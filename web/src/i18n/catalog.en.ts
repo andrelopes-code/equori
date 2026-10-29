@@ -624,6 +624,7 @@ export const catalogEn = {
   "repayment.submit": "Record repayment",
   "repayment.done": "Repayment recorded",
   "entry.kind": "Kind of transaction",
+  "entry.otherKinds": "Other kinds",
   "entry.kind.expense": "Expense",
   "entry.kind.income": "Income",
   "entry.kind.transfer": "Transfer",

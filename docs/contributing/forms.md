@@ -13,6 +13,7 @@ Rules marked with a Slotted ID (FM-06, LA-05) are in `web/node_modules/@slotted/
 ## F2 · Two fields share a row only when they are one answer
 
 - Two fields share a row only when they are parts of one value: a start and an end, a frequency and its interval, an amount and its unit (Baymard).
+- The fields of a row keep their own widths and stand 1rem apart: a field with a width step stops at it and the next starts beside it. A row is never split into equal halves that leave a hole after a short field.
 - Unrelated fields never share a row to fill width. The pair is a `FormRow` (`ui/form-row`) and shares its top (LA-05).
 - Below 600 px of the form's width every row is one field per line.
 
@@ -91,25 +92,25 @@ A field most records leave empty sits in an optional group opened by a choice (F
 
 - A label, a legend, a description and the name of a choice wrap to a second line; none is cut with an ellipsis.
 - A control whose value can be longer than its step (a record's name, an account, a category) is `full`. A `short` or `medium` step holds only values whose length is known (F3).
-- A row of tiles or segments that cannot hold its names on one line drops the secondary line (a hint), then wraps the names, then wraps the row. It never cuts a name.
+- A set of choices whose names do not fit one line is not drawn as tiles or segments: it keeps the few frequent options on the line and moves the others to a menu or a select (F13). A name is never cut.
 - A long value that must stay on one line (an account in a trigger) keeps its name and cuts the secondary detail first.
 
 ## F13 · The control follows the answer
 
-| The answer                                                  | Control                                                                                           |
-| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| one of 2 or 3 short options, each read at a glance          | `SegmentedControl` inside a `FieldGroup` with a legend (F6)                                       |
-| one of 2 to 6 options that need a sentence each             | `RadioGroup` with a description per option                                                        |
-| one of 7 to 15 options from a fixed set                     | `Select` (`ChoiceSelect`)                                                                         |
-| one of more than 15 options, or a set that grows (a record) | `Combobox` with search, and creation where the backend allows it (`CategoryPicker`, `PayeeField`) |
-| several of a fixed set up to 7                              | `CheckboxGroup`                                                                                   |
-| several of a set that grows                                 | a tags field (`TagsField`)                                                                        |
-| yes or no, saved with the form                              | `Checkbox` with its consequence as the description                                                |
-| yes or no that applies at once, outside a submitted form    | `Switch`                                                                                          |
-| a count or a small integer                                  | `NumberField` with the `short` step                                                               |
-| a line of free text                                         | `TextField`; several lines expected: `Textarea`                                                   |
-| an amount, a date, a month, a period, an account            | the domain control (F14)                                                                          |
-| the kind of record, which changes the fields that follow    | choice tiles (`ui/choice-cards`, `EntryKindPicker`) above the fields                              |
+| The answer                                                  | Control                                                                                                                                                                        |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| one of 2 or 3 short options, each read at a glance          | `SegmentedControl` inside a `FieldGroup` with a legend (F6)                                                                                                                    |
+| one of 2 to 6 options that need a sentence each             | `RadioGroup` with a description per option                                                                                                                                     |
+| one of 7 to 15 options from a fixed set                     | `Select` (`ChoiceSelect`)                                                                                                                                                      |
+| one of more than 15 options, or a set that grows (a record) | `Combobox` with search, and creation where the backend allows it (`CategoryPicker`, `PayeeField`)                                                                              |
+| several of a fixed set up to 7                              | `CheckboxGroup`                                                                                                                                                                |
+| several of a set that grows                                 | a tags field (`TagsField`)                                                                                                                                                     |
+| yes or no, saved with the form                              | `Checkbox` with its consequence as the description                                                                                                                             |
+| yes or no that applies at once, outside a submitted form    | `Switch`                                                                                                                                                                       |
+| a count or a small integer                                  | `NumberField` with the `short` step                                                                                                                                            |
+| a line of free text                                         | `TextField`; several lines expected: `Textarea`                                                                                                                                |
+| an amount, a date, a month, a period, an account            | the domain control (F14)                                                                                                                                                       |
+| the kind of record, which changes the fields that follow    | its frequent kinds as `SegmentedControl` segments, the others in a menu beside them whose items carry a description and whose trigger names the chosen one (`EntryKindPicker`) |
 
 - A `Select` hides its options behind a press; with 6 options or fewer that each fit a line, radios or a segmented control show them at once (GOV.UK Design System, Select and Radios).
 - A switch inside a form that is submitted by a button is a checkbox: a switch says the change applies when it moves (NN/g).

@@ -131,11 +131,13 @@ export function ForeignForm({
       </Field>
 
       <FormRow>
-        <Field invalid={errors.original !== undefined}>
+        <Field
+          className={widths.medium}
+          invalid={errors.original !== undefined}
+        >
           <FieldLabel>{t("foreignPurchase.original")}</FieldLabel>
           <MoneyInput
             size="field"
-            className={widths.medium}
             value={draft.original}
             currency={currency ?? ""}
             scale={view.originalScale}

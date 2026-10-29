@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
 import { catalogPtBR } from "@/i18n/catalog.pt-BR";
+import { chooseEntryKind } from "@/testing/entry-kind";
 import { problem } from "@/testing/fake-api";
 import {
   cashID,
@@ -35,15 +36,14 @@ describe("trade entry", () => {
     });
     expect(trigger).toHaveTextContent("XP MXRF11");
     expect(
-      screen.getByRole("radio", { name: catalogEn["entry.kind.trade"] }),
-    ).toBeChecked();
+      // The menu of the other kinds names the chosen one.
+      screen.getByRole("button", { name: catalogEn["entry.kind.trade"] }),
+    ).toBeInTheDocument();
   });
 
   it("offers the trade kind on the new entry", async () => {
     await renderApp("/transactions/new", { fetch: api([]) });
-    await userEvent.click(
-      await screen.findByRole("radio", { name: catalogEn["entry.kind.trade"] }),
-    );
+    await chooseEntryKind(userEvent.setup(), catalogEn["entry.kind.trade"]);
     expect(
       await screen.findByRole("button", {
         name: new RegExp(catalogEn["trade.securityAccount"]),

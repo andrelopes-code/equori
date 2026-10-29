@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
+import { chooseEntryKind } from "@/testing/entry-kind";
 import { problem } from "@/testing/fake-api";
 import {
   brl,
@@ -63,10 +64,9 @@ describe("investment income entry", () => {
 
   it("opens from the new entry flow and from the security account", async () => {
     await renderApp("/transactions/new", { fetch: api([]) });
-    await userEvent.click(
-      await screen.findByRole("radio", {
-        name: catalogEn["entry.kind.investment_income"],
-      }),
+    await chooseEntryKind(
+      userEvent.setup(),
+      catalogEn["entry.kind.investment_income"],
     );
     expect(
       await screen.findByRole("combobox", { name: catalogEn["income.type"] }),

@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
 import { MASK } from "@/privacy/mask";
+import { chooseEntryKind } from "@/testing/entry-kind";
 import { problem } from "@/testing/fake-api";
 import {
   cardID,
@@ -65,10 +66,9 @@ beforeEach(() => {
 describe("foreign purchase entry", () => {
   it("opens from the entry picker", async () => {
     await renderApp("/transactions/new", { fetch: api([]) });
-    await userEvent.click(
-      await screen.findByRole("radio", {
-        name: catalogEn["entry.kind.foreign_purchase"],
-      }),
+    await chooseEntryKind(
+      userEvent.setup(),
+      catalogEn["entry.kind.foreign_purchase"],
     );
     expect(
       await screen.findByRole("combobox", {

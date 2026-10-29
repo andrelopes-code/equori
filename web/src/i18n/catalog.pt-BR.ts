@@ -629,6 +629,7 @@ export const catalogPtBR: Catalog = {
   "repayment.done": "Reposição registrada",
   "detail.actions": "Ações da transação",
   "entry.kind": "Tipo de transação",
+  "entry.otherKinds": "Outros tipos",
   "entry.kind.expense": "Despesa",
   "entry.kind.income": "Receita",
   "entry.kind.transfer": "Transferência",

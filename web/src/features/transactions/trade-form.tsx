@@ -4,6 +4,7 @@ import {
   FieldError,
   FieldLabel,
 } from "@slotted/react/field";
+import { Inline } from "@slotted/react/inline";
 import { Segment, SegmentedControl } from "@slotted/react/segmented-control";
 import { TextField } from "@slotted/react/text-field";
 
@@ -116,16 +117,19 @@ export function TradeForm({
 
       <Field>
         <FieldLabel>{t("trade.side")}</FieldLabel>
-        <SegmentedControl
-          aria-label={t("trade.side")}
-          value={draft.side}
-          onValueChange={(side) => {
-            if (side === "buy" || side === "sell") set({ side });
-          }}
-        >
-          <Segment value="buy">{t("trade.side.buy")}</Segment>
-          <Segment value="sell">{t("trade.side.sell")}</Segment>
-        </SegmentedControl>
+        {/* The segments take their labels' width, as the entry kind's do (F3). */}
+        <Inline>
+          <SegmentedControl
+            aria-label={t("trade.side")}
+            value={draft.side}
+            onValueChange={(side) => {
+              if (side === "buy" || side === "sell") set({ side });
+            }}
+          >
+            <Segment value="buy">{t("trade.side.buy")}</Segment>
+            <Segment value="sell">{t("trade.side.sell")}</Segment>
+          </SegmentedControl>
+        </Inline>
       </Field>
 
       <BrokerageAccountFields
@@ -160,11 +164,13 @@ export function TradeForm({
       </Field>
 
       <FormRow>
-        <Field invalid={errors.quantity !== undefined}>
+        <Field
+          className={widths.medium}
+          invalid={errors.quantity !== undefined}
+        >
           <FieldLabel>{t("trade.quantity")}</FieldLabel>
           <MoneyInput
             size="field"
-            className={widths.medium}
             value={draft.quantity}
             currency={instrument ?? ""}
             scale={instrument === undefined ? 0 : scale(instrument)}
@@ -177,10 +183,12 @@ export function TradeForm({
             <FieldError>{errors.quantity}</FieldError>
           )}
         </Field>
-        <Field invalid={errors.unit_price !== undefined}>
+        <Field
+          className={widths.medium}
+          invalid={errors.unit_price !== undefined}
+        >
           <FieldLabel>{t("trade.unitPrice")}</FieldLabel>
           <TextField
-            className={widths.medium}
             name="unit_price"
             inputMode="decimal"
             autoComplete="off"
@@ -214,11 +222,10 @@ export function TradeForm({
       </FormRow>
 
       <FormRow>
-        <Field invalid={errors.fees !== undefined}>
+        <Field className={widths.medium} invalid={errors.fees !== undefined}>
           <FieldLabel>{t("trade.fees")}</FieldLabel>
           <MoneyInput
             size="field"
-            className={widths.medium}
             value={draft.fees}
             currency={base ?? ""}
             scale={baseScale}
@@ -230,11 +237,10 @@ export function TradeForm({
           {errors.fees !== undefined && <FieldError>{errors.fees}</FieldError>}
         </Field>
         {sell && (
-          <Field invalid={errors.taxes !== undefined}>
+          <Field className={widths.medium} invalid={errors.taxes !== undefined}>
             <FieldLabel>{t("trade.taxes")}</FieldLabel>
             <MoneyInput
               size="field"
-              className={widths.medium}
               value={draft.taxes}
               currency={base ?? ""}
               scale={baseScale}

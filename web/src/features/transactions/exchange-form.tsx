@@ -171,11 +171,13 @@ export function ExchangeForm({
       </Field>
 
       <FormRow>
-        <Field invalid={errors.from_amount !== undefined}>
+        <Field
+          className={widths.medium}
+          invalid={errors.from_amount !== undefined}
+        >
           <FieldLabel>{t("exchange.fromAmount")}</FieldLabel>
           <MoneyInput
             size="field"
-            className={widths.medium}
             value={draft.fromAmount}
             currency={from?.currency ?? base ?? ""}
             scale={view.fromScale}
@@ -188,11 +190,13 @@ export function ExchangeForm({
             <FieldError>{errors.from_amount}</FieldError>
           )}
         </Field>
-        <Field invalid={errors.to_amount !== undefined}>
+        <Field
+          className={widths.medium}
+          invalid={errors.to_amount !== undefined}
+        >
           <FieldLabel>{t("exchange.toAmount")}</FieldLabel>
           <MoneyInput
             size="field"
-            className={widths.medium}
             value={draft.toAmount}
             currency={to?.currency ?? base ?? ""}
             scale={view.toScale}

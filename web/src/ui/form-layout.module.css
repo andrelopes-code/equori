@@ -30,11 +30,19 @@
     min-inline-size: 0;
   }
 
+  /* The fields of a row keep their own widths, 1rem apart: a field with a width step stops at
+     it and the next one starts beside it, so no half-column hole opens between them; a field
+     without a step takes what is left (docs/contributing/forms.md, F2). */
   .row {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: start;
-    gap: var(--slotted-space-6);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: var(--slotted-space-8) var(--slotted-space-6);
+  }
+
+  .row > * {
+    flex: 1 1 12rem;
+    min-inline-size: 0;
   }
 
   /* The aside stands beside the column once both fit: 40rem, the gap and 20rem. */
@@ -48,12 +56,6 @@
       inset-block-start: calc(
         var(--slotted-page-sticky-top, 0px) + var(--slotted-space-6)
       );
-    }
-  }
-
-  @container (max-width: 37.4375rem) {
-    .row {
-      grid-template-columns: minmax(0, 1fr);
     }
   }
 }

@@ -121,11 +121,10 @@ export function IncomeForm({
       </Field>
 
       <FormRow>
-        <Field invalid={errors.gross !== undefined}>
+        <Field className={widths.medium} invalid={errors.gross !== undefined}>
           <FieldLabel>{t("income.gross")}</FieldLabel>
           <MoneyInput
             size="field"
-            className={widths.medium}
             value={draft.gross}
             currency={base ?? ""}
             scale={baseScale}
@@ -138,11 +137,13 @@ export function IncomeForm({
             <FieldError>{errors.gross}</FieldError>
           )}
         </Field>
-        <Field invalid={errors.withheld !== undefined}>
+        <Field
+          className={widths.medium}
+          invalid={errors.withheld !== undefined}
+        >
           <FieldLabel>{t("income.withheld")}</FieldLabel>
           <MoneyInput
             size="field"
-            className={widths.medium}
             value={draft.withheld}
             currency={base ?? ""}
             scale={baseScale}

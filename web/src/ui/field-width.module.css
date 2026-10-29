@@ -1,6 +1,7 @@
 @layer app {
   /* Workaround for Slotted issue #20: a field has no width step for the length of its answer.
-     The class goes on the control, so the label keeps the column's width. */
+     In a column the class goes on the control, so the label keeps the column's width; in a
+     FormRow it goes on the Field, so the next field starts where this one ends. */
   .short {
     max-inline-size: 6rem;
   }

@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
 import { MASK } from "@/privacy/mask";
+import { chooseEntryKind } from "@/testing/entry-kind";
 import { problem } from "@/testing/fake-api";
 import {
   eurWalletID,
@@ -67,11 +68,7 @@ beforeEach(() => {
 describe("currency exchange entry", () => {
   it("opens from the entry picker", async () => {
     await renderApp("/transactions/new", { fetch: api([]) });
-    await userEvent.click(
-      await screen.findByRole("radio", {
-        name: catalogEn["entry.kind.exchange"],
-      }),
-    );
+    await chooseEntryKind(userEvent.setup(), catalogEn["entry.kind.exchange"]);
     expect(
       await screen.findByRole("button", {
         name: new RegExp(catalogEn["exchange.to"]),

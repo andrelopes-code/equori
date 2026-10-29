@@ -3,8 +3,9 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
-import { fakeApi, json, problem } from "@/testing/fake-api";
 import { chooseAccount } from "@/testing/account-choice";
+import { chooseEntryKind } from "@/testing/entry-kind";
+import { fakeApi, json, problem } from "@/testing/fake-api";
 import { renderApp } from "@/testing/render-app";
 import {
   checkingID,
@@ -111,11 +112,7 @@ describe("NewTransactionPage", () => {
   it("records a transfer between two accounts", async () => {
     const sent: unknown[] = [];
     await renderApp("/transactions/new", { fetch: api(sent) });
-    await userEvent.click(
-      await screen.findByRole("radio", {
-        name: catalogEn["entry.kind.transfer"],
-      }),
-    );
+    await chooseEntryKind(userEvent.setup(), catalogEn["entry.kind.transfer"]);
     await userEvent.type(
       screen.getByRole("textbox", { name: catalogEn["entry.amount"] }),
       "50000",
