@@ -3,7 +3,7 @@
 // under it. These bars take a fill of their own, and a blur where the bar is one element.
 
 import type { Block, Declarations } from "./css.ts";
-import { blur, family, rule } from "./css.ts";
+import { blur, container, family, rule, supports } from "./css.ts";
 import { fill } from "./material.ts";
 
 const sectionHeader = `${family("section")}[data-sticky] > [data-part="header"]`;
@@ -38,6 +38,13 @@ const filledBars = [
   `${family("table")} [data-part="group-row"][data-sticky] > [data-part="group-header"]`,
 ];
 
+// Workaround for Slotted issue #18: a sticky column paints `--slotted-surface` under its row, an
+// opaque band beside the transparent columns. The cell takes the sticky fill, and where the engine
+// reports the table's scroll state, only while content passes under the column.
+const stickyCell = `${family("table")} [data-sticky]`;
+const tableScroll = `${family("table")} [data-part="scroll"]`;
+const stickyColumnFill: Declarations = { "--slotted-surface": fill("sticky") };
+
 const ground: Declarations = { "background-color": fill("sticky") };
 const frostTint: Declarations = { "background-color": fill("frost") };
 const frosted = blur("var(--glass-blur)", "var(--glass-saturate)");
@@ -67,4 +74,15 @@ export const stickyRules: readonly Block[] = [
   rule(family("data-grid"), {
     "--slotted-data-grid-header-surface": fill("sticky"),
   }),
+  rule(stickyCell, stickyColumnFill),
+  supports("(container-type: scroll-state)", [
+    rule(tableScroll, { "container-type": "scroll-state" }),
+    rule(stickyCell, { "--slotted-surface": "transparent" }),
+  ]),
+  container("scroll-state(scrollable: inline-end)", [
+    rule(`${family("table")} [data-sticky="end"]`, stickyColumnFill),
+  ]),
+  container("scroll-state(scrollable: inline-start)", [
+    rule(`${family("table")} [data-sticky="start"]`, stickyColumnFill),
+  ]),
 ];

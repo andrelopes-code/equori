@@ -241,3 +241,22 @@ test("a chart's tooltip blurs what is behind it", () => {
     /\[data-ui="chart"\] \[data-part="tooltip"\][^{]*\{[^}]*backdrop-filter: blur\(var\(--glass-blur\)\)/,
   );
 });
+
+test("a table's sticky column is filled only while content passes under it", () => {
+  assert.match(
+    glassOnly,
+    /\[data-ui="table"\] \[data-sticky\] \{\s*--slotted-surface: var\(--glass-fill-sticky\);/,
+  );
+  assert.match(
+    glassOnly,
+    /@supports \(container-type: scroll-state\) \{[^@]*\[data-part="scroll"\] \{\s*container-type: scroll-state;[^@]*\[data-sticky\] \{\s*--slotted-surface: transparent;/,
+  );
+  assert.match(
+    glassOnly,
+    /@container scroll-state\(scrollable: inline-end\) \{[^@]*\[data-sticky="end"\] \{\s*--slotted-surface: var\(--glass-fill-sticky\);/,
+  );
+  assert.match(
+    glassOnly,
+    /@container scroll-state\(scrollable: inline-start\) \{[^@]*\[data-sticky="start"\] \{\s*--slotted-surface: var\(--glass-fill-sticky\);/,
+  );
+});
