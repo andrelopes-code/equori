@@ -88,6 +88,5 @@ export const budgetPlanPtBR: Record<keyof typeof budgetPlanEn, string> = {
   "plan.ofReference": "de {amount}",
   "plan.dash": "—",
   "plan.distribute.rest": "Restante a enviar: {amount}",
-  "plan.history": "Gasto {last} · média {average}",
   "plan.status": "{changes} · {delta} · {applies}",
 };

@@ -88,6 +88,5 @@ export const budgetPlanEn = {
   "plan.ofReference": "of {amount}",
   "plan.dash": "—",
   "plan.distribute.rest": "Rest to send: {amount}",
-  "plan.history": "Spent {last} · average {average}",
   "plan.status": "{changes} · {delta} · {applies}",
 };
