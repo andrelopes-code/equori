@@ -20,6 +20,7 @@ import {
 import type { BulkSummary } from "@/features/transactions/categorize";
 import type { MessageKey } from "@/i18n/catalog.en";
 import { useT } from "@/i18n/i18n-provider";
+import { useServed } from "@/ui/use-served";
 
 type Account = components["schemas"]["Account"];
 type Transaction = components["schemas"]["Transaction"];
@@ -45,6 +46,7 @@ export function useCategorizeActions(
   const t = useT();
   const api = useApi();
   const navigate = useNavigate();
+  const served = useServed();
   const single = useCategorizeTransaction();
   const bulk = useBulkCategorize();
 
@@ -100,6 +102,15 @@ export function useCategorizeActions(
                 ),
               )
               .catch(() => []);
+      const rule = {
+        to: "/categories/rules/new",
+        search: {
+          category: category.id,
+          ...(tx.payee_id === undefined
+            ? { description: tx.description }
+            : { payee: tx.payee_id }),
+        },
+      } as const;
       toast.show({
         id,
         tone: "success",
@@ -131,30 +142,24 @@ export function useCategorizeActions(
                 {t("categorize.applySimilar", { count: similar.length })}
               </Button>
             )}
-            <Button
-              size="sm"
-              variant="ghost"
-              tone="secondary"
-              onClick={() => {
-                toast.dismiss(id);
-                void navigate({
-                  to: "/categories/rules/new",
-                  search: {
-                    category: category.id,
-                    ...(tx.payee_id === undefined
-                      ? { description: tx.description }
-                      : { payee: tx.payee_id }),
-                  },
-                });
-              }}
-            >
-              {t("categorize.createRule")}
-            </Button>
+            {served(rule) && (
+              <Button
+                size="sm"
+                variant="ghost"
+                tone="secondary"
+                onClick={() => {
+                  toast.dismiss(id);
+                  void navigate(rule);
+                }}
+              >
+                {t("categorize.createRule")}
+              </Button>
+            )}
           </>
         ),
       });
     },
-    [accounts, api, categorizeMany, navigate, single, t],
+    [accounts, api, categorizeMany, navigate, served, single, t],
   );
 
   return { categorizeOne, categorizeMany };

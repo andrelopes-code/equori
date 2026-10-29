@@ -118,6 +118,19 @@ describe("categorization method on the transaction list", () => {
     expect(link).toHaveAttribute("href", `/categories/rules/${ruleID}`);
   });
 
+  // ADR 027, S6: the rules are desktop-only.
+  it("draws the rule mark without a link on a phone", async () => {
+    await renderApp("/transactions", { fetch: api([]), width: 390 });
+    const title = await screen.findByRole("rowheader", { name: /Bakery/ });
+
+    await waitFor(() => {
+      expect(
+        within(title).getByText(catalogEn["method.mark.rule"]),
+      ).toBeInTheDocument();
+    });
+    expect(within(title).queryByRole("link")).toBeNull();
+  });
+
   it("asks the methods of a page in one call", async () => {
     const asked: URL[] = [];
     await renderApp("/transactions", { fetch: api(asked) });

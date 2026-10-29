@@ -1,5 +1,6 @@
 import { useRouter } from "@tanstack/react-router";
 import type { NavigateOptions } from "@tanstack/react-router";
+import { useCallback } from "react";
 
 import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
 
@@ -10,16 +11,21 @@ export function useServed(): (options: NavigateOptions) => boolean {
   const router = useRouter();
   const compact = useMediaQuery(compactQuery);
 
-  return (options) => {
-    if (!compact) return true;
+  return useCallback(
+    (options: NavigateOptions) => {
+      if (!compact) return true;
 
-    const location = router.buildLocation(options);
-    const leaf = router.matchRoutes(location.pathname).at(-1);
-    if (leaf?.staticData.phone !== true) return false;
+      const location = router.buildLocation(options);
+      const leaf = router.matchRoutes(location.pathname).at(-1);
+      if (leaf?.staticData.phone !== true) return false;
 
-    const tab = (location.search as { tab?: unknown }).tab;
-    const tabs = leaf.staticData.phoneTabs;
+      const tab = (location.search as { tab?: unknown }).tab;
+      const tabs = leaf.staticData.phoneTabs;
 
-    return typeof tab !== "string" || tabs === undefined || tabs.includes(tab);
-  };
+      return (
+        typeof tab !== "string" || tabs === undefined || tabs.includes(tab)
+      );
+    },
+    [router, compact],
+  );
 }

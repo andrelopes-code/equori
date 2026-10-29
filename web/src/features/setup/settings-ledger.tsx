@@ -17,9 +17,13 @@ import { SettingsSection } from "@/features/setup/settings-section";
 import { useT } from "@/i18n/i18n-provider";
 import { ChoiceSelect } from "@/ui/choice-select";
 import { routeTo } from "@/ui/route-to";
+import { useServed } from "@/ui/use-served";
+
+const instrumentsPage = { to: "/instruments" } as const;
 
 export function SettingsLedger() {
   const t = useT();
+  const served = useServed();
   const api = useApi();
   const settings = useQuery(settingsQuery(api));
   const instruments = useQuery(instrumentsQuery(api));
@@ -77,19 +81,22 @@ export function SettingsLedger() {
             )}
           </Field>
         </SettingsRow>
-        <SettingsRow
-          label={t("settings.ledger.instrumentsTitle")}
-          description={t("settings.ledger.instrumentsDescription")}
-        >
-          <ButtonLink
-            variant="outline"
-            tone="secondary"
-            fullWidth
-            render={routeTo({ to: "/instruments" })}
+        {/* The instruments are desktop-only (ADR 027, S6). */}
+        {served(instrumentsPage) && (
+          <SettingsRow
+            label={t("settings.ledger.instrumentsTitle")}
+            description={t("settings.ledger.instrumentsDescription")}
           >
-            {t("settings.ledger.instruments")}
-          </ButtonLink>
-        </SettingsRow>
+            <ButtonLink
+              variant="outline"
+              tone="secondary"
+              fullWidth
+              render={routeTo(instrumentsPage)}
+            >
+              {t("settings.ledger.instruments")}
+            </ButtonLink>
+          </SettingsRow>
+        )}
       </SettingsGroup>
     </SettingsSection>
   );

@@ -7,6 +7,7 @@ import type { components } from "@/api/schema.gen";
 import type { MessageKey } from "@/i18n/catalog.en";
 import { useT } from "@/i18n/i18n-provider";
 import { routeTo } from "@/ui/route-to";
+import { useServed } from "@/ui/use-served";
 
 type Categorization = components["schemas"]["Categorization"];
 type Method = NonNullable<Categorization["method"]>;
@@ -26,6 +27,8 @@ export function CategorizationMark({
   categorization: Categorization | undefined;
 }) {
   const t = useT();
+  const served = useServed();
+
   const method = categorization?.method;
   if (method === undefined || method === null) return null;
   const { short, label } = words[method];
@@ -37,11 +40,15 @@ export function CategorizationMark({
   );
   const ruleId = categorization?.rule_id;
   if (method !== "rule" || ruleId === undefined) return badge;
+
+  const rule = { to: "/categories/rules/$id", params: { id: ruleId } } as const;
+  if (!served(rule)) return badge;
+
   return (
     <Link
       variant="neutral"
       underline="none"
-      render={routeTo({ to: "/categories/rules/$id", params: { id: ruleId } })}
+      render={routeTo(rule)}
       onClick={(event: MouseEvent<HTMLAnchorElement>) => {
         // The row opens the transaction on a click; the mark opens the rule instead.
         event.stopPropagation();

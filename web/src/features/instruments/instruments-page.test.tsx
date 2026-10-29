@@ -232,4 +232,19 @@ describe("Instrument catalog", () => {
     });
     expect(link).toHaveAttribute("href", "/instruments");
   });
+
+  // ADR 027, S6: the instruments are desktop-only.
+  it("leaves the settings row out on a phone", async () => {
+    await renderApp("/settings?section=finances", { fetch: api(), width: 390 });
+    await screen.findByRole("heading", { level: 1 });
+
+    expect(
+      screen.queryByRole("link", {
+        name: catalogEn["settings.ledger.instruments"],
+      }),
+    ).toBeNull();
+    expect(
+      screen.queryByText(catalogEn["settings.ledger.instrumentsDescription"]),
+    ).toBeNull();
+  });
 });
