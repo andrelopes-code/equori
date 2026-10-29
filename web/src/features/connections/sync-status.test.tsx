@@ -54,7 +54,7 @@ describe("SyncStatus", () => {
       }),
     );
     expect(
-      await screen.findByText("Open Finance updated at 09:37"),
+      await screen.findByText("Bank connection updated at 09:37"),
     ).toBeInTheDocument();
   });
 
@@ -63,7 +63,7 @@ describe("SyncStatus", () => {
       json(200, { items: [connection("1", "2026-10-14T21:00:00Z")] }),
     );
     expect(
-      await screen.findByText("Open Finance updated at Oct 14"),
+      await screen.findByText("Bank connection updated at Oct 14"),
     ).toBeInTheDocument();
   });
 
@@ -83,10 +83,12 @@ describe("SyncStatus", () => {
     );
     await userEvent.click(
       await screen.findByRole("button", {
-        name: "Open Finance updated at 09:37",
+        name: "Bank connection updated at 09:37",
       }),
     );
-    const panel = await screen.findByRole("dialog", { name: "Open Finance" });
+    const panel = await screen.findByRole("dialog", {
+      name: "Bank connection",
+    });
     const first = within(panel).getByRole("region", { name: "Bank 1" });
     expect(
       within(first).getByText("Bank data from").nextSibling,
@@ -143,10 +145,12 @@ describe("SyncStatus", () => {
     );
     await userEvent.click(
       await screen.findByRole("button", {
-        name: "Open Finance updated at 09:37",
+        name: "Bank connection updated at 09:37",
       }),
     );
-    const panel = await screen.findByRole("dialog", { name: "Open Finance" });
+    const panel = await screen.findByRole("dialog", {
+      name: "Bank connection",
+    });
     expect(
       await within(panel).findByRole("region", { name: "Nubank, Nubank Gold" }),
     ).toBeInTheDocument();

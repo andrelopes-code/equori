@@ -1,7 +1,7 @@
 // The words of the settings screen's panes and appearance choices, spread into catalogEn.
 export const settingsEn = {
   "settings.group.personal": "Personal",
-  "settings.group.books": "Books",
+  "settings.group.books": "Finances",
   "settings.group.connections": "Connections",
   "settings.group.system": "System",
   "settings.summary.account": "Signed-in identity, role and session.",
@@ -49,7 +49,7 @@ export const settingsEn = {
     "Codex (config.toml); set EQUORI_TOKEN to the token",
   "settings.external_access.json": "Other clients (JSON)",
   "settings.external_access.done": "Done",
-  "settings.summary.data": "Export and import of the books.",
+  "settings.summary.data": "Export and import of your records.",
   "settings.browserOnly.tag": "This browser",
   "settings.account.session": "Session",
   "settings.account.logoutDescription":
@@ -61,7 +61,7 @@ export const settingsEn = {
     "Today's date and a number, as the chosen region writes them.",
   "settings.ledger.instrumentsTitle": "Instruments",
   "settings.ledger.instrumentsDescription":
-    "Currencies, assets and their prices.",
+    "Currencies, investments and their prices.",
   "settings.appearance.reset": "Restore defaults",
   "settings.appearance.theme": "Theme",
   "settings.appearance.colour": "Colour",

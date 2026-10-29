@@ -197,11 +197,11 @@ describe("overview page", () => {
 
   it("S129: shows assets, liabilities, net and the change against the previous month end", async () => {
     await renderApp("/", { width: 800, fetch: api() });
-    const assets = await screen.findByRole("article", { name: "Assets" });
+    const assets = await screen.findByRole("article", { name: "You own" });
     await waitFor(() => {
       expect(assets).toHaveTextContent("2,205.00");
     });
-    expect(block("Liabilities")).toHaveTextContent("1,200.00");
+    expect(block("You owe")).toHaveTextContent("1,200.00");
     expect(block("Net worth")).toHaveTextContent("1,005.00");
     expect(block("Net worth")).toHaveTextContent("+17.5%");
   });
@@ -465,7 +465,9 @@ describe("overview page", () => {
         .getAllByRole("listitem")
         .map((row) => row.textContent);
       expect(rows[0]).toMatch(/Uncategorized transactions.*3/);
-      expect(rows[1]).toMatch(/Entries the bank did not report.*Nubank.*2/);
+      expect(rows[1]).toMatch(
+        /Transactions the bank did not report.*Nubank.*2/,
+      );
       expect(rows[2]).toMatch(/Connections that need action.*1/);
       expect(rows[3]).toMatch(/Reserva de emergência.*15\.00/);
       expect(
@@ -520,7 +522,7 @@ describe("overview page", () => {
       });
       const region = await screen.findByRole("article", { name: "Attention" });
       const link = await within(region).findByRole("link", {
-        name: /Entries the bank did not report/,
+        name: /Transactions the bank did not report/,
       });
       expect(link.getAttribute("href")).toBe(`/cards/${cardID}/statements/s1`);
     });
@@ -573,7 +575,7 @@ describe("overview page", () => {
         within(region).queryByRole("button", { name: "Try again" }),
       ).toBeNull();
       expect(region).toHaveTextContent(
-        /Entries the bank did not report.*Itaú checking.*1/,
+        /Transactions the bank did not report.*Itaú checking.*1/,
       );
     });
 
@@ -587,7 +589,7 @@ describe("overview page", () => {
       const region = await screen.findByRole("article", { name: "Attention" });
       await within(region).findByRole("button", { name: "Try again" });
       await waitFor(() => {
-        expect(block("Assets")).toHaveTextContent("2,205.00");
+        expect(block("You own")).toHaveTextContent("2,205.00");
       });
     });
   });

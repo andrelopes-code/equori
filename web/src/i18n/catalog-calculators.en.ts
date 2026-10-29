@@ -173,7 +173,7 @@ export const calculatorsEn = {
   "calc.compound.limit4":
     "The range is not a forecast. With withdrawals, one fixed return understates the range of outcomes (Pfau 2016).",
   "calc.noIndexes":
-    "This instance fetches no index, so no index can be chosen; an administrator enables them in EQUORI_INDEX_FEEDS (docs/operations/price-feeds.md).",
+    "This installation fetches no index, so no index can be chosen; an administrator enables them in EQUORI_INDEX_FEEDS (docs/operations/price-feeds.md).",
   "calc.index": "Index",
   "calc.index.none": "None",
   "calc.rates.rate": "Rate",
@@ -219,7 +219,7 @@ export const calculatorsEn = {
   "calc.correction.formula1":
     "M7: corrected = amount × Π (1 + rᵢ); rᵢ the rate of each month or day i",
   "calc.correction.assumption1":
-    "The rates are the ones the index source published and this instance stored.",
+    "The rates are the ones the index source published and this installation stored.",
   "calc.correction.limit1":
     "Results can differ from those of an institution, which may use other dates or rounding (Banco Central do Brasil, Calculadora do Cidadão).",
   "calc.financing.solve": "What to calculate",

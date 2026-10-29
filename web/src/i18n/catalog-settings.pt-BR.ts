@@ -3,7 +3,7 @@ import type { settingsEn } from "@/i18n/catalog-settings.en";
 // The words of the settings screen in pt-BR, spread into catalogPtBR.
 export const settingsPtBR: Record<keyof typeof settingsEn, string> = {
   "settings.group.personal": "Pessoal",
-  "settings.group.books": "Livros",
+  "settings.group.books": "Finanças",
   "settings.group.connections": "Conexões",
   "settings.group.system": "Sistema",
   "settings.summary.account": "Identidade conectada, papel e sessão.",
@@ -52,7 +52,7 @@ export const settingsPtBR: Record<keyof typeof settingsEn, string> = {
     "Codex (config.toml); defina EQUORI_TOKEN com o token",
   "settings.external_access.json": "Outros clientes (JSON)",
   "settings.external_access.done": "Concluir",
-  "settings.summary.data": "Exportação e importação dos livros.",
+  "settings.summary.data": "Exportação e importação dos seus registros.",
   "settings.browserOnly.tag": "Este dispositivo",
   "settings.account.session": "Sessão",
   "settings.account.logoutDescription":
@@ -63,7 +63,8 @@ export const settingsPtBR: Record<keyof typeof settingsEn, string> = {
   "settings.language.exampleDescription":
     "A data de hoje e um número, como a região escolhida os escreve.",
   "settings.ledger.instrumentsTitle": "Instrumentos",
-  "settings.ledger.instrumentsDescription": "Moedas, ativos e seus preços.",
+  "settings.ledger.instrumentsDescription":
+    "Moedas, investimentos e seus preços.",
   "settings.appearance.reset": "Restaurar padrões",
   "settings.appearance.theme": "Tema",
   "settings.appearance.colour": "Cor",

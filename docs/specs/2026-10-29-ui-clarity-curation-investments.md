@@ -20,3 +20,17 @@ Quem usa estas telas investe; termos que toda corretora mostra ficam: custo méd
 | Relatórios: "Ativos", "Passivos", "visão de caixa", "Nada lançado", coluna "Lançamentos", "Fluxos" | Renomear | termos transversais | Você tem; Você deve; pelo dinheiro que de fato entrou e saiu; Nada registrado; Transações; Entradas e saídas |
 
 "Encargo de compra internacional (pontos-base)" fica: a ajuda do campo já define o ponto-base.
+
+## Varredura dos termos transversais
+
+Os termos transversais das curadorias anteriores foram aplicados nos textos restantes de todos os catálogos (configurações, assistente, captura offline, visão geral, calculadoras, dados de mercado):
+
+- "livro", "livros", "deste livro" → "seus registros", "um equori vazio", "todas as suas contas". O grupo de configurações "Livros" passa a "Finanças", palavra do subtítulo da página.
+- "instância" → "instalação".
+- "Open Finance" → "conexão bancária"; "provedor" da conexão bancária → "conexão bancária". "Provedor" do modelo de linguagem fica: é o termo do assistente.
+- "lançamento", "lançar" → "transação", "registrar"; a fila offline guarda textos, e passa a "Textos offline".
+- "conciliação", "conciliada" → "conferência de saldo"; "associada" para linhas importadas.
+- "Ativos", "Passivos" → "Você tem", "Você deve".
+- "MiB" → "MB".
+
+O tema de cor "Livro-caixa" fica: é um nome próprio de tema.

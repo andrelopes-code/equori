@@ -2,7 +2,7 @@
 export const marketDataEn = {
   "settings.market_data.title": "Market data",
   "settings.summary.market_data":
-    "Public sources of prices and indexes the instance fetches every 6 hours.",
+    "Public sources of prices and indexes this installation fetches every 6 hours.",
   "marketData.prices": "Prices",
   "marketData.indexes": "Indexes",
   "marketData.refresh": "Update now",

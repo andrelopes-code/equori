@@ -41,8 +41,8 @@ export const catalogEn = {
   "palette.account": "Account",
   "palette.scheme": "Colour scheme: {name}",
   "palette.language": "Language: {name}",
-  "sync.updated": "Open Finance updated at {time}",
-  "sync.detailsTitle": "Open Finance",
+  "sync.updated": "Bank connection updated at {time}",
+  "sync.detailsTitle": "Bank connection",
   "sync.detailsDescription":
     "Pluggy fetches each bank on its own schedule, and the app then reads Pluggy.",
   "sync.bankData": "Bank data from",
@@ -99,19 +99,19 @@ export const catalogEn = {
   "settings.integrations.title": "Integrations",
   "settings.data.title": "Data",
   "settings.data.description":
-    "Export every fact of the books as an open archive, or restore an archive into empty books.",
+    "Export all your records as an open archive, or restore an archive into an empty equori.",
   "export.label": "Export",
   "export.none": "No export requested.",
   "export.pending": "Preparing the archive.",
   "export.ready":
     "Ready: {size}, requested on {date}, archive version {version}.",
-  "export.failed": "The last export failed: the archive exceeds 256 MiB.",
+  "export.failed": "The last export failed: the archive exceeds 256 MB.",
   "export.request": "Request export",
   "export.download": "Download",
   "import.label": "Import",
   "import.description":
-    "Restores an archive into books without transactions; the archive's facts replace the starting accounts. An archive of this version of equori or an earlier one imports; an archive of a later version does not.",
-  "import.blocked": "Import needs books without transactions.",
+    "Restores an archive into an equori without transactions; the archive's facts replace the starting accounts. An archive of this version of equori or an earlier one imports; an archive of a later version does not.",
+  "import.blocked": "Import needs an equori without transactions.",
   "import.choose": "Choose archive",
   "import.done": "Archive imported: {rows} rows, archive version {version}.",
   "import.tooNew":
@@ -266,11 +266,10 @@ export const catalogEn = {
   "problem.provider_unauthorized": "The provider rejected the key.",
   "problem.provider_unavailable": "The provider did not answer.",
   "settings.ledger.title": "Finances",
-  "settings.ledger.description": "Applies to every account of this ledger.",
+  "settings.ledger.description": "Applies to all your accounts.",
   "settings.baseCurrency.help":
     "Totals across accounts are stated in this currency.",
-  "settings.baseCurrency.locked":
-    "Locked because the ledger already holds transactions.",
+  "settings.baseCurrency.locked": "Locked because transactions already exist.",
   "login.title": "Sign in",
   "login.subtitle": "Sign in to reach your finances.",
   "login.tagline": "Your finances, in balance.",
@@ -280,7 +279,7 @@ export const catalogEn = {
   "login.submit": "Sign in",
   "setup.title": "Create the first user",
   "setup.subtitle":
-    "This user administers the instance. Its language and region set how equori writes numbers, dates and money.",
+    "This user administers this installation. Its language and region set how equori writes numbers, dates and money.",
   "setup.email": "Email",
   "setup.password": "Password",
   "setup.password.help": "At least 12 characters.",
@@ -295,7 +294,7 @@ export const catalogEn = {
   "setup.token_missing":
     'This address has no setup token. Open the address equori printed when it first started: the setup.url file in its data directory, or the line "first user setup" of its log.',
   "problem.setup_token_invalid":
-    "This setup address is not the one this instance issued. Open the address from setup.url or from the log again.",
+    "This setup address is not the one this installation issued. Open the address from setup.url or from the log again.",
   "problem.setup_complete": "The first user exists. Sign in instead.",
   "scheme.dark": "Dark",
   "scheme.light": "Light",
@@ -378,9 +377,9 @@ export const catalogEn = {
   "problem.transaction_voided":
     "The transaction is voided and cannot be changed.",
   "problem.posting_reconciled":
-    "The transaction has reconciled postings and cannot be changed.",
+    "The transaction is already reconciled and cannot be changed. Unlock the account's reconciliation to correct it.",
   "problem.account_not_empty":
-    "The account has a balance or postings after the closing date and cannot be closed.",
+    "The account has a balance or transactions after the closing date and cannot be closed.",
   "problem.settings_locked":
     "The settings cannot be changed after the first transaction.",
   "problem.mixed_instruments":
@@ -1384,7 +1383,7 @@ export const catalogEn = {
   "assistant.step.handle_card_purchase": "Preparing a purchase event",
   "assistant.step.settle_statement": "Preparing a statement action",
   "assistant.step.reconcile_account": "Preparing a reconciliation",
-  "assistant.step.record_investment": "Preparing an investment entry",
+  "assistant.step.record_investment": "Preparing an investment transaction",
   "assistant.step.get_category_totals": "Adding up categories",
   "assistant.step.get_account_history": "Reading account history",
   "assistant.step.list_schedules": "Reading schedules",
@@ -1443,7 +1442,7 @@ export const catalogEn = {
   "assistant.action.settle_statement.remove_facts": "Remove statement facts",
   "assistant.action.reconcile_account.record_balance": "Record bank balance",
   "assistant.action.reconcile_account.resolve_difference": "Resolve difference",
-  "assistant.action.reconcile_account.unlock": "Unlock reconciled entries",
+  "assistant.action.reconcile_account.unlock": "Unlock the reconciliation",
   "assistant.action.record_investment.buy": "Record purchase of security",
   "assistant.action.record_investment.sell": "Record sale of security",
   "assistant.action.record_investment.income": "Record investment income",
@@ -1638,7 +1637,7 @@ export const catalogEn = {
   "calendar.year.previous": "Previous year",
   "calendar.year.next": "Next year",
   "calendar.source.rule": "Calendar rule",
-  "calendar.source.instance": "Defined on this instance",
+  "calendar.source.instance": "Defined on this installation",
   "calendar.holidays.empty":
     "No holidays in {year}. Only weekends are not business days.",
   "calendar.open": "See the holidays of this calendar",
@@ -1810,8 +1809,8 @@ export const catalogEn = {
   "overview.block.label": "Overview blocks",
   "overview.netWorth.title": "Net worth",
   "overview.netWorth.open": "Open net worth",
-  "overview.netWorth.assets": "Assets",
-  "overview.netWorth.liabilities": "Liabilities",
+  "overview.netWorth.assets": "You own",
+  "overview.netWorth.liabilities": "You owe",
   "overview.indicators.open": "Open indicators",
   "overview.indicators.savings": "Savings rate",
   "overview.indicators.reserve": "Reserve",
@@ -1865,7 +1864,7 @@ export const catalogEn = {
   "overview.goals.of": "{current} of {target}",
   "overview.goals.empty": "No goals yet",
   "overview.attention.uncategorized": "Uncategorized transactions",
-  "overview.attention.unconfirmed": "Entries the bank did not report",
+  "overview.attention.unconfirmed": "Transactions the bank did not report",
   "overview.attention.withUnconfirmed":
     "{account} · {count} not confirmed by the bank",
   "overview.attention.connections": "Connections that need action",

@@ -42,8 +42,8 @@ export const catalogPtBR: Catalog = {
   "palette.account": "Conta",
   "palette.scheme": "Esquema de cores: {name}",
   "palette.language": "Idioma: {name}",
-  "sync.updated": "Open Finance atualizado às {time}",
-  "sync.detailsTitle": "Open Finance",
+  "sync.updated": "Conexão bancária atualizada às {time}",
+  "sync.detailsTitle": "Conexão bancária",
   "sync.detailsDescription":
     "A Pluggy busca os dados de cada banco no próprio horário, e depois o app lê a Pluggy.",
   "sync.bankData": "Dados do banco de",
@@ -100,19 +100,19 @@ export const catalogPtBR: Catalog = {
   "settings.integrations.title": "Integrações",
   "settings.data.title": "Dados",
   "settings.data.description":
-    "Exporte todos os fatos dos livros num arquivo aberto, ou restaure um arquivo em livros vazios.",
+    "Exporte todos os seus registros num arquivo aberto, ou restaure um arquivo num equori vazio.",
   "export.label": "Exportação",
   "export.none": "Nenhuma exportação pedida.",
   "export.pending": "Preparando o arquivo.",
   "export.ready":
     "Pronto: {size}, pedido em {date}, versão de arquivo {version}.",
-  "export.failed": "A última exportação falhou: o arquivo passa de 256 MiB.",
+  "export.failed": "A última exportação falhou: o arquivo passa de 256 MB.",
   "export.request": "Pedir exportação",
   "export.download": "Baixar",
   "import.label": "Importação",
   "import.description":
-    "Restaura um arquivo em livros sem transações; os fatos do arquivo substituem as contas iniciais. Um arquivo desta versão do equori ou de uma anterior é importado; um arquivo de uma versão posterior, não.",
-  "import.blocked": "A importação exige livros sem transações.",
+    "Restaura um arquivo num equori sem transações; os fatos do arquivo substituem as contas iniciais. Um arquivo desta versão do equori ou de uma anterior é importado; um arquivo de uma versão posterior, não.",
+  "import.blocked": "A importação exige um equori sem transações.",
   "import.choose": "Escolher arquivo",
   "import.done":
     "Arquivo importado: {rows} linhas, versão de arquivo {version}.",
@@ -271,10 +271,10 @@ export const catalogPtBR: Catalog = {
   "problem.provider_unauthorized": "O provedor recusou a chave.",
   "problem.provider_unavailable": "O provedor não respondeu.",
   "settings.ledger.title": "Finanças",
-  "settings.ledger.description": "Vale para todas as contas deste livro.",
+  "settings.ledger.description": "Vale para todas as suas contas.",
   "settings.baseCurrency.help":
     "Os totais entre contas são expressos nesta moeda.",
-  "settings.baseCurrency.locked": "Bloqueada porque o livro já tem transações.",
+  "settings.baseCurrency.locked": "Bloqueada porque já existem transações.",
   "login.title": "Entrar",
   "login.subtitle": "Entre para acessar suas finanças.",
   "login.tagline": "Suas finanças, em equilíbrio.",
@@ -284,7 +284,7 @@ export const catalogPtBR: Catalog = {
   "login.submit": "Entrar",
   "setup.title": "Criar o primeiro usuário",
   "setup.subtitle":
-    "Este usuário administra a instância. O idioma e a região definem como o equori escreve números, datas e valores.",
+    "Este usuário administra esta instalação. O idioma e a região definem como o equori escreve números, datas e valores.",
   "setup.email": "E-mail",
   "setup.password": "Senha",
   "setup.password.help": "Pelo menos 12 caracteres.",
@@ -299,7 +299,7 @@ export const catalogPtBR: Catalog = {
   "setup.token_missing":
     'Este endereço não tem o token de configuração. Abra o endereço que o equori mostrou na primeira execução: o arquivo setup.url no diretório de dados, ou a linha "first user setup" do log.',
   "problem.setup_token_invalid":
-    "Este endereço de configuração não é o que esta instância emitiu. Abra de novo o endereço do setup.url ou do log.",
+    "Este endereço de configuração não é o que esta instalação emitiu. Abra de novo o endereço do setup.url ou do log.",
   "problem.setup_complete": "O primeiro usuário já existe. Entre com ele.",
   "scheme.dark": "Escuro",
   "scheme.light": "Claro",
@@ -383,9 +383,9 @@ export const catalogPtBR: Catalog = {
   "problem.transaction_voided":
     "A transação está anulada e não pode ser alterada.",
   "problem.posting_reconciled":
-    "A transação tem lançamentos conciliados e não pode ser alterada.",
+    "A transação já foi conferida e não pode ser alterada. Reabra a conferência da conta para corrigi-la.",
   "problem.account_not_empty":
-    "A conta tem saldo ou lançamentos após a data de encerramento e não pode ser encerrada.",
+    "A conta tem saldo ou transações após a data de encerramento e não pode ser encerrada.",
   "problem.settings_locked":
     "As configurações não podem ser alteradas após a primeira transação.",
   "problem.mixed_instruments":
@@ -523,7 +523,7 @@ export const catalogPtBR: Catalog = {
   "facts.description": "Descrição",
   "facts.tags": "Tags",
   "facts.tagsHelp":
-    "Marcadores livres que cruzam as categorias, como uma viagem ou uma reforma. Um lançamento pode ter vários.",
+    "Marcadores livres que cruzam as categorias, como uma viagem ou uma reforma. Uma transação pode ter várias.",
   "facts.categorized": "Categorizada por",
   "facts.origin": "Origem",
   "transaction.facts.side": "Lado",
@@ -1183,7 +1183,7 @@ export const catalogPtBR: Catalog = {
     "Um padrão na sintaxe RE2, comparado ao texto como o banco escreveu, com maiúsculas; comece com (?i) para ignorá-las. Exemplo: (?i)^(uber|99)",
   "ruleEditor.regexPlaceholder": "(?i)^(uber|99)",
   "ruleEditor.reading": "A regra por extenso",
-  "capture.title": "Lançar por texto",
+  "capture.title": "Registrar por texto",
   "capture.subheading":
     "Uma transação por linha. Nada é registrado antes da confirmação.",
   "capture.useForm": "Usar formulário",
@@ -1260,7 +1260,7 @@ export const catalogPtBR: Catalog = {
     "Escreva o que gastou; o equori lê quando o servidor responder de novo.",
   "offline.user": "Na fila de {email}",
   "offline.noUser":
-    "Entre uma vez com o servidor acessível para lançar neste aparelho sem ele.",
+    "Entre uma vez com o servidor acessível para registrar neste aparelho sem ele.",
   "offline.queue": "Guardar na fila",
   "offline.retry": "Tentar de novo",
   "offline.queued": "Na fila",
@@ -1269,12 +1269,12 @@ export const catalogPtBR: Catalog = {
     "O aparelho recusou guardar o texto; ele continua no campo.",
   "queue.discard": "Descartar",
   "queue.writtenOn": "Escrito em {date}",
-  "queue.title": "Lançamentos offline",
+  "queue.title": "Textos offline",
   "queue.subheading":
-    "Textos escritos sem o servidor. Cada um abre no lançamento por texto com o dia em que foi escrito.",
+    "Textos escritos sem o servidor. Cada um abre no registro por texto com o dia em que foi escrito.",
   "queue.process": "Revisar",
-  "queue.empty": "Nenhum lançamento offline na fila.",
-  "queue.pending": "{count} lançamentos offline na fila",
+  "queue.empty": "Nenhum texto offline na fila.",
+  "queue.pending": "{count} textos offline na fila",
   "queue.open": "Abrir fila",
   "capture.queuedFrom":
     "Texto escrito em {date}. As datas dele contam a partir desse dia.",
@@ -1306,7 +1306,7 @@ export const catalogPtBR: Catalog = {
   "assistant.history": "Histórico de conversas",
   "assistant.welcome.title": "Como posso ajudar?",
   "assistant.welcome.body":
-    "Pergunte sobre saldos, gastos e faturas, peça para lançar ou corrigir uma transação, ou pergunte onde fica algo no app. Nada muda sem a sua confirmação.",
+    "Pergunte sobre saldos, gastos e faturas, peça para registrar ou corrigir uma transação, ou pergunte onde fica algo no app. Nada muda sem a sua confirmação.",
   "assistant.composer.hint": "Enter envia · Shift+Enter quebra a linha",
   "assistant.suggestion.overview.1": "Qual o saldo das minhas contas?",
   "assistant.suggestion.overview.2": "Quanto gastei por categoria este mês?",
@@ -1387,9 +1387,9 @@ export const catalogPtBR: Catalog = {
   "assistant.step.manage_card": "Preparando uma alteração de cartão",
   "assistant.step.handle_card_purchase": "Preparando um evento de compra",
   "assistant.step.settle_statement": "Preparando uma ação na fatura",
-  "assistant.step.reconcile_account": "Preparando uma conciliação",
+  "assistant.step.reconcile_account": "Preparando uma conferência de saldo",
   "assistant.step.record_investment":
-    "Preparando um lançamento de investimento",
+    "Preparando o registro de um investimento",
   "assistant.step.get_category_totals": "Somando categorias",
   "assistant.step.get_account_history": "Lendo o histórico da conta",
   "assistant.step.list_schedules": "Lendo agendamentos",
@@ -1455,8 +1455,7 @@ export const catalogPtBR: Catalog = {
   "assistant.action.reconcile_account.record_balance":
     "Registrar saldo do banco",
   "assistant.action.reconcile_account.resolve_difference": "Resolver diferença",
-  "assistant.action.reconcile_account.unlock":
-    "Desbloquear lançamentos conciliados",
+  "assistant.action.reconcile_account.unlock": "Reabrir a conferência",
   "assistant.action.record_investment.buy": "Registrar compra de ativo",
   "assistant.action.record_investment.sell": "Registrar venda de ativo",
   "assistant.action.record_investment.income": "Registrar provento",
@@ -1655,7 +1654,7 @@ export const catalogPtBR: Catalog = {
   "calendar.year.previous": "Ano anterior",
   "calendar.year.next": "Próximo ano",
   "calendar.source.rule": "Regra do calendário",
-  "calendar.source.instance": "Definido na instância",
+  "calendar.source.instance": "Definido nesta instalação",
   "calendar.holidays.empty":
     "Sem feriados em {year}. Somente os fins de semana não são dias úteis.",
   "calendar.open": "Ver os feriados deste calendário",
@@ -1826,8 +1825,8 @@ export const catalogPtBR: Catalog = {
   "overview.block.label": "Blocos da visão geral",
   "overview.netWorth.title": "Patrimônio líquido",
   "overview.netWorth.open": "Abrir patrimônio líquido",
-  "overview.netWorth.assets": "Ativos",
-  "overview.netWorth.liabilities": "Passivos",
+  "overview.netWorth.assets": "Você tem",
+  "overview.netWorth.liabilities": "Você deve",
   "overview.indicators.open": "Abrir indicadores",
   "overview.indicators.savings": "Taxa de poupança",
   "overview.indicators.reserve": "Reserva",
@@ -1883,11 +1882,11 @@ export const catalogPtBR: Catalog = {
   "overview.goals.of": "{current} de {target}",
   "overview.goals.empty": "Nenhuma meta ainda",
   "overview.attention.uncategorized": "Transações sem categoria",
-  "overview.attention.unconfirmed": "Lançamentos que o banco não informou",
+  "overview.attention.unconfirmed": "Transações que o banco não informou",
   "overview.attention.withUnconfirmed":
     "{account} · {count} sem confirmação do banco",
   "overview.attention.connections": "Conexões que pedem ação",
-  "overview.attention.difference": "Diferença aberta na conciliação",
+  "overview.attention.difference": "Diferença aberta na conferência de saldo",
   "overview.attention.atLeast": "{count}+",
   "overview.figures.net": "Patrimônio líquido",
   "overview.figures.result": "Resultado do mês",

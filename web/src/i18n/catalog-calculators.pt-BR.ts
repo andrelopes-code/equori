@@ -174,7 +174,7 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.compound.limit4":
     "A faixa não é uma previsão. Com resgates, um retorno fixo subestima a faixa de resultados (Pfau 2016).",
   "calc.noIndexes":
-    "Esta instância não busca nenhum índice, então nenhum índice pode ser escolhido; um administrador os ativa em EQUORI_INDEX_FEEDS (docs/operations/price-feeds.md).",
+    "Esta instalação não busca nenhum índice, então nenhum índice pode ser escolhido; um administrador os ativa em EQUORI_INDEX_FEEDS (docs/operations/price-feeds.md).",
   "calc.index": "Índice",
   "calc.index.none": "Nenhum",
   "calc.rates.rate": "Taxa",
@@ -221,7 +221,7 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.correction.formula1":
     "M7: corrigido = valor × Π (1 + rᵢ); rᵢ a taxa de cada mês ou dia i",
   "calc.correction.assumption1":
-    "As taxas são as que a fonte do índice publicou e esta instância guardou.",
+    "As taxas são as que a fonte do índice publicou e esta instalação guardou.",
   "calc.correction.limit1":
     "Os resultados podem diferir dos de uma instituição, que pode usar outras datas ou arredondamentos (Banco Central do Brasil, Calculadora do Cidadão).",
   "calc.financing.solve": "O que calcular",
