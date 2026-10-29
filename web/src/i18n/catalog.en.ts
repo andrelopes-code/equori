@@ -845,8 +845,9 @@ export const catalogEn = {
   "category.total": "Total",
   "category.totalHint":
     "The category and every category under it, in the month.",
-  "category.own": "Own",
-  "category.ownHint": "Only what was posted on this category itself.",
+  "category.own": "Direct",
+  "category.ownHint":
+    "Only what was recorded on this category, without the ones under it.",
   "category.share": "Share",
   "category.actionsColumn": "Actions",
   "category.actions": "Actions for {name}",

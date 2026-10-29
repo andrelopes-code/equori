@@ -17,3 +17,11 @@ Tabela de curadoria (`2026-10-29-ui-clarity-design.md`, seção 5) das telas `/`
 Ficam: "Dias de carência" (palavra comum, com descrição), "Transportar o saldo para o mês seguinte" (com descrição), "Ocorrência", "Comprometido" (com nota das parcelas), "Calendário de dias úteis" (com o link dos feriados).
 
 Em en: "Realize" vira "Link"; "Counterpart" vira "Category or account"; "terms" vira "amount and recurrence"; "Reference" vira "Amount to distribute"; "books", "booked" e "cash basis" saem.
+
+## Categorias
+
+As telas de categorias, regras, favorecidos e tags (`/categories/*`) já usam palavras comuns (regra, condição, mesclar, apelido). A ajuda de expressão regular fica: só aparece para quem escolhe essa comparação.
+
+| Elemento | Remédio | Critério | Proposta |
+|---|---|---|---|
+| Coluna "Próprio", nota "Só o que foi lançado nesta categoria." | Renomear | "próprio" não diz o que exclui; os relatórios chamam o mesmo valor de "Direto" | Direto; Só o que foi registrado nesta categoria, sem as que estão dentro dela. |

@@ -846,8 +846,9 @@ export const catalogPtBR: Catalog = {
   "category.create.confirm": "Criar categoria",
   "category.total": "Total",
   "category.totalHint": "A categoria e todas as que estão dentro dela, no mês.",
-  "category.own": "Próprio",
-  "category.ownHint": "Só o que foi lançado nesta categoria.",
+  "category.own": "Direto",
+  "category.ownHint":
+    "Só o que foi registrado nesta categoria, sem as que estão dentro dela.",
   "category.share": "Participação",
   "category.actionsColumn": "Ações",
   "category.actions": "Ações de {name}",
