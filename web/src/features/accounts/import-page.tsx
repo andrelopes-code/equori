@@ -6,6 +6,12 @@ import {
 } from "@slotted/react/action-bar";
 import { Button } from "@slotted/react/button";
 import { Field, FieldError, FieldLabel } from "@slotted/react/field";
+import {
+  FieldGroup,
+  FieldGroupContent,
+  FieldGroupLegend,
+} from "@slotted/react/field-group";
+import { Inline } from "@slotted/react/inline";
 import { Page, PageBody, PageFooter } from "@slotted/react/page";
 import { Segment, SegmentedControl } from "@slotted/react/segmented-control";
 import { Stack } from "@slotted/react/stack";
@@ -17,7 +23,6 @@ import { useMemo, useRef, useState } from "react";
 import { useApi } from "@/api/api-context";
 import { errorText } from "@/api/problem";
 import { AccountFormHeader } from "@/features/accounts/account-form-header";
-import styles from "@/features/accounts/import-page.module.css";
 import {
   accountQuery,
   csvProfileQuery,
@@ -32,6 +37,7 @@ import { CsvPreviewTable } from "@/features/accounts/csv-preview-table";
 import { CsvProfileSection } from "@/features/accounts/csv-profile-section";
 import { useScale } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
+import { FormLayout } from "@/ui/form-layout";
 
 // P4 amendment A16: the server takes a statement of at most 10 MiB.
 const maxBytes = 10 * 1024 * 1024;
@@ -92,6 +98,11 @@ export function ImportPage() {
         : previewCsv(text, draft, scale(currency)),
     [text, draft, scale, currency],
   );
+  const csv =
+    format === "csv" &&
+    draft !== null &&
+    preview !== null &&
+    currency !== undefined;
   const ready = file !== undefined && (format === "ofx" || profile !== null);
   const busy = save.isPending || send.isPending;
 
@@ -158,89 +169,94 @@ export function ImportPage() {
         backLabel={account.data?.name ?? t("nav.accounts")}
       />
       <PageBody>
-        <Stack gap={6}>
-          <Field invalid={refusal !== null || error !== null}>
-            <FieldLabel>{t("importFile.file")}</FieldLabel>
-            <Upload
-              accept=".ofx,.csv,text/csv,application/x-ofx"
-              maxSize={maxBytes}
-              // A statement has no thumbnail and no in-browser view worth opening.
-              preview="none"
-              view="none"
-              files={files}
-              description={t("importFile.fileHint")}
-              onFilesChange={(next) => {
-                setFiles(next);
-                setEdited(null);
-                setError(null);
-                const kept = next.find((f) => f.status !== "rejected");
-                if (kept !== undefined) {
-                  setRefusal(null);
-                  setFormat(formatOf(kept.name));
-                }
-                read(
-                  kept?.file,
-                  kept === undefined ? "ofx" : formatOf(kept.name),
-                );
-              }}
-              onReject={(rejected) => {
-                const reason = rejected[0]?.reason;
-                setRefusal(
-                  reason === "size"
-                    ? t("importFile.tooLarge")
-                    : t("importFile.wrongType"),
-                );
-              }}
-            />
-            {(refusal ?? error) !== null && (
-              <FieldError>{refusal ?? error}</FieldError>
-            )}
-          </Field>
-          {file !== undefined && (
-            <Field>
-              <FieldLabel>{t("importFile.format")}</FieldLabel>
-              <SegmentedControl
-                aria-label={t("importFile.format")}
-                value={format}
-                onValueChange={(next) => {
-                  if (next === "ofx" || next === "csv") {
-                    setFormat(next);
-                    setEdited(null);
-                    read(file, next);
+        <Stack gap={10}>
+          <FormLayout>
+            <Field invalid={refusal !== null || error !== null}>
+              <FieldLabel>{t("importFile.file")}</FieldLabel>
+              <Upload
+                accept=".ofx,.csv,text/csv,application/x-ofx"
+                maxSize={maxBytes}
+                // A statement has no thumbnail and no in-browser view worth opening.
+                preview="none"
+                view="none"
+                files={files}
+                description={t("importFile.fileHint")}
+                onFilesChange={(next) => {
+                  setFiles(next);
+                  setEdited(null);
+                  setError(null);
+                  const kept = next.find((f) => f.status !== "rejected");
+                  if (kept !== undefined) {
+                    setRefusal(null);
+                    setFormat(formatOf(kept.name));
                   }
+                  read(
+                    kept?.file,
+                    kept === undefined ? "ofx" : formatOf(kept.name),
+                  );
                 }}
-              >
-                <Segment value="ofx">{t("importFile.ofx")}</Segment>
-                <Segment value="csv">{t("importFile.csv")}</Segment>
-              </SegmentedControl>
+                onReject={(rejected) => {
+                  const reason = rejected[0]?.reason;
+                  setRefusal(
+                    reason === "size"
+                      ? t("importFile.tooLarge")
+                      : t("importFile.wrongType"),
+                  );
+                }}
+              />
+              {(refusal ?? error) !== null && (
+                <FieldError>{refusal ?? error}</FieldError>
+              )}
             </Field>
-          )}
-          {format === "csv" &&
-            draft !== null &&
-            preview !== null &&
-            currency !== undefined && (
-              <div className={styles.csv}>
-                <CsvProfileSection
-                  value={draft}
-                  onChange={setEdited}
-                  headers={preview.headers}
-                />
-                <Stack gap={2}>
-                  <CsvPreviewTable
-                    preview={preview}
-                    currency={currency}
-                    scale={scale === null ? 2 : scale(currency)}
-                  />
-                  {preview.problem !== null && (
-                    <FieldError>
-                      {t("importFile.missingColumn", {
-                        column: preview.problem.column,
-                      })}
-                    </FieldError>
-                  )}
-                </Stack>
-              </div>
+
+            {file !== undefined && (
+              <FieldGroup>
+                <FieldGroupLegend>{t("importFile.format")}</FieldGroupLegend>
+                <FieldGroupContent>
+                  <Inline>
+                    <SegmentedControl
+                      aria-label={t("importFile.format")}
+                      value={format}
+                      onValueChange={(next) => {
+                        if (next === "ofx" || next === "csv") {
+                          setFormat(next);
+                          setEdited(null);
+                          read(file, next);
+                        }
+                      }}
+                    >
+                      <Segment value="ofx">{t("importFile.ofx")}</Segment>
+                      <Segment value="csv">{t("importFile.csv")}</Segment>
+                    </SegmentedControl>
+                  </Inline>
+                </FieldGroupContent>
+              </FieldGroup>
             )}
+            {csv && (
+              <CsvProfileSection
+                value={draft}
+                onChange={setEdited}
+                headers={preview.headers}
+              />
+            )}
+          </FormLayout>
+
+          {csv && (
+            <Stack gap={2}>
+              <CsvPreviewTable
+                preview={preview}
+                currency={currency}
+                scale={scale === null ? 2 : scale(currency)}
+              />
+              {preview.problem !== null && (
+                <FieldError>
+                  {t("importFile.missingColumn", {
+                    column: preview.problem.column,
+                  })}
+                </FieldError>
+              )}
+            </Stack>
+          )}
         </Stack>
       </PageBody>
     </Page>

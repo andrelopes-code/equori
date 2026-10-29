@@ -1,17 +1,19 @@
-import { Field, FieldDescription, FieldLabel } from "@slotted/react/field";
+import { Checkbox } from "@slotted/react/checkbox";
+import { Field, FieldLabel } from "@slotted/react/field";
 import {
   FieldGroup,
   FieldGroupContent,
   FieldGroupLegend,
 } from "@slotted/react/field-group";
-import { Grid } from "@slotted/react/grid";
+import { Inline } from "@slotted/react/inline";
 import { Segment, SegmentedControl } from "@slotted/react/segmented-control";
-import { Stack } from "@slotted/react/stack";
-import { Switch } from "@slotted/react/switch";
 
 import type { ProfileDraft } from "@/features/accounts/csv-guess";
 import { useT } from "@/i18n/i18n-provider";
 import { ChoiceSelect } from "@/ui/choice-select";
+import widths from "@/ui/field-width.module.css";
+import { FormRow } from "@/ui/form-row";
+import { FormSection } from "@/ui/form-section";
 
 const none = "";
 
@@ -65,80 +67,85 @@ export function CsvProfileSection({
     </Field>
   );
   return (
-    <FieldGroup>
-      <FieldGroupLegend>{t("importFile.profile")}</FieldGroupLegend>
-      <FieldGroupContent>
-        <Stack gap={4}>
-          <Grid columns={2} gap={4} minItemWidth="sm">
-            <Field>
-              <FieldLabel>{t("importFile.delimiter")}</FieldLabel>
-              <ChoiceSelect
-                label={t("importFile.delimiter")}
-                choices={[
-                  {
-                    value: "semicolon",
-                    label: t("importFile.delimiter.semicolon"),
-                  },
-                  { value: "comma", label: t("importFile.delimiter.comma") },
-                  { value: "tab", label: t("importFile.delimiter.tab") },
-                  { value: "pipe", label: t("importFile.delimiter.pipe") },
-                ]}
-                value={value.delimiter ?? "comma"}
-                multiple={false}
-                onChange={(next) => {
-                  if (
-                    next === "semicolon" ||
-                    next === "comma" ||
-                    next === "tab" ||
-                    next === "pipe"
-                  ) {
-                    set({ delimiter: next });
-                  }
-                }}
-              />
-            </Field>
-            <Field>
-              <FieldLabel>{t("importFile.headerRows")}</FieldLabel>
-              <ChoiceSelect
-                label={t("importFile.headerRows")}
-                choices={[0, 1, 2, 3].map((n) => ({
-                  value: String(n),
-                  label: String(n),
-                }))}
-                value={String(value.header_rows ?? 1)}
-                multiple={false}
-                onChange={(next) => {
-                  if (typeof next === "string")
-                    set({ header_rows: Number(next) });
-                }}
-              />
-            </Field>
-            {column(t("importFile.dateColumn"), "date_column")}
-            <Field required>
-              <FieldLabel>{t("importFile.dateLayout")}</FieldLabel>
-              <ChoiceSelect
-                label={t("importFile.dateLayout")}
-                choices={["DD/MM/YYYY", "YYYY-MM-DD", "MM/DD/YYYY"].map(
-                  (l) => ({ value: l, label: l }),
-                )}
-                value={value.date_layout ?? null}
-                multiple={false}
-                onChange={(next) => {
-                  if (
-                    next === "DD/MM/YYYY" ||
-                    next === "YYYY-MM-DD" ||
-                    next === "MM/DD/YYYY"
-                  ) {
-                    set({ date_layout: next });
-                  }
-                }}
-              />
-            </Field>
-            {column(t("importFile.descriptionColumn"), "description_column")}
-            {column(t("importFile.idColumn"), "id_column", true)}
-          </Grid>
-          <Field>
-            <FieldLabel>{t("importFile.amountMode")}</FieldLabel>
+    <FormSection legend={t("importFile.profile")}>
+      <Field>
+        <FieldLabel>{t("importFile.delimiter")}</FieldLabel>
+        <ChoiceSelect
+          className={widths.medium}
+          label={t("importFile.delimiter")}
+          choices={[
+            {
+              value: "semicolon",
+              label: t("importFile.delimiter.semicolon"),
+            },
+            { value: "comma", label: t("importFile.delimiter.comma") },
+            { value: "tab", label: t("importFile.delimiter.tab") },
+            { value: "pipe", label: t("importFile.delimiter.pipe") },
+          ]}
+          value={value.delimiter ?? "comma"}
+          multiple={false}
+          onChange={(next) => {
+            if (
+              next === "semicolon" ||
+              next === "comma" ||
+              next === "tab" ||
+              next === "pipe"
+            ) {
+              set({ delimiter: next });
+            }
+          }}
+        />
+      </Field>
+
+      <Field>
+        <FieldLabel>{t("importFile.headerRows")}</FieldLabel>
+        <ChoiceSelect
+          className={widths.short}
+          label={t("importFile.headerRows")}
+          choices={[0, 1, 2, 3].map((n) => ({
+            value: String(n),
+            label: String(n),
+          }))}
+          value={String(value.header_rows ?? 1)}
+          multiple={false}
+          onChange={(next) => {
+            if (typeof next === "string") set({ header_rows: Number(next) });
+          }}
+        />
+      </Field>
+
+      <FormRow>
+        {column(t("importFile.dateColumn"), "date_column")}
+        <Field required className={widths.medium}>
+          <FieldLabel>{t("importFile.dateLayout")}</FieldLabel>
+          <ChoiceSelect
+            label={t("importFile.dateLayout")}
+            choices={["DD/MM/YYYY", "YYYY-MM-DD", "MM/DD/YYYY"].map((l) => ({
+              value: l,
+              label: l,
+            }))}
+            value={value.date_layout ?? null}
+            multiple={false}
+            onChange={(next) => {
+              if (
+                next === "DD/MM/YYYY" ||
+                next === "YYYY-MM-DD" ||
+                next === "MM/DD/YYYY"
+              ) {
+                set({ date_layout: next });
+              }
+            }}
+          />
+        </Field>
+      </FormRow>
+
+      {column(t("importFile.descriptionColumn"), "description_column")}
+      {column(t("importFile.idColumn"), "id_column", true)}
+
+      <FieldGroup>
+        <FieldGroupLegend>{t("importFile.amountMode")}</FieldGroupLegend>
+        <FieldGroupContent>
+          <Inline>
             <SegmentedControl
               aria-label={t("importFile.amountMode")}
               value={split ? "split" : "single"}
@@ -157,44 +164,46 @@ export function CsvProfileSection({
               <Segment value="single">{t("importFile.amountSingle")}</Segment>
               <Segment value="split">{t("importFile.amountSplit")}</Segment>
             </SegmentedControl>
-          </Field>
-          <Grid columns={2} gap={4} minItemWidth="sm">
-            {split ? (
-              <>
-                {column(t("importFile.debitColumn"), "debit_column")}
-                {column(t("importFile.creditColumn"), "credit_column")}
-              </>
-            ) : (
-              column(t("importFile.amountColumn"), "amount_column")
-            )}
-            <Field required>
-              <FieldLabel>{t("importFile.decimal")}</FieldLabel>
-              <SegmentedControl
-                aria-label={t("importFile.decimal")}
-                value={value.decimal_separator ?? ","}
-                onValueChange={(next) => {
-                  if (next === "," || next === ".")
-                    set({ decimal_separator: next });
-                }}
-              >
-                <Segment value=",">{t("importFile.decimal.comma")}</Segment>
-                <Segment value=".">{t("importFile.decimal.dot")}</Segment>
-              </SegmentedControl>
-            </Field>
-          </Grid>
-          <Field>
-            <Switch
-              checked={value.amount_sign === "inverted"}
-              onCheckedChange={(on) => {
-                set({ amount_sign: on ? "inverted" : "as_is" });
+          </Inline>
+        </FieldGroupContent>
+      </FieldGroup>
+
+      {split && (
+        <FormRow>
+          {column(t("importFile.debitColumn"), "debit_column")}
+          {column(t("importFile.creditColumn"), "credit_column")}
+        </FormRow>
+      )}
+      {!split && column(t("importFile.amountColumn"), "amount_column")}
+
+      <FieldGroup required>
+        <FieldGroupLegend>{t("importFile.decimal")}</FieldGroupLegend>
+        <FieldGroupContent>
+          <Inline>
+            <SegmentedControl
+              aria-label={t("importFile.decimal")}
+              value={value.decimal_separator ?? ","}
+              onValueChange={(next) => {
+                if (next === "," || next === ".")
+                  set({ decimal_separator: next });
               }}
             >
-              {t("importFile.inverted")}
-            </Switch>
-            <FieldDescription>{t("importFile.invertedHint")}</FieldDescription>
-          </Field>
-        </Stack>
-      </FieldGroupContent>
-    </FieldGroup>
+              <Segment value=",">{t("importFile.decimal.comma")}</Segment>
+              <Segment value=".">{t("importFile.decimal.dot")}</Segment>
+            </SegmentedControl>
+          </Inline>
+        </FieldGroupContent>
+      </FieldGroup>
+
+      <Checkbox
+        checked={value.amount_sign === "inverted"}
+        onCheckedChange={(on) => {
+          set({ amount_sign: on ? "inverted" : "as_is" });
+        }}
+        description={t("importFile.invertedHint")}
+      >
+        {t("importFile.inverted")}
+      </Checkbox>
+    </FormSection>
   );
 }
