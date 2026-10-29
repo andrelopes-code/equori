@@ -1,4 +1,4 @@
-# Card billing certainty: provisional statements and the open bill (amendments A136 to A139)
+# Card billing certainty: provisional statements and the open bill (amendments A136 to A141)
 
 Amends the billing, amount due and settlement rows of `docs/domain/05-domain-model.md` (T04, A86, A89, A90) and the matching rules of `2026-10-20-record-matching-design.md` (A98 to A101).
 
@@ -84,6 +84,12 @@ The ledger now runs the same check after every recorded, corrected or voided tra
 
 The statement page explains its unconfirmed lines: an alert names them; when the statement's total matches the institution's it says that reconciling records it, otherwise it states the resolutions of A133.
 
+### A141: no posting moves by a guess
+
+A90 moved every pending posting off a statement with facts, reading "pending" as "not billed". On 2026-10-29 the owner recorded the Nubank Gold total of 2026-11 (1,238.65); A90 then moved three rides of 2026-10-19 and 2026-10-20 (21.40) to 2026-12, although the institution's file bills them on 2026-11. The aggregator still reported them pending.
+
+The move of A90 is removed. A posting changes statement automatically only when a line states its bill (A39, A136); everything else is a proposal the owner confirms (A137). A pending posting the reported total leaves out stays where it is: the statement shows the difference and proposes the move, and the line moves by itself once the aggregator reports it with its bill.
+
 ## Regions
 
 The rules use dates, lines, bills and totals. Every source provides these concepts: files of any format, any aggregator, any country. No regional value and no extension point is introduced; `docs/contributing/regions.md` is unchanged. `MatchHardLimit` is an existing value, not regional.
@@ -97,6 +103,7 @@ The rules use dates, lines, bills and totals. Every source provides these concep
 | S178 | A manual charge of 50.00 dated 2026-10-27, explicit statement 2026-12 chosen by the owner, stays on 2026-12 when statement 2026-11 closes. |
 | S179 | A closed statement differs from its file total by 0.01 and has no provisional posting of 0.01. The page shows the difference as a possible rounding difference; no posting moves. |
 | S181 | A bill of 230.00 arrives for a statement whose lines sum 240.00: not reconciled. The owner records a credit of 10.00 on it; the statement is reconciled without a new sync. |
+| S184 | A bill of 316.13 covers a posted line of 230.00 and a line of 86.13 the aggregator still reports pending. The pending posting stays on the statement, whose difference is 0. With a bill of 230.00 it also stays, the statement shows a difference of 86.13, and the line moves to 2026-12 when the aggregator reports it with the bill due 2026-12-10. |
 | S180 | Statement 2026-11 closed (due 2026-11-05) with 1,238.65 unpaid; statement 2026-12 open with charges 353.72. Open amount is 353.72. On 2026-11-06, unpaid, statement 2026-11 is `overdue` and the open amount is 1,592.37. |
 
 ## Out of scope

@@ -93,9 +93,9 @@ func TestStatementReconciledWhenAnEntryClosesTheDifference_S181(t *testing.T) {
 	}
 }
 
-// A90: a pending line is never billed on a statement the institution reported; it moves to
-// the first statement without facts.
-func TestPendingLineLeavesAReportedStatement(t *testing.T) {
+// A141 (amends A90): a pending line the reported total leaves out stays on its statement;
+// the difference shows it, and the line moves when the bank reports it with its bill.
+func TestPendingLineOutsideTheReportedTotalStays(t *testing.T) {
 	t.Parallel()
 	f, card := cardWithBill(t, pluggy.Bill{ID: "bill-nov", DueDate: "2026-11-10T00:00:00.000Z", BillClosingDate: new("2026-11-02T00:00:00.000Z"), TotalAmount: "230.00"})
 	f.line(pluggy.SubtypeCard, cardLine("charge-1", "2026-10-20", "230.00", "POSTED", new("bill-nov")))
@@ -103,8 +103,37 @@ func TestPendingLineLeavesAReportedStatement(t *testing.T) {
 	f.sync()
 
 	_, tx := f.recordOf("pending-1")
-	if p := f.cardPosting(tx, card); p.Statement != "2026-12" || p.Status != "pending" {
+	if p := f.cardPosting(tx, card); p.Statement != "2026-11" || p.Status != "pending" {
 		t.Fatalf("pending posting = %+v", p)
+	}
+	if s := f.statement(card, "2026-11"); s.Difference == nil || s.Difference.Amount != 8613 || s.Reconciled {
+		t.Fatalf("2026-11 difference = %+v", s.Difference)
+	}
+
+	f.p.AddBill(nubankItem+"-card", pluggy.Bill{ID: "bill-dec", DueDate: "2026-12-10T00:00:00.000Z", TotalAmount: "86.13"})
+	f.line(pluggy.SubtypeCard, cardLine("pending-1", "2026-10-25", "86.13", "POSTED", new("bill-dec")))
+	f.sync()
+
+	if p := f.cardPosting(tx, card); p.Statement != "2026-12" {
+		t.Fatalf("posted line on %s, want 2026-12", p.Statement)
+	}
+	if s := f.statement(card, "2026-11"); !s.Reconciled {
+		t.Fatalf("2026-11 = %+v, want reconciled once the line left it", s)
+	}
+}
+
+// S184 (A141): a pending line the reported total includes stays on its statement: the bank
+// billed it although the aggregator still reports it pending.
+func TestPendingLineInTheReportedTotalStays_S184(t *testing.T) {
+	t.Parallel()
+	f, card := cardWithBill(t, pluggy.Bill{ID: "bill-nov", DueDate: "2026-11-10T00:00:00.000Z", BillClosingDate: new("2026-11-02T00:00:00.000Z"), TotalAmount: "316.13"})
+	f.line(pluggy.SubtypeCard, cardLine("charge-1", "2026-10-20", "230.00", "POSTED", new("bill-nov")))
+	f.line(pluggy.SubtypeCard, cardLine("pending-1", "2026-10-25", "86.13", "PENDING", nil))
+	f.sync()
+
+	_, tx := f.recordOf("pending-1")
+	if p := f.cardPosting(tx, card); p.Statement != "2026-11" {
+		t.Fatalf("pending posting on %s, want 2026-11", p.Statement)
 	}
 	if s := f.statement(card, "2026-11"); s.Difference == nil || s.Difference.Amount != 0 {
 		t.Fatalf("2026-11 difference = %+v", s.Difference)

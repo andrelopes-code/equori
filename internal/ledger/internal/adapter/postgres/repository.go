@@ -961,15 +961,6 @@ func (r *Repository) RedatablePostings(ctx context.Context, userID int64, accoun
 	return out, err
 }
 
-func (r *Repository) PendingOnReported(ctx context.Context, userID int64, accountID uuid.UUID) ([]app.RedatablePosting, error) {
-	rows, err := r.q.ListPendingOnReported(ctx, ListPendingOnReportedParams{UserID: userID, AccountID: accountID})
-	out := make([]app.RedatablePosting, len(rows))
-	for i, row := range rows {
-		out[i] = app.RedatablePosting{ID: row.ID, StatementID: row.StatementID}
-	}
-	return out, err
-}
-
 func (r *Repository) MovePostingStatement(ctx context.Context, userID int64, postingID, statementID uuid.UUID) error {
 	return r.q.MovePostingStatement(ctx, MovePostingStatementParams{UserID: userID, ID: postingID, StatementID: nullUUID(statementID)})
 }

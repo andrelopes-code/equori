@@ -181,47 +181,11 @@ func (s *Service) effectiveDates(ctx context.Context, st Statement, rules domain
 	return closing, due, nil
 }
 
-// SettleReportedStatements moves the card's pending postings off the statements the
-// institution reported (A90) and reconciles every closed statement whose amount due equals
-// the reported total (A92, A7).
+// SettleReportedStatements reconciles every closed statement of the card whose amount due
+// equals the reported total (A92, A7). It moves no posting: a feed can still report as pending
+// a line the institution billed, so a statement changes only by the line's bill or by the
+// owner (A141).
 func (s *Service) SettleReportedStatements(ctx context.Context, userID int64, cardID uuid.UUID) error {
-	err := s.repo.InTx(ctx, func(r Repository) error {
-		pending, err := r.PendingOnReported(ctx, userID, cardID)
-		if err != nil || len(pending) == 0 {
-			return err
-		}
-		stored, err := r.Statements(ctx, userID, cardID)
-		if err != nil {
-			return err
-		}
-		reported := map[domain.ReferenceMonth]bool{}
-		refOf := map[uuid.UUID]domain.ReferenceMonth{}
-		for _, st := range stored {
-			refOf[st.ID] = st.Input.Reference
-			reported[st.Input.Reference] = st.Fact != nil
-		}
-		rules, err := r.BillingRules(ctx, userID, cardID)
-		if err != nil {
-			return err
-		}
-		for _, p := range pending {
-			ref := refOf[p.StatementID]
-			for reported[ref] {
-				ref = ref.Add(1)
-			}
-			id, err := s.ensureStatement(ctx, r, userID, cardID, ref, rules)
-			if err != nil {
-				return err
-			}
-			if err := r.MovePostingStatement(ctx, userID, p.ID, id); err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-	if err != nil {
-		return err
-	}
 	card, err := s.card(ctx, userID, cardID)
 	if err != nil {
 		return err

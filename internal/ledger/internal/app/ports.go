@@ -394,8 +394,6 @@ type Repository interface {
 	DeleteStatementFact(ctx context.Context, userID int64, statementID uuid.UUID, source string) error
 	// RedatablePostings lists the card's postings billed by their date (A86).
 	RedatablePostings(ctx context.Context, userID int64, accountID uuid.UUID) ([]RedatablePosting, error)
-	// PendingOnReported lists the card's pending postings billed on a statement with facts (A90).
-	PendingOnReported(ctx context.Context, userID int64, accountID uuid.UUID) ([]RedatablePosting, error)
 	MovePostingStatement(ctx context.Context, userID int64, postingID, statementID uuid.UUID) error
 	StatementAccount(ctx context.Context, userID int64, statementID uuid.UUID) (uuid.UUID, error)
 	OpenStatementsFrom(ctx context.Context, userID int64, accountID uuid.UUID, from domain.ReferenceMonth, today time.Time) ([]Statement, error)

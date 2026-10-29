@@ -48,46 +48,6 @@ func (q *Queries) HasOpeningBalance(ctx context.Context, arg HasOpeningBalancePa
 	return column_1, err
 }
 
-const listPendingOnReported = `-- name: ListPendingOnReported :many
-SELECT p.id, p.statement_id::uuid AS statement_id FROM ledger_posting p
-WHERE p.user_id = $1 AND p.account_id = $2 AND NOT p.voided AND p.status = 'pending'
-  AND p.installment_plan_id IS NULL
-  AND EXISTS (SELECT 1 FROM ledger_statement_fact f WHERE f.statement_id = p.statement_id)
-`
-
-type ListPendingOnReportedParams struct {
-	UserID    int64
-	AccountID uuid.UUID
-}
-
-type ListPendingOnReportedRow struct {
-	ID          uuid.UUID
-	StatementID uuid.UUID
-}
-
-// A90: pending card postings billed on a statement the institution reported. An installment
-// is billed on the statement its plan fixes (T07), so a reported bill without it did not bill
-// it, and it stays (A97).
-func (q *Queries) ListPendingOnReported(ctx context.Context, arg ListPendingOnReportedParams) ([]ListPendingOnReportedRow, error) {
-	rows, err := q.db.Query(ctx, listPendingOnReported, arg.UserID, arg.AccountID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []ListPendingOnReportedRow
-	for rows.Next() {
-		var i ListPendingOnReportedRow
-		if err := rows.Scan(&i.ID, &i.StatementID); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const listRedatablePostings = `-- name: ListRedatablePostings :many
 SELECT p.id, p.booked_on, p.statement_id::uuid AS statement_id FROM ledger_posting p
 WHERE p.user_id = $1 AND p.account_id = $2 AND NOT p.voided AND p.statement_id IS NOT NULL
