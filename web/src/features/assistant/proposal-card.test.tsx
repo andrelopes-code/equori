@@ -9,6 +9,7 @@ import { catalogEn } from "@/i18n/catalog.en";
 import { fakeApi, json, problem } from "@/testing/fake-api";
 import { expectNoAmounts, hideAmounts } from "@/testing/privacy";
 import { renderWithProviders, renderWithRouter } from "@/testing/render-app";
+import { setViewport } from "@/testing/viewport";
 
 type Proposal = components["schemas"]["AssistantProposal"];
 
@@ -223,6 +224,29 @@ describe("ProposalCard", () => {
     expect(
       screen.getByRole("link", { name: catalogEn["assistant.proposal.open"] }),
     ).toHaveAttribute("href", "/transactions/t1");
+  });
+
+  // ADR 027, S6: the rules are desktop-only, so a phone shows no way to the rule.
+  it("leaves out the screen of a desktop-only record on a phone", () => {
+    setViewport(390);
+
+    renderWithRouter(
+      <ProposalCard
+        proposal={{
+          ...pending,
+          tool: "manage_rule",
+          status: "executed",
+          result: { rule_id: "r1" },
+        }}
+      />,
+      { path: "/", fetch: fakeApi({}) },
+    );
+
+    expect(
+      screen.queryByRole("link", {
+        name: catalogEn["assistant.proposal.open"],
+      }),
+    ).toBeNull();
   });
 
   // P17 and Review Focus 3 of phase 4.

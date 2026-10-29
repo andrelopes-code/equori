@@ -31,6 +31,7 @@ import type { Decision } from "@/features/assistant/confirm-all";
 import { proposalScreen } from "@/features/assistant/proposal-screen";
 import { useExpired } from "@/features/assistant/use-expired";
 import { routeTo } from "@/ui/route-to";
+import { useServed } from "@/ui/use-served";
 import { Link } from "@slotted/react/link";
 
 type Proposal = components["schemas"]["AssistantProposal"];
@@ -99,6 +100,7 @@ export function ProposalCard({
   onDecided?: (id: string, decision: Decision) => void;
 }) {
   const t = useT();
+  const served = useServed();
   const [locale] = useAppLocale();
   const valueText = useValueText();
   const confirm = useConfirmProposal();
@@ -190,7 +192,7 @@ export function ProposalCard({
               </AlertContent>
             </Alert>
           )}
-          {screen !== undefined && (
+          {screen !== undefined && served({ href: screen }) && (
             <Text size="sm">
               <Link render={routeTo({ href: screen })}>
                 {t("assistant.proposal.open")}
