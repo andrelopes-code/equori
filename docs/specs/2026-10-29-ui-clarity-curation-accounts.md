@@ -103,3 +103,5 @@ O perfil de leitura do CSV (separador, linhas de cabeçalho, formato da data) fi
 ## 8. Fora desta rodada
 
 Posições de investimento, agendamentos da conta, instituições e configuração do cartão entram nas curadorias de investimentos, planejamento e cartões.
+
+| Critério de pontuação "Contraparte"; "Esta corretora não tem ativos." | Renomear | termo de contabilidade; termo transversal | Favorecido; Esta corretora não tem investimentos. |
