@@ -23,6 +23,8 @@ const phoneRoutes = [
   "/transactions/$id",
   "/transactions/$id/correct",
   "/settings",
+  "/help",
+  "/help/$page",
 ];
 
 const desktopRoutes = [

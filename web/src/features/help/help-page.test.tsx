@@ -70,6 +70,21 @@ describe("help", () => {
     ).not.toBeInTheDocument();
   });
 
+  // ADR 027, S3: the help is a phone route, so a statement read on a phone reaches its page.
+  it("draws a page below 600 px", async () => {
+    await renderApp("/help/statement", {
+      width: 390,
+      fetch: fakeApi(sharedRoutes),
+    });
+
+    expect(
+      await screen.findByRole("heading", {
+        level: 1,
+        name: "The statement screen",
+      }),
+    ).toBeInTheDocument();
+  });
+
   it("answers an unknown page with the not-found screen", async () => {
     await renderApp("/help/nope", { fetch: fakeApi(sharedRoutes) });
 

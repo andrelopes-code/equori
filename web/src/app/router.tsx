@@ -437,12 +437,14 @@ const calculatorRoute = createRoute({
 });
 
 const helpRoute = createRoute({
+  staticData: { phone: true },
   getParentRoute: () => authedRoute,
   path: "help",
   component: HelpIndexPage,
 });
 
 const helpPageRoute = createRoute({
+  staticData: { phone: true },
   getParentRoute: () => authedRoute,
   path: "help/$page",
   beforeLoad: ({ params }) => {

@@ -6,12 +6,13 @@ Rules marked with a Slotted ID (LP-01, OV-02) are in `web/node_modules/@slotted/
 
 ## M1 · A screen declares its purpose
 
-Each phone route is one of two kinds. The kind fixes the phone pattern.
+Each phone route is one of three kinds. The kind fixes the phone pattern.
 
 | Kind          | Example                                     | Desktop                              | Phone                                                                                                 |
 | ------------- | ------------------------------------------- | ------------------------------------ | ----------------------------------------------------------------------------------------------------- |
 | Comparison    | statement lines, installments               | `data-grid`                          | `data-grid` with the pop-in (LP-01): row header and priority columns stay, the rest move into the row |
 | Record work   | accounts, cards, transactions               | `data-grid` with an `actions` column | `DataList` swapped in with `createWidthGate` at `COMPACT_BELOW` over the same sort and selection      |
+| Reading       | help pages                                  | `Markdown` prose and a `List` of pages | the same prose and list in one column; no table                                                     |
 
 A phone grid never scrolls sideways (LP-01). Horizontal scroll is accepted only for a comparison table that cannot lose a column (NN/g), with the header row and the first column pinned and a cut-off last column as the scroll cue.
 
