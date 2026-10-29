@@ -45,7 +45,7 @@ export const CardFigures = memo(function CardFigures({
     <FigureGrid label={t("card.figures")}>
       <FigureCard
         label={t("card.figure.current")}
-        value={current === undefined ? undefined : figure(current.amount_due)}
+        value={current === undefined ? undefined : figure(current.open_amount)}
         note={
           current === undefined
             ? t("cards.noStatement")

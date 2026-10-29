@@ -50,7 +50,7 @@ export function cardTotals(
   const nearestDue = unpaid.map((s) => s.due_date).sort()[0];
   return {
     open: {
-      amount: sum(cards.map((c) => c.current?.amount_due)),
+      amount: sum(cards.map((c) => c.current?.open_amount)),
       currency: base,
     },
     due: { amount: sum(unpaid.map((s) => s.unpaid)), currency: base },

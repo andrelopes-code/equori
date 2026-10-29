@@ -9,6 +9,7 @@ const statement = (
   due_date: string,
   amount_due: number,
   unpaid: number,
+  open_amount = amount_due,
 ) =>
   ({
     id,
@@ -16,10 +17,28 @@ const statement = (
     due_date,
     amount_due: money(amount_due),
     unpaid: money(unpaid),
+    open_amount: money(open_amount),
   }) as never;
 const account = (id: string) => ({ id, name: id }) as never;
 
 describe("owedStatements", () => {
+  // S180 (A138): the closed statement not yet due is owed on its own row; the open one owes
+  // only its own cycle, not the card balance that carries the closed one.
+  it("owes the open statement's open amount beside the unpaid closed one", () => {
+    const rows = owedStatements([
+      {
+        account: account("nubank"),
+        current: statement("dec", "open", "2026-12-07", 159237, 159237, 35372),
+        unpaid: [statement("nov", "closed", "2026-11-05", 123865, 123865)],
+      },
+    ]);
+
+    expect(rows.map((r) => [r.statement.id, r.amount.amount])).toEqual([
+      ["nov", 123865],
+      ["dec", 35372],
+    ]);
+  });
+
   it("lists the open statement with charges and the unpaid closed ones, by due date", () => {
     const rows = owedStatements([
       {

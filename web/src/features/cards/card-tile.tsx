@@ -81,7 +81,7 @@ export function CardTile({
       logo={logoOf(institution?.identifier, index.data)}
       currency={account.currency}
       scale={scale(account.currency)}
-      value={current?.amount_due.amount}
+      value={current?.open_amount.amount}
       context={
         current === undefined
           ? undefined

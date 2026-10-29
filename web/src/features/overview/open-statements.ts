@@ -12,7 +12,7 @@ export interface OwedStatement {
   open: boolean;
 }
 
-// An open statement owes its amount due; a closed one owes what is still unpaid.
+// An open statement owes its open amount (A138); a closed one owes what is still unpaid.
 export function owedStatements(
   cards: readonly {
     account: Account;
@@ -28,13 +28,13 @@ export function owedStatements(
         amount: statement.unpaid,
         open: false,
       })),
-      ...(current === undefined || current.amount_due.amount <= 0
+      ...(current === undefined || current.open_amount.amount <= 0
         ? []
         : [
             {
               account,
               statement: current,
-              amount: current.amount_due,
+              amount: current.open_amount,
               open: true,
             },
           ]),
