@@ -681,3 +681,22 @@ describe("overview page", () => {
     });
   });
 });
+
+describe("OverviewPage links on a phone (ADR 027, S6)", () => {
+  const desktopOnly =
+    'a[href^="/planning"], a[href^="/goals"], a[href^="/reports"], a[href^="/categories"], a[href^="/accounts/links"]';
+
+  it("draws no link to a desktop-only destination below 600 px", async () => {
+    await renderApp("/", { fetch: api(), width: 390 });
+    await screen.findByRole("article", { name: "Net worth" });
+
+    expect(document.querySelectorAll(desktopOnly)).toHaveLength(0);
+  });
+
+  it("keeps those links on the desk", async () => {
+    await renderApp("/", { fetch: api(), width: 1280 });
+    await screen.findByRole("article", { name: "Net worth" });
+
+    expect(document.querySelectorAll(desktopOnly).length).toBeGreaterThan(0);
+  });
+});

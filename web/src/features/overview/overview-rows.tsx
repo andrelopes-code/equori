@@ -14,6 +14,7 @@ import type { NavigateOptions } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
 import { routeTo } from "@/ui/route-to";
+import { useServed } from "@/ui/use-served";
 
 export interface OverviewRow {
   key: string;
@@ -34,6 +35,8 @@ export function OverviewRows({
   label: string;
   rows: OverviewRow[];
 }) {
+  const served = useServed();
+
   return (
     <List aria-label={label}>
       {rows.map((row) => {
@@ -56,10 +59,10 @@ export function OverviewRows({
             key={row.key}
             {...(row.start === undefined ? {} : { align: "start" as const })}
           >
-            {row.to === undefined ? (
-              <ListItemContent>{body}</ListItemContent>
-            ) : (
+            {row.to !== undefined && served(row.to) ? (
               <ListItemLink render={routeTo(row.to)}>{body}</ListItemLink>
+            ) : (
+              <ListItemContent>{body}</ListItemContent>
             )}
             {row.actions !== undefined && (
               <ListItemActions>{row.actions}</ListItemActions>

@@ -3,6 +3,7 @@ import type { NavigateOptions } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
 import { routeTo } from "@/ui/route-to";
+import { useServed } from "@/ui/use-served";
 
 export function OverviewLink({
   options,
@@ -14,6 +15,10 @@ export function OverviewLink({
   label?: string;
   children: ReactNode;
 }) {
+  const served = useServed();
+
+  if (!served(options)) return null;
+
   return (
     <Link
       size="sm"

@@ -37,6 +37,7 @@ import {
   validateLinksSearch,
   validateAccountsSearch,
   AccountCardPreview,
+  phoneAccountTabs,
 } from "@/features/accounts";
 import { InstrumentPage, InstrumentsPage } from "@/features/instruments";
 import {
@@ -57,6 +58,7 @@ import {
   CardPage,
   CardsPage,
   StatementPage,
+  phoneCardTabs,
   validateCardSearch,
   validateStatementSearch,
 } from "@/features/cards";
@@ -209,7 +211,7 @@ const settingsRoute = createRoute({
 });
 
 const accountRoute = createRoute({
-  staticData: { phone: true },
+  staticData: { phone: true, phoneTabs: phoneAccountTabs },
   getParentRoute: () => authedRoute,
   path: "accounts/$id",
   validateSearch: validateAccountSearch,
@@ -265,7 +267,7 @@ const cardsRoute = createRoute({
 });
 
 const cardRoute = createRoute({
-  staticData: { phone: true },
+  staticData: { phone: true, phoneTabs: phoneCardTabs },
   getParentRoute: () => authedRoute,
   path: "cards/$accountId",
   validateSearch: validateCardSearch,
@@ -569,9 +571,10 @@ declare module "@tanstack/react-router" {
     router: AppRouter;
   }
 
-  // ADR 027, S2: a route served below 600 px.
+  // ADR 027, S2: a route served below 600 px; S5: the tabs it offers there, when it has tabs.
   interface StaticDataRouteOption {
     phone?: true;
+    phoneTabs?: readonly string[];
   }
 }
 

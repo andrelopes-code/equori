@@ -32,7 +32,10 @@ export { AccountSetupMessage } from "@/features/accounts/account-setup-message";
 export { BillingRuleFields } from "@/features/accounts/billing-rule-fields";
 export type { BillingFields } from "@/features/accounts/billing-rule-fields";
 export { validateAccountsSearch } from "@/features/accounts/accounts-search";
-export { validateAccountSearch } from "@/features/accounts/account-search";
+export {
+  phoneAccountTabs,
+  validateAccountSearch,
+} from "@/features/accounts/account-search";
 export { ImportPage } from "@/features/accounts/import-page";
 export { BatchPage } from "@/features/accounts/batch-page";
 export { validateBatchSearch } from "@/features/accounts/batch-search";
