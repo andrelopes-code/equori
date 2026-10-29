@@ -26,6 +26,7 @@ import { ProblemError, errorText, fieldErrors } from "@/api/problem";
 import { useCreateAccessToken } from "@/features/setup/api";
 import { clientSnippets } from "@/features/setup/client-snippets";
 import { useT } from "@/i18n/i18n-provider";
+import { FormLayout } from "@/ui/form-layout";
 import { useStableCallback } from "@/ui/use-stable-callback";
 
 const expiryDays = [30, 90, 365] as const;
@@ -95,7 +96,7 @@ export function AccessTokenDialog({ onClose }: { onClose: () => void }) {
         </DialogHeader>
         <DialogBody>
           {token !== null && snippets !== null ? (
-            <Stack gap={4}>
+            <FormLayout>
               <CodeBlock
                 code={token}
                 title={t("settings.external_access.token")}
@@ -119,7 +120,7 @@ export function AccessTokenDialog({ onClose }: { onClose: () => void }) {
                 title={t("settings.external_access.json")}
                 renderToken={masked}
               />
-            </Stack>
+            </FormLayout>
           ) : (
             // Workaround for Slotted issue #8.
             <form

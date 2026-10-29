@@ -9,7 +9,12 @@ import {
 } from "@slotted/react/dialog";
 import { Divider } from "@slotted/react/divider";
 import { Field, FieldError, FieldLabel } from "@slotted/react/field";
-import { Grid } from "@slotted/react/grid";
+import {
+  FieldGroup,
+  FieldGroupContent,
+  FieldGroupLegend,
+} from "@slotted/react/field-group";
+import { Inline } from "@slotted/react/inline";
 import { InlineMessage } from "@slotted/react/inline-message";
 import { Segment, SegmentedControl } from "@slotted/react/segmented-control";
 import {
@@ -19,7 +24,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@slotted/react/select";
-import { Stack } from "@slotted/react/stack";
 import { TextField } from "@slotted/react/text-field";
 import { useQuery } from "@tanstack/react-query";
 import { useId, useState } from "react";
@@ -42,6 +46,7 @@ import type {
   CategoryIconName,
 } from "@/features/categories/category-paths";
 import { useT } from "@/i18n/i18n-provider";
+import { FormLayout } from "@/ui/form-layout";
 import { useStableCallback } from "@/ui/use-stable-callback";
 
 const topLevel = "__top__";
@@ -165,7 +170,7 @@ export function CategoryDialog({
               void save();
             }}
           >
-            <Stack gap={6}>
+            <FormLayout>
               <CategoryPreview
                 name={name}
                 placeholder={t("category.new")}
@@ -178,6 +183,7 @@ export function CategoryDialog({
               {summary !== null && (
                 <InlineMessage tone="danger">{summary}</InlineMessage>
               )}
+
               <Field invalid={errors.name !== undefined} required>
                 <FieldLabel>{t("category.name")}</FieldLabel>
                 <TextField
@@ -192,64 +198,64 @@ export function CategoryDialog({
                   <FieldError>{errors.name}</FieldError>
                 )}
               </Field>
-              <Grid
-                columns={editing === null ? 2 : 1}
-                minItemWidth="sm"
-                gap={5}
-              >
-                {editing === null && (
-                  <Field>
-                    <FieldLabel>{t("category.class")}</FieldLabel>
-                    <SegmentedControl
-                      value={cls}
-                      fullWidth
-                      onValueChange={(value) => {
-                        if (value === "expense" || value === "income") {
-                          setCls(value);
-                          setParent(null);
-                        }
-                      }}
-                    >
-                      <Segment value="expense">
-                        {t("category.group.expense")}
-                      </Segment>
-                      <Segment value="income">
-                        {t("category.group.income")}
-                      </Segment>
-                    </SegmentedControl>
-                  </Field>
-                )}
-                <Field invalid={errors.parent !== undefined}>
-                  <FieldLabel>{t("category.parent")}</FieldLabel>
-                  <Select
-                    value={parent ?? topLevel}
-                    onValueChange={(value) => {
-                      setParent(
-                        typeof value === "string" && value !== topLevel
-                          ? value
-                          : null,
-                      );
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={topLevel}>
-                        {t("category.topLevel")}
+
+              {editing === null && (
+                <FieldGroup>
+                  <FieldGroupLegend>{t("category.class")}</FieldGroupLegend>
+                  <FieldGroupContent>
+                    <Inline>
+                      <SegmentedControl
+                        aria-label={t("category.class")}
+                        value={cls}
+                        onValueChange={(value) => {
+                          if (value === "expense" || value === "income") {
+                            setCls(value);
+                            setParent(null);
+                          }
+                        }}
+                      >
+                        <Segment value="expense">
+                          {t("category.group.expense")}
+                        </Segment>
+                        <Segment value="income">
+                          {t("category.group.income")}
+                        </Segment>
+                      </SegmentedControl>
+                    </Inline>
+                  </FieldGroupContent>
+                </FieldGroup>
+              )}
+
+              <Field invalid={errors.parent !== undefined}>
+                <FieldLabel>{t("category.parent")}</FieldLabel>
+                <Select
+                  value={parent ?? topLevel}
+                  onValueChange={(value) => {
+                    setParent(
+                      typeof value === "string" && value !== topLevel
+                        ? value
+                        : null,
+                    );
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={topLevel}>
+                      {t("category.topLevel")}
+                    </SelectItem>
+                    {parents.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.path}
                       </SelectItem>
-                      {parents.map((p) => (
-                        <SelectItem key={p.id} value={p.id}>
-                          {p.path}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {errors.parent !== undefined && (
-                    <FieldError>{errors.parent}</FieldError>
-                  )}
-                </Field>
-              </Grid>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.parent !== undefined && (
+                  <FieldError>{errors.parent}</FieldError>
+                )}
+              </Field>
               <Divider label={t("appearance.title")} align="start" />
               <AppearancePicker
                 name={name}
@@ -260,7 +266,7 @@ export function CategoryDialog({
                   setIcon(next.icon);
                 }}
               />
-            </Stack>
+            </FormLayout>
           </form>
         </DialogBody>
         <DialogFooter>

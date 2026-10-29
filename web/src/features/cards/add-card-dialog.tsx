@@ -1,4 +1,5 @@
 import { Button } from "@slotted/react/button";
+import { Checkbox } from "@slotted/react/checkbox";
 import {
   Dialog,
   DialogBody,
@@ -9,14 +10,13 @@ import {
 } from "@slotted/react/dialog";
 import { Field, FieldError, FieldLabel } from "@slotted/react/field";
 import { InlineMessage } from "@slotted/react/inline-message";
-import { Stack } from "@slotted/react/stack";
-import { Switch } from "@slotted/react/switch";
 import { TextField } from "@slotted/react/text-field";
 import { useId, useState } from "react";
 
 import { ProblemError, errorText, fieldErrors } from "@/api/problem";
 import { useCreateCard } from "@/features/cards/api";
 import { useT } from "@/i18n/i18n-provider";
+import { FormLayout } from "@/ui/form-layout";
 import { useStableCallback } from "@/ui/use-stable-callback";
 import { useOverlayOpen } from "@/ui/use-overlay-open";
 
@@ -75,10 +75,11 @@ export function AddCardDialog({
                 });
             }}
           >
-            <Stack gap={4}>
+            <FormLayout>
               {summary !== null && (
                 <InlineMessage tone="danger">{summary}</InlineMessage>
               )}
+
               <Field invalid={errors.holder !== undefined} required>
                 <FieldLabel>{t("accountForm.holder")}</FieldLabel>
                 <TextField
@@ -92,6 +93,7 @@ export function AddCardDialog({
                   <FieldError>{errors.holder}</FieldError>
                 )}
               </Field>
+
               <Field invalid={errors.last_four !== undefined} required>
                 <FieldLabel>{t("accountForm.lastFour")}</FieldLabel>
                 <TextField
@@ -106,10 +108,11 @@ export function AddCardDialog({
                   <FieldError>{errors.last_four}</FieldError>
                 )}
               </Field>
-              <Switch checked={virtual} onCheckedChange={setVirtual}>
+
+              <Checkbox checked={virtual} onCheckedChange={setVirtual}>
                 {t("accountForm.virtual")}
-              </Switch>
-            </Stack>
+              </Checkbox>
+            </FormLayout>
           </form>
         </DialogBody>
         <DialogFooter>

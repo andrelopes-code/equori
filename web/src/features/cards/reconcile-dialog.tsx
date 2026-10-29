@@ -10,13 +10,14 @@ import {
 } from "@slotted/react/dialog";
 import { Field, FieldLabel } from "@slotted/react/field";
 import { InlineMessage } from "@slotted/react/inline-message";
-import { Stack } from "@slotted/react/stack";
 import { useId, useState } from "react";
 
 import { ProblemError, errorText } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
 import { useReconcileStatement } from "@/features/cards/api";
 import { useT } from "@/i18n/i18n-provider";
+import widths from "@/ui/field-width.module.css";
+import { FormLayout } from "@/ui/form-layout";
 import { MoneyInput } from "@/ui/money-input";
 import { useStableCallback } from "@/ui/use-stable-callback";
 import { useOverlayOpen } from "@/ui/use-overlay-open";
@@ -102,13 +103,16 @@ export function ReconcileDialog({
                 });
             }}
           >
-            <Stack gap={4}>
+            <FormLayout>
               {error !== null && (
                 <InlineMessage tone="warning">{error}</InlineMessage>
               )}
+
               <Field>
                 <FieldLabel>{t("reconcileStatement.amount")}</FieldLabel>
                 <MoneyInput
+                  size="field"
+                  className={widths.medium}
                   value={amount}
                   onChange={setAmount}
                   currency={currency}
@@ -116,7 +120,7 @@ export function ReconcileDialog({
                   sign="neutral"
                 />
               </Field>
-            </Stack>
+            </FormLayout>
           </form>
         </DialogBody>
         <DialogFooter>

@@ -10,7 +10,6 @@ import {
 } from "@slotted/react/dialog";
 import { Field, FieldError, FieldLabel } from "@slotted/react/field";
 import { Inline } from "@slotted/react/inline";
-import { Stack } from "@slotted/react/stack";
 import { TextField } from "@slotted/react/text-field";
 import { useQuery } from "@tanstack/react-query";
 import { useId, useMemo, useState } from "react";
@@ -27,6 +26,7 @@ import { logoIndexQuery, logoOf } from "@/features/accounts/institution-logo";
 import { catalogLabel } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
 import { ChoiceSelect } from "@/ui/choice-select";
+import { FormLayout } from "@/ui/form-layout";
 import { useOverlayOpen } from "@/ui/use-overlay-open";
 import { useStableCallback } from "@/ui/use-stable-callback";
 
@@ -112,7 +112,7 @@ export function InstitutionIdentifierDialog({
               run({ scheme, identifier: identifier.trim() });
             }}
           >
-            <Stack gap={4}>
+            <FormLayout>
               <Field required>
                 <FieldLabel>{t("institutions.scheme")}</FieldLabel>
                 <ChoiceSelect
@@ -129,6 +129,7 @@ export function InstitutionIdentifierDialog({
                   }}
                 />
               </Field>
+
               <Field invalid={error !== null} required>
                 <FieldLabel>{t("institutions.identifier")}</FieldLabel>
                 <Inline gap={3} wrap="nowrap" align="center">
@@ -152,7 +153,7 @@ export function InstitutionIdentifierDialog({
                 </Inline>
                 {error !== null && <FieldError>{error}</FieldError>}
               </Field>
-            </Stack>
+            </FormLayout>
           </form>
         </DialogBody>
         <DialogFooter>

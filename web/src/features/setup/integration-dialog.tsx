@@ -15,7 +15,6 @@ import {
   FieldLabel,
 } from "@slotted/react/field";
 import { InlineMessage } from "@slotted/react/inline-message";
-import { Stack } from "@slotted/react/stack";
 import { TextField } from "@slotted/react/text-field";
 import { useId, useState } from "react";
 
@@ -28,6 +27,7 @@ import type { Aggregator, Integration } from "@/features/setup/api";
 import { catalogLabel } from "@/features/setup/catalog-label";
 import { useT } from "@/i18n/i18n-provider";
 import { ChoiceSelect } from "@/ui/choice-select";
+import { FormLayout } from "@/ui/form-layout";
 import { useStableCallback } from "@/ui/use-stable-callback";
 
 // Creates an integration, or replaces the credentials of one. The fields come from the
@@ -111,10 +111,11 @@ export function IntegrationDialog({
               submit();
             }}
           >
-            <Stack gap={4}>
+            <FormLayout>
               {summary !== null && (
                 <InlineMessage tone="danger">{summary}</InlineMessage>
               )}
+
               {integration === null && (
                 <>
                   <Field required>
@@ -135,6 +136,7 @@ export function IntegrationDialog({
                       }}
                     />
                   </Field>
+
                   <Field invalid={errors.name !== undefined} required>
                     <FieldLabel>{t("settings.integrations.name")}</FieldLabel>
                     <TextField
@@ -151,6 +153,7 @@ export function IntegrationDialog({
                   </Field>
                 </>
               )}
+
               {aggregator?.credential_fields.map((field) => {
                 const error = errors[`credentials.${field.name}`];
                 return (
@@ -189,7 +192,7 @@ export function IntegrationDialog({
                   </Field>
                 );
               })}
-            </Stack>
+            </FormLayout>
           </form>
         </DialogBody>
         <DialogFooter>

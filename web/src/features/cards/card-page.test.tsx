@@ -171,7 +171,7 @@ describe("CardPage", () => {
       "5555",
     );
     await userEvent.click(
-      within(dialog).getByRole("switch", {
+      within(dialog).getByRole("checkbox", {
         name: catalogEn["accountForm.virtual"],
       }),
     );

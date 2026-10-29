@@ -10,13 +10,14 @@ import {
 import { Field, FieldDescription, FieldLabel } from "@slotted/react/field";
 import { InlineMessage } from "@slotted/react/inline-message";
 import { NumberField } from "@slotted/react/number-field";
-import { Stack } from "@slotted/react/stack";
 import { useId, useState } from "react";
 
 import { errorText } from "@/api/problem";
 import { useSetUsageLimit } from "@/features/setup/api";
 import type { UsageRow } from "@/features/setup/api";
 import { useT } from "@/i18n/i18n-provider";
+import widths from "@/ui/field-width.module.css";
+import { FormLayout } from "@/ui/form-layout";
 import { useStableCallback } from "@/ui/use-stable-callback";
 
 // The daily limits the owner copies from the provider's console (ADR 019 U4); an empty field
@@ -69,13 +70,15 @@ export function UsageLimitDialog({
                 });
             }}
           >
-            <Stack gap={4}>
+            <FormLayout>
               {error !== null && (
                 <InlineMessage tone="danger">{error}</InlineMessage>
               )}
+
               <Field>
                 <FieldLabel>{t("assistant.limits.requests")}</FieldLabel>
                 <NumberField
+                  className={widths.medium}
                   name="requests_per_day"
                   value={requests}
                   min={1}
@@ -83,9 +86,11 @@ export function UsageLimitDialog({
                   onValueChange={setRequests}
                 />
               </Field>
+
               <Field>
                 <FieldLabel>{t("assistant.limits.tokens")}</FieldLabel>
                 <NumberField
+                  className={widths.medium}
                   name="tokens_per_day"
                   value={tokens}
                   min={1}
@@ -95,7 +100,7 @@ export function UsageLimitDialog({
                   {t("assistant.limits.hint")}
                 </FieldDescription>
               </Field>
-            </Stack>
+            </FormLayout>
           </form>
         </DialogBody>
         <DialogFooter>

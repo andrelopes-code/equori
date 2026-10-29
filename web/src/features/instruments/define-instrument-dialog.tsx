@@ -15,7 +15,6 @@ import {
   FieldLabel,
 } from "@slotted/react/field";
 import { InlineMessage } from "@slotted/react/inline-message";
-import { Stack } from "@slotted/react/stack";
 import { TextField } from "@slotted/react/text-field";
 import { useQuery } from "@tanstack/react-query";
 import { useId, useMemo, useState } from "react";
@@ -32,6 +31,8 @@ import {
 import { instrumentsQuery, settingsQuery } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
 import { ChoiceSelect } from "@/ui/choice-select";
+import widths from "@/ui/field-width.module.css";
+import { FormLayout } from "@/ui/form-layout";
 import { useOverlayOpen } from "@/ui/use-overlay-open";
 import { useStableCallback } from "@/ui/use-stable-callback";
 
@@ -146,10 +147,11 @@ export function DefineInstrumentDialog({
               submit();
             }}
           >
-            <Stack gap={4}>
+            <FormLayout>
               {summary !== null && (
                 <InlineMessage tone="danger">{summary}</InlineMessage>
               )}
+
               <Field invalid={errors.code !== undefined} required>
                 <FieldLabel>{t("instruments.field.code")}</FieldLabel>
                 <TextField
@@ -165,9 +167,11 @@ export function DefineInstrumentDialog({
                   <FieldError>{errors.code}</FieldError>
                 )}
               </Field>
+
               <Field invalid={errors.type !== undefined} required>
                 <FieldLabel>{t("instruments.field.type")}</FieldLabel>
                 <ChoiceSelect
+                  className={widths.medium}
                   label={t("instruments.field.type")}
                   choices={typeChoices}
                   value={type}
@@ -183,10 +187,12 @@ export function DefineInstrumentDialog({
                   <FieldError>{errors.type}</FieldError>
                 )}
               </Field>
+
               {subtypeChoices.length > 1 && (
                 <Field invalid={errors.subtype !== undefined}>
                   <FieldLabel>{t("instruments.field.subtype")}</FieldLabel>
                   <ChoiceSelect
+                    className={widths.medium}
                     label={t("instruments.field.subtype")}
                     choices={subtypeChoices}
                     value={subtype}
@@ -200,6 +206,7 @@ export function DefineInstrumentDialog({
                   )}
                 </Field>
               )}
+
               <Field invalid={errors.name !== undefined} required>
                 <FieldLabel>{t("instruments.field.name")}</FieldLabel>
                 <TextField
@@ -214,6 +221,7 @@ export function DefineInstrumentDialog({
                   <FieldError>{errors.name}</FieldError>
                 )}
               </Field>
+
               <Field invalid={errors.scale !== undefined} required>
                 <FieldLabel>{t("instruments.field.scale")}</FieldLabel>
                 <TextField
@@ -233,9 +241,11 @@ export function DefineInstrumentDialog({
                   <FieldError>{errors.scale}</FieldError>
                 )}
               </Field>
+
               <Field invalid={errors.quote_currency !== undefined} required>
                 <FieldLabel>{t("instruments.field.quote")}</FieldLabel>
                 <ChoiceSelect
+                  className={widths.medium}
                   label={t("instruments.field.quote")}
                   choices={currencyChoices}
                   value={chosenQuote}
@@ -249,6 +259,7 @@ export function DefineInstrumentDialog({
                   <FieldError>{errors.quote_currency}</FieldError>
                 )}
               </Field>
+
               <Field invalid={errors.exchange !== undefined}>
                 <FieldLabel>{t("instruments.field.exchange")}</FieldLabel>
                 <TextField
@@ -268,7 +279,7 @@ export function DefineInstrumentDialog({
                   <FieldError>{errors.exchange}</FieldError>
                 )}
               </Field>
-            </Stack>
+            </FormLayout>
           </form>
         </DialogBody>
         <DialogFooter>

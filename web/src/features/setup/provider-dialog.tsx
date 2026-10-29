@@ -14,7 +14,6 @@ import {
   FieldLabel,
 } from "@slotted/react/field";
 import { InlineMessage } from "@slotted/react/inline-message";
-import { Stack } from "@slotted/react/stack";
 import { TextField } from "@slotted/react/text-field";
 import { useId, useState } from "react";
 
@@ -24,6 +23,7 @@ import type { ModelPreset, ModelProvider } from "@/features/setup/api";
 import { catalogLabel } from "@/features/setup/catalog-label";
 import { useT } from "@/i18n/i18n-provider";
 import { ChoiceSelect } from "@/ui/choice-select";
+import { FormLayout } from "@/ui/form-layout";
 import { useStableCallback } from "@/ui/use-stable-callback";
 
 // Creates a provider from a preset, or edits one; an edit sends only the fields the reader
@@ -119,10 +119,11 @@ export function ProviderDialog({
               submit();
             }}
           >
-            <Stack gap={4}>
+            <FormLayout>
               {summary !== null && (
                 <InlineMessage tone="danger">{summary}</InlineMessage>
               )}
+
               {provider === null && (
                 <Field invalid={errors.preset !== undefined} required>
                   <FieldLabel>{t("assistant.field.preset")}</FieldLabel>
@@ -143,6 +144,7 @@ export function ProviderDialog({
                   )}
                 </Field>
               )}
+
               {preset !== undefined && (
                 <InlineMessage
                   tone={preset.notice === "trains" ? "warning" : "secondary"}
@@ -150,6 +152,7 @@ export function ProviderDialog({
                   {t(`assistant.notice.${preset.notice}.detail`)}
                 </InlineMessage>
               )}
+
               <Field invalid={errors.name !== undefined} required>
                 <FieldLabel>{t("assistant.field.name")}</FieldLabel>
                 <TextField
@@ -164,6 +167,7 @@ export function ProviderDialog({
                   <FieldError>{errors.name}</FieldError>
                 )}
               </Field>
+
               <Field
                 invalid={errors.base_url !== undefined}
                 required={preset?.base_url === ""}
@@ -185,10 +189,12 @@ export function ProviderDialog({
                     })}
                   </FieldDescription>
                 )}
+
                 {errors.base_url !== undefined && (
                   <FieldError>{errors.base_url}</FieldError>
                 )}
               </Field>
+
               <Field
                 invalid={errors.key !== undefined}
                 required={provider === null && preset?.key_required === true}
@@ -208,16 +214,18 @@ export function ProviderDialog({
                     {t("assistant.field.key.keep")}
                   </FieldDescription>
                 )}
+
                 {preset?.key_required === false && (
                   <FieldDescription>
                     {t("assistant.field.key.optional")}
                   </FieldDescription>
                 )}
+
                 {errors.key !== undefined && (
                   <FieldError>{errors.key}</FieldError>
                 )}
               </Field>
-            </Stack>
+            </FormLayout>
           </form>
         </DialogBody>
         <DialogFooter>
