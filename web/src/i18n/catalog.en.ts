@@ -64,6 +64,7 @@ export const catalogEn = {
   "firstSteps.action.account": "Add an account",
   "firstSteps.action.transactions": "Record a transaction",
   "firstSteps.action.categories": "Categorize transactions",
+  "firstSteps.dismiss": "Dismiss",
   "firstSteps.guide": "See the first-month walkthrough",
   "help.title": "Help",
   "help.subtitle":

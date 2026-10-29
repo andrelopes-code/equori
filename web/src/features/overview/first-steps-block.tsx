@@ -1,4 +1,4 @@
-import { ButtonLink } from "@slotted/react/button";
+import { Button, ButtonLink } from "@slotted/react/button";
 import { Card, CardActions, CardBody, CardHeader } from "@slotted/react/card";
 import { Inline } from "@slotted/react/inline";
 import { Stack } from "@slotted/react/stack";
@@ -14,17 +14,19 @@ import {
   uncategorizedQuery,
 } from "@/features/overview/api";
 import { firstSteps } from "@/features/overview/first-steps";
+import { useFirstStepsDismissal } from "@/features/overview/use-first-steps-dismissal";
 import { useT } from "@/i18n/i18n-provider";
 import { routeTo } from "@/ui/route-to";
 
 // What a newcomer does before the overview has anything to show, as numbered steps with the next
-// one's action; gone once every step is done.
+// one's action; gone once every step is done, or once the reader dismisses it.
 export function FirstStepsBlock() {
   const t = useT();
   const api = useApi();
   const accounts = useQuery(accountsQuery(api));
   const anyTransaction = useQuery(anyTransactionQuery(api));
   const uncategorized = useQuery(uncategorizedQuery(api));
+  const [dismissed, dismiss] = useFirstStepsDismissal();
 
   const loaded =
     accounts.data !== undefined &&
@@ -39,7 +41,7 @@ export function FirstStepsBlock() {
     : [];
   const next = steps.find((s) => !s.done);
 
-  if (next === undefined) return null;
+  if (next === undefined || dismissed) return null;
 
   const done = steps.filter((s) => s.done).length;
 
@@ -55,9 +57,19 @@ export function FirstStepsBlock() {
           </Text>
         </Stack>
         <CardActions>
-          <Tag size="sm" tone="secondary">
-            {t("firstSteps.progress", { done, total: steps.length })}
-          </Tag>
+          <Inline gap={3} align="center" wrap="nowrap">
+            <Tag size="sm" tone="secondary">
+              {t("firstSteps.progress", { done, total: steps.length })}
+            </Tag>
+            <Button
+              size="sm"
+              variant="ghost"
+              tone="secondary"
+              onClick={dismiss}
+            >
+              {t("firstSteps.dismiss")}
+            </Button>
+          </Inline>
         </CardActions>
       </CardHeader>
       <CardBody>

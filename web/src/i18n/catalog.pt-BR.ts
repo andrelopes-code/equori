@@ -66,6 +66,7 @@ export const catalogPtBR: Catalog = {
   "firstSteps.action.account": "Cadastrar uma conta",
   "firstSteps.action.transactions": "Registrar uma transação",
   "firstSteps.action.categories": "Categorizar transações",
+  "firstSteps.dismiss": "Dispensar",
   "firstSteps.guide": "Ver o roteiro do primeiro mês",
   "help.title": "Ajuda",
   "help.subtitle":

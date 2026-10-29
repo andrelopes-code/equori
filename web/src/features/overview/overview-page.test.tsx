@@ -149,6 +149,26 @@ function block(name: string) {
 
 describe("overview page", () => {
   // Design, Camada 3: the steps a newcomer has left lead to their screens.
+  it("leaves the first steps out once dismissed, in this browser", async () => {
+    const first = await renderApp("/", { fetch: api() });
+    await screen.findByRole("list", { name: catalogEn["firstSteps.title"] });
+
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["firstSteps.dismiss"] }),
+    );
+
+    expect(
+      screen.queryByRole("list", { name: catalogEn["firstSteps.title"] }),
+    ).not.toBeInTheDocument();
+    first.unmount();
+
+    await renderApp("/", { fetch: api() });
+    await screen.findByRole("heading", { level: 1 });
+    expect(
+      screen.queryByRole("list", { name: catalogEn["firstSteps.title"] }),
+    ).not.toBeInTheDocument();
+  });
+
   it("shows the first steps done and leads to the next one", async () => {
     await renderApp("/", { fetch: api() });
 
