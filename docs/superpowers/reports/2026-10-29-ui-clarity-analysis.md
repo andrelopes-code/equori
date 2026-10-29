@@ -80,7 +80,7 @@ O seletor de tipo de conta descreve cada opção em uma frase de leigo (`kind.hi
 
 ## 4. Proposta em camadas
 
-Cada camada depende da anterior. A ordem vai do que remove a dúvida ao que a explica.
+Cada camada depende da anterior. A ordem vai do que remove a dúvida ao que a explica. Nenhuma camada se aplica a todas as telas por padrão: cada uso de cada mecanismo passa pela curadoria da seção 5.
 
 ### Camada 0: vocabulário
 
@@ -94,7 +94,7 @@ A definição de um termo regional (um identificador de banco, um imposto) vive 
 
 ### Camada 1: ajuda no lugar da pergunta
 
-A ajuda é escolhida por triagem de cada tela (seção 5), nunca adicionada em lote. Onde a triagem indicar ajuda:
+Onde a curadoria indicar ajuda:
 
 - Campo: termo → `FieldHelp`; consequência da resposta → `FieldDescription` (F8).
 - Coluna: `DataGrid` já aceita `description` e `help` por coluna. `Table` não oferece ajuda no cabeçalho; essa falta é um achado da Slotted (área `family`).
@@ -103,11 +103,11 @@ A ajuda é escolhida por triagem de cada tela (seção 5), nunca adicionada em l
 
 ### Camada 2: ajuda da tela
 
-Cada página tem um botão "Sobre esta tela" no cabeçalho. Ele abre uma gaveta com: para que serve a tela, o que significa cada seção e coluna, as tarefas comuns, e o link para a página correspondente da documentação. O conteúdo vem dos mesmos arquivos da Camada 4, indexados pela rota.
+Uma página selecionada pela curadoria recebe um botão "Sobre esta tela" no cabeçalho. Ele abre uma gaveta com: para que serve a tela, o que significam as seções e colunas que precisam de explicação, as tarefas comuns, e o link para a página correspondente da documentação. O conteúdo vem dos mesmos arquivos da Camada 4, indexados pela rota.
 
 ### Camada 3: primeiros passos
 
-Uma lista de primeiros passos na visão geral, visível até ser concluída ou dispensada: criar a primeira conta, importar um extrato, categorizar, criar um agendamento. Cada item abre a tela da tarefa. Tour guiado só sob demanda, nas telas de fluxo com várias etapas (importação, fatura), por um botão "Mostrar como funciona"; nunca abre sozinho.
+Uma lista de primeiros passos na visão geral, visível até ser concluída ou dispensada. Os itens são escolhidos pela curadoria entre as tarefas sem as quais o app não mostra nada útil. Cada item abre a tela da tarefa. Um tour guiado entra só numa tela selecionada pela curadoria, abre só quando a pessoa pede ("Mostrar como funciona") e nunca abre sozinho.
 
 ### Camada 4: documentação de uso
 
@@ -117,7 +117,7 @@ Arquivos Markdown em pt-BR e en, no repositório, organizados por Diátaxis:
 |---|---|
 | Tutorial | O primeiro mês no equori, do cadastro da conta ao primeiro relatório |
 | Guia de tarefa | Importar um extrato; pagar uma fatura; registrar uma compra parcelada; conciliar um saldo; criar uma regra de categoria |
-| Referência | Uma página por tela (seções, colunas, campos, estados); o glossário de uso |
+| Referência | Uma página para cada tela selecionada pela curadoria (seções, colunas, campos, estados que precisam de explicação); o glossário de uso |
 | Explicação | Como o equori registra dinheiro (partidas dobradas em linguagem leiga); como a fatura é calculada; o que é conciliação |
 
 Os mesmos arquivos são embutidos no binário e servidos em `/help` dentro do app, o que funciona sem internet numa instalação auto-hospedada. Um site público gerado dos mesmos arquivos é opcional e posterior.
@@ -126,13 +126,13 @@ Os mesmos arquivos são embutidos no binário e servidos em `/help` dentro do ap
 
 O módulo `assistant` responde perguntas sobre os dados. Uma ferramenta de consulta ao glossário e à documentação permite perguntas como "o que é custo médio" no chat, com a resposta citando a página de ajuda.
 
-## 5. Triagem e redação
+## 5. Curadoria e redação
 
-Texto de ajuda em excesso tem custo: cada ícone de ajuda disputa atenção com o campo, e uma ajuda que repete o rótulo ensina a pessoa a ignorar todas as outras. A ajuda entra só onde a triagem a justifica.
+Ajuda em excesso tem custo: cada ícone de ajuda disputa atenção com o campo, cada botão de tela ocupa o cabeçalho, cada tour interrompe, e uma ajuda que repete o óbvio ensina a pessoa a ignorar todas as outras. Todo mecanismo de ajuda (definição, descrição, legenda de estado, "Sobre esta tela", tour, item de primeiros passos, página de documentação) entra só onde a curadoria o justifica.
 
 ### 5.1 Ordem de remédio
 
-Para cada campo, coluna ou estado que gera dúvida, o primeiro remédio aplicável encerra a triagem:
+Para cada campo, coluna, estado ou tela que gera dúvida, o primeiro remédio aplicável encerra a curadoria:
 
 1. Remover: o campo ou a coluna não é necessário para a tarefa da tela, ou tem valor padrão que serve à maioria.
 2. Renomear: existe palavra comum com o mesmo sentido.
@@ -140,7 +140,17 @@ Para cada campo, coluna ou estado que gera dúvida, o primeiro remédio aplicáv
 4. Descrever: a dúvida é sobre o formato ou a consequência da resposta → `FieldDescription`.
 5. Definir: a dúvida é sobre o significado de um termo que precisa ficar → `FieldHelp`.
 
-### 5.2 Critérios para definir um termo
+### 5.2 Critérios por mecanismo
+
+| Mecanismo | Entra quando |
+|---|---|
+| `FieldHelp` (definição) | o rótulo atende a um critério da lista abaixo |
+| `FieldDescription` | o formato da resposta ou a sua consequência não é visível na própria tela |
+| Legenda de estado | o nome do estado não diz o que aconteceu ou o que fazer a seguir |
+| "Sobre esta tela" | a tela tem conceito próprio que nenhum rótulo explica sozinho (fatura, conciliação, carteira); uma lista, um formulário curto ou uma tela de configuração simples não entra |
+| Tour | a tela tem etapas cuja ordem não é visível e cujo erro custa refazer trabalho (importação de extrato é candidata); nenhuma outra tela entra |
+| Item de primeiros passos | sem a tarefa, o app não mostra nada útil |
+| Página de referência | a tela recebeu "Sobre esta tela" |
 
 Um rótulo recebe `FieldHelp` quando atende a pelo menos um critério:
 
@@ -162,7 +172,7 @@ Uma tela em que mais da metade dos campos atende aos critérios volta ao passo 2
 
 ### 5.4 Processo por tela
 
-1. A triagem da tela produz uma tabela: elemento, remédio escolhido (5.1), critério atendido (5.2), texto proposto.
+1. A curadoria da tela produz uma tabela: elemento, remédio escolhido (5.1), mecanismo e critério atendido (5.2), texto proposto. Um elemento sem dúvida não entra na tabela.
 2. O dono revisa e aprova a tabela antes de qualquer alteração de código.
 3. A implementação aplica só o que a tabela aprovada lista.
 
@@ -170,12 +180,11 @@ A ordem das telas segue o uso: transações, contas, cartões, visão geral, dep
 
 ### 5.5 Verificação
 
-- Um teste falha quando uma rota de `router.tsx` não tem página de referência em pt-BR e en.
-- `review-screen` e a revisão de PR conferem, em toda tela nova, a tabela de triagem e a Camada 2.
+- `review-screen` e a revisão de PR conferem, em toda tela nova ou alterada, que cada mecanismo de ajuda presente consta de uma tabela de curadoria aprovada.
 
 ## 6. Decisões pendentes do dono
 
 1. Política de vocabulário: trocar rótulos por palavras comuns onde existirem (Camada 0, item 1), ou manter os rótulos e só explicar.
 2. Lugar da documentação: só dentro do app (`/help`), ou também um site público.
-3. Tour guiado sob demanda nas telas de várias etapas, ou só lista de primeiros passos e ajuda contextual.
+3. Tour na importação de extrato (única tela candidata pelo critério de 5.2), ou nenhum tour.
 4. Abrir agora os dois achados candidatos da Slotted (ajuda em cabeçalho de `Table`; ajuda em `StatCard`).
