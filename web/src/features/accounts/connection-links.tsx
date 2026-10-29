@@ -116,7 +116,7 @@ export function ConnectionLinks({
   const provider = providerWords[connection.provider_status];
   return (
     <Stack
-      gap={3}
+      gap={8}
       render={(props) => <section {...props} aria-label={connection.name} />}
     >
       <Inline justify="between" gap={4}>

@@ -8,6 +8,7 @@ import {
 import type { components } from "@/api/schema.gen";
 import { formatInstant } from "@/features/accounts/instant";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { Card, CardBody } from "@slotted/react";
 
 type Connection = components["schemas"]["Connection"];
 
@@ -28,18 +29,24 @@ export function ConnectionTimesList({ connection }: ConnectionTimesListProps) {
   ];
 
   return (
-    <DescriptionList layout="stack" columns={3} minColumnWidth="sm">
-      {rows.map((row) => (
-        <DescriptionListItem key={row.term}>
-          <DescriptionListTerm>{row.term}</DescriptionListTerm>
-          <DescriptionListDescription
-            empty={row.at === undefined}
-            placeholder={t("sync.notReported")}
-          >
-            {row.at === undefined ? undefined : formatInstant(row.at, locale)}
-          </DescriptionListDescription>
-        </DescriptionListItem>
-      ))}
-    </DescriptionList>
+    <Card fill="elevated">
+      <CardBody>
+        <DescriptionList layout="stack" columns={3} minColumnWidth="sm">
+          {rows.map((row) => (
+            <DescriptionListItem key={row.term}>
+              <DescriptionListTerm>{row.term}</DescriptionListTerm>
+              <DescriptionListDescription
+                empty={row.at === undefined}
+                placeholder={t("sync.notReported")}
+              >
+                {row.at === undefined
+                  ? undefined
+                  : formatInstant(row.at, locale)}
+              </DescriptionListDescription>
+            </DescriptionListItem>
+          ))}
+        </DescriptionList>
+      </CardBody>
+    </Card>
   );
 }
