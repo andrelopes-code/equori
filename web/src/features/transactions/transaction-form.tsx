@@ -3,8 +3,9 @@ import { TextField } from "@slotted/react/text-field";
 import type { ReactNode } from "react";
 
 import type { components } from "@/api/schema.gen";
-import { CategoryPicker } from "@/features/categories";
 import { AccountField } from "@/features/transactions/account-field";
+import { EntryAmountField } from "@/features/transactions/entry-amount-field";
+import { EntryClassificationFields } from "@/features/transactions/entry-classification-fields";
 import { isBuiltKind } from "@/features/transactions/entry-kind";
 import { EntryKindPicker } from "@/features/transactions/entry-kind-picker";
 import type {
@@ -12,14 +13,12 @@ import type {
   EntryKind,
   PostingKind,
 } from "@/features/transactions/entry-kind";
-import { PayeeField } from "@/features/transactions/payee-field";
 import { PostingsEditor } from "@/features/transactions/postings-editor";
 import { TagsField } from "@/features/transactions/tags-field";
 import { useT } from "@/i18n/i18n-provider";
 import { DateInput } from "@/ui/date-input";
 import { FieldTitle } from "@/ui/field-title";
 import { FormLayout } from "@/ui/form-layout";
-import { MoneyInput } from "@/ui/money-input";
 
 type Account = components["schemas"]["Account"];
 type Payee = components["schemas"]["Payee"];
@@ -73,7 +72,6 @@ export function TransactionForm({
   const currency = account?.currency ?? baseCurrency;
   const digits = scale(currency);
   const error = (name: string) => errors[name];
-  const simple = draft.kind !== "advanced";
   const simpleKind = draft.kind === "advanced" ? null : draft.kind;
   const accountLabel =
     draft.kind === "transfer"
@@ -96,29 +94,18 @@ export function TransactionForm({
         }}
       />
 
-      {simple && (
-        <Field invalid={error("amount") !== undefined}>
-          <FieldLabel>{t("entry.amount")}</FieldLabel>
-          <MoneyInput
-            value={draft.amount}
-            currency={currency}
-            scale={digits}
-            sign={
-              draft.kind === "expense"
-                ? "expense"
-                : draft.kind === "income"
-                  ? "income"
-                  : "neutral"
-            }
-            autoFocus={autoFocusAmount}
-            onChange={(amount) => {
-              set({ amount });
-            }}
-          />
-          {error("amount") !== undefined && (
-            <FieldError>{error("amount")}</FieldError>
-          )}
-        </Field>
+      {simpleKind !== null && (
+        <EntryAmountField
+          kind={simpleKind}
+          value={draft.amount}
+          currency={currency}
+          scale={digits}
+          error={error("amount")}
+          autoFocus={autoFocusAmount}
+          onChange={(amount) => {
+            set({ amount });
+          }}
+        />
       )}
 
       {simpleKind !== null && (
@@ -188,37 +175,19 @@ export function TransactionForm({
       </Field>
 
       {(draft.kind === "expense" || draft.kind === "income") && (
-        <Field invalid={error("category") !== undefined}>
-          <FieldLabel>{t("category.label")}</FieldLabel>
-          <CategoryPicker
-            placeholder={t("entry.categoryPlaceholder")}
-            value={draft.categoryId}
-            amount={draft.kind === "income" ? 1 : -1}
-            onChange={(id) => {
-              set({ categoryId: id });
-            }}
-          />
-          {error("category") !== undefined && (
-            <FieldError>{error("category")}</FieldError>
-          )}
-        </Field>
-      )}
-
-      {(draft.kind === "expense" || draft.kind === "income") && (
-        <Field invalid={error("payee_id") !== undefined}>
-          <FieldTitle label={t("facts.payee")} help={t("facts.payeeHelp")} />
-          <PayeeField
-            placeholder={t("entry.payeePlaceholder")}
-            payees={payees}
-            value={draft.payeeId}
-            onChange={(id) => {
-              set({ payeeId: id });
-            }}
-          />
-          {error("payee_id") !== undefined && (
-            <FieldError>{error("payee_id")}</FieldError>
-          )}
-        </Field>
+        <EntryClassificationFields
+          kind={draft.kind}
+          categoryId={draft.categoryId}
+          payeeId={draft.payeeId}
+          payees={payees}
+          errors={errors}
+          onCategory={(id) => {
+            set({ categoryId: id });
+          }}
+          onPayee={(id) => {
+            set({ payeeId: id });
+          }}
+        />
       )}
 
       {draft.kind === "advanced" && (
