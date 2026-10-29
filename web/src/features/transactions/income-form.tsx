@@ -11,6 +11,7 @@ import type { useIncomeEntry } from "@/features/transactions/use-income-entry";
 import { useT } from "@/i18n/i18n-provider";
 import { ChoiceSelect } from "@/ui/choice-select";
 import { DateInput } from "@/ui/date-input";
+import { FieldTitle } from "@/ui/field-title";
 import widths from "@/ui/field-width.module.css";
 import { FigureCard } from "@/ui/figure-card";
 import { FigureGrid } from "@/ui/figure-grid";
@@ -87,7 +88,7 @@ export function IncomeForm({
       />
 
       <Field invalid={errors.income_type !== undefined}>
-        <FieldLabel>{t("income.type")}</FieldLabel>
+        <FieldTitle label={t("income.type")} help={t("income.typeHelp")} />
         <ChoiceSelect
           className={widths.medium}
           label={t("income.type")}
@@ -122,7 +123,7 @@ export function IncomeForm({
 
       <FormRow>
         <Field className={widths.medium} invalid={errors.gross !== undefined}>
-          <FieldLabel>{t("income.gross")}</FieldLabel>
+          <FieldTitle label={t("income.gross")} help={t("income.grossHelp")} />
           <MoneyInput
             size="field"
             value={draft.gross}
@@ -141,7 +142,10 @@ export function IncomeForm({
           className={widths.medium}
           invalid={errors.withheld !== undefined}
         >
-          <FieldLabel>{t("income.withheld")}</FieldLabel>
+          <FieldTitle
+            label={t("income.withheld")}
+            help={t("income.withheldHelp")}
+          />
           <MoneyInput
             size="field"
             value={draft.withheld}

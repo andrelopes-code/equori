@@ -478,6 +478,8 @@ export const catalogEn = {
   "detail.loadFailed": "The transaction could not be loaded",
   "detail.category": "Category",
   "detail.postings": "Postings",
+  "detail.postingsHelp":
+    "Each line moves an amount into or out of an account or a category. What leaves on one side enters on another, so the lines balance.",
   "detail.links": "Linked transactions",
   "detail.attachments": "Attachments",
   "detail.history": "History",
@@ -506,8 +508,12 @@ export const catalogEn = {
   "posting.status.reconciled": "Reconciled",
   "facts.date": "Date",
   "facts.payee": "Payee",
+  "facts.payeeHelp":
+    "The shop, company or person the money went to or came from. It groups what you spend or receive by who it was with.",
   "facts.description": "Description",
   "facts.tags": "Tags",
+  "facts.tagsHelp":
+    "Free labels that cut across categories, such as a trip or a renovation. A transaction can carry several.",
   "facts.categorized": "Categorized by",
   "facts.origin": "Origin",
   "facts.version": "Version",
@@ -670,21 +676,29 @@ export const catalogEn = {
     "No credit card in {currency}. Create one before recording a foreign purchase.",
   "foreignPurchase.category": "Category",
   "foreignPurchase.original": "Original amount",
+  "foreignPurchase.originalHelp":
+    "The amount in the currency the purchase was made in, as on the receipt.",
   "foreignPurchase.currency": "Currency",
   "foreignPurchase.currencyPlaceholder": "Choose a currency",
   "foreignPurchase.otherCurrency": "Other currency (ISO 4217 code)",
   "foreignPurchase.otherCurrencyInvalid":
     "Not a currency code other than the base currency.",
   "foreignPurchase.rate": "Exchange rate",
+  "foreignPurchase.rateHelp":
+    "How much one unit of the foreign currency was worth in your main currency on the purchase date.",
   "foreignPurchase.rateSuggested":
     "Stored price of {date}: {rate}, source {source}",
   "foreignPurchase.rateMissing":
     "No stored price for {currency} on {date}. Enter the rate.",
   "foreignPurchase.chargeRate": "Foreign transaction charge (basis points)",
+  "foreignPurchase.chargeRateHelp":
+    "The percentage the card charges on purchases in another currency, written in basis points: 100 basis points are 1%.",
   "foreignPurchase.chargeRateInvalid": "Enter a whole number from 0 to 10000.",
   "foreignPurchase.chargeCategory": "Charge category",
   "foreignPurchase.chargeCategoryPlaceholder": "Default charge account",
   "foreignPurchase.statement": "Statement",
+  "foreignPurchase.statementHelp":
+    "The card statement the purchase is billed on. By the card's closing rule, it follows the purchase date and the statement's closing day.",
   "foreignPurchase.statementAutomatic": "By the billing rule of the card",
   "foreignPurchase.result": "Result",
   "foreignPurchase.converted": "Converted amount",
@@ -705,6 +719,8 @@ export const catalogEn = {
   "exchange.fromAmount": "Amount sent",
   "exchange.toAmount": "Amount received",
   "exchange.fee": "Fee",
+  "exchange.feeHelp":
+    "What the bank or exchange house charged apart from the rate.",
   "exchange.feeCategory": "Fee category",
   "exchange.feeCategoryPlaceholder": "Default fee account",
   "exchange.result": "Result",
@@ -721,7 +737,10 @@ export const catalogEn = {
   "trade.side.buy": "Buy",
   "trade.side.sell": "Sell",
   "trade.securityAccount": "Security account",
+  "trade.securityAccountHelp": "The brokerage account where the asset is held.",
   "trade.cashAccount": "Cash account",
+  "trade.cashAccountHelp":
+    "The account the money of a purchase leaves, or the money of a sale enters.",
   "trade.cashAccountPlaceholder": "Choose the cash account",
   "trade.noSecurityAccount":
     "No account holds a security yet. Create one under a brokerage account.",
@@ -732,7 +751,11 @@ export const catalogEn = {
   "trade.priceStored": "Stored price of {date}: {price}",
   "trade.noStoredPrice": "No stored price on this date.",
   "trade.fees": "Fees",
+  "trade.feesHelp":
+    "What the broker and the exchange charge for the operation, such as brokerage fees.",
   "trade.taxes": "Taxes",
+  "trade.taxesHelp":
+    "The tax charged on the operation itself, when there is one.",
   "trade.taxesCategory": "Tax category",
   "trade.taxesCategoryPlaceholder": "Default tax account",
   "trade.gross": "Gross",
@@ -752,13 +775,17 @@ export const catalogEn = {
     "A cash account of the same brokerage, in {currency}.",
   "income.record": "Record income",
   "income.type": "Income type",
+  "income.typeHelp": "What the payment is, such as a dividend or interest.",
   "income.typePlaceholder": "Choose the type",
   "income.type.dividend": "Dividend",
   "income.type.jcp": "Interest on equity",
   "income.type.interest": "Interest",
   "income.type.coupon": "Coupon",
   "income.gross": "Gross amount",
+  "income.grossHelp": "The amount before any tax is taken off.",
   "income.withheld": "Withheld",
+  "income.withheldHelp":
+    "The tax taken off at the source, before the money reaches the account. What arrives is the gross amount less this.",
   "income.withheldCategory": "Withheld category",
   "income.withheldCategoryPlaceholder": "Default tax account",
   "income.category": "Income category",

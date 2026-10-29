@@ -22,6 +22,7 @@ import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 import { ChoiceSelect } from "@/ui/choice-select";
 import { DateInput } from "@/ui/date-input";
+import { FieldTitle } from "@/ui/field-title";
 import widths from "@/ui/field-width.module.css";
 import { FormLayout } from "@/ui/form-layout";
 import { FormRow } from "@/ui/form-row";
@@ -137,7 +138,10 @@ export function ForeignForm({
           className={widths.medium}
           invalid={errors.original !== undefined}
         >
-          <FieldLabel>{t("foreignPurchase.original")}</FieldLabel>
+          <FieldTitle
+            label={t("foreignPurchase.original")}
+            help={t("foreignPurchase.originalHelp")}
+          />
           <MoneyInput
             size="field"
             value={draft.original}
@@ -191,7 +195,10 @@ export function ForeignForm({
       </Field>
 
       <Field invalid={errors.rate !== undefined}>
-        <FieldLabel>{t("foreignPurchase.rate")}</FieldLabel>
+        <FieldTitle
+          label={t("foreignPurchase.rate")}
+          help={t("foreignPurchase.rateHelp")}
+        />
         <TextField
           className={widths.medium}
           name="rate"
@@ -236,7 +243,10 @@ export function ForeignForm({
       </Field>
 
       <Field invalid={errors.foreign_charge_rate_bp !== undefined}>
-        <FieldLabel>{t("foreignPurchase.chargeRate")}</FieldLabel>
+        <FieldTitle
+          label={t("foreignPurchase.chargeRate")}
+          help={t("foreignPurchase.chargeRateHelp")}
+        />
         <TextField
           className={widths.short}
           name="charge-rate"
@@ -269,7 +279,7 @@ export function ForeignForm({
       )}
 
       <Field invalid={errors.payee_id !== undefined}>
-        <FieldLabel>{t("facts.payee")}</FieldLabel>
+        <FieldTitle label={t("facts.payee")} help={t("facts.payeeHelp")} />
         <PayeeField
           placeholder={t("entry.payeePlaceholder")}
           payees={payees}
@@ -293,7 +303,10 @@ export function ForeignForm({
       </Field>
 
       <Field invalid={errors.statement !== undefined}>
-        <FieldLabel>{t("foreignPurchase.statement")}</FieldLabel>
+        <FieldTitle
+          label={t("foreignPurchase.statement")}
+          help={t("foreignPurchase.statementHelp")}
+        />
         <ChoiceSelect
           label={t("foreignPurchase.statement")}
           multiple={false}

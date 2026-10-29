@@ -17,6 +17,7 @@ import { PostingsEditor } from "@/features/transactions/postings-editor";
 import { TagsField } from "@/features/transactions/tags-field";
 import { useT } from "@/i18n/i18n-provider";
 import { DateInput } from "@/ui/date-input";
+import { FieldTitle } from "@/ui/field-title";
 import { FormLayout } from "@/ui/form-layout";
 import { MoneyInput } from "@/ui/money-input";
 
@@ -205,7 +206,7 @@ export function TransactionForm({
 
       {(draft.kind === "expense" || draft.kind === "income") && (
         <Field invalid={error("payee_id") !== undefined}>
-          <FieldLabel>{t("facts.payee")}</FieldLabel>
+          <FieldTitle label={t("facts.payee")} help={t("facts.payeeHelp")} />
           <PayeeField
             placeholder={t("entry.payeePlaceholder")}
             payees={payees}
@@ -222,7 +223,10 @@ export function TransactionForm({
 
       {draft.kind === "advanced" && (
         <Field>
-          <FieldLabel>{t("detail.postings")}</FieldLabel>
+          <FieldTitle
+            label={t("detail.postings")}
+            help={t("detail.postingsHelp")}
+          />
           <PostingsEditor
             rows={draft.rows}
             onChange={(rows) => {
@@ -252,7 +256,7 @@ export function TransactionForm({
       </Field>
 
       <Field invalid={error("tags") !== undefined}>
-        <FieldLabel>{t("facts.tags")}</FieldLabel>
+        <FieldTitle label={t("facts.tags")} help={t("facts.tagsHelp")} />
         <TagsField
           placeholder={t("entry.tagsPlaceholder")}
           tags={tags}

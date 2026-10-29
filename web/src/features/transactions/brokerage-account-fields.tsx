@@ -1,14 +1,10 @@
 import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
-import {
-  Field,
-  FieldDescription,
-  FieldError,
-  FieldLabel,
-} from "@slotted/react/field";
+import { Field, FieldDescription, FieldError } from "@slotted/react/field";
 
 import type { components } from "@/api/schema.gen";
 import { AccountField } from "@/features/transactions/account-field";
 import { useT } from "@/i18n/i18n-provider";
+import { FieldTitle } from "@/ui/field-title";
 
 type Account = components["schemas"]["Account"];
 
@@ -55,7 +51,10 @@ export function BrokerageAccountFields({
         </Alert>
       )}
       <Field invalid={errors.account_id !== undefined}>
-        <FieldLabel>{t("trade.securityAccount")}</FieldLabel>
+        <FieldTitle
+          label={t("trade.securityAccount")}
+          help={t("trade.securityAccountHelp")}
+        />
         <AccountField
           compact
           name="security"
@@ -80,7 +79,10 @@ export function BrokerageAccountFields({
       </Field>
 
       <Field invalid={errors.cash_account_id !== undefined}>
-        <FieldLabel>{t("trade.cashAccount")}</FieldLabel>
+        <FieldTitle
+          label={t("trade.cashAccount")}
+          help={t("trade.cashAccountHelp")}
+        />
         <AccountField
           compact
           name="cash"

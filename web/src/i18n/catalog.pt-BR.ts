@@ -483,6 +483,8 @@ export const catalogPtBR: Catalog = {
   "detail.loadFailed": "Não foi possível carregar a transação",
   "detail.category": "Categoria",
   "detail.postings": "Lançamentos",
+  "detail.postingsHelp":
+    "Cada linha move um valor para dentro ou para fora de uma conta ou categoria. O que sai de um lado entra em outro, então as linhas se equilibram.",
   "detail.links": "Transações vinculadas",
   "detail.attachments": "Anexos",
   "detail.history": "Histórico",
@@ -511,8 +513,12 @@ export const catalogPtBR: Catalog = {
   "posting.status.reconciled": "Conciliado",
   "facts.date": "Data",
   "facts.payee": "Favorecido",
+  "facts.payeeHelp":
+    "A loja, empresa ou pessoa para quem o dinheiro foi ou de quem veio. Agrupa o que você gasta ou recebe por com quem foi.",
   "facts.description": "Descrição",
   "facts.tags": "Tags",
+  "facts.tagsHelp":
+    "Marcadores livres que cruzam as categorias, como uma viagem ou uma reforma. Um lançamento pode ter vários.",
   "facts.categorized": "Categorizada por",
   "facts.origin": "Origem",
   "facts.version": "Versão",
@@ -675,21 +681,29 @@ export const catalogPtBR: Catalog = {
     "Nenhum cartão de crédito em {currency}. Crie um antes de registrar uma compra no exterior.",
   "foreignPurchase.category": "Categoria",
   "foreignPurchase.original": "Valor original",
+  "foreignPurchase.originalHelp":
+    "O valor na moeda em que a compra foi feita, como aparece no recibo.",
   "foreignPurchase.currency": "Moeda",
   "foreignPurchase.currencyPlaceholder": "Escolha uma moeda",
   "foreignPurchase.otherCurrency": "Outra moeda (código ISO 4217)",
   "foreignPurchase.otherCurrencyInvalid":
     "Não é um código de moeda diferente da moeda base.",
   "foreignPurchase.rate": "Taxa de câmbio",
+  "foreignPurchase.rateHelp":
+    "Quanto valia uma unidade da moeda estrangeira na sua moeda principal, na data da compra.",
   "foreignPurchase.rateSuggested":
     "Preço armazenado de {date}: {rate}, fonte {source}",
   "foreignPurchase.rateMissing":
     "Sem preço armazenado de {currency} em {date}. Informe a taxa.",
   "foreignPurchase.chargeRate": "Encargo de compra internacional (pontos-base)",
+  "foreignPurchase.chargeRateHelp":
+    "O percentual que o cartão cobra sobre compras em outra moeda, escrito em pontos-base: 100 pontos-base são 1%.",
   "foreignPurchase.chargeRateInvalid": "Informe um inteiro de 0 a 10000.",
   "foreignPurchase.chargeCategory": "Categoria do encargo",
   "foreignPurchase.chargeCategoryPlaceholder": "Conta padrão do encargo",
   "foreignPurchase.statement": "Fatura",
+  "foreignPurchase.statementHelp":
+    "A fatura do cartão em que a compra é cobrada. Pela regra de fechamento, ela segue a data da compra e o dia de fechamento da fatura.",
   "foreignPurchase.statementAutomatic": "Pela regra de fechamento do cartão",
   "foreignPurchase.result": "Resultado",
   "foreignPurchase.converted": "Valor convertido",
@@ -710,6 +724,8 @@ export const catalogPtBR: Catalog = {
   "exchange.fromAmount": "Valor enviado",
   "exchange.toAmount": "Valor recebido",
   "exchange.fee": "Tarifa",
+  "exchange.feeHelp":
+    "O que o banco ou a casa de câmbio cobrou à parte, fora a cotação.",
   "exchange.feeCategory": "Categoria da tarifa",
   "exchange.feeCategoryPlaceholder": "Conta padrão da tarifa",
   "exchange.result": "Resultado",
@@ -726,7 +742,11 @@ export const catalogPtBR: Catalog = {
   "trade.side.buy": "Compra",
   "trade.side.sell": "Venda",
   "trade.securityAccount": "Conta do ativo",
+  "trade.securityAccountHelp":
+    "A conta da corretora onde o ativo fica guardado.",
   "trade.cashAccount": "Conta de caixa",
+  "trade.cashAccountHelp":
+    "A conta de onde sai o dinheiro da compra, ou para onde vai o dinheiro da venda.",
   "trade.cashAccountPlaceholder": "Escolha a conta de caixa",
   "trade.noSecurityAccount":
     "Nenhuma conta guarda um ativo ainda. Crie uma dentro de uma conta de corretora.",
@@ -737,7 +757,10 @@ export const catalogPtBR: Catalog = {
   "trade.priceStored": "Preço armazenado de {date}: {price}",
   "trade.noStoredPrice": "Sem preço armazenado nesta data.",
   "trade.fees": "Taxas",
+  "trade.feesHelp":
+    "O que a corretora e a bolsa cobram pela operação, como a corretagem.",
   "trade.taxes": "Impostos",
+  "trade.taxesHelp": "O imposto cobrado na própria operação, quando houver.",
   "trade.taxesCategory": "Categoria do imposto",
   "trade.taxesCategoryPlaceholder": "Conta de impostos padrão",
   "trade.gross": "Bruto",
@@ -758,13 +781,17 @@ export const catalogPtBR: Catalog = {
     "Uma conta de caixa da mesma corretora, em {currency}.",
   "income.record": "Registrar rendimento",
   "income.type": "Tipo de rendimento",
+  "income.typeHelp": "O que é o pagamento, como dividendo ou juros.",
   "income.typePlaceholder": "Escolha o tipo",
   "income.type.dividend": "Dividendo",
   "income.type.jcp": "Juros sobre capital próprio",
   "income.type.interest": "Juros",
   "income.type.coupon": "Cupom",
   "income.gross": "Valor bruto",
+  "income.grossHelp": "O valor antes de qualquer imposto ser descontado.",
   "income.withheld": "Retido",
+  "income.withheldHelp":
+    "O imposto descontado na fonte, antes de o dinheiro chegar à conta. O que entra é o valor bruto menos este.",
   "income.withheldCategory": "Categoria do retido",
   "income.withheldCategoryPlaceholder": "Conta de impostos padrão",
   "income.category": "Categoria do rendimento",

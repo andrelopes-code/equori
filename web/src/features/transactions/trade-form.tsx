@@ -19,6 +19,7 @@ import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { MASK } from "@/privacy/mask";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 import { DateInput } from "@/ui/date-input";
+import { FieldTitle } from "@/ui/field-title";
 import widths from "@/ui/field-width.module.css";
 import { FigureCard } from "@/ui/figure-card";
 import { FigureGrid } from "@/ui/figure-grid";
@@ -223,7 +224,7 @@ export function TradeForm({
 
       <FormRow>
         <Field className={widths.medium} invalid={errors.fees !== undefined}>
-          <FieldLabel>{t("trade.fees")}</FieldLabel>
+          <FieldTitle label={t("trade.fees")} help={t("trade.feesHelp")} />
           <MoneyInput
             size="field"
             value={draft.fees}
@@ -238,7 +239,7 @@ export function TradeForm({
         </Field>
         {sell && (
           <Field className={widths.medium} invalid={errors.taxes !== undefined}>
-            <FieldLabel>{t("trade.taxes")}</FieldLabel>
+            <FieldTitle label={t("trade.taxes")} help={t("trade.taxesHelp")} />
             <MoneyInput
               size="field"
               value={draft.taxes}

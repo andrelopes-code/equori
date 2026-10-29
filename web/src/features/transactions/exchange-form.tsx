@@ -13,6 +13,7 @@ import { numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 import { DateInput } from "@/ui/date-input";
+import { FieldTitle } from "@/ui/field-title";
 import widths from "@/ui/field-width.module.css";
 import { FormLayout } from "@/ui/form-layout";
 import { FormRow } from "@/ui/form-row";
@@ -212,7 +213,7 @@ export function ExchangeForm({
       </FormRow>
 
       <Field invalid={errors.fee !== undefined}>
-        <FieldLabel>{t("exchange.fee")}</FieldLabel>
+        <FieldTitle label={t("exchange.fee")} help={t("exchange.feeHelp")} />
         <MoneyInput
           value={draft.fee}
           currency={base ?? ""}
