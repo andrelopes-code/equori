@@ -136,9 +136,9 @@ test("an item inside an overlay follows the overlay's curve, less the inset", ()
     "--slotted-combobox-item-radius",
     "--slotted-multi-select-item-radius",
     "--slotted-command-palette-item-radius",
-  ]) {
+  ] as const) {
     assert.equal(
-      theme.components[token],
+      theme.components?.[token],
       "max(0px, calc(var(--slotted-radius-lg) - var(--slotted-space-2)))",
       token,
     );
