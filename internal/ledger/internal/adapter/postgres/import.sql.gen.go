@@ -353,7 +353,8 @@ func (q *Queries) ReleaseExternalRecord(ctx context.Context, arg ReleaseExternal
 }
 
 const settleImportedPosting = `-- name: SettleImportedPosting :exec
-UPDATE ledger_posting SET status = $1, statement_id = coalesce($2, statement_id)
+UPDATE ledger_posting SET status = $1, statement_id = coalesce($2, statement_id),
+    statement_basis = CASE WHEN $2::uuid IS NULL THEN statement_basis ELSE 'institution' END
 WHERE user_id = $3 AND id = $4
 `
 
@@ -364,6 +365,7 @@ type SettleImportedPostingParams struct {
 	ID          uuid.UUID
 }
 
+// A136: a statement the line's bill states makes the institution the posting's basis.
 func (q *Queries) SettleImportedPosting(ctx context.Context, arg SettleImportedPostingParams) error {
 	_, err := q.db.Exec(ctx, settleImportedPosting,
 		arg.Status,

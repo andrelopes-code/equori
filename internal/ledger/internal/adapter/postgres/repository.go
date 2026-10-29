@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"cmp"
 	"context"
 	"encoding/json/v2"
 	"errors"
@@ -634,7 +635,8 @@ func (r *Repository) insertPostings(ctx context.Context, t domain.Transaction, p
 			UserID: t.UserID, TransactionID: t.ID, AccountID: p.AccountID, Position: first + int16(i), //nolint:gosec // at most 500 postings (domain.MaxPostings).
 			Amount: p.Amount.Amount(), Weight: p.Weight.Amount(), BookedOn: t.Date, SettledOn: p.SettledOn,
 			Status: string(p.Status), OriginalAmount: originalAmount(p.Original), OriginalInstrument: originalInstrument(p.Original),
-			Memo: nullString(p.Memo), StatementID: nullUUID(p.StatementID), CardRole: nullString(p.CardRole),
+			Memo: nullString(p.Memo), StatementID: nullUUID(p.StatementID), StatementBasis: cmp.Or(p.StatementBasis, domain.BasisDate),
+			CardRole:          nullString(p.CardRole),
 			InstallmentPlanID: installmentPlan(p.Installment), InstallmentNumber: installmentNumber(p.Installment),
 			InstallmentCount: installmentCount(p.Installment), ExternalRecordID: nullUUID(p.ExternalRecordID),
 		}
@@ -989,7 +991,7 @@ func (r *Repository) StatementPostings(ctx context.Context, userID int64, statem
 	for i, row := range rows {
 		out[i] = app.StatementPosting{
 			TransactionID: row.TransactionID, Date: row.Date, Description: row.Description,
-			CardRole: deref(row.CardRole), Amount: row.Amount,
+			CardRole: deref(row.CardRole), Amount: row.Amount, Basis: row.StatementBasis,
 		}
 		if row.InstallmentPlanID.Valid && row.InstallmentNumber != nil && row.InstallmentCount != nil {
 			out[i].Installment = &domain.InstallmentRef{PlanID: row.InstallmentPlanID.UUID, Number: int(*row.InstallmentNumber), Count: int(*row.InstallmentCount)}

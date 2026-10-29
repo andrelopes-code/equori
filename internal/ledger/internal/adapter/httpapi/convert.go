@@ -184,7 +184,7 @@ func fromTransactionInput(ctx context.Context, in TransactionInput, amounts amou
 			if err != nil {
 				return domain.Transaction{}, &domain.FieldError{Field: field("statement"), Message: "must be YYYY-MM", Err: domain.ErrValidation}
 			}
-			posting.Statement = &m
+			posting.Statement, posting.StatementBasis = &m, domain.BasisOwner
 		}
 		if p.CardRole != nil {
 			posting.CardRole = string(*p.CardRole)

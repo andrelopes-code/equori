@@ -125,7 +125,7 @@ erDiagram
 | `ledger_tag`, `ledger_transaction_tag` | `id`, `user_id`, `name`; `transaction_id`, `tag_id` | `UNIQUE (user_id, lower(name))` |
 | `ledger_transaction` | `void_reason`, `external_record_id`, `created_at`, `updated_at` | `version >= 1`; `UNIQUE (user_id, external_record_id)` (P4 amendment A11) |
 | `ledger_transaction_version` | `transaction_id`, `version`, `snapshot jsonb` (transaction and postings as they were), `reason`, `replaced_at` | `PRIMARY KEY (transaction_id, version)`; insert-only |
-| `ledger_posting` | `memo` | `booked_on` equals the transaction date and `voided` equals the transaction's void state, both copied by triggers so balance sums read one partial index (N06); `card_role` and `statement_id` both set or both null; installment columns all set or all null; `installment_number BETWEEN 1 AND installment_count` |
+| `ledger_posting` | `memo` | `booked_on` equals the transaction date and `voided` equals the transaction's void state, both copied by triggers so balance sums read one partial index (N06); `card_role` and `statement_id` both set or both null; `statement_basis` in (`date`, `owner`, `institution`), default `date` (A136); installment columns all set or all null; `installment_number BETWEEN 1 AND installment_count` |
 | `ledger_link` | `id`, `user_id`, `from_transaction_id`, `to_transaction_id`, `link_type` | `UNIQUE (from_transaction_id, to_transaction_id, link_type)`; no self-link |
 | `ledger_statement` | | `UNIQUE (account_id, reference_month)`; `due_date > closing_date` |
 | `ledger_installment_plan` | `first_statement_id`; the status is derived, not stored | `installment_count BETWEEN 2 AND 420` |

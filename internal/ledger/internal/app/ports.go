@@ -145,6 +145,8 @@ type StatementPosting struct {
 	CardRole      string
 	Amount        int64
 	Installment   *domain.InstallmentRef
+	Basis         string // the source that chose the statement (A136)
+	Provisional   bool   // derived by Statement from Basis (A136)
 }
 
 // PlanInstallment is one installment of a plan with the statement it is billed on.

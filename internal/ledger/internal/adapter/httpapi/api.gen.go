@@ -1942,12 +1942,15 @@ type StatementPlacement struct {
 
 // StatementPosting defines model for StatementPosting.
 type StatementPosting struct {
-	Amount        Money                    `json:"amount"`
-	CardRole      StatementPostingCardRole `json:"card_role"`
-	Date          openapi_types.Date       `json:"date"`
-	Description   string                   `json:"description"`
-	Installment   *Installment             `json:"installment,omitempty"`
-	TransactionId openapi_types.UUID       `json:"transaction_id"`
+	Amount      Money                    `json:"amount"`
+	CardRole    StatementPostingCardRole `json:"card_role"`
+	Date        openapi_types.Date       `json:"date"`
+	Description string                   `json:"description"`
+	Installment *Installment             `json:"installment,omitempty"`
+
+	// Provisional The institution may still bill the posting on another statement: no line stated its bill, the statement is not reconciled and the posting is dated within 10 days before the closing date (A136).
+	Provisional   bool               `json:"provisional"`
+	TransactionId openapi_types.UUID `json:"transaction_id"`
 }
 
 // StatementPostingCardRole defines model for StatementPosting.CardRole.

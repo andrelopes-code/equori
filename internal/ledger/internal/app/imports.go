@@ -173,7 +173,7 @@ func (s *Service) RecordImportedBatch(ctx context.Context, userID int64, recs []
 				if err != nil {
 					return err
 				}
-				draft.Postings[0].Statement = &ref
+				draft.Postings[0].Statement, draft.Postings[0].StatementBasis = &ref, domain.BasisInstitution
 			}
 			t, err := domain.NewTransaction(draft, accounts)
 			if err != nil {

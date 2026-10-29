@@ -216,3 +216,33 @@ func TestSummarizeOpenAmount(t *testing.T) {
 		})
 	}
 }
+
+// A136: statement closing on 2026-10-29.
+func TestProvisional(t *testing.T) {
+	t.Parallel()
+	closing := day("2026-10-29")
+	tests := []struct {
+		name        string
+		basis       string
+		date        string
+		reconciled  bool
+		installment bool
+		want        bool
+	}{
+		{name: "date, the day before closing", basis: BasisDate, date: "2026-10-28", want: true},
+		{name: "date, 10 days before closing", basis: BasisDate, date: "2026-10-19", want: true},
+		{name: "date, 11 days before closing", basis: BasisDate, date: "2026-10-18"},
+		{name: "owner", basis: BasisOwner, date: "2026-10-28", want: true},
+		{name: "institution", basis: BasisInstitution, date: "2026-10-28"},
+		{name: "reconciled", basis: BasisDate, date: "2026-10-28", reconciled: true},
+		{name: "installment", basis: BasisDate, date: "2026-10-28", installment: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			if got := Provisional(tt.basis, day(tt.date), closing, tt.reconciled, tt.installment); got != tt.want {
+				t.Fatalf("Provisional = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

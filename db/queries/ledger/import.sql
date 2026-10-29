@@ -80,7 +80,9 @@ WHERE user_id = @user_id AND external_record_id = @external_record_id
 FOR UPDATE;
 
 -- name: SettleImportedPosting :exec
-UPDATE ledger_posting SET status = @status, statement_id = coalesce(sqlc.narg(statement_id), statement_id)
+-- A136: a statement the line's bill states makes the institution the posting's basis.
+UPDATE ledger_posting SET status = @status, statement_id = coalesce(sqlc.narg(statement_id), statement_id),
+    statement_basis = CASE WHEN sqlc.narg(statement_id)::uuid IS NULL THEN statement_basis ELSE 'institution' END
 WHERE user_id = @user_id AND id = @id;
 
 -- name: ReleaseExternalRecord :exec

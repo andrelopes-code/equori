@@ -76,8 +76,11 @@ type Posting struct {
 	// month; StatementID is set by the application once the statement row exists.
 	Statement   *ReferenceMonth
 	StatementID uuid.UUID
-	CardRole    string
-	Installment *InstallmentRef
+	// StatementBasis is the source that chose Statement: BasisDate, BasisOwner or
+	// BasisInstitution (A136).
+	StatementBasis string
+	CardRole       string
+	Installment    *InstallmentRef
 	// ExternalRecordID is the imported record this posting confirms (P5b amendment A27).
 	ExternalRecordID uuid.UUID
 }
@@ -279,7 +282,7 @@ func (t Transaction) Correct(next Transaction, expectedVersion int, accounts map
 	if err != nil {
 		return Transaction{}, err
 	}
-	next.Postings = postings
+	next.Postings = keepStatementBasis(t.Postings, postings)
 	if next.Origin == "" {
 		next.Origin = t.Origin
 	}
@@ -346,6 +349,25 @@ func keepRecordLinks(prev, next []Posting) ([]Posting, error) {
 		next[i].ExternalRecordID = p.ExternalRecordID
 	}
 	return next, nil
+}
+
+// keepStatementBasis keeps the statement an owner or a line chose for a card posting when
+// the correction names none or the same one (A136); a statement left to the date is derived
+// again.
+func keepStatementBasis(prev, next []Posting) []Posting {
+	for _, p := range prev {
+		if p.Statement == nil || p.StatementBasis == BasisDate || p.StatementBasis == "" {
+			continue
+		}
+		i := slices.IndexFunc(next, func(n Posting) bool { return n.AccountID == p.AccountID })
+		if i < 0 {
+			continue
+		}
+		if s := next[i].Statement; s == nil || *s == *p.Statement {
+			next[i].Statement, next[i].StatementBasis = p.Statement, p.StatementBasis
+		}
+	}
+	return next
 }
 
 func (t Transaction) Void(at time.Time, reason string) (Transaction, error) {

@@ -4231,6 +4231,8 @@ export interface components {
             card_role: "charge" | "credit" | "payment";
             amount: components["schemas"]["Money"];
             installment?: components["schemas"]["Installment"];
+            /** @description The institution may still bill the posting on another statement: no line stated its bill, the statement is not reconciled and the posting is dated within 10 days before the closing date (A136). */
+            provisional: boolean;
         };
         StatementDetail: components["schemas"]["StatementSummary"] & {
             postings: components["schemas"]["StatementPosting"][];

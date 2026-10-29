@@ -16,7 +16,22 @@ const (
 	StatusPartiallyPaid = "partially_paid"
 	StatusOverdue       = "overdue"
 	StatusFinanced      = "financed"
+
+	BasisDate        = "date"
+	BasisOwner       = "owner"
+	BasisInstitution = "institution"
 )
+
+// ProvisionalWindow is how many days before its statement's closing a card posting may still
+// post on the next statement; it equals ingestion's MatchHardLimit (A136).
+const ProvisionalWindow = 10
+
+// Provisional reports whether the statement of a card posting dated d may still change: no
+// line stated its bill, its statement is not reconciled and d falls within ProvisionalWindow
+// days before closing (A136). An installment follows its plan, not the posting date.
+func Provisional(basis string, d, closing time.Time, reconciled, installment bool) bool {
+	return basis != BasisInstitution && !reconciled && !installment && !d.Before(closing.AddDate(0, 0, -ProvisionalWindow))
+}
 
 // StatementLine is one card posting; Amount uses the ledger sign (a charge is negative).
 type StatementLine struct {

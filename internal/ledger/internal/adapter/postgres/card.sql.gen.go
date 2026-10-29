@@ -773,7 +773,7 @@ func (q *Queries) ListStatementLines(ctx context.Context, arg ListStatementLines
 
 const listStatementPostings = `-- name: ListStatementPostings :many
 SELECT p.transaction_id, t.date, t.description, p.card_role, p.amount,
-       p.installment_plan_id, p.installment_number, p.installment_count
+       p.installment_plan_id, p.installment_number, p.installment_count, p.statement_basis
 FROM ledger_posting p
 JOIN ledger_transaction t ON t.id = p.transaction_id
 WHERE p.user_id = $1 AND p.statement_id = $2 AND NOT p.voided
@@ -794,6 +794,7 @@ type ListStatementPostingsRow struct {
 	InstallmentPlanID uuid.NullUUID
 	InstallmentNumber *int16
 	InstallmentCount  *int16
+	StatementBasis    string
 }
 
 func (q *Queries) ListStatementPostings(ctx context.Context, arg ListStatementPostingsParams) ([]ListStatementPostingsRow, error) {
@@ -814,6 +815,7 @@ func (q *Queries) ListStatementPostings(ctx context.Context, arg ListStatementPo
 			&i.InstallmentPlanID,
 			&i.InstallmentNumber,
 			&i.InstallmentCount,
+			&i.StatementBasis,
 		); err != nil {
 			return nil, err
 		}

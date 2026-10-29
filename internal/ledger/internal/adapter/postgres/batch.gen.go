@@ -22,12 +22,12 @@ const insertPostings = `-- name: InsertPostings :batchexec
 INSERT INTO ledger_posting (
     user_id, transaction_id, account_id, position, amount, weight, booked_on, settled_on,
     status, original_amount, original_instrument, memo,
-    statement_id, card_role, installment_plan_id, installment_number, installment_count, external_record_id
+    statement_id, statement_basis, card_role, installment_plan_id, installment_number, installment_count, external_record_id
 ) VALUES (
     $1, $2, $3, $4, $5, $6, $7, $8,
     $9, $10, $11, $12,
-    $13, $14, $15,
-    $16, $17, $18
+    $13, $14, $15, $16,
+    $17, $18, $19
 )
 `
 
@@ -51,6 +51,7 @@ type InsertPostingsParams struct {
 	OriginalInstrument *string
 	Memo               *string
 	StatementID        uuid.NullUUID
+	StatementBasis     string
 	CardRole           *string
 	InstallmentPlanID  uuid.NullUUID
 	InstallmentNumber  *int16
@@ -76,6 +77,7 @@ func (q *Queries) InsertPostings(ctx context.Context, arg []InsertPostingsParams
 			a.OriginalInstrument,
 			a.Memo,
 			a.StatementID,
+			a.StatementBasis,
 			a.CardRole,
 			a.InstallmentPlanID,
 			a.InstallmentNumber,

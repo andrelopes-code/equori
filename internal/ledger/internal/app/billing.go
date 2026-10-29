@@ -42,6 +42,9 @@ func (s *Service) bill(ctx context.Context, r Repository, t *domain.Transaction)
 		if err != nil {
 			return err
 		}
+		if p.Statement == nil || p.StatementBasis == "" {
+			p.StatementBasis = domain.BasisDate
+		}
 		p.Statement, p.StatementID = &ref, id
 	}
 	return nil

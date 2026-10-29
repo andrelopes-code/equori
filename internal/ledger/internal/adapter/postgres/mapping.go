@@ -126,7 +126,8 @@ func (r *Repository) toPosting(ctx context.Context, row ListPostingsRow) (domain
 	p := domain.Posting{
 		ID: row.ID, AccountID: row.AccountID, Amount: amount, Weight: weight,
 		Status: domain.PostingStatus(row.Status), SettledOn: row.SettledOn, Memo: deref(row.Memo),
-		StatementID: row.StatementID.UUID, CardRole: deref(row.CardRole), ExternalRecordID: row.ExternalRecordID.UUID,
+		StatementID: row.StatementID.UUID, StatementBasis: row.StatementBasis, CardRole: deref(row.CardRole),
+		ExternalRecordID: row.ExternalRecordID.UUID,
 	}
 	if row.StatementReference != nil {
 		m := domain.MonthOf(*row.StatementReference)
@@ -178,6 +179,7 @@ type snapshotPosting struct {
 	Memo               string                 `json:"memo,omitempty"`
 	Statement          string                 `json:"statement,omitempty"`
 	StatementID        uuid.UUID              `json:"statement_id,omitzero"`
+	StatementBasis     string                 `json:"statement_basis,omitempty"`
 	CardRole           string                 `json:"card_role,omitempty"`
 	Installment        *domain.InstallmentRef `json:"installment,omitempty"`
 }
@@ -201,7 +203,7 @@ func toSnapshot(t domain.Transaction) snapshot {
 		if p.Statement != nil {
 			sp.Statement = p.Statement.String()
 		}
-		sp.StatementID, sp.CardRole, sp.Installment = p.StatementID, p.CardRole, p.Installment
+		sp.StatementID, sp.StatementBasis, sp.CardRole, sp.Installment = p.StatementID, p.StatementBasis, p.CardRole, p.Installment
 		s.Postings = append(s.Postings, sp)
 	}
 	return s
@@ -230,7 +232,7 @@ func (s snapshot) transaction(ctx context.Context, ins app.Instruments) (domain.
 		}
 		p := domain.Posting{
 			AccountID: sp.AccountID, Amount: amount, Weight: weight, Status: domain.PostingStatus(sp.Status), Memo: sp.Memo,
-			StatementID: sp.StatementID, CardRole: sp.CardRole, Installment: sp.Installment,
+			StatementID: sp.StatementID, StatementBasis: sp.StatementBasis, CardRole: sp.CardRole, Installment: sp.Installment,
 		}
 		if sp.Statement != "" {
 			m, err := domain.ParseReferenceMonth(sp.Statement)

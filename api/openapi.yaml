@@ -7285,7 +7285,7 @@ components:
           description: Absent on the last page.
     StatementPosting:
       type: object
-      required: [transaction_id, date, description, card_role, amount]
+      required: [transaction_id, date, description, card_role, amount, provisional]
       properties:
         transaction_id:
           type: string
@@ -7302,6 +7302,12 @@ components:
           $ref: "#/components/schemas/Money"
         installment:
           $ref: "#/components/schemas/Installment"
+        provisional:
+          type: boolean
+          description: >-
+            The institution may still bill the posting on another statement: no line stated its bill,
+            the statement is not reconciled and the posting is dated within 10 days before the closing
+            date (A136).
     StatementDetail:
       allOf:
         - $ref: "#/components/schemas/StatementSummary"

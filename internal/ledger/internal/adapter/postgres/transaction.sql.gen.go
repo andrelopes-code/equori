@@ -323,7 +323,7 @@ func (q *Queries) ListLinksTo(ctx context.Context, arg ListLinksToParams) ([]Lis
 }
 
 const listPostings = `-- name: ListPostings :many
-SELECT p.id, p.user_id, p.transaction_id, p.account_id, p.position, p.amount, p.weight, p.booked_on, p.settled_on, p.status, p.original_amount, p.original_instrument, p.memo, p.voided, p.statement_id, p.card_role, p.installment_plan_id, p.installment_number, p.installment_count, p.external_record_id, a.instrument AS account_instrument, t.balancing_currency, s.reference_month AS statement_reference
+SELECT p.id, p.user_id, p.transaction_id, p.account_id, p.position, p.amount, p.weight, p.booked_on, p.settled_on, p.status, p.original_amount, p.original_instrument, p.memo, p.voided, p.statement_id, p.card_role, p.installment_plan_id, p.installment_number, p.installment_count, p.external_record_id, p.statement_basis, a.instrument AS account_instrument, t.balancing_currency, s.reference_month AS statement_reference
 FROM ledger_posting p
 JOIN ledger_account a ON a.id = p.account_id
 JOIN ledger_transaction t ON t.id = p.transaction_id
@@ -358,6 +358,7 @@ type ListPostingsRow struct {
 	InstallmentNumber  *int16
 	InstallmentCount   *int16
 	ExternalRecordID   uuid.NullUUID
+	StatementBasis     string
 	AccountInstrument  string
 	BalancingCurrency  string
 	StatementReference *time.Time
@@ -393,6 +394,7 @@ func (q *Queries) ListPostings(ctx context.Context, arg ListPostingsParams) ([]L
 			&i.InstallmentNumber,
 			&i.InstallmentCount,
 			&i.ExternalRecordID,
+			&i.StatementBasis,
 			&i.AccountInstrument,
 			&i.BalancingCurrency,
 			&i.StatementReference,

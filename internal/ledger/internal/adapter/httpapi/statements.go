@@ -130,6 +130,7 @@ func (s *Server) statementDetail(ctx context.Context, userID int64, id uuid.UUID
 		sp := StatementPosting{
 			TransactionId: p.TransactionID, Date: apiDate(p.Date), Description: p.Description,
 			CardRole: StatementPostingCardRole(p.CardRole), Amount: Money{Amount: p.Amount, Currency: string(a.Instrument)},
+			Provisional: p.Provisional,
 		}
 		if p.Installment != nil {
 			sp.Installment = &Installment{PlanId: p.Installment.PlanID, Number: p.Installment.Number, Count: p.Installment.Count}

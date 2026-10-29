@@ -10,6 +10,7 @@ function line(role: StatementLine["card_role"], amount: number): StatementLine {
     description: "line",
     card_role: role,
     amount: { amount, currency: "BRL" },
+    provisional: false,
   };
 }
 

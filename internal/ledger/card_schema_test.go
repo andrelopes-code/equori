@@ -70,6 +70,20 @@ func TestDBAcceptsBilledCardPosting(t *testing.T) {
 	}
 }
 
+// A136: the statement basis is one of date, owner or institution.
+func TestDBRejectsUnknownStatementBasis(t *testing.T) {
+	t.Parallel()
+	f := newCardFixture(t)
+	id, err := f.recordCard(t, cardPosting{f.card, f.statement, "charge", -100}, cardPosting{account: f.food, amount: 100})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.pool.Exec(t.Context(), `UPDATE ledger_posting SET statement_basis = 'guess' WHERE transaction_id = $1`, id)
+
+	requireViolation(t, err, checkViolation, "statement_basis")
+}
+
 func TestDBRejectsCardPostingWithoutStatement(t *testing.T) {
 	t.Parallel()
 	f := newCardFixture(t)

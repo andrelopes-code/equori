@@ -52,9 +52,13 @@ func (s *Service) Statement(ctx context.Context, userID int64, id uuid.UUID) (St
 		return StatementView{}, domain.Account{}, nil, err
 	}
 	for _, v := range views {
-		if v.ID == id {
-			return v, a, postings, nil
+		if v.ID != id {
+			continue
 		}
+		for i, p := range postings {
+			postings[i].Provisional = domain.Provisional(p.Basis, p.Date, v.Input.Closing, v.Reconciled, p.Installment != nil)
+		}
+		return v, a, postings, nil
 	}
 	return StatementView{}, domain.Account{}, nil, ErrNotFound
 }
