@@ -1,4 +1,4 @@
-// Package web embeds the built single-page application (ADR 008).
+// Package web embeds the built single-page application (ADR 028).
 package web
 
 import (

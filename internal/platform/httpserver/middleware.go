@@ -39,7 +39,7 @@ func Middleware(h http.Handler, log *slog.Logger, limits ...BodyLimit) http.Hand
 }
 
 // securityHeaders are set before the handler runs, so every response carries them,
-// including problems written by the middleware itself (ADR 007, C9; ADR 008).
+// including problems written by the middleware itself (ADR 007, C9; ADR 028).
 func securityHeaders(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		h := w.Header()

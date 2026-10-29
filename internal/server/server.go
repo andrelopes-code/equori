@@ -49,7 +49,7 @@ type Config struct {
 	// Web holds the built single-page application; nil answers 404 outside /api/.
 	Web fs.FS
 	// WebDevPort, when set, redirects every path outside /api/ to the Vite server on that port
-	// instead of serving Web (ADR 008, development).
+	// instead of serving Web (ADR 028, development).
 	WebDevPort int
 	// APIDocs registers GET /docs and GET /openapi.yaml.
 	APIDocs bool

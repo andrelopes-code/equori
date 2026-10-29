@@ -1,6 +1,6 @@
 /* Paints the stored scheme's surface and the brand mark before the application loads. #0c0c0f and
    #f9fafe are --slotted-surface in the dark and light schemes (equori.gen.css). The CSP of
-   ADR 008 forbids inline styles, so this is a file. React replaces the contents of #root. */
+   ADR 028 forbids inline styles, so this is a file. React replaces the contents of #root. */
 html {
   background-color: #0c0c0f;
   color: #f9fafe;

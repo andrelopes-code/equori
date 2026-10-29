@@ -71,7 +71,7 @@ func serveFile(w http.ResponseWriter, r *http.Request, fsys fs.FS, name string) 
 	}
 	switch {
 	case name == indexName || name == "sw.js":
-		// The browser must see a new service worker on the next load (ADR 008, W11; ADR 022, P2).
+		// The browser must see a new service worker on the next load (ADR 028, W11; ADR 022, P2).
 		w.Header().Set("Cache-Control", "no-cache")
 	case strings.HasPrefix(name, assetsDir+"/"):
 		// Vite names every file under assets/ by its content hash.
@@ -87,7 +87,7 @@ func serveFile(w http.ResponseWriter, r *http.Request, fsys fs.FS, name string) 
 
 // DevRedirect answers every GET and HEAD with a temporary redirect to the Vite server on port
 // of the request's host, keeping the path and the query, so a page opened on the
-// application's port shows the current sources (ADR 008, development).
+// application's port shows the current sources (ADR 028, development).
 func DevRedirect(port int) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet && r.Method != http.MethodHead {

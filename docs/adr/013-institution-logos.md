@@ -5,7 +5,7 @@
 
 ## Context
 
-An account names its institution only by text. The account picker of the entry form draws a mark per account, and a mark made of two letters does not identify Nubank, Mercado Pago or Itaú at a glance. `ledger_institution` holds `name` and a free-text `code`; neither identifies the institution outside the user's own data. ADR 008-web-interface serves the application under `default-src 'self'`, so a logo cannot load from a third-party origin, and a request to a CDN would tell a third party which institutions the user holds.
+An account names its institution only by text. The account picker of the entry form draws a mark per account, and a mark made of two letters does not identify Nubank, Mercado Pago or Itaú at a glance. `ledger_institution` holds `name` and a free-text `code`; neither identifies the institution outside the user's own data. ADR 028 serves the application under `default-src 'self'`, so a logo cannot load from a third-party origin, and a request to a CDN would tell a third party which institutions the user holds.
 
 The ISPB is the eight-digit identifier the Banco Central do Brasil gives every participant of the payment system (STR and Pix). It is stable across renames and covers institutions without a COMPE code.
 

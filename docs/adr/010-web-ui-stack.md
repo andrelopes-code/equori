@@ -5,7 +5,7 @@
 
 ## Context
 
-The web interface needs a component library, client-side routing, server-state caching, charts, and a component test environment. ADR 008 fixes the delivery model: a Vite, React and TypeScript single-page application embedded in the binary.
+The web interface needs a component library, client-side routing, server-state caching, charts, and a component test environment. ADR 028 fixes the delivery model: a Vite, React and TypeScript single-page application embedded in the binary.
 
 ## Decision
 
@@ -47,5 +47,5 @@ Test environment: `web/src/testing/setup.ts` runs before each test file. It regi
 ## Consequences
 
 - Slotted is a beta. Its API changes between betas without deprecation. An upgrade is a decision recorded as an amendment to this ADR.
-- The CSP of ADR 008 (W12) applies to every dependency; a library that needs inline scripts or styles requires an amendment.
+- The CSP of ADR 028 (W12) applies to every dependency; a library that needs inline scripts or styles requires an amendment.
 - `@slotted/react` 0.1.0-beta.2 bundles a CommonJS copy of `react-dom` in the chunk `dist/react-dom-*.js`. The chunk calls `require("react")`, which throws at module evaluation in the browser and leaves `#root` empty. A second `react-dom` copy would also not flush the application renderer. `web/vite.config.ts` registers the plugin `equori:slotted-react-dom`, which replaces the chunk with a re-export of the application's `react-dom`. The plugin is removed when Slotted ships an ESM `react-dom` import. `TestBuiltScriptsHaveNoCommonJSRequire` (`web/embed_test.go`) fails when a built script contains `typeof require`; it skips when `web/dist` holds no scripts.

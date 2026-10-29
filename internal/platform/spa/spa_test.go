@@ -80,7 +80,7 @@ func TestHandlerWithoutIndex(t *testing.T) {
 	}
 }
 
-// ADR 008, development: every path outside /api/ redirects to the Vite server on the same
+// ADR 028, development: every path outside /api/ redirects to the Vite server on the same
 // host, keeping the path and the query.
 func TestDevRedirect(t *testing.T) {
 	t.Parallel()

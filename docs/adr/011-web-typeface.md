@@ -5,7 +5,7 @@
 
 ## Context
 
-The Slotted default theme names `'Geist Variable'` in `--slotted-font-family-sans` and `'Geist Mono Variable'` in `--slotted-font-family-mono`, and ships no font file. Without the files every browser falls back to its system face, so the interface differs per platform and the tabular figures of amounts depend on that face. ADR 008-web-interface serves the application under `default-src 'self'`, so a font cannot load from a third-party origin.
+The Slotted default theme names `'Geist Variable'` in `--slotted-font-family-sans` and `'Geist Mono Variable'` in `--slotted-font-family-mono`, and ships no font file. Without the files every browser falls back to its system face, so the interface differs per platform and the tabular figures of amounts depend on that face. ADR 028 serves the application under `default-src 'self'`, so a font cannot load from a third-party origin.
 
 ## Decision
 

@@ -105,7 +105,7 @@ describe("index.html boot script", () => {
     );
   });
 
-  it("holds no inline script, inline style or style attribute, which the CSP of ADR 008 blocks", () => {
+  it("holds no inline script, inline style or style attribute, which the CSP of ADR 028 blocks", () => {
     expect(html).not.toMatch(/<script(?![^>]*\bsrc=)[^>]*>/);
     expect(html).not.toMatch(/<style[\s>]/);
     expect(html).not.toMatch(/\sstyle=/);

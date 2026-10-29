@@ -10,7 +10,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/apitest"
 )
 
-// ADR 008.
+// ADR 028.
 func TestWebIsServedOutsideAPI(t *testing.T) {
 	t.Parallel()
 	const index = `<!doctype html><div id="root"></div>`
@@ -61,7 +61,7 @@ func TestWebServesManifestAndIcon(t *testing.T) {
 	}
 }
 
-// ADR 008, development: with the Vite port set, pages redirect to the Vite server, which
+// ADR 028, development: with the Vite port set, pages redirect to the Vite server, which
 // serves the current sources; the API stays here.
 func TestWebRedirectsToTheDevServer(t *testing.T) {
 	t.Parallel()

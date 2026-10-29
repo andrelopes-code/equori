@@ -40,7 +40,7 @@ flowchart LR
 | P8 Currencies and investments | Securities as instruments; prices with the BCB PTAX and B3 COTAHIST feeds; conversion and valued balances; foreign purchases; exchanges; trades at average cost; investment income; Portfolio derived tables; planning in any currency (amendments A58–A72 of `docs/plans/2026-10-17-p8-currencies-investments.md`) | S16, S17, S21, S22, S64–S67 | Scenarios pass; D1 data complete |
 | Regional neutrality | Region and language on the user; registries for calendars, price sources, identifier schemes, jurisdictions, aggregators, encodings and lexicons; locale conventions; regional settings screen (`docs/plans/2026-10-22-regional-neutrality.md`, ADR 016, `docs/contributing/regions.md`) | — | The checklist of `docs/contributing/regions.md` adds a region without editing a module core |
 | P9 Reporting and export | Accrual and cash views; net worth; statement analytics; export and import round trip | S30 | SC6; N13 |
-| Web interface | Separate track once the P2 API contract is stable: SPA embedded in the binary (ADR 008) | — | SC4, N21, N22 |
+| Web interface | Separate track once the P2 API contract is stable: SPA embedded in the binary (ADR 028) | — | SC4, N21, N22 |
 
 ## 9.3 Next step
 

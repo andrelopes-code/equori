@@ -140,7 +140,7 @@ func TestNotFound(t *testing.T) {
 	}
 }
 
-// ADR 007, C9; ADR 008 for non-API responses.
+// ADR 007, C9; ADR 028 for non-API responses.
 func TestMiddlewareSetsSecurityHeaders(t *testing.T) {
 	t.Parallel()
 	common := map[string]string{"X-Content-Type-Options": "nosniff", "Referrer-Policy": "no-referrer"}

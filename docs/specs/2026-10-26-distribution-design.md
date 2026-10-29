@@ -42,7 +42,7 @@ Eleven queries order by a text column (`ORDER BY name`, `ORDER BY lower(name)`).
 
 ### Current packaging and configuration
 
-- `Dockerfile`: web build, then `CGO_ENABLED=0` Go build, then `gcr.io/distroless/static-debian13:nonroot`. The binary embeds the web interface (ADR 008).
+- `Dockerfile`: web build, then `CGO_ENABLED=0` Go build, then `gcr.io/distroless/static-debian13:nonroot`. The binary embeds the web interface (ADR 028).
 - `.github/workflows/release.yml`: on a `v*.*.*` tag, images for linux/amd64 and linux/arm64 on GHCR, tags `X.Y.Z` and `X.Y`, `latest` only for a tag without `-`, and a GitHub release marked pre-release for a tag with `-`. The repository holds no tag.
 - Configuration is environment only (`internal/platform/config`). `EQUORI_DATABASE_URL` is required. `EQUORI_HTTP_ADDR` defaults to `:8080`. An empty `EQUORI_TIMEZONE` resolves to UTC.
 - The first admin is created by `equori user create --admin` (ADR 003). No HTTP setup endpoint exists.
@@ -247,7 +247,7 @@ Managed mode is the mode in which `equori` runs its own PostgreSQL server as a c
 | ID | Rule |
 |---|---|
 | P1 | A service worker at `/sw.js` registers only in a secure context and only in the production build. On install it caches `/` and every `/assets/` file that `/` names. A navigation goes to the network first, stores the answer under `/`, and falls back to the cached `/`. When the stored `/` changes, the cached `/assets/` files are deleted. A request under `/assets/` is answered from the cache first and stored on a miss. No `/api/` response is cached. |
-| P2 | `/sw.js` returns `Cache-Control: no-cache`, like `index.html` (ADR 008, W11). |
+| P2 | `/sw.js` returns `Cache-Control: no-cache`, like `index.html` (ADR 028, W11). |
 | P3 | When the profile request of an authenticated route fails without an HTTP response, the application redirects to `/offline`. That screen holds a text field, the button that queues the text and the list of queued entries of the last user (P4a). |
 | P4 | The queue lives in `localStorage` under `equori.capture.queue`. The entries are short texts, the synchronous API runs in the jsdom test environment without a new dependency, and no service worker reads them. An entry holds `id`, `user_id`, `text`, `default_account_id` (optional), `captured_on` (the device's local date) and `created_at`. Only entries of the signed-in user are listed. |
 | P4a | The session cookie is `HttpOnly` and no API response is cached, so the device keeps its own record of the owner. Each successful load of the profile online stores `id` and `email` of the profile as the device's last user in `localStorage` under `equori.device.user`. Offline, a new entry belongs to the last user, and the offline screen shows that user's email. Logout clears the last user, so a signed-out device queues nothing. A device without a last user shows the offline state without the queue. |
@@ -272,7 +272,7 @@ Managed mode is the mode in which `equori` runs its own PostgreSQL server as a c
 | ADR 001 | Dated amendment: managed mode; minimum major 18; major upgrades remain the host's responsibility in compose and follow V6 in managed mode. |
 | ADR 003 | Dated amendment for C4, only if C4 applies. |
 | ADR 008, integration credentials (`008-integration-credentials.md`) | Dated amendment: the generated `secret.key` and `equori secrets key` of C3. |
-| ADR 008, web interface (`008-web-interface.md`) | Dated amendment: the `/sw.js` rule of P2. |
+| ADR 028, web interface (`028-web-interface.md`) | Dated amendment: the `/sw.js` rule of P2. |
 | Text capture design | Amendment of A109 for `reference_date` (P6). |
 | `docs/domain/01-vision.md` 1.9 | The constraint names the forms of D1. |
 | `docs/domain/08-non-functional-requirements.md` | N24 lists the artifacts of D1. New requirements for B4 (dump of each form restores into each other form) and V4 (refusal of an unknown migration). |
@@ -305,7 +305,7 @@ Each phase ends releasable. The order is a design call.
 | Phase | Content | Depends on |
 |---|---|---|
 | F1 Release foundation | V3, V4 without the managed-mode part of its message, C1, R1 to R4 and R7 without the standalone image, `compose.yaml` pinned to a version, ADR 021 | none |
-| F2 Managed PostgreSQL | D2, C2, C3, D4, the managed-mode part of V4, standalone image and its smoke test, amendments of ADR 001 and of both ADR 008 files that concern it | F1 |
+| F2 Managed PostgreSQL | D2, C2, C3, D4, the managed-mode part of V4, standalone image and its smoke test, amendments of ADR 001 and of ADR 008 and ADR 028 that concern it | F1 |
 | F3 Homebrew | R5, the tap repository, D8, the Safari check of C4 | F2 |
 | F4 Phone | D7, text capture amendment | F1 only for its release; independent of F2 and F3 |
 

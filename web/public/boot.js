@@ -1,6 +1,6 @@
 // Runs before the stylesheet and the application load, so the first paint already holds the
 // stored scheme. The resolution mirrors applyScheme in src/theme/scheme.ts. It is a file, not an
-// inline script, because the CSP of ADR 008 forbids inline scripts.
+// inline script, because the CSP of ADR 028 forbids inline scripts.
 (function () {
   var scheme = "dark";
   try {

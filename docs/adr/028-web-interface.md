@@ -1,4 +1,4 @@
-# ADR 008: Web interface delivery
+# ADR 028: Web interface delivery
 
 - Status: accepted
 - Date: 2026-10-16

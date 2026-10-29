@@ -32,7 +32,7 @@ type Config struct {
 	// SyncInterval is how often the scheduler checks connections for new data (P6 A43).
 	SyncInterval time.Duration
 	// WebDevPort, when set, redirects pages to the Vite server on that port of the same host,
-	// for development (ADR 008); zero serves the embedded application.
+	// for development (ADR 028); zero serves the embedded application.
 	WebDevPort int
 	// GeminiAPIKey enables the Gemini API provider (ADR 009); empty leaves it unregistered.
 	GeminiAPIKey string
