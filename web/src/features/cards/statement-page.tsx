@@ -1,74 +1,30 @@
-import { Button, IconButton, IconButtonLink } from "@slotted/react/button";
-import { ButtonGroup } from "@slotted/react/button-group";
-import { Glyph, Icon } from "@slotted/react/icon";
-import { Menu, MenuContent, MenuItem, MenuTrigger } from "@slotted/react/menu";
 import { Page, PageBody } from "@slotted/react/page";
-import {
-  PageHeader,
-  PageHeaderActions,
-  PageHeaderHeading,
-  PageHeaderMarks,
-  PageHeaderSubheading,
-  PageHeaderTitle,
-  PageHeaderTitleArea,
-  PageHeaderTitleRow,
-} from "@slotted/react/page-header";
 import { Stack } from "@slotted/react/stack";
-import { Tag } from "@slotted/react/tag";
-import { toast } from "@slotted/react/toast";
 import { useQuery } from "@tanstack/react-query";
-import {
-  Link as RouterLink,
-  useNavigate,
-  useParams,
-  useSearch,
-} from "@tanstack/react-router";
+import { useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { useState } from "react";
 
 import { useApi } from "@/api/api-context";
-import { errorText } from "@/api/problem";
-import {
-  statementQuery,
-  statementsQuery,
-  useRemoveStatementFacts,
-} from "@/features/cards/api";
+import { statementQuery, statementsQuery } from "@/features/cards/api";
 import { currentAndUnpaid } from "@/features/cards/card-totals";
+import { ChargeActionDialogs } from "@/features/cards/charge-action-dialogs";
 import { ChargeActions } from "@/features/cards/charge-actions";
 import type { ChargeAction } from "@/features/cards/charge-actions";
-import { DisputeDialog } from "@/features/cards/dispute-dialog";
-import { FactsDialog } from "@/features/cards/facts-dialog";
-import { FinanceDialog } from "@/features/cards/finance-dialog";
-import { PayDialog } from "@/features/cards/pay-dialog";
-import { PlanDrawer } from "@/features/cards/plan-drawer";
-import { ReconcileDialog } from "@/features/cards/reconcile-dialog";
-import { RefundDialog } from "@/features/cards/refund-dialog";
 import { addMonths, currentMonth } from "@/features/cards/reference-months";
+import { StatementDialogs } from "@/features/cards/statement-dialogs";
 import { StatementFigures } from "@/features/cards/statement-figures";
+import { StatementHeader } from "@/features/cards/statement-header";
+import type { StatementDialog } from "@/features/cards/statement-header";
 import { neighbours } from "@/features/cards/statement-groups";
 import { StatementAnalysis } from "@/features/cards/statement-analysis";
 import { StatementLines } from "@/features/cards/statement-lines";
 import { unconfirmedQuery } from "@/features/accounts";
-import {
-  statementStatusTone,
-  statementStatusWords,
-} from "@/features/cards/statement-words";
 import { useScale } from "@/features/setup";
-import { formatDate, formatMonthTitle } from "@/i18n/format";
-import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { QueryError } from "@/ui/query-error";
-import { Presence } from "@/ui/presence";
-import { StepGlyph } from "@/ui/step-glyph";
-import { PageBack } from "@/ui/page-back";
-
-type Dialog = "pay" | "finance" | "reconcile" | "facts";
-
-const owing = new Set(["closed", "partially_paid", "overdue"]);
 
 // One statement: its terms, its lines by day, and the commands its state allows.
 export function StatementPage() {
-  const t = useT();
-  const [locale] = useAppLocale();
   const api = useApi();
   const today = useToday();
   const navigate = useNavigate();
@@ -85,8 +41,7 @@ export function StatementPage() {
   );
   // A secondary mark: a failed read leaves the lines unmarked.
   const unconfirmed = useQuery(unconfirmedQuery(api, accountId));
-  const remove = useRemoveStatementFacts();
-  const [dialog, setDialog] = useState<Dialog | null>(
+  const [dialog, setDialog] = useState<StatementDialog | null>(
     search.pay === true ? "pay" : null,
   );
   const [action, setAction] = useState<ChargeAction | null>(null);
@@ -108,173 +63,15 @@ export function StatementPage() {
       });
     }
   };
-  const step = (
-    id: string | undefined,
-    key: "statement.previous" | "statement.next",
-    direction: "previous" | "next",
-  ) => {
-    const glyph = (
-      <Icon>
-        <StepGlyph direction={direction} />
-      </Icon>
-    );
-    return id === undefined ? (
-      <IconButton aria-label={t(key)} disabled>
-        {glyph}
-      </IconButton>
-    ) : (
-      <IconButtonLink
-        aria-label={t(key)}
-        render={(props) => (
-          <RouterLink
-            {...props}
-            to="/cards/$accountId/statements/$statementId"
-            params={{ accountId, statementId: id }}
-          />
-        )}
-      >
-        {glyph}
-      </IconButtonLink>
-    );
-  };
-
   return (
     <Page width="full">
-      <PageHeader size="lg">
-        <PageHeaderTitleArea>
-          <PageBack
-            render={(props) => (
-              <RouterLink
-                {...props}
-                to="/cards/$accountId"
-                params={{ accountId }}
-              />
-            )}
-          >
-            {t("nav.cards")}
-          </PageBack>
-          <PageHeaderTitleRow>
-            <PageHeaderTitle>
-              <PageHeaderHeading>
-                {s === undefined
-                  ? t("statement.title")
-                  : t("statement.titleOf", {
-                      month: formatMonthTitle(s.reference, locale),
-                    })}
-              </PageHeaderHeading>
-              {s !== undefined && (
-                <PageHeaderMarks>
-                  <Tag size="sm" tone={statementStatusTone[s.status]}>
-                    {t(statementStatusWords[s.status])}
-                  </Tag>
-                  {s.reconciled && (
-                    <Tag size="sm" tone="success">
-                      {t("statement.reconciled")}
-                    </Tag>
-                  )}
-                </PageHeaderMarks>
-              )}
-              {s !== undefined && (
-                <PageHeaderSubheading>
-                  {t("cards.closesDue", {
-                    closing: formatDate(s.closing_date, locale),
-                    due: formatDate(s.due_date, locale),
-                  })}
-                </PageHeaderSubheading>
-              )}
-            </PageHeaderTitle>
-            <PageHeaderActions>
-              <ButtonGroup
-                aria-label={t("statement.steps")}
-                variant="outline"
-                tone="secondary"
-              >
-                {step(around.previous, "statement.previous", "previous")}
-                {step(around.next, "statement.next", "next")}
-              </ButtonGroup>
-              {s !== undefined && owing.has(s.status) && (
-                <Button
-                  variant="outline"
-                  tone="secondary"
-                  onClick={() => {
-                    setDialog("finance");
-                  }}
-                >
-                  {t("statement.finance")}
-                </Button>
-              )}
-              {s !== undefined && owing.has(s.status) && !s.reconciled && (
-                <Button
-                  variant="outline"
-                  tone="secondary"
-                  onClick={() => {
-                    setDialog("reconcile");
-                  }}
-                >
-                  {t("statement.reconcile")}
-                </Button>
-              )}
-              {s !== undefined && s.status !== "financed" && (
-                <Button
-                  variant="outline"
-                  tone="secondary"
-                  onClick={() => {
-                    setDialog("facts");
-                  }}
-                >
-                  {t("statement.facts")}
-                </Button>
-              )}
-              {s !== undefined &&
-                s.status !== "financed" &&
-                s.status !== "paid" && (
-                  <Button
-                    onClick={() => {
-                      setDialog("pay");
-                    }}
-                  >
-                    {t("statement.pay")}
-                  </Button>
-                )}
-              {s?.institution?.source === "owner" && (
-                <Menu>
-                  <MenuTrigger
-                    render={(props) => (
-                      <IconButton
-                        {...props}
-                        variant="ghost"
-                        tone="secondary"
-                        aria-label={t("account.more")}
-                      >
-                        <Icon>
-                          <Glyph name="ellipsis" />
-                        </Icon>
-                      </IconButton>
-                    )}
-                  />
-                  <MenuContent>
-                    <MenuItem
-                      tone="danger"
-                      onSelect={() => {
-                        remove
-                          .mutateAsync(statementId)
-                          .catch((caught: unknown) => {
-                            toast.show({
-                              tone: "danger",
-                              title: errorText(caught, t),
-                            });
-                          });
-                      }}
-                    >
-                      {t("statement.removeFacts")}
-                    </MenuItem>
-                  </MenuContent>
-                </Menu>
-              )}
-            </PageHeaderActions>
-          </PageHeaderTitleRow>
-        </PageHeaderTitleArea>
-      </PageHeader>
+      <StatementHeader
+        accountId={accountId}
+        statementId={statementId}
+        statement={s}
+        around={around}
+        onDialog={setDialog}
+      />
       <PageBody>
         {statement.isError ? (
           <QueryError
@@ -311,124 +108,19 @@ export function StatementPage() {
           </Stack>
         )}
       </PageBody>
-      <Presence
-        value={s !== undefined && dialog === "pay" ? dialog : undefined}
-      >
-        {() =>
-          s === undefined ? null : (
-            <PayDialog
-              statement={s}
-              scale={sc}
-              onCancel={close}
-              onDone={() => {
-                close();
-                toast.show({ tone: "success", title: t("pay.done") });
-              }}
-            />
-          )
-        }
-      </Presence>
-      <Presence
-        value={s !== undefined && dialog === "finance" ? dialog : undefined}
-      >
-        {() =>
-          s === undefined ? null : (
-            <FinanceDialog
-              statement={s}
-              scale={sc}
-              onCancel={close}
-              onDone={() => {
-                close();
-                toast.show({ tone: "success", title: t("finance.done") });
-              }}
-            />
-          )
-        }
-      </Presence>
-      <Presence
-        value={s !== undefined && dialog === "reconcile" ? dialog : undefined}
-      >
-        {() =>
-          s === undefined ? null : (
-            <ReconcileDialog
-              statement={s}
-              scale={sc}
-              onCancel={close}
-              onFacts={() => {
-                setDialog("facts");
-              }}
-              onDone={() => {
-                close();
-                toast.show({
-                  tone: "success",
-                  title: t("reconcileStatement.done"),
-                });
-              }}
-            />
-          )
-        }
-      </Presence>
-      <Presence
-        value={s !== undefined && dialog === "facts" ? dialog : undefined}
-      >
-        {() =>
-          s === undefined ? null : (
-            <FactsDialog
-              statement={s}
-              scale={sc}
-              onCancel={close}
-              onDone={() => {
-                close();
-                toast.show({ tone: "success", title: t("facts.done") });
-              }}
-            />
-          )
-        }
-      </Presence>
-      <Presence value={action?.kind === "refund" ? action : undefined}>
-        {(a) => (
-          <RefundDialog
-            line={a.line}
-            scale={sc}
-            onCancel={endAction}
-            onDone={() => {
-              endAction();
-              toast.show({ tone: "success", title: t("refund.done") });
-            }}
-          />
-        )}
-      </Presence>
-      <Presence value={action?.kind === "dispute" ? action : undefined}>
-        {(a) => (
-          <DisputeDialog
-            line={a.line}
-            open={a.open}
-            onCancel={endAction}
-            onDone={() => {
-              endAction();
-              toast.show({
-                tone: "success",
-                title: t(
-                  a.open === undefined
-                    ? "dispute.openDone"
-                    : "dispute.resolveDone",
-                ),
-              });
-            }}
-          />
-        )}
-      </Presence>
-      <Presence value={action?.kind === "plan" ? action : undefined}>
-        {(a) => (
-          <PlanDrawer
-            planId={a.planId}
-            name={a.line.description}
-            openReference={openReference}
-            scale={sc}
-            onClose={endAction}
-          />
-        )}
-      </Presence>
+      <StatementDialogs
+        statement={s}
+        dialog={dialog}
+        scale={sc}
+        onClose={close}
+        onDialog={setDialog}
+      />
+      <ChargeActionDialogs
+        action={action}
+        scale={sc}
+        openReference={openReference}
+        onEnd={endAction}
+      />
     </Page>
   );
 }
