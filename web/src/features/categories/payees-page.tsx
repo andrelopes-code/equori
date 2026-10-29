@@ -27,7 +27,6 @@ import { PayeeActions } from "@/features/categories/payee-actions";
 import { NewPayeeDialog } from "@/features/categories/new-payee-dialog";
 import { payeesQuery } from "@/features/setup";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
 
 type Payee = components["schemas"]["Payee"];
 
@@ -41,7 +40,6 @@ export function PayeesPage() {
   const t = useT();
   const [locale] = useAppLocale();
   const api = useApi();
-  const compact = useMediaQuery(compactQuery);
   const payees = useQuery(payeesQuery(api));
   const aliases = useQuery(payeeAliasesQuery(api));
   const rename = useRenamePayee();
@@ -221,7 +219,7 @@ export function PayeesPage() {
               rows={rows}
               rowKey="id"
               loading={payees.isPending}
-              {...(compact ? {} : { height: "100%" })}
+              height="100%"
               selectionMode="multiple"
               value={selection}
               onValueChange={(value) => {

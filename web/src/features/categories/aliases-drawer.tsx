@@ -6,7 +6,6 @@ import {
   DrawerDescription,
   DrawerHeader,
   DrawerPanel,
-  DrawerResizer,
   DrawerTitle,
 } from "@slotted/react/drawer";
 import { Field, FieldLabel } from "@slotted/react/field";
@@ -32,7 +31,6 @@ import type { components } from "@/api/schema.gen";
 import styles from "@/features/categories/aliases-drawer.module.css";
 import { useCreateAlias, useDeleteAlias } from "@/features/categories/api";
 import { ChoiceSelect } from "@/ui/choice-select";
-import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
 import type { MessageKey } from "@/i18n/catalog.en";
 import { useT } from "@/i18n/i18n-provider";
 
@@ -53,7 +51,6 @@ export function AliasesDrawer({
   onClose: () => void;
 }) {
   const t = useT();
-  const phone = useMediaQuery(compactQuery);
   const create = useCreateAlias();
   const remove = useDeleteAlias();
   const [pattern, setPattern] = useState("");
@@ -68,11 +65,10 @@ export function AliasesDrawer({
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
-      side={phone ? "bottom" : "end"}
-      size={phone ? "content" : "md"}
+      side="end"
+      size="md"
     >
       <DrawerPanel>
-        {phone && <DrawerResizer />}
         <DrawerHeader>
           <DrawerTitle>{t("alias.title", { name: payee.name })}</DrawerTitle>
           <DrawerDescription>{t("alias.description")}</DrawerDescription>

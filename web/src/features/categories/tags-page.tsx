@@ -24,7 +24,6 @@ import { MergeTagsDialog } from "@/features/categories/merge-tags-dialog";
 import { TagActions } from "@/features/categories/tag-actions";
 import { tagsQuery } from "@/features/transactions";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
 
 interface TagRow {
   name: string;
@@ -36,7 +35,6 @@ export function TagsPage() {
   const t = useT();
   const [locale] = useAppLocale();
   const api = useApi();
-  const compact = useMediaQuery(compactQuery);
   const tags = useQuery(tagsQuery(api));
   const rename = useRenameTag();
   const [query, setQuery] = useState("");
@@ -172,7 +170,7 @@ export function TagsPage() {
               rows={rows}
               rowKey="name"
               loading={tags.isPending}
-              {...(compact ? {} : { height: "100%" })}
+              height="100%"
               selectionMode="multiple"
               value={selection}
               onValueChange={(value) => {

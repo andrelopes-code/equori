@@ -10,11 +10,4 @@
   .add > :first-child {
     grid-column: 1 / -1;
   }
-
-  @media (max-width: 599px) {
-    .add {
-      grid-template-columns: minmax(0, 1fr);
-      align-items: stretch;
-    }
-  }
 }
