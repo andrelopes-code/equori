@@ -41,6 +41,10 @@ func (t Transaction) ToLine(accountID uuid.UUID, amount int64, date time.Time) (
 	for i, p := range t.Postings {
 		// Correct moves the record links of the current postings (keepRecordLinks).
 		p.ID, p.Weight, p.StatementID, p.ExternalRecordID = uuid.Nil, money.Money{}, uuid.Nil, uuid.Nil
+		if !date.Equal(t.Date) && (p.StatementBasis == BasisDate || p.StatementBasis == "") {
+			// A136: a statement the date chose follows the line's date.
+			p.Statement = nil
+		}
 		if p.Amount.Currency() != old.Currency() {
 			return Transaction{}, false, invalid("postings", "a transaction in several currencies cannot take a line's amount")
 		}

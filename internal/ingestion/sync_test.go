@@ -482,3 +482,27 @@ func TestReviewMatchBillsLine_S176(t *testing.T) {
 		t.Errorf("other charge on %s, want 2026-11", p.Statement)
 	}
 }
+
+// A136: a line without a bill that moves a charge's date past the closing moves its statement
+// when the date chose it.
+func TestReviewMatchMovesADateStatement(t *testing.T) {
+	t.Parallel()
+	f := newSyncFixture(t)
+	card := f.h.Card("Nubank card", 3, 10, "next")
+	food := f.h.Account("Food", "expense", "", nil)
+	f.mapTo(pluggy.SubtypeCard, card)
+	chosen := f.h.Record("2026-11-02", apitest.Posting(card, -713), apitest.Posting(food, 713))
+	f.h.Record("2026-11-02", apitest.Posting(card, -713), apitest.Posting(food, 713))
+	f.line(pluggy.SubtypeCard, cardLine("card-1", "2026-11-04", "7.13", "POSTED", nil))
+	f.sync()
+	var record string
+	if err := f.h.Pool.QueryRow(t.Context(), `SELECT id::text FROM ingestion_external_record WHERE external_id = 'card-1' AND state = 'needs_review'`).Scan(&record); err != nil {
+		t.Fatalf("record in review: %v", err)
+	}
+
+	f.h.MustDo(http.MethodPost, "/api/v1/external-records/"+record+"/resolve", map[string]any{"action": "match", "transaction_id": chosen}, http.StatusOK, nil)
+
+	if p := f.cardPosting(chosen, card); p.Statement != "2026-12" {
+		t.Fatalf("matched charge on %s, want 2026-12", p.Statement)
+	}
+}
