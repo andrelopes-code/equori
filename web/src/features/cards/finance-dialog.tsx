@@ -10,7 +10,6 @@ import {
 } from "@slotted/react/dialog";
 import { Field, FieldDescription, FieldLabel } from "@slotted/react/field";
 import { InlineMessage } from "@slotted/react/inline-message";
-import { Stack } from "@slotted/react/stack";
 import { useId, useState } from "react";
 
 import { errorText } from "@/api/problem";
@@ -21,6 +20,8 @@ import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { ChoiceSelect } from "@/ui/choice-select";
 import { DateInput } from "@/ui/date-input";
+import widths from "@/ui/field-width.module.css";
+import { FormLayout } from "@/ui/form-layout";
 import { MoneyInput } from "@/ui/money-input";
 import { useStableCallback } from "@/ui/use-stable-callback";
 import { useOverlayOpen } from "@/ui/use-overlay-open";
@@ -92,13 +93,15 @@ export function FinanceDialog({
                 });
             }}
           >
-            <Stack gap={4}>
+            <FormLayout>
               {error !== null && (
                 <InlineMessage tone="danger">{error}</InlineMessage>
               )}
+
               <Field>
                 <FieldLabel>{t("finance.count")}</FieldLabel>
                 <ChoiceSelect
+                  className={widths.short}
                   label={t("finance.count")}
                   choices={counts.map((n) => ({
                     value: String(n),
@@ -111,9 +114,12 @@ export function FinanceDialog({
                   }}
                 />
               </Field>
+
               <Field>
                 <FieldLabel>{t("finance.installment")}</FieldLabel>
                 <MoneyInput
+                  size="field"
+                  className={widths.medium}
                   value={each}
                   onChange={setEach}
                   currency={currency}
@@ -131,11 +137,12 @@ export function FinanceDialog({
                   </FieldDescription>
                 )}
               </Field>
+
               <Field>
                 <FieldLabel>{t("finance.date")}</FieldLabel>
                 <DateInput name="date" value={date} onChange={setDate} />
               </Field>
-            </Stack>
+            </FormLayout>
           </form>
         </DialogBody>
         <DialogFooter>

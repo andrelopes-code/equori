@@ -11,7 +11,6 @@ import {
 import { Field, FieldDescription, FieldLabel } from "@slotted/react/field";
 import { InlineMessage } from "@slotted/react/inline-message";
 import { Inline } from "@slotted/react/inline";
-import { Stack } from "@slotted/react/stack";
 import { useQuery } from "@tanstack/react-query";
 import { useId, useState } from "react";
 
@@ -25,6 +24,8 @@ import { formatMonthTitle } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { DateInput } from "@/ui/date-input";
+import widths from "@/ui/field-width.module.css";
+import { FormLayout } from "@/ui/form-layout";
 import { MoneyInput } from "@/ui/money-input";
 import { useStableCallback } from "@/ui/use-stable-callback";
 import { useOverlayOpen } from "@/ui/use-overlay-open";
@@ -116,13 +117,16 @@ export function PayDialog({
                 });
             }}
           >
-            <Stack gap={4}>
+            <FormLayout>
               {error !== null && (
                 <InlineMessage tone="danger">{error}</InlineMessage>
               )}
+
               <Field>
                 <FieldLabel>{t("pay.amount")}</FieldLabel>
                 <MoneyInput
+                  size="field"
+                  className={widths.medium}
                   value={amount}
                   onChange={setAmount}
                   currency={currency}
@@ -156,6 +160,7 @@ export function PayDialog({
                   </FieldDescription>
                 )}
               </Field>
+
               {accounts.data !== undefined && (
                 <Field>
                   <FieldLabel>{t("pay.from")}</FieldLabel>
@@ -177,11 +182,12 @@ export function PayDialog({
                   />
                 </Field>
               )}
+
               <Field>
                 <FieldLabel>{t("pay.date")}</FieldLabel>
                 <DateInput name="date" value={date} onChange={setDate} />
               </Field>
-            </Stack>
+            </FormLayout>
           </form>
         </DialogBody>
         <DialogFooter>

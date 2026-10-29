@@ -2,7 +2,6 @@ import { Button } from "@slotted/react/button";
 import { Field, FieldLabel } from "@slotted/react/field";
 import { InlineMessage } from "@slotted/react/inline-message";
 import { Inline } from "@slotted/react/inline";
-import { Stack } from "@slotted/react/stack";
 import { useState } from "react";
 
 import { errorText } from "@/api/problem";
@@ -10,6 +9,8 @@ import { useCreateCreditLimit } from "@/features/cards/api";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { DateInput } from "@/ui/date-input";
+import widths from "@/ui/field-width.module.css";
+import { FormLayout } from "@/ui/form-layout";
 import { MoneyInput } from "@/ui/money-input";
 
 // A new version of the credit limit from a day on; the free limit follows from it.
@@ -50,10 +51,12 @@ export function CreditLimitForm({
           });
       }}
     >
-      <Stack gap={4}>
+      <FormLayout>
         <Field>
           <FieldLabel>{t("accountForm.limit")}</FieldLabel>
           <MoneyInput
+            size="field"
+            className={widths.medium}
             value={amount}
             onChange={setAmount}
             currency={currency}
@@ -61,10 +64,12 @@ export function CreditLimitForm({
             sign="neutral"
           />
         </Field>
+
         <Field>
           <FieldLabel>{t("card.limitFrom")}</FieldLabel>
           <DateInput name="effective_from" value={from} onChange={setFrom} />
         </Field>
+
         {error !== null && <InlineMessage tone="danger">{error}</InlineMessage>}
         <Inline gap={3}>
           <Button
@@ -78,7 +83,7 @@ export function CreditLimitForm({
             {t("detail.cancel")}
           </Button>
         </Inline>
-      </Stack>
+      </FormLayout>
     </form>
   );
 }

@@ -10,7 +10,6 @@ import {
 } from "@slotted/react/dialog";
 import { Field, FieldDescription, FieldLabel } from "@slotted/react/field";
 import { InlineMessage } from "@slotted/react/inline-message";
-import { Stack } from "@slotted/react/stack";
 import { TextField } from "@slotted/react/text-field";
 import { useId, useState } from "react";
 
@@ -22,6 +21,8 @@ import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { ChoiceSelect } from "@/ui/choice-select";
 import { DateInput } from "@/ui/date-input";
+import widths from "@/ui/field-width.module.css";
+import { FormLayout } from "@/ui/form-layout";
 import { MoneyInput } from "@/ui/money-input";
 import { useStableCallback } from "@/ui/use-stable-callback";
 import { useOverlayOpen } from "@/ui/use-overlay-open";
@@ -112,13 +113,16 @@ export function InstallmentPurchaseDialog({
                 });
             }}
           >
-            <Stack gap={4}>
+            <FormLayout>
               {error !== null && (
                 <InlineMessage tone="danger">{error}</InlineMessage>
               )}
+
               <Field>
                 <FieldLabel>{t("installments.total")}</FieldLabel>
                 <MoneyInput
+                  size="field"
+                  className={widths.medium}
                   value={total}
                   onChange={setTotal}
                   currency={account.currency}
@@ -126,6 +130,7 @@ export function InstallmentPurchaseDialog({
                   sign="expense"
                 />
               </Field>
+
               <Field>
                 <FieldLabel>{t("installments.description")}</FieldLabel>
                 <TextField
@@ -136,6 +141,7 @@ export function InstallmentPurchaseDialog({
                   }}
                 />
               </Field>
+
               <Field required>
                 <FieldLabel>{t("installments.category")}</FieldLabel>
                 <CategoryPicker
@@ -146,9 +152,11 @@ export function InstallmentPurchaseDialog({
                   portal={false}
                 />
               </Field>
+
               <Field>
                 <FieldLabel>{t("installments.count")}</FieldLabel>
                 <ChoiceSelect
+                  className={widths.short}
                   label={t("installments.count")}
                   choices={counts.map((n) => ({
                     value: String(n),
@@ -170,9 +178,12 @@ export function InstallmentPurchaseDialog({
                   </FieldDescription>
                 )}
               </Field>
+
               <Field>
                 <FieldLabel>{t("installments.interest")}</FieldLabel>
                 <MoneyInput
+                  size="field"
+                  className={widths.medium}
                   value={interest}
                   onChange={setInterest}
                   currency={account.currency}
@@ -183,11 +194,12 @@ export function InstallmentPurchaseDialog({
                   {t("installments.interestHint")}
                 </FieldDescription>
               </Field>
+
               <Field>
                 <FieldLabel>{t("installments.date")}</FieldLabel>
                 <DateInput name="date" value={date} onChange={setDate} />
               </Field>
-            </Stack>
+            </FormLayout>
           </form>
         </DialogBody>
         <DialogFooter>

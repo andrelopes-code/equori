@@ -10,7 +10,6 @@ import {
 } from "@slotted/react/dialog";
 import { Field, FieldDescription, FieldLabel } from "@slotted/react/field";
 import { InlineMessage } from "@slotted/react/inline-message";
-import { Stack } from "@slotted/react/stack";
 import { useId, useState } from "react";
 
 import { errorText } from "@/api/problem";
@@ -19,6 +18,8 @@ import { useRefund } from "@/features/cards/api";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { DateInput } from "@/ui/date-input";
+import widths from "@/ui/field-width.module.css";
+import { FormLayout } from "@/ui/form-layout";
 import { MoneyInput } from "@/ui/money-input";
 import { useStableCallback } from "@/ui/use-stable-callback";
 import { useOverlayOpen } from "@/ui/use-overlay-open";
@@ -87,13 +88,16 @@ export function RefundDialog({
                 });
             }}
           >
-            <Stack gap={4}>
+            <FormLayout>
               {error !== null && (
                 <InlineMessage tone="danger">{error}</InlineMessage>
               )}
+
               <Field invalid={tooMuch}>
                 <FieldLabel>{t("refund.amount")}</FieldLabel>
                 <MoneyInput
+                  size="field"
+                  className={widths.medium}
                   value={amount}
                   onChange={setAmount}
                   currency={currency}
@@ -104,11 +108,12 @@ export function RefundDialog({
                   {tooMuch ? t("refund.tooMuch") : t("refund.amountHint")}
                 </FieldDescription>
               </Field>
+
               <Field>
                 <FieldLabel>{t("refund.date")}</FieldLabel>
                 <DateInput name="date" value={date} onChange={setDate} />
               </Field>
-            </Stack>
+            </FormLayout>
           </form>
         </DialogBody>
         <DialogFooter>

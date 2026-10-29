@@ -10,7 +10,6 @@ import {
 } from "@slotted/react/dialog";
 import { Field, FieldLabel } from "@slotted/react/field";
 import { InlineMessage } from "@slotted/react/inline-message";
-import { Stack } from "@slotted/react/stack";
 import { useId, useState } from "react";
 
 import { errorText } from "@/api/problem";
@@ -18,6 +17,8 @@ import type { components } from "@/api/schema.gen";
 import { useSetStatementFacts } from "@/features/cards/api";
 import { useT } from "@/i18n/i18n-provider";
 import { DateInput } from "@/ui/date-input";
+import widths from "@/ui/field-width.module.css";
+import { FormLayout } from "@/ui/form-layout";
 import { MoneyInput } from "@/ui/money-input";
 import { useStableCallback } from "@/ui/use-stable-callback";
 import { useOverlayOpen } from "@/ui/use-overlay-open";
@@ -87,13 +88,16 @@ export function FactsDialog({
                 });
             }}
           >
-            <Stack gap={4}>
+            <FormLayout>
               {error !== null && (
                 <InlineMessage tone="danger">{error}</InlineMessage>
               )}
+
               <Field>
                 <FieldLabel>{t("facts.total")}</FieldLabel>
                 <MoneyInput
+                  size="field"
+                  className={widths.medium}
                   value={total}
                   onChange={setTotal}
                   currency={currency}
@@ -101,9 +105,12 @@ export function FactsDialog({
                   sign="neutral"
                 />
               </Field>
+
               <Field>
                 <FieldLabel>{t("facts.minimum")}</FieldLabel>
                 <MoneyInput
+                  size="field"
+                  className={widths.medium}
                   value={minimum}
                   onChange={setMinimum}
                   currency={currency}
@@ -111,6 +118,7 @@ export function FactsDialog({
                   sign="neutral"
                 />
               </Field>
+
               <Field>
                 <FieldLabel>{t("facts.closing")}</FieldLabel>
                 <DateInput
@@ -120,6 +128,7 @@ export function FactsDialog({
                   shortcuts={false}
                 />
               </Field>
+
               <Field>
                 <FieldLabel>{t("facts.due")}</FieldLabel>
                 <DateInput
@@ -129,7 +138,7 @@ export function FactsDialog({
                   shortcuts={false}
                 />
               </Field>
-            </Stack>
+            </FormLayout>
           </form>
         </DialogBody>
         <DialogFooter>

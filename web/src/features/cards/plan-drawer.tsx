@@ -42,6 +42,8 @@ import { formatMonthTitle } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { DateInput } from "@/ui/date-input";
+import widths from "@/ui/field-width.module.css";
+import { FormLayout } from "@/ui/form-layout";
 import { MoneyInput } from "@/ui/money-input";
 import { QueryError } from "@/ui/query-error";
 import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
@@ -238,7 +240,7 @@ export function PlanDrawer({
                     submit();
                   }}
                 >
-                  <Stack gap={4}>
+                  <FormLayout>
                     {error !== null && (
                       <InlineMessage tone="danger">{error}</InlineMessage>
                     )}
@@ -261,6 +263,8 @@ export function PlanDrawer({
                       <Field>
                         <FieldLabel>{t("plan.paid")}</FieldLabel>
                         <MoneyInput
+                          size="field"
+                          className={widths.medium}
                           value={quote.sum - quote.discount}
                           onChange={setPaid}
                           currency={currency}
@@ -282,7 +286,7 @@ export function PlanDrawer({
                       <FieldLabel>{t("plan.date")}</FieldLabel>
                       <DateInput name="date" value={date} onChange={setDate} />
                     </Field>
-                  </Stack>
+                  </FormLayout>
                 </form>
               )}
             </Stack>

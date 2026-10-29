@@ -11,7 +11,6 @@ import {
 import { Field, FieldLabel } from "@slotted/react/field";
 import { InlineMessage } from "@slotted/react/inline-message";
 import { Radio, RadioGroup } from "@slotted/react/radio-group";
-import { Stack } from "@slotted/react/stack";
 import { useId, useState } from "react";
 
 import { errorText } from "@/api/problem";
@@ -20,6 +19,7 @@ import { useOpenDispute, useResolveDispute } from "@/features/cards/api";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { DateInput } from "@/ui/date-input";
+import { FormLayout } from "@/ui/form-layout";
 import { useStableCallback } from "@/ui/use-stable-callback";
 import { useOverlayOpen } from "@/ui/use-overlay-open";
 
@@ -90,10 +90,11 @@ export function DisputeDialog({
               });
             }}
           >
-            <Stack gap={4}>
+            <FormLayout>
               {error !== null && (
                 <InlineMessage tone="danger">{error}</InlineMessage>
               )}
+
               {resolving && (
                 <Field>
                   <FieldLabel>{t("dispute.outcome")}</FieldLabel>
@@ -114,13 +115,14 @@ export function DisputeDialog({
                   </RadioGroup>
                 </Field>
               )}
+
               <Field>
                 <FieldLabel>
                   {t(resolving ? "dispute.resolvedOn" : "dispute.openedOn")}
                 </FieldLabel>
                 <DateInput name="date" value={date} onChange={setDate} />
               </Field>
-            </Stack>
+            </FormLayout>
           </form>
         </DialogBody>
         <DialogFooter>
