@@ -195,4 +195,6 @@ A ordem das telas segue o uso: transações, contas, cartões, visão geral, dep
 
 5. Aprovação: o dono delegou a aprovação das tabelas de curadoria (5.4, passo 2). Cada tabela é conferida contra as seções 5.1 a 5.3 e contra pesquisa antes do código.
 
-Tabelas de curadoria: `2026-10-29-ui-clarity-curation-transactions.md` (transações).
+Tabelas de curadoria: `2026-10-29-ui-clarity-curation-transactions.md` (transações), `2026-10-29-ui-clarity-curation-accounts.md` (contas).
+
+Pendência regional: os textos de situação da sincronização citam o portal de um agregador ("Meu Pluggy"). O nome do portal passa a vir da implementação do agregador (ponto de extensão Aggregator) e o catálogo usa `{portal}`.
