@@ -20,8 +20,8 @@ export interface Surface {
   // Elements over content that moves or carries detail: they blur what is behind them. A card over
   // the aurora blurs a gradient that is already smooth, so a card blurs only over a detailed ground.
   readonly blur?: readonly string[];
-  // A family that reads its blur as a token: the token it reads, written on the family.
-  readonly blurToken?: string;
+  // A family that reads its blur as a token: the tokens it reads, written on the family.
+  readonly blurToken?: string | readonly string[];
 }
 
 // A family whose tokens are all named `--slotted-<family>-<token>`.
@@ -51,8 +51,6 @@ const picker = (name: string): Surface => ({
 // palette rule in equori.theme.ts), so the dialog's ground stays out of it.
 // A drawer over the page: an inline drawer is part of the layout and blurs nothing.
 const OVERLAY_DRAWER = `${family("drawer")}[data-mode="overlay"] > [data-part="panel"]`;
-// The footer is sticky, so the body scrolls under it; the panel's blur reaches only the page behind.
-const OVERLAY_DRAWER_FOOTER = `${OVERLAY_DRAWER} > [data-part="footer"]`;
 
 const NOT_PALETTE = ':not(:has(> [data-ui="command-palette"]))';
 
@@ -157,8 +155,12 @@ export const surfaces: readonly Surface[] = [
         declarations: { "box-shadow": elevation(3) },
       },
     ],
-    blurToken: "--slotted-drawer-backdrop-filter",
-    blur: [OVERLAY_DRAWER_FOOTER],
+    // The footer is sticky, so the body scrolls under it; the panel's blur reaches only the page
+    // behind.
+    blurToken: [
+      "--slotted-drawer-backdrop-filter",
+      "--slotted-drawer-footer-backdrop-filter",
+    ],
   },
   {
     family: "action-sheet",
@@ -185,9 +187,9 @@ export const surfaces: readonly Surface[] = [
   {
     family: "chart",
     // The chart's own surface stays opaque: the library mixes its series colours with it. Only
-    // the card variant's ground and the tooltip are glass; the tooltip's fill is a token, so only its
-    // blur is declared here.
+    // the card variant's ground and the overlays are glass; the tooltip's fill is a token.
     tokens: { "--slotted-chart-tooltip-surface": fill("overlay") },
+    blurToken: "--slotted-chart-overlay-backdrop-filter",
     paint: [
       {
         select: `${family("chart")}[data-variant="card"]`,
@@ -204,9 +206,6 @@ export const surfaces: readonly Surface[] = [
         },
       })),
     ],
-    blur: ["tooltip", "menu", "help-content"].map(
-      (name) => `${family("chart")} [data-part="${name}"]`,
-    ),
   },
   {
     family: "app-shell",
@@ -230,7 +229,7 @@ export const scope = surfaces.map((surface) => family(surface.family));
 export const blurred = surfaces.flatMap((surface) => surface.blur ?? []);
 
 export const blurTokens = surfaces.flatMap((surface) =>
-  surface.blurToken === undefined
-    ? []
-    : [{ family: surface.family, token: surface.blurToken }],
+  [surface.blurToken ?? []]
+    .flat()
+    .map((token) => ({ family: surface.family, token })),
 );

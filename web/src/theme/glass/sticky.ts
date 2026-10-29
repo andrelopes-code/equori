@@ -38,12 +38,13 @@ const filledBars = [
   `${family("table")} [data-part="group-row"][data-sticky] > [data-part="group-header"]`,
 ];
 
-// Workaround for Slotted issue #18: a sticky column paints `--slotted-surface` under its row, an
-// opaque band beside the transparent columns. The cell takes the sticky fill, and where the engine
-// reports the table's scroll state, only while content passes under the column.
+// A sticky column takes the sticky fill, and where the engine reports the table's scroll state, only
+// while content passes under the column.
 const stickyCell = `${family("table")} [data-sticky]`;
 const tableScroll = `${family("table")} [data-part="scroll"]`;
-const stickyColumnFill: Declarations = { "--slotted-surface": fill("sticky") };
+const stickyColumnFill: Declarations = {
+  "--slotted-table-sticky-surface": fill("sticky"),
+};
 
 const ground: Declarations = { "background-color": fill("sticky") };
 const frostTint: Declarations = { "background-color": fill("frost") };
@@ -77,7 +78,7 @@ export const stickyRules: readonly Block[] = [
   rule(stickyCell, stickyColumnFill),
   supports("(container-type: scroll-state)", [
     rule(tableScroll, { "container-type": "scroll-state" }),
-    rule(stickyCell, { "--slotted-surface": "transparent" }),
+    rule(stickyCell, { "--slotted-table-sticky-surface": "transparent" }),
   ]),
   container("scroll-state(scrollable: inline-end)", [
     rule(`${family("table")} [data-sticky="end"]`, stickyColumnFill),

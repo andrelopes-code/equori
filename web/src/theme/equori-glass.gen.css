@@ -216,11 +216,6 @@
     --slotted-toast-surface: var(--slotted-surface-material);
     --slotted-toast-backdrop-filter: var(--slotted-material-backdrop);
     --slotted-command-palette-footer-surface: color-mix(in oklab, var(--slotted-surface-sunken) 50%, transparent);
-    --slotted-menu-item-radius: max(0px, calc(var(--slotted-radius-lg) - var(--slotted-space-2)));
-    --slotted-select-item-radius: max(0px, calc(var(--slotted-radius-lg) - var(--slotted-space-2)));
-    --slotted-combobox-item-radius: max(0px, calc(var(--slotted-radius-lg) - var(--slotted-space-2)));
-    --slotted-multi-select-item-radius: max(0px, calc(var(--slotted-radius-lg) - var(--slotted-space-2)));
-    --slotted-command-palette-item-radius: max(0px, calc(var(--slotted-radius-lg) - var(--slotted-space-2)));
     font-size: var(--slotted-font-size-md);
     line-height: var(--slotted-line-height-md);
   }
@@ -1026,11 +1021,6 @@
     --slotted-radius-md: 0px;
     --slotted-radius-lg: 0px;
     --slotted-control-radius: var(--slotted-radius-sm);
-    --slotted-menu-item-radius: max(0px, calc(var(--slotted-radius-lg) - var(--slotted-space-2)));
-    --slotted-select-item-radius: max(0px, calc(var(--slotted-radius-lg) - var(--slotted-space-2)));
-    --slotted-combobox-item-radius: max(0px, calc(var(--slotted-radius-lg) - var(--slotted-space-2)));
-    --slotted-multi-select-item-radius: max(0px, calc(var(--slotted-radius-lg) - var(--slotted-space-2)));
-    --slotted-command-palette-item-radius: max(0px, calc(var(--slotted-radius-lg) - var(--slotted-space-2)));
   }
 
   [data-slotted-theme="equori-glass"][data-slotted-corners="soft"],
@@ -1040,11 +1030,6 @@
     --slotted-radius-md: 3px;
     --slotted-radius-lg: 4px;
     --slotted-control-radius: var(--slotted-radius-sm);
-    --slotted-menu-item-radius: max(0px, calc(var(--slotted-radius-lg) - var(--slotted-space-2)));
-    --slotted-select-item-radius: max(0px, calc(var(--slotted-radius-lg) - var(--slotted-space-2)));
-    --slotted-combobox-item-radius: max(0px, calc(var(--slotted-radius-lg) - var(--slotted-space-2)));
-    --slotted-multi-select-item-radius: max(0px, calc(var(--slotted-radius-lg) - var(--slotted-space-2)));
-    --slotted-command-palette-item-radius: max(0px, calc(var(--slotted-radius-lg) - var(--slotted-space-2)));
   }
 
   [data-slotted-theme="equori-glass"][data-slotted-corners="standard"],
@@ -1054,11 +1039,6 @@
     --slotted-radius-md: 6px;
     --slotted-radius-lg: 8px;
     --slotted-control-radius: var(--slotted-radius-sm);
-    --slotted-menu-item-radius: max(0px, calc(var(--slotted-radius-lg) - var(--slotted-space-2)));
-    --slotted-select-item-radius: max(0px, calc(var(--slotted-radius-lg) - var(--slotted-space-2)));
-    --slotted-combobox-item-radius: max(0px, calc(var(--slotted-radius-lg) - var(--slotted-space-2)));
-    --slotted-multi-select-item-radius: max(0px, calc(var(--slotted-radius-lg) - var(--slotted-space-2)));
-    --slotted-command-palette-item-radius: max(0px, calc(var(--slotted-radius-lg) - var(--slotted-space-2)));
   }
 
   [data-slotted-theme="equori-glass"][data-slotted-corners="round"],
@@ -1068,11 +1048,6 @@
     --slotted-radius-md: 12px;
     --slotted-radius-lg: 16px;
     --slotted-control-radius: var(--slotted-radius-sm);
-    --slotted-menu-item-radius: max(0px, calc(var(--slotted-radius-lg) - var(--slotted-space-2)));
-    --slotted-select-item-radius: max(0px, calc(var(--slotted-radius-lg) - var(--slotted-space-2)));
-    --slotted-combobox-item-radius: max(0px, calc(var(--slotted-radius-lg) - var(--slotted-space-2)));
-    --slotted-multi-select-item-radius: max(0px, calc(var(--slotted-radius-lg) - var(--slotted-space-2)));
-    --slotted-command-palette-item-radius: max(0px, calc(var(--slotted-radius-lg) - var(--slotted-space-2)));
   }
 
   @media (pointer: coarse) {
@@ -1857,11 +1832,6 @@
       --slotted-dialog-scrim: color-mix(in srgb, var(--slotted-scrim) 30%, transparent);
     }
 
-    [data-ui="page"] > [data-part="footer"][data-status="entering"],
-    [data-ui="page"] > [data-part="footer"][data-status="exiting"] {
-      opacity: 1;
-    }
-
     [data-ui="drawer"][data-mode="overlay"][data-side="bottom"][data-drag] {
       --slotted-drawer-slide-duration: 480ms;
       --slotted-drawer-slide-exit-duration: 260ms;
@@ -2092,11 +2062,7 @@
       --slotted-section-surface: var(--glass-fill-card);
     }
 
-    &[data-slotted-scheme="dark"] [data-ui="dashboard-grid"][data-editing] [data-part="widget"] > [data-ui="card"],
-    &[data-slotted-scheme="dark"] [data-ui="drawer"][data-mode="overlay"] > [data-part="panel"] > [data-part="footer"],
-    &[data-slotted-scheme="dark"] [data-ui="chart"] [data-part="tooltip"],
-    &[data-slotted-scheme="dark"] [data-ui="chart"] [data-part="menu"],
-    &[data-slotted-scheme="dark"] [data-ui="chart"] [data-part="help-content"] {
+    &[data-slotted-scheme="dark"] [data-ui="dashboard-grid"][data-editing] [data-part="widget"] > [data-ui="card"] {
       -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
       backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
     }
@@ -2137,8 +2103,16 @@
       --slotted-drawer-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
     }
 
+    &[data-slotted-scheme="dark"] [data-ui="drawer"] {
+      --slotted-drawer-footer-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    }
+
     &[data-slotted-scheme="dark"] [data-ui="action-bar"] {
       --slotted-action-bar-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    }
+
+    &[data-slotted-scheme="dark"] [data-ui="chart"] {
+      --slotted-chart-overlay-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
     }
 
     &[data-slotted-scheme="dark"] [data-ui="card"],
@@ -2237,7 +2211,7 @@
     }
 
     &[data-slotted-scheme="dark"] [data-ui="table"] [data-sticky] {
-      --slotted-surface: var(--glass-fill-sticky);
+      --slotted-table-sticky-surface: var(--glass-fill-sticky);
     }
 
     @supports (container-type: scroll-state) {
@@ -2246,19 +2220,19 @@
       }
 
       &[data-slotted-scheme="dark"] [data-ui="table"] [data-sticky] {
-        --slotted-surface: transparent;
+        --slotted-table-sticky-surface: transparent;
       }
     }
 
     @container scroll-state(scrollable: inline-end) {
       &[data-slotted-scheme="dark"] [data-ui="table"] [data-sticky="end"] {
-        --slotted-surface: var(--glass-fill-sticky);
+        --slotted-table-sticky-surface: var(--glass-fill-sticky);
       }
     }
 
     @container scroll-state(scrollable: inline-start) {
       &[data-slotted-scheme="dark"] [data-ui="table"] [data-sticky="start"] {
-        --slotted-surface: var(--glass-fill-sticky);
+        --slotted-table-sticky-surface: var(--glass-fill-sticky);
       }
     }
 
@@ -2326,10 +2300,6 @@
       }
 
       &[data-slotted-scheme="dark"] [data-ui="dashboard-grid"][data-editing] [data-part="widget"] > [data-ui="card"],
-      &[data-slotted-scheme="dark"] [data-ui="drawer"][data-mode="overlay"] > [data-part="panel"] > [data-part="footer"],
-      &[data-slotted-scheme="dark"] [data-ui="chart"] [data-part="tooltip"],
-      &[data-slotted-scheme="dark"] [data-ui="chart"] [data-part="menu"],
-      &[data-slotted-scheme="dark"] [data-ui="chart"] [data-part="help-content"],
       &[data-slotted-scheme="dark"] [data-ui="section"][data-sticky] > [data-part="header"],
       &[data-slotted-scheme="dark"] [data-ui="section"][data-sticky] > [data-part="header"]::before,
       &[data-slotted-scheme="dark"] [data-ui="data-grid"] > [data-part="scroll"] > [data-part="head"] {
@@ -2377,8 +2347,16 @@
         --slotted-drawer-backdrop-filter: none;
       }
 
+      &[data-slotted-scheme="dark"] [data-ui="drawer"] {
+        --slotted-drawer-footer-backdrop-filter: none;
+      }
+
       &[data-slotted-scheme="dark"] [data-ui="action-bar"] {
         --slotted-action-bar-backdrop-filter: none;
+      }
+
+      &[data-slotted-scheme="dark"] [data-ui="chart"] {
+        --slotted-chart-overlay-backdrop-filter: none;
       }
     }
   }

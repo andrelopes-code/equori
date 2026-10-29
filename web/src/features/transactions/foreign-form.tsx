@@ -28,9 +28,6 @@ import { FormLayout } from "@/ui/form-layout";
 import { FormRow } from "@/ui/form-row";
 import { MoneyInput } from "@/ui/money-input";
 
-// A statement reference is YYYY-MM, so this value never names one.
-const automatic = "automatic";
-
 type Payee = components["schemas"]["Payee"];
 
 // Families read: select, field, text-field, date-picker, stat-card. The card, the amounts and the
@@ -311,10 +308,8 @@ export function ForeignForm({
           label={t("foreignPurchase.statement")}
           multiple={false}
           choices={[
-            // Workaround for Slotted issue #26: a select never shows an option whose value is
-            // the empty string, so the automatic statement has a value of its own.
             {
-              value: automatic,
+              value: "",
               label: t("foreignPurchase.statementAutomatic"),
             },
             ...view.statements.map((s) => ({
@@ -322,10 +317,10 @@ export function ForeignForm({
               label: formatMonthTitle(s.reference, locale),
             })),
           ]}
-          value={draft.statement ?? automatic}
+          value={draft.statement ?? ""}
           onChange={(value) => {
             if (typeof value === "string")
-              set({ statement: value === automatic ? null : value });
+              set({ statement: value === "" ? null : value });
           }}
         />
         <FieldDescription live="polite">

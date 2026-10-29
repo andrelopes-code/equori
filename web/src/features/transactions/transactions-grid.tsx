@@ -144,18 +144,12 @@ export function TransactionsGrid({
     [t, locale, today, scale, fmt, growsWithPage],
   );
 
-  const titles = useMemo(
-    () => new Map(list.rows.map((row) => [row.id, row.title])),
-    [list.rows],
-  );
-
   const messages = useMemo(
     () => ({
-      // Workaround for Slotted issue #7.
       selectRow: ({ row }: { row: string }) =>
-        t("transactions.selectRow", { row: titles.get(row) ?? row }),
+        t("transactions.selectRow", { row }),
     }),
-    [t, titles],
+    [t],
   );
   const renderGroup = useCallback(
     ({ node }: { node: { text: string; rows: readonly ListRow[] } }) => (
@@ -234,14 +228,10 @@ export function TransactionsGrid({
       rows={list.rows}
       rowKey="id"
       {...(height === undefined ? {} : { height })}
-      // Workaround for Slotted issue #6: the server already orders and filters, and client mode
-      // with an empty sort keeps that order while it groups by day.
-      mode="client"
+      mode="server"
       hasMore={list.hasMore}
       onLoadMore={list.loadMore}
-      // Workaround for Slotted issue #5: the grid's loading writes aria-busy, which costs 340 ms at
-      // 70 rows, so it covers the first read only and the header's bar shows a refresh.
-      loading={list.pending}
+      loading={list.pending || list.refreshing}
       error={list.error === null ? null : t("transactions.loadFailed")}
       onRetry={list.retry}
       showRange={false}

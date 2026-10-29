@@ -91,8 +91,7 @@ export function InstrumentPage() {
               {i.type !== "currency" && (
                 <HeaderAction
                   label={t("instrument.edit")}
-                  // Workaround for Slotted issue #12: no pencil glyph; file-text names the action below 600 px.
-                  glyph="file-text"
+                  glyph="pencil"
                   wordsOnly
                   onClick={() => {
                     setEditing(true);

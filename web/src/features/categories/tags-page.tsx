@@ -56,7 +56,6 @@ export function TagsPage() {
 
   const messages = useMemo(
     () => ({
-      // Workaround for Slotted issue #7.
       selectRow: ({ row }: { row: string }) =>
         t("transactions.selectRow", { row }),
     }),

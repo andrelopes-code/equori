@@ -40,9 +40,7 @@ const surfaceRules = surfaces.flatMap((surface) => [
   ),
 ]);
 
-// A family with a backdrop-filter token reads its blur from it. Workaround for Slotted issue #2:
-// the chart's tooltip, menu and help content and the drawer's footer have none, so the filter is
-// written on them.
+// A family with a backdrop-filter token reads its blur from it.
 const blurRules = [
   rule(blurred, blur("var(--glass-blur)", "var(--glass-saturate)")),
   ...blurTokens.map(({ family: name, token }) =>

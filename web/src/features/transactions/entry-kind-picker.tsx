@@ -139,9 +139,6 @@ export function EntryKindPicker({
                       key={kind.value}
                       value={kind.value}
                       description={t(kind.hint)}
-                      // Workaround for Slotted issue #25: an item with a description takes it
-                      // into its accessible name; the label alone names the kind.
-                      aria-label={t(kind.label)}
                     >
                       {t(kind.label)}
                     </MenuRadioItem>

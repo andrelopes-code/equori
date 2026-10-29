@@ -3,9 +3,6 @@ import defaultTheme from "@slotted/themes/default";
 
 // A total closes its table with one rule in the softened rule colour; the double rule of a
 // ledger sheet read as a heavy line (owner review item 17).
-const concentricItemRadius =
-  "max(0px, calc(var(--slotted-radius-lg) - var(--slotted-space-2)))";
-
 const summaryRule = `
 [data-ui="table"] [data-part="summary"] [data-part="row"]:first-child [data-part="cell"],
 [data-ui="table"] [data-part="summary"] [data-part="row"]:first-child [data-part="row-header"] {
@@ -23,15 +20,6 @@ const currentDestinationRule = `
 
 [data-ui="top-navigation"] [data-part="name"] {
   color: var(--slotted-text);
-}
-`;
-
-// Workaround for Slotted issue #3: the page footer, a material, fades as it slides, so it keeps
-// opacity 1 and enters by its slide alone, which already carries it past the edge.
-const footerEntryRule = `
-[data-ui="page"] > [data-part="footer"][data-status="entering"],
-[data-ui="page"] > [data-part="footer"][data-status="exiting"] {
-  opacity: 1;
 }
 `;
 
@@ -198,19 +186,11 @@ export default extendTheme(
       "--slotted-toast-backdrop-filter": "var(--slotted-material-backdrop)",
       "--slotted-command-palette-footer-surface":
         "color-mix(in oklab, var(--slotted-surface-sunken) 50%, transparent)",
-      // Workaround for Slotted issue #17: an item's corner is concentric with its overlay's
-      // under every corner style, the panel's radius less the space-2 inset between them.
-      "--slotted-menu-item-radius": concentricItemRadius,
-      "--slotted-select-item-radius": concentricItemRadius,
-      "--slotted-combobox-item-radius": concentricItemRadius,
-      "--slotted-multi-select-item-radius": concentricItemRadius,
-      "--slotted-command-palette-item-radius": concentricItemRadius,
     },
     rules: [
       summaryRule,
       currentDestinationRule,
       paletteScrimRule,
-      footerEntryRule,
       sheetSlideRule,
     ],
   },

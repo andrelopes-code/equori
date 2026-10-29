@@ -2,7 +2,7 @@ import { parseISODate, toISOYearMonth } from "@slotted/core/date";
 import { Button, IconButton } from "@slotted/react/button";
 import { ButtonGroup } from "@slotted/react/button-group";
 import { Calendar } from "@slotted/react/calendar";
-import { Icon } from "@slotted/react/icon";
+import { Glyph, Icon } from "@slotted/react/icon";
 import {
   Popover,
   PopoverBody,
@@ -53,9 +53,16 @@ export function MonthControl({
       <Popover open={open} onOpenChange={setOpen} align="center">
         <PopoverTrigger
           render={(props) => (
-            // Workaround for Slotted issue #4: the calendar glyph reads below the label, so the
-            // trigger shows the label alone.
-            <Button {...props}>{formatMonthTitle(value, locale)}</Button>
+            <Button
+              {...props}
+              start={
+                <Icon size="sm">
+                  <Glyph name="calendar" />
+                </Icon>
+              }
+            >
+              {formatMonthTitle(value, locale)}
+            </Button>
           )}
         />
         <PopoverLayer>

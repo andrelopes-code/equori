@@ -84,11 +84,10 @@ export function PayeesPage() {
   );
   const messages = useMemo(
     () => ({
-      // Workaround for Slotted issue #7.
       selectRow: ({ row }: { row: string }) =>
-        t("transactions.selectRow", { row: byId.get(row)?.name ?? row }),
+        t("transactions.selectRow", { row }),
     }),
-    [t, byId],
+    [t],
   );
   const renderHeader = useCallback(
     ({ column }: { column: { id: string; label: string } }) =>

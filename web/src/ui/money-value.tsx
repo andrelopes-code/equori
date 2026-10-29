@@ -13,7 +13,8 @@ export interface MoneyAmount {
 // (smaller, medium weight, muted ink), so the whole units are what the eye reads first. The sign
 // belongs to the quantity, not to the unit: it is written against the digits at their size, after
 // the symbol, where a sign before the small symbol would stand alone at the figure's size.
-// Workaround for Slotted issue #13: StatCardValue writes a currency as one run of text.
+// StatCardValue's emphasis="whole" formats a number through Intl; an amount here is an integer
+// with its scale, written by useMoneyFormat, so its parts are drawn as children.
 export function MoneyValue({ money, scale, signed = false }: MoneyAmount) {
   const fmt = useMoneyFormat();
   const segments = fmt.segments(money, scale);

@@ -216,11 +216,6 @@
     --slotted-toast-surface: var(--slotted-surface-material);
     --slotted-toast-backdrop-filter: var(--slotted-material-backdrop);
     --slotted-command-palette-footer-surface: color-mix(in oklab, var(--slotted-surface-sunken) 50%, transparent);
-    --slotted-menu-item-radius: max(0px, calc(var(--slotted-radius-lg) - var(--slotted-space-2)));
-    --slotted-select-item-radius: max(0px, calc(var(--slotted-radius-lg) - var(--slotted-space-2)));
-    --slotted-combobox-item-radius: max(0px, calc(var(--slotted-radius-lg) - var(--slotted-space-2)));
-    --slotted-multi-select-item-radius: max(0px, calc(var(--slotted-radius-lg) - var(--slotted-space-2)));
-    --slotted-command-palette-item-radius: max(0px, calc(var(--slotted-radius-lg) - var(--slotted-space-2)));
     font-size: var(--slotted-font-size-md);
     line-height: var(--slotted-line-height-md);
   }
@@ -1026,11 +1021,6 @@
     --slotted-radius-md: 0px;
     --slotted-radius-lg: 0px;
     --slotted-control-radius: var(--slotted-radius-sm);
-    --slotted-menu-item-radius: max(0px, calc(var(--slotted-radius-lg) - var(--slotted-space-2)));
-    --slotted-select-item-radius: max(0px, calc(var(--slotted-radius-lg) - var(--slotted-space-2)));
-    --slotted-combobox-item-radius: max(0px, calc(var(--slotted-radius-lg) - var(--slotted-space-2)));
-    --slotted-multi-select-item-radius: max(0px, calc(var(--slotted-radius-lg) - var(--slotted-space-2)));
-    --slotted-command-palette-item-radius: max(0px, calc(var(--slotted-radius-lg) - var(--slotted-space-2)));
   }
 
   [data-slotted-theme="equori"][data-slotted-corners="soft"],
@@ -1040,11 +1030,6 @@
     --slotted-radius-md: 3px;
     --slotted-radius-lg: 4px;
     --slotted-control-radius: var(--slotted-radius-sm);
-    --slotted-menu-item-radius: max(0px, calc(var(--slotted-radius-lg) - var(--slotted-space-2)));
-    --slotted-select-item-radius: max(0px, calc(var(--slotted-radius-lg) - var(--slotted-space-2)));
-    --slotted-combobox-item-radius: max(0px, calc(var(--slotted-radius-lg) - var(--slotted-space-2)));
-    --slotted-multi-select-item-radius: max(0px, calc(var(--slotted-radius-lg) - var(--slotted-space-2)));
-    --slotted-command-palette-item-radius: max(0px, calc(var(--slotted-radius-lg) - var(--slotted-space-2)));
   }
 
   [data-slotted-theme="equori"][data-slotted-corners="standard"],
@@ -1054,11 +1039,6 @@
     --slotted-radius-md: 6px;
     --slotted-radius-lg: 8px;
     --slotted-control-radius: var(--slotted-radius-sm);
-    --slotted-menu-item-radius: max(0px, calc(var(--slotted-radius-lg) - var(--slotted-space-2)));
-    --slotted-select-item-radius: max(0px, calc(var(--slotted-radius-lg) - var(--slotted-space-2)));
-    --slotted-combobox-item-radius: max(0px, calc(var(--slotted-radius-lg) - var(--slotted-space-2)));
-    --slotted-multi-select-item-radius: max(0px, calc(var(--slotted-radius-lg) - var(--slotted-space-2)));
-    --slotted-command-palette-item-radius: max(0px, calc(var(--slotted-radius-lg) - var(--slotted-space-2)));
   }
 
   [data-slotted-theme="equori"][data-slotted-corners="round"],
@@ -1068,11 +1048,6 @@
     --slotted-radius-md: 12px;
     --slotted-radius-lg: 16px;
     --slotted-control-radius: var(--slotted-radius-sm);
-    --slotted-menu-item-radius: max(0px, calc(var(--slotted-radius-lg) - var(--slotted-space-2)));
-    --slotted-select-item-radius: max(0px, calc(var(--slotted-radius-lg) - var(--slotted-space-2)));
-    --slotted-combobox-item-radius: max(0px, calc(var(--slotted-radius-lg) - var(--slotted-space-2)));
-    --slotted-multi-select-item-radius: max(0px, calc(var(--slotted-radius-lg) - var(--slotted-space-2)));
-    --slotted-command-palette-item-radius: max(0px, calc(var(--slotted-radius-lg) - var(--slotted-space-2)));
   }
 
   @media (pointer: coarse) {
@@ -1855,11 +1830,6 @@
 
     &[data-slotted-scheme="light"] [data-ui="dialog"]:has([data-ui="command-palette"]) {
       --slotted-dialog-scrim: color-mix(in srgb, var(--slotted-scrim) 30%, transparent);
-    }
-
-    [data-ui="page"] > [data-part="footer"][data-status="entering"],
-    [data-ui="page"] > [data-part="footer"][data-status="exiting"] {
-      opacity: 1;
     }
 
     [data-ui="drawer"][data-mode="overlay"][data-side="bottom"][data-drag] {

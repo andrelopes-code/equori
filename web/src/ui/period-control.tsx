@@ -3,7 +3,7 @@ import { Button, IconButton } from "@slotted/react/button";
 import { ButtonGroup } from "@slotted/react/button-group";
 import { Calendar } from "@slotted/react/calendar";
 import type { CalendarValue } from "@slotted/react/calendar";
-import { Icon } from "@slotted/react/icon";
+import { Glyph, Icon } from "@slotted/react/icon";
 import { Inline } from "@slotted/react/inline";
 import {
   Popover,
@@ -103,9 +103,16 @@ export function PeriodControl({
       >
         <PopoverTrigger
           render={(props) => (
-            // Workaround for Slotted issue #4: the calendar glyph reads below the label, so the
-            // trigger shows the label alone.
-            <Button {...props}>{label}</Button>
+            <Button
+              {...props}
+              start={
+                <Icon size="sm">
+                  <Glyph name="calendar" />
+                </Icon>
+              }
+            >
+              {label}
+            </Button>
           )}
         />
         <PopoverLayer>

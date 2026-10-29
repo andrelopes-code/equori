@@ -100,23 +100,14 @@ test("a dialog and a drawer blur through their own tokens", () => {
 
 // The footer is sticky inside the panel, so the body scrolls under it; the panel's blur reaches only
 // what is behind the panel.
-test("an overlay drawer's footer blurs the body that scrolls under it", () => {
-  const footer =
-    '[data-ui="drawer"][data-mode="overlay"] > [data-part="panel"] > [data-part="footer"]';
-  const declarationsOf = (selector: string) =>
-    [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
-      .filter(([, selectors]) => selectors?.includes(selector))
-      .map(([, , body]) => body ?? "");
-  const bodies = declarationsOf(footer);
-  assert.ok(
-    bodies.some((body) =>
-      body.includes("backdrop-filter: blur(var(--glass-blur)"),
-    ),
-    "the footer is not blurred",
+test("a drawer's footer blurs the body that scrolls under it", () => {
+  assert.match(
+    css,
+    /\[data-ui="drawer"\] \{[^}]*--slotted-drawer-footer-backdrop-filter: blur\(var\(--glass-blur\)/,
   );
-  assert.ok(
-    bodies.some((body) => body.includes("backdrop-filter: none")),
-    "reduced transparency keeps the footer's blur",
+  assert.match(
+    css,
+    /\[data-ui="drawer"\] \{[^}]*--slotted-drawer-footer-backdrop-filter: none/,
   );
 });
 
@@ -235,28 +226,28 @@ test("a framed grid's blurred head follows the frame's rounded corners", () => {
 // Chromium makes an ancestor whose opacity is below 1 the backdrop root of its descendants, so a
 // popup that fades its positioner shows its content's blur only once the fade ends. The glass
 // fades the blurred content itself and keeps the positioner opaque.
-test("a chart's tooltip blurs what is behind it", () => {
+test("a chart's overlays blur what is behind them", () => {
   assert.match(
     css,
-    /\[data-ui="chart"\] \[data-part="tooltip"\][^{]*\{[^}]*backdrop-filter: blur\(var\(--glass-blur\)\)/,
+    /\[data-ui="chart"\] \{[^}]*--slotted-chart-overlay-backdrop-filter: blur\(var\(--glass-blur\)\)/,
   );
 });
 
 test("a table's sticky column is filled only while content passes under it", () => {
   assert.match(
     glassOnly,
-    /\[data-ui="table"\] \[data-sticky\] \{\s*--slotted-surface: var\(--glass-fill-sticky\);/,
+    /\[data-ui="table"\] \[data-sticky\] \{\s*--slotted-table-sticky-surface: var\(--glass-fill-sticky\);/,
   );
   assert.match(
     glassOnly,
-    /@supports \(container-type: scroll-state\) \{[^@]*\[data-part="scroll"\] \{\s*container-type: scroll-state;[^@]*\[data-sticky\] \{\s*--slotted-surface: transparent;/,
+    /@supports \(container-type: scroll-state\) \{[^@]*\[data-part="scroll"\] \{\s*container-type: scroll-state;[^@]*\[data-sticky\] \{\s*--slotted-table-sticky-surface: transparent;/,
   );
   assert.match(
     glassOnly,
-    /@container scroll-state\(scrollable: inline-end\) \{[^@]*\[data-sticky="end"\] \{\s*--slotted-surface: var\(--glass-fill-sticky\);/,
+    /@container scroll-state\(scrollable: inline-end\) \{[^@]*\[data-sticky="end"\] \{\s*--slotted-table-sticky-surface: var\(--glass-fill-sticky\);/,
   );
   assert.match(
     glassOnly,
-    /@container scroll-state\(scrollable: inline-start\) \{[^@]*\[data-sticky="start"\] \{\s*--slotted-surface: var\(--glass-fill-sticky\);/,
+    /@container scroll-state\(scrollable: inline-start\) \{[^@]*\[data-sticky="start"\] \{\s*--slotted-table-sticky-surface: var\(--glass-fill-sticky\);/,
   );
 });
