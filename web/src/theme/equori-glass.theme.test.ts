@@ -233,6 +233,20 @@ test("a chart's overlays blur what is behind them", () => {
   );
 });
 
+// The table view of a chart covers the plot: the page shows through it as through the chart's
+// card, and its sticky header, which reads the chart's surface, takes the fill of every other
+// sticky table header. A full-screen chart covers the page and keeps its opaque surface.
+test("a chart's table view is glass and its header is filled", () => {
+  assert.match(
+    css,
+    /\[data-ui="chart"\] \[data-part="table-region"\] \{\s*background-color: transparent;/,
+  );
+  assert.match(
+    css,
+    /\[data-ui="chart"\]:not\(\[data-fullscreen\]\):has\(\[data-part="table-region"\]\) \{\s*--slotted-chart-surface: var\(--glass-fill-sticky\);/,
+  );
+});
+
 test("a table's sticky column is filled only while content passes under it", () => {
   assert.match(
     glassOnly,

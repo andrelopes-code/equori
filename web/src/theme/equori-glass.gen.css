@@ -2047,6 +2047,14 @@
       box-shadow: var(--glass-shadow-1);
     }
 
+    &[data-slotted-scheme="dark"] [data-ui="chart"] [data-part="table-region"] {
+      background-color: transparent;
+    }
+
+    &[data-slotted-scheme="dark"] [data-ui="chart"]:not([data-fullscreen]):has([data-part="table-region"]) {
+      --slotted-chart-surface: var(--glass-fill-sticky);
+    }
+
     &[data-slotted-scheme="dark"] [data-ui="chart"] [data-part="menu"] {
       background-color: var(--glass-fill-overlay);
       box-shadow: var(--glass-shadow-2);

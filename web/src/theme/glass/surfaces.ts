@@ -198,6 +198,18 @@ export const surfaces: readonly Surface[] = [
           "box-shadow": elevation(1),
         },
       },
+      // Workaround for Slotted issue #36: the table view and its sticky header paint the opaque
+      // chart surface and read no token of their own, so the table shows as a solid block in a
+      // glass card. The region exists only while the table is open, and the drawing whose colours
+      // mix with the surface is hidden then.
+      {
+        select: `${family("chart")} [data-part="table-region"]`,
+        declarations: { "background-color": "transparent" },
+      },
+      {
+        select: `${family("chart")}:not([data-fullscreen]):has([data-part="table-region"])`,
+        declarations: { "--slotted-chart-surface": fill("sticky") },
+      },
       ...["menu", "help-content"].map((name) => ({
         select: `${family("chart")} [data-part="${name}"]`,
         declarations: {
