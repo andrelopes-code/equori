@@ -26,7 +26,6 @@ import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { ChoiceSelect } from "@/ui/choice-select";
 import { DateInput } from "@/ui/date-input";
-import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
 
 import styles from "@/features/portfolio/portfolio-page.module.css";
 
@@ -41,7 +40,6 @@ export function PortfolioPage() {
   const navigate = useNavigate();
   const base = useQuery(settingsQuery(api)).data?.base_currency;
   const instruments = useQuery(instrumentsQuery(api));
-  const compact = useMediaQuery(compactQuery);
   const date = search.date ?? today;
   const valueIn = search.value_in ?? base;
   const currencies = (instruments.data?.items ?? [])
@@ -59,33 +57,6 @@ export function PortfolioPage() {
       replace: true,
     });
   };
-  // A page header's controls carry no visible label; each names itself to assistive technology.
-  const controls = (
-    <>
-      <ChoiceSelect
-        label={t("portfolio.valueIn")}
-        choices={currencies}
-        multiple={false}
-        value={valueIn ?? null}
-        onChange={(next) => {
-          if (typeof next === "string")
-            change({ value_in: next === base ? undefined : next });
-        }}
-      />
-      <DateInput
-        name="date"
-        value={date}
-        shortcuts={false}
-        messages={{
-          choose: t("portfolio.date"),
-          change: ({ date: day }) => t("portfolio.dateChange", { date: day }),
-        }}
-        onChange={(next) => {
-          change({ date: next === today ? undefined : next });
-        }}
-      />
-    </>
-  );
   const yearLink = (
     <ButtonLink
       variant="outline"
@@ -106,19 +77,40 @@ export function PortfolioPage() {
                 {t("portfolio.subtitle")}
               </PageHeaderSubheading>
             </PageHeaderTitle>
+            {/* A page header's controls carry no visible label; each names itself to assistive
+                technology. */}
             <PageHeaderActions>
-              {!compact && (
-                <Inline gap={3} wrap="nowrap">
-                  {controls}
-                </Inline>
-              )}
+              <Inline gap={3} wrap="nowrap">
+                <ChoiceSelect
+                  label={t("portfolio.valueIn")}
+                  choices={currencies}
+                  multiple={false}
+                  value={valueIn ?? null}
+                  onChange={(next) => {
+                    if (typeof next === "string")
+                      change({ value_in: next === base ? undefined : next });
+                  }}
+                />
+                <DateInput
+                  name="date"
+                  value={date}
+                  shortcuts={false}
+                  messages={{
+                    choose: t("portfolio.date"),
+                    change: ({ date: day }) =>
+                      t("portfolio.dateChange", { date: day }),
+                  }}
+                  onChange={(next) => {
+                    change({ date: next === today ? undefined : next });
+                  }}
+                />
+              </Inline>
             </PageHeaderActions>
           </PageHeaderTitleRow>
         </PageHeaderTitleArea>
       </PageHeader>
       <PageBody>
         <Stack gap={6}>
-          {compact && <div className={styles.controls}>{controls}</div>}
           <Stack gap={3}>
             <Inline gap={3} align="center" justify="between" wrap="wrap">
               <Heading level={2} size="md">

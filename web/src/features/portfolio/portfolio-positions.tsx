@@ -44,11 +44,8 @@ import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { MASK } from "@/privacy/mask";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 import { AppLink } from "@/ui/app-link";
-import { PhoneGroup } from "@/ui/phone-group";
-import { PhoneList } from "@/ui/phone-list";
-import { PricedValue, usePriceOf } from "@/ui/priced-value";
+import { PricedValue } from "@/ui/priced-value";
 import { QueryError } from "@/ui/query-error";
-import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
 
 type Account = components["schemas"]["Account"];
 type Money = components["schemas"]["Money"];
@@ -64,13 +61,11 @@ export function PortfolioPositions({
   date: string;
   valueIn: string | undefined;
 }) {
-  const priceOf = usePriceOf();
   const t = useT();
   const [tag] = useAppLocale();
   const api = useApi();
   const fmt = useMoneyFormat();
   const scale = useScale();
-  const compact = useMediaQuery(compactQuery);
   const [by, setBy] = useState<PositionGroupBy>("account");
   const positions = useQuery({
     ...positionsQuery(api, date, valueIn),
@@ -183,75 +178,6 @@ export function PortfolioPositions({
             </ResultStateDescription>
           </ResultStateContent>
         </ResultState>
-      ) : compact ? (
-        <Stack gap={4}>
-          {pending && (
-            <PhoneList
-              label={t("portfolio.positions.title")}
-              loading
-              empty=""
-              rows={[]}
-            />
-          )}
-          {groups.map((group) => (
-            <PhoneGroup
-              key={group.key}
-              label={group.label}
-              end={
-                valueIn === undefined || group.value === 0
-                  ? undefined
-                  : money({ amount: group.value, currency: valueIn })
-              }
-            >
-              <PhoneList
-                label={group.label}
-                loading={false}
-                empty=""
-                rows={group.rows.map((row) => ({
-                  key: `${row.position.account_id}-${row.position.instrument}`,
-                  title: instrumentCell(row.position),
-                  lines: [
-                    accountCell(row.position),
-                    [
-                      t("positions.quantity"),
-                      fmt.plain(
-                        row.position.quantity,
-                        digits(row.position.quantity.currency),
-                      ),
-                    ].join(": "),
-                    [
-                      t("positions.costBasis"),
-                      money(row.position.cost_basis),
-                    ].join(": "),
-                    [
-                      t("positions.marketValue"),
-                      row.position.market_value === undefined
-                        ? t("positions.noPrice")
-                        : [
-                            money(row.position.market_value),
-                            priceOf(row.position.prices),
-                          ]
-                            .filter(Boolean)
-                            .join(" · "),
-                    ].join(": "),
-                    row.share === undefined
-                      ? ""
-                      : [t("portfolio.share"), shareText(row)].join(": "),
-                  ],
-                  end: resultCell(row.position),
-                }))}
-              />
-            </PhoneGroup>
-          ))}
-          {valueIn !== undefined && groups.length > 0 && (
-            <Text size="sm" tone="muted">
-              {[
-                t("portfolio.total"),
-                money({ amount: total, currency: valueIn }),
-              ].join(": ")}
-            </Text>
-          )}
-        </Stack>
       ) : (
         <Table columns={columns} variant="framed">
           <TableContent>

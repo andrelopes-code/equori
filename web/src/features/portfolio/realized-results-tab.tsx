@@ -30,9 +30,7 @@ import { formatDate, formatMonthName } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 import { AppLink } from "@/ui/app-link";
-import { PhoneList } from "@/ui/phone-list";
 import { QueryError } from "@/ui/query-error";
-import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
 
 type Account = components["schemas"]["Account"];
 type Money = components["schemas"]["Money"];
@@ -48,7 +46,6 @@ export function RealizedResultsTab({ year }: { year: number }) {
   const api = useApi();
   const fmt = useMoneyFormat();
   const scale = useScale();
-  const compact = useMediaQuery(compactQuery);
   const results = useQuery(realizedResultsQuery(api, year));
   const accounts = useQuery(accountsQuery(api));
   const pending = results.isPending || accounts.isPending || scale === null;
@@ -151,94 +148,65 @@ export function RealizedResultsTab({ year }: { year: number }) {
           {totals}
         </Stack>
       )}
-      {compact ? (
-        <PhoneList
-          label={t("taxYear.realized.title")}
-          loading={pending}
-          empty=""
-          rows={items.map((r) => ({
-            key: `${r.transaction_id}-${r.instrument}`,
-            title: r.instrument,
-            link: { to: "/transactions/$id", params: { id: r.transaction_id } },
-            lines: [
-              [formatDate(r.date, tag), accountLabel(byID, r.account_id)].join(
-                " · ",
-              ),
-              [t("taxYear.quantity"), quantity(r)].join(": "),
-              [t("taxYear.cost"), money(r.cost)].join(": "),
-              [t("taxYear.proceeds"), money(r.proceeds)].join(": "),
-              [t("taxYear.taxClass"), classOf(r)].join(": "),
-            ],
-            end: (
-              <Text size="sm" tone={resultTone(r)}>
-                {signed(r.result)}
-              </Text>
-            ),
-          }))}
-        />
-      ) : (
-        <Table columns={columns} variant="framed">
-          <TableContent>
-            <TableCaption>{t("taxYear.realized.title")}</TableCaption>
-            <TableHead>
-              <TableRow>
-                <TableColumnHeader>{t("taxYear.date")}</TableColumnHeader>
-                <TableColumnHeader>{t("taxYear.instrument")}</TableColumnHeader>
-                <TableColumnHeader>{t("taxYear.account")}</TableColumnHeader>
-                <TableColumnHeader numeric>
-                  {t("taxYear.quantity")}
-                </TableColumnHeader>
-                <TableColumnHeader numeric>
-                  {t("taxYear.cost")}
-                </TableColumnHeader>
-                <TableColumnHeader numeric>
-                  {t("taxYear.proceeds")}
-                </TableColumnHeader>
-                <TableColumnHeader numeric>
-                  {t("taxYear.result")}
-                </TableColumnHeader>
-                <TableColumnHeader>{t("taxYear.taxClass")}</TableColumnHeader>
-              </TableRow>
-            </TableHead>
-            {pending ? (
-              <TableLoader skeletonRows={3} />
-            ) : (
-              <TableBody>
-                {items.map((r) => (
-                  <TableRow
-                    key={`${r.transaction_id}-${r.instrument}`}
-                    value={`${r.transaction_id}-${r.instrument}`}
-                  >
-                    <TableCell>{dateCell(r)}</TableCell>
-                    <TableCell>
-                      <AppLink
-                        variant="neutral"
-                        underline="hover"
-                        to={{
-                          to: "/instruments/$code",
-                          params: { code: r.instrument },
-                        }}
-                      >
-                        {r.instrument}
-                      </AppLink>
-                    </TableCell>
-                    <TableCell>{accountCell(r)}</TableCell>
-                    <TableCell numeric>{quantity(r)}</TableCell>
-                    <TableCell numeric>{money(r.cost)}</TableCell>
-                    <TableCell numeric>{money(r.proceeds)}</TableCell>
-                    <TableCell numeric>
-                      <Text size="sm" tone={resultTone(r)}>
-                        {signed(r.result)}
-                      </Text>
-                    </TableCell>
-                    <TableCell>{classOf(r)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            )}
-          </TableContent>
-        </Table>
-      )}
+      <Table columns={columns} variant="framed">
+        <TableContent>
+          <TableCaption>{t("taxYear.realized.title")}</TableCaption>
+          <TableHead>
+            <TableRow>
+              <TableColumnHeader>{t("taxYear.date")}</TableColumnHeader>
+              <TableColumnHeader>{t("taxYear.instrument")}</TableColumnHeader>
+              <TableColumnHeader>{t("taxYear.account")}</TableColumnHeader>
+              <TableColumnHeader numeric>
+                {t("taxYear.quantity")}
+              </TableColumnHeader>
+              <TableColumnHeader numeric>{t("taxYear.cost")}</TableColumnHeader>
+              <TableColumnHeader numeric>
+                {t("taxYear.proceeds")}
+              </TableColumnHeader>
+              <TableColumnHeader numeric>
+                {t("taxYear.result")}
+              </TableColumnHeader>
+              <TableColumnHeader>{t("taxYear.taxClass")}</TableColumnHeader>
+            </TableRow>
+          </TableHead>
+          {pending ? (
+            <TableLoader skeletonRows={3} />
+          ) : (
+            <TableBody>
+              {items.map((r) => (
+                <TableRow
+                  key={`${r.transaction_id}-${r.instrument}`}
+                  value={`${r.transaction_id}-${r.instrument}`}
+                >
+                  <TableCell>{dateCell(r)}</TableCell>
+                  <TableCell>
+                    <AppLink
+                      variant="neutral"
+                      underline="hover"
+                      to={{
+                        to: "/instruments/$code",
+                        params: { code: r.instrument },
+                      }}
+                    >
+                      {r.instrument}
+                    </AppLink>
+                  </TableCell>
+                  <TableCell>{accountCell(r)}</TableCell>
+                  <TableCell numeric>{quantity(r)}</TableCell>
+                  <TableCell numeric>{money(r.cost)}</TableCell>
+                  <TableCell numeric>{money(r.proceeds)}</TableCell>
+                  <TableCell numeric>
+                    <Text size="sm" tone={resultTone(r)}>
+                      {signed(r.result)}
+                    </Text>
+                  </TableCell>
+                  <TableCell>{classOf(r)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          )}
+        </TableContent>
+      </Table>
     </Stack>
   );
 }

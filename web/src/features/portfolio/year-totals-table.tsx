@@ -8,10 +8,6 @@ import {
   TableHead,
   TableRow,
 } from "@slotted/react/table";
-import { Stack } from "@slotted/react/stack";
-import { Heading, Text } from "@slotted/react/typography";
-
-import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
 
 export interface TotalsTableRow {
   key: string;
@@ -28,28 +24,7 @@ export function YearTotalsTable({
   headers: string[];
   rows: TotalsTableRow[];
 }) {
-  const compact = useMediaQuery(compactQuery);
   // Below 600 px four numeric columns clip the last one: each row becomes a group of lines.
-  if (compact)
-    return (
-      <Stack gap={2} role="group" aria-label={caption}>
-        <Heading level={3} size="sm">
-          {caption}
-        </Heading>
-        {rows.map((row) => (
-          <Stack key={row.key} gap={0}>
-            <Text size="md" weight="semibold">
-              {row.cells[0]}
-            </Text>
-            {row.cells.slice(1).map((cell, i) => (
-              <Text key={headers[i + 1]} size="sm" tone="muted">
-                {[headers[i + 1], cell].join(": ")}
-              </Text>
-            ))}
-          </Stack>
-        ))}
-      </Stack>
-    );
   return (
     <Table columns={headers.length} variant="framed">
       <TableContent>

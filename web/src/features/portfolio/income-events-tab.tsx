@@ -30,9 +30,7 @@ import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 import { AppLink } from "@/ui/app-link";
-import { PhoneList } from "@/ui/phone-list";
 import { QueryError } from "@/ui/query-error";
-import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
 
 type Account = components["schemas"]["Account"];
 type Money = components["schemas"]["Money"];
@@ -54,7 +52,6 @@ export function IncomeEventsTab({ year }: { year: number }) {
   const api = useApi();
   const fmt = useMoneyFormat();
   const scale = useScale();
-  const compact = useMediaQuery(compactQuery);
   const events = useQuery(incomeEventsQuery(api, year));
   const accounts = useQuery(accountsQuery(api));
   const pending = events.isPending || accounts.isPending || scale === null;
@@ -155,88 +152,59 @@ export function IncomeEventsTab({ year }: { year: number }) {
           </Stack>
         </Stack>
       )}
-      {compact ? (
-        <PhoneList
-          label={t("taxYear.income.title")}
-          loading={pending}
-          empty=""
-          rows={items.map((e) => ({
-            key: `${e.transaction_id}-${e.instrument}`,
-            title: e.instrument,
-            link: { to: "/transactions/$id", params: { id: e.transaction_id } },
-            lines: [
-              [formatDate(e.date, tag), accountLabel(byID, e.account_id)].join(
-                " · ",
-              ),
-              [t("taxYear.incomeType"), typeLabel(e.income_type)].join(": "),
-              [t("taxYear.taxTreatment"), treatmentLabel(e.tax_treatment)].join(
-                ": ",
-              ),
-              [t("taxYear.gross"), money(e.gross)].join(": "),
-              [t("taxYear.withheld"), money(e.withheld)].join(": "),
-            ],
-            end: money(net(e)),
-          }))}
-        />
-      ) : (
-        <Table columns={columns} variant="framed">
-          <TableContent>
-            <TableCaption>{t("taxYear.income.title")}</TableCaption>
-            <TableHead>
-              <TableRow>
-                <TableColumnHeader>{t("taxYear.date")}</TableColumnHeader>
-                <TableColumnHeader>{t("taxYear.instrument")}</TableColumnHeader>
-                <TableColumnHeader>{t("taxYear.account")}</TableColumnHeader>
-                <TableColumnHeader>{t("taxYear.incomeType")}</TableColumnHeader>
-                <TableColumnHeader>
-                  {t("taxYear.taxTreatment")}
-                </TableColumnHeader>
-                <TableColumnHeader numeric>
-                  {t("taxYear.gross")}
-                </TableColumnHeader>
-                <TableColumnHeader numeric>
-                  {t("taxYear.withheld")}
-                </TableColumnHeader>
-                <TableColumnHeader numeric>
-                  {t("taxYear.net")}
-                </TableColumnHeader>
-              </TableRow>
-            </TableHead>
-            {pending ? (
-              <TableLoader skeletonRows={3} />
-            ) : (
-              <TableBody>
-                {items.map((e) => (
-                  <TableRow
-                    key={`${e.transaction_id}-${e.instrument}`}
-                    value={`${e.transaction_id}-${e.instrument}`}
-                  >
-                    <TableCell>{dateCell(e)}</TableCell>
-                    <TableCell>
-                      <AppLink
-                        variant="neutral"
-                        underline="hover"
-                        to={{
-                          to: "/instruments/$code",
-                          params: { code: e.instrument },
-                        }}
-                      >
-                        {e.instrument}
-                      </AppLink>
-                    </TableCell>
-                    <TableCell>{accountCell(e)}</TableCell>
-                    <TableCell>{typeLabel(e.income_type)}</TableCell>
-                    <TableCell>{treatmentLabel(e.tax_treatment)}</TableCell>
-                    <TableCell numeric>{money(e.gross)}</TableCell>
-                    <TableCell numeric>{money(e.withheld)}</TableCell>
-                    <TableCell numeric>{money(net(e))}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            )}
-          </TableContent>
-        </Table>
-      )}
+      <Table columns={columns} variant="framed">
+        <TableContent>
+          <TableCaption>{t("taxYear.income.title")}</TableCaption>
+          <TableHead>
+            <TableRow>
+              <TableColumnHeader>{t("taxYear.date")}</TableColumnHeader>
+              <TableColumnHeader>{t("taxYear.instrument")}</TableColumnHeader>
+              <TableColumnHeader>{t("taxYear.account")}</TableColumnHeader>
+              <TableColumnHeader>{t("taxYear.incomeType")}</TableColumnHeader>
+              <TableColumnHeader>{t("taxYear.taxTreatment")}</TableColumnHeader>
+              <TableColumnHeader numeric>
+                {t("taxYear.gross")}
+              </TableColumnHeader>
+              <TableColumnHeader numeric>
+                {t("taxYear.withheld")}
+              </TableColumnHeader>
+              <TableColumnHeader numeric>{t("taxYear.net")}</TableColumnHeader>
+            </TableRow>
+          </TableHead>
+          {pending ? (
+            <TableLoader skeletonRows={3} />
+          ) : (
+            <TableBody>
+              {items.map((e) => (
+                <TableRow
+                  key={`${e.transaction_id}-${e.instrument}`}
+                  value={`${e.transaction_id}-${e.instrument}`}
+                >
+                  <TableCell>{dateCell(e)}</TableCell>
+                  <TableCell>
+                    <AppLink
+                      variant="neutral"
+                      underline="hover"
+                      to={{
+                        to: "/instruments/$code",
+                        params: { code: e.instrument },
+                      }}
+                    >
+                      {e.instrument}
+                    </AppLink>
+                  </TableCell>
+                  <TableCell>{accountCell(e)}</TableCell>
+                  <TableCell>{typeLabel(e.income_type)}</TableCell>
+                  <TableCell>{treatmentLabel(e.tax_treatment)}</TableCell>
+                  <TableCell numeric>{money(e.gross)}</TableCell>
+                  <TableCell numeric>{money(e.withheld)}</TableCell>
+                  <TableCell numeric>{money(net(e))}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          )}
+        </TableContent>
+      </Table>
     </Stack>
   );
 }

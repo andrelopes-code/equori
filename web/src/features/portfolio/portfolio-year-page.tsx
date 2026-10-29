@@ -29,7 +29,6 @@ import type { YearSearch, YearTab } from "@/features/portfolio/year-search";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
-import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
 
 // CP-04: a year is stepped one at a time and typed when far away, so the control is a number
 // field with steppers, limited to the range the contract accepts before any request. The year is
@@ -40,7 +39,6 @@ export function PortfolioYearPage() {
   const today = useToday();
   const search = useSearch({ from: "/_authed/portfolio/year" });
   const navigate = useNavigate();
-  const compact = useMediaQuery(compactQuery);
   const year = search.year ?? Number(today.slice(0, 4));
   const tab: YearTab = search.tab ?? "realized";
   const api = useApi();
@@ -65,28 +63,6 @@ export function PortfolioYearPage() {
     { tab: "realized", label: t("taxYear.tab.realized") },
     { tab: "income", label: t("taxYear.tab.income") },
   ];
-  const yearField = (
-    <Field>
-      <NumberField
-        aria-label={t("taxYear.year")}
-        name="year"
-        value={year}
-        min={minYear}
-        max={maxYear}
-        locale={tag}
-        format={{ useGrouping: false }}
-        onValueChange={(next) => {
-          if (
-            next !== null &&
-            Number.isInteger(next) &&
-            next >= minYear &&
-            next <= maxYear
-          )
-            change({ year: next });
-        }}
-      />
-    </Field>
-  );
   return (
     <Page width="full">
       <PageHeader size="lg">
@@ -105,7 +81,28 @@ export function PortfolioYearPage() {
                     })}
               </PageHeaderSubheading>
             </PageHeaderTitle>
-            <PageHeaderActions>{!compact && yearField}</PageHeaderActions>
+            <PageHeaderActions>
+              <Field>
+                <NumberField
+                  aria-label={t("taxYear.year")}
+                  name="year"
+                  value={year}
+                  min={minYear}
+                  max={maxYear}
+                  locale={tag}
+                  format={{ useGrouping: false }}
+                  onValueChange={(next) => {
+                    if (
+                      next !== null &&
+                      Number.isInteger(next) &&
+                      next >= minYear &&
+                      next <= maxYear
+                    )
+                      change({ year: next });
+                  }}
+                />
+              </Field>
+            </PageHeaderActions>
           </PageHeaderTitleRow>
         </PageHeaderTitleArea>
         <PageHeaderTabs>
@@ -129,7 +126,6 @@ export function PortfolioYearPage() {
       </PageHeader>
       <PageBody>
         <Stack gap={6}>
-          {compact && yearField}
           {tab === "realized" ? (
             <RealizedResultsTab year={year} />
           ) : (
