@@ -526,7 +526,6 @@ export const catalogPtBR: Catalog = {
     "Marcadores livres que cruzam as categorias, como uma viagem ou uma reforma. Um lançamento pode ter vários.",
   "facts.categorized": "Categorizada por",
   "facts.origin": "Origem",
-  "facts.version": "Versão",
   "transaction.facts.side": "Lado",
   "transaction.facts.instrument": "Instrumento",
   "transaction.facts.quantity": "Quantidade",

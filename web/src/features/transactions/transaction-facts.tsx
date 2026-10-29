@@ -77,12 +77,6 @@ export function TransactionFacts({
           {t(originWords[transaction.origin])}
         </DescriptionListDescription>
       </DescriptionListItem>
-      <DescriptionListItem>
-        <DescriptionListTerm>{t("facts.version")}</DescriptionListTerm>
-        <DescriptionListDescription>
-          {String(transaction.version)}
-        </DescriptionListDescription>
-      </DescriptionListItem>
       {transaction.trade !== undefined && (
         <TradeFacts trade={transaction.trade} />
       )}

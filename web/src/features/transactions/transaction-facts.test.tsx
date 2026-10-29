@@ -214,11 +214,22 @@ describe("transaction facts", () => {
     );
   });
 
+  // The history section names the current version; a bare number among the facts said nothing.
+  it("leaves the version to the history section", async () => {
+    await renderApp(`/transactions/${txID}`, {
+      fetch: api(transactionFixture()),
+    });
+
+    await screen.findByText(f("facts.origin"));
+
+    expect(screen.queryByText("Version")).not.toBeInTheDocument();
+  });
+
   it("adds no section to a plain transaction", async () => {
     await renderApp(`/transactions/${txID}`, {
       fetch: api(transactionFixture()),
     });
-    await screen.findByText(f("facts.version"));
+    await screen.findByText(f("facts.origin"));
     expect(
       screen.queryByText(f("transaction.facts.side")),
     ).not.toBeInTheDocument();

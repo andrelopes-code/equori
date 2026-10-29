@@ -521,7 +521,6 @@ export const catalogEn = {
     "Free labels that cut across categories, such as a trip or a renovation. A transaction can carry several.",
   "facts.categorized": "Categorized by",
   "facts.origin": "Origin",
-  "facts.version": "Version",
   "transaction.facts.side": "Side",
   "transaction.facts.instrument": "Instrument",
   "transaction.facts.quantity": "Quantity",
