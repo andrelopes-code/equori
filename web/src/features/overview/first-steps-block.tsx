@@ -1,11 +1,5 @@
 import { ButtonLink } from "@slotted/react/button";
-import {
-  Card,
-  CardActions,
-  CardBody,
-  CardFooter,
-  CardHeader,
-} from "@slotted/react/card";
+import { Card, CardActions, CardBody, CardHeader } from "@slotted/react/card";
 import { Inline } from "@slotted/react/inline";
 import { Stack } from "@slotted/react/stack";
 import { Stepper, StepperList, StepperStep } from "@slotted/react/stepper";
@@ -67,36 +61,37 @@ export function FirstStepsBlock() {
         </CardActions>
       </CardHeader>
       <CardBody>
-        <Stepper step={steps.indexOf(next)} navigation="none">
-          <StepperList aria-label={t("firstSteps.title")}>
-            {steps.map((step) => (
-              <StepperStep
-                key={step.id}
-                label={t(`firstSteps.${step.id}`)}
-                description={t(`firstSteps.${step.id}Hint`)}
-                complete={step.done}
-              />
-            ))}
-          </StepperList>
-        </Stepper>
+        <Stack gap={8}>
+          <Stepper step={steps.indexOf(next)} navigation="none">
+            <StepperList aria-label={t("firstSteps.title")}>
+              {steps.map((step) => (
+                <StepperStep
+                  key={step.id}
+                  label={t(`firstSteps.${step.id}`)}
+                  description={t(`firstSteps.${step.id}Hint`)}
+                  complete={step.done}
+                />
+              ))}
+            </StepperList>
+          </Stepper>
+
+          <Inline gap={3} wrap="wrap">
+            <ButtonLink render={routeTo(next.destination)}>
+              {t(`firstSteps.action.${next.id}`)}
+            </ButtonLink>
+            <ButtonLink
+              variant="ghost"
+              tone="secondary"
+              render={routeTo({
+                to: "/help/$page",
+                params: { page: "first-month" },
+              })}
+            >
+              {t("firstSteps.guide")}
+            </ButtonLink>
+          </Inline>
+        </Stack>
       </CardBody>
-      <CardFooter>
-        <Inline gap={3} wrap="wrap">
-          <ButtonLink render={routeTo(next.destination)}>
-            {t(`firstSteps.action.${next.id}`)}
-          </ButtonLink>
-          <ButtonLink
-            variant="ghost"
-            tone="secondary"
-            render={routeTo({
-              to: "/help/$page",
-              params: { page: "first-month" },
-            })}
-          >
-            {t("firstSteps.guide")}
-          </ButtonLink>
-        </Inline>
-      </CardFooter>
     </Card>
   );
 }

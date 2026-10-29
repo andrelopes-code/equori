@@ -15,7 +15,7 @@
     );
   }
 
-  /* The text keeps the reading line, and from 1280 px the list of its sections stands at its end;
+  /* The text keeps the reading line, and from 1280 px the list of its sections stands beside it;
      below, the list folds above the text. The 13 rem column holds the longest section title. */
   .article {
     display: grid;
@@ -24,15 +24,20 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
+  /* The list follows the text, not the page's far edge. The text's track is 44 rem, the reading
+     measure of the body's type; the measure token counts in ch, which a grid track reads in the
+     article's own font. */
   @media (min-width: 1280px) {
     .article {
-      grid-template-columns: minmax(0, 1fr) 13rem;
+      grid-template-columns: minmax(0, 44rem) 13rem;
+      justify-content: start;
     }
   }
 
   .text {
     display: flex;
     min-inline-size: 0;
+    max-inline-size: 44rem;
     flex-direction: column;
     gap: var(--slotted-space-9);
   }

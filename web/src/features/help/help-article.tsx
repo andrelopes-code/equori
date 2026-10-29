@@ -1,4 +1,3 @@
-import { Container } from "@slotted/react/container";
 import { Divider } from "@slotted/react/divider";
 import { Markdown } from "@slotted/react/markdown";
 import { Stack } from "@slotted/react/stack";
@@ -44,18 +43,16 @@ export function HelpArticle({ lead, body, page }: HelpArticleProps) {
     <div className={styles.article}>
       <div className={styles.text}>
         {!beside && sections}
-        <Container size="measure" inset={0} align="start">
-          <Stack gap={7}>
-            <div className={styles.lead}>
-              <Markdown source={lead} size="lg" renderers={screenLinks} />
-            </div>
-            <div ref={setText}>
-              <Markdown source={body} size="md" renderers={screenLinks} />
-            </div>
-            <Divider />
-            <HelpPager page={page} />
-          </Stack>
-        </Container>
+        <Stack gap={7}>
+          <div className={styles.lead}>
+            <Markdown source={lead} size="lg" renderers={screenLinks} />
+          </div>
+          <div ref={setText}>
+            <Markdown source={body} size="md" renderers={screenLinks} />
+          </div>
+          <Divider />
+          <HelpPager page={page} />
+        </Stack>
       </div>
 
       {beside && sections}
