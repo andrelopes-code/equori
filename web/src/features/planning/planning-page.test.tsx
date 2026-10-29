@@ -12,6 +12,7 @@ import {
   salary,
   streaming,
 } from "@/testing/planning-api";
+import { optionalName } from "@/testing/optional-name";
 import { renderApp } from "@/testing/render-app";
 
 async function openAction(row: string, index: number, action: string) {
@@ -230,7 +231,7 @@ describe("PlanningPage agenda", () => {
     );
     await user.type(
       within(dialog).getByRole("textbox", {
-        name: catalogEn["occurrence.reason"],
+        name: optionalName(catalogEn["occurrence.reason"]),
       }),
       "Paid in cash",
     );

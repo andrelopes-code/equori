@@ -53,7 +53,7 @@ export function SuggestionCard({
       </CardHeader>
       <CardBody>
         {naming ? (
-          <Field>
+          <Field required>
             <FieldLabel>{t("rules.name")}</FieldLabel>
             <TextField
               value={name}

@@ -78,7 +78,7 @@ export function BillingRuleForm({
       }}
     >
       <Stack gap={8}>
-        <Field>
+        <Field required>
           <FieldLabel>{t("card.effectiveFrom")}</FieldLabel>
           <ChoiceSelect
             label={t("card.effectiveFrom")}

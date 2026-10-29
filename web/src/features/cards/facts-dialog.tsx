@@ -93,7 +93,7 @@ export function FactsDialog({
                 <InlineMessage tone="danger">{error}</InlineMessage>
               )}
 
-              <Field>
+              <Field required>
                 <FieldLabel>{t("facts.total")}</FieldLabel>
                 <MoneyInput
                   size="field"
@@ -129,7 +129,7 @@ export function FactsDialog({
                 />
               </Field>
 
-              <Field>
+              <Field required>
                 <FieldLabel>{t("facts.due")}</FieldLabel>
                 <DateInput
                   name="due_date"

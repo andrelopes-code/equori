@@ -210,7 +210,7 @@ export function PortfolioReturn({
             });
         }}
       />
-      <Field>
+      <Field necessity="none">
         <FieldLabel>{t("portfolio.return.from")}</FieldLabel>
         <DateInput
           name="from"
@@ -221,7 +221,7 @@ export function PortfolioReturn({
           }}
         />
       </Field>
-      <Field>
+      <Field necessity="none">
         <FieldLabel>{t("portfolio.return.to")}</FieldLabel>
         <DateInput
           name="to"

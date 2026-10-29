@@ -97,7 +97,7 @@ export function TransactionForm({
       )}
 
       {simpleKind !== null && (
-        <Field invalid={error("account") !== undefined}>
+        <Field required invalid={error("account") !== undefined}>
           <FieldLabel>{accountLabel}</FieldLabel>
           <AccountField
             name="account"
@@ -124,7 +124,7 @@ export function TransactionForm({
       )}
 
       {draft.kind === "transfer" && (
-        <Field invalid={error("to") !== undefined}>
+        <Field required invalid={error("to") !== undefined}>
           <FieldLabel>{t("entry.to")}</FieldLabel>
           <AccountField
             name="to"
@@ -148,7 +148,7 @@ export function TransactionForm({
         </Field>
       )}
 
-      <Field invalid={error("date") !== undefined}>
+      <Field required invalid={error("date") !== undefined}>
         <FieldLabel>{t("entry.date")}</FieldLabel>
         <DateInput
           name="date"

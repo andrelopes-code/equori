@@ -13,13 +13,14 @@ import {
   usdWalletID,
   wiseID,
 } from "@/testing/foreign-api";
+import { optionalName } from "@/testing/optional-name";
 import { expectNoAmounts, hideAmounts } from "@/testing/privacy";
 import { renderApp } from "@/testing/render-app";
 import { checkingID, savingsID, txID } from "@/testing/transaction-api";
 
 const path = `/transactions/new?kind=exchange&account_id=${checkingID}`;
 
-async function type(label: string, text: string) {
+async function type(label: string | RegExp, text: string) {
   await userEvent.type(
     await screen.findByRole("textbox", { name: label }),
     text,
@@ -42,7 +43,7 @@ async function chooseAccount(label: string, id: string) {
   await userEvent.click(radio);
 }
 
-async function pickCategory(label: string, text: string) {
+async function pickCategory(label: string | RegExp, text: string) {
   const input = await screen.findByRole("combobox", { name: label });
   await userEvent.click(input);
   await userEvent.type(input, text);
@@ -56,8 +57,8 @@ async function fillS17() {
   await chooseAccount(catalogEn["exchange.to"], wiseID);
   await type(catalogEn["exchange.fromAmount"], "548300");
   await type(catalogEn["exchange.toAmount"], "100000");
-  await type(catalogEn["exchange.fee"], "3000");
-  await pickCategory(catalogEn["exchange.feeCategory"], "Fees");
+  await type(optionalName(catalogEn["exchange.fee"]), "3000");
+  await pickCategory(optionalName(catalogEn["exchange.feeCategory"]), "Fees");
 }
 
 beforeEach(() => {

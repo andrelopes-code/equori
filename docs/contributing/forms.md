@@ -56,7 +56,9 @@ A field with no step is `full`.
 
 ## F7 · Necessity is said once, the same way
 
-- Required fields carry no mark; an optional field carries "(optional)" (Silver). The application sets `necessity="optional"` once, through `FieldDefaultsProvider` at its root. It is not set yet: it is set once every field the backend requires states `required` (plan of 2026-10-29, slice 7). Until then a form marks its required fields with `required` and the asterisk the family draws.
+- Required fields carry no mark; an optional field carries "(optional)" (Silver). The application sets `necessity="optional"` once, through `FieldDefaultsProvider` in `app/slotted-locale.tsx`.
+- A section (`FormSection`) is a topic, not a question: its legend carries no necessity word. A set of choices that is a question (`FieldGroup` with segments or radios) states `required` like a field.
+- A control outside a submitted form (a calculator, a filter, a setting applied at once) sets `necessity="none"` on its `Field`: nothing is sent, so nothing is optional.
 - A field the backend requires sets `required` on its `Field`, so the mark and `aria-required` follow from one fact.
 
 ## F8 · Help sits where its question is

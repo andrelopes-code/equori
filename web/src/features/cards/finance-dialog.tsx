@@ -98,7 +98,7 @@ export function FinanceDialog({
                 <InlineMessage tone="danger">{error}</InlineMessage>
               )}
 
-              <Field>
+              <Field required>
                 <FieldLabel>{t("finance.count")}</FieldLabel>
                 <ChoiceSelect
                   className={widths.short}
@@ -115,7 +115,7 @@ export function FinanceDialog({
                 />
               </Field>
 
-              <Field>
+              <Field required>
                 <FieldLabel>{t("finance.installment")}</FieldLabel>
                 <MoneyInput
                   size="field"
@@ -138,7 +138,7 @@ export function FinanceDialog({
                 )}
               </Field>
 
-              <Field>
+              <Field required>
                 <FieldLabel>{t("finance.date")}</FieldLabel>
                 <DateInput name="date" value={date} onChange={setDate} />
               </Field>

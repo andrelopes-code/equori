@@ -12,6 +12,7 @@ import {
   parentID,
 } from "@/testing/account-api";
 import { fakeApi, json, problem } from "@/testing/fake-api";
+import { optionalName } from "@/testing/optional-name";
 import { renderApp } from "@/testing/render-app";
 
 const createdID = "e0000000-0000-4000-8000-0000000000aa";
@@ -321,7 +322,7 @@ describe("Edit account", () => {
     const sent: Sent[] = [];
     await renderApp(`/accounts/${checkingID}/edit`, { fetch: api(sent) });
     const parent = await screen.findByRole("combobox", {
-      name: catalogEn["accountForm.parent"],
+      name: optionalName(catalogEn["accountForm.parent"]),
     });
     await userEvent.click(parent);
     await userEvent.click(
@@ -343,7 +344,7 @@ describe("Edit account", () => {
   it("offers each parent with its kind and what it holds, and says where the account stands", async () => {
     await renderApp(`/accounts/${checkingID}/edit`, { fetch: api([]) });
     const parent = await screen.findByRole("combobox", {
-      name: catalogEn["accountForm.parent"],
+      name: optionalName(catalogEn["accountForm.parent"]),
     });
     expect(
       await screen.findByText(catalogEn["accountForm.parentNone"]),

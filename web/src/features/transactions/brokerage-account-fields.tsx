@@ -50,7 +50,7 @@ export function BrokerageAccountFields({
           </AlertContent>
         </Alert>
       )}
-      <Field invalid={errors.account_id !== undefined}>
+      <Field required invalid={errors.account_id !== undefined}>
         <FieldTitle
           label={t("trade.securityAccount")}
           help={t("trade.securityAccountHelp")}
@@ -78,7 +78,7 @@ export function BrokerageAccountFields({
         )}
       </Field>
 
-      <Field invalid={errors.cash_account_id !== undefined}>
+      <Field required invalid={errors.cash_account_id !== undefined}>
         <FieldTitle
           label={t("trade.cashAccount")}
           help={t("trade.cashAccountHelp")}

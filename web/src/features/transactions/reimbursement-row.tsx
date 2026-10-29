@@ -42,7 +42,7 @@ export function ReimbursementRow({
         {transaction.description}
       </Checkbox>
       {checked && (
-        <Field>
+        <Field required>
           <FieldLabel>
             {t("reimbursement.amount", {
               description: transaction.description,

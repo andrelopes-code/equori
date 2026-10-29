@@ -68,7 +68,7 @@ export function CsvProfileSection({
   );
   return (
     <FormSection legend={t("importFile.profile")}>
-      <Field>
+      <Field required>
         <FieldLabel>{t("importFile.delimiter")}</FieldLabel>
         <ChoiceSelect
           className={widths.medium}
@@ -97,7 +97,7 @@ export function CsvProfileSection({
         />
       </Field>
 
-      <Field>
+      <Field required>
         <FieldLabel>{t("importFile.headerRows")}</FieldLabel>
         <ChoiceSelect
           className={widths.short}
@@ -142,7 +142,7 @@ export function CsvProfileSection({
       {column(t("importFile.descriptionColumn"), "description_column")}
       {column(t("importFile.idColumn"), "id_column", true)}
 
-      <FieldGroup>
+      <FieldGroup required>
         <FieldGroupLegend>{t("importFile.amountMode")}</FieldGroupLegend>
         <FieldGroupContent>
           <Inline>

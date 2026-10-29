@@ -107,7 +107,7 @@ export function LinkDrawer({
             {candidates.length === 0 ? (
               <Text size="sm">{t("links.noCandidate")}</Text>
             ) : (
-              <Field>
+              <Field required>
                 <FieldLabel>{t("links.chooseAccount")}</FieldLabel>
                 <RadioGroup
                   name="account"

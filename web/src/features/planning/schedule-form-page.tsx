@@ -373,7 +373,7 @@ export function ScheduleFormPage() {
                   )}
                 </Field>
 
-                <Field>
+                <Field required>
                   <FieldLabel>{t("schedule.tolerance")}</FieldLabel>
                   <NumberField
                     className={widths.short}
@@ -391,7 +391,7 @@ export function ScheduleFormPage() {
                   </FieldDescription>
                 </Field>
 
-                <Field>
+                <Field required>
                   <FieldLabel>{t("schedule.grace")}</FieldLabel>
                   <NumberField
                     className={widths.short}

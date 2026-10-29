@@ -88,7 +88,7 @@ export function RecurrenceFields({
   const mode = modeOf(value);
   const end = endOf(value);
   const field = (label: string, control: ReactNode) => (
-    <Field className={widths.medium}>
+    <Field required className={widths.medium}>
       <FieldLabel>{label}</FieldLabel>
       {control}
     </Field>
@@ -140,7 +140,7 @@ export function RecurrenceFields({
   return (
     <Stack gap={8}>
       <FormRow>
-        <Field className={widths.medium}>
+        <Field required className={widths.medium}>
           <FieldLabel>{t("recurrence.frequency")}</FieldLabel>
           <ChoiceSelect
             label={t("recurrence.frequency")}
@@ -166,7 +166,7 @@ export function RecurrenceFields({
           />
         </Field>
 
-        <Field className={widths.short}>
+        <Field required className={widths.short}>
           <FieldLabel>{t("recurrence.interval")}</FieldLabel>
           <NumberField
             name="interval"
@@ -181,7 +181,7 @@ export function RecurrenceFields({
       </FormRow>
 
       {value.frequency === "monthly" && (
-        <FieldGroup>
+        <FieldGroup required>
           <FieldGroupLegend>{t("recurrence.mode")}</FieldGroupLegend>
           <FieldGroupContent>
             <Inline>
@@ -243,7 +243,7 @@ export function RecurrenceFields({
       )}
       {value.frequency === "weekly" && weekdayChoice}
 
-      <Field>
+      <Field required>
         <FieldLabel>{t("recurrence.adjustment")}</FieldLabel>
         <ChoiceSelect
           label={t("recurrence.adjustment")}
@@ -272,7 +272,7 @@ export function RecurrenceFields({
         />
       </Field>
 
-      <FieldGroup>
+      <FieldGroup required>
         <FieldGroupLegend>{t("recurrence.end")}</FieldGroupLegend>
         <FieldGroupContent>
           <Inline>
@@ -298,7 +298,7 @@ export function RecurrenceFields({
       </FieldGroup>
 
       {value.until !== undefined && (
-        <Field>
+        <Field required>
           <FieldLabel>{t("recurrence.untilField")}</FieldLabel>
           <DateInput
             name="until"
@@ -313,7 +313,7 @@ export function RecurrenceFields({
       )}
 
       {value.count !== undefined && (
-        <Field className={widths.short}>
+        <Field required className={widths.short}>
           <FieldLabel>{t("recurrence.countField")}</FieldLabel>
           <NumberField
             name="count"

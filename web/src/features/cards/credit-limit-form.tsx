@@ -52,7 +52,7 @@ export function CreditLimitForm({
       }}
     >
       <FormLayout>
-        <Field>
+        <Field required>
           <FieldLabel>{t("accountForm.limit")}</FieldLabel>
           <MoneyInput
             size="field"
@@ -65,7 +65,7 @@ export function CreditLimitForm({
           />
         </Field>
 
-        <Field>
+        <Field required>
           <FieldLabel>{t("card.limitFrom")}</FieldLabel>
           <DateInput name="effective_from" value={from} onChange={setFrom} />
         </Field>

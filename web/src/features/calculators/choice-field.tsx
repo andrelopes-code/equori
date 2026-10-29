@@ -17,7 +17,7 @@ export function ChoiceField<T extends string>({
   onChange: (value: T) => void;
 }) {
   return (
-    <Field>
+    <Field necessity="none">
       <FieldLabel>{label}</FieldLabel>
       <SegmentedControl
         value={value}

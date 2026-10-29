@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { FieldDefaultsProvider } from "@slotted/react/field";
 import {
   FieldGroup,
   FieldGroupContent,
@@ -23,12 +24,18 @@ export function FormSection({
   children,
 }: FormSectionProps) {
   return (
-    <FieldGroup className={styles.section}>
+    // Workaround for Slotted issue #40: a section is a topic, not a question, so its legend says no
+    // necessity; the provider inside gives its fields back the application's own.
+    <FieldGroup className={styles.section} necessity="none">
       <FieldGroupLegend>{legend}</FieldGroupLegend>
       {description !== undefined && (
         <FieldGroupDescription>{description}</FieldGroupDescription>
       )}
-      <FieldGroupContent>{children}</FieldGroupContent>
+      <FieldGroupContent>
+        <FieldDefaultsProvider necessity="optional">
+          {children}
+        </FieldDefaultsProvider>
+      </FieldGroupContent>
     </FieldGroup>
   );
 }

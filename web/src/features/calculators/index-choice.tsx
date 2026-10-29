@@ -25,7 +25,7 @@ export function IndexChoice({
   onChange: (id: string | undefined) => void;
 }) {
   return (
-    <Field>
+    <Field necessity="none">
       <FieldLabel>{label}</FieldLabel>
       <SegmentedControl
         value={value ?? typed}

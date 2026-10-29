@@ -75,7 +75,7 @@ export function CloseAccountDialog({
         </DialogHeader>
         <DialogBody>
           <FormLayout>
-            <Field>
+            <Field required>
               <FieldLabel>{t("account.closeDate")}</FieldLabel>
               <DateInput name="closed_on" value={date} onChange={setDate} />
             </Field>

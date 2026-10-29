@@ -620,7 +620,7 @@ export const catalogPtBR: Catalog = {
   "reimbursement.totals": "Alocado {allocated} de {total} · Sobra {leftover}",
   "reimbursement.empty":
     "Nenhuma despesa dos últimos 90 dias tem valor restante a reembolsar.",
-  "reimbursement.category": "Categoria das despesas marcadas (opcional)",
+  "reimbursement.category": "Categoria das despesas marcadas",
   "reimbursement.categoryHint":
     "Vazio mantém as categorias. Uma categoria move cada despesa marcada e o seu reembolso para ela.",
   "reimbursement.submit": "Marcar como reembolso",
@@ -1585,7 +1585,7 @@ export const catalogPtBR: Catalog = {
   "occurrence.skipTitle": "Pular {name}?",
   "occurrence.skipHint":
     "Uma ocorrência pulada sai da projeção e dos totais do mês.",
-  "occurrence.reason": "Motivo (opcional)",
+  "occurrence.reason": "Motivo",
   "occurrence.moveTitle": "Mover {name}",
   "occurrence.moveHint":
     "Uma mudança posterior nos termos do agendamento mantém a nova data.",

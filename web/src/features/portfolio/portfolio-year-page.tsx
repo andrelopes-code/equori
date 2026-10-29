@@ -82,7 +82,7 @@ export function PortfolioYearPage() {
               </PageHeaderSubheading>
             </PageHeaderTitle>
             <PageHeaderActions>
-              <Field>
+              <Field necessity="none">
                 <NumberField
                   aria-label={t("taxYear.year")}
                   name="year"

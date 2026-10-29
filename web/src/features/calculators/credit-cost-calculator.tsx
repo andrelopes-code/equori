@@ -235,7 +235,7 @@ export function CreditCostCalculator() {
         />
       </div>
       <div className={styles.pair}>
-        <Field>
+        <Field necessity="none">
           <FieldLabel>{t("calc.credit.releaseDate")}</FieldLabel>
           <DateInput
             name="releaseDate"
@@ -246,7 +246,7 @@ export function CreditCostCalculator() {
             }}
           />
         </Field>
-        <Field>
+        <Field necessity="none">
           <FieldLabel>{t("calc.credit.firstDue")}</FieldLabel>
           <DateInput
             name="firstDue"

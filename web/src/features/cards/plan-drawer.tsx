@@ -260,7 +260,7 @@ export function PlanDrawer({
                           })}
                     </InlineMessage>
                     {mode === "anticipate" && currency !== undefined && (
-                      <Field>
+                      <Field required>
                         <FieldLabel>{t("plan.paid")}</FieldLabel>
                         <MoneyInput
                           size="field"
@@ -282,7 +282,7 @@ export function PlanDrawer({
                         </FieldDescription>
                       </Field>
                     )}
-                    <Field>
+                    <Field required>
                       <FieldLabel>{t("plan.date")}</FieldLabel>
                       <DateInput name="date" value={date} onChange={setDate} />
                     </Field>

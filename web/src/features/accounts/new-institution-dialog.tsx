@@ -36,7 +36,7 @@ export function NewInstitutionDialog({
           <DialogDescription>{t("institutions.newHint")}</DialogDescription>
         </DialogHeader>
         <DialogBody>
-          <Field>
+          <Field required>
             <FieldLabel>{t("institutions.name")}</FieldLabel>
             <InstitutionField
               value={null}

@@ -29,7 +29,7 @@ export function AccountCurrencyField({
   const t = useT();
 
   return (
-    <Field invalid={error !== undefined}>
+    <Field required invalid={error !== undefined}>
       <FieldLabel>{t("accountForm.currency")}</FieldLabel>
       {mode === "create" && (
         <ChoiceSelect

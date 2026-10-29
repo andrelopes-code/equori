@@ -12,6 +12,7 @@ import {
   taxesID,
   travelID,
 } from "@/testing/foreign-api";
+import { optionalName } from "@/testing/optional-name";
 import { expectNoAmounts, hideAmounts } from "@/testing/privacy";
 import { renderApp } from "@/testing/render-app";
 import { txID } from "@/testing/transaction-api";
@@ -108,7 +109,7 @@ describe("foreign purchase entry", () => {
   it("prefills the charge of the card and lets it change", async () => {
     await renderApp(path, { fetch: api([]) });
     const field = await screen.findByRole("textbox", {
-      name: catalogEn["foreignPurchase.chargeRate"],
+      name: optionalName(catalogEn["foreignPurchase.chargeRate"]),
     });
     await waitFor(() => {
       expect(field).toHaveValue("350");
@@ -205,7 +206,7 @@ describe("foreign purchase entry", () => {
     await renderApp(path, { fetch: api(sent) });
     await fillS16();
     const input = await screen.findByRole("combobox", {
-      name: catalogEn["foreignPurchase.chargeCategory"],
+      name: optionalName(catalogEn["foreignPurchase.chargeCategory"]),
     });
     await userEvent.click(input);
     await userEvent.type(input, "Taxes");

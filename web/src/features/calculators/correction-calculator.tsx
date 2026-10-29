@@ -189,7 +189,7 @@ export function CorrectionCalculator() {
           />
           <div className={styles.pair}>
             {from !== null && (
-              <Field>
+              <Field necessity="none">
                 <FieldLabel>{t("calc.correction.from")}</FieldLabel>
                 <MonthControl
                   label={t("calc.correction.from")}
@@ -201,7 +201,7 @@ export function CorrectionCalculator() {
               </Field>
             )}
             {to !== null && (
-              <Field>
+              <Field necessity="none">
                 <FieldLabel>{t("calc.correction.to")}</FieldLabel>
                 <MonthControl
                   label={t("calc.correction.to")}

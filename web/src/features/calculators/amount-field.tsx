@@ -24,7 +24,7 @@ export function AmountField({
 }) {
   const minor = value === undefined ? 0 : Number(value);
   return (
-    <Field>
+    <Field necessity="none">
       <FieldLabel>{label}</FieldLabel>
       <MoneyInput
         size="field"

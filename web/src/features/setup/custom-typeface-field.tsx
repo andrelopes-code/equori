@@ -30,7 +30,7 @@ export function CustomTypefaceField() {
         if (next !== null) setTypeface(next);
       }}
     >
-      <Field invalid={invalid}>
+      <Field necessity="none" invalid={invalid}>
         <FieldLabel>{t("settings.typeface.custom")}</FieldLabel>
         <Inline gap={3} align="center">
           <TextField

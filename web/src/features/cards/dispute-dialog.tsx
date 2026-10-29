@@ -96,7 +96,7 @@ export function DisputeDialog({
               )}
 
               {resolving && (
-                <Field>
+                <Field required>
                   <FieldLabel>{t("dispute.outcome")}</FieldLabel>
                   <RadioGroup
                     name="outcome"
@@ -116,7 +116,7 @@ export function DisputeDialog({
                 </Field>
               )}
 
-              <Field>
+              <Field required>
                 <FieldLabel>
                   {t(resolving ? "dispute.resolvedOn" : "dispute.openedOn")}
                 </FieldLabel>

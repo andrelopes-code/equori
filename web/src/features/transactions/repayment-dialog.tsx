@@ -96,7 +96,7 @@ export function RepaymentDialog({
             <InlineMessage>{t("repayment.empty")}</InlineMessage>
           )}
           {items.length > 0 && (
-            <Field>
+            <Field required>
               <FieldLabel>{t("repayment.sources")}</FieldLabel>
               <RadioGroup
                 value={chosen ?? undefined}
@@ -121,7 +121,7 @@ export function RepaymentDialog({
             </Field>
           )}
           {selected !== undefined && (
-            <Field>
+            <Field required>
               <FieldLabel>{t("repayment.amount")}</FieldLabel>
               <MoneyInput
                 value={amount}

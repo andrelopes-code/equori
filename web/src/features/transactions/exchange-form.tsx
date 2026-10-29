@@ -105,7 +105,7 @@ export function ExchangeForm({
     >
       <EntryKindPicker value="exchange" onChange={onKind} investments />
 
-      <Field invalid={errors.from_account_id !== undefined}>
+      <Field required invalid={errors.from_account_id !== undefined}>
         <FieldLabel>{t("exchange.from")}</FieldLabel>
         <AccountField
           compact
@@ -132,7 +132,7 @@ export function ExchangeForm({
         )}
       </Field>
 
-      <Field invalid={errors.to_account_id !== undefined}>
+      <Field required invalid={errors.to_account_id !== undefined}>
         <FieldLabel>{t("exchange.to")}</FieldLabel>
         <AccountField
           compact
@@ -159,7 +159,7 @@ export function ExchangeForm({
         )}
       </Field>
 
-      <Field invalid={errors.date !== undefined}>
+      <Field required invalid={errors.date !== undefined}>
         <FieldLabel>{t("entry.date")}</FieldLabel>
         <DateInput
           name="date"
@@ -173,6 +173,7 @@ export function ExchangeForm({
 
       <FormRow>
         <Field
+          required
           className={widths.medium}
           invalid={errors.from_amount !== undefined}
         >
@@ -192,6 +193,7 @@ export function ExchangeForm({
           )}
         </Field>
         <Field
+          required
           className={widths.medium}
           invalid={errors.to_amount !== undefined}
         >

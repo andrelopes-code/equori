@@ -263,7 +263,7 @@ export function DebtPayoffCalculator() {
             </CardHeader>
             <CardBody>
               <div className={styles.pair}>
-                <Field>
+                <Field necessity="none">
                   <FieldLabel>{t("calc.debt.name", { n })}</FieldLabel>
                   <TextField
                     name={`debt-${String(n)}-name`}

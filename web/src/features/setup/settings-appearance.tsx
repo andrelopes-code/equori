@@ -107,7 +107,7 @@ export function SettingsAppearance() {
             }))}
             onChange={setAccent}
           />
-          <Field className={styles.customAccent}>
+          <Field necessity="none" className={styles.customAccent}>
             <FieldLabel>{t("settings.accent.custom")}</FieldLabel>
             <ColorField
               value={accentSeed(accent)}
@@ -134,7 +134,7 @@ export function SettingsAppearance() {
             }))}
             onChange={setTone}
           />
-          <Field className={styles.customAccent}>
+          <Field necessity="none" className={styles.customAccent}>
             <FieldLabel>{t("settings.tone.custom")}</FieldLabel>
             <ColorField
               value={toneSeed(tone)}

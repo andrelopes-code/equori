@@ -121,7 +121,7 @@ export function RecurringCostCalculator() {
   const inputs = (
     <>
       {fillable.length > 0 && (
-        <Field>
+        <Field necessity="none">
           <FieldLabel>{t("calc.recurring.schedule")}</FieldLabel>
           <ChoiceSelect
             label={t("calc.recurring.schedule")}

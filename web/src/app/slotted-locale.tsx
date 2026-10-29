@@ -1,3 +1,4 @@
+import { FieldDefaultsProvider } from "@slotted/react/field";
 import { SlottedProvider } from "@slotted/react/i18n";
 import { useEffect } from "react";
 import type { ReactNode } from "react";
@@ -17,7 +18,10 @@ export function SlottedLocale({ children }: { children: ReactNode }) {
     slotted === null ? {} : { [language]: slotted, [tag]: slotted };
   return (
     <SlottedProvider locale={tag} catalogs={catalogs}>
-      {children}
+      {/* F7: required fields carry no mark; an optional field says "(optional)". */}
+      <FieldDefaultsProvider necessity="optional">
+        {children}
+      </FieldDefaultsProvider>
     </SlottedProvider>
   );
 }

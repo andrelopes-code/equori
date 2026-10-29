@@ -121,7 +121,7 @@ export function PayDialog({
                 <InlineMessage tone="danger">{error}</InlineMessage>
               )}
 
-              <Field>
+              <Field required>
                 <FieldLabel>{t("pay.amount")}</FieldLabel>
                 <MoneyInput
                   size="field"
@@ -150,7 +150,7 @@ export function PayDialog({
               </Field>
 
               {accounts.data !== undefined && (
-                <Field>
+                <Field required>
                   <FieldLabel>{t("pay.from")}</FieldLabel>
                   <AccountField
                     accounts={accounts.data}
@@ -171,7 +171,7 @@ export function PayDialog({
                 </Field>
               )}
 
-              <Field>
+              <Field required>
                 <FieldLabel>{t("pay.date")}</FieldLabel>
                 <DateInput name="date" value={date} onChange={setDate} />
               </Field>

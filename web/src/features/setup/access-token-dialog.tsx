@@ -148,7 +148,7 @@ export function AccessTokenDialog({ onClose }: { onClose: () => void }) {
                     <FieldError>{errors.name}</FieldError>
                   )}
                 </Field>
-                <FieldGroup>
+                <FieldGroup required>
                   <FieldGroupLegend>
                     {t("settings.external_access.scope")}
                   </FieldGroupLegend>
@@ -172,7 +172,7 @@ export function AccessTokenDialog({ onClose }: { onClose: () => void }) {
                     </RadioGroup>
                   </FieldGroupContent>
                 </FieldGroup>
-                <FieldGroup>
+                <FieldGroup required>
                   <FieldGroupLegend>
                     {t("settings.external_access.expiry")}
                   </FieldGroupLegend>

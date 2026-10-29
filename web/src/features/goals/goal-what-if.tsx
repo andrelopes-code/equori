@@ -47,7 +47,7 @@ export function GoalWhatIf({
       : monthsBetween(goal.due_on.slice(0, 7), line.ready);
   return (
     <Stack gap={3}>
-      <Field size="sm">
+      <Field necessity="none" size="sm">
         <Inline justify="between" align="baseline" gap={3}>
           <FieldLabel>{t("goals.monthly")}</FieldLabel>
           <Text size="sm" weight="medium">
@@ -96,7 +96,7 @@ export function GoalWhatIf({
         </Inline>
       )}
       {investing && (
-        <Field size="sm">
+        <Field necessity="none" size="sm">
           <Inline justify="between" align="baseline" gap={3}>
             <FieldLabel>{t("goals.return")}</FieldLabel>
             <Text size="sm" weight="medium">

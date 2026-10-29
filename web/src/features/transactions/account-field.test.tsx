@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
 import { fakeApi, json } from "@/testing/fake-api";
+import { optionalName } from "@/testing/optional-name";
 import { renderApp } from "@/testing/render-app";
 import { foodID, sharedRoutes } from "@/testing/transaction-api";
 
@@ -248,7 +249,7 @@ describe("AccountField on a wide screen", () => {
   it("marks the suggested account where it stands, with the reason", async () => {
     await renderApp("/transactions/new", { fetch: fakeApi(routes) });
     const category = await screen.findByRole("combobox", {
-      name: catalogEn["category.label"],
+      name: optionalName(catalogEn["category.label"]),
     });
     await userEvent.click(category);
     await userEvent.type(category, "Mercado");

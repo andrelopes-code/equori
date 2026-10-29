@@ -171,7 +171,7 @@ export function ImportPage() {
       <PageBody>
         <Stack gap={10}>
           <FormLayout>
-            <Field invalid={refusal !== null || error !== null}>
+            <Field required invalid={refusal !== null || error !== null}>
               <FieldLabel>{t("importFile.file")}</FieldLabel>
               <Upload
                 accept=".ofx,.csv,text/csv,application/x-ofx"
@@ -210,7 +210,7 @@ export function ImportPage() {
             </Field>
 
             {file !== undefined && (
-              <FieldGroup>
+              <FieldGroup required>
                 <FieldGroupLegend>{t("importFile.format")}</FieldGroupLegend>
                 <FieldGroupContent>
                   <Inline>

@@ -93,7 +93,7 @@ export function RefundDialog({
                 <InlineMessage tone="danger">{error}</InlineMessage>
               )}
 
-              <Field invalid={tooMuch}>
+              <Field required invalid={tooMuch}>
                 <FieldLabel>{t("refund.amount")}</FieldLabel>
                 <MoneyInput
                   size="field"
@@ -109,7 +109,7 @@ export function RefundDialog({
                 </FieldDescription>
               </Field>
 
-              <Field>
+              <Field required>
                 <FieldLabel>{t("refund.date")}</FieldLabel>
                 <DateInput name="date" value={date} onChange={setDate} />
               </Field>

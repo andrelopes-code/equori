@@ -87,7 +87,7 @@ export function IncomeForm({
         }}
       />
 
-      <Field invalid={errors.income_type !== undefined}>
+      <Field required invalid={errors.income_type !== undefined}>
         <FieldTitle label={t("income.type")} help={t("income.typeHelp")} />
         <ChoiceSelect
           className={widths.medium}
@@ -109,7 +109,7 @@ export function IncomeForm({
         )}
       </Field>
 
-      <Field invalid={errors.date !== undefined}>
+      <Field required invalid={errors.date !== undefined}>
         <FieldLabel>{t("entry.date")}</FieldLabel>
         <DateInput
           name="date"
@@ -122,7 +122,11 @@ export function IncomeForm({
       </Field>
 
       <FormRow>
-        <Field className={widths.medium} invalid={errors.gross !== undefined}>
+        <Field
+          required
+          className={widths.medium}
+          invalid={errors.gross !== undefined}
+        >
           <FieldTitle label={t("income.gross")} help={t("income.grossHelp")} />
           <MoneyInput
             size="field"
@@ -162,7 +166,7 @@ export function IncomeForm({
         </Field>
       </FormRow>
 
-      <Field invalid={errors.category_id !== undefined}>
+      <Field required invalid={errors.category_id !== undefined}>
         <FieldLabel>{t("income.category")}</FieldLabel>
         <CategoryPicker
           placeholder={t("entry.categoryPlaceholder")}

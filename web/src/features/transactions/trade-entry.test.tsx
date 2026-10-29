@@ -11,12 +11,13 @@ import {
   investmentApi as api,
   securityID,
 } from "@/testing/investment-api";
+import { optionalName } from "@/testing/optional-name";
 import { renderApp } from "@/testing/render-app";
 import { txID } from "@/testing/transaction-api";
 
 const path = `/transactions/new?kind=trade&account_id=${securityID}`;
 
-async function type(label: string, text: string) {
+async function type(label: string | RegExp, text: string) {
   await userEvent.type(
     await screen.findByRole("textbox", { name: label }),
     text,
@@ -72,7 +73,7 @@ describe("trade entry", () => {
     const { router } = await renderApp(path, { fetch: api(sent) });
     await type(catalogEn["trade.quantity"], "150");
     await type(catalogEn["trade.unitPrice"], "10.05");
-    await type(catalogEn["trade.fees"], "490");
+    await type(optionalName(catalogEn["trade.fees"]), "490");
     expect(await screen.findByText(/1,507\.50/)).toBeInTheDocument();
     expect(screen.getByText(/1,512\.40/)).toBeInTheDocument();
     await userEvent.click(
@@ -128,7 +129,7 @@ describe("trade entry", () => {
     );
     await type(catalogEn["trade.quantity"], "50");
     await type(catalogEn["trade.unitPrice"], "10.80");
-    await type(catalogEn["trade.fees"], "210");
+    await type(optionalName(catalogEn["trade.fees"]), "210");
     expect(await screen.findByText(/540\.00/)).toBeInTheDocument();
     expect(screen.getByText(/537\.90/)).toBeInTheDocument();
     expect(screen.getByText(/10\.0827/)).toBeInTheDocument();

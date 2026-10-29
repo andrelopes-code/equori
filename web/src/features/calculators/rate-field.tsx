@@ -25,7 +25,7 @@ export function RateField({
   children?: ReactNode;
 }) {
   return (
-    <Field>
+    <Field necessity="none">
       <FieldLabel>{label}</FieldLabel>
       <RateInput
         name={name}

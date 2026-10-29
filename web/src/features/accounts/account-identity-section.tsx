@@ -35,7 +35,7 @@ export function AccountIdentitySection({
 
   return (
     <FormSection legend={t("accountForm.identity")}>
-      <Field>
+      <Field required>
         <FieldLabel>{t("accountForm.kind")}</FieldLabel>
         <KindSummary
           kind={kind}

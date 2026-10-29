@@ -12,6 +12,7 @@ import {
   streamingID,
 } from "@/testing/planning-api";
 import { chooseAccount } from "@/testing/account-choice";
+import { optionalName } from "@/testing/optional-name";
 import { renderApp } from "@/testing/render-app";
 
 beforeEach(() => {
@@ -302,7 +303,7 @@ describe("Schedule page", () => {
     const dialog = await screen.findByRole("dialog");
     await userEvent.type(
       within(dialog).getByRole("textbox", {
-        name: catalogEn["schedule.amount"],
+        name: optionalName(catalogEn["schedule.amount"]),
       }),
       "230000",
     );

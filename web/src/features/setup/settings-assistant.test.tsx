@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from "vitest";
 import { catalogEn as en } from "@/i18n/catalog.en";
 import { catalogPtBR as pt } from "@/i18n/catalog.pt-BR";
 import { fakeApi, json, problem } from "@/testing/fake-api";
+import { optionalName } from "@/testing/optional-name";
 import { renderApp } from "@/testing/render-app";
 
 // The chart engine renders thousands of nodes in jsdom, and each text query over the section
@@ -499,7 +500,7 @@ describe("assistant settings", () => {
     const dialog = await screen.findByRole("dialog");
     await userEvent.type(
       within(dialog).getByRole("spinbutton", {
-        name: pt["assistant.limits.requests"],
+        name: optionalName(pt["assistant.limits.requests"], "opcional"),
       }),
       "1000",
     );

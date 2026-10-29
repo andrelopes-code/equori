@@ -15,6 +15,7 @@ import {
   statementFixtures,
 } from "@/testing/account-api";
 import { fakeApi, json, problem } from "@/testing/fake-api";
+import { optionalName } from "@/testing/optional-name";
 import { renderApp } from "@/testing/render-app";
 
 type Route = (req: Request) => Response | Promise<Response>;
@@ -284,7 +285,7 @@ describe("CardPage", () => {
     const dialog = await screen.findByRole("dialog");
     await userEvent.type(
       within(dialog).getByRole("textbox", {
-        name: catalogEn["installments.description"],
+        name: optionalName(catalogEn["installments.description"]),
       }),
       "Geladeira",
     );

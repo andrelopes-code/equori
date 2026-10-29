@@ -27,7 +27,7 @@ export function EntryAmountField({
   const t = useT();
 
   return (
-    <Field invalid={error !== undefined}>
+    <Field required invalid={error !== undefined}>
       <FieldLabel>{t("entry.amount")}</FieldLabel>
       <MoneyInput
         value={value}

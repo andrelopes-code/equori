@@ -66,7 +66,7 @@ export function VoidDialog({
                 });
             }}
           >
-            <Field>
+            <Field required>
               <FieldLabel>{t("void.reason")}</FieldLabel>
               <Textarea
                 name="reason"

@@ -116,7 +116,7 @@ export function TradeForm({
     >
       <EntryKindPicker value="trade" onChange={onKind} investments />
 
-      <Field>
+      <Field required>
         <FieldLabel>{t("trade.side")}</FieldLabel>
         {/* The segments take their labels' width, as the entry kind's do (F3). */}
         <Inline>
@@ -152,7 +152,7 @@ export function TradeForm({
         }}
       />
 
-      <Field invalid={errors.date !== undefined}>
+      <Field required invalid={errors.date !== undefined}>
         <FieldLabel>{t("entry.date")}</FieldLabel>
         <DateInput
           name="date"
@@ -166,6 +166,7 @@ export function TradeForm({
 
       <FormRow>
         <Field
+          required
           className={widths.medium}
           invalid={errors.quantity !== undefined}
         >
@@ -185,6 +186,7 @@ export function TradeForm({
           )}
         </Field>
         <Field
+          required
           className={widths.medium}
           invalid={errors.unit_price !== undefined}
         >

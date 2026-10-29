@@ -18,7 +18,7 @@ export function PlacementCheck({ accountId }: { accountId: string }) {
   const [date, setDate] = useState(today);
   const placement = useQuery(placementQuery(useApi(), accountId, date));
   return (
-    <Field>
+    <Field necessity="none">
       <FieldLabel>{t("card.purchaseOn")}</FieldLabel>
       <DateInput name="date" value={date} onChange={setDate} />
       <FieldDescription live="polite">

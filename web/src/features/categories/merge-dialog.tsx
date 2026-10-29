@@ -48,7 +48,7 @@ export function MergeDialog({
         </DialogHeader>
         <DialogBody>
           <Stack gap={4}>
-            <Field>
+            <Field required>
               <FieldLabel>{t("merge.into")}</FieldLabel>
               <CategoryPicker
                 value={into}

@@ -19,7 +19,7 @@ export function CountField({
   onChange: (text: string) => void;
 }) {
   return (
-    <Field>
+    <Field necessity="none">
       <FieldLabel>{label}</FieldLabel>
       <TextField
         name={name}

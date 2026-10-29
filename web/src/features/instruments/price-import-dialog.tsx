@@ -80,7 +80,7 @@ export function PriceImportDialog({ onClose }: { onClose: () => void }) {
                 {t("prices.import.recorded", { count: recorded })}
               </InlineMessage>
             ) : (
-              <Field invalid={refusal !== null || problems.length > 0}>
+              <Field required invalid={refusal !== null || problems.length > 0}>
                 <FieldLabel>{t("prices.import.file")}</FieldLabel>
                 <Upload
                   accept=".csv,text/csv"

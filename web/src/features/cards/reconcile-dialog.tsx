@@ -108,7 +108,7 @@ export function ReconcileDialog({
                 <InlineMessage tone="warning">{error}</InlineMessage>
               )}
 
-              <Field>
+              <Field required>
                 <FieldLabel>{t("reconcileStatement.amount")}</FieldLabel>
                 <MoneyInput
                   size="field"

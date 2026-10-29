@@ -6,6 +6,7 @@ import { catalogEn } from "@/i18n/catalog.en";
 import { chooseAccount } from "@/testing/account-choice";
 import { chooseEntryKind } from "@/testing/entry-kind";
 import { fakeApi, json, problem } from "@/testing/fake-api";
+import { optionalName } from "@/testing/optional-name";
 import { renderApp } from "@/testing/render-app";
 import {
   accounts,
@@ -32,7 +33,7 @@ function api(
   });
 }
 
-async function pick(label: string, text: string) {
+async function pick(label: string | RegExp, text: string) {
   const input = screen.getByRole("combobox", { name: label });
   await userEvent.click(input);
   await userEvent.type(input, text);
@@ -83,10 +84,12 @@ describe("NewTransactionPage", () => {
     });
     await userEvent.type(amount, "12000");
     await chooseAccount(catalogEn["entry.payWith"], "Itau");
-    await pick(catalogEn["category.label"], "Mercado");
-    await pick(catalogEn["facts.payee"], "Padaria");
+    await pick(optionalName(catalogEn["category.label"]), "Mercado");
+    await pick(optionalName(catalogEn["facts.payee"]), "Padaria");
     await userEvent.type(
-      screen.getByRole("textbox", { name: catalogEn["facts.description"] }),
+      screen.getByRole("textbox", {
+        name: optionalName(catalogEn["facts.description"]),
+      }),
       "Weekly shop",
     );
     await userEvent.click(
@@ -148,7 +151,7 @@ describe("NewTransactionPage", () => {
       "713",
     );
     await chooseAccount(catalogEn["entry.payWith"], "Nubank Gold");
-    await pick(catalogEn["category.label"], "Mercado");
+    await pick(optionalName(catalogEn["category.label"]), "Mercado");
 
     await userEvent.click(
       await screen.findByRole("combobox", {
@@ -201,7 +204,7 @@ describe("NewTransactionPage", () => {
 
     await userEvent.click(
       await screen.findByRole("combobox", {
-        name: catalogEn["category.label"],
+        name: optionalName(catalogEn["category.label"]),
       }),
     );
 
@@ -272,13 +275,15 @@ describe("NewTransactionPage", () => {
       "100",
     );
     await chooseAccount(catalogEn["entry.payWith"], "Itau");
-    await pick(catalogEn["category.label"], "Lazer");
+    await pick(optionalName(catalogEn["category.label"]), "Lazer");
     await userEvent.click(
       screen.getByRole("button", { name: catalogEn["entry.save"] }),
     );
     expect(await screen.findByText("Category is closed.")).toBeInTheDocument();
     expect(
-      screen.getByRole("combobox", { name: catalogEn["category.label"] }),
+      screen.getByRole("combobox", {
+        name: optionalName(catalogEn["category.label"]),
+      }),
     ).toHaveAttribute("aria-invalid", "true");
   });
 
@@ -288,7 +293,7 @@ describe("NewTransactionPage", () => {
     });
     await userEvent.type(
       await screen.findByRole("textbox", {
-        name: catalogEn["facts.description"],
+        name: optionalName(catalogEn["facts.description"]),
       }),
       "Half done",
     );
@@ -300,7 +305,7 @@ describe("NewTransactionPage", () => {
     });
     expect(
       await screen.findByRole("textbox", {
-        name: catalogEn["facts.description"],
+        name: optionalName(catalogEn["facts.description"]),
       }),
     ).toHaveValue("Half done");
   });

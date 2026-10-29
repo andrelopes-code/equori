@@ -200,7 +200,7 @@ export function CategoryDialog({
               </Field>
 
               {editing === null && (
-                <FieldGroup>
+                <FieldGroup required>
                   <FieldGroupLegend>{t("category.class")}</FieldGroupLegend>
                   <FieldGroupContent>
                     <Inline>

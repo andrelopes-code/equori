@@ -98,7 +98,7 @@ export function EntryKindPicker({
   }
 
   return (
-    <FieldGroup>
+    <FieldGroup required>
       <FieldGroupLegend>{t("entry.kind")}</FieldGroupLegend>
       <FieldGroupContent>
         <Inline gap={4} wrap="wrap" align="center">

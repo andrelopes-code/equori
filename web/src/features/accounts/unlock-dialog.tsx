@@ -56,7 +56,7 @@ export function UnlockDialog({
         </DialogHeader>
         <DialogBody>
           <FormLayout>
-            <Field>
+            <Field required>
               <FieldLabel>{t("unlock.from")}</FieldLabel>
               <DateInput
                 name="from"

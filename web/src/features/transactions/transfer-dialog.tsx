@@ -74,7 +74,7 @@ export function TransferDialog({
           <DialogDescription>{t("transfer.description")}</DialogDescription>
         </DialogHeader>
         <DialogBody>
-          <Field>
+          <Field required>
             <FieldLabel>{t("transfer.account")}</FieldLabel>
             <Select
               value={accountId}

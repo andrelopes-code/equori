@@ -93,7 +93,7 @@ export function AssertionDialog({
             }}
           >
             <FormLayout>
-              <Field invalid={errors.date !== undefined}>
+              <Field required invalid={errors.date !== undefined}>
                 <FieldLabel>{t("reconciliation.date")}</FieldLabel>
                 <DateInput
                   name="date"
@@ -106,7 +106,10 @@ export function AssertionDialog({
                 )}
               </Field>
 
-              <Field invalid={errors.amount !== undefined || summary !== null}>
+              <Field
+                required
+                invalid={errors.amount !== undefined || summary !== null}
+              >
                 <FieldLabel>
                   {t(
                     owed

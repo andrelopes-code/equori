@@ -616,7 +616,7 @@ export const catalogEn = {
   "reimbursement.totals": "Allocated {allocated} of {total} · Left {leftover}",
   "reimbursement.empty":
     "No expense of the previous 90 days has an amount left to reimburse.",
-  "reimbursement.category": "Category of the checked expenses (optional)",
+  "reimbursement.category": "Category of the checked expenses",
   "reimbursement.categoryHint":
     "Empty keeps their categories. A category moves each checked expense and its reimbursement to it.",
   "reimbursement.submit": "Mark as reimbursement",
@@ -1563,7 +1563,7 @@ export const catalogEn = {
   "occurrence.skipTitle": "Skip {name}?",
   "occurrence.skipHint":
     "A skipped occurrence leaves the projection and the month totals.",
-  "occurrence.reason": "Reason (optional)",
+  "occurrence.reason": "Reason",
   "occurrence.moveTitle": "Move {name}",
   "occurrence.moveHint":
     "A later change of the schedule's terms keeps the new date.",

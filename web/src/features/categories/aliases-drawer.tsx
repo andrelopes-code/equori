@@ -98,7 +98,7 @@ export function AliasesDrawer({
                   });
               }}
             >
-              <Field>
+              <Field required>
                 <FieldLabel>{t("alias.pattern")}</FieldLabel>
                 <TextField
                   value={pattern}
@@ -109,7 +109,7 @@ export function AliasesDrawer({
                   }}
                 />
               </Field>
-              <Field>
+              <Field required>
                 <FieldLabel>{t("alias.match")}</FieldLabel>
                 <ChoiceSelect
                   className={widths.medium}

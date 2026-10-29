@@ -139,7 +139,7 @@ export function ReimbursementDialog({
             <InlineMessage>{t("reimbursement.empty")}</InlineMessage>
           )}
           {items.length > 0 && (
-            <Field>
+            <Field required>
               <FieldLabel>{t("reimbursement.expenses")}</FieldLabel>
               {rows.map(({ item, state }) => (
                 <ReimbursementRow

@@ -30,7 +30,7 @@ export function KindChooser({
   return (
     <Stack gap={6}>
       {kindGroups.map((group) => (
-        <FieldGroup key={group.key}>
+        <FieldGroup necessity="none" key={group.key}>
           <FieldGroupLegend>{t(kindGroupLabel[group.key])}</FieldGroupLegend>
           <FieldGroupContent>
             <RadioGroup

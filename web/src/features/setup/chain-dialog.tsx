@@ -182,7 +182,7 @@ export function ChainDialog({
             {own.length > 0 && (
               <Stack gap={3}>
                 <Inline gap={3} align="end">
-                  <Field>
+                  <Field required>
                     <FieldLabel>{t("assistant.chain.provider")}</FieldLabel>
                     <ChoiceSelect
                       label={t("assistant.chain.provider")}
@@ -194,7 +194,7 @@ export function ChainDialog({
                       }}
                     />
                   </Field>
-                  <Field>
+                  <Field required>
                     <FieldLabel>{t("assistant.chain.model")}</FieldLabel>
                     <TextField
                       value={model}

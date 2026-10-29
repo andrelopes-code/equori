@@ -91,7 +91,7 @@ export function ForeignForm({
           </AlertContent>
         </Alert>
       )}
-      <Field invalid={errors.account_id !== undefined}>
+      <Field required invalid={errors.account_id !== undefined}>
         <FieldLabel>{t("foreignPurchase.card")}</FieldLabel>
         <AccountField
           compact
@@ -118,7 +118,7 @@ export function ForeignForm({
         )}
       </Field>
 
-      <Field invalid={errors.date !== undefined}>
+      <Field required invalid={errors.date !== undefined}>
         <FieldLabel>{t("entry.date")}</FieldLabel>
         <DateInput
           name="date"
@@ -132,6 +132,7 @@ export function ForeignForm({
 
       <FormRow>
         <Field
+          required
           className={widths.medium}
           invalid={errors.original !== undefined}
         >
@@ -153,7 +154,7 @@ export function ForeignForm({
             <FieldError>{errors.original}</FieldError>
           )}
         </Field>
-        <Field invalid={view.otherInvalid}>
+        <Field required invalid={view.otherInvalid}>
           <FieldLabel>{t("foreignPurchase.currency")}</FieldLabel>
           <ChoiceSelect
             label={t("foreignPurchase.currency")}
@@ -172,7 +173,7 @@ export function ForeignForm({
         </Field>
       </FormRow>
 
-      <Field invalid={view.otherInvalid}>
+      <Field required invalid={view.otherInvalid}>
         <FieldLabel>{t("foreignPurchase.otherCurrency")}</FieldLabel>
         <TextField
           className={widths.short}
@@ -191,7 +192,7 @@ export function ForeignForm({
         )}
       </Field>
 
-      <Field invalid={errors.rate !== undefined}>
+      <Field required invalid={errors.rate !== undefined}>
         <FieldTitle
           label={t("foreignPurchase.rate")}
           help={t("foreignPurchase.rateHelp")}
@@ -224,7 +225,7 @@ export function ForeignForm({
         {errors.rate !== undefined && <FieldError>{errors.rate}</FieldError>}
       </Field>
 
-      <Field invalid={errors.category_id !== undefined}>
+      <Field required invalid={errors.category_id !== undefined}>
         <FieldLabel>{t("foreignPurchase.category")}</FieldLabel>
         <CategoryPicker
           placeholder={t("entry.categoryPlaceholder")}

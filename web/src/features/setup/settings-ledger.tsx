@@ -62,7 +62,7 @@ export function SettingsLedger() {
               : t("settings.baseCurrency.help")
           }
         >
-          <Field invalid={currencyError !== undefined}>
+          <Field necessity="none" invalid={currencyError !== undefined}>
             <ChoiceSelect
               label={t("settings.baseCurrency")}
               choices={currencyChoices}

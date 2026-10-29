@@ -118,7 +118,7 @@ export function InstallmentPurchaseDialog({
                 <InlineMessage tone="danger">{error}</InlineMessage>
               )}
 
-              <Field>
+              <Field required>
                 <FieldLabel>{t("installments.total")}</FieldLabel>
                 <MoneyInput
                   size="field"
@@ -153,7 +153,7 @@ export function InstallmentPurchaseDialog({
                 />
               </Field>
 
-              <Field>
+              <Field required>
                 <FieldLabel>{t("installments.count")}</FieldLabel>
                 <ChoiceSelect
                   className={widths.short}
@@ -195,7 +195,7 @@ export function InstallmentPurchaseDialog({
                 </FieldDescription>
               </Field>
 
-              <Field>
+              <Field required>
                 <FieldLabel>{t("installments.date")}</FieldLabel>
                 <DateInput name="date" value={date} onChange={setDate} />
               </Field>

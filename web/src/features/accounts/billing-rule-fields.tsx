@@ -71,7 +71,7 @@ export function BillingRuleFields({
   return (
     // Fields 1.5rem apart, as FormLayout spaces them (docs/contributing/forms.md, F5).
     <Stack gap={8}>
-      <Field>
+      <Field required>
         <FieldLabel>{t("accountForm.closingMode")}</FieldLabel>
         <Inline>
           <SegmentedControl
@@ -164,7 +164,7 @@ export function BillingRuleFields({
         </Field>
       </FormRow>
       <FormRow>
-        <Field className={widths.medium}>
+        <Field required className={widths.medium}>
           <FieldLabel>{t("accountForm.closingAdjustment")}</FieldLabel>
           <ChoiceSelect
             label={t("accountForm.closingAdjustment")}
@@ -178,7 +178,7 @@ export function BillingRuleFields({
             }}
           />
         </Field>
-        <Field className={widths.medium}>
+        <Field required className={widths.medium}>
           <FieldLabel>{t("accountForm.dueAdjustment")}</FieldLabel>
           <ChoiceSelect
             label={t("accountForm.dueAdjustment")}
@@ -193,7 +193,7 @@ export function BillingRuleFields({
           />
         </Field>
       </FormRow>
-      <Field>
+      <Field required>
         <FieldLabel>{t("accountForm.assignment")}</FieldLabel>
         <Inline>
           <SegmentedControl

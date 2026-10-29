@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
 import { fakeApi, json, problem } from "@/testing/fake-api";
+import { optionalName } from "@/testing/optional-name";
 import { renderApp } from "@/testing/render-app";
 import {
   checkingID,
@@ -76,7 +77,7 @@ describe("CorrectTransactionPage", () => {
       fetch: api(sent, []),
     });
     const description = await screen.findByRole("textbox", {
-      name: catalogEn["facts.description"],
+      name: optionalName(catalogEn["facts.description"]),
     });
     expect(description).toHaveValue("Weekly shop");
     expect(
