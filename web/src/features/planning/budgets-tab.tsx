@@ -40,7 +40,6 @@ import styles from "@/features/planning/budgets.module.css";
 import { UnbudgetedList } from "@/features/planning/unbudgeted-list";
 import { settingsQuery, useScale } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
-import { useToday } from "@/i18n/today";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 import { QueryError } from "@/ui/query-error";
 
@@ -57,7 +56,6 @@ export function BudgetsTab({
 }) {
   const t = useT();
   const api = useApi();
-  const today = useToday();
   const fmt = useMoneyFormat();
   const scale = useScale();
   const [editing, setEditing] = useState<Budget | null>(null);
@@ -121,11 +119,6 @@ export function BudgetsTab({
   const states: Record<BudgetState, number> = { over: 0, near: 0, within: 0 };
   for (const g of groups)
     for (const r of g.rows) states[budgetState(r.progress)] += 1;
-  const days = Number(monthEnd(month).slice(8, 10));
-  const elapsed =
-    today.slice(0, 7) === month
-      ? { day: Number(today.slice(8, 10)), days }
-      : undefined;
   const money = (amount: number) =>
     fmt.money({ amount, currency }, scale(currency));
   const slices = [
@@ -141,23 +134,23 @@ export function BudgetsTab({
   return (
     <>
       <div className={styles.layout}>
-        <div className={styles.overview}>
-          <BudgetSummary
-            figures={
-              groups.length === 0 ? undefined : monthFigures(groups, currency)
-            }
-            states={states}
-            committed={committed.data}
-            elapsed={elapsed}
-            scale={scale}
-          />
-          <BudgetSpendingChart
-            slices={slices}
-            currency={currency}
-            scale={scale(currency)}
-            loading={totals.isPending}
-          />
-        </div>
+        <BudgetSummary
+          figures={
+            groups.length === 0 ? undefined : monthFigures(groups, currency)
+          }
+          states={states}
+          committed={committed.data}
+          month={month}
+          scale={scale}
+        />
+
+        <BudgetSpendingChart
+          slices={slices}
+          currency={currency}
+          scale={scale(currency)}
+          loading={totals.isPending}
+        />
+
         <div className={styles.groups}>
           {groups.length === 0 && <Text tone="muted">{t("budget.empty")}</Text>}
           {groups.map((group) => {

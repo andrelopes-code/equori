@@ -91,19 +91,34 @@ describe("PlanningPage budgets", () => {
     const summary = await screen.findByRole("region", {
       name: catalogEn["budget.summary"],
     });
+    const spent = await within(summary).findByRole("group", {
+      name: catalogEn["budget.figure.spent"],
+    });
+    expect(figureValue(spent)).toBe("R$2,450.00");
     expect(
-      await within(summary).findByText(
-        words("budget.ofRoom", { room: "R$2,600.00" }),
+      within(spent).getByText(
+        words("budget.figure.share", { share: "94%", room: "R$2,600.00" }),
       ),
     ).toBeInTheDocument();
-    expect(within(summary).getByText("R$2,450.00")).toBeInTheDocument();
+    const left = within(summary).getByRole("group", {
+      name: catalogEn["budget.figure.left"],
+    });
+    expect(figureValue(left)).toBe("R$150.00");
     expect(
-      within(summary).getByText(catalogEn["budget.overOne"]),
+      within(left).getByText(catalogEn["budget.figure.monthAhead"]),
     ).toBeInTheDocument();
+    const overspent = within(summary).getByRole("group", {
+      name: catalogEn["budget.figure.overspent"],
+    });
+    expect(figureValue(overspent)).toBe("1");
     expect(
-      within(summary).getByText(words("budget.withinMany", { count: "2" })),
+      within(overspent).getByText(
+        [
+          words("budget.nearMany", { count: "0" }),
+          words("budget.withinMany", { count: "2" }),
+        ].join(" · "),
+      ),
     ).toBeInTheDocument();
-    expect(within(summary).queryByText(catalogEn["budget.nearOne"])).toBeNull();
   });
 
   it("lists the spending of categories no budget covers, each with a way to budget it", async () => {
@@ -129,22 +144,22 @@ describe("PlanningPage budgets", () => {
     const summary = await screen.findByRole("region", {
       name: catalogEn["budget.summary"],
     });
-    await within(summary).findByText("R$388.27");
-    const terms = within(summary).getAllByRole("term");
-    expect(
-      Object.fromEntries(
-        terms.map((term) => [
-          term.textContent,
-          term.nextElementSibling?.textContent,
-        ]),
-      ),
-    ).toEqual({
-      [catalogEn["budget.committedTotal"]]: "R$388.27",
-      [catalogEn["budget.installments"]]: "R$333.33",
-      [catalogEn["budget.expected"]]: "R$54.94",
+    const committed = await within(summary).findByRole("group", {
+      name: catalogEn["budget.figure.committed"],
+    });
+    await waitFor(() => {
+      expect(figureValue(committed)).toBe("R$388.27");
     });
     expect(
-      within(summary).getByText(
+      within(committed).getByText(
+        words("budget.figure.committedParts", {
+          installments: "R$333.33",
+          expected: "R$54.94",
+        }),
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(committed).getByText(
         words("budget.price", {
           instrument: "USD",
           rate: "5.5000",
@@ -222,3 +237,8 @@ describe("PlanningPage budgets", () => {
     });
   });
 });
+
+// The figure a StatCard shows, symbol and minor digits included.
+function figureValue(card: HTMLElement) {
+  return card.querySelector('[data-part="value"]')?.textContent;
+}
