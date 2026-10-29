@@ -53,10 +53,10 @@ export const settingsPtBR: Record<keyof typeof settingsEn, string> = {
   "settings.external_access.json": "Outros clientes (JSON)",
   "settings.external_access.done": "Concluir",
   "settings.summary.data": "Exportação e importação dos livros.",
-  "settings.browserOnly.tag": "Este navegador",
+  "settings.browserOnly.tag": "Este dispositivo",
   "settings.account.session": "Sessão",
   "settings.account.logoutDescription":
-    "Encerra a sessão neste navegador. Outros dispositivos continuam conectados.",
+    "Encerra a sessão neste dispositivo. Outros dispositivos continuam conectados.",
   "settings.language.help": "Palavras da interface.",
   "settings.region.help":
     "Formatos de data e número, e os catálogos regionais.",
