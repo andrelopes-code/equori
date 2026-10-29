@@ -20,9 +20,10 @@ Every screen of `web/` had a phone layout below 600 px (`docs/contributing/mobil
 | S6 | The phone dock and the More sheet list only destinations whose route is a phone route. The command palette lists every destination; a desktop-only one leads to S4. |
 | S7 | A desktop-only screen, tab or drawer holds no code for widths below 600 px: no `compactQuery` branch, no `PhoneList` or `PhoneGroup`, no `max-width: 599px` rule. Its tests render at desktop width. |
 | S8 | The assistant panel stays on the phone as a bottom drawer. |
+| S9 | On the phone, a link or an action of a phone route whose destination is desktop-only is left out; a link drawn through `AppLink` draws as its text. `useServed` (`web/src/ui/use-served.ts`) decides from the route definitions: `staticData.phone`, and `staticData.phoneTabs` for a route with tabs (S5). |
 
 ## Consequences
 
 - A new screen is designed and tested at desktop width only. `docs/contributing/mobile.md` applies to the routes of S3.
 - A route is promoted to the phone by an amendment of S3 that also adds its phone layout and tests.
-- A link from a phone route to a desktop-only route leads to the notice of S4 on the phone.
+- The notice of S4 answers what S9 leaves out: a typed URL, a bookmark or a command of the palette.

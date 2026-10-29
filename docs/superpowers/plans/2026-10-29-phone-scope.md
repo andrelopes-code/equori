@@ -31,3 +31,7 @@ One task per feature: remove each `compactQuery` branch, `PhoneList`/`PhoneGroup
 ## Slice 7: links
 
 14. Audit links from phone routes to desktop-only routes (overview widgets, transaction detail, settings). Each link either stays (the notice of S4 answers it) or is hidden on the phone; the decision is listed in the commit body.
+
+## State on 2026-10-29
+
+Every task is delivered. Task 13 keeps `ui/phone-list.tsx` and `ui/phone-group.tsx`: the account ledger, the statements and the installment plans, all phone routes, use them. Slice 7 became S9 of the ADR (`useServed`). The web suite fails 17 tests, each of which failed in the baseline of its feature before this plan's change to it.
