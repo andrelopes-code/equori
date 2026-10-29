@@ -5,14 +5,7 @@
     gap: var(--slotted-space-6);
   }
 
-  /* On a phone the goals come first and the figures that add them up follow. */
-  @media (max-width: 599px) {
-    .summary {
-      order: 2;
-    }
-  }
-
-  /* As many goals per line as fit at 320 px; one column on a phone. */
+  /* As many goals per line as fit at 320 px. */
   .grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));

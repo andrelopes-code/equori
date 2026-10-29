@@ -130,34 +130,32 @@ export function GoalsPage() {
           </ResultState>
         ) : (
           <div className={styles.page}>
-            <div className={styles.summary}>
-              <FigureGrid label={t("goals.figures")}>
-                <FigureCard
-                  label={t("goals.figure.count")}
-                  value={loading ? undefined : String(items.length)}
-                  note={t("goals.countNote")}
-                  loading={loading}
-                />
-                <FigureCard
-                  label={t("goals.figure.reached")}
-                  value={loading ? undefined : String(reached)}
-                  note={t("goals.reachedNote")}
-                  loading={loading}
-                />
-                <FigureCard
-                  label={t("goals.figure.next")}
-                  value={
-                    loading
-                      ? undefined
-                      : nextDue === undefined
-                        ? t("goals.nothingDue")
-                        : formatDate(nextDue, locale)
-                  }
-                  note={t("goals.nextNote")}
-                  loading={loading}
-                />
-              </FigureGrid>
-            </div>
+            <FigureGrid label={t("goals.figures")}>
+              <FigureCard
+                label={t("goals.figure.count")}
+                value={loading ? undefined : String(items.length)}
+                note={t("goals.countNote")}
+                loading={loading}
+              />
+              <FigureCard
+                label={t("goals.figure.reached")}
+                value={loading ? undefined : String(reached)}
+                note={t("goals.reachedNote")}
+                loading={loading}
+              />
+              <FigureCard
+                label={t("goals.figure.next")}
+                value={
+                  loading
+                    ? undefined
+                    : nextDue === undefined
+                      ? t("goals.nothingDue")
+                      : formatDate(nextDue, locale)
+                }
+                note={t("goals.nextNote")}
+                loading={loading}
+              />
+            </FigureGrid>
             <div className={styles.grid}>
               {scale !== null &&
                 items.map((goal) => (
