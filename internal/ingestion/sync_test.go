@@ -454,3 +454,31 @@ func TestS71SyncReevaluatesOpenAssertion(t *testing.T) {
 		}
 	})
 }
+
+// S176 (A136): a line with a bill that two manual charges could confirm goes to review; the
+// owner's match bills the chosen charge on the line's statement, as an automatic match does.
+func TestReviewMatchBillsLine_S176(t *testing.T) {
+	t.Parallel()
+	f := newSyncFixture(t)
+	card := f.h.Card("Nubank card", 3, 10, "next")
+	food := f.h.Account("Food", "expense", "", nil)
+	f.mapTo(pluggy.SubtypeCard, card)
+	chosen := f.h.Record("2026-11-02", apitest.Posting(card, -713), apitest.Posting(food, 713))
+	other := f.h.Record("2026-11-02", apitest.Posting(card, -713), apitest.Posting(food, 713))
+	f.p.AddBill(nubankItem+"-card", pluggy.Bill{ID: "bill-dec", DueDate: "2026-12-10T00:00:00.000Z", TotalAmount: "7.13"})
+	f.line(pluggy.SubtypeCard, cardLine("card-1", "2026-11-03", "7.13", "POSTED", new("bill-dec")))
+	f.sync()
+	var record string
+	if err := f.h.Pool.QueryRow(t.Context(), `SELECT id::text FROM ingestion_external_record WHERE external_id = 'card-1' AND state = 'needs_review'`).Scan(&record); err != nil {
+		t.Fatalf("record in review: %v", err)
+	}
+
+	f.h.MustDo(http.MethodPost, "/api/v1/external-records/"+record+"/resolve", map[string]any{"action": "match", "transaction_id": chosen}, http.StatusOK, nil)
+
+	if p := f.cardPosting(chosen, card); p.Statement != "2026-12" {
+		t.Errorf("matched charge on %s, want 2026-12", p.Statement)
+	}
+	if p := f.cardPosting(other, card); p.Statement != "2026-11" {
+		t.Errorf("other charge on %s, want 2026-11", p.Statement)
+	}
+}

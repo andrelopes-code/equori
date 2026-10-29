@@ -81,6 +81,10 @@ func (s *Service) Resolve(ctx context.Context, userID int64, recordID uuid.UUID,
 		if len(conflicts) > 0 {
 			return domain.ExternalRecord{}, domain.Batch{}, ErrAlreadyMatched
 		}
+		// A136: the line's bill places the posting, as an automatic match does.
+		if err := s.billMatched(ctx, &rec, false); err != nil {
+			return domain.ExternalRecord{}, domain.Batch{}, err
+		}
 		rec.State, rec.TransactionID = domain.StateMatched, txID
 	case ActionCreate:
 		line := Line{AccountID: rec.AccountID, Currency: currencyOf(b), Date: rec.Date, Amount: rec.Amount, Description: truncate(rec.Description)}
