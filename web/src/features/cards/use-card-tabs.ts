@@ -1,13 +1,18 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useDeferredValue, useState } from "react";
 
+import { phoneCardTabs } from "@/features/cards/card-search";
 import type { CardSearch, CardTab } from "@/features/cards/card-search";
+import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
 
 // The tab a card's page marks and the one its region renders, and the moves that write the address.
 export function useCardTabs(accountId: string, search: CardSearch) {
   const navigate = useNavigate();
+  const compact = useMediaQuery(compactQuery);
 
-  const tab: CardTab = search.tab ?? "statements";
+  const asked: CardTab = search.tab ?? "statements";
+  const tab: CardTab =
+    compact && !phoneCardTabs.includes(asked) ? "statements" : asked;
   const [chosen, setChosen] = useState<CardTab | null>(null);
   const shown = useDeferredValue(chosen ?? tab);
 

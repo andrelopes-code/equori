@@ -476,3 +476,43 @@ describe("CardPage", () => {
     expect(await within(table).findByText("Sofá")).toBeInTheDocument();
   });
 });
+
+describe("Card tabs on a phone (ADR 027, S5)", () => {
+  it("offers the statements and the plans, and shows the statements for a desktop-only tab", async () => {
+    await renderApp(`/cards/${cardID}?tab=settings`, {
+      width: 390,
+      fetch: api(),
+    });
+
+    const strip = await screen.findByRole("tablist", {
+      name: catalogEn["card.tabs"],
+    });
+    expect(
+      within(strip)
+        .getAllByRole("tab")
+        .map((tab) => tab.textContent),
+    ).toEqual([catalogEn["card.tab.statements"], catalogEn["card.tab.plans"]]);
+    expect(
+      within(strip).getByRole("tab", {
+        name: catalogEn["card.tab.statements"],
+      }),
+    ).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("states a missing billing cycle without the way to the settings", async () => {
+    await renderApp(`/cards/${cardID}`, {
+      width: 390,
+      fetch: api([], {
+        [`GET /api/v1/accounts/${cardID}/billing-cycle-rules`]: () =>
+          json(200, { items: [] }),
+      }),
+    });
+
+    expect(
+      await screen.findByText(catalogEn["card.ruleMissing"]),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole("button", { name: catalogEn["card.setRule"] }),
+    ).toBeNull();
+  });
+});

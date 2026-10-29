@@ -1,5 +1,8 @@
 export type CardTab = "statements" | "plans" | "cards" | "settings";
 
+// The tabs a card's page offers below 600 px (ADR 027, S5).
+export const phoneCardTabs: readonly CardTab[] = ["statements", "plans"];
+
 export interface CardSearch {
   tab?: Exclude<CardTab, "statements">;
   // The first reference month the statements tab reads.

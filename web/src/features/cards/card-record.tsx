@@ -122,15 +122,18 @@ export function CardRecord({ account, search, scale }: CardRecordProps) {
                 <AlertDescription>{t("card.ruleMissing")}</AlertDescription>
               </AlertContent>
 
-              <AlertActions>
-                <Button
-                  onClick={() => {
-                    cardTabs.select("settings", true);
-                  }}
-                >
-                  {t("card.setRule")}
-                </Button>
-              </AlertActions>
+              {/* The billing cycle is set in the settings tab, desktop-only (ADR 027, S5). */}
+              {!compact && (
+                <AlertActions>
+                  <Button
+                    onClick={() => {
+                      cardTabs.select("settings", true);
+                    }}
+                  >
+                    {t("card.setRule")}
+                  </Button>
+                </AlertActions>
+              )}
             </Alert>
           )}
           {!compact && overview}

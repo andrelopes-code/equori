@@ -13,18 +13,17 @@ import {
   PageHeaderHeading,
   PageHeaderMarks,
   PageHeaderSubheading,
-  PageHeaderTabs,
   PageHeaderTitle,
   PageHeaderTitleArea,
   PageHeaderTitleRow,
   PageHeaderVisual,
 } from "@slotted/react/page-header";
-import { Tab, TabList, Tabs } from "@slotted/react/tabs";
 import { Tag } from "@slotted/react/tag";
 import { Link, useNavigate } from "@tanstack/react-router";
 
 import type { components } from "@/api/schema.gen";
 import { AccountAvatar } from "@/features/accounts";
+import { CardHeaderTabs } from "@/features/cards/card-header-tabs";
 import type { CardTab } from "@/features/cards/card-search";
 import {
   statementStatusTone,
@@ -71,12 +70,6 @@ export function CardHeader({
     institution,
     ...lastFours.map((digits) => t("card.masked", { digits })),
   ].filter((p) => p !== undefined);
-  const tabs: { tab: CardTab; label: string }[] = [
-    { tab: "statements", label: t("card.tab.statements") },
-    { tab: "plans", label: t("card.tab.plans") },
-    { tab: "cards", label: t("card.tab.cards") },
-    { tab: "settings", label: t("card.tab.settings") },
-  ];
   return (
     <PageHeader size="lg">
       <PageHeaderTitleArea>
@@ -203,23 +196,7 @@ export function CardHeader({
           </PageHeaderActions>
         </PageHeaderTitleRow>
       </PageHeaderTitleArea>
-      <PageHeaderTabs>
-        <Tabs
-          value={tab}
-          onValueChange={(value) => {
-            const entry = tabs.find((e) => e.tab === value);
-            if (entry !== undefined) onTab(entry.tab);
-          }}
-        >
-          <TabList aria-label={t("card.tabs")}>
-            {tabs.map((entry) => (
-              <Tab key={entry.tab} value={entry.tab}>
-                {entry.label}
-              </Tab>
-            ))}
-          </TabList>
-        </Tabs>
-      </PageHeaderTabs>
+      <CardHeaderTabs tab={tab} onTab={onTab} />
     </PageHeader>
   );
 }
