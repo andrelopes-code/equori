@@ -10,7 +10,7 @@ import {
 } from "@slotted/react/dialog";
 import { Field, FieldDescription, FieldLabel } from "@slotted/react/field";
 import { InlineMessage } from "@slotted/react/inline-message";
-import { Inline } from "@slotted/react/inline";
+import { TextFieldAction } from "@slotted/react/text-field";
 import { useQuery } from "@tanstack/react-query";
 import { useId, useState } from "react";
 
@@ -24,7 +24,6 @@ import { formatMonthTitle } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { DateInput } from "@/ui/date-input";
-import widths from "@/ui/field-width.module.css";
 import { FormLayout } from "@/ui/form-layout";
 import { MoneyInput } from "@/ui/money-input";
 import { useStableCallback } from "@/ui/use-stable-callback";
@@ -126,37 +125,26 @@ export function PayDialog({
                 <FieldLabel>{t("pay.amount")}</FieldLabel>
                 <MoneyInput
                   size="field"
-                  className={widths.medium}
                   value={amount}
                   onChange={setAmount}
                   currency={currency}
                   scale={scale(currency)}
                   sign="neutral"
-                />
-                <Inline gap={2}>
-                  {presets.map((preset) => (
-                    <Button
+                  end={presets.map((preset) => (
+                    <TextFieldAction
                       key={preset.key}
-                      size="sm"
-                      variant={amount === preset.value ? "solid" : "outline"}
-                      tone={amount === preset.value ? "accent" : "secondary"}
                       aria-pressed={amount === preset.value}
                       onClick={() => {
                         setAmount(preset.value);
                       }}
                     >
-                      {t("pay.presetWith", {
-                        label: preset.label,
-                        amount: money(preset.value),
-                      })}
-                    </Button>
+                      {preset.label}
+                    </TextFieldAction>
                   ))}
-                </Inline>
-                {amount > 0 && (
+                />
+                {amount > 0 && left > 0 && (
                   <FieldDescription live="polite">
-                    {left <= 0
-                      ? t("pay.paysAll")
-                      : t("pay.leaves", { amount: money(left) })}
+                    {t("pay.leaves", { amount: money(left) })}
                   </FieldDescription>
                 )}
               </Field>

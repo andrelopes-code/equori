@@ -1,7 +1,7 @@
 import { useField } from "@slotted/react/field";
 import { TextField } from "@slotted/react/text-field";
 import { useEffect } from "react";
-import type { KeyboardEvent } from "react";
+import type { KeyboardEvent, ReactNode } from "react";
 
 import { minorFromTyped } from "@/ui/money-entry";
 import styles from "@/ui/money-input.module.css";
@@ -27,6 +27,7 @@ export function MoneyInput({
   readOnly,
   onKeyDown,
   className,
+  end,
 }: {
   // Minor units, at least zero; the sign belongs to the entry's kind.
   value: number;
@@ -45,6 +46,8 @@ export function MoneyInput({
   onKeyDown?: (event: KeyboardEvent<HTMLInputElement>) => void;
   // A width step of ui/field-width for a field-sized input (docs/contributing/forms.md, F3).
   className?: string | undefined;
+  // Shortcuts that set the amount, as TextFieldActions inside a field-sized frame (F14.3).
+  end?: ReactNode;
 }) {
   const fmt = useMoneyFormat();
   const field = useField();
@@ -77,6 +80,7 @@ export function MoneyInput({
         {...(onKeyDown === undefined ? {} : { onKeyDown })}
         value={parts.integer + parts.fraction}
         start={marks[sign] + parts.symbol}
+        end={end}
         onChange={(event) => {
           typed(event.target.value);
         }}

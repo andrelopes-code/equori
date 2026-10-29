@@ -344,6 +344,59 @@ describe("StatementPage", () => {
     });
   });
 
+  // docs/contributing/forms.md F14.3: the shortcuts sit inside the amount's frame.
+  it("sets the minimum from inside the amount and states what stays open", async () => {
+    const sent: Sent[] = [];
+    await renderApp(`${path}?pay=true`, {
+      fetch: api(sent, {
+        [`GET /api/v1/statements/${closedStatementID}`]: () =>
+          json(
+            200,
+            detail(closed, {
+              institution: {
+                source: "aggregator",
+                due_date: "2026-10-25",
+                total: money(180000),
+                minimum: money(20000),
+              },
+            }),
+          ),
+      }),
+    });
+    const dialog = await screen.findByRole("dialog");
+    expect(
+      within(dialog).queryByText(/stays open on the statement/),
+    ).not.toBeInTheDocument();
+
+    const minimum = within(dialog).getByRole("button", {
+      name: catalogEn["pay.preset.minimum"],
+    });
+    await userEvent.click(minimum);
+
+    expect(minimum).toHaveAttribute("aria-pressed", "true");
+    expect(minimum.closest('[data-ui="text-field"]')).not.toBeNull();
+    expect(
+      within(dialog).getByText(/1,600\.00 stays open on the statement\./),
+    ).toBeInTheDocument();
+
+    await chooseAccount(catalogEn["pay.from"], "Nubank");
+    await userEvent.click(
+      within(dialog).getByRole("button", { name: catalogEn["pay.submit"] }),
+    );
+    await waitFor(() => {
+      expect(sent).toEqual([
+        {
+          route: "pay",
+          body: {
+            date: "2026-10-17",
+            from_account_id: checkingID,
+            amount: money(20000),
+          },
+        },
+      ]);
+    });
+  });
+
   it("finances what is open in installments and states the interest", async () => {
     const sent: Sent[] = [];
     await renderApp(path, { fetch: api(sent) });
