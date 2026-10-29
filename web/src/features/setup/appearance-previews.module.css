@@ -153,7 +153,8 @@
   .typeface {
     display: grid;
     box-sizing: border-box;
-    aspect-ratio: 16 / 10;
+    /* A sample of two words needs less height than a drawing; six faces stand in two short rows. */
+    aspect-ratio: 16 / 7;
     place-items: center;
     background: var(--slotted-surface);
     color: var(--slotted-text);

@@ -3,7 +3,7 @@ import { useSyncExternalStore } from "react";
 import { preference } from "@/theme/preference";
 
 export type TypefacePreset =
-  "geist" | "system" | "grotesque" | "humanist" | "rounded";
+  "geist" | "system" | "grotesque" | "humanist" | "rounded" | "mono";
 
 // A preset, or the family name of a face installed on the reader's device, after "custom:".
 export type Typeface = TypefacePreset | `custom:${string}`;
@@ -19,14 +19,15 @@ export function customTypeface(name: string): Typeface | null {
 
 // The stack of each choice. geist ships with the application's first load; grotesque (Inter),
 // humanist (Source Sans 3) and rounded (Nunito) ship as faces of their own, loaded the first time
-// they are shown, so a reader who never picks one never downloads it. system is the operating
-// system's own face.
+// they are shown, so a reader who never picks one never downloads it. mono is Geist Mono, which the
+// first load already ships for figures. system is the operating system's own face.
 export const typefaceStacks: Readonly<Record<TypefacePreset, string>> = {
   geist: "'Geist Variable', ui-sans-serif, system-ui, sans-serif",
   system: "system-ui, sans-serif",
   grotesque: "'Inter Variable', ui-sans-serif, system-ui, sans-serif",
   humanist: "'Source Sans 3 Variable', ui-sans-serif, system-ui, sans-serif",
   rounded: "'Nunito Variable', ui-sans-serif, system-ui, sans-serif",
+  mono: "'Geist Mono Variable', ui-monospace, monospace",
 };
 
 const faces: Partial<Record<TypefacePreset, () => Promise<unknown>>> = {

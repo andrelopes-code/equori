@@ -99,6 +99,7 @@ export const settingsPtBR: Record<keyof typeof settingsEn, string> = {
   "typeface.grotesque": "Inter",
   "typeface.humanist": "Source Sans",
   "typeface.rounded": "Nunito",
+  "typeface.mono": "Geist Mono",
   "settings.motion": "Reduzir movimento",
   "settings.motion.description":
     "Encurta transições e animações a um instante, independente do sistema operacional.",

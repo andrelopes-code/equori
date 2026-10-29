@@ -6,19 +6,27 @@
 
   .group {
     display: grid;
-    gap: var(--slotted-space-3);
+    /* A row of cards ends in its captions, so rows stand further apart than columns. */
+    gap: var(--slotted-space-5) var(--slotted-space-4);
     /* A card's least measure: no token holds it. Three fit a 375 px phone, and the row spreads to
        its container's width on a desktop. */
     grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr));
   }
 
-  /* Four cards stand two by two where a row holds fewer than four, so no card is left alone on a
-     row of its own. */
-  .group[data-count="4"] {
+  /* Four and six cards stand in full rows of two where a row holds fewer, so no card is left alone
+     on a row of its own; six stand three by three from 30 rem, four in one row from 36 rem. */
+  .group[data-count="4"],
+  .group[data-count="6"] {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   @container choice-cards (min-width: 30rem) {
+    .group[data-count="6"] {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  @container choice-cards (min-width: 36rem) {
     .group[data-count="4"] {
       grid-template-columns: repeat(4, minmax(0, 1fr));
     }
@@ -40,21 +48,15 @@
     cursor: pointer;
   }
 
+  /* The option draws no frame of its own: it sits inside a settings card, and a card inside a card
+     reads as clutter. The preview is the framed part and carries the choice. */
   .card {
     display: flex;
     flex-direction: column;
-    gap: var(--slotted-space-3);
+    gap: var(--slotted-space-2);
     box-sizing: border-box;
     block-size: 100%;
     min-block-size: var(--slotted-target-comfortable);
-    padding: var(--slotted-space-2);
-    border: var(--slotted-border-width-thin) solid var(--slotted-border-subtle);
-    border-radius: var(--slotted-radius-lg);
-    background: var(--slotted-surface-raised);
-    outline: var(--slotted-border-width-medium) solid transparent;
-    transition:
-      border-color var(--slotted-duration-short) var(--slotted-easing-standard),
-      outline-color var(--slotted-duration-short) var(--slotted-easing-standard);
   }
 
   .preview {
@@ -62,6 +64,10 @@
     overflow: hidden;
     border: var(--slotted-border-width-thin) solid var(--slotted-border-subtle);
     border-radius: var(--slotted-radius-md);
+    outline: var(--slotted-border-width-medium) solid transparent;
+    transition:
+      border-color var(--slotted-duration-short) var(--slotted-easing-standard),
+      outline-color var(--slotted-duration-short) var(--slotted-easing-standard);
   }
 
   .caption {
@@ -70,7 +76,6 @@
     justify-content: space-between;
     gap: var(--slotted-space-2);
     padding-inline: var(--slotted-space-1);
-    padding-block-end: var(--slotted-space-1);
     color: var(--slotted-text);
     font-size: var(--slotted-font-size-sm);
     font-weight: var(--slotted-font-weight-medium);
@@ -99,11 +104,11 @@
       border-color var(--slotted-duration-short) var(--slotted-easing-standard);
   }
 
-  .option:hover .card {
+  .option:hover .preview {
     border-color: var(--slotted-border-strong);
   }
 
-  .radio:checked + .card {
+  .radio:checked + .card .preview {
     border-color: var(--slotted-tone-accent-text);
     outline-color: var(--slotted-tone-accent-text);
   }
@@ -119,7 +124,7 @@
     );
   }
 
-  .radio:focus-visible + .card {
+  .radio:focus-visible + .card .preview {
     outline: var(--slotted-focus-ring-width) solid
       var(--slotted-focus-ring-color);
     outline-offset: var(--slotted-focus-ring-offset);
@@ -140,14 +145,14 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .card,
+    .preview,
     .mark {
       transition: none;
     }
   }
 
   @media (forced-colors: active) {
-    .radio:checked + .card {
+    .radio:checked + .card .preview {
       border-color: Highlight;
       outline-color: Highlight;
     }

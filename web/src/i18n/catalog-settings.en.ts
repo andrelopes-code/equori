@@ -96,6 +96,7 @@ export const settingsEn = {
   "typeface.grotesque": "Inter",
   "typeface.humanist": "Source Sans",
   "typeface.rounded": "Nunito",
+  "typeface.mono": "Geist Mono",
   "settings.motion": "Reduce motion",
   "settings.motion.description":
     "Shortens transitions and animations to an instant, whatever the operating system sets.",
