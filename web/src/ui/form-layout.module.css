@@ -1,0 +1,55 @@
+@layer app {
+  /* Workaround for Slotted issue #21: form has no bounded field column with an aside. */
+  .frame {
+    container-type: inline-size;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(0, 40rem);
+    gap: var(--slotted-space-9);
+    align-items: start;
+  }
+
+  .fields {
+    display: flex;
+    flex-direction: column;
+    gap: var(--slotted-form-field-gap, var(--slotted-space-6));
+  }
+
+  /* Workaround for Slotted issue #22: no token separates two sections of a form. */
+  .fields:has(> .section) {
+    gap: var(--slotted-space-9);
+  }
+
+  .section {
+    min-inline-size: 0;
+  }
+
+  .row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: var(--slotted-space-5);
+  }
+
+  /* The aside stands beside the column once both fit: 40rem, the gap and 20rem. */
+  @container (min-width: 62rem) {
+    .layout:has(> .aside) {
+      grid-template-columns: minmax(0, 40rem) 20rem;
+    }
+
+    .aside {
+      position: sticky;
+      inset-block-start: calc(
+        var(--slotted-page-sticky-top, 0px) + var(--slotted-space-6)
+      );
+    }
+  }
+
+  @container (max-width: 37.4375rem) {
+    .row {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+}

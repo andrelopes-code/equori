@@ -1,0 +1,11 @@
+@layer app {
+  /* Workaround for Slotted issue #20: a field has no width step for the length of its answer.
+     The class goes on the control, so the label keeps the column's width. */
+  .short {
+    max-inline-size: 6rem;
+  }
+
+  .medium {
+    max-inline-size: 15rem;
+  }
+}
