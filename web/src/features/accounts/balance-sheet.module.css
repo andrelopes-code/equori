@@ -18,10 +18,10 @@
     white-space: nowrap;
   }
 
-  /* A date field holds ten characters and its calendar button; 11rem keeps it to that, so the
-     basis control stands beside it instead of under it. No token holds a measure. */
+  /* The date field is as wide as its date and calendar button, so the basis control stands
+     beside it; a fixed measure left an empty run inside the field. */
   .date {
-    inline-size: 11rem;
+    inline-size: fit-content;
   }
 
   .bar {
