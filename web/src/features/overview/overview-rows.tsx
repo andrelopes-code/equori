@@ -18,7 +18,7 @@ import { useServed } from "@/ui/use-served";
 
 export interface OverviewRow {
   key: string;
-  // A mark before the title; the row then aligns it and the metadata with the title's line.
+  // A mark before the title; the row centres it on its lines, where a meter row draws its bar.
   start?: ReactNode;
   title: ReactNode;
   line?: ReactNode;
@@ -55,10 +55,7 @@ export function OverviewRows({
           </>
         );
         return (
-          <ListItem
-            key={row.key}
-            {...(row.start === undefined ? {} : { align: "start" as const })}
-          >
+          <ListItem key={row.key}>
             {row.to !== undefined && served(row.to) ? (
               <ListItemLink render={routeTo(row.to)}>{body}</ListItemLink>
             ) : (
