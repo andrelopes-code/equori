@@ -8,11 +8,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@slotted/react/dialog";
-import { Field, FieldLabel } from "@slotted/react/field";
+import { Field, FieldDescription, FieldLabel } from "@slotted/react/field";
 import { InlineMessage } from "@slotted/react/inline-message";
 import { Inline } from "@slotted/react/inline";
 import { Stack } from "@slotted/react/stack";
-import { Text } from "@slotted/react/typography";
 import { useQuery } from "@tanstack/react-query";
 import { useId, useState } from "react";
 
@@ -149,6 +148,13 @@ export function PayDialog({
                     </Button>
                   ))}
                 </Inline>
+                {amount > 0 && (
+                  <FieldDescription live="polite">
+                    {left <= 0
+                      ? t("pay.paysAll")
+                      : t("pay.leaves", { amount: money(left) })}
+                  </FieldDescription>
+                )}
               </Field>
               {accounts.data !== undefined && (
                 <Field>
@@ -175,13 +181,6 @@ export function PayDialog({
                 <FieldLabel>{t("pay.date")}</FieldLabel>
                 <DateInput name="date" value={date} onChange={setDate} />
               </Field>
-              {amount > 0 && (
-                <Text size="sm" role="status">
-                  {left <= 0
-                    ? t("pay.paysAll")
-                    : t("pay.leaves", { amount: money(left) })}
-                </Text>
-              )}
             </Stack>
           </form>
         </DialogBody>

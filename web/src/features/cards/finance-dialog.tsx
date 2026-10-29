@@ -8,10 +8,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@slotted/react/dialog";
-import { Field, FieldLabel } from "@slotted/react/field";
+import { Field, FieldDescription, FieldLabel } from "@slotted/react/field";
 import { InlineMessage } from "@slotted/react/inline-message";
 import { Stack } from "@slotted/react/stack";
-import { Text } from "@slotted/react/typography";
 import { useId, useState } from "react";
 
 import { errorText } from "@/api/problem";
@@ -121,21 +120,21 @@ export function FinanceDialog({
                   scale={scale(currency)}
                   sign="neutral"
                 />
+                {each > 0 && (
+                  <FieldDescription live="polite">
+                    {t("finance.interest", {
+                      total: money(count * each),
+                      interest: money(
+                        financingInterest(count, each, statement.unpaid.amount),
+                      ),
+                    })}
+                  </FieldDescription>
+                )}
               </Field>
               <Field>
                 <FieldLabel>{t("finance.date")}</FieldLabel>
                 <DateInput name="date" value={date} onChange={setDate} />
               </Field>
-              {each > 0 && (
-                <Text size="sm" role="status">
-                  {t("finance.interest", {
-                    total: money(count * each),
-                    interest: money(
-                      financingInterest(count, each, statement.unpaid.amount),
-                    ),
-                  })}
-                </Text>
-              )}
             </Stack>
           </form>
         </DialogBody>

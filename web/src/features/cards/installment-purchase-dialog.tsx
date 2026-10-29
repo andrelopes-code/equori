@@ -12,7 +12,6 @@ import { Field, FieldDescription, FieldLabel } from "@slotted/react/field";
 import { InlineMessage } from "@slotted/react/inline-message";
 import { Stack } from "@slotted/react/stack";
 import { TextField } from "@slotted/react/text-field";
-import { Text } from "@slotted/react/typography";
 import { useId, useState } from "react";
 
 import { errorText } from "@/api/problem";
@@ -161,6 +160,15 @@ export function InstallmentPurchaseDialog({
                     if (typeof next === "string") setCount(Number(next));
                   }}
                 />
+                {total > 0 && (
+                  <FieldDescription live="polite">
+                    {t("installments.summary", {
+                      count,
+                      each: money(each),
+                      total: money(total + interest),
+                    })}
+                  </FieldDescription>
+                )}
               </Field>
               <Field>
                 <FieldLabel>{t("installments.interest")}</FieldLabel>
@@ -179,15 +187,6 @@ export function InstallmentPurchaseDialog({
                 <FieldLabel>{t("installments.date")}</FieldLabel>
                 <DateInput name="date" value={date} onChange={setDate} />
               </Field>
-              {total > 0 && (
-                <Text size="sm" role="status">
-                  {t("installments.summary", {
-                    count,
-                    each: money(each),
-                    total: money(total + interest),
-                  })}
-                </Text>
-              )}
             </Stack>
           </form>
         </DialogBody>

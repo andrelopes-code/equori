@@ -64,6 +64,7 @@ A field with no step is `full`.
 - A description is at most one line at the column's width (about 90 characters).
 - From 62rem of the form's width the aside stands beside the column, 20rem wide, and sticks under the page's chrome (LA-06). Below, it follows the last field.
 
+- A sentence that follows from the answers (the statement a purchase falls on, what a payment leaves unpaid, the total of an installment plan) is the `FieldDescription` of the field whose answer completes it, with `live="polite"`. It is never a `Text` standing between fields: a loose `Text` is 13 px in full ink, reads as a field of its own and is linked to no control.
 - A description and an error under the same control: the error comes first, the description stays.
 - A placeholder shows an example of the format ("Ex.: Mercado"), never the label's words or an instruction.
 

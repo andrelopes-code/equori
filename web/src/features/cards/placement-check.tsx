@@ -1,6 +1,4 @@
-import { Field, FieldLabel } from "@slotted/react/field";
-import { Stack } from "@slotted/react/stack";
-import { Text } from "@slotted/react/typography";
+import { Field, FieldDescription, FieldLabel } from "@slotted/react/field";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
@@ -20,12 +18,10 @@ export function PlacementCheck({ accountId }: { accountId: string }) {
   const [date, setDate] = useState(today);
   const placement = useQuery(placementQuery(useApi(), accountId, date));
   return (
-    <Stack gap={3}>
-      <Field>
-        <FieldLabel>{t("card.purchaseOn")}</FieldLabel>
-        <DateInput name="date" value={date} onChange={setDate} />
-      </Field>
-      <Text size="sm" role="status">
+    <Field>
+      <FieldLabel>{t("card.purchaseOn")}</FieldLabel>
+      <DateInput name="date" value={date} onChange={setDate} />
+      <FieldDescription live="polite">
         {placement.data !== undefined
           ? t("card.placement", {
               month: formatMonthTitle(placement.data.reference, locale),
@@ -38,7 +34,7 @@ export function PlacementCheck({ accountId }: { accountId: string }) {
             : placement.isError
               ? errorText(placement.error, t)
               : ""}
-      </Text>
-    </Stack>
+      </FieldDescription>
+    </Field>
   );
 }

@@ -5,7 +5,6 @@ import {
   FieldError,
   FieldLabel,
 } from "@slotted/react/field";
-import { Text } from "@slotted/react/typography";
 import { TextField } from "@slotted/react/text-field";
 
 import type { components } from "@/api/schema.gen";
@@ -27,6 +26,9 @@ import widths from "@/ui/field-width.module.css";
 import { FormLayout } from "@/ui/form-layout";
 import { FormRow } from "@/ui/form-row";
 import { MoneyInput } from "@/ui/money-input";
+
+// A statement reference is YYYY-MM, so this value never names one.
+const automatic = "automatic";
 
 type Payee = components["schemas"]["Payee"];
 
@@ -296,19 +298,24 @@ export function ForeignForm({
           label={t("foreignPurchase.statement")}
           multiple={false}
           choices={[
-            { value: "", label: t("foreignPurchase.statementAutomatic") },
+            // Workaround for Slotted issue #26: a select never shows an option whose value is
+            // the empty string, so the automatic statement has a value of its own.
+            {
+              value: automatic,
+              label: t("foreignPurchase.statementAutomatic"),
+            },
             ...view.statements.map((s) => ({
               value: s.reference,
               label: formatMonthTitle(s.reference, locale),
             })),
           ]}
-          value={draft.statement ?? ""}
+          value={draft.statement ?? automatic}
           onChange={(value) => {
             if (typeof value === "string")
-              set({ statement: value === "" ? null : value });
+              set({ statement: value === automatic ? null : value });
           }}
         />
-        <Text size="sm" role="status">
+        <FieldDescription live="polite">
           {placement !== undefined && placement !== null
             ? t("card.placement", {
                 month: formatMonthTitle(placement.reference, locale),
@@ -318,7 +325,7 @@ export function ForeignForm({
             : view.card !== undefined && view.placement === null
               ? t("card.placementNoRule")
               : ""}
-        </Text>
+        </FieldDescription>
         {errors.statement !== undefined && (
           <FieldError>{errors.statement}</FieldError>
         )}

@@ -12,7 +12,6 @@ import {
 import { Stack } from "@slotted/react/stack";
 import { Switch } from "@slotted/react/switch";
 import { TextField } from "@slotted/react/text-field";
-import { Text } from "@slotted/react/typography";
 
 import type { components } from "@/api/schema.gen";
 import type { AccountDraft } from "@/features/accounts/account-draft";
@@ -24,12 +23,13 @@ import {
 import { CardSetupSection } from "@/features/accounts/card-setup-section";
 import { InstitutionField } from "@/features/accounts/institution-field";
 import { KindSummary } from "@/features/accounts/kind-summary";
+import { ParentField } from "@/features/accounts/parent-field";
 import { useT } from "@/i18n/i18n-provider";
 import { ChoiceSelect } from "@/ui/choice-select";
 import { ColorSwatches } from "@/ui/color-swatches";
 import { DateInput } from "@/ui/date-input";
+import widths from "@/ui/field-width.module.css";
 import { MoneyInput } from "@/ui/money-input";
-import { ParentField } from "@/features/accounts/parent-field";
 
 type Account = components["schemas"]["Account"];
 
@@ -164,7 +164,11 @@ export function AccountForm({
                   }}
                 />
               ) : (
-                <Text weight="medium">{draft.currency}</Text>
+                <TextField
+                  value={draft.currency}
+                  readOnly
+                  className={widths.short}
+                />
               )}
               {mode === "edit" && (
                 <FieldDescription>
