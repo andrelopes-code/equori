@@ -173,7 +173,7 @@ The model must represent every item below. Each item gets at least one worked ex
 | Moving money (payment initiation, PIX transfers, trading orders) | equori records money; it does not move it. |
 | Business accounting (company books, NF-e issuance) | Personal finance only. |
 | Hosted multi-tenant service | Self-hosted product. |
-| Native mobile apps | Responsive web interface first. |
+| Native mobile apps | Web interface for the desktop; the phone serves capture and lookup (ADR 027). |
 
 ## 1.11 Decisions
 

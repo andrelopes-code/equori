@@ -1,18 +1,17 @@
 # Mobile screens
 
-A phone is a screen of its own, not the desktop screen made narrow. Every screen of `web/` answers this guide at widths below 600 px (the compact size class of Slotted). Mandatory reading before writing or changing a screen.
+A phone is a screen of its own, not the desktop screen made narrow. The phone routes of ADR 027 (S3) answer this guide at widths below 600 px (the compact size class of Slotted). Every other route is desktop-only and renders a notice on the phone (ADR 027, S4). Mandatory reading before writing or changing a phone route.
 
 Rules marked with a Slotted ID (LP-01, OV-02) are in `web/node_modules/@slotted/react/dist/docs/guidelines/`. Rules marked NN/g come from nngroup.com articles "Mobile Tables", "Tabs, Used Right", "Scrolling and Attention" and "Mobile User Experience". Rules marked equori are decisions of this application.
 
 ## M1 · A screen declares its purpose
 
-Each screen is one of three kinds. The kind fixes the phone pattern.
+Each phone route is one of two kinds. The kind fixes the phone pattern.
 
 | Kind          | Example                                     | Desktop                              | Phone                                                                                                 |
 | ------------- | ------------------------------------------- | ------------------------------------ | ----------------------------------------------------------------------------------------------------- |
-| Comparison    | statement lines, positions, installments    | `data-grid`                          | `data-grid` with the pop-in (LP-01): row header and priority columns stay, the rest move into the row |
-| Record work   | categories, rules, cards, schedules, payees | `data-grid` with an `actions` column | `DataList` swapped in with `createWidthGate` at `COMPACT_BELOW` over the same sort and selection      |
-| Bulk or setup | CSV mapping, batch records, administration  | `data-grid`                          | a screen of its own with the same pop-in, or a notice that the task is for a wider screen             |
+| Comparison    | statement lines, installments               | `data-grid`                          | `data-grid` with the pop-in (LP-01): row header and priority columns stay, the rest move into the row |
+| Record work   | accounts, cards, transactions               | `data-grid` with an `actions` column | `DataList` swapped in with `createWidthGate` at `COMPACT_BELOW` over the same sort and selection      |
 
 A phone grid never scrolls sideways (LP-01). Horizontal scroll is accepted only for a comparison table that cannot lose a column (NN/g), with the header row and the first column pinned and a cut-off last column as the scroll cue.
 
@@ -48,4 +47,4 @@ An in-page tab holds similar content and switches instantly (NN/g). The reader m
 
 A mobile review of a screen records two captures, 360×640 and 390×844, and quotes the rule broken for each finding. The gate is review. There is no custom lint script.
 
-A new screen states its kind (M1) in its pull request. A screen that departs from a rule here names the rule and the reason in the pull request.
+A route promoted to the phone states its kind (M1) in its pull request. A screen that departs from a rule here names the rule and the reason in the pull request.
