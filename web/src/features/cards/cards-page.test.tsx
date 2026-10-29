@@ -83,13 +83,27 @@ describe("CardsPage", () => {
   it("offers to pay a closed statement still owing", async () => {
     const { router } = await renderApp("/cards", { fetch: api() });
     const tile = await screen.findByRole("article", { name: "Itaú Visa" });
+    const stub = await within(tile).findByRole("group", {
+      name: catalogEn["cards.stub.name"],
+    });
+    expect(stub).toHaveAttribute("data-status", "info");
     expect(
-      await within(tile).findByText(
-        words("cards.unpaid", { date: "10/25/2026", amount: "R$1,800.00" }),
+      within(stub).getByText(words("cards.stub.due", { when: "in 8 days" })),
+    ).toBeInTheDocument();
+    expect(
+      within(stub).getByText(
+        words("cards.stub.reference", { month: "Oct 2026" }),
       ),
     ).toBeInTheDocument();
+    expect(within(stub).getByText("R$1,800.00")).toBeInTheDocument();
+    expect(
+      within(stub).getByText(
+        words("cards.stub.dates", { closing: "Oct 5", due: "Oct 25" }),
+      ),
+    ).toBeInTheDocument();
+    expect(within(stub).queryByRole("progressbar")).toBeNull();
     await userEvent.click(
-      within(tile).getByRole("button", { name: catalogEn["cards.pay"] }),
+      within(stub).getByRole("button", { name: catalogEn["cards.pay"] }),
     );
     await waitFor(() => {
       expect(router.state.location.pathname).toBe(

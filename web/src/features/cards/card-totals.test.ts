@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { cardTotals, currentAndUnpaid } from "@/features/cards/card-totals";
+import {
+  cardTotals,
+  currentAndUnpaid,
+  limitMeter,
+  owedAmount,
+} from "@/features/cards/card-totals";
 import {
   accountFixtures,
   cardID,
@@ -34,5 +39,40 @@ describe("cardTotals", () => {
       available: { amount: 1100000, currency: "BRL" },
       limit: { amount: 1600000, currency: "BRL" },
     });
+  });
+});
+
+describe("owedAmount", () => {
+  it("adds what each closed statement still owes", () => {
+    const unpaid = [
+      { unpaid: { amount: 120000, currency: "BRL" } },
+      { unpaid: { amount: 60000, currency: "BRL" } },
+    ] as never;
+
+    expect(owedAmount(unpaid)).toBe(180000);
+  });
+});
+
+describe("limitMeter", () => {
+  it("takes the used share of the credit limit", () => {
+    const meter = limitMeter({
+      credit_limit: { amount: 800000, currency: "BRL" },
+      available_limit: { amount: 550000, currency: "BRL" },
+    });
+
+    expect(meter).toEqual({ used: 250000, total: 800000 });
+  });
+
+  it("uses 0 when the available limit exceeds the credit limit", () => {
+    const meter = limitMeter({
+      credit_limit: { amount: 100000, currency: "BRL" },
+      available_limit: { amount: 150000, currency: "BRL" },
+    });
+
+    expect(meter).toEqual({ used: 0, total: 100000 });
+  });
+
+  it("returns undefined without a credit limit", () => {
+    expect(limitMeter(undefined)).toBeUndefined();
   });
 });

@@ -584,7 +584,13 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "cards.closesDue": "Fecha em {closing}, vence em {due}",
   "cards.limitUsed": "Limite usado",
   "cards.limitText": "{used} de {limit}",
-  "cards.unpaid": "Vence em {date}: {amount}",
+  "cards.stub.name": "Fatura fechada",
+  "cards.stub.reference": "Fatura de {month}",
+  "cards.stub.referenceMany": "{count} faturas em aberto",
+  "cards.stub.due": "Vence {when}",
+  "cards.stub.overdue": "Venceu {when}",
+  "cards.stub.dates": "Fechou {closing} · vence {due}",
+  "cards.stub.paid": "{paid} pago de {total}",
   "cards.pay": "Pagar",
   "card.figures": "Indicadores do cartão",
   "card.figure.current": "Fatura atual",
@@ -772,8 +778,6 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "kind.title.loan": "Empréstimo",
   "kind.title.payable": "A pagar",
   "card.owedNote": "{count} faturas em aberto; a mais antiga venceu em {date}",
-  "cards.unpaidMany":
-    "{amount} em aberto em {count} faturas, a mais antiga vencida em {date}",
   "cards.subtitleOne":
     "1 cartão: o que cobra agora, o que vence e o limite livre.",
   "account.figure.neverNote":

@@ -1,9 +1,5 @@
-import { Button } from "@slotted/react/button";
-import { Inline } from "@slotted/react/inline";
-import { Stack } from "@slotted/react/stack";
 import { Text } from "@slotted/react/typography";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
 
 import { useApi } from "@/api/api-context";
 import type { components } from "@/api/schema.gen";
@@ -14,18 +10,24 @@ import {
   logoOf,
 } from "@/features/accounts";
 import { flowsQuery } from "@/features/cards/api";
-import { formatDate, formatDayMonth, shiftDate } from "@/i18n/format";
+import { limitMeter } from "@/features/cards/card-totals";
+import { StatementStub } from "@/features/cards/statement-stub";
+import { daysSinceMonday, weekOutflows } from "@/features/cards/week-outflows";
+import { formatDayMonth, shiftDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
-import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type Account = components["schemas"]["Account"];
 type Institution = components["schemas"]["Institution"];
 type Statement = components["schemas"]["StatementSummary"];
 
-// Days since the Monday of the week holding the ISO date: 0 on a Monday, 6 on a Sunday.
-function daysSinceMonday(iso: string): number {
-  return (new Date(`${iso}T00:00:00Z`).getUTCDay() + 6) % 7;
+interface CardTileProps {
+  account: Account;
+  institution: Institution | undefined;
+  current: Statement | undefined;
+  unpaid: Statement[];
+  loading: boolean;
+  scale: (code: string) => number;
 }
 
 // One credit card: the account card with the statement purchases go on, the limit and the
@@ -37,37 +39,27 @@ export function CardTile({
   unpaid,
   loading,
   scale,
-}: {
-  account: Account;
-  institution: Institution | undefined;
-  current: Statement | undefined;
-  unpaid: Statement[];
-  loading: boolean;
-  scale: (code: string) => number;
-}) {
+}: CardTileProps) {
   const t = useT();
   const [locale] = useAppLocale();
-  const fmt = useMoneyFormat();
   const api = useApi();
-  const navigate = useNavigate();
   const today = useToday();
   const elapsed = daysSinceMonday(today);
   const monday = shiftDate(today, -elapsed);
   const flows = useQuery(flowsQuery(api, account.id, monday, today));
   const index = useQuery(logoIndexQuery);
-  const money = (m: components["schemas"]["Money"]) =>
-    fmt.money(m, scale(m.currency));
-  const oldest = unpaid[0];
-  const owed = unpaid.reduce((sum, s) => sum + s.unpaid.amount, 0);
-  const limit = account.card?.credit_limit;
-  const available = account.card?.available_limit;
+
   const signal =
     flows.data === undefined
       ? undefined
-      : Array.from({ length: elapsed + 1 }, (_, i) => {
-          const day = shiftDate(monday, i);
-          return flows.data.find((f) => f.date === day)?.outflow.amount ?? 0;
+      : weekOutflows(monday, elapsed, flows.data);
+  const context =
+    current === undefined
+      ? undefined
+      : t("accountCard.due", {
+          date: formatDayMonth(current.due_date, locale),
         });
+
   return (
     <AccountCard
       kind="credit"
@@ -82,60 +74,22 @@ export function CardTile({
       currency={account.currency}
       scale={scale(account.currency)}
       value={current?.open_amount.amount}
-      context={
-        current === undefined
-          ? undefined
-          : t("accountCard.due", {
-              date: formatDayMonth(current.due_date, locale),
-            })
-      }
-      meter={
-        limit === undefined || available === undefined
-          ? undefined
-          : {
-              used: Math.max(limit.amount - available.amount, 0),
-              total: limit.amount,
-            }
-      }
+      context={context}
+      meter={limitMeter(account.card)}
       signal={signal}
       loading={loading}
     >
-      <Stack gap={3}>
-        {!loading && current === undefined && (
-          <Text size="sm" tone="muted">
-            {t("cards.noStatement")}
-          </Text>
-        )}
-        {oldest !== undefined && (
-          <Inline justify="between" gap={3}>
-            <Text size="sm" weight="medium">
-              {t(unpaid.length === 1 ? "cards.unpaid" : "cards.unpaidMany", {
-                date: formatDate(oldest.due_date, locale),
-                amount: money({
-                  amount: owed,
-                  currency: oldest.unpaid.currency,
-                }),
-                count: unpaid.length,
-              })}
-            </Text>
-            <Button
-              size="sm"
-              onClick={() => {
-                void navigate({
-                  to: "/cards/$accountId/statements/$statementId",
-                  params: {
-                    accountId: account.id,
-                    statementId: oldest.id,
-                  },
-                  search: { pay: true },
-                });
-              }}
-            >
-              {t("cards.pay")}
-            </Button>
-          </Inline>
-        )}
-      </Stack>
+      <StatementStub
+        accountId={account.id}
+        unpaid={unpaid}
+        scale={scale(unpaid[0]?.unpaid.currency ?? account.currency)}
+      />
+
+      {!loading && current === undefined && (
+        <Text size="sm" tone="muted">
+          {t("cards.noStatement")}
+        </Text>
+      )}
     </AccountCard>
   );
 }

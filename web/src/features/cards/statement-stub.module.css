@@ -1,0 +1,63 @@
+@layer app {
+  /* The slip slides out from under the account card: it starts behind the card's lower edge,
+     is inset from its sides, and its top padding clears the overlap. */
+  .stub {
+    --stub-overlap: var(--slotted-space-8);
+
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--slotted-space-5);
+    box-sizing: border-box;
+    /* The account card's widest drawing, 400 px, less the inset on each side. */
+    max-inline-size: calc(400px - 2 * var(--slotted-space-5));
+    margin-block-start: calc(
+      -1 * (var(--stub-overlap) + var(--slotted-space-5))
+    );
+    margin-inline: var(--slotted-space-5);
+    padding: calc(var(--stub-overlap) + var(--slotted-space-5))
+      var(--slotted-space-6) var(--slotted-space-6);
+    border: var(--slotted-border-width-thin) solid var(--slotted-border-subtle);
+    border-radius: 0 0 var(--slotted-radius-lg) var(--slotted-radius-lg);
+    background: var(--slotted-surface);
+    box-shadow: var(--slotted-shadow-sm);
+  }
+
+  .stub[data-status="warning"] {
+    border-color: var(--slotted-tone-warning-border);
+    background: var(--slotted-tone-warning-surface);
+  }
+
+  .stub[data-status="danger"] {
+    border-color: var(--slotted-tone-danger-border);
+    background: var(--slotted-tone-danger-surface);
+  }
+
+  .head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--slotted-space-5);
+    min-inline-size: 0;
+  }
+
+  .body {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--slotted-space-6);
+  }
+
+  .figure {
+    display: flex;
+    flex-direction: column;
+    gap: var(--slotted-space-1);
+    min-inline-size: 0;
+  }
+
+  @media (forced-colors: active) {
+    .stub {
+      border-color: CanvasText;
+    }
+  }
+}

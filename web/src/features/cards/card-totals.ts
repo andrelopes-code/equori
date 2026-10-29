@@ -65,3 +65,25 @@ export function cardTotals(
     },
   };
 }
+
+// What the closed statements still owe, added in the minor units of their currency.
+export function owedAmount(unpaid: readonly Statement[]): number {
+  return unpaid.reduce((sum, s) => sum + s.unpaid.amount, 0);
+}
+
+// The share of the credit limit in use; undefined when the card holds no limit.
+export function limitMeter(
+  card: Account["card"],
+): { used: number; total: number } | undefined {
+  const limit = card?.credit_limit;
+  const available = card?.available_limit;
+
+  if (limit === undefined || available === undefined) {
+    return undefined;
+  }
+
+  return {
+    used: Math.max(limit.amount - available.amount, 0),
+    total: limit.amount,
+  };
+}

@@ -291,6 +291,14 @@ export function formatDayMonthLong(iso: string, locale: string): string {
   );
 }
 
+// "amanhã", "em 6 dias", "há 3 dias" / "tomorrow", "in 6 days", "3 days ago".
+export function formatRelativeDays(days: number, locale: string): string {
+  return new Intl.RelativeTimeFormat(locale, { numeric: "auto" }).format(
+    days,
+    "day",
+  );
+}
+
 export function formatDayHeader(
   iso: string,
   today: string,

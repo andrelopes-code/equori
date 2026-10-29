@@ -586,7 +586,13 @@ export const accountsEn = {
   "cards.closesDue": "Closes on {closing}, due on {due}",
   "cards.limitUsed": "Limit used",
   "cards.limitText": "{used} of {limit}",
-  "cards.unpaid": "Due on {date}: {amount}",
+  "cards.stub.name": "Closed statement",
+  "cards.stub.reference": "{month} statement",
+  "cards.stub.referenceMany": "{count} statements open",
+  "cards.stub.due": "Due {when}",
+  "cards.stub.overdue": "Was due {when}",
+  "cards.stub.dates": "Closed {closing} · due {due}",
+  "cards.stub.paid": "{paid} paid of {total}",
   "cards.pay": "Pay",
   "card.figures": "Card figures",
   "card.figure.current": "Current statement",
@@ -774,8 +780,6 @@ export const accountsEn = {
   "kind.title.loan": "Loan",
   "kind.title.payable": "Payable",
   "card.owedNote": "{count} statements open; the oldest was due on {date}",
-  "cards.unpaidMany":
-    "{amount} open on {count} statements, the oldest due on {date}",
   "cards.subtitleOne":
     "1 card: what it bills now, what is due and the limit left.",
   "account.figure.neverNote":

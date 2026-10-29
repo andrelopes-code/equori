@@ -14,6 +14,7 @@ import {
   formatSigned,
   formatSignedBasisPoints,
   formatPlain,
+  formatRelativeDays,
   numberFormatter,
   formatReferenceMonth,
   parseAmount,
@@ -180,6 +181,17 @@ describe("short dates", () => {
     ["2026-11-05", "en", "November 5"],
   ] as const)("long day and month of %s in %s", (iso, locale, want) => {
     expect(formatDayMonthLong(iso, locale)).toBe(want);
+  });
+
+  it.each([
+    [0, "pt-BR", "hoje"],
+    [1, "pt-BR", "amanhã"],
+    [6, "pt-BR", "em 6 dias"],
+    [-3, "pt-BR", "há 3 dias"],
+    [-1, "en", "yesterday"],
+    [6, "en", "in 6 days"],
+  ] as const)("relative day %i in %s", (days, locale, want) => {
+    expect(formatRelativeDays(days, locale)).toBe(want);
   });
 
   const words = { today: "Hoje", yesterday: "Ontem" };
