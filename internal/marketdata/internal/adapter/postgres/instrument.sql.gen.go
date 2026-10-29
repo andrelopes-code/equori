@@ -10,7 +10,12 @@ import (
 )
 
 const getInstrument = `-- name: GetInstrument :one
-SELECT code, instrument_type, scale, name, quote_currency, exchange, subtype FROM marketdata_instrument WHERE code = $1
+SELECT
+    code, instrument_type, scale, name, quote_currency, exchange, subtype
+FROM
+    marketdata_instrument
+WHERE
+    code = $1
 `
 
 func (q *Queries) GetInstrument(ctx context.Context, code string) (MarketdataInstrument, error) {
@@ -29,8 +34,18 @@ func (q *Queries) GetInstrument(ctx context.Context, code string) (MarketdataIns
 }
 
 const insertInstrument = `-- name: InsertInstrument :execrows
-INSERT INTO marketdata_instrument (code, instrument_type, scale, name, quote_currency, exchange, subtype)
-VALUES ($1, $2, $3, $4, $5, $6, $7)
+INSERT INTO
+    marketdata_instrument (code, instrument_type, scale, name, quote_currency, exchange, subtype)
+VALUES
+    (
+        $1,
+        $2,
+        $3,
+        $4,
+        $5,
+        $6,
+        $7
+    )
 ON CONFLICT (code) DO NOTHING
 `
 
@@ -61,8 +76,13 @@ func (q *Queries) InsertInstrument(ctx context.Context, arg InsertInstrumentPara
 }
 
 const insertMissingCurrencies = `-- name: InsertMissingCurrencies :exec
-INSERT INTO marketdata_instrument (code, instrument_type, scale, name)
-SELECT unnest($1::text[]), 'currency', unnest($2::smallint[]), unnest($3::text[])
+INSERT INTO
+    marketdata_instrument (code, instrument_type, scale, name)
+SELECT
+    unnest($1::TEXT[]),
+    'currency',
+    unnest($2::SMALLINT[]),
+    unnest($3::TEXT[])
 ON CONFLICT (code) DO NOTHING
 `
 
@@ -78,7 +98,12 @@ func (q *Queries) InsertMissingCurrencies(ctx context.Context, arg InsertMissing
 }
 
 const listInstruments = `-- name: ListInstruments :many
-SELECT code, instrument_type, scale, name, quote_currency, exchange, subtype FROM marketdata_instrument ORDER BY code
+SELECT
+    code, instrument_type, scale, name, quote_currency, exchange, subtype
+FROM
+    marketdata_instrument
+ORDER BY
+    code
 `
 
 func (q *Queries) ListInstruments(ctx context.Context) ([]MarketdataInstrument, error) {
@@ -110,7 +135,14 @@ func (q *Queries) ListInstruments(ctx context.Context) ([]MarketdataInstrument, 
 }
 
 const listInstrumentsByType = `-- name: ListInstrumentsByType :many
-SELECT code, instrument_type, scale, name, quote_currency, exchange, subtype FROM marketdata_instrument WHERE instrument_type = $1 ORDER BY code
+SELECT
+    code, instrument_type, scale, name, quote_currency, exchange, subtype
+FROM
+    marketdata_instrument
+WHERE
+    instrument_type = $1
+ORDER BY
+    code
 `
 
 func (q *Queries) ListInstrumentsByType(ctx context.Context, instrumentType string) ([]MarketdataInstrument, error) {
@@ -142,8 +174,13 @@ func (q *Queries) ListInstrumentsByType(ctx context.Context, instrumentType stri
 }
 
 const updateInstrument = `-- name: UpdateInstrument :execrows
-UPDATE marketdata_instrument SET name = $1, exchange = $2, subtype = $3
-WHERE code = $4
+UPDATE marketdata_instrument
+SET
+    name = $1,
+    exchange = $2,
+    subtype = $3
+WHERE
+    code = $4
 `
 
 type UpdateInstrumentParams struct {

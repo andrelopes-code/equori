@@ -13,8 +13,16 @@ import (
 )
 
 const categoryHints = `-- name: CategoryHints :many
-SELECT class, description, category_id, answered_at FROM capture_category_hint
-WHERE user_id = $1 AND description = ANY($2::text[])
+SELECT
+    class,
+    description,
+    category_id,
+    answered_at
+FROM
+    capture_category_hint
+WHERE
+    user_id = $1
+    AND description = ANY ($2::TEXT[])
 `
 
 type CategoryHintsParams struct {
@@ -55,9 +63,12 @@ func (q *Queries) CategoryHints(ctx context.Context, arg CategoryHintsParams) ([
 }
 
 const saveCategoryHint = `-- name: SaveCategoryHint :exec
-INSERT INTO capture_category_hint (user_id, class, description, category_id, answered_at)
-VALUES ($1, $2, $3, $4, $5)
-ON CONFLICT (user_id, class, description) DO UPDATE SET
+INSERT INTO
+    capture_category_hint (user_id, class, description, category_id, answered_at)
+VALUES
+    ($1, $2, $3, $4, $5)
+ON CONFLICT (user_id, class, description) DO UPDATE
+SET
     category_id = EXCLUDED.category_id,
     answered_at = EXCLUDED.answered_at
 `

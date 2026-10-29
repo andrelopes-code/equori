@@ -12,7 +12,10 @@ import (
 )
 
 const deleteTag = `-- name: DeleteTag :exec
-DELETE FROM ledger_tag WHERE user_id = $1 AND id = $2
+DELETE FROM ledger_tag
+WHERE
+    user_id = $1
+    AND id = $2
 `
 
 type DeleteTagParams struct {
@@ -26,7 +29,13 @@ func (q *Queries) DeleteTag(ctx context.Context, arg DeleteTagParams) error {
 }
 
 const getPayee = `-- name: GetPayee :one
-SELECT id, user_id, name, merged_into FROM ledger_payee WHERE user_id = $1 AND id = $2
+SELECT
+    id, user_id, name, merged_into
+FROM
+    ledger_payee
+WHERE
+    user_id = $1
+    AND id = $2
 `
 
 type GetPayeeParams struct {
@@ -47,7 +56,12 @@ func (q *Queries) GetPayee(ctx context.Context, arg GetPayeeParams) (LedgerPayee
 }
 
 const getSettings = `-- name: GetSettings :one
-SELECT user_id, base_currency FROM ledger_settings WHERE user_id = $1
+SELECT
+    user_id, base_currency
+FROM
+    ledger_settings
+WHERE
+    user_id = $1
 `
 
 func (q *Queries) GetSettings(ctx context.Context, userID int64) (LedgerSetting, error) {
@@ -58,12 +72,21 @@ func (q *Queries) GetSettings(ctx context.Context, userID int64) (LedgerSetting,
 }
 
 const getTagUsage = `-- name: GetTagUsage :one
-SELECT g.id, g.name, count(t.id)::int AS transactions
-FROM ledger_tag g
-LEFT JOIN ledger_transaction_tag tt ON tt.tag_id = g.id
-LEFT JOIN ledger_transaction t ON t.id = tt.transaction_id AND t.voided_at IS NULL
-WHERE g.user_id = $1 AND g.name = $2
-GROUP BY g.id, g.name
+SELECT
+    g.id,
+    g.name,
+    count(t.id)::int AS transactions
+FROM
+    ledger_tag g
+    LEFT JOIN ledger_transaction_tag tt ON tt.tag_id = g.id
+    LEFT JOIN ledger_transaction t ON t.id = tt.transaction_id
+    AND t.voided_at IS NULL
+WHERE
+    g.user_id = $1
+    AND g.name = $2
+GROUP BY
+    g.id,
+    g.name
 `
 
 type GetTagUsageParams struct {
@@ -85,7 +108,12 @@ func (q *Queries) GetTagUsage(ctx context.Context, arg GetTagUsageParams) (GetTa
 }
 
 const insertInstitution = `-- name: InsertInstitution :one
-INSERT INTO ledger_institution (user_id, name, code, identifier_scheme, identifier) VALUES ($1, $2, $3, $4, $5) RETURNING id, user_id, name, code, identifier_scheme, identifier
+INSERT INTO
+    ledger_institution (user_id, name, code, identifier_scheme, identifier)
+VALUES
+    ($1, $2, $3, $4, $5)
+RETURNING
+    id, user_id, name, code, identifier_scheme, identifier
 `
 
 type InsertInstitutionParams struct {
@@ -117,7 +145,12 @@ func (q *Queries) InsertInstitution(ctx context.Context, arg InsertInstitutionPa
 }
 
 const insertPayee = `-- name: InsertPayee :one
-INSERT INTO ledger_payee (user_id, name) VALUES ($1, $2) RETURNING id, user_id, name, merged_into
+INSERT INTO
+    ledger_payee (user_id, name)
+VALUES
+    ($1, $2)
+RETURNING
+    id, user_id, name, merged_into
 `
 
 type InsertPayeeParams struct {
@@ -138,11 +171,22 @@ func (q *Queries) InsertPayee(ctx context.Context, arg InsertPayeeParams) (Ledge
 }
 
 const listInstitutions = `-- name: ListInstitutions :many
-SELECT id, user_id, name, code, identifier_scheme, identifier, lower(name)::text AS sort_name FROM ledger_institution
-WHERE user_id = $1
-  AND ($2::text IS NULL OR (lower(name), id) > ($2::text, $3::uuid))
-ORDER BY lower(name), id
-LIMIT $4
+SELECT
+    id, user_id, name, code, identifier_scheme, identifier,
+    lower(name)::text AS sort_name
+FROM
+    ledger_institution
+WHERE
+    user_id = $1
+    AND (
+        $2::text IS NULL
+        OR (lower(name), id) > ($2::text, $3::uuid)
+    )
+ORDER BY
+    lower(name),
+    id
+LIMIT
+    $4
 `
 
 type ListInstitutionsParams struct {
@@ -196,11 +240,23 @@ func (q *Queries) ListInstitutions(ctx context.Context, arg ListInstitutionsPara
 }
 
 const listPayees = `-- name: ListPayees :many
-SELECT id, user_id, name, merged_into, lower(name)::text AS sort_name FROM ledger_payee
-WHERE user_id = $1 AND merged_into IS NULL
-  AND ($2::text IS NULL OR (lower(name), id) > ($2::text, $3::uuid))
-ORDER BY lower(name), id
-LIMIT $4
+SELECT
+    id, user_id, name, merged_into,
+    lower(name)::text AS sort_name
+FROM
+    ledger_payee
+WHERE
+    user_id = $1
+    AND merged_into IS NULL
+    AND (
+        $2::text IS NULL
+        OR (lower(name), id) > ($2::text, $3::uuid)
+    )
+ORDER BY
+    lower(name),
+    id
+LIMIT
+    $4
 `
 
 type ListPayeesParams struct {
@@ -250,10 +306,20 @@ func (q *Queries) ListPayees(ctx context.Context, arg ListPayeesParams) ([]ListP
 }
 
 const listTags = `-- name: ListTags :many
-SELECT name FROM ledger_tag
-WHERE user_id = $1 AND ($2::text IS NULL OR name > $2::text)
-ORDER BY name
-LIMIT $3
+SELECT
+    name
+FROM
+    ledger_tag
+WHERE
+    user_id = $1
+    AND (
+        $2::text IS NULL
+        OR name > $2::text
+    )
+ORDER BY
+    name
+LIMIT
+    $3
 `
 
 type ListTagsParams struct {
@@ -283,7 +349,12 @@ func (q *Queries) ListTags(ctx context.Context, arg ListTagsParams) ([]string, e
 }
 
 const markPayeeMerged = `-- name: MarkPayeeMerged :exec
-UPDATE ledger_payee SET merged_into = $1 WHERE user_id = $2 AND id = $3
+UPDATE ledger_payee
+SET
+    merged_into = $1
+WHERE
+    user_id = $2
+    AND id = $3
 `
 
 type MarkPayeeMergedParams struct {
@@ -298,8 +369,13 @@ func (q *Queries) MarkPayeeMerged(ctx context.Context, arg MarkPayeeMergedParams
 }
 
 const moveCounterpartyPayee = `-- name: MoveCounterpartyPayee :exec
-UPDATE ledger_account SET counterparty_payee_id = $1, updated_at = now()
-WHERE user_id = $2 AND counterparty_payee_id = $3
+UPDATE ledger_account
+SET
+    counterparty_payee_id = $1,
+    updated_at = now()
+WHERE
+    user_id = $2
+    AND counterparty_payee_id = $3
 `
 
 type MoveCounterpartyPayeeParams struct {
@@ -314,9 +390,17 @@ func (q *Queries) MoveCounterpartyPayee(ctx context.Context, arg MoveCounterpart
 }
 
 const moveTagLinks = `-- name: MoveTagLinks :exec
-INSERT INTO ledger_transaction_tag (user_id, transaction_id, tag_id)
-SELECT l.user_id, l.transaction_id, $1::uuid FROM ledger_transaction_tag l
-WHERE l.user_id = $2 AND l.tag_id = $3
+INSERT INTO
+    ledger_transaction_tag (user_id, transaction_id, tag_id)
+SELECT
+    l.user_id,
+    l.transaction_id,
+    $1::uuid
+FROM
+    ledger_transaction_tag l
+WHERE
+    l.user_id = $2
+    AND l.tag_id = $3
 ON CONFLICT DO NOTHING
 `
 
@@ -333,8 +417,13 @@ func (q *Queries) MoveTagLinks(ctx context.Context, arg MoveTagLinksParams) erro
 }
 
 const moveVoidedPayee = `-- name: MoveVoidedPayee :exec
-UPDATE ledger_transaction SET payee_id = $1
-WHERE user_id = $2 AND payee_id = $3 AND voided_at IS NOT NULL
+UPDATE ledger_transaction
+SET
+    payee_id = $1
+WHERE
+    user_id = $2
+    AND payee_id = $3
+    AND voided_at IS NOT NULL
 `
 
 type MoveVoidedPayeeParams struct {
@@ -349,7 +438,14 @@ func (q *Queries) MoveVoidedPayee(ctx context.Context, arg MoveVoidedPayeeParams
 }
 
 const payeeNames = `-- name: PayeeNames :many
-SELECT id, name FROM ledger_payee WHERE user_id = $1 AND id = ANY($2::uuid[])
+SELECT
+    id,
+    name
+FROM
+    ledger_payee
+WHERE
+    user_id = $1
+    AND id = ANY ($2::UUID[])
 `
 
 type PayeeNamesParams struct {
@@ -383,7 +479,14 @@ func (q *Queries) PayeeNames(ctx context.Context, arg PayeeNamesParams) ([]Payee
 }
 
 const renamePayee = `-- name: RenamePayee :one
-UPDATE ledger_payee SET name = $1 WHERE user_id = $2 AND id = $3 RETURNING id, user_id, name, merged_into
+UPDATE ledger_payee
+SET
+    name = $1
+WHERE
+    user_id = $2
+    AND id = $3
+RETURNING
+    id, user_id, name, merged_into
 `
 
 type RenamePayeeParams struct {
@@ -405,8 +508,14 @@ func (q *Queries) RenamePayee(ctx context.Context, arg RenamePayeeParams) (Ledge
 }
 
 const renameTag = `-- name: RenameTag :one
-UPDATE ledger_tag SET name = $1 WHERE user_id = $2 AND id = $3
-RETURNING id
+UPDATE ledger_tag
+SET
+    name = $1
+WHERE
+    user_id = $2
+    AND id = $3
+RETURNING
+    id
 `
 
 type RenameTagParams struct {
@@ -423,7 +532,15 @@ func (q *Queries) RenameTag(ctx context.Context, arg RenameTagParams) (uuid.UUID
 }
 
 const setInstitutionIdentifier = `-- name: SetInstitutionIdentifier :one
-UPDATE ledger_institution SET identifier_scheme = $1, identifier = $2 WHERE user_id = $3 AND id = $4 RETURNING id, user_id, name, code, identifier_scheme, identifier
+UPDATE ledger_institution
+SET
+    identifier_scheme = $1,
+    identifier = $2
+WHERE
+    user_id = $3
+    AND id = $4
+RETURNING
+    id, user_id, name, code, identifier_scheme, identifier
 `
 
 type SetInstitutionIdentifierParams struct {
@@ -453,7 +570,16 @@ func (q *Queries) SetInstitutionIdentifier(ctx context.Context, arg SetInstituti
 }
 
 const transactionsWithPayee = `-- name: TransactionsWithPayee :many
-SELECT id FROM ledger_transaction WHERE user_id = $1 AND payee_id = $2 AND voided_at IS NULL ORDER BY id
+SELECT
+    id
+FROM
+    ledger_transaction
+WHERE
+    user_id = $1
+    AND payee_id = $2
+    AND voided_at IS NULL
+ORDER BY
+    id
 `
 
 type TransactionsWithPayeeParams struct {
@@ -483,10 +609,17 @@ func (q *Queries) TransactionsWithPayee(ctx context.Context, arg TransactionsWit
 }
 
 const transactionsWithTag = `-- name: TransactionsWithTag :many
-SELECT tt.transaction_id FROM ledger_transaction_tag tt
-JOIN ledger_transaction t ON t.id = tt.transaction_id
-WHERE tt.user_id = $1 AND tt.tag_id = $2 AND t.voided_at IS NULL
-ORDER BY tt.transaction_id
+SELECT
+    tt.transaction_id
+FROM
+    ledger_transaction_tag tt
+    JOIN ledger_transaction t ON t.id = tt.transaction_id
+WHERE
+    tt.user_id = $1
+    AND tt.tag_id = $2
+    AND t.voided_at IS NULL
+ORDER BY
+    tt.transaction_id
 `
 
 type TransactionsWithTagParams struct {
@@ -515,8 +648,13 @@ func (q *Queries) TransactionsWithTag(ctx context.Context, arg TransactionsWithT
 }
 
 const upsertSettings = `-- name: UpsertSettings :exec
-INSERT INTO ledger_settings (user_id, base_currency) VALUES ($1, $2)
-ON CONFLICT (user_id) DO UPDATE SET base_currency = EXCLUDED.base_currency
+INSERT INTO
+    ledger_settings (user_id, base_currency)
+VALUES
+    ($1, $2)
+ON CONFLICT (user_id) DO UPDATE
+SET
+    base_currency = EXCLUDED.base_currency
 `
 
 type UpsertSettingsParams struct {
@@ -530,9 +668,15 @@ func (q *Queries) UpsertSettings(ctx context.Context, arg UpsertSettingsParams) 
 }
 
 const upsertTag = `-- name: UpsertTag :one
-INSERT INTO ledger_tag (user_id, name) VALUES ($1, $2)
-ON CONFLICT (user_id, name) DO UPDATE SET name = EXCLUDED.name
-RETURNING id
+INSERT INTO
+    ledger_tag (user_id, name)
+VALUES
+    ($1, $2)
+ON CONFLICT (user_id, name) DO UPDATE
+SET
+    name = EXCLUDED.name
+RETURNING
+    id
 `
 
 type UpsertTagParams struct {

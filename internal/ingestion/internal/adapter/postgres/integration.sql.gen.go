@@ -12,7 +12,10 @@ import (
 )
 
 const deleteIntegration = `-- name: DeleteIntegration :execrows
-DELETE FROM ingestion_integration WHERE user_id = $1 AND id = $2
+DELETE FROM ingestion_integration
+WHERE
+    user_id = $1
+    AND id = $2
 `
 
 type DeleteIntegrationParams struct {
@@ -29,7 +32,13 @@ func (q *Queries) DeleteIntegration(ctx context.Context, arg DeleteIntegrationPa
 }
 
 const getIntegration = `-- name: GetIntegration :one
-SELECT id, user_id, aggregator, name, credential_ciphertext, updated_at FROM ingestion_integration WHERE user_id = $1 AND id = $2
+SELECT
+    id, user_id, aggregator, name, credential_ciphertext, updated_at
+FROM
+    ingestion_integration
+WHERE
+    user_id = $1
+    AND id = $2
 `
 
 type GetIntegrationParams struct {
@@ -52,9 +61,12 @@ func (q *Queries) GetIntegration(ctx context.Context, arg GetIntegrationParams) 
 }
 
 const insertIntegration = `-- name: InsertIntegration :one
-INSERT INTO ingestion_integration (id, user_id, aggregator, name, credential_ciphertext)
-VALUES ($1, $2, $3, $4, $5)
-RETURNING id, user_id, aggregator, name, credential_ciphertext, updated_at
+INSERT INTO
+    ingestion_integration (id, user_id, aggregator, name, credential_ciphertext)
+VALUES
+    ($1, $2, $3, $4, $5)
+RETURNING
+    id, user_id, aggregator, name, credential_ciphertext, updated_at
 `
 
 type InsertIntegrationParams struct {
@@ -86,11 +98,21 @@ func (q *Queries) InsertIntegration(ctx context.Context, arg InsertIntegrationPa
 }
 
 const listIntegrations = `-- name: ListIntegrations :many
-SELECT id, user_id, aggregator, name, credential_ciphertext, updated_at FROM ingestion_integration
-WHERE user_id = $1
-  AND ($2::text IS NULL OR (name, id) > ($2::text, $3::uuid))
-ORDER BY name, id
-LIMIT $4
+SELECT
+    id, user_id, aggregator, name, credential_ciphertext, updated_at
+FROM
+    ingestion_integration
+WHERE
+    user_id = $1
+    AND (
+        $2::text IS NULL
+        OR (name, id) > ($2::text, $3::uuid)
+    )
+ORDER BY
+    name,
+    id
+LIMIT
+    $4
 `
 
 type ListIntegrationsParams struct {
@@ -133,7 +155,15 @@ func (q *Queries) ListIntegrations(ctx context.Context, arg ListIntegrationsPara
 }
 
 const lockAllCredentials = `-- name: LockAllCredentials :many
-SELECT id, user_id, credential_ciphertext FROM ingestion_integration ORDER BY id FOR UPDATE
+SELECT
+    id,
+    user_id,
+    credential_ciphertext
+FROM
+    ingestion_integration
+ORDER BY
+    id
+FOR UPDATE
 `
 
 type LockAllCredentialsRow struct {
@@ -164,8 +194,12 @@ func (q *Queries) LockAllCredentials(ctx context.Context) ([]LockAllCredentialsR
 }
 
 const resealCredentials = `-- name: ResealCredentials :exec
-UPDATE ingestion_integration SET credential_ciphertext = $1
-WHERE user_id = $2 AND id = $3
+UPDATE ingestion_integration
+SET
+    credential_ciphertext = $1
+WHERE
+    user_id = $2
+    AND id = $3
 `
 
 type ResealCredentialsParams struct {
@@ -180,9 +214,15 @@ func (q *Queries) ResealCredentials(ctx context.Context, arg ResealCredentialsPa
 }
 
 const updateCredentials = `-- name: UpdateCredentials :one
-UPDATE ingestion_integration SET credential_ciphertext = $1, updated_at = now()
-WHERE user_id = $2 AND id = $3
-RETURNING id, user_id, aggregator, name, credential_ciphertext, updated_at
+UPDATE ingestion_integration
+SET
+    credential_ciphertext = $1,
+    updated_at = now()
+WHERE
+    user_id = $2
+    AND id = $3
+RETURNING
+    id, user_id, aggregator, name, credential_ciphertext, updated_at
 `
 
 type UpdateCredentialsParams struct {

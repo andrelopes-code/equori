@@ -21,17 +21,28 @@ pre-commit:
       glob: "web/**/*.{ts,tsx}"
       run: pnpm exec eslint --cache --cache-location node_modules/.cache/eslint/ --no-warn-ignored {staged_files}
 
-    - name: gen-check
-      glob:
-        - "db/queries/**"
-        - "db/migrations/**"
-        - "sqlc.yaml"
-        - "api/openapi.yaml"
-        - "**/oapi-codegen.yaml"
-        - "web/src/theme/equori.theme.ts"
-        - "web/src/theme/equori-glass.theme.ts"
-        - "web/src/theme/glass/**"
-      run: make gen-check
+    # Piped: sqlc copies each query's text into the generated Go code, so gen-check reads the
+    # formatted queries.
+    - name: sql
+      group:
+        piped: true
+        jobs:
+          - name: sql-format
+            glob: "db/queries/**/*.sql"
+            run: for f in {staged_files}; do web/node_modules/.bin/sql-formatter --fix "$f" || exit 1; done
+            stage_fixed: true
+
+          - name: gen-check
+            glob:
+              - "db/queries/**"
+              - "db/migrations/**"
+              - "sqlc.yaml"
+              - "api/openapi.yaml"
+              - "**/oapi-codegen.yaml"
+              - "web/src/theme/equori.theme.ts"
+              - "web/src/theme/equori-glass.theme.ts"
+              - "web/src/theme/glass/**"
+            run: make gen-check
 
 # Sequential: run beside the Go tests, the vitest workers starve and time out (41 of 1494 tests).
 pre-push:

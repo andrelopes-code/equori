@@ -13,12 +13,23 @@ import (
 )
 
 const accountBalancesBookedAt = `-- name: AccountBalancesBookedAt :many
-SELECT a.id, a.instrument, coalesce(sum(p.amount), 0)::bigint AS total
-FROM ledger_account a
-LEFT JOIN ledger_posting p ON p.account_id = a.id AND NOT p.voided AND p.booked_on <= $1
-WHERE a.user_id = $2 AND a.account_class IN ('asset', 'liability')
-GROUP BY a.id
-ORDER BY a.name, a.id
+SELECT
+    a.id,
+    a.instrument,
+    coalesce(sum(p.amount), 0)::bigint AS total
+FROM
+    ledger_account a
+    LEFT JOIN ledger_posting p ON p.account_id = a.id
+    AND NOT p.voided
+    AND p.booked_on <= $1
+WHERE
+    a.user_id = $2
+    AND a.account_class IN ('asset', 'liability')
+GROUP BY
+    a.id
+ORDER BY
+    a.name,
+    a.id
 `
 
 type AccountBalancesBookedAtParams struct {
@@ -53,12 +64,23 @@ func (q *Queries) AccountBalancesBookedAt(ctx context.Context, arg AccountBalanc
 }
 
 const accountBalancesSettledAt = `-- name: AccountBalancesSettledAt :many
-SELECT a.id, a.instrument, coalesce(sum(p.amount), 0)::bigint AS total
-FROM ledger_account a
-LEFT JOIN ledger_posting p ON p.account_id = a.id AND NOT p.voided AND coalesce(p.settled_on, p.booked_on) <= $1
-WHERE a.user_id = $2 AND a.account_class IN ('asset', 'liability')
-GROUP BY a.id
-ORDER BY a.name, a.id
+SELECT
+    a.id,
+    a.instrument,
+    coalesce(sum(p.amount), 0)::bigint AS total
+FROM
+    ledger_account a
+    LEFT JOIN ledger_posting p ON p.account_id = a.id
+    AND NOT p.voided
+    AND coalesce(p.settled_on, p.booked_on) <= $1
+WHERE
+    a.user_id = $2
+    AND a.account_class IN ('asset', 'liability')
+GROUP BY
+    a.id
+ORDER BY
+    a.name,
+    a.id
 `
 
 type AccountBalancesSettledAtParams struct {
@@ -93,16 +115,37 @@ func (q *Queries) AccountBalancesSettledAt(ctx context.Context, arg AccountBalan
 }
 
 const balanceBookedAt = `-- name: BalanceBookedAt :one
-WITH RECURSIVE tree AS (
-    SELECT a.id FROM ledger_account a WHERE a.user_id = $2 AND a.id = $3
-    UNION ALL
-    SELECT c.id FROM ledger_account c JOIN tree ON c.parent_id = tree.id WHERE c.user_id = $2
-)
-SELECT coalesce(sum(p.amount), 0)::bigint
-FROM ledger_posting p
-WHERE p.account_id IN (SELECT id FROM tree)
-  AND NOT p.voided
-  AND p.booked_on <= $1
+WITH RECURSIVE
+    tree AS (
+        SELECT
+            a.id
+        FROM
+            ledger_account a
+        WHERE
+            a.user_id = $2
+            AND a.id = $3
+        UNION ALL
+        SELECT
+            c.id
+        FROM
+            ledger_account c
+            JOIN tree ON c.parent_id = tree.id
+        WHERE
+            c.user_id = $2
+    )
+SELECT
+    coalesce(sum(p.amount), 0)::bigint
+FROM
+    ledger_posting p
+WHERE
+    p.account_id IN (
+        SELECT
+            id
+        FROM
+            tree
+    )
+    AND NOT p.voided
+    AND p.booked_on <= $1
 `
 
 type BalanceBookedAtParams struct {
@@ -119,16 +162,37 @@ func (q *Queries) BalanceBookedAt(ctx context.Context, arg BalanceBookedAtParams
 }
 
 const balanceSettledAt = `-- name: BalanceSettledAt :one
-WITH RECURSIVE tree AS (
-    SELECT a.id FROM ledger_account a WHERE a.user_id = $2 AND a.id = $3
-    UNION ALL
-    SELECT c.id FROM ledger_account c JOIN tree ON c.parent_id = tree.id WHERE c.user_id = $2
-)
-SELECT coalesce(sum(p.amount), 0)::bigint
-FROM ledger_posting p
-WHERE p.account_id IN (SELECT id FROM tree)
-  AND NOT p.voided
-  AND coalesce(p.settled_on, p.booked_on) <= $1
+WITH RECURSIVE
+    tree AS (
+        SELECT
+            a.id
+        FROM
+            ledger_account a
+        WHERE
+            a.user_id = $2
+            AND a.id = $3
+        UNION ALL
+        SELECT
+            c.id
+        FROM
+            ledger_account c
+            JOIN tree ON c.parent_id = tree.id
+        WHERE
+            c.user_id = $2
+    )
+SELECT
+    coalesce(sum(p.amount), 0)::bigint
+FROM
+    ledger_posting p
+WHERE
+    p.account_id IN (
+        SELECT
+            id
+        FROM
+            tree
+    )
+    AND NOT p.voided
+    AND coalesce(p.settled_on, p.booked_on) <= $1
 `
 
 type BalanceSettledAtParams struct {
@@ -145,18 +209,43 @@ func (q *Queries) BalanceSettledAt(ctx context.Context, arg BalanceSettledAtPara
 }
 
 const categoryMonthlyTotals = `-- name: CategoryMonthlyTotals :many
-WITH RECURSIVE tree AS (
-    SELECT a.id FROM ledger_account a WHERE a.user_id = $3 AND a.id = $4
-    UNION ALL
-    SELECT c.id FROM ledger_account c JOIN tree ON c.parent_id = tree.id WHERE c.user_id = $3
-)
-SELECT date_trunc('month', p.booked_on)::date AS month, sum(p.weight)::bigint AS total
-FROM ledger_posting p
-WHERE p.account_id IN (SELECT id FROM tree)
-  AND NOT p.voided
-  AND p.booked_on >= $1 AND p.booked_on < $2
-GROUP BY 1
-ORDER BY 1
+WITH RECURSIVE
+    tree AS (
+        SELECT
+            a.id
+        FROM
+            ledger_account a
+        WHERE
+            a.user_id = $3
+            AND a.id = $4
+        UNION ALL
+        SELECT
+            c.id
+        FROM
+            ledger_account c
+            JOIN tree ON c.parent_id = tree.id
+        WHERE
+            c.user_id = $3
+    )
+SELECT
+    date_trunc('month', p.booked_on)::date AS MONTH,
+    sum(p.weight)::bigint AS total
+FROM
+    ledger_posting p
+WHERE
+    p.account_id IN (
+        SELECT
+            id
+        FROM
+            tree
+    )
+    AND NOT p.voided
+    AND p.booked_on >= $1
+    AND p.booked_on < $2
+GROUP BY
+    1
+ORDER BY
+    1
 `
 
 type CategoryMonthlyTotalsParams struct {
@@ -198,16 +287,38 @@ func (q *Queries) CategoryMonthlyTotals(ctx context.Context, arg CategoryMonthly
 }
 
 const categoryTotal = `-- name: CategoryTotal :one
-WITH RECURSIVE tree AS (
-    SELECT a.id FROM ledger_account a WHERE a.user_id = $3 AND a.id = $4
-    UNION ALL
-    SELECT c.id FROM ledger_account c JOIN tree ON c.parent_id = tree.id WHERE c.user_id = $3
-)
-SELECT coalesce(sum(p.weight), 0)::bigint
-FROM ledger_posting p
-WHERE p.account_id IN (SELECT id FROM tree)
-  AND NOT p.voided
-  AND p.booked_on >= $1 AND p.booked_on < $2
+WITH RECURSIVE
+    tree AS (
+        SELECT
+            a.id
+        FROM
+            ledger_account a
+        WHERE
+            a.user_id = $3
+            AND a.id = $4
+        UNION ALL
+        SELECT
+            c.id
+        FROM
+            ledger_account c
+            JOIN tree ON c.parent_id = tree.id
+        WHERE
+            c.user_id = $3
+    )
+SELECT
+    coalesce(sum(p.weight), 0)::bigint
+FROM
+    ledger_posting p
+WHERE
+    p.account_id IN (
+        SELECT
+            id
+        FROM
+            tree
+    )
+    AND NOT p.voided
+    AND p.booked_on >= $1
+    AND p.booked_on < $2
 `
 
 type CategoryTotalParams struct {
@@ -231,13 +342,23 @@ func (q *Queries) CategoryTotal(ctx context.Context, arg CategoryTotalParams) (i
 }
 
 const ownCategoryMonthlyTotals = `-- name: OwnCategoryMonthlyTotals :many
-SELECT p.account_id, date_trunc('month', p.booked_on)::date AS month, sum(p.weight)::bigint AS total
-FROM ledger_posting p
-JOIN ledger_account a ON a.id = p.account_id AND a.user_id = p.user_id
-WHERE p.user_id = $1 AND a.account_class = $2
-  AND NOT p.voided
-  AND p.booked_on >= $3 AND p.booked_on < $4
-GROUP BY 1, 2
+SELECT
+    p.account_id,
+    date_trunc('month', p.booked_on)::date AS MONTH,
+    sum(p.weight)::bigint AS total
+FROM
+    ledger_posting p
+    JOIN ledger_account a ON a.id = p.account_id
+    AND a.user_id = p.user_id
+WHERE
+    p.user_id = $1
+    AND a.account_class = $2
+    AND NOT p.voided
+    AND p.booked_on >= $3
+    AND p.booked_on < $4
+GROUP BY
+    1,
+    2
 `
 
 type OwnCategoryMonthlyTotalsParams struct {
@@ -280,17 +401,41 @@ func (q *Queries) OwnCategoryMonthlyTotals(ctx context.Context, arg OwnCategoryM
 }
 
 const treeBalancesByInstrument = `-- name: TreeBalancesByInstrument :many
-WITH RECURSIVE tree AS (
-    SELECT a.id, a.instrument FROM ledger_account a WHERE a.user_id = $3 AND a.id = $4
-    UNION ALL
-    SELECT c.id, c.instrument FROM ledger_account c JOIN tree ON c.parent_id = tree.id WHERE c.user_id = $3
-)
-SELECT tree.instrument, coalesce(sum(p.amount), 0)::bigint AS total
-FROM tree
-LEFT JOIN ledger_posting p ON p.account_id = tree.id AND NOT p.voided
-    AND CASE WHEN $1::boolean THEN coalesce(p.settled_on, p.booked_on) ELSE p.booked_on END <= $2
-GROUP BY tree.instrument
-ORDER BY tree.instrument
+WITH RECURSIVE
+    tree AS (
+        SELECT
+            a.id,
+            a.instrument
+        FROM
+            ledger_account a
+        WHERE
+            a.user_id = $3
+            AND a.id = $4
+        UNION ALL
+        SELECT
+            c.id,
+            c.instrument
+        FROM
+            ledger_account c
+            JOIN tree ON c.parent_id = tree.id
+        WHERE
+            c.user_id = $3
+    )
+SELECT
+    tree.instrument,
+    coalesce(sum(p.amount), 0)::bigint AS total
+FROM
+    tree
+    LEFT JOIN ledger_posting p ON p.account_id = tree.id
+    AND NOT p.voided
+    AND CASE
+        WHEN $1::boolean THEN coalesce(p.settled_on, p.booked_on)
+        ELSE p.booked_on
+    END <= $2
+GROUP BY
+    tree.instrument
+ORDER BY
+    tree.instrument
 `
 
 type TreeBalancesByInstrumentParams struct {
@@ -332,22 +477,66 @@ func (q *Queries) TreeBalancesByInstrument(ctx context.Context, arg TreeBalances
 }
 
 const treeExternalFlows = `-- name: TreeExternalFlows :many
-WITH RECURSIVE tree AS (
-    SELECT a.id FROM ledger_account a WHERE a.user_id = $1 AND a.id = ANY($4::uuid[])
-    UNION
-    SELECT c.id FROM ledger_account c JOIN tree ON c.parent_id = tree.id WHERE c.user_id = $1
-)
-SELECT t.date, t.balancing_currency, (-sum(o.weight))::bigint AS flow
-FROM ledger_transaction t
-JOIN ledger_posting o ON o.transaction_id = t.id AND NOT o.voided AND o.account_id NOT IN (SELECT id FROM tree)
-JOIN ledger_account oa ON oa.id = o.account_id AND oa.account_class IN ('asset', 'liability')
-WHERE t.user_id = $1 AND t.voided_at IS NULL AND t.date BETWEEN $2 AND $3
-  AND EXISTS (
-      SELECT 1 FROM ledger_posting p
-      WHERE p.transaction_id = t.id AND NOT p.voided AND p.account_id IN (SELECT id FROM tree)
-  )
-GROUP BY t.id, t.date, t.balancing_currency
-ORDER BY t.date, t.id
+WITH RECURSIVE
+    tree AS (
+        SELECT
+            a.id
+        FROM
+            ledger_account a
+        WHERE
+            a.user_id = $1
+            AND a.id = ANY ($4::UUID[])
+        UNION
+        SELECT
+            c.id
+        FROM
+            ledger_account c
+            JOIN tree ON c.parent_id = tree.id
+        WHERE
+            c.user_id = $1
+    )
+SELECT
+    t.date,
+    t.balancing_currency,
+    (- sum(o.weight))::bigint AS flow
+FROM
+    ledger_transaction t
+    JOIN ledger_posting o ON o.transaction_id = t.id
+    AND NOT o.voided
+    AND o.account_id NOT IN (
+        SELECT
+            id
+        FROM
+            tree
+    )
+    JOIN ledger_account oa ON oa.id = o.account_id
+    AND oa.account_class IN ('asset', 'liability')
+WHERE
+    t.user_id = $1
+    AND t.voided_at IS NULL
+    AND t.date BETWEEN $2 AND $3
+    AND EXISTS (
+        SELECT
+            1
+        FROM
+            ledger_posting p
+        WHERE
+            p.transaction_id = t.id
+            AND NOT p.voided
+            AND p.account_id IN (
+                SELECT
+                    id
+                FROM
+                    tree
+            )
+    )
+GROUP BY
+    t.id,
+    t.date,
+    t.balancing_currency
+ORDER BY
+    t.date,
+    t.id
 `
 
 type TreeExternalFlowsParams struct {
@@ -393,14 +582,38 @@ func (q *Queries) TreeExternalFlows(ctx context.Context, arg TreeExternalFlowsPa
 }
 
 const treeFirstPosting = `-- name: TreeFirstPosting :one
-WITH RECURSIVE tree AS (
-    SELECT a.id FROM ledger_account a WHERE a.user_id = $1 AND a.id = ANY($2::uuid[])
-    UNION
-    SELECT c.id FROM ledger_account c JOIN tree ON c.parent_id = tree.id WHERE c.user_id = $1
-)
-SELECT coalesce(min(p.booked_on), DATE '0001-01-01')::date AS first_on, (count(*) > 0)::boolean AS found
-FROM ledger_posting p
-WHERE p.user_id = $1 AND NOT p.voided AND p.account_id IN (SELECT id FROM tree)
+WITH RECURSIVE
+    tree AS (
+        SELECT
+            a.id
+        FROM
+            ledger_account a
+        WHERE
+            a.user_id = $1
+            AND a.id = ANY ($2::UUID[])
+        UNION
+        SELECT
+            c.id
+        FROM
+            ledger_account c
+            JOIN tree ON c.parent_id = tree.id
+        WHERE
+            c.user_id = $1
+    )
+SELECT
+    coalesce(min(p.booked_on), DATE '0001-01-01')::date AS first_on,
+    (count(*) > 0)::boolean AS found
+FROM
+    ledger_posting p
+WHERE
+    p.user_id = $1
+    AND NOT p.voided
+    AND p.account_id IN (
+        SELECT
+            id
+        FROM
+            tree
+    )
 `
 
 type TreeFirstPostingParams struct {
@@ -423,12 +636,32 @@ func (q *Queries) TreeFirstPosting(ctx context.Context, arg TreeFirstPostingPara
 }
 
 const treeInstruments = `-- name: TreeInstruments :many
-WITH RECURSIVE tree AS (
-    SELECT a.id, a.instrument FROM ledger_account a WHERE a.user_id = $1 AND a.id = $2
-    UNION ALL
-    SELECT c.id, c.instrument FROM ledger_account c JOIN tree ON c.parent_id = tree.id WHERE c.user_id = $1
-)
-SELECT DISTINCT instrument FROM tree ORDER BY instrument
+WITH RECURSIVE
+    tree AS (
+        SELECT
+            a.id,
+            a.instrument
+        FROM
+            ledger_account a
+        WHERE
+            a.user_id = $1
+            AND a.id = $2
+        UNION ALL
+        SELECT
+            c.id,
+            c.instrument
+        FROM
+            ledger_account c
+            JOIN tree ON c.parent_id = tree.id
+        WHERE
+            c.user_id = $1
+    )
+SELECT DISTINCT
+    instrument
+FROM
+    tree
+ORDER BY
+    instrument
 `
 
 type TreeInstrumentsParams struct {

@@ -13,7 +13,12 @@ import (
 )
 
 const countTransactions = `-- name: CountTransactions :one
-SELECT count(*) FROM ledger_transaction WHERE user_id = $1
+SELECT
+    count(*)
+FROM
+    ledger_transaction
+WHERE
+    user_id = $1
 `
 
 func (q *Queries) CountTransactions(ctx context.Context, userID int64) (int64, error) {
@@ -24,7 +29,9 @@ func (q *Queries) CountTransactions(ctx context.Context, userID int64) (int64, e
 }
 
 const deleteLinksFrom = `-- name: DeleteLinksFrom :exec
-DELETE FROM ledger_link WHERE from_transaction_id = $1
+DELETE FROM ledger_link
+WHERE
+    from_transaction_id = $1
 `
 
 func (q *Queries) DeleteLinksFrom(ctx context.Context, fromTransactionID uuid.UUID) error {
@@ -33,7 +40,9 @@ func (q *Queries) DeleteLinksFrom(ctx context.Context, fromTransactionID uuid.UU
 }
 
 const deletePostings = `-- name: DeletePostings :exec
-DELETE FROM ledger_posting WHERE transaction_id = $1
+DELETE FROM ledger_posting
+WHERE
+    transaction_id = $1
 `
 
 func (q *Queries) DeletePostings(ctx context.Context, transactionID uuid.UUID) error {
@@ -42,7 +51,10 @@ func (q *Queries) DeletePostings(ctx context.Context, transactionID uuid.UUID) e
 }
 
 const deletePostingsByID = `-- name: DeletePostingsByID :exec
-DELETE FROM ledger_posting WHERE transaction_id = $1 AND id = ANY($2::uuid[])
+DELETE FROM ledger_posting
+WHERE
+    transaction_id = $1
+    AND id = ANY ($2::UUID[])
 `
 
 type DeletePostingsByIDParams struct {
@@ -56,7 +68,11 @@ func (q *Queries) DeletePostingsByID(ctx context.Context, arg DeletePostingsByID
 }
 
 const deleteReimbursementLinksFrom = `-- name: DeleteReimbursementLinksFrom :exec
-DELETE FROM ledger_link WHERE user_id = $1 AND from_transaction_id = $2 AND link_type = 'reimbursement_of'
+DELETE FROM ledger_link
+WHERE
+    user_id = $1
+    AND from_transaction_id = $2
+    AND link_type = 'reimbursement_of'
 `
 
 type DeleteReimbursementLinksFromParams struct {
@@ -70,7 +86,9 @@ func (q *Queries) DeleteReimbursementLinksFrom(ctx context.Context, arg DeleteRe
 }
 
 const deleteTransactionTags = `-- name: DeleteTransactionTags :exec
-DELETE FROM ledger_transaction_tag WHERE transaction_id = $1
+DELETE FROM ledger_transaction_tag
+WHERE
+    transaction_id = $1
 `
 
 func (q *Queries) DeleteTransactionTags(ctx context.Context, transactionID uuid.UUID) error {
@@ -79,7 +97,13 @@ func (q *Queries) DeleteTransactionTags(ctx context.Context, transactionID uuid.
 }
 
 const getTransaction = `-- name: GetTransaction :one
-SELECT id, user_id, date, description, payee_id, balancing_currency, origin, version, voided_at, void_reason, created_at, updated_at FROM ledger_transaction WHERE user_id = $1 AND id = $2
+SELECT
+    id, user_id, date, description, payee_id, balancing_currency, origin, version, voided_at, void_reason, created_at, updated_at
+FROM
+    ledger_transaction
+WHERE
+    user_id = $1
+    AND id = $2
 `
 
 type GetTransactionParams struct {
@@ -108,7 +132,14 @@ func (q *Queries) GetTransaction(ctx context.Context, arg GetTransactionParams) 
 }
 
 const getTransactionForUpdate = `-- name: GetTransactionForUpdate :one
-SELECT id, user_id, date, description, payee_id, balancing_currency, origin, version, voided_at, void_reason, created_at, updated_at FROM ledger_transaction WHERE user_id = $1 AND id = $2 FOR UPDATE
+SELECT
+    id, user_id, date, description, payee_id, balancing_currency, origin, version, voided_at, void_reason, created_at, updated_at
+FROM
+    ledger_transaction
+WHERE
+    user_id = $1
+    AND id = $2
+FOR UPDATE
 `
 
 type GetTransactionForUpdateParams struct {
@@ -137,7 +168,10 @@ func (q *Queries) GetTransactionForUpdate(ctx context.Context, arg GetTransactio
 }
 
 const insertLink = `-- name: InsertLink :exec
-INSERT INTO ledger_link (user_id, from_transaction_id, to_transaction_id, link_type, amount) VALUES ($1, $2, $3, $4, $5)
+INSERT INTO
+    ledger_link (user_id, from_transaction_id, to_transaction_id, link_type, amount)
+VALUES
+    ($1, $2, $3, $4, $5)
 `
 
 type InsertLinkParams struct {
@@ -160,9 +194,21 @@ func (q *Queries) InsertLink(ctx context.Context, arg InsertLinkParams) error {
 }
 
 const insertTransaction = `-- name: InsertTransaction :one
-INSERT INTO ledger_transaction (id, user_id, date, description, payee_id, balancing_currency, origin, version)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-RETURNING id, user_id, date, description, payee_id, balancing_currency, origin, version, voided_at, void_reason, created_at, updated_at
+INSERT INTO
+    ledger_transaction (id, user_id, date, description, payee_id, balancing_currency, origin, version)
+VALUES
+    (
+        $1,
+        $2,
+        $3,
+        $4,
+        $5,
+        $6,
+        $7,
+        $8
+    )
+RETURNING
+    id, user_id, date, description, payee_id, balancing_currency, origin, version, voided_at, void_reason, created_at, updated_at
 `
 
 type InsertTransactionParams struct {
@@ -206,7 +252,10 @@ func (q *Queries) InsertTransaction(ctx context.Context, arg InsertTransactionPa
 }
 
 const insertTransactionTag = `-- name: InsertTransactionTag :exec
-INSERT INTO ledger_transaction_tag (user_id, transaction_id, tag_id) VALUES ($1, $2, $3)
+INSERT INTO
+    ledger_transaction_tag (user_id, transaction_id, tag_id)
+VALUES
+    ($1, $2, $3)
 `
 
 type InsertTransactionTagParams struct {
@@ -221,7 +270,10 @@ func (q *Queries) InsertTransactionTag(ctx context.Context, arg InsertTransactio
 }
 
 const insertVersion = `-- name: InsertVersion :exec
-INSERT INTO ledger_transaction_version (transaction_id, version, snapshot, reason) VALUES ($1, $2, $3, $4)
+INSERT INTO
+    ledger_transaction_version (transaction_id, version, snapshot, reason)
+VALUES
+    ($1, $2, $3, $4)
 `
 
 type InsertVersionParams struct {
@@ -242,8 +294,17 @@ func (q *Queries) InsertVersion(ctx context.Context, arg InsertVersionParams) er
 }
 
 const listLinksFrom = `-- name: ListLinksFrom :many
-SELECT id, user_id, from_transaction_id, to_transaction_id, link_type, amount FROM ledger_link WHERE user_id = $1 AND from_transaction_id = ANY($2::uuid[])
-ORDER BY from_transaction_id, link_type, to_transaction_id
+SELECT
+    id, user_id, from_transaction_id, to_transaction_id, link_type, amount
+FROM
+    ledger_link
+WHERE
+    user_id = $1
+    AND from_transaction_id = ANY ($2::UUID[])
+ORDER BY
+    from_transaction_id,
+    link_type,
+    to_transaction_id
 `
 
 type ListLinksFromParams struct {
@@ -279,10 +340,21 @@ func (q *Queries) ListLinksFrom(ctx context.Context, arg ListLinksFromParams) ([
 }
 
 const listLinksTo = `-- name: ListLinksTo :many
-SELECT l.link_type, l.from_transaction_id, l.amount, t.balancing_currency FROM ledger_link l
-JOIN ledger_transaction t ON t.id = l.from_transaction_id
-WHERE l.user_id = $1 AND l.to_transaction_id = $2 AND t.voided_at IS NULL
-ORDER BY l.link_type, l.from_transaction_id
+SELECT
+    l.link_type,
+    l.from_transaction_id,
+    l.amount,
+    t.balancing_currency
+FROM
+    ledger_link l
+    JOIN ledger_transaction t ON t.id = l.from_transaction_id
+WHERE
+    l.user_id = $1
+    AND l.to_transaction_id = $2
+    AND t.voided_at IS NULL
+ORDER BY
+    l.link_type,
+    l.from_transaction_id
 `
 
 type ListLinksToParams struct {
@@ -323,13 +395,22 @@ func (q *Queries) ListLinksTo(ctx context.Context, arg ListLinksToParams) ([]Lis
 }
 
 const listPostings = `-- name: ListPostings :many
-SELECT p.id, p.user_id, p.transaction_id, p.account_id, p.position, p.amount, p.weight, p.booked_on, p.settled_on, p.status, p.original_amount, p.original_instrument, p.memo, p.voided, p.statement_id, p.card_role, p.installment_plan_id, p.installment_number, p.installment_count, p.external_record_id, p.statement_basis, a.instrument AS account_instrument, t.balancing_currency, s.reference_month AS statement_reference
-FROM ledger_posting p
-JOIN ledger_account a ON a.id = p.account_id
-JOIN ledger_transaction t ON t.id = p.transaction_id
-LEFT JOIN ledger_statement s ON s.id = p.statement_id
-WHERE p.user_id = $1 AND p.transaction_id = ANY($2::uuid[])
-ORDER BY p.transaction_id, p.position
+SELECT
+    p.id, p.user_id, p.transaction_id, p.account_id, p.position, p.amount, p.weight, p.booked_on, p.settled_on, p.status, p.original_amount, p.original_instrument, p.memo, p.voided, p.statement_id, p.card_role, p.installment_plan_id, p.installment_number, p.installment_count, p.external_record_id, p.statement_basis,
+    a.instrument AS account_instrument,
+    t.balancing_currency,
+    s.reference_month AS statement_reference
+FROM
+    ledger_posting p
+    JOIN ledger_account a ON a.id = p.account_id
+    JOIN ledger_transaction t ON t.id = p.transaction_id
+    LEFT JOIN ledger_statement s ON s.id = p.statement_id
+WHERE
+    p.user_id = $1
+    AND p.transaction_id = ANY ($2::UUID[])
+ORDER BY
+    p.transaction_id,
+    p.position
 `
 
 type ListPostingsParams struct {
@@ -410,26 +491,78 @@ func (q *Queries) ListPostings(ctx context.Context, arg ListPostingsParams) ([]L
 }
 
 const listReimbursementCandidates = `-- name: ListReimbursementCandidates :many
-SELECT e.id, (e.spent - e.held)::bigint AS remaining, e.allocated::bigint AS allocated
-FROM (
-  SELECT t.id, t.date, sum(p.amount) AS spent,
-    coalesce((SELECT sum(l.amount) FROM ledger_link l
-              JOIN ledger_transaction f ON f.user_id = l.user_id AND f.id = l.from_transaction_id AND f.voided_at IS NULL
-              WHERE l.user_id = $1 AND l.to_transaction_id = t.id AND l.link_type = 'reimbursement_of'
-                AND l.from_transaction_id <> $2), 0) AS held,
-    coalesce((SELECT sum(l.amount) FROM ledger_link l
-              WHERE l.user_id = $1 AND l.to_transaction_id = t.id AND l.link_type = 'reimbursement_of'
-                AND l.from_transaction_id = $2), 0) AS allocated
-  FROM ledger_transaction t
-  JOIN ledger_posting p ON p.user_id = t.user_id AND p.transaction_id = t.id AND p.amount > 0 AND NOT p.voided
-  JOIN ledger_account a ON a.user_id = p.user_id AND a.id = p.account_id
-    AND a.account_class = 'expense' AND a.instrument = $3::text
-  WHERE t.user_id = $1 AND t.id <> $2 AND t.voided_at IS NULL
-  GROUP BY t.id, t.date
-) e
-WHERE e.spent - e.held > 0 AND (e.date BETWEEN $4::date AND $5::date OR e.allocated > 0)
-ORDER BY (e.allocated > 0) DESC, (e.spent - e.held = $6::bigint) DESC, e.date DESC, e.id DESC
-LIMIT $7::int
+SELECT
+    e.id,
+    (e.spent - e.held)::bigint AS remaining,
+    e.allocated::bigint AS allocated
+FROM
+    (
+        SELECT
+            t.id,
+            t.date,
+            sum(p.amount) AS spent,
+            coalesce(
+                (
+                    SELECT
+                        sum(l.amount)
+                    FROM
+                        ledger_link l
+                        JOIN ledger_transaction f ON f.user_id = l.user_id
+                        AND f.id = l.from_transaction_id
+                        AND f.voided_at IS NULL
+                    WHERE
+                        l.user_id = $1
+                        AND l.to_transaction_id = t.id
+                        AND l.link_type = 'reimbursement_of'
+                        AND l.from_transaction_id <> $2
+                ),
+                0
+            ) AS held,
+            coalesce(
+                (
+                    SELECT
+                        sum(l.amount)
+                    FROM
+                        ledger_link l
+                    WHERE
+                        l.user_id = $1
+                        AND l.to_transaction_id = t.id
+                        AND l.link_type = 'reimbursement_of'
+                        AND l.from_transaction_id = $2
+                ),
+                0
+            ) AS allocated
+        FROM
+            ledger_transaction t
+            JOIN ledger_posting p ON p.user_id = t.user_id
+            AND p.transaction_id = t.id
+            AND p.amount > 0
+            AND NOT p.voided
+            JOIN ledger_account a ON a.user_id = p.user_id
+            AND a.id = p.account_id
+            AND a.account_class = 'expense'
+            AND a.instrument = $3::text
+        WHERE
+            t.user_id = $1
+            AND t.id <> $2
+            AND t.voided_at IS NULL
+        GROUP BY
+            t.id,
+            t.date
+    ) e
+WHERE
+    e.spent - e.held > 0
+    AND (
+        e.date BETWEEN $4::date AND $5::date
+        OR e.allocated > 0
+    )
+ORDER BY
+    (e.allocated > 0) DESC,
+    (e.spent - e.held = $6::bigint) DESC,
+    e.date DESC,
+    e.id DESC
+LIMIT
+    $7::int
 `
 
 type ListReimbursementCandidatesParams struct {
@@ -479,26 +612,76 @@ func (q *Queries) ListReimbursementCandidates(ctx context.Context, arg ListReimb
 }
 
 const listReimbursementSources = `-- name: ListReimbursementSources :many
-SELECT s.id, (s.inflow - s.allocated)::bigint AS free
-FROM (
-  SELECT t.id, t.date, (-sum(p.amount))::bigint AS inflow,
-    coalesce((SELECT sum(l.amount) FROM ledger_link l
-              WHERE l.user_id = $1 AND l.from_transaction_id = t.id AND l.link_type = 'reimbursement_of'), 0) AS allocated
-  FROM ledger_transaction t
-  JOIN ledger_posting p ON p.user_id = t.user_id AND p.transaction_id = t.id AND NOT p.voided
-  JOIN ledger_account a ON a.user_id = p.user_id AND a.id = p.account_id AND a.account_class IN ('income', 'expense')
-  WHERE t.user_id = $1 AND t.id <> $2 AND t.voided_at IS NULL
-    AND t.date BETWEEN $3::date AND $4::date AND a.instrument = $5::text
-    AND NOT EXISTS (SELECT 1 FROM ledger_link l
-                    WHERE l.user_id = $1 AND l.from_transaction_id = t.id AND l.to_transaction_id = $2
-                      AND l.link_type = 'reimbursement_of')
-  GROUP BY t.id, t.date
-  HAVING sum(p.amount) < 0
-     AND bool_and((a.account_class = 'income' AND a.system_role = 'uncategorized_income') OR (a.account_class = 'expense' AND p.amount < 0))
-) s
-WHERE s.inflow - s.allocated > 0
-ORDER BY s.date, s.id
-LIMIT $6::int
+SELECT
+    s.id,
+    (s.inflow - s.allocated)::bigint AS free
+FROM
+    (
+        SELECT
+            t.id,
+            t.date,
+            (- sum(p.amount))::bigint AS inflow,
+            coalesce(
+                (
+                    SELECT
+                        sum(l.amount)
+                    FROM
+                        ledger_link l
+                    WHERE
+                        l.user_id = $1
+                        AND l.from_transaction_id = t.id
+                        AND l.link_type = 'reimbursement_of'
+                ),
+                0
+            ) AS allocated
+        FROM
+            ledger_transaction t
+            JOIN ledger_posting p ON p.user_id = t.user_id
+            AND p.transaction_id = t.id
+            AND NOT p.voided
+            JOIN ledger_account a ON a.user_id = p.user_id
+            AND a.id = p.account_id
+            AND a.account_class IN ('income', 'expense')
+        WHERE
+            t.user_id = $1
+            AND t.id <> $2
+            AND t.voided_at IS NULL
+            AND t.date BETWEEN $3::date AND $4::date
+            AND a.instrument = $5::text
+            AND NOT EXISTS (
+                SELECT
+                    1
+                FROM
+                    ledger_link l
+                WHERE
+                    l.user_id = $1
+                    AND l.from_transaction_id = t.id
+                    AND l.to_transaction_id = $2
+                    AND l.link_type = 'reimbursement_of'
+            )
+        GROUP BY
+            t.id,
+            t.date
+        HAVING
+            sum(p.amount) < 0
+            AND bool_and(
+                (
+                    a.account_class = 'income'
+                    AND a.system_role = 'uncategorized_income'
+                )
+                OR (
+                    a.account_class = 'expense'
+                    AND p.amount < 0
+                )
+            )
+    ) s
+WHERE
+    s.inflow - s.allocated > 0
+ORDER BY
+    s.date,
+    s.id
+LIMIT
+    $6::int
 `
 
 type ListReimbursementSourcesParams struct {
@@ -544,11 +727,17 @@ func (q *Queries) ListReimbursementSources(ctx context.Context, arg ListReimburs
 }
 
 const listTransactionTags = `-- name: ListTransactionTags :many
-SELECT tt.transaction_id, g.name
-FROM ledger_transaction_tag tt
-JOIN ledger_tag g ON g.id = tt.tag_id
-WHERE tt.user_id = $1 AND tt.transaction_id = ANY($2::uuid[])
-ORDER BY g.name
+SELECT
+    tt.transaction_id,
+    g.name
+FROM
+    ledger_transaction_tag tt
+    JOIN ledger_tag g ON g.id = tt.tag_id
+WHERE
+    tt.user_id = $1
+    AND tt.transaction_id = ANY ($2::UUID[])
+ORDER BY
+    g.name
 `
 
 type ListTransactionTagsParams struct {
@@ -582,38 +771,134 @@ func (q *Queries) ListTransactionTags(ctx context.Context, arg ListTransactionTa
 }
 
 const listTransactions = `-- name: ListTransactions :many
-WITH RECURSIVE tree AS (
-    SELECT a.id FROM ledger_account a WHERE a.user_id = $1 AND a.id = $2::uuid
-    UNION ALL
-    SELECT c.id FROM ledger_account c JOIN tree ON c.parent_id = tree.id WHERE c.user_id = $1
-)
-SELECT t.id, t.user_id, t.date, t.description, t.payee_id, t.balancing_currency, t.origin, t.version, t.voided_at, t.void_reason, t.created_at, t.updated_at FROM ledger_transaction t
-WHERE t.user_id = $1
-  AND ($2::uuid IS NULL OR EXISTS (
-      SELECT 1 FROM ledger_posting p WHERE p.transaction_id = t.id AND p.account_id IN (SELECT id FROM tree)))
-  AND ($3::uuid IS NULL OR t.payee_id = $3::uuid)
-  AND ($4::text IS NULL OR EXISTS (
-      SELECT 1 FROM ledger_transaction_tag tt JOIN ledger_tag g ON g.id = tt.tag_id
-      WHERE tt.transaction_id = t.id AND g.name = $4::text))
-  AND ($5::date IS NULL OR t.date >= $5::date)
-  AND ($6::date IS NULL OR t.date <= $6::date)
-  -- P5 amendment A17: every category posting is on an uncategorized system account.
-  -- A voided transaction cannot be categorized, so the queue leaves it out.
-  AND (NOT $7::boolean OR (
-      t.voided_at IS NULL AND EXISTS (SELECT 1 FROM ledger_posting p JOIN ledger_account a ON a.id = p.account_id
-              WHERE p.transaction_id = t.id AND a.system_role IN ('uncategorized_expense', 'uncategorized_income'))
-      AND NOT EXISTS (SELECT 1 FROM ledger_posting p JOIN ledger_account a ON a.id = p.account_id
-              WHERE p.transaction_id = t.id AND a.account_class IN ('income', 'expense')
-                AND a.system_role IS DISTINCT FROM 'uncategorized_expense' AND a.system_role IS DISTINCT FROM 'uncategorized_income')))
-  AND ($8::text IS NULL OR
-       strpos(lower(t.description), lower($8::text)) > 0 OR
-       EXISTS (SELECT 1 FROM ledger_payee y WHERE y.user_id = $1 AND y.id = t.payee_id
-               AND strpos(lower(y.name), lower($8::text)) > 0) OR
-       EXISTS (SELECT 1 FROM ledger_posting p WHERE p.transaction_id = t.id
-               AND strpos(lower(coalesce(p.memo, '')), lower($8::text)) > 0))
-  AND ($9::date IS NULL OR (t.date, t.id) < ($9::date, $10::uuid))
-ORDER BY t.date DESC, t.id DESC
-LIMIT $11
+WITH RECURSIVE
+    tree AS (
+        SELECT
+            a.id
+        FROM
+            ledger_account a
+        WHERE
+            a.user_id = $1
+            AND a.id = $2::uuid
+        UNION ALL
+        SELECT
+            c.id
+        FROM
+            ledger_account c
+            JOIN tree ON c.parent_id = tree.id
+        WHERE
+            c.user_id = $1
+    )
+SELECT
+    t.id, t.user_id, t.date, t.description, t.payee_id, t.balancing_currency, t.origin, t.version, t.voided_at, t.void_reason, t.created_at, t.updated_at
+FROM
+    ledger_transaction t
+WHERE
+    t.user_id = $1
+    AND (
+        $2::uuid IS NULL
+        OR EXISTS (
+            SELECT
+                1
+            FROM
+                ledger_posting p
+            WHERE
+                p.transaction_id = t.id
+                AND p.account_id IN (
+                    SELECT
+                        id
+                    FROM
+                        tree
+                )
+        )
+    )
+    AND (
+        $3::uuid IS NULL
+        OR t.payee_id = $3::uuid
+    )
+    AND (
+        $4::text IS NULL
+        OR EXISTS (
+            SELECT
+                1
+            FROM
+                ledger_transaction_tag tt
+                JOIN ledger_tag g ON g.id = tt.tag_id
+            WHERE
+                tt.transaction_id = t.id
+                AND g.name = $4::text
+        )
+    )
+    AND (
+        $5::date IS NULL
+        OR t.date >= $5::date
+    )
+    AND (
+        $6::date IS NULL
+        OR t.date <= $6::date
+    )
+    -- P5 amendment A17: every category posting is on an uncategorized system account.
+    -- A voided transaction cannot be categorized, so the queue leaves it out.
+    AND (
+        NOT $7::boolean
+        OR (
+            t.voided_at IS NULL
+            AND EXISTS (
+                SELECT
+                    1
+                FROM
+                    ledger_posting p
+                    JOIN ledger_account a ON a.id = p.account_id
+                WHERE
+                    p.transaction_id = t.id
+                    AND a.system_role IN ('uncategorized_expense', 'uncategorized_income')
+            )
+            AND NOT EXISTS (
+                SELECT
+                    1
+                FROM
+                    ledger_posting p
+                    JOIN ledger_account a ON a.id = p.account_id
+                WHERE
+                    p.transaction_id = t.id
+                    AND a.account_class IN ('income', 'expense')
+                    AND a.system_role IS DISTINCT FROM 'uncategorized_expense'
+                    AND a.system_role IS DISTINCT FROM 'uncategorized_income'
+            )
+        )
+    )
+    AND (
+        $8::text IS NULL
+        OR strpos(lower(t.description), lower($8::text)) > 0
+        OR EXISTS (
+            SELECT
+                1
+            FROM
+                ledger_payee y
+            WHERE
+                y.user_id = $1
+                AND y.id = t.payee_id
+                AND strpos(lower(y.name), lower($8::text)) > 0
+        )
+        OR EXISTS (
+            SELECT
+                1
+            FROM
+                ledger_posting p
+            WHERE
+                p.transaction_id = t.id
+                AND strpos(lower(coalesce(p.memo, '')), lower($8::text)) > 0
+        )
+    )
+    AND (
+        $9::date IS NULL
+        OR (t.date, t.id) < ($9::date, $10::uuid)
+    )
+ORDER BY
+    t.date DESC,
+    t.id DESC
+LIMIT
+    $11
 `
 
 type ListTransactionsParams struct {
@@ -677,10 +962,16 @@ func (q *Queries) ListTransactions(ctx context.Context, arg ListTransactionsPara
 }
 
 const listVersions = `-- name: ListVersions :many
-SELECT v.transaction_id, v.version, v.snapshot, v.reason, v.replaced_at FROM ledger_transaction_version v
-JOIN ledger_transaction t ON t.id = v.transaction_id
-WHERE t.user_id = $1 AND v.transaction_id = $2
-ORDER BY v.version
+SELECT
+    v.transaction_id, v.version, v.snapshot, v.reason, v.replaced_at
+FROM
+    ledger_transaction_version v
+    JOIN ledger_transaction t ON t.id = v.transaction_id
+WHERE
+    t.user_id = $1
+    AND v.transaction_id = $2
+ORDER BY
+    v.version
 `
 
 type ListVersionsParams struct {
@@ -715,7 +1006,12 @@ func (q *Queries) ListVersions(ctx context.Context, arg ListVersionsParams) ([]L
 }
 
 const nextPostingPosition = `-- name: NextPostingPosition :one
-SELECT (coalesce(max(position), -1) + 1)::smallint FROM ledger_posting WHERE transaction_id = $1
+SELECT
+    (coalesce(max(position), -1) + 1)::smallint
+FROM
+    ledger_posting
+WHERE
+    transaction_id = $1
 `
 
 func (q *Queries) NextPostingPosition(ctx context.Context, transactionID uuid.UUID) (int16, error) {
@@ -726,11 +1022,18 @@ func (q *Queries) NextPostingPosition(ctx context.Context, transactionID uuid.UU
 }
 
 const reimbursedTotal = `-- name: ReimbursedTotal :one
-SELECT coalesce(sum(l.amount), 0)::bigint
-FROM ledger_link l
-JOIN ledger_transaction t ON t.user_id = l.user_id AND t.id = l.from_transaction_id
-WHERE l.user_id = $1 AND l.to_transaction_id = $2 AND l.link_type = 'reimbursement_of'
-  AND l.from_transaction_id <> $3 AND t.voided_at IS NULL
+SELECT
+    coalesce(sum(l.amount), 0)::bigint
+FROM
+    ledger_link l
+    JOIN ledger_transaction t ON t.user_id = l.user_id
+    AND t.id = l.from_transaction_id
+WHERE
+    l.user_id = $1
+    AND l.to_transaction_id = $2
+    AND l.link_type = 'reimbursement_of'
+    AND l.from_transaction_id <> $3
+    AND t.voided_at IS NULL
 `
 
 type ReimbursedTotalParams struct {
@@ -749,9 +1052,17 @@ func (q *Queries) ReimbursedTotal(ctx context.Context, arg ReimbursedTotalParams
 
 const updateTransaction = `-- name: UpdateTransaction :exec
 UPDATE ledger_transaction
-SET date = $1, description = $2, payee_id = $3,
-    balancing_currency = $4, origin = $5, version = $6, updated_at = now()
-WHERE user_id = $7 AND id = $8
+SET
+    date = $1,
+    description = $2,
+    payee_id = $3,
+    balancing_currency = $4,
+    origin = $5,
+    version = $6,
+    updated_at = now()
+WHERE
+    user_id = $7
+    AND id = $8
 `
 
 type UpdateTransactionParams struct {
@@ -780,8 +1091,14 @@ func (q *Queries) UpdateTransaction(ctx context.Context, arg UpdateTransactionPa
 }
 
 const voidTransaction = `-- name: VoidTransaction :exec
-UPDATE ledger_transaction SET voided_at = $3, void_reason = $4, updated_at = now()
-WHERE user_id = $1 AND id = $2
+UPDATE ledger_transaction
+SET
+    voided_at = $3,
+    void_reason = $4,
+    updated_at = now()
+WHERE
+    user_id = $1
+    AND id = $2
 `
 
 type VoidTransactionParams struct {

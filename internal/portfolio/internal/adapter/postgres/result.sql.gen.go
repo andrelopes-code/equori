@@ -13,7 +13,10 @@ import (
 )
 
 const deleteRealizedResults = `-- name: DeleteRealizedResults :exec
-DELETE FROM portfolio_realized_result WHERE user_id = $1 AND account_id = ANY($2::uuid[])
+DELETE FROM portfolio_realized_result
+WHERE
+    user_id = $1
+    AND account_id = ANY ($2::UUID[])
 `
 
 type DeleteRealizedResultsParams struct {
@@ -27,8 +30,36 @@ func (q *Queries) DeleteRealizedResults(ctx context.Context, arg DeleteRealizedR
 }
 
 const insertRealizedResult = `-- name: InsertRealizedResult :exec
-INSERT INTO portfolio_realized_result (user_id, transaction_id, account_id, instrument, date, month, quantity, cost, proceeds, result, tax_class, currency)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+INSERT INTO
+    portfolio_realized_result (
+        user_id,
+        transaction_id,
+        account_id,
+        instrument,
+        date,
+        MONTH,
+        quantity,
+        cost,
+        proceeds,
+        result,
+        tax_class,
+        currency
+    )
+VALUES
+    (
+        $1,
+        $2,
+        $3,
+        $4,
+        $5,
+        $6,
+        $7,
+        $8,
+        $9,
+        $10,
+        $11,
+        $12
+    )
 `
 
 type InsertRealizedResultParams struct {
@@ -65,9 +96,17 @@ func (q *Queries) InsertRealizedResult(ctx context.Context, arg InsertRealizedRe
 }
 
 const listRealizedResults = `-- name: ListRealizedResults :many
-SELECT user_id, transaction_id, account_id, instrument, date, month, quantity, cost, proceeds, result, tax_class, currency FROM portfolio_realized_result
-WHERE user_id = $1 AND date >= $2 AND date < $3
-ORDER BY date, transaction_id
+SELECT
+    user_id, transaction_id, account_id, instrument, date, month, quantity, cost, proceeds, result, tax_class, currency
+FROM
+    portfolio_realized_result
+WHERE
+    user_id = $1
+    AND date >= $2
+    AND date < $3
+ORDER BY
+    date,
+    transaction_id
 `
 
 type ListRealizedResultsParams struct {

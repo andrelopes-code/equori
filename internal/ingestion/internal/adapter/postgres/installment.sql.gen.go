@@ -12,7 +12,14 @@ import (
 )
 
 const listInstallmentPlans = `-- name: ListInstallmentPlans :many
-SELECT plan_key, plan_id FROM ingestion_installment_plan WHERE user_id = $1 AND plan_key = ANY($2::bytea[])
+SELECT
+    plan_key,
+    plan_id
+FROM
+    ingestion_installment_plan
+WHERE
+    user_id = $1
+    AND plan_key = ANY ($2::bytea[])
 `
 
 type ListInstallmentPlansParams struct {
@@ -46,8 +53,10 @@ func (q *Queries) ListInstallmentPlans(ctx context.Context, arg ListInstallmentP
 }
 
 const saveInstallmentPlan = `-- name: SaveInstallmentPlan :exec
-INSERT INTO ingestion_installment_plan (user_id, account_id, plan_key, plan_id)
-VALUES ($1, $2, $3, $4)
+INSERT INTO
+    ingestion_installment_plan (user_id, account_id, plan_key, plan_id)
+VALUES
+    ($1, $2, $3, $4)
 ON CONFLICT (user_id, plan_key) DO NOTHING
 `
 

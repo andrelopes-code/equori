@@ -11,7 +11,12 @@ import (
 )
 
 const getTerms = `-- name: GetTerms :one
-SELECT instrument_code, issued_on, matures_on, index_id, percent_of_index_bp, spread_bp, day_count, face_value FROM marketdata_fixed_income_terms WHERE instrument_code = $1
+SELECT
+    instrument_code, issued_on, matures_on, index_id, percent_of_index_bp, spread_bp, day_count, face_value
+FROM
+    marketdata_fixed_income_terms
+WHERE
+    instrument_code = $1
 `
 
 func (q *Queries) GetTerms(ctx context.Context, instrumentCode string) (MarketdataFixedIncomeTerm, error) {
@@ -31,7 +36,12 @@ func (q *Queries) GetTerms(ctx context.Context, instrumentCode string) (Marketda
 }
 
 const listTerms = `-- name: ListTerms :many
-SELECT instrument_code, issued_on, matures_on, index_id, percent_of_index_bp, spread_bp, day_count, face_value FROM marketdata_fixed_income_terms ORDER BY instrument_code
+SELECT
+    instrument_code, issued_on, matures_on, index_id, percent_of_index_bp, spread_bp, day_count, face_value
+FROM
+    marketdata_fixed_income_terms
+ORDER BY
+    instrument_code
 `
 
 func (q *Queries) ListTerms(ctx context.Context) ([]MarketdataFixedIncomeTerm, error) {
@@ -64,12 +74,37 @@ func (q *Queries) ListTerms(ctx context.Context) ([]MarketdataFixedIncomeTerm, e
 }
 
 const putTerms = `-- name: PutTerms :exec
-INSERT INTO marketdata_fixed_income_terms (instrument_code, issued_on, matures_on, index_id, percent_of_index_bp, spread_bp, day_count, face_value)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-ON CONFLICT (instrument_code) DO UPDATE SET
-    issued_on = EXCLUDED.issued_on, matures_on = EXCLUDED.matures_on, index_id = EXCLUDED.index_id,
-    percent_of_index_bp = EXCLUDED.percent_of_index_bp, spread_bp = EXCLUDED.spread_bp,
-    day_count = EXCLUDED.day_count, face_value = EXCLUDED.face_value
+INSERT INTO
+    marketdata_fixed_income_terms (
+        instrument_code,
+        issued_on,
+        matures_on,
+        index_id,
+        percent_of_index_bp,
+        spread_bp,
+        day_count,
+        face_value
+    )
+VALUES
+    (
+        $1,
+        $2,
+        $3,
+        $4,
+        $5,
+        $6,
+        $7,
+        $8
+    )
+ON CONFLICT (instrument_code) DO UPDATE
+SET
+    issued_on = EXCLUDED.issued_on,
+    matures_on = EXCLUDED.matures_on,
+    index_id = EXCLUDED.index_id,
+    percent_of_index_bp = EXCLUDED.percent_of_index_bp,
+    spread_bp = EXCLUDED.spread_bp,
+    day_count = EXCLUDED.day_count,
+    face_value = EXCLUDED.face_value
 `
 
 type PutTermsParams struct {

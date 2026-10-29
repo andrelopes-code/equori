@@ -19,13 +19,47 @@ var (
 )
 
 const insertRecords = `-- name: InsertRecords :batchone
-INSERT INTO ingestion_external_record (user_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description,
-    external_status, due_date, installment_number, installment_count, category_id, balance_after, line_kind)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9,
-    $10, $11, $12, $13,
-    $14, $15, $16)
+INSERT INTO
+    ingestion_external_record (
+        user_id,
+        batch_id,
+        account_id,
+        external_id,
+        dedup_key,
+        raw,
+        booked_on,
+        amount,
+        description,
+        external_status,
+        due_date,
+        installment_number,
+        installment_count,
+        category_id,
+        balance_after,
+        line_kind
+    )
+VALUES
+    (
+        $1,
+        $2,
+        $3,
+        $4,
+        $5,
+        $6,
+        $7,
+        $8,
+        $9,
+        $10,
+        $11,
+        $12,
+        $13,
+        $14,
+        $15,
+        $16
+    )
 ON CONFLICT (user_id, dedup_key) DO NOTHING
-RETURNING id, user_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change, line_kind, review_reason, candidate_scores
+RETURNING
+    id, user_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change, line_kind, review_reason, candidate_scores
 `
 
 type InsertRecordsBatchResults struct {
@@ -130,9 +164,16 @@ func (b *InsertRecordsBatchResults) Close() error {
 
 const saveRecordOutcomes = `-- name: SaveRecordOutcomes :batchexec
 UPDATE ingestion_external_record
-SET batch_id = $1, state = $2, transaction_id = $3, candidates = $4,
-    review_reason = $5, candidate_scores = $6
-WHERE user_id = $7 AND id = $8
+SET
+    batch_id = $1,
+    state = $2,
+    transaction_id = $3,
+    candidates = $4,
+    review_reason = $5,
+    candidate_scores = $6
+WHERE
+    user_id = $7
+    AND id = $8
 `
 
 type SaveRecordOutcomesBatchResults struct {
@@ -193,13 +234,23 @@ func (b *SaveRecordOutcomesBatchResults) Close() error {
 }
 
 const updateRecordFacts = `-- name: UpdateRecordFacts :batchexec
-UPDATE ingestion_external_record SET
-    raw = $1, external_status = $2, due_date = $3,
-    installment_number = $4, installment_count = $5,
-    category_id = $6, balance_after = $7,
-    line_kind = $8, unapplied_change = $9,
-    booked_on = $10, amount = $11, review_reason = $12
-WHERE user_id = $13 AND id = $14
+UPDATE ingestion_external_record
+SET
+    raw = $1,
+    external_status = $2,
+    due_date = $3,
+    installment_number = $4,
+    installment_count = $5,
+    category_id = $6,
+    balance_after = $7,
+    line_kind = $8,
+    unapplied_change = $9,
+    booked_on = $10,
+    amount = $11,
+    review_reason = $12
+WHERE
+    user_id = $13
+    AND id = $14
 `
 
 type UpdateRecordFactsBatchResults struct {

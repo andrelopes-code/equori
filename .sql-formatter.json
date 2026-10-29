@@ -1,0 +1,9 @@
+{
+  "language": "postgresql",
+  "tabWidth": 4,
+  "keywordCase": "upper",
+  "dataTypeCase": "lower",
+  "functionCase": "lower",
+  "expressionWidth": 80,
+  "paramTypes": { "numbered": ["$"], "named": ["@"] }
+}

@@ -13,7 +13,10 @@ import (
 )
 
 const deleteBudget = `-- name: DeleteBudget :execrows
-DELETE FROM planning_budget WHERE user_id = $1 AND id = $2
+DELETE FROM planning_budget
+WHERE
+    user_id = $1
+    AND id = $2
 `
 
 type DeleteBudgetParams struct {
@@ -31,7 +34,13 @@ func (q *Queries) DeleteBudget(ctx context.Context, arg DeleteBudgetParams) (int
 }
 
 const getBudget = `-- name: GetBudget :one
-SELECT id, user_id, category_account_id, period_type, rollover, currency, created_at FROM planning_budget WHERE user_id = $1 AND id = $2
+SELECT
+    id, user_id, category_account_id, period_type, rollover, currency, created_at
+FROM
+    planning_budget
+WHERE
+    user_id = $1
+    AND id = $2
 `
 
 type GetBudgetParams struct {
@@ -55,9 +64,12 @@ func (q *Queries) GetBudget(ctx context.Context, arg GetBudgetParams) (PlanningB
 }
 
 const insertBudget = `-- name: InsertBudget :one
-INSERT INTO planning_budget (user_id, category_account_id, rollover, currency)
-VALUES ($1, $2, $3, $4)
-RETURNING id, user_id, category_account_id, period_type, rollover, currency, created_at
+INSERT INTO
+    planning_budget (user_id, category_account_id, rollover, currency)
+VALUES
+    ($1, $2, $3, $4)
+RETURNING
+    id, user_id, category_account_id, period_type, rollover, currency, created_at
 `
 
 type InsertBudgetParams struct {
@@ -88,8 +100,10 @@ func (q *Queries) InsertBudget(ctx context.Context, arg InsertBudgetParams) (Pla
 }
 
 const insertBudgetAmount = `-- name: InsertBudgetAmount :exec
-INSERT INTO planning_budget_amount (user_id, budget_id, effective_from, amount)
-VALUES ($1, $2, $3, $4)
+INSERT INTO
+    planning_budget_amount (user_id, budget_id, effective_from, amount)
+VALUES
+    ($1, $2, $3, $4)
 `
 
 type InsertBudgetAmountParams struct {
@@ -110,7 +124,14 @@ func (q *Queries) InsertBudgetAmount(ctx context.Context, arg InsertBudgetAmount
 }
 
 const listAllBudgets = `-- name: ListAllBudgets :many
-SELECT id, user_id, category_account_id, period_type, rollover, currency, created_at FROM planning_budget WHERE user_id = $1 ORDER BY id
+SELECT
+    id, user_id, category_account_id, period_type, rollover, currency, created_at
+FROM
+    planning_budget
+WHERE
+    user_id = $1
+ORDER BY
+    id
 `
 
 func (q *Queries) ListAllBudgets(ctx context.Context, userID int64) ([]PlanningBudget, error) {
@@ -142,7 +163,16 @@ func (q *Queries) ListAllBudgets(ctx context.Context, userID int64) ([]PlanningB
 }
 
 const listBudgetAmounts = `-- name: ListBudgetAmounts :many
-SELECT user_id, budget_id, effective_from, amount FROM planning_budget_amount WHERE user_id = $1 AND budget_id = ANY($2::uuid[]) ORDER BY budget_id, effective_from
+SELECT
+    user_id, budget_id, effective_from, amount
+FROM
+    planning_budget_amount
+WHERE
+    user_id = $1
+    AND budget_id = ANY ($2::UUID[])
+ORDER BY
+    budget_id,
+    effective_from
 `
 
 type ListBudgetAmountsParams struct {
@@ -176,10 +206,20 @@ func (q *Queries) ListBudgetAmounts(ctx context.Context, arg ListBudgetAmountsPa
 }
 
 const listBudgets = `-- name: ListBudgets :many
-SELECT id, user_id, category_account_id, period_type, rollover, currency, created_at FROM planning_budget
-WHERE user_id = $1 AND ($2::uuid IS NULL OR id > $2::uuid)
-ORDER BY id
-LIMIT $3
+SELECT
+    id, user_id, category_account_id, period_type, rollover, currency, created_at
+FROM
+    planning_budget
+WHERE
+    user_id = $1
+    AND (
+        $2::uuid IS NULL
+        OR id > $2::uuid
+    )
+ORDER BY
+    id
+LIMIT
+    $3
 `
 
 type ListBudgetsParams struct {
@@ -217,7 +257,14 @@ func (q *Queries) ListBudgets(ctx context.Context, arg ListBudgetsParams) ([]Pla
 }
 
 const lockBudget = `-- name: LockBudget :one
-SELECT id, user_id, category_account_id, period_type, rollover, currency, created_at FROM planning_budget WHERE user_id = $1 AND id = $2 FOR UPDATE
+SELECT
+    id, user_id, category_account_id, period_type, rollover, currency, created_at
+FROM
+    planning_budget
+WHERE
+    user_id = $1
+    AND id = $2
+FOR UPDATE
 `
 
 type LockBudgetParams struct {
@@ -241,9 +288,13 @@ func (q *Queries) LockBudget(ctx context.Context, arg LockBudgetParams) (Plannin
 }
 
 const upsertBudgetAmount = `-- name: UpsertBudgetAmount :exec
-INSERT INTO planning_budget_amount (user_id, budget_id, effective_from, amount)
-VALUES ($1, $2, $3, $4)
-ON CONFLICT (budget_id, effective_from) DO UPDATE SET amount = EXCLUDED.amount
+INSERT INTO
+    planning_budget_amount (user_id, budget_id, effective_from, amount)
+VALUES
+    ($1, $2, $3, $4)
+ON CONFLICT (budget_id, effective_from) DO UPDATE
+SET
+    amount = EXCLUDED.amount
 `
 
 type UpsertBudgetAmountParams struct {

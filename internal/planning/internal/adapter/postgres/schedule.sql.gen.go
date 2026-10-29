@@ -13,7 +13,13 @@ import (
 )
 
 const getSchedule = `-- name: GetSchedule :one
-SELECT id, user_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar FROM planning_schedule WHERE user_id = $1 AND id = $2
+SELECT
+    id, user_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar
+FROM
+    planning_schedule
+WHERE
+    user_id = $1
+    AND id = $2
 `
 
 type GetScheduleParams struct {
@@ -45,8 +51,15 @@ func (q *Queries) GetSchedule(ctx context.Context, arg GetScheduleParams) (Plann
 }
 
 const insertOccurrences = `-- name: InsertOccurrences :exec
-INSERT INTO planning_occurrence (user_id, schedule_id, sequence, expected_on, expected_amount, state)
-SELECT $1::bigint, $2::uuid, unnest($3::int[]), unnest($4::text[])::date, unnest($5::bigint[]), 'expected'
+INSERT INTO
+    planning_occurrence (user_id, schedule_id, sequence, expected_on, expected_amount, state)
+SELECT
+    $1::bigint,
+    $2::uuid,
+    unnest($3::INT[]),
+    unnest($4::TEXT[])::date,
+    unnest($5::BIGINT[]),
+    'expected'
 ON CONFLICT (schedule_id, sequence) DO NOTHING
 `
 
@@ -71,7 +84,10 @@ func (q *Queries) InsertOccurrences(ctx context.Context, arg InsertOccurrencesPa
 }
 
 const insertPause = `-- name: InsertPause :exec
-INSERT INTO planning_schedule_pause (user_id, schedule_id, period) VALUES ($1, $2, daterange($3::date, $4::date, '[]'))
+INSERT INTO
+    planning_schedule_pause (user_id, schedule_id, period)
+VALUES
+    ($1, $2, daterange ($3::date, $4::date, '[]'))
 `
 
 type InsertPauseParams struct {
@@ -92,9 +108,38 @@ func (q *Queries) InsertPause(ctx context.Context, arg InsertPauseParams) error 
 }
 
 const insertSchedule = `-- name: InsertSchedule :one
-INSERT INTO planning_schedule (user_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, generated_until, calendar, created_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-RETURNING id, user_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar
+INSERT INTO
+    planning_schedule (
+        user_id,
+        kind,
+        account_id,
+        counterpart_id,
+        payee_id,
+        description,
+        currency,
+        match_tolerance_bp,
+        grace_days,
+        generated_until,
+        calendar,
+        created_at
+    )
+VALUES
+    (
+        $1,
+        $2,
+        $3,
+        $4,
+        $5,
+        $6,
+        $7,
+        $8,
+        $9,
+        $10,
+        $11,
+        $12
+    )
+RETURNING
+    id, user_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar
 `
 
 type InsertScheduleParams struct {
@@ -149,11 +194,52 @@ func (q *Queries) InsertSchedule(ctx context.Context, arg InsertScheduleParams) 
 }
 
 const insertTerms = `-- name: InsertTerms :exec
-INSERT INTO planning_schedule_terms (user_id, schedule_id, effective_from, frequency, interval, day_of_month, weekday, ordinal,
-    business_day_ordinal, adjustment, calendar, start, until, count, amount, first_sequence)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8,
-    $9, $10,
-    (SELECT calendar FROM planning_schedule WHERE user_id = $1 AND id = $2), $11, $12, $13, $14, $15)
+INSERT INTO
+    planning_schedule_terms (
+        user_id,
+        schedule_id,
+        effective_from,
+        frequency,
+        interval,
+        day_of_month,
+        weekday,
+        ordinal,
+        business_day_ordinal,
+        adjustment,
+        calendar,
+        start,
+        until,
+        count,
+        amount,
+        first_sequence
+    )
+VALUES
+    (
+        $1,
+        $2,
+        $3,
+        $4,
+        $5,
+        $6,
+        $7,
+        $8,
+        $9,
+        $10,
+        (
+            SELECT
+                calendar
+            FROM
+                planning_schedule
+            WHERE
+                user_id = $1
+                AND id = $2
+        ),
+        $11,
+        $12,
+        $13,
+        $14,
+        $15
+    )
 `
 
 type InsertTermsParams struct {
@@ -196,10 +282,21 @@ func (q *Queries) InsertTerms(ctx context.Context, arg InsertTermsParams) error 
 }
 
 const listOccurrences = `-- name: ListOccurrences :many
-SELECT id, user_id, schedule_id, sequence, expected_on, expected_amount, state, transaction_id, realized_by, moved_from, skip_reason, declined_transaction_id FROM planning_occurrence
-WHERE user_id = $1 AND expected_on BETWEEN $2 AND $3
-  AND ($4::uuid IS NULL OR schedule_id = $4::uuid)
-ORDER BY expected_on, schedule_id, sequence
+SELECT
+    id, user_id, schedule_id, sequence, expected_on, expected_amount, state, transaction_id, realized_by, moved_from, skip_reason, declined_transaction_id
+FROM
+    planning_occurrence
+WHERE
+    user_id = $1
+    AND expected_on BETWEEN $2 AND $3
+    AND (
+        $4::uuid IS NULL
+        OR schedule_id = $4::uuid
+    )
+ORDER BY
+    expected_on,
+    schedule_id,
+    sequence
 `
 
 type ListOccurrencesParams struct {
@@ -248,9 +345,17 @@ func (q *Queries) ListOccurrences(ctx context.Context, arg ListOccurrencesParams
 }
 
 const listOccurrencesOfTransaction = `-- name: ListOccurrencesOfTransaction :many
-SELECT id, user_id, schedule_id, sequence, expected_on, expected_amount, state, transaction_id, realized_by, moved_from, skip_reason, declined_transaction_id FROM planning_occurrence
-WHERE user_id = $1 AND transaction_id = $2
-ORDER BY expected_on, schedule_id, sequence
+SELECT
+    id, user_id, schedule_id, sequence, expected_on, expected_amount, state, transaction_id, realized_by, moved_from, skip_reason, declined_transaction_id
+FROM
+    planning_occurrence
+WHERE
+    user_id = $1
+    AND transaction_id = $2
+ORDER BY
+    expected_on,
+    schedule_id,
+    sequence
 `
 
 type ListOccurrencesOfTransactionParams struct {
@@ -292,8 +397,18 @@ func (q *Queries) ListOccurrencesOfTransaction(ctx context.Context, arg ListOccu
 }
 
 const listPauses = `-- name: ListPauses :many
-SELECT schedule_id, lower(period)::date AS from_date, (upper(period) - 1)::date AS to_date
-FROM planning_schedule_pause WHERE user_id = $1 AND schedule_id = ANY($2::uuid[]) ORDER BY schedule_id, lower(period)
+SELECT
+    schedule_id,
+    lower(period)::date AS from_date,
+    (upper(period) - 1)::date AS to_date
+FROM
+    planning_schedule_pause
+WHERE
+    user_id = $1
+    AND schedule_id = ANY ($2::UUID[])
+ORDER BY
+    schedule_id,
+    lower(period)
 `
 
 type ListPausesParams struct {
@@ -328,10 +443,20 @@ func (q *Queries) ListPauses(ctx context.Context, arg ListPausesParams) ([]ListP
 }
 
 const listSchedules = `-- name: ListSchedules :many
-SELECT id, user_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar FROM planning_schedule
-WHERE user_id = $1 AND ($2::uuid IS NULL OR id > $2::uuid)
-ORDER BY id
-LIMIT $3
+SELECT
+    id, user_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar
+FROM
+    planning_schedule
+WHERE
+    user_id = $1
+    AND (
+        $2::uuid IS NULL
+        OR id > $2::uuid
+    )
+ORDER BY
+    id
+LIMIT
+    $3
 `
 
 type ListSchedulesParams struct {
@@ -377,7 +502,16 @@ func (q *Queries) ListSchedules(ctx context.Context, arg ListSchedulesParams) ([
 }
 
 const listTerms = `-- name: ListTerms :many
-SELECT user_id, schedule_id, effective_from, frequency, interval, day_of_month, weekday, ordinal, business_day_ordinal, adjustment, calendar, start, until, count, amount, first_sequence FROM planning_schedule_terms WHERE user_id = $1 AND schedule_id = ANY($2::uuid[]) ORDER BY schedule_id, effective_from
+SELECT
+    user_id, schedule_id, effective_from, frequency, interval, day_of_month, weekday, ordinal, business_day_ordinal, adjustment, calendar, start, until, count, amount, first_sequence
+FROM
+    planning_schedule_terms
+WHERE
+    user_id = $1
+    AND schedule_id = ANY ($2::UUID[])
+ORDER BY
+    schedule_id,
+    effective_from
 `
 
 type ListTermsParams struct {
@@ -423,7 +557,14 @@ func (q *Queries) ListTerms(ctx context.Context, arg ListTermsParams) ([]Plannin
 }
 
 const lockSchedule = `-- name: LockSchedule :one
-SELECT id, user_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar FROM planning_schedule WHERE user_id = $1 AND id = $2 FOR UPDATE
+SELECT
+    id, user_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar
+FROM
+    planning_schedule
+WHERE
+    user_id = $1
+    AND id = $2
+FOR UPDATE
 `
 
 type LockScheduleParams struct {
@@ -455,7 +596,14 @@ func (q *Queries) LockSchedule(ctx context.Context, arg LockScheduleParams) (Pla
 }
 
 const scheduleRefs = `-- name: ScheduleRefs :many
-SELECT user_id, id FROM planning_schedule ORDER BY user_id, id
+SELECT
+    user_id,
+    id
+FROM
+    planning_schedule
+ORDER BY
+    user_id,
+    id
 `
 
 type ScheduleRefsRow struct {
@@ -485,9 +633,20 @@ func (q *Queries) ScheduleRefs(ctx context.Context) ([]ScheduleRefsRow, error) {
 }
 
 const schedulesBehind = `-- name: SchedulesBehind :many
-SELECT user_id, id FROM planning_schedule
-WHERE generated_until < $1 AND (ends_on IS NULL OR generated_until < ends_on)
-ORDER BY user_id, id
+SELECT
+    user_id,
+    id
+FROM
+    planning_schedule
+WHERE
+    generated_until < $1
+    AND (
+        ends_on IS NULL
+        OR generated_until < ends_on
+    )
+ORDER BY
+    user_id,
+    id
 `
 
 type SchedulesBehindRow struct {
@@ -517,7 +676,14 @@ func (q *Queries) SchedulesBehind(ctx context.Context, horizon time.Time) ([]Sch
 }
 
 const schedulesOfUser = `-- name: SchedulesOfUser :many
-SELECT id, user_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar FROM planning_schedule WHERE user_id = $1 ORDER BY id
+SELECT
+    id, user_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar
+FROM
+    planning_schedule
+WHERE
+    user_id = $1
+ORDER BY
+    id
 `
 
 func (q *Queries) SchedulesOfUser(ctx context.Context, userID int64) ([]PlanningSchedule, error) {
@@ -557,7 +723,13 @@ func (q *Queries) SchedulesOfUser(ctx context.Context, userID int64) ([]Planning
 }
 
 const setEndsOn = `-- name: SetEndsOn :exec
-UPDATE planning_schedule SET ends_on = $1, updated_at = now() WHERE user_id = $2 AND id = $3
+UPDATE planning_schedule
+SET
+    ends_on = $1,
+    updated_at = now()
+WHERE
+    user_id = $2
+    AND id = $3
 `
 
 type SetEndsOnParams struct {
@@ -572,7 +744,13 @@ func (q *Queries) SetEndsOn(ctx context.Context, arg SetEndsOnParams) error {
 }
 
 const setGeneratedUntil = `-- name: SetGeneratedUntil :exec
-UPDATE planning_schedule SET generated_until = $1, updated_at = now() WHERE user_id = $2 AND id = $3
+UPDATE planning_schedule
+SET
+    generated_until = $1,
+    updated_at = now()
+WHERE
+    user_id = $2
+    AND id = $3
 `
 
 type SetGeneratedUntilParams struct {

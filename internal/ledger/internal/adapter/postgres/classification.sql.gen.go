@@ -12,7 +12,13 @@ import (
 )
 
 const existingPayees = `-- name: ExistingPayees :many
-SELECT id FROM ledger_payee WHERE user_id = $1 AND id = ANY($2::uuid[])
+SELECT
+    id
+FROM
+    ledger_payee
+WHERE
+    user_id = $1
+    AND id = ANY ($2::UUID[])
 `
 
 type ExistingPayeesParams struct {
@@ -41,7 +47,13 @@ func (q *Queries) ExistingPayees(ctx context.Context, arg ExistingPayeesParams) 
 }
 
 const getTransactionsByIDs = `-- name: GetTransactionsByIDs :many
-SELECT id, user_id, date, description, payee_id, balancing_currency, origin, version, voided_at, void_reason, created_at, updated_at FROM ledger_transaction WHERE user_id = $1 AND id = ANY($2::uuid[])
+SELECT
+    id, user_id, date, description, payee_id, balancing_currency, origin, version, voided_at, void_reason, created_at, updated_at
+FROM
+    ledger_transaction
+WHERE
+    user_id = $1
+    AND id = ANY ($2::UUID[])
 `
 
 type GetTransactionsByIDsParams struct {
@@ -83,17 +95,36 @@ func (q *Queries) GetTransactionsByIDs(ctx context.Context, arg GetTransactionsB
 }
 
 const latestPayeeCategories = `-- name: LatestPayeeCategories :many
-SELECT DISTINCT ON (t.payee_id, a.account_class) t.payee_id::uuid AS payee_id, a.account_class, p.account_id
-FROM ledger_transaction t
-JOIN ledger_posting p ON p.transaction_id = t.id
-JOIN ledger_account a ON a.id = p.account_id
-WHERE t.user_id = $1 AND t.payee_id = ANY($2::uuid[]) AND t.voided_at IS NULL
-  AND a.account_class IN ('income', 'expense')
-  AND a.system_role IS DISTINCT FROM 'uncategorized_expense'
-  AND a.system_role IS DISTINCT FROM 'uncategorized_income'
-  AND (SELECT count(*) FROM ledger_posting q JOIN ledger_account b ON b.id = q.account_id
-       WHERE q.transaction_id = t.id AND b.account_class IN ('income', 'expense')) = 1
-ORDER BY t.payee_id, a.account_class, t.date DESC, t.id DESC
+SELECT DISTINCT
+    ON (t.payee_id, a.account_class) t.payee_id::uuid AS payee_id,
+    a.account_class,
+    p.account_id
+FROM
+    ledger_transaction t
+    JOIN ledger_posting p ON p.transaction_id = t.id
+    JOIN ledger_account a ON a.id = p.account_id
+WHERE
+    t.user_id = $1
+    AND t.payee_id = ANY ($2::UUID[])
+    AND t.voided_at IS NULL
+    AND a.account_class IN ('income', 'expense')
+    AND a.system_role IS DISTINCT FROM 'uncategorized_expense'
+    AND a.system_role IS DISTINCT FROM 'uncategorized_income'
+    AND (
+        SELECT
+            count(*)
+        FROM
+            ledger_posting q
+            JOIN ledger_account b ON b.id = q.account_id
+        WHERE
+            q.transaction_id = t.id
+            AND b.account_class IN ('income', 'expense')
+    ) = 1
+ORDER BY
+    t.payee_id,
+    a.account_class,
+    t.date DESC,
+    t.id DESC
 `
 
 type LatestPayeeCategoriesParams struct {
@@ -129,7 +160,14 @@ func (q *Queries) LatestPayeeCategories(ctx context.Context, arg LatestPayeeCate
 }
 
 const listAllAccounts = `-- name: ListAllAccounts :many
-SELECT id, user_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, color, icon, excluded_from_liquidity FROM ledger_account WHERE user_id = $1 ORDER BY id
+SELECT
+    id, user_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, color, icon, excluded_from_liquidity
+FROM
+    ledger_account
+WHERE
+    user_id = $1
+ORDER BY
+    id
 `
 
 func (q *Queries) ListAllAccounts(ctx context.Context, userID int64) ([]LedgerAccount, error) {
@@ -172,10 +210,16 @@ func (q *Queries) ListAllAccounts(ctx context.Context, userID int64) ([]LedgerAc
 }
 
 const rawDescriptions = `-- name: RawDescriptions :many
-SELECT v.transaction_id, (v.snapshot->>'description')::text AS description
-FROM ledger_transaction_version v
-JOIN ledger_transaction t ON t.id = v.transaction_id
-WHERE t.user_id = $1 AND v.transaction_id = ANY($2::uuid[]) AND v.version = 1
+SELECT
+    v.transaction_id,
+    (v.snapshot ->> 'description')::text AS description
+FROM
+    ledger_transaction_version v
+    JOIN ledger_transaction t ON t.id = v.transaction_id
+WHERE
+    t.user_id = $1
+    AND v.transaction_id = ANY ($2::UUID[])
+    AND v.version = 1
 `
 
 type RawDescriptionsParams struct {

@@ -13,15 +13,42 @@ import (
 )
 
 const indicatorAccounts = `-- name: IndicatorAccounts :many
-WITH RECURSIVE interest AS (
-    SELECT r.id FROM ledger_account r WHERE r.user_id = $1 AND r.system_role = 'interest'
-    UNION ALL
-    SELECT a.id FROM ledger_account a JOIN interest i ON a.parent_id = i.id WHERE a.user_id = $1
-)
-SELECT a.id, a.account_class, coalesce(a.kind, '')::text AS kind, a.instrument, a.excluded_from_liquidity,
-       (a.id IN (SELECT id FROM interest))::boolean AS interest
-FROM ledger_account a
-WHERE a.user_id = $1
+WITH RECURSIVE
+    interest AS (
+        SELECT
+            r.id
+        FROM
+            ledger_account r
+        WHERE
+            r.user_id = $1
+            AND r.system_role = 'interest'
+        UNION ALL
+        SELECT
+            a.id
+        FROM
+            ledger_account a
+            JOIN interest i ON a.parent_id = i.id
+        WHERE
+            a.user_id = $1
+    )
+SELECT
+    a.id,
+    a.account_class,
+    coalesce(a.kind, '')::text AS kind,
+    a.instrument,
+    a.excluded_from_liquidity,
+    (
+        a.id IN (
+            SELECT
+                id
+            FROM
+                interest
+        )
+    )::boolean AS interest
+FROM
+    ledger_account a
+WHERE
+    a.user_id = $1
 `
 
 type IndicatorAccountsRow struct {
@@ -62,7 +89,12 @@ func (q *Queries) IndicatorAccounts(ctx context.Context, userID int64) ([]Indica
 }
 
 const indicatorBaseCurrency = `-- name: IndicatorBaseCurrency :one
-SELECT base_currency FROM ledger_settings WHERE user_id = $1
+SELECT
+    base_currency
+FROM
+    ledger_settings
+WHERE
+    user_id = $1
 `
 
 func (q *Queries) IndicatorBaseCurrency(ctx context.Context, userID int64) (string, error) {
@@ -73,10 +105,17 @@ func (q *Queries) IndicatorBaseCurrency(ctx context.Context, userID int64) (stri
 }
 
 const indicatorFirstPosting = `-- name: IndicatorFirstPosting :one
-SELECT booked_on FROM ledger_posting
-WHERE user_id = $1 AND NOT voided
-ORDER BY booked_on
-LIMIT 1
+SELECT
+    booked_on
+FROM
+    ledger_posting
+WHERE
+    user_id = $1
+    AND NOT voided
+ORDER BY
+    booked_on
+LIMIT
+    1
 `
 
 // The earliest booked date of the user's postings that are not voided.
@@ -88,19 +127,35 @@ func (q *Queries) IndicatorFirstPosting(ctx context.Context, userID int64) (time
 }
 
 const loanPrincipalByMonth = `-- name: LoanPrincipalByMonth :many
-SELECT date_trunc('month', p.booked_on)::date AS month, sum(p.amount)::bigint AS total
-FROM ledger_posting p
-JOIN ledger_account a ON a.id = p.account_id
-JOIN ledger_settings st ON st.user_id = p.user_id
-WHERE p.user_id = $1 AND NOT p.voided AND a.account_class = 'liability' AND a.kind = 'loan'
-  AND a.instrument = st.base_currency AND p.amount > 0
-  AND p.booked_on BETWEEN $2::date AND $3::date
-  AND EXISTS (
-    SELECT 1 FROM ledger_posting q
-    JOIN ledger_account qa ON qa.id = q.account_id
-    WHERE q.user_id = p.user_id AND q.transaction_id = p.transaction_id AND NOT q.voided
-      AND qa.account_class = 'asset')
-GROUP BY 1
+SELECT
+    date_trunc('month', p.booked_on)::date AS MONTH,
+    sum(p.amount)::bigint AS total
+FROM
+    ledger_posting p
+    JOIN ledger_account a ON a.id = p.account_id
+    JOIN ledger_settings st ON st.user_id = p.user_id
+WHERE
+    p.user_id = $1
+    AND NOT p.voided
+    AND a.account_class = 'liability'
+    AND a.kind = 'loan'
+    AND a.instrument = st.base_currency
+    AND p.amount > 0
+    AND p.booked_on BETWEEN $2::date AND $3::date
+    AND EXISTS (
+        SELECT
+            1
+        FROM
+            ledger_posting q
+            JOIN ledger_account qa ON qa.id = q.account_id
+        WHERE
+            q.user_id = p.user_id
+            AND q.transaction_id = p.transaction_id
+            AND NOT q.voided
+            AND qa.account_class = 'asset'
+    )
+GROUP BY
+    1
 `
 
 type LoanPrincipalByMonthParams struct {

@@ -13,7 +13,10 @@ import (
 )
 
 const deletePositionDays = `-- name: DeletePositionDays :exec
-DELETE FROM portfolio_position_day WHERE user_id = $1 AND account_id = ANY($2::uuid[])
+DELETE FROM portfolio_position_day
+WHERE
+    user_id = $1
+    AND account_id = ANY ($2::UUID[])
 `
 
 type DeletePositionDaysParams struct {
@@ -27,8 +30,10 @@ func (q *Queries) DeletePositionDays(ctx context.Context, arg DeletePositionDays
 }
 
 const insertPositionDay = `-- name: InsertPositionDay :exec
-INSERT INTO portfolio_position_day (user_id, account_id, instrument, date, quantity, cost_basis)
-VALUES ($1, $2, $3, $4, $5, $6)
+INSERT INTO
+    portfolio_position_day (user_id, account_id, instrument, date, quantity, cost_basis)
+VALUES
+    ($1, $2, $3, $4, $5, $6)
 `
 
 type InsertPositionDayParams struct {
@@ -53,13 +58,26 @@ func (q *Queries) InsertPositionDay(ctx context.Context, arg InsertPositionDayPa
 }
 
 const positionsAt = `-- name: PositionsAt :many
-SELECT user_id, account_id, instrument, date, quantity, cost_basis FROM (
-    SELECT DISTINCT ON (account_id) user_id, account_id, instrument, date, quantity, cost_basis FROM portfolio_position_day
-    WHERE user_id = $1 AND date <= $2
-    ORDER BY account_id, date DESC
-) latest
-WHERE quantity <> 0
-ORDER BY instrument, account_id
+SELECT
+    user_id, account_id, instrument, date, quantity, cost_basis
+FROM
+    (
+        SELECT DISTINCT
+            ON (account_id) user_id, account_id, instrument, date, quantity, cost_basis
+        FROM
+            portfolio_position_day
+        WHERE
+            user_id = $1
+            AND date <= $2
+        ORDER BY
+            account_id,
+            date DESC
+    ) latest
+WHERE
+    quantity <> 0
+ORDER BY
+    instrument,
+    account_id
 `
 
 type PositionsAtParams struct {

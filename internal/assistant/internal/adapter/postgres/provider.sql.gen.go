@@ -13,7 +13,10 @@ import (
 )
 
 const deleteProvider = `-- name: DeleteProvider :execrows
-DELETE FROM assistant_provider WHERE user_id = $1 AND id = $2
+DELETE FROM assistant_provider
+WHERE
+    user_id = $1
+    AND id = $2
 `
 
 type DeleteProviderParams struct {
@@ -30,7 +33,13 @@ func (q *Queries) DeleteProvider(ctx context.Context, arg DeleteProviderParams) 
 }
 
 const getProvider = `-- name: GetProvider :one
-SELECT id, user_id, preset, name, base_url, sealed_key, created_at FROM assistant_provider WHERE user_id = $1 AND id = $2
+SELECT
+    id, user_id, preset, name, base_url, sealed_key, created_at
+FROM
+    assistant_provider
+WHERE
+    user_id = $1
+    AND id = $2
 `
 
 type GetProviderParams struct {
@@ -54,8 +63,10 @@ func (q *Queries) GetProvider(ctx context.Context, arg GetProviderParams) (Assis
 }
 
 const insertProvider = `-- name: InsertProvider :exec
-INSERT INTO assistant_provider (id, user_id, preset, name, base_url, sealed_key, created_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7)
+INSERT INTO
+    assistant_provider (id, user_id, preset, name, base_url, sealed_key, created_at)
+VALUES
+    ($1, $2, $3, $4, $5, $6, $7)
 `
 
 type InsertProviderParams struct {
@@ -82,7 +93,15 @@ func (q *Queries) InsertProvider(ctx context.Context, arg InsertProviderParams) 
 }
 
 const listProviders = `-- name: ListProviders :many
-SELECT id, user_id, preset, name, base_url, sealed_key, created_at FROM assistant_provider WHERE user_id = $1 ORDER BY created_at, id
+SELECT
+    id, user_id, preset, name, base_url, sealed_key, created_at
+FROM
+    assistant_provider
+WHERE
+    user_id = $1
+ORDER BY
+    created_at,
+    id
 `
 
 func (q *Queries) ListProviders(ctx context.Context, userID int64) ([]AssistantProvider, error) {
@@ -114,7 +133,17 @@ func (q *Queries) ListProviders(ctx context.Context, userID int64) ([]AssistantP
 }
 
 const lockAllKeys = `-- name: LockAllKeys :many
-SELECT id, user_id, sealed_key FROM assistant_provider WHERE sealed_key IS NOT NULL ORDER BY id FOR UPDATE
+SELECT
+    id,
+    user_id,
+    sealed_key
+FROM
+    assistant_provider
+WHERE
+    sealed_key IS NOT NULL
+ORDER BY
+    id
+FOR UPDATE
 `
 
 type LockAllKeysRow struct {
@@ -145,7 +174,12 @@ func (q *Queries) LockAllKeys(ctx context.Context) ([]LockAllKeysRow, error) {
 }
 
 const resealKey = `-- name: ResealKey :exec
-UPDATE assistant_provider SET sealed_key = $1 WHERE user_id = $2 AND id = $3
+UPDATE assistant_provider
+SET
+    sealed_key = $1
+WHERE
+    user_id = $2
+    AND id = $3
 `
 
 type ResealKeyParams struct {
@@ -160,8 +194,14 @@ func (q *Queries) ResealKey(ctx context.Context, arg ResealKeyParams) error {
 }
 
 const updateProvider = `-- name: UpdateProvider :execrows
-UPDATE assistant_provider SET name = $1, base_url = $2, sealed_key = $3
-WHERE user_id = $4 AND id = $5
+UPDATE assistant_provider
+SET
+    name = $1,
+    base_url = $2,
+    sealed_key = $3
+WHERE
+    user_id = $4
+    AND id = $5
 `
 
 type UpdateProviderParams struct {

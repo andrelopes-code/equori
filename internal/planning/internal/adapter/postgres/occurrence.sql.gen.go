@@ -14,9 +14,17 @@ import (
 
 const deleteExpected = `-- name: DeleteExpected :many
 DELETE FROM planning_occurrence
-WHERE user_id = $1 AND schedule_id = $2 AND state = 'expected'
-  AND expected_on BETWEEN $3 AND $4 AND ($5::boolean OR moved_from IS NULL)
-RETURNING expected_on
+WHERE
+    user_id = $1
+    AND schedule_id = $2
+    AND state = 'expected'
+    AND expected_on BETWEEN $3 AND $4
+    AND (
+        $5::boolean
+        OR moved_from IS NULL
+    )
+RETURNING
+    expected_on
 `
 
 type DeleteExpectedParams struct {
@@ -56,10 +64,19 @@ func (q *Queries) DeleteExpected(ctx context.Context, arg DeleteExpectedParams) 
 }
 
 const expectedOccurrences = `-- name: ExpectedOccurrences :many
-SELECT id, user_id, schedule_id, sequence, expected_on, expected_amount, state, transaction_id, realized_by, moved_from, skip_reason, declined_transaction_id FROM planning_occurrence
-WHERE user_id = $1 AND schedule_id = ANY($2::uuid[]) AND state = 'expected'
-  AND expected_on BETWEEN $3 AND $4
-ORDER BY expected_on, schedule_id, sequence
+SELECT
+    id, user_id, schedule_id, sequence, expected_on, expected_amount, state, transaction_id, realized_by, moved_from, skip_reason, declined_transaction_id
+FROM
+    planning_occurrence
+WHERE
+    user_id = $1
+    AND schedule_id = ANY ($2::UUID[])
+    AND state = 'expected'
+    AND expected_on BETWEEN $3 AND $4
+ORDER BY
+    expected_on,
+    schedule_id,
+    sequence
 FOR UPDATE
 `
 
@@ -109,10 +126,20 @@ func (q *Queries) ExpectedOccurrences(ctx context.Context, arg ExpectedOccurrenc
 }
 
 const keptOccurrences = `-- name: KeptOccurrences :many
-SELECT id, user_id, schedule_id, sequence, expected_on, expected_amount, state, transaction_id, realized_by, moved_from, skip_reason, declined_transaction_id FROM planning_occurrence
-WHERE user_id = $1 AND schedule_id = $2 AND coalesce(moved_from, expected_on) >= $3
-  AND (state <> 'expected' OR moved_from IS NOT NULL)
-ORDER BY sequence
+SELECT
+    id, user_id, schedule_id, sequence, expected_on, expected_amount, state, transaction_id, realized_by, moved_from, skip_reason, declined_transaction_id
+FROM
+    planning_occurrence
+WHERE
+    user_id = $1
+    AND schedule_id = $2
+    AND coalesce(moved_from, expected_on) >= $3
+    AND (
+        state <> 'expected'
+        OR moved_from IS NOT NULL
+    )
+ORDER BY
+    sequence
 `
 
 type KeptOccurrencesParams struct {
@@ -156,7 +183,14 @@ func (q *Queries) KeptOccurrences(ctx context.Context, arg KeptOccurrencesParams
 }
 
 const lockOccurrence = `-- name: LockOccurrence :one
-SELECT id, user_id, schedule_id, sequence, expected_on, expected_amount, state, transaction_id, realized_by, moved_from, skip_reason, declined_transaction_id FROM planning_occurrence WHERE user_id = $1 AND id = $2 FOR UPDATE
+SELECT
+    id, user_id, schedule_id, sequence, expected_on, expected_amount, state, transaction_id, realized_by, moved_from, skip_reason, declined_transaction_id
+FROM
+    planning_occurrence
+WHERE
+    user_id = $1
+    AND id = $2
+FOR UPDATE
 `
 
 type LockOccurrenceParams struct {
@@ -185,9 +219,16 @@ func (q *Queries) LockOccurrence(ctx context.Context, arg LockOccurrenceParams) 
 }
 
 const moveOccurrence = `-- name: MoveOccurrence :one
-UPDATE planning_occurrence SET moved_from = coalesce(moved_from, expected_on), expected_on = $1
-WHERE user_id = $2 AND id = $3 AND state = 'expected'
-RETURNING id, user_id, schedule_id, sequence, expected_on, expected_amount, state, transaction_id, realized_by, moved_from, skip_reason, declined_transaction_id
+UPDATE planning_occurrence
+SET
+    moved_from = coalesce(moved_from, expected_on),
+    expected_on = $1
+WHERE
+    user_id = $2
+    AND id = $3
+    AND state = 'expected'
+RETURNING
+    id, user_id, schedule_id, sequence, expected_on, expected_amount, state, transaction_id, realized_by, moved_from, skip_reason, declined_transaction_id
 `
 
 type MoveOccurrenceParams struct {
@@ -218,7 +259,14 @@ func (q *Queries) MoveOccurrence(ctx context.Context, arg MoveOccurrenceParams) 
 }
 
 const occurrenceByTransaction = `-- name: OccurrenceByTransaction :one
-SELECT id, user_id, schedule_id, sequence, expected_on, expected_amount, state, transaction_id, realized_by, moved_from, skip_reason, declined_transaction_id FROM planning_occurrence WHERE user_id = $1 AND transaction_id = $2 FOR UPDATE
+SELECT
+    id, user_id, schedule_id, sequence, expected_on, expected_amount, state, transaction_id, realized_by, moved_from, skip_reason, declined_transaction_id
+FROM
+    planning_occurrence
+WHERE
+    user_id = $1
+    AND transaction_id = $2
+FOR UPDATE
 `
 
 type OccurrenceByTransactionParams struct {
@@ -247,9 +295,17 @@ func (q *Queries) OccurrenceByTransaction(ctx context.Context, arg OccurrenceByT
 }
 
 const realizeOccurrence = `-- name: RealizeOccurrence :one
-UPDATE planning_occurrence SET state = 'realized', transaction_id = $1, realized_by = $2
-WHERE user_id = $3 AND id = $4 AND state = 'expected'
-RETURNING id, user_id, schedule_id, sequence, expected_on, expected_amount, state, transaction_id, realized_by, moved_from, skip_reason, declined_transaction_id
+UPDATE planning_occurrence
+SET
+    state = 'realized',
+    transaction_id = $1,
+    realized_by = $2
+WHERE
+    user_id = $3
+    AND id = $4
+    AND state = 'expected'
+RETURNING
+    id, user_id, schedule_id, sequence, expected_on, expected_amount, state, transaction_id, realized_by, moved_from, skip_reason, declined_transaction_id
 `
 
 type RealizeOccurrenceParams struct {
@@ -285,10 +341,21 @@ func (q *Queries) RealizeOccurrence(ctx context.Context, arg RealizeOccurrencePa
 }
 
 const releaseOccurrence = `-- name: ReleaseOccurrence :one
-UPDATE planning_occurrence SET state = 'expected', transaction_id = NULL, realized_by = NULL,
-    declined_transaction_id = CASE WHEN $1::boolean THEN transaction_id ELSE declined_transaction_id END
-WHERE user_id = $2 AND id = $3 AND state = 'realized'
-RETURNING id, user_id, schedule_id, sequence, expected_on, expected_amount, state, transaction_id, realized_by, moved_from, skip_reason, declined_transaction_id
+UPDATE planning_occurrence
+SET
+    state = 'expected',
+    transaction_id = NULL,
+    realized_by = NULL,
+    declined_transaction_id = CASE
+        WHEN $1::boolean THEN transaction_id
+        ELSE declined_transaction_id
+    END
+WHERE
+    user_id = $2
+    AND id = $3
+    AND state = 'realized'
+RETURNING
+    id, user_id, schedule_id, sequence, expected_on, expected_amount, state, transaction_id, realized_by, moved_from, skip_reason, declined_transaction_id
 `
 
 type ReleaseOccurrenceParams struct {
@@ -318,9 +385,18 @@ func (q *Queries) ReleaseOccurrence(ctx context.Context, arg ReleaseOccurrencePa
 }
 
 const schedulesTouching = `-- name: SchedulesTouching :many
-SELECT id, user_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar FROM planning_schedule
-WHERE user_id = $1 AND (account_id = ANY($2::uuid[]) OR counterpart_id = ANY($2::uuid[]))
-ORDER BY id
+SELECT
+    id, user_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar
+FROM
+    planning_schedule
+WHERE
+    user_id = $1
+    AND (
+        account_id = ANY ($2::UUID[])
+        OR counterpart_id = ANY ($2::UUID[])
+    )
+ORDER BY
+    id
 `
 
 type SchedulesTouchingParams struct {
@@ -366,9 +442,16 @@ func (q *Queries) SchedulesTouching(ctx context.Context, arg SchedulesTouchingPa
 }
 
 const skipOccurrence = `-- name: SkipOccurrence :one
-UPDATE planning_occurrence SET state = 'skipped', skip_reason = $1
-WHERE user_id = $2 AND id = $3 AND state = 'expected'
-RETURNING id, user_id, schedule_id, sequence, expected_on, expected_amount, state, transaction_id, realized_by, moved_from, skip_reason, declined_transaction_id
+UPDATE planning_occurrence
+SET
+    state = 'skipped',
+    skip_reason = $1
+WHERE
+    user_id = $2
+    AND id = $3
+    AND state = 'expected'
+RETURNING
+    id, user_id, schedule_id, sequence, expected_on, expected_amount, state, transaction_id, realized_by, moved_from, skip_reason, declined_transaction_id
 `
 
 type SkipOccurrenceParams struct {

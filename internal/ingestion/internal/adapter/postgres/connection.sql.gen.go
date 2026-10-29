@@ -13,8 +13,15 @@ import (
 )
 
 const accountFilePeriods = `-- name: AccountFilePeriods :many
-SELECT period_from, period_to FROM ingestion_batch
-WHERE user_id = $1 AND account_id = $2 AND source <> 'aggregator'
+SELECT
+    period_from,
+    period_to
+FROM
+    ingestion_batch
+WHERE
+    user_id = $1
+    AND account_id = $2
+    AND source <> 'aggregator'
 `
 
 type AccountFilePeriodsParams struct {
@@ -49,7 +56,14 @@ func (q *Queries) AccountFilePeriods(ctx context.Context, arg AccountFilePeriods
 }
 
 const accountMapping = `-- name: AccountMapping :one
-SELECT sync_from, last_synced_on FROM ingestion_external_account WHERE user_id = $1 AND account_id = $2
+SELECT
+    sync_from,
+    last_synced_on
+FROM
+    ingestion_external_account
+WHERE
+    user_id = $1
+    AND account_id = $2
 `
 
 type AccountMappingParams struct {
@@ -71,7 +85,10 @@ func (q *Queries) AccountMapping(ctx context.Context, arg AccountMappingParams) 
 }
 
 const deleteConnection = `-- name: DeleteConnection :execrows
-DELETE FROM ingestion_connection WHERE user_id = $1 AND id = $2
+DELETE FROM ingestion_connection
+WHERE
+    user_id = $1
+    AND id = $2
 `
 
 type DeleteConnectionParams struct {
@@ -88,9 +105,16 @@ func (q *Queries) DeleteConnection(ctx context.Context, arg DeleteConnectionPara
 }
 
 const externalAccountsOf = `-- name: ExternalAccountsOf :many
-SELECT id, user_id, connection_id, external_account_id, type, subtype, name, number_last4, currency, account_id, sync_from, ignored, last_synced_on, balance_on, balance_amount, former_names FROM ingestion_external_account
-WHERE user_id = $1 AND connection_id = ANY($2::uuid[])
-ORDER BY connection_id, id
+SELECT
+    id, user_id, connection_id, external_account_id, type, subtype, name, number_last4, currency, account_id, sync_from, ignored, last_synced_on, balance_on, balance_amount, former_names
+FROM
+    ingestion_external_account
+WHERE
+    user_id = $1
+    AND connection_id = ANY ($2::UUID[])
+ORDER BY
+    connection_id,
+    id
 `
 
 type ExternalAccountsOfParams struct {
@@ -136,7 +160,13 @@ func (q *Queries) ExternalAccountsOf(ctx context.Context, arg ExternalAccountsOf
 }
 
 const getConnection = `-- name: GetConnection :one
-SELECT id, user_id, integration_id, external_id, name, provider_status, last_item_update_at, last_synced_at, last_error, created_at, next_item_update_at FROM ingestion_connection WHERE user_id = $1 AND id = $2
+SELECT
+    id, user_id, integration_id, external_id, name, provider_status, last_item_update_at, last_synced_at, last_error, created_at, next_item_update_at
+FROM
+    ingestion_connection
+WHERE
+    user_id = $1
+    AND id = $2
 `
 
 type GetConnectionParams struct {
@@ -164,9 +194,26 @@ func (q *Queries) GetConnection(ctx context.Context, arg GetConnectionParams) (I
 }
 
 const insertConnection = `-- name: InsertConnection :one
-INSERT INTO ingestion_connection (user_id, integration_id, external_id, name, provider_status, last_item_update_at)
-VALUES ($1, $2, $3, $4, $5, $6)
-RETURNING id, user_id, integration_id, external_id, name, provider_status, last_item_update_at, last_synced_at, last_error, created_at, next_item_update_at
+INSERT INTO
+    ingestion_connection (
+        user_id,
+        integration_id,
+        external_id,
+        name,
+        provider_status,
+        last_item_update_at
+    )
+VALUES
+    (
+        $1,
+        $2,
+        $3,
+        $4,
+        $5,
+        $6
+    )
+RETURNING
+    id, user_id, integration_id, external_id, name, provider_status, last_item_update_at, last_synced_at, last_error, created_at, next_item_update_at
 `
 
 type InsertConnectionParams struct {
@@ -205,9 +252,30 @@ func (q *Queries) InsertConnection(ctx context.Context, arg InsertConnectionPara
 }
 
 const insertExternalAccount = `-- name: InsertExternalAccount :one
-INSERT INTO ingestion_external_account (user_id, connection_id, external_account_id, type, subtype, name, number_last4, currency)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-RETURNING id, user_id, connection_id, external_account_id, type, subtype, name, number_last4, currency, account_id, sync_from, ignored, last_synced_on, balance_on, balance_amount, former_names
+INSERT INTO
+    ingestion_external_account (
+        user_id,
+        connection_id,
+        external_account_id,
+        type,
+        subtype,
+        name,
+        number_last4,
+        currency
+    )
+VALUES
+    (
+        $1,
+        $2,
+        $3,
+        $4,
+        $5,
+        $6,
+        $7,
+        $8
+    )
+RETURNING
+    id, user_id, connection_id, external_account_id, type, subtype, name, number_last4, currency, account_id, sync_from, ignored, last_synced_on, balance_on, balance_amount, former_names
 `
 
 type InsertExternalAccountParams struct {
@@ -255,8 +323,28 @@ func (q *Queries) InsertExternalAccount(ctx context.Context, arg InsertExternalA
 }
 
 const insertMissingExternalAccount = `-- name: InsertMissingExternalAccount :exec
-INSERT INTO ingestion_external_account (user_id, connection_id, external_account_id, type, subtype, name, number_last4, currency)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+INSERT INTO
+    ingestion_external_account (
+        user_id,
+        connection_id,
+        external_account_id,
+        type,
+        subtype,
+        name,
+        number_last4,
+        currency
+    )
+VALUES
+    (
+        $1,
+        $2,
+        $3,
+        $4,
+        $5,
+        $6,
+        $7,
+        $8
+    )
 ON CONFLICT (connection_id, external_account_id) DO NOTHING
 `
 
@@ -286,7 +374,14 @@ func (q *Queries) InsertMissingExternalAccount(ctx context.Context, arg InsertMi
 }
 
 const listAllConnections = `-- name: ListAllConnections :many
-SELECT id, user_id FROM ingestion_connection ORDER BY user_id, id
+SELECT
+    id,
+    user_id
+FROM
+    ingestion_connection
+ORDER BY
+    user_id,
+    id
 `
 
 type ListAllConnectionsRow struct {
@@ -316,11 +411,21 @@ func (q *Queries) ListAllConnections(ctx context.Context) ([]ListAllConnectionsR
 }
 
 const listConnections = `-- name: ListConnections :many
-SELECT id, user_id, integration_id, external_id, name, provider_status, last_item_update_at, last_synced_at, last_error, created_at, next_item_update_at FROM ingestion_connection
-WHERE user_id = $1
-  AND ($2::text IS NULL OR (name, id) > ($2::text, $3::uuid))
-ORDER BY name, id
-LIMIT $4
+SELECT
+    id, user_id, integration_id, external_id, name, provider_status, last_item_update_at, last_synced_at, last_error, created_at, next_item_update_at
+FROM
+    ingestion_connection
+WHERE
+    user_id = $1
+    AND (
+        $2::text IS NULL
+        OR (name, id) > ($2::text, $3::uuid)
+    )
+ORDER BY
+    name,
+    id
+LIMIT
+    $4
 `
 
 type ListConnectionsParams struct {
@@ -368,9 +473,14 @@ func (q *Queries) ListConnections(ctx context.Context, arg ListConnectionsParams
 }
 
 const markAccountSynced = `-- name: MarkAccountSynced :exec
-UPDATE ingestion_external_account SET last_synced_on = $1,
-    balance_on = $2, balance_amount = $3
-WHERE user_id = $4 AND id = $5
+UPDATE ingestion_external_account
+SET
+    last_synced_on = $1,
+    balance_on = $2,
+    balance_amount = $3
+WHERE
+    user_id = $4
+    AND id = $5
 `
 
 type MarkAccountSyncedParams struct {
@@ -394,8 +504,13 @@ func (q *Queries) MarkAccountSynced(ctx context.Context, arg MarkAccountSyncedPa
 
 const renameExternalAccount = `-- name: RenameExternalAccount :exec
 UPDATE ingestion_external_account
-SET former_names = array_remove(array_append(array_remove(former_names, name), name), $1::text), name = $1
-WHERE user_id = $2 AND id = $3 AND name <> $1
+SET
+    former_names = array_remove(array_append(array_remove(former_names, name), name), $1::text),
+    name = $1
+WHERE
+    user_id = $2
+    AND id = $3
+    AND name <> $1
 `
 
 type RenameExternalAccountParams struct {
@@ -411,9 +526,16 @@ func (q *Queries) RenameExternalAccount(ctx context.Context, arg RenameExternalA
 }
 
 const saveConnectionState = `-- name: SaveConnectionState :exec
-UPDATE ingestion_connection SET provider_status = $1, last_item_update_at = $2,
-    next_item_update_at = $3, last_synced_at = $4, last_error = $5
-WHERE user_id = $6 AND id = $7
+UPDATE ingestion_connection
+SET
+    provider_status = $1,
+    last_item_update_at = $2,
+    next_item_update_at = $3,
+    last_synced_at = $4,
+    last_error = $5
+WHERE
+    user_id = $6
+    AND id = $7
 `
 
 type SaveConnectionStateParams struct {
@@ -440,9 +562,17 @@ func (q *Queries) SaveConnectionState(ctx context.Context, arg SaveConnectionSta
 }
 
 const saveMapping = `-- name: SaveMapping :one
-UPDATE ingestion_external_account SET account_id = $1, sync_from = $2, ignored = $3
-WHERE user_id = $4 AND connection_id = $5 AND id = $6
-RETURNING id, user_id, connection_id, external_account_id, type, subtype, name, number_last4, currency, account_id, sync_from, ignored, last_synced_on, balance_on, balance_amount, former_names
+UPDATE ingestion_external_account
+SET
+    account_id = $1,
+    sync_from = $2,
+    ignored = $3
+WHERE
+    user_id = $4
+    AND connection_id = $5
+    AND id = $6
+RETURNING
+    id, user_id, connection_id, external_account_id, type, subtype, name, number_last4, currency, account_id, sync_from, ignored, last_synced_on, balance_on, balance_amount, former_names
 `
 
 type SaveMappingParams struct {

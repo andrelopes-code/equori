@@ -11,7 +11,13 @@ import (
 )
 
 const anyUser = `-- name: AnyUser :one
-SELECT EXISTS (SELECT 1 FROM identity_user)
+SELECT
+    EXISTS (
+        SELECT
+            1
+        FROM
+            identity_user
+    )
 `
 
 func (q *Queries) AnyUser(ctx context.Context) (bool, error) {
@@ -22,8 +28,10 @@ func (q *Queries) AnyUser(ctx context.Context) (bool, error) {
 }
 
 const createSession = `-- name: CreateSession :exec
-INSERT INTO identity_session (token_hash, user_id, created_at, expires_at)
-VALUES ($1, $2, $3, $4)
+INSERT INTO
+    identity_session (token_hash, user_id, created_at, expires_at)
+VALUES
+    ($1, $2, $3, $4)
 `
 
 type CreateSessionParams struct {
@@ -44,9 +52,12 @@ func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) er
 }
 
 const createUser = `-- name: CreateUser :one
-INSERT INTO identity_user (email, password_hash, role, language, region)
-VALUES ($1, $2, $3, $4, $5)
-RETURNING id, email, password_hash, role, disabled_at, created_at, language, region
+INSERT INTO
+    identity_user (email, password_hash, role, language, region)
+VALUES
+    ($1, $2, $3, $4, $5)
+RETURNING
+    id, email, password_hash, role, disabled_at, created_at, language, region
 `
 
 type CreateUserParams struct {
@@ -80,7 +91,9 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (Identit
 }
 
 const deleteExpiredSessions = `-- name: DeleteExpiredSessions :exec
-DELETE FROM identity_session WHERE expires_at <= $1
+DELETE FROM identity_session
+WHERE
+    expires_at <= $1
 `
 
 func (q *Queries) DeleteExpiredSessions(ctx context.Context, expiresAt time.Time) error {
@@ -89,7 +102,9 @@ func (q *Queries) DeleteExpiredSessions(ctx context.Context, expiresAt time.Time
 }
 
 const deleteSession = `-- name: DeleteSession :exec
-DELETE FROM identity_session WHERE token_hash = $1
+DELETE FROM identity_session
+WHERE
+    token_hash = $1
 `
 
 func (q *Queries) DeleteSession(ctx context.Context, tokenHash []byte) error {
@@ -98,7 +113,12 @@ func (q *Queries) DeleteSession(ctx context.Context, tokenHash []byte) error {
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, email, password_hash, role, disabled_at, created_at, language, region FROM identity_user WHERE email = $1
+SELECT
+    id, email, password_hash, role, disabled_at, created_at, language, region
+FROM
+    identity_user
+WHERE
+    email = $1
 `
 
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (IdentityUser, error) {
@@ -118,7 +138,12 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (IdentityUse
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT id, email, password_hash, role, disabled_at, created_at, language, region FROM identity_user WHERE id = $1
+SELECT
+    id, email, password_hash, role, disabled_at, created_at, language, region
+FROM
+    identity_user
+WHERE
+    id = $1
 `
 
 func (q *Queries) GetUserByID(ctx context.Context, id int64) (IdentityUser, error) {
@@ -138,10 +163,14 @@ func (q *Queries) GetUserByID(ctx context.Context, id int64) (IdentityUser, erro
 }
 
 const getUserBySession = `-- name: GetUserBySession :one
-SELECT u.id, u.email, u.password_hash, u.role, u.disabled_at, u.created_at, u.language, u.region
-FROM identity_session s
-JOIN identity_user u ON u.id = s.user_id
-WHERE s.token_hash = $1 AND s.expires_at > $2
+SELECT
+    u.id, u.email, u.password_hash, u.role, u.disabled_at, u.created_at, u.language, u.region
+FROM
+    identity_session s
+    JOIN identity_user u ON u.id = s.user_id
+WHERE
+    s.token_hash = $1
+    AND s.expires_at > $2
 `
 
 type GetUserBySessionParams struct {
@@ -176,8 +205,14 @@ func (q *Queries) LockUsers(ctx context.Context) error {
 }
 
 const updateProfile = `-- name: UpdateProfile :one
-UPDATE identity_user SET language = $2, region = $3 WHERE id = $1
-RETURNING id, email, password_hash, role, disabled_at, created_at, language, region
+UPDATE identity_user
+SET
+    language = $2,
+    region = $3
+WHERE
+    id = $1
+RETURNING
+    id, email, password_hash, role, disabled_at, created_at, language, region
 `
 
 type UpdateProfileParams struct {

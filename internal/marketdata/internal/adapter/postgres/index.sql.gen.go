@@ -13,8 +13,14 @@ import (
 )
 
 const indexRange = `-- name: IndexRange :one
-SELECT coalesce(min(date), DATE '0001-01-01')::date AS first, coalesce(max(date), DATE '0001-01-01')::date AS last, count(*) AS n
-FROM marketdata_index_rate WHERE index_id = $1
+SELECT
+    coalesce(min(date), DATE '0001-01-01')::date AS first,
+    coalesce(max(date), DATE '0001-01-01')::date AS last,
+    count(*) AS n
+FROM
+    marketdata_index_rate
+WHERE
+    index_id = $1
 `
 
 type IndexRangeRow struct {
@@ -32,8 +38,13 @@ func (q *Queries) IndexRange(ctx context.Context, indexID string) (IndexRangeRow
 }
 
 const indexTermsStart = `-- name: IndexTermsStart :one
-SELECT coalesce(min(issued_on), DATE '0001-01-01')::date AS issued_on, count(*) AS n
-FROM marketdata_fixed_income_terms WHERE index_id = $1
+SELECT
+    coalesce(min(issued_on), DATE '0001-01-01')::date AS issued_on,
+    count(*) AS n
+FROM
+    marketdata_fixed_income_terms
+WHERE
+    index_id = $1
 `
 
 type IndexTermsStartRow struct {
@@ -50,8 +61,13 @@ func (q *Queries) IndexTermsStart(ctx context.Context, indexID *string) (IndexTe
 }
 
 const latestIndexRate = `-- name: LatestIndexRate :one
-SELECT coalesce(max(date), DATE '0001-01-01')::date AS latest, (count(*) > 0)::boolean AS found
-FROM marketdata_index_rate WHERE index_id = $1
+SELECT
+    coalesce(max(date), DATE '0001-01-01')::date AS latest,
+    (count(*) > 0)::boolean AS found
+FROM
+    marketdata_index_rate
+WHERE
+    index_id = $1
 `
 
 type LatestIndexRateRow struct {
@@ -68,7 +84,16 @@ func (q *Queries) LatestIndexRate(ctx context.Context, indexID string) (LatestIn
 }
 
 const listIndexRates = `-- name: ListIndexRates :many
-SELECT date, rate FROM marketdata_index_rate WHERE index_id = $1 AND date >= $2 ORDER BY date
+SELECT
+    date,
+    rate
+FROM
+    marketdata_index_rate
+WHERE
+    index_id = $1
+    AND date >= $2
+ORDER BY
+    date
 `
 
 type ListIndexRatesParams struct {
@@ -102,7 +127,17 @@ func (q *Queries) ListIndexRates(ctx context.Context, arg ListIndexRatesParams) 
 }
 
 const listIndexRatesBetween = `-- name: ListIndexRatesBetween :many
-SELECT date, rate FROM marketdata_index_rate WHERE index_id = $1 AND date >= $2 AND date <= $3 ORDER BY date
+SELECT
+    date,
+    rate
+FROM
+    marketdata_index_rate
+WHERE
+    index_id = $1
+    AND date >= $2
+    AND date <= $3
+ORDER BY
+    date
 `
 
 type ListIndexRatesBetweenParams struct {
@@ -137,8 +172,14 @@ func (q *Queries) ListIndexRatesBetween(ctx context.Context, arg ListIndexRatesB
 }
 
 const upsertIndexRate = `-- name: UpsertIndexRate :exec
-INSERT INTO marketdata_index_rate (index_id, date, rate, source) VALUES ($1, $2, $3, $4)
-ON CONFLICT (index_id, date) DO UPDATE SET rate = EXCLUDED.rate, source = EXCLUDED.source
+INSERT INTO
+    marketdata_index_rate (index_id, date, rate, source)
+VALUES
+    ($1, $2, $3, $4)
+ON CONFLICT (index_id, date) DO UPDATE
+SET
+    rate = EXCLUDED.rate,
+    source = EXCLUDED.source
 `
 
 type UpsertIndexRateParams struct {

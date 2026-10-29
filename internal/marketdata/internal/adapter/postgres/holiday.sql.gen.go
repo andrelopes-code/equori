@@ -11,7 +11,16 @@ import (
 )
 
 const isInstanceHoliday = `-- name: IsInstanceHoliday :one
-SELECT EXISTS (SELECT 1 FROM marketdata_holiday WHERE calendar = $1 AND date = $2)
+SELECT
+    EXISTS (
+        SELECT
+            1
+        FROM
+            marketdata_holiday
+        WHERE
+            calendar = $1
+            AND date = $2
+    )
 `
 
 type IsInstanceHolidayParams struct {
@@ -27,9 +36,16 @@ func (q *Queries) IsInstanceHoliday(ctx context.Context, arg IsInstanceHolidayPa
 }
 
 const listInstanceHolidays = `-- name: ListInstanceHolidays :many
-SELECT calendar, date, name FROM marketdata_holiday
-WHERE calendar = $1 AND date >= $2 AND date <= $3
-ORDER BY date
+SELECT
+    calendar, date, name
+FROM
+    marketdata_holiday
+WHERE
+    calendar = $1
+    AND date >= $2
+    AND date <= $3
+ORDER BY
+    date
 `
 
 type ListInstanceHolidaysParams struct {

@@ -12,15 +12,20 @@ import (
 )
 
 const deleteMergeCollidingSuggestions = `-- name: DeleteMergeCollidingSuggestions :exec
-
 DELETE FROM classification_suggestion d
-WHERE d.user_id = $1 AND d.id IN (
-    SELECT greatest(s.id, o.id)
-    FROM classification_suggestion s
-    JOIN classification_suggestion o
-      ON o.user_id = s.user_id AND o.fingerprint = replace(s.fingerprint, $2::text, $3::text)
-    WHERE s.user_id = $1 AND s.fingerprint LIKE '% -> ' || $2::text
-)
+WHERE
+    d.user_id = $1
+    AND d.id IN (
+        SELECT
+            greatest(s.id, o.id)
+        FROM
+            classification_suggestion s
+            JOIN classification_suggestion o ON o.user_id = s.user_id
+            AND o.fingerprint = replace(s.fingerprint, $2::text, $3::text)
+        WHERE
+            s.user_id = $1
+            AND s.fingerprint LIKE '% -> ' || $2::text
+    )
 `
 
 type DeleteMergeCollidingSuggestionsParams struct {
@@ -39,13 +44,19 @@ func (q *Queries) DeleteMergeCollidingSuggestions(ctx context.Context, arg Delet
 
 const deletePayeeMergeCollidingSuggestions = `-- name: DeletePayeeMergeCollidingSuggestions :exec
 DELETE FROM classification_suggestion d
-WHERE d.user_id = $1 AND d.id IN (
-    SELECT greatest(s.id, o.id)
-    FROM classification_suggestion s
-    JOIN classification_suggestion o
-      ON o.user_id = s.user_id AND o.fingerprint = replace(s.fingerprint, $2::text, $3::text)
-    WHERE s.user_id = $1 AND s.fingerprint LIKE 'payee:' || $2::text || ' -> %'
-)
+WHERE
+    d.user_id = $1
+    AND d.id IN (
+        SELECT
+            greatest(s.id, o.id)
+        FROM
+            classification_suggestion s
+            JOIN classification_suggestion o ON o.user_id = s.user_id
+            AND o.fingerprint = replace(s.fingerprint, $2::text, $3::text)
+        WHERE
+            s.user_id = $1
+            AND s.fingerprint LIKE 'payee:' || $2::text || ' -> %'
+    )
 `
 
 type DeletePayeeMergeCollidingSuggestionsParams struct {
@@ -60,8 +71,12 @@ func (q *Queries) DeletePayeeMergeCollidingSuggestions(ctx context.Context, arg 
 }
 
 const mergeCategorizations = `-- name: MergeCategorizations :exec
-UPDATE classification_categorization SET category_id = $1
-WHERE user_id = $2 AND category_id = $3
+UPDATE classification_categorization
+SET
+    category_id = $1
+WHERE
+    user_id = $2
+    AND category_id = $3
 `
 
 type MergeCategorizationsParams struct {
@@ -76,9 +91,12 @@ func (q *Queries) MergeCategorizations(ctx context.Context, arg MergeCategorizat
 }
 
 const mergePayeeAliases = `-- name: MergePayeeAliases :exec
-
-UPDATE classification_payee_alias SET payee_id = $1::uuid
-WHERE user_id = $2 AND payee_id = $3::uuid
+UPDATE classification_payee_alias
+SET
+    payee_id = $1::uuid
+WHERE
+    user_id = $2
+    AND payee_id = $3::uuid
 `
 
 type MergePayeeAliasesParams struct {
@@ -94,8 +112,12 @@ func (q *Queries) MergePayeeAliases(ctx context.Context, arg MergePayeeAliasesPa
 }
 
 const mergePayeeMatchKeys = `-- name: MergePayeeMatchKeys :exec
-UPDATE classification_categorization SET match_key = 'payee:' || $1::text
-WHERE user_id = $2 AND match_key = 'payee:' || $3::text
+UPDATE classification_categorization
+SET
+    match_key = 'payee:' || $1::text
+WHERE
+    user_id = $2
+    AND match_key = 'payee:' || $3::text
 `
 
 type MergePayeeMatchKeysParams struct {
@@ -111,9 +133,16 @@ func (q *Queries) MergePayeeMatchKeys(ctx context.Context, arg MergePayeeMatchKe
 
 const mergePayeeRules = `-- name: MergePayeeRules :exec
 UPDATE classification_rule
-SET conditions = replace(conditions::text, $1::text, $2::text)::jsonb,
-    actions = replace(actions::text, $1::text, $2::text)::jsonb, updated_at = now()
-WHERE user_id = $3 AND (strpos(conditions::text, $1::text) > 0 OR strpos(actions::text, $1::text) > 0)
+SET
+    conditions = replace(conditions::text, $1::text, $2::text)::jsonb,
+    actions = replace(actions::text, $1::text, $2::text)::jsonb,
+    updated_at = now()
+WHERE
+    user_id = $3
+    AND (
+        strpos(conditions::text, $1::text) > 0
+        OR strpos(actions::text, $1::text) > 0
+    )
 `
 
 type MergePayeeRulesParams struct {
@@ -129,9 +158,12 @@ func (q *Queries) MergePayeeRules(ctx context.Context, arg MergePayeeRulesParams
 
 const mergePayeeSuggestions = `-- name: MergePayeeSuggestions :exec
 UPDATE classification_suggestion
-SET fingerprint = replace(fingerprint, $1::text, $2::text),
+SET
+    fingerprint = replace(fingerprint, $1::text, $2::text),
     conditions = replace(conditions::text, $1::text, $2::text)::jsonb
-WHERE user_id = $3 AND fingerprint LIKE 'payee:' || $1::text || ' -> %'
+WHERE
+    user_id = $3
+    AND fingerprint LIKE 'payee:' || $1::text || ' -> %'
 `
 
 type MergePayeeSuggestionsParams struct {
@@ -147,8 +179,12 @@ func (q *Queries) MergePayeeSuggestions(ctx context.Context, arg MergePayeeSugge
 
 const mergeRuleActions = `-- name: MergeRuleActions :exec
 UPDATE classification_rule
-SET actions = replace(actions::text, $1::text, $2::text)::jsonb, updated_at = now()
-WHERE user_id = $3 AND strpos(actions::text, $1::text) > 0
+SET
+    actions = replace(actions::text, $1::text, $2::text)::jsonb,
+    updated_at = now()
+WHERE
+    user_id = $3
+    AND strpos(actions::text, $1::text) > 0
 `
 
 type MergeRuleActionsParams struct {
@@ -163,8 +199,12 @@ func (q *Queries) MergeRuleActions(ctx context.Context, arg MergeRuleActionsPara
 }
 
 const mergeSourceCategories = `-- name: MergeSourceCategories :exec
-UPDATE classification_source_category SET category_id = $1
-WHERE user_id = $2 AND category_id = $3
+UPDATE classification_source_category
+SET
+    category_id = $1
+WHERE
+    user_id = $2
+    AND category_id = $3
 `
 
 type MergeSourceCategoriesParams struct {
@@ -180,9 +220,12 @@ func (q *Queries) MergeSourceCategories(ctx context.Context, arg MergeSourceCate
 
 const mergeSuggestions = `-- name: MergeSuggestions :exec
 UPDATE classification_suggestion
-SET fingerprint = replace(fingerprint, $1::text, $2::text),
+SET
+    fingerprint = replace(fingerprint, $1::text, $2::text),
     actions = replace(actions::text, $1::text, $2::text)::jsonb
-WHERE user_id = $3 AND fingerprint LIKE '% -> ' || $1::text
+WHERE
+    user_id = $3
+    AND fingerprint LIKE '% -> ' || $1::text
 `
 
 type MergeSuggestionsParams struct {
@@ -198,14 +241,42 @@ func (q *Queries) MergeSuggestions(ctx context.Context, arg MergeSuggestionsPara
 
 const renameRuleTag = `-- name: RenameRuleTag :exec
 UPDATE classification_rule r
-SET actions = (
-        SELECT jsonb_agg(CASE WHEN x.a ? 'tags' THEN jsonb_set(x.a, '{tags}', (
-            SELECT jsonb_agg(DISTINCT CASE WHEN t = $1::text THEN $2::text ELSE t END)
-            FROM jsonb_array_elements_text(x.a -> 'tags') t)) ELSE x.a END ORDER BY x.i)
-        FROM jsonb_array_elements(r.actions) WITH ORDINALITY AS x (a, i)),
+SET
+    actions = (
+        SELECT
+            jsonb_agg(
+                CASE
+                    WHEN x.a ? 'tags' THEN jsonb_set(
+                        x.a,
+                        '{tags}',
+                        (
+                            SELECT
+                                jsonb_agg(
+                                    DISTINCT CASE
+                                        WHEN t = $1::text THEN $2::text
+                                        ELSE t
+                                    END
+                                )
+                            FROM
+                                jsonb_array_elements_text(x.a -> 'tags') t
+                        )
+                    )
+                    ELSE x.a
+                END
+                ORDER BY
+                    x.i
+            )
+        FROM
+            jsonb_array_elements(r.actions) WITH ORDINALITY AS x (a, i)
+    ),
     updated_at = now()
-WHERE r.user_id = $3
-  AND jsonb_path_exists(r.actions, '$[*].tags[*] ? (@ == $t)', jsonb_build_object('t', $1::text))
+WHERE
+    r.user_id = $3
+    AND jsonb_path_exists(
+        r.actions,
+        '$[*].tags[*] ? (@ == $t)',
+        jsonb_build_object('t', $1::text)
+    )
 `
 
 type RenameRuleTagParams struct {

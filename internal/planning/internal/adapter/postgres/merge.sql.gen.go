@@ -12,10 +12,19 @@ import (
 )
 
 const deleteMergedBudget = `-- name: DeleteMergedBudget :exec
-
 DELETE FROM planning_budget b
-WHERE b.user_id = $1 AND b.category_account_id = $2
-  AND EXISTS (SELECT 1 FROM planning_budget o WHERE o.user_id = $1 AND o.category_account_id = $3)
+WHERE
+    b.user_id = $1
+    AND b.category_account_id = $2
+    AND EXISTS (
+        SELECT
+            1
+        FROM
+            planning_budget o
+        WHERE
+            o.user_id = $1
+            AND o.category_account_id = $3
+    )
 `
 
 type DeleteMergedBudgetParams struct {
@@ -33,10 +42,22 @@ func (q *Queries) DeleteMergedBudget(ctx context.Context, arg DeleteMergedBudget
 
 const mergeScheduleAccounts = `-- name: MergeScheduleAccounts :exec
 UPDATE planning_schedule
-SET account_id = CASE WHEN account_id = $1 THEN $2 ELSE account_id END,
-    counterpart_id = CASE WHEN counterpart_id = $1 THEN $2 ELSE counterpart_id END,
+SET
+    account_id = CASE
+        WHEN account_id = $1 THEN $2
+        ELSE account_id
+    END,
+    counterpart_id = CASE
+        WHEN counterpart_id = $1 THEN $2
+        ELSE counterpart_id
+    END,
     updated_at = now()
-WHERE user_id = $3 AND (account_id = $1 OR counterpart_id = $1)
+WHERE
+    user_id = $3
+    AND (
+        account_id = $1
+        OR counterpart_id = $1
+    )
 `
 
 type MergeScheduleAccountsParams struct {
@@ -51,8 +72,13 @@ func (q *Queries) MergeScheduleAccounts(ctx context.Context, arg MergeScheduleAc
 }
 
 const mergeSchedulePayee = `-- name: MergeSchedulePayee :exec
-UPDATE planning_schedule SET payee_id = $1, updated_at = now()
-WHERE user_id = $2 AND payee_id = $3
+UPDATE planning_schedule
+SET
+    payee_id = $1,
+    updated_at = now()
+WHERE
+    user_id = $2
+    AND payee_id = $3
 `
 
 type MergeSchedulePayeeParams struct {
@@ -68,8 +94,12 @@ func (q *Queries) MergeSchedulePayee(ctx context.Context, arg MergeSchedulePayee
 }
 
 const moveMergedBudget = `-- name: MoveMergedBudget :exec
-UPDATE planning_budget SET category_account_id = $1
-WHERE user_id = $2 AND category_account_id = $3
+UPDATE planning_budget
+SET
+    category_account_id = $1
+WHERE
+    user_id = $2
+    AND category_account_id = $3
 `
 
 type MoveMergedBudgetParams struct {

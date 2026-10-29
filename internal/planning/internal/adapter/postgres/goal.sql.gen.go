@@ -13,7 +13,10 @@ import (
 )
 
 const deleteGoal = `-- name: DeleteGoal :execrows
-DELETE FROM planning_goal WHERE user_id = $1 AND id = $2
+DELETE FROM planning_goal
+WHERE
+    user_id = $1
+    AND id = $2
 `
 
 type DeleteGoalParams struct {
@@ -30,7 +33,10 @@ func (q *Queries) DeleteGoal(ctx context.Context, arg DeleteGoalParams) (int64, 
 }
 
 const deleteGoalAccounts = `-- name: DeleteGoalAccounts :exec
-DELETE FROM planning_goal_account WHERE user_id = $1 AND goal_id = $2
+DELETE FROM planning_goal_account
+WHERE
+    user_id = $1
+    AND goal_id = $2
 `
 
 type DeleteGoalAccountsParams struct {
@@ -44,7 +50,13 @@ func (q *Queries) DeleteGoalAccounts(ctx context.Context, arg DeleteGoalAccounts
 }
 
 const getGoal = `-- name: GetGoal :one
-SELECT id, user_id, name, target, currency, due_on, created_at FROM planning_goal WHERE user_id = $1 AND id = $2
+SELECT
+    id, user_id, name, target, currency, due_on, created_at
+FROM
+    planning_goal
+WHERE
+    user_id = $1
+    AND id = $2
 `
 
 type GetGoalParams struct {
@@ -68,9 +80,12 @@ func (q *Queries) GetGoal(ctx context.Context, arg GetGoalParams) (PlanningGoal,
 }
 
 const insertGoal = `-- name: InsertGoal :one
-INSERT INTO planning_goal (user_id, name, target, currency, due_on)
-VALUES ($1, $2, $3, $4, $5)
-RETURNING id, user_id, name, target, currency, due_on, created_at
+INSERT INTO
+    planning_goal (user_id, name, target, currency, due_on)
+VALUES
+    ($1, $2, $3, $4, $5)
+RETURNING
+    id, user_id, name, target, currency, due_on, created_at
 `
 
 type InsertGoalParams struct {
@@ -103,8 +118,12 @@ func (q *Queries) InsertGoal(ctx context.Context, arg InsertGoalParams) (Plannin
 }
 
 const insertGoalAccounts = `-- name: InsertGoalAccounts :exec
-INSERT INTO planning_goal_account (user_id, goal_id, account_id)
-SELECT $1::bigint, $2::uuid, unnest($3::uuid[])
+INSERT INTO
+    planning_goal_account (user_id, goal_id, account_id)
+SELECT
+    $1::bigint,
+    $2::uuid,
+    unnest($3::UUID[])
 `
 
 type InsertGoalAccountsParams struct {
@@ -119,7 +138,17 @@ func (q *Queries) InsertGoalAccounts(ctx context.Context, arg InsertGoalAccounts
 }
 
 const listGoalAccounts = `-- name: ListGoalAccounts :many
-SELECT goal_id, account_id FROM planning_goal_account WHERE user_id = $1 AND goal_id = ANY($2::uuid[]) ORDER BY goal_id, account_id
+SELECT
+    goal_id,
+    account_id
+FROM
+    planning_goal_account
+WHERE
+    user_id = $1
+    AND goal_id = ANY ($2::UUID[])
+ORDER BY
+    goal_id,
+    account_id
 `
 
 type ListGoalAccountsParams struct {
@@ -153,10 +182,20 @@ func (q *Queries) ListGoalAccounts(ctx context.Context, arg ListGoalAccountsPara
 }
 
 const listGoals = `-- name: ListGoals :many
-SELECT id, user_id, name, target, currency, due_on, created_at FROM planning_goal
-WHERE user_id = $1 AND ($2::uuid IS NULL OR id > $2::uuid)
-ORDER BY id
-LIMIT $3
+SELECT
+    id, user_id, name, target, currency, due_on, created_at
+FROM
+    planning_goal
+WHERE
+    user_id = $1
+    AND (
+        $2::uuid IS NULL
+        OR id > $2::uuid
+    )
+ORDER BY
+    id
+LIMIT
+    $3
 `
 
 type ListGoalsParams struct {
@@ -194,9 +233,17 @@ func (q *Queries) ListGoals(ctx context.Context, arg ListGoalsParams) ([]Plannin
 }
 
 const updateGoal = `-- name: UpdateGoal :one
-UPDATE planning_goal SET name = $1, target = $2, currency = $3, due_on = $4
-WHERE user_id = $5 AND id = $6
-RETURNING id, user_id, name, target, currency, due_on, created_at
+UPDATE planning_goal
+SET
+    name = $1,
+    target = $2,
+    currency = $3,
+    due_on = $4
+WHERE
+    user_id = $5
+    AND id = $6
+RETURNING
+    id, user_id, name, target, currency, due_on, created_at
 `
 
 type UpdateGoalParams struct {

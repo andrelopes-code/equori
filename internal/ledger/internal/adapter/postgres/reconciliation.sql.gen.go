@@ -13,7 +13,11 @@ import (
 )
 
 const deleteReconciliationsFrom = `-- name: DeleteReconciliationsFrom :exec
-DELETE FROM ledger_reconciliation WHERE user_id = $1 AND account_id = $2 AND date >= $3::date
+DELETE FROM ledger_reconciliation
+WHERE
+    user_id = $1
+    AND account_id = $2
+    AND date >= $3::date
 `
 
 type DeleteReconciliationsFromParams struct {
@@ -28,7 +32,8 @@ func (q *Queries) DeleteReconciliationsFrom(ctx context.Context, arg DeleteRecon
 }
 
 const enableReconciledUnlock = `-- name: EnableReconciledUnlock :exec
-SELECT set_config('equori.unlock_reconciled', 'on', true)
+SELECT
+    set_config('equori.unlock_reconciled', 'on', TRUE)
 `
 
 func (q *Queries) EnableReconciledUnlock(ctx context.Context) error {
@@ -37,9 +42,18 @@ func (q *Queries) EnableReconciledUnlock(ctx context.Context) error {
 }
 
 const firstSettledOn = `-- name: FirstSettledOn :one
-SELECT coalesce(settled_on, booked_on)::date FROM ledger_posting
-WHERE user_id = $1 AND account_id = $2 AND NOT voided
-ORDER BY 1 LIMIT 1
+SELECT
+    coalesce(settled_on, booked_on)::date
+FROM
+    ledger_posting
+WHERE
+    user_id = $1
+    AND account_id = $2
+    AND NOT voided
+ORDER BY
+    1
+LIMIT
+    1
 `
 
 type FirstSettledOnParams struct {
@@ -55,9 +69,21 @@ func (q *Queries) FirstSettledOn(ctx context.Context, arg FirstSettledOnParams) 
 }
 
 const getBalanceAssertion = `-- name: GetBalanceAssertion :one
-SELECT a.id, a.user_id, a.account_id, a.date, a.amount, a.source, a.recorded_at, EXISTS (SELECT 1 FROM ledger_reconciliation r WHERE r.assertion_id = a.id) AS reconciled
-FROM ledger_balance_assertion a
-WHERE a.user_id = $1 AND a.id = $2
+SELECT
+    a.id, a.user_id, a.account_id, a.date, a.amount, a.source, a.recorded_at,
+    EXISTS (
+        SELECT
+            1
+        FROM
+            ledger_reconciliation r
+        WHERE
+            r.assertion_id = a.id
+    ) AS reconciled
+FROM
+    ledger_balance_assertion a
+WHERE
+    a.user_id = $1
+    AND a.id = $2
 `
 
 type GetBalanceAssertionParams struct {
@@ -93,9 +119,12 @@ func (q *Queries) GetBalanceAssertion(ctx context.Context, arg GetBalanceAsserti
 }
 
 const insertBalanceAssertion = `-- name: InsertBalanceAssertion :one
-INSERT INTO ledger_balance_assertion (user_id, account_id, date, amount, source)
-VALUES ($1, $2, $3, $4, $5)
-RETURNING id, user_id, account_id, date, amount, source, recorded_at
+INSERT INTO
+    ledger_balance_assertion (user_id, account_id, date, amount, source)
+VALUES
+    ($1, $2, $3, $4, $5)
+RETURNING
+    id, user_id, account_id, date, amount, source, recorded_at
 `
 
 type InsertBalanceAssertionParams struct {
@@ -128,8 +157,28 @@ func (q *Queries) InsertBalanceAssertion(ctx context.Context, arg InsertBalanceA
 }
 
 const insertReconciliation = `-- name: InsertReconciliation :exec
-INSERT INTO ledger_reconciliation (user_id, account_id, date, assertion_id, statement_id, difference, resolution, resolution_transaction_id)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+INSERT INTO
+    ledger_reconciliation (
+        user_id,
+        account_id,
+        date,
+        assertion_id,
+        statement_id,
+        difference,
+        resolution,
+        resolution_transaction_id
+    )
+VALUES
+    (
+        $1,
+        $2,
+        $3,
+        $4,
+        $5,
+        $6,
+        $7,
+        $8
+    )
 `
 
 type InsertReconciliationParams struct {
@@ -158,7 +207,17 @@ func (q *Queries) InsertReconciliation(ctx context.Context, arg InsertReconcilia
 }
 
 const lastReconciledOn = `-- name: LastReconciledOn :one
-SELECT date FROM ledger_reconciliation WHERE user_id = $1 AND account_id = $2 ORDER BY date DESC LIMIT 1
+SELECT
+    date
+FROM
+    ledger_reconciliation
+WHERE
+    user_id = $1
+    AND account_id = $2
+ORDER BY
+    date DESC
+LIMIT
+    1
 `
 
 type LastReconciledOnParams struct {
@@ -174,12 +233,30 @@ func (q *Queries) LastReconciledOn(ctx context.Context, arg LastReconciledOnPara
 }
 
 const listBalanceAssertionPage = `-- name: ListBalanceAssertionPage :many
-SELECT a.id, a.user_id, a.account_id, a.date, a.amount, a.source, a.recorded_at, EXISTS (SELECT 1 FROM ledger_reconciliation r WHERE r.assertion_id = a.id) AS reconciled
-FROM ledger_balance_assertion a
-WHERE a.user_id = $1 AND a.account_id = $2
-  AND ($3::date IS NULL OR (a.date, a.id) < ($3::date, $4::uuid))
-ORDER BY a.date DESC, a.id DESC
-LIMIT $5
+SELECT
+    a.id, a.user_id, a.account_id, a.date, a.amount, a.source, a.recorded_at,
+    EXISTS (
+        SELECT
+            1
+        FROM
+            ledger_reconciliation r
+        WHERE
+            r.assertion_id = a.id
+    ) AS reconciled
+FROM
+    ledger_balance_assertion a
+WHERE
+    a.user_id = $1
+    AND a.account_id = $2
+    AND (
+        $3::date IS NULL
+        OR (a.date, a.id) < ($3::date, $4::uuid)
+    )
+ORDER BY
+    a.date DESC,
+    a.id DESC
+LIMIT
+    $5
 `
 
 type ListBalanceAssertionPageParams struct {
@@ -237,10 +314,24 @@ func (q *Queries) ListBalanceAssertionPage(ctx context.Context, arg ListBalanceA
 }
 
 const listBalanceAssertions = `-- name: ListBalanceAssertions :many
-SELECT a.id, a.user_id, a.account_id, a.date, a.amount, a.source, a.recorded_at, EXISTS (SELECT 1 FROM ledger_reconciliation r WHERE r.assertion_id = a.id) AS reconciled
-FROM ledger_balance_assertion a
-WHERE a.user_id = $1 AND a.account_id = $2
-ORDER BY a.date DESC, a.id DESC
+SELECT
+    a.id, a.user_id, a.account_id, a.date, a.amount, a.source, a.recorded_at,
+    EXISTS (
+        SELECT
+            1
+        FROM
+            ledger_reconciliation r
+        WHERE
+            r.assertion_id = a.id
+    ) AS reconciled
+FROM
+    ledger_balance_assertion a
+WHERE
+    a.user_id = $1
+    AND a.account_id = $2
+ORDER BY
+    a.date DESC,
+    a.id DESC
 `
 
 type ListBalanceAssertionsParams struct {
@@ -289,11 +380,15 @@ func (q *Queries) ListBalanceAssertions(ctx context.Context, arg ListBalanceAsse
 }
 
 const reconcileAccountPostings = `-- name: ReconcileAccountPostings :exec
-UPDATE ledger_posting SET status = 'reconciled'
-WHERE user_id = $1 AND account_id = $2
-  AND NOT voided
-  AND status <> 'reconciled'
-  AND coalesce(settled_on, booked_on) <= $3::date
+UPDATE ledger_posting
+SET
+    status = 'reconciled'
+WHERE
+    user_id = $1
+    AND account_id = $2
+    AND NOT voided
+    AND status <> 'reconciled'
+    AND coalesce(settled_on, booked_on) <= $3::date
 `
 
 type ReconcileAccountPostingsParams struct {
@@ -308,8 +403,14 @@ func (q *Queries) ReconcileAccountPostings(ctx context.Context, arg ReconcileAcc
 }
 
 const reconcileStatementPostings = `-- name: ReconcileStatementPostings :exec
-UPDATE ledger_posting SET status = 'reconciled'
-WHERE user_id = $1 AND statement_id = $2 AND NOT voided AND status <> 'reconciled'
+UPDATE ledger_posting
+SET
+    status = 'reconciled'
+WHERE
+    user_id = $1
+    AND statement_id = $2
+    AND NOT voided
+    AND status <> 'reconciled'
 `
 
 type ReconcileStatementPostingsParams struct {
@@ -323,12 +424,26 @@ func (q *Queries) ReconcileStatementPostings(ctx context.Context, arg ReconcileS
 }
 
 const unreconcileAccountPostings = `-- name: UnreconcileAccountPostings :exec
-UPDATE ledger_posting p SET status = 'cleared'
-WHERE p.user_id = $1 AND p.account_id = $2
-  AND p.status = 'reconciled'
-  AND (coalesce(p.settled_on, p.booked_on) >= $3::date
-       OR p.statement_id IN (SELECT r.statement_id FROM ledger_reconciliation r
-                           WHERE r.user_id = $1 AND r.account_id = $2 AND r.date >= $3::date))
+UPDATE ledger_posting p
+SET
+    status = 'cleared'
+WHERE
+    p.user_id = $1
+    AND p.account_id = $2
+    AND p.status = 'reconciled'
+    AND (
+        coalesce(p.settled_on, p.booked_on) >= $3::date
+        OR p.statement_id IN (
+            SELECT
+                r.statement_id
+            FROM
+                ledger_reconciliation r
+            WHERE
+                r.user_id = $1
+                AND r.account_id = $2
+                AND r.date >= $3::date
+        )
+    )
 `
 
 type UnreconcileAccountPostingsParams struct {

@@ -12,7 +12,10 @@ import (
 )
 
 const deleteRule = `-- name: DeleteRule :execrows
-DELETE FROM classification_rule WHERE user_id = $1 AND id = $2
+DELETE FROM classification_rule
+WHERE
+    user_id = $1
+    AND id = $2
 `
 
 type DeleteRuleParams struct {
@@ -29,7 +32,15 @@ func (q *Queries) DeleteRule(ctx context.Context, arg DeleteRuleParams) (int64, 
 }
 
 const enabledRules = `-- name: EnabledRules :many
-SELECT id, user_id, name, priority, enabled, stop_processing, conditions, actions, schema_version, created_at, updated_at FROM classification_rule WHERE user_id = $1 AND enabled ORDER BY priority
+SELECT
+    id, user_id, name, priority, enabled, stop_processing, conditions, actions, schema_version, created_at, updated_at
+FROM
+    classification_rule
+WHERE
+    user_id = $1
+    AND enabled
+ORDER BY
+    priority
 `
 
 func (q *Queries) EnabledRules(ctx context.Context, userID int64) ([]ClassificationRule, error) {
@@ -65,7 +76,13 @@ func (q *Queries) EnabledRules(ctx context.Context, userID int64) ([]Classificat
 }
 
 const getRule = `-- name: GetRule :one
-SELECT id, user_id, name, priority, enabled, stop_processing, conditions, actions, schema_version, created_at, updated_at FROM classification_rule WHERE user_id = $1 AND id = $2
+SELECT
+    id, user_id, name, priority, enabled, stop_processing, conditions, actions, schema_version, created_at, updated_at
+FROM
+    classification_rule
+WHERE
+    user_id = $1
+    AND id = $2
 `
 
 type GetRuleParams struct {
@@ -93,10 +110,37 @@ func (q *Queries) GetRule(ctx context.Context, arg GetRuleParams) (Classificatio
 }
 
 const insertRule = `-- name: InsertRule :one
-INSERT INTO classification_rule (user_id, name, priority, enabled, stop_processing, conditions, actions, schema_version)
-VALUES ($1, $2, (SELECT coalesce(max(priority), 0) + 1 FROM classification_rule WHERE user_id = $1),
-        $3, $4, $5, $6, 1)
-RETURNING id, user_id, name, priority, enabled, stop_processing, conditions, actions, schema_version, created_at, updated_at
+INSERT INTO
+    classification_rule (
+        user_id,
+        name,
+        priority,
+        enabled,
+        stop_processing,
+        conditions,
+        actions,
+        schema_version
+    )
+VALUES
+    (
+        $1,
+        $2,
+        (
+            SELECT
+                coalesce(max(priority), 0) + 1
+            FROM
+                classification_rule
+            WHERE
+                user_id = $1
+        ),
+        $3,
+        $4,
+        $5,
+        $6,
+        1
+    )
+RETURNING
+    id, user_id, name, priority, enabled, stop_processing, conditions, actions, schema_version, created_at, updated_at
 `
 
 type InsertRuleParams struct {
@@ -136,11 +180,20 @@ func (q *Queries) InsertRule(ctx context.Context, arg InsertRuleParams) (Classif
 }
 
 const listRules = `-- name: ListRules :many
-SELECT id, user_id, name, priority, enabled, stop_processing, conditions, actions, schema_version, created_at, updated_at FROM classification_rule
-WHERE user_id = $1
-  AND ($2::int IS NULL OR priority > $2::int)
-ORDER BY priority
-LIMIT $3
+SELECT
+    id, user_id, name, priority, enabled, stop_processing, conditions, actions, schema_version, created_at, updated_at
+FROM
+    classification_rule
+WHERE
+    user_id = $1
+    AND (
+        $2::int IS NULL
+        OR priority > $2::int
+    )
+ORDER BY
+    priority
+LIMIT
+    $3
 `
 
 type ListRulesParams struct {
@@ -182,7 +235,15 @@ func (q *Queries) ListRules(ctx context.Context, arg ListRulesParams) ([]Classif
 }
 
 const ruleIDs = `-- name: RuleIDs :many
-SELECT id FROM classification_rule WHERE user_id = $1 ORDER BY priority FOR UPDATE
+SELECT
+    id
+FROM
+    classification_rule
+WHERE
+    user_id = $1
+ORDER BY
+    priority
+FOR UPDATE
 `
 
 func (q *Queries) RuleIDs(ctx context.Context, userID int64) ([]uuid.UUID, error) {
@@ -206,7 +267,13 @@ func (q *Queries) RuleIDs(ctx context.Context, userID int64) ([]uuid.UUID, error
 }
 
 const setRulePriority = `-- name: SetRulePriority :exec
-UPDATE classification_rule SET priority = $1, updated_at = now() WHERE user_id = $2 AND id = $3
+UPDATE classification_rule
+SET
+    priority = $1,
+    updated_at = now()
+WHERE
+    user_id = $2
+    AND id = $3
 `
 
 type SetRulePriorityParams struct {
@@ -222,9 +289,18 @@ func (q *Queries) SetRulePriority(ctx context.Context, arg SetRulePriorityParams
 
 const updateRule = `-- name: UpdateRule :one
 UPDATE classification_rule
-SET name = $1, enabled = $2, stop_processing = $3, conditions = $4, actions = $5, updated_at = now()
-WHERE user_id = $6 AND id = $7
-RETURNING id, user_id, name, priority, enabled, stop_processing, conditions, actions, schema_version, created_at, updated_at
+SET
+    name = $1,
+    enabled = $2,
+    stop_processing = $3,
+    conditions = $4,
+    actions = $5,
+    updated_at = now()
+WHERE
+    user_id = $6
+    AND id = $7
+RETURNING
+    id, user_id, name, priority, enabled, stop_processing, conditions, actions, schema_version, created_at, updated_at
 `
 
 type UpdateRuleParams struct {

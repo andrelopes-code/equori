@@ -9,6 +9,10 @@ export EQUORI_TEST_DB_PORT ?= 54339
 export EQUORI_TEST_DB_SERVICE ?= db-test
 export EQUORI_TEST_DATABASE_URL ?= postgres://equori:equori@127.0.0.1:$(EQUORI_TEST_DB_PORT)/postgres?sslmode=disable
 COMPOSE := docker compose -f compose.yaml -f compose.dev.yaml
+# Migrations stay unformatted: applied ones are never edited, and the formatter joins the aligned
+# columns of a CREATE TABLE into one line.
+SQL_QUERIES := $(wildcard db/queries/*/*.sql)
+SQL_FMT := web/node_modules/.bin/sql-formatter
 # Secrets and personal settings kept outside the repository (secret key, timezone, owner); read
 # after dev.env and before .env by the targets that run the app.
 LOCAL_ENV ?= $(HOME)/.config/equori/local.env
@@ -26,11 +30,13 @@ check: static web-build
 
 static: fmt-check tidy-check gen-check lint formula-test
 
-fmt: $(TOOLS)
+fmt: $(TOOLS) $(WEB_DEPS)
 	$(BIN)/golangci-lint fmt
+	for f in $(SQL_QUERIES); do $(SQL_FMT) --fix $$f || exit 1; done
 
-fmt-check: $(TOOLS)
+fmt-check: $(TOOLS) $(WEB_DEPS)
 	$(BIN)/golangci-lint fmt --diff
+	for f in $(SQL_QUERIES); do $(SQL_FMT) $$f | diff -u $$f - || exit 1; done
 
 # The Windows form compiles from the same tree (ADR 023); its build-tagged files are checked here too.
 lint: $(TOOLS)

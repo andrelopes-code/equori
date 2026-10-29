@@ -13,12 +13,28 @@ import (
 )
 
 const analyticsStatements = `-- name: AnalyticsStatements :many
-SELECT s.id, s.account_id, s.reference_month, s.closing_date, a.instrument,
-       coalesce(lag(s.closing_date) OVER (ORDER BY s.reference_month), '1900-01-01')::date AS previous_closing
-FROM ledger_statement s
-JOIN ledger_account a ON a.id = s.account_id
-WHERE s.user_id = $1 AND s.account_id = $2 AND a.kind = 'credit_card'
-ORDER BY s.reference_month DESC
+SELECT
+    s.id,
+    s.account_id,
+    s.reference_month,
+    s.closing_date,
+    a.instrument,
+    coalesce(
+        lag(s.closing_date) OVER (
+            ORDER BY
+                s.reference_month
+        ),
+        '1900-01-01'
+    )::date AS previous_closing
+FROM
+    ledger_statement s
+    JOIN ledger_account a ON a.id = s.account_id
+WHERE
+    s.user_id = $1
+    AND s.account_id = $2
+    AND a.kind = 'credit_card'
+ORDER BY
+    s.reference_month DESC
 `
 
 type AnalyticsStatementsParams struct {
@@ -64,7 +80,14 @@ func (q *Queries) AnalyticsStatements(ctx context.Context, arg AnalyticsStatemen
 }
 
 const cardInstrument = `-- name: CardInstrument :one
-SELECT instrument FROM ledger_account WHERE user_id = $1 AND id = $2 AND kind = 'credit_card'
+SELECT
+    instrument
+FROM
+    ledger_account
+WHERE
+    user_id = $1
+    AND id = $2
+    AND kind = 'credit_card'
 `
 
 type CardInstrumentParams struct {
@@ -80,18 +103,42 @@ func (q *Queries) CardInstrument(ctx context.Context, arg CardInstrumentParams) 
 }
 
 const cashCardLines = `-- name: CashCardLines :many
-SELECT p.id, p.transaction_id, p.account_id AS card_id, p.amount, p.card_role, s.id AS statement_id, s.reference_month,
-       (a.instrument = st.base_currency)::boolean AS base, o.date AS plan_purchase_date,
-       EXISTS (SELECT 1 FROM ledger_link l WHERE l.user_id = p.user_id AND l.from_transaction_id = p.transaction_id
-               AND l.link_type = 'anticipation_of')::boolean AS anticipation
-FROM ledger_posting p
-JOIN ledger_account a ON a.id = p.account_id
-JOIN ledger_settings st ON st.user_id = p.user_id
-JOIN ledger_statement s ON s.id = p.statement_id
-LEFT JOIN ledger_installment_plan ip ON ip.id = p.installment_plan_id
-LEFT JOIN ledger_transaction o ON o.id = ip.origin_transaction_id
-WHERE p.user_id = $1 AND NOT p.voided AND a.kind = 'credit_card' AND p.card_role IN ('charge', 'credit')
-ORDER BY p.account_id, s.reference_month, p.id
+SELECT
+    p.id,
+    p.transaction_id,
+    p.account_id AS card_id,
+    p.amount,
+    p.card_role,
+    s.id AS statement_id,
+    s.reference_month,
+    (a.instrument = st.base_currency)::boolean AS base,
+    o.date AS plan_purchase_date,
+    EXISTS (
+        SELECT
+            1
+        FROM
+            ledger_link l
+        WHERE
+            l.user_id = p.user_id
+            AND l.from_transaction_id = p.transaction_id
+            AND l.link_type = 'anticipation_of'
+    )::boolean AS anticipation
+FROM
+    ledger_posting p
+    JOIN ledger_account a ON a.id = p.account_id
+    JOIN ledger_settings st ON st.user_id = p.user_id
+    JOIN ledger_statement s ON s.id = p.statement_id
+    LEFT JOIN ledger_installment_plan ip ON ip.id = p.installment_plan_id
+    LEFT JOIN ledger_transaction o ON o.id = ip.origin_transaction_id
+WHERE
+    p.user_id = $1
+    AND NOT p.voided
+    AND a.kind = 'credit_card'
+    AND p.card_role IN ('charge', 'credit')
+ORDER BY
+    p.account_id,
+    s.reference_month,
+    p.id
 `
 
 type CashCardLinesRow struct {
@@ -141,12 +188,21 @@ func (q *Queries) CashCardLines(ctx context.Context, userID int64) ([]CashCardLi
 }
 
 const cashCategoryPostings = `-- name: CashCategoryPostings :many
-SELECT p.transaction_id, p.account_id, p.amount
-FROM ledger_posting p
-JOIN ledger_account a ON a.id = p.account_id
-WHERE p.user_id = $1 AND NOT p.voided AND a.account_class IN ('expense', 'income')
-  AND p.transaction_id = ANY ($2::uuid[])
-ORDER BY p.transaction_id, p.account_id
+SELECT
+    p.transaction_id,
+    p.account_id,
+    p.amount
+FROM
+    ledger_posting p
+    JOIN ledger_account a ON a.id = p.account_id
+WHERE
+    p.user_id = $1
+    AND NOT p.voided
+    AND a.account_class IN ('expense', 'income')
+    AND p.transaction_id = ANY ($2::UUID[])
+ORDER BY
+    p.transaction_id,
+    p.account_id
 `
 
 type CashCategoryPostingsParams struct {
@@ -181,18 +237,36 @@ func (q *Queries) CashCategoryPostings(ctx context.Context, arg CashCategoryPost
 }
 
 const cashOffCardMonthTotals = `-- name: CashOffCardMonthTotals :many
-SELECT date_trunc('month', p.booked_on)::date AS month, p.account_id, sum(p.amount)::bigint AS total
-FROM ledger_posting p
-JOIN ledger_account a ON a.id = p.account_id
-WHERE p.user_id = $1 AND NOT p.voided AND a.account_class IN ('expense', 'income')
-  AND p.booked_on BETWEEN $2::date AND $3::date
-  AND NOT EXISTS (
-    SELECT 1 FROM ledger_posting q
-    JOIN ledger_account qa ON qa.id = q.account_id
-    JOIN ledger_settings st ON st.user_id = q.user_id
-    WHERE q.transaction_id = p.transaction_id AND q.user_id = p.user_id AND NOT q.voided
-      AND qa.kind = 'credit_card' AND qa.instrument = st.base_currency AND q.card_role IN ('charge', 'credit'))
-GROUP BY 1, p.account_id
+SELECT
+    date_trunc('month', p.booked_on)::date AS MONTH,
+    p.account_id,
+    sum(p.amount)::bigint AS total
+FROM
+    ledger_posting p
+    JOIN ledger_account a ON a.id = p.account_id
+WHERE
+    p.user_id = $1
+    AND NOT p.voided
+    AND a.account_class IN ('expense', 'income')
+    AND p.booked_on BETWEEN $2::date AND $3::date
+    AND NOT EXISTS (
+        SELECT
+            1
+        FROM
+            ledger_posting q
+            JOIN ledger_account qa ON qa.id = q.account_id
+            JOIN ledger_settings st ON st.user_id = q.user_id
+        WHERE
+            q.transaction_id = p.transaction_id
+            AND q.user_id = p.user_id
+            AND NOT q.voided
+            AND qa.kind = 'credit_card'
+            AND qa.instrument = st.base_currency
+            AND q.card_role IN ('charge', 'credit')
+    )
+GROUP BY
+    1,
+    p.account_id
 `
 
 type CashOffCardMonthTotalsParams struct {
@@ -229,18 +303,34 @@ func (q *Queries) CashOffCardMonthTotals(ctx context.Context, arg CashOffCardMon
 }
 
 const cashOffCardTotals = `-- name: CashOffCardTotals :many
-SELECT p.account_id, sum(p.amount)::bigint AS total
-FROM ledger_posting p
-JOIN ledger_account a ON a.id = p.account_id
-WHERE p.user_id = $1 AND NOT p.voided AND a.account_class IN ('expense', 'income')
-  AND p.booked_on BETWEEN $2::date AND $3::date
-  AND NOT EXISTS (
-    SELECT 1 FROM ledger_posting q
-    JOIN ledger_account qa ON qa.id = q.account_id
-    JOIN ledger_settings st ON st.user_id = q.user_id
-    WHERE q.transaction_id = p.transaction_id AND q.user_id = p.user_id AND NOT q.voided
-      AND qa.kind = 'credit_card' AND qa.instrument = st.base_currency AND q.card_role IN ('charge', 'credit'))
-GROUP BY p.account_id
+SELECT
+    p.account_id,
+    sum(p.amount)::bigint AS total
+FROM
+    ledger_posting p
+    JOIN ledger_account a ON a.id = p.account_id
+WHERE
+    p.user_id = $1
+    AND NOT p.voided
+    AND a.account_class IN ('expense', 'income')
+    AND p.booked_on BETWEEN $2::date AND $3::date
+    AND NOT EXISTS (
+        SELECT
+            1
+        FROM
+            ledger_posting q
+            JOIN ledger_account qa ON qa.id = q.account_id
+            JOIN ledger_settings st ON st.user_id = q.user_id
+        WHERE
+            q.transaction_id = p.transaction_id
+            AND q.user_id = p.user_id
+            AND NOT q.voided
+            AND qa.kind = 'credit_card'
+            AND qa.instrument = st.base_currency
+            AND q.card_role IN ('charge', 'credit')
+    )
+GROUP BY
+    p.account_id
 `
 
 type CashOffCardTotalsParams struct {
@@ -276,10 +366,15 @@ func (q *Queries) CashOffCardTotals(ctx context.Context, arg CashOffCardTotalsPa
 }
 
 const cashOrigins = `-- name: CashOrigins :many
-SELECT from_transaction_id, to_transaction_id
-FROM ledger_link
-WHERE user_id = $1 AND link_type IN ('anticipation_of', 'cancellation_of')
-  AND from_transaction_id = ANY ($2::uuid[])
+SELECT
+    from_transaction_id,
+    to_transaction_id
+FROM
+    ledger_link
+WHERE
+    user_id = $1
+    AND link_type IN ('anticipation_of', 'cancellation_of')
+    AND from_transaction_id = ANY ($2::UUID[])
 `
 
 type CashOriginsParams struct {
@@ -314,15 +409,37 @@ func (q *Queries) CashOrigins(ctx context.Context, arg CashOriginsParams) ([]Cas
 }
 
 const cashPayments = `-- name: CashPayments :many
-SELECT p.id, p.transaction_id, p.account_id AS card_id, p.booked_on, p.amount,
-       EXISTS (SELECT 1 FROM ledger_installment_plan ip WHERE ip.user_id = p.user_id
-               AND ip.origin_transaction_id = p.transaction_id AND ip.plan_kind = 'financing')::boolean AS financing
-FROM ledger_posting p
-JOIN ledger_account a ON a.id = p.account_id
-JOIN ledger_settings st ON st.user_id = p.user_id
-WHERE p.user_id = $1 AND NOT p.voided AND a.kind = 'credit_card' AND a.instrument = st.base_currency
-  AND p.card_role = 'payment' AND p.booked_on <= $2::date
-ORDER BY p.account_id, p.booked_on, p.id
+SELECT
+    p.id,
+    p.transaction_id,
+    p.account_id AS card_id,
+    p.booked_on,
+    p.amount,
+    EXISTS (
+        SELECT
+            1
+        FROM
+            ledger_installment_plan ip
+        WHERE
+            ip.user_id = p.user_id
+            AND ip.origin_transaction_id = p.transaction_id
+            AND ip.plan_kind = 'financing'
+    )::boolean AS financing
+FROM
+    ledger_posting p
+    JOIN ledger_account a ON a.id = p.account_id
+    JOIN ledger_settings st ON st.user_id = p.user_id
+WHERE
+    p.user_id = $1
+    AND NOT p.voided
+    AND a.kind = 'credit_card'
+    AND a.instrument = st.base_currency
+    AND p.card_role = 'payment'
+    AND p.booked_on <= $2::date
+ORDER BY
+    p.account_id,
+    p.booked_on,
+    p.id
 `
 
 type CashPaymentsParams struct {
@@ -369,12 +486,28 @@ func (q *Queries) CashPayments(ctx context.Context, arg CashPaymentsParams) ([]C
 }
 
 const chargeCategories = `-- name: ChargeCategories :many
-WITH RECURSIVE c AS (
-    SELECT r.id FROM ledger_account r WHERE r.user_id = $1 AND r.system_role IN ('interest', 'taxes', 'fees')
-    UNION ALL
-    SELECT a.id FROM ledger_account a JOIN c ON a.parent_id = c.id WHERE a.user_id = $1
-)
-SELECT id FROM c
+WITH RECURSIVE
+    c AS (
+        SELECT
+            r.id
+        FROM
+            ledger_account r
+        WHERE
+            r.user_id = $1
+            AND r.system_role IN ('interest', 'taxes', 'fees')
+        UNION ALL
+        SELECT
+            a.id
+        FROM
+            ledger_account a
+            JOIN c ON a.parent_id = c.id
+        WHERE
+            a.user_id = $1
+    )
+SELECT
+    id
+FROM
+    c
 `
 
 // The system categories interest, taxes and fees with their descendants.
@@ -399,7 +532,13 @@ func (q *Queries) ChargeCategories(ctx context.Context, userID int64) ([]uuid.UU
 }
 
 const statementCard = `-- name: StatementCard :one
-SELECT s.account_id FROM ledger_statement s WHERE s.user_id = $1 AND s.id = $2
+SELECT
+    s.account_id
+FROM
+    ledger_statement s
+WHERE
+    s.user_id = $1
+    AND s.id = $2
 `
 
 type StatementCardParams struct {

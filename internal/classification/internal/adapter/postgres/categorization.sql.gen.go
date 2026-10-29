@@ -13,8 +13,14 @@ import (
 )
 
 const categorizationsByIDs = `-- name: CategorizationsByIDs :many
-SELECT transaction_id, user_id, transaction_version, transaction_date, method, rule_id, corrected, match_key, category_id, voided, decided_at FROM classification_categorization
-WHERE user_id = $1 AND transaction_id = ANY($2::uuid[]) AND NOT voided
+SELECT
+    transaction_id, user_id, transaction_version, transaction_date, method, rule_id, corrected, match_key, category_id, voided, decided_at
+FROM
+    classification_categorization
+WHERE
+    user_id = $1
+    AND transaction_id = ANY ($2::UUID[])
+    AND NOT voided
 `
 
 type CategorizationsByIDsParams struct {
@@ -56,9 +62,17 @@ func (q *Queries) CategorizationsByIDs(ctx context.Context, arg CategorizationsB
 }
 
 const countMethods = `-- name: CountMethods :many
-SELECT coalesce(method, '')::text AS method, count(*) AS n FROM classification_categorization
-WHERE user_id = $1 AND NOT voided AND transaction_date BETWEEN $2 AND $3
-GROUP BY method
+SELECT
+    coalesce(method, '')::text AS method,
+    count(*) AS n
+FROM
+    classification_categorization
+WHERE
+    user_id = $1
+    AND NOT voided
+    AND transaction_date BETWEEN $2 AND $3
+GROUP BY
+    method
 `
 
 type CountMethodsParams struct {
@@ -94,7 +108,11 @@ func (q *Queries) CountMethods(ctx context.Context, arg CountMethodsParams) ([]C
 
 const deleteCategorization = `-- name: DeleteCategorization :exec
 DELETE FROM classification_categorization
-WHERE user_id = $1 AND transaction_id = $2 AND transaction_version < $3 AND NOT voided
+WHERE
+    user_id = $1
+    AND transaction_id = $2
+    AND transaction_version < $3
+    AND NOT voided
 `
 
 type DeleteCategorizationParams struct {
@@ -109,7 +127,13 @@ func (q *Queries) DeleteCategorization(ctx context.Context, arg DeleteCategoriza
 }
 
 const getCategorization = `-- name: GetCategorization :one
-SELECT transaction_id, user_id, transaction_version, transaction_date, method, rule_id, corrected, match_key, category_id, voided, decided_at FROM classification_categorization WHERE user_id = $1 AND transaction_id = $2
+SELECT
+    transaction_id, user_id, transaction_version, transaction_date, method, rule_id, corrected, match_key, category_id, voided, decided_at
+FROM
+    classification_categorization
+WHERE
+    user_id = $1
+    AND transaction_id = $2
 `
 
 type GetCategorizationParams struct {
@@ -137,9 +161,27 @@ func (q *Queries) GetCategorization(ctx context.Context, arg GetCategorizationPa
 }
 
 const markCategorizationVoided = `-- name: MarkCategorizationVoided :exec
-INSERT INTO classification_categorization (transaction_id, user_id, transaction_version, transaction_date, voided, decided_at)
-VALUES ($1, $2, $3, $4, true, $5)
-ON CONFLICT (transaction_id) DO UPDATE SET voided = true
+INSERT INTO
+    classification_categorization (
+        transaction_id,
+        user_id,
+        transaction_version,
+        transaction_date,
+        voided,
+        decided_at
+    )
+VALUES
+    (
+        $1,
+        $2,
+        $3,
+        $4,
+        TRUE,
+        $5
+    )
+ON CONFLICT (transaction_id) DO UPDATE
+SET
+    voided = TRUE
 `
 
 type MarkCategorizationVoidedParams struct {
@@ -163,11 +205,24 @@ func (q *Queries) MarkCategorizationVoided(ctx context.Context, arg MarkCategori
 }
 
 const pendingCategorizations = `-- name: PendingCategorizations :many
-SELECT transaction_id, transaction_date FROM classification_categorization
-WHERE user_id = $1 AND method IS NULL AND NOT voided
-  AND ($2::date IS NULL OR (transaction_date, transaction_id) > ($2::date, $3::uuid))
-ORDER BY transaction_date, transaction_id
-LIMIT $4
+SELECT
+    transaction_id,
+    transaction_date
+FROM
+    classification_categorization
+WHERE
+    user_id = $1
+    AND method IS NULL
+    AND NOT voided
+    AND (
+        $2::date IS NULL
+        OR (transaction_date, transaction_id) > ($2::date, $3::uuid)
+    )
+ORDER BY
+    transaction_date,
+    transaction_id
+LIMIT
+    $4
 `
 
 type PendingCategorizationsParams struct {
@@ -208,11 +263,24 @@ func (q *Queries) PendingCategorizations(ctx context.Context, arg PendingCategor
 }
 
 const previewCandidates = `-- name: PreviewCandidates :many
-SELECT transaction_id, transaction_date FROM classification_categorization
-WHERE user_id = $1 AND NOT voided AND transaction_date BETWEEN $2::date AND $3::date
-  AND ($4::date IS NULL OR (transaction_date, transaction_id) < ($4::date, $5::uuid))
-ORDER BY transaction_date DESC, transaction_id DESC
-LIMIT $6
+SELECT
+    transaction_id,
+    transaction_date
+FROM
+    classification_categorization
+WHERE
+    user_id = $1
+    AND NOT voided
+    AND transaction_date BETWEEN $2::date AND $3::date
+    AND (
+        $4::date IS NULL
+        OR (transaction_date, transaction_id) < ($4::date, $5::uuid)
+    )
+ORDER BY
+    transaction_date DESC,
+    transaction_id DESC
+LIMIT
+    $6
 `
 
 type PreviewCandidatesParams struct {
@@ -258,10 +326,19 @@ func (q *Queries) PreviewCandidates(ctx context.Context, arg PreviewCandidatesPa
 }
 
 const ruleUsage = `-- name: RuleUsage :many
-SELECT rule_id::uuid AS rule_id, count(*)::int AS n, max(decided_at)::timestamptz AS last_decided_at
-FROM classification_categorization
-WHERE user_id = $1 AND method = 'rule' AND NOT voided AND rule_id = ANY($2::uuid[])
-GROUP BY rule_id
+SELECT
+    rule_id::uuid AS rule_id,
+    count(*)::int AS n,
+    max(decided_at)::timestamptz AS last_decided_at
+FROM
+    classification_categorization
+WHERE
+    user_id = $1
+    AND method = 'rule'
+    AND NOT voided
+    AND rule_id = ANY ($2::UUID[])
+GROUP BY
+    rule_id
 `
 
 type RuleUsageParams struct {
@@ -297,18 +374,47 @@ func (q *Queries) RuleUsage(ctx context.Context, arg RuleUsageParams) ([]RuleUsa
 }
 
 const upsertCategorization = `-- name: UpsertCategorization :execrows
-INSERT INTO classification_categorization (
-    transaction_id, user_id, transaction_version, transaction_date, method, rule_id, corrected, match_key, category_id, voided, decided_at
-) VALUES (
-    $1, $2, $3, $4, $5, $6, $7,
-    $8, $9, false, $10
-)
+INSERT INTO
+    classification_categorization (
+        transaction_id,
+        user_id,
+        transaction_version,
+        transaction_date,
+        method,
+        rule_id,
+        corrected,
+        match_key,
+        category_id,
+        voided,
+        decided_at
+    )
+VALUES
+    (
+        $1,
+        $2,
+        $3,
+        $4,
+        $5,
+        $6,
+        $7,
+        $8,
+        $9,
+        FALSE,
+        $10
+    )
 ON CONFLICT (transaction_id) DO UPDATE
-SET transaction_version = EXCLUDED.transaction_version, transaction_date = EXCLUDED.transaction_date,
-    method = EXCLUDED.method, rule_id = EXCLUDED.rule_id, corrected = EXCLUDED.corrected,
-    match_key = EXCLUDED.match_key, category_id = EXCLUDED.category_id, decided_at = EXCLUDED.decided_at
-WHERE classification_categorization.transaction_version < EXCLUDED.transaction_version
-  AND NOT classification_categorization.voided
+SET
+    transaction_version = EXCLUDED.transaction_version,
+    transaction_date = EXCLUDED.transaction_date,
+    method = EXCLUDED.method,
+    rule_id = EXCLUDED.rule_id,
+    corrected = EXCLUDED.corrected,
+    match_key = EXCLUDED.match_key,
+    category_id = EXCLUDED.category_id,
+    decided_at = EXCLUDED.decided_at
+WHERE
+    classification_categorization.transaction_version < EXCLUDED.transaction_version
+    AND NOT classification_categorization.voided
 `
 
 type UpsertCategorizationParams struct {

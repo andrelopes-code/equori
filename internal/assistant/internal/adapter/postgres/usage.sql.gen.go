@@ -11,17 +11,42 @@ import (
 )
 
 const addUsage = `-- name: AddUsage :exec
-INSERT INTO assistant_usage (user_id, day, provider_id, model, use_id, requests, errors, quota_errors,
-                             input_tokens, output_tokens, cooling_until)
-VALUES ($1, $2, $3, $4, $5, 1, $6, $7, $8, $9,
-        $10)
-ON CONFLICT (user_id, day, provider_id, model, use_id) DO UPDATE SET
-    requests      = assistant_usage.requests + 1,
-    errors        = assistant_usage.errors + EXCLUDED.errors,
-    quota_errors  = assistant_usage.quota_errors + EXCLUDED.quota_errors,
-    input_tokens  = assistant_usage.input_tokens + EXCLUDED.input_tokens,
+INSERT INTO
+    assistant_usage (
+        user_id,
+        DAY,
+        provider_id,
+        model,
+        use_id,
+        requests,
+        errors,
+        quota_errors,
+        input_tokens,
+        output_tokens,
+        cooling_until
+    )
+VALUES
+    (
+        $1,
+        $2,
+        $3,
+        $4,
+        $5,
+        1,
+        $6,
+        $7,
+        $8,
+        $9,
+        $10
+    )
+ON CONFLICT (user_id, DAY, provider_id, model, use_id) DO UPDATE
+SET
+    requests = assistant_usage.requests + 1,
+    errors = assistant_usage.errors + EXCLUDED.errors,
+    quota_errors = assistant_usage.quota_errors + EXCLUDED.quota_errors,
+    input_tokens = assistant_usage.input_tokens + EXCLUDED.input_tokens,
     output_tokens = assistant_usage.output_tokens + EXCLUDED.output_tokens,
-    cooling_until = GREATEST(assistant_usage.cooling_until, EXCLUDED.cooling_until)
+    cooling_until = greatest(assistant_usage.cooling_until, EXCLUDED.cooling_until)
 `
 
 type AddUsageParams struct {
@@ -55,7 +80,10 @@ func (q *Queries) AddUsage(ctx context.Context, arg AddUsageParams) error {
 }
 
 const deleteProviderLimits = `-- name: DeleteProviderLimits :exec
-DELETE FROM assistant_usage_limit WHERE user_id = $1 AND provider_id = $2
+DELETE FROM assistant_usage_limit
+WHERE
+    user_id = $1
+    AND provider_id = $2
 `
 
 type DeleteProviderLimitsParams struct {
@@ -69,7 +97,10 @@ func (q *Queries) DeleteProviderLimits(ctx context.Context, arg DeleteProviderLi
 }
 
 const deleteProviderUsage = `-- name: DeleteProviderUsage :exec
-DELETE FROM assistant_usage WHERE user_id = $1 AND provider_id = $2
+DELETE FROM assistant_usage
+WHERE
+    user_id = $1
+    AND provider_id = $2
 `
 
 type DeleteProviderUsageParams struct {
@@ -83,7 +114,11 @@ func (q *Queries) DeleteProviderUsage(ctx context.Context, arg DeleteProviderUsa
 }
 
 const deleteUsageLimit = `-- name: DeleteUsageLimit :exec
-DELETE FROM assistant_usage_limit WHERE user_id = $1 AND provider_id = $2 AND model = $3
+DELETE FROM assistant_usage_limit
+WHERE
+    user_id = $1
+    AND provider_id = $2
+    AND model = $3
 `
 
 type DeleteUsageLimitParams struct {
@@ -98,7 +133,15 @@ func (q *Queries) DeleteUsageLimit(ctx context.Context, arg DeleteUsageLimitPara
 }
 
 const listUsageLimits = `-- name: ListUsageLimits :many
-SELECT user_id, provider_id, model, requests_per_day, tokens_per_day FROM assistant_usage_limit WHERE user_id = $1 ORDER BY provider_id, model
+SELECT
+    user_id, provider_id, model, requests_per_day, tokens_per_day
+FROM
+    assistant_usage_limit
+WHERE
+    user_id = $1
+ORDER BY
+    provider_id,
+    model
 `
 
 func (q *Queries) ListUsageLimits(ctx context.Context, userID int64) ([]AssistantUsageLimit, error) {
@@ -128,11 +171,20 @@ func (q *Queries) ListUsageLimits(ctx context.Context, userID int64) ([]Assistan
 }
 
 const setUsageLimit = `-- name: SetUsageLimit :exec
-INSERT INTO assistant_usage_limit (user_id, provider_id, model, requests_per_day, tokens_per_day)
-VALUES ($1, $2, $3, $4, $5)
-ON CONFLICT (user_id, provider_id, model) DO UPDATE SET
+INSERT INTO
+    assistant_usage_limit (user_id, provider_id, model, requests_per_day, tokens_per_day)
+VALUES
+    (
+        $1,
+        $2,
+        $3,
+        $4,
+        $5
+    )
+ON CONFLICT (user_id, provider_id, model) DO UPDATE
+SET
     requests_per_day = EXCLUDED.requests_per_day,
-    tokens_per_day   = EXCLUDED.tokens_per_day
+    tokens_per_day = EXCLUDED.tokens_per_day
 `
 
 type SetUsageLimitParams struct {
@@ -155,14 +207,26 @@ func (q *Queries) SetUsageLimit(ctx context.Context, arg SetUsageLimitParams) er
 }
 
 const usageByDay = `-- name: UsageByDay :many
-SELECT day, provider_id, model,
-       sum(requests)::bigint AS requests,
-       sum(errors)::bigint   AS errors,
-       sum(input_tokens + output_tokens)::bigint AS tokens
-FROM assistant_usage
-WHERE user_id = $1 AND day BETWEEN $2 AND $3
-GROUP BY day, provider_id, model
-ORDER BY day, provider_id, model
+SELECT
+    DAY,
+    provider_id,
+    model,
+    sum(requests)::bigint AS requests,
+    sum(errors)::bigint AS errors,
+    sum(input_tokens + output_tokens)::bigint AS tokens
+FROM
+    assistant_usage
+WHERE
+    user_id = $1
+    AND DAY BETWEEN $2 AND $3
+GROUP BY
+    DAY,
+    provider_id,
+    model
+ORDER BY
+    DAY,
+    provider_id,
+    model
 `
 
 type UsageByDayParams struct {
@@ -208,18 +272,45 @@ func (q *Queries) UsageByDay(ctx context.Context, arg UsageByDayParams) ([]Usage
 }
 
 const usageSince = `-- name: UsageSince :many
-SELECT provider_id, model,
-       COALESCE(sum(requests) FILTER (WHERE day = $1::date), 0)::bigint      AS today_requests,
-       COALESCE(sum(errors) FILTER (WHERE day = $1::date), 0)::bigint        AS today_errors,
-       COALESCE(sum(input_tokens + output_tokens) FILTER (WHERE day = $1::date), 0)::bigint AS today_tokens,
-       sum(requests)::bigint                                                      AS period_requests,
-       sum(input_tokens + output_tokens)::bigint                                  AS period_tokens,
-       -- Year 1 is Go's zero time: no cooldown.
-       COALESCE(max(cooling_until), '0001-01-01 00:00:00+00')::timestamptz        AS cooling_until
-FROM assistant_usage
-WHERE user_id = $2 AND day >= $3::date
-GROUP BY provider_id, model
-ORDER BY provider_id, model
+SELECT
+    provider_id,
+    model,
+    coalesce(
+        sum(requests) FILTER (
+            WHERE
+                DAY = $1::date
+        ),
+        0
+    )::bigint AS today_requests,
+    coalesce(
+        sum(errors) FILTER (
+            WHERE
+                DAY = $1::date
+        ),
+        0
+    )::bigint AS today_errors,
+    coalesce(
+        sum(input_tokens + output_tokens) FILTER (
+            WHERE
+                DAY = $1::date
+        ),
+        0
+    )::bigint AS today_tokens,
+    sum(requests)::bigint AS period_requests,
+    sum(input_tokens + output_tokens)::bigint AS period_tokens,
+    -- Year 1 is Go's zero time: no cooldown.
+    coalesce(max(cooling_until), '0001-01-01 00:00:00+00')::timestamptz AS cooling_until
+FROM
+    assistant_usage
+WHERE
+    user_id = $2
+    AND DAY >= $3::date
+GROUP BY
+    provider_id,
+    model
+ORDER BY
+    provider_id,
+    model
 `
 
 type UsageSinceParams struct {

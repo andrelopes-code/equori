@@ -13,7 +13,9 @@ import (
 )
 
 const deleteIndexExpectations = `-- name: DeleteIndexExpectations :exec
-DELETE FROM marketdata_index_expectation WHERE index_id = $1
+DELETE FROM marketdata_index_expectation
+WHERE
+    index_id = $1
 `
 
 func (q *Queries) DeleteIndexExpectations(ctx context.Context, indexID string) error {
@@ -22,8 +24,10 @@ func (q *Queries) DeleteIndexExpectations(ctx context.Context, indexID string) e
 }
 
 const insertIndexExpectation = `-- name: InsertIndexExpectation :exec
-INSERT INTO marketdata_index_expectation (index_id, date, rate, survey_date, source)
-VALUES ($1, $2, $3, $4, $5)
+INSERT INTO
+    marketdata_index_expectation (index_id, date, rate, survey_date, source)
+VALUES
+    ($1, $2, $3, $4, $5)
 `
 
 type InsertIndexExpectationParams struct {
@@ -46,8 +50,13 @@ func (q *Queries) InsertIndexExpectation(ctx context.Context, arg InsertIndexExp
 }
 
 const latestSurvey = `-- name: LatestSurvey :one
-SELECT coalesce(max(survey_date), DATE '0001-01-01')::date AS latest, (count(*) > 0)::boolean AS found
-FROM marketdata_index_expectation WHERE source = $1
+SELECT
+    coalesce(max(survey_date), DATE '0001-01-01')::date AS latest,
+    (count(*) > 0)::boolean AS found
+FROM
+    marketdata_index_expectation
+WHERE
+    source = $1
 `
 
 type LatestSurveyRow struct {
@@ -64,7 +73,16 @@ func (q *Queries) LatestSurvey(ctx context.Context, source string) (LatestSurvey
 }
 
 const listIndexExpectations = `-- name: ListIndexExpectations :many
-SELECT date, rate, survey_date FROM marketdata_index_expectation WHERE index_id = $1 ORDER BY date
+SELECT
+    date,
+    rate,
+    survey_date
+FROM
+    marketdata_index_expectation
+WHERE
+    index_id = $1
+ORDER BY
+    date
 `
 
 type ListIndexExpectationsRow struct {

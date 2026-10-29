@@ -13,11 +13,22 @@ import (
 )
 
 const accountFlows = `-- name: AccountFlows :many
-SELECT r.date, r.inflow_booked, r.outflow_booked
-FROM reporting_account_day r
-WHERE r.user_id = $1 AND r.account_id = $2 AND r.date BETWEEN $3::date AND $4::date
-  AND (r.inflow_booked <> 0 OR r.outflow_booked <> 0)
-ORDER BY r.date
+SELECT
+    r.date,
+    r.inflow_booked,
+    r.outflow_booked
+FROM
+    reporting_account_day r
+WHERE
+    r.user_id = $1
+    AND r.account_id = $2
+    AND r.date BETWEEN $3::date AND $4::date
+    AND (
+        r.inflow_booked <> 0
+        OR r.outflow_booked <> 0
+    )
+ORDER BY
+    r.date
 `
 
 type AccountFlowsParams struct {
@@ -60,7 +71,13 @@ func (q *Queries) AccountFlows(ctx context.Context, arg AccountFlowsParams) ([]A
 }
 
 const accountInstrument = `-- name: AccountInstrument :one
-SELECT instrument FROM ledger_account WHERE user_id = $1 AND id = $2
+SELECT
+    instrument
+FROM
+    ledger_account
+WHERE
+    user_id = $1
+    AND id = $2
 `
 
 type AccountInstrumentParams struct {
@@ -76,7 +93,13 @@ func (q *Queries) AccountInstrument(ctx context.Context, arg AccountInstrumentPa
 }
 
 const accountName = `-- name: AccountName :one
-SELECT name FROM ledger_account WHERE user_id = $1 AND id = $2
+SELECT
+    name
+FROM
+    ledger_account
+WHERE
+    user_id = $1
+    AND id = $2
 `
 
 type AccountNameParams struct {
@@ -92,12 +115,25 @@ func (q *Queries) AccountName(ctx context.Context, arg AccountNameParams) (strin
 }
 
 const categoryTotals = `-- name: CategoryTotals :many
-SELECT a.id, a.parent_id, a.name, a.instrument, a.closed_on, coalesce(sum(r.delta_booked), 0)::bigint AS total
-FROM ledger_account a
-LEFT JOIN reporting_account_day r ON r.account_id = a.id AND r.date BETWEEN $1::date AND $2::date
-WHERE a.user_id = $3 AND a.account_class = $4
-GROUP BY a.id
-ORDER BY a.name, a.id
+SELECT
+    a.id,
+    a.parent_id,
+    a.name,
+    a.instrument,
+    a.closed_on,
+    coalesce(sum(r.delta_booked), 0)::bigint AS total
+FROM
+    ledger_account a
+    LEFT JOIN reporting_account_day r ON r.account_id = a.id
+    AND r.date BETWEEN $1::date AND $2::date
+WHERE
+    a.user_id = $3
+    AND a.account_class = $4
+GROUP BY
+    a.id
+ORDER BY
+    a.name,
+    a.id
 `
 
 type CategoryTotalsParams struct {
@@ -150,7 +186,10 @@ func (q *Queries) CategoryTotals(ctx context.Context, arg CategoryTotalsParams) 
 }
 
 const deleteAccountDaysFrom = `-- name: DeleteAccountDaysFrom :exec
-DELETE FROM reporting_account_day WHERE account_id = $1 AND date >= $2
+DELETE FROM reporting_account_day
+WHERE
+    account_id = $1
+    AND date >= $2
 `
 
 type DeleteAccountDaysFromParams struct {
@@ -164,35 +203,109 @@ func (q *Queries) DeleteAccountDaysFrom(ctx context.Context, arg DeleteAccountDa
 }
 
 const insertAccountDaysFrom = `-- name: InsertAccountDaysFrom :exec
-INSERT INTO reporting_account_day (user_id, account_id, date, delta_booked, delta_settled, balance_booked, balance_settled, inflow_booked, outflow_booked)
-SELECT $1::bigint, $2::uuid, d.date, d.delta_booked, d.delta_settled,
-       base.booked + sum(d.delta_booked) OVER w,
-       base.settled + sum(d.delta_settled) OVER w,
-       d.inflow, d.outflow
-FROM (
-    SELECT x.date, sum(x.booked)::bigint AS delta_booked, sum(x.settled)::bigint AS delta_settled,
-           coalesce(sum(x.booked) FILTER (WHERE x.booked > 0), 0)::bigint AS inflow,
-           coalesce(-sum(x.booked) FILTER (WHERE x.booked < 0), 0)::bigint AS outflow
-    FROM (
-        SELECT p.booked_on AS date, p.amount AS booked, 0::bigint AS settled
-        FROM ledger_posting p
-        WHERE p.user_id = $1::bigint AND p.account_id = $2::uuid AND NOT p.voided AND p.booked_on >= $3::date
-        UNION ALL
-        SELECT coalesce(p.settled_on, p.booked_on), 0::bigint, p.amount
-        FROM ledger_posting p
-        WHERE p.user_id = $1::bigint AND p.account_id = $2::uuid AND NOT p.voided
-          AND coalesce(p.settled_on, p.booked_on) >= $3::date
-    ) x
-    GROUP BY x.date
-    HAVING sum(x.booked) <> 0 OR sum(x.settled) <> 0 OR bool_or(x.booked <> 0)
-) d
-CROSS JOIN (
-    SELECT coalesce(sum(p.amount) FILTER (WHERE p.booked_on < $3::date), 0)::bigint AS booked,
-           coalesce(sum(p.amount) FILTER (WHERE coalesce(p.settled_on, p.booked_on) < $3::date), 0)::bigint AS settled
-    FROM ledger_posting p
-    WHERE p.user_id = $1::bigint AND p.account_id = $2::uuid AND NOT p.voided
-) base
-WINDOW w AS (ORDER BY d.date)
+INSERT INTO
+    reporting_account_day (
+        user_id,
+        account_id,
+        date,
+        delta_booked,
+        delta_settled,
+        balance_booked,
+        balance_settled,
+        inflow_booked,
+        outflow_booked
+    )
+SELECT
+    $1::bigint,
+    $2::uuid,
+    d.date,
+    d.delta_booked,
+    d.delta_settled,
+    base.booked + sum(d.delta_booked) OVER w,
+    base.settled + sum(d.delta_settled) OVER w,
+    d.inflow,
+    d.outflow
+FROM
+    (
+        SELECT
+            x.date,
+            sum(x.booked)::bigint AS delta_booked,
+            sum(x.settled)::bigint AS delta_settled,
+            coalesce(
+                sum(x.booked) FILTER (
+                    WHERE
+                        x.booked > 0
+                ),
+                0
+            )::bigint AS inflow,
+            coalesce(
+                - sum(x.booked) FILTER (
+                    WHERE
+                        x.booked < 0
+                ),
+                0
+            )::bigint AS outflow
+        FROM
+            (
+                SELECT
+                    p.booked_on AS date,
+                    p.amount AS booked,
+                    0::bigint AS settled
+                FROM
+                    ledger_posting p
+                WHERE
+                    p.user_id = $1::bigint
+                    AND p.account_id = $2::uuid
+                    AND NOT p.voided
+                    AND p.booked_on >= $3::date
+                UNION ALL
+                SELECT
+                    coalesce(p.settled_on, p.booked_on),
+                    0::bigint,
+                    p.amount
+                FROM
+                    ledger_posting p
+                WHERE
+                    p.user_id = $1::bigint
+                    AND p.account_id = $2::uuid
+                    AND NOT p.voided
+                    AND coalesce(p.settled_on, p.booked_on) >= $3::date
+            ) x
+        GROUP BY
+            x.date
+        HAVING
+            sum(x.booked) <> 0
+            OR sum(x.settled) <> 0
+            OR bool_or(x.booked <> 0)
+    ) d
+    CROSS JOIN (
+        SELECT
+            coalesce(
+                sum(p.amount) FILTER (
+                    WHERE
+                        p.booked_on < $3::date
+                ),
+                0
+            )::bigint AS booked,
+            coalesce(
+                sum(p.amount) FILTER (
+                    WHERE
+                        coalesce(p.settled_on, p.booked_on) < $3::date
+                ),
+                0
+            )::bigint AS settled
+        FROM
+            ledger_posting p
+        WHERE
+            p.user_id = $1::bigint
+            AND p.account_id = $2::uuid
+            AND NOT p.voided
+    ) base
+WINDOW
+    w AS (
+        ORDER BY
+            d.date
+    )
 `
 
 type InsertAccountDaysFromParams struct {
@@ -207,7 +320,14 @@ func (q *Queries) InsertAccountDaysFrom(ctx context.Context, arg InsertAccountDa
 }
 
 const listAllAccounts = `-- name: ListAllAccounts :many
-SELECT user_id, id FROM ledger_account ORDER BY user_id, id
+SELECT
+    user_id,
+    id
+FROM
+    ledger_account
+ORDER BY
+    user_id,
+    id
 `
 
 type ListAllAccountsRow struct {
@@ -236,16 +356,42 @@ func (q *Queries) ListAllAccounts(ctx context.Context) ([]ListAllAccountsRow, er
 }
 
 const treeDailyDeltas = `-- name: TreeDailyDeltas :many
-WITH RECURSIVE tree AS (
-    SELECT a.id FROM ledger_account a WHERE a.user_id = $2 AND a.id = $3
-    UNION ALL
-    SELECT c.id FROM ledger_account c JOIN tree ON c.parent_id = tree.id WHERE c.user_id = $2
-)
-SELECT r.date, sum(r.delta_booked)::bigint AS delta_booked, sum(r.delta_settled)::bigint AS delta_settled
-FROM reporting_account_day r
-WHERE r.account_id IN (SELECT id FROM tree) AND r.date <= $1
-GROUP BY r.date
-ORDER BY r.date
+WITH RECURSIVE
+    tree AS (
+        SELECT
+            a.id
+        FROM
+            ledger_account a
+        WHERE
+            a.user_id = $2
+            AND a.id = $3
+        UNION ALL
+        SELECT
+            c.id
+        FROM
+            ledger_account c
+            JOIN tree ON c.parent_id = tree.id
+        WHERE
+            c.user_id = $2
+    )
+SELECT
+    r.date,
+    sum(r.delta_booked)::bigint AS delta_booked,
+    sum(r.delta_settled)::bigint AS delta_settled
+FROM
+    reporting_account_day r
+WHERE
+    r.account_id IN (
+        SELECT
+            id
+        FROM
+            tree
+    )
+    AND r.date <= $1
+GROUP BY
+    r.date
+ORDER BY
+    r.date
 `
 
 type TreeDailyDeltasParams struct {
@@ -281,12 +427,32 @@ func (q *Queries) TreeDailyDeltas(ctx context.Context, arg TreeDailyDeltasParams
 }
 
 const treeInstruments = `-- name: TreeInstruments :many
-WITH RECURSIVE tree AS (
-    SELECT a.id, a.instrument FROM ledger_account a WHERE a.user_id = $1 AND a.id = $2
-    UNION ALL
-    SELECT c.id, c.instrument FROM ledger_account c JOIN tree ON c.parent_id = tree.id WHERE c.user_id = $1
-)
-SELECT DISTINCT instrument FROM tree ORDER BY instrument
+WITH RECURSIVE
+    tree AS (
+        SELECT
+            a.id,
+            a.instrument
+        FROM
+            ledger_account a
+        WHERE
+            a.user_id = $1
+            AND a.id = $2
+        UNION ALL
+        SELECT
+            c.id,
+            c.instrument
+        FROM
+            ledger_account c
+            JOIN tree ON c.parent_id = tree.id
+        WHERE
+            c.user_id = $1
+    )
+SELECT DISTINCT
+    instrument
+FROM
+    tree
+ORDER BY
+    instrument
 `
 
 type TreeInstrumentsParams struct {

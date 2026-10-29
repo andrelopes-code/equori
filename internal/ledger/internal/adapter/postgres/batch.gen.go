@@ -19,16 +19,50 @@ var (
 )
 
 const insertPostings = `-- name: InsertPostings :batchexec
-INSERT INTO ledger_posting (
-    user_id, transaction_id, account_id, position, amount, weight, booked_on, settled_on,
-    status, original_amount, original_instrument, memo,
-    statement_id, statement_basis, card_role, installment_plan_id, installment_number, installment_count, external_record_id
-) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8,
-    $9, $10, $11, $12,
-    $13, $14, $15, $16,
-    $17, $18, $19
-)
+INSERT INTO
+    ledger_posting (
+        user_id,
+        transaction_id,
+        account_id,
+        position,
+        amount,
+        weight,
+        booked_on,
+        settled_on,
+        status,
+        original_amount,
+        original_instrument,
+        memo,
+        statement_id,
+        statement_basis,
+        card_role,
+        installment_plan_id,
+        installment_number,
+        installment_count,
+        external_record_id
+    )
+VALUES
+    (
+        $1,
+        $2,
+        $3,
+        $4,
+        $5,
+        $6,
+        $7,
+        $8,
+        $9,
+        $10,
+        $11,
+        $12,
+        $13,
+        $14,
+        $15,
+        $16,
+        $17,
+        $18,
+        $19
+    )
 `
 
 type InsertPostingsBatchResults struct {

@@ -13,12 +13,23 @@ import (
 )
 
 const anticipatedReferences = `-- name: AnticipatedReferences :many
-SELECT DISTINCT s.reference_month
-FROM ledger_link l
-JOIN ledger_transaction t ON t.user_id = l.user_id AND t.id = l.from_transaction_id AND t.voided_at IS NULL
-JOIN ledger_posting p ON p.user_id = l.user_id AND p.transaction_id = t.id AND p.card_role = 'credit' AND NOT p.voided
-JOIN ledger_statement s ON s.user_id = l.user_id AND s.id = p.statement_id
-WHERE l.user_id = $1 AND l.to_transaction_id = $2 AND l.link_type = 'anticipation_of'
+SELECT DISTINCT
+    s.reference_month
+FROM
+    ledger_link l
+    JOIN ledger_transaction t ON t.user_id = l.user_id
+    AND t.id = l.from_transaction_id
+    AND t.voided_at IS NULL
+    JOIN ledger_posting p ON p.user_id = l.user_id
+    AND p.transaction_id = t.id
+    AND p.card_role = 'credit'
+    AND NOT p.voided
+    JOIN ledger_statement s ON s.user_id = l.user_id
+    AND s.id = p.statement_id
+WHERE
+    l.user_id = $1
+    AND l.to_transaction_id = $2
+    AND l.link_type = 'anticipation_of'
 `
 
 type AnticipatedReferencesParams struct {
@@ -47,12 +58,23 @@ func (q *Queries) AnticipatedReferences(ctx context.Context, arg AnticipatedRefe
 }
 
 const anticipationDiscount = `-- name: AnticipationDiscount :one
-SELECT coalesce(-sum(p.amount), 0)::bigint
-FROM ledger_link l
-JOIN ledger_transaction t ON t.user_id = l.user_id AND t.id = l.from_transaction_id AND t.voided_at IS NULL
-JOIN ledger_posting p ON p.user_id = l.user_id AND p.transaction_id = t.id AND NOT p.voided
-JOIN ledger_account a ON a.user_id = l.user_id AND a.id = p.account_id AND a.system_role = 'discounts'
-WHERE l.user_id = $1 AND l.to_transaction_id = $2 AND l.link_type = 'anticipation_of'
+SELECT
+    coalesce(- sum(p.amount), 0)::bigint
+FROM
+    ledger_link l
+    JOIN ledger_transaction t ON t.user_id = l.user_id
+    AND t.id = l.from_transaction_id
+    AND t.voided_at IS NULL
+    JOIN ledger_posting p ON p.user_id = l.user_id
+    AND p.transaction_id = t.id
+    AND NOT p.voided
+    JOIN ledger_account a ON a.user_id = l.user_id
+    AND a.id = p.account_id
+    AND a.system_role = 'discounts'
+WHERE
+    l.user_id = $1
+    AND l.to_transaction_id = $2
+    AND l.link_type = 'anticipation_of'
 `
 
 type AnticipationDiscountParams struct {
@@ -69,12 +91,19 @@ func (q *Queries) AnticipationDiscount(ctx context.Context, arg AnticipationDisc
 }
 
 const committedInstallments = `-- name: CommittedInstallments :one
-SELECT coalesce(-sum(p.amount), 0)::bigint
-FROM ledger_posting p
-JOIN ledger_statement s ON s.id = p.statement_id
-WHERE p.user_id = $1 AND p.account_id = $2 AND NOT p.voided
-  AND p.installment_plan_id IS NOT NULL AND p.card_role = 'charge'
-  AND s.reference_month = $3 AND s.closing_date > $4
+SELECT
+    coalesce(- sum(p.amount), 0)::bigint
+FROM
+    ledger_posting p
+    JOIN ledger_statement s ON s.id = p.statement_id
+WHERE
+    p.user_id = $1
+    AND p.account_id = $2
+    AND NOT p.voided
+    AND p.installment_plan_id IS NOT NULL
+    AND p.card_role = 'charge'
+    AND s.reference_month = $3
+    AND s.closing_date > $4
 `
 
 type CommittedInstallmentsParams struct {
@@ -97,16 +126,30 @@ func (q *Queries) CommittedInstallments(ctx context.Context, arg CommittedInstal
 }
 
 const ensureStatement = `-- name: EnsureStatement :one
-WITH inserted AS (
-    INSERT INTO ledger_statement (user_id, account_id, reference_month, closing_date, due_date)
-    VALUES ($1, $2, $3, $4, $5)
-    ON CONFLICT (account_id, reference_month) DO NOTHING
-    RETURNING id
-)
-SELECT id FROM inserted
+WITH
+    inserted AS (
+        INSERT INTO
+            ledger_statement (user_id, account_id, reference_month, closing_date, due_date)
+        VALUES
+            ($1, $2, $3, $4, $5)
+        ON CONFLICT (account_id, reference_month) DO NOTHING
+        RETURNING
+            id
+    )
+SELECT
+    id
+FROM
+    inserted
 UNION ALL
-SELECT id FROM ledger_statement WHERE account_id = $2 AND reference_month = $3
-LIMIT 1
+SELECT
+    id
+FROM
+    ledger_statement
+WHERE
+    account_id = $2
+    AND reference_month = $3
+LIMIT
+    1
 `
 
 type EnsureStatementParams struct {
@@ -131,7 +174,14 @@ func (q *Queries) EnsureStatement(ctx context.Context, arg EnsureStatementParams
 }
 
 const getDisputeForUpdate = `-- name: GetDisputeForUpdate :one
-SELECT id, user_id, transaction_id, opened_on, resolved_on, outcome, refund_transaction_id FROM ledger_dispute WHERE user_id = $1 AND id = $2 FOR UPDATE
+SELECT
+    id, user_id, transaction_id, opened_on, resolved_on, outcome, refund_transaction_id
+FROM
+    ledger_dispute
+WHERE
+    user_id = $1
+    AND id = $2
+FOR UPDATE
 `
 
 type GetDisputeForUpdateParams struct {
@@ -155,7 +205,13 @@ func (q *Queries) GetDisputeForUpdate(ctx context.Context, arg GetDisputeForUpda
 }
 
 const getPlan = `-- name: GetPlan :one
-SELECT id, user_id, account_id, origin_transaction_id, plan_kind, installment_count, principal, interest, monthly_rate, first_statement_id, created_at FROM ledger_installment_plan WHERE user_id = $1 AND id = $2
+SELECT
+    id, user_id, account_id, origin_transaction_id, plan_kind, installment_count, principal, interest, monthly_rate, first_statement_id, created_at
+FROM
+    ledger_installment_plan
+WHERE
+    user_id = $1
+    AND id = $2
 `
 
 type GetPlanParams struct {
@@ -183,7 +239,13 @@ func (q *Queries) GetPlan(ctx context.Context, arg GetPlanParams) (LedgerInstall
 }
 
 const getStatement = `-- name: GetStatement :one
-SELECT id, user_id, account_id, reference_month, closing_date, due_date, financed_by_plan_id, created_at FROM ledger_statement WHERE user_id = $1 AND id = $2
+SELECT
+    id, user_id, account_id, reference_month, closing_date, due_date, financed_by_plan_id, created_at
+FROM
+    ledger_statement
+WHERE
+    user_id = $1
+    AND id = $2
 `
 
 type GetStatementParams struct {
@@ -208,7 +270,14 @@ func (q *Queries) GetStatement(ctx context.Context, arg GetStatementParams) (Led
 }
 
 const getStatementByDueDate = `-- name: GetStatementByDueDate :one
-SELECT reference_month FROM ledger_statement WHERE user_id = $1 AND account_id = $2 AND due_date = $3
+SELECT
+    reference_month
+FROM
+    ledger_statement
+WHERE
+    user_id = $1
+    AND account_id = $2
+    AND due_date = $3
 `
 
 type GetStatementByDueDateParams struct {
@@ -225,7 +294,13 @@ func (q *Queries) GetStatementByDueDate(ctx context.Context, arg GetStatementByD
 }
 
 const getSystemAccount = `-- name: GetSystemAccount :one
-SELECT id, user_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, color, icon, excluded_from_liquidity FROM ledger_account WHERE user_id = $1 AND system_role = $2
+SELECT
+    id, user_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, color, icon, excluded_from_liquidity
+FROM
+    ledger_account
+WHERE
+    user_id = $1
+    AND system_role = $2
 `
 
 type GetSystemAccountParams struct {
@@ -260,12 +335,36 @@ func (q *Queries) GetSystemAccount(ctx context.Context, arg GetSystemAccountPara
 }
 
 const insertBillingRule = `-- name: InsertBillingRule :one
-INSERT INTO ledger_billing_cycle_rule (
-    user_id, account_id, effective_from, closing_day, due_day, closing_day_assignment, due_date_adjustment, calendar,
-    closing_mode, closing_days_before_due, closing_adjustment
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8,
-    $9, $10, $11)
-RETURNING user_id, account_id, effective_from, closing_day, due_day, closing_day_assignment, due_date_adjustment, calendar, created_at, closing_mode, closing_days_before_due, closing_adjustment
+INSERT INTO
+    ledger_billing_cycle_rule (
+        user_id,
+        account_id,
+        effective_from,
+        closing_day,
+        due_day,
+        closing_day_assignment,
+        due_date_adjustment,
+        calendar,
+        closing_mode,
+        closing_days_before_due,
+        closing_adjustment
+    )
+VALUES
+    (
+        $1,
+        $2,
+        $3,
+        $4,
+        $5,
+        $6,
+        $7,
+        $8,
+        $9,
+        $10,
+        $11
+    )
+RETURNING
+    user_id, account_id, effective_from, closing_day, due_day, closing_day_assignment, due_date_adjustment, calendar, created_at, closing_mode, closing_days_before_due, closing_adjustment
 `
 
 type InsertBillingRuleParams struct {
@@ -315,7 +414,12 @@ func (q *Queries) InsertBillingRule(ctx context.Context, arg InsertBillingRulePa
 }
 
 const insertCard = `-- name: InsertCard :one
-INSERT INTO ledger_card (user_id, account_id, holder, last_four, virtual, foreign_charge_bp) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, user_id, account_id, holder, last_four, virtual, active, created_at, foreign_charge_bp
+INSERT INTO
+    ledger_card (user_id, account_id, holder, last_four, virtual, foreign_charge_bp)
+VALUES
+    ($1, $2, $3, $4, $5, $6)
+RETURNING
+    id, user_id, account_id, holder, last_four, virtual, active, created_at, foreign_charge_bp
 `
 
 type InsertCardParams struct {
@@ -352,10 +456,17 @@ func (q *Queries) InsertCard(ctx context.Context, arg InsertCardParams) (LedgerC
 }
 
 const insertCreditLimit = `-- name: InsertCreditLimit :one
-INSERT INTO ledger_credit_limit (user_id, account_id, effective_from, amount) VALUES ($1, $2, $3, $4)
-ON CONFLICT (account_id, effective_from) DO UPDATE SET amount = EXCLUDED.amount
-WHERE ledger_credit_limit.user_id = EXCLUDED.user_id
-RETURNING user_id, account_id, effective_from, amount, created_at
+INSERT INTO
+    ledger_credit_limit (user_id, account_id, effective_from, amount)
+VALUES
+    ($1, $2, $3, $4)
+ON CONFLICT (account_id, effective_from) DO UPDATE
+SET
+    amount = EXCLUDED.amount
+WHERE
+    ledger_credit_limit.user_id = EXCLUDED.user_id
+RETURNING
+    user_id, account_id, effective_from, amount, created_at
 `
 
 type InsertCreditLimitParams struct {
@@ -384,7 +495,12 @@ func (q *Queries) InsertCreditLimit(ctx context.Context, arg InsertCreditLimitPa
 }
 
 const insertDispute = `-- name: InsertDispute :one
-INSERT INTO ledger_dispute (user_id, transaction_id, opened_on) VALUES ($1, $2, $3) RETURNING id, user_id, transaction_id, opened_on, resolved_on, outcome, refund_transaction_id
+INSERT INTO
+    ledger_dispute (user_id, transaction_id, opened_on)
+VALUES
+    ($1, $2, $3)
+RETURNING
+    id, user_id, transaction_id, opened_on, resolved_on, outcome, refund_transaction_id
 `
 
 type InsertDisputeParams struct {
@@ -409,9 +525,30 @@ func (q *Queries) InsertDispute(ctx context.Context, arg InsertDisputeParams) (L
 }
 
 const insertInstallmentPlan = `-- name: InsertInstallmentPlan :exec
-INSERT INTO ledger_installment_plan (
-    id, user_id, account_id, origin_transaction_id, plan_kind, installment_count, principal, interest, first_statement_id
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+INSERT INTO
+    ledger_installment_plan (
+        id,
+        user_id,
+        account_id,
+        origin_transaction_id,
+        plan_kind,
+        installment_count,
+        principal,
+        interest,
+        first_statement_id
+    )
+VALUES
+    (
+        $1,
+        $2,
+        $3,
+        $4,
+        $5,
+        $6,
+        $7,
+        $8,
+        $9
+    )
 `
 
 type InsertInstallmentPlanParams struct {
@@ -442,13 +579,28 @@ func (q *Queries) InsertInstallmentPlan(ctx context.Context, arg InsertInstallme
 }
 
 const listAnticipationCharges = `-- name: ListAnticipationCharges :many
-SELECT p.amount, s.reference_month, s.closing_date
-FROM ledger_link l
-JOIN ledger_transaction t ON t.user_id = l.user_id AND t.id = l.from_transaction_id AND t.voided_at IS NULL
-JOIN ledger_posting p ON p.user_id = l.user_id AND p.transaction_id = t.id AND p.card_role = 'charge' AND NOT p.voided
-JOIN ledger_statement s ON s.user_id = l.user_id AND s.id = p.statement_id
-WHERE l.user_id = $1 AND l.to_transaction_id = $2 AND l.link_type = 'anticipation_of'
-ORDER BY s.reference_month, p.id
+SELECT
+    p.amount,
+    s.reference_month,
+    s.closing_date
+FROM
+    ledger_link l
+    JOIN ledger_transaction t ON t.user_id = l.user_id
+    AND t.id = l.from_transaction_id
+    AND t.voided_at IS NULL
+    JOIN ledger_posting p ON p.user_id = l.user_id
+    AND p.transaction_id = t.id
+    AND p.card_role = 'charge'
+    AND NOT p.voided
+    JOIN ledger_statement s ON s.user_id = l.user_id
+    AND s.id = p.statement_id
+WHERE
+    l.user_id = $1
+    AND l.to_transaction_id = $2
+    AND l.link_type = 'anticipation_of'
+ORDER BY
+    s.reference_month,
+    p.id
 `
 
 type ListAnticipationChargesParams struct {
@@ -484,7 +636,15 @@ func (q *Queries) ListAnticipationCharges(ctx context.Context, arg ListAnticipat
 }
 
 const listBillingRules = `-- name: ListBillingRules :many
-SELECT user_id, account_id, effective_from, closing_day, due_day, closing_day_assignment, due_date_adjustment, calendar, created_at, closing_mode, closing_days_before_due, closing_adjustment FROM ledger_billing_cycle_rule WHERE user_id = $1 AND account_id = $2 ORDER BY effective_from
+SELECT
+    user_id, account_id, effective_from, closing_day, due_day, closing_day_assignment, due_date_adjustment, calendar, created_at, closing_mode, closing_days_before_due, closing_adjustment
+FROM
+    ledger_billing_cycle_rule
+WHERE
+    user_id = $1
+    AND account_id = $2
+ORDER BY
+    effective_from
 `
 
 type ListBillingRulesParams struct {
@@ -526,7 +686,16 @@ func (q *Queries) ListBillingRules(ctx context.Context, arg ListBillingRulesPara
 }
 
 const listCards = `-- name: ListCards :many
-SELECT id, user_id, account_id, holder, last_four, virtual, active, created_at, foreign_charge_bp FROM ledger_card WHERE user_id = $1 AND account_id = $2 ORDER BY created_at, id
+SELECT
+    id, user_id, account_id, holder, last_four, virtual, active, created_at, foreign_charge_bp
+FROM
+    ledger_card
+WHERE
+    user_id = $1
+    AND account_id = $2
+ORDER BY
+    created_at,
+    id
 `
 
 type ListCardsParams struct {
@@ -565,7 +734,15 @@ func (q *Queries) ListCards(ctx context.Context, arg ListCardsParams) ([]LedgerC
 }
 
 const listCreditLimits = `-- name: ListCreditLimits :many
-SELECT user_id, account_id, effective_from, amount, created_at FROM ledger_credit_limit WHERE user_id = $1 AND account_id = $2 ORDER BY effective_from
+SELECT
+    user_id, account_id, effective_from, amount, created_at
+FROM
+    ledger_credit_limit
+WHERE
+    user_id = $1
+    AND account_id = $2
+ORDER BY
+    effective_from
 `
 
 type ListCreditLimitsParams struct {
@@ -600,7 +777,16 @@ func (q *Queries) ListCreditLimits(ctx context.Context, arg ListCreditLimitsPara
 }
 
 const listDisputes = `-- name: ListDisputes :many
-SELECT id, user_id, transaction_id, opened_on, resolved_on, outcome, refund_transaction_id FROM ledger_dispute WHERE user_id = $1 AND transaction_id = $2 ORDER BY opened_on, id
+SELECT
+    id, user_id, transaction_id, opened_on, resolved_on, outcome, refund_transaction_id
+FROM
+    ledger_dispute
+WHERE
+    user_id = $1
+    AND transaction_id = $2
+ORDER BY
+    opened_on,
+    id
 `
 
 type ListDisputesParams struct {
@@ -637,9 +823,17 @@ func (q *Queries) ListDisputes(ctx context.Context, arg ListDisputesParams) ([]L
 }
 
 const listOpenStatementsFrom = `-- name: ListOpenStatementsFrom :many
-SELECT id, user_id, account_id, reference_month, closing_date, due_date, financed_by_plan_id, created_at FROM ledger_statement
-WHERE user_id = $1 AND account_id = $2 AND reference_month >= $3 AND closing_date > $4
-ORDER BY reference_month
+SELECT
+    id, user_id, account_id, reference_month, closing_date, due_date, financed_by_plan_id, created_at
+FROM
+    ledger_statement
+WHERE
+    user_id = $1
+    AND account_id = $2
+    AND reference_month >= $3
+    AND closing_date > $4
+ORDER BY
+    reference_month
 `
 
 type ListOpenStatementsFromParams struct {
@@ -684,11 +878,22 @@ func (q *Queries) ListOpenStatementsFrom(ctx context.Context, arg ListOpenStatem
 }
 
 const listPlanInstallments = `-- name: ListPlanInstallments :many
-SELECT p.installment_number, p.amount, s.reference_month, s.closing_date
-FROM ledger_posting p
-JOIN ledger_statement s ON s.user_id = p.user_id AND s.id = p.statement_id
-WHERE p.user_id = $1 AND p.installment_plan_id = $2 AND NOT p.voided AND p.card_role = 'charge'
-ORDER BY p.installment_number
+SELECT
+    p.installment_number,
+    p.amount,
+    s.reference_month,
+    s.closing_date
+FROM
+    ledger_posting p
+    JOIN ledger_statement s ON s.user_id = p.user_id
+    AND s.id = p.statement_id
+WHERE
+    p.user_id = $1
+    AND p.installment_plan_id = $2
+    AND NOT p.voided
+    AND p.card_role = 'charge'
+ORDER BY
+    p.installment_number
 `
 
 type ListPlanInstallmentsParams struct {
@@ -729,9 +934,18 @@ func (q *Queries) ListPlanInstallments(ctx context.Context, arg ListPlanInstallm
 }
 
 const listStatementLines = `-- name: ListStatementLines :many
-SELECT p.statement_id, p.card_role, p.amount, p.booked_on
-FROM ledger_posting p
-WHERE p.user_id = $1 AND p.account_id = $2 AND NOT p.voided AND p.statement_id IS NOT NULL
+SELECT
+    p.statement_id,
+    p.card_role,
+    p.amount,
+    p.booked_on
+FROM
+    ledger_posting p
+WHERE
+    p.user_id = $1
+    AND p.account_id = $2
+    AND NOT p.voided
+    AND p.statement_id IS NOT NULL
 `
 
 type ListStatementLinesParams struct {
@@ -772,12 +986,27 @@ func (q *Queries) ListStatementLines(ctx context.Context, arg ListStatementLines
 }
 
 const listStatementPostings = `-- name: ListStatementPostings :many
-SELECT p.transaction_id, t.date, t.description, p.card_role, p.amount,
-       p.installment_plan_id, p.installment_number, p.installment_count, p.statement_basis
-FROM ledger_posting p
-JOIN ledger_transaction t ON t.id = p.transaction_id
-WHERE p.user_id = $1 AND p.statement_id = $2 AND NOT p.voided
-ORDER BY t.date, t.id, p.position
+SELECT
+    p.transaction_id,
+    t.date,
+    t.description,
+    p.card_role,
+    p.amount,
+    p.installment_plan_id,
+    p.installment_number,
+    p.installment_count,
+    p.statement_basis
+FROM
+    ledger_posting p
+    JOIN ledger_transaction t ON t.id = p.transaction_id
+WHERE
+    p.user_id = $1
+    AND p.statement_id = $2
+    AND NOT p.voided
+ORDER BY
+    t.date,
+    t.id,
+    p.position
 `
 
 type ListStatementPostingsParams struct {
@@ -828,10 +1057,23 @@ func (q *Queries) ListStatementPostings(ctx context.Context, arg ListStatementPo
 }
 
 const listStatements = `-- name: ListStatements :many
-SELECT s.id, s.user_id, s.account_id, s.reference_month, s.closing_date, s.due_date, s.financed_by_plan_id, s.created_at, EXISTS (SELECT 1 FROM ledger_reconciliation r WHERE r.statement_id = s.id) AS reconciled
-FROM ledger_statement s
-WHERE s.user_id = $1 AND s.account_id = $2
-ORDER BY s.reference_month
+SELECT
+    s.id, s.user_id, s.account_id, s.reference_month, s.closing_date, s.due_date, s.financed_by_plan_id, s.created_at,
+    EXISTS (
+        SELECT
+            1
+        FROM
+            ledger_reconciliation r
+        WHERE
+            r.statement_id = s.id
+    ) AS reconciled
+FROM
+    ledger_statement s
+WHERE
+    s.user_id = $1
+    AND s.account_id = $2
+ORDER BY
+    s.reference_month
 `
 
 type ListStatementsParams struct {
@@ -882,15 +1124,35 @@ func (q *Queries) ListStatements(ctx context.Context, arg ListStatementsParams) 
 }
 
 const lockPlanInstallment = `-- name: LockPlanInstallment :one
-SELECT p.id, p.amount, p.external_record_id, p.transaction_id,
-    (t.voided_at IS NOT NULL OR EXISTS (
-        SELECT 1 FROM ledger_link l WHERE l.user_id = t.user_id AND l.to_transaction_id = t.id
-          AND l.link_type IN ('refund_of', 'cancellation_of'))) AS reversed
-FROM ledger_installment_plan pl
-JOIN ledger_posting p ON p.installment_plan_id = pl.id AND p.installment_number = $1 AND p.card_role = 'charge'
-JOIN ledger_transaction t ON t.id = p.transaction_id
-WHERE pl.user_id = $2 AND pl.id = $3
-FOR UPDATE OF p
+SELECT
+    p.id,
+    p.amount,
+    p.external_record_id,
+    p.transaction_id,
+    (
+        t.voided_at IS NOT NULL
+        OR EXISTS (
+            SELECT
+                1
+            FROM
+                ledger_link l
+            WHERE
+                l.user_id = t.user_id
+                AND l.to_transaction_id = t.id
+                AND l.link_type IN ('refund_of', 'cancellation_of')
+        )
+    ) AS reversed
+FROM
+    ledger_installment_plan pl
+    JOIN ledger_posting p ON p.installment_plan_id = pl.id
+    AND p.installment_number = $1
+    AND p.card_role = 'charge'
+    JOIN ledger_transaction t ON t.id = p.transaction_id
+WHERE
+    pl.user_id = $2
+    AND pl.id = $3
+FOR UPDATE OF
+    p
 `
 
 type LockPlanInstallmentParams struct {
@@ -923,12 +1185,32 @@ func (q *Queries) LockPlanInstallment(ctx context.Context, arg LockPlanInstallme
 
 const planState = `-- name: PlanState :one
 SELECT
-  EXISTS (SELECT 1 FROM ledger_link l JOIN ledger_transaction t ON t.user_id = l.user_id AND t.id = l.from_transaction_id
-          WHERE l.user_id = $1 AND l.to_transaction_id = $2
-            AND l.link_type = 'cancellation_of' AND t.voided_at IS NULL) AS cancelled,
-  EXISTS (SELECT 1 FROM ledger_link l JOIN ledger_transaction t ON t.user_id = l.user_id AND t.id = l.from_transaction_id
-          WHERE l.user_id = $1 AND l.to_transaction_id = $2
-            AND l.link_type = 'anticipation_of' AND t.voided_at IS NULL) AS anticipated
+    EXISTS (
+        SELECT
+            1
+        FROM
+            ledger_link l
+            JOIN ledger_transaction t ON t.user_id = l.user_id
+            AND t.id = l.from_transaction_id
+        WHERE
+            l.user_id = $1
+            AND l.to_transaction_id = $2
+            AND l.link_type = 'cancellation_of'
+            AND t.voided_at IS NULL
+    ) AS cancelled,
+    EXISTS (
+        SELECT
+            1
+        FROM
+            ledger_link l
+            JOIN ledger_transaction t ON t.user_id = l.user_id
+            AND t.id = l.from_transaction_id
+        WHERE
+            l.user_id = $1
+            AND l.to_transaction_id = $2
+            AND l.link_type = 'anticipation_of'
+            AND t.voided_at IS NULL
+    ) AS anticipated
 `
 
 type PlanStateParams struct {
@@ -949,12 +1231,19 @@ func (q *Queries) PlanState(ctx context.Context, arg PlanStateParams) (PlanState
 }
 
 const priorInstallments = `-- name: PriorInstallments :one
-SELECT coalesce(-sum(p.amount), 0)::bigint
-FROM ledger_posting p
-JOIN ledger_statement s ON s.id = p.statement_id
-WHERE p.user_id = $1 AND p.account_id = $2 AND NOT p.voided
-  AND p.installment_plan_id IS NOT NULL AND p.card_role = 'charge'
-  AND s.reference_month = $3 AND p.booked_on < $3
+SELECT
+    coalesce(- sum(p.amount), 0)::bigint
+FROM
+    ledger_posting p
+    JOIN ledger_statement s ON s.id = p.statement_id
+WHERE
+    p.user_id = $1
+    AND p.account_id = $2
+    AND NOT p.voided
+    AND p.installment_plan_id IS NOT NULL
+    AND p.card_role = 'charge'
+    AND s.reference_month = $3
+    AND p.booked_on < $3
 `
 
 type PriorInstallmentsParams struct {
@@ -973,11 +1262,18 @@ func (q *Queries) PriorInstallments(ctx context.Context, arg PriorInstallmentsPa
 }
 
 const refundedTotal = `-- name: RefundedTotal :one
-SELECT coalesce(sum(p.amount), 0)::bigint
-FROM ledger_link l
-JOIN ledger_posting p ON p.user_id = l.user_id AND p.transaction_id = l.from_transaction_id
-WHERE l.user_id = $1 AND l.to_transaction_id = $2 AND l.link_type IN ('refund_of', 'cancellation_of', 'chargeback_of')
-  AND p.card_role = 'credit' AND NOT p.voided
+SELECT
+    coalesce(sum(p.amount), 0)::bigint
+FROM
+    ledger_link l
+    JOIN ledger_posting p ON p.user_id = l.user_id
+    AND p.transaction_id = l.from_transaction_id
+WHERE
+    l.user_id = $1
+    AND l.to_transaction_id = $2
+    AND l.link_type IN ('refund_of', 'cancellation_of', 'chargeback_of')
+    AND p.card_role = 'credit'
+    AND NOT p.voided
 `
 
 type RefundedTotalParams struct {
@@ -993,9 +1289,15 @@ func (q *Queries) RefundedTotal(ctx context.Context, arg RefundedTotalParams) (i
 }
 
 const resolveDispute = `-- name: ResolveDispute :one
-UPDATE ledger_dispute SET resolved_on = $1, outcome = $2, refund_transaction_id = $3
-WHERE id = $4
-RETURNING id, user_id, transaction_id, opened_on, resolved_on, outcome, refund_transaction_id
+UPDATE ledger_dispute
+SET
+    resolved_on = $1,
+    outcome = $2,
+    refund_transaction_id = $3
+WHERE
+    id = $4
+RETURNING
+    id, user_id, transaction_id, opened_on, resolved_on, outcome, refund_transaction_id
 `
 
 type ResolveDisputeParams struct {
@@ -1026,7 +1328,14 @@ func (q *Queries) ResolveDispute(ctx context.Context, arg ResolveDisputeParams) 
 }
 
 const setCardActive = `-- name: SetCardActive :one
-UPDATE ledger_card SET active = $1 WHERE user_id = $2 AND id = $3 RETURNING id, user_id, account_id, holder, last_four, virtual, active, created_at, foreign_charge_bp
+UPDATE ledger_card
+SET
+    active = $1
+WHERE
+    user_id = $2
+    AND id = $3
+RETURNING
+    id, user_id, account_id, holder, last_four, virtual, active, created_at, foreign_charge_bp
 `
 
 type SetCardActiveParams struct {
@@ -1053,7 +1362,11 @@ func (q *Queries) SetCardActive(ctx context.Context, arg SetCardActiveParams) (L
 }
 
 const setStatementFinanced = `-- name: SetStatementFinanced :exec
-UPDATE ledger_statement SET financed_by_plan_id = $1 WHERE id = $2
+UPDATE ledger_statement
+SET
+    financed_by_plan_id = $1
+WHERE
+    id = $2
 `
 
 type SetStatementFinancedParams struct {
@@ -1067,7 +1380,12 @@ func (q *Queries) SetStatementFinanced(ctx context.Context, arg SetStatementFina
 }
 
 const updateStatementDates = `-- name: UpdateStatementDates :exec
-UPDATE ledger_statement SET closing_date = $1, due_date = $2 WHERE id = $3
+UPDATE ledger_statement
+SET
+    closing_date = $1,
+    due_date = $2
+WHERE
+    id = $3
 `
 
 type UpdateStatementDatesParams struct {

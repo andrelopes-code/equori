@@ -13,7 +13,12 @@ import (
 )
 
 const clearRecordLinks = `-- name: ClearRecordLinks :exec
-UPDATE ledger_posting SET external_record_id = NULL WHERE user_id = $1 AND transaction_id = $2
+UPDATE ledger_posting
+SET
+    external_record_id = NULL
+WHERE
+    user_id = $1
+    AND transaction_id = $2
 `
 
 type ClearRecordLinksParams struct {
@@ -27,17 +32,60 @@ func (q *Queries) ClearRecordLinks(ctx context.Context, arg ClearRecordLinksPara
 }
 
 const pairingCandidates = `-- name: PairingCandidates :many
-SELECT t.id FROM ledger_transaction t
-WHERE t.user_id = $1 AND t.id <> $2 AND t.voided_at IS NULL AND t.origin = 'import'
-  AND t.date BETWEEN $3::date AND $4::date
-  AND EXISTS (SELECT 1 FROM ledger_posting p WHERE p.transaction_id = t.id AND p.account_id = $5 AND p.amount = $6)
-  AND NOT EXISTS (SELECT 1 FROM ledger_posting p WHERE p.transaction_id = t.id AND p.account_id = ANY($7::uuid[]))
-  AND EXISTS (SELECT 1 FROM ledger_posting p JOIN ledger_account a ON a.id = p.account_id
-              WHERE p.transaction_id = t.id AND a.system_role IN ('uncategorized_expense', 'uncategorized_income', 'transfers_in_transit'))
-  AND NOT EXISTS (SELECT 1 FROM ledger_posting p JOIN ledger_account a ON a.id = p.account_id
-              WHERE p.transaction_id = t.id AND a.account_class IN ('income', 'expense')
-                AND a.system_role IS DISTINCT FROM 'uncategorized_expense' AND a.system_role IS DISTINCT FROM 'uncategorized_income')
-ORDER BY t.date, t.id
+SELECT
+    t.id
+FROM
+    ledger_transaction t
+WHERE
+    t.user_id = $1
+    AND t.id <> $2
+    AND t.voided_at IS NULL
+    AND t.origin = 'import'
+    AND t.date BETWEEN $3::date AND $4::date
+    AND EXISTS (
+        SELECT
+            1
+        FROM
+            ledger_posting p
+        WHERE
+            p.transaction_id = t.id
+            AND p.account_id = $5
+            AND p.amount = $6
+    )
+    AND NOT EXISTS (
+        SELECT
+            1
+        FROM
+            ledger_posting p
+        WHERE
+            p.transaction_id = t.id
+            AND p.account_id = ANY ($7::UUID[])
+    )
+    AND EXISTS (
+        SELECT
+            1
+        FROM
+            ledger_posting p
+            JOIN ledger_account a ON a.id = p.account_id
+        WHERE
+            p.transaction_id = t.id
+            AND a.system_role IN ('uncategorized_expense', 'uncategorized_income', 'transfers_in_transit')
+    )
+    AND NOT EXISTS (
+        SELECT
+            1
+        FROM
+            ledger_posting p
+            JOIN ledger_account a ON a.id = p.account_id
+        WHERE
+            p.transaction_id = t.id
+            AND a.account_class IN ('income', 'expense')
+            AND a.system_role IS DISTINCT FROM 'uncategorized_expense'
+            AND a.system_role IS DISTINCT FROM 'uncategorized_income'
+    )
+ORDER BY
+    t.date,
+    t.id
 `
 
 type PairingCandidatesParams struct {

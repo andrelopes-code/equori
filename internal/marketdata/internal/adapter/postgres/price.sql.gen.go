@@ -13,20 +13,59 @@ import (
 )
 
 const conversionIntermediate = `-- name: ConversionIntermediate :one
-WITH legs AS (
-    SELECT quote_instrument AS other, instrument AS side, max(date) AS latest FROM marketdata_price
-    WHERE instrument IN ($2::text, $1::text) AND marketdata_price.date <= $3 GROUP BY 1, 2
-    UNION ALL
-    SELECT instrument, quote_instrument, max(date) FROM marketdata_price
-    WHERE quote_instrument IN ($2::text, $1::text) AND marketdata_price.date <= $3 GROUP BY 1, 2
-), best AS (
-    SELECT other, side, max(latest) AS latest FROM legs GROUP BY other, side
-)
-SELECT f.other::text AS code FROM best f
-JOIN best t ON t.other = f.other AND t.side = $1::text
-WHERE f.side = $2::text AND f.other NOT IN ($2::text, $1::text)
-ORDER BY least(f.latest, t.latest) DESC, f.other
-LIMIT 1
+WITH
+    legs AS (
+        SELECT
+            quote_instrument AS other,
+            instrument AS side,
+            max(date) AS latest
+        FROM
+            marketdata_price
+        WHERE
+            instrument IN ($2::text, $1::text)
+            AND marketdata_price.date <= $3
+        GROUP BY
+            1,
+            2
+        UNION ALL
+        SELECT
+            instrument,
+            quote_instrument,
+            max(date)
+        FROM
+            marketdata_price
+        WHERE
+            quote_instrument IN ($2::text, $1::text)
+            AND marketdata_price.date <= $3
+        GROUP BY
+            1,
+            2
+    ),
+    best AS (
+        SELECT
+            other,
+            side,
+            max(latest) AS latest
+        FROM
+            legs
+        GROUP BY
+            other,
+            side
+    )
+SELECT
+    f.other::text AS code
+FROM
+    best f
+    JOIN best t ON t.other = f.other
+    AND t.side = $1::text
+WHERE
+    f.side = $2::text
+    AND f.other NOT IN ($2::text, $1::text)
+ORDER BY
+    least(f.latest, t.latest) DESC,
+    f.other
+LIMIT
+    1
 `
 
 type ConversionIntermediateParams struct {
@@ -43,7 +82,10 @@ func (q *Queries) ConversionIntermediate(ctx context.Context, arg ConversionInte
 }
 
 const deletePricesBySource = `-- name: DeletePricesBySource :exec
-DELETE FROM marketdata_price WHERE source = $1 AND instrument = $2
+DELETE FROM marketdata_price
+WHERE
+    source = $1
+    AND instrument = $2
 `
 
 type DeletePricesBySourceParams struct {
@@ -57,8 +99,16 @@ func (q *Queries) DeletePricesBySource(ctx context.Context, arg DeletePricesBySo
 }
 
 const latestSourceDate = `-- name: LatestSourceDate :one
-SELECT coalesce(max(date), DATE '1970-01-01')::date AS latest FROM marketdata_price
-WHERE source = $1 AND ($2::text IS NULL OR instrument = $2)
+SELECT
+    coalesce(max(date), DATE '1970-01-01')::date AS latest
+FROM
+    marketdata_price
+WHERE
+    source = $1
+    AND (
+        $2::text IS NULL
+        OR instrument = $2
+    )
 `
 
 type LatestSourceDateParams struct {
@@ -74,10 +124,18 @@ func (q *Queries) LatestSourceDate(ctx context.Context, arg LatestSourceDatePara
 }
 
 const listChosenPrices = `-- name: ListChosenPrices :many
-SELECT DISTINCT ON (date) instrument, quote_instrument, date, value, source, priority, recorded_at FROM marketdata_price
-WHERE instrument = $1 AND quote_instrument = $2
-  AND date BETWEEN $3 AND $4
-ORDER BY date, priority, recorded_at DESC
+SELECT DISTINCT
+    ON (date) instrument, quote_instrument, date, value, source, priority, recorded_at
+FROM
+    marketdata_price
+WHERE
+    instrument = $1
+    AND quote_instrument = $2
+    AND date BETWEEN $3 AND $4
+ORDER BY
+    date,
+    priority,
+    recorded_at DESC
 `
 
 type ListChosenPricesParams struct {
@@ -121,10 +179,20 @@ func (q *Queries) ListChosenPrices(ctx context.Context, arg ListChosenPricesPara
 }
 
 const priceOnOrBefore = `-- name: PriceOnOrBefore :many
-SELECT instrument, quote_instrument, date, value, source, priority, recorded_at FROM marketdata_price
-WHERE instrument = $1 AND quote_instrument = $2 AND date <= $3
-ORDER BY date DESC, priority, recorded_at DESC
-LIMIT 1
+SELECT
+    instrument, quote_instrument, date, value, source, priority, recorded_at
+FROM
+    marketdata_price
+WHERE
+    instrument = $1
+    AND quote_instrument = $2
+    AND date <= $3
+ORDER BY
+    date DESC,
+    priority,
+    recorded_at DESC
+LIMIT
+    1
 `
 
 type PriceOnOrBeforeParams struct {
@@ -162,10 +230,14 @@ func (q *Queries) PriceOnOrBefore(ctx context.Context, arg PriceOnOrBeforeParams
 }
 
 const upsertPrice = `-- name: UpsertPrice :exec
-INSERT INTO marketdata_price (instrument, quote_instrument, date, value, source, priority)
-VALUES ($1, $2, $3, $4, $5, $6)
-ON CONFLICT (instrument, quote_instrument, date, source)
-DO UPDATE SET value = EXCLUDED.value, recorded_at = now()
+INSERT INTO
+    marketdata_price (instrument, quote_instrument, date, value, source, priority)
+VALUES
+    ($1, $2, $3, $4, $5, $6)
+ON CONFLICT (instrument, quote_instrument, date, source) DO UPDATE
+SET
+    value = EXCLUDED.value,
+    recorded_at = now()
 `
 
 type UpsertPriceParams struct {

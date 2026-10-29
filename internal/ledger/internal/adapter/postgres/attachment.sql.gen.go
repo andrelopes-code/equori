@@ -13,7 +13,12 @@ import (
 )
 
 const deleteAttachment = `-- name: DeleteAttachment :one
-DELETE FROM ledger_attachment WHERE user_id = $1 AND id = $2 RETURNING sha256
+DELETE FROM ledger_attachment
+WHERE
+    user_id = $1
+    AND id = $2
+RETURNING
+    sha256
 `
 
 type DeleteAttachmentParams struct {
@@ -30,8 +35,18 @@ func (q *Queries) DeleteAttachment(ctx context.Context, arg DeleteAttachmentPara
 
 const deleteUnreferencedBlob = `-- name: DeleteUnreferencedBlob :exec
 DELETE FROM ledger_attachment_blob b
-WHERE b.user_id = $1 AND b.sha256 = $2
-  AND NOT EXISTS (SELECT 1 FROM ledger_attachment a WHERE a.user_id = b.user_id AND a.sha256 = b.sha256)
+WHERE
+    b.user_id = $1
+    AND b.sha256 = $2
+    AND NOT EXISTS (
+        SELECT
+            1
+        FROM
+            ledger_attachment a
+        WHERE
+            a.user_id = b.user_id
+            AND a.sha256 = b.sha256
+    )
 `
 
 type DeleteUnreferencedBlobParams struct {
@@ -45,10 +60,17 @@ func (q *Queries) DeleteUnreferencedBlob(ctx context.Context, arg DeleteUnrefere
 }
 
 const getAttachmentContent = `-- name: GetAttachmentContent :one
-SELECT a.file_name, a.media_type, b.content
-FROM ledger_attachment a
-JOIN ledger_attachment_blob b ON b.user_id = a.user_id AND b.sha256 = a.sha256
-WHERE a.user_id = $1 AND a.id = $2
+SELECT
+    a.file_name,
+    a.media_type,
+    b.content
+FROM
+    ledger_attachment a
+    JOIN ledger_attachment_blob b ON b.user_id = a.user_id
+    AND b.sha256 = a.sha256
+WHERE
+    a.user_id = $1
+    AND a.id = $2
 `
 
 type GetAttachmentContentParams struct {
@@ -70,13 +92,25 @@ func (q *Queries) GetAttachmentContent(ctx context.Context, arg GetAttachmentCon
 }
 
 const listAttachments = `-- name: ListAttachments :many
-SELECT a.id, a.user_id, a.transaction_id, a.sha256, a.file_name, a.media_type, a.created_at, b.size
-FROM ledger_attachment a
-JOIN ledger_attachment_blob b ON b.user_id = a.user_id AND b.sha256 = a.sha256
-WHERE a.user_id = $1 AND a.transaction_id = $2
-  AND ($3::timestamptz IS NULL OR (a.created_at, a.id) > ($3::timestamptz, $4::uuid))
-ORDER BY a.created_at, a.id
-LIMIT $5
+SELECT
+    a.id, a.user_id, a.transaction_id, a.sha256, a.file_name, a.media_type, a.created_at,
+    b.size
+FROM
+    ledger_attachment a
+    JOIN ledger_attachment_blob b ON b.user_id = a.user_id
+    AND b.sha256 = a.sha256
+WHERE
+    a.user_id = $1
+    AND a.transaction_id = $2
+    AND (
+        $3::timestamptz IS NULL
+        OR (a.created_at, a.id) > ($3::timestamptz, $4::uuid)
+    )
+ORDER BY
+    a.created_at,
+    a.id
+LIMIT
+    $5
 `
 
 type ListAttachmentsParams struct {
@@ -134,10 +168,15 @@ func (q *Queries) ListAttachments(ctx context.Context, arg ListAttachmentsParams
 }
 
 const upsertAttachment = `-- name: UpsertAttachment :one
-INSERT INTO ledger_attachment (user_id, transaction_id, sha256, file_name, media_type)
-VALUES ($1, $2, $3, $4, $5)
-ON CONFLICT (transaction_id, sha256) DO UPDATE SET file_name = ledger_attachment.file_name
-RETURNING id, user_id, transaction_id, sha256, file_name, media_type, created_at
+INSERT INTO
+    ledger_attachment (user_id, transaction_id, sha256, file_name, media_type)
+VALUES
+    ($1, $2, $3, $4, $5)
+ON CONFLICT (transaction_id, sha256) DO UPDATE
+SET
+    file_name = ledger_attachment.file_name
+RETURNING
+    id, user_id, transaction_id, sha256, file_name, media_type, created_at
 `
 
 type UpsertAttachmentParams struct {
@@ -170,9 +209,13 @@ func (q *Queries) UpsertAttachment(ctx context.Context, arg UpsertAttachmentPara
 }
 
 const upsertAttachmentBlob = `-- name: UpsertAttachmentBlob :exec
-INSERT INTO ledger_attachment_blob (user_id, sha256, size, content)
-VALUES ($1, $2, $3, $4)
-ON CONFLICT (user_id, sha256) DO UPDATE SET size = EXCLUDED.size
+INSERT INTO
+    ledger_attachment_blob (user_id, sha256, size, content)
+VALUES
+    ($1, $2, $3, $4)
+ON CONFLICT (user_id, sha256) DO UPDATE
+SET
+    size = EXCLUDED.size
 `
 
 type UpsertAttachmentBlobParams struct {

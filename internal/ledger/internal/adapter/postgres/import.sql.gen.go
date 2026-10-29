@@ -13,8 +13,14 @@ import (
 )
 
 const clearPendingPostings = `-- name: ClearPendingPostings :exec
-UPDATE ledger_posting SET status = 'cleared'
-WHERE user_id = $1 AND transaction_id = $2 AND account_id = $3 AND status = 'pending'
+UPDATE ledger_posting
+SET
+    status = 'cleared'
+WHERE
+    user_id = $1
+    AND transaction_id = $2
+    AND account_id = $3
+    AND status = 'pending'
 `
 
 type ClearPendingPostingsParams struct {
@@ -29,7 +35,14 @@ func (q *Queries) ClearPendingPostings(ctx context.Context, arg ClearPendingPost
 }
 
 const getRecordPosting = `-- name: GetRecordPosting :one
-SELECT transaction_id, installment_plan_id FROM ledger_posting WHERE user_id = $1 AND external_record_id = $2
+SELECT
+    transaction_id,
+    installment_plan_id
+FROM
+    ledger_posting
+WHERE
+    user_id = $1
+    AND external_record_id = $2
 `
 
 type GetRecordPostingParams struct {
@@ -50,7 +63,13 @@ func (q *Queries) GetRecordPosting(ctx context.Context, arg GetRecordPostingPara
 }
 
 const getTransactionIDByExternalRecord = `-- name: GetTransactionIDByExternalRecord :one
-SELECT transaction_id FROM ledger_posting WHERE user_id = $1 AND external_record_id = $2
+SELECT
+    transaction_id
+FROM
+    ledger_posting
+WHERE
+    user_id = $1
+    AND external_record_id = $2
 `
 
 type GetTransactionIDByExternalRecordParams struct {
@@ -66,8 +85,12 @@ func (q *Queries) GetTransactionIDByExternalRecord(ctx context.Context, arg GetT
 }
 
 const linkExternalRecord = `-- name: LinkExternalRecord :exec
-UPDATE ledger_posting SET external_record_id = $1
-WHERE user_id = $2 AND id = $3
+UPDATE ledger_posting
+SET
+    external_record_id = $1
+WHERE
+    user_id = $2
+    AND id = $3
 `
 
 type LinkExternalRecordParams struct {
@@ -82,8 +105,14 @@ func (q *Queries) LinkExternalRecord(ctx context.Context, arg LinkExternalRecord
 }
 
 const listTransactionsByExternalRecords = `-- name: ListTransactionsByExternalRecords :many
-SELECT external_record_id::uuid AS external_record_id, transaction_id FROM ledger_posting
-WHERE user_id = $1 AND external_record_id = ANY($2::uuid[])
+SELECT
+    external_record_id::uuid AS external_record_id,
+    transaction_id
+FROM
+    ledger_posting
+WHERE
+    user_id = $1
+    AND external_record_id = ANY ($2::UUID[])
 `
 
 type ListTransactionsByExternalRecordsParams struct {
@@ -117,37 +146,103 @@ func (q *Queries) ListTransactionsByExternalRecords(ctx context.Context, arg Lis
 }
 
 const listUnconfirmedPostings = `-- name: ListUnconfirmedPostings :many
-WITH open AS (
-    SELECT p.id, p.transaction_id, p.amount, p.statement_id, p.position, p.status,
-        coalesce(s.closing_date, p.settled_on, p.booked_on)::date AS expected_on
-    FROM ledger_posting p
-    LEFT JOIN ledger_statement s ON s.user_id = p.user_id AND s.id = p.statement_id
-    WHERE p.user_id = $3 AND p.account_id = $4 AND NOT p.voided
-      AND p.external_record_id IS NULL
-), ranked AS (
-    SELECT o.id, o.statement_id, abs(o.amount) AS size, sign(o.amount) AS sign, g.origin,
-        row_number() OVER (PARTITION BY g.origin, o.statement_id, abs(o.amount), sign(o.amount) ORDER BY o.id) AS rank
-    FROM open o
-    CROSS JOIN LATERAL (
-        SELECT DISTINCT l.to_transaction_id AS origin
-        FROM ledger_link l
-        WHERE l.user_id = $3 AND l.link_type IN ('cancellation_of', 'anticipation_of')
-          AND o.transaction_id IN (l.from_transaction_id, l.to_transaction_id)
-    ) g
-    WHERE o.statement_id IS NOT NULL
-), offset_posting AS (
-    SELECT r.id FROM ranked r JOIN ranked q ON q.origin = r.origin AND q.statement_id = r.statement_id
-      AND q.size = r.size AND q.sign = -r.sign AND q.rank = r.rank
-)
-SELECT u.transaction_id, u.expected_on, u.amount, t.payee_id, t.description, u.statement_id FROM (
-    SELECT DISTINCT ON (o.transaction_id) o.transaction_id, o.expected_on, o.amount, o.statement_id
-    FROM open o
-    WHERE o.status <> 'reconciled' AND o.expected_on BETWEEN $1::date AND $2::date
-      AND o.id NOT IN (SELECT id FROM offset_posting)
-    ORDER BY o.transaction_id, o.expected_on, o.position
-) u
-JOIN ledger_transaction t ON t.user_id = $3 AND t.id = u.transaction_id
-ORDER BY u.expected_on, u.transaction_id
+WITH
+    open AS (
+        SELECT
+            p.id,
+            p.transaction_id,
+            p.amount,
+            p.statement_id,
+            p.position,
+            p.status,
+            coalesce(s.closing_date, p.settled_on, p.booked_on)::date AS expected_on
+        FROM
+            ledger_posting p
+            LEFT JOIN ledger_statement s ON s.user_id = p.user_id
+            AND s.id = p.statement_id
+        WHERE
+            p.user_id = $3
+            AND p.account_id = $4
+            AND NOT p.voided
+            AND p.external_record_id IS NULL
+    ),
+    ranked AS (
+        SELECT
+            o.id,
+            o.statement_id,
+            abs(o.amount) AS size,
+            sign(o.amount) AS sign,
+            g.origin,
+            row_number() OVER (
+                PARTITION BY
+                    g.origin,
+                    o.statement_id,
+                    abs(o.amount),
+                    sign(o.amount)
+                ORDER BY
+                    o.id
+            ) AS rank
+        FROM
+            open o
+            CROSS JOIN LATERAL (
+                SELECT DISTINCT
+                    l.to_transaction_id AS origin
+                FROM
+                    ledger_link l
+                WHERE
+                    l.user_id = $3
+                    AND l.link_type IN ('cancellation_of', 'anticipation_of')
+                    AND o.transaction_id IN (l.from_transaction_id, l.to_transaction_id)
+            ) g
+        WHERE
+            o.statement_id IS NOT NULL
+    ),
+    offset_posting AS (
+        SELECT
+            r.id
+        FROM
+            ranked r
+            JOIN ranked q ON q.origin = r.origin
+            AND q.statement_id = r.statement_id
+            AND q.size = r.size
+            AND q.sign = - r.sign
+            AND q.rank = r.rank
+    )
+SELECT
+    u.transaction_id,
+    u.expected_on,
+    u.amount,
+    t.payee_id,
+    t.description,
+    u.statement_id
+FROM
+    (
+        SELECT DISTINCT
+            ON (o.transaction_id) o.transaction_id,
+            o.expected_on,
+            o.amount,
+            o.statement_id
+        FROM
+            open o
+        WHERE
+            o.status <> 'reconciled'
+            AND o.expected_on BETWEEN $1::date AND $2::date
+            AND o.id NOT IN (
+                SELECT
+                    id
+                FROM
+                    offset_posting
+            )
+        ORDER BY
+            o.transaction_id,
+            o.expected_on,
+            o.position
+    ) u
+    JOIN ledger_transaction t ON t.user_id = $3
+    AND t.id = u.transaction_id
+ORDER BY
+    u.expected_on,
+    u.transaction_id
 `
 
 type ListUnconfirmedPostingsParams struct {
@@ -203,16 +298,35 @@ func (q *Queries) ListUnconfirmedPostings(ctx context.Context, arg ListUnconfirm
 }
 
 const listUnlinkedPostings = `-- name: ListUnlinkedPostings :many
-SELECT u.transaction_id, u.booked_on, u.amount, t.payee_id, t.description FROM (
-    SELECT DISTINCT ON (p.transaction_id) p.transaction_id, p.booked_on, p.amount
-    FROM ledger_posting p
-    WHERE p.user_id = $1 AND p.account_id = $2 AND NOT p.voided
-      AND p.external_record_id IS NULL
-      AND p.booked_on BETWEEN $3::date AND $4::date
-    ORDER BY p.transaction_id, p.position
-) u
-JOIN ledger_transaction t ON t.user_id = $1 AND t.id = u.transaction_id
-ORDER BY u.booked_on, u.transaction_id
+SELECT
+    u.transaction_id,
+    u.booked_on,
+    u.amount,
+    t.payee_id,
+    t.description
+FROM
+    (
+        SELECT DISTINCT
+            ON (p.transaction_id) p.transaction_id,
+            p.booked_on,
+            p.amount
+        FROM
+            ledger_posting p
+        WHERE
+            p.user_id = $1
+            AND p.account_id = $2
+            AND NOT p.voided
+            AND p.external_record_id IS NULL
+            AND p.booked_on BETWEEN $3::date AND $4::date
+        ORDER BY
+            p.transaction_id,
+            p.position
+    ) u
+    JOIN ledger_transaction t ON t.user_id = $1
+    AND t.id = u.transaction_id
+ORDER BY
+    u.booked_on,
+    u.transaction_id
 `
 
 type ListUnlinkedPostingsParams struct {
@@ -264,12 +378,22 @@ func (q *Queries) ListUnlinkedPostings(ctx context.Context, arg ListUnlinkedPost
 }
 
 const lockAccountPostingLinks = `-- name: LockAccountPostingLinks :many
-SELECT p.id, p.external_record_id, (t.voided_at IS NOT NULL)::boolean AS voided
-FROM ledger_posting p
-JOIN ledger_transaction t ON t.id = p.transaction_id
-WHERE p.user_id = $1 AND p.transaction_id = $2 AND p.account_id = $3
-ORDER BY p.position
-FOR UPDATE OF p, t
+SELECT
+    p.id,
+    p.external_record_id,
+    (t.voided_at IS NOT NULL)::boolean AS voided
+FROM
+    ledger_posting p
+    JOIN ledger_transaction t ON t.id = p.transaction_id
+WHERE
+    p.user_id = $1
+    AND p.transaction_id = $2
+    AND p.account_id = $3
+ORDER BY
+    p.position
+FOR UPDATE OF
+    p,
+    t
 `
 
 type LockAccountPostingLinksParams struct {
@@ -306,8 +430,16 @@ func (q *Queries) LockAccountPostingLinks(ctx context.Context, arg LockAccountPo
 }
 
 const lockImportedPosting = `-- name: LockImportedPosting :one
-SELECT id, account_id, status, card_role FROM ledger_posting
-WHERE user_id = $1 AND external_record_id = $2
+SELECT
+    id,
+    account_id,
+    status,
+    card_role
+FROM
+    ledger_posting
+WHERE
+    user_id = $1
+    AND external_record_id = $2
 FOR UPDATE
 `
 
@@ -337,8 +469,12 @@ func (q *Queries) LockImportedPosting(ctx context.Context, arg LockImportedPosti
 }
 
 const releaseExternalRecord = `-- name: ReleaseExternalRecord :exec
-UPDATE ledger_posting SET external_record_id = NULL
-WHERE user_id = $1 AND external_record_id = $2
+UPDATE ledger_posting
+SET
+    external_record_id = NULL
+WHERE
+    user_id = $1
+    AND external_record_id = $2
 `
 
 type ReleaseExternalRecordParams struct {
@@ -353,9 +489,17 @@ func (q *Queries) ReleaseExternalRecord(ctx context.Context, arg ReleaseExternal
 }
 
 const settleImportedPosting = `-- name: SettleImportedPosting :exec
-UPDATE ledger_posting SET status = $1, statement_id = coalesce($2, statement_id),
-    statement_basis = CASE WHEN $2::uuid IS NULL THEN statement_basis ELSE 'institution' END
-WHERE user_id = $3 AND id = $4
+UPDATE ledger_posting
+SET
+    status = $1,
+    statement_id = coalesce($2, statement_id),
+    statement_basis = CASE
+        WHEN $2::uuid IS NULL THEN statement_basis
+        ELSE 'institution'
+    END
+WHERE
+    user_id = $3
+    AND id = $4
 `
 
 type SettleImportedPostingParams struct {

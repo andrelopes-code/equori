@@ -13,7 +13,11 @@ import (
 )
 
 const deleteStatementFact = `-- name: DeleteStatementFact :exec
-DELETE FROM ledger_statement_fact WHERE user_id = $1 AND statement_id = $2 AND source = $3
+DELETE FROM ledger_statement_fact
+WHERE
+    user_id = $1
+    AND statement_id = $2
+    AND source = $3
 `
 
 type DeleteStatementFactParams struct {
@@ -28,12 +32,21 @@ func (q *Queries) DeleteStatementFact(ctx context.Context, arg DeleteStatementFa
 }
 
 const hasOpeningBalance = `-- name: HasOpeningBalance :one
-SELECT EXISTS (
-    SELECT 1 FROM ledger_posting c
-    JOIN ledger_transaction t ON t.id = c.transaction_id AND t.voided_at IS NULL
-    JOIN ledger_posting o ON o.transaction_id = c.transaction_id
-    JOIN ledger_account a ON a.id = o.account_id AND a.system_role = 'opening_balances'
-    WHERE c.user_id = $1 AND c.account_id = $2)::bool
+SELECT
+    EXISTS (
+        SELECT
+            1
+        FROM
+            ledger_posting c
+            JOIN ledger_transaction t ON t.id = c.transaction_id
+            AND t.voided_at IS NULL
+            JOIN ledger_posting o ON o.transaction_id = c.transaction_id
+            JOIN ledger_account a ON a.id = o.account_id
+            AND a.system_role = 'opening_balances'
+        WHERE
+            c.user_id = $1
+            AND c.account_id = $2
+    )::bool
 `
 
 type HasOpeningBalanceParams struct {
@@ -49,9 +62,20 @@ func (q *Queries) HasOpeningBalance(ctx context.Context, arg HasOpeningBalancePa
 }
 
 const listRedatablePostings = `-- name: ListRedatablePostings :many
-SELECT p.id, p.booked_on, p.statement_id::uuid AS statement_id FROM ledger_posting p
-WHERE p.user_id = $1 AND p.account_id = $2 AND NOT p.voided AND p.statement_id IS NOT NULL
-  AND p.external_record_id IS NULL AND p.installment_plan_id IS NULL AND p.status <> 'reconciled'
+SELECT
+    p.id,
+    p.booked_on,
+    p.statement_id::uuid AS statement_id
+FROM
+    ledger_posting p
+WHERE
+    p.user_id = $1
+    AND p.account_id = $2
+    AND NOT p.voided
+    AND p.statement_id IS NOT NULL
+    AND p.external_record_id IS NULL
+    AND p.installment_plan_id IS NULL
+    AND p.status <> 'reconciled'
 `
 
 type ListRedatablePostingsParams struct {
@@ -87,7 +111,14 @@ func (q *Queries) ListRedatablePostings(ctx context.Context, arg ListRedatablePo
 }
 
 const listStatementClosings = `-- name: ListStatementClosings :many
-SELECT reference_month, closing_date FROM ledger_statement WHERE user_id = $1 AND account_id = $2
+SELECT
+    reference_month,
+    closing_date
+FROM
+    ledger_statement
+WHERE
+    user_id = $1
+    AND account_id = $2
 `
 
 type ListStatementClosingsParams struct {
@@ -121,9 +152,14 @@ func (q *Queries) ListStatementClosings(ctx context.Context, arg ListStatementCl
 }
 
 const listStatementFacts = `-- name: ListStatementFacts :many
-SELECT f.user_id, f.statement_id, f.source, f.closing_date, f.due_date, f.total, f.minimum, f.reported_at FROM ledger_statement_fact f
-JOIN ledger_statement s ON s.id = f.statement_id
-WHERE f.user_id = $1 AND s.account_id = $2
+SELECT
+    f.user_id, f.statement_id, f.source, f.closing_date, f.due_date, f.total, f.minimum, f.reported_at
+FROM
+    ledger_statement_fact f
+    JOIN ledger_statement s ON s.id = f.statement_id
+WHERE
+    f.user_id = $1
+    AND s.account_id = $2
 `
 
 type ListStatementFactsParams struct {
@@ -161,7 +197,12 @@ func (q *Queries) ListStatementFacts(ctx context.Context, arg ListStatementFacts
 }
 
 const movePostingStatement = `-- name: MovePostingStatement :exec
-UPDATE ledger_posting SET statement_id = $1 WHERE user_id = $2 AND id = $3
+UPDATE ledger_posting
+SET
+    statement_id = $1
+WHERE
+    user_id = $2
+    AND id = $3
 `
 
 type MovePostingStatementParams struct {
@@ -176,11 +217,25 @@ func (q *Queries) MovePostingStatement(ctx context.Context, arg MovePostingState
 }
 
 const upsertStatementFact = `-- name: UpsertStatementFact :exec
-INSERT INTO ledger_statement_fact (user_id, statement_id, source, closing_date, due_date, total, minimum)
-VALUES ($1, $2, $3, $4, $5, $6, $7)
-ON CONFLICT (statement_id, source) DO UPDATE SET
-    closing_date = excluded.closing_date, due_date = excluded.due_date, total = excluded.total,
-    minimum = excluded.minimum, reported_at = now()
+INSERT INTO
+    ledger_statement_fact (user_id, statement_id, source, closing_date, due_date, total, minimum)
+VALUES
+    (
+        $1,
+        $2,
+        $3,
+        $4,
+        $5,
+        $6,
+        $7
+    )
+ON CONFLICT (statement_id, source) DO UPDATE
+SET
+    closing_date = excluded.closing_date,
+    due_date = excluded.due_date,
+    total = excluded.total,
+    minimum = excluded.minimum,
+    reported_at = now()
 `
 
 type UpsertStatementFactParams struct {

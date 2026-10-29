@@ -13,13 +13,26 @@ import (
 )
 
 const completeBatch = `-- name: CompleteBatch :one
-UPDATE ingestion_batch SET
-    received = $1, ignored = $2, matched = $3, created = $4,
-    needs_review = $5, discarded = $6, updated = $7, withdrawn = $8,
-    balance_date = $9, balance_amount = $10,
-    balance_status = $11, balance_reason = $12, completed_at = now()
-WHERE user_id = $13 AND id = $14
-RETURNING id, user_id, account_id, source, file_name, currency, period_from, period_to, received, ignored, matched, created, needs_review, discarded, balance_date, balance_amount, balance_status, balance_reason, started_at, completed_at, external_account_id, updated, withdrawn
+UPDATE ingestion_batch
+SET
+    received = $1,
+    ignored = $2,
+    matched = $3,
+    created = $4,
+    needs_review = $5,
+    discarded = $6,
+    updated = $7,
+    withdrawn = $8,
+    balance_date = $9,
+    balance_amount = $10,
+    balance_status = $11,
+    balance_reason = $12,
+    completed_at = now()
+WHERE
+    user_id = $13
+    AND id = $14
+RETURNING
+    id, user_id, account_id, source, file_name, currency, period_from, period_to, received, ignored, matched, created, needs_review, discarded, balance_date, balance_amount, balance_status, balance_reason, started_at, completed_at, external_account_id, updated, withdrawn
 `
 
 type CompleteBatchParams struct {
@@ -86,7 +99,13 @@ func (q *Queries) CompleteBatch(ctx context.Context, arg CompleteBatchParams) (I
 }
 
 const getBatch = `-- name: GetBatch :one
-SELECT id, user_id, account_id, source, file_name, currency, period_from, period_to, received, ignored, matched, created, needs_review, discarded, balance_date, balance_amount, balance_status, balance_reason, started_at, completed_at, external_account_id, updated, withdrawn FROM ingestion_batch WHERE user_id = $1 AND id = $2
+SELECT
+    id, user_id, account_id, source, file_name, currency, period_from, period_to, received, ignored, matched, created, needs_review, discarded, balance_date, balance_amount, balance_status, balance_reason, started_at, completed_at, external_account_id, updated, withdrawn
+FROM
+    ingestion_batch
+WHERE
+    user_id = $1
+    AND id = $2
 `
 
 type GetBatchParams struct {
@@ -126,9 +145,30 @@ func (q *Queries) GetBatch(ctx context.Context, arg GetBatchParams) (IngestionBa
 }
 
 const insertBatch = `-- name: InsertBatch :one
-INSERT INTO ingestion_batch (user_id, account_id, source, file_name, currency, period_from, period_to, external_account_id)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-RETURNING id, user_id, account_id, source, file_name, currency, period_from, period_to, received, ignored, matched, created, needs_review, discarded, balance_date, balance_amount, balance_status, balance_reason, started_at, completed_at, external_account_id, updated, withdrawn
+INSERT INTO
+    ingestion_batch (
+        user_id,
+        account_id,
+        source,
+        file_name,
+        currency,
+        period_from,
+        period_to,
+        external_account_id
+    )
+VALUES
+    (
+        $1,
+        $2,
+        $3,
+        $4,
+        $5,
+        $6,
+        $7,
+        $8
+    )
+RETURNING
+    id, user_id, account_id, source, file_name, currency, period_from, period_to, received, ignored, matched, created, needs_review, discarded, balance_date, balance_amount, balance_status, balance_reason, started_at, completed_at, external_account_id, updated, withdrawn
 `
 
 type InsertBatchParams struct {
@@ -183,11 +223,21 @@ func (q *Queries) InsertBatch(ctx context.Context, arg InsertBatchParams) (Inges
 }
 
 const listBatches = `-- name: ListBatches :many
-SELECT id, user_id, account_id, source, file_name, currency, period_from, period_to, received, ignored, matched, created, needs_review, discarded, balance_date, balance_amount, balance_status, balance_reason, started_at, completed_at, external_account_id, updated, withdrawn FROM ingestion_batch
-WHERE user_id = $1
-  AND ($2::timestamptz IS NULL OR (started_at, id) < ($2::timestamptz, $3::uuid))
-ORDER BY started_at DESC, id DESC
-LIMIT $4
+SELECT
+    id, user_id, account_id, source, file_name, currency, period_from, period_to, received, ignored, matched, created, needs_review, discarded, balance_date, balance_amount, balance_status, balance_reason, started_at, completed_at, external_account_id, updated, withdrawn
+FROM
+    ingestion_batch
+WHERE
+    user_id = $1
+    AND (
+        $2::timestamptz IS NULL
+        OR (started_at, id) < ($2::timestamptz, $3::uuid)
+    )
+ORDER BY
+    started_at DESC,
+    id DESC
+LIMIT
+    $4
 `
 
 type ListBatchesParams struct {
@@ -247,7 +297,8 @@ func (q *Queries) ListBatches(ctx context.Context, arg ListBatchesParams) ([]Ing
 }
 
 const lockAccountImports = `-- name: LockAccountImports :exec
-SELECT pg_advisory_lock(hashtextextended($1::text, 0))
+SELECT
+    pg_advisory_lock(hashtextextended ($1::text, 0))
 `
 
 // Session-level lock held for one import: imports of one account run one at a time.
@@ -257,7 +308,8 @@ func (q *Queries) LockAccountImports(ctx context.Context, accountKey string) err
 }
 
 const unlockAccountImports = `-- name: UnlockAccountImports :exec
-SELECT pg_advisory_unlock(hashtextextended($1::text, 0))
+SELECT
+    pg_advisory_unlock(hashtextextended ($1::text, 0))
 `
 
 func (q *Queries) UnlockAccountImports(ctx context.Context, accountKey string) error {

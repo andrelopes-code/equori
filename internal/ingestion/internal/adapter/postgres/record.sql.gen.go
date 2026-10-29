@@ -13,7 +13,13 @@ import (
 )
 
 const getRecord = `-- name: GetRecord :one
-SELECT id, user_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change, line_kind, review_reason, candidate_scores FROM ingestion_external_record WHERE user_id = $1 AND id = $2
+SELECT
+    id, user_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change, line_kind, review_reason, candidate_scores
+FROM
+    ingestion_external_record
+WHERE
+    user_id = $1
+    AND id = $2
 `
 
 type GetRecordParams struct {
@@ -53,12 +59,25 @@ func (q *Queries) GetRecord(ctx context.Context, arg GetRecordParams) (Ingestion
 }
 
 const listBatchRecords = `-- name: ListBatchRecords :many
-SELECT id, user_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change, line_kind, review_reason, candidate_scores FROM ingestion_external_record
-WHERE user_id = $1 AND batch_id = $2
-  AND ($3::text IS NULL OR state = $3::text)
-  AND ($4::uuid IS NULL OR id > $4::uuid)
-ORDER BY id
-LIMIT $5
+SELECT
+    id, user_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change, line_kind, review_reason, candidate_scores
+FROM
+    ingestion_external_record
+WHERE
+    user_id = $1
+    AND batch_id = $2
+    AND (
+        $3::text IS NULL
+        OR state = $3::text
+    )
+    AND (
+        $4::uuid IS NULL
+        OR id > $4::uuid
+    )
+ORDER BY
+    id
+LIMIT
+    $5
 `
 
 type ListBatchRecordsParams struct {
@@ -120,7 +139,13 @@ func (q *Queries) ListBatchRecords(ctx context.Context, arg ListBatchRecordsPara
 }
 
 const listRecordsByKeys = `-- name: ListRecordsByKeys :many
-SELECT id, user_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change, line_kind, review_reason, candidate_scores FROM ingestion_external_record WHERE user_id = $1 AND dedup_key = ANY($2::bytea[])
+SELECT
+    id, user_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change, line_kind, review_reason, candidate_scores
+FROM
+    ingestion_external_record
+WHERE
+    user_id = $1
+    AND dedup_key = ANY ($2::bytea[])
 `
 
 type ListRecordsByKeysParams struct {
@@ -173,10 +198,16 @@ func (q *Queries) ListRecordsByKeys(ctx context.Context, arg ListRecordsByKeysPa
 }
 
 const listSyncedRecords = `-- name: ListSyncedRecords :many
-SELECT id, user_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change, line_kind, review_reason, candidate_scores FROM ingestion_external_record
-WHERE user_id = $1 AND account_id = $2 AND external_status IS NOT NULL
-  AND booked_on BETWEEN $3::date AND $4::date
-  AND state NOT IN ('withdrawn', 'discarded')
+SELECT
+    id, user_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change, line_kind, review_reason, candidate_scores
+FROM
+    ingestion_external_record
+WHERE
+    user_id = $1
+    AND account_id = $2
+    AND external_status IS NOT NULL
+    AND booked_on BETWEEN $3::date AND $4::date
+    AND state NOT IN ('withdrawn', 'discarded')
 `
 
 type ListSyncedRecordsParams struct {
@@ -237,8 +268,13 @@ func (q *Queries) ListSyncedRecords(ctx context.Context, arg ListSyncedRecordsPa
 }
 
 const moveRecords = `-- name: MoveRecords :exec
-UPDATE ingestion_external_record SET transaction_id = $1
-WHERE user_id = $2 AND id = ANY($3::uuid[]) AND transaction_id IS NOT NULL
+UPDATE ingestion_external_record
+SET
+    transaction_id = $1
+WHERE
+    user_id = $2
+    AND id = ANY ($3::UUID[])
+    AND transaction_id IS NOT NULL
 `
 
 type MoveRecordsParams struct {
@@ -254,8 +290,13 @@ func (q *Queries) MoveRecords(ctx context.Context, arg MoveRecordsParams) error 
 }
 
 const moveReopenedCount = `-- name: MoveReopenedCount :exec
-UPDATE ingestion_batch SET discarded = discarded - 1, needs_review = needs_review + 1
-WHERE user_id = $1 AND id = $2
+UPDATE ingestion_batch
+SET
+    discarded = discarded - 1,
+    needs_review = needs_review + 1
+WHERE
+    user_id = $1
+    AND id = $2
 `
 
 type MoveReopenedCountParams struct {
@@ -269,12 +310,15 @@ func (q *Queries) MoveReopenedCount(ctx context.Context, arg MoveReopenedCountPa
 }
 
 const moveReviewCount = `-- name: MoveReviewCount :exec
-UPDATE ingestion_batch SET
+UPDATE ingestion_batch
+SET
     needs_review = needs_review - 1,
     matched = matched + ($1::text = 'matched')::int,
     created = created + ($1::text = 'created')::int,
     discarded = discarded + ($1::text = 'discarded')::int
-WHERE user_id = $2 AND id = $3
+WHERE
+    user_id = $2
+    AND id = $3
 `
 
 type MoveReviewCountParams struct {
@@ -290,8 +334,13 @@ func (q *Queries) MoveReviewCount(ctx context.Context, arg MoveReviewCountParams
 }
 
 const reopenRecord = `-- name: ReopenRecord :execrows
-UPDATE ingestion_external_record SET state = 'needs_review'
-WHERE user_id = $1 AND id = $2 AND state = 'discarded'
+UPDATE ingestion_external_record
+SET
+    state = 'needs_review'
+WHERE
+    user_id = $1
+    AND id = $2
+    AND state = 'discarded'
 `
 
 type ReopenRecordParams struct {
@@ -309,8 +358,14 @@ func (q *Queries) ReopenRecord(ctx context.Context, arg ReopenRecordParams) (int
 }
 
 const withdrawRecords = `-- name: WithdrawRecords :exec
-UPDATE ingestion_external_record SET state = 'withdrawn', transaction_id = NULL, candidates = '{}'
-WHERE user_id = $1 AND id = ANY($2::uuid[])
+UPDATE ingestion_external_record
+SET
+    state = 'withdrawn',
+    transaction_id = NULL,
+    candidates = '{}'
+WHERE
+    user_id = $1
+    AND id = ANY ($2::UUID[])
 `
 
 type WithdrawRecordsParams struct {
@@ -324,10 +379,26 @@ func (q *Queries) WithdrawRecords(ctx context.Context, arg WithdrawRecordsParams
 }
 
 const withdrawReviewCounts = `-- name: WithdrawReviewCounts :exec
-UPDATE ingestion_batch b SET needs_review = b.needs_review - w.n
-FROM (SELECT batch_id, count(*)::int AS n FROM ingestion_external_record
-      WHERE user_id = $1 AND id = ANY($2::uuid[]) AND state = 'needs_review' GROUP BY batch_id) w
-WHERE b.user_id = $1 AND b.id = w.batch_id
+UPDATE ingestion_batch b
+SET
+    needs_review = b.needs_review - w.n
+FROM
+    (
+        SELECT
+            batch_id,
+            count(*)::int AS n
+        FROM
+            ingestion_external_record
+        WHERE
+            user_id = $1
+            AND id = ANY ($2::UUID[])
+            AND state = 'needs_review'
+        GROUP BY
+            batch_id
+    ) w
+WHERE
+    b.user_id = $1
+    AND b.id = w.batch_id
 `
 
 type WithdrawReviewCountsParams struct {

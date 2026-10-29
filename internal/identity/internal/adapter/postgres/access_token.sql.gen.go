@@ -13,8 +13,10 @@ import (
 )
 
 const createAccessToken = `-- name: CreateAccessToken :exec
-INSERT INTO identity_access_token (id, user_id, name, scope, token_hash, created_at, expires_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7)
+INSERT INTO
+    identity_access_token (id, user_id, name, scope, token_hash, created_at, expires_at)
+VALUES
+    ($1, $2, $3, $4, $5, $6, $7)
 `
 
 type CreateAccessTokenParams struct {
@@ -41,7 +43,10 @@ func (q *Queries) CreateAccessToken(ctx context.Context, arg CreateAccessTokenPa
 }
 
 const deleteAccessToken = `-- name: DeleteAccessToken :execrows
-DELETE FROM identity_access_token WHERE user_id = $1 AND id = $2
+DELETE FROM identity_access_token
+WHERE
+    user_id = $1
+    AND id = $2
 `
 
 type DeleteAccessTokenParams struct {
@@ -58,9 +63,19 @@ func (q *Queries) DeleteAccessToken(ctx context.Context, arg DeleteAccessTokenPa
 }
 
 const getAccessTokenByHash = `-- name: GetAccessTokenByHash :one
-SELECT id, user_id, name, scope, created_at, expires_at, last_used_at
-FROM identity_access_token
-WHERE token_hash = $1 AND expires_at > $2
+SELECT
+    id,
+    user_id,
+    name,
+    scope,
+    created_at,
+    expires_at,
+    last_used_at
+FROM
+    identity_access_token
+WHERE
+    token_hash = $1
+    AND expires_at > $2
 `
 
 type GetAccessTokenByHashParams struct {
@@ -95,10 +110,21 @@ func (q *Queries) GetAccessTokenByHash(ctx context.Context, arg GetAccessTokenBy
 }
 
 const listAccessTokens = `-- name: ListAccessTokens :many
-SELECT id, user_id, name, scope, created_at, expires_at, last_used_at
-FROM identity_access_token
-WHERE user_id = $1
-ORDER BY created_at DESC, id
+SELECT
+    id,
+    user_id,
+    name,
+    scope,
+    created_at,
+    expires_at,
+    last_used_at
+FROM
+    identity_access_token
+WHERE
+    user_id = $1
+ORDER BY
+    created_at DESC,
+    id
 `
 
 type ListAccessTokensRow struct {
@@ -140,8 +166,16 @@ func (q *Queries) ListAccessTokens(ctx context.Context, userID int64) ([]ListAcc
 }
 
 const touchAccessToken = `-- name: TouchAccessToken :exec
-UPDATE identity_access_token SET last_used_at = $3
-WHERE user_id = $1 AND id = $2 AND (last_used_at IS NULL OR last_used_at <= $3::timestamptz - interval '1 minute')
+UPDATE identity_access_token
+SET
+    last_used_at = $3
+WHERE
+    user_id = $1
+    AND id = $2
+    AND (
+        last_used_at IS NULL
+        OR last_used_at <= $3::timestamptz - interval '1 minute'
+    )
 `
 
 type TouchAccessTokenParams struct {

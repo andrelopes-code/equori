@@ -10,7 +10,13 @@ import (
 )
 
 const listFeeds = `-- name: ListFeeds :many
-SELECT id, enabled FROM marketdata_feed ORDER BY id
+SELECT
+    id,
+    enabled
+FROM
+    marketdata_feed
+ORDER BY
+    id
 `
 
 func (q *Queries) ListFeeds(ctx context.Context) ([]MarketdataFeed, error) {
@@ -34,8 +40,13 @@ func (q *Queries) ListFeeds(ctx context.Context) ([]MarketdataFeed, error) {
 }
 
 const setFeed = `-- name: SetFeed :exec
-INSERT INTO marketdata_feed (id, enabled) VALUES ($1, $2)
-ON CONFLICT (id) DO UPDATE SET enabled = EXCLUDED.enabled
+INSERT INTO
+    marketdata_feed (id, enabled)
+VALUES
+    ($1, $2)
+ON CONFLICT (id) DO UPDATE
+SET
+    enabled = EXCLUDED.enabled
 `
 
 type SetFeedParams struct {

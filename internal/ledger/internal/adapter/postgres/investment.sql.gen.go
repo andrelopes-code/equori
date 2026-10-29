@@ -14,9 +14,16 @@ import (
 )
 
 const holding = `-- name: Holding :one
-SELECT coalesce(sum(amount), 0)::bigint AS quantity, coalesce(sum(weight), 0)::bigint AS cost_basis
-FROM ledger_posting
-WHERE user_id = $1 AND account_id = $2 AND NOT voided AND booked_on <= $3
+SELECT
+    coalesce(sum(amount), 0)::bigint AS quantity,
+    coalesce(sum(weight), 0)::bigint AS cost_basis
+FROM
+    ledger_posting
+WHERE
+    user_id = $1
+    AND account_id = $2
+    AND NOT voided
+    AND booked_on <= $3
 `
 
 type HoldingParams struct {
@@ -39,8 +46,28 @@ func (q *Queries) Holding(ctx context.Context, arg HoldingParams) (HoldingRow, e
 }
 
 const insertInvestmentIncome = `-- name: InsertInvestmentIncome :exec
-INSERT INTO ledger_investment_income (transaction_id, user_id, account_id, cash_account_id, income_type, gross, withheld, currency)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+INSERT INTO
+    ledger_investment_income (
+        transaction_id,
+        user_id,
+        account_id,
+        cash_account_id,
+        income_type,
+        gross,
+        withheld,
+        currency
+    )
+VALUES
+    (
+        $1,
+        $2,
+        $3,
+        $4,
+        $5,
+        $6,
+        $7,
+        $8
+    )
 `
 
 type InsertInvestmentIncomeParams struct {
@@ -69,8 +96,36 @@ func (q *Queries) InsertInvestmentIncome(ctx context.Context, arg InsertInvestme
 }
 
 const insertTrade = `-- name: InsertTrade :exec
-INSERT INTO ledger_trade (transaction_id, user_id, account_id, cash_account_id, side, quantity, unit_price, gross, fees, taxes, cost, currency)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+INSERT INTO
+    ledger_trade (
+        transaction_id,
+        user_id,
+        account_id,
+        cash_account_id,
+        side,
+        quantity,
+        unit_price,
+        gross,
+        fees,
+        taxes,
+        cost,
+        currency
+    )
+VALUES
+    (
+        $1,
+        $2,
+        $3,
+        $4,
+        $5,
+        $6,
+        $7,
+        $8,
+        $9,
+        $10,
+        $11,
+        $12
+    )
 `
 
 type InsertTradeParams struct {
@@ -107,12 +162,22 @@ func (q *Queries) InsertTrade(ctx context.Context, arg InsertTradeParams) error 
 }
 
 const laterSaleExists = `-- name: LaterSaleExists :one
-SELECT EXISTS (
-    SELECT 1 FROM ledger_trade tr
-    JOIN ledger_transaction t ON t.user_id = tr.user_id AND t.id = tr.transaction_id
-    WHERE tr.user_id = $1 AND tr.account_id = ANY($2::uuid[]) AND tr.side = 'sell'
-      AND t.voided_at IS NULL AND t.date >= $3 AND tr.transaction_id <> $4
-)
+SELECT
+    EXISTS (
+        SELECT
+            1
+        FROM
+            ledger_trade tr
+            JOIN ledger_transaction t ON t.user_id = tr.user_id
+            AND t.id = tr.transaction_id
+        WHERE
+            tr.user_id = $1
+            AND tr.account_id = ANY ($2::UUID[])
+            AND tr.side = 'sell'
+            AND t.voided_at IS NULL
+            AND t.date >= $3
+            AND tr.transaction_id <> $4
+    )
 `
 
 type LaterSaleExistsParams struct {
@@ -136,7 +201,13 @@ func (q *Queries) LaterSaleExists(ctx context.Context, arg LaterSaleExistsParams
 }
 
 const listInvestmentIncome = `-- name: ListInvestmentIncome :many
-SELECT transaction_id, user_id, account_id, cash_account_id, income_type, gross, withheld, currency FROM ledger_investment_income WHERE user_id = $1 AND transaction_id = ANY($2::uuid[])
+SELECT
+    transaction_id, user_id, account_id, cash_account_id, income_type, gross, withheld, currency
+FROM
+    ledger_investment_income
+WHERE
+    user_id = $1
+    AND transaction_id = ANY ($2::UUID[])
 `
 
 type ListInvestmentIncomeParams struct {
@@ -174,7 +245,13 @@ func (q *Queries) ListInvestmentIncome(ctx context.Context, arg ListInvestmentIn
 }
 
 const listTrades = `-- name: ListTrades :many
-SELECT transaction_id, user_id, account_id, cash_account_id, side, quantity, unit_price, gross, fees, taxes, cost, currency FROM ledger_trade WHERE user_id = $1 AND transaction_id = ANY($2::uuid[])
+SELECT
+    transaction_id, user_id, account_id, cash_account_id, side, quantity, unit_price, gross, fees, taxes, cost, currency
+FROM
+    ledger_trade
+WHERE
+    user_id = $1
+    AND transaction_id = ANY ($2::UUID[])
 `
 
 type ListTradesParams struct {
@@ -216,11 +293,24 @@ func (q *Queries) ListTrades(ctx context.Context, arg ListTradesParams) ([]Ledge
 }
 
 const securityIncomes = `-- name: SecurityIncomes :many
-SELECT i.transaction_id, i.account_id, t.date, i.income_type, i.gross, i.withheld
-FROM ledger_investment_income i
-JOIN ledger_transaction t ON t.user_id = i.user_id AND t.id = i.transaction_id
-WHERE i.user_id = $1 AND i.account_id = ANY($2::uuid[]) AND t.voided_at IS NULL
-ORDER BY t.date, i.transaction_id
+SELECT
+    i.transaction_id,
+    i.account_id,
+    t.date,
+    i.income_type,
+    i.gross,
+    i.withheld
+FROM
+    ledger_investment_income i
+    JOIN ledger_transaction t ON t.user_id = i.user_id
+    AND t.id = i.transaction_id
+WHERE
+    i.user_id = $1
+    AND i.account_id = ANY ($2::UUID[])
+    AND t.voided_at IS NULL
+ORDER BY
+    t.date,
+    i.transaction_id
 `
 
 type SecurityIncomesParams struct {
@@ -265,10 +355,22 @@ func (q *Queries) SecurityIncomes(ctx context.Context, arg SecurityIncomesParams
 }
 
 const securityPostings = `-- name: SecurityPostings :many
-SELECT p.account_id, p.transaction_id, p.booked_on, p.amount, p.weight
-FROM ledger_posting p
-WHERE p.user_id = $1 AND p.account_id = ANY($2::uuid[]) AND NOT p.voided
-ORDER BY p.booked_on, p.transaction_id, p.position
+SELECT
+    p.account_id,
+    p.transaction_id,
+    p.booked_on,
+    p.amount,
+    p.weight
+FROM
+    ledger_posting p
+WHERE
+    p.user_id = $1
+    AND p.account_id = ANY ($2::UUID[])
+    AND NOT p.voided
+ORDER BY
+    p.booked_on,
+    p.transaction_id,
+    p.position
 `
 
 type SecurityPostingsParams struct {
@@ -311,11 +413,27 @@ func (q *Queries) SecurityPostings(ctx context.Context, arg SecurityPostingsPara
 }
 
 const securityTrades = `-- name: SecurityTrades :many
-SELECT tr.transaction_id, tr.account_id, t.date, tr.side, tr.quantity, tr.gross, tr.fees, tr.taxes, tr.cost
-FROM ledger_trade tr
-JOIN ledger_transaction t ON t.user_id = tr.user_id AND t.id = tr.transaction_id
-WHERE tr.user_id = $1 AND tr.account_id = ANY($2::uuid[]) AND t.voided_at IS NULL
-ORDER BY t.date, tr.transaction_id
+SELECT
+    tr.transaction_id,
+    tr.account_id,
+    t.date,
+    tr.side,
+    tr.quantity,
+    tr.gross,
+    tr.fees,
+    tr.taxes,
+    tr.cost
+FROM
+    ledger_trade tr
+    JOIN ledger_transaction t ON t.user_id = tr.user_id
+    AND t.id = tr.transaction_id
+WHERE
+    tr.user_id = $1
+    AND tr.account_id = ANY ($2::UUID[])
+    AND t.voided_at IS NULL
+ORDER BY
+    t.date,
+    tr.transaction_id
 `
 
 type SecurityTradesParams struct {

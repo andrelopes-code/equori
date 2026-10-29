@@ -13,11 +13,30 @@ import (
 )
 
 const appendMessage = `-- name: AppendMessage :one
-INSERT INTO assistant_message (id, user_id, conversation_id, seq, role, content, outcome, created_at)
-SELECT $1, $2, $3,
-       COALESCE((SELECT max(seq) FROM assistant_message WHERE conversation_id = $3 AND user_id = $2), 0) + 1,
-       $4, $5, $6, $7
-RETURNING id, user_id, conversation_id, seq, role, content, outcome, created_at
+INSERT INTO
+    assistant_message (id, user_id, conversation_id, seq, role, content, outcome, created_at)
+SELECT
+    $1,
+    $2,
+    $3,
+    coalesce(
+        (
+            SELECT
+                max(seq)
+            FROM
+                assistant_message
+            WHERE
+                conversation_id = $3
+                AND user_id = $2
+        ),
+        0
+    ) + 1,
+    $4,
+    $5,
+    $6,
+    $7
+RETURNING
+    id, user_id, conversation_id, seq, role, content, outcome, created_at
 `
 
 type AppendMessageParams struct {
@@ -55,7 +74,13 @@ func (q *Queries) AppendMessage(ctx context.Context, arg AppendMessageParams) (A
 }
 
 const conversationByID = `-- name: ConversationByID :one
-SELECT id, user_id, title, created_at, updated_at FROM assistant_conversation WHERE user_id = $1 AND id = $2
+SELECT
+    id, user_id, title, created_at, updated_at
+FROM
+    assistant_conversation
+WHERE
+    user_id = $1
+    AND id = $2
 `
 
 type ConversationByIDParams struct {
@@ -77,7 +102,10 @@ func (q *Queries) ConversationByID(ctx context.Context, arg ConversationByIDPara
 }
 
 const deleteConversation = `-- name: DeleteConversation :execrows
-DELETE FROM assistant_conversation WHERE user_id = $1 AND id = $2
+DELETE FROM assistant_conversation
+WHERE
+    user_id = $1
+    AND id = $2
 `
 
 type DeleteConversationParams struct {
@@ -94,7 +122,9 @@ func (q *Queries) DeleteConversation(ctx context.Context, arg DeleteConversation
 }
 
 const deleteConversations = `-- name: DeleteConversations :exec
-DELETE FROM assistant_conversation WHERE user_id = $1
+DELETE FROM assistant_conversation
+WHERE
+    user_id = $1
 `
 
 func (q *Queries) DeleteConversations(ctx context.Context, userID int64) error {
@@ -103,8 +133,10 @@ func (q *Queries) DeleteConversations(ctx context.Context, userID int64) error {
 }
 
 const insertConversation = `-- name: InsertConversation :exec
-INSERT INTO assistant_conversation (id, user_id, title, created_at, updated_at)
-VALUES ($1, $2, $3, $4, $5)
+INSERT INTO
+    assistant_conversation (id, user_id, title, created_at, updated_at)
+VALUES
+    ($1, $2, $3, $4, $5)
 `
 
 type InsertConversationParams struct {
@@ -127,11 +159,21 @@ func (q *Queries) InsertConversation(ctx context.Context, arg InsertConversation
 }
 
 const listConversations = `-- name: ListConversations :many
-SELECT id, user_id, title, created_at, updated_at FROM assistant_conversation
-WHERE user_id = $1
-  AND ($2::timestamptz IS NULL OR (updated_at, id) < ($2::timestamptz, $3::uuid))
-ORDER BY updated_at DESC, id DESC
-LIMIT $4
+SELECT
+    id, user_id, title, created_at, updated_at
+FROM
+    assistant_conversation
+WHERE
+    user_id = $1
+    AND (
+        $2::timestamptz IS NULL
+        OR (updated_at, id) < ($2::timestamptz, $3::uuid)
+    )
+ORDER BY
+    updated_at DESC,
+    id DESC
+LIMIT
+    $4
 `
 
 type ListConversationsParams struct {
@@ -173,7 +215,15 @@ func (q *Queries) ListConversations(ctx context.Context, arg ListConversationsPa
 }
 
 const listMessages = `-- name: ListMessages :many
-SELECT id, user_id, conversation_id, seq, role, content, outcome, created_at FROM assistant_message WHERE user_id = $1 AND conversation_id = $2 ORDER BY seq
+SELECT
+    id, user_id, conversation_id, seq, role, content, outcome, created_at
+FROM
+    assistant_message
+WHERE
+    user_id = $1
+    AND conversation_id = $2
+ORDER BY
+    seq
 `
 
 type ListMessagesParams struct {
@@ -211,7 +261,12 @@ func (q *Queries) ListMessages(ctx context.Context, arg ListMessagesParams) ([]A
 }
 
 const touchConversation = `-- name: TouchConversation :exec
-UPDATE assistant_conversation SET updated_at = $1 WHERE user_id = $2 AND id = $3
+UPDATE assistant_conversation
+SET
+    updated_at = $1
+WHERE
+    user_id = $2
+    AND id = $3
 `
 
 type TouchConversationParams struct {

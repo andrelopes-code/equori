@@ -12,7 +12,14 @@ import (
 )
 
 const allAliases = `-- name: AllAliases :many
-SELECT id, user_id, pattern, match_type, payee_id, created_at FROM classification_payee_alias WHERE user_id = $1 ORDER BY id
+SELECT
+    id, user_id, pattern, match_type, payee_id, created_at
+FROM
+    classification_payee_alias
+WHERE
+    user_id = $1
+ORDER BY
+    id
 `
 
 func (q *Queries) AllAliases(ctx context.Context, userID int64) ([]ClassificationPayeeAlias, error) {
@@ -43,7 +50,10 @@ func (q *Queries) AllAliases(ctx context.Context, userID int64) ([]Classificatio
 }
 
 const deleteAlias = `-- name: DeleteAlias :execrows
-DELETE FROM classification_payee_alias WHERE user_id = $1 AND id = $2
+DELETE FROM classification_payee_alias
+WHERE
+    user_id = $1
+    AND id = $2
 `
 
 type DeleteAliasParams struct {
@@ -60,7 +70,13 @@ func (q *Queries) DeleteAlias(ctx context.Context, arg DeleteAliasParams) (int64
 }
 
 const getAlias = `-- name: GetAlias :one
-SELECT id, user_id, pattern, match_type, payee_id, created_at FROM classification_payee_alias WHERE user_id = $1 AND id = $2
+SELECT
+    id, user_id, pattern, match_type, payee_id, created_at
+FROM
+    classification_payee_alias
+WHERE
+    user_id = $1
+    AND id = $2
 `
 
 type GetAliasParams struct {
@@ -83,9 +99,12 @@ func (q *Queries) GetAlias(ctx context.Context, arg GetAliasParams) (Classificat
 }
 
 const insertAlias = `-- name: InsertAlias :one
-INSERT INTO classification_payee_alias (user_id, pattern, match_type, payee_id)
-VALUES ($1, $2, $3, $4)
-RETURNING id, user_id, pattern, match_type, payee_id, created_at
+INSERT INTO
+    classification_payee_alias (user_id, pattern, match_type, payee_id)
+VALUES
+    ($1, $2, $3, $4)
+RETURNING
+    id, user_id, pattern, match_type, payee_id, created_at
 `
 
 type InsertAliasParams struct {
@@ -115,10 +134,20 @@ func (q *Queries) InsertAlias(ctx context.Context, arg InsertAliasParams) (Class
 }
 
 const listAliases = `-- name: ListAliases :many
-SELECT id, user_id, pattern, match_type, payee_id, created_at FROM classification_payee_alias
-WHERE user_id = $1 AND ($2::uuid IS NULL OR id > $2::uuid)
-ORDER BY id
-LIMIT $3
+SELECT
+    id, user_id, pattern, match_type, payee_id, created_at
+FROM
+    classification_payee_alias
+WHERE
+    user_id = $1
+    AND (
+        $2::uuid IS NULL
+        OR id > $2::uuid
+    )
+ORDER BY
+    id
+LIMIT
+    $3
 `
 
 type ListAliasesParams struct {
@@ -155,9 +184,16 @@ func (q *Queries) ListAliases(ctx context.Context, arg ListAliasesParams) ([]Cla
 }
 
 const updateAlias = `-- name: UpdateAlias :one
-UPDATE classification_payee_alias SET pattern = $1, match_type = $2, payee_id = $3
-WHERE user_id = $4 AND id = $5
-RETURNING id, user_id, pattern, match_type, payee_id, created_at
+UPDATE classification_payee_alias
+SET
+    pattern = $1,
+    match_type = $2,
+    payee_id = $3
+WHERE
+    user_id = $4
+    AND id = $5
+RETURNING
+    id, user_id, pattern, match_type, payee_id, created_at
 `
 
 type UpdateAliasParams struct {

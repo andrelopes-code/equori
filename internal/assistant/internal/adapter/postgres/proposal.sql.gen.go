@@ -13,8 +13,12 @@ import (
 )
 
 const attachProposals = `-- name: AttachProposals :exec
-UPDATE assistant_proposal SET message_id = $1
-WHERE user_id = $2 AND id = ANY($3::uuid[])
+UPDATE assistant_proposal
+SET
+    message_id = $1
+WHERE
+    user_id = $2
+    AND id = ANY ($3::UUID[])
 `
 
 type AttachProposalsParams struct {
@@ -29,9 +33,16 @@ func (q *Queries) AttachProposals(ctx context.Context, arg AttachProposalsParams
 }
 
 const claimProposal = `-- name: ClaimProposal :one
-UPDATE assistant_proposal SET status = 'executing'
-WHERE user_id = $1 AND id = $2 AND status = 'pending' AND expires_at > $3
-RETURNING id, user_id, conversation_id, message_id, tool, arguments, preview, basis, status, result, created_at, expires_at, decided_at
+UPDATE assistant_proposal
+SET
+    status = 'executing'
+WHERE
+    user_id = $1
+    AND id = $2
+    AND status = 'pending'
+    AND expires_at > $3
+RETURNING
+    id, user_id, conversation_id, message_id, tool, arguments, preview, basis, status, result, created_at, expires_at, decided_at
 `
 
 type ClaimProposalParams struct {
@@ -62,8 +73,14 @@ func (q *Queries) ClaimProposal(ctx context.Context, arg ClaimProposalParams) (A
 }
 
 const decideProposal = `-- name: DecideProposal :exec
-UPDATE assistant_proposal SET status = $1, result = $2, decided_at = $3
-WHERE user_id = $4 AND id = $5
+UPDATE assistant_proposal
+SET
+    status = $1,
+    result = $2,
+    decided_at = $3
+WHERE
+    user_id = $4
+    AND id = $5
 `
 
 type DecideProposalParams struct {
@@ -86,8 +103,14 @@ func (q *Queries) DecideProposal(ctx context.Context, arg DecideProposalParams) 
 }
 
 const discardProposals = `-- name: DiscardProposals :exec
-UPDATE assistant_proposal SET status = 'discarded', decided_at = $1
-WHERE user_id = $2 AND id = ANY($3::uuid[]) AND status = 'pending'
+UPDATE assistant_proposal
+SET
+    status = 'discarded',
+    decided_at = $1
+WHERE
+    user_id = $2
+    AND id = ANY ($3::UUID[])
+    AND status = 'pending'
 `
 
 type DiscardProposalsParams struct {
@@ -102,10 +125,38 @@ func (q *Queries) DiscardProposals(ctx context.Context, arg DiscardProposalsPara
 }
 
 const insertProposal = `-- name: InsertProposal :exec
-INSERT INTO assistant_proposal (id, user_id, conversation_id, message_id, tool, arguments, preview, basis, status, result,
-                                created_at, expires_at, decided_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9,
-        $10, $11, $12, $13)
+INSERT INTO
+    assistant_proposal (
+        id,
+        user_id,
+        conversation_id,
+        message_id,
+        tool,
+        arguments,
+        preview,
+        basis,
+        status,
+        result,
+        created_at,
+        expires_at,
+        decided_at
+    )
+VALUES
+    (
+        $1,
+        $2,
+        $3,
+        $4,
+        $5,
+        $6,
+        $7,
+        $8,
+        $9,
+        $10,
+        $11,
+        $12,
+        $13
+    )
 `
 
 type InsertProposalParams struct {
@@ -144,7 +195,16 @@ func (q *Queries) InsertProposal(ctx context.Context, arg InsertProposalParams) 
 }
 
 const listProposals = `-- name: ListProposals :many
-SELECT id, user_id, conversation_id, message_id, tool, arguments, preview, basis, status, result, created_at, expires_at, decided_at FROM assistant_proposal WHERE user_id = $1 AND conversation_id = $2 ORDER BY created_at, id
+SELECT
+    id, user_id, conversation_id, message_id, tool, arguments, preview, basis, status, result, created_at, expires_at, decided_at
+FROM
+    assistant_proposal
+WHERE
+    user_id = $1
+    AND conversation_id = $2
+ORDER BY
+    created_at,
+    id
 `
 
 type ListProposalsParams struct {
@@ -187,7 +247,13 @@ func (q *Queries) ListProposals(ctx context.Context, arg ListProposalsParams) ([
 }
 
 const proposalByID = `-- name: ProposalByID :one
-SELECT id, user_id, conversation_id, message_id, tool, arguments, preview, basis, status, result, created_at, expires_at, decided_at FROM assistant_proposal WHERE user_id = $1 AND id = $2
+SELECT
+    id, user_id, conversation_id, message_id, tool, arguments, preview, basis, status, result, created_at, expires_at, decided_at
+FROM
+    assistant_proposal
+WHERE
+    user_id = $1
+    AND id = $2
 `
 
 type ProposalByIDParams struct {
@@ -217,8 +283,15 @@ func (q *Queries) ProposalByID(ctx context.Context, arg ProposalByIDParams) (Ass
 }
 
 const rejectProposal = `-- name: RejectProposal :execrows
-UPDATE assistant_proposal SET status = 'rejected', decided_at = $1
-WHERE user_id = $2 AND id = $3 AND status = 'pending' AND expires_at > $1
+UPDATE assistant_proposal
+SET
+    status = 'rejected',
+    decided_at = $1
+WHERE
+    user_id = $2
+    AND id = $3
+    AND status = 'pending'
+    AND expires_at > $1
 `
 
 type RejectProposalParams struct {

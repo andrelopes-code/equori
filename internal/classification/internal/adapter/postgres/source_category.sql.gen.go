@@ -12,11 +12,17 @@ import (
 )
 
 const countSourceCategory = `-- name: CountSourceCategory :exec
-INSERT INTO classification_source_category (user_id, aggregator, external_id, name, seen_count)
-VALUES ($1, $2, $3, $4, $5)
-ON CONFLICT (user_id, aggregator, external_id) DO UPDATE SET
+INSERT INTO
+    classification_source_category (user_id, aggregator, external_id, name, seen_count)
+VALUES
+    ($1, $2, $3, $4, $5)
+ON CONFLICT (user_id, aggregator, external_id) DO UPDATE
+SET
     seen_count = classification_source_category.seen_count + EXCLUDED.seen_count,
-    name = CASE WHEN EXCLUDED.name = '' THEN classification_source_category.name ELSE EXCLUDED.name END
+    name = CASE
+        WHEN EXCLUDED.name = '' THEN classification_source_category.name
+        ELSE EXCLUDED.name
+    END
 `
 
 type CountSourceCategoryParams struct {
@@ -40,11 +46,21 @@ func (q *Queries) CountSourceCategory(ctx context.Context, arg CountSourceCatego
 }
 
 const listSourceCategories = `-- name: ListSourceCategories :many
-SELECT id, user_id, aggregator, external_id, name, seen_count, category_id FROM classification_source_category
-WHERE user_id = $1
-  AND ($2::text IS NULL OR (name, id) > ($2::text, $3::uuid))
-ORDER BY name, id
-LIMIT $4
+SELECT
+    id, user_id, aggregator, external_id, name, seen_count, category_id
+FROM
+    classification_source_category
+WHERE
+    user_id = $1
+    AND (
+        $2::text IS NULL
+        OR (name, id) > ($2::text, $3::uuid)
+    )
+ORDER BY
+    name,
+    id
+LIMIT
+    $4
 `
 
 type ListSourceCategoriesParams struct {
@@ -88,9 +104,14 @@ func (q *Queries) ListSourceCategories(ctx context.Context, arg ListSourceCatego
 }
 
 const mapSourceCategory = `-- name: MapSourceCategory :one
-UPDATE classification_source_category SET category_id = $1
-WHERE user_id = $2 AND id = $3
-RETURNING id, user_id, aggregator, external_id, name, seen_count, category_id
+UPDATE classification_source_category
+SET
+    category_id = $1
+WHERE
+    user_id = $2
+    AND id = $3
+RETURNING
+    id, user_id, aggregator, external_id, name, seen_count, category_id
 `
 
 type MapSourceCategoryParams struct {
@@ -115,8 +136,16 @@ func (q *Queries) MapSourceCategory(ctx context.Context, arg MapSourceCategoryPa
 }
 
 const mappedSourceCategories = `-- name: MappedSourceCategories :many
-SELECT external_id, category_id::uuid AS category_id FROM classification_source_category
-WHERE user_id = $1 AND aggregator = $2 AND external_id = ANY($3::text[]) AND category_id IS NOT NULL
+SELECT
+    external_id,
+    category_id::uuid AS category_id
+FROM
+    classification_source_category
+WHERE
+    user_id = $1
+    AND aggregator = $2
+    AND external_id = ANY ($3::TEXT[])
+    AND category_id IS NOT NULL
 `
 
 type MappedSourceCategoriesParams struct {

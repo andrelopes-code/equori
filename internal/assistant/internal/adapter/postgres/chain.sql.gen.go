@@ -12,7 +12,10 @@ import (
 )
 
 const deleteChain = `-- name: DeleteChain :exec
-DELETE FROM assistant_chain_target WHERE user_id = $1 AND use_id = $2
+DELETE FROM assistant_chain_target
+WHERE
+    user_id = $1
+    AND use_id = $2
 `
 
 type DeleteChainParams struct {
@@ -26,8 +29,10 @@ func (q *Queries) DeleteChain(ctx context.Context, arg DeleteChainParams) error 
 }
 
 const insertChainTarget = `-- name: InsertChainTarget :exec
-INSERT INTO assistant_chain_target (user_id, use_id, position, provider_id, model, capabilities)
-VALUES ($1, $2, $3, $4, $5, $6)
+INSERT INTO
+    assistant_chain_target (user_id, use_id, position, provider_id, model, capabilities)
+VALUES
+    ($1, $2, $3, $4, $5, $6)
 `
 
 type InsertChainTargetParams struct {
@@ -52,7 +57,15 @@ func (q *Queries) InsertChainTarget(ctx context.Context, arg InsertChainTargetPa
 }
 
 const listChainTargets = `-- name: ListChainTargets :many
-SELECT user_id, use_id, position, provider_id, model, capabilities FROM assistant_chain_target WHERE user_id = $1 ORDER BY use_id, position
+SELECT
+    user_id, use_id, position, provider_id, model, capabilities
+FROM
+    assistant_chain_target
+WHERE
+    user_id = $1
+ORDER BY
+    use_id,
+    position
 `
 
 func (q *Queries) ListChainTargets(ctx context.Context, userID int64) ([]AssistantChainTarget, error) {

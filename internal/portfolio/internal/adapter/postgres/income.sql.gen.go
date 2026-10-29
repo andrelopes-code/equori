@@ -13,7 +13,10 @@ import (
 )
 
 const deleteIncomeEvents = `-- name: DeleteIncomeEvents :exec
-DELETE FROM portfolio_income_event WHERE user_id = $1 AND account_id = ANY($2::uuid[])
+DELETE FROM portfolio_income_event
+WHERE
+    user_id = $1
+    AND account_id = ANY ($2::UUID[])
 `
 
 type DeleteIncomeEventsParams struct {
@@ -27,8 +30,32 @@ func (q *Queries) DeleteIncomeEvents(ctx context.Context, arg DeleteIncomeEvents
 }
 
 const insertIncomeEvent = `-- name: InsertIncomeEvent :exec
-INSERT INTO portfolio_income_event (user_id, transaction_id, account_id, instrument, date, income_type, tax_treatment, gross, withheld, currency)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+INSERT INTO
+    portfolio_income_event (
+        user_id,
+        transaction_id,
+        account_id,
+        instrument,
+        date,
+        income_type,
+        tax_treatment,
+        gross,
+        withheld,
+        currency
+    )
+VALUES
+    (
+        $1,
+        $2,
+        $3,
+        $4,
+        $5,
+        $6,
+        $7,
+        $8,
+        $9,
+        $10
+    )
 `
 
 type InsertIncomeEventParams struct {
@@ -61,9 +88,17 @@ func (q *Queries) InsertIncomeEvent(ctx context.Context, arg InsertIncomeEventPa
 }
 
 const listIncomeEvents = `-- name: ListIncomeEvents :many
-SELECT user_id, transaction_id, account_id, instrument, date, income_type, tax_treatment, gross, withheld, currency FROM portfolio_income_event
-WHERE user_id = $1 AND date >= $2 AND date < $3
-ORDER BY date, transaction_id
+SELECT
+    user_id, transaction_id, account_id, instrument, date, income_type, tax_treatment, gross, withheld, currency
+FROM
+    portfolio_income_event
+WHERE
+    user_id = $1
+    AND date >= $2
+    AND date < $3
+ORDER BY
+    date,
+    transaction_id
 `
 
 type ListIncomeEventsParams struct {
@@ -104,11 +139,29 @@ func (q *Queries) ListIncomeEvents(ctx context.Context, arg ListIncomeEventsPara
 }
 
 const listRebuildUsers = `-- name: ListRebuildUsers :many
-SELECT user_id FROM ledger_account WHERE kind = 'brokerage'
-UNION SELECT user_id FROM portfolio_position_day
-UNION SELECT user_id FROM portfolio_realized_result
-UNION SELECT user_id FROM portfolio_income_event
-ORDER BY user_id
+SELECT
+    user_id
+FROM
+    ledger_account
+WHERE
+    kind = 'brokerage'
+UNION
+SELECT
+    user_id
+FROM
+    portfolio_position_day
+UNION
+SELECT
+    user_id
+FROM
+    portfolio_realized_result
+UNION
+SELECT
+    user_id
+FROM
+    portfolio_income_event
+ORDER BY
+    user_id
 `
 
 func (q *Queries) ListRebuildUsers(ctx context.Context) ([]int64, error) {

@@ -13,10 +13,21 @@ import (
 )
 
 const correctedExamples = `-- name: CorrectedExamples :many
-SELECT transaction_id FROM classification_categorization
-WHERE user_id = $1 AND match_key = $2 AND category_id = $3 AND corrected AND NOT voided
-ORDER BY transaction_date, transaction_id
-LIMIT $4
+SELECT
+    transaction_id
+FROM
+    classification_categorization
+WHERE
+    user_id = $1
+    AND match_key = $2
+    AND category_id = $3
+    AND corrected
+    AND NOT voided
+ORDER BY
+    transaction_date,
+    transaction_id
+LIMIT
+    $4
 `
 
 type CorrectedExamplesParams struct {
@@ -52,9 +63,16 @@ func (q *Queries) CorrectedExamples(ctx context.Context, arg CorrectedExamplesPa
 }
 
 const decideSuggestion = `-- name: DecideSuggestion :one
-UPDATE classification_suggestion SET state = $1, rule_id = $2, decided_at = now()
-WHERE user_id = $3 AND id = $4
-RETURNING id, user_id, fingerprint, conditions, actions, example_transaction_ids, state, rule_id, created_at, decided_at
+UPDATE classification_suggestion
+SET
+    state = $1,
+    rule_id = $2,
+    decided_at = now()
+WHERE
+    user_id = $3
+    AND id = $4
+RETURNING
+    id, user_id, fingerprint, conditions, actions, example_transaction_ids, state, rule_id, created_at, decided_at
 `
 
 type DecideSuggestionParams struct {
@@ -88,12 +106,24 @@ func (q *Queries) DecideSuggestion(ctx context.Context, arg DecideSuggestionPara
 }
 
 const listSuggestions = `-- name: ListSuggestions :many
-SELECT id, user_id, fingerprint, conditions, actions, example_transaction_ids, state, rule_id, created_at, decided_at FROM classification_suggestion
-WHERE user_id = $1
-  AND ($2::text IS NULL OR state = $2::text)
-  AND ($3::uuid IS NULL OR id > $3::uuid)
-ORDER BY id
-LIMIT $4
+SELECT
+    id, user_id, fingerprint, conditions, actions, example_transaction_ids, state, rule_id, created_at, decided_at
+FROM
+    classification_suggestion
+WHERE
+    user_id = $1
+    AND (
+        $2::text IS NULL
+        OR state = $2::text
+    )
+    AND (
+        $3::uuid IS NULL
+        OR id > $3::uuid
+    )
+ORDER BY
+    id
+LIMIT
+    $4
 `
 
 type ListSuggestionsParams struct {
@@ -140,7 +170,14 @@ func (q *Queries) ListSuggestions(ctx context.Context, arg ListSuggestionsParams
 }
 
 const lockSuggestion = `-- name: LockSuggestion :one
-SELECT id, user_id, fingerprint, conditions, actions, example_transaction_ids, state, rule_id, created_at, decided_at FROM classification_suggestion WHERE user_id = $1 AND id = $2 FOR UPDATE
+SELECT
+    id, user_id, fingerprint, conditions, actions, example_transaction_ids, state, rule_id, created_at, decided_at
+FROM
+    classification_suggestion
+WHERE
+    user_id = $1
+    AND id = $2
+FOR UPDATE
 `
 
 type LockSuggestionParams struct {
@@ -167,10 +204,31 @@ func (q *Queries) LockSuggestion(ctx context.Context, arg LockSuggestionParams) 
 }
 
 const upsertSuggestion = `-- name: UpsertSuggestion :exec
-INSERT INTO classification_suggestion (user_id, fingerprint, conditions, actions, example_transaction_ids, state, created_at)
-VALUES ($1, $2, $3, $4, $5, 'pending', $6)
-ON CONFLICT (user_id, fingerprint) DO UPDATE SET example_transaction_ids = EXCLUDED.example_transaction_ids
-WHERE classification_suggestion.state = 'pending'
+INSERT INTO
+    classification_suggestion (
+        user_id,
+        fingerprint,
+        conditions,
+        actions,
+        example_transaction_ids,
+        state,
+        created_at
+    )
+VALUES
+    (
+        $1,
+        $2,
+        $3,
+        $4,
+        $5,
+        'pending',
+        $6
+    )
+ON CONFLICT (user_id, fingerprint) DO UPDATE
+SET
+    example_transaction_ids = EXCLUDED.example_transaction_ids
+WHERE
+    classification_suggestion.state = 'pending'
 `
 
 type UpsertSuggestionParams struct {
