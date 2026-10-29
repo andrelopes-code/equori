@@ -8,6 +8,7 @@ import { chooseEntryKind } from "@/testing/entry-kind";
 import { fakeApi, json, problem } from "@/testing/fake-api";
 import { renderApp } from "@/testing/render-app";
 import {
+  accounts,
   checkingID,
   foodID,
   payeeID,
@@ -106,6 +107,75 @@ describe("NewTransactionPage", () => {
     });
     await waitFor(() => {
       expect(router.state.location.pathname).toBe("/transactions");
+    });
+  });
+
+  // A136: a card purchase 3 days before the closing date may land on the next statement; the
+  // owner who knows it chooses that one, and the request names it.
+  it("records a card purchase on the statement the owner chose", async () => {
+    const cardID = "c0000000-0000-4000-8000-000000000001";
+    const sent: unknown[] = [];
+    await renderApp("/transactions/new", {
+      fetch: fakeApi({
+        ...sharedRoutes,
+        "GET /api/v1/accounts": () =>
+          json(200, {
+            items: [
+              ...accounts,
+              {
+                id: cardID,
+                name: "Nubank Gold",
+                class: "liability",
+                kind: "credit_card",
+                currency: "BRL",
+              },
+            ],
+          }),
+        [`GET /api/v1/accounts/${cardID}/statement-placement`]: () =>
+          json(200, {
+            reference: "2026-11",
+            closing_date: "2026-10-20",
+            due_date: "2026-10-27",
+          }),
+        "POST /api/v1/transactions": async (req) => {
+          sent.push(await req.json());
+          return json(201, transactionFixture());
+        },
+      }),
+    });
+    await userEvent.type(
+      await screen.findByRole("textbox", { name: catalogEn["entry.amount"] }),
+      "713",
+    );
+    await chooseAccount(catalogEn["entry.payWith"], "Nubank Gold");
+    await pick(catalogEn["category.label"], "Mercado");
+
+    await userEvent.click(
+      await screen.findByRole("combobox", {
+        name: catalogEn["entry.statement"],
+      }),
+    );
+    await userEvent.click(
+      await screen.findByRole("option", { name: "December 2026" }),
+    );
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["entry.save"] }),
+    );
+
+    await waitFor(() => {
+      expect(sent).toEqual([
+        {
+          date: "2026-10-17",
+          postings: [
+            {
+              account_id: cardID,
+              amount: money(-713),
+              statement: "2026-12",
+            },
+            { account_id: foodID, amount: money(713) },
+          ],
+        },
+      ]);
     });
   });
 

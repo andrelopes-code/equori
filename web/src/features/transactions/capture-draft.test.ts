@@ -101,6 +101,7 @@ describe("draftOf", () => {
       toAccountId: null,
       categoryId: "food",
       payeeId: "p",
+      statement: null,
       description: "Mercado",
       tags: [],
       rows: [],

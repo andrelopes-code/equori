@@ -4,16 +4,14 @@ import type { ReactNode } from "react";
 
 import type { components } from "@/api/schema.gen";
 import { AccountField } from "@/features/transactions/account-field";
+import { groupOf } from "@/features/transactions/account-groups";
 import { EntryAmountField } from "@/features/transactions/entry-amount-field";
 import { EntryClassificationFields } from "@/features/transactions/entry-classification-fields";
 import { isBuiltKind } from "@/features/transactions/entry-kind";
 import { EntryKindPicker } from "@/features/transactions/entry-kind-picker";
-import type {
-  EntryDraft,
-  EntryKind,
-  PostingKind,
-} from "@/features/transactions/entry-kind";
+import type { EntryDraft, EntryKind } from "@/features/transactions/entry-kind";
 import { PostingsEditor } from "@/features/transactions/postings-editor";
+import { StatementChoice } from "@/features/transactions/statement-choice";
 import { TagsField } from "@/features/transactions/tags-field";
 import { useT } from "@/i18n/i18n-provider";
 import { DateInput } from "@/ui/date-input";
@@ -22,16 +20,6 @@ import { FormLayout } from "@/ui/form-layout";
 
 type Account = components["schemas"]["Account"];
 type Payee = components["schemas"]["Payee"];
-
-// The request's posting field names, read back into the field that wrote them (FM-02).
-export function fieldOf(kind: PostingKind, field: string): string {
-  if (kind === "advanced") return field;
-  if (field.startsWith("postings[0]")) return "account";
-  if (field.startsWith("postings[1]"))
-    return kind === "transfer" ? "to" : "category";
-  if (field.startsWith("tags")) return "tags";
-  return field;
-}
 
 export function TransactionForm({
   draft,
@@ -126,7 +114,7 @@ export function TransactionForm({
             currency={currency}
             scale={scale}
             onChange={(id) => {
-              set({ accountId: id });
+              set({ accountId: id, statement: null });
             }}
           />
           {error("account") !== undefined && (
@@ -166,13 +154,26 @@ export function TransactionForm({
           name="date"
           value={draft.date}
           onChange={(date) => {
-            set({ date });
+            set({ date, statement: null });
           }}
         />
         {error("date") !== undefined && (
           <FieldError>{error("date")}</FieldError>
         )}
       </Field>
+
+      {draft.kind === "expense" &&
+        account !== undefined &&
+        groupOf(account) === "cards" && (
+          <StatementChoice
+            cardId={account.id}
+            date={draft.date}
+            value={draft.statement}
+            onChange={(statement) => {
+              set({ statement });
+            }}
+          />
+        )}
 
       {(draft.kind === "expense" || draft.kind === "income") && (
         <EntryClassificationFields

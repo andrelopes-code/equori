@@ -44,6 +44,7 @@ export function draftOf(line: CaptureLine, override?: LineOverride): LineDraft {
     toAccountId: line.to_account_id ?? null,
     categoryId: line.category_id ?? null,
     payeeId: line.payee_id ?? null,
+    statement: null,
     description: line.description,
     tags: line.tags,
     rows: [],

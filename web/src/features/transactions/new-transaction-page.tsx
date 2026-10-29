@@ -51,10 +51,8 @@ import { useIncomeEntry } from "@/features/transactions/use-income-entry";
 import { useExchangeEntry } from "@/features/transactions/use-exchange-entry";
 import { useForeignEntry } from "@/features/transactions/use-foreign-entry";
 import { useTradeEntry } from "@/features/transactions/use-trade-entry";
-import {
-  TransactionForm,
-  fieldOf,
-} from "@/features/transactions/transaction-form";
+import { fieldOf } from "@/features/transactions/field-of";
+import { TransactionForm } from "@/features/transactions/transaction-form";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { compactQuery, useMediaQuery, wideQuery } from "@/ui/use-media-query";

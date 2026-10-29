@@ -43,10 +43,8 @@ import type { EntryDraft } from "@/features/transactions/entry-kind";
 import { draftProblems } from "@/features/transactions/entry-validation";
 import { movedFields } from "@/features/transactions/moved-fields";
 import type { MovedField } from "@/features/transactions/moved-fields";
-import {
-  TransactionForm,
-  fieldOf,
-} from "@/features/transactions/transaction-form";
+import { fieldOf } from "@/features/transactions/field-of";
+import { TransactionForm } from "@/features/transactions/transaction-form";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMediaQuery, wideQuery } from "@/ui/use-media-query";

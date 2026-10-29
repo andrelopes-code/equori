@@ -38,6 +38,8 @@ export interface EntryDraft {
   categoryId: string | null;
   toAccountId: string | null;
   payeeId: string | null;
+  // A card statement the owner chose for an expense (A136); null leaves it to the date.
+  statement: string | null;
   description: string;
   tags: string[];
   rows: EntryRow[];
@@ -55,6 +57,7 @@ export function emptyDraft(
     categoryId: null,
     toAccountId: null,
     payeeId: null,
+    statement: null,
     description: "",
     tags: [],
     rows: [
@@ -102,7 +105,10 @@ function postingsOf(
   switch (draft.kind) {
     case "expense":
       return [
-        posting(draft.accountId, -draft.amount),
+        {
+          ...posting(draft.accountId, -draft.amount),
+          ...(draft.statement === null ? {} : { statement: draft.statement }),
+        },
         posting(draft.categoryId, draft.amount),
       ];
     case "income":
