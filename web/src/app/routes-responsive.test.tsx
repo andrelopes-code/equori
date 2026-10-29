@@ -175,7 +175,7 @@ const routes: RouteCase[] = [
     // The record's page is headed by the transaction itself.
     path: `/transactions/${txID}`,
     heading: "Compra no mercado",
-    loaded: catalogPtBR["detail.postings"],
+    loaded: catalogPtBR["detail.accounts"],
     authenticated: true,
   },
   {

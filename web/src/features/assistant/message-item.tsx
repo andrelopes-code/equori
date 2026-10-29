@@ -10,11 +10,9 @@ import { Glyph, Icon } from "@slotted/react/icon";
 import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
 import { Button, IconButton } from "@slotted/react/button";
 import { Markdown } from "@slotted/react/markdown";
-import type { MarkdownRenderers } from "@slotted/react/markdown";
 import { Stack } from "@slotted/react/stack";
 import { Text } from "@slotted/react/typography";
 import { useMemo, useState } from "react";
-import type { NavigateOptions } from "@tanstack/react-router";
 
 import styles from "@/features/assistant/assistant-panel.module.css";
 import type { AssistantMessage } from "@/features/assistant/sse";
@@ -29,22 +27,8 @@ import type { Decision } from "@/features/assistant/confirm-all";
 import { ProposalCard } from "@/features/assistant/proposal-card";
 import { TurnActivity } from "@/features/assistant/turn-activity";
 import { useT } from "@/i18n/i18n-provider";
-import { matchScreen } from "@/navigation/navigation-map";
+import { screenLinks } from "@/navigation/screen-links";
 import { usePrivacy } from "@/privacy/privacy-provider";
-import { AppLink } from "@/ui/app-link";
-
-// A link to a screen of the navigation map becomes a router link; any other link is its label.
-const renderers: MarkdownRenderers = {
-  link: ({ element, children }) =>
-    matchScreen(element.href) === undefined ? (
-      children
-    ) : (
-      // matchScreen has checked that the path is a screen of the router.
-      <AppLink to={{ to: element.href as NonNullable<NavigateOptions["to"]> }}>
-        {children}
-      </AppLink>
-    ),
-};
 
 export function MessageItem({
   message,
@@ -122,7 +106,7 @@ export function MessageItem({
                 {t("assistant.empty_answer")}
               </Text>
             ) : (
-              <Markdown tree={tree} size="md" renderers={renderers} />
+              <Markdown tree={tree} size="md" renderers={screenLinks} />
             )}
           </div>
         )}

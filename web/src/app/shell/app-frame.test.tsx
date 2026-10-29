@@ -365,7 +365,7 @@ describe("desktop column", () => {
     expect(await screen.findByRole("dialog")).toBeInTheDocument();
   });
 
-  it("holds settings, scheme, language and log out in the account menu", async () => {
+  it("holds settings, help, scheme, language and log out in the account menu", async () => {
     const user = userEvent.setup();
     await renderApp("/", { fetch: newFetch() });
     await user.click(
@@ -378,6 +378,7 @@ describe("desktop column", () => {
       ),
     ).toEqual([
       catalogEn["more.settings"],
+      catalogEn["more.help"],
       catalogEn["privacy.hide"],
       catalogEn["scheme.dark"],
       catalogEn["scheme.light"],

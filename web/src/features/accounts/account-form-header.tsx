@@ -1,5 +1,6 @@
 import {
   PageHeader,
+  PageHeaderActions,
   PageHeaderHeading,
   PageHeaderSubheading,
   PageHeaderTitle,
@@ -7,6 +8,7 @@ import {
   PageHeaderTitleRow,
 } from "@slotted/react/page-header";
 import { Link } from "@tanstack/react-router";
+import type { ReactNode } from "react";
 
 import { useMediaQuery, wideQuery } from "@/ui/use-media-query";
 import { PageBack } from "@/ui/page-back";
@@ -17,6 +19,7 @@ export function AccountFormHeader({
   subtitle,
   back,
   backLabel,
+  actions,
 }: {
   title: string;
   subtitle: string;
@@ -25,6 +28,7 @@ export function AccountFormHeader({
     | { to: "/accounts/$id"; params: { id: string } }
     | { to: "/cards/$accountId"; params: { accountId: string } };
   backLabel: string;
+  actions?: ReactNode;
 }) {
   const wide = useMediaQuery(wideQuery);
   return (
@@ -41,6 +45,9 @@ export function AccountFormHeader({
             <PageHeaderHeading>{title}</PageHeaderHeading>
             <PageHeaderSubheading>{subtitle}</PageHeaderSubheading>
           </PageHeaderTitle>
+          {actions !== undefined && (
+            <PageHeaderActions>{actions}</PageHeaderActions>
+          )}
         </PageHeaderTitleRow>
       </PageHeaderTitleArea>
     </PageHeader>

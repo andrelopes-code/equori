@@ -35,6 +35,7 @@ import { previewCsv } from "@/features/accounts/csv-preview";
 import { readText } from "@/features/accounts/read-file";
 import { CsvPreviewTable } from "@/features/accounts/csv-preview-table";
 import { CsvProfileSection } from "@/features/accounts/csv-profile-section";
+import { HelpLink } from "@/features/help";
 import { useScale } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
 import { FormLayout } from "@/ui/form-layout";
@@ -167,6 +168,7 @@ export function ImportPage() {
         }
         back={{ to: "/accounts/$id", params: { id } }}
         backLabel={account.data?.name ?? t("nav.accounts")}
+        actions={<HelpLink page="import-statement" />}
       />
       <PageBody>
         <Stack gap={10}>

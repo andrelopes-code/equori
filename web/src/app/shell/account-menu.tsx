@@ -85,6 +85,16 @@ export function AccountMenu({ compact }: { compact: boolean }) {
           >
             {t("more.settings")}
           </MenuItem>
+          <MenuItem
+            icon={
+              <Icon size="sm">
+                <ShellIcon name="help" />
+              </Icon>
+            }
+            onSelect={() => void navigate({ to: "/help" })}
+          >
+            {t("more.help")}
+          </MenuItem>
           <MenuCheckboxItem
             icon={
               <Icon size="sm">

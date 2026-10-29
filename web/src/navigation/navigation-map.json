@@ -357,5 +357,21 @@
       "set language model providers, chains and daily limits",
       "see language model usage"
     ]
+  },
+  {
+    "path": "/help",
+    "topics": ["getting_started"],
+    "screen": "Help",
+    "tasks": [
+      "read the walkthrough, the steps of a task, the glossary or how equori records money"
+    ]
+  },
+  {
+    "path": "/help/$page",
+    "topics": ["getting_started"],
+    "screen": "Help page",
+    "tasks": [
+      "read one help page: first-month, import-statement, pay-statement, check-balance, category-rule, glossary, statement, portfolio, budget-plan, how-money-is-recorded, bank-connections"
+    ]
   }
 ]

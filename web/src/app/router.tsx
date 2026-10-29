@@ -53,6 +53,7 @@ import {
   isCalculatorId,
   validateCalculatorSearch,
 } from "@/features/calculators";
+import { HelpIndexPage, HelpPage, isHelpPage } from "@/features/help";
 import { OverviewPage } from "@/features/overview";
 import {
   CardPage,
@@ -435,6 +436,22 @@ const calculatorRoute = createRoute({
   component: CalculatorPage,
 });
 
+const helpRoute = createRoute({
+  getParentRoute: () => authedRoute,
+  path: "help",
+  component: HelpIndexPage,
+});
+
+const helpPageRoute = createRoute({
+  getParentRoute: () => authedRoute,
+  path: "help/$page",
+  beforeLoad: ({ params }) => {
+    // eslint-disable-next-line @typescript-eslint/only-throw-error -- TanStack Router not-found results are thrown objects.
+    if (!isHelpPage(params.page)) throw notFound();
+  },
+  component: HelpPage,
+});
+
 const accountsLayoutRoute = createRoute({
   getParentRoute: () => authedRoute,
   path: "accounts",
@@ -547,6 +564,8 @@ export const routeTree = rootRoute.addChildren([
     reportsRoute,
     calculatorsRoute,
     calculatorRoute,
+    helpRoute,
+    helpPageRoute,
     instrumentRoute,
     settingsRoute,
   ]),

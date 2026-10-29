@@ -13,6 +13,7 @@ import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useApi } from "@/api/api-context";
 import { compatibleKinds } from "@/features/accounts/account-kinds";
 import { HeaderSlot } from "@/features/accounts/header-slot";
+import { HelpLink } from "@/features/help";
 import { accountsQuery, connectionsListQuery } from "@/features/accounts/api";
 import { ConnectionLinks } from "@/features/accounts/connection-links";
 import { linkCandidates } from "@/features/accounts/link-candidates";
@@ -48,6 +49,9 @@ export function LinksPage() {
   return (
     <>
       <HeaderSlot slot="subheading">{t("links.subtitle")}</HeaderSlot>
+      <HeaderSlot slot="actions">
+        <HelpLink page="bank-connections" />
+      </HeaderSlot>
       <PageBody>
         {connections.isError ? (
           <QueryError

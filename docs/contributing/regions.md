@@ -43,6 +43,7 @@ Capture reads its separators and date order from `locale.ConventionsOf` through 
 | `web/src/features/calculators/credit-cost-calculator.tsx` | `regionalTerms`: a `switch` on the region that returns the name the region gives the effective annual cost of credit (CET in Brazil) and the nominal rate its contracts state beside it (APR in the United States); a region without a case has neither | `web/src/features/calculators/credit-cost-calculator.test.tsx` |
 | `web/src/features/calculators/financing-region.ts` | `systemNames`: a `switch` on the region that returns the names of the fixed-installment and fixed-amortization systems (Price and SAC in Brazil); a region without a case names them by what each keeps fixed | `web/src/features/calculators/financing-calculator.test.tsx` |
 | `web/src/features/calculators/debt-region.ts` | `debtRateQuote`: a `switch` on the region that returns the period a debt's rate is quoted in and whether an annual rate is nominal (an APR in the United States); a region without a case quotes a monthly rate | `web/src/features/calculators/debt-region.test.ts` |
+| `web/src/features/help/content/regions/<REGION>/<language>/<page>.md` | Help passages: the passage of a region that `loadHelpPage` adds after the neutral page of the same language (`content/<language>/<page>.md`); a region without a file reads the neutral page, which names no regional value | `web/src/features/help/help-pages.test.ts`, `web/src/features/help/help-page.test.tsx` |
 
 ## Checklist
 
@@ -58,7 +59,8 @@ Capture reads its separators and date order from `locale.ConventionsOf` through 
 10. Add an aggregator: a package `internal/ingestion/internal/aggregator/<id>/` implementing `Aggregator`, an entry in `New` and `AggregatorIDs` in `internal/ingestion/ingestion.go`, and a test against a fake server.
 11. Add a file encoding: a case in `Decoder` in `internal/ingestion/internal/charset/registry.go`.
 12. Add a capture lexicon: a file `internal/capture/internal/domain/lexicon_<language>.go`, a case in `lexiconOf`, and a test in `lexicon_test.go`.
-13. Add a language: an entry in `languages` in `web/src/i18n/languages.ts` and the two catalogs, and a ledger wording: a file `internal/ledger/internal/domain/wording_<language>.go`, a case in `writerFor`, and an entry in `wording_test.go`.
-14. Run `make check`.
+13. Add a language: an entry in `languages` in `web/src/i18n/languages.ts` and the two catalogs, the help pages in `web/src/features/help/content/<language>/`, and a ledger wording: a file `internal/ledger/internal/domain/wording_<language>.go`, a case in `writerFor`, and an entry in `wording_test.go`.
+14. Add a help passage: a file `web/src/features/help/content/regions/<REGION>/<language>/<page>.md` for each language, when a help page needs a fact of the region (its data sharing system, its aggregator).
+15. Run `make check`.
 
 A registry rejects a duplicate or malformed identifier at startup. An unknown identifier in `EQUORI_PRICE_FEEDS` or `EQUORI_INDEX_FEEDS` stops the process with the variable name and the identifier.

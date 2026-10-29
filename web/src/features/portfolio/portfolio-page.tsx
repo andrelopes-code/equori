@@ -17,6 +17,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 
 import { useApi } from "@/api/api-context";
+import { HelpLink } from "@/features/help";
 import { PortfolioAllocation } from "@/features/portfolio/portfolio-allocation";
 import { PortfolioPositions } from "@/features/portfolio/portfolio-positions";
 import { PortfolioReturn } from "@/features/portfolio/portfolio-return";
@@ -81,6 +82,7 @@ export function PortfolioPage() {
                 technology. */}
             <PageHeaderActions>
               <Inline gap={3} wrap="nowrap">
+                <HelpLink page="portfolio" />
                 <ChoiceSelect
                   label={t("portfolio.valueIn")}
                   choices={currencies}

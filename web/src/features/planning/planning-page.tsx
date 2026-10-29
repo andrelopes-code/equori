@@ -15,6 +15,7 @@ import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useDeferredValue, useState } from "react";
 import type { ReactNode } from "react";
 
+import { HelpLink } from "@/features/help";
 import { AgendaTab } from "@/features/planning/agenda-tab";
 import { BudgetsArea } from "@/features/planning/budgets-area";
 import { PlanningFooter } from "@/features/planning/planning-footer";
@@ -96,6 +97,7 @@ export function PlanningPage() {
                   onChange={changeMonth}
                 />
               )}
+              {current === "budgets" && <HelpLink page="budget-plan" />}
               <RefreshButton
                 label={t("planning.refresh")}
                 refreshing={refresh.refreshing}
