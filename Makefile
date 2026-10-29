@@ -56,6 +56,7 @@ gen: $(TOOLS) $(WEB_DEPS)
 		tmp=$$(mktemp -d) && (cd web && pnpm exec slotted-build-theme src/theme/$$theme.theme.ts --out $$tmp) \
 			&& cp $$tmp/$$theme.css web/src/theme/$$theme.gen.css && rm -rf $$tmp || exit 1; \
 	done
+	cd web && node src/theme/surface-gen.ts > src/theme/surface.gen.css
 
 gen-check: gen
 	git diff --exit-code -- '*.gen.go' '*.gen.ts' '*.gen.css'

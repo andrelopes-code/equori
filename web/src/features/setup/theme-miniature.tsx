@@ -5,6 +5,7 @@ import styles from "@/features/setup/theme-miniature.module.css";
 import { useT } from "@/i18n/i18n-provider";
 import { accentSeed } from "@/theme/accent";
 import { statusNames } from "@/theme/status";
+import { surfaceAttributes } from "@/theme/surface";
 import type { ThemeValues } from "@/theme/themes";
 import { toneSeed } from "@/theme/tone";
 import { typefaceStack } from "@/theme/typeface";
@@ -14,11 +15,13 @@ export interface ThemeMiniatureProps {
 }
 
 // Families read: none draws a miniature of the application. The scope derives every token again
-// from the theme's seeds and corners, so the drawing is the theme and not a copy of its colours.
+// from the theme's seeds, corners and surface values, so the drawing is the theme and not a copy
+// of its colours.
 export function ThemeMiniature({ values }: ThemeMiniatureProps) {
   const t = useT();
 
   const seeds = miniatureSeeds(values);
+  const surfaces = surfaceAttributes(values);
   const face = {
     "--slotted-font-family-sans": typefaceStack(values.typeface),
   } as CSSProperties;
@@ -30,6 +33,7 @@ export function ThemeMiniature({ values }: ThemeMiniatureProps) {
       style={face}
       className={styles.miniature}
       data-visual={values.visual}
+      {...surfaces}
     >
       <span className={styles.rail}>
         <span className={styles.brand} />

@@ -4,6 +4,7 @@ import { applyDensity, defaultDensity } from "@/theme/density";
 import { motion } from "@/theme/motion";
 import { applyScheme, defaultScheme } from "@/theme/scheme";
 import { statusSeeds } from "@/theme/status";
+import { applySurfaces, surfaceDefaults } from "@/theme/surface";
 import { textSize } from "@/theme/text-size";
 import { tone } from "@/theme/tone";
 import { typeface } from "@/theme/typeface";
@@ -21,4 +22,5 @@ export function resetAppearance(): void {
   typeface.apply(typeface.fallback);
   motion.apply(motion.fallback);
   applyVisual(defaultVisual);
+  applySurfaces(surfaceDefaults);
 }

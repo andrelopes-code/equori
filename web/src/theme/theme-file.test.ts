@@ -29,8 +29,51 @@ describe("theme file", () => {
     });
   });
 
+  it("reads a file without surface values as their defaults", () => {
+    const file = {
+      format: "equori.theme",
+      version: 1,
+      name: "Old",
+      accent: "#06b6d4",
+      tone: "#64748b",
+      success: "theme",
+      danger: "theme",
+      warning: "theme",
+      info: "theme",
+      corners: "round",
+      typeface: "geist",
+      visual: "standard",
+    };
+
+    expect(parseTheme(JSON.stringify(file))?.values).toMatchObject({
+      depth: "standard",
+      step: "standard",
+      borders: "subtle",
+      shadows: "soft",
+      chart: "spectrum",
+    });
+  });
+
+  it("writes every surface value and leaves the contrast out", () => {
+    const file = JSON.parse(exportTheme("T", curatedThemes.terminal)) as object;
+
+    expect(file).toMatchObject({
+      depth: "oled",
+      borders: "strong",
+      shadows: "flat",
+    });
+    expect(file).not.toHaveProperty("contrast");
+  });
+
   it.each([
     ["text that is not JSON", "{"],
+    [
+      "a surface value outside its set",
+      exportTheme("A", curatedThemes.equori).replace(
+        '"depth": "standard"',
+        '"depth": "abyss"',
+      ),
+    ],
     ["another format", JSON.stringify({ format: "other", version: 1 })],
     [
       "a later version",

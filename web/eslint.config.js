@@ -172,6 +172,9 @@ export default defineConfig(
       "src/theme/equori-glass.theme.ts",
       "src/theme/equori-glass.theme.test.ts",
       "src/theme/glass/**",
+      "src/theme/surface-gen.ts",
+      "src/theme/surface-recipe.theme.test.ts",
+      "src/theme/surface-sheet.ts",
     ],
     rules: {
       "no-restricted-imports": restrict({

@@ -4,6 +4,8 @@ import { accentSeed, accentSeeds, accents, isAccent } from "@/theme/accent";
 import { isCorners } from "@/theme/corners";
 import { preference } from "@/theme/preference";
 import { statusSeeds } from "@/theme/status";
+import { surfaceDefaults, surfaces, themeSurfaceNames } from "@/theme/surface";
+import type { ThemeSurfaces } from "@/theme/surface";
 import { tone, toneSeed, toneSeeds, tones } from "@/theme/tone";
 import { typeface } from "@/theme/typeface";
 import type { SavedTheme, ThemeValues } from "@/theme/themes";
@@ -140,6 +142,9 @@ function themeValues(record: Record<string, unknown>): ThemeValues | null {
   )
     return null;
 
+  const themeSurfaces = surfaceValues(record);
+  if (themeSurfaces === null) return null;
+
   return {
     accent: accents.find((a) => accentSeeds[a] === accent) ?? accent,
     tone: tones.find((s) => toneSeeds[s] === toneValue) ?? toneValue,
@@ -150,7 +155,22 @@ function themeValues(record: Record<string, unknown>): ThemeValues | null {
     corners,
     typeface: typefaceValue,
     visual,
+    ...themeSurfaces,
   };
+}
+
+// A file of version 1 written before the surface values reads each missing one as its default
+// (spec A16); a present value outside its set refuses the file.
+function surfaceValues(record: Record<string, unknown>): ThemeSurfaces | null {
+  const values: Record<string, string> = {};
+  for (const name of themeSurfaceNames) {
+    const value = record[name] ?? surfaceDefaults[name];
+    if (typeof value !== "string" || !surfaces[name].accepts(value))
+      return null;
+    values[name] = value;
+  }
+
+  return values as unknown as ThemeSurfaces;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

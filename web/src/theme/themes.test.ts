@@ -31,6 +31,37 @@ describe("themes", () => {
     expect(matchTheme(currentThemeValues(), [])).toBe("ocean");
   });
 
+  it("applies the surface values a theme holds", () => {
+    applyThemeValues(curatedThemes.terminal);
+
+    expect(document.documentElement).toHaveAttribute(
+      "data-equori-depth",
+      "oled",
+    );
+    expect(document.documentElement).toHaveAttribute(
+      "data-equori-borders",
+      "strong",
+    );
+    expect(document.documentElement).toHaveAttribute(
+      "data-equori-shadows",
+      "flat",
+    );
+  });
+
+  it("reads a changed surface value as custom", () => {
+    applyThemeValues({ ...curatedThemes.ocean, depth: "soft" });
+
+    expect(matchTheme(currentThemeValues(), [])).toBeNull();
+  });
+
+  it("leaves the contrast of secondary text as it was", () => {
+    localStorage.setItem("equori.contrast", "high");
+
+    applyThemeValues(curatedThemes.paper);
+
+    expect(localStorage.getItem("equori.contrast")).toBe("high");
+  });
+
   it("leaves the reading preferences as they were", () => {
     localStorage.setItem("equori.scheme", "light");
 

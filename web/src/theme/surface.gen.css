@@ -1,0 +1,351 @@
+[data-equori-depth="soft"][data-equori-step="standard"][data-slotted-scheme="dark"],
+[data-slotted-scheme="dark"] [data-equori-depth="soft"][data-equori-step="standard"]:not([data-slotted-scheme]),
+[data-equori-depth="soft"][data-equori-step="standard"] [data-slotted-scheme="dark"]:not([data-equori-depth]),
+[data-equori-depth="soft"][data-equori-step="standard"][data-slotted-scheme="dark"] [data-slotted-seeds]:not([data-slotted-scheme], [data-equori-depth]) {
+  --slotted-surface-sunken: oklch(from var(--slotted-seed-neutral) 0.15 min(calc(c * 0.22), 0.08) h);
+  --slotted-surface: oklch(from var(--slotted-seed-neutral) 0.175 min(calc(c * 0.22), 0.08) h);
+  --slotted-surface-raised: oklch(from var(--slotted-seed-neutral) 0.22 min(calc(c * 0.22), 0.08) h);
+}
+
+[data-equori-depth="soft"][data-equori-step="standard"][data-slotted-scheme="light"],
+[data-slotted-scheme="light"] [data-equori-depth="soft"][data-equori-step="standard"]:not([data-slotted-scheme]),
+[data-equori-depth="soft"][data-equori-step="standard"] [data-slotted-scheme="light"]:not([data-equori-depth]),
+[data-equori-depth="soft"][data-equori-step="standard"][data-slotted-scheme="light"] [data-slotted-seeds]:not([data-slotted-scheme], [data-equori-depth]) {
+  --slotted-surface-sunken: oklch(from var(--slotted-seed-neutral) 0.985 min(calc(c * 0.22), 0.012) h);
+  --slotted-surface: oklch(from var(--slotted-seed-neutral) 0.99 min(calc(c * 0.22), 0.006) h);
+  --slotted-surface-raised: oklch(from var(--slotted-seed-neutral) 0.99 min(calc(c * 0.22), 0.006) h);
+}
+
+[data-equori-depth="soft"][data-equori-step="wide"][data-slotted-scheme="dark"],
+[data-slotted-scheme="dark"] [data-equori-depth="soft"][data-equori-step="wide"]:not([data-slotted-scheme]),
+[data-equori-depth="soft"][data-equori-step="wide"] [data-slotted-scheme="dark"]:not([data-equori-depth]),
+[data-equori-depth="soft"][data-equori-step="wide"][data-slotted-scheme="dark"] [data-slotted-seeds]:not([data-slotted-scheme], [data-equori-depth]) {
+  --slotted-surface-sunken: oklch(from var(--slotted-seed-neutral) 0.15 min(calc(c * 0.22), 0.08) h);
+  --slotted-surface: oklch(from var(--slotted-seed-neutral) 0.175 min(calc(c * 0.22), 0.08) h);
+  --slotted-surface-raised: oklch(from var(--slotted-seed-neutral) 0.23 min(calc(c * 0.22), 0.08) h);
+}
+
+[data-equori-depth="soft"][data-equori-step="wide"][data-slotted-scheme="light"],
+[data-slotted-scheme="light"] [data-equori-depth="soft"][data-equori-step="wide"]:not([data-slotted-scheme]),
+[data-equori-depth="soft"][data-equori-step="wide"] [data-slotted-scheme="light"]:not([data-equori-depth]),
+[data-equori-depth="soft"][data-equori-step="wide"][data-slotted-scheme="light"] [data-slotted-seeds]:not([data-slotted-scheme], [data-equori-depth]) {
+  --slotted-surface-sunken: oklch(from var(--slotted-seed-neutral) 0.985 min(calc(c * 0.22), 0.012) h);
+  --slotted-surface: oklch(from var(--slotted-seed-neutral) 0.99 min(calc(c * 0.22), 0.006) h);
+  --slotted-surface-raised: oklch(from var(--slotted-seed-neutral) 1 min(calc(c * 0.22), 0.006) h);
+}
+
+[data-equori-depth="standard"][data-equori-step="standard"][data-slotted-scheme="dark"],
+[data-slotted-scheme="dark"] [data-equori-depth="standard"][data-equori-step="standard"]:not([data-slotted-scheme]),
+[data-equori-depth="standard"][data-equori-step="standard"] [data-slotted-scheme="dark"]:not([data-equori-depth]),
+[data-equori-depth="standard"][data-equori-step="standard"][data-slotted-scheme="dark"] [data-slotted-seeds]:not([data-slotted-scheme], [data-equori-depth]) {
+  --slotted-surface-sunken: oklch(from var(--slotted-seed-neutral) 0.13 min(calc(c * 0.22), 0.08) h);
+  --slotted-surface: oklch(from var(--slotted-seed-neutral) 0.155 min(calc(c * 0.22), 0.08) h);
+  --slotted-surface-raised: oklch(from var(--slotted-seed-neutral) 0.2 min(calc(c * 0.22), 0.08) h);
+}
+
+[data-equori-depth="standard"][data-equori-step="standard"][data-slotted-scheme="light"],
+[data-slotted-scheme="light"] [data-equori-depth="standard"][data-equori-step="standard"]:not([data-slotted-scheme]),
+[data-equori-depth="standard"][data-equori-step="standard"] [data-slotted-scheme="light"]:not([data-equori-depth]),
+[data-equori-depth="standard"][data-equori-step="standard"][data-slotted-scheme="light"] [data-slotted-seeds]:not([data-slotted-scheme], [data-equori-depth]) {
+  --slotted-surface-sunken: oklch(from var(--slotted-seed-neutral) 0.97 min(calc(c * 0.22), 0.012) h);
+  --slotted-surface: oklch(from var(--slotted-seed-neutral) 0.985 min(calc(c * 0.22), 0.006) h);
+  --slotted-surface-raised: oklch(from var(--slotted-seed-neutral) 0.985 min(calc(c * 0.22), 0.006) h);
+}
+
+[data-equori-depth="standard"][data-equori-step="wide"][data-slotted-scheme="dark"],
+[data-slotted-scheme="dark"] [data-equori-depth="standard"][data-equori-step="wide"]:not([data-slotted-scheme]),
+[data-equori-depth="standard"][data-equori-step="wide"] [data-slotted-scheme="dark"]:not([data-equori-depth]),
+[data-equori-depth="standard"][data-equori-step="wide"][data-slotted-scheme="dark"] [data-slotted-seeds]:not([data-slotted-scheme], [data-equori-depth]) {
+  --slotted-surface-sunken: oklch(from var(--slotted-seed-neutral) 0.13 min(calc(c * 0.22), 0.08) h);
+  --slotted-surface: oklch(from var(--slotted-seed-neutral) 0.155 min(calc(c * 0.22), 0.08) h);
+  --slotted-surface-raised: oklch(from var(--slotted-seed-neutral) 0.21 min(calc(c * 0.22), 0.08) h);
+}
+
+[data-equori-depth="standard"][data-equori-step="wide"][data-slotted-scheme="light"],
+[data-slotted-scheme="light"] [data-equori-depth="standard"][data-equori-step="wide"]:not([data-slotted-scheme]),
+[data-equori-depth="standard"][data-equori-step="wide"] [data-slotted-scheme="light"]:not([data-equori-depth]),
+[data-equori-depth="standard"][data-equori-step="wide"][data-slotted-scheme="light"] [data-slotted-seeds]:not([data-slotted-scheme], [data-equori-depth]) {
+  --slotted-surface-sunken: oklch(from var(--slotted-seed-neutral) 0.97 min(calc(c * 0.22), 0.012) h);
+  --slotted-surface: oklch(from var(--slotted-seed-neutral) 0.985 min(calc(c * 0.22), 0.006) h);
+  --slotted-surface-raised: oklch(from var(--slotted-seed-neutral) 0.997 min(calc(c * 0.22), 0.006) h);
+}
+
+[data-equori-depth="deep"][data-equori-step="standard"][data-slotted-scheme="dark"],
+[data-slotted-scheme="dark"] [data-equori-depth="deep"][data-equori-step="standard"]:not([data-slotted-scheme]),
+[data-equori-depth="deep"][data-equori-step="standard"] [data-slotted-scheme="dark"]:not([data-equori-depth]),
+[data-equori-depth="deep"][data-equori-step="standard"][data-slotted-scheme="dark"] [data-slotted-seeds]:not([data-slotted-scheme], [data-equori-depth]) {
+  --slotted-surface-sunken: oklch(from var(--slotted-seed-neutral) 0.095 min(calc(c * 0.22), 0.08) h);
+  --slotted-surface: oklch(from var(--slotted-seed-neutral) 0.115 min(calc(c * 0.22), 0.08) h);
+  --slotted-surface-raised: oklch(from var(--slotted-seed-neutral) 0.16 min(calc(c * 0.22), 0.08) h);
+}
+
+[data-equori-depth="deep"][data-equori-step="standard"][data-slotted-scheme="light"],
+[data-slotted-scheme="light"] [data-equori-depth="deep"][data-equori-step="standard"]:not([data-slotted-scheme]),
+[data-equori-depth="deep"][data-equori-step="standard"] [data-slotted-scheme="light"]:not([data-equori-depth]),
+[data-equori-depth="deep"][data-equori-step="standard"][data-slotted-scheme="light"] [data-slotted-seeds]:not([data-slotted-scheme], [data-equori-depth]) {
+  --slotted-surface-sunken: oklch(from var(--slotted-seed-neutral) 0.962 min(calc(c * 0.22), 0.012) h);
+  --slotted-surface: oklch(from var(--slotted-seed-neutral) 0.98 min(calc(c * 0.22), 0.006) h);
+  --slotted-surface-raised: oklch(from var(--slotted-seed-neutral) 0.98 min(calc(c * 0.22), 0.006) h);
+}
+
+[data-equori-depth="deep"][data-equori-step="wide"][data-slotted-scheme="dark"],
+[data-slotted-scheme="dark"] [data-equori-depth="deep"][data-equori-step="wide"]:not([data-slotted-scheme]),
+[data-equori-depth="deep"][data-equori-step="wide"] [data-slotted-scheme="dark"]:not([data-equori-depth]),
+[data-equori-depth="deep"][data-equori-step="wide"][data-slotted-scheme="dark"] [data-slotted-seeds]:not([data-slotted-scheme], [data-equori-depth]) {
+  --slotted-surface-sunken: oklch(from var(--slotted-seed-neutral) 0.095 min(calc(c * 0.22), 0.08) h);
+  --slotted-surface: oklch(from var(--slotted-seed-neutral) 0.115 min(calc(c * 0.22), 0.08) h);
+  --slotted-surface-raised: oklch(from var(--slotted-seed-neutral) 0.17 min(calc(c * 0.22), 0.08) h);
+}
+
+[data-equori-depth="deep"][data-equori-step="wide"][data-slotted-scheme="light"],
+[data-slotted-scheme="light"] [data-equori-depth="deep"][data-equori-step="wide"]:not([data-slotted-scheme]),
+[data-equori-depth="deep"][data-equori-step="wide"] [data-slotted-scheme="light"]:not([data-equori-depth]),
+[data-equori-depth="deep"][data-equori-step="wide"][data-slotted-scheme="light"] [data-slotted-seeds]:not([data-slotted-scheme], [data-equori-depth]) {
+  --slotted-surface-sunken: oklch(from var(--slotted-seed-neutral) 0.962 min(calc(c * 0.22), 0.012) h);
+  --slotted-surface: oklch(from var(--slotted-seed-neutral) 0.98 min(calc(c * 0.22), 0.006) h);
+  --slotted-surface-raised: oklch(from var(--slotted-seed-neutral) 0.992 min(calc(c * 0.22), 0.006) h);
+}
+
+[data-equori-depth="oled"][data-equori-step="standard"][data-slotted-scheme="dark"],
+[data-slotted-scheme="dark"] [data-equori-depth="oled"][data-equori-step="standard"]:not([data-slotted-scheme]),
+[data-equori-depth="oled"][data-equori-step="standard"] [data-slotted-scheme="dark"]:not([data-equori-depth]),
+[data-equori-depth="oled"][data-equori-step="standard"][data-slotted-scheme="dark"] [data-slotted-seeds]:not([data-slotted-scheme], [data-equori-depth]) {
+  --slotted-surface-sunken: oklch(from var(--slotted-seed-neutral) 0 min(calc(c * 0.22), 0.08) h);
+  --slotted-surface: oklch(from var(--slotted-seed-neutral) 0 min(calc(c * 0.22), 0.08) h);
+  --slotted-surface-raised: oklch(from var(--slotted-seed-neutral) 0.13 min(calc(c * 0.22), 0.08) h);
+}
+
+[data-equori-depth="oled"][data-equori-step="standard"][data-slotted-scheme="light"],
+[data-slotted-scheme="light"] [data-equori-depth="oled"][data-equori-step="standard"]:not([data-slotted-scheme]),
+[data-equori-depth="oled"][data-equori-step="standard"] [data-slotted-scheme="light"]:not([data-equori-depth]),
+[data-equori-depth="oled"][data-equori-step="standard"][data-slotted-scheme="light"] [data-slotted-seeds]:not([data-slotted-scheme], [data-equori-depth]) {
+  --slotted-surface-sunken: oklch(from var(--slotted-seed-neutral) 1 min(calc(c * 0.22), 0.012) h);
+  --slotted-surface: oklch(from var(--slotted-seed-neutral) 1 min(calc(c * 0.22), 0.006) h);
+  --slotted-surface-raised: oklch(from var(--slotted-seed-neutral) 1 min(calc(c * 0.22), 0.006) h);
+}
+
+[data-equori-depth="oled"][data-equori-step="wide"][data-slotted-scheme="dark"],
+[data-slotted-scheme="dark"] [data-equori-depth="oled"][data-equori-step="wide"]:not([data-slotted-scheme]),
+[data-equori-depth="oled"][data-equori-step="wide"] [data-slotted-scheme="dark"]:not([data-equori-depth]),
+[data-equori-depth="oled"][data-equori-step="wide"][data-slotted-scheme="dark"] [data-slotted-seeds]:not([data-slotted-scheme], [data-equori-depth]) {
+  --slotted-surface-sunken: oklch(from var(--slotted-seed-neutral) 0 min(calc(c * 0.22), 0.08) h);
+  --slotted-surface: oklch(from var(--slotted-seed-neutral) 0 min(calc(c * 0.22), 0.08) h);
+  --slotted-surface-raised: oklch(from var(--slotted-seed-neutral) 0.14 min(calc(c * 0.22), 0.08) h);
+}
+
+[data-equori-depth="oled"][data-equori-step="wide"][data-slotted-scheme="light"],
+[data-slotted-scheme="light"] [data-equori-depth="oled"][data-equori-step="wide"]:not([data-slotted-scheme]),
+[data-equori-depth="oled"][data-equori-step="wide"] [data-slotted-scheme="light"]:not([data-equori-depth]),
+[data-equori-depth="oled"][data-equori-step="wide"][data-slotted-scheme="light"] [data-slotted-seeds]:not([data-slotted-scheme], [data-equori-depth]) {
+  --slotted-surface-sunken: oklch(from var(--slotted-seed-neutral) 1 min(calc(c * 0.22), 0.012) h);
+  --slotted-surface: oklch(from var(--slotted-seed-neutral) 1 min(calc(c * 0.22), 0.006) h);
+  --slotted-surface-raised: oklch(from var(--slotted-seed-neutral) 1 min(calc(c * 0.22), 0.006) h);
+}
+
+[data-equori-borders="none"][data-slotted-scheme="dark"],
+[data-slotted-scheme="dark"] [data-equori-borders="none"]:not([data-slotted-scheme]),
+[data-equori-borders="none"] [data-slotted-scheme="dark"]:not([data-equori-borders]),
+[data-equori-borders="none"][data-slotted-scheme="dark"] [data-slotted-seeds]:not([data-slotted-scheme], [data-equori-borders]) {
+  --slotted-border-subtle: var(--slotted-surface-raised);
+}
+
+[data-equori-borders="none"][data-slotted-scheme="light"],
+[data-slotted-scheme="light"] [data-equori-borders="none"]:not([data-slotted-scheme]),
+[data-equori-borders="none"] [data-slotted-scheme="light"]:not([data-equori-borders]),
+[data-equori-borders="none"][data-slotted-scheme="light"] [data-slotted-seeds]:not([data-slotted-scheme], [data-equori-borders]) {
+  --slotted-border-subtle: var(--slotted-surface-raised);
+}
+
+[data-equori-borders="subtle"][data-slotted-scheme="dark"],
+[data-slotted-scheme="dark"] [data-equori-borders="subtle"]:not([data-slotted-scheme]),
+[data-equori-borders="subtle"] [data-slotted-scheme="dark"]:not([data-equori-borders]),
+[data-equori-borders="subtle"][data-slotted-scheme="dark"] [data-slotted-seeds]:not([data-slotted-scheme], [data-equori-borders]) {
+  --slotted-border-subtle: oklch(from var(--slotted-seed-neutral) 0.275 min(calc(c * 0.22), 0.051) h);
+}
+
+[data-equori-borders="subtle"][data-slotted-scheme="light"],
+[data-slotted-scheme="light"] [data-equori-borders="subtle"]:not([data-slotted-scheme]),
+[data-equori-borders="subtle"] [data-slotted-scheme="light"]:not([data-equori-borders]),
+[data-equori-borders="subtle"][data-slotted-scheme="light"] [data-slotted-seeds]:not([data-slotted-scheme], [data-equori-borders]) {
+  --slotted-border-subtle: oklch(from var(--slotted-seed-neutral) 0.898 min(calc(c * 0.313), 0.049) h);
+}
+
+[data-equori-borders="strong"][data-slotted-scheme="dark"],
+[data-slotted-scheme="dark"] [data-equori-borders="strong"]:not([data-slotted-scheme]),
+[data-equori-borders="strong"] [data-slotted-scheme="dark"]:not([data-equori-borders]),
+[data-equori-borders="strong"][data-slotted-scheme="dark"] [data-slotted-seeds]:not([data-slotted-scheme], [data-equori-borders]) {
+  --slotted-border-subtle: oklch(from var(--slotted-seed-neutral) 0.38 min(calc(c * 0.29), 0.06) h);
+}
+
+[data-equori-borders="strong"][data-slotted-scheme="light"],
+[data-slotted-scheme="light"] [data-equori-borders="strong"]:not([data-slotted-scheme]),
+[data-equori-borders="strong"] [data-slotted-scheme="light"]:not([data-equori-borders]),
+[data-equori-borders="strong"][data-slotted-scheme="light"] [data-slotted-seeds]:not([data-slotted-scheme], [data-equori-borders]) {
+  --slotted-border-subtle: oklch(from var(--slotted-seed-neutral) 0.82 min(calc(c * 0.45), 0.06) h);
+}
+
+[data-equori-shadows="flat"][data-slotted-scheme="dark"],
+[data-slotted-scheme="dark"] [data-equori-shadows="flat"]:not([data-slotted-scheme]),
+[data-equori-shadows="flat"] [data-slotted-scheme="dark"]:not([data-equori-shadows]),
+[data-equori-shadows="flat"][data-slotted-scheme="dark"] [data-slotted-seeds]:not([data-slotted-scheme], [data-equori-shadows]) {
+  --slotted-shadow-sm: none;
+  --slotted-shadow-md: none;
+  --slotted-shadow-lg: none;
+}
+
+[data-equori-shadows="flat"][data-slotted-scheme="light"],
+[data-slotted-scheme="light"] [data-equori-shadows="flat"]:not([data-slotted-scheme]),
+[data-equori-shadows="flat"] [data-slotted-scheme="light"]:not([data-equori-shadows]),
+[data-equori-shadows="flat"][data-slotted-scheme="light"] [data-slotted-seeds]:not([data-slotted-scheme], [data-equori-shadows]) {
+  --slotted-shadow-sm: none;
+  --slotted-shadow-md: none;
+  --slotted-shadow-lg: none;
+}
+
+[data-equori-shadows="soft"][data-slotted-scheme="dark"],
+[data-slotted-scheme="dark"] [data-equori-shadows="soft"]:not([data-slotted-scheme]),
+[data-equori-shadows="soft"] [data-slotted-scheme="dark"]:not([data-equori-shadows]),
+[data-equori-shadows="soft"][data-slotted-scheme="dark"] [data-slotted-seeds]:not([data-slotted-scheme], [data-equori-shadows]) {
+  --slotted-shadow-sm: 0 1px 3px rgb(0 0 0 / 0.45), 0 1px 2px -1px rgb(0 0 0 / 0.40);
+  --slotted-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.50), 0 2px 4px -2px rgb(0 0 0 / 0.45);
+  --slotted-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.60), 0 4px 6px -4px rgb(0 0 0 / 0.50);
+}
+
+[data-equori-shadows="soft"][data-slotted-scheme="light"],
+[data-slotted-scheme="light"] [data-equori-shadows="soft"]:not([data-slotted-scheme]),
+[data-equori-shadows="soft"] [data-slotted-scheme="light"]:not([data-equori-shadows]),
+[data-equori-shadows="soft"][data-slotted-scheme="light"] [data-slotted-seeds]:not([data-slotted-scheme], [data-equori-shadows]) {
+  --slotted-shadow-sm: 0 1px 3px rgb(15 23 42 / 0.08), 0 1px 2px -1px rgb(15 23 42 / 0.08);
+  --slotted-shadow-md: 0 4px 6px -1px rgb(15 23 42 / 0.08), 0 2px 4px -2px rgb(15 23 42 / 0.08);
+  --slotted-shadow-lg: 0 10px 15px -3px rgb(15 23 42 / 0.10), 0 4px 6px -4px rgb(15 23 42 / 0.08);
+}
+
+[data-equori-shadows="deep"][data-slotted-scheme="dark"],
+[data-slotted-scheme="dark"] [data-equori-shadows="deep"]:not([data-slotted-scheme]),
+[data-equori-shadows="deep"] [data-slotted-scheme="dark"]:not([data-equori-shadows]),
+[data-equori-shadows="deep"][data-slotted-scheme="dark"] [data-slotted-seeds]:not([data-slotted-scheme], [data-equori-shadows]) {
+  --slotted-shadow-sm: 0 2px 6px rgb(0 0 0 / 0.55), 0 1px 2px rgb(0 0 0 / 0.50);
+  --slotted-shadow-md: 0 8px 18px -4px rgb(0 0 0 / 0.65), 0 3px 6px -3px rgb(0 0 0 / 0.55);
+  --slotted-shadow-lg: 0 22px 40px -8px rgb(0 0 0 / 0.70), 0 8px 16px -8px rgb(0 0 0 / 0.60);
+}
+
+[data-equori-shadows="deep"][data-slotted-scheme="light"],
+[data-slotted-scheme="light"] [data-equori-shadows="deep"]:not([data-slotted-scheme]),
+[data-equori-shadows="deep"] [data-slotted-scheme="light"]:not([data-equori-shadows]),
+[data-equori-shadows="deep"][data-slotted-scheme="light"] [data-slotted-seeds]:not([data-slotted-scheme], [data-equori-shadows]) {
+  --slotted-shadow-sm: 0 2px 6px rgb(15 23 42 / 0.12), 0 1px 2px rgb(15 23 42 / 0.10);
+  --slotted-shadow-md: 0 8px 18px -4px rgb(15 23 42 / 0.16), 0 3px 6px -3px rgb(15 23 42 / 0.12);
+  --slotted-shadow-lg: 0 22px 40px -8px rgb(15 23 42 / 0.22), 0 8px 16px -8px rgb(15 23 42 / 0.14);
+}
+
+[data-equori-chart="spectrum"][data-slotted-scheme="dark"],
+[data-slotted-scheme="dark"] [data-equori-chart="spectrum"]:not([data-slotted-scheme]),
+[data-equori-chart="spectrum"] [data-slotted-scheme="dark"]:not([data-equori-chart]),
+[data-equori-chart="spectrum"][data-slotted-scheme="dark"] [data-slotted-seeds]:not([data-slotted-scheme], [data-equori-chart]) {
+  --slotted-data-1: #8a82e9;
+  --slotted-data-2: #cb7f00;
+  --slotted-data-3: #00a8a8;
+  --slotted-data-4: #de6674;
+  --slotted-data-5: #069ce4;
+  --slotted-data-6: #68a63f;
+  --slotted-data-7: #c46dbd;
+  --slotted-data-8: #db703b;
+}
+
+[data-equori-chart="spectrum"][data-slotted-scheme="light"],
+[data-slotted-scheme="light"] [data-equori-chart="spectrum"]:not([data-slotted-scheme]),
+[data-equori-chart="spectrum"] [data-slotted-scheme="light"]:not([data-equori-chart]),
+[data-equori-chart="spectrum"][data-slotted-scheme="light"] [data-slotted-seeds]:not([data-slotted-scheme], [data-equori-chart]) {
+  --slotted-data-1: #7368d4;
+  --slotted-data-2: #b46400;
+  --slotted-data-3: #009597;
+  --slotted-data-4: #c6495b;
+  --slotted-data-5: #0083ce;
+  --slotted-data-6: #4d8e16;
+  --slotted-data-7: #ad51a7;
+  --slotted-data-8: #c4530f;
+}
+
+[data-equori-chart="accent"][data-slotted-scheme="dark"],
+[data-slotted-scheme="dark"] [data-equori-chart="accent"]:not([data-slotted-scheme]),
+[data-equori-chart="accent"] [data-slotted-scheme="dark"]:not([data-equori-chart]),
+[data-equori-chart="accent"][data-slotted-scheme="dark"] [data-slotted-seeds]:not([data-slotted-scheme], [data-equori-chart]) {
+  --slotted-data-1: oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1), 0.16) h);
+  --slotted-data-2: oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1), 0.16) calc(h + 45));
+  --slotted-data-3: oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1), 0.16) calc(h + 90));
+  --slotted-data-4: oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1), 0.16) calc(h + 135));
+  --slotted-data-5: oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1), 0.16) calc(h + 180));
+  --slotted-data-6: oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1), 0.16) calc(h + 225));
+  --slotted-data-7: oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1), 0.16) calc(h + 270));
+  --slotted-data-8: oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1), 0.16) calc(h + 315));
+}
+
+[data-equori-chart="accent"][data-slotted-scheme="light"],
+[data-slotted-scheme="light"] [data-equori-chart="accent"]:not([data-slotted-scheme]),
+[data-equori-chart="accent"] [data-slotted-scheme="light"]:not([data-equori-chart]),
+[data-equori-chart="accent"][data-slotted-scheme="light"] [data-slotted-seeds]:not([data-slotted-scheme], [data-equori-chart]) {
+  --slotted-data-1: oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1), 0.16) h);
+  --slotted-data-2: oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1), 0.16) calc(h + 45));
+  --slotted-data-3: oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1), 0.16) calc(h + 90));
+  --slotted-data-4: oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1), 0.16) calc(h + 135));
+  --slotted-data-5: oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1), 0.16) calc(h + 180));
+  --slotted-data-6: oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1), 0.16) calc(h + 225));
+  --slotted-data-7: oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1), 0.16) calc(h + 270));
+  --slotted-data-8: oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1), 0.16) calc(h + 315));
+}
+
+[data-equori-chart="mono"][data-slotted-scheme="dark"],
+[data-slotted-scheme="dark"] [data-equori-chart="mono"]:not([data-slotted-scheme]),
+[data-equori-chart="mono"] [data-slotted-scheme="dark"]:not([data-equori-chart]),
+[data-equori-chart="mono"][data-slotted-scheme="dark"] [data-slotted-seeds]:not([data-slotted-scheme], [data-equori-chart]) {
+  --slotted-data-1: oklch(from var(--slotted-seed-accent) 0.86 min(calc(c * 1), 0.16) h);
+  --slotted-data-2: oklch(from var(--slotted-seed-accent) 0.805 min(calc(c * 1), 0.16) h);
+  --slotted-data-3: oklch(from var(--slotted-seed-accent) 0.75 min(calc(c * 1), 0.16) h);
+  --slotted-data-4: oklch(from var(--slotted-seed-accent) 0.695 min(calc(c * 1), 0.16) h);
+  --slotted-data-5: oklch(from var(--slotted-seed-accent) 0.64 min(calc(c * 1), 0.16) h);
+  --slotted-data-6: oklch(from var(--slotted-seed-accent) 0.585 min(calc(c * 1), 0.16) h);
+  --slotted-data-7: oklch(from var(--slotted-seed-accent) 0.53 min(calc(c * 1), 0.16) h);
+  --slotted-data-8: oklch(from var(--slotted-seed-accent) 0.475 min(calc(c * 1), 0.16) h);
+}
+
+[data-equori-chart="mono"][data-slotted-scheme="light"],
+[data-slotted-scheme="light"] [data-equori-chart="mono"]:not([data-slotted-scheme]),
+[data-equori-chart="mono"] [data-slotted-scheme="light"]:not([data-equori-chart]),
+[data-equori-chart="mono"][data-slotted-scheme="light"] [data-slotted-seeds]:not([data-slotted-scheme], [data-equori-chart]) {
+  --slotted-data-1: oklch(from var(--slotted-seed-accent) 0.36 min(calc(c * 1), 0.16) h);
+  --slotted-data-2: oklch(from var(--slotted-seed-accent) 0.415 min(calc(c * 1), 0.16) h);
+  --slotted-data-3: oklch(from var(--slotted-seed-accent) 0.47 min(calc(c * 1), 0.16) h);
+  --slotted-data-4: oklch(from var(--slotted-seed-accent) 0.525 min(calc(c * 1), 0.16) h);
+  --slotted-data-5: oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1), 0.16) h);
+  --slotted-data-6: oklch(from var(--slotted-seed-accent) 0.635 min(calc(c * 1), 0.16) h);
+  --slotted-data-7: oklch(from var(--slotted-seed-accent) 0.69 min(calc(c * 1), 0.16) h);
+  --slotted-data-8: oklch(from var(--slotted-seed-accent) 0.745 min(calc(c * 1), 0.16) h);
+}
+
+[data-equori-contrast="standard"][data-slotted-scheme="dark"],
+[data-slotted-scheme="dark"] [data-equori-contrast="standard"]:not([data-slotted-scheme]),
+[data-equori-contrast="standard"] [data-slotted-scheme="dark"]:not([data-equori-contrast]),
+[data-equori-contrast="standard"][data-slotted-scheme="dark"] [data-slotted-seeds]:not([data-slotted-scheme], [data-equori-contrast]) {
+  --slotted-text-muted: oklch(from var(--slotted-seed-neutral) 0.712 min(calc(c * 0.318), 0.06) h);
+}
+
+[data-equori-contrast="standard"][data-slotted-scheme="light"],
+[data-slotted-scheme="light"] [data-equori-contrast="standard"]:not([data-slotted-scheme]),
+[data-equori-contrast="standard"] [data-slotted-scheme="light"]:not([data-equori-contrast]),
+[data-equori-contrast="standard"][data-slotted-scheme="light"] [data-slotted-seeds]:not([data-slotted-scheme], [data-equori-contrast]) {
+  --slotted-text-muted: oklch(from var(--slotted-seed-neutral) 0.522 min(calc(c * 0.913), 0.06) h);
+}
+
+[data-equori-contrast="high"][data-slotted-scheme="dark"],
+[data-slotted-scheme="dark"] [data-equori-contrast="high"]:not([data-slotted-scheme]),
+[data-equori-contrast="high"] [data-slotted-scheme="dark"]:not([data-equori-contrast]),
+[data-equori-contrast="high"][data-slotted-scheme="dark"] [data-slotted-seeds]:not([data-slotted-scheme], [data-equori-contrast]) {
+  --slotted-text-muted: oklch(from var(--slotted-seed-neutral) 0.8 min(calc(c * 0.25), 0.05) h);
+}
+
+[data-equori-contrast="high"][data-slotted-scheme="light"],
+[data-slotted-scheme="light"] [data-equori-contrast="high"]:not([data-slotted-scheme]),
+[data-equori-contrast="high"] [data-slotted-scheme="light"]:not([data-equori-contrast]),
+[data-equori-contrast="high"][data-slotted-scheme="light"] [data-slotted-seeds]:not([data-slotted-scheme], [data-equori-contrast]) {
+  --slotted-text-muted: oklch(from var(--slotted-seed-neutral) 0.43 min(calc(c * 0.9), 0.06) h);
+}

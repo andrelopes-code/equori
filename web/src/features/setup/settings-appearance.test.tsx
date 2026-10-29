@@ -52,6 +52,7 @@ describe("appearance studio", () => {
     expect(terminal?.style.getPropertyValue("--slotted-seed-accent")).toBe(
       "#f59e0b",
     );
+    expect(terminal).toHaveAttribute("data-equori-depth", "oled");
   });
 
   it("reads a changed value as custom and saves it as a theme", async () => {

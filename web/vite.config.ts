@@ -53,6 +53,7 @@ export default defineConfig({
       ...configDefaults.exclude,
       "src/theme/equori.theme.test.ts",
       "src/theme/equori-glass.theme.test.ts",
+      "src/theme/surface-recipe.theme.test.ts",
       "src/testing/slotted-issues.test.ts",
     ],
   },

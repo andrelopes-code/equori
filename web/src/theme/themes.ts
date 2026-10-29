@@ -4,6 +4,14 @@ import { applyCorners, readCorners, useCorners } from "@/theme/corners";
 import type { Corners } from "@/theme/corners";
 import { statusNames, statusSeeds, useStatusSeed } from "@/theme/status";
 import type { StatusName, StatusSeed } from "@/theme/status";
+import {
+  applySurface,
+  surfaceDefaults,
+  surfaces,
+  themeSurfaceNames,
+  useSurface,
+} from "@/theme/surface";
+import type { ThemeSurfaces } from "@/theme/surface";
 import { tone, toneSeed, useTone } from "@/theme/tone";
 import type { Tone } from "@/theme/tone";
 import { typeface, useTypeface } from "@/theme/typeface";
@@ -13,7 +21,8 @@ import type { Visual } from "@/theme/visual";
 
 // The values a theme holds. Scheme, density, text size and motion are the reader's own and stay
 // outside every theme (spec A1, docs/specs/2026-10-29-appearance-studio-design.md).
-export interface ThemeValues extends Record<StatusName, StatusSeed> {
+export interface ThemeValues
+  extends Record<StatusName, StatusSeed>, ThemeSurfaces {
   accent: Accent;
   tone: Tone;
   corners: Corners;
@@ -44,10 +53,19 @@ const neutralStatus = {
   info: "theme",
 } as const;
 
+const standardSurfaces: ThemeSurfaces = {
+  depth: surfaceDefaults.depth,
+  step: surfaceDefaults.step,
+  borders: surfaceDefaults.borders,
+  shadows: surfaceDefaults.shadows,
+  chart: surfaceDefaults.chart,
+};
+
 // Each theme pairs its status colours with its own hue, so an amount reads as part of the palette.
 export const curatedThemes: Readonly<Record<CuratedTheme, ThemeValues>> = {
   equori: {
     ...neutralStatus,
+    ...standardSurfaces,
     accent: "indigo",
     tone: "graphite",
     corners: "standard",
@@ -56,6 +74,7 @@ export const curatedThemes: Readonly<Record<CuratedTheme, ThemeValues>> = {
   },
   ledger: {
     ...neutralStatus,
+    ...standardSurfaces,
     accent: "#3d6fd9",
     tone: "zinc",
     success: "#2f9e5f",
@@ -63,9 +82,12 @@ export const curatedThemes: Readonly<Record<CuratedTheme, ThemeValues>> = {
     corners: "square",
     typeface: "grotesque",
     visual: "standard",
+    borders: "strong",
+    shadows: "flat",
   },
   paper: {
     ...neutralStatus,
+    ...standardSurfaces,
     accent: "#b4532a",
     tone: "stone",
     success: "#5f8a3a",
@@ -73,9 +95,11 @@ export const curatedThemes: Readonly<Record<CuratedTheme, ThemeValues>> = {
     corners: "soft",
     typeface: "humanist",
     visual: "standard",
+    depth: "soft",
   },
   forest: {
     ...neutralStatus,
+    ...standardSurfaces,
     accent: "#2f9e6e",
     tone: "sage",
     success: "#65a30d",
@@ -86,6 +110,7 @@ export const curatedThemes: Readonly<Record<CuratedTheme, ThemeValues>> = {
   },
   ocean: {
     ...neutralStatus,
+    ...standardSurfaces,
     accent: "cyan",
     tone: "slate",
     success: "#14b8a6",
@@ -93,9 +118,13 @@ export const curatedThemes: Readonly<Record<CuratedTheme, ThemeValues>> = {
     corners: "round",
     typeface: "grotesque",
     visual: "standard",
+    depth: "deep",
+    borders: "none",
+    shadows: "deep",
   },
   dusk: {
     ...neutralStatus,
+    ...standardSurfaces,
     accent: "pink",
     tone: "#7a6a86",
     success: "#34d399",
@@ -103,9 +132,12 @@ export const curatedThemes: Readonly<Record<CuratedTheme, ThemeValues>> = {
     corners: "round",
     typeface: "rounded",
     visual: "standard",
+    depth: "deep",
+    borders: "none",
   },
   terminal: {
     ...neutralStatus,
+    ...standardSurfaces,
     accent: "#f59e0b",
     tone: "zinc",
     success: "#22c55e",
@@ -113,9 +145,13 @@ export const curatedThemes: Readonly<Record<CuratedTheme, ThemeValues>> = {
     corners: "square",
     typeface: "mono",
     visual: "standard",
+    depth: "oled",
+    borders: "strong",
+    shadows: "flat",
   },
   glass: {
     ...neutralStatus,
+    ...standardSurfaces,
     accent: "violet",
     tone: "graphite",
     corners: "round",
@@ -139,6 +175,11 @@ export function currentThemeValues(): ThemeValues {
     corners: readCorners(),
     typeface: typeface.read(),
     visual: readVisual(),
+    depth: surfaces.depth.read(),
+    step: surfaces.step.read(),
+    borders: surfaces.borders.read(),
+    shadows: surfaces.shadows.read(),
+    chart: surfaces.chart.read(),
   };
 }
 
@@ -153,6 +194,11 @@ export function useThemeValues(): ThemeValues {
   const [corners] = useCorners();
   const [typefaceValue] = useTypeface();
   const [visual] = useVisual();
+  const [depth] = useSurface("depth");
+  const [step] = useSurface("step");
+  const [borders] = useSurface("borders");
+  const [shadows] = useSurface("shadows");
+  const [chart] = useSurface("chart");
 
   return {
     accent,
@@ -164,6 +210,11 @@ export function useThemeValues(): ThemeValues {
     corners,
     typeface: typefaceValue,
     visual,
+    depth,
+    step,
+    borders,
+    shadows,
+    chart,
   };
 }
 
@@ -174,6 +225,7 @@ export function applyThemeValues(values: ThemeValues): void {
   applyCorners(values.corners);
   typeface.apply(values.typeface);
   applyVisual(values.visual);
+  for (const name of themeSurfaceNames) applySurface(name, values[name]);
 }
 
 // A preset and the hex seed it stands for are the same value.
@@ -184,7 +236,8 @@ export function sameThemeValues(a: ThemeValues, b: ThemeValues): boolean {
     statusNames.every((name) => a[name] === b[name]) &&
     a.corners === b.corners &&
     a.typeface === b.typeface &&
-    a.visual === b.visual
+    a.visual === b.visual &&
+    themeSurfaceNames.every((name) => a[name] === b[name])
   );
 }
 
