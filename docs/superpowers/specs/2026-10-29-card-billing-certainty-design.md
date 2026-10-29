@@ -1,4 +1,4 @@
-# Card billing certainty: provisional statements and the open bill (amendments A136 to A138)
+# Card billing certainty: provisional statements and the open bill (amendments A136 to A139)
 
 Amends the billing, amount due and settlement rows of `docs/domain/05-domain-model.md` (T04, A86, A89, A90) and the matching rules of `2026-10-20-record-matching-design.md` (A98 to A101).
 
@@ -76,6 +76,14 @@ Checks with the data of 2026-10-29 after A137 moves the 7.13:
 - after a payment of 1,238.65 on 2026-11-03: amount due 353.72, unpaid previous 0, open amount 353.72;
 - after a partial payment of 1,000.00: amount due 592.37, unpaid previous 238.65, open amount 353.72.
 
+### A139: a statement settles when its difference closes
+
+A closed statement whose amount due equals the institution's total is reconciled (A92). The check ran only after a sync that delivered bills; an aggregator sends a bill once, so a statement whose difference a later entry closed (a cancellation recorded after the bill arrived) stayed unreconciled, and its postings stayed in the unconfirmed list (A133) for good.
+
+The ledger now runs the same check after every recorded, corrected or voided transaction that touches a credit card (outbox events `ledger.transaction_recorded.v1`, `ledger.transaction_corrected.v1`, `ledger.transaction_voided.v1`, consumer `ledger-statement-settlement`).
+
+The statement page explains its unconfirmed lines: an alert names them; when the statement's total matches the institution's it says that reconciling records it, otherwise it states the resolutions of A133.
+
 ## Regions
 
 The rules use dates, lines, bills and totals. Every source provides these concepts: files of any format, any aggregator, any country. No regional value and no extension point is introduced; `docs/contributing/regions.md` is unchanged. `MatchHardLimit` is an existing value, not regional.
@@ -88,6 +96,7 @@ The rules use dates, lines, bills and totals. Every source provides these concep
 | S177 | Statement 2026-11 closes with an owner fact of 1,238.65 and an amount due of 1,245.78. Its provisional postings include the manual 7.13 of 2026-10-28 and an imported cleared 7.13 of 2026-10-23. The proposal moves the posting of 2026-10-28. After the move, amount due equals the fact. |
 | S178 | A manual charge of 50.00 dated 2026-10-27, explicit statement 2026-12 chosen by the owner, stays on 2026-12 when statement 2026-11 closes. |
 | S179 | A closed statement differs from its file total by 0.01 and has no provisional posting of 0.01. The page shows the difference as a possible rounding difference; no posting moves. |
+| S181 | A bill of 230.00 arrives for a statement whose lines sum 240.00: not reconciled. The owner records a credit of 10.00 on it; the statement is reconciled without a new sync. |
 | S180 | Statement 2026-11 closed (due 2026-11-05) with 1,238.65 unpaid; statement 2026-12 open with charges 353.72. Open amount is 353.72. On 2026-11-06, unpaid, statement 2026-11 is `overdue` and the open amount is 1,592.37. |
 
 ## Out of scope

@@ -245,6 +245,30 @@ func (s *Service) SettleReportedStatements(ctx context.Context, userID int64, ca
 	return nil
 }
 
+// SettleChangedCards settles the reported statements of the credit cards among accountIDs
+// (A139); other accounts are skipped.
+func (s *Service) SettleChangedCards(ctx context.Context, userID int64, accountIDs []uuid.UUID) error {
+	for _, id := range accountIDs {
+		a, err := s.repo.Account(ctx, userID, id)
+		if errors.Is(err, ErrNotFound) {
+			continue
+		}
+		if err != nil {
+			return err
+		}
+
+		if a.Kind != domain.KindCreditCard {
+			continue
+		}
+
+		if err := s.SettleReportedStatements(ctx, userID, id); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // RecordCardOpening opens a card that has no opening balance with the total of the bill due
 // on due, billed on that bill's statement and dated on its closing date (A93).
 func (s *Service) RecordCardOpening(ctx context.Context, userID int64, cardID uuid.UUID, due time.Time, total money.Money) error {

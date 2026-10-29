@@ -238,6 +238,11 @@ func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, md MarketData, profi
 	ins := &instruments{md: md, cache: map[money.Currency]app.Instrument{}}
 	svc := app.NewService(postgres.NewRepository(pool, ins), clk, calendarAdapter{md}, ins, pricesAdapter{md}, profiles, regionDefaults{})
 	dispatcher.Subscribe("ledger-provisioning", "identity.user_created.v2", provision)
+	// A139: a change on a card may close a reported statement's difference; the bank sends the
+	// bill once, so the ledger settles again after every change rather than at the next bill.
+	for _, event := range []string{app.EventTransactionRecorded, app.EventTransactionCorrected, app.EventTransactionVoided} {
+		dispatcher.Subscribe("ledger-statement-settlement", event, settleCards(svc))
+	}
 	return &Module{http: httpapi.NewServer(svc, log), svc: svc}
 }
 
@@ -523,6 +528,18 @@ type userCreated struct {
 }
 
 // provision runs in the dispatcher's transaction, so the system accounts commit with the delivery.
+// settleCards settles the reported statements of each card a transaction event names (A139).
+func settleCards(svc *app.Service) outbox.Handler {
+	return func(ctx context.Context, _ pgx.Tx, e outbox.Delivered) error {
+		var p app.TransactionEvent
+		if err := json.Unmarshal(e.Payload, &p); err != nil {
+			return fmt.Errorf("decode %s: %w", e.Type, err)
+		}
+
+		return svc.SettleChangedCards(ctx, e.UserID, p.AccountIDs)
+	}
+}
+
 func provision(ctx context.Context, tx pgx.Tx, e outbox.Delivered) error {
 	var p userCreated
 	if err := json.Unmarshal(e.Payload, &p); err != nil {

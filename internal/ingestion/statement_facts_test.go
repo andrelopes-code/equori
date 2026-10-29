@@ -72,6 +72,27 @@ func TestStatementFactsReportADifference(t *testing.T) {
 	}
 }
 
+// S181 (A139): a statement that differs from the bank's total is reconciled as soon as a
+// later entry closes the difference, without waiting for the bank to send the bill again.
+func TestStatementReconciledWhenAnEntryClosesTheDifference_S181(t *testing.T) {
+	t.Parallel()
+	f, card := cardWithBill(t, pluggy.Bill{ID: "bill-nov", DueDate: "2026-11-10T00:00:00.000Z", TotalAmount: "230.00"})
+	f.line(pluggy.SubtypeCard, cardLine("charge-1", "2026-10-20", "240.00", "POSTED", new("bill-nov")))
+	f.sync()
+	if s := f.statement(card, "2026-11"); s.Reconciled {
+		t.Fatalf("statement reconciled with a difference: %+v", s)
+	}
+	refunds := f.h.Account("Refunds", "income", "", nil)
+
+	f.h.Record("2026-10-21", map[string]any{"account_id": card, "amount": map[string]any{"amount": 1000, "currency": "BRL"}},
+		map[string]any{"account_id": refunds, "amount": map[string]any{"amount": -1000, "currency": "BRL"}})
+	f.h.Dispatch()
+
+	if s := f.statement(card, "2026-11"); !s.Reconciled || s.Difference == nil || s.Difference.Amount != 0 {
+		t.Fatalf("statement = %+v (difference %+v), want reconciled", s, s.Difference)
+	}
+}
+
 // A90: a pending line is never billed on a statement the institution reported; it moves to
 // the first statement without facts.
 func TestPendingLineLeavesAReportedStatement(t *testing.T) {
