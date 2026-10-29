@@ -1838,18 +1838,6 @@
       --slotted-drawer-slide-exit-duration: 260ms;
     }
 
-    [data-ui="dialog"][data-size="sm"] {
-      --slotted-dialog-measure: 32rem;
-    }
-
-    [data-ui="dialog"][data-size="md"] {
-      --slotted-dialog-measure: 42rem;
-    }
-
-    [data-ui="dialog"][data-size="lg"] {
-      --slotted-dialog-measure: 48rem;
-    }
-
     [data-ui="tooltip"] > [data-part="arrow"] {
       --equori-tooltip-arrow-overlap: 0.5px;
       opacity: 0;
@@ -2104,6 +2092,7 @@
 
     &[data-slotted-scheme="dark"] [data-ui="chart"] {
       --slotted-chart-tooltip-surface: var(--glass-fill-overlay);
+      --slotted-chart-table-surface: transparent;
     }
 
     &[data-slotted-scheme="dark"] [data-ui="chart"][data-variant="card"] {
@@ -2111,12 +2100,8 @@
       box-shadow: var(--glass-shadow-1);
     }
 
-    &[data-slotted-scheme="dark"] [data-ui="chart"] [data-part="table-region"] {
-      background-color: transparent;
-    }
-
-    &[data-slotted-scheme="dark"] [data-ui="chart"]:not([data-fullscreen]):has([data-part="table-region"]) {
-      --slotted-chart-surface: var(--slotted-surface-raised);
+    &[data-slotted-scheme="dark"] [data-ui="chart"]:not([data-fullscreen]) {
+      --slotted-chart-table-header-surface: var(--slotted-surface-raised);
     }
 
     &[data-slotted-scheme="dark"] [data-ui="chart"] [data-part="menu"] {

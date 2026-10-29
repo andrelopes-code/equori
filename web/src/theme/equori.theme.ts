@@ -50,22 +50,6 @@ const darkNeutral = (l: number) => ({
   c: { scale: 0.22, max: 0.08 },
 });
 
-// Workaround for Slotted issue #37: the dialog has no measure per size. A confirmation at 24rem
-// wrapped its sentence to five lines, and a form at 32rem held a column narrower than a form page's.
-const dialogMeasureRule = `
-[data-ui="dialog"][data-size="sm"] {
-  --slotted-dialog-measure: 32rem;
-}
-
-[data-ui="dialog"][data-size="md"] {
-  --slotted-dialog-measure: 42rem;
-}
-
-[data-ui="dialog"][data-size="lg"] {
-  --slotted-dialog-measure: 48rem;
-}
-`;
-
 // Workaround for Slotted issue #39: only the tooltip's content fades, so its arrow stays opaque
 // and reads as a separate piece on open and close. The arrow takes the content's three fade rules.
 // Half of the arrow's square lies over the content: while both fade, that half composites twice
@@ -269,7 +253,6 @@ export default extendTheme(
       currentDestinationRule,
       paletteScrimRule,
       sheetSlideRule,
-      dialogMeasureRule,
       tooltipArrowFadeRule,
     ],
   },

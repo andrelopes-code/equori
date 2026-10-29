@@ -188,7 +188,12 @@ export const surfaces: readonly Surface[] = [
     family: "chart",
     // The chart's own surface stays opaque: the library mixes its series colours with it. Only
     // the card variant's ground and the overlays are glass; the tooltip's fill is a token.
-    tokens: { "--slotted-chart-tooltip-surface": fill("overlay") },
+    // The table view lets the glass card show through; its sticky header stays opaque, since no
+    // blur reaches it and a translucent header shows the rows that pass under it.
+    tokens: {
+      "--slotted-chart-tooltip-surface": fill("overlay"),
+      "--slotted-chart-table-surface": "transparent",
+    },
     blurToken: "--slotted-chart-overlay-backdrop-filter",
     paint: [
       {
@@ -198,19 +203,11 @@ export const surfaces: readonly Surface[] = [
           "box-shadow": elevation(1),
         },
       },
-      // Workaround for Slotted issue #36: the table view and its sticky header paint the opaque
-      // chart surface and read no token of their own, so the table shows as a solid block in a
-      // glass card. The region exists only while the table is open, and the drawing whose colours
-      // mix with the surface is hidden then. The header reads the surface and no blur reaches it,
-      // so the surface stays opaque: a translucent header shows the rows that pass under it.
       {
-        select: `${family("chart")} [data-part="table-region"]`,
-        declarations: { "background-color": "transparent" },
-      },
-      {
-        select: `${family("chart")}:not([data-fullscreen]):has([data-part="table-region"])`,
+        select: `${family("chart")}:not([data-fullscreen])`,
         declarations: {
-          "--slotted-chart-surface": "var(--slotted-surface-raised)",
+          "--slotted-chart-table-header-surface":
+            "var(--slotted-surface-raised)",
         },
       },
       ...["menu", "help-content"].map((name) => ({
