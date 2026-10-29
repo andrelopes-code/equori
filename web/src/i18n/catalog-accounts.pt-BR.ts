@@ -699,6 +699,13 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "statement.role.payment": "Pagamento",
   "statement.installment": "{number}/{count}",
   "statement.unconfirmed": "Sem linha do banco",
+  "statement.provisional": "Fatura provisória",
+  "statement.proposal.title": "Diferença de {amount} com o banco",
+  "statement.proposal.description":
+    "Estes lançamentos foram feitos perto do fechamento e o banco provavelmente os cobrou na fatura seguinte: {names}.",
+  "statement.proposal.move": "Mover para a fatura seguinte",
+  "statement.rounding":
+    "Diferença de {amount} sem lançamento que a explique: provavelmente arredondamento do banco.",
   "statement.lineActions": "Ações de {name}",
   "statement.openTransaction": "Abrir transação",
   "statement.title": "Fatura",

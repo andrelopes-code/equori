@@ -134,6 +134,11 @@ export function StatementLines({
                           {line.card_role === "charge" && (
                             <DisputeTag transactionId={line.transaction_id} />
                           )}
+                          {line.provisional && (
+                            <Tag size="sm" tone="info">
+                              {t("statement.provisional")}
+                            </Tag>
+                          )}
                           {unconfirmed?.has(line.transaction_id) === true && (
                             <Tag size="sm" tone="warning">
                               {t("statement.unconfirmed")}

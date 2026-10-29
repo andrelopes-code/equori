@@ -2,13 +2,14 @@ import { Text } from "@slotted/react/typography";
 import { Stack } from "@slotted/react/stack";
 
 import type { components } from "@/api/schema.gen";
+import { DifferenceProposal } from "@/features/cards/difference-proposal";
 import { useT } from "@/i18n/i18n-provider";
 import { FigureCard } from "@/ui/figure-card";
 import { FigureGrid } from "@/ui/figure-grid";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 import type { MoneyAmount } from "@/ui/money-value";
 
-type Statement = components["schemas"]["StatementSummary"];
+type Statement = components["schemas"]["StatementDetail"];
 
 // The statement's terms and the sentence that adds them up (A89): what was owed before, what was
 // charged, credited and paid on it, the total and what is still open.
@@ -87,6 +88,7 @@ export function StatementFigures({
           total: money(statement.amount_due),
         })}
       </Text>
+      <DifferenceProposal statement={statement} scale={scale} />
     </Stack>
   );
 }

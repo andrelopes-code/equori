@@ -701,6 +701,13 @@ export const accountsEn = {
   "statement.role.payment": "Payment",
   "statement.installment": "{number}/{count}",
   "statement.unconfirmed": "No bank line",
+  "statement.provisional": "Provisional statement",
+  "statement.proposal.title": "A {amount} difference from the bank",
+  "statement.proposal.description":
+    "These entries were made close to the closing date and the bank likely billed them on the next statement: {names}.",
+  "statement.proposal.move": "Move to the next statement",
+  "statement.rounding":
+    "A {amount} difference no entry explains: likely a rounding by the bank.",
   "statement.lineActions": "Actions for {name}",
   "statement.openTransaction": "Open transaction",
   "statement.title": "Statement",

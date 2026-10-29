@@ -339,6 +339,21 @@ export function useReconcileStatement() {
   );
 }
 
+export function useDeferStatementPostings() {
+  return useApiMutation(
+    async (
+      api,
+      { id, transactionIds }: { id: string; transactionIds: string[] },
+    ) =>
+      unwrap(
+        await api.POST("/statements/{id}/defer", {
+          params: { path: { id } },
+          body: { transaction_ids: transactionIds },
+        }),
+      ),
+  );
+}
+
 export function useSetStatementFacts() {
   return useApiMutation(
     async (

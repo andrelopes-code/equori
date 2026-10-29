@@ -708,4 +708,88 @@ describe("Statement line actions", () => {
       screen.queryByRole("menuitem", { name: catalogEn["refund.action"] }),
     ).not.toBeInTheDocument();
   });
+
+  it("tags a provisional line and moves the lines a difference names (A137)", async () => {
+    const sent: Sent[] = [];
+    const differs = {
+      institution: {
+        source: "owner",
+        due_date: "2026-10-25",
+        total: money(170000),
+      },
+      amount_difference: money(10000),
+      difference_proposal: {
+        transaction_ids: ["tx1"],
+        amount: money(10000),
+      },
+    };
+    const withProvisional = detail(closed, differs) as {
+      postings: Record<string, unknown>[];
+    };
+    withProvisional.postings[0] = {
+      ...withProvisional.postings[0],
+      provisional: true,
+    };
+    await renderApp(path, {
+      fetch: api(sent, {
+        [`GET /api/v1/statements/${closedStatementID}`]: () =>
+          json(200, withProvisional),
+        [`POST /api/v1/statements/${closedStatementID}/defer`]: async (req) => {
+          sent.push({ route: "defer", body: (await req.json()) as unknown });
+          return json(200, detail(closed));
+        },
+      }),
+    });
+
+    expect(
+      await screen.findByText(catalogEn["statement.provisional"]),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        words("statement.proposal.description", { names: "Mercado" }),
+      ),
+    ).toBeInTheDocument();
+    await userEvent.click(
+      screen.getByRole("button", {
+        name: catalogEn["statement.proposal.move"],
+      }),
+    );
+
+    await waitFor(() => {
+      expect(sent.filter((x) => x.route === "defer")).toEqual([
+        { route: "defer", body: { transaction_ids: ["tx1"] } },
+      ]);
+    });
+  });
+
+  it("names a difference no line explains as rounding (S179)", async () => {
+    await renderApp(path, {
+      fetch: api([], {
+        [`GET /api/v1/statements/${closedStatementID}`]: () =>
+          json(
+            200,
+            detail(closed, {
+              institution: {
+                source: "owner",
+                due_date: "2026-10-25",
+                total: money(179999),
+              },
+              amount_difference: money(1),
+              rounding_difference: true,
+            }),
+          ),
+      }),
+    });
+
+    expect(
+      await screen.findByText(
+        words("statement.rounding", { amount: "R$0.01" }),
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", {
+        name: catalogEn["statement.proposal.move"],
+      }),
+    ).not.toBeInTheDocument();
+  });
 });
