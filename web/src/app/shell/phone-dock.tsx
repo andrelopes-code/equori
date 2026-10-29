@@ -54,12 +54,6 @@ export function PhoneDock({
               icon: <ShellIcon name="text" size={20} weight={1.9} />,
               onSelect: () => void navigate({ to: "/transactions/capture" }),
             },
-            {
-              id: "account",
-              label: t("palette.newAccount"),
-              icon: <ShellIcon name="accounts" size={20} weight={1.9} />,
-              onSelect: () => void navigate({ to: "/accounts/new" }),
-            },
           ]}
         />
       )}

@@ -32,8 +32,9 @@ export interface Destination {
     | "/settings";
   label: MessageKey;
   icon: ShellIconName;
-  // A phone holds four destinations in its navigation bar and the rest in the More sheet.
-  phone: "bar" | "more";
+  // A phone holds four destinations in its navigation bar and the rest in the More sheet;
+  // "none" is desktop-only (ADR 027, S6).
+  phone: "bar" | "more" | "none";
 }
 
 export const destinations: readonly Destination[] = [
@@ -56,7 +57,7 @@ export const destinations: readonly Destination[] = [
     to: "/categories",
     label: "nav.categories",
     icon: "categories",
-    phone: "more",
+    phone: "none",
   },
   {
     key: "cards",
@@ -77,42 +78,42 @@ export const destinations: readonly Destination[] = [
     to: "/goals",
     label: "nav.goals",
     icon: "goals",
-    phone: "more",
+    phone: "none",
   },
   {
     key: "planning",
     to: "/planning",
     label: "nav.planning",
     icon: "planning",
-    phone: "more",
+    phone: "none",
   },
   {
     key: "instruments",
     to: "/instruments",
     label: "nav.instruments",
     icon: "instruments",
-    phone: "more",
+    phone: "none",
   },
   {
     key: "portfolio",
     to: "/portfolio",
     label: "nav.portfolio",
     icon: "instruments",
-    phone: "more",
+    phone: "none",
   },
   {
     key: "reports",
     to: "/reports",
     label: "nav.reports",
     icon: "reports",
-    phone: "more",
+    phone: "none",
   },
   {
     key: "calculators",
     to: "/calculators",
     label: "nav.calculators",
     icon: "calculator",
-    phone: "more",
+    phone: "none",
   },
   {
     key: "settings",

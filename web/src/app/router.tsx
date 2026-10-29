@@ -201,6 +201,7 @@ const authedRoute = createRoute({
 });
 
 const settingsRoute = createRoute({
+  staticData: { phone: true },
   getParentRoute: () => authedRoute,
   path: "settings",
   validateSearch: validateSettingsSearch,
@@ -208,6 +209,7 @@ const settingsRoute = createRoute({
 });
 
 const accountRoute = createRoute({
+  staticData: { phone: true },
   getParentRoute: () => authedRoute,
   path: "accounts/$id",
   validateSearch: validateAccountSearch,
@@ -256,12 +258,14 @@ const linksRoute = createRoute({
 });
 
 const cardsRoute = createRoute({
+  staticData: { phone: true },
   getParentRoute: () => authedRoute,
   path: "cards",
   component: CardsPage,
 });
 
 const cardRoute = createRoute({
+  staticData: { phone: true },
   getParentRoute: () => authedRoute,
   path: "cards/$accountId",
   validateSearch: validateCardSearch,
@@ -269,6 +273,7 @@ const cardRoute = createRoute({
 });
 
 const statementRoute = createRoute({
+  staticData: { phone: true },
   getParentRoute: () => authedRoute,
   path: "cards/$accountId/statements/$statementId",
   validateSearch: validateStatementSearch,
@@ -276,6 +281,7 @@ const statementRoute = createRoute({
 });
 
 const homeRoute = createRoute({
+  staticData: { phone: true },
   getParentRoute: () => authedRoute,
   path: "/",
   validateSearch: (search): { month?: string } =>
@@ -287,6 +293,7 @@ const homeRoute = createRoute({
 });
 
 const transactionsRoute = createRoute({
+  staticData: { phone: true },
   getParentRoute: () => authedRoute,
   path: "transactions",
   validateSearch: validateTransactionsPageSearch,
@@ -433,6 +440,7 @@ const accountsLayoutRoute = createRoute({
 });
 
 const accountsRoute = createRoute({
+  staticData: { phone: true },
   getParentRoute: () => accountsLayoutRoute,
   path: "/",
   validateSearch: validateAccountsSearch,
@@ -440,6 +448,7 @@ const accountsRoute = createRoute({
 });
 
 const newTransactionRoute = createRoute({
+  staticData: { phone: true },
   getParentRoute: () => authedRoute,
   path: "transactions/new",
   validateSearch: (search): { account_id?: string; kind?: BuiltKind } => {
@@ -453,6 +462,7 @@ const newTransactionRoute = createRoute({
 });
 
 const captureRoute = createRoute({
+  staticData: { phone: true },
   getParentRoute: () => authedRoute,
   path: "transactions/capture",
   validateSearch: validateCaptureSearch,
@@ -460,18 +470,21 @@ const captureRoute = createRoute({
 });
 
 const captureQueueRoute = createRoute({
+  staticData: { phone: true },
   getParentRoute: () => authedRoute,
   path: "transactions/queue",
   component: CaptureQueuePage,
 });
 
 const transactionRoute = createRoute({
+  staticData: { phone: true },
   getParentRoute: () => authedRoute,
   path: "transactions/$id",
   component: TransactionPage,
 });
 
 const correctTransactionRoute = createRoute({
+  staticData: { phone: true },
   getParentRoute: () => authedRoute,
   path: "transactions/$id/correct",
   component: CorrectTransactionPage,
@@ -554,6 +567,11 @@ export type AppRouter = ReturnType<typeof newRouter>;
 declare module "@tanstack/react-router" {
   interface Register {
     router: AppRouter;
+  }
+
+  // ADR 027, S2: a route served below 600 px.
+  interface StaticDataRouteOption {
+    phone?: true;
   }
 }
 

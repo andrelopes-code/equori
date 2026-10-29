@@ -17,6 +17,7 @@ import styles from "@/app/shell/app-frame.module.css";
 import { CommandMenu } from "@/app/shell/command-menu";
 import { DesktopNav } from "@/app/shell/desktop-nav";
 import { PhoneDock } from "@/app/shell/phone-dock";
+import { PhoneGate } from "@/app/shell/phone-gate";
 import { TopAppBar } from "@/app/shell/top-app-bar";
 import { useEditing } from "@/app/shell/use-editing";
 import {
@@ -140,7 +141,9 @@ export function AppFrame() {
         <PageDefaultsProvider inset={wide ? 9 : 6}>
           <PageHeaderDefaultsProvider variant="plain" material>
             <SectionDefaultsProvider size="sm">
-              <Outlet />
+              <PhoneGate>
+                <Outlet />
+              </PhoneGate>
             </SectionDefaultsProvider>
           </PageHeaderDefaultsProvider>
         </PageDefaultsProvider>

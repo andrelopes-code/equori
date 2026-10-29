@@ -274,27 +274,6 @@ describe("Portfolio positions", () => {
     ).toBeInTheDocument();
   });
 
-  it("dates the market value on a phone line", async () => {
-    await renderApp("/portfolio", { width: 390, fetch: pricedApi() });
-    expect(
-      await screen.findByText(
-        `${catalogEn["positions.marketValue"]}: R$20.00 · ${catalogEn["positions.priceOf"].replace("{date}", "10/22/2026")}`,
-      ),
-    ).toBeInTheDocument();
-  });
-
-  it("writes each phone line as a label and its value", async () => {
-    await renderApp("/portfolio", { width: 390, fetch: portfolioApi() });
-    expect(
-      await screen.findByText(
-        `${catalogEn["positions.marketValue"]}: ${catalogEn["positions.noPrice"]}`,
-      ),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(`${catalogEn["positions.marketValue"]}: R$105.00`),
-    ).toBeInTheDocument();
-  });
-
   it("names the header's currency and date without a visible label", async () => {
     await renderApp("/portfolio?date=2026-09-30", { fetch: portfolioApi() });
     const currency = await screen.findByRole("combobox", {
@@ -309,13 +288,5 @@ describe("Portfolio positions", () => {
     ).toBeVisible();
     expect(header).not.toHaveTextContent(catalogEn["portfolio.valueIn"]);
     expect(header).not.toHaveTextContent(catalogEn["portfolio.date"]);
-  });
-
-  it("moves the date and currency out of the header on a phone", async () => {
-    await renderApp("/portfolio", { width: 390, fetch: portfolioApi() });
-    const currency = await screen.findByRole("combobox", {
-      name: catalogEn["portfolio.valueIn"],
-    });
-    expect(currency.closest('[data-ui="page-header"]')).toBeNull();
   });
 });

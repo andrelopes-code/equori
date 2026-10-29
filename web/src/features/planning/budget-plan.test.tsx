@@ -436,20 +436,6 @@ describe("Budget plan", () => {
     expect(screen.getByText(catalogEn["plan.noHistory"])).toBeInTheDocument();
   });
 
-  it("keeps the save bar and drops the history columns on a phone", async () => {
-    await renderApp(november, { fetch: budgetPlanApi(), today, width: 390 });
-    await panel();
-    await userEvent.type(await input("Energy"), "0");
-    expect(
-      await screen.findByRole("button", { name: catalogEn["plan.save"] }),
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByRole("columnheader", {
-        name: catalogEn["plan.col.average"],
-      }),
-    ).not.toBeInTheDocument();
-  });
-
   it("hides the fixed reference in privacy mode", async () => {
     localStorage.setItem("equori.privacy", "hidden");
     const { container } = await renderPlan(

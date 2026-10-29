@@ -68,8 +68,9 @@ describe("AppFrame layout", () => {
     });
     const page = container.querySelector("main")?.firstElementChild;
     expect(page).toBeInstanceOf(HTMLElement);
+    // 800 px: below 600 px a desktop-only route renders the notice of ADR 027 (S4).
     act(() => {
-      setViewport(390);
+      setViewport(800);
     });
     expect(page?.isConnected).toBe(true);
     act(() => {
@@ -629,8 +630,8 @@ describe("phone dock", () => {
     ).toHaveAttribute("aria-current", "page");
   });
 
-  it.each(["/goals", "/settings"])("marks More current on %s", async (path) => {
-    await renderApp(path, { width: 390, fetch: newFetch() });
+  it("marks More current on /settings", async () => {
+    await renderApp("/settings", { width: 390, fetch: newFetch() });
     expect(
       within(navigationBar()).getByRole("button", {
         name: catalogEn["nav.more"],
@@ -659,7 +660,8 @@ describe("phone dock", () => {
     expect(router.state.location.pathname).toBe("/cards");
   });
 
-  it("offers the transaction form, the text and a new account from the floating button", async () => {
+  // ADR 027, S6: a new account is a desktop-only route.
+  it("offers the transaction form and the text from the floating button", async () => {
     const user = userEvent.setup();
     await renderApp("/", { width: 390, fetch: newFetch() });
     await user.click(
@@ -670,17 +672,12 @@ describe("phone dock", () => {
     ).toHaveAttribute("aria-expanded", "true");
     expect(
       screen.getAllByRole("menuitem").map((item) => item.textContent),
-    ).toEqual([
-      catalogEn["nav.new"],
-      catalogEn["capture.title"],
-      catalogEn["palette.newAccount"],
-    ]);
+    ).toEqual([catalogEn["nav.new"], catalogEn["capture.title"]]);
   });
 
   it.each([
     ["nav.new", "/transactions/new"],
     ["capture.title", "/transactions/capture"],
-    ["palette.newAccount", "/accounts/new"],
   ] as const)("opens %s from the floating button", async (label, path) => {
     const user = userEvent.setup();
     const { router } = await renderApp("/", {
@@ -769,22 +766,27 @@ describe("phone dock", () => {
     expect(within(sheet).getByRole("separator")).toBeInTheDocument();
   });
 
-  it.each([
-    ["nav.goals", "/goals"],
-    ["nav.planning", "/planning"],
-    ["nav.instruments", "/instruments"],
-    ["nav.portfolio", "/portfolio"],
-    ["nav.reports", "/reports"],
-    ["nav.calculators", "/calculators"],
-    ["more.settings", "/settings"],
-  ] as const)("opens %s from More", async (label, path) => {
+  // ADR 027, S6: the other destinations are desktop-only.
+  it("lists only settings among the destinations of More", async () => {
+    await renderApp("/", { width: 390, fetch: newFetch() });
+
+    const { sheet } = await openMore();
+
+    expect(
+      within(sheet)
+        .getAllByRole("link")
+        .map((link) => link.textContent),
+    ).toEqual([catalogEn["more.settings"]]);
+  });
+
+  it("opens settings from More", async () => {
     const { router } = await renderApp("/", { width: 390, fetch: newFetch() });
     const { user, sheet } = await openMore();
     await user.click(
-      within(sheet).getByRole("link", { name: catalogEn[label] }),
+      within(sheet).getByRole("link", { name: catalogEn["more.settings"] }),
     );
     await waitFor(() => {
-      expect(router.state.location.pathname).toBe(path);
+      expect(router.state.location.pathname).toBe("/settings");
     });
     await waitFor(() => {
       expect(screen.queryByRole("dialog")).toBeNull();

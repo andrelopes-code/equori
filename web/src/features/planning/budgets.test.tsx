@@ -191,22 +191,6 @@ describe("PlanningPage budgets", () => {
     });
   });
 
-  it("puts the budgets before the chart on a phone, as rows of one surface", async () => {
-    const { container } = await renderApp(november, {
-      fetch: budgetApi(),
-      width: 390,
-    });
-    const transport = await screen.findByRole("region", { name: "Transport" });
-    expect(transport.querySelector('[data-ui="card"]')).toBeNull();
-    const chart = container.querySelector('[data-ui="chart"]');
-    if (chart === null) throw new Error("no chart");
-    expect(
-      transport.compareDocumentPosition(chart) &
-        Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
-    expect(screen.queryByText(catalogEn["budget.overOne"])).toBeNull();
-  });
-
   it("deletes a budget from its card after a confirmation (S144)", async () => {
     const deleted: string[] = [];
     await renderApp(november, {

@@ -243,23 +243,4 @@ describe("Import batch", () => {
       await screen.findByText(catalogEn["batch.resolvedElsewhere"]),
     ).toBeInTheDocument();
   });
-
-  it("shows only the queue on a phone and the line on its own", async () => {
-    await renderApp(path, { fetch: api([]), width: 390 });
-    expect(
-      await screen.findByRole("list", { name: catalogEn["batch.queue"] }),
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByRole("table", { name: /Score of/ }),
-    ).not.toBeInTheDocument();
-    await userEvent.click(await screen.findByRole("link", { name: /Padaria/ }));
-    expect(
-      await screen.findByRole("table", {
-        name: words("batch.scoreOf", { name: "Pão" }),
-      }),
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByRole("list", { name: catalogEn["batch.queue"] }),
-    ).not.toBeInTheDocument();
-  });
 });

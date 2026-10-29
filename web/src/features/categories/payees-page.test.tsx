@@ -169,11 +169,8 @@ describe("PayeesPage", () => {
     });
   });
 
-  it.each([
-    [390, "bottom"],
-    [1280, "end"],
-  ])("opens the aliases drawer at %i px from the %s", async (width, side) => {
-    await renderApp("/categories/payees", { fetch: api([]), width });
+  it("opens the aliases drawer from the end", async () => {
+    await renderApp("/categories/payees", { fetch: api([]) });
     await userEvent.click(
       await screen.findByRole("button", { name: "Actions for iFood" }),
     );
@@ -183,6 +180,6 @@ describe("PayeesPage", () => {
       }),
     );
     const drawer = await screen.findByRole("dialog");
-    expect(drawer.closest("[data-side]")).toHaveAttribute("data-side", side);
+    expect(drawer.closest("[data-side]")).toHaveAttribute("data-side", "end");
   });
 });
