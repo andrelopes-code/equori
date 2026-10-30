@@ -124,7 +124,7 @@ func (m *Module) tick(ctx context.Context, src feed.Source) error {
 		return nil
 	}
 
-	today := m.feeds.Clock.Today()
+	today := m.feeds.Clock.Today(ctx)
 
 	starts := make([]time.Time, len(codes))
 	for i, code := range codes {

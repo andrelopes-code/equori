@@ -211,7 +211,7 @@ func reconciliationOf(ctx context.Context, svc *app.Service, booksID int64, id u
 
 func cardDetailsOf(ctx context.Context, svc *app.Service, booksID int64, a domain.Account, unit money.Money,
 	in getAccountDetailsIn, month, from *domain.ReferenceMonth) (cardDetailsView, error) {
-	today := svc.Today()
+	today := svc.Today(ctx)
 	out := cardDetailsView{Cards: []cardView{}, Statements: []statementRowView{}}
 
 	cards, err := svc.Cards(ctx, booksID, a.ID)

@@ -104,7 +104,7 @@ func (m *Module) Feeds(ctx context.Context) ([]Feed, error) {
 			last = &latest
 		}
 
-		out = append(out, m.feed(src.ID(), domain.FeedPrice, index.PeriodDay, last, on, suggested, lags))
+		out = append(out, m.feed(ctx, src.ID(), domain.FeedPrice, index.PeriodDay, last, on, suggested, lags))
 	}
 
 	for _, src := range m.feeds.Indexes {
@@ -118,7 +118,7 @@ func (m *Module) Feeds(ctx context.Context) ([]Feed, error) {
 			last = &latest.Latest
 		}
 
-		out = append(out, m.feed(src.ID(), domain.FeedIndex, src.Period(), last, on, suggested, lags))
+		out = append(out, m.feed(ctx, src.ID(), domain.FeedIndex, src.Period(), last, on, suggested, lags))
 	}
 
 	for _, src := range m.feeds.Expectations {
@@ -132,13 +132,13 @@ func (m *Module) Feeds(ctx context.Context) ([]Feed, error) {
 			last = &latest.Latest
 		}
 
-		out = append(out, m.feed(src.ID(), domain.FeedExpectation, index.PeriodDay, last, on, suggested, lags))
+		out = append(out, m.feed(ctx, src.ID(), domain.FeedExpectation, index.PeriodDay, last, on, suggested, lags))
 	}
 
 	return out, nil
 }
 
-func (m *Module) feed(id, kind, period string, last *time.Time, on map[string]bool, suggested []string, lags map[string]int) Feed {
+func (m *Module) feed(ctx context.Context, id, kind, period string, last *time.Time, on map[string]bool, suggested []string, lags map[string]int) Feed {
 	f := Feed{ID: id, Kind: kind, Enabled: on[id], Suggested: slices.Contains(suggested, id), Last: last}
 	if f.Enabled && last != nil {
 		// The period of last is published; the one due is the next, ending two periods after last.
@@ -147,7 +147,7 @@ func (m *Module) feed(id, kind, period string, last *time.Time, on map[string]bo
 			due = last.AddDate(0, 2, lags[id])
 		}
 
-		f.Stale = m.feeds.Clock.Today().After(due)
+		f.Stale = m.feeds.Clock.Today(ctx).After(due)
 	}
 
 	m.runsMu.Lock()

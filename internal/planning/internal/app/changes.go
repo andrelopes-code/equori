@@ -30,7 +30,7 @@ func (s *Service) changeOccurrence(ctx context.Context, booksID int64, id uuid.U
 		}
 
 		changed, err := change(repo, o, sch)
-		out = s.view(changed, sch)
+		out = s.view(ctx, changed, sch)
 
 		return err
 	})
@@ -145,7 +145,7 @@ func (s *Service) ChangeTerms(ctx context.Context, booksID int64, id uuid.UUID, 
 
 		// Regenerate only where occurrences existed: from today, or from the earliest date
 		// removed when it is earlier, never before the effective date.
-		from := s.clk.Today()
+		from := s.clk.Today(ctx)
 		for _, d := range removed {
 			if d.Before(from) {
 				from = d

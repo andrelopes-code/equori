@@ -178,7 +178,7 @@ type Ledger interface {
 	// Transfer reports false when the ledger refused the transfer for a business rule.
 	Transfer(ctx context.Context, booksID int64, t TransferRequest) (applied bool, err error)
 	// Today is the date of the ledger's clock.
-	Today() time.Time
+	Today(ctx context.Context) time.Time
 }
 
 // TransferRequest asks the ledger to turn a transaction into a transfer (P5b amendment A31).

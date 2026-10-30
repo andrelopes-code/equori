@@ -150,7 +150,7 @@ func serve(parent context.Context) error {
 		}()
 	}
 
-	clk := clock.New(cfg.TimeZone, time.Now)
+	clk := clock.New(time.Now)
 	scfg := serverConfig(cfg, &clk)
 	scfg.Web, scfg.WebDevPort, scfg.Version = web.Dist(), cfg.WebDevPort, buildVersion()
 	scfg.SetupDone = func() {

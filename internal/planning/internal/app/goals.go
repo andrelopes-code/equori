@@ -30,7 +30,7 @@ type TrailingReturn struct {
 
 // withReturn attaches the trailing return; a goal without one reads as before.
 func (s *Service) withReturn(ctx context.Context, booksID int64, v GoalView) (GoalView, error) {
-	bp, months, ok, err := s.returns.TrailingReturn(ctx, booksID, v.AccountIDs, s.clk.Today(), v.Currency)
+	bp, months, ok, err := s.returns.TrailingReturn(ctx, booksID, v.AccountIDs, s.clk.Today(ctx), v.Currency)
 	if err != nil || !ok {
 		return v, err
 	}
@@ -154,7 +154,7 @@ func (s *Service) DeleteGoal(ctx context.Context, booksID int64, id uuid.UUID) e
 // measure sums the booked balances of the goal's accounts and their sub-accounts today, each
 // instrument valued in the goal currency with stored prices (A55, P8 amendments A72 and A120).
 func (s *Service) measure(ctx context.Context, booksID int64, g domain.Goal) (GoalView, error) {
-	today := s.clk.Today()
+	today := s.clk.Today(ctx)
 	var current int64
 	var prices []Price
 

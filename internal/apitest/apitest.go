@@ -77,14 +77,14 @@ func Today(date string) Option {
 		panic(err)
 	}
 
-	clk := clock.New(time.UTC, func() time.Time { return d.Add(12 * time.Hour) })
+	clk := clock.New(func() time.Time { return d.Add(12 * time.Hour) })
 
 	return func(c *server.Config) { c.Clock = &clk }
 }
 
 // Clock replaces the instance clock with now.
 func Clock(now func() time.Time) Option {
-	clk := clock.New(time.UTC, now)
+	clk := clock.New(now)
 	return func(c *server.Config) { c.Clock = &clk }
 }
 

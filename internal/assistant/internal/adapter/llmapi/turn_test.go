@@ -45,7 +45,7 @@ func TestAgentWaitsOnceForTransient(t *testing.T) {
 			t.Parallel()
 
 			now := start
-			clk := clock.New(time.UTC, func() time.Time { return now })
+			clk := clock.New(func() time.Time { return now })
 			router := llm.NewRouter(&clk, slog.New(slog.NewTextHandler(io.Discard, nil)), nil, llmtest.New("p", tt.steps...))
 			var waits []time.Time
 			a := &Agent{client: router.Client(llm.Target{Provider: "p", Model: "m"}), handlers: map[string]llm.ToolHandler{},
@@ -84,7 +84,7 @@ func TestAgentRunsReadsTogether(t *testing.T) {
 	t.Parallel()
 
 	now := time.Date(2026, 10, 23, 10, 0, 0, 0, time.UTC)
-	clk := clock.New(time.UTC, func() time.Time { return now })
+	clk := clock.New(func() time.Time { return now })
 	two := llm.Response{Message: llm.Message{Role: llm.RoleModel, Parts: []llm.Part{
 		{ToolCall: &llm.ToolCall{Name: "get_a", Args: json.RawMessage(`{}`)}},
 		{ToolCall: &llm.ToolCall{Name: "get_b", Args: json.RawMessage(`{}`)}},

@@ -65,7 +65,7 @@ type getPortfolioOut struct {
 	Subtypes    []string       `json:"subtypes,omitzero"`
 }
 
-func getPortfolio(svc *app.Service, names AccountNames, today func() time.Time) tool.Tool {
+func getPortfolio(svc *app.Service, names AccountNames, today func(context.Context) time.Time) tool.Tool {
 	return tool.New(tool.Spec{
 		Name: "get_portfolio",
 		Description: "Returns investment views at a date: positions with quantity, cost and market value; allocation by instrument type, currency or institution; net worth; or the annual return of an account over a period. " +
@@ -83,7 +83,7 @@ func getPortfolio(svc *app.Service, names AccountNames, today func() time.Time) 
 
 		date := in.Date.Time
 		if date.IsZero() {
-			date = today()
+			date = today(ctx)
 		}
 
 		var err error

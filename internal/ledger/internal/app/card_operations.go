@@ -217,7 +217,7 @@ func (s *Service) Commitment(ctx context.Context, booksID int64, accountID uuid.
 		return money.Money{}, err
 	}
 
-	total, err := s.repo.CommittedInstallments(ctx, booksID, accountID, month, s.clock.Today())
+	total, err := s.repo.CommittedInstallments(ctx, booksID, accountID, month, s.clock.Today(ctx))
 	if err != nil {
 		return money.Money{}, err
 	}
@@ -320,7 +320,7 @@ func (s *Service) FinanceStatement(ctx context.Context, booksID int64, statement
 		switch {
 		case v.FinancedBy != uuid.Nil:
 			return ErrStatementFinanced
-		case s.clock.Today().Before(v.Input.Closing):
+		case s.clock.Today(ctx).Before(v.Input.Closing):
 			return ErrStatementNotClosed
 		case v.Summary.Unpaid <= 0:
 			return validationError("statement", "has no unpaid amount")

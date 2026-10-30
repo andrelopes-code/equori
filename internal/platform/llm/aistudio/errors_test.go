@@ -127,7 +127,7 @@ func TestKeyNeverExposed(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var logs bytes.Buffer
-			clk := clock.New(time.UTC, func() time.Time { return time.Date(2026, 10, 16, 12, 0, 0, 0, time.UTC) })
+			clk := clock.New(func() time.Time { return time.Date(2026, 10, 16, 12, 0, 0, 0, time.UTC) })
 			router := llm.NewRouter(&clk, slog.New(slog.NewJSONHandler(&logs, nil)), nil, aistudio.New(tt.url(t), key, http.DefaultClient))
 
 			_, err := router.Client(llm.Target{Provider: "aistudio", Model: "gemini-x"}).Generate(context.Background(), llm.Request{Messages: []llm.Message{user("hi")}})

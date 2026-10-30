@@ -15,7 +15,7 @@ import (
 // AccountNames returns the names of the book's accounts by ID.
 type AccountNames func(ctx context.Context, booksID int64) (map[uuid.UUID]string, error)
 
-func Tools(svc *app.Service, names AccountNames, today func() time.Time) []tool.Tool {
+func Tools(svc *app.Service, names AccountNames, today func(context.Context) time.Time) []tool.Tool {
 	return []tool.Tool{getPortfolio(svc, names, today), getTaxYear(svc, names)}
 }
 

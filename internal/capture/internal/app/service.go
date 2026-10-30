@@ -48,7 +48,7 @@ type Ledger interface {
 	// Transactions returns the book's transactions among ids in the order of ids; unknown ids
 	// are omitted.
 	Transactions(ctx context.Context, booksID int64, ids []uuid.UUID) ([]Transaction, error)
-	Today() time.Time
+	Today(ctx context.Context) time.Time
 }
 
 // Entry is an expense or income line, signed as the posting on its account. NamedPayee is
@@ -139,7 +139,7 @@ func (s *Service) Preview(ctx context.Context, booksID int64, text string, defau
 		return nil, ErrDefaultAccount
 	}
 
-	y, m, d := s.ledger.Today().Date()
+	y, m, d := s.ledger.Today(ctx).Date()
 
 	day := time.Date(y, m, d, 0, 0, 0, 0, time.UTC)
 	if !reference.IsZero() {

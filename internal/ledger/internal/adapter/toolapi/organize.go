@@ -268,7 +268,7 @@ func (c organizeCall) planCreateAccount(ctx context.Context, pv *tool.Preview) (
 
 	a := domain.Account{
 		Name: c.in.Name, Class: domain.Class(c.in.Class), Kind: domain.Kind(c.in.Kind), Instrument: currency,
-		ParentID: c.parentID, InstitutionID: c.institutionID, OpenedOn: c.svc.Today(),
+		ParentID: c.parentID, InstitutionID: c.institutionID, OpenedOn: c.svc.Today(ctx),
 	}
 	pv.Target = c.in.Name
 
@@ -435,7 +435,7 @@ func (c organizeCall) planCloseOrReopenAccount(ctx context.Context, pv *tool.Pre
 
 	pv.Target = a.Name
 
-	date := c.svc.Today()
+	date := c.svc.Today(ctx)
 	if !c.in.Date.IsZero() {
 		date = c.in.Date.Time
 	}

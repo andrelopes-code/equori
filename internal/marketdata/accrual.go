@@ -29,7 +29,7 @@ func (m *Module) TickAccrual(ctx context.Context) {
 }
 
 func (m *Module) accrue(ctx context.Context, row postgres.MarketdataFixedIncomeTerm) error {
-	today := m.feeds.Clock.Today()
+	today := m.feeds.Clock.Today(ctx)
 
 	end := today
 	if row.MaturesOn.Before(end) {

@@ -46,7 +46,7 @@ func (s *Service) AssertBalance(ctx context.Context, booksID int64, accountID uu
 		return AssertionResult{}, validationError("source", "must be manual, import or aggregator")
 	}
 
-	if date.After(s.clock.Today()) {
+	if date.After(s.clock.Today(ctx)) {
 		return AssertionResult{}, validationError("date", "must not be in the future")
 	}
 
@@ -71,7 +71,7 @@ func (s *Service) AssertBalance(ctx context.Context, booksID int64, accountID uu
 // A reserve may book bounded yield (D3, A75). The result is that of the newest assertion of
 // the date and amount: the list orders by creation, newest first.
 func (s *Service) AssertSynced(ctx context.Context, booksID int64, accountID uuid.UUID, date time.Time, amount money.Money, reserve bool) (AssertionResult, error) {
-	if date.After(s.clock.Today()) {
+	if date.After(s.clock.Today(ctx)) {
 		return AssertionResult{}, validationError("date", "must not be in the future")
 	}
 
@@ -419,7 +419,7 @@ func (s *Service) ReconcileStatement(ctx context.Context, booksID int64, stateme
 			return validationError("amount_due", "must be in the card currency")
 		}
 
-		if s.clock.Today().Before(v.Input.Closing) {
+		if s.clock.Today(ctx).Before(v.Input.Closing) {
 			return ErrStatementNotClosed
 		}
 

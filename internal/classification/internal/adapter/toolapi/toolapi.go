@@ -20,7 +20,7 @@ import (
 // Names returns the names of the book's categories and payees by ID.
 type Names func(ctx context.Context, booksID int64) (categories, payees map[uuid.UUID]string, err error)
 
-func Tools(svc *app.Service, names Names, today func() time.Time) []tool.Tool {
+func Tools(svc *app.Service, names Names, today func(context.Context) time.Time) []tool.Tool {
 	return []tool.Tool{listRules(svc, names), explainCategorization(svc), manageRule(svc, names, today)}
 }
 

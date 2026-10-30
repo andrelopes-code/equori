@@ -317,6 +317,6 @@ func manageSchedule(svc *app.Service, l Ledger, clk clock.Clock) tool.Tool {
 			return scheduleView{}, err
 		}
 
-		return toScheduleView(s, accounts, clk.Today(), nil, true)
+		return toScheduleView(s, accounts, clk.Today(ctx), nil, true)
 	})
 }

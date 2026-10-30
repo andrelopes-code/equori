@@ -112,7 +112,7 @@ func (in manageRuleIn) alias(id uuid.UUID, payee uuid.UUID) domain.Alias {
 // notFound is the not-found error the module maps to the not_found code.
 func notFound() error { return app.ErrNotFound }
 
-func manageRule(svc *app.Service, names Names, today func() time.Time) tool.Tool {
+func manageRule(svc *app.Service, names Names, today func(context.Context) time.Time) tool.Tool {
 	return tool.NewWrite(tool.Spec{
 		Name: "manage_rule",
 		Description: "Proposes a change to automatic categorization: create, change, reorder or delete a rule; accept or dismiss a suggested rule; run the rules over uncategorized transactions; map an aggregator's category; create, change or delete a payee alias. " +
@@ -221,7 +221,7 @@ func manageRule(svc *app.Service, names Names, today func() time.Time) tool.Tool
 				{Field: "category", After: text(actionsText(s.Actions, categories, payees))},
 			}
 		case "run_rules":
-			st, err := svc.Statistics(ctx, booksID, time.Time{}, today())
+			st, err := svc.Statistics(ctx, booksID, time.Time{}, today(ctx))
 			if err != nil {
 				return pv, err
 			}

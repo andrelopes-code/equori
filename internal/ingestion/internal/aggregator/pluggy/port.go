@@ -20,8 +20,6 @@ import (
 // integration (A45).
 type Port struct {
 	sessions *client.Sessions
-	// loc is the instance time zone: dates of instants that are not midnight UTC (A37).
-	loc *time.Location
 }
 
 // DefaultURL is the Pluggy API address used when none is configured.
@@ -38,7 +36,7 @@ func NewPort(baseURL string, hc *http.Client, clk clock.Clock) (*Port, error) {
 		return nil, err
 	}
 
-	return &Port{sessions: client.NewSessions(c), loc: clk.Location()}, nil
+	return &Port{sessions: client.NewSessions(c)}, nil
 }
 
 func (p Port) ID() string { return "pluggy" }
@@ -239,7 +237,7 @@ func (p Port) ReadAccount(ctx context.Context, id uuid.UUID, c domain.Credential
 
 		i := slices.IndexFunc(accounts, func(a client.Account) bool { return a.ID == accountID })
 		if i < 0 {
-			return p.readReserve(it, accounts, accountID, scale, &out)
+			return p.readReserve(ctx, it, accounts, accountID, scale, &out)
 		}
 
 		a := accounts[i]
@@ -254,7 +252,7 @@ func (p Port) ReadAccount(ctx context.Context, id uuid.UUID, c domain.Credential
 
 			for _, b := range bs {
 				bills[b.ID] = b
-				if bill, err := client.ReadBill(b, scale, p.loc); err == nil {
+				if bill, err := client.ReadBill(b, scale, clock.Location(ctx)); err == nil {
 					out.Bills = append(out.Bills, bill)
 				}
 			}
@@ -273,14 +271,14 @@ func (p Port) ReadAccount(ctx context.Context, id uuid.UUID, c domain.Credential
 		if a.Subtype != client.SubtypeCard && out.ItemUpdatedAt != nil {
 			// A42: the balance holds at the item's last update.
 			if amount, err := client.Minor(a.Balance, scale); err == nil {
-				l := out.ItemUpdatedAt.In(p.loc)
+				l := out.ItemUpdatedAt.In(clock.Location(ctx))
 				out.Balance = &domain.Balance{Date: time.Date(l.Year(), l.Month(), l.Day(), 0, 0, 0, 0, time.UTC), Amount: amount}
 			}
 		}
 
 		for _, t := range ts {
 			out.Seen = append(out.Seen, t.ID)
-			r, ok, err := client.Normalize(t, a, bills, scale, p.loc)
+			r, ok, err := client.Normalize(t, a, bills, scale, clock.Location(ctx))
 			// A line whose amount or date cannot be read is left out (A37); the balance
 			// assertion then reports the difference.
 			if err == nil && ok {
@@ -300,7 +298,7 @@ func (p Port) ReadAccount(ctx context.Context, id uuid.UUID, c domain.Credential
 // readReserve reads a reserved balance by its identification: no lines, and a balance of the
 // summed amounts in the parent account's currency at the item's last update (A74).
 // ErrAccountGone when no account holds it.
-func (p Port) readReserve(it client.Item, accounts []client.Account, identification string, scale int, out *domain.AccountRead) error {
+func (p Port) readReserve(ctx context.Context, it client.Item, accounts []client.Account, identification string, scale int, out *domain.AccountRead) error {
 	for _, a := range accounts {
 		if a.BankData == nil {
 			continue
@@ -338,7 +336,7 @@ func (p Port) readReserve(it client.Item, accounts []client.Account, identificat
 			}
 
 			if held && out.ItemUpdatedAt != nil {
-				l := out.ItemUpdatedAt.In(p.loc)
+				l := out.ItemUpdatedAt.In(clock.Location(ctx))
 				out.Balance = &domain.Balance{Date: time.Date(l.Year(), l.Month(), l.Day(), 0, 0, 0, 0, time.UTC), Amount: total}
 			}
 

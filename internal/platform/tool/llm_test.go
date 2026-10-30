@@ -33,7 +33,7 @@ func runEcho(t *testing.T, args string) llm.ToolResult {
 			FinishReason: llm.FinishStop,
 		}},
 	)
-	clk := clock.New(time.UTC, func() time.Time { return time.Date(2026, 10, 20, 12, 0, 0, 0, time.UTC) })
+	clk := clock.New(func() time.Time { return time.Date(2026, 10, 20, 12, 0, 0, 0, time.UTC) })
 	router := llm.NewRouter(&clk, slog.New(slog.DiscardHandler), nil, p)
 	req := llm.Request{Tools: tools, Messages: []llm.Message{{Role: llm.RoleUser, Parts: []llm.Part{{Text: "echo"}}}}}
 

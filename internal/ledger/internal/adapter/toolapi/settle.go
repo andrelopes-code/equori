@@ -118,7 +118,7 @@ func planSettle(ctx context.Context, svc *app.Service, booksID int64, in settleS
 	pv.Target = "Statement " + v.Input.Reference.String() + " of " + card.Name
 	pv.Basis = due.Amount + ":" + unpaid.Amount
 
-	date := svc.Today()
+	date := svc.Today(ctx)
 	if !in.Date.IsZero() {
 		date = in.Date.Time
 	}

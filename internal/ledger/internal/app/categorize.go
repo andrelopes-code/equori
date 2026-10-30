@@ -196,7 +196,7 @@ func (s *Service) MergeCategories(ctx context.Context, booksID int64, from, into
 			}
 		}
 
-		today := s.clock.Today()
+		today := s.clock.Today(ctx)
 
 		src.ClosedOn = &today
 		if src, err = domain.NewAccount(src); err != nil {

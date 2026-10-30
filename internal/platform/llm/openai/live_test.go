@@ -26,7 +26,7 @@ func TestLive(t *testing.T) {
 	if baseURL == "" || model == "" {
 		t.Fatal("EQUORI_OPENAI_LIVE_URL and EQUORI_OPENAI_LIVE_MODEL must be set")
 	}
-	clk := clock.New(time.UTC, time.Now)
+	clk := clock.New(time.Now)
 	p := openai.New(baseURL, os.Getenv("EQUORI_OPENAI_LIVE_KEY"), &http.Client{Timeout: 2 * time.Minute})
 	client := llm.NewRouter(&clk, slog.New(slog.NewTextHandler(os.Stderr, nil)), nil, p).Client(llm.Target{Provider: "openai", Model: model})
 	ctx := context.Background()

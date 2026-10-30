@@ -265,7 +265,7 @@ func (m *Module) Tools() tool.Group {
 // RecordImported creates the transaction of an external record; it is idempotent by recordID
 // (P4 amendments A11, A14).
 // Today is the date of the ledger's clock (A81 previews read it).
-func (m *Module) Today() time.Time { return m.svc.Today() }
+func (m *Module) Today(ctx context.Context) time.Time { return m.svc.Today(ctx) }
 
 func (m *Module) RecordImported(ctx context.Context, booksID int64, recordID uuid.UUID, p ImportedPosting) (uuid.UUID, error) {
 	return m.svc.RecordImported(ctx, booksID, recordID, p)
@@ -560,7 +560,7 @@ func provision(ctx context.Context, tx pgx.Tx, e outbox.Delivered) error {
 		return fmt.Errorf("decode %s: %w", e.Type, err)
 	}
 
-	svc := app.NewService(postgres.NewRepository(tx, nil), clock.New(time.UTC, time.Now), nil, nil, nil, nil, nil)
+	svc := app.NewService(postgres.NewRepository(tx, nil), clock.New(time.Now), nil, nil, nil, nil, nil)
 
 	return svc.Provision(ctx, p.BooksID, p.BaseCurrency)
 }

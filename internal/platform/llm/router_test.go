@@ -33,7 +33,7 @@ func newFixture(providers ...llm.Provider) *fixture {
 
 func newResolvingFixture(res llm.Resolver, providers ...llm.Provider) *fixture {
 	f := &fixture{now: start}
-	clk := clock.New(time.UTC, func() time.Time { return f.now })
+	clk := clock.New(func() time.Time { return f.now })
 	f.router = llm.NewRouter(&clk, slog.New(slog.NewJSONHandler(&f.logs, nil)), res, providers...)
 
 	return f

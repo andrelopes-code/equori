@@ -14,7 +14,9 @@ import (
 // horizonMonths bounds generation: occurrences reach today + 12 months (A49).
 const horizonMonths = 12
 
-func (s *Service) horizon() time.Time { return s.clk.Today().AddDate(0, horizonMonths, 0) }
+func (s *Service) horizon(ctx context.Context) time.Time {
+	return s.clk.Today(ctx).AddDate(0, horizonMonths, 0)
+}
 
 // businessDays is a BusinessDays over the holidays of the years it loaded.
 type businessDays map[time.Time]bool
@@ -48,7 +50,7 @@ func (s *Service) days(ctx context.Context, calendar string, from, to time.Time)
 // generate adds the occurrences of sch after its GeneratedUntil up to the horizon and
 // advances GeneratedUntil; existing sequences are kept (A49).
 func (s *Service) generate(ctx context.Context, repo Repository, booksID int64, sch domain.Schedule) error {
-	horizon := s.horizon()
+	horizon := s.horizon(ctx)
 	if !sch.GeneratedUntil.Before(horizon) {
 		return nil
 	}
@@ -75,7 +77,7 @@ func (s *Service) fill(ctx context.Context, repo Repository, booksID int64, sch 
 		return err
 	}
 
-	today := s.clk.Today()
+	today := s.clk.Today(ctx)
 	if len(planned) == 0 || planned[0].Date.After(today.AddDate(0, 0, domain.MatchWindowDays)) {
 		return nil
 	}
@@ -95,7 +97,7 @@ func (s *Service) fill(ctx context.Context, repo Repository, booksID int64, sch 
 		}
 	}
 
-	created := clock.DateOf(sch.CreatedAt, s.clk.Location())
+	created := clock.DateOf(sch.CreatedAt, clock.Location(ctx))
 
 	open, err := repo.ExpectedOccurrences(ctx, booksID, []uuid.UUID{sch.ID}, first, created.AddDate(0, 0, -1))
 	if err != nil {
@@ -144,7 +146,7 @@ type Failure struct {
 
 // Tick extends every schedule whose occurrences stop before the horizon (A53).
 func (s *Service) Tick(ctx context.Context) ([]Failure, error) {
-	refs, err := s.repo.SchedulesBehind(ctx, s.horizon())
+	refs, err := s.repo.SchedulesBehind(ctx, s.horizon(ctx))
 	if err != nil {
 		return nil, err
 	}

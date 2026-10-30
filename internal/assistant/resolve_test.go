@@ -50,7 +50,7 @@ func newWorld(t *testing.T) *world {
 func (w *world) module(t *testing.T, current, previous string) *assistant.Module {
 	t.Helper()
 
-	clk := clock.New(time.UTC, time.Now)
+	clk := clock.New(time.Now)
 
 	m, err := assistant.New(w.pool, assistant.Config{
 		SecretKey: current, PreviousSecretKey: previous, Clock: clk,

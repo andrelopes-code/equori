@@ -48,7 +48,7 @@ func (s *Service) PreviewRule(ctx context.Context, booksID int64, r domain.Rule)
 	}
 
 	c.Rules = []domain.Rule{r}
-	today := s.ledger.Today()
+	today := s.ledger.Today(ctx)
 	var out RulePreview
 
 	var after *PendingKey

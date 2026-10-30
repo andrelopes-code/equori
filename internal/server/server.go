@@ -100,7 +100,7 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 
 	dispatcher := outbox.NewDispatcher(pool, log)
 
-	clk := clock.New(time.UTC, time.Now)
+	clk := clock.New(time.Now)
 	if cfg.Clock != nil {
 		clk = *cfg.Clock
 	}

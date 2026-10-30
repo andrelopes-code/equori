@@ -63,7 +63,7 @@ func (s *Service) CreateSchedule(ctx context.Context, booksID int64, in Schedule
 		in.Calendar = s.cal.DefaultCalendar(p.Region)
 	}
 
-	if _, err := s.cal.Holidays(ctx, in.Calendar, s.clk.Today().Year()); errors.Is(err, ErrUnknownCalendar) {
+	if _, err := s.cal.Holidays(ctx, in.Calendar, s.clk.Today(ctx).Year()); errors.Is(err, ErrUnknownCalendar) {
 		return domain.Schedule{}, &domain.FieldError{Field: "calendar", Message: "is not a known calendar", Err: domain.ErrValidation}
 	} else if err != nil {
 		return domain.Schedule{}, fmt.Errorf("check calendar: %w", err)
@@ -230,7 +230,7 @@ func (s *Service) occurrenceViews(ctx context.Context, booksID int64, os []domai
 		byID[sch.ID] = sch
 	}
 
-	today := s.clk.Today()
+	today := s.clk.Today(ctx)
 
 	out := make([]OccurrenceView, 0, len(os))
 	for _, o := range os {

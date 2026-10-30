@@ -147,7 +147,7 @@ func (s *Service) Realize(ctx context.Context, booksID int64, id, txID uuid.UUID
 		}
 
 		realized, err := repo.Realize(ctx, booksID, id, txID, realizedManual)
-		out = s.view(realized, sch)
+		out = s.view(ctx, realized, sch)
 
 		return err
 	})
@@ -175,7 +175,7 @@ func (s *Service) Unrealize(ctx context.Context, booksID int64, id uuid.UUID) (O
 		}
 
 		released, err := repo.Release(ctx, booksID, id, true)
-		out = s.view(released, sch)
+		out = s.view(ctx, released, sch)
 
 		return err
 	})
@@ -183,8 +183,8 @@ func (s *Service) Unrealize(ctx context.Context, booksID int64, id uuid.UUID) (O
 	return out, err
 }
 
-func (s *Service) view(o domain.Occurrence, sch domain.Schedule) OccurrenceView {
-	return OccurrenceView{Occurrence: o, Shown: o.Shown(s.clk.Today(), sch.GraceDays), Currency: sch.Currency}
+func (s *Service) view(ctx context.Context, o domain.Occurrence, sch domain.Schedule) OccurrenceView {
+	return OccurrenceView{Occurrence: o, Shown: o.Shown(s.clk.Today(ctx), sch.GraceDays), Currency: sch.Currency}
 }
 
 // Occurrence reads one occurrence of the book.
@@ -199,5 +199,5 @@ func (s *Service) Occurrence(ctx context.Context, booksID int64, id uuid.UUID) (
 		return OccurrenceView{}, err
 	}
 
-	return s.view(o, sch), nil
+	return s.view(ctx, o, sch), nil
 }

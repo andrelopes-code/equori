@@ -38,7 +38,7 @@ func (s *Service) AddBillingRule(ctx context.Context, booksID int64, accountID u
 		return domain.BillingCycleRule{}, err
 	}
 
-	if _, err := s.cal.Adjust(ctx, rule.Calendar, s.clock.Today(), "none"); err != nil {
+	if _, err := s.cal.Adjust(ctx, rule.Calendar, s.clock.Today(ctx), "none"); err != nil {
 		return domain.BillingCycleRule{}, validationError("calendar", "is not a known calendar")
 	}
 
@@ -62,7 +62,7 @@ func (s *Service) redateOpenStatements(ctx context.Context, r Repository, booksI
 		return err
 	}
 
-	open, err := r.OpenStatementsFrom(ctx, booksID, accountID, from, s.clock.Today())
+	open, err := r.OpenStatementsFrom(ctx, booksID, accountID, from, s.clock.Today(ctx))
 	if err != nil {
 		return err
 	}
@@ -176,7 +176,7 @@ func (s *Service) CardSummary(ctx context.Context, booksID int64, a domain.Accou
 		return nil, err
 	}
 
-	today := s.clock.Today()
+	today := s.clock.Today(ctx)
 
 	var current *CreditLimit
 	for i := range limits {

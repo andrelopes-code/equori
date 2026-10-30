@@ -138,7 +138,7 @@ func planPurchase(ctx context.Context, svc *app.Service, booksID int64, in handl
 
 	pv.Target, pv.Basis = "Purchase "+targetText(t), basisOf(t)
 
-	date := svc.Today()
+	date := svc.Today(ctx)
 	if !in.Date.IsZero() {
 		date = in.Date.Time
 	}

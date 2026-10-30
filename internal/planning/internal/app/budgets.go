@@ -138,7 +138,7 @@ func (s *Service) BudgetProgress(ctx context.Context, booksID int64, id uuid.UUI
 	}
 
 	month = domain.MonthOf(month)
-	if month.After(s.horizon()) {
+	if month.After(s.horizon(ctx)) {
 		return domain.Progress{}, "", &domain.FieldError{Field: "month", Message: "must be at most today + 12 months", Err: domain.ErrValidation}
 	}
 

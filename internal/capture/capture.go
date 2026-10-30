@@ -76,7 +76,7 @@ func (p ledgerPort) BaseCurrency(ctx context.Context, booksID int64) (money.Curr
 	return p.l.BaseCurrency(ctx, booksID)
 }
 
-func (p ledgerPort) Today() time.Time { return p.l.Today() }
+func (p ledgerPort) Today(ctx context.Context) time.Time { return p.l.Today(ctx) }
 
 // Transactions classes a transaction by its uncategorized posting; a voided one, or one with a
 // category, has no class.

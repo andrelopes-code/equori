@@ -182,7 +182,7 @@ func (s *Service) syncAccount(ctx context.Context, agg Aggregator, c domain.Conn
 		return domain.Batch{}, fmt.Errorf("account %s: %w", ext.ID, err)
 	}
 
-	today := s.today()
+	today := s.today(ctx)
 	from, to := ext.SyncWindow(today)
 
 	unlock, err := s.repo.LockAccountImports(ctx, accountID)

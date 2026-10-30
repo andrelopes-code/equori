@@ -165,7 +165,7 @@ func listSchedules(svc *app.Service, l Ledger, clk clock.Clock) tool.Tool {
 			return listSchedulesOut{}, err
 		}
 
-		today := clk.Today()
+		today := clk.Today(ctx)
 
 		month, err := parseMonth("month", in.Month, time.Time{})
 		if err != nil {

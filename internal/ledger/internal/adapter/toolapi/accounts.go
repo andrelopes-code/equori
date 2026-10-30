@@ -132,7 +132,7 @@ func getBalances(svc *app.Service) tool.Tool {
 	}, func(ctx context.Context, booksID int64, in getBalancesIn) (getBalancesOut, error) {
 		date := in.Date.Time
 		if in.Date.IsZero() {
-			date = svc.Today()
+			date = svc.Today(ctx)
 		}
 
 		b := app.Basis(in.Basis)

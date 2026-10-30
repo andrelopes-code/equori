@@ -137,7 +137,7 @@ func (s *Service) statementSummaries(ctx context.Context, r Repository, booksID 
 		inputs[i] = st.Input
 	}
 
-	summaries := domain.Summarize(inputs, s.clock.Today())
+	summaries := domain.Summarize(inputs, s.clock.Today(ctx))
 
 	out := make([]StatementView, len(stored))
 	for i := range stored {

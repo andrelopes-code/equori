@@ -292,7 +292,7 @@ func (p ledgerPort) Transfer(ctx context.Context, booksID int64, t app.TransferR
 	return err == nil, err
 }
 
-func (p ledgerPort) Today() time.Time { return p.l.Today() }
+func (p ledgerPort) Today(ctx context.Context) time.Time { return p.l.Today(ctx) }
 
 func (p ledgerPort) MissingPayees(ctx context.Context, booksID int64, ids []uuid.UUID) ([]uuid.UUID, error) {
 	return p.l.MissingPayees(ctx, booksID, ids)

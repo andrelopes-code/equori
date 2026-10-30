@@ -96,7 +96,7 @@ func (m *Module) tickIndex(ctx context.Context, src index.Source) error {
 		return err
 	}
 
-	today := m.feeds.Clock.Today()
+	today := m.feeds.Clock.Today(ctx)
 
 	from := today.AddDate(-indexHistoryYears, 0, 0)
 	if issued.N > 0 && issued.IssuedOn.Before(from) {

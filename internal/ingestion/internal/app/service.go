@@ -113,7 +113,7 @@ type Service struct {
 	box   Sealer
 	aggs  registry.Registry[Aggregator]
 	now   func() time.Time
-	today func() time.Time
+	today func(context.Context) time.Time
 }
 
 // Integrations are what aggregator integrations need; the zero value leaves them unavailable.
@@ -121,7 +121,8 @@ type Integrations struct {
 	Box         Sealer
 	Aggregators registry.Registry[Aggregator]
 	// Now and Today are the instance's clock (ADR 005).
-	Now, Today func() time.Time
+	Now   func() time.Time
+	Today func(context.Context) time.Time
 }
 
 func NewService(repo Repository, ledger Ledger, in Integrations) *Service {

@@ -229,7 +229,7 @@ func (s *Service) SettleReportedStatements(ctx context.Context, booksID int64, c
 	}
 
 	for _, v := range views {
-		if v.Fact == nil || v.Reconciled || s.clock.Today().Before(v.Input.Closing) || v.Summary.AmountDue != v.Fact.Total {
+		if v.Fact == nil || v.Reconciled || s.clock.Today(ctx).Before(v.Input.Closing) || v.Summary.AmountDue != v.Fact.Total {
 			continue
 		}
 

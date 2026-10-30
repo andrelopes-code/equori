@@ -32,8 +32,8 @@ var beginning = time.Date(1, 1, 1, 0, 0, 0, 0, time.UTC)
 
 // Project returns the projection of a balance account to date to (P7 amendment A56).
 func (s *Service) Project(ctx context.Context, booksID int64, accountID uuid.UUID, to time.Time) (Projection, error) {
-	today := s.clk.Today()
-	if !to.After(today) || to.After(s.horizon()) {
+	today := s.clk.Today(ctx)
+	if !to.After(today) || to.After(s.horizon(ctx)) {
 		return Projection{}, &domain.FieldError{Field: "to", Message: "must be after today and at most today + 12 months", Err: domain.ErrValidation}
 	}
 
@@ -177,7 +177,7 @@ func (s *Service) Committed(ctx context.Context, booksID int64, month time.Time)
 		return Committed{}, err
 	}
 
-	today := s.clk.Today()
+	today := s.clk.Today(ctx)
 	for _, o := range os {
 		sch := byID[o.ScheduleID]
 		if o.State != domain.Expected || !committedKinds[sch.Kind] {

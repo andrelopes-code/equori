@@ -70,7 +70,7 @@ func (s *Service) Statement(ctx context.Context, booksID int64, id uuid.UUID) (S
 			postings[i].Provisional = domain.Provisional(p.Basis, p.Date, v.Input.Closing, v.Reconciled, p.Installment != nil)
 		}
 
-		v.Explanation = s.explain(v, postings)
+		v.Explanation = s.explain(ctx, v, postings)
 
 		return v, a, postings, nil
 	}
@@ -80,8 +80,8 @@ func (s *Service) Statement(ctx context.Context, booksID int64, id uuid.UUID) (S
 
 // explain searches the provisional postings of a closed, unreconciled statement for the ones
 // that close its difference with the institution's total (A137).
-func (s *Service) explain(v StatementView, postings []StatementPosting) domain.DifferenceExplanation {
-	if v.Fact == nil || v.Reconciled || s.clock.Today().Before(v.Input.Closing) {
+func (s *Service) explain(ctx context.Context, v StatementView, postings []StatementPosting) domain.DifferenceExplanation {
+	if v.Fact == nil || v.Reconciled || s.clock.Today(ctx).Before(v.Input.Closing) {
 		return domain.DifferenceExplanation{}
 	}
 

@@ -12,6 +12,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/andrelopes-code/equori/internal/assistant/internal/domain"
+	"github.com/andrelopes-code/equori/internal/platform/clock"
 	"github.com/andrelopes-code/equori/internal/platform/locale"
 )
 
@@ -198,7 +199,7 @@ func (s *Service) Turn(ctx context.Context, booksID int64, in TurnInput, ev Turn
 	defer cancel()
 
 	req := AgentRequest{
-		System:   Prompt(PromptInput{Today: s.today(), Locale: prof, Page: in.Page}),
+		System:   Prompt(PromptInput{Today: clock.DateOf(s.now(), clock.Location(ctx)), Locale: prof, Page: in.Page}),
 		History:  History(messages, proposals, now),
 		Text:     text,
 		Deadline: s.now().Add(TurnTimeout),

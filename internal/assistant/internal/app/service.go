@@ -27,7 +27,7 @@ type Service struct {
 	profile  func(context.Context, int64) (locale.Locale, error)
 }
 
-// NewService takes the clock as now (an instant) and today (the instance's date).
+// NewService takes the clock as now (an instant) and today (the UTC date of usage days).
 func NewService(repo Repository, box Sealer, models ModelLister, instance []Instance, uses []Use, now, today func() time.Time, log *slog.Logger) *Service {
 	return &Service{repo: repo, box: box, models: models, instance: instance, uses: uses, now: now, today: today, log: log}
 }

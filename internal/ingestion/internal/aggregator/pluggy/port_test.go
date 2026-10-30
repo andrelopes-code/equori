@@ -12,7 +12,7 @@ import (
 )
 
 func TestPluggyPortCapabilities(t *testing.T) {
-	p, err := pluggy.NewPort("https://pluggy.example", http.DefaultClient, clock.New(time.UTC, func() time.Time { return time.Date(2026, 10, 22, 12, 0, 0, 0, time.UTC) }))
+	p, err := pluggy.NewPort("https://pluggy.example", http.DefaultClient, clock.New(func() time.Time { return time.Date(2026, 10, 22, 12, 0, 0, 0, time.UTC) }))
 	if err != nil {
 		t.Fatal(err)
 	}

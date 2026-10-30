@@ -164,7 +164,7 @@ func getBudgetsAndGoals(svc *app.Service, l Ledger, clk clock.Clock) tool.Tool {
 			"Do not use it for spending by category without a budget: get_category_totals does.",
 		Effect: tool.ReadOnly, Idempotent: true,
 	}, func(ctx context.Context, booksID int64, in getBudgetsAndGoalsIn) (getBudgetsAndGoalsOut, error) {
-		month, err := parseMonth("month", in.Month, firstOfMonth(clk.Today()))
+		month, err := parseMonth("month", in.Month, firstOfMonth(clk.Today(ctx)))
 		if err != nil {
 			return getBudgetsAndGoalsOut{}, err
 		}

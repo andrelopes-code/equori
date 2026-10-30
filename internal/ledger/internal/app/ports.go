@@ -40,7 +40,7 @@ var (
 // Clock is satisfied by platform/clock.Clock.
 type Clock interface {
 	Now() time.Time
-	Today() time.Time
+	Today(ctx context.Context) time.Time
 }
 
 // Instruments reads the instruments of Market data (P8 amendment A63).

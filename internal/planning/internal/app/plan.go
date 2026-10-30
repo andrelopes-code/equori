@@ -62,7 +62,7 @@ func (p Plan) Unassigned() (int64, bool) {
 // BudgetPlan returns the plan of month for the book.
 func (s *Service) BudgetPlan(ctx context.Context, booksID int64, month time.Time) (Plan, error) {
 	month = domain.MonthOf(month)
-	if month.After(s.horizon()) {
+	if month.After(s.horizon(ctx)) {
 		return Plan{}, &domain.FieldError{Field: "month", Message: "must be at most today + 12 months", Err: domain.ErrValidation}
 	}
 
@@ -198,7 +198,7 @@ func (s *Service) planOccurrences(ctx context.Context, booksID int64, out *Plan)
 		return err
 	}
 
-	today := s.clk.Today()
+	today := s.clk.Today(ctx)
 
 	items := make(map[uuid.UUID]int)
 	for _, o := range os {
@@ -254,7 +254,7 @@ type PlanAmount struct {
 // fixed is read only with SourceFixed.
 func (s *Service) SaveBudgetPlan(ctx context.Context, booksID int64, month time.Time, source domain.ReferenceSource, fixed *money.Money, amounts []PlanAmount) (Plan, error) {
 	month = domain.MonthOf(month)
-	if month.Before(domain.MonthOf(s.clk.Today())) || month.After(s.horizon()) {
+	if month.Before(domain.MonthOf(s.clk.Today(ctx))) || month.After(s.horizon(ctx)) {
 		return Plan{}, &domain.FieldError{Field: "month", Message: "must be from the current month to today + 12 months", Err: domain.ErrValidation}
 	}
 
