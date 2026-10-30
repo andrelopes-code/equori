@@ -16,17 +16,20 @@ import (
 )
 
 var (
-	ErrNotFound           = errors.New("not found")
-	ErrEmailTaken         = errors.New("email already registered")
-	ErrInvalidCredentials = errors.New("invalid credentials")
-	ErrTooManyAttempts    = errors.New("too many login attempts")
-	ErrUnauthenticated    = errors.New("unauthenticated")
-	ErrBusy               = errors.New("too many concurrent password operations")
-	ErrBooksNotFound      = errors.New("books not found")
-	ErrBookRoleRequired   = errors.New("book role required")
-	ErrMemberNotFound     = errors.New("member not found")
-	ErrLastOwner          = errors.New("last owner")
-	ErrTimeZoneInvalid    = errors.New("time zone is not an IANA name")
+	ErrNotFound                = errors.New("not found")
+	ErrEmailTaken              = errors.New("email already registered")
+	ErrInvalidCredentials      = errors.New("invalid credentials")
+	ErrTooManyAttempts         = errors.New("too many login attempts")
+	ErrUnauthenticated         = errors.New("unauthenticated")
+	ErrBusy                    = errors.New("too many concurrent password operations")
+	ErrBooksNotFound           = errors.New("books not found")
+	ErrBookRoleRequired        = errors.New("book role required")
+	ErrMemberNotFound          = errors.New("member not found")
+	ErrLastOwner               = errors.New("last owner")
+	ErrAlreadyMember           = errors.New("already a member")
+	ErrInvitationNotFound      = errors.New("invitation not found")
+	ErrInvitationEmailMismatch = errors.New("invitation for another email")
+	ErrTimeZoneInvalid         = errors.New("time zone is not an IANA name")
 	// ErrAppearanceTooLarge reports an appearance object over MaxAppearanceBytes.
 	ErrAppearanceTooLarge = errors.New("appearance over 16 KiB")
 )
@@ -71,6 +74,7 @@ type Repository interface {
 	DeleteSession(ctx context.Context, tokenHash []byte) error
 	DeleteExpiredSessions(ctx context.Context, now time.Time) error
 	AccessTokenRepository
+	InvitationRepository
 }
 
 // MaxAppearanceBytes bounds the encoded appearance object (BK21).

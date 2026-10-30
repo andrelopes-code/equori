@@ -6,7 +6,20 @@ package postgres
 
 import (
 	"time"
+
+	"github.com/google/uuid"
 )
+
+type IdentityInvitation struct {
+	ID        uuid.UUID
+	BooksID   int64
+	Email     string
+	Role      string
+	TokenHash []byte
+	InvitedBy int64
+	CreatedAt time.Time
+	ExpiresAt time.Time
+}
 
 type IdentityMember struct {
 	ID           int64

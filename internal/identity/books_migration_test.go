@@ -104,7 +104,7 @@ func TestBooksBackfill(t *testing.T) {
 		t.Errorf("ledger_settings_user_id_fkey references %q, %v; want identity_books", ref, err)
 	}
 
-	if err := pool.QueryRow(ctx, `SELECT count(*) FROM pg_constraint WHERE contype = 'f' AND confrelid = 'identity_member'::regclass AND conrelid NOT IN ('identity_session'::regclass, 'identity_access_token'::regclass, 'identity_membership'::regclass)`).Scan(&n); err != nil || n != 0 {
+	if err := pool.QueryRow(ctx, `SELECT count(*) FROM pg_constraint WHERE contype = 'f' AND confrelid = 'identity_member'::regclass AND conrelid NOT IN ('identity_session'::regclass, 'identity_access_token'::regclass, 'identity_membership'::regclass, 'identity_invitation'::regclass)`).Scan(&n); err != nil || n != 0 {
 		t.Errorf("business foreign keys to identity_member = %d, %v; want 0", n, err)
 	}
 }

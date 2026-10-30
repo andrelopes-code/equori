@@ -253,6 +253,12 @@ func ToProblem(err error) (problem.Details, bool) {
 		return problem.New(http.StatusNotFound, "member_not_found", "no member of this book has this ID"), true
 	case errors.Is(err, app.ErrLastOwner):
 		return problem.New(http.StatusConflict, "last_owner", "the book must keep at least one owner"), true
+	case errors.Is(err, app.ErrAlreadyMember):
+		return problem.New(http.StatusConflict, "already_member", "the email already has a membership in this book"), true
+	case errors.Is(err, app.ErrInvitationNotFound):
+		return problem.New(http.StatusNotFound, "invitation_not_found", "the invitation does not exist or expired"), true
+	case errors.Is(err, app.ErrInvitationEmailMismatch):
+		return problem.New(http.StatusForbidden, "invitation_email_mismatch", "the invitation is for another email"), true
 	case errors.Is(err, app.ErrAccessTokenNotFound):
 		return problem.New(http.StatusNotFound, "access_token_not_found", "no access token of the member has this ID"), true
 	case errors.Is(err, app.ErrBusy):

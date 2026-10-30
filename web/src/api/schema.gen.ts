@@ -223,6 +223,84 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/books/current/invitations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the pending invitations of the active book, without tokens (HA24). */
+        get: operations["listInvitations"];
+        put?: never;
+        /**
+         * Invite an email to the active book; the answer holds the token once (HA24).
+         * @description 409 already_member when the email has a membership in the book; 422 validation_failed on email.
+         */
+        post: operations["createInvitation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/books/current/invitations/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Revoke a pending invitation of the active book. */
+        delete: operations["deleteInvitation"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/invitations/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Describe the invitation of a token (HA25). */
+        post: operations["previewInvitation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/invitations/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Accept an invitation (HA26).
+         * @description Without a member of the invited email, password and language create one and the answer
+         *     sets a session in the book. With such a member, the request needs that member's session,
+         *     which moves to the book: 401 unauthenticated without it, 403 invitation_email_mismatch
+         *     with another member's, 409 already_member when the membership exists.
+         */
+        post: operations["acceptInvitation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/access-tokens": {
         parameters: {
             query?: never;
@@ -5781,6 +5859,41 @@ export interface components {
         MemberRoleInput: {
             role: components["schemas"]["BookRole"];
         };
+        InvitationInput: {
+            email: string;
+            role: components["schemas"]["BookRole"];
+        };
+        Invitation: {
+            /** Format: uuid */
+            id: string;
+            email: string;
+            role: components["schemas"]["BookRole"];
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            expires_at: string;
+            /** @description Present only in the answer of createInvitation. */
+            token?: string;
+        };
+        InvitationList: {
+            items: components["schemas"]["Invitation"][];
+        };
+        InvitationToken: {
+            token: string;
+        };
+        InvitationPreview: {
+            books_name: string;
+            inviter_email: string;
+            role: components["schemas"]["BookRole"];
+            email: string;
+            member_exists: boolean;
+        };
+        AcceptInvitationInput: {
+            token: string;
+            /** @description Required when no member has the invited email. */
+            password?: string;
+            language?: string;
+        };
         CreateBooksInput: {
             name?: string;
             region: string;
@@ -5818,7 +5931,7 @@ export interface components {
              *     budget_exists, instrument_exists, mixed_instruments, price_missing, later_sale_exists,
              *     investment_transaction, system_account, attachment_not_inlineable, archive_too_new,
              *     setup_token_invalid, setup_complete, book_role_required, books_not_found, member_not_found,
-             *     last_owner.
+             *     last_owner, already_member, invitation_not_found, invitation_email_mismatch.
              */
             code: string;
             request_id?: string;
@@ -6277,6 +6390,138 @@ export interface operations {
             };
             401: components["responses"]["Problem"];
             409: components["responses"]["Problem"];
+        };
+    };
+    listInvitations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Pending invitations, newest first. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvitationList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+        };
+    };
+    createInvitation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InvitationInput"];
+            };
+        };
+        responses: {
+            /** @description Created; token is shown only here. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Invitation"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    deleteInvitation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Revoked. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+        };
+    };
+    previewInvitation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InvitationToken"];
+            };
+        };
+        responses: {
+            /** @description The invitation. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvitationPreview"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+        };
+    };
+    acceptInvitation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                equori_session?: components["parameters"]["SessionCookie"];
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AcceptInvitationInput"];
+            };
+        };
+        responses: {
+            /** @description Accepted. */
+            204: {
+                headers: {
+                    "Set-Cookie"?: string;
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            503: components["responses"]["Problem"];
         };
     };
     listAccessTokens: {

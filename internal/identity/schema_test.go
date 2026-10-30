@@ -243,3 +243,50 @@ func tableNames(t *testing.T, pool *pgxpool.Pool, query string) []string {
 
 	return names
 }
+
+// HA23: one pending invitation per email and book; the token hash is unique.
+func TestInvitationSchema(t *testing.T) {
+	t.Parallel()
+	pool := pgtest.New(t)
+	member, books := pgtest.CreateMember(t, pool)
+
+	var other int64
+	if err := pool.QueryRow(t.Context(), `INSERT INTO identity_books (region, name) VALUES ('US', 'test') RETURNING id`).Scan(&other); err != nil {
+		t.Fatal(err)
+	}
+
+	insert := `INSERT INTO identity_invitation (id, books_id, email, role, token_hash, invited_by, created_at, expires_at)
+		VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, '2026-10-30T12:00:00Z', '2026-11-06T12:00:00Z')`
+
+	if _, err := pool.Exec(t.Context(), insert, books, "b@example.com", "read", bytes.Repeat([]byte{2}, 32), member); err != nil {
+		t.Fatal(err)
+	}
+
+	for _, tt := range []struct {
+		name string
+		args []any
+		code string
+	}{
+		{"role outside the set", []any{books, "a@example.com", "admin", bytes.Repeat([]byte{1}, 32), member}, checkViolation},
+		{"second row of the pair", []any{books, "b@example.com", "read", bytes.Repeat([]byte{3}, 32), member}, uniqueViolation},
+		{"second row of the token hash", []any{books, "c@example.com", "read", bytes.Repeat([]byte{2}, 32), member}, uniqueViolation},
+	} {
+		_, err := pool.Exec(t.Context(), insert, tt.args...)
+		if pgErr, ok := errors.AsType[*pgconn.PgError](err); !ok || pgErr.Code != tt.code {
+			t.Errorf("%s: error = %v, want SQLSTATE %s", tt.name, err, tt.code)
+		}
+	}
+
+	if _, err := pool.Exec(t.Context(), insert, other, "d@example.com", "read", bytes.Repeat([]byte{4}, 32), member); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := pool.Exec(t.Context(), `DELETE FROM identity_books WHERE id = $1`, other); err != nil {
+		t.Fatal(err)
+	}
+
+	var n int
+	if err := pool.QueryRow(t.Context(), `SELECT count(*) FROM identity_invitation WHERE books_id = $1`, other).Scan(&n); err != nil || n != 0 {
+		t.Errorf("invitations of the deleted book = %d, %v; want 0", n, err)
+	}
+}

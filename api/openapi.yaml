@@ -400,6 +400,134 @@ paths:
           $ref: "#/components/responses/Problem"
         "409":
           $ref: "#/components/responses/Problem"
+  /books/current/invitations:
+    get:
+      tags: [identity]
+      operationId: listInvitations
+      x-book-role: owner
+      summary: List the pending invitations of the active book, without tokens (HA24).
+      responses:
+        "200":
+          description: Pending invitations, newest first.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvitationList"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+    post:
+      tags: [identity]
+      operationId: createInvitation
+      x-book-role: owner
+      summary: Invite an email to the active book; the answer holds the token once (HA24).
+      description: 409 already_member when the email has a membership in the book; 422 validation_failed on email.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InvitationInput"
+      responses:
+        "201":
+          description: Created; token is shown only here.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invitation"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /books/current/invitations/{id}:
+    delete:
+      tags: [identity]
+      operationId: deleteInvitation
+      x-book-role: owner
+      summary: Revoke a pending invitation of the active book.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "204":
+          description: Revoked.
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+  /invitations/preview:
+    post:
+      tags: [identity]
+      operationId: previewInvitation
+      x-book-role: public
+      summary: Describe the invitation of a token (HA25).
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InvitationToken"
+      responses:
+        "200":
+          description: The invitation.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvitationPreview"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+  /invitations/accept:
+    post:
+      tags: [identity]
+      operationId: acceptInvitation
+      x-book-role: public
+      summary: Accept an invitation (HA26).
+      description: |
+        Without a member of the invited email, password and language create one and the answer
+        sets a session in the book. With such a member, the request needs that member's session,
+        which moves to the book: 401 unauthenticated without it, 403 invitation_email_mismatch
+        with another member's, 409 already_member when the membership exists.
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/SessionCookie"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AcceptInvitationInput"
+      responses:
+        "204":
+          description: Accepted.
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        "503":
+          $ref: "#/components/responses/Problem"
   /access-tokens:
     get:
       tags: [identity]
@@ -10553,6 +10681,81 @@ components:
       properties:
         role:
           $ref: "#/components/schemas/BookRole"
+    InvitationInput:
+      type: object
+      additionalProperties: false
+      required: [email, role]
+      properties:
+        email:
+          type: string
+          maxLength: 254
+        role:
+          $ref: "#/components/schemas/BookRole"
+    Invitation:
+      type: object
+      required: [id, email, role, created_at, expires_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+        role:
+          $ref: "#/components/schemas/BookRole"
+        created_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+        token:
+          type: string
+          description: Present only in the answer of createInvitation.
+    InvitationList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Invitation"
+    InvitationToken:
+      type: object
+      additionalProperties: false
+      required: [token]
+      properties:
+        token:
+          type: string
+          minLength: 1
+          maxLength: 64
+    InvitationPreview:
+      type: object
+      required: [books_name, inviter_email, role, email, member_exists]
+      properties:
+        books_name:
+          type: string
+        inviter_email:
+          type: string
+        role:
+          $ref: "#/components/schemas/BookRole"
+        email:
+          type: string
+        member_exists:
+          type: boolean
+    AcceptInvitationInput:
+      type: object
+      additionalProperties: false
+      required: [token]
+      properties:
+        token:
+          type: string
+          minLength: 1
+          maxLength: 64
+        password:
+          type: string
+          description: Required when no member has the invited email.
+        language:
+          type: string
     CreateBooksInput:
       type: object
       additionalProperties: false
@@ -10628,7 +10831,7 @@ components:
             budget_exists, instrument_exists, mixed_instruments, price_missing, later_sale_exists,
             investment_transaction, system_account, attachment_not_inlineable, archive_too_new,
             setup_token_invalid, setup_complete, book_role_required, books_not_found, member_not_found,
-            last_owner.
+            last_owner, already_member, invitation_not_found, invitation_email_mismatch.
         request_id:
           type: string
         retry_at:
