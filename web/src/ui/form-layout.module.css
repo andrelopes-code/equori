@@ -11,6 +11,10 @@
     align-items: start;
   }
 
+  .fill {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   /* Two fields stand 1.5rem apart, so a label reads with the control under it and not with
      the control above it (docs/contributing/forms.md, F5). */
   .fields {

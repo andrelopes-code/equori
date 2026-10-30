@@ -63,7 +63,7 @@ export function TermsDialog({
     if (!open) onCancel();
   });
   return (
-    <Dialog open={overlayOpen} size="md" onOpenChange={openChange}>
+    <Dialog open={overlayOpen} size="lg" onOpenChange={openChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t("schedule.changeTerms")}</DialogTitle>
@@ -106,7 +106,7 @@ export function TermsDialog({
                 });
             }}
           >
-            <FormLayout>
+            <FormLayout fill>
               {summary !== null && (
                 <InlineMessage tone="danger">{summary}</InlineMessage>
               )}
@@ -154,7 +154,11 @@ export function TermsDialog({
               </Checkbox>
 
               {withRecurrence && recurrence !== undefined && (
-                <RecurrenceFields value={recurrence} onChange={setRecurrence} />
+                <RecurrenceFields
+                  value={recurrence}
+                  onChange={setRecurrence}
+                  fill
+                />
               )}
             </FormLayout>
           </form>
