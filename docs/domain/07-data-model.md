@@ -17,7 +17,7 @@ This chapter maps the domain model (chapter 5) to PostgreSQL 18 tables. It is th
 | Effective-dated values | One row per version with `effective_from`; `UNIQUE (subject_id, effective_from)`. The version in force at a date is the latest `effective_from ≤ date`, so versions cannot overlap (I08). |
 | Audit columns | `created_at`, `updated_at` on every mutable table. |
 | Table prefix | Owning module (chapter 4, 4.5). |
-| Cross-module references | Foreign keys from a module to `identity_user`, `ledger_*` and `marketdata_*` tables are allowed: integrity takes precedence over decoupling inside one database. Writes stay with the owner (ADR 002). |
+| Cross-module references | Foreign keys from a module to `identity_books`, `ledger_*` and `marketdata_*` tables are allowed: integrity takes precedence over decoupling inside one database. Writes stay with the owner (ADR 002). |
 | Invariants | Enforced in the domain code first; the database repeats the ones that protect money (7.6) as constraints and deferred constraint triggers. |
 
 ## 7.2 Ledger
@@ -145,7 +145,7 @@ erDiagram
   planning_occurrence }o--o| ledger_transaction : "realized by"
   planning_budget ||--|{ planning_budget_amount : versions
   planning_budget }o--|| ledger_account : category
-  planning_budget_reference |o--|| identity_user : reference
+  planning_budget_reference |o--|| identity_books : reference
   planning_goal ||--|{ planning_goal_account : tracks
 
   classification_rule ||--o{ classification_categorization : "applied by"
@@ -196,6 +196,11 @@ erDiagram
 | `portfolio_realized_result` | `user_id`, `transaction_id` PK, `account_id`, `instrument`, `date`, `month`, `quantity`, `cost`, `proceeds`, `result`, `tax_class`, `currency` | Derived; `tax_class` is null when the jurisdiction gives none; `result = proceeds − cost` |
 | `portfolio_income_event` | `user_id`, `transaction_id` PK, `account_id`, `instrument`, `date`, `income_type`, `tax_treatment`, `gross`, `withheld`, `currency` | Derived; `tax_treatment ~ '^[a-z0-9_]{2,40}$'` or null |
 | `reporting_account_day` | `user_id`, `account_id`, `date`, `delta_booked`, `delta_settled`, `balance_booked`, `balance_settled` | Derived daily balance series (B02, B08); rebuilt per account from the first changed date |
+| `identity_member` | `id` bigint identity PK, `email`, `password_hash`, `role` (instance role), `disabled_at`, `created_at`, `language` | `email = lower(email)`, unique; `role IN ('admin', 'member')`; `language ~ '^[a-z]{2,3}$'` (ADR 029) |
+| `identity_books` | `id` bigint identity PK, `region`, `time_zone`, `created_at` | `region ~ '^[A-Z]{2}$'`; every business `user_id` references `identity_books (id)` until P10 plan 2 renames it `books_id` |
+| `identity_membership` | `member_id`, `books_id`, `role` (book role), `created_at` | `PRIMARY KEY (member_id, books_id)`; `role IN ('owner', 'write', 'read')`; both columns `ON DELETE CASCADE` |
+| `identity_session` | `token_hash` PK, `member_id`, `books_id`, `created_at`, `expires_at` | `(member_id, books_id)` references `identity_membership`, `ON DELETE CASCADE` |
+| `identity_access_token` | `id` PK, `member_id`, `books_id`, `name`, `scope`, `token_hash`, `created_at`, `expires_at`, `last_used_at` | `(member_id, books_id)` references `identity_membership`, `ON DELETE CASCADE` |
 | `outbox_event` | ADR 006 | |
 | `<module>_processed_event` | `event_id`, `processed_at` | `PRIMARY KEY (event_id)`; Portfolio keeps none, its rebuild is idempotent |
 

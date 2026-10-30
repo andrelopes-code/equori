@@ -22,7 +22,7 @@ type Feed = domain.Feed
 
 // Admins tells whether a user may change the instance (identity).
 type Admins interface {
-	IsAdmin(ctx context.Context, userID int64) (bool, error)
+	IsAdmin(ctx context.Context, memberID int64) (bool, error)
 }
 
 // WithAdmins sets who may change the feeds; the composition root calls it once.
@@ -250,7 +250,7 @@ func (m *Module) Refresh(ctx context.Context) error {
 func (m *Module) WaitRefresh() { m.refreshes.Wait() }
 
 func (m *Module) requireAdmin(ctx context.Context) error {
-	ok, err := m.admins.IsAdmin(ctx, auth.MustUserID(ctx))
+	ok, err := m.admins.IsAdmin(ctx, auth.MustMemberID(ctx))
 	if err != nil {
 		return err
 	}

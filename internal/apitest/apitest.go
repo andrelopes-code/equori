@@ -180,6 +180,12 @@ func Empty(t testing.TB, opts ...Option) *Harness {
 	}
 
 	h := &Harness{t: t, Pool: pgtest.New(t), logs: logs, log: slog.New(slog.NewTextHandler(out, &slog.HandlerOptions{Level: slog.LevelDebug}))}
+
+	// BK17: a book without members, so a member ID never equals a books ID by chance.
+	if _, err := h.Pool.Exec(t.Context(), `INSERT INTO identity_books (region) VALUES ('US')`); err != nil {
+		t.Fatal(err)
+	}
+
 	h.server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { (*h.handler.Load()).ServeHTTP(w, r) }))
 	t.Cleanup(h.server.Close)
 	h.start(opts)

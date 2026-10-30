@@ -68,3 +68,11 @@ Personal access tokens open the MCP endpoint, and only it:
 - `identity_access_token` holds `id`, `user_id`, `name`, `scope` (`read` or `write`), the SHA-256 `token_hash`, `created_at`, `expires_at` and `last_used_at`. The token text is `eqt_` and 32 random bytes in unpadded base32; the API shows it once, in the answer of `createAccessToken`.
 - Expiry is chosen at creation: 30, 90 or 365 days. `last_used_at` is written at most once a minute per token. Deleting a token takes effect on the next request.
 - `/mcp` accepts only `Authorization: Bearer <token>`; a token in the query string is never read; the session cookie is not accepted there, and a token is not accepted on `/api/`.
+
+## Amendment of 2026-10-30 (ADR 029)
+
+[ADR 029](029-shared-books.md) replaces the section "Users and data isolation":
+
+- The person who logs in is a member (`identity_member`); business data belongs to a book (`identity_books`); `identity_membership` links one member to one book with a book role.
+- A session and an access token belong to a membership: `identity_session` and `identity_access_token` hold `member_id` and `books_id`, and deleting the membership deletes them.
+- Login opens the session in the book of the member's `owner` membership with the lowest `books_id`, else the lowest `books_id` of any membership; a member without membership gets `invalid_credentials`.

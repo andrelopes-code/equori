@@ -196,3 +196,14 @@ classDiagram
 | Cash view | Regime de caixa | Income and expenses on the date money left or entered a balance account. A card expense counts when its statement is paid, in proportion to the payment. | |
 | Committed amount | Valor comprometido | Sum of installments not yet billed and expected occurrences in a future period. | 2,340.00 already committed for 2026-12 |
 | Net worth | Patrimônio líquido | Sum of all balance accounts (assets − liabilities) at a date, converted with stored prices (B05). | |
+
+## 2.11 Books and members
+
+| Term | Portuguese | Definition | Example |
+|---|---|---|---|
+| Books | Livro | The set of business data of one household or person. Every business row belongs to exactly one books. One books is "a book" in prose and `books` in identifiers (ADR 029). | |
+| Member | Membro | A person who logs in: email, password, instance role, language, appearance. | |
+| Membership | Vínculo | The link of one member to one book, with a book role. | |
+| Instance role | Papel na instância | `admin` or `member`, on the member. An admin changes instance settings and creates members (ADR 003). | |
+| Book role | Papel no livro | `owner`, `write` or `read`, on the membership. P10 creates only `owner`; P11 enforces the roles. | |
+| Active book | Livro ativo | The book of the current session or access token. | |
