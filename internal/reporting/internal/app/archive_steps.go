@@ -9,7 +9,7 @@ import (
 
 // ArchiveVersion is the archive_version this instance writes and the highest it reads
 // (ADR 021). It is the number of steps in archiveSteps plus 1.
-const ArchiveVersion = 4
+const ArchiveVersion = 5
 
 // ArchiveStep migrates the tables of an archive from one version to the next; it is pure and
 // leaves its input unchanged (ADR 021, V3).
@@ -17,7 +17,7 @@ type ArchiveStep func([]ArchiveTable) ([]ArchiveTable, error)
 
 // archiveSteps holds at index i the step from version i+1 to i+2. A change to an exported
 // table appends its step here and increments ArchiveVersion in the same commit (ADR 021, V2).
-var archiveSteps = []ArchiveStep{addExcludedFromLiquidity, addBudgetReference, addStatementBasis}
+var archiveSteps = []ArchiveStep{addExcludedFromLiquidity, addBudgetReference, addStatementBasis, dropConversations}
 
 // migrateArchive applies the steps from version from to the last one, in order.
 func migrateArchive(tables []ArchiveTable, from int, steps []ArchiveStep) ([]ArchiveTable, error) {
@@ -53,6 +53,22 @@ func addBudgetReference(tables []ArchiveTable) ([]ArchiveTable, error) {
 // (card billing amendment A136): the ledger cannot tell which of them a line's bill placed.
 func addStatementBasis(tables []ArchiveTable) ([]ArchiveTable, error) {
 	return withField(tables, "ledger_posting", "statement_basis", jsontext.Value(`"date"`))
+}
+
+// dropConversations moves a version 4 archive to version 5, which leaves out the assistant's
+// conversations, messages and proposals: each belongs to one member (households design HA55).
+func dropConversations(tables []ArchiveTable) ([]ArchiveTable, error) {
+	out := make([]ArchiveTable, 0, len(tables))
+	for _, t := range tables {
+		switch t.Name {
+		case "assistant_conversation", "assistant_message", "assistant_proposal":
+			continue
+		}
+
+		out = append(out, ArchiveTable{Name: t.Name, Rows: slices.Clone(t.Rows)})
+	}
+
+	return out, nil
 }
 
 // withField returns tables with field set to value in every row of table; the input is left

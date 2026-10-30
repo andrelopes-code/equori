@@ -140,7 +140,33 @@ func TestAddStatementBasis(t *testing.T) {
 		t.Fatalf("other table %s, input %s", got[1].Rows[0], v3[0].Rows[0])
 	}
 
-	if ArchiveVersion != 4 {
-		t.Fatalf("ArchiveVersion = %d, want 4", ArchiveVersion)
+	if ArchiveVersion < 4 {
+		t.Fatalf("ArchiveVersion = %d, want at least 4", ArchiveVersion)
+	}
+}
+
+// Households design HA55, ADR 021 V2: version 5 leaves out the assistant's conversations,
+// messages and proposals.
+func TestDropConversations(t *testing.T) {
+	t.Parallel()
+
+	v4 := []ArchiveTable{
+		{Name: "assistant_conversation", Rows: [][]byte{[]byte(`{"id":"c"}`)}},
+		{Name: "ledger_payee", Rows: [][]byte{[]byte(`{"id":"b"}`)}},
+		{Name: "assistant_message", Rows: [][]byte{[]byte(`{"id":"m"}`)}},
+		{Name: "assistant_proposal", Rows: [][]byte{[]byte(`{"id":"p"}`)}},
+	}
+
+	got, err := dropConversations(v4)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(got) != 1 || got[0].Name != "ledger_payee" || string(got[0].Rows[0]) != `{"id":"b"}` {
+		t.Fatalf("tables = %+v", got)
+	}
+
+	if len(v4) != 4 {
+		t.Fatalf("input has %d tables, want 4", len(v4))
 	}
 }
