@@ -22,6 +22,7 @@ import { ChoiceSelect } from "@/ui/choice-select";
 import { DateInput } from "@/ui/date-input";
 import widths from "@/ui/field-width.module.css";
 import { FormLayout } from "@/ui/form-layout";
+import { FormRow } from "@/ui/form-row";
 import { MoneyInput } from "@/ui/money-input";
 import { useStableCallback } from "@/ui/use-stable-callback";
 import { useOverlayOpen } from "@/ui/use-overlay-open";
@@ -98,49 +99,58 @@ export function FinanceDialog({
                 <InlineMessage tone="danger">{error}</InlineMessage>
               )}
 
-              <Field required>
-                <FieldLabel>{t("finance.count")}</FieldLabel>
-                <ChoiceSelect
-                  className={widths.short}
-                  label={t("finance.count")}
-                  choices={counts.map((n) => ({
-                    value: String(n),
-                    label: String(n),
-                  }))}
-                  value={String(count)}
-                  multiple={false}
-                  onChange={(next) => {
-                    if (typeof next === "string") setCount(Number(next));
-                  }}
-                />
-              </Field>
+              <FormRow>
+                <Field required>
+                  <FieldLabel>{t("finance.count")}</FieldLabel>
+                  <ChoiceSelect
+                    label={t("finance.count")}
+                    choices={counts.map((n) => ({
+                      value: String(n),
+                      label: String(n),
+                    }))}
+                    value={String(count)}
+                    multiple={false}
+                    onChange={(next) => {
+                      if (typeof next === "string") setCount(Number(next));
+                    }}
+                  />
+                </Field>
 
-              <Field required>
-                <FieldLabel>{t("finance.installment")}</FieldLabel>
-                <MoneyInput
-                  size="field"
-                  className={widths.medium}
-                  value={each}
-                  onChange={setEach}
-                  currency={currency}
-                  scale={scale(currency)}
-                  sign="neutral"
-                />
-                {each > 0 && (
-                  <FieldDescription live="polite">
-                    {t("finance.interest", {
-                      total: money(count * each),
-                      interest: money(
-                        financingInterest(count, each, statement.unpaid.amount),
-                      ),
-                    })}
-                  </FieldDescription>
-                )}
-              </Field>
+                <Field required>
+                  <FieldLabel>{t("finance.installment")}</FieldLabel>
+                  <MoneyInput
+                    size="field"
+                    value={each}
+                    onChange={setEach}
+                    currency={currency}
+                    scale={scale(currency)}
+                    sign="neutral"
+                  />
+                  {each > 0 && (
+                    <FieldDescription live="polite">
+                      {t("finance.interest", {
+                        total: money(count * each),
+                        interest: money(
+                          financingInterest(
+                            count,
+                            each,
+                            statement.unpaid.amount,
+                          ),
+                        ),
+                      })}
+                    </FieldDescription>
+                  )}
+                </Field>
+              </FormRow>
 
               <Field required>
                 <FieldLabel>{t("finance.date")}</FieldLabel>
-                <DateInput name="date" value={date} onChange={setDate} />
+                <DateInput
+                  name="date"
+                  className={widths.fill}
+                  value={date}
+                  onChange={setDate}
+                />
               </Field>
             </FormLayout>
           </form>

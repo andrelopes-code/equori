@@ -86,7 +86,7 @@ A field that is optional and does not change what the record is (a parent accoun
 
 - A form page has `PageBack`, a title that names the record ("New schedule"), and a subheading that says what the record does.
 - The actions are the page's footer: the primary action names the result ("Create schedule"), the secondary actions stand before it, and the way out is a ghost button before them: "Cancel" when the form keeps nothing, "Discard" when it keeps a draft that the button also clears (FM-05).
-- A form of more than eight fields, or one with an aside, is a page, never a dialog. A dialog form follows F1 to F9 inside the dialog's body.
+- A form of more than eight fields, or one with an aside, is a page, never a dialog. A dialog form follows F4 to F9 inside the dialog's body; F15 replaces F1 to F3 there.
 - A dialog's measure is set by its `size` in the theme: `sm` 32rem, for a confirmation or a form of one or two fields; `md` 42rem, for a form; `lg` 48rem.
 
 ## F11 · Type in a form has three sizes
@@ -138,6 +138,15 @@ A form builds a control of its own (CP-04, `build-own-element`) when one of thes
 4. **The value is a domain type of the application.** Money, a period, a month and an account have one control each (docs/contributing/web.md, "Domain controls before families").
 
 A control of the application's own keeps every state of the family it stands beside: the control height (F4), focus ring, `invalid`, `disabled`, `readOnly`, keyboard, forced colours and the field's label and description wiring (`useField`). A look of its own is not a reason to build one.
+
+## F15 · A dialog form is laid out for its own fields
+
+A dialog's body is already a bounded measure (F10), so the column of F1, the pairing of F2 and the width steps of F3 do not apply inside it. Each dialog is laid out from its own fields and checked on screen at its size; no fixed grid answers every dialog (owner review, 2026-10-30; Slotted issue #54).
+
+- Every control fills the space it stands in: no width step inside a dialog. A `DateInput` takes the `fill` class of `ui/field-width.module.css`.
+- Two fields whose answers are short (an amount, a date, a count) share a `FormRow` when the pair reads in the order the reader answers: the total beside the minimum, the closing date beside the due date.
+- A field whose answer is long or carries actions inside its control (a picker of records, free text, an amount with presets) takes the whole row.
+- A dialog never leaves one control short of the body's width beside an empty space.
 
 ## Sources
 

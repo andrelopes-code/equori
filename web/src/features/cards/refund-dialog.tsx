@@ -20,6 +20,7 @@ import { useToday } from "@/i18n/today";
 import { DateInput } from "@/ui/date-input";
 import widths from "@/ui/field-width.module.css";
 import { FormLayout } from "@/ui/form-layout";
+import { FormRow } from "@/ui/form-row";
 import { MoneyInput } from "@/ui/money-input";
 import { useStableCallback } from "@/ui/use-stable-callback";
 import { useOverlayOpen } from "@/ui/use-overlay-open";
@@ -93,26 +94,32 @@ export function RefundDialog({
                 <InlineMessage tone="danger">{error}</InlineMessage>
               )}
 
-              <Field required invalid={tooMuch}>
-                <FieldLabel>{t("refund.amount")}</FieldLabel>
-                <MoneyInput
-                  size="field"
-                  className={widths.medium}
-                  value={amount}
-                  onChange={setAmount}
-                  currency={currency}
-                  scale={scale(currency)}
-                  sign="income"
-                />
-                <FieldDescription>
-                  {tooMuch ? t("refund.tooMuch") : t("refund.amountHint")}
-                </FieldDescription>
-              </Field>
+              <FormRow>
+                <Field required invalid={tooMuch}>
+                  <FieldLabel>{t("refund.amount")}</FieldLabel>
+                  <MoneyInput
+                    size="field"
+                    value={amount}
+                    onChange={setAmount}
+                    currency={currency}
+                    scale={scale(currency)}
+                    sign="income"
+                  />
+                  <FieldDescription>
+                    {tooMuch ? t("refund.tooMuch") : t("refund.amountHint")}
+                  </FieldDescription>
+                </Field>
 
-              <Field required>
-                <FieldLabel>{t("refund.date")}</FieldLabel>
-                <DateInput name="date" value={date} onChange={setDate} />
-              </Field>
+                <Field required>
+                  <FieldLabel>{t("refund.date")}</FieldLabel>
+                  <DateInput
+                    name="date"
+                    className={widths.fill}
+                    value={date}
+                    onChange={setDate}
+                  />
+                </Field>
+              </FormRow>
             </FormLayout>
           </form>
         </DialogBody>

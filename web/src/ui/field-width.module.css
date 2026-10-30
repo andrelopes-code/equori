@@ -9,4 +9,10 @@
   .medium {
     max-inline-size: 15rem;
   }
+
+  /* Workaround for Slotted issue #53: a date picker keeps its field at the width of its content.
+     The class goes on DateInput, so its field fills the column of a dialog row. */
+  .fill > * > :first-child {
+    flex-grow: 1;
+  }
 }

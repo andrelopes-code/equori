@@ -16,7 +16,6 @@ import { ProblemError, errorText } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
 import { useReconcileStatement } from "@/features/cards/api";
 import { useT } from "@/i18n/i18n-provider";
-import widths from "@/ui/field-width.module.css";
 import { FormLayout } from "@/ui/form-layout";
 import { MoneyInput } from "@/ui/money-input";
 import { useStableCallback } from "@/ui/use-stable-callback";
@@ -112,7 +111,6 @@ export function ReconcileDialog({
                 <FieldLabel>{t("reconcileStatement.amount")}</FieldLabel>
                 <MoneyInput
                   size="field"
-                  className={widths.medium}
                   value={amount}
                   onChange={setAmount}
                   currency={currency}
