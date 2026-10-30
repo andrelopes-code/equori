@@ -204,6 +204,9 @@ export default extendTheme(
       // Workaround for Slotted issue #38: at 0.25rem a description or an error touched the
       // control above it.
       "--slotted-field-group-message-gap": "var(--slotted-space-4)",
+      // Workaround for Slotted issue #57: a question's legend stood 1.25rem above its control,
+      // a section's distance; it stands where a field's label does. FormSection restores 1.25rem.
+      "--slotted-field-group-content-gap": "var(--slotted-field-row-gap)",
       "--slotted-top-navigation-color": "var(--slotted-text-muted)",
       "--slotted-top-navigation-current-color": "var(--slotted-text)",
       "--slotted-top-navigation-current-background": "transparent",

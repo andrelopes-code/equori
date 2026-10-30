@@ -29,7 +29,10 @@
     gap: var(--slotted-space-8);
   }
 
+  /* Workaround for Slotted issue #57: the theme sets the question's content gap; a section's
+     legend keeps the family's 1.25rem above its first field (docs/contributing/forms.md, F5). */
   .section {
+    --slotted-field-group-content-gap: var(--slotted-space-7);
     --slotted-field-group-field-gap: var(--slotted-space-8);
 
     min-inline-size: 0;

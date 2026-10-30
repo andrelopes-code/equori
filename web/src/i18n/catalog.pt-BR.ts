@@ -877,6 +877,8 @@ export const catalogPtBR: Catalog = {
   "categories.tab.rules": "Regras",
   "categories.tab.payees": "Favorecidos",
   "category.new": "Nova categoria",
+  "category.new.description":
+    "Agrupa as transações para somá-las nos relatórios.",
   "category.edit": "Editar categoria",
   "category.name": "Nome",
   "category.class": "Tipo de categoria",

@@ -44,7 +44,8 @@ A field with no step is `full`.
 - A form with more than six fields, or with fields about two or more topics, splits them into `FormSection`s (`ui/form-section`) whose legend names the topic ("Value", "When", "Repetition").
 - Two fields stand 1.5rem apart (`--slotted-space-8`), inside a section or not; a label stands 0.25rem above its control (the family's own). The ratio of 6 to 1 makes each label read with the control under it.
 - A description or an error stands 0.5rem under its control (`--slotted-space-4`, set in the theme).
-- Two sections stand 1.5rem apart, as two fields do, and a legend 1.25rem above its first field (the family's own). The legend is what separates topics.
+- Two sections stand 1.5rem apart, as two fields do, and a section's legend 1.25rem above its first field. The legend is what separates topics.
+- A question's legend (a `FieldGroup` of segments or radios) stands 0.375rem above its choices, as a label stands above its control (the theme's, Slotted issue #57).
 - `FormLayout` and `FormSection` write these steps; a form writes no gap, margin, `Stack` or `Grid` of its own between fields. A component that renders several fields for reuse in more than one form (`BillingRuleFields`) spaces them with `Stack gap={8}`, the same 1.5rem, and puts pairs in `FormRow`.
 - A repeated group (each card of an account, each line of a plan) is one block per item: its fields, then its actions (remove, a toggle of the item) in an `Inline` on the item's last line, then the button that adds an item after the last block.
 - A section is named by its legend only. No overline, no step number, no uppercase label.

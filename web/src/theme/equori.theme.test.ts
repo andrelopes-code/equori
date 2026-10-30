@@ -127,3 +127,10 @@ test("a raised toast and the palette are materials over the page", () => {
     /--slotted-command-palette-backdrop-filter:\s*var\(--slotted-material-backdrop\)/,
   );
 });
+
+test("a question's legend stands as close to its control as a field's label", () => {
+  assert.match(
+    css,
+    /--slotted-field-group-content-gap:\s*var\(--slotted-field-row-gap\)/,
+  );
+});

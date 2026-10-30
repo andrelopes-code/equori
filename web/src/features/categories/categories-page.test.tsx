@@ -521,6 +521,10 @@ describe("CategoriesPage", () => {
       }),
     );
     const dialog = await screen.findByRole("dialog");
+    expect(dialog).toHaveAccessibleDescription(
+      catalogEn["category.new.description"],
+    );
+
     await userEvent.type(
       within(dialog).getByRole("textbox", { name: catalogEn["category.name"] }),
       "Pets",

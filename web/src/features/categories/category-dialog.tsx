@@ -3,6 +3,7 @@ import {
   Dialog,
   DialogBody,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -76,6 +77,11 @@ export function CategoryDialog({
           <DialogTitle>
             {editing === null ? t("category.new") : t("category.edit")}
           </DialogTitle>
+          {editing === null && (
+            <DialogDescription>
+              {t("category.new.description")}
+            </DialogDescription>
+          )}
         </DialogHeader>
         <DialogBody>
           {/* Workaround for Slotted issue #8:

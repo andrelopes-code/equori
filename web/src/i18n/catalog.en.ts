@@ -873,6 +873,7 @@ export const catalogEn = {
   "categories.tab.rules": "Rules",
   "categories.tab.payees": "Payees",
   "category.new": "New category",
+  "category.new.description": "Groups transactions so the reports add them up.",
   "category.edit": "Edit category",
   "category.name": "Name",
   "category.class": "Kind of category",
