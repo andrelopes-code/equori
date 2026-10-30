@@ -242,24 +242,107 @@ func (s *Service) read(ctx context.Context, f ImportFile, currency money.Currenc
 	return st, nil
 }
 
+// importPlan is the state of one importRecords call: the lines, their claimed records and the
+// groups the lines fall into.
+type importPlan struct {
+	batch      *domain.Batch
+	currency   money.Currency
+	sync       bool
+	lines      []domain.NormalizedRecord
+	transferTo func(domain.NormalizedRecord) *uuid.UUID
+	claimed    []Claim
+
+	pending []*domain.ExternalRecord
+	updated []domain.ExternalRecord
+	creates []NewLine
+	created []*domain.ExternalRecord
+	matches []Match
+	matched []*domain.ExternalRecord
+	scoring []scoredLine
+	parts   []InstallmentLine
+	retried []*domain.ExternalRecord
+	again   []InstallmentLine
+}
+
 // importRecords deduplicates, matches and creates the lines of one batch with a constant
 // number of ledger commits, so that a 1,000-line file stays within N07. A record that a
 // previous import left received is processed again (P4 amendment A12). In a sync, a stored
 // line the aggregator changed is updated (P6 A36), a withdrawn line returned again is
 // processed again (A38), and a line the ledger refuses waits for review instead of failing
 // the batch. transferTo, when set, names the account a new line is a transfer to (A76).
-func (s *Service) importRecords(ctx context.Context, batch *domain.Batch, currency money.Currency, lines []domain.NormalizedRecord, transferTo func(domain.NormalizedRecord) *uuid.UUID) error {
-	sync := batch.Source == domain.SourceAggregator
+func (s *Service) importRecords(
+	ctx context.Context,
+	batch *domain.Batch,
+	currency money.Currency,
+	lines []domain.NormalizedRecord,
+	transferTo func(domain.NormalizedRecord) *uuid.UUID,
+) error {
+	p := &importPlan{
+		batch:      batch,
+		currency:   currency,
+		sync:       batch.Source == domain.SourceAggregator,
+		lines:      lines,
+		transferTo: transferTo,
+	}
+
+	if err := s.claimLines(ctx, p); err != nil {
+		return err
+	}
+
+	postings, err := s.unlinked(ctx, batch, p.claimed)
+	if err != nil {
+		return err
+	}
+
+	if err := s.classifyLines(ctx, p); err != nil {
+		return err
+	}
+
+	assigned, err := s.assign(ctx, batch.UserID, p.scoring, postings)
+	if err != nil {
+		return err
+	}
+
+	repeated, err := s.repeatedLines(ctx, p, assigned)
+	if err != nil {
+		return err
+	}
+
+	p.route(assigned, repeated)
+
+	if err := s.linkMatches(ctx, p); err != nil {
+		return err
+	}
+
+	if err := s.create(ctx, batch.UserID, p.sync, p.creates, p.created); err != nil {
+		return err
+	}
+
+	if err := s.placeInstallments(ctx, p); err != nil {
+		return err
+	}
+
+	return s.saveOutcomes(ctx, p)
+}
+
+func (s *Service) claimLines(ctx context.Context, p *importPlan) error {
 	ordinals := domain.Ordinals{}
 
-	claims := make([]domain.ExternalRecord, len(lines))
-	for i, r := range lines {
+	claims := make([]domain.ExternalRecord, len(p.lines))
+	for i, r := range p.lines {
 		claims[i] = domain.ExternalRecord{
-			UserID: batch.UserID, BatchID: batch.ID, AccountID: batch.AccountID, ExternalID: r.ExternalID,
-			DedupKey: domain.DedupKey(batch.AccountID, batch.Source, r, ordinals.Next(r)), Raw: r.Raw,
-			Date: r.Date, Amount: r.Amount, Description: r.Description, State: domain.StateReceived,
+			UserID:      p.batch.UserID,
+			BatchID:     p.batch.ID,
+			AccountID:   p.batch.AccountID,
+			ExternalID:  r.ExternalID,
+			DedupKey:    domain.DedupKey(p.batch.AccountID, p.batch.Source, r, ordinals.Next(r)),
+			Raw:         r.Raw,
+			Date:        r.Date,
+			Amount:      r.Amount,
+			Description: r.Description,
+			State:       domain.StateReceived,
 		}
-		if sync {
+		if p.sync {
 			withFacts(&claims[i], r)
 		}
 	}
@@ -269,105 +352,177 @@ func (s *Service) importRecords(ctx context.Context, batch *domain.Batch, curren
 		return err
 	}
 
-	batch.Counts.Received = len(lines)
-	for i := range claimed {
-		if rec := &claimed[i].Record; claimed[i].Existed && rec.State == domain.StateWithdrawn {
-			withFacts(rec, lines[i])
-			rec.Date, rec.Amount, rec.State, rec.TransactionID, rec.Candidates = lines[i].Date, lines[i].Amount, domain.StateReceived, uuid.Nil, nil
-			rec.ReviewReason, rec.Scores = "", nil
-			claimed[i].Existed = false
-		}
-	}
+	p.batch.Counts.Received = len(p.lines)
+	reopenWithdrawn(claimed, p.lines)
 
-	postings, err := s.unlinked(ctx, batch, claimed)
-	if err != nil {
-		return err
-	}
+	p.claimed = claimed
 
-	var (
-		pending []*domain.ExternalRecord
-		updated []domain.ExternalRecord
-		creates []NewLine
-		created []*domain.ExternalRecord
-		matches []Match
-		matched []*domain.ExternalRecord
-		scoring []scoredLine
-		parts   []InstallmentLine
-		retried []*domain.ExternalRecord
-		again   []InstallmentLine
-	)
-	for i := range claimed {
-		rec := &claimed[i].Record
-		if r := lines[i]; sync && claimed[i].Existed && rec.State == domain.StateNeedsReview && r.Installment != nil && r.Amount < 0 && len(rec.Candidates) == 0 {
-			// A90: an installment line waiting for review is offered again; what refused it
-			// (a reconciled installment, a line of an earlier rule) may have changed.
-			withFacts(rec, r)
-			line := Line{AccountID: rec.AccountID, Currency: currency, Date: rec.Date, Amount: rec.Amount, Description: truncate(rec.Description), Pending: r.Pending, DueDate: r.DueDate, Category: r.Category, Kind: r.Kind}
-			retried, again = append(retried, rec), append(again, InstallmentLine{RecordID: rec.ID, Line: line, Installment: *r.Installment})
+	return nil
+}
 
-			continue
-		}
-
-		if claimed[i].Existed && rec.State != domain.StateReceived {
-			changed, err := s.update(ctx, sync, rec, lines[i])
-			if err != nil {
-				return err
-			}
-
-			if changed {
-				batch.Counts.Updated++
-
-				updated = append(updated, *rec)
-			} else {
-				batch.Counts.Ignored++
-			}
-
-			continue
-		}
-
-		rec.BatchID = batch.ID
-		pending = append(pending, rec)
-		r := lines[i]
-
-		line := Line{AccountID: rec.AccountID, Currency: currency, Date: rec.Date, Amount: rec.Amount, Description: truncate(rec.Description), Pending: r.Pending, DueDate: r.DueDate, Category: r.Category, Kind: r.Kind}
-		if transferTo != nil {
-			line.TransferTo = transferTo(r)
-		}
-
-		if sync && r.Installment != nil && r.Amount < 0 {
-			// A40: the line goes to its installment purchase; a resumed one finds its own link.
-			parts = append(parts, InstallmentLine{RecordID: rec.ID, Line: line, Installment: *r.Installment})
-			continue
-		}
-
-		if claimed[i].Existed {
-			done, err := s.resume(ctx, rec)
-			if err != nil {
-				return err
-			}
-
-			if done {
-				continue
-			}
-		}
-
-		scoring = append(scoring, scoredLine{rec: rec, line: line})
-	}
-
-	assigned, err := s.assign(ctx, batch.UserID, scoring, postings)
-	if err != nil {
-		return err
-	}
-
-	var repeated map[int]bool
-	if sync {
-		if repeated, err = s.repeats(ctx, batch, scoring, assigned); err != nil {
+func (s *Service) classifyLines(ctx context.Context, p *importPlan) error {
+	for i := range p.claimed {
+		if err := s.classifyLine(ctx, p, i); err != nil {
 			return err
 		}
 	}
 
+	return nil
+}
+
+func (s *Service) classifyLine(ctx context.Context, p *importPlan, i int) error {
+	rec, r := &p.claimed[i].Record, p.lines[i]
+	existed := p.claimed[i].Existed
+
+	if p.sync && existed && rec.State == domain.StateNeedsReview &&
+		r.Installment != nil && r.Amount < 0 && len(rec.Candidates) == 0 {
+		p.offerAgain(rec, r)
+
+		return nil
+	}
+
+	if existed && rec.State != domain.StateReceived {
+		return s.applyStoredChange(ctx, p, rec, r)
+	}
+
+	rec.BatchID = p.batch.ID
+	p.pending = append(p.pending, rec)
+
+	line := p.lineOf(rec, r)
+	if p.transferTo != nil {
+		line.TransferTo = p.transferTo(r)
+	}
+
+	if p.sync && r.Installment != nil && r.Amount < 0 {
+		// A40: the line goes to its installment purchase; a resumed one finds its own link.
+		p.parts = append(p.parts, InstallmentLine{RecordID: rec.ID, Line: line, Installment: *r.Installment})
+
+		return nil
+	}
+
+	if existed {
+		done, err := s.resume(ctx, rec)
+		if err != nil {
+			return err
+		}
+
+		if done {
+			return nil
+		}
+	}
+
+	p.scoring = append(p.scoring, scoredLine{rec: rec, line: line})
+
+	return nil
+}
+
+func (s *Service) applyStoredChange(
+	ctx context.Context,
+	p *importPlan,
+	rec *domain.ExternalRecord,
+	r domain.NormalizedRecord,
+) error {
+	changed, err := s.update(ctx, p.sync, rec, r)
+	if err != nil {
+		return err
+	}
+
+	if changed {
+		p.batch.Counts.Updated++
+
+		p.updated = append(p.updated, *rec)
+	} else {
+		p.batch.Counts.Ignored++
+	}
+
+	return nil
+}
+
+func (s *Service) repeatedLines(
+	ctx context.Context,
+	p *importPlan,
+	assigned []domain.Assignment,
+) (map[int]bool, error) {
+	if !p.sync {
+		return nil, nil
+	}
+
+	return s.repeats(ctx, p.batch, p.scoring, assigned)
+}
+
+func (s *Service) linkMatches(ctx context.Context, p *importPlan) error {
+	conflicts, err := s.ledger.ClearMatched(ctx, p.batch.UserID, p.matches)
+	if err != nil {
+		return err
+	}
+
+	for i, rec := range p.matched {
+		rec.State, rec.TransactionID = domain.StateMatched, p.matches[i].TransactionID
+		if slices.Contains(conflicts, i) {
+			rec.State, rec.TransactionID, rec.Candidates = domain.StateNeedsReview, uuid.Nil, []uuid.UUID{p.matches[i].TransactionID}
+			continue
+		}
+
+		if err := s.billMatched(ctx, rec, p.matches[i].Pending); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (s *Service) placeInstallments(ctx context.Context, p *importPlan) error {
+	if err := s.installments(ctx, p.batch, p.parts, p.pending); err != nil {
+		return err
+	}
+
+	if err := s.installments(ctx, p.batch, p.again, p.retried); err != nil {
+		return err
+	}
+
+	for _, rec := range p.retried {
+		if rec.State == domain.StateNeedsReview {
+			p.batch.Counts.Ignored++
+			continue
+		}
+
+		// The record stays in its batch, which counts it as resolved.
+		if err := s.repo.ResolveRecord(ctx, *rec); err != nil {
+			return err
+		}
+
+		p.batch.Counts.Updated++
+	}
+
+	return nil
+}
+
+func (s *Service) saveOutcomes(ctx context.Context, p *importPlan) error {
+	outcomes := make([]domain.ExternalRecord, len(p.pending))
+	for i, rec := range p.pending {
+		p.batch.Counts.Count(rec.State)
+		outcomes[i] = *rec
+	}
+
+	if err := s.repo.UpdateRecordFacts(ctx, p.updated); err != nil {
+		return err
+	}
+
+	return s.repo.SaveOutcomes(ctx, outcomes)
+}
+
+func (p *importPlan) offerAgain(rec *domain.ExternalRecord, r domain.NormalizedRecord) {
+	// A90: an installment line waiting for review is offered again; what refused it
+	// (a reconciled installment, a line of an earlier rule) may have changed.
+	withFacts(rec, r)
+
+	line := p.lineOf(rec, r)
+	p.retried, p.again = append(p.retried, rec), append(p.again, InstallmentLine{RecordID: rec.ID, Line: line, Installment: *r.Installment})
+}
+
+func (p *importPlan) route(assigned []domain.Assignment, repeated map[int]bool) {
 	for i, a := range assigned {
-		rec, line := scoring[i].rec, scoring[i].line
+		rec, line := p.scoring[i].rec, p.scoring[i].line
 		if repeated[i] {
 			// A142: the source reports a recorded payment under a second id.
 			rec.State, rec.ReviewReason = domain.StateNeedsReview, domain.ReviewRepeated
@@ -376,10 +531,10 @@ func (s *Service) importRecords(ctx context.Context, batch *domain.Batch, curren
 
 		switch a.Zone {
 		case domain.ZoneNew:
-			creates, created = append(creates, NewLine{RecordID: rec.ID, Line: line}), append(created, rec)
+			p.creates, p.created = append(p.creates, NewLine{RecordID: rec.ID, Line: line}), append(p.created, rec)
 		case domain.ZoneLink:
-			matches = append(matches, Match{RecordID: rec.ID, TransactionID: a.TransactionID, AccountID: rec.AccountID, Pending: line.Pending})
-			matched = append(matched, rec)
+			p.matches = append(p.matches, Match{RecordID: rec.ID, TransactionID: a.TransactionID, AccountID: rec.AccountID, Pending: line.Pending})
+			p.matched = append(p.matched, rec)
 		default:
 			rec.State, rec.ReviewReason, rec.Scores = domain.StateNeedsReview, string(a.Zone), a.Candidates
 
@@ -389,61 +544,32 @@ func (s *Service) importRecords(ctx context.Context, batch *domain.Batch, curren
 			}
 		}
 	}
+}
 
-	conflicts, err := s.ledger.ClearMatched(ctx, batch.UserID, matches)
-	if err != nil {
-		return err
+func (p *importPlan) lineOf(rec *domain.ExternalRecord, r domain.NormalizedRecord) Line {
+	return Line{
+		AccountID:   rec.AccountID,
+		Currency:    p.currency,
+		Date:        rec.Date,
+		Amount:      rec.Amount,
+		Description: truncate(rec.Description),
+		Pending:     r.Pending,
+		DueDate:     r.DueDate,
+		Category:    r.Category,
+		Kind:        r.Kind,
 	}
+}
 
-	for i, rec := range matched {
-		rec.State, rec.TransactionID = domain.StateMatched, matches[i].TransactionID
-		if slices.Contains(conflicts, i) {
-			rec.State, rec.TransactionID, rec.Candidates = domain.StateNeedsReview, uuid.Nil, []uuid.UUID{matches[i].TransactionID}
-			continue
+// reopenWithdrawn turns a withdrawn record that the aggregator returned into a received one.
+func reopenWithdrawn(claimed []Claim, lines []domain.NormalizedRecord) {
+	for i := range claimed {
+		if rec := &claimed[i].Record; claimed[i].Existed && rec.State == domain.StateWithdrawn {
+			withFacts(rec, lines[i])
+			rec.Date, rec.Amount, rec.State, rec.TransactionID, rec.Candidates = lines[i].Date, lines[i].Amount, domain.StateReceived, uuid.Nil, nil
+			rec.ReviewReason, rec.Scores = "", nil
+			claimed[i].Existed = false
 		}
-
-		if err := s.billMatched(ctx, rec, matches[i].Pending); err != nil {
-			return err
-		}
 	}
-
-	if err := s.create(ctx, batch.UserID, sync, creates, created); err != nil {
-		return err
-	}
-
-	if err := s.installments(ctx, batch, parts, pending); err != nil {
-		return err
-	}
-
-	if err := s.installments(ctx, batch, again, retried); err != nil {
-		return err
-	}
-
-	for _, rec := range retried {
-		if rec.State == domain.StateNeedsReview {
-			batch.Counts.Ignored++
-			continue
-		}
-
-		// The record stays in its batch, which counts it as resolved.
-		if err := s.repo.ResolveRecord(ctx, *rec); err != nil {
-			return err
-		}
-
-		batch.Counts.Updated++
-	}
-
-	outcomes := make([]domain.ExternalRecord, len(pending))
-	for i, rec := range pending {
-		batch.Counts.Count(rec.State)
-		outcomes[i] = *rec
-	}
-
-	if err := s.repo.UpdateRecordFacts(ctx, updated); err != nil {
-		return err
-	}
-
-	return s.repo.SaveOutcomes(ctx, outcomes)
 }
 
 // create records the transactions of new lines. A line the ledger refuses fails a file
