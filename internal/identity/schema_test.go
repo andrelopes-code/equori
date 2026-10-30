@@ -45,6 +45,26 @@ const foreignKeyViolation = "23503"
 // notNullViolation is the PostgreSQL SQLSTATE for not_null_violation.
 const notNullViolation = "23502"
 
+func TestAppearanceSchema(t *testing.T) {
+	t.Parallel()
+	pool := pgtest.New(t)
+	member, _ := pgtest.CreateMember(t, pool)
+
+	for _, tt := range []struct {
+		sql  string
+		code string
+	}{
+		{`UPDATE identity_member SET appearance = '[]' WHERE id = $1`, checkViolation},
+		{`UPDATE identity_member SET appearance = 'null' WHERE id = $1`, checkViolation},
+		{`UPDATE identity_member SET appearance = NULL WHERE id = $1`, notNullViolation},
+	} {
+		_, err := pool.Exec(t.Context(), tt.sql, member)
+		if pgErr, ok := errors.AsType[*pgconn.PgError](err); !ok || pgErr.Code != tt.code {
+			t.Errorf("%s: error = %v, want SQLSTATE %s", tt.sql, err, tt.code)
+		}
+	}
+}
+
 func TestMembershipSchema(t *testing.T) {
 	t.Parallel()
 	pool := pgtest.New(t)

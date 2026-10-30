@@ -22,6 +22,8 @@ var (
 	ErrUnauthenticated    = errors.New("unauthenticated")
 	ErrBusy               = errors.New("too many concurrent password operations")
 	ErrTimeZoneInvalid    = errors.New("time zone is not an IANA name")
+	// ErrAppearanceTooLarge reports an appearance object over MaxAppearanceBytes.
+	ErrAppearanceTooLarge = errors.New("appearance over 16 KiB")
 )
 
 // Repository returns ErrNotFound for missing rows and ErrEmailTaken on duplicate email.
@@ -40,6 +42,10 @@ type Repository interface {
 	BooksZone(ctx context.Context, booksID int64) (region string, timeZone *string, err error)
 	// UpdateBooksSettings stores the region and the time_zone of the books.
 	UpdateBooksSettings(ctx context.Context, booksID int64, region string, timeZone *string) error
+	// Appearance returns the stored JSON object of the member.
+	Appearance(ctx context.Context, memberID int64) ([]byte, error)
+	// SetAppearance replaces the stored JSON object of the member.
+	SetAppearance(ctx context.Context, memberID int64, doc []byte) error
 	MemberByID(ctx context.Context, memberID int64) (domain.Member, error)
 	MemberByEmail(ctx context.Context, email string) (domain.Member, error)
 	CreateSession(ctx context.Context, s domain.Session) error
@@ -48,6 +54,9 @@ type Repository interface {
 	DeleteExpiredSessions(ctx context.Context, now time.Time) error
 	AccessTokenRepository
 }
+
+// MaxAppearanceBytes bounds the encoded appearance object (BK21).
+const MaxAppearanceBytes = 16 << 10
 
 const (
 	loginAttemptLimit  = 5
@@ -231,6 +240,30 @@ func (s *Service) UpdateBooksSettings(ctx context.Context, booksID int64, region
 	}
 
 	return BooksSettings{Region: region, TimeZone: timeZone, DefaultTimeZone: s.defaultTimeZone(region)}, nil
+}
+
+// Appearance returns the stored JSON object of the member.
+func (s *Service) Appearance(ctx context.Context, memberID int64) ([]byte, error) {
+	doc, err := s.repo.Appearance(ctx, memberID)
+	if err != nil {
+		return nil, fmt.Errorf("load appearance of member %d: %w", memberID, err)
+	}
+
+	return doc, nil
+}
+
+// SetAppearance stores the JSON object of the member; ErrAppearanceTooLarge when it is over
+// MaxAppearanceBytes.
+func (s *Service) SetAppearance(ctx context.Context, memberID int64, doc []byte) error {
+	if len(doc) > MaxAppearanceBytes {
+		return ErrAppearanceTooLarge
+	}
+
+	if err := s.repo.SetAppearance(ctx, memberID, doc); err != nil {
+		return fmt.Errorf("store appearance of member %d: %w", memberID, err)
+	}
+
+	return nil
 }
 
 // UpdateProfile changes the language of the member and the region of the books; an empty field keeps the stored value.

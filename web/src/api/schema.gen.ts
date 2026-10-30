@@ -64,6 +64,28 @@ export interface paths {
         patch: operations["updateCurrentUser"];
         trace?: never;
     };
+    "/me/appearance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Return the appearance choices of the authenticated member (ADR 029 BK21). */
+        get: operations["getMemberAppearance"];
+        /**
+         * Replace the appearance choices of the authenticated member.
+         * @description Any JSON object is stored; 422 appearance_too_large when its encoding is over 16 KiB. The
+         *     web validates each value when it reads them.
+         */
+        put: operations["setMemberAppearance"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/books/current": {
         parameters: {
             query?: never;
@@ -5597,6 +5619,10 @@ export interface components {
         UpdateUserInput: {
             language?: string;
         };
+        /** @description Appearance choices by name (scheme, accent, themes, ...); the web defines names and values. */
+        Appearance: {
+            [key: string]: unknown;
+        };
         BooksSettings: {
             region: string;
             /** @description IANA time zone name; null while the book uses default_time_zone. */
@@ -5826,6 +5852,54 @@ export interface operations {
                     "application/json": components["schemas"]["User"];
                 };
             };
+            401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    getMemberAppearance: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Stored choices; an empty object before the first save. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Appearance"];
+                };
+            };
+            401: components["responses"]["Problem"];
+        };
+    };
+    setMemberAppearance: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Appearance"];
+            };
+        };
+        responses: {
+            /** @description Stored choices. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Appearance"];
+                };
+            };
+            400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
         };

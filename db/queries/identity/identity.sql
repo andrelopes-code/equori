@@ -143,3 +143,18 @@ SET
     time_zone = $3
 WHERE
     id = $1;
+
+-- name: GetAppearance :one
+SELECT
+    appearance
+FROM
+    identity_member
+WHERE
+    id = $1;
+
+-- name: SetAppearance :exec
+UPDATE identity_member
+SET
+    appearance = $2
+WHERE
+    id = $1;

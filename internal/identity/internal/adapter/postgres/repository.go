@@ -176,6 +176,19 @@ func (r *Repository) UpdateBooksSettings(ctx context.Context, booksID int64, reg
 	return r.q.UpdateBooksSettings(ctx, UpdateBooksSettingsParams{ID: booksID, Region: region, TimeZone: timeZone})
 }
 
+func (r *Repository) Appearance(ctx context.Context, memberID int64) ([]byte, error) {
+	doc, err := r.q.GetAppearance(ctx, memberID)
+	if err != nil {
+		return nil, notFound(err)
+	}
+
+	return doc, nil
+}
+
+func (r *Repository) SetAppearance(ctx context.Context, memberID int64, doc []byte) error {
+	return r.q.SetAppearance(ctx, SetAppearanceParams{ID: memberID, Appearance: doc})
+}
+
 func (r *Repository) LoginBooks(ctx context.Context, memberID int64) (int64, error) {
 	booksID, err := r.q.GetLoginBooks(ctx, memberID)
 	if err != nil {

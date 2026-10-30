@@ -234,6 +234,8 @@ func ToProblem(err error) (problem.Details, bool) {
 		return problem.New(http.StatusBadRequest, "invalid_request", "malformed request"), true
 	case errors.Is(err, app.ErrTimeZoneInvalid):
 		return problem.New(http.StatusUnprocessableEntity, "time_zone_invalid", "the time zone is not an IANA time zone name"), true
+	case errors.Is(err, app.ErrAppearanceTooLarge):
+		return problem.New(http.StatusUnprocessableEntity, "appearance_too_large", "the appearance is over 16 KiB"), true
 	case errors.Is(err, app.ErrInvalidCredentials):
 		return problem.New(http.StatusUnauthorized, "invalid_credentials", "email or password is incorrect"), true
 	case errors.Is(err, app.ErrUnauthenticated):

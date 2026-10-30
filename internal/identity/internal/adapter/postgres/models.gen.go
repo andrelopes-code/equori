@@ -16,4 +16,5 @@ type IdentityMember struct {
 	DisabledAt   *time.Time
 	CreatedAt    time.Time
 	Language     string
+	Appearance   []byte
 }

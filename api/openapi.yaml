@@ -160,6 +160,46 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /me/appearance:
+    get:
+      tags: [identity]
+      operationId: getMemberAppearance
+      summary: Return the appearance choices of the authenticated member (ADR 029 BK21).
+      responses:
+        "200":
+          description: Stored choices; an empty object before the first save.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Appearance"
+        "401":
+          $ref: "#/components/responses/Problem"
+    put:
+      tags: [identity]
+      operationId: setMemberAppearance
+      summary: Replace the appearance choices of the authenticated member.
+      description: |
+        Any JSON object is stored; 422 appearance_too_large when its encoding is over 16 KiB. The
+        web validates each value when it reads them.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Appearance"
+      responses:
+        "200":
+          description: Stored choices.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Appearance"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
   /books/current:
     get:
       tags: [identity]
@@ -10050,6 +10090,10 @@ components:
         language:
           type: string
           pattern: "^[a-z]{2,3}$"
+    Appearance:
+      type: object
+      additionalProperties: true
+      description: Appearance choices by name (scheme, accent, themes, ...); the web defines names and values.
     BooksSettings:
       type: object
       required: [region, time_zone, default_time_zone]

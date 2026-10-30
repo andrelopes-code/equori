@@ -63,6 +63,9 @@ type AccessTokenList struct {
 	Items []AccessToken `json:"items"`
 }
 
+// Appearance Appearance choices by name (scheme, accent, themes, ...); the web defines names and values.
+type Appearance map[string]interface{}
+
 // BooksSettings defines model for BooksSettings.
 type BooksSettings struct {
 	// DefaultTimeZone The IANA time zone name of the region (BK18).
@@ -177,6 +180,9 @@ type UpdateCurrentBooksJSONRequestBody = BooksSettingsInput
 // UpdateCurrentUserJSONRequestBody defines body for UpdateCurrentUser for application/json ContentType.
 type UpdateCurrentUserJSONRequestBody = UpdateUserInput
 
+// SetMemberAppearanceJSONRequestBody defines body for SetMemberAppearance for application/json ContentType.
+type SetMemberAppearanceJSONRequestBody = Appearance
+
 // CreateSessionJSONRequestBody defines body for CreateSession for application/json ContentType.
 type CreateSessionJSONRequestBody = Credentials
 
@@ -206,6 +212,12 @@ type ServerInterface interface {
 	// UpdateCurrentUser Change the language of the authenticated member.
 	// (PATCH /me)
 	UpdateCurrentUser(w http.ResponseWriter, r *http.Request)
+	// GetMemberAppearance Return the appearance choices of the authenticated member (ADR 029 BK21).
+	// (GET /me/appearance)
+	GetMemberAppearance(w http.ResponseWriter, r *http.Request)
+	// SetMemberAppearance Replace the appearance choices of the authenticated member.
+	// (PUT /me/appearance)
+	SetMemberAppearance(w http.ResponseWriter, r *http.Request)
 	// DeleteSession Log out and end the current session.
 	// (DELETE /session)
 	DeleteSession(w http.ResponseWriter, r *http.Request, params DeleteSessionParams)
@@ -330,6 +342,34 @@ func (siw *ServerInterfaceWrapper) UpdateCurrentUser(w http.ResponseWriter, r *h
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.UpdateCurrentUser(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetMemberAppearance operation middleware
+func (siw *ServerInterfaceWrapper) GetMemberAppearance(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetMemberAppearance(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SetMemberAppearance operation middleware
+func (siw *ServerInterfaceWrapper) SetMemberAppearance(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SetMemberAppearance(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -542,6 +582,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/setup", wrapper.CompleteSetup)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/me", wrapper.GetCurrentUser)
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/me", wrapper.UpdateCurrentUser)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/me/appearance", wrapper.GetMemberAppearance)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/me/appearance", wrapper.SetMemberAppearance)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/books/current", wrapper.GetCurrentBooks)
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/books/current", wrapper.UpdateCurrentBooks)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/access-tokens", wrapper.ListAccessTokens)
@@ -880,6 +922,109 @@ func (response UpdateCurrentUser422ApplicationProblemPlusJSONResponse) VisitUpda
 	return err
 }
 
+type GetMemberAppearanceRequestObject struct {
+}
+
+type GetMemberAppearanceResponseObject interface {
+	VisitGetMemberAppearanceResponse(w http.ResponseWriter) error
+}
+
+type GetMemberAppearance200JSONResponse Appearance
+
+func (response GetMemberAppearance200JSONResponse) VisitGetMemberAppearanceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetMemberAppearance401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetMemberAppearance401ApplicationProblemPlusJSONResponse) VisitGetMemberAppearanceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetMemberAppearanceRequestObject struct {
+	Body *SetMemberAppearanceJSONRequestBody
+}
+
+type SetMemberAppearanceResponseObject interface {
+	VisitSetMemberAppearanceResponse(w http.ResponseWriter) error
+}
+
+type SetMemberAppearance200JSONResponse Appearance
+
+func (response SetMemberAppearance200JSONResponse) VisitSetMemberAppearanceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetMemberAppearance400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response SetMemberAppearance400ApplicationProblemPlusJSONResponse) VisitSetMemberAppearanceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetMemberAppearance401ApplicationProblemPlusJSONResponse Problem
+
+func (response SetMemberAppearance401ApplicationProblemPlusJSONResponse) VisitSetMemberAppearanceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetMemberAppearance422ApplicationProblemPlusJSONResponse Problem
+
+func (response SetMemberAppearance422ApplicationProblemPlusJSONResponse) VisitSetMemberAppearanceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type DeleteSessionRequestObject struct {
 	Params DeleteSessionParams
 }
@@ -1178,6 +1323,12 @@ type StrictServerInterface interface {
 	// UpdateCurrentUser Change the language of the authenticated member.
 	// (PATCH /me)
 	UpdateCurrentUser(ctx context.Context, request UpdateCurrentUserRequestObject) (UpdateCurrentUserResponseObject, error)
+	// GetMemberAppearance Return the appearance choices of the authenticated member (ADR 029 BK21).
+	// (GET /me/appearance)
+	GetMemberAppearance(ctx context.Context, request GetMemberAppearanceRequestObject) (GetMemberAppearanceResponseObject, error)
+	// SetMemberAppearance Replace the appearance choices of the authenticated member.
+	// (PUT /me/appearance)
+	SetMemberAppearance(ctx context.Context, request SetMemberAppearanceRequestObject) (SetMemberAppearanceResponseObject, error)
 	// DeleteSession Log out and end the current session.
 	// (DELETE /session)
 	DeleteSession(ctx context.Context, request DeleteSessionRequestObject) (DeleteSessionResponseObject, error)
@@ -1415,6 +1566,61 @@ func (sh *strictHandler) UpdateCurrentUser(w http.ResponseWriter, r *http.Reques
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(UpdateCurrentUserResponseObject); ok {
 		if err := validResponse.VisitUpdateCurrentUserResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetMemberAppearance operation middleware
+func (sh *strictHandler) GetMemberAppearance(w http.ResponseWriter, r *http.Request) {
+	var request GetMemberAppearanceRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetMemberAppearance(ctx, request.(GetMemberAppearanceRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetMemberAppearance")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetMemberAppearanceResponseObject); ok {
+		if err := validResponse.VisitGetMemberAppearanceResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SetMemberAppearance operation middleware
+func (sh *strictHandler) SetMemberAppearance(w http.ResponseWriter, r *http.Request) {
+	var request SetMemberAppearanceRequestObject
+
+	var body SetMemberAppearanceJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SetMemberAppearance(ctx, request.(SetMemberAppearanceRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SetMemberAppearance")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SetMemberAppearanceResponseObject); ok {
+		if err := validResponse.VisitSetMemberAppearanceResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

@@ -49,7 +49,7 @@ INSERT INTO
 VALUES
     ($1, $2, $3, $4)
 RETURNING
-    id, email, password_hash, role, disabled_at, created_at, language
+    id, email, password_hash, role, disabled_at, created_at, language, appearance
 `
 
 type CreateMemberParams struct {
@@ -75,6 +75,7 @@ func (q *Queries) CreateMember(ctx context.Context, arg CreateMemberParams) (Ide
 		&i.DisabledAt,
 		&i.CreatedAt,
 		&i.Language,
+		&i.Appearance,
 	)
 	return i, err
 }
@@ -143,6 +144,22 @@ WHERE
 func (q *Queries) DeleteSession(ctx context.Context, tokenHash []byte) error {
 	_, err := q.db.Exec(ctx, deleteSession, tokenHash)
 	return err
+}
+
+const getAppearance = `-- name: GetAppearance :one
+SELECT
+    appearance
+FROM
+    identity_member
+WHERE
+    id = $1
+`
+
+func (q *Queries) GetAppearance(ctx context.Context, id int64) ([]byte, error) {
+	row := q.db.QueryRow(ctx, getAppearance, id)
+	var appearance []byte
+	err := row.Scan(&appearance)
+	return appearance, err
 }
 
 const getBooksZone = `-- name: GetBooksZone :one
@@ -226,7 +243,7 @@ func (q *Queries) GetLoginBooks(ctx context.Context, memberID int64) (int64, err
 
 const getMemberByEmail = `-- name: GetMemberByEmail :one
 SELECT
-    id, email, password_hash, role, disabled_at, created_at, language
+    id, email, password_hash, role, disabled_at, created_at, language, appearance
 FROM
     identity_member
 WHERE
@@ -244,13 +261,14 @@ func (q *Queries) GetMemberByEmail(ctx context.Context, email string) (IdentityM
 		&i.DisabledAt,
 		&i.CreatedAt,
 		&i.Language,
+		&i.Appearance,
 	)
 	return i, err
 }
 
 const getMemberByID = `-- name: GetMemberByID :one
 SELECT
-    id, email, password_hash, role, disabled_at, created_at, language
+    id, email, password_hash, role, disabled_at, created_at, language, appearance
 FROM
     identity_member
 WHERE
@@ -268,6 +286,7 @@ func (q *Queries) GetMemberByID(ctx context.Context, id int64) (IdentityMember, 
 		&i.DisabledAt,
 		&i.CreatedAt,
 		&i.Language,
+		&i.Appearance,
 	)
 	return i, err
 }
@@ -329,6 +348,24 @@ LOCK TABLE identity_member IN EXCLUSIVE MODE
 // The first-user setup creates its admin under this lock, so two requests yield one admin (W-U4).
 func (q *Queries) LockMembers(ctx context.Context) error {
 	_, err := q.db.Exec(ctx, lockMembers)
+	return err
+}
+
+const setAppearance = `-- name: SetAppearance :exec
+UPDATE identity_member
+SET
+    appearance = $2
+WHERE
+    id = $1
+`
+
+type SetAppearanceParams struct {
+	ID         int64
+	Appearance []byte
+}
+
+func (q *Queries) SetAppearance(ctx context.Context, arg SetAppearanceParams) error {
+	_, err := q.db.Exec(ctx, setAppearance, arg.ID, arg.Appearance)
 	return err
 }
 
