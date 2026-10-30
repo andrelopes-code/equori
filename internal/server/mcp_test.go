@@ -156,6 +156,62 @@ func TestMCPListsToolsByScope(t *testing.T) {
 	}
 }
 
+// S197, HA16: a token keeps the role its member holds now; a demoted member's write token lists only
+// the ReadOnly tools, and a read member creates no write token.
+func TestMCPDemotedToken(t *testing.T) {
+	t.Parallel()
+	h := apitest.New(t)
+
+	writer := h.JoinAs("writer@example.com", h.OwnerID(), "write")
+	tok := mcpToken(t, h, writer, "write")
+
+	if got := listNames(t, mcpSession(t, h, tok)); len(got) != len(h.App.Tools.Tools()) {
+		t.Fatalf("write member lists %d tools, registry has %d", len(got), len(h.App.Tools.Tools()))
+	}
+
+	if _, err := h.Pool.Exec(t.Context(),
+		`UPDATE identity_membership SET role = 'read' WHERE member_id = $1 AND books_id = $2`,
+		h.MemberIDOf("writer@example.com"), h.OwnerID()); err != nil {
+		t.Fatal(err)
+	}
+
+	var reads []string
+	for _, tl := range h.App.Tools.Tools() {
+		if tl.Spec().Effect == tool.ReadOnly {
+			reads = append(reads, tl.Spec().Name)
+		}
+	}
+
+	slices.Sort(reads)
+
+	demoted := listNames(t, mcpSession(t, h, tok))
+
+	var got []string
+	for n := range demoted {
+		got = append(got, n)
+	}
+
+	slices.Sort(got)
+
+	if !slices.Equal(got, reads) {
+		t.Fatalf("demoted token lists %v, want the ReadOnly tools %v", got, reads)
+	}
+
+	r := h.Call(writer, http.MethodPost, "/api/v1/access-tokens", map[string]any{"name": "w", "scope": "write", "expires_in_days": 30})
+	if r.Status != http.StatusForbidden {
+		t.Fatalf("write token of a read member: %d %s", r.Status, r.Body)
+	}
+
+	if !strings.Contains(string(r.Body), `"book_role_required"`) {
+		t.Errorf("write token of a read member: body = %s, want book_role_required", r.Body)
+	}
+
+	r = h.Call(writer, http.MethodPost, "/api/v1/access-tokens", map[string]any{"name": "w", "scope": "read", "expires_in_days": 30})
+	if r.Status != http.StatusCreated {
+		t.Errorf("read token of a read member: %d %s", r.Status, r.Body)
+	}
+}
+
 // X16, X12, ADR 003: the result is the registry's, as structured content and one text block, for the token's book only.
 func TestMCPCallTool(t *testing.T) {
 	t.Parallel()

@@ -17,8 +17,10 @@ import (
 
 // Agent runs the chat's model loop over the tools of the chat set.
 type Agent struct {
-	client   *llm.Client
-	decls    []llm.Tool
+	client *llm.Client
+	decls  []llm.Tool
+	// reads are the declarations of the ReadOnly tools, sent to a member whose book role is below write (HA17).
+	reads    []llm.Tool
 	handlers map[string]llm.ToolHandler
 	wait     func(ctx context.Context, until time.Time) error
 	// concurrent names the read tools, whose calls of one response run together (design 2026-10-26 E13).
@@ -38,7 +40,9 @@ func NewAgent(client *llm.Client, svc *app.Service, tools app.Tools, set tool.Se
 		return ok && e == tool.ReadOnly
 	}
 
-	return &Agent{client: client, decls: decls, handlers: handlers, wait: wait, concurrent: concurrent}
+	reads := slices.DeleteFunc(slices.Clone(decls), func(d llm.Tool) bool { return !concurrent(d.Name) })
+
+	return &Agent{client: client, decls: decls, reads: reads, handlers: handlers, wait: wait, concurrent: concurrent}
 }
 
 // Run calls the model loop once more after a wait when only transient cooldowns block every target and the
@@ -67,6 +71,10 @@ func (a *Agent) Run(ctx context.Context, booksID int64, in app.AgentRequest, onS
 
 func (a *Agent) run(ctx context.Context, booksID int64, in app.AgentRequest, onStep, onText func(string), onRestart func()) (app.AgentResult, error) {
 	req := llm.Request{System: in.System, Tools: a.decls}
+	if role, ok := auth.CurrentRole(ctx); ok && !role.Allows(auth.RoleWrite) {
+		req.Tools = a.reads
+	}
+
 	for _, m := range in.History {
 		role := llm.RoleUser
 		if m.Role == domain.RoleAssistant {

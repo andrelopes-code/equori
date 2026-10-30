@@ -14,7 +14,7 @@ import (
 func TestUpdateProfileTool(t *testing.T) {
 	t.Parallel()
 	h := apitest.New(t)
-	args := map[string]any{"language": "en", "region": "US"}
+	args := map[string]any{"language": "en"}
 
 	b, err := json.Marshal(args)
 	if err != nil {
@@ -28,7 +28,6 @@ func TestUpdateProfileTool(t *testing.T) {
 
 	want := tool.Preview{Action: "update_profile", Changes: []tool.Change{
 		{Field: "language", Before: tool.TextValue("pt"), After: tool.TextValue("en")},
-		{Field: "region", Before: tool.TextValue("BR"), After: tool.TextValue("US")},
 	}}
 	if !reflect.DeepEqual(p, want) {
 		t.Errorf("preview = %+v, want %+v", p, want)
@@ -51,10 +50,10 @@ func TestUpdateProfileTool(t *testing.T) {
 
 	h.MustDo(http.MethodGet, "/api/v1/me", nil, http.StatusOK, &got)
 
-	if got != (me{"en", "US"}) {
-		t.Errorf("profile = %+v, want en US", got)
+	if got != (me{"en", "BR"}) {
+		t.Errorf("profile = %+v, want en BR", got)
 	}
 
 	h.ExpectToolError(h.Tool("update_profile", map[string]any{}), "invalid_arguments", "language")
-	h.ExpectToolError(h.Tool("update_profile", map[string]any{"region": "Brazil"}), "validation_failed", "region")
+	h.ExpectToolError(h.Tool("update_profile", map[string]any{"region": "US"}), "invalid_arguments", "")
 }

@@ -21,6 +21,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/llm"
 	"github.com/andrelopes-code/equori/internal/platform/llm/llmtest"
 	"github.com/andrelopes-code/equori/internal/platform/locale"
+	"github.com/andrelopes-code/equori/internal/platform/tool"
 )
 
 const chatModel = "gemini-3.5-flash-lite"
@@ -184,6 +185,38 @@ func TestTurnRead(t *testing.T) {
 
 	if strings.Contains(h.Logs(), "Qual o saldo?") || strings.Contains(h.Logs(), "R$ 10,00") {
 		t.Fatal("logs carry message text")
+	}
+}
+
+// HA17: the chat of a read member declares only the ReadOnly tools.
+func TestTurnReadMemberTools(t *testing.T) {
+	t.Parallel()
+
+	p := llmtest.New("aistudio", textStep("ok"))
+	h := turnHarness(t, p)
+	reader := h.JoinAs("reader@example.com", h.OwnerID(), "read")
+
+	r := sendTurn(h, reader, map[string]any{"text": "oi"})
+	if r.Status != http.StatusOK {
+		t.Fatalf("status = %d: %s", r.Status, r.Body)
+	}
+
+	var want []string
+	for _, tl := range h.App.Tools.Tools() {
+		if tl.Spec().Effect == tool.ReadOnly {
+			want = append(want, tl.Spec().Name)
+		}
+	}
+
+	slices.Sort(want)
+
+	var got []string
+	for _, d := range p.Requests()[0].Request.Tools {
+		got = append(got, d.Name)
+	}
+
+	if !slices.Equal(got, want) {
+		t.Errorf("declared tools = %v, want the ReadOnly tools %v", got, want)
 	}
 }
 

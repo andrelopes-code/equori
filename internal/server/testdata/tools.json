@@ -6369,7 +6369,7 @@
   },
   {
     "name": "update_profile",
-    "description": "Proposes changing the member's language or region, which set the language of the app and of these answers and the format of numbers and dates. Use it when the user asks to switch language or region. Do not use it for the base currency, which is fixed after the first transaction. The user confirms first.",
+    "description": "Proposes changing the member's language, which sets the language of the app and of these answers. Use it when the user asks to switch language. Do not use it for the region or the base currency of the book, which a book owner changes in settings. The user confirms first.",
     "effect": "write",
     "idempotent": false,
     "input_schema": {
@@ -6378,10 +6378,6 @@
         "language": {
           "type": "string",
           "description": "ISO 639 language code, such as en or pt"
-        },
-        "region": {
-          "type": "string",
-          "description": "ISO 3166-1 alpha-2 region code, such as US or BR"
         }
       },
       "additionalProperties": false

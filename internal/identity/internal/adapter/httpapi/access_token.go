@@ -26,7 +26,15 @@ func (s *Server) CreateAccessToken(ctx context.Context, req CreateAccessTokenReq
 		return nil, errInvalidRequest
 	}
 
-	text, t, err := s.svc.CreateAccessToken(ctx, auth.MustMemberID(ctx), auth.MustBooksID(ctx), req.Body.Name, req.Body.Scope, req.Body.ExpiresInDays)
+	text, t, err := s.svc.CreateAccessToken(
+		ctx,
+		auth.MustMemberID(ctx),
+		auth.MustBooksID(ctx),
+		auth.MustBookRole(ctx),
+		req.Body.Name,
+		req.Body.Scope,
+		req.Body.ExpiresInDays,
+	)
 	if err != nil {
 		return nil, err
 	}

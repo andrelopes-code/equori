@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/andrelopes-code/equori/internal/identity/internal/domain"
+	"github.com/andrelopes-code/equori/internal/platform/auth"
 )
 
 var (
@@ -28,10 +29,14 @@ type AccessTokenRepository interface {
 }
 
 // CreateAccessToken returns the token text, shown to the user once, and its record (design 2026-10-26 X5-X7).
-func (s *Service) CreateAccessToken(ctx context.Context, memberID, booksID int64, name, scope string, days int) (string, domain.AccessToken, error) {
+func (s *Service) CreateAccessToken(ctx context.Context, memberID, booksID int64, role auth.BookRole, name, scope string, days int) (string, domain.AccessToken, error) {
 	text, t, err := domain.NewAccessToken(memberID, booksID, name, scope, days, s.now())
 	if err != nil {
 		return "", domain.AccessToken{}, err
+	}
+
+	if scope == "write" && !role.Allows(auth.RoleWrite) {
+		return "", domain.AccessToken{}, ErrBookRoleRequired
 	}
 
 	if err := s.repo.CreateAccessToken(ctx, t); err != nil {

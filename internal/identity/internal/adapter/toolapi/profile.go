@@ -10,7 +10,6 @@ import (
 
 type updateProfileIn struct {
 	Language string `json:"language,omitzero" jsonschema:"ISO 639 language code, such as en or pt"`
-	Region   string `json:"region,omitzero" jsonschema:"ISO 3166-1 alpha-2 region code, such as US or BR"`
 }
 
 type updateProfileOut struct {
@@ -21,32 +20,30 @@ type updateProfileOut struct {
 func updateProfile(svc *app.Service) tool.Tool {
 	return tool.NewWrite(tool.Spec{
 		Name: "update_profile",
-		Description: "Proposes changing the member's language or region, which set the language of the app and of these answers " +
-			"and the format of numbers and dates. " +
-			"Use it when the user asks to switch language or region. " +
-			"Do not use it for the base currency, which is fixed after the first transaction. " +
+		Description: "Proposes changing the member's language, which sets the language of the app and of these answers. " +
+			"Use it when the user asks to switch language. " +
+			"Do not use it for the region or the base currency of the book, which a book owner changes in settings. " +
 			"The user confirms first.",
 		Effect: tool.Write,
 	}, func(ctx context.Context, booksID int64, in updateProfileIn) (tool.Preview, error) {
-		if in.Language == "" && in.Region == "" {
-			return tool.Preview{}, tool.InvalidArgument("language", "or region is required")
+		if in.Language == "" {
+			return tool.Preview{}, tool.InvalidArgument("language", "is required")
 		}
 
-		before, after, err := svc.ProfileChange(ctx, booksID, auth.MustMemberID(ctx), in.Language, in.Region)
+		before, after, err := svc.ProfileChange(ctx, booksID, auth.MustMemberID(ctx), in.Language, "")
 		if err != nil {
 			return tool.Preview{}, err
 		}
 
 		return tool.Preview{Action: "update_profile", Changes: []tool.Change{
 			{Field: "language", Before: tool.TextValue(before.Language), After: tool.TextValue(after.Language)},
-			{Field: "region", Before: tool.TextValue(before.Region), After: tool.TextValue(after.Region)},
 		}}, nil
 	}, func(ctx context.Context, booksID int64, in updateProfileIn) (updateProfileOut, error) {
-		if in.Language == "" && in.Region == "" {
-			return updateProfileOut{}, tool.InvalidArgument("language", "or region is required")
+		if in.Language == "" {
+			return updateProfileOut{}, tool.InvalidArgument("language", "is required")
 		}
 
-		l, err := svc.UpdateProfile(ctx, booksID, auth.MustMemberID(ctx), in.Language, in.Region)
+		l, err := svc.UpdateProfile(ctx, booksID, auth.MustMemberID(ctx), in.Language, "")
 		if err != nil {
 			return updateProfileOut{}, err
 		}

@@ -30,6 +30,7 @@ var exclusions = map[string]bool{
 	"-visual":   true, // colour, icon and logo identifiers chosen by looking at them
 	"-setup":    true, // the base currency changes only before the first transaction, during provisioning
 	"-instance": true, // the instance's outbound sources are chosen by an admin, not handed to a language model (ADR 025)
+	"-owner":    true, // a setting or membership of the book that only its owner changes (HA18)
 }
 
 // withoutOperation are the tools that map to no operation, with the reason.

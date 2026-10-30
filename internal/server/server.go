@@ -26,6 +26,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/marketdata"
 	"github.com/andrelopes-code/equori/internal/planning"
 	"github.com/andrelopes-code/equori/internal/platform/apidoc"
+	"github.com/andrelopes-code/equori/internal/platform/auth"
 	"github.com/andrelopes-code/equori/internal/platform/clock"
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/platform/llm"
@@ -238,7 +239,7 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 			}
 
 			return mcp.Grant{
-				TokenID: g.TokenID.String(), MemberID: g.MemberID, BooksID: g.BooksID, Role: g.Role, Write: g.Scope == "write", Location: loc,
+				TokenID: g.TokenID.String(), MemberID: g.MemberID, BooksID: g.BooksID, Role: g.Role, Write: g.Scope == "write" && g.Role.Allows(auth.RoleWrite), Location: loc,
 			}, nil
 		},
 	}))
