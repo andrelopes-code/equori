@@ -1,8 +1,8 @@
 -- name: InsertConversation :exec
 INSERT INTO
-    assistant_conversation (id, books_id, title, created_at, updated_at)
+    assistant_conversation (id, books_id, member_id, title, created_at, updated_at)
 VALUES
-    (@id, @books_id, @title, @created_at, @updated_at);
+    (@id, @books_id, @member_id, @title, @created_at, @updated_at);
 
 -- name: ConversationByID :one
 SELECT
@@ -11,6 +11,7 @@ FROM
     assistant_conversation
 WHERE
     books_id = @books_id
+    AND member_id = @member_id
     AND id = @id;
 
 -- name: ListConversations :many
@@ -20,6 +21,7 @@ FROM
     assistant_conversation
 WHERE
     books_id = @books_id
+    AND member_id = @member_id
     AND (
         sqlc.narg (after_updated_at)::timestamptz IS NULL
         OR (updated_at, id) < (sqlc.narg (after_updated_at)::timestamptz, sqlc.narg (after_id)::uuid)
@@ -34,12 +36,14 @@ LIMIT
 DELETE FROM assistant_conversation
 WHERE
     books_id = @books_id
+    AND member_id = @member_id
     AND id = @id;
 
 -- name: DeleteConversations :exec
 DELETE FROM assistant_conversation
 WHERE
-    books_id = @books_id;
+    books_id = @books_id
+    AND member_id = @member_id;
 
 -- name: AppendMessage :one
 INSERT INTO

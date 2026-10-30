@@ -34,7 +34,7 @@ func (s *Server) toProposal(p domain.Proposal) (AssistantProposal, error) {
 }
 
 func (s *Server) ConfirmAssistantProposal(ctx context.Context, req ConfirmAssistantProposalRequestObject) (ConfirmAssistantProposalResponseObject, error) {
-	p, err := s.svc.Confirm(ctx, auth.MustBooksID(ctx), req.Id)
+	p, err := s.svc.Confirm(ctx, auth.MustBooksID(ctx), auth.MustMemberID(ctx), req.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +45,7 @@ func (s *Server) ConfirmAssistantProposal(ctx context.Context, req ConfirmAssist
 }
 
 func (s *Server) RejectAssistantProposal(ctx context.Context, req RejectAssistantProposalRequestObject) (RejectAssistantProposalResponseObject, error) {
-	p, err := s.svc.Reject(ctx, auth.MustBooksID(ctx), req.Id)
+	p, err := s.svc.Reject(ctx, auth.MustBooksID(ctx), auth.MustMemberID(ctx), req.Id)
 	if err != nil {
 		return nil, err
 	}

@@ -19,7 +19,8 @@ func TestSchema(t *testing.T) {
 	t.Parallel()
 	pool := pgtest.New(t)
 	ctx := t.Context()
-	a, b := pgtest.CreateBooks(t, pool), pgtest.CreateBooks(t, pool)
+	ma, a := pgtest.CreateMember(t, pool)
+	b := pgtest.CreateBooks(t, pool)
 
 	const provider = "11111111-1111-1111-1111-111111111111"
 	if _, err := pool.Exec(ctx, `INSERT INTO assistant_provider (id, books_id, preset, name, base_url, created_at)
@@ -28,7 +29,8 @@ func TestSchema(t *testing.T) {
 	}
 
 	const conv = "22222222-2222-2222-2222-222222222222"
-	if _, err := pool.Exec(ctx, `INSERT INTO assistant_conversation VALUES ($1, $2, 'T', now(), now())`, conv, a); err != nil {
+	if _, err := pool.Exec(ctx, `INSERT INTO assistant_conversation (id, books_id, member_id, title, created_at, updated_at)
+		VALUES ($1, $2, $3, 'T', now(), now())`, conv, a, ma); err != nil {
 		t.Fatal(err)
 	}
 

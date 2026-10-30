@@ -127,7 +127,7 @@ func truncateRunes(s string, n int) string {
 
 // Turn runs one book message through the model and reports through ev (spec 6). An error returned before ev.Turn
 // has been called leaves the stream unstarted; after it, failures reach ev.Error.
-func (s *Service) Turn(ctx context.Context, booksID int64, in TurnInput, ev TurnEvents) error {
+func (s *Service) Turn(ctx context.Context, booksID, memberID int64, in TurnInput, ev TurnEvents) error {
 	text := strings.TrimSpace(in.Text)
 	if n := utf8.RuneCountInString(text); n < 1 || n > domain.MaxMessage {
 		return ErrInvalidText
@@ -140,7 +140,7 @@ func (s *Service) Turn(ctx context.Context, booksID int64, in TurnInput, ev Turn
 	var proposals []domain.Proposal
 	if in.ConversationID != uuid.Nil {
 		var err error
-		if _, err = s.repo.Conversation(ctx, booksID, in.ConversationID); err != nil {
+		if _, err = s.repo.Conversation(ctx, booksID, memberID, in.ConversationID); err != nil {
 			return err
 		}
 
@@ -181,7 +181,7 @@ func (s *Service) Turn(ctx context.Context, booksID int64, in TurnInput, ev Turn
 
 	if in.ConversationID == uuid.Nil {
 		conv.ID = uuid.New()
-		if err := s.repo.CreateConversation(ctx, booksID, conv); err != nil {
+		if err := s.repo.CreateConversation(ctx, booksID, memberID, conv); err != nil {
 			return err
 		}
 	}
@@ -282,7 +282,7 @@ func (s *Service) Turn(ctx context.Context, booksID int64, in TurnInput, ev Turn
 		}
 
 		for _, id := range ids {
-			p, err := s.repo.Proposal(storeCtx, booksID, id)
+			p, err := s.repo.Proposal(storeCtx, booksID, memberID, id)
 			if err != nil {
 				return s.failAfterStream(ctx, ev, err)
 			}

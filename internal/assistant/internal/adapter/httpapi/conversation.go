@@ -50,7 +50,7 @@ func (s *Server) ListAssistantConversations(ctx context.Context, req ListAssista
 		return nil, err
 	}
 
-	rows, next, err := s.svc.ConversationPage(ctx, auth.MustBooksID(ctx), r.After, r.Limit)
+	rows, next, err := s.svc.ConversationPage(ctx, auth.MustBooksID(ctx), auth.MustMemberID(ctx), r.After, r.Limit)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +68,7 @@ func (s *Server) ListAssistantConversations(ctx context.Context, req ListAssista
 }
 
 func (s *Server) GetAssistantConversation(ctx context.Context, req GetAssistantConversationRequestObject) (GetAssistantConversationResponseObject, error) {
-	d, err := s.svc.Conversation(ctx, auth.MustBooksID(ctx), req.Id)
+	d, err := s.svc.Conversation(ctx, auth.MustBooksID(ctx), auth.MustMemberID(ctx), req.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +86,7 @@ func (s *Server) GetAssistantConversation(ctx context.Context, req GetAssistantC
 }
 
 func (s *Server) DeleteAssistantConversation(ctx context.Context, req DeleteAssistantConversationRequestObject) (DeleteAssistantConversationResponseObject, error) {
-	if err := s.svc.DeleteConversation(ctx, auth.MustBooksID(ctx), req.Id); err != nil {
+	if err := s.svc.DeleteConversation(ctx, auth.MustBooksID(ctx), auth.MustMemberID(ctx), req.Id); err != nil {
 		return nil, err
 	}
 
@@ -94,7 +94,7 @@ func (s *Server) DeleteAssistantConversation(ctx context.Context, req DeleteAssi
 }
 
 func (s *Server) DeleteAssistantConversations(ctx context.Context, _ DeleteAssistantConversationsRequestObject) (DeleteAssistantConversationsResponseObject, error) {
-	if err := s.svc.DeleteConversations(ctx, auth.MustBooksID(ctx)); err != nil {
+	if err := s.svc.DeleteConversations(ctx, auth.MustBooksID(ctx), auth.MustMemberID(ctx)); err != nil {
 		return nil, err
 	}
 

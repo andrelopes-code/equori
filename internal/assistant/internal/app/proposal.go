@@ -67,8 +67,8 @@ func (s *Service) Propose(ctx context.Context, booksID int64, conversationID uui
 }
 
 // unclaimed explains why a proposal could not be claimed or rejected.
-func (s *Service) unclaimed(ctx context.Context, booksID int64, id uuid.UUID) error {
-	p, err := s.repo.Proposal(ctx, booksID, id)
+func (s *Service) unclaimed(ctx context.Context, booksID, memberID int64, id uuid.UUID) error {
+	p, err := s.repo.Proposal(ctx, booksID, memberID, id)
 	if err != nil {
 		return err
 	}
@@ -82,16 +82,16 @@ func (s *Service) unclaimed(ctx context.Context, booksID int64, id uuid.UUID) er
 }
 
 // Confirm executes a pending proposal at most once (spec 8.2).
-func (s *Service) Confirm(ctx context.Context, booksID int64, id uuid.UUID) (domain.Proposal, error) {
+func (s *Service) Confirm(ctx context.Context, booksID, memberID int64, id uuid.UUID) (domain.Proposal, error) {
 	now := s.now()
 
-	p, ok, err := s.repo.ClaimProposal(ctx, booksID, id, now)
+	p, ok, err := s.repo.ClaimProposal(ctx, booksID, memberID, id, now)
 	if err != nil {
 		return domain.Proposal{}, err
 	}
 
 	if !ok {
-		return domain.Proposal{}, s.unclaimed(ctx, booksID, id)
+		return domain.Proposal{}, s.unclaimed(ctx, booksID, memberID, id)
 	}
 
 	ctx = auth.WithBooksID(ctx, booksID)
@@ -132,17 +132,17 @@ func (s *Service) Confirm(ctx context.Context, booksID int64, id uuid.UUID) (dom
 }
 
 // Reject closes a pending proposal without executing it.
-func (s *Service) Reject(ctx context.Context, booksID int64, id uuid.UUID) (domain.Proposal, error) {
-	ok, err := s.repo.RejectProposal(ctx, booksID, id, s.now())
+func (s *Service) Reject(ctx context.Context, booksID, memberID int64, id uuid.UUID) (domain.Proposal, error) {
+	ok, err := s.repo.RejectProposal(ctx, booksID, memberID, id, s.now())
 	if err != nil {
 		return domain.Proposal{}, err
 	}
 
 	if !ok {
-		return domain.Proposal{}, s.unclaimed(ctx, booksID, id)
+		return domain.Proposal{}, s.unclaimed(ctx, booksID, memberID, id)
 	}
 
-	p, err := s.repo.Proposal(ctx, booksID, id)
+	p, err := s.repo.Proposal(ctx, booksID, memberID, id)
 	if err != nil {
 		return domain.Proposal{}, err
 	}

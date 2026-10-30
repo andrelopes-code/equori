@@ -31,23 +31,24 @@ func TestProposal(t *testing.T) {
 	pool := pgtest.New(t)
 	repo := postgres.NewRepository(pool)
 	ctx := t.Context()
-	a, b := pgtest.CreateBooks(t, pool), pgtest.CreateBooks(t, pool)
-	c := conversation(t, repo, a, t0)
+	ma, a := pgtest.CreateMember(t, pool)
+	mb, b := pgtest.CreateMember(t, pool)
+	c := conversation(t, repo, a, ma, t0)
 
 	p := newProposal(t, repo, a, c.ID)
-	if got, ok, err := repo.ClaimProposal(ctx, b, p.ID, t0); err != nil || ok || got.ID != uuid.Nil {
+	if got, ok, err := repo.ClaimProposal(ctx, b, mb, p.ID, t0); err != nil || ok || got.ID != uuid.Nil {
 		t.Fatalf("other book's claim = %+v, %v, %v", got, ok, err)
 	}
 
-	if got, ok, err := repo.ClaimProposal(ctx, a, p.ID, t0.Add(time.Minute)); err != nil || !ok || got.Status != domain.ProposalExecuting {
+	if got, ok, err := repo.ClaimProposal(ctx, a, ma, p.ID, t0.Add(time.Minute)); err != nil || !ok || got.Status != domain.ProposalExecuting {
 		t.Fatalf("first claim = %+v, %v, %v", got, ok, err)
 	}
 
-	if _, ok, err := repo.ClaimProposal(ctx, a, p.ID, t0.Add(time.Minute)); err != nil || ok {
+	if _, ok, err := repo.ClaimProposal(ctx, a, ma, p.ID, t0.Add(time.Minute)); err != nil || ok {
 		t.Fatalf("second claim = %v, %v", ok, err)
 	}
 
-	if ok, err := repo.RejectProposal(ctx, a, p.ID, t0.Add(time.Minute)); err != nil || ok {
+	if ok, err := repo.RejectProposal(ctx, a, ma, p.ID, t0.Add(time.Minute)); err != nil || ok {
 		t.Fatalf("reject of executing = %v, %v", ok, err)
 	}
 
@@ -55,22 +56,22 @@ func TestProposal(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got, err := repo.Proposal(ctx, a, p.ID)
+	got, err := repo.Proposal(ctx, a, ma, p.ID)
 	if err != nil || got.Status != domain.ProposalExecuted || string(got.Result) != `{"ok": true}` || !got.DecidedAt.Equal(t0.Add(2*time.Minute)) {
 		t.Fatalf("Proposal = %+v, %v", got, err)
 	}
 
 	expiring := newProposal(t, repo, a, c.ID)
-	if _, ok, err := repo.ClaimProposal(ctx, a, expiring.ID, expiring.ExpiresAt); err != nil || ok {
+	if _, ok, err := repo.ClaimProposal(ctx, a, ma, expiring.ID, expiring.ExpiresAt); err != nil || ok {
 		t.Fatalf("claim at expires_at = %v, %v", ok, err)
 	}
 
-	if ok, err := repo.RejectProposal(ctx, a, expiring.ID, expiring.ExpiresAt); err != nil || ok {
+	if ok, err := repo.RejectProposal(ctx, a, ma, expiring.ID, expiring.ExpiresAt); err != nil || ok {
 		t.Fatalf("reject at expires_at = %v, %v", ok, err)
 	}
 
 	rejectable, discardable := newProposal(t, repo, a, c.ID), newProposal(t, repo, a, c.ID)
-	if ok, err := repo.RejectProposal(ctx, a, rejectable.ID, t0); err != nil || !ok {
+	if ok, err := repo.RejectProposal(ctx, a, ma, rejectable.ID, t0); err != nil || !ok {
 		t.Fatalf("reject = %v, %v", ok, err)
 	}
 
@@ -80,7 +81,7 @@ func TestProposal(t *testing.T) {
 
 	want := map[uuid.UUID]domain.ProposalStatus{p.ID: domain.ProposalExecuted, rejectable.ID: domain.ProposalRejected, discardable.ID: domain.ProposalDiscarded}
 	for id, status := range want {
-		if got, _ := repo.Proposal(ctx, a, id); got.Status != status {
+		if got, _ := repo.Proposal(ctx, a, ma, id); got.Status != status {
 			t.Errorf("proposal %s status = %s, want %s", id, got.Status, status)
 		}
 	}
@@ -94,7 +95,7 @@ func TestProposal(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if got, _ := repo.Proposal(ctx, a, p.ID); got.MessageID != msg.ID {
+	if got, _ := repo.Proposal(ctx, a, ma, p.ID); got.MessageID != msg.ID {
 		t.Fatalf("MessageID = %s, want %s", got.MessageID, msg.ID)
 	}
 
@@ -102,11 +103,11 @@ func TestProposal(t *testing.T) {
 		t.Fatalf("Proposals = %d, %v; want 4", len(list), err)
 	}
 
-	if _, err := repo.Proposal(ctx, b, p.ID); err == nil {
+	if _, err := repo.Proposal(ctx, b, mb, p.ID); err == nil {
 		t.Fatal("other book read the proposal")
 	}
 
-	if err := repo.DeleteConversation(ctx, a, c.ID); err != nil {
+	if err := repo.DeleteConversation(ctx, a, ma, c.ID); err != nil {
 		t.Fatal(err)
 	}
 

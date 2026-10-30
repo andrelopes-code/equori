@@ -75,21 +75,23 @@ func (q *Queries) AppendMessage(ctx context.Context, arg AppendMessageParams) (A
 
 const conversationByID = `-- name: ConversationByID :one
 SELECT
-    id, books_id, title, created_at, updated_at
+    id, books_id, title, created_at, updated_at, member_id
 FROM
     assistant_conversation
 WHERE
     books_id = $1
-    AND id = $2
+    AND member_id = $2
+    AND id = $3
 `
 
 type ConversationByIDParams struct {
-	BooksID int64
-	ID      uuid.UUID
+	BooksID  int64
+	MemberID int64
+	ID       uuid.UUID
 }
 
 func (q *Queries) ConversationByID(ctx context.Context, arg ConversationByIDParams) (AssistantConversation, error) {
-	row := q.db.QueryRow(ctx, conversationByID, arg.BooksID, arg.ID)
+	row := q.db.QueryRow(ctx, conversationByID, arg.BooksID, arg.MemberID, arg.ID)
 	var i AssistantConversation
 	err := row.Scan(
 		&i.ID,
@@ -97,6 +99,7 @@ func (q *Queries) ConversationByID(ctx context.Context, arg ConversationByIDPara
 		&i.Title,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.MemberID,
 	)
 	return i, err
 }
@@ -105,16 +108,18 @@ const deleteConversation = `-- name: DeleteConversation :execrows
 DELETE FROM assistant_conversation
 WHERE
     books_id = $1
-    AND id = $2
+    AND member_id = $2
+    AND id = $3
 `
 
 type DeleteConversationParams struct {
-	BooksID int64
-	ID      uuid.UUID
+	BooksID  int64
+	MemberID int64
+	ID       uuid.UUID
 }
 
 func (q *Queries) DeleteConversation(ctx context.Context, arg DeleteConversationParams) (int64, error) {
-	result, err := q.db.Exec(ctx, deleteConversation, arg.BooksID, arg.ID)
+	result, err := q.db.Exec(ctx, deleteConversation, arg.BooksID, arg.MemberID, arg.ID)
 	if err != nil {
 		return 0, err
 	}
@@ -125,23 +130,30 @@ const deleteConversations = `-- name: DeleteConversations :exec
 DELETE FROM assistant_conversation
 WHERE
     books_id = $1
+    AND member_id = $2
 `
 
-func (q *Queries) DeleteConversations(ctx context.Context, booksID int64) error {
-	_, err := q.db.Exec(ctx, deleteConversations, booksID)
+type DeleteConversationsParams struct {
+	BooksID  int64
+	MemberID int64
+}
+
+func (q *Queries) DeleteConversations(ctx context.Context, arg DeleteConversationsParams) error {
+	_, err := q.db.Exec(ctx, deleteConversations, arg.BooksID, arg.MemberID)
 	return err
 }
 
 const insertConversation = `-- name: InsertConversation :exec
 INSERT INTO
-    assistant_conversation (id, books_id, title, created_at, updated_at)
+    assistant_conversation (id, books_id, member_id, title, created_at, updated_at)
 VALUES
-    ($1, $2, $3, $4, $5)
+    ($1, $2, $3, $4, $5, $6)
 `
 
 type InsertConversationParams struct {
 	ID        uuid.UUID
 	BooksID   int64
+	MemberID  int64
 	Title     string
 	CreatedAt time.Time
 	UpdatedAt time.Time
@@ -151,6 +163,7 @@ func (q *Queries) InsertConversation(ctx context.Context, arg InsertConversation
 	_, err := q.db.Exec(ctx, insertConversation,
 		arg.ID,
 		arg.BooksID,
+		arg.MemberID,
 		arg.Title,
 		arg.CreatedAt,
 		arg.UpdatedAt,
@@ -160,24 +173,26 @@ func (q *Queries) InsertConversation(ctx context.Context, arg InsertConversation
 
 const listConversations = `-- name: ListConversations :many
 SELECT
-    id, books_id, title, created_at, updated_at
+    id, books_id, title, created_at, updated_at, member_id
 FROM
     assistant_conversation
 WHERE
     books_id = $1
+    AND member_id = $2
     AND (
-        $2::timestamptz IS NULL
-        OR (updated_at, id) < ($2::timestamptz, $3::uuid)
+        $3::timestamptz IS NULL
+        OR (updated_at, id) < ($3::timestamptz, $4::uuid)
     )
 ORDER BY
     updated_at DESC,
     id DESC
 LIMIT
-    $4
+    $5
 `
 
 type ListConversationsParams struct {
 	BooksID        int64
+	MemberID       int64
 	AfterUpdatedAt *time.Time
 	AfterID        uuid.NullUUID
 	RowLimit       int32
@@ -186,6 +201,7 @@ type ListConversationsParams struct {
 func (q *Queries) ListConversations(ctx context.Context, arg ListConversationsParams) ([]AssistantConversation, error) {
 	rows, err := q.db.Query(ctx, listConversations,
 		arg.BooksID,
+		arg.MemberID,
 		arg.AfterUpdatedAt,
 		arg.AfterID,
 		arg.RowLimit,
@@ -203,6 +219,7 @@ func (q *Queries) ListConversations(ctx context.Context, arg ListConversationsPa
 			&i.Title,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.MemberID,
 		); err != nil {
 			return nil, err
 		}

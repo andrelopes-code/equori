@@ -96,7 +96,7 @@ func (e proposalEnv) propose(t *testing.T, booksID int64, text string) string {
 	t.Helper()
 
 	conv := domain.Conversation{ID: uuid.New(), Title: "t", CreatedAt: *e.now.Load(), UpdatedAt: *e.now.Load()}
-	if err := postgres.NewRepository(e.h.Pool).CreateConversation(t.Context(), booksID, conv); err != nil {
+	if err := postgres.NewRepository(e.h.Pool).CreateConversation(t.Context(), booksID, e.h.MemberIDOf("owner@example.com"), conv); err != nil {
 		t.Fatal(err)
 	}
 

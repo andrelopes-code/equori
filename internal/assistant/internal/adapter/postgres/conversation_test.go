@@ -15,11 +15,11 @@ import (
 
 var t0 = time.Date(2026, 10, 23, 10, 0, 0, 0, time.UTC)
 
-func conversation(t *testing.T, repo *postgres.Repository, booksID int64, at time.Time) domain.Conversation {
+func conversation(t *testing.T, repo *postgres.Repository, booksID, memberID int64, at time.Time) domain.Conversation {
 	t.Helper()
 
 	c := domain.Conversation{ID: uuid.New(), Title: "T", CreatedAt: at, UpdatedAt: at}
-	if err := repo.CreateConversation(t.Context(), booksID, c); err != nil {
+	if err := repo.CreateConversation(t.Context(), booksID, memberID, c); err != nil {
 		t.Fatal(err)
 	}
 
@@ -31,10 +31,11 @@ func TestConversation(t *testing.T) {
 	pool := pgtest.New(t)
 	repo := postgres.NewRepository(pool)
 	ctx := t.Context()
-	a, b := pgtest.CreateBooks(t, pool), pgtest.CreateBooks(t, pool)
-	c1 := conversation(t, repo, a, t0)
-	c2 := conversation(t, repo, a, t0.Add(time.Hour))
-	c3 := conversation(t, repo, a, t0.Add(2*time.Hour))
+	ma, a := pgtest.CreateMember(t, pool)
+	mb, b := pgtest.CreateMember(t, pool)
+	c1 := conversation(t, repo, a, ma, t0)
+	c2 := conversation(t, repo, a, ma, t0.Add(time.Hour))
+	c3 := conversation(t, repo, a, ma, t0.Add(2*time.Hour))
 
 	var last time.Time
 	for i, role := range []domain.Role{domain.RoleUser, domain.RoleAssistant, domain.RoleUser} {
@@ -56,34 +57,34 @@ func TestConversation(t *testing.T) {
 		t.Fatalf("Messages = %+v, %v", msgs, err)
 	}
 
-	if got, err := repo.Conversation(ctx, a, c1.ID); err != nil || !got.UpdatedAt.Equal(last) {
+	if got, err := repo.Conversation(ctx, a, ma, c1.ID); err != nil || !got.UpdatedAt.Equal(last) {
 		t.Fatalf("Conversation = %+v, %v; want updated_at %v", got, err, last)
 	}
 
 	// c1 was touched at t0+3m, which is older than c2 and c3.
-	page, err := repo.Conversations(ctx, a, nil, 2)
+	page, err := repo.Conversations(ctx, a, ma, nil, 2)
 	if err != nil || len(page) != 2 || page[0].ID != c3.ID || page[1].ID != c2.ID {
 		t.Fatalf("first page = %+v, %v", page, err)
 	}
 
-	next, err := repo.Conversations(ctx, a, &app.ConversationKey{UpdatedAt: page[1].UpdatedAt, ID: page[1].ID}, 2)
+	next, err := repo.Conversations(ctx, a, ma, &app.ConversationKey{UpdatedAt: page[1].UpdatedAt, ID: page[1].ID}, 2)
 	if err != nil || len(next) != 1 || next[0].ID != c1.ID {
 		t.Fatalf("next page = %+v, %v", next, err)
 	}
 
-	if _, err := repo.Conversation(ctx, b, c1.ID); !errors.Is(err, domain.ErrConversationNotFound) {
+	if _, err := repo.Conversation(ctx, b, mb, c1.ID); !errors.Is(err, domain.ErrConversationNotFound) {
 		t.Fatalf("other book's Conversation error = %v", err)
 	}
 
-	if err := repo.DeleteConversation(ctx, b, c1.ID); !errors.Is(err, domain.ErrConversationNotFound) {
+	if err := repo.DeleteConversation(ctx, b, mb, c1.ID); !errors.Is(err, domain.ErrConversationNotFound) {
 		t.Fatalf("other book's DeleteConversation error = %v", err)
 	}
 
-	if err := repo.DeleteConversations(ctx, b); err != nil {
+	if err := repo.DeleteConversations(ctx, b, mb); err != nil {
 		t.Fatal(err)
 	}
 
-	if all, _ := repo.Conversations(ctx, a, nil, 10); len(all) != 3 {
+	if all, _ := repo.Conversations(ctx, a, ma, nil, 10); len(all) != 3 {
 		t.Fatalf("book A has %d conversations, want 3", len(all))
 	}
 }

@@ -33,26 +33,37 @@ func (q *Queries) AttachProposals(ctx context.Context, arg AttachProposalsParams
 }
 
 const claimProposal = `-- name: ClaimProposal :one
-UPDATE assistant_proposal
+UPDATE assistant_proposal p
 SET
     status = 'executing'
+FROM
+    assistant_conversation c
 WHERE
-    books_id = $1
-    AND id = $2
-    AND status = 'pending'
-    AND expires_at > $3
+    p.books_id = $1
+    AND p.id = $2
+    AND p.status = 'pending'
+    AND p.expires_at > $3
+    AND c.id = p.conversation_id
+    AND c.books_id = p.books_id
+    AND c.member_id = $4
 RETURNING
-    id, books_id, conversation_id, message_id, tool, arguments, preview, basis, status, result, created_at, expires_at, decided_at
+    p.id, p.books_id, p.conversation_id, p.message_id, p.tool, p.arguments, p.preview, p.basis, p.status, p.result, p.created_at, p.expires_at, p.decided_at
 `
 
 type ClaimProposalParams struct {
-	BooksID int64
-	ID      uuid.UUID
-	Now     time.Time
+	BooksID  int64
+	ID       uuid.UUID
+	Now      time.Time
+	MemberID int64
 }
 
 func (q *Queries) ClaimProposal(ctx context.Context, arg ClaimProposalParams) (AssistantProposal, error) {
-	row := q.db.QueryRow(ctx, claimProposal, arg.BooksID, arg.ID, arg.Now)
+	row := q.db.QueryRow(ctx, claimProposal,
+		arg.BooksID,
+		arg.ID,
+		arg.Now,
+		arg.MemberID,
+	)
 	var i AssistantProposal
 	err := row.Scan(
 		&i.ID,
@@ -248,21 +259,26 @@ func (q *Queries) ListProposals(ctx context.Context, arg ListProposalsParams) ([
 
 const proposalByID = `-- name: ProposalByID :one
 SELECT
-    id, books_id, conversation_id, message_id, tool, arguments, preview, basis, status, result, created_at, expires_at, decided_at
+    p.id, p.books_id, p.conversation_id, p.message_id, p.tool, p.arguments, p.preview, p.basis, p.status, p.result, p.created_at, p.expires_at, p.decided_at
 FROM
-    assistant_proposal
+    assistant_proposal p
+    JOIN assistant_conversation c ON c.id = p.conversation_id
+    AND c.books_id = p.books_id
 WHERE
-    books_id = $1
-    AND id = $2
+    p.books_id = $1
+    AND p.id = $2
+    AND c.member_id = $3
 `
 
 type ProposalByIDParams struct {
-	BooksID int64
-	ID      uuid.UUID
+	BooksID  int64
+	ID       uuid.UUID
+	MemberID int64
 }
 
+// HA28: a proposal belongs to the member of its conversation.
 func (q *Queries) ProposalByID(ctx context.Context, arg ProposalByIDParams) (AssistantProposal, error) {
-	row := q.db.QueryRow(ctx, proposalByID, arg.BooksID, arg.ID)
+	row := q.db.QueryRow(ctx, proposalByID, arg.BooksID, arg.ID, arg.MemberID)
 	var i AssistantProposal
 	err := row.Scan(
 		&i.ID,
@@ -283,25 +299,36 @@ func (q *Queries) ProposalByID(ctx context.Context, arg ProposalByIDParams) (Ass
 }
 
 const rejectProposal = `-- name: RejectProposal :execrows
-UPDATE assistant_proposal
+UPDATE assistant_proposal p
 SET
     status = 'rejected',
     decided_at = $1
+FROM
+    assistant_conversation c
 WHERE
-    books_id = $2
-    AND id = $3
-    AND status = 'pending'
-    AND expires_at > $1
+    p.books_id = $2
+    AND p.id = $3
+    AND p.status = 'pending'
+    AND p.expires_at > $1
+    AND c.id = p.conversation_id
+    AND c.books_id = p.books_id
+    AND c.member_id = $4
 `
 
 type RejectProposalParams struct {
-	Now     *time.Time
-	BooksID int64
-	ID      uuid.UUID
+	Now      *time.Time
+	BooksID  int64
+	ID       uuid.UUID
+	MemberID int64
 }
 
 func (q *Queries) RejectProposal(ctx context.Context, arg RejectProposalParams) (int64, error) {
-	result, err := q.db.Exec(ctx, rejectProposal, arg.Now, arg.BooksID, arg.ID)
+	result, err := q.db.Exec(ctx, rejectProposal,
+		arg.Now,
+		arg.BooksID,
+		arg.ID,
+		arg.MemberID,
+	)
 	if err != nil {
 		return 0, err
 	}

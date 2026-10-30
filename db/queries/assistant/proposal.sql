@@ -33,13 +33,17 @@ VALUES
     );
 
 -- name: ProposalByID :one
+-- HA28: a proposal belongs to the member of its conversation.
 SELECT
-    *
+    p.*
 FROM
-    assistant_proposal
+    assistant_proposal p
+    JOIN assistant_conversation c ON c.id = p.conversation_id
+    AND c.books_id = p.books_id
 WHERE
-    books_id = @books_id
-    AND id = @id;
+    p.books_id = @books_id
+    AND p.id = @id
+    AND c.member_id = @member_id;
 
 -- name: ListProposals :many
 SELECT
@@ -54,16 +58,21 @@ ORDER BY
     id;
 
 -- name: ClaimProposal :one
-UPDATE assistant_proposal
+UPDATE assistant_proposal p
 SET
     status = 'executing'
+FROM
+    assistant_conversation c
 WHERE
-    books_id = @books_id
-    AND id = @id
-    AND status = 'pending'
-    AND expires_at > @now
+    p.books_id = @books_id
+    AND p.id = @id
+    AND p.status = 'pending'
+    AND p.expires_at > @now
+    AND c.id = p.conversation_id
+    AND c.books_id = p.books_id
+    AND c.member_id = @member_id
 RETURNING
-    *;
+    p.*;
 
 -- name: DecideProposal :exec
 UPDATE assistant_proposal
@@ -76,15 +85,20 @@ WHERE
     AND id = @id;
 
 -- name: RejectProposal :execrows
-UPDATE assistant_proposal
+UPDATE assistant_proposal p
 SET
     status = 'rejected',
     decided_at = @now
+FROM
+    assistant_conversation c
 WHERE
-    books_id = @books_id
-    AND id = @id
-    AND status = 'pending'
-    AND expires_at > @now;
+    p.books_id = @books_id
+    AND p.id = @id
+    AND p.status = 'pending'
+    AND p.expires_at > @now
+    AND c.id = p.conversation_id
+    AND c.books_id = p.books_id
+    AND c.member_id = @member_id;
 
 -- name: AttachProposals :exec
 UPDATE assistant_proposal

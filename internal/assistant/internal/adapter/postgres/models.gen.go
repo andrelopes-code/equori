@@ -25,6 +25,7 @@ type AssistantConversation struct {
 	Title     string
 	CreatedAt time.Time
 	UpdatedAt time.Time
+	MemberID  int64
 }
 
 type AssistantMessage struct {

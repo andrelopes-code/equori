@@ -37,8 +37,8 @@ func (r *Repository) InsertProposal(ctx context.Context, booksID int64, p domain
 	})
 }
 
-func (r *Repository) Proposal(ctx context.Context, booksID int64, id uuid.UUID) (domain.Proposal, error) {
-	row, err := r.q.ProposalByID(ctx, ProposalByIDParams{BooksID: booksID, ID: id})
+func (r *Repository) Proposal(ctx context.Context, booksID, memberID int64, id uuid.UUID) (domain.Proposal, error) {
+	row, err := r.q.ProposalByID(ctx, ProposalByIDParams{BooksID: booksID, MemberID: memberID, ID: id})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return domain.Proposal{}, domain.ErrProposalNotFound
 	}
@@ -60,8 +60,8 @@ func (r *Repository) Proposals(ctx context.Context, booksID int64, conversationI
 	return out, nil
 }
 
-func (r *Repository) ClaimProposal(ctx context.Context, booksID int64, id uuid.UUID, now time.Time) (domain.Proposal, bool, error) {
-	row, err := r.q.ClaimProposal(ctx, ClaimProposalParams{BooksID: booksID, ID: id, Now: now})
+func (r *Repository) ClaimProposal(ctx context.Context, booksID, memberID int64, id uuid.UUID, now time.Time) (domain.Proposal, bool, error) {
+	row, err := r.q.ClaimProposal(ctx, ClaimProposalParams{BooksID: booksID, MemberID: memberID, ID: id, Now: now})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return domain.Proposal{}, false, nil
 	}
@@ -73,8 +73,8 @@ func (r *Repository) DecideProposal(ctx context.Context, booksID int64, id uuid.
 	return r.q.DecideProposal(ctx, DecideProposalParams{Status: string(status), Result: result, DecidedAt: &at, BooksID: booksID, ID: id})
 }
 
-func (r *Repository) RejectProposal(ctx context.Context, booksID int64, id uuid.UUID, now time.Time) (bool, error) {
-	n, err := r.q.RejectProposal(ctx, RejectProposalParams{Now: &now, BooksID: booksID, ID: id})
+func (r *Repository) RejectProposal(ctx context.Context, booksID, memberID int64, id uuid.UUID, now time.Time) (bool, error) {
+	n, err := r.q.RejectProposal(ctx, RejectProposalParams{Now: &now, BooksID: booksID, MemberID: memberID, ID: id})
 	return n > 0, err
 }
 

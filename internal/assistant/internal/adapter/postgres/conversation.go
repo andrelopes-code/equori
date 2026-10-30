@@ -28,14 +28,14 @@ func toMessage(row AssistantMessage) domain.Message {
 	return m
 }
 
-func (r *Repository) CreateConversation(ctx context.Context, booksID int64, c domain.Conversation) error {
+func (r *Repository) CreateConversation(ctx context.Context, booksID, memberID int64, c domain.Conversation) error {
 	return r.q.InsertConversation(ctx, InsertConversationParams{
-		ID: c.ID, BooksID: booksID, Title: c.Title, CreatedAt: c.CreatedAt, UpdatedAt: c.UpdatedAt,
+		ID: c.ID, BooksID: booksID, MemberID: memberID, Title: c.Title, CreatedAt: c.CreatedAt, UpdatedAt: c.UpdatedAt,
 	})
 }
 
-func (r *Repository) Conversation(ctx context.Context, booksID int64, id uuid.UUID) (domain.Conversation, error) {
-	row, err := r.q.ConversationByID(ctx, ConversationByIDParams{BooksID: booksID, ID: id})
+func (r *Repository) Conversation(ctx context.Context, booksID, memberID int64, id uuid.UUID) (domain.Conversation, error) {
+	row, err := r.q.ConversationByID(ctx, ConversationByIDParams{BooksID: booksID, MemberID: memberID, ID: id})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return domain.Conversation{}, domain.ErrConversationNotFound
 	}
@@ -43,8 +43,8 @@ func (r *Repository) Conversation(ctx context.Context, booksID int64, id uuid.UU
 	return toConversation(row), err
 }
 
-func (r *Repository) Conversations(ctx context.Context, booksID int64, after *app.ConversationKey, limit int) ([]domain.Conversation, error) {
-	arg := ListConversationsParams{BooksID: booksID, RowLimit: int32(limit)} //nolint:gosec // the caller bounds limit
+func (r *Repository) Conversations(ctx context.Context, booksID, memberID int64, after *app.ConversationKey, limit int) ([]domain.Conversation, error) {
+	arg := ListConversationsParams{BooksID: booksID, MemberID: memberID, RowLimit: int32(limit)} //nolint:gosec // the caller bounds limit
 	if after != nil {
 		arg.AfterUpdatedAt = &after.UpdatedAt
 		arg.AfterID = uuid.NullUUID{UUID: after.ID, Valid: true}
@@ -63,8 +63,8 @@ func (r *Repository) Conversations(ctx context.Context, booksID int64, after *ap
 	return out, nil
 }
 
-func (r *Repository) DeleteConversation(ctx context.Context, booksID int64, id uuid.UUID) error {
-	n, err := r.q.DeleteConversation(ctx, DeleteConversationParams{BooksID: booksID, ID: id})
+func (r *Repository) DeleteConversation(ctx context.Context, booksID, memberID int64, id uuid.UUID) error {
+	n, err := r.q.DeleteConversation(ctx, DeleteConversationParams{BooksID: booksID, MemberID: memberID, ID: id})
 	if err == nil && n == 0 {
 		return domain.ErrConversationNotFound
 	}
@@ -72,8 +72,8 @@ func (r *Repository) DeleteConversation(ctx context.Context, booksID int64, id u
 	return err
 }
 
-func (r *Repository) DeleteConversations(ctx context.Context, booksID int64) error {
-	return r.q.DeleteConversations(ctx, booksID)
+func (r *Repository) DeleteConversations(ctx context.Context, booksID, memberID int64) error {
+	return r.q.DeleteConversations(ctx, DeleteConversationsParams{BooksID: booksID, MemberID: memberID})
 }
 
 func (r *Repository) AppendMessage(ctx context.Context, booksID int64, m domain.Message) (domain.Message, error) {
