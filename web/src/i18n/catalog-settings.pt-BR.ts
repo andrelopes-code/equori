@@ -66,6 +66,8 @@ export const settingsPtBR: Record<keyof typeof settingsEn, string> = {
     "O dia que conta como hoje e o primeiro dia de cada mês.",
   "settings.timeZone.regionDefault": "Padrão da região ({zone})",
   "problem.time_zone_invalid": "O fuso horário não é um nome de fuso IANA.",
+  "problem.appearance_too_large":
+    "A aparência passa de 16 KiB. Remova temas salvos para guardá-la na conta.",
   "settings.language.exampleDescription":
     "A data de hoje e um número, como a região escolhida os escreve.",
   "settings.ledger.instrumentsTitle": "Cotações",

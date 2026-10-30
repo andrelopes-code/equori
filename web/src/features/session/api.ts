@@ -84,3 +84,24 @@ export function useChooseLanguage(): (language: Language) => void {
     update.mutate(language);
   };
 }
+
+export const appearanceSaveKey = ["me", "appearance", "save"] as const;
+
+export type AppearanceInput =
+  paths["/me/appearance"]["put"]["requestBody"]["content"]["application/json"];
+
+export function appearanceQuery(api: Client<paths>, memberID: number) {
+  return queryOptions({
+    queryKey: ["me", memberID, "appearance"] as const,
+    queryFn: async () => unwrap(await api.GET("/me/appearance")),
+  });
+}
+
+export function useSaveAppearance() {
+  const api = useApi();
+  return useMutation({
+    mutationKey: appearanceSaveKey,
+    mutationFn: async (input: AppearanceInput) =>
+      unwrap(await api.PUT("/me/appearance", { body: input })),
+  });
+}

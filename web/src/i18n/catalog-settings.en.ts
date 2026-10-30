@@ -63,6 +63,8 @@ export const settingsEn = {
     "The day that counts as today, and the first day of each month.",
   "settings.timeZone.regionDefault": "Region default ({zone})",
   "problem.time_zone_invalid": "The time zone is not an IANA time zone name.",
+  "problem.appearance_too_large":
+    "The appearance is over 16 KiB. Remove saved themes to store it in the account.",
   "settings.language.exampleDescription":
     "Today's date and a number, as the chosen region writes them.",
   "settings.ledger.instrumentsTitle": "Prices",

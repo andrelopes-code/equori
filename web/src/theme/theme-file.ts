@@ -39,6 +39,11 @@ export function writeSavedThemes(themes: readonly SavedTheme[]): void {
   saved.apply(JSON.stringify(themes.slice(0, MAX_SAVED)));
 }
 
+// Repaints the saved themes from storage after a write that bypassed `writeSavedThemes`.
+export function refreshSavedThemes(): void {
+  saved.apply(saved.read());
+}
+
 export function useSavedThemes(): [
   SavedTheme[],
   (themes: readonly SavedTheme[]) => void,

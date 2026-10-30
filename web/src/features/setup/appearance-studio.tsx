@@ -1,5 +1,6 @@
 import { Page, PageBody } from "@slotted/react/page";
 
+import { AppearanceSaveError } from "@/features/setup/appearance-save-error";
 import styles from "@/features/setup/appearance-studio.module.css";
 import { StudioCanvas } from "@/features/setup/studio-canvas";
 import { StudioHeader } from "@/features/setup/studio-header";
@@ -14,6 +15,9 @@ export function AppearanceStudio() {
   return (
     <Page width="full">
       <StudioHeader library={library} />
+
+      <AppearanceSaveError />
+
       <PageBody>
         <div className={styles.workspace}>
           <StudioPanel library={library} />
