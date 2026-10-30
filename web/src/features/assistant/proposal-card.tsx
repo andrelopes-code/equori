@@ -17,7 +17,6 @@ import {
   useConfirmProposal,
   useRejectProposal,
 } from "@/features/assistant/api";
-import { AssistantNote } from "@/features/assistant/assistant-note";
 import { catalogKey } from "@/features/assistant/catalog-key";
 import type { Decision } from "@/features/assistant/confirm-all";
 import { ProposalActions } from "@/features/assistant/proposal-actions";
@@ -54,7 +53,7 @@ interface ProposalCardProps {
   onDecided?: (id: string, decision: Decision) => void;
 }
 
-// Families read: card, badge, description-list, button, link. A write the assistant proposes: what
+// Families read: card, badge, typography, button, link. A write the assistant proposes: what
 // it does and to what, each value it changes, and the two decisions while it waits. A decided card
 // keeps its changes and says its outcome in the header.
 export function ProposalCard({
@@ -94,6 +93,12 @@ export function ProposalCard({
       : undefined;
   const opens = screen !== undefined && served({ href: screen });
   const hint = status === "stale" || status === "expired";
+  const failure = error === null ? undefined : errorText(error, t);
+  // What a decided card says under its changes: why it failed, or why to ask again.
+  const outcome =
+    detail ??
+    failure ??
+    (hint ? t(`assistant.proposal.hint.${status}`) : undefined);
 
   function handleConfirm() {
     if (busy) return;
@@ -110,7 +115,7 @@ export function ProposalCard({
   }
 
   return (
-    <Card size="sm" fill={pending ? "elevated" : "outline"}>
+    <Card size="md" fill={pending ? "elevated" : "outline"}>
       <CardHeader>
         <span className={styles.proposalTitle}>
           {/* Workaround for Slotted issue #55: inside a message the card's header takes the
@@ -134,22 +139,7 @@ export function ProposalCard({
       </CardHeader>
 
       <CardBody>
-        <span className={styles.proposalBody}>
-          <ProposalChanges changes={preview.changes} />
-          {destructive && pending && (
-            <AssistantNote tone="danger">
-              {t("assistant.proposal.destructive")}
-            </AssistantNote>
-          )}
-          {detail !== undefined && (
-            <AssistantNote tone="danger">{detail}</AssistantNote>
-          )}
-          {error !== null && (
-            <AssistantNote tone="danger" live>
-              {errorText(error, t)}
-            </AssistantNote>
-          )}
-        </span>
+        <ProposalChanges changes={preview.changes} />
       </CardBody>
 
       {pending && (
@@ -158,6 +148,7 @@ export function ProposalCard({
             ref={actions}
             expiresAt={shown.expires_at}
             destructive={destructive}
+            error={failure}
             busy={busy}
             confirming={confirm.isPending}
             rejecting={reject.isPending}
@@ -177,10 +168,14 @@ export function ProposalCard({
         </CardFooter>
       )}
 
-      {hint && (
+      {!pending && outcome !== undefined && (
         <CardFooter>
-          <Text size="xs" tone="muted">
-            {t(`assistant.proposal.hint.${status}`)}
+          <Text
+            size="sm"
+            tone={hint ? "muted" : "danger"}
+            role={failure === undefined ? undefined : "status"}
+          >
+            {outcome}
           </Text>
         </CardFooter>
       )}

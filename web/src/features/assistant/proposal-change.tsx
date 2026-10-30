@@ -1,44 +1,41 @@
-import { Glyph, Icon } from "@slotted/react/icon";
 import { Text } from "@slotted/react/typography";
 import { VisuallyHidden } from "@slotted/react/visually-hidden";
 
 import styles from "@/features/assistant/assistant-panel.module.css";
 import { useT } from "@/i18n/i18n-provider";
 
-// One changed value of a proposal: the value it replaces, struck and muted, then the new one.
-export function ProposalChange({
-  before,
-  after,
-}: {
+interface ProposalChangeProps {
   before: string | undefined;
   after: string | undefined;
-}) {
+}
+
+// One changed value of a proposal: the new value, then the value it replaces under it, struck and
+// muted. A value the proposal only removes is struck alone.
+export function ProposalChange({ before, after }: ProposalChangeProps) {
   const t = useT();
-  if (before === undefined || after === undefined) {
+
+  if (after === undefined) {
     return (
-      <Text
-        size="sm"
-        weight="medium"
-        tone={before === undefined ? undefined : "muted"}
-        className={before === undefined ? undefined : styles.removed}
-      >
-        {after ?? before}
+      <Text size="sm" tone="muted" className={styles.removed}>
+        {before}
       </Text>
     );
   }
+
   return (
     <span className={styles.change}>
-      <Text size="sm" tone="muted" className={styles.removed}>
-        <VisuallyHidden>{t("assistant.change.before")}</VisuallyHidden>
-        {before}
-      </Text>
-      <Icon size="text" directional>
-        <Glyph name="arrow-right" />
-      </Icon>
       <Text size="sm" weight="medium">
-        <VisuallyHidden>{t("assistant.change.after")}</VisuallyHidden>
+        {before !== undefined && (
+          <VisuallyHidden>{t("assistant.change.after")}</VisuallyHidden>
+        )}
         {after}
       </Text>
+      {before !== undefined && (
+        <Text size="xs" tone="muted" className={styles.removed}>
+          <VisuallyHidden>{t("assistant.change.before")}</VisuallyHidden>
+          {before}
+        </Text>
+      )}
     </span>
   );
 }

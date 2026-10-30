@@ -120,17 +120,28 @@
     min-inline-size: 0;
   }
 
-  .proposalBody {
+  /* One field per row: its name at the start, its value at the end of the card. */
+  .changes {
     display: grid;
     gap: var(--slotted-space-3);
+    margin: 0;
   }
 
-  /* The values a proposal writes read at the size of the card's other text; a field sits on its
-     value and apart from the next pair. */
-  .changes {
-    --slotted-description-list-font-size: var(--slotted-font-size-sm);
-    --slotted-description-list-stack-gap: 0;
-    --slotted-description-list-row-gap: var(--slotted-space-3);
+  .field {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--slotted-space-4);
+  }
+
+  .fieldValue {
+    margin: 0;
+    min-inline-size: 0;
+    text-align: end;
+  }
+
+  .proposalMeta {
+    display: grid;
   }
 
   /* The expiry at the start, the two decisions at the end; they wrap under it in a narrow pane. */
@@ -149,24 +160,10 @@
     margin-inline-start: auto;
   }
 
-  .note {
-    display: flex;
-    align-items: flex-start;
-    gap: var(--slotted-space-2);
-  }
-
-  /* The mark stands on the note's first line. */
-  .noteMark {
-    display: inline-flex;
-    align-items: center;
-    block-size: 1lh;
-  }
-
+  /* The new value over the one it replaces, both at the end of the row. */
   .change {
-    display: inline-flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--slotted-space-2);
+    display: grid;
+    justify-items: end;
   }
 
   .removed {

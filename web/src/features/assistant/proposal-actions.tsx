@@ -8,6 +8,8 @@ import { useAppLocale, useT } from "@/i18n/i18n-provider";
 interface ProposalActionsProps {
   expiresAt: string;
   destructive: boolean;
+  // Why the last decision did not reach the server.
+  error: string | undefined;
   busy: boolean;
   confirming: boolean;
   rejecting: boolean;
@@ -17,10 +19,11 @@ interface ProposalActionsProps {
 }
 
 // Families read: button, typography. The two decisions of a waiting proposal, after the hour it
-// expires.
+// expires, whether it can be undone and why the last decision failed.
 export function ProposalActions({
   expiresAt,
   destructive,
+  error,
   busy,
   confirming,
   rejecting,
@@ -37,9 +40,21 @@ export function ProposalActions({
 
   return (
     <div className={styles.proposalActions} ref={ref}>
-      <Text size="xs" tone="muted">
-        {t("assistant.proposal.expires", { time })}
-      </Text>
+      <span className={styles.proposalMeta}>
+        {error !== undefined && (
+          <Text size="xs" tone="danger" role="status">
+            {error}
+          </Text>
+        )}
+        {destructive && (
+          <Text size="xs" tone="danger">
+            {t("assistant.proposal.destructive")}
+          </Text>
+        )}
+        <Text size="xs" tone="muted">
+          {t("assistant.proposal.expires", { time })}
+        </Text>
+      </span>
 
       <span className={styles.proposalButtons}>
         <Button

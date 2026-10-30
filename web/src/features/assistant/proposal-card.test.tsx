@@ -199,14 +199,27 @@ describe("ProposalCard", () => {
     }
   });
 
-  // P14: the fields stand in two columns; the family folds them to one below its own threshold.
-  it("lays the fields in two columns (P14)", () => {
+  // P14 (amended 2026-10-30): each field is one row of the list, its name then its value.
+  it("lays each field on a row of its own (P14)", () => {
     renderWithProviders(<ProposalCard proposal={pending} />, {
       fetch: fakeApi({}),
     });
+
+    const rows = [...document.querySelectorAll("dl > div")];
+
     expect(
-      document.querySelector('[data-ui="description-list"]'),
-    ).toHaveAttribute("data-columns", "2");
+      rows.map((row) => [...row.children].map((cell) => cell.tagName)),
+    ).toEqual(pending.preview.changes.map(() => ["DT", "DD"]));
+    expect(rows[0]?.querySelector("dt")).toHaveTextContent("Amount");
+
+    // The value a change writes reads first; the one it replaces follows it.
+    const value = rows[0]?.querySelector("dd")?.textContent ?? "";
+
+    const after = value.indexOf(catalogEn["assistant.change.after"]);
+    const before = value.indexOf(catalogEn["assistant.change.before"]);
+
+    expect(after).toBeGreaterThanOrEqual(0);
+    expect(after).toBeLessThan(before);
   });
 
   // P16: an executed proposal whose result names a record links to its screen.

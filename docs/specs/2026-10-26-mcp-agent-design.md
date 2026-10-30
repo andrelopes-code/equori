@@ -208,7 +208,7 @@ P9: from 1200 px the panel is the `AppShellAside` pane (`asideMode="inline"`) be
 | Rule | Content |
 |---|---|
 | P13 | An answer with proposals scrolls the thread so the last card's actions are visible. |
-| P14 | Fields render in two columns from 400 px of card width. |
+| P14 | Each field is one row: its name at the start, its value at the end of the card. A changed value shows the new value over the one it replaces, struck. Amendment of 2026-10-30 (owner review): replaces "two columns from 400 px of card width", which stacked every field under its name in the pane. |
 | P15 | A pending card shows its expiry time and turns `expired` at that time without a click. |
 | P16 | An executed proposal whose result names an entity with a screen in the navigation map shows "Abrir" to it. |
 | P17 | Two or more pending proposals in one answer show "Confirmar todas" after the last card; it confirms them in order and stops at the first failure. |
