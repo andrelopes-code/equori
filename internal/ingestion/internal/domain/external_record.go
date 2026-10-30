@@ -56,11 +56,12 @@ type ExternalRecord struct {
 	UnappliedChange string
 }
 
-// Why a record waits for review (A100, A102); the first two are the zones of Assign.
+// Why a record waits for review (A100, A102, A142); the first two are the zones of Assign.
 const (
 	ReviewAmbiguous = string(ZoneAmbiguous)
 	ReviewProbable  = string(ZoneProbable)
 	ReviewChanged   = "changed"
+	ReviewRepeated  = "repeated"
 )
 
 // ExternalStatusOf is the aggregator status of a normalized line.

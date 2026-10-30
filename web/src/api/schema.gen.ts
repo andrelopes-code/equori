@@ -3886,10 +3886,10 @@ export interface components {
             /** @description A change the aggregator reported that the ledger did not take (P6 amendment A36). */
             unapplied_change?: string;
             /**
-             * @description Why the record waits for review (A100, A102).
+             * @description Why the record waits for review (A100, A102, A142).
              * @enum {string}
              */
-            review_reason?: "ambiguous" | "probable" | "changed";
+            review_reason?: "ambiguous" | "probable" | "changed" | "repeated";
             /** @description The candidates as matching scored them, best first (A99, A100). */
             scored_candidates?: components["schemas"]["ScoredCandidate"][];
         };

@@ -931,3 +931,7 @@ The scenarios of `docs/specs/2026-10-29-card-billing-certainty-design.md`: a rev
 ### S182–S183 Review keeps up with the ledger (A140)
 
 The scenarios of `docs/specs/2026-10-29-review-reopen-design.md`: the review offers an entry recorded after the import (S182); a discarded line can be reopened and matched (S183).
+
+### S185 Repeated card payment (A142)
+
+The scenario of `docs/specs/2026-10-30-repeated-card-payment-design.md`: a card payment the source returns under a second id waits for review instead of paying the card twice (S185).

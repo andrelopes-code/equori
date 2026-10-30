@@ -6651,8 +6651,8 @@ components:
           description: A change the aggregator reported that the ledger did not take (P6 amendment A36).
         review_reason:
           type: string
-          enum: [ambiguous, probable, changed]
-          description: Why the record waits for review (A100, A102).
+          enum: [ambiguous, probable, changed, repeated]
+          description: Why the record waits for review (A100, A102, A142).
         scored_candidates:
           type: array
           description: The candidates as matching scored them, best first (A99, A100).

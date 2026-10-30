@@ -486,6 +486,7 @@ classDiagram
 | Aggregator facts | An aggregator record keeps the line's status (`PENDING`, `POSTED`), bill due date, installment, category, balance after and card line type, to detect later changes (A36, A88), and describes a change the ledger did not take (`unapplied_change`). |
 | Card line type | Pluggy `operationType` `PAGAMENTO_FATURA` is a card `payment` booked against `transfers_in_transit` until the paying account's line pairs with it; `ESTORNO` is a `credit`; a classification rule action types a payment for sources without a type. A later type rewrites a line recorded as a credit unless it changed since its import (A88). |
 | Provisional line | A pending card line without a bill and a posted line of the same amount within 3 days in one read are one line; the pending one is dropped or withdrawn (A91). |
+| Repeated payment | A new card credit with the amount of a recorded credit within 3 days, one of the two a payment, waits for review as `repeated` (A142). |
 | Card sync start | A card's first sync reads from the cycle that holds `sync_from` and opens a card without an opening balance with the total of the bill before it (A93). |
 | Installment plan key | A card installment line belongs to the plan keyed by card, purchase date, installment count and description without the installment mark (A40). |
 | Isolation | Integrations, connections, mappings and API keys belong to one user; the same item may be connected by two users (A45). |

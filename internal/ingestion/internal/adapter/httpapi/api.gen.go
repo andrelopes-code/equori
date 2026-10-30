@@ -126,6 +126,7 @@ const (
 	Ambiguous ExternalRecordReviewReason = "ambiguous"
 	Changed   ExternalRecordReviewReason = "changed"
 	Probable  ExternalRecordReviewReason = "probable"
+	Repeated  ExternalRecordReviewReason = "repeated"
 )
 
 // Valid indicates whether the value is a known member of the ExternalRecordReviewReason enum.
@@ -136,6 +137,8 @@ func (e ExternalRecordReviewReason) Valid() bool {
 	case Changed:
 		return true
 	case Probable:
+		return true
+	case Repeated:
 		return true
 	default:
 		return false
@@ -488,7 +491,7 @@ type ExternalRecord struct {
 	ExternalId  *string              `json:"external_id,omitempty"`
 	Id          openapi_types.UUID   `json:"id"`
 
-	// ReviewReason Why the record waits for review (A100, A102).
+	// ReviewReason Why the record waits for review (A100, A102, A142).
 	ReviewReason *ExternalRecordReviewReason `json:"review_reason,omitempty"`
 
 	// ScoredCandidates The candidates as matching scored them, best first (A99, A100).
@@ -500,7 +503,7 @@ type ExternalRecord struct {
 	UnappliedChange *string `json:"unapplied_change,omitempty"`
 }
 
-// ExternalRecordReviewReason Why the record waits for review (A100, A102).
+// ExternalRecordReviewReason Why the record waits for review (A100, A102, A142).
 type ExternalRecordReviewReason string
 
 // ExternalRecordState defines model for ExternalRecord.State.

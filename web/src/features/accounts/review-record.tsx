@@ -25,6 +25,7 @@ const reasonWords: Record<
   ambiguous: "batch.reason.ambiguous",
   probable: "batch.reason.probable",
   changed: "batch.reason.changed",
+  repeated: "batch.reason.repeated",
 };
 
 // The line waiting for review, the transactions it may confirm best first, and the three ways

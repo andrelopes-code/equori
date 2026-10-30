@@ -328,8 +328,21 @@ func (s *Service) importRecords(ctx context.Context, batch *domain.Batch, curren
 	if err != nil {
 		return err
 	}
+
+	var repeated map[int]bool
+	if sync {
+		if repeated, err = s.repeats(ctx, batch, scoring, assigned); err != nil {
+			return err
+		}
+	}
+
 	for i, a := range assigned {
 		rec, line := scoring[i].rec, scoring[i].line
+		if repeated[i] {
+			// A142: the source reports a recorded payment under a second id.
+			rec.State, rec.ReviewReason = domain.StateNeedsReview, domain.ReviewRepeated
+			continue
+		}
 		switch a.Zone {
 		case domain.ZoneNew:
 			creates, created = append(creates, NewLine{RecordID: rec.ID, Line: line}), append(created, rec)
@@ -541,6 +554,75 @@ func (s *Service) unlinked(ctx context.Context, batch *domain.Batch, claimed []C
 		return nil, nil
 	}
 	return s.ledger.UnlinkedPostings(ctx, batch.UserID, batch.AccountID, from.AddDate(0, 0, -domain.MatchHardLimit), to.AddDate(0, 0, domain.MatchHardLimit))
+}
+
+// repeats returns the lines matching would create that repeat a payment the account records
+// (A142). The recorded lines are the account's aggregator records that hold a transaction and
+// the lines this import links. Only card lines carry the payment kind, so a bank account
+// repeats nothing.
+func (s *Service) repeats(
+	ctx context.Context,
+	batch *domain.Batch,
+	lines []scoredLine,
+	assigned []domain.Assignment,
+) (map[int]bool, error) {
+	var (
+		fresh, recorded []domain.RepeatLine
+		at              []int
+		from, to        time.Time
+	)
+	for i, a := range assigned {
+		l := domain.RepeatLine{
+			ExternalID: lines[i].rec.ExternalID,
+			Date:       lines[i].line.Date,
+			Amount:     lines[i].line.Amount,
+			Kind:       lines[i].line.Kind,
+		}
+		switch {
+		case a.Zone == domain.ZoneLink:
+			recorded = append(recorded, l)
+		case a.Zone == domain.ZoneNew && l.Amount > 0:
+			fresh, at = append(fresh, l), append(at, i)
+			if from.IsZero() || l.Date.Before(from) {
+				from = l.Date
+			}
+			if l.Date.After(to) {
+				to = l.Date
+			}
+		}
+	}
+	if len(fresh) == 0 {
+		return nil, nil
+	}
+
+	stored, err := s.repo.SyncedRecords(
+		ctx,
+		batch.UserID,
+		batch.AccountID,
+		from.AddDate(0, 0, -domain.RepeatDays),
+		to.AddDate(0, 0, domain.RepeatDays),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, rec := range stored {
+		if rec.TransactionID != uuid.Nil {
+			recorded = append(recorded, domain.RepeatLine{
+				ExternalID: rec.ExternalID,
+				Date:       rec.Date,
+				Amount:     rec.Amount,
+				Kind:       rec.LineKind,
+			})
+		}
+	}
+
+	out := map[int]bool{}
+	for k := range domain.Repeats(fresh, recorded) {
+		out[at[k]] = true
+	}
+
+	return out, nil
 }
 
 // scoredLine is a line that matching decides: link, review or create.
