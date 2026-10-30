@@ -17,6 +17,7 @@ import { ProblemError, errorText, fieldErrors } from "@/api/problem";
 import { useCreateCard } from "@/features/cards/api";
 import { useT } from "@/i18n/i18n-provider";
 import { FormLayout } from "@/ui/form-layout";
+import { FormRow } from "@/ui/form-row";
 import { useStableCallback } from "@/ui/use-stable-callback";
 import { useOverlayOpen } from "@/ui/use-overlay-open";
 
@@ -80,34 +81,36 @@ export function AddCardDialog({
                 <InlineMessage tone="danger">{summary}</InlineMessage>
               )}
 
-              <Field invalid={errors.holder !== undefined} required>
-                <FieldLabel>{t("accountForm.holder")}</FieldLabel>
-                <TextField
-                  value={holder}
-                  maxLength={120}
-                  onChange={(event) => {
-                    setHolder(event.target.value);
-                  }}
-                />
-                {errors.holder !== undefined && (
-                  <FieldError>{errors.holder}</FieldError>
-                )}
-              </Field>
+              <FormRow>
+                <Field invalid={errors.holder !== undefined} required>
+                  <FieldLabel>{t("accountForm.holder")}</FieldLabel>
+                  <TextField
+                    value={holder}
+                    maxLength={120}
+                    onChange={(event) => {
+                      setHolder(event.target.value);
+                    }}
+                  />
+                  {errors.holder !== undefined && (
+                    <FieldError>{errors.holder}</FieldError>
+                  )}
+                </Field>
 
-              <Field invalid={errors.last_four !== undefined} required>
-                <FieldLabel>{t("accountForm.lastFour")}</FieldLabel>
-                <TextField
-                  value={lastFour}
-                  inputMode="numeric"
-                  maxLength={4}
-                  onChange={(event) => {
-                    setLastFour(event.target.value.replace(/\D/gu, ""));
-                  }}
-                />
-                {errors.last_four !== undefined && (
-                  <FieldError>{errors.last_four}</FieldError>
-                )}
-              </Field>
+                <Field invalid={errors.last_four !== undefined} required>
+                  <FieldLabel>{t("accountForm.lastFour")}</FieldLabel>
+                  <TextField
+                    value={lastFour}
+                    inputMode="numeric"
+                    maxLength={4}
+                    onChange={(event) => {
+                      setLastFour(event.target.value.replace(/\D/gu, ""));
+                    }}
+                  />
+                  {errors.last_four !== undefined && (
+                    <FieldError>{errors.last_four}</FieldError>
+                  )}
+                </Field>
+              </FormRow>
 
               <Checkbox checked={virtual} onCheckedChange={setVirtual}>
                 {t("accountForm.virtual")}

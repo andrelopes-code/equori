@@ -23,6 +23,7 @@ import { ChoiceSelect } from "@/ui/choice-select";
 import { DateInput } from "@/ui/date-input";
 import widths from "@/ui/field-width.module.css";
 import { FormLayout } from "@/ui/form-layout";
+import { FormRow } from "@/ui/form-row";
 import { MoneyInput } from "@/ui/money-input";
 import { useStableCallback } from "@/ui/use-stable-callback";
 import { useOverlayOpen } from "@/ui/use-overlay-open";
@@ -118,18 +119,29 @@ export function InstallmentPurchaseDialog({
                 <InlineMessage tone="danger">{error}</InlineMessage>
               )}
 
-              <Field required>
-                <FieldLabel>{t("installments.total")}</FieldLabel>
-                <MoneyInput
-                  size="field"
-                  className={widths.medium}
-                  value={total}
-                  onChange={setTotal}
-                  currency={account.currency}
-                  scale={scale}
-                  sign="expense"
-                />
-              </Field>
+              <FormRow>
+                <Field required>
+                  <FieldLabel>{t("installments.total")}</FieldLabel>
+                  <MoneyInput
+                    size="field"
+                    value={total}
+                    onChange={setTotal}
+                    currency={account.currency}
+                    scale={scale}
+                    sign="expense"
+                  />
+                </Field>
+
+                <Field required>
+                  <FieldLabel>{t("installments.date")}</FieldLabel>
+                  <DateInput
+                    name="date"
+                    className={widths.fill}
+                    value={date}
+                    onChange={setDate}
+                  />
+                </Field>
+              </FormRow>
 
               <Field>
                 <FieldLabel>{t("installments.description")}</FieldLabel>
@@ -153,52 +165,47 @@ export function InstallmentPurchaseDialog({
                 />
               </Field>
 
-              <Field required>
-                <FieldLabel>{t("installments.count")}</FieldLabel>
-                <ChoiceSelect
-                  className={widths.short}
-                  label={t("installments.count")}
-                  choices={counts.map((n) => ({
-                    value: String(n),
-                    label: String(n),
-                  }))}
-                  value={String(count)}
-                  multiple={false}
-                  onChange={(next) => {
-                    if (typeof next === "string") setCount(Number(next));
-                  }}
-                />
-                {total > 0 && (
-                  <FieldDescription live="polite">
-                    {t("installments.summary", {
-                      count,
-                      each: money(each),
-                      total: money(total + interest),
-                    })}
+              <FormRow>
+                <Field required>
+                  <FieldLabel>{t("installments.count")}</FieldLabel>
+                  <ChoiceSelect
+                    label={t("installments.count")}
+                    choices={counts.map((n) => ({
+                      value: String(n),
+                      label: String(n),
+                    }))}
+                    value={String(count)}
+                    multiple={false}
+                    onChange={(next) => {
+                      if (typeof next === "string") setCount(Number(next));
+                    }}
+                  />
+                  {total > 0 && (
+                    <FieldDescription live="polite">
+                      {t("installments.summary", {
+                        count,
+                        each: money(each),
+                        total: money(total + interest),
+                      })}
+                    </FieldDescription>
+                  )}
+                </Field>
+
+                <Field>
+                  <FieldLabel>{t("installments.interest")}</FieldLabel>
+                  <MoneyInput
+                    size="field"
+                    value={interest}
+                    onChange={setInterest}
+                    currency={account.currency}
+                    scale={scale}
+                    sign="neutral"
+                  />
+                  <FieldDescription>
+                    {t("installments.interestHint")}
                   </FieldDescription>
-                )}
-              </Field>
-
-              <Field>
-                <FieldLabel>{t("installments.interest")}</FieldLabel>
-                <MoneyInput
-                  size="field"
-                  className={widths.medium}
-                  value={interest}
-                  onChange={setInterest}
-                  currency={account.currency}
-                  scale={scale}
-                  sign="neutral"
-                />
-                <FieldDescription>
-                  {t("installments.interestHint")}
-                </FieldDescription>
-              </Field>
-
-              <Field required>
-                <FieldLabel>{t("installments.date")}</FieldLabel>
-                <DateInput name="date" value={date} onChange={setDate} />
-              </Field>
+                </Field>
+              </FormRow>
             </FormLayout>
           </form>
         </DialogBody>

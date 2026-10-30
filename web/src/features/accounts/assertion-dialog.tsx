@@ -24,6 +24,7 @@ import { useToday } from "@/i18n/today";
 import { DateInput } from "@/ui/date-input";
 import widths from "@/ui/field-width.module.css";
 import { FormLayout } from "@/ui/form-layout";
+import { FormRow } from "@/ui/form-row";
 import { MoneyInput } from "@/ui/money-input";
 import { useOverlayOpen } from "@/ui/use-overlay-open";
 import { useStableCallback } from "@/ui/use-stable-callback";
@@ -93,46 +94,48 @@ export function AssertionDialog({
             }}
           >
             <FormLayout>
-              <Field required invalid={errors.date !== undefined}>
-                <FieldLabel>{t("reconciliation.date")}</FieldLabel>
-                <DateInput
-                  name="date"
-                  value={date}
-                  onChange={setDate}
-                  max={today}
-                />
-                {errors.date !== undefined && (
-                  <FieldError>{errors.date}</FieldError>
-                )}
-              </Field>
-
-              <Field
-                required
-                invalid={errors.amount !== undefined || summary !== null}
-              >
-                <FieldLabel>
-                  {t(
-                    owed
-                      ? "reconciliation.amountOwed"
-                      : "reconciliation.amount",
+              <FormRow>
+                <Field required invalid={errors.date !== undefined}>
+                  <FieldLabel>{t("reconciliation.date")}</FieldLabel>
+                  <DateInput
+                    className={widths.fill}
+                    name="date"
+                    value={date}
+                    onChange={setDate}
+                    max={today}
+                  />
+                  {errors.date !== undefined && (
+                    <FieldError>{errors.date}</FieldError>
                   )}
-                </FieldLabel>
-                <MoneyInput
-                  size="field"
-                  className={widths.medium}
-                  value={amount}
-                  onChange={setAmount}
-                  currency={account.currency}
-                  scale={scale}
-                  sign="neutral"
-                />
-                <FieldDescription>
-                  {t("reconciliation.amountHint")}
-                </FieldDescription>
-                {amountError !== undefined && (
-                  <FieldError>{amountError}</FieldError>
-                )}
-              </Field>
+                </Field>
+
+                <Field
+                  required
+                  invalid={errors.amount !== undefined || summary !== null}
+                >
+                  <FieldLabel>
+                    {t(
+                      owed
+                        ? "reconciliation.amountOwed"
+                        : "reconciliation.amount",
+                    )}
+                  </FieldLabel>
+                  <MoneyInput
+                    size="field"
+                    value={amount}
+                    onChange={setAmount}
+                    currency={account.currency}
+                    scale={scale}
+                    sign="neutral"
+                  />
+                  <FieldDescription>
+                    {t("reconciliation.amountHint")}
+                  </FieldDescription>
+                  {amountError !== undefined && (
+                    <FieldError>{amountError}</FieldError>
+                  )}
+                </Field>
+              </FormRow>
             </FormLayout>
           </form>
         </DialogBody>
