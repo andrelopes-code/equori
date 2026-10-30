@@ -23,6 +23,14 @@ const currentDestinationRule = `
 }
 `;
 
+// Workaround for Slotted issue #57: a question's legend was drawn at 14 px, a section title's
+// size; it takes a field label's 13 px. FormSection restores 14 px.
+const questionLegendRule = `
+[data-ui="field-group"] > [data-part="legend"] {
+  font-size: var(--slotted-control-font-size-md);
+}
+`;
+
 // A light palette dims the page less: the material already sets it apart.
 const paletteScrimRule = `
 &[data-slotted-scheme="light"] [data-ui="dialog"]:has([data-ui="command-palette"]) {
@@ -206,7 +214,7 @@ export default extendTheme(
       "--slotted-field-group-message-gap": "var(--slotted-space-4)",
       // Workaround for Slotted issue #57: a question's legend stood 1.25rem above its control,
       // a section's distance; it stands where a field's label does. FormSection restores 1.25rem.
-      "--slotted-field-group-content-gap": "var(--slotted-field-row-gap)",
+      "--slotted-field-group-content-gap": "var(--slotted-space-3)",
       "--slotted-top-navigation-color": "var(--slotted-text-muted)",
       "--slotted-top-navigation-current-color": "var(--slotted-text)",
       "--slotted-top-navigation-current-background": "transparent",
@@ -254,6 +262,7 @@ export default extendTheme(
     rules: [
       summaryRule,
       currentDestinationRule,
+      questionLegendRule,
       paletteScrimRule,
       sheetSlideRule,
       tooltipArrowFadeRule,

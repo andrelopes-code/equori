@@ -647,14 +647,10 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "card.limitSaved": "Limite salvo",
   "card.ruleVersions": "Versões do ciclo da fatura",
   "card.limitVersions": "Versões do limite",
-  "card.nonBusiness": "Em dias não úteis",
   "card.noRule": "Nenhum ciclo da fatura ainda.",
   "card.closingBefore": "{days} dias antes do vencimento",
   "card.closingOn": "Dia {day}",
   "card.dueOn": "Dia {day}",
-  "card.adjustments": "Fechamento: {closing}; vencimento: {due}",
-  "card.simulation": "Em que fatura uma compra entra",
-  "card.purchaseOn": "Compra em",
   "card.placement":
     "Entra na fatura de {month}, que fecha em {closing} e vence em {due}.",
   "card.placementNoRule":

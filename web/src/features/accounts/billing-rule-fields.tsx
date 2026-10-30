@@ -55,12 +55,16 @@ export function BillingRuleFields({
   value,
   onChange,
   errors,
+  fill = false,
 }: {
   value: BillingFields;
   onChange: (next: BillingFields) => void;
   errors: Record<string, string>;
+  // In a dialog every control fills its column (docs/contributing/forms.md, F15).
+  fill?: boolean;
 }) {
   const t = useT();
+  const medium = fill ? undefined : widths.medium;
   const set = (patch: Partial<BillingFields>) => {
     onChange({ ...value, ...patch });
   };
@@ -90,7 +94,7 @@ export function BillingRuleFields({
       <FormRow>
         {value.closingMode === "day" ? (
           <Field
-            className={widths.medium}
+            className={medium}
             invalid={errors.closing_day !== undefined}
             required
           >
@@ -115,7 +119,7 @@ export function BillingRuleFields({
           </Field>
         ) : (
           <Field
-            className={widths.medium}
+            className={medium}
             invalid={errors.closing_days_before_due !== undefined}
             required
           >
@@ -143,7 +147,7 @@ export function BillingRuleFields({
           </Field>
         )}
         <Field
-          className={widths.medium}
+          className={medium}
           invalid={errors.due_day !== undefined}
           required
         >
@@ -164,7 +168,7 @@ export function BillingRuleFields({
         </Field>
       </FormRow>
       <FormRow>
-        <Field required className={widths.medium}>
+        <Field required className={medium}>
           <FieldLabel>{t("accountForm.closingAdjustment")}</FieldLabel>
           <ChoiceSelect
             label={t("accountForm.closingAdjustment")}
@@ -178,7 +182,7 @@ export function BillingRuleFields({
             }}
           />
         </Field>
-        <Field required className={widths.medium}>
+        <Field required className={medium}>
           <FieldLabel>{t("accountForm.dueAdjustment")}</FieldLabel>
           <ChoiceSelect
             label={t("accountForm.dueAdjustment")}

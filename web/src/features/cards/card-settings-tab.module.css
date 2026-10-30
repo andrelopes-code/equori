@@ -1,0 +1,20 @@
+@layer app {
+  .frame {
+    container-type: inline-size;
+  }
+
+  .sections {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--slotted-space-8);
+    align-items: start;
+  }
+
+  /* The cycle's table holds four columns and the limit's two, so the cycle takes two thirds once
+     both fit beside each other. */
+  @container (min-width: 60rem) {
+    .sections {
+      grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    }
+  }
+}

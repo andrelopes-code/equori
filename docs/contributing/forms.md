@@ -87,6 +87,7 @@ A field that is optional and does not change what the record is (a parent accoun
 
 - A form page has `PageBack`, a title that names the record ("New schedule"), and a subheading that says what the record does.
 - The actions are the page's footer: the primary action names the result ("Create schedule"), the secondary actions stand before it, and the way out is a ghost button before them: "Cancel" when the form keeps nothing, "Discard" when it keeps a draft that the button also clears (FM-05).
+- A form opened from a section of a record page (a new version of a limit or a billing cycle) is a dialog. It never opens inline in a card across the page's measure, where its fields stand short and pinned to the start edge.
 - A form of more than eight fields, or one with an aside, is a page, never a dialog. A dialog form follows F4 to F9 inside the dialog's body; F15 replaces F1 to F3 there.
 - A dialog's measure is set by its `size` in the theme: `sm` 32rem, for a confirmation or a form of one or two fields; `md` 42rem, for a form; `lg` 48rem.
 
@@ -99,7 +100,7 @@ A field that is optional and does not change what the record is (a parent accoun
 | the amount of `MoneyInput size="panel"`    | `4xl`, the one large figure of an entry form (F4)       |
 
 - No heading, figure or text of another size stands among the fields. A figure the form computes goes in the aside, drawn by `FigureGrid` and `FigureCard`.
-- A legend is the label's size in semibold; the family draws it.
+- A question's legend is the label's size in semibold, drawn by the theme (Slotted issue #57); a section's legend is one step larger (`--slotted-control-font-size-lg`, `FormSection`).
 - A summary drawn inside a field (the kind chosen, the account a value belongs to) uses the description's size, `xs` muted, or the control's: never `Text size="sm"` between the two.
 
 ## F12 · Text is not cut

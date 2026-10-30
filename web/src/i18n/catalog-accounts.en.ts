@@ -648,14 +648,10 @@ export const accountsEn = {
   "card.limitSaved": "Limit saved",
   "card.ruleVersions": "Billing cycle versions",
   "card.limitVersions": "Limit versions",
-  "card.nonBusiness": "On non-business days",
   "card.noRule": "No billing cycle yet.",
   "card.closingBefore": "{days} days before the due date",
   "card.closingOn": "Day {day}",
   "card.dueOn": "Day {day}",
-  "card.adjustments": "Closing: {closing}; due: {due}",
-  "card.simulation": "Where a purchase is billed",
-  "card.purchaseOn": "Purchase on",
   "card.placement":
     "Billed on the {month} statement, which closes on {closing} and is due on {due}.",
   "card.placementNoRule":

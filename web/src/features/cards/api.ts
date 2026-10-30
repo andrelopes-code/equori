@@ -190,23 +190,6 @@ export function planQuery(api: Client<paths>, planId: string) {
   });
 }
 
-export function placementQuery(
-  api: Client<paths>,
-  accountId: string,
-  date: string,
-) {
-  return queryOptions({
-    queryKey: [...accountKeys.detail(accountId), "placement", date] as const,
-    queryFn: async () =>
-      unwrap(
-        await api.GET("/accounts/{id}/statement-placement", {
-          params: { path: { id: accountId }, query: { date } },
-        }),
-      ),
-    retry: false,
-  });
-}
-
 function useApiMutation<V, R>(fn: (api: Client<paths>, vars: V) => Promise<R>) {
   const api = useApi();
   return useMutation({ mutationFn: (vars: V) => fn(api, vars) });

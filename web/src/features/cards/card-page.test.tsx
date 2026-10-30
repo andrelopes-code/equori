@@ -2,6 +2,7 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
+import { adjustmentLabel } from "@/features/accounts";
 import { catalogEn } from "@/i18n/catalog.en";
 import {
   accountFixtures,
@@ -266,16 +267,19 @@ describe("CardPage", () => {
     await userEvent.click(
       await screen.findByRole("button", { name: catalogEn["card.newRule"] }),
     );
-    const rule = await screen.findByRole("form", {
+    const rule = await screen.findByRole("dialog", {
       name: catalogEn["card.newRule"],
     });
     await userEvent.click(
       within(rule).getByRole("button", { name: catalogEn["detail.save"] }),
     );
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
     await userEvent.click(
       screen.getByRole("button", { name: catalogEn["card.newLimit"] }),
     );
-    const limit = await screen.findByRole("form", {
+    const limit = await screen.findByRole("dialog", {
       name: catalogEn["card.newLimit"],
     });
     await userEvent.type(
@@ -309,17 +313,35 @@ describe("CardPage", () => {
     });
   });
 
-  it("says where a purchase on a day is billed", async () => {
+  it("reads each cycle day with its rule for non-business days", async () => {
     await renderApp(`/cards/${cardID}?tab=settings`, { fetch: api() });
+    const table = await screen.findByRole("table", {
+      name: catalogEn["card.ruleVersions"],
+    });
+    const month = await within(table).findByRole("rowheader", {
+      name: "January 2026",
+    });
+    const cells = within(month.closest("tr") as HTMLElement).getAllByRole(
+      "cell",
+    );
+
+    expect(cells.map((cell) => cell.textContent)).toEqual([
+      words("card.closingOn", { day: "5" }) + catalogEn[adjustmentLabel.none],
+      words("card.dueOn", { day: "12" }) + catalogEn[adjustmentLabel.following],
+    ]);
+  });
+
+  it("draws no simulation of where a purchase is billed", async () => {
+    await renderApp(`/cards/${cardID}?tab=settings`, { fetch: api() });
+    await screen.findByRole("button", { name: catalogEn["card.newRule"] });
     expect(
-      await screen.findByText(
-        words("card.placement", {
-          month: "November 2026",
-          closing: "11/05/2026",
-          due: "11/12/2026",
-        }),
-      ),
-    ).toBeInTheDocument();
+      screen
+        .getAllByRole("heading", { level: 2 })
+        .map((heading) => heading.textContent),
+    ).toEqual([
+      catalogEn["accountForm.billing"],
+      catalogEn["accountForm.limitGroup"],
+    ]);
   });
 
   it("asks for a billing cycle when the card has none", async () => {
@@ -337,10 +359,7 @@ describe("CardPage", () => {
       await screen.findByRole("button", { name: catalogEn["card.setRule"] }),
     );
     expect(
-      await screen.findByRole("form", { name: catalogEn["card.newRule"] }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(catalogEn["card.placementNoRule"]),
+      await screen.findByRole("dialog", { name: catalogEn["card.newRule"] }),
     ).toBeInTheDocument();
   });
 
