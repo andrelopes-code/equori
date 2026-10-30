@@ -128,16 +128,6 @@ test("a raised toast and the palette are materials over the page", () => {
   );
 });
 
-// The field's own row gap is a fallback, not a token: a reference to it resolved to nothing
-// and the family fell back to 1.25rem.
-test("a question's legend stands as close to its control as a field's label", () => {
-  assert.match(
-    css,
-    /--slotted-field-group-content-gap:\s*var\(--slotted-space-3\)/,
-  );
-  assert.match(css, /--slotted-space-3:\s*0\.375rem/);
-});
-
 test("a question's legend is a field label's size", () => {
   assert.match(
     css,
@@ -148,6 +138,6 @@ test("a question's legend is a field label's size", () => {
 test("a tag keeps its height and stands its text 2 px further from each side", () => {
   assert.match(
     css,
-    /\[data-ui="tag"\]\[data-size="sm"\] > \[data-part="body"\] \{\s*padding-inline: var\(--slotted-space-4\);/,
+    /\[data-ui="tag"\]\[data-size="sm"\] \{\s*--slotted-tag-inset-inline: var\(--slotted-space-4\);/,
   );
 });

@@ -44,13 +44,6 @@ export function AttachmentCard({
     <Attachment
       file={{ name: item.file_name, type: item.media_type, size: item.size }}
       loading={removing}
-      // Workaround for Slotted issue #48: a press on the picture ends its click on the card or on
-      // the picture, not on the trigger stretched over them. A click on a button or link (the
-      // trigger, remove) is theirs.
-      onClick={(event) => {
-        const target = event.target as Element;
-        if (target.closest("button, a") === null) onView?.();
-      }}
       {...(onRemove === undefined ? {} : { onRemove })}
     >
       {image ? (

@@ -22,7 +22,6 @@ import { formatDate, shiftDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { DateInput } from "@/ui/date-input";
-import widths from "@/ui/field-width.module.css";
 import { FormLayout } from "@/ui/form-layout";
 import { FormRow } from "@/ui/form-row";
 import { MoneyInput } from "@/ui/money-input";
@@ -115,7 +114,6 @@ export function TermsDialog({
                 <Field invalid={errors.effective_from !== undefined} required>
                   <FieldLabel>{t("schedule.effectiveFrom")}</FieldLabel>
                   <DateInput
-                    className={widths.fill}
                     name="effective_from"
                     value={from}
                     min={shiftDate(after, 1)}

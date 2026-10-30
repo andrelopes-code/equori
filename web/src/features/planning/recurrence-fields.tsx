@@ -89,7 +89,6 @@ export function RecurrenceFields({
   const t = useT();
   const medium = fill ? undefined : widths.medium;
   const short = fill ? undefined : widths.short;
-  const date = fill ? widths.fill : undefined;
   const [locale] = useAppLocale();
   const mode = modeOf(value);
   const end = endOf(value);
@@ -270,7 +269,6 @@ export function RecurrenceFields({
         <FieldLabel>{t("recurrence.start")}</FieldLabel>
         <DateInput
           name="start"
-          className={date}
           value={value.start}
           shortcuts={false}
           onChange={(start) => {
@@ -309,7 +307,6 @@ export function RecurrenceFields({
           <FieldLabel>{t("recurrence.untilField")}</FieldLabel>
           <DateInput
             name="until"
-            className={date}
             value={value.until}
             min={value.start}
             shortcuts={false}

@@ -20,7 +20,6 @@ import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { ChoiceSelect } from "@/ui/choice-select";
 import { DateInput } from "@/ui/date-input";
-import widths from "@/ui/field-width.module.css";
 import { FormLayout } from "@/ui/form-layout";
 import { FormRow } from "@/ui/form-row";
 import { MoneyInput } from "@/ui/money-input";
@@ -145,12 +144,7 @@ export function FinanceDialog({
 
               <Field required>
                 <FieldLabel>{t("finance.date")}</FieldLabel>
-                <DateInput
-                  name="date"
-                  className={widths.fill}
-                  value={date}
-                  onChange={setDate}
-                />
+                <DateInput name="date" value={date} onChange={setDate} />
               </Field>
             </FormLayout>
           </form>

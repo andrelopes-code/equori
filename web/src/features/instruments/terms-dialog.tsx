@@ -33,7 +33,6 @@ import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { ChoiceSelect } from "@/ui/choice-select";
 import { DateInput } from "@/ui/date-input";
-import widths from "@/ui/field-width.module.css";
 import { FormLayout } from "@/ui/form-layout";
 import { FormRow } from "@/ui/form-row";
 import { MoneyInput } from "@/ui/money-input";
@@ -164,7 +163,6 @@ export function TermsDialog({
                 <Field invalid={errors.issued_on !== undefined} required>
                   <FieldLabel>{t("terms.issuedOn")}</FieldLabel>
                   <DateInput
-                    className={widths.fill}
                     name="issued_on"
                     value={issued}
                     shortcuts={false}
@@ -178,7 +176,6 @@ export function TermsDialog({
                 <Field invalid={errors.matures_on !== undefined} required>
                   <FieldLabel>{t("terms.maturesOn")}</FieldLabel>
                   <DateInput
-                    className={widths.fill}
                     name="matures_on"
                     value={matures}
                     shortcuts={false}

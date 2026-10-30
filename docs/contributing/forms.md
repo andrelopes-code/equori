@@ -145,7 +145,7 @@ A control of the application's own keeps every state of the family it stands bes
 
 A dialog's body is already a bounded measure (F10), so the column of F1, the pairing of F2 and the width steps of F3 do not apply inside it. Each dialog is laid out from its own fields and checked on screen at its size; no fixed grid answers every dialog (owner review, 2026-10-30; Slotted issue #54).
 
-- Every control fills the space it stands in: no width step inside a dialog. A `DateInput` takes the `fill` class of `ui/field-width.module.css`.
+- Every control fills the space it stands in: no width step inside a dialog.
 - An `lg` dialog is wider than the 40rem column, so its `FormLayout` sets `fill` and the column takes the body. A component that renders several fields (`RecurrenceFields`) takes `fill` to drop its width steps.
 - Two fields whose answers are short (an amount, a date, a count) share a `FormRow` when the pair reads in the order the reader answers: the total beside the minimum, the closing date beside the due date.
 - A field whose answer is long or carries actions inside its control (a picker of records, free text, an amount with presets) takes the whole row.

@@ -19,7 +19,6 @@ import { useOpenDispute, useResolveDispute } from "@/features/cards/api";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { DateInput } from "@/ui/date-input";
-import widths from "@/ui/field-width.module.css";
 import { FormLayout } from "@/ui/form-layout";
 import { useStableCallback } from "@/ui/use-stable-callback";
 import { useOverlayOpen } from "@/ui/use-overlay-open";
@@ -121,12 +120,7 @@ export function DisputeDialog({
                 <FieldLabel>
                   {t(resolving ? "dispute.resolvedOn" : "dispute.openedOn")}
                 </FieldLabel>
-                <DateInput
-                  name="date"
-                  className={widths.fill}
-                  value={date}
-                  onChange={setDate}
-                />
+                <DateInput name="date" value={date} onChange={setDate} />
               </Field>
             </FormLayout>
           </form>

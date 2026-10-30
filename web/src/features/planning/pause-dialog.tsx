@@ -19,7 +19,6 @@ import { shiftDate } from "@/i18n/format";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { DateInput } from "@/ui/date-input";
-import widths from "@/ui/field-width.module.css";
 import { FormLayout } from "@/ui/form-layout";
 import { FormRow } from "@/ui/form-row";
 import { useOverlayOpen } from "@/ui/use-overlay-open";
@@ -66,7 +65,6 @@ export function PauseDialog({
               <Field required>
                 <FieldLabel>{t("schedule.pauseFrom")}</FieldLabel>
                 <DateInput
-                  className={widths.fill}
                   name="from"
                   value={from}
                   shortcuts={false}
@@ -80,7 +78,6 @@ export function PauseDialog({
               <Field required>
                 <FieldLabel>{t("schedule.pauseTo")}</FieldLabel>
                 <DateInput
-                  className={widths.fill}
                   name="to"
                   value={to}
                   min={from}

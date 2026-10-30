@@ -194,8 +194,9 @@
     --slotted-icon-arrow-down: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 5v14'/%3E%3Cpath d='m19 12-7 7-7-7'/%3E%3C/svg%3E");
     --slotted-icon-mic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 19v3'/%3E%3Cpath d='M19 10v2a7 7 0 0 1-14 0v-2'/%3E%3Crect x='9' y='2' width='6' height='13' rx='3'/%3E%3C/svg%3E");
     --slotted-icon-pencil: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cg transform='translate(0 0.001)'%3E%3Cpath d='M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z'/%3E%3Cpath d='m15 5 4 4'/%3E%3C/g%3E%3C/svg%3E");
+    --slotted-icon-download: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 15V3'/%3E%3Cpath d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'/%3E%3Cpath d='m7 10 5 5 5-5'/%3E%3C/svg%3E");
+    --slotted-icon-rotate-cw: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8'/%3E%3Cpath d='M21 3v5h-5'/%3E%3C/svg%3E");
     --slotted-field-group-message-gap: var(--slotted-space-4);
-    --slotted-field-group-content-gap: var(--slotted-space-3);
     --slotted-top-navigation-color: var(--slotted-text-muted);
     --slotted-top-navigation-current-color: var(--slotted-text);
     --slotted-top-navigation-current-background: transparent;
@@ -1894,24 +1895,16 @@
       animation: slotted-tooltip-fade var(--slotted-duration-medium) var(--slotted-easing-enter);
     }
 
-    [data-ui="tag"] > [data-part="body"] {
-      padding-inline: calc(var(--slotted-space-4) + var(--slotted-space-1));
+    [data-ui="tag"] {
+      --slotted-tag-inset-inline: calc(var(--slotted-space-4) + var(--slotted-space-1));
     }
 
-    [data-ui="tag"][data-size="sm"] > [data-part="body"] {
-      padding-inline: var(--slotted-space-4);
+    [data-ui="tag"][data-size="sm"] {
+      --slotted-tag-inset-inline: var(--slotted-space-4);
     }
 
-    [data-ui="tag"][data-size="lg"] > [data-part="body"] {
-      padding-inline: calc(var(--slotted-space-5) + var(--slotted-space-1));
-    }
-
-    [data-ui="tag"] > [data-part="body"]:has(+ [data-part="remove"]) {
-      padding-inline-end: var(--slotted-space-2);
-    }
-
-    [data-ui="tag"][data-size="lg"] > [data-part="body"]:has(+ [data-part="remove"]) {
-      padding-inline-end: var(--slotted-space-3);
+    [data-ui="tag"][data-size="lg"] {
+      --slotted-tag-inset-inline: calc(var(--slotted-space-5) + var(--slotted-space-1));
     }
   }
 }

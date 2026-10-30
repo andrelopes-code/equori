@@ -118,9 +118,7 @@ export function ProposalCard({
     <Card size="md" fill={pending ? "elevated" : "outline"}>
       <CardHeader>
         <span className={styles.proposalTitle}>
-          {/* Workaround for Slotted issue #55: inside a message the card's header takes the
-              message's muted colour, so the title states its own. */}
-          <Text size="sm" weight="semibold" tone="default">
+          <Text size="sm" weight="semibold">
             {actionKey === undefined ? preview.action : t(actionKey)}
           </Text>
           {preview.target !== undefined && (

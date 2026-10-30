@@ -17,7 +17,6 @@ import type { components } from "@/api/schema.gen";
 import { useSetStatementFacts } from "@/features/cards/api";
 import { useT } from "@/i18n/i18n-provider";
 import { DateInput } from "@/ui/date-input";
-import widths from "@/ui/field-width.module.css";
 import { FormLayout } from "@/ui/form-layout";
 import { FormRow } from "@/ui/form-row";
 import { MoneyInput } from "@/ui/money-input";
@@ -125,7 +124,6 @@ export function FactsDialog({
                   <FieldLabel>{t("facts.closing")}</FieldLabel>
                   <DateInput
                     name="closing_date"
-                    className={widths.fill}
                     value={closing}
                     onChange={setClosing}
                     shortcuts={false}
@@ -136,7 +134,6 @@ export function FactsDialog({
                   <FieldLabel>{t("facts.due")}</FieldLabel>
                   <DateInput
                     name="due_date"
-                    className={widths.fill}
                     value={due}
                     onChange={setDue}
                     shortcuts={false}

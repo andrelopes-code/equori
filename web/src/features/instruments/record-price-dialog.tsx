@@ -20,7 +20,6 @@ import { parseRate } from "@/features/instruments/rate";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { DateInput } from "@/ui/date-input";
-import widths from "@/ui/field-width.module.css";
 import { FormLayout } from "@/ui/form-layout";
 import { FormRow } from "@/ui/form-row";
 import { useOverlayOpen } from "@/ui/use-overlay-open";
@@ -103,12 +102,7 @@ export function RecordPriceDialog({
               <FormRow>
                 <Field invalid={errors.date !== undefined} required>
                   <FieldLabel>{t("instrument.price.date")}</FieldLabel>
-                  <DateInput
-                    name="date"
-                    className={widths.fill}
-                    value={date}
-                    onChange={setDate}
-                  />
+                  <DateInput name="date" value={date} onChange={setDate} />
                   {errors.date !== undefined && (
                     <FieldError>{errors.date}</FieldError>
                   )}

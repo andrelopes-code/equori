@@ -24,7 +24,6 @@ import { formatMonthTitle } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { DateInput } from "@/ui/date-input";
-import widths from "@/ui/field-width.module.css";
 import { FormLayout } from "@/ui/form-layout";
 import { MoneyInput } from "@/ui/money-input";
 import { useStableCallback } from "@/ui/use-stable-callback";
@@ -174,12 +173,7 @@ export function PayDialog({
 
               <Field required>
                 <FieldLabel>{t("pay.date")}</FieldLabel>
-                <DateInput
-                  name="date"
-                  className={widths.fill}
-                  value={date}
-                  onChange={setDate}
-                />
+                <DateInput name="date" value={date} onChange={setDate} />
               </Field>
             </FormLayout>
           </form>

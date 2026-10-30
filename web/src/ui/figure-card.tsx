@@ -12,7 +12,6 @@ import {
 } from "@slotted/react/stat-card";
 import type { ReactNode } from "react";
 
-import styles from "@/ui/figure-card.module.css";
 import { MoneyValue } from "@/ui/money-value";
 import type { MoneyAmount } from "@/ui/money-value";
 
@@ -53,8 +52,7 @@ export function FigureCard({
       status={!loading && value === undefined ? "empty" : "ready"}
       goodWhen={goodWhen}
       formatOptions={{ maximumFractionDigits: 1 }}
-      className={styles.card}
-      data-attention={attention}
+      {...(attention === undefined ? {} : { attention })}
       {...(delta === undefined ? {} : { delta })}
     >
       <StatCardHeader>

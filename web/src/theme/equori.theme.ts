@@ -58,28 +58,19 @@ const darkNeutral = (l: number) => ({
   c: { scale: 0.22, max: 0.08 },
 });
 
-// Workaround for Slotted issue #58: no token sets a tag's inline inset. The text stood 6 px
-// inside the border of a small tag and read cramped; each size gains 2 px, the height stays.
-// Beside the remove button the body keeps the family's end padding, its gap.
+// A tag's text stands 2 px further from its border than the family's default at each size; the
+// height stays.
 const tagInsetRule = `
-[data-ui="tag"] > [data-part="body"] {
-  padding-inline: calc(var(--slotted-space-4) + var(--slotted-space-1));
+[data-ui="tag"] {
+  --slotted-tag-inset-inline: calc(var(--slotted-space-4) + var(--slotted-space-1));
 }
 
-[data-ui="tag"][data-size="sm"] > [data-part="body"] {
-  padding-inline: var(--slotted-space-4);
+[data-ui="tag"][data-size="sm"] {
+  --slotted-tag-inset-inline: var(--slotted-space-4);
 }
 
-[data-ui="tag"][data-size="lg"] > [data-part="body"] {
-  padding-inline: calc(var(--slotted-space-5) + var(--slotted-space-1));
-}
-
-[data-ui="tag"] > [data-part="body"]:has(+ [data-part="remove"]) {
-  padding-inline-end: var(--slotted-space-2);
-}
-
-[data-ui="tag"][data-size="lg"] > [data-part="body"]:has(+ [data-part="remove"]) {
-  padding-inline-end: var(--slotted-space-3);
+[data-ui="tag"][data-size="lg"] {
+  --slotted-tag-inset-inline: calc(var(--slotted-space-5) + var(--slotted-space-1));
 }
 `;
 
@@ -237,9 +228,6 @@ export default extendTheme(
       // Workaround for Slotted issue #38: at 0.25rem a description or an error touched the
       // control above it.
       "--slotted-field-group-message-gap": "var(--slotted-space-4)",
-      // Workaround for Slotted issue #57: a question's legend stood 1.25rem above its control,
-      // a section's distance; it stands where a field's label does. FormSection restores 1.25rem.
-      "--slotted-field-group-content-gap": "var(--slotted-space-3)",
       "--slotted-top-navigation-color": "var(--slotted-text-muted)",
       "--slotted-top-navigation-current-color": "var(--slotted-text)",
       "--slotted-top-navigation-current-background": "transparent",

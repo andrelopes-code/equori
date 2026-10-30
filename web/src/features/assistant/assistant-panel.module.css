@@ -122,21 +122,11 @@
 
   /* One field per row: its name at the start, its value at the end of the card. */
   .changes {
-    display: grid;
-    gap: var(--slotted-space-3);
-    margin: 0;
-  }
-
-  .field {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: var(--slotted-space-4);
+    row-gap: var(--slotted-space-3);
   }
 
   .fieldValue {
-    margin: 0;
-    min-inline-size: 0;
+    justify-content: end;
     text-align: end;
   }
 
