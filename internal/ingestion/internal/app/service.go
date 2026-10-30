@@ -48,6 +48,10 @@ type Repository interface {
 	// LockAccountImports serializes the imports of one account until unlock runs.
 	LockAccountImports(ctx context.Context, accountID uuid.UUID) (unlock func(), err error)
 
+	// SyncInterval returns the stored interval; false without a row.
+	SyncInterval(ctx context.Context) (int, bool, error)
+	SetSyncInterval(ctx context.Context, minutes int) error
+
 	// InsertIntegration returns a *domain.FieldError on name when the book already has the name.
 	InsertIntegration(ctx context.Context, i domain.Integration) (domain.Integration, error)
 	Integration(ctx context.Context, booksID int64, id uuid.UUID) (domain.Integration, error)
@@ -116,6 +120,7 @@ type Service struct {
 	today func(context.Context) time.Time
 	// inBooks gives each scheduled sync the context of its book (BK20).
 	inBooks func(ctx context.Context, booksID int64) (context.Context, error)
+	admins  Admins
 }
 
 // Integrations are what aggregator integrations need; the zero value leaves them unavailable.
@@ -127,10 +132,11 @@ type Integrations struct {
 	Today func(context.Context) time.Time
 	// InBooks gives each scheduled sync the context of its book (BK20).
 	InBooks func(ctx context.Context, booksID int64) (context.Context, error)
+	Admins  Admins
 }
 
 func NewService(repo Repository, ledger Ledger, in Integrations) *Service {
-	return &Service{repo: repo, ledger: ledger, box: in.Box, aggs: in.Aggregators, now: in.Now, today: in.Today, inBooks: in.InBooks}
+	return &Service{repo: repo, ledger: ledger, box: in.Box, aggs: in.Aggregators, now: in.Now, today: in.Today, inBooks: in.InBooks, admins: in.Admins}
 }
 
 // FollowPairing points the records that a ledger pairing moved to the kept transaction

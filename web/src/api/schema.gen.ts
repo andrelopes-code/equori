@@ -2487,6 +2487,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/ingestion/sync-schedule": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** How often the scheduler checks the bank connections of the instance (ADR 029 BK23). */
+        get: operations["getSyncSchedule"];
+        /** Change the sync interval of the instance; admin only. */
+        put: operations["setSyncSchedule"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/import-batches": {
         parameters: {
             query?: never;
@@ -3951,6 +3969,10 @@ export interface components {
             items: components["schemas"]["ExternalRecord"][];
             /** @description Absent on the last page. */
             next_cursor?: string;
+        };
+        SyncSchedule: {
+            /** Format: int32 */
+            minutes: number;
         };
         CsvProfile: {
             /** @enum {string} */
@@ -10066,6 +10088,54 @@ export interface operations {
             400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
+        };
+    };
+    getSyncSchedule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The interval; 60 minutes while none is stored. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SyncSchedule"];
+                };
+            };
+            401: components["responses"]["Problem"];
+        };
+    };
+    setSyncSchedule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SyncSchedule"];
+            };
+        };
+        responses: {
+            /** @description Stored. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SyncSchedule"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
         };
     };
     listImportBatches: {

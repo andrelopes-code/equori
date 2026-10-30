@@ -691,6 +691,11 @@ type SyncResult struct {
 	Connection Connection    `json:"connection"`
 }
 
+// SyncSchedule defines model for SyncSchedule.
+type SyncSchedule struct {
+	Minutes int32 `json:"minutes"`
+}
+
 // UnconfirmedEntry defines model for UnconfirmedEntry.
 type UnconfirmedEntry struct {
 	Amount Money `json:"amount"`
@@ -774,6 +779,9 @@ type MapExternalAccountJSONRequestBody = AccountMappingInput
 // ResolveExternalRecordJSONRequestBody defines body for ResolveExternalRecord for application/json ContentType.
 type ResolveExternalRecordJSONRequestBody = RecordResolution
 
+// SetSyncScheduleJSONRequestBody defines body for SetSyncSchedule for application/json ContentType.
+type SetSyncScheduleJSONRequestBody = SyncSchedule
+
 // CreateIntegrationJSONRequestBody defines body for CreateIntegration for application/json ContentType.
 type CreateIntegrationJSONRequestBody = IntegrationInput
 
@@ -830,6 +838,12 @@ type ServerInterface interface {
 	// ListBatchRecords The external records of a batch, in file order.
 	// (GET /import-batches/{id}/records)
 	ListBatchRecords(w http.ResponseWriter, r *http.Request, id ID, params ListBatchRecordsParams)
+	// GetSyncSchedule How often the scheduler checks the bank connections of the instance (ADR 029 BK23).
+	// (GET /ingestion/sync-schedule)
+	GetSyncSchedule(w http.ResponseWriter, r *http.Request)
+	// SetSyncSchedule Change the sync interval of the instance; admin only.
+	// (PUT /ingestion/sync-schedule)
+	SetSyncSchedule(w http.ResponseWriter, r *http.Request)
 	// ListIntegrations Aggregator integrations, by name.
 	// (GET /integrations)
 	ListIntegrations(w http.ResponseWriter, r *http.Request, params ListIntegrationsParams)
@@ -1339,6 +1353,34 @@ func (siw *ServerInterfaceWrapper) ListBatchRecords(w http.ResponseWriter, r *ht
 	handler.ServeHTTP(w, r)
 }
 
+// GetSyncSchedule operation middleware
+func (siw *ServerInterfaceWrapper) GetSyncSchedule(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetSyncSchedule(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SetSyncSchedule operation middleware
+func (siw *ServerInterfaceWrapper) SetSyncSchedule(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SetSyncSchedule(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListIntegrations operation middleware
 func (siw *ServerInterfaceWrapper) ListIntegrations(w http.ResponseWriter, r *http.Request) {
 
@@ -1597,6 +1639,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 		ErrorHandlerFunc:   options.ErrorHandlerFunc,
 	}
 
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/ingestion/sync-schedule", wrapper.GetSyncSchedule)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/ingestion/sync-schedule", wrapper.SetSyncSchedule)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/import-batches", wrapper.ListImportBatches)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/csv-profile", wrapper.GetCsvProfile)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/accounts/{id}/csv-profile", wrapper.SaveCsvProfile)
@@ -2671,6 +2715,109 @@ func (response ListBatchRecords404ApplicationProblemPlusJSONResponse) VisitListB
 	return err
 }
 
+type GetSyncScheduleRequestObject struct {
+}
+
+type GetSyncScheduleResponseObject interface {
+	VisitGetSyncScheduleResponse(w http.ResponseWriter) error
+}
+
+type GetSyncSchedule200JSONResponse SyncSchedule
+
+func (response GetSyncSchedule200JSONResponse) VisitGetSyncScheduleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetSyncSchedule401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetSyncSchedule401ApplicationProblemPlusJSONResponse) VisitGetSyncScheduleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetSyncScheduleRequestObject struct {
+	Body *SetSyncScheduleJSONRequestBody
+}
+
+type SetSyncScheduleResponseObject interface {
+	VisitSetSyncScheduleResponse(w http.ResponseWriter) error
+}
+
+type SetSyncSchedule200JSONResponse SyncSchedule
+
+func (response SetSyncSchedule200JSONResponse) VisitSetSyncScheduleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetSyncSchedule400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response SetSyncSchedule400ApplicationProblemPlusJSONResponse) VisitSetSyncScheduleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetSyncSchedule401ApplicationProblemPlusJSONResponse Problem
+
+func (response SetSyncSchedule401ApplicationProblemPlusJSONResponse) VisitSetSyncScheduleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetSyncSchedule403ApplicationProblemPlusJSONResponse Problem
+
+func (response SetSyncSchedule403ApplicationProblemPlusJSONResponse) VisitSetSyncScheduleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListIntegrationsRequestObject struct {
 	Params ListIntegrationsParams
 }
@@ -3084,6 +3231,12 @@ type StrictServerInterface interface {
 	// ListBatchRecords The external records of a batch, in file order.
 	// (GET /import-batches/{id}/records)
 	ListBatchRecords(ctx context.Context, request ListBatchRecordsRequestObject) (ListBatchRecordsResponseObject, error)
+	// GetSyncSchedule How often the scheduler checks the bank connections of the instance (ADR 029 BK23).
+	// (GET /ingestion/sync-schedule)
+	GetSyncSchedule(ctx context.Context, request GetSyncScheduleRequestObject) (GetSyncScheduleResponseObject, error)
+	// SetSyncSchedule Change the sync interval of the instance; admin only.
+	// (PUT /ingestion/sync-schedule)
+	SetSyncSchedule(ctx context.Context, request SetSyncScheduleRequestObject) (SetSyncScheduleResponseObject, error)
 	// ListIntegrations Aggregator integrations, by name.
 	// (GET /integrations)
 	ListIntegrations(ctx context.Context, request ListIntegrationsRequestObject) (ListIntegrationsResponseObject, error)
@@ -3582,6 +3735,61 @@ func (sh *strictHandler) ListBatchRecords(w http.ResponseWriter, r *http.Request
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListBatchRecordsResponseObject); ok {
 		if err := validResponse.VisitListBatchRecordsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetSyncSchedule operation middleware
+func (sh *strictHandler) GetSyncSchedule(w http.ResponseWriter, r *http.Request) {
+	var request GetSyncScheduleRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetSyncSchedule(ctx, request.(GetSyncScheduleRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetSyncSchedule")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetSyncScheduleResponseObject); ok {
+		if err := validResponse.VisitGetSyncScheduleResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SetSyncSchedule operation middleware
+func (sh *strictHandler) SetSyncSchedule(w http.ResponseWriter, r *http.Request) {
+	var request SetSyncScheduleRequestObject
+
+	var body SetSyncScheduleJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SetSyncSchedule(ctx, request.(SetSyncScheduleRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SetSyncSchedule")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SetSyncScheduleResponseObject); ok {
+		if err := validResponse.VisitSetSyncScheduleResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

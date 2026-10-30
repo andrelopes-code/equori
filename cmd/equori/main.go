@@ -187,7 +187,7 @@ func serve(parent context.Context) error {
 		defer close(schedulerDone)
 
 		if cfg.SecretKey != "" {
-			app.Ingestion.RunScheduler(ctx, cfg.SyncInterval)
+			app.Ingestion.RunScheduler(ctx)
 		}
 	}()
 	// P7 amendment A53: the occurrence horizon moves with the clock.

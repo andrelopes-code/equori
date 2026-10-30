@@ -49,13 +49,19 @@ type Config struct {
 	Clock clock.Clock
 	// InBooks gives each scheduled sync the context of its book (BK20).
 	InBooks func(ctx context.Context, booksID int64) (context.Context, error)
+	Admins  Admins
+}
+
+// Admins tells whether a member holds the admin instance role; identity implements it.
+type Admins interface {
+	IsAdmin(ctx context.Context, memberID int64) (bool, error)
 }
 
 // AggregatorIDs lists the aggregators this build offers, in ascending order.
 func AggregatorIDs() []string { return []string{"pluggy"} }
 
 func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, l *ledger.Module, c *classification.Module, cfg Config, log *slog.Logger) (*Module, error) {
-	in := app.Integrations{Now: cfg.Clock.Now, Today: cfg.Clock.Today, InBooks: cfg.InBooks}
+	in := app.Integrations{Now: cfg.Clock.Now, Today: cfg.Clock.Today, InBooks: cfg.InBooks, Admins: cfg.Admins}
 	if cfg.SecretKey != "" {
 		var previous []byte
 		if cfg.PreviousSecretKey != "" {
@@ -128,16 +134,23 @@ func (m *Module) Tick(ctx context.Context) {
 	}
 }
 
-// RunScheduler ticks now and then every interval until ctx ends.
-func (m *Module) RunScheduler(ctx context.Context, interval time.Duration) {
-	t := time.NewTicker(interval)
-	defer t.Stop()
-
+// RunScheduler ticks now and then after each stored interval until ctx ends (BK23).
+func (m *Module) RunScheduler(ctx context.Context) {
 	for {
 		m.Tick(ctx)
 
+		minutes, err := m.svc.SyncInterval(ctx)
+		if err != nil {
+			m.log.Error("read sync interval", "error", err.Error())
+
+			minutes = app.DefaultSyncIntervalMinutes
+		}
+
+		t := time.NewTimer(time.Duration(minutes) * time.Minute)
 		select {
 		case <-ctx.Done():
+			t.Stop()
+
 			return
 		case <-t.C:
 		}

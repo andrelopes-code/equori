@@ -1,10 +1,14 @@
 package ingestion_test
 
 import (
+	"errors"
 	"net/http"
 	"testing"
 
+	"github.com/jackc/pgx/v5/pgconn"
+
 	"github.com/andrelopes-code/equori/internal/apitest"
+	"github.com/andrelopes-code/equori/internal/platform/postgres/pgtest"
 )
 
 func TestSchemaInvariants(t *testing.T) {
@@ -151,6 +155,33 @@ func TestConnectionSchemaInvariants(t *testing.T) {
 	for _, tc := range tests {
 		if tc.err == nil {
 			t.Errorf("%s: accepted", tc.name)
+		}
+	}
+}
+
+func TestInstanceSettingsSchema(t *testing.T) {
+	t.Parallel()
+	pool := pgtest.New(t)
+
+	// Each statement runs after the previous one: the third accepted row makes the last a duplicate.
+	for _, tt := range []struct {
+		sql  string
+		code string
+	}{
+		{`INSERT INTO ingestion_instance_settings (id, sync_interval_minutes) VALUES (false, 60)`, "23514"},
+		{`INSERT INTO ingestion_instance_settings (sync_interval_minutes) VALUES (0)`, "23514"},
+		{`INSERT INTO ingestion_instance_settings (sync_interval_minutes) VALUES (1441)`, "23514"},
+		{`INSERT INTO ingestion_instance_settings (sync_interval_minutes) VALUES (60)`, ""},
+		{`INSERT INTO ingestion_instance_settings (sync_interval_minutes) VALUES (30)`, "23505"},
+	} {
+		_, err := pool.Exec(t.Context(), tt.sql)
+
+		pgErr, ok := errors.AsType[*pgconn.PgError](err)
+		switch {
+		case tt.code == "" && err != nil:
+			t.Errorf("%s: error = %v, want none", tt.sql, err)
+		case tt.code != "" && (!ok || pgErr.Code != tt.code):
+			t.Errorf("%s: error = %v, want code %s", tt.sql, err, tt.code)
 		}
 	}
 }

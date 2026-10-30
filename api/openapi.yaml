@@ -4143,6 +4143,43 @@ paths:
           $ref: "#/components/responses/Problem"
         "404":
           $ref: "#/components/responses/Problem"
+  /ingestion/sync-schedule:
+    get:
+      tags: [ingestion]
+      operationId: getSyncSchedule
+      summary: How often the scheduler checks the bank connections of the instance (ADR 029 BK23).
+      responses:
+        "200":
+          description: The interval; 60 minutes while none is stored.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncSchedule"
+        "401":
+          $ref: "#/components/responses/Problem"
+    put:
+      tags: [ingestion]
+      operationId: setSyncSchedule
+      summary: Change the sync interval of the instance; admin only.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SyncSchedule"
+      responses:
+        "200":
+          description: Stored.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncSchedule"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
   /import-batches:
     get:
       tags: [ingestion]
@@ -6757,6 +6794,16 @@ components:
         next_cursor:
           type: string
           description: Absent on the last page.
+    SyncSchedule:
+      type: object
+      additionalProperties: false
+      required: [minutes]
+      properties:
+        minutes:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 1440
     CsvProfile:
       type: object
       additionalProperties: false

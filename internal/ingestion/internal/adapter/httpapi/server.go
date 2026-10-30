@@ -68,6 +68,8 @@ func ToProblem(err error) (problem.Details, bool) {
 	switch {
 	case errors.Is(err, app.ErrNotFound):
 		return problem.New(http.StatusNotFound, "not_found", "resource not found"), true
+	case errors.Is(err, app.ErrAdminRequired):
+		return problem.New(http.StatusForbidden, "admin_required", err.Error()), true
 	case errors.Is(err, app.ErrRecordResolved):
 		return problem.New(http.StatusConflict, "record_resolved", err.Error()), true
 	case errors.Is(err, app.ErrRecordNotDiscarded):
