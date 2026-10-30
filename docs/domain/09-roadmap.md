@@ -150,6 +150,12 @@ The implementing model stops, writes the checkpoint and reports when any conditi
 
 After a stop, the planning model amends the plan. The implementing model resumes from the checkpoint.
 
+A model that ends its turn by recommending a new session, for the next step of this section or for any other task, gives the owner the message to send in that session:
+
+- The message stands alone: it names the step, the plan or spec file, the checkpoint `.claude/progress/current.md`, the model and effort of the step, and the expected result and stop.
+- It sits at the end of the reply, in one fenced code block, preceded by a line that starts with the marker 📋 and names the target session, for example `📋 Prompt for the new session (plan check, Opus, effort high):`.
+- A reply that recommends two sessions gives one marked block per session, in the order of execution.
+
 ### 9.4.4 After 1.0
 
 | Item | Target |
