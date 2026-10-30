@@ -89,6 +89,7 @@ export function CreditCostCalculator() {
       notes={terms.note === null ? [] : [t(terms.note)]}
     />
   );
+
   if (money === null)
     return (
       <CalculatorFrame
@@ -108,6 +109,7 @@ export function CreditCostCalculator() {
 
   let results = null;
   let details;
+
   if (firstDue !== null && firstDue <= releaseDate)
     results = (
       <Alert tone="warning">
@@ -129,6 +131,7 @@ export function CreditCostCalculator() {
     const cost = effectiveAnnualCost(released, fees, releaseDate, flows);
     const shown = cost === null ? null : roundHalfEven(cost * 10000) / 10000;
     const paid = fees + installment * count;
+
     results =
       shown === null ? (
         <Alert tone="warning">

@@ -372,7 +372,10 @@ export const accountsEn = {
   "sync.never": "Not yet",
   "sync.lastError": "Last error: {error}",
   "sync.now": "Sync now",
-  "sync.result": "{created} created and {matched} matched in this account.",
+  "sync.result.title": "Sync finished",
+  "sync.result.nothing": "No new lines: this account was already up to date.",
+  "sync.result.notSynced": "Nothing synced",
+  "sync.result.failed": "Sync failed",
   "sync.portal.none": "the connection's site",
   "sync.notSynced":
     "The connection waits for you in {portal}; nothing was synced.",

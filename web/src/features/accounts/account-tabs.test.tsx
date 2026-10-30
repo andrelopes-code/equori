@@ -284,12 +284,45 @@ describe("Sync tab", () => {
     await userEvent.click(
       screen.getByRole("button", { name: catalogEn["sync.now"] }),
     );
+    const result = await screen.findByRole("status");
     expect(
-      await screen.findByText(
-        words("sync.result", { created: "4", matched: "6" }),
-      ),
+      within(result).getByText(catalogEn["sync.result.title"]),
+    ).toBeInTheDocument();
+    expect(
+      within(result).getByText(words("imports.count.created", { count: "4" })),
+    ).toBeInTheDocument();
+    expect(
+      within(result).getByText(words("imports.count.matched", { count: "6" })),
     ).toBeInTheDocument();
     expect(sent).toEqual(["sync"]);
+  });
+
+  it("says that a sync brought nothing new", async () => {
+    await renderApp(`/accounts/${checkingID}?tab=sync`, {
+      fetch: api({
+        [`POST /api/v1/connections/${connectionID}/sync`]: () =>
+          json(200, {
+            connection: connectionFixture,
+            batches: [
+              {
+                ...batch("b9", checkingID, ""),
+                counts: counts({ created: 0, matched: 0, needs_review: 0 }),
+              },
+            ],
+          }),
+      }),
+    });
+    await userEvent.click(
+      await screen.findByRole("button", { name: catalogEn["sync.now"] }),
+    );
+
+    const result = await screen.findByRole("status");
+    expect(
+      within(result).getByText(catalogEn["sync.result.title"]),
+    ).toBeInTheDocument();
+    expect(
+      within(result).getByText(catalogEn["sync.result.nothing"]),
+    ).toBeInTheDocument();
   });
 
   it("groups the link's source apart from its freshness", async () => {

@@ -3,7 +3,6 @@ import { Button } from "@slotted/react/button";
 import { Grid } from "@slotted/react/grid";
 import { Inline } from "@slotted/react/inline";
 import { Stack } from "@slotted/react/stack";
-import { Text } from "@slotted/react/typography";
 import { useState } from "react";
 
 import type { components } from "@/api/schema.gen";
@@ -11,6 +10,7 @@ import type { Linked } from "@/features/accounts/account-tab-panel";
 import { StopSyncDialog } from "@/features/accounts/stop-sync-dialog";
 import { SyncFreshnessCard } from "@/features/accounts/sync-freshness-card";
 import { SyncSourceCard } from "@/features/accounts/sync-source-card";
+import { SyncResult } from "@/features/accounts/sync-result";
 import { SyncStartDialog } from "@/features/accounts/sync-start-dialog";
 import { useSyncNow } from "@/features/accounts/use-sync-now";
 import { useT } from "@/i18n/i18n-provider";
@@ -35,10 +35,7 @@ export function SyncTab({ account, linked }: SyncTabProps) {
 
   return (
     <Stack gap={6}>
-      <Inline justify="between" align="center" gap={3} wrap="wrap">
-        <Text size="sm" role="status">
-          {sync.result}
-        </Text>
+      <Inline justify="end" align="center" gap={3} wrap="wrap">
         <Inline gap={3}>
           <Button
             variant="ghost"
@@ -68,6 +65,8 @@ export function SyncTab({ account, linked }: SyncTabProps) {
           </Button>
         </Inline>
       </Inline>
+
+      <SyncResult outcome={sync.outcome} />
 
       {connection.last_error !== undefined && (
         <Alert tone="danger">

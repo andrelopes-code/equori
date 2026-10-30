@@ -371,7 +371,10 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "sync.never": "Ainda não",
   "sync.lastError": "Último erro: {error}",
   "sync.now": "Sincronizar agora",
-  "sync.result": "{created} criadas e {matched} associadas nesta conta.",
+  "sync.result.title": "Sincronização concluída",
+  "sync.result.nothing": "Nenhuma linha nova: a conta já estava em dia.",
+  "sync.result.notSynced": "Nada foi sincronizado",
+  "sync.result.failed": "Falha ao sincronizar",
   "sync.portal.none": "site da conexão",
   "sync.notSynced":
     "A conexão aguarda você no {portal}; nada foi sincronizado.",
