@@ -175,7 +175,7 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.compound.limit4":
     "A faixa não é uma previsão. Com resgates, um retorno fixo subestima a faixa de resultados (Pfau 2016).",
   "calc.noIndexes":
-    "Esta instalação não busca nenhum índice, então nenhum índice pode ser escolhido; um administrador os ativa em EQUORI_INDEX_FEEDS (docs/operations/price-feeds.md).",
+    "Esta instalação não busca nenhum índice, então nenhum índice pode ser escolhido; um administrador os ativa em Configurações, Dados de mercado.",
   "calc.index": "Índice",
   "calc.index.none": "Nenhum",
   "calc.rates.rate": "Taxa",

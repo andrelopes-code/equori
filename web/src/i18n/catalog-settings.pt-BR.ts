@@ -65,6 +65,9 @@ export const settingsPtBR: Record<keyof typeof settingsEn, string> = {
   "settings.timeZone.help":
     "O dia que conta como hoje e o primeiro dia de cada mês.",
   "settings.timeZone.regionDefault": "Padrão da região ({zone})",
+  "settings.syncInterval": "Buscar dados novos",
+  "settings.syncInterval.help":
+    "Com que frequência cada conexão bancária desta instância é consultada. Só um administrador altera.",
   "problem.time_zone_invalid": "O fuso horário não é um nome de fuso IANA.",
   "problem.appearance_too_large":
     "A aparência passa de 16 KiB. Remova temas salvos para guardá-la na conta.",

@@ -17,7 +17,7 @@ export const marketDataEn = {
   "marketData.failed": "Last update failed: {error}",
   "marketData.attention":
     "A source is overdue or failed. Its data stop at the date shown.",
-  "problem.admin_required": "Only an admin changes the market data sources.",
+  "problem.admin_required": "Only an admin changes this instance setting.",
   "problem.refresh_running":
     "An update is already running. The dates change when it ends.",
   "marketData.feed.b3_cotahist": "B3 daily quotes",

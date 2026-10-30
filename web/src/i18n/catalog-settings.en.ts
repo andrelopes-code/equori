@@ -62,6 +62,9 @@ export const settingsEn = {
   "settings.timeZone.help":
     "The day that counts as today, and the first day of each month.",
   "settings.timeZone.regionDefault": "Region default ({zone})",
+  "settings.syncInterval": "Check for new data",
+  "settings.syncInterval.help":
+    "How often each bank connection of this instance is checked. Only an admin changes it.",
   "problem.time_zone_invalid": "The time zone is not an IANA time zone name.",
   "problem.appearance_too_large":
     "The appearance is over 16 KiB. Remove saved themes to store it in the account.",

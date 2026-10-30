@@ -26,6 +26,7 @@ import { IntegrationDeleteDialog } from "@/features/setup/integration-delete-dia
 import { IntegrationDialog } from "@/features/setup/integration-dialog";
 import { SettingsGroup } from "@/features/setup/settings-group";
 import { SettingsSection } from "@/features/setup/settings-section";
+import { SettingsSyncSchedule } from "@/features/setup/settings-sync-schedule";
 import { formatDate, numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 
@@ -157,6 +158,8 @@ export function SettingsIntegrations() {
           onClose={close}
         />
       )}
+
+      <SettingsSyncSchedule />
     </SettingsSection>
   );
 }

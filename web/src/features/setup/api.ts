@@ -162,6 +162,28 @@ export function useUpdateBooks() {
   });
 }
 
+export type SyncSchedule = components["schemas"]["SyncSchedule"];
+
+export function syncScheduleQuery(api: Client<paths>) {
+  return queryOptions({
+    queryKey: ["ingestion", "sync-schedule"] as const,
+    queryFn: async () => unwrap(await api.GET("/ingestion/sync-schedule")),
+  });
+}
+
+export function useSetSyncSchedule() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: SyncSchedule) =>
+      unwrap(await api.PUT("/ingestion/sync-schedule", { body })),
+    onSuccess: () =>
+      queryClient.invalidateQueries({
+        queryKey: syncScheduleQuery(api).queryKey,
+      }),
+  });
+}
+
 export type ModelProvider = components["schemas"]["Provider"];
 export type ModelPreset = components["schemas"]["Preset"];
 export type ModelUse = components["schemas"]["Use"];

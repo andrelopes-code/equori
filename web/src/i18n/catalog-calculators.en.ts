@@ -173,7 +173,7 @@ export const calculatorsEn = {
   "calc.compound.limit4":
     "The range is not a forecast. With withdrawals, one fixed return understates the range of outcomes (Pfau 2016).",
   "calc.noIndexes":
-    "This installation fetches no index, so no index can be chosen; an administrator enables them in EQUORI_INDEX_FEEDS (docs/operations/price-feeds.md).",
+    "This installation fetches no index, so no index can be chosen; an administrator enables them in Settings, Market data.",
   "calc.index": "Index",
   "calc.index.none": "None",
   "calc.rates.rate": "Rate",
