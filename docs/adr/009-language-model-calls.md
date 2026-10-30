@@ -16,7 +16,7 @@ Classification, reporting, ingestion and a future conversational channel will ca
 | M3 | Rotation is reactive. A quota error cools the target down for the provider's `retryDelay`, or 60 s without one; a transient error (5xx, transport failure) for 10 s. The cooldown table is in process memory, shared by every chain, and cleared by a restart. Invalid requests and rejected credentials go back to the caller without rotation. |
 | M4 | When every target of a chain is cooling down, `Generate` returns `ErrExhausted` at once with the earliest retry instant; the caller decides whether to wait, defer the work or answer 503. A chain without a configured provider returns `ErrUnavailable`. |
 | M5 | Tool calling has two layers: `Client.Generate` is one model step; `RunTools` runs the loop with Go handlers and a step limit. Opaque provider signatures (Gemini thought signatures) travel back unchanged inside the neutral messages. |
-| M6 | The Gemini adapter uses `generateContent` over `net/http` (standard library, no SDK). The key is read from `EQUORI_GEMINI_API_KEY`, sent only in the `x-goog-api-key` header, and never logged (N16); requests go only to `EQUORI_GEMINI_URL` (N17). |
+| M6 | The Gemini adapter uses `generateContent` over `net/http` (standard library, no SDK). The key is a provider of the book (ADR 019, ADR 029 BK24), sent only in the `x-goog-api-key` header, and never logged (N16); requests go only to the base URL of that provider (N17). |
 | M7 | Logs record provider, model, outcome, duration, token counts and cooldown end per attempt, never message content. |
 
 ## Consequences

@@ -71,8 +71,8 @@ receives: a mapped checking account stays a leaf.
 
 ## 4. Synchronization
 
-The scheduler checks every connection at start and then every `EQUORI_SYNC_INTERVAL`
-(default `1h`) and syncs those whose item has data newer than the last sync.
+The scheduler checks every connection at start and then after each sync interval, which an admin sets in Settings > Integrations (`PUT /api/v1/ingestion/sync-schedule`, default 60 minutes),
+and syncs those whose item has data newer than the last sync.
 `POST /api/v1/connections/<connection>/sync` syncs one now. Each sync of a mapped account is
 one import batch with source `open_finance` (`GET /api/v1/import-batches`):
 

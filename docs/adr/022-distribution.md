@@ -51,7 +51,7 @@ Managed mode is the mode in which `equori` runs its own PostgreSQL server as a c
 
 | ID | Rule |
 |---|---|
-| C1 | An empty `EQUORI_TIMEZONE` resolves to the system zone (`time.Local`). A container without `TZ` and without zone files keeps UTC. `compose.yaml` keeps its explicit default. |
+| C1 | Removed by ADR 029 (BK20): the time zone is a setting of the book; `compose.yaml` sets none. |
 | C2 | In managed mode, `equori.env` in the data directory is read before the process environment. Format: one `KEY=VALUE` per line, `#` starts a comment line, no quoting, no expansion. A variable present in the process environment wins. The Homebrew service has no other place for settings that survives an upgrade. |
 | C3 | In managed mode without `EQUORI_SECRET_KEY`, the first start writes 32 random bytes in standard base64 to `secret.key`, mode 0600, and uses them. The key stays outside every dump (ADR 008, K2). `equori secrets key` prints the key in use, so the owner can store it apart from the dumps and set `EQUORI_SECRET_KEY` on the instance that receives a restore. Without the key, a restored instance keeps every ledger fact and answers 409 `integration_unavailable` until the credentials are entered again (ADR 008, consequences). External mode is unchanged. |
 | C4 | Applied only if F3 shows that Safari drops a `Secure` cookie on `http://127.0.0.1`: the session cookie omits `Secure` when the request's host is a loopback address. Every other host keeps `Secure` unless `EQUORI_INSECURE_COOKIES=true`. |

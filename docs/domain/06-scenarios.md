@@ -935,3 +935,7 @@ The scenarios of `docs/specs/2026-10-29-review-reopen-design.md`: the review off
 ### S185 Repeated card payment (A142)
 
 The scenario of `docs/specs/2026-10-30-repeated-card-payment-design.md`: a card payment the source returns under a second id waits for review instead of paying the card twice (S185).
+
+### S186–S191 Shared books and setting levels (ADR 029)
+
+The scenarios of `docs/specs/2026-10-30-shared-books-design.md`, section 7: setup creates a book, its `owner` membership and its ledger settings (S186); two members see only the rows of their own book (S187); "today" follows the time zone of the book (S188); appearance follows the member across sessions (S189); only an admin changes the sync interval of the instance (S190); a deleted membership ends its session (S191).

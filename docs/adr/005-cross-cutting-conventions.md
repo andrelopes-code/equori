@@ -55,7 +55,7 @@ Package `internal/platform/money` (stdlib only) is the shared kernel for amounts
 
 - Instants (`created_at`, `expires_at`) are `time.Time` in UTC, stored as `timestamptz`.
 - Accounting dates (transaction date, budget month) are calendar dates, stored as `date`. In Go they are `time.Time` at 00:00 UTC; `clock.DateOf` is the only constructor from an instant.
-- The instance time zone comes from `EQUORI_TIMEZONE` (IANA name, default `UTC`). "Today" and month boundaries are computed in it with `clock.Clock.Today`.
+- The time zone is the book's: `identity_books.time_zone`, or `DefaultTimeZone(region)` of `internal/identity/region_defaults.go` while it is null (ADR 029, BK18, BK19). `clock.Clock.Today(ctx)` computes "today" and month boundaries in the location the context carries; work without a book (market data ticks, `assistant_usage` days) runs in UTC.
 - API: instants as RFC 3339 with `Z`; dates as `YYYY-MM-DD` (`format: date`).
 - The binary embeds the time zone database (`time/tzdata`).
 

@@ -11,7 +11,7 @@ ADR 003 gives every business table a `user_id`, which names both the person who 
 
 ## Decision
 
-- A book (`identity_books`) is the tenant: every business row belongs to exactly one book. Every business table has `books_id bigint NOT NULL REFERENCES identity_books (id)`, and every query on it filters by `books_id`.
+- A book (`identity_books`) is the tenant: every business row belongs to exactly one book. Every business table has `books_id bigint NOT NULL`, which references `identity_books (id)` directly or through a composite foreign key to a parent table that holds the same `books_id`, and every query on it filters by `books_id`.
 - A member (`identity_member`) is a person who logs in. A membership (`identity_membership`) links one member to one book with the role `owner`, `write` or `read`.
 - The instance roles `admin` and `member` of ADR 003 stay on the member.
 - A session and an access token belong to one membership: they carry the member and the active book.

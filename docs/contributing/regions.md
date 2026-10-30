@@ -1,6 +1,6 @@
 # Adding a region
 
-A region is an ISO 3166-1 alpha-2 code stored on the user profile (`internal/platform/locale/regions.go`). A language is an ISO 639 code stored beside it. Behavior that depends on the region or the language is an extension point (ADR 016): an interface declared by the consuming module, one implementation per identifier, and a default function that maps a region to an identifier.
+A region is an ISO 3166-1 alpha-2 code stored on the book (`identity_books.region`) (`internal/platform/locale/regions.go`). A language is an ISO 639 code stored beside it. Behavior that depends on the region or the language is an extension point (ADR 016): an interface declared by the consuming module, one implementation per identifier, and a default function that maps a region to an identifier.
 
 Identifiers match `^[a-z0-9_]{2,40}$`. A regional identifier is prefixed by the lowercase region (`br_banking`, `br_ispb`); an international one is not (`ecb`, `weekend`, `bic`).
 
@@ -54,7 +54,7 @@ Capture reads its separators and date order from `locale.ConventionsOf` through 
 4. Add a calendar: a Go value in `internal/marketdata/internal/calendar/<id>.go`, an entry in `marketdata.New`, and a test of its holidays against an official source.
 5. Add a jurisdiction: a package `internal/portfolio/internal/jurisdiction/<id>/` implementing `Jurisdiction`, an entry in `portfolio.New`, and a test of tax class, treatment and the `TaxYear` range.
 6. Add a price source: a package `internal/marketdata/internal/feed/<id>/` implementing `Source`, an entry in `sourceEntries` in `internal/marketdata/sources.go` with its publication lag, a case in `SuggestedFeeds` for its region, a test against a fixture in `testdata/`, and a line in `docs/operations/price-feeds.md`.
-7. Add an index source: a package `internal/marketdata/internal/index/<id>/` implementing `Source`, an entry in `indexEntries` in `internal/marketdata/indexes.go` with its publication lag, a case in `SuggestedFeeds` for its region, a test against a fake server, and the identifier in the `EQUORI_INDEX_FEEDS` line of `docs/operations/price-feeds.md`.
+7. Add an index source: a package `internal/marketdata/internal/index/<id>/` implementing `Source`, an entry in `indexEntries` in `internal/marketdata/indexes.go` with its publication lag, a case in `SuggestedFeeds` for its region, a test against a fake server, and the identifier in the index list of `docs/operations/price-feeds.md`.
 8. Add an expectation source: a package `internal/marketdata/internal/expectation/<id>/` implementing `Source`, an entry in `expectationEntries` in `internal/marketdata/expectations.go` with its publication lag, a case in `SuggestedFeeds` for its region, and a test against a fake server.
 9. Add an institution identifier scheme: an entry in `IdentifierSchemes`, and a case in `logoOf` when a logo source exists.
 10. Add an aggregator: a package `internal/ingestion/internal/aggregator/<id>/` implementing `Aggregator`, an entry in `New` and `AggregatorIDs` in `internal/ingestion/ingestion.go`, and a test against a fake server.
@@ -64,4 +64,4 @@ Capture reads its separators and date order from `locale.ConventionsOf` through 
 14. Add a help passage: a file `web/src/features/help/content/regions/<REGION>/<language>/<page>.md` for each language, when a help page needs a fact of the region (its data sharing system, its aggregator).
 15. Run `make check`.
 
-A registry rejects a duplicate or malformed identifier at startup. An unknown identifier in `EQUORI_PRICE_FEEDS` or `EQUORI_INDEX_FEEDS` stops the process with the variable name and the identifier.
+A registry rejects a duplicate or malformed identifier at startup.

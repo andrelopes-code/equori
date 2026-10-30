@@ -22,7 +22,7 @@ Text capture (`docs/specs/2026-10-21-text-capture-design.md`) decides categories
 
 ## Consequences
 
-- On unpaid quota, Google may use submitted content and human reviewers may read it (ADR 009). Configuring `EQUORI_GEMINI_API_KEY`, or a provider on the settings screen, is the consent to sending descriptions and category names.
+- On unpaid quota, Google may use submitted content and human reviewers may read it (ADR 009). Configuring a provider on the settings screen is the consent to sending descriptions and category names.
 - Hints of a category the owner later merges or closes are asked again.
 - New table `capture_category_hint`, owned by `capture`.
 

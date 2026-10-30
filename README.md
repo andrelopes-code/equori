@@ -85,13 +85,11 @@ docker compose exec app /equori user create --email you@example.com --language <
 | `EQUORI_BACKUP_DIR` | `<data directory>/backups` | Directory of the automatic backups of managed mode |
 | `EQUORI_HTTP_ADDR` | `:8080` | HTTP listen address |
 | `EQUORI_LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error` |
-| `EQUORI_TIMEZONE` | the host's zone (UTC in the container image) | IANA time zone for "today" and month boundaries, e.g. `America/Sao_Paulo` |
 | `EQUORI_INSECURE_COOKIES` | `false` | `true` drops the `Secure` cookie attribute; required to log in over plain HTTP from another host |
 | `EQUORI_API_DOCS` | `false` | `true` serves the API reference at `/docs` and the contract at `/openapi.yaml`, both without a session |
 | `EQUORI_SECRET_KEY` | unset | 32 bytes in standard base64 (`openssl rand -base64 32`) that seal integration credentials (ADR 008); without it integrations are unavailable, except in managed mode, which generates `secret.key` in the data directory (`equori secrets key` prints it). Keep it outside backups |
 | `EQUORI_SECRET_KEY_PREVIOUS` | unset | The replaced key during a rotation: `equori secrets rotate` reseals every credential, then remove it |
 | `EQUORI_AGGREGATOR_PLUGGY_URL` | `https://api.pluggy.ai` | Base URL of the Pluggy API |
-| `EQUORI_SYNC_INTERVAL` | `1h` | How often connections are checked for new Pluggy data (at least `1m`) |
 | `POSTGRES_PASSWORD` | `equori` | Database password used by `compose.yaml` |
 
 Data lives in the `pgdata` Docker volume. Back it up with:
