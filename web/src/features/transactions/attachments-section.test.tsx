@@ -1,8 +1,7 @@
-import { act, fireEvent, screen, within } from "@testing-library/react";
+import { act, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
-import { catalogEn } from "@/i18n/catalog.en";
 import { fakeApi, json } from "@/testing/fake-api";
 import { hideAmounts } from "@/testing/privacy";
 import { renderApp } from "@/testing/render-app";
@@ -61,17 +60,7 @@ async function open(name: string) {
 const shown = (dialog: HTMLElement) =>
   within(dialog).getByRole<HTMLImageElement>("img");
 
-beforeAll(() => {
-  // jsdom has no PointerEvent: a MouseEvent carries the coordinates the viewer reads.
-  class PointerEventShim extends MouseEvent {
-    pointerId: number;
-    constructor(type: string, init: PointerEventInit = {}) {
-      super(type, init);
-      this.pointerId = init.pointerId ?? 1;
-    }
-  }
-  Object.defineProperty(window, "PointerEvent", { value: PointerEventShim });
-});
+const frame = (dialog: HTMLElement) => dialog.querySelector("iframe");
 
 beforeEach(() => {
   localStorage.clear();
@@ -126,15 +115,13 @@ describe("attachments of a transaction", () => {
   it("opens a PDF in a frame with the inline disposition and keeps the download", async () => {
     await renderApp(path, { fetch: api() });
     const { dialog } = await open("invoice.pdf");
-    const frame = within(dialog).getByTitle("invoice.pdf");
-    expect(frame.tagName).toBe("IFRAME");
-    expect(frame).toHaveAttribute(
+    expect(frame(dialog)).toHaveAttribute(
       "src",
       `${content(ids.pdf)}?disposition=inline`,
     );
     expect(within(dialog).queryByRole("img")).toBeNull();
     const download = within(dialog).getByRole("link", {
-      name: catalogEn["attachment.download"],
+      name: "Download",
     });
     expect(download).toHaveAttribute("href", content(ids.pdf));
     expect(download).toHaveAttribute("download", "invoice.pdf");
@@ -144,10 +131,12 @@ describe("attachments of a transaction", () => {
     await renderApp(path, { fetch: api() });
     const { user, dialog } = await open("receipt-1.png");
     expect(shown(dialog)).toHaveAttribute("src", content(ids.one));
-    expect(within(dialog).getByText("receipt-1.png")).toBeInTheDocument();
+    expect(
+      within(dialog).getByRole("heading", { name: "receipt-1.png" }),
+    ).toBeInTheDocument();
     expect(
       within(dialog).getByRole("link", {
-        name: catalogEn["attachment.download"],
+        name: "Download",
       }),
     ).toHaveAttribute("download", "receipt-1.png");
     await user.keyboard("{Escape}");
@@ -159,126 +148,31 @@ describe("attachments of a transaction", () => {
     expect(screen.getByRole("button", { name: "receipt-1.png" })).toHaveFocus();
   });
 
-  it("zooms by button, by key and by wheel", async () => {
-    await renderApp(path, { fetch: api() });
-    const { user, dialog } = await open("receipt-1.png");
-    expect(within(dialog).getByText("100%")).toBeInTheDocument();
-    await user.click(
-      within(dialog).getByRole("button", {
-        name: catalogEn["attachment.zoomIn"],
-      }),
-    );
-    expect(within(dialog).getByText("125%")).toBeInTheDocument();
-    await user.keyboard("+");
-    expect(within(dialog).getByText("150%")).toBeInTheDocument();
-    await user.keyboard("-");
-    expect(within(dialog).getByText("125%")).toBeInTheDocument();
-    fireEvent.wheel(shown(dialog), { deltaY: -100 });
-    expect(within(dialog).getByText("150%")).toBeInTheDocument();
-    await user.click(
-      within(dialog).getByRole("button", {
-        name: catalogEn["attachment.zoomReset"],
-      }),
-    );
-    expect(within(dialog).getByText("100%")).toBeInTheDocument();
-  });
-
-  it("takes the whole screen on a dark ground of its own", async () => {
-    await renderApp(path, { fetch: api() });
-    const { dialog } = await open("receipt-1.png");
-
-    const layer = dialog.closest('[data-ui="dialog"]');
-
-    expect(layer).toHaveAttribute("data-surface", "plain");
-    expect(layer).toHaveAttribute("data-full-screen", "always");
-    expect(dialog).toHaveAttribute("data-slotted-scheme", "dark");
-  });
-
-  it("closes on a click on the ground around the picture", async () => {
-    await renderApp(path, { fetch: api() });
-    const { dialog } = await open("receipt-1.png");
-    const stage = shown(dialog).parentElement;
-    if (stage === null) throw new Error("no stage around the picture");
-
-    fireEvent.pointerDown(stage, { clientX: 10, clientY: 10, pointerId: 1 });
-    fireEvent.pointerUp(stage, { clientX: 10, clientY: 10, pointerId: 1 });
-    fireEvent.click(stage, { clientX: 10, clientY: 10 });
-    await act(async () => {
-      await new Promise((resolve) => requestAnimationFrame(resolve));
-    });
-
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-  });
-
-  it("zooms one step for the sum of a trackpad's small wheel turns", async () => {
-    await renderApp(path, { fetch: api() });
-    const { dialog } = await open("receipt-1.png");
-
-    for (let turn = 0; turn < 4; turn++) {
-      fireEvent.wheel(shown(dialog), { deltaY: -25 });
-    }
-
-    expect(within(dialog).getByText("125%")).toBeInTheDocument();
-  });
-
-  it("draws no zoom for a PDF, which the browser's reader zooms", async () => {
-    await renderApp(path, { fetch: api() });
-    const { dialog } = await open("invoice.pdf");
-
-    expect(
-      within(dialog).queryByRole("button", {
-        name: catalogEn["attachment.zoomIn"],
-      }),
-    ).toBeNull();
-  });
-
   it("steps between the files, the PDF included, by button and by arrow key", async () => {
     await renderApp(path, { fetch: api() });
     const { user, dialog } = await open("receipt-1.png");
     const previous = within(dialog).getByRole("button", {
-      name: catalogEn["attachment.previous"],
+      name: "Previous file",
     });
     const next = within(dialog).getByRole("button", {
-      name: catalogEn["attachment.next"],
+      name: "Next file",
     });
     expect(previous).toBeDisabled();
     expect(within(dialog).getByText("1 of 4")).toBeInTheDocument();
-    await user.click(next);
-    expect(within(dialog).getByTitle("invoice.pdf")).toBeInTheDocument();
+    // In a browser the viewer opens with the focus on its stage; jsdom leaves it on the trigger.
+    act(() => {
+      dialog.querySelector<HTMLElement>('[data-part="stage"]')?.focus();
+    });
+    await user.keyboard("{ArrowRight}");
+    expect(frame(dialog)).toHaveAttribute("title", "invoice.pdf");
     expect(within(dialog).getByText("2 of 4")).toBeInTheDocument();
     await user.keyboard("{ArrowRight}");
     expect(shown(dialog)).toHaveAttribute("src", content(ids.two));
-    await user.keyboard("{ArrowRight}");
+    await user.click(next);
     expect(shown(dialog)).toHaveAttribute("src", content(ids.three));
     expect(next).toBeDisabled();
-    await user.keyboard("{ArrowLeft}");
+    await user.click(previous);
     expect(shown(dialog)).toHaveAttribute("src", content(ids.two));
     expect(within(dialog).getByText("3 of 4")).toBeInTheDocument();
-  });
-
-  it("swipes between the files on a phone", async () => {
-    await renderApp(path, { fetch: api(), width: 390 });
-    const { dialog } = await open("receipt-1.png");
-    const image = shown(dialog);
-    fireEvent.pointerDown(image, { clientX: 300, clientY: 200, pointerId: 1 });
-    fireEvent.pointerUp(image, { clientX: 100, clientY: 210, pointerId: 1 });
-    const frame = within(dialog).getByTitle("invoice.pdf");
-    // The frame takes its own touches, so the swipe lands on the stage around it.
-    const stage = frame.parentElement;
-    if (stage === null) throw new Error("no stage around the frame");
-    fireEvent.pointerDown(stage, { clientX: 100, clientY: 200, pointerId: 1 });
-    fireEvent.pointerUp(stage, { clientX: 300, clientY: 200, pointerId: 1 });
-    expect(shown(dialog)).toHaveAttribute("src", content(ids.one));
-  });
-
-  it("does not step on a short or vertical drag", async () => {
-    await renderApp(path, { fetch: api(), width: 390 });
-    const { dialog } = await open("receipt-1.png");
-    const image = shown(dialog);
-    fireEvent.pointerDown(image, { clientX: 300, clientY: 100, pointerId: 1 });
-    fireEvent.pointerUp(image, { clientX: 280, clientY: 110, pointerId: 1 });
-    fireEvent.pointerDown(image, { clientX: 300, clientY: 100, pointerId: 1 });
-    fireEvent.pointerUp(image, { clientX: 100, clientY: 400, pointerId: 1 });
-    expect(shown(dialog)).toHaveAttribute("src", content(ids.one));
   });
 });

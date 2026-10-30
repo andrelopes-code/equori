@@ -1,7 +1,27 @@
+import type { MediaViewerItem } from "@slotted/react/media-viewer";
+
+import type { components } from "@/api/schema.gen";
 import { numberFormatter } from "@/i18n/format";
+
+type Attachment = components["schemas"]["Attachment"];
 
 export function contentURL(id: string): string {
   return `/api/v1/attachments/${id}/content`;
+}
+
+// A PDF is framed from the inline disposition, the one response that admits a frame (ADR 007,
+// C9a); the download keeps the attachment disposition.
+export function mediaItem(file: Attachment): MediaViewerItem {
+  const content = contentURL(file.id);
+  const pdf = file.media_type === "application/pdf";
+
+  return {
+    id: file.id,
+    src: pdf ? `${content}?disposition=inline` : content,
+    name: file.file_name,
+    type: file.media_type,
+    downloadHref: content,
+  };
 }
 
 const units = [

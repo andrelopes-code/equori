@@ -2,6 +2,7 @@ import { AttachmentGroup } from "@slotted/react/attachment";
 import { Button } from "@slotted/react/button";
 import { Glyph, Icon } from "@slotted/react/icon";
 import { InlineMessage } from "@slotted/react/inline-message";
+import { MediaViewer } from "@slotted/react/media-viewer";
 import { Stack } from "@slotted/react/stack";
 import { Text } from "@slotted/react/typography";
 import { VisuallyHidden } from "@slotted/react/visually-hidden";
@@ -16,7 +17,7 @@ import {
   useUploadAttachment,
 } from "@/features/transactions/api";
 import { AttachmentCard } from "@/features/transactions/attachment-card";
-import { AttachmentViewer } from "@/features/transactions/attachment-viewer";
+import { mediaItem } from "@/features/transactions/attachment-meta";
 import styles from "@/features/transactions/attachments-section.module.css";
 import { useT } from "@/i18n/i18n-provider";
 
@@ -37,7 +38,8 @@ export function AttachmentsSection({
   const remove = useRemoveAttachment(transactionId);
   const input = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
-  const [viewing, setViewing] = useState<string | null>(null);
+  const [viewing, setViewing] = useState("");
+  const [viewerOpen, setViewerOpen] = useState(false);
 
   const items = files.data ?? [];
   const isImage = (mediaType: string) => mediaType.startsWith("image/");
@@ -69,6 +71,7 @@ export function AttachmentsSection({
                 viewable.includes(item)
                   ? () => {
                       setViewing(item.id);
+                      setViewerOpen(true);
                     }
                   : undefined
               }
@@ -86,13 +89,12 @@ export function AttachmentsSection({
           ))}
         </AttachmentGroup>
       )}
-      <AttachmentViewer
-        files={viewable}
-        currentId={viewing}
-        onChange={setViewing}
-        onClose={() => {
-          setViewing(null);
-        }}
+      <MediaViewer
+        items={viewable.map(mediaItem)}
+        open={viewerOpen}
+        onOpenChange={setViewerOpen}
+        value={viewing}
+        onValueChange={setViewing}
       />
       {error !== null && <InlineMessage tone="danger">{error}</InlineMessage>}
       {!readOnly && (
