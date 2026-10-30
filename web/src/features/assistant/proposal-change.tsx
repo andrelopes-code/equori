@@ -17,7 +17,9 @@ export function ProposalChange({
   if (before === undefined || after === undefined) {
     return (
       <Text
+        size="sm"
         weight="medium"
+        tone={before === undefined ? undefined : "muted"}
         className={before === undefined ? undefined : styles.removed}
       >
         {after ?? before}
@@ -26,14 +28,14 @@ export function ProposalChange({
   }
   return (
     <span className={styles.change}>
-      <Text tone="muted" className={styles.removed}>
+      <Text size="sm" tone="muted" className={styles.removed}>
         <VisuallyHidden>{t("assistant.change.before")}</VisuallyHidden>
         {before}
       </Text>
       <Icon size="text" directional>
         <Glyph name="arrow-right" />
       </Icon>
-      <Text weight="medium">
+      <Text size="sm" weight="medium">
         <VisuallyHidden>{t("assistant.change.after")}</VisuallyHidden>
         {after}
       </Text>

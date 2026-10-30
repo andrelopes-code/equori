@@ -114,19 +114,52 @@
     inline-size: 100%;
   }
 
-  .proposalHead {
+  /* The action over its target, one line apart. */
+  .proposalTitle {
+    display: grid;
+    min-inline-size: 0;
+  }
+
+  .proposalBody {
+    display: grid;
+    gap: var(--slotted-space-3);
+  }
+
+  /* The values a proposal writes read at the size of the card's other text; a field sits on its
+     value and apart from the next pair. */
+  .changes {
+    --slotted-description-list-font-size: var(--slotted-font-size-sm);
+    --slotted-description-list-stack-gap: 0;
+    --slotted-description-list-row-gap: var(--slotted-space-3);
+  }
+
+  /* The expiry at the start, the two decisions at the end; they wrap under it in a narrow pane. */
+  .proposalActions {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     gap: var(--slotted-space-2);
+    inline-size: 100%;
   }
 
-  .proposalActions {
+  .proposalButtons {
     display: flex;
-    justify-content: flex-end;
     gap: var(--slotted-space-2);
-    inline-size: 100%;
+    margin-inline-start: auto;
+  }
+
+  .note {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--slotted-space-2);
+  }
+
+  /* The mark stands on the note's first line. */
+  .noteMark {
+    display: inline-flex;
+    align-items: center;
+    block-size: 1lh;
   }
 
   .change {

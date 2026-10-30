@@ -1420,8 +1420,12 @@ export const catalogPtBR: Catalog = {
   "assistant.proposal.status.executed": "Feito",
   "assistant.proposal.status.failed": "Falhou",
   "assistant.proposal.status.rejected": "Rejeitada",
-  "assistant.proposal.status.stale": "Os dados mudaram; peça de novo",
-  "assistant.proposal.status.expired": "Expirou; peça de novo",
+  "assistant.proposal.status.stale": "Desatualizada",
+  "assistant.proposal.status.expired": "Expirada",
+  "assistant.proposal.hint.stale":
+    "Os dados mudaram depois desta proposta. Peça de novo ao assistente.",
+  "assistant.proposal.hint.expired":
+    "A proposta expirou antes de uma decisão. Peça de novo ao assistente.",
   "assistant.proposal.status.discarded": "Descartada",
   "assistant.step.list_accounts": "Lendo contas",
   "assistant.step.get_balances": "Lendo saldos",

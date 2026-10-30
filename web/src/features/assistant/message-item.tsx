@@ -7,7 +7,6 @@ import {
   MessageFooter,
 } from "@slotted/react/message";
 import { Glyph, Icon } from "@slotted/react/icon";
-import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
 import { Button, IconButton } from "@slotted/react/button";
 import { Markdown } from "@slotted/react/markdown";
 import { Stack } from "@slotted/react/stack";
@@ -22,6 +21,7 @@ import {
   maskAmounts,
   maskMatch,
 } from "@/features/assistant/mask-amounts";
+import { AssistantNote } from "@/features/assistant/assistant-note";
 import { ConfirmAll } from "@/features/assistant/confirm-all";
 import type { Decision } from "@/features/assistant/confirm-all";
 import { ProposalCard } from "@/features/assistant/proposal-card";
@@ -113,13 +113,9 @@ export function MessageItem({
         {(message.outcome === "step_limit" || message.proposals.length > 0) && (
           <Stack gap={3} className={styles.attached}>
             {message.outcome === "step_limit" && (
-              <Alert tone="warning" reach="inline">
-                <AlertContent>
-                  <AlertDescription>
-                    {t("assistant.step_limit")}
-                  </AlertDescription>
-                </AlertContent>
-              </Alert>
+              <AssistantNote tone="warning">
+                {t("assistant.step_limit")}
+              </AssistantNote>
             )}
             {message.proposals.map((proposal) => (
               <ProposalCard

@@ -1414,8 +1414,12 @@ export const catalogEn = {
   "assistant.proposal.status.executed": "Done",
   "assistant.proposal.status.failed": "Failed",
   "assistant.proposal.status.rejected": "Rejected",
-  "assistant.proposal.status.stale": "The data changed; ask again",
-  "assistant.proposal.status.expired": "Expired; ask again",
+  "assistant.proposal.status.stale": "Outdated",
+  "assistant.proposal.status.expired": "Expired",
+  "assistant.proposal.hint.stale":
+    "The data changed after this proposal. Ask the assistant again.",
+  "assistant.proposal.hint.expired":
+    "This proposal expired before a decision. Ask the assistant again.",
   "assistant.proposal.status.discarded": "Discarded",
   "assistant.step.list_accounts": "Reading accounts",
   "assistant.step.get_balances": "Reading balances",

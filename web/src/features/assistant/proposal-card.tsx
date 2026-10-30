@@ -1,15 +1,14 @@
-import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
 import { Badge } from "@slotted/react/badge";
-import { Button } from "@slotted/react/button";
-import { Card, CardBody, CardFooter, CardHeader } from "@slotted/react/card";
 import {
-  DescriptionList,
-  DescriptionListDescription,
-  DescriptionListItem,
-  DescriptionListTerm,
-} from "@slotted/react/description-list";
-import { Stack } from "@slotted/react/stack";
+  Card,
+  CardActions,
+  CardBody,
+  CardFooter,
+  CardHeader,
+} from "@slotted/react/card";
+import { Link } from "@slotted/react/link";
 import { Text } from "@slotted/react/typography";
+import { useEffect, useRef } from "react";
 
 import { errorText } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
@@ -18,24 +17,19 @@ import {
   useConfirmProposal,
   useRejectProposal,
 } from "@/features/assistant/api";
-import { maskAmountText } from "@/features/assistant/mask-amounts";
-import { ProposalChange } from "@/features/assistant/proposal-change";
-import { catalogEn } from "@/i18n/catalog.en";
-import type { MessageKey } from "@/i18n/catalog.en";
-import { formatDate } from "@/i18n/format";
-import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { useMoneyFormat } from "@/privacy/use-money-format";
-import { useEffect, useRef } from "react";
-
+import { AssistantNote } from "@/features/assistant/assistant-note";
+import { catalogKey } from "@/features/assistant/catalog-key";
 import type { Decision } from "@/features/assistant/confirm-all";
+import { ProposalActions } from "@/features/assistant/proposal-actions";
+import { ProposalChanges } from "@/features/assistant/proposal-changes";
 import { proposalScreen } from "@/features/assistant/proposal-screen";
 import { useExpired } from "@/features/assistant/use-expired";
+import { useValueText } from "@/features/assistant/use-value-text";
+import { useT } from "@/i18n/i18n-provider";
 import { routeTo } from "@/ui/route-to";
 import { useServed } from "@/ui/use-served";
-import { Link } from "@slotted/react/link";
 
 type Proposal = components["schemas"]["AssistantProposal"];
-type Value = components["schemas"]["AssistantValue"];
 
 const tones = {
   pending: "accent",
@@ -48,47 +42,7 @@ const tones = {
   discarded: "secondary",
 } as const;
 
-export function catalogKey(key: string): MessageKey | undefined {
-  return key in catalogEn ? (key as MessageKey) : undefined;
-}
-
-// The decimal string of the API ("1234.56") becomes an integer and its scale by string
-// manipulation (O7).
-function minorUnits(amount: string): { minor: number; scale: number } {
-  const [, fraction = ""] = amount.split(".");
-  return { minor: Number(amount.replace(".", "")), scale: fraction.length };
-}
-
-function useValueText() {
-  const [locale] = useAppLocale();
-  const money = useMoneyFormat();
-  return (value: Value | undefined): string | undefined => {
-    if (value === undefined) return undefined;
-    if (value.amount !== undefined && value.currency !== undefined) {
-      const { minor, scale } = minorUnits(value.amount);
-      return money.money({ amount: minor, currency: value.currency }, scale);
-    }
-    if (value.date !== undefined) return formatDate(value.date, locale);
-    const text = value.text ?? "";
-    return money.hidden ? maskAmountText(text) : text;
-  };
-}
-
-function failureDetail(result: unknown): string | undefined {
-  if (typeof result !== "object" || result === null) return undefined;
-  const detail = (result as { detail?: unknown }).detail;
-  return typeof detail === "string" ? detail : undefined;
-}
-
-// Families read: card, badge, description-list, alert, button. A write the assistant proposes:
-// what it does and to what, each value it changes, and the two decisions while it waits.
-export function ProposalCard({
-  proposal,
-  reveal = false,
-  decision,
-  locked = false,
-  onDecided,
-}: {
+interface ProposalCardProps {
   proposal: Proposal;
   // The last card of a new answer brings its actions into view (P13).
   reveal?: boolean;
@@ -98,149 +52,146 @@ export function ProposalCard({
   locked?: boolean;
   // Reports the card's own decision, so a "confirm all" leaves it out.
   onDecided?: (id: string, decision: Decision) => void;
-}) {
+}
+
+// Families read: card, badge, description-list, button, link. A write the assistant proposes: what
+// it does and to what, each value it changes, and the two decisions while it waits. A decided card
+// keeps its changes and says its outcome in the header.
+export function ProposalCard({
+  proposal,
+  reveal = false,
+  decision,
+  locked = false,
+  onDecided,
+}: ProposalCardProps) {
   const t = useT();
   const served = useServed();
-  const [locale] = useAppLocale();
   const valueText = useValueText();
   const confirm = useConfirmProposal();
   const reject = useRejectProposal();
+  const actions = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (reveal) actions.current?.scrollIntoView({ block: "nearest" });
+  }, [reveal]);
+
   const shown = confirm.data ?? reject.data ?? decision?.proposal ?? proposal;
   const { preview } = shown;
   const busy = confirm.isPending || reject.isPending || locked;
   const error = confirm.error ?? reject.error ?? decision?.error ?? null;
-  const screen =
-    shown.status === "executed"
-      ? proposalScreen(shown.tool, shown.result)
-      : undefined;
-  const actionKey = catalogKey(`assistant.action.${preview.action}`);
-  const detail =
-    shown.status === "failed" ? failureDetail(shown.result) : undefined;
   // The server's answer to a confirm in flight wins over the timer (P15).
   const passed = useExpired(shown.expires_at, shown.status === "pending");
   const status =
     shown.status === "pending" && passed && !busy ? "expired" : shown.status;
   const pending = status === "pending";
   const destructive = preview.destructive === true;
-  const actions = useRef<HTMLSpanElement>(null);
-  useEffect(() => {
-    if (reveal) actions.current?.scrollIntoView({ block: "nearest" });
-  }, [reveal]);
+  const actionKey = catalogKey(`assistant.action.${preview.action}`);
+  const detail =
+    shown.status === "failed" ? failureDetail(shown.result) : undefined;
+  const screen =
+    shown.status === "executed"
+      ? proposalScreen(shown.tool, shown.result)
+      : undefined;
+  const opens = screen !== undefined && served({ href: screen });
+  const hint = status === "stale" || status === "expired";
+
+  function handleConfirm() {
+    if (busy) return;
+
+    confirm.mutate(shown.id, {
+      onSuccess: (result) => onDecided?.(shown.id, { proposal: result }),
+    });
+  }
+
+  function handleReject() {
+    reject.mutate(shown.id, {
+      onSuccess: (result) => onDecided?.(shown.id, { proposal: result }),
+    });
+  }
 
   return (
     <Card size="sm" fill={pending ? "elevated" : "outline"}>
       <CardHeader>
-        <Stack gap={1}>
-          <span className={styles.proposalHead}>
-            <Text weight="semibold">
-              {actionKey === undefined ? preview.action : t(actionKey)}
-            </Text>
-            <Badge tone={tones[status]} size="sm">
-              {t(`assistant.proposal.status.${status}`)}
-            </Badge>
-          </span>
+        <span className={styles.proposalTitle}>
+          {/* Workaround for Slotted issue #55: inside a message the card's header takes the
+              message's muted colour, so the title states its own. */}
+          <Text size="sm" weight="semibold" tone="default">
+            {actionKey === undefined ? preview.action : t(actionKey)}
+          </Text>
           {preview.target !== undefined && (
             <Text size="sm" tone="muted">
               {valueText({ text: preview.target })}
             </Text>
           )}
-          {pending && (
-            <Text size="xs" tone="muted">
-              {t("assistant.proposal.expires", {
-                time: new Intl.DateTimeFormat(locale, {
-                  hour: "numeric",
-                  minute: "2-digit",
-                }).format(new Date(shown.expires_at)),
-              })}
-            </Text>
-          )}
-        </Stack>
+        </span>
+        {!pending && (
+          <CardActions>
+            <Badge tone={tones[status]} size="sm">
+              {t(`assistant.proposal.status.${status}`)}
+            </Badge>
+          </CardActions>
+        )}
       </CardHeader>
+
       <CardBody>
-        <Stack gap={3}>
-          <DescriptionList layout="stack" columns={2}>
-            {preview.changes.map((change, i) => {
-              const fieldKey = catalogKey(`assistant.field.${change.field}`);
-              return (
-                <DescriptionListItem key={`${change.field}-${String(i)}`}>
-                  <DescriptionListTerm>
-                    {fieldKey === undefined ? change.field : t(fieldKey)}
-                  </DescriptionListTerm>
-                  <DescriptionListDescription>
-                    <ProposalChange
-                      before={valueText(change.before)}
-                      after={valueText(change.after)}
-                    />
-                  </DescriptionListDescription>
-                </DescriptionListItem>
-              );
-            })}
-          </DescriptionList>
+        <span className={styles.proposalBody}>
+          <ProposalChanges changes={preview.changes} />
           {destructive && pending && (
-            <Alert tone="danger" reach="inline">
-              <AlertContent>
-                <AlertDescription>
-                  {t("assistant.proposal.destructive")}
-                </AlertDescription>
-              </AlertContent>
-            </Alert>
+            <AssistantNote tone="danger">
+              {t("assistant.proposal.destructive")}
+            </AssistantNote>
           )}
           {detail !== undefined && (
-            <Alert tone="danger" reach="inline">
-              <AlertContent>
-                <AlertDescription>{detail}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          )}
-          {screen !== undefined && served({ href: screen }) && (
-            <Text size="sm">
-              <Link render={routeTo({ href: screen })}>
-                {t("assistant.proposal.open")}
-              </Link>
-            </Text>
+            <AssistantNote tone="danger">{detail}</AssistantNote>
           )}
           {error !== null && (
-            <Alert tone="danger" reach="inline" live="polite">
-              <AlertContent>
-                <AlertDescription>{errorText(error, t)}</AlertDescription>
-              </AlertContent>
-            </Alert>
+            <AssistantNote tone="danger" live>
+              {errorText(error, t)}
+            </AssistantNote>
           )}
-        </Stack>
+        </span>
       </CardBody>
+
       {pending && (
         <CardFooter>
-          <span className={styles.proposalActions} ref={actions}>
-            <Button
-              variant="ghost"
-              tone="secondary"
-              disabled={busy}
-              loading={reject.isPending}
-              onClick={() => {
-                reject.mutate(shown.id, {
-                  onSuccess: (proposal) => onDecided?.(shown.id, { proposal }),
-                });
-              }}
-            >
-              {t("assistant.proposal.reject")}
-            </Button>
-            <Button
-              tone={destructive ? "danger" : "accent"}
-              disabled={busy}
-              loading={confirm.isPending}
-              onClick={() => {
-                if (!busy)
-                  confirm.mutate(shown.id, {
-                    onSuccess: (proposal) =>
-                      onDecided?.(shown.id, { proposal }),
-                  });
-              }}
-            >
-              {t("assistant.proposal.confirm")}
-            </Button>
-          </span>
+          <ProposalActions
+            ref={actions}
+            expiresAt={shown.expires_at}
+            destructive={destructive}
+            busy={busy}
+            confirming={confirm.isPending}
+            rejecting={reject.isPending}
+            onConfirm={handleConfirm}
+            onReject={handleReject}
+          />
+        </CardFooter>
+      )}
+
+      {opens && (
+        <CardFooter>
+          <Text size="sm">
+            <Link render={routeTo({ href: screen })}>
+              {t("assistant.proposal.open")}
+            </Link>
+          </Text>
+        </CardFooter>
+      )}
+
+      {hint && (
+        <CardFooter>
+          <Text size="xs" tone="muted">
+            {t(`assistant.proposal.hint.${status}`)}
+          </Text>
         </CardFooter>
       )}
     </Card>
   );
+}
+
+function failureDetail(result: unknown): string | undefined {
+  if (typeof result !== "object" || result === null) return undefined;
+
+  const detail = (result as { detail?: unknown }).detail;
+
+  return typeof detail === "string" ? detail : undefined;
 }

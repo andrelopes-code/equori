@@ -6,7 +6,7 @@ import {
 } from "@slotted/react/collapsible";
 import { MessageActivity, MessageActivityStep } from "@slotted/react/message";
 
-import { catalogKey } from "@/features/assistant/proposal-card";
+import { catalogKey } from "@/features/assistant/catalog-key";
 import { useT } from "@/i18n/i18n-provider";
 
 // Families read: message (activity), collapsible. The steps of a turn in order: while it runs the
