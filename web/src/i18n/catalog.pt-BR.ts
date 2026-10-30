@@ -622,6 +622,7 @@ export const catalogPtBR: Catalog = {
   "attachment.zoomOut": "Diminuir",
   "attachment.zoomReset": "Ajustar à janela",
   "attachment.download": "Baixar",
+  "attachment.close": "Fechar",
   "history.label": "Versões da transação",
   "history.voided": "Anulada",
   "history.current": "Versão atual ({version})",

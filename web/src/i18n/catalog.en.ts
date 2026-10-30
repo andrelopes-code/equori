@@ -614,6 +614,7 @@ export const catalogEn = {
   "attachment.zoomOut": "Zoom out",
   "attachment.zoomReset": "Fit to window",
   "attachment.download": "Download",
+  "attachment.close": "Close",
   "history.label": "Versions of the transaction",
   "history.voided": "Voided",
   "history.current": "Current version ({version})",

@@ -159,20 +159,28 @@ describe("attachments of a transaction", () => {
     expect(screen.getByRole("button", { name: "receipt-1.png" })).toHaveFocus();
   });
 
-  // Slotted issue #48: a press on the picture ends its click on the card itself.
-  it("opens the viewer from a click that lands on the card", async () => {
-    await renderApp(path, { fetch: api() });
-    const trigger = await screen.findByRole("button", {
-      name: "receipt-2.jpg",
-    });
-    const card = trigger.closest('[data-ui="attachment"]');
-    if (card === null) throw new Error("no card around the trigger");
+  // Slotted issue #48: a press on the picture ends its click on the card under a mouse and on the
+  // picture under a finger.
+  it.each([
+    { where: "card", target: (card: Element) => card },
+    { where: "picture", target: (card: Element) => card.querySelector("img") },
+  ])(
+    "opens the viewer from a click that lands on the $where",
+    async ({ target }) => {
+      await renderApp(path, { fetch: api() });
+      const trigger = await screen.findByRole("button", {
+        name: "receipt-2.jpg",
+      });
+      const card = trigger.closest('[data-ui="attachment"]');
+      const pressed = card === null ? null : target(card);
+      if (pressed === null) throw new Error("no card around the trigger");
 
-    fireEvent.click(card);
+      fireEvent.click(pressed);
 
-    const dialog = await screen.findByRole("dialog");
-    expect(shown(dialog)).toHaveAttribute("src", content(ids.two));
-  });
+      const dialog = await screen.findByRole("dialog");
+      expect(shown(dialog)).toHaveAttribute("src", content(ids.two));
+    },
+  );
 
   it("zooms by button, by key and by wheel", async () => {
     await renderApp(path, { fetch: api() });
@@ -196,6 +204,55 @@ describe("attachments of a transaction", () => {
       }),
     );
     expect(within(dialog).getByText("100%")).toBeInTheDocument();
+  });
+
+  it("takes the whole screen on a dark ground of its own", async () => {
+    await renderApp(path, { fetch: api() });
+    const { dialog } = await open("receipt-1.png");
+
+    const layer = dialog.closest('[data-ui="dialog"]');
+
+    expect(layer).toHaveAttribute("data-surface", "plain");
+    expect(layer).toHaveAttribute("data-full-screen", "always");
+    expect(dialog).toHaveAttribute("data-slotted-scheme", "dark");
+  });
+
+  it("closes on a click on the ground around the picture", async () => {
+    await renderApp(path, { fetch: api() });
+    const { dialog } = await open("receipt-1.png");
+    const stage = shown(dialog).parentElement;
+    if (stage === null) throw new Error("no stage around the picture");
+
+    fireEvent.pointerDown(stage, { clientX: 10, clientY: 10, pointerId: 1 });
+    fireEvent.pointerUp(stage, { clientX: 10, clientY: 10, pointerId: 1 });
+    fireEvent.click(stage, { clientX: 10, clientY: 10 });
+    await act(async () => {
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+    });
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("zooms one step for the sum of a trackpad's small wheel turns", async () => {
+    await renderApp(path, { fetch: api() });
+    const { dialog } = await open("receipt-1.png");
+
+    for (let turn = 0; turn < 4; turn++) {
+      fireEvent.wheel(shown(dialog), { deltaY: -25 });
+    }
+
+    expect(within(dialog).getByText("125%")).toBeInTheDocument();
+  });
+
+  it("draws no zoom for a PDF, which the browser's reader zooms", async () => {
+    await renderApp(path, { fetch: api() });
+    const { dialog } = await open("invoice.pdf");
+
+    expect(
+      within(dialog).queryByRole("button", {
+        name: catalogEn["attachment.zoomIn"],
+      }),
+    ).toBeNull();
   });
 
   it("steps between the files, the PDF included, by button and by arrow key", async () => {

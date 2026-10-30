@@ -1,5 +1,9 @@
 import { numberFormatter } from "@/i18n/format";
 
+export function contentURL(id: string): string {
+  return `/api/v1/attachments/${id}/content`;
+}
+
 const units = [
   { unit: "byte", limit: 1024 },
   { unit: "kilobyte", limit: 1024 ** 2 },
