@@ -97,10 +97,13 @@ SELECT
     m.disabled_at,
     m.created_at,
     m.language,
-    s.books_id
+    s.books_id,
+    ms.role AS book_role
 FROM
     identity_session s
     JOIN identity_member m ON m.id = s.member_id
+    JOIN identity_membership ms ON ms.member_id = s.member_id
+    AND ms.books_id = s.books_id
 WHERE
     s.token_hash = $1
     AND s.expires_at > $2;
@@ -163,6 +166,27 @@ SET
 WHERE
     member_id = $1
     AND books_id = $2;
+
+-- name: SwitchSession :execrows
+UPDATE identity_session
+SET
+    books_id = $3
+WHERE
+    token_hash = $1
+    AND member_id = $2;
+
+-- name: ListMemberBooks :many
+SELECT
+    b.id,
+    b.name,
+    ms.role
+FROM
+    identity_membership ms
+    JOIN identity_books b ON b.id = ms.books_id
+WHERE
+    ms.member_id = $1
+ORDER BY
+    b.id;
 
 -- name: GetAppearance :one
 SELECT

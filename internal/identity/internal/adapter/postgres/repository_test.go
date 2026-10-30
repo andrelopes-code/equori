@@ -56,11 +56,11 @@ func TestRepositorySessions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if got, gotBooks, err := repo.MemberBySession(ctx, s.TokenHash, now); err != nil || got.ID != user.ID || gotBooks != booksID {
-		t.Fatalf("MemberBySession = %+v, %d, %v; want member %d, books %d", got, gotBooks, err, user.ID, booksID)
+	if got, err := repo.MemberBySession(ctx, s.TokenHash, now); err != nil || got.Member.ID != user.ID || got.BooksID != booksID {
+		t.Fatalf("MemberBySession = %+v, %v; want member %d, books %d", got, err, user.ID, booksID)
 	}
 
-	if _, _, err := repo.MemberBySession(ctx, s.TokenHash, s.ExpiresAt); !errors.Is(err, app.ErrNotFound) {
+	if _, err := repo.MemberBySession(ctx, s.TokenHash, s.ExpiresAt); !errors.Is(err, app.ErrNotFound) {
 		t.Fatalf("expired session err = %v, want ErrNotFound", err)
 	}
 
@@ -68,7 +68,7 @@ func TestRepositorySessions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, _, err := repo.MemberBySession(ctx, s.TokenHash, now); !errors.Is(err, app.ErrNotFound) {
+	if _, err := repo.MemberBySession(ctx, s.TokenHash, now); !errors.Is(err, app.ErrNotFound) {
 		t.Fatalf("session survived DeleteExpiredSessions: err = %v", err)
 	}
 
@@ -81,7 +81,7 @@ func TestRepositorySessions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, _, err := repo.MemberBySession(ctx, s2.TokenHash, now); !errors.Is(err, app.ErrNotFound) {
+	if _, err := repo.MemberBySession(ctx, s2.TokenHash, now); !errors.Is(err, app.ErrNotFound) {
 		t.Fatalf("session survived DeleteSession: err = %v", err)
 	}
 }

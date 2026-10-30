@@ -10,6 +10,7 @@ import (
 
 	"github.com/andrelopes-code/equori/internal/identity/internal/domain"
 	"github.com/andrelopes-code/equori/internal/identity/internal/password"
+	"github.com/andrelopes-code/equori/internal/platform/auth"
 	"github.com/andrelopes-code/equori/internal/platform/locale"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )
@@ -21,6 +22,7 @@ var (
 	ErrTooManyAttempts    = errors.New("too many login attempts")
 	ErrUnauthenticated    = errors.New("unauthenticated")
 	ErrBusy               = errors.New("too many concurrent password operations")
+	ErrBooksNotFound      = errors.New("books not found")
 	ErrTimeZoneInvalid    = errors.New("time zone is not an IANA name")
 	// ErrAppearanceTooLarge reports an appearance object over MaxAppearanceBytes.
 	ErrAppearanceTooLarge = errors.New("appearance over 16 KiB")
@@ -45,6 +47,12 @@ type Repository interface {
 	UpdateBooksSettings(ctx context.Context, booksID int64, region string, timeZone, name *string) (string, error)
 	// TouchMembership returns ErrNotFound without the membership.
 	TouchMembership(ctx context.Context, memberID, booksID int64, at time.Time) error
+	// SwitchSession touches the membership and moves the session in one transaction; ErrBooksNotFound
+	// without the membership, also on a foreign key violation (spec section 9).
+	SwitchSession(ctx context.Context, tokenHash []byte, memberID, booksID int64, at time.Time) error
+	MemberBooks(ctx context.Context, memberID int64) ([]BooksMembership, error)
+	// CreateBooks creates the book and its owner membership and publishes identity.books_created.v1.
+	CreateBooks(ctx context.Context, memberID int64, language, name, region string, base money.Currency) (int64, error)
 	// Appearance returns the stored JSON object of the member.
 	Appearance(ctx context.Context, memberID int64) ([]byte, error)
 	// SetAppearance replaces the stored JSON object of the member.
@@ -52,7 +60,7 @@ type Repository interface {
 	MemberByID(ctx context.Context, memberID int64) (domain.Member, error)
 	MemberByEmail(ctx context.Context, email string) (domain.Member, error)
 	CreateSession(ctx context.Context, s domain.Session) error
-	MemberBySession(ctx context.Context, tokenHash []byte, now time.Time) (domain.Member, int64, error)
+	MemberBySession(ctx context.Context, tokenHash []byte, now time.Time) (Access, error)
 	DeleteSession(ctx context.Context, tokenHash []byte) error
 	DeleteExpiredSessions(ctx context.Context, now time.Time) error
 	AccessTokenRepository
@@ -92,8 +100,12 @@ func NewService(repo Repository, now func() time.Time, defaultTimeZone func(regi
 }
 
 func (s *Service) CreateMember(ctx context.Context, email, plain string, role domain.Role, l locale.Locale, base money.Currency) (domain.Member, error) {
-	u, err := s.newMember(ctx, email, plain, role, l, base)
+	u, err := s.newMember(ctx, email, plain, role, l.Language)
 	if err != nil {
+		return domain.Member{}, err
+	}
+
+	if err := validateBooks(l.Region, base); err != nil {
 		return domain.Member{}, err
 	}
 
@@ -103,7 +115,7 @@ func (s *Service) CreateMember(ctx context.Context, email, plain string, role do
 }
 
 // newMember validates a new member and hashes its password.
-func (s *Service) newMember(ctx context.Context, email, plain string, role domain.Role, l locale.Locale, base money.Currency) (domain.Member, error) {
+func (s *Service) newMember(ctx context.Context, email, plain string, role domain.Role, language string) (domain.Member, error) {
 	email, err := domain.NormalizeEmail(email)
 	if err != nil {
 		return domain.Member{}, err
@@ -117,12 +129,8 @@ func (s *Service) newMember(ctx context.Context, email, plain string, role domai
 		return domain.Member{}, domain.ErrInvalidRole
 	}
 
-	if err := validateLocale(l); err != nil {
+	if err := validateLanguage(language); err != nil {
 		return domain.Member{}, err
-	}
-
-	if _, err := money.ParseCurrency(string(base)); err != nil {
-		return domain.Member{}, &domain.FieldError{Field: "base_currency", Message: "must be an ISO 4217 currency code"}
 	}
 
 	release, err := s.acquireHashSlot(ctx)
@@ -134,15 +142,40 @@ func (s *Service) newMember(ctx context.Context, email, plain string, role domai
 
 	release()
 
-	return domain.Member{Email: email, PasswordHash: hash, Role: role, Language: l.Language}, nil
+	return domain.Member{Email: email, PasswordHash: hash, Role: role, Language: language}, nil
+}
+
+// validateBooks checks the region and the base currency of a new book.
+func validateBooks(region string, base money.Currency) error {
+	if err := validateRegion(region); err != nil {
+		return err
+	}
+
+	if _, err := money.ParseCurrency(string(base)); err != nil {
+		return &domain.FieldError{Field: "base_currency", Message: "must be an ISO 4217 currency code"}
+	}
+
+	return nil
 }
 
 func validateLocale(l locale.Locale) error {
-	if !locale.ValidLanguage(l.Language) {
+	if err := validateLanguage(l.Language); err != nil {
+		return err
+	}
+
+	return validateRegion(l.Region)
+}
+
+func validateLanguage(language string) error {
+	if !locale.ValidLanguage(language) {
 		return &domain.FieldError{Field: "language", Message: "must be an ISO 639 language code"}
 	}
 
-	if !locale.ValidRegion(l.Region) {
+	return nil
+}
+
+func validateRegion(region string) error {
+	if !locale.ValidRegion(region) {
 		return &domain.FieldError{Field: "region", Message: "must be an ISO 3166-1 alpha-2 code"}
 	}
 
@@ -367,19 +400,82 @@ func (s *Service) Logout(ctx context.Context, token string) error {
 	return s.repo.DeleteSession(ctx, domain.HashToken(token))
 }
 
-// Authenticate returns the member and the active books ID; ErrUnauthenticated for unknown or expired tokens and disabled members.
-func (s *Service) Authenticate(ctx context.Context, token string) (domain.Member, int64, error) {
-	user, booksID, err := s.repo.MemberBySession(ctx, domain.HashToken(token), s.now())
+// Access is an authenticated member in its active book.
+type Access struct {
+	Member  domain.Member
+	BooksID int64
+	Role    auth.BookRole
+}
+
+// Authenticate returns the member, the active books ID and the role in it; ErrUnauthenticated for unknown or expired tokens and disabled members.
+func (s *Service) Authenticate(ctx context.Context, token string) (Access, error) {
+	access, err := s.repo.MemberBySession(ctx, domain.HashToken(token), s.now())
 	switch {
 	case errors.Is(err, ErrNotFound):
-		return domain.Member{}, 0, ErrUnauthenticated
+		return Access{}, ErrUnauthenticated
 	case err != nil:
-		return domain.Member{}, 0, fmt.Errorf("load session: %w", err)
-	case user.Disabled:
-		return domain.Member{}, 0, ErrUnauthenticated
+		return Access{}, fmt.Errorf("load session: %w", err)
+	case access.Member.Disabled:
+		return Access{}, ErrUnauthenticated
 	}
 
-	return user, booksID, nil
+	return access, nil
+}
+
+type BooksMembership struct {
+	ID     int64
+	Name   string
+	Role   auth.BookRole
+	Active bool
+}
+
+// Books lists the books of the member's memberships, by ID; Active marks activeBooksID (HA5).
+func (s *Service) Books(ctx context.Context, memberID, activeBooksID int64) ([]BooksMembership, error) {
+	books, err := s.repo.MemberBooks(ctx, memberID)
+	if err != nil {
+		return nil, fmt.Errorf("list books of member %d: %w", memberID, err)
+	}
+
+	for i := range books {
+		books[i].Active = books[i].ID == activeBooksID
+	}
+
+	return books, nil
+}
+
+// SwitchBooks moves the session to booksID: ErrBooksNotFound without a membership of the member (HA4).
+func (s *Service) SwitchBooks(ctx context.Context, memberID int64, sessionToken string, booksID int64) error {
+	return s.repo.SwitchSession(ctx, domain.HashToken(sessionToken), memberID, booksID, s.now())
+}
+
+// CreateBooks creates a book with the member as owner; a nil name takes the member's email and an
+// empty base takes the default of the region (HA6).
+func (s *Service) CreateBooks(ctx context.Context, memberID int64, name *string, region string, base money.Currency) (BooksMembership, error) {
+	base, err := s.baseCurrency(region, base)
+	if err != nil {
+		return BooksMembership{}, err
+	}
+
+	if err := validateBooks(region, base); err != nil {
+		return BooksMembership{}, err
+	}
+
+	member, err := s.repo.MemberByID(ctx, memberID)
+	if err != nil {
+		return BooksMembership{}, fmt.Errorf("load member %d: %w", memberID, err)
+	}
+
+	booksName := domain.DefaultBooksName(member.Email)
+	if name != nil {
+		booksName = *name
+	}
+
+	id, err := s.repo.CreateBooks(ctx, memberID, member.Language, booksName, region, base)
+	if err != nil {
+		return BooksMembership{}, fmt.Errorf("create books of member %d: %w", memberID, err)
+	}
+
+	return BooksMembership{ID: id, Name: booksName, Role: auth.RoleOwner}, nil
 }
 
 func (s *Service) verify(ctx context.Context, plain, hash string) (bool, error) {

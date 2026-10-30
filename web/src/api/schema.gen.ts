@@ -108,6 +108,64 @@ export interface paths {
         patch: operations["updateCurrentBooks"];
         trace?: never;
     };
+    "/me/books": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the books of the member's memberships (HA5). */
+        get: operations["listMyBooks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/books": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create a book with the member as owner; the session stays in its book (HA6).
+         * @description Without name the book takes the member's email; without base_currency, the default of the
+         *     region; a region without one is 422 on base_currency.
+         */
+        post: operations["createBooks"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/session/books": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Move the current session to another book of the member (HA4).
+         * @description A books ID without a membership of the member is 404 books_not_found.
+         */
+        put: operations["switchBooks"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/access-tokens": {
         parameters: {
             query?: never;
@@ -5613,6 +5671,9 @@ export interface components {
             email: string;
             /** @enum {string} */
             role: "admin" | "member";
+            /** Format: int64 */
+            books_id: number;
+            book_role: components["schemas"]["BookRole"];
             language: string;
             region: string;
         };
@@ -5635,6 +5696,28 @@ export interface components {
             region: string;
             time_zone: string | null;
             name?: string;
+        };
+        /** @enum {string} */
+        BookRole: "owner" | "write" | "read";
+        BooksMembership: {
+            /** Format: int64 */
+            id: number;
+            name: string;
+            role: components["schemas"]["BookRole"];
+            /** @description True for the book of the current session. */
+            active: boolean;
+        };
+        BooksMembershipList: {
+            items: components["schemas"]["BooksMembership"][];
+        };
+        CreateBooksInput: {
+            name?: string;
+            region: string;
+            base_currency?: string;
+        };
+        SwitchBooksInput: {
+            /** Format: int64 */
+            books_id: number;
         };
         SetupStatus: {
             required: boolean;
@@ -5952,6 +6035,81 @@ export interface operations {
             400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
+        };
+    };
+    listMyBooks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Memberships, by books ID. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BooksMembershipList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+        };
+    };
+    createBooks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateBooksInput"];
+            };
+        };
+        responses: {
+            /** @description Created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BooksMembership"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    switchBooks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                equori_session?: components["parameters"]["SessionCookie"];
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SwitchBooksInput"];
+            };
+        };
+        responses: {
+            /** @description Switched. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
         };
     };
     listAccessTokens: {

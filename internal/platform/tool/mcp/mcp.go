@@ -23,6 +23,7 @@ type Grant struct {
 	TokenID  string
 	MemberID int64
 	BooksID  int64
+	Role     auth.BookRole
 	Write    bool
 	// Location is the book's location for dates (BK19); nil reads as UTC.
 	Location *time.Location
@@ -127,7 +128,7 @@ func callTool(cfg Config, spec tool.Spec) sdk.ToolHandler {
 		}
 
 		start := time.Now()
-		res, err := cfg.Registry.Call(clock.WithLocation(auth.WithIdentity(ctx, g.MemberID, g.BooksID), g.Location), spec.Name, req.Params.Arguments)
+		res, err := cfg.Registry.Call(clock.WithLocation(auth.WithIdentity(ctx, g.MemberID, g.BooksID, g.Role), g.Location), spec.Name, req.Params.Arguments)
 
 		outcome := "ok"
 		switch {

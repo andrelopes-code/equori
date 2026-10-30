@@ -30,21 +30,24 @@ WHERE
     AND id = $2;
 
 -- name: GetAccessTokenByHash :one
--- Verification knows only the token; the hash identifies the member and the book.
+-- Verification knows only the token; the hash identifies the member and the book. HA16: the role is read at each use.
 SELECT
-    id,
-    member_id,
-    books_id,
-    name,
-    scope,
-    created_at,
-    expires_at,
-    last_used_at
+    t.id,
+    t.member_id,
+    t.books_id,
+    t.name,
+    t.scope,
+    t.created_at,
+    t.expires_at,
+    t.last_used_at,
+    ms.role AS book_role
 FROM
-    identity_access_token
+    identity_access_token t
+    JOIN identity_membership ms ON ms.member_id = t.member_id
+    AND ms.books_id = t.books_id
 WHERE
-    token_hash = $1
-    AND expires_at > $2;
+    t.token_hash = $1
+    AND t.expires_at > $2;
 
 -- name: TouchAccessToken :exec
 -- X8: last_used_at moves at most once a minute.

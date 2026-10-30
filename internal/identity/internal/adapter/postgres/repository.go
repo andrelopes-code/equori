@@ -11,13 +11,18 @@ import (
 
 	"github.com/andrelopes-code/equori/internal/identity/internal/app"
 	"github.com/andrelopes-code/equori/internal/identity/internal/domain"
+	"github.com/andrelopes-code/equori/internal/platform/auth"
 	"github.com/andrelopes-code/equori/internal/platform/locale"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/outbox"
 )
 
-// uniqueViolation is the PostgreSQL SQLSTATE for unique_violation.
-const uniqueViolation = "23505"
+const (
+	// uniqueViolation is the PostgreSQL SQLSTATE for unique_violation.
+	uniqueViolation = "23505"
+	// foreignKeyViolation is the PostgreSQL SQLSTATE for foreign_key_violation.
+	foreignKeyViolation = "23503"
+)
 
 var _ app.Repository = (*Repository)(nil)
 
@@ -121,25 +126,54 @@ func (r *Repository) insertMember(ctx context.Context, tx pgx.Tx, u domain.Membe
 		return domain.Member{}, 0, err
 	}
 
-	booksID, err := q.CreateBooks(ctx, CreateBooksParams{Region: region, Name: domain.DefaultBooksName(u.Email)})
+	booksID, err := r.insertBooks(ctx, tx, row.ID, row.Language, domain.DefaultBooksName(u.Email), region, base)
 	if err != nil {
 		return domain.Member{}, 0, err
 	}
 
-	if err := q.CreateMembership(ctx, CreateMembershipParams{MemberID: row.ID, BooksID: booksID, Role: "owner"}); err != nil {
-		return domain.Member{}, 0, err
+	return toMember(row), booksID, nil
+}
+
+// insertBooks creates the book, the owner membership of memberID and the books_created event.
+func (r *Repository) insertBooks(ctx context.Context, tx pgx.Tx, memberID int64, language, name, region string, base money.Currency) (int64, error) {
+	q := r.q.WithTx(tx)
+
+	booksID, err := q.CreateBooks(ctx, CreateBooksParams{Region: region, Name: name})
+	if err != nil {
+		return 0, err
+	}
+
+	if err := q.CreateMembership(ctx, CreateMembershipParams{MemberID: memberID, BooksID: booksID, Role: string(auth.RoleOwner)}); err != nil {
+		return 0, err
 	}
 
 	if err := outbox.Insert(ctx, tx, outbox.Event{
 		Type:        booksCreatedEvent,
 		BooksID:     booksID,
 		AggregateID: strconv.FormatInt(booksID, 10),
-		Payload:     booksCreated{BooksID: booksID, MemberID: row.ID, Language: row.Language, Region: region, BaseCurrency: base},
+		Payload:     booksCreated{BooksID: booksID, MemberID: memberID, Language: language, Region: region, BaseCurrency: base},
 	}); err != nil {
-		return domain.Member{}, 0, err
+		return 0, err
 	}
 
-	return toMember(row), booksID, nil
+	return booksID, nil
+}
+
+// CreateBooks publishes identity.books_created.v1 in the same transaction.
+func (r *Repository) CreateBooks(ctx context.Context, memberID int64, language, name, region string, base money.Currency) (int64, error) {
+	var booksID int64
+
+	err := pgx.BeginFunc(ctx, r.db, func(tx pgx.Tx) error {
+		var err error
+		booksID, err = r.insertBooks(ctx, tx, memberID, language, name, region, base)
+
+		return err
+	})
+	if err != nil {
+		return 0, err
+	}
+
+	return booksID, nil
 }
 
 // UpdateProfile stores the language of the member and the region of the books in one transaction.
@@ -203,6 +237,51 @@ func (r *Repository) TouchMembership(ctx context.Context, memberID, booksID int6
 	return nil
 }
 
+func (r *Repository) SwitchSession(ctx context.Context, tokenHash []byte, memberID, booksID int64, at time.Time) error {
+	err := pgx.BeginFunc(ctx, r.db, func(tx pgx.Tx) error {
+		q := r.q.WithTx(tx)
+
+		n, err := q.TouchMembership(ctx, TouchMembershipParams{MemberID: memberID, BooksID: booksID, LastActiveAt: at})
+		if err != nil {
+			return err
+		}
+
+		if n == 0 {
+			return app.ErrBooksNotFound
+		}
+
+		n, err = q.SwitchSession(ctx, SwitchSessionParams{TokenHash: tokenHash, MemberID: memberID, BooksID: booksID})
+		if err != nil {
+			return err
+		}
+
+		if n == 0 {
+			return app.ErrUnauthenticated
+		}
+
+		return nil
+	})
+	if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == foreignKeyViolation {
+		return app.ErrBooksNotFound
+	}
+
+	return err
+}
+
+func (r *Repository) MemberBooks(ctx context.Context, memberID int64) ([]app.BooksMembership, error) {
+	rows, err := r.q.ListMemberBooks(ctx, memberID)
+	if err != nil {
+		return nil, err
+	}
+
+	out := make([]app.BooksMembership, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, app.BooksMembership{ID: row.ID, Name: row.Name, Role: auth.BookRole(row.Role)})
+	}
+
+	return out, nil
+}
+
 func (r *Repository) Appearance(ctx context.Context, memberID int64) ([]byte, error) {
 	doc, err := r.q.GetAppearance(ctx, memberID)
 	if err != nil {
@@ -253,10 +332,10 @@ func (r *Repository) CreateSession(ctx context.Context, s domain.Session) error 
 	})
 }
 
-func (r *Repository) MemberBySession(ctx context.Context, tokenHash []byte, now time.Time) (domain.Member, int64, error) {
+func (r *Repository) MemberBySession(ctx context.Context, tokenHash []byte, now time.Time) (app.Access, error) {
 	row, err := r.q.GetMemberBySession(ctx, GetMemberBySessionParams{TokenHash: tokenHash, ExpiresAt: now})
 	if err != nil {
-		return domain.Member{}, 0, notFound(err)
+		return app.Access{}, notFound(err)
 	}
 
 	user := toMember(IdentityMember{
@@ -264,7 +343,7 @@ func (r *Repository) MemberBySession(ctx context.Context, tokenHash []byte, now 
 		DisabledAt: row.DisabledAt, CreatedAt: row.CreatedAt, Language: row.Language,
 	})
 
-	return user, row.BooksID, nil
+	return app.Access{Member: user, BooksID: row.BooksID, Role: auth.BookRole(row.BookRole)}, nil
 }
 
 func (r *Repository) DeleteSession(ctx context.Context, tokenHash []byte) error {

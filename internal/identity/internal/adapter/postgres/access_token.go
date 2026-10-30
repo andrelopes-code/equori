@@ -63,7 +63,7 @@ func (r *Repository) AccessTokenByHash(ctx context.Context, hash []byte, now tim
 	}
 
 	return domain.AccessToken{
-		ID: row.ID, MemberID: row.MemberID, BooksID: row.BooksID, Name: row.Name, Scope: row.Scope, TokenHash: hash, CreatedAt: row.CreatedAt, ExpiresAt: row.ExpiresAt, LastUsedAt: row.LastUsedAt,
+		ID: row.ID, MemberID: row.MemberID, BooksID: row.BooksID, Name: row.Name, Scope: row.Scope, Role: row.BookRole, TokenHash: hash, CreatedAt: row.CreatedAt, ExpiresAt: row.ExpiresAt, LastUsedAt: row.LastUsedAt,
 	}, nil
 }
 

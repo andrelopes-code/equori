@@ -2,6 +2,7 @@ package auth_test
 
 import (
 	"context"
+	"slices"
 	"testing"
 
 	"github.com/andrelopes-code/equori/internal/platform/auth"
@@ -20,9 +21,9 @@ func TestIdentity(t *testing.T) {
 		booksID   int64
 		hasBooks  bool
 	}{
-		{"identity", auth.WithIdentity(bg, 7, 9), 7, true, 9, true},
+		{"identity", auth.WithIdentity(bg, 7, 9, auth.RoleOwner), 7, true, 9, true},
 		{"books only", auth.WithBooksID(bg, 9), 0, false, 9, true},
-		{"books replaced", auth.WithBooksID(auth.WithIdentity(bg, 7, 9), 11), 7, true, 11, true},
+		{"books replaced", auth.WithBooksID(auth.WithIdentity(bg, 7, 9, auth.RoleOwner), 11), 7, true, 11, true},
 		{"empty", bg, 0, false, 0, false},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
@@ -51,4 +52,44 @@ func TestMustMemberIDPanics(t *testing.T) {
 	}()
 
 	auth.MustMemberID(auth.WithBooksID(context.Background(), 9))
+}
+
+func TestBookRoleAllows(t *testing.T) {
+	t.Parallel()
+
+	for _, tt := range []struct {
+		role                     auth.BookRole
+		read, write, owner, none bool
+	}{
+		{auth.RoleRead, true, false, false, false},
+		{auth.RoleWrite, true, true, false, false},
+		{auth.RoleOwner, true, true, true, false},
+		{"", false, false, false, false},
+		{"admin", false, false, false, false},
+	} {
+		t.Run(string(tt.role), func(t *testing.T) {
+			t.Parallel()
+
+			got := []bool{
+				tt.role.Allows(auth.RoleRead),
+				tt.role.Allows(auth.RoleWrite),
+				tt.role.Allows(auth.RoleOwner),
+				tt.role.Allows(""),
+			}
+			want := []bool{tt.read, tt.write, tt.owner, tt.none}
+
+			if !slices.Equal(got, want) {
+				t.Errorf("Allows(read, write, owner, empty) = %v, want %v", got, want)
+			}
+		})
+	}
+}
+
+func TestMustBookRole(t *testing.T) {
+	t.Parallel()
+
+	ctx := auth.WithBooksID(auth.WithIdentity(context.Background(), 7, 9, auth.RoleWrite), 11)
+	if got := auth.MustBookRole(ctx); got != auth.RoleWrite {
+		t.Errorf("MustBookRole = %q, want %q", got, auth.RoleWrite)
+	}
 }

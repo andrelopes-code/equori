@@ -238,7 +238,7 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 			}
 
 			return mcp.Grant{
-				TokenID: g.TokenID.String(), MemberID: g.MemberID, BooksID: g.BooksID, Write: g.Scope == "write", Location: loc,
+				TokenID: g.TokenID.String(), MemberID: g.MemberID, BooksID: g.BooksID, Role: g.Role, Write: g.Scope == "write", Location: loc,
 			}, nil
 		},
 	}))

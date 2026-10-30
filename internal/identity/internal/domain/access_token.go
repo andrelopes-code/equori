@@ -24,11 +24,13 @@ const (
 
 // AccessToken opens /mcp for one member. It is persisted by TokenHash only; the text is shown once.
 type AccessToken struct {
-	ID         uuid.UUID
-	MemberID   int64
-	BooksID    int64
-	Name       string
-	Scope      string
+	ID       uuid.UUID
+	MemberID int64
+	BooksID  int64
+	Name     string
+	Scope    string
+	// Role is the member's role in the book, read at each verification (HA16); empty on a new token.
+	Role       string
 	TokenHash  []byte
 	CreatedAt  time.Time
 	ExpiresAt  time.Time

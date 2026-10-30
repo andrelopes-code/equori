@@ -17,6 +17,27 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
+// Defines values for BookRole.
+const (
+	Owner BookRole = "owner"
+	Read  BookRole = "read"
+	Write BookRole = "write"
+)
+
+// Valid indicates whether the value is a known member of the BookRole enum.
+func (e BookRole) Valid() bool {
+	switch e {
+	case Owner:
+		return true
+	case Read:
+		return true
+	case Write:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for UserRole.
 const (
 	Admin  UserRole = "admin"
@@ -66,6 +87,23 @@ type AccessTokenList struct {
 // Appearance Appearance choices by name (scheme, accent, themes, ...); the web defines names and values.
 type Appearance map[string]interface{}
 
+// BookRole defines model for BookRole.
+type BookRole string
+
+// BooksMembership defines model for BooksMembership.
+type BooksMembership struct {
+	// Active True for the book of the current session.
+	Active bool     `json:"active"`
+	Id     int64    `json:"id"`
+	Name   string   `json:"name"`
+	Role   BookRole `json:"role"`
+}
+
+// BooksMembershipList defines model for BooksMembershipList.
+type BooksMembershipList struct {
+	Items []BooksMembership `json:"items"`
+}
+
 // BooksSettings defines model for BooksSettings.
 type BooksSettings struct {
 	// DefaultTimeZone The IANA time zone name of the region (BK18).
@@ -82,6 +120,13 @@ type BooksSettingsInput struct {
 	Name     *string `json:"name,omitempty"`
 	Region   string  `json:"region"`
 	TimeZone *string `json:"time_zone"`
+}
+
+// CreateBooksInput defines model for CreateBooksInput.
+type CreateBooksInput struct {
+	BaseCurrency *string `json:"base_currency,omitempty"`
+	Name         *string `json:"name,omitempty"`
+	Region       string  `json:"region"`
 }
 
 // Credentials defines model for Credentials.
@@ -142,6 +187,11 @@ type SetupStatus struct {
 	Required bool `json:"required"`
 }
 
+// SwitchBooksInput defines model for SwitchBooksInput.
+type SwitchBooksInput struct {
+	BooksId int64 `json:"books_id"`
+}
+
 // UpdateUserInput defines model for UpdateUserInput.
 type UpdateUserInput struct {
 	Language *string `json:"language,omitempty"`
@@ -149,6 +199,8 @@ type UpdateUserInput struct {
 
 // User defines model for User.
 type User struct {
+	BookRole BookRole `json:"book_role"`
+	BooksId  int64    `json:"books_id"`
 	Email    string   `json:"email"`
 	Id       int64    `json:"id"`
 	Language string   `json:"language"`
@@ -173,8 +225,16 @@ type DeleteSessionParams struct {
 	EquoriSession *SessionCookie `form:"equori_session,omitempty" json:"equori_session,omitempty"`
 }
 
+// SwitchBooksParams defines parameters for SwitchBooks.
+type SwitchBooksParams struct {
+	EquoriSession *SessionCookie `form:"equori_session,omitempty" json:"equori_session,omitempty"`
+}
+
 // CreateAccessTokenJSONRequestBody defines body for CreateAccessToken for application/json ContentType.
 type CreateAccessTokenJSONRequestBody = AccessTokenInput
+
+// CreateBooksJSONRequestBody defines body for CreateBooks for application/json ContentType.
+type CreateBooksJSONRequestBody = CreateBooksInput
 
 // UpdateCurrentBooksJSONRequestBody defines body for UpdateCurrentBooks for application/json ContentType.
 type UpdateCurrentBooksJSONRequestBody = BooksSettingsInput
@@ -187,6 +247,9 @@ type SetMemberAppearanceJSONRequestBody = Appearance
 
 // CreateSessionJSONRequestBody defines body for CreateSession for application/json ContentType.
 type CreateSessionJSONRequestBody = Credentials
+
+// SwitchBooksJSONRequestBody defines body for SwitchBooks for application/json ContentType.
+type SwitchBooksJSONRequestBody = SwitchBooksInput
 
 // CompleteSetupJSONRequestBody defines body for CompleteSetup for application/json ContentType.
 type CompleteSetupJSONRequestBody = SetupInput
@@ -202,6 +265,9 @@ type ServerInterface interface {
 	// DeleteAccessToken Delete a personal access token; it stops working at once.
 	// (DELETE /access-tokens/{id})
 	DeleteAccessToken(w http.ResponseWriter, r *http.Request, id ID)
+	// CreateBooks Create a book with the member as owner; the session stays in its book (HA6).
+	// (POST /books)
+	CreateBooks(w http.ResponseWriter, r *http.Request)
 	// GetCurrentBooks Return the settings of the active book (ADR 029 BK22).
 	// (GET /books/current)
 	GetCurrentBooks(w http.ResponseWriter, r *http.Request)
@@ -220,12 +286,18 @@ type ServerInterface interface {
 	// SetMemberAppearance Replace the appearance choices of the authenticated member.
 	// (PUT /me/appearance)
 	SetMemberAppearance(w http.ResponseWriter, r *http.Request)
+	// ListMyBooks List the books of the member's memberships (HA5).
+	// (GET /me/books)
+	ListMyBooks(w http.ResponseWriter, r *http.Request)
 	// DeleteSession Log out and end the current session.
 	// (DELETE /session)
 	DeleteSession(w http.ResponseWriter, r *http.Request, params DeleteSessionParams)
 	// CreateSession Log in and start a session.
 	// (POST /session)
 	CreateSession(w http.ResponseWriter, r *http.Request)
+	// SwitchBooks Move the current session to another book of the member (HA4).
+	// (PUT /session/books)
+	SwitchBooks(w http.ResponseWriter, r *http.Request, params SwitchBooksParams)
 	// GetSetup Report whether the first member is still to be created (ADR 003, amendment of 2026-10-27).
 	// (GET /setup)
 	GetSetup(w http.ResponseWriter, r *http.Request)
@@ -288,6 +360,20 @@ func (siw *ServerInterfaceWrapper) DeleteAccessToken(w http.ResponseWriter, r *h
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.DeleteAccessToken(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateBooks operation middleware
+func (siw *ServerInterfaceWrapper) CreateBooks(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateBooks(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -381,6 +467,20 @@ func (siw *ServerInterfaceWrapper) SetMemberAppearance(w http.ResponseWriter, r 
 	handler.ServeHTTP(w, r)
 }
 
+// ListMyBooks operation middleware
+func (siw *ServerInterfaceWrapper) ListMyBooks(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListMyBooks(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // DeleteSession operation middleware
 func (siw *ServerInterfaceWrapper) DeleteSession(w http.ResponseWriter, r *http.Request) {
 
@@ -421,6 +521,41 @@ func (siw *ServerInterfaceWrapper) CreateSession(w http.ResponseWriter, r *http.
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.CreateSession(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SwitchBooks operation middleware
+func (siw *ServerInterfaceWrapper) SwitchBooks(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params SwitchBooksParams
+
+	{
+		var cookie *http.Cookie
+
+		if cookie, err = r.Cookie("equori_session"); err == nil {
+			var value SessionCookie
+			err = runtime.BindStyledParameterWithOptions("simple", "equori_session", cookie.Value, &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationCookie, Explode: true, Required: false, Type: "string", Format: ""})
+			if err != nil {
+				siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "equori_session", Err: err})
+				return
+			}
+			params.EquoriSession = &value
+
+		}
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SwitchBooks(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -588,6 +723,9 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/me/appearance", wrapper.SetMemberAppearance)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/books/current", wrapper.GetCurrentBooks)
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/books/current", wrapper.UpdateCurrentBooks)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/me/books", wrapper.ListMyBooks)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/books", wrapper.CreateBooks)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/session/books", wrapper.SwitchBooks)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/access-tokens", wrapper.ListAccessTokens)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/access-tokens", wrapper.CreateAccessToken)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/access-tokens/{id}", wrapper.DeleteAccessToken)
@@ -728,6 +866,72 @@ func (response DeleteAccessToken404ApplicationProblemPlusJSONResponse) VisitDele
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateBooksRequestObject struct {
+	Body *CreateBooksJSONRequestBody
+}
+
+type CreateBooksResponseObject interface {
+	VisitCreateBooksResponse(w http.ResponseWriter) error
+}
+
+type CreateBooks201JSONResponse BooksMembership
+
+func (response CreateBooks201JSONResponse) VisitCreateBooksResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateBooks400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response CreateBooks400ApplicationProblemPlusJSONResponse) VisitCreateBooksResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateBooks401ApplicationProblemPlusJSONResponse Problem
+
+func (response CreateBooks401ApplicationProblemPlusJSONResponse) VisitCreateBooksResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateBooks422ApplicationProblemPlusJSONResponse Problem
+
+func (response CreateBooks422ApplicationProblemPlusJSONResponse) VisitCreateBooksResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -1027,6 +1231,43 @@ func (response SetMemberAppearance422ApplicationProblemPlusJSONResponse) VisitSe
 	return err
 }
 
+type ListMyBooksRequestObject struct {
+}
+
+type ListMyBooksResponseObject interface {
+	VisitListMyBooksResponse(w http.ResponseWriter) error
+}
+
+type ListMyBooks200JSONResponse BooksMembershipList
+
+func (response ListMyBooks200JSONResponse) VisitListMyBooksResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListMyBooks401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListMyBooks401ApplicationProblemPlusJSONResponse) VisitListMyBooksResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type DeleteSessionRequestObject struct {
 	Params DeleteSessionParams
 }
@@ -1159,6 +1400,67 @@ func (response CreateSession503ApplicationProblemPlusJSONResponse) VisitCreateSe
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SwitchBooksRequestObject struct {
+	Params SwitchBooksParams
+	Body   *SwitchBooksJSONRequestBody
+}
+
+type SwitchBooksResponseObject interface {
+	VisitSwitchBooksResponse(w http.ResponseWriter) error
+}
+
+type SwitchBooks204Response struct {
+}
+
+func (response SwitchBooks204Response) VisitSwitchBooksResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type SwitchBooks400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response SwitchBooks400ApplicationProblemPlusJSONResponse) VisitSwitchBooksResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SwitchBooks401ApplicationProblemPlusJSONResponse Problem
+
+func (response SwitchBooks401ApplicationProblemPlusJSONResponse) VisitSwitchBooksResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SwitchBooks404ApplicationProblemPlusJSONResponse Problem
+
+func (response SwitchBooks404ApplicationProblemPlusJSONResponse) VisitSwitchBooksResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -1313,6 +1615,9 @@ type StrictServerInterface interface {
 	// DeleteAccessToken Delete a personal access token; it stops working at once.
 	// (DELETE /access-tokens/{id})
 	DeleteAccessToken(ctx context.Context, request DeleteAccessTokenRequestObject) (DeleteAccessTokenResponseObject, error)
+	// CreateBooks Create a book with the member as owner; the session stays in its book (HA6).
+	// (POST /books)
+	CreateBooks(ctx context.Context, request CreateBooksRequestObject) (CreateBooksResponseObject, error)
 	// GetCurrentBooks Return the settings of the active book (ADR 029 BK22).
 	// (GET /books/current)
 	GetCurrentBooks(ctx context.Context, request GetCurrentBooksRequestObject) (GetCurrentBooksResponseObject, error)
@@ -1331,12 +1636,18 @@ type StrictServerInterface interface {
 	// SetMemberAppearance Replace the appearance choices of the authenticated member.
 	// (PUT /me/appearance)
 	SetMemberAppearance(ctx context.Context, request SetMemberAppearanceRequestObject) (SetMemberAppearanceResponseObject, error)
+	// ListMyBooks List the books of the member's memberships (HA5).
+	// (GET /me/books)
+	ListMyBooks(ctx context.Context, request ListMyBooksRequestObject) (ListMyBooksResponseObject, error)
 	// DeleteSession Log out and end the current session.
 	// (DELETE /session)
 	DeleteSession(ctx context.Context, request DeleteSessionRequestObject) (DeleteSessionResponseObject, error)
 	// CreateSession Log in and start a session.
 	// (POST /session)
 	CreateSession(ctx context.Context, request CreateSessionRequestObject) (CreateSessionResponseObject, error)
+	// SwitchBooks Move the current session to another book of the member (HA4).
+	// (PUT /session/books)
+	SwitchBooks(ctx context.Context, request SwitchBooksRequestObject) (SwitchBooksResponseObject, error)
 	// GetSetup Report whether the first member is still to be created (ADR 003, amendment of 2026-10-27).
 	// (GET /setup)
 	GetSetup(ctx context.Context, request GetSetupRequestObject) (GetSetupResponseObject, error)
@@ -1458,6 +1769,37 @@ func (sh *strictHandler) DeleteAccessToken(w http.ResponseWriter, r *http.Reques
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(DeleteAccessTokenResponseObject); ok {
 		if err := validResponse.VisitDeleteAccessTokenResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateBooks operation middleware
+func (sh *strictHandler) CreateBooks(w http.ResponseWriter, r *http.Request) {
+	var request CreateBooksRequestObject
+
+	var body CreateBooksJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateBooks(ctx, request.(CreateBooksRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateBooks")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateBooksResponseObject); ok {
+		if err := validResponse.VisitCreateBooksResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -1630,6 +1972,30 @@ func (sh *strictHandler) SetMemberAppearance(w http.ResponseWriter, r *http.Requ
 	}
 }
 
+// ListMyBooks operation middleware
+func (sh *strictHandler) ListMyBooks(w http.ResponseWriter, r *http.Request) {
+	var request ListMyBooksRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListMyBooks(ctx, request.(ListMyBooksRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListMyBooks")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListMyBooksResponseObject); ok {
+		if err := validResponse.VisitListMyBooksResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // DeleteSession operation middleware
 func (sh *strictHandler) DeleteSession(w http.ResponseWriter, r *http.Request, params DeleteSessionParams) {
 	var request DeleteSessionRequestObject
@@ -1680,6 +2046,39 @@ func (sh *strictHandler) CreateSession(w http.ResponseWriter, r *http.Request) {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(CreateSessionResponseObject); ok {
 		if err := validResponse.VisitCreateSessionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SwitchBooks operation middleware
+func (sh *strictHandler) SwitchBooks(w http.ResponseWriter, r *http.Request, params SwitchBooksParams) {
+	var request SwitchBooksRequestObject
+
+	request.Params = params
+
+	var body SwitchBooksJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SwitchBooks(ctx, request.(SwitchBooksRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SwitchBooks")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SwitchBooksResponseObject); ok {
+		if err := validResponse.VisitSwitchBooksResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

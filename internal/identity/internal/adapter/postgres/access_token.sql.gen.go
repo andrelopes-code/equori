@@ -66,19 +66,22 @@ func (q *Queries) DeleteAccessToken(ctx context.Context, arg DeleteAccessTokenPa
 
 const getAccessTokenByHash = `-- name: GetAccessTokenByHash :one
 SELECT
-    id,
-    member_id,
-    books_id,
-    name,
-    scope,
-    created_at,
-    expires_at,
-    last_used_at
+    t.id,
+    t.member_id,
+    t.books_id,
+    t.name,
+    t.scope,
+    t.created_at,
+    t.expires_at,
+    t.last_used_at,
+    ms.role AS book_role
 FROM
-    identity_access_token
+    identity_access_token t
+    JOIN identity_membership ms ON ms.member_id = t.member_id
+    AND ms.books_id = t.books_id
 WHERE
-    token_hash = $1
-    AND expires_at > $2
+    t.token_hash = $1
+    AND t.expires_at > $2
 `
 
 type GetAccessTokenByHashParams struct {
@@ -95,9 +98,10 @@ type GetAccessTokenByHashRow struct {
 	CreatedAt  time.Time
 	ExpiresAt  time.Time
 	LastUsedAt *time.Time
+	BookRole   string
 }
 
-// Verification knows only the token; the hash identifies the member and the book.
+// Verification knows only the token; the hash identifies the member and the book. HA16: the role is read at each use.
 func (q *Queries) GetAccessTokenByHash(ctx context.Context, arg GetAccessTokenByHashParams) (GetAccessTokenByHashRow, error) {
 	row := q.db.QueryRow(ctx, getAccessTokenByHash, arg.TokenHash, arg.ExpiresAt)
 	var i GetAccessTokenByHashRow
@@ -110,6 +114,7 @@ func (q *Queries) GetAccessTokenByHash(ctx context.Context, arg GetAccessTokenBy
 		&i.CreatedAt,
 		&i.ExpiresAt,
 		&i.LastUsedAt,
+		&i.BookRole,
 	)
 	return i, err
 }

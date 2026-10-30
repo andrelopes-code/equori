@@ -17,7 +17,7 @@ func (h *Harness) Tool(name string, args any) tool.Result {
 		h.t.Fatal(err)
 	}
 
-	r, err := h.App.Tools.Call(auth.WithIdentity(h.t.Context(), h.MemberIDOf("owner@example.com"), h.OwnerID()), name, b)
+	r, err := h.App.Tools.Call(auth.WithIdentity(h.t.Context(), h.MemberIDOf("owner@example.com"), h.OwnerID(), auth.RoleOwner), name, b)
 	if err != nil {
 		h.t.Fatalf("call tool %s: %v", name, err)
 	}

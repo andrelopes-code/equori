@@ -79,19 +79,17 @@ func (s *Service) CompleteSetup(ctx context.Context, token, email, plain string,
 		return Session{}, domain.Member{}, ErrSetupTokenInvalid
 	}
 
-	if base == "" && locale.ValidRegion(l.Region) {
-		var ok bool
-		if s.setup.hooks.DefaultCurrency != nil {
-			base, ok = s.setup.hooks.DefaultCurrency(l.Region)
-		}
-
-		if !ok {
-			return Session{}, domain.Member{}, &domain.FieldError{Field: "base_currency", Message: "is required for this region"}
-		}
+	base, err = s.baseCurrency(l.Region, base)
+	if err != nil {
+		return Session{}, domain.Member{}, err
 	}
 
-	u, err := s.newMember(ctx, email, plain, domain.RoleAdmin, l, base)
+	u, err := s.newMember(ctx, email, plain, domain.RoleAdmin, l.Language)
 	if err != nil {
+		return Session{}, domain.Member{}, err
+	}
+
+	if err := validateBooks(l.Region, base); err != nil {
 		return Session{}, domain.Member{}, err
 	}
 
@@ -114,4 +112,20 @@ func (s *Service) CompleteSetup(ctx context.Context, token, email, plain string,
 	}
 
 	return session, created, nil
+}
+
+// baseCurrency returns base, or the default of region when base is empty; a region without a
+// default is a field error on base_currency (ADR 016).
+func (s *Service) baseCurrency(region string, base money.Currency) (money.Currency, error) {
+	if base != "" || !locale.ValidRegion(region) {
+		return base, nil
+	}
+
+	if s.setup.hooks.DefaultCurrency != nil {
+		if def, ok := s.setup.hooks.DefaultCurrency(region); ok {
+			return def, nil
+		}
+	}
+
+	return "", &domain.FieldError{Field: "base_currency", Message: "is required for this region"}
 }

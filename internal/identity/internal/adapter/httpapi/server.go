@@ -66,20 +66,20 @@ func (s *Server) RequireSession(next http.Handler) http.Handler {
 			return
 		}
 
-		user, booksID, err := s.svc.Authenticate(r.Context(), cookie.Value)
+		access, err := s.svc.Authenticate(r.Context(), cookie.Value)
 		if err != nil {
 			s.errs.Write(w, r, err)
 			return
 		}
 
-		loc, err := s.svc.Location(r.Context(), booksID)
+		loc, err := s.svc.Location(r.Context(), access.BooksID)
 		if err != nil {
 			s.errs.Write(w, r, err)
 			return
 		}
 
-		ctx := clock.WithLocation(auth.WithIdentity(r.Context(), user.ID, booksID), loc)
-		ctx = context.WithValue(ctx, memberKey{}, user)
+		ctx := clock.WithLocation(auth.WithIdentity(r.Context(), access.Member.ID, access.BooksID, access.Role), loc)
+		ctx = context.WithValue(ctx, memberKey{}, access.Member)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
@@ -122,7 +122,7 @@ func (s *Server) CompleteSetup(ctx context.Context, req CompleteSetupRequestObje
 	s.log.InfoContext(ctx, "first member created", "member_id", user.ID, "request_id", httpserver.RequestID(ctx))
 	cookie := s.cookie(session.Token, session.ExpiresAt)
 
-	return CompleteSetup201JSONResponse{Body: toAPIUser(user, locale.Locale{Language: user.Language, Region: b.Region}), Headers: CompleteSetup201ResponseHeaders{SetCookie: &cookie}}, nil
+	return CompleteSetup201JSONResponse{Body: toAPIUser(user, locale.Locale{Language: user.Language, Region: b.Region}, session.BooksID, auth.RoleOwner), Headers: CompleteSetup201ResponseHeaders{SetCookie: &cookie}}, nil
 }
 
 func (s *Server) CreateSession(ctx context.Context, req CreateSessionRequestObject) (CreateSessionResponseObject, error) {
@@ -170,7 +170,7 @@ func (s *Server) GetCurrentUser(ctx context.Context, _ GetCurrentUserRequestObje
 		return nil, err
 	}
 
-	return GetCurrentUser200JSONResponse(toAPIUser(user, l)), nil
+	return GetCurrentUser200JSONResponse(toAPIUser(user, l, auth.MustBooksID(ctx), auth.MustBookRole(ctx))), nil
 }
 
 func (s *Server) UpdateCurrentUser(ctx context.Context, req UpdateCurrentUserRequestObject) (UpdateCurrentUserResponseObject, error) {
@@ -188,11 +188,11 @@ func (s *Server) UpdateCurrentUser(ctx context.Context, req UpdateCurrentUserReq
 		return nil, err
 	}
 
-	return UpdateCurrentUser200JSONResponse(toAPIUser(user, l)), nil
+	return UpdateCurrentUser200JSONResponse(toAPIUser(user, l, auth.MustBooksID(ctx), auth.MustBookRole(ctx))), nil
 }
 
-func toAPIUser(u domain.Member, l locale.Locale) User {
-	return User{Id: u.ID, Email: u.Email, Role: UserRole(u.Role), Language: l.Language, Region: l.Region}
+func toAPIUser(u domain.Member, l locale.Locale, booksID int64, role auth.BookRole) User {
+	return User{Id: u.ID, Email: u.Email, Role: UserRole(u.Role), Language: l.Language, Region: l.Region, BooksId: booksID, BookRole: BookRole(role)}
 }
 
 func deref(s *string) string {
@@ -246,6 +246,8 @@ func ToProblem(err error) (problem.Details, bool) {
 		return problem.New(http.StatusForbidden, "setup_token_invalid", "the setup token is not the one this instance issued"), true
 	case errors.Is(err, app.ErrSetupComplete):
 		return problem.New(http.StatusConflict, "setup_complete", "the first member exists; sign in instead"), true
+	case errors.Is(err, app.ErrBooksNotFound):
+		return problem.New(http.StatusNotFound, "books_not_found", "the member has no book with this ID"), true
 	case errors.Is(err, app.ErrAccessTokenNotFound):
 		return problem.New(http.StatusNotFound, "access_token_not_found", "no access token of the member has this ID"), true
 	case errors.Is(err, app.ErrBusy):

@@ -40,6 +40,8 @@ type AccessGrant struct {
 	MemberID int64
 	BooksID  int64
 	Scope    string
+	// Role is the member's role in the book at this verification (HA16).
+	Role auth.BookRole
 }
 
 type Member struct {
@@ -115,7 +117,7 @@ func (m *Module) VerifyAccessToken(ctx context.Context, token string) (AccessGra
 		return AccessGrant{}, err
 	}
 
-	return AccessGrant{TokenID: t.ID, MemberID: t.MemberID, BooksID: t.BooksID, Scope: t.Scope}, nil
+	return AccessGrant{TokenID: t.ID, MemberID: t.MemberID, BooksID: t.BooksID, Scope: t.Scope, Role: auth.BookRole(t.Role)}, nil
 }
 
 func (m *Module) CreateMember(ctx context.Context, email, password, role string, l locale.Locale, baseCurrency money.Currency) (Member, error) {

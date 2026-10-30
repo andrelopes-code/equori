@@ -322,10 +322,13 @@ SELECT
     m.disabled_at,
     m.created_at,
     m.language,
-    s.books_id
+    s.books_id,
+    ms.role AS book_role
 FROM
     identity_session s
     JOIN identity_member m ON m.id = s.member_id
+    JOIN identity_membership ms ON ms.member_id = s.member_id
+    AND ms.books_id = s.books_id
 WHERE
     s.token_hash = $1
     AND s.expires_at > $2
@@ -345,6 +348,7 @@ type GetMemberBySessionRow struct {
 	CreatedAt    time.Time
 	Language     string
 	BooksID      int64
+	BookRole     string
 }
 
 func (q *Queries) GetMemberBySession(ctx context.Context, arg GetMemberBySessionParams) (GetMemberBySessionRow, error) {
@@ -359,8 +363,49 @@ func (q *Queries) GetMemberBySession(ctx context.Context, arg GetMemberBySession
 		&i.CreatedAt,
 		&i.Language,
 		&i.BooksID,
+		&i.BookRole,
 	)
 	return i, err
+}
+
+const listMemberBooks = `-- name: ListMemberBooks :many
+SELECT
+    b.id,
+    b.name,
+    ms.role
+FROM
+    identity_membership ms
+    JOIN identity_books b ON b.id = ms.books_id
+WHERE
+    ms.member_id = $1
+ORDER BY
+    b.id
+`
+
+type ListMemberBooksRow struct {
+	ID   int64
+	Name string
+	Role string
+}
+
+func (q *Queries) ListMemberBooks(ctx context.Context, memberID int64) ([]ListMemberBooksRow, error) {
+	rows, err := q.db.Query(ctx, listMemberBooks, memberID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListMemberBooksRow
+	for rows.Next() {
+		var i ListMemberBooksRow
+		if err := rows.Scan(&i.ID, &i.Name, &i.Role); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const lockMembers = `-- name: LockMembers :exec
@@ -389,6 +434,29 @@ type SetAppearanceParams struct {
 func (q *Queries) SetAppearance(ctx context.Context, arg SetAppearanceParams) error {
 	_, err := q.db.Exec(ctx, setAppearance, arg.ID, arg.Appearance)
 	return err
+}
+
+const switchSession = `-- name: SwitchSession :execrows
+UPDATE identity_session
+SET
+    books_id = $3
+WHERE
+    token_hash = $1
+    AND member_id = $2
+`
+
+type SwitchSessionParams struct {
+	TokenHash []byte
+	MemberID  int64
+	BooksID   int64
+}
+
+func (q *Queries) SwitchSession(ctx context.Context, arg SwitchSessionParams) (int64, error) {
+	result, err := q.db.Exec(ctx, switchSession, arg.TokenHash, arg.MemberID, arg.BooksID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const touchMembership = `-- name: TouchMembership :execrows

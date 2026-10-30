@@ -258,6 +258,13 @@ func (h *Harness) login(email, role string, l locale.Locale, base money.Currency
 
 	h.Dispatch()
 
+	return h.SignIn(email)
+}
+
+// SignIn returns a new client with the session of POST /api/v1/session for an existing member.
+func (h *Harness) SignIn(email string) *http.Client {
+	h.t.Helper()
+
 	jar, err := cookiejar.New(nil)
 	if err != nil {
 		h.t.Fatal(err)
@@ -266,6 +273,25 @@ func (h *Harness) login(email, role string, l locale.Locale, base money.Currency
 	c := &http.Client{Jar: jar}
 	if r := h.Call(c, http.MethodPost, "/api/v1/session", map[string]string{"email": email, "password": Password}); r.Status != http.StatusNoContent {
 		h.t.Fatalf("login status %d: %s", r.Status, r.Body)
+	}
+
+	return c
+}
+
+// JoinAs creates a member with the instance role member and its own book, adds a membership of
+// booksID with role, logs in and switches the session to booksID (HA4).
+func (h *Harness) JoinAs(email string, booksID int64, role string) *http.Client {
+	h.t.Helper()
+
+	c := h.LoginMember(email)
+
+	if _, err := h.Pool.Exec(h.t.Context(),
+		`INSERT INTO identity_membership (member_id, books_id, role) VALUES ($1, $2, $3)`, h.MemberIDOf(email), booksID, role); err != nil {
+		h.t.Fatal(err)
+	}
+
+	if r := h.Call(c, http.MethodPut, "/api/v1/session/books", map[string]int64{"books_id": booksID}); r.Status != http.StatusNoContent {
+		h.t.Fatalf("switch books status %d: %s", r.Status, r.Body)
 	}
 
 	return c
