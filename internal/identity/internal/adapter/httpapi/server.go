@@ -249,6 +249,10 @@ func ToProblem(err error) (problem.Details, bool) {
 		return problem.New(http.StatusForbidden, "book_role_required", "the member's role in this book does not allow this operation"), true
 	case errors.Is(err, app.ErrBooksNotFound):
 		return problem.New(http.StatusNotFound, "books_not_found", "the member has no book with this ID"), true
+	case errors.Is(err, app.ErrMemberNotFound):
+		return problem.New(http.StatusNotFound, "member_not_found", "no member of this book has this ID"), true
+	case errors.Is(err, app.ErrLastOwner):
+		return problem.New(http.StatusConflict, "last_owner", "the book must keep at least one owner"), true
 	case errors.Is(err, app.ErrAccessTokenNotFound):
 		return problem.New(http.StatusNotFound, "access_token_not_found", "no access token of the member has this ID"), true
 	case errors.Is(err, app.ErrBusy):

@@ -2,11 +2,13 @@ package postgres
 
 import (
 	"errors"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/andrelopes-code/equori/internal/identity/internal/app"
 	"github.com/andrelopes-code/equori/internal/identity/internal/domain"
+	"github.com/andrelopes-code/equori/internal/platform/auth"
 	"github.com/andrelopes-code/equori/internal/platform/postgres/pgtest"
 )
 
@@ -83,5 +85,55 @@ func TestRepositorySessions(t *testing.T) {
 
 	if _, err := repo.MemberBySession(ctx, s2.TokenHash, now); !errors.Is(err, app.ErrNotFound) {
 		t.Fatalf("session survived DeleteSession: err = %v", err)
+	}
+}
+
+// HA21: two owners demoted at once leave one owner.
+func TestChangeRoleConcurrent(t *testing.T) {
+	t.Parallel()
+	ctx := t.Context()
+	pool := pgtest.New(t)
+	repo := NewRepository(pool)
+	m1, b := pgtest.CreateMember(t, pool)
+
+	var m2 int64
+
+	err := pool.QueryRow(ctx,
+		`INSERT INTO identity_member (email, password_hash, role, language) VALUES ('second@example.com', 'x', 'member', 'en') RETURNING id`).Scan(&m2)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := pool.Exec(ctx, `INSERT INTO identity_membership (member_id, books_id, role) VALUES ($1, $2, 'owner')`, m2, b); err != nil {
+		t.Fatal(err)
+	}
+
+	start := make(chan struct{})
+	errs := make([]error, 2)
+
+	var wg sync.WaitGroup
+
+	for i, id := range []int64{m1, m2} {
+		wg.Add(1)
+
+		go func() {
+			defer wg.Done()
+
+			<-start
+
+			errs[i] = repo.ChangeRole(ctx, b, id, auth.RoleWrite)
+		}()
+	}
+
+	close(start)
+	wg.Wait()
+
+	if !(errs[0] == nil && errors.Is(errs[1], app.ErrLastOwner)) && !(errs[1] == nil && errors.Is(errs[0], app.ErrLastOwner)) {
+		t.Fatalf("errors = %v, want nil and ErrLastOwner", errs)
+	}
+
+	var owners int
+	if err := pool.QueryRow(ctx, `SELECT count(*) FROM identity_membership WHERE books_id = $1 AND role = 'owner'`, b).Scan(&owners); err != nil || owners != 1 {
+		t.Fatalf("owners = %d, %v; want 1", owners, err)
 	}
 }

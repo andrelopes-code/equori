@@ -27,6 +27,29 @@ func (q *Queries) AnyMember(ctx context.Context) (bool, error) {
 	return exists, err
 }
 
+const countOtherOwners = `-- name: CountOtherOwners :one
+SELECT
+    count(*)
+FROM
+    identity_membership
+WHERE
+    books_id = $1
+    AND role = 'owner'
+    AND member_id <> $2
+`
+
+type CountOtherOwnersParams struct {
+	BooksID  int64
+	MemberID int64
+}
+
+func (q *Queries) CountOtherOwners(ctx context.Context, arg CountOtherOwnersParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countOtherOwners, arg.BooksID, arg.MemberID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createBooks = `-- name: CreateBooks :one
 INSERT INTO
     identity_books (region, name)
@@ -137,6 +160,23 @@ WHERE
 
 func (q *Queries) DeleteExpiredSessions(ctx context.Context, expiresAt time.Time) error {
 	_, err := q.db.Exec(ctx, deleteExpiredSessions, expiresAt)
+	return err
+}
+
+const deleteMembership = `-- name: DeleteMembership :exec
+DELETE FROM identity_membership
+WHERE
+    books_id = $1
+    AND member_id = $2
+`
+
+type DeleteMembershipParams struct {
+	BooksID  int64
+	MemberID int64
+}
+
+func (q *Queries) DeleteMembership(ctx context.Context, arg DeleteMembershipParams) error {
+	_, err := q.db.Exec(ctx, deleteMembership, arg.BooksID, arg.MemberID)
 	return err
 }
 
@@ -368,6 +408,28 @@ func (q *Queries) GetMemberBySession(ctx context.Context, arg GetMemberBySession
 	return i, err
 }
 
+const getMembershipRole = `-- name: GetMembershipRole :one
+SELECT
+    role
+FROM
+    identity_membership
+WHERE
+    books_id = $1
+    AND member_id = $2
+`
+
+type GetMembershipRoleParams struct {
+	BooksID  int64
+	MemberID int64
+}
+
+func (q *Queries) GetMembershipRole(ctx context.Context, arg GetMembershipRoleParams) (string, error) {
+	row := q.db.QueryRow(ctx, getMembershipRole, arg.BooksID, arg.MemberID)
+	var role string
+	err := row.Scan(&role)
+	return role, err
+}
+
 const listMemberBooks = `-- name: ListMemberBooks :many
 SELECT
     b.id,
@@ -406,6 +468,70 @@ func (q *Queries) ListMemberBooks(ctx context.Context, memberID int64) ([]ListMe
 		return nil, err
 	}
 	return items, nil
+}
+
+const listMembers = `-- name: ListMembers :many
+SELECT
+    ms.member_id,
+    m.email,
+    ms.role,
+    ms.created_at
+FROM
+    identity_membership ms
+    JOIN identity_member m ON m.id = ms.member_id
+WHERE
+    ms.books_id = $1
+ORDER BY
+    ms.created_at,
+    ms.member_id
+`
+
+type ListMembersRow struct {
+	MemberID  int64
+	Email     string
+	Role      string
+	CreatedAt time.Time
+}
+
+func (q *Queries) ListMembers(ctx context.Context, booksID int64) ([]ListMembersRow, error) {
+	rows, err := q.db.Query(ctx, listMembers, booksID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListMembersRow
+	for rows.Next() {
+		var i ListMembersRow
+		if err := rows.Scan(
+			&i.MemberID,
+			&i.Email,
+			&i.Role,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const lockBooks = `-- name: LockBooks :exec
+SELECT
+    id
+FROM
+    identity_books
+WHERE
+    id = $1
+FOR UPDATE
+`
+
+// HA21: membership changes of one book run one at a time.
+func (q *Queries) LockBooks(ctx context.Context, id int64) error {
+	_, err := q.db.Exec(ctx, lockBooks, id)
+	return err
 }
 
 const lockMembers = `-- name: LockMembers :exec
@@ -528,6 +654,25 @@ type UpdateLanguageParams struct {
 
 func (q *Queries) UpdateLanguage(ctx context.Context, arg UpdateLanguageParams) error {
 	_, err := q.db.Exec(ctx, updateLanguage, arg.ID, arg.Language)
+	return err
+}
+
+const updateMembershipRole = `-- name: UpdateMembershipRole :exec
+UPDATE identity_membership
+SET ROLE = $3
+WHERE
+    books_id = $1
+    AND member_id = $2
+`
+
+type UpdateMembershipRoleParams struct {
+	BooksID  int64
+	MemberID int64
+	Role     string
+}
+
+func (q *Queries) UpdateMembershipRole(ctx context.Context, arg UpdateMembershipRoleParams) error {
+	_, err := q.db.Exec(ctx, updateMembershipRole, arg.BooksID, arg.MemberID, arg.Role)
 	return err
 }
 

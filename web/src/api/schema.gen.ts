@@ -166,6 +166,63 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/books/current/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the memberships of the active book (HA19). */
+        get: operations["listMembers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/books/current/members/{memberId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                memberId: number;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a membership of the active book with its sessions, access tokens and conversations (HA20, HA22). */
+        delete: operations["removeMember"];
+        options?: never;
+        head?: never;
+        /**
+         * Change the role of a membership of the active book (HA20).
+         * @description 404 member_not_found for a member without a membership in the book; 409 last_owner when the book would keep no owner.
+         */
+        patch: operations["updateMember"];
+        trace?: never;
+    };
+    "/books/current/membership": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove the caller's membership of the active book; the session ends with it (HA20). */
+        delete: operations["leaveBooks"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/access-tokens": {
         parameters: {
             query?: never;
@@ -5710,6 +5767,20 @@ export interface components {
         BooksMembershipList: {
             items: components["schemas"]["BooksMembership"][];
         };
+        BooksMember: {
+            /** Format: int64 */
+            member_id: number;
+            email: string;
+            role: components["schemas"]["BookRole"];
+            /** Format: date-time */
+            created_at: string;
+        };
+        BooksMemberList: {
+            items: components["schemas"]["BooksMember"][];
+        };
+        MemberRoleInput: {
+            role: components["schemas"]["BookRole"];
+        };
         CreateBooksInput: {
             name?: string;
             region: string;
@@ -5746,7 +5817,8 @@ export interface components {
              *     currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended,
              *     budget_exists, instrument_exists, mixed_instruments, price_missing, later_sale_exists,
              *     investment_transaction, system_account, attachment_not_inlineable, archive_too_new,
-             *     setup_token_invalid, setup_complete, book_role_required, books_not_found.
+             *     setup_token_invalid, setup_complete, book_role_required, books_not_found, member_not_found,
+             *     last_owner.
              */
             code: string;
             request_id?: string;
@@ -6110,6 +6182,101 @@ export interface operations {
             400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
+        };
+    };
+    listMembers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Memberships, oldest first. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BooksMemberList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+        };
+    };
+    removeMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                memberId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Removed. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+        };
+    };
+    updateMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                memberId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MemberRoleInput"];
+            };
+        };
+        responses: {
+            /** @description Changed. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+        };
+    };
+    leaveBooks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Left; the session cookie is cleared. */
+            204: {
+                headers: {
+                    "Set-Cookie"?: string;
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
         };
     };
     listAccessTokens: {

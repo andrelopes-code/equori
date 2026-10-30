@@ -202,3 +202,60 @@ SET
     appearance = $2
 WHERE
     id = $1;
+
+-- name: ListMembers :many
+SELECT
+    ms.member_id,
+    m.email,
+    ms.role,
+    ms.created_at
+FROM
+    identity_membership ms
+    JOIN identity_member m ON m.id = ms.member_id
+WHERE
+    ms.books_id = $1
+ORDER BY
+    ms.created_at,
+    ms.member_id;
+
+-- name: LockBooks :exec
+-- HA21: membership changes of one book run one at a time.
+SELECT
+    id
+FROM
+    identity_books
+WHERE
+    id = $1
+FOR UPDATE;
+
+-- name: GetMembershipRole :one
+SELECT
+    role
+FROM
+    identity_membership
+WHERE
+    books_id = $1
+    AND member_id = $2;
+
+-- name: CountOtherOwners :one
+SELECT
+    count(*)
+FROM
+    identity_membership
+WHERE
+    books_id = $1
+    AND role = 'owner'
+    AND member_id <> $2;
+
+-- name: UpdateMembershipRole :exec
+UPDATE identity_membership
+SET ROLE = $3
+WHERE
+    books_id = $1
+    AND member_id = $2;
+
+-- name: DeleteMembership :exec
+DELETE FROM identity_membership
+WHERE
+    books_id = $1
+    AND member_id = $2;

@@ -319,6 +319,87 @@ paths:
           $ref: "#/components/responses/Problem"
         "404":
           $ref: "#/components/responses/Problem"
+  /books/current/members:
+    get:
+      tags: [identity]
+      operationId: listMembers
+      x-book-role: read
+      summary: List the memberships of the active book (HA19).
+      responses:
+        "200":
+          description: Memberships, oldest first.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BooksMemberList"
+        "401":
+          $ref: "#/components/responses/Problem"
+  /books/current/members/{memberId}:
+    parameters:
+      - name: memberId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+    patch:
+      tags: [identity]
+      operationId: updateMember
+      x-book-role: owner
+      summary: Change the role of a membership of the active book (HA20).
+      description: 404 member_not_found for a member without a membership in the book; 409 last_owner when the book would keep no owner.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MemberRoleInput"
+      responses:
+        "204":
+          description: Changed.
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+    delete:
+      tags: [identity]
+      operationId: removeMember
+      x-book-role: owner
+      summary: Remove a membership of the active book with its sessions, access tokens and conversations (HA20, HA22).
+      responses:
+        "204":
+          description: Removed.
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+  /books/current/membership:
+    delete:
+      tags: [identity]
+      operationId: leaveBooks
+      x-book-role: read
+      summary: Remove the caller's membership of the active book; the session ends with it (HA20).
+      responses:
+        "204":
+          description: Left; the session cookie is cleared.
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+        "401":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
   /access-tokens:
     get:
       tags: [identity]
@@ -10443,6 +10524,35 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/BooksMembership"
+    BooksMember:
+      type: object
+      required: [member_id, email, role, created_at]
+      properties:
+        member_id:
+          type: integer
+          format: int64
+        email:
+          type: string
+        role:
+          $ref: "#/components/schemas/BookRole"
+        created_at:
+          type: string
+          format: date-time
+    BooksMemberList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/BooksMember"
+    MemberRoleInput:
+      type: object
+      additionalProperties: false
+      required: [role]
+      properties:
+        role:
+          $ref: "#/components/schemas/BookRole"
     CreateBooksInput:
       type: object
       additionalProperties: false
@@ -10517,7 +10627,8 @@ components:
             currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended,
             budget_exists, instrument_exists, mixed_instruments, price_missing, later_sale_exists,
             investment_transaction, system_account, attachment_not_inlineable, archive_too_new,
-            setup_token_invalid, setup_complete, book_role_required, books_not_found.
+            setup_token_invalid, setup_complete, book_role_required, books_not_found, member_not_found,
+            last_owner.
         request_id:
           type: string
         retry_at:

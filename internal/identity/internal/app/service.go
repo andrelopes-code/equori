@@ -24,6 +24,8 @@ var (
 	ErrBusy               = errors.New("too many concurrent password operations")
 	ErrBooksNotFound      = errors.New("books not found")
 	ErrBookRoleRequired   = errors.New("book role required")
+	ErrMemberNotFound     = errors.New("member not found")
+	ErrLastOwner          = errors.New("last owner")
 	ErrTimeZoneInvalid    = errors.New("time zone is not an IANA name")
 	// ErrAppearanceTooLarge reports an appearance object over MaxAppearanceBytes.
 	ErrAppearanceTooLarge = errors.New("appearance over 16 KiB")
@@ -52,6 +54,10 @@ type Repository interface {
 	// without the membership, also on a foreign key violation (spec section 9).
 	SwitchSession(ctx context.Context, tokenHash []byte, memberID, booksID int64, at time.Time) error
 	MemberBooks(ctx context.Context, memberID int64) ([]BooksMembership, error)
+	Members(ctx context.Context, booksID int64) ([]Membership, error)
+	// ChangeRole and RemoveMembership lock the book row first; ErrMemberNotFound, ErrLastOwner.
+	ChangeRole(ctx context.Context, booksID, memberID int64, role auth.BookRole) error
+	RemoveMembership(ctx context.Context, booksID, memberID int64) error
 	// CreateBooks creates the book and its owner membership and publishes identity.books_created.v1.
 	CreateBooks(ctx context.Context, memberID int64, language, name, region string, base money.Currency) (int64, error)
 	// Appearance returns the stored JSON object of the member.
@@ -430,6 +436,13 @@ type BooksMembership struct {
 	Active bool
 }
 
+type Membership struct {
+	MemberID  int64
+	Email     string
+	Role      auth.BookRole
+	CreatedAt time.Time
+}
+
 // Books lists the books of the member's memberships, by ID; Active marks activeBooksID (HA5).
 func (s *Service) Books(ctx context.Context, memberID, activeBooksID int64) ([]BooksMembership, error) {
 	books, err := s.repo.MemberBooks(ctx, memberID)
@@ -477,6 +490,21 @@ func (s *Service) CreateBooks(ctx context.Context, memberID int64, name *string,
 	}
 
 	return BooksMembership{ID: id, Name: booksName, Role: auth.RoleOwner}, nil
+}
+
+// Members lists the memberships of the book, oldest first (HA19).
+func (s *Service) Members(ctx context.Context, booksID int64) ([]Membership, error) {
+	return s.repo.Members(ctx, booksID)
+}
+
+// ChangeRole sets the role of a membership: ErrMemberNotFound, ErrLastOwner (HA20, HA21).
+func (s *Service) ChangeRole(ctx context.Context, booksID, memberID int64, role auth.BookRole) error {
+	return s.repo.ChangeRole(ctx, booksID, memberID, role)
+}
+
+// RemoveMembership deletes a membership with its sessions and tokens: ErrMemberNotFound, ErrLastOwner (HA20, HA22).
+func (s *Service) RemoveMembership(ctx context.Context, booksID, memberID int64) error {
+	return s.repo.RemoveMembership(ctx, booksID, memberID)
 }
 
 func (s *Service) verify(ctx context.Context, plain, hash string) (bool, error) {
