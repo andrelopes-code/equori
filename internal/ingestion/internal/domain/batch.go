@@ -42,7 +42,7 @@ type FileBalance struct {
 // Batch is one file import or one sync of a mapped account (an import batch).
 type Batch struct {
 	ID        uuid.UUID
-	UserID    int64
+	BooksID   int64
 	AccountID uuid.UUID
 	Source    Source
 	FileName  string // empty for a sync

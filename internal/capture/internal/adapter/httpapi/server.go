@@ -80,7 +80,7 @@ func (s *Server) PreviewCapture(ctx context.Context, req PreviewCaptureRequestOb
 		reference = time.Date(y, m, d, 0, 0, 0, 0, time.UTC)
 	}
 
-	lines, err := s.svc.Preview(ctx, auth.MustUserID(ctx), req.Body.Text, def, reference)
+	lines, err := s.svc.Preview(ctx, auth.MustBooksID(ctx), req.Body.Text, def, reference)
 	if err != nil {
 		return nil, err
 	}
@@ -164,7 +164,7 @@ func (s *Server) SuggestCaptureCategories(ctx context.Context, req SuggestCaptur
 		items[i] = app.SuggestItem{Description: it.Description, Class: string(it.Kind)}
 	}
 
-	suggestions, available, err := s.svc.Suggest(ctx, auth.MustUserID(ctx), items)
+	suggestions, available, err := s.svc.Suggest(ctx, auth.MustBooksID(ctx), items)
 	if err != nil {
 		return nil, err
 	}
@@ -187,7 +187,7 @@ func (s *Server) SuggestCaptureCategories(ctx context.Context, req SuggestCaptur
 }
 
 func (s *Server) SuggestTransactionCategories(ctx context.Context, req SuggestTransactionCategoriesRequestObject) (SuggestTransactionCategoriesResponseObject, error) {
-	suggestions, available, err := s.svc.SuggestForTransactions(ctx, auth.MustUserID(ctx), req.Body.TransactionIds)
+	suggestions, available, err := s.svc.SuggestForTransactions(ctx, auth.MustBooksID(ctx), req.Body.TransactionIds)
 	if err != nil {
 		return nil, err
 	}

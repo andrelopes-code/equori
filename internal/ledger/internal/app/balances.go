@@ -11,18 +11,18 @@ import (
 )
 
 // BalanceAt returns the balance in the account currency; a parent account sums its descendants.
-func (s *Service) BalanceAt(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time, basis Basis) (Balance, error) {
+func (s *Service) BalanceAt(ctx context.Context, booksID int64, accountID uuid.UUID, date time.Time, basis Basis) (Balance, error) {
 	basis, err := normalizeBasis(basis)
 	if err != nil {
 		return Balance{}, err
 	}
 
-	a, err := s.repo.Account(ctx, userID, accountID)
+	a, err := s.repo.Account(ctx, booksID, accountID)
 	if err != nil {
 		return Balance{}, err
 	}
 
-	instruments, err := s.repo.TreeInstruments(ctx, userID, accountID)
+	instruments, err := s.repo.TreeInstruments(ctx, booksID, accountID)
 	if err != nil {
 		return Balance{}, err
 	}
@@ -31,7 +31,7 @@ func (s *Service) BalanceAt(ctx context.Context, userID int64, accountID uuid.UU
 		return Balance{}, ErrMixedInstruments
 	}
 
-	total, err := s.repo.BalanceAt(ctx, userID, accountID, date, basis)
+	total, err := s.repo.BalanceAt(ctx, booksID, accountID, date, basis)
 	if err != nil {
 		return Balance{}, err
 	}
@@ -57,13 +57,13 @@ func normalizeBasis(basis Basis) (Basis, error) {
 
 // BalancesAt returns the balance of every asset and liability account, in the account
 // currency, ordered by account name then id.
-func (s *Service) BalancesAt(ctx context.Context, userID int64, date time.Time, basis Basis) ([]Balance, error) {
+func (s *Service) BalancesAt(ctx context.Context, booksID int64, date time.Time, basis Basis) ([]Balance, error) {
 	basis, err := normalizeBasis(basis)
 	if err != nil {
 		return nil, err
 	}
 
-	totals, err := s.repo.BalancesAt(ctx, userID, date, basis)
+	totals, err := s.repo.BalancesAt(ctx, booksID, date, basis)
 	if err != nil {
 		return nil, err
 	}
@@ -83,17 +83,17 @@ func (s *Service) BalancesAt(ctx context.Context, userID int64, date time.Time, 
 
 // CategoryTotal returns the weights of the postings of a category subtree booked in
 // [from, to), in the user's base currency (P7 amendment A54).
-func (s *Service) CategoryTotal(ctx context.Context, userID int64, categoryID uuid.UUID, from, to time.Time) (money.Money, error) {
-	settings, err := s.repo.Settings(ctx, userID)
+func (s *Service) CategoryTotal(ctx context.Context, booksID int64, categoryID uuid.UUID, from, to time.Time) (money.Money, error) {
+	settings, err := s.repo.Settings(ctx, booksID)
 	if err != nil {
 		return money.Money{}, err
 	}
 
-	if _, err := s.repo.Account(ctx, userID, categoryID); err != nil {
+	if _, err := s.repo.Account(ctx, booksID, categoryID); err != nil {
 		return money.Money{}, err
 	}
 
-	total, err := s.repo.CategoryTotal(ctx, userID, categoryID, from, to)
+	total, err := s.repo.CategoryTotal(ctx, booksID, categoryID, from, to)
 	if err != nil {
 		return money.Money{}, err
 	}
@@ -111,29 +111,29 @@ type CategoryMonth struct {
 
 // OwnCategoryMonthlyTotals returns the own postings of every category of class by month in
 // [from, to), in the base currency (budget plan amendment A129).
-func (s *Service) OwnCategoryMonthlyTotals(ctx context.Context, userID int64, class string, from, to time.Time) ([]CategoryMonth, money.Currency, error) {
-	settings, err := s.repo.Settings(ctx, userID)
+func (s *Service) OwnCategoryMonthlyTotals(ctx context.Context, booksID int64, class string, from, to time.Time) ([]CategoryMonth, money.Currency, error) {
+	settings, err := s.repo.Settings(ctx, booksID)
 	if err != nil {
 		return nil, "", err
 	}
 
-	rows, err := s.repo.OwnCategoryMonthlyTotals(ctx, userID, class, from, to)
+	rows, err := s.repo.OwnCategoryMonthlyTotals(ctx, booksID, class, from, to)
 
 	return rows, settings.BaseCurrency, err
 }
 
 // CategoryMonthlyTotals is CategoryTotal for each month in [from, to), keyed by its first day.
-func (s *Service) CategoryMonthlyTotals(ctx context.Context, userID int64, categoryID uuid.UUID, from, to time.Time) (map[time.Time]money.Money, error) {
-	settings, err := s.repo.Settings(ctx, userID)
+func (s *Service) CategoryMonthlyTotals(ctx context.Context, booksID int64, categoryID uuid.UUID, from, to time.Time) (map[time.Time]money.Money, error) {
+	settings, err := s.repo.Settings(ctx, booksID)
 	if err != nil {
 		return nil, err
 	}
 
-	if _, err := s.repo.Account(ctx, userID, categoryID); err != nil {
+	if _, err := s.repo.Account(ctx, booksID, categoryID); err != nil {
 		return nil, err
 	}
 
-	totals, err := s.repo.CategoryMonthlyTotals(ctx, userID, categoryID, from, to)
+	totals, err := s.repo.CategoryMonthlyTotals(ctx, booksID, categoryID, from, to)
 	if err != nil {
 		return nil, err
 	}

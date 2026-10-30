@@ -14,7 +14,7 @@ func (s *Server) SkipOccurrence(ctx context.Context, req SkipOccurrenceRequestOb
 		reason = *req.Body.Reason
 	}
 
-	o, err := s.svc.Skip(ctx, auth.MustUserID(ctx), req.Id, reason)
+	o, err := s.svc.Skip(ctx, auth.MustBooksID(ctx), req.Id, reason)
 	if err != nil {
 		return nil, err
 	}
@@ -23,7 +23,7 @@ func (s *Server) SkipOccurrence(ctx context.Context, req SkipOccurrenceRequestOb
 }
 
 func (s *Server) MoveOccurrence(ctx context.Context, req MoveOccurrenceRequestObject) (MoveOccurrenceResponseObject, error) {
-	o, err := s.svc.Move(ctx, auth.MustUserID(ctx), req.Id, req.Body.Date.Time)
+	o, err := s.svc.Move(ctx, auth.MustBooksID(ctx), req.Id, req.Body.Date.Time)
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +48,7 @@ func (s *Server) ChangeScheduleTerms(ctx context.Context, req ChangeScheduleTerm
 		rule = &r
 	}
 
-	sch, err := s.svc.ChangeTerms(ctx, auth.MustUserID(ctx), req.Id, req.Body.EffectiveFrom.Time, amount, rule)
+	sch, err := s.svc.ChangeTerms(ctx, auth.MustBooksID(ctx), req.Id, req.Body.EffectiveFrom.Time, amount, rule)
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +57,7 @@ func (s *Server) ChangeScheduleTerms(ctx context.Context, req ChangeScheduleTerm
 }
 
 func (s *Server) PauseSchedule(ctx context.Context, req PauseScheduleRequestObject) (PauseScheduleResponseObject, error) {
-	sch, err := s.svc.Pause(ctx, auth.MustUserID(ctx), req.Id, req.Body.From.Time, req.Body.To.Time)
+	sch, err := s.svc.Pause(ctx, auth.MustBooksID(ctx), req.Id, req.Body.From.Time, req.Body.To.Time)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +66,7 @@ func (s *Server) PauseSchedule(ctx context.Context, req PauseScheduleRequestObje
 }
 
 func (s *Server) EndSchedule(ctx context.Context, req EndScheduleRequestObject) (EndScheduleResponseObject, error) {
-	sch, err := s.svc.End(ctx, auth.MustUserID(ctx), req.Id, req.Body.From.Time)
+	sch, err := s.svc.End(ctx, auth.MustBooksID(ctx), req.Id, req.Body.From.Time)
 	if err != nil {
 		return nil, err
 	}

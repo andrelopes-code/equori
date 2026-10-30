@@ -18,7 +18,7 @@ func toDisputeAPI(d app.Dispute) Dispute {
 }
 
 func (s *Server) ListDisputes(ctx context.Context, req ListDisputesRequestObject) (ListDisputesResponseObject, error) {
-	disputes, err := s.svc.Disputes(ctx, auth.MustUserID(ctx), req.Id)
+	disputes, err := s.svc.Disputes(ctx, auth.MustBooksID(ctx), req.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +32,7 @@ func (s *Server) ListDisputes(ctx context.Context, req ListDisputesRequestObject
 }
 
 func (s *Server) OpenDispute(ctx context.Context, req OpenDisputeRequestObject) (OpenDisputeResponseObject, error) {
-	d, err := s.svc.OpenDispute(ctx, auth.MustUserID(ctx), req.Id, dateOf(req.Body.OpenedOn))
+	d, err := s.svc.OpenDispute(ctx, auth.MustBooksID(ctx), req.Id, dateOf(req.Body.OpenedOn))
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,7 @@ func (s *Server) ResolveDispute(ctx context.Context, req ResolveDisputeRequestOb
 		return nil, err
 	}
 
-	d, err := s.svc.ResolveDispute(ctx, auth.MustUserID(ctx), req.Id, dateOf(req.Body.ResolvedOn), string(req.Body.Outcome), statement)
+	d, err := s.svc.ResolveDispute(ctx, auth.MustBooksID(ctx), req.Id, dateOf(req.Body.ResolvedOn), string(req.Body.Outcome), statement)
 	if err != nil {
 		return nil, err
 	}

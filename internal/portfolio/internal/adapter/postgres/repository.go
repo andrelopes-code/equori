@@ -24,22 +24,22 @@ func NewRepository(pool *pgxpool.Pool) *Repository { return &Repository{q: New(p
 func NewTxRepository(tx pgx.Tx) *Repository { return &Repository{q: New(tx)} }
 
 // Replace deletes the rows of accountIDs and inserts r; it runs in the dispatcher's transaction.
-func (r *Repository) Replace(ctx context.Context, userID int64, accountIDs []uuid.UUID, rb domain.Rebuilt) error {
-	if err := r.q.DeletePositionDays(ctx, DeletePositionDaysParams{UserID: userID, AccountIds: accountIDs}); err != nil {
+func (r *Repository) Replace(ctx context.Context, booksID int64, accountIDs []uuid.UUID, rb domain.Rebuilt) error {
+	if err := r.q.DeletePositionDays(ctx, DeletePositionDaysParams{BooksID: booksID, AccountIds: accountIDs}); err != nil {
 		return err
 	}
 
-	if err := r.q.DeleteRealizedResults(ctx, DeleteRealizedResultsParams{UserID: userID, AccountIds: accountIDs}); err != nil {
+	if err := r.q.DeleteRealizedResults(ctx, DeleteRealizedResultsParams{BooksID: booksID, AccountIds: accountIDs}); err != nil {
 		return err
 	}
 
-	if err := r.q.DeleteIncomeEvents(ctx, DeleteIncomeEventsParams{UserID: userID, AccountIds: accountIDs}); err != nil {
+	if err := r.q.DeleteIncomeEvents(ctx, DeleteIncomeEventsParams{BooksID: booksID, AccountIds: accountIDs}); err != nil {
 		return err
 	}
 
 	for _, d := range rb.Days {
 		if err := r.q.InsertPositionDay(ctx, InsertPositionDayParams{
-			UserID: userID, AccountID: d.AccountID, Instrument: string(d.Instrument), Date: d.Date, Quantity: d.Quantity, CostBasis: d.CostBasis,
+			BooksID: booksID, AccountID: d.AccountID, Instrument: string(d.Instrument), Date: d.Date, Quantity: d.Quantity, CostBasis: d.CostBasis,
 		}); err != nil {
 			return err
 		}
@@ -47,7 +47,7 @@ func (r *Repository) Replace(ctx context.Context, userID int64, accountIDs []uui
 
 	for _, x := range rb.Results {
 		if err := r.q.InsertRealizedResult(ctx, InsertRealizedResultParams{
-			UserID: userID, TransactionID: x.TransactionID, AccountID: x.AccountID, Instrument: string(x.Instrument), Date: x.Date, Month: x.Month,
+			BooksID: booksID, TransactionID: x.TransactionID, AccountID: x.AccountID, Instrument: string(x.Instrument), Date: x.Date, Month: x.Month,
 			Quantity: x.Quantity, Cost: x.Cost, Proceeds: x.Proceeds, Result: x.Result, TaxClass: optional(x.TaxClass), Currency: string(x.Currency),
 		}); err != nil {
 			return err
@@ -56,7 +56,7 @@ func (r *Repository) Replace(ctx context.Context, userID int64, accountIDs []uui
 
 	for _, e := range rb.Incomes {
 		if err := r.q.InsertIncomeEvent(ctx, InsertIncomeEventParams{
-			UserID: userID, TransactionID: e.TransactionID, AccountID: e.AccountID, Instrument: string(e.Instrument), Date: e.Date,
+			BooksID: booksID, TransactionID: e.TransactionID, AccountID: e.AccountID, Instrument: string(e.Instrument), Date: e.Date,
 			IncomeType: e.Type, TaxTreatment: optional(e.TaxTreatment), Gross: e.Gross, Withheld: e.Withheld, Currency: string(e.Currency),
 		}); err != nil {
 			return err
@@ -66,8 +66,8 @@ func (r *Repository) Replace(ctx context.Context, userID int64, accountIDs []uui
 	return nil
 }
 
-func (r *Repository) PositionsAt(ctx context.Context, userID int64, date time.Time) ([]domain.PositionDay, error) {
-	rows, err := r.q.PositionsAt(ctx, PositionsAtParams{UserID: userID, OnDate: date})
+func (r *Repository) PositionsAt(ctx context.Context, booksID int64, date time.Time) ([]domain.PositionDay, error) {
+	rows, err := r.q.PositionsAt(ctx, PositionsAtParams{BooksID: booksID, OnDate: date})
 
 	out := make([]domain.PositionDay, len(rows))
 	for i, row := range rows {
@@ -77,8 +77,8 @@ func (r *Repository) PositionsAt(ctx context.Context, userID int64, date time.Ti
 	return out, err
 }
 
-func (r *Repository) RealizedResults(ctx context.Context, userID int64, from, to time.Time) ([]domain.RealizedResult, error) {
-	rows, err := r.q.ListRealizedResults(ctx, ListRealizedResultsParams{UserID: userID, FromDate: from, ToDate: to})
+func (r *Repository) RealizedResults(ctx context.Context, booksID int64, from, to time.Time) ([]domain.RealizedResult, error) {
+	rows, err := r.q.ListRealizedResults(ctx, ListRealizedResultsParams{BooksID: booksID, FromDate: from, ToDate: to})
 
 	out := make([]domain.RealizedResult, len(rows))
 	for i, row := range rows {
@@ -91,8 +91,8 @@ func (r *Repository) RealizedResults(ctx context.Context, userID int64, from, to
 	return out, err
 }
 
-func (r *Repository) IncomeEvents(ctx context.Context, userID int64, from, to time.Time) ([]domain.IncomeEvent, error) {
-	rows, err := r.q.ListIncomeEvents(ctx, ListIncomeEventsParams{UserID: userID, FromDate: from, ToDate: to})
+func (r *Repository) IncomeEvents(ctx context.Context, booksID int64, from, to time.Time) ([]domain.IncomeEvent, error) {
+	rows, err := r.q.ListIncomeEvents(ctx, ListIncomeEventsParams{BooksID: booksID, FromDate: from, ToDate: to})
 
 	out := make([]domain.IncomeEvent, len(rows))
 	for i, row := range rows {
@@ -105,8 +105,8 @@ func (r *Repository) IncomeEvents(ctx context.Context, userID int64, from, to ti
 	return out, err
 }
 
-func (r *Repository) RebuildUsers(ctx context.Context) ([]int64, error) {
-	return r.q.ListRebuildUsers(ctx)
+func (r *Repository) BooksToRebuild(ctx context.Context) ([]int64, error) {
+	return r.q.ListRebuildBooks(ctx)
 }
 
 // optional stores the empty string as NULL.

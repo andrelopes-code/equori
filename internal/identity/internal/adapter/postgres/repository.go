@@ -132,7 +132,7 @@ func (r *Repository) insertUser(ctx context.Context, tx pgx.Tx, u domain.User, r
 
 	if err := outbox.Insert(ctx, tx, outbox.Event{
 		Type:        booksCreatedEvent,
-		UserID:      booksID,
+		BooksID:     booksID,
 		AggregateID: strconv.FormatInt(booksID, 10),
 		Payload:     booksCreated{BooksID: booksID, MemberID: row.ID, Language: row.Language, Region: region, BaseCurrency: base},
 	}); err != nil {
@@ -172,8 +172,8 @@ func (r *Repository) LoginBooks(ctx context.Context, memberID int64) (int64, err
 	return booksID, nil
 }
 
-func (r *Repository) UserByID(ctx context.Context, userID int64) (domain.User, error) {
-	row, err := r.q.GetUserByID(ctx, userID)
+func (r *Repository) UserByID(ctx context.Context, memberID int64) (domain.User, error) {
+	row, err := r.q.GetUserByID(ctx, memberID)
 	if err != nil {
 		return domain.User{}, notFound(err)
 	}

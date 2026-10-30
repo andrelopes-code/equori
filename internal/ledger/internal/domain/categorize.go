@@ -159,7 +159,7 @@ func categoryPostings(t Transaction, replaced []Posting, parts []CategoryPart, a
 
 		a, ok := accounts[part.AccountID]
 		switch {
-		case !ok || a.UserID != t.UserID:
+		case !ok || a.BooksID != t.BooksID:
 			return nil, &FieldError{Field: field("account_id"), Message: "unknown account", Err: ErrUnknownAccount}
 		case !a.IsCategory():
 			return nil, invalid(field("account_id"), "must be an income or expense account")

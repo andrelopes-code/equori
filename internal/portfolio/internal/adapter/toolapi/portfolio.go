@@ -74,7 +74,7 @@ func getPortfolio(svc *app.Service, names AccountNames, today func() time.Time) 
 			"Do not use it for cash balances only: get_balances does; nor for a tax year: get_tax_year does.",
 		Effect:     tool.ReadOnly,
 		Idempotent: true,
-	}, func(ctx context.Context, userID int64, in getPortfolioIn) (getPortfolioOut, error) {
+	}, func(ctx context.Context, booksID int64, in getPortfolioIn) (getPortfolioOut, error) {
 		fields := []field{
 			{"date", !in.Date.IsZero()}, {"by", in.By != ""}, {"account_id", in.AccountID != ""},
 			{"from", !in.From.IsZero()}, {"to", !in.To.IsZero()}, {"instrument_type", in.InstrumentType != ""},
@@ -109,9 +109,9 @@ func getPortfolio(svc *app.Service, names AccountNames, today func() time.Time) 
 
 		switch in.View {
 		case "positions":
-			return positions(ctx, svc, names, userID, date)
+			return positions(ctx, svc, names, booksID, date)
 		case "allocation":
-			r, err := svc.Allocation(ctx, userID, date, string(in.By), "")
+			r, err := svc.Allocation(ctx, booksID, date, string(in.By), "")
 			if err != nil {
 				return getPortfolioOut{}, err
 			}
@@ -123,7 +123,7 @@ func getPortfolio(svc *app.Service, names AccountNames, today func() time.Time) 
 
 			return out, nil
 		case "net_worth":
-			r, err := svc.NetWorth(ctx, userID, date, "")
+			r, err := svc.NetWorth(ctx, booksID, date, "")
 			if err != nil {
 				return getPortfolioOut{}, err
 			}
@@ -135,18 +135,18 @@ func getPortfolio(svc *app.Service, names AccountNames, today func() time.Time) 
 				return getPortfolioOut{}, err
 			}
 
-			r, err := svc.Return(ctx, userID, id, in.From.Time, in.To.Time, "")
+			r, err := svc.Return(ctx, booksID, id, in.From.Time, in.To.Time, "")
 			if err != nil {
 				return getPortfolioOut{}, err
 			}
 
 			return getPortfolioOut{AnnualBP: r.AnnualBP, Opening: tool.MoneyOf(r.Opening), Closing: tool.MoneyOf(r.Closing)}, nil
 		case "income_types":
-			types, err := svc.IncomeTypes(ctx, userID)
+			types, err := svc.IncomeTypes(ctx, booksID)
 			return getPortfolioOut{IncomeTypes: nonNil(types)}, err
 		}
 
-		subtypes, err := svc.Subtypes(ctx, userID, string(in.InstrumentType))
+		subtypes, err := svc.Subtypes(ctx, booksID, string(in.InstrumentType))
 
 		return getPortfolioOut{Subtypes: nonNil(subtypes)}, err
 	})
@@ -171,13 +171,13 @@ func optionalFields(name string, fields []field, optional ...string) error {
 	return nil
 }
 
-func positions(ctx context.Context, svc *app.Service, names AccountNames, userID int64, date time.Time) (getPortfolioOut, error) {
-	ps, err := svc.Positions(ctx, userID, date, "")
+func positions(ctx context.Context, svc *app.Service, names AccountNames, booksID int64, date time.Time) (getPortfolioOut, error) {
+	ps, err := svc.Positions(ctx, booksID, date, "")
 	if err != nil {
 		return getPortfolioOut{}, err
 	}
 
-	named, err := names(ctx, userID)
+	named, err := names(ctx, booksID)
 	if err != nil {
 		return getPortfolioOut{}, err
 	}

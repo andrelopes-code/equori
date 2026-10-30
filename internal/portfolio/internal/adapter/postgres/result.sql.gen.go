@@ -15,24 +15,24 @@ import (
 const deleteRealizedResults = `-- name: DeleteRealizedResults :exec
 DELETE FROM portfolio_realized_result
 WHERE
-    user_id = $1
+    books_id = $1
     AND account_id = ANY ($2::UUID[])
 `
 
 type DeleteRealizedResultsParams struct {
-	UserID     int64
+	BooksID    int64
 	AccountIds []uuid.UUID
 }
 
 func (q *Queries) DeleteRealizedResults(ctx context.Context, arg DeleteRealizedResultsParams) error {
-	_, err := q.db.Exec(ctx, deleteRealizedResults, arg.UserID, arg.AccountIds)
+	_, err := q.db.Exec(ctx, deleteRealizedResults, arg.BooksID, arg.AccountIds)
 	return err
 }
 
 const insertRealizedResult = `-- name: InsertRealizedResult :exec
 INSERT INTO
     portfolio_realized_result (
-        user_id,
+        books_id,
         transaction_id,
         account_id,
         instrument,
@@ -63,7 +63,7 @@ VALUES
 `
 
 type InsertRealizedResultParams struct {
-	UserID        int64
+	BooksID       int64
 	TransactionID uuid.UUID
 	AccountID     uuid.UUID
 	Instrument    string
@@ -79,7 +79,7 @@ type InsertRealizedResultParams struct {
 
 func (q *Queries) InsertRealizedResult(ctx context.Context, arg InsertRealizedResultParams) error {
 	_, err := q.db.Exec(ctx, insertRealizedResult,
-		arg.UserID,
+		arg.BooksID,
 		arg.TransactionID,
 		arg.AccountID,
 		arg.Instrument,
@@ -97,11 +97,11 @@ func (q *Queries) InsertRealizedResult(ctx context.Context, arg InsertRealizedRe
 
 const listRealizedResults = `-- name: ListRealizedResults :many
 SELECT
-    user_id, transaction_id, account_id, instrument, date, month, quantity, cost, proceeds, result, tax_class, currency
+    books_id, transaction_id, account_id, instrument, date, month, quantity, cost, proceeds, result, tax_class, currency
 FROM
     portfolio_realized_result
 WHERE
-    user_id = $1
+    books_id = $1
     AND date >= $2
     AND date < $3
 ORDER BY
@@ -110,13 +110,13 @@ ORDER BY
 `
 
 type ListRealizedResultsParams struct {
-	UserID   int64
+	BooksID  int64
 	FromDate time.Time
 	ToDate   time.Time
 }
 
 func (q *Queries) ListRealizedResults(ctx context.Context, arg ListRealizedResultsParams) ([]PortfolioRealizedResult, error) {
-	rows, err := q.db.Query(ctx, listRealizedResults, arg.UserID, arg.FromDate, arg.ToDate)
+	rows, err := q.db.Query(ctx, listRealizedResults, arg.BooksID, arg.FromDate, arg.ToDate)
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +125,7 @@ func (q *Queries) ListRealizedResults(ctx context.Context, arg ListRealizedResul
 	for rows.Next() {
 		var i PortfolioRealizedResult
 		if err := rows.Scan(
-			&i.UserID,
+			&i.BooksID,
 			&i.TransactionID,
 			&i.AccountID,
 			&i.Instrument,

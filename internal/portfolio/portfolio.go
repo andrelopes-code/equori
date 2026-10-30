@@ -41,7 +41,7 @@ type Module struct {
 
 // Profiles is the part of identity the module uses to pick a user's jurisdiction.
 type Profiles interface {
-	Profile(ctx context.Context, userID int64) (locale.Locale, error)
+	Profile(ctx context.Context, booksID int64) (locale.Locale, error)
 }
 
 type jurisdictions struct {
@@ -49,8 +49,8 @@ type jurisdictions struct {
 	byID     registry.Registry[domain.Jurisdiction]
 }
 
-func (j jurisdictions) For(ctx context.Context, userID int64) (domain.Jurisdiction, error) {
-	p, err := j.profiles.Profile(ctx, userID)
+func (j jurisdictions) For(ctx context.Context, booksID int64) (domain.Jurisdiction, error) {
+	p, err := j.profiles.Profile(ctx, booksID)
 	if err != nil {
 		return nil, fmt.Errorf("read profile: %w", err)
 	}
@@ -86,22 +86,22 @@ func (m *Module) handle(ctx context.Context, tx pgx.Tx, e outbox.Delivered) erro
 		return fmt.Errorf("decode %s: %w", e.Type, err)
 	}
 
-	return m.svc.WithRepository(postgres.NewTxRepository(tx)).HandleTransaction(ctx, e.UserID, payload.AccountIDs)
+	return m.svc.WithRepository(postgres.NewTxRepository(tx)).HandleTransaction(ctx, e.BooksID, payload.AccountIDs)
 }
 
 // RebuildAll recomputes every derived row from the ledger (equori portfolio rebuild).
 func (m *Module) RebuildAll(ctx context.Context) error { return m.svc.RebuildAll(ctx) }
 
-// RebuildUser recomputes the user's derived rows, after an import of an export archive.
-func (m *Module) RebuildUser(ctx context.Context, userID int64) error {
-	return m.svc.RebuildUser(ctx, userID)
+// RebuildBooks recomputes the user's derived rows, after an import of an export archive.
+func (m *Module) RebuildBooks(ctx context.Context, booksID int64) error {
+	return m.svc.RebuildBooks(ctx, booksID)
 }
 
 // TrailingReturn is the money-weighted return, in basis points, of the accounts taken as one tree
 // over the last 12 months up to today, valued in in, with the whole months the window covers;
 // ok is false when there is too little history or no flow (investments design 4.4).
-func (m *Module) TrailingReturn(ctx context.Context, userID int64, accountIDs []uuid.UUID, today time.Time, in money.Currency) (bp, months int, ok bool, err error) {
-	return m.svc.TrailingReturn(ctx, userID, accountIDs, today, in)
+func (m *Module) TrailingReturn(ctx context.Context, booksID int64, accountIDs []uuid.UUID, today time.Time, in money.Currency) (bp, months int, ok bool, err error) {
+	return m.svc.TrailingReturn(ctx, booksID, accountIDs, today, in)
 }
 
 // Tools returns the portfolio module's tools for language models (ADR 012).
@@ -109,8 +109,8 @@ func (m *Module) Tools() tool.Group {
 	return tool.Group{Tools: toolapi.Tools(m.svc, m.accountNames, m.ledger.Today), Errors: tool.FromProblem(httpapi.ToProblem)}
 }
 
-func (m *Module) accountNames(ctx context.Context, userID int64) (map[uuid.UUID]string, error) {
-	accounts, _, err := m.ledger.CaptureVocabulary(ctx, userID)
+func (m *Module) accountNames(ctx context.Context, booksID int64) (map[uuid.UUID]string, error) {
+	accounts, _, err := m.ledger.CaptureVocabulary(ctx, booksID)
 	if err != nil {
 		return nil, err
 	}
@@ -127,8 +127,8 @@ func (m *Module) RegisterRoutes(mux *http.ServeMux) { m.http.Register(mux) }
 
 // ValuedBalances values each account's own balance at the end of date in the base currency;
 // an account with a zero balance is absent. A missing price wraps ErrPriceMissing.
-func (m *Module) ValuedBalances(ctx context.Context, userID int64, date time.Time) (map[uuid.UUID]money.Money, error) {
-	return m.svc.BaseValues(ctx, userID, date)
+func (m *Module) ValuedBalances(ctx context.Context, booksID int64, date time.Time) (map[uuid.UUID]money.Money, error) {
+	return m.svc.BaseValues(ctx, booksID, date)
 }
 
 type ledgerPort struct {
@@ -136,8 +136,8 @@ type ledgerPort struct {
 	md *marketdata.Module
 }
 
-func (p ledgerPort) AccountFacts(ctx context.Context, userID int64) ([]app.Account, error) {
-	facts, err := p.l.AccountFacts(ctx, userID)
+func (p ledgerPort) AccountFacts(ctx context.Context, booksID int64) ([]app.Account, error) {
+	facts, err := p.l.AccountFacts(ctx, booksID)
 
 	out := make([]app.Account, len(facts))
 	for i, a := range facts {
@@ -147,12 +147,12 @@ func (p ledgerPort) AccountFacts(ctx context.Context, userID int64) ([]app.Accou
 	return out, err
 }
 
-func (p ledgerPort) BaseCurrency(ctx context.Context, userID int64) (money.Currency, error) {
-	return p.l.BaseCurrency(ctx, userID)
+func (p ledgerPort) BaseCurrency(ctx context.Context, booksID int64) (money.Currency, error) {
+	return p.l.BaseCurrency(ctx, booksID)
 }
 
-func (p ledgerPort) InvestmentFacts(ctx context.Context, userID int64, brokerageID uuid.UUID) (domain.Facts, error) {
-	f, err := p.l.InvestmentFacts(ctx, userID, brokerageID)
+func (p ledgerPort) InvestmentFacts(ctx context.Context, booksID int64, brokerageID uuid.UUID) (domain.Facts, error) {
+	f, err := p.l.InvestmentFacts(ctx, booksID, brokerageID)
 	if err != nil {
 		return domain.Facts{}, err
 	}
@@ -185,8 +185,8 @@ func (p ledgerPort) InvestmentFacts(ctx context.Context, userID int64, brokerage
 	return out, nil
 }
 
-func (p ledgerPort) ValuedBalance(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time, in money.Currency) (money.Money, error) {
-	c, err := p.l.ValuedBalance(ctx, userID, accountID, date, in)
+func (p ledgerPort) ValuedBalance(ctx context.Context, booksID int64, accountID uuid.UUID, date time.Time, in money.Currency) (money.Money, error) {
+	c, err := p.l.ValuedBalance(ctx, booksID, accountID, date, in)
 	switch {
 	case errors.Is(err, ledger.ErrNotFound):
 		return money.Money{}, fmt.Errorf("%w: %w", app.ErrNotFound, err)
@@ -197,8 +197,8 @@ func (p ledgerPort) ValuedBalance(ctx context.Context, userID int64, accountID u
 	return c.Value, err
 }
 
-func (p ledgerPort) FirstPosting(ctx context.Context, userID int64, accountIDs []uuid.UUID) (time.Time, bool, error) {
-	first, found, err := p.l.FirstPosting(ctx, userID, accountIDs)
+func (p ledgerPort) FirstPosting(ctx context.Context, booksID int64, accountIDs []uuid.UUID) (time.Time, bool, error) {
+	first, found, err := p.l.FirstPosting(ctx, booksID, accountIDs)
 	if errors.Is(err, ledger.ErrNotFound) {
 		return time.Time{}, false, fmt.Errorf("%w: %w", app.ErrNotFound, err)
 	}
@@ -206,8 +206,8 @@ func (p ledgerPort) FirstPosting(ctx context.Context, userID int64, accountIDs [
 	return first, found, err
 }
 
-func (p ledgerPort) Balances(ctx context.Context, userID int64, date time.Time) ([]app.AccountBalance, error) {
-	bs, err := p.l.Balances(ctx, userID, date)
+func (p ledgerPort) Balances(ctx context.Context, booksID int64, date time.Time) ([]app.AccountBalance, error) {
+	bs, err := p.l.Balances(ctx, booksID, date)
 
 	out := make([]app.AccountBalance, len(bs))
 	for i, b := range bs {
@@ -217,8 +217,8 @@ func (p ledgerPort) Balances(ctx context.Context, userID int64, date time.Time) 
 	return out, err
 }
 
-func (p ledgerPort) ExternalFlows(ctx context.Context, userID int64, accountIDs []uuid.UUID, from, to time.Time) ([]app.Flow, error) {
-	fs, err := p.l.ExternalFlows(ctx, userID, accountIDs, from, to)
+func (p ledgerPort) ExternalFlows(ctx context.Context, booksID int64, accountIDs []uuid.UUID, from, to time.Time) ([]app.Flow, error) {
+	fs, err := p.l.ExternalFlows(ctx, booksID, accountIDs, from, to)
 	if errors.Is(err, ledger.ErrNotFound) {
 		return nil, fmt.Errorf("%w: %w", app.ErrNotFound, err)
 	}

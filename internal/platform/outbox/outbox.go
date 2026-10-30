@@ -14,7 +14,7 @@ import (
 
 type Event struct {
 	Type        string
-	UserID      int64
+	BooksID     int64
 	AggregateID string
 	Payload     any
 }
@@ -22,7 +22,7 @@ type Event struct {
 type Delivered struct {
 	ID          uuid.UUID
 	Type        string
-	UserID      int64
+	BooksID     int64
 	AggregateID string
 	Payload     []byte
 	OccurredAt  time.Time
@@ -41,9 +41,9 @@ func Insert(ctx context.Context, tx pgx.Tx, e Event) error {
 
 	// One round trip: the insert and the notification travel in one statement.
 	_, err = tx.Exec(ctx, `WITH inserted AS (
-		INSERT INTO outbox_event (user_id, type, aggregate_id, payload) VALUES ($1, $2, $3, $4) RETURNING 1
+		INSERT INTO outbox_event (books_id, type, aggregate_id, payload) VALUES ($1, $2, $3, $4) RETURNING 1
 	) SELECT pg_notify('outbox', '') FROM inserted`,
-		e.UserID, e.Type, e.AggregateID, payload)
+		e.BooksID, e.Type, e.AggregateID, payload)
 	if err != nil {
 		return fmt.Errorf("insert %s event: %w", e.Type, err)
 	}

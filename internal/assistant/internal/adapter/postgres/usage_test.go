@@ -15,17 +15,17 @@ func TestUsage(t *testing.T) {
 	pool := pgtest.New(t)
 	repo := postgres.NewRepository(pool)
 	ctx := t.Context()
-	a, b := pgtest.CreateUser(t, pool), pgtest.CreateUser(t, pool)
+	a, b := pgtest.CreateBooks(t, pool), pgtest.CreateBooks(t, pool)
 	today := time.Date(2026, 10, 23, 0, 0, 0, 0, time.UTC)
 	until := time.Date(2026, 10, 23, 15, 0, 0, 0, time.UTC)
 
 	entries := []domain.UsageEntry{
-		{UserID: a, Day: today, ProviderID: "aistudio", Model: "m", UseID: "capture.suggest", InputTokens: 10, OutputTokens: 5},
-		{UserID: a, Day: today, ProviderID: "aistudio", Model: "m", UseID: "capture.suggest", Failed: true, Quota: true, CoolingUntil: until},
-		{UserID: a, Day: today, ProviderID: "aistudio", Model: "m", UseID: "assistant.chat", Failed: true},
-		{UserID: a, Day: today.AddDate(0, 0, -3), ProviderID: "aistudio", Model: "m", UseID: "assistant.chat", InputTokens: 100},
-		{UserID: a, Day: today.AddDate(0, 0, -40), ProviderID: "aistudio", Model: "m", UseID: "assistant.chat", InputTokens: 1000},
-		{UserID: b, Day: today, ProviderID: "aistudio", Model: "m", UseID: "assistant.chat", InputTokens: 7},
+		{BooksID: a, Day: today, ProviderID: "aistudio", Model: "m", UseID: "capture.suggest", InputTokens: 10, OutputTokens: 5},
+		{BooksID: a, Day: today, ProviderID: "aistudio", Model: "m", UseID: "capture.suggest", Failed: true, Quota: true, CoolingUntil: until},
+		{BooksID: a, Day: today, ProviderID: "aistudio", Model: "m", UseID: "assistant.chat", Failed: true},
+		{BooksID: a, Day: today.AddDate(0, 0, -3), ProviderID: "aistudio", Model: "m", UseID: "assistant.chat", InputTokens: 100},
+		{BooksID: a, Day: today.AddDate(0, 0, -40), ProviderID: "aistudio", Model: "m", UseID: "assistant.chat", InputTokens: 1000},
+		{BooksID: b, Day: today, ProviderID: "aistudio", Model: "m", UseID: "assistant.chat", InputTokens: 7},
 	}
 	for _, e := range entries {
 		if err := repo.AddUsage(ctx, e); err != nil {
@@ -35,7 +35,7 @@ func TestUsage(t *testing.T) {
 
 	var requests, errs, quota int
 	if err := pool.QueryRow(ctx, `SELECT requests, errors, quota_errors FROM assistant_usage
-		WHERE user_id = $1 AND day = $2 AND use_id = 'capture.suggest'`, a, today).Scan(&requests, &errs, &quota); err != nil {
+		WHERE books_id = $1 AND day = $2 AND use_id = 'capture.suggest'`, a, today).Scan(&requests, &errs, &quota); err != nil {
 		t.Fatal(err)
 	}
 
@@ -73,7 +73,7 @@ func TestLimitsAndProviderDelete(t *testing.T) {
 	pool := pgtest.New(t)
 	repo := postgres.NewRepository(pool)
 	ctx := t.Context()
-	a := pgtest.CreateUser(t, pool)
+	a := pgtest.CreateBooks(t, pool)
 
 	p := provider(t, a, "Local", nil)
 	if err := repo.InsertProvider(ctx, p); err != nil {
@@ -104,7 +104,7 @@ func TestLimitsAndProviderDelete(t *testing.T) {
 	}
 
 	day := time.Date(2026, 10, 23, 0, 0, 0, 0, time.UTC)
-	if err := repo.AddUsage(ctx, domain.UsageEntry{UserID: a, Day: day, ProviderID: p.ID.String(), Model: "m", UseID: "assistant.chat"}); err != nil {
+	if err := repo.AddUsage(ctx, domain.UsageEntry{BooksID: a, Day: day, ProviderID: p.ID.String(), Model: "m", UseID: "assistant.chat"}); err != nil {
 		t.Fatal(err)
 	}
 

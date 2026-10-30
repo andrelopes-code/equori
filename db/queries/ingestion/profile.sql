@@ -4,14 +4,14 @@ SELECT
 FROM
     ingestion_csv_profile
 WHERE
-    user_id = $1
+    books_id = $1
     AND account_id = $2;
 
 -- name: UpsertProfile :one
 -- The WHERE keeps another user's profile out of reach: no row comes back for it.
 INSERT INTO
     ingestion_csv_profile (
-        user_id,
+        books_id,
         account_id,
         delimiter,
         header_rows,
@@ -29,7 +29,7 @@ INSERT INTO
     )
 VALUES
     (
-        @user_id,
+        @books_id,
         @account_id,
         @delimiter,
         @header_rows,
@@ -62,6 +62,6 @@ SET
     group_separator = EXCLUDED.group_separator,
     updated_at = now()
 WHERE
-    ingestion_csv_profile.user_id = EXCLUDED.user_id
+    ingestion_csv_profile.books_id = EXCLUDED.books_id
 RETURNING
     *;

@@ -37,23 +37,23 @@ func projectBalance(svc *app.Service, l Ledger) tool.Tool {
 			"Use it for will there be enough money on a date. " +
 			"Do not use it for past balances: get_account_history does.",
 		Effect: tool.ReadOnly, Idempotent: true,
-	}, func(ctx context.Context, userID int64, in projectBalanceIn) (projectBalanceOut, error) {
+	}, func(ctx context.Context, booksID int64, in projectBalanceIn) (projectBalanceOut, error) {
 		id, err := optionalID(in.AccountID, "account_id")
 		if err != nil {
 			return projectBalanceOut{}, err
 		}
 
-		p, err := svc.Project(ctx, userID, id, in.To.Time)
+		p, err := svc.Project(ctx, booksID, id, in.To.Time)
 		if err != nil {
 			return projectBalanceOut{}, err
 		}
 
-		accounts, err := l.Accounts(ctx, userID)
+		accounts, err := l.Accounts(ctx, booksID)
 		if err != nil {
 			return projectBalanceOut{}, err
 		}
 
-		schedules, err := allSchedules(ctx, svc, userID)
+		schedules, err := allSchedules(ctx, svc, booksID)
 		if err != nil {
 			return projectBalanceOut{}, err
 		}

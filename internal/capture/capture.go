@@ -31,7 +31,7 @@ type Module struct {
 
 // Profiles is the part of identity the module uses to read a user's lines by language and region.
 type Profiles interface {
-	Profile(ctx context.Context, userID int64) (locale.Locale, error)
+	Profile(ctx context.Context, booksID int64) (locale.Locale, error)
 }
 
 // SuggestUse is the language model use of category suggestions (ADR 014 L6).
@@ -50,8 +50,8 @@ func (m *Module) RegisterRoutes(mux *http.ServeMux) { m.http.Register(mux) }
 
 type ledgerPort struct{ l *ledger.Module }
 
-func (p ledgerPort) Vocabulary(ctx context.Context, userID int64) ([]app.Account, []app.Payee, error) {
-	accounts, payees, err := p.l.CaptureVocabulary(ctx, userID)
+func (p ledgerPort) Vocabulary(ctx context.Context, booksID int64) ([]app.Account, []app.Payee, error) {
+	accounts, payees, err := p.l.CaptureVocabulary(ctx, booksID)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -72,16 +72,16 @@ func (p ledgerPort) Vocabulary(ctx context.Context, userID int64) ([]app.Account
 	return outAccounts, outPayees, nil
 }
 
-func (p ledgerPort) BaseCurrency(ctx context.Context, userID int64) (money.Currency, error) {
-	return p.l.BaseCurrency(ctx, userID)
+func (p ledgerPort) BaseCurrency(ctx context.Context, booksID int64) (money.Currency, error) {
+	return p.l.BaseCurrency(ctx, booksID)
 }
 
 func (p ledgerPort) Today() time.Time { return p.l.Today() }
 
 // Transactions classes a transaction by its uncategorized posting; a voided one, or one with a
 // category, has no class.
-func (p ledgerPort) Transactions(ctx context.Context, userID int64, ids []uuid.UUID) ([]app.Transaction, error) {
-	facts, err := p.l.TransactionFacts(ctx, userID, ids)
+func (p ledgerPort) Transactions(ctx context.Context, booksID int64, ids []uuid.UUID) ([]app.Transaction, error) {
+	facts, err := p.l.TransactionFacts(ctx, booksID, ids)
 	if err != nil {
 		return nil, err
 	}
@@ -108,13 +108,13 @@ type classifierPort struct{ c *classification.Module }
 
 // Decide keeps a category only when the decision is one category; a split or a transfer is
 // left to the classification of the recorded transaction (P5 A20).
-func (p classifierPort) Decide(ctx context.Context, userID int64, entries []app.Entry) ([]app.Decision, error) {
+func (p classifierPort) Decide(ctx context.Context, booksID int64, entries []app.Entry) ([]app.Decision, error) {
 	lines := make([]classification.ManualLine, len(entries))
 	for i, e := range entries {
 		lines[i] = classification.ManualLine{AccountID: e.AccountID, Date: e.Date, Amount: e.Amount, Description: e.Description, NamedPayee: e.NamedPayee}
 	}
 
-	decisions, err := p.c.DecideManual(ctx, userID, lines)
+	decisions, err := p.c.DecideManual(ctx, booksID, lines)
 	if err != nil {
 		return nil, err
 	}

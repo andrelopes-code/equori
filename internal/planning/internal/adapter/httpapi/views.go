@@ -7,7 +7,7 @@ import (
 )
 
 func (s *Server) GetProjection(ctx context.Context, req GetProjectionRequestObject) (GetProjectionResponseObject, error) {
-	p, err := s.svc.Project(ctx, auth.MustUserID(ctx), req.Id, req.Params.To.Time)
+	p, err := s.svc.Project(ctx, auth.MustBooksID(ctx), req.Id, req.Params.To.Time)
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +33,7 @@ func (s *Server) GetCommitted(ctx context.Context, req GetCommittedRequestObject
 		return nil, err
 	}
 
-	c, err := s.svc.Committed(ctx, auth.MustUserID(ctx), month)
+	c, err := s.svc.Committed(ctx, auth.MustBooksID(ctx), month)
 	if err != nil {
 		return nil, err
 	}

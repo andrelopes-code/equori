@@ -29,7 +29,7 @@ func TestInstitutionISPBBecomesIdentifier(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	rows, err := pool.Query(ctx, `SELECT name, identifier_scheme, identifier FROM ledger_institution WHERE user_id = $1 ORDER BY name`, uid)
+	rows, err := pool.Query(ctx, `SELECT name, identifier_scheme, identifier FROM ledger_institution WHERE books_id = $1 ORDER BY name`, uid)
 	if err != nil {
 		t.Fatal(err)
 	}

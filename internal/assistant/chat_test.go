@@ -46,7 +46,7 @@ func TestChatState(t *testing.T) {
 			return llmtest.Step{Model: model, Err: &llm.QuotaError{RetryAfter: time.Hour}}
 		}
 		h := apitest.New(t, apitest.LLM(llmtest.New("aistudio", quota("gemini-3.5-flash-lite"), quota("gemini-3.1-flash-lite"), quota("gemini-3.5-flash"))))
-		ctx := auth.WithUserID(t.Context(), h.OwnerID())
+		ctx := auth.WithBooksID(t.Context(), h.OwnerID())
 		_, _ = h.App.LLM.Use(assistant.ChatUse).Generate(ctx, llm.Request{Messages: []llm.Message{{Role: llm.RoleUser, Parts: []llm.Part{{Text: "x"}}}}})
 		var rows struct {
 			Items []usageView `json:"items"`

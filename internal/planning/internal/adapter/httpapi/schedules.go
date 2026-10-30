@@ -94,7 +94,7 @@ func (s *Server) CreateSchedule(ctx context.Context, req CreateScheduleRequestOb
 		return nil, err
 	}
 
-	created, err := s.svc.CreateSchedule(ctx, auth.MustUserID(ctx), app.ScheduleInput{
+	created, err := s.svc.CreateSchedule(ctx, auth.MustBooksID(ctx), app.ScheduleInput{
 		Kind: domain.Kind(b.Kind), AccountID: b.AccountId, CounterpartID: b.CounterpartId, PayeeID: optUUID(b.PayeeId),
 		Description: b.Description, Amount: amount, Rule: fromRecurrenceAPI(b.Recurrence), Calendar: stringOf(b.Calendar),
 		ToleranceBP: b.MatchToleranceBp, GraceDays: b.GraceDays,
@@ -107,7 +107,7 @@ func (s *Server) CreateSchedule(ctx context.Context, req CreateScheduleRequestOb
 }
 
 func (s *Server) GetSchedule(ctx context.Context, req GetScheduleRequestObject) (GetScheduleResponseObject, error) {
-	sch, err := s.svc.Schedule(ctx, auth.MustUserID(ctx), req.Id)
+	sch, err := s.svc.Schedule(ctx, auth.MustBooksID(ctx), req.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +121,7 @@ func (s *Server) ListSchedules(ctx context.Context, req ListSchedulesRequestObje
 		return nil, err
 	}
 
-	ss, next, err := s.svc.ListSchedules(ctx, auth.MustUserID(ctx), p)
+	ss, next, err := s.svc.ListSchedules(ctx, auth.MustBooksID(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -155,13 +155,13 @@ func (s *Server) ListOccurrences(ctx context.Context, req ListOccurrencesRequest
 	var err error
 	switch {
 	case req.Params.TransactionId != nil:
-		os, err = s.svc.OccurrencesOfTransaction(ctx, auth.MustUserID(ctx), *req.Params.TransactionId)
+		os, err = s.svc.OccurrencesOfTransaction(ctx, auth.MustBooksID(ctx), *req.Params.TransactionId)
 	case req.Params.From == nil:
 		err = &paramError{field: "from", message: "value is required but missing"}
 	case req.Params.To == nil:
 		err = &paramError{field: "to", message: "value is required but missing"}
 	default:
-		os, err = s.svc.Occurrences(ctx, auth.MustUserID(ctx), req.Params.From.Time, req.Params.To.Time, optUUID(req.Params.ScheduleId), state)
+		os, err = s.svc.Occurrences(ctx, auth.MustBooksID(ctx), req.Params.From.Time, req.Params.To.Time, optUUID(req.Params.ScheduleId), state)
 	}
 
 	if err != nil {

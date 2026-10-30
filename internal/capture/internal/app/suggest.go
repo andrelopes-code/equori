@@ -52,8 +52,8 @@ type Hint struct {
 }
 
 type HintRepository interface {
-	Hints(ctx context.Context, userID int64, descriptions []string) ([]Hint, error)
-	SaveHint(ctx context.Context, userID int64, h Hint) error
+	Hints(ctx context.Context, booksID int64, descriptions []string) ([]Hint, error)
+	SaveHint(ctx context.Context, booksID int64, h Hint) error
 }
 
 // Suggestion is the category named for one item; FromModel is true when this request asked
@@ -67,14 +67,14 @@ type hintKey struct{ class, description string }
 
 // Suggest names a category for each item from the kept answers, asking the model once for
 // the others (ADR 014). available is false when the model could not be asked.
-func (s *Service) Suggest(ctx context.Context, userID int64, items []SuggestItem) (out []Suggestion, available bool, err error) {
+func (s *Service) Suggest(ctx context.Context, booksID int64, items []SuggestItem) (out []Suggestion, available bool, err error) {
 	if len(items) > MaxSuggestions {
 		return nil, false, ErrTooManySuggestions
 	}
 
 	out = make([]Suggestion, len(items))
 
-	accounts, _, err := s.ledger.Vocabulary(ctx, userID)
+	accounts, _, err := s.ledger.Vocabulary(ctx, booksID)
 	if err != nil {
 		return nil, false, err
 	}
@@ -94,7 +94,7 @@ func (s *Service) Suggest(ctx context.Context, userID int64, items []SuggestItem
 		descriptions = append(descriptions, keys[i].description)
 	}
 
-	kept, err := s.hints.Hints(ctx, userID, descriptions)
+	kept, err := s.hints.Hints(ctx, booksID, descriptions)
 	if err != nil {
 		return nil, false, err
 	}
@@ -137,7 +137,7 @@ func (s *Service) Suggest(ctx context.Context, userID int64, items []SuggestItem
 		return out, s.suggester != nil, nil
 	}
 
-	profile, err := s.profiles.Profile(ctx, userID)
+	profile, err := s.profiles.Profile(ctx, booksID)
 	if err != nil {
 		return nil, false, fmt.Errorf("read profile: %w", err)
 	}
@@ -159,7 +159,7 @@ func (s *Service) Suggest(ctx context.Context, userID int64, items []SuggestItem
 		}
 
 		answers[k] = id
-		if err := s.hints.SaveHint(ctx, userID, Hint{Class: k.class, Description: k.description, CategoryID: id, AnsweredAt: now}); err != nil {
+		if err := s.hints.SaveHint(ctx, booksID, Hint{Class: k.class, Description: k.description, CategoryID: id, AnsweredAt: now}); err != nil {
 			return nil, false, err
 		}
 	}

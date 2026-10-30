@@ -11,7 +11,7 @@ import (
 )
 
 type AssistantChainTarget struct {
-	UserID       int64
+	BooksID      int64
 	UseID        string
 	Position     int32
 	ProviderID   uuid.UUID
@@ -21,7 +21,7 @@ type AssistantChainTarget struct {
 
 type AssistantConversation struct {
 	ID        uuid.UUID
-	UserID    int64
+	BooksID   int64
 	Title     string
 	CreatedAt time.Time
 	UpdatedAt time.Time
@@ -29,7 +29,7 @@ type AssistantConversation struct {
 
 type AssistantMessage struct {
 	ID             uuid.UUID
-	UserID         int64
+	BooksID        int64
 	ConversationID uuid.UUID
 	Seq            int32
 	Role           string
@@ -40,7 +40,7 @@ type AssistantMessage struct {
 
 type AssistantProposal struct {
 	ID             uuid.UUID
-	UserID         int64
+	BooksID        int64
 	ConversationID uuid.UUID
 	MessageID      uuid.NullUUID
 	Tool           string
@@ -56,7 +56,7 @@ type AssistantProposal struct {
 
 type AssistantProvider struct {
 	ID        uuid.UUID
-	UserID    int64
+	BooksID   int64
 	Preset    string
 	Name      string
 	BaseUrl   string
@@ -65,7 +65,7 @@ type AssistantProvider struct {
 }
 
 type AssistantUsageLimit struct {
-	UserID         int64
+	BooksID        int64
 	ProviderID     string
 	Model          string
 	RequestsPerDay *int32

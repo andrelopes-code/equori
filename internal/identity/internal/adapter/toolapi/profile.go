@@ -27,12 +27,12 @@ func updateProfile(svc *app.Service) tool.Tool {
 			"Do not use it for the base currency, which is fixed after the first transaction. " +
 			"The user confirms first.",
 		Effect: tool.Write,
-	}, func(ctx context.Context, userID int64, in updateProfileIn) (tool.Preview, error) {
+	}, func(ctx context.Context, booksID int64, in updateProfileIn) (tool.Preview, error) {
 		if in.Language == "" && in.Region == "" {
 			return tool.Preview{}, tool.InvalidArgument("language", "or region is required")
 		}
 
-		before, after, err := svc.ProfileChange(ctx, userID, auth.MustMemberID(ctx), in.Language, in.Region)
+		before, after, err := svc.ProfileChange(ctx, booksID, auth.MustMemberID(ctx), in.Language, in.Region)
 		if err != nil {
 			return tool.Preview{}, err
 		}
@@ -41,12 +41,12 @@ func updateProfile(svc *app.Service) tool.Tool {
 			{Field: "language", Before: tool.TextValue(before.Language), After: tool.TextValue(after.Language)},
 			{Field: "region", Before: tool.TextValue(before.Region), After: tool.TextValue(after.Region)},
 		}}, nil
-	}, func(ctx context.Context, userID int64, in updateProfileIn) (updateProfileOut, error) {
+	}, func(ctx context.Context, booksID int64, in updateProfileIn) (updateProfileOut, error) {
 		if in.Language == "" && in.Region == "" {
 			return updateProfileOut{}, tool.InvalidArgument("language", "or region is required")
 		}
 
-		l, err := svc.UpdateProfile(ctx, userID, auth.MustMemberID(ctx), in.Language, in.Region)
+		l, err := svc.UpdateProfile(ctx, booksID, auth.MustMemberID(ctx), in.Language, in.Region)
 		if err != nil {
 			return updateProfileOut{}, err
 		}

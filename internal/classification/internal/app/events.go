@@ -35,7 +35,7 @@ var errRecordPending = errors.New("categorization record not written yet")
 // Event is a ledger transaction event (ADR 006).
 type Event struct {
 	Type              string
-	UserID            int64
+	BooksID           int64
 	TransactionID     uuid.UUID
 	Version           int
 	Date              time.Time
@@ -56,7 +56,7 @@ type Cause struct {
 // empty while the transaction is uncategorized.
 type Record struct {
 	TransactionID uuid.UUID
-	UserID        int64
+	BooksID       int64
 	Version       int
 	Date          time.Time
 	Method        string
@@ -79,18 +79,18 @@ func (s *Service) HandleEvent(ctx context.Context, e Event) error {
 	}
 
 	if e.Type == EventVoided {
-		return s.repo.MarkVoided(ctx, Record{TransactionID: e.TransactionID, UserID: e.UserID, Version: e.Version, Date: e.Date, DecidedAt: e.OccurredAt})
+		return s.repo.MarkVoided(ctx, Record{TransactionID: e.TransactionID, BooksID: e.BooksID, Version: e.Version, Date: e.Date, DecidedAt: e.OccurredAt})
 	}
 
 	if e.CategoryState == stateNone {
-		return s.repo.DeleteCategorization(ctx, e.UserID, e.TransactionID, e.Version)
+		return s.repo.DeleteCategorization(ctx, e.BooksID, e.TransactionID, e.Version)
 	}
 
-	rec := Record{TransactionID: e.TransactionID, UserID: e.UserID, Version: e.Version, Date: e.Date, DecidedAt: e.OccurredAt}
+	rec := Record{TransactionID: e.TransactionID, BooksID: e.BooksID, Version: e.Version, Date: e.Date, DecidedAt: e.OccurredAt}
 	switch {
 	case e.CategoryState == stateUncategorized:
 	case e.Cause.Method == causeMerge:
-		prev, err := s.repo.Categorization(ctx, e.UserID, e.TransactionID)
+		prev, err := s.repo.Categorization(ctx, e.BooksID, e.TransactionID)
 		if errors.Is(err, ErrNotFound) {
 			return errRecordPending
 		}
@@ -104,7 +104,7 @@ func (s *Service) HandleEvent(ctx context.Context, e Event) error {
 		rec.Method, rec.RuleID = e.Cause.Method, e.Cause.RuleID
 		rec.Corrected = e.Cause.Method == MethodManual
 	case e.Type == EventCorrected && !e.CategoriesChanged:
-		prev, err := s.repo.Categorization(ctx, e.UserID, e.TransactionID)
+		prev, err := s.repo.Categorization(ctx, e.BooksID, e.TransactionID)
 		if errors.Is(err, ErrNotFound) {
 			return errRecordPending
 		}
@@ -126,7 +126,7 @@ func (s *Service) HandleEvent(ctx context.Context, e Event) error {
 	}
 
 	if e.Type == EventRecorded && e.CategoryState == stateUncategorized && e.Origin != originImport {
-		if _, err := s.classify(ctx, e.UserID, []uuid.UUID{e.TransactionID}); err != nil {
+		if _, err := s.classify(ctx, e.BooksID, []uuid.UUID{e.TransactionID}); err != nil {
 			return fmt.Errorf("classify %s: %w", e.TransactionID, err)
 		}
 	}
@@ -141,7 +141,7 @@ func (s *Service) HandleEvent(ctx context.Context, e Event) error {
 
 // describeCorrection sets the match key and the single category of a corrected transaction.
 func (s *Service) describeCorrection(ctx context.Context, rec *Record) error {
-	facts, err := s.ledger.TransactionFacts(ctx, rec.UserID, []uuid.UUID{rec.TransactionID})
+	facts, err := s.ledger.TransactionFacts(ctx, rec.BooksID, []uuid.UUID{rec.TransactionID})
 	if err != nil || len(facts) == 0 {
 		return err
 	}

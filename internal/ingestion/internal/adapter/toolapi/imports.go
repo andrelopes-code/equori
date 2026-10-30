@@ -111,10 +111,10 @@ func getImports(svc *app.Service, names AccountNames) tool.Tool {
 			"Use it for whether a bank synced, what an import did or what needs review. " +
 			"Do not use it for the transactions themselves: search_transactions does.",
 		Effect: tool.ReadOnly,
-	}, func(ctx context.Context, userID int64, in getImportsIn) (getImportsOut, error) {
+	}, func(ctx context.Context, booksID int64, in getImportsIn) (getImportsOut, error) {
 		fields := []field{{"batch_id", in.BatchID != ""}, {"state", in.State != ""}, {"account_id", in.AccountID != ""}}
 
-		named, err := names(ctx, userID)
+		named, err := names(ctx, booksID)
 		if err != nil {
 			return getImportsOut{}, err
 		}
@@ -126,19 +126,19 @@ func getImports(svc *app.Service, names AccountNames) tool.Tool {
 				return getImportsOut{}, err
 			}
 
-			return records(ctx, svc, userID, in, named)
+			return records(ctx, svc, booksID, in, named)
 		case "unconfirmed":
 			if err := required("unconfirmed", fields, "account_id"); err != nil {
 				return getImportsOut{}, err
 			}
 
-			return unconfirmed(ctx, svc, userID, in, named)
+			return unconfirmed(ctx, svc, booksID, in, named)
 		case "connections":
 			if err := required("connections", fields); err != nil {
 				return getImportsOut{}, err
 			}
 
-			return connections(ctx, svc, userID, in, named)
+			return connections(ctx, svc, booksID, in, named)
 		}
 
 		if err := required("batches", fields); err != nil {
@@ -150,7 +150,7 @@ func getImports(svc *app.Service, names AccountNames) tool.Tool {
 			return getImportsOut{}, err
 		}
 
-		batches, next, err := svc.ListBatches(ctx, userID, p)
+		batches, next, err := svc.ListBatches(ctx, booksID, p)
 		if err != nil {
 			return getImportsOut{}, err
 		}
@@ -179,7 +179,7 @@ func toBatchView(b domain.Batch, named map[uuid.UUID]string) batchView {
 	}
 }
 
-func records(ctx context.Context, svc *app.Service, userID int64, in getImportsIn, named map[uuid.UUID]string) (getImportsOut, error) {
+func records(ctx context.Context, svc *app.Service, booksID int64, in getImportsIn, named map[uuid.UUID]string) (getImportsOut, error) {
 	id, err := optionalID(in.BatchID, "batch_id")
 	if err != nil {
 		return getImportsOut{}, err
@@ -190,7 +190,7 @@ func records(ctx context.Context, svc *app.Service, userID int64, in getImportsI
 		return getImportsOut{}, err
 	}
 
-	recs, next, b, err := svc.Records(ctx, userID, id, domain.RecordState(in.State), p)
+	recs, next, b, err := svc.Records(ctx, booksID, id, domain.RecordState(in.State), p)
 	if err != nil {
 		return getImportsOut{}, err
 	}
@@ -227,13 +227,13 @@ func toRecordView(r domain.ExternalRecord, currency string) (recordView, error) 
 	return v, nil
 }
 
-func unconfirmed(ctx context.Context, svc *app.Service, userID int64, in getImportsIn, named map[uuid.UUID]string) (getImportsOut, error) {
+func unconfirmed(ctx context.Context, svc *app.Service, booksID int64, in getImportsIn, named map[uuid.UUID]string) (getImportsOut, error) {
 	id, err := optionalID(in.AccountID, "account_id")
 	if err != nil {
 		return getImportsOut{}, err
 	}
 
-	ps, currency, err := svc.Unconfirmed(ctx, userID, id)
+	ps, currency, err := svc.Unconfirmed(ctx, booksID, id)
 	if err != nil {
 		return getImportsOut{}, err
 	}
@@ -254,13 +254,13 @@ func unconfirmed(ctx context.Context, svc *app.Service, userID int64, in getImpo
 	return out, err
 }
 
-func connections(ctx context.Context, svc *app.Service, userID int64, in getImportsIn, named map[uuid.UUID]string) (getImportsOut, error) {
+func connections(ctx context.Context, svc *app.Service, booksID int64, in getImportsIn, named map[uuid.UUID]string) (getImportsOut, error) {
 	p, err := pageRequest[app.NameKey](in.PageArgs)
 	if err != nil {
 		return getImportsOut{}, err
 	}
 
-	cs, next, err := svc.ListConnections(ctx, userID, p)
+	cs, next, err := svc.ListConnections(ctx, booksID, p)
 	if err != nil {
 		return getImportsOut{}, err
 	}
@@ -294,7 +294,7 @@ func connections(ctx context.Context, svc *app.Service, userID int64, in getImpo
 	}
 
 	// shortcut: integrations are listed up to one page of tool.MaxLimit; a household has a handful.
-	is, _, err := svc.ListIntegrations(ctx, userID, page.Request[app.NameKey]{Limit: tool.MaxLimit})
+	is, _, err := svc.ListIntegrations(ctx, booksID, page.Request[app.NameKey]{Limit: tool.MaxLimit})
 	if err != nil {
 		return getImportsOut{}, err
 	}

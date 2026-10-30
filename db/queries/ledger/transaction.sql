@@ -4,15 +4,15 @@ SELECT
 FROM
     ledger_transaction
 WHERE
-    user_id = $1;
+    books_id = $1;
 
 -- name: InsertTransaction :one
 INSERT INTO
-    ledger_transaction (id, user_id, date, description, payee_id, balancing_currency, origin, version)
+    ledger_transaction (id, books_id, date, description, payee_id, balancing_currency, origin, version)
 VALUES
     (
         @id,
-        @user_id,
+        @books_id,
         @date,
         @description,
         sqlc.narg (payee_id),
@@ -34,7 +34,7 @@ SET
     version = @version,
     updated_at = now()
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND id = @id;
 
 -- name: VoidTransaction :exec
@@ -44,7 +44,7 @@ SET
     void_reason = $4,
     updated_at = now()
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2;
 
 -- name: GetTransaction :one
@@ -53,7 +53,7 @@ SELECT
 FROM
     ledger_transaction
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2;
 
 -- name: GetTransactionForUpdate :one
@@ -62,7 +62,7 @@ SELECT
 FROM
     ledger_transaction
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2
 FOR UPDATE;
 
@@ -70,7 +70,7 @@ FOR UPDATE;
 -- One round trip for all postings of a transaction.
 INSERT INTO
     ledger_posting (
-        user_id,
+        books_id,
         transaction_id,
         account_id,
         position,
@@ -92,7 +92,7 @@ INSERT INTO
     )
 VALUES
     (
-        @user_id,
+        @books_id,
         @transaction_id,
         @account_id,
         @position,
@@ -130,7 +130,7 @@ FROM
     JOIN ledger_transaction t ON t.id = p.transaction_id
     LEFT JOIN ledger_statement s ON s.id = p.statement_id
 WHERE
-    p.user_id = $1
+    p.books_id = $1
     AND p.transaction_id = ANY (@transaction_ids::UUID[])
 ORDER BY
     p.transaction_id,
@@ -143,7 +143,7 @@ WHERE
 
 -- name: InsertTransactionTag :exec
 INSERT INTO
-    ledger_transaction_tag (user_id, transaction_id, tag_id)
+    ledger_transaction_tag (books_id, transaction_id, tag_id)
 VALUES
     ($1, $2, $3);
 
@@ -155,7 +155,7 @@ FROM
     ledger_transaction_tag tt
     JOIN ledger_tag g ON g.id = tt.tag_id
 WHERE
-    tt.user_id = $1
+    tt.books_id = $1
     AND tt.transaction_id = ANY (@transaction_ids::UUID[])
 ORDER BY
     g.name;
@@ -167,7 +167,7 @@ WHERE
 
 -- name: InsertLink :exec
 INSERT INTO
-    ledger_link (user_id, from_transaction_id, to_transaction_id, link_type, amount)
+    ledger_link (books_id, from_transaction_id, to_transaction_id, link_type, amount)
 VALUES
     ($1, $2, $3, $4, sqlc.narg (amount));
 
@@ -177,7 +177,7 @@ SELECT
 FROM
     ledger_link
 WHERE
-    user_id = $1
+    books_id = $1
     AND from_transaction_id = ANY (@transaction_ids::UUID[])
 ORDER BY
     from_transaction_id,
@@ -194,7 +194,7 @@ FROM
     ledger_link l
     JOIN ledger_transaction t ON t.id = l.from_transaction_id
 WHERE
-    l.user_id = $1
+    l.books_id = $1
     AND l.to_transaction_id = $2
     AND t.voided_at IS NULL
 ORDER BY
@@ -214,7 +214,7 @@ FROM
     ledger_transaction_version v
     JOIN ledger_transaction t ON t.id = v.transaction_id
 WHERE
-    t.user_id = $1
+    t.books_id = $1
     AND v.transaction_id = $2
 ORDER BY
     v.version;
@@ -228,7 +228,7 @@ WITH RECURSIVE
         FROM
             ledger_account a
         WHERE
-            a.user_id = @user_id
+            a.books_id = @books_id
             AND a.id = sqlc.narg (account_id)::uuid
         UNION ALL
         SELECT
@@ -237,14 +237,14 @@ WITH RECURSIVE
             ledger_account c
             JOIN tree ON c.parent_id = tree.id
         WHERE
-            c.user_id = @user_id
+            c.books_id = @books_id
     )
 SELECT
     t.*
 FROM
     ledger_transaction t
 WHERE
-    t.user_id = @user_id
+    t.books_id = @books_id
     AND (
         sqlc.narg (account_id)::uuid IS NULL
         OR EXISTS (
@@ -326,7 +326,7 @@ WHERE
             FROM
                 ledger_payee y
             WHERE
-                y.user_id = @user_id
+                y.books_id = @books_id
                 AND y.id = t.payee_id
                 AND strpos(lower(y.name), lower(sqlc.narg (q)::text)) > 0
         )
@@ -370,10 +370,10 @@ SELECT
     coalesce(sum(l.amount), 0)::bigint
 FROM
     ledger_link l
-    JOIN ledger_transaction t ON t.user_id = l.user_id
+    JOIN ledger_transaction t ON t.books_id = l.books_id
     AND t.id = l.from_transaction_id
 WHERE
-    l.user_id = @user_id
+    l.books_id = @books_id
     AND l.to_transaction_id = @origin_id
     AND l.link_type = 'reimbursement_of'
     AND l.from_transaction_id <> @except_from
@@ -382,7 +382,7 @@ WHERE
 -- name: DeleteReimbursementLinksFrom :exec
 DELETE FROM ledger_link
 WHERE
-    user_id = $1
+    books_id = $1
     AND from_transaction_id = $2
     AND link_type = 'reimbursement_of';
 
@@ -405,11 +405,11 @@ FROM
                         sum(l.amount)
                     FROM
                         ledger_link l
-                        JOIN ledger_transaction f ON f.user_id = l.user_id
+                        JOIN ledger_transaction f ON f.books_id = l.books_id
                         AND f.id = l.from_transaction_id
                         AND f.voided_at IS NULL
                     WHERE
-                        l.user_id = @user_id
+                        l.books_id = @books_id
                         AND l.to_transaction_id = t.id
                         AND l.link_type = 'reimbursement_of'
                         AND l.from_transaction_id <> @transaction_id
@@ -423,7 +423,7 @@ FROM
                     FROM
                         ledger_link l
                     WHERE
-                        l.user_id = @user_id
+                        l.books_id = @books_id
                         AND l.to_transaction_id = t.id
                         AND l.link_type = 'reimbursement_of'
                         AND l.from_transaction_id = @transaction_id
@@ -432,16 +432,16 @@ FROM
             ) AS allocated
         FROM
             ledger_transaction t
-            JOIN ledger_posting p ON p.user_id = t.user_id
+            JOIN ledger_posting p ON p.books_id = t.books_id
             AND p.transaction_id = t.id
             AND p.amount > 0
             AND NOT p.voided
-            JOIN ledger_account a ON a.user_id = p.user_id
+            JOIN ledger_account a ON a.books_id = p.books_id
             AND a.id = p.account_id
             AND a.account_class = 'expense'
             AND a.instrument = @instrument::text
         WHERE
-            t.user_id = @user_id
+            t.books_id = @books_id
             AND t.id <> @transaction_id
             AND t.voided_at IS NULL
         GROUP BY
@@ -480,7 +480,7 @@ FROM
                     FROM
                         ledger_link l
                     WHERE
-                        l.user_id = @user_id
+                        l.books_id = @books_id
                         AND l.from_transaction_id = t.id
                         AND l.link_type = 'reimbursement_of'
                 ),
@@ -488,14 +488,14 @@ FROM
             ) AS allocated
         FROM
             ledger_transaction t
-            JOIN ledger_posting p ON p.user_id = t.user_id
+            JOIN ledger_posting p ON p.books_id = t.books_id
             AND p.transaction_id = t.id
             AND NOT p.voided
-            JOIN ledger_account a ON a.user_id = p.user_id
+            JOIN ledger_account a ON a.books_id = p.books_id
             AND a.id = p.account_id
             AND a.account_class IN ('income', 'expense')
         WHERE
-            t.user_id = @user_id
+            t.books_id = @books_id
             AND t.id <> @transaction_id
             AND t.voided_at IS NULL
             AND t.date BETWEEN @from_date::date AND @to_date::date
@@ -506,7 +506,7 @@ FROM
                 FROM
                     ledger_link l
                 WHERE
-                    l.user_id = @user_id
+                    l.books_id = @books_id
                     AND l.from_transaction_id = t.id
                     AND l.to_transaction_id = @transaction_id
                     AND l.link_type = 'reimbursement_of'

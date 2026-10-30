@@ -12,7 +12,7 @@ import (
 
 type PlanningBudget struct {
 	ID                uuid.UUID
-	UserID            int64
+	BooksID           int64
 	CategoryAccountID uuid.UUID
 	PeriodType        string
 	Rollover          bool
@@ -21,14 +21,14 @@ type PlanningBudget struct {
 }
 
 type PlanningBudgetAmount struct {
-	UserID        int64
+	BooksID       int64
 	BudgetID      uuid.UUID
 	EffectiveFrom time.Time
 	Amount        int64
 }
 
 type PlanningBudgetReference struct {
-	UserID   int64
+	BooksID  int64
 	Source   string
 	Amount   *int64
 	Currency string
@@ -36,7 +36,7 @@ type PlanningBudgetReference struct {
 
 type PlanningGoal struct {
 	ID        uuid.UUID
-	UserID    int64
+	BooksID   int64
 	Name      string
 	Target    int64
 	Currency  string
@@ -46,7 +46,7 @@ type PlanningGoal struct {
 
 type PlanningOccurrence struct {
 	ID                    uuid.UUID
-	UserID                int64
+	BooksID               int64
 	ScheduleID            uuid.UUID
 	Sequence              int32
 	ExpectedOn            time.Time
@@ -61,7 +61,7 @@ type PlanningOccurrence struct {
 
 type PlanningSchedule struct {
 	ID               uuid.UUID
-	UserID           int64
+	BooksID          int64
 	Kind             string
 	AccountID        uuid.UUID
 	CounterpartID    uuid.UUID
@@ -78,7 +78,7 @@ type PlanningSchedule struct {
 }
 
 type PlanningScheduleTerm struct {
-	UserID             int64
+	BooksID            int64
 	ScheduleID         uuid.UUID
 	EffectiveFrom      time.Time
 	Frequency          string

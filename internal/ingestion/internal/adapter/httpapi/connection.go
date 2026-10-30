@@ -54,7 +54,7 @@ func toConnectionAPI(c domain.Connection) Connection {
 func (s *Server) CreateConnection(ctx context.Context, req CreateConnectionRequestObject) (CreateConnectionResponseObject, error) {
 	b := req.Body
 
-	c, err := s.svc.CreateConnection(ctx, auth.MustUserID(ctx), b.IntegrationId, b.ExternalId, opt(b.Name))
+	c, err := s.svc.CreateConnection(ctx, auth.MustBooksID(ctx), b.IntegrationId, b.ExternalId, opt(b.Name))
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +70,7 @@ func (s *Server) ListConnections(ctx context.Context, req ListConnectionsRequest
 		return nil, err
 	}
 
-	cs, next, err := s.svc.ListConnections(ctx, auth.MustUserID(ctx), p)
+	cs, next, err := s.svc.ListConnections(ctx, auth.MustBooksID(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +86,7 @@ func (s *Server) ListConnections(ctx context.Context, req ListConnectionsRequest
 }
 
 func (s *Server) GetConnection(ctx context.Context, req GetConnectionRequestObject) (GetConnectionResponseObject, error) {
-	c, err := s.svc.Connection(ctx, auth.MustUserID(ctx), req.Id)
+	c, err := s.svc.Connection(ctx, auth.MustBooksID(ctx), req.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +95,7 @@ func (s *Server) GetConnection(ctx context.Context, req GetConnectionRequestObje
 }
 
 func (s *Server) DeleteConnection(ctx context.Context, req DeleteConnectionRequestObject) (DeleteConnectionResponseObject, error) {
-	if err := s.svc.DeleteConnection(ctx, auth.MustUserID(ctx), req.Id); err != nil {
+	if err := s.svc.DeleteConnection(ctx, auth.MustBooksID(ctx), req.Id); err != nil {
 		return nil, err
 	}
 
@@ -110,7 +110,7 @@ func (s *Server) MapExternalAccount(ctx context.Context, req MapExternalAccountR
 		m.SyncFrom = &b.SyncFrom.Time
 	}
 
-	a, err := s.svc.MapAccount(ctx, auth.MustUserID(ctx), req.Id, req.ExternalAccountId, m)
+	a, err := s.svc.MapAccount(ctx, auth.MustBooksID(ctx), req.Id, req.ExternalAccountId, m)
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +119,7 @@ func (s *Server) MapExternalAccount(ctx context.Context, req MapExternalAccountR
 }
 
 func (s *Server) SyncConnection(ctx context.Context, req SyncConnectionRequestObject) (SyncConnectionResponseObject, error) {
-	c, batches, err := s.svc.SyncConnection(ctx, auth.MustUserID(ctx), req.Id)
+	c, batches, err := s.svc.SyncConnection(ctx, auth.MustBooksID(ctx), req.Id)
 	if err != nil {
 		return nil, err
 	}

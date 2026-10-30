@@ -14,7 +14,7 @@ import (
 
 const appendMessage = `-- name: AppendMessage :one
 INSERT INTO
-    assistant_message (id, user_id, conversation_id, seq, role, content, outcome, created_at)
+    assistant_message (id, books_id, conversation_id, seq, role, content, outcome, created_at)
 SELECT
     $1,
     $2,
@@ -27,7 +27,7 @@ SELECT
                 assistant_message
             WHERE
                 conversation_id = $3
-                AND user_id = $2
+                AND books_id = $2
         ),
         0
     ) + 1,
@@ -36,12 +36,12 @@ SELECT
     $6,
     $7
 RETURNING
-    id, user_id, conversation_id, seq, role, content, outcome, created_at
+    id, books_id, conversation_id, seq, role, content, outcome, created_at
 `
 
 type AppendMessageParams struct {
 	ID             uuid.UUID
-	UserID         int64
+	BooksID        int64
 	ConversationID uuid.UUID
 	Role           string
 	Content        string
@@ -52,7 +52,7 @@ type AppendMessageParams struct {
 func (q *Queries) AppendMessage(ctx context.Context, arg AppendMessageParams) (AssistantMessage, error) {
 	row := q.db.QueryRow(ctx, appendMessage,
 		arg.ID,
-		arg.UserID,
+		arg.BooksID,
 		arg.ConversationID,
 		arg.Role,
 		arg.Content,
@@ -62,7 +62,7 @@ func (q *Queries) AppendMessage(ctx context.Context, arg AppendMessageParams) (A
 	var i AssistantMessage
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.ConversationID,
 		&i.Seq,
 		&i.Role,
@@ -75,25 +75,25 @@ func (q *Queries) AppendMessage(ctx context.Context, arg AppendMessageParams) (A
 
 const conversationByID = `-- name: ConversationByID :one
 SELECT
-    id, user_id, title, created_at, updated_at
+    id, books_id, title, created_at, updated_at
 FROM
     assistant_conversation
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2
 `
 
 type ConversationByIDParams struct {
-	UserID int64
-	ID     uuid.UUID
+	BooksID int64
+	ID      uuid.UUID
 }
 
 func (q *Queries) ConversationByID(ctx context.Context, arg ConversationByIDParams) (AssistantConversation, error) {
-	row := q.db.QueryRow(ctx, conversationByID, arg.UserID, arg.ID)
+	row := q.db.QueryRow(ctx, conversationByID, arg.BooksID, arg.ID)
 	var i AssistantConversation
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.Title,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -104,17 +104,17 @@ func (q *Queries) ConversationByID(ctx context.Context, arg ConversationByIDPara
 const deleteConversation = `-- name: DeleteConversation :execrows
 DELETE FROM assistant_conversation
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2
 `
 
 type DeleteConversationParams struct {
-	UserID int64
-	ID     uuid.UUID
+	BooksID int64
+	ID      uuid.UUID
 }
 
 func (q *Queries) DeleteConversation(ctx context.Context, arg DeleteConversationParams) (int64, error) {
-	result, err := q.db.Exec(ctx, deleteConversation, arg.UserID, arg.ID)
+	result, err := q.db.Exec(ctx, deleteConversation, arg.BooksID, arg.ID)
 	if err != nil {
 		return 0, err
 	}
@@ -124,24 +124,24 @@ func (q *Queries) DeleteConversation(ctx context.Context, arg DeleteConversation
 const deleteConversations = `-- name: DeleteConversations :exec
 DELETE FROM assistant_conversation
 WHERE
-    user_id = $1
+    books_id = $1
 `
 
-func (q *Queries) DeleteConversations(ctx context.Context, userID int64) error {
-	_, err := q.db.Exec(ctx, deleteConversations, userID)
+func (q *Queries) DeleteConversations(ctx context.Context, booksID int64) error {
+	_, err := q.db.Exec(ctx, deleteConversations, booksID)
 	return err
 }
 
 const insertConversation = `-- name: InsertConversation :exec
 INSERT INTO
-    assistant_conversation (id, user_id, title, created_at, updated_at)
+    assistant_conversation (id, books_id, title, created_at, updated_at)
 VALUES
     ($1, $2, $3, $4, $5)
 `
 
 type InsertConversationParams struct {
 	ID        uuid.UUID
-	UserID    int64
+	BooksID   int64
 	Title     string
 	CreatedAt time.Time
 	UpdatedAt time.Time
@@ -150,7 +150,7 @@ type InsertConversationParams struct {
 func (q *Queries) InsertConversation(ctx context.Context, arg InsertConversationParams) error {
 	_, err := q.db.Exec(ctx, insertConversation,
 		arg.ID,
-		arg.UserID,
+		arg.BooksID,
 		arg.Title,
 		arg.CreatedAt,
 		arg.UpdatedAt,
@@ -160,11 +160,11 @@ func (q *Queries) InsertConversation(ctx context.Context, arg InsertConversation
 
 const listConversations = `-- name: ListConversations :many
 SELECT
-    id, user_id, title, created_at, updated_at
+    id, books_id, title, created_at, updated_at
 FROM
     assistant_conversation
 WHERE
-    user_id = $1
+    books_id = $1
     AND (
         $2::timestamptz IS NULL
         OR (updated_at, id) < ($2::timestamptz, $3::uuid)
@@ -177,7 +177,7 @@ LIMIT
 `
 
 type ListConversationsParams struct {
-	UserID         int64
+	BooksID        int64
 	AfterUpdatedAt *time.Time
 	AfterID        uuid.NullUUID
 	RowLimit       int32
@@ -185,7 +185,7 @@ type ListConversationsParams struct {
 
 func (q *Queries) ListConversations(ctx context.Context, arg ListConversationsParams) ([]AssistantConversation, error) {
 	rows, err := q.db.Query(ctx, listConversations,
-		arg.UserID,
+		arg.BooksID,
 		arg.AfterUpdatedAt,
 		arg.AfterID,
 		arg.RowLimit,
@@ -199,7 +199,7 @@ func (q *Queries) ListConversations(ctx context.Context, arg ListConversationsPa
 		var i AssistantConversation
 		if err := rows.Scan(
 			&i.ID,
-			&i.UserID,
+			&i.BooksID,
 			&i.Title,
 			&i.CreatedAt,
 			&i.UpdatedAt,
@@ -216,23 +216,23 @@ func (q *Queries) ListConversations(ctx context.Context, arg ListConversationsPa
 
 const listMessages = `-- name: ListMessages :many
 SELECT
-    id, user_id, conversation_id, seq, role, content, outcome, created_at
+    id, books_id, conversation_id, seq, role, content, outcome, created_at
 FROM
     assistant_message
 WHERE
-    user_id = $1
+    books_id = $1
     AND conversation_id = $2
 ORDER BY
     seq
 `
 
 type ListMessagesParams struct {
-	UserID         int64
+	BooksID        int64
 	ConversationID uuid.UUID
 }
 
 func (q *Queries) ListMessages(ctx context.Context, arg ListMessagesParams) ([]AssistantMessage, error) {
-	rows, err := q.db.Query(ctx, listMessages, arg.UserID, arg.ConversationID)
+	rows, err := q.db.Query(ctx, listMessages, arg.BooksID, arg.ConversationID)
 	if err != nil {
 		return nil, err
 	}
@@ -242,7 +242,7 @@ func (q *Queries) ListMessages(ctx context.Context, arg ListMessagesParams) ([]A
 		var i AssistantMessage
 		if err := rows.Scan(
 			&i.ID,
-			&i.UserID,
+			&i.BooksID,
 			&i.ConversationID,
 			&i.Seq,
 			&i.Role,
@@ -265,17 +265,17 @@ UPDATE assistant_conversation
 SET
     updated_at = $1
 WHERE
-    user_id = $2
+    books_id = $2
     AND id = $3
 `
 
 type TouchConversationParams struct {
 	UpdatedAt time.Time
-	UserID    int64
+	BooksID   int64
 	ID        uuid.UUID
 }
 
 func (q *Queries) TouchConversation(ctx context.Context, arg TouchConversationParams) error {
-	_, err := q.db.Exec(ctx, touchConversation, arg.UpdatedAt, arg.UserID, arg.ID)
+	_, err := q.db.Exec(ctx, touchConversation, arg.UpdatedAt, arg.BooksID, arg.ID)
 	return err
 }

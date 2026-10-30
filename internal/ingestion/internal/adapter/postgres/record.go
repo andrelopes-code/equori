@@ -35,7 +35,7 @@ func toRecord(row IngestionExternalRecord) (domain.ExternalRecord, error) {
 	}
 
 	rec := domain.ExternalRecord{
-		ID: row.ID, UserID: row.UserID, BatchID: row.BatchID, AccountID: row.AccountID, ExternalID: value(row.ExternalID),
+		ID: row.ID, BooksID: row.BooksID, BatchID: row.BatchID, AccountID: row.AccountID, ExternalID: value(row.ExternalID),
 		DedupKey: row.DedupKey, Raw: raw, Date: row.BookedOn, Amount: row.Amount, Description: row.Description,
 		State: domain.RecordState(row.State), TransactionID: row.TransactionID.UUID, Candidates: row.Candidates,
 		ExternalStatus: value(row.ExternalStatus), DueDate: row.DueDate, CategoryID: value(row.CategoryID),
@@ -90,7 +90,7 @@ func (r *Repository) ClaimRecords(ctx context.Context, recs []domain.ExternalRec
 
 		f := factsOf(rec)
 		params[i] = InsertRecordsParams{
-			UserID: rec.UserID, BatchID: rec.BatchID, AccountID: rec.AccountID, ExternalID: optional(rec.ExternalID),
+			BooksID: rec.BooksID, BatchID: rec.BatchID, AccountID: rec.AccountID, ExternalID: optional(rec.ExternalID),
 			DedupKey: rec.DedupKey, Raw: raw, BookedOn: rec.Date, Amount: rec.Amount, Description: rec.Description,
 			ExternalStatus: f.status, DueDate: f.dueDate, InstallmentNumber: f.number, InstallmentCount: f.count,
 			CategoryID: f.category, BalanceAfter: f.balanceAfter, LineKind: f.kind,
@@ -117,7 +117,7 @@ func (r *Repository) ClaimRecords(ctx context.Context, recs []domain.ExternalRec
 			return batchErr
 		}
 
-		rows, err := q.ListRecordsByKeys(ctx, ListRecordsByKeysParams{UserID: recs[0].UserID, Keys: existing})
+		rows, err := q.ListRecordsByKeys(ctx, ListRecordsByKeysParams{BooksID: recs[0].BooksID, Keys: existing})
 		if err != nil {
 			return err
 		}
@@ -155,7 +155,7 @@ func outcome(rec domain.ExternalRecord) (SaveRecordOutcomesParams, error) {
 	stored, err := json.Marshal(scores)
 
 	return SaveRecordOutcomesParams{
-		UserID: rec.UserID, ID: rec.ID, BatchID: rec.BatchID, State: string(rec.State),
+		BooksID: rec.BooksID, ID: rec.ID, BatchID: rec.BatchID, State: string(rec.State),
 		TransactionID: uuid.NullUUID{UUID: rec.TransactionID, Valid: rec.TransactionID != uuid.Nil}, Candidates: candidates,
 		ReviewReason: optional(rec.ReviewReason), CandidateScores: stored,
 	}, err
@@ -190,7 +190,7 @@ func (r *Repository) SaveOutcomes(ctx context.Context, recs []domain.ExternalRec
 
 func (r *Repository) InsertBatch(ctx context.Context, b domain.Batch) (domain.Batch, error) {
 	row, err := r.q.InsertBatch(ctx, InsertBatchParams{
-		UserID: b.UserID, AccountID: b.AccountID, Source: string(b.Source), FileName: optional(b.FileName),
+		BooksID: b.BooksID, AccountID: b.AccountID, Source: string(b.Source), FileName: optional(b.FileName),
 		Currency: b.Currency, PeriodFrom: b.PeriodFrom, PeriodTo: b.PeriodTo, ExternalAccountID: nullable(b.ExternalAccountID),
 	})
 	if err != nil {
@@ -204,7 +204,7 @@ func (r *Repository) CompleteBatch(ctx context.Context, b domain.Batch) (domain.
 	c := b.Counts
 
 	params := CompleteBatchParams{
-		UserID: b.UserID, ID: b.ID, Received: int32(c.Received), Ignored: int32(c.Ignored), Matched: int32(c.Matched), //nolint:gosec // line counts of a 10 MiB file
+		BooksID: b.BooksID, ID: b.ID, Received: int32(c.Received), Ignored: int32(c.Ignored), Matched: int32(c.Matched), //nolint:gosec // line counts of a 10 MiB file
 		Created: int32(c.Created), NeedsReview: int32(c.NeedsReview), Discarded: int32(c.Discarded), //nolint:gosec // line counts of a 10 MiB file
 		Updated: int32(c.Updated), Withdrawn: int32(c.Withdrawn), //nolint:gosec // line counts of one account window
 		BalanceStatus: string(b.Balance.Status), BalanceReason: optional(b.Balance.Reason), BalanceDate: b.Balance.Date,
@@ -221,8 +221,8 @@ func (r *Repository) CompleteBatch(ctx context.Context, b domain.Batch) (domain.
 	return toBatch(row), nil
 }
 
-func (r *Repository) Batch(ctx context.Context, userID int64, id uuid.UUID) (domain.Batch, error) {
-	row, err := r.q.GetBatch(ctx, GetBatchParams{UserID: userID, ID: id})
+func (r *Repository) Batch(ctx context.Context, booksID int64, id uuid.UUID) (domain.Batch, error) {
+	row, err := r.q.GetBatch(ctx, GetBatchParams{BooksID: booksID, ID: id})
 	if err != nil {
 		return domain.Batch{}, notFound(err)
 	}
@@ -251,8 +251,8 @@ func (r *Repository) LockAccountImports(ctx context.Context, accountID uuid.UUID
 	}, nil
 }
 
-func (r *Repository) Record(ctx context.Context, userID int64, id uuid.UUID) (domain.ExternalRecord, error) {
-	row, err := r.q.GetRecord(ctx, GetRecordParams{UserID: userID, ID: id})
+func (r *Repository) Record(ctx context.Context, booksID int64, id uuid.UUID) (domain.ExternalRecord, error) {
+	row, err := r.q.GetRecord(ctx, GetRecordParams{BooksID: booksID, ID: id})
 	if err != nil {
 		return domain.ExternalRecord{}, notFound(err)
 	}
@@ -260,8 +260,8 @@ func (r *Repository) Record(ctx context.Context, userID int64, id uuid.UUID) (do
 	return toRecord(row)
 }
 
-func (r *Repository) Records(ctx context.Context, userID int64, batchID uuid.UUID, state domain.RecordState, p page.Request[app.RecordKey]) ([]domain.ExternalRecord, *app.RecordKey, error) {
-	params := ListBatchRecordsParams{UserID: userID, BatchID: batchID, State: optional(string(state)), RowLimit: int32(p.Limit + 1)} //nolint:gosec // limit is at most page.MaxLimit
+func (r *Repository) Records(ctx context.Context, booksID int64, batchID uuid.UUID, state domain.RecordState, p page.Request[app.RecordKey]) ([]domain.ExternalRecord, *app.RecordKey, error) {
+	params := ListBatchRecordsParams{BooksID: booksID, BatchID: batchID, State: optional(string(state)), RowLimit: int32(p.Limit + 1)} //nolint:gosec // limit is at most page.MaxLimit
 	if p.After != nil {
 		params.AfterID = uuid.NullUUID{UUID: p.After.ID, Valid: true}
 	}
@@ -294,25 +294,25 @@ func (r *Repository) ResolveRecord(ctx context.Context, rec domain.ExternalRecor
 			return err
 		}
 
-		return q.MoveReviewCount(ctx, MoveReviewCountParams{UserID: rec.UserID, ID: rec.BatchID, State: string(rec.State)})
+		return q.MoveReviewCount(ctx, MoveReviewCountParams{BooksID: rec.BooksID, ID: rec.BatchID, State: string(rec.State)})
 	})
 }
 
 // ReopenRecord returns a discarded record to review and moves it between the batch counts; it
 // reports false when the record is not discarded (A140).
-func (r *Repository) ReopenRecord(ctx context.Context, userID int64, id, batchID uuid.UUID) (bool, error) {
+func (r *Repository) ReopenRecord(ctx context.Context, booksID int64, id, batchID uuid.UUID) (bool, error) {
 	reopened := false
 	err := pgx.BeginFunc(ctx, r.pool, func(tx pgx.Tx) error {
 		q := r.q.WithTx(tx)
 
-		n, err := q.ReopenRecord(ctx, ReopenRecordParams{UserID: userID, ID: id})
+		n, err := q.ReopenRecord(ctx, ReopenRecordParams{BooksID: booksID, ID: id})
 		if err != nil || n == 0 {
 			return err
 		}
 
 		reopened = true
 
-		return q.MoveReopenedCount(ctx, MoveReopenedCountParams{UserID: userID, ID: batchID})
+		return q.MoveReopenedCount(ctx, MoveReopenedCountParams{BooksID: booksID, ID: batchID})
 	})
 
 	return reopened, err

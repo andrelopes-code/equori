@@ -55,7 +55,7 @@ func TestNewProvider(t *testing.T) {
 					t.Fatalf("NewProvider: %v", err)
 				}
 
-				if p.BaseURL != tt.wantURL || p.UserID != 7 || p.Preset != tt.preset || !p.CreatedAt.Equal(now) {
+				if p.BaseURL != tt.wantURL || p.BooksID != 7 || p.Preset != tt.preset || !p.CreatedAt.Equal(now) {
 					t.Fatalf("provider = %+v, want base URL %s", p, tt.wantURL)
 				}
 			}

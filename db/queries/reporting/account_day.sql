@@ -7,7 +7,7 @@ WITH RECURSIVE
         FROM
             ledger_account a
         WHERE
-            a.user_id = @user_id
+            a.books_id = @books_id
             AND a.id = @account_id
         UNION ALL
         SELECT
@@ -17,7 +17,7 @@ WITH RECURSIVE
             ledger_account c
             JOIN tree ON c.parent_id = tree.id
         WHERE
-            c.user_id = @user_id
+            c.books_id = @books_id
     )
 SELECT DISTINCT
     instrument
@@ -28,12 +28,12 @@ ORDER BY
 
 -- name: ListAllAccounts :many
 SELECT
-    user_id,
+    books_id,
     id
 FROM
     ledger_account
 ORDER BY
-    user_id,
+    books_id,
     id;
 
 -- name: DeleteAccountDaysFrom :exec
@@ -45,7 +45,7 @@ WHERE
 -- name: InsertAccountDaysFrom :exec
 INSERT INTO
     reporting_account_day (
-        user_id,
+        books_id,
         account_id,
         date,
         delta_booked,
@@ -56,7 +56,7 @@ INSERT INTO
         outflow_booked
     )
 SELECT
-    @user_id::bigint,
+    @books_id::bigint,
     @account_id::uuid,
     d.date,
     d.delta_booked,
@@ -94,7 +94,7 @@ FROM
                 FROM
                     ledger_posting p
                 WHERE
-                    p.user_id = @user_id::bigint
+                    p.books_id = @books_id::bigint
                     AND p.account_id = @account_id::uuid
                     AND NOT p.voided
                     AND p.booked_on >= @from_date::date
@@ -106,7 +106,7 @@ FROM
                 FROM
                     ledger_posting p
                 WHERE
-                    p.user_id = @user_id::bigint
+                    p.books_id = @books_id::bigint
                     AND p.account_id = @account_id::uuid
                     AND NOT p.voided
                     AND coalesce(p.settled_on, p.booked_on) >= @from_date::date
@@ -137,7 +137,7 @@ FROM
         FROM
             ledger_posting p
         WHERE
-            p.user_id = @user_id::bigint
+            p.books_id = @books_id::bigint
             AND p.account_id = @account_id::uuid
             AND NOT p.voided
     ) base
@@ -155,7 +155,7 @@ WITH RECURSIVE
         FROM
             ledger_account a
         WHERE
-            a.user_id = @user_id
+            a.books_id = @books_id
             AND a.id = @account_id
         UNION ALL
         SELECT
@@ -164,7 +164,7 @@ WITH RECURSIVE
             ledger_account c
             JOIN tree ON c.parent_id = tree.id
         WHERE
-            c.user_id = @user_id
+            c.books_id = @books_id
     )
 SELECT
     r.date,
@@ -191,7 +191,7 @@ SELECT
 FROM
     ledger_account
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND id = @account_id;
 
 -- name: AccountFlows :many
@@ -203,7 +203,7 @@ SELECT
 FROM
     reporting_account_day r
 WHERE
-    r.user_id = @user_id
+    r.books_id = @books_id
     AND r.account_id = @account_id
     AND r.date BETWEEN @from_date::date AND @to_date::date
     AND (
@@ -227,7 +227,7 @@ FROM
     LEFT JOIN reporting_account_day r ON r.account_id = a.id
     AND r.date BETWEEN @from_date::date AND @to_date::date
 WHERE
-    a.user_id = @user_id
+    a.books_id = @books_id
     AND a.account_class = @account_class
 GROUP BY
     a.id
@@ -241,5 +241,5 @@ SELECT
 FROM
     ledger_account
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND id = @account_id;

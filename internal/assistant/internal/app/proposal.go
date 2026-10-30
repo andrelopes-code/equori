@@ -27,13 +27,13 @@ func (e *ToolFailure) Error() string { return "tool failed" }
 // UseTools sets the tool set proposals preview and execute; the chat does not run without it.
 func (s *Service) UseTools(t Tools) { s.tools = t }
 
-func (s *Service) logProposal(ctx context.Context, userID int64, id uuid.UUID, name, decision string) {
-	s.log.InfoContext(ctx, "assistant proposal", "user_id", userID, "proposal_id", id, "tool", name, "decision", decision)
+func (s *Service) logProposal(ctx context.Context, booksID int64, id uuid.UUID, name, decision string) {
+	s.log.InfoContext(ctx, "assistant proposal", "books_id", booksID, "proposal_id", id, "tool", name, "decision", decision)
 }
 
 // Propose stores a pending proposal of a write tool and returns what the model receives.
-func (s *Service) Propose(ctx context.Context, userID int64, conversationID uuid.UUID, name string, args json.RawMessage) (json.RawMessage, error) {
-	pv, res, err := s.tools.Preview(auth.WithUserID(ctx, userID), name, args)
+func (s *Service) Propose(ctx context.Context, booksID int64, conversationID uuid.UUID, name string, args json.RawMessage) (json.RawMessage, error) {
+	pv, res, err := s.tools.Preview(auth.WithBooksID(ctx, booksID), name, args)
 	if err != nil {
 		return nil, err
 	}
@@ -53,11 +53,11 @@ func (s *Service) Propose(ctx context.Context, userID int64, conversationID uuid
 		ID: uuid.New(), ConversationID: conversationID, Tool: name, Arguments: args, Preview: preview,
 		Basis: tool.PreviewDigest(pv), Status: domain.ProposalPending, CreatedAt: now, ExpiresAt: now.Add(domain.ProposalTTL),
 	}
-	if err := s.repo.InsertProposal(ctx, userID, p); err != nil {
+	if err := s.repo.InsertProposal(ctx, booksID, p); err != nil {
 		return nil, err
 	}
 
-	s.logProposal(ctx, userID, p.ID, name, "created")
+	s.logProposal(ctx, booksID, p.ID, name, "created")
 
 	if t, ok := ctx.Value(turnKey{}).(*turnState); ok {
 		t.add(p.ID)
@@ -67,14 +67,14 @@ func (s *Service) Propose(ctx context.Context, userID int64, conversationID uuid
 }
 
 // unclaimed explains why a proposal could not be claimed or rejected.
-func (s *Service) unclaimed(ctx context.Context, userID int64, id uuid.UUID) error {
-	p, err := s.repo.Proposal(ctx, userID, id)
+func (s *Service) unclaimed(ctx context.Context, booksID int64, id uuid.UUID) error {
+	p, err := s.repo.Proposal(ctx, booksID, id)
 	if err != nil {
 		return err
 	}
 
 	if p.Expired(s.now()) {
-		s.logProposal(ctx, userID, id, p.Tool, "expired")
+		s.logProposal(ctx, booksID, id, p.Tool, "expired")
 		return ErrProposalExpired
 	}
 
@@ -82,19 +82,19 @@ func (s *Service) unclaimed(ctx context.Context, userID int64, id uuid.UUID) err
 }
 
 // Confirm executes a pending proposal at most once (spec 8.2).
-func (s *Service) Confirm(ctx context.Context, userID int64, id uuid.UUID) (domain.Proposal, error) {
+func (s *Service) Confirm(ctx context.Context, booksID int64, id uuid.UUID) (domain.Proposal, error) {
 	now := s.now()
 
-	p, ok, err := s.repo.ClaimProposal(ctx, userID, id, now)
+	p, ok, err := s.repo.ClaimProposal(ctx, booksID, id, now)
 	if err != nil {
 		return domain.Proposal{}, err
 	}
 
 	if !ok {
-		return domain.Proposal{}, s.unclaimed(ctx, userID, id)
+		return domain.Proposal{}, s.unclaimed(ctx, booksID, id)
 	}
 
-	ctx = auth.WithUserID(ctx, userID)
+	ctx = auth.WithBooksID(ctx, booksID)
 
 	pv, res, err := s.tools.Preview(ctx, p.Tool, p.Arguments)
 	if err != nil {
@@ -102,11 +102,11 @@ func (s *Service) Confirm(ctx context.Context, userID int64, id uuid.UUID) (doma
 	}
 
 	if res.IsError || tool.PreviewDigest(pv) != p.Basis {
-		if err := s.repo.DecideProposal(ctx, userID, id, domain.ProposalStale, nil, now); err != nil {
+		if err := s.repo.DecideProposal(ctx, booksID, id, domain.ProposalStale, nil, now); err != nil {
 			return domain.Proposal{}, err
 		}
 
-		s.logProposal(ctx, userID, id, p.Tool, "stale")
+		s.logProposal(ctx, booksID, id, p.Tool, "stale")
 
 		return domain.Proposal{}, ErrProposalStale
 	}
@@ -121,33 +121,33 @@ func (s *Service) Confirm(ctx context.Context, userID int64, id uuid.UUID) (doma
 		status, decision = domain.ProposalFailed, "failed"
 	}
 
-	if err := s.repo.DecideProposal(ctx, userID, id, status, res.Content, now); err != nil {
+	if err := s.repo.DecideProposal(ctx, booksID, id, status, res.Content, now); err != nil {
 		return domain.Proposal{}, err
 	}
 
-	s.logProposal(ctx, userID, id, p.Tool, decision)
+	s.logProposal(ctx, booksID, id, p.Tool, decision)
 	p.Status, p.Result, p.DecidedAt = status, res.Content, now
 
 	return p, nil
 }
 
 // Reject closes a pending proposal without executing it.
-func (s *Service) Reject(ctx context.Context, userID int64, id uuid.UUID) (domain.Proposal, error) {
-	ok, err := s.repo.RejectProposal(ctx, userID, id, s.now())
+func (s *Service) Reject(ctx context.Context, booksID int64, id uuid.UUID) (domain.Proposal, error) {
+	ok, err := s.repo.RejectProposal(ctx, booksID, id, s.now())
 	if err != nil {
 		return domain.Proposal{}, err
 	}
 
 	if !ok {
-		return domain.Proposal{}, s.unclaimed(ctx, userID, id)
+		return domain.Proposal{}, s.unclaimed(ctx, booksID, id)
 	}
 
-	p, err := s.repo.Proposal(ctx, userID, id)
+	p, err := s.repo.Proposal(ctx, booksID, id)
 	if err != nil {
 		return domain.Proposal{}, err
 	}
 
-	s.logProposal(ctx, userID, id, p.Tool, "rejected")
+	s.logProposal(ctx, booksID, id, p.Tool, "rejected")
 
 	return p, nil
 }

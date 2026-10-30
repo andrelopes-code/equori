@@ -27,25 +27,25 @@ type PlanView struct {
 // InstallmentPlan returns the plan, its schedule and its status. A non-voided
 // cancellation reverses every installment; a non-voided anticipation reverses the
 // installments whose statement it credited.
-func (s *Service) InstallmentPlan(ctx context.Context, userID int64, id uuid.UUID) (PlanView, error) {
-	plan, err := s.repo.Plan(ctx, userID, id)
+func (s *Service) InstallmentPlan(ctx context.Context, booksID int64, id uuid.UUID) (PlanView, error) {
+	plan, err := s.repo.Plan(ctx, booksID, id)
 	if err != nil {
 		return PlanView{}, err
 	}
 
-	installments, err := s.repo.PlanInstallments(ctx, userID, id)
+	installments, err := s.repo.PlanInstallments(ctx, booksID, id)
 	if err != nil {
 		return PlanView{}, err
 	}
 
-	cancelled, anticipated, err := s.repo.PlanState(ctx, userID, plan.OriginTransactionID)
+	cancelled, anticipated, err := s.repo.PlanState(ctx, booksID, plan.OriginTransactionID)
 	if err != nil {
 		return PlanView{}, err
 	}
 
 	var credited map[domain.ReferenceMonth]struct{}
 	if anticipated && !cancelled {
-		if credited, err = s.repo.AnticipatedReferences(ctx, userID, plan.OriginTransactionID); err != nil {
+		if credited, err = s.repo.AnticipatedReferences(ctx, booksID, plan.OriginTransactionID); err != nil {
 			return PlanView{}, err
 		}
 	}

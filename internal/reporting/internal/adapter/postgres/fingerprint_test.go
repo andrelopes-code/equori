@@ -33,7 +33,7 @@ func TestArchiveFingerprint(t *testing.T) {
 
 	rows, err := pool.Query(t.Context(), `SELECT table_name || '.' || column_name || ' ' || udt_name || CASE WHEN is_nullable = 'YES' THEN ' null' ELSE '' END
 		FROM information_schema.columns
-		WHERE table_schema = current_schema() AND table_name = ANY ($1) AND column_name <> 'user_id'
+		WHERE table_schema = current_schema() AND table_name = ANY ($1) AND column_name <> 'books_id'
 		ORDER BY table_name, column_name`, tables)
 	if err != nil {
 		t.Fatal(err)

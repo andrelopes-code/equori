@@ -34,7 +34,7 @@ const (
 
 type InstallmentPlan struct {
 	ID                  uuid.UUID
-	UserID              int64
+	BooksID             int64
 	AccountID           uuid.UUID
 	OriginTransactionID uuid.UUID
 	Kind                string

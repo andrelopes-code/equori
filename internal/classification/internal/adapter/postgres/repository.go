@@ -106,8 +106,8 @@ func toRules(rows []ClassificationRule) ([]domain.Rule, error) {
 	return out, nil
 }
 
-func (r *Repository) ListRules(ctx context.Context, userID int64, p page.Request[app.RuleKey]) ([]domain.Rule, *app.RuleKey, error) {
-	params := ListRulesParams{UserID: userID, RowLimit: int32(p.Limit + 1)} //nolint:gosec // limit is at most page.MaxLimit
+func (r *Repository) ListRules(ctx context.Context, booksID int64, p page.Request[app.RuleKey]) ([]domain.Rule, *app.RuleKey, error) {
+	params := ListRulesParams{BooksID: booksID, RowLimit: int32(p.Limit + 1)} //nolint:gosec // limit is at most page.MaxLimit
 	if p.After != nil {
 		priority := int32(p.After.Priority) //nolint:gosec // priorities are small positive integers
 		params.AfterPriority = &priority
@@ -128,8 +128,8 @@ func (r *Repository) ListRules(ctx context.Context, userID int64, p page.Request
 	return out, &app.RuleKey{Priority: int(kept[len(kept)-1].Priority)}, nil
 }
 
-func (r *Repository) EnabledRules(ctx context.Context, userID int64) ([]domain.Rule, error) {
-	rows, err := r.q.EnabledRules(ctx, userID)
+func (r *Repository) EnabledRules(ctx context.Context, booksID int64) ([]domain.Rule, error) {
+	rows, err := r.q.EnabledRules(ctx, booksID)
 	if err != nil {
 		return nil, err
 	}
@@ -137,12 +137,12 @@ func (r *Repository) EnabledRules(ctx context.Context, userID int64) ([]domain.R
 	return toRules(rows)
 }
 
-func (r *Repository) LockRuleIDs(ctx context.Context, userID int64) ([]uuid.UUID, error) {
-	return r.q.RuleIDs(ctx, userID)
+func (r *Repository) LockRuleIDs(ctx context.Context, booksID int64) ([]uuid.UUID, error) {
+	return r.q.RuleIDs(ctx, booksID)
 }
 
-func (r *Repository) Rule(ctx context.Context, userID int64, id uuid.UUID) (domain.Rule, error) {
-	row, err := r.q.GetRule(ctx, GetRuleParams{UserID: userID, ID: id})
+func (r *Repository) Rule(ctx context.Context, booksID int64, id uuid.UUID) (domain.Rule, error) {
+	row, err := r.q.GetRule(ctx, GetRuleParams{BooksID: booksID, ID: id})
 	if err != nil {
 		return domain.Rule{}, notFound(err)
 	}
@@ -150,14 +150,14 @@ func (r *Repository) Rule(ctx context.Context, userID int64, id uuid.UUID) (doma
 	return toRule(row)
 }
 
-func (r *Repository) InsertRule(ctx context.Context, userID int64, rule domain.Rule) (domain.Rule, error) {
+func (r *Repository) InsertRule(ctx context.Context, booksID int64, rule domain.Rule) (domain.Rule, error) {
 	conditions, actions, err := ruleDocs(rule)
 	if err != nil {
 		return domain.Rule{}, err
 	}
 
 	row, err := r.q.InsertRule(ctx, InsertRuleParams{
-		UserID: userID, Name: rule.Name, Enabled: rule.Enabled, StopProcessing: rule.StopProcessing, Conditions: conditions, Actions: actions,
+		BooksID: booksID, Name: rule.Name, Enabled: rule.Enabled, StopProcessing: rule.StopProcessing, Conditions: conditions, Actions: actions,
 	})
 	if err != nil {
 		return domain.Rule{}, err
@@ -166,14 +166,14 @@ func (r *Repository) InsertRule(ctx context.Context, userID int64, rule domain.R
 	return toRule(row)
 }
 
-func (r *Repository) UpdateRule(ctx context.Context, userID int64, rule domain.Rule) (domain.Rule, error) {
+func (r *Repository) UpdateRule(ctx context.Context, booksID int64, rule domain.Rule) (domain.Rule, error) {
 	conditions, actions, err := ruleDocs(rule)
 	if err != nil {
 		return domain.Rule{}, err
 	}
 
 	row, err := r.q.UpdateRule(ctx, UpdateRuleParams{
-		UserID: userID, ID: rule.ID, Name: rule.Name, Enabled: rule.Enabled, StopProcessing: rule.StopProcessing, Conditions: conditions, Actions: actions,
+		BooksID: booksID, ID: rule.ID, Name: rule.Name, Enabled: rule.Enabled, StopProcessing: rule.StopProcessing, Conditions: conditions, Actions: actions,
 	})
 	if err != nil {
 		return domain.Rule{}, notFound(err)
@@ -182,8 +182,8 @@ func (r *Repository) UpdateRule(ctx context.Context, userID int64, rule domain.R
 	return toRule(row)
 }
 
-func (r *Repository) DeleteRule(ctx context.Context, userID int64, id uuid.UUID) error {
-	n, err := r.q.DeleteRule(ctx, DeleteRuleParams{UserID: userID, ID: id})
+func (r *Repository) DeleteRule(ctx context.Context, booksID int64, id uuid.UUID) error {
+	n, err := r.q.DeleteRule(ctx, DeleteRuleParams{BooksID: booksID, ID: id})
 	if err == nil && n == 0 {
 		return app.ErrNotFound
 	}
@@ -191,14 +191,14 @@ func (r *Repository) DeleteRule(ctx context.Context, userID int64, id uuid.UUID)
 	return err
 }
 
-func (r *Repository) SetPriorities(ctx context.Context, userID int64, ids []uuid.UUID) error {
+func (r *Repository) SetPriorities(ctx context.Context, booksID int64, ids []uuid.UUID) error {
 	// Swapping priorities passes through duplicates until the last update.
 	if _, err := r.db.Exec(ctx, "SET CONSTRAINTS classification_rule_priority_key DEFERRED"); err != nil {
 		return err
 	}
 
 	for i, id := range ids {
-		if err := r.q.SetRulePriority(ctx, SetRulePriorityParams{UserID: userID, ID: id, Priority: int32(i + 1)}); err != nil { //nolint:gosec // at most 500 rules
+		if err := r.q.SetRulePriority(ctx, SetRulePriorityParams{BooksID: booksID, ID: id, Priority: int32(i + 1)}); err != nil { //nolint:gosec // at most 500 rules
 			return err
 		}
 	}
@@ -224,8 +224,8 @@ func toAliases(rows []ClassificationPayeeAlias) ([]domain.Alias, error) {
 	return out, nil
 }
 
-func (r *Repository) ListAliases(ctx context.Context, userID int64, p page.Request[app.AliasKey]) ([]domain.Alias, *app.AliasKey, error) {
-	params := ListAliasesParams{UserID: userID, RowLimit: int32(p.Limit + 1)} //nolint:gosec // limit is at most page.MaxLimit
+func (r *Repository) ListAliases(ctx context.Context, booksID int64, p page.Request[app.AliasKey]) ([]domain.Alias, *app.AliasKey, error) {
+	params := ListAliasesParams{BooksID: booksID, RowLimit: int32(p.Limit + 1)} //nolint:gosec // limit is at most page.MaxLimit
 	if p.After != nil {
 		params.AfterID = uuid.NullUUID{UUID: p.After.ID, Valid: true}
 	}
@@ -245,8 +245,8 @@ func (r *Repository) ListAliases(ctx context.Context, userID int64, p page.Reque
 	return out, &app.AliasKey{ID: kept[len(kept)-1].ID}, nil
 }
 
-func (r *Repository) Aliases(ctx context.Context, userID int64) ([]domain.Alias, error) {
-	rows, err := r.q.AllAliases(ctx, userID)
+func (r *Repository) Aliases(ctx context.Context, booksID int64) ([]domain.Alias, error) {
+	rows, err := r.q.AllAliases(ctx, booksID)
 	if err != nil {
 		return nil, err
 	}
@@ -254,8 +254,8 @@ func (r *Repository) Aliases(ctx context.Context, userID int64) ([]domain.Alias,
 	return toAliases(rows)
 }
 
-func (r *Repository) Alias(ctx context.Context, userID int64, id uuid.UUID) (domain.Alias, error) {
-	row, err := r.q.GetAlias(ctx, GetAliasParams{UserID: userID, ID: id})
+func (r *Repository) Alias(ctx context.Context, booksID int64, id uuid.UUID) (domain.Alias, error) {
+	row, err := r.q.GetAlias(ctx, GetAliasParams{BooksID: booksID, ID: id})
 	if err != nil {
 		return domain.Alias{}, notFound(err)
 	}
@@ -271,8 +271,8 @@ func aliasError(err error) error {
 	return notFound(err)
 }
 
-func (r *Repository) InsertAlias(ctx context.Context, userID int64, a domain.Alias) (domain.Alias, error) {
-	row, err := r.q.InsertAlias(ctx, InsertAliasParams{UserID: userID, Pattern: a.Pattern, MatchType: string(a.MatchType), PayeeID: a.PayeeID})
+func (r *Repository) InsertAlias(ctx context.Context, booksID int64, a domain.Alias) (domain.Alias, error) {
+	row, err := r.q.InsertAlias(ctx, InsertAliasParams{BooksID: booksID, Pattern: a.Pattern, MatchType: string(a.MatchType), PayeeID: a.PayeeID})
 	if err != nil {
 		return domain.Alias{}, aliasError(err)
 	}
@@ -280,8 +280,8 @@ func (r *Repository) InsertAlias(ctx context.Context, userID int64, a domain.Ali
 	return toAlias(row)
 }
 
-func (r *Repository) UpdateAlias(ctx context.Context, userID int64, a domain.Alias) (domain.Alias, error) {
-	row, err := r.q.UpdateAlias(ctx, UpdateAliasParams{UserID: userID, ID: a.ID, Pattern: a.Pattern, MatchType: string(a.MatchType), PayeeID: a.PayeeID})
+func (r *Repository) UpdateAlias(ctx context.Context, booksID int64, a domain.Alias) (domain.Alias, error) {
+	row, err := r.q.UpdateAlias(ctx, UpdateAliasParams{BooksID: booksID, ID: a.ID, Pattern: a.Pattern, MatchType: string(a.MatchType), PayeeID: a.PayeeID})
 	if err != nil {
 		return domain.Alias{}, aliasError(err)
 	}
@@ -289,8 +289,8 @@ func (r *Repository) UpdateAlias(ctx context.Context, userID int64, a domain.Ali
 	return toAlias(row)
 }
 
-func (r *Repository) DeleteAlias(ctx context.Context, userID int64, id uuid.UUID) error {
-	n, err := r.q.DeleteAlias(ctx, DeleteAliasParams{UserID: userID, ID: id})
+func (r *Repository) DeleteAlias(ctx context.Context, booksID int64, id uuid.UUID) error {
+	n, err := r.q.DeleteAlias(ctx, DeleteAliasParams{BooksID: booksID, ID: id})
 	if err == nil && n == 0 {
 		return app.ErrNotFound
 	}

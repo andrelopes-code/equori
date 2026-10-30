@@ -92,15 +92,15 @@ func newProposalEnv(t *testing.T) proposalEnv {
 }
 
 // propose stores a pending proposal of user's through the module and returns its ID.
-func (e proposalEnv) propose(t *testing.T, userID int64, text string) string {
+func (e proposalEnv) propose(t *testing.T, booksID int64, text string) string {
 	t.Helper()
 
 	conv := domain.Conversation{ID: uuid.New(), Title: "t", CreatedAt: *e.now.Load(), UpdatedAt: *e.now.Load()}
-	if err := postgres.NewRepository(e.h.Pool).CreateConversation(t.Context(), userID, conv); err != nil {
+	if err := postgres.NewRepository(e.h.Pool).CreateConversation(t.Context(), booksID, conv); err != nil {
 		t.Fatal(err)
 	}
 
-	content, err := assistant.ProposeForTest(e.h.App.Assistant, t.Context(), userID, conv.ID, "note_for_test", json.RawMessage(`{"text":"`+text+`"}`))
+	content, err := assistant.ProposeForTest(e.h.App.Assistant, t.Context(), booksID, conv.ID, "note_for_test", json.RawMessage(`{"text":"`+text+`"}`))
 	if err != nil {
 		t.Fatal(err)
 	}

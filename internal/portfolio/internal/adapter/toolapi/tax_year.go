@@ -52,20 +52,20 @@ func getTaxYear(svc *app.Service, names AccountNames) tool.Tool {
 			"Do not use it for current positions: get_portfolio does.",
 		Effect:     tool.ReadOnly,
 		Idempotent: true,
-	}, func(ctx context.Context, userID int64, in getTaxYearIn) (getTaxYearOut, error) {
-		named, err := names(ctx, userID)
+	}, func(ctx context.Context, booksID int64, in getTaxYearIn) (getTaxYearOut, error) {
+		named, err := names(ctx, booksID)
 		if err != nil {
 			return getTaxYearOut{}, err
 		}
 
-		from, to, err := svc.TaxYear(ctx, userID, in.Year)
+		from, to, err := svc.TaxYear(ctx, booksID, in.Year)
 		if err != nil {
 			return getTaxYearOut{}, err
 		}
 
 		out := getTaxYearOut{From: tool.DateOf(from), To: tool.DateOf(to.AddDate(0, 0, -1))}
 		if in.View != "income" {
-			rs, err := svc.RealizedResults(ctx, userID, in.Year)
+			rs, err := svc.RealizedResults(ctx, booksID, in.Year)
 			if err != nil {
 				return getTaxYearOut{}, err
 			}
@@ -81,7 +81,7 @@ func getTaxYear(svc *app.Service, names AccountNames) tool.Tool {
 		}
 
 		if in.View != "sales" {
-			es, err := svc.IncomeEvents(ctx, userID, in.Year)
+			es, err := svc.IncomeEvents(ctx, booksID, in.Year)
 			if err != nil {
 				return getTaxYearOut{}, err
 			}

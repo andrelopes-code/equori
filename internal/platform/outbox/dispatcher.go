@@ -124,7 +124,7 @@ func (d *Dispatcher) DispatchPending(ctx context.Context) (int, error) {
 
 func (d *Dispatcher) pending(ctx context.Context, s subscription) ([]Delivered, error) {
 	rows, err := d.pool.Query(ctx, `
-		SELECT e.id, e.type, e.user_id, e.aggregate_id, e.payload, e.occurred_at
+		SELECT e.id, e.type, e.books_id, e.aggregate_id, e.payload, e.occurred_at
 		FROM outbox_event e
 		LEFT JOIN outbox_delivery d ON d.event_id = e.id AND d.consumer = $2
 		WHERE e.type = $1
@@ -137,7 +137,7 @@ func (d *Dispatcher) pending(ctx context.Context, s subscription) ([]Delivered, 
 
 	return pgx.CollectRows(rows, func(r pgx.CollectableRow) (Delivered, error) {
 		var e Delivered
-		err := r.Scan(&e.ID, &e.Type, &e.UserID, &e.AggregateID, &e.Payload, &e.OccurredAt)
+		err := r.Scan(&e.ID, &e.Type, &e.BooksID, &e.AggregateID, &e.Payload, &e.OccurredAt)
 
 		return e, err
 	})

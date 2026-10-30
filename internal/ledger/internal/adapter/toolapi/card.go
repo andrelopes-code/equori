@@ -46,11 +46,11 @@ func manageCard(svc *app.Service) tool.Tool {
 			"Do not use it for purchases or statements: handle_card_purchase and settle_statement do. " +
 			"The user confirms every change.",
 		Effect: tool.Write,
-	}, func(ctx context.Context, userID int64, in manageCardIn) (tool.Preview, error) {
-		pv, _, err := planCard(ctx, svc, userID, in)
+	}, func(ctx context.Context, booksID int64, in manageCardIn) (tool.Preview, error) {
+		pv, _, err := planCard(ctx, svc, booksID, in)
 		return pv, err
-	}, func(ctx context.Context, userID int64, in manageCardIn) (manageCardOut, error) {
-		_, run, err := planCard(ctx, svc, userID, in)
+	}, func(ctx context.Context, booksID int64, in manageCardIn) (manageCardOut, error) {
+		_, run, err := planCard(ctx, svc, booksID, in)
 		if err != nil {
 			return manageCardOut{}, err
 		}
@@ -61,7 +61,7 @@ func manageCard(svc *app.Service) tool.Tool {
 
 func cardText(c domain.Card) string { return c.Holder + " " + c.LastFour }
 
-func planCard(ctx context.Context, svc *app.Service, userID int64, in manageCardIn) (tool.Preview, func() (manageCardOut, error), error) {
+func planCard(ctx context.Context, svc *app.Service, booksID int64, in manageCardIn) (tool.Preview, func() (manageCardOut, error), error) {
 	action := string(in.Action)
 	pv := tool.Preview{Action: "manage_card"}
 
@@ -96,7 +96,7 @@ func planCard(ctx context.Context, svc *app.Service, userID int64, in manageCard
 		return pv, nil, err
 	}
 
-	a, err := svc.Account(ctx, userID, id)
+	a, err := svc.Account(ctx, booksID, id)
 	if err != nil {
 		return pv, nil, err
 	}
@@ -118,13 +118,13 @@ func planCard(ctx context.Context, svc *app.Service, userID int64, in manageCard
 		pv.Changes = []tool.Change{{Field: "card", After: tool.TextValue(cardText(c))}}
 
 		return pv, func() (manageCardOut, error) {
-			created, err := svc.AddCard(ctx, userID, c, nil)
+			created, err := svc.AddCard(ctx, booksID, c, nil)
 			out.ID = created.ID.String()
 
 			return out, err
 		}, nil
 	case "set_card_active":
-		cards, err := svc.Cards(ctx, userID, a.ID)
+		cards, err := svc.Cards(ctx, booksID, a.ID)
 		if err != nil {
 			return pv, nil, err
 		}
@@ -147,7 +147,7 @@ func planCard(ctx context.Context, svc *app.Service, userID int64, in manageCard
 			}
 
 			return pv, func() (manageCardOut, error) {
-				_, err := svc.SetCardActive(ctx, userID, c.ID, in.Active)
+				_, err := svc.SetCardActive(ctx, booksID, c.ID, in.Active)
 				out.ID = c.ID.String()
 
 				return out, err
@@ -169,7 +169,7 @@ func planCard(ctx context.Context, svc *app.Service, userID int64, in manageCard
 		pv.Changes = []tool.Change{{Field: "limit", After: tool.MoneyValue(amount)}, {Field: "date", After: tool.DateValue(in.EffectiveFrom.Time)}}
 
 		return pv, func() (manageCardOut, error) {
-			_, err := svc.AddCreditLimit(ctx, userID, app.CreditLimit{AccountID: a.ID, EffectiveFrom: in.EffectiveFrom.Time, Amount: amount})
+			_, err := svc.AddCreditLimit(ctx, booksID, app.CreditLimit{AccountID: a.ID, EffectiveFrom: in.EffectiveFrom.Time, Amount: amount})
 			out.ID = a.ID.String()
 
 			return out, err
@@ -186,7 +186,7 @@ func planCard(ctx context.Context, svc *app.Service, userID int64, in manageCard
 		}
 
 		return pv, func() (manageCardOut, error) {
-			_, err := svc.AddBillingRule(ctx, userID, a.ID, rule)
+			_, err := svc.AddBillingRule(ctx, booksID, a.ID, rule)
 			out.ID = a.ID.String()
 
 			return out, err

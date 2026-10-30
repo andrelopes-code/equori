@@ -46,11 +46,11 @@ func handleCardPurchase(svc *app.Service) tool.Tool {
 			"Do not use it to record a new purchase: record_transaction does. " +
 			"The user confirms first.",
 		Effect: tool.Write,
-	}, func(ctx context.Context, userID int64, in handleCardPurchaseIn) (tool.Preview, error) {
-		pv, _, err := planPurchase(ctx, svc, userID, in)
+	}, func(ctx context.Context, booksID int64, in handleCardPurchaseIn) (tool.Preview, error) {
+		pv, _, err := planPurchase(ctx, svc, booksID, in)
 		return pv, err
-	}, func(ctx context.Context, userID int64, in handleCardPurchaseIn) (handleCardPurchaseOut, error) {
-		_, run, err := planPurchase(ctx, svc, userID, in)
+	}, func(ctx context.Context, booksID int64, in handleCardPurchaseIn) (handleCardPurchaseOut, error) {
+		_, run, err := planPurchase(ctx, svc, booksID, in)
 		if err != nil {
 			return handleCardPurchaseOut{}, err
 		}
@@ -60,10 +60,10 @@ func handleCardPurchase(svc *app.Service) tool.Tool {
 }
 
 // nextOpenStatement returns the first open statement of the card from the month of date.
-func nextOpenStatement(ctx context.Context, svc *app.Service, userID int64, card uuid.UUID, date time.Time) (domain.ReferenceMonth, error) {
+func nextOpenStatement(ctx context.Context, svc *app.Service, booksID int64, card uuid.UUID, date time.Time) (domain.ReferenceMonth, error) {
 	from := domain.MonthOf(date)
 
-	views, _, _, err := svc.Statements(ctx, userID, card, &from, nil, page.Request[app.StatementKey]{Limit: page.MaxLimit})
+	views, _, _, err := svc.Statements(ctx, booksID, card, &from, nil, page.Request[app.StatementKey]{Limit: page.MaxLimit})
 	if err != nil {
 		return from, err
 	}
@@ -77,7 +77,7 @@ func nextOpenStatement(ctx context.Context, svc *app.Service, userID int64, card
 	return from.Add(1), nil
 }
 
-func planPurchase(ctx context.Context, svc *app.Service, userID int64, in handleCardPurchaseIn) (tool.Preview, func() (handleCardPurchaseOut, error), error) {
+func planPurchase(ctx context.Context, svc *app.Service, booksID int64, in handleCardPurchaseIn) (tool.Preview, func() (handleCardPurchaseOut, error), error) {
 	action := string(in.Action)
 	pv := tool.Preview{Action: "handle_card_purchase"}
 
@@ -110,7 +110,7 @@ func planPurchase(ctx context.Context, svc *app.Service, userID int64, in handle
 		return pv, nil, err
 	}
 
-	t, err := svc.Transaction(ctx, userID, id)
+	t, err := svc.Transaction(ctx, booksID, id)
 	if err != nil {
 		return pv, nil, err
 	}
@@ -181,17 +181,17 @@ func planPurchase(ctx context.Context, svc *app.Service, userID int64, in handle
 		statementChange()
 
 		return pv, func() (handleCardPurchaseOut, error) {
-			return created(svc.RefundPurchase(ctx, userID, t.ID, date, amount, statement))
+			return created(svc.RefundPurchase(ctx, booksID, t.ID, date, amount, statement))
 		}, nil
 	case "open_dispute":
 		pv.Changes = []tool.Change{{Field: "status", After: text("disputed")}, dateChange}
 
 		return pv, func() (handleCardPurchaseOut, error) {
-			_, err := svc.OpenDispute(ctx, userID, t.ID, date)
+			_, err := svc.OpenDispute(ctx, booksID, t.ID, date)
 			return handleCardPurchaseOut{TransactionID: t.ID.String()}, err
 		}, nil
 	case "resolve_dispute":
-		disputes, err := svc.Disputes(ctx, userID, t.ID)
+		disputes, err := svc.Disputes(ctx, booksID, t.ID)
 		if err != nil {
 			return pv, nil, err
 		}
@@ -212,7 +212,7 @@ func planPurchase(ctx context.Context, svc *app.Service, userID int64, in handle
 		statementChange()
 
 		return pv, func() (handleCardPurchaseOut, error) {
-			d, err := svc.ResolveDispute(ctx, userID, open.ID, date, string(in.Outcome), statement)
+			d, err := svc.ResolveDispute(ctx, booksID, open.ID, date, string(in.Outcome), statement)
 			if d.RefundTransactionID != uuid.Nil {
 				return handleCardPurchaseOut{TransactionID: d.RefundTransactionID.String()}, err
 			}
@@ -231,7 +231,7 @@ func planPurchase(ctx context.Context, svc *app.Service, userID int64, in handle
 		statementChange()
 
 		return pv, func() (handleCardPurchaseOut, error) {
-			return created(svc.CancelPlan(ctx, userID, planID, date, statement))
+			return created(svc.CancelPlan(ctx, booksID, planID, date, statement))
 		}, nil
 	}
 
@@ -240,7 +240,7 @@ func planPurchase(ctx context.Context, svc *app.Service, userID int64, in handle
 		return pv, nil, err
 	}
 
-	target, err := anticipationTarget(ctx, svc, userID, cardPosting.AccountID, date, statement)
+	target, err := anticipationTarget(ctx, svc, booksID, cardPosting.AccountID, date, statement)
 	if err != nil {
 		return pv, nil, err
 	}
@@ -253,14 +253,14 @@ func planPurchase(ctx context.Context, svc *app.Service, userID int64, in handle
 	}
 
 	return pv, func() (handleCardPurchaseOut, error) {
-		return created(svc.AnticipatePlan(ctx, userID, planID, date, in.FromInstallment, in.ToInstallment, target, amount))
+		return created(svc.AnticipatePlan(ctx, booksID, planID, date, in.FromInstallment, in.ToInstallment, target, amount))
 	}, nil
 }
 
-func anticipationTarget(ctx context.Context, svc *app.Service, userID int64, card uuid.UUID, date time.Time, given *domain.ReferenceMonth) (domain.ReferenceMonth, error) {
+func anticipationTarget(ctx context.Context, svc *app.Service, booksID int64, card uuid.UUID, date time.Time, given *domain.ReferenceMonth) (domain.ReferenceMonth, error) {
 	if given != nil {
 		return *given, nil
 	}
 
-	return nextOpenStatement(ctx, svc, userID, card, date)
+	return nextOpenStatement(ctx, svc, booksID, card, date)
 }

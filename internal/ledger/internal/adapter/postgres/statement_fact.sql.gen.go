@@ -15,19 +15,19 @@ import (
 const deleteStatementFact = `-- name: DeleteStatementFact :exec
 DELETE FROM ledger_statement_fact
 WHERE
-    user_id = $1
+    books_id = $1
     AND statement_id = $2
     AND source = $3
 `
 
 type DeleteStatementFactParams struct {
-	UserID      int64
+	BooksID     int64
 	StatementID uuid.UUID
 	Source      string
 }
 
 func (q *Queries) DeleteStatementFact(ctx context.Context, arg DeleteStatementFactParams) error {
-	_, err := q.db.Exec(ctx, deleteStatementFact, arg.UserID, arg.StatementID, arg.Source)
+	_, err := q.db.Exec(ctx, deleteStatementFact, arg.BooksID, arg.StatementID, arg.Source)
 	return err
 }
 
@@ -44,18 +44,18 @@ SELECT
             JOIN ledger_account a ON a.id = o.account_id
             AND a.system_role = 'opening_balances'
         WHERE
-            c.user_id = $1
+            c.books_id = $1
             AND c.account_id = $2
     )::bool
 `
 
 type HasOpeningBalanceParams struct {
-	UserID    int64
+	BooksID   int64
 	AccountID uuid.UUID
 }
 
 func (q *Queries) HasOpeningBalance(ctx context.Context, arg HasOpeningBalanceParams) (bool, error) {
-	row := q.db.QueryRow(ctx, hasOpeningBalance, arg.UserID, arg.AccountID)
+	row := q.db.QueryRow(ctx, hasOpeningBalance, arg.BooksID, arg.AccountID)
 	var column_1 bool
 	err := row.Scan(&column_1)
 	return column_1, err
@@ -69,7 +69,7 @@ SELECT
 FROM
     ledger_posting p
 WHERE
-    p.user_id = $1
+    p.books_id = $1
     AND p.account_id = $2
     AND NOT p.voided
     AND p.statement_id IS NOT NULL
@@ -79,7 +79,7 @@ WHERE
 `
 
 type ListRedatablePostingsParams struct {
-	UserID    int64
+	BooksID   int64
 	AccountID uuid.UUID
 }
 
@@ -91,7 +91,7 @@ type ListRedatablePostingsRow struct {
 
 // A86: card postings billed by their date: no external record, no installment, not reconciled.
 func (q *Queries) ListRedatablePostings(ctx context.Context, arg ListRedatablePostingsParams) ([]ListRedatablePostingsRow, error) {
-	rows, err := q.db.Query(ctx, listRedatablePostings, arg.UserID, arg.AccountID)
+	rows, err := q.db.Query(ctx, listRedatablePostings, arg.BooksID, arg.AccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -117,12 +117,12 @@ SELECT
 FROM
     ledger_statement
 WHERE
-    user_id = $1
+    books_id = $1
     AND account_id = $2
 `
 
 type ListStatementClosingsParams struct {
-	UserID    int64
+	BooksID   int64
 	AccountID uuid.UUID
 }
 
@@ -132,7 +132,7 @@ type ListStatementClosingsRow struct {
 }
 
 func (q *Queries) ListStatementClosings(ctx context.Context, arg ListStatementClosingsParams) ([]ListStatementClosingsRow, error) {
-	rows, err := q.db.Query(ctx, listStatementClosings, arg.UserID, arg.AccountID)
+	rows, err := q.db.Query(ctx, listStatementClosings, arg.BooksID, arg.AccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -153,22 +153,22 @@ func (q *Queries) ListStatementClosings(ctx context.Context, arg ListStatementCl
 
 const listStatementFacts = `-- name: ListStatementFacts :many
 SELECT
-    f.user_id, f.statement_id, f.source, f.closing_date, f.due_date, f.total, f.minimum, f.reported_at
+    f.books_id, f.statement_id, f.source, f.closing_date, f.due_date, f.total, f.minimum, f.reported_at
 FROM
     ledger_statement_fact f
     JOIN ledger_statement s ON s.id = f.statement_id
 WHERE
-    f.user_id = $1
+    f.books_id = $1
     AND s.account_id = $2
 `
 
 type ListStatementFactsParams struct {
-	UserID    int64
+	BooksID   int64
 	AccountID uuid.UUID
 }
 
 func (q *Queries) ListStatementFacts(ctx context.Context, arg ListStatementFactsParams) ([]LedgerStatementFact, error) {
-	rows, err := q.db.Query(ctx, listStatementFacts, arg.UserID, arg.AccountID)
+	rows, err := q.db.Query(ctx, listStatementFacts, arg.BooksID, arg.AccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -177,7 +177,7 @@ func (q *Queries) ListStatementFacts(ctx context.Context, arg ListStatementFacts
 	for rows.Next() {
 		var i LedgerStatementFact
 		if err := rows.Scan(
-			&i.UserID,
+			&i.BooksID,
 			&i.StatementID,
 			&i.Source,
 			&i.ClosingDate,
@@ -201,24 +201,24 @@ UPDATE ledger_posting
 SET
     statement_id = $1
 WHERE
-    user_id = $2
+    books_id = $2
     AND id = $3
 `
 
 type MovePostingStatementParams struct {
 	StatementID uuid.NullUUID
-	UserID      int64
+	BooksID     int64
 	ID          uuid.UUID
 }
 
 func (q *Queries) MovePostingStatement(ctx context.Context, arg MovePostingStatementParams) error {
-	_, err := q.db.Exec(ctx, movePostingStatement, arg.StatementID, arg.UserID, arg.ID)
+	_, err := q.db.Exec(ctx, movePostingStatement, arg.StatementID, arg.BooksID, arg.ID)
 	return err
 }
 
 const upsertStatementFact = `-- name: UpsertStatementFact :exec
 INSERT INTO
-    ledger_statement_fact (user_id, statement_id, source, closing_date, due_date, total, minimum)
+    ledger_statement_fact (books_id, statement_id, source, closing_date, due_date, total, minimum)
 VALUES
     (
         $1,
@@ -239,7 +239,7 @@ SET
 `
 
 type UpsertStatementFactParams struct {
-	UserID      int64
+	BooksID     int64
 	StatementID uuid.UUID
 	Source      string
 	ClosingDate *time.Time
@@ -250,7 +250,7 @@ type UpsertStatementFactParams struct {
 
 func (q *Queries) UpsertStatementFact(ctx context.Context, arg UpsertStatementFactParams) error {
 	_, err := q.db.Exec(ctx, upsertStatementFact,
-		arg.UserID,
+		arg.BooksID,
 		arg.StatementID,
 		arg.Source,
 		arg.ClosingDate,

@@ -98,7 +98,7 @@ type Calendar interface {
 
 // Profiles gives the language and region of a user (identity).
 type Profiles interface {
-	Profile(ctx context.Context, userID int64) (locale.Locale, error)
+	Profile(ctx context.Context, booksID int64) (locale.Locale, error)
 }
 
 // RegionDefaults gives the values a record takes from the region of its owner, or from the
@@ -159,7 +159,7 @@ type PlanInstallment struct {
 
 type Dispute struct {
 	ID                  uuid.UUID
-	UserID              int64
+	BooksID             int64
 	TransactionID       uuid.UUID
 	OpenedOn            time.Time
 	ResolvedOn          *time.Time
@@ -169,7 +169,7 @@ type Dispute struct {
 
 type BalanceAssertion struct {
 	ID         uuid.UUID
-	UserID     int64
+	BooksID    int64
 	AccountID  uuid.UUID
 	Date       time.Time
 	Amount     int64
@@ -181,7 +181,7 @@ type BalanceAssertion struct {
 // Reconciliation records that an account matched its institution through Date,
 // from an assertion or from a card statement (P3 amendment A7).
 type Reconciliation struct {
-	UserID                  int64
+	BooksID                 int64
 	AccountID               uuid.UUID
 	Date                    time.Time
 	AssertionID             uuid.UUID
@@ -192,15 +192,15 @@ type Reconciliation struct {
 }
 
 type Settings struct {
-	UserID       int64
+	BooksID      int64
 	BaseCurrency money.Currency
 }
 
 type Institution struct {
-	ID     uuid.UUID
-	UserID int64
-	Name   string
-	Code   string
+	ID      uuid.UUID
+	BooksID int64
+	Name    string
+	Code    string
 	// Identifier keys the institution's logo (ADR 013); the zero value when unknown.
 	Identifier InstitutionIdentifier
 }
@@ -211,9 +211,9 @@ type InstitutionIdentifier struct {
 }
 
 type Payee struct {
-	ID     uuid.UUID
-	UserID int64
-	Name   string
+	ID      uuid.UUID
+	BooksID int64
+	Name    string
 	// MergedInto is the payee that replaced this one (A82); zero for a live payee.
 	MergedInto uuid.UUID
 }
@@ -291,7 +291,7 @@ type TransactionCursor struct {
 }
 
 type TransactionQuery struct {
-	UserID    int64
+	BooksID   int64
 	AccountID uuid.UUID
 	PayeeID   uuid.UUID
 	Tag       string
@@ -309,52 +309,52 @@ type Repository interface {
 	InTx(ctx context.Context, fn func(Repository) error) error
 	Publish(ctx context.Context, e outbox.Event) error
 
-	Settings(ctx context.Context, userID int64) (Settings, error)
+	Settings(ctx context.Context, booksID int64) (Settings, error)
 	SaveSettings(ctx context.Context, s Settings) error
-	SetSystemAccountsInstrument(ctx context.Context, userID int64, c money.Currency) error
-	CountTransactions(ctx context.Context, userID int64) (int64, error)
+	SetSystemAccountsInstrument(ctx context.Context, booksID int64, c money.Currency) error
+	CountTransactions(ctx context.Context, booksID int64) (int64, error)
 
 	InsertInstitution(ctx context.Context, i Institution) (Institution, error)
-	SetInstitutionIdentifier(ctx context.Context, userID int64, id uuid.UUID, ident InstitutionIdentifier) (Institution, error)
+	SetInstitutionIdentifier(ctx context.Context, booksID int64, id uuid.UUID, ident InstitutionIdentifier) (Institution, error)
 	// List methods return the page and the key of its last row when more rows follow.
-	ListInstitutions(ctx context.Context, userID int64, p page.Request[InstitutionKey]) ([]Institution, *InstitutionKey, error)
+	ListInstitutions(ctx context.Context, booksID int64, p page.Request[InstitutionKey]) ([]Institution, *InstitutionKey, error)
 	InsertPayee(ctx context.Context, p Payee) (Payee, error)
-	Payee(ctx context.Context, userID int64, id uuid.UUID) (Payee, error)
-	ListPayees(ctx context.Context, userID int64, p page.Request[PayeeKey]) ([]Payee, *PayeeKey, error)
-	ListTags(ctx context.Context, userID int64, p page.Request[TagKey]) ([]string, *TagKey, error)
+	Payee(ctx context.Context, booksID int64, id uuid.UUID) (Payee, error)
+	ListPayees(ctx context.Context, booksID int64, p page.Request[PayeeKey]) ([]Payee, *PayeeKey, error)
+	ListTags(ctx context.Context, booksID int64, p page.Request[TagKey]) ([]string, *TagKey, error)
 
-	Account(ctx context.Context, userID int64, id uuid.UUID) (domain.Account, error)
-	Accounts(ctx context.Context, userID int64, ids []uuid.UUID) (map[uuid.UUID]domain.Account, error)
-	ListAccounts(ctx context.Context, userID int64, p page.Request[AccountKey]) ([]domain.Account, *AccountKey, error)
+	Account(ctx context.Context, booksID int64, id uuid.UUID) (domain.Account, error)
+	Accounts(ctx context.Context, booksID int64, ids []uuid.UUID) (map[uuid.UUID]domain.Account, error)
+	ListAccounts(ctx context.Context, booksID int64, p page.Request[AccountKey]) ([]domain.Account, *AccountKey, error)
 	InsertAccount(ctx context.Context, a domain.Account) (domain.Account, error)
 	UpdateAccount(ctx context.Context, a domain.Account) (domain.Account, error)
-	AccountHasChildren(ctx context.Context, userID int64, id uuid.UUID) (bool, error)
-	AccountTotals(ctx context.Context, userID int64, id uuid.UUID) (AccountTotals, error)
+	AccountHasChildren(ctx context.Context, booksID int64, id uuid.UUID) (bool, error)
+	AccountTotals(ctx context.Context, booksID int64, id uuid.UUID) (AccountTotals, error)
 	// TransactionsWithAccount returns the non-voided transactions with a posting on the account.
-	TransactionsWithAccount(ctx context.Context, userID int64, accountID uuid.UUID) ([]uuid.UUID, error)
+	TransactionsWithAccount(ctx context.Context, booksID int64, accountID uuid.UUID) ([]uuid.UUID, error)
 	// AccountTransactionsBetween returns the non-voided transactions with a posting on the
 	// account dated in [from, to], by date.
-	AccountTransactionsBetween(ctx context.Context, userID int64, accountID uuid.UUID, from, to time.Time) ([]uuid.UUID, error)
+	AccountTransactionsBetween(ctx context.Context, booksID int64, accountID uuid.UUID, from, to time.Time) ([]uuid.UUID, error)
 	// RenamePayee returns ErrValidation on name for a name in use.
-	RenamePayee(ctx context.Context, userID int64, id uuid.UUID, name string) (Payee, error)
+	RenamePayee(ctx context.Context, booksID int64, id uuid.UUID, name string) (Payee, error)
 	// TransactionsWithPayee returns the non-voided transactions of the payee.
-	TransactionsWithPayee(ctx context.Context, userID int64, payeeID uuid.UUID) ([]uuid.UUID, error)
+	TransactionsWithPayee(ctx context.Context, booksID int64, payeeID uuid.UUID) ([]uuid.UUID, error)
 	// RetirePayee moves the voided transactions and the counterparty accounts of from to into
 	// and marks from as merged (A82).
-	RetirePayee(ctx context.Context, userID int64, from, into uuid.UUID) error
+	RetirePayee(ctx context.Context, booksID int64, from, into uuid.UUID) error
 	// TagUsage returns ErrNotFound for a name the user has no tag under.
-	TagUsage(ctx context.Context, userID int64, name string) (TagUsage, error)
+	TagUsage(ctx context.Context, booksID int64, name string) (TagUsage, error)
 	// RenameTag returns ErrValidation on name for a name in use.
-	RenameTag(ctx context.Context, userID int64, id uuid.UUID, name string) error
+	RenameTag(ctx context.Context, booksID int64, id uuid.UUID, name string) error
 	// TransactionsWithTag returns the non-voided transactions that carry the tag.
-	TransactionsWithTag(ctx context.Context, userID int64, tagID uuid.UUID) ([]uuid.UUID, error)
+	TransactionsWithTag(ctx context.Context, booksID int64, tagID uuid.UUID) ([]uuid.UUID, error)
 	// MoveTagLinks makes every transaction that carries from carry into as well.
-	MoveTagLinks(ctx context.Context, userID int64, from, into uuid.UUID) error
+	MoveTagLinks(ctx context.Context, booksID int64, from, into uuid.UUID) error
 	// DeleteTag removes the tag from every transaction that still carries it.
-	DeleteTag(ctx context.Context, userID int64, id uuid.UUID) error
+	DeleteTag(ctx context.Context, booksID int64, id uuid.UUID) error
 
-	Transaction(ctx context.Context, userID int64, id uuid.UUID) (domain.Transaction, error)
-	LockTransaction(ctx context.Context, userID int64, id uuid.UUID) (domain.Transaction, error)
+	Transaction(ctx context.Context, booksID int64, id uuid.UUID) (domain.Transaction, error)
+	LockTransaction(ctx context.Context, booksID int64, id uuid.UUID) (domain.Transaction, error)
 	InsertTransaction(ctx context.Context, t domain.Transaction) (domain.Transaction, error)
 	// InsertTransactionRows writes a validated, billed transaction without reading it back.
 	InsertTransactionRows(ctx context.Context, t domain.Transaction) error
@@ -362,150 +362,150 @@ type Repository interface {
 	// ReplaceCategoryPostings stores next, which differs from prev only in its category
 	// postings, description, payee, tags and version; other postings keep their rows.
 	ReplaceCategoryPostings(ctx context.Context, prev, next domain.Transaction, reason string) error
-	TransactionsByIDs(ctx context.Context, userID int64, ids []uuid.UUID) ([]domain.Transaction, error)
+	TransactionsByIDs(ctx context.Context, booksID int64, ids []uuid.UUID) ([]domain.Transaction, error)
 	// RawDescriptions returns the version 1 description of the given transactions that have later versions.
-	RawDescriptions(ctx context.Context, userID int64, ids []uuid.UUID) (map[uuid.UUID]string, error)
-	AllAccounts(ctx context.Context, userID int64) ([]domain.Account, error)
-	ExistingPayees(ctx context.Context, userID int64, ids []uuid.UUID) (map[uuid.UUID]struct{}, error)
+	RawDescriptions(ctx context.Context, booksID int64, ids []uuid.UUID) (map[uuid.UUID]string, error)
+	AllAccounts(ctx context.Context, booksID int64) ([]domain.Account, error)
+	ExistingPayees(ctx context.Context, booksID int64, ids []uuid.UUID) (map[uuid.UUID]struct{}, error)
 	// PayeeNames omits identifiers of other users and unknown identifiers.
-	PayeeNames(ctx context.Context, userID int64, ids []uuid.UUID) (map[uuid.UUID]string, error)
-	LatestPayeeCategories(ctx context.Context, userID int64, payees []uuid.UUID) (map[PayeeClass]uuid.UUID, error)
+	PayeeNames(ctx context.Context, booksID int64, ids []uuid.UUID) (map[uuid.UUID]string, error)
+	LatestPayeeCategories(ctx context.Context, booksID int64, payees []uuid.UUID) (map[PayeeClass]uuid.UUID, error)
 	VoidTransaction(ctx context.Context, t domain.Transaction) error
 	ListTransactions(ctx context.Context, q TransactionQuery) ([]domain.Transaction, error)
-	Versions(ctx context.Context, userID int64, id uuid.UUID) ([]Version, error)
+	Versions(ctx context.Context, booksID int64, id uuid.UUID) ([]Version, error)
 
-	InsertBillingRule(ctx context.Context, userID int64, accountID uuid.UUID, r domain.BillingCycleRule) (domain.BillingCycleRule, error)
-	BillingRules(ctx context.Context, userID int64, accountID uuid.UUID) (domain.Rules, error)
-	InsertCreditLimit(ctx context.Context, userID int64, l CreditLimit) (CreditLimit, error)
-	CreditLimits(ctx context.Context, userID int64, accountID uuid.UUID) ([]CreditLimit, error)
+	InsertBillingRule(ctx context.Context, booksID int64, accountID uuid.UUID, r domain.BillingCycleRule) (domain.BillingCycleRule, error)
+	BillingRules(ctx context.Context, booksID int64, accountID uuid.UUID) (domain.Rules, error)
+	InsertCreditLimit(ctx context.Context, booksID int64, l CreditLimit) (CreditLimit, error)
+	CreditLimits(ctx context.Context, booksID int64, accountID uuid.UUID) ([]CreditLimit, error)
 	InsertCard(ctx context.Context, c domain.Card) (domain.Card, error)
-	Cards(ctx context.Context, userID int64, accountID uuid.UUID) ([]domain.Card, error)
-	SetCardActive(ctx context.Context, userID int64, id uuid.UUID, active bool) (domain.Card, error)
+	Cards(ctx context.Context, booksID int64, accountID uuid.UUID) ([]domain.Card, error)
+	SetCardActive(ctx context.Context, booksID int64, id uuid.UUID, active bool) (domain.Card, error)
 
-	EnsureStatement(ctx context.Context, userID int64, accountID uuid.UUID, d domain.StatementDates, due time.Time) (uuid.UUID, error)
-	Statements(ctx context.Context, userID int64, accountID uuid.UUID) ([]Statement, error)
+	EnsureStatement(ctx context.Context, booksID int64, accountID uuid.UUID, d domain.StatementDates, due time.Time) (uuid.UUID, error)
+	Statements(ctx context.Context, booksID int64, accountID uuid.UUID) ([]Statement, error)
 	// HasOpeningBalance reports whether a transaction not voided books the account against
 	// the opening balances account.
-	HasOpeningBalance(ctx context.Context, userID int64, accountID uuid.UUID) (bool, error)
+	HasOpeningBalance(ctx context.Context, booksID int64, accountID uuid.UUID) (bool, error)
 	// StatementClosings returns the closing date of each stored statement of the card.
-	StatementClosings(ctx context.Context, userID int64, accountID uuid.UUID) (map[domain.ReferenceMonth]time.Time, error)
+	StatementClosings(ctx context.Context, booksID int64, accountID uuid.UUID) (map[domain.ReferenceMonth]time.Time, error)
 	// SaveStatementFact records a fact, replacing the one of its source (A85).
 	SaveStatementFact(ctx context.Context, f domain.StatementFact) error
-	DeleteStatementFact(ctx context.Context, userID int64, statementID uuid.UUID, source string) error
+	DeleteStatementFact(ctx context.Context, booksID int64, statementID uuid.UUID, source string) error
 	// RedatablePostings lists the card's postings billed by their date (A86).
-	RedatablePostings(ctx context.Context, userID int64, accountID uuid.UUID) ([]RedatablePosting, error)
-	MovePostingStatement(ctx context.Context, userID int64, postingID, statementID uuid.UUID) error
-	StatementAccount(ctx context.Context, userID int64, statementID uuid.UUID) (uuid.UUID, error)
-	OpenStatementsFrom(ctx context.Context, userID int64, accountID uuid.UUID, from domain.ReferenceMonth, today time.Time) ([]Statement, error)
+	RedatablePostings(ctx context.Context, booksID int64, accountID uuid.UUID) ([]RedatablePosting, error)
+	MovePostingStatement(ctx context.Context, booksID int64, postingID, statementID uuid.UUID) error
+	StatementAccount(ctx context.Context, booksID int64, statementID uuid.UUID) (uuid.UUID, error)
+	OpenStatementsFrom(ctx context.Context, booksID int64, accountID uuid.UUID, from domain.ReferenceMonth, today time.Time) ([]Statement, error)
 	UpdateStatementDates(ctx context.Context, id uuid.UUID, closing, due time.Time) error
 	InsertPlan(ctx context.Context, p domain.InstallmentPlan) error
 	SetStatementFinanced(ctx context.Context, statementID, planID uuid.UUID) error
-	Plan(ctx context.Context, userID int64, id uuid.UUID) (domain.InstallmentPlan, error)
-	PlanInstallments(ctx context.Context, userID int64, planID uuid.UUID) ([]PlanInstallment, error)
+	Plan(ctx context.Context, booksID int64, id uuid.UUID) (domain.InstallmentPlan, error)
+	PlanInstallments(ctx context.Context, booksID int64, planID uuid.UUID) ([]PlanInstallment, error)
 	// PlanState reports whether a non-voided cancellation or anticipation of the origin purchase exists.
-	PlanState(ctx context.Context, userID int64, originID uuid.UUID) (cancelled, anticipated bool, err error)
+	PlanState(ctx context.Context, booksID int64, originID uuid.UUID) (cancelled, anticipated bool, err error)
 	// AnticipatedReferences returns the statements credited by non-voided anticipations of the origin purchase.
-	AnticipatedReferences(ctx context.Context, userID int64, originID uuid.UUID) (map[domain.ReferenceMonth]struct{}, error)
-	RefundedTotal(ctx context.Context, userID int64, originID uuid.UUID) (int64, error)
+	AnticipatedReferences(ctx context.Context, booksID int64, originID uuid.UUID) (map[domain.ReferenceMonth]struct{}, error)
+	RefundedTotal(ctx context.Context, booksID int64, originID uuid.UUID) (int64, error)
 	// AnticipationCharges returns the charges of non-voided anticipations of the origin purchase, without installment numbers (A135).
-	AnticipationCharges(ctx context.Context, userID int64, originID uuid.UUID) ([]PlanInstallment, error)
+	AnticipationCharges(ctx context.Context, booksID int64, originID uuid.UUID) ([]PlanInstallment, error)
 	// AnticipationDiscount returns the discount non-voided anticipations of the origin purchase granted, positive (A135).
-	AnticipationDiscount(ctx context.Context, userID int64, originID uuid.UUID) (int64, error)
+	AnticipationDiscount(ctx context.Context, booksID int64, originID uuid.UUID) (int64, error)
 	// ReimbursedTotal returns what the non-voided transactions other than exceptFrom repay of the origin expense (A117).
-	ReimbursedTotal(ctx context.Context, userID int64, originID, exceptFrom uuid.UUID) (int64, error)
+	ReimbursedTotal(ctx context.Context, booksID int64, originID, exceptFrom uuid.UUID) (int64, error)
 	// ReimbursementCandidates returns the expenses with an amount left to reimburse, ranked as the query asks (A117).
 	ReimbursementCandidates(ctx context.Context, q CandidateQuery) ([]CandidateRow, error)
 	// ReimbursementSources returns the inflows that can repay an expense, oldest first (A117).
 	ReimbursementSources(ctx context.Context, q SourceQuery) ([]SourceRow, error)
 	// SetReimbursementLinks replaces the reimbursement_of links of a transaction with links (A117).
-	SetReimbursementLinks(ctx context.Context, userID int64, from uuid.UUID, links []domain.Link) error
+	SetReimbursementLinks(ctx context.Context, booksID int64, from uuid.UUID, links []domain.Link) error
 	InsertDispute(ctx context.Context, d Dispute) (Dispute, error)
-	Disputes(ctx context.Context, userID int64, transactionID uuid.UUID) ([]Dispute, error)
+	Disputes(ctx context.Context, booksID int64, transactionID uuid.UUID) ([]Dispute, error)
 	// LinksTo returns the non-voided transactions that link to id, ordered by link type, then source.
-	LinksTo(ctx context.Context, userID int64, id uuid.UUID) ([]Reference, error)
-	LockDispute(ctx context.Context, userID int64, id uuid.UUID) (Dispute, error)
+	LinksTo(ctx context.Context, booksID int64, id uuid.UUID) ([]Reference, error)
+	LockDispute(ctx context.Context, booksID int64, id uuid.UUID) (Dispute, error)
 	ResolveDispute(ctx context.Context, d Dispute) (Dispute, error)
-	SystemAccount(ctx context.Context, userID int64, role domain.SystemRole) (domain.Account, error)
-	CommittedInstallments(ctx context.Context, userID int64, accountID uuid.UUID, month domain.ReferenceMonth, today time.Time) (int64, error)
+	SystemAccount(ctx context.Context, booksID int64, role domain.SystemRole) (domain.Account, error)
+	CommittedInstallments(ctx context.Context, booksID int64, accountID uuid.UUID, month domain.ReferenceMonth, today time.Time) (int64, error)
 	// PriorInstallments sums the installments billed on statement month of purchases booked before it.
-	PriorInstallments(ctx context.Context, userID int64, accountID uuid.UUID, month domain.ReferenceMonth) (int64, error)
-	StatementPostings(ctx context.Context, userID int64, statementID uuid.UUID) ([]StatementPosting, error)
+	PriorInstallments(ctx context.Context, booksID int64, accountID uuid.UUID, month domain.ReferenceMonth) (int64, error)
+	StatementPostings(ctx context.Context, booksID int64, statementID uuid.UUID) ([]StatementPosting, error)
 
-	LockAccount(ctx context.Context, userID int64, id uuid.UUID) (domain.Account, error)
+	LockAccount(ctx context.Context, booksID int64, id uuid.UUID) (domain.Account, error)
 	InsertBalanceAssertion(ctx context.Context, a BalanceAssertion) (BalanceAssertion, error)
-	BalanceAssertion(ctx context.Context, userID int64, id uuid.UUID) (BalanceAssertion, error)
+	BalanceAssertion(ctx context.Context, booksID int64, id uuid.UUID) (BalanceAssertion, error)
 	// BalanceAssertions returns the account's assertions, latest date first.
-	BalanceAssertions(ctx context.Context, userID int64, accountID uuid.UUID) ([]BalanceAssertion, error)
-	BalanceAssertionPage(ctx context.Context, userID int64, accountID uuid.UUID, p page.Request[AssertionKey]) ([]BalanceAssertion, *AssertionKey, error)
-	LastReconciledOn(ctx context.Context, userID int64, accountID uuid.UUID) (*time.Time, error)
-	FirstSettledOn(ctx context.Context, userID int64, accountID uuid.UUID) (*time.Time, error)
+	BalanceAssertions(ctx context.Context, booksID int64, accountID uuid.UUID) ([]BalanceAssertion, error)
+	BalanceAssertionPage(ctx context.Context, booksID int64, accountID uuid.UUID, p page.Request[AssertionKey]) ([]BalanceAssertion, *AssertionKey, error)
+	LastReconciledOn(ctx context.Context, booksID int64, accountID uuid.UUID) (*time.Time, error)
+	FirstSettledOn(ctx context.Context, booksID int64, accountID uuid.UUID) (*time.Time, error)
 	// InsertReconciliation returns domain.ErrAlreadyReconciled for an assertion or statement reconciled before.
 	InsertReconciliation(ctx context.Context, rec Reconciliation) error
 	// ReconcilePostings marks the account's non-voided postings settled through the date as reconciled.
-	ReconcilePostings(ctx context.Context, userID int64, accountID uuid.UUID, through time.Time) error
-	ReconcileStatementPostings(ctx context.Context, userID int64, statementID uuid.UUID) error
+	ReconcilePostings(ctx context.Context, booksID int64, accountID uuid.UUID, through time.Time) error
+	ReconcileStatementPostings(ctx context.Context, booksID int64, statementID uuid.UUID) error
 	// UnlockAccount returns reconciled postings settled from the date to cleared and deletes
 	// the reconciliations dated from it.
-	UnlockAccount(ctx context.Context, userID int64, accountID uuid.UUID, from time.Time) error
+	UnlockAccount(ctx context.Context, booksID int64, accountID uuid.UUID, from time.Time) error
 
 	// InsertAttachment stores the content unless the user already has a blob with the same hash.
 	InsertAttachment(ctx context.Context, a Attachment, content []byte) (Attachment, error)
-	Attachments(ctx context.Context, userID int64, transactionID uuid.UUID, p page.Request[AttachmentKey]) ([]Attachment, *AttachmentKey, error)
-	AttachmentContent(ctx context.Context, userID int64, id uuid.UUID) (AttachmentContent, error)
+	Attachments(ctx context.Context, booksID int64, transactionID uuid.UUID, p page.Request[AttachmentKey]) ([]Attachment, *AttachmentKey, error)
+	AttachmentContent(ctx context.Context, booksID int64, id uuid.UUID) (AttachmentContent, error)
 	// DeleteAttachment deletes the blob too when no other attachment references it.
-	DeleteAttachment(ctx context.Context, userID int64, id uuid.UUID) error
+	DeleteAttachment(ctx context.Context, booksID int64, id uuid.UUID) error
 
 	// TransactionByExternalRecord returns ErrNotFound when no transaction carries the record.
-	TransactionByExternalRecord(ctx context.Context, userID int64, recordID uuid.UUID) (uuid.UUID, error)
+	TransactionByExternalRecord(ctx context.Context, booksID int64, recordID uuid.UUID) (uuid.UUID, error)
 	// TransactionsByExternalRecords maps each record id that a transaction carries to it.
-	TransactionsByExternalRecords(ctx context.Context, userID int64, recordIDs []uuid.UUID) (map[uuid.UUID]uuid.UUID, error)
+	TransactionsByExternalRecords(ctx context.Context, booksID int64, recordIDs []uuid.UUID) (map[uuid.UUID]uuid.UUID, error)
 	// LockAccountPostingLinks locks the transaction and its postings on the account and
 	// returns them in position order.
-	LockAccountPostingLinks(ctx context.Context, userID int64, txID, accountID uuid.UUID) ([]PostingLink, error)
-	UnlinkedPostings(ctx context.Context, userID int64, accountID uuid.UUID, from, to time.Time) ([]UnlinkedPosting, error)
-	UnconfirmedPostings(ctx context.Context, userID int64, accountID uuid.UUID, from, to time.Time) ([]UnlinkedPosting, error)
+	LockAccountPostingLinks(ctx context.Context, booksID int64, txID, accountID uuid.UUID) ([]PostingLink, error)
+	UnlinkedPostings(ctx context.Context, booksID int64, accountID uuid.UUID, from, to time.Time) ([]UnlinkedPosting, error)
+	UnconfirmedPostings(ctx context.Context, booksID int64, accountID uuid.UUID, from, to time.Time) ([]UnlinkedPosting, error)
 	// LinkExternalRecord returns ErrAlreadyMatched when another posting carries the record.
-	LinkExternalRecord(ctx context.Context, userID int64, postingID, recordID uuid.UUID) error
-	ClearPendingPostings(ctx context.Context, userID int64, txID, accountID uuid.UUID) error
+	LinkExternalRecord(ctx context.Context, booksID int64, postingID, recordID uuid.UUID) error
+	ClearPendingPostings(ctx context.Context, booksID int64, txID, accountID uuid.UUID) error
 	// LockImportedPosting returns the posting an external record confirms; ErrNotFound when none.
-	LockImportedPosting(ctx context.Context, userID int64, recordID uuid.UUID) (ImportedPostingState, error)
+	LockImportedPosting(ctx context.Context, booksID int64, recordID uuid.UUID) (ImportedPostingState, error)
 	// SettleImportedPosting sets the posting's status and, when statementID is not nil, its statement.
-	SettleImportedPosting(ctx context.Context, userID int64, postingID uuid.UUID, status domain.PostingStatus, statementID uuid.UUID) error
-	ReleaseExternalRecord(ctx context.Context, userID int64, recordID uuid.UUID) error
+	SettleImportedPosting(ctx context.Context, booksID int64, postingID uuid.UUID, status domain.PostingStatus, statementID uuid.UUID) error
+	ReleaseExternalRecord(ctx context.Context, booksID int64, recordID uuid.UUID) error
 	// RecordPosting returns the transaction and the installment plan of the posting an
 	// external record confirms; ErrNotFound when none.
-	RecordPosting(ctx context.Context, userID int64, recordID uuid.UUID) (txID, planID uuid.UUID, err error)
+	RecordPosting(ctx context.Context, booksID int64, recordID uuid.UUID) (txID, planID uuid.UUID, err error)
 	// LockPlanInstallment returns installment number of the plan; ErrNotFound when none.
-	LockPlanInstallment(ctx context.Context, userID int64, planID uuid.UUID, number int) (PlanInstallmentState, error)
+	LockPlanInstallment(ctx context.Context, booksID int64, planID uuid.UUID, number int) (PlanInstallmentState, error)
 	// StatementByDueDate returns the card statement due on the date; ErrNotFound when none.
-	StatementByDueDate(ctx context.Context, userID int64, accountID uuid.UUID, due time.Time) (domain.ReferenceMonth, error)
+	StatementByDueDate(ctx context.Context, booksID int64, accountID uuid.UUID, due time.Time) (domain.ReferenceMonth, error)
 	// PairingCandidates returns the ids that pair with a transfer, by date then id (P5b amendment A29).
 	PairingCandidates(ctx context.Context, q PairingQuery) ([]uuid.UUID, error)
 	// ClearRecordLinks removes the record links of a transaction's postings.
-	ClearRecordLinks(ctx context.Context, userID int64, txID uuid.UUID) error
+	ClearRecordLinks(ctx context.Context, booksID int64, txID uuid.UUID) error
 
 	// BalanceAt sums the postings of the account and its descendants up to and including date.
-	BalanceAt(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time, basis Basis) (int64, error)
+	BalanceAt(ctx context.Context, booksID int64, accountID uuid.UUID, date time.Time, basis Basis) (int64, error)
 	// BalancesAt sums the postings of each asset and liability account up to and including
 	// date, ordered by account name then id.
-	BalancesAt(ctx context.Context, userID int64, date time.Time, basis Basis) ([]AccountTotal, error)
-	TreeInstruments(ctx context.Context, userID int64, accountID uuid.UUID) ([]money.Currency, error)
-	SecurityPostings(ctx context.Context, userID int64, accountIDs []uuid.UUID) ([]HoldingPosting, error)
-	SecurityTrades(ctx context.Context, userID int64, accountIDs []uuid.UUID) ([]TradeFact, error)
-	SecurityIncomes(ctx context.Context, userID int64, accountIDs []uuid.UUID) ([]IncomeFact, error)
-	Holding(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time) (quantity, costBasis int64, err error)
-	LaterSaleExists(ctx context.Context, userID int64, accountIDs []uuid.UUID, date time.Time, exclude uuid.UUID) (bool, error)
-	TreeBalancesByInstrument(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time, basis Basis) (map[money.Currency]int64, error)
+	BalancesAt(ctx context.Context, booksID int64, date time.Time, basis Basis) ([]AccountTotal, error)
+	TreeInstruments(ctx context.Context, booksID int64, accountID uuid.UUID) ([]money.Currency, error)
+	SecurityPostings(ctx context.Context, booksID int64, accountIDs []uuid.UUID) ([]HoldingPosting, error)
+	SecurityTrades(ctx context.Context, booksID int64, accountIDs []uuid.UUID) ([]TradeFact, error)
+	SecurityIncomes(ctx context.Context, booksID int64, accountIDs []uuid.UUID) ([]IncomeFact, error)
+	Holding(ctx context.Context, booksID int64, accountID uuid.UUID, date time.Time) (quantity, costBasis int64, err error)
+	LaterSaleExists(ctx context.Context, booksID int64, accountIDs []uuid.UUID, date time.Time, exclude uuid.UUID) (bool, error)
+	TreeBalancesByInstrument(ctx context.Context, booksID int64, accountID uuid.UUID, date time.Time, basis Basis) (map[money.Currency]int64, error)
 	// TreeExternalFlows returns, per transaction of [from, to] that touches the tree of the accounts
 	// and a balance account outside it, the money that entered the tree (negative when it left).
-	TreeExternalFlows(ctx context.Context, userID int64, accountIDs []uuid.UUID, from, to time.Time) ([]ExternalFlow, error)
+	TreeExternalFlows(ctx context.Context, booksID int64, accountIDs []uuid.UUID, from, to time.Time) ([]ExternalFlow, error)
 	// TreeFirstPosting returns the booked date of the earliest posting of the tree of the accounts.
-	TreeFirstPosting(ctx context.Context, userID int64, accountIDs []uuid.UUID) (time.Time, bool, error)
+	TreeFirstPosting(ctx context.Context, booksID int64, accountIDs []uuid.UUID) (time.Time, bool, error)
 	// CategoryTotal sums the weights of the non-voided postings of the account and its
 	// descendants booked in [from, to).
-	CategoryTotal(ctx context.Context, userID int64, accountID uuid.UUID, from, to time.Time) (int64, error)
+	CategoryTotal(ctx context.Context, booksID int64, accountID uuid.UUID, from, to time.Time) (int64, error)
 	// CategoryMonthlyTotals returns CategoryTotal by first day of month, months without postings omitted.
-	CategoryMonthlyTotals(ctx context.Context, userID int64, accountID uuid.UUID, from, to time.Time) (map[time.Time]int64, error)
+	CategoryMonthlyTotals(ctx context.Context, booksID int64, accountID uuid.UUID, from, to time.Time) (map[time.Time]int64, error)
 	// OwnCategoryMonthlyTotals returns the own postings of every category of class by month in [from, to).
-	OwnCategoryMonthlyTotals(ctx context.Context, userID int64, class string, from, to time.Time) ([]CategoryMonth, error)
+	OwnCategoryMonthlyTotals(ctx context.Context, booksID int64, class string, from, to time.Time) ([]CategoryMonth, error)
 }

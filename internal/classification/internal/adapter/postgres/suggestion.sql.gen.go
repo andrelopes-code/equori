@@ -18,7 +18,7 @@ SELECT
 FROM
     classification_categorization
 WHERE
-    user_id = $1
+    books_id = $1
     AND match_key = $2
     AND category_id = $3
     AND corrected
@@ -31,7 +31,7 @@ LIMIT
 `
 
 type CorrectedExamplesParams struct {
-	UserID     int64
+	BooksID    int64
 	MatchKey   *string
 	CategoryID uuid.NullUUID
 	RowLimit   int32
@@ -39,7 +39,7 @@ type CorrectedExamplesParams struct {
 
 func (q *Queries) CorrectedExamples(ctx context.Context, arg CorrectedExamplesParams) ([]uuid.UUID, error) {
 	rows, err := q.db.Query(ctx, correctedExamples,
-		arg.UserID,
+		arg.BooksID,
 		arg.MatchKey,
 		arg.CategoryID,
 		arg.RowLimit,
@@ -69,30 +69,30 @@ SET
     rule_id = $2,
     decided_at = now()
 WHERE
-    user_id = $3
+    books_id = $3
     AND id = $4
 RETURNING
-    id, user_id, fingerprint, conditions, actions, example_transaction_ids, state, rule_id, created_at, decided_at
+    id, books_id, fingerprint, conditions, actions, example_transaction_ids, state, rule_id, created_at, decided_at
 `
 
 type DecideSuggestionParams struct {
-	State  string
-	RuleID uuid.NullUUID
-	UserID int64
-	ID     uuid.UUID
+	State   string
+	RuleID  uuid.NullUUID
+	BooksID int64
+	ID      uuid.UUID
 }
 
 func (q *Queries) DecideSuggestion(ctx context.Context, arg DecideSuggestionParams) (ClassificationSuggestion, error) {
 	row := q.db.QueryRow(ctx, decideSuggestion,
 		arg.State,
 		arg.RuleID,
-		arg.UserID,
+		arg.BooksID,
 		arg.ID,
 	)
 	var i ClassificationSuggestion
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.Fingerprint,
 		&i.Conditions,
 		&i.Actions,
@@ -107,11 +107,11 @@ func (q *Queries) DecideSuggestion(ctx context.Context, arg DecideSuggestionPara
 
 const listSuggestions = `-- name: ListSuggestions :many
 SELECT
-    id, user_id, fingerprint, conditions, actions, example_transaction_ids, state, rule_id, created_at, decided_at
+    id, books_id, fingerprint, conditions, actions, example_transaction_ids, state, rule_id, created_at, decided_at
 FROM
     classification_suggestion
 WHERE
-    user_id = $1
+    books_id = $1
     AND (
         $2::text IS NULL
         OR state = $2::text
@@ -127,7 +127,7 @@ LIMIT
 `
 
 type ListSuggestionsParams struct {
-	UserID   int64
+	BooksID  int64
 	State    *string
 	AfterID  uuid.NullUUID
 	RowLimit int32
@@ -135,7 +135,7 @@ type ListSuggestionsParams struct {
 
 func (q *Queries) ListSuggestions(ctx context.Context, arg ListSuggestionsParams) ([]ClassificationSuggestion, error) {
 	rows, err := q.db.Query(ctx, listSuggestions,
-		arg.UserID,
+		arg.BooksID,
 		arg.State,
 		arg.AfterID,
 		arg.RowLimit,
@@ -149,7 +149,7 @@ func (q *Queries) ListSuggestions(ctx context.Context, arg ListSuggestionsParams
 		var i ClassificationSuggestion
 		if err := rows.Scan(
 			&i.ID,
-			&i.UserID,
+			&i.BooksID,
 			&i.Fingerprint,
 			&i.Conditions,
 			&i.Actions,
@@ -171,26 +171,26 @@ func (q *Queries) ListSuggestions(ctx context.Context, arg ListSuggestionsParams
 
 const lockSuggestion = `-- name: LockSuggestion :one
 SELECT
-    id, user_id, fingerprint, conditions, actions, example_transaction_ids, state, rule_id, created_at, decided_at
+    id, books_id, fingerprint, conditions, actions, example_transaction_ids, state, rule_id, created_at, decided_at
 FROM
     classification_suggestion
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2
 FOR UPDATE
 `
 
 type LockSuggestionParams struct {
-	UserID int64
-	ID     uuid.UUID
+	BooksID int64
+	ID      uuid.UUID
 }
 
 func (q *Queries) LockSuggestion(ctx context.Context, arg LockSuggestionParams) (ClassificationSuggestion, error) {
-	row := q.db.QueryRow(ctx, lockSuggestion, arg.UserID, arg.ID)
+	row := q.db.QueryRow(ctx, lockSuggestion, arg.BooksID, arg.ID)
 	var i ClassificationSuggestion
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.Fingerprint,
 		&i.Conditions,
 		&i.Actions,
@@ -206,7 +206,7 @@ func (q *Queries) LockSuggestion(ctx context.Context, arg LockSuggestionParams) 
 const upsertSuggestion = `-- name: UpsertSuggestion :exec
 INSERT INTO
     classification_suggestion (
-        user_id,
+        books_id,
         fingerprint,
         conditions,
         actions,
@@ -224,7 +224,7 @@ VALUES
         'pending',
         $6
     )
-ON CONFLICT (user_id, fingerprint) DO UPDATE
+ON CONFLICT (books_id, fingerprint) DO UPDATE
 SET
     example_transaction_ids = EXCLUDED.example_transaction_ids
 WHERE
@@ -232,7 +232,7 @@ WHERE
 `
 
 type UpsertSuggestionParams struct {
-	UserID                int64
+	BooksID               int64
 	Fingerprint           string
 	Conditions            []byte
 	Actions               []byte
@@ -243,7 +243,7 @@ type UpsertSuggestionParams struct {
 // P5 amendment A24: one suggestion per fingerprint; only a pending one gains examples.
 func (q *Queries) UpsertSuggestion(ctx context.Context, arg UpsertSuggestionParams) error {
 	_, err := q.db.Exec(ctx, upsertSuggestion,
-		arg.UserID,
+		arg.BooksID,
 		arg.Fingerprint,
 		arg.Conditions,
 		arg.Actions,

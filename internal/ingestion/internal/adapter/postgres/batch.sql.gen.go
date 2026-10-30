@@ -29,10 +29,10 @@ SET
     balance_reason = $12,
     completed_at = now()
 WHERE
-    user_id = $13
+    books_id = $13
     AND id = $14
 RETURNING
-    id, user_id, account_id, source, file_name, currency, period_from, period_to, received, ignored, matched, created, needs_review, discarded, balance_date, balance_amount, balance_status, balance_reason, started_at, completed_at, external_account_id, updated, withdrawn
+    id, books_id, account_id, source, file_name, currency, period_from, period_to, received, ignored, matched, created, needs_review, discarded, balance_date, balance_amount, balance_status, balance_reason, started_at, completed_at, external_account_id, updated, withdrawn
 `
 
 type CompleteBatchParams struct {
@@ -48,7 +48,7 @@ type CompleteBatchParams struct {
 	BalanceAmount *int64
 	BalanceStatus string
 	BalanceReason *string
-	UserID        int64
+	BooksID       int64
 	ID            uuid.UUID
 }
 
@@ -66,13 +66,13 @@ func (q *Queries) CompleteBatch(ctx context.Context, arg CompleteBatchParams) (I
 		arg.BalanceAmount,
 		arg.BalanceStatus,
 		arg.BalanceReason,
-		arg.UserID,
+		arg.BooksID,
 		arg.ID,
 	)
 	var i IngestionBatch
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.AccountID,
 		&i.Source,
 		&i.FileName,
@@ -100,25 +100,25 @@ func (q *Queries) CompleteBatch(ctx context.Context, arg CompleteBatchParams) (I
 
 const getBatch = `-- name: GetBatch :one
 SELECT
-    id, user_id, account_id, source, file_name, currency, period_from, period_to, received, ignored, matched, created, needs_review, discarded, balance_date, balance_amount, balance_status, balance_reason, started_at, completed_at, external_account_id, updated, withdrawn
+    id, books_id, account_id, source, file_name, currency, period_from, period_to, received, ignored, matched, created, needs_review, discarded, balance_date, balance_amount, balance_status, balance_reason, started_at, completed_at, external_account_id, updated, withdrawn
 FROM
     ingestion_batch
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2
 `
 
 type GetBatchParams struct {
-	UserID int64
-	ID     uuid.UUID
+	BooksID int64
+	ID      uuid.UUID
 }
 
 func (q *Queries) GetBatch(ctx context.Context, arg GetBatchParams) (IngestionBatch, error) {
-	row := q.db.QueryRow(ctx, getBatch, arg.UserID, arg.ID)
+	row := q.db.QueryRow(ctx, getBatch, arg.BooksID, arg.ID)
 	var i IngestionBatch
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.AccountID,
 		&i.Source,
 		&i.FileName,
@@ -147,7 +147,7 @@ func (q *Queries) GetBatch(ctx context.Context, arg GetBatchParams) (IngestionBa
 const insertBatch = `-- name: InsertBatch :one
 INSERT INTO
     ingestion_batch (
-        user_id,
+        books_id,
         account_id,
         source,
         file_name,
@@ -168,11 +168,11 @@ VALUES
         $8
     )
 RETURNING
-    id, user_id, account_id, source, file_name, currency, period_from, period_to, received, ignored, matched, created, needs_review, discarded, balance_date, balance_amount, balance_status, balance_reason, started_at, completed_at, external_account_id, updated, withdrawn
+    id, books_id, account_id, source, file_name, currency, period_from, period_to, received, ignored, matched, created, needs_review, discarded, balance_date, balance_amount, balance_status, balance_reason, started_at, completed_at, external_account_id, updated, withdrawn
 `
 
 type InsertBatchParams struct {
-	UserID            int64
+	BooksID           int64
 	AccountID         uuid.UUID
 	Source            string
 	FileName          *string
@@ -184,7 +184,7 @@ type InsertBatchParams struct {
 
 func (q *Queries) InsertBatch(ctx context.Context, arg InsertBatchParams) (IngestionBatch, error) {
 	row := q.db.QueryRow(ctx, insertBatch,
-		arg.UserID,
+		arg.BooksID,
 		arg.AccountID,
 		arg.Source,
 		arg.FileName,
@@ -196,7 +196,7 @@ func (q *Queries) InsertBatch(ctx context.Context, arg InsertBatchParams) (Inges
 	var i IngestionBatch
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.AccountID,
 		&i.Source,
 		&i.FileName,
@@ -224,11 +224,11 @@ func (q *Queries) InsertBatch(ctx context.Context, arg InsertBatchParams) (Inges
 
 const listBatches = `-- name: ListBatches :many
 SELECT
-    id, user_id, account_id, source, file_name, currency, period_from, period_to, received, ignored, matched, created, needs_review, discarded, balance_date, balance_amount, balance_status, balance_reason, started_at, completed_at, external_account_id, updated, withdrawn
+    id, books_id, account_id, source, file_name, currency, period_from, period_to, received, ignored, matched, created, needs_review, discarded, balance_date, balance_amount, balance_status, balance_reason, started_at, completed_at, external_account_id, updated, withdrawn
 FROM
     ingestion_batch
 WHERE
-    user_id = $1
+    books_id = $1
     AND (
         $2::timestamptz IS NULL
         OR (started_at, id) < ($2::timestamptz, $3::uuid)
@@ -241,7 +241,7 @@ LIMIT
 `
 
 type ListBatchesParams struct {
-	UserID       int64
+	BooksID      int64
 	AfterStarted *time.Time
 	AfterID      uuid.NullUUID
 	RowLimit     int32
@@ -249,7 +249,7 @@ type ListBatchesParams struct {
 
 func (q *Queries) ListBatches(ctx context.Context, arg ListBatchesParams) ([]IngestionBatch, error) {
 	rows, err := q.db.Query(ctx, listBatches,
-		arg.UserID,
+		arg.BooksID,
 		arg.AfterStarted,
 		arg.AfterID,
 		arg.RowLimit,
@@ -263,7 +263,7 @@ func (q *Queries) ListBatches(ctx context.Context, arg ListBatchesParams) ([]Ing
 		var i IngestionBatch
 		if err := rows.Scan(
 			&i.ID,
-			&i.UserID,
+			&i.BooksID,
 			&i.AccountID,
 			&i.Source,
 			&i.FileName,

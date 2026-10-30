@@ -60,7 +60,7 @@ func TestUsageA1A3(t *testing.T) {
 	quota := llmtest.Step{Model: "gemini-3.5-flash-lite", Err: &llm.QuotaError{RetryAfter: time.Hour}}
 	h := apitest.New(t, apitest.LLM(llmtest.New("aistudio", ok, quota)))
 
-	ctx := auth.WithUserID(t.Context(), h.OwnerID())
+	ctx := auth.WithBooksID(t.Context(), h.OwnerID())
 	if err := call(ctx, h, capture.SuggestUse); err != nil {
 		t.Fatalf("first call: %v", err)
 	}
@@ -110,7 +110,7 @@ func TestUsageWithoutUseOrUserA2(t *testing.T) {
 		t.Fatalf("call without a user: %v", err)
 	}
 
-	ctx := auth.WithUserID(t.Context(), h.OwnerID())
+	ctx := auth.WithBooksID(t.Context(), h.OwnerID())
 	if _, err := h.App.LLM.Client(llm.Target{Provider: "aistudio", Model: "gemini-3.5-flash"}).Generate(ctx, llm.Request{
 		Messages: []llm.Message{{Role: llm.RoleUser, Parts: []llm.Part{{Text: "x"}}}},
 	}); err != nil {
@@ -194,7 +194,7 @@ func TestUsageDays(t *testing.T) {
 	h := apitest.New(t, apitest.LLM(llmtest.New("aistudio", lite, refused, flash)),
 		apitest.Clock(func() time.Time { return start.AddDate(0, 0, int(day.Load())) }))
 
-	ctx := auth.WithUserID(t.Context(), h.OwnerID())
+	ctx := auth.WithBooksID(t.Context(), h.OwnerID())
 	if err := call(ctx, h, assistant.ChatUse); err != nil {
 		t.Fatalf("day 1: %v", err)
 	}

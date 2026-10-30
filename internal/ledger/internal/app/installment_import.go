@@ -39,12 +39,12 @@ type ImportedInstallment struct {
 // Amount from the statement Number − 1 months before the line's, with the line confirming
 // its installment. A record that a posting already carries keeps it, so an interrupted
 // sync completes without a second plan.
-func (s *Service) RecordImportedInstallment(ctx context.Context, userID int64, in ImportedInstallment) (txID, planID uuid.UUID, err error) {
-	if txID, planID, err := s.repo.RecordPosting(ctx, userID, in.RecordID); !errors.Is(err, ErrNotFound) {
+func (s *Service) RecordImportedInstallment(ctx context.Context, booksID int64, in ImportedInstallment) (txID, planID uuid.UUID, err error) {
+	if txID, planID, err := s.repo.RecordPosting(ctx, booksID, in.RecordID); !errors.Is(err, ErrNotFound) {
 		return txID, planID, err
 	}
 
-	line, err := s.lineStatement(ctx, userID, in)
+	line, err := s.lineStatement(ctx, booksID, in)
 	if err != nil {
 		return uuid.Nil, uuid.Nil, err
 	}
@@ -62,7 +62,7 @@ func (s *Service) RecordImportedInstallment(ctx context.Context, userID int64, i
 		}
 	}
 
-	expense, err := s.repo.SystemAccount(ctx, userID, domain.RoleUncategorizedExpense)
+	expense, err := s.repo.SystemAccount(ctx, booksID, domain.RoleUncategorizedExpense)
 	if err != nil {
 		return uuid.Nil, uuid.Nil, err
 	}
@@ -82,22 +82,22 @@ func (s *Service) RecordImportedInstallment(ctx context.Context, userID int64, i
 	}
 
 	purchase.Splits = []domain.Posting{split}
-	t, planID, err := s.InstallmentPurchase(ctx, userID, purchase)
+	t, planID, err := s.InstallmentPurchase(ctx, booksID, purchase)
 
 	return t.ID, planID, err
 }
 
-func (s *Service) lineStatement(ctx context.Context, userID int64, in ImportedInstallment) (domain.ReferenceMonth, error) {
+func (s *Service) lineStatement(ctx context.Context, booksID int64, in ImportedInstallment) (domain.ReferenceMonth, error) {
 	if in.DueDate != nil {
-		return s.statementDue(ctx, s.repo, userID, in.CardAccountID, *in.DueDate)
+		return s.statementDue(ctx, s.repo, booksID, in.CardAccountID, *in.DueDate)
 	}
 
-	rules, err := s.repo.BillingRules(ctx, userID, in.CardAccountID)
+	rules, err := s.repo.BillingRules(ctx, booksID, in.CardAccountID)
 	if err != nil {
 		return domain.ReferenceMonth{}, err
 	}
 
-	ref, err := s.statementOn(ctx, s.repo, userID, in.CardAccountID, in.LineDate, rules)
+	ref, err := s.statementOn(ctx, s.repo, booksID, in.CardAccountID, in.LineDate, rules)
 	if errors.Is(err, domain.ErrNoBillingRule) {
 		return domain.ReferenceMonth{}, validationError("card_account_id", "card has no billing cycle rule for the date")
 	}
@@ -119,10 +119,10 @@ type InstallmentConfirmation struct {
 // installment is gone, its purchase was reversed, or a change would touch a reconciled
 // posting; ErrAlreadyMatched when another record confirms it. Linking the same record again
 // is a no-op.
-func (s *Service) LinkInstallment(ctx context.Context, userID int64, recordID, planID uuid.UUID, number int, c InstallmentConfirmation) (uuid.UUID, error) {
+func (s *Service) LinkInstallment(ctx context.Context, booksID int64, recordID, planID uuid.UUID, number int, c InstallmentConfirmation) (uuid.UUID, error) {
 	var txID uuid.UUID
 	err := s.repo.InTx(ctx, func(r Repository) error {
-		in, err := r.LockPlanInstallment(ctx, userID, planID, number)
+		in, err := r.LockPlanInstallment(ctx, booksID, planID, number)
 		switch {
 		case errors.Is(err, ErrNotFound):
 			return ErrInstallmentUnavailable
@@ -139,7 +139,7 @@ func (s *Service) LinkInstallment(ctx context.Context, userID int64, recordID, p
 
 		txID = in.TransactionID
 
-		return s.confirmInstallment(ctx, r, userID, in, recordID, number, c)
+		return s.confirmInstallment(ctx, r, booksID, in, recordID, number, c)
 	})
 
 	return txID, err
@@ -147,8 +147,8 @@ func (s *Service) LinkInstallment(ctx context.Context, userID int64, recordID, p
 
 // confirmInstallment writes what the line reports on installment number: the record link,
 // and a new version of the purchase when the amount or the statement differs.
-func (s *Service) confirmInstallment(ctx context.Context, r Repository, userID int64, in PlanInstallmentState, recordID uuid.UUID, number int, c InstallmentConfirmation) error {
-	prev, err := r.LockTransaction(ctx, userID, in.TransactionID)
+func (s *Service) confirmInstallment(ctx context.Context, r Repository, booksID int64, in PlanInstallmentState, recordID uuid.UUID, number int, c InstallmentConfirmation) error {
+	prev, err := r.LockTransaction(ctx, booksID, in.TransactionID)
 	if err != nil {
 		return err
 	}
@@ -160,7 +160,7 @@ func (s *Service) confirmInstallment(ctx context.Context, r Repository, userID i
 
 	target := prev.Postings[k].Statement
 	if c.DueDate != nil {
-		ref, err := s.statementDue(ctx, r, userID, prev.Postings[k].AccountID, *c.DueDate)
+		ref, err := s.statementDue(ctx, r, booksID, prev.Postings[k].AccountID, *c.DueDate)
 		if err != nil {
 			return err
 		}
@@ -174,7 +174,7 @@ func (s *Service) confirmInstallment(ctx context.Context, r Repository, userID i
 	}
 
 	if -in.Amount == c.Amount.Amount() && target != nil && prev.Postings[k].Statement != nil && *target == *prev.Postings[k].Statement {
-		if err := r.LinkExternalRecord(ctx, userID, in.PostingID, recordID); err != nil {
+		if err := r.LinkExternalRecord(ctx, booksID, in.PostingID, recordID); err != nil {
 			return err
 		}
 
@@ -182,7 +182,7 @@ func (s *Service) confirmInstallment(ctx context.Context, r Repository, userID i
 			return nil
 		}
 
-		return r.SettleImportedPosting(ctx, userID, in.PostingID, status, uuid.Nil)
+		return r.SettleImportedPosting(ctx, booksID, in.PostingID, status, uuid.Nil)
 	}
 
 	next, err := withConfirmedInstallment(prev, k, recordID, number, c.Amount, *target, status)
@@ -190,7 +190,7 @@ func (s *Service) confirmInstallment(ctx context.Context, r Repository, userID i
 		return err
 	}
 
-	accounts, err := r.Accounts(ctx, userID, postingAccounts(prev))
+	accounts, err := r.Accounts(ctx, booksID, postingAccounts(prev))
 	if err != nil {
 		return err
 	}
@@ -210,7 +210,7 @@ func (s *Service) confirmInstallment(ctx context.Context, r Repository, userID i
 	event := newTransactionEvent(next, accounts, prev)
 	event.PreviousDate = prev.Date.Format(time.DateOnly)
 
-	return r.Publish(ctx, outbox.Event{Type: EventTransactionCorrected, UserID: userID, AggregateID: next.ID.String(), Payload: event})
+	return r.Publish(ctx, outbox.Event{Type: EventTransactionCorrected, BooksID: booksID, AggregateID: next.ID.String(), Payload: event})
 }
 
 const reasonConfirmed = "installment confirmed"

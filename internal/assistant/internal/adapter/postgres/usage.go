@@ -22,15 +22,15 @@ func (r *Repository) AddUsage(ctx context.Context, e domain.UsageEntry) error {
 	}
 
 	return r.q.AddUsage(ctx, AddUsageParams{
-		UserID: e.UserID, Day: e.Day, ProviderID: e.ProviderID, Model: e.Model, UseID: e.UseID,
+		BooksID: e.BooksID, Day: e.Day, ProviderID: e.ProviderID, Model: e.Model, UseID: e.UseID,
 		Errors: bit(e.Failed), QuotaErrors: bit(e.Quota), InputTokens: e.InputTokens, OutputTokens: e.OutputTokens,
 		CoolingUntil: until,
 	})
 }
 
 // UsageSince sums the user's usage per provider and model from since to today, both inclusive.
-func (r *Repository) UsageSince(ctx context.Context, userID int64, today, since time.Time) ([]domain.UsageSummary, error) {
-	rows, err := r.q.UsageSince(ctx, UsageSinceParams{UserID: userID, Today: today, Since: since})
+func (r *Repository) UsageSince(ctx context.Context, booksID int64, today, since time.Time) ([]domain.UsageSummary, error) {
+	rows, err := r.q.UsageSince(ctx, UsageSinceParams{BooksID: booksID, Today: today, Since: since})
 	if err != nil {
 		return nil, err
 	}
@@ -50,8 +50,8 @@ func (r *Repository) UsageSince(ctx context.Context, userID int64, today, since 
 	return out, nil
 }
 
-func (r *Repository) UsageByDay(ctx context.Context, userID int64, from, to time.Time) ([]domain.UsageDay, error) {
-	rows, err := r.q.UsageByDay(ctx, UsageByDayParams{UserID: userID, FromDate: from, ToDate: to})
+func (r *Repository) UsageByDay(ctx context.Context, booksID int64, from, to time.Time) ([]domain.UsageDay, error) {
+	rows, err := r.q.UsageByDay(ctx, UsageByDayParams{BooksID: booksID, FromDate: from, ToDate: to})
 	if err != nil {
 		return nil, err
 	}
@@ -64,8 +64,8 @@ func (r *Repository) UsageByDay(ctx context.Context, userID int64, from, to time
 	return out, nil
 }
 
-func (r *Repository) Limits(ctx context.Context, userID int64) ([]domain.Limit, error) {
-	rows, err := r.q.ListUsageLimits(ctx, userID)
+func (r *Repository) Limits(ctx context.Context, booksID int64) ([]domain.Limit, error) {
+	rows, err := r.q.ListUsageLimits(ctx, booksID)
 	if err != nil {
 		return nil, err
 	}
@@ -83,9 +83,9 @@ func (r *Repository) Limits(ctx context.Context, userID int64) ([]domain.Limit, 
 }
 
 // SetLimit stores l, or removes the stored limit when l has neither quota.
-func (r *Repository) SetLimit(ctx context.Context, userID int64, l domain.Limit) error {
+func (r *Repository) SetLimit(ctx context.Context, booksID int64, l domain.Limit) error {
 	if l.Cleared() {
-		return r.q.DeleteUsageLimit(ctx, DeleteUsageLimitParams{UserID: userID, ProviderID: l.ProviderID, Model: l.Model})
+		return r.q.DeleteUsageLimit(ctx, DeleteUsageLimitParams{BooksID: booksID, ProviderID: l.ProviderID, Model: l.Model})
 	}
 
 	var requests *int32
@@ -95,6 +95,6 @@ func (r *Repository) SetLimit(ctx context.Context, userID int64, l domain.Limit)
 	}
 
 	return r.q.SetUsageLimit(ctx, SetUsageLimitParams{
-		UserID: userID, ProviderID: l.ProviderID, Model: l.Model, RequestsPerDay: requests, TokensPerDay: l.TokensPerDay,
+		BooksID: booksID, ProviderID: l.ProviderID, Model: l.Model, RequestsPerDay: requests, TokensPerDay: l.TokensPerDay,
 	})
 }

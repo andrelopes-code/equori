@@ -47,7 +47,7 @@ func toProfileAPI(p domain.Profile) CsvProfile {
 }
 
 func (s *Server) GetCsvProfile(ctx context.Context, req GetCsvProfileRequestObject) (GetCsvProfileResponseObject, error) {
-	p, err := s.svc.Profile(ctx, auth.MustUserID(ctx), req.Id)
+	p, err := s.svc.Profile(ctx, auth.MustBooksID(ctx), req.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -59,7 +59,7 @@ func (s *Server) SaveCsvProfile(ctx context.Context, req SaveCsvProfileRequestOb
 	b := req.Body
 
 	p := domain.Profile{
-		UserID: auth.MustUserID(ctx), AccountID: req.Id, HeaderRows: 1, DateColumn: b.DateColumn, DateLayout: domain.DateLayout(b.DateLayout),
+		BooksID: auth.MustBooksID(ctx), AccountID: req.Id, HeaderRows: 1, DateColumn: b.DateColumn, DateLayout: domain.DateLayout(b.DateLayout),
 		AmountColumn: opt(b.AmountColumn), DebitColumn: opt(b.DebitColumn), CreditColumn: opt(b.CreditColumn),
 		DecimalSeparator: string(b.DecimalSeparator), DescriptionColumn: b.DescriptionColumn, IDColumn: opt(b.IdColumn),
 	}

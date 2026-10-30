@@ -14,7 +14,7 @@ import (
 const deleteMergedBudget = `-- name: DeleteMergedBudget :exec
 DELETE FROM planning_budget b
 WHERE
-    b.user_id = $1
+    b.books_id = $1
     AND b.category_account_id = $2
     AND EXISTS (
         SELECT
@@ -22,21 +22,21 @@ WHERE
         FROM
             planning_budget o
         WHERE
-            o.user_id = $1
+            o.books_id = $1
             AND o.category_account_id = $3
     )
 `
 
 type DeleteMergedBudgetParams struct {
-	UserID int64
-	FromID uuid.UUID
-	IntoID uuid.UUID
+	BooksID int64
+	FromID  uuid.UUID
+	IntoID  uuid.UUID
 }
 
 // A75: planning references follow a category merge.
 // When the destination has a budget, the source budget and its amounts go.
 func (q *Queries) DeleteMergedBudget(ctx context.Context, arg DeleteMergedBudgetParams) error {
-	_, err := q.db.Exec(ctx, deleteMergedBudget, arg.UserID, arg.FromID, arg.IntoID)
+	_, err := q.db.Exec(ctx, deleteMergedBudget, arg.BooksID, arg.FromID, arg.IntoID)
 	return err
 }
 
@@ -53,7 +53,7 @@ SET
     END,
     updated_at = now()
 WHERE
-    user_id = $3
+    books_id = $3
     AND (
         account_id = $1
         OR counterpart_id = $1
@@ -61,13 +61,13 @@ WHERE
 `
 
 type MergeScheduleAccountsParams struct {
-	FromID uuid.UUID
-	IntoID uuid.UUID
-	UserID int64
+	FromID  uuid.UUID
+	IntoID  uuid.UUID
+	BooksID int64
 }
 
 func (q *Queries) MergeScheduleAccounts(ctx context.Context, arg MergeScheduleAccountsParams) error {
-	_, err := q.db.Exec(ctx, mergeScheduleAccounts, arg.FromID, arg.IntoID, arg.UserID)
+	_, err := q.db.Exec(ctx, mergeScheduleAccounts, arg.FromID, arg.IntoID, arg.BooksID)
 	return err
 }
 
@@ -77,19 +77,19 @@ SET
     payee_id = $1,
     updated_at = now()
 WHERE
-    user_id = $2
+    books_id = $2
     AND payee_id = $3
 `
 
 type MergeSchedulePayeeParams struct {
-	IntoID uuid.NullUUID
-	UserID int64
-	FromID uuid.NullUUID
+	IntoID  uuid.NullUUID
+	BooksID int64
+	FromID  uuid.NullUUID
 }
 
 // A82: schedules follow a payee merge.
 func (q *Queries) MergeSchedulePayee(ctx context.Context, arg MergeSchedulePayeeParams) error {
-	_, err := q.db.Exec(ctx, mergeSchedulePayee, arg.IntoID, arg.UserID, arg.FromID)
+	_, err := q.db.Exec(ctx, mergeSchedulePayee, arg.IntoID, arg.BooksID, arg.FromID)
 	return err
 }
 
@@ -98,17 +98,17 @@ UPDATE planning_budget
 SET
     category_account_id = $1
 WHERE
-    user_id = $2
+    books_id = $2
     AND category_account_id = $3
 `
 
 type MoveMergedBudgetParams struct {
-	IntoID uuid.UUID
-	UserID int64
-	FromID uuid.UUID
+	IntoID  uuid.UUID
+	BooksID int64
+	FromID  uuid.UUID
 }
 
 func (q *Queries) MoveMergedBudget(ctx context.Context, arg MoveMergedBudgetParams) error {
-	_, err := q.db.Exec(ctx, moveMergedBudget, arg.IntoID, arg.UserID, arg.FromID)
+	_, err := q.db.Exec(ctx, moveMergedBudget, arg.IntoID, arg.BooksID, arg.FromID)
 	return err
 }

@@ -4,7 +4,7 @@ SELECT
 FROM
     classification_rule
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND (
         sqlc.narg (after_priority)::int IS NULL
         OR priority > sqlc.narg (after_priority)::int
@@ -20,7 +20,7 @@ SELECT
 FROM
     classification_rule
 WHERE
-    user_id = $1
+    books_id = $1
     AND enabled
 ORDER BY
     priority;
@@ -31,7 +31,7 @@ SELECT
 FROM
     classification_rule
 WHERE
-    user_id = $1
+    books_id = $1
 ORDER BY
     priority
 FOR UPDATE;
@@ -42,14 +42,14 @@ SELECT
 FROM
     classification_rule
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2;
 
 -- name: InsertRule :one
 -- A new rule takes the last priority.
 INSERT INTO
     classification_rule (
-        user_id,
+        books_id,
         name,
         priority,
         enabled,
@@ -60,7 +60,7 @@ INSERT INTO
     )
 VALUES
     (
-        @user_id,
+        @books_id,
         @name,
         (
             SELECT
@@ -68,7 +68,7 @@ VALUES
             FROM
                 classification_rule
             WHERE
-                user_id = @user_id
+                books_id = @books_id
         ),
         @enabled,
         @stop_processing,
@@ -89,7 +89,7 @@ SET
     actions = @actions,
     updated_at = now()
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND id = @id
 RETURNING
     *;
@@ -97,7 +97,7 @@ RETURNING
 -- name: DeleteRule :execrows
 DELETE FROM classification_rule
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2;
 
 -- name: SetRulePriority :exec
@@ -106,5 +106,5 @@ SET
     priority = @priority,
     updated_at = now()
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND id = @id;

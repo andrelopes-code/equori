@@ -21,7 +21,7 @@ func nullString(s string) *string {
 
 func toRecord(row ClassificationCategorization) app.Record {
 	rec := app.Record{
-		TransactionID: row.TransactionID, UserID: row.UserID, Version: int(row.TransactionVersion), Date: row.TransactionDate,
+		TransactionID: row.TransactionID, BooksID: row.BooksID, Version: int(row.TransactionVersion), Date: row.TransactionDate,
 		RuleID: row.RuleID.UUID, Corrected: row.Corrected, CategoryID: row.CategoryID.UUID, Voided: row.Voided, DecidedAt: row.DecidedAt,
 	}
 	if row.Method != nil {
@@ -35,8 +35,8 @@ func toRecord(row ClassificationCategorization) app.Record {
 	return rec
 }
 
-func (r *Repository) Categorization(ctx context.Context, userID int64, transactionID uuid.UUID) (app.Record, error) {
-	row, err := r.q.GetCategorization(ctx, GetCategorizationParams{UserID: userID, TransactionID: transactionID})
+func (r *Repository) Categorization(ctx context.Context, booksID int64, transactionID uuid.UUID) (app.Record, error) {
+	row, err := r.q.GetCategorization(ctx, GetCategorizationParams{BooksID: booksID, TransactionID: transactionID})
 	if err != nil {
 		return app.Record{}, notFound(err)
 	}
@@ -46,7 +46,7 @@ func (r *Repository) Categorization(ctx context.Context, userID int64, transacti
 
 func (r *Repository) UpsertCategorization(ctx context.Context, rec app.Record) (bool, error) {
 	n, err := r.q.UpsertCategorization(ctx, UpsertCategorizationParams{
-		TransactionID: rec.TransactionID, UserID: rec.UserID, TransactionVersion: int32(rec.Version), //nolint:gosec // a small positive counter
+		TransactionID: rec.TransactionID, BooksID: rec.BooksID, TransactionVersion: int32(rec.Version), //nolint:gosec // a small positive counter
 		TransactionDate: rec.Date, Method: nullString(rec.Method), RuleID: nullUUID(rec.RuleID), Corrected: rec.Corrected,
 		MatchKey: nullString(rec.MatchKey), CategoryID: nullUUID(rec.CategoryID), DecidedAt: rec.DecidedAt,
 	})
@@ -56,19 +56,19 @@ func (r *Repository) UpsertCategorization(ctx context.Context, rec app.Record) (
 
 func (r *Repository) MarkVoided(ctx context.Context, rec app.Record) error {
 	return r.q.MarkCategorizationVoided(ctx, MarkCategorizationVoidedParams{
-		TransactionID: rec.TransactionID, UserID: rec.UserID, TransactionVersion: int32(rec.Version), //nolint:gosec // a small positive counter
+		TransactionID: rec.TransactionID, BooksID: rec.BooksID, TransactionVersion: int32(rec.Version), //nolint:gosec // a small positive counter
 		TransactionDate: rec.Date, DecidedAt: rec.DecidedAt,
 	})
 }
 
-func (r *Repository) DeleteCategorization(ctx context.Context, userID int64, transactionID uuid.UUID, version int) error {
+func (r *Repository) DeleteCategorization(ctx context.Context, booksID int64, transactionID uuid.UUID, version int) error {
 	return r.q.DeleteCategorization(ctx, DeleteCategorizationParams{
-		UserID: userID, TransactionID: transactionID, TransactionVersion: int32(version), //nolint:gosec // a small positive counter
+		BooksID: booksID, TransactionID: transactionID, TransactionVersion: int32(version), //nolint:gosec // a small positive counter
 	})
 }
 
-func (r *Repository) PendingCategorizations(ctx context.Context, userID int64, after *app.PendingKey, limit int) ([]uuid.UUID, *app.PendingKey, error) {
-	params := PendingCategorizationsParams{UserID: userID, RowLimit: int32(limit)} //nolint:gosec // a fixed page size
+func (r *Repository) PendingCategorizations(ctx context.Context, booksID int64, after *app.PendingKey, limit int) ([]uuid.UUID, *app.PendingKey, error) {
+	params := PendingCategorizationsParams{BooksID: booksID, RowLimit: int32(limit)} //nolint:gosec // a fixed page size
 	if after != nil {
 		params.AfterDate, params.AfterID = &after.Date, nullUUID(after.ID)
 	}
@@ -92,8 +92,8 @@ func (r *Repository) PendingCategorizations(ctx context.Context, userID int64, a
 	return ids, &app.PendingKey{Date: last.TransactionDate, ID: last.TransactionID}, nil
 }
 
-func (r *Repository) CountMethods(ctx context.Context, userID int64, from, to time.Time) (map[string]int, error) {
-	rows, err := r.q.CountMethods(ctx, CountMethodsParams{UserID: userID, FromDate: from, ToDate: to})
+func (r *Repository) CountMethods(ctx context.Context, booksID int64, from, to time.Time) (map[string]int, error) {
+	rows, err := r.q.CountMethods(ctx, CountMethodsParams{BooksID: booksID, FromDate: from, ToDate: to})
 	if err != nil {
 		return nil, err
 	}
@@ -106,8 +106,8 @@ func (r *Repository) CountMethods(ctx context.Context, userID int64, from, to ti
 	return out, nil
 }
 
-func (r *Repository) Categorizations(ctx context.Context, userID int64, ids []uuid.UUID) ([]app.Record, error) {
-	rows, err := r.q.CategorizationsByIDs(ctx, CategorizationsByIDsParams{UserID: userID, Ids: ids})
+func (r *Repository) Categorizations(ctx context.Context, booksID int64, ids []uuid.UUID) ([]app.Record, error) {
+	rows, err := r.q.CategorizationsByIDs(ctx, CategorizationsByIDsParams{BooksID: booksID, Ids: ids})
 	if err != nil {
 		return nil, err
 	}
@@ -120,8 +120,8 @@ func (r *Repository) Categorizations(ctx context.Context, userID int64, ids []uu
 	return out, nil
 }
 
-func (r *Repository) RuleUsage(ctx context.Context, userID int64, ids []uuid.UUID) (map[uuid.UUID]app.RuleUsage, error) {
-	rows, err := r.q.RuleUsage(ctx, RuleUsageParams{UserID: userID, Ids: ids})
+func (r *Repository) RuleUsage(ctx context.Context, booksID int64, ids []uuid.UUID) (map[uuid.UUID]app.RuleUsage, error) {
+	rows, err := r.q.RuleUsage(ctx, RuleUsageParams{BooksID: booksID, Ids: ids})
 	if err != nil {
 		return nil, err
 	}
@@ -134,8 +134,8 @@ func (r *Repository) RuleUsage(ctx context.Context, userID int64, ids []uuid.UUI
 	return out, nil
 }
 
-func (r *Repository) PreviewCandidates(ctx context.Context, userID int64, from, to time.Time, after *app.PendingKey, limit int) ([]uuid.UUID, *app.PendingKey, error) {
-	params := PreviewCandidatesParams{UserID: userID, FromDate: from, ToDate: to, RowLimit: int32(limit)} //nolint:gosec // a fixed page size
+func (r *Repository) PreviewCandidates(ctx context.Context, booksID int64, from, to time.Time, after *app.PendingKey, limit int) ([]uuid.UUID, *app.PendingKey, error) {
+	params := PreviewCandidatesParams{BooksID: booksID, FromDate: from, ToDate: to, RowLimit: int32(limit)} //nolint:gosec // a fixed page size
 	if after != nil {
 		params.AfterDate, params.AfterID = &after.Date, nullUUID(after.ID)
 	}

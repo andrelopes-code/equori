@@ -91,20 +91,20 @@ func PreviewDigest(p Preview) string {
 }
 
 // NewWrite builds a Write or Destructive tool with a preview of its effect.
-func NewWrite[In, Out any](s Spec, preview func(ctx context.Context, userID int64, in In) (Preview, error),
-	h func(ctx context.Context, userID int64, in In) (Out, error)) Tool {
+func NewWrite[In, Out any](s Spec, preview func(ctx context.Context, booksID int64, in In) (Preview, error),
+	h func(ctx context.Context, booksID int64, in In) (Out, error)) Tool {
 	if s.Effect == ReadOnly {
 		panic(fmt.Sprintf("tool %s: a read-only tool has no preview", s.Name))
 	}
 
 	t := New(s, h)
-	t.preview = func(ctx context.Context, userID int64, args []byte) (Preview, error) {
+	t.preview = func(ctx context.Context, booksID int64, args []byte) (Preview, error) {
 		var v In
 		if err := json.Unmarshal(args, &v); err != nil {
 			return Preview{}, invalidArguments(err.Error())
 		}
 
-		return preview(ctx, userID, v)
+		return preview(ctx, booksID, v)
 	}
 
 	return t
@@ -119,9 +119,9 @@ func (r *Registry) Preview(ctx context.Context, name string, args json.RawMessag
 		return Preview{}, Result{}, fmt.Errorf("preview tool %s: %w", name, ErrUnknownTool)
 	}
 
-	userID, ok := auth.UserID(ctx)
+	booksID, ok := auth.BooksID(ctx)
 	if !ok {
-		return Preview{}, Result{}, fmt.Errorf("preview tool %s: %w", name, ErrNoUser)
+		return Preview{}, Result{}, fmt.Errorf("preview tool %s: %w", name, ErrNoBooks)
 	}
 
 	if !e.tool.HasPreview() {
@@ -130,19 +130,19 @@ func (r *Registry) Preview(ctx context.Context, name string, args json.RawMessag
 
 	start := time.Now()
 
-	p, res, outcome, err := r.preview(ctx, e, userID, args)
+	p, res, outcome, err := r.preview(ctx, e, booksID, args)
 	if err != nil {
 		outcome = "canceled"
 	}
 
-	r.log.LogAttrs(ctx, slog.LevelInfo, "tool preview", slog.String("tool", name), slog.Int64("user_id", userID),
+	r.log.LogAttrs(ctx, slog.LevelInfo, "tool preview", slog.String("tool", name), slog.Int64("books_id", booksID),
 		slog.String("effect", e.tool.spec.Effect.String()), slog.String("outcome", outcome),
 		slog.Duration("duration", time.Since(start)), slog.Int("bytes", len(res.Content)))
 
 	return p, res, err
 }
 
-func (r *Registry) preview(ctx context.Context, e entry, userID int64, args json.RawMessage) (Preview, Result, string, error) {
+func (r *Registry) preview(ctx context.Context, e entry, booksID int64, args json.RawMessage) (Preview, Result, string, error) {
 	name := e.tool.spec.Name
 
 	args, bad := e.tool.validate(args)
@@ -151,7 +151,7 @@ func (r *Registry) preview(ctx context.Context, e entry, userID int64, args json
 		return Preview{}, res, outcome, err
 	}
 
-	p, err := e.tool.preview(ctx, userID, args)
+	p, err := e.tool.preview(ctx, booksID, args)
 	if err != nil {
 		res, outcome, err := r.mapError(ctx, e, err)
 		return Preview{}, res, outcome, err

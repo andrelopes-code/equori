@@ -18,7 +18,7 @@ import (
 )
 
 // Names returns the names of the user's categories and payees by ID.
-type Names func(ctx context.Context, userID int64) (categories, payees map[uuid.UUID]string, err error)
+type Names func(ctx context.Context, booksID int64) (categories, payees map[uuid.UUID]string, err error)
 
 func Tools(svc *app.Service, names Names, today func() time.Time) []tool.Tool {
 	return []tool.Tool{listRules(svc, names), explainCategorization(svc), manageRule(svc, names, today)}
@@ -129,12 +129,12 @@ func actionsText(as []domain.Action, categories, payees map[uuid.UUID]string) st
 }
 
 // allRules reads every rule in priority order.
-func allRules(ctx context.Context, svc *app.Service, userID int64) ([]domain.Rule, error) {
+func allRules(ctx context.Context, svc *app.Service, booksID int64) ([]domain.Rule, error) {
 	var all []domain.Rule
 
 	p := page.Request[app.RuleKey]{Limit: page.MaxLimit}
 	for {
-		rows, next, err := svc.ListRules(ctx, userID, p)
+		rows, next, err := svc.ListRules(ctx, booksID, p)
 		if err != nil {
 			return nil, err
 		}

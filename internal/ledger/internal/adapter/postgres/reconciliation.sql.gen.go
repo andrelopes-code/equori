@@ -15,19 +15,19 @@ import (
 const deleteReconciliationsFrom = `-- name: DeleteReconciliationsFrom :exec
 DELETE FROM ledger_reconciliation
 WHERE
-    user_id = $1
+    books_id = $1
     AND account_id = $2
     AND date >= $3::date
 `
 
 type DeleteReconciliationsFromParams struct {
-	UserID    int64
+	BooksID   int64
 	AccountID uuid.UUID
 	FromDate  time.Time
 }
 
 func (q *Queries) DeleteReconciliationsFrom(ctx context.Context, arg DeleteReconciliationsFromParams) error {
-	_, err := q.db.Exec(ctx, deleteReconciliationsFrom, arg.UserID, arg.AccountID, arg.FromDate)
+	_, err := q.db.Exec(ctx, deleteReconciliationsFrom, arg.BooksID, arg.AccountID, arg.FromDate)
 	return err
 }
 
@@ -47,7 +47,7 @@ SELECT
 FROM
     ledger_posting
 WHERE
-    user_id = $1
+    books_id = $1
     AND account_id = $2
     AND NOT voided
 ORDER BY
@@ -57,12 +57,12 @@ LIMIT
 `
 
 type FirstSettledOnParams struct {
-	UserID    int64
+	BooksID   int64
 	AccountID uuid.UUID
 }
 
 func (q *Queries) FirstSettledOn(ctx context.Context, arg FirstSettledOnParams) (time.Time, error) {
-	row := q.db.QueryRow(ctx, firstSettledOn, arg.UserID, arg.AccountID)
+	row := q.db.QueryRow(ctx, firstSettledOn, arg.BooksID, arg.AccountID)
 	var column_1 time.Time
 	err := row.Scan(&column_1)
 	return column_1, err
@@ -70,7 +70,7 @@ func (q *Queries) FirstSettledOn(ctx context.Context, arg FirstSettledOnParams) 
 
 const getBalanceAssertion = `-- name: GetBalanceAssertion :one
 SELECT
-    a.id, a.user_id, a.account_id, a.date, a.amount, a.source, a.recorded_at,
+    a.id, a.books_id, a.account_id, a.date, a.amount, a.source, a.recorded_at,
     EXISTS (
         SELECT
             1
@@ -82,18 +82,18 @@ SELECT
 FROM
     ledger_balance_assertion a
 WHERE
-    a.user_id = $1
+    a.books_id = $1
     AND a.id = $2
 `
 
 type GetBalanceAssertionParams struct {
-	UserID int64
-	ID     uuid.UUID
+	BooksID int64
+	ID      uuid.UUID
 }
 
 type GetBalanceAssertionRow struct {
 	ID         uuid.UUID
-	UserID     int64
+	BooksID    int64
 	AccountID  uuid.UUID
 	Date       time.Time
 	Amount     int64
@@ -103,11 +103,11 @@ type GetBalanceAssertionRow struct {
 }
 
 func (q *Queries) GetBalanceAssertion(ctx context.Context, arg GetBalanceAssertionParams) (GetBalanceAssertionRow, error) {
-	row := q.db.QueryRow(ctx, getBalanceAssertion, arg.UserID, arg.ID)
+	row := q.db.QueryRow(ctx, getBalanceAssertion, arg.BooksID, arg.ID)
 	var i GetBalanceAssertionRow
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.AccountID,
 		&i.Date,
 		&i.Amount,
@@ -120,15 +120,15 @@ func (q *Queries) GetBalanceAssertion(ctx context.Context, arg GetBalanceAsserti
 
 const insertBalanceAssertion = `-- name: InsertBalanceAssertion :one
 INSERT INTO
-    ledger_balance_assertion (user_id, account_id, date, amount, source)
+    ledger_balance_assertion (books_id, account_id, date, amount, source)
 VALUES
     ($1, $2, $3, $4, $5)
 RETURNING
-    id, user_id, account_id, date, amount, source, recorded_at
+    id, books_id, account_id, date, amount, source, recorded_at
 `
 
 type InsertBalanceAssertionParams struct {
-	UserID    int64
+	BooksID   int64
 	AccountID uuid.UUID
 	Date      time.Time
 	Amount    int64
@@ -137,7 +137,7 @@ type InsertBalanceAssertionParams struct {
 
 func (q *Queries) InsertBalanceAssertion(ctx context.Context, arg InsertBalanceAssertionParams) (LedgerBalanceAssertion, error) {
 	row := q.db.QueryRow(ctx, insertBalanceAssertion,
-		arg.UserID,
+		arg.BooksID,
 		arg.AccountID,
 		arg.Date,
 		arg.Amount,
@@ -146,7 +146,7 @@ func (q *Queries) InsertBalanceAssertion(ctx context.Context, arg InsertBalanceA
 	var i LedgerBalanceAssertion
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.AccountID,
 		&i.Date,
 		&i.Amount,
@@ -159,7 +159,7 @@ func (q *Queries) InsertBalanceAssertion(ctx context.Context, arg InsertBalanceA
 const insertReconciliation = `-- name: InsertReconciliation :exec
 INSERT INTO
     ledger_reconciliation (
-        user_id,
+        books_id,
         account_id,
         date,
         assertion_id,
@@ -182,7 +182,7 @@ VALUES
 `
 
 type InsertReconciliationParams struct {
-	UserID                  int64
+	BooksID                 int64
 	AccountID               uuid.UUID
 	Date                    time.Time
 	AssertionID             uuid.NullUUID
@@ -194,7 +194,7 @@ type InsertReconciliationParams struct {
 
 func (q *Queries) InsertReconciliation(ctx context.Context, arg InsertReconciliationParams) error {
 	_, err := q.db.Exec(ctx, insertReconciliation,
-		arg.UserID,
+		arg.BooksID,
 		arg.AccountID,
 		arg.Date,
 		arg.AssertionID,
@@ -212,7 +212,7 @@ SELECT
 FROM
     ledger_reconciliation
 WHERE
-    user_id = $1
+    books_id = $1
     AND account_id = $2
 ORDER BY
     date DESC
@@ -221,12 +221,12 @@ LIMIT
 `
 
 type LastReconciledOnParams struct {
-	UserID    int64
+	BooksID   int64
 	AccountID uuid.UUID
 }
 
 func (q *Queries) LastReconciledOn(ctx context.Context, arg LastReconciledOnParams) (time.Time, error) {
-	row := q.db.QueryRow(ctx, lastReconciledOn, arg.UserID, arg.AccountID)
+	row := q.db.QueryRow(ctx, lastReconciledOn, arg.BooksID, arg.AccountID)
 	var date time.Time
 	err := row.Scan(&date)
 	return date, err
@@ -234,7 +234,7 @@ func (q *Queries) LastReconciledOn(ctx context.Context, arg LastReconciledOnPara
 
 const listBalanceAssertionPage = `-- name: ListBalanceAssertionPage :many
 SELECT
-    a.id, a.user_id, a.account_id, a.date, a.amount, a.source, a.recorded_at,
+    a.id, a.books_id, a.account_id, a.date, a.amount, a.source, a.recorded_at,
     EXISTS (
         SELECT
             1
@@ -246,7 +246,7 @@ SELECT
 FROM
     ledger_balance_assertion a
 WHERE
-    a.user_id = $1
+    a.books_id = $1
     AND a.account_id = $2
     AND (
         $3::date IS NULL
@@ -260,7 +260,7 @@ LIMIT
 `
 
 type ListBalanceAssertionPageParams struct {
-	UserID    int64
+	BooksID   int64
 	AccountID uuid.UUID
 	AfterDate *time.Time
 	AfterID   uuid.NullUUID
@@ -269,7 +269,7 @@ type ListBalanceAssertionPageParams struct {
 
 type ListBalanceAssertionPageRow struct {
 	ID         uuid.UUID
-	UserID     int64
+	BooksID    int64
 	AccountID  uuid.UUID
 	Date       time.Time
 	Amount     int64
@@ -280,7 +280,7 @@ type ListBalanceAssertionPageRow struct {
 
 func (q *Queries) ListBalanceAssertionPage(ctx context.Context, arg ListBalanceAssertionPageParams) ([]ListBalanceAssertionPageRow, error) {
 	rows, err := q.db.Query(ctx, listBalanceAssertionPage,
-		arg.UserID,
+		arg.BooksID,
 		arg.AccountID,
 		arg.AfterDate,
 		arg.AfterID,
@@ -295,7 +295,7 @@ func (q *Queries) ListBalanceAssertionPage(ctx context.Context, arg ListBalanceA
 		var i ListBalanceAssertionPageRow
 		if err := rows.Scan(
 			&i.ID,
-			&i.UserID,
+			&i.BooksID,
 			&i.AccountID,
 			&i.Date,
 			&i.Amount,
@@ -315,7 +315,7 @@ func (q *Queries) ListBalanceAssertionPage(ctx context.Context, arg ListBalanceA
 
 const listBalanceAssertions = `-- name: ListBalanceAssertions :many
 SELECT
-    a.id, a.user_id, a.account_id, a.date, a.amount, a.source, a.recorded_at,
+    a.id, a.books_id, a.account_id, a.date, a.amount, a.source, a.recorded_at,
     EXISTS (
         SELECT
             1
@@ -327,7 +327,7 @@ SELECT
 FROM
     ledger_balance_assertion a
 WHERE
-    a.user_id = $1
+    a.books_id = $1
     AND a.account_id = $2
 ORDER BY
     a.date DESC,
@@ -335,13 +335,13 @@ ORDER BY
 `
 
 type ListBalanceAssertionsParams struct {
-	UserID    int64
+	BooksID   int64
 	AccountID uuid.UUID
 }
 
 type ListBalanceAssertionsRow struct {
 	ID         uuid.UUID
-	UserID     int64
+	BooksID    int64
 	AccountID  uuid.UUID
 	Date       time.Time
 	Amount     int64
@@ -351,7 +351,7 @@ type ListBalanceAssertionsRow struct {
 }
 
 func (q *Queries) ListBalanceAssertions(ctx context.Context, arg ListBalanceAssertionsParams) ([]ListBalanceAssertionsRow, error) {
-	rows, err := q.db.Query(ctx, listBalanceAssertions, arg.UserID, arg.AccountID)
+	rows, err := q.db.Query(ctx, listBalanceAssertions, arg.BooksID, arg.AccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -361,7 +361,7 @@ func (q *Queries) ListBalanceAssertions(ctx context.Context, arg ListBalanceAsse
 		var i ListBalanceAssertionsRow
 		if err := rows.Scan(
 			&i.ID,
-			&i.UserID,
+			&i.BooksID,
 			&i.AccountID,
 			&i.Date,
 			&i.Amount,
@@ -384,7 +384,7 @@ UPDATE ledger_posting
 SET
     status = 'reconciled'
 WHERE
-    user_id = $1
+    books_id = $1
     AND account_id = $2
     AND NOT voided
     AND status <> 'reconciled'
@@ -392,13 +392,13 @@ WHERE
 `
 
 type ReconcileAccountPostingsParams struct {
-	UserID    int64
+	BooksID   int64
 	AccountID uuid.UUID
 	OnDate    time.Time
 }
 
 func (q *Queries) ReconcileAccountPostings(ctx context.Context, arg ReconcileAccountPostingsParams) error {
-	_, err := q.db.Exec(ctx, reconcileAccountPostings, arg.UserID, arg.AccountID, arg.OnDate)
+	_, err := q.db.Exec(ctx, reconcileAccountPostings, arg.BooksID, arg.AccountID, arg.OnDate)
 	return err
 }
 
@@ -407,19 +407,19 @@ UPDATE ledger_posting
 SET
     status = 'reconciled'
 WHERE
-    user_id = $1
+    books_id = $1
     AND statement_id = $2
     AND NOT voided
     AND status <> 'reconciled'
 `
 
 type ReconcileStatementPostingsParams struct {
-	UserID      int64
+	BooksID     int64
 	StatementID uuid.NullUUID
 }
 
 func (q *Queries) ReconcileStatementPostings(ctx context.Context, arg ReconcileStatementPostingsParams) error {
-	_, err := q.db.Exec(ctx, reconcileStatementPostings, arg.UserID, arg.StatementID)
+	_, err := q.db.Exec(ctx, reconcileStatementPostings, arg.BooksID, arg.StatementID)
 	return err
 }
 
@@ -428,7 +428,7 @@ UPDATE ledger_posting p
 SET
     status = 'cleared'
 WHERE
-    p.user_id = $1
+    p.books_id = $1
     AND p.account_id = $2
     AND p.status = 'reconciled'
     AND (
@@ -439,7 +439,7 @@ WHERE
             FROM
                 ledger_reconciliation r
             WHERE
-                r.user_id = $1
+                r.books_id = $1
                 AND r.account_id = $2
                 AND r.date >= $3::date
         )
@@ -447,13 +447,13 @@ WHERE
 `
 
 type UnreconcileAccountPostingsParams struct {
-	UserID    int64
+	BooksID   int64
 	AccountID uuid.UUID
 	FromDate  time.Time
 }
 
 // A statement reconciliation is released whole: its postings may settle before from_date.
 func (q *Queries) UnreconcileAccountPostings(ctx context.Context, arg UnreconcileAccountPostingsParams) error {
-	_, err := q.db.Exec(ctx, unreconcileAccountPostings, arg.UserID, arg.AccountID, arg.FromDate)
+	_, err := q.db.Exec(ctx, unreconcileAccountPostings, arg.BooksID, arg.AccountID, arg.FromDate)
 	return err
 }

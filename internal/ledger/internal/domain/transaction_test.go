@@ -30,7 +30,7 @@ func newTxFixture(t *testing.T) txFixture {
 
 func (f txFixture) tx(postings ...Posting) Transaction {
 	return Transaction{
-		UserID:            1,
+		BooksID:           1,
 		Date:              day("2026-10-14"),
 		Description:       "Supermarket",
 		BalancingCurrency: "BRL",

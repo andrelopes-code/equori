@@ -16,8 +16,8 @@ type writer struct {
 	layout string
 }
 
-func (s *Service) writerFor(ctx context.Context, userID int64) (writer, error) {
-	l, err := s.profiles.Profile(ctx, userID)
+func (s *Service) writerFor(ctx context.Context, booksID int64) (writer, error) {
+	l, err := s.profiles.Profile(ctx, booksID)
 	if err != nil {
 		return writer{}, fmt.Errorf("read profile: %w", err)
 	}

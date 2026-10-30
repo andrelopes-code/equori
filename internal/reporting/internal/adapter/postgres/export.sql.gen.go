@@ -20,7 +20,7 @@ SELECT
 FROM
     reporting_export
 WHERE
-    user_id = $1
+    books_id = $1
 `
 
 type ExportContentRow struct {
@@ -29,8 +29,8 @@ type ExportContentRow struct {
 	Content     []byte
 }
 
-func (q *Queries) ExportContent(ctx context.Context, userID int64) (ExportContentRow, error) {
-	row := q.db.QueryRow(ctx, exportContent, userID)
+func (q *Queries) ExportContent(ctx context.Context, booksID int64) (ExportContentRow, error) {
+	row := q.db.QueryRow(ctx, exportContent, booksID)
 	var i ExportContentRow
 	err := row.Scan(&i.Status, &i.RequestedAt, &i.Content)
 	return i, err
@@ -46,7 +46,7 @@ SET
     problem = $5,
     archive_version = $6
 WHERE
-    user_id = $7
+    books_id = $7
     AND id = $8
     AND status = 'pending'
 `
@@ -58,7 +58,7 @@ type FinishExportParams struct {
 	Sha256         []byte
 	Problem        *string
 	ArchiveVersion *int32
-	UserID         int64
+	BooksID        int64
 	ID             uuid.UUID
 }
 
@@ -70,7 +70,7 @@ func (q *Queries) FinishExport(ctx context.Context, arg FinishExportParams) erro
 		arg.Sha256,
 		arg.Problem,
 		arg.ArchiveVersion,
-		arg.UserID,
+		arg.BooksID,
 		arg.ID,
 	)
 	return err
@@ -89,7 +89,7 @@ SELECT
 FROM
     reporting_export
 WHERE
-    user_id = $1
+    books_id = $1
 `
 
 type GetExportRow struct {
@@ -103,8 +103,8 @@ type GetExportRow struct {
 	ArchiveVersion *int32
 }
 
-func (q *Queries) GetExport(ctx context.Context, userID int64) (GetExportRow, error) {
-	row := q.db.QueryRow(ctx, getExport, userID)
+func (q *Queries) GetExport(ctx context.Context, booksID int64) (GetExportRow, error) {
+	row := q.db.QueryRow(ctx, getExport, booksID)
 	var i GetExportRow
 	err := row.Scan(
 		&i.ID,
@@ -121,10 +121,10 @@ func (q *Queries) GetExport(ctx context.Context, userID int64) (GetExportRow, er
 
 const requestExport = `-- name: RequestExport :one
 INSERT INTO
-    reporting_export (user_id, status, requested_at)
+    reporting_export (books_id, status, requested_at)
 VALUES
     ($1, 'pending', $2)
-ON CONFLICT (user_id) DO UPDATE
+ON CONFLICT (books_id) DO UPDATE
 SET
     id = uuidv7(),
     status = 'pending',
@@ -143,7 +143,7 @@ RETURNING
 `
 
 type RequestExportParams struct {
-	UserID      int64
+	BooksID     int64
 	RequestedAt time.Time
 }
 
@@ -154,7 +154,7 @@ type RequestExportRow struct {
 }
 
 func (q *Queries) RequestExport(ctx context.Context, arg RequestExportParams) (RequestExportRow, error) {
-	row := q.db.QueryRow(ctx, requestExport, arg.UserID, arg.RequestedAt)
+	row := q.db.QueryRow(ctx, requestExport, arg.BooksID, arg.RequestedAt)
 	var i RequestExportRow
 	err := row.Scan(&i.ID, &i.Status, &i.RequestedAt)
 	return i, err

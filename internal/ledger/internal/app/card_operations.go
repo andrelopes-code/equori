@@ -35,14 +35,14 @@ func validationError(field, message string) error {
 }
 
 // InstallmentPurchase records the full expense now and one card charge per statement (S06, S07, DM2, DM3).
-func (s *Service) InstallmentPurchase(ctx context.Context, userID int64, in InstallmentPurchaseInput) (domain.Transaction, uuid.UUID, error) {
+func (s *Service) InstallmentPurchase(ctx context.Context, booksID int64, in InstallmentPurchaseInput) (domain.Transaction, uuid.UUID, error) {
 	var (
 		created domain.Transaction
 		planID  uuid.UUID
 	)
 	err := s.repo.InTx(ctx, func(r Repository) error {
 		var err error
-		created, planID, err = s.installmentPurchase(ctx, r, userID, in)
+		created, planID, err = s.installmentPurchase(ctx, r, booksID, in)
 
 		return err
 	})
@@ -51,7 +51,7 @@ func (s *Service) InstallmentPurchase(ctx context.Context, userID int64, in Inst
 }
 
 // installmentPurchase records the purchase and its plan inside the caller's database transaction.
-func (s *Service) installmentPurchase(ctx context.Context, r Repository, userID int64, in InstallmentPurchaseInput) (domain.Transaction, uuid.UUID, error) {
+func (s *Service) installmentPurchase(ctx context.Context, r Repository, booksID int64, in InstallmentPurchaseInput) (domain.Transaction, uuid.UUID, error) {
 	if in.Count < 2 || in.Count > maxInstallments {
 		return domain.Transaction{}, uuid.Nil, validationError("installment_count", "must be between 2 and 420")
 	}
@@ -62,7 +62,7 @@ func (s *Service) installmentPurchase(ctx context.Context, r Repository, userID 
 
 	planID := uuid.Must(uuid.NewV7())
 
-	card, err := r.Account(ctx, userID, in.CardAccountID)
+	card, err := r.Account(ctx, booksID, in.CardAccountID)
 	if err != nil {
 		return domain.Transaction{}, uuid.Nil, err
 	}
@@ -86,14 +86,14 @@ func (s *Service) installmentPurchase(ctx context.Context, r Repository, userID 
 		return domain.Transaction{}, uuid.Nil, err
 	}
 
-	first, err := s.firstStatement(ctx, r, userID, card.ID, in)
+	first, err := s.firstStatement(ctx, r, booksID, card.ID, in)
 	if err != nil {
 		return domain.Transaction{}, uuid.Nil, err
 	}
 
 	postings := append([]domain.Posting{}, in.Splits...)
 	if !interest.IsZero() {
-		interestAccount, err := r.SystemAccount(ctx, userID, domain.RoleInterest)
+		interestAccount, err := r.SystemAccount(ctx, booksID, domain.RoleInterest)
 		if err != nil {
 			return domain.Transaction{}, uuid.Nil, err
 		}
@@ -116,7 +116,7 @@ func (s *Service) installmentPurchase(ctx context.Context, r Repository, userID 
 	}
 
 	created, err := s.insert(ctx, r, domain.Transaction{
-		UserID: userID, Date: in.Date, Description: in.Description, PayeeID: in.PayeeID, Tags: in.Tags, Postings: postings,
+		BooksID: booksID, Date: in.Date, Description: in.Description, PayeeID: in.PayeeID, Tags: in.Tags, Postings: postings,
 		Origin: in.Origin,
 	})
 	if err != nil {
@@ -124,7 +124,7 @@ func (s *Service) installmentPurchase(ctx context.Context, r Repository, userID 
 	}
 
 	if err := r.InsertPlan(ctx, domain.InstallmentPlan{
-		ID: planID, UserID: userID, AccountID: card.ID, OriginTransactionID: created.ID, Kind: domain.PlanPurchase,
+		ID: planID, BooksID: booksID, AccountID: card.ID, OriginTransactionID: created.ID, Kind: domain.PlanPurchase,
 		Count: in.Count, Principal: principal, Interest: interest, FirstStatementID: firstCardStatement(created, card.ID),
 	}); err != nil {
 		return domain.Transaction{}, uuid.Nil, err
@@ -182,12 +182,12 @@ func installmentParts(total money.Money, in InstallmentPurchaseInput) ([]money.M
 	return in.Amounts, nil
 }
 
-func (s *Service) firstStatement(ctx context.Context, r Repository, userID int64, cardID uuid.UUID, in InstallmentPurchaseInput) (domain.ReferenceMonth, error) {
+func (s *Service) firstStatement(ctx context.Context, r Repository, booksID int64, cardID uuid.UUID, in InstallmentPurchaseInput) (domain.ReferenceMonth, error) {
 	if in.FirstStatement != nil {
 		return *in.FirstStatement, nil
 	}
 
-	rules, err := r.BillingRules(ctx, userID, cardID)
+	rules, err := r.BillingRules(ctx, booksID, cardID)
 	if err != nil {
 		return domain.ReferenceMonth{}, err
 	}
@@ -211,13 +211,13 @@ func firstCardStatement(t domain.Transaction, cardID uuid.UUID) uuid.UUID {
 }
 
 // Commitment is the sum of installments billed on the statement of month that has not closed yet.
-func (s *Service) Commitment(ctx context.Context, userID int64, accountID uuid.UUID, month domain.ReferenceMonth) (money.Money, error) {
-	a, err := s.card(ctx, userID, accountID)
+func (s *Service) Commitment(ctx context.Context, booksID int64, accountID uuid.UUID, month domain.ReferenceMonth) (money.Money, error) {
+	a, err := s.card(ctx, booksID, accountID)
 	if err != nil {
 		return money.Money{}, err
 	}
 
-	total, err := s.repo.CommittedInstallments(ctx, userID, accountID, month, s.clock.Today())
+	total, err := s.repo.CommittedInstallments(ctx, booksID, accountID, month, s.clock.Today())
 	if err != nil {
 		return money.Money{}, err
 	}
@@ -227,13 +227,13 @@ func (s *Service) Commitment(ctx context.Context, userID int64, accountID uuid.U
 
 // PriorInstallments sums the installments billed on the statement of month of purchases booked
 // before month: the accrual view counted them in an earlier month (budget plan amendment A129).
-func (s *Service) PriorInstallments(ctx context.Context, userID int64, accountID uuid.UUID, month domain.ReferenceMonth) (money.Money, error) {
-	a, err := s.card(ctx, userID, accountID)
+func (s *Service) PriorInstallments(ctx context.Context, booksID int64, accountID uuid.UUID, month domain.ReferenceMonth) (money.Money, error) {
+	a, err := s.card(ctx, booksID, accountID)
 	if err != nil {
 		return money.Money{}, err
 	}
 
-	total, err := s.repo.PriorInstallments(ctx, userID, accountID, month)
+	total, err := s.repo.PriorInstallments(ctx, booksID, accountID, month)
 	if err != nil {
 		return money.Money{}, err
 	}
@@ -242,18 +242,18 @@ func (s *Service) PriorInstallments(ctx context.Context, userID int64, accountID
 }
 
 // statementView loads a statement with its derived summary inside r.
-func (s *Service) statementView(ctx context.Context, r Repository, userID int64, statementID uuid.UUID) (StatementView, domain.Account, error) {
-	accountID, err := r.StatementAccount(ctx, userID, statementID)
+func (s *Service) statementView(ctx context.Context, r Repository, booksID int64, statementID uuid.UUID) (StatementView, domain.Account, error) {
+	accountID, err := r.StatementAccount(ctx, booksID, statementID)
 	if err != nil {
 		return StatementView{}, domain.Account{}, err
 	}
 
-	card, err := r.Account(ctx, userID, accountID)
+	card, err := r.Account(ctx, booksID, accountID)
 	if err != nil {
 		return StatementView{}, domain.Account{}, err
 	}
 
-	views, err := s.statementSummaries(ctx, r, userID, accountID)
+	views, err := s.statementSummaries(ctx, r, booksID, accountID)
 	if err != nil {
 		return StatementView{}, domain.Account{}, err
 	}
@@ -269,10 +269,10 @@ func (s *Service) statementView(ctx context.Context, r Repository, userID int64,
 
 // PayStatement moves amount from a balance account to the card (M08); the payment is billed
 // on the statement of its date's cycle and settles the statement (A89).
-func (s *Service) PayStatement(ctx context.Context, userID int64, statementID uuid.UUID, date time.Time, from uuid.UUID, amount money.Money) (domain.Transaction, error) {
+func (s *Service) PayStatement(ctx context.Context, booksID int64, statementID uuid.UUID, date time.Time, from uuid.UUID, amount money.Money) (domain.Transaction, error) {
 	var created domain.Transaction
 	err := s.repo.InTx(ctx, func(r Repository) error {
-		v, card, err := s.statementView(ctx, r, userID, statementID)
+		v, card, err := s.statementView(ctx, r, booksID, statementID)
 		if err != nil {
 			return err
 		}
@@ -283,13 +283,13 @@ func (s *Service) PayStatement(ctx context.Context, userID int64, statementID uu
 
 		ref := v.Input.Reference
 
-		w, err := s.writerFor(ctx, userID)
+		w, err := s.writerFor(ctx, booksID)
 		if err != nil {
 			return err
 		}
 
 		created, err = s.insert(ctx, r, domain.Transaction{
-			UserID: userID, Date: date, Description: fmt.Sprintf(w.StatementPayment, ref.String()),
+			BooksID: booksID, Date: date, Description: fmt.Sprintf(w.StatementPayment, ref.String()),
 			Postings: []domain.Posting{
 				{AccountID: card.ID, Amount: amount, CardRole: domain.RolePayment},
 				{AccountID: from, Amount: amount.Neg()},
@@ -304,7 +304,7 @@ func (s *Service) PayStatement(ctx context.Context, userID int64, statementID uu
 
 // FinanceStatement converts the unpaid amount of a closed statement into installments on
 // the following statements; interest is the installments' total minus the unpaid amount (S11).
-func (s *Service) FinanceStatement(ctx context.Context, userID int64, statementID uuid.UUID, date time.Time, count int, installment money.Money) (domain.Transaction, uuid.UUID, error) {
+func (s *Service) FinanceStatement(ctx context.Context, booksID int64, statementID uuid.UUID, date time.Time, count int, installment money.Money) (domain.Transaction, uuid.UUID, error) {
 	if count < 2 || count > maxInstallments {
 		return domain.Transaction{}, uuid.Nil, validationError("installment_count", "must be between 2 and 420")
 	}
@@ -312,7 +312,7 @@ func (s *Service) FinanceStatement(ctx context.Context, userID int64, statementI
 	var created domain.Transaction
 	planID := uuid.Must(uuid.NewV7())
 	err := s.repo.InTx(ctx, func(r Repository) error {
-		v, card, err := s.statementView(ctx, r, userID, statementID)
+		v, card, err := s.statementView(ctx, r, booksID, statementID)
 		if err != nil {
 			return err
 		}
@@ -350,7 +350,7 @@ func (s *Service) FinanceStatement(ctx context.Context, userID int64, statementI
 		}
 
 		if !interest.IsZero() {
-			interestAccount, err := r.SystemAccount(ctx, userID, domain.RoleInterest)
+			interestAccount, err := r.SystemAccount(ctx, booksID, domain.RoleInterest)
 			if err != nil {
 				return err
 			}
@@ -358,20 +358,20 @@ func (s *Service) FinanceStatement(ctx context.Context, userID int64, statementI
 			postings = append(postings, domain.Posting{AccountID: interestAccount.ID, Amount: interest})
 		}
 
-		w, err := s.writerFor(ctx, userID)
+		w, err := s.writerFor(ctx, booksID)
 		if err != nil {
 			return err
 		}
 
 		created, err = s.insert(ctx, r, domain.Transaction{
-			UserID: userID, Date: date, Description: fmt.Sprintf(w.StatementFinancing, ref.String()), Postings: postings,
+			BooksID: booksID, Date: date, Description: fmt.Sprintf(w.StatementFinancing, ref.String()), Postings: postings,
 		})
 		if err != nil {
 			return err
 		}
 
 		if err := r.InsertPlan(ctx, domain.InstallmentPlan{
-			ID: planID, UserID: userID, AccountID: card.ID, OriginTransactionID: created.ID, Kind: domain.PlanFinancing,
+			ID: planID, BooksID: booksID, AccountID: card.ID, OriginTransactionID: created.ID, Kind: domain.PlanFinancing,
 			Count: count, Principal: unpaid, Interest: interest, FirstStatementID: firstCardStatement(created, card.ID),
 		}); err != nil {
 			return err

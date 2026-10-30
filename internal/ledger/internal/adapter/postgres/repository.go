@@ -75,29 +75,29 @@ func notFound(err error) error {
 	return err
 }
 
-func (r *Repository) Settings(ctx context.Context, userID int64) (app.Settings, error) {
-	row, err := r.q.GetSettings(ctx, userID)
+func (r *Repository) Settings(ctx context.Context, booksID int64) (app.Settings, error) {
+	row, err := r.q.GetSettings(ctx, booksID)
 	if err != nil {
 		return app.Settings{}, notFound(err)
 	}
 
-	return app.Settings{UserID: row.UserID, BaseCurrency: money.Currency(row.BaseCurrency)}, nil
+	return app.Settings{BooksID: row.BooksID, BaseCurrency: money.Currency(row.BaseCurrency)}, nil
 }
 
 func (r *Repository) SaveSettings(ctx context.Context, s app.Settings) error {
-	return r.q.UpsertSettings(ctx, UpsertSettingsParams{UserID: s.UserID, BaseCurrency: string(s.BaseCurrency)})
+	return r.q.UpsertSettings(ctx, UpsertSettingsParams{BooksID: s.BooksID, BaseCurrency: string(s.BaseCurrency)})
 }
 
-func (r *Repository) SetSystemAccountsInstrument(ctx context.Context, userID int64, c money.Currency) error {
-	return r.q.SetSystemAccountsInstrument(ctx, SetSystemAccountsInstrumentParams{UserID: userID, Instrument: string(c)})
+func (r *Repository) SetSystemAccountsInstrument(ctx context.Context, booksID int64, c money.Currency) error {
+	return r.q.SetSystemAccountsInstrument(ctx, SetSystemAccountsInstrumentParams{BooksID: booksID, Instrument: string(c)})
 }
 
-func (r *Repository) CountTransactions(ctx context.Context, userID int64) (int64, error) {
-	return r.q.CountTransactions(ctx, userID)
+func (r *Repository) CountTransactions(ctx context.Context, booksID int64) (int64, error) {
+	return r.q.CountTransactions(ctx, booksID)
 }
 
 func (r *Repository) InsertInstitution(ctx context.Context, i app.Institution) (app.Institution, error) {
-	row, err := r.q.InsertInstitution(ctx, InsertInstitutionParams{UserID: i.UserID, Name: i.Name, Code: nullString(i.Code), IdentifierScheme: nullString(i.Identifier.Scheme), Identifier: nullString(i.Identifier.Value)})
+	row, err := r.q.InsertInstitution(ctx, InsertInstitutionParams{BooksID: i.BooksID, Name: i.Name, Code: nullString(i.Code), IdentifierScheme: nullString(i.Identifier.Scheme), Identifier: nullString(i.Identifier.Value)})
 	if err != nil {
 		return app.Institution{}, duplicateInstitution(err)
 	}
@@ -105,8 +105,8 @@ func (r *Repository) InsertInstitution(ctx context.Context, i app.Institution) (
 	return toInstitution(row), nil
 }
 
-func (r *Repository) SetInstitutionIdentifier(ctx context.Context, userID int64, id uuid.UUID, ident app.InstitutionIdentifier) (app.Institution, error) {
-	row, err := r.q.SetInstitutionIdentifier(ctx, SetInstitutionIdentifierParams{UserID: userID, ID: id, IdentifierScheme: nullString(ident.Scheme), Identifier: nullString(ident.Value)})
+func (r *Repository) SetInstitutionIdentifier(ctx context.Context, booksID int64, id uuid.UUID, ident app.InstitutionIdentifier) (app.Institution, error) {
+	row, err := r.q.SetInstitutionIdentifier(ctx, SetInstitutionIdentifierParams{BooksID: booksID, ID: id, IdentifierScheme: nullString(ident.Scheme), Identifier: nullString(ident.Value)})
 	if err != nil {
 		return app.Institution{}, duplicateInstitution(notFound(err))
 	}
@@ -123,8 +123,8 @@ func duplicateInstitution(err error) error {
 	return duplicate(err, "name")
 }
 
-func (r *Repository) ListInstitutions(ctx context.Context, userID int64, p page.Request[app.InstitutionKey]) ([]app.Institution, *app.InstitutionKey, error) {
-	params := ListInstitutionsParams{UserID: userID, RowLimit: rowLimit(p.Limit)}
+func (r *Repository) ListInstitutions(ctx context.Context, booksID int64, p page.Request[app.InstitutionKey]) ([]app.Institution, *app.InstitutionKey, error) {
+	params := ListInstitutionsParams{BooksID: booksID, RowLimit: rowLimit(p.Limit)}
 	if p.After != nil {
 		params.AfterName, params.AfterID = &p.After.Name, nullUUID(p.After.ID)
 	}
@@ -136,7 +136,7 @@ func (r *Repository) ListInstitutions(ctx context.Context, userID int64, p page.
 
 	items, next := pageOf(rows, p.Limit,
 		func(row ListInstitutionsRow) app.Institution {
-			return toInstitution(LedgerInstitution{ID: row.ID, UserID: row.UserID, Name: row.Name, Code: row.Code, IdentifierScheme: row.IdentifierScheme, Identifier: row.Identifier})
+			return toInstitution(LedgerInstitution{ID: row.ID, BooksID: row.BooksID, Name: row.Name, Code: row.Code, IdentifierScheme: row.IdentifierScheme, Identifier: row.Identifier})
 		},
 		func(row ListInstitutionsRow) app.InstitutionKey {
 			return app.InstitutionKey{Name: row.SortName, ID: row.ID}
@@ -146,7 +146,7 @@ func (r *Repository) ListInstitutions(ctx context.Context, userID int64, p page.
 }
 
 func (r *Repository) InsertPayee(ctx context.Context, p app.Payee) (app.Payee, error) {
-	row, err := r.q.InsertPayee(ctx, InsertPayeeParams{UserID: p.UserID, Name: p.Name})
+	row, err := r.q.InsertPayee(ctx, InsertPayeeParams{BooksID: p.BooksID, Name: p.Name})
 	if err != nil {
 		return app.Payee{}, duplicate(err, "name")
 	}
@@ -154,8 +154,8 @@ func (r *Repository) InsertPayee(ctx context.Context, p app.Payee) (app.Payee, e
 	return toPayee(row), nil
 }
 
-func (r *Repository) RenamePayee(ctx context.Context, userID int64, id uuid.UUID, name string) (app.Payee, error) {
-	row, err := r.q.RenamePayee(ctx, RenamePayeeParams{UserID: userID, ID: id, Name: name})
+func (r *Repository) RenamePayee(ctx context.Context, booksID int64, id uuid.UUID, name string) (app.Payee, error) {
+	row, err := r.q.RenamePayee(ctx, RenamePayeeParams{BooksID: booksID, ID: id, Name: name})
 	if err != nil {
 		return app.Payee{}, duplicate(notFound(err), "name")
 	}
@@ -163,12 +163,12 @@ func (r *Repository) RenamePayee(ctx context.Context, userID int64, id uuid.UUID
 	return toPayee(row), nil
 }
 
-func (r *Repository) TransactionsWithPayee(ctx context.Context, userID int64, payeeID uuid.UUID) ([]uuid.UUID, error) {
-	return r.q.TransactionsWithPayee(ctx, TransactionsWithPayeeParams{UserID: userID, PayeeID: nullUUID(payeeID)})
+func (r *Repository) TransactionsWithPayee(ctx context.Context, booksID int64, payeeID uuid.UUID) ([]uuid.UUID, error) {
+	return r.q.TransactionsWithPayee(ctx, TransactionsWithPayeeParams{BooksID: booksID, PayeeID: nullUUID(payeeID)})
 }
 
-func (r *Repository) TagUsage(ctx context.Context, userID int64, name string) (app.TagUsage, error) {
-	row, err := r.q.GetTagUsage(ctx, GetTagUsageParams{UserID: userID, Name: name})
+func (r *Repository) TagUsage(ctx context.Context, booksID int64, name string) (app.TagUsage, error) {
+	row, err := r.q.GetTagUsage(ctx, GetTagUsageParams{BooksID: booksID, Name: name})
 	if err != nil {
 		return app.TagUsage{}, notFound(err)
 	}
@@ -176,37 +176,37 @@ func (r *Repository) TagUsage(ctx context.Context, userID int64, name string) (a
 	return app.TagUsage{ID: row.ID, Name: row.Name, Transactions: int(row.Transactions)}, nil
 }
 
-func (r *Repository) RenameTag(ctx context.Context, userID int64, id uuid.UUID, name string) error {
-	_, err := r.q.RenameTag(ctx, RenameTagParams{UserID: userID, ID: id, NewName: name})
+func (r *Repository) RenameTag(ctx context.Context, booksID int64, id uuid.UUID, name string) error {
+	_, err := r.q.RenameTag(ctx, RenameTagParams{BooksID: booksID, ID: id, NewName: name})
 	return duplicate(notFound(err), "name")
 }
 
-func (r *Repository) TransactionsWithTag(ctx context.Context, userID int64, tagID uuid.UUID) ([]uuid.UUID, error) {
-	return r.q.TransactionsWithTag(ctx, TransactionsWithTagParams{UserID: userID, TagID: tagID})
+func (r *Repository) TransactionsWithTag(ctx context.Context, booksID int64, tagID uuid.UUID) ([]uuid.UUID, error) {
+	return r.q.TransactionsWithTag(ctx, TransactionsWithTagParams{BooksID: booksID, TagID: tagID})
 }
 
-func (r *Repository) MoveTagLinks(ctx context.Context, userID int64, from, into uuid.UUID) error {
-	return r.q.MoveTagLinks(ctx, MoveTagLinksParams{UserID: userID, FromID: from, IntoID: into})
+func (r *Repository) MoveTagLinks(ctx context.Context, booksID int64, from, into uuid.UUID) error {
+	return r.q.MoveTagLinks(ctx, MoveTagLinksParams{BooksID: booksID, FromID: from, IntoID: into})
 }
 
-func (r *Repository) DeleteTag(ctx context.Context, userID int64, id uuid.UUID) error {
-	return r.q.DeleteTag(ctx, DeleteTagParams{UserID: userID, ID: id})
+func (r *Repository) DeleteTag(ctx context.Context, booksID int64, id uuid.UUID) error {
+	return r.q.DeleteTag(ctx, DeleteTagParams{BooksID: booksID, ID: id})
 }
 
-func (r *Repository) RetirePayee(ctx context.Context, userID int64, from, into uuid.UUID) error {
-	if err := r.q.MoveVoidedPayee(ctx, MoveVoidedPayeeParams{UserID: userID, FromID: nullUUID(from), IntoID: nullUUID(into)}); err != nil {
+func (r *Repository) RetirePayee(ctx context.Context, booksID int64, from, into uuid.UUID) error {
+	if err := r.q.MoveVoidedPayee(ctx, MoveVoidedPayeeParams{BooksID: booksID, FromID: nullUUID(from), IntoID: nullUUID(into)}); err != nil {
 		return err
 	}
 
-	if err := r.q.MoveCounterpartyPayee(ctx, MoveCounterpartyPayeeParams{UserID: userID, FromID: nullUUID(from), IntoID: nullUUID(into)}); err != nil {
+	if err := r.q.MoveCounterpartyPayee(ctx, MoveCounterpartyPayeeParams{BooksID: booksID, FromID: nullUUID(from), IntoID: nullUUID(into)}); err != nil {
 		return err
 	}
 
-	return r.q.MarkPayeeMerged(ctx, MarkPayeeMergedParams{UserID: userID, FromID: from, IntoID: nullUUID(into)})
+	return r.q.MarkPayeeMerged(ctx, MarkPayeeMergedParams{BooksID: booksID, FromID: from, IntoID: nullUUID(into)})
 }
 
-func (r *Repository) Payee(ctx context.Context, userID int64, id uuid.UUID) (app.Payee, error) {
-	row, err := r.q.GetPayee(ctx, GetPayeeParams{UserID: userID, ID: id})
+func (r *Repository) Payee(ctx context.Context, booksID int64, id uuid.UUID) (app.Payee, error) {
+	row, err := r.q.GetPayee(ctx, GetPayeeParams{BooksID: booksID, ID: id})
 	if err != nil {
 		return app.Payee{}, notFound(err)
 	}
@@ -214,8 +214,8 @@ func (r *Repository) Payee(ctx context.Context, userID int64, id uuid.UUID) (app
 	return toPayee(row), nil
 }
 
-func (r *Repository) PayeeNames(ctx context.Context, userID int64, ids []uuid.UUID) (map[uuid.UUID]string, error) {
-	rows, err := r.q.PayeeNames(ctx, PayeeNamesParams{UserID: userID, Ids: ids})
+func (r *Repository) PayeeNames(ctx context.Context, booksID int64, ids []uuid.UUID) (map[uuid.UUID]string, error) {
+	rows, err := r.q.PayeeNames(ctx, PayeeNamesParams{BooksID: booksID, Ids: ids})
 	if err != nil {
 		return nil, err
 	}
@@ -228,8 +228,8 @@ func (r *Repository) PayeeNames(ctx context.Context, userID int64, ids []uuid.UU
 	return out, nil
 }
 
-func (r *Repository) ListPayees(ctx context.Context, userID int64, p page.Request[app.PayeeKey]) ([]app.Payee, *app.PayeeKey, error) {
-	params := ListPayeesParams{UserID: userID, RowLimit: rowLimit(p.Limit)}
+func (r *Repository) ListPayees(ctx context.Context, booksID int64, p page.Request[app.PayeeKey]) ([]app.Payee, *app.PayeeKey, error) {
+	params := ListPayeesParams{BooksID: booksID, RowLimit: rowLimit(p.Limit)}
 	if p.After != nil {
 		params.AfterName, params.AfterID = &p.After.Name, nullUUID(p.After.ID)
 	}
@@ -241,15 +241,15 @@ func (r *Repository) ListPayees(ctx context.Context, userID int64, p page.Reques
 
 	items, next := pageOf(rows, p.Limit,
 		func(row ListPayeesRow) app.Payee {
-			return toPayee(LedgerPayee{ID: row.ID, UserID: row.UserID, Name: row.Name})
+			return toPayee(LedgerPayee{ID: row.ID, BooksID: row.BooksID, Name: row.Name})
 		},
 		func(row ListPayeesRow) app.PayeeKey { return app.PayeeKey{Name: row.SortName, ID: row.ID} })
 
 	return items, next, nil
 }
 
-func (r *Repository) ListTags(ctx context.Context, userID int64, p page.Request[app.TagKey]) ([]string, *app.TagKey, error) {
-	params := ListTagsParams{UserID: userID, RowLimit: rowLimit(p.Limit)}
+func (r *Repository) ListTags(ctx context.Context, booksID int64, p page.Request[app.TagKey]) ([]string, *app.TagKey, error) {
+	params := ListTagsParams{BooksID: booksID, RowLimit: rowLimit(p.Limit)}
 	if p.After != nil {
 		params.AfterName = &p.After.Name
 	}
@@ -264,8 +264,8 @@ func (r *Repository) ListTags(ctx context.Context, userID int64, p page.Request[
 	return items, next, nil
 }
 
-func (r *Repository) Account(ctx context.Context, userID int64, id uuid.UUID) (domain.Account, error) {
-	row, err := r.q.GetAccount(ctx, GetAccountParams{UserID: userID, ID: id})
+func (r *Repository) Account(ctx context.Context, booksID int64, id uuid.UUID) (domain.Account, error) {
+	row, err := r.q.GetAccount(ctx, GetAccountParams{BooksID: booksID, ID: id})
 	if err != nil {
 		return domain.Account{}, notFound(err)
 	}
@@ -273,8 +273,8 @@ func (r *Repository) Account(ctx context.Context, userID int64, id uuid.UUID) (d
 	return toAccount(row), nil
 }
 
-func (r *Repository) Accounts(ctx context.Context, userID int64, ids []uuid.UUID) (map[uuid.UUID]domain.Account, error) {
-	rows, err := r.q.GetAccountsByIDs(ctx, GetAccountsByIDsParams{UserID: userID, Ids: ids})
+func (r *Repository) Accounts(ctx context.Context, booksID int64, ids []uuid.UUID) (map[uuid.UUID]domain.Account, error) {
+	rows, err := r.q.GetAccountsByIDs(ctx, GetAccountsByIDsParams{BooksID: booksID, Ids: ids})
 	if err != nil {
 		return nil, err
 	}
@@ -287,8 +287,8 @@ func (r *Repository) Accounts(ctx context.Context, userID int64, ids []uuid.UUID
 	return out, nil
 }
 
-func (r *Repository) ListAccounts(ctx context.Context, userID int64, p page.Request[app.AccountKey]) ([]domain.Account, *app.AccountKey, error) {
-	params := ListAccountsParams{UserID: userID, RowLimit: rowLimit(p.Limit)}
+func (r *Repository) ListAccounts(ctx context.Context, booksID int64, p page.Request[app.AccountKey]) ([]domain.Account, *app.AccountKey, error) {
+	params := ListAccountsParams{BooksID: booksID, RowLimit: rowLimit(p.Limit)}
 	if p.After != nil {
 		params.AfterClass, params.AfterName, params.AfterID = &p.After.Class, &p.After.Name, nullUUID(p.After.ID)
 	}
@@ -301,7 +301,7 @@ func (r *Repository) ListAccounts(ctx context.Context, userID int64, p page.Requ
 	items, next := pageOf(rows, p.Limit,
 		func(row ListAccountsRow) domain.Account {
 			return toAccount(LedgerAccount{
-				ID: row.ID, UserID: row.UserID, Name: row.Name, AccountClass: row.AccountClass, Kind: row.Kind,
+				ID: row.ID, BooksID: row.BooksID, Name: row.Name, AccountClass: row.AccountClass, Kind: row.Kind,
 				Instrument: row.Instrument, ParentID: row.ParentID, InstitutionID: row.InstitutionID,
 				CounterpartyPayeeID: row.CounterpartyPayeeID, OpenedOn: row.OpenedOn, ClosedOn: row.ClosedOn,
 				YieldMode: row.YieldMode, SystemRole: row.SystemRole, Color: row.Color, Icon: row.Icon,
@@ -318,7 +318,7 @@ func (r *Repository) ListAccounts(ctx context.Context, userID int64, p page.Requ
 
 func (r *Repository) InsertAccount(ctx context.Context, a domain.Account) (domain.Account, error) {
 	row, err := r.q.InsertAccount(ctx, InsertAccountParams{
-		UserID: a.UserID, Name: a.Name, AccountClass: string(a.Class), Kind: nullString(string(a.Kind)),
+		BooksID: a.BooksID, Name: a.Name, AccountClass: string(a.Class), Kind: nullString(string(a.Kind)),
 		Instrument: string(a.Instrument), ParentID: nullUUID(a.ParentID), InstitutionID: nullUUID(a.InstitutionID),
 		CounterpartyPayeeID: nullUUID(a.CounterpartyID), OpenedOn: a.OpenedOn, ClosedOn: a.ClosedOn,
 		YieldMode: string(a.YieldMode), SystemRole: nullString(string(a.SystemRole)),
@@ -333,7 +333,7 @@ func (r *Repository) InsertAccount(ctx context.Context, a domain.Account) (domai
 
 func (r *Repository) UpdateAccount(ctx context.Context, a domain.Account) (domain.Account, error) {
 	row, err := r.q.UpdateAccount(ctx, UpdateAccountParams{
-		UserID: a.UserID, ID: a.ID, Name: a.Name, ParentID: nullUUID(a.ParentID),
+		BooksID: a.BooksID, ID: a.ID, Name: a.Name, ParentID: nullUUID(a.ParentID),
 		InstitutionID: nullUUID(a.InstitutionID), ClosedOn: a.ClosedOn, YieldMode: string(a.YieldMode),
 		Color: nullColor(a.Color), Icon: nullString(a.Icon), ExcludedFromLiquidity: a.ExcludedFromLiquidity,
 	})
@@ -344,12 +344,12 @@ func (r *Repository) UpdateAccount(ctx context.Context, a domain.Account) (domai
 	return toAccount(row), nil
 }
 
-func (r *Repository) AccountHasChildren(ctx context.Context, userID int64, id uuid.UUID) (bool, error) {
-	return r.q.AccountHasChildren(ctx, AccountHasChildrenParams{UserID: userID, ParentID: nullUUID(id)})
+func (r *Repository) AccountHasChildren(ctx context.Context, booksID int64, id uuid.UUID) (bool, error) {
+	return r.q.AccountHasChildren(ctx, AccountHasChildrenParams{BooksID: booksID, ParentID: nullUUID(id)})
 }
 
-func (r *Repository) AccountTotals(ctx context.Context, userID int64, id uuid.UUID) (app.AccountTotals, error) {
-	row, err := r.q.AccountTotals(ctx, AccountTotalsParams{UserID: userID, AccountID: id})
+func (r *Repository) AccountTotals(ctx context.Context, booksID int64, id uuid.UUID) (app.AccountTotals, error) {
+	row, err := r.q.AccountTotals(ctx, AccountTotalsParams{BooksID: booksID, AccountID: id})
 	if err != nil {
 		return app.AccountTotals{}, err
 	}
@@ -357,34 +357,34 @@ func (r *Repository) AccountTotals(ctx context.Context, userID int64, id uuid.UU
 	return app.AccountTotals{Total: row.Total, LastBookedOn: row.LastBookedOn}, nil
 }
 
-func (r *Repository) AccountTransactionsBetween(ctx context.Context, userID int64, accountID uuid.UUID, from, to time.Time) ([]uuid.UUID, error) {
-	return r.q.AccountTransactionsBetween(ctx, AccountTransactionsBetweenParams{UserID: userID, AccountID: accountID, FromDate: from, ToDate: to})
+func (r *Repository) AccountTransactionsBetween(ctx context.Context, booksID int64, accountID uuid.UUID, from, to time.Time) ([]uuid.UUID, error) {
+	return r.q.AccountTransactionsBetween(ctx, AccountTransactionsBetweenParams{BooksID: booksID, AccountID: accountID, FromDate: from, ToDate: to})
 }
 
-func (r *Repository) TransactionsWithAccount(ctx context.Context, userID int64, accountID uuid.UUID) ([]uuid.UUID, error) {
-	return r.q.TransactionsWithAccount(ctx, TransactionsWithAccountParams{UserID: userID, AccountID: accountID})
+func (r *Repository) TransactionsWithAccount(ctx context.Context, booksID int64, accountID uuid.UUID) ([]uuid.UUID, error) {
+	return r.q.TransactionsWithAccount(ctx, TransactionsWithAccountParams{BooksID: booksID, AccountID: accountID})
 }
 
-func (r *Repository) Transaction(ctx context.Context, userID int64, id uuid.UUID) (domain.Transaction, error) {
-	row, err := r.q.GetTransaction(ctx, GetTransactionParams{UserID: userID, ID: id})
+func (r *Repository) Transaction(ctx context.Context, booksID int64, id uuid.UUID) (domain.Transaction, error) {
+	row, err := r.q.GetTransaction(ctx, GetTransactionParams{BooksID: booksID, ID: id})
 	if err != nil {
 		return domain.Transaction{}, notFound(err)
 	}
 
-	return r.complete(ctx, userID, row)
+	return r.complete(ctx, booksID, row)
 }
 
-func (r *Repository) LockTransaction(ctx context.Context, userID int64, id uuid.UUID) (domain.Transaction, error) {
-	row, err := r.q.GetTransactionForUpdate(ctx, GetTransactionForUpdateParams{UserID: userID, ID: id})
+func (r *Repository) LockTransaction(ctx context.Context, booksID int64, id uuid.UUID) (domain.Transaction, error) {
+	row, err := r.q.GetTransactionForUpdate(ctx, GetTransactionForUpdateParams{BooksID: booksID, ID: id})
 	if err != nil {
 		return domain.Transaction{}, notFound(err)
 	}
 
-	return r.complete(ctx, userID, row)
+	return r.complete(ctx, booksID, row)
 }
 
-func (r *Repository) complete(ctx context.Context, userID int64, row LedgerTransaction) (domain.Transaction, error) {
-	ts, err := r.completeAll(ctx, userID, []LedgerTransaction{row})
+func (r *Repository) complete(ctx context.Context, booksID int64, row LedgerTransaction) (domain.Transaction, error) {
+	ts, err := r.completeAll(ctx, booksID, []LedgerTransaction{row})
 	if err != nil {
 		return domain.Transaction{}, err
 	}
@@ -393,7 +393,7 @@ func (r *Repository) complete(ctx context.Context, userID int64, row LedgerTrans
 }
 
 // completeAll loads postings, tags and links of rows in three queries.
-func (r *Repository) completeAll(ctx context.Context, userID int64, rows []LedgerTransaction) ([]domain.Transaction, error) {
+func (r *Repository) completeAll(ctx context.Context, booksID int64, rows []LedgerTransaction) ([]domain.Transaction, error) {
 	ids := make([]uuid.UUID, len(rows))
 	byID := make(map[uuid.UUID]*domain.Transaction, len(rows))
 
@@ -404,7 +404,7 @@ func (r *Repository) completeAll(ctx context.Context, userID int64, rows []Ledge
 		byID[row.ID] = &out[i]
 	}
 
-	postings, err := r.q.ListPostings(ctx, ListPostingsParams{UserID: userID, TransactionIds: ids})
+	postings, err := r.q.ListPostings(ctx, ListPostingsParams{BooksID: booksID, TransactionIds: ids})
 	if err != nil {
 		return nil, err
 	}
@@ -419,7 +419,7 @@ func (r *Repository) completeAll(ctx context.Context, userID int64, rows []Ledge
 		t.Postings = append(t.Postings, posting)
 	}
 
-	tags, err := r.q.ListTransactionTags(ctx, ListTransactionTagsParams{UserID: userID, TransactionIds: ids})
+	tags, err := r.q.ListTransactionTags(ctx, ListTransactionTagsParams{BooksID: booksID, TransactionIds: ids})
 	if err != nil {
 		return nil, err
 	}
@@ -429,7 +429,7 @@ func (r *Repository) completeAll(ctx context.Context, userID int64, rows []Ledge
 		t.Tags = append(t.Tags, tag.Name)
 	}
 
-	links, err := r.q.ListLinksFrom(ctx, ListLinksFromParams{UserID: userID, TransactionIds: ids})
+	links, err := r.q.ListLinksFrom(ctx, ListLinksFromParams{BooksID: booksID, TransactionIds: ids})
 	if err != nil {
 		return nil, err
 	}
@@ -439,7 +439,7 @@ func (r *Repository) completeAll(ctx context.Context, userID int64, rows []Ledge
 		t.Links = append(t.Links, domain.Link{Type: domain.LinkType(l.LinkType), Target: l.ToTransactionID, Amount: storedAmount(l.Amount)})
 	}
 
-	trades, err := r.q.ListTrades(ctx, ListTradesParams{UserID: userID, TransactionIds: ids})
+	trades, err := r.q.ListTrades(ctx, ListTradesParams{BooksID: booksID, TransactionIds: ids})
 	if err != nil {
 		return nil, err
 	}
@@ -453,7 +453,7 @@ func (r *Repository) completeAll(ctx context.Context, userID int64, rows []Ledge
 		byID[row.TransactionID].Trade = &trade
 	}
 
-	incomes, err := r.q.ListInvestmentIncome(ctx, ListInvestmentIncomeParams{UserID: userID, TransactionIds: ids})
+	incomes, err := r.q.ListInvestmentIncome(ctx, ListInvestmentIncomeParams{BooksID: booksID, TransactionIds: ids})
 	if err != nil {
 		return nil, err
 	}
@@ -484,12 +484,12 @@ func (r *Repository) InsertTransaction(ctx context.Context, t domain.Transaction
 		return domain.Transaction{}, err
 	}
 
-	return r.Transaction(ctx, t.UserID, t.ID)
+	return r.Transaction(ctx, t.BooksID, t.ID)
 }
 
 func (r *Repository) InsertTransactionRows(ctx context.Context, t domain.Transaction) error {
 	_, err := r.q.InsertTransaction(ctx, InsertTransactionParams{
-		ID: t.ID, UserID: t.UserID, Date: t.Date, Description: t.Description, PayeeID: nullUUID(t.PayeeID),
+		ID: t.ID, BooksID: t.BooksID, Date: t.Date, Description: t.Description, PayeeID: nullUUID(t.PayeeID),
 		BalancingCurrency: string(t.BalancingCurrency), Origin: string(t.Origin), Version: int32(t.Version), //nolint:gosec // version is a small positive counter.
 	})
 	if err != nil {
@@ -502,7 +502,7 @@ func (r *Repository) InsertTransactionRows(ctx context.Context, t domain.Transac
 
 	if in := t.Income; in != nil {
 		return r.q.InsertInvestmentIncome(ctx, InsertInvestmentIncomeParams{
-			TransactionID: t.ID, UserID: t.UserID, AccountID: in.AccountID, CashAccountID: in.CashAccountID, IncomeType: string(in.Type),
+			TransactionID: t.ID, BooksID: t.BooksID, AccountID: in.AccountID, CashAccountID: in.CashAccountID, IncomeType: string(in.Type),
 			Gross: in.Gross.Amount(), Withheld: in.Withheld.Amount(), Currency: string(in.Gross.Currency()),
 		})
 	}
@@ -515,7 +515,7 @@ func (r *Repository) InsertTransactionRows(ctx context.Context, t domain.Transac
 		}
 
 		return r.q.InsertTrade(ctx, InsertTradeParams{
-			TransactionID: t.ID, UserID: t.UserID, AccountID: tr.AccountID, CashAccountID: tr.CashAccountID, Side: string(tr.Side),
+			TransactionID: t.ID, BooksID: t.BooksID, AccountID: tr.AccountID, CashAccountID: tr.CashAccountID, Side: string(tr.Side),
 			Quantity: tr.Quantity.Amount(), UnitPrice: platformpg.NumericOf(tr.UnitPrice), Gross: tr.Gross.Amount(),
 			Fees: tr.Fees.Amount(), Taxes: tr.Taxes.Amount(), Cost: cost, Currency: string(tr.Gross.Currency()),
 		})
@@ -567,16 +567,16 @@ func (r *Repository) toTrade(ctx context.Context, row LedgerTrade, t *domain.Tra
 	return trade, nil
 }
 
-func (r *Repository) SecurityPostings(ctx context.Context, userID int64, accountIDs []uuid.UUID) ([]app.HoldingPosting, error) {
-	rows, err := r.q.SecurityPostings(ctx, SecurityPostingsParams{UserID: userID, AccountIds: accountIDs})
+func (r *Repository) SecurityPostings(ctx context.Context, booksID int64, accountIDs []uuid.UUID) ([]app.HoldingPosting, error) {
+	rows, err := r.q.SecurityPostings(ctx, SecurityPostingsParams{BooksID: booksID, AccountIds: accountIDs})
 
 	return mapAll(rows, func(row SecurityPostingsRow) app.HoldingPosting {
 		return app.HoldingPosting{AccountID: row.AccountID, TransactionID: row.TransactionID, Date: row.BookedOn, Quantity: row.Amount, Weight: row.Weight}
 	}), err
 }
 
-func (r *Repository) SecurityTrades(ctx context.Context, userID int64, accountIDs []uuid.UUID) ([]app.TradeFact, error) {
-	rows, err := r.q.SecurityTrades(ctx, SecurityTradesParams{UserID: userID, AccountIds: accountIDs})
+func (r *Repository) SecurityTrades(ctx context.Context, booksID int64, accountIDs []uuid.UUID) ([]app.TradeFact, error) {
+	rows, err := r.q.SecurityTrades(ctx, SecurityTradesParams{BooksID: booksID, AccountIds: accountIDs})
 
 	return mapAll(rows, func(row SecurityTradesRow) app.TradeFact {
 		f := app.TradeFact{
@@ -591,21 +591,21 @@ func (r *Repository) SecurityTrades(ctx context.Context, userID int64, accountID
 	}), err
 }
 
-func (r *Repository) SecurityIncomes(ctx context.Context, userID int64, accountIDs []uuid.UUID) ([]app.IncomeFact, error) {
-	rows, err := r.q.SecurityIncomes(ctx, SecurityIncomesParams{UserID: userID, AccountIds: accountIDs})
+func (r *Repository) SecurityIncomes(ctx context.Context, booksID int64, accountIDs []uuid.UUID) ([]app.IncomeFact, error) {
+	rows, err := r.q.SecurityIncomes(ctx, SecurityIncomesParams{BooksID: booksID, AccountIds: accountIDs})
 
 	return mapAll(rows, func(row SecurityIncomesRow) app.IncomeFact {
 		return app.IncomeFact{TransactionID: row.TransactionID, AccountID: row.AccountID, Date: row.Date, Type: row.IncomeType, Gross: row.Gross, Withheld: row.Withheld}
 	}), err
 }
 
-func (r *Repository) Holding(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time) (int64, int64, error) {
-	row, err := r.q.Holding(ctx, HoldingParams{UserID: userID, AccountID: accountID, OnDate: date})
+func (r *Repository) Holding(ctx context.Context, booksID int64, accountID uuid.UUID, date time.Time) (int64, int64, error) {
+	row, err := r.q.Holding(ctx, HoldingParams{BooksID: booksID, AccountID: accountID, OnDate: date})
 	return row.Quantity, row.CostBasis, err
 }
 
-func (r *Repository) LaterSaleExists(ctx context.Context, userID int64, accountIDs []uuid.UUID, date time.Time, exclude uuid.UUID) (bool, error) {
-	return r.q.LaterSaleExists(ctx, LaterSaleExistsParams{UserID: userID, AccountIds: accountIDs, OnDate: date, Exclude: exclude})
+func (r *Repository) LaterSaleExists(ctx context.Context, booksID int64, accountIDs []uuid.UUID, date time.Time, exclude uuid.UUID) (bool, error) {
+	return r.q.LaterSaleExists(ctx, LaterSaleExistsParams{BooksID: booksID, AccountIds: accountIDs, OnDate: date, Exclude: exclude})
 }
 
 func (r *Repository) ReplaceTransaction(ctx context.Context, prev, next domain.Transaction, reason string) error {
@@ -633,7 +633,7 @@ func (r *Repository) ReplaceTransaction(ctx context.Context, prev, next domain.T
 	}
 
 	if err := r.q.UpdateTransaction(ctx, UpdateTransactionParams{
-		UserID: next.UserID, ID: next.ID, Date: next.Date, Description: next.Description, PayeeID: nullUUID(next.PayeeID),
+		BooksID: next.BooksID, ID: next.ID, Date: next.Date, Description: next.Description, PayeeID: nullUUID(next.PayeeID),
 		BalancingCurrency: string(next.BalancingCurrency), Origin: string(next.Origin), Version: int32(next.Version), //nolint:gosec // version is a small positive counter.
 	}); err != nil {
 		return referenceError(err)
@@ -684,7 +684,7 @@ func (r *Repository) ReplaceCategoryPostings(ctx context.Context, prev, next dom
 	}
 
 	if err := r.q.UpdateTransaction(ctx, UpdateTransactionParams{
-		UserID: next.UserID, ID: next.ID, Date: next.Date, Description: next.Description, PayeeID: nullUUID(next.PayeeID),
+		BooksID: next.BooksID, ID: next.ID, Date: next.Date, Description: next.Description, PayeeID: nullUUID(next.PayeeID),
 		BalancingCurrency: string(next.BalancingCurrency), Origin: string(next.Origin), Version: int32(next.Version), //nolint:gosec // version is a small positive counter.
 	}); err != nil {
 		return referenceError(err)
@@ -707,7 +707,7 @@ func (r *Repository) writeChildren(ctx context.Context, t domain.Transaction) er
 	}
 
 	for _, l := range t.Links {
-		if err := r.q.InsertLink(ctx, InsertLinkParams{UserID: t.UserID, FromTransactionID: t.ID, ToTransactionID: l.Target, LinkType: string(l.Type), Amount: linkAmount(l.Amount)}); err != nil {
+		if err := r.q.InsertLink(ctx, InsertLinkParams{BooksID: t.BooksID, FromTransactionID: t.ID, ToTransactionID: l.Target, LinkType: string(l.Type), Amount: linkAmount(l.Amount)}); err != nil {
 			return referenceError(err)
 		}
 	}
@@ -720,7 +720,7 @@ func (r *Repository) insertPostings(ctx context.Context, t domain.Transaction, p
 	postings := make([]InsertPostingsParams, len(ps))
 	for i, p := range ps {
 		postings[i] = InsertPostingsParams{
-			UserID: t.UserID, TransactionID: t.ID, AccountID: p.AccountID, Position: first + int16(i), //nolint:gosec // at most 500 postings (domain.MaxPostings).
+			BooksID: t.BooksID, TransactionID: t.ID, AccountID: p.AccountID, Position: first + int16(i), //nolint:gosec // at most 500 postings (domain.MaxPostings).
 			Amount: p.Amount.Amount(), Weight: p.Weight.Amount(), BookedOn: t.Date, SettledOn: p.SettledOn,
 			Status: string(p.Status), OriginalAmount: originalAmount(p.Original), OriginalInstrument: originalInstrument(p.Original),
 			Memo: nullString(p.Memo), StatementID: nullUUID(p.StatementID), StatementBasis: cmp.Or(p.StatementBasis, domain.BasisDate),
@@ -742,12 +742,12 @@ func (r *Repository) insertPostings(ctx context.Context, t domain.Transaction, p
 
 func (r *Repository) writeTags(ctx context.Context, t domain.Transaction) error {
 	for _, tag := range t.Tags {
-		tagID, err := r.q.UpsertTag(ctx, UpsertTagParams{UserID: t.UserID, Name: tag})
+		tagID, err := r.q.UpsertTag(ctx, UpsertTagParams{BooksID: t.BooksID, Name: tag})
 		if err != nil {
 			return err
 		}
 
-		if err := r.q.InsertTransactionTag(ctx, InsertTransactionTagParams{UserID: t.UserID, TransactionID: t.ID, TagID: tagID}); err != nil {
+		if err := r.q.InsertTransactionTag(ctx, InsertTransactionTagParams{BooksID: t.BooksID, TransactionID: t.ID, TagID: tagID}); err != nil {
 			return err
 		}
 	}
@@ -756,12 +756,12 @@ func (r *Repository) writeTags(ctx context.Context, t domain.Transaction) error 
 }
 
 func (r *Repository) VoidTransaction(ctx context.Context, t domain.Transaction) error {
-	return r.q.VoidTransaction(ctx, VoidTransactionParams{UserID: t.UserID, ID: t.ID, VoidedAt: t.VoidedAt, VoidReason: nullString(t.VoidReason)})
+	return r.q.VoidTransaction(ctx, VoidTransactionParams{BooksID: t.BooksID, ID: t.ID, VoidedAt: t.VoidedAt, VoidReason: nullString(t.VoidReason)})
 }
 
 func (r *Repository) ListTransactions(ctx context.Context, q app.TransactionQuery) ([]domain.Transaction, error) {
 	params := ListTransactionsParams{
-		UserID: q.UserID, AccountID: nullUUID(q.AccountID), PayeeID: nullUUID(q.PayeeID), Tag: nullString(q.Tag),
+		BooksID: q.BooksID, AccountID: nullUUID(q.AccountID), PayeeID: nullUUID(q.PayeeID), Tag: nullString(q.Tag),
 		Q: nullString(q.Q), FromDate: q.From, ToDate: q.To, Uncategorized: q.Uncategorized, RowLimit: int32(q.Limit), //nolint:gosec // limit is at most page.MaxLimit + 1.
 	}
 	if q.After != nil {
@@ -774,11 +774,11 @@ func (r *Repository) ListTransactions(ctx context.Context, q app.TransactionQuer
 		return nil, err
 	}
 
-	return r.completeAll(ctx, q.UserID, rows)
+	return r.completeAll(ctx, q.BooksID, rows)
 }
 
-func (r *Repository) Versions(ctx context.Context, userID int64, id uuid.UUID) ([]app.Version, error) {
-	rows, err := r.q.ListVersions(ctx, ListVersionsParams{UserID: userID, TransactionID: id})
+func (r *Repository) Versions(ctx context.Context, booksID int64, id uuid.UUID) ([]app.Version, error) {
+	rows, err := r.q.ListVersions(ctx, ListVersionsParams{BooksID: booksID, TransactionID: id})
 	if err != nil {
 		return nil, err
 	}
@@ -819,8 +819,8 @@ func referenceError(err error) error {
 	return err
 }
 
-func (r *Repository) TreeInstruments(ctx context.Context, userID int64, accountID uuid.UUID) ([]money.Currency, error) {
-	rows, err := r.q.TreeInstruments(ctx, TreeInstrumentsParams{UserID: userID, AccountID: accountID})
+func (r *Repository) TreeInstruments(ctx context.Context, booksID int64, accountID uuid.UUID) ([]money.Currency, error) {
+	rows, err := r.q.TreeInstruments(ctx, TreeInstrumentsParams{BooksID: booksID, AccountID: accountID})
 
 	out := make([]money.Currency, len(rows))
 	for i, c := range rows {
@@ -830,8 +830,8 @@ func (r *Repository) TreeInstruments(ctx context.Context, userID int64, accountI
 	return out, err
 }
 
-func (r *Repository) TreeBalancesByInstrument(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time, basis app.Basis) (map[money.Currency]int64, error) {
-	rows, err := r.q.TreeBalancesByInstrument(ctx, TreeBalancesByInstrumentParams{UserID: userID, AccountID: accountID, Settled: basis == app.BasisSettled, OnDate: &date})
+func (r *Repository) TreeBalancesByInstrument(ctx context.Context, booksID int64, accountID uuid.UUID, date time.Time, basis app.Basis) (map[money.Currency]int64, error) {
+	rows, err := r.q.TreeBalancesByInstrument(ctx, TreeBalancesByInstrumentParams{BooksID: booksID, AccountID: accountID, Settled: basis == app.BasisSettled, OnDate: &date})
 
 	out := make(map[money.Currency]int64, len(rows))
 	for _, row := range rows {
@@ -841,8 +841,8 @@ func (r *Repository) TreeBalancesByInstrument(ctx context.Context, userID int64,
 	return out, err
 }
 
-func (r *Repository) TreeExternalFlows(ctx context.Context, userID int64, accountIDs []uuid.UUID, from, to time.Time) ([]app.ExternalFlow, error) {
-	rows, err := r.q.TreeExternalFlows(ctx, TreeExternalFlowsParams{UserID: userID, AccountIds: accountIDs, FromDate: from, ToDate: to})
+func (r *Repository) TreeExternalFlows(ctx context.Context, booksID int64, accountIDs []uuid.UUID, from, to time.Time) ([]app.ExternalFlow, error) {
+	rows, err := r.q.TreeExternalFlows(ctx, TreeExternalFlowsParams{BooksID: booksID, AccountIds: accountIDs, FromDate: from, ToDate: to})
 	if err != nil {
 		return nil, fmt.Errorf("tree external flows: %w", err)
 	}
@@ -860,8 +860,8 @@ func (r *Repository) TreeExternalFlows(ctx context.Context, userID int64, accoun
 	return out, nil
 }
 
-func (r *Repository) TreeFirstPosting(ctx context.Context, userID int64, accountIDs []uuid.UUID) (time.Time, bool, error) {
-	row, err := r.q.TreeFirstPosting(ctx, TreeFirstPostingParams{UserID: userID, AccountIds: accountIDs})
+func (r *Repository) TreeFirstPosting(ctx context.Context, booksID int64, accountIDs []uuid.UUID) (time.Time, bool, error) {
+	row, err := r.q.TreeFirstPosting(ctx, TreeFirstPostingParams{BooksID: booksID, AccountIds: accountIDs})
 	if err != nil {
 		return time.Time{}, false, fmt.Errorf("tree first posting: %w", err)
 	}
@@ -869,36 +869,36 @@ func (r *Repository) TreeFirstPosting(ctx context.Context, userID int64, account
 	return row.FirstOn, row.Found, nil
 }
 
-func (r *Repository) BalanceAt(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time, basis app.Basis) (int64, error) {
+func (r *Repository) BalanceAt(ctx context.Context, booksID int64, accountID uuid.UUID, date time.Time, basis app.Basis) (int64, error) {
 	if basis == app.BasisSettled {
-		return r.q.BalanceSettledAt(ctx, BalanceSettledAtParams{UserID: userID, AccountID: accountID, OnDate: &date})
+		return r.q.BalanceSettledAt(ctx, BalanceSettledAtParams{BooksID: booksID, AccountID: accountID, OnDate: &date})
 	}
 
-	return r.q.BalanceBookedAt(ctx, BalanceBookedAtParams{UserID: userID, AccountID: accountID, OnDate: date})
+	return r.q.BalanceBookedAt(ctx, BalanceBookedAtParams{BooksID: booksID, AccountID: accountID, OnDate: date})
 }
 
-func (r *Repository) BalancesAt(ctx context.Context, userID int64, date time.Time, basis app.Basis) ([]app.AccountTotal, error) {
+func (r *Repository) BalancesAt(ctx context.Context, booksID int64, date time.Time, basis app.Basis) ([]app.AccountTotal, error) {
 	if basis == app.BasisSettled {
-		rows, err := r.q.AccountBalancesSettledAt(ctx, AccountBalancesSettledAtParams{UserID: userID, OnDate: &date})
+		rows, err := r.q.AccountBalancesSettledAt(ctx, AccountBalancesSettledAtParams{BooksID: booksID, OnDate: &date})
 
 		return mapAll(rows, func(row AccountBalancesSettledAtRow) app.AccountTotal {
 			return app.AccountTotal{AccountID: row.ID, Instrument: money.Currency(row.Instrument), Total: row.Total}
 		}), err
 	}
 
-	rows, err := r.q.AccountBalancesBookedAt(ctx, AccountBalancesBookedAtParams{UserID: userID, OnDate: date})
+	rows, err := r.q.AccountBalancesBookedAt(ctx, AccountBalancesBookedAtParams{BooksID: booksID, OnDate: date})
 
 	return mapAll(rows, func(row AccountBalancesBookedAtRow) app.AccountTotal {
 		return app.AccountTotal{AccountID: row.ID, Instrument: money.Currency(row.Instrument), Total: row.Total}
 	}), err
 }
 
-func (r *Repository) CategoryTotal(ctx context.Context, userID int64, accountID uuid.UUID, from, to time.Time) (int64, error) {
-	return r.q.CategoryTotal(ctx, CategoryTotalParams{UserID: userID, AccountID: accountID, FromDate: from, ToDate: to})
+func (r *Repository) CategoryTotal(ctx context.Context, booksID int64, accountID uuid.UUID, from, to time.Time) (int64, error) {
+	return r.q.CategoryTotal(ctx, CategoryTotalParams{BooksID: booksID, AccountID: accountID, FromDate: from, ToDate: to})
 }
 
-func (r *Repository) CategoryMonthlyTotals(ctx context.Context, userID int64, accountID uuid.UUID, from, to time.Time) (map[time.Time]int64, error) {
-	rows, err := r.q.CategoryMonthlyTotals(ctx, CategoryMonthlyTotalsParams{UserID: userID, AccountID: accountID, FromDate: from, ToDate: to})
+func (r *Repository) CategoryMonthlyTotals(ctx context.Context, booksID int64, accountID uuid.UUID, from, to time.Time) (map[time.Time]int64, error) {
+	rows, err := r.q.CategoryMonthlyTotals(ctx, CategoryMonthlyTotalsParams{BooksID: booksID, AccountID: accountID, FromDate: from, ToDate: to})
 	if err != nil {
 		return nil, err
 	}
@@ -911,8 +911,8 @@ func (r *Repository) CategoryMonthlyTotals(ctx context.Context, userID int64, ac
 	return out, nil
 }
 
-func (r *Repository) OwnCategoryMonthlyTotals(ctx context.Context, userID int64, class string, from, to time.Time) ([]app.CategoryMonth, error) {
-	rows, err := r.q.OwnCategoryMonthlyTotals(ctx, OwnCategoryMonthlyTotalsParams{UserID: userID, AccountClass: class, FromDate: from, ToDate: to})
+func (r *Repository) OwnCategoryMonthlyTotals(ctx context.Context, booksID int64, class string, from, to time.Time) ([]app.CategoryMonth, error) {
+	rows, err := r.q.OwnCategoryMonthlyTotals(ctx, OwnCategoryMonthlyTotalsParams{BooksID: booksID, AccountClass: class, FromDate: from, ToDate: to})
 	if err != nil {
 		return nil, fmt.Errorf("own category monthly totals: %w", err)
 	}
@@ -925,9 +925,9 @@ func (r *Repository) OwnCategoryMonthlyTotals(ctx context.Context, userID int64,
 	return out, nil
 }
 
-func (r *Repository) InsertBillingRule(ctx context.Context, userID int64, accountID uuid.UUID, rule domain.BillingCycleRule) (domain.BillingCycleRule, error) {
+func (r *Repository) InsertBillingRule(ctx context.Context, booksID int64, accountID uuid.UUID, rule domain.BillingCycleRule) (domain.BillingCycleRule, error) {
 	p := InsertBillingRuleParams{
-		UserID: userID, AccountID: accountID, EffectiveFrom: rule.EffectiveFrom.FirstDay(),
+		BooksID: booksID, AccountID: accountID, EffectiveFrom: rule.EffectiveFrom.FirstDay(),
 		DueDay:               int16(rule.DueDay), //nolint:gosec // days are 1 to 31 (domain.NewBillingCycleRule).
 		ClosingDayAssignment: rule.Assignment, DueDateAdjustment: rule.Adjustment, Calendar: rule.Calendar,
 		ClosingMode: rule.ClosingMode, ClosingAdjustment: rule.ClosingAdjustment,
@@ -948,13 +948,13 @@ func (r *Repository) InsertBillingRule(ctx context.Context, userID int64, accoun
 	return toBillingRule(row), nil
 }
 
-func (r *Repository) BillingRules(ctx context.Context, userID int64, accountID uuid.UUID) (domain.Rules, error) {
-	rows, err := r.q.ListBillingRules(ctx, ListBillingRulesParams{UserID: userID, AccountID: accountID})
+func (r *Repository) BillingRules(ctx context.Context, booksID int64, accountID uuid.UUID) (domain.Rules, error) {
+	rows, err := r.q.ListBillingRules(ctx, ListBillingRulesParams{BooksID: booksID, AccountID: accountID})
 	return mapAll(rows, toBillingRule), err
 }
 
-func (r *Repository) InsertCreditLimit(ctx context.Context, userID int64, l app.CreditLimit) (app.CreditLimit, error) {
-	_, err := r.q.InsertCreditLimit(ctx, InsertCreditLimitParams{UserID: userID, AccountID: l.AccountID, EffectiveFrom: l.EffectiveFrom, Amount: l.Amount.Amount()})
+func (r *Repository) InsertCreditLimit(ctx context.Context, booksID int64, l app.CreditLimit) (app.CreditLimit, error) {
+	_, err := r.q.InsertCreditLimit(ctx, InsertCreditLimitParams{BooksID: booksID, AccountID: l.AccountID, EffectiveFrom: l.EffectiveFrom, Amount: l.Amount.Amount()})
 	if err != nil {
 		return app.CreditLimit{}, err
 	}
@@ -962,13 +962,13 @@ func (r *Repository) InsertCreditLimit(ctx context.Context, userID int64, l app.
 	return l, nil
 }
 
-func (r *Repository) CreditLimits(ctx context.Context, userID int64, accountID uuid.UUID) ([]app.CreditLimit, error) {
-	rows, err := r.q.ListCreditLimits(ctx, ListCreditLimitsParams{UserID: userID, AccountID: accountID})
+func (r *Repository) CreditLimits(ctx context.Context, booksID int64, accountID uuid.UUID) ([]app.CreditLimit, error) {
+	rows, err := r.q.ListCreditLimits(ctx, ListCreditLimitsParams{BooksID: booksID, AccountID: accountID})
 	if err != nil {
 		return nil, err
 	}
 
-	a, err := r.Account(ctx, userID, accountID)
+	a, err := r.Account(ctx, booksID, accountID)
 	if err != nil {
 		return nil, err
 	}
@@ -987,7 +987,7 @@ func (r *Repository) CreditLimits(ctx context.Context, userID int64, accountID u
 }
 
 func (r *Repository) InsertCard(ctx context.Context, c domain.Card) (domain.Card, error) {
-	row, err := r.q.InsertCard(ctx, InsertCardParams{UserID: c.UserID, AccountID: c.AccountID, Holder: c.Holder, LastFour: c.LastFour, Virtual: c.Virtual, ForeignChargeBp: int32(c.ForeignChargeBP)}) //nolint:gosec // G115: NewCard bounds the rate to 0–10000
+	row, err := r.q.InsertCard(ctx, InsertCardParams{BooksID: c.BooksID, AccountID: c.AccountID, Holder: c.Holder, LastFour: c.LastFour, Virtual: c.Virtual, ForeignChargeBp: int32(c.ForeignChargeBP)}) //nolint:gosec // G115: NewCard bounds the rate to 0–10000
 	if err != nil {
 		return domain.Card{}, referenceError(err)
 	}
@@ -995,8 +995,8 @@ func (r *Repository) InsertCard(ctx context.Context, c domain.Card) (domain.Card
 	return toCard(row), nil
 }
 
-func (r *Repository) SetCardActive(ctx context.Context, userID int64, id uuid.UUID, active bool) (domain.Card, error) {
-	row, err := r.q.SetCardActive(ctx, SetCardActiveParams{UserID: userID, ID: id, Active: active})
+func (r *Repository) SetCardActive(ctx context.Context, booksID int64, id uuid.UUID, active bool) (domain.Card, error) {
+	row, err := r.q.SetCardActive(ctx, SetCardActiveParams{BooksID: booksID, ID: id, Active: active})
 	if err != nil {
 		return domain.Card{}, notFound(err)
 	}
@@ -1004,29 +1004,29 @@ func (r *Repository) SetCardActive(ctx context.Context, userID int64, id uuid.UU
 	return toCard(row), nil
 }
 
-func (r *Repository) Cards(ctx context.Context, userID int64, accountID uuid.UUID) ([]domain.Card, error) {
-	rows, err := r.q.ListCards(ctx, ListCardsParams{UserID: userID, AccountID: accountID})
+func (r *Repository) Cards(ctx context.Context, booksID int64, accountID uuid.UUID) ([]domain.Card, error) {
+	rows, err := r.q.ListCards(ctx, ListCardsParams{BooksID: booksID, AccountID: accountID})
 	return mapAll(rows, toCard), err
 }
 
-func (r *Repository) EnsureStatement(ctx context.Context, userID int64, accountID uuid.UUID, d domain.StatementDates, due time.Time) (uuid.UUID, error) {
+func (r *Repository) EnsureStatement(ctx context.Context, booksID int64, accountID uuid.UUID, d domain.StatementDates, due time.Time) (uuid.UUID, error) {
 	return r.q.EnsureStatement(ctx, EnsureStatementParams{
-		UserID: userID, AccountID: accountID, ReferenceMonth: d.Reference.FirstDay(), ClosingDate: d.Closing, DueDate: due,
+		BooksID: booksID, AccountID: accountID, ReferenceMonth: d.Reference.FirstDay(), ClosingDate: d.Closing, DueDate: due,
 	})
 }
 
-func (r *Repository) Statements(ctx context.Context, userID int64, accountID uuid.UUID) ([]app.Statement, error) {
-	rows, err := r.q.ListStatements(ctx, ListStatementsParams{UserID: userID, AccountID: accountID})
+func (r *Repository) Statements(ctx context.Context, booksID int64, accountID uuid.UUID) ([]app.Statement, error) {
+	rows, err := r.q.ListStatements(ctx, ListStatementsParams{BooksID: booksID, AccountID: accountID})
 	if err != nil {
 		return nil, err
 	}
 
-	lines, err := r.q.ListStatementLines(ctx, ListStatementLinesParams{UserID: userID, AccountID: accountID})
+	lines, err := r.q.ListStatementLines(ctx, ListStatementLinesParams{BooksID: booksID, AccountID: accountID})
 	if err != nil {
 		return nil, err
 	}
 
-	factRows, err := r.q.ListStatementFacts(ctx, ListStatementFactsParams{UserID: userID, AccountID: accountID})
+	factRows, err := r.q.ListStatementFacts(ctx, ListStatementFactsParams{BooksID: booksID, AccountID: accountID})
 	if err != nil {
 		return nil, err
 	}
@@ -1034,7 +1034,7 @@ func (r *Repository) Statements(ctx context.Context, userID int64, accountID uui
 	facts := make(map[uuid.UUID][]domain.StatementFact)
 	for _, f := range factRows {
 		facts[f.StatementID] = append(facts[f.StatementID], domain.StatementFact{
-			UserID: f.UserID, StatementID: f.StatementID, Source: f.Source, Closing: f.ClosingDate, Due: f.DueDate,
+			BooksID: f.BooksID, StatementID: f.StatementID, Source: f.Source, Closing: f.ClosingDate, Due: f.DueDate,
 			Total: f.Total, Minimum: f.Minimum,
 		})
 	}
@@ -1059,12 +1059,12 @@ func (r *Repository) Statements(ctx context.Context, userID int64, accountID uui
 	return out, nil
 }
 
-func (r *Repository) HasOpeningBalance(ctx context.Context, userID int64, accountID uuid.UUID) (bool, error) {
-	return r.q.HasOpeningBalance(ctx, HasOpeningBalanceParams{UserID: userID, AccountID: accountID})
+func (r *Repository) HasOpeningBalance(ctx context.Context, booksID int64, accountID uuid.UUID) (bool, error) {
+	return r.q.HasOpeningBalance(ctx, HasOpeningBalanceParams{BooksID: booksID, AccountID: accountID})
 }
 
-func (r *Repository) StatementClosings(ctx context.Context, userID int64, accountID uuid.UUID) (map[domain.ReferenceMonth]time.Time, error) {
-	rows, err := r.q.ListStatementClosings(ctx, ListStatementClosingsParams{UserID: userID, AccountID: accountID})
+func (r *Repository) StatementClosings(ctx context.Context, booksID int64, accountID uuid.UUID) (map[domain.ReferenceMonth]time.Time, error) {
+	rows, err := r.q.ListStatementClosings(ctx, ListStatementClosingsParams{BooksID: booksID, AccountID: accountID})
 
 	out := make(map[domain.ReferenceMonth]time.Time, len(rows))
 	for _, row := range rows {
@@ -1076,17 +1076,17 @@ func (r *Repository) StatementClosings(ctx context.Context, userID int64, accoun
 
 func (r *Repository) SaveStatementFact(ctx context.Context, f domain.StatementFact) error {
 	return r.q.UpsertStatementFact(ctx, UpsertStatementFactParams{
-		UserID: f.UserID, StatementID: f.StatementID, Source: f.Source, ClosingDate: f.Closing, DueDate: f.Due,
+		BooksID: f.BooksID, StatementID: f.StatementID, Source: f.Source, ClosingDate: f.Closing, DueDate: f.Due,
 		Total: f.Total, Minimum: f.Minimum,
 	})
 }
 
-func (r *Repository) DeleteStatementFact(ctx context.Context, userID int64, statementID uuid.UUID, source string) error {
-	return r.q.DeleteStatementFact(ctx, DeleteStatementFactParams{UserID: userID, StatementID: statementID, Source: source})
+func (r *Repository) DeleteStatementFact(ctx context.Context, booksID int64, statementID uuid.UUID, source string) error {
+	return r.q.DeleteStatementFact(ctx, DeleteStatementFactParams{BooksID: booksID, StatementID: statementID, Source: source})
 }
 
-func (r *Repository) RedatablePostings(ctx context.Context, userID int64, accountID uuid.UUID) ([]app.RedatablePosting, error) {
-	rows, err := r.q.ListRedatablePostings(ctx, ListRedatablePostingsParams{UserID: userID, AccountID: accountID})
+func (r *Repository) RedatablePostings(ctx context.Context, booksID int64, accountID uuid.UUID) ([]app.RedatablePosting, error) {
+	rows, err := r.q.ListRedatablePostings(ctx, ListRedatablePostingsParams{BooksID: booksID, AccountID: accountID})
 
 	out := make([]app.RedatablePosting, len(rows))
 	for i, row := range rows {
@@ -1096,12 +1096,12 @@ func (r *Repository) RedatablePostings(ctx context.Context, userID int64, accoun
 	return out, err
 }
 
-func (r *Repository) MovePostingStatement(ctx context.Context, userID int64, postingID, statementID uuid.UUID) error {
-	return r.q.MovePostingStatement(ctx, MovePostingStatementParams{UserID: userID, ID: postingID, StatementID: nullUUID(statementID)})
+func (r *Repository) MovePostingStatement(ctx context.Context, booksID int64, postingID, statementID uuid.UUID) error {
+	return r.q.MovePostingStatement(ctx, MovePostingStatementParams{BooksID: booksID, ID: postingID, StatementID: nullUUID(statementID)})
 }
 
-func (r *Repository) StatementAccount(ctx context.Context, userID int64, statementID uuid.UUID) (uuid.UUID, error) {
-	row, err := r.q.GetStatement(ctx, GetStatementParams{UserID: userID, ID: statementID})
+func (r *Repository) StatementAccount(ctx context.Context, booksID int64, statementID uuid.UUID) (uuid.UUID, error) {
+	row, err := r.q.GetStatement(ctx, GetStatementParams{BooksID: booksID, ID: statementID})
 	if err != nil {
 		return uuid.Nil, notFound(err)
 	}
@@ -1109,8 +1109,8 @@ func (r *Repository) StatementAccount(ctx context.Context, userID int64, stateme
 	return row.AccountID, nil
 }
 
-func (r *Repository) StatementPostings(ctx context.Context, userID int64, statementID uuid.UUID) ([]app.StatementPosting, error) {
-	rows, err := r.q.ListStatementPostings(ctx, ListStatementPostingsParams{UserID: userID, StatementID: nullUUID(statementID)})
+func (r *Repository) StatementPostings(ctx context.Context, booksID int64, statementID uuid.UUID) ([]app.StatementPosting, error) {
+	rows, err := r.q.ListStatementPostings(ctx, ListStatementPostingsParams{BooksID: booksID, StatementID: nullUUID(statementID)})
 	if err != nil {
 		return nil, err
 	}
@@ -1129,8 +1129,8 @@ func (r *Repository) StatementPostings(ctx context.Context, userID int64, statem
 	return out, nil
 }
 
-func (r *Repository) OpenStatementsFrom(ctx context.Context, userID int64, accountID uuid.UUID, from domain.ReferenceMonth, today time.Time) ([]app.Statement, error) {
-	rows, err := r.q.ListOpenStatementsFrom(ctx, ListOpenStatementsFromParams{UserID: userID, AccountID: accountID, FromMonth: from.FirstDay(), Today: today})
+func (r *Repository) OpenStatementsFrom(ctx context.Context, booksID int64, accountID uuid.UUID, from domain.ReferenceMonth, today time.Time) ([]app.Statement, error) {
+	rows, err := r.q.ListOpenStatementsFrom(ctx, ListOpenStatementsFromParams{BooksID: booksID, AccountID: accountID, FromMonth: from.FirstDay(), Today: today})
 	if err != nil {
 		return nil, err
 	}
@@ -1151,14 +1151,14 @@ func (r *Repository) UpdateStatementDates(ctx context.Context, id uuid.UUID, clo
 
 func (r *Repository) InsertPlan(ctx context.Context, p domain.InstallmentPlan) error {
 	return r.q.InsertInstallmentPlan(ctx, InsertInstallmentPlanParams{
-		ID: p.ID, UserID: p.UserID, AccountID: p.AccountID, OriginTransactionID: p.OriginTransactionID, PlanKind: p.Kind,
+		ID: p.ID, BooksID: p.BooksID, AccountID: p.AccountID, OriginTransactionID: p.OriginTransactionID, PlanKind: p.Kind,
 		InstallmentCount: int16(p.Count), //nolint:gosec // at most 420 installments.
 		Principal:        p.Principal.Amount(), Interest: p.Interest.Amount(), FirstStatementID: p.FirstStatementID,
 	})
 }
 
-func (r *Repository) SystemAccount(ctx context.Context, userID int64, role domain.SystemRole) (domain.Account, error) {
-	row, err := r.q.GetSystemAccount(ctx, GetSystemAccountParams{UserID: userID, SystemRole: nullString(string(role))})
+func (r *Repository) SystemAccount(ctx context.Context, booksID int64, role domain.SystemRole) (domain.Account, error) {
+	row, err := r.q.GetSystemAccount(ctx, GetSystemAccountParams{BooksID: booksID, SystemRole: nullString(string(role))})
 	if err != nil {
 		return domain.Account{}, notFound(err)
 	}
@@ -1166,25 +1166,25 @@ func (r *Repository) SystemAccount(ctx context.Context, userID int64, role domai
 	return toAccount(row), nil
 }
 
-func (r *Repository) PriorInstallments(ctx context.Context, userID int64, accountID uuid.UUID, month domain.ReferenceMonth) (int64, error) {
-	return r.q.PriorInstallments(ctx, PriorInstallmentsParams{UserID: userID, AccountID: accountID, ReferenceMonth: month.FirstDay()})
+func (r *Repository) PriorInstallments(ctx context.Context, booksID int64, accountID uuid.UUID, month domain.ReferenceMonth) (int64, error) {
+	return r.q.PriorInstallments(ctx, PriorInstallmentsParams{BooksID: booksID, AccountID: accountID, ReferenceMonth: month.FirstDay()})
 }
 
-func (r *Repository) CommittedInstallments(ctx context.Context, userID int64, accountID uuid.UUID, month domain.ReferenceMonth, today time.Time) (int64, error) {
-	return r.q.CommittedInstallments(ctx, CommittedInstallmentsParams{UserID: userID, AccountID: accountID, ReferenceMonth: month.FirstDay(), Today: today})
+func (r *Repository) CommittedInstallments(ctx context.Context, booksID int64, accountID uuid.UUID, month domain.ReferenceMonth, today time.Time) (int64, error) {
+	return r.q.CommittedInstallments(ctx, CommittedInstallmentsParams{BooksID: booksID, AccountID: accountID, ReferenceMonth: month.FirstDay(), Today: today})
 }
 
 func (r *Repository) SetStatementFinanced(ctx context.Context, statementID, planID uuid.UUID) error {
 	return r.q.SetStatementFinanced(ctx, SetStatementFinancedParams{ID: statementID, PlanID: nullUUID(planID)})
 }
 
-func (r *Repository) Plan(ctx context.Context, userID int64, id uuid.UUID) (domain.InstallmentPlan, error) {
-	row, err := r.q.GetPlan(ctx, GetPlanParams{UserID: userID, ID: id})
+func (r *Repository) Plan(ctx context.Context, booksID int64, id uuid.UUID) (domain.InstallmentPlan, error) {
+	row, err := r.q.GetPlan(ctx, GetPlanParams{BooksID: booksID, ID: id})
 	if err != nil {
 		return domain.InstallmentPlan{}, notFound(err)
 	}
 
-	card, err := r.Account(ctx, userID, row.AccountID)
+	card, err := r.Account(ctx, booksID, row.AccountID)
 	if err != nil {
 		return domain.InstallmentPlan{}, err
 	}
@@ -1200,14 +1200,14 @@ func (r *Repository) Plan(ctx context.Context, userID int64, id uuid.UUID) (doma
 	}
 
 	return domain.InstallmentPlan{
-		ID: row.ID, UserID: row.UserID, AccountID: row.AccountID, OriginTransactionID: row.OriginTransactionID,
+		ID: row.ID, BooksID: row.BooksID, AccountID: row.AccountID, OriginTransactionID: row.OriginTransactionID,
 		Kind: row.PlanKind, Count: int(row.InstallmentCount), Principal: principal, Interest: interest,
 		FirstStatementID: row.FirstStatementID,
 	}, nil
 }
 
-func (r *Repository) PlanState(ctx context.Context, userID int64, originID uuid.UUID) (cancelled, anticipated bool, err error) {
-	row, err := r.q.PlanState(ctx, PlanStateParams{UserID: userID, OriginID: originID})
+func (r *Repository) PlanState(ctx context.Context, booksID int64, originID uuid.UUID) (cancelled, anticipated bool, err error) {
+	row, err := r.q.PlanState(ctx, PlanStateParams{BooksID: booksID, OriginID: originID})
 	if err != nil {
 		return false, false, err
 	}
@@ -1215,8 +1215,8 @@ func (r *Repository) PlanState(ctx context.Context, userID int64, originID uuid.
 	return row.Cancelled, row.Anticipated, nil
 }
 
-func (r *Repository) AnticipatedReferences(ctx context.Context, userID int64, originID uuid.UUID) (map[domain.ReferenceMonth]struct{}, error) {
-	rows, err := r.q.AnticipatedReferences(ctx, AnticipatedReferencesParams{UserID: userID, OriginID: originID})
+func (r *Repository) AnticipatedReferences(ctx context.Context, booksID int64, originID uuid.UUID) (map[domain.ReferenceMonth]struct{}, error) {
+	rows, err := r.q.AnticipatedReferences(ctx, AnticipatedReferencesParams{BooksID: booksID, OriginID: originID})
 	if err != nil {
 		return nil, err
 	}
@@ -1229,8 +1229,8 @@ func (r *Repository) AnticipatedReferences(ctx context.Context, userID int64, or
 	return out, nil
 }
 
-func (r *Repository) AnticipationCharges(ctx context.Context, userID int64, originID uuid.UUID) ([]app.PlanInstallment, error) {
-	rows, err := r.q.ListAnticipationCharges(ctx, ListAnticipationChargesParams{UserID: userID, OriginID: originID})
+func (r *Repository) AnticipationCharges(ctx context.Context, booksID int64, originID uuid.UUID) ([]app.PlanInstallment, error) {
+	rows, err := r.q.ListAnticipationCharges(ctx, ListAnticipationChargesParams{BooksID: booksID, OriginID: originID})
 	if err != nil {
 		return nil, err
 	}
@@ -1243,12 +1243,12 @@ func (r *Repository) AnticipationCharges(ctx context.Context, userID int64, orig
 	return out, nil
 }
 
-func (r *Repository) AnticipationDiscount(ctx context.Context, userID int64, originID uuid.UUID) (int64, error) {
-	return r.q.AnticipationDiscount(ctx, AnticipationDiscountParams{UserID: userID, OriginID: originID})
+func (r *Repository) AnticipationDiscount(ctx context.Context, booksID int64, originID uuid.UUID) (int64, error) {
+	return r.q.AnticipationDiscount(ctx, AnticipationDiscountParams{BooksID: booksID, OriginID: originID})
 }
 
-func (r *Repository) PlanInstallments(ctx context.Context, userID int64, planID uuid.UUID) ([]app.PlanInstallment, error) {
-	rows, err := r.q.ListPlanInstallments(ctx, ListPlanInstallmentsParams{UserID: userID, InstallmentPlanID: nullUUID(planID)})
+func (r *Repository) PlanInstallments(ctx context.Context, booksID int64, planID uuid.UUID) ([]app.PlanInstallment, error) {
+	rows, err := r.q.ListPlanInstallments(ctx, ListPlanInstallmentsParams{BooksID: booksID, InstallmentPlanID: nullUUID(planID)})
 	if err != nil {
 		return nil, err
 	}
@@ -1266,17 +1266,17 @@ func (r *Repository) PlanInstallments(ctx context.Context, userID int64, planID 
 	return out, nil
 }
 
-func (r *Repository) RefundedTotal(ctx context.Context, userID int64, originID uuid.UUID) (int64, error) {
-	return r.q.RefundedTotal(ctx, RefundedTotalParams{UserID: userID, ToTransactionID: originID})
+func (r *Repository) RefundedTotal(ctx context.Context, booksID int64, originID uuid.UUID) (int64, error) {
+	return r.q.RefundedTotal(ctx, RefundedTotalParams{BooksID: booksID, ToTransactionID: originID})
 }
 
-func (r *Repository) ReimbursedTotal(ctx context.Context, userID int64, originID, exceptFrom uuid.UUID) (int64, error) {
-	return r.q.ReimbursedTotal(ctx, ReimbursedTotalParams{UserID: userID, OriginID: originID, ExceptFrom: exceptFrom})
+func (r *Repository) ReimbursedTotal(ctx context.Context, booksID int64, originID, exceptFrom uuid.UUID) (int64, error) {
+	return r.q.ReimbursedTotal(ctx, ReimbursedTotalParams{BooksID: booksID, OriginID: originID, ExceptFrom: exceptFrom})
 }
 
 func (r *Repository) ReimbursementCandidates(ctx context.Context, q app.CandidateQuery) ([]app.CandidateRow, error) {
 	rows, err := r.q.ListReimbursementCandidates(ctx, ListReimbursementCandidatesParams{
-		Instrument: string(q.Instrument), UserID: q.UserID, TransactionID: q.ExcludeID, FromDate: q.From, ToDate: q.To,
+		Instrument: string(q.Instrument), BooksID: q.BooksID, TransactionID: q.ExcludeID, FromDate: q.From, ToDate: q.To,
 		Amount: q.Amount, MaxRows: int32(q.MaxRows), //nolint:gosec // the limit is a small constant.
 	})
 	if err != nil {
@@ -1293,7 +1293,7 @@ func (r *Repository) ReimbursementCandidates(ctx context.Context, q app.Candidat
 
 func (r *Repository) ReimbursementSources(ctx context.Context, q app.SourceQuery) ([]app.SourceRow, error) {
 	rows, err := r.q.ListReimbursementSources(ctx, ListReimbursementSourcesParams{
-		Instrument: string(q.Instrument), UserID: q.UserID, TransactionID: q.ExcludeID, FromDate: q.From, ToDate: q.To,
+		Instrument: string(q.Instrument), BooksID: q.BooksID, TransactionID: q.ExcludeID, FromDate: q.From, ToDate: q.To,
 		MaxRows: int32(q.MaxRows), //nolint:gosec // the limit is a small constant.
 	})
 	if err != nil {
@@ -1308,13 +1308,13 @@ func (r *Repository) ReimbursementSources(ctx context.Context, q app.SourceQuery
 	return out, nil
 }
 
-func (r *Repository) SetReimbursementLinks(ctx context.Context, userID int64, from uuid.UUID, links []domain.Link) error {
-	if err := r.q.DeleteReimbursementLinksFrom(ctx, DeleteReimbursementLinksFromParams{UserID: userID, FromTransactionID: from}); err != nil {
+func (r *Repository) SetReimbursementLinks(ctx context.Context, booksID int64, from uuid.UUID, links []domain.Link) error {
+	if err := r.q.DeleteReimbursementLinksFrom(ctx, DeleteReimbursementLinksFromParams{BooksID: booksID, FromTransactionID: from}); err != nil {
 		return err
 	}
 
 	for _, l := range links {
-		err := r.q.InsertLink(ctx, InsertLinkParams{UserID: userID, FromTransactionID: from, ToTransactionID: l.Target, LinkType: string(l.Type), Amount: linkAmount(l.Amount)})
+		err := r.q.InsertLink(ctx, InsertLinkParams{BooksID: booksID, FromTransactionID: from, ToTransactionID: l.Target, LinkType: string(l.Type), Amount: linkAmount(l.Amount)})
 		if err != nil {
 			return referenceError(err)
 		}
@@ -1325,13 +1325,13 @@ func (r *Repository) SetReimbursementLinks(ctx context.Context, userID int64, fr
 
 func toDispute(row LedgerDispute) app.Dispute {
 	return app.Dispute{
-		ID: row.ID, UserID: row.UserID, TransactionID: row.TransactionID, OpenedOn: row.OpenedOn,
+		ID: row.ID, BooksID: row.BooksID, TransactionID: row.TransactionID, OpenedOn: row.OpenedOn,
 		ResolvedOn: row.ResolvedOn, Outcome: deref(row.Outcome), RefundTransactionID: row.RefundTransactionID.UUID,
 	}
 }
 
 func (r *Repository) InsertDispute(ctx context.Context, d app.Dispute) (app.Dispute, error) {
-	row, err := r.q.InsertDispute(ctx, InsertDisputeParams{UserID: d.UserID, TransactionID: d.TransactionID, OpenedOn: d.OpenedOn})
+	row, err := r.q.InsertDispute(ctx, InsertDisputeParams{BooksID: d.BooksID, TransactionID: d.TransactionID, OpenedOn: d.OpenedOn})
 	if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == uniqueViolation {
 		return app.Dispute{}, app.ErrDisputeOpen
 	}
@@ -1343,8 +1343,8 @@ func (r *Repository) InsertDispute(ctx context.Context, d app.Dispute) (app.Disp
 	return toDispute(row), nil
 }
 
-func (r *Repository) Disputes(ctx context.Context, userID int64, transactionID uuid.UUID) ([]app.Dispute, error) {
-	rows, err := r.q.ListDisputes(ctx, ListDisputesParams{UserID: userID, TransactionID: transactionID})
+func (r *Repository) Disputes(ctx context.Context, booksID int64, transactionID uuid.UUID) ([]app.Dispute, error) {
+	rows, err := r.q.ListDisputes(ctx, ListDisputesParams{BooksID: booksID, TransactionID: transactionID})
 	if err != nil {
 		return nil, err
 	}
@@ -1374,8 +1374,8 @@ func storedAmount(v *int64) int64 {
 	return *v
 }
 
-func (r *Repository) LinksTo(ctx context.Context, userID int64, id uuid.UUID) ([]app.Reference, error) {
-	rows, err := r.q.ListLinksTo(ctx, ListLinksToParams{UserID: userID, ToTransactionID: id})
+func (r *Repository) LinksTo(ctx context.Context, booksID int64, id uuid.UUID) ([]app.Reference, error) {
+	rows, err := r.q.ListLinksTo(ctx, ListLinksToParams{BooksID: booksID, ToTransactionID: id})
 	if err != nil {
 		return nil, err
 	}
@@ -1388,8 +1388,8 @@ func (r *Repository) LinksTo(ctx context.Context, userID int64, id uuid.UUID) ([
 	return out, nil
 }
 
-func (r *Repository) LockDispute(ctx context.Context, userID int64, id uuid.UUID) (app.Dispute, error) {
-	row, err := r.q.GetDisputeForUpdate(ctx, GetDisputeForUpdateParams{UserID: userID, ID: id})
+func (r *Repository) LockDispute(ctx context.Context, booksID int64, id uuid.UUID) (app.Dispute, error) {
+	row, err := r.q.GetDisputeForUpdate(ctx, GetDisputeForUpdateParams{BooksID: booksID, ID: id})
 	if err != nil {
 		return app.Dispute{}, notFound(err)
 	}

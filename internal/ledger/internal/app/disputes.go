@@ -17,15 +17,15 @@ const (
 )
 
 // OpenDispute flags a card purchase as contested; its postings stay in their categories (S13).
-func (s *Service) OpenDispute(ctx context.Context, userID int64, transactionID uuid.UUID, openedOn time.Time) (Dispute, error) {
+func (s *Service) OpenDispute(ctx context.Context, booksID int64, transactionID uuid.UUID, openedOn time.Time) (Dispute, error) {
 	var d Dispute
 	err := s.repo.InTx(ctx, func(r Repository) error {
-		if _, err := s.lockPurchase(ctx, r, userID, transactionID); err != nil {
+		if _, err := s.lockPurchase(ctx, r, booksID, transactionID); err != nil {
 			return err
 		}
 
 		var err error
-		d, err = r.InsertDispute(ctx, Dispute{UserID: userID, TransactionID: transactionID, OpenedOn: openedOn})
+		d, err = r.InsertDispute(ctx, Dispute{BooksID: booksID, TransactionID: transactionID, OpenedOn: openedOn})
 
 		return err
 	})
@@ -34,24 +34,24 @@ func (s *Service) OpenDispute(ctx context.Context, userID int64, transactionID u
 }
 
 // Disputes lists the disputes of a transaction, oldest first.
-func (s *Service) Disputes(ctx context.Context, userID int64, transactionID uuid.UUID) ([]Dispute, error) {
-	if _, err := s.repo.Transaction(ctx, userID, transactionID); err != nil {
+func (s *Service) Disputes(ctx context.Context, booksID int64, transactionID uuid.UUID) ([]Dispute, error) {
+	if _, err := s.repo.Transaction(ctx, booksID, transactionID); err != nil {
 		return nil, err
 	}
 
-	return s.repo.Disputes(ctx, userID, transactionID)
+	return s.repo.Disputes(ctx, booksID, transactionID)
 }
 
 // ResolveDispute closes a dispute; a won dispute credits the charged amount not yet
 // refunded, linked chargeback_of the purchase (M22).
-func (s *Service) ResolveDispute(ctx context.Context, userID int64, id uuid.UUID, resolvedOn time.Time, outcome string, statement *domain.ReferenceMonth) (Dispute, error) {
+func (s *Service) ResolveDispute(ctx context.Context, booksID int64, id uuid.UUID, resolvedOn time.Time, outcome string, statement *domain.ReferenceMonth) (Dispute, error) {
 	if outcome != OutcomeWon && outcome != OutcomeLost {
 		return Dispute{}, validationError("outcome", "must be won or lost")
 	}
 
 	var resolved Dispute
 	err := s.repo.InTx(ctx, func(r Repository) error {
-		d, err := r.LockDispute(ctx, userID, id)
+		d, err := r.LockDispute(ctx, booksID, id)
 		if err != nil {
 			return err
 		}
@@ -66,12 +66,12 @@ func (s *Service) ResolveDispute(ctx context.Context, userID int64, id uuid.UUID
 
 		d.ResolvedOn, d.Outcome = &resolvedOn, outcome
 		if outcome == OutcomeWon {
-			pu, err := s.lockPurchase(ctx, r, userID, d.TransactionID)
+			pu, err := s.lockPurchase(ctx, r, booksID, d.TransactionID)
 			if err != nil {
 				return err
 			}
 
-			done, err := r.RefundedTotal(ctx, userID, pu.tx.ID)
+			done, err := r.RefundedTotal(ctx, booksID, pu.tx.ID)
 			if err != nil {
 				return err
 			}
@@ -87,13 +87,13 @@ func (s *Service) ResolveDispute(ctx context.Context, userID int64, id uuid.UUID
 					return err
 				}
 
-				w, err := s.writerFor(ctx, userID)
+				w, err := s.writerFor(ctx, booksID)
 				if err != nil {
 					return err
 				}
 
 				refund, err := s.insert(ctx, r, domain.Transaction{
-					UserID: userID, Date: resolvedOn, Description: fmt.Sprintf(w.Chargeback, pu.tx.Description), PayeeID: pu.tx.PayeeID,
+					BooksID: booksID, Date: resolvedOn, Description: fmt.Sprintf(w.Chargeback, pu.tx.Description), PayeeID: pu.tx.PayeeID,
 					Postings: append([]domain.Posting{{AccountID: pu.card.ID, Amount: remaining, CardRole: domain.RoleCredit, Statement: statement}}, reversals...),
 					Links:    []domain.Link{{Type: domain.LinkChargebackOf, Target: pu.tx.ID}},
 				})

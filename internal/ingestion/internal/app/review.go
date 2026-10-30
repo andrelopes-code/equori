@@ -28,13 +28,13 @@ const (
 )
 
 // Records lists a batch's records in file order; state filters them when not empty.
-func (s *Service) Records(ctx context.Context, userID int64, batchID uuid.UUID, state domain.RecordState, p page.Request[RecordKey]) ([]domain.ExternalRecord, *RecordKey, domain.Batch, error) {
-	b, err := s.repo.Batch(ctx, userID, batchID)
+func (s *Service) Records(ctx context.Context, booksID int64, batchID uuid.UUID, state domain.RecordState, p page.Request[RecordKey]) ([]domain.ExternalRecord, *RecordKey, domain.Batch, error) {
+	b, err := s.repo.Batch(ctx, booksID, batchID)
 	if err != nil {
 		return nil, nil, domain.Batch{}, err
 	}
 
-	recs, next, err := s.repo.Records(ctx, userID, batchID, state, p)
+	recs, next, err := s.repo.Records(ctx, booksID, batchID, state, p)
 	if err != nil {
 		return nil, nil, domain.Batch{}, err
 	}
@@ -51,13 +51,13 @@ func (s *Service) Records(ctx context.Context, userID int64, batchID uuid.UUID, 
 // Resolve settles a record that needs review with the owner's choice (chapter 4, 4.3.3,
 // ResolveMatch) and moves it between the batch counts.
 // Record returns one of the user's external records.
-func (s *Service) Record(ctx context.Context, userID int64, id uuid.UUID) (domain.ExternalRecord, error) {
-	rec, err := s.repo.Record(ctx, userID, id)
+func (s *Service) Record(ctx context.Context, booksID int64, id uuid.UUID) (domain.ExternalRecord, error) {
+	rec, err := s.repo.Record(ctx, booksID, id)
 	if err != nil {
 		return domain.ExternalRecord{}, err
 	}
 
-	b, err := s.repo.Batch(ctx, userID, rec.BatchID)
+	b, err := s.repo.Batch(ctx, booksID, rec.BatchID)
 	if err != nil {
 		return domain.ExternalRecord{}, err
 	}
@@ -65,12 +65,12 @@ func (s *Service) Record(ctx context.Context, userID int64, id uuid.UUID) (domai
 	return rec, s.refreshCandidates(ctx, &rec, currencyOf(b))
 }
 
-func (s *Service) Resolve(ctx context.Context, userID int64, recordID uuid.UUID, action string, txID uuid.UUID) (domain.ExternalRecord, domain.Batch, error) {
+func (s *Service) Resolve(ctx context.Context, booksID int64, recordID uuid.UUID, action string, txID uuid.UUID) (domain.ExternalRecord, domain.Batch, error) {
 	if action != ActionMatch && action != ActionCreate && action != ActionDiscard {
 		return domain.ExternalRecord{}, domain.Batch{}, &domain.FieldError{Field: "action", Message: "must be match, create or discard"}
 	}
 
-	found, err := s.repo.Record(ctx, userID, recordID)
+	found, err := s.repo.Record(ctx, booksID, recordID)
 	if err != nil {
 		return domain.ExternalRecord{}, domain.Batch{}, err
 	}
@@ -81,7 +81,7 @@ func (s *Service) Resolve(ctx context.Context, userID int64, recordID uuid.UUID,
 	}
 	defer unlock()
 
-	rec, err := s.repo.Record(ctx, userID, recordID)
+	rec, err := s.repo.Record(ctx, booksID, recordID)
 	if err != nil {
 		return domain.ExternalRecord{}, domain.Batch{}, err
 	}
@@ -90,7 +90,7 @@ func (s *Service) Resolve(ctx context.Context, userID int64, recordID uuid.UUID,
 		return domain.ExternalRecord{}, domain.Batch{}, ErrRecordResolved
 	}
 
-	b, err := s.repo.Batch(ctx, userID, rec.BatchID)
+	b, err := s.repo.Batch(ctx, booksID, rec.BatchID)
 	if err != nil {
 		return domain.ExternalRecord{}, domain.Batch{}, err
 	}
@@ -115,11 +115,11 @@ func (s *Service) Resolve(ctx context.Context, userID int64, recordID uuid.UUID,
 		}
 
 		// A101: the institution's amount and date win; the owner's classification stays.
-		if err := s.ledger.ConfirmLine(ctx, userID, txID, rec.AccountID, rec.Amount, rec.Date); err != nil {
+		if err := s.ledger.ConfirmLine(ctx, booksID, txID, rec.AccountID, rec.Amount, rec.Date); err != nil {
 			return domain.ExternalRecord{}, domain.Batch{}, err
 		}
 
-		conflicts, err := s.ledger.ClearMatched(ctx, userID, []Match{{RecordID: rec.ID, TransactionID: txID, AccountID: rec.AccountID}})
+		conflicts, err := s.ledger.ClearMatched(ctx, booksID, []Match{{RecordID: rec.ID, TransactionID: txID, AccountID: rec.AccountID}})
 		if err != nil {
 			return domain.ExternalRecord{}, domain.Batch{}, err
 		}
@@ -137,7 +137,7 @@ func (s *Service) Resolve(ctx context.Context, userID int64, recordID uuid.UUID,
 	case ActionCreate:
 		line := Line{AccountID: rec.AccountID, Currency: currencyOf(b), Date: rec.Date, Amount: rec.Amount, Description: truncate(rec.Description)}
 
-		ids, err := s.ledger.RecordImported(ctx, userID, []NewLine{{RecordID: rec.ID, Line: line}})
+		ids, err := s.ledger.RecordImported(ctx, booksID, []NewLine{{RecordID: rec.ID, Line: line}})
 		if errors.Is(err, ErrLineRejected) {
 			return domain.ExternalRecord{}, domain.Batch{}, &domain.FieldError{Field: "action", Message: err.Error()}
 		}
@@ -162,13 +162,13 @@ func (s *Service) Resolve(ctx context.Context, userID int64, recordID uuid.UUID,
 // Unconfirmed lists the account's entries that neither an institution line nor an institution
 // balance confirmed, expected within its feed and more than MatchHardLimit days before the
 // feed's end, oldest first (A103, A133).
-func (s *Service) Unconfirmed(ctx context.Context, userID int64, accountID uuid.UUID) ([]domain.LedgerPosting, money.Currency, error) {
-	target, err := s.ledger.ImportTarget(ctx, userID, accountID)
+func (s *Service) Unconfirmed(ctx context.Context, booksID int64, accountID uuid.UUID) ([]domain.LedgerPosting, money.Currency, error) {
+	target, err := s.ledger.ImportTarget(ctx, booksID, accountID)
 	if err != nil {
 		return nil, "", err
 	}
 
-	feed, err := s.repo.AccountFeed(ctx, userID, accountID)
+	feed, err := s.repo.AccountFeed(ctx, booksID, accountID)
 	if err != nil || feed.From == nil || feed.To == nil {
 		return nil, target.Currency, err
 	}
@@ -178,15 +178,15 @@ func (s *Service) Unconfirmed(ctx context.Context, userID int64, accountID uuid.
 		return nil, target.Currency, nil
 	}
 
-	ps, err := s.ledger.UnconfirmedPostings(ctx, userID, accountID, *feed.From, to)
+	ps, err := s.ledger.UnconfirmedPostings(ctx, booksID, accountID, *feed.From, to)
 
 	return ps, target.Currency, err
 }
 
 // Reopen returns a discarded record to review with the candidates the ledger holds now, so a
 // line discarded before the entry it confirms existed can still confirm it (A140).
-func (s *Service) Reopen(ctx context.Context, userID int64, recordID uuid.UUID) (domain.ExternalRecord, domain.Batch, error) {
-	found, err := s.repo.Record(ctx, userID, recordID)
+func (s *Service) Reopen(ctx context.Context, booksID int64, recordID uuid.UUID) (domain.ExternalRecord, domain.Batch, error) {
+	found, err := s.repo.Record(ctx, booksID, recordID)
 	if err != nil {
 		return domain.ExternalRecord{}, domain.Batch{}, err
 	}
@@ -197,7 +197,7 @@ func (s *Service) Reopen(ctx context.Context, userID int64, recordID uuid.UUID) 
 	}
 	defer unlock()
 
-	reopened, err := s.repo.ReopenRecord(ctx, userID, recordID, found.BatchID)
+	reopened, err := s.repo.ReopenRecord(ctx, booksID, recordID, found.BatchID)
 	if err != nil {
 		return domain.ExternalRecord{}, domain.Batch{}, err
 	}
@@ -206,12 +206,12 @@ func (s *Service) Reopen(ctx context.Context, userID int64, recordID uuid.UUID) 
 		return domain.ExternalRecord{}, domain.Batch{}, ErrRecordNotDiscarded
 	}
 
-	b, err := s.repo.Batch(ctx, userID, found.BatchID)
+	b, err := s.repo.Batch(ctx, booksID, found.BatchID)
 	if err != nil {
 		return domain.ExternalRecord{}, domain.Batch{}, err
 	}
 
-	rec, err := s.repo.Record(ctx, userID, recordID)
+	rec, err := s.repo.Record(ctx, booksID, recordID)
 	if err != nil {
 		return domain.ExternalRecord{}, domain.Batch{}, err
 	}
@@ -227,7 +227,7 @@ func (s *Service) refreshCandidates(ctx context.Context, rec *domain.ExternalRec
 		return nil
 	}
 
-	postings, err := s.ledger.UnlinkedPostings(ctx, rec.UserID, rec.AccountID,
+	postings, err := s.ledger.UnlinkedPostings(ctx, rec.BooksID, rec.AccountID,
 		rec.Date.AddDate(0, 0, -domain.MatchHardLimit), rec.Date.AddDate(0, 0, domain.MatchHardLimit))
 	if err != nil {
 		return err
@@ -235,7 +235,7 @@ func (s *Service) refreshCandidates(ctx context.Context, rec *domain.ExternalRec
 
 	line := Line{AccountID: rec.AccountID, Currency: currency, Date: rec.Date, Amount: rec.Amount, Description: truncate(rec.Description)}
 
-	assigned, err := s.assign(ctx, rec.UserID, []scoredLine{{rec: rec, line: line}}, postings)
+	assigned, err := s.assign(ctx, rec.BooksID, []scoredLine{{rec: rec, line: line}}, postings)
 	if err != nil {
 		return err
 	}

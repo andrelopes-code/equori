@@ -160,7 +160,7 @@ func TestTickOverTwoUsers(t *testing.T) {
 	for user, want := range map[int64]string{f.h.OwnerID(): "tx-owner", otherID: "tx-other"} {
 		var ids []string
 
-		rows, err := f.h.Pool.Query(t.Context(), `SELECT external_id FROM ingestion_external_record WHERE user_id = $1`, user)
+		rows, err := f.h.Pool.Query(t.Context(), `SELECT external_id FROM ingestion_external_record WHERE books_id = $1`, user)
 		if err != nil {
 			t.Fatal(err)
 		}

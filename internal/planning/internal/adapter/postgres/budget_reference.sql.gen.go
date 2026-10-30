@@ -11,18 +11,18 @@ import (
 
 const getBudgetReference = `-- name: GetBudgetReference :one
 SELECT
-    user_id, source, amount, currency
+    books_id, source, amount, currency
 FROM
     planning_budget_reference
 WHERE
-    user_id = $1
+    books_id = $1
 `
 
-func (q *Queries) GetBudgetReference(ctx context.Context, userID int64) (PlanningBudgetReference, error) {
-	row := q.db.QueryRow(ctx, getBudgetReference, userID)
+func (q *Queries) GetBudgetReference(ctx context.Context, booksID int64) (PlanningBudgetReference, error) {
+	row := q.db.QueryRow(ctx, getBudgetReference, booksID)
 	var i PlanningBudgetReference
 	err := row.Scan(
-		&i.UserID,
+		&i.BooksID,
 		&i.Source,
 		&i.Amount,
 		&i.Currency,
@@ -32,10 +32,10 @@ func (q *Queries) GetBudgetReference(ctx context.Context, userID int64) (Plannin
 
 const upsertBudgetReference = `-- name: UpsertBudgetReference :exec
 INSERT INTO
-    planning_budget_reference (user_id, source, amount, currency)
+    planning_budget_reference (books_id, source, amount, currency)
 VALUES
     ($1, $2, $3, $4)
-ON CONFLICT (user_id) DO UPDATE
+ON CONFLICT (books_id) DO UPDATE
 SET
     source = EXCLUDED.source,
     amount = EXCLUDED.amount,
@@ -43,7 +43,7 @@ SET
 `
 
 type UpsertBudgetReferenceParams struct {
-	UserID   int64
+	BooksID  int64
 	Source   string
 	Amount   *int64
 	Currency string
@@ -51,7 +51,7 @@ type UpsertBudgetReferenceParams struct {
 
 func (q *Queries) UpsertBudgetReference(ctx context.Context, arg UpsertBudgetReferenceParams) error {
 	_, err := q.db.Exec(ctx, upsertBudgetReference,
-		arg.UserID,
+		arg.BooksID,
 		arg.Source,
 		arg.Amount,
 		arg.Currency,

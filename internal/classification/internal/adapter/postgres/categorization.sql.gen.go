@@ -14,23 +14,23 @@ import (
 
 const categorizationsByIDs = `-- name: CategorizationsByIDs :many
 SELECT
-    transaction_id, user_id, transaction_version, transaction_date, method, rule_id, corrected, match_key, category_id, voided, decided_at
+    transaction_id, books_id, transaction_version, transaction_date, method, rule_id, corrected, match_key, category_id, voided, decided_at
 FROM
     classification_categorization
 WHERE
-    user_id = $1
+    books_id = $1
     AND transaction_id = ANY ($2::UUID[])
     AND NOT voided
 `
 
 type CategorizationsByIDsParams struct {
-	UserID int64
-	Ids    []uuid.UUID
+	BooksID int64
+	Ids     []uuid.UUID
 }
 
 // A79: the categorizations of several transactions.
 func (q *Queries) CategorizationsByIDs(ctx context.Context, arg CategorizationsByIDsParams) ([]ClassificationCategorization, error) {
-	rows, err := q.db.Query(ctx, categorizationsByIDs, arg.UserID, arg.Ids)
+	rows, err := q.db.Query(ctx, categorizationsByIDs, arg.BooksID, arg.Ids)
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +40,7 @@ func (q *Queries) CategorizationsByIDs(ctx context.Context, arg CategorizationsB
 		var i ClassificationCategorization
 		if err := rows.Scan(
 			&i.TransactionID,
-			&i.UserID,
+			&i.BooksID,
 			&i.TransactionVersion,
 			&i.TransactionDate,
 			&i.Method,
@@ -68,7 +68,7 @@ SELECT
 FROM
     classification_categorization
 WHERE
-    user_id = $1
+    books_id = $1
     AND NOT voided
     AND transaction_date BETWEEN $2 AND $3
 GROUP BY
@@ -76,7 +76,7 @@ GROUP BY
 `
 
 type CountMethodsParams struct {
-	UserID   int64
+	BooksID  int64
 	FromDate time.Time
 	ToDate   time.Time
 }
@@ -87,7 +87,7 @@ type CountMethodsRow struct {
 }
 
 func (q *Queries) CountMethods(ctx context.Context, arg CountMethodsParams) ([]CountMethodsRow, error) {
-	rows, err := q.db.Query(ctx, countMethods, arg.UserID, arg.FromDate, arg.ToDate)
+	rows, err := q.db.Query(ctx, countMethods, arg.BooksID, arg.FromDate, arg.ToDate)
 	if err != nil {
 		return nil, err
 	}
@@ -109,44 +109,44 @@ func (q *Queries) CountMethods(ctx context.Context, arg CountMethodsParams) ([]C
 const deleteCategorization = `-- name: DeleteCategorization :exec
 DELETE FROM classification_categorization
 WHERE
-    user_id = $1
+    books_id = $1
     AND transaction_id = $2
     AND transaction_version < $3
     AND NOT voided
 `
 
 type DeleteCategorizationParams struct {
-	UserID             int64
+	BooksID            int64
 	TransactionID      uuid.UUID
 	TransactionVersion int32
 }
 
 func (q *Queries) DeleteCategorization(ctx context.Context, arg DeleteCategorizationParams) error {
-	_, err := q.db.Exec(ctx, deleteCategorization, arg.UserID, arg.TransactionID, arg.TransactionVersion)
+	_, err := q.db.Exec(ctx, deleteCategorization, arg.BooksID, arg.TransactionID, arg.TransactionVersion)
 	return err
 }
 
 const getCategorization = `-- name: GetCategorization :one
 SELECT
-    transaction_id, user_id, transaction_version, transaction_date, method, rule_id, corrected, match_key, category_id, voided, decided_at
+    transaction_id, books_id, transaction_version, transaction_date, method, rule_id, corrected, match_key, category_id, voided, decided_at
 FROM
     classification_categorization
 WHERE
-    user_id = $1
+    books_id = $1
     AND transaction_id = $2
 `
 
 type GetCategorizationParams struct {
-	UserID        int64
+	BooksID       int64
 	TransactionID uuid.UUID
 }
 
 func (q *Queries) GetCategorization(ctx context.Context, arg GetCategorizationParams) (ClassificationCategorization, error) {
-	row := q.db.QueryRow(ctx, getCategorization, arg.UserID, arg.TransactionID)
+	row := q.db.QueryRow(ctx, getCategorization, arg.BooksID, arg.TransactionID)
 	var i ClassificationCategorization
 	err := row.Scan(
 		&i.TransactionID,
-		&i.UserID,
+		&i.BooksID,
 		&i.TransactionVersion,
 		&i.TransactionDate,
 		&i.Method,
@@ -164,7 +164,7 @@ const markCategorizationVoided = `-- name: MarkCategorizationVoided :exec
 INSERT INTO
     classification_categorization (
         transaction_id,
-        user_id,
+        books_id,
         transaction_version,
         transaction_date,
         voided,
@@ -186,7 +186,7 @@ SET
 
 type MarkCategorizationVoidedParams struct {
 	TransactionID      uuid.UUID
-	UserID             int64
+	BooksID            int64
 	TransactionVersion int32
 	TransactionDate    time.Time
 	DecidedAt          time.Time
@@ -196,7 +196,7 @@ type MarkCategorizationVoidedParams struct {
 func (q *Queries) MarkCategorizationVoided(ctx context.Context, arg MarkCategorizationVoidedParams) error {
 	_, err := q.db.Exec(ctx, markCategorizationVoided,
 		arg.TransactionID,
-		arg.UserID,
+		arg.BooksID,
 		arg.TransactionVersion,
 		arg.TransactionDate,
 		arg.DecidedAt,
@@ -211,7 +211,7 @@ SELECT
 FROM
     classification_categorization
 WHERE
-    user_id = $1
+    books_id = $1
     AND method IS NULL
     AND NOT voided
     AND (
@@ -226,7 +226,7 @@ LIMIT
 `
 
 type PendingCategorizationsParams struct {
-	UserID    int64
+	BooksID   int64
 	AfterDate *time.Time
 	AfterID   uuid.NullUUID
 	RowLimit  int32
@@ -239,7 +239,7 @@ type PendingCategorizationsRow struct {
 
 func (q *Queries) PendingCategorizations(ctx context.Context, arg PendingCategorizationsParams) ([]PendingCategorizationsRow, error) {
 	rows, err := q.db.Query(ctx, pendingCategorizations,
-		arg.UserID,
+		arg.BooksID,
 		arg.AfterDate,
 		arg.AfterID,
 		arg.RowLimit,
@@ -269,7 +269,7 @@ SELECT
 FROM
     classification_categorization
 WHERE
-    user_id = $1
+    books_id = $1
     AND NOT voided
     AND transaction_date BETWEEN $2::date AND $3::date
     AND (
@@ -284,7 +284,7 @@ LIMIT
 `
 
 type PreviewCandidatesParams struct {
-	UserID    int64
+	BooksID   int64
 	FromDate  time.Time
 	ToDate    time.Time
 	AfterDate *time.Time
@@ -300,7 +300,7 @@ type PreviewCandidatesRow struct {
 // A81: the non-voided categorizable transactions dated in [from, to], newest first.
 func (q *Queries) PreviewCandidates(ctx context.Context, arg PreviewCandidatesParams) ([]PreviewCandidatesRow, error) {
 	rows, err := q.db.Query(ctx, previewCandidates,
-		arg.UserID,
+		arg.BooksID,
 		arg.FromDate,
 		arg.ToDate,
 		arg.AfterDate,
@@ -333,7 +333,7 @@ SELECT
 FROM
     classification_categorization
 WHERE
-    user_id = $1
+    books_id = $1
     AND method = 'rule'
     AND NOT voided
     AND rule_id = ANY ($2::UUID[])
@@ -342,8 +342,8 @@ GROUP BY
 `
 
 type RuleUsageParams struct {
-	UserID int64
-	Ids    []uuid.UUID
+	BooksID int64
+	Ids     []uuid.UUID
 }
 
 type RuleUsageRow struct {
@@ -354,7 +354,7 @@ type RuleUsageRow struct {
 
 // A80: how many current categorizations each rule decided, and the latest.
 func (q *Queries) RuleUsage(ctx context.Context, arg RuleUsageParams) ([]RuleUsageRow, error) {
-	rows, err := q.db.Query(ctx, ruleUsage, arg.UserID, arg.Ids)
+	rows, err := q.db.Query(ctx, ruleUsage, arg.BooksID, arg.Ids)
 	if err != nil {
 		return nil, err
 	}
@@ -377,7 +377,7 @@ const upsertCategorization = `-- name: UpsertCategorization :execrows
 INSERT INTO
     classification_categorization (
         transaction_id,
-        user_id,
+        books_id,
         transaction_version,
         transaction_date,
         method,
@@ -419,7 +419,7 @@ WHERE
 
 type UpsertCategorizationParams struct {
 	TransactionID      uuid.UUID
-	UserID             int64
+	BooksID            int64
 	TransactionVersion int32
 	TransactionDate    time.Time
 	Method             *string
@@ -434,7 +434,7 @@ type UpsertCategorizationParams struct {
 func (q *Queries) UpsertCategorization(ctx context.Context, arg UpsertCategorizationParams) (int64, error) {
 	result, err := q.db.Exec(ctx, upsertCategorization,
 		arg.TransactionID,
-		arg.UserID,
+		arg.BooksID,
 		arg.TransactionVersion,
 		arg.TransactionDate,
 		arg.Method,

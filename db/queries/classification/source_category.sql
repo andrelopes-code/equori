@@ -1,10 +1,10 @@
 -- name: CountSourceCategory :exec
 -- A line carried the category: count it and keep the aggregator's latest name.
 INSERT INTO
-    classification_source_category (user_id, aggregator, external_id, name, seen_count)
+    classification_source_category (books_id, aggregator, external_id, name, seen_count)
 VALUES
-    (@user_id, @aggregator, @external_id, @name, @seen)
-ON CONFLICT (user_id, aggregator, external_id) DO UPDATE
+    (@books_id, @aggregator, @external_id, @name, @seen)
+ON CONFLICT (books_id, aggregator, external_id) DO UPDATE
 SET
     seen_count = classification_source_category.seen_count + EXCLUDED.seen_count,
     name = CASE
@@ -19,7 +19,7 @@ SELECT
 FROM
     classification_source_category
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND aggregator = @aggregator
     AND external_id = ANY (@external_ids::TEXT[])
     AND category_id IS NOT NULL;
@@ -30,7 +30,7 @@ SELECT
 FROM
     classification_source_category
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND (
         sqlc.narg (after_name)::text IS NULL
         OR (name, id) > (sqlc.narg (after_name)::text, sqlc.narg (after_id)::uuid)
@@ -46,7 +46,7 @@ UPDATE classification_source_category
 SET
     category_id = sqlc.narg (category_id)
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND id = @id
 RETURNING
     *;

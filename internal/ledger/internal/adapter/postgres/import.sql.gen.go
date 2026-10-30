@@ -17,20 +17,20 @@ UPDATE ledger_posting
 SET
     status = 'cleared'
 WHERE
-    user_id = $1
+    books_id = $1
     AND transaction_id = $2
     AND account_id = $3
     AND status = 'pending'
 `
 
 type ClearPendingPostingsParams struct {
-	UserID        int64
+	BooksID       int64
 	TransactionID uuid.UUID
 	AccountID     uuid.UUID
 }
 
 func (q *Queries) ClearPendingPostings(ctx context.Context, arg ClearPendingPostingsParams) error {
-	_, err := q.db.Exec(ctx, clearPendingPostings, arg.UserID, arg.TransactionID, arg.AccountID)
+	_, err := q.db.Exec(ctx, clearPendingPostings, arg.BooksID, arg.TransactionID, arg.AccountID)
 	return err
 }
 
@@ -41,12 +41,12 @@ SELECT
 FROM
     ledger_posting
 WHERE
-    user_id = $1
+    books_id = $1
     AND external_record_id = $2
 `
 
 type GetRecordPostingParams struct {
-	UserID           int64
+	BooksID          int64
 	ExternalRecordID uuid.NullUUID
 }
 
@@ -56,7 +56,7 @@ type GetRecordPostingRow struct {
 }
 
 func (q *Queries) GetRecordPosting(ctx context.Context, arg GetRecordPostingParams) (GetRecordPostingRow, error) {
-	row := q.db.QueryRow(ctx, getRecordPosting, arg.UserID, arg.ExternalRecordID)
+	row := q.db.QueryRow(ctx, getRecordPosting, arg.BooksID, arg.ExternalRecordID)
 	var i GetRecordPostingRow
 	err := row.Scan(&i.TransactionID, &i.InstallmentPlanID)
 	return i, err
@@ -68,17 +68,17 @@ SELECT
 FROM
     ledger_posting
 WHERE
-    user_id = $1
+    books_id = $1
     AND external_record_id = $2
 `
 
 type GetTransactionIDByExternalRecordParams struct {
-	UserID           int64
+	BooksID          int64
 	ExternalRecordID uuid.NullUUID
 }
 
 func (q *Queries) GetTransactionIDByExternalRecord(ctx context.Context, arg GetTransactionIDByExternalRecordParams) (uuid.UUID, error) {
-	row := q.db.QueryRow(ctx, getTransactionIDByExternalRecord, arg.UserID, arg.ExternalRecordID)
+	row := q.db.QueryRow(ctx, getTransactionIDByExternalRecord, arg.BooksID, arg.ExternalRecordID)
 	var transaction_id uuid.UUID
 	err := row.Scan(&transaction_id)
 	return transaction_id, err
@@ -89,18 +89,18 @@ UPDATE ledger_posting
 SET
     external_record_id = $1
 WHERE
-    user_id = $2
+    books_id = $2
     AND id = $3
 `
 
 type LinkExternalRecordParams struct {
 	ExternalRecordID uuid.NullUUID
-	UserID           int64
+	BooksID          int64
 	ID               uuid.UUID
 }
 
 func (q *Queries) LinkExternalRecord(ctx context.Context, arg LinkExternalRecordParams) error {
-	_, err := q.db.Exec(ctx, linkExternalRecord, arg.ExternalRecordID, arg.UserID, arg.ID)
+	_, err := q.db.Exec(ctx, linkExternalRecord, arg.ExternalRecordID, arg.BooksID, arg.ID)
 	return err
 }
 
@@ -111,12 +111,12 @@ SELECT
 FROM
     ledger_posting
 WHERE
-    user_id = $1
+    books_id = $1
     AND external_record_id = ANY ($2::UUID[])
 `
 
 type ListTransactionsByExternalRecordsParams struct {
-	UserID    int64
+	BooksID   int64
 	RecordIds []uuid.UUID
 }
 
@@ -126,7 +126,7 @@ type ListTransactionsByExternalRecordsRow struct {
 }
 
 func (q *Queries) ListTransactionsByExternalRecords(ctx context.Context, arg ListTransactionsByExternalRecordsParams) ([]ListTransactionsByExternalRecordsRow, error) {
-	rows, err := q.db.Query(ctx, listTransactionsByExternalRecords, arg.UserID, arg.RecordIds)
+	rows, err := q.db.Query(ctx, listTransactionsByExternalRecords, arg.BooksID, arg.RecordIds)
 	if err != nil {
 		return nil, err
 	}
@@ -158,10 +158,10 @@ WITH
             coalesce(s.closing_date, p.settled_on, p.booked_on)::date AS expected_on
         FROM
             ledger_posting p
-            LEFT JOIN ledger_statement s ON s.user_id = p.user_id
+            LEFT JOIN ledger_statement s ON s.books_id = p.books_id
             AND s.id = p.statement_id
         WHERE
-            p.user_id = $3
+            p.books_id = $3
             AND p.account_id = $4
             AND NOT p.voided
             AND p.external_record_id IS NULL
@@ -190,7 +190,7 @@ WITH
                 FROM
                     ledger_link l
                 WHERE
-                    l.user_id = $3
+                    l.books_id = $3
                     AND l.link_type IN ('cancellation_of', 'anticipation_of')
                     AND o.transaction_id IN (l.from_transaction_id, l.to_transaction_id)
             ) g
@@ -238,7 +238,7 @@ FROM
             o.expected_on,
             o.position
     ) u
-    JOIN ledger_transaction t ON t.user_id = $3
+    JOIN ledger_transaction t ON t.books_id = $3
     AND t.id = u.transaction_id
 ORDER BY
     u.expected_on,
@@ -248,7 +248,7 @@ ORDER BY
 type ListUnconfirmedPostingsParams struct {
 	FromDate  time.Time
 	ToDate    time.Time
-	UserID    int64
+	BooksID   int64
 	AccountID uuid.UUID
 }
 
@@ -269,7 +269,7 @@ func (q *Queries) ListUnconfirmedPostings(ctx context.Context, arg ListUnconfirm
 	rows, err := q.db.Query(ctx, listUnconfirmedPostings,
 		arg.FromDate,
 		arg.ToDate,
-		arg.UserID,
+		arg.BooksID,
 		arg.AccountID,
 	)
 	if err != nil {
@@ -313,7 +313,7 @@ FROM
         FROM
             ledger_posting p
         WHERE
-            p.user_id = $1
+            p.books_id = $1
             AND p.account_id = $2
             AND NOT p.voided
             AND p.external_record_id IS NULL
@@ -322,7 +322,7 @@ FROM
             p.transaction_id,
             p.position
     ) u
-    JOIN ledger_transaction t ON t.user_id = $1
+    JOIN ledger_transaction t ON t.books_id = $1
     AND t.id = u.transaction_id
 ORDER BY
     u.booked_on,
@@ -330,7 +330,7 @@ ORDER BY
 `
 
 type ListUnlinkedPostingsParams struct {
-	UserID    int64
+	BooksID   int64
 	AccountID uuid.UUID
 	FromDate  time.Time
 	ToDate    time.Time
@@ -348,7 +348,7 @@ type ListUnlinkedPostingsRow struct {
 // what statement lines may confirm (I07, P5b amendment A27).
 func (q *Queries) ListUnlinkedPostings(ctx context.Context, arg ListUnlinkedPostingsParams) ([]ListUnlinkedPostingsRow, error) {
 	rows, err := q.db.Query(ctx, listUnlinkedPostings,
-		arg.UserID,
+		arg.BooksID,
 		arg.AccountID,
 		arg.FromDate,
 		arg.ToDate,
@@ -386,7 +386,7 @@ FROM
     ledger_posting p
     JOIN ledger_transaction t ON t.id = p.transaction_id
 WHERE
-    p.user_id = $1
+    p.books_id = $1
     AND p.transaction_id = $2
     AND p.account_id = $3
 ORDER BY
@@ -397,7 +397,7 @@ FOR UPDATE OF
 `
 
 type LockAccountPostingLinksParams struct {
-	UserID        int64
+	BooksID       int64
 	TransactionID uuid.UUID
 	AccountID     uuid.UUID
 }
@@ -410,7 +410,7 @@ type LockAccountPostingLinksRow struct {
 
 // The transaction's postings on the account, locked with the transaction, in position order.
 func (q *Queries) LockAccountPostingLinks(ctx context.Context, arg LockAccountPostingLinksParams) ([]LockAccountPostingLinksRow, error) {
-	rows, err := q.db.Query(ctx, lockAccountPostingLinks, arg.UserID, arg.TransactionID, arg.AccountID)
+	rows, err := q.db.Query(ctx, lockAccountPostingLinks, arg.BooksID, arg.TransactionID, arg.AccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -438,13 +438,13 @@ SELECT
 FROM
     ledger_posting
 WHERE
-    user_id = $1
+    books_id = $1
     AND external_record_id = $2
 FOR UPDATE
 `
 
 type LockImportedPostingParams struct {
-	UserID           int64
+	BooksID          int64
 	ExternalRecordID uuid.NullUUID
 }
 
@@ -457,7 +457,7 @@ type LockImportedPostingRow struct {
 
 // The posting an external record confirms (P6 amendment A36).
 func (q *Queries) LockImportedPosting(ctx context.Context, arg LockImportedPostingParams) (LockImportedPostingRow, error) {
-	row := q.db.QueryRow(ctx, lockImportedPosting, arg.UserID, arg.ExternalRecordID)
+	row := q.db.QueryRow(ctx, lockImportedPosting, arg.BooksID, arg.ExternalRecordID)
 	var i LockImportedPostingRow
 	err := row.Scan(
 		&i.ID,
@@ -473,18 +473,18 @@ UPDATE ledger_posting
 SET
     external_record_id = NULL
 WHERE
-    user_id = $1
+    books_id = $1
     AND external_record_id = $2
 `
 
 type ReleaseExternalRecordParams struct {
-	UserID           int64
+	BooksID          int64
 	ExternalRecordID uuid.NullUUID
 }
 
 // A38: the posting stays; a line with another id may confirm it again.
 func (q *Queries) ReleaseExternalRecord(ctx context.Context, arg ReleaseExternalRecordParams) error {
-	_, err := q.db.Exec(ctx, releaseExternalRecord, arg.UserID, arg.ExternalRecordID)
+	_, err := q.db.Exec(ctx, releaseExternalRecord, arg.BooksID, arg.ExternalRecordID)
 	return err
 }
 
@@ -498,14 +498,14 @@ SET
         ELSE 'institution'
     END
 WHERE
-    user_id = $3
+    books_id = $3
     AND id = $4
 `
 
 type SettleImportedPostingParams struct {
 	Status      string
 	StatementID uuid.NullUUID
-	UserID      int64
+	BooksID     int64
 	ID          uuid.UUID
 }
 
@@ -514,7 +514,7 @@ func (q *Queries) SettleImportedPosting(ctx context.Context, arg SettleImportedP
 	_, err := q.db.Exec(ctx, settleImportedPosting,
 		arg.Status,
 		arg.StatementID,
-		arg.UserID,
+		arg.BooksID,
 		arg.ID,
 	)
 	return err

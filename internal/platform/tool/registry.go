@@ -91,26 +91,26 @@ func (r *Registry) Call(ctx context.Context, name string, args json.RawMessage) 
 		return Result{}, fmt.Errorf("call tool %s: %w", name, ErrUnknownTool)
 	}
 
-	userID, ok := auth.UserID(ctx)
+	booksID, ok := auth.BooksID(ctx)
 	if !ok {
-		return Result{}, fmt.Errorf("call tool %s: %w", name, ErrNoUser)
+		return Result{}, fmt.Errorf("call tool %s: %w", name, ErrNoBooks)
 	}
 
 	start := time.Now()
 
-	res, outcome, err := r.call(ctx, e, userID, args)
+	res, outcome, err := r.call(ctx, e, booksID, args)
 	if err != nil {
 		outcome = "canceled"
 	}
 
-	r.log.LogAttrs(ctx, slog.LevelInfo, "tool call", slog.String("tool", name), slog.Int64("user_id", userID),
+	r.log.LogAttrs(ctx, slog.LevelInfo, "tool call", slog.String("tool", name), slog.Int64("books_id", booksID),
 		slog.String("effect", e.tool.spec.Effect.String()), slog.String("outcome", outcome),
 		slog.Duration("duration", time.Since(start)), slog.Int("bytes", len(res.Content)))
 
 	return res, err
 }
 
-func (r *Registry) call(ctx context.Context, e entry, userID int64, args json.RawMessage) (Result, string, error) {
+func (r *Registry) call(ctx context.Context, e entry, booksID int64, args json.RawMessage) (Result, string, error) {
 	name := e.tool.spec.Name
 
 	args, bad := e.tool.validate(args)
@@ -118,7 +118,7 @@ func (r *Registry) call(ctx context.Context, e entry, userID int64, args json.Ra
 		return failure(*bad)
 	}
 
-	out, err := e.tool.call(ctx, userID, args)
+	out, err := e.tool.call(ctx, booksID, args)
 	if err != nil {
 		if ctx.Err() != nil || errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 			return Result{}, "", fmt.Errorf("call tool %s: %w", name, err)

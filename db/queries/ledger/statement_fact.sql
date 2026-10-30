@@ -11,7 +11,7 @@ SELECT
             JOIN ledger_account a ON a.id = o.account_id
             AND a.system_role = 'opening_balances'
         WHERE
-            c.user_id = @user_id
+            c.books_id = @books_id
             AND c.account_id = @account_id
     )::bool;
 
@@ -22,15 +22,15 @@ SELECT
 FROM
     ledger_statement
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND account_id = @account_id;
 
 -- name: UpsertStatementFact :exec
 INSERT INTO
-    ledger_statement_fact (user_id, statement_id, source, closing_date, due_date, total, minimum)
+    ledger_statement_fact (books_id, statement_id, source, closing_date, due_date, total, minimum)
 VALUES
     (
-        @user_id,
+        @books_id,
         @statement_id,
         @source,
         sqlc.narg (closing_date),
@@ -49,7 +49,7 @@ SET
 -- name: DeleteStatementFact :exec
 DELETE FROM ledger_statement_fact
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND statement_id = @statement_id
     AND source = @source;
 
@@ -60,7 +60,7 @@ FROM
     ledger_statement_fact f
     JOIN ledger_statement s ON s.id = f.statement_id
 WHERE
-    f.user_id = @user_id
+    f.books_id = @books_id
     AND s.account_id = @account_id;
 
 -- name: ListRedatablePostings :many
@@ -72,7 +72,7 @@ SELECT
 FROM
     ledger_posting p
 WHERE
-    p.user_id = @user_id
+    p.books_id = @books_id
     AND p.account_id = @account_id
     AND NOT p.voided
     AND p.statement_id IS NOT NULL
@@ -85,5 +85,5 @@ UPDATE ledger_posting
 SET
     statement_id = @statement_id
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND id = @id;

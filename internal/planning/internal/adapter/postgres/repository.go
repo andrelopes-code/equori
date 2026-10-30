@@ -66,9 +66,9 @@ func fromPtr(p *int32) int {
 	return int(*p)
 }
 
-func (r *Repository) InsertSchedule(ctx context.Context, userID int64, s domain.Schedule) (domain.Schedule, error) {
+func (r *Repository) InsertSchedule(ctx context.Context, booksID int64, s domain.Schedule) (domain.Schedule, error) {
 	row, err := r.q.InsertSchedule(ctx, InsertScheduleParams{
-		UserID: userID, Kind: string(s.Kind), AccountID: s.AccountID, CounterpartID: s.CounterpartID,
+		BooksID: booksID, Kind: string(s.Kind), AccountID: s.AccountID, CounterpartID: s.CounterpartID,
 		PayeeID: nullUUID(s.PayeeID), Description: s.Description, Currency: string(s.Currency),
 		MatchToleranceBp: int32(s.ToleranceBP), GraceDays: int32(s.GraceDays), GeneratedUntil: s.GeneratedUntil, Calendar: s.Calendar, //nolint:gosec // validated to 0-10000 and 0-31
 		CreatedAt: s.CreatedAt,
@@ -78,7 +78,7 @@ func (r *Repository) InsertSchedule(ctx context.Context, userID int64, s domain.
 	}
 
 	for _, t := range s.Terms {
-		if err := r.insertTerms(ctx, userID, row.ID, t); err != nil {
+		if err := r.insertTerms(ctx, booksID, row.ID, t); err != nil {
 			return domain.Schedule{}, err
 		}
 	}
@@ -89,7 +89,7 @@ func (r *Repository) InsertSchedule(ctx context.Context, userID int64, s domain.
 	return out, nil
 }
 
-func (r *Repository) insertTerms(ctx context.Context, userID int64, scheduleID uuid.UUID, t domain.Terms) error {
+func (r *Repository) insertTerms(ctx context.Context, booksID int64, scheduleID uuid.UUID, t domain.Terms) error {
 	rule := t.Rule
 
 	var weekday *int32
@@ -99,7 +99,7 @@ func (r *Repository) insertTerms(ctx context.Context, userID int64, scheduleID u
 	}
 
 	err := r.q.InsertTerms(ctx, InsertTermsParams{
-		UserID: userID, ScheduleID: scheduleID, EffectiveFrom: t.EffectiveFrom, Frequency: string(rule.Frequency),
+		BooksID: booksID, ScheduleID: scheduleID, EffectiveFrom: t.EffectiveFrom, Frequency: string(rule.Frequency),
 		Interval: int32(rule.Interval), DayOfMonth: intPtr(rule.DayOfMonth), Weekday: weekday, Ordinal: intPtr(rule.Ordinal), //nolint:gosec // interval is at most 120 (contract)
 		BusinessDayOrdinal: intPtr(rule.BusinessDayOrdinal), Adjustment: rule.Adjustment, Start: rule.Start, Until: rule.Until, Count: intPtr(rule.Count), Amount: t.Amount, FirstSequence: intPtr(t.FirstSequence),
 	})
@@ -149,7 +149,7 @@ func (r *Repository) complete(ctx context.Context, rows []PlanningSchedule) ([]d
 		byID[row.ID] = &out[i]
 	}
 
-	terms, err := r.q.ListTerms(ctx, ListTermsParams{UserID: rows[0].UserID, ScheduleIds: ids})
+	terms, err := r.q.ListTerms(ctx, ListTermsParams{BooksID: rows[0].BooksID, ScheduleIds: ids})
 	if err != nil {
 		return nil, fmt.Errorf("list schedule terms: %w", err)
 	}
@@ -159,7 +159,7 @@ func (r *Repository) complete(ctx context.Context, rows []PlanningSchedule) ([]d
 		s.Terms = append(s.Terms, toTerms(t))
 	}
 
-	pauses, err := r.q.ListPauses(ctx, ListPausesParams{UserID: rows[0].UserID, ScheduleIds: ids})
+	pauses, err := r.q.ListPauses(ctx, ListPausesParams{BooksID: rows[0].BooksID, ScheduleIds: ids})
 	if err != nil {
 		return nil, fmt.Errorf("list schedule pauses: %w", err)
 	}
@@ -185,13 +185,13 @@ func (r *Repository) one(ctx context.Context, row PlanningSchedule, err error) (
 	return out[0], nil
 }
 
-func (r *Repository) Schedule(ctx context.Context, userID int64, id uuid.UUID) (domain.Schedule, error) {
-	row, err := r.q.GetSchedule(ctx, GetScheduleParams{UserID: userID, ID: id})
+func (r *Repository) Schedule(ctx context.Context, booksID int64, id uuid.UUID) (domain.Schedule, error) {
+	row, err := r.q.GetSchedule(ctx, GetScheduleParams{BooksID: booksID, ID: id})
 	return r.one(ctx, row, err)
 }
 
-func (r *Repository) LockSchedule(ctx context.Context, userID int64, id uuid.UUID) (domain.Schedule, error) {
-	row, err := r.q.LockSchedule(ctx, LockScheduleParams{UserID: userID, ID: id})
+func (r *Repository) LockSchedule(ctx context.Context, booksID int64, id uuid.UUID) (domain.Schedule, error) {
+	row, err := r.q.LockSchedule(ctx, LockScheduleParams{BooksID: booksID, ID: id})
 	return r.one(ctx, row, err)
 }
 
@@ -217,10 +217,10 @@ func trim[R any](rows []R, limit int, id func(R) uuid.UUID) ([]R, *app.IDKey) {
 	return rows, &app.IDKey{ID: id(rows[len(rows)-1])}
 }
 
-func (r *Repository) ListSchedules(ctx context.Context, userID int64, p page.Request[app.IDKey]) ([]domain.Schedule, *app.IDKey, error) {
+func (r *Repository) ListSchedules(ctx context.Context, booksID int64, p page.Request[app.IDKey]) ([]domain.Schedule, *app.IDKey, error) {
 	after, limit := keyset(p)
 
-	rows, err := r.q.ListSchedules(ctx, ListSchedulesParams{UserID: userID, AfterID: after, RowLimit: limit})
+	rows, err := r.q.ListSchedules(ctx, ListSchedulesParams{BooksID: booksID, AfterID: after, RowLimit: limit})
 	if err != nil {
 		return nil, nil, fmt.Errorf("list schedules: %w", err)
 	}
@@ -231,8 +231,8 @@ func (r *Repository) ListSchedules(ctx context.Context, userID int64, p page.Req
 	return out, next, err
 }
 
-func (r *Repository) Schedules(ctx context.Context, userID int64) ([]domain.Schedule, error) {
-	rows, err := r.q.SchedulesOfUser(ctx, userID)
+func (r *Repository) Schedules(ctx context.Context, booksID int64) ([]domain.Schedule, error) {
+	rows, err := r.q.SchedulesOfBooks(ctx, booksID)
 	if err != nil {
 		return nil, fmt.Errorf("list schedules of user: %w", err)
 	}
@@ -248,7 +248,7 @@ func (r *Repository) SchedulesBehind(ctx context.Context, horizon time.Time) ([]
 
 	out := make([]app.ScheduleRef, len(rows))
 	for i, row := range rows {
-		out[i] = app.ScheduleRef{UserID: row.UserID, ID: row.ID}
+		out[i] = app.ScheduleRef{BooksID: row.BooksID, ID: row.ID}
 	}
 
 	return out, nil
@@ -262,22 +262,22 @@ func (r *Repository) ScheduleRefs(ctx context.Context) ([]app.ScheduleRef, error
 
 	out := make([]app.ScheduleRef, len(rows))
 	for i, row := range rows {
-		out[i] = app.ScheduleRef{UserID: row.UserID, ID: row.ID}
+		out[i] = app.ScheduleRef{BooksID: row.BooksID, ID: row.ID}
 	}
 
 	return out, nil
 }
 
-func (r *Repository) SetGeneratedUntil(ctx context.Context, userID int64, id uuid.UUID, d time.Time) error {
-	return r.q.SetGeneratedUntil(ctx, SetGeneratedUntilParams{UserID: userID, ID: id, GeneratedUntil: d})
+func (r *Repository) SetGeneratedUntil(ctx context.Context, booksID int64, id uuid.UUID, d time.Time) error {
+	return r.q.SetGeneratedUntil(ctx, SetGeneratedUntilParams{BooksID: booksID, ID: id, GeneratedUntil: d})
 }
 
-func (r *Repository) InsertOccurrences(ctx context.Context, userID int64, scheduleID uuid.UUID, ps []domain.Planned) error {
+func (r *Repository) InsertOccurrences(ctx context.Context, booksID int64, scheduleID uuid.UUID, ps []domain.Planned) error {
 	if len(ps) == 0 {
 		return nil
 	}
 
-	arg := InsertOccurrencesParams{UserID: userID, ScheduleID: scheduleID}
+	arg := InsertOccurrencesParams{BooksID: booksID, ScheduleID: scheduleID}
 	for _, p := range ps {
 		arg.Sequences = append(arg.Sequences, int32(p.Sequence)) //nolint:gosec // sequences stay far below 2^31
 		arg.Dates = append(arg.Dates, p.Date.Format(time.DateOnly))
@@ -308,8 +308,8 @@ func toOccurrence(row PlanningOccurrence) domain.Occurrence {
 	return o
 }
 
-func (r *Repository) Occurrences(ctx context.Context, userID int64, from, to time.Time, scheduleID uuid.UUID) ([]domain.Occurrence, error) {
-	rows, err := r.q.ListOccurrences(ctx, ListOccurrencesParams{UserID: userID, FromDate: from, ToDate: to, ScheduleID: nullUUID(scheduleID)})
+func (r *Repository) Occurrences(ctx context.Context, booksID int64, from, to time.Time, scheduleID uuid.UUID) ([]domain.Occurrence, error) {
+	rows, err := r.q.ListOccurrences(ctx, ListOccurrencesParams{BooksID: booksID, FromDate: from, ToDate: to, ScheduleID: nullUUID(scheduleID)})
 	if err != nil {
 		return nil, fmt.Errorf("list occurrences: %w", err)
 	}
@@ -322,8 +322,8 @@ func (r *Repository) Occurrences(ctx context.Context, userID int64, from, to tim
 	return out, nil
 }
 
-func (r *Repository) OccurrencesOfTransaction(ctx context.Context, userID int64, txID uuid.UUID) ([]domain.Occurrence, error) {
-	rows, err := r.q.ListOccurrencesOfTransaction(ctx, ListOccurrencesOfTransactionParams{UserID: userID, TransactionID: nullUUID(txID)})
+func (r *Repository) OccurrencesOfTransaction(ctx context.Context, booksID int64, txID uuid.UUID) ([]domain.Occurrence, error) {
+	rows, err := r.q.ListOccurrencesOfTransaction(ctx, ListOccurrencesOfTransactionParams{BooksID: booksID, TransactionID: nullUUID(txID)})
 	if err != nil {
 		return nil, fmt.Errorf("list occurrences of a transaction: %w", err)
 	}
@@ -336,8 +336,8 @@ func (r *Repository) OccurrencesOfTransaction(ctx context.Context, userID int64,
 	return out, nil
 }
 
-func (r *Repository) SchedulesTouching(ctx context.Context, userID int64, accounts []uuid.UUID) ([]domain.Schedule, error) {
-	rows, err := r.q.SchedulesTouching(ctx, SchedulesTouchingParams{UserID: userID, AccountIds: accounts})
+func (r *Repository) SchedulesTouching(ctx context.Context, booksID int64, accounts []uuid.UUID) ([]domain.Schedule, error) {
+	rows, err := r.q.SchedulesTouching(ctx, SchedulesTouchingParams{BooksID: booksID, AccountIds: accounts})
 	if err != nil {
 		return nil, fmt.Errorf("list schedules of accounts: %w", err)
 	}
@@ -345,8 +345,8 @@ func (r *Repository) SchedulesTouching(ctx context.Context, userID int64, accoun
 	return r.complete(ctx, rows)
 }
 
-func (r *Repository) OccurrenceByTransaction(ctx context.Context, userID int64, txID uuid.UUID) (domain.Occurrence, error) {
-	row, err := r.q.OccurrenceByTransaction(ctx, OccurrenceByTransactionParams{UserID: userID, TransactionID: nullUUID(txID)})
+func (r *Repository) OccurrenceByTransaction(ctx context.Context, booksID int64, txID uuid.UUID) (domain.Occurrence, error) {
+	row, err := r.q.OccurrenceByTransaction(ctx, OccurrenceByTransactionParams{BooksID: booksID, TransactionID: nullUUID(txID)})
 	if err != nil {
 		return domain.Occurrence{}, notFound(err)
 	}
@@ -354,8 +354,8 @@ func (r *Repository) OccurrenceByTransaction(ctx context.Context, userID int64, 
 	return toOccurrence(row), nil
 }
 
-func (r *Repository) ExpectedOccurrences(ctx context.Context, userID int64, schedules []uuid.UUID, from, to time.Time) ([]domain.Occurrence, error) {
-	rows, err := r.q.ExpectedOccurrences(ctx, ExpectedOccurrencesParams{UserID: userID, ScheduleIds: schedules, FromDate: from, ToDate: to})
+func (r *Repository) ExpectedOccurrences(ctx context.Context, booksID int64, schedules []uuid.UUID, from, to time.Time) ([]domain.Occurrence, error) {
+	rows, err := r.q.ExpectedOccurrences(ctx, ExpectedOccurrencesParams{BooksID: booksID, ScheduleIds: schedules, FromDate: from, ToDate: to})
 	if err != nil {
 		return nil, fmt.Errorf("list expected occurrences: %w", err)
 	}
@@ -368,8 +368,8 @@ func (r *Repository) ExpectedOccurrences(ctx context.Context, userID int64, sche
 	return out, nil
 }
 
-func (r *Repository) LockOccurrence(ctx context.Context, userID int64, id uuid.UUID) (domain.Occurrence, error) {
-	row, err := r.q.LockOccurrence(ctx, LockOccurrenceParams{UserID: userID, ID: id})
+func (r *Repository) LockOccurrence(ctx context.Context, booksID int64, id uuid.UUID) (domain.Occurrence, error) {
+	row, err := r.q.LockOccurrence(ctx, LockOccurrenceParams{BooksID: booksID, ID: id})
 	if err != nil {
 		return domain.Occurrence{}, notFound(err)
 	}
@@ -386,8 +386,8 @@ func closed(err error) error {
 	return err
 }
 
-func (r *Repository) Realize(ctx context.Context, userID int64, id, txID uuid.UUID, by string) (domain.Occurrence, error) {
-	row, err := r.q.RealizeOccurrence(ctx, RealizeOccurrenceParams{UserID: userID, ID: id, TransactionID: nullUUID(txID), RealizedBy: &by})
+func (r *Repository) Realize(ctx context.Context, booksID int64, id, txID uuid.UUID, by string) (domain.Occurrence, error) {
+	row, err := r.q.RealizeOccurrence(ctx, RealizeOccurrenceParams{BooksID: booksID, ID: id, TransactionID: nullUUID(txID), RealizedBy: &by})
 	// I07: another realization of the transaction committed after this one checked for it.
 	if pe, ok := errors.AsType[*pgconn.PgError](err); ok && pe.Code == uniqueViolation {
 		return domain.Occurrence{}, app.ErrTransactionInUse
@@ -400,8 +400,8 @@ func (r *Repository) Realize(ctx context.Context, userID int64, id, txID uuid.UU
 	return toOccurrence(row), nil
 }
 
-func (r *Repository) Release(ctx context.Context, userID int64, id uuid.UUID, decline bool) (domain.Occurrence, error) {
-	row, err := r.q.ReleaseOccurrence(ctx, ReleaseOccurrenceParams{UserID: userID, ID: id, Decline: decline})
+func (r *Repository) Release(ctx context.Context, booksID int64, id uuid.UUID, decline bool) (domain.Occurrence, error) {
+	row, err := r.q.ReleaseOccurrence(ctx, ReleaseOccurrenceParams{BooksID: booksID, ID: id, Decline: decline})
 	if err != nil {
 		return domain.Occurrence{}, closed(err)
 	}
@@ -411,13 +411,13 @@ func (r *Repository) Release(ctx context.Context, userID int64, id uuid.UUID, de
 
 const exclusionViolation = "23P01"
 
-func (r *Repository) Skip(ctx context.Context, userID int64, id uuid.UUID, reason string) (domain.Occurrence, error) {
+func (r *Repository) Skip(ctx context.Context, booksID int64, id uuid.UUID, reason string) (domain.Occurrence, error) {
 	var p *string
 	if reason != "" {
 		p = &reason
 	}
 
-	row, err := r.q.SkipOccurrence(ctx, SkipOccurrenceParams{UserID: userID, ID: id, SkipReason: p})
+	row, err := r.q.SkipOccurrence(ctx, SkipOccurrenceParams{BooksID: booksID, ID: id, SkipReason: p})
 	if err != nil {
 		return domain.Occurrence{}, closed(err)
 	}
@@ -425,8 +425,8 @@ func (r *Repository) Skip(ctx context.Context, userID int64, id uuid.UUID, reaso
 	return toOccurrence(row), nil
 }
 
-func (r *Repository) Move(ctx context.Context, userID int64, id uuid.UUID, date time.Time) (domain.Occurrence, error) {
-	row, err := r.q.MoveOccurrence(ctx, MoveOccurrenceParams{UserID: userID, ID: id, ExpectedOn: date})
+func (r *Repository) Move(ctx context.Context, booksID int64, id uuid.UUID, date time.Time) (domain.Occurrence, error) {
+	row, err := r.q.MoveOccurrence(ctx, MoveOccurrenceParams{BooksID: booksID, ID: id, ExpectedOn: date})
 	if err != nil {
 		return domain.Occurrence{}, closed(err)
 	}
@@ -434,8 +434,8 @@ func (r *Repository) Move(ctx context.Context, userID int64, id uuid.UUID, date 
 	return toOccurrence(row), nil
 }
 
-func (r *Repository) DeleteExpected(ctx context.Context, userID int64, scheduleID uuid.UUID, from, to time.Time, includeMoved bool) ([]time.Time, error) {
-	removed, err := r.q.DeleteExpected(ctx, DeleteExpectedParams{UserID: userID, ScheduleID: scheduleID, FromDate: from, ToDate: to, IncludeMoved: includeMoved})
+func (r *Repository) DeleteExpected(ctx context.Context, booksID int64, scheduleID uuid.UUID, from, to time.Time, includeMoved bool) ([]time.Time, error) {
+	removed, err := r.q.DeleteExpected(ctx, DeleteExpectedParams{BooksID: booksID, ScheduleID: scheduleID, FromDate: from, ToDate: to, IncludeMoved: includeMoved})
 	if err != nil {
 		return nil, fmt.Errorf("delete expected occurrences: %w", err)
 	}
@@ -443,8 +443,8 @@ func (r *Repository) DeleteExpected(ctx context.Context, userID int64, scheduleI
 	return removed, nil
 }
 
-func (r *Repository) KeptOccurrences(ctx context.Context, userID int64, scheduleID uuid.UUID, from time.Time) ([]domain.Occurrence, error) {
-	rows, err := r.q.KeptOccurrences(ctx, KeptOccurrencesParams{UserID: userID, ScheduleID: scheduleID, FromDate: &from})
+func (r *Repository) KeptOccurrences(ctx context.Context, booksID int64, scheduleID uuid.UUID, from time.Time) ([]domain.Occurrence, error) {
+	rows, err := r.q.KeptOccurrences(ctx, KeptOccurrencesParams{BooksID: booksID, ScheduleID: scheduleID, FromDate: &from})
 	if err != nil {
 		return nil, fmt.Errorf("list kept occurrences: %w", err)
 	}
@@ -457,12 +457,12 @@ func (r *Repository) KeptOccurrences(ctx context.Context, userID int64, schedule
 	return out, nil
 }
 
-func (r *Repository) InsertTerms(ctx context.Context, userID int64, scheduleID uuid.UUID, t domain.Terms) error {
-	return r.insertTerms(ctx, userID, scheduleID, t)
+func (r *Repository) InsertTerms(ctx context.Context, booksID int64, scheduleID uuid.UUID, t domain.Terms) error {
+	return r.insertTerms(ctx, booksID, scheduleID, t)
 }
 
-func (r *Repository) InsertPause(ctx context.Context, userID int64, scheduleID uuid.UUID, p domain.Pause) error {
-	err := r.q.InsertPause(ctx, InsertPauseParams{UserID: userID, ScheduleID: scheduleID, FromDate: p.From, ToDate: p.To})
+func (r *Repository) InsertPause(ctx context.Context, booksID int64, scheduleID uuid.UUID, p domain.Pause) error {
+	err := r.q.InsertPause(ctx, InsertPauseParams{BooksID: booksID, ScheduleID: scheduleID, FromDate: p.From, ToDate: p.To})
 	if pe, ok := errors.AsType[*pgconn.PgError](err); ok && pe.Code == exclusionViolation {
 		return app.ErrPauseOverlap
 	}
@@ -474,14 +474,14 @@ func (r *Repository) InsertPause(ctx context.Context, userID int64, scheduleID u
 	return nil
 }
 
-func (r *Repository) SetEndsOn(ctx context.Context, userID int64, id uuid.UUID, d time.Time) error {
-	return r.q.SetEndsOn(ctx, SetEndsOnParams{UserID: userID, ID: id, EndsOn: &d})
+func (r *Repository) SetEndsOn(ctx context.Context, booksID int64, id uuid.UUID, d time.Time) error {
+	return r.q.SetEndsOn(ctx, SetEndsOnParams{BooksID: booksID, ID: id, EndsOn: &d})
 }
 
 const uniqueViolation = "23505"
 
-func (r *Repository) InsertBudget(ctx context.Context, userID int64, b domain.Budget) (domain.Budget, error) {
-	row, err := r.q.InsertBudget(ctx, InsertBudgetParams{UserID: userID, CategoryAccountID: b.CategoryID, Rollover: b.Rollover, Currency: string(b.Currency)})
+func (r *Repository) InsertBudget(ctx context.Context, booksID int64, b domain.Budget) (domain.Budget, error) {
+	row, err := r.q.InsertBudget(ctx, InsertBudgetParams{BooksID: booksID, CategoryAccountID: b.CategoryID, Rollover: b.Rollover, Currency: string(b.Currency)})
 	if pe, ok := errors.AsType[*pgconn.PgError](err); ok && pe.Code == uniqueViolation {
 		return domain.Budget{}, app.ErrBudgetExists
 	}
@@ -491,7 +491,7 @@ func (r *Repository) InsertBudget(ctx context.Context, userID int64, b domain.Bu
 	}
 
 	for _, a := range b.Amounts {
-		if err := r.InsertBudgetAmount(ctx, userID, row.ID, a); err != nil {
+		if err := r.InsertBudgetAmount(ctx, booksID, row.ID, a); err != nil {
 			return domain.Budget{}, err
 		}
 	}
@@ -499,8 +499,8 @@ func (r *Repository) InsertBudget(ctx context.Context, userID int64, b domain.Bu
 	return r.oneBudget(ctx, row, nil)
 }
 
-func (r *Repository) InsertBudgetAmount(ctx context.Context, userID int64, budgetID uuid.UUID, a domain.BudgetAmount) error {
-	err := r.q.InsertBudgetAmount(ctx, InsertBudgetAmountParams{UserID: userID, BudgetID: budgetID, EffectiveFrom: a.EffectiveFrom, Amount: a.Amount})
+func (r *Repository) InsertBudgetAmount(ctx context.Context, booksID int64, budgetID uuid.UUID, a domain.BudgetAmount) error {
+	err := r.q.InsertBudgetAmount(ctx, InsertBudgetAmountParams{BooksID: booksID, BudgetID: budgetID, EffectiveFrom: a.EffectiveFrom, Amount: a.Amount})
 	if err != nil {
 		return fmt.Errorf("insert budget amount: %w", err)
 	}
@@ -523,7 +523,7 @@ func (r *Repository) completeBudgets(ctx context.Context, rows []PlanningBudget)
 		byID[row.ID] = &out[i]
 	}
 
-	amounts, err := r.q.ListBudgetAmounts(ctx, ListBudgetAmountsParams{UserID: rows[0].UserID, BudgetIds: ids})
+	amounts, err := r.q.ListBudgetAmounts(ctx, ListBudgetAmountsParams{BooksID: rows[0].BooksID, BudgetIds: ids})
 	if err != nil {
 		return nil, fmt.Errorf("list budget amounts: %w", err)
 	}
@@ -549,13 +549,13 @@ func (r *Repository) oneBudget(ctx context.Context, row PlanningBudget, err erro
 	return out[0], nil
 }
 
-func (r *Repository) Budget(ctx context.Context, userID int64, id uuid.UUID) (domain.Budget, error) {
-	row, err := r.q.GetBudget(ctx, GetBudgetParams{UserID: userID, ID: id})
+func (r *Repository) Budget(ctx context.Context, booksID int64, id uuid.UUID) (domain.Budget, error) {
+	row, err := r.q.GetBudget(ctx, GetBudgetParams{BooksID: booksID, ID: id})
 	return r.oneBudget(ctx, row, err)
 }
 
-func (r *Repository) DeleteBudget(ctx context.Context, userID int64, id uuid.UUID) error {
-	n, err := r.q.DeleteBudget(ctx, DeleteBudgetParams{UserID: userID, ID: id})
+func (r *Repository) DeleteBudget(ctx context.Context, booksID int64, id uuid.UUID) error {
+	n, err := r.q.DeleteBudget(ctx, DeleteBudgetParams{BooksID: booksID, ID: id})
 	if err != nil {
 		return fmt.Errorf("delete budget: %w", err)
 	}
@@ -567,15 +567,15 @@ func (r *Repository) DeleteBudget(ctx context.Context, userID int64, id uuid.UUI
 	return nil
 }
 
-func (r *Repository) LockBudget(ctx context.Context, userID int64, id uuid.UUID) (domain.Budget, error) {
-	row, err := r.q.LockBudget(ctx, LockBudgetParams{UserID: userID, ID: id})
+func (r *Repository) LockBudget(ctx context.Context, booksID int64, id uuid.UUID) (domain.Budget, error) {
+	row, err := r.q.LockBudget(ctx, LockBudgetParams{BooksID: booksID, ID: id})
 	return r.oneBudget(ctx, row, err)
 }
 
-func (r *Repository) ListBudgets(ctx context.Context, userID int64, p page.Request[app.IDKey]) ([]domain.Budget, *app.IDKey, error) {
+func (r *Repository) ListBudgets(ctx context.Context, booksID int64, p page.Request[app.IDKey]) ([]domain.Budget, *app.IDKey, error) {
 	after, limit := keyset(p)
 
-	rows, err := r.q.ListBudgets(ctx, ListBudgetsParams{UserID: userID, AfterID: after, RowLimit: limit})
+	rows, err := r.q.ListBudgets(ctx, ListBudgetsParams{BooksID: booksID, AfterID: after, RowLimit: limit})
 	if err != nil {
 		return nil, nil, fmt.Errorf("list budgets: %w", err)
 	}
@@ -586,8 +586,8 @@ func (r *Repository) ListBudgets(ctx context.Context, userID int64, p page.Reque
 	return out, next, err
 }
 
-func (r *Repository) Budgets(ctx context.Context, userID int64) ([]domain.Budget, error) {
-	rows, err := r.q.ListAllBudgets(ctx, userID)
+func (r *Repository) Budgets(ctx context.Context, booksID int64) ([]domain.Budget, error) {
+	rows, err := r.q.ListAllBudgets(ctx, booksID)
 	if err != nil {
 		return nil, fmt.Errorf("list all budgets: %w", err)
 	}
@@ -595,8 +595,8 @@ func (r *Repository) Budgets(ctx context.Context, userID int64) ([]domain.Budget
 	return r.completeBudgets(ctx, rows)
 }
 
-func (r *Repository) UpsertBudgetAmount(ctx context.Context, userID int64, budgetID uuid.UUID, a domain.BudgetAmount) error {
-	err := r.q.UpsertBudgetAmount(ctx, UpsertBudgetAmountParams{UserID: userID, BudgetID: budgetID, EffectiveFrom: a.EffectiveFrom, Amount: a.Amount})
+func (r *Repository) UpsertBudgetAmount(ctx context.Context, booksID int64, budgetID uuid.UUID, a domain.BudgetAmount) error {
+	err := r.q.UpsertBudgetAmount(ctx, UpsertBudgetAmountParams{BooksID: booksID, BudgetID: budgetID, EffectiveFrom: a.EffectiveFrom, Amount: a.Amount})
 	if err != nil {
 		return fmt.Errorf("upsert budget amount: %w", err)
 	}
@@ -604,8 +604,8 @@ func (r *Repository) UpsertBudgetAmount(ctx context.Context, userID int64, budge
 	return nil
 }
 
-func (r *Repository) BudgetReference(ctx context.Context, userID int64) (domain.Reference, bool, error) {
-	row, err := r.q.GetBudgetReference(ctx, userID)
+func (r *Repository) BudgetReference(ctx context.Context, booksID int64) (domain.Reference, bool, error) {
+	row, err := r.q.GetBudgetReference(ctx, booksID)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return domain.Reference{}, false, nil
 	}
@@ -622,13 +622,13 @@ func (r *Repository) BudgetReference(ctx context.Context, userID int64) (domain.
 	return out, true, nil
 }
 
-func (r *Repository) SaveBudgetReference(ctx context.Context, userID int64, ref domain.Reference, currency money.Currency) error {
+func (r *Repository) SaveBudgetReference(ctx context.Context, booksID int64, ref domain.Reference, currency money.Currency) error {
 	var amount *int64
 	if ref.HasFixed {
 		amount = &ref.Fixed
 	}
 
-	err := r.q.UpsertBudgetReference(ctx, UpsertBudgetReferenceParams{UserID: userID, Source: string(ref.Source), Amount: amount, Currency: string(currency)})
+	err := r.q.UpsertBudgetReference(ctx, UpsertBudgetReferenceParams{BooksID: booksID, Source: string(ref.Source), Amount: amount, Currency: string(currency)})
 	if err != nil {
 		return fmt.Errorf("save budget reference: %w", err)
 	}
@@ -636,8 +636,8 @@ func (r *Repository) SaveBudgetReference(ctx context.Context, userID int64, ref 
 	return nil
 }
 
-func (r *Repository) InsertGoal(ctx context.Context, userID int64, g domain.Goal) (domain.Goal, error) {
-	row, err := r.q.InsertGoal(ctx, InsertGoalParams{UserID: userID, Name: g.Name, Target: g.Target, Currency: string(g.Currency), DueOn: g.DueOn})
+func (r *Repository) InsertGoal(ctx context.Context, booksID int64, g domain.Goal) (domain.Goal, error) {
+	row, err := r.q.InsertGoal(ctx, InsertGoalParams{BooksID: booksID, Name: g.Name, Target: g.Target, Currency: string(g.Currency), DueOn: g.DueOn})
 	if pe, ok := errors.AsType[*pgconn.PgError](err); ok && pe.Code == uniqueViolation {
 		return domain.Goal{}, &domain.FieldError{Field: "name", Message: "is the name of another goal", Err: domain.ErrValidation}
 	}
@@ -646,15 +646,15 @@ func (r *Repository) InsertGoal(ctx context.Context, userID int64, g domain.Goal
 		return domain.Goal{}, fmt.Errorf("insert goal: %w", err)
 	}
 
-	if err := r.q.InsertGoalAccounts(ctx, InsertGoalAccountsParams{UserID: userID, GoalID: row.ID, AccountIds: g.AccountIDs}); err != nil {
+	if err := r.q.InsertGoalAccounts(ctx, InsertGoalAccountsParams{BooksID: booksID, GoalID: row.ID, AccountIds: g.AccountIDs}); err != nil {
 		return domain.Goal{}, fmt.Errorf("insert goal accounts: %w", err)
 	}
 
 	return r.oneGoal(ctx, row, nil)
 }
 
-func (r *Repository) UpdateGoal(ctx context.Context, userID int64, g domain.Goal) (domain.Goal, error) {
-	row, err := r.q.UpdateGoal(ctx, UpdateGoalParams{UserID: userID, ID: g.ID, Name: g.Name, Target: g.Target, Currency: string(g.Currency), DueOn: g.DueOn})
+func (r *Repository) UpdateGoal(ctx context.Context, booksID int64, g domain.Goal) (domain.Goal, error) {
+	row, err := r.q.UpdateGoal(ctx, UpdateGoalParams{BooksID: booksID, ID: g.ID, Name: g.Name, Target: g.Target, Currency: string(g.Currency), DueOn: g.DueOn})
 	if pe, ok := errors.AsType[*pgconn.PgError](err); ok && pe.Code == uniqueViolation {
 		return domain.Goal{}, &domain.FieldError{Field: "name", Message: "is the name of another goal", Err: domain.ErrValidation}
 	}
@@ -663,19 +663,19 @@ func (r *Repository) UpdateGoal(ctx context.Context, userID int64, g domain.Goal
 		return r.oneGoal(ctx, row, err)
 	}
 
-	if err := r.q.DeleteGoalAccounts(ctx, DeleteGoalAccountsParams{UserID: userID, GoalID: g.ID}); err != nil {
+	if err := r.q.DeleteGoalAccounts(ctx, DeleteGoalAccountsParams{BooksID: booksID, GoalID: g.ID}); err != nil {
 		return domain.Goal{}, fmt.Errorf("delete goal accounts: %w", err)
 	}
 
-	if err := r.q.InsertGoalAccounts(ctx, InsertGoalAccountsParams{UserID: userID, GoalID: g.ID, AccountIds: g.AccountIDs}); err != nil {
+	if err := r.q.InsertGoalAccounts(ctx, InsertGoalAccountsParams{BooksID: booksID, GoalID: g.ID, AccountIds: g.AccountIDs}); err != nil {
 		return domain.Goal{}, fmt.Errorf("insert goal accounts: %w", err)
 	}
 
 	return r.oneGoal(ctx, row, nil)
 }
 
-func (r *Repository) DeleteGoal(ctx context.Context, userID int64, id uuid.UUID) error {
-	n, err := r.q.DeleteGoal(ctx, DeleteGoalParams{UserID: userID, ID: id})
+func (r *Repository) DeleteGoal(ctx context.Context, booksID int64, id uuid.UUID) error {
+	n, err := r.q.DeleteGoal(ctx, DeleteGoalParams{BooksID: booksID, ID: id})
 	if err != nil {
 		return fmt.Errorf("delete goal: %w", err)
 	}
@@ -702,7 +702,7 @@ func (r *Repository) completeGoals(ctx context.Context, rows []PlanningGoal) ([]
 		byID[row.ID] = &out[i]
 	}
 
-	accounts, err := r.q.ListGoalAccounts(ctx, ListGoalAccountsParams{UserID: rows[0].UserID, GoalIds: ids})
+	accounts, err := r.q.ListGoalAccounts(ctx, ListGoalAccountsParams{BooksID: rows[0].BooksID, GoalIds: ids})
 	if err != nil {
 		return nil, fmt.Errorf("list goal accounts: %w", err)
 	}
@@ -728,15 +728,15 @@ func (r *Repository) oneGoal(ctx context.Context, row PlanningGoal, err error) (
 	return out[0], nil
 }
 
-func (r *Repository) Goal(ctx context.Context, userID int64, id uuid.UUID) (domain.Goal, error) {
-	row, err := r.q.GetGoal(ctx, GetGoalParams{UserID: userID, ID: id})
+func (r *Repository) Goal(ctx context.Context, booksID int64, id uuid.UUID) (domain.Goal, error) {
+	row, err := r.q.GetGoal(ctx, GetGoalParams{BooksID: booksID, ID: id})
 	return r.oneGoal(ctx, row, err)
 }
 
-func (r *Repository) ListGoals(ctx context.Context, userID int64, p page.Request[app.IDKey]) ([]domain.Goal, *app.IDKey, error) {
+func (r *Repository) ListGoals(ctx context.Context, booksID int64, p page.Request[app.IDKey]) ([]domain.Goal, *app.IDKey, error) {
 	after, limit := keyset(p)
 
-	rows, err := r.q.ListGoals(ctx, ListGoalsParams{UserID: userID, AfterID: after, RowLimit: limit})
+	rows, err := r.q.ListGoals(ctx, ListGoalsParams{BooksID: booksID, AfterID: after, RowLimit: limit})
 	if err != nil {
 		return nil, nil, fmt.Errorf("list goals: %w", err)
 	}
@@ -747,18 +747,18 @@ func (r *Repository) ListGoals(ctx context.Context, userID int64, p page.Request
 	return out, next, err
 }
 
-func (r *Repository) MergeCategory(ctx context.Context, userID int64, from, into uuid.UUID) error {
-	if err := r.q.DeleteMergedBudget(ctx, DeleteMergedBudgetParams{UserID: userID, FromID: from, IntoID: into}); err != nil {
+func (r *Repository) MergeCategory(ctx context.Context, booksID int64, from, into uuid.UUID) error {
+	if err := r.q.DeleteMergedBudget(ctx, DeleteMergedBudgetParams{BooksID: booksID, FromID: from, IntoID: into}); err != nil {
 		return err
 	}
 
-	if err := r.q.MoveMergedBudget(ctx, MoveMergedBudgetParams{UserID: userID, FromID: from, IntoID: into}); err != nil {
+	if err := r.q.MoveMergedBudget(ctx, MoveMergedBudgetParams{BooksID: booksID, FromID: from, IntoID: into}); err != nil {
 		return err
 	}
 
-	return r.q.MergeScheduleAccounts(ctx, MergeScheduleAccountsParams{UserID: userID, FromID: from, IntoID: into})
+	return r.q.MergeScheduleAccounts(ctx, MergeScheduleAccountsParams{BooksID: booksID, FromID: from, IntoID: into})
 }
 
-func (r *Repository) MergePayee(ctx context.Context, userID int64, from, into uuid.UUID) error {
-	return r.q.MergeSchedulePayee(ctx, MergeSchedulePayeeParams{UserID: userID, FromID: uuid.NullUUID{UUID: from, Valid: true}, IntoID: uuid.NullUUID{UUID: into, Valid: true}})
+func (r *Repository) MergePayee(ctx context.Context, booksID int64, from, into uuid.UUID) error {
+	return r.q.MergeSchedulePayee(ctx, MergeSchedulePayeeParams{BooksID: booksID, FromID: uuid.NullUUID{UUID: from, Valid: true}, IntoID: uuid.NullUUID{UUID: into, Valid: true}})
 }

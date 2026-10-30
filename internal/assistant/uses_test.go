@@ -144,7 +144,7 @@ func TestUserChainCallA7(t *testing.T) {
 		map[string]any{"provider_id": p.ID, "model": "m2", "capabilities": []string{"structured_output"}},
 	}}, http.StatusOK, nil)
 
-	ctx := auth.WithUserID(t.Context(), h.OwnerID())
+	ctx := auth.WithBooksID(t.Context(), h.OwnerID())
 
 	resp, err := h.App.LLM.Use(capture.SuggestUse).Generate(ctx, llm.Request{
 		Messages: []llm.Message{{Role: llm.RoleUser, Parts: []llm.Part{{Text: "x"}}}}, Schema: []byte(`{"type":"object"}`),
@@ -179,11 +179,11 @@ func TestCooldownPerUserA8(t *testing.T) {
 	req := llm.Request{Messages: []llm.Message{{Role: llm.RoleUser, Parts: []llm.Part{{Text: "x"}}}}}
 
 	client := h.App.LLM.Use(assistant.ChatUse)
-	if _, err := client.Generate(auth.WithUserID(t.Context(), h.OwnerID()), req); !errors.Is(err, llm.ErrExhausted) {
+	if _, err := client.Generate(auth.WithBooksID(t.Context(), h.OwnerID()), req); !errors.Is(err, llm.ErrExhausted) {
 		t.Fatalf("owner err = %v, want ErrExhausted", err)
 	}
 
-	if resp, err := client.Generate(auth.WithUserID(t.Context(), otherID), req); err != nil || resp.Text() != "ok" {
+	if resp, err := client.Generate(auth.WithBooksID(t.Context(), otherID), req); err != nil || resp.Text() != "ok" {
 		t.Fatalf("other user = %+v, %v", resp, err)
 	}
 }

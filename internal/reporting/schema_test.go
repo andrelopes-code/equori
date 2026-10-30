@@ -14,12 +14,12 @@ import (
 func TestAccountDayFlowChecks(t *testing.T) {
 	t.Parallel()
 	pool := pgtest.New(t)
-	userID := pgtest.CreateUser(t, pool)
+	booksID := pgtest.CreateBooks(t, pool)
 
 	var account string
 	if err := pool.QueryRow(t.Context(), `
-		INSERT INTO ledger_account (user_id, name, account_class, kind, instrument, opened_on)
-		VALUES ($1, 'Nubank', 'asset', 'checking', 'BRL', '2026-01-01') RETURNING id`, userID).Scan(&account); err != nil {
+		INSERT INTO ledger_account (books_id, name, account_class, kind, instrument, opened_on)
+		VALUES ($1, 'Nubank', 'asset', 'checking', 'BRL', '2026-01-01') RETURNING id`, booksID).Scan(&account); err != nil {
 		t.Fatal(err)
 	}
 
@@ -33,8 +33,8 @@ func TestAccountDayFlowChecks(t *testing.T) {
 		{"difference is not the delta", 100, 300, 100, "reporting_account_day_delta_check"},
 	} {
 		_, err := pool.Exec(t.Context(), `
-			INSERT INTO reporting_account_day (user_id, account_id, date, delta_booked, delta_settled, balance_booked, balance_settled, inflow_booked, outflow_booked)
-			VALUES ($1, $2, '2026-10-01', $3, 0, $3, 0, $4, $5)`, userID, account, tc.delta, tc.inflow, tc.outflow)
+			INSERT INTO reporting_account_day (books_id, account_id, date, delta_booked, delta_settled, balance_booked, balance_settled, inflow_booked, outflow_booked)
+			VALUES ($1, $2, '2026-10-01', $3, 0, $3, 0, $4, $5)`, booksID, account, tc.delta, tc.inflow, tc.outflow)
 
 		var pgErr *pgconn.PgError
 		if !errors.As(err, &pgErr) || pgErr.Code != "23514" || !strings.Contains(pgErr.ConstraintName, tc.constraint) {

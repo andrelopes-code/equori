@@ -12,12 +12,12 @@ import (
 
 // CreateConnection reads the item through the integration and stores it with its accounts,
 // all pending (A35).
-func (s *Service) CreateConnection(ctx context.Context, userID int64, integrationID uuid.UUID, itemID, name string) (domain.Connection, error) {
+func (s *Service) CreateConnection(ctx context.Context, booksID int64, integrationID uuid.UUID, itemID, name string) (domain.Connection, error) {
 	if err := s.available(); err != nil {
 		return domain.Connection{}, err
 	}
 
-	i, err := s.repo.Integration(ctx, userID, integrationID)
+	i, err := s.repo.Integration(ctx, booksID, integrationID)
 	if errors.Is(err, ErrNotFound) {
 		return domain.Connection{}, &domain.FieldError{Field: "integration_id", Message: "unknown integration"}
 	}
@@ -50,7 +50,7 @@ func (s *Service) CreateConnection(ctx context.Context, userID int64, integratio
 		return domain.Connection{}, err
 	}
 
-	c.UserID, c.IntegrationID, c.ExternalID = userID, i.ID, itemID
+	c.BooksID, c.IntegrationID, c.ExternalID = booksID, i.ID, itemID
 
 	stored, err := s.repo.InsertConnection(ctx, c)
 	if err != nil {
@@ -67,7 +67,7 @@ func (s *Service) CreateConnection(ctx context.Context, userID int64, integratio
 func (s *Service) withState(ctx context.Context, c *domain.Connection, aggs map[uuid.UUID]Aggregator) error {
 	agg, ok := aggs[c.IntegrationID]
 	if !ok {
-		i, err := s.repo.Integration(ctx, c.UserID, c.IntegrationID)
+		i, err := s.repo.Integration(ctx, c.BooksID, c.IntegrationID)
 		if err != nil {
 			return err
 		}
@@ -86,12 +86,12 @@ func (s *Service) withState(ctx context.Context, c *domain.Connection, aggs map[
 	return nil
 }
 
-func (s *Service) Connection(ctx context.Context, userID int64, id uuid.UUID) (domain.Connection, error) {
+func (s *Service) Connection(ctx context.Context, booksID int64, id uuid.UUID) (domain.Connection, error) {
 	if err := s.available(); err != nil {
 		return domain.Connection{}, err
 	}
 
-	c, err := s.repo.Connection(ctx, userID, id)
+	c, err := s.repo.Connection(ctx, booksID, id)
 	if err != nil {
 		return domain.Connection{}, err
 	}
@@ -99,12 +99,12 @@ func (s *Service) Connection(ctx context.Context, userID int64, id uuid.UUID) (d
 	return c, s.withState(ctx, &c, map[uuid.UUID]Aggregator{})
 }
 
-func (s *Service) ListConnections(ctx context.Context, userID int64, p page.Request[NameKey]) ([]domain.Connection, *NameKey, error) {
+func (s *Service) ListConnections(ctx context.Context, booksID int64, p page.Request[NameKey]) ([]domain.Connection, *NameKey, error) {
 	if err := s.available(); err != nil {
 		return nil, nil, err
 	}
 
-	list, next, err := s.repo.ListConnections(ctx, userID, p)
+	list, next, err := s.repo.ListConnections(ctx, booksID, p)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -119,21 +119,21 @@ func (s *Service) ListConnections(ctx context.Context, userID int64, p page.Requ
 	return list, next, nil
 }
 
-func (s *Service) DeleteConnection(ctx context.Context, userID int64, id uuid.UUID) error {
+func (s *Service) DeleteConnection(ctx context.Context, booksID int64, id uuid.UUID) error {
 	if err := s.available(); err != nil {
 		return err
 	}
 
-	return s.repo.DeleteConnection(ctx, userID, id)
+	return s.repo.DeleteConnection(ctx, booksID, id)
 }
 
 // MapAccount maps an external account to a ledger account or ignores it (A35).
-func (s *Service) MapAccount(ctx context.Context, userID int64, connectionID, externalAccountID uuid.UUID, m domain.Mapping) (domain.ExternalAccount, error) {
+func (s *Service) MapAccount(ctx context.Context, booksID int64, connectionID, externalAccountID uuid.UUID, m domain.Mapping) (domain.ExternalAccount, error) {
 	if err := s.available(); err != nil {
 		return domain.ExternalAccount{}, err
 	}
 
-	c, err := s.repo.Connection(ctx, userID, connectionID)
+	c, err := s.repo.Connection(ctx, booksID, connectionID)
 	if err != nil {
 		return domain.ExternalAccount{}, err
 	}
@@ -155,7 +155,7 @@ func (s *Service) MapAccount(ctx context.Context, userID int64, connectionID, ex
 
 	var target domain.ImportTarget
 	if !m.Ignored {
-		target, err = s.ledger.ImportTarget(ctx, userID, *m.AccountID)
+		target, err = s.ledger.ImportTarget(ctx, booksID, *m.AccountID)
 		if errors.Is(err, ErrNotFound) {
 			return domain.ExternalAccount{}, &domain.FieldError{Field: "account_id", Message: "unknown account"}
 		}

@@ -23,7 +23,7 @@ func toItem(a app.StatementAnalytics) StatementAnalyticsItem {
 }
 
 func (s *Server) GetStatementAnalytics(ctx context.Context, req GetStatementAnalyticsRequestObject) (GetStatementAnalyticsResponseObject, error) {
-	a, err := s.svc.StatementAnalytics(ctx, auth.MustUserID(ctx), req.Id)
+	a, err := s.svc.StatementAnalytics(ctx, auth.MustBooksID(ctx), req.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +48,7 @@ func (s *Server) GetCardStatementAnalytics(ctx context.Context, req GetCardState
 	now := s.clock.Now()
 	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
 
-	as, err := s.svc.CardStatementAnalytics(ctx, auth.MustUserID(ctx), req.Id, today)
+	as, err := s.svc.CardStatementAnalytics(ctx, auth.MustBooksID(ctx), req.Id, today)
 	if err != nil {
 		return nil, err
 	}

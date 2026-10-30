@@ -53,7 +53,7 @@ func getAccountHistory(svc *app.Service) tool.Tool {
 			"Use it for how a balance evolved or how much entered and left an account. " +
 			"Do not use it for a balance at one date: get_balances does; nor for the future: project_balance does.",
 		Effect: tool.ReadOnly,
-	}, func(ctx context.Context, userID int64, in getAccountHistoryIn) (getAccountHistoryOut, error) {
+	}, func(ctx context.Context, booksID int64, in getAccountHistoryIn) (getAccountHistoryOut, error) {
 		id, err := uuid.Parse(in.AccountID)
 		if err != nil {
 			return getAccountHistoryOut{}, tool.InvalidArgument("account_id", "is not a UUID")
@@ -63,14 +63,14 @@ func getAccountHistory(svc *app.Service) tool.Tool {
 			return getAccountHistoryOut{}, tool.InvalidArgument("to", "must be on or after from and at most 365 days after it")
 		}
 
-		name, err := svc.AccountName(ctx, userID, id)
+		name, err := svc.AccountName(ctx, booksID, id)
 		if err != nil {
 			return getAccountHistoryOut{}, err
 		}
 
 		out := getAccountHistoryOut{AccountID: in.AccountID, AccountName: name, View: string(in.View)}
 		if in.View == "flows" {
-			flows, instrument, err := svc.Flows(ctx, userID, id, in.From.Time, in.To.Time)
+			flows, instrument, err := svc.Flows(ctx, booksID, id, in.From.Time, in.To.Time)
 			if err != nil {
 				return getAccountHistoryOut{}, err
 			}
@@ -93,7 +93,7 @@ func getAccountHistory(svc *app.Service) tool.Tool {
 			return out, nil
 		}
 
-		points, currency, err := svc.Series(ctx, userID, id, in.From.Time, in.To.Time, app.BasisBooked)
+		points, currency, err := svc.Series(ctx, booksID, id, in.From.Time, in.To.Time, app.BasisBooked)
 		if err != nil {
 			return getAccountHistoryOut{}, err
 		}

@@ -30,13 +30,13 @@ type CapturePayee struct {
 }
 
 // CaptureVocabulary returns the balance accounts, the categories and the live payees of the user.
-func (s *Service) CaptureVocabulary(ctx context.Context, userID int64) ([]CaptureAccount, []CapturePayee, error) {
-	accounts, err := s.repo.AllAccounts(ctx, userID)
+func (s *Service) CaptureVocabulary(ctx context.Context, booksID int64) ([]CaptureAccount, []CapturePayee, error) {
+	accounts, err := s.repo.AllAccounts(ctx, booksID)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	institutions, err := s.institutionNames(ctx, userID)
+	institutions, err := s.institutionNames(ctx, booksID)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -52,7 +52,7 @@ func (s *Service) CaptureVocabulary(ctx context.Context, userID int64) ([]Captur
 			SystemRole: string(a.SystemRole), Instrument: a.Instrument, ClosedOn: a.ClosedOn, Institution: institutions[a.InstitutionID],
 		}
 		if a.Kind == domain.KindCreditCard {
-			cards, err := s.repo.Cards(ctx, userID, a.ID)
+			cards, err := s.repo.Cards(ctx, booksID, a.ID)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -67,7 +67,7 @@ func (s *Service) CaptureVocabulary(ctx context.Context, userID int64) ([]Captur
 		out = append(out, c)
 	}
 
-	payees, err := s.allPayees(ctx, userID)
+	payees, err := s.allPayees(ctx, booksID)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -75,12 +75,12 @@ func (s *Service) CaptureVocabulary(ctx context.Context, userID int64) ([]Captur
 	return out, payees, nil
 }
 
-func (s *Service) institutionNames(ctx context.Context, userID int64) (map[uuid.UUID]string, error) {
+func (s *Service) institutionNames(ctx context.Context, booksID int64) (map[uuid.UUID]string, error) {
 	names := map[uuid.UUID]string{}
 
 	req := page.Request[InstitutionKey]{Limit: page.MaxLimit}
 	for {
-		items, next, err := s.repo.ListInstitutions(ctx, userID, req)
+		items, next, err := s.repo.ListInstitutions(ctx, booksID, req)
 		if err != nil {
 			return nil, err
 		}
@@ -97,12 +97,12 @@ func (s *Service) institutionNames(ctx context.Context, userID int64) (map[uuid.
 	}
 }
 
-func (s *Service) allPayees(ctx context.Context, userID int64) ([]CapturePayee, error) {
+func (s *Service) allPayees(ctx context.Context, booksID int64) ([]CapturePayee, error) {
 	var out []CapturePayee
 
 	req := page.Request[PayeeKey]{Limit: page.MaxLimit}
 	for {
-		items, next, err := s.repo.ListPayees(ctx, userID, req)
+		items, next, err := s.repo.ListPayees(ctx, booksID, req)
 		if err != nil {
 			return nil, err
 		}

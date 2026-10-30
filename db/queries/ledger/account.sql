@@ -1,7 +1,7 @@
 -- name: InsertAccount :one
 INSERT INTO
     ledger_account (
-        user_id,
+        books_id,
         name,
         account_class,
         kind,
@@ -18,7 +18,7 @@ INSERT INTO
     )
 VALUES
     (
-        @user_id,
+        @books_id,
         @name,
         @account_class,
         sqlc.narg (kind),
@@ -49,7 +49,7 @@ SET
     excluded_from_liquidity = @excluded_from_liquidity,
     updated_at = now()
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND id = @id
 RETURNING
     *;
@@ -60,7 +60,7 @@ SELECT
 FROM
     ledger_account
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2;
 
 -- name: GetAccountsByIDs :many
@@ -69,7 +69,7 @@ SELECT
 FROM
     ledger_account
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = ANY (@ids::UUID[]);
 
 -- name: ListAccounts :many
@@ -79,7 +79,7 @@ SELECT
 FROM
     ledger_account
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND (
         sqlc.narg (after_class)::text IS NULL
         OR (account_class, lower(name), id) > (
@@ -101,7 +101,7 @@ SET
     instrument = $2,
     updated_at = now()
 WHERE
-    user_id = $1
+    books_id = $1
     AND system_role IS NOT NULL;
 
 -- name: AccountHasChildren :one
@@ -112,7 +112,7 @@ SELECT
         FROM
             ledger_account
         WHERE
-            user_id = $1
+            books_id = $1
             AND parent_id = $2
     );
 
@@ -123,7 +123,7 @@ SELECT
 FROM
     ledger_posting p
 WHERE
-    p.user_id = $1
+    p.books_id = $1
     AND p.account_id = $2
     AND NOT p.voided;
 
@@ -133,7 +133,7 @@ SELECT
 FROM
     ledger_account
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2
 FOR UPDATE;
 
@@ -145,7 +145,7 @@ FROM
     ledger_transaction t
     JOIN ledger_posting p ON p.transaction_id = t.id
 WHERE
-    t.user_id = @user_id
+    t.books_id = @books_id
     AND p.account_id = @account_id
     AND t.voided_at IS NULL
 ORDER BY
@@ -159,7 +159,7 @@ SELECT
 FROM
     ledger_transaction t
 WHERE
-    t.user_id = @user_id
+    t.books_id = @books_id
     AND t.voided_at IS NULL
     AND t.date BETWEEN @from_date::date AND @to_date::date
     AND EXISTS (
@@ -168,7 +168,7 @@ WHERE
         FROM
             ledger_posting p
         WHERE
-            p.user_id = @user_id
+            p.books_id = @books_id
             AND p.transaction_id = t.id
             AND p.account_id = @account_id
     )

@@ -13,7 +13,7 @@ import (
 )
 
 // AccountNames returns the names of the user's accounts by ID.
-type AccountNames func(ctx context.Context, userID int64) (map[uuid.UUID]string, error)
+type AccountNames func(ctx context.Context, booksID int64) (map[uuid.UUID]string, error)
 
 func Tools(svc *app.Service, names AccountNames, today func() time.Time) []tool.Tool {
 	return []tool.Tool{getPortfolio(svc, names, today), getTaxYear(svc, names)}

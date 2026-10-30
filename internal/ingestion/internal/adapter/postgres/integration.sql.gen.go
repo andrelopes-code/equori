@@ -14,17 +14,17 @@ import (
 const deleteIntegration = `-- name: DeleteIntegration :execrows
 DELETE FROM ingestion_integration
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2
 `
 
 type DeleteIntegrationParams struct {
-	UserID int64
-	ID     uuid.UUID
+	BooksID int64
+	ID      uuid.UUID
 }
 
 func (q *Queries) DeleteIntegration(ctx context.Context, arg DeleteIntegrationParams) (int64, error) {
-	result, err := q.db.Exec(ctx, deleteIntegration, arg.UserID, arg.ID)
+	result, err := q.db.Exec(ctx, deleteIntegration, arg.BooksID, arg.ID)
 	if err != nil {
 		return 0, err
 	}
@@ -33,25 +33,25 @@ func (q *Queries) DeleteIntegration(ctx context.Context, arg DeleteIntegrationPa
 
 const getIntegration = `-- name: GetIntegration :one
 SELECT
-    id, user_id, aggregator, name, credential_ciphertext, updated_at
+    id, books_id, aggregator, name, credential_ciphertext, updated_at
 FROM
     ingestion_integration
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2
 `
 
 type GetIntegrationParams struct {
-	UserID int64
-	ID     uuid.UUID
+	BooksID int64
+	ID      uuid.UUID
 }
 
 func (q *Queries) GetIntegration(ctx context.Context, arg GetIntegrationParams) (IngestionIntegration, error) {
-	row := q.db.QueryRow(ctx, getIntegration, arg.UserID, arg.ID)
+	row := q.db.QueryRow(ctx, getIntegration, arg.BooksID, arg.ID)
 	var i IngestionIntegration
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.Aggregator,
 		&i.Name,
 		&i.CredentialCiphertext,
@@ -62,16 +62,16 @@ func (q *Queries) GetIntegration(ctx context.Context, arg GetIntegrationParams) 
 
 const insertIntegration = `-- name: InsertIntegration :one
 INSERT INTO
-    ingestion_integration (id, user_id, aggregator, name, credential_ciphertext)
+    ingestion_integration (id, books_id, aggregator, name, credential_ciphertext)
 VALUES
     ($1, $2, $3, $4, $5)
 RETURNING
-    id, user_id, aggregator, name, credential_ciphertext, updated_at
+    id, books_id, aggregator, name, credential_ciphertext, updated_at
 `
 
 type InsertIntegrationParams struct {
 	ID                   uuid.UUID
-	UserID               int64
+	BooksID              int64
 	Aggregator           string
 	Name                 string
 	CredentialCiphertext []byte
@@ -80,7 +80,7 @@ type InsertIntegrationParams struct {
 func (q *Queries) InsertIntegration(ctx context.Context, arg InsertIntegrationParams) (IngestionIntegration, error) {
 	row := q.db.QueryRow(ctx, insertIntegration,
 		arg.ID,
-		arg.UserID,
+		arg.BooksID,
 		arg.Aggregator,
 		arg.Name,
 		arg.CredentialCiphertext,
@@ -88,7 +88,7 @@ func (q *Queries) InsertIntegration(ctx context.Context, arg InsertIntegrationPa
 	var i IngestionIntegration
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.Aggregator,
 		&i.Name,
 		&i.CredentialCiphertext,
@@ -99,11 +99,11 @@ func (q *Queries) InsertIntegration(ctx context.Context, arg InsertIntegrationPa
 
 const listIntegrations = `-- name: ListIntegrations :many
 SELECT
-    id, user_id, aggregator, name, credential_ciphertext, updated_at
+    id, books_id, aggregator, name, credential_ciphertext, updated_at
 FROM
     ingestion_integration
 WHERE
-    user_id = $1
+    books_id = $1
     AND (
         $2::text IS NULL
         OR (name, id) > ($2::text, $3::uuid)
@@ -116,7 +116,7 @@ LIMIT
 `
 
 type ListIntegrationsParams struct {
-	UserID    int64
+	BooksID   int64
 	AfterName *string
 	AfterID   uuid.NullUUID
 	RowLimit  int32
@@ -124,7 +124,7 @@ type ListIntegrationsParams struct {
 
 func (q *Queries) ListIntegrations(ctx context.Context, arg ListIntegrationsParams) ([]IngestionIntegration, error) {
 	rows, err := q.db.Query(ctx, listIntegrations,
-		arg.UserID,
+		arg.BooksID,
 		arg.AfterName,
 		arg.AfterID,
 		arg.RowLimit,
@@ -138,7 +138,7 @@ func (q *Queries) ListIntegrations(ctx context.Context, arg ListIntegrationsPara
 		var i IngestionIntegration
 		if err := rows.Scan(
 			&i.ID,
-			&i.UserID,
+			&i.BooksID,
 			&i.Aggregator,
 			&i.Name,
 			&i.CredentialCiphertext,
@@ -157,7 +157,7 @@ func (q *Queries) ListIntegrations(ctx context.Context, arg ListIntegrationsPara
 const lockAllCredentials = `-- name: LockAllCredentials :many
 SELECT
     id,
-    user_id,
+    books_id,
     credential_ciphertext
 FROM
     ingestion_integration
@@ -168,7 +168,7 @@ FOR UPDATE
 
 type LockAllCredentialsRow struct {
 	ID                   uuid.UUID
-	UserID               int64
+	BooksID              int64
 	CredentialCiphertext []byte
 }
 
@@ -182,7 +182,7 @@ func (q *Queries) LockAllCredentials(ctx context.Context) ([]LockAllCredentialsR
 	var items []LockAllCredentialsRow
 	for rows.Next() {
 		var i LockAllCredentialsRow
-		if err := rows.Scan(&i.ID, &i.UserID, &i.CredentialCiphertext); err != nil {
+		if err := rows.Scan(&i.ID, &i.BooksID, &i.CredentialCiphertext); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -198,18 +198,18 @@ UPDATE ingestion_integration
 SET
     credential_ciphertext = $1
 WHERE
-    user_id = $2
+    books_id = $2
     AND id = $3
 `
 
 type ResealCredentialsParams struct {
 	CredentialCiphertext []byte
-	UserID               int64
+	BooksID              int64
 	ID                   uuid.UUID
 }
 
 func (q *Queries) ResealCredentials(ctx context.Context, arg ResealCredentialsParams) error {
-	_, err := q.db.Exec(ctx, resealCredentials, arg.CredentialCiphertext, arg.UserID, arg.ID)
+	_, err := q.db.Exec(ctx, resealCredentials, arg.CredentialCiphertext, arg.BooksID, arg.ID)
 	return err
 }
 
@@ -219,24 +219,24 @@ SET
     credential_ciphertext = $1,
     updated_at = now()
 WHERE
-    user_id = $2
+    books_id = $2
     AND id = $3
 RETURNING
-    id, user_id, aggregator, name, credential_ciphertext, updated_at
+    id, books_id, aggregator, name, credential_ciphertext, updated_at
 `
 
 type UpdateCredentialsParams struct {
 	CredentialCiphertext []byte
-	UserID               int64
+	BooksID              int64
 	ID                   uuid.UUID
 }
 
 func (q *Queries) UpdateCredentials(ctx context.Context, arg UpdateCredentialsParams) (IngestionIntegration, error) {
-	row := q.db.QueryRow(ctx, updateCredentials, arg.CredentialCiphertext, arg.UserID, arg.ID)
+	row := q.db.QueryRow(ctx, updateCredentials, arg.CredentialCiphertext, arg.BooksID, arg.ID)
 	var i IngestionIntegration
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.Aggregator,
 		&i.Name,
 		&i.CredentialCiphertext,

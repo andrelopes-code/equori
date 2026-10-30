@@ -219,7 +219,7 @@ func TestTurnExhausted(t *testing.T) {
 	}
 	p := llmtest.New("aistudio", quota("gemini-3.5-flash-lite"), quota("gemini-3.1-flash-lite"), quota("gemini-3.5-flash"))
 	h := turnHarness(t, p)
-	ctx := auth.WithUserID(t.Context(), h.OwnerID())
+	ctx := auth.WithBooksID(t.Context(), h.OwnerID())
 	_, _ = h.App.LLM.Use(assistant.ChatUse).Generate(ctx, llm.Request{Messages: []llm.Message{{Role: llm.RoleUser, Parts: []llm.Part{{Text: "x"}}}}})
 	before := len(p.Requests())
 	r := sendTurn(h, h.Client, map[string]any{"text": "oi"})
@@ -476,7 +476,7 @@ func TestTurnTransientIsNotALimit(t *testing.T) {
 	t.Run("transient cooldowns are not stored as a limit", func(t *testing.T) {
 		t.Parallel()
 		h, _ := harness(t, llmtest.New("aistudio", append(slices.Clone(steps), textStep("ok"))...))
-		ctx := auth.WithUserID(t.Context(), h.OwnerID())
+		ctx := auth.WithBooksID(t.Context(), h.OwnerID())
 
 		_, _ = h.App.LLM.Use(assistant.ChatUse).Generate(ctx, llm.Request{Messages: []llm.Message{{Role: llm.RoleUser, Parts: []llm.Part{{Text: "x"}}}}})
 		if r := sendTurn(h, h.Client, map[string]any{"text": "oi"}); r.Status != http.StatusOK {

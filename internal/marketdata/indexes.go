@@ -141,7 +141,7 @@ func (m *Module) Indexes(ctx context.Context) ([]IndexSummary, error) {
 		return nil, err
 	}
 
-	l, err := m.profiles.Profile(ctx, auth.MustUserID(ctx))
+	l, err := m.profiles.Profile(ctx, auth.MustBooksID(ctx))
 	if err != nil {
 		return nil, err
 	}

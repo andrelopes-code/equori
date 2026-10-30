@@ -10,7 +10,7 @@ import (
 )
 
 // Export design E2: a table is a fact, shared, or named as left out. A new table without
-// user_id fails here until it is classified.
+// books_id fails here until it is classified.
 func TestEveryTableIsClassified(t *testing.T) {
 	t.Parallel()
 	pool := pgtest.New(t)
@@ -33,7 +33,7 @@ func TestEveryTableIsClassified(t *testing.T) {
 
 	// marketdata_feed holds the instance's feed settings (ADR 025 F1) and marketdata_index_expectation
 	// the latest survey a feed fetches again (ADR 026 E3); neither holds a user's rows.
-	other := []string{"goose_db_version", "identity_books", "identity_membership", "identity_member", "ledger_transaction_version", "marketdata_feed",
+	other := []string{"goose_db_version", "identity_books", "identity_member", "ledger_transaction_version", "marketdata_feed",
 		"marketdata_index_expectation", "outbox_delivery"}
 	for _, table := range all {
 		if !slices.Contains(facts, table) && !slices.Contains(sharedTables, table) && !slices.Contains(notExported, table) && !slices.Contains(other, table) {

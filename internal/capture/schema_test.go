@@ -15,9 +15,9 @@ func TestSchemaInvariants(t *testing.T) {
 	h.Login("other@example.com")
 	uid := h.OwnerID()
 
-	hint := func(userID int64, class, description string, category any) error {
-		_, err := h.Pool.Exec(t.Context(), `INSERT INTO capture_category_hint (user_id, class, description, category_id, answered_at)
-			VALUES ($1, $2, $3, $4, now())`, userID, class, description, category)
+	hint := func(booksID int64, class, description string, category any) error {
+		_, err := h.Pool.Exec(t.Context(), `INSERT INTO capture_category_hint (books_id, class, description, category_id, answered_at)
+			VALUES ($1, $2, $3, $4, now())`, booksID, class, description, category)
 
 		return err
 	}

@@ -34,7 +34,7 @@ type DayDelta struct {
 }
 
 type AccountRef struct {
-	UserID    int64
+	BooksID   int64
 	AccountID uuid.UUID
 }
 
@@ -49,13 +49,13 @@ type Repository interface {
 	CashRepository
 	AnalyticsRepository
 	IndicatorRepository
-	AccountCurrency(ctx context.Context, userID int64, accountID uuid.UUID) (string, error)
-	AccountName(ctx context.Context, userID int64, accountID uuid.UUID) (string, error)
-	Rebuild(ctx context.Context, userID int64, accountID uuid.UUID, from time.Time) error
-	TreeDailyDeltas(ctx context.Context, userID int64, accountID uuid.UUID, to time.Time) ([]DayDelta, error)
+	AccountCurrency(ctx context.Context, booksID int64, accountID uuid.UUID) (string, error)
+	AccountName(ctx context.Context, booksID int64, accountID uuid.UUID) (string, error)
+	Rebuild(ctx context.Context, booksID int64, accountID uuid.UUID, from time.Time) error
+	TreeDailyDeltas(ctx context.Context, booksID int64, accountID uuid.UUID, to time.Time) ([]DayDelta, error)
 	AllAccounts(ctx context.Context) ([]AccountRef, error)
 	// CategoryTotals returns every account of the class with its own booked total in [from, to].
-	CategoryTotals(ctx context.Context, userID int64, class string, from, to time.Time) ([]CategoryRow, error)
+	CategoryTotals(ctx context.Context, booksID int64, class string, from, to time.Time) ([]CategoryRow, error)
 }
 
 type Service struct {
@@ -67,18 +67,18 @@ type Service struct {
 func NewService(repo Repository) *Service { return &Service{repo: repo} }
 
 // Series returns one point per day in [from, to], in the account currency.
-func (s *Service) Series(ctx context.Context, userID int64, accountID uuid.UUID, from, to time.Time, basis Basis) ([]Point, string, error) {
+func (s *Service) Series(ctx context.Context, booksID int64, accountID uuid.UUID, from, to time.Time, basis Basis) ([]Point, string, error) {
 	days := int(to.Sub(from).Hours()/24) + 1
 	if days < 1 || days > MaxSeriesDays {
 		return nil, "", ErrInvalidRange
 	}
 
-	currency, err := s.repo.AccountCurrency(ctx, userID, accountID)
+	currency, err := s.repo.AccountCurrency(ctx, booksID, accountID)
 	if err != nil {
 		return nil, "", err
 	}
 
-	deltas, err := s.repo.TreeDailyDeltas(ctx, userID, accountID, to)
+	deltas, err := s.repo.TreeDailyDeltas(ctx, booksID, accountID, to)
 	if err != nil {
 		return nil, "", err
 	}
@@ -111,14 +111,14 @@ func (d DayDelta) pick(b Basis) int64 {
 }
 
 // AccountName returns the name of one of the user's accounts, or ErrNotFound.
-func (s *Service) AccountName(ctx context.Context, userID int64, accountID uuid.UUID) (string, error) {
-	return s.repo.AccountName(ctx, userID, accountID)
+func (s *Service) AccountName(ctx context.Context, booksID int64, accountID uuid.UUID) (string, error) {
+	return s.repo.AccountName(ctx, booksID, accountID)
 }
 
 // RebuildAccounts recomputes the series of each account from the given date on.
-func (s *Service) RebuildAccounts(ctx context.Context, userID int64, accountIDs []uuid.UUID, from time.Time) error {
+func (s *Service) RebuildAccounts(ctx context.Context, booksID int64, accountIDs []uuid.UUID, from time.Time) error {
 	for _, id := range accountIDs {
-		if err := s.repo.Rebuild(ctx, userID, id, from); err != nil {
+		if err := s.repo.Rebuild(ctx, booksID, id, from); err != nil {
 			return err
 		}
 	}
@@ -131,22 +131,24 @@ var earliest = time.Date(1900, 1, 1, 0, 0, 0, 0, time.UTC)
 
 func (s *Service) RebuildAll(ctx context.Context) error { return s.rebuild(ctx, 0) }
 
-// RebuildUser recomputes the series of every account of the user, after an import.
-func (s *Service) RebuildUser(ctx context.Context, userID int64) error { return s.rebuild(ctx, userID) }
+// RebuildBooks recomputes the series of every account of the user, after an import.
+func (s *Service) RebuildBooks(ctx context.Context, booksID int64) error {
+	return s.rebuild(ctx, booksID)
+}
 
-// rebuild recomputes the accounts of userID, or of every user when it is zero.
-func (s *Service) rebuild(ctx context.Context, userID int64) error {
+// rebuild recomputes the accounts of booksID, or of every user when it is zero.
+func (s *Service) rebuild(ctx context.Context, booksID int64) error {
 	refs, err := s.repo.AllAccounts(ctx)
 	if err != nil {
 		return err
 	}
 
 	for _, r := range refs {
-		if userID != 0 && r.UserID != userID {
+		if booksID != 0 && r.BooksID != booksID {
 			continue
 		}
 
-		if err := s.repo.Rebuild(ctx, r.UserID, r.AccountID, earliest); err != nil {
+		if err := s.repo.Rebuild(ctx, r.BooksID, r.AccountID, earliest); err != nil {
 			return err
 		}
 	}

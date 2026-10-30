@@ -80,7 +80,7 @@ func newTestRegistry(t *testing.T) (*Registry, *bytes.Buffer) {
 	return r, logs
 }
 
-func userCtx(t *testing.T) context.Context { return auth.WithUserID(t.Context(), 7) }
+func userCtx(t *testing.T) context.Context { return auth.WithBooksID(t.Context(), 7) }
 
 // assertError checks that r is a tool error with code whose detail contains detail.
 func assertError(t *testing.T, r Result, code, detail string) {
@@ -137,7 +137,7 @@ func TestRegistry(t *testing.T) {
 	})
 	t.Run("no user", func(t *testing.T) {
 		r, _ := newTestRegistry(t)
-		if _, err := r.Call(t.Context(), "echo", []byte(`{"text":"hi"}`)); !errors.Is(err, ErrNoUser) {
+		if _, err := r.Call(t.Context(), "echo", []byte(`{"text":"hi"}`)); !errors.Is(err, ErrNoBooks) {
 			t.Errorf("err = %v", err)
 		}
 	})
@@ -154,7 +154,7 @@ func TestRegistry(t *testing.T) {
 		}
 
 		line := logs.String()
-		for _, want := range []string{`msg="tool call"`, "tool=echo", "user_id=7", "effect=read_only", "outcome=ok", "bytes=13", "duration="} {
+		for _, want := range []string{`msg="tool call"`, "tool=echo", "books_id=7", "effect=read_only", "outcome=ok", "bytes=13", "duration="} {
 			if !strings.Contains(line, want) {
 				t.Errorf("log %q lacks %q", line, want)
 			}

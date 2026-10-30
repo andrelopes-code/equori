@@ -38,15 +38,15 @@ func fieldErr(field, message string, err error) error {
 
 // RecordForeignPurchase records M11: amount = original × rate, the foreign charge on the amount, both
 // charged to the account in the base currency (P8 amendment A66).
-func (s *Service) RecordForeignPurchase(ctx context.Context, userID int64, in ForeignPurchase) (domain.Transaction, error) {
+func (s *Service) RecordForeignPurchase(ctx context.Context, booksID int64, in ForeignPurchase) (domain.Transaction, error) {
 	var created domain.Transaction
 	err := s.repo.InTx(ctx, func(r Repository) error {
-		base, err := baseCurrency(ctx, r, userID)
+		base, err := baseCurrency(ctx, r, booksID)
 		if err != nil {
 			return err
 		}
 
-		account, err := loadAccount(ctx, r, userID, in.AccountID, "account_id")
+		account, err := loadAccount(ctx, r, booksID, in.AccountID, "account_id")
 		if err != nil {
 			return err
 		}
@@ -55,7 +55,7 @@ func (s *Service) RecordForeignPurchase(ctx context.Context, userID int64, in Fo
 			return fieldErr("account_id", "must be a balance account in the base currency "+string(base), domain.ErrCurrencyUnsupported)
 		}
 
-		if err := s.expenseCategory(ctx, r, userID, in.CategoryID, "category_id"); err != nil {
+		if err := s.expenseCategory(ctx, r, booksID, in.CategoryID, "category_id"); err != nil {
 			return err
 		}
 
@@ -66,7 +66,7 @@ func (s *Service) RecordForeignPurchase(ctx context.Context, userID int64, in Fo
 		var bp int
 		if in.ForeignChargeRateBP != nil {
 			bp = *in.ForeignChargeRateBP
-		} else if bp, err = s.cardForeignChargeBP(ctx, r, userID, in.AccountID); err != nil {
+		} else if bp, err = s.cardForeignChargeBP(ctx, r, booksID, in.AccountID); err != nil {
 			return err
 		}
 
@@ -91,13 +91,13 @@ func (s *Service) RecordForeignPurchase(ctx context.Context, userID int64, in Fo
 		if !charge.IsZero() {
 			chargeCategory := in.ForeignChargeCategoryID
 			if chargeCategory == uuid.Nil {
-				taxes, err := r.SystemAccount(ctx, userID, domain.RoleTaxes)
+				taxes, err := r.SystemAccount(ctx, booksID, domain.RoleTaxes)
 				if err != nil {
 					return err
 				}
 
 				chargeCategory = taxes.ID
-			} else if err := s.expenseCategory(ctx, r, userID, chargeCategory, "foreign_charge_category_id"); err != nil {
+			} else if err := s.expenseCategory(ctx, r, booksID, chargeCategory, "foreign_charge_category_id"); err != nil {
 				return err
 			}
 
@@ -110,7 +110,7 @@ func (s *Service) RecordForeignPurchase(ctx context.Context, userID int64, in Fo
 		}
 
 		created, err = s.insert(ctx, r, domain.Transaction{
-			UserID: userID, Date: in.Date, Description: in.Description, PayeeID: in.PayeeID,
+			BooksID: booksID, Date: in.Date, Description: in.Description, PayeeID: in.PayeeID,
 			Postings: append(postings, charges...),
 		})
 
@@ -122,20 +122,20 @@ func (s *Service) RecordForeignPurchase(ctx context.Context, userID int64, in Fo
 
 // Exchange records M12 between accounts of two currencies, one of them the base
 // currency (P8 amendment A67).
-func (s *Service) Exchange(ctx context.Context, userID int64, in Exchange) (domain.Transaction, error) {
+func (s *Service) Exchange(ctx context.Context, booksID int64, in Exchange) (domain.Transaction, error) {
 	var created domain.Transaction
 	err := s.repo.InTx(ctx, func(r Repository) error {
-		base, err := baseCurrency(ctx, r, userID)
+		base, err := baseCurrency(ctx, r, booksID)
 		if err != nil {
 			return err
 		}
 
-		from, err := loadAccount(ctx, r, userID, in.FromAccountID, "from_account_id")
+		from, err := loadAccount(ctx, r, booksID, in.FromAccountID, "from_account_id")
 		if err != nil {
 			return err
 		}
 
-		to, err := loadAccount(ctx, r, userID, in.ToAccountID, "to_account_id")
+		to, err := loadAccount(ctx, r, booksID, in.ToAccountID, "to_account_id")
 		if err != nil {
 			return err
 		}
@@ -198,20 +198,20 @@ func (s *Service) Exchange(ctx context.Context, userID int64, in Exchange) (doma
 		if !fee.IsZero() {
 			feeCategory := in.FeeCategoryID
 			if feeCategory == uuid.Nil {
-				fees, err := r.SystemAccount(ctx, userID, domain.RoleFees)
+				fees, err := r.SystemAccount(ctx, booksID, domain.RoleFees)
 				if err != nil {
 					return err
 				}
 
 				feeCategory = fees.ID
-			} else if err := s.expenseCategory(ctx, r, userID, feeCategory, "fee_category_id"); err != nil {
+			} else if err := s.expenseCategory(ctx, r, booksID, feeCategory, "fee_category_id"); err != nil {
 				return err
 			}
 
 			postings = []domain.Posting{postings[0], {AccountID: feeCategory, Amount: fee}, postings[1]}
 		}
 
-		created, err = s.insert(ctx, r, domain.Transaction{UserID: userID, Date: in.Date, Description: in.Description, BalancingCurrency: base, Postings: postings})
+		created, err = s.insert(ctx, r, domain.Transaction{BooksID: booksID, Date: in.Date, Description: in.Description, BalancingCurrency: base, Postings: postings})
 
 		return err
 	})
@@ -221,7 +221,7 @@ func (s *Service) Exchange(ctx context.Context, userID int64, in Exchange) (doma
 
 // ValuedBalance is BalanceAt valued in currency in with stored prices (P8 amendment
 // A65); a parent whose sub-accounts hold several instruments sums their values.
-func (s *Service) ValuedBalance(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time, basis Basis, in money.Currency) (Balance, Conversion, error) {
+func (s *Service) ValuedBalance(ctx context.Context, booksID int64, accountID uuid.UUID, date time.Time, basis Basis, in money.Currency) (Balance, Conversion, error) {
 	if basis == "" {
 		basis = BasisBooked
 	}
@@ -230,11 +230,11 @@ func (s *Service) ValuedBalance(ctx context.Context, userID int64, accountID uui
 		return Balance{}, Conversion{}, fieldErr("value_in", "must be a supported currency", domain.ErrValidation)
 	}
 
-	if _, err := s.repo.Account(ctx, userID, accountID); err != nil {
+	if _, err := s.repo.Account(ctx, booksID, accountID); err != nil {
 		return Balance{}, Conversion{}, err
 	}
 
-	totals, err := s.repo.TreeBalancesByInstrument(ctx, userID, accountID, date, basis)
+	totals, err := s.repo.TreeBalancesByInstrument(ctx, booksID, accountID, date, basis)
 	if err != nil {
 		return Balance{}, Conversion{}, err
 	}
@@ -289,27 +289,27 @@ func (s *Service) ValuedBalance(ctx context.Context, userID int64, accountID uui
 // ExternalFlows is the money that entered (positive) or left (negative) the accounts and their
 // sub-accounts, taken as one tree, between from and to, one item per transaction (investments
 // design 4.3).
-func (s *Service) ExternalFlows(ctx context.Context, userID int64, accountIDs []uuid.UUID, from, to time.Time) ([]ExternalFlow, error) {
-	if err := s.ownAccounts(ctx, userID, accountIDs); err != nil {
+func (s *Service) ExternalFlows(ctx context.Context, booksID int64, accountIDs []uuid.UUID, from, to time.Time) ([]ExternalFlow, error) {
+	if err := s.ownAccounts(ctx, booksID, accountIDs); err != nil {
 		return nil, err
 	}
 
-	return s.repo.TreeExternalFlows(ctx, userID, accountIDs, from, to)
+	return s.repo.TreeExternalFlows(ctx, booksID, accountIDs, from, to)
 }
 
 // FirstPosting is the booked date of the earliest posting of the accounts and their
 // sub-accounts; false when they have none.
-func (s *Service) FirstPosting(ctx context.Context, userID int64, accountIDs []uuid.UUID) (time.Time, bool, error) {
-	if err := s.ownAccounts(ctx, userID, accountIDs); err != nil {
+func (s *Service) FirstPosting(ctx context.Context, booksID int64, accountIDs []uuid.UUID) (time.Time, bool, error) {
+	if err := s.ownAccounts(ctx, booksID, accountIDs); err != nil {
 		return time.Time{}, false, err
 	}
 
-	return s.repo.TreeFirstPosting(ctx, userID, accountIDs)
+	return s.repo.TreeFirstPosting(ctx, booksID, accountIDs)
 }
 
-func (s *Service) ownAccounts(ctx context.Context, userID int64, accountIDs []uuid.UUID) error {
+func (s *Service) ownAccounts(ctx context.Context, booksID int64, accountIDs []uuid.UUID) error {
 	for _, id := range accountIDs {
-		if _, err := s.repo.Account(ctx, userID, id); err != nil {
+		if _, err := s.repo.Account(ctx, booksID, id); err != nil {
 			return err
 		}
 	}
@@ -317,13 +317,13 @@ func (s *Service) ownAccounts(ctx context.Context, userID int64, accountIDs []uu
 	return nil
 }
 
-func baseCurrency(ctx context.Context, r Repository, userID int64) (money.Currency, error) {
-	settings, err := r.Settings(ctx, userID)
+func baseCurrency(ctx context.Context, r Repository, booksID int64) (money.Currency, error) {
+	settings, err := r.Settings(ctx, booksID)
 	return settings.BaseCurrency, err
 }
 
-func loadAccount(ctx context.Context, r Repository, userID int64, id uuid.UUID, field string) (domain.Account, error) {
-	a, err := r.Account(ctx, userID, id)
+func loadAccount(ctx context.Context, r Repository, booksID int64, id uuid.UUID, field string) (domain.Account, error) {
+	a, err := r.Account(ctx, booksID, id)
 	if errors.Is(err, ErrNotFound) {
 		return domain.Account{}, fieldErr(field, "unknown account", domain.ErrUnknownAccount)
 	}
@@ -331,8 +331,8 @@ func loadAccount(ctx context.Context, r Repository, userID int64, id uuid.UUID, 
 	return a, err
 }
 
-func (s *Service) expenseCategory(ctx context.Context, r Repository, userID int64, id uuid.UUID, field string) error {
-	a, err := loadAccount(ctx, r, userID, id, field)
+func (s *Service) expenseCategory(ctx context.Context, r Repository, booksID int64, id uuid.UUID, field string) error {
+	a, err := loadAccount(ctx, r, booksID, id, field)
 	if err != nil {
 		return err
 	}
@@ -346,8 +346,8 @@ func (s *Service) expenseCategory(ctx context.Context, r Repository, userID int6
 
 // cardForeignChargeBP reads the rate from the first active card of the account; an account
 // without an active card takes the default of the owner's region.
-func (s *Service) cardForeignChargeBP(ctx context.Context, r Repository, userID int64, accountID uuid.UUID) (int, error) {
-	cards, err := r.Cards(ctx, userID, accountID)
+func (s *Service) cardForeignChargeBP(ctx context.Context, r Repository, booksID int64, accountID uuid.UUID) (int, error) {
+	cards, err := r.Cards(ctx, booksID, accountID)
 	if err != nil {
 		return 0, err
 	}
@@ -358,5 +358,5 @@ func (s *Service) cardForeignChargeBP(ctx context.Context, r Repository, userID 
 		}
 	}
 
-	return s.regionForeignChargeBP(ctx, userID)
+	return s.regionForeignChargeBP(ctx, booksID)
 }

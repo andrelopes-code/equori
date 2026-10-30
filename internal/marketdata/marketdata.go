@@ -67,7 +67,7 @@ type Module struct {
 
 // Profiles gives the language and region of a user (identity).
 type Profiles interface {
-	Profile(ctx context.Context, userID int64) (locale.Locale, error)
+	Profile(ctx context.Context, booksID int64) (locale.Locale, error)
 }
 
 // WithProfiles sets where the region of the calling user comes from; the composition root calls it once.
@@ -142,7 +142,7 @@ func (m *Module) listHolidays(ctx context.Context, calendar string, year int) ([
 }
 
 func (m *Module) calendarList(ctx context.Context) (httpapi.CalendarList, error) {
-	l, err := m.profiles.Profile(ctx, auth.MustUserID(ctx))
+	l, err := m.profiles.Profile(ctx, auth.MustBooksID(ctx))
 	if err != nil {
 		return httpapi.CalendarList{}, fmt.Errorf("read profile: %w", err)
 	}

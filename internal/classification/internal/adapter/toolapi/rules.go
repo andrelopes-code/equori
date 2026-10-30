@@ -70,7 +70,7 @@ func listRules(svc *app.Service, names Names) tool.Tool {
 			"Do not use it for one transaction's categorization: explain_categorization does.",
 		Effect:     tool.ReadOnly,
 		Idempotent: true,
-	}, func(ctx context.Context, userID int64, in listRulesIn) (listRulesOut, error) {
+	}, func(ctx context.Context, booksID int64, in listRulesIn) (listRulesOut, error) {
 		if in.RuleID != "" && in.Kind != "rules" {
 			return listRulesOut{}, tool.InvalidArgument("rule_id", "is not used by kind "+string(in.Kind))
 		}
@@ -80,7 +80,7 @@ func listRules(svc *app.Service, names Names) tool.Tool {
 			return listRulesOut{}, err
 		}
 
-		categories, payees, err := names(ctx, userID)
+		categories, payees, err := names(ctx, booksID)
 		if err != nil {
 			return listRulesOut{}, err
 		}
@@ -97,13 +97,13 @@ func listRules(svc *app.Service, names Names) tool.Tool {
 
 			var next *app.RuleKey
 			if ruleID != uuid.Nil {
-				one, err := svc.Rule(ctx, userID, ruleID)
+				one, err := svc.Rule(ctx, booksID, ruleID)
 				if err != nil {
 					return out, err
 				}
 
 				rules = []domain.Rule{one}
-			} else if rules, next, err = svc.ListRules(ctx, userID, p); err != nil {
+			} else if rules, next, err = svc.ListRules(ctx, booksID, p); err != nil {
 				return out, err
 			}
 
@@ -112,7 +112,7 @@ func listRules(svc *app.Service, names Names) tool.Tool {
 				ids[i] = r.ID
 			}
 
-			usage, err := svc.RuleUsage(ctx, userID, ids)
+			usage, err := svc.RuleUsage(ctx, booksID, ids)
 			if err != nil {
 				return out, err
 			}
@@ -134,7 +134,7 @@ func listRules(svc *app.Service, names Names) tool.Tool {
 				return out, err
 			}
 
-			items, next, err := svc.ListSuggestions(ctx, userID, app.SuggestionPending, p)
+			items, next, err := svc.ListSuggestions(ctx, booksID, app.SuggestionPending, p)
 			if err != nil {
 				return out, err
 			}
@@ -160,7 +160,7 @@ func listRules(svc *app.Service, names Names) tool.Tool {
 				return out, err
 			}
 
-			items, next, err := svc.ListSourceCategories(ctx, userID, p)
+			items, next, err := svc.ListSourceCategories(ctx, booksID, p)
 			if err != nil {
 				return out, err
 			}
@@ -182,7 +182,7 @@ func listRules(svc *app.Service, names Names) tool.Tool {
 			return out, err
 		}
 
-		items, next, err := svc.ListAliases(ctx, userID, p)
+		items, next, err := svc.ListAliases(ctx, booksID, p)
 		if err != nil {
 			return out, err
 		}

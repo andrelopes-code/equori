@@ -20,7 +20,7 @@ SELECT
 FROM
     reporting_account_day r
 WHERE
-    r.user_id = $1
+    r.books_id = $1
     AND r.account_id = $2
     AND r.date BETWEEN $3::date AND $4::date
     AND (
@@ -32,7 +32,7 @@ ORDER BY
 `
 
 type AccountFlowsParams struct {
-	UserID    int64
+	BooksID   int64
 	AccountID uuid.UUID
 	FromDate  time.Time
 	ToDate    time.Time
@@ -47,7 +47,7 @@ type AccountFlowsRow struct {
 // A119: the booked inflow and outflow of the account itself, one row per day with a posting.
 func (q *Queries) AccountFlows(ctx context.Context, arg AccountFlowsParams) ([]AccountFlowsRow, error) {
 	rows, err := q.db.Query(ctx, accountFlows,
-		arg.UserID,
+		arg.BooksID,
 		arg.AccountID,
 		arg.FromDate,
 		arg.ToDate,
@@ -76,17 +76,17 @@ SELECT
 FROM
     ledger_account
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2
 `
 
 type AccountInstrumentParams struct {
-	UserID    int64
+	BooksID   int64
 	AccountID uuid.UUID
 }
 
 func (q *Queries) AccountInstrument(ctx context.Context, arg AccountInstrumentParams) (string, error) {
-	row := q.db.QueryRow(ctx, accountInstrument, arg.UserID, arg.AccountID)
+	row := q.db.QueryRow(ctx, accountInstrument, arg.BooksID, arg.AccountID)
 	var instrument string
 	err := row.Scan(&instrument)
 	return instrument, err
@@ -98,17 +98,17 @@ SELECT
 FROM
     ledger_account
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2
 `
 
 type AccountNameParams struct {
-	UserID    int64
+	BooksID   int64
 	AccountID uuid.UUID
 }
 
 func (q *Queries) AccountName(ctx context.Context, arg AccountNameParams) (string, error) {
-	row := q.db.QueryRow(ctx, accountName, arg.UserID, arg.AccountID)
+	row := q.db.QueryRow(ctx, accountName, arg.BooksID, arg.AccountID)
 	var name string
 	err := row.Scan(&name)
 	return name, err
@@ -127,7 +127,7 @@ FROM
     LEFT JOIN reporting_account_day r ON r.account_id = a.id
     AND r.date BETWEEN $1::date AND $2::date
 WHERE
-    a.user_id = $3
+    a.books_id = $3
     AND a.account_class = $4
 GROUP BY
     a.id
@@ -139,7 +139,7 @@ ORDER BY
 type CategoryTotalsParams struct {
 	FromDate     time.Time
 	ToDate       time.Time
-	UserID       int64
+	BooksID      int64
 	AccountClass string
 }
 
@@ -157,7 +157,7 @@ func (q *Queries) CategoryTotals(ctx context.Context, arg CategoryTotalsParams) 
 	rows, err := q.db.Query(ctx, categoryTotals,
 		arg.FromDate,
 		arg.ToDate,
-		arg.UserID,
+		arg.BooksID,
 		arg.AccountClass,
 	)
 	if err != nil {
@@ -205,7 +205,7 @@ func (q *Queries) DeleteAccountDaysFrom(ctx context.Context, arg DeleteAccountDa
 const insertAccountDaysFrom = `-- name: InsertAccountDaysFrom :exec
 INSERT INTO
     reporting_account_day (
-        user_id,
+        books_id,
         account_id,
         date,
         delta_booked,
@@ -254,7 +254,7 @@ FROM
                 FROM
                     ledger_posting p
                 WHERE
-                    p.user_id = $1::bigint
+                    p.books_id = $1::bigint
                     AND p.account_id = $2::uuid
                     AND NOT p.voided
                     AND p.booked_on >= $3::date
@@ -266,7 +266,7 @@ FROM
                 FROM
                     ledger_posting p
                 WHERE
-                    p.user_id = $1::bigint
+                    p.books_id = $1::bigint
                     AND p.account_id = $2::uuid
                     AND NOT p.voided
                     AND coalesce(p.settled_on, p.booked_on) >= $3::date
@@ -297,7 +297,7 @@ FROM
         FROM
             ledger_posting p
         WHERE
-            p.user_id = $1::bigint
+            p.books_id = $1::bigint
             AND p.account_id = $2::uuid
             AND NOT p.voided
     ) base
@@ -309,30 +309,30 @@ WINDOW
 `
 
 type InsertAccountDaysFromParams struct {
-	UserID    int64
+	BooksID   int64
 	AccountID uuid.UUID
 	FromDate  time.Time
 }
 
 func (q *Queries) InsertAccountDaysFrom(ctx context.Context, arg InsertAccountDaysFromParams) error {
-	_, err := q.db.Exec(ctx, insertAccountDaysFrom, arg.UserID, arg.AccountID, arg.FromDate)
+	_, err := q.db.Exec(ctx, insertAccountDaysFrom, arg.BooksID, arg.AccountID, arg.FromDate)
 	return err
 }
 
 const listAllAccounts = `-- name: ListAllAccounts :many
 SELECT
-    user_id,
+    books_id,
     id
 FROM
     ledger_account
 ORDER BY
-    user_id,
+    books_id,
     id
 `
 
 type ListAllAccountsRow struct {
-	UserID int64
-	ID     uuid.UUID
+	BooksID int64
+	ID      uuid.UUID
 }
 
 func (q *Queries) ListAllAccounts(ctx context.Context) ([]ListAllAccountsRow, error) {
@@ -344,7 +344,7 @@ func (q *Queries) ListAllAccounts(ctx context.Context) ([]ListAllAccountsRow, er
 	var items []ListAllAccountsRow
 	for rows.Next() {
 		var i ListAllAccountsRow
-		if err := rows.Scan(&i.UserID, &i.ID); err != nil {
+		if err := rows.Scan(&i.BooksID, &i.ID); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -363,7 +363,7 @@ WITH RECURSIVE
         FROM
             ledger_account a
         WHERE
-            a.user_id = $2
+            a.books_id = $2
             AND a.id = $3
         UNION ALL
         SELECT
@@ -372,7 +372,7 @@ WITH RECURSIVE
             ledger_account c
             JOIN tree ON c.parent_id = tree.id
         WHERE
-            c.user_id = $2
+            c.books_id = $2
     )
 SELECT
     r.date,
@@ -396,7 +396,7 @@ ORDER BY
 
 type TreeDailyDeltasParams struct {
 	ToDate    time.Time
-	UserID    int64
+	BooksID   int64
 	AccountID uuid.UUID
 }
 
@@ -407,7 +407,7 @@ type TreeDailyDeltasRow struct {
 }
 
 func (q *Queries) TreeDailyDeltas(ctx context.Context, arg TreeDailyDeltasParams) ([]TreeDailyDeltasRow, error) {
-	rows, err := q.db.Query(ctx, treeDailyDeltas, arg.ToDate, arg.UserID, arg.AccountID)
+	rows, err := q.db.Query(ctx, treeDailyDeltas, arg.ToDate, arg.BooksID, arg.AccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -435,7 +435,7 @@ WITH RECURSIVE
         FROM
             ledger_account a
         WHERE
-            a.user_id = $1
+            a.books_id = $1
             AND a.id = $2
         UNION ALL
         SELECT
@@ -445,7 +445,7 @@ WITH RECURSIVE
             ledger_account c
             JOIN tree ON c.parent_id = tree.id
         WHERE
-            c.user_id = $1
+            c.books_id = $1
     )
 SELECT DISTINCT
     instrument
@@ -456,12 +456,12 @@ ORDER BY
 `
 
 type TreeInstrumentsParams struct {
-	UserID    int64
+	BooksID   int64
 	AccountID uuid.UUID
 }
 
 func (q *Queries) TreeInstruments(ctx context.Context, arg TreeInstrumentsParams) ([]string, error) {
-	rows, err := q.db.Query(ctx, treeInstruments, arg.UserID, arg.AccountID)
+	rows, err := q.db.Query(ctx, treeInstruments, arg.BooksID, arg.AccountID)
 	if err != nil {
 		return nil, err
 	}

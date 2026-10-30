@@ -14,41 +14,41 @@ import (
 const deleteTag = `-- name: DeleteTag :exec
 DELETE FROM ledger_tag
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2
 `
 
 type DeleteTagParams struct {
-	UserID int64
-	ID     uuid.UUID
+	BooksID int64
+	ID      uuid.UUID
 }
 
 func (q *Queries) DeleteTag(ctx context.Context, arg DeleteTagParams) error {
-	_, err := q.db.Exec(ctx, deleteTag, arg.UserID, arg.ID)
+	_, err := q.db.Exec(ctx, deleteTag, arg.BooksID, arg.ID)
 	return err
 }
 
 const getPayee = `-- name: GetPayee :one
 SELECT
-    id, user_id, name, merged_into
+    id, books_id, name, merged_into
 FROM
     ledger_payee
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2
 `
 
 type GetPayeeParams struct {
-	UserID int64
-	ID     uuid.UUID
+	BooksID int64
+	ID      uuid.UUID
 }
 
 func (q *Queries) GetPayee(ctx context.Context, arg GetPayeeParams) (LedgerPayee, error) {
-	row := q.db.QueryRow(ctx, getPayee, arg.UserID, arg.ID)
+	row := q.db.QueryRow(ctx, getPayee, arg.BooksID, arg.ID)
 	var i LedgerPayee
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.Name,
 		&i.MergedInto,
 	)
@@ -57,17 +57,17 @@ func (q *Queries) GetPayee(ctx context.Context, arg GetPayeeParams) (LedgerPayee
 
 const getSettings = `-- name: GetSettings :one
 SELECT
-    user_id, base_currency
+    books_id, base_currency
 FROM
     ledger_settings
 WHERE
-    user_id = $1
+    books_id = $1
 `
 
-func (q *Queries) GetSettings(ctx context.Context, userID int64) (LedgerSetting, error) {
-	row := q.db.QueryRow(ctx, getSettings, userID)
+func (q *Queries) GetSettings(ctx context.Context, booksID int64) (LedgerSetting, error) {
+	row := q.db.QueryRow(ctx, getSettings, booksID)
 	var i LedgerSetting
-	err := row.Scan(&i.UserID, &i.BaseCurrency)
+	err := row.Scan(&i.BooksID, &i.BaseCurrency)
 	return i, err
 }
 
@@ -82,7 +82,7 @@ FROM
     LEFT JOIN ledger_transaction t ON t.id = tt.transaction_id
     AND t.voided_at IS NULL
 WHERE
-    g.user_id = $1
+    g.books_id = $1
     AND g.name = $2
 GROUP BY
     g.id,
@@ -90,8 +90,8 @@ GROUP BY
 `
 
 type GetTagUsageParams struct {
-	UserID int64
-	Name   string
+	BooksID int64
+	Name    string
 }
 
 type GetTagUsageRow struct {
@@ -101,7 +101,7 @@ type GetTagUsageRow struct {
 }
 
 func (q *Queries) GetTagUsage(ctx context.Context, arg GetTagUsageParams) (GetTagUsageRow, error) {
-	row := q.db.QueryRow(ctx, getTagUsage, arg.UserID, arg.Name)
+	row := q.db.QueryRow(ctx, getTagUsage, arg.BooksID, arg.Name)
 	var i GetTagUsageRow
 	err := row.Scan(&i.ID, &i.Name, &i.Transactions)
 	return i, err
@@ -109,15 +109,15 @@ func (q *Queries) GetTagUsage(ctx context.Context, arg GetTagUsageParams) (GetTa
 
 const insertInstitution = `-- name: InsertInstitution :one
 INSERT INTO
-    ledger_institution (user_id, name, code, identifier_scheme, identifier)
+    ledger_institution (books_id, name, code, identifier_scheme, identifier)
 VALUES
     ($1, $2, $3, $4, $5)
 RETURNING
-    id, user_id, name, code, identifier_scheme, identifier
+    id, books_id, name, code, identifier_scheme, identifier
 `
 
 type InsertInstitutionParams struct {
-	UserID           int64
+	BooksID          int64
 	Name             string
 	Code             *string
 	IdentifierScheme *string
@@ -126,7 +126,7 @@ type InsertInstitutionParams struct {
 
 func (q *Queries) InsertInstitution(ctx context.Context, arg InsertInstitutionParams) (LedgerInstitution, error) {
 	row := q.db.QueryRow(ctx, insertInstitution,
-		arg.UserID,
+		arg.BooksID,
 		arg.Name,
 		arg.Code,
 		arg.IdentifierScheme,
@@ -135,7 +135,7 @@ func (q *Queries) InsertInstitution(ctx context.Context, arg InsertInstitutionPa
 	var i LedgerInstitution
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.Name,
 		&i.Code,
 		&i.IdentifierScheme,
@@ -146,24 +146,24 @@ func (q *Queries) InsertInstitution(ctx context.Context, arg InsertInstitutionPa
 
 const insertPayee = `-- name: InsertPayee :one
 INSERT INTO
-    ledger_payee (user_id, name)
+    ledger_payee (books_id, name)
 VALUES
     ($1, $2)
 RETURNING
-    id, user_id, name, merged_into
+    id, books_id, name, merged_into
 `
 
 type InsertPayeeParams struct {
-	UserID int64
-	Name   string
+	BooksID int64
+	Name    string
 }
 
 func (q *Queries) InsertPayee(ctx context.Context, arg InsertPayeeParams) (LedgerPayee, error) {
-	row := q.db.QueryRow(ctx, insertPayee, arg.UserID, arg.Name)
+	row := q.db.QueryRow(ctx, insertPayee, arg.BooksID, arg.Name)
 	var i LedgerPayee
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.Name,
 		&i.MergedInto,
 	)
@@ -172,12 +172,12 @@ func (q *Queries) InsertPayee(ctx context.Context, arg InsertPayeeParams) (Ledge
 
 const listInstitutions = `-- name: ListInstitutions :many
 SELECT
-    id, user_id, name, code, identifier_scheme, identifier,
+    id, books_id, name, code, identifier_scheme, identifier,
     lower(name)::text AS sort_name
 FROM
     ledger_institution
 WHERE
-    user_id = $1
+    books_id = $1
     AND (
         $2::text IS NULL
         OR (lower(name), id) > ($2::text, $3::uuid)
@@ -190,7 +190,7 @@ LIMIT
 `
 
 type ListInstitutionsParams struct {
-	UserID    int64
+	BooksID   int64
 	AfterName *string
 	AfterID   uuid.NullUUID
 	RowLimit  int32
@@ -198,7 +198,7 @@ type ListInstitutionsParams struct {
 
 type ListInstitutionsRow struct {
 	ID               uuid.UUID
-	UserID           int64
+	BooksID          int64
 	Name             string
 	Code             *string
 	IdentifierScheme *string
@@ -208,7 +208,7 @@ type ListInstitutionsRow struct {
 
 func (q *Queries) ListInstitutions(ctx context.Context, arg ListInstitutionsParams) ([]ListInstitutionsRow, error) {
 	rows, err := q.db.Query(ctx, listInstitutions,
-		arg.UserID,
+		arg.BooksID,
 		arg.AfterName,
 		arg.AfterID,
 		arg.RowLimit,
@@ -222,7 +222,7 @@ func (q *Queries) ListInstitutions(ctx context.Context, arg ListInstitutionsPara
 		var i ListInstitutionsRow
 		if err := rows.Scan(
 			&i.ID,
-			&i.UserID,
+			&i.BooksID,
 			&i.Name,
 			&i.Code,
 			&i.IdentifierScheme,
@@ -241,12 +241,12 @@ func (q *Queries) ListInstitutions(ctx context.Context, arg ListInstitutionsPara
 
 const listPayees = `-- name: ListPayees :many
 SELECT
-    id, user_id, name, merged_into,
+    id, books_id, name, merged_into,
     lower(name)::text AS sort_name
 FROM
     ledger_payee
 WHERE
-    user_id = $1
+    books_id = $1
     AND merged_into IS NULL
     AND (
         $2::text IS NULL
@@ -260,7 +260,7 @@ LIMIT
 `
 
 type ListPayeesParams struct {
-	UserID    int64
+	BooksID   int64
 	AfterName *string
 	AfterID   uuid.NullUUID
 	RowLimit  int32
@@ -268,7 +268,7 @@ type ListPayeesParams struct {
 
 type ListPayeesRow struct {
 	ID         uuid.UUID
-	UserID     int64
+	BooksID    int64
 	Name       string
 	MergedInto uuid.NullUUID
 	SortName   string
@@ -276,7 +276,7 @@ type ListPayeesRow struct {
 
 func (q *Queries) ListPayees(ctx context.Context, arg ListPayeesParams) ([]ListPayeesRow, error) {
 	rows, err := q.db.Query(ctx, listPayees,
-		arg.UserID,
+		arg.BooksID,
 		arg.AfterName,
 		arg.AfterID,
 		arg.RowLimit,
@@ -290,7 +290,7 @@ func (q *Queries) ListPayees(ctx context.Context, arg ListPayeesParams) ([]ListP
 		var i ListPayeesRow
 		if err := rows.Scan(
 			&i.ID,
-			&i.UserID,
+			&i.BooksID,
 			&i.Name,
 			&i.MergedInto,
 			&i.SortName,
@@ -311,7 +311,7 @@ SELECT
 FROM
     ledger_tag
 WHERE
-    user_id = $1
+    books_id = $1
     AND (
         $2::text IS NULL
         OR name > $2::text
@@ -323,13 +323,13 @@ LIMIT
 `
 
 type ListTagsParams struct {
-	UserID    int64
+	BooksID   int64
 	AfterName *string
 	RowLimit  int32
 }
 
 func (q *Queries) ListTags(ctx context.Context, arg ListTagsParams) ([]string, error) {
-	rows, err := q.db.Query(ctx, listTags, arg.UserID, arg.AfterName, arg.RowLimit)
+	rows, err := q.db.Query(ctx, listTags, arg.BooksID, arg.AfterName, arg.RowLimit)
 	if err != nil {
 		return nil, err
 	}
@@ -353,18 +353,18 @@ UPDATE ledger_payee
 SET
     merged_into = $1
 WHERE
-    user_id = $2
+    books_id = $2
     AND id = $3
 `
 
 type MarkPayeeMergedParams struct {
-	IntoID uuid.NullUUID
-	UserID int64
-	FromID uuid.UUID
+	IntoID  uuid.NullUUID
+	BooksID int64
+	FromID  uuid.UUID
 }
 
 func (q *Queries) MarkPayeeMerged(ctx context.Context, arg MarkPayeeMergedParams) error {
-	_, err := q.db.Exec(ctx, markPayeeMerged, arg.IntoID, arg.UserID, arg.FromID)
+	_, err := q.db.Exec(ctx, markPayeeMerged, arg.IntoID, arg.BooksID, arg.FromID)
 	return err
 }
 
@@ -374,45 +374,45 @@ SET
     counterparty_payee_id = $1,
     updated_at = now()
 WHERE
-    user_id = $2
+    books_id = $2
     AND counterparty_payee_id = $3
 `
 
 type MoveCounterpartyPayeeParams struct {
-	IntoID uuid.NullUUID
-	UserID int64
-	FromID uuid.NullUUID
+	IntoID  uuid.NullUUID
+	BooksID int64
+	FromID  uuid.NullUUID
 }
 
 func (q *Queries) MoveCounterpartyPayee(ctx context.Context, arg MoveCounterpartyPayeeParams) error {
-	_, err := q.db.Exec(ctx, moveCounterpartyPayee, arg.IntoID, arg.UserID, arg.FromID)
+	_, err := q.db.Exec(ctx, moveCounterpartyPayee, arg.IntoID, arg.BooksID, arg.FromID)
 	return err
 }
 
 const moveTagLinks = `-- name: MoveTagLinks :exec
 INSERT INTO
-    ledger_transaction_tag (user_id, transaction_id, tag_id)
+    ledger_transaction_tag (books_id, transaction_id, tag_id)
 SELECT
-    l.user_id,
+    l.books_id,
     l.transaction_id,
     $1::uuid
 FROM
     ledger_transaction_tag l
 WHERE
-    l.user_id = $2
+    l.books_id = $2
     AND l.tag_id = $3
 ON CONFLICT DO NOTHING
 `
 
 type MoveTagLinksParams struct {
-	IntoID uuid.UUID
-	UserID int64
-	FromID uuid.UUID
+	IntoID  uuid.UUID
+	BooksID int64
+	FromID  uuid.UUID
 }
 
 // Voided transactions keep their version and name the destination in place.
 func (q *Queries) MoveTagLinks(ctx context.Context, arg MoveTagLinksParams) error {
-	_, err := q.db.Exec(ctx, moveTagLinks, arg.IntoID, arg.UserID, arg.FromID)
+	_, err := q.db.Exec(ctx, moveTagLinks, arg.IntoID, arg.BooksID, arg.FromID)
 	return err
 }
 
@@ -421,19 +421,19 @@ UPDATE ledger_transaction
 SET
     payee_id = $1
 WHERE
-    user_id = $2
+    books_id = $2
     AND payee_id = $3
     AND voided_at IS NOT NULL
 `
 
 type MoveVoidedPayeeParams struct {
-	IntoID uuid.NullUUID
-	UserID int64
-	FromID uuid.NullUUID
+	IntoID  uuid.NullUUID
+	BooksID int64
+	FromID  uuid.NullUUID
 }
 
 func (q *Queries) MoveVoidedPayee(ctx context.Context, arg MoveVoidedPayeeParams) error {
-	_, err := q.db.Exec(ctx, moveVoidedPayee, arg.IntoID, arg.UserID, arg.FromID)
+	_, err := q.db.Exec(ctx, moveVoidedPayee, arg.IntoID, arg.BooksID, arg.FromID)
 	return err
 }
 
@@ -444,13 +444,13 @@ SELECT
 FROM
     ledger_payee
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = ANY ($2::UUID[])
 `
 
 type PayeeNamesParams struct {
-	UserID int64
-	Ids    []uuid.UUID
+	BooksID int64
+	Ids     []uuid.UUID
 }
 
 type PayeeNamesRow struct {
@@ -459,7 +459,7 @@ type PayeeNamesRow struct {
 }
 
 func (q *Queries) PayeeNames(ctx context.Context, arg PayeeNamesParams) ([]PayeeNamesRow, error) {
-	rows, err := q.db.Query(ctx, payeeNames, arg.UserID, arg.Ids)
+	rows, err := q.db.Query(ctx, payeeNames, arg.BooksID, arg.Ids)
 	if err != nil {
 		return nil, err
 	}
@@ -483,24 +483,24 @@ UPDATE ledger_payee
 SET
     name = $1
 WHERE
-    user_id = $2
+    books_id = $2
     AND id = $3
 RETURNING
-    id, user_id, name, merged_into
+    id, books_id, name, merged_into
 `
 
 type RenamePayeeParams struct {
-	Name   string
-	UserID int64
-	ID     uuid.UUID
+	Name    string
+	BooksID int64
+	ID      uuid.UUID
 }
 
 func (q *Queries) RenamePayee(ctx context.Context, arg RenamePayeeParams) (LedgerPayee, error) {
-	row := q.db.QueryRow(ctx, renamePayee, arg.Name, arg.UserID, arg.ID)
+	row := q.db.QueryRow(ctx, renamePayee, arg.Name, arg.BooksID, arg.ID)
 	var i LedgerPayee
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.Name,
 		&i.MergedInto,
 	)
@@ -512,7 +512,7 @@ UPDATE ledger_tag
 SET
     name = $1
 WHERE
-    user_id = $2
+    books_id = $2
     AND id = $3
 RETURNING
     id
@@ -520,12 +520,12 @@ RETURNING
 
 type RenameTagParams struct {
 	NewName string
-	UserID  int64
+	BooksID int64
 	ID      uuid.UUID
 }
 
 func (q *Queries) RenameTag(ctx context.Context, arg RenameTagParams) (uuid.UUID, error) {
-	row := q.db.QueryRow(ctx, renameTag, arg.NewName, arg.UserID, arg.ID)
+	row := q.db.QueryRow(ctx, renameTag, arg.NewName, arg.BooksID, arg.ID)
 	var id uuid.UUID
 	err := row.Scan(&id)
 	return id, err
@@ -537,16 +537,16 @@ SET
     identifier_scheme = $1,
     identifier = $2
 WHERE
-    user_id = $3
+    books_id = $3
     AND id = $4
 RETURNING
-    id, user_id, name, code, identifier_scheme, identifier
+    id, books_id, name, code, identifier_scheme, identifier
 `
 
 type SetInstitutionIdentifierParams struct {
 	IdentifierScheme *string
 	Identifier       *string
-	UserID           int64
+	BooksID          int64
 	ID               uuid.UUID
 }
 
@@ -554,13 +554,13 @@ func (q *Queries) SetInstitutionIdentifier(ctx context.Context, arg SetInstituti
 	row := q.db.QueryRow(ctx, setInstitutionIdentifier,
 		arg.IdentifierScheme,
 		arg.Identifier,
-		arg.UserID,
+		arg.BooksID,
 		arg.ID,
 	)
 	var i LedgerInstitution
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.Name,
 		&i.Code,
 		&i.IdentifierScheme,
@@ -575,7 +575,7 @@ SELECT
 FROM
     ledger_transaction
 WHERE
-    user_id = $1
+    books_id = $1
     AND payee_id = $2
     AND voided_at IS NULL
 ORDER BY
@@ -583,13 +583,13 @@ ORDER BY
 `
 
 type TransactionsWithPayeeParams struct {
-	UserID  int64
+	BooksID int64
 	PayeeID uuid.NullUUID
 }
 
 // A82: the non-voided transactions of the payee, by id.
 func (q *Queries) TransactionsWithPayee(ctx context.Context, arg TransactionsWithPayeeParams) ([]uuid.UUID, error) {
-	rows, err := q.db.Query(ctx, transactionsWithPayee, arg.UserID, arg.PayeeID)
+	rows, err := q.db.Query(ctx, transactionsWithPayee, arg.BooksID, arg.PayeeID)
 	if err != nil {
 		return nil, err
 	}
@@ -615,7 +615,7 @@ FROM
     ledger_transaction_tag tt
     JOIN ledger_transaction t ON t.id = tt.transaction_id
 WHERE
-    tt.user_id = $1
+    tt.books_id = $1
     AND tt.tag_id = $2
     AND t.voided_at IS NULL
 ORDER BY
@@ -623,12 +623,12 @@ ORDER BY
 `
 
 type TransactionsWithTagParams struct {
-	UserID int64
-	TagID  uuid.UUID
+	BooksID int64
+	TagID   uuid.UUID
 }
 
 func (q *Queries) TransactionsWithTag(ctx context.Context, arg TransactionsWithTagParams) ([]uuid.UUID, error) {
-	rows, err := q.db.Query(ctx, transactionsWithTag, arg.UserID, arg.TagID)
+	rows, err := q.db.Query(ctx, transactionsWithTag, arg.BooksID, arg.TagID)
 	if err != nil {
 		return nil, err
 	}
@@ -649,30 +649,30 @@ func (q *Queries) TransactionsWithTag(ctx context.Context, arg TransactionsWithT
 
 const upsertSettings = `-- name: UpsertSettings :exec
 INSERT INTO
-    ledger_settings (user_id, base_currency)
+    ledger_settings (books_id, base_currency)
 VALUES
     ($1, $2)
-ON CONFLICT (user_id) DO UPDATE
+ON CONFLICT (books_id) DO UPDATE
 SET
     base_currency = EXCLUDED.base_currency
 `
 
 type UpsertSettingsParams struct {
-	UserID       int64
+	BooksID      int64
 	BaseCurrency string
 }
 
 func (q *Queries) UpsertSettings(ctx context.Context, arg UpsertSettingsParams) error {
-	_, err := q.db.Exec(ctx, upsertSettings, arg.UserID, arg.BaseCurrency)
+	_, err := q.db.Exec(ctx, upsertSettings, arg.BooksID, arg.BaseCurrency)
 	return err
 }
 
 const upsertTag = `-- name: UpsertTag :one
 INSERT INTO
-    ledger_tag (user_id, name)
+    ledger_tag (books_id, name)
 VALUES
     ($1, $2)
-ON CONFLICT (user_id, name) DO UPDATE
+ON CONFLICT (books_id, name) DO UPDATE
 SET
     name = EXCLUDED.name
 RETURNING
@@ -680,12 +680,12 @@ RETURNING
 `
 
 type UpsertTagParams struct {
-	UserID int64
-	Name   string
+	BooksID int64
+	Name    string
 }
 
 func (q *Queries) UpsertTag(ctx context.Context, arg UpsertTagParams) (uuid.UUID, error) {
-	row := q.db.QueryRow(ctx, upsertTag, arg.UserID, arg.Name)
+	row := q.db.QueryRow(ctx, upsertTag, arg.BooksID, arg.Name)
 	var id uuid.UUID
 	err := row.Scan(&id)
 	return id, err

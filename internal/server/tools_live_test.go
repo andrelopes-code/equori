@@ -52,7 +52,7 @@ func TestToolsLive(t *testing.T) {
 			Text: "Call list_accounts once, then reply with the names of my asset accounts.",
 		}}}},
 	}
-	resp, _, err := llm.RunTools(auth.WithUserID(t.Context(), h.OwnerID()), client, req, handlers, 4)
+	resp, _, err := llm.RunTools(auth.WithBooksID(t.Context(), h.OwnerID()), client, req, handlers, 4)
 	if err != nil {
 		t.Fatalf("Gemini rejected the catalog or the loop failed: %v", err)
 	}
@@ -60,7 +60,7 @@ func TestToolsLive(t *testing.T) {
 		t.Fatalf("answer %q; logs:\n%s", resp.Text(), h.Logs())
 	}
 
-	forced, err := llm.Run(auth.WithUserID(t.Context(), h.OwnerID()), client, llm.Request{
+	forced, err := llm.Run(auth.WithBooksID(t.Context(), h.OwnerID()), client, llm.Request{
 		Tools: tools,
 		Messages: []llm.Message{{Role: llm.RoleUser, Parts: []llm.Part{{
 			Text: "Call list_accounts, then call get_balances, then answer.",

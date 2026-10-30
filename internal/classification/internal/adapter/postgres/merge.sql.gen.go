@@ -14,59 +14,59 @@ import (
 const deleteMergeCollidingSuggestions = `-- name: DeleteMergeCollidingSuggestions :exec
 DELETE FROM classification_suggestion d
 WHERE
-    d.user_id = $1
+    d.books_id = $1
     AND d.id IN (
         SELECT
             greatest(s.id, o.id)
         FROM
             classification_suggestion s
-            JOIN classification_suggestion o ON o.user_id = s.user_id
+            JOIN classification_suggestion o ON o.books_id = s.books_id
             AND o.fingerprint = replace(s.fingerprint, $2::text, $3::text)
         WHERE
-            s.user_id = $1
+            s.books_id = $1
             AND s.fingerprint LIKE '% -> ' || $2::text
     )
 `
 
 type DeleteMergeCollidingSuggestionsParams struct {
-	UserID int64
-	FromID string
-	IntoID string
+	BooksID int64
+	FromID  string
+	IntoID  string
 }
 
 // A75: classification references follow a category merge. A suggestion fingerprint ends in
 // " -> <category id>" (domain.Fingerprint).
 // Of two suggestions whose fingerprints become equal, the newer goes (one per fingerprint, A24).
 func (q *Queries) DeleteMergeCollidingSuggestions(ctx context.Context, arg DeleteMergeCollidingSuggestionsParams) error {
-	_, err := q.db.Exec(ctx, deleteMergeCollidingSuggestions, arg.UserID, arg.FromID, arg.IntoID)
+	_, err := q.db.Exec(ctx, deleteMergeCollidingSuggestions, arg.BooksID, arg.FromID, arg.IntoID)
 	return err
 }
 
 const deletePayeeMergeCollidingSuggestions = `-- name: DeletePayeeMergeCollidingSuggestions :exec
 DELETE FROM classification_suggestion d
 WHERE
-    d.user_id = $1
+    d.books_id = $1
     AND d.id IN (
         SELECT
             greatest(s.id, o.id)
         FROM
             classification_suggestion s
-            JOIN classification_suggestion o ON o.user_id = s.user_id
+            JOIN classification_suggestion o ON o.books_id = s.books_id
             AND o.fingerprint = replace(s.fingerprint, $2::text, $3::text)
         WHERE
-            s.user_id = $1
+            s.books_id = $1
             AND s.fingerprint LIKE 'payee:' || $2::text || ' -> %'
     )
 `
 
 type DeletePayeeMergeCollidingSuggestionsParams struct {
-	UserID int64
-	FromID string
-	IntoID string
+	BooksID int64
+	FromID  string
+	IntoID  string
 }
 
 func (q *Queries) DeletePayeeMergeCollidingSuggestions(ctx context.Context, arg DeletePayeeMergeCollidingSuggestionsParams) error {
-	_, err := q.db.Exec(ctx, deletePayeeMergeCollidingSuggestions, arg.UserID, arg.FromID, arg.IntoID)
+	_, err := q.db.Exec(ctx, deletePayeeMergeCollidingSuggestions, arg.BooksID, arg.FromID, arg.IntoID)
 	return err
 }
 
@@ -75,18 +75,18 @@ UPDATE classification_categorization
 SET
     category_id = $1
 WHERE
-    user_id = $2
+    books_id = $2
     AND category_id = $3
 `
 
 type MergeCategorizationsParams struct {
-	IntoID uuid.NullUUID
-	UserID int64
-	FromID uuid.NullUUID
+	IntoID  uuid.NullUUID
+	BooksID int64
+	FromID  uuid.NullUUID
 }
 
 func (q *Queries) MergeCategorizations(ctx context.Context, arg MergeCategorizationsParams) error {
-	_, err := q.db.Exec(ctx, mergeCategorizations, arg.IntoID, arg.UserID, arg.FromID)
+	_, err := q.db.Exec(ctx, mergeCategorizations, arg.IntoID, arg.BooksID, arg.FromID)
 	return err
 }
 
@@ -95,19 +95,19 @@ UPDATE classification_payee_alias
 SET
     payee_id = $1::uuid
 WHERE
-    user_id = $2
+    books_id = $2
     AND payee_id = $3::uuid
 `
 
 type MergePayeeAliasesParams struct {
-	IntoID uuid.UUID
-	UserID int64
-	FromID uuid.UUID
+	IntoID  uuid.UUID
+	BooksID int64
+	FromID  uuid.UUID
 }
 
 // A82: classification references follow a payee merge. A payee match key is "payee:<id>".
 func (q *Queries) MergePayeeAliases(ctx context.Context, arg MergePayeeAliasesParams) error {
-	_, err := q.db.Exec(ctx, mergePayeeAliases, arg.IntoID, arg.UserID, arg.FromID)
+	_, err := q.db.Exec(ctx, mergePayeeAliases, arg.IntoID, arg.BooksID, arg.FromID)
 	return err
 }
 
@@ -116,18 +116,18 @@ UPDATE classification_categorization
 SET
     match_key = 'payee:' || $1::text
 WHERE
-    user_id = $2
+    books_id = $2
     AND match_key = 'payee:' || $3::text
 `
 
 type MergePayeeMatchKeysParams struct {
-	IntoID string
-	UserID int64
-	FromID string
+	IntoID  string
+	BooksID int64
+	FromID  string
 }
 
 func (q *Queries) MergePayeeMatchKeys(ctx context.Context, arg MergePayeeMatchKeysParams) error {
-	_, err := q.db.Exec(ctx, mergePayeeMatchKeys, arg.IntoID, arg.UserID, arg.FromID)
+	_, err := q.db.Exec(ctx, mergePayeeMatchKeys, arg.IntoID, arg.BooksID, arg.FromID)
 	return err
 }
 
@@ -138,7 +138,7 @@ SET
     actions = replace(actions::text, $1::text, $2::text)::jsonb,
     updated_at = now()
 WHERE
-    user_id = $3
+    books_id = $3
     AND (
         strpos(conditions::text, $1::text) > 0
         OR strpos(actions::text, $1::text) > 0
@@ -146,13 +146,13 @@ WHERE
 `
 
 type MergePayeeRulesParams struct {
-	FromID string
-	IntoID string
-	UserID int64
+	FromID  string
+	IntoID  string
+	BooksID int64
 }
 
 func (q *Queries) MergePayeeRules(ctx context.Context, arg MergePayeeRulesParams) error {
-	_, err := q.db.Exec(ctx, mergePayeeRules, arg.FromID, arg.IntoID, arg.UserID)
+	_, err := q.db.Exec(ctx, mergePayeeRules, arg.FromID, arg.IntoID, arg.BooksID)
 	return err
 }
 
@@ -162,18 +162,18 @@ SET
     fingerprint = replace(fingerprint, $1::text, $2::text),
     conditions = replace(conditions::text, $1::text, $2::text)::jsonb
 WHERE
-    user_id = $3
+    books_id = $3
     AND fingerprint LIKE 'payee:' || $1::text || ' -> %'
 `
 
 type MergePayeeSuggestionsParams struct {
-	FromID string
-	IntoID string
-	UserID int64
+	FromID  string
+	IntoID  string
+	BooksID int64
 }
 
 func (q *Queries) MergePayeeSuggestions(ctx context.Context, arg MergePayeeSuggestionsParams) error {
-	_, err := q.db.Exec(ctx, mergePayeeSuggestions, arg.FromID, arg.IntoID, arg.UserID)
+	_, err := q.db.Exec(ctx, mergePayeeSuggestions, arg.FromID, arg.IntoID, arg.BooksID)
 	return err
 }
 
@@ -183,18 +183,18 @@ SET
     actions = replace(actions::text, $1::text, $2::text)::jsonb,
     updated_at = now()
 WHERE
-    user_id = $3
+    books_id = $3
     AND strpos(actions::text, $1::text) > 0
 `
 
 type MergeRuleActionsParams struct {
-	FromID string
-	IntoID string
-	UserID int64
+	FromID  string
+	IntoID  string
+	BooksID int64
 }
 
 func (q *Queries) MergeRuleActions(ctx context.Context, arg MergeRuleActionsParams) error {
-	_, err := q.db.Exec(ctx, mergeRuleActions, arg.FromID, arg.IntoID, arg.UserID)
+	_, err := q.db.Exec(ctx, mergeRuleActions, arg.FromID, arg.IntoID, arg.BooksID)
 	return err
 }
 
@@ -203,18 +203,18 @@ UPDATE classification_source_category
 SET
     category_id = $1
 WHERE
-    user_id = $2
+    books_id = $2
     AND category_id = $3
 `
 
 type MergeSourceCategoriesParams struct {
-	IntoID uuid.NullUUID
-	UserID int64
-	FromID uuid.NullUUID
+	IntoID  uuid.NullUUID
+	BooksID int64
+	FromID  uuid.NullUUID
 }
 
 func (q *Queries) MergeSourceCategories(ctx context.Context, arg MergeSourceCategoriesParams) error {
-	_, err := q.db.Exec(ctx, mergeSourceCategories, arg.IntoID, arg.UserID, arg.FromID)
+	_, err := q.db.Exec(ctx, mergeSourceCategories, arg.IntoID, arg.BooksID, arg.FromID)
 	return err
 }
 
@@ -224,18 +224,18 @@ SET
     fingerprint = replace(fingerprint, $1::text, $2::text),
     actions = replace(actions::text, $1::text, $2::text)::jsonb
 WHERE
-    user_id = $3
+    books_id = $3
     AND fingerprint LIKE '% -> ' || $1::text
 `
 
 type MergeSuggestionsParams struct {
-	FromID string
-	IntoID string
-	UserID int64
+	FromID  string
+	IntoID  string
+	BooksID int64
 }
 
 func (q *Queries) MergeSuggestions(ctx context.Context, arg MergeSuggestionsParams) error {
-	_, err := q.db.Exec(ctx, mergeSuggestions, arg.FromID, arg.IntoID, arg.UserID)
+	_, err := q.db.Exec(ctx, mergeSuggestions, arg.FromID, arg.IntoID, arg.BooksID)
 	return err
 }
 
@@ -271,7 +271,7 @@ SET
     ),
     updated_at = now()
 WHERE
-    r.user_id = $3
+    r.books_id = $3
     AND jsonb_path_exists(
         r.actions,
         '$[*].tags[*] ? (@ == $t)',
@@ -282,11 +282,11 @@ WHERE
 type RenameRuleTagParams struct {
 	FromName string
 	IntoName string
-	UserID   int64
+	BooksID  int64
 }
 
 // A rule that adds a renamed or merged tag adds the tag's new name, once.
 func (q *Queries) RenameRuleTag(ctx context.Context, arg RenameRuleTagParams) error {
-	_, err := q.db.Exec(ctx, renameRuleTag, arg.FromName, arg.IntoName, arg.UserID)
+	_, err := q.db.Exec(ctx, renameRuleTag, arg.FromName, arg.IntoName, arg.BooksID)
 	return err
 }

@@ -107,13 +107,13 @@ func getAccountDetails(svc *app.Service) tool.Tool {
 			"Use it for questions about one account or card. " +
 			"Do not use it for a statement's lines: get_statement returns them.",
 		Effect: tool.ReadOnly,
-	}, func(ctx context.Context, userID int64, in getAccountDetailsIn) (getAccountDetailsOut, error) {
+	}, func(ctx context.Context, booksID int64, in getAccountDetailsIn) (getAccountDetailsOut, error) {
 		id, err := requiredID(in.AccountID, "account_id")
 		if err != nil {
 			return getAccountDetailsOut{}, err
 		}
 
-		a, err := svc.Account(ctx, userID, id)
+		a, err := svc.Account(ctx, booksID, id)
 		if err != nil {
 			return getAccountDetailsOut{}, err
 		}
@@ -152,11 +152,11 @@ func getAccountDetails(svc *app.Service) tool.Tool {
 			return out, err
 		}
 
-		if out.Reconciliation, err = reconciliationOf(ctx, svc, userID, id); err != nil {
+		if out.Reconciliation, err = reconciliationOf(ctx, svc, booksID, id); err != nil {
 			return out, err
 		}
 
-		assertions, _, err := svc.BalanceAssertions(ctx, userID, id, page.Request[app.AssertionKey]{Limit: 5})
+		assertions, _, err := svc.BalanceAssertions(ctx, booksID, id, page.Request[app.AssertionKey]{Limit: 5})
 		if err != nil {
 			return out, err
 		}
@@ -171,7 +171,7 @@ func getAccountDetails(svc *app.Service) tool.Tool {
 		}
 
 		if isCard {
-			out.Card, err = cardDetailsOf(ctx, svc, userID, a, unit, in, month, from)
+			out.Card, err = cardDetailsOf(ctx, svc, booksID, a, unit, in, month, from)
 		}
 
 		return out, err
@@ -191,8 +191,8 @@ func parseMonth(s, field string) (*domain.ReferenceMonth, error) {
 	return &m, nil
 }
 
-func reconciliationOf(ctx context.Context, svc *app.Service, userID int64, id uuid.UUID) (reconciliationView, error) {
-	st, err := svc.ReconciliationStatus(ctx, userID, id)
+func reconciliationOf(ctx context.Context, svc *app.Service, booksID int64, id uuid.UUID) (reconciliationView, error) {
+	st, err := svc.ReconciliationStatus(ctx, booksID, id)
 	if err != nil {
 		return reconciliationView{}, err
 	}
@@ -209,12 +209,12 @@ func reconciliationOf(ctx context.Context, svc *app.Service, userID int64, id uu
 	return out, nil
 }
 
-func cardDetailsOf(ctx context.Context, svc *app.Service, userID int64, a domain.Account, unit money.Money,
+func cardDetailsOf(ctx context.Context, svc *app.Service, booksID int64, a domain.Account, unit money.Money,
 	in getAccountDetailsIn, month, from *domain.ReferenceMonth) (cardDetailsView, error) {
 	today := svc.Today()
 	out := cardDetailsView{Cards: []cardView{}, Statements: []statementRowView{}}
 
-	cards, err := svc.Cards(ctx, userID, a.ID)
+	cards, err := svc.Cards(ctx, booksID, a.ID)
 	if err != nil {
 		return cardDetailsView{}, err
 	}
@@ -223,13 +223,13 @@ func cardDetailsOf(ctx context.Context, svc *app.Service, userID int64, a domain
 		out.Cards = append(out.Cards, cardView{CardID: c.ID.String(), Holder: c.Holder, LastFour: c.LastFour, Virtual: c.Virtual, Active: c.Active})
 	}
 
-	limits, err := svc.CreditLimits(ctx, userID, a.ID)
+	limits, err := svc.CreditLimits(ctx, booksID, a.ID)
 	if err != nil {
 		return cardDetailsView{}, err
 	}
 
 	if len(limits) > 0 {
-		sum, err := svc.CardSummary(ctx, userID, a)
+		sum, err := svc.CardSummary(ctx, booksID, a)
 		if err != nil {
 			return cardDetailsView{}, err
 		}
@@ -239,7 +239,7 @@ func cardDetailsOf(ctx context.Context, svc *app.Service, userID int64, a domain
 		}
 	}
 
-	rules, err := svc.BillingRules(ctx, userID, a.ID)
+	rules, err := svc.BillingRules(ctx, booksID, a.ID)
 	if err != nil {
 		return cardDetailsView{}, err
 	}
@@ -254,7 +254,7 @@ func cardDetailsOf(ctx context.Context, svc *app.Service, userID int64, a domain
 	}
 
 	views, err := allPages(func(p page.Request[app.StatementKey]) ([]app.StatementView, *app.StatementKey, error) {
-		rows, next, _, err := svc.Statements(ctx, userID, a.ID, from, nil, p)
+		rows, next, _, err := svc.Statements(ctx, booksID, a.ID, from, nil, p)
 		return rows, next, err
 	})
 	if err != nil {
@@ -279,7 +279,7 @@ func cardDetailsOf(ctx context.Context, svc *app.Service, userID int64, a domain
 	}
 
 	if !in.PurchaseDate.IsZero() {
-		pl, err := svc.PlaceStatement(ctx, userID, a.ID, in.PurchaseDate.Time)
+		pl, err := svc.PlaceStatement(ctx, booksID, a.ID, in.PurchaseDate.Time)
 		if err != nil {
 			return cardDetailsView{}, err
 		}
@@ -288,7 +288,7 @@ func cardDetailsOf(ctx context.Context, svc *app.Service, userID int64, a domain
 	}
 
 	if month != nil {
-		m, err := svc.Commitment(ctx, userID, a.ID, *month)
+		m, err := svc.Commitment(ctx, booksID, a.ID, *month)
 		if err != nil {
 			return cardDetailsView{}, err
 		}

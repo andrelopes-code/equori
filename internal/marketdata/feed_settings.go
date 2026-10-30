@@ -84,7 +84,7 @@ func (m *Module) Feeds(ctx context.Context) ([]Feed, error) {
 		return nil, err
 	}
 
-	l, err := m.profiles.Profile(ctx, auth.MustUserID(ctx))
+	l, err := m.profiles.Profile(ctx, auth.MustBooksID(ctx))
 	if err != nil {
 		return nil, err
 	}

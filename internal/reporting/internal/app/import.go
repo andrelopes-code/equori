@@ -53,7 +53,7 @@ type ImportRepository interface {
 	ImportableTables(ctx context.Context) ([]string, error)
 	// Import writes the tables in one transaction (export design E4, steps 2 to 4);
 	// attachments are keyed by the hexadecimal SHA-256 of their bytes.
-	Import(ctx context.Context, userID int64, tables []ArchiveTable, attachments map[string][]byte) ([]TableCount, error)
+	Import(ctx context.Context, booksID int64, tables []ArchiveTable, attachments map[string][]byte) ([]TableCount, error)
 }
 
 type archiveManifest struct {
@@ -74,7 +74,7 @@ type archiveManifest struct {
 
 // Import migrates an archive of an earlier version, restores it into the books of a user
 // without facts, then rebuilds the derived tables (export design E4, ADR 021).
-func (s *Exports) Import(ctx context.Context, userID int64, archive []byte) (ImportResult, error) {
+func (s *Exports) Import(ctx context.Context, booksID int64, archive []byte) (ImportResult, error) {
 	files, err := unzip(archive)
 	if err != nil {
 		return ImportResult{}, err
@@ -148,13 +148,13 @@ func (s *Exports) Import(ctx context.Context, userID int64, archive []byte) (Imp
 		attachments[a.SHA256] = b
 	}
 
-	counts, err := s.imports.Import(ctx, userID, tables, attachments)
+	counts, err := s.imports.Import(ctx, booksID, tables, attachments)
 	if err != nil {
 		return ImportResult{}, err
 	}
 
 	for _, rebuild := range s.rebuilds {
-		if err := rebuild(ctx, userID); err != nil {
+		if err := rebuild(ctx, booksID); err != nil {
 			return ImportResult{}, fmt.Errorf("rebuild after import: %w", err)
 		}
 	}

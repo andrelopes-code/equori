@@ -4,7 +4,7 @@ SELECT
 FROM
     classification_categorization
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND match_key = @match_key
     AND category_id = @category_id
     AND corrected
@@ -19,7 +19,7 @@ LIMIT
 -- P5 amendment A24: one suggestion per fingerprint; only a pending one gains examples.
 INSERT INTO
     classification_suggestion (
-        user_id,
+        books_id,
         fingerprint,
         conditions,
         actions,
@@ -29,7 +29,7 @@ INSERT INTO
     )
 VALUES
     (
-        @user_id,
+        @books_id,
         @fingerprint,
         @conditions,
         @actions,
@@ -37,7 +37,7 @@ VALUES
         'pending',
         @created_at
     )
-ON CONFLICT (user_id, fingerprint) DO UPDATE
+ON CONFLICT (books_id, fingerprint) DO UPDATE
 SET
     example_transaction_ids = EXCLUDED.example_transaction_ids
 WHERE
@@ -49,7 +49,7 @@ SELECT
 FROM
     classification_suggestion
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND (
         sqlc.narg (state)::text IS NULL
         OR state = sqlc.narg (state)::text
@@ -69,7 +69,7 @@ SELECT
 FROM
     classification_suggestion
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2
 FOR UPDATE;
 
@@ -80,7 +80,7 @@ SET
     rule_id = sqlc.narg (rule_id),
     decided_at = now()
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND id = @id
 RETURNING
     *;

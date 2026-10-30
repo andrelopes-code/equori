@@ -17,19 +17,19 @@ SELECT
         FROM
             ledger_link l
         WHERE
-            l.user_id = p.user_id
+            l.books_id = p.books_id
             AND l.from_transaction_id = p.transaction_id
             AND l.link_type = 'anticipation_of'
     )::boolean AS anticipation
 FROM
     ledger_posting p
     JOIN ledger_account a ON a.id = p.account_id
-    JOIN ledger_settings st ON st.user_id = p.user_id
+    JOIN ledger_settings st ON st.books_id = p.books_id
     JOIN ledger_statement s ON s.id = p.statement_id
     LEFT JOIN ledger_installment_plan ip ON ip.id = p.installment_plan_id
     LEFT JOIN ledger_transaction o ON o.id = ip.origin_transaction_id
 WHERE
-    p.user_id = @user_id
+    p.books_id = @books_id
     AND NOT p.voided
     AND a.kind = 'credit_card'
     AND p.card_role IN ('charge', 'credit')
@@ -53,16 +53,16 @@ SELECT
         FROM
             ledger_installment_plan ip
         WHERE
-            ip.user_id = p.user_id
+            ip.books_id = p.books_id
             AND ip.origin_transaction_id = p.transaction_id
             AND ip.plan_kind = 'financing'
     )::boolean AS financing
 FROM
     ledger_posting p
     JOIN ledger_account a ON a.id = p.account_id
-    JOIN ledger_settings st ON st.user_id = p.user_id
+    JOIN ledger_settings st ON st.books_id = p.books_id
 WHERE
-    p.user_id = @user_id
+    p.books_id = @books_id
     AND NOT p.voided
     AND a.kind = 'credit_card'
     AND a.instrument = st.base_currency
@@ -82,7 +82,7 @@ FROM
     ledger_posting p
     JOIN ledger_account a ON a.id = p.account_id
 WHERE
-    p.user_id = @user_id
+    p.books_id = @books_id
     AND NOT p.voided
     AND a.account_class IN ('expense', 'income')
     AND p.transaction_id = ANY (@transaction_ids::UUID[])
@@ -98,7 +98,7 @@ SELECT
 FROM
     ledger_link
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND link_type IN ('anticipation_of', 'cancellation_of')
     AND from_transaction_id = ANY (@transaction_ids::UUID[]);
 
@@ -111,7 +111,7 @@ FROM
     ledger_posting p
     JOIN ledger_account a ON a.id = p.account_id
 WHERE
-    p.user_id = @user_id
+    p.books_id = @books_id
     AND NOT p.voided
     AND a.account_class IN ('expense', 'income')
     AND p.booked_on BETWEEN @from_date::date AND @to_date::date
@@ -121,10 +121,10 @@ WHERE
         FROM
             ledger_posting q
             JOIN ledger_account qa ON qa.id = q.account_id
-            JOIN ledger_settings st ON st.user_id = q.user_id
+            JOIN ledger_settings st ON st.books_id = q.books_id
         WHERE
             q.transaction_id = p.transaction_id
-            AND q.user_id = p.user_id
+            AND q.books_id = p.books_id
             AND NOT q.voided
             AND qa.kind = 'credit_card'
             AND qa.instrument = st.base_currency
@@ -143,7 +143,7 @@ FROM
     ledger_posting p
     JOIN ledger_account a ON a.id = p.account_id
 WHERE
-    p.user_id = @user_id
+    p.books_id = @books_id
     AND NOT p.voided
     AND a.account_class IN ('expense', 'income')
     AND p.booked_on BETWEEN @from_date::date AND @to_date::date
@@ -153,10 +153,10 @@ WHERE
         FROM
             ledger_posting q
             JOIN ledger_account qa ON qa.id = q.account_id
-            JOIN ledger_settings st ON st.user_id = q.user_id
+            JOIN ledger_settings st ON st.books_id = q.books_id
         WHERE
             q.transaction_id = p.transaction_id
-            AND q.user_id = p.user_id
+            AND q.books_id = p.books_id
             AND NOT q.voided
             AND qa.kind = 'credit_card'
             AND qa.instrument = st.base_currency
@@ -185,7 +185,7 @@ FROM
     ledger_statement s
     JOIN ledger_account a ON a.id = s.account_id
 WHERE
-    s.user_id = @user_id
+    s.books_id = @books_id
     AND s.account_id = @card_id
     AND a.kind = 'credit_card'
 ORDER BY
@@ -197,7 +197,7 @@ SELECT
 FROM
     ledger_statement s
 WHERE
-    s.user_id = @user_id
+    s.books_id = @books_id
     AND s.id = @id;
 
 -- name: ChargeCategories :many
@@ -209,7 +209,7 @@ WITH RECURSIVE
         FROM
             ledger_account r
         WHERE
-            r.user_id = @user_id
+            r.books_id = @books_id
             AND r.system_role IN ('interest', 'taxes', 'fees')
         UNION ALL
         SELECT
@@ -218,7 +218,7 @@ WITH RECURSIVE
             ledger_account a
             JOIN c ON a.parent_id = c.id
         WHERE
-            a.user_id = @user_id
+            a.books_id = @books_id
     )
 SELECT
     id
@@ -231,6 +231,6 @@ SELECT
 FROM
     ledger_account
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND id = @id
     AND kind = 'credit_card';

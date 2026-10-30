@@ -42,7 +42,7 @@ func (s *Server) ListRuleSuggestions(ctx context.Context, req ListRuleSuggestion
 		state = string(*req.Params.State)
 	}
 
-	items, next, err := s.svc.ListSuggestions(ctx, auth.MustUserID(ctx), state, p)
+	items, next, err := s.svc.ListSuggestions(ctx, auth.MustBooksID(ctx), state, p)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +58,7 @@ func (s *Server) ListRuleSuggestions(ctx context.Context, req ListRuleSuggestion
 }
 
 func (s *Server) AcceptRuleSuggestion(ctx context.Context, req AcceptRuleSuggestionRequestObject) (AcceptRuleSuggestionResponseObject, error) {
-	sg, err := s.svc.AcceptSuggestion(ctx, auth.MustUserID(ctx), req.Id, req.Body.Name)
+	sg, err := s.svc.AcceptSuggestion(ctx, auth.MustBooksID(ctx), req.Id, req.Body.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +67,7 @@ func (s *Server) AcceptRuleSuggestion(ctx context.Context, req AcceptRuleSuggest
 }
 
 func (s *Server) DismissRuleSuggestion(ctx context.Context, req DismissRuleSuggestionRequestObject) (DismissRuleSuggestionResponseObject, error) {
-	sg, err := s.svc.DismissSuggestion(ctx, auth.MustUserID(ctx), req.Id)
+	sg, err := s.svc.DismissSuggestion(ctx, auth.MustBooksID(ctx), req.Id)
 	if err != nil {
 		return nil, err
 	}

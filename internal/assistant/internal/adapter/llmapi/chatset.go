@@ -50,7 +50,7 @@ func ChatHandlers(svc *app.Service, tools app.Tools, set tool.Set, conversationI
 		}
 
 		handlers[name] = func(ctx context.Context, args json.RawMessage) (json.RawMessage, error) {
-			out, err := svc.Propose(ctx, auth.MustUserID(ctx), conversationID(ctx), name, args)
+			out, err := svc.Propose(ctx, auth.MustBooksID(ctx), conversationID(ctx), name, args)
 			if tf, ok := errors.AsType[*app.ToolFailure](err); ok {
 				return nil, &llm.ToolError{Content: tf.Content}
 			}

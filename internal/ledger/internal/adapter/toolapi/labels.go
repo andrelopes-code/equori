@@ -45,7 +45,7 @@ func listPayeesAndTags(svc *app.Service) tool.Tool {
 			"Use it to find the payee_id a write takes or to check whether a payee, tag or institution exists. " +
 			"Do not use it for transactions of a payee: search_transactions with query does that.",
 		Effect: tool.ReadOnly,
-	}, func(ctx context.Context, userID int64, in listPayeesAndTagsIn) (listPayeesAndTagsOut, error) {
+	}, func(ctx context.Context, booksID int64, in listPayeesAndTagsIn) (listPayeesAndTagsOut, error) {
 		q := strings.ToLower(in.Query)
 		match := func(name string) bool { return strings.Contains(strings.ToLower(name), q) }
 		var out listPayeesAndTagsOut
@@ -55,7 +55,7 @@ func listPayeesAndTags(svc *app.Service) tool.Tool {
 		case "payees":
 			var rows []app.Payee
 			if rows, err = allPages(func(p page.Request[app.PayeeKey]) ([]app.Payee, *app.PayeeKey, error) {
-				return svc.ListPayees(ctx, userID, p)
+				return svc.ListPayees(ctx, booksID, p)
 			}); err != nil {
 				return out, err
 			}
@@ -71,7 +71,7 @@ func listPayeesAndTags(svc *app.Service) tool.Tool {
 		case "tags":
 			var rows []string
 			if rows, err = allPages(func(p page.Request[app.TagKey]) ([]string, *app.TagKey, error) {
-				return svc.ListTags(ctx, userID, p)
+				return svc.ListTags(ctx, booksID, p)
 			}); err != nil {
 				return out, err
 			}
@@ -87,7 +87,7 @@ func listPayeesAndTags(svc *app.Service) tool.Tool {
 		default:
 			var rows []app.Institution
 			if rows, err = allPages(func(p page.Request[app.InstitutionKey]) ([]app.Institution, *app.InstitutionKey, error) {
-				return svc.ListInstitutions(ctx, userID, p)
+				return svc.ListInstitutions(ctx, booksID, p)
 			}); err != nil {
 				return out, err
 			}

@@ -15,17 +15,17 @@ import (
 const deleteProvider = `-- name: DeleteProvider :execrows
 DELETE FROM assistant_provider
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2
 `
 
 type DeleteProviderParams struct {
-	UserID int64
-	ID     uuid.UUID
+	BooksID int64
+	ID      uuid.UUID
 }
 
 func (q *Queries) DeleteProvider(ctx context.Context, arg DeleteProviderParams) (int64, error) {
-	result, err := q.db.Exec(ctx, deleteProvider, arg.UserID, arg.ID)
+	result, err := q.db.Exec(ctx, deleteProvider, arg.BooksID, arg.ID)
 	if err != nil {
 		return 0, err
 	}
@@ -34,25 +34,25 @@ func (q *Queries) DeleteProvider(ctx context.Context, arg DeleteProviderParams) 
 
 const getProvider = `-- name: GetProvider :one
 SELECT
-    id, user_id, preset, name, base_url, sealed_key, created_at
+    id, books_id, preset, name, base_url, sealed_key, created_at
 FROM
     assistant_provider
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2
 `
 
 type GetProviderParams struct {
-	UserID int64
-	ID     uuid.UUID
+	BooksID int64
+	ID      uuid.UUID
 }
 
 func (q *Queries) GetProvider(ctx context.Context, arg GetProviderParams) (AssistantProvider, error) {
-	row := q.db.QueryRow(ctx, getProvider, arg.UserID, arg.ID)
+	row := q.db.QueryRow(ctx, getProvider, arg.BooksID, arg.ID)
 	var i AssistantProvider
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.Preset,
 		&i.Name,
 		&i.BaseUrl,
@@ -64,14 +64,14 @@ func (q *Queries) GetProvider(ctx context.Context, arg GetProviderParams) (Assis
 
 const insertProvider = `-- name: InsertProvider :exec
 INSERT INTO
-    assistant_provider (id, user_id, preset, name, base_url, sealed_key, created_at)
+    assistant_provider (id, books_id, preset, name, base_url, sealed_key, created_at)
 VALUES
     ($1, $2, $3, $4, $5, $6, $7)
 `
 
 type InsertProviderParams struct {
 	ID        uuid.UUID
-	UserID    int64
+	BooksID   int64
 	Preset    string
 	Name      string
 	BaseUrl   string
@@ -82,7 +82,7 @@ type InsertProviderParams struct {
 func (q *Queries) InsertProvider(ctx context.Context, arg InsertProviderParams) error {
 	_, err := q.db.Exec(ctx, insertProvider,
 		arg.ID,
-		arg.UserID,
+		arg.BooksID,
 		arg.Preset,
 		arg.Name,
 		arg.BaseUrl,
@@ -94,18 +94,18 @@ func (q *Queries) InsertProvider(ctx context.Context, arg InsertProviderParams) 
 
 const listProviders = `-- name: ListProviders :many
 SELECT
-    id, user_id, preset, name, base_url, sealed_key, created_at
+    id, books_id, preset, name, base_url, sealed_key, created_at
 FROM
     assistant_provider
 WHERE
-    user_id = $1
+    books_id = $1
 ORDER BY
     created_at,
     id
 `
 
-func (q *Queries) ListProviders(ctx context.Context, userID int64) ([]AssistantProvider, error) {
-	rows, err := q.db.Query(ctx, listProviders, userID)
+func (q *Queries) ListProviders(ctx context.Context, booksID int64) ([]AssistantProvider, error) {
+	rows, err := q.db.Query(ctx, listProviders, booksID)
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +115,7 @@ func (q *Queries) ListProviders(ctx context.Context, userID int64) ([]AssistantP
 		var i AssistantProvider
 		if err := rows.Scan(
 			&i.ID,
-			&i.UserID,
+			&i.BooksID,
 			&i.Preset,
 			&i.Name,
 			&i.BaseUrl,
@@ -135,7 +135,7 @@ func (q *Queries) ListProviders(ctx context.Context, userID int64) ([]AssistantP
 const lockAllKeys = `-- name: LockAllKeys :many
 SELECT
     id,
-    user_id,
+    books_id,
     sealed_key
 FROM
     assistant_provider
@@ -148,7 +148,7 @@ FOR UPDATE
 
 type LockAllKeysRow struct {
 	ID        uuid.UUID
-	UserID    int64
+	BooksID   int64
 	SealedKey []byte
 }
 
@@ -162,7 +162,7 @@ func (q *Queries) LockAllKeys(ctx context.Context) ([]LockAllKeysRow, error) {
 	var items []LockAllKeysRow
 	for rows.Next() {
 		var i LockAllKeysRow
-		if err := rows.Scan(&i.ID, &i.UserID, &i.SealedKey); err != nil {
+		if err := rows.Scan(&i.ID, &i.BooksID, &i.SealedKey); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -178,18 +178,18 @@ UPDATE assistant_provider
 SET
     sealed_key = $1
 WHERE
-    user_id = $2
+    books_id = $2
     AND id = $3
 `
 
 type ResealKeyParams struct {
 	SealedKey []byte
-	UserID    int64
+	BooksID   int64
 	ID        uuid.UUID
 }
 
 func (q *Queries) ResealKey(ctx context.Context, arg ResealKeyParams) error {
-	_, err := q.db.Exec(ctx, resealKey, arg.SealedKey, arg.UserID, arg.ID)
+	_, err := q.db.Exec(ctx, resealKey, arg.SealedKey, arg.BooksID, arg.ID)
 	return err
 }
 
@@ -200,7 +200,7 @@ SET
     base_url = $2,
     sealed_key = $3
 WHERE
-    user_id = $4
+    books_id = $4
     AND id = $5
 `
 
@@ -208,7 +208,7 @@ type UpdateProviderParams struct {
 	Name      string
 	BaseUrl   string
 	SealedKey []byte
-	UserID    int64
+	BooksID   int64
 	ID        uuid.UUID
 }
 
@@ -217,7 +217,7 @@ func (q *Queries) UpdateProvider(ctx context.Context, arg UpdateProviderParams) 
 		arg.Name,
 		arg.BaseUrl,
 		arg.SealedKey,
-		arg.UserID,
+		arg.BooksID,
 		arg.ID,
 	)
 	if err != nil {

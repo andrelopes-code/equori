@@ -9,9 +9,9 @@ DECLARE
 BEGIN
     FOR t IN
         SELECT table_name FROM information_schema.columns
-        WHERE table_schema = 'public' AND column_name = 'user_id'
+        WHERE table_schema = 'public' AND column_name = 'books_id'
     LOOP
-        EXECUTE format('DELETE FROM %I WHERE user_id = $1', t) USING demo_books;
+        EXECUTE format('DELETE FROM %I WHERE books_id = $1', t) USING demo_books;
     END LOOP;
     DELETE FROM identity_session WHERE member_id = demo_member OR books_id = demo_books;
     DELETE FROM identity_access_token WHERE member_id = demo_member OR books_id = demo_books;

@@ -24,7 +24,7 @@ type turnStream struct {
 func (t turnStream) VisitSendAssistantMessageResponse(w http.ResponseWriter) error { return t.run(w) }
 
 func (s *Server) SendAssistantMessage(ctx context.Context, req SendAssistantMessageRequestObject) (SendAssistantMessageResponseObject, error) {
-	userID := auth.MustUserID(ctx)
+	booksID := auth.MustBooksID(ctx)
 
 	in := app.TurnInput{Text: req.Body.Text}
 	if req.Body.ConversationId != nil {
@@ -37,7 +37,7 @@ func (s *Server) SendAssistantMessage(ctx context.Context, req SendAssistantMess
 
 	return turnStream{run: func(w http.ResponseWriter) error {
 		st := &eventStream{s: s, ctx: ctx, w: w, rc: http.NewResponseController(w)}
-		if err := s.svc.Turn(ctx, userID, in, st); err != nil {
+		if err := s.svc.Turn(ctx, booksID, in, st); err != nil {
 			s.writeProblem(ctx, w, err)
 		}
 

@@ -55,12 +55,12 @@ func (s *Server) SetStatementFacts(ctx context.Context, req SetStatementFactsReq
 		f.Minimum = &minimum
 	}
 
-	userID := auth.MustUserID(ctx)
-	if err := s.svc.SetOwnerFacts(ctx, userID, req.Id, f); err != nil {
+	booksID := auth.MustBooksID(ctx)
+	if err := s.svc.SetOwnerFacts(ctx, booksID, req.Id, f); err != nil {
 		return nil, err
 	}
 
-	out, err := s.statementDetail(ctx, userID, req.Id)
+	out, err := s.statementDetail(ctx, booksID, req.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +69,7 @@ func (s *Server) SetStatementFacts(ctx context.Context, req SetStatementFactsReq
 }
 
 func (s *Server) RemoveStatementFacts(ctx context.Context, req RemoveStatementFactsRequestObject) (RemoveStatementFactsResponseObject, error) {
-	if err := s.svc.RemoveOwnerFacts(ctx, auth.MustUserID(ctx), req.Id); err != nil {
+	if err := s.svc.RemoveOwnerFacts(ctx, auth.MustBooksID(ctx), req.Id); err != nil {
 		return nil, err
 	}
 
@@ -105,7 +105,7 @@ func (s *Server) ListStatements(ctx context.Context, req ListStatementsRequestOb
 		return nil, err
 	}
 
-	views, next, a, err := s.svc.Statements(ctx, auth.MustUserID(ctx), req.Id, from, to, p)
+	views, next, a, err := s.svc.Statements(ctx, auth.MustBooksID(ctx), req.Id, from, to, p)
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +121,7 @@ func (s *Server) ListStatements(ctx context.Context, req ListStatementsRequestOb
 }
 
 func (s *Server) GetStatement(ctx context.Context, req GetStatementRequestObject) (GetStatementResponseObject, error) {
-	out, err := s.statementDetail(ctx, auth.MustUserID(ctx), req.Id)
+	out, err := s.statementDetail(ctx, auth.MustBooksID(ctx), req.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -129,8 +129,8 @@ func (s *Server) GetStatement(ctx context.Context, req GetStatementRequestObject
 	return GetStatement200JSONResponse(out), nil
 }
 
-func (s *Server) statementDetail(ctx context.Context, userID int64, id uuid.UUID) (StatementDetail, error) {
-	v, a, postings, err := s.svc.Statement(ctx, userID, id)
+func (s *Server) statementDetail(ctx context.Context, booksID int64, id uuid.UUID) (StatementDetail, error) {
+	v, a, postings, err := s.svc.Statement(ctx, booksID, id)
 	if err != nil {
 		return StatementDetail{}, err
 	}

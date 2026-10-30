@@ -57,7 +57,7 @@ type organizeRun func() (manageAccountsAndPayeesOut, error)
 // organizeCall holds the parsed arguments of one manage_accounts_and_payees call.
 type organizeCall struct {
 	svc           *app.Service
-	userID        int64
+	booksID       int64
 	in            manageAccountsAndPayeesIn
 	action        string
 	given         map[string]bool
@@ -87,11 +87,11 @@ func manageAccountsAndPayees(svc *app.Service) tool.Tool {
 			"Do not use it for card settings: manage_card does. " +
 			"Merging cannot be undone; the user confirms every change.",
 		Effect: tool.Destructive,
-	}, func(ctx context.Context, userID int64, in manageAccountsAndPayeesIn) (tool.Preview, error) {
-		pv, _, err := planOrganize(ctx, svc, userID, in)
+	}, func(ctx context.Context, booksID int64, in manageAccountsAndPayeesIn) (tool.Preview, error) {
+		pv, _, err := planOrganize(ctx, svc, booksID, in)
 		return pv, err
-	}, func(ctx context.Context, userID int64, in manageAccountsAndPayeesIn) (manageAccountsAndPayeesOut, error) {
-		_, run, err := planOrganize(ctx, svc, userID, in)
+	}, func(ctx context.Context, booksID int64, in manageAccountsAndPayeesIn) (manageAccountsAndPayeesOut, error) {
+		_, run, err := planOrganize(ctx, svc, booksID, in)
 		if err != nil {
 			return manageAccountsAndPayeesOut{}, err
 		}
@@ -100,9 +100,9 @@ func manageAccountsAndPayees(svc *app.Service) tool.Tool {
 	})
 }
 
-func institutionName(ctx context.Context, svc *app.Service, userID int64, id uuid.UUID) (string, error) {
+func institutionName(ctx context.Context, svc *app.Service, booksID int64, id uuid.UUID) (string, error) {
 	all, err := allPages(func(p page.Request[app.InstitutionKey]) ([]app.Institution, *app.InstitutionKey, error) {
-		return svc.ListInstitutions(ctx, userID, p)
+		return svc.ListInstitutions(ctx, booksID, p)
 	})
 	if err != nil {
 		return "", err
@@ -117,9 +117,9 @@ func institutionName(ctx context.Context, svc *app.Service, userID int64, id uui
 	return "", app.ErrNotFound
 }
 
-func payeeByID(ctx context.Context, svc *app.Service, userID int64, id uuid.UUID) (app.Payee, error) {
+func payeeByID(ctx context.Context, svc *app.Service, booksID int64, id uuid.UUID) (app.Payee, error) {
 	all, err := allPages(func(p page.Request[app.PayeeKey]) ([]app.Payee, *app.PayeeKey, error) {
-		return svc.ListPayees(ctx, userID, p)
+		return svc.ListPayees(ctx, booksID, p)
 	})
 	if err != nil {
 		return app.Payee{}, err
@@ -135,12 +135,12 @@ func payeeByID(ctx context.Context, svc *app.Service, userID int64, id uuid.UUID
 }
 
 // accountName returns the name of an optional account reference; the zero ID has no name.
-func accountName(ctx context.Context, svc *app.Service, userID int64, id uuid.UUID) (string, error) {
+func accountName(ctx context.Context, svc *app.Service, booksID int64, id uuid.UUID) (string, error) {
 	if id == uuid.Nil {
 		return "", nil
 	}
 
-	a, err := svc.Account(ctx, userID, id)
+	a, err := svc.Account(ctx, booksID, id)
 
 	return a.Name, err
 }
@@ -148,12 +148,12 @@ func accountName(ctx context.Context, svc *app.Service, userID int64, id uuid.UU
 func planOrganize(
 	ctx context.Context,
 	svc *app.Service,
-	userID int64,
+	booksID int64,
 	in manageAccountsAndPayeesIn,
 ) (tool.Preview, organizeRun, error) {
 	pv := tool.Preview{Action: "manage_accounts_and_payees"}
 
-	c, err := newOrganizeCall(svc, userID, in)
+	c, err := newOrganizeCall(svc, booksID, in)
 	if err != nil {
 		return pv, nil, err
 	}
@@ -165,7 +165,7 @@ func planOrganize(
 
 func newOrganizeCall(
 	svc *app.Service,
-	userID int64,
+	booksID int64,
 	in manageAccountsAndPayeesIn,
 ) (organizeCall, error) {
 	accountID, err := optionalID(in.AccountID, "account_id")
@@ -195,7 +195,7 @@ func newOrganizeCall(
 
 	return organizeCall{
 		svc:           svc,
-		userID:        userID,
+		booksID:       booksID,
 		in:            in,
 		action:        string(in.Action),
 		given:         givenFields(in),
@@ -256,7 +256,7 @@ func (c organizeCall) planCreateAccount(ctx context.Context, pv *tool.Preview) (
 		return nil, err
 	}
 
-	settings, err := c.svc.Settings(ctx, c.userID)
+	settings, err := c.svc.Settings(ctx, c.booksID)
 	if err != nil {
 		return nil, err
 	}
@@ -277,7 +277,7 @@ func (c organizeCall) planCreateAccount(ctx context.Context, pv *tool.Preview) (
 	}
 
 	return func() (manageAccountsAndPayeesOut, error) {
-		created, err := c.svc.CreateAccount(ctx, c.userID, a)
+		created, err := c.svc.CreateAccount(ctx, c.booksID, a)
 		return manageAccountsAndPayeesOut{Action: c.action, ID: created.ID.String(), Name: created.Name}, err
 	}, nil
 }
@@ -296,7 +296,7 @@ func (c organizeCall) describeNewAccount(
 
 	pv.Changes = append(pv.Changes, tool.Change{Field: "currency", After: text(string(currency))})
 	if c.parentID != uuid.Nil {
-		parent, err := accountName(ctx, c.svc, c.userID, c.parentID)
+		parent, err := accountName(ctx, c.svc, c.booksID, c.parentID)
 		if err != nil {
 			return err
 		}
@@ -305,7 +305,7 @@ func (c organizeCall) describeNewAccount(
 	}
 
 	if c.institutionID != uuid.Nil {
-		name, err := institutionName(ctx, c.svc, c.userID, c.institutionID)
+		name, err := institutionName(ctx, c.svc, c.booksID, c.institutionID)
 		if err != nil {
 			return err
 		}
@@ -327,7 +327,7 @@ func (c organizeCall) planUpdateAccount(ctx context.Context, pv *tool.Preview) (
 		return nil, tool.InvalidArgument("name", "one of name, parent_id or institution_id is required for update_account")
 	}
 
-	a, err := c.svc.Account(ctx, c.userID, c.accountID)
+	a, err := c.svc.Account(ctx, c.booksID, c.accountID)
 	if err != nil {
 		return nil, err
 	}
@@ -349,7 +349,7 @@ func (c organizeCall) planUpdateAccount(ctx context.Context, pv *tool.Preview) (
 	}
 
 	return func() (manageAccountsAndPayeesOut, error) {
-		updated, err := c.svc.UpdateAccount(ctx, c.userID, a.ID, patch)
+		updated, err := c.svc.UpdateAccount(ctx, c.booksID, a.ID, patch)
 		return manageAccountsAndPayeesOut{Action: c.action, ID: a.ID.String(), Name: updated.Name}, err
 	}, nil
 }
@@ -366,12 +366,12 @@ func (c organizeCall) patchParent(
 
 	text := tool.TextValue
 
-	before, err := accountName(ctx, c.svc, c.userID, current)
+	before, err := accountName(ctx, c.svc, c.booksID, current)
 	if err != nil {
 		return err
 	}
 
-	after, err := accountName(ctx, c.svc, c.userID, c.parentID)
+	after, err := accountName(ctx, c.svc, c.booksID, c.parentID)
 	if err != nil {
 		return err
 	}
@@ -398,12 +398,12 @@ func (c organizeCall) patchInstitution(
 	var before string
 	if current != uuid.Nil {
 		var err error
-		if before, err = institutionName(ctx, c.svc, c.userID, current); err != nil {
+		if before, err = institutionName(ctx, c.svc, c.booksID, current); err != nil {
 			return err
 		}
 	}
 
-	after, err := institutionName(ctx, c.svc, c.userID, c.institutionID)
+	after, err := institutionName(ctx, c.svc, c.booksID, c.institutionID)
 	if err != nil {
 		return err
 	}
@@ -428,7 +428,7 @@ func (c organizeCall) planCloseOrReopenAccount(ctx context.Context, pv *tool.Pre
 		return nil, err
 	}
 
-	a, err := c.svc.Account(ctx, c.userID, c.accountID)
+	a, err := c.svc.Account(ctx, c.booksID, c.accountID)
 	if err != nil {
 		return nil, err
 	}
@@ -448,10 +448,10 @@ func (c organizeCall) planCloseOrReopenAccount(ctx context.Context, pv *tool.Pre
 
 	return func() (manageAccountsAndPayeesOut, error) {
 		if closing {
-			return manageAccountsAndPayeesOut{Action: c.action, ID: a.ID.String(), Name: a.Name}, c.svc.CloseAccount(ctx, c.userID, a.ID, date)
+			return manageAccountsAndPayeesOut{Action: c.action, ID: a.ID.String(), Name: a.Name}, c.svc.CloseAccount(ctx, c.booksID, a.ID, date)
 		}
 
-		_, err := c.svc.ReopenAccount(ctx, c.userID, a.ID)
+		_, err := c.svc.ReopenAccount(ctx, c.booksID, a.ID)
 
 		return manageAccountsAndPayeesOut{Action: c.action, ID: a.ID.String(), Name: a.Name}, err
 	}, nil
@@ -464,12 +464,12 @@ func (c organizeCall) planMergeCategory(ctx context.Context, pv *tool.Preview) (
 		return nil, err
 	}
 
-	from, err := c.svc.Account(ctx, c.userID, c.accountID)
+	from, err := c.svc.Account(ctx, c.booksID, c.accountID)
 	if err != nil {
 		return nil, err
 	}
 
-	into, err := c.svc.Account(ctx, c.userID, c.intoID)
+	into, err := c.svc.Account(ctx, c.booksID, c.intoID)
 	if err != nil {
 		return nil, err
 	}
@@ -478,7 +478,7 @@ func (c organizeCall) planMergeCategory(ctx context.Context, pv *tool.Preview) (
 	pv.Changes = []tool.Change{{Field: "category", Before: text(from.Name), After: text(into.Name)}}
 
 	return func() (manageAccountsAndPayeesOut, error) {
-		merged, err := c.svc.MergeCategories(ctx, c.userID, from.ID, into.ID)
+		merged, err := c.svc.MergeCategories(ctx, c.booksID, from.ID, into.ID)
 		return manageAccountsAndPayeesOut{Action: c.action, ID: merged.ID.String(), Name: merged.Name}, err
 	}, nil
 }
@@ -495,11 +495,11 @@ func (c organizeCall) planCreatePayeeOrInstitution(ctx context.Context, pv *tool
 
 	return func() (manageAccountsAndPayeesOut, error) {
 		if c.in.Action == "create_payee" {
-			p, err := c.svc.CreatePayee(ctx, c.userID, c.in.Name)
+			p, err := c.svc.CreatePayee(ctx, c.booksID, c.in.Name)
 			return manageAccountsAndPayeesOut{Action: c.action, ID: p.ID.String(), Name: p.Name}, err
 		}
 
-		i, err := c.svc.CreateInstitution(ctx, c.userID, app.Institution{Name: c.in.Name})
+		i, err := c.svc.CreateInstitution(ctx, c.booksID, app.Institution{Name: c.in.Name})
 
 		return manageAccountsAndPayeesOut{Action: c.action, ID: i.ID.String(), Name: i.Name}, err
 	}, nil
@@ -512,7 +512,7 @@ func (c organizeCall) planRenamePayee(ctx context.Context, pv *tool.Preview) (or
 		return nil, err
 	}
 
-	p, err := payeeByID(ctx, c.svc, c.userID, c.payeeID)
+	p, err := payeeByID(ctx, c.svc, c.booksID, c.payeeID)
 	if err != nil {
 		return nil, err
 	}
@@ -521,7 +521,7 @@ func (c organizeCall) planRenamePayee(ctx context.Context, pv *tool.Preview) (or
 	pv.Changes = []tool.Change{{Field: "name", Before: text(p.Name), After: text(c.in.Name)}}
 
 	return func() (manageAccountsAndPayeesOut, error) {
-		renamed, err := c.svc.RenamePayee(ctx, c.userID, p.ID, c.in.Name)
+		renamed, err := c.svc.RenamePayee(ctx, c.booksID, p.ID, c.in.Name)
 		return manageAccountsAndPayeesOut{Action: c.action, ID: p.ID.String(), Name: renamed.Name}, err
 	}, nil
 }
@@ -533,7 +533,7 @@ func (c organizeCall) planRenameTag(ctx context.Context, pv *tool.Preview) (orga
 		return nil, err
 	}
 
-	tag, err := c.svc.Tag(ctx, c.userID, c.in.Tag)
+	tag, err := c.svc.Tag(ctx, c.booksID, c.in.Tag)
 	if err != nil {
 		return nil, err
 	}
@@ -547,7 +547,7 @@ func (c organizeCall) planRenameTag(ctx context.Context, pv *tool.Preview) (orga
 	pv.Changes = []tool.Change{{Field: "name", Before: text(tag.Name), After: text(name)}}
 
 	return func() (manageAccountsAndPayeesOut, error) {
-		renamed, err := c.svc.RenameTag(ctx, c.userID, tag.Name, name)
+		renamed, err := c.svc.RenameTag(ctx, c.booksID, tag.Name, name)
 		return manageAccountsAndPayeesOut{Action: c.action, Name: renamed.Name}, err
 	}, nil
 }
@@ -559,7 +559,7 @@ func (c organizeCall) planMergeTag(ctx context.Context, pv *tool.Preview) (organ
 		return nil, err
 	}
 
-	from, err := c.svc.Tag(ctx, c.userID, c.in.Tag)
+	from, err := c.svc.Tag(ctx, c.booksID, c.in.Tag)
 	if err != nil {
 		return nil, err
 	}
@@ -568,7 +568,7 @@ func (c organizeCall) planMergeTag(ctx context.Context, pv *tool.Preview) (organ
 	pv.Changes = []tool.Change{{Field: "tags", Before: text(from.Name), After: text(c.in.IntoTag)}}
 
 	return func() (manageAccountsAndPayeesOut, error) {
-		merged, err := c.svc.MergeTag(ctx, c.userID, from.Name, c.in.IntoTag)
+		merged, err := c.svc.MergeTag(ctx, c.booksID, from.Name, c.in.IntoTag)
 		return manageAccountsAndPayeesOut{Action: c.action, Name: merged.Name}, err
 	}, nil
 }
@@ -578,7 +578,7 @@ func (c organizeCall) planDeleteTag(ctx context.Context, pv *tool.Preview) (orga
 		return nil, err
 	}
 
-	tag, err := c.svc.Tag(ctx, c.userID, c.in.Tag)
+	tag, err := c.svc.Tag(ctx, c.booksID, c.in.Tag)
 	if err != nil {
 		return nil, err
 	}
@@ -586,7 +586,7 @@ func (c organizeCall) planDeleteTag(ctx context.Context, pv *tool.Preview) (orga
 	pv.Target, pv.Destructive = tag.Name, true
 
 	return func() (manageAccountsAndPayeesOut, error) {
-		return manageAccountsAndPayeesOut{Action: c.action, Name: tag.Name}, c.svc.DeleteTag(ctx, c.userID, tag.Name)
+		return manageAccountsAndPayeesOut{Action: c.action, Name: tag.Name}, c.svc.DeleteTag(ctx, c.booksID, tag.Name)
 	}, nil
 }
 
@@ -597,12 +597,12 @@ func (c organizeCall) planMergePayee(ctx context.Context, pv *tool.Preview) (org
 		return nil, err
 	}
 
-	from, err := payeeByID(ctx, c.svc, c.userID, c.payeeID)
+	from, err := payeeByID(ctx, c.svc, c.booksID, c.payeeID)
 	if err != nil {
 		return nil, err
 	}
 
-	into, err := payeeByID(ctx, c.svc, c.userID, c.intoID)
+	into, err := payeeByID(ctx, c.svc, c.booksID, c.intoID)
 	if err != nil {
 		return nil, err
 	}
@@ -611,7 +611,7 @@ func (c organizeCall) planMergePayee(ctx context.Context, pv *tool.Preview) (org
 	pv.Changes = []tool.Change{{Field: "payee", Before: text(from.Name), After: text(into.Name)}}
 
 	return func() (manageAccountsAndPayeesOut, error) {
-		merged, err := c.svc.MergePayees(ctx, c.userID, from.ID, into.ID)
+		merged, err := c.svc.MergePayees(ctx, c.booksID, from.ID, into.ID)
 		return manageAccountsAndPayeesOut{Action: c.action, ID: merged.ID.String(), Name: merged.Name}, err
 	}, nil
 }

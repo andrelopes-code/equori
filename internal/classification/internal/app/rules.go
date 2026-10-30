@@ -20,41 +20,41 @@ func NewService(repo Repository, ledger Ledger) *Service {
 	return &Service{repo: repo, ledger: ledger}
 }
 
-func (s *Service) ListRules(ctx context.Context, userID int64, p page.Request[RuleKey]) ([]domain.Rule, *RuleKey, error) {
-	return s.repo.ListRules(ctx, userID, p)
+func (s *Service) ListRules(ctx context.Context, booksID int64, p page.Request[RuleKey]) ([]domain.Rule, *RuleKey, error) {
+	return s.repo.ListRules(ctx, booksID, p)
 }
 
-func (s *Service) Rule(ctx context.Context, userID int64, id uuid.UUID) (domain.Rule, error) {
-	return s.repo.Rule(ctx, userID, id)
+func (s *Service) Rule(ctx context.Context, booksID int64, id uuid.UUID) (domain.Rule, error) {
+	return s.repo.Rule(ctx, booksID, id)
 }
 
-func (s *Service) CreateRule(ctx context.Context, userID int64, r domain.Rule) (domain.Rule, error) {
-	r, err := s.checkRule(ctx, userID, r)
+func (s *Service) CreateRule(ctx context.Context, booksID int64, r domain.Rule) (domain.Rule, error) {
+	r, err := s.checkRule(ctx, booksID, r)
 	if err != nil {
 		return domain.Rule{}, err
 	}
 
-	return s.repo.InsertRule(ctx, userID, r)
+	return s.repo.InsertRule(ctx, booksID, r)
 }
 
 // ChangeRule replaces everything but the priority.
-func (s *Service) ChangeRule(ctx context.Context, userID int64, r domain.Rule) (domain.Rule, error) {
-	r, err := s.checkRule(ctx, userID, r)
+func (s *Service) ChangeRule(ctx context.Context, booksID int64, r domain.Rule) (domain.Rule, error) {
+	r, err := s.checkRule(ctx, booksID, r)
 	if err != nil {
 		return domain.Rule{}, err
 	}
 
-	return s.repo.UpdateRule(ctx, userID, r)
+	return s.repo.UpdateRule(ctx, booksID, r)
 }
 
-func (s *Service) DeleteRule(ctx context.Context, userID int64, id uuid.UUID) error {
-	return s.repo.DeleteRule(ctx, userID, id)
+func (s *Service) DeleteRule(ctx context.Context, booksID int64, id uuid.UUID) error {
+	return s.repo.DeleteRule(ctx, booksID, id)
 }
 
 // ReorderRules gives the rules of ids the priorities 1..n; ids is every rule exactly once.
-func (s *Service) ReorderRules(ctx context.Context, userID int64, ids []uuid.UUID) ([]domain.Rule, error) {
+func (s *Service) ReorderRules(ctx context.Context, booksID int64, ids []uuid.UUID) ([]domain.Rule, error) {
 	err := s.repo.InTx(ctx, func(r Repository) error {
-		current, err := r.LockRuleIDs(ctx, userID)
+		current, err := r.LockRuleIDs(ctx, booksID)
 		if err != nil {
 			return err
 		}
@@ -67,13 +67,13 @@ func (s *Service) ReorderRules(ctx context.Context, userID int64, ids []uuid.UUI
 			return &domain.FieldError{Field: "rule_ids", Message: "must list every rule exactly once", Err: domain.ErrValidation}
 		}
 
-		return r.SetPriorities(ctx, userID, ids)
+		return r.SetPriorities(ctx, booksID, ids)
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	rules, _, err := s.repo.ListRules(ctx, userID, page.Request[RuleKey]{Limit: len(ids)})
+	rules, _, err := s.repo.ListRules(ctx, booksID, page.Request[RuleKey]{Limit: len(ids)})
 
 	return rules, err
 }
@@ -81,13 +81,13 @@ func (s *Service) ReorderRules(ctx context.Context, userID int64, ids []uuid.UUI
 func compareIDs(a, b uuid.UUID) int { return slices.Compare(a[:], b[:]) }
 
 // checkRule validates r and its references to the user's categories, payees and accounts.
-func (s *Service) checkRule(ctx context.Context, userID int64, r domain.Rule) (domain.Rule, error) {
+func (s *Service) checkRule(ctx context.Context, booksID int64, r domain.Rule) (domain.Rule, error) {
 	r, err := domain.NewRule(r)
 	if err != nil {
 		return domain.Rule{}, err
 	}
 
-	accounts, err := s.accounts(ctx, userID)
+	accounts, err := s.accounts(ctx, booksID)
 	if err != nil {
 		return domain.Rule{}, err
 	}
@@ -141,7 +141,7 @@ func (s *Service) checkRule(ctx context.Context, userID int64, r domain.Rule) (d
 	}
 
 	if len(payees) > 0 {
-		missing, err := s.ledger.MissingPayees(ctx, userID, payees)
+		missing, err := s.ledger.MissingPayees(ctx, booksID, payees)
 		if err != nil {
 			return domain.Rule{}, err
 		}
@@ -154,8 +154,8 @@ func (s *Service) checkRule(ctx context.Context, userID int64, r domain.Rule) (d
 	return r, nil
 }
 
-func (s *Service) accounts(ctx context.Context, userID int64) (map[uuid.UUID]Account, error) {
-	as, err := s.ledger.AccountFacts(ctx, userID)
+func (s *Service) accounts(ctx context.Context, booksID int64) (map[uuid.UUID]Account, error) {
+	as, err := s.ledger.AccountFacts(ctx, booksID)
 	if err != nil {
 		return nil, err
 	}

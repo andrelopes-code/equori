@@ -12,7 +12,7 @@ import (
 // Provider is one language model service of a user. Its key travels only sealed (ADR 008).
 type Provider struct {
 	ID        uuid.UUID
-	UserID    int64
+	BooksID   int64
 	Preset    string
 	Name      string
 	BaseURL   string
@@ -23,13 +23,13 @@ type Provider struct {
 const maxNameLength = 60
 
 // NewProvider validates a provider; an empty baseURL takes the preset's.
-func NewProvider(id uuid.UUID, userID int64, preset, name, baseURL string, hasKey bool, now time.Time) (Provider, error) {
+func NewProvider(id uuid.UUID, booksID int64, preset, name, baseURL string, hasKey bool, now time.Time) (Provider, error) {
 	p, ok := FindPreset(preset)
 	if !ok {
 		return Provider{}, invalid("preset", "is not a known preset")
 	}
 
-	out := Provider{ID: id, UserID: userID, Preset: preset, CreatedAt: now}
+	out := Provider{ID: id, BooksID: booksID, Preset: preset, CreatedAt: now}
 	if err := out.Rename(name); err != nil {
 		return Provider{}, err
 	}

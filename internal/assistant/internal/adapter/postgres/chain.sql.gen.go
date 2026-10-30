@@ -14,29 +14,29 @@ import (
 const deleteChain = `-- name: DeleteChain :exec
 DELETE FROM assistant_chain_target
 WHERE
-    user_id = $1
+    books_id = $1
     AND use_id = $2
 `
 
 type DeleteChainParams struct {
-	UserID int64
-	UseID  string
+	BooksID int64
+	UseID   string
 }
 
 func (q *Queries) DeleteChain(ctx context.Context, arg DeleteChainParams) error {
-	_, err := q.db.Exec(ctx, deleteChain, arg.UserID, arg.UseID)
+	_, err := q.db.Exec(ctx, deleteChain, arg.BooksID, arg.UseID)
 	return err
 }
 
 const insertChainTarget = `-- name: InsertChainTarget :exec
 INSERT INTO
-    assistant_chain_target (user_id, use_id, position, provider_id, model, capabilities)
+    assistant_chain_target (books_id, use_id, position, provider_id, model, capabilities)
 VALUES
     ($1, $2, $3, $4, $5, $6)
 `
 
 type InsertChainTargetParams struct {
-	UserID       int64
+	BooksID      int64
 	UseID        string
 	Position     int32
 	ProviderID   uuid.UUID
@@ -46,7 +46,7 @@ type InsertChainTargetParams struct {
 
 func (q *Queries) InsertChainTarget(ctx context.Context, arg InsertChainTargetParams) error {
 	_, err := q.db.Exec(ctx, insertChainTarget,
-		arg.UserID,
+		arg.BooksID,
 		arg.UseID,
 		arg.Position,
 		arg.ProviderID,
@@ -58,18 +58,18 @@ func (q *Queries) InsertChainTarget(ctx context.Context, arg InsertChainTargetPa
 
 const listChainTargets = `-- name: ListChainTargets :many
 SELECT
-    user_id, use_id, position, provider_id, model, capabilities
+    books_id, use_id, position, provider_id, model, capabilities
 FROM
     assistant_chain_target
 WHERE
-    user_id = $1
+    books_id = $1
 ORDER BY
     use_id,
     position
 `
 
-func (q *Queries) ListChainTargets(ctx context.Context, userID int64) ([]AssistantChainTarget, error) {
-	rows, err := q.db.Query(ctx, listChainTargets, userID)
+func (q *Queries) ListChainTargets(ctx context.Context, booksID int64) ([]AssistantChainTarget, error) {
+	rows, err := q.db.Query(ctx, listChainTargets, booksID)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +78,7 @@ func (q *Queries) ListChainTargets(ctx context.Context, userID int64) ([]Assista
 	for rows.Next() {
 		var i AssistantChainTarget
 		if err := rows.Scan(
-			&i.UserID,
+			&i.BooksID,
 			&i.UseID,
 			&i.Position,
 			&i.ProviderID,

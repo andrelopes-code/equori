@@ -33,8 +33,8 @@ func voidTransaction(svc *app.Service) tool.Tool {
 			"Do not use it to change values: change_transaction does. " +
 			"The user confirms before the transaction is voided.",
 		Effect: tool.Destructive,
-	}, func(ctx context.Context, userID int64, in voidTransactionIn) (tool.Preview, error) {
-		t, err := voidTarget(ctx, svc, userID, in)
+	}, func(ctx context.Context, booksID int64, in voidTransactionIn) (tool.Preview, error) {
+		t, err := voidTarget(ctx, svc, booksID, in)
 		if err != nil {
 			return tool.Preview{}, err
 		}
@@ -46,13 +46,13 @@ func voidTransaction(svc *app.Service) tool.Tool {
 				{Field: "reason", After: tool.TextValue(in.Reason)},
 			},
 		}, nil
-	}, func(ctx context.Context, userID int64, in voidTransactionIn) (voidTransactionOut, error) {
-		t, err := voidTarget(ctx, svc, userID, in)
+	}, func(ctx context.Context, booksID int64, in voidTransactionIn) (voidTransactionOut, error) {
+		t, err := voidTarget(ctx, svc, booksID, in)
 		if err != nil {
 			return voidTransactionOut{}, err
 		}
 
-		if err := svc.VoidTransaction(ctx, userID, t.ID, in.Reason); err != nil {
+		if err := svc.VoidTransaction(ctx, booksID, t.ID, in.Reason); err != nil {
 			return voidTransactionOut{}, err
 		}
 
@@ -60,7 +60,7 @@ func voidTransaction(svc *app.Service) tool.Tool {
 	})
 }
 
-func voidTarget(ctx context.Context, svc *app.Service, userID int64, in voidTransactionIn) (domain.Transaction, error) {
+func voidTarget(ctx context.Context, svc *app.Service, booksID int64, in voidTransactionIn) (domain.Transaction, error) {
 	id, err := requiredID(in.TransactionID, "transaction_id")
 	if err != nil {
 		return domain.Transaction{}, err
@@ -70,5 +70,5 @@ func voidTarget(ctx context.Context, svc *app.Service, userID int64, in voidTran
 		return domain.Transaction{}, tool.InvalidArgument("reason", "is required")
 	}
 
-	return svc.Transaction(ctx, userID, id)
+	return svc.Transaction(ctx, booksID, id)
 }

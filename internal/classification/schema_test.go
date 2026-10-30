@@ -25,7 +25,7 @@ func TestSchemaInvariants(t *testing.T) {
 	}
 
 	rule := func(priority, version int) error {
-		return exec(`INSERT INTO classification_rule (user_id, name, priority, enabled, stop_processing, conditions, actions, schema_version)
+		return exec(`INSERT INTO classification_rule (books_id, name, priority, enabled, stop_processing, conditions, actions, schema_version)
 			VALUES ($1, 'r', $2, true, false, '[]', '[]', $3)`, uid, priority, version)
 	}
 	if err := rule(1, 1); err != nil {
@@ -33,23 +33,23 @@ func TestSchemaInvariants(t *testing.T) {
 	}
 
 	var ruleID string
-	if err := h.Pool.QueryRow(ctx, `SELECT id FROM classification_rule WHERE user_id = $1`, uid).Scan(&ruleID); err != nil {
+	if err := h.Pool.QueryRow(ctx, `SELECT id FROM classification_rule WHERE books_id = $1`, uid).Scan(&ruleID); err != nil {
 		t.Fatal(err)
 	}
 
 	alias := func(pattern, matchType string) error {
-		return exec(`INSERT INTO classification_payee_alias (user_id, pattern, match_type, payee_id) VALUES ($1, $2, $3, $4)`, uid, pattern, matchType, payee.ID)
+		return exec(`INSERT INTO classification_payee_alias (books_id, pattern, match_type, payee_id) VALUES ($1, $2, $3, $4)`, uid, pattern, matchType, payee.ID)
 	}
 	if err := alias("ifd*", "starts_with"); err != nil {
 		t.Fatal(err)
 	}
 
 	suggestion := func(fingerprint, state string, ruleID any, decided bool) error {
-		return exec(`INSERT INTO classification_suggestion (user_id, fingerprint, conditions, actions, example_transaction_ids, state, rule_id, created_at, decided_at)
+		return exec(`INSERT INTO classification_suggestion (books_id, fingerprint, conditions, actions, example_transaction_ids, state, rule_id, created_at, decided_at)
 			VALUES ($1, $2, '[]', '[]', ARRAY[$3::uuid, $3::uuid], $4, $5, now(), CASE WHEN $6 THEN now() END)`, uid, fingerprint, tx, state, ruleID, decided)
 	}
 	categorization := func(method, ruleID any, corrected bool) error {
-		return exec(`INSERT INTO classification_categorization (transaction_id, user_id, transaction_version, transaction_date, method, rule_id, corrected, decided_at)
+		return exec(`INSERT INTO classification_categorization (transaction_id, books_id, transaction_version, transaction_date, method, rule_id, corrected, decided_at)
 			VALUES ($1, $2, 1, '2026-10-01', $3, $4, $5, now())`, tx, uid, method, ruleID, corrected)
 	}
 
@@ -59,14 +59,14 @@ func TestSchemaInvariants(t *testing.T) {
 	}{
 		{"one rule per priority", rule(1, 1)},
 		{"A41: a source category once per aggregator and id", func() error {
-			source := `INSERT INTO classification_source_category (user_id, aggregator, external_id, name) VALUES ($1, 'pluggy', '05010000', 'Food')`
+			source := `INSERT INTO classification_source_category (books_id, aggregator, external_id, name) VALUES ($1, 'pluggy', '05010000', 'Food')`
 			if err := exec(source, uid); err != nil {
 				return nil
 			}
 
 			return exec(source, uid)
 		}()},
-		{"A41: a source category maps to an account of its user", exec(`INSERT INTO classification_source_category (user_id, aggregator, external_id, name, category_id)
+		{"A41: a source category maps to an account of its user", exec(`INSERT INTO classification_source_category (books_id, aggregator, external_id, name, category_id)
 			VALUES ($1, 'pluggy', '07000000', 'Travel', gen_random_uuid())`, uid)},
 		{"positive priority", rule(0, 1)},
 		{"known rule schema version", rule(2, 2)},

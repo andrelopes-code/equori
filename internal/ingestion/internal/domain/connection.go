@@ -15,7 +15,7 @@ import (
 // Connection is one aggregator item, read through an integration (P6 amendment A34).
 type Connection struct {
 	ID             uuid.UUID
-	UserID         int64
+	BooksID        int64
 	IntegrationID  uuid.UUID
 	ExternalID     string
 	Name           string
@@ -67,7 +67,7 @@ const (
 // ExternalAccount is an account of a connection's item (A35). Only mapped accounts sync.
 type ExternalAccount struct {
 	ID           uuid.UUID
-	UserID       int64
+	BooksID      int64
 	ConnectionID uuid.UUID
 	ExternalID   string
 	Type         string

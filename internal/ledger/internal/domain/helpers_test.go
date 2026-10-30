@@ -38,8 +38,8 @@ func mustAccount(t *testing.T, a Account) Account {
 		a.ID = uuid.Must(uuid.NewV7())
 	}
 
-	if a.UserID == 0 {
-		a.UserID = 1
+	if a.BooksID == 0 {
+		a.BooksID = 1
 	}
 
 	if a.OpenedOn.IsZero() {

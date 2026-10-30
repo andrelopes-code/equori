@@ -29,8 +29,8 @@ type TrailingReturn struct {
 }
 
 // withReturn attaches the trailing return; a goal without one reads as before.
-func (s *Service) withReturn(ctx context.Context, userID int64, v GoalView) (GoalView, error) {
-	bp, months, ok, err := s.returns.TrailingReturn(ctx, userID, v.AccountIDs, s.clk.Today(), v.Currency)
+func (s *Service) withReturn(ctx context.Context, booksID int64, v GoalView) (GoalView, error) {
+	bp, months, ok, err := s.returns.TrailingReturn(ctx, booksID, v.AccountIDs, s.clk.Today(), v.Currency)
 	if err != nil || !ok {
 		return v, err
 	}
@@ -49,7 +49,7 @@ type GoalPatch struct {
 }
 
 // vetGoal validates g and measures it, so a goal that cannot be measured is never stored.
-func (s *Service) vetGoal(ctx context.Context, userID int64, g domain.Goal) (GoalView, error) {
+func (s *Service) vetGoal(ctx context.Context, booksID int64, g domain.Goal) (GoalView, error) {
 	if err := g.Validate(); err != nil {
 		return GoalView{}, err
 	}
@@ -58,7 +58,7 @@ func (s *Service) vetGoal(ctx context.Context, userID int64, g domain.Goal) (Goa
 		return GoalView{}, &domain.FieldError{Field: "target.currency", Message: "must be a currency", Err: domain.ErrValidation}
 	}
 
-	facts, err := s.ledger.AccountFacts(ctx, userID)
+	facts, err := s.ledger.AccountFacts(ctx, booksID)
 	if err != nil {
 		return GoalView{}, err
 	}
@@ -83,20 +83,20 @@ func (s *Service) vetGoal(ctx context.Context, userID int64, g domain.Goal) (Goa
 		}
 	}
 
-	return s.measure(ctx, userID, g)
+	return s.measure(ctx, booksID, g)
 }
 
-func (s *Service) CreateGoal(ctx context.Context, userID int64, name string, target money.Money, dueOn time.Time, accounts []uuid.UUID) (GoalView, error) {
+func (s *Service) CreateGoal(ctx context.Context, booksID int64, name string, target money.Money, dueOn time.Time, accounts []uuid.UUID) (GoalView, error) {
 	g := domain.Goal{Name: name, Target: target.Amount(), Currency: target.Currency(), DueOn: dueOn, AccountIDs: accounts}
 
-	view, err := s.vetGoal(ctx, userID, g)
+	view, err := s.vetGoal(ctx, booksID, g)
 	if err != nil {
 		return GoalView{}, err
 	}
 
 	err = s.repo.InTx(ctx, func(repo Repository) error {
 		var err error
-		view.Goal, err = repo.InsertGoal(ctx, userID, g)
+		view.Goal, err = repo.InsertGoal(ctx, booksID, g)
 
 		return err
 	})
@@ -104,11 +104,11 @@ func (s *Service) CreateGoal(ctx context.Context, userID int64, name string, tar
 		return GoalView{}, err
 	}
 
-	return s.withReturn(ctx, userID, view)
+	return s.withReturn(ctx, booksID, view)
 }
 
-func (s *Service) UpdateGoal(ctx context.Context, userID int64, id uuid.UUID, patch GoalPatch) (GoalView, error) {
-	g, err := s.repo.Goal(ctx, userID, id)
+func (s *Service) UpdateGoal(ctx context.Context, booksID int64, id uuid.UUID, patch GoalPatch) (GoalView, error) {
+	g, err := s.repo.Goal(ctx, booksID, id)
 	if err != nil {
 		return GoalView{}, err
 	}
@@ -129,14 +129,14 @@ func (s *Service) UpdateGoal(ctx context.Context, userID int64, id uuid.UUID, pa
 		g.AccountIDs = *patch.AccountIDs
 	}
 
-	view, err := s.vetGoal(ctx, userID, g)
+	view, err := s.vetGoal(ctx, booksID, g)
 	if err != nil {
 		return GoalView{}, err
 	}
 
 	err = s.repo.InTx(ctx, func(repo Repository) error {
 		var err error
-		view.Goal, err = repo.UpdateGoal(ctx, userID, g)
+		view.Goal, err = repo.UpdateGoal(ctx, booksID, g)
 
 		return err
 	})
@@ -144,23 +144,23 @@ func (s *Service) UpdateGoal(ctx context.Context, userID int64, id uuid.UUID, pa
 		return GoalView{}, err
 	}
 
-	return s.withReturn(ctx, userID, view)
+	return s.withReturn(ctx, booksID, view)
 }
 
-func (s *Service) DeleteGoal(ctx context.Context, userID int64, id uuid.UUID) error {
-	return s.repo.InTx(ctx, func(repo Repository) error { return repo.DeleteGoal(ctx, userID, id) })
+func (s *Service) DeleteGoal(ctx context.Context, booksID int64, id uuid.UUID) error {
+	return s.repo.InTx(ctx, func(repo Repository) error { return repo.DeleteGoal(ctx, booksID, id) })
 }
 
 // measure sums the booked balances of the goal's accounts and their sub-accounts today, each
 // instrument valued in the goal currency with stored prices (A55, P8 amendments A72 and A120).
-func (s *Service) measure(ctx context.Context, userID int64, g domain.Goal) (GoalView, error) {
+func (s *Service) measure(ctx context.Context, booksID int64, g domain.Goal) (GoalView, error) {
 	today := s.clk.Today()
 	var current int64
 	var prices []Price
 
 	var parts []ValuedPart
 	for _, id := range g.AccountIDs {
-		v, err := s.ledger.ValuedBalance(ctx, userID, id, today, g.Currency)
+		v, err := s.ledger.ValuedBalance(ctx, booksID, id, today, g.Currency)
 		if err != nil {
 			return GoalView{}, err
 		}
@@ -173,33 +173,33 @@ func (s *Service) measure(ctx context.Context, userID int64, g domain.Goal) (Goa
 	return GoalView{Goal: g, Progress: g.Measure(current), Prices: prices, Parts: parts}, nil
 }
 
-func (s *Service) Goal(ctx context.Context, userID int64, id uuid.UUID) (GoalView, error) {
-	g, err := s.repo.Goal(ctx, userID, id)
+func (s *Service) Goal(ctx context.Context, booksID int64, id uuid.UUID) (GoalView, error) {
+	g, err := s.repo.Goal(ctx, booksID, id)
 	if err != nil {
 		return GoalView{}, err
 	}
 
-	view, err := s.measure(ctx, userID, g)
+	view, err := s.measure(ctx, booksID, g)
 	if err != nil {
 		return GoalView{}, err
 	}
 
-	return s.withReturn(ctx, userID, view)
+	return s.withReturn(ctx, booksID, view)
 }
 
-func (s *Service) ListGoals(ctx context.Context, userID int64, p page.Request[IDKey]) ([]GoalView, *IDKey, error) {
-	gs, next, err := s.repo.ListGoals(ctx, userID, p)
+func (s *Service) ListGoals(ctx context.Context, booksID int64, p page.Request[IDKey]) ([]GoalView, *IDKey, error) {
+	gs, next, err := s.repo.ListGoals(ctx, booksID, p)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	out := make([]GoalView, len(gs))
 	for i, g := range gs {
-		if out[i], err = s.measure(ctx, userID, g); err != nil {
+		if out[i], err = s.measure(ctx, booksID, g); err != nil {
 			return nil, nil, err
 		}
 
-		if out[i], err = s.withReturn(ctx, userID, out[i]); err != nil {
+		if out[i], err = s.withReturn(ctx, booksID, out[i]); err != nil {
 			return nil, nil, err
 		}
 	}

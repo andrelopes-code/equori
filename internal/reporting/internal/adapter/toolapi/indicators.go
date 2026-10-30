@@ -49,7 +49,7 @@ func getFinancialIndicators(svc *app.Service, clk app.Clock) tool.Tool {
 			"Use it for how much is saved, how long the reserve lasts, and how much income is committed or spent on debt. " +
 			"Do not use it for category totals: get_category_totals lists them.",
 		Effect: tool.ReadOnly,
-	}, func(ctx context.Context, userID int64, in getFinancialIndicatorsIn) (getFinancialIndicatorsOut, error) {
+	}, func(ctx context.Context, booksID int64, in getFinancialIndicatorsIn) (getFinancialIndicatorsOut, error) {
 		now := clk.Now()
 		today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
 
@@ -61,7 +61,7 @@ func getFinancialIndicators(svc *app.Service, clk app.Clock) tool.Tool {
 			}
 		}
 
-		report, err := svc.Indicators(ctx, userID, month, today)
+		report, err := svc.Indicators(ctx, booksID, month, today)
 		if err != nil {
 			return getFinancialIndicatorsOut{}, err
 		}

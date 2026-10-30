@@ -15,19 +15,19 @@ import (
 const deleteAttachment = `-- name: DeleteAttachment :one
 DELETE FROM ledger_attachment
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2
 RETURNING
     sha256
 `
 
 type DeleteAttachmentParams struct {
-	UserID int64
-	ID     uuid.UUID
+	BooksID int64
+	ID      uuid.UUID
 }
 
 func (q *Queries) DeleteAttachment(ctx context.Context, arg DeleteAttachmentParams) ([]byte, error) {
-	row := q.db.QueryRow(ctx, deleteAttachment, arg.UserID, arg.ID)
+	row := q.db.QueryRow(ctx, deleteAttachment, arg.BooksID, arg.ID)
 	var sha256 []byte
 	err := row.Scan(&sha256)
 	return sha256, err
@@ -36,7 +36,7 @@ func (q *Queries) DeleteAttachment(ctx context.Context, arg DeleteAttachmentPara
 const deleteUnreferencedBlob = `-- name: DeleteUnreferencedBlob :exec
 DELETE FROM ledger_attachment_blob b
 WHERE
-    b.user_id = $1
+    b.books_id = $1
     AND b.sha256 = $2
     AND NOT EXISTS (
         SELECT
@@ -44,18 +44,18 @@ WHERE
         FROM
             ledger_attachment a
         WHERE
-            a.user_id = b.user_id
+            a.books_id = b.books_id
             AND a.sha256 = b.sha256
     )
 `
 
 type DeleteUnreferencedBlobParams struct {
-	UserID int64
-	Sha256 []byte
+	BooksID int64
+	Sha256  []byte
 }
 
 func (q *Queries) DeleteUnreferencedBlob(ctx context.Context, arg DeleteUnreferencedBlobParams) error {
-	_, err := q.db.Exec(ctx, deleteUnreferencedBlob, arg.UserID, arg.Sha256)
+	_, err := q.db.Exec(ctx, deleteUnreferencedBlob, arg.BooksID, arg.Sha256)
 	return err
 }
 
@@ -66,16 +66,16 @@ SELECT
     b.content
 FROM
     ledger_attachment a
-    JOIN ledger_attachment_blob b ON b.user_id = a.user_id
+    JOIN ledger_attachment_blob b ON b.books_id = a.books_id
     AND b.sha256 = a.sha256
 WHERE
-    a.user_id = $1
+    a.books_id = $1
     AND a.id = $2
 `
 
 type GetAttachmentContentParams struct {
-	UserID int64
-	ID     uuid.UUID
+	BooksID int64
+	ID      uuid.UUID
 }
 
 type GetAttachmentContentRow struct {
@@ -85,7 +85,7 @@ type GetAttachmentContentRow struct {
 }
 
 func (q *Queries) GetAttachmentContent(ctx context.Context, arg GetAttachmentContentParams) (GetAttachmentContentRow, error) {
-	row := q.db.QueryRow(ctx, getAttachmentContent, arg.UserID, arg.ID)
+	row := q.db.QueryRow(ctx, getAttachmentContent, arg.BooksID, arg.ID)
 	var i GetAttachmentContentRow
 	err := row.Scan(&i.FileName, &i.MediaType, &i.Content)
 	return i, err
@@ -93,14 +93,14 @@ func (q *Queries) GetAttachmentContent(ctx context.Context, arg GetAttachmentCon
 
 const listAttachments = `-- name: ListAttachments :many
 SELECT
-    a.id, a.user_id, a.transaction_id, a.sha256, a.file_name, a.media_type, a.created_at,
+    a.id, a.books_id, a.transaction_id, a.sha256, a.file_name, a.media_type, a.created_at,
     b.size
 FROM
     ledger_attachment a
-    JOIN ledger_attachment_blob b ON b.user_id = a.user_id
+    JOIN ledger_attachment_blob b ON b.books_id = a.books_id
     AND b.sha256 = a.sha256
 WHERE
-    a.user_id = $1
+    a.books_id = $1
     AND a.transaction_id = $2
     AND (
         $3::timestamptz IS NULL
@@ -114,7 +114,7 @@ LIMIT
 `
 
 type ListAttachmentsParams struct {
-	UserID        int64
+	BooksID       int64
 	TransactionID uuid.UUID
 	AfterCreated  *time.Time
 	AfterID       uuid.NullUUID
@@ -123,7 +123,7 @@ type ListAttachmentsParams struct {
 
 type ListAttachmentsRow struct {
 	ID            uuid.UUID
-	UserID        int64
+	BooksID       int64
 	TransactionID uuid.UUID
 	Sha256        []byte
 	FileName      string
@@ -134,7 +134,7 @@ type ListAttachmentsRow struct {
 
 func (q *Queries) ListAttachments(ctx context.Context, arg ListAttachmentsParams) ([]ListAttachmentsRow, error) {
 	rows, err := q.db.Query(ctx, listAttachments,
-		arg.UserID,
+		arg.BooksID,
 		arg.TransactionID,
 		arg.AfterCreated,
 		arg.AfterID,
@@ -149,7 +149,7 @@ func (q *Queries) ListAttachments(ctx context.Context, arg ListAttachmentsParams
 		var i ListAttachmentsRow
 		if err := rows.Scan(
 			&i.ID,
-			&i.UserID,
+			&i.BooksID,
 			&i.TransactionID,
 			&i.Sha256,
 			&i.FileName,
@@ -169,18 +169,18 @@ func (q *Queries) ListAttachments(ctx context.Context, arg ListAttachmentsParams
 
 const upsertAttachment = `-- name: UpsertAttachment :one
 INSERT INTO
-    ledger_attachment (user_id, transaction_id, sha256, file_name, media_type)
+    ledger_attachment (books_id, transaction_id, sha256, file_name, media_type)
 VALUES
     ($1, $2, $3, $4, $5)
 ON CONFLICT (transaction_id, sha256) DO UPDATE
 SET
     file_name = ledger_attachment.file_name
 RETURNING
-    id, user_id, transaction_id, sha256, file_name, media_type, created_at
+    id, books_id, transaction_id, sha256, file_name, media_type, created_at
 `
 
 type UpsertAttachmentParams struct {
-	UserID        int64
+	BooksID       int64
 	TransactionID uuid.UUID
 	Sha256        []byte
 	FileName      string
@@ -189,7 +189,7 @@ type UpsertAttachmentParams struct {
 
 func (q *Queries) UpsertAttachment(ctx context.Context, arg UpsertAttachmentParams) (LedgerAttachment, error) {
 	row := q.db.QueryRow(ctx, upsertAttachment,
-		arg.UserID,
+		arg.BooksID,
 		arg.TransactionID,
 		arg.Sha256,
 		arg.FileName,
@@ -198,7 +198,7 @@ func (q *Queries) UpsertAttachment(ctx context.Context, arg UpsertAttachmentPara
 	var i LedgerAttachment
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.TransactionID,
 		&i.Sha256,
 		&i.FileName,
@@ -210,16 +210,16 @@ func (q *Queries) UpsertAttachment(ctx context.Context, arg UpsertAttachmentPara
 
 const upsertAttachmentBlob = `-- name: UpsertAttachmentBlob :exec
 INSERT INTO
-    ledger_attachment_blob (user_id, sha256, size, content)
+    ledger_attachment_blob (books_id, sha256, size, content)
 VALUES
     ($1, $2, $3, $4)
-ON CONFLICT (user_id, sha256) DO UPDATE
+ON CONFLICT (books_id, sha256) DO UPDATE
 SET
     size = EXCLUDED.size
 `
 
 type UpsertAttachmentBlobParams struct {
-	UserID  int64
+	BooksID int64
 	Sha256  []byte
 	Size    int32
 	Content []byte
@@ -228,7 +228,7 @@ type UpsertAttachmentBlobParams struct {
 // DO UPDATE locks an existing blob row, so a concurrent delete of its last attachment waits.
 func (q *Queries) UpsertAttachmentBlob(ctx context.Context, arg UpsertAttachmentBlobParams) error {
 	_, err := q.db.Exec(ctx, upsertAttachmentBlob,
-		arg.UserID,
+		arg.BooksID,
 		arg.Sha256,
 		arg.Size,
 		arg.Content,

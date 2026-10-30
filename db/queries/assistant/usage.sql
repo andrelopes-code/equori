@@ -2,7 +2,7 @@
 -- One statement per attempt: the row of the day is created or its counters grow.
 INSERT INTO
     assistant_usage (
-        user_id,
+        books_id,
         DAY,
         provider_id,
         model,
@@ -16,7 +16,7 @@ INSERT INTO
     )
 VALUES
     (
-        @user_id,
+        @books_id,
         @day,
         @provider_id,
         @model,
@@ -28,7 +28,7 @@ VALUES
         @output_tokens,
         sqlc.narg (cooling_until)
     )
-ON CONFLICT (user_id, DAY, provider_id, model, use_id) DO UPDATE
+ON CONFLICT (books_id, DAY, provider_id, model, use_id) DO UPDATE
 SET
     requests = assistant_usage.requests + 1,
     errors = assistant_usage.errors + EXCLUDED.errors,
@@ -69,7 +69,7 @@ SELECT
 FROM
     assistant_usage
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND DAY >= @since::date
 GROUP BY
     provider_id,
@@ -89,7 +89,7 @@ SELECT
 FROM
     assistant_usage
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND DAY BETWEEN @from_date AND @to_date
 GROUP BY
     DAY,
@@ -106,23 +106,23 @@ SELECT
 FROM
     assistant_usage_limit
 WHERE
-    user_id = $1
+    books_id = $1
 ORDER BY
     provider_id,
     model;
 
 -- name: SetUsageLimit :exec
 INSERT INTO
-    assistant_usage_limit (user_id, provider_id, model, requests_per_day, tokens_per_day)
+    assistant_usage_limit (books_id, provider_id, model, requests_per_day, tokens_per_day)
 VALUES
     (
-        @user_id,
+        @books_id,
         @provider_id,
         @model,
         sqlc.narg (requests_per_day),
         sqlc.narg (tokens_per_day)
     )
-ON CONFLICT (user_id, provider_id, model) DO UPDATE
+ON CONFLICT (books_id, provider_id, model) DO UPDATE
 SET
     requests_per_day = EXCLUDED.requests_per_day,
     tokens_per_day = EXCLUDED.tokens_per_day;
@@ -130,18 +130,18 @@ SET
 -- name: DeleteUsageLimit :exec
 DELETE FROM assistant_usage_limit
 WHERE
-    user_id = $1
+    books_id = $1
     AND provider_id = $2
     AND model = $3;
 
 -- name: DeleteProviderUsage :exec
 DELETE FROM assistant_usage
 WHERE
-    user_id = $1
+    books_id = $1
     AND provider_id = $2;
 
 -- name: DeleteProviderLimits :exec
 DELETE FROM assistant_usage_limit
 WHERE
-    user_id = $1
+    books_id = $1
     AND provider_id = $2;

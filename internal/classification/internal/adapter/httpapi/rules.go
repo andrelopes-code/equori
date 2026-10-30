@@ -129,7 +129,7 @@ func (s *Server) ListRules(ctx context.Context, req ListRulesRequestObject) (Lis
 		return nil, err
 	}
 
-	rules, next, err := s.svc.ListRules(ctx, auth.MustUserID(ctx), p)
+	rules, next, err := s.svc.ListRules(ctx, auth.MustBooksID(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -154,7 +154,7 @@ func (s *Server) CreateRule(ctx context.Context, req CreateRuleRequestObject) (C
 		return nil, err
 	}
 
-	created, err := s.svc.CreateRule(ctx, auth.MustUserID(ctx), r)
+	created, err := s.svc.CreateRule(ctx, auth.MustBooksID(ctx), r)
 	if err != nil {
 		return nil, err
 	}
@@ -168,7 +168,7 @@ func (s *Server) PreviewRule(ctx context.Context, req PreviewRuleRequestObject) 
 		return nil, err
 	}
 
-	p, err := s.svc.PreviewRule(ctx, auth.MustUserID(ctx), r)
+	p, err := s.svc.PreviewRule(ctx, auth.MustBooksID(ctx), r)
 	if err != nil {
 		return nil, err
 	}
@@ -186,7 +186,7 @@ func (s *Server) PreviewRule(ctx context.Context, req PreviewRuleRequestObject) 
 }
 
 func (s *Server) GetRule(ctx context.Context, req GetRuleRequestObject) (GetRuleResponseObject, error) {
-	r, err := s.svc.Rule(ctx, auth.MustUserID(ctx), req.Id)
+	r, err := s.svc.Rule(ctx, auth.MustBooksID(ctx), req.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -207,7 +207,7 @@ func (s *Server) ChangeRule(ctx context.Context, req ChangeRuleRequestObject) (C
 
 	r.ID = req.Id
 
-	changed, err := s.svc.ChangeRule(ctx, auth.MustUserID(ctx), r)
+	changed, err := s.svc.ChangeRule(ctx, auth.MustBooksID(ctx), r)
 	if err != nil {
 		return nil, err
 	}
@@ -221,7 +221,7 @@ func (s *Server) ChangeRule(ctx context.Context, req ChangeRuleRequestObject) (C
 }
 
 func (s *Server) DeleteRule(ctx context.Context, req DeleteRuleRequestObject) (DeleteRuleResponseObject, error) {
-	if err := s.svc.DeleteRule(ctx, auth.MustUserID(ctx), req.Id); err != nil {
+	if err := s.svc.DeleteRule(ctx, auth.MustBooksID(ctx), req.Id); err != nil {
 		return nil, err
 	}
 
@@ -229,7 +229,7 @@ func (s *Server) DeleteRule(ctx context.Context, req DeleteRuleRequestObject) (D
 }
 
 func (s *Server) ReorderRules(ctx context.Context, req ReorderRulesRequestObject) (ReorderRulesResponseObject, error) {
-	rules, err := s.svc.ReorderRules(ctx, auth.MustUserID(ctx), req.Body.RuleIds)
+	rules, err := s.svc.ReorderRules(ctx, auth.MustBooksID(ctx), req.Body.RuleIds)
 	if err != nil {
 		return nil, err
 	}
@@ -253,7 +253,7 @@ func (s *Server) withUsage(ctx context.Context, rules []Rule) error {
 		ids[i] = r.Id
 	}
 
-	usage, err := s.svc.RuleUsage(ctx, auth.MustUserID(ctx), ids)
+	usage, err := s.svc.RuleUsage(ctx, auth.MustBooksID(ctx), ids)
 	if err != nil {
 		return err
 	}
@@ -282,7 +282,7 @@ func (s *Server) ListPayeeAliases(ctx context.Context, req ListPayeeAliasesReque
 		return nil, err
 	}
 
-	aliases, next, err := s.svc.ListAliases(ctx, auth.MustUserID(ctx), p)
+	aliases, next, err := s.svc.ListAliases(ctx, auth.MustBooksID(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -298,7 +298,7 @@ func (s *Server) ListPayeeAliases(ctx context.Context, req ListPayeeAliasesReque
 }
 
 func (s *Server) CreatePayeeAlias(ctx context.Context, req CreatePayeeAliasRequestObject) (CreatePayeeAliasResponseObject, error) {
-	a, err := s.svc.CreateAlias(ctx, auth.MustUserID(ctx), fromAliasInput(*req.Body))
+	a, err := s.svc.CreateAlias(ctx, auth.MustBooksID(ctx), fromAliasInput(*req.Body))
 	if err != nil {
 		return nil, err
 	}
@@ -307,7 +307,7 @@ func (s *Server) CreatePayeeAlias(ctx context.Context, req CreatePayeeAliasReque
 }
 
 func (s *Server) GetPayeeAlias(ctx context.Context, req GetPayeeAliasRequestObject) (GetPayeeAliasResponseObject, error) {
-	a, err := s.svc.Alias(ctx, auth.MustUserID(ctx), req.Id)
+	a, err := s.svc.Alias(ctx, auth.MustBooksID(ctx), req.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -319,7 +319,7 @@ func (s *Server) ChangePayeeAlias(ctx context.Context, req ChangePayeeAliasReque
 	in := fromAliasInput(*req.Body)
 	in.ID = req.Id
 
-	a, err := s.svc.ChangeAlias(ctx, auth.MustUserID(ctx), in)
+	a, err := s.svc.ChangeAlias(ctx, auth.MustBooksID(ctx), in)
 	if err != nil {
 		return nil, err
 	}
@@ -328,7 +328,7 @@ func (s *Server) ChangePayeeAlias(ctx context.Context, req ChangePayeeAliasReque
 }
 
 func (s *Server) DeletePayeeAlias(ctx context.Context, req DeletePayeeAliasRequestObject) (DeletePayeeAliasResponseObject, error) {
-	if err := s.svc.DeleteAlias(ctx, auth.MustUserID(ctx), req.Id); err != nil {
+	if err := s.svc.DeleteAlias(ctx, auth.MustBooksID(ctx), req.Id); err != nil {
 		return nil, err
 	}
 

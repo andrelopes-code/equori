@@ -52,8 +52,8 @@ type ProviderPatch struct {
 	Name, BaseURL, Key *string
 }
 
-func keyRow(userID int64, id uuid.UUID) []byte {
-	return fmt.Appendf(nil, "assistant_provider|%d|%s", userID, id)
+func keyRow(booksID int64, id uuid.UUID) []byte {
+	return fmt.Appendf(nil, "assistant_provider|%d|%s", booksID, id)
 }
 
 func notice(preset string) domain.Notice {
@@ -72,8 +72,8 @@ func instanceView(in Instance) ProviderView {
 func (s *Service) Presets() []domain.Preset { return domain.Presets() }
 
 // Providers returns the user's providers in creation order, then the instance providers.
-func (s *Service) Providers(ctx context.Context, userID int64) ([]ProviderView, error) {
-	ps, err := s.repo.Providers(ctx, userID)
+func (s *Service) Providers(ctx context.Context, booksID int64) ([]ProviderView, error) {
+	ps, err := s.repo.Providers(ctx, booksID)
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +90,7 @@ func (s *Service) Providers(ctx context.Context, userID int64) ([]ProviderView, 
 	return out, nil
 }
 
-func (s *Service) seal(userID int64, id uuid.UUID, key string) ([]byte, error) {
+func (s *Service) seal(booksID int64, id uuid.UUID, key string) ([]byte, error) {
 	if key == "" {
 		return nil, nil
 	}
@@ -99,16 +99,16 @@ func (s *Service) seal(userID int64, id uuid.UUID, key string) ([]byte, error) {
 		return nil, ErrSecretKeyMissing
 	}
 
-	return s.box.Seal([]byte(key), keyRow(userID, id))
+	return s.box.Seal([]byte(key), keyRow(booksID, id))
 }
 
-func (s *Service) CreateProvider(ctx context.Context, userID int64, in ProviderInput) (ProviderView, error) {
-	p, err := domain.NewProvider(uuid.New(), userID, in.Preset, in.Name, in.BaseURL, in.Key != "", s.now())
+func (s *Service) CreateProvider(ctx context.Context, booksID int64, in ProviderInput) (ProviderView, error) {
+	p, err := domain.NewProvider(uuid.New(), booksID, in.Preset, in.Name, in.BaseURL, in.Key != "", s.now())
 	if err != nil {
 		return ProviderView{}, err
 	}
 
-	if p.SealedKey, err = s.seal(userID, p.ID, in.Key); err != nil {
+	if p.SealedKey, err = s.seal(booksID, p.ID, in.Key); err != nil {
 		return ProviderView{}, err
 	}
 
@@ -119,8 +119,8 @@ func (s *Service) CreateProvider(ctx context.Context, userID int64, in ProviderI
 	return view(p), nil
 }
 
-func (s *Service) UpdateProvider(ctx context.Context, userID int64, id uuid.UUID, patch ProviderPatch) (ProviderView, error) {
-	p, err := s.repo.Provider(ctx, userID, id)
+func (s *Service) UpdateProvider(ctx context.Context, booksID int64, id uuid.UUID, patch ProviderPatch) (ProviderView, error) {
+	p, err := s.repo.Provider(ctx, booksID, id)
 	if err != nil {
 		return ProviderView{}, err
 	}
@@ -142,7 +142,7 @@ func (s *Service) UpdateProvider(ctx context.Context, userID int64, id uuid.UUID
 			return ProviderView{}, domain.ErrKeyRequired
 		}
 
-		if p.SealedKey, err = s.seal(userID, p.ID, *patch.Key); err != nil {
+		if p.SealedKey, err = s.seal(booksID, p.ID, *patch.Key); err != nil {
 			return ProviderView{}, err
 		}
 	}
@@ -154,13 +154,13 @@ func (s *Service) UpdateProvider(ctx context.Context, userID int64, id uuid.UUID
 	return view(p), nil
 }
 
-func (s *Service) DeleteProvider(ctx context.Context, userID int64, id uuid.UUID) error {
-	return s.repo.DeleteProvider(ctx, userID, id)
+func (s *Service) DeleteProvider(ctx context.Context, booksID int64, id uuid.UUID) error {
+	return s.repo.DeleteProvider(ctx, booksID, id)
 }
 
 // ProviderModels asks the provider's API for its models, which also checks its key.
-func (s *Service) ProviderModels(ctx context.Context, userID int64, id uuid.UUID) ([]string, error) {
-	p, err := s.repo.Provider(ctx, userID, id)
+func (s *Service) ProviderModels(ctx context.Context, booksID int64, id uuid.UUID) ([]string, error) {
+	p, err := s.repo.Provider(ctx, booksID, id)
 	if err != nil {
 		return nil, err
 	}
@@ -184,7 +184,7 @@ func (s *Service) open(p domain.Provider) (string, error) {
 		return "", ErrSecretKeyMissing
 	}
 
-	plain, err := s.box.Open(p.SealedKey, keyRow(p.UserID, p.ID))
+	plain, err := s.box.Open(p.SealedKey, keyRow(p.BooksID, p.ID))
 	if err != nil {
 		return "", fmt.Errorf("provider %s: %w", p.ID, err)
 	}
@@ -199,17 +199,17 @@ func (s *Service) RotateSecrets(ctx context.Context) (int, error) {
 		return 0, ErrSecretKeyMissing
 	}
 
-	return s.repo.ResealKeys(ctx, func(userID int64, id uuid.UUID, sealed []byte) ([]byte, error) {
+	return s.repo.ResealKeys(ctx, func(booksID int64, id uuid.UUID, sealed []byte) ([]byte, error) {
 		if !s.box.NeedsReseal(sealed) {
 			return nil, nil
 		}
 
-		plain, err := s.box.Open(sealed, keyRow(userID, id))
+		plain, err := s.box.Open(sealed, keyRow(booksID, id))
 		if err != nil {
 			return nil, fmt.Errorf("provider %s: %w", id, err)
 		}
 
-		return s.box.Seal(plain, keyRow(userID, id))
+		return s.box.Seal(plain, keyRow(booksID, id))
 	})
 }
 

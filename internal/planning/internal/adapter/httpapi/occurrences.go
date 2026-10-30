@@ -7,7 +7,7 @@ import (
 )
 
 func (s *Server) RealizeOccurrence(ctx context.Context, req RealizeOccurrenceRequestObject) (RealizeOccurrenceResponseObject, error) {
-	o, err := s.svc.Realize(ctx, auth.MustUserID(ctx), req.Id, req.Body.TransactionId)
+	o, err := s.svc.Realize(ctx, auth.MustBooksID(ctx), req.Id, req.Body.TransactionId)
 	if err != nil {
 		return nil, err
 	}
@@ -16,7 +16,7 @@ func (s *Server) RealizeOccurrence(ctx context.Context, req RealizeOccurrenceReq
 }
 
 func (s *Server) UnrealizeOccurrence(ctx context.Context, req UnrealizeOccurrenceRequestObject) (UnrealizeOccurrenceResponseObject, error) {
-	o, err := s.svc.Unrealize(ctx, auth.MustUserID(ctx), req.Id)
+	o, err := s.svc.Unrealize(ctx, auth.MustBooksID(ctx), req.Id)
 	if err != nil {
 		return nil, err
 	}

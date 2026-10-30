@@ -20,7 +20,7 @@ WITH RECURSIVE
         FROM
             ledger_account r
         WHERE
-            r.user_id = $1
+            r.books_id = $1
             AND r.system_role = 'interest'
         UNION ALL
         SELECT
@@ -29,7 +29,7 @@ WITH RECURSIVE
             ledger_account a
             JOIN interest i ON a.parent_id = i.id
         WHERE
-            a.user_id = $1
+            a.books_id = $1
     )
 SELECT
     a.id,
@@ -48,7 +48,7 @@ SELECT
 FROM
     ledger_account a
 WHERE
-    a.user_id = $1
+    a.books_id = $1
 `
 
 type IndicatorAccountsRow struct {
@@ -61,8 +61,8 @@ type IndicatorAccountsRow struct {
 }
 
 // Every account of the user; interest marks the system category interest and its descendants.
-func (q *Queries) IndicatorAccounts(ctx context.Context, userID int64) ([]IndicatorAccountsRow, error) {
-	rows, err := q.db.Query(ctx, indicatorAccounts, userID)
+func (q *Queries) IndicatorAccounts(ctx context.Context, booksID int64) ([]IndicatorAccountsRow, error) {
+	rows, err := q.db.Query(ctx, indicatorAccounts, booksID)
 	if err != nil {
 		return nil, err
 	}
@@ -94,11 +94,11 @@ SELECT
 FROM
     ledger_settings
 WHERE
-    user_id = $1
+    books_id = $1
 `
 
-func (q *Queries) IndicatorBaseCurrency(ctx context.Context, userID int64) (string, error) {
-	row := q.db.QueryRow(ctx, indicatorBaseCurrency, userID)
+func (q *Queries) IndicatorBaseCurrency(ctx context.Context, booksID int64) (string, error) {
+	row := q.db.QueryRow(ctx, indicatorBaseCurrency, booksID)
 	var base_currency string
 	err := row.Scan(&base_currency)
 	return base_currency, err
@@ -110,7 +110,7 @@ SELECT
 FROM
     ledger_posting
 WHERE
-    user_id = $1
+    books_id = $1
     AND NOT voided
 ORDER BY
     booked_on
@@ -119,8 +119,8 @@ LIMIT
 `
 
 // The earliest booked date of the user's postings that are not voided.
-func (q *Queries) IndicatorFirstPosting(ctx context.Context, userID int64) (time.Time, error) {
-	row := q.db.QueryRow(ctx, indicatorFirstPosting, userID)
+func (q *Queries) IndicatorFirstPosting(ctx context.Context, booksID int64) (time.Time, error) {
+	row := q.db.QueryRow(ctx, indicatorFirstPosting, booksID)
 	var booked_on time.Time
 	err := row.Scan(&booked_on)
 	return booked_on, err
@@ -133,9 +133,9 @@ SELECT
 FROM
     ledger_posting p
     JOIN ledger_account a ON a.id = p.account_id
-    JOIN ledger_settings st ON st.user_id = p.user_id
+    JOIN ledger_settings st ON st.books_id = p.books_id
 WHERE
-    p.user_id = $1
+    p.books_id = $1
     AND NOT p.voided
     AND a.account_class = 'liability'
     AND a.kind = 'loan'
@@ -149,7 +149,7 @@ WHERE
             ledger_posting q
             JOIN ledger_account qa ON qa.id = q.account_id
         WHERE
-            q.user_id = p.user_id
+            q.books_id = p.books_id
             AND q.transaction_id = p.transaction_id
             AND NOT q.voided
             AND qa.account_class = 'asset'
@@ -159,7 +159,7 @@ GROUP BY
 `
 
 type LoanPrincipalByMonthParams struct {
-	UserID   int64
+	BooksID  int64
 	FromDate time.Time
 	ToDate   time.Time
 }
@@ -171,7 +171,7 @@ type LoanPrincipalByMonthRow struct {
 
 // Analytics design 4.2: postings that reduce a loan owed in the base currency, paid from an asset account.
 func (q *Queries) LoanPrincipalByMonth(ctx context.Context, arg LoanPrincipalByMonthParams) ([]LoanPrincipalByMonthRow, error) {
-	rows, err := q.db.Query(ctx, loanPrincipalByMonth, arg.UserID, arg.FromDate, arg.ToDate)
+	rows, err := q.db.Query(ctx, loanPrincipalByMonth, arg.BooksID, arg.FromDate, arg.ToDate)
 	if err != nil {
 		return nil, err
 	}

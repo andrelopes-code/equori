@@ -16,7 +16,7 @@ const (
 
 // TransactionChanged is a ledger transaction event Planning reacts to (P7 amendment A51).
 type TransactionChanged struct {
-	UserID        int64
+	BooksID       int64
 	TransactionID uuid.UUID
 	AccountIDs    []uuid.UUID
 }
@@ -28,12 +28,12 @@ func (s *Service) HandleTransaction(ctx context.Context, e TransactionChanged) e
 }
 
 func (s *Service) reevaluate(ctx context.Context, repo Repository, e TransactionChanged) error {
-	schedules, err := repo.SchedulesTouching(ctx, e.UserID, e.AccountIDs)
+	schedules, err := repo.SchedulesTouching(ctx, e.BooksID, e.AccountIDs)
 	if err != nil || len(schedules) == 0 {
 		return err
 	}
 
-	facts, err := s.ledger.TransactionFacts(ctx, e.UserID, []uuid.UUID{e.TransactionID})
+	facts, err := s.ledger.TransactionFacts(ctx, e.BooksID, []uuid.UUID{e.TransactionID})
 	if err != nil {
 		return err
 	}
@@ -43,7 +43,7 @@ func (s *Service) reevaluate(ctx context.Context, repo Repository, e Transaction
 		t = facts[0]
 	}
 
-	current, err := repo.OccurrenceByTransaction(ctx, e.UserID, e.TransactionID)
+	current, err := repo.OccurrenceByTransaction(ctx, e.BooksID, e.TransactionID)
 
 	hasCurrent := err == nil
 	if err != nil && !errors.Is(err, ErrNotFound) {
@@ -55,7 +55,7 @@ func (s *Service) reevaluate(ctx context.Context, repo Repository, e Transaction
 			return nil
 		}
 
-		_, err = repo.Release(ctx, e.UserID, current.ID, false)
+		_, err = repo.Release(ctx, e.BooksID, current.ID, false)
 
 		return err
 	}
@@ -71,7 +71,7 @@ func (s *Service) reevaluate(ctx context.Context, repo Repository, e Transaction
 			byID[sch.ID], ids[i] = sch, sch.ID
 		}
 
-		os, err := repo.ExpectedOccurrences(ctx, e.UserID, ids,
+		os, err := repo.ExpectedOccurrences(ctx, e.BooksID, ids,
 			t.Date.AddDate(0, 0, -domain.MatchWindowDays), t.Date.AddDate(0, 0, domain.MatchWindowDays))
 		if err != nil {
 			return err
@@ -94,7 +94,7 @@ func (s *Service) reevaluate(ctx context.Context, repo Repository, e Transaction
 			return nil
 		}
 
-		if _, err := repo.Release(ctx, e.UserID, current.ID, false); err != nil {
+		if _, err := repo.Release(ctx, e.BooksID, current.ID, false); err != nil {
 			return err
 		}
 	}
@@ -103,17 +103,17 @@ func (s *Service) reevaluate(ctx context.Context, repo Repository, e Transaction
 		return nil
 	}
 
-	_, err = repo.Realize(ctx, e.UserID, best.Occurrence.ID, t.ID, realizedAuto)
+	_, err = repo.Realize(ctx, e.BooksID, best.Occurrence.ID, t.ID, realizedAuto)
 
 	return err
 }
 
 // Realize links a chosen transaction to an expected occurrence; re-evaluation never
 // releases it (A51).
-func (s *Service) Realize(ctx context.Context, userID int64, id, txID uuid.UUID) (OccurrenceView, error) {
+func (s *Service) Realize(ctx context.Context, booksID int64, id, txID uuid.UUID) (OccurrenceView, error) {
 	var out OccurrenceView
 	err := s.repo.InTx(ctx, func(repo Repository) error {
-		o, err := repo.LockOccurrence(ctx, userID, id)
+		o, err := repo.LockOccurrence(ctx, booksID, id)
 		if err != nil {
 			return err
 		}
@@ -122,12 +122,12 @@ func (s *Service) Realize(ctx context.Context, userID int64, id, txID uuid.UUID)
 			return ErrOccurrenceClosed
 		}
 
-		sch, err := repo.Schedule(ctx, userID, o.ScheduleID)
+		sch, err := repo.Schedule(ctx, booksID, o.ScheduleID)
 		if err != nil {
 			return err
 		}
 
-		facts, err := s.ledger.TransactionFacts(ctx, userID, []uuid.UUID{txID})
+		facts, err := s.ledger.TransactionFacts(ctx, booksID, []uuid.UUID{txID})
 		if err != nil {
 			return err
 		}
@@ -140,13 +140,13 @@ func (s *Service) Realize(ctx context.Context, userID int64, id, txID uuid.UUID)
 			return &domain.FieldError{Field: "transaction_id", Message: "has no posting on the schedule's account", Err: domain.ErrValidation}
 		}
 
-		if _, err := repo.OccurrenceByTransaction(ctx, userID, txID); err == nil {
+		if _, err := repo.OccurrenceByTransaction(ctx, booksID, txID); err == nil {
 			return ErrTransactionInUse
 		} else if !errors.Is(err, ErrNotFound) {
 			return err
 		}
 
-		realized, err := repo.Realize(ctx, userID, id, txID, realizedManual)
+		realized, err := repo.Realize(ctx, booksID, id, txID, realizedManual)
 		out = s.view(realized, sch)
 
 		return err
@@ -157,10 +157,10 @@ func (s *Service) Realize(ctx context.Context, userID int64, id, txID uuid.UUID)
 
 // Unrealize releases a realized occurrence; its transaction no longer realizes it automatically
 // (final review of P7).
-func (s *Service) Unrealize(ctx context.Context, userID int64, id uuid.UUID) (OccurrenceView, error) {
+func (s *Service) Unrealize(ctx context.Context, booksID int64, id uuid.UUID) (OccurrenceView, error) {
 	var out OccurrenceView
 	err := s.repo.InTx(ctx, func(repo Repository) error {
-		o, err := repo.LockOccurrence(ctx, userID, id)
+		o, err := repo.LockOccurrence(ctx, booksID, id)
 		if err != nil {
 			return err
 		}
@@ -169,12 +169,12 @@ func (s *Service) Unrealize(ctx context.Context, userID int64, id uuid.UUID) (Oc
 			return ErrOccurrenceClosed
 		}
 
-		sch, err := repo.Schedule(ctx, userID, o.ScheduleID)
+		sch, err := repo.Schedule(ctx, booksID, o.ScheduleID)
 		if err != nil {
 			return err
 		}
 
-		released, err := repo.Release(ctx, userID, id, true)
+		released, err := repo.Release(ctx, booksID, id, true)
 		out = s.view(released, sch)
 
 		return err
@@ -188,13 +188,13 @@ func (s *Service) view(o domain.Occurrence, sch domain.Schedule) OccurrenceView 
 }
 
 // Occurrence reads one occurrence of the user.
-func (s *Service) Occurrence(ctx context.Context, userID int64, id uuid.UUID) (OccurrenceView, error) {
-	o, err := s.repo.LockOccurrence(ctx, userID, id)
+func (s *Service) Occurrence(ctx context.Context, booksID int64, id uuid.UUID) (OccurrenceView, error) {
+	o, err := s.repo.LockOccurrence(ctx, booksID, id)
 	if err != nil {
 		return OccurrenceView{}, err
 	}
 
-	sch, err := s.repo.Schedule(ctx, userID, o.ScheduleID)
+	sch, err := s.repo.Schedule(ctx, booksID, o.ScheduleID)
 	if err != nil {
 		return OccurrenceView{}, err
 	}

@@ -12,13 +12,13 @@ import (
 	"github.com/andrelopes-code/equori/internal/ledger/internal/domain"
 )
 
-func (r *Repository) TransactionByExternalRecord(ctx context.Context, userID int64, recordID uuid.UUID) (uuid.UUID, error) {
-	id, err := r.q.GetTransactionIDByExternalRecord(ctx, GetTransactionIDByExternalRecordParams{UserID: userID, ExternalRecordID: nullUUID(recordID)})
+func (r *Repository) TransactionByExternalRecord(ctx context.Context, booksID int64, recordID uuid.UUID) (uuid.UUID, error) {
+	id, err := r.q.GetTransactionIDByExternalRecord(ctx, GetTransactionIDByExternalRecordParams{BooksID: booksID, ExternalRecordID: nullUUID(recordID)})
 	return id, notFound(err)
 }
 
-func (r *Repository) UnlinkedPostings(ctx context.Context, userID int64, accountID uuid.UUID, from, to time.Time) ([]app.UnlinkedPosting, error) {
-	rows, err := r.q.ListUnlinkedPostings(ctx, ListUnlinkedPostingsParams{UserID: userID, AccountID: accountID, FromDate: from, ToDate: to})
+func (r *Repository) UnlinkedPostings(ctx context.Context, booksID int64, accountID uuid.UUID, from, to time.Time) ([]app.UnlinkedPosting, error) {
+	rows, err := r.q.ListUnlinkedPostings(ctx, ListUnlinkedPostingsParams{BooksID: booksID, AccountID: accountID, FromDate: from, ToDate: to})
 
 	return mapAll(rows, func(row ListUnlinkedPostingsRow) app.UnlinkedPosting {
 		return app.UnlinkedPosting{
@@ -27,8 +27,8 @@ func (r *Repository) UnlinkedPostings(ctx context.Context, userID int64, account
 	}), err
 }
 
-func (r *Repository) UnconfirmedPostings(ctx context.Context, userID int64, accountID uuid.UUID, from, to time.Time) ([]app.UnlinkedPosting, error) {
-	rows, err := r.q.ListUnconfirmedPostings(ctx, ListUnconfirmedPostingsParams{UserID: userID, AccountID: accountID, FromDate: from, ToDate: to})
+func (r *Repository) UnconfirmedPostings(ctx context.Context, booksID int64, accountID uuid.UUID, from, to time.Time) ([]app.UnlinkedPosting, error) {
+	rows, err := r.q.ListUnconfirmedPostings(ctx, ListUnconfirmedPostingsParams{BooksID: booksID, AccountID: accountID, FromDate: from, ToDate: to})
 
 	return mapAll(rows, func(row ListUnconfirmedPostingsRow) app.UnlinkedPosting {
 		return app.UnlinkedPosting{
@@ -38,8 +38,8 @@ func (r *Repository) UnconfirmedPostings(ctx context.Context, userID int64, acco
 	}), err
 }
 
-func (r *Repository) LinkExternalRecord(ctx context.Context, userID int64, postingID, recordID uuid.UUID) error {
-	err := r.q.LinkExternalRecord(ctx, LinkExternalRecordParams{UserID: userID, ID: postingID, ExternalRecordID: nullUUID(recordID)})
+func (r *Repository) LinkExternalRecord(ctx context.Context, booksID int64, postingID, recordID uuid.UUID) error {
+	err := r.q.LinkExternalRecord(ctx, LinkExternalRecordParams{BooksID: booksID, ID: postingID, ExternalRecordID: nullUUID(recordID)})
 	if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == uniqueViolation {
 		return app.ErrAlreadyMatched
 	}
@@ -47,8 +47,8 @@ func (r *Repository) LinkExternalRecord(ctx context.Context, userID int64, posti
 	return err
 }
 
-func (r *Repository) LockImportedPosting(ctx context.Context, userID int64, recordID uuid.UUID) (app.ImportedPostingState, error) {
-	row, err := r.q.LockImportedPosting(ctx, LockImportedPostingParams{UserID: userID, ExternalRecordID: nullUUID(recordID)})
+func (r *Repository) LockImportedPosting(ctx context.Context, booksID int64, recordID uuid.UUID) (app.ImportedPostingState, error) {
+	row, err := r.q.LockImportedPosting(ctx, LockImportedPostingParams{BooksID: booksID, ExternalRecordID: nullUUID(recordID)})
 	if err != nil {
 		return app.ImportedPostingState{}, notFound(err)
 	}
@@ -61,16 +61,16 @@ func (r *Repository) LockImportedPosting(ctx context.Context, userID int64, reco
 	return p, nil
 }
 
-func (r *Repository) SettleImportedPosting(ctx context.Context, userID int64, postingID uuid.UUID, status domain.PostingStatus, statementID uuid.UUID) error {
-	return r.q.SettleImportedPosting(ctx, SettleImportedPostingParams{UserID: userID, ID: postingID, Status: string(status), StatementID: nullUUID(statementID)})
+func (r *Repository) SettleImportedPosting(ctx context.Context, booksID int64, postingID uuid.UUID, status domain.PostingStatus, statementID uuid.UUID) error {
+	return r.q.SettleImportedPosting(ctx, SettleImportedPostingParams{BooksID: booksID, ID: postingID, Status: string(status), StatementID: nullUUID(statementID)})
 }
 
-func (r *Repository) ReleaseExternalRecord(ctx context.Context, userID int64, recordID uuid.UUID) error {
-	return r.q.ReleaseExternalRecord(ctx, ReleaseExternalRecordParams{UserID: userID, ExternalRecordID: nullUUID(recordID)})
+func (r *Repository) ReleaseExternalRecord(ctx context.Context, booksID int64, recordID uuid.UUID) error {
+	return r.q.ReleaseExternalRecord(ctx, ReleaseExternalRecordParams{BooksID: booksID, ExternalRecordID: nullUUID(recordID)})
 }
 
-func (r *Repository) RecordPosting(ctx context.Context, userID int64, recordID uuid.UUID) (uuid.UUID, uuid.UUID, error) {
-	row, err := r.q.GetRecordPosting(ctx, GetRecordPostingParams{UserID: userID, ExternalRecordID: nullUUID(recordID)})
+func (r *Repository) RecordPosting(ctx context.Context, booksID int64, recordID uuid.UUID) (uuid.UUID, uuid.UUID, error) {
+	row, err := r.q.GetRecordPosting(ctx, GetRecordPostingParams{BooksID: booksID, ExternalRecordID: nullUUID(recordID)})
 	if err != nil {
 		return uuid.Nil, uuid.Nil, notFound(err)
 	}
@@ -78,8 +78,8 @@ func (r *Repository) RecordPosting(ctx context.Context, userID int64, recordID u
 	return row.TransactionID, row.InstallmentPlanID.UUID, nil
 }
 
-func (r *Repository) LockPlanInstallment(ctx context.Context, userID int64, planID uuid.UUID, number int) (app.PlanInstallmentState, error) {
-	row, err := r.q.LockPlanInstallment(ctx, LockPlanInstallmentParams{UserID: userID, PlanID: planID, Number: installmentNumber(&domain.InstallmentRef{Number: number})})
+func (r *Repository) LockPlanInstallment(ctx context.Context, booksID int64, planID uuid.UUID, number int) (app.PlanInstallmentState, error) {
+	row, err := r.q.LockPlanInstallment(ctx, LockPlanInstallmentParams{BooksID: booksID, PlanID: planID, Number: installmentNumber(&domain.InstallmentRef{Number: number})})
 	if err != nil {
 		return app.PlanInstallmentState{}, notFound(err)
 	}
@@ -90,8 +90,8 @@ func (r *Repository) LockPlanInstallment(ctx context.Context, userID int64, plan
 	}, nil
 }
 
-func (r *Repository) StatementByDueDate(ctx context.Context, userID int64, accountID uuid.UUID, due time.Time) (domain.ReferenceMonth, error) {
-	first, err := r.q.GetStatementByDueDate(ctx, GetStatementByDueDateParams{UserID: userID, AccountID: accountID, DueDate: due})
+func (r *Repository) StatementByDueDate(ctx context.Context, booksID int64, accountID uuid.UUID, due time.Time) (domain.ReferenceMonth, error) {
+	first, err := r.q.GetStatementByDueDate(ctx, GetStatementByDueDateParams{BooksID: booksID, AccountID: accountID, DueDate: due})
 	if err != nil {
 		return domain.ReferenceMonth{}, notFound(err)
 	}
@@ -99,12 +99,12 @@ func (r *Repository) StatementByDueDate(ctx context.Context, userID int64, accou
 	return domain.MonthOf(first), nil
 }
 
-func (r *Repository) ClearPendingPostings(ctx context.Context, userID int64, txID, accountID uuid.UUID) error {
-	return r.q.ClearPendingPostings(ctx, ClearPendingPostingsParams{UserID: userID, TransactionID: txID, AccountID: accountID})
+func (r *Repository) ClearPendingPostings(ctx context.Context, booksID int64, txID, accountID uuid.UUID) error {
+	return r.q.ClearPendingPostings(ctx, ClearPendingPostingsParams{BooksID: booksID, TransactionID: txID, AccountID: accountID})
 }
 
-func (r *Repository) TransactionsByExternalRecords(ctx context.Context, userID int64, recordIDs []uuid.UUID) (map[uuid.UUID]uuid.UUID, error) {
-	rows, err := r.q.ListTransactionsByExternalRecords(ctx, ListTransactionsByExternalRecordsParams{UserID: userID, RecordIds: recordIDs})
+func (r *Repository) TransactionsByExternalRecords(ctx context.Context, booksID int64, recordIDs []uuid.UUID) (map[uuid.UUID]uuid.UUID, error) {
+	rows, err := r.q.ListTransactionsByExternalRecords(ctx, ListTransactionsByExternalRecordsParams{BooksID: booksID, RecordIds: recordIDs})
 	if err != nil {
 		return nil, err
 	}
@@ -117,8 +117,8 @@ func (r *Repository) TransactionsByExternalRecords(ctx context.Context, userID i
 	return out, nil
 }
 
-func (r *Repository) LockAccountPostingLinks(ctx context.Context, userID int64, txID, accountID uuid.UUID) ([]app.PostingLink, error) {
-	rows, err := r.q.LockAccountPostingLinks(ctx, LockAccountPostingLinksParams{UserID: userID, TransactionID: txID, AccountID: accountID})
+func (r *Repository) LockAccountPostingLinks(ctx context.Context, booksID int64, txID, accountID uuid.UUID) ([]app.PostingLink, error) {
+	rows, err := r.q.LockAccountPostingLinks(ctx, LockAccountPostingLinksParams{BooksID: booksID, TransactionID: txID, AccountID: accountID})
 
 	return mapAll(rows, func(row LockAccountPostingLinksRow) app.PostingLink {
 		return app.PostingLink{PostingID: row.ID, RecordID: row.ExternalRecordID.UUID, Voided: row.Voided}
@@ -127,11 +127,11 @@ func (r *Repository) LockAccountPostingLinks(ctx context.Context, userID int64, 
 
 func (r *Repository) PairingCandidates(ctx context.Context, q app.PairingQuery) ([]uuid.UUID, error) {
 	return r.q.PairingCandidates(ctx, PairingCandidatesParams{
-		UserID: q.UserID, TransactionID: q.TransactionID, AccountID: q.AccountID, Amount: q.Amount,
+		BooksID: q.BooksID, TransactionID: q.TransactionID, AccountID: q.AccountID, Amount: q.Amount,
 		FromDate: q.From, ToDate: q.To, ExcludedAccounts: q.ExcludedAccounts,
 	})
 }
 
-func (r *Repository) ClearRecordLinks(ctx context.Context, userID int64, txID uuid.UUID) error {
-	return r.q.ClearRecordLinks(ctx, ClearRecordLinksParams{UserID: userID, TransactionID: txID})
+func (r *Repository) ClearRecordLinks(ctx context.Context, booksID int64, txID uuid.UUID) error {
+	return r.q.ClearRecordLinks(ctx, ClearRecordLinksParams{BooksID: booksID, TransactionID: txID})
 }

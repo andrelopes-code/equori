@@ -95,12 +95,12 @@ func columns(ctx context.Context, q DBTX, table string) ([]string, error) {
 	return pgx.CollectRows(rows, pgx.RowTo[string])
 }
 
-func (r *Exports) Import(ctx context.Context, userID int64, tables []app.ArchiveTable, attachments map[string][]byte) ([]app.TableCount, error) {
+func (r *Exports) Import(ctx context.Context, booksID int64, tables []app.ArchiveTable, attachments map[string][]byte) ([]app.TableCount, error) {
 	var counts []app.TableCount
 	err := pgx.BeginFunc(ctx, r.pool, func(tx pgx.Tx) error {
 		var holds bool
-		if err := tx.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM ledger_transaction WHERE user_id = $1)
-			OR EXISTS (SELECT 1 FROM ledger_account WHERE user_id = $1 AND system_role IS NULL)`, userID).Scan(&holds); err != nil {
+		if err := tx.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM ledger_transaction WHERE books_id = $1)
+			OR EXISTS (SELECT 1 FROM ledger_account WHERE books_id = $1 AND system_role IS NULL)`, booksID).Scan(&holds); err != nil {
 			return err
 		}
 
@@ -125,15 +125,15 @@ func (r *Exports) Import(ctx context.Context, userID int64, tables []app.Archive
 
 		// The sign-up rows (system accounts, settings) give way to the archive's.
 		for _, t := range slices.Backward(order) {
-			where := "user_id = $1"
+			where := "books_id = $1"
 			switch {
 			case t == "ledger_transaction_version":
-				where = "transaction_id IN (SELECT id FROM ledger_transaction WHERE user_id = $1)"
+				where = "transaction_id IN (SELECT id FROM ledger_transaction WHERE books_id = $1)"
 			case !slices.Contains(facts, t):
 				continue
 			}
 
-			if _, err := tx.Exec(ctx, fmt.Sprintf(`DELETE FROM %s WHERE %s`, pgx.Identifier{t}.Sanitize(), where), userID); err != nil {
+			if _, err := tx.Exec(ctx, fmt.Sprintf(`DELETE FROM %s WHERE %s`, pgx.Identifier{t}.Sanitize(), where), booksID); err != nil {
 				return fmt.Errorf("clear %s: %w", t, err)
 			}
 		}
@@ -155,7 +155,7 @@ func (r *Exports) Import(ctx context.Context, userID int64, tables []app.Archive
 				}
 			}
 
-			n, err := insert(ctx, tx, t, rows, userID, slices.Contains(sharedTables, t))
+			n, err := insert(ctx, tx, t, rows, booksID, slices.Contains(sharedTables, t))
 			if err != nil {
 				return fmt.Errorf("import %s: %w", t, err)
 			}
@@ -171,7 +171,7 @@ func (r *Exports) Import(ctx context.Context, userID int64, tables []app.Archive
 
 			name, col := pgx.Identifier{t}.Sanitize(), pgx.Identifier{c}.Sanitize()
 			if _, err := tx.Exec(ctx, fmt.Sprintf(`UPDATE %s t SET %s = r.%s FROM jsonb_populate_recordset(NULL::%s, $1::jsonb) r
-				WHERE t.user_id = $2 AND t.id = r.id AND r.%s IS NOT NULL`, name, col, col, name, col), jsonArray(rows), userID); err != nil {
+				WHERE t.books_id = $2 AND t.id = r.id AND r.%s IS NOT NULL`, name, col, col, name, col), jsonArray(rows), booksID); err != nil {
 				return fmt.Errorf("import %s.%s: %w", t, c, err)
 			}
 		}
@@ -188,7 +188,7 @@ func (r *Exports) Import(ctx context.Context, userID int64, tables []app.Archive
 }
 
 // insert writes rows in one statement; a shared row already present is kept.
-func insert(ctx context.Context, tx pgx.Tx, table string, rows [][]byte, userID int64, shared bool) (int, error) {
+func insert(ctx context.Context, tx pgx.Tx, table string, rows [][]byte, booksID int64, shared bool) (int, error) {
 	cols, err := columns(ctx, tx, table)
 	if err != nil {
 		return 0, err
@@ -199,7 +199,7 @@ func insert(ctx context.Context, tx pgx.Tx, table string, rows [][]byte, userID 
 
 	for i, c := range cols {
 		switch c {
-		case "user_id":
+		case "books_id":
 			values[i] = "$2::bigint"
 		case laterReferences[table]:
 			values[i] = "NULL"
@@ -211,7 +211,7 @@ func insert(ctx context.Context, tx pgx.Tx, table string, rows [][]byte, userID 
 	}
 
 	if slices.Contains(values, "$2::bigint") {
-		args = append(args, userID)
+		args = append(args, booksID)
 	}
 
 	name := pgx.Identifier{table}.Sanitize()

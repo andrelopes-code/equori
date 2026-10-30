@@ -60,20 +60,20 @@ func (p Plan) Unassigned() (int64, bool) {
 }
 
 // BudgetPlan returns the plan of month for the user.
-func (s *Service) BudgetPlan(ctx context.Context, userID int64, month time.Time) (Plan, error) {
+func (s *Service) BudgetPlan(ctx context.Context, booksID int64, month time.Time) (Plan, error) {
 	month = domain.MonthOf(month)
 	if month.After(s.horizon()) {
 		return Plan{}, &domain.FieldError{Field: "month", Message: "must be at most today + 12 months", Err: domain.ErrValidation}
 	}
 
-	base, err := s.ledger.BaseCurrency(ctx, userID)
+	base, err := s.ledger.BaseCurrency(ctx, booksID)
 	if err != nil {
 		return Plan{}, err
 	}
 
 	out := Plan{Month: month, Currency: base}
 
-	facts, err := s.ledger.AccountFacts(ctx, userID)
+	facts, err := s.ledger.AccountFacts(ctx, booksID)
 	if err != nil {
 		return Plan{}, err
 	}
@@ -91,7 +91,7 @@ func (s *Service) BudgetPlan(ctx context.Context, userID int64, month time.Time)
 		case a.Class == "income":
 			flowAccounts = append(flowAccounts, a.ID)
 		case a.Kind == "credit_card" && a.Instrument == base:
-			c, err := s.ledger.PriorInstallments(ctx, userID, a.ID, month)
+			c, err := s.ledger.PriorInstallments(ctx, booksID, a.ID, month)
 			if err != nil {
 				return Plan{}, err
 			}
@@ -102,22 +102,22 @@ func (s *Service) BudgetPlan(ctx context.Context, userID int64, month time.Time)
 
 	from, to := month.AddDate(0, -3, 0), month.AddDate(0, 1, 0)
 
-	own, err := s.ledger.OwnCategoryMonthlyTotals(ctx, userID, "expense", from, to)
+	own, err := s.ledger.OwnCategoryMonthlyTotals(ctx, booksID, "expense", from, to)
 	if err != nil {
 		return Plan{}, err
 	}
 
-	income, err := s.ledger.OwnCategoryMonthlyTotals(ctx, userID, "income", from, to)
+	income, err := s.ledger.OwnCategoryMonthlyTotals(ctx, booksID, "income", from, to)
 	if err != nil {
 		return Plan{}, err
 	}
 
-	first, hasPostings, err := s.ledger.FirstPosting(ctx, userID, flowAccounts)
+	first, hasPostings, err := s.ledger.FirstPosting(ctx, booksID, flowAccounts)
 	if err != nil {
 		return Plan{}, err
 	}
 
-	budgets, err := s.repo.Budgets(ctx, userID)
+	budgets, err := s.repo.Budgets(ctx, booksID)
 	if err != nil {
 		return Plan{}, err
 	}
@@ -152,11 +152,11 @@ func (s *Service) BudgetPlan(ctx context.Context, userID int64, month time.Time)
 		out.Average = &average
 	}
 
-	if err := s.planOccurrences(ctx, userID, &out); err != nil {
+	if err := s.planOccurrences(ctx, booksID, &out); err != nil {
 		return Plan{}, err
 	}
 
-	ref, stored, err := s.repo.BudgetReference(ctx, userID)
+	ref, stored, err := s.repo.BudgetReference(ctx, booksID)
 	if err != nil {
 		return Plan{}, err
 	}
@@ -179,8 +179,8 @@ func (s *Service) BudgetPlan(ctx context.Context, userID int64, month time.Time)
 
 // planOccurrences adds the month's income and savings occurrences that are expected or
 // realized, valued in the base currency at today's prices (A72).
-func (s *Service) planOccurrences(ctx context.Context, userID int64, out *Plan) error {
-	schedules, err := s.repo.Schedules(ctx, userID)
+func (s *Service) planOccurrences(ctx context.Context, booksID int64, out *Plan) error {
+	schedules, err := s.repo.Schedules(ctx, booksID)
 	if err != nil {
 		return err
 	}
@@ -193,7 +193,7 @@ func (s *Service) planOccurrences(ctx context.Context, userID int64, out *Plan) 
 		}
 	}
 
-	os, err := s.repo.Occurrences(ctx, userID, out.Month, out.Month.AddDate(0, 1, -1), uuid.Nil)
+	os, err := s.repo.Occurrences(ctx, booksID, out.Month, out.Month.AddDate(0, 1, -1), uuid.Nil)
 	if err != nil {
 		return err
 	}
@@ -252,13 +252,13 @@ type PlanAmount struct {
 // on, in one transaction (A130): the version of month is replaced, a category without a budget
 // gets one when its amount is above zero, and versions of other months stay.
 // fixed is read only with SourceFixed.
-func (s *Service) SaveBudgetPlan(ctx context.Context, userID int64, month time.Time, source domain.ReferenceSource, fixed *money.Money, amounts []PlanAmount) (Plan, error) {
+func (s *Service) SaveBudgetPlan(ctx context.Context, booksID int64, month time.Time, source domain.ReferenceSource, fixed *money.Money, amounts []PlanAmount) (Plan, error) {
 	month = domain.MonthOf(month)
 	if month.Before(domain.MonthOf(s.clk.Today())) || month.After(s.horizon()) {
 		return Plan{}, &domain.FieldError{Field: "month", Message: "must be from the current month to today + 12 months", Err: domain.ErrValidation}
 	}
 
-	base, err := s.ledger.BaseCurrency(ctx, userID)
+	base, err := s.ledger.BaseCurrency(ctx, booksID)
 	if err != nil {
 		return Plan{}, err
 	}
@@ -280,7 +280,7 @@ func (s *Service) SaveBudgetPlan(ctx context.Context, userID int64, month time.T
 		ref.Fixed, ref.HasFixed = fixed.Amount(), true
 	}
 
-	facts, err := s.ledger.AccountFacts(ctx, userID)
+	facts, err := s.ledger.AccountFacts(ctx, booksID)
 	if err != nil {
 		return Plan{}, err
 	}
@@ -312,7 +312,7 @@ func (s *Service) SaveBudgetPlan(ctx context.Context, userID int64, month time.T
 	}
 
 	err = s.repo.InTx(ctx, func(repo Repository) error {
-		budgets, err := repo.Budgets(ctx, userID)
+		budgets, err := repo.Budgets(ctx, booksID)
 		if err != nil {
 			return err
 		}
@@ -332,27 +332,27 @@ func (s *Service) SaveBudgetPlan(ctx context.Context, userID int64, month time.T
 				}
 
 				b := domain.Budget{CategoryID: a.CategoryID, Currency: base, Amounts: []domain.BudgetAmount{version}}
-				if _, err := repo.InsertBudget(ctx, userID, b); err != nil {
+				if _, err := repo.InsertBudget(ctx, booksID, b); err != nil {
 					return err
 				}
 
 				continue
 			}
 
-			if _, err := repo.LockBudget(ctx, userID, id); err != nil {
+			if _, err := repo.LockBudget(ctx, booksID, id); err != nil {
 				return err
 			}
 
-			if err := repo.UpsertBudgetAmount(ctx, userID, id, version); err != nil {
+			if err := repo.UpsertBudgetAmount(ctx, booksID, id, version); err != nil {
 				return err
 			}
 		}
 
-		return repo.SaveBudgetReference(ctx, userID, ref, base)
+		return repo.SaveBudgetReference(ctx, booksID, ref, base)
 	})
 	if err != nil {
 		return Plan{}, err
 	}
 
-	return s.BudgetPlan(ctx, userID, month)
+	return s.BudgetPlan(ctx, booksID, month)
 }

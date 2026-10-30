@@ -2,7 +2,7 @@
 INSERT INTO
     ledger_trade (
         transaction_id,
-        user_id,
+        books_id,
         account_id,
         cash_account_id,
         side,
@@ -17,7 +17,7 @@ INSERT INTO
 VALUES
     (
         @transaction_id,
-        @user_id,
+        @books_id,
         @account_id,
         @cash_account_id,
         @side,
@@ -36,7 +36,7 @@ SELECT
 FROM
     ledger_trade
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND transaction_id = ANY (@transaction_ids::UUID[]);
 
 -- name: Holding :one
@@ -47,7 +47,7 @@ SELECT
 FROM
     ledger_posting
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND account_id = @account_id
     AND NOT voided
     AND booked_on <= @on_date;
@@ -60,10 +60,10 @@ SELECT
             1
         FROM
             ledger_trade tr
-            JOIN ledger_transaction t ON t.user_id = tr.user_id
+            JOIN ledger_transaction t ON t.books_id = tr.books_id
             AND t.id = tr.transaction_id
         WHERE
-            tr.user_id = @user_id
+            tr.books_id = @books_id
             AND tr.account_id = ANY (@account_ids::UUID[])
             AND tr.side = 'sell'
             AND t.voided_at IS NULL
@@ -75,7 +75,7 @@ SELECT
 INSERT INTO
     ledger_investment_income (
         transaction_id,
-        user_id,
+        books_id,
         account_id,
         cash_account_id,
         income_type,
@@ -86,7 +86,7 @@ INSERT INTO
 VALUES
     (
         @transaction_id,
-        @user_id,
+        @books_id,
         @account_id,
         @cash_account_id,
         @income_type,
@@ -101,7 +101,7 @@ SELECT
 FROM
     ledger_investment_income
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND transaction_id = ANY (@transaction_ids::UUID[]);
 
 -- name: SecurityPostings :many
@@ -114,7 +114,7 @@ SELECT
 FROM
     ledger_posting p
 WHERE
-    p.user_id = @user_id
+    p.books_id = @books_id
     AND p.account_id = ANY (@account_ids::UUID[])
     AND NOT p.voided
 ORDER BY
@@ -135,10 +135,10 @@ SELECT
     tr.cost
 FROM
     ledger_trade tr
-    JOIN ledger_transaction t ON t.user_id = tr.user_id
+    JOIN ledger_transaction t ON t.books_id = tr.books_id
     AND t.id = tr.transaction_id
 WHERE
-    tr.user_id = @user_id
+    tr.books_id = @books_id
     AND tr.account_id = ANY (@account_ids::UUID[])
     AND t.voided_at IS NULL
 ORDER BY
@@ -155,10 +155,10 @@ SELECT
     i.withheld
 FROM
     ledger_investment_income i
-    JOIN ledger_transaction t ON t.user_id = i.user_id
+    JOIN ledger_transaction t ON t.books_id = i.books_id
     AND t.id = i.transaction_id
 WHERE
-    i.user_id = @user_id
+    i.books_id = @books_id
     AND i.account_id = ANY (@account_ids::UUID[])
     AND t.voided_at IS NULL
 ORDER BY

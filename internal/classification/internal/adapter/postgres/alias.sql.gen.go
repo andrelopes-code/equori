@@ -13,17 +13,17 @@ import (
 
 const allAliases = `-- name: AllAliases :many
 SELECT
-    id, user_id, pattern, match_type, payee_id, created_at
+    id, books_id, pattern, match_type, payee_id, created_at
 FROM
     classification_payee_alias
 WHERE
-    user_id = $1
+    books_id = $1
 ORDER BY
     id
 `
 
-func (q *Queries) AllAliases(ctx context.Context, userID int64) ([]ClassificationPayeeAlias, error) {
-	rows, err := q.db.Query(ctx, allAliases, userID)
+func (q *Queries) AllAliases(ctx context.Context, booksID int64) ([]ClassificationPayeeAlias, error) {
+	rows, err := q.db.Query(ctx, allAliases, booksID)
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +33,7 @@ func (q *Queries) AllAliases(ctx context.Context, userID int64) ([]Classificatio
 		var i ClassificationPayeeAlias
 		if err := rows.Scan(
 			&i.ID,
-			&i.UserID,
+			&i.BooksID,
 			&i.Pattern,
 			&i.MatchType,
 			&i.PayeeID,
@@ -52,17 +52,17 @@ func (q *Queries) AllAliases(ctx context.Context, userID int64) ([]Classificatio
 const deleteAlias = `-- name: DeleteAlias :execrows
 DELETE FROM classification_payee_alias
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2
 `
 
 type DeleteAliasParams struct {
-	UserID int64
-	ID     uuid.UUID
+	BooksID int64
+	ID      uuid.UUID
 }
 
 func (q *Queries) DeleteAlias(ctx context.Context, arg DeleteAliasParams) (int64, error) {
-	result, err := q.db.Exec(ctx, deleteAlias, arg.UserID, arg.ID)
+	result, err := q.db.Exec(ctx, deleteAlias, arg.BooksID, arg.ID)
 	if err != nil {
 		return 0, err
 	}
@@ -71,25 +71,25 @@ func (q *Queries) DeleteAlias(ctx context.Context, arg DeleteAliasParams) (int64
 
 const getAlias = `-- name: GetAlias :one
 SELECT
-    id, user_id, pattern, match_type, payee_id, created_at
+    id, books_id, pattern, match_type, payee_id, created_at
 FROM
     classification_payee_alias
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2
 `
 
 type GetAliasParams struct {
-	UserID int64
-	ID     uuid.UUID
+	BooksID int64
+	ID      uuid.UUID
 }
 
 func (q *Queries) GetAlias(ctx context.Context, arg GetAliasParams) (ClassificationPayeeAlias, error) {
-	row := q.db.QueryRow(ctx, getAlias, arg.UserID, arg.ID)
+	row := q.db.QueryRow(ctx, getAlias, arg.BooksID, arg.ID)
 	var i ClassificationPayeeAlias
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.Pattern,
 		&i.MatchType,
 		&i.PayeeID,
@@ -100,15 +100,15 @@ func (q *Queries) GetAlias(ctx context.Context, arg GetAliasParams) (Classificat
 
 const insertAlias = `-- name: InsertAlias :one
 INSERT INTO
-    classification_payee_alias (user_id, pattern, match_type, payee_id)
+    classification_payee_alias (books_id, pattern, match_type, payee_id)
 VALUES
     ($1, $2, $3, $4)
 RETURNING
-    id, user_id, pattern, match_type, payee_id, created_at
+    id, books_id, pattern, match_type, payee_id, created_at
 `
 
 type InsertAliasParams struct {
-	UserID    int64
+	BooksID   int64
 	Pattern   string
 	MatchType string
 	PayeeID   uuid.UUID
@@ -116,7 +116,7 @@ type InsertAliasParams struct {
 
 func (q *Queries) InsertAlias(ctx context.Context, arg InsertAliasParams) (ClassificationPayeeAlias, error) {
 	row := q.db.QueryRow(ctx, insertAlias,
-		arg.UserID,
+		arg.BooksID,
 		arg.Pattern,
 		arg.MatchType,
 		arg.PayeeID,
@@ -124,7 +124,7 @@ func (q *Queries) InsertAlias(ctx context.Context, arg InsertAliasParams) (Class
 	var i ClassificationPayeeAlias
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.Pattern,
 		&i.MatchType,
 		&i.PayeeID,
@@ -135,11 +135,11 @@ func (q *Queries) InsertAlias(ctx context.Context, arg InsertAliasParams) (Class
 
 const listAliases = `-- name: ListAliases :many
 SELECT
-    id, user_id, pattern, match_type, payee_id, created_at
+    id, books_id, pattern, match_type, payee_id, created_at
 FROM
     classification_payee_alias
 WHERE
-    user_id = $1
+    books_id = $1
     AND (
         $2::uuid IS NULL
         OR id > $2::uuid
@@ -151,13 +151,13 @@ LIMIT
 `
 
 type ListAliasesParams struct {
-	UserID   int64
+	BooksID  int64
 	AfterID  uuid.NullUUID
 	RowLimit int32
 }
 
 func (q *Queries) ListAliases(ctx context.Context, arg ListAliasesParams) ([]ClassificationPayeeAlias, error) {
-	rows, err := q.db.Query(ctx, listAliases, arg.UserID, arg.AfterID, arg.RowLimit)
+	rows, err := q.db.Query(ctx, listAliases, arg.BooksID, arg.AfterID, arg.RowLimit)
 	if err != nil {
 		return nil, err
 	}
@@ -167,7 +167,7 @@ func (q *Queries) ListAliases(ctx context.Context, arg ListAliasesParams) ([]Cla
 		var i ClassificationPayeeAlias
 		if err := rows.Scan(
 			&i.ID,
-			&i.UserID,
+			&i.BooksID,
 			&i.Pattern,
 			&i.MatchType,
 			&i.PayeeID,
@@ -190,17 +190,17 @@ SET
     match_type = $2,
     payee_id = $3
 WHERE
-    user_id = $4
+    books_id = $4
     AND id = $5
 RETURNING
-    id, user_id, pattern, match_type, payee_id, created_at
+    id, books_id, pattern, match_type, payee_id, created_at
 `
 
 type UpdateAliasParams struct {
 	Pattern   string
 	MatchType string
 	PayeeID   uuid.UUID
-	UserID    int64
+	BooksID   int64
 	ID        uuid.UUID
 }
 
@@ -209,13 +209,13 @@ func (q *Queries) UpdateAlias(ctx context.Context, arg UpdateAliasParams) (Class
 		arg.Pattern,
 		arg.MatchType,
 		arg.PayeeID,
-		arg.UserID,
+		arg.BooksID,
 		arg.ID,
 	)
 	var i ClassificationPayeeAlias
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.Pattern,
 		&i.MatchType,
 		&i.PayeeID,

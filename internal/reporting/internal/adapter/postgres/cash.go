@@ -11,13 +11,13 @@ import (
 	"github.com/andrelopes-code/equori/internal/reporting/internal/app"
 )
 
-func (r *Repository) CardFacts(ctx context.Context, userID int64, to time.Time) (app.CardFacts, error) {
-	lines, err := r.q.CashCardLines(ctx, userID)
+func (r *Repository) CardFacts(ctx context.Context, booksID int64, to time.Time) (app.CardFacts, error) {
+	lines, err := r.q.CashCardLines(ctx, booksID)
 	if err != nil {
 		return app.CardFacts{}, err
 	}
 
-	payments, err := r.q.CashPayments(ctx, CashPaymentsParams{UserID: userID, ToDate: to})
+	payments, err := r.q.CashPayments(ctx, CashPaymentsParams{BooksID: booksID, ToDate: to})
 	if err != nil {
 		return app.CardFacts{}, err
 	}
@@ -40,7 +40,7 @@ func (r *Repository) CardFacts(ctx context.Context, userID int64, to time.Time) 
 		})
 	}
 
-	origins, err := r.q.CashOrigins(ctx, CashOriginsParams{UserID: userID, TransactionIds: txs})
+	origins, err := r.q.CashOrigins(ctx, CashOriginsParams{BooksID: booksID, TransactionIds: txs})
 	if err != nil {
 		return app.CardFacts{}, err
 	}
@@ -50,7 +50,7 @@ func (r *Repository) CardFacts(ctx context.Context, userID int64, to time.Time) 
 		txs = append(txs, o.ToTransactionID)
 	}
 
-	postings, err := r.q.CashCategoryPostings(ctx, CashCategoryPostingsParams{UserID: userID, TransactionIds: txs})
+	postings, err := r.q.CashCategoryPostings(ctx, CashCategoryPostingsParams{BooksID: booksID, TransactionIds: txs})
 	if err != nil {
 		return app.CardFacts{}, err
 	}
@@ -66,8 +66,8 @@ func (r *Repository) CardFacts(ctx context.Context, userID int64, to time.Time) 
 	return f, nil
 }
 
-func (r *Repository) OffCardTotals(ctx context.Context, userID int64, from, to time.Time) (app.Shares, error) {
-	rows, err := r.q.CashOffCardTotals(ctx, CashOffCardTotalsParams{UserID: userID, FromDate: from, ToDate: to})
+func (r *Repository) OffCardTotals(ctx context.Context, booksID int64, from, to time.Time) (app.Shares, error) {
+	rows, err := r.q.CashOffCardTotals(ctx, CashOffCardTotalsParams{BooksID: booksID, FromDate: from, ToDate: to})
 	if err != nil {
 		return nil, err
 	}
@@ -80,8 +80,8 @@ func (r *Repository) OffCardTotals(ctx context.Context, userID int64, from, to t
 	return out, nil
 }
 
-func (r *Repository) OffCardMonthTotals(ctx context.Context, userID int64, from, to time.Time) (map[time.Time]app.Shares, error) {
-	rows, err := r.q.CashOffCardMonthTotals(ctx, CashOffCardMonthTotalsParams{UserID: userID, FromDate: from, ToDate: to})
+func (r *Repository) OffCardMonthTotals(ctx context.Context, booksID int64, from, to time.Time) (map[time.Time]app.Shares, error) {
+	rows, err := r.q.CashOffCardMonthTotals(ctx, CashOffCardMonthTotalsParams{BooksID: booksID, FromDate: from, ToDate: to})
 	if err != nil {
 		return nil, err
 	}
@@ -98,8 +98,8 @@ func (r *Repository) OffCardMonthTotals(ctx context.Context, userID int64, from,
 	return out, nil
 }
 
-func (r *Repository) StatementCard(ctx context.Context, userID int64, id uuid.UUID) (uuid.UUID, error) {
-	card, err := r.q.StatementCard(ctx, StatementCardParams{UserID: userID, ID: id})
+func (r *Repository) StatementCard(ctx context.Context, booksID int64, id uuid.UUID) (uuid.UUID, error) {
+	card, err := r.q.StatementCard(ctx, StatementCardParams{BooksID: booksID, ID: id})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return uuid.Nil, app.ErrNotFound
 	}
@@ -107,8 +107,8 @@ func (r *Repository) StatementCard(ctx context.Context, userID int64, id uuid.UU
 	return card, err
 }
 
-func (r *Repository) CardStatements(ctx context.Context, userID int64, cardID uuid.UUID) (string, []app.StatementRef, error) {
-	instrument, err := r.q.CardInstrument(ctx, CardInstrumentParams{UserID: userID, ID: cardID})
+func (r *Repository) CardStatements(ctx context.Context, booksID int64, cardID uuid.UUID) (string, []app.StatementRef, error) {
+	instrument, err := r.q.CardInstrument(ctx, CardInstrumentParams{BooksID: booksID, ID: cardID})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return "", nil, app.ErrNotFound
 	}
@@ -117,7 +117,7 @@ func (r *Repository) CardStatements(ctx context.Context, userID int64, cardID uu
 		return "", nil, err
 	}
 
-	rows, err := r.q.AnalyticsStatements(ctx, AnalyticsStatementsParams{UserID: userID, CardID: cardID})
+	rows, err := r.q.AnalyticsStatements(ctx, AnalyticsStatementsParams{BooksID: booksID, CardID: cardID})
 	if err != nil {
 		return "", nil, err
 	}
@@ -130,8 +130,8 @@ func (r *Repository) CardStatements(ctx context.Context, userID int64, cardID uu
 	return instrument, out, nil
 }
 
-func (r *Repository) ChargeCategories(ctx context.Context, userID int64) (map[uuid.UUID]bool, error) {
-	ids, err := r.q.ChargeCategories(ctx, userID)
+func (r *Repository) ChargeCategories(ctx context.Context, booksID int64) (map[uuid.UUID]bool, error) {
+	ids, err := r.q.ChargeCategories(ctx, booksID)
 	if err != nil {
 		return nil, err
 	}

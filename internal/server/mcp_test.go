@@ -170,7 +170,7 @@ func TestMCPCallTool(t *testing.T) {
 		t.Fatalf("call: %v %+v", err, res)
 	}
 
-	want, err := h.App.Tools.Call(auth.WithUserID(t.Context(), h.OwnerID()), "list_accounts", json.RawMessage(`{}`))
+	want, err := h.App.Tools.Call(auth.WithBooksID(t.Context(), h.OwnerID()), "list_accounts", json.RawMessage(`{}`))
 	if err != nil {
 		t.Fatal(err)
 	}

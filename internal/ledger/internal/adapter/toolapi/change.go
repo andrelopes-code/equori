@@ -61,22 +61,22 @@ func changeTransaction(svc *app.Service) tool.Tool {
 			"Do not use it to set a category: categorize_transactions does; nor to void: void_transaction does; nor for card refunds: handle_card_purchase does. " +
 			"The user confirms before the change applies.",
 		Effect: tool.Write,
-	}, func(ctx context.Context, userID int64, in changeTransactionIn) (tool.Preview, error) {
-		p, err := planChange(ctx, svc, userID, in)
+	}, func(ctx context.Context, booksID int64, in changeTransactionIn) (tool.Preview, error) {
+		p, err := planChange(ctx, svc, booksID, in)
 		if err != nil {
 			return tool.Preview{}, err
 		}
 
 		pv := tool.Preview{Action: "change_transaction", Target: targetOf(p.current), Basis: basisOf(p.current)}
 
-		accounts, _, err := allAccounts(ctx, svc, userID)
+		accounts, _, err := allAccounts(ctx, svc, booksID)
 		if err != nil {
 			return pv, err
 		}
 
 		switch in.Action {
 		case "correct":
-			pv.Changes, err = correctionChanges(ctx, svc, userID, p, accounts)
+			pv.Changes, err = correctionChanges(ctx, svc, booksID, p, accounts)
 		case "make_transfer":
 			before := ""
 			for _, po := range p.current.Postings {
@@ -101,8 +101,8 @@ func changeTransaction(svc *app.Service) tool.Tool {
 		}
 
 		return pv, err
-	}, func(ctx context.Context, userID int64, in changeTransactionIn) (changeTransactionOut, error) {
-		p, err := planChange(ctx, svc, userID, in)
+	}, func(ctx context.Context, booksID int64, in changeTransactionIn) (changeTransactionOut, error) {
+		p, err := planChange(ctx, svc, booksID, in)
 		if err != nil {
 			return changeTransactionOut{}, err
 		}
@@ -111,18 +111,18 @@ func changeTransaction(svc *app.Service) tool.Tool {
 		switch in.Action {
 		case "correct":
 			var t domain.Transaction
-			if t, err = svc.CorrectTransaction(ctx, userID, p.current.ID, p.current.Version, p.next, in.Reason); err == nil {
+			if t, err = svc.CorrectTransaction(ctx, booksID, p.current.ID, p.current.Version, p.next, in.Reason); err == nil {
 				id = t.ID
 			}
 		case "make_transfer":
 			var res app.TransferResult
-			res, err = svc.Transfer(ctx, userID, app.TransferRequest{
+			res, err = svc.Transfer(ctx, booksID, app.TransferRequest{
 				TransactionID: p.current.ID, ExpectedVersion: p.current.Version, AccountID: p.transfer.ID, Cause: app.Cause{Method: app.MethodManual},
 			})
 			id = res.Kept
 		default:
 			var t domain.Transaction
-			if t, err = svc.Reimburse(ctx, userID, app.ReimbursementRequest{
+			if t, err = svc.Reimburse(ctx, booksID, app.ReimbursementRequest{
 				TransactionID: p.current.ID, ExpectedVersion: p.current.Version, Allocations: p.allocs, Cause: app.Cause{Method: app.MethodManual},
 			}); err == nil {
 				id = t.ID
@@ -133,7 +133,7 @@ func changeTransaction(svc *app.Service) tool.Tool {
 			return changeTransactionOut{}, err
 		}
 
-		t, err := svc.Transaction(ctx, userID, id)
+		t, err := svc.Transaction(ctx, booksID, id)
 
 		return changeTransactionOut{TransactionID: id.String(), Version: t.Version}, err
 	})
@@ -154,7 +154,7 @@ func unusedFields(action string, given map[string]bool, used ...string) error {
 	return nil
 }
 
-func planChange(ctx context.Context, svc *app.Service, userID int64, in changeTransactionIn) (changePlan, error) {
+func planChange(ctx context.Context, svc *app.Service, booksID int64, in changeTransactionIn) (changePlan, error) {
 	var p changePlan
 
 	id, err := requiredID(in.TransactionID, "transaction_id")
@@ -162,7 +162,7 @@ func planChange(ctx context.Context, svc *app.Service, userID int64, in changeTr
 		return p, err
 	}
 
-	if p.current, err = svc.Transaction(ctx, userID, id); err != nil {
+	if p.current, err = svc.Transaction(ctx, booksID, id); err != nil {
 		return p, err
 	}
 
@@ -185,7 +185,7 @@ func planChange(ctx context.Context, svc *app.Service, userID int64, in changeTr
 			return p, err
 		}
 
-		p.next, err = correctedTransaction(ctx, svc, userID, p.current, in)
+		p.next, err = correctedTransaction(ctx, svc, booksID, p.current, in)
 	case "make_transfer":
 		if err := unusedFields("make_transfer", given, "to_account_id"); err != nil {
 			return p, err
@@ -196,7 +196,7 @@ func planChange(ctx context.Context, svc *app.Service, userID int64, in changeTr
 			return p, err
 		}
 
-		p.transfer, err = svc.Account(ctx, userID, to)
+		p.transfer, err = svc.Account(ctx, booksID, to)
 	default:
 		if err := unusedFields("reimburse", given, "allocations"); err != nil {
 			return p, err
@@ -218,7 +218,7 @@ func planChange(ctx context.Context, svc *app.Service, userID int64, in changeTr
 				return p, err
 			}
 
-			expense, err := svc.Transaction(ctx, userID, expenseID)
+			expense, err := svc.Transaction(ctx, booksID, expenseID)
 			if err != nil {
 				return p, err
 			}
@@ -270,7 +270,7 @@ func sides(t domain.Transaction) (from, to int, ok bool) {
 	return 1, 0, true
 }
 
-func correctedTransaction(ctx context.Context, svc *app.Service, userID int64, cur domain.Transaction, in changeTransactionIn) (domain.Transaction, error) {
+func correctedTransaction(ctx context.Context, svc *app.Service, booksID int64, cur domain.Transaction, in changeTransactionIn) (domain.Transaction, error) {
 	next := domain.Transaction{
 		Date: cur.Date, Description: cur.Description, PayeeID: cur.PayeeID, Tags: cur.Tags, Links: cur.Links,
 		Origin: cur.Origin,
@@ -332,7 +332,7 @@ func correctedTransaction(ctx context.Context, svc *app.Service, userID int64, c
 			return next, err
 		}
 
-		a, err := svc.Account(ctx, userID, id)
+		a, err := svc.Account(ctx, booksID, id)
 		if err != nil {
 			return next, err
 		}
@@ -343,7 +343,7 @@ func correctedTransaction(ctx context.Context, svc *app.Service, userID int64, c
 	return next, nil
 }
 
-func correctionChanges(ctx context.Context, svc *app.Service, userID int64, p changePlan, accounts map[uuid.UUID]domain.Account) ([]tool.Change, error) {
+func correctionChanges(ctx context.Context, svc *app.Service, booksID int64, p changePlan, accounts map[uuid.UUID]domain.Account) ([]tool.Change, error) {
 	cur, next := p.current, p.next
 
 	var out []tool.Change
@@ -356,7 +356,7 @@ func correctionChanges(ctx context.Context, svc *app.Service, userID int64, p ch
 	}
 
 	if cur.PayeeID != next.PayeeID {
-		names, err := svc.PayeeNames(ctx, userID, []uuid.UUID{cur.PayeeID, next.PayeeID})
+		names, err := svc.PayeeNames(ctx, booksID, []uuid.UUID{cur.PayeeID, next.PayeeID})
 		if err != nil {
 			return nil, err
 		}

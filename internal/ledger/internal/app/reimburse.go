@@ -29,11 +29,11 @@ type ReimbursementRequest struct {
 }
 
 // Reimburse returns the reimbursement after the change.
-func (s *Service) Reimburse(ctx context.Context, userID int64, req ReimbursementRequest) (domain.Transaction, error) {
+func (s *Service) Reimburse(ctx context.Context, booksID int64, req ReimbursementRequest) (domain.Transaction, error) {
 	var out domain.Transaction
 	err := s.repo.InTx(ctx, func(r Repository) error {
 		var err error
-		out, err = s.reimburse(ctx, r, userID, req)
+		out, err = s.reimburse(ctx, r, booksID, req)
 
 		return err
 	})
@@ -41,7 +41,7 @@ func (s *Service) Reimburse(ctx context.Context, userID int64, req Reimbursement
 	return out, err
 }
 
-func (s *Service) reimburse(ctx context.Context, r Repository, userID int64, req ReimbursementRequest) (domain.Transaction, error) {
+func (s *Service) reimburse(ctx context.Context, r Repository, booksID int64, req ReimbursementRequest) (domain.Transaction, error) {
 	ids := []uuid.UUID{req.TransactionID}
 	for _, a := range req.Allocations {
 		if !slices.Contains(ids, a.OriginalID) {
@@ -54,7 +54,7 @@ func (s *Service) reimburse(ctx context.Context, r Repository, userID int64, req
 
 	var all []domain.Transaction
 	for _, id := range ids {
-		t, err := r.LockTransaction(ctx, userID, id)
+		t, err := r.LockTransaction(ctx, booksID, id)
 		if err != nil {
 			return domain.Transaction{}, err
 		}
@@ -63,7 +63,7 @@ func (s *Service) reimburse(ctx context.Context, r Repository, userID int64, req
 		all = append(all, t)
 	}
 
-	uncategorized, err := r.SystemAccount(ctx, userID, domain.RoleUncategorizedIncome)
+	uncategorized, err := r.SystemAccount(ctx, booksID, domain.RoleUncategorizedIncome)
 	if err != nil {
 		return domain.Transaction{}, err
 	}
@@ -73,7 +73,7 @@ func (s *Service) reimburse(ctx context.Context, r Repository, userID int64, req
 		accountIDs = append(accountIDs, a.CategoryID)
 	}
 
-	accounts, err := r.Accounts(ctx, userID, accountIDs)
+	accounts, err := r.Accounts(ctx, booksID, accountIDs)
 	if err != nil {
 		return domain.Transaction{}, err
 	}
@@ -93,7 +93,7 @@ func (s *Service) reimburse(ctx context.Context, r Repository, userID int64, req
 			}
 		}
 
-		held, err := r.ReimbursedTotal(ctx, userID, a.OriginalID, req.TransactionID)
+		held, err := r.ReimbursedTotal(ctx, booksID, a.OriginalID, req.TransactionID)
 		if err != nil {
 			return domain.Transaction{}, err
 		}
@@ -111,7 +111,7 @@ func (s *Service) reimburse(ctx context.Context, r Repository, userID int64, req
 	}
 
 	links := slices.DeleteFunc(slices.Clone(next.Links), func(l domain.Link) bool { return l.Type != domain.LinkReimbursementOf })
-	if err := r.SetReimbursementLinks(ctx, userID, next.ID, links); err != nil {
+	if err := r.SetReimbursementLinks(ctx, booksID, next.ID, links); err != nil {
 		return domain.Transaction{}, err
 	}
 
@@ -158,5 +158,5 @@ func (s *Service) publishCategorized(ctx context.Context, r Repository, next, pr
 		event.Cause = &cause
 	}
 
-	return r.Publish(ctx, outbox.Event{Type: EventTransactionCategorized, UserID: next.UserID, AggregateID: next.ID.String(), Payload: event})
+	return r.Publish(ctx, outbox.Event{Type: EventTransactionCategorized, BooksID: next.BooksID, AggregateID: next.ID.String(), Payload: event})
 }

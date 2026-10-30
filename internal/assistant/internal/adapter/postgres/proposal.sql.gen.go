@@ -17,18 +17,18 @@ UPDATE assistant_proposal
 SET
     message_id = $1
 WHERE
-    user_id = $2
+    books_id = $2
     AND id = ANY ($3::UUID[])
 `
 
 type AttachProposalsParams struct {
 	MessageID uuid.NullUUID
-	UserID    int64
+	BooksID   int64
 	Ids       []uuid.UUID
 }
 
 func (q *Queries) AttachProposals(ctx context.Context, arg AttachProposalsParams) error {
-	_, err := q.db.Exec(ctx, attachProposals, arg.MessageID, arg.UserID, arg.Ids)
+	_, err := q.db.Exec(ctx, attachProposals, arg.MessageID, arg.BooksID, arg.Ids)
 	return err
 }
 
@@ -37,26 +37,26 @@ UPDATE assistant_proposal
 SET
     status = 'executing'
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2
     AND status = 'pending'
     AND expires_at > $3
 RETURNING
-    id, user_id, conversation_id, message_id, tool, arguments, preview, basis, status, result, created_at, expires_at, decided_at
+    id, books_id, conversation_id, message_id, tool, arguments, preview, basis, status, result, created_at, expires_at, decided_at
 `
 
 type ClaimProposalParams struct {
-	UserID int64
-	ID     uuid.UUID
-	Now    time.Time
+	BooksID int64
+	ID      uuid.UUID
+	Now     time.Time
 }
 
 func (q *Queries) ClaimProposal(ctx context.Context, arg ClaimProposalParams) (AssistantProposal, error) {
-	row := q.db.QueryRow(ctx, claimProposal, arg.UserID, arg.ID, arg.Now)
+	row := q.db.QueryRow(ctx, claimProposal, arg.BooksID, arg.ID, arg.Now)
 	var i AssistantProposal
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.ConversationID,
 		&i.MessageID,
 		&i.Tool,
@@ -79,7 +79,7 @@ SET
     result = $2,
     decided_at = $3
 WHERE
-    user_id = $4
+    books_id = $4
     AND id = $5
 `
 
@@ -87,7 +87,7 @@ type DecideProposalParams struct {
 	Status    string
 	Result    []byte
 	DecidedAt *time.Time
-	UserID    int64
+	BooksID   int64
 	ID        uuid.UUID
 }
 
@@ -96,7 +96,7 @@ func (q *Queries) DecideProposal(ctx context.Context, arg DecideProposalParams) 
 		arg.Status,
 		arg.Result,
 		arg.DecidedAt,
-		arg.UserID,
+		arg.BooksID,
 		arg.ID,
 	)
 	return err
@@ -108,19 +108,19 @@ SET
     status = 'discarded',
     decided_at = $1
 WHERE
-    user_id = $2
+    books_id = $2
     AND id = ANY ($3::UUID[])
     AND status = 'pending'
 `
 
 type DiscardProposalsParams struct {
-	At     *time.Time
-	UserID int64
-	Ids    []uuid.UUID
+	At      *time.Time
+	BooksID int64
+	Ids     []uuid.UUID
 }
 
 func (q *Queries) DiscardProposals(ctx context.Context, arg DiscardProposalsParams) error {
-	_, err := q.db.Exec(ctx, discardProposals, arg.At, arg.UserID, arg.Ids)
+	_, err := q.db.Exec(ctx, discardProposals, arg.At, arg.BooksID, arg.Ids)
 	return err
 }
 
@@ -128,7 +128,7 @@ const insertProposal = `-- name: InsertProposal :exec
 INSERT INTO
     assistant_proposal (
         id,
-        user_id,
+        books_id,
         conversation_id,
         message_id,
         tool,
@@ -161,7 +161,7 @@ VALUES
 
 type InsertProposalParams struct {
 	ID             uuid.UUID
-	UserID         int64
+	BooksID        int64
 	ConversationID uuid.UUID
 	MessageID      uuid.NullUUID
 	Tool           string
@@ -178,7 +178,7 @@ type InsertProposalParams struct {
 func (q *Queries) InsertProposal(ctx context.Context, arg InsertProposalParams) error {
 	_, err := q.db.Exec(ctx, insertProposal,
 		arg.ID,
-		arg.UserID,
+		arg.BooksID,
 		arg.ConversationID,
 		arg.MessageID,
 		arg.Tool,
@@ -196,11 +196,11 @@ func (q *Queries) InsertProposal(ctx context.Context, arg InsertProposalParams) 
 
 const listProposals = `-- name: ListProposals :many
 SELECT
-    id, user_id, conversation_id, message_id, tool, arguments, preview, basis, status, result, created_at, expires_at, decided_at
+    id, books_id, conversation_id, message_id, tool, arguments, preview, basis, status, result, created_at, expires_at, decided_at
 FROM
     assistant_proposal
 WHERE
-    user_id = $1
+    books_id = $1
     AND conversation_id = $2
 ORDER BY
     created_at,
@@ -208,12 +208,12 @@ ORDER BY
 `
 
 type ListProposalsParams struct {
-	UserID         int64
+	BooksID        int64
 	ConversationID uuid.UUID
 }
 
 func (q *Queries) ListProposals(ctx context.Context, arg ListProposalsParams) ([]AssistantProposal, error) {
-	rows, err := q.db.Query(ctx, listProposals, arg.UserID, arg.ConversationID)
+	rows, err := q.db.Query(ctx, listProposals, arg.BooksID, arg.ConversationID)
 	if err != nil {
 		return nil, err
 	}
@@ -223,7 +223,7 @@ func (q *Queries) ListProposals(ctx context.Context, arg ListProposalsParams) ([
 		var i AssistantProposal
 		if err := rows.Scan(
 			&i.ID,
-			&i.UserID,
+			&i.BooksID,
 			&i.ConversationID,
 			&i.MessageID,
 			&i.Tool,
@@ -248,25 +248,25 @@ func (q *Queries) ListProposals(ctx context.Context, arg ListProposalsParams) ([
 
 const proposalByID = `-- name: ProposalByID :one
 SELECT
-    id, user_id, conversation_id, message_id, tool, arguments, preview, basis, status, result, created_at, expires_at, decided_at
+    id, books_id, conversation_id, message_id, tool, arguments, preview, basis, status, result, created_at, expires_at, decided_at
 FROM
     assistant_proposal
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2
 `
 
 type ProposalByIDParams struct {
-	UserID int64
-	ID     uuid.UUID
+	BooksID int64
+	ID      uuid.UUID
 }
 
 func (q *Queries) ProposalByID(ctx context.Context, arg ProposalByIDParams) (AssistantProposal, error) {
-	row := q.db.QueryRow(ctx, proposalByID, arg.UserID, arg.ID)
+	row := q.db.QueryRow(ctx, proposalByID, arg.BooksID, arg.ID)
 	var i AssistantProposal
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.ConversationID,
 		&i.MessageID,
 		&i.Tool,
@@ -288,20 +288,20 @@ SET
     status = 'rejected',
     decided_at = $1
 WHERE
-    user_id = $2
+    books_id = $2
     AND id = $3
     AND status = 'pending'
     AND expires_at > $1
 `
 
 type RejectProposalParams struct {
-	Now    *time.Time
-	UserID int64
-	ID     uuid.UUID
+	Now     *time.Time
+	BooksID int64
+	ID      uuid.UUID
 }
 
 func (q *Queries) RejectProposal(ctx context.Context, arg RejectProposalParams) (int64, error) {
-	result, err := q.db.Exec(ctx, rejectProposal, arg.Now, arg.UserID, arg.ID)
+	result, err := q.db.Exec(ctx, rejectProposal, arg.Now, arg.BooksID, arg.ID)
 	if err != nil {
 		return 0, err
 	}

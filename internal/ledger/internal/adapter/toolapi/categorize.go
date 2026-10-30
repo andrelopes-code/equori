@@ -43,8 +43,8 @@ func categorizeTransactions(svc *app.Service) tool.Tool {
 			"Do not use it to split a transaction among categories: change_transaction does. " +
 			"The user confirms before categories change.",
 		Effect: tool.Write,
-	}, func(ctx context.Context, userID int64, in categorizeTransactionsIn) (tool.Preview, error) {
-		p, err := planCategorize(ctx, svc, userID, in)
+	}, func(ctx context.Context, booksID int64, in categorizeTransactionsIn) (tool.Preview, error) {
+		p, err := planCategorize(ctx, svc, booksID, in)
 		if err != nil {
 			return tool.Preview{}, err
 		}
@@ -61,7 +61,7 @@ func categorizeTransactions(svc *app.Service) tool.Tool {
 			Changes: []tool.Change{{Field: "category", After: tool.TextValue(p.category.Name)}},
 		}
 		if p.payeeID != uuid.Nil {
-			names, err := svc.PayeeNames(ctx, userID, []uuid.UUID{p.payeeID})
+			names, err := svc.PayeeNames(ctx, booksID, []uuid.UUID{p.payeeID})
 			if err != nil {
 				return tool.Preview{}, err
 			}
@@ -70,13 +70,13 @@ func categorizeTransactions(svc *app.Service) tool.Tool {
 		}
 
 		return pv, nil
-	}, func(ctx context.Context, userID int64, in categorizeTransactionsIn) (categorizeTransactionsOut, error) {
-		p, err := planCategorize(ctx, svc, userID, in)
+	}, func(ctx context.Context, booksID int64, in categorizeTransactionsIn) (categorizeTransactionsOut, error) {
+		p, err := planCategorize(ctx, svc, booksID, in)
 		if err != nil {
 			return categorizeTransactionsOut{}, err
 		}
 
-		errs, err := svc.CategorizeMany(ctx, userID, p.category.ID, p.items)
+		errs, err := svc.CategorizeMany(ctx, booksID, p.category.ID, p.items)
 		if err != nil {
 			return categorizeTransactionsOut{}, err
 		}
@@ -88,12 +88,12 @@ func categorizeTransactions(svc *app.Service) tool.Tool {
 				continue
 			}
 
-			t, err := svc.Transaction(ctx, userID, it.ID)
+			t, err := svc.Transaction(ctx, booksID, it.ID)
 			if err != nil {
 				return out, err
 			}
 
-			cerrs, err := svc.Categorize(ctx, userID, []app.Categorization{{
+			cerrs, err := svc.Categorize(ctx, booksID, []app.Categorization{{
 				TransactionID: it.ID, ExpectedVersion: t.Version, PayeeID: &p.payeeID, Cause: app.Cause{Method: app.MethodManual},
 			}})
 			if err != nil {
@@ -123,7 +123,7 @@ func bulkStatus(err error) string {
 	return "not_categorizable"
 }
 
-func planCategorize(ctx context.Context, svc *app.Service, userID int64, in categorizeTransactionsIn) (categorizePlan, error) {
+func planCategorize(ctx context.Context, svc *app.Service, booksID int64, in categorizeTransactionsIn) (categorizePlan, error) {
 	var p categorizePlan
 	if n := len(in.TransactionIDs); n < 1 || n > 50 {
 		return p, tool.InvalidArgument("transaction_ids", "must have between 1 and 50 items")
@@ -138,7 +138,7 @@ func planCategorize(ctx context.Context, svc *app.Service, userID int64, in cate
 		return p, err
 	}
 
-	if p.category, err = svc.Account(ctx, userID, categoryID); err != nil {
+	if p.category, err = svc.Account(ctx, booksID, categoryID); err != nil {
 		return p, err
 	}
 
@@ -152,7 +152,7 @@ func planCategorize(ctx context.Context, svc *app.Service, userID int64, in cate
 			return p, err
 		}
 
-		t, err := svc.Transaction(ctx, userID, id)
+		t, err := svc.Transaction(ctx, booksID, id)
 		if err != nil {
 			return p, err
 		}

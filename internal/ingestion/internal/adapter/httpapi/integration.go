@@ -16,7 +16,7 @@ func toIntegrationAPI(i domain.Integration) Integration {
 func (s *Server) CreateIntegration(ctx context.Context, req CreateIntegrationRequestObject) (CreateIntegrationResponseObject, error) {
 	b := req.Body
 
-	i, err := s.svc.CreateIntegration(ctx, auth.MustUserID(ctx), domain.AggregatorID(b.Aggregator), b.Name,
+	i, err := s.svc.CreateIntegration(ctx, auth.MustBooksID(ctx), domain.AggregatorID(b.Aggregator), b.Name,
 		domain.Credentials(b.Credentials))
 	if err != nil {
 		return nil, err
@@ -33,7 +33,7 @@ func (s *Server) ListIntegrations(ctx context.Context, req ListIntegrationsReque
 		return nil, err
 	}
 
-	is, next, err := s.svc.ListIntegrations(ctx, auth.MustUserID(ctx), p)
+	is, next, err := s.svc.ListIntegrations(ctx, auth.MustBooksID(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +49,7 @@ func (s *Server) ListIntegrations(ctx context.Context, req ListIntegrationsReque
 }
 
 func (s *Server) GetIntegration(ctx context.Context, req GetIntegrationRequestObject) (GetIntegrationResponseObject, error) {
-	i, err := s.svc.Integration(ctx, auth.MustUserID(ctx), req.Id)
+	i, err := s.svc.Integration(ctx, auth.MustBooksID(ctx), req.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +58,7 @@ func (s *Server) GetIntegration(ctx context.Context, req GetIntegrationRequestOb
 }
 
 func (s *Server) UpdateIntegrationCredentials(ctx context.Context, req UpdateIntegrationCredentialsRequestObject) (UpdateIntegrationCredentialsResponseObject, error) {
-	i, err := s.svc.UpdateCredentials(ctx, auth.MustUserID(ctx), req.Id, domain.Credentials(*req.Body))
+	i, err := s.svc.UpdateCredentials(ctx, auth.MustBooksID(ctx), req.Id, domain.Credentials(*req.Body))
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +67,7 @@ func (s *Server) UpdateIntegrationCredentials(ctx context.Context, req UpdateInt
 }
 
 func (s *Server) DeleteIntegration(ctx context.Context, req DeleteIntegrationRequestObject) (DeleteIntegrationResponseObject, error) {
-	if err := s.svc.DeleteIntegration(ctx, auth.MustUserID(ctx), req.Id); err != nil {
+	if err := s.svc.DeleteIntegration(ctx, auth.MustBooksID(ctx), req.Id); err != nil {
 		return nil, err
 	}
 

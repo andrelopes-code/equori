@@ -42,11 +42,11 @@ func reconcileAccount(svc *app.Service) tool.Tool {
 			"Do not use it to correct a single transaction: change_transaction does. " +
 			"The user confirms first.",
 		Effect: tool.Write,
-	}, func(ctx context.Context, userID int64, in reconcileAccountIn) (tool.Preview, error) {
-		pv, _, err := planReconcile(ctx, svc, userID, in)
+	}, func(ctx context.Context, booksID int64, in reconcileAccountIn) (tool.Preview, error) {
+		pv, _, err := planReconcile(ctx, svc, booksID, in)
 		return pv, err
-	}, func(ctx context.Context, userID int64, in reconcileAccountIn) (reconcileAccountOut, error) {
-		_, run, err := planReconcile(ctx, svc, userID, in)
+	}, func(ctx context.Context, booksID int64, in reconcileAccountIn) (reconcileAccountOut, error) {
+		_, run, err := planReconcile(ctx, svc, booksID, in)
 		if err != nil {
 			return reconcileAccountOut{}, err
 		}
@@ -55,7 +55,7 @@ func reconcileAccount(svc *app.Service) tool.Tool {
 	})
 }
 
-func planReconcile(ctx context.Context, svc *app.Service, userID int64, in reconcileAccountIn) (tool.Preview, func() (reconcileAccountOut, error), error) {
+func planReconcile(ctx context.Context, svc *app.Service, booksID int64, in reconcileAccountIn) (tool.Preview, func() (reconcileAccountOut, error), error) {
 	action := string(in.Action)
 	pv := tool.Preview{Action: "reconcile_account"}
 
@@ -80,7 +80,7 @@ func planReconcile(ctx context.Context, svc *app.Service, userID int64, in recon
 		return pv, nil, err
 	}
 
-	a, err := svc.Account(ctx, userID, id)
+	a, err := svc.Account(ctx, booksID, id)
 	if err != nil {
 		return pv, nil, err
 	}
@@ -101,11 +101,11 @@ func planReconcile(ctx context.Context, svc *app.Service, userID int64, in recon
 		pv.Changes = []tool.Change{{Field: "amount", After: tool.MoneyValue(amount)}, {Field: "date", After: tool.DateValue(in.Date.Time)}}
 
 		return pv, func() (reconcileAccountOut, error) {
-			res, err := svc.AssertBalance(ctx, userID, a.ID, in.Date.Time, amount, app.SourceManual)
+			res, err := svc.AssertBalance(ctx, booksID, a.ID, in.Date.Time, amount, app.SourceManual)
 			return assertionOut(a.ID.String(), res), err
 		}, nil
 	case "resolve_difference":
-		st, err := svc.ReconciliationStatus(ctx, userID, a.ID)
+		st, err := svc.ReconciliationStatus(ctx, booksID, a.ID)
 		if err != nil {
 			return pv, nil, err
 		}
@@ -122,14 +122,14 @@ func planReconcile(ctx context.Context, svc *app.Service, userID int64, in recon
 		}
 
 		return pv, func() (reconcileAccountOut, error) {
-			res, err := svc.ResolveAssertion(ctx, userID, st.Open.AssertionID, domain.Resolution(in.Resolution))
+			res, err := svc.ResolveAssertion(ctx, booksID, st.Open.AssertionID, domain.Resolution(in.Resolution))
 			return assertionOut(a.ID.String(), res), err
 		}, nil
 	default:
 		pv.Changes = []tool.Change{{Field: "date", After: tool.DateValue(in.Date.Time)}, {Field: "status", Before: tool.TextValue("reconciled"), After: tool.TextValue("unlocked")}}
 
 		return pv, func() (reconcileAccountOut, error) {
-			return reconcileAccountOut{AccountID: a.ID.String()}, svc.Unlock(ctx, userID, a.ID, in.Date.Time)
+			return reconcileAccountOut{AccountID: a.ID.String()}, svc.Unlock(ctx, booksID, a.ID, in.Date.Time)
 		}, nil
 	}
 }

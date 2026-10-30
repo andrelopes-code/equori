@@ -3,7 +3,7 @@
 -- When the destination has a budget, the source budget and its amounts go.
 DELETE FROM planning_budget b
 WHERE
-    b.user_id = @user_id
+    b.books_id = @books_id
     AND b.category_account_id = @from_id
     AND EXISTS (
         SELECT
@@ -11,7 +11,7 @@ WHERE
         FROM
             planning_budget o
         WHERE
-            o.user_id = @user_id
+            o.books_id = @books_id
             AND o.category_account_id = @into_id
     );
 
@@ -20,7 +20,7 @@ UPDATE planning_budget
 SET
     category_account_id = @into_id
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND category_account_id = @from_id;
 
 -- name: MergeScheduleAccounts :exec
@@ -36,7 +36,7 @@ SET
     END,
     updated_at = now()
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND (
         account_id = @from_id
         OR counterpart_id = @from_id
@@ -49,5 +49,5 @@ SET
     payee_id = @into_id,
     updated_at = now()
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND payee_id = @from_id;

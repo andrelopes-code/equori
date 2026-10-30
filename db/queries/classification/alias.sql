@@ -4,7 +4,7 @@ SELECT
 FROM
     classification_payee_alias
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND (
         sqlc.narg (after_id)::uuid IS NULL
         OR id > sqlc.narg (after_id)::uuid
@@ -20,7 +20,7 @@ SELECT
 FROM
     classification_payee_alias
 WHERE
-    user_id = $1
+    books_id = $1
 ORDER BY
     id;
 
@@ -30,14 +30,14 @@ SELECT
 FROM
     classification_payee_alias
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2;
 
 -- name: InsertAlias :one
 INSERT INTO
-    classification_payee_alias (user_id, pattern, match_type, payee_id)
+    classification_payee_alias (books_id, pattern, match_type, payee_id)
 VALUES
-    (@user_id, @pattern, @match_type, @payee_id)
+    (@books_id, @pattern, @match_type, @payee_id)
 RETURNING
     *;
 
@@ -48,7 +48,7 @@ SET
     match_type = @match_type,
     payee_id = @payee_id
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND id = @id
 RETURNING
     *;
@@ -56,5 +56,5 @@ RETURNING
 -- name: DeleteAlias :execrows
 DELETE FROM classification_payee_alias
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2;

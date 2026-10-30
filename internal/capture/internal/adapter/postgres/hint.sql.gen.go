@@ -21,12 +21,12 @@ SELECT
 FROM
     capture_category_hint
 WHERE
-    user_id = $1
+    books_id = $1
     AND description = ANY ($2::TEXT[])
 `
 
 type CategoryHintsParams struct {
-	UserID       int64
+	BooksID      int64
 	Descriptions []string
 }
 
@@ -38,7 +38,7 @@ type CategoryHintsRow struct {
 }
 
 func (q *Queries) CategoryHints(ctx context.Context, arg CategoryHintsParams) ([]CategoryHintsRow, error) {
-	rows, err := q.db.Query(ctx, categoryHints, arg.UserID, arg.Descriptions)
+	rows, err := q.db.Query(ctx, categoryHints, arg.BooksID, arg.Descriptions)
 	if err != nil {
 		return nil, err
 	}
@@ -64,17 +64,17 @@ func (q *Queries) CategoryHints(ctx context.Context, arg CategoryHintsParams) ([
 
 const saveCategoryHint = `-- name: SaveCategoryHint :exec
 INSERT INTO
-    capture_category_hint (user_id, class, description, category_id, answered_at)
+    capture_category_hint (books_id, class, description, category_id, answered_at)
 VALUES
     ($1, $2, $3, $4, $5)
-ON CONFLICT (user_id, class, description) DO UPDATE
+ON CONFLICT (books_id, class, description) DO UPDATE
 SET
     category_id = EXCLUDED.category_id,
     answered_at = EXCLUDED.answered_at
 `
 
 type SaveCategoryHintParams struct {
-	UserID      int64
+	BooksID     int64
 	Class       string
 	Description string
 	CategoryID  uuid.NullUUID
@@ -83,7 +83,7 @@ type SaveCategoryHintParams struct {
 
 func (q *Queries) SaveCategoryHint(ctx context.Context, arg SaveCategoryHintParams) error {
 	_, err := q.db.Exec(ctx, saveCategoryHint,
-		arg.UserID,
+		arg.BooksID,
 		arg.Class,
 		arg.Description,
 		arg.CategoryID,

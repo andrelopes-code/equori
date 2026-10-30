@@ -132,7 +132,7 @@ func (s *Server) ListPresets(context.Context, ListPresetsRequestObject) (ListPre
 }
 
 func (s *Server) ListProviders(ctx context.Context, _ ListProvidersRequestObject) (ListProvidersResponseObject, error) {
-	views, err := s.svc.Providers(ctx, auth.MustUserID(ctx))
+	views, err := s.svc.Providers(ctx, auth.MustBooksID(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -156,7 +156,7 @@ func value(p *string) string {
 func (s *Server) CreateProvider(ctx context.Context, req CreateProviderRequestObject) (CreateProviderResponseObject, error) {
 	b := req.Body
 
-	v, err := s.svc.CreateProvider(ctx, auth.MustUserID(ctx), app.ProviderInput{
+	v, err := s.svc.CreateProvider(ctx, auth.MustBooksID(ctx), app.ProviderInput{
 		Preset: b.Preset, Name: b.Name, BaseURL: value(b.BaseUrl), Key: value(b.Key),
 	})
 	if err != nil {
@@ -167,7 +167,7 @@ func (s *Server) CreateProvider(ctx context.Context, req CreateProviderRequestOb
 }
 
 func (s *Server) UpdateProvider(ctx context.Context, req UpdateProviderRequestObject) (UpdateProviderResponseObject, error) {
-	v, err := s.svc.UpdateProvider(ctx, auth.MustUserID(ctx), req.Id, app.ProviderPatch{
+	v, err := s.svc.UpdateProvider(ctx, auth.MustBooksID(ctx), req.Id, app.ProviderPatch{
 		Name: req.Body.Name, BaseURL: req.Body.BaseUrl, Key: req.Body.Key,
 	})
 	if err != nil {
@@ -178,7 +178,7 @@ func (s *Server) UpdateProvider(ctx context.Context, req UpdateProviderRequestOb
 }
 
 func (s *Server) DeleteProvider(ctx context.Context, req DeleteProviderRequestObject) (DeleteProviderResponseObject, error) {
-	if err := s.svc.DeleteProvider(ctx, auth.MustUserID(ctx), req.Id); err != nil {
+	if err := s.svc.DeleteProvider(ctx, auth.MustBooksID(ctx), req.Id); err != nil {
 		return nil, err
 	}
 
@@ -186,7 +186,7 @@ func (s *Server) DeleteProvider(ctx context.Context, req DeleteProviderRequestOb
 }
 
 func (s *Server) ListProviderModels(ctx context.Context, req ListProviderModelsRequestObject) (ListProviderModelsResponseObject, error) {
-	ids, err := s.svc.ProviderModels(ctx, auth.MustUserID(ctx), req.Id)
+	ids, err := s.svc.ProviderModels(ctx, auth.MustBooksID(ctx), req.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -212,7 +212,7 @@ func toUse(v app.UseView) Use {
 }
 
 func (s *Server) ListUses(ctx context.Context, _ ListUsesRequestObject) (ListUsesResponseObject, error) {
-	views, err := s.svc.Uses(ctx, auth.MustUserID(ctx))
+	views, err := s.svc.Uses(ctx, auth.MustBooksID(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -226,7 +226,7 @@ func (s *Server) ListUses(ctx context.Context, _ ListUsesRequestObject) (ListUse
 }
 
 func (s *Server) SetUseChain(ctx context.Context, req SetUseChainRequestObject) (SetUseChainResponseObject, error) {
-	userID := auth.MustUserID(ctx)
+	booksID := auth.MustBooksID(ctx)
 
 	in := make([]app.ChainInput, len(req.Body.Targets))
 	for i, t := range req.Body.Targets {
@@ -238,11 +238,11 @@ func (s *Server) SetUseChain(ctx context.Context, req SetUseChainRequestObject) 
 		}
 	}
 
-	if err := s.svc.SetChain(ctx, userID, req.Use, in); err != nil {
+	if err := s.svc.SetChain(ctx, booksID, req.Use, in); err != nil {
 		return nil, err
 	}
 
-	views, err := s.svc.Uses(ctx, userID)
+	views, err := s.svc.Uses(ctx, booksID)
 	if err != nil {
 		return nil, err
 	}

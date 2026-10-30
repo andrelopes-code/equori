@@ -11,7 +11,7 @@ import (
 )
 
 type PortfolioIncomeEvent struct {
-	UserID        int64
+	BooksID       int64
 	TransactionID uuid.UUID
 	AccountID     uuid.UUID
 	Instrument    string
@@ -24,7 +24,7 @@ type PortfolioIncomeEvent struct {
 }
 
 type PortfolioPositionDay struct {
-	UserID     int64
+	BooksID    int64
 	AccountID  uuid.UUID
 	Instrument string
 	Date       time.Time
@@ -33,7 +33,7 @@ type PortfolioPositionDay struct {
 }
 
 type PortfolioRealizedResult struct {
-	UserID        int64
+	BooksID       int64
 	TransactionID uuid.UUID
 	AccountID     uuid.UUID
 	Instrument    string

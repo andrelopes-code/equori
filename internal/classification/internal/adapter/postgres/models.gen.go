@@ -12,7 +12,7 @@ import (
 
 type ClassificationCategorization struct {
 	TransactionID      uuid.UUID
-	UserID             int64
+	BooksID            int64
 	TransactionVersion int32
 	TransactionDate    time.Time
 	Method             *string
@@ -26,7 +26,7 @@ type ClassificationCategorization struct {
 
 type ClassificationPayeeAlias struct {
 	ID        uuid.UUID
-	UserID    int64
+	BooksID   int64
 	Pattern   string
 	MatchType string
 	PayeeID   uuid.UUID
@@ -35,7 +35,7 @@ type ClassificationPayeeAlias struct {
 
 type ClassificationRule struct {
 	ID             uuid.UUID
-	UserID         int64
+	BooksID        int64
 	Name           string
 	Priority       int32
 	Enabled        bool
@@ -49,7 +49,7 @@ type ClassificationRule struct {
 
 type ClassificationSourceCategory struct {
 	ID         uuid.UUID
-	UserID     int64
+	BooksID    int64
 	Aggregator string
 	ExternalID string
 	Name       string
@@ -59,7 +59,7 @@ type ClassificationSourceCategory struct {
 
 type ClassificationSuggestion struct {
 	ID                    uuid.UUID
-	UserID                int64
+	BooksID               int64
 	Fingerprint           string
 	Conditions            []byte
 	Actions               []byte

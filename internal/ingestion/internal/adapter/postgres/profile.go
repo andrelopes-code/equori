@@ -45,15 +45,15 @@ func value(s *string) string {
 
 func toProfile(row IngestionCsvProfile) domain.Profile {
 	return domain.Profile{
-		UserID: row.UserID, AccountID: row.AccountID, Delimiter: row.Delimiter, HeaderRows: int(row.HeaderRows),
+		BooksID: row.BooksID, AccountID: row.AccountID, Delimiter: row.Delimiter, HeaderRows: int(row.HeaderRows),
 		DateColumn: row.DateColumn, DateLayout: domain.DateLayout(row.DateLayout), AmountColumn: value(row.AmountColumn),
 		DebitColumn: value(row.DebitColumn), CreditColumn: value(row.CreditColumn), DecimalSeparator: row.DecimalSeparator,
 		DescriptionColumn: row.DescriptionColumn, IDColumn: value(row.IDColumn), AmountSign: domain.AmountSign(row.AmountSign), Encoding: row.Encoding, GroupSeparator: row.GroupSeparator,
 	}
 }
 
-func (r *Repository) Profile(ctx context.Context, userID int64, accountID uuid.UUID) (domain.Profile, error) {
-	row, err := r.q.GetProfile(ctx, GetProfileParams{UserID: userID, AccountID: accountID})
+func (r *Repository) Profile(ctx context.Context, booksID int64, accountID uuid.UUID) (domain.Profile, error) {
+	row, err := r.q.GetProfile(ctx, GetProfileParams{BooksID: booksID, AccountID: accountID})
 	if err != nil {
 		return domain.Profile{}, notFound(err)
 	}
@@ -63,7 +63,7 @@ func (r *Repository) Profile(ctx context.Context, userID int64, accountID uuid.U
 
 func (r *Repository) SaveProfile(ctx context.Context, p domain.Profile) (domain.Profile, error) {
 	row, err := r.q.UpsertProfile(ctx, UpsertProfileParams{
-		UserID: p.UserID, AccountID: p.AccountID, Delimiter: p.Delimiter, HeaderRows: int32(p.HeaderRows), //nolint:gosec // at most 10
+		BooksID: p.BooksID, AccountID: p.AccountID, Delimiter: p.Delimiter, HeaderRows: int32(p.HeaderRows), //nolint:gosec // at most 10
 		DateColumn: p.DateColumn, DateLayout: string(p.DateLayout), AmountColumn: optional(p.AmountColumn),
 		DebitColumn: optional(p.DebitColumn), CreditColumn: optional(p.CreditColumn), DecimalSeparator: p.DecimalSeparator,
 		DescriptionColumn: p.DescriptionColumn, IDColumn: optional(p.IDColumn), AmountSign: string(p.AmountSign), Encoding: p.Encoding, GroupSeparator: p.GroupSeparator,

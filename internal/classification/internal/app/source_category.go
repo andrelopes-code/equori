@@ -29,15 +29,15 @@ type NameKey struct {
 	ID   uuid.UUID `json:"i"`
 }
 
-func (s *Service) ListSourceCategories(ctx context.Context, userID int64, p page.Request[NameKey]) ([]SourceCategory, *NameKey, error) {
-	return s.repo.ListSourceCategories(ctx, userID, p)
+func (s *Service) ListSourceCategories(ctx context.Context, booksID int64, p page.Request[NameKey]) ([]SourceCategory, *NameKey, error) {
+	return s.repo.ListSourceCategories(ctx, booksID, p)
 }
 
 // MapSourceCategory sets the category that lines carrying the source category get when no
 // rule decides them; uuid.Nil clears it.
-func (s *Service) MapSourceCategory(ctx context.Context, userID int64, id, categoryID uuid.UUID) (SourceCategory, error) {
+func (s *Service) MapSourceCategory(ctx context.Context, booksID int64, id, categoryID uuid.UUID) (SourceCategory, error) {
 	if categoryID != uuid.Nil {
-		accounts, err := s.accounts(ctx, userID)
+		accounts, err := s.accounts(ctx, booksID)
 		if err != nil {
 			return SourceCategory{}, err
 		}
@@ -47,12 +47,12 @@ func (s *Service) MapSourceCategory(ctx context.Context, userID int64, id, categ
 		}
 	}
 
-	return s.repo.MapSourceCategory(ctx, userID, id, categoryID)
+	return s.repo.MapSourceCategory(ctx, booksID, id, categoryID)
 }
 
 // sourceCategories counts the categories the lines carry and returns, per line, the
 // owner's category for it.
-func (s *Service) sourceCategories(ctx context.Context, userID int64, lines []ImportLine) ([]uuid.UUID, error) {
+func (s *Service) sourceCategories(ctx context.Context, booksID int64, lines []ImportLine) ([]uuid.UUID, error) {
 	out := make([]uuid.UUID, len(lines))
 	seen := map[LineCategory]int{}
 	byAggregator := map[string][]string{}
@@ -89,13 +89,13 @@ func (s *Service) sourceCategories(ctx context.Context, userID int64, lines []Im
 		counts[i] = SourceCategory{Aggregator: k.Aggregator, ExternalID: k.ExternalID, Name: names[k], Count: seen[k]}
 	}
 
-	if err := s.repo.CountSourceCategories(ctx, userID, counts); err != nil {
+	if err := s.repo.CountSourceCategories(ctx, booksID, counts); err != nil {
 		return nil, err
 	}
 
 	mapped := map[LineCategory]uuid.UUID{}
 	for aggregator, ids := range byAggregator {
-		m, err := s.repo.MappedSourceCategories(ctx, userID, aggregator, ids)
+		m, err := s.repo.MappedSourceCategories(ctx, booksID, aggregator, ids)
 		if err != nil {
 			return nil, err
 		}

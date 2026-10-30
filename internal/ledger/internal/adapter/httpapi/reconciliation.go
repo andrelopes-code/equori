@@ -39,7 +39,7 @@ func (s *Server) CreateBalanceAssertion(ctx context.Context, req CreateBalanceAs
 		return nil, err
 	}
 
-	res, err := s.svc.AssertBalance(ctx, auth.MustUserID(ctx), req.Id, dateOf(req.Body.Date), amount, optString((*string)(req.Body.Source)))
+	res, err := s.svc.AssertBalance(ctx, auth.MustBooksID(ctx), req.Id, dateOf(req.Body.Date), amount, optString((*string)(req.Body.Source)))
 	if err != nil {
 		return nil, err
 	}
@@ -48,9 +48,9 @@ func (s *Server) CreateBalanceAssertion(ctx context.Context, req CreateBalanceAs
 }
 
 func (s *Server) ListBalanceAssertions(ctx context.Context, req ListBalanceAssertionsRequestObject) (ListBalanceAssertionsResponseObject, error) {
-	userID := auth.MustUserID(ctx)
+	booksID := auth.MustBooksID(ctx)
 
-	a, err := s.svc.Account(ctx, userID, req.Id)
+	a, err := s.svc.Account(ctx, booksID, req.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +60,7 @@ func (s *Server) ListBalanceAssertions(ctx context.Context, req ListBalanceAsser
 		return nil, err
 	}
 
-	assertions, next, err := s.svc.BalanceAssertions(ctx, userID, req.Id, p)
+	assertions, next, err := s.svc.BalanceAssertions(ctx, booksID, req.Id, p)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +76,7 @@ func (s *Server) ListBalanceAssertions(ctx context.Context, req ListBalanceAsser
 }
 
 func (s *Server) ResolveBalanceAssertion(ctx context.Context, req ResolveBalanceAssertionRequestObject) (ResolveBalanceAssertionResponseObject, error) {
-	res, err := s.svc.ResolveAssertion(ctx, auth.MustUserID(ctx), req.Id, domain.Resolution(req.Body.Resolution))
+	res, err := s.svc.ResolveAssertion(ctx, auth.MustBooksID(ctx), req.Id, domain.Resolution(req.Body.Resolution))
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +85,7 @@ func (s *Server) ResolveBalanceAssertion(ctx context.Context, req ResolveBalance
 }
 
 func (s *Server) GetReconciliationStatus(ctx context.Context, req GetReconciliationStatusRequestObject) (GetReconciliationStatusResponseObject, error) {
-	out, err := s.reconciliationStatus(ctx, auth.MustUserID(ctx), req.Id)
+	out, err := s.reconciliationStatus(ctx, auth.MustBooksID(ctx), req.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -93,8 +93,8 @@ func (s *Server) GetReconciliationStatus(ctx context.Context, req GetReconciliat
 	return GetReconciliationStatus200JSONResponse(out), nil
 }
 
-func (s *Server) reconciliationStatus(ctx context.Context, userID int64, accountID uuid.UUID) (ReconciliationStatus, error) {
-	st, err := s.svc.ReconciliationStatus(ctx, userID, accountID)
+func (s *Server) reconciliationStatus(ctx context.Context, booksID int64, accountID uuid.UUID) (ReconciliationStatus, error) {
+	st, err := s.svc.ReconciliationStatus(ctx, booksID, accountID)
 	if err != nil {
 		return ReconciliationStatus{}, err
 	}
@@ -108,12 +108,12 @@ func (s *Server) reconciliationStatus(ctx context.Context, userID int64, account
 }
 
 func (s *Server) UnlockAccount(ctx context.Context, req UnlockAccountRequestObject) (UnlockAccountResponseObject, error) {
-	userID := auth.MustUserID(ctx)
-	if err := s.svc.Unlock(ctx, userID, req.Id, dateOf(req.Body.From)); err != nil {
+	booksID := auth.MustBooksID(ctx)
+	if err := s.svc.Unlock(ctx, booksID, req.Id, dateOf(req.Body.From)); err != nil {
 		return nil, err
 	}
 
-	out, err := s.reconciliationStatus(ctx, userID, req.Id)
+	out, err := s.reconciliationStatus(ctx, booksID, req.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -127,12 +127,12 @@ func (s *Server) ReconcileStatement(ctx context.Context, req ReconcileStatementR
 		return nil, err
 	}
 
-	userID := auth.MustUserID(ctx)
-	if err := s.svc.ReconcileStatement(ctx, userID, req.Id, amount); err != nil {
+	booksID := auth.MustBooksID(ctx)
+	if err := s.svc.ReconcileStatement(ctx, booksID, req.Id, amount); err != nil {
 		return nil, err
 	}
 
-	out, err := s.statementDetail(ctx, userID, req.Id)
+	out, err := s.statementDetail(ctx, booksID, req.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -141,12 +141,12 @@ func (s *Server) ReconcileStatement(ctx context.Context, req ReconcileStatementR
 }
 
 func (s *Server) DeferStatementPostings(ctx context.Context, req DeferStatementPostingsRequestObject) (DeferStatementPostingsResponseObject, error) {
-	userID := auth.MustUserID(ctx)
-	if err := s.svc.DeferPostings(ctx, userID, req.Id, req.Body.TransactionIds); err != nil {
+	booksID := auth.MustBooksID(ctx)
+	if err := s.svc.DeferPostings(ctx, booksID, req.Id, req.Body.TransactionIds); err != nil {
 		return nil, err
 	}
 
-	out, err := s.statementDetail(ctx, userID, req.Id)
+	out, err := s.statementDetail(ctx, booksID, req.Id)
 	if err != nil {
 		return nil, err
 	}

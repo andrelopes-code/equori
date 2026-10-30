@@ -43,11 +43,11 @@ type Payee struct {
 
 // Ledger is what the capture reads from the ledger.
 type Ledger interface {
-	Vocabulary(ctx context.Context, userID int64) ([]Account, []Payee, error)
-	BaseCurrency(ctx context.Context, userID int64) (money.Currency, error)
+	Vocabulary(ctx context.Context, booksID int64) ([]Account, []Payee, error)
+	BaseCurrency(ctx context.Context, booksID int64) (money.Currency, error)
 	// Transactions returns the user's transactions among ids in the order of ids; unknown ids
 	// are omitted.
-	Transactions(ctx context.Context, userID int64, ids []uuid.UUID) ([]Transaction, error)
+	Transactions(ctx context.Context, booksID int64, ids []uuid.UUID) ([]Transaction, error)
 	Today() time.Time
 }
 
@@ -71,7 +71,7 @@ type Decision struct {
 }
 
 type Classifier interface {
-	Decide(ctx context.Context, userID int64, entries []Entry) ([]Decision, error)
+	Decide(ctx context.Context, booksID int64, entries []Entry) ([]Decision, error)
 }
 
 // Line is a read line with the payee and category the owner's books decide for it.
@@ -84,7 +84,7 @@ type Line struct {
 
 // Profiles supplies the language and region a user's lines are read in.
 type Profiles interface {
-	Profile(ctx context.Context, userID int64) (locale.Locale, error)
+	Profile(ctx context.Context, booksID int64) (locale.Locale, error)
 }
 
 type Clock interface{ Now() time.Time }
@@ -105,7 +105,7 @@ func NewService(l Ledger, c Classifier, h HintRepository, p Profiles, sg Suggest
 
 // Preview reads text into drafts (A106–A113). It records nothing.
 // Preview reads text into lines; a zero reference reads it against today (A128).
-func (s *Service) Preview(ctx context.Context, userID int64, text string, defaultAccount uuid.UUID, reference time.Time) ([]Line, error) {
+func (s *Service) Preview(ctx context.Context, booksID int64, text string, defaultAccount uuid.UUID, reference time.Time) ([]Line, error) {
 	blank := 0
 
 	pieces := domain.SplitLines(text)
@@ -119,17 +119,17 @@ func (s *Service) Preview(ctx context.Context, userID int64, text string, defaul
 		return nil, ErrTooManyLines
 	}
 
-	accounts, payees, err := s.ledger.Vocabulary(ctx, userID)
+	accounts, payees, err := s.ledger.Vocabulary(ctx, booksID)
 	if err != nil {
 		return nil, err
 	}
 
-	base, err := s.ledger.BaseCurrency(ctx, userID)
+	base, err := s.ledger.BaseCurrency(ctx, booksID)
 	if err != nil {
 		return nil, err
 	}
 
-	profile, err := s.profiles.Profile(ctx, userID)
+	profile, err := s.profiles.Profile(ctx, booksID)
 	if err != nil {
 		return nil, err
 	}
@@ -170,7 +170,7 @@ func (s *Service) Preview(ctx context.Context, userID int64, text string, defaul
 		return lines, nil
 	}
 
-	decisions, err := s.classifier.Decide(ctx, userID, entries)
+	decisions, err := s.classifier.Decide(ctx, booksID, entries)
 	if err != nil {
 		return nil, err
 	}

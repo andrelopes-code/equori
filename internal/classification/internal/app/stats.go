@@ -12,8 +12,8 @@ type Statistics struct {
 	Total, Rule, Source, History, Manual, Uncategorized int
 }
 
-func (s *Service) Statistics(ctx context.Context, userID int64, from, to time.Time) (Statistics, error) {
-	counts, err := s.repo.CountMethods(ctx, userID, from, to)
+func (s *Service) Statistics(ctx context.Context, booksID int64, from, to time.Time) (Statistics, error) {
+	counts, err := s.repo.CountMethods(ctx, booksID, from, to)
 	if err != nil {
 		return Statistics{}, err
 	}
@@ -28,8 +28,8 @@ func (s *Service) Statistics(ctx context.Context, userID int64, from, to time.Ti
 }
 
 // Categorization returns the record of a transaction; ErrNotFound when it has none.
-func (s *Service) Categorization(ctx context.Context, userID int64, transactionID uuid.UUID) (Record, error) {
-	return s.repo.Categorization(ctx, userID, transactionID)
+func (s *Service) Categorization(ctx context.Context, booksID int64, transactionID uuid.UUID) (Record, error) {
+	return s.repo.Categorization(ctx, booksID, transactionID)
 }
 
 // RuleUsage is how many current categorizations a rule decided and when it last did (A80).
@@ -38,10 +38,10 @@ type RuleUsage struct {
 	Last  time.Time
 }
 
-func (s *Service) Categorizations(ctx context.Context, userID int64, ids []uuid.UUID) ([]Record, error) {
-	return s.repo.Categorizations(ctx, userID, ids)
+func (s *Service) Categorizations(ctx context.Context, booksID int64, ids []uuid.UUID) ([]Record, error) {
+	return s.repo.Categorizations(ctx, booksID, ids)
 }
 
-func (s *Service) RuleUsage(ctx context.Context, userID int64, ids []uuid.UUID) (map[uuid.UUID]RuleUsage, error) {
-	return s.repo.RuleUsage(ctx, userID, ids)
+func (s *Service) RuleUsage(ctx context.Context, booksID int64, ids []uuid.UUID) (map[uuid.UUID]RuleUsage, error) {
+	return s.repo.RuleUsage(ctx, booksID, ids)
 }

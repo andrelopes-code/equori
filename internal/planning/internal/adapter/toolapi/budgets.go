@@ -163,7 +163,7 @@ func getBudgetsAndGoals(svc *app.Service, l Ledger, clk clock.Clock) tool.Tool {
 			"Use it for how a budget or goal is going, or how much income still has no budget. " +
 			"Do not use it for spending by category without a budget: get_category_totals does.",
 		Effect: tool.ReadOnly, Idempotent: true,
-	}, func(ctx context.Context, userID int64, in getBudgetsAndGoalsIn) (getBudgetsAndGoalsOut, error) {
+	}, func(ctx context.Context, booksID int64, in getBudgetsAndGoalsIn) (getBudgetsAndGoalsOut, error) {
 		month, err := parseMonth("month", in.Month, firstOfMonth(clk.Today()))
 		if err != nil {
 			return getBudgetsAndGoalsOut{}, err
@@ -171,12 +171,12 @@ func getBudgetsAndGoals(svc *app.Service, l Ledger, clk clock.Clock) tool.Tool {
 
 		out := getBudgetsAndGoalsOut{Month: month.Format(monthLayout), Budgets: []budgetView{}, Goals: []goalView{}}
 		if in.Kind == "plan" {
-			p, err := svc.BudgetPlan(ctx, userID, month)
+			p, err := svc.BudgetPlan(ctx, booksID, month)
 			if err != nil {
 				return out, err
 			}
 
-			accounts, err := l.Accounts(ctx, userID)
+			accounts, err := l.Accounts(ctx, booksID)
 			if err != nil {
 				return out, err
 			}
@@ -187,14 +187,14 @@ func getBudgetsAndGoals(svc *app.Service, l Ledger, clk clock.Clock) tool.Tool {
 		}
 
 		if in.Kind != "goals" {
-			accounts, err := l.Accounts(ctx, userID)
+			accounts, err := l.Accounts(ctx, booksID)
 			if err != nil {
 				return out, err
 			}
 
 			r := page.Request[app.IDKey]{Limit: page.MaxLimit}
 			for {
-				bs, next, err := svc.ListBudgets(ctx, userID, r)
+				bs, next, err := svc.ListBudgets(ctx, booksID, r)
 				if err != nil {
 					return out, err
 				}
@@ -205,7 +205,7 @@ func getBudgetsAndGoals(svc *app.Service, l Ledger, clk clock.Clock) tool.Tool {
 						continue
 					}
 
-					p, currency, err := svc.BudgetProgress(ctx, userID, b.ID, month)
+					p, currency, err := svc.BudgetProgress(ctx, booksID, b.ID, month)
 					if err != nil {
 						return out, err
 					}
@@ -234,7 +234,7 @@ func getBudgetsAndGoals(svc *app.Service, l Ledger, clk clock.Clock) tool.Tool {
 		if in.Kind != "budgets" {
 			r := page.Request[app.IDKey]{Limit: page.MaxLimit}
 			for {
-				gs, next, err := svc.ListGoals(ctx, userID, r)
+				gs, next, err := svc.ListGoals(ctx, booksID, r)
 				if err != nil {
 					return out, err
 				}

@@ -43,7 +43,7 @@ func (s *Server) CreateGoal(ctx context.Context, req CreateGoalRequestObject) (C
 		return nil, err
 	}
 
-	g, err := s.svc.CreateGoal(ctx, auth.MustUserID(ctx), req.Body.Name, target, req.Body.DueOn.Time, req.Body.AccountIds)
+	g, err := s.svc.CreateGoal(ctx, auth.MustBooksID(ctx), req.Body.Name, target, req.Body.DueOn.Time, req.Body.AccountIds)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +66,7 @@ func (s *Server) UpdateGoal(ctx context.Context, req UpdateGoalRequestObject) (U
 		patch.DueOn = &req.Body.DueOn.Time
 	}
 
-	g, err := s.svc.UpdateGoal(ctx, auth.MustUserID(ctx), req.Id, patch)
+	g, err := s.svc.UpdateGoal(ctx, auth.MustBooksID(ctx), req.Id, patch)
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +75,7 @@ func (s *Server) UpdateGoal(ctx context.Context, req UpdateGoalRequestObject) (U
 }
 
 func (s *Server) DeleteGoal(ctx context.Context, req DeleteGoalRequestObject) (DeleteGoalResponseObject, error) {
-	if err := s.svc.DeleteGoal(ctx, auth.MustUserID(ctx), req.Id); err != nil {
+	if err := s.svc.DeleteGoal(ctx, auth.MustBooksID(ctx), req.Id); err != nil {
 		return nil, err
 	}
 
@@ -83,7 +83,7 @@ func (s *Server) DeleteGoal(ctx context.Context, req DeleteGoalRequestObject) (D
 }
 
 func (s *Server) GetGoal(ctx context.Context, req GetGoalRequestObject) (GetGoalResponseObject, error) {
-	g, err := s.svc.Goal(ctx, auth.MustUserID(ctx), req.Id)
+	g, err := s.svc.Goal(ctx, auth.MustBooksID(ctx), req.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +97,7 @@ func (s *Server) ListGoals(ctx context.Context, req ListGoalsRequestObject) (Lis
 		return nil, err
 	}
 
-	gs, next, err := s.svc.ListGoals(ctx, auth.MustUserID(ctx), p)
+	gs, next, err := s.svc.ListGoals(ctx, auth.MustBooksID(ctx), p)
 	if err != nil {
 		return nil, err
 	}

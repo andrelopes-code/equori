@@ -15,24 +15,24 @@ import (
 const deleteIncomeEvents = `-- name: DeleteIncomeEvents :exec
 DELETE FROM portfolio_income_event
 WHERE
-    user_id = $1
+    books_id = $1
     AND account_id = ANY ($2::UUID[])
 `
 
 type DeleteIncomeEventsParams struct {
-	UserID     int64
+	BooksID    int64
 	AccountIds []uuid.UUID
 }
 
 func (q *Queries) DeleteIncomeEvents(ctx context.Context, arg DeleteIncomeEventsParams) error {
-	_, err := q.db.Exec(ctx, deleteIncomeEvents, arg.UserID, arg.AccountIds)
+	_, err := q.db.Exec(ctx, deleteIncomeEvents, arg.BooksID, arg.AccountIds)
 	return err
 }
 
 const insertIncomeEvent = `-- name: InsertIncomeEvent :exec
 INSERT INTO
     portfolio_income_event (
-        user_id,
+        books_id,
         transaction_id,
         account_id,
         instrument,
@@ -59,7 +59,7 @@ VALUES
 `
 
 type InsertIncomeEventParams struct {
-	UserID        int64
+	BooksID       int64
 	TransactionID uuid.UUID
 	AccountID     uuid.UUID
 	Instrument    string
@@ -73,7 +73,7 @@ type InsertIncomeEventParams struct {
 
 func (q *Queries) InsertIncomeEvent(ctx context.Context, arg InsertIncomeEventParams) error {
 	_, err := q.db.Exec(ctx, insertIncomeEvent,
-		arg.UserID,
+		arg.BooksID,
 		arg.TransactionID,
 		arg.AccountID,
 		arg.Instrument,
@@ -89,11 +89,11 @@ func (q *Queries) InsertIncomeEvent(ctx context.Context, arg InsertIncomeEventPa
 
 const listIncomeEvents = `-- name: ListIncomeEvents :many
 SELECT
-    user_id, transaction_id, account_id, instrument, date, income_type, tax_treatment, gross, withheld, currency
+    books_id, transaction_id, account_id, instrument, date, income_type, tax_treatment, gross, withheld, currency
 FROM
     portfolio_income_event
 WHERE
-    user_id = $1
+    books_id = $1
     AND date >= $2
     AND date < $3
 ORDER BY
@@ -102,13 +102,13 @@ ORDER BY
 `
 
 type ListIncomeEventsParams struct {
-	UserID   int64
+	BooksID  int64
 	FromDate time.Time
 	ToDate   time.Time
 }
 
 func (q *Queries) ListIncomeEvents(ctx context.Context, arg ListIncomeEventsParams) ([]PortfolioIncomeEvent, error) {
-	rows, err := q.db.Query(ctx, listIncomeEvents, arg.UserID, arg.FromDate, arg.ToDate)
+	rows, err := q.db.Query(ctx, listIncomeEvents, arg.BooksID, arg.FromDate, arg.ToDate)
 	if err != nil {
 		return nil, err
 	}
@@ -117,7 +117,7 @@ func (q *Queries) ListIncomeEvents(ctx context.Context, arg ListIncomeEventsPara
 	for rows.Next() {
 		var i PortfolioIncomeEvent
 		if err := rows.Scan(
-			&i.UserID,
+			&i.BooksID,
 			&i.TransactionID,
 			&i.AccountID,
 			&i.Instrument,
@@ -138,45 +138,45 @@ func (q *Queries) ListIncomeEvents(ctx context.Context, arg ListIncomeEventsPara
 	return items, nil
 }
 
-const listRebuildUsers = `-- name: ListRebuildUsers :many
+const listRebuildBooks = `-- name: ListRebuildBooks :many
 SELECT
-    user_id
+    books_id
 FROM
     ledger_account
 WHERE
     kind = 'brokerage'
 UNION
 SELECT
-    user_id
+    books_id
 FROM
     portfolio_position_day
 UNION
 SELECT
-    user_id
+    books_id
 FROM
     portfolio_realized_result
 UNION
 SELECT
-    user_id
+    books_id
 FROM
     portfolio_income_event
 ORDER BY
-    user_id
+    books_id
 `
 
-func (q *Queries) ListRebuildUsers(ctx context.Context) ([]int64, error) {
-	rows, err := q.db.Query(ctx, listRebuildUsers)
+func (q *Queries) ListRebuildBooks(ctx context.Context) ([]int64, error) {
+	rows, err := q.db.Query(ctx, listRebuildBooks)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 	var items []int64
 	for rows.Next() {
-		var user_id int64
-		if err := rows.Scan(&user_id); err != nil {
+		var books_id int64
+		if err := rows.Scan(&books_id); err != nil {
 			return nil, err
 		}
-		items = append(items, user_id)
+		items = append(items, books_id)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

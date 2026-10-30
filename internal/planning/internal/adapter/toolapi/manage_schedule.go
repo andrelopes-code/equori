@@ -83,7 +83,7 @@ func validationError(field, message string) error {
 	return &domain.FieldError{Field: field, Message: message, Err: domain.ErrValidation}
 }
 
-func prepareSchedule(ctx context.Context, svc *app.Service, l Ledger, userID int64, in manageScheduleIn) (schedulePlan, error) {
+func prepareSchedule(ctx context.Context, svc *app.Service, l Ledger, booksID int64, in manageScheduleIn) (schedulePlan, error) {
 	given := func(s string) bool { return s != "" }
 	fields := []field{
 		{"schedule_id", given(in.ScheduleID)}, {"kind", given(string(in.Kind))}, {"description", given(in.Description)},
@@ -136,7 +136,7 @@ func prepareSchedule(ctx context.Context, svc *app.Service, l Ledger, userID int
 	}
 
 	if scheduleID != uuid.Nil {
-		if p.schedule, err = svc.Schedule(ctx, userID, scheduleID); err != nil {
+		if p.schedule, err = svc.Schedule(ctx, booksID, scheduleID); err != nil {
 			return schedulePlan{}, err
 		}
 	}
@@ -144,7 +144,7 @@ func prepareSchedule(ctx context.Context, svc *app.Service, l Ledger, userID int
 	unit := money.Money{}
 	switch in.Action {
 	case "create":
-		accounts, err := l.Accounts(ctx, userID)
+		accounts, err := l.Accounts(ctx, booksID)
 		if err != nil {
 			return schedulePlan{}, err
 		}
@@ -226,8 +226,8 @@ func manageSchedule(svc *app.Service, l Ledger, clk clock.Clock) tool.Tool {
 			"Do not use it for one occurrence: manage_occurrence does. " +
 			"The user confirms first.",
 		Effect: tool.Write,
-	}, func(ctx context.Context, userID int64, in manageScheduleIn) (tool.Preview, error) {
-		p, err := prepareSchedule(ctx, svc, l, userID, in)
+	}, func(ctx context.Context, booksID int64, in manageScheduleIn) (tool.Preview, error) {
+		p, err := prepareSchedule(ctx, svc, l, booksID, in)
 		if err != nil {
 			return tool.Preview{}, err
 		}
@@ -287,8 +287,8 @@ func manageSchedule(svc *app.Service, l Ledger, clk clock.Clock) tool.Tool {
 		}
 
 		return pv, nil
-	}, func(ctx context.Context, userID int64, in manageScheduleIn) (scheduleView, error) {
-		p, err := prepareSchedule(ctx, svc, l, userID, in)
+	}, func(ctx context.Context, booksID int64, in manageScheduleIn) (scheduleView, error) {
+		p, err := prepareSchedule(ctx, svc, l, booksID, in)
 		if err != nil {
 			return scheduleView{}, err
 		}
@@ -296,23 +296,23 @@ func manageSchedule(svc *app.Service, l Ledger, clk clock.Clock) tool.Tool {
 		var s domain.Schedule
 		switch in.Action {
 		case "create":
-			s, err = svc.CreateSchedule(ctx, userID, app.ScheduleInput{
+			s, err = svc.CreateSchedule(ctx, booksID, app.ScheduleInput{
 				Kind: domain.Kind(in.Kind), AccountID: p.accountID, CounterpartID: p.counterID, PayeeID: p.payeeID,
 				Description: in.Description, Amount: *p.amount, Rule: *p.rule,
 			})
 		case "change_terms":
-			s, err = svc.ChangeTerms(ctx, userID, p.schedule.ID, in.From.Time, p.amount, p.rule)
+			s, err = svc.ChangeTerms(ctx, booksID, p.schedule.ID, in.From.Time, p.amount, p.rule)
 		case "pause":
-			s, err = svc.Pause(ctx, userID, p.schedule.ID, in.From.Time, in.To.Time)
+			s, err = svc.Pause(ctx, booksID, p.schedule.ID, in.From.Time, in.To.Time)
 		default:
-			s, err = svc.End(ctx, userID, p.schedule.ID, in.From.Time)
+			s, err = svc.End(ctx, booksID, p.schedule.ID, in.From.Time)
 		}
 
 		if err != nil {
 			return scheduleView{}, err
 		}
 
-		accounts, err := l.Accounts(ctx, userID)
+		accounts, err := l.Accounts(ctx, booksID)
 		if err != nil {
 			return scheduleView{}, err
 		}

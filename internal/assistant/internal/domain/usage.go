@@ -8,7 +8,7 @@ import (
 
 // UsageEntry is one attempt to add to the day's counters (ADR 019 U2).
 type UsageEntry struct {
-	UserID       int64
+	BooksID      int64
 	Day          time.Time
 	ProviderID   string
 	Model        string

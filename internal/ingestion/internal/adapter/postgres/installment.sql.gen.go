@@ -18,13 +18,13 @@ SELECT
 FROM
     ingestion_installment_plan
 WHERE
-    user_id = $1
+    books_id = $1
     AND plan_key = ANY ($2::bytea[])
 `
 
 type ListInstallmentPlansParams struct {
-	UserID int64
-	Keys   [][]byte
+	BooksID int64
+	Keys    [][]byte
 }
 
 type ListInstallmentPlansRow struct {
@@ -33,7 +33,7 @@ type ListInstallmentPlansRow struct {
 }
 
 func (q *Queries) ListInstallmentPlans(ctx context.Context, arg ListInstallmentPlansParams) ([]ListInstallmentPlansRow, error) {
-	rows, err := q.db.Query(ctx, listInstallmentPlans, arg.UserID, arg.Keys)
+	rows, err := q.db.Query(ctx, listInstallmentPlans, arg.BooksID, arg.Keys)
 	if err != nil {
 		return nil, err
 	}
@@ -54,14 +54,14 @@ func (q *Queries) ListInstallmentPlans(ctx context.Context, arg ListInstallmentP
 
 const saveInstallmentPlan = `-- name: SaveInstallmentPlan :exec
 INSERT INTO
-    ingestion_installment_plan (user_id, account_id, plan_key, plan_id)
+    ingestion_installment_plan (books_id, account_id, plan_key, plan_id)
 VALUES
     ($1, $2, $3, $4)
-ON CONFLICT (user_id, plan_key) DO NOTHING
+ON CONFLICT (books_id, plan_key) DO NOTHING
 `
 
 type SaveInstallmentPlanParams struct {
-	UserID    int64
+	BooksID   int64
 	AccountID uuid.UUID
 	PlanKey   []byte
 	PlanID    uuid.UUID
@@ -69,7 +69,7 @@ type SaveInstallmentPlanParams struct {
 
 func (q *Queries) SaveInstallmentPlan(ctx context.Context, arg SaveInstallmentPlanParams) error {
 	_, err := q.db.Exec(ctx, saveInstallmentPlan,
-		arg.UserID,
+		arg.BooksID,
 		arg.AccountID,
 		arg.PlanKey,
 		arg.PlanID,

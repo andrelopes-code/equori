@@ -25,10 +25,10 @@ import (
 // EventExportRequested starts the build of an export (export design E3).
 const EventExportRequested = "reporting.export_requested.v1"
 
-// notExported are the tables with user_id that stay out of the archive (export design E2).
+// notExported are the tables with books_id that stay out of the archive (export design E2).
 var notExported = []string{
 	"assistant_chain_target", "assistant_provider", "assistant_usage", "assistant_usage_limit",
-	"capture_category_hint", "identity_access_token", "identity_session", "outbox_event",
+	"capture_category_hint", "identity_access_token", "identity_membership", "identity_session", "outbox_event",
 	"portfolio_income_event", "portfolio_position_day", "portfolio_realized_result",
 	"reporting_account_day", "reporting_export",
 }
@@ -38,12 +38,12 @@ var sharedTables = []string{
 	"marketdata_holiday", "marketdata_index_rate", "marketdata_instrument", "marketdata_fixed_income_terms", "marketdata_price",
 }
 
-// rowExpressions write a row of t without user_id; a table listed here drops more.
+// rowExpressions write a row of t without books_id; a table listed here drops more.
 var rowExpressions = map[string]string{
 	// The bytes travel as a file of their own.
-	"ledger_attachment_blob": `to_jsonb(t) - 'user_id' - 'content'`,
+	"ledger_attachment_blob": `to_jsonb(t) - 'books_id' - 'content'`,
 	// The credential is sealed for the source instance and user (ADR 008); it never travels.
-	"ingestion_integration": `(to_jsonb(t) - 'user_id') || jsonb_build_object('credential_ciphertext', ''::bytea)`,
+	"ingestion_integration": `(to_jsonb(t) - 'books_id') || jsonb_build_object('credential_ciphertext', ''::bytea)`,
 }
 
 type archiveTable struct {
@@ -83,10 +83,10 @@ func NewExports(pool *pgxpool.Pool, appVersion string) *Exports {
 	return &Exports{pool: pool, q: New(pool), appVersion: appVersion}
 }
 
-// FactTables returns the tables with user_id that the archive carries, by name.
+// FactTables returns the tables with books_id that the archive carries, by name.
 func FactTables(ctx context.Context, q DBTX) ([]string, error) {
 	rows, err := q.Query(ctx, `SELECT table_name FROM information_schema.columns
-		WHERE table_schema = current_schema() AND column_name = 'user_id' ORDER BY table_name`)
+		WHERE table_schema = current_schema() AND column_name = 'books_id' ORDER BY table_name`)
 	if err != nil {
 		return nil, err
 	}
@@ -117,11 +117,11 @@ func primaryKey(ctx context.Context, q DBTX, table string) ([]string, error) {
 	return cols, err
 }
 
-func (r *Exports) BuildArchive(ctx context.Context, userID int64, at time.Time) ([]byte, error) {
+func (r *Exports) BuildArchive(ctx context.Context, booksID int64, at time.Time) ([]byte, error) {
 	var out []byte
 	err := pgx.BeginTxFunc(ctx, r.pool, pgx.TxOptions{IsoLevel: pgx.RepeatableRead, AccessMode: pgx.ReadOnly}, func(tx pgx.Tx) error {
 		var err error
-		out, err = buildArchive(ctx, tx, userID, at, r.appVersion)
+		out, err = buildArchive(ctx, tx, booksID, at, r.appVersion)
 
 		return err
 	})
@@ -129,7 +129,7 @@ func (r *Exports) BuildArchive(ctx context.Context, userID int64, at time.Time) 
 	return out, err
 }
 
-func buildArchive(ctx context.Context, tx pgx.Tx, userID int64, at time.Time, appVersion string) ([]byte, error) {
+func buildArchive(ctx context.Context, tx pgx.Tx, booksID int64, at time.Time, appVersion string) ([]byte, error) {
 	m := archiveManifest{
 		Format: "equori-export", FormatVersion: 1, ArchiveVersion: app.ArchiveVersion, AppVersion: appVersion,
 		ExportedAt: at, Attachments: []archiveFile{},
@@ -165,12 +165,12 @@ func buildArchive(ctx context.Context, tx pgx.Tx, userID int64, at time.Time, ap
 	}
 
 	for _, t := range facts {
-		from := cmp.Or(rowExpressions[t], `to_jsonb(t) - 'user_id'`)
-		sources = append(sources, source{t, from, "t.user_id = $1"})
+		from := cmp.Or(rowExpressions[t], `to_jsonb(t) - 'books_id'`)
+		sources = append(sources, source{t, from, "t.books_id = $1"})
 	}
 
 	sources = append(sources, source{"ledger_transaction_version", "to_jsonb(t)",
-		"t.transaction_id IN (SELECT id FROM ledger_transaction WHERE user_id = $1)"})
+		"t.transaction_id IN (SELECT id FROM ledger_transaction WHERE books_id = $1)"})
 	slices.SortFunc(sources, func(a, b source) int { return strings.Compare(a.table, b.table) })
 
 	for _, s := range sources {
@@ -188,7 +188,7 @@ func buildArchive(ctx context.Context, tx pgx.Tx, userID int64, at time.Time, ap
 
 		args := []any{}
 		if strings.Contains(s.where, "$1") {
-			args = append(args, userID)
+			args = append(args, booksID)
 		}
 
 		rows, err := tx.Query(ctx, sql, args...)
@@ -216,7 +216,7 @@ func buildArchive(ctx context.Context, tx pgx.Tx, userID int64, at time.Time, ap
 		m.Tables = append(m.Tables, archiveTable{Name: s.table, File: file, Rows: len(lines), SHA256: hex.EncodeToString(sum[:])})
 	}
 
-	rows, err := tx.Query(ctx, `SELECT sha256, content FROM ledger_attachment_blob WHERE user_id = $1 ORDER BY sha256`, userID)
+	rows, err := tx.Query(ctx, `SELECT sha256, content FROM ledger_attachment_blob WHERE books_id = $1 ORDER BY sha256`, booksID)
 	if err != nil {
 		return nil, fmt.Errorf("read attachments: %w", err)
 	}
@@ -261,11 +261,11 @@ func buildArchive(ctx context.Context, tx pgx.Tx, userID int64, at time.Time, ap
 }
 
 // RequestExport writes the pending export and its event in one transaction (ADR 006).
-func (r *Exports) RequestExport(ctx context.Context, userID int64, at time.Time) (app.Export, bool, error) {
+func (r *Exports) RequestExport(ctx context.Context, booksID int64, at time.Time) (app.Export, bool, error) {
 	var e app.Export
 	ok := true
 	err := pgx.BeginFunc(ctx, r.pool, func(tx pgx.Tx) error {
-		row, err := r.q.WithTx(tx).RequestExport(ctx, RequestExportParams{UserID: userID, RequestedAt: at})
+		row, err := r.q.WithTx(tx).RequestExport(ctx, RequestExportParams{BooksID: booksID, RequestedAt: at})
 		if errors.Is(err, pgx.ErrNoRows) {
 			ok = false
 			return nil
@@ -277,14 +277,14 @@ func (r *Exports) RequestExport(ctx context.Context, userID int64, at time.Time)
 
 		e = app.Export{ID: row.ID, Status: app.ExportStatus(row.Status), RequestedAt: row.RequestedAt}
 
-		return outbox.Insert(ctx, tx, outbox.Event{Type: EventExportRequested, UserID: userID, AggregateID: row.ID.String(), Payload: map[string]string{"export_id": row.ID.String()}})
+		return outbox.Insert(ctx, tx, outbox.Event{Type: EventExportRequested, BooksID: booksID, AggregateID: row.ID.String(), Payload: map[string]string{"export_id": row.ID.String()}})
 	})
 
 	return e, ok, err
 }
 
-func (r *Exports) Export(ctx context.Context, userID int64) (app.Export, error) {
-	row, err := r.q.GetExport(ctx, userID)
+func (r *Exports) Export(ctx context.Context, booksID int64) (app.Export, error) {
+	row, err := r.q.GetExport(ctx, booksID)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return app.Export{}, app.ErrExportNotFound
 	}
@@ -309,8 +309,8 @@ func (r *Exports) Export(ctx context.Context, userID int64) (app.Export, error) 
 	return e, nil
 }
 
-func (r *Exports) ExportContent(ctx context.Context, userID int64) (app.Export, []byte, error) {
-	row, err := r.q.ExportContent(ctx, userID)
+func (r *Exports) ExportContent(ctx context.Context, booksID int64) (app.Export, []byte, error) {
+	row, err := r.q.ExportContent(ctx, booksID)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return app.Export{}, nil, app.ErrExportNotFound
 	}
@@ -322,8 +322,8 @@ func (r *Exports) ExportContent(ctx context.Context, userID int64) (app.Export, 
 	return app.Export{Status: app.ExportStatus(row.Status), RequestedAt: row.RequestedAt}, row.Content, nil
 }
 
-func (r *Exports) FinishExport(ctx context.Context, userID int64, id uuid.UUID, at time.Time, archive []byte, problem string) error {
-	p := FinishExportParams{UserID: userID, ID: id, FinishedAt: &at, Status: string(app.ExportReady), Content: archive}
+func (r *Exports) FinishExport(ctx context.Context, booksID int64, id uuid.UUID, at time.Time, archive []byte, problem string) error {
+	p := FinishExportParams{BooksID: booksID, ID: id, FinishedAt: &at, Status: string(app.ExportReady), Content: archive}
 	if problem != "" {
 		p.Status, p.Problem = string(app.ExportFailed), &problem
 	} else {

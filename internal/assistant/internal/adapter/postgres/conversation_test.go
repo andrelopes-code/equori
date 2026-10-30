@@ -15,11 +15,11 @@ import (
 
 var t0 = time.Date(2026, 10, 23, 10, 0, 0, 0, time.UTC)
 
-func conversation(t *testing.T, repo *postgres.Repository, userID int64, at time.Time) domain.Conversation {
+func conversation(t *testing.T, repo *postgres.Repository, booksID int64, at time.Time) domain.Conversation {
 	t.Helper()
 
 	c := domain.Conversation{ID: uuid.New(), Title: "T", CreatedAt: at, UpdatedAt: at}
-	if err := repo.CreateConversation(t.Context(), userID, c); err != nil {
+	if err := repo.CreateConversation(t.Context(), booksID, c); err != nil {
 		t.Fatal(err)
 	}
 
@@ -31,7 +31,7 @@ func TestConversation(t *testing.T) {
 	pool := pgtest.New(t)
 	repo := postgres.NewRepository(pool)
 	ctx := t.Context()
-	a, b := pgtest.CreateUser(t, pool), pgtest.CreateUser(t, pool)
+	a, b := pgtest.CreateBooks(t, pool), pgtest.CreateBooks(t, pool)
 	c1 := conversation(t, repo, a, t0)
 	c2 := conversation(t, repo, a, t0.Add(time.Hour))
 	c3 := conversation(t, repo, a, t0.Add(2*time.Hour))

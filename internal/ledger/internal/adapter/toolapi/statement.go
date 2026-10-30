@@ -56,13 +56,13 @@ func getStatement(svc *app.Service) tool.Tool {
 			"Use it to explain a statement or check its lines. " +
 			"Do not use it to list statements: get_account_details lists them with their IDs.",
 		Effect: tool.ReadOnly,
-	}, func(ctx context.Context, userID int64, in getStatementIn) (getStatementOut, error) {
+	}, func(ctx context.Context, booksID int64, in getStatementIn) (getStatementOut, error) {
 		id, err := requiredID(in.StatementID, "statement_id")
 		if err != nil {
 			return getStatementOut{}, err
 		}
 
-		v, a, postings, err := svc.Statement(ctx, userID, id)
+		v, a, postings, err := svc.Statement(ctx, booksID, id)
 		if err != nil {
 			return getStatementOut{}, err
 		}

@@ -44,7 +44,7 @@ func newWorld(t *testing.T) *world {
 	t.Helper()
 	pool := pgtest.New(t)
 
-	return &world{pool: pool, user: pgtest.CreateUser(t, pool), made: &made{}}
+	return &world{pool: pool, user: pgtest.CreateBooks(t, pool), made: &made{}}
 }
 
 func (w *world) module(t *testing.T, current, previous string) *assistant.Module {
@@ -125,7 +125,7 @@ func TestResolveDefault(t *testing.T) {
 	groq := w.provider(t, "groq", "Groq", "https://api.groq.com/openai/v1", "gk", keyA, day)
 	gemini := w.provider(t, "gemini", "Gemini", "https://generativelanguage.googleapis.com", "ek", keyA, day.Add(time.Hour))
 	m := w.module(t, keyA, "")
-	got := targets(t, m, auth.WithUserID(t.Context(), w.user), assistant.ChatUse)
+	got := targets(t, m, auth.WithBooksID(t.Context(), w.user), assistant.ChatUse)
 
 	want := []string{gemini.String() + "/gemini-3.5-flash-lite", "aistudio/gemini-3.5-flash-lite", gemini.String() + "/gemini-3.1-flash-lite", "aistudio/gemini-3.1-flash-lite", gemini.String() + "/gemini-3.5-flash", "aistudio/gemini-3.5-flash", groq.String() + "/openai/gpt-oss-120b"}
 	if !slices.Equal(got, want) {
@@ -150,7 +150,7 @@ func TestResolveUserChain(t *testing.T) {
 
 	m := w.module(t, "", "")
 
-	got := targets(t, m, auth.WithUserID(t.Context(), w.user), assistant.ChatUse)
+	got := targets(t, m, auth.WithBooksID(t.Context(), w.user), assistant.ChatUse)
 	if want := []string{local.String() + "/b"}; !slices.Equal(got, want) {
 		t.Fatalf("targets = %v, want %v (a lacks tools)", got, want)
 	}
@@ -173,7 +173,7 @@ func TestResolveUnreadableKey(t *testing.T) {
 	w.provider(t, "groq", "Groq", "https://api.groq.com/openai/v1", "gk", keyB, day)
 
 	m := w.module(t, keyA, "")
-	if got, want := targets(t, m, auth.WithUserID(t.Context(), w.user), assistant.ChatUse), []string{"aistudio/gemini-3.5-flash-lite", "aistudio/gemini-3.1-flash-lite", "aistudio/gemini-3.5-flash"}; !slices.Equal(got, want) {
+	if got, want := targets(t, m, auth.WithBooksID(t.Context(), w.user), assistant.ChatUse), []string{"aistudio/gemini-3.5-flash-lite", "aistudio/gemini-3.1-flash-lite", "aistudio/gemini-3.5-flash"}; !slices.Equal(got, want) {
 		t.Fatalf("targets = %v, want %v", got, want)
 	}
 }
@@ -191,7 +191,7 @@ func TestRotateSecrets(t *testing.T) {
 
 	after := w.module(t, keyB, "")
 
-	got := targets(t, after, auth.WithUserID(t.Context(), w.user), assistant.ChatUse)
+	got := targets(t, after, auth.WithBooksID(t.Context(), w.user), assistant.ChatUse)
 	if want := []string{"aistudio/gemini-3.5-flash-lite", "aistudio/gemini-3.1-flash-lite", "aistudio/gemini-3.5-flash", groq.String() + "/openai/gpt-oss-120b"}; !slices.Equal(got, want) {
 		t.Fatalf("targets after rotation = %v, want %v", got, want)
 	}

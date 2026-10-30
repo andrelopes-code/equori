@@ -35,7 +35,7 @@ func (s *Server) RecordForeignPurchase(ctx context.Context, req RecordForeignPur
 		in.Statement = &m
 	}
 
-	t, err := s.svc.RecordForeignPurchase(ctx, auth.MustUserID(ctx), in)
+	t, err := s.svc.RecordForeignPurchase(ctx, auth.MustBooksID(ctx), in)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +69,7 @@ func (s *Server) ExchangeCurrency(ctx context.Context, req ExchangeCurrencyReque
 		in.Fee = &fee
 	}
 
-	t, err := s.svc.Exchange(ctx, auth.MustUserID(ctx), in)
+	t, err := s.svc.Exchange(ctx, auth.MustBooksID(ctx), in)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +112,7 @@ func (s *Server) RecordTrade(ctx context.Context, req RecordTradeRequestObject) 
 		o.Taxes = &taxes
 	}
 
-	t, err := s.svc.RecordTrade(ctx, auth.MustUserID(ctx), o)
+	t, err := s.svc.RecordTrade(ctx, auth.MustBooksID(ctx), o)
 	if err != nil {
 		return nil, err
 	}
@@ -141,7 +141,7 @@ func (s *Server) RecordInvestmentIncome(ctx context.Context, req RecordInvestmen
 		o.Withheld = &withheld
 	}
 
-	t, err := s.svc.RecordIncome(ctx, auth.MustUserID(ctx), o)
+	t, err := s.svc.RecordIncome(ctx, auth.MustBooksID(ctx), o)
 	if err != nil {
 		return nil, err
 	}

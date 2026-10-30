@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	ErrNoUser      = errors.New("tool call without a user")
+	ErrNoBooks     = errors.New("tool call without a book")
 	ErrUnknownTool = errors.New("unknown tool")
 )
 

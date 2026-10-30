@@ -17,17 +17,17 @@ UPDATE ledger_posting
 SET
     external_record_id = NULL
 WHERE
-    user_id = $1
+    books_id = $1
     AND transaction_id = $2
 `
 
 type ClearRecordLinksParams struct {
-	UserID        int64
+	BooksID       int64
 	TransactionID uuid.UUID
 }
 
 func (q *Queries) ClearRecordLinks(ctx context.Context, arg ClearRecordLinksParams) error {
-	_, err := q.db.Exec(ctx, clearRecordLinks, arg.UserID, arg.TransactionID)
+	_, err := q.db.Exec(ctx, clearRecordLinks, arg.BooksID, arg.TransactionID)
 	return err
 }
 
@@ -37,7 +37,7 @@ SELECT
 FROM
     ledger_transaction t
 WHERE
-    t.user_id = $1
+    t.books_id = $1
     AND t.id <> $2
     AND t.voided_at IS NULL
     AND t.origin = 'import'
@@ -89,7 +89,7 @@ ORDER BY
 `
 
 type PairingCandidatesParams struct {
-	UserID           int64
+	BooksID          int64
 	TransactionID    uuid.UUID
 	FromDate         time.Time
 	ToDate           time.Time
@@ -102,7 +102,7 @@ type PairingCandidatesParams struct {
 // a card payment waiting on transfers_in_transit is one too (A88).
 func (q *Queries) PairingCandidates(ctx context.Context, arg PairingCandidatesParams) ([]uuid.UUID, error) {
 	rows, err := q.db.Query(ctx, pairingCandidates,
-		arg.UserID,
+		arg.BooksID,
 		arg.TransactionID,
 		arg.FromDate,
 		arg.ToDate,

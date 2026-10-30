@@ -132,7 +132,7 @@ func manageImports(svc *app.Service, names AccountNames) tool.Tool {
 			"Do not use it to add credentials or a new connection: the user does that on the Links screen, and get_help explains it. " +
 			"The user confirms first.",
 		Effect: tool.Destructive,
-	}, func(ctx context.Context, userID int64, in manageImportsIn) (tool.Preview, error) {
+	}, func(ctx context.Context, booksID int64, in manageImportsIn) (tool.Preview, error) {
 		a, err := parseImportsAction(in)
 		if err != nil {
 			return tool.Preview{}, err
@@ -141,7 +141,7 @@ func manageImports(svc *app.Service, names AccountNames) tool.Tool {
 		p := tool.Preview{Action: "manage_imports." + string(in.Action)}
 		switch in.Action {
 		case "sync", "delete_connection":
-			c, err := svc.Connection(ctx, userID, a.connection)
+			c, err := svc.Connection(ctx, booksID, a.connection)
 			if err != nil {
 				return tool.Preview{}, err
 			}
@@ -153,9 +153,9 @@ func manageImports(svc *app.Service, names AccountNames) tool.Tool {
 				p.Changes, p.Destructive = []tool.Change{{Field: "connection", Before: tool.TextValue(c.Name)}}, true
 			}
 		case "map_account":
-			return previewMapping(ctx, svc, names, userID, a, in, p)
+			return previewMapping(ctx, svc, names, booksID, a, in, p)
 		case "resolve_record":
-			rec, err := svc.Record(ctx, userID, a.record)
+			rec, err := svc.Record(ctx, booksID, a.record)
 			if err != nil {
 				return tool.Preview{}, err
 			}
@@ -175,7 +175,7 @@ func manageImports(svc *app.Service, names AccountNames) tool.Tool {
 				p.Changes = append(p.Changes, tool.Change{Field: "transaction", After: tool.TextValue(in.TransactionID)})
 			}
 		case "reopen_record":
-			rec, err := svc.Record(ctx, userID, a.record)
+			rec, err := svc.Record(ctx, booksID, a.record)
 			if err != nil {
 				return tool.Preview{}, err
 			}
@@ -187,12 +187,12 @@ func manageImports(svc *app.Service, names AccountNames) tool.Tool {
 			p.Target = "Bank line " + rec.Description + " of " + rec.Date.Format(time.DateOnly)
 			p.Changes = []tool.Change{{Field: "status", Before: tool.TextValue(string(rec.State)), After: tool.TextValue(string(domain.StateNeedsReview))}}
 		case "delete_integration":
-			i, err := svc.Integration(ctx, userID, a.integration)
+			i, err := svc.Integration(ctx, booksID, a.integration)
 			if err != nil {
 				return tool.Preview{}, err
 			}
 
-			if inUse, err := integrationInUse(ctx, svc, userID, a.integration); err != nil {
+			if inUse, err := integrationInUse(ctx, svc, booksID, a.integration); err != nil {
 				return tool.Preview{}, err
 			} else if inUse {
 				return tool.Preview{}, app.ErrIntegrationInUse
@@ -203,7 +203,7 @@ func manageImports(svc *app.Service, names AccountNames) tool.Tool {
 		}
 
 		return p, nil
-	}, func(ctx context.Context, userID int64, in manageImportsIn) (manageImportsOut, error) {
+	}, func(ctx context.Context, booksID int64, in manageImportsIn) (manageImportsOut, error) {
 		a, err := parseImportsAction(in)
 		if err != nil {
 			return manageImportsOut{}, err
@@ -211,12 +211,12 @@ func manageImports(svc *app.Service, names AccountNames) tool.Tool {
 
 		switch in.Action {
 		case "sync":
-			c, batches, err := svc.SyncConnection(ctx, userID, a.connection)
+			c, batches, err := svc.SyncConnection(ctx, booksID, a.connection)
 			if err != nil {
 				return manageImportsOut{}, err
 			}
 
-			named, err := names(ctx, userID)
+			named, err := names(ctx, booksID)
 			if err != nil {
 				return manageImportsOut{}, err
 			}
@@ -228,14 +228,14 @@ func manageImports(svc *app.Service, names AccountNames) tool.Tool {
 
 			return out, nil
 		case "map_account":
-			ext, err := svc.MapAccount(ctx, userID, a.connection, a.external, a.mapping(in))
+			ext, err := svc.MapAccount(ctx, booksID, a.connection, a.external, a.mapping(in))
 			if err != nil {
 				return manageImportsOut{}, err
 			}
 
 			out := manageImportsOut{ExternalAccountID: ext.ID.String(), State: string(ext.State())}
 			if ext.AccountID != nil {
-				named, err := names(ctx, userID)
+				named, err := names(ctx, booksID)
 				if err != nil {
 					return manageImportsOut{}, err
 				}
@@ -245,7 +245,7 @@ func manageImports(svc *app.Service, names AccountNames) tool.Tool {
 
 			return out, nil
 		case "resolve_record":
-			rec, _, err := svc.Resolve(ctx, userID, a.record, string(in.Resolution), a.transaction)
+			rec, _, err := svc.Resolve(ctx, booksID, a.record, string(in.Resolution), a.transaction)
 			if err != nil {
 				return manageImportsOut{}, err
 			}
@@ -257,27 +257,27 @@ func manageImports(svc *app.Service, names AccountNames) tool.Tool {
 
 			return out, nil
 		case "reopen_record":
-			rec, _, err := svc.Reopen(ctx, userID, a.record)
+			rec, _, err := svc.Reopen(ctx, booksID, a.record)
 			if err != nil {
 				return manageImportsOut{}, err
 			}
 
 			return manageImportsOut{RecordID: rec.ID.String(), State: string(rec.State)}, nil
 		case "delete_connection":
-			return manageImportsOut{Deleted: true}, svc.DeleteConnection(ctx, userID, a.connection)
+			return manageImportsOut{Deleted: true}, svc.DeleteConnection(ctx, booksID, a.connection)
 		}
 
-		return manageImportsOut{Deleted: true}, svc.DeleteIntegration(ctx, userID, a.integration)
+		return manageImportsOut{Deleted: true}, svc.DeleteIntegration(ctx, booksID, a.integration)
 	})
 }
 
-func previewMapping(ctx context.Context, svc *app.Service, names AccountNames, userID int64, a importsAction, in manageImportsIn, p tool.Preview) (tool.Preview, error) {
+func previewMapping(ctx context.Context, svc *app.Service, names AccountNames, booksID int64, a importsAction, in manageImportsIn, p tool.Preview) (tool.Preview, error) {
 	m := a.mapping(in)
 	if err := m.Validate(); err != nil {
 		return tool.Preview{}, err
 	}
 
-	c, err := svc.Connection(ctx, userID, a.connection)
+	c, err := svc.Connection(ctx, booksID, a.connection)
 	if err != nil {
 		return tool.Preview{}, err
 	}
@@ -295,7 +295,7 @@ func previewMapping(ctx context.Context, svc *app.Service, names AccountNames, u
 		return p, nil
 	}
 
-	named, err := names(ctx, userID)
+	named, err := names(ctx, booksID)
 	if err != nil {
 		return tool.Preview{}, err
 	}
@@ -323,10 +323,10 @@ func previewMapping(ctx context.Context, svc *app.Service, names AccountNames, u
 	return p, nil
 }
 
-func integrationInUse(ctx context.Context, svc *app.Service, userID int64, id uuid.UUID) (bool, error) {
+func integrationInUse(ctx context.Context, svc *app.Service, booksID int64, id uuid.UUID) (bool, error) {
 	r := page.Request[app.NameKey]{Limit: page.MaxLimit}
 	for {
-		cs, next, err := svc.ListConnections(ctx, userID, r)
+		cs, next, err := svc.ListConnections(ctx, booksID, r)
 		if err != nil {
 			return false, err
 		}

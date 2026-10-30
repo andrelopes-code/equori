@@ -18,12 +18,12 @@ var (
 
 // Commitments is the committed amount of a month (planning, A57).
 type Commitments interface {
-	CommittedTotal(ctx context.Context, userID int64, month time.Time) (money.Money, error)
+	CommittedTotal(ctx context.Context, booksID int64, month time.Time) (money.Money, error)
 }
 
 // Valuations values each account's own balance at the end of a date in the base currency.
 type Valuations interface {
-	ValuedBalances(ctx context.Context, userID int64, date time.Time) (map[uuid.UUID]money.Money, error)
+	ValuedBalances(ctx context.Context, booksID int64, date time.Time) (map[uuid.UUID]money.Money, error)
 }
 
 type IndicatorAccount struct {
@@ -33,13 +33,13 @@ type IndicatorAccount struct {
 }
 
 type IndicatorRepository interface {
-	BaseCurrency(ctx context.Context, userID int64) (string, error)
+	BaseCurrency(ctx context.Context, booksID int64) (string, error)
 	// FirstPosting is the earliest booked date of the user's postings that are not voided; ok is false without one.
-	FirstPosting(ctx context.Context, userID int64) (first time.Time, ok bool, err error)
-	IndicatorAccounts(ctx context.Context, userID int64) ([]IndicatorAccount, error)
+	FirstPosting(ctx context.Context, booksID int64) (first time.Time, ok bool, err error)
+	IndicatorAccounts(ctx context.Context, booksID int64) ([]IndicatorAccount, error)
 	// OffCardMonthTotals is OffCardTotals per month, keyed by the first day of the month.
-	OffCardMonthTotals(ctx context.Context, userID int64, from, to time.Time) (map[time.Time]Shares, error)
-	LoanPrincipalByMonth(ctx context.Context, userID int64, from, to time.Time) (map[time.Time]int64, error)
+	OffCardMonthTotals(ctx context.Context, booksID int64, from, to time.Time) (map[time.Time]Shares, error)
+	LoanPrincipalByMonth(ctx context.Context, booksID int64, from, to time.Time) (map[time.Time]int64, error)
 }
 
 type IndicatorReport struct {
@@ -57,7 +57,7 @@ func (s *Service) UseIndicatorSources(c Commitments, v Valuations) {
 
 // Indicators returns the indicators of month and the 11 months before it in the cash view
 // (analytics design 4); today bounds the current month.
-func (s *Service) Indicators(ctx context.Context, userID int64, month, today time.Time) (IndicatorReport, error) {
+func (s *Service) Indicators(ctx context.Context, booksID int64, month, today time.Time) (IndicatorReport, error) {
 	if s.commitments == nil || s.valuations == nil {
 		return IndicatorReport{}, errors.New("indicators: sources not set")
 	}
@@ -69,7 +69,7 @@ func (s *Service) Indicators(ctx context.Context, userID int64, month, today tim
 		return IndicatorReport{}, ErrInvalidMonth
 	}
 
-	base, err := s.repo.BaseCurrency(ctx, userID)
+	base, err := s.repo.BaseCurrency(ctx, booksID)
 	if err != nil {
 		return IndicatorReport{}, err
 	}
@@ -83,22 +83,22 @@ func (s *Service) Indicators(ctx context.Context, userID int64, month, today tim
 	}
 	start := month.AddDate(0, -23, 0)
 
-	totals, err := s.cashMonthTotals(ctx, userID, start, monthEnd(month))
+	totals, err := s.cashMonthTotals(ctx, booksID, start, monthEnd(month))
 	if err != nil {
 		return IndicatorReport{}, err
 	}
 
-	loans, err := s.repo.LoanPrincipalByMonth(ctx, userID, start, monthEnd(month))
+	loans, err := s.repo.LoanPrincipalByMonth(ctx, booksID, start, monthEnd(month))
 	if err != nil {
 		return IndicatorReport{}, err
 	}
 
-	accounts, err := s.repo.IndicatorAccounts(ctx, userID)
+	accounts, err := s.repo.IndicatorAccounts(ctx, booksID)
 	if err != nil {
 		return IndicatorReport{}, err
 	}
 
-	first, ok, err := s.repo.FirstPosting(ctx, userID)
+	first, ok, err := s.repo.FirstPosting(ctx, booksID)
 	if err != nil {
 		return IndicatorReport{}, err
 	}
@@ -147,7 +147,7 @@ func (s *Service) Indicators(ctx context.Context, userID int64, month, today tim
 		}
 
 		if i >= 12 {
-			values, err := s.valuations.ValuedBalances(ctx, userID, monthEnd(m))
+			values, err := s.valuations.ValuedBalances(ctx, booksID, monthEnd(m))
 			if err != nil {
 				return IndicatorReport{}, err
 			}
@@ -161,7 +161,7 @@ func (s *Service) Indicators(ctx context.Context, userID int64, month, today tim
 				}
 			}
 
-			c, err := s.commitments.CommittedTotal(ctx, userID, m)
+			c, err := s.commitments.CommittedTotal(ctx, booksID, m)
 			if err != nil {
 				return IndicatorReport{}, err
 			}

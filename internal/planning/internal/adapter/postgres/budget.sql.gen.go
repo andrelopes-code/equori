@@ -15,18 +15,18 @@ import (
 const deleteBudget = `-- name: DeleteBudget :execrows
 DELETE FROM planning_budget
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2
 `
 
 type DeleteBudgetParams struct {
-	UserID int64
-	ID     uuid.UUID
+	BooksID int64
+	ID      uuid.UUID
 }
 
 // S144: the amounts go with the budget (ON DELETE CASCADE).
 func (q *Queries) DeleteBudget(ctx context.Context, arg DeleteBudgetParams) (int64, error) {
-	result, err := q.db.Exec(ctx, deleteBudget, arg.UserID, arg.ID)
+	result, err := q.db.Exec(ctx, deleteBudget, arg.BooksID, arg.ID)
 	if err != nil {
 		return 0, err
 	}
@@ -35,25 +35,25 @@ func (q *Queries) DeleteBudget(ctx context.Context, arg DeleteBudgetParams) (int
 
 const getBudget = `-- name: GetBudget :one
 SELECT
-    id, user_id, category_account_id, period_type, rollover, currency, created_at
+    id, books_id, category_account_id, period_type, rollover, currency, created_at
 FROM
     planning_budget
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2
 `
 
 type GetBudgetParams struct {
-	UserID int64
-	ID     uuid.UUID
+	BooksID int64
+	ID      uuid.UUID
 }
 
 func (q *Queries) GetBudget(ctx context.Context, arg GetBudgetParams) (PlanningBudget, error) {
-	row := q.db.QueryRow(ctx, getBudget, arg.UserID, arg.ID)
+	row := q.db.QueryRow(ctx, getBudget, arg.BooksID, arg.ID)
 	var i PlanningBudget
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.CategoryAccountID,
 		&i.PeriodType,
 		&i.Rollover,
@@ -65,15 +65,15 @@ func (q *Queries) GetBudget(ctx context.Context, arg GetBudgetParams) (PlanningB
 
 const insertBudget = `-- name: InsertBudget :one
 INSERT INTO
-    planning_budget (user_id, category_account_id, rollover, currency)
+    planning_budget (books_id, category_account_id, rollover, currency)
 VALUES
     ($1, $2, $3, $4)
 RETURNING
-    id, user_id, category_account_id, period_type, rollover, currency, created_at
+    id, books_id, category_account_id, period_type, rollover, currency, created_at
 `
 
 type InsertBudgetParams struct {
-	UserID            int64
+	BooksID           int64
 	CategoryAccountID uuid.UUID
 	Rollover          bool
 	Currency          string
@@ -81,7 +81,7 @@ type InsertBudgetParams struct {
 
 func (q *Queries) InsertBudget(ctx context.Context, arg InsertBudgetParams) (PlanningBudget, error) {
 	row := q.db.QueryRow(ctx, insertBudget,
-		arg.UserID,
+		arg.BooksID,
 		arg.CategoryAccountID,
 		arg.Rollover,
 		arg.Currency,
@@ -89,7 +89,7 @@ func (q *Queries) InsertBudget(ctx context.Context, arg InsertBudgetParams) (Pla
 	var i PlanningBudget
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.CategoryAccountID,
 		&i.PeriodType,
 		&i.Rollover,
@@ -101,13 +101,13 @@ func (q *Queries) InsertBudget(ctx context.Context, arg InsertBudgetParams) (Pla
 
 const insertBudgetAmount = `-- name: InsertBudgetAmount :exec
 INSERT INTO
-    planning_budget_amount (user_id, budget_id, effective_from, amount)
+    planning_budget_amount (books_id, budget_id, effective_from, amount)
 VALUES
     ($1, $2, $3, $4)
 `
 
 type InsertBudgetAmountParams struct {
-	UserID        int64
+	BooksID       int64
 	BudgetID      uuid.UUID
 	EffectiveFrom time.Time
 	Amount        int64
@@ -115,7 +115,7 @@ type InsertBudgetAmountParams struct {
 
 func (q *Queries) InsertBudgetAmount(ctx context.Context, arg InsertBudgetAmountParams) error {
 	_, err := q.db.Exec(ctx, insertBudgetAmount,
-		arg.UserID,
+		arg.BooksID,
 		arg.BudgetID,
 		arg.EffectiveFrom,
 		arg.Amount,
@@ -125,17 +125,17 @@ func (q *Queries) InsertBudgetAmount(ctx context.Context, arg InsertBudgetAmount
 
 const listAllBudgets = `-- name: ListAllBudgets :many
 SELECT
-    id, user_id, category_account_id, period_type, rollover, currency, created_at
+    id, books_id, category_account_id, period_type, rollover, currency, created_at
 FROM
     planning_budget
 WHERE
-    user_id = $1
+    books_id = $1
 ORDER BY
     id
 `
 
-func (q *Queries) ListAllBudgets(ctx context.Context, userID int64) ([]PlanningBudget, error) {
-	rows, err := q.db.Query(ctx, listAllBudgets, userID)
+func (q *Queries) ListAllBudgets(ctx context.Context, booksID int64) ([]PlanningBudget, error) {
+	rows, err := q.db.Query(ctx, listAllBudgets, booksID)
 	if err != nil {
 		return nil, err
 	}
@@ -145,7 +145,7 @@ func (q *Queries) ListAllBudgets(ctx context.Context, userID int64) ([]PlanningB
 		var i PlanningBudget
 		if err := rows.Scan(
 			&i.ID,
-			&i.UserID,
+			&i.BooksID,
 			&i.CategoryAccountID,
 			&i.PeriodType,
 			&i.Rollover,
@@ -164,11 +164,11 @@ func (q *Queries) ListAllBudgets(ctx context.Context, userID int64) ([]PlanningB
 
 const listBudgetAmounts = `-- name: ListBudgetAmounts :many
 SELECT
-    user_id, budget_id, effective_from, amount
+    books_id, budget_id, effective_from, amount
 FROM
     planning_budget_amount
 WHERE
-    user_id = $1
+    books_id = $1
     AND budget_id = ANY ($2::UUID[])
 ORDER BY
     budget_id,
@@ -176,12 +176,12 @@ ORDER BY
 `
 
 type ListBudgetAmountsParams struct {
-	UserID    int64
+	BooksID   int64
 	BudgetIds []uuid.UUID
 }
 
 func (q *Queries) ListBudgetAmounts(ctx context.Context, arg ListBudgetAmountsParams) ([]PlanningBudgetAmount, error) {
-	rows, err := q.db.Query(ctx, listBudgetAmounts, arg.UserID, arg.BudgetIds)
+	rows, err := q.db.Query(ctx, listBudgetAmounts, arg.BooksID, arg.BudgetIds)
 	if err != nil {
 		return nil, err
 	}
@@ -190,7 +190,7 @@ func (q *Queries) ListBudgetAmounts(ctx context.Context, arg ListBudgetAmountsPa
 	for rows.Next() {
 		var i PlanningBudgetAmount
 		if err := rows.Scan(
-			&i.UserID,
+			&i.BooksID,
 			&i.BudgetID,
 			&i.EffectiveFrom,
 			&i.Amount,
@@ -207,11 +207,11 @@ func (q *Queries) ListBudgetAmounts(ctx context.Context, arg ListBudgetAmountsPa
 
 const listBudgets = `-- name: ListBudgets :many
 SELECT
-    id, user_id, category_account_id, period_type, rollover, currency, created_at
+    id, books_id, category_account_id, period_type, rollover, currency, created_at
 FROM
     planning_budget
 WHERE
-    user_id = $1
+    books_id = $1
     AND (
         $2::uuid IS NULL
         OR id > $2::uuid
@@ -223,13 +223,13 @@ LIMIT
 `
 
 type ListBudgetsParams struct {
-	UserID   int64
+	BooksID  int64
 	AfterID  uuid.NullUUID
 	RowLimit int32
 }
 
 func (q *Queries) ListBudgets(ctx context.Context, arg ListBudgetsParams) ([]PlanningBudget, error) {
-	rows, err := q.db.Query(ctx, listBudgets, arg.UserID, arg.AfterID, arg.RowLimit)
+	rows, err := q.db.Query(ctx, listBudgets, arg.BooksID, arg.AfterID, arg.RowLimit)
 	if err != nil {
 		return nil, err
 	}
@@ -239,7 +239,7 @@ func (q *Queries) ListBudgets(ctx context.Context, arg ListBudgetsParams) ([]Pla
 		var i PlanningBudget
 		if err := rows.Scan(
 			&i.ID,
-			&i.UserID,
+			&i.BooksID,
 			&i.CategoryAccountID,
 			&i.PeriodType,
 			&i.Rollover,
@@ -258,26 +258,26 @@ func (q *Queries) ListBudgets(ctx context.Context, arg ListBudgetsParams) ([]Pla
 
 const lockBudget = `-- name: LockBudget :one
 SELECT
-    id, user_id, category_account_id, period_type, rollover, currency, created_at
+    id, books_id, category_account_id, period_type, rollover, currency, created_at
 FROM
     planning_budget
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2
 FOR UPDATE
 `
 
 type LockBudgetParams struct {
-	UserID int64
-	ID     uuid.UUID
+	BooksID int64
+	ID      uuid.UUID
 }
 
 func (q *Queries) LockBudget(ctx context.Context, arg LockBudgetParams) (PlanningBudget, error) {
-	row := q.db.QueryRow(ctx, lockBudget, arg.UserID, arg.ID)
+	row := q.db.QueryRow(ctx, lockBudget, arg.BooksID, arg.ID)
 	var i PlanningBudget
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.CategoryAccountID,
 		&i.PeriodType,
 		&i.Rollover,
@@ -289,7 +289,7 @@ func (q *Queries) LockBudget(ctx context.Context, arg LockBudgetParams) (Plannin
 
 const upsertBudgetAmount = `-- name: UpsertBudgetAmount :exec
 INSERT INTO
-    planning_budget_amount (user_id, budget_id, effective_from, amount)
+    planning_budget_amount (books_id, budget_id, effective_from, amount)
 VALUES
     ($1, $2, $3, $4)
 ON CONFLICT (budget_id, effective_from) DO UPDATE
@@ -298,7 +298,7 @@ SET
 `
 
 type UpsertBudgetAmountParams struct {
-	UserID        int64
+	BooksID       int64
 	BudgetID      uuid.UUID
 	EffectiveFrom time.Time
 	Amount        int64
@@ -307,7 +307,7 @@ type UpsertBudgetAmountParams struct {
 // A130: a plan save replaces the version of its month.
 func (q *Queries) UpsertBudgetAmount(ctx context.Context, arg UpsertBudgetAmountParams) error {
 	_, err := q.db.Exec(ctx, upsertBudgetAmount,
-		arg.UserID,
+		arg.BooksID,
 		arg.BudgetID,
 		arg.EffectiveFrom,
 		arg.Amount,

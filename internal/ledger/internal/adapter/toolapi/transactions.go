@@ -55,8 +55,8 @@ func searchTransactions(svc *app.Service) tool.Tool {
 			"Do not use it for totals by category: get_category_totals adds them up. " +
 			"Filters combine; narrow them instead of reading many pages.",
 		Effect: tool.ReadOnly,
-	}, func(ctx context.Context, userID int64, in searchTransactionsIn) (searchTransactionsOut, error) {
-		q, err := transactionQuery(userID, in)
+	}, func(ctx context.Context, booksID int64, in searchTransactionsIn) (searchTransactionsOut, error) {
+		q, err := transactionQuery(booksID, in)
 		if err != nil {
 			return searchTransactionsOut{}, err
 		}
@@ -66,7 +66,7 @@ func searchTransactions(svc *app.Service) tool.Tool {
 			return searchTransactionsOut{}, err
 		}
 
-		accounts, _, err := allAccounts(ctx, svc, userID)
+		accounts, _, err := allAccounts(ctx, svc, booksID)
 		if err != nil {
 			return searchTransactionsOut{}, err
 		}
@@ -78,7 +78,7 @@ func searchTransactions(svc *app.Service) tool.Tool {
 			}
 		}
 
-		payees, err := svc.PayeeNames(ctx, userID, payeeIDs)
+		payees, err := svc.PayeeNames(ctx, booksID, payeeIDs)
 		if err != nil {
 			return searchTransactionsOut{}, err
 		}
@@ -119,8 +119,8 @@ func viewOf(t domain.Transaction, accounts map[uuid.UUID]domain.Account, payees 
 }
 
 // transactionQuery checks the argument values the schema cannot: identifiers, limit and cursor.
-func transactionQuery(userID int64, in searchTransactionsIn) (app.TransactionQuery, error) {
-	q := app.TransactionQuery{UserID: userID, Tag: in.Tag, Q: in.Query, Uncategorized: in.Uncategorized}
+func transactionQuery(booksID int64, in searchTransactionsIn) (app.TransactionQuery, error) {
+	q := app.TransactionQuery{BooksID: booksID, Tag: in.Tag, Q: in.Query, Uncategorized: in.Uncategorized}
 
 	var err error
 	if q.AccountID, err = optionalID(in.AccountID, "account_id"); err != nil {

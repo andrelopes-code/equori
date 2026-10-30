@@ -94,7 +94,7 @@ const (
 // Profile says how the CSV files of one account are read (P4 amendment A13). Columns are
 // header names, or 1-based positions when the file has no header row.
 type Profile struct {
-	UserID            int64
+	BooksID           int64
 	AccountID         uuid.UUID
 	Delimiter         string
 	HeaderRows        int

@@ -14,13 +14,13 @@ import (
 // Statements lists a card's statements within [from, to]; nil bounds are open. Pages are
 // cut in memory: each summary carries the unpaid amount of the previous statement, so
 // every statement of the card is summarized anyway. A zero Limit returns every statement.
-func (s *Service) Statements(ctx context.Context, userID int64, accountID uuid.UUID, from, to *domain.ReferenceMonth, p page.Request[StatementKey]) ([]StatementView, *StatementKey, domain.Account, error) {
-	a, err := s.card(ctx, userID, accountID)
+func (s *Service) Statements(ctx context.Context, booksID int64, accountID uuid.UUID, from, to *domain.ReferenceMonth, p page.Request[StatementKey]) ([]StatementView, *StatementKey, domain.Account, error) {
+	a, err := s.card(ctx, booksID, accountID)
 	if err != nil {
 		return nil, nil, domain.Account{}, err
 	}
 
-	all, err := s.statementSummaries(ctx, s.repo, userID, accountID)
+	all, err := s.statementSummaries(ctx, s.repo, booksID, accountID)
 	if err != nil {
 		return nil, nil, domain.Account{}, err
 	}
@@ -45,18 +45,18 @@ func (s *Service) Statements(ctx context.Context, userID int64, accountID uuid.U
 	return out, &StatementKey{Reference: out[len(out)-1].Input.Reference.String()}, a, nil
 }
 
-func (s *Service) Statement(ctx context.Context, userID int64, id uuid.UUID) (StatementView, domain.Account, []StatementPosting, error) {
-	accountID, err := s.repo.StatementAccount(ctx, userID, id)
+func (s *Service) Statement(ctx context.Context, booksID int64, id uuid.UUID) (StatementView, domain.Account, []StatementPosting, error) {
+	accountID, err := s.repo.StatementAccount(ctx, booksID, id)
 	if err != nil {
 		return StatementView{}, domain.Account{}, nil, err
 	}
 
-	views, _, a, err := s.Statements(ctx, userID, accountID, nil, nil, page.Request[StatementKey]{})
+	views, _, a, err := s.Statements(ctx, booksID, accountID, nil, nil, page.Request[StatementKey]{})
 	if err != nil {
 		return StatementView{}, domain.Account{}, nil, err
 	}
 
-	postings, err := s.repo.StatementPostings(ctx, userID, id)
+	postings, err := s.repo.StatementPostings(ctx, booksID, id)
 	if err != nil {
 		return StatementView{}, domain.Account{}, nil, err
 	}

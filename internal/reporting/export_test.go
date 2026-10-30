@@ -114,7 +114,7 @@ func TestExport(t *testing.T) {
 	checking := h.Account("Checking", "asset", "checking", nil)
 	food := h.Account("Food", "expense", "", nil)
 	tx := h.Record("2026-10-20", apitest.Posting(checking, -4590), apitest.Posting(food, 4590))
-	// A correction keeps version 1 in ledger_transaction_version, which has no user_id.
+	// A correction keeps version 1 in ledger_transaction_version, which has no books_id.
 	h.MustDo(http.MethodPut, "/api/v1/transactions/"+tx, map[string]any{
 		"date": "2026-10-20", "description": "Groceries", "expected_version": 1, "reason": "typo",
 		"postings": []map[string]any{apitest.Posting(checking, -4590), apitest.Posting(food, 4590)},
@@ -170,8 +170,8 @@ func TestExport(t *testing.T) {
 		t.Error("shared instruments are missing")
 	}
 
-	if strings.Contains(string(files["tables/ledger_posting.jsonl"]), "user_id") {
-		t.Error("a row carries user_id")
+	if strings.Contains(string(files["tables/ledger_posting.jsonl"]), "books_id") {
+		t.Error("a row carries books_id")
 	}
 
 	blob := files["tables/ledger_attachment_blob.jsonl"]

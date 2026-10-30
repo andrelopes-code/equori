@@ -82,16 +82,16 @@ func originalInstrument(m *money.Money) *string {
 }
 
 func toInstitution(row LedgerInstitution) app.Institution {
-	return app.Institution{ID: row.ID, UserID: row.UserID, Name: row.Name, Code: deref(row.Code), Identifier: app.InstitutionIdentifier{Scheme: deref(row.IdentifierScheme), Value: deref(row.Identifier)}}
+	return app.Institution{ID: row.ID, BooksID: row.BooksID, Name: row.Name, Code: deref(row.Code), Identifier: app.InstitutionIdentifier{Scheme: deref(row.IdentifierScheme), Value: deref(row.Identifier)}}
 }
 
 func toPayee(row LedgerPayee) app.Payee {
-	return app.Payee{ID: row.ID, UserID: row.UserID, Name: row.Name, MergedInto: row.MergedInto.UUID}
+	return app.Payee{ID: row.ID, BooksID: row.BooksID, Name: row.Name, MergedInto: row.MergedInto.UUID}
 }
 
 func toAccount(row LedgerAccount) domain.Account {
 	return domain.Account{
-		ID: row.ID, UserID: row.UserID, Name: row.Name, Class: domain.Class(row.AccountClass),
+		ID: row.ID, BooksID: row.BooksID, Name: row.Name, Class: domain.Class(row.AccountClass),
 		Kind: domain.Kind(deref(row.Kind)), Instrument: money.Currency(row.Instrument),
 		ParentID: row.ParentID.UUID, InstitutionID: row.InstitutionID.UUID, CounterpartyID: row.CounterpartyPayeeID.UUID,
 		OpenedOn: row.OpenedOn, ClosedOn: row.ClosedOn, YieldMode: domain.YieldMode(row.YieldMode),
@@ -121,7 +121,7 @@ func nullColor(c int) *int16 {
 
 func toTransaction(row LedgerTransaction) domain.Transaction {
 	return domain.Transaction{
-		ID: row.ID, UserID: row.UserID, Date: row.Date, Description: row.Description, PayeeID: row.PayeeID.UUID,
+		ID: row.ID, BooksID: row.BooksID, Date: row.Date, Description: row.Description, PayeeID: row.PayeeID.UUID,
 		BalancingCurrency: money.Currency(row.BalancingCurrency), Origin: domain.Origin(row.Origin),
 		Version: int(row.Version), VoidedAt: row.VoidedAt, VoidReason: deref(row.VoidReason),
 	}
@@ -168,7 +168,7 @@ func (r *Repository) toPosting(ctx context.Context, row ListPostingsRow) (domain
 // snapshot is the JSON form of a replaced transaction version (ledger_transaction_version).
 type snapshot struct {
 	ID                uuid.UUID         `json:"id"`
-	UserID            int64             `json:"user_id"`
+	BooksID           int64             `json:"books_id"`
 	Date              string            `json:"date"`
 	Description       string            `json:"description"`
 	PayeeID           uuid.UUID         `json:"payee_id"`
@@ -205,7 +205,7 @@ type snapshotPosting struct {
 
 func toSnapshot(t domain.Transaction) snapshot {
 	s := snapshot{
-		ID: t.ID, UserID: t.UserID, Date: t.Date.Format(time.DateOnly), Description: t.Description, PayeeID: t.PayeeID,
+		ID: t.ID, BooksID: t.BooksID, Date: t.Date.Format(time.DateOnly), Description: t.Description, PayeeID: t.PayeeID,
 		BalancingCurrency: string(t.BalancingCurrency), Origin: string(t.Origin), Version: t.Version, Tags: t.Tags,
 	}
 	for _, l := range t.Links {
@@ -239,7 +239,7 @@ func (s snapshot) transaction(ctx context.Context, ins app.Instruments) (domain.
 	}
 
 	t := domain.Transaction{
-		ID: s.ID, UserID: s.UserID, Date: d, Description: s.Description, PayeeID: s.PayeeID,
+		ID: s.ID, BooksID: s.BooksID, Date: d, Description: s.Description, PayeeID: s.PayeeID,
 		BalancingCurrency: money.Currency(s.BalancingCurrency), Origin: domain.Origin(s.Origin), Version: s.Version, Tags: s.Tags,
 	}
 	for _, l := range s.Links {
@@ -312,7 +312,7 @@ func toBillingRule(row LedgerBillingCycleRule) domain.BillingCycleRule {
 }
 
 func toCard(row LedgerCard) domain.Card {
-	return domain.Card{ID: row.ID, UserID: row.UserID, AccountID: row.AccountID, Holder: row.Holder, LastFour: row.LastFour, Virtual: row.Virtual, Active: row.Active, ForeignChargeBP: int(row.ForeignChargeBp)}
+	return domain.Card{ID: row.ID, BooksID: row.BooksID, AccountID: row.AccountID, Holder: row.Holder, LastFour: row.LastFour, Virtual: row.Virtual, Active: row.Active, ForeignChargeBP: int(row.ForeignChargeBp)}
 }
 
 func installmentPlan(i *domain.InstallmentRef) uuid.NullUUID {

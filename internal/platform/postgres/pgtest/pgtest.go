@@ -213,8 +213,8 @@ func CreateMember(t testing.TB, pool *pgxpool.Pool) (memberID, booksID int64) {
 	return memberID, booksID
 }
 
-// CreateUser returns the books ID of CreateMember.
-func CreateUser(t testing.TB, pool *pgxpool.Pool) int64 {
+// CreateBooks returns the books ID of CreateMember.
+func CreateBooks(t testing.TB, pool *pgxpool.Pool) int64 {
 	t.Helper()
 	_, booksID := CreateMember(t, pool)
 

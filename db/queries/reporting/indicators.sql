@@ -4,7 +4,7 @@ SELECT
 FROM
     ledger_settings
 WHERE
-    user_id = @user_id;
+    books_id = @books_id;
 
 -- name: IndicatorFirstPosting :one
 -- The earliest booked date of the user's postings that are not voided.
@@ -13,7 +13,7 @@ SELECT
 FROM
     ledger_posting
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND NOT voided
 ORDER BY
     booked_on
@@ -29,7 +29,7 @@ WITH RECURSIVE
         FROM
             ledger_account r
         WHERE
-            r.user_id = @user_id
+            r.books_id = @books_id
             AND r.system_role = 'interest'
         UNION ALL
         SELECT
@@ -38,7 +38,7 @@ WITH RECURSIVE
             ledger_account a
             JOIN interest i ON a.parent_id = i.id
         WHERE
-            a.user_id = @user_id
+            a.books_id = @books_id
     )
 SELECT
     a.id,
@@ -57,7 +57,7 @@ SELECT
 FROM
     ledger_account a
 WHERE
-    a.user_id = @user_id;
+    a.books_id = @books_id;
 
 -- name: LoanPrincipalByMonth :many
 -- Analytics design 4.2: postings that reduce a loan owed in the base currency, paid from an asset account.
@@ -67,9 +67,9 @@ SELECT
 FROM
     ledger_posting p
     JOIN ledger_account a ON a.id = p.account_id
-    JOIN ledger_settings st ON st.user_id = p.user_id
+    JOIN ledger_settings st ON st.books_id = p.books_id
 WHERE
-    p.user_id = @user_id
+    p.books_id = @books_id
     AND NOT p.voided
     AND a.account_class = 'liability'
     AND a.kind = 'loan'
@@ -83,7 +83,7 @@ WHERE
             ledger_posting q
             JOIN ledger_account qa ON qa.id = q.account_id
         WHERE
-            q.user_id = p.user_id
+            q.books_id = p.books_id
             AND q.transaction_id = p.transaction_id
             AND NOT q.voided
             AND qa.account_class = 'asset'

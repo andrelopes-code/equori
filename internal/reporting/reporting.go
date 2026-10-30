@@ -38,7 +38,7 @@ type Module struct {
 func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, clk clock.Clock, log *slog.Logger, appVersion string) *Module {
 	svc := app.NewService(postgres.NewRepository(pool))
 	store := postgres.NewExports(pool, appVersion)
-	exports := app.NewExports(store, store, clk, svc.RebuildUser)
+	exports := app.NewExports(store, store, clk, svc.RebuildBooks)
 	dispatcher.Subscribe("reporting-export", postgres.EventExportRequested, func(ctx context.Context, _ pgx.Tx, e outbox.Delivered) error {
 		var p struct {
 			ExportID uuid.UUID `json:"export_id"`
@@ -47,7 +47,7 @@ func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, clk clock.Clock, log
 			return fmt.Errorf("decode %s: %w", e.Type, err)
 		}
 
-		return exports.Build(ctx, e.UserID, p.ExportID)
+		return exports.Build(ctx, e.BooksID, p.ExportID)
 	})
 
 	for _, eventType := range []string{ledger.EventTransactionRecorded, ledger.EventTransactionCorrected, ledger.EventTransactionCategorized, ledger.EventTransactionVoided} {
@@ -61,7 +61,7 @@ func (m *Module) RegisterRoutes(mux *http.ServeMux) { m.http.Register(mux) }
 
 // OnImport adds the rebuild of another module's derived tables, run for the user after an
 // import of an export archive (export design E4).
-func (m *Module) OnImport(rebuild func(ctx context.Context, userID int64) error) {
+func (m *Module) OnImport(rebuild func(ctx context.Context, booksID int64) error) {
 	m.exports.OnImport(rebuild)
 }
 
@@ -78,12 +78,12 @@ func (m *Module) Tools() tool.Group {
 
 // Commitments is the committed amount of a month, lent by planning.
 type Commitments interface {
-	CommittedTotal(ctx context.Context, userID int64, month time.Time) (money.Money, error)
+	CommittedTotal(ctx context.Context, booksID int64, month time.Time) (money.Money, error)
 }
 
 // Valuations values each account's own balance at the end of a date in the base currency, lent by portfolio.
 type Valuations interface {
-	ValuedBalances(ctx context.Context, userID int64, date time.Time) (map[uuid.UUID]money.Money, error)
+	ValuedBalances(ctx context.Context, booksID int64, date time.Time) (map[uuid.UUID]money.Money, error)
 }
 
 // UseIndicatorSources lends the indicators their two sources; internal/server binds them late
@@ -99,13 +99,13 @@ type priced struct {
 	v Valuations
 }
 
-func (p priced) CommittedTotal(ctx context.Context, userID int64, month time.Time) (money.Money, error) {
-	c, err := p.c.CommittedTotal(ctx, userID, month)
+func (p priced) CommittedTotal(ctx context.Context, booksID int64, month time.Time) (money.Money, error) {
+	c, err := p.c.CommittedTotal(ctx, booksID, month)
 	return c, priceMissing(err)
 }
 
-func (p priced) ValuedBalances(ctx context.Context, userID int64, date time.Time) (map[uuid.UUID]money.Money, error) {
-	v, err := p.v.ValuedBalances(ctx, userID, date)
+func (p priced) ValuedBalances(ctx context.Context, booksID int64, date time.Time) (map[uuid.UUID]money.Money, error) {
+	v, err := p.v.ValuedBalances(ctx, booksID, date)
 	return v, priceMissing(err)
 }
 
@@ -143,5 +143,5 @@ func rebuildSeries(ctx context.Context, tx pgx.Tx, e outbox.Delivered) error {
 		}
 	}
 
-	return app.NewService(postgres.NewRepository(tx)).RebuildAccounts(ctx, e.UserID, p.AccountIDs, from)
+	return app.NewService(postgres.NewRepository(tx)).RebuildAccounts(ctx, e.BooksID, p.AccountIDs, from)
 }

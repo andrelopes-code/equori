@@ -64,7 +64,7 @@ func (s *Server) ImportFile(ctx context.Context, req ImportFileRequestObject) (I
 	}
 
 	b, err := s.svc.Import(ctx, app.ImportFile{
-		UserID: auth.MustUserID(ctx), AccountID: req.Id, Source: domain.Source(format), FileName: name, Content: content,
+		BooksID: auth.MustBooksID(ctx), AccountID: req.Id, Source: domain.Source(format), FileName: name, Content: content,
 	})
 	if err != nil {
 		return nil, err
@@ -76,7 +76,7 @@ func (s *Server) ImportFile(ctx context.Context, req ImportFileRequestObject) (I
 }
 
 func (s *Server) GetImportBatch(ctx context.Context, req GetImportBatchRequestObject) (GetImportBatchResponseObject, error) {
-	b, err := s.svc.Batch(ctx, auth.MustUserID(ctx), req.Id)
+	b, err := s.svc.Batch(ctx, auth.MustBooksID(ctx), req.Id)
 	if err != nil {
 		return nil, err
 	}

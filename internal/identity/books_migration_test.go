@@ -108,3 +108,42 @@ func TestBooksBackfill(t *testing.T) {
 		t.Errorf("business foreign keys to identity_member = %d, %v; want 0", n, err)
 	}
 }
+
+// ADR 029, BK5, BK7: migration 70 renames the owner column of every business table and the key of the stored snapshots.
+func TestBooksColumnRename(t *testing.T) {
+	t.Parallel()
+	pool := pgtest.Empty(t)
+	ctx := t.Context()
+
+	log := slog.New(slog.NewTextHandler(io.Discard, nil))
+	if err := postgres.MigrateTo(ctx, pool, 69, log); err != nil {
+		t.Fatal(err)
+	}
+
+	_, books := pgtest.CreateMember(t, pool)
+
+	var transaction string
+	if err := pool.QueryRow(ctx, `INSERT INTO ledger_transaction (user_id, date, description, balancing_currency, origin) VALUES ($1, '2026-10-30', 'Coffee', 'BRL', 'manual') RETURNING id`, books).Scan(&transaction); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := pool.Exec(ctx, `INSERT INTO ledger_transaction_version (transaction_id, version, snapshot, reason) VALUES ($1, 1, jsonb_build_object('id', $1::uuid::text, 'user_id', $2::bigint, 'version', 1), 'edit')`, transaction, books); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := postgres.Migrate(ctx, pool, log); err != nil {
+		t.Fatal(err)
+	}
+
+	var got int64
+	if err := pool.QueryRow(ctx, `SELECT books_id FROM ledger_transaction`).Scan(&got); err != nil || got != books {
+		t.Errorf("ledger_transaction.books_id = %d, %v; want %d", got, err, books)
+	}
+
+	var hasOld bool
+
+	var snapshotBooks int64
+	if err := pool.QueryRow(ctx, `SELECT snapshot ? 'user_id', (snapshot ->> 'books_id')::bigint FROM ledger_transaction_version`).Scan(&hasOld, &snapshotBooks); err != nil || hasOld || snapshotBooks != books {
+		t.Errorf("snapshot keeps the old key = %t, books_id = %d, %v; want false, %d", hasOld, snapshotBooks, err, books)
+	}
+}

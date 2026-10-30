@@ -17,13 +17,13 @@ var ErrBudgetExists = errors.New("the category already has a budget")
 
 // category returns the category account of the user and checks the base currency: budgets
 // stay in it (P7 amendment A47, kept by P8 amendment A72).
-func (s *Service) category(ctx context.Context, userID int64, id uuid.UUID) (Account, money.Currency, error) {
-	base, err := s.ledger.BaseCurrency(ctx, userID)
+func (s *Service) category(ctx context.Context, booksID int64, id uuid.UUID) (Account, money.Currency, error) {
+	base, err := s.ledger.BaseCurrency(ctx, booksID)
 	if err != nil {
 		return Account{}, "", err
 	}
 
-	facts, err := s.ledger.AccountFacts(ctx, userID)
+	facts, err := s.ledger.AccountFacts(ctx, booksID)
 	if err != nil {
 		return Account{}, "", err
 	}
@@ -59,8 +59,8 @@ func checkBudgetAmount(m money.Money, currency money.Currency) error {
 	return nil
 }
 
-func (s *Service) CreateBudget(ctx context.Context, userID int64, categoryID uuid.UUID, amount money.Money, from time.Time, rollover bool) (domain.Budget, error) {
-	_, base, err := s.category(ctx, userID, categoryID)
+func (s *Service) CreateBudget(ctx context.Context, booksID int64, categoryID uuid.UUID, amount money.Money, from time.Time, rollover bool) (domain.Budget, error) {
+	_, base, err := s.category(ctx, booksID, categoryID)
 	if err != nil {
 		return domain.Budget{}, err
 	}
@@ -74,7 +74,7 @@ func (s *Service) CreateBudget(ctx context.Context, userID int64, categoryID uui
 	var created domain.Budget
 	err = s.repo.InTx(ctx, func(repo Repository) error {
 		var err error
-		created, err = repo.InsertBudget(ctx, userID, b)
+		created, err = repo.InsertBudget(ctx, booksID, b)
 
 		return err
 	})
@@ -83,10 +83,10 @@ func (s *Service) CreateBudget(ctx context.Context, userID int64, categoryID uui
 }
 
 // AddBudgetAmount sets the amount from a month after the latest one on (T09).
-func (s *Service) AddBudgetAmount(ctx context.Context, userID int64, id uuid.UUID, from time.Time, amount money.Money) (domain.Budget, error) {
+func (s *Service) AddBudgetAmount(ctx context.Context, booksID int64, id uuid.UUID, from time.Time, amount money.Money) (domain.Budget, error) {
 	var out domain.Budget
 	err := s.repo.InTx(ctx, func(repo Repository) error {
-		b, err := repo.LockBudget(ctx, userID, id)
+		b, err := repo.LockBudget(ctx, booksID, id)
 		if err != nil {
 			return err
 		}
@@ -100,11 +100,11 @@ func (s *Service) AddBudgetAmount(ctx context.Context, userID int64, id uuid.UUI
 			return err
 		}
 
-		if err := repo.InsertBudgetAmount(ctx, userID, id, domain.BudgetAmount{EffectiveFrom: from, Amount: amount.Amount()}); err != nil {
+		if err := repo.InsertBudgetAmount(ctx, booksID, id, domain.BudgetAmount{EffectiveFrom: from, Amount: amount.Amount()}); err != nil {
 			return err
 		}
 
-		out, err = repo.Budget(ctx, userID, id)
+		out, err = repo.Budget(ctx, booksID, id)
 
 		return err
 	})
@@ -112,27 +112,27 @@ func (s *Service) AddBudgetAmount(ctx context.Context, userID int64, id uuid.UUI
 	return out, err
 }
 
-func (s *Service) Budget(ctx context.Context, userID int64, id uuid.UUID) (domain.Budget, error) {
-	return s.repo.Budget(ctx, userID, id)
+func (s *Service) Budget(ctx context.Context, booksID int64, id uuid.UUID) (domain.Budget, error) {
+	return s.repo.Budget(ctx, booksID, id)
 }
 
-func (s *Service) ListBudgets(ctx context.Context, userID int64, p page.Request[IDKey]) ([]domain.Budget, *IDKey, error) {
-	return s.repo.ListBudgets(ctx, userID, p)
+func (s *Service) ListBudgets(ctx context.Context, booksID int64, p page.Request[IDKey]) ([]domain.Budget, *IDKey, error) {
+	return s.repo.ListBudgets(ctx, booksID, p)
 }
 
 // BudgetProgress reports the month of a budget; spending of an income category is positive (A54).
 // DeleteBudget removes a budget with its amounts (S144).
-func (s *Service) DeleteBudget(ctx context.Context, userID int64, id uuid.UUID) error {
-	return s.repo.InTx(ctx, func(repo Repository) error { return repo.DeleteBudget(ctx, userID, id) })
+func (s *Service) DeleteBudget(ctx context.Context, booksID int64, id uuid.UUID) error {
+	return s.repo.InTx(ctx, func(repo Repository) error { return repo.DeleteBudget(ctx, booksID, id) })
 }
 
-func (s *Service) BudgetProgress(ctx context.Context, userID int64, id uuid.UUID, month time.Time) (domain.Progress, money.Currency, error) {
-	b, err := s.repo.Budget(ctx, userID, id)
+func (s *Service) BudgetProgress(ctx context.Context, booksID int64, id uuid.UUID, month time.Time) (domain.Progress, money.Currency, error) {
+	b, err := s.repo.Budget(ctx, booksID, id)
 	if err != nil {
 		return domain.Progress{}, "", err
 	}
 
-	category, _, err := s.category(ctx, userID, b.CategoryID)
+	category, _, err := s.category(ctx, booksID, b.CategoryID)
 	if err != nil {
 		return domain.Progress{}, "", err
 	}
@@ -150,7 +150,7 @@ func (s *Service) BudgetProgress(ctx context.Context, userID int64, id uuid.UUID
 	// One ledger query per request: the months of a rollover budget at once, or the month alone.
 	var totals map[time.Time]int64
 	if b.Rollover && len(b.Amounts) > 0 && !b.Amounts[0].EffectiveFrom.After(month) {
-		if totals, err = s.ledger.CategoryMonthlyTotals(ctx, userID, b.CategoryID, b.Amounts[0].EffectiveFrom, month.AddDate(0, 1, 0)); err != nil {
+		if totals, err = s.ledger.CategoryMonthlyTotals(ctx, booksID, b.CategoryID, b.Amounts[0].EffectiveFrom, month.AddDate(0, 1, 0)); err != nil {
 			return domain.Progress{}, "", err
 		}
 	}
@@ -164,7 +164,7 @@ func (s *Service) BudgetProgress(ctx context.Context, userID int64, id uuid.UUID
 			return 0, nil
 		}
 
-		total, err := s.ledger.CategoryTotal(ctx, userID, b.CategoryID, m, m.AddDate(0, 1, 0))
+		total, err := s.ledger.CategoryTotal(ctx, booksID, b.CategoryID, m, m.AddDate(0, 1, 0))
 
 		return sign * total, err
 	}
@@ -183,11 +183,11 @@ func (s *Service) BudgetProgress(ctx context.Context, userID int64, id uuid.UUID
 
 // HandleCategoriesMerged moves the budget and the schedules of from to into; when into has a
 // budget, the budget of from is dropped (A75).
-func (s *Service) HandleCategoriesMerged(ctx context.Context, userID int64, from, into uuid.UUID) error {
-	return s.repo.MergeCategory(ctx, userID, from, into)
+func (s *Service) HandleCategoriesMerged(ctx context.Context, booksID int64, from, into uuid.UUID) error {
+	return s.repo.MergeCategory(ctx, booksID, from, into)
 }
 
 // HandlePayeesMerged moves the schedules of from to into (A82).
-func (s *Service) HandlePayeesMerged(ctx context.Context, userID int64, from, into uuid.UUID) error {
-	return s.repo.MergePayee(ctx, userID, from, into)
+func (s *Service) HandlePayeesMerged(ctx context.Context, booksID int64, from, into uuid.UUID) error {
+	return s.repo.MergePayee(ctx, booksID, from, into)
 }

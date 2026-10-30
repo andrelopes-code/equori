@@ -44,14 +44,14 @@ func listAccounts(svc *app.Service) tool.Tool {
 			"Use it to find the ID of an account or category named by the user. " +
 			"Do not use it for balances: get_balances returns them.",
 		Effect: tool.ReadOnly,
-	}, func(ctx context.Context, userID int64, in listAccountsIn) (listAccountsOut, error) {
-		byID, all, err := allAccounts(ctx, svc, userID)
+	}, func(ctx context.Context, booksID int64, in listAccountsIn) (listAccountsOut, error) {
+		byID, all, err := allAccounts(ctx, svc, booksID)
 		if err != nil {
 			return listAccountsOut{}, err
 		}
 
 		institutions, err := allPages(func(p page.Request[app.InstitutionKey]) ([]app.Institution, *app.InstitutionKey, error) {
-			return svc.ListInstitutions(ctx, userID, p)
+			return svc.ListInstitutions(ctx, booksID, p)
 		})
 		if err != nil {
 			return listAccountsOut{}, err
@@ -62,7 +62,7 @@ func listAccounts(svc *app.Service) tool.Tool {
 			names[i.ID] = i.Name
 		}
 
-		settings, err := svc.Settings(ctx, userID)
+		settings, err := svc.Settings(ctx, booksID)
 		if err != nil {
 			return listAccountsOut{}, err
 		}
@@ -129,7 +129,7 @@ func getBalances(svc *app.Service) tool.Tool {
 			"Do not use it for spending by category: get_category_totals returns it; " +
 			"nor for a balance over time: get_account_history returns it.",
 		Effect: tool.ReadOnly,
-	}, func(ctx context.Context, userID int64, in getBalancesIn) (getBalancesOut, error) {
+	}, func(ctx context.Context, booksID int64, in getBalancesIn) (getBalancesOut, error) {
 		date := in.Date.Time
 		if in.Date.IsZero() {
 			date = svc.Today()
@@ -140,7 +140,7 @@ func getBalances(svc *app.Service) tool.Tool {
 			b = app.BasisBooked
 		}
 
-		balances, err := svc.BalancesAt(ctx, userID, date, b)
+		balances, err := svc.BalancesAt(ctx, booksID, date, b)
 		if err != nil {
 			return getBalancesOut{}, err
 		}
@@ -152,7 +152,7 @@ func getBalances(svc *app.Service) tool.Tool {
 			}
 		}
 
-		_, all, err := allAccounts(ctx, svc, userID)
+		_, all, err := allAccounts(ctx, svc, booksID)
 		if err != nil {
 			return getBalancesOut{}, err
 		}

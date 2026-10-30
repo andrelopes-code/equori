@@ -25,8 +25,8 @@ type Account struct {
 // Ledger is the part of the ledger module the tools read.
 type Ledger interface {
 	// Accounts returns the user's accounts and categories by ID.
-	Accounts(ctx context.Context, userID int64) (map[uuid.UUID]Account, error)
-	BaseCurrency(ctx context.Context, userID int64) (money.Currency, error)
+	Accounts(ctx context.Context, booksID int64) (map[uuid.UUID]Account, error)
+	BaseCurrency(ctx context.Context, booksID int64) (money.Currency, error)
 }
 
 func Tools(svc *app.Service, l Ledger, clk clock.Clock) []tool.Tool {
@@ -106,12 +106,12 @@ func firstOfMonth(t time.Time) time.Time {
 func accountName(accounts map[uuid.UUID]Account, id uuid.UUID) string { return accounts[id].Name }
 
 // allSchedules reads every schedule of the user.
-func allSchedules(ctx context.Context, svc *app.Service, userID int64) ([]domain.Schedule, error) {
+func allSchedules(ctx context.Context, svc *app.Service, booksID int64) ([]domain.Schedule, error) {
 	var out []domain.Schedule
 
 	r := page.Request[app.IDKey]{Limit: page.MaxLimit}
 	for {
-		ss, next, err := svc.ListSchedules(ctx, userID, r)
+		ss, next, err := svc.ListSchedules(ctx, booksID, r)
 		if err != nil {
 			return nil, err
 		}

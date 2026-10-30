@@ -120,13 +120,13 @@ func manageRule(svc *app.Service, names Names, today func() time.Time) tool.Tool
 			"Do not use it for transactions already recorded one by one: categorize_transactions does. " +
 			"The user confirms every change.",
 		Effect: tool.Destructive,
-	}, func(ctx context.Context, userID int64, in manageRuleIn) (tool.Preview, error) {
+	}, func(ctx context.Context, booksID int64, in manageRuleIn) (tool.Preview, error) {
 		p, err := parseManage(in)
 		if err != nil {
 			return tool.Preview{}, err
 		}
 
-		categories, payees, err := names(ctx, userID)
+		categories, payees, err := names(ctx, booksID)
 		if err != nil {
 			return tool.Preview{}, err
 		}
@@ -150,7 +150,7 @@ func manageRule(svc *app.Service, names Names, today func() time.Time) tool.Tool
 
 			pv.Target = "Rule " + in.Name
 			if in.Action == "change_rule" {
-				old, err := svc.Rule(ctx, userID, p.rule)
+				old, err := svc.Rule(ctx, booksID, p.rule)
 				if err != nil {
 					return pv, err
 				}
@@ -159,14 +159,14 @@ func manageRule(svc *app.Service, names Names, today func() time.Time) tool.Tool
 				change[0].Before, change[1].Before, change[2].Before = text(old.Name), text(conditionsText(old.Conditions)), text(actionsText(old.Actions, categories, payees))
 			}
 
-			preview, err := svc.PreviewRule(ctx, userID, rule)
+			preview, err := svc.PreviewRule(ctx, booksID, rule)
 			if err != nil {
 				return pv, err
 			}
 
 			pv.Changes = append(change, tool.Change{Field: "count", After: text(fmt.Sprintf("%d transactions of the last year", preview.WouldCategorize.Count))})
 		case "delete_rule":
-			old, err := svc.Rule(ctx, userID, p.rule)
+			old, err := svc.Rule(ctx, booksID, p.rule)
 			if err != nil {
 				return pv, err
 			}
@@ -174,7 +174,7 @@ func manageRule(svc *app.Service, names Names, today func() time.Time) tool.Tool
 			pv.Target, pv.Destructive = "Rule "+old.Name, true
 			pv.Changes = []tool.Change{{Field: "rule", Before: text(old.Name)}}
 		case "reorder_rules":
-			rules, err := allRules(ctx, svc, userID)
+			rules, err := allRules(ctx, svc, booksID)
 			if err != nil {
 				return pv, err
 			}
@@ -201,7 +201,7 @@ func manageRule(svc *app.Service, names Names, today func() time.Time) tool.Tool
 				}
 			}
 		case "accept_suggestion", "dismiss_suggestion":
-			s, err := findSuggestion(ctx, svc, userID, p.suggestion)
+			s, err := findSuggestion(ctx, svc, booksID, p.suggestion)
 			if err != nil {
 				return pv, err
 			}
@@ -221,7 +221,7 @@ func manageRule(svc *app.Service, names Names, today func() time.Time) tool.Tool
 				{Field: "category", After: text(actionsText(s.Actions, categories, payees))},
 			}
 		case "run_rules":
-			st, err := svc.Statistics(ctx, userID, time.Time{}, today())
+			st, err := svc.Statistics(ctx, booksID, time.Time{}, today())
 			if err != nil {
 				return pv, err
 			}
@@ -229,7 +229,7 @@ func manageRule(svc *app.Service, names Names, today func() time.Time) tool.Tool
 			pv.Target = "Categorization rules"
 			pv.Changes = []tool.Change{{Field: "count", After: text(fmt.Sprintf("%d uncategorized transactions", st.Uncategorized))}}
 		case "map_source_category":
-			sc, err := findSourceCategory(ctx, svc, userID, p.source)
+			sc, err := findSourceCategory(ctx, svc, booksID, p.source)
 			if err != nil {
 				return pv, err
 			}
@@ -243,7 +243,7 @@ func manageRule(svc *app.Service, names Names, today func() time.Time) tool.Tool
 		case "create_alias", "change_alias", "delete_alias":
 			var old domain.Alias
 			if in.Action != "create_alias" {
-				if old, err = svc.Alias(ctx, userID, p.alias); err != nil {
+				if old, err = svc.Alias(ctx, booksID, p.alias); err != nil {
 					return pv, err
 				}
 			}
@@ -272,7 +272,7 @@ func manageRule(svc *app.Service, names Names, today func() time.Time) tool.Tool
 		}
 
 		return pv, nil
-	}, func(ctx context.Context, userID int64, in manageRuleIn) (manageRuleOut, error) {
+	}, func(ctx context.Context, booksID int64, in manageRuleIn) (manageRuleOut, error) {
 		p, err := parseManage(in)
 		if err != nil {
 			return manageRuleOut{}, err
@@ -286,51 +286,51 @@ func manageRule(svc *app.Service, names Names, today func() time.Time) tool.Tool
 			}
 
 			if in.Action == "create_rule" {
-				rule, err = svc.CreateRule(ctx, userID, rule)
+				rule, err = svc.CreateRule(ctx, booksID, rule)
 			} else {
-				old, oldErr := svc.Rule(ctx, userID, p.rule)
+				old, oldErr := svc.Rule(ctx, booksID, p.rule)
 				if oldErr != nil {
 					return manageRuleOut{}, oldErr
 				}
 
 				rule.ID, rule.Enabled, rule.StopProcessing = p.rule, old.Enabled, old.StopProcessing
-				rule, err = svc.ChangeRule(ctx, userID, rule)
+				rule, err = svc.ChangeRule(ctx, booksID, rule)
 			}
 
 			return manageRuleOut{RuleID: rule.ID.String()}, err
 		case "delete_rule":
-			return manageRuleOut{Deleted: true}, svc.DeleteRule(ctx, userID, p.rule)
+			return manageRuleOut{Deleted: true}, svc.DeleteRule(ctx, booksID, p.rule)
 		case "reorder_rules":
-			_, err := svc.ReorderRules(ctx, userID, p.rules)
+			_, err := svc.ReorderRules(ctx, booksID, p.rules)
 			return manageRuleOut{}, err
 		case "accept_suggestion":
-			s, err := svc.AcceptSuggestion(ctx, userID, p.suggestion, in.Name)
+			s, err := svc.AcceptSuggestion(ctx, booksID, p.suggestion, in.Name)
 			return manageRuleOut{SuggestionID: s.ID.String(), RuleID: s.RuleID.String()}, err
 		case "dismiss_suggestion":
-			s, err := svc.DismissSuggestion(ctx, userID, p.suggestion)
+			s, err := svc.DismissSuggestion(ctx, booksID, p.suggestion)
 			return manageRuleOut{SuggestionID: s.ID.String()}, err
 		case "run_rules":
-			examined, categorized, err := svc.RunRules(ctx, userID)
+			examined, categorized, err := svc.RunRules(ctx, booksID)
 			return manageRuleOut{Examined: examined, Categorized: categorized}, err
 		case "map_source_category":
-			sc, err := svc.MapSourceCategory(ctx, userID, p.source, p.category)
+			sc, err := svc.MapSourceCategory(ctx, booksID, p.source, p.category)
 			return manageRuleOut{SourceCategoryID: sc.ID.String()}, err
 		case "create_alias":
-			a, err := svc.CreateAlias(ctx, userID, in.alias(uuid.Nil, p.payee))
+			a, err := svc.CreateAlias(ctx, booksID, in.alias(uuid.Nil, p.payee))
 			return manageRuleOut{AliasID: a.ID.String()}, err
 		case "change_alias":
-			a, err := svc.ChangeAlias(ctx, userID, in.alias(p.alias, p.payee))
+			a, err := svc.ChangeAlias(ctx, booksID, in.alias(p.alias, p.payee))
 			return manageRuleOut{AliasID: a.ID.String()}, err
 		}
 
-		return manageRuleOut{Deleted: true}, svc.DeleteAlias(ctx, userID, p.alias)
+		return manageRuleOut{Deleted: true}, svc.DeleteAlias(ctx, booksID, p.alias)
 	})
 }
 
-func findSuggestion(ctx context.Context, svc *app.Service, userID int64, id uuid.UUID) (app.Suggestion, error) {
+func findSuggestion(ctx context.Context, svc *app.Service, booksID int64, id uuid.UUID) (app.Suggestion, error) {
 	r := page.Request[app.SuggestionKey]{Limit: page.MaxLimit}
 	for {
-		items, next, err := svc.ListSuggestions(ctx, userID, "", r)
+		items, next, err := svc.ListSuggestions(ctx, booksID, "", r)
 		if err != nil {
 			return app.Suggestion{}, err
 		}
@@ -347,10 +347,10 @@ func findSuggestion(ctx context.Context, svc *app.Service, userID int64, id uuid
 	}
 }
 
-func findSourceCategory(ctx context.Context, svc *app.Service, userID int64, id uuid.UUID) (app.SourceCategory, error) {
+func findSourceCategory(ctx context.Context, svc *app.Service, booksID int64, id uuid.UUID) (app.SourceCategory, error) {
 	r := page.Request[app.NameKey]{Limit: page.MaxLimit}
 	for {
-		items, next, err := svc.ListSourceCategories(ctx, userID, r)
+		items, next, err := svc.ListSourceCategories(ctx, booksID, r)
 		if err != nil {
 			return app.SourceCategory{}, err
 		}

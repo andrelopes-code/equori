@@ -22,17 +22,17 @@ type ImportLine struct {
 
 // DecideImport decides each line before it is recorded (P5 amendment A19); the decision of
 // a line without payee, tags or category is nil.
-func (s *Service) DecideImport(ctx context.Context, userID int64, lines []ImportLine) ([]*domain.Decision, error) {
+func (s *Service) DecideImport(ctx context.Context, booksID int64, lines []ImportLine) ([]*domain.Decision, error) {
 	if len(lines) == 0 {
 		return nil, nil
 	}
 
-	c, accounts, err := s.catalog(ctx, userID)
+	c, accounts, err := s.catalog(ctx, booksID)
 	if err != nil {
 		return nil, err
 	}
 
-	sources, err := s.sourceCategories(ctx, userID, lines)
+	sources, err := s.sourceCategories(ctx, booksID, lines)
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +43,7 @@ func (s *Service) DecideImport(ctx context.Context, userID int64, lines []Import
 		subjects[i].SourceCategory = sources[i]
 	}
 
-	decisions, err := s.decideAll(ctx, userID, c, subjects)
+	decisions, err := s.decideAll(ctx, booksID, c, subjects)
 	if err != nil {
 		return nil, err
 	}
@@ -67,12 +67,12 @@ type ManualLine struct {
 
 // DecideManual decides lines the owner writes, before the ledger records them (capture
 // A113). It writes nothing.
-func (s *Service) DecideManual(ctx context.Context, userID int64, lines []ManualLine) ([]domain.Decision, error) {
+func (s *Service) DecideManual(ctx context.Context, booksID int64, lines []ManualLine) ([]domain.Decision, error) {
 	if len(lines) == 0 {
 		return nil, nil
 	}
 
-	c, accounts, err := s.catalog(ctx, userID)
+	c, accounts, err := s.catalog(ctx, booksID)
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +85,7 @@ func (s *Service) DecideManual(ctx context.Context, userID int64, lines []Manual
 		}
 	}
 
-	return s.decideAll(ctx, userID, c, subjects)
+	return s.decideAll(ctx, booksID, c, subjects)
 }
 
 func lineSubject(l ImportLine, accounts map[uuid.UUID]Account, origin string) domain.Subject {

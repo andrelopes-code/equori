@@ -13,24 +13,24 @@ import (
 
 const getProfile = `-- name: GetProfile :one
 SELECT
-    user_id, account_id, delimiter, header_rows, date_column, date_layout, amount_column, debit_column, credit_column, decimal_separator, description_column, id_column, amount_sign, updated_at, encoding, group_separator
+    books_id, account_id, delimiter, header_rows, date_column, date_layout, amount_column, debit_column, credit_column, decimal_separator, description_column, id_column, amount_sign, updated_at, encoding, group_separator
 FROM
     ingestion_csv_profile
 WHERE
-    user_id = $1
+    books_id = $1
     AND account_id = $2
 `
 
 type GetProfileParams struct {
-	UserID    int64
+	BooksID   int64
 	AccountID uuid.UUID
 }
 
 func (q *Queries) GetProfile(ctx context.Context, arg GetProfileParams) (IngestionCsvProfile, error) {
-	row := q.db.QueryRow(ctx, getProfile, arg.UserID, arg.AccountID)
+	row := q.db.QueryRow(ctx, getProfile, arg.BooksID, arg.AccountID)
 	var i IngestionCsvProfile
 	err := row.Scan(
-		&i.UserID,
+		&i.BooksID,
 		&i.AccountID,
 		&i.Delimiter,
 		&i.HeaderRows,
@@ -53,7 +53,7 @@ func (q *Queries) GetProfile(ctx context.Context, arg GetProfileParams) (Ingesti
 const upsertProfile = `-- name: UpsertProfile :one
 INSERT INTO
     ingestion_csv_profile (
-        user_id,
+        books_id,
         account_id,
         delimiter,
         header_rows,
@@ -104,13 +104,13 @@ SET
     group_separator = EXCLUDED.group_separator,
     updated_at = now()
 WHERE
-    ingestion_csv_profile.user_id = EXCLUDED.user_id
+    ingestion_csv_profile.books_id = EXCLUDED.books_id
 RETURNING
-    user_id, account_id, delimiter, header_rows, date_column, date_layout, amount_column, debit_column, credit_column, decimal_separator, description_column, id_column, amount_sign, updated_at, encoding, group_separator
+    books_id, account_id, delimiter, header_rows, date_column, date_layout, amount_column, debit_column, credit_column, decimal_separator, description_column, id_column, amount_sign, updated_at, encoding, group_separator
 `
 
 type UpsertProfileParams struct {
-	UserID            int64
+	BooksID           int64
 	AccountID         uuid.UUID
 	Delimiter         string
 	HeaderRows        int32
@@ -130,7 +130,7 @@ type UpsertProfileParams struct {
 // The WHERE keeps another user's profile out of reach: no row comes back for it.
 func (q *Queries) UpsertProfile(ctx context.Context, arg UpsertProfileParams) (IngestionCsvProfile, error) {
 	row := q.db.QueryRow(ctx, upsertProfile,
-		arg.UserID,
+		arg.BooksID,
 		arg.AccountID,
 		arg.Delimiter,
 		arg.HeaderRows,
@@ -148,7 +148,7 @@ func (q *Queries) UpsertProfile(ctx context.Context, arg UpsertProfileParams) (I
 	)
 	var i IngestionCsvProfile
 	err := row.Scan(
-		&i.UserID,
+		&i.BooksID,
 		&i.AccountID,
 		&i.Delimiter,
 		&i.HeaderRows,

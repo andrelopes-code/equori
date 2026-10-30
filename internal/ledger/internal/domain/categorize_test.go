@@ -34,7 +34,7 @@ func (f categorizeFixture) record(t *testing.T, postings ...Posting) Transaction
 	t.Helper()
 
 	tx, err := NewTransaction(Transaction{
-		ID: uuid.Must(uuid.NewV7()), UserID: 1, Date: day("2026-10-14"), Description: "UBER *TRIP",
+		ID: uuid.Must(uuid.NewV7()), BooksID: 1, Date: day("2026-10-14"), Description: "UBER *TRIP",
 		BalancingCurrency: "BRL", Postings: postings, Tags: []string{"work"},
 	}, f.accounts)
 	if err != nil {

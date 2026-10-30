@@ -43,11 +43,11 @@ func settleStatement(svc *app.Service) tool.Tool {
 			"Do not use it for one purchase: handle_card_purchase does. " +
 			"The user confirms first.",
 		Effect: tool.Write,
-	}, func(ctx context.Context, userID int64, in settleStatementIn) (tool.Preview, error) {
-		pv, _, err := planSettle(ctx, svc, userID, in)
+	}, func(ctx context.Context, booksID int64, in settleStatementIn) (tool.Preview, error) {
+		pv, _, err := planSettle(ctx, svc, booksID, in)
 		return pv, err
-	}, func(ctx context.Context, userID int64, in settleStatementIn) (settleStatementOut, error) {
-		_, run, err := planSettle(ctx, svc, userID, in)
+	}, func(ctx context.Context, booksID int64, in settleStatementIn) (settleStatementOut, error) {
+		_, run, err := planSettle(ctx, svc, booksID, in)
 		if err != nil {
 			return settleStatementOut{}, err
 		}
@@ -56,7 +56,7 @@ func settleStatement(svc *app.Service) tool.Tool {
 	})
 }
 
-func planSettle(ctx context.Context, svc *app.Service, userID int64, in settleStatementIn) (tool.Preview, func() (settleStatementOut, error), error) {
+func planSettle(ctx context.Context, svc *app.Service, booksID int64, in settleStatementIn) (tool.Preview, func() (settleStatementOut, error), error) {
 	action := string(in.Action)
 	pv := tool.Preview{Action: "settle_statement"}
 
@@ -95,7 +95,7 @@ func planSettle(ctx context.Context, svc *app.Service, userID int64, in settleSt
 		return pv, nil, err
 	}
 
-	v, card, _, err := svc.Statement(ctx, userID, id)
+	v, card, _, err := svc.Statement(ctx, booksID, id)
 	if err != nil {
 		return pv, nil, err
 	}
@@ -133,7 +133,7 @@ func planSettle(ctx context.Context, svc *app.Service, userID int64, in settleSt
 			return pv, nil, err
 		}
 
-		from, err := svc.Account(ctx, userID, fromID)
+		from, err := svc.Account(ctx, booksID, fromID)
 		if err != nil {
 			return pv, nil, err
 		}
@@ -141,7 +141,7 @@ func planSettle(ctx context.Context, svc *app.Service, userID int64, in settleSt
 		pv.Changes = []tool.Change{{Field: "amount", After: tool.MoneyValue(amount)}, {Field: "account", After: tool.TextValue(from.Name)}, {Field: "date", After: tool.DateValue(date)}}
 
 		return pv, func() (settleStatementOut, error) {
-			t, err := svc.PayStatement(ctx, userID, id, date, from.ID, amount)
+			t, err := svc.PayStatement(ctx, booksID, id, date, from.ID, amount)
 			out.TransactionID = t.ID.String()
 
 			return out, err
@@ -159,7 +159,7 @@ func planSettle(ctx context.Context, svc *app.Service, userID int64, in settleSt
 		}
 
 		return pv, func() (settleStatementOut, error) {
-			t, _, err := svc.FinanceStatement(ctx, userID, id, date, in.InstallmentCount, amount)
+			t, _, err := svc.FinanceStatement(ctx, booksID, id, date, in.InstallmentCount, amount)
 			out.TransactionID = t.ID.String()
 
 			return out, err
@@ -172,7 +172,7 @@ func planSettle(ctx context.Context, svc *app.Service, userID int64, in settleSt
 
 		pv.Changes = []tool.Change{{Field: "amount", Before: tool.Value{Amount: due.Amount, Currency: due.Currency}, After: tool.MoneyValue(amount)}}
 
-		return pv, func() (settleStatementOut, error) { return out, svc.ReconcileStatement(ctx, userID, id, amount) }, nil
+		return pv, func() (settleStatementOut, error) { return out, svc.ReconcileStatement(ctx, booksID, id, amount) }, nil
 	case "set_facts":
 		amount, err := parse("amount", in.Amount)
 		if err != nil {
@@ -187,7 +187,7 @@ func planSettle(ctx context.Context, svc *app.Service, userID int64, in settleSt
 			pv.Changes = append(pv.Changes, tool.Change{Field: "date", After: tool.DateValue(in.ClosingDate.Time)})
 		}
 
-		return pv, func() (settleStatementOut, error) { return out, svc.SetOwnerFacts(ctx, userID, id, f) }, nil
+		return pv, func() (settleStatementOut, error) { return out, svc.SetOwnerFacts(ctx, booksID, id, f) }, nil
 	case "defer_postings":
 		txIDs := make([]uuid.UUID, len(in.TransactionIDs))
 		for i, raw := range in.TransactionIDs {
@@ -198,9 +198,9 @@ func planSettle(ctx context.Context, svc *app.Service, userID int64, in settleSt
 
 		pv.Changes = []tool.Change{{Field: "statement", Before: tool.TextValue(v.Input.Reference.String()), After: tool.TextValue(v.Input.Reference.Add(1).String())}}
 
-		return pv, func() (settleStatementOut, error) { return out, svc.DeferPostings(ctx, userID, id, txIDs) }, nil
+		return pv, func() (settleStatementOut, error) { return out, svc.DeferPostings(ctx, booksID, id, txIDs) }, nil
 	default:
 		pv.Changes = []tool.Change{{Field: "due_on", Before: tool.DateValue(v.Input.Due)}}
-		return pv, func() (settleStatementOut, error) { return out, svc.RemoveOwnerFacts(ctx, userID, id) }, nil
+		return pv, func() (settleStatementOut, error) { return out, svc.RemoveOwnerFacts(ctx, booksID, id) }, nil
 	}
 }

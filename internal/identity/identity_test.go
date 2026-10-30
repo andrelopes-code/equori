@@ -318,12 +318,12 @@ func TestCreateUserPublishesEvent(t *testing.T) {
 	}
 
 	var n int
-	var userID int64
+	var eventBooksID int64
 
 	err = h.pool.QueryRow(t.Context(),
-		`SELECT count(*), max(user_id) FROM outbox_event WHERE type = 'identity.books_created.v1'`).Scan(&n, &userID)
-	if err != nil || n != 1 || userID != booksID {
-		t.Fatalf("events = %d for books %d, %v; want 1 for books %d", n, userID, err, booksID)
+		`SELECT count(*), max(books_id) FROM outbox_event WHERE type = 'identity.books_created.v1'`).Scan(&n, &eventBooksID)
+	if err != nil || n != 1 || eventBooksID != booksID {
+		t.Fatalf("events = %d for books %d, %v; want 1 for books %d", n, eventBooksID, err, booksID)
 	}
 
 	var payload struct {

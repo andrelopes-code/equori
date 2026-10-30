@@ -43,8 +43,8 @@ func NewAgent(client *llm.Client, svc *app.Service, tools app.Tools, set tool.Se
 
 // Run calls the model loop once more after a wait when only transient cooldowns block every target and the
 // earliest one ends before the turn's deadline (design 2026-10-26 E6).
-func (a *Agent) Run(ctx context.Context, userID int64, in app.AgentRequest, onStep, onText func(string), onRestart func()) (app.AgentResult, error) {
-	out, err := a.run(ctx, userID, in, onStep, onText, onRestart)
+func (a *Agent) Run(ctx context.Context, booksID int64, in app.AgentRequest, onStep, onText func(string), onRestart func()) (app.AgentResult, error) {
+	out, err := a.run(ctx, booksID, in, onStep, onText, onRestart)
 
 	ee, ok := errors.AsType[*llm.ExhaustedError](err)
 	if !ok || !ee.Transient || !ee.RetryAt.Before(in.Deadline) {
@@ -57,7 +57,7 @@ func (a *Agent) Run(ctx context.Context, userID int64, in app.AgentRequest, onSt
 		return out, mapError(err)
 	}
 
-	second, err := a.run(ctx, userID, in, onStep, onText, onRestart)
+	second, err := a.run(ctx, booksID, in, onStep, onText, onRestart)
 	second.ToolCalls += out.ToolCalls
 	second.InputTokens += out.InputTokens
 	second.OutputTokens += out.OutputTokens
@@ -65,7 +65,7 @@ func (a *Agent) Run(ctx context.Context, userID int64, in app.AgentRequest, onSt
 	return second, mapError(err)
 }
 
-func (a *Agent) run(ctx context.Context, userID int64, in app.AgentRequest, onStep, onText func(string), onRestart func()) (app.AgentResult, error) {
+func (a *Agent) run(ctx context.Context, booksID int64, in app.AgentRequest, onStep, onText func(string), onRestart func()) (app.AgentResult, error) {
 	req := llm.Request{System: in.System, Tools: a.decls}
 	for _, m := range in.History {
 		role := llm.RoleUser
@@ -78,7 +78,7 @@ func (a *Agent) run(ctx context.Context, userID int64, in app.AgentRequest, onSt
 
 	req.Messages = append(req.Messages, llm.Message{Role: llm.RoleUser, Parts: []llm.Part{{Text: in.Text}}})
 	calls := 0
-	res, err := llm.Run(auth.WithUserID(ctx, userID), a.client, req, a.handlers, llm.LoopOptions{
+	res, err := llm.Run(auth.WithBooksID(ctx, booksID), a.client, req, a.handlers, llm.LoopOptions{
 		MaxSteps: app.MaxSteps, ForceAnswer: true, Pin: true,
 		OnToolCall: func(c llm.ToolCall) {
 			calls++

@@ -43,7 +43,7 @@ func TestDailyLimitS138(t *testing.T) {
 	req := llm.Request{Messages: []llm.Message{{Role: llm.RoleUser, Parts: []llm.Part{{Text: "x"}}}}}
 	client := h.App.LLM.Use(assistant.ChatUse)
 
-	ctx := auth.WithUserID(t.Context(), h.OwnerID())
+	ctx := auth.WithBooksID(t.Context(), h.OwnerID())
 	if _, err := client.Generate(ctx, req); err != nil {
 		t.Fatalf("first call: %v", err)
 	}
@@ -60,7 +60,7 @@ func TestDailyLimitS138(t *testing.T) {
 	}
 
 	for range 2 {
-		if _, err := client.Generate(auth.WithUserID(t.Context(), otherID), req); err != nil {
+		if _, err := client.Generate(auth.WithBooksID(t.Context(), otherID), req); err != nil {
 			t.Fatalf("other user's call: %v", err)
 		}
 	}

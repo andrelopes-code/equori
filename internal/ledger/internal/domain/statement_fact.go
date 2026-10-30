@@ -14,7 +14,7 @@ const (
 
 // StatementFact is what an institution reported for a card statement (A85).
 type StatementFact struct {
-	UserID      int64
+	BooksID     int64
 	StatementID uuid.UUID
 	Source      string
 	Closing     *time.Time // nil when the institution did not report it

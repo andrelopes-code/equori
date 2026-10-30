@@ -45,15 +45,15 @@ type Tool struct {
 	spec          Spec
 	input, output *jsonschema.Schema
 	in, out       *jsonschema.Resolved
-	call          func(ctx context.Context, userID int64, args []byte) (any, error)
-	preview       func(ctx context.Context, userID int64, args []byte) (Preview, error)
+	call          func(ctx context.Context, booksID int64, args []byte) (any, error)
+	preview       func(ctx context.Context, booksID int64, args []byte) (Preview, error)
 }
 
 var namePattern = regexp.MustCompile(`^[a-z][a-z0-9_]{0,63}$`)
 
 // New builds a tool from a typed handler. It panics on a definition ADR 012 rejects, so a
 // broken tool stops startup.
-func New[In, Out any](s Spec, h func(ctx context.Context, userID int64, in In) (Out, error)) Tool {
+func New[In, Out any](s Spec, h func(ctx context.Context, booksID int64, in In) (Out, error)) Tool {
 	switch {
 	case !namePattern.MatchString(s.Name):
 		panic(fmt.Sprintf("tool %q: name must match %s", s.Name, namePattern))
@@ -75,14 +75,14 @@ func New[In, Out any](s Spec, h func(ctx context.Context, userID int64, in In) (
 
 	return Tool{
 		spec: s, input: input, output: output, in: in, out: out,
-		call: func(ctx context.Context, userID int64, args []byte) (any, error) {
+		call: func(ctx context.Context, booksID int64, args []byte) (any, error) {
 			var v In
 			// The schema has accepted args; what fails here is a value, such as a malformed date.
 			if err := json.Unmarshal(args, &v); err != nil {
 				return nil, invalidArguments(err.Error())
 			}
 
-			return h(ctx, userID, v)
+			return h(ctx, booksID, v)
 		},
 	}
 }

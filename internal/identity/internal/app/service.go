@@ -35,7 +35,7 @@ type Repository interface {
 	Locale(ctx context.Context, booksID, memberID int64) (locale.Locale, error)
 	// LoginBooks returns ErrNotFound without rows.
 	LoginBooks(ctx context.Context, memberID int64) (int64, error)
-	UserByID(ctx context.Context, userID int64) (domain.User, error)
+	UserByID(ctx context.Context, memberID int64) (domain.User, error)
 	UserByEmail(ctx context.Context, email string) (domain.User, error)
 	CreateSession(ctx context.Context, s domain.Session) error
 	UserBySession(ctx context.Context, tokenHash []byte, now time.Time) (domain.User, int64, error)

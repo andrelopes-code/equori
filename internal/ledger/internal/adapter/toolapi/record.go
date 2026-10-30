@@ -68,8 +68,8 @@ func recordTransaction(svc *app.Service) tool.Tool {
 			"Do not use it to change an existing transaction: change_transaction does. " +
 			"The user confirms the proposal before anything is recorded.",
 		Effect: tool.Write,
-	}, func(ctx context.Context, userID int64, in recordTransactionIn) (tool.Preview, error) {
-		p, err := planRecord(ctx, svc, userID, in)
+	}, func(ctx context.Context, booksID int64, in recordTransactionIn) (tool.Preview, error) {
+		p, err := planRecord(ctx, svc, booksID, in)
 		if err != nil {
 			return tool.Preview{}, err
 		}
@@ -90,7 +90,7 @@ func recordTransaction(svc *app.Service) tool.Tool {
 		}
 
 		if p.payeeID != uuid.Nil {
-			names, err := svc.PayeeNames(ctx, userID, []uuid.UUID{p.payeeID})
+			names, err := svc.PayeeNames(ctx, booksID, []uuid.UUID{p.payeeID})
 			if err != nil {
 				return tool.Preview{}, err
 			}
@@ -115,8 +115,8 @@ func recordTransaction(svc *app.Service) tool.Tool {
 		}
 
 		return pv, nil
-	}, func(ctx context.Context, userID int64, in recordTransactionIn) (recordTransactionOut, error) {
-		p, err := planRecord(ctx, svc, userID, in)
+	}, func(ctx context.Context, booksID int64, in recordTransactionIn) (recordTransactionOut, error) {
+		p, err := planRecord(ctx, svc, booksID, in)
 		if err != nil {
 			return recordTransactionOut{}, err
 		}
@@ -129,17 +129,17 @@ func recordTransaction(svc *app.Service) tool.Tool {
 				splits[i] = domain.Posting{AccountID: d.account.ID, Amount: d.amount}
 			}
 
-			t, _, err = svc.InstallmentPurchase(ctx, userID, app.InstallmentPurchaseInput{
+			t, _, err = svc.InstallmentPurchase(ctx, booksID, app.InstallmentPurchaseInput{
 				CardAccountID: p.from.ID, Date: in.Date.Time, Description: in.Description, PayeeID: p.payeeID, Tags: in.Tags,
 				Splits: splits, Count: in.Installments,
 			})
 		case p.foreign:
-			t, err = svc.RecordForeignPurchase(ctx, userID, app.ForeignPurchase{
+			t, err = svc.RecordForeignPurchase(ctx, booksID, app.ForeignPurchase{
 				AccountID: p.from.ID, CategoryID: p.dests[0].account.ID, PayeeID: p.payeeID,
 				Date: in.Date.Time, Description: in.Description, Original: p.original, Rate: p.rate,
 			})
 		case p.exchange:
-			t, err = svc.Exchange(ctx, userID, app.Exchange{
+			t, err = svc.Exchange(ctx, booksID, app.Exchange{
 				FromAccountID: p.from.ID, ToAccountID: p.dests[0].account.ID, Date: in.Date.Time, Description: in.Description,
 				FromAmount: p.amount, ToAmount: p.toAmount,
 			})
@@ -149,7 +149,7 @@ func recordTransaction(svc *app.Service) tool.Tool {
 				postings = append(postings, domain.Posting{AccountID: d.account.ID, Amount: d.amount})
 			}
 
-			t, err = svc.RecordTransaction(ctx, userID, domain.Transaction{
+			t, err = svc.RecordTransaction(ctx, booksID, domain.Transaction{
 				Date: in.Date.Time, Description: in.Description, PayeeID: p.payeeID, Tags: in.Tags, Postings: postings, Origin: domain.OriginManual,
 			})
 		}
@@ -162,7 +162,7 @@ func recordTransaction(svc *app.Service) tool.Tool {
 	})
 }
 
-func planRecord(ctx context.Context, svc *app.Service, userID int64, in recordTransactionIn) (recordPlan, error) {
+func planRecord(ctx context.Context, svc *app.Service, booksID int64, in recordTransactionIn) (recordPlan, error) {
 	var p recordPlan
 
 	fromID, err := requiredID(in.FromAccountID, "from_account_id")
@@ -170,7 +170,7 @@ func planRecord(ctx context.Context, svc *app.Service, userID int64, in recordTr
 		return p, err
 	}
 
-	if p.from, err = svc.Account(ctx, userID, fromID); err != nil {
+	if p.from, err = svc.Account(ctx, booksID, fromID); err != nil {
 		return p, err
 	}
 
@@ -212,7 +212,7 @@ func planRecord(ctx context.Context, svc *app.Service, userID int64, in recordTr
 			return p, err
 		}
 
-		a, err := svc.Account(ctx, userID, id)
+		a, err := svc.Account(ctx, booksID, id)
 		if err != nil {
 			return p, err
 		}

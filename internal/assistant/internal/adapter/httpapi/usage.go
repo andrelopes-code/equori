@@ -10,7 +10,7 @@ import (
 )
 
 func (s *Server) ListUsage(ctx context.Context, _ ListUsageRequestObject) (ListUsageResponseObject, error) {
-	rows, err := s.svc.Usage(ctx, auth.MustUserID(ctx))
+	rows, err := s.svc.Usage(ctx, auth.MustBooksID(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +34,7 @@ func (s *Server) ListUsage(ctx context.Context, _ ListUsageRequestObject) (ListU
 }
 
 func (s *Server) ListUsageDays(ctx context.Context, req ListUsageDaysRequestObject) (ListUsageDaysResponseObject, error) {
-	rows, err := s.svc.UsageByDay(ctx, auth.MustUserID(ctx), req.Params.From.Time, req.Params.To.Time)
+	rows, err := s.svc.UsageByDay(ctx, auth.MustBooksID(ctx), req.Params.From.Time, req.Params.To.Time)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +52,7 @@ func (s *Server) ListUsageDays(ctx context.Context, req ListUsageDaysRequestObje
 
 func (s *Server) SetUsageLimit(ctx context.Context, req SetUsageLimitRequestObject) (SetUsageLimitResponseObject, error) {
 	b := req.Body
-	if err := s.svc.SetLimit(ctx, auth.MustUserID(ctx), b.ProviderId, b.Model, b.RequestsPerDay, b.TokensPerDay); err != nil {
+	if err := s.svc.SetLimit(ctx, auth.MustBooksID(ctx), b.ProviderId, b.Model, b.RequestsPerDay, b.TokensPerDay); err != nil {
 		return nil, err
 	}
 

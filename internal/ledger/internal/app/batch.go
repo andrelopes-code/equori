@@ -16,7 +16,7 @@ type BatchEntry struct {
 
 // RecordBatch records every entry in one database transaction, or none (A114). A rejected
 // entry's field is prefixed with entries[i] and the member that holds it.
-func (s *Service) RecordBatch(ctx context.Context, userID int64, entries []BatchEntry) ([]domain.Transaction, error) {
+func (s *Service) RecordBatch(ctx context.Context, booksID int64, entries []BatchEntry) ([]domain.Transaction, error) {
 	out := make([]domain.Transaction, len(entries))
 
 	err := s.repo.InTx(ctx, func(r Repository) error {
@@ -25,11 +25,11 @@ func (s *Service) RecordBatch(ctx context.Context, userID int64, entries []Batch
 			switch {
 			case e.Transaction != nil && e.Purchase == nil:
 				t := *e.Transaction
-				t.UserID = userID
+				t.BooksID = booksID
 				out[i], err = s.insert(ctx, r, t)
 				err = domain.WithFieldPrefix(fmt.Sprintf("entries[%d].transaction.", i), err)
 			case e.Purchase != nil && e.Transaction == nil:
-				out[i], _, err = s.installmentPurchase(ctx, r, userID, *e.Purchase)
+				out[i], _, err = s.installmentPurchase(ctx, r, booksID, *e.Purchase)
 				if errors.Is(err, ErrNotFound) {
 					err = &domain.FieldError{Field: "card_account_id", Message: "unknown account", Err: domain.ErrUnknownAccount}
 				}

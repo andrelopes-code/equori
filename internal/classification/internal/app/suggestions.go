@@ -25,7 +25,7 @@ var ErrSuggestionClosed = errors.New("the suggestion is already accepted or dism
 // Suggestion proposes a rule from repeated manual corrections.
 type Suggestion struct {
 	ID          uuid.UUID
-	UserID      int64
+	BooksID     int64
 	Fingerprint string
 	Conditions  []domain.Condition
 	Actions     []domain.Action
@@ -48,7 +48,7 @@ func (s *Service) suggest(ctx context.Context, rec Record) error {
 		return nil
 	}
 
-	examples, err := s.repo.CorrectedExamples(ctx, rec.UserID, rec.MatchKey, rec.CategoryID, maxExamples)
+	examples, err := s.repo.CorrectedExamples(ctx, rec.BooksID, rec.MatchKey, rec.CategoryID, maxExamples)
 	if err != nil || len(examples) < 2 {
 		return err
 	}
@@ -56,20 +56,20 @@ func (s *Service) suggest(ctx context.Context, rec Record) error {
 	conditions, actions := domain.SuggestedRule(rec.MatchKey, rec.CategoryID)
 
 	return s.repo.UpsertSuggestion(ctx, Suggestion{
-		UserID: rec.UserID, Fingerprint: domain.Fingerprint(rec.MatchKey, rec.CategoryID),
+		BooksID: rec.BooksID, Fingerprint: domain.Fingerprint(rec.MatchKey, rec.CategoryID),
 		Conditions: conditions, Actions: actions, Examples: examples, CreatedAt: rec.DecidedAt,
 	})
 }
 
-func (s *Service) ListSuggestions(ctx context.Context, userID int64, state string, p page.Request[SuggestionKey]) ([]Suggestion, *SuggestionKey, error) {
-	return s.repo.ListSuggestions(ctx, userID, state, p)
+func (s *Service) ListSuggestions(ctx context.Context, booksID int64, state string, p page.Request[SuggestionKey]) ([]Suggestion, *SuggestionKey, error) {
+	return s.repo.ListSuggestions(ctx, booksID, state, p)
 }
 
 // AcceptSuggestion creates the suggested rule at the last priority.
-func (s *Service) AcceptSuggestion(ctx context.Context, userID int64, id uuid.UUID, name string) (Suggestion, error) {
+func (s *Service) AcceptSuggestion(ctx context.Context, booksID int64, id uuid.UUID, name string) (Suggestion, error) {
 	var out Suggestion
 	err := s.repo.InTx(ctx, func(r Repository) error {
-		sg, err := r.LockSuggestion(ctx, userID, id)
+		sg, err := r.LockSuggestion(ctx, booksID, id)
 		if err != nil {
 			return err
 		}
@@ -78,16 +78,16 @@ func (s *Service) AcceptSuggestion(ctx context.Context, userID int64, id uuid.UU
 			return ErrSuggestionClosed
 		}
 
-		rule, err := s.checkRule(ctx, userID, domain.Rule{Name: name, Enabled: true, Conditions: sg.Conditions, Actions: sg.Actions})
+		rule, err := s.checkRule(ctx, booksID, domain.Rule{Name: name, Enabled: true, Conditions: sg.Conditions, Actions: sg.Actions})
 		if err != nil {
 			return err
 		}
 
-		if rule, err = r.InsertRule(ctx, userID, rule); err != nil {
+		if rule, err = r.InsertRule(ctx, booksID, rule); err != nil {
 			return err
 		}
 
-		out, err = r.DecideSuggestion(ctx, userID, id, SuggestionAccepted, rule.ID)
+		out, err = r.DecideSuggestion(ctx, booksID, id, SuggestionAccepted, rule.ID)
 
 		return err
 	})
@@ -95,10 +95,10 @@ func (s *Service) AcceptSuggestion(ctx context.Context, userID int64, id uuid.UU
 	return out, err
 }
 
-func (s *Service) DismissSuggestion(ctx context.Context, userID int64, id uuid.UUID) (Suggestion, error) {
+func (s *Service) DismissSuggestion(ctx context.Context, booksID int64, id uuid.UUID) (Suggestion, error) {
 	var out Suggestion
 	err := s.repo.InTx(ctx, func(r Repository) error {
-		sg, err := r.LockSuggestion(ctx, userID, id)
+		sg, err := r.LockSuggestion(ctx, booksID, id)
 		if err != nil {
 			return err
 		}
@@ -107,7 +107,7 @@ func (s *Service) DismissSuggestion(ctx context.Context, userID int64, id uuid.U
 			return ErrSuggestionClosed
 		}
 
-		out, err = r.DecideSuggestion(ctx, userID, id, SuggestionDismissed, uuid.Nil)
+		out, err = r.DecideSuggestion(ctx, booksID, id, SuggestionDismissed, uuid.Nil)
 
 		return err
 	})

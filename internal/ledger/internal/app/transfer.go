@@ -45,7 +45,7 @@ type PairedEvent struct {
 
 // PairingQuery selects the pairing candidates of a transaction (A29).
 type PairingQuery struct {
-	UserID           int64
+	BooksID          int64
 	TransactionID    uuid.UUID
 	AccountID        uuid.UUID
 	Amount           int64
@@ -53,11 +53,11 @@ type PairingQuery struct {
 	ExcludedAccounts []uuid.UUID
 }
 
-func (s *Service) Transfer(ctx context.Context, userID int64, req TransferRequest) (TransferResult, error) {
+func (s *Service) Transfer(ctx context.Context, booksID int64, req TransferRequest) (TransferResult, error) {
 	var res TransferResult
 	err := s.repo.InTx(ctx, func(r Repository) error {
 		var err error
-		res, err = s.transfer(ctx, r, userID, req)
+		res, err = s.transfer(ctx, r, booksID, req)
 
 		return err
 	})
@@ -65,13 +65,13 @@ func (s *Service) Transfer(ctx context.Context, userID int64, req TransferReques
 	return res, err
 }
 
-func (s *Service) transfer(ctx context.Context, r Repository, userID int64, req TransferRequest) (TransferResult, error) {
-	t, err := r.LockTransaction(ctx, userID, req.TransactionID)
+func (s *Service) transfer(ctx context.Context, r Repository, booksID int64, req TransferRequest) (TransferResult, error) {
+	t, err := r.LockTransaction(ctx, booksID, req.TransactionID)
 	if err != nil {
 		return TransferResult{}, err
 	}
 
-	target, accounts, err := s.transferAccounts(ctx, r, userID, req.AccountID, t)
+	target, accounts, err := s.transferAccounts(ctx, r, booksID, req.AccountID, t)
 	if err != nil {
 		return TransferResult{}, err
 	}
@@ -90,7 +90,7 @@ func (s *Service) transfer(ctx context.Context, r Repository, userID int64, req 
 		return TransferResult{Kept: t.ID}, s.saveTransfer(ctx, r, t, plain, accounts, req.Cause)
 	}
 
-	other, err := r.LockTransaction(ctx, userID, candidate)
+	other, err := r.LockTransaction(ctx, booksID, candidate)
 	if err != nil {
 		return TransferResult{}, err
 	}
@@ -116,7 +116,7 @@ func (s *Service) transfer(ctx context.Context, r Repository, userID int64, req 
 		return TransferResult{}, err
 	}
 
-	ownAcc, otherAccounts, err := s.transferAccounts(ctx, r, userID, own, other)
+	ownAcc, otherAccounts, err := s.transferAccounts(ctx, r, booksID, own, other)
 	if err != nil {
 		return TransferResult{}, err
 	}
@@ -132,8 +132,8 @@ func (s *Service) transfer(ctx context.Context, r Repository, userID int64, req 
 }
 
 // transferAccounts loads the target account and the accounts of t with it.
-func (s *Service) transferAccounts(ctx context.Context, r Repository, userID int64, accountID uuid.UUID, t domain.Transaction) (domain.Account, map[uuid.UUID]domain.Account, error) {
-	accounts, err := r.Accounts(ctx, userID, append(postingAccounts(t), accountID))
+func (s *Service) transferAccounts(ctx context.Context, r Repository, booksID int64, accountID uuid.UUID, t domain.Transaction) (domain.Account, map[uuid.UUID]domain.Account, error) {
+	accounts, err := r.Accounts(ctx, booksID, append(postingAccounts(t), accountID))
 	if err != nil {
 		return domain.Account{}, nil, err
 	}
@@ -144,7 +144,7 @@ func (s *Service) transferAccounts(ctx context.Context, r Repository, userID int
 // pairingCandidate returns the transaction to pair with, or uuid.Nil without candidates.
 func (s *Service) pairingCandidate(ctx context.Context, r Repository, t, plain domain.Transaction, accounts map[uuid.UUID]domain.Account, req TransferRequest) (uuid.UUID, error) {
 	q := PairingQuery{
-		UserID: t.UserID, TransactionID: t.ID, AccountID: req.AccountID, Amount: plain.Postings[len(plain.Postings)-1].Amount.Amount(),
+		BooksID: t.BooksID, TransactionID: t.ID, AccountID: req.AccountID, Amount: plain.Postings[len(plain.Postings)-1].Amount.Amount(),
 		From: t.Date.AddDate(0, 0, -pairingWindowDays), To: t.Date.AddDate(0, 0, pairingWindowDays),
 	}
 	for _, p := range t.Postings {
@@ -179,7 +179,7 @@ func (s *Service) pair(ctx context.Context, r Repository, kept, next, dropped do
 		return TransferResult{}, err
 	}
 
-	if err := r.ClearRecordLinks(ctx, dropped.UserID, dropped.ID); err != nil {
+	if err := r.ClearRecordLinks(ctx, dropped.BooksID, dropped.ID); err != nil {
 		return TransferResult{}, err
 	}
 
@@ -187,13 +187,13 @@ func (s *Service) pair(ctx context.Context, r Repository, kept, next, dropped do
 		return TransferResult{}, err
 	}
 
-	droppedAccounts, err := r.Accounts(ctx, dropped.UserID, postingAccounts(dropped))
+	droppedAccounts, err := r.Accounts(ctx, dropped.BooksID, postingAccounts(dropped))
 	if err != nil {
 		return TransferResult{}, err
 	}
 
 	if err := r.Publish(ctx, outbox.Event{
-		Type: EventTransactionVoided, UserID: dropped.UserID, AggregateID: dropped.ID.String(), Payload: newTransactionEvent(voided, droppedAccounts),
+		Type: EventTransactionVoided, BooksID: dropped.BooksID, AggregateID: dropped.ID.String(), Payload: newTransactionEvent(voided, droppedAccounts),
 	}); err != nil {
 		return TransferResult{}, err
 	}
@@ -208,7 +208,7 @@ func (s *Service) pair(ctx context.Context, r Repository, kept, next, dropped do
 	}
 
 	return TransferResult{Kept: kept.ID, Voided: dropped.ID}, r.Publish(ctx, outbox.Event{
-		Type: EventTransactionsPaired, UserID: kept.UserID, AggregateID: kept.ID.String(),
+		Type: EventTransactionsPaired, BooksID: kept.BooksID, AggregateID: kept.ID.String(),
 		Payload: PairedEvent{Kept: kept.ID, Voided: dropped.ID, RecordIDs: records},
 	})
 }
@@ -230,7 +230,7 @@ func (s *Service) saveTransfer(ctx context.Context, r Repository, prev, next dom
 		event.Cause = &cause
 	}
 
-	return r.Publish(ctx, outbox.Event{Type: EventTransactionCorrected, UserID: next.UserID, AggregateID: next.ID.String(), Payload: event})
+	return r.Publish(ctx, outbox.Event{Type: EventTransactionCorrected, BooksID: next.BooksID, AggregateID: next.ID.String(), Payload: event})
 }
 
 // linkOn returns the record that confirms t's posting on the account.

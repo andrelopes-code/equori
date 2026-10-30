@@ -137,7 +137,7 @@ func (s *Server) ListImportBatches(ctx context.Context, req ListImportBatchesReq
 		return nil, err
 	}
 
-	batches, next, err := s.svc.ListBatches(ctx, auth.MustUserID(ctx), p)
+	batches, next, err := s.svc.ListBatches(ctx, auth.MustBooksID(ctx), p)
 	if err != nil {
 		return nil, err
 	}

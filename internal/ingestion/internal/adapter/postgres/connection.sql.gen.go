@@ -19,13 +19,13 @@ SELECT
 FROM
     ingestion_batch
 WHERE
-    user_id = $1
+    books_id = $1
     AND account_id = $2
     AND source <> 'aggregator'
 `
 
 type AccountFilePeriodsParams struct {
-	UserID    int64
+	BooksID   int64
 	AccountID uuid.UUID
 }
 
@@ -36,7 +36,7 @@ type AccountFilePeriodsRow struct {
 
 // A103: the periods the account's imported files covered.
 func (q *Queries) AccountFilePeriods(ctx context.Context, arg AccountFilePeriodsParams) ([]AccountFilePeriodsRow, error) {
-	rows, err := q.db.Query(ctx, accountFilePeriods, arg.UserID, arg.AccountID)
+	rows, err := q.db.Query(ctx, accountFilePeriods, arg.BooksID, arg.AccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -62,12 +62,12 @@ SELECT
 FROM
     ingestion_external_account
 WHERE
-    user_id = $1
+    books_id = $1
     AND account_id = $2
 `
 
 type AccountMappingParams struct {
-	UserID    int64
+	BooksID   int64
 	AccountID uuid.NullUUID
 }
 
@@ -78,7 +78,7 @@ type AccountMappingRow struct {
 
 // A103: the start and the last synced date of the account's mapping.
 func (q *Queries) AccountMapping(ctx context.Context, arg AccountMappingParams) (AccountMappingRow, error) {
-	row := q.db.QueryRow(ctx, accountMapping, arg.UserID, arg.AccountID)
+	row := q.db.QueryRow(ctx, accountMapping, arg.BooksID, arg.AccountID)
 	var i AccountMappingRow
 	err := row.Scan(&i.SyncFrom, &i.LastSyncedOn)
 	return i, err
@@ -87,17 +87,17 @@ func (q *Queries) AccountMapping(ctx context.Context, arg AccountMappingParams) 
 const deleteConnection = `-- name: DeleteConnection :execrows
 DELETE FROM ingestion_connection
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2
 `
 
 type DeleteConnectionParams struct {
-	UserID int64
-	ID     uuid.UUID
+	BooksID int64
+	ID      uuid.UUID
 }
 
 func (q *Queries) DeleteConnection(ctx context.Context, arg DeleteConnectionParams) (int64, error) {
-	result, err := q.db.Exec(ctx, deleteConnection, arg.UserID, arg.ID)
+	result, err := q.db.Exec(ctx, deleteConnection, arg.BooksID, arg.ID)
 	if err != nil {
 		return 0, err
 	}
@@ -106,11 +106,11 @@ func (q *Queries) DeleteConnection(ctx context.Context, arg DeleteConnectionPara
 
 const externalAccountsOf = `-- name: ExternalAccountsOf :many
 SELECT
-    id, user_id, connection_id, external_account_id, type, subtype, name, number_last4, currency, account_id, sync_from, ignored, last_synced_on, balance_on, balance_amount, former_names
+    id, books_id, connection_id, external_account_id, type, subtype, name, number_last4, currency, account_id, sync_from, ignored, last_synced_on, balance_on, balance_amount, former_names
 FROM
     ingestion_external_account
 WHERE
-    user_id = $1
+    books_id = $1
     AND connection_id = ANY ($2::UUID[])
 ORDER BY
     connection_id,
@@ -118,12 +118,12 @@ ORDER BY
 `
 
 type ExternalAccountsOfParams struct {
-	UserID        int64
+	BooksID       int64
 	ConnectionIds []uuid.UUID
 }
 
 func (q *Queries) ExternalAccountsOf(ctx context.Context, arg ExternalAccountsOfParams) ([]IngestionExternalAccount, error) {
-	rows, err := q.db.Query(ctx, externalAccountsOf, arg.UserID, arg.ConnectionIds)
+	rows, err := q.db.Query(ctx, externalAccountsOf, arg.BooksID, arg.ConnectionIds)
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +133,7 @@ func (q *Queries) ExternalAccountsOf(ctx context.Context, arg ExternalAccountsOf
 		var i IngestionExternalAccount
 		if err := rows.Scan(
 			&i.ID,
-			&i.UserID,
+			&i.BooksID,
 			&i.ConnectionID,
 			&i.ExternalAccountID,
 			&i.Type,
@@ -161,25 +161,25 @@ func (q *Queries) ExternalAccountsOf(ctx context.Context, arg ExternalAccountsOf
 
 const getConnection = `-- name: GetConnection :one
 SELECT
-    id, user_id, integration_id, external_id, name, provider_status, last_item_update_at, last_synced_at, last_error, created_at, next_item_update_at
+    id, books_id, integration_id, external_id, name, provider_status, last_item_update_at, last_synced_at, last_error, created_at, next_item_update_at
 FROM
     ingestion_connection
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2
 `
 
 type GetConnectionParams struct {
-	UserID int64
-	ID     uuid.UUID
+	BooksID int64
+	ID      uuid.UUID
 }
 
 func (q *Queries) GetConnection(ctx context.Context, arg GetConnectionParams) (IngestionConnection, error) {
-	row := q.db.QueryRow(ctx, getConnection, arg.UserID, arg.ID)
+	row := q.db.QueryRow(ctx, getConnection, arg.BooksID, arg.ID)
 	var i IngestionConnection
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.IntegrationID,
 		&i.ExternalID,
 		&i.Name,
@@ -196,7 +196,7 @@ func (q *Queries) GetConnection(ctx context.Context, arg GetConnectionParams) (I
 const insertConnection = `-- name: InsertConnection :one
 INSERT INTO
     ingestion_connection (
-        user_id,
+        books_id,
         integration_id,
         external_id,
         name,
@@ -213,11 +213,11 @@ VALUES
         $6
     )
 RETURNING
-    id, user_id, integration_id, external_id, name, provider_status, last_item_update_at, last_synced_at, last_error, created_at, next_item_update_at
+    id, books_id, integration_id, external_id, name, provider_status, last_item_update_at, last_synced_at, last_error, created_at, next_item_update_at
 `
 
 type InsertConnectionParams struct {
-	UserID           int64
+	BooksID          int64
 	IntegrationID    uuid.UUID
 	ExternalID       string
 	Name             string
@@ -227,7 +227,7 @@ type InsertConnectionParams struct {
 
 func (q *Queries) InsertConnection(ctx context.Context, arg InsertConnectionParams) (IngestionConnection, error) {
 	row := q.db.QueryRow(ctx, insertConnection,
-		arg.UserID,
+		arg.BooksID,
 		arg.IntegrationID,
 		arg.ExternalID,
 		arg.Name,
@@ -237,7 +237,7 @@ func (q *Queries) InsertConnection(ctx context.Context, arg InsertConnectionPara
 	var i IngestionConnection
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.IntegrationID,
 		&i.ExternalID,
 		&i.Name,
@@ -254,7 +254,7 @@ func (q *Queries) InsertConnection(ctx context.Context, arg InsertConnectionPara
 const insertExternalAccount = `-- name: InsertExternalAccount :one
 INSERT INTO
     ingestion_external_account (
-        user_id,
+        books_id,
         connection_id,
         external_account_id,
         type,
@@ -275,11 +275,11 @@ VALUES
         $8
     )
 RETURNING
-    id, user_id, connection_id, external_account_id, type, subtype, name, number_last4, currency, account_id, sync_from, ignored, last_synced_on, balance_on, balance_amount, former_names
+    id, books_id, connection_id, external_account_id, type, subtype, name, number_last4, currency, account_id, sync_from, ignored, last_synced_on, balance_on, balance_amount, former_names
 `
 
 type InsertExternalAccountParams struct {
-	UserID            int64
+	BooksID           int64
 	ConnectionID      uuid.UUID
 	ExternalAccountID string
 	Type              string
@@ -291,7 +291,7 @@ type InsertExternalAccountParams struct {
 
 func (q *Queries) InsertExternalAccount(ctx context.Context, arg InsertExternalAccountParams) (IngestionExternalAccount, error) {
 	row := q.db.QueryRow(ctx, insertExternalAccount,
-		arg.UserID,
+		arg.BooksID,
 		arg.ConnectionID,
 		arg.ExternalAccountID,
 		arg.Type,
@@ -303,7 +303,7 @@ func (q *Queries) InsertExternalAccount(ctx context.Context, arg InsertExternalA
 	var i IngestionExternalAccount
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.ConnectionID,
 		&i.ExternalAccountID,
 		&i.Type,
@@ -325,7 +325,7 @@ func (q *Queries) InsertExternalAccount(ctx context.Context, arg InsertExternalA
 const insertMissingExternalAccount = `-- name: InsertMissingExternalAccount :exec
 INSERT INTO
     ingestion_external_account (
-        user_id,
+        books_id,
         connection_id,
         external_account_id,
         type,
@@ -349,7 +349,7 @@ ON CONFLICT (connection_id, external_account_id) DO NOTHING
 `
 
 type InsertMissingExternalAccountParams struct {
-	UserID            int64
+	BooksID           int64
 	ConnectionID      uuid.UUID
 	ExternalAccountID string
 	Type              string
@@ -361,7 +361,7 @@ type InsertMissingExternalAccountParams struct {
 
 func (q *Queries) InsertMissingExternalAccount(ctx context.Context, arg InsertMissingExternalAccountParams) error {
 	_, err := q.db.Exec(ctx, insertMissingExternalAccount,
-		arg.UserID,
+		arg.BooksID,
 		arg.ConnectionID,
 		arg.ExternalAccountID,
 		arg.Type,
@@ -376,17 +376,17 @@ func (q *Queries) InsertMissingExternalAccount(ctx context.Context, arg InsertMi
 const listAllConnections = `-- name: ListAllConnections :many
 SELECT
     id,
-    user_id
+    books_id
 FROM
     ingestion_connection
 ORDER BY
-    user_id,
+    books_id,
     id
 `
 
 type ListAllConnectionsRow struct {
-	ID     uuid.UUID
-	UserID int64
+	ID      uuid.UUID
+	BooksID int64
 }
 
 // The scheduler checks every user's connections (A43); each sync then filters by its user.
@@ -399,7 +399,7 @@ func (q *Queries) ListAllConnections(ctx context.Context) ([]ListAllConnectionsR
 	var items []ListAllConnectionsRow
 	for rows.Next() {
 		var i ListAllConnectionsRow
-		if err := rows.Scan(&i.ID, &i.UserID); err != nil {
+		if err := rows.Scan(&i.ID, &i.BooksID); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -412,11 +412,11 @@ func (q *Queries) ListAllConnections(ctx context.Context) ([]ListAllConnectionsR
 
 const listConnections = `-- name: ListConnections :many
 SELECT
-    id, user_id, integration_id, external_id, name, provider_status, last_item_update_at, last_synced_at, last_error, created_at, next_item_update_at
+    id, books_id, integration_id, external_id, name, provider_status, last_item_update_at, last_synced_at, last_error, created_at, next_item_update_at
 FROM
     ingestion_connection
 WHERE
-    user_id = $1
+    books_id = $1
     AND (
         $2::text IS NULL
         OR (name, id) > ($2::text, $3::uuid)
@@ -429,7 +429,7 @@ LIMIT
 `
 
 type ListConnectionsParams struct {
-	UserID    int64
+	BooksID   int64
 	AfterName *string
 	AfterID   uuid.NullUUID
 	RowLimit  int32
@@ -437,7 +437,7 @@ type ListConnectionsParams struct {
 
 func (q *Queries) ListConnections(ctx context.Context, arg ListConnectionsParams) ([]IngestionConnection, error) {
 	rows, err := q.db.Query(ctx, listConnections,
-		arg.UserID,
+		arg.BooksID,
 		arg.AfterName,
 		arg.AfterID,
 		arg.RowLimit,
@@ -451,7 +451,7 @@ func (q *Queries) ListConnections(ctx context.Context, arg ListConnectionsParams
 		var i IngestionConnection
 		if err := rows.Scan(
 			&i.ID,
-			&i.UserID,
+			&i.BooksID,
 			&i.IntegrationID,
 			&i.ExternalID,
 			&i.Name,
@@ -479,7 +479,7 @@ SET
     balance_on = $2,
     balance_amount = $3
 WHERE
-    user_id = $4
+    books_id = $4
     AND id = $5
 `
 
@@ -487,7 +487,7 @@ type MarkAccountSyncedParams struct {
 	LastSyncedOn  *time.Time
 	BalanceOn     *time.Time
 	BalanceAmount *int64
-	UserID        int64
+	BooksID       int64
 	ID            uuid.UUID
 }
 
@@ -496,7 +496,7 @@ func (q *Queries) MarkAccountSynced(ctx context.Context, arg MarkAccountSyncedPa
 		arg.LastSyncedOn,
 		arg.BalanceOn,
 		arg.BalanceAmount,
-		arg.UserID,
+		arg.BooksID,
 		arg.ID,
 	)
 	return err
@@ -508,20 +508,20 @@ SET
     former_names = array_remove(array_append(array_remove(former_names, name), name), $1::text),
     name = $1
 WHERE
-    user_id = $2
+    books_id = $2
     AND id = $3
     AND name <> $1
 `
 
 type RenameExternalAccountParams struct {
-	Name   string
-	UserID int64
-	ID     uuid.UUID
+	Name    string
+	BooksID int64
+	ID      uuid.UUID
 }
 
 // A94: the previous name joins the former names; the new name leaves them.
 func (q *Queries) RenameExternalAccount(ctx context.Context, arg RenameExternalAccountParams) error {
-	_, err := q.db.Exec(ctx, renameExternalAccount, arg.Name, arg.UserID, arg.ID)
+	_, err := q.db.Exec(ctx, renameExternalAccount, arg.Name, arg.BooksID, arg.ID)
 	return err
 }
 
@@ -534,7 +534,7 @@ SET
     last_synced_at = $4,
     last_error = $5
 WHERE
-    user_id = $6
+    books_id = $6
     AND id = $7
 `
 
@@ -544,7 +544,7 @@ type SaveConnectionStateParams struct {
 	NextItemUpdateAt *time.Time
 	LastSyncedAt     *time.Time
 	LastError        *string
-	UserID           int64
+	BooksID          int64
 	ID               uuid.UUID
 }
 
@@ -555,7 +555,7 @@ func (q *Queries) SaveConnectionState(ctx context.Context, arg SaveConnectionSta
 		arg.NextItemUpdateAt,
 		arg.LastSyncedAt,
 		arg.LastError,
-		arg.UserID,
+		arg.BooksID,
 		arg.ID,
 	)
 	return err
@@ -568,18 +568,18 @@ SET
     sync_from = $2,
     ignored = $3
 WHERE
-    user_id = $4
+    books_id = $4
     AND connection_id = $5
     AND id = $6
 RETURNING
-    id, user_id, connection_id, external_account_id, type, subtype, name, number_last4, currency, account_id, sync_from, ignored, last_synced_on, balance_on, balance_amount, former_names
+    id, books_id, connection_id, external_account_id, type, subtype, name, number_last4, currency, account_id, sync_from, ignored, last_synced_on, balance_on, balance_amount, former_names
 `
 
 type SaveMappingParams struct {
 	AccountID    uuid.NullUUID
 	SyncFrom     *time.Time
 	Ignored      bool
-	UserID       int64
+	BooksID      int64
 	ConnectionID uuid.UUID
 	ID           uuid.UUID
 }
@@ -589,14 +589,14 @@ func (q *Queries) SaveMapping(ctx context.Context, arg SaveMappingParams) (Inges
 		arg.AccountID,
 		arg.SyncFrom,
 		arg.Ignored,
-		arg.UserID,
+		arg.BooksID,
 		arg.ConnectionID,
 		arg.ID,
 	)
 	var i IngestionExternalAccount
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.ConnectionID,
 		&i.ExternalAccountID,
 		&i.Type,

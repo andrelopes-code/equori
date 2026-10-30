@@ -11,7 +11,7 @@ import (
 )
 
 func (s *Server) GetCategorization(ctx context.Context, req GetCategorizationRequestObject) (GetCategorizationResponseObject, error) {
-	rec, err := s.svc.Categorization(ctx, auth.MustUserID(ctx), req.Id)
+	rec, err := s.svc.Categorization(ctx, auth.MustBooksID(ctx), req.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -24,7 +24,7 @@ func (s *Server) ListCategorizations(ctx context.Context, req ListCategorization
 		return nil, &paramError{field: "transaction_id", message: "must have 1 to 200 ids"}
 	}
 
-	recs, err := s.svc.Categorizations(ctx, auth.MustUserID(ctx), req.Params.TransactionId)
+	recs, err := s.svc.Categorizations(ctx, auth.MustBooksID(ctx), req.Params.TransactionId)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +52,7 @@ func toCategorizationAPI(rec app.Record) Categorization {
 }
 
 func (s *Server) RunRules(ctx context.Context, _ RunRulesRequestObject) (RunRulesResponseObject, error) {
-	examined, categorized, err := s.svc.RunRules(ctx, auth.MustUserID(ctx))
+	examined, categorized, err := s.svc.RunRules(ctx, auth.MustBooksID(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +65,7 @@ func (s *Server) GetCategorizationStatistics(ctx context.Context, req GetCategor
 		return nil, &paramError{field: "to", message: "must not be before from"}
 	}
 
-	st, err := s.svc.Statistics(ctx, auth.MustUserID(ctx), req.Params.From.Time, req.Params.To.Time)
+	st, err := s.svc.Statistics(ctx, auth.MustBooksID(ctx), req.Params.From.Time, req.Params.To.Time)
 	if err != nil {
 		return nil, err
 	}

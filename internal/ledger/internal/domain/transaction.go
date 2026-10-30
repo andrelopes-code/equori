@@ -94,7 +94,7 @@ type InstallmentRef struct {
 
 type Transaction struct {
 	ID                uuid.UUID
-	UserID            int64
+	BooksID           int64
 	Date              time.Time
 	Description       string
 	PayeeID           uuid.UUID
@@ -206,7 +206,7 @@ func checkPosting(i int, p Posting, t Transaction, accounts map[uuid.UUID]Accoun
 	field := func(name string) string { return fmt.Sprintf("postings[%d].%s", i, name) }
 
 	a, ok := accounts[p.AccountID]
-	if !ok || a.UserID != t.UserID {
+	if !ok || a.BooksID != t.BooksID {
 		return Posting{}, &FieldError{Field: field("account_id"), Message: "unknown account", Err: ErrUnknownAccount}
 	}
 
@@ -302,7 +302,7 @@ func (t Transaction) Correct(next Transaction, expectedVersion int, accounts map
 	}
 
 	next.ID = t.ID
-	next.UserID = t.UserID
+	next.BooksID = t.BooksID
 	next.Version = t.Version + 1
 	// A correction that names no links keeps the ones t has; an empty list clears them.
 	if next.Links == nil {

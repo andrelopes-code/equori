@@ -57,7 +57,7 @@ type Prices interface {
 // Returns gives the money-weighted return of accounts taken as one tree over the last 12 months
 // (Portfolio, investments design 4.4); ok is false when there is too little history or no flow.
 type Returns interface {
-	TrailingReturn(ctx context.Context, userID int64, accountIDs []uuid.UUID, today time.Time, in money.Currency) (bp, months int, ok bool, err error)
+	TrailingReturn(ctx context.Context, booksID int64, accountIDs []uuid.UUID, today time.Time, in money.Currency) (bp, months int, ok bool, err error)
 }
 
 // Account is the part of a ledger account Planning checks.
@@ -86,35 +86,35 @@ type ValuedPart struct {
 
 // Ledger is the part of the ledger module Planning reads (ADR 002).
 type Ledger interface {
-	AccountFacts(ctx context.Context, userID int64) ([]Account, error)
-	MissingPayees(ctx context.Context, userID int64, ids []uuid.UUID) ([]uuid.UUID, error)
-	BaseCurrency(ctx context.Context, userID int64) (money.Currency, error)
+	AccountFacts(ctx context.Context, booksID int64) ([]Account, error)
+	MissingPayees(ctx context.Context, booksID int64, ids []uuid.UUID) ([]uuid.UUID, error)
+	BaseCurrency(ctx context.Context, booksID int64) (money.Currency, error)
 	// TransactionFacts returns the user's transactions among ids; unknown ids are omitted.
-	TransactionFacts(ctx context.Context, userID int64, ids []uuid.UUID) ([]domain.Transaction, error)
+	TransactionFacts(ctx context.Context, booksID int64, ids []uuid.UUID) ([]domain.Transaction, error)
 	// AccountTransactionsBetween returns the non-voided transactions with a posting on the
 	// account dated in [from, to], by date.
-	AccountTransactionsBetween(ctx context.Context, userID int64, accountID uuid.UUID, from, to time.Time) ([]uuid.UUID, error)
+	AccountTransactionsBetween(ctx context.Context, booksID int64, accountID uuid.UUID, from, to time.Time) ([]uuid.UUID, error)
 	// CategoryTotal sums the postings of a category subtree booked in [from, to), in minor
 	// units of the base currency.
-	CategoryTotal(ctx context.Context, userID int64, categoryID uuid.UUID, from, to time.Time) (int64, error)
+	CategoryTotal(ctx context.Context, booksID int64, categoryID uuid.UUID, from, to time.Time) (int64, error)
 	// CategoryMonthlyTotals is CategoryTotal for each month in [from, to), keyed by its first day.
-	CategoryMonthlyTotals(ctx context.Context, userID int64, categoryID uuid.UUID, from, to time.Time) (map[time.Time]int64, error)
+	CategoryMonthlyTotals(ctx context.Context, booksID int64, categoryID uuid.UUID, from, to time.Time) (map[time.Time]int64, error)
 	// Balance is the booked balance of an account at the end of date, in its instrument.
-	Balance(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time) (money.Money, error)
+	Balance(ctx context.Context, booksID int64, accountID uuid.UUID, date time.Time) (money.Money, error)
 	// ValuedBalance values the account and its sub-accounts in currency in; the error wraps
 	// ErrPriceMissing when no stored price values an instrument.
-	ValuedBalance(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time, in money.Currency) (Valuation, error)
+	ValuedBalance(ctx context.Context, booksID int64, accountID uuid.UUID, date time.Time, in money.Currency) (Valuation, error)
 	// Commitment sums the installments of a card billed on the statement of month while it is open.
-	Commitment(ctx context.Context, userID int64, cardID uuid.UUID, month time.Time) (int64, error)
+	Commitment(ctx context.Context, booksID int64, cardID uuid.UUID, month time.Time) (int64, error)
 	// PriorInstallments sums the installments of a card billed on the statement of month of
 	// purchases booked before month (A129).
-	PriorInstallments(ctx context.Context, userID int64, cardID uuid.UUID, month time.Time) (int64, error)
+	PriorInstallments(ctx context.Context, booksID int64, cardID uuid.UUID, month time.Time) (int64, error)
 	// OwnCategoryMonthlyTotals returns the own postings of each category of class by category and
 	// first day of month in [from, to), in minor units of the base currency.
-	OwnCategoryMonthlyTotals(ctx context.Context, userID int64, class string, from, to time.Time) (map[uuid.UUID]map[time.Time]int64, error)
+	OwnCategoryMonthlyTotals(ctx context.Context, booksID int64, class string, from, to time.Time) (map[uuid.UUID]map[time.Time]int64, error)
 	// FirstPosting is the booked date of the earliest posting of the accounts and their
 	// sub-accounts; false when they have none.
-	FirstPosting(ctx context.Context, userID int64, accountIDs []uuid.UUID) (time.Time, bool, error)
+	FirstPosting(ctx context.Context, booksID int64, accountIDs []uuid.UUID) (time.Time, bool, error)
 }
 
 // ErrUnknownCalendar is returned by Calendar.Holidays for an id no calendar answers to.
@@ -128,7 +128,7 @@ type Calendar interface {
 
 // Profiles gives the language and region of a user (identity).
 type Profiles interface {
-	Profile(ctx context.Context, userID int64) (locale.Locale, error)
+	Profile(ctx context.Context, booksID int64) (locale.Locale, error)
 }
 
 // IDKey is the sort key of lists in creation order.
@@ -138,79 +138,79 @@ type IDKey struct {
 
 // ScheduleRef names a schedule across users.
 type ScheduleRef struct {
-	UserID int64
-	ID     uuid.UUID
+	BooksID int64
+	ID      uuid.UUID
 }
 
 type Repository interface {
 	// MergeCategory moves budgets and schedules from one category to another (A75).
-	MergeCategory(ctx context.Context, userID int64, from, into uuid.UUID) error
+	MergeCategory(ctx context.Context, booksID int64, from, into uuid.UUID) error
 	// MergePayee moves the schedules of a payee to another (A82).
-	MergePayee(ctx context.Context, userID int64, from, into uuid.UUID) error
+	MergePayee(ctx context.Context, booksID int64, from, into uuid.UUID) error
 	InTx(ctx context.Context, fn func(Repository) error) error
 	// InsertSchedule stores s with its terms and returns it with its id.
-	InsertSchedule(ctx context.Context, userID int64, s domain.Schedule) (domain.Schedule, error)
-	Schedule(ctx context.Context, userID int64, id uuid.UUID) (domain.Schedule, error)
+	InsertSchedule(ctx context.Context, booksID int64, s domain.Schedule) (domain.Schedule, error)
+	Schedule(ctx context.Context, booksID int64, id uuid.UUID) (domain.Schedule, error)
 	// LockSchedule reads the schedule for update.
-	LockSchedule(ctx context.Context, userID int64, id uuid.UUID) (domain.Schedule, error)
-	ListSchedules(ctx context.Context, userID int64, p page.Request[IDKey]) ([]domain.Schedule, *IDKey, error)
-	Schedules(ctx context.Context, userID int64) ([]domain.Schedule, error)
+	LockSchedule(ctx context.Context, booksID int64, id uuid.UUID) (domain.Schedule, error)
+	ListSchedules(ctx context.Context, booksID int64, p page.Request[IDKey]) ([]domain.Schedule, *IDKey, error)
+	Schedules(ctx context.Context, booksID int64) ([]domain.Schedule, error)
 	SchedulesBehind(ctx context.Context, horizon time.Time) ([]ScheduleRef, error)
 	// ScheduleRefs returns every schedule across users.
 	ScheduleRefs(ctx context.Context) ([]ScheduleRef, error)
-	SetGeneratedUntil(ctx context.Context, userID int64, id uuid.UUID, d time.Time) error
-	InsertOccurrences(ctx context.Context, userID int64, scheduleID uuid.UUID, ps []domain.Planned) error
+	SetGeneratedUntil(ctx context.Context, booksID int64, id uuid.UUID, d time.Time) error
+	InsertOccurrences(ctx context.Context, booksID int64, scheduleID uuid.UUID, ps []domain.Planned) error
 	// Occurrences returns the occurrences with expected date in [from, to]; scheduleID uuid.Nil
 	// means every schedule.
-	Occurrences(ctx context.Context, userID int64, from, to time.Time, scheduleID uuid.UUID) ([]domain.Occurrence, error)
-	OccurrencesOfTransaction(ctx context.Context, userID int64, txID uuid.UUID) ([]domain.Occurrence, error)
+	Occurrences(ctx context.Context, booksID int64, from, to time.Time, scheduleID uuid.UUID) ([]domain.Occurrence, error)
+	OccurrencesOfTransaction(ctx context.Context, booksID int64, txID uuid.UUID) ([]domain.Occurrence, error)
 	// SchedulesTouching returns the schedules whose account or counterpart is among accounts.
-	SchedulesTouching(ctx context.Context, userID int64, accounts []uuid.UUID) ([]domain.Schedule, error)
+	SchedulesTouching(ctx context.Context, booksID int64, accounts []uuid.UUID) ([]domain.Schedule, error)
 	// OccurrenceByTransaction locks the occurrence the transaction realizes; ErrNotFound when none.
-	OccurrenceByTransaction(ctx context.Context, userID int64, txID uuid.UUID) (domain.Occurrence, error)
+	OccurrenceByTransaction(ctx context.Context, booksID int64, txID uuid.UUID) (domain.Occurrence, error)
 	// ExpectedOccurrences locks the expected occurrences of schedules with expected date in [from, to].
-	ExpectedOccurrences(ctx context.Context, userID int64, schedules []uuid.UUID, from, to time.Time) ([]domain.Occurrence, error)
-	LockOccurrence(ctx context.Context, userID int64, id uuid.UUID) (domain.Occurrence, error)
+	ExpectedOccurrences(ctx context.Context, booksID int64, schedules []uuid.UUID, from, to time.Time) ([]domain.Occurrence, error)
+	LockOccurrence(ctx context.Context, booksID int64, id uuid.UUID) (domain.Occurrence, error)
 	// Realize and Release change an expected or realized occurrence; ErrOccurrenceClosed when its
 	// state changed meanwhile.
-	Realize(ctx context.Context, userID int64, id, txID uuid.UUID, by string) (domain.Occurrence, error)
+	Realize(ctx context.Context, booksID int64, id, txID uuid.UUID, by string) (domain.Occurrence, error)
 	// Release with decline also records the transaction as declined by the occurrence.
-	Release(ctx context.Context, userID int64, id uuid.UUID, decline bool) (domain.Occurrence, error)
+	Release(ctx context.Context, booksID int64, id uuid.UUID, decline bool) (domain.Occurrence, error)
 	// Skip and Move change an expected occurrence; ErrOccurrenceClosed otherwise.
-	Skip(ctx context.Context, userID int64, id uuid.UUID, reason string) (domain.Occurrence, error)
-	Move(ctx context.Context, userID int64, id uuid.UUID, date time.Time) (domain.Occurrence, error)
+	Skip(ctx context.Context, booksID int64, id uuid.UUID, reason string) (domain.Occurrence, error)
+	Move(ctx context.Context, booksID int64, id uuid.UUID, date time.Time) (domain.Occurrence, error)
 	// DeleteExpected removes expected occurrences with expected date in [from, to]; moved ones
 	// only with includeMoved. It returns the dates removed.
-	DeleteExpected(ctx context.Context, userID int64, scheduleID uuid.UUID, from, to time.Time, includeMoved bool) ([]time.Time, error)
+	DeleteExpected(ctx context.Context, booksID int64, scheduleID uuid.UUID, from, to time.Time, includeMoved bool) ([]time.Time, error)
 	// KeptOccurrences returns the realized, skipped and moved occurrences generated on or after from.
-	KeptOccurrences(ctx context.Context, userID int64, scheduleID uuid.UUID, from time.Time) ([]domain.Occurrence, error)
-	InsertTerms(ctx context.Context, userID int64, scheduleID uuid.UUID, t domain.Terms) error
+	KeptOccurrences(ctx context.Context, booksID int64, scheduleID uuid.UUID, from time.Time) ([]domain.Occurrence, error)
+	InsertTerms(ctx context.Context, booksID int64, scheduleID uuid.UUID, t domain.Terms) error
 	// InsertPause returns ErrPauseOverlap when the pause overlaps another one.
-	InsertPause(ctx context.Context, userID int64, scheduleID uuid.UUID, p domain.Pause) error
-	SetEndsOn(ctx context.Context, userID int64, id uuid.UUID, d time.Time) error
+	InsertPause(ctx context.Context, booksID int64, scheduleID uuid.UUID, p domain.Pause) error
+	SetEndsOn(ctx context.Context, booksID int64, id uuid.UUID, d time.Time) error
 
 	// InsertBudget stores b with its amounts; ErrBudgetExists when the category has one.
-	InsertBudget(ctx context.Context, userID int64, b domain.Budget) (domain.Budget, error)
-	InsertBudgetAmount(ctx context.Context, userID int64, budgetID uuid.UUID, a domain.BudgetAmount) error
-	Budget(ctx context.Context, userID int64, id uuid.UUID) (domain.Budget, error)
-	LockBudget(ctx context.Context, userID int64, id uuid.UUID) (domain.Budget, error)
-	ListBudgets(ctx context.Context, userID int64, p page.Request[IDKey]) ([]domain.Budget, *IDKey, error)
+	InsertBudget(ctx context.Context, booksID int64, b domain.Budget) (domain.Budget, error)
+	InsertBudgetAmount(ctx context.Context, booksID int64, budgetID uuid.UUID, a domain.BudgetAmount) error
+	Budget(ctx context.Context, booksID int64, id uuid.UUID) (domain.Budget, error)
+	LockBudget(ctx context.Context, booksID int64, id uuid.UUID) (domain.Budget, error)
+	ListBudgets(ctx context.Context, booksID int64, p page.Request[IDKey]) ([]domain.Budget, *IDKey, error)
 	// DeleteBudget removes the budget with its amounts; ErrNotFound when it is not the user's.
-	DeleteBudget(ctx context.Context, userID int64, id uuid.UUID) error
+	DeleteBudget(ctx context.Context, booksID int64, id uuid.UUID) error
 	// Budgets returns every budget of the user with its amounts.
-	Budgets(ctx context.Context, userID int64) ([]domain.Budget, error)
+	Budgets(ctx context.Context, booksID int64) ([]domain.Budget, error)
 	// UpsertBudgetAmount replaces the version of a.EffectiveFrom or inserts it (A130).
-	UpsertBudgetAmount(ctx context.Context, userID int64, budgetID uuid.UUID, a domain.BudgetAmount) error
+	UpsertBudgetAmount(ctx context.Context, booksID int64, budgetID uuid.UUID, a domain.BudgetAmount) error
 	// BudgetReference returns the stored reference choice; ok is false when there is none (A131).
-	BudgetReference(ctx context.Context, userID int64) (r domain.Reference, ok bool, err error)
-	SaveBudgetReference(ctx context.Context, userID int64, r domain.Reference, currency money.Currency) error
+	BudgetReference(ctx context.Context, booksID int64) (r domain.Reference, ok bool, err error)
+	SaveBudgetReference(ctx context.Context, booksID int64, r domain.Reference, currency money.Currency) error
 
 	// InsertGoal stores g with its accounts; a used name is a field error on name.
-	InsertGoal(ctx context.Context, userID int64, g domain.Goal) (domain.Goal, error)
-	Goal(ctx context.Context, userID int64, id uuid.UUID) (domain.Goal, error)
-	ListGoals(ctx context.Context, userID int64, p page.Request[IDKey]) ([]domain.Goal, *IDKey, error)
+	InsertGoal(ctx context.Context, booksID int64, g domain.Goal) (domain.Goal, error)
+	Goal(ctx context.Context, booksID int64, id uuid.UUID) (domain.Goal, error)
+	ListGoals(ctx context.Context, booksID int64, p page.Request[IDKey]) ([]domain.Goal, *IDKey, error)
 	// UpdateGoal replaces the fields and the accounts of g.ID; ErrNotFound when it is not the user's.
-	UpdateGoal(ctx context.Context, userID int64, g domain.Goal) (domain.Goal, error)
+	UpdateGoal(ctx context.Context, booksID int64, g domain.Goal) (domain.Goal, error)
 	// DeleteGoal removes the goal with its accounts; ErrNotFound when it is not the user's.
-	DeleteGoal(ctx context.Context, userID int64, id uuid.UUID) error
+	DeleteGoal(ctx context.Context, booksID int64, id uuid.UUID) error
 }

@@ -12,14 +12,14 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/postgres/pgtest"
 )
 
-func newProposal(t *testing.T, repo *postgres.Repository, userID int64, conv uuid.UUID) domain.Proposal {
+func newProposal(t *testing.T, repo *postgres.Repository, booksID int64, conv uuid.UUID) domain.Proposal {
 	t.Helper()
 
 	p := domain.Proposal{
 		ID: uuid.New(), ConversationID: conv, Tool: "create_transaction", Arguments: []byte(`{}`), Preview: []byte(`{}`),
 		Basis: strings.Repeat("a", 64), Status: domain.ProposalPending, CreatedAt: t0, ExpiresAt: t0.Add(domain.ProposalTTL),
 	}
-	if err := repo.InsertProposal(t.Context(), userID, p); err != nil {
+	if err := repo.InsertProposal(t.Context(), booksID, p); err != nil {
 		t.Fatal(err)
 	}
 
@@ -31,7 +31,7 @@ func TestProposal(t *testing.T) {
 	pool := pgtest.New(t)
 	repo := postgres.NewRepository(pool)
 	ctx := t.Context()
-	a, b := pgtest.CreateUser(t, pool), pgtest.CreateUser(t, pool)
+	a, b := pgtest.CreateBooks(t, pool), pgtest.CreateBooks(t, pool)
 	c := conversation(t, repo, a, t0)
 
 	p := newProposal(t, repo, a, c.ID)

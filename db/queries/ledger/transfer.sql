@@ -6,7 +6,7 @@ SELECT
 FROM
     ledger_transaction t
 WHERE
-    t.user_id = @user_id
+    t.books_id = @books_id
     AND t.id <> @transaction_id
     AND t.voided_at IS NULL
     AND t.origin = 'import'
@@ -61,5 +61,5 @@ UPDATE ledger_posting
 SET
     external_record_id = NULL
 WHERE
-    user_id = $1
+    books_id = $1
     AND transaction_id = $2;

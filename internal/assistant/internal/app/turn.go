@@ -53,7 +53,7 @@ type AgentResult struct {
 // Agent runs the model loop over the chat tools. Its errors are *LimitError, ErrChatUnavailable, ErrTurnFailed
 // or a context error. Write tools reach Service.Propose with ctx. onText receives the model's text as it arrives.
 type Agent interface {
-	Run(ctx context.Context, userID int64, req AgentRequest, onStep func(tool string), onText func(text string), onRestart func()) (AgentResult, error)
+	Run(ctx context.Context, booksID int64, req AgentRequest, onStep func(tool string), onText func(text string), onRestart func()) (AgentResult, error)
 }
 
 // UseAgent sets the agent and the profile lookup the chat needs; the chat does not run without them.
@@ -126,7 +126,7 @@ func truncateRunes(s string, n int) string {
 
 // Turn runs one user message through the model and reports through ev (spec 6). An error returned before ev.Turn
 // has been called leaves the stream unstarted; after it, failures reach ev.Error.
-func (s *Service) Turn(ctx context.Context, userID int64, in TurnInput, ev TurnEvents) error {
+func (s *Service) Turn(ctx context.Context, booksID int64, in TurnInput, ev TurnEvents) error {
 	text := strings.TrimSpace(in.Text)
 	if n := utf8.RuneCountInString(text); n < 1 || n > domain.MaxMessage {
 		return ErrInvalidText
@@ -139,15 +139,15 @@ func (s *Service) Turn(ctx context.Context, userID int64, in TurnInput, ev TurnE
 	var proposals []domain.Proposal
 	if in.ConversationID != uuid.Nil {
 		var err error
-		if _, err = s.repo.Conversation(ctx, userID, in.ConversationID); err != nil {
+		if _, err = s.repo.Conversation(ctx, booksID, in.ConversationID); err != nil {
 			return err
 		}
 
-		if messages, err = s.repo.Messages(ctx, userID, in.ConversationID); err != nil {
+		if messages, err = s.repo.Messages(ctx, booksID, in.ConversationID); err != nil {
 			return err
 		}
 
-		if proposals, err = s.repo.Proposals(ctx, userID, in.ConversationID); err != nil {
+		if proposals, err = s.repo.Proposals(ctx, booksID, in.ConversationID); err != nil {
 			return err
 		}
 	}
@@ -157,35 +157,35 @@ func (s *Service) Turn(ctx context.Context, userID int64, in TurnInput, ev TurnE
 		return errors.New("use assistant.chat is not declared")
 	}
 
-	st, err := s.ChatState(ctx, userID, use)
+	st, err := s.ChatState(ctx, booksID, use)
 	if err != nil {
 		return err
 	}
 
 	if !st.Available {
 		if !st.RetryAt.IsZero() {
-			s.logTurn(ctx, userID, in.ConversationID, outcomeExhaust, AgentResult{}, now)
+			s.logTurn(ctx, booksID, in.ConversationID, outcomeExhaust, AgentResult{}, now)
 			return &LimitError{RetryAt: st.RetryAt}
 		}
 
-		s.logTurn(ctx, userID, in.ConversationID, outcomeUnavail, AgentResult{}, now)
+		s.logTurn(ctx, booksID, in.ConversationID, outcomeUnavail, AgentResult{}, now)
 
 		return ErrChatUnavailable
 	}
 
-	prof, err := s.profile(ctx, userID)
+	prof, err := s.profile(ctx, booksID)
 	if err != nil {
 		return fmt.Errorf("read profile: %w", err)
 	}
 
 	if in.ConversationID == uuid.Nil {
 		conv.ID = uuid.New()
-		if err := s.repo.CreateConversation(ctx, userID, conv); err != nil {
+		if err := s.repo.CreateConversation(ctx, booksID, conv); err != nil {
 			return err
 		}
 	}
 
-	userMsg, err := s.repo.AppendMessage(ctx, userID, domain.Message{ID: uuid.New(), ConversationID: conv.ID, Role: domain.RoleUser, Content: text, CreatedAt: now})
+	userMsg, err := s.repo.AppendMessage(ctx, booksID, domain.Message{ID: uuid.New(), ConversationID: conv.ID, Role: domain.RoleUser, Content: text, CreatedAt: now})
 	if err != nil {
 		return err
 	}
@@ -206,13 +206,13 @@ func (s *Service) Turn(ctx context.Context, userID int64, in TurnInput, ev TurnE
 	discard := func() {
 		if ids := state.take(); len(ids) > 0 {
 			// The caller's context may be done; the discard must still reach the database.
-			if err := s.repo.DiscardProposals(context.WithoutCancel(ctx), userID, ids, s.now()); err != nil {
+			if err := s.repo.DiscardProposals(context.WithoutCancel(ctx), booksID, ids, s.now()); err != nil {
 				s.log.WarnContext(ctx, "assistant proposals not discarded", "error", err)
 			}
 		}
 	}
 
-	res, err := s.agent.Run(runCtx, userID, req, ev.Step, ev.Delta, discard)
+	res, err := s.agent.Run(runCtx, booksID, req, ev.Step, ev.Delta, discard)
 	if err != nil {
 		discard()
 
@@ -228,7 +228,7 @@ func (s *Service) Turn(ctx context.Context, userID int64, in TurnInput, ev TurnE
 			}
 		}
 
-		s.logTurn(ctx, userID, conv.ID, outcome, res, now)
+		s.logTurn(ctx, booksID, conv.ID, outcome, res, now)
 
 		stored := domain.OutcomeFailed
 		if outcome == outcomeCancel {
@@ -236,7 +236,7 @@ func (s *Service) Turn(ctx context.Context, userID int64, in TurnInput, ev TurnE
 		}
 
 		// The message records that the user's text got no answer; the client may already be gone.
-		if _, err := s.repo.AppendMessage(context.WithoutCancel(ctx), userID, domain.Message{
+		if _, err := s.repo.AppendMessage(context.WithoutCancel(ctx), booksID, domain.Message{
 			ID: uuid.New(), ConversationID: conv.ID, Role: domain.RoleAssistant, Outcome: stored, CreatedAt: s.now(),
 		}); err != nil {
 			s.log.ErrorContext(ctx, "assistant unanswered turn not stored", "error", err)
@@ -263,7 +263,7 @@ func (s *Service) Turn(ctx context.Context, userID int64, in TurnInput, ev TurnE
 	// The answer is stored even when the client left after the model returned: nothing else reads the turn.
 	storeCtx := context.WithoutCancel(ctx)
 
-	answer, err := s.repo.AppendMessage(storeCtx, userID, domain.Message{
+	answer, err := s.repo.AppendMessage(storeCtx, booksID, domain.Message{
 		ID: uuid.New(), ConversationID: conv.ID, Role: domain.RoleAssistant, Outcome: outcome,
 		Content: truncateRunes(strings.TrimSpace(res.Text), domain.MaxAnswer), CreatedAt: s.now(),
 	})
@@ -276,12 +276,12 @@ func (s *Service) Turn(ctx context.Context, userID int64, in TurnInput, ev TurnE
 
 	out := AnsweredMessage{Message: answer}
 	if len(ids) > 0 {
-		if err := s.repo.AttachProposals(storeCtx, userID, answer.ID, ids); err != nil {
+		if err := s.repo.AttachProposals(storeCtx, booksID, answer.ID, ids); err != nil {
 			return s.failAfterStream(ctx, ev, err)
 		}
 
 		for _, id := range ids {
-			p, err := s.repo.Proposal(storeCtx, userID, id)
+			p, err := s.repo.Proposal(storeCtx, booksID, id)
 			if err != nil {
 				return s.failAfterStream(ctx, ev, err)
 			}
@@ -290,7 +290,7 @@ func (s *Service) Turn(ctx context.Context, userID int64, in TurnInput, ev TurnE
 		}
 	}
 
-	s.logTurn(ctx, userID, conv.ID, string(outcome), res, now)
+	s.logTurn(ctx, booksID, conv.ID, string(outcome), res, now)
 	ev.Answer(out)
 
 	return nil
@@ -303,8 +303,8 @@ func (s *Service) failAfterStream(ctx context.Context, ev TurnEvents, err error)
 	return nil
 }
 
-func (s *Service) logTurn(ctx context.Context, userID int64, conversationID uuid.UUID, outcome string, r AgentResult, began time.Time) {
-	s.log.InfoContext(ctx, "assistant turn", "user_id", userID, "conversation_id", conversationID, "steps", r.Steps,
+func (s *Service) logTurn(ctx context.Context, booksID int64, conversationID uuid.UUID, outcome string, r AgentResult, began time.Time) {
+	s.log.InfoContext(ctx, "assistant turn", "books_id", booksID, "conversation_id", conversationID, "steps", r.Steps,
 		"tool_calls", r.ToolCalls, "input_tokens", r.InputTokens, "output_tokens", r.OutputTokens,
 		"provider", r.ProviderName, "model", r.Model, "outcome", outcome, "restarted", r.Restarted, "duration", s.now().Sub(began))
 }

@@ -14,25 +14,25 @@ import (
 
 const getSchedule = `-- name: GetSchedule :one
 SELECT
-    id, user_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar
+    id, books_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar
 FROM
     planning_schedule
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2
 `
 
 type GetScheduleParams struct {
-	UserID int64
-	ID     uuid.UUID
+	BooksID int64
+	ID      uuid.UUID
 }
 
 func (q *Queries) GetSchedule(ctx context.Context, arg GetScheduleParams) (PlanningSchedule, error) {
-	row := q.db.QueryRow(ctx, getSchedule, arg.UserID, arg.ID)
+	row := q.db.QueryRow(ctx, getSchedule, arg.BooksID, arg.ID)
 	var i PlanningSchedule
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.Kind,
 		&i.AccountID,
 		&i.CounterpartID,
@@ -52,7 +52,7 @@ func (q *Queries) GetSchedule(ctx context.Context, arg GetScheduleParams) (Plann
 
 const insertOccurrences = `-- name: InsertOccurrences :exec
 INSERT INTO
-    planning_occurrence (user_id, schedule_id, sequence, expected_on, expected_amount, state)
+    planning_occurrence (books_id, schedule_id, sequence, expected_on, expected_amount, state)
 SELECT
     $1::bigint,
     $2::uuid,
@@ -64,7 +64,7 @@ ON CONFLICT (schedule_id, sequence) DO NOTHING
 `
 
 type InsertOccurrencesParams struct {
-	UserID     int64
+	BooksID    int64
 	ScheduleID uuid.UUID
 	Sequences  []int32
 	Dates      []string
@@ -74,7 +74,7 @@ type InsertOccurrencesParams struct {
 // Generation is idempotent by (schedule_id, sequence) (P7 amendment A49).
 func (q *Queries) InsertOccurrences(ctx context.Context, arg InsertOccurrencesParams) error {
 	_, err := q.db.Exec(ctx, insertOccurrences,
-		arg.UserID,
+		arg.BooksID,
 		arg.ScheduleID,
 		arg.Sequences,
 		arg.Dates,
@@ -85,13 +85,13 @@ func (q *Queries) InsertOccurrences(ctx context.Context, arg InsertOccurrencesPa
 
 const insertPause = `-- name: InsertPause :exec
 INSERT INTO
-    planning_schedule_pause (user_id, schedule_id, period)
+    planning_schedule_pause (books_id, schedule_id, period)
 VALUES
     ($1, $2, daterange ($3::date, $4::date, '[]'))
 `
 
 type InsertPauseParams struct {
-	UserID     int64
+	BooksID    int64
 	ScheduleID uuid.UUID
 	FromDate   time.Time
 	ToDate     time.Time
@@ -99,7 +99,7 @@ type InsertPauseParams struct {
 
 func (q *Queries) InsertPause(ctx context.Context, arg InsertPauseParams) error {
 	_, err := q.db.Exec(ctx, insertPause,
-		arg.UserID,
+		arg.BooksID,
 		arg.ScheduleID,
 		arg.FromDate,
 		arg.ToDate,
@@ -110,7 +110,7 @@ func (q *Queries) InsertPause(ctx context.Context, arg InsertPauseParams) error 
 const insertSchedule = `-- name: InsertSchedule :one
 INSERT INTO
     planning_schedule (
-        user_id,
+        books_id,
         kind,
         account_id,
         counterpart_id,
@@ -139,11 +139,11 @@ VALUES
         $12
     )
 RETURNING
-    id, user_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar
+    id, books_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar
 `
 
 type InsertScheduleParams struct {
-	UserID           int64
+	BooksID          int64
 	Kind             string
 	AccountID        uuid.UUID
 	CounterpartID    uuid.UUID
@@ -159,7 +159,7 @@ type InsertScheduleParams struct {
 
 func (q *Queries) InsertSchedule(ctx context.Context, arg InsertScheduleParams) (PlanningSchedule, error) {
 	row := q.db.QueryRow(ctx, insertSchedule,
-		arg.UserID,
+		arg.BooksID,
 		arg.Kind,
 		arg.AccountID,
 		arg.CounterpartID,
@@ -175,7 +175,7 @@ func (q *Queries) InsertSchedule(ctx context.Context, arg InsertScheduleParams) 
 	var i PlanningSchedule
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.Kind,
 		&i.AccountID,
 		&i.CounterpartID,
@@ -196,7 +196,7 @@ func (q *Queries) InsertSchedule(ctx context.Context, arg InsertScheduleParams) 
 const insertTerms = `-- name: InsertTerms :exec
 INSERT INTO
     planning_schedule_terms (
-        user_id,
+        books_id,
         schedule_id,
         effective_from,
         frequency,
@@ -231,7 +231,7 @@ VALUES
             FROM
                 planning_schedule
             WHERE
-                user_id = $1
+                books_id = $1
                 AND id = $2
         ),
         $11,
@@ -243,7 +243,7 @@ VALUES
 `
 
 type InsertTermsParams struct {
-	UserID             int64
+	BooksID            int64
 	ScheduleID         uuid.UUID
 	EffectiveFrom      time.Time
 	Frequency          string
@@ -262,7 +262,7 @@ type InsertTermsParams struct {
 
 func (q *Queries) InsertTerms(ctx context.Context, arg InsertTermsParams) error {
 	_, err := q.db.Exec(ctx, insertTerms,
-		arg.UserID,
+		arg.BooksID,
 		arg.ScheduleID,
 		arg.EffectiveFrom,
 		arg.Frequency,
@@ -283,11 +283,11 @@ func (q *Queries) InsertTerms(ctx context.Context, arg InsertTermsParams) error 
 
 const listOccurrences = `-- name: ListOccurrences :many
 SELECT
-    id, user_id, schedule_id, sequence, expected_on, expected_amount, state, transaction_id, realized_by, moved_from, skip_reason, declined_transaction_id
+    id, books_id, schedule_id, sequence, expected_on, expected_amount, state, transaction_id, realized_by, moved_from, skip_reason, declined_transaction_id
 FROM
     planning_occurrence
 WHERE
-    user_id = $1
+    books_id = $1
     AND expected_on BETWEEN $2 AND $3
     AND (
         $4::uuid IS NULL
@@ -300,7 +300,7 @@ ORDER BY
 `
 
 type ListOccurrencesParams struct {
-	UserID     int64
+	BooksID    int64
 	FromDate   time.Time
 	ToDate     time.Time
 	ScheduleID uuid.NullUUID
@@ -308,7 +308,7 @@ type ListOccurrencesParams struct {
 
 func (q *Queries) ListOccurrences(ctx context.Context, arg ListOccurrencesParams) ([]PlanningOccurrence, error) {
 	rows, err := q.db.Query(ctx, listOccurrences,
-		arg.UserID,
+		arg.BooksID,
 		arg.FromDate,
 		arg.ToDate,
 		arg.ScheduleID,
@@ -322,7 +322,7 @@ func (q *Queries) ListOccurrences(ctx context.Context, arg ListOccurrencesParams
 		var i PlanningOccurrence
 		if err := rows.Scan(
 			&i.ID,
-			&i.UserID,
+			&i.BooksID,
 			&i.ScheduleID,
 			&i.Sequence,
 			&i.ExpectedOn,
@@ -346,11 +346,11 @@ func (q *Queries) ListOccurrences(ctx context.Context, arg ListOccurrencesParams
 
 const listOccurrencesOfTransaction = `-- name: ListOccurrencesOfTransaction :many
 SELECT
-    id, user_id, schedule_id, sequence, expected_on, expected_amount, state, transaction_id, realized_by, moved_from, skip_reason, declined_transaction_id
+    id, books_id, schedule_id, sequence, expected_on, expected_amount, state, transaction_id, realized_by, moved_from, skip_reason, declined_transaction_id
 FROM
     planning_occurrence
 WHERE
-    user_id = $1
+    books_id = $1
     AND transaction_id = $2
 ORDER BY
     expected_on,
@@ -359,12 +359,12 @@ ORDER BY
 `
 
 type ListOccurrencesOfTransactionParams struct {
-	UserID        int64
+	BooksID       int64
 	TransactionID uuid.NullUUID
 }
 
 func (q *Queries) ListOccurrencesOfTransaction(ctx context.Context, arg ListOccurrencesOfTransactionParams) ([]PlanningOccurrence, error) {
-	rows, err := q.db.Query(ctx, listOccurrencesOfTransaction, arg.UserID, arg.TransactionID)
+	rows, err := q.db.Query(ctx, listOccurrencesOfTransaction, arg.BooksID, arg.TransactionID)
 	if err != nil {
 		return nil, err
 	}
@@ -374,7 +374,7 @@ func (q *Queries) ListOccurrencesOfTransaction(ctx context.Context, arg ListOccu
 		var i PlanningOccurrence
 		if err := rows.Scan(
 			&i.ID,
-			&i.UserID,
+			&i.BooksID,
 			&i.ScheduleID,
 			&i.Sequence,
 			&i.ExpectedOn,
@@ -404,7 +404,7 @@ SELECT
 FROM
     planning_schedule_pause
 WHERE
-    user_id = $1
+    books_id = $1
     AND schedule_id = ANY ($2::UUID[])
 ORDER BY
     schedule_id,
@@ -412,7 +412,7 @@ ORDER BY
 `
 
 type ListPausesParams struct {
-	UserID      int64
+	BooksID     int64
 	ScheduleIds []uuid.UUID
 }
 
@@ -423,7 +423,7 @@ type ListPausesRow struct {
 }
 
 func (q *Queries) ListPauses(ctx context.Context, arg ListPausesParams) ([]ListPausesRow, error) {
-	rows, err := q.db.Query(ctx, listPauses, arg.UserID, arg.ScheduleIds)
+	rows, err := q.db.Query(ctx, listPauses, arg.BooksID, arg.ScheduleIds)
 	if err != nil {
 		return nil, err
 	}
@@ -444,11 +444,11 @@ func (q *Queries) ListPauses(ctx context.Context, arg ListPausesParams) ([]ListP
 
 const listSchedules = `-- name: ListSchedules :many
 SELECT
-    id, user_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar
+    id, books_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar
 FROM
     planning_schedule
 WHERE
-    user_id = $1
+    books_id = $1
     AND (
         $2::uuid IS NULL
         OR id > $2::uuid
@@ -460,13 +460,13 @@ LIMIT
 `
 
 type ListSchedulesParams struct {
-	UserID   int64
+	BooksID  int64
 	AfterID  uuid.NullUUID
 	RowLimit int32
 }
 
 func (q *Queries) ListSchedules(ctx context.Context, arg ListSchedulesParams) ([]PlanningSchedule, error) {
-	rows, err := q.db.Query(ctx, listSchedules, arg.UserID, arg.AfterID, arg.RowLimit)
+	rows, err := q.db.Query(ctx, listSchedules, arg.BooksID, arg.AfterID, arg.RowLimit)
 	if err != nil {
 		return nil, err
 	}
@@ -476,7 +476,7 @@ func (q *Queries) ListSchedules(ctx context.Context, arg ListSchedulesParams) ([
 		var i PlanningSchedule
 		if err := rows.Scan(
 			&i.ID,
-			&i.UserID,
+			&i.BooksID,
 			&i.Kind,
 			&i.AccountID,
 			&i.CounterpartID,
@@ -503,11 +503,11 @@ func (q *Queries) ListSchedules(ctx context.Context, arg ListSchedulesParams) ([
 
 const listTerms = `-- name: ListTerms :many
 SELECT
-    user_id, schedule_id, effective_from, frequency, interval, day_of_month, weekday, ordinal, business_day_ordinal, adjustment, calendar, start, until, count, amount, first_sequence
+    books_id, schedule_id, effective_from, frequency, interval, day_of_month, weekday, ordinal, business_day_ordinal, adjustment, calendar, start, until, count, amount, first_sequence
 FROM
     planning_schedule_terms
 WHERE
-    user_id = $1
+    books_id = $1
     AND schedule_id = ANY ($2::UUID[])
 ORDER BY
     schedule_id,
@@ -515,12 +515,12 @@ ORDER BY
 `
 
 type ListTermsParams struct {
-	UserID      int64
+	BooksID     int64
 	ScheduleIds []uuid.UUID
 }
 
 func (q *Queries) ListTerms(ctx context.Context, arg ListTermsParams) ([]PlanningScheduleTerm, error) {
-	rows, err := q.db.Query(ctx, listTerms, arg.UserID, arg.ScheduleIds)
+	rows, err := q.db.Query(ctx, listTerms, arg.BooksID, arg.ScheduleIds)
 	if err != nil {
 		return nil, err
 	}
@@ -529,7 +529,7 @@ func (q *Queries) ListTerms(ctx context.Context, arg ListTermsParams) ([]Plannin
 	for rows.Next() {
 		var i PlanningScheduleTerm
 		if err := rows.Scan(
-			&i.UserID,
+			&i.BooksID,
 			&i.ScheduleID,
 			&i.EffectiveFrom,
 			&i.Frequency,
@@ -558,26 +558,26 @@ func (q *Queries) ListTerms(ctx context.Context, arg ListTermsParams) ([]Plannin
 
 const lockSchedule = `-- name: LockSchedule :one
 SELECT
-    id, user_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar
+    id, books_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar
 FROM
     planning_schedule
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2
 FOR UPDATE
 `
 
 type LockScheduleParams struct {
-	UserID int64
-	ID     uuid.UUID
+	BooksID int64
+	ID      uuid.UUID
 }
 
 func (q *Queries) LockSchedule(ctx context.Context, arg LockScheduleParams) (PlanningSchedule, error) {
-	row := q.db.QueryRow(ctx, lockSchedule, arg.UserID, arg.ID)
+	row := q.db.QueryRow(ctx, lockSchedule, arg.BooksID, arg.ID)
 	var i PlanningSchedule
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.Kind,
 		&i.AccountID,
 		&i.CounterpartID,
@@ -597,18 +597,18 @@ func (q *Queries) LockSchedule(ctx context.Context, arg LockScheduleParams) (Pla
 
 const scheduleRefs = `-- name: ScheduleRefs :many
 SELECT
-    user_id,
+    books_id,
     id
 FROM
     planning_schedule
 ORDER BY
-    user_id,
+    books_id,
     id
 `
 
 type ScheduleRefsRow struct {
-	UserID int64
-	ID     uuid.UUID
+	BooksID int64
+	ID      uuid.UUID
 }
 
 // Every schedule across users: what a backfill of their history reads (P7 amendment A127).
@@ -621,7 +621,7 @@ func (q *Queries) ScheduleRefs(ctx context.Context) ([]ScheduleRefsRow, error) {
 	var items []ScheduleRefsRow
 	for rows.Next() {
 		var i ScheduleRefsRow
-		if err := rows.Scan(&i.UserID, &i.ID); err != nil {
+		if err := rows.Scan(&i.BooksID, &i.ID); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -634,7 +634,7 @@ func (q *Queries) ScheduleRefs(ctx context.Context) ([]ScheduleRefsRow, error) {
 
 const schedulesBehind = `-- name: SchedulesBehind :many
 SELECT
-    user_id,
+    books_id,
     id
 FROM
     planning_schedule
@@ -645,13 +645,13 @@ WHERE
         OR generated_until < ends_on
     )
 ORDER BY
-    user_id,
+    books_id,
     id
 `
 
 type SchedulesBehindRow struct {
-	UserID int64
-	ID     uuid.UUID
+	BooksID int64
+	ID      uuid.UUID
 }
 
 // A53: schedules whose occurrences stop before the horizon, across users.
@@ -664,7 +664,7 @@ func (q *Queries) SchedulesBehind(ctx context.Context, horizon time.Time) ([]Sch
 	var items []SchedulesBehindRow
 	for rows.Next() {
 		var i SchedulesBehindRow
-		if err := rows.Scan(&i.UserID, &i.ID); err != nil {
+		if err := rows.Scan(&i.BooksID, &i.ID); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -675,19 +675,19 @@ func (q *Queries) SchedulesBehind(ctx context.Context, horizon time.Time) ([]Sch
 	return items, nil
 }
 
-const schedulesOfUser = `-- name: SchedulesOfUser :many
+const schedulesOfBooks = `-- name: SchedulesOfBooks :many
 SELECT
-    id, user_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar
+    id, books_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar
 FROM
     planning_schedule
 WHERE
-    user_id = $1
+    books_id = $1
 ORDER BY
     id
 `
 
-func (q *Queries) SchedulesOfUser(ctx context.Context, userID int64) ([]PlanningSchedule, error) {
-	rows, err := q.db.Query(ctx, schedulesOfUser, userID)
+func (q *Queries) SchedulesOfBooks(ctx context.Context, booksID int64) ([]PlanningSchedule, error) {
+	rows, err := q.db.Query(ctx, schedulesOfBooks, booksID)
 	if err != nil {
 		return nil, err
 	}
@@ -697,7 +697,7 @@ func (q *Queries) SchedulesOfUser(ctx context.Context, userID int64) ([]Planning
 		var i PlanningSchedule
 		if err := rows.Scan(
 			&i.ID,
-			&i.UserID,
+			&i.BooksID,
 			&i.Kind,
 			&i.AccountID,
 			&i.CounterpartID,
@@ -728,18 +728,18 @@ SET
     ends_on = $1,
     updated_at = now()
 WHERE
-    user_id = $2
+    books_id = $2
     AND id = $3
 `
 
 type SetEndsOnParams struct {
-	EndsOn *time.Time
-	UserID int64
-	ID     uuid.UUID
+	EndsOn  *time.Time
+	BooksID int64
+	ID      uuid.UUID
 }
 
 func (q *Queries) SetEndsOn(ctx context.Context, arg SetEndsOnParams) error {
-	_, err := q.db.Exec(ctx, setEndsOn, arg.EndsOn, arg.UserID, arg.ID)
+	_, err := q.db.Exec(ctx, setEndsOn, arg.EndsOn, arg.BooksID, arg.ID)
 	return err
 }
 
@@ -749,17 +749,17 @@ SET
     generated_until = $1,
     updated_at = now()
 WHERE
-    user_id = $2
+    books_id = $2
     AND id = $3
 `
 
 type SetGeneratedUntilParams struct {
 	GeneratedUntil time.Time
-	UserID         int64
+	BooksID        int64
 	ID             uuid.UUID
 }
 
 func (q *Queries) SetGeneratedUntil(ctx context.Context, arg SetGeneratedUntilParams) error {
-	_, err := q.db.Exec(ctx, setGeneratedUntil, arg.GeneratedUntil, arg.UserID, arg.ID)
+	_, err := q.db.Exec(ctx, setGeneratedUntil, arg.GeneratedUntil, arg.BooksID, arg.ID)
 	return err
 }

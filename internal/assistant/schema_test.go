@@ -19,10 +19,10 @@ func TestSchema(t *testing.T) {
 	t.Parallel()
 	pool := pgtest.New(t)
 	ctx := t.Context()
-	a, b := pgtest.CreateUser(t, pool), pgtest.CreateUser(t, pool)
+	a, b := pgtest.CreateBooks(t, pool), pgtest.CreateBooks(t, pool)
 
 	const provider = "11111111-1111-1111-1111-111111111111"
-	if _, err := pool.Exec(ctx, `INSERT INTO assistant_provider (id, user_id, preset, name, base_url, created_at)
+	if _, err := pool.Exec(ctx, `INSERT INTO assistant_provider (id, books_id, preset, name, base_url, created_at)
 		VALUES ($1, $2, 'ollama', 'Local', 'http://127.0.0.1:11434/v1', now())`, provider, a); err != nil {
 		t.Fatal(err)
 	}

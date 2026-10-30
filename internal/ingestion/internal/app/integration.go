@@ -74,8 +74,8 @@ type NameKey struct {
 	ID   uuid.UUID `json:"i"`
 }
 
-func credentialRow(userID int64, id uuid.UUID) []byte {
-	return fmt.Appendf(nil, "ingestion_integration|%d|%s", userID, id)
+func credentialRow(booksID int64, id uuid.UUID) []byte {
+	return fmt.Appendf(nil, "ingestion_integration|%d|%s", booksID, id)
 }
 
 func (s *Service) available() error {
@@ -86,17 +86,17 @@ func (s *Service) available() error {
 	return nil
 }
 
-func (s *Service) seal(userID int64, id uuid.UUID, c domain.Credentials) ([]byte, error) {
+func (s *Service) seal(booksID int64, id uuid.UUID, c domain.Credentials) ([]byte, error) {
 	plain, err := json.Marshal(c)
 	if err != nil {
 		return nil, err
 	}
 
-	return s.box.Seal(plain, credentialRow(userID, id))
+	return s.box.Seal(plain, credentialRow(booksID, id))
 }
 
 func (s *Service) credentials(i domain.Integration) (domain.Credentials, error) {
-	plain, err := s.box.Open(i.SealedCredentials, credentialRow(i.UserID, i.ID))
+	plain, err := s.box.Open(i.SealedCredentials, credentialRow(i.BooksID, i.ID))
 	if err != nil {
 		return domain.Credentials{}, ErrCredentialsUnreadable
 	}
@@ -156,12 +156,12 @@ func (s *Service) verify(ctx context.Context, agg Aggregator, id uuid.UUID, c do
 }
 
 // CreateIntegration stores credentials the aggregator accepts; rejected ones store nothing (S57).
-func (s *Service) CreateIntegration(ctx context.Context, userID int64, p domain.AggregatorID, name string, c domain.Credentials) (domain.Integration, error) {
+func (s *Service) CreateIntegration(ctx context.Context, booksID int64, p domain.AggregatorID, name string, c domain.Credentials) (domain.Integration, error) {
 	if err := s.available(); err != nil {
 		return domain.Integration{}, err
 	}
 
-	i, err := domain.NewIntegration(uuid.Must(uuid.NewV7()), userID, p, name)
+	i, err := domain.NewIntegration(uuid.Must(uuid.NewV7()), booksID, p, name)
 	if err != nil {
 		return domain.Integration{}, err
 	}
@@ -175,7 +175,7 @@ func (s *Service) CreateIntegration(ctx context.Context, userID int64, p domain.
 		return domain.Integration{}, err
 	}
 
-	if i.SealedCredentials, err = s.seal(userID, i.ID, c); err != nil {
+	if i.SealedCredentials, err = s.seal(booksID, i.ID, c); err != nil {
 		agg.Forget(i.ID)
 		return domain.Integration{}, err
 	}
@@ -188,30 +188,30 @@ func (s *Service) CreateIntegration(ctx context.Context, userID int64, p domain.
 	return saved, err
 }
 
-func (s *Service) Integration(ctx context.Context, userID int64, id uuid.UUID) (domain.Integration, error) {
+func (s *Service) Integration(ctx context.Context, booksID int64, id uuid.UUID) (domain.Integration, error) {
 	if err := s.available(); err != nil {
 		return domain.Integration{}, err
 	}
 
-	return s.repo.Integration(ctx, userID, id)
+	return s.repo.Integration(ctx, booksID, id)
 }
 
-func (s *Service) ListIntegrations(ctx context.Context, userID int64, p page.Request[NameKey]) ([]domain.Integration, *NameKey, error) {
+func (s *Service) ListIntegrations(ctx context.Context, booksID int64, p page.Request[NameKey]) ([]domain.Integration, *NameKey, error) {
 	if err := s.available(); err != nil {
 		return nil, nil, err
 	}
 
-	return s.repo.ListIntegrations(ctx, userID, p)
+	return s.repo.ListIntegrations(ctx, booksID, p)
 }
 
 // UpdateCredentials replaces the credentials after the aggregator accepts them; rejected ones
 // leave the stored ones in place.
-func (s *Service) UpdateCredentials(ctx context.Context, userID int64, id uuid.UUID, c domain.Credentials) (domain.Integration, error) {
+func (s *Service) UpdateCredentials(ctx context.Context, booksID int64, id uuid.UUID, c domain.Credentials) (domain.Integration, error) {
 	if err := s.available(); err != nil {
 		return domain.Integration{}, err
 	}
 
-	i, err := s.repo.Integration(ctx, userID, id)
+	i, err := s.repo.Integration(ctx, booksID, id)
 	if err != nil {
 		return domain.Integration{}, err
 	}
@@ -226,25 +226,25 @@ func (s *Service) UpdateCredentials(ctx context.Context, userID int64, id uuid.U
 		return domain.Integration{}, err
 	}
 
-	sealed, err := s.seal(userID, id, c)
+	sealed, err := s.seal(booksID, id, c)
 	if err != nil {
 		return domain.Integration{}, err
 	}
 
-	return s.repo.UpdateCredentials(ctx, userID, id, sealed)
+	return s.repo.UpdateCredentials(ctx, booksID, id, sealed)
 }
 
-func (s *Service) DeleteIntegration(ctx context.Context, userID int64, id uuid.UUID) error {
+func (s *Service) DeleteIntegration(ctx context.Context, booksID int64, id uuid.UUID) error {
 	if err := s.available(); err != nil {
 		return err
 	}
 
-	i, err := s.repo.Integration(ctx, userID, id)
+	i, err := s.repo.Integration(ctx, booksID, id)
 	if err != nil {
 		return err
 	}
 
-	if err := s.repo.DeleteIntegration(ctx, userID, id); err != nil {
+	if err := s.repo.DeleteIntegration(ctx, booksID, id); err != nil {
 		return err
 	}
 
@@ -263,13 +263,13 @@ func (s *Service) RotateSecrets(ctx context.Context) (int, error) {
 		return 0, err
 	}
 
-	return s.repo.ResealCredentials(ctx, func(userID int64, id uuid.UUID, sealed []byte) ([]byte, error) {
+	return s.repo.ResealCredentials(ctx, func(booksID int64, id uuid.UUID, sealed []byte) ([]byte, error) {
 		// An imported integration holds no credential until the owner enters it (export design E2).
 		if len(sealed) == 0 || !s.box.NeedsReseal(sealed) {
 			return nil, nil
 		}
 
-		row := credentialRow(userID, id)
+		row := credentialRow(booksID, id)
 
 		plain, err := s.box.Open(sealed, row)
 		if err != nil {

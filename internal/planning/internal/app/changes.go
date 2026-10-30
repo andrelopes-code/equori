@@ -14,17 +14,17 @@ import (
 var lastDate = time.Date(9999, 12, 31, 0, 0, 0, 0, time.UTC)
 
 // changeOccurrence applies change to an occurrence of the user and returns it as read.
-func (s *Service) changeOccurrence(ctx context.Context, userID int64, id uuid.UUID,
+func (s *Service) changeOccurrence(ctx context.Context, booksID int64, id uuid.UUID,
 	change func(Repository, domain.Occurrence, domain.Schedule) (domain.Occurrence, error),
 ) (OccurrenceView, error) {
 	var out OccurrenceView
 	err := s.repo.InTx(ctx, func(repo Repository) error {
-		o, err := repo.LockOccurrence(ctx, userID, id)
+		o, err := repo.LockOccurrence(ctx, booksID, id)
 		if err != nil {
 			return err
 		}
 
-		sch, err := repo.Schedule(ctx, userID, o.ScheduleID)
+		sch, err := repo.Schedule(ctx, booksID, o.ScheduleID)
 		if err != nil {
 			return err
 		}
@@ -39,16 +39,16 @@ func (s *Service) changeOccurrence(ctx context.Context, userID int64, id uuid.UU
 }
 
 // Skip skips an expected occurrence (T03).
-func (s *Service) Skip(ctx context.Context, userID int64, id uuid.UUID, reason string) (OccurrenceView, error) {
-	return s.changeOccurrence(ctx, userID, id, func(repo Repository, _ domain.Occurrence, _ domain.Schedule) (domain.Occurrence, error) {
-		return repo.Skip(ctx, userID, id, reason)
+func (s *Service) Skip(ctx context.Context, booksID int64, id uuid.UUID, reason string) (OccurrenceView, error) {
+	return s.changeOccurrence(ctx, booksID, id, func(repo Repository, _ domain.Occurrence, _ domain.Schedule) (domain.Occurrence, error) {
+		return repo.Skip(ctx, booksID, id, reason)
 	})
 }
 
 // Move moves an expected occurrence; it keeps its sequence and is never regenerated (A52).
 // The new date is one the schedule produces dates on: outside its pauses and before its end.
-func (s *Service) Move(ctx context.Context, userID int64, id uuid.UUID, date time.Time) (OccurrenceView, error) {
-	return s.changeOccurrence(ctx, userID, id, func(repo Repository, o domain.Occurrence, sch domain.Schedule) (domain.Occurrence, error) {
+func (s *Service) Move(ctx context.Context, booksID int64, id uuid.UUID, date time.Time) (OccurrenceView, error) {
+	return s.changeOccurrence(ctx, booksID, id, func(repo Repository, o domain.Occurrence, sch domain.Schedule) (domain.Occurrence, error) {
 		switch {
 		case o.State != domain.Expected:
 			return domain.Occurrence{}, ErrOccurrenceClosed
@@ -58,17 +58,17 @@ func (s *Service) Move(ctx context.Context, userID int64, id uuid.UUID, date tim
 			return domain.Occurrence{}, &domain.FieldError{Field: "date", Message: "falls inside a pause of the schedule", Err: domain.ErrValidation}
 		}
 
-		return repo.Move(ctx, userID, id, date)
+		return repo.Move(ctx, booksID, id, date)
 	})
 }
 
 // changeSchedule runs change on the locked schedule and returns the schedule as stored after it.
-func (s *Service) changeSchedule(ctx context.Context, userID int64, id uuid.UUID,
+func (s *Service) changeSchedule(ctx context.Context, booksID int64, id uuid.UUID,
 	change func(Repository, *domain.Schedule) error,
 ) (domain.Schedule, error) {
 	var out domain.Schedule
 	err := s.repo.InTx(ctx, func(repo Repository) error {
-		sch, err := repo.LockSchedule(ctx, userID, id)
+		sch, err := repo.LockSchedule(ctx, booksID, id)
 		if err != nil {
 			return err
 		}
@@ -77,7 +77,7 @@ func (s *Service) changeSchedule(ctx context.Context, userID int64, id uuid.UUID
 			return err
 		}
 
-		out, err = repo.Schedule(ctx, userID, id)
+		out, err = repo.Schedule(ctx, booksID, id)
 
 		return err
 	})
@@ -92,8 +92,8 @@ func endsBefore(sch domain.Schedule, d time.Time) bool {
 // ChangeTerms adds a terms version from effectiveFrom; without rule the previous rule is kept,
 // start included (A49). Expected occurrences from that date on that were not moved are
 // regenerated (A52).
-func (s *Service) ChangeTerms(ctx context.Context, userID int64, id uuid.UUID, effectiveFrom time.Time, amount *money.Money, rule *domain.Rule) (domain.Schedule, error) {
-	return s.changeSchedule(ctx, userID, id, func(repo Repository, sch *domain.Schedule) error {
+func (s *Service) ChangeTerms(ctx context.Context, booksID int64, id uuid.UUID, effectiveFrom time.Time, amount *money.Money, rule *domain.Rule) (domain.Schedule, error) {
+	return s.changeSchedule(ctx, booksID, id, func(repo Repository, sch *domain.Schedule) error {
 		if endsBefore(*sch, effectiveFrom) {
 			return ErrScheduleEnded
 		}
@@ -128,17 +128,17 @@ func (s *Service) ChangeTerms(ctx context.Context, userID int64, id uuid.UUID, e
 			return err
 		}
 
-		first, err := s.firstSequence(ctx, repo, userID, *sch)
+		first, err := s.firstSequence(ctx, repo, booksID, *sch)
 		if err != nil {
 			return err
 		}
 
 		sch.Terms[len(sch.Terms)-1].FirstSequence = first
-		if err := repo.InsertTerms(ctx, userID, sch.ID, sch.Terms[len(sch.Terms)-1]); err != nil {
+		if err := repo.InsertTerms(ctx, booksID, sch.ID, sch.Terms[len(sch.Terms)-1]); err != nil {
 			return err
 		}
 
-		removed, err := repo.DeleteExpected(ctx, userID, sch.ID, effectiveFrom, lastDate, false)
+		removed, err := repo.DeleteExpected(ctx, booksID, sch.ID, effectiveFrom, lastDate, false)
 		if err != nil {
 			return err
 		}
@@ -156,17 +156,17 @@ func (s *Service) ChangeTerms(ctx context.Context, userID int64, id uuid.UUID, e
 			from = effectiveFrom
 		}
 
-		return s.regenerate(ctx, repo, userID, *sch, from)
+		return s.regenerate(ctx, repo, booksID, *sch, from)
 	})
 }
 
 // firstSequence returns the first sequence of the latest terms version of sch: 0 to continue
 // after the earlier versions, unless a kept occurrence holds one of the sequences the version
 // would take for another date; then the version starts after the highest kept sequence.
-func (s *Service) firstSequence(ctx context.Context, repo Repository, userID int64, sch domain.Schedule) (int, error) {
+func (s *Service) firstSequence(ctx context.Context, repo Repository, booksID int64, sch domain.Schedule) (int, error) {
 	latest := sch.Terms[len(sch.Terms)-1]
 
-	kept, err := repo.KeptOccurrences(ctx, userID, sch.ID, latest.EffectiveFrom)
+	kept, err := repo.KeptOccurrences(ctx, booksID, sch.ID, latest.EffectiveFrom)
 	if err != nil || len(kept) == 0 {
 		return 0, err
 	}
@@ -213,8 +213,8 @@ func generated(o domain.Occurrence) time.Time {
 }
 
 // Pause suppresses the dates in [from, to]; its expected occurrences, moved ones included, go.
-func (s *Service) Pause(ctx context.Context, userID int64, id uuid.UUID, from, to time.Time) (domain.Schedule, error) {
-	return s.changeSchedule(ctx, userID, id, func(repo Repository, sch *domain.Schedule) error {
+func (s *Service) Pause(ctx context.Context, booksID int64, id uuid.UUID, from, to time.Time) (domain.Schedule, error) {
+	return s.changeSchedule(ctx, booksID, id, func(repo Repository, sch *domain.Schedule) error {
 		if to.Before(from) {
 			return &domain.FieldError{Field: "to", Message: "must not be before from", Err: domain.ErrValidation}
 		}
@@ -223,39 +223,39 @@ func (s *Service) Pause(ctx context.Context, userID int64, id uuid.UUID, from, t
 			return ErrScheduleEnded
 		}
 
-		if err := repo.InsertPause(ctx, userID, sch.ID, domain.Pause{From: from, To: to}); err != nil {
+		if err := repo.InsertPause(ctx, booksID, sch.ID, domain.Pause{From: from, To: to}); err != nil {
 			return err
 		}
 
-		_, err := repo.DeleteExpected(ctx, userID, sch.ID, from, to, true)
+		_, err := repo.DeleteExpected(ctx, booksID, sch.ID, from, to, true)
 
 		return err
 	})
 }
 
 // End produces no occurrence on or after from; expected ones go, realized and skipped stay.
-func (s *Service) End(ctx context.Context, userID int64, id uuid.UUID, from time.Time) (domain.Schedule, error) {
-	return s.changeSchedule(ctx, userID, id, func(repo Repository, sch *domain.Schedule) error {
+func (s *Service) End(ctx context.Context, booksID int64, id uuid.UUID, from time.Time) (domain.Schedule, error) {
+	return s.changeSchedule(ctx, booksID, id, func(repo Repository, sch *domain.Schedule) error {
 		if endsBefore(*sch, from) {
 			return ErrScheduleEnded
 		}
 
-		if err := repo.SetEndsOn(ctx, userID, sch.ID, from); err != nil {
+		if err := repo.SetEndsOn(ctx, booksID, sch.ID, from); err != nil {
 			return err
 		}
 
-		_, err := repo.DeleteExpected(ctx, userID, sch.ID, from, lastDate, true)
+		_, err := repo.DeleteExpected(ctx, booksID, sch.ID, from, lastDate, true)
 
 		return err
 	})
 }
 
 // regenerate inserts the occurrences of sch from from to its GeneratedUntil that are missing.
-func (s *Service) regenerate(ctx context.Context, repo Repository, userID int64, sch domain.Schedule, from time.Time) error {
+func (s *Service) regenerate(ctx context.Context, repo Repository, booksID int64, sch domain.Schedule, from time.Time) error {
 	days, err := s.days(ctx, sch.Calendar, sch.Terms[0].Rule.Start, sch.GeneratedUntil)
 	if err != nil {
 		return err
 	}
 
-	return repo.InsertOccurrences(ctx, userID, sch.ID, sch.Planned(from, sch.GeneratedUntil, days))
+	return repo.InsertOccurrences(ctx, booksID, sch.ID, sch.Planned(from, sch.GeneratedUntil, days))
 }

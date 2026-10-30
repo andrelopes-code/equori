@@ -56,9 +56,9 @@ type CardFacts struct {
 }
 
 type CashRepository interface {
-	CardFacts(ctx context.Context, userID int64, to time.Time) (CardFacts, error)
+	CardFacts(ctx context.Context, booksID int64, to time.Time) (CardFacts, error)
 	// OffCardTotals sums, per category, the postings in [from, to] of transactions without a card line.
-	OffCardTotals(ctx context.Context, userID int64, from, to time.Time) (Shares, error)
+	OffCardTotals(ctx context.Context, booksID int64, from, to time.Time) (Shares, error)
 }
 
 // CashPayment is the amount a card payment gives one category in the cash view, with the
@@ -72,13 +72,13 @@ type CashPayment struct {
 }
 
 // cashTotals is the cash view of [from, to] per category (CV1 to CV9).
-func (s *Service) cashTotals(ctx context.Context, userID int64, from, to time.Time) (Shares, error) {
-	out, err := s.repo.OffCardTotals(ctx, userID, from, to)
+func (s *Service) cashTotals(ctx context.Context, booksID int64, from, to time.Time) (Shares, error) {
+	out, err := s.repo.OffCardTotals(ctx, booksID, from, to)
 	if err != nil {
 		return nil, err
 	}
 
-	facts, err := s.repo.CardFacts(ctx, userID, to)
+	facts, err := s.repo.CardFacts(ctx, booksID, to)
 	if err != nil {
 		return nil, err
 	}
@@ -95,13 +95,13 @@ func (s *Service) cashTotals(ctx context.Context, userID int64, from, to time.Ti
 
 // cashMonthTotals is the cash view of [from, to] per category and per month, keyed by the
 // first day of the month (CV1 to CV9).
-func (s *Service) cashMonthTotals(ctx context.Context, userID int64, from, to time.Time) (map[time.Time]Shares, error) {
-	out, err := s.repo.OffCardMonthTotals(ctx, userID, from, to)
+func (s *Service) cashMonthTotals(ctx context.Context, booksID int64, from, to time.Time) (map[time.Time]Shares, error) {
+	out, err := s.repo.OffCardMonthTotals(ctx, booksID, from, to)
 	if err != nil {
 		return nil, err
 	}
 
-	facts, err := s.repo.CardFacts(ctx, userID, to)
+	facts, err := s.repo.CardFacts(ctx, booksID, to)
 	if err != nil {
 		return nil, err
 	}
@@ -125,17 +125,17 @@ func (s *Service) cashMonthTotals(ctx context.Context, userID int64, from, to ti
 
 // CategoryCashPayments lists the card amounts of one category in the cash view of [from, to],
 // signed as its postings, in the order the payments apply (CV10).
-func (s *Service) CategoryCashPayments(ctx context.Context, userID int64, categoryID uuid.UUID, from, to time.Time) ([]CashPayment, string, error) {
+func (s *Service) CategoryCashPayments(ctx context.Context, booksID int64, categoryID uuid.UUID, from, to time.Time) ([]CashPayment, string, error) {
 	if days := int(to.Sub(from).Hours()/24) + 1; days < 1 || days > MaxCategoryDays {
 		return nil, "", ErrInvalidCategoryRange
 	}
 
-	instrument, err := s.repo.AccountCurrency(ctx, userID, categoryID)
+	instrument, err := s.repo.AccountCurrency(ctx, booksID, categoryID)
 	if err != nil {
 		return nil, "", err
 	}
 
-	facts, err := s.repo.CardFacts(ctx, userID, to)
+	facts, err := s.repo.CardFacts(ctx, booksID, to)
 	if err != nil {
 		return nil, "", err
 	}

@@ -26,13 +26,13 @@ type Target struct {
 // else the use's defaults matched against the user's providers and then the instance
 // providers. Targets lacking a needed capability and providers whose key does not open are
 // left out. Without a user, only instance providers are matched.
-func (s *Service) Resolve(ctx context.Context, userID int64, hasUser bool, use Use) ([]Target, error) {
-	targets, err := s.candidates(ctx, userID, hasUser, use)
-	if err != nil || !hasUser || len(targets) == 0 {
+func (s *Service) Resolve(ctx context.Context, booksID int64, hasBooks bool, use Use) ([]Target, error) {
+	targets, err := s.candidates(ctx, booksID, hasBooks, use)
+	if err != nil || !hasBooks || len(targets) == 0 {
 		return targets, err
 	}
 
-	b, err := s.budget(ctx, userID)
+	b, err := s.budget(ctx, booksID)
 	if err != nil {
 		return nil, err
 	}
@@ -67,17 +67,17 @@ func (s *Service) Resolve(ctx context.Context, userID int64, hasUser bool, use U
 	return nil, &LimitError{RetryAt: retry}
 }
 
-func (s *Service) candidates(ctx context.Context, userID int64, hasUser bool, use Use) ([]Target, error) {
+func (s *Service) candidates(ctx context.Context, booksID int64, hasBooks bool, use Use) ([]Target, error) {
 	var providers []domain.Provider
 
 	var chain []domain.ChainTarget
-	if hasUser {
+	if hasBooks {
 		var err error
-		if providers, err = s.repo.Providers(ctx, userID); err != nil {
+		if providers, err = s.repo.Providers(ctx, booksID); err != nil {
 			return nil, err
 		}
 
-		chains, err := s.repo.Chains(ctx, userID)
+		chains, err := s.repo.Chains(ctx, booksID)
 		if err != nil {
 			return nil, err
 		}
@@ -167,15 +167,15 @@ type budget struct {
 	usage  map[targetKey]domain.UsageSummary
 }
 
-func (s *Service) budget(ctx context.Context, userID int64) (budget, error) {
+func (s *Service) budget(ctx context.Context, booksID int64) (budget, error) {
 	today := s.today()
 
-	rows, err := s.repo.UsageSince(ctx, userID, today, today)
+	rows, err := s.repo.UsageSince(ctx, booksID, today, today)
 	if err != nil {
 		return budget{}, err
 	}
 
-	limits, err := s.repo.Limits(ctx, userID)
+	limits, err := s.repo.Limits(ctx, booksID)
 	if err != nil {
 		return budget{}, err
 	}

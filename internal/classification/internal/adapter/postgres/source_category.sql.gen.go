@@ -13,10 +13,10 @@ import (
 
 const countSourceCategory = `-- name: CountSourceCategory :exec
 INSERT INTO
-    classification_source_category (user_id, aggregator, external_id, name, seen_count)
+    classification_source_category (books_id, aggregator, external_id, name, seen_count)
 VALUES
     ($1, $2, $3, $4, $5)
-ON CONFLICT (user_id, aggregator, external_id) DO UPDATE
+ON CONFLICT (books_id, aggregator, external_id) DO UPDATE
 SET
     seen_count = classification_source_category.seen_count + EXCLUDED.seen_count,
     name = CASE
@@ -26,7 +26,7 @@ SET
 `
 
 type CountSourceCategoryParams struct {
-	UserID     int64
+	BooksID    int64
 	Aggregator string
 	ExternalID string
 	Name       string
@@ -36,7 +36,7 @@ type CountSourceCategoryParams struct {
 // A line carried the category: count it and keep the aggregator's latest name.
 func (q *Queries) CountSourceCategory(ctx context.Context, arg CountSourceCategoryParams) error {
 	_, err := q.db.Exec(ctx, countSourceCategory,
-		arg.UserID,
+		arg.BooksID,
 		arg.Aggregator,
 		arg.ExternalID,
 		arg.Name,
@@ -47,11 +47,11 @@ func (q *Queries) CountSourceCategory(ctx context.Context, arg CountSourceCatego
 
 const listSourceCategories = `-- name: ListSourceCategories :many
 SELECT
-    id, user_id, aggregator, external_id, name, seen_count, category_id
+    id, books_id, aggregator, external_id, name, seen_count, category_id
 FROM
     classification_source_category
 WHERE
-    user_id = $1
+    books_id = $1
     AND (
         $2::text IS NULL
         OR (name, id) > ($2::text, $3::uuid)
@@ -64,7 +64,7 @@ LIMIT
 `
 
 type ListSourceCategoriesParams struct {
-	UserID    int64
+	BooksID   int64
 	AfterName *string
 	AfterID   uuid.NullUUID
 	RowLimit  int32
@@ -72,7 +72,7 @@ type ListSourceCategoriesParams struct {
 
 func (q *Queries) ListSourceCategories(ctx context.Context, arg ListSourceCategoriesParams) ([]ClassificationSourceCategory, error) {
 	rows, err := q.db.Query(ctx, listSourceCategories,
-		arg.UserID,
+		arg.BooksID,
 		arg.AfterName,
 		arg.AfterID,
 		arg.RowLimit,
@@ -86,7 +86,7 @@ func (q *Queries) ListSourceCategories(ctx context.Context, arg ListSourceCatego
 		var i ClassificationSourceCategory
 		if err := rows.Scan(
 			&i.ID,
-			&i.UserID,
+			&i.BooksID,
 			&i.Aggregator,
 			&i.ExternalID,
 			&i.Name,
@@ -108,24 +108,24 @@ UPDATE classification_source_category
 SET
     category_id = $1
 WHERE
-    user_id = $2
+    books_id = $2
     AND id = $3
 RETURNING
-    id, user_id, aggregator, external_id, name, seen_count, category_id
+    id, books_id, aggregator, external_id, name, seen_count, category_id
 `
 
 type MapSourceCategoryParams struct {
 	CategoryID uuid.NullUUID
-	UserID     int64
+	BooksID    int64
 	ID         uuid.UUID
 }
 
 func (q *Queries) MapSourceCategory(ctx context.Context, arg MapSourceCategoryParams) (ClassificationSourceCategory, error) {
-	row := q.db.QueryRow(ctx, mapSourceCategory, arg.CategoryID, arg.UserID, arg.ID)
+	row := q.db.QueryRow(ctx, mapSourceCategory, arg.CategoryID, arg.BooksID, arg.ID)
 	var i ClassificationSourceCategory
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.Aggregator,
 		&i.ExternalID,
 		&i.Name,
@@ -142,14 +142,14 @@ SELECT
 FROM
     classification_source_category
 WHERE
-    user_id = $1
+    books_id = $1
     AND aggregator = $2
     AND external_id = ANY ($3::TEXT[])
     AND category_id IS NOT NULL
 `
 
 type MappedSourceCategoriesParams struct {
-	UserID      int64
+	BooksID     int64
 	Aggregator  string
 	ExternalIds []string
 }
@@ -160,7 +160,7 @@ type MappedSourceCategoriesRow struct {
 }
 
 func (q *Queries) MappedSourceCategories(ctx context.Context, arg MappedSourceCategoriesParams) ([]MappedSourceCategoriesRow, error) {
-	rows, err := q.db.Query(ctx, mappedSourceCategories, arg.UserID, arg.Aggregator, arg.ExternalIds)
+	rows, err := q.db.Query(ctx, mappedSourceCategories, arg.BooksID, arg.Aggregator, arg.ExternalIds)
 	if err != nil {
 		return nil, err
 	}

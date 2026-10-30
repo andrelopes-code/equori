@@ -27,7 +27,7 @@ func (s *Service) installments(ctx context.Context, batch *domain.Batch, lines [
 		keys[i] = domain.PlanKey(batch.AccountID, l.Installment, l.Line.Description)
 	}
 
-	plans, err := s.repo.InstallmentPlans(ctx, batch.UserID, keys)
+	plans, err := s.repo.InstallmentPlans(ctx, batch.BooksID, keys)
 	if err != nil {
 		return err
 	}
@@ -38,9 +38,9 @@ func (s *Service) installments(ctx context.Context, batch *domain.Batch, lines [
 
 		planID, known := plans[string(keys[i])]
 		if known {
-			txID, err = s.ledger.LinkInstallment(ctx, batch.UserID, l.RecordID, planID, l.Installment.Number, l.Line)
+			txID, err = s.ledger.LinkInstallment(ctx, batch.BooksID, l.RecordID, planID, l.Installment.Number, l.Line)
 		} else {
-			txID, planID, err = s.ledger.RecordInstallment(ctx, batch.UserID, l)
+			txID, planID, err = s.ledger.RecordInstallment(ctx, batch.BooksID, l)
 		}
 
 		switch {
@@ -54,7 +54,7 @@ func (s *Service) installments(ctx context.Context, batch *domain.Batch, lines [
 		rec.State, rec.TransactionID = domain.StateMatched, txID
 		if !known && planID != uuid.Nil {
 			rec.State, plans[string(keys[i])] = domain.StateCreated, planID
-			if err := s.repo.SaveInstallmentPlan(ctx, batch.UserID, batch.AccountID, keys[i], planID); err != nil {
+			if err := s.repo.SaveInstallmentPlan(ctx, batch.BooksID, batch.AccountID, keys[i], planID); err != nil {
 				return err
 			}
 		}

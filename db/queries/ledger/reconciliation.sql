@@ -1,6 +1,6 @@
 -- name: InsertBalanceAssertion :one
 INSERT INTO
-    ledger_balance_assertion (user_id, account_id, date, amount, source)
+    ledger_balance_assertion (books_id, account_id, date, amount, source)
 VALUES
     ($1, $2, $3, $4, $5)
 RETURNING
@@ -20,7 +20,7 @@ SELECT
 FROM
     ledger_balance_assertion a
 WHERE
-    a.user_id = $1
+    a.books_id = $1
     AND a.account_id = $2
 ORDER BY
     a.date DESC,
@@ -40,7 +40,7 @@ SELECT
 FROM
     ledger_balance_assertion a
 WHERE
-    a.user_id = @user_id
+    a.books_id = @books_id
     AND a.account_id = @account_id
     AND (
         sqlc.narg (after_date)::date IS NULL
@@ -66,7 +66,7 @@ SELECT
 FROM
     ledger_balance_assertion a
 WHERE
-    a.user_id = $1
+    a.books_id = $1
     AND a.id = $2;
 
 -- name: LastReconciledOn :one
@@ -75,7 +75,7 @@ SELECT
 FROM
     ledger_reconciliation
 WHERE
-    user_id = $1
+    books_id = $1
     AND account_id = $2
 ORDER BY
     date DESC
@@ -85,7 +85,7 @@ LIMIT
 -- name: InsertReconciliation :exec
 INSERT INTO
     ledger_reconciliation (
-        user_id,
+        books_id,
         account_id,
         date,
         assertion_id,
@@ -96,7 +96,7 @@ INSERT INTO
     )
 VALUES
     (
-        @user_id,
+        @books_id,
         @account_id,
         @date,
         sqlc.narg (assertion_id),
@@ -111,7 +111,7 @@ UPDATE ledger_posting
 SET
     status = 'reconciled'
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND account_id = @account_id
     AND NOT voided
     AND status <> 'reconciled'
@@ -123,7 +123,7 @@ SELECT
 FROM
     ledger_posting
 WHERE
-    user_id = $1
+    books_id = $1
     AND account_id = $2
     AND NOT voided
 ORDER BY
@@ -141,7 +141,7 @@ UPDATE ledger_posting p
 SET
     status = 'cleared'
 WHERE
-    p.user_id = @user_id
+    p.books_id = @books_id
     AND p.account_id = @account_id
     AND p.status = 'reconciled'
     AND (
@@ -152,7 +152,7 @@ WHERE
             FROM
                 ledger_reconciliation r
             WHERE
-                r.user_id = @user_id
+                r.books_id = @books_id
                 AND r.account_id = @account_id
                 AND r.date >= @from_date::date
         )
@@ -161,7 +161,7 @@ WHERE
 -- name: DeleteReconciliationsFrom :exec
 DELETE FROM ledger_reconciliation
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND account_id = @account_id
     AND date >= @from_date::date;
 
@@ -170,7 +170,7 @@ UPDATE ledger_posting
 SET
     status = 'reconciled'
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND statement_id = @statement_id
     AND NOT voided
     AND status <> 'reconciled';

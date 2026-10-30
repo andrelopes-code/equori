@@ -37,7 +37,7 @@ const (
 
 // AssertBalance records the institution's balance of a leaf balance account (A9) and
 // reconciles the account when the settled balance matches, after recording yield (F6, A10).
-func (s *Service) AssertBalance(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time, amount money.Money, source string) (AssertionResult, error) {
+func (s *Service) AssertBalance(ctx context.Context, booksID int64, accountID uuid.UUID, date time.Time, amount money.Money, source string) (AssertionResult, error) {
 	switch source {
 	case "":
 		source = SourceManual
@@ -52,7 +52,7 @@ func (s *Service) AssertBalance(ctx context.Context, userID int64, accountID uui
 
 	var res AssertionResult
 	err := s.repo.InTx(ctx, func(r Repository) error {
-		a, err := s.lockAssertionTarget(ctx, r, userID, accountID, date, amount)
+		a, err := s.lockAssertionTarget(ctx, r, booksID, accountID, date, amount)
 		if err != nil {
 			return err
 		}
@@ -70,19 +70,19 @@ func (s *Service) AssertBalance(ctx context.Context, userID int64, accountID uui
 // of that date and amount again, because history recorded since may close the difference (A77).
 // A reserve may book bounded yield (D3, A75). The result is that of the newest assertion of
 // the date and amount: the list orders by creation, newest first.
-func (s *Service) AssertSynced(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time, amount money.Money, reserve bool) (AssertionResult, error) {
+func (s *Service) AssertSynced(ctx context.Context, booksID int64, accountID uuid.UUID, date time.Time, amount money.Money, reserve bool) (AssertionResult, error) {
 	if date.After(s.clock.Today()) {
 		return AssertionResult{}, validationError("date", "must not be in the future")
 	}
 
 	var res AssertionResult
 	err := s.repo.InTx(ctx, func(r Repository) error {
-		a, err := s.lockAssertionTarget(ctx, r, userID, accountID, date, amount)
+		a, err := s.lockAssertionTarget(ctx, r, booksID, accountID, date, amount)
 		if err != nil {
 			return err
 		}
 
-		assertions, err := r.BalanceAssertions(ctx, userID, accountID)
+		assertions, err := r.BalanceAssertions(ctx, booksID, accountID)
 		if err != nil {
 			return err
 		}
@@ -137,7 +137,7 @@ func (s *Service) AssertSynced(ctx context.Context, userID int64, accountID uuid
 // sync of its day closes that day's difference, and each day books its own yield within its own
 // bound (D3 amendment). Of one date, only the newest assertion that reconciles counts.
 func (s *Service) redecideOpenReserve(ctx context.Context, r Repository, a domain.Account, date time.Time, assertions []BalanceAssertion) error {
-	last, err := r.LastReconciledOn(ctx, a.UserID, a.ID)
+	last, err := r.LastReconciledOn(ctx, a.BooksID, a.ID)
 	if err != nil {
 		return err
 	}
@@ -172,8 +172,8 @@ func (s *Service) redecideOpenReserve(ctx context.Context, r Repository, a domai
 
 // lockAssertionTarget locks the account and checks that an assertion of date and amount may
 // be decided on it.
-func (s *Service) lockAssertionTarget(ctx context.Context, r Repository, userID int64, accountID uuid.UUID, date time.Time, amount money.Money) (domain.Account, error) {
-	a, err := s.lockLeafBalance(ctx, r, userID, accountID)
+func (s *Service) lockAssertionTarget(ctx context.Context, r Repository, booksID int64, accountID uuid.UUID, date time.Time, amount money.Money) (domain.Account, error) {
+	a, err := s.lockLeafBalance(ctx, r, booksID, accountID)
 	if err != nil {
 		return domain.Account{}, err
 	}
@@ -182,7 +182,7 @@ func (s *Service) lockAssertionTarget(ctx context.Context, r Repository, userID 
 		return domain.Account{}, validationError("amount", "must be in the account currency")
 	}
 
-	last, err := r.LastReconciledOn(ctx, userID, accountID)
+	last, err := r.LastReconciledOn(ctx, booksID, accountID)
 	if err != nil {
 		return domain.Account{}, err
 	}
@@ -196,7 +196,7 @@ func (s *Service) lockAssertionTarget(ctx context.Context, r Repository, userID 
 func (s *Service) decideAssertion(ctx context.Context, r Repository, a domain.Account, date time.Time, amount money.Money, source string, reserve bool, existing *BalanceAssertion) (AssertionResult, error) {
 	var res AssertionResult
 
-	prev, err := s.previousAssertionDate(ctx, r, a.UserID, a.ID, date)
+	prev, err := s.previousAssertionDate(ctx, r, a.BooksID, a.ID, date)
 	if err != nil {
 		return res, err
 	}
@@ -206,7 +206,7 @@ func (s *Service) decideAssertion(ctx context.Context, r Repository, a domain.Ac
 		return res, err
 	}
 
-	settled, err := r.BalanceAt(ctx, a.UserID, a.ID, date, BasisSettled)
+	settled, err := r.BalanceAt(ctx, a.BooksID, a.ID, date, BasisSettled)
 	if err != nil {
 		return res, err
 	}
@@ -234,7 +234,7 @@ func (s *Service) decideAssertion(ctx context.Context, r Repository, a domain.Ac
 	if existing != nil {
 		res.Assertion = *existing
 	} else if res.Assertion, err = r.InsertBalanceAssertion(ctx, BalanceAssertion{
-		UserID: a.UserID, AccountID: a.ID, Date: date, Amount: amount.Amount(), Source: source,
+		BooksID: a.BooksID, AccountID: a.ID, Date: date, Amount: amount.Amount(), Source: source,
 	}); err != nil {
 		return res, err
 	}
@@ -255,7 +255,7 @@ func (s *Service) decideAssertion(ctx context.Context, r Repository, a domain.Ac
 
 	res.Resolution = outcome.Resolution
 	if err := s.reconcile(ctx, r, Reconciliation{
-		UserID: a.UserID, AccountID: a.ID, Date: date, AssertionID: res.Assertion.ID,
+		BooksID: a.BooksID, AccountID: a.ID, Date: date, AssertionID: res.Assertion.ID,
 		Difference: outcome.Difference, Resolution: outcome.Resolution, ResolutionTransactionID: res.ResolutionTransactionID,
 	}); err != nil {
 		return res, err
@@ -267,25 +267,25 @@ func (s *Service) decideAssertion(ctx context.Context, r Repository, a domain.Ac
 }
 
 // ResolveAssertion settles the open difference of an assertion chosen by the owner (F6, S26).
-func (s *Service) ResolveAssertion(ctx context.Context, userID int64, id uuid.UUID, resolution domain.Resolution) (AssertionResult, error) {
+func (s *Service) ResolveAssertion(ctx context.Context, booksID int64, id uuid.UUID, resolution domain.Resolution) (AssertionResult, error) {
 	if resolution != domain.ResolutionAdjustment && resolution != domain.ResolutionYield && resolution != domain.ResolutionTransactionsAdded {
 		return AssertionResult{}, validationError("resolution", "must be adjustment, yield or transactions_added")
 	}
 
-	found, err := s.repo.BalanceAssertion(ctx, userID, id)
+	found, err := s.repo.BalanceAssertion(ctx, booksID, id)
 	if err != nil {
 		return AssertionResult{}, err
 	}
 
 	var res AssertionResult
 	err = s.repo.InTx(ctx, func(r Repository) error {
-		a, err := s.lockLeafBalance(ctx, r, userID, found.AccountID)
+		a, err := s.lockLeafBalance(ctx, r, booksID, found.AccountID)
 		if err != nil {
 			return err
 		}
 
 		// Reread under the account lock: every reconciliation of the account holds it.
-		if res.Assertion, err = r.BalanceAssertion(ctx, userID, id); err != nil {
+		if res.Assertion, err = r.BalanceAssertion(ctx, booksID, id); err != nil {
 			return err
 		}
 
@@ -293,7 +293,7 @@ func (s *Service) ResolveAssertion(ctx context.Context, userID int64, id uuid.UU
 			return domain.ErrAlreadyReconciled
 		}
 
-		last, err := r.LastReconciledOn(ctx, userID, a.ID)
+		last, err := r.LastReconciledOn(ctx, booksID, a.ID)
 		if err != nil {
 			return err
 		}
@@ -302,7 +302,7 @@ func (s *Service) ResolveAssertion(ctx context.Context, userID int64, id uuid.UU
 			return err
 		}
 
-		settled, err := r.BalanceAt(ctx, userID, a.ID, res.Assertion.Date, BasisSettled)
+		settled, err := r.BalanceAt(ctx, booksID, a.ID, res.Assertion.Date, BasisSettled)
 		if err != nil {
 			return err
 		}
@@ -330,7 +330,7 @@ func (s *Service) ResolveAssertion(ctx context.Context, userID int64, id uuid.UU
 		res.Resolution, res.Assertion.Reconciled = resolution, true
 
 		return s.reconcile(ctx, r, Reconciliation{
-			UserID: userID, AccountID: a.ID, Date: res.Assertion.Date, AssertionID: id,
+			BooksID: booksID, AccountID: a.ID, Date: res.Assertion.Date, AssertionID: id,
 			Difference: res.Difference.Amount(), Resolution: resolution, ResolutionTransactionID: res.ResolutionTransactionID,
 		})
 	})
@@ -351,18 +351,18 @@ type OpenDifference struct {
 
 // ReconciliationStatus reports the latest assertion's difference while it is open and
 // not superseded by a later reconciliation; the difference reflects the current postings.
-func (s *Service) ReconciliationStatus(ctx context.Context, userID int64, accountID uuid.UUID) (ReconciliationStatus, error) {
-	a, err := s.repo.Account(ctx, userID, accountID)
+func (s *Service) ReconciliationStatus(ctx context.Context, booksID int64, accountID uuid.UUID) (ReconciliationStatus, error) {
+	a, err := s.repo.Account(ctx, booksID, accountID)
 	if err != nil {
 		return ReconciliationStatus{}, err
 	}
 
 	var st ReconciliationStatus
-	if st.LastReconciledOn, err = s.repo.LastReconciledOn(ctx, userID, accountID); err != nil {
+	if st.LastReconciledOn, err = s.repo.LastReconciledOn(ctx, booksID, accountID); err != nil {
 		return ReconciliationStatus{}, err
 	}
 
-	assertions, err := s.repo.BalanceAssertions(ctx, userID, accountID)
+	assertions, err := s.repo.BalanceAssertions(ctx, booksID, accountID)
 	if err != nil || len(assertions) == 0 {
 		return st, err
 	}
@@ -372,7 +372,7 @@ func (s *Service) ReconciliationStatus(ctx context.Context, userID int64, accoun
 		return st, nil
 	}
 
-	settled, err := s.repo.BalanceAt(ctx, userID, accountID, latest.Date, BasisSettled)
+	settled, err := s.repo.BalanceAt(ctx, booksID, accountID, latest.Date, BasisSettled)
 	if err != nil {
 		return ReconciliationStatus{}, err
 	}
@@ -388,29 +388,29 @@ func (s *Service) ReconciliationStatus(ctx context.Context, userID int64, accoun
 }
 
 // Unlock is the explicit step chapter 2 requires before reconciled postings change (A8).
-func (s *Service) Unlock(ctx context.Context, userID int64, accountID uuid.UUID, from time.Time) error {
+func (s *Service) Unlock(ctx context.Context, booksID int64, accountID uuid.UUID, from time.Time) error {
 	return s.repo.InTx(ctx, func(r Repository) error {
-		if _, err := r.LockAccount(ctx, userID, accountID); err != nil {
+		if _, err := r.LockAccount(ctx, booksID, accountID); err != nil {
 			return err
 		}
 
-		return r.UnlockAccount(ctx, userID, accountID, from)
+		return r.UnlockAccount(ctx, booksID, accountID, from)
 	})
 }
 
 // ReconcileStatement confirms the institution's amount due for a closed card statement (A7).
-func (s *Service) ReconcileStatement(ctx context.Context, userID int64, statementID uuid.UUID, amountDue money.Money) error {
-	accountID, err := s.repo.StatementAccount(ctx, userID, statementID)
+func (s *Service) ReconcileStatement(ctx context.Context, booksID int64, statementID uuid.UUID, amountDue money.Money) error {
+	accountID, err := s.repo.StatementAccount(ctx, booksID, statementID)
 	if err != nil {
 		return err
 	}
 
 	return s.repo.InTx(ctx, func(r Repository) error {
-		if _, err := r.LockAccount(ctx, userID, accountID); err != nil {
+		if _, err := r.LockAccount(ctx, booksID, accountID); err != nil {
 			return err
 		}
 
-		v, card, err := s.statementView(ctx, r, userID, statementID)
+		v, card, err := s.statementView(ctx, r, booksID, statementID)
 		if err != nil {
 			return err
 		}
@@ -433,22 +433,22 @@ func (s *Service) ReconcileStatement(ctx context.Context, userID int64, statemen
 		}
 
 		return s.reconcile(ctx, r, Reconciliation{
-			UserID: userID, AccountID: accountID, Date: v.Input.Closing, StatementID: statementID, Resolution: domain.ResolutionNone,
+			BooksID: booksID, AccountID: accountID, Date: v.Input.Closing, StatementID: statementID, Resolution: domain.ResolutionNone,
 		})
 	})
 }
 
-func (s *Service) BalanceAssertions(ctx context.Context, userID int64, accountID uuid.UUID, p page.Request[AssertionKey]) ([]BalanceAssertion, *AssertionKey, error) {
-	if _, err := s.repo.Account(ctx, userID, accountID); err != nil {
+func (s *Service) BalanceAssertions(ctx context.Context, booksID int64, accountID uuid.UUID, p page.Request[AssertionKey]) ([]BalanceAssertion, *AssertionKey, error) {
+	if _, err := s.repo.Account(ctx, booksID, accountID); err != nil {
 		return nil, nil, err
 	}
 
-	return s.repo.BalanceAssertionPage(ctx, userID, accountID, p)
+	return s.repo.BalanceAssertionPage(ctx, booksID, accountID, p)
 }
 
 // lockLeafBalance serializes the reconciliations of one account.
-func (s *Service) lockLeafBalance(ctx context.Context, r Repository, userID int64, accountID uuid.UUID) (domain.Account, error) {
-	a, err := r.LockAccount(ctx, userID, accountID)
+func (s *Service) lockLeafBalance(ctx context.Context, r Repository, booksID int64, accountID uuid.UUID) (domain.Account, error) {
+	a, err := r.LockAccount(ctx, booksID, accountID)
 	if err != nil {
 		return domain.Account{}, err
 	}
@@ -463,7 +463,7 @@ func checkLeafBalance(ctx context.Context, r Repository, a domain.Account) error
 		return validationError("account_id", "must be a balance account")
 	}
 
-	parent, err := r.AccountHasChildren(ctx, a.UserID, a.ID)
+	parent, err := r.AccountHasChildren(ctx, a.BooksID, a.ID)
 	if err != nil {
 		return err
 	}
@@ -477,8 +477,8 @@ func checkLeafBalance(ctx context.Context, r Repository, a domain.Account) error
 
 // previousAssertionDate is the date of the latest assertion dated before date; nil when
 // there is none.
-func (s *Service) previousAssertionDate(ctx context.Context, r Repository, userID int64, accountID uuid.UUID, date time.Time) (*time.Time, error) {
-	assertions, err := r.BalanceAssertions(ctx, userID, accountID)
+func (s *Service) previousAssertionDate(ctx context.Context, r Repository, booksID int64, accountID uuid.UUID, date time.Time) (*time.Time, error) {
+	assertions, err := r.BalanceAssertions(ctx, booksID, accountID)
 	if err != nil {
 		return nil, err
 	}
@@ -500,7 +500,7 @@ func (s *Service) yieldStart(ctx context.Context, r Repository, a domain.Account
 		return &start, nil
 	}
 
-	first, err := r.FirstSettledOn(ctx, a.UserID, a.ID)
+	first, err := r.FirstSettledOn(ctx, a.BooksID, a.ID)
 	if err != nil || first == nil || first.After(date) {
 		return nil, err
 	}
@@ -516,7 +516,7 @@ func (s *Service) resolveAsYield(ctx context.Context, r Repository, a domain.Acc
 		return uuid.Nil, validationError("resolution", "yield needs a positive difference; use adjustment")
 	}
 
-	prev, err := s.previousAssertionDate(ctx, r, a.UserID, a.ID, date)
+	prev, err := s.previousAssertionDate(ctx, r, a.BooksID, a.ID, date)
 	if err != nil {
 		return uuid.Nil, err
 	}
@@ -534,7 +534,7 @@ func (s *Service) resolveAsYield(ctx context.Context, r Repository, a domain.Acc
 }
 
 func (s *Service) recordYield(ctx context.Context, r Repository, a domain.Account, start, end time.Time, amount int64) (uuid.UUID, error) {
-	income, err := r.SystemAccount(ctx, a.UserID, domain.RoleYield)
+	income, err := r.SystemAccount(ctx, a.BooksID, domain.RoleYield)
 	if err != nil {
 		return uuid.Nil, err
 	}
@@ -544,13 +544,13 @@ func (s *Service) recordYield(ctx context.Context, r Repository, a domain.Accoun
 		return uuid.Nil, err
 	}
 
-	w, err := s.writerFor(ctx, a.UserID)
+	w, err := s.writerFor(ctx, a.BooksID)
 	if err != nil {
 		return uuid.Nil, err
 	}
 
 	t, err := s.insert(ctx, r, domain.Transaction{
-		UserID: a.UserID, Date: end, Origin: domain.OriginSystem, Description: w.yield(start, end),
+		BooksID: a.BooksID, Date: end, Origin: domain.OriginSystem, Description: w.yield(start, end),
 		Postings: []domain.Posting{{AccountID: a.ID, Amount: gain}, {AccountID: income.ID, Amount: gain.Neg()}},
 	})
 
@@ -558,18 +558,18 @@ func (s *Service) recordYield(ctx context.Context, r Repository, a domain.Accoun
 }
 
 func (s *Service) recordAdjustment(ctx context.Context, r Repository, a domain.Account, date time.Time, diff money.Money) (uuid.UUID, error) {
-	equity, err := r.SystemAccount(ctx, a.UserID, domain.RoleAdjustments)
+	equity, err := r.SystemAccount(ctx, a.BooksID, domain.RoleAdjustments)
 	if err != nil {
 		return uuid.Nil, err
 	}
 
-	w, err := s.writerFor(ctx, a.UserID)
+	w, err := s.writerFor(ctx, a.BooksID)
 	if err != nil {
 		return uuid.Nil, err
 	}
 
 	t, err := s.insert(ctx, r, domain.Transaction{
-		UserID: a.UserID, Date: date, Origin: domain.OriginSystem, Description: w.BalanceAdjustment,
+		BooksID: a.BooksID, Date: date, Origin: domain.OriginSystem, Description: w.BalanceAdjustment,
 		Postings: []domain.Posting{{AccountID: a.ID, Amount: diff}, {AccountID: equity.ID, Amount: diff.Neg()}},
 	})
 
@@ -581,9 +581,9 @@ func (s *Service) reconcile(ctx context.Context, r Repository, rec Reconciliatio
 		return err
 	}
 
-	mark := func() error { return r.ReconcilePostings(ctx, rec.UserID, rec.AccountID, rec.Date) }
+	mark := func() error { return r.ReconcilePostings(ctx, rec.BooksID, rec.AccountID, rec.Date) }
 	if rec.StatementID != uuid.Nil {
-		mark = func() error { return r.ReconcileStatementPostings(ctx, rec.UserID, rec.StatementID) }
+		mark = func() error { return r.ReconcileStatementPostings(ctx, rec.BooksID, rec.StatementID) }
 	}
 
 	if err := mark(); err != nil {
@@ -591,7 +591,7 @@ func (s *Service) reconcile(ctx context.Context, r Repository, rec Reconciliatio
 	}
 
 	return r.Publish(ctx, outbox.Event{
-		Type: EventAccountReconciled, UserID: rec.UserID, AggregateID: rec.AccountID.String(),
+		Type: EventAccountReconciled, BooksID: rec.BooksID, AggregateID: rec.AccountID.String(),
 		Payload: AccountReconciledEvent{AccountID: rec.AccountID, Date: rec.Date.Format(time.DateOnly)},
 	})
 }

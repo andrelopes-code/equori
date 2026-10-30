@@ -15,7 +15,7 @@ import (
 const deleteExpected = `-- name: DeleteExpected :many
 DELETE FROM planning_occurrence
 WHERE
-    user_id = $1
+    books_id = $1
     AND schedule_id = $2
     AND state = 'expected'
     AND expected_on BETWEEN $3 AND $4
@@ -28,7 +28,7 @@ RETURNING
 `
 
 type DeleteExpectedParams struct {
-	UserID       int64
+	BooksID      int64
 	ScheduleID   uuid.UUID
 	FromDate     time.Time
 	ToDate       time.Time
@@ -39,7 +39,7 @@ type DeleteExpectedParams struct {
 // include_moved is set. Returns the dates removed.
 func (q *Queries) DeleteExpected(ctx context.Context, arg DeleteExpectedParams) ([]time.Time, error) {
 	rows, err := q.db.Query(ctx, deleteExpected,
-		arg.UserID,
+		arg.BooksID,
 		arg.ScheduleID,
 		arg.FromDate,
 		arg.ToDate,
@@ -65,11 +65,11 @@ func (q *Queries) DeleteExpected(ctx context.Context, arg DeleteExpectedParams) 
 
 const expectedOccurrences = `-- name: ExpectedOccurrences :many
 SELECT
-    id, user_id, schedule_id, sequence, expected_on, expected_amount, state, transaction_id, realized_by, moved_from, skip_reason, declined_transaction_id
+    id, books_id, schedule_id, sequence, expected_on, expected_amount, state, transaction_id, realized_by, moved_from, skip_reason, declined_transaction_id
 FROM
     planning_occurrence
 WHERE
-    user_id = $1
+    books_id = $1
     AND schedule_id = ANY ($2::UUID[])
     AND state = 'expected'
     AND expected_on BETWEEN $3 AND $4
@@ -81,7 +81,7 @@ FOR UPDATE
 `
 
 type ExpectedOccurrencesParams struct {
-	UserID      int64
+	BooksID     int64
 	ScheduleIds []uuid.UUID
 	FromDate    time.Time
 	ToDate      time.Time
@@ -89,7 +89,7 @@ type ExpectedOccurrencesParams struct {
 
 func (q *Queries) ExpectedOccurrences(ctx context.Context, arg ExpectedOccurrencesParams) ([]PlanningOccurrence, error) {
 	rows, err := q.db.Query(ctx, expectedOccurrences,
-		arg.UserID,
+		arg.BooksID,
 		arg.ScheduleIds,
 		arg.FromDate,
 		arg.ToDate,
@@ -103,7 +103,7 @@ func (q *Queries) ExpectedOccurrences(ctx context.Context, arg ExpectedOccurrenc
 		var i PlanningOccurrence
 		if err := rows.Scan(
 			&i.ID,
-			&i.UserID,
+			&i.BooksID,
 			&i.ScheduleID,
 			&i.Sequence,
 			&i.ExpectedOn,
@@ -127,11 +127,11 @@ func (q *Queries) ExpectedOccurrences(ctx context.Context, arg ExpectedOccurrenc
 
 const keptOccurrences = `-- name: KeptOccurrences :many
 SELECT
-    id, user_id, schedule_id, sequence, expected_on, expected_amount, state, transaction_id, realized_by, moved_from, skip_reason, declined_transaction_id
+    id, books_id, schedule_id, sequence, expected_on, expected_amount, state, transaction_id, realized_by, moved_from, skip_reason, declined_transaction_id
 FROM
     planning_occurrence
 WHERE
-    user_id = $1
+    books_id = $1
     AND schedule_id = $2
     AND coalesce(moved_from, expected_on) >= $3
     AND (
@@ -143,14 +143,14 @@ ORDER BY
 `
 
 type KeptOccurrencesParams struct {
-	UserID     int64
+	BooksID    int64
 	ScheduleID uuid.UUID
 	FromDate   *time.Time
 }
 
 // Occurrences a terms change keeps from a date on: realized, skipped or moved (A52).
 func (q *Queries) KeptOccurrences(ctx context.Context, arg KeptOccurrencesParams) ([]PlanningOccurrence, error) {
-	rows, err := q.db.Query(ctx, keptOccurrences, arg.UserID, arg.ScheduleID, arg.FromDate)
+	rows, err := q.db.Query(ctx, keptOccurrences, arg.BooksID, arg.ScheduleID, arg.FromDate)
 	if err != nil {
 		return nil, err
 	}
@@ -160,7 +160,7 @@ func (q *Queries) KeptOccurrences(ctx context.Context, arg KeptOccurrencesParams
 		var i PlanningOccurrence
 		if err := rows.Scan(
 			&i.ID,
-			&i.UserID,
+			&i.BooksID,
 			&i.ScheduleID,
 			&i.Sequence,
 			&i.ExpectedOn,
@@ -184,26 +184,26 @@ func (q *Queries) KeptOccurrences(ctx context.Context, arg KeptOccurrencesParams
 
 const lockOccurrence = `-- name: LockOccurrence :one
 SELECT
-    id, user_id, schedule_id, sequence, expected_on, expected_amount, state, transaction_id, realized_by, moved_from, skip_reason, declined_transaction_id
+    id, books_id, schedule_id, sequence, expected_on, expected_amount, state, transaction_id, realized_by, moved_from, skip_reason, declined_transaction_id
 FROM
     planning_occurrence
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2
 FOR UPDATE
 `
 
 type LockOccurrenceParams struct {
-	UserID int64
-	ID     uuid.UUID
+	BooksID int64
+	ID      uuid.UUID
 }
 
 func (q *Queries) LockOccurrence(ctx context.Context, arg LockOccurrenceParams) (PlanningOccurrence, error) {
-	row := q.db.QueryRow(ctx, lockOccurrence, arg.UserID, arg.ID)
+	row := q.db.QueryRow(ctx, lockOccurrence, arg.BooksID, arg.ID)
 	var i PlanningOccurrence
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.ScheduleID,
 		&i.Sequence,
 		&i.ExpectedOn,
@@ -224,26 +224,26 @@ SET
     moved_from = coalesce(moved_from, expected_on),
     expected_on = $1
 WHERE
-    user_id = $2
+    books_id = $2
     AND id = $3
     AND state = 'expected'
 RETURNING
-    id, user_id, schedule_id, sequence, expected_on, expected_amount, state, transaction_id, realized_by, moved_from, skip_reason, declined_transaction_id
+    id, books_id, schedule_id, sequence, expected_on, expected_amount, state, transaction_id, realized_by, moved_from, skip_reason, declined_transaction_id
 `
 
 type MoveOccurrenceParams struct {
 	ExpectedOn time.Time
-	UserID     int64
+	BooksID    int64
 	ID         uuid.UUID
 }
 
 // moved_from keeps the generated date across several moves (P7 amendment A52).
 func (q *Queries) MoveOccurrence(ctx context.Context, arg MoveOccurrenceParams) (PlanningOccurrence, error) {
-	row := q.db.QueryRow(ctx, moveOccurrence, arg.ExpectedOn, arg.UserID, arg.ID)
+	row := q.db.QueryRow(ctx, moveOccurrence, arg.ExpectedOn, arg.BooksID, arg.ID)
 	var i PlanningOccurrence
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.ScheduleID,
 		&i.Sequence,
 		&i.ExpectedOn,
@@ -260,26 +260,26 @@ func (q *Queries) MoveOccurrence(ctx context.Context, arg MoveOccurrenceParams) 
 
 const occurrenceByTransaction = `-- name: OccurrenceByTransaction :one
 SELECT
-    id, user_id, schedule_id, sequence, expected_on, expected_amount, state, transaction_id, realized_by, moved_from, skip_reason, declined_transaction_id
+    id, books_id, schedule_id, sequence, expected_on, expected_amount, state, transaction_id, realized_by, moved_from, skip_reason, declined_transaction_id
 FROM
     planning_occurrence
 WHERE
-    user_id = $1
+    books_id = $1
     AND transaction_id = $2
 FOR UPDATE
 `
 
 type OccurrenceByTransactionParams struct {
-	UserID        int64
+	BooksID       int64
 	TransactionID uuid.NullUUID
 }
 
 func (q *Queries) OccurrenceByTransaction(ctx context.Context, arg OccurrenceByTransactionParams) (PlanningOccurrence, error) {
-	row := q.db.QueryRow(ctx, occurrenceByTransaction, arg.UserID, arg.TransactionID)
+	row := q.db.QueryRow(ctx, occurrenceByTransaction, arg.BooksID, arg.TransactionID)
 	var i PlanningOccurrence
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.ScheduleID,
 		&i.Sequence,
 		&i.ExpectedOn,
@@ -301,17 +301,17 @@ SET
     transaction_id = $1,
     realized_by = $2
 WHERE
-    user_id = $3
+    books_id = $3
     AND id = $4
     AND state = 'expected'
 RETURNING
-    id, user_id, schedule_id, sequence, expected_on, expected_amount, state, transaction_id, realized_by, moved_from, skip_reason, declined_transaction_id
+    id, books_id, schedule_id, sequence, expected_on, expected_amount, state, transaction_id, realized_by, moved_from, skip_reason, declined_transaction_id
 `
 
 type RealizeOccurrenceParams struct {
 	TransactionID uuid.NullUUID
 	RealizedBy    *string
-	UserID        int64
+	BooksID       int64
 	ID            uuid.UUID
 }
 
@@ -319,13 +319,13 @@ func (q *Queries) RealizeOccurrence(ctx context.Context, arg RealizeOccurrencePa
 	row := q.db.QueryRow(ctx, realizeOccurrence,
 		arg.TransactionID,
 		arg.RealizedBy,
-		arg.UserID,
+		arg.BooksID,
 		arg.ID,
 	)
 	var i PlanningOccurrence
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.ScheduleID,
 		&i.Sequence,
 		&i.ExpectedOn,
@@ -351,25 +351,25 @@ SET
         ELSE declined_transaction_id
     END
 WHERE
-    user_id = $2
+    books_id = $2
     AND id = $3
     AND state = 'realized'
 RETURNING
-    id, user_id, schedule_id, sequence, expected_on, expected_amount, state, transaction_id, realized_by, moved_from, skip_reason, declined_transaction_id
+    id, books_id, schedule_id, sequence, expected_on, expected_amount, state, transaction_id, realized_by, moved_from, skip_reason, declined_transaction_id
 `
 
 type ReleaseOccurrenceParams struct {
 	Decline bool
-	UserID  int64
+	BooksID int64
 	ID      uuid.UUID
 }
 
 func (q *Queries) ReleaseOccurrence(ctx context.Context, arg ReleaseOccurrenceParams) (PlanningOccurrence, error) {
-	row := q.db.QueryRow(ctx, releaseOccurrence, arg.Decline, arg.UserID, arg.ID)
+	row := q.db.QueryRow(ctx, releaseOccurrence, arg.Decline, arg.BooksID, arg.ID)
 	var i PlanningOccurrence
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.ScheduleID,
 		&i.Sequence,
 		&i.ExpectedOn,
@@ -386,11 +386,11 @@ func (q *Queries) ReleaseOccurrence(ctx context.Context, arg ReleaseOccurrencePa
 
 const schedulesTouching = `-- name: SchedulesTouching :many
 SELECT
-    id, user_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar
+    id, books_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar
 FROM
     planning_schedule
 WHERE
-    user_id = $1
+    books_id = $1
     AND (
         account_id = ANY ($2::UUID[])
         OR counterpart_id = ANY ($2::UUID[])
@@ -400,13 +400,13 @@ ORDER BY
 `
 
 type SchedulesTouchingParams struct {
-	UserID     int64
+	BooksID    int64
 	AccountIds []uuid.UUID
 }
 
 // Schedules whose template names one of the accounts of a transaction (P7 amendment A51).
 func (q *Queries) SchedulesTouching(ctx context.Context, arg SchedulesTouchingParams) ([]PlanningSchedule, error) {
-	rows, err := q.db.Query(ctx, schedulesTouching, arg.UserID, arg.AccountIds)
+	rows, err := q.db.Query(ctx, schedulesTouching, arg.BooksID, arg.AccountIds)
 	if err != nil {
 		return nil, err
 	}
@@ -416,7 +416,7 @@ func (q *Queries) SchedulesTouching(ctx context.Context, arg SchedulesTouchingPa
 		var i PlanningSchedule
 		if err := rows.Scan(
 			&i.ID,
-			&i.UserID,
+			&i.BooksID,
 			&i.Kind,
 			&i.AccountID,
 			&i.CounterpartID,
@@ -447,25 +447,25 @@ SET
     state = 'skipped',
     skip_reason = $1
 WHERE
-    user_id = $2
+    books_id = $2
     AND id = $3
     AND state = 'expected'
 RETURNING
-    id, user_id, schedule_id, sequence, expected_on, expected_amount, state, transaction_id, realized_by, moved_from, skip_reason, declined_transaction_id
+    id, books_id, schedule_id, sequence, expected_on, expected_amount, state, transaction_id, realized_by, moved_from, skip_reason, declined_transaction_id
 `
 
 type SkipOccurrenceParams struct {
 	SkipReason *string
-	UserID     int64
+	BooksID    int64
 	ID         uuid.UUID
 }
 
 func (q *Queries) SkipOccurrence(ctx context.Context, arg SkipOccurrenceParams) (PlanningOccurrence, error) {
-	row := q.db.QueryRow(ctx, skipOccurrence, arg.SkipReason, arg.UserID, arg.ID)
+	row := q.db.QueryRow(ctx, skipOccurrence, arg.SkipReason, arg.BooksID, arg.ID)
 	var i PlanningOccurrence
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.ScheduleID,
 		&i.Sequence,
 		&i.ExpectedOn,

@@ -17,7 +17,7 @@ import (
 
 type schemaFixture struct {
 	pool     *pgxpool.Pool
-	userID   int64
+	booksID  int64
 	checking string
 	food     string
 }
@@ -25,21 +25,21 @@ type schemaFixture struct {
 func newSchemaFixture(t *testing.T) schemaFixture {
 	t.Helper()
 	pool := pgtest.New(t)
-	f := schemaFixture{pool: pool, userID: pgtest.CreateUser(t, pool)}
-	f.checking = f.account(t, f.userID, "asset", "checking", "2026-01-01")
-	f.food = f.account(t, f.userID, "expense", "", "2026-01-01")
+	f := schemaFixture{pool: pool, booksID: pgtest.CreateBooks(t, pool)}
+	f.checking = f.account(t, f.booksID, "asset", "checking", "2026-01-01")
+	f.food = f.account(t, f.booksID, "expense", "", "2026-01-01")
 
 	return f
 }
 
-func (f schemaFixture) account(t *testing.T, userID int64, class, kind, openedOn string) string {
+func (f schemaFixture) account(t *testing.T, booksID int64, class, kind, openedOn string) string {
 	t.Helper()
 	var id string
 
 	err := f.pool.QueryRow(t.Context(), `
-		INSERT INTO ledger_account (user_id, name, account_class, kind, instrument, opened_on)
+		INSERT INTO ledger_account (books_id, name, account_class, kind, instrument, opened_on)
 		VALUES ($1, $2, $3, nullif($4, ''), 'BRL', $5) RETURNING id`,
-		userID, class+"-"+kind+"-"+openedOn, class, kind, openedOn).Scan(&id)
+		booksID, class+"-"+kind+"-"+openedOn, class, kind, openedOn).Scan(&id)
 	if err != nil {
 		t.Fatalf("insert account: %v", err)
 	}
@@ -53,20 +53,20 @@ type postingRow struct {
 }
 
 // recordTx inserts a transaction and its postings in one database transaction and returns the commit error.
-func (f schemaFixture) recordTx(t *testing.T, userID int64, date string, postings ...postingRow) (string, error) {
+func (f schemaFixture) recordTx(t *testing.T, booksID int64, date string, postings ...postingRow) (string, error) {
 	t.Helper()
 	var id string
 	err := pgx.BeginFunc(t.Context(), f.pool, func(tx pgx.Tx) error {
 		if err := tx.QueryRow(t.Context(), `
-			INSERT INTO ledger_transaction (user_id, date, description, balancing_currency, origin)
-			VALUES ($1, $2, 'test', 'BRL', 'manual') RETURNING id`, userID, date).Scan(&id); err != nil {
+			INSERT INTO ledger_transaction (books_id, date, description, balancing_currency, origin)
+			VALUES ($1, $2, 'test', 'BRL', 'manual') RETURNING id`, booksID, date).Scan(&id); err != nil {
 			return err
 		}
 
 		for i, p := range postings {
 			if _, err := tx.Exec(t.Context(), `
-				INSERT INTO ledger_posting (user_id, transaction_id, account_id, position, amount, weight, booked_on, status)
-				VALUES ($1, $2, $3, $4, $5, $5, $6, 'cleared')`, userID, id, p.account, i, p.amount, date); err != nil {
+				INSERT INTO ledger_posting (books_id, transaction_id, account_id, position, amount, weight, booked_on, status)
+				VALUES ($1, $2, $3, $4, $5, $5, $6, 'cleared')`, booksID, id, p.account, i, p.amount, date); err != nil {
 				return err
 			}
 		}
@@ -101,9 +101,9 @@ const (
 func TestAccountTreeRejectsCycle(t *testing.T) {
 	t.Parallel()
 	f := newSchemaFixture(t)
-	a := f.account(t, f.userID, "expense", "", "2026-01-01")
+	a := f.account(t, f.booksID, "expense", "", "2026-01-01")
 
-	b := f.account(t, f.userID, "expense", "", "2026-02-01")
+	b := f.account(t, f.booksID, "expense", "", "2026-02-01")
 	if _, err := f.pool.Exec(t.Context(), `UPDATE ledger_account SET parent_id = $1 WHERE id = $2`, a, b); err != nil {
 		t.Fatal(err)
 	}
@@ -128,7 +128,7 @@ func TestDBAcceptsBalancedTransaction(t *testing.T) {
 	t.Parallel()
 
 	f := newSchemaFixture(t)
-	if _, err := f.recordTx(t, f.userID, "2026-03-01", postingRow{f.checking, -10000}, postingRow{f.food, 10000}); err != nil {
+	if _, err := f.recordTx(t, f.booksID, "2026-03-01", postingRow{f.checking, -10000}, postingRow{f.food, 10000}); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -136,14 +136,14 @@ func TestDBAcceptsBalancedTransaction(t *testing.T) {
 func TestDBRejectsUnbalancedTransaction(t *testing.T) {
 	t.Parallel()
 	f := newSchemaFixture(t)
-	_, err := f.recordTx(t, f.userID, "2026-03-01", postingRow{f.checking, -9000}, postingRow{f.food, 10000})
+	_, err := f.recordTx(t, f.booksID, "2026-03-01", postingRow{f.checking, -9000}, postingRow{f.food, 10000})
 	requireViolation(t, err, checkViolation, "unbalanced")
 }
 
 func TestDBRejectsSinglePosting(t *testing.T) {
 	t.Parallel()
 	f := newSchemaFixture(t)
-	_, err := f.recordTx(t, f.userID, "2026-03-01", postingRow{f.checking, -9000})
+	_, err := f.recordTx(t, f.booksID, "2026-03-01", postingRow{f.checking, -9000})
 	requireViolation(t, err, checkViolation, "at least 2")
 }
 
@@ -151,7 +151,7 @@ func TestDBIgnoresVoidedTransaction(t *testing.T) {
 	t.Parallel()
 	f := newSchemaFixture(t)
 
-	id, err := f.recordTx(t, f.userID, "2026-03-01", postingRow{f.checking, -10000}, postingRow{f.food, 10000})
+	id, err := f.recordTx(t, f.booksID, "2026-03-01", postingRow{f.checking, -10000}, postingRow{f.food, 10000})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -173,17 +173,17 @@ func TestDBIgnoresVoidedTransaction(t *testing.T) {
 func TestDBRejectsPostingOutsideOpenPeriod(t *testing.T) {
 	t.Parallel()
 	f := newSchemaFixture(t)
-	late := f.account(t, f.userID, "asset", "cash", "2026-02-01")
-	_, err := f.recordTx(t, f.userID, "2026-01-31", postingRow{late, -100}, postingRow{f.food, 100})
+	late := f.account(t, f.booksID, "asset", "cash", "2026-02-01")
+	_, err := f.recordTx(t, f.booksID, "2026-01-31", postingRow{late, -100}, postingRow{f.food, 100})
 	requireViolation(t, err, checkViolation, "not open")
 }
 
 func TestDBRejectsCrossUserAccount(t *testing.T) {
 	t.Parallel()
 	f := newSchemaFixture(t)
-	other := pgtest.CreateUser(t, f.pool)
+	other := pgtest.CreateBooks(t, f.pool)
 	otherFood := f.account(t, other, "expense", "", "2026-01-01")
-	_, err := f.recordTx(t, f.userID, "2026-03-01", postingRow{f.checking, -100}, postingRow{otherFood, 100})
+	_, err := f.recordTx(t, f.booksID, "2026-03-01", postingRow{f.checking, -100}, postingRow{otherFood, 100})
 	requireViolation(t, err, foreignKeyViolation, "")
 }
 
@@ -193,8 +193,8 @@ func TestDBRejectsClassKindMismatch(t *testing.T) {
 	f := newSchemaFixture(t)
 	for _, c := range []struct{ class, kind string }{{"expense", "checking"}, {"liability", "cash"}, {"asset", ""}} {
 		_, err := f.pool.Exec(context.Background(), `
-			INSERT INTO ledger_account (user_id, name, account_class, kind, instrument, opened_on)
-			VALUES ($1, 'x', $2, nullif($3, ''), 'BRL', '2026-01-01')`, f.userID, c.class, c.kind)
+			INSERT INTO ledger_account (books_id, name, account_class, kind, instrument, opened_on)
+			VALUES ($1, 'x', $2, nullif($3, ''), 'BRL', '2026-01-01')`, f.booksID, c.class, c.kind)
 		requireViolation(t, err, checkViolation, "")
 	}
 }
@@ -203,7 +203,7 @@ func TestDBForbidsUnvoid(t *testing.T) {
 	t.Parallel()
 	f := newSchemaFixture(t)
 
-	id, err := f.recordTx(t, f.userID, "2026-03-01", postingRow{f.checking, -100}, postingRow{f.food, 100})
+	id, err := f.recordTx(t, f.booksID, "2026-03-01", postingRow{f.checking, -100}, postingRow{f.food, 100})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -220,7 +220,7 @@ func TestDBBookedOnFollowsDate(t *testing.T) {
 	t.Parallel()
 	f := newSchemaFixture(t)
 
-	id, err := f.recordTx(t, f.userID, "2026-03-01", postingRow{f.checking, -100}, postingRow{f.food, 100})
+	id, err := f.recordTx(t, f.booksID, "2026-03-01", postingRow{f.checking, -100}, postingRow{f.food, 100})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -244,16 +244,16 @@ func TestDBRejectsSaleWithoutCost(t *testing.T) {
 	ctx := t.Context()
 	cash, other := f.checking, f.food
 
-	id, err := f.recordTx(t, f.userID, "2026-10-20", postingRow{cash, 100}, postingRow{other, -100})
+	id, err := f.recordTx(t, f.booksID, "2026-10-20", postingRow{cash, 100}, postingRow{other, -100})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	_, err = f.pool.Exec(ctx, `INSERT INTO ledger_trade (transaction_id, user_id, account_id, cash_account_id, side, quantity, unit_price, gross, fees, taxes, currency)
-		VALUES ($1, $2, $3, $4, 'sell', 1, 1, 100, 0, 0, 'BRL')`, id, f.userID, other, cash)
+	_, err = f.pool.Exec(ctx, `INSERT INTO ledger_trade (transaction_id, books_id, account_id, cash_account_id, side, quantity, unit_price, gross, fees, taxes, currency)
+		VALUES ($1, $2, $3, $4, 'sell', 1, 1, 100, 0, 0, 'BRL')`, id, f.booksID, other, cash)
 	requireViolation(t, err, checkViolation, "")
-	_, err = f.pool.Exec(ctx, `INSERT INTO ledger_trade (transaction_id, user_id, account_id, cash_account_id, side, quantity, unit_price, gross, fees, taxes, currency)
-		VALUES ($1, $2, $3, $4, 'buy', 1, 1, 100, 0, 5, 'BRL')`, id, f.userID, other, cash)
+	_, err = f.pool.Exec(ctx, `INSERT INTO ledger_trade (transaction_id, books_id, account_id, cash_account_id, side, quantity, unit_price, gross, fees, taxes, currency)
+		VALUES ($1, $2, $3, $4, 'buy', 1, 1, 100, 0, 5, 'BRL')`, id, f.booksID, other, cash)
 	requireViolation(t, err, checkViolation, "")
 }
 
@@ -261,24 +261,24 @@ func TestDBRejectsSaleWithoutCost(t *testing.T) {
 func TestInstitutionIdentifierChecks(t *testing.T) {
 	t.Parallel()
 	f := newSchemaFixture(t)
-	insert := `INSERT INTO ledger_institution (user_id, name, identifier_scheme, identifier) VALUES ($1, $2, $3, $4)`
-	_, err := f.pool.Exec(t.Context(), insert, f.userID, "Bad scheme", "Br-ISPB", "18236120")
+	insert := `INSERT INTO ledger_institution (books_id, name, identifier_scheme, identifier) VALUES ($1, $2, $3, $4)`
+	_, err := f.pool.Exec(t.Context(), insert, f.booksID, "Bad scheme", "Br-ISPB", "18236120")
 	requireViolation(t, err, checkViolation, "identifier_scheme")
-	_, err = f.pool.Exec(t.Context(), insert, f.userID, "Empty", "bic", "")
+	_, err = f.pool.Exec(t.Context(), insert, f.booksID, "Empty", "bic", "")
 	requireViolation(t, err, checkViolation, "identifier")
-	_, err = f.pool.Exec(t.Context(), insert, f.userID, "Long", "bic", strings.Repeat("A", 41))
+	_, err = f.pool.Exec(t.Context(), insert, f.booksID, "Long", "bic", strings.Repeat("A", 41))
 	requireViolation(t, err, checkViolation, "identifier")
-	_, err = f.pool.Exec(t.Context(), insert, f.userID, "Half", "bic", nil)
+	_, err = f.pool.Exec(t.Context(), insert, f.booksID, "Half", "bic", nil)
 	requireViolation(t, err, checkViolation, "")
-	_, err = f.pool.Exec(t.Context(), insert, f.userID, "Half", nil, "18236120")
+	_, err = f.pool.Exec(t.Context(), insert, f.booksID, "Half", nil, "18236120")
 	requireViolation(t, err, checkViolation, "")
 
-	_, err = f.pool.Exec(t.Context(), insert, f.userID, "Nubank", "br_ispb", "18236120")
+	_, err = f.pool.Exec(t.Context(), insert, f.booksID, "Nubank", "br_ispb", "18236120")
 	if err != nil {
 		t.Fatalf("insert institution: %v", err)
 	}
 
-	_, err = f.pool.Exec(t.Context(), insert, f.userID, "Nu", "br_ispb", "18236120")
+	_, err = f.pool.Exec(t.Context(), insert, f.booksID, "Nu", "br_ispb", "18236120")
 	requireViolation(t, err, uniqueViolation, "identifier")
 }
 
@@ -286,7 +286,7 @@ func TestTagNameSchema(t *testing.T) {
 	t.Parallel()
 	f := newSchemaFixture(t)
 	insert := func(name string) error {
-		_, err := f.pool.Exec(t.Context(), `INSERT INTO ledger_tag (user_id, name) VALUES ($1, $2)`, f.userID, name)
+		_, err := f.pool.Exec(t.Context(), `INSERT INTO ledger_tag (books_id, name) VALUES ($1, $2)`, f.booksID, name)
 		return err
 	}
 	requireViolation(t, insert("a b"), checkViolation, "")
@@ -306,15 +306,15 @@ func TestDBInvestmentIncomeTypeIsAnIdentifier(t *testing.T) {
 	t.Parallel()
 	f := newSchemaFixture(t)
 
-	id, err := f.recordTx(t, f.userID, "2026-03-01", postingRow{f.checking, -10000}, postingRow{f.food, 10000})
+	id, err := f.recordTx(t, f.booksID, "2026-03-01", postingRow{f.checking, -10000}, postingRow{f.food, 10000})
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	insert := func(incomeType string) error {
 		_, err := f.pool.Exec(t.Context(), `
-			INSERT INTO ledger_investment_income (transaction_id, user_id, account_id, cash_account_id, income_type, gross, withheld, currency)
-			VALUES ($1, $2, $3, $3, $4, 100, 0, 'BRL')`, id, f.userID, f.checking, incomeType)
+			INSERT INTO ledger_investment_income (transaction_id, books_id, account_id, cash_account_id, income_type, gross, withheld, currency)
+			VALUES ($1, $2, $3, $3, $4, 100, 0, 'BRL')`, id, f.booksID, f.checking, incomeType)
 
 		return err
 	}

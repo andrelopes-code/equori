@@ -8,7 +8,7 @@ import (
 
 // SyncFailure is a connection a tick could not sync.
 type SyncFailure struct {
-	UserID       int64
+	BooksID      int64
 	ConnectionID uuid.UUID
 	Err          error
 }
@@ -31,8 +31,8 @@ func (s *Service) Tick(ctx context.Context) ([]SyncFailure, error) {
 			return failures, ctx.Err()
 		}
 
-		if _, _, err := s.sync(ctx, ref.UserID, ref.ID, false); err != nil {
-			failures = append(failures, SyncFailure{UserID: ref.UserID, ConnectionID: ref.ID, Err: err})
+		if _, _, err := s.sync(ctx, ref.BooksID, ref.ID, false); err != nil {
+			failures = append(failures, SyncFailure{BooksID: ref.BooksID, ConnectionID: ref.ID, Err: err})
 		}
 	}
 

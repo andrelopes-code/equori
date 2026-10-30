@@ -10,8 +10,8 @@ import (
 
 // ConversationPage returns up to limit conversations after the given position, most recently updated first,
 // and the position of the next page when there is one.
-func (s *Service) ConversationPage(ctx context.Context, userID int64, after *ConversationKey, limit int) ([]domain.Conversation, *ConversationKey, error) {
-	rows, err := s.repo.Conversations(ctx, userID, after, limit+1)
+func (s *Service) ConversationPage(ctx context.Context, booksID int64, after *ConversationKey, limit int) ([]domain.Conversation, *ConversationKey, error) {
+	rows, err := s.repo.Conversations(ctx, booksID, after, limit+1)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -33,18 +33,18 @@ type ConversationDetail struct {
 	Proposals    []domain.Proposal
 }
 
-func (s *Service) Conversation(ctx context.Context, userID int64, id uuid.UUID) (ConversationDetail, error) {
-	c, err := s.repo.Conversation(ctx, userID, id)
+func (s *Service) Conversation(ctx context.Context, booksID int64, id uuid.UUID) (ConversationDetail, error) {
+	c, err := s.repo.Conversation(ctx, booksID, id)
 	if err != nil {
 		return ConversationDetail{}, err
 	}
 
-	msgs, err := s.repo.Messages(ctx, userID, id)
+	msgs, err := s.repo.Messages(ctx, booksID, id)
 	if err != nil {
 		return ConversationDetail{}, err
 	}
 
-	ps, err := s.repo.Proposals(ctx, userID, id)
+	ps, err := s.repo.Proposals(ctx, booksID, id)
 	if err != nil {
 		return ConversationDetail{}, err
 	}
@@ -52,10 +52,10 @@ func (s *Service) Conversation(ctx context.Context, userID int64, id uuid.UUID) 
 	return ConversationDetail{Conversation: c, Messages: msgs, Proposals: ps}, nil
 }
 
-func (s *Service) DeleteConversation(ctx context.Context, userID int64, id uuid.UUID) error {
-	return s.repo.DeleteConversation(ctx, userID, id)
+func (s *Service) DeleteConversation(ctx context.Context, booksID int64, id uuid.UUID) error {
+	return s.repo.DeleteConversation(ctx, booksID, id)
 }
 
-func (s *Service) DeleteConversations(ctx context.Context, userID int64) error {
-	return s.repo.DeleteConversations(ctx, userID)
+func (s *Service) DeleteConversations(ctx context.Context, booksID int64) error {
+	return s.repo.DeleteConversations(ctx, booksID)
 }

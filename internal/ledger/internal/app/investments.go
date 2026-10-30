@@ -45,13 +45,13 @@ type IncomeFact struct {
 }
 
 // InvestmentFacts returns the facts of the children of brokerageID that hold a security.
-func (s *Service) InvestmentFacts(ctx context.Context, userID int64, brokerageID uuid.UUID) (InvestmentFacts, error) {
-	settings, err := s.repo.Settings(ctx, userID)
+func (s *Service) InvestmentFacts(ctx context.Context, booksID int64, brokerageID uuid.UUID) (InvestmentFacts, error) {
+	settings, err := s.repo.Settings(ctx, booksID)
 	if err != nil {
 		return InvestmentFacts{}, err
 	}
 
-	accounts, err := s.repo.AllAccounts(ctx, userID)
+	accounts, err := s.repo.AllAccounts(ctx, booksID)
 	if err != nil {
 		return InvestmentFacts{}, err
 	}
@@ -70,15 +70,15 @@ func (s *Service) InvestmentFacts(ctx context.Context, userID int64, brokerageID
 		return out, nil
 	}
 
-	if out.Postings, err = s.repo.SecurityPostings(ctx, userID, ids); err != nil {
+	if out.Postings, err = s.repo.SecurityPostings(ctx, booksID, ids); err != nil {
 		return InvestmentFacts{}, err
 	}
 
-	if out.Trades, err = s.repo.SecurityTrades(ctx, userID, ids); err != nil {
+	if out.Trades, err = s.repo.SecurityTrades(ctx, booksID, ids); err != nil {
 		return InvestmentFacts{}, err
 	}
 
-	out.Incomes, err = s.repo.SecurityIncomes(ctx, userID, ids)
+	out.Incomes, err = s.repo.SecurityIncomes(ctx, booksID, ids)
 
 	return out, err
 }

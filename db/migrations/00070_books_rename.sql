@@ -1,0 +1,127 @@
+-- +goose Up
+-- ADR 029, BK5: every business table names its owner books_id; constraint and index names keep user_id.
+ALTER TABLE assistant_chain_target RENAME COLUMN user_id TO books_id;
+ALTER TABLE assistant_conversation RENAME COLUMN user_id TO books_id;
+ALTER TABLE assistant_message RENAME COLUMN user_id TO books_id;
+ALTER TABLE assistant_proposal RENAME COLUMN user_id TO books_id;
+ALTER TABLE assistant_provider RENAME COLUMN user_id TO books_id;
+ALTER TABLE assistant_usage RENAME COLUMN user_id TO books_id;
+ALTER TABLE assistant_usage_limit RENAME COLUMN user_id TO books_id;
+ALTER TABLE capture_category_hint RENAME COLUMN user_id TO books_id;
+ALTER TABLE classification_categorization RENAME COLUMN user_id TO books_id;
+ALTER TABLE classification_payee_alias RENAME COLUMN user_id TO books_id;
+ALTER TABLE classification_rule RENAME COLUMN user_id TO books_id;
+ALTER TABLE classification_source_category RENAME COLUMN user_id TO books_id;
+ALTER TABLE classification_suggestion RENAME COLUMN user_id TO books_id;
+ALTER TABLE ingestion_batch RENAME COLUMN user_id TO books_id;
+ALTER TABLE ingestion_connection RENAME COLUMN user_id TO books_id;
+ALTER TABLE ingestion_csv_profile RENAME COLUMN user_id TO books_id;
+ALTER TABLE ingestion_external_account RENAME COLUMN user_id TO books_id;
+ALTER TABLE ingestion_external_record RENAME COLUMN user_id TO books_id;
+ALTER TABLE ingestion_installment_plan RENAME COLUMN user_id TO books_id;
+ALTER TABLE ingestion_integration RENAME COLUMN user_id TO books_id;
+ALTER TABLE ledger_account RENAME COLUMN user_id TO books_id;
+ALTER TABLE ledger_attachment RENAME COLUMN user_id TO books_id;
+ALTER TABLE ledger_attachment_blob RENAME COLUMN user_id TO books_id;
+ALTER TABLE ledger_balance_assertion RENAME COLUMN user_id TO books_id;
+ALTER TABLE ledger_billing_cycle_rule RENAME COLUMN user_id TO books_id;
+ALTER TABLE ledger_card RENAME COLUMN user_id TO books_id;
+ALTER TABLE ledger_credit_limit RENAME COLUMN user_id TO books_id;
+ALTER TABLE ledger_dispute RENAME COLUMN user_id TO books_id;
+ALTER TABLE ledger_installment_plan RENAME COLUMN user_id TO books_id;
+ALTER TABLE ledger_institution RENAME COLUMN user_id TO books_id;
+ALTER TABLE ledger_investment_income RENAME COLUMN user_id TO books_id;
+ALTER TABLE ledger_link RENAME COLUMN user_id TO books_id;
+ALTER TABLE ledger_payee RENAME COLUMN user_id TO books_id;
+ALTER TABLE ledger_posting RENAME COLUMN user_id TO books_id;
+ALTER TABLE ledger_reconciliation RENAME COLUMN user_id TO books_id;
+ALTER TABLE ledger_settings RENAME COLUMN user_id TO books_id;
+ALTER TABLE ledger_statement RENAME COLUMN user_id TO books_id;
+ALTER TABLE ledger_statement_fact RENAME COLUMN user_id TO books_id;
+ALTER TABLE ledger_tag RENAME COLUMN user_id TO books_id;
+ALTER TABLE ledger_trade RENAME COLUMN user_id TO books_id;
+ALTER TABLE ledger_transaction RENAME COLUMN user_id TO books_id;
+ALTER TABLE ledger_transaction_tag RENAME COLUMN user_id TO books_id;
+ALTER TABLE outbox_event RENAME COLUMN user_id TO books_id;
+ALTER TABLE planning_budget RENAME COLUMN user_id TO books_id;
+ALTER TABLE planning_budget_amount RENAME COLUMN user_id TO books_id;
+ALTER TABLE planning_budget_reference RENAME COLUMN user_id TO books_id;
+ALTER TABLE planning_goal RENAME COLUMN user_id TO books_id;
+ALTER TABLE planning_goal_account RENAME COLUMN user_id TO books_id;
+ALTER TABLE planning_occurrence RENAME COLUMN user_id TO books_id;
+ALTER TABLE planning_schedule RENAME COLUMN user_id TO books_id;
+ALTER TABLE planning_schedule_pause RENAME COLUMN user_id TO books_id;
+ALTER TABLE planning_schedule_terms RENAME COLUMN user_id TO books_id;
+ALTER TABLE portfolio_income_event RENAME COLUMN user_id TO books_id;
+ALTER TABLE portfolio_position_day RENAME COLUMN user_id TO books_id;
+ALTER TABLE portfolio_realized_result RENAME COLUMN user_id TO books_id;
+ALTER TABLE reporting_account_day RENAME COLUMN user_id TO books_id;
+ALTER TABLE reporting_export RENAME COLUMN user_id TO books_id;
+
+-- BK7: the snapshot of a replaced version names its book.
+UPDATE ledger_transaction_version
+SET snapshot = (snapshot - 'user_id') || jsonb_build_object('books_id', snapshot -> 'user_id')
+WHERE snapshot ? 'user_id';
+
+-- +goose Down
+UPDATE ledger_transaction_version
+SET snapshot = (snapshot - 'books_id') || jsonb_build_object('user_id', snapshot -> 'books_id')
+WHERE snapshot ? 'books_id';
+
+ALTER TABLE assistant_chain_target RENAME COLUMN books_id TO user_id;
+ALTER TABLE assistant_conversation RENAME COLUMN books_id TO user_id;
+ALTER TABLE assistant_message RENAME COLUMN books_id TO user_id;
+ALTER TABLE assistant_proposal RENAME COLUMN books_id TO user_id;
+ALTER TABLE assistant_provider RENAME COLUMN books_id TO user_id;
+ALTER TABLE assistant_usage RENAME COLUMN books_id TO user_id;
+ALTER TABLE assistant_usage_limit RENAME COLUMN books_id TO user_id;
+ALTER TABLE capture_category_hint RENAME COLUMN books_id TO user_id;
+ALTER TABLE classification_categorization RENAME COLUMN books_id TO user_id;
+ALTER TABLE classification_payee_alias RENAME COLUMN books_id TO user_id;
+ALTER TABLE classification_rule RENAME COLUMN books_id TO user_id;
+ALTER TABLE classification_source_category RENAME COLUMN books_id TO user_id;
+ALTER TABLE classification_suggestion RENAME COLUMN books_id TO user_id;
+ALTER TABLE ingestion_batch RENAME COLUMN books_id TO user_id;
+ALTER TABLE ingestion_connection RENAME COLUMN books_id TO user_id;
+ALTER TABLE ingestion_csv_profile RENAME COLUMN books_id TO user_id;
+ALTER TABLE ingestion_external_account RENAME COLUMN books_id TO user_id;
+ALTER TABLE ingestion_external_record RENAME COLUMN books_id TO user_id;
+ALTER TABLE ingestion_installment_plan RENAME COLUMN books_id TO user_id;
+ALTER TABLE ingestion_integration RENAME COLUMN books_id TO user_id;
+ALTER TABLE ledger_account RENAME COLUMN books_id TO user_id;
+ALTER TABLE ledger_attachment RENAME COLUMN books_id TO user_id;
+ALTER TABLE ledger_attachment_blob RENAME COLUMN books_id TO user_id;
+ALTER TABLE ledger_balance_assertion RENAME COLUMN books_id TO user_id;
+ALTER TABLE ledger_billing_cycle_rule RENAME COLUMN books_id TO user_id;
+ALTER TABLE ledger_card RENAME COLUMN books_id TO user_id;
+ALTER TABLE ledger_credit_limit RENAME COLUMN books_id TO user_id;
+ALTER TABLE ledger_dispute RENAME COLUMN books_id TO user_id;
+ALTER TABLE ledger_installment_plan RENAME COLUMN books_id TO user_id;
+ALTER TABLE ledger_institution RENAME COLUMN books_id TO user_id;
+ALTER TABLE ledger_investment_income RENAME COLUMN books_id TO user_id;
+ALTER TABLE ledger_link RENAME COLUMN books_id TO user_id;
+ALTER TABLE ledger_payee RENAME COLUMN books_id TO user_id;
+ALTER TABLE ledger_posting RENAME COLUMN books_id TO user_id;
+ALTER TABLE ledger_reconciliation RENAME COLUMN books_id TO user_id;
+ALTER TABLE ledger_settings RENAME COLUMN books_id TO user_id;
+ALTER TABLE ledger_statement RENAME COLUMN books_id TO user_id;
+ALTER TABLE ledger_statement_fact RENAME COLUMN books_id TO user_id;
+ALTER TABLE ledger_tag RENAME COLUMN books_id TO user_id;
+ALTER TABLE ledger_trade RENAME COLUMN books_id TO user_id;
+ALTER TABLE ledger_transaction RENAME COLUMN books_id TO user_id;
+ALTER TABLE ledger_transaction_tag RENAME COLUMN books_id TO user_id;
+ALTER TABLE outbox_event RENAME COLUMN books_id TO user_id;
+ALTER TABLE planning_budget RENAME COLUMN books_id TO user_id;
+ALTER TABLE planning_budget_amount RENAME COLUMN books_id TO user_id;
+ALTER TABLE planning_budget_reference RENAME COLUMN books_id TO user_id;
+ALTER TABLE planning_goal RENAME COLUMN books_id TO user_id;
+ALTER TABLE planning_goal_account RENAME COLUMN books_id TO user_id;
+ALTER TABLE planning_occurrence RENAME COLUMN books_id TO user_id;
+ALTER TABLE planning_schedule RENAME COLUMN books_id TO user_id;
+ALTER TABLE planning_schedule_pause RENAME COLUMN books_id TO user_id;
+ALTER TABLE planning_schedule_terms RENAME COLUMN books_id TO user_id;
+ALTER TABLE portfolio_income_event RENAME COLUMN books_id TO user_id;
+ALTER TABLE portfolio_position_day RENAME COLUMN books_id TO user_id;
+ALTER TABLE portfolio_realized_result RENAME COLUMN books_id TO user_id;
+ALTER TABLE reporting_account_day RENAME COLUMN books_id TO user_id;
+ALTER TABLE reporting_export RENAME COLUMN books_id TO user_id;

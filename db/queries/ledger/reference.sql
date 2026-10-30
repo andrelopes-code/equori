@@ -4,20 +4,20 @@ SELECT
 FROM
     ledger_settings
 WHERE
-    user_id = $1;
+    books_id = $1;
 
 -- name: UpsertSettings :exec
 INSERT INTO
-    ledger_settings (user_id, base_currency)
+    ledger_settings (books_id, base_currency)
 VALUES
     ($1, $2)
-ON CONFLICT (user_id) DO UPDATE
+ON CONFLICT (books_id) DO UPDATE
 SET
     base_currency = EXCLUDED.base_currency;
 
 -- name: InsertInstitution :one
 INSERT INTO
-    ledger_institution (user_id, name, code, identifier_scheme, identifier)
+    ledger_institution (books_id, name, code, identifier_scheme, identifier)
 VALUES
     ($1, $2, $3, $4, $5)
 RETURNING
@@ -29,7 +29,7 @@ SET
     identifier_scheme = sqlc.narg (identifier_scheme),
     identifier = sqlc.narg (identifier)
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND id = @id
 RETURNING
     *;
@@ -41,7 +41,7 @@ SELECT
 FROM
     ledger_institution
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND (
         sqlc.narg (after_name)::text IS NULL
         OR (lower(name), id) > (sqlc.narg (after_name)::text, sqlc.narg (after_id)::uuid)
@@ -54,7 +54,7 @@ LIMIT
 
 -- name: InsertPayee :one
 INSERT INTO
-    ledger_payee (user_id, name)
+    ledger_payee (books_id, name)
 VALUES
     ($1, $2)
 RETURNING
@@ -66,7 +66,7 @@ SELECT
 FROM
     ledger_payee
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2;
 
 -- name: PayeeNames :many
@@ -76,7 +76,7 @@ SELECT
 FROM
     ledger_payee
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND id = ANY (@ids::UUID[]);
 
 -- name: ListPayees :many
@@ -86,7 +86,7 @@ SELECT
 FROM
     ledger_payee
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND merged_into IS NULL
     AND (
         sqlc.narg (after_name)::text IS NULL
@@ -103,7 +103,7 @@ UPDATE ledger_payee
 SET
     name = @name
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND id = @id
 RETURNING
     *;
@@ -113,7 +113,7 @@ UPDATE ledger_payee
 SET
     merged_into = @into_id
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND id = @from_id;
 
 -- name: TransactionsWithPayee :many
@@ -123,7 +123,7 @@ SELECT
 FROM
     ledger_transaction
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND payee_id = @payee_id
     AND voided_at IS NULL
 ORDER BY
@@ -134,7 +134,7 @@ UPDATE ledger_transaction
 SET
     payee_id = @into_id
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND payee_id = @from_id
     AND voided_at IS NOT NULL;
 
@@ -144,15 +144,15 @@ SET
     counterparty_payee_id = @into_id,
     updated_at = now()
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND counterparty_payee_id = @from_id;
 
 -- name: UpsertTag :one
 INSERT INTO
-    ledger_tag (user_id, name)
+    ledger_tag (books_id, name)
 VALUES
     ($1, $2)
-ON CONFLICT (user_id, name) DO UPDATE
+ON CONFLICT (books_id, name) DO UPDATE
 SET
     name = EXCLUDED.name
 RETURNING
@@ -164,7 +164,7 @@ SELECT
 FROM
     ledger_tag
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND (
         sqlc.narg (after_name)::text IS NULL
         OR name > sqlc.narg (after_name)::text
@@ -185,7 +185,7 @@ FROM
     LEFT JOIN ledger_transaction t ON t.id = tt.transaction_id
     AND t.voided_at IS NULL
 WHERE
-    g.user_id = @user_id
+    g.books_id = @books_id
     AND g.name = @name
 GROUP BY
     g.id,
@@ -196,7 +196,7 @@ UPDATE ledger_tag
 SET
     name = @new_name
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND id = @id
 RETURNING
     id;
@@ -208,7 +208,7 @@ FROM
     ledger_transaction_tag tt
     JOIN ledger_transaction t ON t.id = tt.transaction_id
 WHERE
-    tt.user_id = @user_id
+    tt.books_id = @books_id
     AND tt.tag_id = @tag_id
     AND t.voided_at IS NULL
 ORDER BY
@@ -217,20 +217,20 @@ ORDER BY
 -- name: MoveTagLinks :exec
 -- Voided transactions keep their version and name the destination in place.
 INSERT INTO
-    ledger_transaction_tag (user_id, transaction_id, tag_id)
+    ledger_transaction_tag (books_id, transaction_id, tag_id)
 SELECT
-    l.user_id,
+    l.books_id,
     l.transaction_id,
     @into_id::uuid
 FROM
     ledger_transaction_tag l
 WHERE
-    l.user_id = @user_id
+    l.books_id = @books_id
     AND l.tag_id = @from_id
 ON CONFLICT DO NOTHING;
 
 -- name: DeleteTag :exec
 DELETE FROM ledger_tag
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND id = @id;

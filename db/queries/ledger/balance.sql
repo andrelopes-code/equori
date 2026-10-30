@@ -6,7 +6,7 @@ WITH RECURSIVE
         FROM
             ledger_account a
         WHERE
-            a.user_id = @user_id
+            a.books_id = @books_id
             AND a.id = @account_id
         UNION ALL
         SELECT
@@ -15,7 +15,7 @@ WITH RECURSIVE
             ledger_account c
             JOIN tree ON c.parent_id = tree.id
         WHERE
-            c.user_id = @user_id
+            c.books_id = @books_id
     )
 SELECT
     coalesce(sum(p.amount), 0)::bigint
@@ -39,7 +39,7 @@ WITH RECURSIVE
         FROM
             ledger_account a
         WHERE
-            a.user_id = @user_id
+            a.books_id = @books_id
             AND a.id = @account_id
         UNION ALL
         SELECT
@@ -48,7 +48,7 @@ WITH RECURSIVE
             ledger_account c
             JOIN tree ON c.parent_id = tree.id
         WHERE
-            c.user_id = @user_id
+            c.books_id = @books_id
     )
 SELECT
     coalesce(sum(p.amount), 0)::bigint
@@ -75,7 +75,7 @@ FROM
     AND NOT p.voided
     AND p.booked_on <= @on_date
 WHERE
-    a.user_id = @user_id
+    a.books_id = @books_id
     AND a.account_class IN ('asset', 'liability')
 GROUP BY
     a.id
@@ -94,7 +94,7 @@ FROM
     AND NOT p.voided
     AND coalesce(p.settled_on, p.booked_on) <= @on_date
 WHERE
-    a.user_id = @user_id
+    a.books_id = @books_id
     AND a.account_class IN ('asset', 'liability')
 GROUP BY
     a.id
@@ -111,7 +111,7 @@ WITH RECURSIVE
         FROM
             ledger_account a
         WHERE
-            a.user_id = @user_id
+            a.books_id = @books_id
             AND a.id = @account_id
         UNION ALL
         SELECT
@@ -120,7 +120,7 @@ WITH RECURSIVE
             ledger_account c
             JOIN tree ON c.parent_id = tree.id
         WHERE
-            c.user_id = @user_id
+            c.books_id = @books_id
     )
 SELECT
     coalesce(sum(p.weight), 0)::bigint
@@ -146,7 +146,7 @@ WITH RECURSIVE
         FROM
             ledger_account a
         WHERE
-            a.user_id = @user_id
+            a.books_id = @books_id
             AND a.id = @account_id
         UNION ALL
         SELECT
@@ -155,7 +155,7 @@ WITH RECURSIVE
             ledger_account c
             JOIN tree ON c.parent_id = tree.id
         WHERE
-            c.user_id = @user_id
+            c.books_id = @books_id
     )
 SELECT
     date_trunc('month', p.booked_on)::date AS MONTH,
@@ -186,7 +186,7 @@ WITH RECURSIVE
         FROM
             ledger_account a
         WHERE
-            a.user_id = @user_id
+            a.books_id = @books_id
             AND a.id = @account_id
         UNION ALL
         SELECT
@@ -196,7 +196,7 @@ WITH RECURSIVE
             ledger_account c
             JOIN tree ON c.parent_id = tree.id
         WHERE
-            c.user_id = @user_id
+            c.books_id = @books_id
     )
 SELECT DISTINCT
     instrument
@@ -215,7 +215,7 @@ WITH RECURSIVE
         FROM
             ledger_account a
         WHERE
-            a.user_id = @user_id
+            a.books_id = @books_id
             AND a.id = @account_id
         UNION ALL
         SELECT
@@ -225,7 +225,7 @@ WITH RECURSIVE
             ledger_account c
             JOIN tree ON c.parent_id = tree.id
         WHERE
-            c.user_id = @user_id
+            c.books_id = @books_id
     )
 SELECT
     tree.instrument,
@@ -255,7 +255,7 @@ WITH RECURSIVE
         FROM
             ledger_account a
         WHERE
-            a.user_id = @user_id
+            a.books_id = @books_id
             AND a.id = ANY (@account_ids::UUID[])
         UNION
         SELECT
@@ -264,7 +264,7 @@ WITH RECURSIVE
             ledger_account c
             JOIN tree ON c.parent_id = tree.id
         WHERE
-            c.user_id = @user_id
+            c.books_id = @books_id
     )
 SELECT
     t.date,
@@ -283,7 +283,7 @@ FROM
     JOIN ledger_account oa ON oa.id = o.account_id
     AND oa.account_class IN ('asset', 'liability')
 WHERE
-    t.user_id = @user_id
+    t.books_id = @books_id
     AND t.voided_at IS NULL
     AND t.date BETWEEN @from_date AND @to_date
     AND EXISTS (
@@ -319,7 +319,7 @@ WITH RECURSIVE
         FROM
             ledger_account a
         WHERE
-            a.user_id = @user_id
+            a.books_id = @books_id
             AND a.id = ANY (@account_ids::UUID[])
         UNION
         SELECT
@@ -328,7 +328,7 @@ WITH RECURSIVE
             ledger_account c
             JOIN tree ON c.parent_id = tree.id
         WHERE
-            c.user_id = @user_id
+            c.books_id = @books_id
     )
 SELECT
     coalesce(min(p.booked_on), DATE '0001-01-01')::date AS first_on,
@@ -336,7 +336,7 @@ SELECT
 FROM
     ledger_posting p
 WHERE
-    p.user_id = @user_id
+    p.books_id = @books_id
     AND NOT p.voided
     AND p.account_id IN (
         SELECT
@@ -354,9 +354,9 @@ SELECT
 FROM
     ledger_posting p
     JOIN ledger_account a ON a.id = p.account_id
-    AND a.user_id = p.user_id
+    AND a.books_id = p.books_id
 WHERE
-    p.user_id = @user_id
+    p.books_id = @books_id
     AND a.account_class = @account_class
     AND NOT p.voided
     AND p.booked_on >= @from_date

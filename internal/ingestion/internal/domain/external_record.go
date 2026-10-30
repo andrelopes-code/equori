@@ -27,7 +27,7 @@ const (
 // ExternalRecord is one statement line as received, with what the import made of it.
 type ExternalRecord struct {
 	ID            uuid.UUID
-	UserID        int64
+	BooksID       int64
 	BatchID       uuid.UUID
 	AccountID     uuid.UUID
 	ExternalID    string

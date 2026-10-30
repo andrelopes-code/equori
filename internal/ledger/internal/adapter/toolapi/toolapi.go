@@ -28,12 +28,12 @@ func (accountClass) Values() []string {
 }
 
 // allAccounts reads every account of the user in the order of ListAccounts, by class and then name.
-func allAccounts(ctx context.Context, svc *app.Service, userID int64) (map[uuid.UUID]domain.Account, []domain.Account, error) {
+func allAccounts(ctx context.Context, svc *app.Service, booksID int64) (map[uuid.UUID]domain.Account, []domain.Account, error) {
 	var all []domain.Account
 
 	p := page.Request[app.AccountKey]{Limit: page.MaxLimit}
 	for {
-		rows, next, err := svc.ListAccounts(ctx, userID, p)
+		rows, next, err := svc.ListAccounts(ctx, booksID, p)
 		if err != nil {
 			return nil, nil, err
 		}

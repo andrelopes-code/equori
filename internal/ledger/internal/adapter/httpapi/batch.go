@@ -31,7 +31,7 @@ func (s *Server) CreateTransactionBatch(ctx context.Context, req CreateTransacti
 		}
 	}
 
-	created, err := s.svc.RecordBatch(ctx, auth.MustUserID(ctx), entries)
+	created, err := s.svc.RecordBatch(ctx, auth.MustBooksID(ctx), entries)
 	if err != nil {
 		return nil, err
 	}

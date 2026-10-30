@@ -27,7 +27,7 @@ func (s *Server) ListSourceCategories(ctx context.Context, req ListSourceCategor
 		return nil, err
 	}
 
-	cs, next, err := s.svc.ListSourceCategories(ctx, auth.MustUserID(ctx), p)
+	cs, next, err := s.svc.ListSourceCategories(ctx, auth.MustBooksID(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +48,7 @@ func (s *Server) MapSourceCategory(ctx context.Context, req MapSourceCategoryReq
 		category = *req.Body.CategoryId
 	}
 
-	c, err := s.svc.MapSourceCategory(ctx, auth.MustUserID(ctx), req.Id, category)
+	c, err := s.svc.MapSourceCategory(ctx, auth.MustBooksID(ctx), req.Id, category)
 	if err != nil {
 		return nil, err
 	}

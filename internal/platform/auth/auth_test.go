@@ -21,8 +21,8 @@ func TestIdentity(t *testing.T) {
 		hasBooks  bool
 	}{
 		{"identity", auth.WithIdentity(bg, 7, 9), 7, true, 9, true},
-		{"books only", auth.WithUserID(bg, 9), 0, false, 9, true},
-		{"books replaced", auth.WithUserID(auth.WithIdentity(bg, 7, 9), 11), 7, true, 11, true},
+		{"books only", auth.WithBooksID(bg, 9), 0, false, 9, true},
+		{"books replaced", auth.WithBooksID(auth.WithIdentity(bg, 7, 9), 11), 7, true, 11, true},
 		{"empty", bg, 0, false, 0, false},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
@@ -50,5 +50,5 @@ func TestMustMemberIDPanics(t *testing.T) {
 		}
 	}()
 
-	auth.MustMemberID(auth.WithUserID(context.Background(), 9))
+	auth.MustMemberID(auth.WithBooksID(context.Background(), 9))
 }

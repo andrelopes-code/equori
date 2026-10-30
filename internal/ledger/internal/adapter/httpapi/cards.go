@@ -32,7 +32,7 @@ func toBillingRuleAPI(r domain.BillingCycleRule) BillingCycleRule {
 }
 
 func (s *Server) ListBillingCycleRules(ctx context.Context, req ListBillingCycleRulesRequestObject) (ListBillingCycleRulesResponseObject, error) {
-	rules, err := s.svc.BillingRules(ctx, auth.MustUserID(ctx), req.Id)
+	rules, err := s.svc.BillingRules(ctx, auth.MustBooksID(ctx), req.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +78,7 @@ func (s *Server) CreateBillingCycleRule(ctx context.Context, req CreateBillingCy
 		r.Adjustment = string(*b.DueDateAdjustment)
 	}
 
-	created, err := s.svc.AddBillingRule(ctx, auth.MustUserID(ctx), req.Id, r)
+	created, err := s.svc.AddBillingRule(ctx, auth.MustBooksID(ctx), req.Id, r)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +87,7 @@ func (s *Server) CreateBillingCycleRule(ctx context.Context, req CreateBillingCy
 }
 
 func (s *Server) ListCreditLimits(ctx context.Context, req ListCreditLimitsRequestObject) (ListCreditLimitsResponseObject, error) {
-	limits, err := s.svc.CreditLimits(ctx, auth.MustUserID(ctx), req.Id)
+	limits, err := s.svc.CreditLimits(ctx, auth.MustBooksID(ctx), req.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +106,7 @@ func (s *Server) CreateCreditLimit(ctx context.Context, req CreateCreditLimitReq
 		return nil, err
 	}
 
-	l, err := s.svc.AddCreditLimit(ctx, auth.MustUserID(ctx), app.CreditLimit{AccountID: req.Id, EffectiveFrom: dateOf(req.Body.EffectiveFrom), Amount: amount})
+	l, err := s.svc.AddCreditLimit(ctx, auth.MustBooksID(ctx), app.CreditLimit{AccountID: req.Id, EffectiveFrom: dateOf(req.Body.EffectiveFrom), Amount: amount})
 	if err != nil {
 		return nil, err
 	}
@@ -120,7 +120,7 @@ func toCardAPI(c domain.Card) Card {
 }
 
 func (s *Server) ListCards(ctx context.Context, req ListCardsRequestObject) (ListCardsResponseObject, error) {
-	cards, err := s.svc.Cards(ctx, auth.MustUserID(ctx), req.Id)
+	cards, err := s.svc.Cards(ctx, auth.MustBooksID(ctx), req.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -136,7 +136,7 @@ func (s *Server) ListCards(ctx context.Context, req ListCardsRequestObject) (Lis
 func (s *Server) CreateCard(ctx context.Context, req CreateCardRequestObject) (CreateCardResponseObject, error) {
 	virtual := req.Body.Virtual != nil && *req.Body.Virtual
 
-	c, err := s.svc.AddCard(ctx, auth.MustUserID(ctx), domain.Card{AccountID: req.Id, Holder: req.Body.Holder, LastFour: req.Body.LastFour, Virtual: virtual}, req.Body.ForeignChargeBp)
+	c, err := s.svc.AddCard(ctx, auth.MustBooksID(ctx), domain.Card{AccountID: req.Id, Holder: req.Body.Holder, LastFour: req.Body.LastFour, Virtual: virtual}, req.Body.ForeignChargeBp)
 	if err != nil {
 		return nil, err
 	}
@@ -145,7 +145,7 @@ func (s *Server) CreateCard(ctx context.Context, req CreateCardRequestObject) (C
 }
 
 func (s *Server) UpdateCard(ctx context.Context, req UpdateCardRequestObject) (UpdateCardResponseObject, error) {
-	c, err := s.svc.SetCardActive(ctx, auth.MustUserID(ctx), req.Id, req.Body.Active)
+	c, err := s.svc.SetCardActive(ctx, auth.MustBooksID(ctx), req.Id, req.Body.Active)
 	if err != nil {
 		return nil, err
 	}

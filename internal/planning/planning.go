@@ -62,7 +62,7 @@ func (m *Module) handle(ctx context.Context, tx pgx.Tx, e outbox.Delivered) erro
 	}
 
 	return m.svc.WithRepository(postgres.NewTxRepository(tx)).HandleTransaction(ctx, app.TransactionChanged{
-		UserID: e.UserID, TransactionID: payload.TransactionID, AccountIDs: payload.AccountIDs,
+		BooksID: e.BooksID, TransactionID: payload.TransactionID, AccountIDs: payload.AccountIDs,
 	})
 }
 
@@ -73,7 +73,7 @@ func (m *Module) handleMerge(ctx context.Context, tx pgx.Tx, e outbox.Delivered)
 		return fmt.Errorf("decode %s: %w", e.Type, err)
 	}
 
-	return m.svc.WithRepository(postgres.NewTxRepository(tx)).HandleCategoriesMerged(ctx, e.UserID, payload.From, payload.Into)
+	return m.svc.WithRepository(postgres.NewTxRepository(tx)).HandleCategoriesMerged(ctx, e.BooksID, payload.From, payload.Into)
 }
 
 // handlePayeeMerge follows a payee merge in the dispatcher's transaction (A82).
@@ -83,7 +83,7 @@ func (m *Module) handlePayeeMerge(ctx context.Context, tx pgx.Tx, e outbox.Deliv
 		return fmt.Errorf("decode %s: %w", e.Type, err)
 	}
 
-	return m.svc.WithRepository(postgres.NewTxRepository(tx)).HandlePayeesMerged(ctx, e.UserID, payload.From, payload.Into)
+	return m.svc.WithRepository(postgres.NewTxRepository(tx)).HandlePayeesMerged(ctx, e.BooksID, payload.From, payload.Into)
 }
 
 // Tools returns the planning module's tools for language models (ADR 012).
@@ -94,8 +94,8 @@ func (m *Module) Tools() tool.Group {
 // toolLedger gives the tools the names and instruments of the user's accounts and categories.
 type toolLedger struct{ l *ledger.Module }
 
-func (t toolLedger) Accounts(ctx context.Context, userID int64) (map[uuid.UUID]toolapi.Account, error) {
-	accounts, _, err := t.l.CaptureVocabulary(ctx, userID)
+func (t toolLedger) Accounts(ctx context.Context, booksID int64) (map[uuid.UUID]toolapi.Account, error) {
+	accounts, _, err := t.l.CaptureVocabulary(ctx, booksID)
 	if err != nil {
 		return nil, err
 	}
@@ -108,15 +108,15 @@ func (t toolLedger) Accounts(ctx context.Context, userID int64) (map[uuid.UUID]t
 	return out, nil
 }
 
-func (t toolLedger) BaseCurrency(ctx context.Context, userID int64) (money.Currency, error) {
-	return t.l.BaseCurrency(ctx, userID)
+func (t toolLedger) BaseCurrency(ctx context.Context, booksID int64) (money.Currency, error) {
+	return t.l.BaseCurrency(ctx, booksID)
 }
 
 func (m *Module) RegisterRoutes(mux *http.ServeMux) { m.http.Register(mux) }
 
 // CommittedTotal is the committed amount of month (A57), in the base currency.
-func (m *Module) CommittedTotal(ctx context.Context, userID int64, month time.Time) (money.Money, error) {
-	c, err := m.svc.Committed(ctx, userID, month)
+func (m *Module) CommittedTotal(ctx context.Context, booksID int64, month time.Time) (money.Money, error) {
+	c, err := m.svc.Committed(ctx, booksID, month)
 	if err != nil {
 		return money.Money{}, err
 	}
@@ -162,8 +162,8 @@ func (m *Module) RunScheduler(ctx context.Context, interval time.Duration) {
 
 type ledgerPort struct{ l *ledger.Module }
 
-func (p ledgerPort) AccountFacts(ctx context.Context, userID int64) ([]app.Account, error) {
-	facts, err := p.l.AccountFacts(ctx, userID)
+func (p ledgerPort) AccountFacts(ctx context.Context, booksID int64) ([]app.Account, error) {
+	facts, err := p.l.AccountFacts(ctx, booksID)
 
 	out := make([]app.Account, len(facts))
 	for i, a := range facts {
@@ -173,20 +173,20 @@ func (p ledgerPort) AccountFacts(ctx context.Context, userID int64) ([]app.Accou
 	return out, err
 }
 
-func (p ledgerPort) MissingPayees(ctx context.Context, userID int64, ids []uuid.UUID) ([]uuid.UUID, error) {
-	return p.l.MissingPayees(ctx, userID, ids)
+func (p ledgerPort) MissingPayees(ctx context.Context, booksID int64, ids []uuid.UUID) ([]uuid.UUID, error) {
+	return p.l.MissingPayees(ctx, booksID, ids)
 }
 
-func (p ledgerPort) BaseCurrency(ctx context.Context, userID int64) (money.Currency, error) {
-	return p.l.BaseCurrency(ctx, userID)
+func (p ledgerPort) BaseCurrency(ctx context.Context, booksID int64) (money.Currency, error) {
+	return p.l.BaseCurrency(ctx, booksID)
 }
 
-func (p ledgerPort) AccountTransactionsBetween(ctx context.Context, userID int64, accountID uuid.UUID, from, to time.Time) ([]uuid.UUID, error) {
-	return p.l.AccountTransactionsBetween(ctx, userID, accountID, from, to)
+func (p ledgerPort) AccountTransactionsBetween(ctx context.Context, booksID int64, accountID uuid.UUID, from, to time.Time) ([]uuid.UUID, error) {
+	return p.l.AccountTransactionsBetween(ctx, booksID, accountID, from, to)
 }
 
-func (p ledgerPort) TransactionFacts(ctx context.Context, userID int64, ids []uuid.UUID) ([]domain.Transaction, error) {
-	facts, err := p.l.TransactionFacts(ctx, userID, ids)
+func (p ledgerPort) TransactionFacts(ctx context.Context, booksID int64, ids []uuid.UUID) ([]domain.Transaction, error) {
+	facts, err := p.l.TransactionFacts(ctx, booksID, ids)
 
 	out := make([]domain.Transaction, len(facts))
 	for i, f := range facts {
@@ -201,13 +201,13 @@ func (p ledgerPort) TransactionFacts(ctx context.Context, userID int64, ids []uu
 	return out, err
 }
 
-func (p ledgerPort) CategoryTotal(ctx context.Context, userID int64, categoryID uuid.UUID, from, to time.Time) (int64, error) {
-	m, err := p.l.CategoryTotal(ctx, userID, categoryID, from, to)
+func (p ledgerPort) CategoryTotal(ctx context.Context, booksID int64, categoryID uuid.UUID, from, to time.Time) (int64, error) {
+	m, err := p.l.CategoryTotal(ctx, booksID, categoryID, from, to)
 	return m.Amount(), err
 }
 
-func (p ledgerPort) Balance(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time) (money.Money, error) {
-	m, err := p.l.Balance(ctx, userID, accountID, date)
+func (p ledgerPort) Balance(ctx context.Context, booksID int64, accountID uuid.UUID, date time.Time) (money.Money, error) {
+	m, err := p.l.Balance(ctx, booksID, accountID, date)
 	if errors.Is(err, ledger.ErrMixedInstruments) {
 		return money.Money{}, fmt.Errorf("%w: %w", app.ErrMixedInstruments, err)
 	}
@@ -215,8 +215,8 @@ func (p ledgerPort) Balance(ctx context.Context, userID int64, accountID uuid.UU
 	return m, err
 }
 
-func (p ledgerPort) ValuedBalance(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time, in money.Currency) (app.Valuation, error) {
-	c, err := p.l.ValuedBalance(ctx, userID, accountID, date, in)
+func (p ledgerPort) ValuedBalance(ctx context.Context, booksID int64, accountID uuid.UUID, date time.Time, in money.Currency) (app.Valuation, error) {
+	c, err := p.l.ValuedBalance(ctx, booksID, accountID, date, in)
 	if errors.Is(err, ledger.ErrPriceMissing) {
 		return app.Valuation{}, fmt.Errorf("%w: %w", app.ErrPriceMissing, err)
 	}
@@ -257,18 +257,18 @@ func (p pricesPort) Convert(ctx context.Context, q money.Money, to money.Currenc
 	return c.Value, prices, nil
 }
 
-func (p ledgerPort) Commitment(ctx context.Context, userID int64, cardID uuid.UUID, month time.Time) (int64, error) {
-	m, err := p.l.Commitment(ctx, userID, cardID, month)
+func (p ledgerPort) Commitment(ctx context.Context, booksID int64, cardID uuid.UUID, month time.Time) (int64, error) {
+	m, err := p.l.Commitment(ctx, booksID, cardID, month)
 	return m.Amount(), err
 }
 
-func (p ledgerPort) PriorInstallments(ctx context.Context, userID int64, cardID uuid.UUID, month time.Time) (int64, error) {
-	m, err := p.l.PriorInstallments(ctx, userID, cardID, month)
+func (p ledgerPort) PriorInstallments(ctx context.Context, booksID int64, cardID uuid.UUID, month time.Time) (int64, error) {
+	m, err := p.l.PriorInstallments(ctx, booksID, cardID, month)
 	return m.Amount(), err
 }
 
-func (p ledgerPort) OwnCategoryMonthlyTotals(ctx context.Context, userID int64, class string, from, to time.Time) (map[uuid.UUID]map[time.Time]int64, error) {
-	rows, err := p.l.OwnCategoryMonthlyTotals(ctx, userID, class, from, to)
+func (p ledgerPort) OwnCategoryMonthlyTotals(ctx context.Context, booksID int64, class string, from, to time.Time) (map[uuid.UUID]map[time.Time]int64, error) {
+	rows, err := p.l.OwnCategoryMonthlyTotals(ctx, booksID, class, from, to)
 	if err != nil {
 		return nil, err
 	}
@@ -285,12 +285,12 @@ func (p ledgerPort) OwnCategoryMonthlyTotals(ctx context.Context, userID int64, 
 	return out, nil
 }
 
-func (p ledgerPort) FirstPosting(ctx context.Context, userID int64, accountIDs []uuid.UUID) (time.Time, bool, error) {
-	return p.l.FirstPosting(ctx, userID, accountIDs)
+func (p ledgerPort) FirstPosting(ctx context.Context, booksID int64, accountIDs []uuid.UUID) (time.Time, bool, error) {
+	return p.l.FirstPosting(ctx, booksID, accountIDs)
 }
 
-func (p ledgerPort) CategoryMonthlyTotals(ctx context.Context, userID int64, categoryID uuid.UUID, from, to time.Time) (map[time.Time]int64, error) {
-	ms, err := p.l.CategoryMonthlyTotals(ctx, userID, categoryID, from, to)
+func (p ledgerPort) CategoryMonthlyTotals(ctx context.Context, booksID int64, categoryID uuid.UUID, from, to time.Time) (map[time.Time]int64, error) {
+	ms, err := p.l.CategoryMonthlyTotals(ctx, booksID, categoryID, from, to)
 
 	out := make(map[time.Time]int64, len(ms))
 	for m, v := range ms {
@@ -302,7 +302,7 @@ func (p ledgerPort) CategoryMonthlyTotals(ctx context.Context, userID int64, cat
 
 // Profiles is the part of identity the module uses to default a schedule's calendar.
 type Profiles interface {
-	Profile(ctx context.Context, userID int64) (locale.Locale, error)
+	Profile(ctx context.Context, booksID int64) (locale.Locale, error)
 }
 
 type calendarPort struct{ md *marketdata.Module }

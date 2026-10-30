@@ -28,17 +28,17 @@ func toProposal(row AssistantProposal) domain.Proposal {
 	return p
 }
 
-func (r *Repository) InsertProposal(ctx context.Context, userID int64, p domain.Proposal) error {
+func (r *Repository) InsertProposal(ctx context.Context, booksID int64, p domain.Proposal) error {
 	return r.q.InsertProposal(ctx, InsertProposalParams{
-		ID: p.ID, UserID: userID, ConversationID: p.ConversationID,
+		ID: p.ID, BooksID: booksID, ConversationID: p.ConversationID,
 		MessageID: uuid.NullUUID{UUID: p.MessageID, Valid: p.MessageID != uuid.Nil},
 		Tool:      p.Tool, Arguments: p.Arguments, Preview: p.Preview, Basis: p.Basis, Status: string(p.Status),
 		Result: p.Result, CreatedAt: p.CreatedAt, ExpiresAt: p.ExpiresAt, DecidedAt: utc(&p.DecidedAt),
 	})
 }
 
-func (r *Repository) Proposal(ctx context.Context, userID int64, id uuid.UUID) (domain.Proposal, error) {
-	row, err := r.q.ProposalByID(ctx, ProposalByIDParams{UserID: userID, ID: id})
+func (r *Repository) Proposal(ctx context.Context, booksID int64, id uuid.UUID) (domain.Proposal, error) {
+	row, err := r.q.ProposalByID(ctx, ProposalByIDParams{BooksID: booksID, ID: id})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return domain.Proposal{}, domain.ErrProposalNotFound
 	}
@@ -46,8 +46,8 @@ func (r *Repository) Proposal(ctx context.Context, userID int64, id uuid.UUID) (
 	return toProposal(row), err
 }
 
-func (r *Repository) Proposals(ctx context.Context, userID int64, conversationID uuid.UUID) ([]domain.Proposal, error) {
-	rows, err := r.q.ListProposals(ctx, ListProposalsParams{UserID: userID, ConversationID: conversationID})
+func (r *Repository) Proposals(ctx context.Context, booksID int64, conversationID uuid.UUID) ([]domain.Proposal, error) {
+	rows, err := r.q.ListProposals(ctx, ListProposalsParams{BooksID: booksID, ConversationID: conversationID})
 	if err != nil {
 		return nil, err
 	}
@@ -60,8 +60,8 @@ func (r *Repository) Proposals(ctx context.Context, userID int64, conversationID
 	return out, nil
 }
 
-func (r *Repository) ClaimProposal(ctx context.Context, userID int64, id uuid.UUID, now time.Time) (domain.Proposal, bool, error) {
-	row, err := r.q.ClaimProposal(ctx, ClaimProposalParams{UserID: userID, ID: id, Now: now})
+func (r *Repository) ClaimProposal(ctx context.Context, booksID int64, id uuid.UUID, now time.Time) (domain.Proposal, bool, error) {
+	row, err := r.q.ClaimProposal(ctx, ClaimProposalParams{BooksID: booksID, ID: id, Now: now})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return domain.Proposal{}, false, nil
 	}
@@ -69,21 +69,21 @@ func (r *Repository) ClaimProposal(ctx context.Context, userID int64, id uuid.UU
 	return toProposal(row), err == nil, err
 }
 
-func (r *Repository) DecideProposal(ctx context.Context, userID int64, id uuid.UUID, status domain.ProposalStatus, result []byte, at time.Time) error {
-	return r.q.DecideProposal(ctx, DecideProposalParams{Status: string(status), Result: result, DecidedAt: &at, UserID: userID, ID: id})
+func (r *Repository) DecideProposal(ctx context.Context, booksID int64, id uuid.UUID, status domain.ProposalStatus, result []byte, at time.Time) error {
+	return r.q.DecideProposal(ctx, DecideProposalParams{Status: string(status), Result: result, DecidedAt: &at, BooksID: booksID, ID: id})
 }
 
-func (r *Repository) RejectProposal(ctx context.Context, userID int64, id uuid.UUID, now time.Time) (bool, error) {
-	n, err := r.q.RejectProposal(ctx, RejectProposalParams{Now: &now, UserID: userID, ID: id})
+func (r *Repository) RejectProposal(ctx context.Context, booksID int64, id uuid.UUID, now time.Time) (bool, error) {
+	n, err := r.q.RejectProposal(ctx, RejectProposalParams{Now: &now, BooksID: booksID, ID: id})
 	return n > 0, err
 }
 
-func (r *Repository) AttachProposals(ctx context.Context, userID int64, messageID uuid.UUID, ids []uuid.UUID) error {
+func (r *Repository) AttachProposals(ctx context.Context, booksID int64, messageID uuid.UUID, ids []uuid.UUID) error {
 	return r.q.AttachProposals(ctx, AttachProposalsParams{
-		MessageID: uuid.NullUUID{UUID: messageID, Valid: true}, UserID: userID, Ids: ids,
+		MessageID: uuid.NullUUID{UUID: messageID, Valid: true}, BooksID: booksID, Ids: ids,
 	})
 }
 
-func (r *Repository) DiscardProposals(ctx context.Context, userID int64, ids []uuid.UUID, at time.Time) error {
-	return r.q.DiscardProposals(ctx, DiscardProposalsParams{At: &at, UserID: userID, Ids: ids})
+func (r *Repository) DiscardProposals(ctx context.Context, booksID int64, ids []uuid.UUID, at time.Time) error {
+	return r.q.DiscardProposals(ctx, DiscardProposalsParams{At: &at, BooksID: booksID, Ids: ids})
 }

@@ -6,20 +6,20 @@ func TestDBLinkAmountConstraint(t *testing.T) {
 	t.Parallel()
 	f := newCardFixture(t)
 
-	spent, err := f.recordTx(t, f.userID, "2026-10-17", postingRow{f.checking, -1500}, postingRow{f.food, 1500})
+	spent, err := f.recordTx(t, f.booksID, "2026-10-17", postingRow{f.checking, -1500}, postingRow{f.food, 1500})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	received, err := f.recordTx(t, f.userID, "2026-10-20", postingRow{f.checking, 1500}, postingRow{f.food, -1500})
+	received, err := f.recordTx(t, f.booksID, "2026-10-20", postingRow{f.checking, 1500}, postingRow{f.food, -1500})
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	insert := func(linkType string, amount any) error {
 		_, err := f.pool.Exec(t.Context(), `
-			INSERT INTO ledger_link (user_id, from_transaction_id, to_transaction_id, link_type, amount)
-			VALUES ($1, $2, $3, $4, $5)`, f.userID, received, spent, linkType, amount)
+			INSERT INTO ledger_link (books_id, from_transaction_id, to_transaction_id, link_type, amount)
+			VALUES ($1, $2, $3, $4, $5)`, f.booksID, received, spent, linkType, amount)
 
 		return err
 	}

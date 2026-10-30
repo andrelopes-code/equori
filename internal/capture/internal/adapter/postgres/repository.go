@@ -14,8 +14,8 @@ type Repository struct{ q *Queries }
 
 func NewRepository(pool *pgxpool.Pool) *Repository { return &Repository{q: New(pool)} }
 
-func (r *Repository) Hints(ctx context.Context, userID int64, descriptions []string) ([]app.Hint, error) {
-	rows, err := r.q.CategoryHints(ctx, CategoryHintsParams{UserID: userID, Descriptions: descriptions})
+func (r *Repository) Hints(ctx context.Context, booksID int64, descriptions []string) ([]app.Hint, error) {
+	rows, err := r.q.CategoryHints(ctx, CategoryHintsParams{BooksID: booksID, Descriptions: descriptions})
 	if err != nil {
 		return nil, err
 	}
@@ -28,9 +28,9 @@ func (r *Repository) Hints(ctx context.Context, userID int64, descriptions []str
 	return out, nil
 }
 
-func (r *Repository) SaveHint(ctx context.Context, userID int64, h app.Hint) error {
+func (r *Repository) SaveHint(ctx context.Context, booksID int64, h app.Hint) error {
 	return r.q.SaveCategoryHint(ctx, SaveCategoryHintParams{
-		UserID: userID, Class: h.Class, Description: h.Description,
+		BooksID: booksID, Class: h.Class, Description: h.Description,
 		CategoryID: uuid.NullUUID{UUID: h.CategoryID, Valid: h.CategoryID != uuid.Nil}, AnsweredAt: h.AnsweredAt,
 	})
 }

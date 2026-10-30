@@ -5,7 +5,7 @@ SELECT
 FROM
     planning_schedule
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND (
         account_id = ANY (@account_ids::UUID[])
         OR counterpart_id = ANY (@account_ids::UUID[])
@@ -19,7 +19,7 @@ SELECT
 FROM
     planning_occurrence
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND transaction_id = @transaction_id
 FOR UPDATE;
 
@@ -29,7 +29,7 @@ SELECT
 FROM
     planning_occurrence
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND schedule_id = ANY (@schedule_ids::UUID[])
     AND state = 'expected'
     AND expected_on BETWEEN @from_date AND @to_date
@@ -45,7 +45,7 @@ SELECT
 FROM
     planning_occurrence
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND id = @id
 FOR UPDATE;
 
@@ -56,7 +56,7 @@ SET
     transaction_id = @transaction_id,
     realized_by = @realized_by
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND id = @id
     AND state = 'expected'
 RETURNING
@@ -73,7 +73,7 @@ SET
         ELSE declined_transaction_id
     END
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND id = @id
     AND state = 'realized'
 RETURNING
@@ -85,7 +85,7 @@ SET
     state = 'skipped',
     skip_reason = sqlc.narg (skip_reason)
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND id = @id
     AND state = 'expected'
 RETURNING
@@ -98,7 +98,7 @@ SET
     moved_from = coalesce(moved_from, expected_on),
     expected_on = @expected_on
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND id = @id
     AND state = 'expected'
 RETURNING
@@ -109,7 +109,7 @@ RETURNING
 -- include_moved is set. Returns the dates removed.
 DELETE FROM planning_occurrence
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND schedule_id = @schedule_id
     AND state = 'expected'
     AND expected_on BETWEEN @from_date AND @to_date
@@ -127,7 +127,7 @@ SELECT
 FROM
     planning_occurrence
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND schedule_id = @schedule_id
     AND coalesce(moved_from, expected_on) >= @from_date
     AND (

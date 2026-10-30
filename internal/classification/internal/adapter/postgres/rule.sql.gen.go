@@ -14,17 +14,17 @@ import (
 const deleteRule = `-- name: DeleteRule :execrows
 DELETE FROM classification_rule
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2
 `
 
 type DeleteRuleParams struct {
-	UserID int64
-	ID     uuid.UUID
+	BooksID int64
+	ID      uuid.UUID
 }
 
 func (q *Queries) DeleteRule(ctx context.Context, arg DeleteRuleParams) (int64, error) {
-	result, err := q.db.Exec(ctx, deleteRule, arg.UserID, arg.ID)
+	result, err := q.db.Exec(ctx, deleteRule, arg.BooksID, arg.ID)
 	if err != nil {
 		return 0, err
 	}
@@ -33,18 +33,18 @@ func (q *Queries) DeleteRule(ctx context.Context, arg DeleteRuleParams) (int64, 
 
 const enabledRules = `-- name: EnabledRules :many
 SELECT
-    id, user_id, name, priority, enabled, stop_processing, conditions, actions, schema_version, created_at, updated_at
+    id, books_id, name, priority, enabled, stop_processing, conditions, actions, schema_version, created_at, updated_at
 FROM
     classification_rule
 WHERE
-    user_id = $1
+    books_id = $1
     AND enabled
 ORDER BY
     priority
 `
 
-func (q *Queries) EnabledRules(ctx context.Context, userID int64) ([]ClassificationRule, error) {
-	rows, err := q.db.Query(ctx, enabledRules, userID)
+func (q *Queries) EnabledRules(ctx context.Context, booksID int64) ([]ClassificationRule, error) {
+	rows, err := q.db.Query(ctx, enabledRules, booksID)
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +54,7 @@ func (q *Queries) EnabledRules(ctx context.Context, userID int64) ([]Classificat
 		var i ClassificationRule
 		if err := rows.Scan(
 			&i.ID,
-			&i.UserID,
+			&i.BooksID,
 			&i.Name,
 			&i.Priority,
 			&i.Enabled,
@@ -77,25 +77,25 @@ func (q *Queries) EnabledRules(ctx context.Context, userID int64) ([]Classificat
 
 const getRule = `-- name: GetRule :one
 SELECT
-    id, user_id, name, priority, enabled, stop_processing, conditions, actions, schema_version, created_at, updated_at
+    id, books_id, name, priority, enabled, stop_processing, conditions, actions, schema_version, created_at, updated_at
 FROM
     classification_rule
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2
 `
 
 type GetRuleParams struct {
-	UserID int64
-	ID     uuid.UUID
+	BooksID int64
+	ID      uuid.UUID
 }
 
 func (q *Queries) GetRule(ctx context.Context, arg GetRuleParams) (ClassificationRule, error) {
-	row := q.db.QueryRow(ctx, getRule, arg.UserID, arg.ID)
+	row := q.db.QueryRow(ctx, getRule, arg.BooksID, arg.ID)
 	var i ClassificationRule
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.Name,
 		&i.Priority,
 		&i.Enabled,
@@ -112,7 +112,7 @@ func (q *Queries) GetRule(ctx context.Context, arg GetRuleParams) (Classificatio
 const insertRule = `-- name: InsertRule :one
 INSERT INTO
     classification_rule (
-        user_id,
+        books_id,
         name,
         priority,
         enabled,
@@ -131,7 +131,7 @@ VALUES
             FROM
                 classification_rule
             WHERE
-                user_id = $1
+                books_id = $1
         ),
         $3,
         $4,
@@ -140,11 +140,11 @@ VALUES
         1
     )
 RETURNING
-    id, user_id, name, priority, enabled, stop_processing, conditions, actions, schema_version, created_at, updated_at
+    id, books_id, name, priority, enabled, stop_processing, conditions, actions, schema_version, created_at, updated_at
 `
 
 type InsertRuleParams struct {
-	UserID         int64
+	BooksID        int64
 	Name           string
 	Enabled        bool
 	StopProcessing bool
@@ -155,7 +155,7 @@ type InsertRuleParams struct {
 // A new rule takes the last priority.
 func (q *Queries) InsertRule(ctx context.Context, arg InsertRuleParams) (ClassificationRule, error) {
 	row := q.db.QueryRow(ctx, insertRule,
-		arg.UserID,
+		arg.BooksID,
 		arg.Name,
 		arg.Enabled,
 		arg.StopProcessing,
@@ -165,7 +165,7 @@ func (q *Queries) InsertRule(ctx context.Context, arg InsertRuleParams) (Classif
 	var i ClassificationRule
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.Name,
 		&i.Priority,
 		&i.Enabled,
@@ -181,11 +181,11 @@ func (q *Queries) InsertRule(ctx context.Context, arg InsertRuleParams) (Classif
 
 const listRules = `-- name: ListRules :many
 SELECT
-    id, user_id, name, priority, enabled, stop_processing, conditions, actions, schema_version, created_at, updated_at
+    id, books_id, name, priority, enabled, stop_processing, conditions, actions, schema_version, created_at, updated_at
 FROM
     classification_rule
 WHERE
-    user_id = $1
+    books_id = $1
     AND (
         $2::int IS NULL
         OR priority > $2::int
@@ -197,13 +197,13 @@ LIMIT
 `
 
 type ListRulesParams struct {
-	UserID        int64
+	BooksID       int64
 	AfterPriority *int32
 	RowLimit      int32
 }
 
 func (q *Queries) ListRules(ctx context.Context, arg ListRulesParams) ([]ClassificationRule, error) {
-	rows, err := q.db.Query(ctx, listRules, arg.UserID, arg.AfterPriority, arg.RowLimit)
+	rows, err := q.db.Query(ctx, listRules, arg.BooksID, arg.AfterPriority, arg.RowLimit)
 	if err != nil {
 		return nil, err
 	}
@@ -213,7 +213,7 @@ func (q *Queries) ListRules(ctx context.Context, arg ListRulesParams) ([]Classif
 		var i ClassificationRule
 		if err := rows.Scan(
 			&i.ID,
-			&i.UserID,
+			&i.BooksID,
 			&i.Name,
 			&i.Priority,
 			&i.Enabled,
@@ -240,14 +240,14 @@ SELECT
 FROM
     classification_rule
 WHERE
-    user_id = $1
+    books_id = $1
 ORDER BY
     priority
 FOR UPDATE
 `
 
-func (q *Queries) RuleIDs(ctx context.Context, userID int64) ([]uuid.UUID, error) {
-	rows, err := q.db.Query(ctx, ruleIDs, userID)
+func (q *Queries) RuleIDs(ctx context.Context, booksID int64) ([]uuid.UUID, error) {
+	rows, err := q.db.Query(ctx, ruleIDs, booksID)
 	if err != nil {
 		return nil, err
 	}
@@ -272,18 +272,18 @@ SET
     priority = $1,
     updated_at = now()
 WHERE
-    user_id = $2
+    books_id = $2
     AND id = $3
 `
 
 type SetRulePriorityParams struct {
 	Priority int32
-	UserID   int64
+	BooksID  int64
 	ID       uuid.UUID
 }
 
 func (q *Queries) SetRulePriority(ctx context.Context, arg SetRulePriorityParams) error {
-	_, err := q.db.Exec(ctx, setRulePriority, arg.Priority, arg.UserID, arg.ID)
+	_, err := q.db.Exec(ctx, setRulePriority, arg.Priority, arg.BooksID, arg.ID)
 	return err
 }
 
@@ -297,10 +297,10 @@ SET
     actions = $5,
     updated_at = now()
 WHERE
-    user_id = $6
+    books_id = $6
     AND id = $7
 RETURNING
-    id, user_id, name, priority, enabled, stop_processing, conditions, actions, schema_version, created_at, updated_at
+    id, books_id, name, priority, enabled, stop_processing, conditions, actions, schema_version, created_at, updated_at
 `
 
 type UpdateRuleParams struct {
@@ -309,7 +309,7 @@ type UpdateRuleParams struct {
 	StopProcessing bool
 	Conditions     []byte
 	Actions        []byte
-	UserID         int64
+	BooksID        int64
 	ID             uuid.UUID
 }
 
@@ -320,13 +320,13 @@ func (q *Queries) UpdateRule(ctx context.Context, arg UpdateRuleParams) (Classif
 		arg.StopProcessing,
 		arg.Conditions,
 		arg.Actions,
-		arg.UserID,
+		arg.BooksID,
 		arg.ID,
 	)
 	var i ClassificationRule
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.Name,
 		&i.Priority,
 		&i.Enabled,

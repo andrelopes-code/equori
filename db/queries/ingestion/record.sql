@@ -2,7 +2,7 @@
 -- A row comes back only for a new key; a conflict is pgx.ErrNoRows for that item.
 INSERT INTO
     ingestion_external_record (
-        user_id,
+        books_id,
         batch_id,
         account_id,
         external_id,
@@ -21,7 +21,7 @@ INSERT INTO
     )
 VALUES
     (
-        @user_id,
+        @books_id,
         @batch_id,
         @account_id,
         sqlc.narg (external_id),
@@ -38,7 +38,7 @@ VALUES
         sqlc.narg (balance_after),
         sqlc.narg (line_kind)
     )
-ON CONFLICT (user_id, dedup_key) DO NOTHING
+ON CONFLICT (books_id, dedup_key) DO NOTHING
 RETURNING
     *;
 
@@ -48,7 +48,7 @@ SELECT
 FROM
     ingestion_external_record
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND dedup_key = ANY (@keys::bytea[]);
 
 -- name: SaveRecordOutcomes :batchexec
@@ -61,7 +61,7 @@ SET
     review_reason = sqlc.narg (review_reason),
     candidate_scores = @candidate_scores
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND id = @id;
 
 -- name: GetRecord :one
@@ -70,7 +70,7 @@ SELECT
 FROM
     ingestion_external_record
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2;
 
 -- name: ListBatchRecords :many
@@ -79,7 +79,7 @@ SELECT
 FROM
     ingestion_external_record
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND batch_id = @batch_id
     AND (
         sqlc.narg (state)::text IS NULL
@@ -103,7 +103,7 @@ SET
     created = created + (@state::text = 'created')::int,
     discarded = discarded + (@state::text = 'discarded')::int
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND id = @id;
 
 -- name: ReopenRecord :execrows
@@ -112,7 +112,7 @@ UPDATE ingestion_external_record
 SET
     state = 'needs_review'
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND id = @id
     AND state = 'discarded';
 
@@ -122,7 +122,7 @@ SET
     discarded = discarded - 1,
     needs_review = needs_review + 1
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND id = @id;
 
 -- name: MoveRecords :exec
@@ -131,7 +131,7 @@ UPDATE ingestion_external_record
 SET
     transaction_id = @transaction_id
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND id = ANY (@record_ids::UUID[])
     AND transaction_id IS NOT NULL;
 
@@ -152,7 +152,7 @@ SET
     amount = @amount,
     review_reason = sqlc.narg (review_reason)
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND id = @id;
 
 -- name: ListSyncedRecords :many
@@ -162,7 +162,7 @@ SELECT
 FROM
     ingestion_external_record
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND account_id = @account_id
     AND external_status IS NOT NULL
     AND booked_on BETWEEN @from_date::date AND @to_date::date
@@ -180,14 +180,14 @@ FROM
         FROM
             ingestion_external_record
         WHERE
-            user_id = @user_id
+            books_id = @books_id
             AND id = ANY (@record_ids::UUID[])
             AND state = 'needs_review'
         GROUP BY
             batch_id
     ) w
 WHERE
-    b.user_id = @user_id
+    b.books_id = @books_id
     AND b.id = w.batch_id;
 
 -- name: WithdrawRecords :exec
@@ -197,5 +197,5 @@ SET
     transaction_id = NULL,
     candidates = '{}'
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND id = ANY (@record_ids::UUID[]);

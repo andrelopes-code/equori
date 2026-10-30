@@ -11,8 +11,8 @@ import (
 	"github.com/andrelopes-code/equori/internal/ingestion/internal/domain"
 )
 
-func (s *Service) Profile(ctx context.Context, userID int64, accountID uuid.UUID) (domain.Profile, error) {
-	return s.repo.Profile(ctx, userID, accountID)
+func (s *Service) Profile(ctx context.Context, booksID int64, accountID uuid.UUID) (domain.Profile, error) {
+	return s.repo.Profile(ctx, booksID, accountID)
 }
 
 // SaveProfile replaces the account's CSV profile; an account of another user is ErrNotFound.

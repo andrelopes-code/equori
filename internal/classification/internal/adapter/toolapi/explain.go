@@ -76,7 +76,7 @@ func explainCategorization(svc *app.Service) tool.Tool {
 			"Do not use it to change a category: categorize_transactions does.",
 		Effect:     tool.ReadOnly,
 		Idempotent: true,
-	}, func(ctx context.Context, userID int64, in explainCategorizationIn) (explainCategorizationOut, error) {
+	}, func(ctx context.Context, booksID int64, in explainCategorizationIn) (explainCategorizationOut, error) {
 		fields := []field{
 			{"transaction_ids", len(in.TransactionIDs) > 0}, {"from", !in.From.IsZero()}, {"to", !in.To.IsZero()},
 			{"description_contains", in.DescriptionContains != ""}, {"category_id", in.CategoryID != ""},
@@ -110,7 +110,7 @@ func explainCategorization(svc *app.Service) tool.Tool {
 				}
 			}
 
-			recs, err := svc.Categorizations(ctx, userID, ids)
+			recs, err := svc.Categorizations(ctx, booksID, ids)
 			if err != nil {
 				return explainCategorizationOut{}, err
 			}
@@ -123,7 +123,7 @@ func explainCategorization(svc *app.Service) tool.Tool {
 				if r.RuleID != uuid.Nil {
 					n, ok := ruleNames[r.RuleID]
 					if !ok {
-						rule, err := svc.Rule(ctx, userID, r.RuleID)
+						rule, err := svc.Rule(ctx, booksID, r.RuleID)
 						if err != nil && !errors.Is(err, app.ErrNotFound) {
 							return explainCategorizationOut{}, err
 						}
@@ -144,7 +144,7 @@ func explainCategorization(svc *app.Service) tool.Tool {
 				return explainCategorizationOut{}, tool.InvalidArgument("to", "must not be before from")
 			}
 
-			st, err := svc.Statistics(ctx, userID, in.From.Time, in.To.Time)
+			st, err := svc.Statistics(ctx, booksID, in.From.Time, in.To.Time)
 
 			return explainCategorizationOut{Statistics: statisticsView{
 				From: in.From, To: in.To, Total: st.Total, Rule: st.Rule, Source: st.Source, History: st.History, Manual: st.Manual, Uncategorized: st.Uncategorized,
@@ -161,7 +161,7 @@ func explainCategorization(svc *app.Service) tool.Tool {
 			return explainCategorizationOut{}, err
 		}
 
-		p, err := svc.PreviewRule(ctx, userID, rule)
+		p, err := svc.PreviewRule(ctx, booksID, rule)
 
 		return explainCategorizationOut{RulePreview: rulePreviewView{
 			DescriptionContains: in.DescriptionContains, WouldCategorize: p.WouldCategorize.Count, Conflicts: p.Conflicts.Count,

@@ -23,7 +23,7 @@ FROM
     AND NOT p.voided
     AND p.booked_on <= $1
 WHERE
-    a.user_id = $2
+    a.books_id = $2
     AND a.account_class IN ('asset', 'liability')
 GROUP BY
     a.id
@@ -33,8 +33,8 @@ ORDER BY
 `
 
 type AccountBalancesBookedAtParams struct {
-	OnDate time.Time
-	UserID int64
+	OnDate  time.Time
+	BooksID int64
 }
 
 type AccountBalancesBookedAtRow struct {
@@ -44,7 +44,7 @@ type AccountBalancesBookedAtRow struct {
 }
 
 func (q *Queries) AccountBalancesBookedAt(ctx context.Context, arg AccountBalancesBookedAtParams) ([]AccountBalancesBookedAtRow, error) {
-	rows, err := q.db.Query(ctx, accountBalancesBookedAt, arg.OnDate, arg.UserID)
+	rows, err := q.db.Query(ctx, accountBalancesBookedAt, arg.OnDate, arg.BooksID)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +74,7 @@ FROM
     AND NOT p.voided
     AND coalesce(p.settled_on, p.booked_on) <= $1
 WHERE
-    a.user_id = $2
+    a.books_id = $2
     AND a.account_class IN ('asset', 'liability')
 GROUP BY
     a.id
@@ -84,8 +84,8 @@ ORDER BY
 `
 
 type AccountBalancesSettledAtParams struct {
-	OnDate *time.Time
-	UserID int64
+	OnDate  *time.Time
+	BooksID int64
 }
 
 type AccountBalancesSettledAtRow struct {
@@ -95,7 +95,7 @@ type AccountBalancesSettledAtRow struct {
 }
 
 func (q *Queries) AccountBalancesSettledAt(ctx context.Context, arg AccountBalancesSettledAtParams) ([]AccountBalancesSettledAtRow, error) {
-	rows, err := q.db.Query(ctx, accountBalancesSettledAt, arg.OnDate, arg.UserID)
+	rows, err := q.db.Query(ctx, accountBalancesSettledAt, arg.OnDate, arg.BooksID)
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +122,7 @@ WITH RECURSIVE
         FROM
             ledger_account a
         WHERE
-            a.user_id = $2
+            a.books_id = $2
             AND a.id = $3
         UNION ALL
         SELECT
@@ -131,7 +131,7 @@ WITH RECURSIVE
             ledger_account c
             JOIN tree ON c.parent_id = tree.id
         WHERE
-            c.user_id = $2
+            c.books_id = $2
     )
 SELECT
     coalesce(sum(p.amount), 0)::bigint
@@ -150,12 +150,12 @@ WHERE
 
 type BalanceBookedAtParams struct {
 	OnDate    time.Time
-	UserID    int64
+	BooksID   int64
 	AccountID uuid.UUID
 }
 
 func (q *Queries) BalanceBookedAt(ctx context.Context, arg BalanceBookedAtParams) (int64, error) {
-	row := q.db.QueryRow(ctx, balanceBookedAt, arg.OnDate, arg.UserID, arg.AccountID)
+	row := q.db.QueryRow(ctx, balanceBookedAt, arg.OnDate, arg.BooksID, arg.AccountID)
 	var column_1 int64
 	err := row.Scan(&column_1)
 	return column_1, err
@@ -169,7 +169,7 @@ WITH RECURSIVE
         FROM
             ledger_account a
         WHERE
-            a.user_id = $2
+            a.books_id = $2
             AND a.id = $3
         UNION ALL
         SELECT
@@ -178,7 +178,7 @@ WITH RECURSIVE
             ledger_account c
             JOIN tree ON c.parent_id = tree.id
         WHERE
-            c.user_id = $2
+            c.books_id = $2
     )
 SELECT
     coalesce(sum(p.amount), 0)::bigint
@@ -197,12 +197,12 @@ WHERE
 
 type BalanceSettledAtParams struct {
 	OnDate    *time.Time
-	UserID    int64
+	BooksID   int64
 	AccountID uuid.UUID
 }
 
 func (q *Queries) BalanceSettledAt(ctx context.Context, arg BalanceSettledAtParams) (int64, error) {
-	row := q.db.QueryRow(ctx, balanceSettledAt, arg.OnDate, arg.UserID, arg.AccountID)
+	row := q.db.QueryRow(ctx, balanceSettledAt, arg.OnDate, arg.BooksID, arg.AccountID)
 	var column_1 int64
 	err := row.Scan(&column_1)
 	return column_1, err
@@ -216,7 +216,7 @@ WITH RECURSIVE
         FROM
             ledger_account a
         WHERE
-            a.user_id = $3
+            a.books_id = $3
             AND a.id = $4
         UNION ALL
         SELECT
@@ -225,7 +225,7 @@ WITH RECURSIVE
             ledger_account c
             JOIN tree ON c.parent_id = tree.id
         WHERE
-            c.user_id = $3
+            c.books_id = $3
     )
 SELECT
     date_trunc('month', p.booked_on)::date AS MONTH,
@@ -251,7 +251,7 @@ ORDER BY
 type CategoryMonthlyTotalsParams struct {
 	FromDate  time.Time
 	ToDate    time.Time
-	UserID    int64
+	BooksID   int64
 	AccountID uuid.UUID
 }
 
@@ -265,7 +265,7 @@ func (q *Queries) CategoryMonthlyTotals(ctx context.Context, arg CategoryMonthly
 	rows, err := q.db.Query(ctx, categoryMonthlyTotals,
 		arg.FromDate,
 		arg.ToDate,
-		arg.UserID,
+		arg.BooksID,
 		arg.AccountID,
 	)
 	if err != nil {
@@ -294,7 +294,7 @@ WITH RECURSIVE
         FROM
             ledger_account a
         WHERE
-            a.user_id = $3
+            a.books_id = $3
             AND a.id = $4
         UNION ALL
         SELECT
@@ -303,7 +303,7 @@ WITH RECURSIVE
             ledger_account c
             JOIN tree ON c.parent_id = tree.id
         WHERE
-            c.user_id = $3
+            c.books_id = $3
     )
 SELECT
     coalesce(sum(p.weight), 0)::bigint
@@ -324,7 +324,7 @@ WHERE
 type CategoryTotalParams struct {
 	FromDate  time.Time
 	ToDate    time.Time
-	UserID    int64
+	BooksID   int64
 	AccountID uuid.UUID
 }
 
@@ -333,7 +333,7 @@ func (q *Queries) CategoryTotal(ctx context.Context, arg CategoryTotalParams) (i
 	row := q.db.QueryRow(ctx, categoryTotal,
 		arg.FromDate,
 		arg.ToDate,
-		arg.UserID,
+		arg.BooksID,
 		arg.AccountID,
 	)
 	var column_1 int64
@@ -349,9 +349,9 @@ SELECT
 FROM
     ledger_posting p
     JOIN ledger_account a ON a.id = p.account_id
-    AND a.user_id = p.user_id
+    AND a.books_id = p.books_id
 WHERE
-    p.user_id = $1
+    p.books_id = $1
     AND a.account_class = $2
     AND NOT p.voided
     AND p.booked_on >= $3
@@ -362,7 +362,7 @@ GROUP BY
 `
 
 type OwnCategoryMonthlyTotalsParams struct {
-	UserID       int64
+	BooksID      int64
 	AccountClass string
 	FromDate     time.Time
 	ToDate       time.Time
@@ -377,7 +377,7 @@ type OwnCategoryMonthlyTotalsRow struct {
 // Budget plan amendment A129: own postings of every category of a class, by month.
 func (q *Queries) OwnCategoryMonthlyTotals(ctx context.Context, arg OwnCategoryMonthlyTotalsParams) ([]OwnCategoryMonthlyTotalsRow, error) {
 	rows, err := q.db.Query(ctx, ownCategoryMonthlyTotals,
-		arg.UserID,
+		arg.BooksID,
 		arg.AccountClass,
 		arg.FromDate,
 		arg.ToDate,
@@ -409,7 +409,7 @@ WITH RECURSIVE
         FROM
             ledger_account a
         WHERE
-            a.user_id = $3
+            a.books_id = $3
             AND a.id = $4
         UNION ALL
         SELECT
@@ -419,7 +419,7 @@ WITH RECURSIVE
             ledger_account c
             JOIN tree ON c.parent_id = tree.id
         WHERE
-            c.user_id = $3
+            c.books_id = $3
     )
 SELECT
     tree.instrument,
@@ -441,7 +441,7 @@ ORDER BY
 type TreeBalancesByInstrumentParams struct {
 	Settled   bool
 	OnDate    *time.Time
-	UserID    int64
+	BooksID   int64
 	AccountID uuid.UUID
 }
 
@@ -455,7 +455,7 @@ func (q *Queries) TreeBalancesByInstrument(ctx context.Context, arg TreeBalances
 	rows, err := q.db.Query(ctx, treeBalancesByInstrument,
 		arg.Settled,
 		arg.OnDate,
-		arg.UserID,
+		arg.BooksID,
 		arg.AccountID,
 	)
 	if err != nil {
@@ -484,7 +484,7 @@ WITH RECURSIVE
         FROM
             ledger_account a
         WHERE
-            a.user_id = $1
+            a.books_id = $1
             AND a.id = ANY ($4::UUID[])
         UNION
         SELECT
@@ -493,7 +493,7 @@ WITH RECURSIVE
             ledger_account c
             JOIN tree ON c.parent_id = tree.id
         WHERE
-            c.user_id = $1
+            c.books_id = $1
     )
 SELECT
     t.date,
@@ -512,7 +512,7 @@ FROM
     JOIN ledger_account oa ON oa.id = o.account_id
     AND oa.account_class IN ('asset', 'liability')
 WHERE
-    t.user_id = $1
+    t.books_id = $1
     AND t.voided_at IS NULL
     AND t.date BETWEEN $2 AND $3
     AND EXISTS (
@@ -540,7 +540,7 @@ ORDER BY
 `
 
 type TreeExternalFlowsParams struct {
-	UserID     int64
+	BooksID    int64
 	FromDate   time.Time
 	ToDate     time.Time
 	AccountIds []uuid.UUID
@@ -558,7 +558,7 @@ type TreeExternalFlowsRow struct {
 // transaction's balancing currency. A transfer between two roots is internal.
 func (q *Queries) TreeExternalFlows(ctx context.Context, arg TreeExternalFlowsParams) ([]TreeExternalFlowsRow, error) {
 	rows, err := q.db.Query(ctx, treeExternalFlows,
-		arg.UserID,
+		arg.BooksID,
 		arg.FromDate,
 		arg.ToDate,
 		arg.AccountIds,
@@ -589,7 +589,7 @@ WITH RECURSIVE
         FROM
             ledger_account a
         WHERE
-            a.user_id = $1
+            a.books_id = $1
             AND a.id = ANY ($2::UUID[])
         UNION
         SELECT
@@ -598,7 +598,7 @@ WITH RECURSIVE
             ledger_account c
             JOIN tree ON c.parent_id = tree.id
         WHERE
-            c.user_id = $1
+            c.books_id = $1
     )
 SELECT
     coalesce(min(p.booked_on), DATE '0001-01-01')::date AS first_on,
@@ -606,7 +606,7 @@ SELECT
 FROM
     ledger_posting p
 WHERE
-    p.user_id = $1
+    p.books_id = $1
     AND NOT p.voided
     AND p.account_id IN (
         SELECT
@@ -617,7 +617,7 @@ WHERE
 `
 
 type TreeFirstPostingParams struct {
-	UserID     int64
+	BooksID    int64
 	AccountIds []uuid.UUID
 }
 
@@ -629,7 +629,7 @@ type TreeFirstPostingRow struct {
 // The booked date of the earliest non-voided posting of the accounts and their sub-accounts;
 // found is false, and first_on meaningless, when there is none.
 func (q *Queries) TreeFirstPosting(ctx context.Context, arg TreeFirstPostingParams) (TreeFirstPostingRow, error) {
-	row := q.db.QueryRow(ctx, treeFirstPosting, arg.UserID, arg.AccountIds)
+	row := q.db.QueryRow(ctx, treeFirstPosting, arg.BooksID, arg.AccountIds)
 	var i TreeFirstPostingRow
 	err := row.Scan(&i.FirstOn, &i.Found)
 	return i, err
@@ -644,7 +644,7 @@ WITH RECURSIVE
         FROM
             ledger_account a
         WHERE
-            a.user_id = $1
+            a.books_id = $1
             AND a.id = $2
         UNION ALL
         SELECT
@@ -654,7 +654,7 @@ WITH RECURSIVE
             ledger_account c
             JOIN tree ON c.parent_id = tree.id
         WHERE
-            c.user_id = $1
+            c.books_id = $1
     )
 SELECT DISTINCT
     instrument
@@ -665,12 +665,12 @@ ORDER BY
 `
 
 type TreeInstrumentsParams struct {
-	UserID    int64
+	BooksID   int64
 	AccountID uuid.UUID
 }
 
 func (q *Queries) TreeInstruments(ctx context.Context, arg TreeInstrumentsParams) ([]string, error) {
-	rows, err := q.db.Query(ctx, treeInstruments, arg.UserID, arg.AccountID)
+	rows, err := q.db.Query(ctx, treeInstruments, arg.BooksID, arg.AccountID)
 	if err != nil {
 		return nil, err
 	}

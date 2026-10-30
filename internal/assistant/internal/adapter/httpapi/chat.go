@@ -15,7 +15,7 @@ func (s *Server) GetAssistantChat(ctx context.Context, _ GetAssistantChatRequest
 		return nil, errors.New("use assistant.chat is not declared")
 	}
 
-	st, err := s.svc.ChatState(ctx, auth.MustUserID(ctx), use)
+	st, err := s.svc.ChatState(ctx, auth.MustBooksID(ctx), use)
 	if err != nil {
 		return nil, err
 	}

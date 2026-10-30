@@ -39,7 +39,7 @@ func (s *Server) Register(mux *http.ServeMux) {
 }
 
 func (s *Server) ListPositions(ctx context.Context, req ListPositionsRequestObject) (ListPositionsResponseObject, error) {
-	ps, err := s.svc.Positions(ctx, auth.MustUserID(ctx), req.Params.Date.Time, valueIn(req.Params.ValueIn))
+	ps, err := s.svc.Positions(ctx, auth.MustBooksID(ctx), req.Params.Date.Time, valueIn(req.Params.ValueIn))
 	if err != nil {
 		return nil, err
 	}
@@ -70,14 +70,14 @@ func (s *Server) ListPositions(ctx context.Context, req ListPositionsRequestObje
 }
 
 func (s *Server) ListRealizedResults(ctx context.Context, req ListRealizedResultsRequestObject) (ListRealizedResultsResponseObject, error) {
-	userID := auth.MustUserID(ctx)
+	booksID := auth.MustBooksID(ctx)
 
-	from, to, err := s.svc.TaxYear(ctx, userID, req.Params.Year)
+	from, to, err := s.svc.TaxYear(ctx, booksID, req.Params.Year)
 	if err != nil {
 		return nil, err
 	}
 
-	rs, err := s.svc.RealizedResults(ctx, userID, req.Params.Year)
+	rs, err := s.svc.RealizedResults(ctx, booksID, req.Params.Year)
 	if err != nil {
 		return nil, err
 	}
@@ -95,14 +95,14 @@ func (s *Server) ListRealizedResults(ctx context.Context, req ListRealizedResult
 }
 
 func (s *Server) ListIncomeEvents(ctx context.Context, req ListIncomeEventsRequestObject) (ListIncomeEventsResponseObject, error) {
-	userID := auth.MustUserID(ctx)
+	booksID := auth.MustBooksID(ctx)
 
-	from, to, err := s.svc.TaxYear(ctx, userID, req.Params.Year)
+	from, to, err := s.svc.TaxYear(ctx, booksID, req.Params.Year)
 	if err != nil {
 		return nil, err
 	}
 
-	es, err := s.svc.IncomeEvents(ctx, userID, req.Params.Year)
+	es, err := s.svc.IncomeEvents(ctx, booksID, req.Params.Year)
 	if err != nil {
 		return nil, err
 	}
@@ -120,7 +120,7 @@ func (s *Server) ListIncomeEvents(ctx context.Context, req ListIncomeEventsReque
 }
 
 func (s *Server) ListInvestmentIncomeTypes(ctx context.Context, _ ListInvestmentIncomeTypesRequestObject) (ListInvestmentIncomeTypesResponseObject, error) {
-	types, err := s.svc.IncomeTypes(ctx, auth.MustUserID(ctx))
+	types, err := s.svc.IncomeTypes(ctx, auth.MustBooksID(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +134,7 @@ func (s *Server) ListInvestmentIncomeTypes(ctx context.Context, _ ListInvestment
 }
 
 func (s *Server) ListInstrumentSubtypes(ctx context.Context, req ListInstrumentSubtypesRequestObject) (ListInstrumentSubtypesResponseObject, error) {
-	subtypes, err := s.svc.Subtypes(ctx, auth.MustUserID(ctx), string(req.Params.Type))
+	subtypes, err := s.svc.Subtypes(ctx, auth.MustBooksID(ctx), string(req.Params.Type))
 	if err != nil {
 		return nil, err
 	}
@@ -153,7 +153,7 @@ func (s *Server) GetReturn(ctx context.Context, req GetReturnRequestObject) (Get
 		account = *req.Params.AccountId
 	}
 
-	r, err := s.svc.Return(ctx, auth.MustUserID(ctx), account, req.Params.From.Time, req.Params.To.Time, in)
+	r, err := s.svc.Return(ctx, auth.MustBooksID(ctx), account, req.Params.From.Time, req.Params.To.Time, in)
 	if err != nil {
 		return nil, err
 	}
@@ -167,7 +167,7 @@ func (s *Server) GetReturn(ctx context.Context, req GetReturnRequestObject) (Get
 }
 
 func (s *Server) GetAllocation(ctx context.Context, req GetAllocationRequestObject) (GetAllocationResponseObject, error) {
-	r, err := s.svc.Allocation(ctx, auth.MustUserID(ctx), req.Params.Date.Time, string(req.Params.By), valueIn(req.Params.ValueIn))
+	r, err := s.svc.Allocation(ctx, auth.MustBooksID(ctx), req.Params.Date.Time, string(req.Params.By), valueIn(req.Params.ValueIn))
 	if err != nil {
 		return nil, err
 	}
@@ -181,7 +181,7 @@ func (s *Server) GetAllocation(ctx context.Context, req GetAllocationRequestObje
 }
 
 func (s *Server) GetNetWorth(ctx context.Context, req GetNetWorthRequestObject) (GetNetWorthResponseObject, error) {
-	r, err := s.svc.NetWorth(ctx, auth.MustUserID(ctx), req.Params.Date.Time, valueIn(req.Params.ValueIn))
+	r, err := s.svc.NetWorth(ctx, auth.MustBooksID(ctx), req.Params.Date.Time, valueIn(req.Params.ValueIn))
 	if err != nil {
 		return nil, err
 	}

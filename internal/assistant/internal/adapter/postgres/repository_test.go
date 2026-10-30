@@ -15,10 +15,10 @@ import (
 
 var created = time.Date(2026, 10, 23, 12, 0, 0, 0, time.UTC)
 
-func provider(t *testing.T, userID int64, name string, key []byte) domain.Provider {
+func provider(t *testing.T, booksID int64, name string, key []byte) domain.Provider {
 	t.Helper()
 
-	p, err := domain.NewProvider(uuid.New(), userID, "ollama", name, "", false, created)
+	p, err := domain.NewProvider(uuid.New(), booksID, "ollama", name, "", false, created)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -33,7 +33,7 @@ func TestProviders(t *testing.T) {
 	pool := pgtest.New(t)
 	repo := postgres.NewRepository(pool)
 	ctx := t.Context()
-	a, b := pgtest.CreateUser(t, pool), pgtest.CreateUser(t, pool)
+	a, b := pgtest.CreateBooks(t, pool), pgtest.CreateBooks(t, pool)
 
 	p := provider(t, a, "Local", []byte{1, 2})
 	if err := repo.InsertProvider(ctx, p); err != nil {
@@ -68,7 +68,7 @@ func TestProviders(t *testing.T) {
 
 	other := p
 
-	other.UserID = b
+	other.BooksID = b
 	if err := repo.UpdateProvider(ctx, other); !errors.Is(err, domain.ErrProviderNotFound) {
 		t.Fatalf("other user's UpdateProvider err = %v, want ErrProviderNotFound", err)
 	}
@@ -92,7 +92,7 @@ func TestChains(t *testing.T) {
 	pool := pgtest.New(t)
 	repo := postgres.NewRepository(pool)
 	ctx := t.Context()
-	a, b := pgtest.CreateUser(t, pool), pgtest.CreateUser(t, pool)
+	a, b := pgtest.CreateBooks(t, pool), pgtest.CreateBooks(t, pool)
 
 	p, q := provider(t, a, "One", nil), provider(t, b, "Other", nil)
 	for _, x := range []domain.Provider{p, q} {
@@ -137,7 +137,7 @@ func TestResealKeys(t *testing.T) {
 	pool := pgtest.New(t)
 	repo := postgres.NewRepository(pool)
 	ctx := t.Context()
-	a := pgtest.CreateUser(t, pool)
+	a := pgtest.CreateBooks(t, pool)
 
 	keyed, keyless := provider(t, a, "Keyed", []byte("old")), provider(t, a, "Keyless", nil)
 	for _, x := range []domain.Provider{keyed, keyless} {
@@ -148,11 +148,11 @@ func TestResealKeys(t *testing.T) {
 
 	var seen []uuid.UUID
 
-	n, err := repo.ResealKeys(ctx, func(userID int64, id uuid.UUID, sealed []byte) ([]byte, error) {
+	n, err := repo.ResealKeys(ctx, func(booksID int64, id uuid.UUID, sealed []byte) ([]byte, error) {
 		seen = append(seen, id)
 
-		if userID != a || string(sealed) != "old" {
-			t.Errorf("reseal got user %d, sealed %q", userID, sealed)
+		if booksID != a || string(sealed) != "old" {
+			t.Errorf("reseal got user %d, sealed %q", booksID, sealed)
 		}
 
 		return []byte("new"), nil

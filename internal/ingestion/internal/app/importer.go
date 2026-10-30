@@ -82,56 +82,56 @@ func (e *RejectedLine) Is(target error) bool { return target == ErrLineRejected 
 type Ledger interface {
 	// ImportTarget returns ErrNotFound for an unknown account and a *domain.FieldError on
 	// account_id for an account that cannot hold statement lines.
-	ImportTarget(ctx context.Context, userID int64, accountID uuid.UUID) (domain.ImportTarget, error)
+	ImportTarget(ctx context.Context, booksID int64, accountID uuid.UUID) (domain.ImportTarget, error)
 	// LinkedTransaction returns ErrNotFound when no transaction carries the record.
-	LinkedTransaction(ctx context.Context, userID int64, recordID uuid.UUID) (txID uuid.UUID, imported bool, err error)
+	LinkedTransaction(ctx context.Context, booksID int64, recordID uuid.UUID) (txID uuid.UUID, imported bool, err error)
 	// UnlinkedPostings lists the account's postings in [from, to] that no external record
 	// confirms and whose transaction is not voided.
-	UnlinkedPostings(ctx context.Context, userID int64, accountID uuid.UUID, from, to time.Time) ([]domain.LedgerPosting, error)
+	UnlinkedPostings(ctx context.Context, booksID int64, accountID uuid.UUID, from, to time.Time) ([]domain.LedgerPosting, error)
 	// UnconfirmedPostings lists the account's postings that neither a line nor a balance
 	// confirms, dated by when the institution reports them (A133).
-	UnconfirmedPostings(ctx context.Context, userID int64, accountID uuid.UUID, from, to time.Time) ([]domain.LedgerPosting, error)
+	UnconfirmedPostings(ctx context.Context, booksID int64, accountID uuid.UUID, from, to time.Time) ([]domain.LedgerPosting, error)
 	// LinePayees returns the payee classification decides for each line, uuid.Nil for none,
 	// in input order (A99).
-	LinePayees(ctx context.Context, userID int64, lines []Line) ([]uuid.UUID, error)
+	LinePayees(ctx context.Context, booksID int64, lines []Line) ([]uuid.UUID, error)
 	// RecordImported creates the transactions of the lines, ids in input order; a refused
 	// line is a *RejectedLine and creates none.
-	RecordImported(ctx context.Context, userID int64, lines []NewLine) ([]uuid.UUID, error)
+	RecordImported(ctx context.Context, booksID int64, lines []NewLine) ([]uuid.UUID, error)
 	// ConfirmLine corrects the transaction to the line's amount and date (A101); a voided
 	// transaction is ErrTransactionVoided and a reconciled posting ErrReconciled.
-	ConfirmLine(ctx context.Context, userID int64, txID, accountID uuid.UUID, amount int64, date time.Time) error
+	ConfirmLine(ctx context.Context, booksID int64, txID, accountID uuid.UUID, amount int64, date time.Time) error
 	// ClearMatched links the matches and returns the indexes of those whose transaction
 	// already carries another record.
-	ClearMatched(ctx context.Context, userID int64, ms []Match) (conflicts []int, err error)
-	AssertBalance(ctx context.Context, userID int64, accountID uuid.UUID, b domain.Balance, c money.Currency) error
+	ClearMatched(ctx context.Context, booksID int64, ms []Match) (conflicts []int, err error)
+	AssertBalance(ctx context.Context, booksID int64, accountID uuid.UUID, b domain.Balance, c money.Currency) error
 	// AssertSyncedBalance records an aggregator balance without yield (P6 A42); a refused
 	// assertion wraps ErrBalanceRejected.
-	AssertSyncedBalance(ctx context.Context, userID int64, accountID uuid.UUID, b domain.Balance, c money.Currency) error
+	AssertSyncedBalance(ctx context.Context, booksID int64, accountID uuid.UUID, b domain.Balance, c money.Currency) error
 	// AssertSyncedReserve is AssertSyncedBalance for a reserved balance, which books bounded
 	// yield on a positive difference (A75).
-	AssertSyncedReserve(ctx context.Context, userID int64, accountID uuid.UUID, b domain.Balance, c money.Currency) error
+	AssertSyncedReserve(ctx context.Context, booksID int64, accountID uuid.UUID, b domain.Balance, c money.Currency) error
 	// UpdateImportedPosting applies a later report on a recorded line (A36): ErrReconciled
 	// leaves the posting as it is; ErrNotFound when no posting carries the record.
 	// kind KindPayment retypes a card credit as a payment; ErrNotRetypable when the
 	// transaction changed since its import.
-	UpdateImportedPosting(ctx context.Context, userID int64, recordID uuid.UUID, pending bool, dueDate *time.Time, kind string) error
+	UpdateImportedPosting(ctx context.Context, booksID int64, recordID uuid.UUID, pending bool, dueDate *time.Time, kind string) error
 	// RecordStatementFacts records a card bill on the ledger statement due on its due date (A85).
-	RecordStatementFacts(ctx context.Context, userID int64, accountID uuid.UUID, b domain.Bill, c money.Currency) error
+	RecordStatementFacts(ctx context.Context, booksID int64, accountID uuid.UUID, b domain.Bill, c money.Currency) error
 	// RecordCardOpening opens a card that has no opening balance with the total of the bill
 	// before its first synced cycle, billed on that bill's statement (A93).
-	RecordCardOpening(ctx context.Context, userID int64, accountID uuid.UUID, b domain.Bill, c money.Currency) error
+	RecordCardOpening(ctx context.Context, booksID int64, accountID uuid.UUID, b domain.Bill, c money.Currency) error
 	// SettleReportedStatements moves pending card postings off reported statements and
 	// reconciles the reported statements that match (A90, A92).
-	SettleReportedStatements(ctx context.Context, userID int64, accountID uuid.UUID) error
+	SettleReportedStatements(ctx context.Context, booksID int64, accountID uuid.UUID) error
 	// ReleaseRecord unlinks a withdrawn record from its posting (A38).
-	ReleaseRecord(ctx context.Context, userID int64, recordID uuid.UUID) error
+	ReleaseRecord(ctx context.Context, booksID int64, recordID uuid.UUID) error
 	// RecordInstallment creates the installment purchase of the first line seen of it and
 	// returns its transaction and plan (A40); a refused line wraps ErrInstallmentRefused.
-	RecordInstallment(ctx context.Context, userID int64, l InstallmentLine) (txID, planID uuid.UUID, err error)
+	RecordInstallment(ctx context.Context, booksID int64, l InstallmentLine) (txID, planID uuid.UUID, err error)
 	// LinkInstallment links a line to installment number of a plan and returns its
 	// transaction; ErrInstallmentRefused when the installment is gone, reversed, of another
 	// amount or confirmed by another line.
-	LinkInstallment(ctx context.Context, userID int64, recordID, planID uuid.UUID, number int, l Line) (uuid.UUID, error)
+	LinkInstallment(ctx context.Context, booksID int64, recordID, planID uuid.UUID, number int, l Line) (uuid.UUID, error)
 }
 
 // InstallmentLine is an aggregator card line that belongs to an installment purchase.
@@ -142,7 +142,7 @@ type InstallmentLine struct {
 }
 
 type ImportFile struct {
-	UserID    int64
+	BooksID   int64
 	AccountID uuid.UUID
 	Source    domain.Source
 	FileName  string
@@ -166,7 +166,7 @@ func (s *Service) Import(ctx context.Context, f ImportFile) (domain.Batch, error
 		return domain.Batch{}, fileError("must be at most 10 MiB")
 	}
 
-	target, err := s.ledger.ImportTarget(ctx, f.UserID, f.AccountID)
+	target, err := s.ledger.ImportTarget(ctx, f.BooksID, f.AccountID)
 	if err != nil {
 		return domain.Batch{}, err
 	}
@@ -185,7 +185,7 @@ func (s *Service) Import(ctx context.Context, f ImportFile) (domain.Batch, error
 	defer unlock()
 
 	batch, err := s.repo.InsertBatch(ctx, domain.Batch{
-		UserID: f.UserID, AccountID: f.AccountID, Source: f.Source, FileName: f.FileName, Currency: string(currency),
+		BooksID: f.BooksID, AccountID: f.AccountID, Source: f.Source, FileName: f.FileName, Currency: string(currency),
 		PeriodFrom: st.From, PeriodTo: st.To, Balance: domain.FileBalance{Status: domain.BalanceNone},
 	})
 	if err != nil {
@@ -199,7 +199,7 @@ func (s *Service) Import(ctx context.Context, f ImportFile) (domain.Batch, error
 	if st.Balance != nil {
 		batch.Balance = domain.FileBalance{Status: domain.BalanceRecorded, Date: &st.Balance.Date, Amount: st.Balance.Amount}
 
-		err := s.ledger.AssertBalance(ctx, f.UserID, f.AccountID, *st.Balance, currency)
+		err := s.ledger.AssertBalance(ctx, f.BooksID, f.AccountID, *st.Balance, currency)
 		if errors.Is(err, ErrBalanceRejected) {
 			batch.Balance.Status, batch.Balance.Reason = domain.BalanceSkipped, err.Error()
 		} else if err != nil {
@@ -213,7 +213,7 @@ func (s *Service) Import(ctx context.Context, f ImportFile) (domain.Batch, error
 func (s *Service) read(ctx context.Context, f ImportFile, currency money.Currency) (domain.Statement, error) {
 	scale := currency.MinorUnits()
 	if f.Source == domain.SourceCSV {
-		p, err := s.repo.Profile(ctx, f.UserID, f.AccountID)
+		p, err := s.repo.Profile(ctx, f.BooksID, f.AccountID)
 		if errors.Is(err, ErrNotFound) {
 			return domain.Statement{}, &domain.FieldError{Field: "format", Message: "the account has no CSV profile; set it with PUT /accounts/{id}/csv-profile"}
 		}
@@ -298,7 +298,7 @@ func (s *Service) importRecords(
 		return err
 	}
 
-	assigned, err := s.assign(ctx, batch.UserID, p.scoring, postings)
+	assigned, err := s.assign(ctx, batch.BooksID, p.scoring, postings)
 	if err != nil {
 		return err
 	}
@@ -314,7 +314,7 @@ func (s *Service) importRecords(
 		return err
 	}
 
-	if err := s.create(ctx, batch.UserID, p.sync, p.creates, p.created); err != nil {
+	if err := s.create(ctx, batch.BooksID, p.sync, p.creates, p.created); err != nil {
 		return err
 	}
 
@@ -331,7 +331,7 @@ func (s *Service) claimLines(ctx context.Context, p *importPlan) error {
 	claims := make([]domain.ExternalRecord, len(p.lines))
 	for i, r := range p.lines {
 		claims[i] = domain.ExternalRecord{
-			UserID:      p.batch.UserID,
+			BooksID:     p.batch.BooksID,
 			BatchID:     p.batch.ID,
 			AccountID:   p.batch.AccountID,
 			ExternalID:  r.ExternalID,
@@ -451,7 +451,7 @@ func (s *Service) repeatedLines(
 }
 
 func (s *Service) linkMatches(ctx context.Context, p *importPlan) error {
-	conflicts, err := s.ledger.ClearMatched(ctx, p.batch.UserID, p.matches)
+	conflicts, err := s.ledger.ClearMatched(ctx, p.batch.BooksID, p.matches)
 	if err != nil {
 		return err
 	}
@@ -574,9 +574,9 @@ func reopenWithdrawn(claimed []Claim, lines []domain.NormalizedRecord) {
 
 // create records the transactions of new lines. A line the ledger refuses fails a file
 // import; in a sync it waits for review and the other lines are created.
-func (s *Service) create(ctx context.Context, userID int64, sync bool, creates []NewLine, created []*domain.ExternalRecord) error {
+func (s *Service) create(ctx context.Context, booksID int64, sync bool, creates []NewLine, created []*domain.ExternalRecord) error {
 	for {
-		ids, err := s.ledger.RecordImported(ctx, userID, creates)
+		ids, err := s.ledger.RecordImported(ctx, booksID, creates)
 
 		rejected, ok := errors.AsType[*RejectedLine](err)
 		switch {
@@ -632,7 +632,7 @@ func (s *Service) update(ctx context.Context, sync bool, rec *domain.ExternalRec
 
 	applied := rec.LineKind
 	if settled || retype {
-		err := s.ledger.UpdateImportedPosting(ctx, rec.UserID, rec.ID, r.Pending, r.DueDate, r.Kind)
+		err := s.ledger.UpdateImportedPosting(ctx, rec.BooksID, rec.ID, r.Pending, r.DueDate, r.Kind)
 		switch {
 		case errors.Is(err, ErrReconciled):
 			notes = append(notes, "the aggregator reports the line "+strings.ToLower(domain.ExternalStatusOf(r))+billNote(r.DueDate)+"; the posting is reconciled and keeps its status and statement")
@@ -678,7 +678,7 @@ func (s *Service) followLine(ctx context.Context, rec *domain.ExternalRecord, r 
 		return kept, nil
 	}
 
-	err := s.ledger.ConfirmLine(ctx, rec.UserID, rec.TransactionID, rec.AccountID, r.Amount, r.Date)
+	err := s.ledger.ConfirmLine(ctx, rec.BooksID, rec.TransactionID, rec.AccountID, r.Amount, r.Date)
 	switch {
 	case errors.Is(err, ErrReconciled):
 		rec.ReviewReason = domain.ReviewChanged
@@ -702,7 +702,7 @@ func (s *Service) billMatched(ctx context.Context, rec *domain.ExternalRecord, p
 		return nil
 	}
 
-	err := s.ledger.UpdateImportedPosting(ctx, rec.UserID, rec.ID, pending, rec.DueDate, "")
+	err := s.ledger.UpdateImportedPosting(ctx, rec.BooksID, rec.ID, pending, rec.DueDate, "")
 	switch {
 	case errors.Is(err, ErrReconciled):
 		rec.UnappliedChange = "the aggregator reports the line" + billNote(rec.DueDate) + "; the posting is reconciled and keeps its status and statement"
@@ -746,7 +746,7 @@ func (s *Service) unlinked(ctx context.Context, batch *domain.Batch, claimed []C
 		return nil, nil
 	}
 
-	return s.ledger.UnlinkedPostings(ctx, batch.UserID, batch.AccountID, from.AddDate(0, 0, -domain.MatchHardLimit), to.AddDate(0, 0, domain.MatchHardLimit))
+	return s.ledger.UnlinkedPostings(ctx, batch.BooksID, batch.AccountID, from.AddDate(0, 0, -domain.MatchHardLimit), to.AddDate(0, 0, domain.MatchHardLimit))
 }
 
 // repeats returns the lines matching would create that repeat a payment the account records
@@ -792,7 +792,7 @@ func (s *Service) repeats(
 
 	stored, err := s.repo.SyncedRecords(
 		ctx,
-		batch.UserID,
+		batch.BooksID,
 		batch.AccountID,
 		from.AddDate(0, 0, -domain.RepeatDays),
 		to.AddDate(0, 0, domain.RepeatDays),
@@ -828,7 +828,7 @@ type scoredLine struct {
 
 // assign decides the lines by score (A98–A100); the payees of the lines are asked of
 // classification only when the account has postings to compare.
-func (s *Service) assign(ctx context.Context, userID int64, lines []scoredLine, postings []domain.LedgerPosting) ([]domain.Assignment, error) {
+func (s *Service) assign(ctx context.Context, booksID int64, lines []scoredLine, postings []domain.LedgerPosting) ([]domain.Assignment, error) {
 	if len(lines) == 0 {
 		return nil, nil
 	}
@@ -847,7 +847,7 @@ func (s *Service) assign(ctx context.Context, userID int64, lines []scoredLine, 
 		plain[i] = l.line
 	}
 
-	payees, err := s.ledger.LinePayees(ctx, userID, plain)
+	payees, err := s.ledger.LinePayees(ctx, booksID, plain)
 	if err != nil {
 		return nil, err
 	}
@@ -863,7 +863,7 @@ func (s *Service) assign(ctx context.Context, userID int64, lines []scoredLine, 
 // resume completes a record whose transaction a previous import committed in the ledger
 // before it stopped (P4 amendments A11, A12); it reports whether the record is done.
 func (s *Service) resume(ctx context.Context, rec *domain.ExternalRecord) (bool, error) {
-	txID, imported, err := s.ledger.LinkedTransaction(ctx, rec.UserID, rec.ID)
+	txID, imported, err := s.ledger.LinkedTransaction(ctx, rec.BooksID, rec.ID)
 	if errors.Is(err, ErrNotFound) {
 		return false, nil
 	}

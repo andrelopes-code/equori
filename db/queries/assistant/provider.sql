@@ -1,8 +1,8 @@
 -- name: InsertProvider :exec
 INSERT INTO
-    assistant_provider (id, user_id, preset, name, base_url, sealed_key, created_at)
+    assistant_provider (id, books_id, preset, name, base_url, sealed_key, created_at)
 VALUES
-    (@id, @user_id, @preset, @name, @base_url, @sealed_key, @created_at);
+    (@id, @books_id, @preset, @name, @base_url, @sealed_key, @created_at);
 
 -- name: GetProvider :one
 SELECT
@@ -10,7 +10,7 @@ SELECT
 FROM
     assistant_provider
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2;
 
 -- name: ListProviders :many
@@ -19,7 +19,7 @@ SELECT
 FROM
     assistant_provider
 WHERE
-    user_id = $1
+    books_id = $1
 ORDER BY
     created_at,
     id;
@@ -31,20 +31,20 @@ SET
     base_url = @base_url,
     sealed_key = @sealed_key
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND id = @id;
 
 -- name: DeleteProvider :execrows
 DELETE FROM assistant_provider
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2;
 
 -- name: LockAllKeys :many
 -- Rotation (ADR 008 K4) reseals every user's keys: the one query without a user filter.
 SELECT
     id,
-    user_id,
+    books_id,
     sealed_key
 FROM
     assistant_provider
@@ -59,5 +59,5 @@ UPDATE assistant_provider
 SET
     sealed_key = @sealed_key
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND id = @id;

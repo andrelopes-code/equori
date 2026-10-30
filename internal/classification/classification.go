@@ -65,7 +65,7 @@ func (p ledgerPort) handleMerge(ctx context.Context, tx pgx.Tx, e outbox.Deliver
 		return fmt.Errorf("decode %s: %w", e.Type, err)
 	}
 
-	return app.NewService(postgres.NewTxRepository(tx), p).HandleCategoriesMerged(ctx, e.UserID, payload.From, payload.Into)
+	return app.NewService(postgres.NewTxRepository(tx), p).HandleCategoriesMerged(ctx, e.BooksID, payload.From, payload.Into)
 }
 
 // handlePayeeMerge follows a payee merge in the dispatcher's transaction (A82).
@@ -75,7 +75,7 @@ func (p ledgerPort) handlePayeeMerge(ctx context.Context, tx pgx.Tx, e outbox.De
 		return fmt.Errorf("decode %s: %w", e.Type, err)
 	}
 
-	return app.NewService(postgres.NewTxRepository(tx), p).HandlePayeesMerged(ctx, e.UserID, payload.From, payload.Into)
+	return app.NewService(postgres.NewTxRepository(tx), p).HandlePayeesMerged(ctx, e.BooksID, payload.From, payload.Into)
 }
 
 // handleTagRename follows a tag rename or merge in the dispatcher's transaction.
@@ -85,7 +85,7 @@ func (p ledgerPort) handleTagRename(ctx context.Context, tx pgx.Tx, e outbox.Del
 		return fmt.Errorf("decode %s: %w", e.Type, err)
 	}
 
-	return app.NewService(postgres.NewTxRepository(tx), p).HandleTagRenamed(ctx, e.UserID, payload.From, payload.Into)
+	return app.NewService(postgres.NewTxRepository(tx), p).HandleTagRenamed(ctx, e.BooksID, payload.From, payload.Into)
 }
 
 // handle runs in the dispatcher's transaction, so the record commits with the delivery.
@@ -101,7 +101,7 @@ func (p ledgerPort) handle(ctx context.Context, tx pgx.Tx, e outbox.Delivered) e
 	}
 
 	event := app.Event{
-		Type: eventTypes[e.Type], UserID: e.UserID, TransactionID: payload.TransactionID, Version: payload.Version, Date: date,
+		Type: eventTypes[e.Type], BooksID: e.BooksID, TransactionID: payload.TransactionID, Version: payload.Version, Date: date,
 		Origin: payload.Origin, CategoryState: payload.CategoryState, CategoriesChanged: payload.CategoriesChanged, OccurredAt: e.OccurredAt,
 	}
 	if payload.Cause != nil {
@@ -116,8 +116,8 @@ func (m *Module) Tools() tool.Group {
 	return tool.Group{Tools: toolapi.Tools(m.svc, m.names, m.ledger.Today), Errors: tool.FromProblem(httpapi.ToProblem)}
 }
 
-func (m *Module) names(ctx context.Context, userID int64) (categories, payees map[uuid.UUID]string, err error) {
-	accounts, ps, err := m.ledger.CaptureVocabulary(ctx, userID)
+func (m *Module) names(ctx context.Context, booksID int64) (categories, payees map[uuid.UUID]string, err error) {
+	accounts, ps, err := m.ledger.CaptureVocabulary(ctx, booksID)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -144,8 +144,8 @@ type LineCategory = app.LineCategory
 
 // DecideImport decides payee, tags and category of each line before the ledger records it
 // (P5 amendment A19); the decision of a line with nothing to set is nil.
-func (m *Module) DecideImport(ctx context.Context, userID int64, lines []ImportLine) ([]*ledger.ImportDecision, error) {
-	decisions, err := m.svc.DecideImport(ctx, userID, lines)
+func (m *Module) DecideImport(ctx context.Context, booksID int64, lines []ImportLine) ([]*ledger.ImportDecision, error) {
+	decisions, err := m.svc.DecideImport(ctx, booksID, lines)
 	if err != nil {
 		return nil, err
 	}
@@ -195,7 +195,7 @@ type ManualLine struct {
 
 // DecideManual decides payee, tags and category of each line with the precedence of F5 for
 // origin manual (capture A113); the decision of a line with nothing to set is nil.
-func (m *Module) DecideManual(ctx context.Context, userID int64, lines []ManualLine) ([]*ledger.ImportDecision, error) {
+func (m *Module) DecideManual(ctx context.Context, booksID int64, lines []ManualLine) ([]*ledger.ImportDecision, error) {
 	in := make([]app.ManualLine, len(lines))
 	for i, l := range lines {
 		in[i] = app.ManualLine{
@@ -204,7 +204,7 @@ func (m *Module) DecideManual(ctx context.Context, userID int64, lines []ManualL
 		}
 	}
 
-	decisions, err := m.svc.DecideManual(ctx, userID, in)
+	decisions, err := m.svc.DecideManual(ctx, booksID, in)
 	if err != nil {
 		return nil, err
 	}
@@ -214,8 +214,8 @@ func (m *Module) DecideManual(ctx context.Context, userID int64, lines []ManualL
 
 type ledgerPort struct{ l *ledger.Module }
 
-func (p ledgerPort) AccountFacts(ctx context.Context, userID int64) ([]app.Account, error) {
-	facts, err := p.l.AccountFacts(ctx, userID)
+func (p ledgerPort) AccountFacts(ctx context.Context, booksID int64) ([]app.Account, error) {
+	facts, err := p.l.AccountFacts(ctx, booksID)
 
 	out := make([]app.Account, len(facts))
 	for i, a := range facts {
@@ -228,8 +228,8 @@ func (p ledgerPort) AccountFacts(ctx context.Context, userID int64) ([]app.Accou
 	return out, err
 }
 
-func (p ledgerPort) TransactionFacts(ctx context.Context, userID int64, ids []uuid.UUID) ([]app.TransactionFacts, error) {
-	facts, err := p.l.TransactionFacts(ctx, userID, ids)
+func (p ledgerPort) TransactionFacts(ctx context.Context, booksID int64, ids []uuid.UUID) ([]app.TransactionFacts, error) {
+	facts, err := p.l.TransactionFacts(ctx, booksID, ids)
 
 	out := make([]app.TransactionFacts, len(facts))
 	for i, f := range facts {
@@ -246,8 +246,8 @@ func (p ledgerPort) TransactionFacts(ctx context.Context, userID int64, ids []uu
 	return out, err
 }
 
-func (p ledgerPort) LatestPayeeCategories(ctx context.Context, userID int64, payees []uuid.UUID) (map[domain.HistoryKey]uuid.UUID, error) {
-	latest, err := p.l.LatestPayeeCategories(ctx, userID, payees)
+func (p ledgerPort) LatestPayeeCategories(ctx context.Context, booksID int64, payees []uuid.UUID) (map[domain.HistoryKey]uuid.UUID, error) {
+	latest, err := p.l.LatestPayeeCategories(ctx, booksID, payees)
 
 	out := make(map[domain.HistoryKey]uuid.UUID, len(latest))
 	for k, v := range latest {
@@ -257,7 +257,7 @@ func (p ledgerPort) LatestPayeeCategories(ctx context.Context, userID int64, pay
 	return out, err
 }
 
-func (p ledgerPort) Categorize(ctx context.Context, userID int64, cs []app.Categorization) ([]error, error) {
+func (p ledgerPort) Categorize(ctx context.Context, booksID int64, cs []app.Categorization) ([]error, error) {
 	items := make([]ledger.Categorization, len(cs))
 	for i, c := range cs {
 		items[i] = ledger.Categorization{
@@ -272,11 +272,11 @@ func (p ledgerPort) Categorize(ctx context.Context, userID int64, cs []app.Categ
 		}
 	}
 
-	return p.l.Categorize(ctx, userID, items)
+	return p.l.Categorize(ctx, booksID, items)
 }
 
-func (p ledgerPort) Transfer(ctx context.Context, userID int64, t app.TransferRequest) (bool, error) {
-	_, err := p.l.Transfer(ctx, userID, ledger.TransferRequest{
+func (p ledgerPort) Transfer(ctx context.Context, booksID int64, t app.TransferRequest) (bool, error) {
+	_, err := p.l.Transfer(ctx, booksID, ledger.TransferRequest{
 		TransactionID: t.TransactionID, ExpectedVersion: t.ExpectedVersion, AccountID: t.AccountID,
 		Cause: ledger.Cause{Method: app.MethodRule, RuleID: t.RuleID},
 	})
@@ -294,6 +294,6 @@ func (p ledgerPort) Transfer(ctx context.Context, userID int64, t app.TransferRe
 
 func (p ledgerPort) Today() time.Time { return p.l.Today() }
 
-func (p ledgerPort) MissingPayees(ctx context.Context, userID int64, ids []uuid.UUID) ([]uuid.UUID, error) {
-	return p.l.MissingPayees(ctx, userID, ids)
+func (p ledgerPort) MissingPayees(ctx context.Context, booksID int64, ids []uuid.UUID) ([]uuid.UUID, error) {
+	return p.l.MissingPayees(ctx, booksID, ids)
 }

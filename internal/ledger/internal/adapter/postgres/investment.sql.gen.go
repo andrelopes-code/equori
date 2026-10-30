@@ -20,14 +20,14 @@ SELECT
 FROM
     ledger_posting
 WHERE
-    user_id = $1
+    books_id = $1
     AND account_id = $2
     AND NOT voided
     AND booked_on <= $3
 `
 
 type HoldingParams struct {
-	UserID    int64
+	BooksID   int64
 	AccountID uuid.UUID
 	OnDate    time.Time
 }
@@ -39,7 +39,7 @@ type HoldingRow struct {
 
 // The quantity and cost basis of a security account at the end of a date (P8 amendment A68).
 func (q *Queries) Holding(ctx context.Context, arg HoldingParams) (HoldingRow, error) {
-	row := q.db.QueryRow(ctx, holding, arg.UserID, arg.AccountID, arg.OnDate)
+	row := q.db.QueryRow(ctx, holding, arg.BooksID, arg.AccountID, arg.OnDate)
 	var i HoldingRow
 	err := row.Scan(&i.Quantity, &i.CostBasis)
 	return i, err
@@ -49,7 +49,7 @@ const insertInvestmentIncome = `-- name: InsertInvestmentIncome :exec
 INSERT INTO
     ledger_investment_income (
         transaction_id,
-        user_id,
+        books_id,
         account_id,
         cash_account_id,
         income_type,
@@ -72,7 +72,7 @@ VALUES
 
 type InsertInvestmentIncomeParams struct {
 	TransactionID uuid.UUID
-	UserID        int64
+	BooksID       int64
 	AccountID     uuid.UUID
 	CashAccountID uuid.UUID
 	IncomeType    string
@@ -84,7 +84,7 @@ type InsertInvestmentIncomeParams struct {
 func (q *Queries) InsertInvestmentIncome(ctx context.Context, arg InsertInvestmentIncomeParams) error {
 	_, err := q.db.Exec(ctx, insertInvestmentIncome,
 		arg.TransactionID,
-		arg.UserID,
+		arg.BooksID,
 		arg.AccountID,
 		arg.CashAccountID,
 		arg.IncomeType,
@@ -99,7 +99,7 @@ const insertTrade = `-- name: InsertTrade :exec
 INSERT INTO
     ledger_trade (
         transaction_id,
-        user_id,
+        books_id,
         account_id,
         cash_account_id,
         side,
@@ -130,7 +130,7 @@ VALUES
 
 type InsertTradeParams struct {
 	TransactionID uuid.UUID
-	UserID        int64
+	BooksID       int64
 	AccountID     uuid.UUID
 	CashAccountID uuid.UUID
 	Side          string
@@ -146,7 +146,7 @@ type InsertTradeParams struct {
 func (q *Queries) InsertTrade(ctx context.Context, arg InsertTradeParams) error {
 	_, err := q.db.Exec(ctx, insertTrade,
 		arg.TransactionID,
-		arg.UserID,
+		arg.BooksID,
 		arg.AccountID,
 		arg.CashAccountID,
 		arg.Side,
@@ -168,10 +168,10 @@ SELECT
             1
         FROM
             ledger_trade tr
-            JOIN ledger_transaction t ON t.user_id = tr.user_id
+            JOIN ledger_transaction t ON t.books_id = tr.books_id
             AND t.id = tr.transaction_id
         WHERE
-            tr.user_id = $1
+            tr.books_id = $1
             AND tr.account_id = ANY ($2::UUID[])
             AND tr.side = 'sell'
             AND t.voided_at IS NULL
@@ -181,7 +181,7 @@ SELECT
 `
 
 type LaterSaleExistsParams struct {
-	UserID     int64
+	BooksID    int64
 	AccountIds []uuid.UUID
 	OnDate     time.Time
 	Exclude    uuid.UUID
@@ -190,7 +190,7 @@ type LaterSaleExistsParams struct {
 // P8 amendment A69: a non-voided sale of one of the accounts dated on or after on_date.
 func (q *Queries) LaterSaleExists(ctx context.Context, arg LaterSaleExistsParams) (bool, error) {
 	row := q.db.QueryRow(ctx, laterSaleExists,
-		arg.UserID,
+		arg.BooksID,
 		arg.AccountIds,
 		arg.OnDate,
 		arg.Exclude,
@@ -202,21 +202,21 @@ func (q *Queries) LaterSaleExists(ctx context.Context, arg LaterSaleExistsParams
 
 const listInvestmentIncome = `-- name: ListInvestmentIncome :many
 SELECT
-    transaction_id, user_id, account_id, cash_account_id, income_type, gross, withheld, currency
+    transaction_id, books_id, account_id, cash_account_id, income_type, gross, withheld, currency
 FROM
     ledger_investment_income
 WHERE
-    user_id = $1
+    books_id = $1
     AND transaction_id = ANY ($2::UUID[])
 `
 
 type ListInvestmentIncomeParams struct {
-	UserID         int64
+	BooksID        int64
 	TransactionIds []uuid.UUID
 }
 
 func (q *Queries) ListInvestmentIncome(ctx context.Context, arg ListInvestmentIncomeParams) ([]LedgerInvestmentIncome, error) {
-	rows, err := q.db.Query(ctx, listInvestmentIncome, arg.UserID, arg.TransactionIds)
+	rows, err := q.db.Query(ctx, listInvestmentIncome, arg.BooksID, arg.TransactionIds)
 	if err != nil {
 		return nil, err
 	}
@@ -226,7 +226,7 @@ func (q *Queries) ListInvestmentIncome(ctx context.Context, arg ListInvestmentIn
 		var i LedgerInvestmentIncome
 		if err := rows.Scan(
 			&i.TransactionID,
-			&i.UserID,
+			&i.BooksID,
 			&i.AccountID,
 			&i.CashAccountID,
 			&i.IncomeType,
@@ -246,21 +246,21 @@ func (q *Queries) ListInvestmentIncome(ctx context.Context, arg ListInvestmentIn
 
 const listTrades = `-- name: ListTrades :many
 SELECT
-    transaction_id, user_id, account_id, cash_account_id, side, quantity, unit_price, gross, fees, taxes, cost, currency
+    transaction_id, books_id, account_id, cash_account_id, side, quantity, unit_price, gross, fees, taxes, cost, currency
 FROM
     ledger_trade
 WHERE
-    user_id = $1
+    books_id = $1
     AND transaction_id = ANY ($2::UUID[])
 `
 
 type ListTradesParams struct {
-	UserID         int64
+	BooksID        int64
 	TransactionIds []uuid.UUID
 }
 
 func (q *Queries) ListTrades(ctx context.Context, arg ListTradesParams) ([]LedgerTrade, error) {
-	rows, err := q.db.Query(ctx, listTrades, arg.UserID, arg.TransactionIds)
+	rows, err := q.db.Query(ctx, listTrades, arg.BooksID, arg.TransactionIds)
 	if err != nil {
 		return nil, err
 	}
@@ -270,7 +270,7 @@ func (q *Queries) ListTrades(ctx context.Context, arg ListTradesParams) ([]Ledge
 		var i LedgerTrade
 		if err := rows.Scan(
 			&i.TransactionID,
-			&i.UserID,
+			&i.BooksID,
 			&i.AccountID,
 			&i.CashAccountID,
 			&i.Side,
@@ -302,10 +302,10 @@ SELECT
     i.withheld
 FROM
     ledger_investment_income i
-    JOIN ledger_transaction t ON t.user_id = i.user_id
+    JOIN ledger_transaction t ON t.books_id = i.books_id
     AND t.id = i.transaction_id
 WHERE
-    i.user_id = $1
+    i.books_id = $1
     AND i.account_id = ANY ($2::UUID[])
     AND t.voided_at IS NULL
 ORDER BY
@@ -314,7 +314,7 @@ ORDER BY
 `
 
 type SecurityIncomesParams struct {
-	UserID     int64
+	BooksID    int64
 	AccountIds []uuid.UUID
 }
 
@@ -328,7 +328,7 @@ type SecurityIncomesRow struct {
 }
 
 func (q *Queries) SecurityIncomes(ctx context.Context, arg SecurityIncomesParams) ([]SecurityIncomesRow, error) {
-	rows, err := q.db.Query(ctx, securityIncomes, arg.UserID, arg.AccountIds)
+	rows, err := q.db.Query(ctx, securityIncomes, arg.BooksID, arg.AccountIds)
 	if err != nil {
 		return nil, err
 	}
@@ -364,7 +364,7 @@ SELECT
 FROM
     ledger_posting p
 WHERE
-    p.user_id = $1
+    p.books_id = $1
     AND p.account_id = ANY ($2::UUID[])
     AND NOT p.voided
 ORDER BY
@@ -374,7 +374,7 @@ ORDER BY
 `
 
 type SecurityPostingsParams struct {
-	UserID     int64
+	BooksID    int64
 	AccountIds []uuid.UUID
 }
 
@@ -387,7 +387,7 @@ type SecurityPostingsRow struct {
 }
 
 func (q *Queries) SecurityPostings(ctx context.Context, arg SecurityPostingsParams) ([]SecurityPostingsRow, error) {
-	rows, err := q.db.Query(ctx, securityPostings, arg.UserID, arg.AccountIds)
+	rows, err := q.db.Query(ctx, securityPostings, arg.BooksID, arg.AccountIds)
 	if err != nil {
 		return nil, err
 	}
@@ -425,10 +425,10 @@ SELECT
     tr.cost
 FROM
     ledger_trade tr
-    JOIN ledger_transaction t ON t.user_id = tr.user_id
+    JOIN ledger_transaction t ON t.books_id = tr.books_id
     AND t.id = tr.transaction_id
 WHERE
-    tr.user_id = $1
+    tr.books_id = $1
     AND tr.account_id = ANY ($2::UUID[])
     AND t.voided_at IS NULL
 ORDER BY
@@ -437,7 +437,7 @@ ORDER BY
 `
 
 type SecurityTradesParams struct {
-	UserID     int64
+	BooksID    int64
 	AccountIds []uuid.UUID
 }
 
@@ -454,7 +454,7 @@ type SecurityTradesRow struct {
 }
 
 func (q *Queries) SecurityTrades(ctx context.Context, arg SecurityTradesParams) ([]SecurityTradesRow, error) {
-	rows, err := q.db.Query(ctx, securityTrades, arg.UserID, arg.AccountIds)
+	rows, err := q.db.Query(ctx, securityTrades, arg.BooksID, arg.AccountIds)
 	if err != nil {
 		return nil, err
 	}

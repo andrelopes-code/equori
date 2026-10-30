@@ -51,15 +51,10 @@ func MustBooksID(ctx context.Context) int64 {
 	return id
 }
 
-// shortcut: books ID under the former names until P10 plan 2 renames every caller (BK14).
-// WithUserID keeps the member already in ctx.
-func WithUserID(ctx context.Context, booksID int64) context.Context {
+// WithBooksID returns ctx with booksID as the active book and the member already in ctx, if any.
+func WithBooksID(ctx context.Context, booksID int64) context.Context {
 	id, _ := ctx.Value(identityKey{}).(identity)
 	id.booksID = booksID
 
 	return context.WithValue(ctx, identityKey{}, id)
 }
-
-func UserID(ctx context.Context) (int64, bool) { return BooksID(ctx) }
-
-func MustUserID(ctx context.Context) int64 { return MustBooksID(ctx) }

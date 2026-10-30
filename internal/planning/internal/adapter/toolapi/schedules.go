@@ -136,8 +136,8 @@ func toScheduleView(s domain.Schedule, accounts map[uuid.UUID]Account, today tim
 }
 
 // nextExpected returns the date of the first expected occurrence of each schedule from today on.
-func nextExpected(ctx context.Context, svc *app.Service, userID int64, today time.Time) (map[uuid.UUID]time.Time, error) {
-	os, err := svc.Occurrences(ctx, userID, today, today.AddDate(0, 0, 365), uuid.Nil, domain.Expected)
+func nextExpected(ctx context.Context, svc *app.Service, booksID int64, today time.Time) (map[uuid.UUID]time.Time, error) {
+	os, err := svc.Occurrences(ctx, booksID, today, today.AddDate(0, 0, 365), uuid.Nil, domain.Expected)
 	if err != nil {
 		return nil, err
 	}
@@ -159,7 +159,7 @@ func listSchedules(svc *app.Service, l Ledger, clk clock.Clock) tool.Tool {
 			"Use it for upcoming bills, subscriptions and what is due. " +
 			"Do not use it for budgets or goals: get_budgets_and_goals does.",
 		Effect: tool.ReadOnly, Idempotent: true,
-	}, func(ctx context.Context, userID int64, in listSchedulesIn) (listSchedulesOut, error) {
+	}, func(ctx context.Context, booksID int64, in listSchedulesIn) (listSchedulesOut, error) {
 		scheduleID, err := optionalID(in.ScheduleID, "schedule_id")
 		if err != nil {
 			return listSchedulesOut{}, err
@@ -190,24 +190,24 @@ func listSchedules(svc *app.Service, l Ledger, clk clock.Clock) tool.Tool {
 			return listSchedulesOut{}, err
 		}
 
-		accounts, err := l.Accounts(ctx, userID)
+		accounts, err := l.Accounts(ctx, booksID)
 		if err != nil {
 			return listSchedulesOut{}, err
 		}
 
 		var schedules []domain.Schedule
 		if scheduleID != uuid.Nil {
-			s, err := svc.Schedule(ctx, userID, scheduleID)
+			s, err := svc.Schedule(ctx, booksID, scheduleID)
 			if err != nil {
 				return listSchedulesOut{}, err
 			}
 
 			schedules = []domain.Schedule{s}
-		} else if schedules, err = allSchedules(ctx, svc, userID); err != nil {
+		} else if schedules, err = allSchedules(ctx, svc, booksID); err != nil {
 			return listSchedulesOut{}, err
 		}
 
-		next, err := nextExpected(ctx, svc, userID, today)
+		next, err := nextExpected(ctx, svc, booksID, today)
 		if err != nil {
 			return listSchedulesOut{}, err
 		}
@@ -229,7 +229,7 @@ func listSchedules(svc *app.Service, l Ledger, clk clock.Clock) tool.Tool {
 			}
 		}
 
-		os, err := svc.Occurrences(ctx, userID, from, to, scheduleID, domain.State(in.State))
+		os, err := svc.Occurrences(ctx, booksID, from, to, scheduleID, domain.State(in.State))
 		if err != nil {
 			return listSchedulesOut{}, err
 		}
@@ -258,7 +258,7 @@ func listSchedules(svc *app.Service, l Ledger, clk clock.Clock) tool.Tool {
 		}
 
 		if in.Month != "" {
-			c, err := svc.Committed(ctx, userID, month)
+			c, err := svc.Committed(ctx, booksID, month)
 			if err != nil {
 				return listSchedulesOut{}, err
 			}

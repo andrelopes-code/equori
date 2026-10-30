@@ -76,7 +76,7 @@ func (s *Server) GetBudgetPlan(ctx context.Context, req GetBudgetPlanRequestObje
 		return nil, err
 	}
 
-	p, err := s.svc.BudgetPlan(ctx, auth.MustUserID(ctx), month)
+	p, err := s.svc.BudgetPlan(ctx, auth.MustBooksID(ctx), month)
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +110,7 @@ func (s *Server) SaveBudgetPlan(ctx context.Context, req SaveBudgetPlanRequestOb
 		amounts[i] = app.PlanAmount{CategoryID: a.CategoryId, Amount: m}
 	}
 
-	p, err := s.svc.SaveBudgetPlan(ctx, auth.MustUserID(ctx), month, domain.ReferenceSource(req.Body.Source), fixed, amounts)
+	p, err := s.svc.SaveBudgetPlan(ctx, auth.MustBooksID(ctx), month, domain.ReferenceSource(req.Body.Source), fixed, amounts)
 	if err != nil {
 		return nil, err
 	}

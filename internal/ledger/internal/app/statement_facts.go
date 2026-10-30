@@ -22,29 +22,29 @@ type StatementFacts struct {
 
 // RecordStatementFacts records an aggregator's bill on the card statement due on the bill's
 // due date, creating it when absent, and dates the statement by its facts (A85, A86).
-func (s *Service) RecordStatementFacts(ctx context.Context, userID int64, cardID uuid.UUID, f StatementFacts) error {
+func (s *Service) RecordStatementFacts(ctx context.Context, booksID int64, cardID uuid.UUID, f StatementFacts) error {
 	return s.repo.InTx(ctx, func(r Repository) error {
-		card, err := s.card(ctx, userID, cardID)
+		card, err := s.card(ctx, booksID, cardID)
 		if err != nil {
 			return err
 		}
 
-		ref, err := s.statementDue(ctx, r, userID, cardID, f.Due)
+		ref, err := s.statementDue(ctx, r, booksID, cardID, f.Due)
 		if err != nil {
 			return err
 		}
 
-		rules, err := r.BillingRules(ctx, userID, cardID)
+		rules, err := r.BillingRules(ctx, booksID, cardID)
 		if err != nil {
 			return err
 		}
 
-		id, err := s.ensureStatement(ctx, r, userID, cardID, ref, rules)
+		id, err := s.ensureStatement(ctx, r, booksID, cardID, ref, rules)
 		if err != nil {
 			return err
 		}
 
-		fact, err := statementFact(userID, id, domain.FactAggregator, card, f)
+		fact, err := statementFact(booksID, id, domain.FactAggregator, card, f)
 		if err != nil {
 			return err
 		}
@@ -53,19 +53,19 @@ func (s *Service) RecordStatementFacts(ctx context.Context, userID int64, cardID
 			return err
 		}
 
-		return s.dateByFacts(ctx, r, userID, cardID, rules)
+		return s.dateByFacts(ctx, r, booksID, cardID, rules)
 	})
 }
 
 // SetOwnerFacts records the owner's facts for a statement, which win over an aggregator's.
-func (s *Service) SetOwnerFacts(ctx context.Context, userID int64, statementID uuid.UUID, f StatementFacts) error {
+func (s *Service) SetOwnerFacts(ctx context.Context, booksID int64, statementID uuid.UUID, f StatementFacts) error {
 	return s.repo.InTx(ctx, func(r Repository) error {
-		v, card, err := s.statementView(ctx, r, userID, statementID)
+		v, card, err := s.statementView(ctx, r, booksID, statementID)
 		if err != nil {
 			return err
 		}
 
-		fact, err := statementFact(userID, statementID, domain.FactOwner, card, f)
+		fact, err := statementFact(booksID, statementID, domain.FactOwner, card, f)
 		if err != nil {
 			return err
 		}
@@ -74,38 +74,38 @@ func (s *Service) SetOwnerFacts(ctx context.Context, userID int64, statementID u
 			return err
 		}
 
-		rules, err := r.BillingRules(ctx, userID, v.AccountID)
+		rules, err := r.BillingRules(ctx, booksID, v.AccountID)
 		if err != nil {
 			return err
 		}
 
-		return s.dateByFacts(ctx, r, userID, v.AccountID, rules)
+		return s.dateByFacts(ctx, r, booksID, v.AccountID, rules)
 	})
 }
 
 // RemoveOwnerFacts removes the owner's facts; the statement takes the aggregator's facts or
 // the rule's dates again.
-func (s *Service) RemoveOwnerFacts(ctx context.Context, userID int64, statementID uuid.UUID) error {
+func (s *Service) RemoveOwnerFacts(ctx context.Context, booksID int64, statementID uuid.UUID) error {
 	return s.repo.InTx(ctx, func(r Repository) error {
-		v, _, err := s.statementView(ctx, r, userID, statementID)
+		v, _, err := s.statementView(ctx, r, booksID, statementID)
 		if err != nil {
 			return err
 		}
 
-		if err := r.DeleteStatementFact(ctx, userID, statementID, domain.FactOwner); err != nil {
+		if err := r.DeleteStatementFact(ctx, booksID, statementID, domain.FactOwner); err != nil {
 			return err
 		}
 
-		rules, err := r.BillingRules(ctx, userID, v.AccountID)
+		rules, err := r.BillingRules(ctx, booksID, v.AccountID)
 		if err != nil {
 			return err
 		}
 
-		return s.dateByFacts(ctx, r, userID, v.AccountID, rules)
+		return s.dateByFacts(ctx, r, booksID, v.AccountID, rules)
 	})
 }
 
-func statementFact(userID int64, statementID uuid.UUID, source string, card domain.Account, f StatementFacts) (domain.StatementFact, error) {
+func statementFact(booksID int64, statementID uuid.UUID, source string, card domain.Account, f StatementFacts) (domain.StatementFact, error) {
 	if f.Total.Currency() != card.Instrument || (f.Minimum != nil && f.Minimum.Currency() != card.Instrument) {
 		return domain.StatementFact{}, validationError("total", "must be in the card currency")
 	}
@@ -114,7 +114,7 @@ func statementFact(userID int64, statementID uuid.UUID, source string, card doma
 		return domain.StatementFact{}, validationError("closing_date", "must be before the due date")
 	}
 
-	fact := domain.StatementFact{UserID: userID, StatementID: statementID, Source: source, Closing: f.Closing, Due: f.Due, Total: f.Total.Amount()}
+	fact := domain.StatementFact{BooksID: booksID, StatementID: statementID, Source: source, Closing: f.Closing, Due: f.Due, Total: f.Total.Amount()}
 	if f.Minimum != nil {
 		m := f.Minimum.Amount()
 		fact.Minimum = &m
@@ -125,8 +125,8 @@ func statementFact(userID int64, statementID uuid.UUID, source string, card doma
 
 // dateByFacts gives every statement of the card the dates of its effective facts, or the
 // rule's, and bills again the postings billed by a date that the new dates move (A86).
-func (s *Service) dateByFacts(ctx context.Context, r Repository, userID int64, cardID uuid.UUID, rules domain.Rules) error {
-	stored, err := r.Statements(ctx, userID, cardID)
+func (s *Service) dateByFacts(ctx context.Context, r Repository, booksID int64, cardID uuid.UUID, rules domain.Rules) error {
+	stored, err := r.Statements(ctx, booksID, cardID)
 	if err != nil {
 		return err
 	}
@@ -154,7 +154,7 @@ func (s *Service) dateByFacts(ctx context.Context, r Repository, userID int64, c
 		}
 	}
 
-	postings, err := r.RedatablePostings(ctx, userID, cardID)
+	postings, err := r.RedatablePostings(ctx, booksID, cardID)
 	if err != nil {
 		return err
 	}
@@ -170,12 +170,12 @@ func (s *Service) dateByFacts(ctx context.Context, r Repository, userID int64, c
 			continue
 		}
 
-		id, err := s.ensureStatement(ctx, r, userID, cardID, now, rules)
+		id, err := s.ensureStatement(ctx, r, booksID, cardID, now, rules)
 		if err != nil {
 			return err
 		}
 
-		if err := r.MovePostingStatement(ctx, userID, p.ID, id); err != nil {
+		if err := r.MovePostingStatement(ctx, booksID, p.ID, id); err != nil {
 			return err
 		}
 	}
@@ -217,13 +217,13 @@ func (s *Service) effectiveDates(ctx context.Context, st Statement, rules domain
 // equals the reported total (A92, A7). It moves no posting: a feed can still report as pending
 // a line the institution billed, so a statement changes only by the line's bill or by the
 // owner (A141).
-func (s *Service) SettleReportedStatements(ctx context.Context, userID int64, cardID uuid.UUID) error {
-	card, err := s.card(ctx, userID, cardID)
+func (s *Service) SettleReportedStatements(ctx context.Context, booksID int64, cardID uuid.UUID) error {
+	card, err := s.card(ctx, booksID, cardID)
 	if err != nil {
 		return err
 	}
 
-	views, err := s.statementSummaries(ctx, s.repo, userID, cardID)
+	views, err := s.statementSummaries(ctx, s.repo, booksID, cardID)
 	if err != nil {
 		return err
 	}
@@ -238,7 +238,7 @@ func (s *Service) SettleReportedStatements(ctx context.Context, userID int64, ca
 			return err
 		}
 
-		if err := s.ReconcileStatement(ctx, userID, v.ID, total); err != nil && !errors.Is(err, ErrDifferenceRemains) {
+		if err := s.ReconcileStatement(ctx, booksID, v.ID, total); err != nil && !errors.Is(err, ErrDifferenceRemains) {
 			return err
 		}
 	}
@@ -248,9 +248,9 @@ func (s *Service) SettleReportedStatements(ctx context.Context, userID int64, ca
 
 // SettleChangedCards settles the reported statements of the credit cards among accountIDs
 // (A139); other accounts are skipped.
-func (s *Service) SettleChangedCards(ctx context.Context, userID int64, accountIDs []uuid.UUID) error {
+func (s *Service) SettleChangedCards(ctx context.Context, booksID int64, accountIDs []uuid.UUID) error {
 	for _, id := range accountIDs {
-		a, err := s.repo.Account(ctx, userID, id)
+		a, err := s.repo.Account(ctx, booksID, id)
 		if errors.Is(err, ErrNotFound) {
 			continue
 		}
@@ -263,7 +263,7 @@ func (s *Service) SettleChangedCards(ctx context.Context, userID int64, accountI
 			continue
 		}
 
-		if err := s.SettleReportedStatements(ctx, userID, id); err != nil {
+		if err := s.SettleReportedStatements(ctx, booksID, id); err != nil {
 			return err
 		}
 	}
@@ -273,41 +273,41 @@ func (s *Service) SettleChangedCards(ctx context.Context, userID int64, accountI
 
 // RecordCardOpening opens a card that has no opening balance with the total of the bill due
 // on due, billed on that bill's statement and dated on its closing date (A93).
-func (s *Service) RecordCardOpening(ctx context.Context, userID int64, cardID uuid.UUID, due time.Time, total money.Money) error {
+func (s *Service) RecordCardOpening(ctx context.Context, booksID int64, cardID uuid.UUID, due time.Time, total money.Money) error {
 	if total.IsZero() {
 		return nil
 	}
 
 	return s.repo.InTx(ctx, func(r Repository) error {
-		card, err := s.card(ctx, userID, cardID)
+		card, err := s.card(ctx, booksID, cardID)
 		if err != nil {
 			return err
 		}
 
-		if has, err := r.HasOpeningBalance(ctx, userID, cardID); err != nil || has {
+		if has, err := r.HasOpeningBalance(ctx, booksID, cardID); err != nil || has {
 			return err
 		}
 
-		ref, err := s.statementDue(ctx, r, userID, cardID, due)
+		ref, err := s.statementDue(ctx, r, booksID, cardID, due)
 		if err != nil {
 			return err
 		}
 
-		rules, err := r.BillingRules(ctx, userID, cardID)
+		rules, err := r.BillingRules(ctx, booksID, cardID)
 		if err != nil {
 			return err
 		}
 
-		if _, err := s.ensureStatement(ctx, r, userID, cardID, ref, rules); err != nil {
+		if _, err := s.ensureStatement(ctx, r, booksID, cardID, ref, rules); err != nil {
 			return err
 		}
 
-		closing, err := r.StatementClosings(ctx, userID, cardID)
+		closing, err := r.StatementClosings(ctx, booksID, cardID)
 		if err != nil {
 			return err
 		}
 
-		opening, err := r.SystemAccount(ctx, userID, domain.RoleOpeningBalances)
+		opening, err := r.SystemAccount(ctx, booksID, domain.RoleOpeningBalances)
 		if err != nil {
 			return err
 		}
@@ -317,13 +317,13 @@ func (s *Service) RecordCardOpening(ctx context.Context, userID int64, cardID uu
 			date = card.OpenedOn
 		}
 
-		w, err := s.writerFor(ctx, userID)
+		w, err := s.writerFor(ctx, booksID)
 		if err != nil {
 			return err
 		}
 
 		_, err = s.insert(ctx, r, domain.Transaction{
-			UserID: userID, Date: date, Description: fmt.Sprintf(w.CardOpeningBalance, card.Name), Origin: domain.OriginSystem,
+			BooksID: booksID, Date: date, Description: fmt.Sprintf(w.CardOpeningBalance, card.Name), Origin: domain.OriginSystem,
 			Postings: []domain.Posting{
 				{AccountID: cardID, Amount: total.Neg(), Statement: &ref},
 				{AccountID: opening.ID, Amount: total},

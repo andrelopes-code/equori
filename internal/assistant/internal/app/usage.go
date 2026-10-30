@@ -17,10 +17,10 @@ const UsageDays = 30
 // UsageRepository holds the day counters and the declared limits (ADR 019 U2, U4).
 type UsageRepository interface {
 	AddUsage(ctx context.Context, e domain.UsageEntry) error
-	UsageSince(ctx context.Context, userID int64, today, since time.Time) ([]domain.UsageSummary, error)
-	UsageByDay(ctx context.Context, userID int64, from, to time.Time) ([]domain.UsageDay, error)
-	Limits(ctx context.Context, userID int64) ([]domain.Limit, error)
-	SetLimit(ctx context.Context, userID int64, l domain.Limit) error
+	UsageSince(ctx context.Context, booksID int64, today, since time.Time) ([]domain.UsageSummary, error)
+	UsageByDay(ctx context.Context, booksID int64, from, to time.Time) ([]domain.UsageDay, error)
+	Limits(ctx context.Context, booksID int64) ([]domain.Limit, error)
+	SetLimit(ctx context.Context, booksID int64, l domain.Limit) error
 }
 
 // Attempt mirrors llm.Attempt (ADR 009 M1).
@@ -31,7 +31,7 @@ type Attempt struct {
 }
 
 // Record adds one attempt to the user's counters of the day.
-func (s *Service) Record(ctx context.Context, userID int64, a Attempt) error {
+func (s *Service) Record(ctx context.Context, booksID int64, a Attempt) error {
 	// Only a quota cooldown blocks the chat state; a transient one lives in the router (design 2026-10-26 E7).
 	var cooling time.Time
 	if a.Outcome == "quota" {
@@ -39,7 +39,7 @@ func (s *Service) Record(ctx context.Context, userID int64, a Attempt) error {
 	}
 
 	return s.repo.AddUsage(ctx, domain.UsageEntry{
-		UserID: userID, Day: s.today(), ProviderID: a.ProviderID, Model: a.Model, UseID: a.UseID,
+		BooksID: booksID, Day: s.today(), ProviderID: a.ProviderID, Model: a.Model, UseID: a.UseID,
 		Failed: a.Outcome != "ok", Quota: a.Outcome == "quota",
 		InputTokens: a.InputTokens, OutputTokens: a.OutputTokens, CoolingUntil: cooling,
 	})
@@ -52,12 +52,12 @@ var ErrInvalidUsageRange = errors.New("from must not be after to, and the range 
 
 // UsageByDay returns the user's usage per day, provider and model from from to to, both
 // inclusive; a day without use has no row.
-func (s *Service) UsageByDay(ctx context.Context, userID int64, from, to time.Time) ([]domain.UsageDay, error) {
+func (s *Service) UsageByDay(ctx context.Context, booksID int64, from, to time.Time) ([]domain.UsageDay, error) {
 	if to.Before(from) || to.Sub(from) > (MaxUsageRangeDays-1)*24*time.Hour {
 		return nil, ErrInvalidUsageRange
 	}
 
-	return s.repo.UsageByDay(ctx, userID, from, to)
+	return s.repo.UsageByDay(ctx, booksID, from, to)
 }
 
 // UsageRow is one provider and model with its usage, its declared limit and its cooldown.
@@ -69,20 +69,20 @@ type UsageRow struct {
 
 // Usage returns every provider and model with usage in the period or a declared limit, in
 // the order of the user's providers. A cooldown already over is left out.
-func (s *Service) Usage(ctx context.Context, userID int64) ([]UsageRow, error) {
-	providers, err := s.Providers(ctx, userID)
+func (s *Service) Usage(ctx context.Context, booksID int64) ([]UsageRow, error) {
+	providers, err := s.Providers(ctx, booksID)
 	if err != nil {
 		return nil, err
 	}
 
 	today := s.today()
 
-	summaries, err := s.repo.UsageSince(ctx, userID, today, today.AddDate(0, 0, 1-UsageDays))
+	summaries, err := s.repo.UsageSince(ctx, booksID, today, today.AddDate(0, 0, 1-UsageDays))
 	if err != nil {
 		return nil, err
 	}
 
-	limits, err := s.repo.Limits(ctx, userID)
+	limits, err := s.repo.Limits(ctx, booksID)
 	if err != nil {
 		return nil, err
 	}
@@ -156,7 +156,7 @@ func (s *Service) Usage(ctx context.Context, userID int64) ([]UsageRow, error) {
 
 // SetLimit declares the daily limits of one of the user's providers, or an instance
 // provider, for a model; nil for both removes them.
-func (s *Service) SetLimit(ctx context.Context, userID int64, providerID, model string, requests, tokens *int64) error {
+func (s *Service) SetLimit(ctx context.Context, booksID int64, providerID, model string, requests, tokens *int64) error {
 	l, err := domain.NewLimit(providerID, model, requests, tokens)
 	if err != nil {
 		return err
@@ -168,10 +168,10 @@ func (s *Service) SetLimit(ctx context.Context, userID int64, providerID, model 
 			return domain.ErrProviderNotFound
 		}
 
-		if _, err := s.repo.Provider(ctx, userID, id); err != nil {
+		if _, err := s.repo.Provider(ctx, booksID, id); err != nil {
 			return err
 		}
 	}
 
-	return s.repo.SetLimit(ctx, userID, l)
+	return s.repo.SetLimit(ctx, booksID, l)
 }

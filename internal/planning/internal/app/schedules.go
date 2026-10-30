@@ -49,13 +49,13 @@ type ScheduleInput struct {
 	ToleranceBP, GraceDays *int
 }
 
-func (s *Service) CreateSchedule(ctx context.Context, userID int64, in ScheduleInput) (domain.Schedule, error) {
+func (s *Service) CreateSchedule(ctx context.Context, booksID int64, in ScheduleInput) (domain.Schedule, error) {
 	if in.Rule.Adjustment == "" {
 		in.Rule.Adjustment = "none"
 	}
 
 	if in.Calendar == "" {
-		p, err := s.profiles.Profile(ctx, userID)
+		p, err := s.profiles.Profile(ctx, booksID)
 		if err != nil {
 			return domain.Schedule{}, fmt.Errorf("read profile: %w", err)
 		}
@@ -87,7 +87,7 @@ func (s *Service) CreateSchedule(ctx context.Context, userID int64, in ScheduleI
 		return domain.Schedule{}, err
 	}
 
-	if err := s.checkAccounts(ctx, userID, sch); err != nil {
+	if err := s.checkAccounts(ctx, booksID, sch); err != nil {
 		return domain.Schedule{}, err
 	}
 
@@ -100,24 +100,24 @@ func (s *Service) CreateSchedule(ctx context.Context, userID int64, in ScheduleI
 
 	err := s.repo.InTx(ctx, func(repo Repository) error {
 		var err error
-		if created, err = repo.InsertSchedule(ctx, userID, sch); err != nil {
+		if created, err = repo.InsertSchedule(ctx, booksID, sch); err != nil {
 			return err
 		}
 
-		return s.generate(ctx, repo, userID, created)
+		return s.generate(ctx, repo, booksID, created)
 	})
 	if err != nil {
 		return domain.Schedule{}, err
 	}
 
-	return s.repo.Schedule(ctx, userID, created.ID)
+	return s.repo.Schedule(ctx, booksID, created.ID)
 }
 
 // checkAccounts applies the counterpart rule of P7 amendment A46 and the currency rule of
 // P8 amendment A72: the amount is in the currency of account_id, and a transfer or savings
 // counterpart holds that currency too.
-func (s *Service) checkAccounts(ctx context.Context, userID int64, sch domain.Schedule) error {
-	facts, err := s.ledger.AccountFacts(ctx, userID)
+func (s *Service) checkAccounts(ctx context.Context, booksID int64, sch domain.Schedule) error {
+	facts, err := s.ledger.AccountFacts(ctx, booksID)
 	if err != nil {
 		return err
 	}
@@ -163,7 +163,7 @@ func (s *Service) checkAccounts(ctx context.Context, userID int64, sch domain.Sc
 	}
 
 	if sch.PayeeID != uuid.Nil {
-		missing, err := s.ledger.MissingPayees(ctx, userID, []uuid.UUID{sch.PayeeID})
+		missing, err := s.ledger.MissingPayees(ctx, booksID, []uuid.UUID{sch.PayeeID})
 		if err != nil {
 			return err
 		}
@@ -176,12 +176,12 @@ func (s *Service) checkAccounts(ctx context.Context, userID int64, sch domain.Sc
 	return nil
 }
 
-func (s *Service) Schedule(ctx context.Context, userID int64, id uuid.UUID) (domain.Schedule, error) {
-	return s.repo.Schedule(ctx, userID, id)
+func (s *Service) Schedule(ctx context.Context, booksID int64, id uuid.UUID) (domain.Schedule, error) {
+	return s.repo.Schedule(ctx, booksID, id)
 }
 
-func (s *Service) ListSchedules(ctx context.Context, userID int64, p page.Request[IDKey]) ([]domain.Schedule, *IDKey, error) {
-	return s.repo.ListSchedules(ctx, userID, p)
+func (s *Service) ListSchedules(ctx context.Context, booksID int64, p page.Request[IDKey]) ([]domain.Schedule, *IDKey, error) {
+	return s.repo.ListSchedules(ctx, booksID, p)
 }
 
 // maxRangeDays bounds an occurrence range (P7 Global Constraints).
@@ -196,31 +196,31 @@ type OccurrenceView struct {
 
 // Occurrences lists the occurrences with expected date in [from, to]; state filters by the
 // state read, overdue included.
-func (s *Service) Occurrences(ctx context.Context, userID int64, from, to time.Time, scheduleID uuid.UUID, state domain.State) ([]OccurrenceView, error) {
+func (s *Service) Occurrences(ctx context.Context, booksID int64, from, to time.Time, scheduleID uuid.UUID, state domain.State) ([]OccurrenceView, error) {
 	if to.Before(from) || to.Sub(from) > maxRangeDays*24*time.Hour {
 		return nil, &domain.FieldError{Field: "to", Message: "must be on or after from, at most 366 days later", Err: domain.ErrValidation}
 	}
 
-	os, err := s.repo.Occurrences(ctx, userID, from, to, scheduleID)
+	os, err := s.repo.Occurrences(ctx, booksID, from, to, scheduleID)
 	if err != nil {
 		return nil, err
 	}
 
-	return s.occurrenceViews(ctx, userID, os, state)
+	return s.occurrenceViews(ctx, booksID, os, state)
 }
 
 // OccurrencesOfTransaction returns the occurrences the transaction realized, whatever their date.
-func (s *Service) OccurrencesOfTransaction(ctx context.Context, userID int64, txID uuid.UUID) ([]OccurrenceView, error) {
-	os, err := s.repo.OccurrencesOfTransaction(ctx, userID, txID)
+func (s *Service) OccurrencesOfTransaction(ctx context.Context, booksID int64, txID uuid.UUID) ([]OccurrenceView, error) {
+	os, err := s.repo.OccurrencesOfTransaction(ctx, booksID, txID)
 	if err != nil {
 		return nil, err
 	}
 
-	return s.occurrenceViews(ctx, userID, os, "")
+	return s.occurrenceViews(ctx, booksID, os, "")
 }
 
-func (s *Service) occurrenceViews(ctx context.Context, userID int64, os []domain.Occurrence, state domain.State) ([]OccurrenceView, error) {
-	schedules, err := s.repo.Schedules(ctx, userID)
+func (s *Service) occurrenceViews(ctx context.Context, booksID int64, os []domain.Occurrence, state domain.State) ([]OccurrenceView, error) {
+	schedules, err := s.repo.Schedules(ctx, booksID)
 	if err != nil {
 		return nil, err
 	}

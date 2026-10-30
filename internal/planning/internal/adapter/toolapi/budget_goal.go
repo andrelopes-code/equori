@@ -68,7 +68,7 @@ type budgetGoalPlan struct {
 	planNames                    []string
 }
 
-func prepareBudgetOrGoal(ctx context.Context, svc *app.Service, l Ledger, userID int64, in manageBudgetOrGoalIn) (budgetGoalPlan, error) {
+func prepareBudgetOrGoal(ctx context.Context, svc *app.Service, l Ledger, booksID int64, in manageBudgetOrGoalIn) (budgetGoalPlan, error) {
 	fields := []field{
 		{"budget_id", in.BudgetID != ""}, {"goal_id", in.GoalID != ""}, {"category_id", in.CategoryID != ""},
 		{"amount", in.Amount != ""}, {"month", in.Month != ""}, {"rollover", in.Rollover}, {"name", in.Name != ""},
@@ -122,7 +122,7 @@ func prepareBudgetOrGoal(ctx context.Context, svc *app.Service, l Ledger, userID
 		return budgetGoalPlan{}, err
 	}
 
-	accounts, err := l.Accounts(ctx, userID)
+	accounts, err := l.Accounts(ctx, booksID)
 	if err != nil {
 		return budgetGoalPlan{}, err
 	}
@@ -145,19 +145,19 @@ func prepareBudgetOrGoal(ctx context.Context, svc *app.Service, l Ledger, userID
 		}
 
 		p.categoryName = a.Name
-		currency, err = l.BaseCurrency(ctx, userID)
+		currency, err = l.BaseCurrency(ctx, booksID)
 	case "set_budget_amount", "delete_budget":
-		if p.budget, err = svc.Budget(ctx, userID, p.budgetID); err == nil {
+		if p.budget, err = svc.Budget(ctx, booksID, p.budgetID); err == nil {
 			p.categoryName, currency = accounts[p.budget.CategoryID].Name, p.budget.Currency
 		}
 	case "create_goal":
-		currency, err = l.BaseCurrency(ctx, userID)
+		currency, err = l.BaseCurrency(ctx, booksID)
 	case "save_plan":
-		if currency, err = l.BaseCurrency(ctx, userID); err != nil {
+		if currency, err = l.BaseCurrency(ctx, booksID); err != nil {
 			return budgetGoalPlan{}, err
 		}
 
-		if p.plan, err = svc.BudgetPlan(ctx, userID, p.month); err != nil {
+		if p.plan, err = svc.BudgetPlan(ctx, booksID, p.month); err != nil {
 			return budgetGoalPlan{}, err
 		}
 
@@ -181,7 +181,7 @@ func prepareBudgetOrGoal(ctx context.Context, svc *app.Service, l Ledger, userID
 			p.planNames = append(p.planNames, accounts[id].Name)
 		}
 	case "update_goal", "delete_goal":
-		if p.goal, err = svc.Goal(ctx, userID, p.goalID); err == nil {
+		if p.goal, err = svc.Goal(ctx, booksID, p.goalID); err == nil {
 			currency = p.goal.Currency
 		}
 	}
@@ -215,8 +215,8 @@ func manageBudgetOrGoal(svc *app.Service, l Ledger, _ clock.Clock) tool.Tool {
 			"Do not use it for recurring payments: manage_schedule does. " +
 			"Deleting a budget or a goal cannot be undone; the user confirms every change.",
 		Effect: tool.Destructive,
-	}, func(ctx context.Context, userID int64, in manageBudgetOrGoalIn) (tool.Preview, error) {
-		p, err := prepareBudgetOrGoal(ctx, svc, l, userID, in)
+	}, func(ctx context.Context, booksID int64, in manageBudgetOrGoalIn) (tool.Preview, error) {
+		p, err := prepareBudgetOrGoal(ctx, svc, l, booksID, in)
 		if err != nil {
 			return tool.Preview{}, err
 		}
@@ -306,23 +306,23 @@ func manageBudgetOrGoal(svc *app.Service, l Ledger, _ clock.Clock) tool.Tool {
 		}
 
 		return pv, nil
-	}, func(ctx context.Context, userID int64, in manageBudgetOrGoalIn) (manageBudgetOrGoalOut, error) {
-		p, err := prepareBudgetOrGoal(ctx, svc, l, userID, in)
+	}, func(ctx context.Context, booksID int64, in manageBudgetOrGoalIn) (manageBudgetOrGoalOut, error) {
+		p, err := prepareBudgetOrGoal(ctx, svc, l, booksID, in)
 		if err != nil {
 			return manageBudgetOrGoalOut{}, err
 		}
 
 		switch in.Action {
 		case "create_budget":
-			b, err := svc.CreateBudget(ctx, userID, p.categoryID, *p.amount, p.month, in.Rollover)
+			b, err := svc.CreateBudget(ctx, booksID, p.categoryID, *p.amount, p.month, in.Rollover)
 			return manageBudgetOrGoalOut{BudgetID: b.ID.String()}, err
 		case "set_budget_amount":
-			_, err := svc.AddBudgetAmount(ctx, userID, p.budgetID, p.month, *p.amount)
+			_, err := svc.AddBudgetAmount(ctx, booksID, p.budgetID, p.month, *p.amount)
 			return manageBudgetOrGoalOut{BudgetID: p.budgetID.String()}, err
 		case "delete_budget":
-			return manageBudgetOrGoalOut{BudgetID: p.budgetID.String(), Deleted: true}, svc.DeleteBudget(ctx, userID, p.budgetID)
+			return manageBudgetOrGoalOut{BudgetID: p.budgetID.String(), Deleted: true}, svc.DeleteBudget(ctx, booksID, p.budgetID)
 		case "create_goal":
-			g, err := svc.CreateGoal(ctx, userID, in.Name, *p.amount, in.DueOn.Time, p.accountIDs)
+			g, err := svc.CreateGoal(ctx, booksID, in.Name, *p.amount, in.DueOn.Time, p.accountIDs)
 			return manageBudgetOrGoalOut{GoalID: g.ID.String()}, err
 		case "save_plan":
 			source, fixed := domain.ReferenceSource(in.Source), p.amount
@@ -338,7 +338,7 @@ func manageBudgetOrGoal(svc *app.Service, l Ledger, _ clock.Clock) tool.Tool {
 				}
 			}
 
-			_, err := svc.SaveBudgetPlan(ctx, userID, p.month, source, fixed, p.planAmounts)
+			_, err := svc.SaveBudgetPlan(ctx, booksID, p.month, source, fixed, p.planAmounts)
 
 			return manageBudgetOrGoalOut{}, err
 		case "update_goal":
@@ -355,11 +355,11 @@ func manageBudgetOrGoal(svc *app.Service, l Ledger, _ clock.Clock) tool.Tool {
 				patch.AccountIDs = &p.accountIDs
 			}
 
-			_, err := svc.UpdateGoal(ctx, userID, p.goalID, patch)
+			_, err := svc.UpdateGoal(ctx, booksID, p.goalID, patch)
 
 			return manageBudgetOrGoalOut{GoalID: p.goalID.String()}, err
 		}
 
-		return manageBudgetOrGoalOut{GoalID: p.goalID.String(), Deleted: true}, svc.DeleteGoal(ctx, userID, p.goalID)
+		return manageBudgetOrGoalOut{GoalID: p.goalID.String(), Deleted: true}, svc.DeleteGoal(ctx, booksID, p.goalID)
 	})
 }

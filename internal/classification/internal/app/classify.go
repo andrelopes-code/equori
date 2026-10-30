@@ -12,20 +12,20 @@ import (
 const runPage = 500
 
 // catalog loads what decisions read, except payee history.
-func (s *Service) catalog(ctx context.Context, userID int64) (domain.Catalog, map[uuid.UUID]Account, error) {
-	rules, err := s.repo.EnabledRules(ctx, userID)
+func (s *Service) catalog(ctx context.Context, booksID int64) (domain.Catalog, map[uuid.UUID]Account, error) {
+	rules, err := s.repo.EnabledRules(ctx, booksID)
 	if err != nil {
 		return domain.Catalog{}, nil, err
 	}
 
-	aliases, err := s.repo.Aliases(ctx, userID)
+	aliases, err := s.repo.Aliases(ctx, booksID)
 	if err != nil {
 		return domain.Catalog{}, nil, err
 	}
 
 	domain.SortAliases(aliases)
 
-	accounts, err := s.accounts(ctx, userID)
+	accounts, err := s.accounts(ctx, booksID)
 	if err != nil {
 		return domain.Catalog{}, nil, err
 	}
@@ -46,7 +46,7 @@ func (s *Service) catalog(ctx context.Context, userID int64) (domain.Catalog, ma
 
 // decideAll decides every subject; payee history is loaded once for the payees that rules
 // leave without a category (P5 amendment A23).
-func (s *Service) decideAll(ctx context.Context, userID int64, c domain.Catalog, subjects []domain.Subject) ([]domain.Decision, error) {
+func (s *Service) decideAll(ctx context.Context, booksID int64, c domain.Catalog, subjects []domain.Subject) ([]domain.Decision, error) {
 	decisions := make([]domain.Decision, len(subjects))
 
 	var payees []uuid.UUID
@@ -61,7 +61,7 @@ func (s *Service) decideAll(ctx context.Context, userID int64, c domain.Catalog,
 		return decisions, nil
 	}
 
-	history, err := s.ledger.LatestPayeeCategories(ctx, userID, payees)
+	history, err := s.ledger.LatestPayeeCategories(ctx, booksID, payees)
 	if err != nil {
 		return nil, err
 	}
@@ -78,13 +78,13 @@ func (s *Service) decideAll(ctx context.Context, userID int64, c domain.Catalog,
 
 // classify runs F5 on the uncategorized transactions among ids and returns how many got a
 // category. A transaction that changed since its facts were read is left as it is.
-func (s *Service) classify(ctx context.Context, userID int64, ids []uuid.UUID) (int, error) {
-	facts, err := s.ledger.TransactionFacts(ctx, userID, ids)
+func (s *Service) classify(ctx context.Context, booksID int64, ids []uuid.UUID) (int, error) {
+	facts, err := s.ledger.TransactionFacts(ctx, booksID, ids)
 	if err != nil {
 		return 0, err
 	}
 
-	c, accounts, err := s.catalog(ctx, userID)
+	c, accounts, err := s.catalog(ctx, booksID)
 	if err != nil {
 		return 0, err
 	}
@@ -101,7 +101,7 @@ func (s *Service) classify(ctx context.Context, userID int64, ids []uuid.UUID) (
 		targets = append(targets, f)
 	}
 
-	decisions, err := s.decideAll(ctx, userID, c, subjects)
+	decisions, err := s.decideAll(ctx, booksID, c, subjects)
 	if err != nil {
 		return 0, err
 	}
@@ -112,7 +112,7 @@ func (s *Service) classify(ctx context.Context, userID int64, ids []uuid.UUID) (
 	for i, d := range decisions {
 		switch {
 		case d.TransferTo != uuid.Nil:
-			applied, err := s.ledger.Transfer(ctx, userID, TransferRequest{
+			applied, err := s.ledger.Transfer(ctx, booksID, TransferRequest{
 				TransactionID: targets[i].ID, ExpectedVersion: targets[i].Version, AccountID: d.TransferTo, RuleID: d.RuleID,
 			})
 			if err != nil {
@@ -131,7 +131,7 @@ func (s *Service) classify(ctx context.Context, userID int64, ids []uuid.UUID) (
 		return n, nil
 	}
 
-	errs, err := s.ledger.Categorize(ctx, userID, cs)
+	errs, err := s.ledger.Categorize(ctx, booksID, cs)
 	if err != nil {
 		return n, err
 	}
@@ -180,15 +180,15 @@ func subjectOf(f TransactionFacts, accounts map[uuid.UUID]Account) domain.Subjec
 }
 
 // RunRules runs F5 on every uncategorized transaction, in pages (POST /rules/run).
-func (s *Service) RunRules(ctx context.Context, userID int64) (examined, categorized int, err error) {
+func (s *Service) RunRules(ctx context.Context, booksID int64) (examined, categorized int, err error) {
 	var after *PendingKey
 	for {
-		ids, next, err := s.repo.PendingCategorizations(ctx, userID, after, runPage)
+		ids, next, err := s.repo.PendingCategorizations(ctx, booksID, after, runPage)
 		if err != nil {
 			return examined, categorized, err
 		}
 
-		n, err := s.classify(ctx, userID, ids)
+		n, err := s.classify(ctx, booksID, ids)
 		if err != nil {
 			return examined, categorized, err
 		}

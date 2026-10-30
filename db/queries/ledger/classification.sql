@@ -4,7 +4,7 @@ SELECT
 FROM
     ledger_transaction
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = ANY (@ids::UUID[]);
 
 -- name: RawDescriptions :many
@@ -16,7 +16,7 @@ FROM
     ledger_transaction_version v
     JOIN ledger_transaction t ON t.id = v.transaction_id
 WHERE
-    t.user_id = $1
+    t.books_id = $1
     AND v.transaction_id = ANY (@ids::UUID[])
     AND v.version = 1;
 
@@ -26,7 +26,7 @@ SELECT
 FROM
     ledger_account
 WHERE
-    user_id = $1
+    books_id = $1
 ORDER BY
     id;
 
@@ -36,7 +36,7 @@ SELECT
 FROM
     ledger_payee
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = ANY (@ids::UUID[]);
 
 -- name: LatestPayeeCategories :many
@@ -50,7 +50,7 @@ FROM
     JOIN ledger_posting p ON p.transaction_id = t.id
     JOIN ledger_account a ON a.id = p.account_id
 WHERE
-    t.user_id = @user_id
+    t.books_id = @books_id
     AND t.payee_id = ANY (@payee_ids::UUID[])
     AND t.voided_at IS NULL
     AND a.account_class IN ('income', 'expense')

@@ -42,7 +42,7 @@ func (s *Server) CreateBudget(ctx context.Context, req CreateBudgetRequestObject
 		return nil, err
 	}
 
-	b, err := s.svc.CreateBudget(ctx, auth.MustUserID(ctx), req.Body.CategoryId, amount, from, req.Body.Rollover)
+	b, err := s.svc.CreateBudget(ctx, auth.MustBooksID(ctx), req.Body.CategoryId, amount, from, req.Body.Rollover)
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +51,7 @@ func (s *Server) CreateBudget(ctx context.Context, req CreateBudgetRequestObject
 }
 
 func (s *Server) GetBudget(ctx context.Context, req GetBudgetRequestObject) (GetBudgetResponseObject, error) {
-	b, err := s.svc.Budget(ctx, auth.MustUserID(ctx), req.Id)
+	b, err := s.svc.Budget(ctx, auth.MustBooksID(ctx), req.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +60,7 @@ func (s *Server) GetBudget(ctx context.Context, req GetBudgetRequestObject) (Get
 }
 
 func (s *Server) DeleteBudget(ctx context.Context, req DeleteBudgetRequestObject) (DeleteBudgetResponseObject, error) {
-	if err := s.svc.DeleteBudget(ctx, auth.MustUserID(ctx), req.Id); err != nil {
+	if err := s.svc.DeleteBudget(ctx, auth.MustBooksID(ctx), req.Id); err != nil {
 		return nil, err
 	}
 
@@ -73,7 +73,7 @@ func (s *Server) ListBudgets(ctx context.Context, req ListBudgetsRequestObject) 
 		return nil, err
 	}
 
-	bs, next, err := s.svc.ListBudgets(ctx, auth.MustUserID(ctx), p)
+	bs, next, err := s.svc.ListBudgets(ctx, auth.MustBooksID(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +99,7 @@ func (s *Server) AddBudgetAmount(ctx context.Context, req AddBudgetAmountRequest
 		return nil, err
 	}
 
-	b, err := s.svc.AddBudgetAmount(ctx, auth.MustUserID(ctx), req.Id, from, amount)
+	b, err := s.svc.AddBudgetAmount(ctx, auth.MustBooksID(ctx), req.Id, from, amount)
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +113,7 @@ func (s *Server) GetBudgetProgress(ctx context.Context, req GetBudgetProgressReq
 		return nil, err
 	}
 
-	p, currency, err := s.svc.BudgetProgress(ctx, auth.MustUserID(ctx), req.Id, month)
+	p, currency, err := s.svc.BudgetProgress(ctx, auth.MustBooksID(ctx), req.Id, month)
 	if err != nil {
 		return nil, err
 	}

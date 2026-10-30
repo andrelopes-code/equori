@@ -14,7 +14,7 @@ import (
 )
 
 // AccountNames returns the names of the user's balance accounts by ID.
-type AccountNames func(ctx context.Context, userID int64) (map[uuid.UUID]string, error)
+type AccountNames func(ctx context.Context, booksID int64) (map[uuid.UUID]string, error)
 
 func Tools(svc *app.Service, names AccountNames) []tool.Tool {
 	return []tool.Tool{getImports(svc, names), manageImports(svc, names)}

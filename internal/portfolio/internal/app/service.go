@@ -28,23 +28,23 @@ type Account struct {
 
 // Ledger is read through ledger.Module (ADR 002).
 type Ledger interface {
-	AccountFacts(ctx context.Context, userID int64) ([]Account, error)
-	InvestmentFacts(ctx context.Context, userID int64, brokerageID uuid.UUID) (domain.Facts, error)
-	BaseCurrency(ctx context.Context, userID int64) (money.Currency, error)
+	AccountFacts(ctx context.Context, booksID int64) ([]Account, error)
+	InvestmentFacts(ctx context.Context, booksID int64, brokerageID uuid.UUID) (domain.Facts, error)
+	BaseCurrency(ctx context.Context, booksID int64) (money.Currency, error)
 	// ValuedBalance values the account and its sub-accounts at the end of date in currency in; the
 	// error wraps ErrNotFound for an unknown account and ErrPriceMissing for a missing price.
-	ValuedBalance(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time, in money.Currency) (money.Money, error)
+	ValuedBalance(ctx context.Context, booksID int64, accountID uuid.UUID, date time.Time, in money.Currency) (money.Money, error)
 	// ExternalFlows takes the accounts as one tree; FirstPosting is the earliest booked date of it.
-	ExternalFlows(ctx context.Context, userID int64, accountIDs []uuid.UUID, from, to time.Time) ([]Flow, error)
-	FirstPosting(ctx context.Context, userID int64, accountIDs []uuid.UUID) (time.Time, bool, error)
+	ExternalFlows(ctx context.Context, booksID int64, accountIDs []uuid.UUID, from, to time.Time) ([]Flow, error)
+	FirstPosting(ctx context.Context, booksID int64, accountIDs []uuid.UUID) (time.Time, bool, error)
 	// Balances is the balance of every asset and liability account at the end of date, each in
 	// its own instrument and counting its own postings only.
-	Balances(ctx context.Context, userID int64, date time.Time) ([]AccountBalance, error)
+	Balances(ctx context.Context, booksID int64, date time.Time) ([]AccountBalance, error)
 }
 
 // Jurisdictions gives the tax jurisdiction of a user; a nil result means none applies.
 type Jurisdictions interface {
-	For(ctx context.Context, userID int64) (domain.Jurisdiction, error)
+	For(ctx context.Context, booksID int64) (domain.Jurisdiction, error)
 }
 
 type Price struct {
@@ -65,11 +65,11 @@ type MarketData interface {
 }
 
 type Repository interface {
-	Replace(ctx context.Context, userID int64, accountIDs []uuid.UUID, r domain.Rebuilt) error
-	PositionsAt(ctx context.Context, userID int64, date time.Time) ([]domain.PositionDay, error)
-	RealizedResults(ctx context.Context, userID int64, from, to time.Time) ([]domain.RealizedResult, error)
-	IncomeEvents(ctx context.Context, userID int64, from, to time.Time) ([]domain.IncomeEvent, error)
-	RebuildUsers(ctx context.Context) ([]int64, error)
+	Replace(ctx context.Context, booksID int64, accountIDs []uuid.UUID, r domain.Rebuilt) error
+	PositionsAt(ctx context.Context, booksID int64, date time.Time) ([]domain.PositionDay, error)
+	RealizedResults(ctx context.Context, booksID int64, from, to time.Time) ([]domain.RealizedResult, error)
+	IncomeEvents(ctx context.Context, booksID int64, from, to time.Time) ([]domain.IncomeEvent, error)
+	BooksToRebuild(ctx context.Context) ([]int64, error)
 }
 
 type Service struct {
@@ -89,8 +89,8 @@ func (s *Service) WithRepository(repo Repository) *Service {
 }
 
 // HandleTransaction rebuilds every brokerage that has one of accountIDs as a child (A71).
-func (s *Service) HandleTransaction(ctx context.Context, userID int64, accountIDs []uuid.UUID) error {
-	accounts, err := s.ledger.AccountFacts(ctx, userID)
+func (s *Service) HandleTransaction(ctx context.Context, booksID int64, accountIDs []uuid.UUID) error {
+	accounts, err := s.ledger.AccountFacts(ctx, booksID)
 	if err != nil {
 		return err
 	}
@@ -110,7 +110,7 @@ func (s *Service) HandleTransaction(ctx context.Context, userID int64, accountID
 		}
 
 		seen[parent.ID] = true
-		if err := s.rebuild(ctx, userID, parent.ID); err != nil {
+		if err := s.rebuild(ctx, booksID, parent.ID); err != nil {
 			return err
 		}
 	}
@@ -120,13 +120,13 @@ func (s *Service) HandleTransaction(ctx context.Context, userID int64, accountID
 
 // RebuildAll rebuilds every brokerage of every user that has one or has derived rows (equori portfolio rebuild).
 func (s *Service) RebuildAll(ctx context.Context) error {
-	users, err := s.repo.RebuildUsers(ctx)
+	users, err := s.repo.BooksToRebuild(ctx)
 	if err != nil {
 		return err
 	}
 
-	for _, userID := range users {
-		if err := s.RebuildUser(ctx, userID); err != nil {
+	for _, booksID := range users {
+		if err := s.RebuildBooks(ctx, booksID); err != nil {
 			return err
 		}
 	}
@@ -134,9 +134,9 @@ func (s *Service) RebuildAll(ctx context.Context) error {
 	return nil
 }
 
-// RebuildUser recomputes the derived rows of every brokerage account of the user.
-func (s *Service) RebuildUser(ctx context.Context, userID int64) error {
-	accounts, err := s.ledger.AccountFacts(ctx, userID)
+// RebuildBooks recomputes the derived rows of every brokerage account of the user.
+func (s *Service) RebuildBooks(ctx context.Context, booksID int64) error {
+	accounts, err := s.ledger.AccountFacts(ctx, booksID)
 	if err != nil {
 		return err
 	}
@@ -148,12 +148,12 @@ func (s *Service) RebuildUser(ctx context.Context, userID int64) error {
 		}
 	}
 
-	return s.HandleTransaction(ctx, userID, ids)
+	return s.HandleTransaction(ctx, booksID, ids)
 }
 
 // IncomeTypes returns the universal income types plus those of the user's jurisdiction, sorted.
-func (s *Service) IncomeTypes(ctx context.Context, userID int64) ([]string, error) {
-	j, err := s.juris.For(ctx, userID)
+func (s *Service) IncomeTypes(ctx context.Context, booksID int64) ([]string, error) {
+	j, err := s.juris.For(ctx, booksID)
 	if err != nil {
 		return nil, err
 	}
@@ -170,8 +170,8 @@ func (s *Service) IncomeTypes(ctx context.Context, userID int64) ([]string, erro
 
 // Subtypes returns the subtypes of an instrument type that the user's jurisdiction knows; none
 // when the user has no jurisdiction.
-func (s *Service) Subtypes(ctx context.Context, userID int64, instrumentType string) ([]string, error) {
-	j, err := s.juris.For(ctx, userID)
+func (s *Service) Subtypes(ctx context.Context, booksID int64, instrumentType string) ([]string, error) {
+	j, err := s.juris.For(ctx, booksID)
 	if err != nil || j == nil {
 		return []string{}, err
 	}
@@ -179,8 +179,8 @@ func (s *Service) Subtypes(ctx context.Context, userID int64, instrumentType str
 	return j.Subtypes(instrumentType), nil
 }
 
-func (s *Service) rebuild(ctx context.Context, userID int64, brokerageID uuid.UUID) error {
-	facts, err := s.ledger.InvestmentFacts(ctx, userID, brokerageID)
+func (s *Service) rebuild(ctx context.Context, booksID int64, brokerageID uuid.UUID) error {
+	facts, err := s.ledger.InvestmentFacts(ctx, booksID, brokerageID)
 	if err != nil {
 		return err
 	}
@@ -190,12 +190,12 @@ func (s *Service) rebuild(ctx context.Context, userID int64, brokerageID uuid.UU
 		ids[i] = sec.AccountID
 	}
 
-	j, err := s.juris.For(ctx, userID)
+	j, err := s.juris.For(ctx, booksID)
 	if err != nil {
 		return err
 	}
 
-	return s.repo.Replace(ctx, userID, ids, domain.Rebuild(facts, j))
+	return s.repo.Replace(ctx, booksID, ids, domain.Rebuild(facts, j))
 }
 
 type Position struct {
@@ -210,13 +210,13 @@ type Position struct {
 // Positions returns the non-empty positions at the end of date with the cost in the base currency
 // and the market value in in (the base currency by default); a position without a price has no
 // market value, and a missing price to in is ErrPriceMissing.
-func (s *Service) Positions(ctx context.Context, userID int64, date time.Time, in money.Currency) ([]Position, error) {
-	base, err := s.ledger.BaseCurrency(ctx, userID)
+func (s *Service) Positions(ctx context.Context, booksID int64, date time.Time, in money.Currency) ([]Position, error) {
+	base, err := s.ledger.BaseCurrency(ctx, booksID)
 	if err != nil {
 		return nil, err
 	}
 
-	rows, err := s.repo.PositionsAt(ctx, userID, date)
+	rows, err := s.repo.PositionsAt(ctx, booksID, date)
 	if err != nil {
 		return nil, err
 	}
@@ -273,8 +273,8 @@ type Result struct {
 
 // TaxYear returns the tax year that starts in year under the user's jurisdiction: from inclusive,
 // to exclusive.
-func (s *Service) TaxYear(ctx context.Context, userID int64, year int) (time.Time, time.Time, error) {
-	j, err := s.juris.For(ctx, userID)
+func (s *Service) TaxYear(ctx context.Context, booksID int64, year int) (time.Time, time.Time, error) {
+	j, err := s.juris.For(ctx, booksID)
 	if err != nil {
 		return time.Time{}, time.Time{}, err
 	}
@@ -290,13 +290,13 @@ func (s *Service) TaxYear(ctx context.Context, userID int64, year int) (time.Tim
 }
 
 // RealizedResults returns the sales of the tax year that starts in year, in date order.
-func (s *Service) RealizedResults(ctx context.Context, userID int64, year int) ([]Result, error) {
-	from, to, err := s.TaxYear(ctx, userID, year)
+func (s *Service) RealizedResults(ctx context.Context, booksID int64, year int) ([]Result, error) {
+	from, to, err := s.TaxYear(ctx, booksID, year)
 	if err != nil {
 		return nil, err
 	}
 
-	rows, err := s.repo.RealizedResults(ctx, userID, from, to)
+	rows, err := s.repo.RealizedResults(ctx, booksID, from, to)
 	if err != nil {
 		return nil, err
 	}
@@ -329,13 +329,13 @@ type IncomeEvent struct {
 }
 
 // IncomeEvents returns the income of the tax year that starts in year, in date order.
-func (s *Service) IncomeEvents(ctx context.Context, userID int64, year int) ([]IncomeEvent, error) {
-	from, to, err := s.TaxYear(ctx, userID, year)
+func (s *Service) IncomeEvents(ctx context.Context, booksID int64, year int) ([]IncomeEvent, error) {
+	from, to, err := s.TaxYear(ctx, booksID, year)
 	if err != nil {
 		return nil, err
 	}
 
-	rows, err := s.repo.IncomeEvents(ctx, userID, from, to)
+	rows, err := s.repo.IncomeEvents(ctx, booksID, from, to)
 	if err != nil {
 		return nil, err
 	}

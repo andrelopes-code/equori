@@ -48,21 +48,21 @@ func NewService(repo Repository, clock Clock, cal Calendar, ins Instruments, pri
 func (s *Service) Today() time.Time { return s.clock.Today() }
 
 // Provision creates the settings and system accounts of a new user. It is idempotent.
-func (s *Service) Provision(ctx context.Context, userID int64, base money.Currency) error {
+func (s *Service) Provision(ctx context.Context, booksID int64, base money.Currency) error {
 	return s.repo.InTx(ctx, func(r Repository) error {
-		if _, err := r.Settings(ctx, userID); err == nil {
+		if _, err := r.Settings(ctx, booksID); err == nil {
 			return nil
 		} else if !errors.Is(err, ErrNotFound) {
 			return err
 		}
 
-		if err := r.SaveSettings(ctx, Settings{UserID: userID, BaseCurrency: base}); err != nil {
+		if err := r.SaveSettings(ctx, Settings{BooksID: booksID, BaseCurrency: base}); err != nil {
 			return err
 		}
 
 		for _, role := range domain.SystemRoles() {
 			a, err := domain.NewAccount(domain.Account{
-				UserID: userID, Name: role.DefaultName(), Class: role.Class(),
+				BooksID: booksID, Name: role.DefaultName(), Class: role.Class(),
 				Instrument: base, OpenedOn: earliestDate, SystemRole: role,
 			})
 			if err != nil {
@@ -78,18 +78,18 @@ func (s *Service) Provision(ctx context.Context, userID int64, base money.Curren
 	})
 }
 
-func (s *Service) Settings(ctx context.Context, userID int64) (Settings, error) {
-	return s.repo.Settings(ctx, userID)
+func (s *Service) Settings(ctx context.Context, booksID int64) (Settings, error) {
+	return s.repo.Settings(ctx, booksID)
 }
 
 // SetBaseCurrency is allowed only while the user has no transaction; system accounts follow the new currency.
-func (s *Service) SetBaseCurrency(ctx context.Context, userID int64, c money.Currency) error {
+func (s *Service) SetBaseCurrency(ctx context.Context, booksID int64, c money.Currency) error {
 	if _, err := money.ParseCurrency(string(c)); err != nil {
 		return &domain.FieldError{Field: "base_currency", Message: "must be a supported currency", Err: domain.ErrValidation}
 	}
 
 	return s.repo.InTx(ctx, func(r Repository) error {
-		n, err := r.CountTransactions(ctx, userID)
+		n, err := r.CountTransactions(ctx, booksID)
 		if err != nil {
 			return err
 		}
@@ -98,15 +98,15 @@ func (s *Service) SetBaseCurrency(ctx context.Context, userID int64, c money.Cur
 			return ErrSettingsLocked
 		}
 
-		if err := r.SaveSettings(ctx, Settings{UserID: userID, BaseCurrency: c}); err != nil {
+		if err := r.SaveSettings(ctx, Settings{BooksID: booksID, BaseCurrency: c}); err != nil {
 			return err
 		}
 
-		return r.SetSystemAccountsInstrument(ctx, userID, c)
+		return r.SetSystemAccountsInstrument(ctx, booksID, c)
 	})
 }
 
-func (s *Service) CreateInstitution(ctx context.Context, userID int64, i Institution) (Institution, error) {
+func (s *Service) CreateInstitution(ctx context.Context, booksID int64, i Institution) (Institution, error) {
 	if i.Name == "" || len([]rune(i.Name)) > 120 {
 		return Institution{}, &domain.FieldError{Field: "name", Message: "must have 1 to 120 characters", Err: domain.ErrValidation}
 	}
@@ -115,18 +115,18 @@ func (s *Service) CreateInstitution(ctx context.Context, userID int64, i Institu
 		return Institution{}, err
 	}
 
-	i.UserID = userID
+	i.BooksID = booksID
 
 	return s.repo.InsertInstitution(ctx, i)
 }
 
 // SetInstitutionIdentifier sets the identifier of an institution, or clears it when ident is empty (ADR 013).
-func (s *Service) SetInstitutionIdentifier(ctx context.Context, userID int64, id uuid.UUID, ident InstitutionIdentifier) (Institution, error) {
+func (s *Service) SetInstitutionIdentifier(ctx context.Context, booksID int64, id uuid.UUID, ident InstitutionIdentifier) (Institution, error) {
 	if err := validateInstitutionIdentifier(ident); err != nil {
 		return Institution{}, err
 	}
 
-	return s.repo.SetInstitutionIdentifier(ctx, userID, id, ident)
+	return s.repo.SetInstitutionIdentifier(ctx, booksID, id, ident)
 }
 
 // InstitutionIdentifierSchemes lists the schemes an institution identifier may use.
@@ -142,36 +142,36 @@ func validateInstitutionIdentifier(ident InstitutionIdentifier) error {
 	return domain.ValidateIdentifier(ident.Scheme, ident.Value)
 }
 
-func (s *Service) ListInstitutions(ctx context.Context, userID int64, p page.Request[InstitutionKey]) ([]Institution, *InstitutionKey, error) {
-	return s.repo.ListInstitutions(ctx, userID, p)
+func (s *Service) ListInstitutions(ctx context.Context, booksID int64, p page.Request[InstitutionKey]) ([]Institution, *InstitutionKey, error) {
+	return s.repo.ListInstitutions(ctx, booksID, p)
 }
 
-func (s *Service) CreatePayee(ctx context.Context, userID int64, name string) (Payee, error) {
+func (s *Service) CreatePayee(ctx context.Context, booksID int64, name string) (Payee, error) {
 	if name == "" || len([]rune(name)) > 120 {
 		return Payee{}, &domain.FieldError{Field: "name", Message: "must have 1 to 120 characters", Err: domain.ErrValidation}
 	}
 
-	return s.repo.InsertPayee(ctx, Payee{UserID: userID, Name: name})
+	return s.repo.InsertPayee(ctx, Payee{BooksID: booksID, Name: name})
 }
 
-func (s *Service) ListPayees(ctx context.Context, userID int64, p page.Request[PayeeKey]) ([]Payee, *PayeeKey, error) {
-	return s.repo.ListPayees(ctx, userID, p)
+func (s *Service) ListPayees(ctx context.Context, booksID int64, p page.Request[PayeeKey]) ([]Payee, *PayeeKey, error) {
+	return s.repo.ListPayees(ctx, booksID, p)
 }
 
-func (s *Service) PayeeNames(ctx context.Context, userID int64, ids []uuid.UUID) (map[uuid.UUID]string, error) {
-	return s.repo.PayeeNames(ctx, userID, ids)
+func (s *Service) PayeeNames(ctx context.Context, booksID int64, ids []uuid.UUID) (map[uuid.UUID]string, error) {
+	return s.repo.PayeeNames(ctx, booksID, ids)
 }
 
-func (s *Service) ListTags(ctx context.Context, userID int64, p page.Request[TagKey]) ([]string, *TagKey, error) {
-	return s.repo.ListTags(ctx, userID, p)
+func (s *Service) ListTags(ctx context.Context, booksID int64, p page.Request[TagKey]) ([]string, *TagKey, error) {
+	return s.repo.ListTags(ctx, booksID, p)
 }
 
 type accountEvent struct {
 	AccountID uuid.UUID `json:"account_id"`
 }
 
-func (s *Service) CreateAccount(ctx context.Context, userID int64, a domain.Account) (domain.Account, error) {
-	a.UserID = userID
+func (s *Service) CreateAccount(ctx context.Context, booksID int64, a domain.Account) (domain.Account, error) {
+	a.BooksID = booksID
 	if a.OpenedOn.IsZero() {
 		a.OpenedOn = earliestDate
 	}
@@ -197,7 +197,7 @@ func (s *Service) CreateAccount(ctx context.Context, userID int64, a domain.Acco
 			return err
 		}
 
-		return r.Publish(ctx, outbox.Event{Type: EventAccountOpened, UserID: userID, AggregateID: created.ID.String(), Payload: accountEvent{created.ID}})
+		return r.Publish(ctx, outbox.Event{Type: EventAccountOpened, BooksID: booksID, AggregateID: created.ID.String(), Payload: accountEvent{created.ID}})
 	})
 
 	return created, err
@@ -211,10 +211,10 @@ type AccountPatch struct {
 	ExcludedFromLiquidity *bool
 }
 
-func (s *Service) UpdateAccount(ctx context.Context, userID int64, id uuid.UUID, p AccountPatch) (domain.Account, error) {
+func (s *Service) UpdateAccount(ctx context.Context, booksID int64, id uuid.UUID, p AccountPatch) (domain.Account, error) {
 	var updated domain.Account
 	err := s.repo.InTx(ctx, func(r Repository) error {
-		a, err := r.Account(ctx, userID, id)
+		a, err := r.Account(ctx, booksID, id)
 		if err != nil {
 			return err
 		}
@@ -260,10 +260,10 @@ func (s *Service) UpdateAccount(ctx context.Context, userID int64, id uuid.UUID,
 }
 
 // SetAppearance sets or, with zero values, clears the colour and the icon of an account (A83).
-func (s *Service) SetAppearance(ctx context.Context, userID int64, id uuid.UUID, color int, icon string) (domain.Account, error) {
+func (s *Service) SetAppearance(ctx context.Context, booksID int64, id uuid.UUID, color int, icon string) (domain.Account, error) {
 	var updated domain.Account
 	err := s.repo.InTx(ctx, func(r Repository) error {
-		a, err := r.Account(ctx, userID, id)
+		a, err := r.Account(ctx, booksID, id)
 		if err != nil {
 			return err
 		}
@@ -286,7 +286,7 @@ func (s *Service) checkParent(ctx context.Context, r Repository, a domain.Accoun
 		return nil
 	}
 
-	parent, err := r.Account(ctx, a.UserID, a.ParentID)
+	parent, err := r.Account(ctx, a.BooksID, a.ParentID)
 	if errors.Is(err, ErrNotFound) {
 		return &domain.FieldError{Field: "parent_id", Message: "unknown account", Err: domain.ErrUnknownAccount}
 	}
@@ -296,7 +296,7 @@ func (s *Service) checkParent(ctx context.Context, r Repository, a domain.Accoun
 	}
 
 	if parent.IsBalance() {
-		totals, err := r.AccountTotals(ctx, a.UserID, parent.ID)
+		totals, err := r.AccountTotals(ctx, a.BooksID, parent.ID)
 		if err != nil {
 			return err
 		}
@@ -316,7 +316,7 @@ func (s *Service) checkParent(ctx context.Context, r Repository, a domain.Accoun
 				return &domain.FieldError{Field: "parent_id", Message: "must not be a descendant of the account", Err: domain.ErrValidation}
 			}
 
-			if ancestor, err = r.Account(ctx, a.UserID, ancestor.ParentID); err != nil {
+			if ancestor, err = r.Account(ctx, a.BooksID, ancestor.ParentID); err != nil {
 				return err
 			}
 		}
@@ -325,24 +325,24 @@ func (s *Service) checkParent(ctx context.Context, r Repository, a domain.Accoun
 	return domain.ValidateParent(a, parent)
 }
 
-func (s *Service) Account(ctx context.Context, userID int64, id uuid.UUID) (domain.Account, error) {
-	return s.repo.Account(ctx, userID, id)
+func (s *Service) Account(ctx context.Context, booksID int64, id uuid.UUID) (domain.Account, error) {
+	return s.repo.Account(ctx, booksID, id)
 }
 
-func (s *Service) ListAccounts(ctx context.Context, userID int64, p page.Request[AccountKey]) ([]domain.Account, *AccountKey, error) {
-	return s.repo.ListAccounts(ctx, userID, p)
+func (s *Service) ListAccounts(ctx context.Context, booksID int64, p page.Request[AccountKey]) ([]domain.Account, *AccountKey, error) {
+	return s.repo.ListAccounts(ctx, booksID, p)
 }
 
 // CloseAccount closes the account and its open descendants (A74). Every member needs no
 // postings after the closing date; a balance-sheet or equity member also needs a zero balance.
-func (s *Service) CloseAccount(ctx context.Context, userID int64, id uuid.UUID, closedOn time.Time) error {
+func (s *Service) CloseAccount(ctx context.Context, booksID int64, id uuid.UUID, closedOn time.Time) error {
 	return s.repo.InTx(ctx, func(r Repository) error {
-		root, err := r.Account(ctx, userID, id)
+		root, err := r.Account(ctx, booksID, id)
 		if err != nil {
 			return err
 		}
 
-		all, err := r.AllAccounts(ctx, userID)
+		all, err := r.AllAccounts(ctx, booksID)
 		if err != nil {
 			return err
 		}
@@ -359,7 +359,7 @@ func (s *Service) CloseAccount(ctx context.Context, userID int64, id uuid.UUID, 
 				continue
 			}
 
-			totals, err := r.AccountTotals(ctx, userID, a.ID)
+			totals, err := r.AccountTotals(ctx, booksID, a.ID)
 			if err != nil {
 				return err
 			}
@@ -385,7 +385,7 @@ func (s *Service) CloseAccount(ctx context.Context, userID int64, id uuid.UUID, 
 				return err
 			}
 
-			if err := r.Publish(ctx, outbox.Event{Type: EventAccountClosed, UserID: userID, AggregateID: a.ID.String(), Payload: accountEvent{a.ID}}); err != nil {
+			if err := r.Publish(ctx, outbox.Event{Type: EventAccountClosed, BooksID: booksID, AggregateID: a.ID.String(), Payload: accountEvent{a.ID}}); err != nil {
 				return err
 			}
 		}
@@ -396,10 +396,10 @@ func (s *Service) CloseAccount(ctx context.Context, userID int64, id uuid.UUID, 
 
 // ReopenAccount reopens the account and its closed ancestors, so an open account never has a
 // closed parent (A74).
-func (s *Service) ReopenAccount(ctx context.Context, userID int64, id uuid.UUID) (domain.Account, error) {
+func (s *Service) ReopenAccount(ctx context.Context, booksID int64, id uuid.UUID) (domain.Account, error) {
 	var reopened domain.Account
 	err := s.repo.InTx(ctx, func(r Repository) error {
-		a, err := r.Account(ctx, userID, id)
+		a, err := r.Account(ctx, booksID, id)
 		if err != nil {
 			return err
 		}
@@ -424,7 +424,7 @@ func (s *Service) ReopenAccount(ctx context.Context, userID int64, id uuid.UUID)
 				reopened = updated
 			}
 
-			if err := r.Publish(ctx, outbox.Event{Type: EventAccountReopened, UserID: userID, AggregateID: a.ID.String(), Payload: accountEvent{a.ID}}); err != nil {
+			if err := r.Publish(ctx, outbox.Event{Type: EventAccountReopened, BooksID: booksID, AggregateID: a.ID.String(), Payload: accountEvent{a.ID}}); err != nil {
 				return err
 			}
 
@@ -432,7 +432,7 @@ func (s *Service) ReopenAccount(ctx context.Context, userID int64, id uuid.UUID)
 				return nil
 			}
 
-			if a, err = r.Account(ctx, userID, a.ParentID); err != nil {
+			if a, err = r.Account(ctx, booksID, a.ParentID); err != nil {
 				return err
 			}
 
@@ -498,8 +498,8 @@ func accountIDs(ts ...domain.Transaction) []uuid.UUID {
 	return slices.Compact(ids)
 }
 
-func (s *Service) RecordTransaction(ctx context.Context, userID int64, t domain.Transaction) (domain.Transaction, error) {
-	t.UserID = userID
+func (s *Service) RecordTransaction(ctx context.Context, booksID int64, t domain.Transaction) (domain.Transaction, error) {
+	t.BooksID = booksID
 	var created domain.Transaction
 	err := s.repo.InTx(ctx, func(r Repository) error {
 		var err error
@@ -521,7 +521,7 @@ func (s *Service) insert(ctx context.Context, r Repository, t domain.Transaction
 		return domain.Transaction{}, err
 	}
 
-	if err := checkLaterSales(ctx, r, t.UserID, valid.Date, valid.Postings, valid.ID); err != nil {
+	if err := checkLaterSales(ctx, r, t.BooksID, valid.Date, valid.Postings, valid.ID); err != nil {
 		return domain.Transaction{}, err
 	}
 
@@ -535,16 +535,16 @@ func (s *Service) insert(ctx context.Context, r Repository, t domain.Transaction
 	}
 
 	return created, r.Publish(ctx, outbox.Event{
-		Type: EventTransactionRecorded, UserID: t.UserID, AggregateID: created.ID.String(),
+		Type: EventTransactionRecorded, BooksID: t.BooksID, AggregateID: created.ID.String(),
 		Payload: newTransactionEvent(created, accounts),
 	})
 }
 
-func (s *Service) CorrectTransaction(ctx context.Context, userID int64, id uuid.UUID, expectedVersion int, next domain.Transaction, reason string) (domain.Transaction, error) {
+func (s *Service) CorrectTransaction(ctx context.Context, booksID int64, id uuid.UUID, expectedVersion int, next domain.Transaction, reason string) (domain.Transaction, error) {
 	var corrected domain.Transaction
 	err := s.repo.InTx(ctx, func(r Repository) error {
 		var err error
-		corrected, err = s.correctIn(ctx, r, userID, id, expectedVersion, next, reason)
+		corrected, err = s.correctIn(ctx, r, booksID, id, expectedVersion, next, reason)
 
 		return err
 	})
@@ -553,10 +553,10 @@ func (s *Service) CorrectTransaction(ctx context.Context, userID int64, id uuid.
 }
 
 // correctIn is CorrectTransaction inside the database transaction of r.
-func (s *Service) correctIn(ctx context.Context, r Repository, userID int64, id uuid.UUID, expectedVersion int, next domain.Transaction, reason string) (domain.Transaction, error) {
+func (s *Service) correctIn(ctx context.Context, r Repository, booksID int64, id uuid.UUID, expectedVersion int, next domain.Transaction, reason string) (domain.Transaction, error) {
 	var corrected domain.Transaction
 
-	prev, err := r.LockTransaction(ctx, userID, id)
+	prev, err := r.LockTransaction(ctx, booksID, id)
 	if err != nil {
 		return domain.Transaction{}, err
 	}
@@ -565,11 +565,11 @@ func (s *Service) correctIn(ctx context.Context, r Repository, userID int64, id 
 		return domain.Transaction{}, ErrInvestmentTransaction
 	}
 
-	if err := checkLaterSales(ctx, r, userID, prev.Date, prev.Postings, id); err != nil {
+	if err := checkLaterSales(ctx, r, booksID, prev.Date, prev.Postings, id); err != nil {
 		return domain.Transaction{}, err
 	}
 
-	next.ID, next.UserID = id, userID
+	next.ID, next.BooksID = id, booksID
 	if next.BalancingCurrency == "" {
 		next.BalancingCurrency = prev.BalancingCurrency
 	}
@@ -579,7 +579,7 @@ func (s *Service) correctIn(ctx context.Context, r Repository, userID int64, id 
 		return domain.Transaction{}, err
 	}
 
-	if err := s.addAccounts(ctx, r, userID, accounts, prev); err != nil {
+	if err := s.addAccounts(ctx, r, booksID, accounts, prev); err != nil {
 		return domain.Transaction{}, err
 	}
 
@@ -597,12 +597,12 @@ func (s *Service) correctIn(ctx context.Context, r Repository, userID int64, id 
 	}
 
 	// The stored postings carry the ids the database assigned.
-	if corrected, err = r.Transaction(ctx, userID, id); err != nil {
+	if corrected, err = r.Transaction(ctx, booksID, id); err != nil {
 		return domain.Transaction{}, err
 	}
 
 	return corrected, r.Publish(ctx, outbox.Event{
-		Type: EventTransactionCorrected, UserID: userID, AggregateID: id.String(),
+		Type: EventTransactionCorrected, BooksID: booksID, AggregateID: id.String(),
 		Payload: func() TransactionEvent {
 			e := newTransactionEvent(corrected, accounts, prev)
 			e.PreviousDate = prev.Date.Format(time.DateOnly)
@@ -620,7 +620,7 @@ func (s *Service) correct(ctx context.Context, r Repository, prev, next domain.T
 		return domain.Transaction{}, err
 	}
 
-	if err := checkLaterSales(ctx, r, prev.UserID, corrected.Date, corrected.Postings, prev.ID); err != nil {
+	if err := checkLaterSales(ctx, r, prev.BooksID, corrected.Date, corrected.Postings, prev.ID); err != nil {
 		return domain.Transaction{}, err
 	}
 
@@ -631,14 +631,14 @@ func (s *Service) correct(ctx context.Context, r Repository, prev, next domain.T
 	return corrected, r.ReplaceTransaction(ctx, prev, corrected, reason)
 }
 
-func (s *Service) VoidTransaction(ctx context.Context, userID int64, id uuid.UUID, reason string) error {
+func (s *Service) VoidTransaction(ctx context.Context, booksID int64, id uuid.UUID, reason string) error {
 	return s.repo.InTx(ctx, func(r Repository) error {
-		prev, err := r.LockTransaction(ctx, userID, id)
+		prev, err := r.LockTransaction(ctx, booksID, id)
 		if err != nil {
 			return err
 		}
 
-		if err := checkLaterSales(ctx, r, userID, prev.Date, prev.Postings, id); err != nil {
+		if err := checkLaterSales(ctx, r, booksID, prev.Date, prev.Postings, id); err != nil {
 			return err
 		}
 
@@ -651,28 +651,28 @@ func (s *Service) VoidTransaction(ctx context.Context, userID int64, id uuid.UUI
 			return err
 		}
 
-		accounts, err := r.Accounts(ctx, userID, postingAccounts(prev))
+		accounts, err := r.Accounts(ctx, booksID, postingAccounts(prev))
 		if err != nil {
 			return err
 		}
 
 		return r.Publish(ctx, outbox.Event{
-			Type: EventTransactionVoided, UserID: userID, AggregateID: id.String(),
+			Type: EventTransactionVoided, BooksID: booksID, AggregateID: id.String(),
 			Payload: newTransactionEvent(voided, accounts),
 		})
 	})
 }
 
-func (s *Service) Transaction(ctx context.Context, userID int64, id uuid.UUID) (domain.Transaction, error) {
-	return s.repo.Transaction(ctx, userID, id)
+func (s *Service) Transaction(ctx context.Context, booksID int64, id uuid.UUID) (domain.Transaction, error) {
+	return s.repo.Transaction(ctx, booksID, id)
 }
 
-func (s *Service) Versions(ctx context.Context, userID int64, id uuid.UUID) ([]Version, error) {
-	if _, err := s.repo.Transaction(ctx, userID, id); err != nil {
+func (s *Service) Versions(ctx context.Context, booksID int64, id uuid.UUID) ([]Version, error) {
+	if _, err := s.repo.Transaction(ctx, booksID, id); err != nil {
 		return nil, err
 	}
 
-	return s.repo.Versions(ctx, userID, id)
+	return s.repo.Versions(ctx, booksID, id)
 }
 
 // Reference is an inbound link: Source is the transaction that links to another one.
@@ -686,12 +686,12 @@ type Reference struct {
 }
 
 // ReferencedBy returns the non-voided transactions that link to the transaction.
-func (s *Service) ReferencedBy(ctx context.Context, userID int64, id uuid.UUID) ([]Reference, error) {
-	if _, err := s.repo.Transaction(ctx, userID, id); err != nil {
+func (s *Service) ReferencedBy(ctx context.Context, booksID int64, id uuid.UUID) ([]Reference, error) {
+	if _, err := s.repo.Transaction(ctx, booksID, id); err != nil {
 		return nil, err
 	}
 
-	return s.repo.LinksTo(ctx, userID, id)
+	return s.repo.LinksTo(ctx, booksID, id)
 }
 
 // ListTransactions returns a page and the cursor of the next page, nil on the last page.
@@ -717,7 +717,7 @@ func (s *Service) ListTransactions(ctx context.Context, q TransactionQuery) ([]d
 // validate applies settings defaults and checks references before the domain rules.
 func (s *Service) validate(ctx context.Context, r Repository, t domain.Transaction) (domain.Transaction, map[uuid.UUID]domain.Account, error) {
 	if t.BalancingCurrency == "" {
-		settings, err := r.Settings(ctx, t.UserID)
+		settings, err := r.Settings(ctx, t.BooksID)
 		if err != nil {
 			return domain.Transaction{}, nil, err
 		}
@@ -736,7 +736,7 @@ func (s *Service) validate(ctx context.Context, r Repository, t domain.Transacti
 }
 
 // addAccounts loads into accounts the accounts of ts it does not hold yet.
-func (s *Service) addAccounts(ctx context.Context, r Repository, userID int64, accounts map[uuid.UUID]domain.Account, ts ...domain.Transaction) error {
+func (s *Service) addAccounts(ctx context.Context, r Repository, booksID int64, accounts map[uuid.UUID]domain.Account, ts ...domain.Transaction) error {
 	var missing []uuid.UUID
 	for _, id := range postingAccounts(ts...) {
 		if _, ok := accounts[id]; !ok {
@@ -748,7 +748,7 @@ func (s *Service) addAccounts(ctx context.Context, r Repository, userID int64, a
 		return nil
 	}
 
-	more, err := r.Accounts(ctx, userID, missing)
+	more, err := r.Accounts(ctx, booksID, missing)
 	if err != nil {
 		return err
 	}
@@ -765,7 +765,7 @@ func (s *Service) references(ctx context.Context, r Repository, t domain.Transac
 		ids = append(ids, p.AccountID)
 	}
 
-	accounts, err := r.Accounts(ctx, t.UserID, ids)
+	accounts, err := r.Accounts(ctx, t.BooksID, ids)
 	if err != nil {
 		return nil, err
 	}
@@ -776,7 +776,7 @@ func (s *Service) references(ctx context.Context, r Repository, t domain.Transac
 			continue
 		}
 
-		parent, err := r.AccountHasChildren(ctx, t.UserID, a.ID)
+		parent, err := r.AccountHasChildren(ctx, t.BooksID, a.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -787,7 +787,7 @@ func (s *Service) references(ctx context.Context, r Repository, t domain.Transac
 	}
 
 	if t.PayeeID != uuid.Nil {
-		if _, err := r.Payee(ctx, t.UserID, t.PayeeID); errors.Is(err, ErrNotFound) {
+		if _, err := r.Payee(ctx, t.BooksID, t.PayeeID); errors.Is(err, ErrNotFound) {
 			return nil, &domain.FieldError{Field: "payee_id", Message: "unknown payee", Err: domain.ErrValidation}
 		} else if err != nil {
 			return nil, err
@@ -795,7 +795,7 @@ func (s *Service) references(ctx context.Context, r Repository, t domain.Transac
 	}
 
 	for i, l := range t.Links {
-		if _, err := r.Transaction(ctx, t.UserID, l.Target); errors.Is(err, ErrNotFound) {
+		if _, err := r.Transaction(ctx, t.BooksID, l.Target); errors.Is(err, ErrNotFound) {
 			return nil, &domain.FieldError{Field: "links[" + strconv.Itoa(i) + "].target", Message: "unknown transaction", Err: domain.ErrValidation}
 		} else if err != nil {
 			return nil, err

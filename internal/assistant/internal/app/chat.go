@@ -13,8 +13,8 @@ type ChatState struct {
 	RetryAt                     time.Time
 }
 
-func (s *Service) ChatState(ctx context.Context, userID int64, use Use) (ChatState, error) {
-	targets, err := s.Resolve(ctx, userID, true, use)
+func (s *Service) ChatState(ctx context.Context, booksID int64, use Use) (ChatState, error) {
+	targets, err := s.Resolve(ctx, booksID, true, use)
 	if le, ok := errors.AsType[*LimitError](err); ok {
 		return ChatState{RetryAt: le.RetryAt}, nil
 	}
@@ -23,7 +23,7 @@ func (s *Service) ChatState(ctx context.Context, userID int64, use Use) (ChatSta
 		return ChatState{}, err
 	}
 
-	b, err := s.budget(ctx, userID)
+	b, err := s.budget(ctx, booksID)
 	if err != nil {
 		return ChatState{}, err
 	}

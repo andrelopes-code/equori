@@ -21,7 +21,7 @@ var (
 const insertRecords = `-- name: InsertRecords :batchone
 INSERT INTO
     ingestion_external_record (
-        user_id,
+        books_id,
         batch_id,
         account_id,
         external_id,
@@ -57,9 +57,9 @@ VALUES
         $15,
         $16
     )
-ON CONFLICT (user_id, dedup_key) DO NOTHING
+ON CONFLICT (books_id, dedup_key) DO NOTHING
 RETURNING
-    id, user_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change, line_kind, review_reason, candidate_scores
+    id, books_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change, line_kind, review_reason, candidate_scores
 `
 
 type InsertRecordsBatchResults struct {
@@ -69,7 +69,7 @@ type InsertRecordsBatchResults struct {
 }
 
 type InsertRecordsParams struct {
-	UserID            int64
+	BooksID           int64
 	BatchID           uuid.UUID
 	AccountID         uuid.UUID
 	ExternalID        *string
@@ -92,7 +92,7 @@ func (q *Queries) InsertRecords(ctx context.Context, arg []InsertRecordsParams) 
 	batch := &pgx.Batch{}
 	for _, a := range arg {
 		vals := []interface{}{
-			a.UserID,
+			a.BooksID,
 			a.BatchID,
 			a.AccountID,
 			a.ExternalID,
@@ -128,7 +128,7 @@ func (b *InsertRecordsBatchResults) QueryRow(f func(int, IngestionExternalRecord
 		row := b.br.QueryRow()
 		err := row.Scan(
 			&i.ID,
-			&i.UserID,
+			&i.BooksID,
 			&i.BatchID,
 			&i.AccountID,
 			&i.ExternalID,
@@ -172,7 +172,7 @@ SET
     review_reason = $5,
     candidate_scores = $6
 WHERE
-    user_id = $7
+    books_id = $7
     AND id = $8
 `
 
@@ -189,7 +189,7 @@ type SaveRecordOutcomesParams struct {
 	Candidates      []uuid.UUID
 	ReviewReason    *string
 	CandidateScores []byte
-	UserID          int64
+	BooksID         int64
 	ID              uuid.UUID
 }
 
@@ -203,7 +203,7 @@ func (q *Queries) SaveRecordOutcomes(ctx context.Context, arg []SaveRecordOutcom
 			a.Candidates,
 			a.ReviewReason,
 			a.CandidateScores,
-			a.UserID,
+			a.BooksID,
 			a.ID,
 		}
 		batch.Queue(saveRecordOutcomes, vals...)
@@ -249,7 +249,7 @@ SET
     amount = $11,
     review_reason = $12
 WHERE
-    user_id = $13
+    books_id = $13
     AND id = $14
 `
 
@@ -272,7 +272,7 @@ type UpdateRecordFactsParams struct {
 	BookedOn          time.Time
 	Amount            int64
 	ReviewReason      *string
-	UserID            int64
+	BooksID           int64
 	ID                uuid.UUID
 }
 
@@ -293,7 +293,7 @@ func (q *Queries) UpdateRecordFacts(ctx context.Context, arg []UpdateRecordFacts
 			a.BookedOn,
 			a.Amount,
 			a.ReviewReason,
-			a.UserID,
+			a.BooksID,
 			a.ID,
 		}
 		batch.Queue(updateRecordFacts, vals...)

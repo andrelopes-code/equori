@@ -31,7 +31,7 @@ func toExport(e app.Export) Export {
 }
 
 func (s *Server) RequestExport(ctx context.Context, _ RequestExportRequestObject) (RequestExportResponseObject, error) {
-	e, err := s.exports.Request(ctx, auth.MustUserID(ctx))
+	e, err := s.exports.Request(ctx, auth.MustBooksID(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +40,7 @@ func (s *Server) RequestExport(ctx context.Context, _ RequestExportRequestObject
 }
 
 func (s *Server) GetExport(ctx context.Context, _ GetExportRequestObject) (GetExportResponseObject, error) {
-	e, err := s.exports.Get(ctx, auth.MustUserID(ctx))
+	e, err := s.exports.Get(ctx, auth.MustBooksID(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +49,7 @@ func (s *Server) GetExport(ctx context.Context, _ GetExportRequestObject) (GetEx
 }
 
 func (s *Server) GetExportContent(ctx context.Context, _ GetExportContentRequestObject) (GetExportContentResponseObject, error) {
-	content, requested, err := s.exports.Content(ctx, auth.MustUserID(ctx))
+	content, requested, err := s.exports.Content(ctx, auth.MustBooksID(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +85,7 @@ func (s *Server) ImportArchive(ctx context.Context, req ImportArchiveRequestObje
 		break
 	}
 
-	res, err := s.exports.Import(ctx, auth.MustUserID(ctx), archive)
+	res, err := s.exports.Import(ctx, auth.MustBooksID(ctx), archive)
 	if err != nil {
 		return nil, err
 	}

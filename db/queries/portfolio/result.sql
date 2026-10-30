@@ -1,13 +1,13 @@
 -- name: DeleteRealizedResults :exec
 DELETE FROM portfolio_realized_result
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND account_id = ANY (@account_ids::UUID[]);
 
 -- name: InsertRealizedResult :exec
 INSERT INTO
     portfolio_realized_result (
-        user_id,
+        books_id,
         transaction_id,
         account_id,
         instrument,
@@ -22,7 +22,7 @@ INSERT INTO
     )
 VALUES
     (
-        @user_id,
+        @books_id,
         @transaction_id,
         @account_id,
         @instrument,
@@ -42,7 +42,7 @@ SELECT
 FROM
     portfolio_realized_result
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND date >= @from_date
     AND date < @to_date
 ORDER BY

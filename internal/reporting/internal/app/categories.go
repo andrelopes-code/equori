@@ -33,18 +33,18 @@ type CategoryTotal struct {
 
 // CategoryTotals totals the categories of class in [from, to] (A77) in the view, in the
 // order of the repository rows. A closed account is listed only when one of its totals is not zero.
-func (s *Service) CategoryTotals(ctx context.Context, userID int64, class string, from, to time.Time, view View) ([]CategoryTotal, error) {
+func (s *Service) CategoryTotals(ctx context.Context, booksID int64, class string, from, to time.Time, view View) ([]CategoryTotal, error) {
 	if days := int(to.Sub(from).Hours()/24) + 1; days < 1 || days > MaxCategoryDays {
 		return nil, ErrInvalidCategoryRange
 	}
 
-	rows, err := s.repo.CategoryTotals(ctx, userID, class, from, to)
+	rows, err := s.repo.CategoryTotals(ctx, booksID, class, from, to)
 	if err != nil {
 		return nil, err
 	}
 
 	if view == ViewCash {
-		cash, err := s.cashTotals(ctx, userID, from, to)
+		cash, err := s.cashTotals(ctx, booksID, from, to)
 		if err != nil {
 			return nil, err
 		}

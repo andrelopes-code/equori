@@ -123,7 +123,7 @@ func (r SystemRole) DefaultName() string {
 
 type Account struct {
 	ID             uuid.UUID
-	UserID         int64
+	BooksID        int64
 	Name           string
 	Class          Class
 	Kind           Kind
@@ -225,7 +225,7 @@ func ValidateParent(child, parent Account) error {
 	switch {
 	case child.ID == parent.ID:
 		return invalid("parent_id", "must differ from the account")
-	case child.UserID != parent.UserID:
+	case child.BooksID != parent.BooksID:
 		return &FieldError{Field: "parent_id", Message: "unknown account", Err: ErrUnknownAccount}
 	case child.Class != parent.Class:
 		return invalid("parent_id", "must have the same class")

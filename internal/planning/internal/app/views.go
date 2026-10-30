@@ -31,13 +31,13 @@ type Projection struct {
 var beginning = time.Date(1, 1, 1, 0, 0, 0, 0, time.UTC)
 
 // Project returns the projection of a balance account to date to (P7 amendment A56).
-func (s *Service) Project(ctx context.Context, userID int64, accountID uuid.UUID, to time.Time) (Projection, error) {
+func (s *Service) Project(ctx context.Context, booksID int64, accountID uuid.UUID, to time.Time) (Projection, error) {
 	today := s.clk.Today()
 	if !to.After(today) || to.After(s.horizon()) {
 		return Projection{}, &domain.FieldError{Field: "to", Message: "must be after today and at most today + 12 months", Err: domain.ErrValidation}
 	}
 
-	facts, err := s.ledger.AccountFacts(ctx, userID)
+	facts, err := s.ledger.AccountFacts(ctx, booksID)
 	if err != nil {
 		return Projection{}, err
 	}
@@ -47,7 +47,7 @@ func (s *Service) Project(ctx context.Context, userID int64, accountID uuid.UUID
 		return Projection{}, &domain.FieldError{Field: "id", Message: "must be a balance account of the user", Err: domain.ErrValidation}
 	}
 
-	schedules, err := s.repo.SchedulesTouching(ctx, userID, []uuid.UUID{accountID})
+	schedules, err := s.repo.SchedulesTouching(ctx, booksID, []uuid.UUID{accountID})
 	if err != nil {
 		return Projection{}, err
 	}
@@ -57,7 +57,7 @@ func (s *Service) Project(ctx context.Context, userID int64, accountID uuid.UUID
 		byID[sch.ID] = sch
 	}
 
-	os, err := s.repo.Occurrences(ctx, userID, beginning, to, uuid.Nil)
+	os, err := s.repo.Occurrences(ctx, booksID, beginning, to, uuid.Nil)
 	if err != nil {
 		return Projection{}, err
 	}
@@ -97,7 +97,7 @@ func (s *Service) Project(ctx context.Context, userID int64, accountID uuid.UUID
 		return 0
 	})
 
-	openingBalance, err := s.ledger.Balance(ctx, userID, accountID, today)
+	openingBalance, err := s.ledger.Balance(ctx, booksID, accountID, today)
 	if errors.Is(err, ErrMixedInstruments) {
 		return Projection{}, &CurrencyError{Field: "id"}
 	}
@@ -106,7 +106,7 @@ func (s *Service) Project(ctx context.Context, userID int64, accountID uuid.UUID
 		return Projection{}, err
 	}
 
-	closingBalance, err := s.ledger.Balance(ctx, userID, accountID, to)
+	closingBalance, err := s.ledger.Balance(ctx, booksID, accountID, to)
 	if err != nil {
 		return Projection{}, err
 	}
@@ -134,17 +134,17 @@ type Committed struct {
 var committedKinds = map[domain.Kind]bool{domain.Bill: true, domain.Subscription: true, domain.Savings: true}
 
 // Committed returns the installments and the expected occurrences committed in month (A57).
-func (s *Service) Committed(ctx context.Context, userID int64, month time.Time) (Committed, error) {
+func (s *Service) Committed(ctx context.Context, booksID int64, month time.Time) (Committed, error) {
 	month = domain.MonthOf(month)
 
-	base, err := s.ledger.BaseCurrency(ctx, userID)
+	base, err := s.ledger.BaseCurrency(ctx, booksID)
 	if err != nil {
 		return Committed{}, err
 	}
 
 	out := Committed{Month: month, Currency: base}
 
-	facts, err := s.ledger.AccountFacts(ctx, userID)
+	facts, err := s.ledger.AccountFacts(ctx, booksID)
 	if err != nil {
 		return Committed{}, err
 	}
@@ -154,7 +154,7 @@ func (s *Service) Committed(ctx context.Context, userID int64, month time.Time) 
 			continue
 		}
 
-		c, err := s.ledger.Commitment(ctx, userID, a.ID, month)
+		c, err := s.ledger.Commitment(ctx, booksID, a.ID, month)
 		if err != nil {
 			return Committed{}, err
 		}
@@ -162,7 +162,7 @@ func (s *Service) Committed(ctx context.Context, userID int64, month time.Time) 
 		out.Installments += c
 	}
 
-	schedules, err := s.repo.Schedules(ctx, userID)
+	schedules, err := s.repo.Schedules(ctx, booksID)
 	if err != nil {
 		return Committed{}, err
 	}
@@ -172,7 +172,7 @@ func (s *Service) Committed(ctx context.Context, userID int64, month time.Time) 
 		byID[sch.ID] = sch
 	}
 
-	os, err := s.repo.Occurrences(ctx, userID, month, month.AddDate(0, 1, -1), uuid.Nil)
+	os, err := s.repo.Occurrences(ctx, booksID, month, month.AddDate(0, 1, -1), uuid.Nil)
 	if err != nil {
 		return Committed{}, err
 	}

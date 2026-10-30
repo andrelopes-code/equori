@@ -15,15 +15,15 @@ import (
 
 // RecordTrade records M17: a purchase or sale of a security for cash of the same
 // brokerage, the sale at average cost (P8 amendment A68).
-func (s *Service) RecordTrade(ctx context.Context, userID int64, o domain.TradeOrder) (domain.Transaction, error) {
+func (s *Service) RecordTrade(ctx context.Context, booksID int64, o domain.TradeOrder) (domain.Transaction, error) {
 	var created domain.Transaction
 	err := s.repo.InTx(ctx, func(r Repository) error {
-		base, err := baseCurrency(ctx, r, userID)
+		base, err := baseCurrency(ctx, r, booksID)
 		if err != nil {
 			return err
 		}
 
-		security, cash, err := s.brokerageAccounts(ctx, r, userID, o.AccountID, o.CashAccountID, base)
+		security, cash, err := s.brokerageAccounts(ctx, r, booksID, o.AccountID, o.CashAccountID, base)
 		if err != nil {
 			return err
 		}
@@ -33,11 +33,11 @@ func (s *Service) RecordTrade(ctx context.Context, userID int64, o domain.TradeO
 		}
 
 		// Two sales of one account serialize on its row, so each reads the holding the other left.
-		if _, err := r.LockAccount(ctx, userID, security.ID); err != nil {
+		if _, err := r.LockAccount(ctx, booksID, security.ID); err != nil {
 			return err
 		}
 
-		quantity, basis, err := r.Holding(ctx, userID, security.ID, o.Date)
+		quantity, basis, err := r.Holding(ctx, booksID, security.ID, o.Date)
 		if err != nil {
 			return err
 		}
@@ -51,7 +51,7 @@ func (s *Service) RecordTrade(ctx context.Context, userID int64, o domain.TradeO
 			return err
 		}
 
-		accts, err := s.tradeAccounts(ctx, r, userID, o.TaxesCategoryID, "taxes_category_id")
+		accts, err := s.tradeAccounts(ctx, r, booksID, o.TaxesCategoryID, "taxes_category_id")
 		if err != nil {
 			return err
 		}
@@ -62,7 +62,7 @@ func (s *Service) RecordTrade(ctx context.Context, userID int64, o domain.TradeO
 		}
 
 		created, err = s.insert(ctx, r, domain.Transaction{
-			UserID: userID, Date: o.Date, Description: o.Description, BalancingCurrency: base, Postings: postings, Trade: &trade,
+			BooksID: booksID, Date: o.Date, Description: o.Description, BalancingCurrency: base, Postings: postings, Trade: &trade,
 		})
 
 		return err
@@ -73,19 +73,19 @@ func (s *Service) RecordTrade(ctx context.Context, userID int64, o domain.TradeO
 
 // RecordIncome records M18: income paid on a security into cash of the same brokerage
 // (P8 amendment A70).
-func (s *Service) RecordIncome(ctx context.Context, userID int64, o domain.IncomeOrder) (domain.Transaction, error) {
+func (s *Service) RecordIncome(ctx context.Context, booksID int64, o domain.IncomeOrder) (domain.Transaction, error) {
 	var created domain.Transaction
 	err := s.repo.InTx(ctx, func(r Repository) error {
-		base, err := baseCurrency(ctx, r, userID)
+		base, err := baseCurrency(ctx, r, booksID)
 		if err != nil {
 			return err
 		}
 
-		if _, _, err := s.brokerageAccounts(ctx, r, userID, o.AccountID, o.CashAccountID, base); err != nil {
+		if _, _, err := s.brokerageAccounts(ctx, r, booksID, o.AccountID, o.CashAccountID, base); err != nil {
 			return err
 		}
 
-		category, err := loadAccount(ctx, r, userID, o.CategoryID, "category_id")
+		category, err := loadAccount(ctx, r, booksID, o.CategoryID, "category_id")
 		if err != nil {
 			return err
 		}
@@ -94,14 +94,14 @@ func (s *Service) RecordIncome(ctx context.Context, userID int64, o domain.Incom
 			return fieldErr("category_id", "must be an income category", domain.ErrValidation)
 		}
 
-		accts, err := s.tradeAccounts(ctx, r, userID, o.WithheldCategoryID, "withheld_category_id")
+		accts, err := s.tradeAccounts(ctx, r, booksID, o.WithheldCategoryID, "withheld_category_id")
 		if err != nil {
 			return err
 		}
 
 		o.WithheldCategoryID = accts.Taxes
 		if o.Withheld == nil {
-			profile, err := s.profiles.Profile(ctx, userID)
+			profile, err := s.profiles.Profile(ctx, booksID)
 			if err != nil {
 				return fmt.Errorf("read profile: %w", err)
 			}
@@ -115,7 +115,7 @@ func (s *Service) RecordIncome(ctx context.Context, userID int64, o domain.Incom
 		}
 
 		created, err = s.insert(ctx, r, domain.Transaction{
-			UserID: userID, Date: o.Date, Description: o.Description, BalancingCurrency: base, Postings: postings, Income: &income,
+			BooksID: booksID, Date: o.Date, Description: o.Description, BalancingCurrency: base, Postings: postings, Income: &income,
 		})
 
 		return err
@@ -126,8 +126,8 @@ func (s *Service) RecordIncome(ctx context.Context, userID int64, o domain.Incom
 
 // brokerageAccounts checks a security account and a cash account of the same brokerage
 // in the base currency.
-func (s *Service) brokerageAccounts(ctx context.Context, r Repository, userID int64, securityID, cashID uuid.UUID, base money.Currency) (domain.Account, domain.Account, error) {
-	security, err := loadAccount(ctx, r, userID, securityID, "account_id")
+func (s *Service) brokerageAccounts(ctx context.Context, r Repository, booksID int64, securityID, cashID uuid.UUID, base money.Currency) (domain.Account, domain.Account, error) {
+	security, err := loadAccount(ctx, r, booksID, securityID, "account_id")
 	if err != nil {
 		return domain.Account{}, domain.Account{}, err
 	}
@@ -136,7 +136,7 @@ func (s *Service) brokerageAccounts(ctx context.Context, r Repository, userID in
 		return domain.Account{}, domain.Account{}, fieldErr("account_id", "must hold a security", domain.ErrValidation)
 	}
 
-	cash, err := loadAccount(ctx, r, userID, cashID, "cash_account_id")
+	cash, err := loadAccount(ctx, r, booksID, cashID, "cash_account_id")
 	if err != nil {
 		return domain.Account{}, domain.Account{}, err
 	}
@@ -154,13 +154,13 @@ func (s *Service) brokerageAccounts(ctx context.Context, r Repository, userID in
 
 // tradeAccounts returns the result and tax accounts; taxesCategory, named field in the
 // request, replaces the system account taxes.
-func (s *Service) tradeAccounts(ctx context.Context, r Repository, userID int64, taxesCategory uuid.UUID, field string) (domain.TradeAccounts, error) {
+func (s *Service) tradeAccounts(ctx context.Context, r Repository, booksID int64, taxesCategory uuid.UUID, field string) (domain.TradeAccounts, error) {
 	var accts domain.TradeAccounts
 	for _, x := range []struct {
 		role domain.SystemRole
 		id   *uuid.UUID
 	}{{domain.RoleRealizedGains, &accts.RealizedGains}, {domain.RoleRealizedLosses, &accts.RealizedLosses}, {domain.RoleTaxes, &accts.Taxes}} {
-		a, err := r.SystemAccount(ctx, userID, x.role)
+		a, err := r.SystemAccount(ctx, booksID, x.role)
 		if err != nil {
 			return domain.TradeAccounts{}, err
 		}
@@ -169,7 +169,7 @@ func (s *Service) tradeAccounts(ctx context.Context, r Repository, userID int64,
 	}
 
 	if taxesCategory != uuid.Nil {
-		if err := s.expenseCategory(ctx, r, userID, taxesCategory, field); err != nil {
+		if err := s.expenseCategory(ctx, r, booksID, taxesCategory, field); err != nil {
 			return domain.TradeAccounts{}, err
 		}
 
@@ -181,7 +181,7 @@ func (s *Service) tradeAccounts(ctx context.Context, r Repository, userID int64,
 
 // checkLaterSales locks the security accounts of postings and rejects a change dated on
 // or before a non-voided sale of one of them other than exclude (P8 amendment A69).
-func checkLaterSales(ctx context.Context, r Repository, userID int64, date time.Time, postings []domain.Posting, exclude uuid.UUID) error {
+func checkLaterSales(ctx context.Context, r Repository, booksID int64, date time.Time, postings []domain.Posting, exclude uuid.UUID) error {
 	ids := make([]uuid.UUID, 0, len(postings))
 	for _, p := range postings {
 		if isSecurity(p.Amount.Currency()) {
@@ -198,12 +198,12 @@ func checkLaterSales(ctx context.Context, r Repository, userID int64, date time.
 	slices.SortFunc(ids, func(a, b uuid.UUID) int { return bytes.Compare(a[:], b[:]) })
 
 	for _, id := range slices.Compact(ids) {
-		if _, err := r.LockAccount(ctx, userID, id); err != nil {
+		if _, err := r.LockAccount(ctx, booksID, id); err != nil {
 			return err
 		}
 	}
 
-	later, err := r.LaterSaleExists(ctx, userID, ids, date, exclude)
+	later, err := r.LaterSaleExists(ctx, booksID, ids, date, exclude)
 	if err != nil {
 		return err
 	}

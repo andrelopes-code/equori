@@ -21,7 +21,7 @@ var (
 const insertPostings = `-- name: InsertPostings :batchexec
 INSERT INTO
     ledger_posting (
-        user_id,
+        books_id,
         transaction_id,
         account_id,
         position,
@@ -72,7 +72,7 @@ type InsertPostingsBatchResults struct {
 }
 
 type InsertPostingsParams struct {
-	UserID             int64
+	BooksID            int64
 	TransactionID      uuid.UUID
 	AccountID          uuid.UUID
 	Position           int16
@@ -98,7 +98,7 @@ func (q *Queries) InsertPostings(ctx context.Context, arg []InsertPostingsParams
 	batch := &pgx.Batch{}
 	for _, a := range arg {
 		vals := []interface{}{
-			a.UserID,
+			a.BooksID,
 			a.TransactionID,
 			a.AccountID,
 			a.Position,

@@ -27,8 +27,8 @@ type Repository struct {
 func NewRepository(db db) *Repository { return &Repository{db: db, q: New(db)} }
 
 // AccountCurrency is the instrument of the account and its sub-accounts (P8 amendment A63).
-func (r *Repository) AccountCurrency(ctx context.Context, userID int64, accountID uuid.UUID) (string, error) {
-	cs, err := r.q.TreeInstruments(ctx, TreeInstrumentsParams{UserID: userID, AccountID: accountID})
+func (r *Repository) AccountCurrency(ctx context.Context, booksID int64, accountID uuid.UUID) (string, error) {
+	cs, err := r.q.TreeInstruments(ctx, TreeInstrumentsParams{BooksID: booksID, AccountID: accountID})
 	switch {
 	case err != nil:
 		return "", err
@@ -43,19 +43,19 @@ func (r *Repository) AccountCurrency(ctx context.Context, userID int64, accountI
 
 // Rebuild runs in one database transaction (a savepoint inside a caller's transaction),
 // so readers never see a half-rebuilt series.
-func (r *Repository) Rebuild(ctx context.Context, userID int64, accountID uuid.UUID, from time.Time) error {
+func (r *Repository) Rebuild(ctx context.Context, booksID int64, accountID uuid.UUID, from time.Time) error {
 	return pgx.BeginFunc(ctx, r.db, func(tx pgx.Tx) error {
 		q := r.q.WithTx(tx)
 		if err := q.DeleteAccountDaysFrom(ctx, DeleteAccountDaysFromParams{AccountID: accountID, Date: from}); err != nil {
 			return err
 		}
 
-		return q.InsertAccountDaysFrom(ctx, InsertAccountDaysFromParams{UserID: userID, AccountID: accountID, FromDate: from})
+		return q.InsertAccountDaysFrom(ctx, InsertAccountDaysFromParams{BooksID: booksID, AccountID: accountID, FromDate: from})
 	})
 }
 
-func (r *Repository) AccountInstrument(ctx context.Context, userID int64, accountID uuid.UUID) (string, error) {
-	instrument, err := r.q.AccountInstrument(ctx, AccountInstrumentParams{UserID: userID, AccountID: accountID})
+func (r *Repository) AccountInstrument(ctx context.Context, booksID int64, accountID uuid.UUID) (string, error) {
+	instrument, err := r.q.AccountInstrument(ctx, AccountInstrumentParams{BooksID: booksID, AccountID: accountID})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return "", app.ErrNotFound
 	}
@@ -63,8 +63,8 @@ func (r *Repository) AccountInstrument(ctx context.Context, userID int64, accoun
 	return instrument, err
 }
 
-func (r *Repository) AccountName(ctx context.Context, userID int64, accountID uuid.UUID) (string, error) {
-	name, err := r.q.AccountName(ctx, AccountNameParams{UserID: userID, AccountID: accountID})
+func (r *Repository) AccountName(ctx context.Context, booksID int64, accountID uuid.UUID) (string, error) {
+	name, err := r.q.AccountName(ctx, AccountNameParams{BooksID: booksID, AccountID: accountID})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return "", app.ErrNotFound
 	}
@@ -72,8 +72,8 @@ func (r *Repository) AccountName(ctx context.Context, userID int64, accountID uu
 	return name, err
 }
 
-func (r *Repository) AccountFlows(ctx context.Context, userID int64, accountID uuid.UUID, from, to time.Time) ([]app.Flow, error) {
-	rows, err := r.q.AccountFlows(ctx, AccountFlowsParams{UserID: userID, AccountID: accountID, FromDate: from, ToDate: to})
+func (r *Repository) AccountFlows(ctx context.Context, booksID int64, accountID uuid.UUID, from, to time.Time) ([]app.Flow, error) {
+	rows, err := r.q.AccountFlows(ctx, AccountFlowsParams{BooksID: booksID, AccountID: accountID, FromDate: from, ToDate: to})
 	if err != nil {
 		return nil, err
 	}
@@ -86,8 +86,8 @@ func (r *Repository) AccountFlows(ctx context.Context, userID int64, accountID u
 	return out, nil
 }
 
-func (r *Repository) TreeDailyDeltas(ctx context.Context, userID int64, accountID uuid.UUID, to time.Time) ([]app.DayDelta, error) {
-	rows, err := r.q.TreeDailyDeltas(ctx, TreeDailyDeltasParams{UserID: userID, AccountID: accountID, ToDate: to})
+func (r *Repository) TreeDailyDeltas(ctx context.Context, booksID int64, accountID uuid.UUID, to time.Time) ([]app.DayDelta, error) {
+	rows, err := r.q.TreeDailyDeltas(ctx, TreeDailyDeltasParams{BooksID: booksID, AccountID: accountID, ToDate: to})
 	if err != nil {
 		return nil, err
 	}
@@ -108,14 +108,14 @@ func (r *Repository) AllAccounts(ctx context.Context) ([]app.AccountRef, error) 
 
 	out := make([]app.AccountRef, len(rows))
 	for i, row := range rows {
-		out[i] = app.AccountRef{UserID: row.UserID, AccountID: row.ID}
+		out[i] = app.AccountRef{BooksID: row.BooksID, AccountID: row.ID}
 	}
 
 	return out, nil
 }
 
-func (r *Repository) CategoryTotals(ctx context.Context, userID int64, class string, from, to time.Time) ([]app.CategoryRow, error) {
-	rows, err := r.q.CategoryTotals(ctx, CategoryTotalsParams{UserID: userID, AccountClass: class, FromDate: from, ToDate: to})
+func (r *Repository) CategoryTotals(ctx context.Context, booksID int64, class string, from, to time.Time) ([]app.CategoryRow, error) {
+	rows, err := r.q.CategoryTotals(ctx, CategoryTotalsParams{BooksID: booksID, AccountClass: class, FromDate: from, ToDate: to})
 	if err != nil {
 		return nil, err
 	}

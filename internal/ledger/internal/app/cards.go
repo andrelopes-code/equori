@@ -10,8 +10,8 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
-func (s *Service) card(ctx context.Context, userID int64, accountID uuid.UUID) (domain.Account, error) {
-	a, err := s.repo.Account(ctx, userID, accountID)
+func (s *Service) card(ctx context.Context, booksID int64, accountID uuid.UUID) (domain.Account, error) {
+	a, err := s.repo.Account(ctx, booksID, accountID)
 	if err != nil {
 		return domain.Account{}, err
 	}
@@ -19,13 +19,13 @@ func (s *Service) card(ctx context.Context, userID int64, accountID uuid.UUID) (
 	return a, domain.RequireCard(a)
 }
 
-func (s *Service) AddBillingRule(ctx context.Context, userID int64, accountID uuid.UUID, r domain.BillingCycleRule) (domain.BillingCycleRule, error) {
-	if _, err := s.card(ctx, userID, accountID); err != nil {
+func (s *Service) AddBillingRule(ctx context.Context, booksID int64, accountID uuid.UUID, r domain.BillingCycleRule) (domain.BillingCycleRule, error) {
+	if _, err := s.card(ctx, booksID, accountID); err != nil {
 		return domain.BillingCycleRule{}, err
 	}
 
 	if r.Calendar == "" {
-		p, err := s.profiles.Profile(ctx, userID)
+		p, err := s.profiles.Profile(ctx, booksID)
 		if err != nil {
 			return domain.BillingCycleRule{}, fmt.Errorf("read profile: %w", err)
 		}
@@ -44,11 +44,11 @@ func (s *Service) AddBillingRule(ctx context.Context, userID int64, accountID uu
 
 	var created domain.BillingCycleRule
 	err = s.repo.InTx(ctx, func(tx Repository) error {
-		if created, err = tx.InsertBillingRule(ctx, userID, accountID, rule); err != nil {
+		if created, err = tx.InsertBillingRule(ctx, booksID, accountID, rule); err != nil {
 			return err
 		}
 
-		return s.redateOpenStatements(ctx, tx, userID, accountID, rule.EffectiveFrom)
+		return s.redateOpenStatements(ctx, tx, booksID, accountID, rule.EffectiveFrom)
 	})
 
 	return created, err
@@ -56,13 +56,13 @@ func (s *Service) AddBillingRule(ctx context.Context, userID int64, accountID uu
 
 // redateOpenStatements applies a new rule version to statements that have not closed
 // yet; their postings stay on the same reference month.
-func (s *Service) redateOpenStatements(ctx context.Context, r Repository, userID int64, accountID uuid.UUID, from domain.ReferenceMonth) error {
-	rules, err := r.BillingRules(ctx, userID, accountID)
+func (s *Service) redateOpenStatements(ctx context.Context, r Repository, booksID int64, accountID uuid.UUID, from domain.ReferenceMonth) error {
+	rules, err := r.BillingRules(ctx, booksID, accountID)
 	if err != nil {
 		return err
 	}
 
-	open, err := r.OpenStatementsFrom(ctx, userID, accountID, from, s.clock.Today())
+	open, err := r.OpenStatementsFrom(ctx, booksID, accountID, from, s.clock.Today())
 	if err != nil {
 		return err
 	}
@@ -88,16 +88,16 @@ func (s *Service) redateOpenStatements(ctx context.Context, r Repository, userID
 	return nil
 }
 
-func (s *Service) BillingRules(ctx context.Context, userID int64, accountID uuid.UUID) (domain.Rules, error) {
-	if _, err := s.card(ctx, userID, accountID); err != nil {
+func (s *Service) BillingRules(ctx context.Context, booksID int64, accountID uuid.UUID) (domain.Rules, error) {
+	if _, err := s.card(ctx, booksID, accountID); err != nil {
 		return nil, err
 	}
 
-	return s.repo.BillingRules(ctx, userID, accountID)
+	return s.repo.BillingRules(ctx, booksID, accountID)
 }
 
-func (s *Service) AddCreditLimit(ctx context.Context, userID int64, l CreditLimit) (CreditLimit, error) {
-	a, err := s.card(ctx, userID, l.AccountID)
+func (s *Service) AddCreditLimit(ctx context.Context, booksID int64, l CreditLimit) (CreditLimit, error) {
+	a, err := s.card(ctx, booksID, l.AccountID)
 	if err != nil {
 		return CreditLimit{}, err
 	}
@@ -106,28 +106,28 @@ func (s *Service) AddCreditLimit(ctx context.Context, userID int64, l CreditLimi
 		return CreditLimit{}, &domain.FieldError{Field: "amount", Message: "must be positive and in the card currency", Err: domain.ErrValidation}
 	}
 
-	return s.repo.InsertCreditLimit(ctx, userID, l)
+	return s.repo.InsertCreditLimit(ctx, booksID, l)
 }
 
-func (s *Service) CreditLimits(ctx context.Context, userID int64, accountID uuid.UUID) ([]CreditLimit, error) {
-	if _, err := s.card(ctx, userID, accountID); err != nil {
+func (s *Service) CreditLimits(ctx context.Context, booksID int64, accountID uuid.UUID) ([]CreditLimit, error) {
+	if _, err := s.card(ctx, booksID, accountID); err != nil {
 		return nil, err
 	}
 
-	return s.repo.CreditLimits(ctx, userID, accountID)
+	return s.repo.CreditLimits(ctx, booksID, accountID)
 }
 
 // AddCard creates a card; a nil foreignChargeBP takes the default of the owner's region.
-func (s *Service) AddCard(ctx context.Context, userID int64, c domain.Card, foreignChargeBP *int) (domain.Card, error) {
-	if _, err := s.card(ctx, userID, c.AccountID); err != nil {
+func (s *Service) AddCard(ctx context.Context, booksID int64, c domain.Card, foreignChargeBP *int) (domain.Card, error) {
+	if _, err := s.card(ctx, booksID, c.AccountID); err != nil {
 		return domain.Card{}, err
 	}
 
-	c.UserID = userID
+	c.BooksID = booksID
 	if foreignChargeBP != nil {
 		c.ForeignChargeBP = *foreignChargeBP
 	} else {
-		bp, err := s.regionForeignChargeBP(ctx, userID)
+		bp, err := s.regionForeignChargeBP(ctx, booksID)
 		if err != nil {
 			return domain.Card{}, err
 		}
@@ -143,8 +143,8 @@ func (s *Service) AddCard(ctx context.Context, userID int64, c domain.Card, fore
 	return s.repo.InsertCard(ctx, c)
 }
 
-func (s *Service) regionForeignChargeBP(ctx context.Context, userID int64) (int, error) {
-	p, err := s.profiles.Profile(ctx, userID)
+func (s *Service) regionForeignChargeBP(ctx context.Context, booksID int64) (int, error) {
+	p, err := s.profiles.Profile(ctx, booksID)
 	if err != nil {
 		return 0, fmt.Errorf("read profile: %w", err)
 	}
@@ -152,26 +152,26 @@ func (s *Service) regionForeignChargeBP(ctx context.Context, userID int64) (int,
 	return s.defaults.ForeignChargeBP(p.Region), nil
 }
 
-func (s *Service) Cards(ctx context.Context, userID int64, accountID uuid.UUID) ([]domain.Card, error) {
-	if _, err := s.card(ctx, userID, accountID); err != nil {
+func (s *Service) Cards(ctx context.Context, booksID int64, accountID uuid.UUID) ([]domain.Card, error) {
+	if _, err := s.card(ctx, booksID, accountID); err != nil {
 		return nil, err
 	}
 
-	return s.repo.Cards(ctx, userID, accountID)
+	return s.repo.Cards(ctx, booksID, accountID)
 }
 
-func (s *Service) SetCardActive(ctx context.Context, userID int64, id uuid.UUID, active bool) (domain.Card, error) {
-	return s.repo.SetCardActive(ctx, userID, id, active)
+func (s *Service) SetCardActive(ctx context.Context, booksID int64, id uuid.UUID, active bool) (domain.Card, error) {
+	return s.repo.SetCardActive(ctx, booksID, id, active)
 }
 
 // CardSummary returns nil when the card has no credit limit in force today. The available
 // limit subtracts the whole debt, unbilled installments included, as issuers do.
-func (s *Service) CardSummary(ctx context.Context, userID int64, a domain.Account) (*CardSummary, error) {
+func (s *Service) CardSummary(ctx context.Context, booksID int64, a domain.Account) (*CardSummary, error) {
 	if a.Kind != domain.KindCreditCard {
 		return nil, nil
 	}
 
-	limits, err := s.repo.CreditLimits(ctx, userID, a.ID)
+	limits, err := s.repo.CreditLimits(ctx, booksID, a.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -189,7 +189,7 @@ func (s *Service) CardSummary(ctx context.Context, userID int64, a domain.Accoun
 		return nil, nil
 	}
 
-	totals, err := s.repo.AccountTotals(ctx, userID, a.ID)
+	totals, err := s.repo.AccountTotals(ctx, booksID, a.ID)
 	if err != nil {
 		return nil, err
 	}

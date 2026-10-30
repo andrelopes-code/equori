@@ -13,7 +13,7 @@ import (
 
 type LedgerAccount struct {
 	ID                    uuid.UUID
-	UserID                int64
+	BooksID               int64
 	Name                  string
 	AccountClass          string
 	Kind                  *string
@@ -34,7 +34,7 @@ type LedgerAccount struct {
 
 type LedgerAttachment struct {
 	ID            uuid.UUID
-	UserID        int64
+	BooksID       int64
 	TransactionID uuid.UUID
 	Sha256        []byte
 	FileName      string
@@ -44,7 +44,7 @@ type LedgerAttachment struct {
 
 type LedgerBalanceAssertion struct {
 	ID         uuid.UUID
-	UserID     int64
+	BooksID    int64
 	AccountID  uuid.UUID
 	Date       time.Time
 	Amount     int64
@@ -53,7 +53,7 @@ type LedgerBalanceAssertion struct {
 }
 
 type LedgerBillingCycleRule struct {
-	UserID               int64
+	BooksID              int64
 	AccountID            uuid.UUID
 	EffectiveFrom        time.Time
 	ClosingDay           *int16
@@ -69,7 +69,7 @@ type LedgerBillingCycleRule struct {
 
 type LedgerCard struct {
 	ID              uuid.UUID
-	UserID          int64
+	BooksID         int64
 	AccountID       uuid.UUID
 	Holder          string
 	LastFour        string
@@ -80,7 +80,7 @@ type LedgerCard struct {
 }
 
 type LedgerCreditLimit struct {
-	UserID        int64
+	BooksID       int64
 	AccountID     uuid.UUID
 	EffectiveFrom time.Time
 	Amount        int64
@@ -89,7 +89,7 @@ type LedgerCreditLimit struct {
 
 type LedgerDispute struct {
 	ID                  uuid.UUID
-	UserID              int64
+	BooksID             int64
 	TransactionID       uuid.UUID
 	OpenedOn            time.Time
 	ResolvedOn          *time.Time
@@ -99,7 +99,7 @@ type LedgerDispute struct {
 
 type LedgerInstallmentPlan struct {
 	ID                  uuid.UUID
-	UserID              int64
+	BooksID             int64
 	AccountID           uuid.UUID
 	OriginTransactionID uuid.UUID
 	PlanKind            string
@@ -113,7 +113,7 @@ type LedgerInstallmentPlan struct {
 
 type LedgerInstitution struct {
 	ID               uuid.UUID
-	UserID           int64
+	BooksID          int64
 	Name             string
 	Code             *string
 	IdentifierScheme *string
@@ -122,7 +122,7 @@ type LedgerInstitution struct {
 
 type LedgerInvestmentIncome struct {
 	TransactionID uuid.UUID
-	UserID        int64
+	BooksID       int64
 	AccountID     uuid.UUID
 	CashAccountID uuid.UUID
 	IncomeType    string
@@ -133,7 +133,7 @@ type LedgerInvestmentIncome struct {
 
 type LedgerLink struct {
 	ID                uuid.UUID
-	UserID            int64
+	BooksID           int64
 	FromTransactionID uuid.UUID
 	ToTransactionID   uuid.UUID
 	LinkType          string
@@ -142,19 +142,19 @@ type LedgerLink struct {
 
 type LedgerPayee struct {
 	ID         uuid.UUID
-	UserID     int64
+	BooksID    int64
 	Name       string
 	MergedInto uuid.NullUUID
 }
 
 type LedgerSetting struct {
-	UserID       int64
+	BooksID      int64
 	BaseCurrency string
 }
 
 type LedgerStatement struct {
 	ID               uuid.UUID
-	UserID           int64
+	BooksID          int64
 	AccountID        uuid.UUID
 	ReferenceMonth   time.Time
 	ClosingDate      time.Time
@@ -164,7 +164,7 @@ type LedgerStatement struct {
 }
 
 type LedgerStatementFact struct {
-	UserID      int64
+	BooksID     int64
 	StatementID uuid.UUID
 	Source      string
 	ClosingDate *time.Time
@@ -176,7 +176,7 @@ type LedgerStatementFact struct {
 
 type LedgerTrade struct {
 	TransactionID uuid.UUID
-	UserID        int64
+	BooksID       int64
 	AccountID     uuid.UUID
 	CashAccountID uuid.UUID
 	Side          string
@@ -191,7 +191,7 @@ type LedgerTrade struct {
 
 type LedgerTransaction struct {
 	ID                uuid.UUID
-	UserID            int64
+	BooksID           int64
 	Date              time.Time
 	Description       string
 	PayeeID           uuid.NullUUID

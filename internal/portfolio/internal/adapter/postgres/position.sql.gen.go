@@ -15,29 +15,29 @@ import (
 const deletePositionDays = `-- name: DeletePositionDays :exec
 DELETE FROM portfolio_position_day
 WHERE
-    user_id = $1
+    books_id = $1
     AND account_id = ANY ($2::UUID[])
 `
 
 type DeletePositionDaysParams struct {
-	UserID     int64
+	BooksID    int64
 	AccountIds []uuid.UUID
 }
 
 func (q *Queries) DeletePositionDays(ctx context.Context, arg DeletePositionDaysParams) error {
-	_, err := q.db.Exec(ctx, deletePositionDays, arg.UserID, arg.AccountIds)
+	_, err := q.db.Exec(ctx, deletePositionDays, arg.BooksID, arg.AccountIds)
 	return err
 }
 
 const insertPositionDay = `-- name: InsertPositionDay :exec
 INSERT INTO
-    portfolio_position_day (user_id, account_id, instrument, date, quantity, cost_basis)
+    portfolio_position_day (books_id, account_id, instrument, date, quantity, cost_basis)
 VALUES
     ($1, $2, $3, $4, $5, $6)
 `
 
 type InsertPositionDayParams struct {
-	UserID     int64
+	BooksID    int64
 	AccountID  uuid.UUID
 	Instrument string
 	Date       time.Time
@@ -47,7 +47,7 @@ type InsertPositionDayParams struct {
 
 func (q *Queries) InsertPositionDay(ctx context.Context, arg InsertPositionDayParams) error {
 	_, err := q.db.Exec(ctx, insertPositionDay,
-		arg.UserID,
+		arg.BooksID,
 		arg.AccountID,
 		arg.Instrument,
 		arg.Date,
@@ -59,15 +59,15 @@ func (q *Queries) InsertPositionDay(ctx context.Context, arg InsertPositionDayPa
 
 const positionsAt = `-- name: PositionsAt :many
 SELECT
-    user_id, account_id, instrument, date, quantity, cost_basis
+    books_id, account_id, instrument, date, quantity, cost_basis
 FROM
     (
         SELECT DISTINCT
-            ON (account_id) user_id, account_id, instrument, date, quantity, cost_basis
+            ON (account_id) books_id, account_id, instrument, date, quantity, cost_basis
         FROM
             portfolio_position_day
         WHERE
-            user_id = $1
+            books_id = $1
             AND date <= $2
         ORDER BY
             account_id,
@@ -81,13 +81,13 @@ ORDER BY
 `
 
 type PositionsAtParams struct {
-	UserID int64
-	OnDate time.Time
+	BooksID int64
+	OnDate  time.Time
 }
 
 // The latest row of each security account on or before on_date, without empty positions.
 func (q *Queries) PositionsAt(ctx context.Context, arg PositionsAtParams) ([]PortfolioPositionDay, error) {
-	rows, err := q.db.Query(ctx, positionsAt, arg.UserID, arg.OnDate)
+	rows, err := q.db.Query(ctx, positionsAt, arg.BooksID, arg.OnDate)
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +96,7 @@ func (q *Queries) PositionsAt(ctx context.Context, arg PositionsAtParams) ([]Por
 	for rows.Next() {
 		var i PortfolioPositionDay
 		if err := rows.Scan(
-			&i.UserID,
+			&i.BooksID,
 			&i.AccountID,
 			&i.Instrument,
 			&i.Date,

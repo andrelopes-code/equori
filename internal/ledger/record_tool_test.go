@@ -20,7 +20,7 @@ func previewTool(t *testing.T, h *apitest.Harness, name string, args any) tool.P
 		t.Fatal(err)
 	}
 
-	p, res, err := h.App.Tools.Preview(auth.WithUserID(t.Context(), h.OwnerID()), name, b)
+	p, res, err := h.App.Tools.Preview(auth.WithBooksID(t.Context(), h.OwnerID()), name, b)
 	if err != nil || res.IsError {
 		t.Fatalf("preview %s: %v %s", name, err, res.Content)
 	}

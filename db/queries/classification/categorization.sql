@@ -4,7 +4,7 @@ SELECT
 FROM
     classification_categorization
 WHERE
-    user_id = $1
+    books_id = $1
     AND transaction_id = $2;
 
 -- name: UpsertCategorization :execrows
@@ -12,7 +12,7 @@ WHERE
 INSERT INTO
     classification_categorization (
         transaction_id,
-        user_id,
+        books_id,
         transaction_version,
         transaction_date,
         method,
@@ -26,7 +26,7 @@ INSERT INTO
 VALUES
     (
         @transaction_id,
-        @user_id,
+        @books_id,
         @transaction_version,
         @transaction_date,
         sqlc.narg (method),
@@ -56,7 +56,7 @@ WHERE
 INSERT INTO
     classification_categorization (
         transaction_id,
-        user_id,
+        books_id,
         transaction_version,
         transaction_date,
         voided,
@@ -65,7 +65,7 @@ INSERT INTO
 VALUES
     (
         @transaction_id,
-        @user_id,
+        @books_id,
         @transaction_version,
         @transaction_date,
         TRUE,
@@ -78,7 +78,7 @@ SET
 -- name: DeleteCategorization :exec
 DELETE FROM classification_categorization
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND transaction_id = @transaction_id
     AND transaction_version < @transaction_version
     AND NOT voided;
@@ -90,7 +90,7 @@ SELECT
 FROM
     classification_categorization
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND method IS NULL
     AND NOT voided
     AND (
@@ -110,7 +110,7 @@ SELECT
 FROM
     classification_categorization
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND NOT voided
     AND transaction_date BETWEEN @from_date AND @to_date
 GROUP BY
@@ -123,7 +123,7 @@ SELECT
 FROM
     classification_categorization
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND transaction_id = ANY (@ids::UUID[])
     AND NOT voided;
 
@@ -136,7 +136,7 @@ SELECT
 FROM
     classification_categorization
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND method = 'rule'
     AND NOT voided
     AND rule_id = ANY (@ids::UUID[])
@@ -151,7 +151,7 @@ SELECT
 FROM
     classification_categorization
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND NOT voided
     AND transaction_date BETWEEN @from_date::date AND @to_date::date
     AND (

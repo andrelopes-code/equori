@@ -15,17 +15,17 @@ import (
 const deleteGoal = `-- name: DeleteGoal :execrows
 DELETE FROM planning_goal
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2
 `
 
 type DeleteGoalParams struct {
-	UserID int64
-	ID     uuid.UUID
+	BooksID int64
+	ID      uuid.UUID
 }
 
 func (q *Queries) DeleteGoal(ctx context.Context, arg DeleteGoalParams) (int64, error) {
-	result, err := q.db.Exec(ctx, deleteGoal, arg.UserID, arg.ID)
+	result, err := q.db.Exec(ctx, deleteGoal, arg.BooksID, arg.ID)
 	if err != nil {
 		return 0, err
 	}
@@ -35,41 +35,41 @@ func (q *Queries) DeleteGoal(ctx context.Context, arg DeleteGoalParams) (int64, 
 const deleteGoalAccounts = `-- name: DeleteGoalAccounts :exec
 DELETE FROM planning_goal_account
 WHERE
-    user_id = $1
+    books_id = $1
     AND goal_id = $2
 `
 
 type DeleteGoalAccountsParams struct {
-	UserID int64
-	GoalID uuid.UUID
+	BooksID int64
+	GoalID  uuid.UUID
 }
 
 func (q *Queries) DeleteGoalAccounts(ctx context.Context, arg DeleteGoalAccountsParams) error {
-	_, err := q.db.Exec(ctx, deleteGoalAccounts, arg.UserID, arg.GoalID)
+	_, err := q.db.Exec(ctx, deleteGoalAccounts, arg.BooksID, arg.GoalID)
 	return err
 }
 
 const getGoal = `-- name: GetGoal :one
 SELECT
-    id, user_id, name, target, currency, due_on, created_at
+    id, books_id, name, target, currency, due_on, created_at
 FROM
     planning_goal
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2
 `
 
 type GetGoalParams struct {
-	UserID int64
-	ID     uuid.UUID
+	BooksID int64
+	ID      uuid.UUID
 }
 
 func (q *Queries) GetGoal(ctx context.Context, arg GetGoalParams) (PlanningGoal, error) {
-	row := q.db.QueryRow(ctx, getGoal, arg.UserID, arg.ID)
+	row := q.db.QueryRow(ctx, getGoal, arg.BooksID, arg.ID)
 	var i PlanningGoal
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.Name,
 		&i.Target,
 		&i.Currency,
@@ -81,15 +81,15 @@ func (q *Queries) GetGoal(ctx context.Context, arg GetGoalParams) (PlanningGoal,
 
 const insertGoal = `-- name: InsertGoal :one
 INSERT INTO
-    planning_goal (user_id, name, target, currency, due_on)
+    planning_goal (books_id, name, target, currency, due_on)
 VALUES
     ($1, $2, $3, $4, $5)
 RETURNING
-    id, user_id, name, target, currency, due_on, created_at
+    id, books_id, name, target, currency, due_on, created_at
 `
 
 type InsertGoalParams struct {
-	UserID   int64
+	BooksID  int64
 	Name     string
 	Target   int64
 	Currency string
@@ -98,7 +98,7 @@ type InsertGoalParams struct {
 
 func (q *Queries) InsertGoal(ctx context.Context, arg InsertGoalParams) (PlanningGoal, error) {
 	row := q.db.QueryRow(ctx, insertGoal,
-		arg.UserID,
+		arg.BooksID,
 		arg.Name,
 		arg.Target,
 		arg.Currency,
@@ -107,7 +107,7 @@ func (q *Queries) InsertGoal(ctx context.Context, arg InsertGoalParams) (Plannin
 	var i PlanningGoal
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.Name,
 		&i.Target,
 		&i.Currency,
@@ -119,7 +119,7 @@ func (q *Queries) InsertGoal(ctx context.Context, arg InsertGoalParams) (Plannin
 
 const insertGoalAccounts = `-- name: InsertGoalAccounts :exec
 INSERT INTO
-    planning_goal_account (user_id, goal_id, account_id)
+    planning_goal_account (books_id, goal_id, account_id)
 SELECT
     $1::bigint,
     $2::uuid,
@@ -127,13 +127,13 @@ SELECT
 `
 
 type InsertGoalAccountsParams struct {
-	UserID     int64
+	BooksID    int64
 	GoalID     uuid.UUID
 	AccountIds []uuid.UUID
 }
 
 func (q *Queries) InsertGoalAccounts(ctx context.Context, arg InsertGoalAccountsParams) error {
-	_, err := q.db.Exec(ctx, insertGoalAccounts, arg.UserID, arg.GoalID, arg.AccountIds)
+	_, err := q.db.Exec(ctx, insertGoalAccounts, arg.BooksID, arg.GoalID, arg.AccountIds)
 	return err
 }
 
@@ -144,7 +144,7 @@ SELECT
 FROM
     planning_goal_account
 WHERE
-    user_id = $1
+    books_id = $1
     AND goal_id = ANY ($2::UUID[])
 ORDER BY
     goal_id,
@@ -152,7 +152,7 @@ ORDER BY
 `
 
 type ListGoalAccountsParams struct {
-	UserID  int64
+	BooksID int64
 	GoalIds []uuid.UUID
 }
 
@@ -162,7 +162,7 @@ type ListGoalAccountsRow struct {
 }
 
 func (q *Queries) ListGoalAccounts(ctx context.Context, arg ListGoalAccountsParams) ([]ListGoalAccountsRow, error) {
-	rows, err := q.db.Query(ctx, listGoalAccounts, arg.UserID, arg.GoalIds)
+	rows, err := q.db.Query(ctx, listGoalAccounts, arg.BooksID, arg.GoalIds)
 	if err != nil {
 		return nil, err
 	}
@@ -183,11 +183,11 @@ func (q *Queries) ListGoalAccounts(ctx context.Context, arg ListGoalAccountsPara
 
 const listGoals = `-- name: ListGoals :many
 SELECT
-    id, user_id, name, target, currency, due_on, created_at
+    id, books_id, name, target, currency, due_on, created_at
 FROM
     planning_goal
 WHERE
-    user_id = $1
+    books_id = $1
     AND (
         $2::uuid IS NULL
         OR id > $2::uuid
@@ -199,13 +199,13 @@ LIMIT
 `
 
 type ListGoalsParams struct {
-	UserID   int64
+	BooksID  int64
 	AfterID  uuid.NullUUID
 	RowLimit int32
 }
 
 func (q *Queries) ListGoals(ctx context.Context, arg ListGoalsParams) ([]PlanningGoal, error) {
-	rows, err := q.db.Query(ctx, listGoals, arg.UserID, arg.AfterID, arg.RowLimit)
+	rows, err := q.db.Query(ctx, listGoals, arg.BooksID, arg.AfterID, arg.RowLimit)
 	if err != nil {
 		return nil, err
 	}
@@ -215,7 +215,7 @@ func (q *Queries) ListGoals(ctx context.Context, arg ListGoalsParams) ([]Plannin
 		var i PlanningGoal
 		if err := rows.Scan(
 			&i.ID,
-			&i.UserID,
+			&i.BooksID,
 			&i.Name,
 			&i.Target,
 			&i.Currency,
@@ -240,10 +240,10 @@ SET
     currency = $3,
     due_on = $4
 WHERE
-    user_id = $5
+    books_id = $5
     AND id = $6
 RETURNING
-    id, user_id, name, target, currency, due_on, created_at
+    id, books_id, name, target, currency, due_on, created_at
 `
 
 type UpdateGoalParams struct {
@@ -251,7 +251,7 @@ type UpdateGoalParams struct {
 	Target   int64
 	Currency string
 	DueOn    time.Time
-	UserID   int64
+	BooksID  int64
 	ID       uuid.UUID
 }
 
@@ -261,13 +261,13 @@ func (q *Queries) UpdateGoal(ctx context.Context, arg UpdateGoalParams) (Plannin
 		arg.Target,
 		arg.Currency,
 		arg.DueOn,
-		arg.UserID,
+		arg.BooksID,
 		arg.ID,
 	)
 	var i PlanningGoal
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.Name,
 		&i.Target,
 		&i.Currency,

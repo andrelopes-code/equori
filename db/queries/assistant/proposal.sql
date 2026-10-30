@@ -2,7 +2,7 @@
 INSERT INTO
     assistant_proposal (
         id,
-        user_id,
+        books_id,
         conversation_id,
         message_id,
         tool,
@@ -18,7 +18,7 @@ INSERT INTO
 VALUES
     (
         @id,
-        @user_id,
+        @books_id,
         @conversation_id,
         sqlc.narg (message_id),
         @tool,
@@ -38,7 +38,7 @@ SELECT
 FROM
     assistant_proposal
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND id = @id;
 
 -- name: ListProposals :many
@@ -47,7 +47,7 @@ SELECT
 FROM
     assistant_proposal
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND conversation_id = @conversation_id
 ORDER BY
     created_at,
@@ -58,7 +58,7 @@ UPDATE assistant_proposal
 SET
     status = 'executing'
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND id = @id
     AND status = 'pending'
     AND expires_at > @now
@@ -72,7 +72,7 @@ SET
     result = sqlc.narg (result),
     decided_at = @decided_at
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND id = @id;
 
 -- name: RejectProposal :execrows
@@ -81,7 +81,7 @@ SET
     status = 'rejected',
     decided_at = @now
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND id = @id
     AND status = 'pending'
     AND expires_at > @now;
@@ -91,7 +91,7 @@ UPDATE assistant_proposal
 SET
     message_id = @message_id
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND id = ANY (@ids::UUID[]);
 
 -- name: DiscardProposals :exec
@@ -100,6 +100,6 @@ SET
     status = 'discarded',
     decided_at = @at
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND id = ANY (@ids::UUID[])
     AND status = 'pending';

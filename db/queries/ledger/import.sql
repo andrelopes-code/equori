@@ -4,7 +4,7 @@ SELECT
 FROM
     ledger_posting
 WHERE
-    user_id = $1
+    books_id = $1
     AND external_record_id = $2;
 
 -- name: ListUnlinkedPostings :many
@@ -25,7 +25,7 @@ FROM
         FROM
             ledger_posting p
         WHERE
-            p.user_id = @user_id
+            p.books_id = @books_id
             AND p.account_id = @account_id
             AND NOT p.voided
             AND p.external_record_id IS NULL
@@ -34,7 +34,7 @@ FROM
             p.transaction_id,
             p.position
     ) u
-    JOIN ledger_transaction t ON t.user_id = @user_id
+    JOIN ledger_transaction t ON t.books_id = @books_id
     AND t.id = u.transaction_id
 ORDER BY
     u.booked_on,
@@ -57,10 +57,10 @@ WITH
             coalesce(s.closing_date, p.settled_on, p.booked_on)::date AS expected_on
         FROM
             ledger_posting p
-            LEFT JOIN ledger_statement s ON s.user_id = p.user_id
+            LEFT JOIN ledger_statement s ON s.books_id = p.books_id
             AND s.id = p.statement_id
         WHERE
-            p.user_id = @user_id
+            p.books_id = @books_id
             AND p.account_id = @account_id
             AND NOT p.voided
             AND p.external_record_id IS NULL
@@ -89,7 +89,7 @@ WITH
                 FROM
                     ledger_link l
                 WHERE
-                    l.user_id = @user_id
+                    l.books_id = @books_id
                     AND l.link_type IN ('cancellation_of', 'anticipation_of')
                     AND o.transaction_id IN (l.from_transaction_id, l.to_transaction_id)
             ) g
@@ -137,7 +137,7 @@ FROM
             o.expected_on,
             o.position
     ) u
-    JOIN ledger_transaction t ON t.user_id = @user_id
+    JOIN ledger_transaction t ON t.books_id = @books_id
     AND t.id = u.transaction_id
 ORDER BY
     u.expected_on,
@@ -148,7 +148,7 @@ UPDATE ledger_posting
 SET
     external_record_id = @external_record_id
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND id = @id;
 
 -- name: ClearPendingPostings :exec
@@ -156,7 +156,7 @@ UPDATE ledger_posting
 SET
     status = 'cleared'
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND transaction_id = @transaction_id
     AND account_id = @account_id
     AND status = 'pending';
@@ -168,7 +168,7 @@ SELECT
 FROM
     ledger_posting
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND external_record_id = ANY (@record_ids::UUID[]);
 
 -- name: LockAccountPostingLinks :many
@@ -181,7 +181,7 @@ FROM
     ledger_posting p
     JOIN ledger_transaction t ON t.id = p.transaction_id
 WHERE
-    p.user_id = $1
+    p.books_id = $1
     AND p.transaction_id = $2
     AND p.account_id = $3
 ORDER BY
@@ -200,7 +200,7 @@ SELECT
 FROM
     ledger_posting
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND external_record_id = @external_record_id
 FOR UPDATE;
 
@@ -215,7 +215,7 @@ SET
         ELSE 'institution'
     END
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND id = @id;
 
 -- name: ReleaseExternalRecord :exec
@@ -224,7 +224,7 @@ UPDATE ledger_posting
 SET
     external_record_id = NULL
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND external_record_id = @external_record_id;
 
 -- name: GetRecordPosting :one
@@ -234,5 +234,5 @@ SELECT
 FROM
     ledger_posting
 WHERE
-    user_id = $1
+    books_id = $1
     AND external_record_id = $2;

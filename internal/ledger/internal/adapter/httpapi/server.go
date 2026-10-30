@@ -44,7 +44,7 @@ func (s *Server) Register(mux *http.ServeMux) {
 }
 
 func (s *Server) GetSettings(ctx context.Context, _ GetSettingsRequestObject) (GetSettingsResponseObject, error) {
-	st, err := s.svc.Settings(ctx, auth.MustUserID(ctx))
+	st, err := s.svc.Settings(ctx, auth.MustBooksID(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +53,7 @@ func (s *Server) GetSettings(ctx context.Context, _ GetSettingsRequestObject) (G
 }
 
 func (s *Server) UpdateSettings(ctx context.Context, req UpdateSettingsRequestObject) (UpdateSettingsResponseObject, error) {
-	if err := s.svc.SetBaseCurrency(ctx, auth.MustUserID(ctx), money.Currency(req.Body.BaseCurrency)); err != nil {
+	if err := s.svc.SetBaseCurrency(ctx, auth.MustBooksID(ctx), money.Currency(req.Body.BaseCurrency)); err != nil {
 		return nil, err
 	}
 
@@ -66,7 +66,7 @@ func (s *Server) ListInstitutions(ctx context.Context, req ListInstitutionsReque
 		return nil, err
 	}
 
-	rows, next, err := s.svc.ListInstitutions(ctx, auth.MustUserID(ctx), p)
+	rows, next, err := s.svc.ListInstitutions(ctx, auth.MustBooksID(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +82,7 @@ func (s *Server) ListInstitutions(ctx context.Context, req ListInstitutionsReque
 }
 
 func (s *Server) CreateInstitution(ctx context.Context, req CreateInstitutionRequestObject) (CreateInstitutionResponseObject, error) {
-	i, err := s.svc.CreateInstitution(ctx, auth.MustUserID(ctx), app.Institution{Name: req.Body.Name, Code: optString(req.Body.Code), Identifier: institutionIdentifier(req.Body.Identifier)})
+	i, err := s.svc.CreateInstitution(ctx, auth.MustBooksID(ctx), app.Institution{Name: req.Body.Name, Code: optString(req.Body.Code), Identifier: institutionIdentifier(req.Body.Identifier)})
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +101,7 @@ func (s *Server) SetInstitutionIdentifier(ctx context.Context, req SetInstitutio
 		return nil, &domain.FieldError{Field: field, Message: "must be set together with the other identifier field", Err: domain.ErrValidation}
 	}
 
-	i, err := s.svc.SetInstitutionIdentifier(ctx, auth.MustUserID(ctx), req.Id, ident)
+	i, err := s.svc.SetInstitutionIdentifier(ctx, auth.MustBooksID(ctx), req.Id, ident)
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +134,7 @@ func (s *Server) ListPayees(ctx context.Context, req ListPayeesRequestObject) (L
 		return nil, err
 	}
 
-	rows, next, err := s.svc.ListPayees(ctx, auth.MustUserID(ctx), p)
+	rows, next, err := s.svc.ListPayees(ctx, auth.MustBooksID(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -150,7 +150,7 @@ func (s *Server) ListPayees(ctx context.Context, req ListPayeesRequestObject) (L
 }
 
 func (s *Server) CreatePayee(ctx context.Context, req CreatePayeeRequestObject) (CreatePayeeResponseObject, error) {
-	p, err := s.svc.CreatePayee(ctx, auth.MustUserID(ctx), req.Body.Name)
+	p, err := s.svc.CreatePayee(ctx, auth.MustBooksID(ctx), req.Body.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -164,7 +164,7 @@ func (s *Server) ListTags(ctx context.Context, req ListTagsRequestObject) (ListT
 		return nil, err
 	}
 
-	tags, next, err := s.svc.ListTags(ctx, auth.MustUserID(ctx), p)
+	tags, next, err := s.svc.ListTags(ctx, auth.MustBooksID(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -181,16 +181,16 @@ func (s *Server) ListAccounts(ctx context.Context, req ListAccountsRequestObject
 		return nil, err
 	}
 
-	userID := auth.MustUserID(ctx)
+	booksID := auth.MustBooksID(ctx)
 
-	rows, next, err := s.svc.ListAccounts(ctx, userID, p)
+	rows, next, err := s.svc.ListAccounts(ctx, booksID, p)
 	if err != nil {
 		return nil, err
 	}
 
 	out := ListAccounts200JSONResponse{Items: make([]Account, len(rows))}
 	for i, r := range rows {
-		if out.Items[i], err = s.accountAPI(ctx, userID, r); err != nil {
+		if out.Items[i], err = s.accountAPI(ctx, booksID, r); err != nil {
 			return nil, err
 		}
 	}
@@ -201,7 +201,7 @@ func (s *Server) ListAccounts(ctx context.Context, req ListAccountsRequestObject
 }
 
 func (s *Server) CreateAccount(ctx context.Context, req CreateAccountRequestObject) (CreateAccountResponseObject, error) {
-	a, err := s.svc.CreateAccount(ctx, auth.MustUserID(ctx), fromAccountInput(*req.Body))
+	a, err := s.svc.CreateAccount(ctx, auth.MustBooksID(ctx), fromAccountInput(*req.Body))
 	if err != nil {
 		return nil, err
 	}
@@ -210,14 +210,14 @@ func (s *Server) CreateAccount(ctx context.Context, req CreateAccountRequestObje
 }
 
 func (s *Server) GetAccount(ctx context.Context, req GetAccountRequestObject) (GetAccountResponseObject, error) {
-	userID := auth.MustUserID(ctx)
+	booksID := auth.MustBooksID(ctx)
 
-	a, err := s.svc.Account(ctx, userID, req.Id)
+	a, err := s.svc.Account(ctx, booksID, req.Id)
 	if err != nil {
 		return nil, err
 	}
 
-	out, err := s.accountAPI(ctx, userID, a)
+	out, err := s.accountAPI(ctx, booksID, a)
 	if err != nil {
 		return nil, err
 	}
@@ -226,10 +226,10 @@ func (s *Server) GetAccount(ctx context.Context, req GetAccountRequestObject) (G
 }
 
 // accountAPI is an account with the limits of a card, when it is one with a credit limit.
-func (s *Server) accountAPI(ctx context.Context, userID int64, a domain.Account) (Account, error) {
+func (s *Server) accountAPI(ctx context.Context, booksID int64, a domain.Account) (Account, error) {
 	out := toAccountAPI(a)
 
-	summary, err := s.svc.CardSummary(ctx, userID, a)
+	summary, err := s.svc.CardSummary(ctx, booksID, a)
 	if err != nil {
 		return Account{}, err
 	}
@@ -252,7 +252,7 @@ func (s *Server) UpdateAccount(ctx context.Context, req UpdateAccountRequestObje
 		patch.YieldMode = &mode
 	}
 
-	a, err := s.svc.UpdateAccount(ctx, auth.MustUserID(ctx), req.Id, patch)
+	a, err := s.svc.UpdateAccount(ctx, auth.MustBooksID(ctx), req.Id, patch)
 	if err != nil {
 		return nil, err
 	}
@@ -261,12 +261,12 @@ func (s *Server) UpdateAccount(ctx context.Context, req UpdateAccountRequestObje
 }
 
 func (s *Server) CloseAccount(ctx context.Context, req CloseAccountRequestObject) (CloseAccountResponseObject, error) {
-	userID := auth.MustUserID(ctx)
-	if err := s.svc.CloseAccount(ctx, userID, req.Id, dateOf(req.Body.ClosedOn)); err != nil {
+	booksID := auth.MustBooksID(ctx)
+	if err := s.svc.CloseAccount(ctx, booksID, req.Id, dateOf(req.Body.ClosedOn)); err != nil {
 		return nil, err
 	}
 
-	a, err := s.svc.Account(ctx, userID, req.Id)
+	a, err := s.svc.Account(ctx, booksID, req.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -286,7 +286,7 @@ func (s *Server) SetAccountAppearance(ctx context.Context, req SetAccountAppeara
 		icon = string(*req.Body.Icon)
 	}
 
-	a, err := s.svc.SetAppearance(ctx, auth.MustUserID(ctx), req.Id, color, icon)
+	a, err := s.svc.SetAppearance(ctx, auth.MustBooksID(ctx), req.Id, color, icon)
 	if err != nil {
 		return nil, err
 	}
@@ -300,7 +300,7 @@ func (s *Server) SetAccountParent(ctx context.Context, req SetAccountParentReque
 		parent = *req.Body.ParentId
 	}
 
-	a, err := s.svc.UpdateAccount(ctx, auth.MustUserID(ctx), req.Id, app.AccountPatch{ParentID: &parent})
+	a, err := s.svc.UpdateAccount(ctx, auth.MustBooksID(ctx), req.Id, app.AccountPatch{ParentID: &parent})
 	if err != nil {
 		return nil, err
 	}
@@ -309,7 +309,7 @@ func (s *Server) SetAccountParent(ctx context.Context, req SetAccountParentReque
 }
 
 func (s *Server) RenamePayee(ctx context.Context, req RenamePayeeRequestObject) (RenamePayeeResponseObject, error) {
-	p, err := s.svc.RenamePayee(ctx, auth.MustUserID(ctx), req.Id, req.Body.Name)
+	p, err := s.svc.RenamePayee(ctx, auth.MustBooksID(ctx), req.Id, req.Body.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -318,7 +318,7 @@ func (s *Server) RenamePayee(ctx context.Context, req RenamePayeeRequestObject) 
 }
 
 func (s *Server) MergePayee(ctx context.Context, req MergePayeeRequestObject) (MergePayeeResponseObject, error) {
-	p, err := s.svc.MergePayees(ctx, auth.MustUserID(ctx), req.Id, req.Body.Into)
+	p, err := s.svc.MergePayees(ctx, auth.MustBooksID(ctx), req.Id, req.Body.Into)
 	if err != nil {
 		return nil, err
 	}
@@ -327,7 +327,7 @@ func (s *Server) MergePayee(ctx context.Context, req MergePayeeRequestObject) (M
 }
 
 func (s *Server) GetTag(ctx context.Context, req GetTagRequestObject) (GetTagResponseObject, error) {
-	t, err := s.svc.Tag(ctx, auth.MustUserID(ctx), req.Name)
+	t, err := s.svc.Tag(ctx, auth.MustBooksID(ctx), req.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -336,7 +336,7 @@ func (s *Server) GetTag(ctx context.Context, req GetTagRequestObject) (GetTagRes
 }
 
 func (s *Server) RenameTag(ctx context.Context, req RenameTagRequestObject) (RenameTagResponseObject, error) {
-	t, err := s.svc.RenameTag(ctx, auth.MustUserID(ctx), req.Name, req.Body.Name)
+	t, err := s.svc.RenameTag(ctx, auth.MustBooksID(ctx), req.Name, req.Body.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -345,7 +345,7 @@ func (s *Server) RenameTag(ctx context.Context, req RenameTagRequestObject) (Ren
 }
 
 func (s *Server) MergeTag(ctx context.Context, req MergeTagRequestObject) (MergeTagResponseObject, error) {
-	t, err := s.svc.MergeTag(ctx, auth.MustUserID(ctx), req.Name, req.Body.Into)
+	t, err := s.svc.MergeTag(ctx, auth.MustBooksID(ctx), req.Name, req.Body.Into)
 	if err != nil {
 		return nil, err
 	}
@@ -354,7 +354,7 @@ func (s *Server) MergeTag(ctx context.Context, req MergeTagRequestObject) (Merge
 }
 
 func (s *Server) DeleteTag(ctx context.Context, req DeleteTagRequestObject) (DeleteTagResponseObject, error) {
-	if err := s.svc.DeleteTag(ctx, auth.MustUserID(ctx), req.Name); err != nil {
+	if err := s.svc.DeleteTag(ctx, auth.MustBooksID(ctx), req.Name); err != nil {
 		return nil, err
 	}
 
@@ -366,7 +366,7 @@ func toTagUsageAPI(t app.TagUsage) TagUsage {
 }
 
 func (s *Server) MergeAccount(ctx context.Context, req MergeAccountRequestObject) (MergeAccountResponseObject, error) {
-	a, err := s.svc.MergeCategories(ctx, auth.MustUserID(ctx), req.Id, req.Body.Into)
+	a, err := s.svc.MergeCategories(ctx, auth.MustBooksID(ctx), req.Id, req.Body.Into)
 	if err != nil {
 		return nil, err
 	}
@@ -375,7 +375,7 @@ func (s *Server) MergeAccount(ctx context.Context, req MergeAccountRequestObject
 }
 
 func (s *Server) ReopenAccount(ctx context.Context, req ReopenAccountRequestObject) (ReopenAccountResponseObject, error) {
-	a, err := s.svc.ReopenAccount(ctx, auth.MustUserID(ctx), req.Id)
+	a, err := s.svc.ReopenAccount(ctx, auth.MustBooksID(ctx), req.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -390,7 +390,7 @@ func (s *Server) GetAccountBalance(ctx context.Context, req GetAccountBalanceReq
 	}
 
 	if req.Params.ValueIn != nil {
-		b, c, err := s.svc.ValuedBalance(ctx, auth.MustUserID(ctx), req.Id, dateOf(req.Params.Date), basis, money.Currency(*req.Params.ValueIn))
+		b, c, err := s.svc.ValuedBalance(ctx, auth.MustBooksID(ctx), req.Id, dateOf(req.Params.Date), basis, money.Currency(*req.Params.ValueIn))
 		if err != nil {
 			return nil, err
 		}
@@ -409,7 +409,7 @@ func (s *Server) GetAccountBalance(ctx context.Context, req GetAccountBalanceReq
 		}, nil
 	}
 
-	b, err := s.svc.BalanceAt(ctx, auth.MustUserID(ctx), req.Id, dateOf(req.Params.Date), basis)
+	b, err := s.svc.BalanceAt(ctx, auth.MustBooksID(ctx), req.Id, dateOf(req.Params.Date), basis)
 	if err != nil {
 		return nil, err
 	}
@@ -425,7 +425,7 @@ func (s *Server) ListBalances(ctx context.Context, req ListBalancesRequestObject
 		basis = app.Basis(*req.Params.Basis)
 	}
 
-	balances, err := s.svc.BalancesAt(ctx, auth.MustUserID(ctx), dateOf(req.Params.Date), basis)
+	balances, err := s.svc.BalancesAt(ctx, auth.MustBooksID(ctx), dateOf(req.Params.Date), basis)
 	if err != nil {
 		return nil, err
 	}
@@ -445,7 +445,7 @@ func (s *Server) ListTransactions(ctx context.Context, req ListTransactionsReque
 	}
 
 	q := app.TransactionQuery{
-		UserID: auth.MustUserID(ctx), AccountID: optUUID(req.Params.AccountId), PayeeID: optUUID(req.Params.PayeeId),
+		BooksID: auth.MustBooksID(ctx), AccountID: optUUID(req.Params.AccountId), PayeeID: optUUID(req.Params.PayeeId),
 		Tag: optString(req.Params.Tag), Q: optString(req.Params.Q), From: optDate(req.Params.From), To: optDate(req.Params.To), Limit: p.Limit, After: p.After,
 		Uncategorized: req.Params.Uncategorized != nil && *req.Params.Uncategorized,
 	}
@@ -471,7 +471,7 @@ func (s *Server) CreateTransaction(ctx context.Context, req CreateTransactionReq
 		return nil, err
 	}
 
-	t, err := s.svc.RecordTransaction(ctx, auth.MustUserID(ctx), in)
+	t, err := s.svc.RecordTransaction(ctx, auth.MustBooksID(ctx), in)
 	if err != nil {
 		return nil, err
 	}
@@ -480,14 +480,14 @@ func (s *Server) CreateTransaction(ctx context.Context, req CreateTransactionReq
 }
 
 func (s *Server) GetTransaction(ctx context.Context, req GetTransactionRequestObject) (GetTransactionResponseObject, error) {
-	userID := auth.MustUserID(ctx)
+	booksID := auth.MustBooksID(ctx)
 
-	t, err := s.svc.Transaction(ctx, userID, req.Id)
+	t, err := s.svc.Transaction(ctx, booksID, req.Id)
 	if err != nil {
 		return nil, err
 	}
 
-	refs, err := s.svc.ReferencedBy(ctx, userID, req.Id)
+	refs, err := s.svc.ReferencedBy(ctx, booksID, req.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -514,7 +514,7 @@ func (s *Server) CorrectTransaction(ctx context.Context, req CorrectTransactionR
 		return nil, err
 	}
 
-	t, err := s.svc.CorrectTransaction(ctx, auth.MustUserID(ctx), req.Id, b.ExpectedVersion, in, b.Reason)
+	t, err := s.svc.CorrectTransaction(ctx, auth.MustBooksID(ctx), req.Id, b.ExpectedVersion, in, b.Reason)
 	if err != nil {
 		return nil, err
 	}
@@ -523,12 +523,12 @@ func (s *Server) CorrectTransaction(ctx context.Context, req CorrectTransactionR
 }
 
 func (s *Server) VoidTransaction(ctx context.Context, req VoidTransactionRequestObject) (VoidTransactionResponseObject, error) {
-	userID := auth.MustUserID(ctx)
-	if err := s.svc.VoidTransaction(ctx, userID, req.Id, req.Body.Reason); err != nil {
+	booksID := auth.MustBooksID(ctx)
+	if err := s.svc.VoidTransaction(ctx, booksID, req.Id, req.Body.Reason); err != nil {
 		return nil, err
 	}
 
-	t, err := s.svc.Transaction(ctx, userID, req.Id)
+	t, err := s.svc.Transaction(ctx, booksID, req.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -537,7 +537,7 @@ func (s *Server) VoidTransaction(ctx context.Context, req VoidTransactionRequest
 }
 
 func (s *Server) CategorizeTransaction(ctx context.Context, req CategorizeTransactionRequestObject) (CategorizeTransactionResponseObject, error) {
-	userID := auth.MustUserID(ctx)
+	booksID := auth.MustBooksID(ctx)
 
 	c := app.Categorization{
 		TransactionID: req.Id, ExpectedVersion: req.Body.ExpectedVersion, PayeeID: req.Body.PayeeId,
@@ -552,7 +552,7 @@ func (s *Server) CategorizeTransaction(ctx context.Context, req CategorizeTransa
 		c.Parts[i] = domain.CategoryPart{AccountID: p.AccountId, Amount: amount}
 	}
 
-	errs, err := s.svc.Categorize(ctx, userID, []app.Categorization{c})
+	errs, err := s.svc.Categorize(ctx, booksID, []app.Categorization{c})
 	if err != nil {
 		return nil, err
 	}
@@ -561,7 +561,7 @@ func (s *Server) CategorizeTransaction(ctx context.Context, req CategorizeTransa
 		return nil, errs[0]
 	}
 
-	t, err := s.svc.Transaction(ctx, userID, req.Id)
+	t, err := s.svc.Transaction(ctx, booksID, req.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -570,14 +570,14 @@ func (s *Server) CategorizeTransaction(ctx context.Context, req CategorizeTransa
 }
 
 func (s *Server) CategorizeTransactions(ctx context.Context, req CategorizeTransactionsRequestObject) (CategorizeTransactionsResponseObject, error) {
-	userID := auth.MustUserID(ctx)
+	booksID := auth.MustBooksID(ctx)
 
 	items := make([]app.BulkItem, len(req.Body.Items))
 	for i, it := range req.Body.Items {
 		items[i] = app.BulkItem{ID: it.Id, ExpectedVersion: it.ExpectedVersion}
 	}
 
-	errs, err := s.svc.CategorizeMany(ctx, userID, req.Body.CategoryId, items)
+	errs, err := s.svc.CategorizeMany(ctx, booksID, req.Body.CategoryId, items)
 	if err != nil {
 		return nil, err
 	}
@@ -586,7 +586,7 @@ func (s *Server) CategorizeTransactions(ctx context.Context, req CategorizeTrans
 	for i, it := range items {
 		r := BulkCategorizeItemResult{Id: it.ID, Status: bulkStatus(errs[i])}
 		if errs[i] == nil {
-			t, err := s.svc.Transaction(ctx, userID, it.ID)
+			t, err := s.svc.Transaction(ctx, booksID, it.ID)
 			if err != nil {
 				return nil, err
 			}
@@ -617,7 +617,7 @@ func bulkStatus(err error) BulkCategorizeItemResultStatus {
 }
 
 func (s *Server) TransferTransaction(ctx context.Context, req TransferTransactionRequestObject) (TransferTransactionResponseObject, error) {
-	userID := auth.MustUserID(ctx)
+	booksID := auth.MustBooksID(ctx)
 
 	in := app.TransferRequest{
 		TransactionID: req.Id, ExpectedVersion: req.Body.ExpectedVersion, AccountID: req.Body.AccountId, Cause: app.Cause{Method: app.MethodManual},
@@ -626,12 +626,12 @@ func (s *Server) TransferTransaction(ctx context.Context, req TransferTransactio
 		in.PairWith = *req.Body.PairWith
 	}
 
-	res, err := s.svc.Transfer(ctx, userID, in)
+	res, err := s.svc.Transfer(ctx, booksID, in)
 	if err != nil {
 		return nil, err
 	}
 
-	t, err := s.svc.Transaction(ctx, userID, res.Kept)
+	t, err := s.svc.Transaction(ctx, booksID, res.Kept)
 	if err != nil {
 		return nil, err
 	}
@@ -645,7 +645,7 @@ func (s *Server) TransferTransaction(ctx context.Context, req TransferTransactio
 }
 
 func (s *Server) ReimburseTransaction(ctx context.Context, req ReimburseTransactionRequestObject) (ReimburseTransactionResponseObject, error) {
-	userID := auth.MustUserID(ctx)
+	booksID := auth.MustBooksID(ctx)
 
 	in := app.ReimbursementRequest{
 		TransactionID: req.Id, ExpectedVersion: req.Body.ExpectedVersion, Cause: app.Cause{Method: app.MethodManual},
@@ -663,12 +663,12 @@ func (s *Server) ReimburseTransaction(ctx context.Context, req ReimburseTransact
 		}
 	}
 
-	done, err := s.svc.Reimburse(ctx, userID, in)
+	done, err := s.svc.Reimburse(ctx, booksID, in)
 	if err != nil {
 		return nil, err
 	}
 
-	t, err := s.svc.Transaction(ctx, userID, done.ID)
+	t, err := s.svc.Transaction(ctx, booksID, done.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -677,7 +677,7 @@ func (s *Server) ReimburseTransaction(ctx context.Context, req ReimburseTransact
 }
 
 func (s *Server) ListReimbursementCandidates(ctx context.Context, req ListReimbursementCandidatesRequestObject) (ListReimbursementCandidatesResponseObject, error) {
-	candidates, suggestion, err := s.svc.ReimbursementCandidates(ctx, auth.MustUserID(ctx), req.Id)
+	candidates, suggestion, err := s.svc.ReimbursementCandidates(ctx, auth.MustBooksID(ctx), req.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -697,7 +697,7 @@ func (s *Server) ListReimbursementCandidates(ctx context.Context, req ListReimbu
 }
 
 func (s *Server) ListReimbursementSources(ctx context.Context, req ListReimbursementSourcesRequestObject) (ListReimbursementSourcesResponseObject, error) {
-	sources, err := s.svc.ReimbursementSources(ctx, auth.MustUserID(ctx), req.Id)
+	sources, err := s.svc.ReimbursementSources(ctx, auth.MustBooksID(ctx), req.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -711,7 +711,7 @@ func (s *Server) ListReimbursementSources(ctx context.Context, req ListReimburse
 }
 
 func (s *Server) ListTransactionVersions(ctx context.Context, req ListTransactionVersionsRequestObject) (ListTransactionVersionsResponseObject, error) {
-	versions, err := s.svc.Versions(ctx, auth.MustUserID(ctx), req.Id)
+	versions, err := s.svc.Versions(ctx, auth.MustBooksID(ctx), req.Id)
 	if err != nil {
 		return nil, err
 	}

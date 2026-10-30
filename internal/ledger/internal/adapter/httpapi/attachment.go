@@ -56,7 +56,7 @@ func (s *Server) CreateAttachment(ctx context.Context, req CreateAttachmentReque
 		return nil, err
 	}
 
-	a, err := s.svc.Attach(ctx, auth.MustUserID(ctx), req.Id, name, http.DetectContentType(content), content)
+	a, err := s.svc.Attach(ctx, auth.MustBooksID(ctx), req.Id, name, http.DetectContentType(content), content)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +70,7 @@ func (s *Server) ListAttachments(ctx context.Context, req ListAttachmentsRequest
 		return nil, err
 	}
 
-	as, next, err := s.svc.Attachments(ctx, auth.MustUserID(ctx), req.Id, p)
+	as, next, err := s.svc.Attachments(ctx, auth.MustBooksID(ctx), req.Id, p)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +86,7 @@ func (s *Server) ListAttachments(ctx context.Context, req ListAttachmentsRequest
 }
 
 func (s *Server) GetAttachmentContent(ctx context.Context, req GetAttachmentContentRequestObject) (GetAttachmentContentResponseObject, error) {
-	c, err := s.svc.AttachmentContent(ctx, auth.MustUserID(ctx), req.Id)
+	c, err := s.svc.AttachmentContent(ctx, auth.MustBooksID(ctx), req.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +110,7 @@ func (s *Server) GetAttachmentContent(ctx context.Context, req GetAttachmentCont
 }
 
 func (s *Server) DeleteAttachment(ctx context.Context, req DeleteAttachmentRequestObject) (DeleteAttachmentResponseObject, error) {
-	if err := s.svc.DeleteAttachment(ctx, auth.MustUserID(ctx), req.Id); err != nil {
+	if err := s.svc.DeleteAttachment(ctx, auth.MustBooksID(ctx), req.Id); err != nil {
 		return nil, err
 	}
 

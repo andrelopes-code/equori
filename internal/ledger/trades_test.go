@@ -206,17 +206,17 @@ func TestSecurityPostingsWaitForTheAccountLock(t *testing.T) {
 			return err
 		},
 		func() error {
-			return tx.QueryRow(ctx, `INSERT INTO ledger_transaction (user_id, date, description, balancing_currency, origin)
+			return tx.QueryRow(ctx, `INSERT INTO ledger_transaction (books_id, date, description, balancing_currency, origin)
 				VALUES ($1, '2026-10-20', 'sale', 'BRL', 'manual') RETURNING id`, user).Scan(&sale)
 		},
 		func() error {
-			_, err := tx.Exec(ctx, `INSERT INTO ledger_posting (user_id, transaction_id, account_id, position, amount, weight, booked_on, status)
+			_, err := tx.Exec(ctx, `INSERT INTO ledger_posting (books_id, transaction_id, account_id, position, amount, weight, booked_on, status)
 				VALUES ($1, $2, $3, 0, 1008, 1008, '2026-10-20', 'cleared'), ($1, $2, $4, 1, -1, -1008, '2026-10-20', 'cleared')`, user, sale, f.cash, f.mxrf11)
 
 			return err
 		},
 		func() error {
-			_, err := tx.Exec(ctx, `INSERT INTO ledger_trade (transaction_id, user_id, account_id, cash_account_id, side, quantity, unit_price, gross, fees, taxes, cost, currency)
+			_, err := tx.Exec(ctx, `INSERT INTO ledger_trade (transaction_id, books_id, account_id, cash_account_id, side, quantity, unit_price, gross, fees, taxes, cost, currency)
 				VALUES ($1, $2, $3, $4, 'sell', 1, 10.08, 1008, 0, 0, 1008, 'BRL')`, sale, user, f.mxrf11, f.cash)
 
 			return err

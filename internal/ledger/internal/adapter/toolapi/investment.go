@@ -40,11 +40,11 @@ func recordInvestment(svc *app.Service) tool.Tool {
 			"Do not use it to define a new security: manage_instrument does. " +
 			"The user confirms first.",
 		Effect: tool.Write,
-	}, func(ctx context.Context, userID int64, in recordInvestmentIn) (tool.Preview, error) {
-		pv, _, err := planInvestment(ctx, svc, userID, in)
+	}, func(ctx context.Context, booksID int64, in recordInvestmentIn) (tool.Preview, error) {
+		pv, _, err := planInvestment(ctx, svc, booksID, in)
 		return pv, err
-	}, func(ctx context.Context, userID int64, in recordInvestmentIn) (recordInvestmentOut, error) {
-		_, run, err := planInvestment(ctx, svc, userID, in)
+	}, func(ctx context.Context, booksID int64, in recordInvestmentIn) (recordInvestmentOut, error) {
+		_, run, err := planInvestment(ctx, svc, booksID, in)
 		if err != nil {
 			return recordInvestmentOut{}, err
 		}
@@ -53,7 +53,7 @@ func recordInvestment(svc *app.Service) tool.Tool {
 	})
 }
 
-func planInvestment(ctx context.Context, svc *app.Service, userID int64, in recordInvestmentIn) (tool.Preview, func() (recordInvestmentOut, error), error) {
+func planInvestment(ctx context.Context, svc *app.Service, booksID int64, in recordInvestmentIn) (tool.Preview, func() (recordInvestmentOut, error), error) {
 	action := string(in.Kind)
 	pv := tool.Preview{Action: "record_investment"}
 
@@ -88,12 +88,12 @@ func planInvestment(ctx context.Context, svc *app.Service, userID int64, in reco
 		return pv, nil, err
 	}
 
-	security, err := svc.Account(ctx, userID, accountID)
+	security, err := svc.Account(ctx, booksID, accountID)
 	if err != nil {
 		return pv, nil, err
 	}
 
-	cash, err := svc.Account(ctx, userID, cashID)
+	cash, err := svc.Account(ctx, booksID, cashID)
 	if err != nil {
 		return pv, nil, err
 	}
@@ -141,7 +141,7 @@ func planInvestment(ctx context.Context, svc *app.Service, userID int64, in reco
 		pv.Changes = append(pv.Changes, tool.Change{Field: "account", After: tool.TextValue(cash.Name)}, tool.Change{Field: "date", After: tool.DateValue(in.Date.Time)})
 
 		return pv, func() (recordInvestmentOut, error) {
-			t, err := svc.RecordIncome(ctx, userID, o)
+			t, err := svc.RecordIncome(ctx, booksID, o)
 			return recordInvestmentOut{TransactionID: t.ID.String()}, err
 		}, nil
 	}
@@ -183,7 +183,7 @@ func planInvestment(ctx context.Context, svc *app.Service, userID int64, in reco
 	pv.Changes = append(pv.Changes, tool.Change{Field: "account", After: tool.TextValue(cash.Name)}, tool.Change{Field: "date", After: tool.DateValue(in.Date.Time)})
 
 	return pv, func() (recordInvestmentOut, error) {
-		t, err := svc.RecordTrade(ctx, userID, o)
+		t, err := svc.RecordTrade(ctx, booksID, o)
 		return recordInvestmentOut{TransactionID: t.ID.String()}, err
 	}, nil
 }

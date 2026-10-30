@@ -13,7 +13,7 @@ import (
 const addUsage = `-- name: AddUsage :exec
 INSERT INTO
     assistant_usage (
-        user_id,
+        books_id,
         DAY,
         provider_id,
         model,
@@ -39,7 +39,7 @@ VALUES
         $9,
         $10
     )
-ON CONFLICT (user_id, DAY, provider_id, model, use_id) DO UPDATE
+ON CONFLICT (books_id, DAY, provider_id, model, use_id) DO UPDATE
 SET
     requests = assistant_usage.requests + 1,
     errors = assistant_usage.errors + EXCLUDED.errors,
@@ -50,7 +50,7 @@ SET
 `
 
 type AddUsageParams struct {
-	UserID       int64
+	BooksID      int64
 	Day          time.Time
 	ProviderID   string
 	Model        string
@@ -65,7 +65,7 @@ type AddUsageParams struct {
 // One statement per attempt: the row of the day is created or its counters grow.
 func (q *Queries) AddUsage(ctx context.Context, arg AddUsageParams) error {
 	_, err := q.db.Exec(ctx, addUsage,
-		arg.UserID,
+		arg.BooksID,
 		arg.Day,
 		arg.ProviderID,
 		arg.Model,
@@ -82,70 +82,70 @@ func (q *Queries) AddUsage(ctx context.Context, arg AddUsageParams) error {
 const deleteProviderLimits = `-- name: DeleteProviderLimits :exec
 DELETE FROM assistant_usage_limit
 WHERE
-    user_id = $1
+    books_id = $1
     AND provider_id = $2
 `
 
 type DeleteProviderLimitsParams struct {
-	UserID     int64
+	BooksID    int64
 	ProviderID string
 }
 
 func (q *Queries) DeleteProviderLimits(ctx context.Context, arg DeleteProviderLimitsParams) error {
-	_, err := q.db.Exec(ctx, deleteProviderLimits, arg.UserID, arg.ProviderID)
+	_, err := q.db.Exec(ctx, deleteProviderLimits, arg.BooksID, arg.ProviderID)
 	return err
 }
 
 const deleteProviderUsage = `-- name: DeleteProviderUsage :exec
 DELETE FROM assistant_usage
 WHERE
-    user_id = $1
+    books_id = $1
     AND provider_id = $2
 `
 
 type DeleteProviderUsageParams struct {
-	UserID     int64
+	BooksID    int64
 	ProviderID string
 }
 
 func (q *Queries) DeleteProviderUsage(ctx context.Context, arg DeleteProviderUsageParams) error {
-	_, err := q.db.Exec(ctx, deleteProviderUsage, arg.UserID, arg.ProviderID)
+	_, err := q.db.Exec(ctx, deleteProviderUsage, arg.BooksID, arg.ProviderID)
 	return err
 }
 
 const deleteUsageLimit = `-- name: DeleteUsageLimit :exec
 DELETE FROM assistant_usage_limit
 WHERE
-    user_id = $1
+    books_id = $1
     AND provider_id = $2
     AND model = $3
 `
 
 type DeleteUsageLimitParams struct {
-	UserID     int64
+	BooksID    int64
 	ProviderID string
 	Model      string
 }
 
 func (q *Queries) DeleteUsageLimit(ctx context.Context, arg DeleteUsageLimitParams) error {
-	_, err := q.db.Exec(ctx, deleteUsageLimit, arg.UserID, arg.ProviderID, arg.Model)
+	_, err := q.db.Exec(ctx, deleteUsageLimit, arg.BooksID, arg.ProviderID, arg.Model)
 	return err
 }
 
 const listUsageLimits = `-- name: ListUsageLimits :many
 SELECT
-    user_id, provider_id, model, requests_per_day, tokens_per_day
+    books_id, provider_id, model, requests_per_day, tokens_per_day
 FROM
     assistant_usage_limit
 WHERE
-    user_id = $1
+    books_id = $1
 ORDER BY
     provider_id,
     model
 `
 
-func (q *Queries) ListUsageLimits(ctx context.Context, userID int64) ([]AssistantUsageLimit, error) {
-	rows, err := q.db.Query(ctx, listUsageLimits, userID)
+func (q *Queries) ListUsageLimits(ctx context.Context, booksID int64) ([]AssistantUsageLimit, error) {
+	rows, err := q.db.Query(ctx, listUsageLimits, booksID)
 	if err != nil {
 		return nil, err
 	}
@@ -154,7 +154,7 @@ func (q *Queries) ListUsageLimits(ctx context.Context, userID int64) ([]Assistan
 	for rows.Next() {
 		var i AssistantUsageLimit
 		if err := rows.Scan(
-			&i.UserID,
+			&i.BooksID,
 			&i.ProviderID,
 			&i.Model,
 			&i.RequestsPerDay,
@@ -172,7 +172,7 @@ func (q *Queries) ListUsageLimits(ctx context.Context, userID int64) ([]Assistan
 
 const setUsageLimit = `-- name: SetUsageLimit :exec
 INSERT INTO
-    assistant_usage_limit (user_id, provider_id, model, requests_per_day, tokens_per_day)
+    assistant_usage_limit (books_id, provider_id, model, requests_per_day, tokens_per_day)
 VALUES
     (
         $1,
@@ -181,14 +181,14 @@ VALUES
         $4,
         $5
     )
-ON CONFLICT (user_id, provider_id, model) DO UPDATE
+ON CONFLICT (books_id, provider_id, model) DO UPDATE
 SET
     requests_per_day = EXCLUDED.requests_per_day,
     tokens_per_day = EXCLUDED.tokens_per_day
 `
 
 type SetUsageLimitParams struct {
-	UserID         int64
+	BooksID        int64
 	ProviderID     string
 	Model          string
 	RequestsPerDay *int32
@@ -197,7 +197,7 @@ type SetUsageLimitParams struct {
 
 func (q *Queries) SetUsageLimit(ctx context.Context, arg SetUsageLimitParams) error {
 	_, err := q.db.Exec(ctx, setUsageLimit,
-		arg.UserID,
+		arg.BooksID,
 		arg.ProviderID,
 		arg.Model,
 		arg.RequestsPerDay,
@@ -217,7 +217,7 @@ SELECT
 FROM
     assistant_usage
 WHERE
-    user_id = $1
+    books_id = $1
     AND DAY BETWEEN $2 AND $3
 GROUP BY
     DAY,
@@ -230,7 +230,7 @@ ORDER BY
 `
 
 type UsageByDayParams struct {
-	UserID   int64
+	BooksID  int64
 	FromDate time.Time
 	ToDate   time.Time
 }
@@ -245,7 +245,7 @@ type UsageByDayRow struct {
 }
 
 func (q *Queries) UsageByDay(ctx context.Context, arg UsageByDayParams) ([]UsageByDayRow, error) {
-	rows, err := q.db.Query(ctx, usageByDay, arg.UserID, arg.FromDate, arg.ToDate)
+	rows, err := q.db.Query(ctx, usageByDay, arg.BooksID, arg.FromDate, arg.ToDate)
 	if err != nil {
 		return nil, err
 	}
@@ -303,7 +303,7 @@ SELECT
 FROM
     assistant_usage
 WHERE
-    user_id = $2
+    books_id = $2
     AND DAY >= $3::date
 GROUP BY
     provider_id,
@@ -314,9 +314,9 @@ ORDER BY
 `
 
 type UsageSinceParams struct {
-	Today  time.Time
-	UserID int64
-	Since  time.Time
+	Today   time.Time
+	BooksID int64
+	Since   time.Time
 }
 
 type UsageSinceRow struct {
@@ -331,7 +331,7 @@ type UsageSinceRow struct {
 }
 
 func (q *Queries) UsageSince(ctx context.Context, arg UsageSinceParams) ([]UsageSinceRow, error) {
-	rows, err := q.db.Query(ctx, usageSince, arg.Today, arg.UserID, arg.Since)
+	rows, err := q.db.Query(ctx, usageSince, arg.Today, arg.BooksID, arg.Since)
 	if err != nil {
 		return nil, err
 	}

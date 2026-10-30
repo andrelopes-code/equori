@@ -4,7 +4,7 @@ SELECT
 FROM
     ingestion_batch
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND (
         sqlc.narg (after_started)::timestamptz IS NULL
         OR (started_at, id) < (sqlc.narg (after_started)::timestamptz, sqlc.narg (after_id)::uuid)
@@ -18,7 +18,7 @@ LIMIT
 -- name: InsertBatch :one
 INSERT INTO
     ingestion_batch (
-        user_id,
+        books_id,
         account_id,
         source,
         file_name,
@@ -29,7 +29,7 @@ INSERT INTO
     )
 VALUES
     (
-        @user_id,
+        @books_id,
         @account_id,
         @source,
         sqlc.narg (file_name),
@@ -58,7 +58,7 @@ SET
     balance_reason = sqlc.narg (balance_reason),
     completed_at = now()
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND id = @id
 RETURNING
     *;
@@ -69,7 +69,7 @@ SELECT
 FROM
     ingestion_batch
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2;
 
 -- name: LockAccountImports :exec

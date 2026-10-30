@@ -1,7 +1,7 @@
 -- name: InsertSchedule :one
 INSERT INTO
     planning_schedule (
-        user_id,
+        books_id,
         kind,
         account_id,
         counterpart_id,
@@ -16,7 +16,7 @@ INSERT INTO
     )
 VALUES
     (
-        @user_id,
+        @books_id,
         @kind,
         @account_id,
         @counterpart_id,
@@ -35,7 +35,7 @@ RETURNING
 -- name: InsertTerms :exec
 INSERT INTO
     planning_schedule_terms (
-        user_id,
+        books_id,
         schedule_id,
         effective_from,
         frequency,
@@ -54,7 +54,7 @@ INSERT INTO
     )
 VALUES
     (
-        @user_id,
+        @books_id,
         @schedule_id,
         @effective_from,
         @frequency,
@@ -70,7 +70,7 @@ VALUES
             FROM
                 planning_schedule
             WHERE
-                user_id = @user_id
+                books_id = @books_id
                 AND id = @schedule_id
         ),
         @start,
@@ -86,7 +86,7 @@ SELECT
 FROM
     planning_schedule
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND id = @id;
 
 -- name: LockSchedule :one
@@ -95,7 +95,7 @@ SELECT
 FROM
     planning_schedule
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND id = @id
 FOR UPDATE;
 
@@ -105,7 +105,7 @@ SELECT
 FROM
     planning_schedule
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND (
         sqlc.narg (after_id)::uuid IS NULL
         OR id > sqlc.narg (after_id)::uuid
@@ -115,13 +115,13 @@ ORDER BY
 LIMIT
     @row_limit;
 
--- name: SchedulesOfUser :many
+-- name: SchedulesOfBooks :many
 SELECT
     *
 FROM
     planning_schedule
 WHERE
-    user_id = @user_id
+    books_id = @books_id
 ORDER BY
     id;
 
@@ -131,7 +131,7 @@ SELECT
 FROM
     planning_schedule_terms
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND schedule_id = ANY (@schedule_ids::UUID[])
 ORDER BY
     schedule_id,
@@ -139,9 +139,9 @@ ORDER BY
 
 -- name: InsertPause :exec
 INSERT INTO
-    planning_schedule_pause (user_id, schedule_id, period)
+    planning_schedule_pause (books_id, schedule_id, period)
 VALUES
-    (@user_id, @schedule_id, daterange (@from_date::date, @to_date::date, '[]'));
+    (@books_id, @schedule_id, daterange (@from_date::date, @to_date::date, '[]'));
 
 -- name: ListPauses :many
 SELECT
@@ -151,7 +151,7 @@ SELECT
 FROM
     planning_schedule_pause
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND schedule_id = ANY (@schedule_ids::UUID[])
 ORDER BY
     schedule_id,
@@ -163,24 +163,24 @@ SET
     generated_until = @generated_until,
     updated_at = now()
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND id = @id;
 
 -- name: ScheduleRefs :many
 -- Every schedule across users: what a backfill of their history reads (P7 amendment A127).
 SELECT
-    user_id,
+    books_id,
     id
 FROM
     planning_schedule
 ORDER BY
-    user_id,
+    books_id,
     id;
 
 -- name: SchedulesBehind :many
 -- A53: schedules whose occurrences stop before the horizon, across users.
 SELECT
-    user_id,
+    books_id,
     id
 FROM
     planning_schedule
@@ -191,15 +191,15 @@ WHERE
         OR generated_until < ends_on
     )
 ORDER BY
-    user_id,
+    books_id,
     id;
 
 -- name: InsertOccurrences :exec
 -- Generation is idempotent by (schedule_id, sequence) (P7 amendment A49).
 INSERT INTO
-    planning_occurrence (user_id, schedule_id, sequence, expected_on, expected_amount, state)
+    planning_occurrence (books_id, schedule_id, sequence, expected_on, expected_amount, state)
 SELECT
-    @user_id::bigint,
+    @books_id::bigint,
     @schedule_id::uuid,
     unnest(@sequences::INT[]),
     unnest(@dates::TEXT[])::date,
@@ -213,7 +213,7 @@ SELECT
 FROM
     planning_occurrence
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND expected_on BETWEEN @from_date AND @to_date
     AND (
         sqlc.narg (schedule_id)::uuid IS NULL
@@ -230,7 +230,7 @@ SELECT
 FROM
     planning_occurrence
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND transaction_id = @transaction_id
 ORDER BY
     expected_on,
@@ -243,5 +243,5 @@ SET
     ends_on = @ends_on,
     updated_at = now()
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND id = @id;

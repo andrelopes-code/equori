@@ -74,18 +74,18 @@ func manageOccurrence(svc *app.Service) tool.Tool {
 			"Do not use it to change every future occurrence: manage_schedule does. " +
 			"The user confirms first.",
 		Effect: tool.Write,
-	}, func(ctx context.Context, userID int64, in manageOccurrenceIn) (tool.Preview, error) {
+	}, func(ctx context.Context, booksID int64, in manageOccurrenceIn) (tool.Preview, error) {
 		p, err := prepareOccurrence(in)
 		if err != nil {
 			return tool.Preview{}, err
 		}
 
-		o, err := svc.Occurrence(ctx, userID, p.occurrence)
+		o, err := svc.Occurrence(ctx, booksID, p.occurrence)
 		if err != nil {
 			return tool.Preview{}, err
 		}
 
-		sch, err := svc.Schedule(ctx, userID, o.ScheduleID)
+		sch, err := svc.Schedule(ctx, booksID, o.ScheduleID)
 		if err != nil {
 			return tool.Preview{}, err
 		}
@@ -129,7 +129,7 @@ func manageOccurrence(svc *app.Service) tool.Tool {
 		}
 
 		return pv, nil
-	}, func(ctx context.Context, userID int64, in manageOccurrenceIn) (manageOccurrenceOut, error) {
+	}, func(ctx context.Context, booksID int64, in manageOccurrenceIn) (manageOccurrenceOut, error) {
 		p, err := prepareOccurrence(in)
 		if err != nil {
 			return manageOccurrenceOut{}, err
@@ -138,13 +138,13 @@ func manageOccurrence(svc *app.Service) tool.Tool {
 		var o app.OccurrenceView
 		switch in.Action {
 		case "realize":
-			o, err = svc.Realize(ctx, userID, p.occurrence, p.transaction)
+			o, err = svc.Realize(ctx, booksID, p.occurrence, p.transaction)
 		case "skip":
-			o, err = svc.Skip(ctx, userID, p.occurrence, in.Reason)
+			o, err = svc.Skip(ctx, booksID, p.occurrence, in.Reason)
 		case "move":
-			o, err = svc.Move(ctx, userID, p.occurrence, in.Date.Time)
+			o, err = svc.Move(ctx, booksID, p.occurrence, in.Date.Time)
 		default:
-			o, err = svc.Unrealize(ctx, userID, p.occurrence)
+			o, err = svc.Unrealize(ctx, booksID, p.occurrence)
 		}
 
 		if err != nil {

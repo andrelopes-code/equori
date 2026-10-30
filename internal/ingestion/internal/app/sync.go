@@ -15,19 +15,19 @@ import (
 
 // SyncConnection syncs every mapped account of a connection now, one batch per account (P6
 // amendments A36, A43).
-func (s *Service) SyncConnection(ctx context.Context, userID int64, connectionID uuid.UUID) (domain.Connection, []domain.Batch, error) {
+func (s *Service) SyncConnection(ctx context.Context, booksID int64, connectionID uuid.UUID) (domain.Connection, []domain.Batch, error) {
 	if err := s.available(); err != nil {
 		return domain.Connection{}, nil, err
 	}
 
-	return s.sync(ctx, userID, connectionID, true)
+	return s.sync(ctx, booksID, connectionID, true)
 }
 
 // sync reads the item and, unless it is blocked or, without force, has no data newer than
 // the last sync, syncs the mapped accounts. The connection stores the item status and the
 // outcome; its error names no identifier (A44).
-func (s *Service) sync(ctx context.Context, userID int64, connectionID uuid.UUID, force bool) (domain.Connection, []domain.Batch, error) {
-	c, err := s.repo.Connection(ctx, userID, connectionID)
+func (s *Service) sync(ctx context.Context, booksID int64, connectionID uuid.UUID, force bool) (domain.Connection, []domain.Batch, error) {
+	c, err := s.repo.Connection(ctx, booksID, connectionID)
 	if err != nil {
 		return domain.Connection{}, nil, err
 	}
@@ -53,7 +53,7 @@ func (s *Service) sync(ctx context.Context, userID int64, connectionID uuid.UUID
 }
 
 func (s *Service) syncItem(ctx context.Context, c *domain.Connection, force bool) ([]domain.Batch, error) {
-	i, err := s.repo.Integration(ctx, c.UserID, c.IntegrationID)
+	i, err := s.repo.Integration(ctx, c.BooksID, c.IntegrationID)
 	if err != nil {
 		return nil, err
 	}
@@ -139,7 +139,7 @@ func (s *Service) addMissingAccounts(ctx context.Context, agg Aggregator, c *dom
 				continue
 			}
 
-			if err := s.repo.RenameExternalAccount(ctx, c.UserID, stored.ID, a.Name); err != nil {
+			if err := s.repo.RenameExternalAccount(ctx, c.BooksID, stored.ID, a.Name); err != nil {
 				return err
 			}
 
@@ -148,7 +148,7 @@ func (s *Service) addMissingAccounts(ctx context.Context, agg Aggregator, c *dom
 			continue
 		}
 
-		a.UserID, a.ConnectionID = c.UserID, c.ID
+		a.BooksID, a.ConnectionID = c.BooksID, c.ID
 		if err := s.repo.InsertMissingExternalAccount(ctx, a); err != nil {
 			return err
 		}
@@ -160,7 +160,7 @@ func (s *Service) addMissingAccounts(ctx context.Context, agg Aggregator, c *dom
 		return nil
 	}
 
-	reloaded, err := s.repo.Connection(ctx, c.UserID, c.ID)
+	reloaded, err := s.repo.Connection(ctx, c.BooksID, c.ID)
 	if err != nil {
 		return err
 	}
@@ -177,7 +177,7 @@ func (s *Service) addMissingAccounts(ctx context.Context, agg Aggregator, c *dom
 func (s *Service) syncAccount(ctx context.Context, agg Aggregator, c domain.Connection, ext domain.ExternalAccount, creds domain.Credentials) (domain.Batch, error) {
 	accountID := *ext.AccountID
 
-	target, err := s.ledger.ImportTarget(ctx, c.UserID, accountID)
+	target, err := s.ledger.ImportTarget(ctx, c.BooksID, accountID)
 	if err != nil {
 		return domain.Batch{}, fmt.Errorf("account %s: %w", ext.ID, err)
 	}
@@ -227,7 +227,7 @@ func (s *Service) syncAccount(ctx context.Context, agg Aggregator, c domain.Conn
 	}
 
 	batch, err := s.repo.InsertBatch(ctx, domain.Batch{
-		UserID: c.UserID, AccountID: accountID, Source: domain.SourceAggregator, ExternalAccountID: &ext.ID,
+		BooksID: c.BooksID, AccountID: accountID, Source: domain.SourceAggregator, ExternalAccountID: &ext.ID,
 		Currency: string(target.Currency), PeriodFrom: &from, PeriodTo: &to, Balance: domain.FileBalance{Status: domain.BalanceNone},
 	})
 	if err != nil {
@@ -244,13 +244,13 @@ func (s *Service) syncAccount(ctx context.Context, agg Aggregator, c domain.Conn
 			continue
 		}
 
-		if err := s.ledger.RecordStatementFacts(ctx, c.UserID, accountID, b, target.Currency); err != nil {
+		if err := s.ledger.RecordStatementFacts(ctx, c.BooksID, accountID, b, target.Currency); err != nil {
 			return domain.Batch{}, fmt.Errorf("account %s bill due %s: %w", ext.ID, b.Due.Format(time.DateOnly), err)
 		}
 	}
 
 	if opening != nil {
-		if err := s.ledger.RecordCardOpening(ctx, c.UserID, accountID, *opening, target.Currency); err != nil {
+		if err := s.ledger.RecordCardOpening(ctx, c.BooksID, accountID, *opening, target.Currency); err != nil {
 			return domain.Batch{}, fmt.Errorf("account %s opening: %w", ext.ID, err)
 		}
 	}
@@ -260,7 +260,7 @@ func (s *Service) syncAccount(ctx context.Context, agg Aggregator, c domain.Conn
 	}
 
 	if len(read.Bills) > 0 {
-		if err := s.ledger.SettleReportedStatements(ctx, c.UserID, accountID); err != nil {
+		if err := s.ledger.SettleReportedStatements(ctx, c.BooksID, accountID); err != nil {
 			return domain.Batch{}, err
 		}
 	}
@@ -276,7 +276,7 @@ func (s *Service) syncAccount(ctx context.Context, agg Aggregator, c domain.Conn
 			assert = s.ledger.AssertSyncedReserve
 		}
 
-		err := assert(ctx, c.UserID, accountID, *b, target.Currency)
+		err := assert(ctx, c.BooksID, accountID, *b, target.Currency)
 		switch {
 		case errors.Is(err, ErrBalanceRejected):
 			if batch.Balance.Status == domain.BalanceRecorded {
@@ -445,7 +445,7 @@ func (s *Service) withdraw(ctx context.Context, batch *domain.Batch, seen []stri
 		returned[id] = true
 	}
 
-	stored, err := s.repo.SyncedRecords(ctx, batch.UserID, batch.AccountID, from.AddDate(0, 0, 1), to.AddDate(0, 0, -1))
+	stored, err := s.repo.SyncedRecords(ctx, batch.BooksID, batch.AccountID, from.AddDate(0, 0, 1), to.AddDate(0, 0, -1))
 	if err != nil {
 		return err
 	}
@@ -457,7 +457,7 @@ func (s *Service) withdraw(ctx context.Context, batch *domain.Batch, seen []stri
 		}
 
 		if rec.TransactionID != uuid.Nil {
-			if err := s.ledger.ReleaseRecord(ctx, batch.UserID, rec.ID); err != nil {
+			if err := s.ledger.ReleaseRecord(ctx, batch.BooksID, rec.ID); err != nil {
 				return err
 			}
 		}
@@ -467,5 +467,5 @@ func (s *Service) withdraw(ctx context.Context, batch *domain.Batch, seen []stri
 
 	batch.Counts.Withdrawn = len(gone)
 
-	return s.repo.WithdrawRecords(ctx, batch.UserID, gone)
+	return s.repo.WithdrawRecords(ctx, batch.BooksID, gone)
 }

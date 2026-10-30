@@ -36,7 +36,7 @@ func TestSetupCreatesBooks(t *testing.T) {
 	}
 
 	var base string
-	if err := h.Pool.QueryRow(t.Context(), `SELECT base_currency FROM ledger_settings WHERE user_id = $1`, booksID).Scan(&base); err != nil || base != "BRL" {
+	if err := h.Pool.QueryRow(t.Context(), `SELECT base_currency FROM ledger_settings WHERE books_id = $1`, booksID).Scan(&base); err != nil || base != "BRL" {
 		t.Errorf("base_currency = %q, %v; want BRL", base, err)
 	}
 }

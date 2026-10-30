@@ -12,7 +12,7 @@ import (
 
 type IngestionBatch struct {
 	ID                uuid.UUID
-	UserID            int64
+	BooksID           int64
 	AccountID         uuid.UUID
 	Source            string
 	FileName          *string
@@ -38,7 +38,7 @@ type IngestionBatch struct {
 
 type IngestionConnection struct {
 	ID               uuid.UUID
-	UserID           int64
+	BooksID          int64
 	IntegrationID    uuid.UUID
 	ExternalID       string
 	Name             string
@@ -51,7 +51,7 @@ type IngestionConnection struct {
 }
 
 type IngestionCsvProfile struct {
-	UserID            int64
+	BooksID           int64
 	AccountID         uuid.UUID
 	Delimiter         string
 	HeaderRows        int32
@@ -71,7 +71,7 @@ type IngestionCsvProfile struct {
 
 type IngestionExternalAccount struct {
 	ID                uuid.UUID
-	UserID            int64
+	BooksID           int64
 	ConnectionID      uuid.UUID
 	ExternalAccountID string
 	Type              string
@@ -90,7 +90,7 @@ type IngestionExternalAccount struct {
 
 type IngestionExternalRecord struct {
 	ID                uuid.UUID
-	UserID            int64
+	BooksID           int64
 	BatchID           uuid.UUID
 	AccountID         uuid.UUID
 	ExternalID        *string
@@ -116,7 +116,7 @@ type IngestionExternalRecord struct {
 
 type IngestionIntegration struct {
 	ID                   uuid.UUID
-	UserID               int64
+	BooksID              int64
 	Aggregator           string
 	Name                 string
 	CredentialCiphertext []byte

@@ -17,7 +17,7 @@ func (s *Server) GetIndicators(ctx context.Context, req GetIndicatorsRequestObje
 	now := s.clock.Now()
 	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
 
-	report, err := s.svc.Indicators(ctx, auth.MustUserID(ctx), month, today)
+	report, err := s.svc.Indicators(ctx, auth.MustBooksID(ctx), month, today)
 	if err != nil {
 		return nil, err
 	}

@@ -18,11 +18,11 @@ SELECT
 FROM
     ledger_transaction
 WHERE
-    user_id = $1
+    books_id = $1
 `
 
-func (q *Queries) CountTransactions(ctx context.Context, userID int64) (int64, error) {
-	row := q.db.QueryRow(ctx, countTransactions, userID)
+func (q *Queries) CountTransactions(ctx context.Context, booksID int64) (int64, error) {
+	row := q.db.QueryRow(ctx, countTransactions, booksID)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -70,18 +70,18 @@ func (q *Queries) DeletePostingsByID(ctx context.Context, arg DeletePostingsByID
 const deleteReimbursementLinksFrom = `-- name: DeleteReimbursementLinksFrom :exec
 DELETE FROM ledger_link
 WHERE
-    user_id = $1
+    books_id = $1
     AND from_transaction_id = $2
     AND link_type = 'reimbursement_of'
 `
 
 type DeleteReimbursementLinksFromParams struct {
-	UserID            int64
+	BooksID           int64
 	FromTransactionID uuid.UUID
 }
 
 func (q *Queries) DeleteReimbursementLinksFrom(ctx context.Context, arg DeleteReimbursementLinksFromParams) error {
-	_, err := q.db.Exec(ctx, deleteReimbursementLinksFrom, arg.UserID, arg.FromTransactionID)
+	_, err := q.db.Exec(ctx, deleteReimbursementLinksFrom, arg.BooksID, arg.FromTransactionID)
 	return err
 }
 
@@ -98,25 +98,25 @@ func (q *Queries) DeleteTransactionTags(ctx context.Context, transactionID uuid.
 
 const getTransaction = `-- name: GetTransaction :one
 SELECT
-    id, user_id, date, description, payee_id, balancing_currency, origin, version, voided_at, void_reason, created_at, updated_at
+    id, books_id, date, description, payee_id, balancing_currency, origin, version, voided_at, void_reason, created_at, updated_at
 FROM
     ledger_transaction
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2
 `
 
 type GetTransactionParams struct {
-	UserID int64
-	ID     uuid.UUID
+	BooksID int64
+	ID      uuid.UUID
 }
 
 func (q *Queries) GetTransaction(ctx context.Context, arg GetTransactionParams) (LedgerTransaction, error) {
-	row := q.db.QueryRow(ctx, getTransaction, arg.UserID, arg.ID)
+	row := q.db.QueryRow(ctx, getTransaction, arg.BooksID, arg.ID)
 	var i LedgerTransaction
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.Date,
 		&i.Description,
 		&i.PayeeID,
@@ -133,26 +133,26 @@ func (q *Queries) GetTransaction(ctx context.Context, arg GetTransactionParams) 
 
 const getTransactionForUpdate = `-- name: GetTransactionForUpdate :one
 SELECT
-    id, user_id, date, description, payee_id, balancing_currency, origin, version, voided_at, void_reason, created_at, updated_at
+    id, books_id, date, description, payee_id, balancing_currency, origin, version, voided_at, void_reason, created_at, updated_at
 FROM
     ledger_transaction
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2
 FOR UPDATE
 `
 
 type GetTransactionForUpdateParams struct {
-	UserID int64
-	ID     uuid.UUID
+	BooksID int64
+	ID      uuid.UUID
 }
 
 func (q *Queries) GetTransactionForUpdate(ctx context.Context, arg GetTransactionForUpdateParams) (LedgerTransaction, error) {
-	row := q.db.QueryRow(ctx, getTransactionForUpdate, arg.UserID, arg.ID)
+	row := q.db.QueryRow(ctx, getTransactionForUpdate, arg.BooksID, arg.ID)
 	var i LedgerTransaction
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.Date,
 		&i.Description,
 		&i.PayeeID,
@@ -169,13 +169,13 @@ func (q *Queries) GetTransactionForUpdate(ctx context.Context, arg GetTransactio
 
 const insertLink = `-- name: InsertLink :exec
 INSERT INTO
-    ledger_link (user_id, from_transaction_id, to_transaction_id, link_type, amount)
+    ledger_link (books_id, from_transaction_id, to_transaction_id, link_type, amount)
 VALUES
     ($1, $2, $3, $4, $5)
 `
 
 type InsertLinkParams struct {
-	UserID            int64
+	BooksID           int64
 	FromTransactionID uuid.UUID
 	ToTransactionID   uuid.UUID
 	LinkType          string
@@ -184,7 +184,7 @@ type InsertLinkParams struct {
 
 func (q *Queries) InsertLink(ctx context.Context, arg InsertLinkParams) error {
 	_, err := q.db.Exec(ctx, insertLink,
-		arg.UserID,
+		arg.BooksID,
 		arg.FromTransactionID,
 		arg.ToTransactionID,
 		arg.LinkType,
@@ -195,7 +195,7 @@ func (q *Queries) InsertLink(ctx context.Context, arg InsertLinkParams) error {
 
 const insertTransaction = `-- name: InsertTransaction :one
 INSERT INTO
-    ledger_transaction (id, user_id, date, description, payee_id, balancing_currency, origin, version)
+    ledger_transaction (id, books_id, date, description, payee_id, balancing_currency, origin, version)
 VALUES
     (
         $1,
@@ -208,12 +208,12 @@ VALUES
         $8
     )
 RETURNING
-    id, user_id, date, description, payee_id, balancing_currency, origin, version, voided_at, void_reason, created_at, updated_at
+    id, books_id, date, description, payee_id, balancing_currency, origin, version, voided_at, void_reason, created_at, updated_at
 `
 
 type InsertTransactionParams struct {
 	ID                uuid.UUID
-	UserID            int64
+	BooksID           int64
 	Date              time.Time
 	Description       string
 	PayeeID           uuid.NullUUID
@@ -225,7 +225,7 @@ type InsertTransactionParams struct {
 func (q *Queries) InsertTransaction(ctx context.Context, arg InsertTransactionParams) (LedgerTransaction, error) {
 	row := q.db.QueryRow(ctx, insertTransaction,
 		arg.ID,
-		arg.UserID,
+		arg.BooksID,
 		arg.Date,
 		arg.Description,
 		arg.PayeeID,
@@ -236,7 +236,7 @@ func (q *Queries) InsertTransaction(ctx context.Context, arg InsertTransactionPa
 	var i LedgerTransaction
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.Date,
 		&i.Description,
 		&i.PayeeID,
@@ -253,19 +253,19 @@ func (q *Queries) InsertTransaction(ctx context.Context, arg InsertTransactionPa
 
 const insertTransactionTag = `-- name: InsertTransactionTag :exec
 INSERT INTO
-    ledger_transaction_tag (user_id, transaction_id, tag_id)
+    ledger_transaction_tag (books_id, transaction_id, tag_id)
 VALUES
     ($1, $2, $3)
 `
 
 type InsertTransactionTagParams struct {
-	UserID        int64
+	BooksID       int64
 	TransactionID uuid.UUID
 	TagID         uuid.UUID
 }
 
 func (q *Queries) InsertTransactionTag(ctx context.Context, arg InsertTransactionTagParams) error {
-	_, err := q.db.Exec(ctx, insertTransactionTag, arg.UserID, arg.TransactionID, arg.TagID)
+	_, err := q.db.Exec(ctx, insertTransactionTag, arg.BooksID, arg.TransactionID, arg.TagID)
 	return err
 }
 
@@ -295,11 +295,11 @@ func (q *Queries) InsertVersion(ctx context.Context, arg InsertVersionParams) er
 
 const listLinksFrom = `-- name: ListLinksFrom :many
 SELECT
-    id, user_id, from_transaction_id, to_transaction_id, link_type, amount
+    id, books_id, from_transaction_id, to_transaction_id, link_type, amount
 FROM
     ledger_link
 WHERE
-    user_id = $1
+    books_id = $1
     AND from_transaction_id = ANY ($2::UUID[])
 ORDER BY
     from_transaction_id,
@@ -308,12 +308,12 @@ ORDER BY
 `
 
 type ListLinksFromParams struct {
-	UserID         int64
+	BooksID        int64
 	TransactionIds []uuid.UUID
 }
 
 func (q *Queries) ListLinksFrom(ctx context.Context, arg ListLinksFromParams) ([]LedgerLink, error) {
-	rows, err := q.db.Query(ctx, listLinksFrom, arg.UserID, arg.TransactionIds)
+	rows, err := q.db.Query(ctx, listLinksFrom, arg.BooksID, arg.TransactionIds)
 	if err != nil {
 		return nil, err
 	}
@@ -323,7 +323,7 @@ func (q *Queries) ListLinksFrom(ctx context.Context, arg ListLinksFromParams) ([
 		var i LedgerLink
 		if err := rows.Scan(
 			&i.ID,
-			&i.UserID,
+			&i.BooksID,
 			&i.FromTransactionID,
 			&i.ToTransactionID,
 			&i.LinkType,
@@ -349,7 +349,7 @@ FROM
     ledger_link l
     JOIN ledger_transaction t ON t.id = l.from_transaction_id
 WHERE
-    l.user_id = $1
+    l.books_id = $1
     AND l.to_transaction_id = $2
     AND t.voided_at IS NULL
 ORDER BY
@@ -358,7 +358,7 @@ ORDER BY
 `
 
 type ListLinksToParams struct {
-	UserID          int64
+	BooksID         int64
 	ToTransactionID uuid.UUID
 }
 
@@ -370,7 +370,7 @@ type ListLinksToRow struct {
 }
 
 func (q *Queries) ListLinksTo(ctx context.Context, arg ListLinksToParams) ([]ListLinksToRow, error) {
-	rows, err := q.db.Query(ctx, listLinksTo, arg.UserID, arg.ToTransactionID)
+	rows, err := q.db.Query(ctx, listLinksTo, arg.BooksID, arg.ToTransactionID)
 	if err != nil {
 		return nil, err
 	}
@@ -396,7 +396,7 @@ func (q *Queries) ListLinksTo(ctx context.Context, arg ListLinksToParams) ([]Lis
 
 const listPostings = `-- name: ListPostings :many
 SELECT
-    p.id, p.user_id, p.transaction_id, p.account_id, p.position, p.amount, p.weight, p.booked_on, p.settled_on, p.status, p.original_amount, p.original_instrument, p.memo, p.voided, p.statement_id, p.card_role, p.installment_plan_id, p.installment_number, p.installment_count, p.external_record_id, p.statement_basis,
+    p.id, p.books_id, p.transaction_id, p.account_id, p.position, p.amount, p.weight, p.booked_on, p.settled_on, p.status, p.original_amount, p.original_instrument, p.memo, p.voided, p.statement_id, p.card_role, p.installment_plan_id, p.installment_number, p.installment_count, p.external_record_id, p.statement_basis,
     a.instrument AS account_instrument,
     t.balancing_currency,
     s.reference_month AS statement_reference
@@ -406,7 +406,7 @@ FROM
     JOIN ledger_transaction t ON t.id = p.transaction_id
     LEFT JOIN ledger_statement s ON s.id = p.statement_id
 WHERE
-    p.user_id = $1
+    p.books_id = $1
     AND p.transaction_id = ANY ($2::UUID[])
 ORDER BY
     p.transaction_id,
@@ -414,13 +414,13 @@ ORDER BY
 `
 
 type ListPostingsParams struct {
-	UserID         int64
+	BooksID        int64
 	TransactionIds []uuid.UUID
 }
 
 type ListPostingsRow struct {
 	ID                 uuid.UUID
-	UserID             int64
+	BooksID            int64
 	TransactionID      uuid.UUID
 	AccountID          uuid.UUID
 	Position           int16
@@ -446,7 +446,7 @@ type ListPostingsRow struct {
 }
 
 func (q *Queries) ListPostings(ctx context.Context, arg ListPostingsParams) ([]ListPostingsRow, error) {
-	rows, err := q.db.Query(ctx, listPostings, arg.UserID, arg.TransactionIds)
+	rows, err := q.db.Query(ctx, listPostings, arg.BooksID, arg.TransactionIds)
 	if err != nil {
 		return nil, err
 	}
@@ -456,7 +456,7 @@ func (q *Queries) ListPostings(ctx context.Context, arg ListPostingsParams) ([]L
 		var i ListPostingsRow
 		if err := rows.Scan(
 			&i.ID,
-			&i.UserID,
+			&i.BooksID,
 			&i.TransactionID,
 			&i.AccountID,
 			&i.Position,
@@ -507,11 +507,11 @@ FROM
                         sum(l.amount)
                     FROM
                         ledger_link l
-                        JOIN ledger_transaction f ON f.user_id = l.user_id
+                        JOIN ledger_transaction f ON f.books_id = l.books_id
                         AND f.id = l.from_transaction_id
                         AND f.voided_at IS NULL
                     WHERE
-                        l.user_id = $1
+                        l.books_id = $1
                         AND l.to_transaction_id = t.id
                         AND l.link_type = 'reimbursement_of'
                         AND l.from_transaction_id <> $2
@@ -525,7 +525,7 @@ FROM
                     FROM
                         ledger_link l
                     WHERE
-                        l.user_id = $1
+                        l.books_id = $1
                         AND l.to_transaction_id = t.id
                         AND l.link_type = 'reimbursement_of'
                         AND l.from_transaction_id = $2
@@ -534,16 +534,16 @@ FROM
             ) AS allocated
         FROM
             ledger_transaction t
-            JOIN ledger_posting p ON p.user_id = t.user_id
+            JOIN ledger_posting p ON p.books_id = t.books_id
             AND p.transaction_id = t.id
             AND p.amount > 0
             AND NOT p.voided
-            JOIN ledger_account a ON a.user_id = p.user_id
+            JOIN ledger_account a ON a.books_id = p.books_id
             AND a.id = p.account_id
             AND a.account_class = 'expense'
             AND a.instrument = $3::text
         WHERE
-            t.user_id = $1
+            t.books_id = $1
             AND t.id <> $2
             AND t.voided_at IS NULL
         GROUP BY
@@ -566,7 +566,7 @@ LIMIT
 `
 
 type ListReimbursementCandidatesParams struct {
-	UserID        int64
+	BooksID       int64
 	TransactionID uuid.UUID
 	Instrument    string
 	FromDate      time.Time
@@ -585,7 +585,7 @@ type ListReimbursementCandidatesRow struct {
 // repaid by @transaction_id; those it repays first, then the one whose remaining amount equals @amount.
 func (q *Queries) ListReimbursementCandidates(ctx context.Context, arg ListReimbursementCandidatesParams) ([]ListReimbursementCandidatesRow, error) {
 	rows, err := q.db.Query(ctx, listReimbursementCandidates,
-		arg.UserID,
+		arg.BooksID,
 		arg.TransactionID,
 		arg.Instrument,
 		arg.FromDate,
@@ -628,7 +628,7 @@ FROM
                     FROM
                         ledger_link l
                     WHERE
-                        l.user_id = $1
+                        l.books_id = $1
                         AND l.from_transaction_id = t.id
                         AND l.link_type = 'reimbursement_of'
                 ),
@@ -636,14 +636,14 @@ FROM
             ) AS allocated
         FROM
             ledger_transaction t
-            JOIN ledger_posting p ON p.user_id = t.user_id
+            JOIN ledger_posting p ON p.books_id = t.books_id
             AND p.transaction_id = t.id
             AND NOT p.voided
-            JOIN ledger_account a ON a.user_id = p.user_id
+            JOIN ledger_account a ON a.books_id = p.books_id
             AND a.id = p.account_id
             AND a.account_class IN ('income', 'expense')
         WHERE
-            t.user_id = $1
+            t.books_id = $1
             AND t.id <> $2
             AND t.voided_at IS NULL
             AND t.date BETWEEN $3::date AND $4::date
@@ -654,7 +654,7 @@ FROM
                 FROM
                     ledger_link l
                 WHERE
-                    l.user_id = $1
+                    l.books_id = $1
                     AND l.from_transaction_id = t.id
                     AND l.to_transaction_id = $2
                     AND l.link_type = 'reimbursement_of'
@@ -685,7 +685,7 @@ LIMIT
 `
 
 type ListReimbursementSourcesParams struct {
-	UserID        int64
+	BooksID       int64
 	TransactionID uuid.UUID
 	FromDate      time.Time
 	ToDate        time.Time
@@ -701,7 +701,7 @@ type ListReimbursementSourcesRow struct {
 // A117: inflows after an expense whose category side holds only uncategorized income and reimbursements.
 func (q *Queries) ListReimbursementSources(ctx context.Context, arg ListReimbursementSourcesParams) ([]ListReimbursementSourcesRow, error) {
 	rows, err := q.db.Query(ctx, listReimbursementSources,
-		arg.UserID,
+		arg.BooksID,
 		arg.TransactionID,
 		arg.FromDate,
 		arg.ToDate,
@@ -734,14 +734,14 @@ FROM
     ledger_transaction_tag tt
     JOIN ledger_tag g ON g.id = tt.tag_id
 WHERE
-    tt.user_id = $1
+    tt.books_id = $1
     AND tt.transaction_id = ANY ($2::UUID[])
 ORDER BY
     g.name
 `
 
 type ListTransactionTagsParams struct {
-	UserID         int64
+	BooksID        int64
 	TransactionIds []uuid.UUID
 }
 
@@ -751,7 +751,7 @@ type ListTransactionTagsRow struct {
 }
 
 func (q *Queries) ListTransactionTags(ctx context.Context, arg ListTransactionTagsParams) ([]ListTransactionTagsRow, error) {
-	rows, err := q.db.Query(ctx, listTransactionTags, arg.UserID, arg.TransactionIds)
+	rows, err := q.db.Query(ctx, listTransactionTags, arg.BooksID, arg.TransactionIds)
 	if err != nil {
 		return nil, err
 	}
@@ -778,7 +778,7 @@ WITH RECURSIVE
         FROM
             ledger_account a
         WHERE
-            a.user_id = $1
+            a.books_id = $1
             AND a.id = $2::uuid
         UNION ALL
         SELECT
@@ -787,14 +787,14 @@ WITH RECURSIVE
             ledger_account c
             JOIN tree ON c.parent_id = tree.id
         WHERE
-            c.user_id = $1
+            c.books_id = $1
     )
 SELECT
-    t.id, t.user_id, t.date, t.description, t.payee_id, t.balancing_currency, t.origin, t.version, t.voided_at, t.void_reason, t.created_at, t.updated_at
+    t.id, t.books_id, t.date, t.description, t.payee_id, t.balancing_currency, t.origin, t.version, t.voided_at, t.void_reason, t.created_at, t.updated_at
 FROM
     ledger_transaction t
 WHERE
-    t.user_id = $1
+    t.books_id = $1
     AND (
         $2::uuid IS NULL
         OR EXISTS (
@@ -876,7 +876,7 @@ WHERE
             FROM
                 ledger_payee y
             WHERE
-                y.user_id = $1
+                y.books_id = $1
                 AND y.id = t.payee_id
                 AND strpos(lower(y.name), lower($8::text)) > 0
         )
@@ -902,7 +902,7 @@ LIMIT
 `
 
 type ListTransactionsParams struct {
-	UserID        int64
+	BooksID       int64
 	AccountID     uuid.NullUUID
 	PayeeID       uuid.NullUUID
 	Tag           *string
@@ -918,7 +918,7 @@ type ListTransactionsParams struct {
 // A76: the account filter covers the account and its descendants.
 func (q *Queries) ListTransactions(ctx context.Context, arg ListTransactionsParams) ([]LedgerTransaction, error) {
 	rows, err := q.db.Query(ctx, listTransactions,
-		arg.UserID,
+		arg.BooksID,
 		arg.AccountID,
 		arg.PayeeID,
 		arg.Tag,
@@ -939,7 +939,7 @@ func (q *Queries) ListTransactions(ctx context.Context, arg ListTransactionsPara
 		var i LedgerTransaction
 		if err := rows.Scan(
 			&i.ID,
-			&i.UserID,
+			&i.BooksID,
 			&i.Date,
 			&i.Description,
 			&i.PayeeID,
@@ -968,19 +968,19 @@ FROM
     ledger_transaction_version v
     JOIN ledger_transaction t ON t.id = v.transaction_id
 WHERE
-    t.user_id = $1
+    t.books_id = $1
     AND v.transaction_id = $2
 ORDER BY
     v.version
 `
 
 type ListVersionsParams struct {
-	UserID        int64
+	BooksID       int64
 	TransactionID uuid.UUID
 }
 
 func (q *Queries) ListVersions(ctx context.Context, arg ListVersionsParams) ([]LedgerTransactionVersion, error) {
-	rows, err := q.db.Query(ctx, listVersions, arg.UserID, arg.TransactionID)
+	rows, err := q.db.Query(ctx, listVersions, arg.BooksID, arg.TransactionID)
 	if err != nil {
 		return nil, err
 	}
@@ -1026,10 +1026,10 @@ SELECT
     coalesce(sum(l.amount), 0)::bigint
 FROM
     ledger_link l
-    JOIN ledger_transaction t ON t.user_id = l.user_id
+    JOIN ledger_transaction t ON t.books_id = l.books_id
     AND t.id = l.from_transaction_id
 WHERE
-    l.user_id = $1
+    l.books_id = $1
     AND l.to_transaction_id = $2
     AND l.link_type = 'reimbursement_of'
     AND l.from_transaction_id <> $3
@@ -1037,14 +1037,14 @@ WHERE
 `
 
 type ReimbursedTotalParams struct {
-	UserID     int64
+	BooksID    int64
 	OriginID   uuid.UUID
 	ExceptFrom uuid.UUID
 }
 
 // A117: what the non-voided transactions other than @except_from repay of the expense.
 func (q *Queries) ReimbursedTotal(ctx context.Context, arg ReimbursedTotalParams) (int64, error) {
-	row := q.db.QueryRow(ctx, reimbursedTotal, arg.UserID, arg.OriginID, arg.ExceptFrom)
+	row := q.db.QueryRow(ctx, reimbursedTotal, arg.BooksID, arg.OriginID, arg.ExceptFrom)
 	var column_1 int64
 	err := row.Scan(&column_1)
 	return column_1, err
@@ -1061,7 +1061,7 @@ SET
     version = $6,
     updated_at = now()
 WHERE
-    user_id = $7
+    books_id = $7
     AND id = $8
 `
 
@@ -1072,7 +1072,7 @@ type UpdateTransactionParams struct {
 	BalancingCurrency string
 	Origin            string
 	Version           int32
-	UserID            int64
+	BooksID           int64
 	ID                uuid.UUID
 }
 
@@ -1084,7 +1084,7 @@ func (q *Queries) UpdateTransaction(ctx context.Context, arg UpdateTransactionPa
 		arg.BalancingCurrency,
 		arg.Origin,
 		arg.Version,
-		arg.UserID,
+		arg.BooksID,
 		arg.ID,
 	)
 	return err
@@ -1097,12 +1097,12 @@ SET
     void_reason = $4,
     updated_at = now()
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2
 `
 
 type VoidTransactionParams struct {
-	UserID     int64
+	BooksID    int64
 	ID         uuid.UUID
 	VoidedAt   *time.Time
 	VoidReason *string
@@ -1110,7 +1110,7 @@ type VoidTransactionParams struct {
 
 func (q *Queries) VoidTransaction(ctx context.Context, arg VoidTransactionParams) error {
 	_, err := q.db.Exec(ctx, voidTransaction,
-		arg.UserID,
+		arg.BooksID,
 		arg.ID,
 		arg.VoidedAt,
 		arg.VoidReason,

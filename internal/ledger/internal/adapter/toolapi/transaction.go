@@ -94,38 +94,38 @@ func getTransaction(svc *app.Service) tool.Tool {
 			"Use it before changing a transaction or to explain its history. " +
 			"Do not use it to find transactions: search_transactions does.",
 		Effect: tool.ReadOnly,
-	}, func(ctx context.Context, userID int64, in getTransactionIn) (getTransactionOut, error) {
+	}, func(ctx context.Context, booksID int64, in getTransactionIn) (getTransactionOut, error) {
 		id, err := requiredID(in.TransactionID, "transaction_id")
 		if err != nil {
 			return getTransactionOut{}, err
 		}
 
-		t, err := svc.Transaction(ctx, userID, id)
+		t, err := svc.Transaction(ctx, booksID, id)
 		if err != nil {
 			return getTransactionOut{}, err
 		}
 
-		accounts, _, err := allAccounts(ctx, svc, userID)
+		accounts, _, err := allAccounts(ctx, svc, booksID)
 		if err != nil {
 			return getTransactionOut{}, err
 		}
 
-		versions, err := svc.Versions(ctx, userID, id)
+		versions, err := svc.Versions(ctx, booksID, id)
 		if err != nil {
 			return getTransactionOut{}, err
 		}
 
-		attachments, _, err := svc.Attachments(ctx, userID, id, page.Request[app.AttachmentKey]{Limit: 20})
+		attachments, _, err := svc.Attachments(ctx, booksID, id, page.Request[app.AttachmentKey]{Limit: 20})
 		if err != nil {
 			return getTransactionOut{}, err
 		}
 
-		disputes, err := svc.Disputes(ctx, userID, id)
+		disputes, err := svc.Disputes(ctx, booksID, id)
 		if err != nil {
 			return getTransactionOut{}, err
 		}
 
-		refs, err := svc.ReferencedBy(ctx, userID, id)
+		refs, err := svc.ReferencedBy(ctx, booksID, id)
 		if err != nil {
 			return getTransactionOut{}, err
 		}
@@ -135,7 +135,7 @@ func getTransaction(svc *app.Service) tool.Tool {
 			payeeIDs = append(payeeIDs, t.PayeeID)
 		}
 
-		payees, err := svc.PayeeNames(ctx, userID, payeeIDs)
+		payees, err := svc.PayeeNames(ctx, booksID, payeeIDs)
 		if err != nil {
 			return getTransactionOut{}, err
 		}
@@ -183,12 +183,12 @@ func getTransaction(svc *app.Service) tool.Tool {
 			out.Disputes = append(out.Disputes, v)
 		}
 
-		if out.InstallmentPlan, err = installmentPlanOf(ctx, svc, userID, t); err != nil {
+		if out.InstallmentPlan, err = installmentPlanOf(ctx, svc, booksID, t); err != nil {
 			return getTransactionOut{}, err
 		}
 
 		if in.IncludeReimbursement {
-			err = reimbursementsOf(ctx, svc, userID, id, &out)
+			err = reimbursementsOf(ctx, svc, booksID, id, &out)
 		}
 
 		return out, err
@@ -211,13 +211,13 @@ func linkOf(kind string, target uuid.UUID, amount int64, currency money.Currency
 	return v, nil
 }
 
-func installmentPlanOf(ctx context.Context, svc *app.Service, userID int64, t domain.Transaction) (installmentPlanView, error) {
+func installmentPlanOf(ctx context.Context, svc *app.Service, booksID int64, t domain.Transaction) (installmentPlanView, error) {
 	for _, p := range t.Postings {
 		if p.Installment == nil {
 			continue
 		}
 
-		plan, err := svc.InstallmentPlan(ctx, userID, p.Installment.PlanID)
+		plan, err := svc.InstallmentPlan(ctx, booksID, p.Installment.PlanID)
 		if err != nil {
 			return installmentPlanView{}, err
 		}
@@ -238,8 +238,8 @@ func installmentPlanOf(ctx context.Context, svc *app.Service, userID int64, t do
 	return installmentPlanView{}, nil
 }
 
-func reimbursementsOf(ctx context.Context, svc *app.Service, userID int64, id uuid.UUID, out *getTransactionOut) error {
-	candidates, _, err := svc.ReimbursementCandidates(ctx, userID, id)
+func reimbursementsOf(ctx context.Context, svc *app.Service, booksID int64, id uuid.UUID, out *getTransactionOut) error {
+	candidates, _, err := svc.ReimbursementCandidates(ctx, booksID, id)
 	if err != nil {
 		return err
 	}
@@ -251,7 +251,7 @@ func reimbursementsOf(ctx context.Context, svc *app.Service, userID int64, id uu
 		})
 	}
 
-	sources, err := svc.ReimbursementSources(ctx, userID, id)
+	sources, err := svc.ReimbursementSources(ctx, booksID, id)
 	if err != nil {
 		return err
 	}

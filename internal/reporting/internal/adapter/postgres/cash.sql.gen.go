@@ -30,7 +30,7 @@ FROM
     ledger_statement s
     JOIN ledger_account a ON a.id = s.account_id
 WHERE
-    s.user_id = $1
+    s.books_id = $1
     AND s.account_id = $2
     AND a.kind = 'credit_card'
 ORDER BY
@@ -38,8 +38,8 @@ ORDER BY
 `
 
 type AnalyticsStatementsParams struct {
-	UserID int64
-	CardID uuid.UUID
+	BooksID int64
+	CardID  uuid.UUID
 }
 
 type AnalyticsStatementsRow struct {
@@ -53,7 +53,7 @@ type AnalyticsStatementsRow struct {
 
 // The card's statements with the closing of the one before each, newest first.
 func (q *Queries) AnalyticsStatements(ctx context.Context, arg AnalyticsStatementsParams) ([]AnalyticsStatementsRow, error) {
-	rows, err := q.db.Query(ctx, analyticsStatements, arg.UserID, arg.CardID)
+	rows, err := q.db.Query(ctx, analyticsStatements, arg.BooksID, arg.CardID)
 	if err != nil {
 		return nil, err
 	}
@@ -85,18 +85,18 @@ SELECT
 FROM
     ledger_account
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2
     AND kind = 'credit_card'
 `
 
 type CardInstrumentParams struct {
-	UserID int64
-	ID     uuid.UUID
+	BooksID int64
+	ID      uuid.UUID
 }
 
 func (q *Queries) CardInstrument(ctx context.Context, arg CardInstrumentParams) (string, error) {
-	row := q.db.QueryRow(ctx, cardInstrument, arg.UserID, arg.ID)
+	row := q.db.QueryRow(ctx, cardInstrument, arg.BooksID, arg.ID)
 	var instrument string
 	err := row.Scan(&instrument)
 	return instrument, err
@@ -119,19 +119,19 @@ SELECT
         FROM
             ledger_link l
         WHERE
-            l.user_id = p.user_id
+            l.books_id = p.books_id
             AND l.from_transaction_id = p.transaction_id
             AND l.link_type = 'anticipation_of'
     )::boolean AS anticipation
 FROM
     ledger_posting p
     JOIN ledger_account a ON a.id = p.account_id
-    JOIN ledger_settings st ON st.user_id = p.user_id
+    JOIN ledger_settings st ON st.books_id = p.books_id
     JOIN ledger_statement s ON s.id = p.statement_id
     LEFT JOIN ledger_installment_plan ip ON ip.id = p.installment_plan_id
     LEFT JOIN ledger_transaction o ON o.id = ip.origin_transaction_id
 WHERE
-    p.user_id = $1
+    p.books_id = $1
     AND NOT p.voided
     AND a.kind = 'credit_card'
     AND p.card_role IN ('charge', 'credit')
@@ -156,8 +156,8 @@ type CashCardLinesRow struct {
 
 // Charge and credit postings of the user's cards by card and statement; base marks a card in
 // the base currency (CV1, CV6). A line of an installment plan carries the date of its purchase.
-func (q *Queries) CashCardLines(ctx context.Context, userID int64) ([]CashCardLinesRow, error) {
-	rows, err := q.db.Query(ctx, cashCardLines, userID)
+func (q *Queries) CashCardLines(ctx context.Context, booksID int64) ([]CashCardLinesRow, error) {
+	rows, err := q.db.Query(ctx, cashCardLines, booksID)
 	if err != nil {
 		return nil, err
 	}
@@ -196,7 +196,7 @@ FROM
     ledger_posting p
     JOIN ledger_account a ON a.id = p.account_id
 WHERE
-    p.user_id = $1
+    p.books_id = $1
     AND NOT p.voided
     AND a.account_class IN ('expense', 'income')
     AND p.transaction_id = ANY ($2::UUID[])
@@ -206,7 +206,7 @@ ORDER BY
 `
 
 type CashCategoryPostingsParams struct {
-	UserID         int64
+	BooksID        int64
 	TransactionIds []uuid.UUID
 }
 
@@ -217,7 +217,7 @@ type CashCategoryPostingsRow struct {
 }
 
 func (q *Queries) CashCategoryPostings(ctx context.Context, arg CashCategoryPostingsParams) ([]CashCategoryPostingsRow, error) {
-	rows, err := q.db.Query(ctx, cashCategoryPostings, arg.UserID, arg.TransactionIds)
+	rows, err := q.db.Query(ctx, cashCategoryPostings, arg.BooksID, arg.TransactionIds)
 	if err != nil {
 		return nil, err
 	}
@@ -245,7 +245,7 @@ FROM
     ledger_posting p
     JOIN ledger_account a ON a.id = p.account_id
 WHERE
-    p.user_id = $1
+    p.books_id = $1
     AND NOT p.voided
     AND a.account_class IN ('expense', 'income')
     AND p.booked_on BETWEEN $2::date AND $3::date
@@ -255,10 +255,10 @@ WHERE
         FROM
             ledger_posting q
             JOIN ledger_account qa ON qa.id = q.account_id
-            JOIN ledger_settings st ON st.user_id = q.user_id
+            JOIN ledger_settings st ON st.books_id = q.books_id
         WHERE
             q.transaction_id = p.transaction_id
-            AND q.user_id = p.user_id
+            AND q.books_id = p.books_id
             AND NOT q.voided
             AND qa.kind = 'credit_card'
             AND qa.instrument = st.base_currency
@@ -270,7 +270,7 @@ GROUP BY
 `
 
 type CashOffCardMonthTotalsParams struct {
-	UserID   int64
+	BooksID  int64
 	FromDate time.Time
 	ToDate   time.Time
 }
@@ -283,7 +283,7 @@ type CashOffCardMonthTotalsRow struct {
 
 // CV1 per month: category postings in [from, to] of transactions without a card line.
 func (q *Queries) CashOffCardMonthTotals(ctx context.Context, arg CashOffCardMonthTotalsParams) ([]CashOffCardMonthTotalsRow, error) {
-	rows, err := q.db.Query(ctx, cashOffCardMonthTotals, arg.UserID, arg.FromDate, arg.ToDate)
+	rows, err := q.db.Query(ctx, cashOffCardMonthTotals, arg.BooksID, arg.FromDate, arg.ToDate)
 	if err != nil {
 		return nil, err
 	}
@@ -310,7 +310,7 @@ FROM
     ledger_posting p
     JOIN ledger_account a ON a.id = p.account_id
 WHERE
-    p.user_id = $1
+    p.books_id = $1
     AND NOT p.voided
     AND a.account_class IN ('expense', 'income')
     AND p.booked_on BETWEEN $2::date AND $3::date
@@ -320,10 +320,10 @@ WHERE
         FROM
             ledger_posting q
             JOIN ledger_account qa ON qa.id = q.account_id
-            JOIN ledger_settings st ON st.user_id = q.user_id
+            JOIN ledger_settings st ON st.books_id = q.books_id
         WHERE
             q.transaction_id = p.transaction_id
-            AND q.user_id = p.user_id
+            AND q.books_id = p.books_id
             AND NOT q.voided
             AND qa.kind = 'credit_card'
             AND qa.instrument = st.base_currency
@@ -334,7 +334,7 @@ GROUP BY
 `
 
 type CashOffCardTotalsParams struct {
-	UserID   int64
+	BooksID  int64
 	FromDate time.Time
 	ToDate   time.Time
 }
@@ -346,7 +346,7 @@ type CashOffCardTotalsRow struct {
 
 // CV1: category postings in [from, to] of transactions without a card line, per category.
 func (q *Queries) CashOffCardTotals(ctx context.Context, arg CashOffCardTotalsParams) ([]CashOffCardTotalsRow, error) {
-	rows, err := q.db.Query(ctx, cashOffCardTotals, arg.UserID, arg.FromDate, arg.ToDate)
+	rows, err := q.db.Query(ctx, cashOffCardTotals, arg.BooksID, arg.FromDate, arg.ToDate)
 	if err != nil {
 		return nil, err
 	}
@@ -372,13 +372,13 @@ SELECT
 FROM
     ledger_link
 WHERE
-    user_id = $1
+    books_id = $1
     AND link_type IN ('anticipation_of', 'cancellation_of')
     AND from_transaction_id = ANY ($2::UUID[])
 `
 
 type CashOriginsParams struct {
-	UserID         int64
+	BooksID        int64
 	TransactionIds []uuid.UUID
 }
 
@@ -389,7 +389,7 @@ type CashOriginsRow struct {
 
 // CV2: the purchase whose plan a transaction anticipates or cancels.
 func (q *Queries) CashOrigins(ctx context.Context, arg CashOriginsParams) ([]CashOriginsRow, error) {
-	rows, err := q.db.Query(ctx, cashOrigins, arg.UserID, arg.TransactionIds)
+	rows, err := q.db.Query(ctx, cashOrigins, arg.BooksID, arg.TransactionIds)
 	if err != nil {
 		return nil, err
 	}
@@ -421,16 +421,16 @@ SELECT
         FROM
             ledger_installment_plan ip
         WHERE
-            ip.user_id = p.user_id
+            ip.books_id = p.books_id
             AND ip.origin_transaction_id = p.transaction_id
             AND ip.plan_kind = 'financing'
     )::boolean AS financing
 FROM
     ledger_posting p
     JOIN ledger_account a ON a.id = p.account_id
-    JOIN ledger_settings st ON st.user_id = p.user_id
+    JOIN ledger_settings st ON st.books_id = p.books_id
 WHERE
-    p.user_id = $1
+    p.books_id = $1
     AND NOT p.voided
     AND a.kind = 'credit_card'
     AND a.instrument = st.base_currency
@@ -443,8 +443,8 @@ ORDER BY
 `
 
 type CashPaymentsParams struct {
-	UserID int64
-	ToDate time.Time
+	BooksID int64
+	ToDate  time.Time
 }
 
 type CashPaymentsRow struct {
@@ -459,7 +459,7 @@ type CashPaymentsRow struct {
 // CV4: payments of the user's cards in the base currency up to a date, in the order they apply.
 // financing marks the payment of a transaction that created a financing plan (CV7).
 func (q *Queries) CashPayments(ctx context.Context, arg CashPaymentsParams) ([]CashPaymentsRow, error) {
-	rows, err := q.db.Query(ctx, cashPayments, arg.UserID, arg.ToDate)
+	rows, err := q.db.Query(ctx, cashPayments, arg.BooksID, arg.ToDate)
 	if err != nil {
 		return nil, err
 	}
@@ -493,7 +493,7 @@ WITH RECURSIVE
         FROM
             ledger_account r
         WHERE
-            r.user_id = $1
+            r.books_id = $1
             AND r.system_role IN ('interest', 'taxes', 'fees')
         UNION ALL
         SELECT
@@ -502,7 +502,7 @@ WITH RECURSIVE
             ledger_account a
             JOIN c ON a.parent_id = c.id
         WHERE
-            a.user_id = $1
+            a.books_id = $1
     )
 SELECT
     id
@@ -511,8 +511,8 @@ FROM
 `
 
 // The system categories interest, taxes and fees with their descendants.
-func (q *Queries) ChargeCategories(ctx context.Context, userID int64) ([]uuid.UUID, error) {
-	rows, err := q.db.Query(ctx, chargeCategories, userID)
+func (q *Queries) ChargeCategories(ctx context.Context, booksID int64) ([]uuid.UUID, error) {
+	rows, err := q.db.Query(ctx, chargeCategories, booksID)
 	if err != nil {
 		return nil, err
 	}
@@ -537,17 +537,17 @@ SELECT
 FROM
     ledger_statement s
 WHERE
-    s.user_id = $1
+    s.books_id = $1
     AND s.id = $2
 `
 
 type StatementCardParams struct {
-	UserID int64
-	ID     uuid.UUID
+	BooksID int64
+	ID      uuid.UUID
 }
 
 func (q *Queries) StatementCard(ctx context.Context, arg StatementCardParams) (uuid.UUID, error) {
-	row := q.db.QueryRow(ctx, statementCard, arg.UserID, arg.ID)
+	row := q.db.QueryRow(ctx, statementCard, arg.BooksID, arg.ID)
 	var account_id uuid.UUID
 	err := row.Scan(&account_id)
 	return account_id, err

@@ -10,12 +10,12 @@ import (
 	"github.com/andrelopes-code/equori/internal/reporting/internal/app"
 )
 
-func (r *Repository) BaseCurrency(ctx context.Context, userID int64) (string, error) {
-	return r.q.IndicatorBaseCurrency(ctx, userID)
+func (r *Repository) BaseCurrency(ctx context.Context, booksID int64) (string, error) {
+	return r.q.IndicatorBaseCurrency(ctx, booksID)
 }
 
-func (r *Repository) FirstPosting(ctx context.Context, userID int64) (time.Time, bool, error) {
-	first, err := r.q.IndicatorFirstPosting(ctx, userID)
+func (r *Repository) FirstPosting(ctx context.Context, booksID int64) (time.Time, bool, error) {
+	first, err := r.q.IndicatorFirstPosting(ctx, booksID)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return time.Time{}, false, nil
 	}
@@ -27,8 +27,8 @@ func (r *Repository) FirstPosting(ctx context.Context, userID int64) (time.Time,
 	return first, true, nil
 }
 
-func (r *Repository) IndicatorAccounts(ctx context.Context, userID int64) ([]app.IndicatorAccount, error) {
-	rows, err := r.q.IndicatorAccounts(ctx, userID)
+func (r *Repository) IndicatorAccounts(ctx context.Context, booksID int64) ([]app.IndicatorAccount, error) {
+	rows, err := r.q.IndicatorAccounts(ctx, booksID)
 	if err != nil {
 		return nil, err
 	}
@@ -44,8 +44,8 @@ func (r *Repository) IndicatorAccounts(ctx context.Context, userID int64) ([]app
 	return out, nil
 }
 
-func (r *Repository) LoanPrincipalByMonth(ctx context.Context, userID int64, from, to time.Time) (map[time.Time]int64, error) {
-	rows, err := r.q.LoanPrincipalByMonth(ctx, LoanPrincipalByMonthParams{UserID: userID, FromDate: from, ToDate: to})
+func (r *Repository) LoanPrincipalByMonth(ctx context.Context, booksID int64, from, to time.Time) (map[time.Time]int64, error) {
+	rows, err := r.q.LoanPrincipalByMonth(ctx, LoanPrincipalByMonthParams{BooksID: booksID, FromDate: from, ToDate: to})
 	if err != nil {
 		return nil, err
 	}

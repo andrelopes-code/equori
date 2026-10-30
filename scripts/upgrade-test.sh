@@ -43,8 +43,8 @@ snapshot() {
 SELECT account_id || ' ' || sum(amount) FROM ledger_posting WHERE NOT voided GROUP BY account_id ORDER BY 1;
 SELECT format('SELECT %L || '' '' || count(*) FROM %I', table_name, table_name)
 FROM information_schema.columns
-WHERE table_schema = 'public' AND column_name = 'user_id'
-  AND table_name NOT LIKE 'outbox\_%' AND table_name <> 'identity_session'
+WHERE table_schema = 'public' AND column_name IN ('user_id', 'books_id')
+  AND table_name NOT LIKE 'outbox\_%' AND table_name NOT IN ('identity_session', 'identity_membership')
 ORDER BY table_name \gexec
 SQL
 }

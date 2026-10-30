@@ -17,28 +17,28 @@ SELECT DISTINCT
     s.reference_month
 FROM
     ledger_link l
-    JOIN ledger_transaction t ON t.user_id = l.user_id
+    JOIN ledger_transaction t ON t.books_id = l.books_id
     AND t.id = l.from_transaction_id
     AND t.voided_at IS NULL
-    JOIN ledger_posting p ON p.user_id = l.user_id
+    JOIN ledger_posting p ON p.books_id = l.books_id
     AND p.transaction_id = t.id
     AND p.card_role = 'credit'
     AND NOT p.voided
-    JOIN ledger_statement s ON s.user_id = l.user_id
+    JOIN ledger_statement s ON s.books_id = l.books_id
     AND s.id = p.statement_id
 WHERE
-    l.user_id = $1
+    l.books_id = $1
     AND l.to_transaction_id = $2
     AND l.link_type = 'anticipation_of'
 `
 
 type AnticipatedReferencesParams struct {
-	UserID   int64
+	BooksID  int64
 	OriginID uuid.UUID
 }
 
 func (q *Queries) AnticipatedReferences(ctx context.Context, arg AnticipatedReferencesParams) ([]time.Time, error) {
-	rows, err := q.db.Query(ctx, anticipatedReferences, arg.UserID, arg.OriginID)
+	rows, err := q.db.Query(ctx, anticipatedReferences, arg.BooksID, arg.OriginID)
 	if err != nil {
 		return nil, err
 	}
@@ -62,29 +62,29 @@ SELECT
     coalesce(- sum(p.amount), 0)::bigint
 FROM
     ledger_link l
-    JOIN ledger_transaction t ON t.user_id = l.user_id
+    JOIN ledger_transaction t ON t.books_id = l.books_id
     AND t.id = l.from_transaction_id
     AND t.voided_at IS NULL
-    JOIN ledger_posting p ON p.user_id = l.user_id
+    JOIN ledger_posting p ON p.books_id = l.books_id
     AND p.transaction_id = t.id
     AND NOT p.voided
-    JOIN ledger_account a ON a.user_id = l.user_id
+    JOIN ledger_account a ON a.books_id = l.books_id
     AND a.id = p.account_id
     AND a.system_role = 'discounts'
 WHERE
-    l.user_id = $1
+    l.books_id = $1
     AND l.to_transaction_id = $2
     AND l.link_type = 'anticipation_of'
 `
 
 type AnticipationDiscountParams struct {
-	UserID   int64
+	BooksID  int64
 	OriginID uuid.UUID
 }
 
 // A135: the discount non-voided anticipations of the origin purchase granted, positive.
 func (q *Queries) AnticipationDiscount(ctx context.Context, arg AnticipationDiscountParams) (int64, error) {
-	row := q.db.QueryRow(ctx, anticipationDiscount, arg.UserID, arg.OriginID)
+	row := q.db.QueryRow(ctx, anticipationDiscount, arg.BooksID, arg.OriginID)
 	var column_1 int64
 	err := row.Scan(&column_1)
 	return column_1, err
@@ -97,7 +97,7 @@ FROM
     ledger_posting p
     JOIN ledger_statement s ON s.id = p.statement_id
 WHERE
-    p.user_id = $1
+    p.books_id = $1
     AND p.account_id = $2
     AND NOT p.voided
     AND p.installment_plan_id IS NOT NULL
@@ -107,7 +107,7 @@ WHERE
 `
 
 type CommittedInstallmentsParams struct {
-	UserID         int64
+	BooksID        int64
 	AccountID      uuid.UUID
 	ReferenceMonth time.Time
 	Today          time.Time
@@ -115,7 +115,7 @@ type CommittedInstallmentsParams struct {
 
 func (q *Queries) CommittedInstallments(ctx context.Context, arg CommittedInstallmentsParams) (int64, error) {
 	row := q.db.QueryRow(ctx, committedInstallments,
-		arg.UserID,
+		arg.BooksID,
 		arg.AccountID,
 		arg.ReferenceMonth,
 		arg.Today,
@@ -129,7 +129,7 @@ const ensureStatement = `-- name: EnsureStatement :one
 WITH
     inserted AS (
         INSERT INTO
-            ledger_statement (user_id, account_id, reference_month, closing_date, due_date)
+            ledger_statement (books_id, account_id, reference_month, closing_date, due_date)
         VALUES
             ($1, $2, $3, $4, $5)
         ON CONFLICT (account_id, reference_month) DO NOTHING
@@ -153,7 +153,7 @@ LIMIT
 `
 
 type EnsureStatementParams struct {
-	UserID         int64
+	BooksID        int64
 	AccountID      uuid.UUID
 	ReferenceMonth time.Time
 	ClosingDate    time.Time
@@ -162,7 +162,7 @@ type EnsureStatementParams struct {
 
 func (q *Queries) EnsureStatement(ctx context.Context, arg EnsureStatementParams) (uuid.UUID, error) {
 	row := q.db.QueryRow(ctx, ensureStatement,
-		arg.UserID,
+		arg.BooksID,
 		arg.AccountID,
 		arg.ReferenceMonth,
 		arg.ClosingDate,
@@ -175,26 +175,26 @@ func (q *Queries) EnsureStatement(ctx context.Context, arg EnsureStatementParams
 
 const getDisputeForUpdate = `-- name: GetDisputeForUpdate :one
 SELECT
-    id, user_id, transaction_id, opened_on, resolved_on, outcome, refund_transaction_id
+    id, books_id, transaction_id, opened_on, resolved_on, outcome, refund_transaction_id
 FROM
     ledger_dispute
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2
 FOR UPDATE
 `
 
 type GetDisputeForUpdateParams struct {
-	UserID int64
-	ID     uuid.UUID
+	BooksID int64
+	ID      uuid.UUID
 }
 
 func (q *Queries) GetDisputeForUpdate(ctx context.Context, arg GetDisputeForUpdateParams) (LedgerDispute, error) {
-	row := q.db.QueryRow(ctx, getDisputeForUpdate, arg.UserID, arg.ID)
+	row := q.db.QueryRow(ctx, getDisputeForUpdate, arg.BooksID, arg.ID)
 	var i LedgerDispute
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.TransactionID,
 		&i.OpenedOn,
 		&i.ResolvedOn,
@@ -206,25 +206,25 @@ func (q *Queries) GetDisputeForUpdate(ctx context.Context, arg GetDisputeForUpda
 
 const getPlan = `-- name: GetPlan :one
 SELECT
-    id, user_id, account_id, origin_transaction_id, plan_kind, installment_count, principal, interest, monthly_rate, first_statement_id, created_at
+    id, books_id, account_id, origin_transaction_id, plan_kind, installment_count, principal, interest, monthly_rate, first_statement_id, created_at
 FROM
     ledger_installment_plan
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2
 `
 
 type GetPlanParams struct {
-	UserID int64
-	ID     uuid.UUID
+	BooksID int64
+	ID      uuid.UUID
 }
 
 func (q *Queries) GetPlan(ctx context.Context, arg GetPlanParams) (LedgerInstallmentPlan, error) {
-	row := q.db.QueryRow(ctx, getPlan, arg.UserID, arg.ID)
+	row := q.db.QueryRow(ctx, getPlan, arg.BooksID, arg.ID)
 	var i LedgerInstallmentPlan
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.AccountID,
 		&i.OriginTransactionID,
 		&i.PlanKind,
@@ -240,25 +240,25 @@ func (q *Queries) GetPlan(ctx context.Context, arg GetPlanParams) (LedgerInstall
 
 const getStatement = `-- name: GetStatement :one
 SELECT
-    id, user_id, account_id, reference_month, closing_date, due_date, financed_by_plan_id, created_at
+    id, books_id, account_id, reference_month, closing_date, due_date, financed_by_plan_id, created_at
 FROM
     ledger_statement
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2
 `
 
 type GetStatementParams struct {
-	UserID int64
-	ID     uuid.UUID
+	BooksID int64
+	ID      uuid.UUID
 }
 
 func (q *Queries) GetStatement(ctx context.Context, arg GetStatementParams) (LedgerStatement, error) {
-	row := q.db.QueryRow(ctx, getStatement, arg.UserID, arg.ID)
+	row := q.db.QueryRow(ctx, getStatement, arg.BooksID, arg.ID)
 	var i LedgerStatement
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.AccountID,
 		&i.ReferenceMonth,
 		&i.ClosingDate,
@@ -275,19 +275,19 @@ SELECT
 FROM
     ledger_statement
 WHERE
-    user_id = $1
+    books_id = $1
     AND account_id = $2
     AND due_date = $3
 `
 
 type GetStatementByDueDateParams struct {
-	UserID    int64
+	BooksID   int64
 	AccountID uuid.UUID
 	DueDate   time.Time
 }
 
 func (q *Queries) GetStatementByDueDate(ctx context.Context, arg GetStatementByDueDateParams) (time.Time, error) {
-	row := q.db.QueryRow(ctx, getStatementByDueDate, arg.UserID, arg.AccountID, arg.DueDate)
+	row := q.db.QueryRow(ctx, getStatementByDueDate, arg.BooksID, arg.AccountID, arg.DueDate)
 	var reference_month time.Time
 	err := row.Scan(&reference_month)
 	return reference_month, err
@@ -295,25 +295,25 @@ func (q *Queries) GetStatementByDueDate(ctx context.Context, arg GetStatementByD
 
 const getSystemAccount = `-- name: GetSystemAccount :one
 SELECT
-    id, user_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, color, icon, excluded_from_liquidity
+    id, books_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, color, icon, excluded_from_liquidity
 FROM
     ledger_account
 WHERE
-    user_id = $1
+    books_id = $1
     AND system_role = $2
 `
 
 type GetSystemAccountParams struct {
-	UserID     int64
+	BooksID    int64
 	SystemRole *string
 }
 
 func (q *Queries) GetSystemAccount(ctx context.Context, arg GetSystemAccountParams) (LedgerAccount, error) {
-	row := q.db.QueryRow(ctx, getSystemAccount, arg.UserID, arg.SystemRole)
+	row := q.db.QueryRow(ctx, getSystemAccount, arg.BooksID, arg.SystemRole)
 	var i LedgerAccount
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.Name,
 		&i.AccountClass,
 		&i.Kind,
@@ -337,7 +337,7 @@ func (q *Queries) GetSystemAccount(ctx context.Context, arg GetSystemAccountPara
 const insertBillingRule = `-- name: InsertBillingRule :one
 INSERT INTO
     ledger_billing_cycle_rule (
-        user_id,
+        books_id,
         account_id,
         effective_from,
         closing_day,
@@ -364,11 +364,11 @@ VALUES
         $11
     )
 RETURNING
-    user_id, account_id, effective_from, closing_day, due_day, closing_day_assignment, due_date_adjustment, calendar, created_at, closing_mode, closing_days_before_due, closing_adjustment
+    books_id, account_id, effective_from, closing_day, due_day, closing_day_assignment, due_date_adjustment, calendar, created_at, closing_mode, closing_days_before_due, closing_adjustment
 `
 
 type InsertBillingRuleParams struct {
-	UserID               int64
+	BooksID              int64
 	AccountID            uuid.UUID
 	EffectiveFrom        time.Time
 	ClosingDay           *int16
@@ -383,7 +383,7 @@ type InsertBillingRuleParams struct {
 
 func (q *Queries) InsertBillingRule(ctx context.Context, arg InsertBillingRuleParams) (LedgerBillingCycleRule, error) {
 	row := q.db.QueryRow(ctx, insertBillingRule,
-		arg.UserID,
+		arg.BooksID,
 		arg.AccountID,
 		arg.EffectiveFrom,
 		arg.ClosingDay,
@@ -397,7 +397,7 @@ func (q *Queries) InsertBillingRule(ctx context.Context, arg InsertBillingRulePa
 	)
 	var i LedgerBillingCycleRule
 	err := row.Scan(
-		&i.UserID,
+		&i.BooksID,
 		&i.AccountID,
 		&i.EffectiveFrom,
 		&i.ClosingDay,
@@ -415,15 +415,15 @@ func (q *Queries) InsertBillingRule(ctx context.Context, arg InsertBillingRulePa
 
 const insertCard = `-- name: InsertCard :one
 INSERT INTO
-    ledger_card (user_id, account_id, holder, last_four, virtual, foreign_charge_bp)
+    ledger_card (books_id, account_id, holder, last_four, virtual, foreign_charge_bp)
 VALUES
     ($1, $2, $3, $4, $5, $6)
 RETURNING
-    id, user_id, account_id, holder, last_four, virtual, active, created_at, foreign_charge_bp
+    id, books_id, account_id, holder, last_four, virtual, active, created_at, foreign_charge_bp
 `
 
 type InsertCardParams struct {
-	UserID          int64
+	BooksID         int64
 	AccountID       uuid.UUID
 	Holder          string
 	LastFour        string
@@ -433,7 +433,7 @@ type InsertCardParams struct {
 
 func (q *Queries) InsertCard(ctx context.Context, arg InsertCardParams) (LedgerCard, error) {
 	row := q.db.QueryRow(ctx, insertCard,
-		arg.UserID,
+		arg.BooksID,
 		arg.AccountID,
 		arg.Holder,
 		arg.LastFour,
@@ -443,7 +443,7 @@ func (q *Queries) InsertCard(ctx context.Context, arg InsertCardParams) (LedgerC
 	var i LedgerCard
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.AccountID,
 		&i.Holder,
 		&i.LastFour,
@@ -457,20 +457,20 @@ func (q *Queries) InsertCard(ctx context.Context, arg InsertCardParams) (LedgerC
 
 const insertCreditLimit = `-- name: InsertCreditLimit :one
 INSERT INTO
-    ledger_credit_limit (user_id, account_id, effective_from, amount)
+    ledger_credit_limit (books_id, account_id, effective_from, amount)
 VALUES
     ($1, $2, $3, $4)
 ON CONFLICT (account_id, effective_from) DO UPDATE
 SET
     amount = EXCLUDED.amount
 WHERE
-    ledger_credit_limit.user_id = EXCLUDED.user_id
+    ledger_credit_limit.books_id = EXCLUDED.books_id
 RETURNING
-    user_id, account_id, effective_from, amount, created_at
+    books_id, account_id, effective_from, amount, created_at
 `
 
 type InsertCreditLimitParams struct {
-	UserID        int64
+	BooksID       int64
 	AccountID     uuid.UUID
 	EffectiveFrom time.Time
 	Amount        int64
@@ -478,14 +478,14 @@ type InsertCreditLimitParams struct {
 
 func (q *Queries) InsertCreditLimit(ctx context.Context, arg InsertCreditLimitParams) (LedgerCreditLimit, error) {
 	row := q.db.QueryRow(ctx, insertCreditLimit,
-		arg.UserID,
+		arg.BooksID,
 		arg.AccountID,
 		arg.EffectiveFrom,
 		arg.Amount,
 	)
 	var i LedgerCreditLimit
 	err := row.Scan(
-		&i.UserID,
+		&i.BooksID,
 		&i.AccountID,
 		&i.EffectiveFrom,
 		&i.Amount,
@@ -496,25 +496,25 @@ func (q *Queries) InsertCreditLimit(ctx context.Context, arg InsertCreditLimitPa
 
 const insertDispute = `-- name: InsertDispute :one
 INSERT INTO
-    ledger_dispute (user_id, transaction_id, opened_on)
+    ledger_dispute (books_id, transaction_id, opened_on)
 VALUES
     ($1, $2, $3)
 RETURNING
-    id, user_id, transaction_id, opened_on, resolved_on, outcome, refund_transaction_id
+    id, books_id, transaction_id, opened_on, resolved_on, outcome, refund_transaction_id
 `
 
 type InsertDisputeParams struct {
-	UserID        int64
+	BooksID       int64
 	TransactionID uuid.UUID
 	OpenedOn      time.Time
 }
 
 func (q *Queries) InsertDispute(ctx context.Context, arg InsertDisputeParams) (LedgerDispute, error) {
-	row := q.db.QueryRow(ctx, insertDispute, arg.UserID, arg.TransactionID, arg.OpenedOn)
+	row := q.db.QueryRow(ctx, insertDispute, arg.BooksID, arg.TransactionID, arg.OpenedOn)
 	var i LedgerDispute
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.TransactionID,
 		&i.OpenedOn,
 		&i.ResolvedOn,
@@ -528,7 +528,7 @@ const insertInstallmentPlan = `-- name: InsertInstallmentPlan :exec
 INSERT INTO
     ledger_installment_plan (
         id,
-        user_id,
+        books_id,
         account_id,
         origin_transaction_id,
         plan_kind,
@@ -553,7 +553,7 @@ VALUES
 
 type InsertInstallmentPlanParams struct {
 	ID                  uuid.UUID
-	UserID              int64
+	BooksID             int64
 	AccountID           uuid.UUID
 	OriginTransactionID uuid.UUID
 	PlanKind            string
@@ -566,7 +566,7 @@ type InsertInstallmentPlanParams struct {
 func (q *Queries) InsertInstallmentPlan(ctx context.Context, arg InsertInstallmentPlanParams) error {
 	_, err := q.db.Exec(ctx, insertInstallmentPlan,
 		arg.ID,
-		arg.UserID,
+		arg.BooksID,
 		arg.AccountID,
 		arg.OriginTransactionID,
 		arg.PlanKind,
@@ -585,17 +585,17 @@ SELECT
     s.closing_date
 FROM
     ledger_link l
-    JOIN ledger_transaction t ON t.user_id = l.user_id
+    JOIN ledger_transaction t ON t.books_id = l.books_id
     AND t.id = l.from_transaction_id
     AND t.voided_at IS NULL
-    JOIN ledger_posting p ON p.user_id = l.user_id
+    JOIN ledger_posting p ON p.books_id = l.books_id
     AND p.transaction_id = t.id
     AND p.card_role = 'charge'
     AND NOT p.voided
-    JOIN ledger_statement s ON s.user_id = l.user_id
+    JOIN ledger_statement s ON s.books_id = l.books_id
     AND s.id = p.statement_id
 WHERE
-    l.user_id = $1
+    l.books_id = $1
     AND l.to_transaction_id = $2
     AND l.link_type = 'anticipation_of'
 ORDER BY
@@ -604,7 +604,7 @@ ORDER BY
 `
 
 type ListAnticipationChargesParams struct {
-	UserID   int64
+	BooksID  int64
 	OriginID uuid.UUID
 }
 
@@ -616,7 +616,7 @@ type ListAnticipationChargesRow struct {
 
 // A135: what non-voided anticipations of the origin purchase charged, by statement.
 func (q *Queries) ListAnticipationCharges(ctx context.Context, arg ListAnticipationChargesParams) ([]ListAnticipationChargesRow, error) {
-	rows, err := q.db.Query(ctx, listAnticipationCharges, arg.UserID, arg.OriginID)
+	rows, err := q.db.Query(ctx, listAnticipationCharges, arg.BooksID, arg.OriginID)
 	if err != nil {
 		return nil, err
 	}
@@ -637,23 +637,23 @@ func (q *Queries) ListAnticipationCharges(ctx context.Context, arg ListAnticipat
 
 const listBillingRules = `-- name: ListBillingRules :many
 SELECT
-    user_id, account_id, effective_from, closing_day, due_day, closing_day_assignment, due_date_adjustment, calendar, created_at, closing_mode, closing_days_before_due, closing_adjustment
+    books_id, account_id, effective_from, closing_day, due_day, closing_day_assignment, due_date_adjustment, calendar, created_at, closing_mode, closing_days_before_due, closing_adjustment
 FROM
     ledger_billing_cycle_rule
 WHERE
-    user_id = $1
+    books_id = $1
     AND account_id = $2
 ORDER BY
     effective_from
 `
 
 type ListBillingRulesParams struct {
-	UserID    int64
+	BooksID   int64
 	AccountID uuid.UUID
 }
 
 func (q *Queries) ListBillingRules(ctx context.Context, arg ListBillingRulesParams) ([]LedgerBillingCycleRule, error) {
-	rows, err := q.db.Query(ctx, listBillingRules, arg.UserID, arg.AccountID)
+	rows, err := q.db.Query(ctx, listBillingRules, arg.BooksID, arg.AccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -662,7 +662,7 @@ func (q *Queries) ListBillingRules(ctx context.Context, arg ListBillingRulesPara
 	for rows.Next() {
 		var i LedgerBillingCycleRule
 		if err := rows.Scan(
-			&i.UserID,
+			&i.BooksID,
 			&i.AccountID,
 			&i.EffectiveFrom,
 			&i.ClosingDay,
@@ -687,11 +687,11 @@ func (q *Queries) ListBillingRules(ctx context.Context, arg ListBillingRulesPara
 
 const listCards = `-- name: ListCards :many
 SELECT
-    id, user_id, account_id, holder, last_four, virtual, active, created_at, foreign_charge_bp
+    id, books_id, account_id, holder, last_four, virtual, active, created_at, foreign_charge_bp
 FROM
     ledger_card
 WHERE
-    user_id = $1
+    books_id = $1
     AND account_id = $2
 ORDER BY
     created_at,
@@ -699,12 +699,12 @@ ORDER BY
 `
 
 type ListCardsParams struct {
-	UserID    int64
+	BooksID   int64
 	AccountID uuid.UUID
 }
 
 func (q *Queries) ListCards(ctx context.Context, arg ListCardsParams) ([]LedgerCard, error) {
-	rows, err := q.db.Query(ctx, listCards, arg.UserID, arg.AccountID)
+	rows, err := q.db.Query(ctx, listCards, arg.BooksID, arg.AccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -714,7 +714,7 @@ func (q *Queries) ListCards(ctx context.Context, arg ListCardsParams) ([]LedgerC
 		var i LedgerCard
 		if err := rows.Scan(
 			&i.ID,
-			&i.UserID,
+			&i.BooksID,
 			&i.AccountID,
 			&i.Holder,
 			&i.LastFour,
@@ -735,23 +735,23 @@ func (q *Queries) ListCards(ctx context.Context, arg ListCardsParams) ([]LedgerC
 
 const listCreditLimits = `-- name: ListCreditLimits :many
 SELECT
-    user_id, account_id, effective_from, amount, created_at
+    books_id, account_id, effective_from, amount, created_at
 FROM
     ledger_credit_limit
 WHERE
-    user_id = $1
+    books_id = $1
     AND account_id = $2
 ORDER BY
     effective_from
 `
 
 type ListCreditLimitsParams struct {
-	UserID    int64
+	BooksID   int64
 	AccountID uuid.UUID
 }
 
 func (q *Queries) ListCreditLimits(ctx context.Context, arg ListCreditLimitsParams) ([]LedgerCreditLimit, error) {
-	rows, err := q.db.Query(ctx, listCreditLimits, arg.UserID, arg.AccountID)
+	rows, err := q.db.Query(ctx, listCreditLimits, arg.BooksID, arg.AccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -760,7 +760,7 @@ func (q *Queries) ListCreditLimits(ctx context.Context, arg ListCreditLimitsPara
 	for rows.Next() {
 		var i LedgerCreditLimit
 		if err := rows.Scan(
-			&i.UserID,
+			&i.BooksID,
 			&i.AccountID,
 			&i.EffectiveFrom,
 			&i.Amount,
@@ -778,11 +778,11 @@ func (q *Queries) ListCreditLimits(ctx context.Context, arg ListCreditLimitsPara
 
 const listDisputes = `-- name: ListDisputes :many
 SELECT
-    id, user_id, transaction_id, opened_on, resolved_on, outcome, refund_transaction_id
+    id, books_id, transaction_id, opened_on, resolved_on, outcome, refund_transaction_id
 FROM
     ledger_dispute
 WHERE
-    user_id = $1
+    books_id = $1
     AND transaction_id = $2
 ORDER BY
     opened_on,
@@ -790,12 +790,12 @@ ORDER BY
 `
 
 type ListDisputesParams struct {
-	UserID        int64
+	BooksID       int64
 	TransactionID uuid.UUID
 }
 
 func (q *Queries) ListDisputes(ctx context.Context, arg ListDisputesParams) ([]LedgerDispute, error) {
-	rows, err := q.db.Query(ctx, listDisputes, arg.UserID, arg.TransactionID)
+	rows, err := q.db.Query(ctx, listDisputes, arg.BooksID, arg.TransactionID)
 	if err != nil {
 		return nil, err
 	}
@@ -805,7 +805,7 @@ func (q *Queries) ListDisputes(ctx context.Context, arg ListDisputesParams) ([]L
 		var i LedgerDispute
 		if err := rows.Scan(
 			&i.ID,
-			&i.UserID,
+			&i.BooksID,
 			&i.TransactionID,
 			&i.OpenedOn,
 			&i.ResolvedOn,
@@ -824,11 +824,11 @@ func (q *Queries) ListDisputes(ctx context.Context, arg ListDisputesParams) ([]L
 
 const listOpenStatementsFrom = `-- name: ListOpenStatementsFrom :many
 SELECT
-    id, user_id, account_id, reference_month, closing_date, due_date, financed_by_plan_id, created_at
+    id, books_id, account_id, reference_month, closing_date, due_date, financed_by_plan_id, created_at
 FROM
     ledger_statement
 WHERE
-    user_id = $1
+    books_id = $1
     AND account_id = $2
     AND reference_month >= $3
     AND closing_date > $4
@@ -837,7 +837,7 @@ ORDER BY
 `
 
 type ListOpenStatementsFromParams struct {
-	UserID    int64
+	BooksID   int64
 	AccountID uuid.UUID
 	FromMonth time.Time
 	Today     time.Time
@@ -845,7 +845,7 @@ type ListOpenStatementsFromParams struct {
 
 func (q *Queries) ListOpenStatementsFrom(ctx context.Context, arg ListOpenStatementsFromParams) ([]LedgerStatement, error) {
 	rows, err := q.db.Query(ctx, listOpenStatementsFrom,
-		arg.UserID,
+		arg.BooksID,
 		arg.AccountID,
 		arg.FromMonth,
 		arg.Today,
@@ -859,7 +859,7 @@ func (q *Queries) ListOpenStatementsFrom(ctx context.Context, arg ListOpenStatem
 		var i LedgerStatement
 		if err := rows.Scan(
 			&i.ID,
-			&i.UserID,
+			&i.BooksID,
 			&i.AccountID,
 			&i.ReferenceMonth,
 			&i.ClosingDate,
@@ -885,10 +885,10 @@ SELECT
     s.closing_date
 FROM
     ledger_posting p
-    JOIN ledger_statement s ON s.user_id = p.user_id
+    JOIN ledger_statement s ON s.books_id = p.books_id
     AND s.id = p.statement_id
 WHERE
-    p.user_id = $1
+    p.books_id = $1
     AND p.installment_plan_id = $2
     AND NOT p.voided
     AND p.card_role = 'charge'
@@ -897,7 +897,7 @@ ORDER BY
 `
 
 type ListPlanInstallmentsParams struct {
-	UserID            int64
+	BooksID           int64
 	InstallmentPlanID uuid.NullUUID
 }
 
@@ -909,7 +909,7 @@ type ListPlanInstallmentsRow struct {
 }
 
 func (q *Queries) ListPlanInstallments(ctx context.Context, arg ListPlanInstallmentsParams) ([]ListPlanInstallmentsRow, error) {
-	rows, err := q.db.Query(ctx, listPlanInstallments, arg.UserID, arg.InstallmentPlanID)
+	rows, err := q.db.Query(ctx, listPlanInstallments, arg.BooksID, arg.InstallmentPlanID)
 	if err != nil {
 		return nil, err
 	}
@@ -942,14 +942,14 @@ SELECT
 FROM
     ledger_posting p
 WHERE
-    p.user_id = $1
+    p.books_id = $1
     AND p.account_id = $2
     AND NOT p.voided
     AND p.statement_id IS NOT NULL
 `
 
 type ListStatementLinesParams struct {
-	UserID    int64
+	BooksID   int64
 	AccountID uuid.UUID
 }
 
@@ -961,7 +961,7 @@ type ListStatementLinesRow struct {
 }
 
 func (q *Queries) ListStatementLines(ctx context.Context, arg ListStatementLinesParams) ([]ListStatementLinesRow, error) {
-	rows, err := q.db.Query(ctx, listStatementLines, arg.UserID, arg.AccountID)
+	rows, err := q.db.Query(ctx, listStatementLines, arg.BooksID, arg.AccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -1000,7 +1000,7 @@ FROM
     ledger_posting p
     JOIN ledger_transaction t ON t.id = p.transaction_id
 WHERE
-    p.user_id = $1
+    p.books_id = $1
     AND p.statement_id = $2
     AND NOT p.voided
 ORDER BY
@@ -1010,7 +1010,7 @@ ORDER BY
 `
 
 type ListStatementPostingsParams struct {
-	UserID      int64
+	BooksID     int64
 	StatementID uuid.NullUUID
 }
 
@@ -1027,7 +1027,7 @@ type ListStatementPostingsRow struct {
 }
 
 func (q *Queries) ListStatementPostings(ctx context.Context, arg ListStatementPostingsParams) ([]ListStatementPostingsRow, error) {
-	rows, err := q.db.Query(ctx, listStatementPostings, arg.UserID, arg.StatementID)
+	rows, err := q.db.Query(ctx, listStatementPostings, arg.BooksID, arg.StatementID)
 	if err != nil {
 		return nil, err
 	}
@@ -1058,7 +1058,7 @@ func (q *Queries) ListStatementPostings(ctx context.Context, arg ListStatementPo
 
 const listStatements = `-- name: ListStatements :many
 SELECT
-    s.id, s.user_id, s.account_id, s.reference_month, s.closing_date, s.due_date, s.financed_by_plan_id, s.created_at,
+    s.id, s.books_id, s.account_id, s.reference_month, s.closing_date, s.due_date, s.financed_by_plan_id, s.created_at,
     EXISTS (
         SELECT
             1
@@ -1070,20 +1070,20 @@ SELECT
 FROM
     ledger_statement s
 WHERE
-    s.user_id = $1
+    s.books_id = $1
     AND s.account_id = $2
 ORDER BY
     s.reference_month
 `
 
 type ListStatementsParams struct {
-	UserID    int64
+	BooksID   int64
 	AccountID uuid.UUID
 }
 
 type ListStatementsRow struct {
 	ID               uuid.UUID
-	UserID           int64
+	BooksID          int64
 	AccountID        uuid.UUID
 	ReferenceMonth   time.Time
 	ClosingDate      time.Time
@@ -1094,7 +1094,7 @@ type ListStatementsRow struct {
 }
 
 func (q *Queries) ListStatements(ctx context.Context, arg ListStatementsParams) ([]ListStatementsRow, error) {
-	rows, err := q.db.Query(ctx, listStatements, arg.UserID, arg.AccountID)
+	rows, err := q.db.Query(ctx, listStatements, arg.BooksID, arg.AccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -1104,7 +1104,7 @@ func (q *Queries) ListStatements(ctx context.Context, arg ListStatementsParams) 
 		var i ListStatementsRow
 		if err := rows.Scan(
 			&i.ID,
-			&i.UserID,
+			&i.BooksID,
 			&i.AccountID,
 			&i.ReferenceMonth,
 			&i.ClosingDate,
@@ -1137,7 +1137,7 @@ SELECT
             FROM
                 ledger_link l
             WHERE
-                l.user_id = t.user_id
+                l.books_id = t.books_id
                 AND l.to_transaction_id = t.id
                 AND l.link_type IN ('refund_of', 'cancellation_of')
         )
@@ -1149,16 +1149,16 @@ FROM
     AND p.card_role = 'charge'
     JOIN ledger_transaction t ON t.id = p.transaction_id
 WHERE
-    pl.user_id = $2
+    pl.books_id = $2
     AND pl.id = $3
 FOR UPDATE OF
     p
 `
 
 type LockPlanInstallmentParams struct {
-	Number *int16
-	UserID int64
-	PlanID uuid.UUID
+	Number  *int16
+	BooksID int64
+	PlanID  uuid.UUID
 }
 
 type LockPlanInstallmentRow struct {
@@ -1171,7 +1171,7 @@ type LockPlanInstallmentRow struct {
 
 // P6 A40: installment k of a plan and whether the purchase was voided, refunded or cancelled.
 func (q *Queries) LockPlanInstallment(ctx context.Context, arg LockPlanInstallmentParams) (LockPlanInstallmentRow, error) {
-	row := q.db.QueryRow(ctx, lockPlanInstallment, arg.Number, arg.UserID, arg.PlanID)
+	row := q.db.QueryRow(ctx, lockPlanInstallment, arg.Number, arg.BooksID, arg.PlanID)
 	var i LockPlanInstallmentRow
 	err := row.Scan(
 		&i.ID,
@@ -1190,10 +1190,10 @@ SELECT
             1
         FROM
             ledger_link l
-            JOIN ledger_transaction t ON t.user_id = l.user_id
+            JOIN ledger_transaction t ON t.books_id = l.books_id
             AND t.id = l.from_transaction_id
         WHERE
-            l.user_id = $1
+            l.books_id = $1
             AND l.to_transaction_id = $2
             AND l.link_type = 'cancellation_of'
             AND t.voided_at IS NULL
@@ -1203,10 +1203,10 @@ SELECT
             1
         FROM
             ledger_link l
-            JOIN ledger_transaction t ON t.user_id = l.user_id
+            JOIN ledger_transaction t ON t.books_id = l.books_id
             AND t.id = l.from_transaction_id
         WHERE
-            l.user_id = $1
+            l.books_id = $1
             AND l.to_transaction_id = $2
             AND l.link_type = 'anticipation_of'
             AND t.voided_at IS NULL
@@ -1214,7 +1214,7 @@ SELECT
 `
 
 type PlanStateParams struct {
-	UserID   int64
+	BooksID  int64
 	OriginID uuid.UUID
 }
 
@@ -1224,7 +1224,7 @@ type PlanStateRow struct {
 }
 
 func (q *Queries) PlanState(ctx context.Context, arg PlanStateParams) (PlanStateRow, error) {
-	row := q.db.QueryRow(ctx, planState, arg.UserID, arg.OriginID)
+	row := q.db.QueryRow(ctx, planState, arg.BooksID, arg.OriginID)
 	var i PlanStateRow
 	err := row.Scan(&i.Cancelled, &i.Anticipated)
 	return i, err
@@ -1237,7 +1237,7 @@ FROM
     ledger_posting p
     JOIN ledger_statement s ON s.id = p.statement_id
 WHERE
-    p.user_id = $1
+    p.books_id = $1
     AND p.account_id = $2
     AND NOT p.voided
     AND p.installment_plan_id IS NOT NULL
@@ -1247,7 +1247,7 @@ WHERE
 `
 
 type PriorInstallmentsParams struct {
-	UserID         int64
+	BooksID        int64
 	AccountID      uuid.UUID
 	ReferenceMonth time.Time
 }
@@ -1255,7 +1255,7 @@ type PriorInstallmentsParams struct {
 // Budget plan amendment A129: installments billed on statement M of purchases booked before M,
 // which the accrual view counted in an earlier month.
 func (q *Queries) PriorInstallments(ctx context.Context, arg PriorInstallmentsParams) (int64, error) {
-	row := q.db.QueryRow(ctx, priorInstallments, arg.UserID, arg.AccountID, arg.ReferenceMonth)
+	row := q.db.QueryRow(ctx, priorInstallments, arg.BooksID, arg.AccountID, arg.ReferenceMonth)
 	var column_1 int64
 	err := row.Scan(&column_1)
 	return column_1, err
@@ -1266,10 +1266,10 @@ SELECT
     coalesce(sum(p.amount), 0)::bigint
 FROM
     ledger_link l
-    JOIN ledger_posting p ON p.user_id = l.user_id
+    JOIN ledger_posting p ON p.books_id = l.books_id
     AND p.transaction_id = l.from_transaction_id
 WHERE
-    l.user_id = $1
+    l.books_id = $1
     AND l.to_transaction_id = $2
     AND l.link_type IN ('refund_of', 'cancellation_of', 'chargeback_of')
     AND p.card_role = 'credit'
@@ -1277,12 +1277,12 @@ WHERE
 `
 
 type RefundedTotalParams struct {
-	UserID          int64
+	BooksID         int64
 	ToTransactionID uuid.UUID
 }
 
 func (q *Queries) RefundedTotal(ctx context.Context, arg RefundedTotalParams) (int64, error) {
-	row := q.db.QueryRow(ctx, refundedTotal, arg.UserID, arg.ToTransactionID)
+	row := q.db.QueryRow(ctx, refundedTotal, arg.BooksID, arg.ToTransactionID)
 	var column_1 int64
 	err := row.Scan(&column_1)
 	return column_1, err
@@ -1297,7 +1297,7 @@ SET
 WHERE
     id = $4
 RETURNING
-    id, user_id, transaction_id, opened_on, resolved_on, outcome, refund_transaction_id
+    id, books_id, transaction_id, opened_on, resolved_on, outcome, refund_transaction_id
 `
 
 type ResolveDisputeParams struct {
@@ -1317,7 +1317,7 @@ func (q *Queries) ResolveDispute(ctx context.Context, arg ResolveDisputeParams) 
 	var i LedgerDispute
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.TransactionID,
 		&i.OpenedOn,
 		&i.ResolvedOn,
@@ -1332,24 +1332,24 @@ UPDATE ledger_card
 SET
     active = $1
 WHERE
-    user_id = $2
+    books_id = $2
     AND id = $3
 RETURNING
-    id, user_id, account_id, holder, last_four, virtual, active, created_at, foreign_charge_bp
+    id, books_id, account_id, holder, last_four, virtual, active, created_at, foreign_charge_bp
 `
 
 type SetCardActiveParams struct {
-	Active bool
-	UserID int64
-	ID     uuid.UUID
+	Active  bool
+	BooksID int64
+	ID      uuid.UUID
 }
 
 func (q *Queries) SetCardActive(ctx context.Context, arg SetCardActiveParams) (LedgerCard, error) {
-	row := q.db.QueryRow(ctx, setCardActive, arg.Active, arg.UserID, arg.ID)
+	row := q.db.QueryRow(ctx, setCardActive, arg.Active, arg.BooksID, arg.ID)
 	var i LedgerCard
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.AccountID,
 		&i.Holder,
 		&i.LastFour,

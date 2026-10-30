@@ -14,25 +14,25 @@ import (
 
 const getRecord = `-- name: GetRecord :one
 SELECT
-    id, user_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change, line_kind, review_reason, candidate_scores
+    id, books_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change, line_kind, review_reason, candidate_scores
 FROM
     ingestion_external_record
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2
 `
 
 type GetRecordParams struct {
-	UserID int64
-	ID     uuid.UUID
+	BooksID int64
+	ID      uuid.UUID
 }
 
 func (q *Queries) GetRecord(ctx context.Context, arg GetRecordParams) (IngestionExternalRecord, error) {
-	row := q.db.QueryRow(ctx, getRecord, arg.UserID, arg.ID)
+	row := q.db.QueryRow(ctx, getRecord, arg.BooksID, arg.ID)
 	var i IngestionExternalRecord
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.BatchID,
 		&i.AccountID,
 		&i.ExternalID,
@@ -60,11 +60,11 @@ func (q *Queries) GetRecord(ctx context.Context, arg GetRecordParams) (Ingestion
 
 const listBatchRecords = `-- name: ListBatchRecords :many
 SELECT
-    id, user_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change, line_kind, review_reason, candidate_scores
+    id, books_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change, line_kind, review_reason, candidate_scores
 FROM
     ingestion_external_record
 WHERE
-    user_id = $1
+    books_id = $1
     AND batch_id = $2
     AND (
         $3::text IS NULL
@@ -81,7 +81,7 @@ LIMIT
 `
 
 type ListBatchRecordsParams struct {
-	UserID   int64
+	BooksID  int64
 	BatchID  uuid.UUID
 	State    *string
 	AfterID  uuid.NullUUID
@@ -90,7 +90,7 @@ type ListBatchRecordsParams struct {
 
 func (q *Queries) ListBatchRecords(ctx context.Context, arg ListBatchRecordsParams) ([]IngestionExternalRecord, error) {
 	rows, err := q.db.Query(ctx, listBatchRecords,
-		arg.UserID,
+		arg.BooksID,
 		arg.BatchID,
 		arg.State,
 		arg.AfterID,
@@ -105,7 +105,7 @@ func (q *Queries) ListBatchRecords(ctx context.Context, arg ListBatchRecordsPara
 		var i IngestionExternalRecord
 		if err := rows.Scan(
 			&i.ID,
-			&i.UserID,
+			&i.BooksID,
 			&i.BatchID,
 			&i.AccountID,
 			&i.ExternalID,
@@ -140,21 +140,21 @@ func (q *Queries) ListBatchRecords(ctx context.Context, arg ListBatchRecordsPara
 
 const listRecordsByKeys = `-- name: ListRecordsByKeys :many
 SELECT
-    id, user_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change, line_kind, review_reason, candidate_scores
+    id, books_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change, line_kind, review_reason, candidate_scores
 FROM
     ingestion_external_record
 WHERE
-    user_id = $1
+    books_id = $1
     AND dedup_key = ANY ($2::bytea[])
 `
 
 type ListRecordsByKeysParams struct {
-	UserID int64
-	Keys   [][]byte
+	BooksID int64
+	Keys    [][]byte
 }
 
 func (q *Queries) ListRecordsByKeys(ctx context.Context, arg ListRecordsByKeysParams) ([]IngestionExternalRecord, error) {
-	rows, err := q.db.Query(ctx, listRecordsByKeys, arg.UserID, arg.Keys)
+	rows, err := q.db.Query(ctx, listRecordsByKeys, arg.BooksID, arg.Keys)
 	if err != nil {
 		return nil, err
 	}
@@ -164,7 +164,7 @@ func (q *Queries) ListRecordsByKeys(ctx context.Context, arg ListRecordsByKeysPa
 		var i IngestionExternalRecord
 		if err := rows.Scan(
 			&i.ID,
-			&i.UserID,
+			&i.BooksID,
 			&i.BatchID,
 			&i.AccountID,
 			&i.ExternalID,
@@ -199,11 +199,11 @@ func (q *Queries) ListRecordsByKeys(ctx context.Context, arg ListRecordsByKeysPa
 
 const listSyncedRecords = `-- name: ListSyncedRecords :many
 SELECT
-    id, user_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change, line_kind, review_reason, candidate_scores
+    id, books_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change, line_kind, review_reason, candidate_scores
 FROM
     ingestion_external_record
 WHERE
-    user_id = $1
+    books_id = $1
     AND account_id = $2
     AND external_status IS NOT NULL
     AND booked_on BETWEEN $3::date AND $4::date
@@ -211,7 +211,7 @@ WHERE
 `
 
 type ListSyncedRecordsParams struct {
-	UserID    int64
+	BooksID   int64
 	AccountID uuid.UUID
 	FromDate  time.Time
 	ToDate    time.Time
@@ -220,7 +220,7 @@ type ListSyncedRecordsParams struct {
 // The aggregator lines of an account booked in a window that a sync may find withdrawn (A38).
 func (q *Queries) ListSyncedRecords(ctx context.Context, arg ListSyncedRecordsParams) ([]IngestionExternalRecord, error) {
 	rows, err := q.db.Query(ctx, listSyncedRecords,
-		arg.UserID,
+		arg.BooksID,
 		arg.AccountID,
 		arg.FromDate,
 		arg.ToDate,
@@ -234,7 +234,7 @@ func (q *Queries) ListSyncedRecords(ctx context.Context, arg ListSyncedRecordsPa
 		var i IngestionExternalRecord
 		if err := rows.Scan(
 			&i.ID,
-			&i.UserID,
+			&i.BooksID,
 			&i.BatchID,
 			&i.AccountID,
 			&i.ExternalID,
@@ -272,20 +272,20 @@ UPDATE ingestion_external_record
 SET
     transaction_id = $1
 WHERE
-    user_id = $2
+    books_id = $2
     AND id = ANY ($3::UUID[])
     AND transaction_id IS NOT NULL
 `
 
 type MoveRecordsParams struct {
 	TransactionID uuid.NullUUID
-	UserID        int64
+	BooksID       int64
 	RecordIds     []uuid.UUID
 }
 
 // P5b amendment A32: records follow the transaction that kept them after a pairing.
 func (q *Queries) MoveRecords(ctx context.Context, arg MoveRecordsParams) error {
-	_, err := q.db.Exec(ctx, moveRecords, arg.TransactionID, arg.UserID, arg.RecordIds)
+	_, err := q.db.Exec(ctx, moveRecords, arg.TransactionID, arg.BooksID, arg.RecordIds)
 	return err
 }
 
@@ -295,17 +295,17 @@ SET
     discarded = discarded - 1,
     needs_review = needs_review + 1
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2
 `
 
 type MoveReopenedCountParams struct {
-	UserID int64
-	ID     uuid.UUID
+	BooksID int64
+	ID      uuid.UUID
 }
 
 func (q *Queries) MoveReopenedCount(ctx context.Context, arg MoveReopenedCountParams) error {
-	_, err := q.db.Exec(ctx, moveReopenedCount, arg.UserID, arg.ID)
+	_, err := q.db.Exec(ctx, moveReopenedCount, arg.BooksID, arg.ID)
 	return err
 }
 
@@ -317,19 +317,19 @@ SET
     created = created + ($1::text = 'created')::int,
     discarded = discarded + ($1::text = 'discarded')::int
 WHERE
-    user_id = $2
+    books_id = $2
     AND id = $3
 `
 
 type MoveReviewCountParams struct {
-	State  string
-	UserID int64
-	ID     uuid.UUID
+	State   string
+	BooksID int64
+	ID      uuid.UUID
 }
 
 // A resolved record leaves needs_review for the state the owner chose.
 func (q *Queries) MoveReviewCount(ctx context.Context, arg MoveReviewCountParams) error {
-	_, err := q.db.Exec(ctx, moveReviewCount, arg.State, arg.UserID, arg.ID)
+	_, err := q.db.Exec(ctx, moveReviewCount, arg.State, arg.BooksID, arg.ID)
 	return err
 }
 
@@ -338,19 +338,19 @@ UPDATE ingestion_external_record
 SET
     state = 'needs_review'
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2
     AND state = 'discarded'
 `
 
 type ReopenRecordParams struct {
-	UserID int64
-	ID     uuid.UUID
+	BooksID int64
+	ID      uuid.UUID
 }
 
 // A140: a discarded record returns to review.
 func (q *Queries) ReopenRecord(ctx context.Context, arg ReopenRecordParams) (int64, error) {
-	result, err := q.db.Exec(ctx, reopenRecord, arg.UserID, arg.ID)
+	result, err := q.db.Exec(ctx, reopenRecord, arg.BooksID, arg.ID)
 	if err != nil {
 		return 0, err
 	}
@@ -364,17 +364,17 @@ SET
     transaction_id = NULL,
     candidates = '{}'
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = ANY ($2::UUID[])
 `
 
 type WithdrawRecordsParams struct {
-	UserID    int64
+	BooksID   int64
 	RecordIds []uuid.UUID
 }
 
 func (q *Queries) WithdrawRecords(ctx context.Context, arg WithdrawRecordsParams) error {
-	_, err := q.db.Exec(ctx, withdrawRecords, arg.UserID, arg.RecordIds)
+	_, err := q.db.Exec(ctx, withdrawRecords, arg.BooksID, arg.RecordIds)
 	return err
 }
 
@@ -390,23 +390,23 @@ FROM
         FROM
             ingestion_external_record
         WHERE
-            user_id = $1
+            books_id = $1
             AND id = ANY ($2::UUID[])
             AND state = 'needs_review'
         GROUP BY
             batch_id
     ) w
 WHERE
-    b.user_id = $1
+    b.books_id = $1
     AND b.id = w.batch_id
 `
 
 type WithdrawReviewCountsParams struct {
-	UserID    int64
+	BooksID   int64
 	RecordIds []uuid.UUID
 }
 
 func (q *Queries) WithdrawReviewCounts(ctx context.Context, arg WithdrawReviewCountsParams) error {
-	_, err := q.db.Exec(ctx, withdrawReviewCounts, arg.UserID, arg.RecordIds)
+	_, err := q.db.Exec(ctx, withdrawReviewCounts, arg.BooksID, arg.RecordIds)
 	return err
 }

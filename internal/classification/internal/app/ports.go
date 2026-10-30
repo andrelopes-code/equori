@@ -44,70 +44,70 @@ type AliasKey struct {
 // Repository returns ErrNotFound for missing rows.
 type Repository interface {
 	InTx(ctx context.Context, fn func(Repository) error) error
-	ListRules(ctx context.Context, userID int64, p page.Request[RuleKey]) ([]domain.Rule, *RuleKey, error)
+	ListRules(ctx context.Context, booksID int64, p page.Request[RuleKey]) ([]domain.Rule, *RuleKey, error)
 	// EnabledRules returns the enabled rules by priority.
-	EnabledRules(ctx context.Context, userID int64) ([]domain.Rule, error)
+	EnabledRules(ctx context.Context, booksID int64) ([]domain.Rule, error)
 	// LockRuleIDs returns every rule id by priority and locks the rules.
-	LockRuleIDs(ctx context.Context, userID int64) ([]uuid.UUID, error)
-	Rule(ctx context.Context, userID int64, id uuid.UUID) (domain.Rule, error)
+	LockRuleIDs(ctx context.Context, booksID int64) ([]uuid.UUID, error)
+	Rule(ctx context.Context, booksID int64, id uuid.UUID) (domain.Rule, error)
 	// InsertRule stores r at the last priority.
-	InsertRule(ctx context.Context, userID int64, r domain.Rule) (domain.Rule, error)
-	UpdateRule(ctx context.Context, userID int64, r domain.Rule) (domain.Rule, error)
-	DeleteRule(ctx context.Context, userID int64, id uuid.UUID) error
+	InsertRule(ctx context.Context, booksID int64, r domain.Rule) (domain.Rule, error)
+	UpdateRule(ctx context.Context, booksID int64, r domain.Rule) (domain.Rule, error)
+	DeleteRule(ctx context.Context, booksID int64, id uuid.UUID) error
 	// SetPriorities gives ids the priorities 1..n in order.
-	SetPriorities(ctx context.Context, userID int64, ids []uuid.UUID) error
+	SetPriorities(ctx context.Context, booksID int64, ids []uuid.UUID) error
 
-	ListAliases(ctx context.Context, userID int64, p page.Request[AliasKey]) ([]domain.Alias, *AliasKey, error)
-	Aliases(ctx context.Context, userID int64) ([]domain.Alias, error)
-	Alias(ctx context.Context, userID int64, id uuid.UUID) (domain.Alias, error)
+	ListAliases(ctx context.Context, booksID int64, p page.Request[AliasKey]) ([]domain.Alias, *AliasKey, error)
+	Aliases(ctx context.Context, booksID int64) ([]domain.Alias, error)
+	Alias(ctx context.Context, booksID int64, id uuid.UUID) (domain.Alias, error)
 	// InsertAlias and UpdateAlias return ErrAliasExists for a repeated pattern and match type.
-	InsertAlias(ctx context.Context, userID int64, a domain.Alias) (domain.Alias, error)
-	UpdateAlias(ctx context.Context, userID int64, a domain.Alias) (domain.Alias, error)
-	DeleteAlias(ctx context.Context, userID int64, id uuid.UUID) error
+	InsertAlias(ctx context.Context, booksID int64, a domain.Alias) (domain.Alias, error)
+	UpdateAlias(ctx context.Context, booksID int64, a domain.Alias) (domain.Alias, error)
+	DeleteAlias(ctx context.Context, booksID int64, id uuid.UUID) error
 
-	Categorization(ctx context.Context, userID int64, transactionID uuid.UUID) (Record, error)
+	Categorization(ctx context.Context, booksID int64, transactionID uuid.UUID) (Record, error)
 	// Categorizations returns the non-voided rows of the transactions among ids (A79).
-	Categorizations(ctx context.Context, userID int64, ids []uuid.UUID) ([]Record, error)
+	Categorizations(ctx context.Context, booksID int64, ids []uuid.UUID) ([]Record, error)
 	// RuleUsage returns, for each rule among ids with a current categorization, its count and latest decision (A80).
-	RuleUsage(ctx context.Context, userID int64, ids []uuid.UUID) (map[uuid.UUID]RuleUsage, error)
+	RuleUsage(ctx context.Context, booksID int64, ids []uuid.UUID) (map[uuid.UUID]RuleUsage, error)
 	// PreviewCandidates returns up to limit non-voided rows dated in [from, to] before the key,
 	// newest first, and the key of the last one when more may follow (A81).
-	PreviewCandidates(ctx context.Context, userID int64, from, to time.Time, after *PendingKey, limit int) ([]uuid.UUID, *PendingKey, error)
+	PreviewCandidates(ctx context.Context, booksID int64, from, to time.Time, after *PendingKey, limit int) ([]uuid.UUID, *PendingKey, error)
 	// UpsertCategorization writes rec unless the stored row has the same or a higher
 	// version or is voided, and reports whether it wrote.
 	UpsertCategorization(ctx context.Context, rec Record) (bool, error)
 	MarkVoided(ctx context.Context, rec Record) error
 	// DeleteCategorization removes the row of a transaction that lost its category postings at version.
-	DeleteCategorization(ctx context.Context, userID int64, transactionID uuid.UUID, version int) error
+	DeleteCategorization(ctx context.Context, booksID int64, transactionID uuid.UUID, version int) error
 	// PendingCategorizations returns up to limit uncategorized, non-voided transactions after
 	// the key, and the key of the last one when more may follow.
-	PendingCategorizations(ctx context.Context, userID int64, after *PendingKey, limit int) ([]uuid.UUID, *PendingKey, error)
-	CountMethods(ctx context.Context, userID int64, from, to time.Time) (map[string]int, error)
+	PendingCategorizations(ctx context.Context, booksID int64, after *PendingKey, limit int) ([]uuid.UUID, *PendingKey, error)
+	CountMethods(ctx context.Context, booksID int64, from, to time.Time) (map[string]int, error)
 
 	// CountSourceCategories adds the lines that carried each category and keeps its latest name.
-	CountSourceCategories(ctx context.Context, userID int64, seen []SourceCategory) error
+	CountSourceCategories(ctx context.Context, booksID int64, seen []SourceCategory) error
 	// MappedSourceCategories returns the owner's category of each mapped external id.
-	MappedSourceCategories(ctx context.Context, userID int64, aggregator string, externalIDs []string) (map[string]uuid.UUID, error)
-	ListSourceCategories(ctx context.Context, userID int64, p page.Request[NameKey]) ([]SourceCategory, *NameKey, error)
+	MappedSourceCategories(ctx context.Context, booksID int64, aggregator string, externalIDs []string) (map[string]uuid.UUID, error)
+	ListSourceCategories(ctx context.Context, booksID int64, p page.Request[NameKey]) ([]SourceCategory, *NameKey, error)
 	// MapSourceCategory sets or, with uuid.Nil, clears the owner's category.
-	MapSourceCategory(ctx context.Context, userID int64, id, categoryID uuid.UUID) (SourceCategory, error)
+	MapSourceCategory(ctx context.Context, booksID int64, id, categoryID uuid.UUID) (SourceCategory, error)
 
 	// MergeCategory rewrites every reference to from as into (A75).
-	MergeCategory(ctx context.Context, userID int64, from, into uuid.UUID) error
+	MergeCategory(ctx context.Context, booksID int64, from, into uuid.UUID) error
 	// MergePayee rewrites every reference to the payee from as into (A82).
-	MergePayee(ctx context.Context, userID int64, from, into uuid.UUID) error
+	MergePayee(ctx context.Context, booksID int64, from, into uuid.UUID) error
 	// RenameRuleTag makes the rules that add the tag from add into instead.
-	RenameRuleTag(ctx context.Context, userID int64, from, into string) error
+	RenameRuleTag(ctx context.Context, booksID int64, from, into string) error
 
 	// CorrectedExamples returns up to limit corrected, non-voided transactions with the
 	// match key and category, oldest first.
-	CorrectedExamples(ctx context.Context, userID int64, matchKey string, categoryID uuid.UUID, limit int) ([]uuid.UUID, error)
+	CorrectedExamples(ctx context.Context, booksID int64, matchKey string, categoryID uuid.UUID, limit int) ([]uuid.UUID, error)
 	// UpsertSuggestion inserts s as pending, or replaces the examples of a pending
 	// suggestion with the same fingerprint; a decided suggestion is left unchanged.
 	UpsertSuggestion(ctx context.Context, s Suggestion) error
-	ListSuggestions(ctx context.Context, userID int64, state string, p page.Request[SuggestionKey]) ([]Suggestion, *SuggestionKey, error)
-	LockSuggestion(ctx context.Context, userID int64, id uuid.UUID) (Suggestion, error)
-	DecideSuggestion(ctx context.Context, userID int64, id uuid.UUID, state string, ruleID uuid.UUID) (Suggestion, error)
+	ListSuggestions(ctx context.Context, booksID int64, state string, p page.Request[SuggestionKey]) ([]Suggestion, *SuggestionKey, error)
+	LockSuggestion(ctx context.Context, booksID int64, id uuid.UUID) (Suggestion, error)
+	DecideSuggestion(ctx context.Context, booksID int64, id uuid.UUID, state string, ruleID uuid.UUID) (Suggestion, error)
 }
 
 // Account is a ledger account as classification reads it.
@@ -169,14 +169,14 @@ type Categorization struct {
 
 // Ledger is the part of the ledger module that classification uses.
 type Ledger interface {
-	AccountFacts(ctx context.Context, userID int64) ([]Account, error)
-	MissingPayees(ctx context.Context, userID int64, ids []uuid.UUID) ([]uuid.UUID, error)
-	TransactionFacts(ctx context.Context, userID int64, ids []uuid.UUID) ([]TransactionFacts, error)
-	LatestPayeeCategories(ctx context.Context, userID int64, payees []uuid.UUID) (map[domain.HistoryKey]uuid.UUID, error)
+	AccountFacts(ctx context.Context, booksID int64) ([]Account, error)
+	MissingPayees(ctx context.Context, booksID int64, ids []uuid.UUID) ([]uuid.UUID, error)
+	TransactionFacts(ctx context.Context, booksID int64, ids []uuid.UUID) ([]TransactionFacts, error)
+	LatestPayeeCategories(ctx context.Context, booksID int64, payees []uuid.UUID) (map[domain.HistoryKey]uuid.UUID, error)
 	// Categorize returns the error of each item; err applies none.
-	Categorize(ctx context.Context, userID int64, cs []Categorization) (errs []error, err error)
+	Categorize(ctx context.Context, booksID int64, cs []Categorization) (errs []error, err error)
 	// Transfer reports false when the ledger refused the transfer for a business rule.
-	Transfer(ctx context.Context, userID int64, t TransferRequest) (applied bool, err error)
+	Transfer(ctx context.Context, booksID int64, t TransferRequest) (applied bool, err error)
 	// Today is the date of the ledger's clock.
 	Today() time.Time
 }

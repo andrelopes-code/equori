@@ -33,24 +33,24 @@ type TransactionFacts struct {
 
 // AccountTransactionsBetween returns the non-voided transactions with a posting on the account
 // dated in [from, to], by date.
-func (s *Service) AccountTransactionsBetween(ctx context.Context, userID int64, accountID uuid.UUID, from, to time.Time) ([]uuid.UUID, error) {
-	return s.repo.AccountTransactionsBetween(ctx, userID, accountID, from, to)
+func (s *Service) AccountTransactionsBetween(ctx context.Context, booksID int64, accountID uuid.UUID, from, to time.Time) ([]uuid.UUID, error) {
+	return s.repo.AccountTransactionsBetween(ctx, booksID, accountID, from, to)
 }
 
 // TransactionFacts returns the facts of the user's transactions among ids, in the order of
 // ids; unknown ids are omitted.
-func (s *Service) TransactionFacts(ctx context.Context, userID int64, ids []uuid.UUID) ([]TransactionFacts, error) {
-	ts, err := s.repo.TransactionsByIDs(ctx, userID, ids)
+func (s *Service) TransactionFacts(ctx context.Context, booksID int64, ids []uuid.UUID) ([]TransactionFacts, error) {
+	ts, err := s.repo.TransactionsByIDs(ctx, booksID, ids)
 	if err != nil || len(ts) == 0 {
 		return nil, err
 	}
 
-	raw, err := s.repo.RawDescriptions(ctx, userID, ids)
+	raw, err := s.repo.RawDescriptions(ctx, booksID, ids)
 	if err != nil {
 		return nil, err
 	}
 
-	accounts, err := s.repo.Accounts(ctx, userID, postingAccounts(ts...))
+	accounts, err := s.repo.Accounts(ctx, booksID, postingAccounts(ts...))
 	if err != nil {
 		return nil, err
 	}
@@ -101,8 +101,8 @@ type AccountFact struct {
 	ClosedOn                    *time.Time
 }
 
-func (s *Service) AccountFacts(ctx context.Context, userID int64) ([]AccountFact, error) {
-	as, err := s.repo.AllAccounts(ctx, userID)
+func (s *Service) AccountFacts(ctx context.Context, booksID int64) ([]AccountFact, error) {
+	as, err := s.repo.AllAccounts(ctx, booksID)
 	if err != nil {
 		return nil, err
 	}
@@ -119,8 +119,8 @@ func (s *Service) AccountFacts(ctx context.Context, userID int64) ([]AccountFact
 }
 
 // MissingPayees returns the ids that are not payees of the user, in input order.
-func (s *Service) MissingPayees(ctx context.Context, userID int64, ids []uuid.UUID) ([]uuid.UUID, error) {
-	found, err := s.repo.ExistingPayees(ctx, userID, ids)
+func (s *Service) MissingPayees(ctx context.Context, booksID int64, ids []uuid.UUID) ([]uuid.UUID, error) {
+	found, err := s.repo.ExistingPayees(ctx, booksID, ids)
 	if err != nil {
 		return nil, err
 	}
@@ -143,6 +143,6 @@ type PayeeClass struct {
 
 // LatestPayeeCategories returns, per payee and class, the category of the most recent
 // non-voided transaction whose only category posting is categorized (P5 amendment A23).
-func (s *Service) LatestPayeeCategories(ctx context.Context, userID int64, payees []uuid.UUID) (map[PayeeClass]uuid.UUID, error) {
-	return s.repo.LatestPayeeCategories(ctx, userID, payees)
+func (s *Service) LatestPayeeCategories(ctx context.Context, booksID int64, payees []uuid.UUID) (map[PayeeClass]uuid.UUID, error) {
+	return s.repo.LatestPayeeCategories(ctx, booksID, payees)
 }

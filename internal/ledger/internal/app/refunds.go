@@ -19,8 +19,8 @@ type purchase struct {
 	categories []domain.Posting
 }
 
-func (s *Service) lockPurchase(ctx context.Context, r Repository, userID int64, id uuid.UUID) (purchase, error) {
-	t, err := r.LockTransaction(ctx, userID, id)
+func (s *Service) lockPurchase(ctx context.Context, r Repository, booksID int64, id uuid.UUID) (purchase, error) {
+	t, err := r.LockTransaction(ctx, booksID, id)
 	if err != nil {
 		return purchase{}, err
 	}
@@ -34,7 +34,7 @@ func (s *Service) lockPurchase(ctx context.Context, r Repository, userID int64, 
 		ids = append(ids, p.AccountID)
 	}
 
-	accounts, err := r.Accounts(ctx, userID, ids)
+	accounts, err := r.Accounts(ctx, booksID, ids)
 	if err != nil {
 		return purchase{}, err
 	}
@@ -85,12 +85,12 @@ func (pu purchase) reverseCategories(amount int64) ([]domain.Posting, error) {
 // checkCeiling enforces I06: refunds and cancellations never exceed the charged total less
 // the discount of anticipations (A135).
 func (s *Service) checkCeiling(ctx context.Context, r Repository, pu purchase, adding int64) error {
-	done, err := r.RefundedTotal(ctx, pu.tx.UserID, pu.tx.ID)
+	done, err := r.RefundedTotal(ctx, pu.tx.BooksID, pu.tx.ID)
 	if err != nil {
 		return err
 	}
 
-	discount, err := r.AnticipationDiscount(ctx, pu.tx.UserID, pu.tx.ID)
+	discount, err := r.AnticipationDiscount(ctx, pu.tx.BooksID, pu.tx.ID)
 	if err != nil {
 		return err
 	}
@@ -103,14 +103,14 @@ func (s *Service) checkCeiling(ctx context.Context, r Repository, pu purchase, a
 }
 
 // RefundPurchase credits amount on the card and takes it back from the categories (M06, S08).
-func (s *Service) RefundPurchase(ctx context.Context, userID int64, originID uuid.UUID, date time.Time, amount money.Money, statement *domain.ReferenceMonth) (domain.Transaction, error) {
+func (s *Service) RefundPurchase(ctx context.Context, booksID int64, originID uuid.UUID, date time.Time, amount money.Money, statement *domain.ReferenceMonth) (domain.Transaction, error) {
 	if amount.Amount() <= 0 {
 		return domain.Transaction{}, validationError("amount", "must be positive")
 	}
 
 	var created domain.Transaction
 	err := s.repo.InTx(ctx, func(r Repository) error {
-		pu, err := s.lockPurchase(ctx, r, userID, originID)
+		pu, err := s.lockPurchase(ctx, r, booksID, originID)
 		if err != nil {
 			return err
 		}
@@ -126,13 +126,13 @@ func (s *Service) RefundPurchase(ctx context.Context, userID int64, originID uui
 
 		postings := append([]domain.Posting{{AccountID: pu.card.ID, Amount: amount, CardRole: domain.RoleCredit, Statement: statement}}, reversals...)
 
-		w, err := s.writerFor(ctx, userID)
+		w, err := s.writerFor(ctx, booksID)
 		if err != nil {
 			return err
 		}
 
 		created, err = s.insert(ctx, r, domain.Transaction{
-			UserID: userID, Date: date, Description: fmt.Sprintf(w.Refund, pu.tx.Description), PayeeID: pu.tx.PayeeID,
+			BooksID: booksID, Date: date, Description: fmt.Sprintf(w.Refund, pu.tx.Description), PayeeID: pu.tx.PayeeID,
 			Postings: postings, Links: []domain.Link{{Type: domain.LinkRefundOf, Target: originID}},
 		})
 
@@ -142,18 +142,18 @@ func (s *Service) RefundPurchase(ctx context.Context, userID int64, originID uui
 	return created, err
 }
 
-func (s *Service) lockPlan(ctx context.Context, r Repository, userID int64, planID uuid.UUID) (domain.InstallmentPlan, purchase, []PlanInstallment, error) {
-	plan, err := r.Plan(ctx, userID, planID)
+func (s *Service) lockPlan(ctx context.Context, r Repository, booksID int64, planID uuid.UUID) (domain.InstallmentPlan, purchase, []PlanInstallment, error) {
+	plan, err := r.Plan(ctx, booksID, planID)
 	if err != nil {
 		return domain.InstallmentPlan{}, purchase{}, nil, err
 	}
 
-	pu, err := s.lockPurchase(ctx, r, userID, plan.OriginTransactionID)
+	pu, err := s.lockPurchase(ctx, r, booksID, plan.OriginTransactionID)
 	if err != nil {
 		return domain.InstallmentPlan{}, purchase{}, nil, err
 	}
 
-	installments, err := r.PlanInstallments(ctx, userID, planID)
+	installments, err := r.PlanInstallments(ctx, booksID, planID)
 
 	return plan, pu, installments, err
 }
@@ -162,25 +162,25 @@ func (s *Service) lockPlan(ctx context.Context, r Repository, userID int64, plan
 // on creditStatement (default: the statement the date falls in) (M25, S14, T08). An
 // installment an anticipation reversed stays reversed; the anticipation's charge is reversed
 // or credited in its place and its discount returns (A135).
-func (s *Service) CancelPlan(ctx context.Context, userID int64, planID uuid.UUID, date time.Time, creditStatement *domain.ReferenceMonth) (domain.Transaction, error) {
+func (s *Service) CancelPlan(ctx context.Context, booksID int64, planID uuid.UUID, date time.Time, creditStatement *domain.ReferenceMonth) (domain.Transaction, error) {
 	var created domain.Transaction
 	err := s.repo.InTx(ctx, func(r Repository) error {
-		_, pu, installments, err := s.lockPlan(ctx, r, userID, planID)
+		_, pu, installments, err := s.lockPlan(ctx, r, booksID, planID)
 		if err != nil {
 			return err
 		}
 
-		anticipated, err := r.AnticipatedReferences(ctx, userID, pu.tx.ID)
+		anticipated, err := r.AnticipatedReferences(ctx, booksID, pu.tx.ID)
 		if err != nil {
 			return err
 		}
 
-		charges, err := r.AnticipationCharges(ctx, userID, pu.tx.ID)
+		charges, err := r.AnticipationCharges(ctx, booksID, pu.tx.ID)
 		if err != nil {
 			return err
 		}
 
-		discount, err := r.AnticipationDiscount(ctx, userID, pu.tx.ID)
+		discount, err := r.AnticipationDiscount(ctx, booksID, pu.tx.ID)
 		if err != nil {
 			return err
 		}
@@ -232,7 +232,7 @@ func (s *Service) CancelPlan(ctx context.Context, userID int64, planID uuid.UUID
 		}
 
 		if discount > 0 {
-			discounts, err := r.SystemAccount(ctx, userID, domain.RoleDiscounts)
+			discounts, err := r.SystemAccount(ctx, booksID, domain.RoleDiscounts)
 			if err != nil {
 				return err
 			}
@@ -245,13 +245,13 @@ func (s *Service) CancelPlan(ctx context.Context, userID int64, planID uuid.UUID
 			reversals = append(reversals, domain.Posting{AccountID: discounts.ID, Amount: m})
 		}
 
-		w, err := s.writerFor(ctx, userID)
+		w, err := s.writerFor(ctx, booksID)
 		if err != nil {
 			return err
 		}
 
 		created, err = s.insert(ctx, r, domain.Transaction{
-			UserID: userID, Date: date, Description: fmt.Sprintf(w.Cancellation, pu.tx.Description), PayeeID: pu.tx.PayeeID,
+			BooksID: booksID, Date: date, Description: fmt.Sprintf(w.Cancellation, pu.tx.Description), PayeeID: pu.tx.PayeeID,
 			Postings: append(postings, reversals...), Links: []domain.Link{{Type: domain.LinkCancellationOf, Target: pu.tx.ID}},
 		})
 
@@ -263,10 +263,10 @@ func (s *Service) CancelPlan(ctx context.Context, userID int64, planID uuid.UUID
 
 // AnticipatePlan moves installments from..to to the target statement for amount; the
 // difference to their sum is a discount (M26, S15).
-func (s *Service) AnticipatePlan(ctx context.Context, userID int64, planID uuid.UUID, date time.Time, from, to int, target domain.ReferenceMonth, amount money.Money) (domain.Transaction, error) {
+func (s *Service) AnticipatePlan(ctx context.Context, booksID int64, planID uuid.UUID, date time.Time, from, to int, target domain.ReferenceMonth, amount money.Money) (domain.Transaction, error) {
 	var created domain.Transaction
 	err := s.repo.InTx(ctx, func(r Repository) error {
-		plan, pu, installments, err := s.lockPlan(ctx, r, userID, planID)
+		plan, pu, installments, err := s.lockPlan(ctx, r, booksID, planID)
 		if err != nil {
 			return err
 		}
@@ -275,7 +275,7 @@ func (s *Service) AnticipatePlan(ctx context.Context, userID int64, planID uuid.
 			return validationError("from_installment", fmt.Sprintf("installments must be within 1..%d", plan.Count))
 		}
 
-		cancelled, _, err := r.PlanState(ctx, userID, pu.tx.ID)
+		cancelled, _, err := r.PlanState(ctx, booksID, pu.tx.ID)
 		if err != nil {
 			return err
 		}
@@ -284,7 +284,7 @@ func (s *Service) AnticipatePlan(ctx context.Context, userID int64, planID uuid.
 			return validationError("from_installment", "the plan is cancelled")
 		}
 
-		anticipated, err := r.AnticipatedReferences(ctx, userID, pu.tx.ID)
+		anticipated, err := r.AnticipatedReferences(ctx, booksID, pu.tx.ID)
 		if err != nil {
 			return err
 		}
@@ -322,7 +322,7 @@ func (s *Service) AnticipatePlan(ctx context.Context, userID int64, planID uuid.
 
 		postings = append(postings, domain.Posting{AccountID: pu.card.ID, Amount: amount.Neg(), CardRole: domain.RoleCharge, Statement: &target})
 		if discount := sum - amount.Amount(); discount > 0 {
-			discounts, err := r.SystemAccount(ctx, userID, domain.RoleDiscounts)
+			discounts, err := r.SystemAccount(ctx, booksID, domain.RoleDiscounts)
 			if err != nil {
 				return err
 			}
@@ -335,13 +335,13 @@ func (s *Service) AnticipatePlan(ctx context.Context, userID int64, planID uuid.
 			postings = append(postings, domain.Posting{AccountID: discounts.ID, Amount: m})
 		}
 
-		w, err := s.writerFor(ctx, userID)
+		w, err := s.writerFor(ctx, booksID)
 		if err != nil {
 			return err
 		}
 
 		created, err = s.insert(ctx, r, domain.Transaction{
-			UserID: userID, Date: date, Description: fmt.Sprintf(w.Anticipation, pu.tx.Description), PayeeID: pu.tx.PayeeID,
+			BooksID: booksID, Date: date, Description: fmt.Sprintf(w.Anticipation, pu.tx.Description), PayeeID: pu.tx.PayeeID,
 			Postings: postings, Links: []domain.Link{{Type: domain.LinkAnticipationOf, Target: pu.tx.ID}},
 		})
 

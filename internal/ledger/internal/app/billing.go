@@ -24,7 +24,7 @@ func (s *Service) bill(ctx context.Context, r Repository, t *domain.Transaction)
 		rules, ok := rulesByCard[p.AccountID]
 		if !ok {
 			var err error
-			if rules, err = r.BillingRules(ctx, t.UserID, p.AccountID); err != nil {
+			if rules, err = r.BillingRules(ctx, t.BooksID, p.AccountID); err != nil {
 				return err
 			}
 
@@ -40,7 +40,7 @@ func (s *Service) bill(ctx context.Context, r Repository, t *domain.Transaction)
 			return err
 		}
 
-		id, err := s.ensureStatement(ctx, r, t.UserID, p.AccountID, ref, rules)
+		id, err := s.ensureStatement(ctx, r, t.BooksID, p.AccountID, ref, rules)
 		if errors.Is(err, domain.ErrNoBillingRule) {
 			return &domain.FieldError{Field: fmt.Sprintf("postings[%d].statement", i), Message: "no billing cycle rule covers the statement", Err: domain.ErrValidation}
 		}
@@ -66,12 +66,12 @@ func (s *Service) statementOf(ctx context.Context, r Repository, t *domain.Trans
 		return *p.Statement, nil
 	}
 
-	return s.statementOn(ctx, r, t.UserID, p.AccountID, t.Date, rules)
+	return s.statementOn(ctx, r, t.BooksID, p.AccountID, t.Date, rules)
 }
 
 // statementOn is the statement of a posting dated d by the card's stored dates (A86).
-func (s *Service) statementOn(ctx context.Context, r Repository, userID int64, cardID uuid.UUID, d time.Time, rules domain.Rules) (domain.ReferenceMonth, error) {
-	closing, err := r.StatementClosings(ctx, userID, cardID)
+func (s *Service) statementOn(ctx context.Context, r Repository, booksID int64, cardID uuid.UUID, d time.Time, rules domain.Rules) (domain.ReferenceMonth, error) {
+	closing, err := r.StatementClosings(ctx, booksID, cardID)
 	if err != nil {
 		return domain.ReferenceMonth{}, err
 	}
@@ -100,7 +100,7 @@ func (s *Service) shiftClosing(ctx context.Context, closing time.Time, rule doma
 	return shifted
 }
 
-func (s *Service) ensureStatement(ctx context.Context, r Repository, userID int64, accountID uuid.UUID, ref domain.ReferenceMonth, rules domain.Rules) (uuid.UUID, error) {
+func (s *Service) ensureStatement(ctx context.Context, r Repository, booksID int64, accountID uuid.UUID, ref domain.ReferenceMonth, rules domain.Rules) (uuid.UUID, error) {
 	rule, err := rules.For(ref)
 	if err != nil {
 		return uuid.Nil, err
@@ -115,7 +115,7 @@ func (s *Service) ensureStatement(ctx context.Context, r Repository, userID int6
 
 	dates.Closing = s.shiftClosing(ctx, dates.Closing, rule)
 
-	return r.EnsureStatement(ctx, userID, accountID, dates, due)
+	return r.EnsureStatement(ctx, booksID, accountID, dates, due)
 }
 
 // StatementView is a stored statement with its derived summary.
@@ -126,8 +126,8 @@ type StatementView struct {
 	Explanation domain.DifferenceExplanation
 }
 
-func (s *Service) statementSummaries(ctx context.Context, r Repository, userID int64, accountID uuid.UUID) ([]StatementView, error) {
-	stored, err := r.Statements(ctx, userID, accountID)
+func (s *Service) statementSummaries(ctx context.Context, r Repository, booksID int64, accountID uuid.UUID) ([]StatementView, error) {
+	stored, err := r.Statements(ctx, booksID, accountID)
 	if err != nil {
 		return nil, err
 	}
@@ -163,17 +163,17 @@ type StatementDates struct {
 
 // PlaceStatement resolves the statement of a purchase dated d as bill would, without
 // storing it: a stored statement keeps its dates, a new one gets the rule's adjusted dates.
-func (s *Service) PlaceStatement(ctx context.Context, userID int64, cardID uuid.UUID, d time.Time) (StatementPlacement, error) {
-	if _, err := s.card(ctx, userID, cardID); err != nil {
+func (s *Service) PlaceStatement(ctx context.Context, booksID int64, cardID uuid.UUID, d time.Time) (StatementPlacement, error) {
+	if _, err := s.card(ctx, booksID, cardID); err != nil {
 		return StatementPlacement{}, err
 	}
 
-	rules, err := s.repo.BillingRules(ctx, userID, cardID)
+	rules, err := s.repo.BillingRules(ctx, booksID, cardID)
 	if err != nil {
 		return StatementPlacement{}, err
 	}
 
-	ref, err := s.statementOn(ctx, s.repo, userID, cardID, d, rules)
+	ref, err := s.statementOn(ctx, s.repo, booksID, cardID, d, rules)
 	if errors.Is(err, domain.ErrNoBillingRule) {
 		return StatementPlacement{}, validationError("date", "card has no billing cycle rule for the date")
 	}
@@ -182,7 +182,7 @@ func (s *Service) PlaceStatement(ctx context.Context, userID int64, cardID uuid.
 		return StatementPlacement{}, err
 	}
 
-	stored, err := s.repo.Statements(ctx, userID, cardID)
+	stored, err := s.repo.Statements(ctx, booksID, cardID)
 	if err != nil {
 		return StatementPlacement{}, err
 	}

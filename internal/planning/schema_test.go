@@ -27,7 +27,7 @@ func TestSchemaInvariants(t *testing.T) {
 	}
 
 	pause := func(period string) error {
-		return exec(`INSERT INTO planning_schedule_pause (user_id, schedule_id, period) VALUES ($1, $2, $3::daterange)`, uid, id, period)
+		return exec(`INSERT INTO planning_schedule_pause (books_id, schedule_id, period) VALUES ($1, $2, $3::daterange)`, uid, id, period)
 	}
 	if err := pause("[2027-02-01,2027-03-31]"); err != nil {
 		t.Fatal(err)
@@ -54,7 +54,7 @@ func TestSchemaInvariants(t *testing.T) {
 	r.Decode(t, &foreign)
 
 	reference := func(source string, amount any) error {
-		return exec(`INSERT INTO planning_budget_reference (user_id, source, amount, currency) VALUES ($1, $2, $3, 'BRL')`, uid, source, amount)
+		return exec(`INSERT INTO planning_budget_reference (books_id, source, amount, currency) VALUES ($1, $2, $3, 'BRL')`, uid, source, amount)
 	}
 	if err := reference("fixed", 0); err != nil {
 		t.Fatal(err)
@@ -67,11 +67,11 @@ func TestSchemaInvariants(t *testing.T) {
 		run  func() error
 	}{
 		{"terms twice on one date (I08)", func() error {
-			return exec(`INSERT INTO planning_schedule_terms (user_id, schedule_id, effective_from, frequency, interval, day_of_month, adjustment, calendar, start, amount)
+			return exec(`INSERT INTO planning_schedule_terms (books_id, schedule_id, effective_from, frequency, interval, day_of_month, adjustment, calendar, start, amount)
 				VALUES ($1, $2, '2026-11-01', 'monthly', 1, 10, 'none', 'br_banking', '2026-11-01', 100)`, uid, id)
 		}},
 		{"monthly terms without a selector", func() error {
-			return exec(`INSERT INTO planning_schedule_terms (user_id, schedule_id, effective_from, frequency, interval, adjustment, calendar, start, amount)
+			return exec(`INSERT INTO planning_schedule_terms (books_id, schedule_id, effective_from, frequency, interval, adjustment, calendar, start, amount)
 				VALUES ($1, $2, '2027-01-01', 'monthly', 1, 'none', 'br_banking', '2026-11-01', 100)`, uid, id)
 		}},
 		{"overlapping pause", func() error { return pause("[2027-03-01,2027-04-30]") }},
@@ -83,29 +83,29 @@ func TestSchemaInvariants(t *testing.T) {
 			return exec(`UPDATE planning_occurrence SET transaction_id = $2 WHERE schedule_id = $1 AND sequence = 4`, id, tx)
 		}},
 		{"schedule on another user's account", func() error {
-			return exec(`INSERT INTO planning_schedule (user_id, kind, account_id, counterpart_id, description, match_tolerance_bp, grace_days, generated_until)
+			return exec(`INSERT INTO planning_schedule (books_id, kind, account_id, counterpart_id, description, match_tolerance_bp, grace_days, generated_until)
 				VALUES ($1, 'bill', $2, $3, 'x', 1000, 3, '2026-11-01')`, uid, foreign.ID, f.rent)
 		}},
 		{"same account on both sides", func() error {
-			return exec(`INSERT INTO planning_schedule (user_id, kind, account_id, counterpart_id, description, match_tolerance_bp, grace_days, generated_until)
+			return exec(`INSERT INTO planning_schedule (books_id, kind, account_id, counterpart_id, description, match_tolerance_bp, grace_days, generated_until)
 				VALUES ($1, 'transfer', $2, $2, 'x', 1000, 3, '2026-11-01')`, uid, f.checking)
 		}},
 		{"sequence twice", func() error {
-			return exec(`INSERT INTO planning_occurrence (user_id, schedule_id, sequence, expected_on, expected_amount, state)
+			return exec(`INSERT INTO planning_occurrence (books_id, schedule_id, sequence, expected_on, expected_amount, state)
 				VALUES ($1, $2, 1, '2026-11-05', 210000, 'expected')`, uid, id)
 		}},
 		{"two references for one user", func() error { return reference("fixed", 100) }},
 		{"reference with an unknown source", func() error {
-			return exec(`INSERT INTO planning_budget_reference (user_id, source, amount, currency) VALUES ($1, 'monthly_income', NULL, 'BRL')`, otherID)
+			return exec(`INSERT INTO planning_budget_reference (books_id, source, amount, currency) VALUES ($1, 'monthly_income', NULL, 'BRL')`, otherID)
 		}},
 		{"fixed reference without an amount", func() error {
-			return exec(`INSERT INTO planning_budget_reference (user_id, source, amount, currency) VALUES ($1, 'fixed', NULL, 'BRL')`, otherID)
+			return exec(`INSERT INTO planning_budget_reference (books_id, source, amount, currency) VALUES ($1, 'fixed', NULL, 'BRL')`, otherID)
 		}},
 		{"average reference with an amount", func() error {
-			return exec(`INSERT INTO planning_budget_reference (user_id, source, amount, currency) VALUES ($1, 'average_income', 100, 'BRL')`, otherID)
+			return exec(`INSERT INTO planning_budget_reference (books_id, source, amount, currency) VALUES ($1, 'average_income', 100, 'BRL')`, otherID)
 		}},
 		{"negative fixed reference", func() error {
-			return exec(`INSERT INTO planning_budget_reference (user_id, source, amount, currency) VALUES ($1, 'fixed', -1, 'BRL')`, otherID)
+			return exec(`INSERT INTO planning_budget_reference (books_id, source, amount, currency) VALUES ($1, 'fixed', -1, 'BRL')`, otherID)
 		}},
 	}
 	for _, tt := range tests {

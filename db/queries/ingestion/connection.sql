@@ -1,7 +1,7 @@
 -- name: InsertConnection :one
 INSERT INTO
     ingestion_connection (
-        user_id,
+        books_id,
         integration_id,
         external_id,
         name,
@@ -10,7 +10,7 @@ INSERT INTO
     )
 VALUES
     (
-        @user_id,
+        @books_id,
         @integration_id,
         @external_id,
         @name,
@@ -23,7 +23,7 @@ RETURNING
 -- name: InsertExternalAccount :one
 INSERT INTO
     ingestion_external_account (
-        user_id,
+        books_id,
         connection_id,
         external_account_id,
         type,
@@ -34,7 +34,7 @@ INSERT INTO
     )
 VALUES
     (
-        @user_id,
+        @books_id,
         @connection_id,
         @external_account_id,
         @type,
@@ -49,7 +49,7 @@ RETURNING
 -- name: InsertMissingExternalAccount :exec
 INSERT INTO
     ingestion_external_account (
-        user_id,
+        books_id,
         connection_id,
         external_account_id,
         type,
@@ -60,7 +60,7 @@ INSERT INTO
     )
 VALUES
     (
-        @user_id,
+        @books_id,
         @connection_id,
         @external_account_id,
         @type,
@@ -78,7 +78,7 @@ SET
     former_names = array_remove(array_append(array_remove(former_names, name), name), @name::text),
     name = @name
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND id = @id
     AND name <> @name;
 
@@ -88,7 +88,7 @@ SELECT
 FROM
     ingestion_connection
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2;
 
 -- name: ListConnections :many
@@ -97,7 +97,7 @@ SELECT
 FROM
     ingestion_connection
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND (
         sqlc.narg (after_name)::text IS NULL
         OR (name, id) > (sqlc.narg (after_name)::text, sqlc.narg (after_id)::uuid)
@@ -114,7 +114,7 @@ SELECT
 FROM
     ingestion_external_account
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND connection_id = ANY (@connection_ids::UUID[])
 ORDER BY
     connection_id,
@@ -123,7 +123,7 @@ ORDER BY
 -- name: DeleteConnection :execrows
 DELETE FROM ingestion_connection
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2;
 
 -- name: SaveMapping :one
@@ -133,7 +133,7 @@ SET
     sync_from = sqlc.narg (sync_from),
     ignored = @ignored
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND connection_id = @connection_id
     AND id = @id
 RETURNING
@@ -146,7 +146,7 @@ SET
     balance_on = sqlc.narg (balance_on),
     balance_amount = sqlc.narg (balance_amount)
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND id = @id;
 
 -- name: SaveConnectionState :exec
@@ -158,18 +158,18 @@ SET
     last_synced_at = sqlc.narg (last_synced_at),
     last_error = sqlc.narg (last_error)
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND id = @id;
 
 -- name: ListAllConnections :many
 -- The scheduler checks every user's connections (A43); each sync then filters by its user.
 SELECT
     id,
-    user_id
+    books_id
 FROM
     ingestion_connection
 ORDER BY
-    user_id,
+    books_id,
     id;
 
 -- name: AccountMapping :one
@@ -180,7 +180,7 @@ SELECT
 FROM
     ingestion_external_account
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND account_id = @account_id;
 
 -- name: AccountFilePeriods :many
@@ -191,6 +191,6 @@ SELECT
 FROM
     ingestion_batch
 WHERE
-    user_id = @user_id
+    books_id = @books_id
     AND account_id = @account_id
     AND source <> 'aggregator';

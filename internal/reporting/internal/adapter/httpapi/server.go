@@ -41,7 +41,7 @@ func (s *Server) GetBalanceSeries(ctx context.Context, req GetBalanceSeriesReque
 		basis = app.Basis(*req.Params.Basis)
 	}
 
-	points, currency, err := s.svc.Series(ctx, auth.MustUserID(ctx), req.Params.AccountId, req.Params.From.Time, req.Params.To.Time, basis)
+	points, currency, err := s.svc.Series(ctx, auth.MustBooksID(ctx), req.Params.AccountId, req.Params.From.Time, req.Params.To.Time, basis)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +55,7 @@ func (s *Server) GetBalanceSeries(ctx context.Context, req GetBalanceSeriesReque
 }
 
 func (s *Server) GetAccountFlows(ctx context.Context, req GetAccountFlowsRequestObject) (GetAccountFlowsResponseObject, error) {
-	flows, instrument, err := s.svc.Flows(ctx, auth.MustUserID(ctx), req.Params.AccountId, req.Params.From.Time, req.Params.To.Time)
+	flows, instrument, err := s.svc.Flows(ctx, auth.MustBooksID(ctx), req.Params.AccountId, req.Params.From.Time, req.Params.To.Time)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +76,7 @@ func (s *Server) GetCategoryTotals(ctx context.Context, req GetCategoryTotalsReq
 		view = app.View(*req.Params.View)
 	}
 
-	totals, err := s.svc.CategoryTotals(ctx, auth.MustUserID(ctx), string(req.Params.Class), req.Params.From.Time, req.Params.To.Time, view)
+	totals, err := s.svc.CategoryTotals(ctx, auth.MustBooksID(ctx), string(req.Params.Class), req.Params.From.Time, req.Params.To.Time, view)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +92,7 @@ func (s *Server) GetCategoryTotals(ctx context.Context, req GetCategoryTotalsReq
 }
 
 func (s *Server) ListCategoryCashPayments(ctx context.Context, req ListCategoryCashPaymentsRequestObject) (ListCategoryCashPaymentsResponseObject, error) {
-	payments, instrument, err := s.svc.CategoryCashPayments(ctx, auth.MustUserID(ctx), req.Id, req.Params.From.Time, req.Params.To.Time)
+	payments, instrument, err := s.svc.CategoryCashPayments(ctx, auth.MustBooksID(ctx), req.Id, req.Params.From.Time, req.Params.To.Time)
 	if err != nil {
 		return nil, err
 	}

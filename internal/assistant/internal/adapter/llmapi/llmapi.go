@@ -72,12 +72,12 @@ func NewResolver(svc *app.Service, instance []llm.Provider, build Factory, log *
 // Record adds an attempt to the user's usage; a call without a user is not recorded, and a
 // failed write is logged without failing the call (ADR 019 U1, U2).
 func (r *Resolver) Record(ctx context.Context, a llm.Attempt) {
-	userID, ok := auth.UserID(ctx)
+	booksID, ok := auth.BooksID(ctx)
 	if !ok {
 		return
 	}
 
-	err := r.svc.Record(ctx, userID, app.Attempt{
+	err := r.svc.Record(ctx, booksID, app.Attempt{
 		ProviderID: a.Target.Provider, Model: a.Target.Model, UseID: a.Use, Outcome: a.Outcome,
 		InputTokens: int64(a.Usage.InputTokens), OutputTokens: int64(a.Usage.OutputTokens), CoolingUntil: a.CooldownUntil,
 	})
@@ -87,9 +87,9 @@ func (r *Resolver) Record(ctx context.Context, a llm.Attempt) {
 }
 
 func (r *Resolver) Resolve(ctx context.Context, use llm.Use) ([]llm.Binding, error) {
-	userID, hasUser := auth.UserID(ctx)
+	booksID, hasBooks := auth.BooksID(ctx)
 
-	targets, err := r.svc.Resolve(ctx, userID, hasUser, ToUse(use))
+	targets, err := r.svc.Resolve(ctx, booksID, hasBooks, ToUse(use))
 	if le, ok := errors.AsType[*app.LimitError](err); ok {
 		return nil, &llm.ExhaustedError{RetryAt: le.RetryAt}
 	}

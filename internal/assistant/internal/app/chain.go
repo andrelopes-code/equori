@@ -38,15 +38,15 @@ func (e *CapabilityError) Error() string {
 func (e *CapabilityError) Unwrap() error { return domain.ErrCapabilityMissing }
 
 // Uses returns every declared use with its effective chain, keys left out.
-func (s *Service) Uses(ctx context.Context, userID int64) ([]UseView, error) {
-	chains, err := s.repo.Chains(ctx, userID)
+func (s *Service) Uses(ctx context.Context, booksID int64) ([]UseView, error) {
+	chains, err := s.repo.Chains(ctx, booksID)
 	if err != nil {
 		return nil, err
 	}
 
 	out := make([]UseView, 0, len(s.uses))
 	for _, u := range s.uses {
-		targets, err := s.Resolve(ctx, userID, true, u)
+		targets, err := s.Resolve(ctx, booksID, true, u)
 		if err != nil && !errors.Is(err, ErrLimitReached) {
 			return nil, err
 		}
@@ -62,7 +62,7 @@ func (s *Service) Uses(ctx context.Context, userID int64) ([]UseView, error) {
 }
 
 // SetChain stores the user's chain for a use; an empty list restores the default.
-func (s *Service) SetChain(ctx context.Context, userID int64, useID string, in []ChainInput) error {
+func (s *Service) SetChain(ctx context.Context, booksID int64, useID string, in []ChainInput) error {
 	use, ok := s.use(useID)
 	if !ok {
 		return domain.ErrUseNotFound
@@ -75,7 +75,7 @@ func (s *Service) SetChain(ctx context.Context, userID int64, useID string, in [
 			return err
 		}
 
-		p, err := s.repo.Provider(ctx, userID, c.ProviderID)
+		p, err := s.repo.Provider(ctx, booksID, c.ProviderID)
 		if err != nil {
 			return err
 		}
@@ -87,5 +87,5 @@ func (s *Service) SetChain(ctx context.Context, userID int64, useID string, in [
 		targets = append(targets, t)
 	}
 
-	return s.repo.ReplaceChain(ctx, userID, useID, targets)
+	return s.repo.ReplaceChain(ctx, booksID, useID, targets)
 }

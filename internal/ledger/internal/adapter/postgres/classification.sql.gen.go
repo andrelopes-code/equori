@@ -17,17 +17,17 @@ SELECT
 FROM
     ledger_payee
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = ANY ($2::UUID[])
 `
 
 type ExistingPayeesParams struct {
-	UserID int64
-	Ids    []uuid.UUID
+	BooksID int64
+	Ids     []uuid.UUID
 }
 
 func (q *Queries) ExistingPayees(ctx context.Context, arg ExistingPayeesParams) ([]uuid.UUID, error) {
-	rows, err := q.db.Query(ctx, existingPayees, arg.UserID, arg.Ids)
+	rows, err := q.db.Query(ctx, existingPayees, arg.BooksID, arg.Ids)
 	if err != nil {
 		return nil, err
 	}
@@ -48,21 +48,21 @@ func (q *Queries) ExistingPayees(ctx context.Context, arg ExistingPayeesParams) 
 
 const getTransactionsByIDs = `-- name: GetTransactionsByIDs :many
 SELECT
-    id, user_id, date, description, payee_id, balancing_currency, origin, version, voided_at, void_reason, created_at, updated_at
+    id, books_id, date, description, payee_id, balancing_currency, origin, version, voided_at, void_reason, created_at, updated_at
 FROM
     ledger_transaction
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = ANY ($2::UUID[])
 `
 
 type GetTransactionsByIDsParams struct {
-	UserID int64
-	Ids    []uuid.UUID
+	BooksID int64
+	Ids     []uuid.UUID
 }
 
 func (q *Queries) GetTransactionsByIDs(ctx context.Context, arg GetTransactionsByIDsParams) ([]LedgerTransaction, error) {
-	rows, err := q.db.Query(ctx, getTransactionsByIDs, arg.UserID, arg.Ids)
+	rows, err := q.db.Query(ctx, getTransactionsByIDs, arg.BooksID, arg.Ids)
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +72,7 @@ func (q *Queries) GetTransactionsByIDs(ctx context.Context, arg GetTransactionsB
 		var i LedgerTransaction
 		if err := rows.Scan(
 			&i.ID,
-			&i.UserID,
+			&i.BooksID,
 			&i.Date,
 			&i.Description,
 			&i.PayeeID,
@@ -104,7 +104,7 @@ FROM
     JOIN ledger_posting p ON p.transaction_id = t.id
     JOIN ledger_account a ON a.id = p.account_id
 WHERE
-    t.user_id = $1
+    t.books_id = $1
     AND t.payee_id = ANY ($2::UUID[])
     AND t.voided_at IS NULL
     AND a.account_class IN ('income', 'expense')
@@ -128,7 +128,7 @@ ORDER BY
 `
 
 type LatestPayeeCategoriesParams struct {
-	UserID   int64
+	BooksID  int64
 	PayeeIds []uuid.UUID
 }
 
@@ -140,7 +140,7 @@ type LatestPayeeCategoriesRow struct {
 
 // P5 amendment A23: transactions whose only category posting is categorized, latest first.
 func (q *Queries) LatestPayeeCategories(ctx context.Context, arg LatestPayeeCategoriesParams) ([]LatestPayeeCategoriesRow, error) {
-	rows, err := q.db.Query(ctx, latestPayeeCategories, arg.UserID, arg.PayeeIds)
+	rows, err := q.db.Query(ctx, latestPayeeCategories, arg.BooksID, arg.PayeeIds)
 	if err != nil {
 		return nil, err
 	}
@@ -161,17 +161,17 @@ func (q *Queries) LatestPayeeCategories(ctx context.Context, arg LatestPayeeCate
 
 const listAllAccounts = `-- name: ListAllAccounts :many
 SELECT
-    id, user_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, color, icon, excluded_from_liquidity
+    id, books_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, color, icon, excluded_from_liquidity
 FROM
     ledger_account
 WHERE
-    user_id = $1
+    books_id = $1
 ORDER BY
     id
 `
 
-func (q *Queries) ListAllAccounts(ctx context.Context, userID int64) ([]LedgerAccount, error) {
-	rows, err := q.db.Query(ctx, listAllAccounts, userID)
+func (q *Queries) ListAllAccounts(ctx context.Context, booksID int64) ([]LedgerAccount, error) {
+	rows, err := q.db.Query(ctx, listAllAccounts, booksID)
 	if err != nil {
 		return nil, err
 	}
@@ -181,7 +181,7 @@ func (q *Queries) ListAllAccounts(ctx context.Context, userID int64) ([]LedgerAc
 		var i LedgerAccount
 		if err := rows.Scan(
 			&i.ID,
-			&i.UserID,
+			&i.BooksID,
 			&i.Name,
 			&i.AccountClass,
 			&i.Kind,
@@ -217,14 +217,14 @@ FROM
     ledger_transaction_version v
     JOIN ledger_transaction t ON t.id = v.transaction_id
 WHERE
-    t.user_id = $1
+    t.books_id = $1
     AND v.transaction_id = ANY ($2::UUID[])
     AND v.version = 1
 `
 
 type RawDescriptionsParams struct {
-	UserID int64
-	Ids    []uuid.UUID
+	BooksID int64
+	Ids     []uuid.UUID
 }
 
 type RawDescriptionsRow struct {
@@ -234,7 +234,7 @@ type RawDescriptionsRow struct {
 
 // The description of version 1 survives in the first version snapshot (P5 amendment A26).
 func (q *Queries) RawDescriptions(ctx context.Context, arg RawDescriptionsParams) ([]RawDescriptionsRow, error) {
-	rows, err := q.db.Query(ctx, rawDescriptions, arg.UserID, arg.Ids)
+	rows, err := q.db.Query(ctx, rawDescriptions, arg.BooksID, arg.Ids)
 	if err != nil {
 		return nil, err
 	}

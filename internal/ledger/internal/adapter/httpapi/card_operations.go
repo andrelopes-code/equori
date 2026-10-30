@@ -16,7 +16,7 @@ func (s *Server) CreateInstallmentPurchase(ctx context.Context, req CreateInstal
 		return nil, err
 	}
 
-	t, planID, err := s.svc.InstallmentPurchase(ctx, auth.MustUserID(ctx), in)
+	t, planID, err := s.svc.InstallmentPurchase(ctx, auth.MustBooksID(ctx), in)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +78,7 @@ func (s *Server) GetCommitment(ctx context.Context, req GetCommitmentRequestObje
 		return nil, &domain.FieldError{Field: "month", Message: "must be YYYY-MM", Err: domain.ErrValidation}
 	}
 
-	amount, err := s.svc.Commitment(ctx, auth.MustUserID(ctx), req.Id, m)
+	amount, err := s.svc.Commitment(ctx, auth.MustBooksID(ctx), req.Id, m)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +92,7 @@ func (s *Server) PayStatement(ctx context.Context, req PayStatementRequestObject
 		return nil, err
 	}
 
-	t, err := s.svc.PayStatement(ctx, auth.MustUserID(ctx), req.Id, dateOf(req.Body.Date), req.Body.FromAccountId, amount)
+	t, err := s.svc.PayStatement(ctx, auth.MustBooksID(ctx), req.Id, dateOf(req.Body.Date), req.Body.FromAccountId, amount)
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +106,7 @@ func (s *Server) FinanceStatement(ctx context.Context, req FinanceStatementReque
 		return nil, err
 	}
 
-	t, planID, err := s.svc.FinanceStatement(ctx, auth.MustUserID(ctx), req.Id, dateOf(req.Body.Date), req.Body.InstallmentCount, installment)
+	t, planID, err := s.svc.FinanceStatement(ctx, auth.MustBooksID(ctx), req.Id, dateOf(req.Body.Date), req.Body.InstallmentCount, installment)
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +125,7 @@ func (s *Server) RefundTransaction(ctx context.Context, req RefundTransactionReq
 		return nil, err
 	}
 
-	t, err := s.svc.RefundPurchase(ctx, auth.MustUserID(ctx), req.Id, dateOf(req.Body.Date), amount, statement)
+	t, err := s.svc.RefundPurchase(ctx, auth.MustBooksID(ctx), req.Id, dateOf(req.Body.Date), amount, statement)
 	if err != nil {
 		return nil, err
 	}
@@ -139,7 +139,7 @@ func (s *Server) CancelInstallmentPlan(ctx context.Context, req CancelInstallmen
 		return nil, err
 	}
 
-	t, err := s.svc.CancelPlan(ctx, auth.MustUserID(ctx), req.Id, dateOf(req.Body.Date), statement)
+	t, err := s.svc.CancelPlan(ctx, auth.MustBooksID(ctx), req.Id, dateOf(req.Body.Date), statement)
 	if err != nil {
 		return nil, err
 	}
@@ -160,7 +160,7 @@ func (s *Server) AnticipateInstallments(ctx context.Context, req AnticipateInsta
 		return nil, err
 	}
 
-	t, err := s.svc.AnticipatePlan(ctx, auth.MustUserID(ctx), req.Id, dateOf(b.Date), b.FromInstallment, b.ToInstallment, *target, amount)
+	t, err := s.svc.AnticipatePlan(ctx, auth.MustBooksID(ctx), req.Id, dateOf(b.Date), b.FromInstallment, b.ToInstallment, *target, amount)
 	if err != nil {
 		return nil, err
 	}
@@ -169,7 +169,7 @@ func (s *Server) AnticipateInstallments(ctx context.Context, req AnticipateInsta
 }
 
 func (s *Server) GetInstallmentPlan(ctx context.Context, req GetInstallmentPlanRequestObject) (GetInstallmentPlanResponseObject, error) {
-	v, err := s.svc.InstallmentPlan(ctx, auth.MustUserID(ctx), req.Id)
+	v, err := s.svc.InstallmentPlan(ctx, auth.MustBooksID(ctx), req.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -196,7 +196,7 @@ func (s *Server) GetInstallmentPlan(ctx context.Context, req GetInstallmentPlanR
 }
 
 func (s *Server) GetStatementPlacement(ctx context.Context, req GetStatementPlacementRequestObject) (GetStatementPlacementResponseObject, error) {
-	p, err := s.svc.PlaceStatement(ctx, auth.MustUserID(ctx), req.Id, dateOf(req.Params.Date))
+	p, err := s.svc.PlaceStatement(ctx, auth.MustBooksID(ctx), req.Id, dateOf(req.Params.Date))
 	if err != nil {
 		return nil, err
 	}

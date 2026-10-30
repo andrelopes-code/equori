@@ -42,7 +42,7 @@ func (t Transaction) Transfer(expectedVersion int, a Account, link uuid.UUID, ac
 	}
 
 	switch {
-	case a.ID == uuid.Nil || a.UserID != t.UserID:
+	case a.ID == uuid.Nil || a.BooksID != t.BooksID:
 		return Transaction{}, &FieldError{Field: "account_id", Message: "unknown account", Err: ErrUnknownAccount}
 	case !a.IsBalance():
 		return Transaction{}, invalid("account_id", "must be an asset or liability account")

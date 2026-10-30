@@ -12,7 +12,7 @@ import (
 func (f ledgerFixture) balance(t *testing.T, accountID domain.Account, on string, basis app.Basis) int64 {
 	t.Helper()
 
-	b, err := f.svc.BalanceAt(t.Context(), f.userID, accountID.ID, date(on), basis)
+	b, err := f.svc.BalanceAt(t.Context(), f.booksID, accountID.ID, date(on), basis)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -25,7 +25,7 @@ func TestBalanceBookedVsSettled(t *testing.T) {
 	f := newLedgerFixture(t)
 	settled := date("2026-10-19")
 
-	_, err := f.svc.RecordTransaction(t.Context(), f.userID, domain.Transaction{
+	_, err := f.svc.RecordTransaction(t.Context(), f.booksID, domain.Transaction{
 		Date: date("2026-10-17"),
 		Postings: []domain.Posting{
 			{AccountID: f.checking.ID, Amount: brl(t, -8000), SettledOn: &settled},
@@ -55,7 +55,7 @@ func TestBalanceExcludesVoided(t *testing.T) {
 	f.expense(t, "2026-10-01", 1000)
 	tx := f.expense(t, "2026-10-02", 500)
 
-	if err := f.svc.VoidTransaction(t.Context(), f.userID, tx.ID, "duplicate"); err != nil {
+	if err := f.svc.VoidTransaction(t.Context(), f.booksID, tx.ID, "duplicate"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -86,7 +86,7 @@ func TestParentBalanceSumsChildren(t *testing.T) {
 
 	reserve := f.createAccount(t, domain.Account{Name: "Emergency", Class: domain.ClassAsset, Kind: domain.KindReserve, ParentID: parent.ID})
 	for _, p := range [][2]any{{child, int64(500000)}, {reserve, int64(100000)}} {
-		_, err := f.svc.RecordTransaction(t.Context(), f.userID, domain.Transaction{
+		_, err := f.svc.RecordTransaction(t.Context(), f.booksID, domain.Transaction{
 			Date: date("2026-10-05"),
 			Postings: []domain.Posting{
 				{AccountID: p[0].(domain.Account).ID, Amount: brl(t, p[1].(int64))},
@@ -102,7 +102,7 @@ func TestParentBalanceSumsChildren(t *testing.T) {
 		t.Fatalf("parent balance = %d, want 600000", got)
 	}
 
-	_, err := f.svc.RecordTransaction(t.Context(), f.userID, domain.Transaction{
+	_, err := f.svc.RecordTransaction(t.Context(), f.booksID, domain.Transaction{
 		Date: date("2026-10-06"),
 		Postings: []domain.Posting{
 			{AccountID: parent.ID, Amount: brl(t, 100)},

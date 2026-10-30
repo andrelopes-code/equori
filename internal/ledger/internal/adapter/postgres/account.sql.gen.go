@@ -20,18 +20,18 @@ SELECT
         FROM
             ledger_account
         WHERE
-            user_id = $1
+            books_id = $1
             AND parent_id = $2
     )
 `
 
 type AccountHasChildrenParams struct {
-	UserID   int64
+	BooksID  int64
 	ParentID uuid.NullUUID
 }
 
 func (q *Queries) AccountHasChildren(ctx context.Context, arg AccountHasChildrenParams) (bool, error) {
-	row := q.db.QueryRow(ctx, accountHasChildren, arg.UserID, arg.ParentID)
+	row := q.db.QueryRow(ctx, accountHasChildren, arg.BooksID, arg.ParentID)
 	var exists bool
 	err := row.Scan(&exists)
 	return exists, err
@@ -44,13 +44,13 @@ SELECT
 FROM
     ledger_posting p
 WHERE
-    p.user_id = $1
+    p.books_id = $1
     AND p.account_id = $2
     AND NOT p.voided
 `
 
 type AccountTotalsParams struct {
-	UserID    int64
+	BooksID   int64
 	AccountID uuid.UUID
 }
 
@@ -60,7 +60,7 @@ type AccountTotalsRow struct {
 }
 
 func (q *Queries) AccountTotals(ctx context.Context, arg AccountTotalsParams) (AccountTotalsRow, error) {
-	row := q.db.QueryRow(ctx, accountTotals, arg.UserID, arg.AccountID)
+	row := q.db.QueryRow(ctx, accountTotals, arg.BooksID, arg.AccountID)
 	var i AccountTotalsRow
 	err := row.Scan(&i.Total, &i.LastBookedOn)
 	return i, err
@@ -72,7 +72,7 @@ SELECT
 FROM
     ledger_transaction t
 WHERE
-    t.user_id = $1
+    t.books_id = $1
     AND t.voided_at IS NULL
     AND t.date BETWEEN $2::date AND $3::date
     AND EXISTS (
@@ -81,7 +81,7 @@ WHERE
         FROM
             ledger_posting p
         WHERE
-            p.user_id = $1
+            p.books_id = $1
             AND p.transaction_id = t.id
             AND p.account_id = $4
     )
@@ -91,7 +91,7 @@ ORDER BY
 `
 
 type AccountTransactionsBetweenParams struct {
-	UserID    int64
+	BooksID   int64
 	FromDate  time.Time
 	ToDate    time.Time
 	AccountID uuid.UUID
@@ -101,7 +101,7 @@ type AccountTransactionsBetweenParams struct {
 // the ones that may realize the occurrences of a schedule (P7 amendment A127).
 func (q *Queries) AccountTransactionsBetween(ctx context.Context, arg AccountTransactionsBetweenParams) ([]uuid.UUID, error) {
 	rows, err := q.db.Query(ctx, accountTransactionsBetween,
-		arg.UserID,
+		arg.BooksID,
 		arg.FromDate,
 		arg.ToDate,
 		arg.AccountID,
@@ -126,25 +126,25 @@ func (q *Queries) AccountTransactionsBetween(ctx context.Context, arg AccountTra
 
 const getAccount = `-- name: GetAccount :one
 SELECT
-    id, user_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, color, icon, excluded_from_liquidity
+    id, books_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, color, icon, excluded_from_liquidity
 FROM
     ledger_account
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2
 `
 
 type GetAccountParams struct {
-	UserID int64
-	ID     uuid.UUID
+	BooksID int64
+	ID      uuid.UUID
 }
 
 func (q *Queries) GetAccount(ctx context.Context, arg GetAccountParams) (LedgerAccount, error) {
-	row := q.db.QueryRow(ctx, getAccount, arg.UserID, arg.ID)
+	row := q.db.QueryRow(ctx, getAccount, arg.BooksID, arg.ID)
 	var i LedgerAccount
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.Name,
 		&i.AccountClass,
 		&i.Kind,
@@ -167,26 +167,26 @@ func (q *Queries) GetAccount(ctx context.Context, arg GetAccountParams) (LedgerA
 
 const getAccountForUpdate = `-- name: GetAccountForUpdate :one
 SELECT
-    id, user_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, color, icon, excluded_from_liquidity
+    id, books_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, color, icon, excluded_from_liquidity
 FROM
     ledger_account
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = $2
 FOR UPDATE
 `
 
 type GetAccountForUpdateParams struct {
-	UserID int64
-	ID     uuid.UUID
+	BooksID int64
+	ID      uuid.UUID
 }
 
 func (q *Queries) GetAccountForUpdate(ctx context.Context, arg GetAccountForUpdateParams) (LedgerAccount, error) {
-	row := q.db.QueryRow(ctx, getAccountForUpdate, arg.UserID, arg.ID)
+	row := q.db.QueryRow(ctx, getAccountForUpdate, arg.BooksID, arg.ID)
 	var i LedgerAccount
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.Name,
 		&i.AccountClass,
 		&i.Kind,
@@ -209,21 +209,21 @@ func (q *Queries) GetAccountForUpdate(ctx context.Context, arg GetAccountForUpda
 
 const getAccountsByIDs = `-- name: GetAccountsByIDs :many
 SELECT
-    id, user_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, color, icon, excluded_from_liquidity
+    id, books_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, color, icon, excluded_from_liquidity
 FROM
     ledger_account
 WHERE
-    user_id = $1
+    books_id = $1
     AND id = ANY ($2::UUID[])
 `
 
 type GetAccountsByIDsParams struct {
-	UserID int64
-	Ids    []uuid.UUID
+	BooksID int64
+	Ids     []uuid.UUID
 }
 
 func (q *Queries) GetAccountsByIDs(ctx context.Context, arg GetAccountsByIDsParams) ([]LedgerAccount, error) {
-	rows, err := q.db.Query(ctx, getAccountsByIDs, arg.UserID, arg.Ids)
+	rows, err := q.db.Query(ctx, getAccountsByIDs, arg.BooksID, arg.Ids)
 	if err != nil {
 		return nil, err
 	}
@@ -233,7 +233,7 @@ func (q *Queries) GetAccountsByIDs(ctx context.Context, arg GetAccountsByIDsPara
 		var i LedgerAccount
 		if err := rows.Scan(
 			&i.ID,
-			&i.UserID,
+			&i.BooksID,
 			&i.Name,
 			&i.AccountClass,
 			&i.Kind,
@@ -264,7 +264,7 @@ func (q *Queries) GetAccountsByIDs(ctx context.Context, arg GetAccountsByIDsPara
 const insertAccount = `-- name: InsertAccount :one
 INSERT INTO
     ledger_account (
-        user_id,
+        books_id,
         name,
         account_class,
         kind,
@@ -297,11 +297,11 @@ VALUES
         $14
     )
 RETURNING
-    id, user_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, color, icon, excluded_from_liquidity
+    id, books_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, color, icon, excluded_from_liquidity
 `
 
 type InsertAccountParams struct {
-	UserID              int64
+	BooksID             int64
 	Name                string
 	AccountClass        string
 	Kind                *string
@@ -319,7 +319,7 @@ type InsertAccountParams struct {
 
 func (q *Queries) InsertAccount(ctx context.Context, arg InsertAccountParams) (LedgerAccount, error) {
 	row := q.db.QueryRow(ctx, insertAccount,
-		arg.UserID,
+		arg.BooksID,
 		arg.Name,
 		arg.AccountClass,
 		arg.Kind,
@@ -337,7 +337,7 @@ func (q *Queries) InsertAccount(ctx context.Context, arg InsertAccountParams) (L
 	var i LedgerAccount
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.Name,
 		&i.AccountClass,
 		&i.Kind,
@@ -360,12 +360,12 @@ func (q *Queries) InsertAccount(ctx context.Context, arg InsertAccountParams) (L
 
 const listAccounts = `-- name: ListAccounts :many
 SELECT
-    id, user_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, color, icon, excluded_from_liquidity,
+    id, books_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, color, icon, excluded_from_liquidity,
     lower(name)::text AS sort_name
 FROM
     ledger_account
 WHERE
-    user_id = $1
+    books_id = $1
     AND (
         $2::text IS NULL
         OR (account_class, lower(name), id) > (
@@ -383,7 +383,7 @@ LIMIT
 `
 
 type ListAccountsParams struct {
-	UserID     int64
+	BooksID    int64
 	AfterClass *string
 	AfterName  *string
 	AfterID    uuid.NullUUID
@@ -392,7 +392,7 @@ type ListAccountsParams struct {
 
 type ListAccountsRow struct {
 	ID                    uuid.UUID
-	UserID                int64
+	BooksID               int64
 	Name                  string
 	AccountClass          string
 	Kind                  *string
@@ -414,7 +414,7 @@ type ListAccountsRow struct {
 
 func (q *Queries) ListAccounts(ctx context.Context, arg ListAccountsParams) ([]ListAccountsRow, error) {
 	rows, err := q.db.Query(ctx, listAccounts,
-		arg.UserID,
+		arg.BooksID,
 		arg.AfterClass,
 		arg.AfterName,
 		arg.AfterID,
@@ -429,7 +429,7 @@ func (q *Queries) ListAccounts(ctx context.Context, arg ListAccountsParams) ([]L
 		var i ListAccountsRow
 		if err := rows.Scan(
 			&i.ID,
-			&i.UserID,
+			&i.BooksID,
 			&i.Name,
 			&i.AccountClass,
 			&i.Kind,
@@ -464,17 +464,17 @@ SET
     instrument = $2,
     updated_at = now()
 WHERE
-    user_id = $1
+    books_id = $1
     AND system_role IS NOT NULL
 `
 
 type SetSystemAccountsInstrumentParams struct {
-	UserID     int64
+	BooksID    int64
 	Instrument string
 }
 
 func (q *Queries) SetSystemAccountsInstrument(ctx context.Context, arg SetSystemAccountsInstrumentParams) error {
-	_, err := q.db.Exec(ctx, setSystemAccountsInstrument, arg.UserID, arg.Instrument)
+	_, err := q.db.Exec(ctx, setSystemAccountsInstrument, arg.BooksID, arg.Instrument)
 	return err
 }
 
@@ -485,7 +485,7 @@ FROM
     ledger_transaction t
     JOIN ledger_posting p ON p.transaction_id = t.id
 WHERE
-    t.user_id = $1
+    t.books_id = $1
     AND p.account_id = $2
     AND t.voided_at IS NULL
 ORDER BY
@@ -493,13 +493,13 @@ ORDER BY
 `
 
 type TransactionsWithAccountParams struct {
-	UserID    int64
+	BooksID   int64
 	AccountID uuid.UUID
 }
 
 // A75: the non-voided transactions with a posting on the account.
 func (q *Queries) TransactionsWithAccount(ctx context.Context, arg TransactionsWithAccountParams) ([]uuid.UUID, error) {
-	rows, err := q.db.Query(ctx, transactionsWithAccount, arg.UserID, arg.AccountID)
+	rows, err := q.db.Query(ctx, transactionsWithAccount, arg.BooksID, arg.AccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -531,10 +531,10 @@ SET
     excluded_from_liquidity = $8,
     updated_at = now()
 WHERE
-    user_id = $9
+    books_id = $9
     AND id = $10
 RETURNING
-    id, user_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, color, icon, excluded_from_liquidity
+    id, books_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, color, icon, excluded_from_liquidity
 `
 
 type UpdateAccountParams struct {
@@ -546,7 +546,7 @@ type UpdateAccountParams struct {
 	Color                 *int16
 	Icon                  *string
 	ExcludedFromLiquidity bool
-	UserID                int64
+	BooksID               int64
 	ID                    uuid.UUID
 }
 
@@ -560,13 +560,13 @@ func (q *Queries) UpdateAccount(ctx context.Context, arg UpdateAccountParams) (L
 		arg.Color,
 		arg.Icon,
 		arg.ExcludedFromLiquidity,
-		arg.UserID,
+		arg.BooksID,
 		arg.ID,
 	)
 	var i LedgerAccount
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.BooksID,
 		&i.Name,
 		&i.AccountClass,
 		&i.Kind,

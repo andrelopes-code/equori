@@ -163,7 +163,7 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 		return nil, err
 	}
 
-	reportingModule.OnImport(portfolioModule.RebuildUser)
+	reportingModule.OnImport(portfolioModule.RebuildBooks)
 	planningModule := planning.New(pool, dispatcher, ledgerModule, marketdataModule, identityModule, portfolioModule, clk, log)
 	reportingModule.UseIndicatorSources(planningModule, portfolioModule)
 

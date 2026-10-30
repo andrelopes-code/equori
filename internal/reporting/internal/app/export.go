@@ -44,12 +44,12 @@ type Export struct {
 type ExportRepository interface {
 	// RequestExport replaces a finished export with a pending one and publishes
 	// EventExportRequested in the same transaction; ok is false while one is pending.
-	RequestExport(ctx context.Context, userID int64, at time.Time) (e Export, ok bool, err error)
-	Export(ctx context.Context, userID int64) (Export, error)
-	ExportContent(ctx context.Context, userID int64) (Export, []byte, error)
+	RequestExport(ctx context.Context, booksID int64, at time.Time) (e Export, ok bool, err error)
+	Export(ctx context.Context, booksID int64) (Export, error)
+	ExportContent(ctx context.Context, booksID int64) (Export, []byte, error)
 	// BuildArchive reads every fact of the user from one snapshot (export design E1, E2).
-	BuildArchive(ctx context.Context, userID int64, at time.Time) ([]byte, error)
-	FinishExport(ctx context.Context, userID int64, id uuid.UUID, at time.Time, archive []byte, problem string) error
+	BuildArchive(ctx context.Context, booksID int64, at time.Time) ([]byte, error)
+	FinishExport(ctx context.Context, booksID int64, id uuid.UUID, at time.Time, archive []byte, problem string) error
 }
 
 type Clock interface{ Now() time.Time }
@@ -58,21 +58,21 @@ type Exports struct {
 	repo     ExportRepository
 	imports  ImportRepository
 	clock    Clock
-	rebuilds []func(ctx context.Context, userID int64) error
+	rebuilds []func(ctx context.Context, booksID int64) error
 }
 
 // NewExports takes the rebuilds of every derived table, run for the user after an import.
-func NewExports(repo ExportRepository, imports ImportRepository, clk Clock, rebuilds ...func(ctx context.Context, userID int64) error) *Exports {
+func NewExports(repo ExportRepository, imports ImportRepository, clk Clock, rebuilds ...func(ctx context.Context, booksID int64) error) *Exports {
 	return &Exports{repo: repo, imports: imports, clock: clk, rebuilds: rebuilds}
 }
 
 // OnImport adds a rebuild of another module's derived tables.
-func (s *Exports) OnImport(rebuild func(ctx context.Context, userID int64) error) {
+func (s *Exports) OnImport(rebuild func(ctx context.Context, booksID int64) error) {
 	s.rebuilds = append(s.rebuilds, rebuild)
 }
 
-func (s *Exports) Request(ctx context.Context, userID int64) (Export, error) {
-	e, ok, err := s.repo.RequestExport(ctx, userID, s.clock.Now())
+func (s *Exports) Request(ctx context.Context, booksID int64) (Export, error) {
+	e, ok, err := s.repo.RequestExport(ctx, booksID, s.clock.Now())
 	if err != nil {
 		return Export{}, err
 	}
@@ -84,13 +84,13 @@ func (s *Exports) Request(ctx context.Context, userID int64) (Export, error) {
 	return e, nil
 }
 
-func (s *Exports) Get(ctx context.Context, userID int64) (Export, error) {
-	return s.repo.Export(ctx, userID)
+func (s *Exports) Get(ctx context.Context, booksID int64) (Export, error) {
+	return s.repo.Export(ctx, booksID)
 }
 
 // Content returns the archive of a ready export with the date of its request.
-func (s *Exports) Content(ctx context.Context, userID int64) ([]byte, time.Time, error) {
-	e, content, err := s.repo.ExportContent(ctx, userID)
+func (s *Exports) Content(ctx context.Context, booksID int64) ([]byte, time.Time, error) {
+	e, content, err := s.repo.ExportContent(ctx, booksID)
 	if err != nil {
 		return nil, time.Time{}, err
 	}
@@ -104,8 +104,8 @@ func (s *Exports) Content(ctx context.Context, userID int64) ([]byte, time.Time,
 
 // Build records the archive of a pending export. An archive over the limit is recorded as
 // failed; any other error is returned for the dispatcher to retry (export design E3).
-func (s *Exports) Build(ctx context.Context, userID int64, id uuid.UUID) error {
-	e, err := s.repo.Export(ctx, userID)
+func (s *Exports) Build(ctx context.Context, booksID int64, id uuid.UUID) error {
+	e, err := s.repo.Export(ctx, booksID)
 	if errors.Is(err, ErrExportNotFound) || err == nil && (e.ID != id || e.Status != ExportPending) {
 		return nil
 	}
@@ -114,7 +114,7 @@ func (s *Exports) Build(ctx context.Context, userID int64, id uuid.UUID) error {
 		return err
 	}
 
-	archive, err := s.repo.BuildArchive(ctx, userID, e.RequestedAt)
+	archive, err := s.repo.BuildArchive(ctx, booksID, e.RequestedAt)
 
 	problem := ""
 	switch {
@@ -124,5 +124,5 @@ func (s *Exports) Build(ctx context.Context, userID int64, id uuid.UUID) error {
 		return fmt.Errorf("build export %s: %w", id, err)
 	}
 
-	return s.repo.FinishExport(ctx, userID, id, s.clock.Now(), archive, problem)
+	return s.repo.FinishExport(ctx, booksID, id, s.clock.Now(), archive, problem)
 }

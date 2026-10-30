@@ -56,7 +56,7 @@ func (s *Server) ListBatchRecords(ctx context.Context, req ListBatchRecordsReque
 		state = domain.RecordState(*req.Params.State)
 	}
 
-	recs, next, b, err := s.svc.Records(ctx, auth.MustUserID(ctx), req.Id, state, p)
+	recs, next, b, err := s.svc.Records(ctx, auth.MustBooksID(ctx), req.Id, state, p)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +77,7 @@ func (s *Server) ResolveExternalRecord(ctx context.Context, req ResolveExternalR
 		txID = *req.Body.TransactionId
 	}
 
-	rec, b, err := s.svc.Resolve(ctx, auth.MustUserID(ctx), req.Id, string(req.Body.Action), txID)
+	rec, b, err := s.svc.Resolve(ctx, auth.MustBooksID(ctx), req.Id, string(req.Body.Action), txID)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +86,7 @@ func (s *Server) ResolveExternalRecord(ctx context.Context, req ResolveExternalR
 }
 
 func (s *Server) ReopenExternalRecord(ctx context.Context, req ReopenExternalRecordRequestObject) (ReopenExternalRecordResponseObject, error) {
-	rec, b, err := s.svc.Reopen(ctx, auth.MustUserID(ctx), req.Id)
+	rec, b, err := s.svc.Reopen(ctx, auth.MustBooksID(ctx), req.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +95,7 @@ func (s *Server) ReopenExternalRecord(ctx context.Context, req ReopenExternalRec
 }
 
 func (s *Server) ListUnconfirmed(ctx context.Context, req ListUnconfirmedRequestObject) (ListUnconfirmedResponseObject, error) {
-	ps, currency, err := s.svc.Unconfirmed(ctx, auth.MustUserID(ctx), req.Id)
+	ps, currency, err := s.svc.Unconfirmed(ctx, auth.MustBooksID(ctx), req.Id)
 	if err != nil {
 		return nil, err
 	}

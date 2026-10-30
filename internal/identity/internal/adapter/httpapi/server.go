@@ -112,7 +112,7 @@ func (s *Server) CompleteSetup(ctx context.Context, req CompleteSetupRequestObje
 		return nil, err
 	}
 
-	s.log.InfoContext(ctx, "first user created", "user_id", user.ID, "request_id", httpserver.RequestID(ctx))
+	s.log.InfoContext(ctx, "first member created", "member_id", user.ID, "request_id", httpserver.RequestID(ctx))
 	cookie := s.cookie(session.Token, session.ExpiresAt)
 
 	return CompleteSetup201JSONResponse{Body: toAPIUser(user, locale.Locale{Language: user.Language, Region: b.Region}), Headers: CompleteSetup201ResponseHeaders{SetCookie: &cookie}}, nil
@@ -134,7 +134,7 @@ func (s *Server) CreateSession(ctx context.Context, req CreateSessionRequestObje
 		return nil, err
 	}
 
-	s.log.InfoContext(ctx, "login succeeded", "user_id", session.MemberID, "books_id", session.BooksID, "request_id", httpserver.RequestID(ctx))
+	s.log.InfoContext(ctx, "login succeeded", "member_id", session.MemberID, "books_id", session.BooksID, "request_id", httpserver.RequestID(ctx))
 	cookie := s.cookie(session.Token, session.ExpiresAt)
 
 	return CreateSession204Response{Headers: CreateSession204ResponseHeaders{SetCookie: &cookie}}, nil
