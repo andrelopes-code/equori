@@ -1,6 +1,6 @@
 # ADR 029: Shared books
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-10-30
 - Replaces: the section "Users and data isolation" of ADR 003
 - Design: `docs/specs/2026-10-30-shared-books-design.md`
