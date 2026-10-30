@@ -111,8 +111,8 @@ Order of work for a phase:
 
 1. Spec in `docs/specs/`, when the design is open. It records each decision and its reason. The plan cites the spec section and does not repeat the reason.
 2. Plan in `docs/superpowers/plans/`, written after the planning model reads the code each task touches.
-3. Plan check by the planning model in a new session: every path, symbol and command named in the plan exists; every expected test value is derived; no question is open.
-4. Execution by the implementing model, one slice at a time, with the checkpoint of each slice.
+3. Plan check by the planning model in a new session: every path, symbol and command named in the plan exists; every expected test value is derived; no question is open. Before it hands the plan over, the check clears with the owner, in one question, every precondition a stop condition below would hit: files of another session in the working tree, an environment value, a pending owner decision.
+4. Execution by the implementing model of the whole plan in one session. Each slice ends with its commits and its checkpoint, and execution continues with the next slice without waiting for the owner. It stops only on a condition below.
 5. Review by the planning model at the end of the plan: the diff against the plan's edge cases and the phase's exit criterion.
 
 The Status column of section 9.4.2 names the step a phase is in: `open` before step 1, then `spec`, `plan`, `check`, `execution`, `review`, and `delivered` once the exit criterion passes. The model that starts a step updates the column in the commit of that step.
