@@ -61,7 +61,7 @@ func New(spec []byte, prefix string) (*Validator, error) {
 		for method, op := range item.Operations() {
 			pattern := method + " " + prefix + path
 			v.routes.Handle(pattern, http.NotFoundHandler())
-			// Sessions are checked by identity.RequireSession. An empty requirement list stops
+			// Sessions are checked by identity.Authorize. An empty requirement list stops
 			// kin-openapi from reading the whole body for an authentication function.
 			unsecured := *op
 			unsecured.Security = &openapi3.SecurityRequirements{}
@@ -75,6 +75,19 @@ func New(spec []byte, prefix string) (*Validator, error) {
 func (v *Validator) route(r *http.Request) *routers.Route {
 	_, pattern := v.routes.Handler(r)
 	return v.byKey[pattern]
+}
+
+// Extension returns the string extension name of the operation r matches; matched is false when
+// r matches no operation, and value is "" when the operation lacks the extension.
+func (v *Validator) Extension(r *http.Request, name string) (value string, matched bool) {
+	route := v.route(r)
+	if route == nil {
+		return "", false
+	}
+
+	value, _ = route.Operation.Extensions[name].(string)
+
+	return value, true
 }
 
 // Middleware rejects a request that does not conform to its operation (C1–C5); requests

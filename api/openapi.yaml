@@ -3,7 +3,9 @@ info:
   title: equori API
   version: 0.1.0
   description: |
-    Every endpoint under /api/v1 requires a session cookie except POST /api/v1/session.
+    Each operation declares x-book-role. public needs no session; read, write and owner need a
+    session whose role in the active book ranks at least as high (read < write < owner). A lower
+    role is 403 book_role_required (ADR 029, HA9).
     Errors use RFC 9457 problem details (docs/adr/004-api-errors.md).
 servers:
   - url: /api/v1
@@ -33,6 +35,7 @@ paths:
     post:
       tags: [identity]
       operationId: createSession
+      x-book-role: public
       summary: Log in and start a session.
       security: []
       requestBody:
@@ -61,6 +64,7 @@ paths:
     delete:
       tags: [identity]
       operationId: deleteSession
+      x-book-role: read
       summary: Log out and end the current session.
       parameters:
         - $ref: "#/components/parameters/SessionCookie"
@@ -77,6 +81,7 @@ paths:
     get:
       tags: [identity]
       operationId: getSetup
+      x-book-role: public
       summary: Report whether the first member is still to be created (ADR 003, amendment of 2026-10-27).
       security: []
       responses:
@@ -89,6 +94,7 @@ paths:
     post:
       tags: [identity]
       operationId: completeSetup
+      x-book-role: public
       summary: Create the first member, an admin, with the setup token, and start a session.
       description: |
         The token is the one serve logs and writes to setup.url while no member exists. A token
@@ -129,6 +135,7 @@ paths:
     get:
       tags: [identity]
       operationId: getCurrentUser
+      x-book-role: read
       summary: Return the authenticated member.
       responses:
         "200":
@@ -142,6 +149,7 @@ paths:
     patch:
       tags: [identity]
       operationId: updateCurrentUser
+      x-book-role: read
       summary: Change the language of the authenticated member.
       requestBody:
         required: true
@@ -164,6 +172,7 @@ paths:
     get:
       tags: [identity]
       operationId: getMemberAppearance
+      x-book-role: read
       summary: Return the appearance choices of the authenticated member (ADR 029 BK21).
       responses:
         "200":
@@ -177,6 +186,7 @@ paths:
     put:
       tags: [identity]
       operationId: setMemberAppearance
+      x-book-role: read
       summary: Replace the appearance choices of the authenticated member.
       description: |
         Any JSON object is stored; 422 appearance_too_large when its encoding is over 16 KiB. The
@@ -204,6 +214,7 @@ paths:
     get:
       tags: [identity]
       operationId: getCurrentBooks
+      x-book-role: read
       summary: Return the settings of the active book (ADR 029 BK22).
       responses:
         "200":
@@ -217,6 +228,7 @@ paths:
     patch:
       tags: [identity]
       operationId: updateCurrentBooks
+      x-book-role: owner
       summary: Change the name, the region and the time zone of the active book.
       description: |
         A null time_zone restores the region's default. 422 time_zone_invalid when time_zone is not
@@ -311,6 +323,7 @@ paths:
     get:
       tags: [identity]
       operationId: listAccessTokens
+      x-book-role: read
       summary: The book's personal access tokens for MCP, newest first, without their text.
       responses:
         "200":
@@ -324,6 +337,7 @@ paths:
     post:
       tags: [identity]
       operationId: createAccessToken
+      x-book-role: read
       summary: Create a personal access token that opens /mcp only; the answer holds its text once.
       description: |
         422 validation_failed when the name is empty or over 80 characters, the scope is not read or
@@ -349,6 +363,7 @@ paths:
     delete:
       tags: [identity]
       operationId: deleteAccessToken
+      x-book-role: read
       summary: Delete a personal access token; it stops working at once.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -363,6 +378,7 @@ paths:
     get:
       tags: [ledger]
       operationId: getSettings
+      x-book-role: read
       summary: Return the ledger settings.
       responses:
         "200":
@@ -376,6 +392,7 @@ paths:
     put:
       tags: [ledger]
       operationId: updateSettings
+      x-book-role: owner
       summary: Change the base currency; allowed only before the first transaction.
       requestBody:
         required: true
@@ -400,6 +417,7 @@ paths:
     get:
       tags: [ledger]
       operationId: listInstitutions
+      x-book-role: read
       summary: List institutions.
       parameters:
         - $ref: "#/components/parameters/Limit"
@@ -416,6 +434,7 @@ paths:
     post:
       tags: [ledger]
       operationId: createInstitution
+      x-book-role: write
       summary: Create an institution.
       requestBody:
         required: true
@@ -438,6 +457,7 @@ paths:
     get:
       tags: [ledger]
       operationId: listInstitutionIdentifierSchemes
+      x-book-role: read
       summary: List the institution identifier schemes and their patterns.
       responses:
         "200":
@@ -452,6 +472,7 @@ paths:
     put:
       tags: [ledger]
       operationId: setInstitutionIdentifier
+      x-book-role: write
       summary: Set or clear the identifier of an institution; the br_ispb identifier keys its logo (ADR 013).
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -478,6 +499,7 @@ paths:
     get:
       tags: [ledger]
       operationId: listPayees
+      x-book-role: read
       summary: List payees.
       parameters:
         - $ref: "#/components/parameters/Limit"
@@ -494,6 +516,7 @@ paths:
     post:
       tags: [ledger]
       operationId: createPayee
+      x-book-role: write
       summary: Create a payee.
       requestBody:
         required: true
@@ -516,6 +539,7 @@ paths:
     patch:
       tags: [ledger]
       operationId: renamePayee
+      x-book-role: write
       summary: Rename a payee (A82).
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -542,6 +566,7 @@ paths:
     post:
       tags: [ledger]
       operationId: mergePayee
+      x-book-role: write
       summary: Merge a payee into another; returns the destination (A82).
       description: |
         Every non-voided transaction of the payee gets a new version naming the destination; voided transactions and
@@ -571,6 +596,7 @@ paths:
     get:
       tags: [ledger]
       operationId: listTags
+      x-book-role: read
       summary: List tags in use.
       parameters:
         - $ref: "#/components/parameters/Limit"
@@ -590,6 +616,7 @@ paths:
     get:
       tags: [ledger]
       operationId: getTag
+      x-book-role: read
       summary: A tag and the number of non-voided transactions that carry it.
       responses:
         "200":
@@ -605,6 +632,7 @@ paths:
     patch:
       tags: [ledger]
       operationId: renameTag
+      x-book-role: write
       summary: Rename a tag on every transaction; no transaction gets a new version.
       description: The name is normalized as a transaction tag. A name in use is 422 on name; merge the tags instead.
       requestBody:
@@ -629,6 +657,7 @@ paths:
     delete:
       tags: [ledger]
       operationId: deleteTag
+      x-book-role: write
       summary: Delete a tag; every non-voided transaction that carries it gets a new version without it.
       description: Voided transactions lose the tag in place.
       responses:
@@ -642,6 +671,7 @@ paths:
     post:
       tags: [ledger]
       operationId: mergeTag
+      x-book-role: write
       summary: Merge a tag into another; returns the destination.
       description: |
         Every non-voided transaction that carries the tag gets a new version carrying the destination once; voided
@@ -671,6 +701,7 @@ paths:
     get:
       tags: [ledger]
       operationId: listAccounts
+      x-book-role: read
       summary: List accounts, categories included.
       parameters:
         - $ref: "#/components/parameters/Limit"
@@ -687,6 +718,7 @@ paths:
     post:
       tags: [ledger]
       operationId: createAccount
+      x-book-role: write
       summary: Create an account or category.
       requestBody:
         required: true
@@ -714,6 +746,7 @@ paths:
     get:
       tags: [ledger]
       operationId: getAccount
+      x-book-role: read
       summary: Return an account.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -731,6 +764,7 @@ paths:
     patch:
       tags: [ledger]
       operationId: updateAccount
+      x-book-role: write
       summary: Rename or move an account.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -757,6 +791,7 @@ paths:
     post:
       tags: [ledger]
       operationId: closeAccount
+      x-book-role: write
       summary: Close an account and its open descendants (A74).
       description: |
         Every closed account needs no postings after closed_on; an asset, liability or equity account
@@ -788,6 +823,7 @@ paths:
     post:
       tags: [ledger]
       operationId: reopenAccount
+      x-book-role: write
       summary: Reopen a closed account and its closed ancestors (A74).
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -808,6 +844,7 @@ paths:
     put:
       tags: [ledger]
       operationId: setAccountAppearance
+      x-book-role: write
       summary: Set or clear the colour and the icon of an account (A83).
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -834,6 +871,7 @@ paths:
     put:
       tags: [ledger]
       operationId: setAccountParent
+      x-book-role: write
       summary: Set or clear the parent of an account (A84).
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -860,6 +898,7 @@ paths:
     post:
       tags: [ledger]
       operationId: mergeAccount
+      x-book-role: write
       summary: Merge a category into another; returns the destination (A75).
       description: |
         Every non-voided transaction with a posting on the category gets a new version with that posting
@@ -889,6 +928,7 @@ paths:
     get:
       tags: [ledger]
       operationId: getAccountBalance
+      x-book-role: read
       summary: Balance of an account at the end of a date.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -930,6 +970,7 @@ paths:
     get:
       tags: [ledger]
       operationId: listBalances
+      x-book-role: read
       summary: Balance of every balance-sheet account at the end of a date, ordered by account name then id.
       parameters:
         - name: date
@@ -959,6 +1000,7 @@ paths:
     get:
       tags: [ledger]
       operationId: listTransactions
+      x-book-role: read
       summary: List transactions, newest first.
       parameters:
         - $ref: "#/components/parameters/Limit"
@@ -1014,6 +1056,7 @@ paths:
     post:
       tags: [ledger]
       operationId: createTransaction
+      x-book-role: write
       summary: Record a transaction.
       requestBody:
         required: true
@@ -1041,6 +1084,7 @@ paths:
     post:
       tags: [ledger]
       operationId: recordForeignPurchase
+      x-book-role: write
       summary: Record a purchase charged in another currency, with the card's foreign charge (P8 amendment A66).
       requestBody:
         required: true
@@ -1070,6 +1114,7 @@ paths:
     post:
       tags: [ledger]
       operationId: exchangeCurrency
+      x-book-role: write
       summary: Exchange money between own accounts in two currencies, one of them the base currency (P8 amendment A67).
       requestBody:
         required: true
@@ -1099,6 +1144,7 @@ paths:
     post:
       tags: [ledger]
       operationId: recordTrade
+      x-book-role: write
       summary: Buy or sell a security for cash of the same brokerage at average cost (P8 amendment A68).
       requestBody:
         required: true
@@ -1130,6 +1176,7 @@ paths:
     post:
       tags: [ledger]
       operationId: recordInvestmentIncome
+      x-book-role: write
       summary: Record income paid on a security into cash of the same brokerage (P8 amendment A70).
       requestBody:
         required: true
@@ -1159,6 +1206,7 @@ paths:
     get:
       tags: [portfolio]
       operationId: listPositions
+      x-book-role: read
       summary: Positions of the security accounts at the end of a date, valued with stored prices.
       parameters:
         - name: date
@@ -1191,6 +1239,7 @@ paths:
     get:
       tags: [portfolio]
       operationId: listRealizedResults
+      x-book-role: read
       summary: Results of the sales of a year at average cost (D1).
       parameters:
         - $ref: "#/components/parameters/Year"
@@ -1209,6 +1258,7 @@ paths:
     get:
       tags: [portfolio]
       operationId: listIncomeEvents
+      x-book-role: read
       summary: Investment income of a year by tax treatment (D1).
       parameters:
         - $ref: "#/components/parameters/Year"
@@ -1227,6 +1277,7 @@ paths:
     get:
       tags: [portfolio]
       operationId: listInvestmentIncomeTypes
+      x-book-role: read
       summary: Income types the book's jurisdiction accepts.
       responses:
         "200":
@@ -1241,6 +1292,7 @@ paths:
     get:
       tags: [portfolio]
       operationId: getReturn
+      x-book-role: read
       summary: Money-weighted annual return of an account and its sub-accounts over a period of at most 366 days (investments design 4.3).
       description: |
         The flows are the money that entered or left the tree in transactions that also touch a balance account
@@ -1293,6 +1345,7 @@ paths:
     get:
       tags: [portfolio]
       operationId: getAllocation
+      x-book-role: read
       summary: Value of the asset accounts at a date grouped by instrument type, currency or institution (investments design 4.3).
       description: |
         Each account counts its own balance, valued in value_in (the base currency by default) with the stored prices
@@ -1336,6 +1389,7 @@ paths:
     get:
       tags: [portfolio]
       operationId: getNetWorth
+      x-book-role: read
       summary: Assets, liabilities and their difference at a date (investments design 4.3).
       description: Liabilities are the balances of the liability accounts as a positive amount, valued like the assets.
       parameters:
@@ -1368,6 +1422,7 @@ paths:
     get:
       tags: [portfolio]
       operationId: listInstrumentSubtypes
+      x-book-role: read
       summary: Subtypes of an instrument type that the book's jurisdiction knows; none without a jurisdiction.
       parameters:
         - name: type
@@ -1390,6 +1445,7 @@ paths:
     get:
       tags: [ledger]
       operationId: getTransaction
+      x-book-role: read
       summary: Return a transaction.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -1407,6 +1463,7 @@ paths:
     put:
       tags: [ledger]
       operationId: correctTransaction
+      x-book-role: write
       summary: Correct a transaction; creates a new version.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -1435,6 +1492,7 @@ paths:
     post:
       tags: [ledger]
       operationId: voidTransaction
+      x-book-role: write
       summary: Void a transaction; it stays in history.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -1463,6 +1521,7 @@ paths:
     post:
       tags: [ledger]
       operationId: categorizeTransactions
+      x-book-role: write
       summary: Give several transactions one category, each item decided on its own (A78).
       description: |
         Each item replaces the category postings of its transaction with one posting on category_id holding their
@@ -1488,6 +1547,7 @@ paths:
     post:
       tags: [ledger]
       operationId: categorizeTransaction
+      x-book-role: write
       summary: Replace the category postings of a transaction, keeping their total (P5 amendment A18).
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -1518,6 +1578,7 @@ paths:
     post:
       tags: [ledger]
       operationId: transferTransaction
+      x-book-role: write
       summary: Replace the category side with a posting on another of the owner's accounts, pairing with its imported other side (P5b amendments A28, A29).
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -1548,6 +1609,7 @@ paths:
     post:
       tags: [ledger]
       operationId: reimburseTransaction
+      x-book-role: write
       summary: Make an incoming transaction the reimbursement of a recorded expense (A117).
       description: |
         Replaces the reimbursements of the incoming transaction with allocations. For each allocation the
@@ -1585,6 +1647,7 @@ paths:
     get:
       tags: [ledger]
       operationId: listReimbursementCandidates
+      x-book-role: read
       summary: Expenses an incoming transaction can reimburse (A117).
       description: |
         Non-voided expenses in the currency of the transaction dated from 90 days before it through its date,
@@ -1610,6 +1673,7 @@ paths:
     get:
       tags: [ledger]
       operationId: listReimbursementSources
+      x-book-role: read
       summary: Incoming transactions that can repay an expense (A117).
       description: |
         Non-voided inflows in the currency of the expense dated from its date through 90 days after, whose
@@ -1633,6 +1697,7 @@ paths:
     get:
       tags: [ledger]
       operationId: listTransactionVersions
+      x-book-role: read
       summary: Previous versions of a transaction.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -1651,6 +1716,7 @@ paths:
     post:
       tags: [reporting]
       operationId: requestExport
+      x-book-role: read
       summary: Request an archive of every fact of the books (SC6, docs/specs/2026-10-26-export-design.md).
       description: |
         The archive is built after the response and replaces the previous export. 409 export_pending while one is
@@ -1670,6 +1736,7 @@ paths:
     get:
       tags: [reporting]
       operationId: getExport
+      x-book-role: read
       summary: The book's export and its status; 404 when none was requested.
       responses:
         "200":
@@ -1686,6 +1753,7 @@ paths:
     get:
       tags: [reporting]
       operationId: getExportContent
+      x-book-role: read
       summary: Download the archive of a ready export; 409 export_not_ready otherwise.
       responses:
         "200":
@@ -1709,6 +1777,7 @@ paths:
     post:
       tags: [reporting]
       operationId: importArchive
+      x-book-role: owner
       summary: Restore an export archive into books without facts (N13, export design E4).
       description: |
         The request body limit of this route is 257 MiB. 422 archive_invalid for an archive that does not read,
@@ -1747,6 +1816,7 @@ paths:
     get:
       tags: [reporting]
       operationId: getStatementAnalytics
+      x-book-role: read
       summary: A statement split into purchases, installments, charges and credits, per category (P9).
       description: |
         Each category amount of the statement falls in one part (docs/plans/2026-10-26-p9-cash-view.md,
@@ -1768,6 +1838,7 @@ paths:
     get:
       tags: [reporting]
       operationId: getCardStatementAnalytics
+      x-book-role: read
       summary: The 12 latest statements of a card closed on or before today, oldest first, split as in getStatementAnalytics.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -1786,6 +1857,7 @@ paths:
     get:
       tags: [reporting]
       operationId: getBalanceSeries
+      x-book-role: read
       summary: Daily balance of an account and its sub-accounts, one item per day in [from, to].
       parameters:
         - name: account_id
@@ -1831,6 +1903,7 @@ paths:
     get:
       tags: [reporting]
       operationId: getAccountFlows
+      x-book-role: read
       summary: Booked inflow and outflow of one account, one item per day in [from, to] that has a posting (A119).
       description: >-
         Inflow is the sum of the positive amounts of the account's non-voided postings booked on the date;
@@ -1872,6 +1945,7 @@ paths:
     get:
       tags: [reporting]
       operationId: getCategoryTotals
+      x-book-role: read
       summary: Totals of each category of a class in [from, to], at most 366 days, in the accrual or cash view (A77).
       description: |
         Spending of an expense category and earnings of an income category are positive. An account is listed
@@ -1921,6 +1995,7 @@ paths:
     get:
       tags: [reporting]
       operationId: listCategoryCashPayments
+      x-book-role: read
       summary: Card amounts of one category in the cash view of [from, to], at most 366 days, each naming its statement and payment (N20).
       description: |
         Each item is the share a card payment gives the category (docs/plans/2026-10-26-p9-cash-view.md, CV1 to CV10),
@@ -1957,6 +2032,7 @@ paths:
     get:
       tags: [reporting]
       operationId: getIndicators
+      x-book-role: read
       summary: Savings rate, liquidity, committed share, debt service share and liabilities of a month and the 11 months before it, cash view (analytics design 4).
       parameters:
         - name: month
@@ -1982,6 +2058,7 @@ paths:
     get:
       tags: [marketdata]
       operationId: listCalendars
+      x-book-role: read
       summary: Business-day calendars of the instance in identifier order.
       responses:
         "200":
@@ -1996,6 +2073,7 @@ paths:
     get:
       tags: [marketdata]
       operationId: listHolidays
+      x-book-role: read
       summary: Non-business days of a calendar in a year, weekends excluded.
       parameters:
         - name: name
@@ -2027,6 +2105,7 @@ paths:
     get:
       tags: [marketdata]
       operationId: listIndexes
+      x-book-role: read
       summary: The enabled indexes with at least one stored rate, those of the caller's region first (ADR 025 F3).
       responses:
         "200":
@@ -2045,6 +2124,7 @@ paths:
     get:
       tags: [marketdata]
       operationId: listIndexRates
+      x-book-role: read
       summary: The stored rates of an enabled index in [from, to], at most 7,320 days, oldest first.
       parameters:
         - name: id
@@ -2083,6 +2163,7 @@ paths:
     get:
       tags: [marketdata]
       operationId: listIndexExpectations
+      x-book-role: read
       summary: The latest survey of the expected annual rate of an index, oldest point first (ADR 026 E5).
       parameters:
         - name: id
@@ -2105,6 +2186,7 @@ paths:
     get:
       tags: [marketdata]
       operationId: listMarketDataFeeds
+      x-book-role: read
       summary: Every price and index feed of the instance with its state (ADR 025 F5).
       responses:
         "200":
@@ -2119,6 +2201,7 @@ paths:
     put:
       tags: [marketdata]
       operationId: setMarketDataFeed
+      x-book-role: read
       summary: Enable or disable a feed for the whole instance; admin only (ADR 025 F6, F8).
       parameters:
         - name: id
@@ -2154,6 +2237,7 @@ paths:
     post:
       tags: [marketdata]
       operationId: refreshMarketData
+      x-book-role: read
       summary: Run the enabled feeds now; admin only (ADR 025 F7, F8).
       description: |
         The tick runs after the response. 409 refresh_running while a tick, scheduled or requested, runs.
@@ -2170,6 +2254,7 @@ paths:
     get:
       tags: [marketdata]
       operationId: listInstruments
+      x-book-role: read
       summary: Instruments of the instance in code order.
       parameters:
         - name: type
@@ -2191,6 +2276,7 @@ paths:
     post:
       tags: [marketdata]
       operationId: defineInstrument
+      x-book-role: write
       summary: Define a security for the whole instance (P8 amendment A59).
       requestBody:
         required: true
@@ -2222,6 +2308,7 @@ paths:
     get:
       tags: [marketdata]
       operationId: getInstrument
+      x-book-role: read
       summary: One instrument.
       parameters:
         - name: code
@@ -2243,6 +2330,7 @@ paths:
     patch:
       tags: [marketdata]
       operationId: editInstrument
+      x-book-role: write
       summary: Replace the name, exchange and subtype of a security; an absent exchange or subtype is cleared (A134).
       parameters:
         - name: code
@@ -2281,6 +2369,7 @@ paths:
     get:
       tags: [marketdata]
       operationId: getInstrumentTerms
+      x-book-role: read
       summary: The terms of a fixed income instrument (investments design 4.2).
       responses:
         "200":
@@ -2296,6 +2385,7 @@ paths:
     put:
       tags: [marketdata]
       operationId: putInstrumentTerms
+      x-book-role: write
       summary: Set the terms of a fixed income instrument, replacing the earlier ones and the prices accrued from them.
       requestBody:
         required: true
@@ -2322,6 +2412,7 @@ paths:
     get:
       tags: [marketdata]
       operationId: listPrices
+      x-book-role: read
       summary: The chosen price of each date with prices in [from, to], at most 366 days (P8 amendment A60).
       parameters:
         - name: instrument
@@ -2362,6 +2453,7 @@ paths:
     post:
       tags: [marketdata]
       operationId: recordPrice
+      x-book-role: write
       summary: Record a manual price; a manual price of the same date is replaced.
       requestBody:
         required: true
@@ -2386,6 +2478,7 @@ paths:
     post:
       tags: [marketdata]
       operationId: importPrices
+      x-book-role: write
       summary: Record the prices of a CSV file as source csv, all or nothing.
       description: |
         Header `instrument,quote_instrument,date,value`, at most 10,000 lines. A rejected line returns
@@ -2420,6 +2513,7 @@ paths:
     get:
       tags: [ledger]
       operationId: listBillingCycleRules
+      x-book-role: read
       summary: Billing cycle rule versions of a card.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -2437,6 +2531,7 @@ paths:
     post:
       tags: [ledger]
       operationId: createBillingCycleRule
+      x-book-role: write
       summary: Add a billing cycle rule version, effective from a reference month.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -2463,6 +2558,7 @@ paths:
     get:
       tags: [ledger]
       operationId: getStatementPlacement
+      x-book-role: read
       summary: Statement a card purchase dated date would be billed on, with its dates adjusted by the rule's calendar; nothing is stored.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -2491,6 +2587,7 @@ paths:
     get:
       tags: [ledger]
       operationId: listCreditLimits
+      x-book-role: read
       summary: Credit limit versions of a card.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -2508,6 +2605,7 @@ paths:
     post:
       tags: [ledger]
       operationId: createCreditLimit
+      x-book-role: write
       summary: Add a credit limit version.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -2534,6 +2632,7 @@ paths:
     get:
       tags: [ledger]
       operationId: listCards
+      x-book-role: read
       summary: Physical and virtual cards of a card account.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -2551,6 +2650,7 @@ paths:
     post:
       tags: [ledger]
       operationId: createCard
+      x-book-role: write
       summary: Add a card.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -2577,6 +2677,7 @@ paths:
     patch:
       tags: [ledger]
       operationId: updateCard
+      x-book-role: write
       summary: Activate or deactivate a card.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -2603,6 +2704,7 @@ paths:
     get:
       tags: [ledger]
       operationId: listStatements
+      x-book-role: read
       summary: Statements of a card with amounts and status derived from its postings.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -2635,6 +2737,7 @@ paths:
     get:
       tags: [ledger]
       operationId: getStatement
+      x-book-role: read
       summary: A statement with its postings.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -2653,6 +2756,7 @@ paths:
     post:
       tags: [ledger]
       operationId: createInstallmentPurchase
+      x-book-role: write
       summary: Record a card purchase in installments.
       requestBody:
         required: true
@@ -2675,6 +2779,7 @@ paths:
     post:
       tags: [capture]
       operationId: previewCapture
+      x-book-role: write
       summary: Read each line of a text as a transaction draft; records nothing (A106).
       requestBody:
         required: true
@@ -2699,6 +2804,7 @@ paths:
     post:
       tags: [capture]
       operationId: suggestCaptureCategories
+      x-book-role: write
       summary: Name a category for descriptions classification left uncategorized (ADR 014).
       description: Kept answers are served without a model call; the others are asked of a language model in one request.
       requestBody:
@@ -2722,6 +2828,7 @@ paths:
     post:
       tags: [capture]
       operationId: suggestTransactionCategories
+      x-book-role: write
       summary: Name a category for existing uncategorized transactions (ADR 014 L1a).
       description: |
         Each transaction is asked as a capture line of its class with its description, under the use capture.suggest.
@@ -2753,6 +2860,7 @@ paths:
     get:
       tags: [assistant]
       operationId: listPresets
+      x-book-role: read
       summary: Known language model services, their notices and suggested models.
       responses:
         "200":
@@ -2767,6 +2875,7 @@ paths:
     get:
       tags: [assistant]
       operationId: listProviders
+      x-book-role: read
       summary: The book's providers in creation order, then the instance providers; never a key.
       responses:
         "200":
@@ -2780,6 +2889,7 @@ paths:
     post:
       tags: [assistant]
       operationId: createProvider
+      x-book-role: owner
       summary: Store a provider; its key is sealed under EQUORI_SECRET_KEY (ADR 008).
       description: |
         422 key_required when the preset requires a key and none is sent; 409 secret_key_missing
@@ -2807,6 +2917,7 @@ paths:
     patch:
       tags: [assistant]
       operationId: updateProvider
+      x-book-role: owner
       summary: Change a provider's name, base URL or key; an absent key keeps the stored one.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -2834,6 +2945,7 @@ paths:
     delete:
       tags: [assistant]
       operationId: deleteProvider
+      x-book-role: owner
       summary: Delete a provider and its chain targets; their uses fall back to the default.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -2848,6 +2960,7 @@ paths:
     get:
       tags: [assistant]
       operationId: listProviderModels
+      x-book-role: read
       summary: Ask the provider's API for its models, which also checks its key.
       description: 502 provider_unauthorized when the provider rejects the key; 502 provider_unavailable otherwise.
       parameters:
@@ -2871,6 +2984,7 @@ paths:
     get:
       tags: [assistant]
       operationId: listUsage
+      x-book-role: read
       summary: The book's usage per provider and model today and over the last 30 days, with declared limits (ADR 019 U6).
       description: Today is the instance's date; a provider resets its quota on its own schedule.
       responses:
@@ -2886,6 +3000,7 @@ paths:
     get:
       tags: [assistant]
       operationId: listUsageDays
+      x-book-role: read
       summary: The book's usage per day, provider and model over a range of at most 90 days.
       description: Both ends are included and the figures sum the uses. A day without use has no row.
       parameters:
@@ -2916,6 +3031,7 @@ paths:
     put:
       tags: [assistant]
       operationId: setUsageLimit
+      x-book-role: owner
       summary: Declare the daily limits of a provider and model; absent quotas remove them.
       requestBody:
         required: true
@@ -2936,6 +3052,7 @@ paths:
     get:
       tags: [assistant]
       operationId: getAssistantChat
+      x-book-role: read
       summary: Whether the conversation can be used now, with the target it would reach and when to retry.
       responses:
         "200":
@@ -2950,6 +3067,7 @@ paths:
     post:
       tags: [assistant]
       operationId: sendAssistantMessage
+      x-book-role: read
       summary: Run one conversation turn and stream its progress as Server-Sent Events.
       description: |
         Events: turn {conversation_id, message_id}, delta {text}, step {tool}, answer (AssistantMessage) and error (Problem).
@@ -2985,6 +3103,7 @@ paths:
     get:
       tags: [assistant]
       operationId: listAssistantConversations
+      x-book-role: read
       summary: The book's conversations, most recently updated first.
       parameters:
         - $ref: "#/components/parameters/Limit"
@@ -3003,6 +3122,7 @@ paths:
     delete:
       tags: [assistant]
       operationId: deleteAssistantConversations
+      x-book-role: read
       summary: Delete every conversation of the book with its messages and proposals.
       responses:
         "204":
@@ -3013,6 +3133,7 @@ paths:
     get:
       tags: [assistant]
       operationId: getAssistantConversation
+      x-book-role: read
       summary: A conversation with its messages and their proposals.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -3030,6 +3151,7 @@ paths:
     delete:
       tags: [assistant]
       operationId: deleteAssistantConversation
+      x-book-role: read
       summary: Delete a conversation with its messages and proposals; 404 conversation_not_found.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -3044,6 +3166,7 @@ paths:
     post:
       tags: [assistant]
       operationId: confirmAssistantProposal
+      x-book-role: write
       summary: Execute a pending proposal once, after checking that its data did not change.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -3064,6 +3187,7 @@ paths:
     post:
       tags: [assistant]
       operationId: rejectAssistantProposal
+      x-book-role: read
       summary: Reject a pending proposal.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -3084,6 +3208,7 @@ paths:
     get:
       tags: [assistant]
       operationId: listUses
+      x-book-role: read
       summary: Every declared use with its effective chain for the book.
       responses:
         "200":
@@ -3098,6 +3223,7 @@ paths:
     put:
       tags: [assistant]
       operationId: setUseChain
+      x-book-role: owner
       summary: Replace the book's chain of a use; an empty list restores the default.
       description: 422 capability_missing when a model lacks a capability the use needs.
       parameters:
@@ -3130,6 +3256,7 @@ paths:
     post:
       tags: [ledger]
       operationId: createTransactionBatch
+      x-book-role: write
       summary: Record several transactions and installment purchases at once, or none (A114).
       requestBody:
         required: true
@@ -3154,6 +3281,7 @@ paths:
     get:
       tags: [ledger]
       operationId: getCommitment
+      x-book-role: read
       summary: Installments not yet billed on the statement of a month.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -3180,6 +3308,7 @@ paths:
     post:
       tags: [ledger]
       operationId: payStatement
+      x-book-role: write
       summary: Pay a statement from a balance account.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -3211,6 +3340,7 @@ paths:
     post:
       tags: [ledger]
       operationId: financeStatement
+      x-book-role: write
       summary: Convert the unpaid amount of a closed statement into installments.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -3239,6 +3369,7 @@ paths:
     post:
       tags: [ledger]
       operationId: refundTransaction
+      x-book-role: write
       summary: Refund all or part of a card purchase.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -3270,6 +3401,7 @@ paths:
     get:
       tags: [ledger]
       operationId: getInstallmentPlan
+      x-book-role: read
       summary: Schedule and state of an installment plan.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -3288,6 +3420,7 @@ paths:
     post:
       tags: [ledger]
       operationId: cancelInstallmentPlan
+      x-book-role: write
       summary: Cancel an installment purchase.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -3319,6 +3452,7 @@ paths:
     post:
       tags: [ledger]
       operationId: anticipateInstallments
+      x-book-role: write
       summary: Pay future installments early.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -3350,6 +3484,7 @@ paths:
     get:
       tags: [ledger]
       operationId: listDisputes
+      x-book-role: read
       summary: Disputes of a transaction, ordered by opening date.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -3367,6 +3502,7 @@ paths:
     post:
       tags: [ledger]
       operationId: openDispute
+      x-book-role: write
       summary: Open a dispute on a card purchase.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -3395,6 +3531,7 @@ paths:
     post:
       tags: [ledger]
       operationId: resolveDispute
+      x-book-role: write
       summary: Resolve a dispute; a won dispute refunds the remaining charged amount.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -3423,6 +3560,7 @@ paths:
     get:
       tags: [ledger]
       operationId: listBalanceAssertions
+      x-book-role: read
       summary: Balances reported by the institution for a leaf balance account.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -3442,6 +3580,7 @@ paths:
     post:
       tags: [ledger]
       operationId: createBalanceAssertion
+      x-book-role: write
       summary: Record the institution's balance and reconcile the account when it matches.
       description: |
         The difference is the asserted amount minus the settled balance at the date. Zero reconciles
@@ -3474,6 +3613,7 @@ paths:
     post:
       tags: [ledger]
       operationId: resolveBalanceAssertion
+      x-book-role: write
       summary: Resolve the open difference of an assertion and reconcile the account.
       description: |
         adjustment records the difference against the equity account Adjustments; yield records a
@@ -3507,6 +3647,7 @@ paths:
     get:
       tags: [ledger]
       operationId: getReconciliationStatus
+      x-book-role: read
       summary: Last reconciliation date and the open difference of the latest assertion.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -3525,6 +3666,7 @@ paths:
     post:
       tags: [ledger]
       operationId: unlockAccount
+      x-book-role: write
       summary: Return reconciled postings settled on or after a date to cleared.
       description: Deletes the account's reconciliations dated on or after the date (P3 amendment A8).
       parameters:
@@ -3552,6 +3694,7 @@ paths:
     post:
       tags: [ledger]
       operationId: reconcileStatement
+      x-book-role: write
       summary: Confirm the institution's amount due for a closed statement.
       description: |
         An amount equal to the derived amount due marks the statement's postings reconciled
@@ -3583,6 +3726,7 @@ paths:
     post:
       tags: [ledger]
       operationId: deferStatementPostings
+      x-book-role: write
       summary: Move card postings of a statement to the next statement, as the owner's choice (A137).
       description: |
         Each transaction's card posting on the statement moves to the next statement through a
@@ -3616,6 +3760,7 @@ paths:
     put:
       tags: [ledger]
       operationId: setStatementFacts
+      x-book-role: write
       summary: Record the institution's facts for a statement, as the owner reads them (A85).
       description: |
         The owner's facts win over an aggregator's. The statement takes their dates, and the
@@ -3646,6 +3791,7 @@ paths:
     delete:
       tags: [ledger]
       operationId: removeStatementFacts
+      x-book-role: write
       summary: Remove the owner's facts; the statement takes the aggregator's facts or the rule's dates.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -3660,6 +3806,7 @@ paths:
     get:
       tags: [ledger]
       operationId: listAttachments
+      x-book-role: read
       summary: Files attached to a transaction.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -3679,6 +3826,7 @@ paths:
     post:
       tags: [ledger]
       operationId: createAttachment
+      x-book-role: write
       summary: Attach a file to a transaction.
       description: |
         At most 10 MiB of content (N26); the request body limit of this route is 11 MiB. Accepted media
@@ -3716,6 +3864,7 @@ paths:
     delete:
       tags: [ledger]
       operationId: deleteAttachment
+      x-book-role: write
       summary: Remove an attachment; the stored file is deleted when no attachment references it.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -3730,6 +3879,7 @@ paths:
     get:
       tags: [ledger]
       operationId: getAttachmentContent
+      x-book-role: read
       summary: Download the attached file, or show a PDF or an image in a frame of the application.
       description: |
         With disposition=inline the response is shown in place and its Content-Security-Policy
@@ -3772,6 +3922,7 @@ paths:
     get:
       tags: [classification]
       operationId: listRules
+      x-book-role: read
       summary: Categorization rules by priority.
       parameters:
         - $ref: "#/components/parameters/Limit"
@@ -3790,6 +3941,7 @@ paths:
     post:
       tags: [classification]
       operationId: createRule
+      x-book-role: write
       summary: Create a rule at the last priority.
       requestBody:
         required: true
@@ -3819,6 +3971,7 @@ paths:
     post:
       tags: [classification]
       operationId: reorderRules
+      x-book-role: write
       summary: Give every rule a new priority, in the order listed.
       requestBody:
         required: true
@@ -3843,6 +3996,7 @@ paths:
     post:
       tags: [classification]
       operationId: previewRule
+      x-book-role: write
       summary: What a rule would do alone over the transactions of the last 365 days (A81).
       description: |
         would_categorize counts the uncategorized transactions the rule categorizes; conflicts counts the categorized
@@ -3870,6 +4024,7 @@ paths:
     post:
       tags: [classification]
       operationId: runRules
+      x-book-role: write
       summary: Run categorization (F5) on every uncategorized transaction.
       responses:
         "200":
@@ -3884,6 +4039,7 @@ paths:
     get:
       tags: [classification]
       operationId: getCategorization
+      x-book-role: read
       summary: How the categories of a transaction were decided (P5 amendment A20).
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -3904,6 +4060,7 @@ paths:
     get:
       tags: [classification]
       operationId: listCategorizations
+      x-book-role: read
       summary: How the categories of several transactions were decided (A79).
       description: A transaction without a categorization record, or voided, is absent from items.
       parameters:
@@ -3933,6 +4090,7 @@ paths:
     get:
       tags: [classification]
       operationId: listSourceCategories
+      x-book-role: read
       summary: Categories aggregators assigned to imported lines, by name (P6 amendment A41).
       description: count is the number of imported lines that carried the category.
       parameters:
@@ -3951,6 +4109,7 @@ paths:
     put:
       tags: [classification]
       operationId: mapSourceCategory
+      x-book-role: write
       summary: Set the category of lines that carry the source category and no rule decides.
       description: category_id null clears it. The mapping applies to lines imported afterwards (method source, F5).
       parameters:
@@ -3978,6 +4137,7 @@ paths:
     get:
       tags: [classification]
       operationId: getCategorizationStatistics
+      x-book-role: read
       summary: Transactions dated in [from, to] by categorization method (SC5).
       parameters:
         - name: from
@@ -4007,6 +4167,7 @@ paths:
     get:
       tags: [classification]
       operationId: listRuleSuggestions
+      x-book-role: read
       summary: Rules suggested from repeated manual corrections (P5 amendment A24).
       parameters:
         - $ref: "#/components/parameters/Limit"
@@ -4031,6 +4192,7 @@ paths:
     post:
       tags: [classification]
       operationId: acceptRuleSuggestion
+      x-book-role: write
       summary: Create the suggested rule at the last priority.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -4061,6 +4223,7 @@ paths:
     post:
       tags: [classification]
       operationId: dismissRuleSuggestion
+      x-book-role: write
       summary: Dismiss a suggestion; it is not proposed again.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -4083,6 +4246,7 @@ paths:
     get:
       tags: [classification]
       operationId: getRule
+      x-book-role: read
       summary: One rule.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -4102,6 +4266,7 @@ paths:
     put:
       tags: [classification]
       operationId: changeRule
+      x-book-role: write
       summary: Replace a rule; its priority does not change.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -4129,6 +4294,7 @@ paths:
     delete:
       tags: [classification]
       operationId: deleteRule
+      x-book-role: write
       summary: Delete a rule; categorizations it decided keep the method rule.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -4145,6 +4311,7 @@ paths:
     get:
       tags: [classification]
       operationId: listPayeeAliases
+      x-book-role: read
       summary: Payee aliases, oldest first.
       parameters:
         - $ref: "#/components/parameters/Limit"
@@ -4163,6 +4330,7 @@ paths:
     post:
       tags: [classification]
       operationId: createPayeeAlias
+      x-book-role: write
       summary: Map raw descriptions to a payee (P5 amendment A22).
       requestBody:
         required: true
@@ -4192,6 +4360,7 @@ paths:
     get:
       tags: [classification]
       operationId: getPayeeAlias
+      x-book-role: read
       summary: One payee alias.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -4211,6 +4380,7 @@ paths:
     put:
       tags: [classification]
       operationId: changePayeeAlias
+      x-book-role: write
       summary: Replace a payee alias.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -4238,6 +4408,7 @@ paths:
     delete:
       tags: [classification]
       operationId: deletePayeeAlias
+      x-book-role: write
       summary: Delete a payee alias.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -4254,6 +4425,7 @@ paths:
     get:
       tags: [ingestion]
       operationId: getSyncSchedule
+      x-book-role: read
       summary: How often the scheduler checks the bank connections of the instance (ADR 029 BK23).
       responses:
         "200":
@@ -4267,6 +4439,7 @@ paths:
     put:
       tags: [ingestion]
       operationId: setSyncSchedule
+      x-book-role: read
       summary: Change the sync interval of the instance; admin only.
       requestBody:
         required: true
@@ -4291,6 +4464,7 @@ paths:
     get:
       tags: [ingestion]
       operationId: listImportBatches
+      x-book-role: read
       summary: Import batches, newest first.
       parameters:
         - $ref: "#/components/parameters/Limit"
@@ -4308,6 +4482,7 @@ paths:
     get:
       tags: [ingestion]
       operationId: getCsvProfile
+      x-book-role: read
       summary: How the CSV files of the account are read.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -4325,6 +4500,7 @@ paths:
     put:
       tags: [ingestion]
       operationId: saveCsvProfile
+      x-book-role: write
       summary: Set how the CSV files of the account are read (P4 amendment A13).
       description: |
         Columns are header names, or 1-based positions when header_rows is 0. Set amount_column, or
@@ -4354,6 +4530,7 @@ paths:
     post:
       tags: [ingestion]
       operationId: importFile
+      x-book-role: write
       summary: Import an OFX or CSV statement into a balance account.
       description: |
         Each line is deduplicated (I10), matched to an existing transaction of the account with the
@@ -4400,6 +4577,7 @@ paths:
     get:
       tags: [ingestion]
       operationId: getImportBatch
+      x-book-role: read
       summary: One import batch with its counts.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -4418,6 +4596,7 @@ paths:
     get:
       tags: [ingestion]
       operationId: listBatchRecords
+      x-book-role: read
       summary: The external records of a batch, in file order.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -4443,6 +4622,7 @@ paths:
     get:
       tags: [ingestion]
       operationId: listUnconfirmed
+      x-book-role: read
       summary: Entries of the account that neither an institution line nor balance confirmed (A103, A133).
       description: |
         The first posting of each transaction that carries no external record and that no
@@ -4471,6 +4651,7 @@ paths:
     post:
       tags: [ingestion]
       operationId: reopenExternalRecord
+      x-book-role: write
       summary: Return a discarded record to review (A140).
       description: |
         The record waits for review again, with the candidates the ledger holds now; a record that
@@ -4494,6 +4675,7 @@ paths:
     post:
       tags: [ingestion]
       operationId: resolveExternalRecord
+      x-book-role: write
       summary: Resolve a record that needs review.
       description: |
         match links the record to one of its candidates and clears that posting; create records a
@@ -4525,6 +4707,7 @@ paths:
     get:
       tags: [ingestion]
       operationId: listAggregators
+      x-book-role: read
       summary: Aggregators this instance offers, with the credential fields each requires.
       responses:
         "200":
@@ -4539,6 +4722,7 @@ paths:
     get:
       tags: [ingestion]
       operationId: listIntegrations
+      x-book-role: read
       summary: Aggregator integrations, by name.
       parameters:
         - $ref: "#/components/parameters/Limit"
@@ -4557,6 +4741,7 @@ paths:
     post:
       tags: [ingestion]
       operationId: createIntegration
+      x-book-role: write
       summary: Store the credentials of an aggregator application (P6 amendment A34).
       description: |
         The aggregator validates the credentials before they are stored, sealed under
@@ -4593,6 +4778,7 @@ paths:
     get:
       tags: [ingestion]
       operationId: getIntegration
+      x-book-role: read
       summary: Return an integration, without its credentials.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -4612,6 +4798,7 @@ paths:
     delete:
       tags: [ingestion]
       operationId: deleteIntegration
+      x-book-role: write
       summary: Delete an integration without connections (409 integration_in_use otherwise).
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -4628,6 +4815,7 @@ paths:
     put:
       tags: [ingestion]
       operationId: updateIntegrationCredentials
+      x-book-role: write
       summary: Replace the credentials of an integration after the aggregator validates them.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -4658,6 +4846,7 @@ paths:
     get:
       tags: [ingestion]
       operationId: listConnections
+      x-book-role: read
       summary: Connections with their external accounts, by name.
       parameters:
         - $ref: "#/components/parameters/Limit"
@@ -4676,6 +4865,7 @@ paths:
     post:
       tags: [ingestion]
       operationId: createConnection
+      x-book-role: write
       summary: Connect an aggregator item and list its accounts (P6 amendments A34, A35).
       description: |
         external_id is the identifier the aggregator gives the item (one item per institution).
@@ -4710,6 +4900,7 @@ paths:
     get:
       tags: [ingestion]
       operationId: getConnection
+      x-book-role: read
       summary: Return a connection with its external accounts.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -4729,6 +4920,7 @@ paths:
     delete:
       tags: [ingestion]
       operationId: deleteConnection
+      x-book-role: write
       summary: Delete a connection and its mappings; imported records and batches stay.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -4745,6 +4937,7 @@ paths:
     post:
       tags: [ingestion]
       operationId: syncConnection
+      x-book-role: write
       summary: Sync every mapped account of the connection now (P6 amendment A43).
       description: |
         One import batch per mapped account. An item that needs its owner at the aggregator
@@ -4774,6 +4967,7 @@ paths:
     put:
       tags: [ingestion]
       operationId: mapExternalAccount
+      x-book-role: write
       summary: Map an external account to a ledger account, or ignore it (P6 amendment A35).
       description: |
         account_id is a leaf balance account of the external account's currency and a compatible
@@ -4813,6 +5007,7 @@ paths:
     get:
       tags: [planning]
       operationId: listSchedules
+      x-book-role: read
       summary: Schedules in creation order.
       parameters:
         - $ref: "#/components/parameters/Limit"
@@ -4831,6 +5026,7 @@ paths:
     post:
       tags: [planning]
       operationId: createSchedule
+      x-book-role: write
       summary: Create a schedule and generate its occurrences up to today + 12 months (P7 amendments A46-A49).
       description: |
         Money leaves account_id for every kind except income. The counterpart is an expense category for bill
@@ -4864,6 +5060,7 @@ paths:
     get:
       tags: [planning]
       operationId: getSchedule
+      x-book-role: read
       summary: A schedule with its terms versions and pauses.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -4882,6 +5079,7 @@ paths:
     get:
       tags: [planning]
       operationId: listOccurrences
+      x-book-role: read
       summary: Occurrences with expected date in [from, to], at most 366 days, by date, or those a transaction realized.
       description: |
         State overdue is derived from expected and the schedule's grace days (P7 amendment A50). With transaction_id the
@@ -4934,6 +5132,7 @@ paths:
     post:
       tags: [planning]
       operationId: realizeOccurrence
+      x-book-role: write
       summary: Link a transaction to an expected occurrence; ledger changes never release it (P7 amendment A51).
       description: |
         The transaction has a posting on the schedule's account. 409 occurrence_closed when the occurrence is not
@@ -4967,6 +5166,7 @@ paths:
     post:
       tags: [planning]
       operationId: skipOccurrence
+      x-book-role: write
       summary: Skip an expected occurrence (T03; 409 occurrence_closed otherwise).
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -4995,6 +5195,7 @@ paths:
     post:
       tags: [planning]
       operationId: moveOccurrence
+      x-book-role: write
       summary: Move an expected occurrence to another date; terms changes never regenerate it (P7 amendment A52).
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -5023,6 +5224,7 @@ paths:
     post:
       tags: [planning]
       operationId: changeScheduleTerms
+      x-book-role: write
       summary: Add a terms version effective from a date after the latest one (T09; P7 amendments A49, A52).
       description: |
         Without recurrence the previous rule is kept, start included. Expected occurrences from the date on that
@@ -5056,6 +5258,7 @@ paths:
     post:
       tags: [planning]
       operationId: pauseSchedule
+      x-book-role: write
       summary: Suppress the dates in [from, to] (P7 amendment A52).
       description: 409 pause_overlap when it overlaps another pause; 409 schedule_ended on or after ends_on.
       parameters:
@@ -5087,6 +5290,7 @@ paths:
     post:
       tags: [planning]
       operationId: endSchedule
+      x-book-role: write
       summary: Produce no occurrence on or after a date; expected ones are removed, realized ones stay (P7 amendment A52).
       description: 409 schedule_ended when the schedule already ends on or before the date.
       parameters:
@@ -5116,6 +5320,7 @@ paths:
     get:
       tags: [planning]
       operationId: listBudgets
+      x-book-role: read
       summary: Budgets in creation order.
       parameters:
         - $ref: "#/components/parameters/Limit"
@@ -5134,6 +5339,7 @@ paths:
     post:
       tags: [planning]
       operationId: createBudget
+      x-book-role: write
       summary: Create the monthly budget of a category (P7 amendment A54; 409 budget_exists when it has one).
       requestBody:
         required: true
@@ -5165,6 +5371,7 @@ paths:
     get:
       tags: [planning]
       operationId: getBudget
+      x-book-role: read
       summary: A budget with its amounts by month.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -5182,6 +5389,7 @@ paths:
     delete:
       tags: [planning]
       operationId: deleteBudget
+      x-book-role: write
       summary: Delete a budget with its amounts; its category and postings are not touched (S144).
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -5196,6 +5404,7 @@ paths:
     post:
       tags: [planning]
       operationId: addBudgetAmount
+      x-book-role: write
       summary: Set the amount from a month on, after the latest one (T09).
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -5224,6 +5433,7 @@ paths:
     get:
       tags: [planning]
       operationId: getBudgetProgress
+      x-book-role: read
       summary: Planned, carried, spent and available amounts of a month, accrual view (P7 amendment A54).
       description: Spending of an income category is reported as a positive amount.
       parameters:
@@ -5253,6 +5463,7 @@ paths:
     get:
       tags: [planning]
       operationId: listGoals
+      x-book-role: read
       summary: Goals in creation order, with their progress today.
       parameters:
         - $ref: "#/components/parameters/Limit"
@@ -5271,6 +5482,7 @@ paths:
     post:
       tags: [planning]
       operationId: createGoal
+      x-book-role: write
       summary: Create a target balance over balance accounts by a date (P7 amendment A55).
       requestBody:
         required: true
@@ -5300,6 +5512,7 @@ paths:
     get:
       tags: [planning]
       operationId: getGoal
+      x-book-role: read
       summary: A goal with its progress today.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -5317,6 +5530,7 @@ paths:
     patch:
       tags: [planning]
       operationId: updateGoal
+      x-book-role: write
       summary: Change the name, target, due date or accounts of a goal; fields not sent stay as they are.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -5344,6 +5558,7 @@ paths:
     delete:
       tags: [planning]
       operationId: deleteGoal
+      x-book-role: write
       summary: Delete a goal; its accounts are not touched.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -5358,6 +5573,7 @@ paths:
     get:
       tags: [planning]
       operationId: getProjection
+      x-book-role: read
       summary: Projected balance of a balance account to a date after today, at most today + 12 months (P7 amendment A56).
       description: |
         opening is the booked balance today. Each point is an expected occurrence on the account, an overdue one
@@ -5387,6 +5603,7 @@ paths:
     get:
       tags: [planning]
       operationId: getCommitted
+      x-book-role: read
       summary: Installments and expected bills, subscriptions and savings committed in a month (P7 amendment A57).
       parameters:
         - name: month
@@ -5412,6 +5629,7 @@ paths:
     get:
       tags: [planning]
       operationId: getBudgetPlan
+      x-book-role: read
       summary: The reference income of a month, what is committed and the budgets to distribute it across (budget plan A129, A131).
       parameters:
         - $ref: "#/components/parameters/PlanMonth"
@@ -5431,6 +5649,7 @@ paths:
     put:
       tags: [planning]
       operationId: saveBudgetPlan
+      x-book-role: write
       summary: Save the reference choice and the amounts of a month from the current one on, in one transaction (budget plan A130).
       description: |
         Each listed category gets the amount from the month on, replacing the version of that month; a category without a
@@ -5460,6 +5679,7 @@ paths:
     post:
       tags: [planning]
       operationId: unrealizeOccurrence
+      x-book-role: write
       summary: Release a realized occurrence (409 occurrence_closed when it is not realized).
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -10297,7 +10517,7 @@ components:
             currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended,
             budget_exists, instrument_exists, mixed_instruments, price_missing, later_sale_exists,
             investment_transaction, system_account, attachment_not_inlineable, archive_too_new,
-            setup_token_invalid, setup_complete.
+            setup_token_invalid, setup_complete, book_role_required, books_not_found.
         request_id:
           type: string
         retry_at:

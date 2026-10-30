@@ -16,7 +16,9 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/andrelopes-code/equori/api"
 	"github.com/andrelopes-code/equori/internal/identity"
+	"github.com/andrelopes-code/equori/internal/platform/contract"
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/platform/locale"
 	"github.com/andrelopes-code/equori/internal/platform/postgres/pgtest"
@@ -48,7 +50,15 @@ func newHarness(t *testing.T, cfg identity.Config) *harness {
 	m.RegisterRoutes(mux)
 	mux.HandleFunc("GET /api/v1/probe", func(http.ResponseWriter, *http.Request) { h.probeCalls.Add(1) })
 	mux.Handle("/api/", httpserver.NotFound())
-	srv := httptest.NewServer(httpserver.Middleware(m.RequireSession(mux), log))
+	validator, err := contract.New(api.Contract, "/api/v1")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	handler := m.Authorize(validator.Middleware(mux), func(r *http.Request) (string, bool) {
+		return validator.Extension(r, "x-book-role")
+	})
+	srv := httptest.NewServer(httpserver.Middleware(handler, log))
 	t.Cleanup(srv.Close)
 
 	jar, err := cookiejar.New(nil)

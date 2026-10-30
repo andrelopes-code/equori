@@ -21,6 +21,8 @@ import (
 const (
 	CookieName = "equori_session"
 	BaseURL    = "/api/v1"
+
+	rolePublic = "public"
 )
 
 var _ StrictServerInterface = (*Server)(nil)
@@ -50,12 +52,13 @@ func (s *Server) Register(mux *http.ServeMux) {
 
 type memberKey struct{}
 
-// RequireSession rejects every /api/ request without a valid session, except login and the
-// first member setup.
-// Deny by default: a new endpoint is protected without opting in.
-func (s *Server) RequireSession(next http.Handler) http.Handler {
+// Authorize is the single authorization point for /api/ (HA9). required returns the x-book-role of
+// the operation r matches, and whether r matches one. Deny by default: a path without an operation
+// needs a session, and an operation without x-book-role is 403.
+func (s *Server) Authorize(next http.Handler, required func(*http.Request) (role string, matched bool)) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !isAPI(r) || isLogin(r) || isSetup(r) {
+		role, matched := required(r)
+		if !isAPI(r) || (matched && role == rolePublic) {
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -69,6 +72,11 @@ func (s *Server) RequireSession(next http.Handler) http.Handler {
 		access, err := s.svc.Authenticate(r.Context(), cookie.Value)
 		if err != nil {
 			s.errs.Write(w, r, err)
+			return
+		}
+
+		if matched && !access.Role.Allows(auth.BookRole(role)) {
+			s.errs.Write(w, r, app.ErrBookRoleRequired)
 			return
 		}
 
@@ -86,15 +94,6 @@ func (s *Server) RequireSession(next http.Handler) http.Handler {
 
 func isAPI(r *http.Request) bool {
 	return strings.HasPrefix(r.URL.Path, "/api/")
-}
-
-func isLogin(r *http.Request) bool {
-	return r.Method == http.MethodPost && r.URL.Path == BaseURL+"/session"
-}
-
-// isSetup: the setup token, not a session, guards the first member setup (W-U8).
-func isSetup(r *http.Request) bool {
-	return (r.Method == http.MethodGet || r.Method == http.MethodPost) && r.URL.Path == BaseURL+"/setup"
 }
 
 func (s *Server) GetSetup(ctx context.Context, _ GetSetupRequestObject) (GetSetupResponseObject, error) {
@@ -246,6 +245,8 @@ func ToProblem(err error) (problem.Details, bool) {
 		return problem.New(http.StatusForbidden, "setup_token_invalid", "the setup token is not the one this instance issued"), true
 	case errors.Is(err, app.ErrSetupComplete):
 		return problem.New(http.StatusConflict, "setup_complete", "the first member exists; sign in instead"), true
+	case errors.Is(err, app.ErrBookRoleRequired):
+		return problem.New(http.StatusForbidden, "book_role_required", "the member's role in this book does not allow this operation"), true
 	case errors.Is(err, app.ErrBooksNotFound):
 		return problem.New(http.StatusNotFound, "books_not_found", "the member has no book with this ID"), true
 	case errors.Is(err, app.ErrAccessTokenNotFound):

@@ -242,7 +242,9 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 			}, nil
 		},
 	}))
-	root.Handle("/", identityModule.RequireSession(validator.Middleware(mux)))
+	root.Handle("/", identityModule.Authorize(validator.Middleware(mux), func(r *http.Request) (string, bool) {
+		return validator.Extension(r, "x-book-role")
+	}))
 
 	return &App{
 		Handler: httpserver.Middleware(root, log,

@@ -70,7 +70,7 @@ func CurrentRole(ctx context.Context) (BookRole, bool) {
 }
 
 // MustMemberID panics when ctx has no member. Handlers under /api/v1 may call it:
-// identity.Module.RequireSession rejects unauthenticated requests before they reach them.
+// identity.Module.Authorize rejects unauthenticated requests before they reach them.
 func MustMemberID(ctx context.Context) int64 {
 	id, ok := MemberID(ctx)
 	if !ok {

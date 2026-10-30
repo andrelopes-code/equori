@@ -230,3 +230,49 @@ func TestValidatorDoesNotReadUploads(t *testing.T) {
 		t.Fatal("the handler did not run")
 	}
 }
+
+const extensionSpec = `
+openapi: 3.0.3
+info: {title: test, version: "1"}
+paths:
+  /things:
+    get:
+      x-book-role: read
+      responses: {"200": {description: OK}}
+  /plain:
+    get:
+      responses: {"200": {description: OK}}
+`
+
+func TestExtension(t *testing.T) {
+	t.Parallel()
+
+	v, err := New([]byte(extensionSpec), "/api/v1")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		method, path string
+		value        string
+		matched      bool
+	}{
+		{http.MethodGet, "/api/v1/things", "read", true},
+		{http.MethodGet, "/api/v1/plain", "", true},
+		{http.MethodGet, "/api/v1/none", "", false},
+		{http.MethodDelete, "/api/v1/things", "", false},
+		{http.MethodGet, "/other", "", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.method+" "+tt.path, func(t *testing.T) {
+			t.Parallel()
+
+			req := httptest.NewRequestWithContext(t.Context(), tt.method, tt.path, nil)
+
+			value, matched := v.Extension(req, "x-book-role")
+			if value != tt.value || matched != tt.matched {
+				t.Fatalf("Extension = (%q, %t), want (%q, %t)", value, matched, tt.value, tt.matched)
+			}
+		})
+	}
+}

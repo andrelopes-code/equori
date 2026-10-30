@@ -23,6 +23,7 @@ var (
 	ErrUnauthenticated    = errors.New("unauthenticated")
 	ErrBusy               = errors.New("too many concurrent password operations")
 	ErrBooksNotFound      = errors.New("books not found")
+	ErrBookRoleRequired   = errors.New("book role required")
 	ErrTimeZoneInvalid    = errors.New("time zone is not an IANA name")
 	// ErrAppearanceTooLarge reports an appearance object over MaxAppearanceBytes.
 	ErrAppearanceTooLarge = errors.New("appearance over 16 KiB")

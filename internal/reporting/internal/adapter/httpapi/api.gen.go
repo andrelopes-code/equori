@@ -287,7 +287,7 @@ type Problem struct {
 	// currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended,
 	// budget_exists, instrument_exists, mixed_instruments, price_missing, later_sale_exists,
 	// investment_transaction, system_account, attachment_not_inlineable, archive_too_new,
-	// setup_token_invalid, setup_complete.
+	// setup_token_invalid, setup_complete, book_role_required, books_not_found.
 	Code   string        `json:"code"`
 	Detail *string       `json:"detail,omitempty"`
 	Errors *[]FieldError `json:"errors,omitempty"`
