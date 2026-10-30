@@ -91,7 +91,7 @@ flowchart LR
   P15 --> P16[P16 Test and release]
 ```
 
-P11, P12 and P13 depend only on P10 and can run side by side. Each phase starts with a design spec when its design is open, then an implementation plan executed in slices of at most three tasks.
+P11, P12 and P13 depend only on P10 and can run side by side. Each phase is specified, planned and executed under section 9.4.3.
 
 | Phase | Scope | Exit criterion |
 |---|---|---|
@@ -103,7 +103,52 @@ P11, P12 and P13 depend only on P10 and can run side by side. Each phase starts 
 | P15 First use and help | First-use walkthrough; help pages for installation, bank connection and troubleshooting in both languages; in-app notices for due statements and budgets | P16 testers record their first transactions without outside help |
 | P16 Test and release | Security review; the owner and close people use real accounts of several banks; fixes; check of every exit criterion of P10 to P15; tag `v1.0.0` (ADR 022, V1) | Every exit criterion passes; no open defect of data loss, duplication or exposure |
 
-### 9.4.3 After 1.0
+### 9.4.3 Plans
+
+The planning model writes the spec and the plan of each phase: Opus, effort high. The implementing model executes the plan: Sonnet, effort medium or high. The implementing model makes no design decision. Every choice that changes behavior, schema, contract or user-facing text is written in the plan. A case the plan does not cover stops execution.
+
+Order of work for a phase:
+
+1. Spec in `docs/specs/`, when the design is open. It records each decision and its reason. The plan cites the spec section and does not repeat the reason.
+2. Plan in `docs/superpowers/plans/`, written after the planning model reads the code each task touches.
+3. Plan check by the planning model in a new session: every path, symbol and command named in the plan exists; every expected test value is derived; no question is open.
+4. Execution by the implementing model, one slice at a time, with the checkpoint of each slice.
+5. Review by the planning model at the end of the plan: the diff against the plan's edge cases and the phase's exit criterion.
+
+A plan holds at most four slices of at most three tasks. A larger phase is split into plans in dependency order.
+
+| Plan section | Content |
+|---|---|
+| Goal | The exit criterion of section 9.4.2 that the plan serves, quoted. |
+| Decisions | One row per decision: question, choice, source (spec section, ADR or owner). No open question remains. |
+| Contract | The exact text of every artifact the implementing model would otherwise invent: migration SQL, sqlc queries, `api/openapi.yaml` fragments, signatures of exported Go functions and ports, `Problem.code` values, catalog keys with pt-BR and en text, each region-dependent value with its extension point. |
+| Tasks | Grouped in slices. Each task names its effort, medium or high. High applies to migrations, money, authorization, session and bank-sync identity. |
+| Edge cases | Each case with the task and the test that cover it. |
+| Owner tasks | Steps the implementing model never executes: real bank accounts, a clean machine, a provider key, a release tag. |
+| Out of scope | Adjacent changes that the implementing model leaves untouched. |
+
+Each task holds:
+
+- Files to create, modify and test, anchored by function or type name, never by line number.
+- The failing test, written first, with its table of exact inputs and expected values, and the failure expected before the implementation.
+- The implementation steps.
+- The verification commands with their expected result. Commands are limited to the changed packages and never use the tags `eval` or `live`.
+- The commit message.
+
+A mechanical change across many files, such as the rename of `user_id` in P10, is a command or a script in the plan. The plan states the expected number of changed sites and the command that proves completion, with its expected output.
+
+The implementing model stops, writes the checkpoint and reports when any condition holds:
+
+- A file, symbol or command named in the plan is absent or has a different signature.
+- The new test passes before the implementation.
+- A test outside the task fails.
+- The task needs a file, dependency, migration, operation, `Problem.code` or text that the plan does not list.
+- The plan contradicts itself, an ADR, a spec or `CONTRIBUTING.md`.
+- A verification command fails after two fix attempts.
+
+After a stop, the planning model amends the plan. The implementing model resumes from the checkpoint.
+
+### 9.4.4 After 1.0
 
 | Item | Target |
 |---|---|
