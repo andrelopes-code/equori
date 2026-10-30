@@ -49,3 +49,67 @@ P1 to P9 are delivered; the SC1 check of P6 waits for the owner (`docs/operation
 Amendment of 2026-10-26: the cash view of a financed statement and of revolving credit is delivered (CV7 to CV10 of `docs/plans/2026-10-26-p9-cash-view.md`, S149, S150). Reason: the owner decided the rule.
 
 Amendment of 2026-10-26: the import of an archive of another schema version leaves the list above. ADR 021 versions the archive, and an archive of any earlier version imports into any later one.
+
+Amendment of 2026-10-30: the next step is P10 (section 9.4), starting with the design spec of shared books.
+
+## 9.4 Version 1.0
+
+Status: approved by the owner on 2026-10-30. Input: the owner's competitive study of 2026-10-30 and the owner's answers recorded in it.
+
+### 9.4.1 Scope decisions
+
+| Topic | Decision |
+|---|---|
+| Audience | People with basic computer knowledge who follow a guide and paste one prepared terminal command. |
+| Region | Complete use in Brazil. Other regions arrive after 1.0 as regional extensions (ADR 016). |
+| Forms | Docker only: compose and the standalone image. Windows runs Docker Desktop with WSL2, with a guide and a one-command script. The Windows installer (ADR 023) and the Homebrew formula leave the supported set of 1.0. |
+| Languages | Portuguese and English, both complete. |
+| Households | Phases 0 to 3 of the shared-books plan: books, a member separate from the book, invitation, switch of the active book, roles `owner`, `write` and `read`. Phase 4 follows 1.0. |
+| Aggregator | Meu Pluggy is the main path in Brazil; personal use is free without a time limit for up to 5 connections of one holder. File import (OFX, CSV) is the fallback. |
+| Changed bank data | equori decides alone only when a rule leaves no doubt. Every automatic decision appears in the sync summary with an undo; every other case waits for review. |
+| New versions | A new-version notice queries GitHub only with consent given at first access (amends N17). A backup runs before every upgrade in every form. |
+| Errors | An on-demand diagnostic file without amounts, names or descriptions, attached by the owner to an issue. |
+| Second factor | Optional TOTP and passkey with recovery codes, offered at first access and when remote access is set up. |
+| Backup | Daily in every form; a copy encrypted with the owner's password to a chosen folder; the screen shows the date of the last backup and warns when the copy is late. |
+| Settings | The environment holds only values needed before the database opens, security boundaries, and host or network values. Every other setting lives in the app at one level: instance, book, member or browser. The time zone moves to the book, with the region's zone as default; the sync interval moves to the instance screen; `EQUORI_GEMINI_API_KEY` is removed; appearance follows the member. |
+| Support | GitHub Issues and Discussions, and the in-app help. |
+| Notices | Inside equori only. |
+| Testing | The owner and close people, with real accounts. |
+| Release | By exit criteria, without a date. |
+
+### 9.4.2 Phases
+
+```mermaid
+flowchart LR
+  P10[P10 Books and settings] --> P11[P11 Households and access]
+  P10 --> P12[P12 Reliable bank connection]
+  P10 --> P13[P13 Protected data]
+  P11 --> P14[P14 Installation]
+  P12 --> P14
+  P13 --> P14
+  P14 --> P15[P15 First use and help]
+  P15 --> P16[P16 Test and release]
+```
+
+P11, P12 and P13 depend only on P10 and can run side by side. Each phase starts with a design spec when its design is open, then an implementation plan executed in slices of at most three tasks.
+
+| Phase | Scope | Exit criterion |
+|---|---|---|
+| P10 Books and settings | ADR of shared books, replacing the user part of ADR 003; member, books and membership tables with a 1:1 backfill; session and access token per member and book; `user_id` renamed `books_id`, `auth.MustUserID` split into `MustBooksID` and `MustMemberID`; every setting classified by level; time zone per book; appearance per member; the Gemini key moved to the assistant settings | Every test passes after the rename; a schema test rejects a business row without a book; each setting has one level and one source |
+| P11 Households and access | Invitation of a member, switch of the active book, roles enforced at one authorization point; optional TOTP and passkey with recovery codes | An HTTP test per role and per access without membership (404); login tests with TOTP, with a passkey and with a recovery code |
+| P12 Reliable bank connection | The institution's transaction id (`providerId`) as record identity when present; a periodic re-read beyond the 30-day window; automatic decisions only on unambiguous rules, with undo; a summary per sync; a notice for a stalled connection and for an expiring consent; the assistant names stale and unreconciled accounts in its answers | Replays of the October 2026 incidents (repeated payment, late line, amount changed after reconciliation, pending line posted under a new id) end with no duplicate and no unreported change; a connection without update past the spec's limit shows on the overview |
+| P13 Protected data | Daily backup in every form; encrypted copy to a chosen folder; backup screen; backup before every migration; diagnostic file; consented new-version notice | An encrypted copy restored into an empty instance reproduces every fact and derived value; a test proves the diagnostic file holds no amount, name or description |
+| P14 Installation | A configuration map in code that generates the installation guide and the example `.env`; start-up validation that names the variable, the expected value and an example; a one-command script (Docker check, WSL2 on Windows, free port, secret key, database password); first access by region and book; guides for Linux, macOS and Windows | A clean machine of each system reaches first access with one pasted command, checked in the release job or by a documented owner check |
+| P15 First use and help | First-use walkthrough; help pages for installation, bank connection and troubleshooting in both languages; in-app notices for due statements and budgets | P16 testers record their first transactions without outside help |
+| P16 Test and release | Security review; the owner and close people use real accounts of several banks; fixes; check of every exit criterion of P10 to P15; tag `v1.0.0` (ADR 022, V1) | Every exit criterion passes; no open defect of data loss, duplication or exposure |
+
+### 9.4.3 After 1.0
+
+| Item | Target |
+|---|---|
+| Phase 4 of shared books: transfer between books, consolidated report, shared expense with another book as counterparty | 1.x |
+| Import from other applications (Mobills, Organizze, YNAB, Actual) | 1.1 |
+| IRPF report, PDF and receipt reading with a local model, NFC-e items, CDI benchmark | 1.x |
+| Windows installer and Homebrew formula as supported forms | 1.x |
+| Notices outside equori (e-mail, push) | 1.x |
+| Regional extensions: aggregators outside Brazil, CAMT.053 and MT940 import, import profiles per bank, further languages | After the Brazilian goal |
