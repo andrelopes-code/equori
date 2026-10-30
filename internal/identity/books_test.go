@@ -73,7 +73,7 @@ func TestLoginBooksOrder(t *testing.T) {
 			h := apitest.Empty(t)
 			email := "ann@example.com"
 
-			if _, err := h.App.Identity.CreateUser(t.Context(), email, apitest.Password, "admin", locale.Locale{Language: "pt", Region: "BR"}, "BRL"); err != nil {
+			if _, err := h.App.Identity.CreateMember(t.Context(), email, apitest.Password, "admin", locale.Locale{Language: "pt", Region: "BR"}, "BRL"); err != nil {
 				t.Fatal(err)
 			}
 
@@ -100,7 +100,7 @@ func TestLoginPrefersOwnerBooks(t *testing.T) {
 	h := apitest.Empty(t)
 	email := "ann@example.com"
 
-	if _, err := h.App.Identity.CreateUser(t.Context(), email, apitest.Password, "admin", locale.Locale{Language: "pt", Region: "BR"}, "BRL"); err != nil {
+	if _, err := h.App.Identity.CreateMember(t.Context(), email, apitest.Password, "admin", locale.Locale{Language: "pt", Region: "BR"}, "BRL"); err != nil {
 		t.Fatal(err)
 	}
 

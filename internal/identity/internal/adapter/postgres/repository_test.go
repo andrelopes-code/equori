@@ -14,9 +14,9 @@ func TestRepositoryUsers(t *testing.T) {
 	t.Parallel()
 	ctx := t.Context()
 	repo := NewRepository(pgtest.New(t))
-	in := domain.User{Email: "ann@example.com", PasswordHash: "h", Role: domain.RoleAdmin, Language: "pt"}
+	in := domain.Member{Email: "ann@example.com", PasswordHash: "h", Role: domain.RoleAdmin, Language: "pt"}
 
-	created, _, err := repo.CreateUser(ctx, in, "BR", "BRL")
+	created, _, err := repo.CreateMember(ctx, in, "BR", "BRL")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -25,16 +25,16 @@ func TestRepositoryUsers(t *testing.T) {
 		t.Fatalf("unexpected user %+v", created)
 	}
 
-	if _, _, err := repo.CreateUser(ctx, in, "BR", "BRL"); !errors.Is(err, app.ErrEmailTaken) {
+	if _, _, err := repo.CreateMember(ctx, in, "BR", "BRL"); !errors.Is(err, app.ErrEmailTaken) {
 		t.Fatalf("duplicate email err = %v, want ErrEmailTaken", err)
 	}
 
-	got, err := repo.UserByEmail(ctx, in.Email)
+	got, err := repo.MemberByEmail(ctx, in.Email)
 	if err != nil || got != created {
-		t.Fatalf("UserByEmail = %+v, %v; want %+v", got, err, created)
+		t.Fatalf("MemberByEmail = %+v, %v; want %+v", got, err, created)
 	}
 
-	if _, err := repo.UserByEmail(ctx, "nobody@example.com"); !errors.Is(err, app.ErrNotFound) {
+	if _, err := repo.MemberByEmail(ctx, "nobody@example.com"); !errors.Is(err, app.ErrNotFound) {
 		t.Fatalf("unknown email err = %v, want ErrNotFound", err)
 	}
 }
@@ -44,7 +44,7 @@ func TestRepositorySessions(t *testing.T) {
 	ctx := t.Context()
 	repo := NewRepository(pgtest.New(t))
 
-	user, booksID, err := repo.CreateUser(ctx, domain.User{Email: "ann@example.com", PasswordHash: "h", Role: domain.RoleMember, Language: "pt"}, "BR", "BRL")
+	user, booksID, err := repo.CreateMember(ctx, domain.Member{Email: "ann@example.com", PasswordHash: "h", Role: domain.RoleMember, Language: "pt"}, "BR", "BRL")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -56,11 +56,11 @@ func TestRepositorySessions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if got, gotBooks, err := repo.UserBySession(ctx, s.TokenHash, now); err != nil || got.ID != user.ID || gotBooks != booksID {
-		t.Fatalf("UserBySession = %+v, %d, %v; want user %d, books %d", got, gotBooks, err, user.ID, booksID)
+	if got, gotBooks, err := repo.MemberBySession(ctx, s.TokenHash, now); err != nil || got.ID != user.ID || gotBooks != booksID {
+		t.Fatalf("MemberBySession = %+v, %d, %v; want user %d, books %d", got, gotBooks, err, user.ID, booksID)
 	}
 
-	if _, _, err := repo.UserBySession(ctx, s.TokenHash, s.ExpiresAt); !errors.Is(err, app.ErrNotFound) {
+	if _, _, err := repo.MemberBySession(ctx, s.TokenHash, s.ExpiresAt); !errors.Is(err, app.ErrNotFound) {
 		t.Fatalf("expired session err = %v, want ErrNotFound", err)
 	}
 
@@ -68,7 +68,7 @@ func TestRepositorySessions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, _, err := repo.UserBySession(ctx, s.TokenHash, now); !errors.Is(err, app.ErrNotFound) {
+	if _, _, err := repo.MemberBySession(ctx, s.TokenHash, now); !errors.Is(err, app.ErrNotFound) {
 		t.Fatalf("session survived DeleteExpiredSessions: err = %v", err)
 	}
 
@@ -81,7 +81,7 @@ func TestRepositorySessions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, _, err := repo.UserBySession(ctx, s2.TokenHash, now); !errors.Is(err, app.ErrNotFound) {
+	if _, _, err := repo.MemberBySession(ctx, s2.TokenHash, now); !errors.Is(err, app.ErrNotFound) {
 		t.Fatalf("session survived DeleteSession: err = %v", err)
 	}
 }

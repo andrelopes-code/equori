@@ -37,7 +37,7 @@ func (s *Service) UseSetupHooks(h SetupHooks) { s.setup.hooks = h }
 // StartSetup returns a new setup token while no user exists, and "" afterwards (W-U1). The token
 // lives in memory only: a restart issues another.
 func (s *Service) StartSetup(ctx context.Context) (string, error) {
-	exists, err := s.repo.AnyUser(ctx)
+	exists, err := s.repo.AnyMember(ctx)
 	if err != nil || exists {
 		return "", err
 	}
@@ -56,19 +56,19 @@ func (s *Service) StartSetup(ctx context.Context) (string, error) {
 }
 
 func (s *Service) SetupRequired(ctx context.Context) (bool, error) {
-	exists, err := s.repo.AnyUser(ctx)
+	exists, err := s.repo.AnyMember(ctx)
 	return !exists, err
 }
 
 // CompleteSetup creates the first user, an admin, and signs it in (W-U3, W-U4).
-func (s *Service) CompleteSetup(ctx context.Context, token, email, plain string, l locale.Locale, base money.Currency) (Session, domain.User, error) {
+func (s *Service) CompleteSetup(ctx context.Context, token, email, plain string, l locale.Locale, base money.Currency) (Session, domain.Member, error) {
 	required, err := s.SetupRequired(ctx)
 	if err != nil {
-		return Session{}, domain.User{}, err
+		return Session{}, domain.Member{}, err
 	}
 
 	if !required {
-		return Session{}, domain.User{}, ErrSetupComplete
+		return Session{}, domain.Member{}, ErrSetupComplete
 	}
 
 	s.setup.mu.Lock()
@@ -76,7 +76,7 @@ func (s *Service) CompleteSetup(ctx context.Context, token, email, plain string,
 	s.setup.mu.Unlock()
 
 	if stored == "" || subtle.ConstantTimeCompare([]byte(token), []byte(stored)) != 1 {
-		return Session{}, domain.User{}, ErrSetupTokenInvalid
+		return Session{}, domain.Member{}, ErrSetupTokenInvalid
 	}
 
 	if base == "" && locale.ValidRegion(l.Region) {
@@ -86,18 +86,18 @@ func (s *Service) CompleteSetup(ctx context.Context, token, email, plain string,
 		}
 
 		if !ok {
-			return Session{}, domain.User{}, &domain.FieldError{Field: "base_currency", Message: "is required for this region"}
+			return Session{}, domain.Member{}, &domain.FieldError{Field: "base_currency", Message: "is required for this region"}
 		}
 	}
 
-	u, err := s.newUser(ctx, email, plain, domain.RoleAdmin, l, base)
+	u, err := s.newMember(ctx, email, plain, domain.RoleAdmin, l, base)
 	if err != nil {
-		return Session{}, domain.User{}, err
+		return Session{}, domain.Member{}, err
 	}
 
-	created, booksID, err := s.repo.CreateFirstUser(ctx, u, l.Region, base)
+	created, booksID, err := s.repo.CreateFirstMember(ctx, u, l.Region, base)
 	if err != nil {
-		return Session{}, domain.User{}, err
+		return Session{}, domain.Member{}, err
 	}
 
 	s.setup.mu.Lock()
@@ -110,7 +110,7 @@ func (s *Service) CompleteSetup(ctx context.Context, token, email, plain string,
 
 	session, err := s.startSession(ctx, created.ID, booksID, s.now())
 	if err != nil {
-		return Session{}, domain.User{}, err
+		return Session{}, domain.Member{}, err
 	}
 
 	return session, created, nil

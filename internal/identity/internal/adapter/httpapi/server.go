@@ -47,7 +47,7 @@ func (s *Server) Register(mux *http.ServeMux) {
 	})
 }
 
-type userKey struct{}
+type memberKey struct{}
 
 // RequireSession rejects every /api/ request without a valid session, except login and the
 // first-user setup.
@@ -72,7 +72,7 @@ func (s *Server) RequireSession(next http.Handler) http.Handler {
 		}
 
 		ctx := auth.WithIdentity(r.Context(), user.ID, booksID)
-		ctx = context.WithValue(ctx, userKey{}, user)
+		ctx = context.WithValue(ctx, memberKey{}, user)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
@@ -153,7 +153,7 @@ func (s *Server) DeleteSession(ctx context.Context, req DeleteSessionRequestObje
 }
 
 func (s *Server) GetCurrentUser(ctx context.Context, _ GetCurrentUserRequestObject) (GetCurrentUserResponseObject, error) {
-	user, ok := ctx.Value(userKey{}).(domain.User)
+	user, ok := ctx.Value(memberKey{}).(domain.Member)
 	if !ok {
 		return nil, app.ErrUnauthenticated
 	}
@@ -167,7 +167,7 @@ func (s *Server) GetCurrentUser(ctx context.Context, _ GetCurrentUserRequestObje
 }
 
 func (s *Server) UpdateCurrentUser(ctx context.Context, req UpdateCurrentUserRequestObject) (UpdateCurrentUserResponseObject, error) {
-	user, ok := ctx.Value(userKey{}).(domain.User)
+	user, ok := ctx.Value(memberKey{}).(domain.Member)
 	if !ok {
 		return nil, app.ErrUnauthenticated
 	}
@@ -184,7 +184,7 @@ func (s *Server) UpdateCurrentUser(ctx context.Context, req UpdateCurrentUserReq
 	return UpdateCurrentUser200JSONResponse(toAPIUser(user, l)), nil
 }
 
-func toAPIUser(u domain.User, l locale.Locale) User {
+func toAPIUser(u domain.Member, l locale.Locale) User {
 	return User{Id: u.ID, Email: u.Email, Role: UserRole(u.Role), Language: l.Language, Region: l.Region}
 }
 

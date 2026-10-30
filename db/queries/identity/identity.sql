@@ -65,7 +65,7 @@ ORDER BY
 LIMIT
     1;
 
--- name: GetUserByID :one
+-- name: GetMemberByID :one
 SELECT
     *
 FROM
@@ -73,7 +73,7 @@ FROM
 WHERE
     id = $1;
 
--- name: GetUserByEmail :one
+-- name: GetMemberByEmail :one
 SELECT
     *
 FROM
@@ -87,7 +87,7 @@ INSERT INTO
 VALUES
     ($1, $2, $3, $4, $5);
 
--- name: GetUserBySession :one
+-- name: GetMemberBySession :one
 SELECT
     m.id,
     m.email,
@@ -114,11 +114,11 @@ DELETE FROM identity_session
 WHERE
     expires_at <= $1;
 
--- name: LockUsers :exec
+-- name: LockMembers :exec
 -- The first-user setup creates its admin under this lock, so two requests yield one admin (W-U4).
 LOCK TABLE identity_member IN EXCLUSIVE MODE;
 
--- name: AnyUser :one
+-- name: AnyMember :one
 SELECT
     EXISTS (
         SELECT

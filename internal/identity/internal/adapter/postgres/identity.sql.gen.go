@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-const anyUser = `-- name: AnyUser :one
+const anyMember = `-- name: AnyMember :one
 SELECT
     EXISTS (
         SELECT
@@ -20,8 +20,8 @@ SELECT
     )
 `
 
-func (q *Queries) AnyUser(ctx context.Context) (bool, error) {
-	row := q.db.QueryRow(ctx, anyUser)
+func (q *Queries) AnyMember(ctx context.Context) (bool, error) {
+	row := q.db.QueryRow(ctx, anyMember)
 	var exists bool
 	err := row.Scan(&exists)
 	return exists, err
@@ -202,7 +202,7 @@ func (q *Queries) GetLoginBooks(ctx context.Context, memberID int64) (int64, err
 	return books_id, err
 }
 
-const getUserByEmail = `-- name: GetUserByEmail :one
+const getMemberByEmail = `-- name: GetMemberByEmail :one
 SELECT
     id, email, password_hash, role, disabled_at, created_at, language
 FROM
@@ -211,8 +211,8 @@ WHERE
     email = $1
 `
 
-func (q *Queries) GetUserByEmail(ctx context.Context, email string) (IdentityMember, error) {
-	row := q.db.QueryRow(ctx, getUserByEmail, email)
+func (q *Queries) GetMemberByEmail(ctx context.Context, email string) (IdentityMember, error) {
+	row := q.db.QueryRow(ctx, getMemberByEmail, email)
 	var i IdentityMember
 	err := row.Scan(
 		&i.ID,
@@ -226,7 +226,7 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (IdentityMem
 	return i, err
 }
 
-const getUserByID = `-- name: GetUserByID :one
+const getMemberByID = `-- name: GetMemberByID :one
 SELECT
     id, email, password_hash, role, disabled_at, created_at, language
 FROM
@@ -235,8 +235,8 @@ WHERE
     id = $1
 `
 
-func (q *Queries) GetUserByID(ctx context.Context, id int64) (IdentityMember, error) {
-	row := q.db.QueryRow(ctx, getUserByID, id)
+func (q *Queries) GetMemberByID(ctx context.Context, id int64) (IdentityMember, error) {
+	row := q.db.QueryRow(ctx, getMemberByID, id)
 	var i IdentityMember
 	err := row.Scan(
 		&i.ID,
@@ -250,7 +250,7 @@ func (q *Queries) GetUserByID(ctx context.Context, id int64) (IdentityMember, er
 	return i, err
 }
 
-const getUserBySession = `-- name: GetUserBySession :one
+const getMemberBySession = `-- name: GetMemberBySession :one
 SELECT
     m.id,
     m.email,
@@ -268,12 +268,12 @@ WHERE
     AND s.expires_at > $2
 `
 
-type GetUserBySessionParams struct {
+type GetMemberBySessionParams struct {
 	TokenHash []byte
 	ExpiresAt time.Time
 }
 
-type GetUserBySessionRow struct {
+type GetMemberBySessionRow struct {
 	ID           int64
 	Email        string
 	PasswordHash string
@@ -284,9 +284,9 @@ type GetUserBySessionRow struct {
 	BooksID      int64
 }
 
-func (q *Queries) GetUserBySession(ctx context.Context, arg GetUserBySessionParams) (GetUserBySessionRow, error) {
-	row := q.db.QueryRow(ctx, getUserBySession, arg.TokenHash, arg.ExpiresAt)
-	var i GetUserBySessionRow
+func (q *Queries) GetMemberBySession(ctx context.Context, arg GetMemberBySessionParams) (GetMemberBySessionRow, error) {
+	row := q.db.QueryRow(ctx, getMemberBySession, arg.TokenHash, arg.ExpiresAt)
+	var i GetMemberBySessionRow
 	err := row.Scan(
 		&i.ID,
 		&i.Email,
@@ -300,13 +300,13 @@ func (q *Queries) GetUserBySession(ctx context.Context, arg GetUserBySessionPara
 	return i, err
 }
 
-const lockUsers = `-- name: LockUsers :exec
+const lockMembers = `-- name: LockMembers :exec
 LOCK TABLE identity_member IN EXCLUSIVE MODE
 `
 
 // The first-user setup creates its admin under this lock, so two requests yield one admin (W-U4).
-func (q *Queries) LockUsers(ctx context.Context) error {
-	_, err := q.db.Exec(ctx, lockUsers)
+func (q *Queries) LockMembers(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, lockMembers)
 	return err
 }
 

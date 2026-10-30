@@ -25,20 +25,20 @@ var (
 
 // Repository returns ErrNotFound for missing rows and ErrEmailTaken on duplicate email.
 type Repository interface {
-	CreateUser(ctx context.Context, u domain.User, region string, base money.Currency) (domain.User, int64, error)
-	// CreateFirstUser returns ErrSetupComplete when a user exists.
-	CreateFirstUser(ctx context.Context, u domain.User, region string, base money.Currency) (domain.User, int64, error)
-	AnyUser(ctx context.Context) (bool, error)
+	CreateMember(ctx context.Context, u domain.Member, region string, base money.Currency) (domain.Member, int64, error)
+	// CreateFirstMember returns ErrSetupComplete when a user exists.
+	CreateFirstMember(ctx context.Context, u domain.Member, region string, base money.Currency) (domain.Member, int64, error)
+	AnyMember(ctx context.Context) (bool, error)
 	// UpdateProfile stores the language of the member and the region of the books in one transaction.
 	UpdateProfile(ctx context.Context, memberID, booksID int64, l locale.Locale) error
 	// Locale returns ErrNotFound without rows.
 	Locale(ctx context.Context, booksID, memberID int64) (locale.Locale, error)
 	// LoginBooks returns ErrNotFound without rows.
 	LoginBooks(ctx context.Context, memberID int64) (int64, error)
-	UserByID(ctx context.Context, memberID int64) (domain.User, error)
-	UserByEmail(ctx context.Context, email string) (domain.User, error)
+	MemberByID(ctx context.Context, memberID int64) (domain.Member, error)
+	MemberByEmail(ctx context.Context, email string) (domain.Member, error)
 	CreateSession(ctx context.Context, s domain.Session) error
-	UserBySession(ctx context.Context, tokenHash []byte, now time.Time) (domain.User, int64, error)
+	MemberBySession(ctx context.Context, tokenHash []byte, now time.Time) (domain.Member, int64, error)
 	DeleteSession(ctx context.Context, tokenHash []byte) error
 	DeleteExpiredSessions(ctx context.Context, now time.Time) error
 	AccessTokenRepository
@@ -72,50 +72,50 @@ func NewService(repo Repository, now func() time.Time) *Service {
 	}
 }
 
-func (s *Service) CreateUser(ctx context.Context, email, plain string, role domain.Role, l locale.Locale, base money.Currency) (domain.User, error) {
-	u, err := s.newUser(ctx, email, plain, role, l, base)
+func (s *Service) CreateMember(ctx context.Context, email, plain string, role domain.Role, l locale.Locale, base money.Currency) (domain.Member, error) {
+	u, err := s.newMember(ctx, email, plain, role, l, base)
 	if err != nil {
-		return domain.User{}, err
+		return domain.Member{}, err
 	}
 
-	created, _, err := s.repo.CreateUser(ctx, u, l.Region, base)
+	created, _, err := s.repo.CreateMember(ctx, u, l.Region, base)
 
 	return created, err
 }
 
-// newUser validates a new user and hashes its password.
-func (s *Service) newUser(ctx context.Context, email, plain string, role domain.Role, l locale.Locale, base money.Currency) (domain.User, error) {
+// newMember validates a new user and hashes its password.
+func (s *Service) newMember(ctx context.Context, email, plain string, role domain.Role, l locale.Locale, base money.Currency) (domain.Member, error) {
 	email, err := domain.NormalizeEmail(email)
 	if err != nil {
-		return domain.User{}, err
+		return domain.Member{}, err
 	}
 
 	if err := domain.ValidatePassword(plain); err != nil {
-		return domain.User{}, err
+		return domain.Member{}, err
 	}
 
 	if !role.Valid() {
-		return domain.User{}, domain.ErrInvalidRole
+		return domain.Member{}, domain.ErrInvalidRole
 	}
 
 	if err := validateLocale(l); err != nil {
-		return domain.User{}, err
+		return domain.Member{}, err
 	}
 
 	if _, err := money.ParseCurrency(string(base)); err != nil {
-		return domain.User{}, &domain.FieldError{Field: "base_currency", Message: "must be an ISO 4217 currency code"}
+		return domain.Member{}, &domain.FieldError{Field: "base_currency", Message: "must be an ISO 4217 currency code"}
 	}
 
 	release, err := s.acquireHashSlot(ctx)
 	if err != nil {
-		return domain.User{}, err
+		return domain.Member{}, err
 	}
 
 	hash := password.Hash(plain)
 
 	release()
 
-	return domain.User{Email: email, PasswordHash: hash, Role: role, Language: l.Language}, nil
+	return domain.Member{Email: email, PasswordHash: hash, Role: role, Language: l.Language}, nil
 }
 
 func validateLocale(l locale.Locale) error {
@@ -142,7 +142,7 @@ func (s *Service) Profile(ctx context.Context, booksID, memberID int64) (locale.
 
 // IsAdmin reports whether a member has the role admin (ADR 025 F8).
 func (s *Service) IsAdmin(ctx context.Context, memberID int64) (bool, error) {
-	user, err := s.repo.UserByID(ctx, memberID)
+	user, err := s.repo.MemberByID(ctx, memberID)
 	if err != nil {
 		return false, fmt.Errorf("load member %d: %w", memberID, err)
 	}
@@ -205,7 +205,7 @@ func (s *Service) Login(ctx context.Context, email, plain string) (Session, erro
 		return Session{}, ErrTooManyAttempts
 	}
 
-	user, err := s.repo.UserByEmail(ctx, email)
+	user, err := s.repo.MemberByEmail(ctx, email)
 	switch {
 	case errors.Is(err, ErrNotFound):
 		if _, err := s.verify(ctx, plain, s.dummyHash); err != nil {
@@ -258,15 +258,15 @@ func (s *Service) Logout(ctx context.Context, token string) error {
 }
 
 // Authenticate returns the member and the active books ID; ErrUnauthenticated for unknown or expired tokens and disabled members.
-func (s *Service) Authenticate(ctx context.Context, token string) (domain.User, int64, error) {
-	user, booksID, err := s.repo.UserBySession(ctx, domain.HashToken(token), s.now())
+func (s *Service) Authenticate(ctx context.Context, token string) (domain.Member, int64, error) {
+	user, booksID, err := s.repo.MemberBySession(ctx, domain.HashToken(token), s.now())
 	switch {
 	case errors.Is(err, ErrNotFound):
-		return domain.User{}, 0, ErrUnauthenticated
+		return domain.Member{}, 0, ErrUnauthenticated
 	case err != nil:
-		return domain.User{}, 0, fmt.Errorf("load session: %w", err)
+		return domain.Member{}, 0, fmt.Errorf("load session: %w", err)
 	case user.Disabled:
-		return domain.User{}, 0, ErrUnauthenticated
+		return domain.Member{}, 0, ErrUnauthenticated
 	}
 
 	return user, booksID, nil

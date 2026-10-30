@@ -122,7 +122,7 @@ func TestSessionLifecycle(t *testing.T) {
 	t.Parallel()
 
 	h := newHarness(t, identity.Config{})
-	if _, err := h.module.CreateUser(t.Context(), email, password, identity.RoleAdmin, locale.Locale{Language: "pt", Region: "BR"}, "BRL"); err != nil {
+	if _, err := h.module.CreateMember(t.Context(), email, password, identity.RoleAdmin, locale.Locale{Language: "pt", Region: "BR"}, "BRL"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -161,7 +161,7 @@ func TestLoginFailures(t *testing.T) {
 	t.Parallel()
 
 	h := newHarness(t, identity.Config{})
-	if _, err := h.module.CreateUser(t.Context(), email, password, identity.RoleMember, locale.Locale{Language: "pt", Region: "BR"}, "BRL"); err != nil {
+	if _, err := h.module.CreateMember(t.Context(), email, password, identity.RoleMember, locale.Locale{Language: "pt", Region: "BR"}, "BRL"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -203,7 +203,7 @@ func TestUnknownAPIRoute(t *testing.T) {
 	t.Parallel()
 
 	h := newHarness(t, identity.Config{})
-	if _, err := h.module.CreateUser(t.Context(), email, password, identity.RoleMember, locale.Locale{Language: "pt", Region: "BR"}, "BRL"); err != nil {
+	if _, err := h.module.CreateMember(t.Context(), email, password, identity.RoleMember, locale.Locale{Language: "pt", Region: "BR"}, "BRL"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -224,7 +224,7 @@ func TestConcurrentLoginAttemptsRespectLimit(t *testing.T) {
 	t.Parallel()
 
 	h := newHarness(t, identity.Config{})
-	if _, err := h.module.CreateUser(t.Context(), email, password, identity.RoleMember, locale.Locale{Language: "pt", Region: "BR"}, "BRL"); err != nil {
+	if _, err := h.module.CreateMember(t.Context(), email, password, identity.RoleMember, locale.Locale{Language: "pt", Region: "BR"}, "BRL"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -254,7 +254,7 @@ func TestSessionCookieAttributes(t *testing.T) {
 	t.Parallel()
 
 	h := newHarness(t, identity.Config{SecureCookies: true})
-	if _, err := h.module.CreateUser(t.Context(), email, password, identity.RoleMember, locale.Locale{Language: "pt", Region: "BR"}, "BRL"); err != nil {
+	if _, err := h.module.CreateMember(t.Context(), email, password, identity.RoleMember, locale.Locale{Language: "pt", Region: "BR"}, "BRL"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -271,23 +271,23 @@ func TestCreateUserValidation(t *testing.T) {
 	h := newHarness(t, identity.Config{})
 	ctx := t.Context()
 
-	if _, err := h.module.CreateUser(ctx, "not an email", password, identity.RoleMember, locale.Locale{Language: "pt", Region: "BR"}, "BRL"); err == nil {
+	if _, err := h.module.CreateMember(ctx, "not an email", password, identity.RoleMember, locale.Locale{Language: "pt", Region: "BR"}, "BRL"); err == nil {
 		t.Fatal("invalid email accepted")
 	}
 
-	if _, err := h.module.CreateUser(ctx, email, "short", identity.RoleMember, locale.Locale{Language: "pt", Region: "BR"}, "BRL"); err == nil {
+	if _, err := h.module.CreateMember(ctx, email, "short", identity.RoleMember, locale.Locale{Language: "pt", Region: "BR"}, "BRL"); err == nil {
 		t.Fatal("short password accepted")
 	}
 
-	if _, err := h.module.CreateUser(ctx, email, password, "owner", locale.Locale{Language: "pt", Region: "BR"}, "BRL"); err == nil {
+	if _, err := h.module.CreateMember(ctx, email, password, "owner", locale.Locale{Language: "pt", Region: "BR"}, "BRL"); err == nil {
 		t.Fatal("unknown role accepted")
 	}
 
-	if _, err := h.module.CreateUser(ctx, email, password, identity.RoleMember, locale.Locale{Language: "pt", Region: "BR"}, "BRL"); err != nil {
+	if _, err := h.module.CreateMember(ctx, email, password, identity.RoleMember, locale.Locale{Language: "pt", Region: "BR"}, "BRL"); err != nil {
 		t.Fatal(err)
 	}
 
-	if _, err := h.module.CreateUser(ctx, "ANN@example.com", password, identity.RoleMember, locale.Locale{Language: "pt", Region: "BR"}, "BRL"); !errors.Is(err, identity.ErrEmailTaken) {
+	if _, err := h.module.CreateMember(ctx, "ANN@example.com", password, identity.RoleMember, locale.Locale{Language: "pt", Region: "BR"}, "BRL"); !errors.Is(err, identity.ErrEmailTaken) {
 		t.Fatalf("duplicate email with different case err = %v, want ErrEmailTaken", err)
 	}
 }
@@ -307,7 +307,7 @@ func TestCreateUserPublishesEvent(t *testing.T) {
 	t.Parallel()
 	h := newHarness(t, identity.Config{})
 
-	u, err := h.module.CreateUser(t.Context(), email, password, identity.RoleAdmin, locale.Locale{Language: "pt", Region: "BR"}, "BRL")
+	u, err := h.module.CreateMember(t.Context(), email, password, identity.RoleAdmin, locale.Locale{Language: "pt", Region: "BR"}, "BRL")
 	if err != nil {
 		t.Fatal(err)
 	}

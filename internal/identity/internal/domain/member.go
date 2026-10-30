@@ -17,7 +17,7 @@ const (
 
 func (r Role) Valid() bool { return r == RoleAdmin || r == RoleMember }
 
-type User struct {
+type Member struct {
 	ID           int64
 	Email        string
 	PasswordHash string

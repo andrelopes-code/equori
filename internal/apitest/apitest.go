@@ -252,7 +252,7 @@ func (h *Harness) LoginMember(email string) *http.Client {
 func (h *Harness) login(email, role string, l locale.Locale, base money.Currency) *http.Client {
 	h.t.Helper()
 
-	if _, err := h.App.Identity.CreateUser(h.t.Context(), email, Password, role, l, base); err != nil {
+	if _, err := h.App.Identity.CreateMember(h.t.Context(), email, Password, role, l, base); err != nil {
 		h.t.Fatal(err)
 	}
 

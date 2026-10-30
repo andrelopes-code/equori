@@ -46,41 +46,41 @@ type booksCreated struct {
 	BaseCurrency money.Currency `json:"base_currency"`
 }
 
-// CreateUser publishes identity.books_created.v1 in the same transaction.
-func (r *Repository) CreateUser(ctx context.Context, u domain.User, region string, base money.Currency) (domain.User, int64, error) {
+// CreateMember publishes identity.books_created.v1 in the same transaction.
+func (r *Repository) CreateMember(ctx context.Context, u domain.Member, region string, base money.Currency) (domain.Member, int64, error) {
 	var (
-		created domain.User
+		created domain.Member
 		booksID int64
 	)
 
 	err := pgx.BeginFunc(ctx, r.db, func(tx pgx.Tx) error {
 		var err error
-		created, booksID, err = r.insertUser(ctx, tx, u, region, base)
+		created, booksID, err = r.insertMember(ctx, tx, u, region, base)
 
 		return err
 	})
 	if err != nil {
-		return domain.User{}, 0, err
+		return domain.Member{}, 0, err
 	}
 
 	return created, booksID, nil
 }
 
-// CreateFirstUser creates u only while no user exists; the table lock makes the check and the
+// CreateFirstMember creates u only while no user exists; the table lock makes the check and the
 // insert one step for concurrent requests (W-U4).
-func (r *Repository) CreateFirstUser(ctx context.Context, u domain.User, region string, base money.Currency) (domain.User, int64, error) {
+func (r *Repository) CreateFirstMember(ctx context.Context, u domain.Member, region string, base money.Currency) (domain.Member, int64, error) {
 	var (
-		created domain.User
+		created domain.Member
 		booksID int64
 	)
 
 	err := pgx.BeginFunc(ctx, r.db, func(tx pgx.Tx) error {
 		q := r.q.WithTx(tx)
-		if err := q.LockUsers(ctx); err != nil {
+		if err := q.LockMembers(ctx); err != nil {
 			return err
 		}
 
-		exists, err := q.AnyUser(ctx)
+		exists, err := q.AnyMember(ctx)
 		if err != nil {
 			return err
 		}
@@ -89,22 +89,22 @@ func (r *Repository) CreateFirstUser(ctx context.Context, u domain.User, region 
 			return app.ErrSetupComplete
 		}
 
-		created, booksID, err = r.insertUser(ctx, tx, u, region, base)
+		created, booksID, err = r.insertMember(ctx, tx, u, region, base)
 
 		return err
 	})
 	if err != nil {
-		return domain.User{}, 0, err
+		return domain.Member{}, 0, err
 	}
 
 	return created, booksID, nil
 }
 
-func (r *Repository) AnyUser(ctx context.Context) (bool, error) {
-	return r.q.AnyUser(ctx)
+func (r *Repository) AnyMember(ctx context.Context) (bool, error) {
+	return r.q.AnyMember(ctx)
 }
 
-func (r *Repository) insertUser(ctx context.Context, tx pgx.Tx, u domain.User, region string, base money.Currency) (domain.User, int64, error) {
+func (r *Repository) insertMember(ctx context.Context, tx pgx.Tx, u domain.Member, region string, base money.Currency) (domain.Member, int64, error) {
 	q := r.q.WithTx(tx)
 
 	row, err := q.CreateMember(ctx, CreateMemberParams{
@@ -114,20 +114,20 @@ func (r *Repository) insertUser(ctx context.Context, tx pgx.Tx, u domain.User, r
 		Language:     u.Language,
 	})
 	if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == uniqueViolation {
-		return domain.User{}, 0, app.ErrEmailTaken
+		return domain.Member{}, 0, app.ErrEmailTaken
 	}
 
 	if err != nil {
-		return domain.User{}, 0, err
+		return domain.Member{}, 0, err
 	}
 
 	booksID, err := q.CreateBooks(ctx, region)
 	if err != nil {
-		return domain.User{}, 0, err
+		return domain.Member{}, 0, err
 	}
 
 	if err := q.CreateMembership(ctx, CreateMembershipParams{MemberID: row.ID, BooksID: booksID, Role: "owner"}); err != nil {
-		return domain.User{}, 0, err
+		return domain.Member{}, 0, err
 	}
 
 	if err := outbox.Insert(ctx, tx, outbox.Event{
@@ -136,10 +136,10 @@ func (r *Repository) insertUser(ctx context.Context, tx pgx.Tx, u domain.User, r
 		AggregateID: strconv.FormatInt(booksID, 10),
 		Payload:     booksCreated{BooksID: booksID, MemberID: row.ID, Language: row.Language, Region: region, BaseCurrency: base},
 	}); err != nil {
-		return domain.User{}, 0, err
+		return domain.Member{}, 0, err
 	}
 
-	return toUser(row), booksID, nil
+	return toMember(row), booksID, nil
 }
 
 // UpdateProfile stores the language of the member and the region of the books in one transaction.
@@ -172,22 +172,22 @@ func (r *Repository) LoginBooks(ctx context.Context, memberID int64) (int64, err
 	return booksID, nil
 }
 
-func (r *Repository) UserByID(ctx context.Context, memberID int64) (domain.User, error) {
-	row, err := r.q.GetUserByID(ctx, memberID)
+func (r *Repository) MemberByID(ctx context.Context, memberID int64) (domain.Member, error) {
+	row, err := r.q.GetMemberByID(ctx, memberID)
 	if err != nil {
-		return domain.User{}, notFound(err)
+		return domain.Member{}, notFound(err)
 	}
 
-	return toUser(row), nil
+	return toMember(row), nil
 }
 
-func (r *Repository) UserByEmail(ctx context.Context, email string) (domain.User, error) {
-	row, err := r.q.GetUserByEmail(ctx, email)
+func (r *Repository) MemberByEmail(ctx context.Context, email string) (domain.Member, error) {
+	row, err := r.q.GetMemberByEmail(ctx, email)
 	if err != nil {
-		return domain.User{}, notFound(err)
+		return domain.Member{}, notFound(err)
 	}
 
-	return toUser(row), nil
+	return toMember(row), nil
 }
 
 func (r *Repository) CreateSession(ctx context.Context, s domain.Session) error {
@@ -200,13 +200,13 @@ func (r *Repository) CreateSession(ctx context.Context, s domain.Session) error 
 	})
 }
 
-func (r *Repository) UserBySession(ctx context.Context, tokenHash []byte, now time.Time) (domain.User, int64, error) {
-	row, err := r.q.GetUserBySession(ctx, GetUserBySessionParams{TokenHash: tokenHash, ExpiresAt: now})
+func (r *Repository) MemberBySession(ctx context.Context, tokenHash []byte, now time.Time) (domain.Member, int64, error) {
+	row, err := r.q.GetMemberBySession(ctx, GetMemberBySessionParams{TokenHash: tokenHash, ExpiresAt: now})
 	if err != nil {
-		return domain.User{}, 0, notFound(err)
+		return domain.Member{}, 0, notFound(err)
 	}
 
-	user := toUser(IdentityMember{
+	user := toMember(IdentityMember{
 		ID: row.ID, Email: row.Email, PasswordHash: row.PasswordHash, Role: row.Role,
 		DisabledAt: row.DisabledAt, CreatedAt: row.CreatedAt, Language: row.Language,
 	})
@@ -222,8 +222,8 @@ func (r *Repository) DeleteExpiredSessions(ctx context.Context, now time.Time) e
 	return r.q.DeleteExpiredSessions(ctx, now)
 }
 
-func toUser(row IdentityMember) domain.User {
-	return domain.User{
+func toMember(row IdentityMember) domain.Member {
+	return domain.Member{
 		ID:           row.ID,
 		Email:        row.Email,
 		PasswordHash: row.PasswordHash,

@@ -41,7 +41,7 @@ type AccessGrant struct {
 	Scope    string
 }
 
-type User struct {
+type Member struct {
 	ID    int64
 	Email string
 	Role  string
@@ -102,11 +102,11 @@ func (m *Module) VerifyAccessToken(ctx context.Context, token string) (AccessGra
 	return AccessGrant{TokenID: t.ID, MemberID: t.MemberID, BooksID: t.BooksID, Scope: t.Scope}, nil
 }
 
-func (m *Module) CreateUser(ctx context.Context, email, password, role string, l locale.Locale, baseCurrency money.Currency) (User, error) {
-	u, err := m.svc.CreateUser(ctx, email, password, domain.Role(role), l, baseCurrency)
+func (m *Module) CreateMember(ctx context.Context, email, password, role string, l locale.Locale, baseCurrency money.Currency) (Member, error) {
+	u, err := m.svc.CreateMember(ctx, email, password, domain.Role(role), l, baseCurrency)
 	if err != nil {
-		return User{}, err
+		return Member{}, err
 	}
 
-	return User{ID: u.ID, Email: u.Email, Role: string(u.Role)}, nil
+	return Member{ID: u.ID, Email: u.Email, Role: string(u.Role)}, nil
 }
