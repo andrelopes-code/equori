@@ -28,7 +28,7 @@ func sourceEntries() []sourceEntry {
 	}
 }
 
-// SourceIDs lists the identifiers accepted in EQUORI_PRICE_FEEDS.
+// SourceIDs lists the identifiers of the price sources.
 func SourceIDs() []string {
 	entries := sourceEntries()
 
@@ -51,7 +51,7 @@ func NewSources(ids []string, urls map[string]string, hc *http.Client) ([]feed.S
 	for _, id := range ids {
 		e, ok := byID[id]
 		if !ok {
-			return nil, fmt.Errorf("EQUORI_PRICE_FEEDS: unknown feed %q", id)
+			return nil, fmt.Errorf("unknown price feed %q", id)
 		}
 
 		url := urls[id]

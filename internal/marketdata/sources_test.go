@@ -18,7 +18,7 @@ func TestNewSources(t *testing.T) {
 	t.Cleanup(srv.Close)
 	hc := srv.Client()
 
-	if _, err := marketdata.NewSources([]string{"nope"}, nil, hc); err == nil || err.Error() != `EQUORI_PRICE_FEEDS: unknown feed "nope"` {
+	if _, err := marketdata.NewSources([]string{"nope"}, nil, hc); err == nil || err.Error() != `unknown price feed "nope"` {
 		t.Fatalf("err = %v", err)
 	}
 

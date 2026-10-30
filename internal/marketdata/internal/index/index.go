@@ -22,7 +22,7 @@ const (
 
 // Source reads the rates of one index from one public source.
 type Source interface {
-	// ID identifies the source; it is the value of EQUORI_INDEX_FEEDS.
+	// ID identifies the source; it is the id of its marketdata_feed row.
 	ID() string
 	// Index is the identifier the rates are stored under, the index_id of the terms.
 	Index() string

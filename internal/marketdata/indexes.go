@@ -48,7 +48,7 @@ func indexEntries() []indexEntry {
 	}
 }
 
-// IndexSourceIDs lists the identifiers accepted in EQUORI_INDEX_FEEDS.
+// IndexSourceIDs lists the identifiers of the index sources.
 func IndexSourceIDs() []string {
 	entries := indexEntries()
 
@@ -71,7 +71,7 @@ func NewIndexSources(ids []string, urls map[string]string, hc *http.Client) ([]i
 	for _, id := range ids {
 		e, ok := byID[id]
 		if !ok {
-			return nil, fmt.Errorf("EQUORI_INDEX_FEEDS: unknown index feed %q", id)
+			return nil, fmt.Errorf("unknown index feed %q", id)
 		}
 
 		url := urls[id]

@@ -213,7 +213,7 @@ func TestNewIndexSources(t *testing.T) {
 		t.Fatalf("IndexSourceIDs = %v", got)
 	}
 
-	if _, err := marketdata.NewIndexSources([]string{"nope"}, nil, http.DefaultClient); err == nil || !strings.Contains(err.Error(), "EQUORI_INDEX_FEEDS") || !strings.Contains(err.Error(), "nope") {
+	if _, err := marketdata.NewIndexSources([]string{"nope"}, nil, http.DefaultClient); err == nil || !strings.Contains(err.Error(), "unknown index feed") || !strings.Contains(err.Error(), "nope") {
 		t.Fatalf("error = %v", err)
 	}
 

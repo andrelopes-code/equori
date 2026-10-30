@@ -93,7 +93,7 @@ func ExtraTools(groups ...tool.Group) Option {
 	return func(c *server.Config) { c.ExtraTools = append(c.ExtraTools, groups...) }
 }
 
-// LLM configures providers for the whole instance, as EQUORI_GEMINI_API_KEY does.
+// LLM configures providers for the whole instance through server.Config.LLMProviders (BK24).
 func LLM(providers ...llm.Provider) Option {
 	return func(c *server.Config) { c.LLMProviders = providers }
 }

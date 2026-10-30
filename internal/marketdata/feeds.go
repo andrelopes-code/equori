@@ -27,8 +27,8 @@ type FeedConfig struct {
 	Indexes []index.Source
 	// Expectations are the expectation sources (ADR 026).
 	Expectations []expectation.Source
-	// Seed names the sources enabled while no setting is stored: EQUORI_PRICE_FEEDS and
-	// EQUORI_INDEX_FEEDS (ADR 025 F2).
+	// Seed names the sources enabled while no setting is stored; tests set it through
+	// server.Config, production passes none (ADR 025 F2, ADR 029 BK25).
 	Seed   []string
 	Client *http.Client
 	Clock  clock.Clock

@@ -33,7 +33,7 @@ func runPeriodicBackups(ctx context.Context, db *database, cfg config.Config, lo
 		} else if due {
 			latest, _ := postgres.LatestVersion()
 
-			path := filepath.Join(cfg.BackupDir, backup.Name(backup.Periodic, time.Now().In(cfg.TimeZone), latest))
+			path := filepath.Join(cfg.BackupDir, backup.Name(backup.Periodic, time.Now().UTC(), latest))
 			if err := backup.Dump(ctx, db.Cluster.Bin(), db.DSN, path); err != nil {
 				log.Error("periodic backup", "error", err)
 			} else if err := backup.Prune(cfg.BackupDir, backup.Periodic, 7); err != nil {
@@ -92,7 +92,7 @@ func backupCommand(args []string) error {
 
 	path := *out
 	if path == "" {
-		path = backup.Name(backup.Manual, time.Now().In(cfg.TimeZone), latest)
+		path = backup.Name(backup.Manual, time.Now().UTC(), latest)
 		if cfg.Managed() {
 			path = filepath.Join(cfg.BackupDir, path)
 		}

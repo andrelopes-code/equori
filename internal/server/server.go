@@ -58,15 +58,16 @@ type Config struct {
 	SecretKey, PreviousSecretKey string
 	// AggregatorURLs overrides the base URL of an aggregator, by identifier.
 	AggregatorURLs map[string]string
-	// LLMProviders are the language model providers configured for the whole instance
-	// (ADR 009); each book adds its own (ADR 019).
+	// LLMProviders are language model providers for the whole instance (ADR 009); tests inject
+	// them, production passes none (BK24); each book adds its own (ADR 019).
 	LLMProviders []llm.Provider
 	// LLMFactory builds a book's provider; nil builds the real adapters. Tests replace it.
 	LLMFactory func(api, baseURL, key string) llm.Provider
 	// LLMWait blocks a chat turn until a transient cooldown ends; nil uses a timer on Clock.
 	LLMWait func(ctx context.Context, until time.Time) error
-	// PriceFeeds and IndexFeeds name the feeds enabled while no feed setting is stored (ADR 025
-	// F2); FeedURLs overrides the base URLs of every feed by identifier.
+	// PriceFeeds and IndexFeeds name the feeds enabled while no feed setting is stored; tests set
+	// them, production passes none (ADR 025 F2, BK25); FeedURLs overrides the base URLs of every
+	// feed by identifier.
 	PriceFeeds []string
 	IndexFeeds []string
 	FeedURLs   map[string]string

@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 	"reflect"
 	"testing"
-	"time"
 )
 
 func TestLoad(t *testing.T) {
@@ -21,8 +20,7 @@ func TestLoad(t *testing.T) {
 			name: "defaults",
 			env:  map[string]string{"EQUORI_DATABASE_URL": "postgres://x"},
 			want: Config{
-				DatabaseURL: "postgres://x", HTTPAddr: ":8080", LogLevel: slog.LevelInfo, TimeZone: time.Local,
-				SyncInterval: time.Hour, GeminiURL: "https://generativelanguage.googleapis.com",
+				DatabaseURL: "postgres://x", HTTPAddr: ":8080", LogLevel: slog.LevelInfo,
 			},
 		},
 		{
@@ -32,20 +30,12 @@ func TestLoad(t *testing.T) {
 				"EQUORI_HTTP_ADDR":        "127.0.0.1:9000",
 				"EQUORI_LOG_LEVEL":        "debug",
 				"EQUORI_INSECURE_COOKIES": "true",
-				"EQUORI_TIMEZONE":         "UTC",
 				"EQUORI_API_DOCS":         "true",
-				"EQUORI_SYNC_INTERVAL":    "15m",
-				"EQUORI_GEMINI_API_KEY":   "k",
-				"EQUORI_GEMINI_URL":       "http://127.0.0.1:9200",
-				"EQUORI_PRICE_FEEDS":      " bcb_ptax, ,ecb",
 				"EQUORI_WEB_DEV_PORT":     "5173",
 			},
 			want: Config{
 				DatabaseURL: "postgres://x", HTTPAddr: "127.0.0.1:9000", LogLevel: slog.LevelDebug,
-				TimeZone: time.UTC, InsecureCookies: true, APIDocs: true,
-				SyncInterval: 15 * time.Minute, GeminiAPIKey: "k", GeminiURL: "http://127.0.0.1:9200",
-				PriceFeeds: []string{"bcb_ptax", "ecb"},
-				WebDevPort: 5173,
+				InsecureCookies: true, APIDocs: true, WebDevPort: 5173,
 			},
 		},
 		{
@@ -64,8 +54,7 @@ func TestLoad(t *testing.T) {
 			env:  map[string]string{"EQUORI_DATA_DIR": "/srv/equori", "EQUORI_POSTGRES_BIN": "/usr/lib/postgresql/18/bin"},
 			want: Config{
 				DataDir: "/srv/equori", BackupDir: filepath.Join("/srv/equori", "backups"), PostgresBin: "/usr/lib/postgresql/18/bin",
-				HTTPAddr: ":8080", LogLevel: slog.LevelInfo, TimeZone: time.Local,
-				SyncInterval: time.Hour, GeminiURL: "https://generativelanguage.googleapis.com",
+				HTTPAddr: ":8080", LogLevel: slog.LevelInfo,
 			},
 		},
 		{
@@ -73,8 +62,7 @@ func TestLoad(t *testing.T) {
 			env:  map[string]string{"EQUORI_DATA_DIR": "/srv/equori", "EQUORI_BACKUP_DIR": "/mnt/backups"},
 			want: Config{
 				DataDir: "/srv/equori", BackupDir: "/mnt/backups",
-				HTTPAddr: ":8080", LogLevel: slog.LevelInfo, TimeZone: time.Local,
-				SyncInterval: time.Hour, GeminiURL: "https://generativelanguage.googleapis.com",
+				HTTPAddr: ":8080", LogLevel: slog.LevelInfo,
 			},
 		},
 		{
@@ -85,21 +73,6 @@ func TestLoad(t *testing.T) {
 		{
 			name:    "invalid api docs",
 			env:     map[string]string{"EQUORI_DATABASE_URL": "postgres://x", "EQUORI_API_DOCS": "maybe"},
-			wantErr: true,
-		},
-		{
-			name:    "invalid sync interval",
-			env:     map[string]string{"EQUORI_DATABASE_URL": "postgres://x", "EQUORI_SYNC_INTERVAL": "soon"},
-			wantErr: true,
-		},
-		{
-			name:    "sync interval under a minute",
-			env:     map[string]string{"EQUORI_DATABASE_URL": "postgres://x", "EQUORI_SYNC_INTERVAL": "30s"},
-			wantErr: true,
-		},
-		{
-			name:    "unknown time zone",
-			env:     map[string]string{"EQUORI_DATABASE_URL": "postgres://x", "EQUORI_TIMEZONE": "Mars/Olympus"},
 			wantErr: true,
 		},
 		{
@@ -119,21 +92,6 @@ func TestLoad(t *testing.T) {
 				t.Fatalf("got %+v, want %+v", got, tt.want)
 			}
 		})
-	}
-}
-
-func TestLoadNamedTimeZone(t *testing.T) {
-	t.Parallel()
-
-	cfg, err := Load(func(k string) string {
-		return map[string]string{"EQUORI_DATABASE_URL": "postgres://x", "EQUORI_TIMEZONE": "America/Sao_Paulo"}[k]
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if cfg.TimeZone.String() != "America/Sao_Paulo" {
-		t.Fatalf("TimeZone = %s", cfg.TimeZone)
 	}
 }
 
@@ -172,17 +130,45 @@ func TestLoadSecretKeys(t *testing.T) {
 	}
 }
 
-func TestLoadPriceFeeds(t *testing.T) {
+func TestRemovedVariables(t *testing.T) {
 	t.Parallel()
 
-	cfg, err := Load(func(k string) string {
-		return map[string]string{"EQUORI_DATABASE_URL": "postgres://x", "EQUORI_PRICE_FEEDS": " bcb_ptax, ,ecb"}[k]
-	})
-	if err != nil {
-		t.Fatal(err)
+	tests := []struct {
+		name string
+		env  map[string]string
+		want []Removed
+	}{
+		{name: "none", env: map[string]string{"EQUORI_DATABASE_URL": "postgres://x"}},
+		{
+			name: "two",
+			env:  map[string]string{"EQUORI_TIMEZONE": "UTC", "EQUORI_PRICE_FEEDS": "ecb"},
+			want: []Removed{
+				{"EQUORI_TIMEZONE", "Settings > Finances > Time zone"},
+				{"EQUORI_PRICE_FEEDS", "Settings > Market data"},
+			},
+		},
+		{
+			name: "all",
+			env: map[string]string{
+				"EQUORI_TIMEZONE": "x", "EQUORI_SYNC_INTERVAL": "x", "EQUORI_GEMINI_API_KEY": "x",
+				"EQUORI_GEMINI_URL": "x", "EQUORI_PRICE_FEEDS": "x", "EQUORI_INDEX_FEEDS": "x",
+			},
+			want: []Removed{
+				{"EQUORI_TIMEZONE", "Settings > Finances > Time zone"},
+				{"EQUORI_SYNC_INTERVAL", "Settings > Integrations > Check for new data"},
+				{"EQUORI_GEMINI_API_KEY", "Settings > Assistant > Providers, preset aistudio"},
+				{"EQUORI_GEMINI_URL", "Settings > Assistant > Providers, preset aistudio"},
+				{"EQUORI_PRICE_FEEDS", "Settings > Market data"},
+				{"EQUORI_INDEX_FEEDS", "Settings > Market data"},
+			},
+		},
 	}
-
-	if want := []string{"bcb_ptax", "ecb"}; !reflect.DeepEqual(cfg.PriceFeeds, want) {
-		t.Fatalf("PriceFeeds = %v, want %v", cfg.PriceFeeds, want)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := RemovedVariables(func(k string) string { return tt.env[k] })
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Fatalf("got %+v, want %+v", got, tt.want)
+			}
+		})
 	}
 }

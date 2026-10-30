@@ -17,15 +17,13 @@ import (
 	"strings"
 	"syscall"
 	"time"
-	_ "time/tzdata" // EQUORI_TIMEZONE must resolve in images without a zoneinfo database.
+	_ "time/tzdata" // A book's time zone must resolve in images without a zoneinfo database (BK19).
 
 	"github.com/andrelopes-code/equori/internal/ingestion"
 	"github.com/andrelopes-code/equori/internal/marketdata"
 	"github.com/andrelopes-code/equori/internal/platform/clock"
 	"github.com/andrelopes-code/equori/internal/platform/config"
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
-	"github.com/andrelopes-code/equori/internal/platform/llm"
-	"github.com/andrelopes-code/equori/internal/platform/llm/aistudio"
 	"github.com/andrelopes-code/equori/internal/platform/pgcluster"
 	"github.com/andrelopes-code/equori/internal/platform/postgres"
 	"github.com/andrelopes-code/equori/internal/platform/secret"
@@ -116,7 +114,7 @@ func serve(parent context.Context) error {
 		return err
 	}
 
-	log.Info("starting equori", "version", buildVersion(), "schema", schema, "timezone", cfg.TimeZone.String())
+	log.Info("starting equori", "version", buildVersion(), "schema", schema)
 
 	ctx, stop := context.WithCancel(parent)
 	defer stop()
@@ -323,7 +321,7 @@ func serverConfig(cfg config.Config, clk *clock.Clock) server.Config {
 	return server.Config{
 		SecureCookies: !cfg.InsecureCookies, Clock: clk, APIDocs: cfg.APIDocs,
 		SecretKey: cfg.SecretKey, PreviousSecretKey: cfg.PreviousSecretKey, AggregatorURLs: aggregatorURLs(os.Getenv),
-		LLMProviders: llmProviders(cfg), PriceFeeds: cfg.PriceFeeds, IndexFeeds: cfg.IndexFeeds, FeedURLs: feedURLs(os.Getenv),
+		FeedURLs: feedURLs(os.Getenv),
 	}
 }
 
@@ -349,16 +347,6 @@ func feedURLs(getenv func(string) string) map[string]string {
 	}
 
 	return urls
-}
-
-// llmProviders returns the providers the environment configures for the whole instance;
-// each book adds its own on the settings screen (ADR 019).
-func llmProviders(cfg config.Config) []llm.Provider {
-	if cfg.GeminiAPIKey == "" {
-		return nil
-	}
-
-	return []llm.Provider{aistudio.New(cfg.GeminiURL, cfg.GeminiAPIKey, &http.Client{Timeout: 2 * time.Minute})}
 }
 
 func setup() (config.Config, *slog.Logger, error) {
@@ -393,6 +381,9 @@ func setup() (config.Config, *slog.Logger, error) {
 	}
 
 	log := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: cfg.LogLevel}))
+	for _, r := range config.RemovedVariables(getenv) {
+		log.Warn("environment variable removed", "variable", r.Name, "replaced_by", r.Screen)
+	}
 
 	return cfg, log, nil
 }

@@ -77,7 +77,7 @@ func (d *database) migrateManaged(ctx context.Context, cfg config.Config, log *s
 	}
 
 	if pending {
-		path := filepath.Join(cfg.BackupDir, backup.Name(backup.PreMigration, time.Now().In(cfg.TimeZone), current))
+		path := filepath.Join(cfg.BackupDir, backup.Name(backup.PreMigration, time.Now().UTC(), current))
 		if err := backup.Dump(ctx, d.Cluster.Bin(), d.DSN, path); err != nil {
 			return fmt.Errorf("back up before migrating: %w", err)
 		}
