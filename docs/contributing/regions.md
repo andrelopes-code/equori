@@ -1,6 +1,6 @@
 # Adding a region
 
-A region is an ISO 3166-1 alpha-2 code stored on the book (`identity_books.region`) (`internal/platform/locale/regions.go`). A language is an ISO 639 code stored beside it. Behavior that depends on the region or the language is an extension point (ADR 016): an interface declared by the consuming module, one implementation per identifier, and a default function that maps a region to an identifier.
+A region is an ISO 3166-1 alpha-2 code stored on the book (`identity_books.region`; the codes are in `internal/platform/locale/regions.go`). A language is an ISO 639 code stored beside it. Behavior that depends on the region or the language is an extension point (ADR 016): an interface declared by the consuming module, one implementation per identifier, and a default function that maps a region to an identifier.
 
 Identifiers match `^[a-z0-9_]{2,40}$`. A regional identifier is prefixed by the lowercase region (`br_banking`, `br_ispb`); an international one is not (`ecb`, `weekend`, `bic`).
 
