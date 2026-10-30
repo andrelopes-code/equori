@@ -93,3 +93,43 @@ func TestLoginBooksOrder(t *testing.T) {
 		})
 	}
 }
+
+// BK12: an owner membership wins over a membership of a lower books ID.
+func TestLoginPrefersOwnerBooks(t *testing.T) {
+	h := apitest.Empty(t)
+	email := "ann@example.com"
+
+	if _, err := h.App.Identity.CreateUser(t.Context(), email, apitest.Password, "admin", locale.Locale{Language: "pt", Region: "BR"}, "BRL"); err != nil {
+		t.Fatal(err)
+	}
+
+	writeBooks := h.BooksIDOf(email)
+	memberID := h.MemberIDOf(email)
+
+	var ownerBooks int64
+	if err := h.Pool.QueryRow(t.Context(), `INSERT INTO identity_books (region) VALUES ('US') RETURNING id`).Scan(&ownerBooks); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := h.Pool.Exec(t.Context(), `UPDATE identity_membership SET role = 'write' WHERE member_id = $1`, memberID); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := h.Pool.Exec(t.Context(), `INSERT INTO identity_membership (member_id, books_id, role) VALUES ($1, $2, 'owner')`, memberID, ownerBooks); err != nil {
+		t.Fatal(err)
+	}
+
+	r := h.Call(jarClient(t), http.MethodPost, "/api/v1/session", map[string]string{"email": email, "password": apitest.Password})
+	if r.Status != http.StatusNoContent {
+		t.Fatalf("status %d: %s", r.Status, r.Body)
+	}
+
+	var got int64
+	if err := h.Pool.QueryRow(t.Context(), `SELECT books_id FROM identity_session WHERE member_id = $1`, memberID).Scan(&got); err != nil {
+		t.Fatal(err)
+	}
+
+	if ownerBooks <= writeBooks || got != ownerBooks {
+		t.Fatalf("session books = %d, want owner books %d (write books %d)", got, ownerBooks, writeBooks)
+	}
+}
