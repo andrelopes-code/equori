@@ -96,7 +96,7 @@ type Calendar interface {
 	DefaultCalendar(region string) string
 }
 
-// Profiles gives the language and region of a user (identity).
+// Profiles gives the language and region of a book (identity).
 type Profiles interface {
 	Profile(ctx context.Context, booksID int64) (locale.Locale, error)
 }
@@ -342,7 +342,7 @@ type Repository interface {
 	// RetirePayee moves the voided transactions and the counterparty accounts of from to into
 	// and marks from as merged (A82).
 	RetirePayee(ctx context.Context, booksID int64, from, into uuid.UUID) error
-	// TagUsage returns ErrNotFound for a name the user has no tag under.
+	// TagUsage returns ErrNotFound for a name the book has no tag under.
 	TagUsage(ctx context.Context, booksID int64, name string) (TagUsage, error)
 	// RenameTag returns ErrValidation on name for a name in use.
 	RenameTag(ctx context.Context, booksID int64, id uuid.UUID, name string) error
@@ -448,7 +448,7 @@ type Repository interface {
 	// the reconciliations dated from it.
 	UnlockAccount(ctx context.Context, booksID int64, accountID uuid.UUID, from time.Time) error
 
-	// InsertAttachment stores the content unless the user already has a blob with the same hash.
+	// InsertAttachment stores the content unless the book already has a blob with the same hash.
 	InsertAttachment(ctx context.Context, a Attachment, content []byte) (Attachment, error)
 	Attachments(ctx context.Context, booksID int64, transactionID uuid.UUID, p page.Request[AttachmentKey]) ([]Attachment, *AttachmentKey, error)
 	AttachmentContent(ctx context.Context, booksID int64, id uuid.UUID) (AttachmentContent, error)

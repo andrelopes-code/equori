@@ -48,7 +48,7 @@ type Repository interface {
 	// LockAccountImports serializes the imports of one account until unlock runs.
 	LockAccountImports(ctx context.Context, accountID uuid.UUID) (unlock func(), err error)
 
-	// InsertIntegration returns a *domain.FieldError on name when the user already has the name.
+	// InsertIntegration returns a *domain.FieldError on name when the book already has the name.
 	InsertIntegration(ctx context.Context, i domain.Integration) (domain.Integration, error)
 	Integration(ctx context.Context, booksID int64, id uuid.UUID) (domain.Integration, error)
 	ListIntegrations(ctx context.Context, booksID int64, p page.Request[NameKey]) ([]domain.Integration, *NameKey, error)

@@ -14,7 +14,7 @@ import (
 )
 
 // Plan is the budget plan of a month (budget plan amendments A129 and A131). Expected is nil
-// when the user has no income schedule and Average when no month of history exists.
+// when the book has no income schedule and Average when no month of history exists.
 type Plan struct {
 	Month                                    time.Time
 	Currency                                 money.Currency

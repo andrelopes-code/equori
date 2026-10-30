@@ -126,7 +126,7 @@ type Calendar interface {
 	DefaultCalendar(region string) string
 }
 
-// Profiles gives the language and region of a user (identity).
+// Profiles gives the language and region of a book (identity).
 type Profiles interface {
 	Profile(ctx context.Context, booksID int64) (locale.Locale, error)
 }

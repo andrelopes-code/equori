@@ -65,12 +65,12 @@ type Module struct {
 	runs      map[string]feedRun
 }
 
-// Profiles gives the language and region of a user (identity).
+// Profiles gives the language and region of a book (identity).
 type Profiles interface {
 	Profile(ctx context.Context, booksID int64) (locale.Locale, error)
 }
 
-// WithProfiles sets where the region of the calling user comes from; the composition root calls it once.
+// WithProfiles sets where the region of the calling book comes from; the composition root calls it once.
 func (m *Module) WithProfiles(p Profiles) *Module {
 	m.profiles = p
 	return m

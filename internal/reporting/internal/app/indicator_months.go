@@ -40,7 +40,7 @@ type IndicatorMonth struct {
 const minTrailingMonths = 3
 
 // indicatorMonths turns 24 months of facts, oldest first, into the indicators of the last 12.
-// first is the first posting month; the zero time means the user has no posting.
+// first is the first posting month; the zero time means the book has no posting.
 func indicatorMonths(facts []MonthFacts, first time.Time) []IndicatorMonth {
 	if len(facts) != 24 {
 		panic("indicatorMonths needs 24 months of facts")

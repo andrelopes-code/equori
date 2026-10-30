@@ -45,7 +45,7 @@ type Config struct {
 	Uses     []llm.Use
 	// Navigation is web/src/navigation/navigation-map.json (spec 9); empty means no screens.
 	Navigation []byte
-	// Locale returns a user's language and region for the system prompt.
+	// Locale returns the language of the member and the region of the book for the system prompt.
 	Locale func(context.Context, int64) (locale.Locale, error)
 	Clock  clock.Clock
 	// NewProvider builds a book's provider; nil builds the real adapters.

@@ -82,7 +82,7 @@ func (s *Service) Settings(ctx context.Context, booksID int64) (Settings, error)
 	return s.repo.Settings(ctx, booksID)
 }
 
-// SetBaseCurrency is allowed only while the user has no transaction; system accounts follow the new currency.
+// SetBaseCurrency is allowed only while the book has no transaction; system accounts follow the new currency.
 func (s *Service) SetBaseCurrency(ctx context.Context, booksID int64, c money.Currency) error {
 	if _, err := money.ParseCurrency(string(c)); err != nil {
 		return &domain.FieldError{Field: "base_currency", Message: "must be a supported currency", Err: domain.ErrValidation}

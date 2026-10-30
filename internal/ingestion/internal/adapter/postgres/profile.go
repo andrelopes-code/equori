@@ -14,7 +14,7 @@ import (
 
 const foreignKeyViolation = "23503"
 
-// notFound maps a missing row, and a reference to an account the user does not own, to app.ErrNotFound.
+// notFound maps a missing row, and a reference to an account the book does not own, to app.ErrNotFound.
 func notFound(err error) error {
 	if errors.Is(err, pgx.ErrNoRows) {
 		return app.ErrNotFound

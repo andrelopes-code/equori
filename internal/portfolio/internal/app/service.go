@@ -120,12 +120,12 @@ func (s *Service) HandleTransaction(ctx context.Context, booksID int64, accountI
 
 // RebuildAll rebuilds every brokerage of every book that has one or has derived rows (equori portfolio rebuild).
 func (s *Service) RebuildAll(ctx context.Context) error {
-	users, err := s.repo.BooksToRebuild(ctx)
+	books, err := s.repo.BooksToRebuild(ctx)
 	if err != nil {
 		return err
 	}
 
-	for _, booksID := range users {
+	for _, booksID := range books {
 		if err := s.RebuildBooks(ctx, booksID); err != nil {
 			return err
 		}
@@ -169,7 +169,7 @@ func (s *Service) IncomeTypes(ctx context.Context, booksID int64) ([]string, err
 }
 
 // Subtypes returns the subtypes of an instrument type that the book's jurisdiction knows; none
-// when the user has no jurisdiction.
+// when the book has no jurisdiction.
 func (s *Service) Subtypes(ctx context.Context, booksID int64, instrumentType string) ([]string, error) {
 	j, err := s.juris.For(ctx, booksID)
 	if err != nil || j == nil {
