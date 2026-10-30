@@ -17,17 +17,23 @@
     place-items: center;
     padding: 0;
     border: none;
-    border-radius: var(--slotted-radius-md);
+    /* The mark's own squircle (category-avatar), so the ring follows its corners. */
+    border-radius: 32%;
     background: none;
     cursor: pointer;
-    transition: box-shadow var(--slotted-control-transition-duration)
+    outline: var(--slotted-border-width-thick) solid transparent;
+    outline-offset: var(--slotted-border-width-thick);
+    transition: outline-color var(--slotted-control-transition-duration)
       var(--slotted-control-transition-easing);
   }
 
-  .trigger:hover,
+  /* As a colour swatch: a ring apart from the mark on hover, the accent while the panel is open. */
+  .trigger:hover {
+    outline-color: var(--slotted-border-strong);
+  }
+
   .trigger[aria-expanded="true"] {
-    box-shadow: 0 0 0 var(--slotted-border-width-thick)
-      var(--slotted-border-strong);
+    outline-color: var(--slotted-tone-accent-text);
   }
 
   .trigger:focus-visible {

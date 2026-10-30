@@ -84,10 +84,10 @@
     color: var(--slotted-text);
   }
 
-  /* checked: an edge in the text colour, so it reads without the ground (OE-06). The ground is
-     the ink at the strength the category mark uses. */
+  /* checked: an edge in the accent, as the chosen colour swatch, so it reads without the ground
+     (OE-06). The ground is the ink at the strength the category mark uses. */
   .radio:checked + .tile {
-    border-color: var(--slotted-text);
+    border-color: var(--slotted-tone-accent-text);
     background: color-mix(in oklab, var(--tile-ink) 18%, transparent);
     color: var(--tile-ink);
   }
