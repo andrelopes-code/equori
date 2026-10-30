@@ -24,3 +24,7 @@ ADR 003 gives every business table a `user_id`, which names both the person who 
 - Backfilled books keep the IDs of the former users, so sealed values (ADR 008, K3) and composite keys stay valid without a rewrite.
 - The time zone becomes a setting of the book; ADR 005, section 3 changes with the code.
 - P11 adds invitations, the switch of the active book and the enforcement of book roles without a migration of business tables.
+
+## Amendment of 2026-10-30 (P11, households)
+
+Design `docs/specs/2026-10-30-households-access-design.md`. Login opens the membership of the last visit, ties broken by the lowest books ID (HA3); this replaces BK12. The instance role grants no access to a book (HA7). Each operation of `api/openapi.yaml` declares `x-book-role` (`public`, `read`, `write`, `owner`); `identity.Authorize` reads the membership role with the session and refuses a lower role with 403 `book_role_required` before the request is validated (HA8 to HA13). An assistant conversation belongs to one membership and is deleted with it (HA28); the export archive carries no conversation, message or proposal from archive version 5 (HA55).

@@ -44,3 +44,7 @@ The SDK's DNS rebinding check (`DisableLocalhostProtection` false) refuses a req
 ## Revisit criterion
 
 A client the owner uses that cannot send a fixed `Authorization` header, or an MCP protocol version the SDK pinned here does not negotiate.
+
+## Amendment of 2026-10-30 (P11, households)
+
+A token writes only when its scope is `write` and its member's role in the book is `write` or `owner`; the role is read at each verification, so a demotion applies to existing tokens. A `read` member cannot create a `write` token (403 `book_role_required`).

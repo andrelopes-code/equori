@@ -207,3 +207,5 @@ classDiagram
 | Instance role | Papel na instância | `admin` or `member`, on the member. An admin changes instance settings and creates members (ADR 003). | |
 | Book role | Papel no livro | `owner`, `write` or `read`, on the membership. P10 creates only `owner`; P11 enforces the roles. | |
 | Active book | Livro ativo | The book of the current session or access token. | |
+| Required book role | Papel exigido | The lowest book role an operation accepts: `read`, `write` or `owner`, or `public` without a session. | |
+| Invitation | Convite | A single-use link, created by an owner, that adds one email to one book with one book role. | |

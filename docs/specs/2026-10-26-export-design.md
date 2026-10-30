@@ -25,8 +25,9 @@ A `bytea` value is written as `to_jsonb` writes it (`\x` and hexadecimal). Ident
 | Facts | every table with a `user_id` column not listed below, and `ledger_transaction_version` through its transaction | rows of the user |
 | Shared | `marketdata_instrument`, `marketdata_price`, `marketdata_fixed_income_terms`, `marketdata_index_rate`, `marketdata_holiday` | every row |
 | Derived | `reporting_account_day`, `portfolio_position_day`, `portfolio_realized_result`, `portfolio_income_event`, `capture_category_hint` | no |
-| Identity and delivery | `identity_user`, `identity_session`, `outbox_event`, `outbox_delivery`, `goose_db_version` | no |
+| Identity and delivery | `identity_user`, `identity_session`, `identity_invitation`, `outbox_event`, `outbox_delivery`, `goose_db_version` | no |
 | Secrets and usage | `assistant_provider` (sealed key), `assistant_chain_target`, `assistant_usage`, `assistant_usage_limit`, `reporting_export` | no |
+| Conversations | `assistant_conversation`, `assistant_message`, `assistant_proposal`, from archive version 5 (households design HA55) | no |
 
 `ingestion_integration` is a fact without its credential: `credential_ciphertext` is written as an empty value. The ciphertext is sealed under the source instance key and bound to the source user (ADR 008), so no other instance or user opens it. After an import the integration answers 409 `integration_unavailable` until the owner enters the credentials again; key rotation skips an empty value.
 

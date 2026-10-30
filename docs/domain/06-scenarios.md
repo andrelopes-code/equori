@@ -939,3 +939,7 @@ The scenario of `docs/specs/2026-10-30-repeated-card-payment-design.md`: a card 
 ### S186–S191 Shared books and setting levels (ADR 029)
 
 The scenarios of `docs/specs/2026-10-30-shared-books-design.md`, section 7: setup creates a book, its `owner` membership and its ledger settings (S186); two members see only the rows of their own book (S187); "today" follows the time zone of the book (S188); appearance follows the member across sessions (S189); only an admin changes the sync interval of the instance (S190); a deleted membership ends its session (S191).
+
+### S192–S198 Households (P11)
+
+The scenarios of `docs/specs/2026-10-30-households-access-design.md`, section 6: each book role reaches the operations of its rank and no other (S192); a book without membership is 404 (S193); an invitation creates a new member (S194) or adds a book to an existing one (S195); a book keeps its last owner (S196); a demoted member's token stops writing (S197); a conversation is visible only to its member (S198).

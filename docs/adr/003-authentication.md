@@ -76,3 +76,7 @@ Personal access tokens open the MCP endpoint, and only it:
 - The person who logs in is a member (`identity_member`); business data belongs to a book (`identity_books`); `identity_membership` links one member to one book with a book role.
 - A session and an access token belong to a membership: `identity_session` and `identity_access_token` hold `member_id` and `books_id`, and deleting the membership deletes them.
 - Login opens the session in the book of the member's `owner` membership with the lowest `books_id`, else the lowest `books_id` of any membership; a member without membership gets `invalid_credentials`.
+
+## Amendment of 2026-10-30 (P11, households)
+
+A login opens the membership with the latest `last_active_at`, ties broken by the lowest books ID; this replaces the login sentence of the amendment of 2026-10-30 (ADR 029). An owner invites an email to a book with a single-use token valid for 7 days; when no member has the email, its acceptance creates a member with instance role `member` and the given password and language. Self-registration stays impossible: acceptance needs a token.
