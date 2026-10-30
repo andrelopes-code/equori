@@ -135,7 +135,7 @@ export function TermsDialog({
       });
   };
   return (
-    <Dialog open={overlayOpen} size="lg" onOpenChange={openChange}>
+    <Dialog open={overlayOpen} size="md" onOpenChange={openChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t("terms.title")}</DialogTitle>
@@ -164,6 +164,7 @@ export function TermsDialog({
                 <Field invalid={errors.issued_on !== undefined} required>
                   <FieldLabel>{t("terms.issuedOn")}</FieldLabel>
                   <DateInput
+                    className={widths.fill}
                     name="issued_on"
                     value={issued}
                     shortcuts={false}
@@ -177,6 +178,7 @@ export function TermsDialog({
                 <Field invalid={errors.matures_on !== undefined} required>
                   <FieldLabel>{t("terms.maturesOn")}</FieldLabel>
                   <DateInput
+                    className={widths.fill}
                     name="matures_on"
                     value={matures}
                     shortcuts={false}
@@ -184,6 +186,41 @@ export function TermsDialog({
                   />
                   {errors.matures_on !== undefined && (
                     <FieldError>{errors.matures_on}</FieldError>
+                  )}
+                </Field>
+              </FormRow>
+
+              <FormRow>
+                <Field invalid={errors.face_value !== undefined} required>
+                  <FieldLabel>{t("terms.faceValue")}</FieldLabel>
+                  <MoneyInput
+                    size="field"
+                    value={face}
+                    onChange={setFace}
+                    currency={quote}
+                    scale={scale}
+                    sign="neutral"
+                  />
+                  {errors.face_value !== undefined && (
+                    <FieldError>{errors.face_value}</FieldError>
+                  )}
+                </Field>
+
+                <Field invalid={errors.day_count !== undefined} required>
+                  <FieldLabel>{t("terms.dayCount")}</FieldLabel>
+                  <ChoiceSelect
+                    label={t("terms.dayCount")}
+                    choices={dayCountChoices}
+                    value={dayCount}
+                    multiple={false}
+                    invalid={errors.day_count !== undefined}
+                    onChange={(next) => {
+                      if (typeof next === "string")
+                        setDayCount(next as DayCount);
+                    }}
+                  />
+                  {errors.day_count !== undefined && (
+                    <FieldError>{errors.day_count}</FieldError>
                   )}
                 </Field>
               </FormRow>
@@ -205,73 +242,40 @@ export function TermsDialog({
                 )}
               </Field>
 
-              <Field
-                invalid={errors.percent_of_index_bp !== undefined}
-                required
-              >
-                <FieldLabel>{t("terms.percentOfIndex")}</FieldLabel>
-                <TextField
-                  className={widths.medium}
-                  name="percent_of_index"
-                  inputMode="decimal"
-                  value={percent}
-                  onChange={(event) => {
-                    setPercent(event.target.value);
-                  }}
-                />
-                {errors.percent_of_index_bp !== undefined && (
-                  <FieldError>{errors.percent_of_index_bp}</FieldError>
-                )}
-              </Field>
+              <FormRow>
+                <Field
+                  invalid={errors.percent_of_index_bp !== undefined}
+                  required
+                >
+                  <FieldLabel>{t("terms.percentOfIndex")}</FieldLabel>
+                  <TextField
+                    name="percent_of_index"
+                    inputMode="decimal"
+                    value={percent}
+                    onChange={(event) => {
+                      setPercent(event.target.value);
+                    }}
+                  />
+                  {errors.percent_of_index_bp !== undefined && (
+                    <FieldError>{errors.percent_of_index_bp}</FieldError>
+                  )}
+                </Field>
 
-              <Field invalid={errors.spread_bp !== undefined} required>
-                <FieldLabel>{t("terms.spread")}</FieldLabel>
-                <TextField
-                  className={widths.medium}
-                  name="spread"
-                  inputMode="decimal"
-                  value={spread}
-                  onChange={(event) => {
-                    setSpread(event.target.value);
-                  }}
-                />
-                {errors.spread_bp !== undefined && (
-                  <FieldError>{errors.spread_bp}</FieldError>
-                )}
-              </Field>
-
-              <Field invalid={errors.day_count !== undefined} required>
-                <FieldLabel>{t("terms.dayCount")}</FieldLabel>
-                <ChoiceSelect
-                  label={t("terms.dayCount")}
-                  choices={dayCountChoices}
-                  value={dayCount}
-                  multiple={false}
-                  invalid={errors.day_count !== undefined}
-                  onChange={(next) => {
-                    if (typeof next === "string") setDayCount(next as DayCount);
-                  }}
-                />
-                {errors.day_count !== undefined && (
-                  <FieldError>{errors.day_count}</FieldError>
-                )}
-              </Field>
-
-              <Field invalid={errors.face_value !== undefined} required>
-                <FieldLabel>{t("terms.faceValue")}</FieldLabel>
-                <MoneyInput
-                  size="field"
-                  className={widths.medium}
-                  value={face}
-                  onChange={setFace}
-                  currency={quote}
-                  scale={scale}
-                  sign="neutral"
-                />
-                {errors.face_value !== undefined && (
-                  <FieldError>{errors.face_value}</FieldError>
-                )}
-              </Field>
+                <Field invalid={errors.spread_bp !== undefined} required>
+                  <FieldLabel>{t("terms.spread")}</FieldLabel>
+                  <TextField
+                    name="spread"
+                    inputMode="decimal"
+                    value={spread}
+                    onChange={(event) => {
+                      setSpread(event.target.value);
+                    }}
+                  />
+                  {errors.spread_bp !== undefined && (
+                    <FieldError>{errors.spread_bp}</FieldError>
+                  )}
+                </Field>
+              </FormRow>
             </FormLayout>
           </form>
         </DialogBody>

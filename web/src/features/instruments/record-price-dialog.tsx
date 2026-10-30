@@ -22,6 +22,7 @@ import { useToday } from "@/i18n/today";
 import { DateInput } from "@/ui/date-input";
 import widths from "@/ui/field-width.module.css";
 import { FormLayout } from "@/ui/form-layout";
+import { FormRow } from "@/ui/form-row";
 import { useOverlayOpen } from "@/ui/use-overlay-open";
 import { useStableCallback } from "@/ui/use-stable-callback";
 
@@ -99,29 +100,35 @@ export function RecordPriceDialog({
                   </AlertDescription>
                 </AlertContent>
               </Alert>
-              <Field invalid={errors.date !== undefined} required>
-                <FieldLabel>{t("instrument.price.date")}</FieldLabel>
-                <DateInput name="date" value={date} onChange={setDate} />
-                {errors.date !== undefined && (
-                  <FieldError>{errors.date}</FieldError>
-                )}
-              </Field>
+              <FormRow>
+                <Field invalid={errors.date !== undefined} required>
+                  <FieldLabel>{t("instrument.price.date")}</FieldLabel>
+                  <DateInput
+                    name="date"
+                    className={widths.fill}
+                    value={date}
+                    onChange={setDate}
+                  />
+                  {errors.date !== undefined && (
+                    <FieldError>{errors.date}</FieldError>
+                  )}
+                </Field>
 
-              <Field invalid={errors.value !== undefined} required>
-                <FieldLabel>{t("instrument.price.value")}</FieldLabel>
-                <TextField
-                  className={widths.medium}
-                  name="value"
-                  inputMode="decimal"
-                  value={text}
-                  onChange={(event) => {
-                    setText(event.target.value);
-                  }}
-                />
-                {errors.value !== undefined && (
-                  <FieldError>{errors.value}</FieldError>
-                )}
-              </Field>
+                <Field invalid={errors.value !== undefined} required>
+                  <FieldLabel>{t("instrument.price.value")}</FieldLabel>
+                  <TextField
+                    name="value"
+                    inputMode="decimal"
+                    value={text}
+                    onChange={(event) => {
+                      setText(event.target.value);
+                    }}
+                  />
+                  {errors.value !== undefined && (
+                    <FieldError>{errors.value}</FieldError>
+                  )}
+                </Field>
+              </FormRow>
             </FormLayout>
           </form>
         </DialogBody>

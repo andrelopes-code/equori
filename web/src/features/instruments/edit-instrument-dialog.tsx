@@ -26,8 +26,8 @@ import { subtypesQuery, useEditInstrument } from "@/features/instruments/api";
 import { subtypeLabel } from "@/features/instruments/instrument-labels";
 import { useT } from "@/i18n/i18n-provider";
 import { ChoiceSelect } from "@/ui/choice-select";
-import widths from "@/ui/field-width.module.css";
 import { FormLayout } from "@/ui/form-layout";
+import { FormRow } from "@/ui/form-row";
 import { useOverlayOpen } from "@/ui/use-overlay-open";
 import { useStableCallback } from "@/ui/use-stable-callback";
 
@@ -98,7 +98,7 @@ export function EditInstrumentDialog({
       });
   };
   return (
-    <Dialog open={overlayOpen} size="lg" onOpenChange={openChange}>
+    <Dialog open={overlayOpen} size="md" onOpenChange={openChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t("instrument.edit")}</DialogTitle>
@@ -136,44 +136,45 @@ export function EditInstrumentDialog({
                 )}
               </Field>
 
-              {subtypeChoices.length > 1 && (
-                <Field invalid={errors.subtype !== undefined}>
-                  <FieldLabel>{t("instruments.field.subtype")}</FieldLabel>
-                  <ChoiceSelect
-                    className={widths.medium}
-                    label={t("instruments.field.subtype")}
-                    choices={subtypeChoices}
-                    value={subtype}
-                    multiple={false}
-                    onChange={(next) => {
-                      if (typeof next === "string") setSubtype(next);
+              <FormRow>
+                {subtypeChoices.length > 1 && (
+                  <Field invalid={errors.subtype !== undefined}>
+                    <FieldLabel>{t("instruments.field.subtype")}</FieldLabel>
+                    <ChoiceSelect
+                      label={t("instruments.field.subtype")}
+                      choices={subtypeChoices}
+                      value={subtype}
+                      multiple={false}
+                      onChange={(next) => {
+                        if (typeof next === "string") setSubtype(next);
+                      }}
+                    />
+                    {errors.subtype !== undefined && (
+                      <FieldError>{errors.subtype}</FieldError>
+                    )}
+                  </Field>
+                )}
+
+                <Field invalid={errors.exchange !== undefined}>
+                  <FieldLabel>{t("instruments.field.exchange")}</FieldLabel>
+                  <TextField
+                    name="exchange"
+                    value={exchange}
+                    maxLength={4}
+                    autoCapitalize="characters"
+                    onChange={(event) => {
+                      setExchange(event.target.value.toUpperCase());
                     }}
                   />
-                  {errors.subtype !== undefined && (
-                    <FieldError>{errors.subtype}</FieldError>
+                  {errors.exchange === undefined ? (
+                    <FieldDescription>
+                      {t("instruments.field.exchangeHint")}
+                    </FieldDescription>
+                  ) : (
+                    <FieldError>{errors.exchange}</FieldError>
                   )}
                 </Field>
-              )}
-
-              <Field invalid={errors.exchange !== undefined}>
-                <FieldLabel>{t("instruments.field.exchange")}</FieldLabel>
-                <TextField
-                  name="exchange"
-                  value={exchange}
-                  maxLength={4}
-                  autoCapitalize="characters"
-                  onChange={(event) => {
-                    setExchange(event.target.value.toUpperCase());
-                  }}
-                />
-                {errors.exchange === undefined ? (
-                  <FieldDescription>
-                    {t("instruments.field.exchangeHint")}
-                  </FieldDescription>
-                ) : (
-                  <FieldError>{errors.exchange}</FieldError>
-                )}
-              </Field>
+              </FormRow>
             </FormLayout>
           </form>
         </DialogBody>

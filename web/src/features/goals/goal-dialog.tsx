@@ -32,6 +32,7 @@ import { useToday } from "@/i18n/today";
 import { DateInput } from "@/ui/date-input";
 import widths from "@/ui/field-width.module.css";
 import { FormLayout } from "@/ui/form-layout";
+import { FormRow } from "@/ui/form-row";
 import { MoneyInput } from "@/ui/money-input";
 import { useOverlayOpen } from "@/ui/use-overlay-open";
 import { useStableCallback } from "@/ui/use-stable-callback";
@@ -143,38 +144,40 @@ export function GoalDialog({
                 )}
               </Field>
 
-              <Field invalid={errors.target !== undefined} required>
-                <FieldLabel>{t("goals.target")}</FieldLabel>
-                {currency !== undefined && scale !== null && (
-                  <MoneyInput
-                    size="field"
-                    className={widths.medium}
-                    value={target}
-                    onChange={setTarget}
-                    currency={currency}
-                    scale={scale(currency)}
-                    sign="neutral"
+              <FormRow>
+                <Field invalid={errors.target !== undefined} required>
+                  <FieldLabel>{t("goals.target")}</FieldLabel>
+                  {currency !== undefined && scale !== null && (
+                    <MoneyInput
+                      size="field"
+                      value={target}
+                      onChange={setTarget}
+                      currency={currency}
+                      scale={scale(currency)}
+                      sign="neutral"
+                    />
+                  )}
+
+                  {errors.target !== undefined && (
+                    <FieldError>{errors.target}</FieldError>
+                  )}
+                </Field>
+
+                <Field invalid={errors.due_on !== undefined} required>
+                  <FieldLabel>{t("goals.due")}</FieldLabel>
+                  <DateInput
+                    className={widths.fill}
+                    name="due_on"
+                    value={dueOn}
+                    onChange={setDueOn}
+                    shortcuts={false}
+                    min={today}
                   />
-                )}
-
-                {errors.target !== undefined && (
-                  <FieldError>{errors.target}</FieldError>
-                )}
-              </Field>
-
-              <Field invalid={errors.due_on !== undefined} required>
-                <FieldLabel>{t("goals.due")}</FieldLabel>
-                <DateInput
-                  name="due_on"
-                  value={dueOn}
-                  onChange={setDueOn}
-                  shortcuts={false}
-                  min={today}
-                />
-                {errors.due_on !== undefined && (
-                  <FieldError>{errors.due_on}</FieldError>
-                )}
-              </Field>
+                  {errors.due_on !== undefined && (
+                    <FieldError>{errors.due_on}</FieldError>
+                  )}
+                </Field>
+              </FormRow>
 
               <Field invalid={errors.account_ids !== undefined} required>
                 <FieldLabel>{t("goals.accounts")}</FieldLabel>
