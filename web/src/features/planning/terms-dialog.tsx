@@ -24,6 +24,7 @@ import { useToday } from "@/i18n/today";
 import { DateInput } from "@/ui/date-input";
 import widths from "@/ui/field-width.module.css";
 import { FormLayout } from "@/ui/form-layout";
+import { FormRow } from "@/ui/form-row";
 import { MoneyInput } from "@/ui/money-input";
 import { useOverlayOpen } from "@/ui/use-overlay-open";
 import { useStableCallback } from "@/ui/use-stable-callback";
@@ -62,7 +63,7 @@ export function TermsDialog({
     if (!open) onCancel();
   });
   return (
-    <Dialog open={overlayOpen} size="lg" onOpenChange={openChange}>
+    <Dialog open={overlayOpen} size="md" onOpenChange={openChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t("schedule.changeTerms")}</DialogTitle>
@@ -110,38 +111,40 @@ export function TermsDialog({
                 <InlineMessage tone="danger">{summary}</InlineMessage>
               )}
 
-              <Field invalid={errors.effective_from !== undefined} required>
-                <FieldLabel>{t("schedule.effectiveFrom")}</FieldLabel>
-                <DateInput
-                  name="effective_from"
-                  value={from}
-                  min={shiftDate(after, 1)}
-                  shortcuts={false}
-                  onChange={setFrom}
-                />
-                {errors.effective_from !== undefined && (
-                  <FieldError>{errors.effective_from}</FieldError>
-                )}
-              </Field>
-
-              <Field invalid={errors.amount !== undefined}>
-                <FieldLabel>{t("schedule.amount")}</FieldLabel>
-                {currency !== undefined && scale !== null && (
-                  <MoneyInput
-                    size="field"
-                    className={widths.medium}
-                    value={amount}
-                    onChange={setAmount}
-                    currency={currency}
-                    scale={scale(currency)}
-                    sign={schedule.kind === "income" ? "income" : "expense"}
+              <FormRow>
+                <Field invalid={errors.effective_from !== undefined} required>
+                  <FieldLabel>{t("schedule.effectiveFrom")}</FieldLabel>
+                  <DateInput
+                    className={widths.fill}
+                    name="effective_from"
+                    value={from}
+                    min={shiftDate(after, 1)}
+                    shortcuts={false}
+                    onChange={setFrom}
                   />
-                )}
+                  {errors.effective_from !== undefined && (
+                    <FieldError>{errors.effective_from}</FieldError>
+                  )}
+                </Field>
 
-                {errors.amount !== undefined && (
-                  <FieldError>{errors.amount}</FieldError>
-                )}
-              </Field>
+                <Field invalid={errors.amount !== undefined}>
+                  <FieldLabel>{t("schedule.amount")}</FieldLabel>
+                  {currency !== undefined && scale !== null && (
+                    <MoneyInput
+                      size="field"
+                      value={amount}
+                      onChange={setAmount}
+                      currency={currency}
+                      scale={scale(currency)}
+                      sign={schedule.kind === "income" ? "income" : "expense"}
+                    />
+                  )}
+
+                  {errors.amount !== undefined && (
+                    <FieldError>{errors.amount}</FieldError>
+                  )}
+                </Field>
+              </FormRow>
 
               <Checkbox
                 checked={withRecurrence}

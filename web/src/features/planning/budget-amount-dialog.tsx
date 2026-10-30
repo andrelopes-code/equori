@@ -10,7 +10,6 @@ import {
 } from "@slotted/react/dialog";
 import { Field, FieldError, FieldLabel } from "@slotted/react/field";
 import { InlineMessage } from "@slotted/react/inline-message";
-import { Stack } from "@slotted/react/stack";
 import { useId, useState } from "react";
 
 import { errorText } from "@/api/problem";
@@ -21,6 +20,8 @@ import { useScale } from "@/features/setup";
 import { formatMonthTitle } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
+import { FormLayout } from "@/ui/form-layout";
+import { FormRow } from "@/ui/form-row";
 import { MoneyInput } from "@/ui/money-input";
 import { MonthControl } from "@/ui/month-control";
 import { useOverlayOpen } from "@/ui/use-overlay-open";
@@ -100,37 +101,41 @@ export function BudgetAmountDialog({
                 });
             }}
           >
-            <Stack gap={4}>
+            <FormLayout>
               {summary !== null && (
                 <InlineMessage tone="danger">{summary}</InlineMessage>
               )}
-              <Field invalid={errors.effective_from !== undefined} required>
-                <FieldLabel>{t("budget.from")}</FieldLabel>
-                <MonthControl
-                  label={t("budget.from")}
-                  value={from}
-                  onChange={setFrom}
-                />
-                {errors.effective_from !== undefined && (
-                  <FieldError>{errors.effective_from}</FieldError>
-                )}
-              </Field>
-              <Field invalid={errors.amount !== undefined} required>
-                <FieldLabel>{t("budget.amount")}</FieldLabel>
-                {currency !== undefined && scale !== null && (
-                  <MoneyInput
-                    value={amount}
-                    onChange={setAmount}
-                    currency={currency}
-                    scale={scale(currency)}
-                    sign="neutral"
+              <FormRow>
+                <Field invalid={errors.effective_from !== undefined} required>
+                  <FieldLabel>{t("budget.from")}</FieldLabel>
+                  <MonthControl
+                    label={t("budget.from")}
+                    value={from}
+                    onChange={setFrom}
                   />
-                )}
-                {errors.amount !== undefined && (
-                  <FieldError>{errors.amount}</FieldError>
-                )}
-              </Field>
-            </Stack>
+                  {errors.effective_from !== undefined && (
+                    <FieldError>{errors.effective_from}</FieldError>
+                  )}
+                </Field>
+
+                <Field invalid={errors.amount !== undefined} required>
+                  <FieldLabel>{t("budget.amount")}</FieldLabel>
+                  {currency !== undefined && scale !== null && (
+                    <MoneyInput
+                      size="field"
+                      value={amount}
+                      onChange={setAmount}
+                      currency={currency}
+                      scale={scale(currency)}
+                      sign="neutral"
+                    />
+                  )}
+                  {errors.amount !== undefined && (
+                    <FieldError>{errors.amount}</FieldError>
+                  )}
+                </Field>
+              </FormRow>
+            </FormLayout>
           </form>
         </DialogBody>
         <DialogFooter>

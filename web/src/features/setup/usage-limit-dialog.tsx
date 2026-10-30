@@ -16,8 +16,8 @@ import { errorText } from "@/api/problem";
 import { useSetUsageLimit } from "@/features/setup/api";
 import type { UsageRow } from "@/features/setup/api";
 import { useT } from "@/i18n/i18n-provider";
-import widths from "@/ui/field-width.module.css";
 import { FormLayout } from "@/ui/form-layout";
+import { FormRow } from "@/ui/form-row";
 import { useStableCallback } from "@/ui/use-stable-callback";
 
 // The daily limits the owner copies from the provider's console (ADR 019 U4); an empty field
@@ -75,31 +75,31 @@ export function UsageLimitDialog({
                 <InlineMessage tone="danger">{error}</InlineMessage>
               )}
 
-              <Field>
-                <FieldLabel>{t("assistant.limits.requests")}</FieldLabel>
-                <NumberField
-                  className={widths.medium}
-                  name="requests_per_day"
-                  value={requests}
-                  min={1}
-                  max={2147483647}
-                  onValueChange={setRequests}
-                />
-              </Field>
+              <FormRow>
+                <Field>
+                  <FieldLabel>{t("assistant.limits.requests")}</FieldLabel>
+                  <NumberField
+                    name="requests_per_day"
+                    value={requests}
+                    min={1}
+                    max={2147483647}
+                    onValueChange={setRequests}
+                  />
+                </Field>
 
-              <Field>
-                <FieldLabel>{t("assistant.limits.tokens")}</FieldLabel>
-                <NumberField
-                  className={widths.medium}
-                  name="tokens_per_day"
-                  value={tokens}
-                  min={1}
-                  onValueChange={setTokens}
-                />
-                <FieldDescription>
-                  {t("assistant.limits.hint")}
-                </FieldDescription>
-              </Field>
+                <Field>
+                  <FieldLabel>{t("assistant.limits.tokens")}</FieldLabel>
+                  <NumberField
+                    name="tokens_per_day"
+                    value={tokens}
+                    min={1}
+                    onValueChange={setTokens}
+                  />
+                  <FieldDescription>
+                    {t("assistant.limits.hint")}
+                  </FieldDescription>
+                </Field>
+              </FormRow>
             </FormLayout>
           </form>
         </DialogBody>

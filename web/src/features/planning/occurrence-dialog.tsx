@@ -22,6 +22,7 @@ import {
 } from "@/features/planning/api";
 import { useT } from "@/i18n/i18n-provider";
 import { DateInput } from "@/ui/date-input";
+import widths from "@/ui/field-width.module.css";
 import { FormLayout } from "@/ui/form-layout";
 import { useOverlayOpen } from "@/ui/use-overlay-open";
 import { useStableCallback } from "@/ui/use-stable-callback";
@@ -108,7 +109,12 @@ export function OccurrenceDialog({
               {change === "move" && (
                 <Field required>
                   <FieldLabel>{t("occurrence.date")}</FieldLabel>
-                  <DateInput name="date" value={date} onChange={setDate} />
+                  <DateInput
+                    name="date"
+                    className={widths.fill}
+                    value={date}
+                    onChange={setDate}
+                  />
                 </Field>
               )}
             </FormLayout>
