@@ -12,10 +12,12 @@ func (s *Server) ListAccessTokens(ctx context.Context, _ ListAccessTokensRequest
 	if err != nil {
 		return nil, err
 	}
+
 	items := make([]AccessToken, 0, len(tokens))
 	for _, t := range tokens {
 		items = append(items, toAPIAccessToken(t))
 	}
+
 	return ListAccessTokens200JSONResponse{Items: items}, nil
 }
 
@@ -23,12 +25,15 @@ func (s *Server) CreateAccessToken(ctx context.Context, req CreateAccessTokenReq
 	if req.Body == nil {
 		return nil, errInvalidRequest
 	}
+
 	text, t, err := s.svc.CreateAccessToken(ctx, auth.MustUserID(ctx), req.Body.Name, req.Body.Scope, req.Body.ExpiresInDays)
 	if err != nil {
 		return nil, err
 	}
+
 	out := toAPIAccessToken(t)
 	out.Token = &text
+
 	return CreateAccessToken201JSONResponse(out), nil
 }
 
@@ -36,6 +41,7 @@ func (s *Server) DeleteAccessToken(ctx context.Context, req DeleteAccessTokenReq
 	if err := s.svc.DeleteAccessToken(ctx, auth.MustUserID(ctx), req.Id); err != nil {
 		return nil, err
 	}
+
 	return DeleteAccessToken204Response{}, nil
 }
 

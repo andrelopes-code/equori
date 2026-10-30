@@ -32,6 +32,7 @@ func TestCreateAccountAndRecordExpense(t *testing.T) {
 		} `json:"balance"`
 	}
 	h.MustDo(http.MethodGet, "/api/v1/accounts/"+checking+"/balance?date=2026-10-31", nil, http.StatusOK, &bal)
+
 	if bal.Balance.Amount != -12000 || bal.Balance.Currency != "BRL" {
 		t.Fatalf("balance = %+v", bal)
 	}
@@ -83,6 +84,7 @@ func TestCorrectionConflictIs409(t *testing.T) {
 		} `json:"items"`
 	}
 	h.MustDo(http.MethodGet, "/api/v1/transactions/"+id+"/versions", nil, http.StatusOK, &versions)
+
 	if len(versions.Items) != 1 || versions.Items[0].Version != 1 {
 		t.Fatalf("versions = %+v", versions)
 	}
@@ -105,10 +107,12 @@ func TestCorrectionReturnsStoredPostings(t *testing.T) {
 	correction["reason"] = "typo"
 	var corrected apitest.TransactionView
 	h.MustDo(http.MethodPut, "/api/v1/transactions/"+id, correction, http.StatusOK, &corrected)
+
 	read := h.Transaction(id)
 	if len(corrected.Postings) != 2 || len(read.Postings) != 2 {
 		t.Fatalf("corrected = %+v, read = %+v", corrected.Postings, read.Postings)
 	}
+
 	for i, p := range corrected.Postings {
 		if p.ID != read.Postings[i].ID || p.ID == "00000000-0000-0000-0000-000000000000" {
 			t.Fatalf("corrected posting %d id = %s, stored %s", i, p.ID, read.Postings[i].ID)
@@ -120,6 +124,7 @@ func TestPaginationTies(t *testing.T) {
 	t.Parallel()
 	h := apitest.New(t)
 	checking := h.Account("Nubank", "asset", "checking", nil)
+
 	food := h.Account("Food", "expense", "", nil)
 	for i := range 120 {
 		h.Record(fmt.Sprintf("2026-10-%02d", 1+i%3), apitest.Posting(checking, -1), apitest.Posting(food, 1))
@@ -127,6 +132,7 @@ func TestPaginationTies(t *testing.T) {
 
 	seen := map[string]bool{}
 	pages := 0
+
 	path := "/api/v1/transactions?limit=50"
 	for {
 		var page struct {
@@ -134,18 +140,24 @@ func TestPaginationTies(t *testing.T) {
 			NextCursor string   `json:"next_cursor"`
 		}
 		h.MustDo(http.MethodGet, path, nil, http.StatusOK, &page)
+
 		pages++
+
 		for _, it := range page.Items {
 			if seen[it.ID] {
 				t.Fatalf("transaction %s on two pages", it.ID)
 			}
+
 			seen[it.ID] = true
 		}
+
 		if page.NextCursor == "" {
 			break
 		}
+
 		path = "/api/v1/transactions?limit=50&cursor=" + url.QueryEscape(page.NextCursor)
 	}
+
 	if pages != 3 || len(seen) != 120 {
 		t.Fatalf("pages = %d, distinct = %d; want 3 and 120", pages, len(seen))
 	}
@@ -173,6 +185,7 @@ func TestSettingsLockAfterFirstTransaction(t *testing.T) {
 func TestUnauthenticated(t *testing.T) {
 	t.Parallel()
 	h := apitest.New(t)
+
 	anonymous := &http.Client{}
 	for _, p := range []string{"/api/v1/accounts", "/api/v1/transactions", "/api/v1/settings", "/api/v1/payees", "/api/v1/institutions", "/api/v1/tags"} {
 		if r := h.Call(anonymous, http.MethodGet, p, nil); r.Status != http.StatusUnauthorized {

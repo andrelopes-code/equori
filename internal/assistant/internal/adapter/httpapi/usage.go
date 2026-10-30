@@ -14,9 +14,11 @@ func (s *Server) ListUsage(ctx context.Context, _ ListUsageRequestObject) (ListU
 	if err != nil {
 		return nil, err
 	}
+
 	items := make([]UsageRow, len(rows))
 	for i, r := range rows {
 		u := r.Usage
+
 		items[i] = UsageRow{
 			ProviderId: r.Provider.ID, ProviderName: r.Provider.Name, Preset: r.Provider.Preset, Instance: r.Provider.Instance,
 			Model: u.Model, TodayRequests: u.TodayRequests, TodayErrors: u.TodayErrors, TodayTokens: u.TodayTokens,
@@ -27,6 +29,7 @@ func (s *Server) ListUsage(ctx context.Context, _ ListUsageRequestObject) (ListU
 			items[i].CoolingUntil = &u.CoolingUntil
 		}
 	}
+
 	return ListUsage200JSONResponse{Items: items}, nil
 }
 
@@ -35,6 +38,7 @@ func (s *Server) ListUsageDays(ctx context.Context, req ListUsageDaysRequestObje
 	if err != nil {
 		return nil, err
 	}
+
 	items := make([]UsageDay, len(rows))
 	for i, r := range rows {
 		items[i] = UsageDay{
@@ -42,6 +46,7 @@ func (s *Server) ListUsageDays(ctx context.Context, req ListUsageDaysRequestObje
 			Requests: r.Requests, Errors: r.Errors, Tokens: r.Tokens,
 		}
 	}
+
 	return ListUsageDays200JSONResponse{Items: items}, nil
 }
 
@@ -50,5 +55,6 @@ func (s *Server) SetUsageLimit(ctx context.Context, req SetUsageLimitRequestObje
 	if err := s.svc.SetLimit(ctx, auth.MustUserID(ctx), b.ProviderId, b.Model, b.RequestsPerDay, b.TokensPerDay); err != nil {
 		return nil, err
 	}
+
 	return SetUsageLimit204Response{}, nil
 }

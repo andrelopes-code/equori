@@ -25,6 +25,7 @@ func newFixture(t *testing.T, opts ...apitest.Option) fixture {
 	inst := func(name string) string {
 		var out idOnly
 		h.MustDo(http.MethodPost, "/api/v1/institutions", map[string]string{"name": name}, http.StatusCreated, &out)
+
 		return out.ID
 	}
 	nubankInst := inst("Nubank")
@@ -53,6 +54,7 @@ func newFixture(t *testing.T, opts ...apitest.Option) fixture {
 		} `json:"items"`
 	}
 	h.MustDo(http.MethodGet, "/api/v1/accounts", nil, http.StatusOK, &accounts)
+
 	for _, a := range accounts.Items {
 		switch a.SystemRole {
 		case "taxes":
@@ -67,8 +69,10 @@ func newFixture(t *testing.T, opts ...apitest.Option) fixture {
 			f.adjustments = a.ID
 		}
 	}
+
 	f.inss = h.Account("INSS", "expense", "", map[string]any{"parent_id": f.taxes})
 	f.incomeTax = h.Account("Income tax", "expense", "", map[string]any{"parent_id": f.taxes})
+
 	return f
 }
 
@@ -80,11 +84,13 @@ func (f fixture) balance(t *testing.T, account, date, basis string) int64 {
 		} `json:"balance"`
 	}
 	f.h.MustDo(http.MethodGet, "/api/v1/accounts/"+account+"/balance?date="+date+"&basis="+basis, nil, http.StatusOK, &out)
+
 	return out.Balance.Amount
 }
 
 func (f fixture) expectBalances(t *testing.T, date string, want map[string]int64) {
 	t.Helper()
+
 	for account, amount := range want {
 		if got := f.balance(t, account, date, "booked"); got != amount {
 			t.Errorf("balance of %s on %s = %d, want %d", account, date, got, amount)
@@ -94,6 +100,7 @@ func (f fixture) expectBalances(t *testing.T, date string, want map[string]int64
 
 func TestScenarios(t *testing.T) {
 	t.Parallel()
+
 	p := apitest.Posting
 
 	t.Run("S01", func(t *testing.T) {
@@ -125,9 +132,11 @@ func TestScenarios(t *testing.T) {
 		f.expectBalances(t, "2026-10-17", map[string]int64{
 			f.checking: -58900, f.vr: -4590, f.wallet: -1800, f.food: 24590, f.housing: 38900, f.transport: 1800,
 		})
+
 		if got := f.balance(t, f.checking, "2026-10-18", "settled"); got != -50900 {
 			t.Errorf("checking settled balance on 2026-10-18 = %d, want -50900", got)
 		}
+
 		if got := f.balance(t, f.checking, "2026-10-19", "settled"); got != -58900 {
 			t.Errorf("checking settled balance on 2026-10-19 = %d, want -58900", got)
 		}
@@ -144,11 +153,13 @@ func TestScenarios(t *testing.T) {
 
 	t.Run("S19", func(t *testing.T) {
 		f := newFixture(t)
+
 		dinner := f.h.Record("2026-10-12",
 			p(f.itauVisa, -30000), p(f.restaurant, 10000), p(f.receivableAna, 10000), p(f.receivableBruno, 10000))
 		if card := f.h.Transaction(dinner).Postings[0]; card.Statement != "2026-11" || card.CardRole != "charge" {
 			t.Errorf("dinner card posting billed on %q as %q, want 2026-11 charge", card.Statement, card.CardRole)
 		}
+
 		f.h.Record("2026-10-13", p(f.checking, 10000), p(f.receivableAna, -10000))
 		f.expectBalances(t, "2026-10-13", map[string]int64{
 			f.itauVisa: -30000, f.restaurant: 10000, f.receivableAna: 0, f.receivableBruno: 10000, f.checking: 10000,

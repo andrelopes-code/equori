@@ -42,11 +42,14 @@ func (m *Module) ran(id string, err error) {
 	if err != nil {
 		run.err = err.Error()
 	}
+
 	m.runsMu.Lock()
 	defer m.runsMu.Unlock()
+
 	if m.runs == nil {
 		m.runs = make(map[string]feedRun)
 	}
+
 	m.runs[id] = run
 }
 
@@ -56,16 +59,20 @@ func (m *Module) enabledFeeds(ctx context.Context) (map[string]bool, error) {
 	if err != nil {
 		return nil, fmt.Errorf("list the feed settings: %w", err)
 	}
+
 	on := make(map[string]bool)
 	if len(rows) == 0 {
 		for _, id := range m.feeds.Seed {
 			on[id] = true
 		}
+
 		return on, nil
 	}
+
 	for _, r := range rows {
 		on[r.ID] = r.Enabled
 	}
+
 	return on, nil
 }
 
@@ -76,46 +83,58 @@ func (m *Module) Feeds(ctx context.Context) ([]Feed, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	l, err := m.profiles.Profile(ctx, auth.MustUserID(ctx))
 	if err != nil {
 		return nil, err
 	}
+
 	suggested := SuggestedFeeds(l.Region)
 	lags := feedLags()
+
 	out := make([]Feed, 0, len(m.feeds.Sources)+len(m.feeds.Indexes))
 	for _, src := range m.feeds.Sources {
 		latest, err := m.q.LatestSourceDate(ctx, postgres.LatestSourceDateParams{Source: src.ID()})
 		if err != nil {
 			return nil, fmt.Errorf("read the latest price of %s: %w", src.ID(), err)
 		}
+
 		var last *time.Time
 		if latest.After(time.Unix(0, 0).UTC()) {
 			last = &latest
 		}
+
 		out = append(out, m.feed(src.ID(), domain.FeedPrice, index.PeriodDay, last, on, suggested, lags))
 	}
+
 	for _, src := range m.feeds.Indexes {
 		latest, err := m.q.LatestIndexRate(ctx, src.Index())
 		if err != nil {
 			return nil, fmt.Errorf("read the latest rate of %s: %w", src.ID(), err)
 		}
+
 		var last *time.Time
 		if latest.Found {
 			last = &latest.Latest
 		}
+
 		out = append(out, m.feed(src.ID(), domain.FeedIndex, src.Period(), last, on, suggested, lags))
 	}
+
 	for _, src := range m.feeds.Expectations {
 		latest, err := m.q.LatestSurvey(ctx, src.ID())
 		if err != nil {
 			return nil, fmt.Errorf("read the latest survey of %s: %w", src.ID(), err)
 		}
+
 		var last *time.Time
 		if latest.Found {
 			last = &latest.Latest
 		}
+
 		out = append(out, m.feed(src.ID(), domain.FeedExpectation, index.PeriodDay, last, on, suggested, lags))
 	}
+
 	return out, nil
 }
 
@@ -127,17 +146,21 @@ func (m *Module) feed(id, kind, period string, last *time.Time, on map[string]bo
 		if period == index.PeriodMonth {
 			due = last.AddDate(0, 2, lags[id])
 		}
+
 		f.Stale = m.feeds.Clock.Today().After(due)
 	}
+
 	m.runsMu.Lock()
 	run, ok := m.runs[id]
 	m.runsMu.Unlock()
+
 	if ok {
 		f.LastRun = &run.at
 		if run.err != "" {
 			f.Error = &run.err
 		}
 	}
+
 	return f
 }
 
@@ -146,12 +169,15 @@ func feedLags() map[string]int {
 	for _, e := range sourceEntries() {
 		lags[e.id] = e.lag
 	}
+
 	for _, e := range indexEntries() {
 		lags[e.id] = e.lag
 	}
+
 	for _, e := range expectationEntries() {
 		lags[e.id] = e.lag
 	}
+
 	return lags
 }
 
@@ -161,33 +187,43 @@ func (m *Module) SetFeed(ctx context.Context, id string, enabled bool) (Feed, er
 	if err := m.requireAdmin(ctx); err != nil {
 		return Feed{}, err
 	}
+
 	if _, ok := feedLags()[id]; !ok {
 		return Feed{}, ErrUnknownFeed
 	}
+
 	on, err := m.enabledFeeds(ctx)
 	if err != nil {
 		return Feed{}, err
 	}
+
 	on[id] = enabled
+
 	tx, err := m.pool.Begin(ctx)
 	if err != nil {
 		return Feed{}, err
 	}
+
 	defer func() { _ = tx.Rollback(ctx) }()
+
 	q := m.q.WithTx(tx)
 	for fid, en := range on {
 		if err := q.SetFeed(ctx, postgres.SetFeedParams{ID: fid, Enabled: en}); err != nil {
 			return Feed{}, fmt.Errorf("store the setting of %s: %w", fid, err)
 		}
 	}
+
 	if err := tx.Commit(ctx); err != nil {
 		return Feed{}, err
 	}
+
 	fs, err := m.Feeds(ctx)
 	if err != nil {
 		return Feed{}, err
 	}
+
 	i := slices.IndexFunc(fs, func(f Feed) bool { return f.ID == id })
+
 	return fs[i], nil
 }
 
@@ -196,13 +232,17 @@ func (m *Module) Refresh(ctx context.Context) error {
 	if err := m.requireAdmin(ctx); err != nil {
 		return err
 	}
+
 	if !m.running.CompareAndSwap(false, true) {
 		return ErrRefreshRunning
 	}
+
 	m.refreshes.Go(func() {
 		defer m.running.Store(false)
+
 		m.TickFeeds(m.life)
 	})
+
 	return nil
 }
 
@@ -214,8 +254,10 @@ func (m *Module) requireAdmin(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+
 	if !ok {
 		return ErrAdminRequired
 	}
+
 	return nil
 }

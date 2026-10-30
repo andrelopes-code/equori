@@ -71,27 +71,36 @@ func (s *Service) Suggest(ctx context.Context, userID int64, items []SuggestItem
 	if len(items) > MaxSuggestions {
 		return nil, false, ErrTooManySuggestions
 	}
+
 	out = make([]Suggestion, len(items))
+
 	accounts, _, err := s.ledger.Vocabulary(ctx, userID)
 	if err != nil {
 		return nil, false, err
 	}
+
 	options := categoryOptions(accounts)
+
 	usable := map[uuid.UUID]string{}
 	for _, o := range options {
 		usable[o.ID] = o.Class
 	}
+
 	keys := make([]hintKey, len(items))
+
 	var descriptions []string
 	for i, it := range items {
 		keys[i] = hintKey{it.Class, domain.Normalize(it.Description)}
 		descriptions = append(descriptions, keys[i].description)
 	}
+
 	kept, err := s.hints.Hints(ctx, userID, descriptions)
 	if err != nil {
 		return nil, false, err
 	}
+
 	now := s.clock.Now()
+
 	known := map[hintKey]uuid.UUID{}
 	for _, h := range kept {
 		k := hintKey{h.Class, h.Description}
@@ -102,52 +111,65 @@ func (s *Service) Suggest(ctx context.Context, userID int64, items []SuggestItem
 			known[k] = h.CategoryID
 		}
 	}
+
 	var ask []SuggestItem
+
 	var askKeys []hintKey
 	for i, k := range keys {
 		if id, ok := known[k]; ok {
 			out[i].CategoryID = id
 			continue
 		}
+
 		if k.description == "" || slices.Contains(askKeys, k) {
 			continue
 		}
+
 		ask = append(ask, SuggestItem{Description: strings.TrimSpace(items[i].Description), Class: k.class})
 		askKeys = append(askKeys, k)
 	}
+
 	if len(ask) == 0 {
 		return out, true, nil
 	}
+
 	if s.suggester == nil || len(options) == 0 {
 		return out, s.suggester != nil, nil
 	}
+
 	profile, err := s.profiles.Profile(ctx, userID)
 	if err != nil {
 		return nil, false, fmt.Errorf("read profile: %w", err)
 	}
+
 	chosen, err := s.suggester.Suggest(ctx, profile, options, ask)
 	if errors.Is(err, ErrSuggesterUnavailable) {
 		return out, false, nil
 	}
+
 	if err != nil {
 		return nil, false, err
 	}
+
 	answers := map[hintKey]uuid.UUID{}
 	for j, k := range askKeys {
 		var id uuid.UUID
 		if n := chosen[j]; n >= 0 && n < len(options) && options[n].Class == k.class {
 			id = options[n].ID
 		}
+
 		answers[k] = id
 		if err := s.hints.SaveHint(ctx, userID, Hint{Class: k.class, Description: k.description, CategoryID: id, AnsweredAt: now}); err != nil {
 			return nil, false, err
 		}
 	}
+
 	for i, k := range keys {
 		if id, ok := answers[k]; ok {
 			out[i] = Suggestion{CategoryID: id, FromModel: true}
 		}
 	}
+
 	return out, true, nil
 }
 
@@ -158,19 +180,24 @@ func categoryOptions(accounts []Account) []CategoryOption {
 	for _, a := range accounts {
 		byID[a.ID] = a
 	}
+
 	var out []CategoryOption
 	for _, a := range accounts {
 		if a.Closed || a.SystemRole != "" || (a.Class != "expense" && a.Class != "income") {
 			continue
 		}
+
 		names := []string{a.Name}
 		for p, ok := byID[a.ParentID]; ok && len(names) < 10; p, ok = byID[p.ParentID] {
 			names = append([]string{p.Name}, names...)
 		}
+
 		out = append(out, CategoryOption{ID: a.ID, Class: a.Class, Path: strings.Join(names, " › ")})
 	}
+
 	slices.SortFunc(out, func(a, b CategoryOption) int {
 		return cmp.Or(cmp.Compare(a.Class, b.Class), cmp.Compare(a.Path, b.Path))
 	})
+
 	return out
 }

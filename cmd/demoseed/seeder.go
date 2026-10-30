@@ -66,6 +66,7 @@ func (s *seeder) do(method, path string, body, out any) {
 	if s.err != nil {
 		return
 	}
+
 	var reader io.Reader
 	if body != nil {
 		b, err := json.Marshal(body)
@@ -73,32 +74,39 @@ func (s *seeder) do(method, path string, body, out any) {
 			s.fail("encode %s %s: %w", method, path, err)
 			return
 		}
+
 		reader = bytes.NewReader(b)
 	}
+
 	req, err := http.NewRequestWithContext(s.ctx, method, s.base+"/api/v1"+path, reader)
 	if err != nil {
 		s.fail("build %s %s: %w", method, path, err)
 		return
 	}
+
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
+
 	resp, err := s.http.Do(req) //nolint:gosec // the address is the operator's own instance.
 	if err != nil {
 		s.fail("%s %s: %w", method, path, err)
 		return
 	}
 	defer resp.Body.Close()
+
 	raw, err := io.ReadAll(resp.Body)
 	if err != nil {
 		s.fail("read %s %s: %w", method, path, err)
 		return
 	}
+
 	s.calls++
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
 		s.fail("%s %s: status %d: %s", method, path, resp.StatusCode, truncate(raw))
 		return
 	}
+
 	if out != nil && len(raw) > 0 {
 		if err := json.Unmarshal(raw, out); err != nil {
 			s.fail("decode %s %s: %w", method, path, err)
@@ -110,6 +118,7 @@ func truncate(b []byte) string {
 	if len(b) > 400 {
 		return string(b[:400]) + "..."
 	}
+
 	return string(b)
 }
 
@@ -119,6 +128,7 @@ func (s *seeder) create(path string, body any) string {
 		ID string `json:"id"`
 	}
 	s.do(http.MethodPost, path, body, &out)
+
 	return out.ID
 }
 
@@ -128,6 +138,7 @@ func (s *seeder) id(key string) string {
 	if !ok {
 		s.fail("unknown key %q", key)
 	}
+
 	return v
 }
 
@@ -143,23 +154,29 @@ type accountRow struct {
 
 func (s *seeder) listAccounts() []accountRow {
 	var all []accountRow
+
 	cursor := ""
 	for s.err == nil {
 		var page struct {
 			Items      []accountRow `json:"items"`
 			NextCursor string       `json:"next_cursor"`
 		}
+
 		path := "/accounts?limit=200"
 		if cursor != "" {
 			path += "&cursor=" + url.QueryEscape(cursor)
 		}
+
 		s.do(http.MethodGet, path, nil, &page)
+
 		all = append(all, page.Items...)
 		if page.NextCursor == "" {
 			break
 		}
+
 		cursor = page.NextCursor
 	}
+
 	return all
 }
 
@@ -174,13 +191,16 @@ func (s *seeder) loadSystemAccounts() {
 				found = true
 			}
 		}
+
 		if found {
 			return
 		}
+
 		if time.Now().After(deadline) {
 			s.fail("the ledger did not provision the user within 30 seconds")
 			return
 		}
+
 		select {
 		case <-s.ctx.Done():
 			s.fail("wait for provisioning: %w", s.ctx.Err())
@@ -221,6 +241,7 @@ func (s *seeder) record(date, description string, extra map[string]any, postings
 	for k, v := range extra {
 		body[k] = v
 	}
+
 	id := s.create("/transactions", body)
 	if s.err == nil {
 		for _, p := range postings {
@@ -228,5 +249,6 @@ func (s *seeder) record(date, description string, extra map[string]any, postings
 			s.entries = append(s.entries, entry{date: date, account: p.AccountID, cents: p.Amount.Amount, desc: description})
 		}
 	}
+
 	return id
 }

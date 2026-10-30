@@ -67,6 +67,7 @@ func (r Response) Text() string {
 			b.WriteString(p.Text)
 		}
 	}
+
 	return b.String()
 }
 

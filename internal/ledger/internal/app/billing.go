@@ -20,33 +20,42 @@ func (s *Service) bill(ctx context.Context, r Repository, t *domain.Transaction)
 		if p.CardRole == "" {
 			continue
 		}
+
 		rules, ok := rulesByCard[p.AccountID]
 		if !ok {
 			var err error
 			if rules, err = r.BillingRules(ctx, t.UserID, p.AccountID); err != nil {
 				return err
 			}
+
 			rulesByCard[p.AccountID] = rules
 		}
+
 		ref, err := s.statementOf(ctx, r, t, p, rules)
 		if errors.Is(err, domain.ErrNoBillingRule) {
 			return &domain.FieldError{Field: fmt.Sprintf("postings[%d].account_id", i), Message: "card has no billing cycle rule for the date", Err: domain.ErrValidation}
 		}
+
 		if err != nil {
 			return err
 		}
+
 		id, err := s.ensureStatement(ctx, r, t.UserID, p.AccountID, ref, rules)
 		if errors.Is(err, domain.ErrNoBillingRule) {
 			return &domain.FieldError{Field: fmt.Sprintf("postings[%d].statement", i), Message: "no billing cycle rule covers the statement", Err: domain.ErrValidation}
 		}
+
 		if err != nil {
 			return err
 		}
+
 		if p.Statement == nil || p.StatementBasis == "" {
 			p.StatementBasis = domain.BasisDate
 		}
+
 		p.Statement, p.StatementID = &ref, id
 	}
+
 	return nil
 }
 
@@ -56,6 +65,7 @@ func (s *Service) statementOf(ctx context.Context, r Repository, t *domain.Trans
 	if p.Statement != nil {
 		return *p.Statement, nil
 	}
+
 	return s.statementOn(ctx, r, t.UserID, p.AccountID, t.Date, rules)
 }
 
@@ -65,6 +75,7 @@ func (s *Service) statementOn(ctx context.Context, r Repository, userID int64, c
 	if err != nil {
 		return domain.ReferenceMonth{}, err
 	}
+
 	return domain.StatementOn(d, closing, rules, s.projectedClosing(ctx))
 }
 
@@ -80,10 +91,12 @@ func (s *Service) shiftClosing(ctx context.Context, closing time.Time, rule doma
 	if rule.ClosingAdjustment == "" || rule.ClosingAdjustment == "none" {
 		return closing
 	}
+
 	shifted, err := s.cal.Adjust(ctx, rule.Calendar, closing, rule.ClosingAdjustment)
 	if err != nil {
 		return closing
 	}
+
 	return shifted
 }
 
@@ -92,12 +105,16 @@ func (s *Service) ensureStatement(ctx context.Context, r Repository, userID int6
 	if err != nil {
 		return uuid.Nil, err
 	}
+
 	dates := domain.DatesFor(ref, rule)
+
 	due, err := s.cal.Adjust(ctx, rule.Calendar, dates.DueUnadjusted, rule.Adjustment)
 	if err != nil {
 		return uuid.Nil, err
 	}
+
 	dates.Closing = s.shiftClosing(ctx, dates.Closing, rule)
+
 	return r.EnsureStatement(ctx, userID, accountID, dates, due)
 }
 
@@ -114,15 +131,19 @@ func (s *Service) statementSummaries(ctx context.Context, r Repository, userID i
 	if err != nil {
 		return nil, err
 	}
+
 	inputs := make([]domain.StatementInput, len(stored))
 	for i, st := range stored {
 		inputs[i] = st.Input
 	}
+
 	summaries := domain.Summarize(inputs, s.clock.Today())
+
 	out := make([]StatementView, len(stored))
 	for i := range stored {
 		out[i] = StatementView{Statement: stored[i], Summary: summaries[i]}
 	}
+
 	return out, nil
 }
 
@@ -146,29 +167,37 @@ func (s *Service) PlaceStatement(ctx context.Context, userID int64, cardID uuid.
 	if _, err := s.card(ctx, userID, cardID); err != nil {
 		return StatementPlacement{}, err
 	}
+
 	rules, err := s.repo.BillingRules(ctx, userID, cardID)
 	if err != nil {
 		return StatementPlacement{}, err
 	}
+
 	ref, err := s.statementOn(ctx, s.repo, userID, cardID, d, rules)
 	if errors.Is(err, domain.ErrNoBillingRule) {
 		return StatementPlacement{}, validationError("date", "card has no billing cycle rule for the date")
 	}
+
 	if err != nil {
 		return StatementPlacement{}, err
 	}
+
 	stored, err := s.repo.Statements(ctx, userID, cardID)
 	if err != nil {
 		return StatementPlacement{}, err
 	}
+
 	dates, err := s.statementDates(ctx, ref, rules, stored)
 	if errors.Is(err, domain.ErrNoBillingRule) {
 		return StatementPlacement{}, validationError("date", "no billing cycle rule covers the statement")
 	}
+
 	if err != nil {
 		return StatementPlacement{}, err
 	}
+
 	out := StatementPlacement{Reference: ref, Closing: dates.Closing, Due: dates.Due}
+
 	previous, err := s.statementDates(ctx, ref.Add(-1), rules, stored)
 	switch {
 	case err == nil:
@@ -176,6 +205,7 @@ func (s *Service) PlaceStatement(ctx context.Context, userID int64, cardID uuid.
 	case !errors.Is(err, domain.ErrNoBillingRule):
 		return StatementPlacement{}, err
 	}
+
 	return out, nil
 }
 
@@ -185,14 +215,18 @@ func (s *Service) statementDates(ctx context.Context, ref domain.ReferenceMonth,
 			return StatementDates{Closing: st.Input.Closing, Due: st.Input.Due}, nil
 		}
 	}
+
 	rule, err := rules.For(ref)
 	if err != nil {
 		return StatementDates{}, err
 	}
+
 	dates := domain.DatesFor(ref, rule)
+
 	due, err := s.cal.Adjust(ctx, rule.Calendar, dates.DueUnadjusted, rule.Adjustment)
 	if err != nil {
 		return StatementDates{}, err
 	}
+
 	return StatementDates{Closing: s.shiftClosing(ctx, dates.Closing, rule), Due: due}, nil
 }

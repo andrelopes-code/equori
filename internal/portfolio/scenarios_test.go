@@ -38,6 +38,7 @@ func newFixture(t *testing.T) fixture {
 	f.petr4 = child("XP PETR4", "PETR4")
 	f.dividends = h.Account("Dividends", "income", "", nil)
 	f.jcp = h.Account("JCP", "income", "", nil)
+
 	return f
 }
 
@@ -45,14 +46,17 @@ func units(n int64, code string) map[string]any { return map[string]any{"amount"
 
 func (f fixture) trade(t *testing.T, side, date string, quantity int64, price string, fees int64) string {
 	t.Helper()
+
 	body := map[string]any{"account_id": f.mxrf11, "cash_account_id": f.cash, "side": side, "date": date, "quantity": units(quantity, "MXRF11"), "unit_price": price}
 	if fees != 0 {
 		body["fees"] = apitest.BRL(fees)
 	}
+
 	var out struct {
 		ID string `json:"id"`
 	}
 	f.h.MustDo(http.MethodPost, "/api/v1/trades", body, http.StatusCreated, &out)
+
 	return out.ID
 }
 
@@ -77,6 +81,7 @@ func (f fixture) positions(t *testing.T, date string) []positionOut {
 		Items []positionOut `json:"items"`
 	}
 	f.h.MustDo(http.MethodGet, "/api/v1/positions?date="+date, nil, http.StatusOK, &out)
+
 	return out.Items
 }
 
@@ -98,6 +103,7 @@ func (f fixture) results(t *testing.T, year string) []resultOut {
 		Items []resultOut `json:"items"`
 	}
 	f.h.MustDo(http.MethodGet, "/api/v1/realized-results?year="+year, nil, http.StatusOK, &out)
+
 	return out.Items
 }
 
@@ -112,6 +118,7 @@ func TestS64PositionAndRealizedResult(t *testing.T) {
 	if len(ps) != 1 {
 		t.Fatalf("positions = %+v", ps)
 	}
+
 	p := ps[0]
 	if p.AccountID != f.mxrf11 || p.Instrument != "MXRF11" || p.Quantity["amount"] != float64(100) || p.CostBasis["amount"] != float64(100827) ||
 		p.AverageCost != "10.0827" || p.MarketValue["amount"] != float64(93600) || len(p.Prices) != 1 || p.Prices[0].Value != "9.36" {
@@ -154,13 +161,16 @@ func TestS65IncomeEvents(t *testing.T) {
 		} `json:"items"`
 	}
 	f.h.MustDo(http.MethodGet, "/api/v1/income-events?year=2026", nil, http.StatusOK, &out)
+
 	if len(out.Items) != 2 {
 		t.Fatalf("events = %+v", out.Items)
 	}
+
 	d, j := out.Items[0], out.Items[1]
 	if d.Instrument != "MXRF11" || d.IncomeType != "dividend" || d.TaxTreatment != "exempt" || d.Gross["amount"] != float64(1000) || d.Withheld["amount"] != float64(0) || d.Date != "2026-10-26" {
 		t.Fatalf("dividend = %+v", d)
 	}
+
 	if j.Instrument != "PETR4" || j.IncomeType != "jcp" || j.TaxTreatment != "exclusive" || j.Gross["amount"] != float64(4500) || j.Withheld["amount"] != float64(675) {
 		t.Fatalf("JCP = %+v", j)
 	}

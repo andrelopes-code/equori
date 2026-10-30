@@ -61,27 +61,33 @@ func (s *Service) valuedBalances(ctx context.Context, userID int64, date time.Ti
 	if err != nil {
 		return nil, err
 	}
+
 	byID := make(map[uuid.UUID]Account, len(accounts))
 	for _, a := range accounts {
 		byID[a.ID] = a
 	}
+
 	balances, err := s.ledger.Balances(ctx, userID, date)
 	if err != nil {
 		return nil, err
 	}
+
 	var out []valuedBalance
 	for _, b := range balances {
 		if b.Amount.IsZero() {
 			continue
 		}
+
 		value := b.Amount
 		if value.Currency() != in {
 			if value, _, err = s.md.Convert(ctx, value, in, date); err != nil {
 				return nil, fmt.Errorf("value the balance of %s: %w", b.AccountID, err)
 			}
 		}
+
 		out = append(out, valuedBalance{account: byID[b.AccountID], balance: b, value: value})
 	}
+
 	return out, nil
 }
 
@@ -92,14 +98,17 @@ func (s *Service) BaseValues(ctx context.Context, userID int64, date time.Time) 
 	if err != nil {
 		return nil, err
 	}
+
 	balances, err := s.valuedBalances(ctx, userID, date, in)
 	if err != nil {
 		return nil, err
 	}
+
 	out := make(map[uuid.UUID]money.Money, len(balances))
 	for _, v := range balances {
 		out[v.balance.AccountID] = v.value
 	}
+
 	return out, nil
 }
 
@@ -107,6 +116,7 @@ func (s *Service) reportCurrency(ctx context.Context, userID int64, in money.Cur
 	if in != "" {
 		return in, nil
 	}
+
 	return s.ledger.BaseCurrency(ctx, userID)
 }
 
@@ -119,36 +129,45 @@ func (s *Service) Allocation(ctx context.Context, userID int64, date time.Time, 
 	if err != nil {
 		return AllocationReport{}, err
 	}
+
 	balances, err := s.valuedBalances(ctx, userID, date, in)
 	if err != nil {
 		return AllocationReport{}, err
 	}
+
 	var holdings []domain.Holding
 	for _, v := range balances {
 		if v.account.Class != classAsset {
 			continue
 		}
+
 		key, err := s.allocationKey(ctx, v, by)
 		if err != nil {
 			return AllocationReport{}, err
 		}
+
 		holdings = append(holdings, domain.Holding{Key: key, Value: v.value.Amount()})
 	}
+
 	total, err := money.New(0, in)
 	if err != nil {
 		return AllocationReport{}, err
 	}
+
 	report := AllocationReport{Total: total}
 	for _, g := range domain.Allocate(holdings) {
 		value, err := money.New(g.Value, in)
 		if err != nil {
 			return AllocationReport{}, err
 		}
+
 		if report.Total, err = report.Total.Add(value); err != nil {
 			return AllocationReport{}, fmt.Errorf("sum the groups: %w", err)
 		}
+
 		report.Groups = append(report.Groups, AllocationGroup{Key: g.Key, Value: value, ShareBP: g.ShareBP})
 	}
+
 	return report, nil
 }
 
@@ -157,18 +176,23 @@ func (s *Service) allocationKey(ctx context.Context, v valuedBalance, by string)
 		if v.account.InstitutionID == uuid.Nil {
 			return "", nil
 		}
+
 		return v.account.InstitutionID.String(), nil
 	}
+
 	info, err := s.md.InstrumentOf(ctx, v.balance.Amount.Currency())
 	if err != nil {
 		return "", err
 	}
+
 	if by == "type" {
 		return info.Type, nil
 	}
+
 	if info.Type == typeCurrency {
 		return string(v.balance.Amount.Currency()), nil
 	}
+
 	return string(info.QuoteCurrency), nil
 }
 
@@ -179,10 +203,12 @@ func (s *Service) NetWorth(ctx context.Context, userID int64, date time.Time, in
 	if err != nil {
 		return NetWorthReport{}, err
 	}
+
 	balances, err := s.valuedBalances(ctx, userID, date, in)
 	if err != nil {
 		return NetWorthReport{}, err
 	}
+
 	var assets, liabilities int64
 	for _, v := range balances {
 		switch v.account.Class {
@@ -192,6 +218,7 @@ func (s *Service) NetWorth(ctx context.Context, userID int64, date time.Time, in
 			liabilities -= v.value.Amount()
 		}
 	}
+
 	report := NetWorthReport{}
 	for _, f := range []struct {
 		to     *money.Money
@@ -201,5 +228,6 @@ func (s *Service) NetWorth(ctx context.Context, userID int64, date time.Time, in
 			return NetWorthReport{}, err
 		}
 	}
+
 	return report, nil
 }

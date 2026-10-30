@@ -27,6 +27,7 @@ func migrateArchive(tables []ArchiveTable, from int, steps []ArchiveStep) ([]Arc
 			return nil, fmt.Errorf("migrate archive from version %d to %d: %w", v, v+1, err)
 		}
 	}
+
 	return tables, nil
 }
 
@@ -44,6 +45,7 @@ func addBudgetReference(tables []ArchiveTable) ([]ArchiveTable, error) {
 	for i, t := range tables {
 		out[i] = ArchiveTable{Name: t.Name, Rows: slices.Clone(t.Rows)}
 	}
+
 	return out, nil
 }
 
@@ -70,6 +72,7 @@ func withField(tables []ArchiveTable, table, field string, value jsontext.Value)
 			}
 
 			fields[field] = value
+
 			b, err := json.Marshal(fields, json.Deterministic(true))
 			if err != nil {
 				return nil, fmt.Errorf("%s row %d: %w", table, j, err)

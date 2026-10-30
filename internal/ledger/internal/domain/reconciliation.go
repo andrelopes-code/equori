@@ -44,8 +44,10 @@ func YieldBound(settled int64, days int, percent int64) int64 {
 	if settled <= 0 {
 		return 0
 	}
+
 	n := new(big.Int).Mul(big.NewInt(settled), big.NewInt(percent))
 	n.Mul(n, big.NewInt(int64(max(days, 1))))
+
 	return n.Div(n, big.NewInt(100*30)).Int64()
 }
 
@@ -71,5 +73,6 @@ func CheckAssertionDate(date time.Time, lastReconciled *time.Time) error {
 	if lastReconciled != nil && date.Before(*lastReconciled) {
 		return ErrAlreadyReconciled
 	}
+
 	return nil
 }

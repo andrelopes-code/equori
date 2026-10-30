@@ -20,9 +20,11 @@ func TestWebIsServedOutsideAPI(t *testing.T) {
 	if r.Status != http.StatusOK {
 		t.Fatalf("status = %d, want 200; body = %s", r.Status, r.Body)
 	}
+
 	if string(r.Body) != index {
 		t.Errorf("body = %q, want %q", r.Body, index)
 	}
+
 	if got, want := r.Header.Get("Content-Security-Policy"), "default-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"; got != want {
 		t.Errorf("Content-Security-Policy = %q, want %q", got, want)
 	}
@@ -51,9 +53,11 @@ func TestWebServesManifestAndIcon(t *testing.T) {
 			if r.Status != http.StatusOK {
 				t.Fatalf("status = %d, want 200; body = %s", r.Status, r.Body)
 			}
+
 			if string(r.Body) != tc.body {
 				t.Errorf("body = %q, want %q", r.Body, tc.body)
 			}
+
 			if got := r.Header.Get("Content-Type"); !strings.HasPrefix(got, tc.contentType) {
 				t.Errorf("Content-Type = %q, want prefix %q", got, tc.contentType)
 			}
@@ -71,8 +75,10 @@ func TestWebRedirectsToTheDevServer(t *testing.T) {
 	r.Host = "devserver.local:8080"
 	w := httptest.NewRecorder()
 	h.App.Handler.ServeHTTP(w, r)
+
 	if w.Code != http.StatusTemporaryRedirect || w.Header().Get("Location") != "http://devserver.local:5173/admin" {
 		t.Fatalf("status %d, location %q", w.Code, w.Header().Get("Location"))
 	}
+
 	h.ExpectProblem(h.Do(http.MethodGet, "/api/v1/nope", nil), http.StatusNotFound, "not_found", "")
 }

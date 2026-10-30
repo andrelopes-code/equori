@@ -61,22 +61,27 @@ func getStatement(svc *app.Service) tool.Tool {
 		if err != nil {
 			return getStatementOut{}, err
 		}
+
 		v, a, postings, err := svc.Statement(ctx, userID, id)
 		if err != nil {
 			return getStatementOut{}, err
 		}
+
 		unit, err := svc.AmountOf(ctx, 0, a.Instrument)
 		if err != nil {
 			return getStatementOut{}, err
 		}
+
 		amount := func(n int64) tool.Money {
 			m, e := minorMoney(unit, n)
 			if err == nil {
 				err = e
 			}
+
 			return m
 		}
 		s := v.Summary
+
 		out := getStatementOut{
 			StatementID: v.ID.String(), AccountID: a.ID.String(), AccountName: a.Name, Reference: v.Input.Reference.String(),
 			Status: s.Status, ClosingDate: tool.DateOf(v.Input.Closing), DueDate: tool.DateOf(v.Input.Due),
@@ -89,6 +94,7 @@ func getStatement(svc *app.Service) tool.Tool {
 				out.Institution.Minimum = amount(*f.Minimum)
 			}
 		}
+
 		lines := make([]statementLineView, len(postings))
 		for i, p := range postings {
 			lines[i] = statementLineView{
@@ -99,10 +105,13 @@ func getStatement(svc *app.Service) tool.Tool {
 				lines[i].Installment = strconv.Itoa(p.Installment.Number) + "/" + strconv.Itoa(p.Installment.Count)
 			}
 		}
+
 		if err != nil {
 			return getStatementOut{}, err
 		}
+
 		out.Lines, out.NextCursor, err = tool.PageOf(lines, func(l statementLineView) string { return l.key }, in.PageArgs)
+
 		return out, err
 	})
 }

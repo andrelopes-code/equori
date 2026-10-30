@@ -24,6 +24,7 @@ func records(t *testing.T, h *apitest.Harness, batch, state string) []recordView
 		Items []recordView `json:"items"`
 	}
 	h.MustDo(http.MethodGet, "/api/v1/import-batches/"+batch+"/records?state="+state, nil, http.StatusOK, &out)
+
 	return out.Items
 }
 
@@ -38,15 +39,18 @@ func ambiguous(t *testing.T) (h *apitest.Harness, batch string, record recordVie
 	food := h.Account("Food", "expense", "", nil)
 	first = h.Record("2026-10-09", apitest.Posting(checking, -5000), apitest.Posting(food, 5000))
 	second = h.Record("2026-10-10", apitest.Posting(checking, -5000), apitest.Posting(food, 5000))
+
 	b := mustImport(t, h, checking, "ofx", "a.ofx", apitest.OFX("", apitest.OFXLine{Date: "20261010", Amount: "-50.00", FITID: "p1", Name: "PIX"}))
 	if got := counts(b); got != "received 1 ignored 0 matched 0 created 0 review 1" {
 		t.Fatalf("import: %s", got)
 	}
+
 	queued := records(t, h, b.ID, "needs_review")
 	// A100: candidates come best first; the entry of the line's day scores 9, the other 8.
 	if len(queued) != 1 || !slices.Equal(queued[0].Candidates, []string{second, first}) || queued[0].Amount.Amount != -5000 {
 		t.Fatalf("review queue = %+v", queued)
 	}
+
 	return h, b.ID, queued[0], first, second
 }
 
@@ -60,19 +64,24 @@ func TestResolveAsMatch(t *testing.T) {
 
 	var resolved recordView
 	h.MustDo(http.MethodPost, "/api/v1/external-records/"+record.ID+"/resolve", map[string]any{"action": "match", "transaction_id": second}, http.StatusOK, &resolved)
+
 	if resolved.State != "matched" || resolved.TransactionID != second {
 		t.Fatalf("resolved = %+v", resolved)
 	}
+
 	var b batchView
 	h.MustDo(http.MethodGet, "/api/v1/import-batches/"+batch, nil, http.StatusOK, &b)
+
 	if got := counts(b); got != "received 1 ignored 0 matched 1 created 0 review 0" {
 		t.Fatalf("batch after resolution: %s", got)
 	}
+
 	h.ExpectProblem(resolve(h, record.ID, map[string]any{"action": "discard"}), http.StatusConflict, "record_resolved", "")
 }
 
 func TestResolveAsCreateOrDiscard(t *testing.T) {
 	t.Parallel()
+
 	for _, tc := range []struct{ action, want string }{
 		{"create", "received 1 ignored 0 matched 0 created 1 review 0"},
 		{"discard", "received 1 ignored 0 matched 0 created 0 review 0"},
@@ -84,6 +93,7 @@ func TestResolveAsCreateOrDiscard(t *testing.T) {
 			h.MustDo(http.MethodPost, "/api/v1/external-records/"+record.ID+"/resolve", map[string]any{"action": tc.action}, http.StatusOK, &resolved)
 			var b batchView
 			h.MustDo(http.MethodGet, "/api/v1/import-batches/"+batch, nil, http.StatusOK, &b)
+
 			created := map[string]int{"create": 1, "discard": 0}[tc.action]
 			if got := counts(b); got != tc.want || transactionCount(t, h) != before+created {
 				t.Fatalf("batch: %s, transactions %d → %d", got, before, transactionCount(t, h))
@@ -112,8 +122,10 @@ func TestReviewOffersALaterTransaction_S182(t *testing.T) {
 	if len(queued) != 1 || !slices.Contains(queued[0].Candidates, later) {
 		t.Fatalf("review queue = %+v, want the later transaction %s among the candidates", queued, later)
 	}
+
 	var resolved recordView
 	h.MustDo(http.MethodPost, "/api/v1/external-records/"+record.ID+"/resolve", map[string]any{"action": "match", "transaction_id": later}, http.StatusOK, &resolved)
+
 	if resolved.State != "matched" || resolved.TransactionID != later {
 		t.Fatalf("resolved = %+v", resolved)
 	}
@@ -132,11 +144,14 @@ func TestReopenADiscardedLine_S183(t *testing.T) {
 	if reopened.State != "needs_review" || !slices.Contains(reopened.Candidates, second) {
 		t.Fatalf("reopened = %+v", reopened)
 	}
+
 	var b batchView
 	h.MustDo(http.MethodGet, "/api/v1/import-batches/"+batch, nil, http.StatusOK, &b)
+
 	if got := counts(b); got != "received 1 ignored 0 matched 0 created 0 review 1" {
 		t.Fatalf("batch after reopening: %s", got)
 	}
+
 	h.MustDo(http.MethodPost, "/api/v1/external-records/"+record.ID+"/resolve", map[string]any{"action": "match", "transaction_id": second}, http.StatusOK, nil)
 	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/external-records/"+record.ID+"/reopen", nil), http.StatusConflict, "record_not_discarded", "")
 }

@@ -37,5 +37,6 @@ func (t Terms) Validate() error {
 	case t.DayCount == DayCountBus252 && t.IndexID != IndexCDI:
 		return invalid("day_count", "bus252 counts the business days of the cdi index; use act365")
 	}
+
 	return nil
 }

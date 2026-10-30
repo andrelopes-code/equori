@@ -28,15 +28,18 @@ func (b books) uncategorized(t *testing.T, description, class string, amount int
 		} `json:"items"`
 	}
 	b.h.MustDo(http.MethodGet, "/api/v1/accounts?limit=200", nil, http.StatusOK, &accounts)
+
 	var category string
 	for _, a := range accounts.Items {
 		if a.SystemRole == "uncategorized_"+class {
 			category = a.ID
 		}
 	}
+
 	if class == "income" {
 		amount = -amount
 	}
+
 	var out struct {
 		ID string `json:"id"`
 	}
@@ -44,6 +47,7 @@ func (b books) uncategorized(t *testing.T, description, class string, amount int
 		"date": "2026-10-10", "description": description,
 		"postings": []map[string]any{apitest.Posting(b.checking, -amount), apitest.Posting(category, amount)},
 	}, http.StatusCreated, &out)
+
 	return out.ID
 }
 
@@ -51,6 +55,7 @@ func (b books) uncategorized(t *testing.T, description, class string, amount int
 // outside the list is no suggestion, and nothing is recorded.
 func TestSuggestTransactionCategories(t *testing.T) {
 	t.Parallel()
+
 	provider := llmtest.New("aistudio",
 		answer(`{"items":[{"description":1,"category":1},{"description":2,"category":9}]}`),
 	)
@@ -60,14 +65,17 @@ func TestSuggestTransactionCategories(t *testing.T) {
 
 	var got transactionSuggestionsView
 	b.h.MustDo(http.MethodPost, suggestTransactionsPath, map[string]any{"transaction_ids": []string{bakery, freelance}}, http.StatusOK, &got)
+
 	if !got.Available || len(got.Items) != 2 ||
 		got.Items[0].TransactionID != bakery || got.Items[0].CategoryID != b.supermarket || got.Items[0].Source != "model" ||
 		got.Items[1].TransactionID != freelance || got.Items[1].CategoryID != "" || got.Items[1].Source != "" {
 		t.Fatalf("suggestions = %+v", got)
 	}
+
 	if n := len(provider.Requests()); n != 1 {
 		t.Fatalf("calls = %d, want 1", n)
 	}
+
 	if tx := b.h.Transaction(bakery); tx.Version != 1 {
 		t.Errorf("version = %d, want 1: a suggestion records nothing", tx.Version)
 	}
@@ -86,6 +94,7 @@ func TestSuggestTransactionCategoriesRejects(t *testing.T) {
 	for i := range ids {
 		ids[i] = categorized
 	}
+
 	b.h.ExpectProblem(b.h.Do(http.MethodPost, suggestTransactionsPath, map[string]any{"transaction_ids": ids}),
 		http.StatusBadRequest, "invalid_request", "transaction_ids")
 }
@@ -97,6 +106,7 @@ func TestSuggestTransactionCategoriesWithoutModel(t *testing.T) {
 	id := b.uncategorized(t, "Padaria", "expense", 1200)
 	var got transactionSuggestionsView
 	b.h.MustDo(http.MethodPost, suggestTransactionsPath, map[string]any{"transaction_ids": []string{id}}, http.StatusOK, &got)
+
 	if got.Available || len(got.Items) != 1 || got.Items[0].TransactionID != id || got.Items[0].CategoryID != "" {
 		t.Fatalf("suggestions = %+v", got)
 	}

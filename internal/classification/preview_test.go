@@ -19,6 +19,7 @@ func preview(t *testing.T, b books, body map[string]any) previewView {
 	t.Helper()
 	var out previewView
 	b.h.MustDo(http.MethodPost, "/api/v1/rules/preview", body, http.StatusOK, &out)
+
 	return out
 }
 

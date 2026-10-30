@@ -72,26 +72,33 @@ func (s *Service) Series(ctx context.Context, userID int64, accountID uuid.UUID,
 	if days < 1 || days > MaxSeriesDays {
 		return nil, "", ErrInvalidRange
 	}
+
 	currency, err := s.repo.AccountCurrency(ctx, userID, accountID)
 	if err != nil {
 		return nil, "", err
 	}
+
 	deltas, err := s.repo.TreeDailyDeltas(ctx, userID, accountID, to)
 	if err != nil {
 		return nil, "", err
 	}
+
 	var balance int64
+
 	i := 0
 	for ; i < len(deltas) && deltas[i].Date.Before(from); i++ {
 		balance += deltas[i].pick(basis)
 	}
+
 	points := make([]Point, 0, days)
 	for d := from; !d.After(to); d = d.AddDate(0, 0, 1) {
 		for ; i < len(deltas) && !deltas[i].Date.After(d); i++ {
 			balance += deltas[i].pick(basis)
 		}
+
 		points = append(points, Point{Date: d, Balance: balance})
 	}
+
 	return points, currency, nil
 }
 
@@ -99,6 +106,7 @@ func (d DayDelta) pick(b Basis) int64 {
 	if b == BasisSettled {
 		return d.Settled
 	}
+
 	return d.Booked
 }
 
@@ -114,6 +122,7 @@ func (s *Service) RebuildAccounts(ctx context.Context, userID int64, accountIDs 
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -131,13 +140,16 @@ func (s *Service) rebuild(ctx context.Context, userID int64) error {
 	if err != nil {
 		return err
 	}
+
 	for _, r := range refs {
 		if userID != 0 && r.UserID != userID {
 			continue
 		}
+
 		if err := s.repo.Rebuild(ctx, r.UserID, r.AccountID, earliest); err != nil {
 			return err
 		}
 	}
+
 	return nil
 }

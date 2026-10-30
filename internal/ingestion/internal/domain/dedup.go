@@ -23,9 +23,11 @@ func (o Ordinals) Next(r NormalizedRecord) int {
 	if r.ExternalID != "" {
 		return 0
 	}
+
 	k := lineIdentity(r)
 	n := o[k]
 	o[k] = n + 1
+
 	return n
 }
 
@@ -43,6 +45,8 @@ func DedupKey(accountID uuid.UUID, source Source, r NormalizedRecord, ordinal in
 	} else {
 		key = accountID.String() + "\x00line\x00" + lineIdentity(r) + "\x00" + strconv.Itoa(ordinal)
 	}
+
 	sum := sha256.Sum256([]byte(key))
+
 	return sum[:]
 }

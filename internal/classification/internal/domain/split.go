@@ -32,17 +32,21 @@ type Allocation struct {
 // exceed the total.
 func Allocate(total money.Money, parts []Part, categories map[uuid.UUID]Category, date time.Time) ([]Allocation, bool) {
 	sign := int64(1)
+
 	n := total.Amount()
 	if n < 0 {
 		sign, n = -1, -n
 	}
+
 	left := n
+
 	shares := make([]int64, len(parts))
 	for i, p := range parts {
 		c, ok := categories[p.CategoryID]
 		if !ok || !c.usable(total.Currency(), date) {
 			return nil, false
 		}
+
 		switch {
 		case p.Percent != 0:
 			// Split n to keep n·percent within int64 for amounts up to 2^53.
@@ -51,28 +55,36 @@ func Allocate(total money.Money, parts []Part, categories map[uuid.UUID]Category
 			if p.Amount.Currency() != total.Currency() {
 				return nil, false
 			}
+
 			shares[i] = p.Amount.Amount()
 		default:
 			continue
 		}
+
 		left -= shares[i]
 	}
+
 	if left < 0 {
 		return nil, false
 	}
+
 	out := make([]Allocation, 0, len(parts))
 	for i, p := range parts {
 		if p.Remainder {
 			shares[i] = left
 		}
+
 		if shares[i] == 0 {
 			continue
 		}
+
 		amount, err := money.New(sign*shares[i], total.Currency())
 		if err != nil {
 			return nil, false
 		}
+
 		out = append(out, Allocation{CategoryID: p.CategoryID, Amount: amount})
 	}
+
 	return out, len(out) > 0
 }

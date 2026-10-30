@@ -19,6 +19,7 @@ func bulkCategorize(t *testing.T, h *apitest.Harness, category string, items ...
 		Results []bulkResult `json:"results"`
 	}
 	h.MustDo(http.MethodPost, "/api/v1/transactions/categorize", map[string]any{"category_id": category, "items": items}, http.StatusOK, &out)
+
 	return out.Results
 }
 
@@ -35,18 +36,22 @@ func TestS77BulkCategorize(t *testing.T) {
 	stale := c.h.Record("2026-10-03", apitest.Posting(c.checking, -300), apitest.Posting(c.uncategorizedExpense, 300))
 
 	got := bulkCategorize(t, c.h, c.bakery, item(a, 1), item(b, 1), item(stale, 7))
+
 	want := []bulkResult{{a, "categorized", 2}, {b, "categorized", 2}, {stale, "version_conflict", 0}}
 	if len(got) != len(want) {
 		t.Fatalf("results = %+v", got)
 	}
+
 	for i := range want {
 		if got[i] != want[i] {
 			t.Fatalf("result %d = %+v, want %+v", i, got[i], want[i])
 		}
 	}
+
 	if amounts := amountsByAccount(c.h.Transaction(b)); amounts[c.bakery] != 200 || amounts[c.delivery] != 0 || amounts[c.uncategorizedExpense] != 0 {
 		t.Fatalf("b postings = %v", amounts)
 	}
+
 	if v := c.h.Transaction(stale); v.Version != 1 {
 		t.Fatalf("stale version = %d", v.Version)
 	}
@@ -76,12 +81,14 @@ func TestBulkCategorizeRejections(t *testing.T) {
 	a := c.h.Record("2026-10-01", apitest.Posting(c.checking, -100), apitest.Posting(c.uncategorizedExpense, 100))
 	closed := c.h.Account("Closed", "expense", "", nil)
 	c.h.MustDo(http.MethodPost, "/api/v1/accounts/"+closed+"/close", map[string]string{"closed_on": "2026-09-30"}, http.StatusOK, nil)
+
 	post := func(category string, items ...map[string]any) apitest.Response {
 		return c.h.Do(http.MethodPost, "/api/v1/transactions/categorize", map[string]any{"category_id": category, "items": items})
 	}
 	c.h.ExpectProblem(post(c.bakery, item(a, 1), item(a, 1)), http.StatusUnprocessableEntity, "validation_failed", "items")
 	c.h.ExpectProblem(post(closed, item(a, 1)), http.StatusUnprocessableEntity, "validation_failed", "category_id")
 	c.h.ExpectProblem(post(c.checking, item(a, 1)), http.StatusUnprocessableEntity, "validation_failed", "category_id")
+
 	if v := c.h.Transaction(a); v.Version != 1 {
 		t.Fatalf("version after rejections = %d", v.Version)
 	}

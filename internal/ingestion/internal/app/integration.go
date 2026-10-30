@@ -82,6 +82,7 @@ func (s *Service) available() error {
 	if s.box == nil {
 		return ErrIntegrationUnavailable
 	}
+
 	return nil
 }
 
@@ -90,6 +91,7 @@ func (s *Service) seal(userID int64, id uuid.UUID, c domain.Credentials) ([]byte
 	if err != nil {
 		return nil, err
 	}
+
 	return s.box.Seal(plain, credentialRow(userID, id))
 }
 
@@ -98,20 +100,24 @@ func (s *Service) credentials(i domain.Integration) (domain.Credentials, error) 
 	if err != nil {
 		return domain.Credentials{}, ErrCredentialsUnreadable
 	}
+
 	var c domain.Credentials
 	if err := json.Unmarshal(plain, &c); err != nil {
 		return domain.Credentials{}, ErrCredentialsUnreadable
 	}
+
 	return c, nil
 }
 
 // Aggregators lists the aggregators this instance offers, by identifier.
 func (s *Service) Aggregators() []Aggregator {
 	ids := s.aggs.IDs()
+
 	out := make([]Aggregator, len(ids))
 	for i, id := range ids {
 		out[i], _ = s.aggs.Get(id)
 	}
+
 	return out
 }
 
@@ -120,6 +126,7 @@ func (s *Service) aggregator(p domain.AggregatorID) (Aggregator, error) {
 	if err != nil {
 		return nil, &domain.FieldError{Field: "aggregator", Message: "is not an aggregator of this instance"}
 	}
+
 	return a, nil
 }
 
@@ -131,6 +138,7 @@ func secretField(fields []domain.CredentialField) string {
 			name = f.Name
 		}
 	}
+
 	return name
 }
 
@@ -138,10 +146,12 @@ func (s *Service) verify(ctx context.Context, agg Aggregator, id uuid.UUID, c do
 	if err := c.Validate(agg.CredentialFields()); err != nil {
 		return err
 	}
+
 	err := agg.Verify(ctx, id, c)
 	if errors.Is(err, ErrAggregatorUnauthorized) {
 		return &UnauthorizedError{Field: secretField(agg.CredentialFields())}
 	}
+
 	return err
 }
 
@@ -150,25 +160,31 @@ func (s *Service) CreateIntegration(ctx context.Context, userID int64, p domain.
 	if err := s.available(); err != nil {
 		return domain.Integration{}, err
 	}
+
 	i, err := domain.NewIntegration(uuid.Must(uuid.NewV7()), userID, p, name)
 	if err != nil {
 		return domain.Integration{}, err
 	}
+
 	agg, err := s.aggregator(p)
 	if err != nil {
 		return domain.Integration{}, err
 	}
+
 	if err := s.verify(ctx, agg, i.ID, c); err != nil {
 		return domain.Integration{}, err
 	}
+
 	if i.SealedCredentials, err = s.seal(userID, i.ID, c); err != nil {
 		agg.Forget(i.ID)
 		return domain.Integration{}, err
 	}
+
 	saved, err := s.repo.InsertIntegration(ctx, i)
 	if err != nil {
 		agg.Forget(i.ID)
 	}
+
 	return saved, err
 }
 
@@ -176,6 +192,7 @@ func (s *Service) Integration(ctx context.Context, userID int64, id uuid.UUID) (
 	if err := s.available(); err != nil {
 		return domain.Integration{}, err
 	}
+
 	return s.repo.Integration(ctx, userID, id)
 }
 
@@ -183,6 +200,7 @@ func (s *Service) ListIntegrations(ctx context.Context, userID int64, p page.Req
 	if err := s.available(); err != nil {
 		return nil, nil, err
 	}
+
 	return s.repo.ListIntegrations(ctx, userID, p)
 }
 
@@ -192,22 +210,27 @@ func (s *Service) UpdateCredentials(ctx context.Context, userID int64, id uuid.U
 	if err := s.available(); err != nil {
 		return domain.Integration{}, err
 	}
+
 	i, err := s.repo.Integration(ctx, userID, id)
 	if err != nil {
 		return domain.Integration{}, err
 	}
+
 	agg, err := s.aggregator(i.Aggregator)
 	if err != nil {
 		return domain.Integration{}, err
 	}
+
 	if err := s.verify(ctx, agg, id, c); err != nil {
 		agg.Forget(id)
 		return domain.Integration{}, err
 	}
+
 	sealed, err := s.seal(userID, id, c)
 	if err != nil {
 		return domain.Integration{}, err
 	}
+
 	return s.repo.UpdateCredentials(ctx, userID, id, sealed)
 }
 
@@ -215,16 +238,20 @@ func (s *Service) DeleteIntegration(ctx context.Context, userID int64, id uuid.U
 	if err := s.available(); err != nil {
 		return err
 	}
+
 	i, err := s.repo.Integration(ctx, userID, id)
 	if err != nil {
 		return err
 	}
+
 	if err := s.repo.DeleteIntegration(ctx, userID, id); err != nil {
 		return err
 	}
+
 	if agg, err := s.aggregator(i.Aggregator); err == nil {
 		agg.Forget(id)
 	}
+
 	return nil
 }
 
@@ -235,16 +262,20 @@ func (s *Service) RotateSecrets(ctx context.Context) (int, error) {
 	if err := s.available(); err != nil {
 		return 0, err
 	}
+
 	return s.repo.ResealCredentials(ctx, func(userID int64, id uuid.UUID, sealed []byte) ([]byte, error) {
 		// An imported integration holds no credential until the owner enters it (export design E2).
 		if len(sealed) == 0 || !s.box.NeedsReseal(sealed) {
 			return nil, nil
 		}
+
 		row := credentialRow(userID, id)
+
 		plain, err := s.box.Open(sealed, row)
 		if err != nil {
 			return nil, fmt.Errorf("integration %s: %w", id, ErrCredentialsUnreadable)
 		}
+
 		return s.box.Seal(plain, row)
 	})
 }

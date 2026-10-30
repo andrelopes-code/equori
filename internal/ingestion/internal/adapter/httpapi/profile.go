@@ -14,6 +14,7 @@ func opt(s *string) string {
 	if s == nil {
 		return ""
 	}
+
 	return *s
 }
 
@@ -21,6 +22,7 @@ func ref(s string) *string {
 	if s == "" {
 		return nil
 	}
+
 	return &s
 }
 
@@ -35,10 +37,12 @@ func toProfileAPI(p domain.Profile) CsvProfile {
 			out.Delimiter = &name
 		}
 	}
+
 	sign := CsvProfileAmountSign(p.AmountSign)
 	out.AmountSign = &sign
 	out.Encoding = &p.Encoding
 	out.GroupSeparator = &p.GroupSeparator
+
 	return out
 }
 
@@ -47,11 +51,13 @@ func (s *Server) GetCsvProfile(ctx context.Context, req GetCsvProfileRequestObje
 	if err != nil {
 		return nil, err
 	}
+
 	return GetCsvProfile200JSONResponse(toProfileAPI(p)), nil
 }
 
 func (s *Server) SaveCsvProfile(ctx context.Context, req SaveCsvProfileRequestObject) (SaveCsvProfileResponseObject, error) {
 	b := req.Body
+
 	p := domain.Profile{
 		UserID: auth.MustUserID(ctx), AccountID: req.Id, HeaderRows: 1, DateColumn: b.DateColumn, DateLayout: domain.DateLayout(b.DateLayout),
 		AmountColumn: opt(b.AmountColumn), DebitColumn: opt(b.DebitColumn), CreditColumn: opt(b.CreditColumn),
@@ -60,12 +66,15 @@ func (s *Server) SaveCsvProfile(ctx context.Context, req SaveCsvProfileRequestOb
 	if b.Delimiter != nil {
 		p.Delimiter = delimiters[*b.Delimiter]
 	}
+
 	if b.HeaderRows != nil {
 		p.HeaderRows = *b.HeaderRows
 	}
+
 	if b.Encoding != nil {
 		p.Encoding = *b.Encoding
 	}
+
 	if b.GroupSeparator != nil {
 		p.GroupSeparator = *b.GroupSeparator
 	} else if p.DecimalSeparator == "," {
@@ -73,12 +82,15 @@ func (s *Server) SaveCsvProfile(ctx context.Context, req SaveCsvProfileRequestOb
 	} else {
 		p.GroupSeparator = ","
 	}
+
 	if b.AmountSign != nil {
 		p.AmountSign = domain.AmountSign(*b.AmountSign)
 	}
+
 	saved, err := s.svc.SaveProfile(ctx, p)
 	if err != nil {
 		return nil, err
 	}
+
 	return SaveCsvProfile200JSONResponse(toProfileAPI(saved)), nil
 }

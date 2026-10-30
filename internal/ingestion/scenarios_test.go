@@ -20,13 +20,16 @@ func TestImportCardStatement(t *testing.T) {
 		"<STMTTRN><TRNTYPE>DEBIT<DTPOSTED>20261014<TRNAMT>-230.00<FITID>c1<MEMO>SUPERMERCADO</STMTTRN>\n" +
 		"<STMTTRN><TRNTYPE>CREDIT<DTPOSTED>20261020<TRNAMT>230.00<FITID>c2<MEMO>ESTORNO SUPERMERCADO</STMTTRN>\n" +
 		"</BANKTRANLIST></CCSTMTRS></CCSTMTTRNRS></CREDITCARDMSGSRSV1></OFX>\n")
+
 	b := mustImport(t, h, card, "ofx", "fatura.ofx", file)
 	if got := counts(b); got != "received 2 ignored 0 matched 0 created 2 review 0" {
 		t.Fatalf("import: %s", got)
 	}
+
 	for _, r := range records(t, h, b.ID, "created") {
 		var tx apitest.TransactionView
 		h.MustDo(http.MethodGet, "/api/v1/transactions/"+r.TransactionID, nil, http.StatusOK, &tx)
+
 		want := map[bool]string{true: "charge", false: "credit"}[r.Amount.Amount < 0]
 		for _, p := range tx.Postings {
 			if p.AccountID == card && (p.CardRole != want || p.Statement != "2026-11") {

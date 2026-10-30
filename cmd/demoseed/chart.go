@@ -219,21 +219,27 @@ func (s *seeder) buildChart(start string) {
 		if in.scheme != "" {
 			body["identifier"] = map[string]any{"scheme": in.scheme, "identifier": in.identifier}
 		}
+
 		s.ids["inst."+in.key] = s.create("/institutions", body)
 	}
+
 	for _, a := range accounts {
 		body := map[string]any{"name": a.name, "class": a.class, "kind": a.kind, "currency": "BRL", "opened_on": start, "color": a.color}
 		if a.institution != "" {
 			body["institution_id"] = s.id("inst." + a.institution)
 		}
+
 		if a.parent != "" {
 			body["parent_id"] = s.id(a.parent)
 		}
+
 		if a.yield {
 			body["yield_mode"] = "auto"
 		}
+
 		s.ids[a.key] = s.create("/accounts", body)
 	}
+
 	for _, c := range cards {
 		s.ids[c.key] = s.create("/accounts", map[string]any{
 			"name": c.name, "class": "liability", "kind": "credit_card", "currency": "BRL",
@@ -242,23 +248,29 @@ func (s *seeder) buildChart(start string) {
 		for _, p := range c.plastics {
 			s.create("/accounts/"+s.id(c.key)+"/cards", map[string]any{"holder": "MARIANA C RIBEIRO", "last_four": p.lastFour, "virtual": p.virtual})
 		}
+
 		for i, r := range c.rules {
 			if i == 0 {
 				r["effective_from"] = start[:7]
 			}
+
 			s.do(http.MethodPost, "/accounts/"+s.id(c.key)+"/billing-cycle-rules", r, nil)
 		}
+
 		for i, l := range c.limits {
 			if i == 0 {
 				l["effective_from"] = start
 			}
+
 			s.do(http.MethodPost, "/accounts/"+s.id(c.key)+"/credit-limits", l, nil)
 		}
 	}
+
 	s.addCategories("expense", "", 0, expenseCategories)
 	s.addCategories("income", "", 0, incomeCategories)
 	s.addCategories("expense", s.id("system.taxes"), 4, taxCategories)
 	s.addCategories("expense", s.id("system.fees"), 7, feeCategories)
+
 	for _, name := range payees {
 		s.ids["payee."+name] = s.create("/payees", map[string]any{"name": name})
 	}
@@ -270,16 +282,20 @@ func (s *seeder) addCategories(class, parent string, inherited int, list []categ
 		if c.color == 0 {
 			c.color = inherited
 		}
+
 		body := map[string]any{"name": c.name, "class": class, "currency": "BRL"}
 		if c.icon != "" {
 			body["icon"] = c.icon
 		}
+
 		if c.color > 0 {
 			body["color"] = c.color
 		}
+
 		if parent != "" {
 			body["parent_id"] = parent
 		}
+
 		s.ids[c.key] = s.create("/accounts", body)
 		s.addCategories(class, s.ids[c.key], c.color, c.children)
 	}
@@ -291,6 +307,7 @@ func (s *seeder) openBalances(start string) {
 		if a.opening == 0 {
 			continue
 		}
+
 		s.record(start, "Saldo inicial "+a.name, nil,
 			post(s.id(a.key), a.opening), post(s.id("system.opening_balances"), -a.opening))
 	}

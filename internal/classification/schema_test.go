@@ -23,6 +23,7 @@ func TestSchemaInvariants(t *testing.T) {
 		_, err := h.Pool.Exec(ctx, sql, args...)
 		return err
 	}
+
 	rule := func(priority, version int) error {
 		return exec(`INSERT INTO classification_rule (user_id, name, priority, enabled, stop_processing, conditions, actions, schema_version)
 			VALUES ($1, 'r', $2, true, false, '[]', '[]', $3)`, uid, priority, version)
@@ -30,16 +31,19 @@ func TestSchemaInvariants(t *testing.T) {
 	if err := rule(1, 1); err != nil {
 		t.Fatal(err)
 	}
+
 	var ruleID string
 	if err := h.Pool.QueryRow(ctx, `SELECT id FROM classification_rule WHERE user_id = $1`, uid).Scan(&ruleID); err != nil {
 		t.Fatal(err)
 	}
+
 	alias := func(pattern, matchType string) error {
 		return exec(`INSERT INTO classification_payee_alias (user_id, pattern, match_type, payee_id) VALUES ($1, $2, $3, $4)`, uid, pattern, matchType, payee.ID)
 	}
 	if err := alias("ifd*", "starts_with"); err != nil {
 		t.Fatal(err)
 	}
+
 	suggestion := func(fingerprint, state string, ruleID any, decided bool) error {
 		return exec(`INSERT INTO classification_suggestion (user_id, fingerprint, conditions, actions, example_transaction_ids, state, rule_id, created_at, decided_at)
 			VALUES ($1, $2, '[]', '[]', ARRAY[$3::uuid, $3::uuid], $4, $5, now(), CASE WHEN $6 THEN now() END)`, uid, fingerprint, tx, state, ruleID, decided)
@@ -48,6 +52,7 @@ func TestSchemaInvariants(t *testing.T) {
 		return exec(`INSERT INTO classification_categorization (transaction_id, user_id, transaction_version, transaction_date, method, rule_id, corrected, decided_at)
 			VALUES ($1, $2, 1, '2026-10-01', $3, $4, $5, now())`, tx, uid, method, ruleID, corrected)
 	}
+
 	tests := []struct {
 		name string
 		err  error
@@ -58,6 +63,7 @@ func TestSchemaInvariants(t *testing.T) {
 			if err := exec(source, uid); err != nil {
 				return nil
 			}
+
 			return exec(source, uid)
 		}()},
 		{"A41: a source category maps to an account of its user", exec(`INSERT INTO classification_source_category (user_id, aggregator, external_id, name, category_id)
@@ -70,6 +76,7 @@ func TestSchemaInvariants(t *testing.T) {
 			if err := suggestion("f", "pending", nil, false); err != nil {
 				t.Fatal(err)
 			}
+
 			return suggestion("f", "dismissed", nil, true)
 		}()},
 		{"only an accepted suggestion names a rule", suggestion("g", "dismissed", ruleID, true)},
@@ -83,13 +90,17 @@ func TestSchemaInvariants(t *testing.T) {
 			t.Errorf("%s: accepted", tc.name)
 		}
 	}
+
 	if err := categorization("rule", ruleID, false); err != nil {
 		t.Fatalf("valid categorization: %v", err)
 	}
+
 	if err := exec(`DELETE FROM classification_rule WHERE id = $1`, ruleID); err != nil {
 		t.Fatalf("delete rule: %v", err)
 	}
+
 	var method string
+
 	var kept *string
 	if err := h.Pool.QueryRow(ctx, `SELECT method, rule_id FROM classification_categorization WHERE transaction_id = $1`, tx).Scan(&method, &kept); err != nil || method != "rule" || kept != nil {
 		t.Fatalf("after rule delete: method %q, rule %v, %v", method, kept, err)

@@ -35,6 +35,7 @@ func Middleware(h http.Handler, log *slog.Logger, limits ...BodyLimit) http.Hand
 	h = recoverPanic(h, log)
 	h = accessLog(h, log)
 	h = securityHeaders(h)
+
 	return withRequestID(h)
 }
 
@@ -45,12 +46,14 @@ func securityHeaders(next http.Handler) http.Handler {
 		h := w.Header()
 		h.Set("X-Content-Type-Options", "nosniff")
 		h.Set("Referrer-Policy", "no-referrer")
+
 		if strings.HasPrefix(r.URL.Path, "/api/") {
 			h.Set("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'")
 			h.Set("Cache-Control", "no-store")
 		} else {
 			h.Set("Content-Security-Policy", "default-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'")
 		}
+
 		next.ServeHTTP(w, r)
 	})
 }
@@ -66,16 +69,19 @@ func withRequestID(next http.Handler) http.Handler {
 
 func limitBody(next http.Handler, limits []BodyLimit) http.Handler {
 	routes := http.NewServeMux()
+
 	bytes := make(map[string]int64, len(limits))
 	for _, l := range limits {
 		routes.Handle(l.Pattern, next)
 		bytes[l.Pattern] = l.Bytes
 	}
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		limit := int64(maxBodyBytes)
 		if _, pattern := routes.Handler(r); pattern != "" {
 			limit = bytes[pattern]
 		}
+
 		r.Body = http.MaxBytesReader(w, r.Body, limit)
 		next.ServeHTTP(w, r)
 	})
@@ -95,11 +101,13 @@ func accessLog(next http.Handler, log *slog.Logger) http.Handler {
 		start := time.Now()
 		rw := &statusRecorder{ResponseWriter: w, status: http.StatusOK}
 		next.ServeHTTP(rw, r)
+
 		level := slog.LevelInfo
 		if r.URL.Path == "/healthz" {
 			// The container HEALTHCHECK polls every 10 s.
 			level = slog.LevelDebug
 		}
+
 		log.LogAttrs(r.Context(), level, "http request",
 			slog.String("method", r.Method),
 			slog.String("path", r.URL.Path),
@@ -118,17 +126,21 @@ func recoverPanic(next http.Handler, log *slog.Logger) http.Handler {
 			if v == nil {
 				return
 			}
+
 			// http.ErrAbortHandler is the stdlib signal to abort the response silently.
 			if v == http.ErrAbortHandler { //nolint:errorlint // recover() value, not a wrapped error.
 				panic(v)
 			}
+
 			id := RequestID(r.Context())
 			log.ErrorContext(r.Context(), "panic serving request",
 				"panic", v, "request_id", id, "stack", string(debug.Stack()))
+
 			d := problem.New(http.StatusInternalServerError, "internal_error", "")
 			d.RequestID = id
 			problem.Write(w, d)
 		}()
+
 		next.ServeHTTP(w, r)
 	})
 }
@@ -145,6 +157,7 @@ func (s *statusRecorder) WriteHeader(code int) {
 		s.status = code
 		s.wroteHeader = true
 	}
+
 	s.ResponseWriter.WriteHeader(code)
 }
 
@@ -152,6 +165,7 @@ func (s *statusRecorder) Write(b []byte) (int, error) {
 	s.wroteHeader = true
 	n, err := s.ResponseWriter.Write(b)
 	s.bytes += int64(n)
+
 	return n, err
 }
 

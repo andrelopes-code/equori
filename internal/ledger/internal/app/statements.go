@@ -19,10 +19,12 @@ func (s *Service) Statements(ctx context.Context, userID int64, accountID uuid.U
 	if err != nil {
 		return nil, nil, domain.Account{}, err
 	}
+
 	all, err := s.statementSummaries(ctx, s.repo, userID, accountID)
 	if err != nil {
 		return nil, nil, domain.Account{}, err
 	}
+
 	out := make([]StatementView, 0, len(all))
 	for _, v := range all {
 		ref := v.Input.Reference
@@ -30,12 +32,16 @@ func (s *Service) Statements(ctx context.Context, userID int64, accountID uuid.U
 			(p.After != nil && ref.String() <= p.After.Reference) {
 			continue
 		}
+
 		out = append(out, v)
 	}
+
 	if p.Limit == 0 || len(out) <= p.Limit {
 		return out, nil, a, nil
 	}
+
 	out = out[:p.Limit]
+
 	return out, &StatementKey{Reference: out[len(out)-1].Input.Reference.String()}, a, nil
 }
 
@@ -44,24 +50,31 @@ func (s *Service) Statement(ctx context.Context, userID int64, id uuid.UUID) (St
 	if err != nil {
 		return StatementView{}, domain.Account{}, nil, err
 	}
+
 	views, _, a, err := s.Statements(ctx, userID, accountID, nil, nil, page.Request[StatementKey]{})
 	if err != nil {
 		return StatementView{}, domain.Account{}, nil, err
 	}
+
 	postings, err := s.repo.StatementPostings(ctx, userID, id)
 	if err != nil {
 		return StatementView{}, domain.Account{}, nil, err
 	}
+
 	for _, v := range views {
 		if v.ID != id {
 			continue
 		}
+
 		for i, p := range postings {
 			postings[i].Provisional = domain.Provisional(p.Basis, p.Date, v.Input.Closing, v.Reconciled, p.Installment != nil)
 		}
+
 		v.Explanation = s.explain(v, postings)
+
 		return v, a, postings, nil
 	}
+
 	return StatementView{}, domain.Account{}, nil, ErrNotFound
 }
 
@@ -84,6 +97,7 @@ func (s *Service) explain(v StatementView, postings []StatementPosting) domain.D
 			candidates = append(candidates, domain.DifferenceCandidate{TransactionID: p.TransactionID, Date: p.Date})
 			i = len(candidates) - 1
 		}
+
 		candidates[i].Amount += p.Amount
 	}
 

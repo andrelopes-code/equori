@@ -38,11 +38,14 @@ func declaredEncoding(data []byte) string {
 		case "UTF-8", "65001":
 			return "utf-8"
 		}
+
 		return "auto"
 	}
+
 	if m := xmlEncodingDecl.FindSubmatch(head); m != nil {
 		return strings.ToLower(string(m[1]))
 	}
+
 	return "auto"
 }
 
@@ -52,17 +55,21 @@ func Parse(data []byte, scale int) (domain.Statement, error) {
 	if err != nil {
 		return domain.Statement{}, err
 	}
+
 	start := strings.Index(strings.ToUpper(text), "<OFX>")
 	if start < 0 {
 		return domain.Statement{}, errors.New("not an OFX file: no <OFX> element")
 	}
+
 	p := parser{text: text, scale: scale}
 	if err := p.run(start); err != nil {
 		return domain.Statement{}, err
 	}
+
 	if !p.statements {
 		return domain.Statement{}, errors.New("no statement: the file has no STMTRS or CCSTMTRS element")
 	}
+
 	return p.out, nil
 }
 
@@ -84,6 +91,7 @@ func (p *parser) run(start int) error {
 		closing := p.text[start+m[2]:start+m[3]] == "/"
 		name := strings.ToUpper(p.text[start+m[4] : start+m[5]])
 		value := strings.TrimSpace(entities.Replace(p.text[start+m[6] : start+m[7]]))
+
 		offset := start + m[0]
 		switch {
 		case closing:
@@ -98,9 +106,11 @@ func (p *parser) run(start int) error {
 			}
 		}
 	}
+
 	if p.txn != nil {
 		return fmt.Errorf("unexpected end of file inside STMTTRN opened on line %d", p.txnLine)
 	}
+
 	return nil
 }
 
@@ -122,9 +132,11 @@ func (p *parser) close(name string) error {
 	for i >= 0 && p.stack[i] != name {
 		i--
 	}
+
 	if i < 0 {
 		return nil
 	}
+
 	p.stack = p.stack[:i]
 	switch name {
 	case "STMTTRN":
@@ -132,6 +144,7 @@ func (p *parser) close(name string) error {
 		if err != nil {
 			return fmt.Errorf("STMTTRN on line %d: %w", p.txnLine, err)
 		}
+
 		p.out.Records = append(p.out.Records, r)
 		p.txn = nil
 	case "LEDGERBAL":
@@ -139,8 +152,10 @@ func (p *parser) close(name string) error {
 		if err != nil {
 			return fmt.Errorf("LEDGERBAL: %w", err)
 		}
+
 		p.out.Balance, p.balance = b, nil
 	}
+
 	return nil
 }
 
@@ -159,12 +174,14 @@ func (p *parser) leaf(name, value string, offset int) error {
 		if err != nil {
 			return fmt.Errorf("%s on line %d: %w", name, p.line(offset), err)
 		}
+
 		if name == "DTSTART" {
 			p.out.From = &d
 		} else {
 			p.out.To = &d
 		}
 	}
+
 	return nil
 }
 
@@ -173,14 +190,17 @@ func (p *parser) record(leaves map[string]string) (domain.NormalizedRecord, erro
 	if err != nil {
 		return domain.NormalizedRecord{}, fmt.Errorf("DTPOSTED: %w", err)
 	}
+
 	amount, err := amount(leaves["TRNAMT"], p.scale)
 	if err != nil {
 		return domain.NormalizedRecord{}, fmt.Errorf("TRNAMT: %w", err)
 	}
+
 	description := leaves["NAME"]
 	if memo := leaves["MEMO"]; memo != "" && memo != description {
 		description = strings.TrimSpace(description + " " + memo)
 	}
+
 	return domain.NormalizedRecord{ExternalID: leaves["FITID"], Date: d, Amount: amount, Description: description, Raw: leaves}, nil
 }
 
@@ -189,10 +209,12 @@ func (p *parser) ledgerBalance(leaves map[string]string) (*domain.Balance, error
 	if err != nil {
 		return nil, fmt.Errorf("DTASOF: %w", err)
 	}
+
 	amount, err := amount(leaves["BALAMT"], p.scale)
 	if err != nil {
 		return nil, fmt.Errorf("BALAMT: %w", err)
 	}
+
 	return &domain.Balance{Date: d, Amount: amount}, nil
 }
 
@@ -202,10 +224,12 @@ func date(s string) (time.Time, error) {
 	if len(s) < 8 {
 		return time.Time{}, fmt.Errorf("%q is not a date", s)
 	}
+
 	d, err := time.Parse("20060102", s[:8])
 	if err != nil {
 		return time.Time{}, fmt.Errorf("%q is not a date", s)
 	}
+
 	return d, nil
 }
 

@@ -11,6 +11,7 @@ func newPayee(t *testing.T, h *apitest.Harness, name string) string {
 	t.Helper()
 	var out idOnly
 	h.MustDo(http.MethodPost, "/api/v1/payees", map[string]string{"name": name}, http.StatusCreated, &out)
+
 	return out.ID
 }
 
@@ -23,10 +24,12 @@ func payeeNames(t *testing.T, h *apitest.Harness) map[string]string {
 		} `json:"items"`
 	}
 	h.MustDo(http.MethodGet, "/api/v1/payees?limit=200", nil, http.StatusOK, &out)
+
 	m := map[string]string{}
 	for _, p := range out.Items {
 		m[p.ID] = p.Name
 	}
+
 	return m
 }
 
@@ -37,9 +40,11 @@ func TestRenamePayee(t *testing.T) {
 	ifood := newPayee(t, c.h, "IFOOD")
 	newPayee(t, c.h, "Rappi")
 	c.h.MustDo(http.MethodPatch, "/api/v1/payees/"+ifood, map[string]string{"name": "iFood"}, http.StatusOK, nil)
+
 	if got := payeeNames(t, c.h)[ifood]; got != "iFood" {
 		t.Fatalf("name = %q", got)
 	}
+
 	c.h.ExpectProblem(c.h.Do(http.MethodPatch, "/api/v1/payees/"+ifood, map[string]string{"name": "rappi"}), http.StatusUnprocessableEntity, "validation_failed", "name")
 }
 
@@ -62,13 +67,17 @@ func TestMergePayees(t *testing.T) {
 		PayeeID string `json:"payee_id"`
 	}
 	c.h.MustDo(http.MethodGet, "/api/v1/transactions/"+live.ID, nil, http.StatusOK, &got)
+
 	if got.Version != 2 || got.PayeeID != into {
 		t.Fatalf("live transaction = %+v", got)
 	}
+
 	c.h.MustDo(http.MethodGet, "/api/v1/transactions/"+voided.ID, nil, http.StatusOK, &got)
+
 	if got.Version != 1 || got.PayeeID != into {
 		t.Fatalf("voided transaction = %+v", got)
 	}
+
 	names := payeeNames(t, c.h)
 	if _, listed := names[from]; listed || names[into] != "iFood" {
 		t.Fatalf("payees = %v", names)

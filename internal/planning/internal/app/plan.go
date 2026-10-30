@@ -49,6 +49,7 @@ func (p Plan) ReferenceAmount() (int64, bool) {
 	case domain.SourceFixed:
 		return p.Reference.Fixed, p.Reference.HasFixed
 	}
+
 	return 0, false
 }
 
@@ -64,17 +65,22 @@ func (s *Service) BudgetPlan(ctx context.Context, userID int64, month time.Time)
 	if month.After(s.horizon()) {
 		return Plan{}, &domain.FieldError{Field: "month", Message: "must be at most today + 12 months", Err: domain.ErrValidation}
 	}
+
 	base, err := s.ledger.BaseCurrency(ctx, userID)
 	if err != nil {
 		return Plan{}, err
 	}
+
 	out := Plan{Month: month, Currency: base}
+
 	facts, err := s.ledger.AccountFacts(ctx, userID)
 	if err != nil {
 		return Plan{}, err
 	}
+
 	var categories []domain.PlanCategory
 	var flowAccounts []uuid.UUID
+
 	expense := make(map[uuid.UUID]bool)
 	for _, a := range facts {
 		switch {
@@ -89,32 +95,40 @@ func (s *Service) BudgetPlan(ctx context.Context, userID int64, month time.Time)
 			if err != nil {
 				return Plan{}, err
 			}
+
 			out.Installments += c
 		}
 	}
+
 	from, to := month.AddDate(0, -3, 0), month.AddDate(0, 1, 0)
+
 	own, err := s.ledger.OwnCategoryMonthlyTotals(ctx, userID, "expense", from, to)
 	if err != nil {
 		return Plan{}, err
 	}
+
 	income, err := s.ledger.OwnCategoryMonthlyTotals(ctx, userID, "income", from, to)
 	if err != nil {
 		return Plan{}, err
 	}
+
 	first, hasPostings, err := s.ledger.FirstPosting(ctx, userID, flowAccounts)
 	if err != nil {
 		return Plan{}, err
 	}
+
 	budgets, err := s.repo.Budgets(ctx, userID)
 	if err != nil {
 		return Plan{}, err
 	}
+
 	var expenseBudgets []domain.Budget
 	for _, b := range budgets {
 		if expense[b.CategoryID] {
 			expenseBudgets = append(expenseBudgets, b)
 		}
 	}
+
 	out.Rows, out.AverageMonths = domain.PlanRows(domain.PlanInput{
 		Month: month, Categories: categories, Budgets: expenseBudgets, Own: own, FirstPosting: first, HasPostings: hasPostings,
 	})
@@ -123,6 +137,7 @@ func (s *Service) BudgetPlan(ctx context.Context, userID int64, month time.Time)
 			out.Planned += r.Planned
 		}
 	}
+
 	// Income postings are negative; the plan reads earnings as positive.
 	var history int64
 	for _, byMonth := range income {
@@ -131,17 +146,21 @@ func (s *Service) BudgetPlan(ctx context.Context, userID int64, month time.Time)
 			history -= byMonth[month.AddDate(0, -i, 0)]
 		}
 	}
+
 	if out.AverageMonths > 0 {
 		average := domain.Divide(history, out.AverageMonths)
 		out.Average = &average
 	}
+
 	if err := s.planOccurrences(ctx, userID, &out); err != nil {
 		return Plan{}, err
 	}
+
 	ref, stored, err := s.repo.BudgetReference(ctx, userID)
 	if err != nil {
 		return Plan{}, err
 	}
+
 	if !stored {
 		switch {
 		case out.Expected != nil:
@@ -152,7 +171,9 @@ func (s *Service) BudgetPlan(ctx context.Context, userID int64, month time.Time)
 			ref.Source = domain.SourceFixed
 		}
 	}
+
 	out.Reference = ref
+
 	return out, nil
 }
 
@@ -163,6 +184,7 @@ func (s *Service) planOccurrences(ctx context.Context, userID int64, out *Plan) 
 	if err != nil {
 		return err
 	}
+
 	byID := make(map[uuid.UUID]domain.Schedule, len(schedules))
 	for _, sch := range schedules {
 		byID[sch.ID] = sch
@@ -170,42 +192,53 @@ func (s *Service) planOccurrences(ctx context.Context, userID int64, out *Plan) 
 			out.Expected = new(int64)
 		}
 	}
+
 	os, err := s.repo.Occurrences(ctx, userID, out.Month, out.Month.AddDate(0, 1, -1), uuid.Nil)
 	if err != nil {
 		return err
 	}
+
 	today := s.clk.Today()
+
 	items := make(map[uuid.UUID]int)
 	for _, o := range os {
 		sch := byID[o.ScheduleID]
 		if (o.State != domain.Expected && o.State != domain.Realized) || (sch.Kind != domain.Income && sch.Kind != domain.Savings) {
 			continue
 		}
+
 		amount := o.Amount
 		if sch.Currency != out.Currency {
 			m, err := money.New(o.Amount, sch.Currency)
 			if err != nil {
 				return err
 			}
+
 			v, used, err := s.prices.Convert(ctx, m, out.Currency, today)
 			if err != nil {
 				return err
 			}
+
 			amount, out.Prices = v.Amount(), append(out.Prices, used...)
 		}
+
 		if sch.Kind == domain.Savings {
 			out.Savings += amount
 			continue
 		}
+
 		*out.Expected += amount
+
 		i, ok := items[sch.ID]
 		if !ok {
 			i = len(out.ExpectedItems)
 			items[sch.ID] = i
 			out.ExpectedItems = append(out.ExpectedItems, PlanIncome{ScheduleID: sch.ID, Description: sch.Description})
 		}
+
 		out.ExpectedItems[i].Amount += amount
 	}
+
 	return nil
 }
 
@@ -224,81 +257,102 @@ func (s *Service) SaveBudgetPlan(ctx context.Context, userID int64, month time.T
 	if month.Before(domain.MonthOf(s.clk.Today())) || month.After(s.horizon()) {
 		return Plan{}, &domain.FieldError{Field: "month", Message: "must be from the current month to today + 12 months", Err: domain.ErrValidation}
 	}
+
 	base, err := s.ledger.BaseCurrency(ctx, userID)
 	if err != nil {
 		return Plan{}, err
 	}
+
 	ref := domain.Reference{Source: source}
 	if source == domain.SourceFixed {
 		if fixed == nil {
 			return Plan{}, &domain.FieldError{Field: "fixed", Message: "is required with the fixed source", Err: domain.ErrValidation}
 		}
+
 		if err := checkBudgetAmount(*fixed, base); err != nil {
 			if fe, ok := errors.AsType[*domain.FieldError](err); ok {
 				fe.Field = "fixed" + strings.TrimPrefix(fe.Field, "amount")
 			}
+
 			return Plan{}, err
 		}
+
 		ref.Fixed, ref.HasFixed = fixed.Amount(), true
 	}
+
 	facts, err := s.ledger.AccountFacts(ctx, userID)
 	if err != nil {
 		return Plan{}, err
 	}
+
 	byID := make(map[uuid.UUID]Account, len(facts))
 	for _, a := range facts {
 		byID[a.ID] = a
 	}
+
 	seen := make(map[uuid.UUID]bool, len(amounts))
 	for i, a := range amounts {
 		prefix := fmt.Sprintf("amounts[%d].", i)
 		if c, ok := byID[a.CategoryID]; !ok || c.Class != "expense" || c.Closed {
 			return Plan{}, &domain.FieldError{Field: prefix + "category_id", Message: "must be an open expense category of the user", Err: domain.ErrValidation}
 		}
+
 		if seen[a.CategoryID] {
 			return Plan{}, &domain.FieldError{Field: prefix + "category_id", Message: "is listed twice", Err: domain.ErrValidation}
 		}
+
 		seen[a.CategoryID] = true
 		if err := checkBudgetAmount(a.Amount, base); err != nil {
 			if fe, ok := errors.AsType[*domain.FieldError](err); ok {
 				fe.Field = prefix + fe.Field
 			}
+
 			return Plan{}, err
 		}
 	}
+
 	err = s.repo.InTx(ctx, func(repo Repository) error {
 		budgets, err := repo.Budgets(ctx, userID)
 		if err != nil {
 			return err
 		}
+
 		byCategory := make(map[uuid.UUID]uuid.UUID, len(budgets))
 		for _, b := range budgets {
 			byCategory[b.CategoryID] = b.ID
 		}
+
 		for _, a := range amounts {
 			version := domain.BudgetAmount{EffectiveFrom: month, Amount: a.Amount.Amount()}
+
 			id, ok := byCategory[a.CategoryID]
 			if !ok {
 				if version.Amount == 0 {
 					continue
 				}
+
 				b := domain.Budget{CategoryID: a.CategoryID, Currency: base, Amounts: []domain.BudgetAmount{version}}
 				if _, err := repo.InsertBudget(ctx, userID, b); err != nil {
 					return err
 				}
+
 				continue
 			}
+
 			if _, err := repo.LockBudget(ctx, userID, id); err != nil {
 				return err
 			}
+
 			if err := repo.UpsertBudgetAmount(ctx, userID, id, version); err != nil {
 				return err
 			}
 		}
+
 		return repo.SaveBudgetReference(ctx, userID, ref, base)
 	})
 	if err != nil {
 		return Plan{}, err
 	}
+
 	return s.BudgetPlan(ctx, userID, month)
 }

@@ -41,20 +41,25 @@ func (sec security) key() string { return "sec." + sec.code }
 func (s *seeder) buildInvestments(start string) {
 	s.ids["inst.mb"] = s.create("/institutions", map[string]any{"name": "Mercado Bitcoin"})
 	s.ids["mb"] = s.create("/accounts", map[string]any{"name": "Mercado Bitcoin", "class": "asset", "kind": "brokerage", "currency": "BRL", "institution_id": s.id("inst.mb"), "opened_on": start, "color": 8})
+
 	s.ids["mb.cash"] = s.create("/accounts", map[string]any{"name": "Saldo Mercado Bitcoin", "class": "asset", "kind": "brokerage", "currency": "BRL", "institution_id": s.id("inst.mb"), "parent_id": s.id("mb"), "opened_on": start, "color": 8})
 	for _, sec := range securities {
 		body := map[string]any{"code": sec.code, "type": sec.typ, "scale": sec.scale, "name": sec.name, "quote_currency": "BRL"}
 		if sec.exchange != "" {
 			body["exchange"] = sec.exchange
 		}
+
 		if sec.subtype != "" {
 			body["subtype"] = sec.subtype
 		}
+
 		s.do(http.MethodPost, "/instruments", body, nil)
 		s.tolerate("instrument_exists") // instruments are shared by the whole instance, so a second seeding finds them.
+
 		if sec.terms != nil {
 			s.do(http.MethodPut, "/instruments/"+sec.code+"/terms", sec.terms, nil)
 		}
+
 		s.ids[sec.key()] = s.create("/accounts", map[string]any{
 			"name": sec.holder + " " + sec.code, "class": "asset", "kind": "brokerage", "currency": sec.code,
 			"institution_id": s.id("inst." + sec.holder), "parent_id": s.id(sec.holder), "opened_on": start, "color": 4,
@@ -67,22 +72,27 @@ func (s *seeder) buildInvestments(start string) {
 func (s *seeder) series(sec security) {
 	n := len(months(s.start, s.today)) + 1
 	pts := make([]float64, n)
+
 	pts[0] = sec.start
 	for i := 1; i < n; i++ {
 		if sec.accrual > 0 {
 			pts[i] = pts[i-1] * math.Pow(1+sec.accrual, 1.0/12)
 			continue
 		}
+
 		pts[i] = pts[i-1] * math.Exp(sec.drift/12+sec.vol/math.Sqrt(12)*s.rng.NormFloat64())
 	}
+
 	if sec.accrual == 0 {
 		// Pull the walk to the end price its drift implies, so that the volatility shapes the path without moving the outcome.
 		want := math.Log(sec.start) + sec.drift*float64(n-1)/12
+
 		gap := want - math.Log(pts[n-1])
 		for i := range pts {
 			pts[i] *= math.Exp(gap * float64(i) / float64(n-1))
 		}
 	}
+
 	s.px[sec.code] = pts
 }
 
@@ -91,6 +101,7 @@ func (s *seeder) priceOn(code string, d time.Time) float64 {
 	pts := s.px[code]
 	i := (d.Year()-s.start.Year())*12 + int(d.Month()-s.start.Month())
 	frac := float64(d.Day()-1) / float64(d.AddDate(0, 1, -d.Day()+1).AddDate(0, 0, -1).Day())
+
 	return pts[i] + (pts[i+1]-pts[i])*frac
 }
 
@@ -104,9 +115,11 @@ func (s *seeder) postPrices() {
 			for d.Weekday() == time.Saturday || d.Weekday() == time.Sunday {
 				d = d.AddDate(0, 0, -1)
 			}
+
 			if d.After(s.today) {
 				d = s.today
 			}
+
 			s.do(http.MethodPost, "/prices", map[string]any{"instrument": sec.code, "quote_instrument": "BRL", "date": iso(d), "value": rate(s.priceOn(sec.code, d))}, nil)
 		}
 	}
@@ -117,10 +130,12 @@ func (s *seeder) buy(d time.Time, code string, reais float64) {
 	sec := s.security(code)
 	price := s.priceOn(code, d) * (1 + (s.rng.Float64()*2-1)*.006)
 	unit := math.Pow(10, float64(sec.scale))
+
 	qty := int64(math.Round(reais / price * unit))
 	if qty < 1 {
 		qty = 1
 	}
+
 	s.at(d, func() { s.trade(d, code, "buy", qty, price) })
 }
 
@@ -136,26 +151,32 @@ func (s *seeder) security(code string) security {
 			return sec
 		}
 	}
+
 	s.fail("unknown security %q", code)
+
 	return security{}
 }
 
 func (s *seeder) trade(d time.Time, code, side string, qty int64, price float64) {
 	sec := s.security(code)
 	cash := sec.holder + ".cash"
+
 	cost := int64(float64(qty) * price * 100 / math.Pow(10, float64(sec.scale)))
 	if side == "buy" {
 		s.ensure(d, cash, cost+cost/50)
 	}
+
 	s.do(http.MethodPost, "/trades", map[string]any{
 		"account_id": s.id(sec.key()), "cash_account_id": s.id(cash), "side": side, "date": iso(d),
 		"quantity": money{Amount: qty, Currency: code}, "unit_price": rate(price),
 		"description": map[string]string{"buy": "Compra de ", "sell": "Venda de "}[side] + code,
 	}, nil)
+
 	sign := int64(1)
 	if side == "sell" {
 		sign = -1
 	}
+
 	s.bal[s.id(cash)] -= sign * cost
 	s.hold[code] += sign * qty
 }
@@ -172,7 +193,9 @@ func (s *seeder) trades() {
 	} {
 		s.buy(first.AddDate(0, 0, s.rng.IntN(3)), in.code, in.reais)
 	}
+
 	fiis := []string{"HGLG11", "KNRI11", "MXRF11"}
+
 	equities := []string{"ITUB4", "WEGE3", "BBAS3", "PETR4"}
 	for i, m := range months(s.start, s.today) {
 		d := businessDay(m, 7)
@@ -189,9 +212,11 @@ func (s *seeder) trades() {
 			if (i/4)%2 == 1 {
 				code = "TIPCA35"
 			}
+
 			s.buy(d, code, 900)
 		}
 	}
+
 	s.buy(day("2025-03-17"), "CDBXP27", 6000)
 	s.buy(day("2026-03-16"), "CDBXP27", 6000)
 	s.buy(day("2024-12-23"), "TSELIC29", 1500)
@@ -232,27 +257,34 @@ func (s *seeder) income() {
 			if !containsMonth(p.months, m.Month()) {
 				continue
 			}
+
 			d := onDay(m, p.day)
+
 			per := p.perShare
 			for from, v := range p.steps {
 				if from <= ym(m) {
 					per = v
 				}
 			}
+
 			s.at(d, func() {
 				units := s.hold[p.code]
+
 				gross := int64(float64(units) * per * 100)
 				if gross < 1 {
 					return
 				}
+
 				s.do(http.MethodPost, "/investment-income", map[string]any{
 					"account_id": s.id("sec." + p.code), "cash_account_id": s.id("xp.cash"), "income_type": p.kind, "date": iso(d),
 					"gross": brl(gross), "category_id": s.id(p.category), "description": fmt.Sprintf("%s de %s", map[string]string{"dividend": "Rendimento", "jcp": "JCP"}[p.kind], p.code),
 				}, nil)
+
 				withheld := int64(0)
 				if p.kind == "jcp" {
 					withheld = gross * 15 / 100
 				}
+
 				s.bal[s.id("xp.cash")] += gross - withheld
 			})
 		}
@@ -265,6 +297,7 @@ func containsMonth(list []time.Month, m time.Month) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -278,6 +311,7 @@ func (s *seeder) transfers() {
 			s.record(iso(d), "Aporte na caixinha de reserva", nil, post(s.id("nubank.reserve"), 30000), post(s.id("itau.checking"), -30000))
 		})
 	}
+
 	lump := func(date, desc string, cents int64) {
 		d := day(date)
 		s.at(d, func() {
@@ -289,6 +323,7 @@ func (s *seeder) transfers() {
 	lump("2025-12-22", "TED para XP Investimentos, parte do 13º", 150000)
 	lump("2025-03-17", "TED para XP Investimentos, parte da PLR", 600000)
 	lump("2026-03-16", "TED para XP Investimentos, parte da PLR", 600000)
+
 	for _, r := range []struct {
 		date  string
 		cents int64

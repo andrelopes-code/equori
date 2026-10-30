@@ -24,6 +24,7 @@ func toMessage(row AssistantMessage) domain.Message {
 	if row.Outcome != nil {
 		m.Outcome = domain.Outcome(*row.Outcome)
 	}
+
 	return m
 }
 
@@ -38,6 +39,7 @@ func (r *Repository) Conversation(ctx context.Context, userID int64, id uuid.UUI
 	if errors.Is(err, pgx.ErrNoRows) {
 		return domain.Conversation{}, domain.ErrConversationNotFound
 	}
+
 	return toConversation(row), err
 }
 
@@ -47,14 +49,17 @@ func (r *Repository) Conversations(ctx context.Context, userID int64, after *app
 		arg.AfterUpdatedAt = &after.UpdatedAt
 		arg.AfterID = uuid.NullUUID{UUID: after.ID, Valid: true}
 	}
+
 	rows, err := r.q.ListConversations(ctx, arg)
 	if err != nil {
 		return nil, err
 	}
+
 	out := make([]domain.Conversation, len(rows))
 	for i, row := range rows {
 		out[i] = toConversation(row)
 	}
+
 	return out, nil
 }
 
@@ -63,6 +68,7 @@ func (r *Repository) DeleteConversation(ctx context.Context, userID int64, id uu
 	if err == nil && n == 0 {
 		return domain.ErrConversationNotFound
 	}
+
 	return err
 }
 
@@ -76,12 +82,16 @@ func (r *Repository) AppendMessage(ctx context.Context, userID int64, m domain.M
 		o := string(m.Outcome)
 		outcome = &o
 	}
+
 	tx, err := r.pool.Begin(ctx)
 	if err != nil {
 		return domain.Message{}, err
 	}
+
 	defer func() { _ = tx.Rollback(ctx) }()
+
 	q := r.q.WithTx(tx)
+
 	row, err := q.AppendMessage(ctx, AppendMessageParams{
 		ID: m.ID, UserID: userID, ConversationID: m.ConversationID, Role: string(m.Role), Content: m.Content,
 		Outcome: outcome, CreatedAt: m.CreatedAt,
@@ -89,9 +99,11 @@ func (r *Repository) AppendMessage(ctx context.Context, userID int64, m domain.M
 	if err != nil {
 		return domain.Message{}, err
 	}
+
 	if err := q.TouchConversation(ctx, TouchConversationParams{UpdatedAt: m.CreatedAt, UserID: userID, ID: m.ConversationID}); err != nil {
 		return domain.Message{}, err
 	}
+
 	return toMessage(row), tx.Commit(ctx)
 }
 
@@ -100,10 +112,12 @@ func (r *Repository) Messages(ctx context.Context, userID int64, conversationID 
 	if err != nil {
 		return nil, err
 	}
+
 	out := make([]domain.Message, len(rows))
 	for i, row := range rows {
 		out[i] = toMessage(row)
 	}
+
 	return out, nil
 }
 
@@ -111,5 +125,6 @@ func utc(t *time.Time) *time.Time {
 	if t == nil || t.IsZero() {
 		return nil
 	}
+
 	return t
 }

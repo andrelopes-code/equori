@@ -28,10 +28,12 @@ func toRecord(row IngestionExternalRecord) (domain.ExternalRecord, error) {
 	if err := json.Unmarshal(row.Raw, &raw); err != nil {
 		return domain.ExternalRecord{}, err
 	}
+
 	var scores []scoreRow
 	if err := json.Unmarshal(row.CandidateScores, &scores); err != nil {
 		return domain.ExternalRecord{}, err
 	}
+
 	rec := domain.ExternalRecord{
 		ID: row.ID, UserID: row.UserID, BatchID: row.BatchID, AccountID: row.AccountID, ExternalID: value(row.ExternalID),
 		DedupKey: row.DedupKey, Raw: raw, Date: row.BookedOn, Amount: row.Amount, Description: row.Description,
@@ -45,9 +47,11 @@ func toRecord(row IngestionExternalRecord) (domain.ExternalRecord, error) {
 			TransactionID: s.TransactionID, Score: s.Score, Amount: s.Amount, Date: s.Date, Counterparty: s.Counterparty,
 		})
 	}
+
 	if row.InstallmentNumber != nil && row.InstallmentCount != nil {
 		rec.Installment = &domain.Installment{Number: int(*row.InstallmentNumber), Count: int(*row.InstallmentCount)}
 	}
+
 	return rec, nil
 }
 
@@ -65,6 +69,7 @@ func factsOf(rec domain.ExternalRecord) facts {
 		n, c := int32(i.Number), int32(i.Count) //nolint:gosec // at most 420 installments (ledger rule)
 		f.number, f.count = &n, &c
 	}
+
 	return f
 }
 
@@ -75,12 +80,14 @@ func (r *Repository) ClaimRecords(ctx context.Context, recs []domain.ExternalRec
 	if len(recs) == 0 {
 		return out, nil
 	}
+
 	params := make([]InsertRecordsParams, len(recs))
 	for i, rec := range recs {
 		raw, err := json.Marshal(rec.Raw)
 		if err != nil {
 			return nil, err
 		}
+
 		f := factsOf(rec)
 		params[i] = InsertRecordsParams{
 			UserID: rec.UserID, BatchID: rec.BatchID, AccountID: rec.AccountID, ExternalID: optional(rec.ExternalID),
@@ -89,6 +96,7 @@ func (r *Repository) ClaimRecords(ctx context.Context, recs []domain.ExternalRec
 			CategoryID: f.category, BalanceAfter: f.balanceAfter, LineKind: f.kind,
 		}
 	}
+
 	err := pgx.BeginFunc(ctx, r.pool, func(tx pgx.Tx) error {
 		q := r.q.WithTx(tx)
 		var existing [][]byte
@@ -104,17 +112,21 @@ func (r *Repository) ClaimRecords(ctx context.Context, recs []domain.ExternalRec
 				out[i].Record, batchErr = toRecord(row)
 			}
 		})
+
 		if batchErr != nil || len(existing) == 0 {
 			return batchErr
 		}
+
 		rows, err := q.ListRecordsByKeys(ctx, ListRecordsByKeysParams{UserID: recs[0].UserID, Keys: existing})
 		if err != nil {
 			return err
 		}
+
 		byKey := make(map[string]IngestionExternalRecord, len(rows))
 		for _, row := range rows {
 			byKey[string(row.DedupKey)] = row
 		}
+
 		for i := range out {
 			if out[i].Existed {
 				if out[i].Record, err = toRecord(byKey[string(recs[i].DedupKey)]); err != nil {
@@ -122,8 +134,10 @@ func (r *Repository) ClaimRecords(ctx context.Context, recs []domain.ExternalRec
 				}
 			}
 		}
+
 		return nil
 	})
+
 	return out, err
 }
 
@@ -132,11 +146,14 @@ func outcome(rec domain.ExternalRecord) (SaveRecordOutcomesParams, error) {
 	if candidates == nil {
 		candidates = []uuid.UUID{}
 	}
+
 	scores := make([]scoreRow, len(rec.Scores))
 	for i, s := range rec.Scores {
 		scores[i] = scoreRow{TransactionID: s.TransactionID, Score: s.Score, Amount: s.Amount, Date: s.Date, Counterparty: s.Counterparty}
 	}
+
 	stored, err := json.Marshal(scores)
+
 	return SaveRecordOutcomesParams{
 		UserID: rec.UserID, ID: rec.ID, BatchID: rec.BatchID, State: string(rec.State),
 		TransactionID: uuid.NullUUID{UUID: rec.TransactionID, Valid: rec.TransactionID != uuid.Nil}, Candidates: candidates,
@@ -152,12 +169,14 @@ func saveOutcomes(ctx context.Context, q *Queries, recs []domain.ExternalRecord)
 			return err
 		}
 	}
+
 	var first error
 	q.SaveRecordOutcomes(ctx, params).Exec(func(_ int, err error) {
 		if err != nil && first == nil {
 			first = err
 		}
 	})
+
 	return first
 }
 
@@ -165,6 +184,7 @@ func (r *Repository) SaveOutcomes(ctx context.Context, recs []domain.ExternalRec
 	if len(recs) == 0 {
 		return nil
 	}
+
 	return pgx.BeginFunc(ctx, r.pool, func(tx pgx.Tx) error { return saveOutcomes(ctx, r.q.WithTx(tx), recs) })
 }
 
@@ -176,11 +196,13 @@ func (r *Repository) InsertBatch(ctx context.Context, b domain.Batch) (domain.Ba
 	if err != nil {
 		return domain.Batch{}, notFound(err)
 	}
+
 	return toBatch(row), nil
 }
 
 func (r *Repository) CompleteBatch(ctx context.Context, b domain.Batch) (domain.Batch, error) {
 	c := b.Counts
+
 	params := CompleteBatchParams{
 		UserID: b.UserID, ID: b.ID, Received: int32(c.Received), Ignored: int32(c.Ignored), Matched: int32(c.Matched), //nolint:gosec // line counts of a 10 MiB file
 		Created: int32(c.Created), NeedsReview: int32(c.NeedsReview), Discarded: int32(c.Discarded), //nolint:gosec // line counts of a 10 MiB file
@@ -190,10 +212,12 @@ func (r *Repository) CompleteBatch(ctx context.Context, b domain.Batch) (domain.
 	if b.Balance.Date != nil {
 		params.BalanceAmount = &b.Balance.Amount
 	}
+
 	row, err := r.q.CompleteBatch(ctx, params)
 	if err != nil {
 		return domain.Batch{}, err
 	}
+
 	return toBatch(row), nil
 }
 
@@ -202,6 +226,7 @@ func (r *Repository) Batch(ctx context.Context, userID int64, id uuid.UUID) (dom
 	if err != nil {
 		return domain.Batch{}, notFound(err)
 	}
+
 	return toBatch(row), nil
 }
 
@@ -212,13 +237,16 @@ func (r *Repository) LockAccountImports(ctx context.Context, accountID uuid.UUID
 	if err != nil {
 		return nil, err
 	}
+
 	q := New(conn)
 	if err := q.LockAccountImports(ctx, accountID.String()); err != nil {
 		conn.Release()
 		return nil, err
 	}
+
 	return func() {
 		_ = q.UnlockAccountImports(context.WithoutCancel(ctx), accountID.String())
+
 		conn.Release()
 	}, nil
 }
@@ -228,6 +256,7 @@ func (r *Repository) Record(ctx context.Context, userID int64, id uuid.UUID) (do
 	if err != nil {
 		return domain.ExternalRecord{}, notFound(err)
 	}
+
 	return toRecord(row)
 }
 
@@ -236,20 +265,25 @@ func (r *Repository) Records(ctx context.Context, userID int64, batchID uuid.UUI
 	if p.After != nil {
 		params.AfterID = uuid.NullUUID{UUID: p.After.ID, Valid: true}
 	}
+
 	rows, err := r.q.ListBatchRecords(ctx, params)
 	if err != nil {
 		return nil, nil, err
 	}
+
 	kept, more := page.Trim(rows, p.Limit)
+
 	out := make([]domain.ExternalRecord, len(kept))
 	for i, row := range kept {
 		if out[i], err = toRecord(row); err != nil {
 			return nil, nil, err
 		}
 	}
+
 	if !more {
 		return out, nil, nil
 	}
+
 	return out, &app.RecordKey{ID: kept[len(kept)-1].ID}, nil
 }
 
@@ -259,6 +293,7 @@ func (r *Repository) ResolveRecord(ctx context.Context, rec domain.ExternalRecor
 		if err := saveOutcomes(ctx, q, []domain.ExternalRecord{rec}); err != nil {
 			return err
 		}
+
 		return q.MoveReviewCount(ctx, MoveReviewCountParams{UserID: rec.UserID, ID: rec.BatchID, State: string(rec.State)})
 	})
 }
@@ -269,13 +304,16 @@ func (r *Repository) ReopenRecord(ctx context.Context, userID int64, id, batchID
 	reopened := false
 	err := pgx.BeginFunc(ctx, r.pool, func(tx pgx.Tx) error {
 		q := r.q.WithTx(tx)
+
 		n, err := q.ReopenRecord(ctx, ReopenRecordParams{UserID: userID, ID: id})
 		if err != nil || n == 0 {
 			return err
 		}
 
 		reopened = true
+
 		return q.MoveReopenedCount(ctx, MoveReopenedCountParams{UserID: userID, ID: batchID})
 	})
+
 	return reopened, err
 }

@@ -76,9 +76,11 @@ func (s *Exports) Request(ctx context.Context, userID int64) (Export, error) {
 	if err != nil {
 		return Export{}, err
 	}
+
 	if !ok {
 		return Export{}, ErrExportPending
 	}
+
 	return e, nil
 }
 
@@ -92,9 +94,11 @@ func (s *Exports) Content(ctx context.Context, userID int64) ([]byte, time.Time,
 	if err != nil {
 		return nil, time.Time{}, err
 	}
+
 	if e.Status != ExportReady {
 		return nil, time.Time{}, ErrExportNotReady
 	}
+
 	return content, e.RequestedAt, nil
 }
 
@@ -105,10 +109,13 @@ func (s *Exports) Build(ctx context.Context, userID int64, id uuid.UUID) error {
 	if errors.Is(err, ErrExportNotFound) || err == nil && (e.ID != id || e.Status != ExportPending) {
 		return nil
 	}
+
 	if err != nil {
 		return err
 	}
+
 	archive, err := s.repo.BuildArchive(ctx, userID, e.RequestedAt)
+
 	problem := ""
 	switch {
 	case errors.Is(err, ErrExportTooLarge):
@@ -116,5 +123,6 @@ func (s *Exports) Build(ctx context.Context, userID int64, id uuid.UUID) error {
 	case err != nil:
 		return fmt.Errorf("build export %s: %w", id, err)
 	}
+
 	return s.repo.FinishExport(ctx, userID, id, s.clock.Now(), archive, problem)
 }

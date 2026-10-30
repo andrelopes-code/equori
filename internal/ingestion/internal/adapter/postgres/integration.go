@@ -38,6 +38,7 @@ func (r *Repository) InsertIntegration(ctx context.Context, i domain.Integration
 	if violates(err, uniqueViolation, "ingestion_integration_name_key") {
 		return domain.Integration{}, &domain.FieldError{Field: "name", Message: "is already used by another integration"}
 	}
+
 	return toIntegration(row), err
 }
 
@@ -48,13 +49,16 @@ func (r *Repository) Integration(ctx context.Context, userID int64, id uuid.UUID
 
 func (r *Repository) ListIntegrations(ctx context.Context, userID int64, p page.Request[app.NameKey]) ([]domain.Integration, *app.NameKey, error) {
 	limit, name, id := namePage(p)
+
 	rows, err := r.q.ListIntegrations(ctx, ListIntegrationsParams{UserID: userID, RowLimit: limit, AfterName: name, AfterID: id})
 	if err != nil {
 		return nil, nil, err
 	}
+
 	out, next := trimPage(rows, p.Limit, toIntegration, func(row IngestionIntegration) app.NameKey {
 		return app.NameKey{Name: row.Name, ID: row.ID}
 	})
+
 	return out, next, nil
 }
 
@@ -64,6 +68,7 @@ func namePage(p page.Request[app.NameKey]) (int32, *string, uuid.NullUUID) {
 	if p.After == nil {
 		return limit, nil, uuid.NullUUID{}
 	}
+
 	return limit, &p.After.Name, uuid.NullUUID{UUID: p.After.ID, Valid: true}
 }
 
@@ -82,34 +87,43 @@ func (r *Repository) DeleteIntegration(ctx context.Context, userID int64, id uui
 	case n == 0:
 		return app.ErrNotFound
 	}
+
 	return nil
 }
 
 func (r *Repository) ResealCredentials(ctx context.Context, reseal func(userID int64, id uuid.UUID, sealed []byte) ([]byte, error)) (int, error) {
 	changed := 0
+
 	err := pgx.BeginFunc(ctx, r.pool, func(tx pgx.Tx) error {
 		q := r.q.WithTx(tx)
+
 		rows, err := q.LockAllCredentials(ctx)
 		if err != nil {
 			return err
 		}
+
 		for _, row := range rows {
 			sealed, err := reseal(row.UserID, row.ID, row.CredentialCiphertext)
 			if err != nil {
 				return err
 			}
+
 			if sealed == nil {
 				continue
 			}
+
 			if err := q.ResealCredentials(ctx, ResealCredentialsParams{UserID: row.UserID, ID: row.ID, CredentialCiphertext: sealed}); err != nil {
 				return err
 			}
+
 			changed++
 		}
+
 		return nil
 	})
 	if err != nil {
 		return 0, err
 	}
+
 	return changed, nil
 }

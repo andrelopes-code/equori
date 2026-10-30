@@ -131,50 +131,65 @@ func NewRule(r Rule) (Rule, error) {
 	if n := utf8.RuneCountInString(r.Name); n == 0 || n > maxNameLength {
 		return Rule{}, invalid("name", fmt.Sprintf("must have 1 to %d characters", maxNameLength))
 	}
+
 	if len(r.Conditions) == 0 || len(r.Conditions) > maxConditions {
 		return Rule{}, invalid("conditions", fmt.Sprintf("must have 1 to %d conditions", maxConditions))
 	}
+
 	conditions := make([]Condition, len(r.Conditions))
 	for i, c := range r.Conditions {
 		checked, err := checkCondition(fmt.Sprintf("conditions[%d]", i), c)
 		if err != nil {
 			return Rule{}, err
 		}
+
 		conditions[i] = checked
 	}
+
 	r.Conditions = conditions
 	if len(r.Actions) == 0 || len(r.Actions) > maxActions {
 		return Rule{}, invalid("actions", fmt.Sprintf("must have 1 to %d actions", maxActions))
 	}
+
 	seen := map[ActionType]bool{}
+
 	deciders := 0
 	for i, a := range r.Actions {
 		field := fmt.Sprintf("actions[%d]", i)
+
 		if slices.Contains(categoryActions, a.Type) {
 			deciders++
 		}
+
 		if seen[a.Type] || deciders > 1 {
 			return Rule{}, invalid(field+".type", "repeats an action or combines two of set_category, split, transfer and mark_reimbursable")
 		}
+
 		seen[a.Type] = true
+
 		checked, err := checkAction(field, a)
 		if err != nil {
 			return Rule{}, err
 		}
+
 		r.Actions[i] = checked
 	}
+
 	return r, nil
 }
 
 func checkCondition(field string, c Condition) (Condition, error) {
 	value := field + ".value"
+
 	operators, count := conditionShape(c.Field)
 	if operators == nil {
 		return Condition{}, invalid(field+".field", "is not a known field")
 	}
+
 	if !slices.Contains(operators, c.Operator) {
 		return Condition{}, invalid(field+".operator", fmt.Sprintf("is not allowed for %s", c.Field))
 	}
+
 	want := 1
 	switch c.Operator {
 	case OpBetween:
@@ -182,9 +197,11 @@ func checkCondition(field string, c Condition) (Condition, error) {
 	case OpInList:
 		want = -1
 	}
+
 	if n := count(c); (want > 0 && n != want) || (want < 0 && (n == 0 || n > maxListValues)) {
 		return Condition{}, invalid(value, valueCountMessage(want))
 	}
+
 	switch c.Field {
 	case FieldDescription, FieldRawDescription:
 		c.normalized = make([]string, len(c.Text))
@@ -192,13 +209,16 @@ func checkCondition(field string, c Condition) (Condition, error) {
 			if n := utf8.RuneCountInString(t); n == 0 || n > maxTextValue {
 				return Condition{}, invalid(value, fmt.Sprintf("must have 1 to %d characters", maxTextValue))
 			}
+
 			c.normalized[i] = Normalize(t)
 		}
+
 		if c.Operator == OpRegex {
 			re, err := regexp.Compile(c.Text[0])
 			if err != nil {
 				return Condition{}, invalid(value, "is not a valid RE2 pattern")
 			}
+
 			c.re = re
 		}
 	case FieldAccountKind, FieldSource, FieldWeekday:
@@ -217,10 +237,12 @@ func checkCondition(field string, c Condition) (Condition, error) {
 			if m.Currency() != c.Money[0].Currency() {
 				return Condition{}, invalid(value, "must use one currency")
 			}
+
 			if c.Field == FieldAbsoluteAmount && m.IsNegative() {
 				return Condition{}, invalid(value, "must not be negative")
 			}
 		}
+
 		if c.Operator == OpBetween && c.Money[0].Amount() > c.Money[1].Amount() {
 			return Condition{}, invalid(value, "must list the minimum first")
 		}
@@ -230,10 +252,12 @@ func checkCondition(field string, c Condition) (Condition, error) {
 				return Condition{}, invalid(value, "must be between 1 and 31")
 			}
 		}
+
 		if c.Operator == OpBetween && c.Ints[0] > c.Ints[1] {
 			return Condition{}, invalid(value, "must list the minimum first")
 		}
 	}
+
 	return c, nil
 }
 
@@ -254,6 +278,7 @@ func conditionShape(f Field) ([]Operator, func(Condition) int) {
 	case FieldInstallment:
 		return []Operator{OpEquals}, func(Condition) int { return 1 }
 	}
+
 	return nil, nil
 }
 
@@ -264,6 +289,7 @@ func valueCountMessage(want int) string {
 	case 2:
 		return "must be a minimum and a maximum"
 	}
+
 	return fmt.Sprintf("must be a list of 1 to %d values", maxListValues)
 }
 
@@ -281,6 +307,7 @@ func checkAction(field string, a Action) (Action, error) {
 		if len(a.Tags) == 0 || len(a.Tags) > maxTags {
 			return Action{}, invalid(field+".tags", fmt.Sprintf("must have 1 to %d tags", maxTags))
 		}
+
 		for i, t := range a.Tags {
 			if !tagPattern.MatchString(t) {
 				return Action{}, invalid(fmt.Sprintf("%s.tags[%d]", field, i), "must use lowercase letters, digits and hyphens, up to 60 characters")
@@ -295,6 +322,7 @@ func checkAction(field string, a Action) (Action, error) {
 	default:
 		return Action{}, invalid(field+".type", "is not a known action")
 	}
+
 	return a, nil
 }
 
@@ -302,45 +330,59 @@ func checkParts(field string, parts []Part) error {
 	if len(parts) < minSplitParts || len(parts) > maxSplitParts {
 		return invalid(field, fmt.Sprintf("must have %d to %d parts", minSplitParts, maxSplitParts))
 	}
+
 	remainders, percent := 0, 0
+
 	var currency money.Currency
 	for i, p := range parts {
 		pf := fmt.Sprintf("%s[%d]", field, i)
 		if p.CategoryID == uuid.Nil {
 			return invalid(pf+".category_id", "is required")
 		}
+
 		shares := 0
 		if p.Percent != 0 {
 			shares++
+
 			if p.Percent < 1 || p.Percent >= basisPointsAll {
 				return invalid(pf+".percent", "must be between 1 and 9999 basis points")
 			}
+
 			percent += p.Percent
 		}
+
 		if p.Amount != nil {
 			shares++
+
 			if p.Amount.IsNegative() || p.Amount.IsZero() {
 				return invalid(pf+".amount", "must be positive")
 			}
+
 			if currency != "" && p.Amount.Currency() != currency {
 				return invalid(pf+".amount", "must use one currency")
 			}
+
 			currency = p.Amount.Currency()
 		}
+
 		if p.Remainder {
 			shares++
 			remainders++
 		}
+
 		if shares != 1 {
 			return invalid(pf, "must have exactly one of percent, amount and remainder")
 		}
 	}
+
 	if remainders != 1 {
 		return invalid(field, "must have exactly one remainder part")
 	}
+
 	if percent >= basisPointsAll {
 		return invalid(field, "percent parts must sum to less than 10000 basis points")
 	}
+
 	return nil
 }
 
@@ -378,6 +420,7 @@ func (r Rule) matches(s subject) bool {
 			return false
 		}
 	}
+
 	return true
 }
 
@@ -405,12 +448,15 @@ func (c Condition) holds(s subject) bool {
 		if s.Amount.Currency() != c.Money[0].Currency() {
 			return false
 		}
+
 		amount := s.Amount.Amount()
 		if c.Field == FieldAbsoluteAmount && amount < 0 {
 			amount = -amount
 		}
+
 		return c.holdsInt(amount, func(i int) int64 { return c.Money[i].Amount() }, len(c.Money))
 	}
+
 	return false
 }
 
@@ -425,6 +471,7 @@ func (c Condition) holdsText(original, normalized string) bool {
 	case OpRegex:
 		return c.re.MatchString(original)
 	}
+
 	return false
 }
 
@@ -445,5 +492,6 @@ func (c Condition) holdsInt(v int64, value func(int) int64, n int) bool {
 			}
 		}
 	}
+
 	return false
 }

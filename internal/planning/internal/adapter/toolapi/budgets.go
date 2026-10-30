@@ -80,25 +80,32 @@ func toPlanView(p app.Plan, accounts map[uuid.UUID]Account) (planView, error) {
 		if v == nil {
 			return tool.Money{}, nil
 		}
+
 		return m(*v)
 	}
 	out := planView{Source: string(p.Reference.Source), AverageMonths: p.AverageMonths, Rows: make([]planRowView, len(p.Rows))}
+
 	var err error
 	if out.ExpectedIncome, err = optional(p.Expected); err != nil {
 		return planView{}, err
 	}
+
 	if out.AverageIncome, err = optional(p.Average); err != nil {
 		return planView{}, err
 	}
+
 	if ref, ok := p.ReferenceAmount(); ok {
 		rest, _ := p.Unassigned()
+
 		if out.Reference, err = optional(&ref); err != nil {
 			return planView{}, err
 		}
+
 		if out.Unassigned, err = optional(&rest); err != nil {
 			return planView{}, err
 		}
 	}
+
 	for _, f := range []struct {
 		amount int64
 		into   *tool.Money
@@ -107,11 +114,13 @@ func toPlanView(p app.Plan, accounts map[uuid.UUID]Account) (planView, error) {
 			return planView{}, err
 		}
 	}
+
 	for i, r := range p.Rows {
 		v := planRowView{CategoryID: r.CategoryID.String(), CategoryName: accountName(accounts, r.CategoryID), Counted: r.Counted}
 		if r.HasNextChange {
 			v.NextChange = r.NextChange.Format(monthLayout)
 		}
+
 		for _, f := range []struct {
 			amount int64
 			into   *tool.Money
@@ -120,8 +129,10 @@ func toPlanView(p app.Plan, accounts map[uuid.UUID]Account) (planView, error) {
 				return planView{}, err
 			}
 		}
+
 		out.Rows[i] = v
 	}
+
 	return out, nil
 }
 
@@ -136,9 +147,11 @@ func toGoalView(g app.GoalView) (goalView, error) {
 			return goalView{}, err
 		}
 	}
+
 	if g.Trailing != nil {
 		v.TrailingReturnBP = g.Trailing.BP
 	}
+
 	return v, nil
 }
 
@@ -155,39 +168,48 @@ func getBudgetsAndGoals(svc *app.Service, l Ledger, clk clock.Clock) tool.Tool {
 		if err != nil {
 			return getBudgetsAndGoalsOut{}, err
 		}
+
 		out := getBudgetsAndGoalsOut{Month: month.Format(monthLayout), Budgets: []budgetView{}, Goals: []goalView{}}
 		if in.Kind == "plan" {
 			p, err := svc.BudgetPlan(ctx, userID, month)
 			if err != nil {
 				return out, err
 			}
+
 			accounts, err := l.Accounts(ctx, userID)
 			if err != nil {
 				return out, err
 			}
+
 			out.Plan, err = toPlanView(p, accounts)
+
 			return out, err
 		}
+
 		if in.Kind != "goals" {
 			accounts, err := l.Accounts(ctx, userID)
 			if err != nil {
 				return out, err
 			}
+
 			r := page.Request[app.IDKey]{Limit: page.MaxLimit}
 			for {
 				bs, next, err := svc.ListBudgets(ctx, userID, r)
 				if err != nil {
 					return out, err
 				}
+
 				for _, b := range bs {
 					// A budget that starts after the month has no progress to report.
 					if len(b.Amounts) == 0 || b.Amounts[0].EffectiveFrom.After(month) {
 						continue
 					}
+
 					p, currency, err := svc.BudgetProgress(ctx, userID, b.ID, month)
 					if err != nil {
 						return out, err
 					}
+
 					v := budgetView{BudgetID: b.ID.String(), CategoryName: accountName(accounts, b.CategoryID), Rollover: b.Rollover}
 					for _, f := range []struct {
 						amount int64
@@ -197,14 +219,18 @@ func getBudgetsAndGoals(svc *app.Service, l Ledger, clk clock.Clock) tool.Tool {
 							return out, err
 						}
 					}
+
 					out.Budgets = append(out.Budgets, v)
 				}
+
 				if next == nil {
 					break
 				}
+
 				r.After = next
 			}
 		}
+
 		if in.Kind != "budgets" {
 			r := page.Request[app.IDKey]{Limit: page.MaxLimit}
 			for {
@@ -212,19 +238,24 @@ func getBudgetsAndGoals(svc *app.Service, l Ledger, clk clock.Clock) tool.Tool {
 				if err != nil {
 					return out, err
 				}
+
 				for _, g := range gs {
 					v, err := toGoalView(g)
 					if err != nil {
 						return out, err
 					}
+
 					out.Goals = append(out.Goals, v)
 				}
+
 				if next == nil {
 					break
 				}
+
 				r.After = next
 			}
 		}
+
 		return out, nil
 	})
 }

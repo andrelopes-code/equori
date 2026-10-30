@@ -15,14 +15,17 @@ func TestBuiltScriptsHaveNoCommonJSRequire(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if len(scripts) == 0 {
 		t.Skip("web/dist holds no built scripts; run make web-build")
 	}
+
 	for _, name := range scripts {
 		body, err := fs.ReadFile(Dist(), name)
 		if err != nil {
 			t.Fatal(err)
 		}
+
 		if strings.Contains(string(body), "typeof require") {
 			t.Errorf("%s contains \"typeof require\": a dependency bundled a CommonJS module that throws in the browser", path.Base(name))
 		}

@@ -58,16 +58,19 @@ func (s *Server) RequireSession(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 			return
 		}
+
 		cookie, err := r.Cookie(CookieName)
 		if err != nil {
 			s.errs.Write(w, r, app.ErrUnauthenticated)
 			return
 		}
+
 		user, err := s.svc.Authenticate(r.Context(), cookie.Value)
 		if err != nil {
 			s.errs.Write(w, r, err)
 			return
 		}
+
 		ctx := auth.WithUserID(r.Context(), user.ID)
 		ctx = context.WithValue(ctx, userKey{}, user)
 		next.ServeHTTP(w, r.WithContext(ctx))
@@ -92,6 +95,7 @@ func (s *Server) GetSetup(ctx context.Context, _ GetSetupRequestObject) (GetSetu
 	if err != nil {
 		return nil, err
 	}
+
 	return GetSetup200JSONResponse{Required: required}, nil
 }
 
@@ -99,14 +103,18 @@ func (s *Server) CompleteSetup(ctx context.Context, req CompleteSetupRequestObje
 	if req.Body == nil {
 		return nil, errInvalidRequest
 	}
+
 	b := req.Body
+
 	session, user, err := s.svc.CompleteSetup(ctx, b.Token, b.Email, b.Password,
 		locale.Locale{Language: b.Language, Region: b.Region}, money.Currency(deref(b.BaseCurrency)))
 	if err != nil {
 		return nil, err
 	}
+
 	s.log.InfoContext(ctx, "first user created", "user_id", user.ID, "request_id", httpserver.RequestID(ctx))
 	cookie := s.cookie(session.Token, session.ExpiresAt)
+
 	return CompleteSetup201JSONResponse{Body: toAPIUser(user), Headers: CompleteSetup201ResponseHeaders{SetCookie: &cookie}}, nil
 }
 
@@ -114,17 +122,21 @@ func (s *Server) CreateSession(ctx context.Context, req CreateSessionRequestObje
 	if req.Body == nil {
 		return nil, errInvalidRequest
 	}
+
 	session, err := s.svc.Login(ctx, req.Body.Email, req.Body.Password)
 	switch {
 	case errors.Is(err, app.ErrInvalidCredentials), errors.Is(err, app.ErrTooManyAttempts):
 		s.log.WarnContext(ctx, "login failed", "email", req.Body.Email, "reason", err.Error(),
 			"request_id", httpserver.RequestID(ctx))
+
 		return nil, err
 	case err != nil:
 		return nil, err
 	}
+
 	s.log.InfoContext(ctx, "login succeeded", "user_id", session.UserID, "request_id", httpserver.RequestID(ctx))
 	cookie := s.cookie(session.Token, session.ExpiresAt)
+
 	return CreateSession204Response{Headers: CreateSession204ResponseHeaders{SetCookie: &cookie}}, nil
 }
 
@@ -134,7 +146,9 @@ func (s *Server) DeleteSession(ctx context.Context, req DeleteSessionRequestObje
 			return nil, err
 		}
 	}
+
 	cookie := s.cookie("", time.Unix(0, 0))
+
 	return DeleteSession204Response{Headers: DeleteSession204ResponseHeaders{SetCookie: &cookie}}, nil
 }
 
@@ -143,6 +157,7 @@ func (s *Server) GetCurrentUser(ctx context.Context, _ GetCurrentUserRequestObje
 	if !ok {
 		return nil, app.ErrUnauthenticated
 	}
+
 	return GetCurrentUser200JSONResponse(toAPIUser(user)), nil
 }
 
@@ -151,13 +166,16 @@ func (s *Server) UpdateCurrentUser(ctx context.Context, req UpdateCurrentUserReq
 	if !ok {
 		return nil, app.ErrUnauthenticated
 	}
+
 	if req.Body == nil {
 		return nil, errInvalidRequest
 	}
+
 	updated, err := s.svc.UpdateProfile(ctx, user, deref(req.Body.Language), deref(req.Body.Region))
 	if err != nil {
 		return nil, err
 	}
+
 	return UpdateCurrentUser200JSONResponse(toAPIUser(updated)), nil
 }
 
@@ -169,6 +187,7 @@ func deref(s *string) string {
 	if s == nil {
 		return ""
 	}
+
 	return *s
 }
 
@@ -183,6 +202,7 @@ func (s *Server) cookie(value string, expires time.Time) string {
 		Secure:   s.secureCookies,
 		SameSite: http.SameSiteLaxMode,
 	}
+
 	return c.String()
 }
 
@@ -193,8 +213,10 @@ func ToProblem(err error) (problem.Details, bool) {
 	if fe, ok := errors.AsType[*domain.FieldError](err); ok {
 		d := problem.New(http.StatusUnprocessableEntity, "validation_failed", fe.Error())
 		d.Errors = []problem.FieldError{{Field: fe.Field, Message: fe.Message}}
+
 		return d, true
 	}
+
 	switch {
 	case errors.Is(err, errInvalidRequest):
 		return problem.New(http.StatusBadRequest, "invalid_request", "malformed request"), true
@@ -213,5 +235,6 @@ func ToProblem(err error) (problem.Details, bool) {
 	case errors.Is(err, app.ErrBusy):
 		return problem.New(http.StatusServiceUnavailable, "server_busy", "server is busy; retry shortly"), true
 	}
+
 	return problem.Details{}, false
 }

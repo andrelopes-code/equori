@@ -27,23 +27,28 @@ func (v importedView) amounts() map[string]int64 {
 	for _, p := range v.Postings {
 		m[p.AccountID] += p.Amount.Amount
 	}
+
 	return m
 }
 
 // importLines imports an OFX file into checking and returns the created transactions by description.
 func (b books) importLines(t *testing.T, name string, lines ...apitest.OFXLine) map[string]importedView {
 	t.Helper()
+
 	if r := b.h.Import(b.checking, "ofx", name, apitest.OFX("", lines...)); r.Status != http.StatusCreated {
 		t.Fatalf("import status %d: %s", r.Status, r.Body)
 	}
+
 	var list struct {
 		Items []importedView `json:"items"`
 	}
 	b.h.MustDo(http.MethodGet, "/api/v1/transactions?account_id="+b.checking+"&limit=200", nil, http.StatusOK, &list)
+
 	out := map[string]importedView{}
 	for _, v := range list.Items {
 		out[v.Description] = v
 	}
+
 	return out
 }
 
@@ -56,11 +61,14 @@ func TestImportAppliesRule(t *testing.T) {
 	t.Parallel()
 	b := newBooks(t)
 	rule := createRule(t, b.h, "Uber", []map[string]any{contains("uber")}, []map[string]any{setCategory(b.transport)})
+
 	tx := b.importLines(t, "s37.ofx", line("20261014", "-23.90", "s37", "UBER *TRIP"))["UBER *TRIP"]
 	if got := tx.amounts(); tx.Version != 1 || len(tx.Postings) != 2 || got[b.transport] != 2390 || got[b.checking] != -2390 {
 		t.Fatalf("transaction = %+v", tx)
 	}
+
 	dispatch(t, b.h)
+
 	if c := categorizationOf(t, b.h, tx.ID); method(c) != "rule" || c.RuleID != rule.ID {
 		t.Fatalf("categorization = %+v", c)
 	}
@@ -78,7 +86,9 @@ func TestImportAppliesAliasAndHistory(t *testing.T) {
 	if got := tx.amounts(); tx.PayeeID != ifood || got[b.delivery] != 4500 || tx.Version != 1 {
 		t.Fatalf("transaction = %+v", tx)
 	}
+
 	dispatch(t, b.h)
+
 	if c := categorizationOf(t, b.h, tx.ID); method(c) != "history" || c.RuleID != "" {
 		t.Fatalf("categorization = %+v", c)
 	}
@@ -96,9 +106,11 @@ func TestImportMergesRules(t *testing.T) {
 	if got := first.amounts(); got[fuel] != 15000 || !slices.Equal(first.Tags, []string{"car"}) {
 		t.Fatalf("first = %+v", first)
 	}
+
 	b.h.MustDo(http.MethodPut, "/api/v1/rules/"+posto.ID, map[string]any{
 		"name": "Posto", "stop_processing": true, "conditions": []any{contains("posto")}, "actions": []any{setCategory(fuel)},
 	}, http.StatusOK, nil)
+
 	second := b.importLines(t, "s39b.ofx", line("20261013", "-80.00", "s39b", "POSTO SHELL 2"))["POSTO SHELL 2"]
 	if got := second.amounts(); got[fuel] != 8000 || len(second.Tags) != 0 {
 		t.Fatalf("second = %+v", second)
@@ -150,6 +162,7 @@ func TestArchivedCategoryStopsRuleUntilReopened(t *testing.T) {
 	if got := tx.amounts(); got[b.uncategorized] != 850 || got[bakery] != 0 {
 		t.Fatalf("imported while archived = %+v", tx)
 	}
+
 	dispatch(t, b.h)
 
 	b.h.MustDo(http.MethodPost, "/api/v1/accounts/"+bakery+"/reopen", nil, http.StatusOK, nil)
@@ -158,13 +171,17 @@ func TestArchivedCategoryStopsRuleUntilReopened(t *testing.T) {
 		Categorized int `json:"categorized"`
 	}
 	b.h.MustDo(http.MethodPost, "/api/v1/rules/run", nil, http.StatusOK, &run)
+
 	if run.Examined != 1 || run.Categorized != 1 {
 		t.Fatalf("run = %+v", run)
 	}
+
 	dispatch(t, b.h)
+
 	if _, postings := categoryOf(t, b.h, tx.ID); postings[bakery] != 850 {
 		t.Fatalf("postings after reopen = %v", postings)
 	}
+
 	if c := categorizationOf(t, b.h, tx.ID); method(c) != "rule" || c.RuleID != rule.ID {
 		t.Fatalf("categorization = %+v", c)
 	}
@@ -190,6 +207,7 @@ func TestStatisticsAfterImports(t *testing.T) {
 
 	var st map[string]any
 	b.h.MustDo(http.MethodGet, "/api/v1/categorization-statistics?from=2026-10-01&to=2026-10-31", nil, http.StatusOK, &st)
+
 	want := map[string]any{"total": float64(5), "rule": float64(1), "history": float64(1), "manual": float64(2), "source": float64(0), "uncategorized": float64(1)}
 	for k, v := range want {
 		if st[k] != v {

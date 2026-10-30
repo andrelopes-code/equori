@@ -33,10 +33,13 @@ func (d *Date) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &s); err != nil {
 		return err
 	}
+
 	t, err := time.Parse(dateLayout, s)
 	if err != nil {
 		return err
 	}
+
 	d.Time = t
+
 	return nil
 }

@@ -47,13 +47,16 @@ func TestCategoryTotalsTool(t *testing.T) {
 		NextCursor string         `json:"next_cursor"`
 	}
 	period := map[string]any{"class": "expense", "from": "2026-10-01", "to": "2026-10-31"}
+
 	var got output
 	if r := h.Tool("get_category_totals", period); r.IsError {
 		t.Fatalf("get_category_totals = error %s", r.Content)
 	} else if err := json.Unmarshal(r.Content, &got); err != nil {
 		t.Fatal(err)
 	}
+
 	brl := func(amount string) tool.Money { return tool.Money{Amount: amount, Currency: "BRL"} }
+
 	want := output{From: "2026-10-01", To: "2026-10-31", Categories: []toolCategory{
 		{AccountID: flights, Name: "Flights", ParentID: travel, ParentName: "Travel", Total: brl("10.00"), SubtreeTotal: brl("10.00")},
 		{AccountID: food, Name: "Food", Total: brl("0.00"), SubtreeTotal: brl("10.00")},
@@ -66,23 +69,29 @@ func TestCategoryTotalsTool(t *testing.T) {
 	}
 
 	var paged []toolCategory
+
 	cursor := ""
 	for {
 		args := maps.Clone(period)
+
 		args["limit"] = 2
 		if cursor != "" {
 			args["cursor"] = cursor
 		}
+
 		var p output
+
 		r := h.Tool("get_category_totals", args)
 		if err := json.Unmarshal(r.Content, &p); r.IsError || err != nil {
 			t.Fatalf("page = %s, %v", r.Content, err)
 		}
+
 		paged = append(paged, p.Categories...)
 		if cursor = p.NextCursor; cursor == "" {
 			break
 		}
 	}
+
 	if !reflect.DeepEqual(paged, want.Categories) {
 		t.Errorf("pages of two = %+v", paged)
 	}

@@ -45,6 +45,7 @@ func indicatorMonths(facts []MonthFacts, first time.Time) []IndicatorMonth {
 	if len(facts) != 24 {
 		panic("indicatorMonths needs 24 months of facts")
 	}
+
 	out := make([]IndicatorMonth, 0, 12)
 	for j := 12; j < 24; j++ {
 		f := facts[j]
@@ -53,21 +54,26 @@ func indicatorMonths(facts []MonthFacts, first time.Time) []IndicatorMonth {
 			DebtService: f.DebtService, Liquid: f.Liquid, Liabilities: f.Liabilities,
 			SavingsRate: share(f.Income-f.Expense, 1, f.Income, ReasonNoIncome),
 		}
+
 		var n, income, expense int64
 		for _, w := range facts[j-12 : j] {
 			if first.IsZero() || w.Month.Before(first) {
 				continue
 			}
+
 			n++
 			income += w.Income
 			expense += w.Expense
 		}
+
 		if n < minTrailingMonths {
 			short := Ratio{Reason: ReasonInsufficientHistory}
 			m.TrailingSavingsRate, m.Liquidity, m.CommittedShare, m.DebtServiceShare = short, short, short, short
 			out = append(out, m)
+
 			continue
 		}
+
 		m.HasMeans, m.MeanIncome, m.MeanExpense = true, income/n, expense/n
 		m.TrailingSavingsRate = share(income-expense, 1, income, ReasonNoIncome)
 		m.Liquidity = share(f.Liquid, n, expense, ReasonNoExpense)
@@ -75,6 +81,7 @@ func indicatorMonths(facts []MonthFacts, first time.Time) []IndicatorMonth {
 		m.DebtServiceShare = share(f.DebtService, n, income, ReasonNoIncome)
 		out = append(out, m)
 	}
+
 	return out
 }
 
@@ -84,7 +91,9 @@ func share(value, n, total int64, reason Reason) Ratio {
 	if total <= 0 {
 		return Ratio{Reason: reason}
 	}
+
 	q := new(big.Int).Mul(big.NewInt(value), big.NewInt(10000))
 	q.Mul(q, big.NewInt(n))
+
 	return Ratio{BP: q.Quo(q, big.NewInt(total)).Int64()}
 }

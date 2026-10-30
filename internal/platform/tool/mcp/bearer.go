@@ -25,20 +25,24 @@ func authenticate(verify Verify, next http.Handler) http.Handler {
 				return
 			}
 		}
+
 		token, ok := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
 		if !ok || token == "" {
 			unauthorized(w)
 			return
 		}
+
 		g, err := verify(r.Context(), token)
 		if errors.Is(err, ErrInvalidToken) {
 			unauthorized(w)
 			return
 		}
+
 		if err != nil {
 			http.Error(w, "the token could not be verified", http.StatusInternalServerError)
 			return
 		}
+
 		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), grantKey{}, g)))
 	})
 }

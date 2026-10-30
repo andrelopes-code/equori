@@ -52,11 +52,13 @@ func Title(text string) string {
 	if len(runes) <= MaxTitle {
 		return string(runes)
 	}
+
 	runes = runes[:MaxTitle]
 	for i := MaxTitle - 1; i > MaxTitle/2; i-- {
 		if runes[i] == ' ' {
 			return string(runes[:i])
 		}
 	}
+
 	return string(runes)
 }

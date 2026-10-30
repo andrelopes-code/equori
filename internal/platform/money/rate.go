@@ -23,6 +23,7 @@ func NewRate(mantissa int64, scale int) (Rate, error) {
 	if mantissa <= 0 || scale < 0 || scale > MaxScale {
 		return Rate{}, fmt.Errorf("%w: %d with scale %d", ErrInvalidRate, mantissa, scale)
 	}
+
 	return Rate{mantissa: mantissa, scale: int8(scale)}, nil
 }
 
@@ -31,11 +32,14 @@ func ParseRate(s string) (Rate, error) {
 	if !ratePattern.MatchString(s) {
 		return Rate{}, fmt.Errorf("%w: %q", ErrInvalidRate, s)
 	}
+
 	whole, frac, _ := strings.Cut(s, ".")
+
 	mantissa, err := strconv.ParseInt(whole+frac, 10, 64)
 	if err != nil {
 		return Rate{}, fmt.Errorf("%w: %q", ErrInvalidRate, s)
 	}
+
 	return NewRate(mantissa, len(frac))
 }
 
@@ -47,10 +51,13 @@ func (r Rate) String() string {
 	if r.scale == 0 {
 		return digits
 	}
+
 	for len(digits) <= int(r.scale) {
 		digits = "0" + digits
 	}
+
 	cut := len(digits) - int(r.scale)
+
 	return digits[:cut] + "." + digits[cut:]
 }
 
@@ -60,5 +67,6 @@ func (r Rate) Reduced() Rate {
 		r.mantissa /= 10
 		r.scale--
 	}
+
 	return r
 }

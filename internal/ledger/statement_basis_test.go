@@ -26,10 +26,12 @@ func TestProvisionalStatement(t *testing.T) {
 	line := imported(t, c.card, "2026-11-01", -1112)
 	due := time.Date(2026, 11, 10, 0, 0, 0, 0, time.UTC)
 	line.DueDate = &due
+
 	billed, err := c.h.App.Ledger.RecordImported(ctx, uid, uuid.New(), line)
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	correctDescription(c.h, billed.String())
 
 	got := provisionalOf(t, c.h, statements(t, c.h, c.card)["2026-11"].ID)
@@ -40,6 +42,7 @@ func TestProvisionalStatement(t *testing.T) {
 			t.Errorf("transaction %s: provisional = %v (listed %v), want %v", id, p, ok, w)
 		}
 	}
+
 	// S178: the statement the owner chose holds after 2026-11 closes.
 	if s := c.h.Transaction(deferred).Postings[0].Statement; s != "2026-12" {
 		t.Errorf("chosen statement = %s, want 2026-12", s)
@@ -65,10 +68,12 @@ func ownerStatement(p map[string]any, reference string) map[string]any {
 // without their statements.
 func correctDescription(h *apitest.Harness, id string) {
 	tx := h.Transaction(id)
+
 	postings := make([]map[string]any, len(tx.Postings))
 	for i, p := range tx.Postings {
 		postings[i] = apitest.Posting(p.AccountID, p.Amount.Amount)
 	}
+
 	h.MustDo(http.MethodPut, "/api/v1/transactions/"+id, map[string]any{
 		"date": tx.Date, "description": "renamed", "postings": postings,
 		"expected_version": tx.Version, "reason": "rename",
@@ -84,10 +89,12 @@ func provisionalOf(t *testing.T, h *apitest.Harness, statementID string) map[str
 		} `json:"postings"`
 	}
 	h.MustDo(http.MethodGet, "/api/v1/statements/"+statementID, nil, http.StatusOK, &detail)
+
 	out := map[string]bool{}
 	for _, p := range detail.Postings {
 		out[p.TransactionID] = p.Provisional
 	}
+
 	return out
 }
 
@@ -112,14 +119,17 @@ func differenceSetup(t *testing.T, shortBy int64) (c cardSetup, statementID, man
 	c = newCardSetup(t, "2026-11-12")
 	line := imported(t, c.card, "2026-10-28", -713)
 	due := time.Date(2026, 11, 10, 0, 0, 0, 0, time.UTC)
+
 	line.DueDate = &due
 	if _, err := c.h.App.Ledger.RecordImported(t.Context(), c.h.OwnerID(), uuid.New(), line); err != nil {
 		t.Fatal(err)
 	}
+
 	manual = c.purchase("2026-11-01", 713)
 	s := statements(t, c.h, c.card)["2026-11"]
 	c.h.MustDo(http.MethodPut, "/api/v1/statements/"+s.ID+"/facts",
 		map[string]any{"due_date": "2026-11-10", "total": apitest.BRL(int64(s.AmountDue) - shortBy)}, http.StatusOK, nil)
+
 	return c, s.ID, manual
 }
 
@@ -129,6 +139,7 @@ func TestStatementDifferenceProposal_S177(t *testing.T) {
 	c, id, manual := differenceSetup(t, 713)
 	var before differenceView
 	c.h.MustDo(http.MethodGet, "/api/v1/statements/"+id, nil, http.StatusOK, &before)
+
 	if p := before.Proposal; p == nil || len(p.TransactionIDs) != 1 || p.TransactionIDs[0] != manual || p.Amount.Amount != 713 {
 		t.Fatalf("proposal = %+v", before.Proposal)
 	}
@@ -139,6 +150,7 @@ func TestStatementDifferenceProposal_S177(t *testing.T) {
 	if after.AmountDifference == nil || after.AmountDifference.Amount != 0 || after.Proposal != nil {
 		t.Fatalf("after the move = %+v", after)
 	}
+
 	if s := c.h.Transaction(manual).Postings[0].Statement; s != "2026-12" {
 		t.Fatalf("moved charge on %s, want 2026-12", s)
 	}
@@ -213,6 +225,7 @@ func TestDeferRepeatedTransaction(t *testing.T) {
 func TestDeferIsAllOrNothing(t *testing.T) {
 	t.Parallel()
 	c, id, manual := differenceSetup(t, 713)
+
 	locked := c.purchase("2026-11-02", 100)
 	if r := c.h.Do(http.MethodPost, "/api/v1/transactions/"+locked+"/void", map[string]string{"reason": "test"}); r.Status != http.StatusOK {
 		t.Fatalf("void status = %d", r.Status)
@@ -223,6 +236,7 @@ func TestDeferIsAllOrNothing(t *testing.T) {
 	if r.Status < 400 {
 		t.Fatalf("status = %d, want a refusal", r.Status)
 	}
+
 	if s := c.h.Transaction(manual).Postings[0].Statement; s != "2026-11" {
 		t.Fatalf("first transaction moved to %s although the request failed", s)
 	}
@@ -240,6 +254,7 @@ func TestDeferTransactionWithTwoCardPostings(t *testing.T) {
 
 	var before differenceView
 	c.h.MustDo(http.MethodGet, "/api/v1/statements/"+id, nil, http.StatusOK, &before)
+
 	if p := before.Proposal; p == nil || len(p.TransactionIDs) != 2 || !slices.Contains(p.TransactionIDs, split) || !slices.Contains(p.TransactionIDs, manual) {
 		t.Fatalf("proposal = %+v", before.Proposal)
 	}
@@ -250,6 +265,7 @@ func TestDeferTransactionWithTwoCardPostings(t *testing.T) {
 	if after.AmountDifference == nil || after.AmountDifference.Amount != 0 {
 		t.Fatalf("difference after the move = %+v", after.AmountDifference)
 	}
+
 	for _, p := range c.h.Transaction(split).Postings {
 		if p.AccountID == c.card && p.Statement != "2026-12" {
 			t.Fatalf("split posting on %s, want 2026-12", p.Statement)

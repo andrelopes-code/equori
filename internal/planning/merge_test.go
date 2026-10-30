@@ -27,6 +27,7 @@ func (f fixture) budgets() budgetListView {
 	f.h.T().Helper()
 	var out budgetListView
 	f.h.MustDo(http.MethodGet, "/api/v1/budgets", nil, http.StatusOK, &out)
+
 	return out
 }
 
@@ -44,10 +45,12 @@ func TestMergeMovesBudgetAndSchedules(t *testing.T) {
 	if len(got.Items) != 1 || got.Items[0].ID != budget || got.Items[0].CategoryID != housing {
 		t.Fatalf("budgets after merge = %+v", got.Items)
 	}
+
 	var s struct {
 		CounterpartID string `json:"counterpart_id"`
 	}
 	f.h.MustDo(http.MethodGet, "/api/v1/schedules/"+schedule, nil, http.StatusOK, &s)
+
 	if s.CounterpartID != housing {
 		t.Fatalf("schedule counterpart = %q, want housing", s.CounterpartID)
 	}
@@ -85,6 +88,7 @@ func TestPayeeMergeMovesSchedulePayee(t *testing.T) {
 		PayeeID string `json:"payee_id"`
 	}
 	f.h.MustDo(http.MethodGet, "/api/v1/schedules/"+schedule, nil, http.StatusOK, &s)
+
 	if s.PayeeID != other.ID {
 		t.Fatalf("schedule payee = %q, want %q", s.PayeeID, other.ID)
 	}

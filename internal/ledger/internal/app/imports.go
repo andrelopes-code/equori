@@ -71,9 +71,11 @@ func (s *Service) RecordImported(ctx context.Context, userID int64, recordID uui
 	if le, ok := errors.AsType[*LineError](err); ok {
 		return uuid.Nil, le.Err
 	}
+
 	if err != nil {
 		return uuid.Nil, err
 	}
+
 	return ids[0], nil
 }
 
@@ -88,117 +90,146 @@ func (s *Service) RecordImportedBatch(ctx context.Context, userID int64, recs []
 	if len(recs) == 0 {
 		return ids, nil
 	}
+
 	err := s.repo.InTx(ctx, func(r Repository) error {
 		recordIDs := make([]uuid.UUID, len(recs))
 		lineAccounts := make([]uuid.UUID, 0, 1)
+
 		var categories []uuid.UUID
 		for i, rec := range recs {
 			recordIDs[i] = rec.RecordID
 			if !slices.Contains(lineAccounts, rec.Posting.AccountID) {
 				lineAccounts = append(lineAccounts, rec.Posting.AccountID)
 			}
+
 			if rec.Decision != nil {
 				for _, p := range rec.Decision.Parts {
 					categories = append(categories, p.AccountID)
 				}
+
 				if rec.Decision.TransferTo != uuid.Nil {
 					categories = append(categories, rec.Decision.TransferTo)
 				}
 			}
 		}
+
 		existing, err := r.TransactionsByExternalRecords(ctx, userID, recordIDs)
 		if err != nil {
 			return err
 		}
+
 		settings, err := r.Settings(ctx, userID)
 		if err != nil {
 			return err
 		}
+
 		expense, err := r.SystemAccount(ctx, userID, domain.RoleUncategorizedExpense)
 		if err != nil {
 			return err
 		}
+
 		income, err := r.SystemAccount(ctx, userID, domain.RoleUncategorizedIncome)
 		if err != nil {
 			return err
 		}
+
 		transit, err := r.SystemAccount(ctx, userID, domain.RoleTransfersInTransit)
 		if err != nil {
 			return err
 		}
+
 		accounts, err := r.Accounts(ctx, userID, slices.Concat(lineAccounts, categories, []uuid.UUID{expense.ID, income.ID, transit.ID}))
 		if err != nil {
 			return err
 		}
+
 		leaf := map[uuid.UUID]error{}
 		for _, id := range lineAccounts {
 			if a, ok := accounts[id]; ok {
 				leaf[id] = checkLeafBalance(ctx, r, a)
 			}
 		}
+
 		for i, rec := range recs {
 			if id, ok := existing[rec.RecordID]; ok {
 				ids[i] = id
 				continue
 			}
+
 			if err := leaf[rec.Posting.AccountID]; err != nil {
 				return &LineError{Index: i, Err: err}
 			}
+
 			if d := rec.Decision; d != nil && d.TransferTo != uuid.Nil {
 				id, transfer, err := s.completePairing(ctx, r, userID, rec)
 				if err != nil {
 					return err
 				}
+
 				if id != uuid.Nil {
 					ids[i] = id
 					continue
 				}
+
 				if !transfer {
 					undecided := *d
 					undecided.TransferTo = uuid.Nil
 					rec.Decision = &undecided
 				}
 			}
+
 			payment := rec.Posting.Kind == LineKindPayment && accounts[rec.Posting.AccountID].Kind == domain.KindCreditCard
 			if payment && (rec.Decision == nil || rec.Decision.TransferTo == uuid.Nil) {
 				rec = cardPayment(rec, transit)
 			}
+
 			draft := importedTransaction(userID, settings.BaseCurrency, rec, expense, income)
 			if payment {
 				draft.Postings[0].CardRole = domain.RolePayment
 			}
+
 			// A payment is billed by its date: a source may list it on the bill it pays (A89).
 			if rec.Posting.DueDate != nil && accounts[rec.Posting.AccountID].Kind == domain.KindCreditCard && !payment {
 				ref, err := s.statementDue(ctx, r, userID, rec.Posting.AccountID, *rec.Posting.DueDate)
 				if err != nil {
 					return err
 				}
+
 				draft.Postings[0].Statement, draft.Postings[0].StatementBasis = &ref, domain.BasisInstitution
 			}
+
 			t, err := domain.NewTransaction(draft, accounts)
 			if err != nil {
 				return &LineError{Index: i, Err: err}
 			}
+
 			if err := s.bill(ctx, r, &t); err != nil {
 				if errors.Is(err, domain.ErrValidation) {
 					return &LineError{Index: i, Err: err}
 				}
+
 				return err
 			}
+
 			if err := r.InsertTransactionRows(ctx, t); err != nil {
 				return err
 			}
+
 			event := newTransactionEvent(t, accounts)
 			if rec.Decision != nil && rec.Decision.Cause.Method != "" {
 				event.Cause = &rec.Decision.Cause
 			}
+
 			if err := r.Publish(ctx, outbox.Event{Type: EventTransactionRecorded, UserID: userID, AggregateID: t.ID.String(), Payload: event}); err != nil {
 				return err
 			}
+
 			ids[i] = t.ID
 		}
+
 		return nil
 	})
+
 	return ids, err
 }
 
@@ -213,22 +244,27 @@ func importedTransaction(userID int64, base money.Currency, rec ImportedRecord, 
 	if rec.Posting.Pending {
 		t.Postings[0].Status = domain.StatusPending
 	}
+
 	if d := rec.Decision; d != nil {
 		t.PayeeID, t.Tags = d.PayeeID, d.AddTags
 		for _, p := range d.Parts {
 			t.Postings = append(t.Postings, domain.Posting{AccountID: p.AccountID, Amount: p.Amount})
 		}
+
 		if d.TransferTo != uuid.Nil {
 			t.Postings = append(t.Postings, domain.Posting{AccountID: d.TransferTo, Amount: rec.Posting.Amount.Neg()})
 		}
 	}
+
 	if len(t.Postings) == 1 {
 		other := income
 		if rec.Posting.Amount.IsNegative() {
 			other = expense
 		}
+
 		t.Postings = append(t.Postings, domain.Posting{AccountID: other.ID, Amount: rec.Posting.Amount.Neg()})
 	}
+
 	return t
 }
 
@@ -240,7 +276,9 @@ func cardPayment(rec ImportedRecord, transit domain.Account) ImportedRecord {
 	if rec.Decision != nil {
 		d.PayeeID, d.AddTags, d.Cause = rec.Decision.PayeeID, rec.Decision.AddTags, rec.Decision.Cause
 	}
+
 	rec.Decision = &d
+
 	return rec
 }
 
@@ -250,6 +288,7 @@ func cardPayment(rec ImportedRecord, transit domain.Account) ImportedRecord {
 // (transfer true), uncategorized when several exist or the one cannot change.
 func (s *Service) completePairing(ctx context.Context, r Repository, userID int64, rec ImportedRecord) (id uuid.UUID, transfer bool, err error) {
 	line := rec.Posting
+
 	ids, err := r.PairingCandidates(ctx, PairingQuery{
 		UserID: userID, AccountID: rec.Decision.TransferTo, Amount: line.Amount.Neg().Amount(),
 		From: line.Date.AddDate(0, 0, -pairingWindowDays), To: line.Date.AddDate(0, 0, pairingWindowDays),
@@ -258,21 +297,26 @@ func (s *Service) completePairing(ctx context.Context, r Repository, userID int6
 	if err != nil || len(ids) != 1 {
 		return uuid.Nil, len(ids) == 0, err
 	}
+
 	c, err := r.LockTransaction(ctx, userID, ids[0])
 	if err != nil {
 		return uuid.Nil, false, err
 	}
+
 	target, accounts, err := s.transferAccounts(ctx, r, userID, line.AccountID, c)
 	if err != nil {
 		return uuid.Nil, false, err
 	}
+
 	next, err := c.Transfer(c.Version, target, rec.RecordID, accounts)
 	if errors.Is(err, domain.ErrReconciled) || errors.Is(err, domain.ErrValidation) {
 		return uuid.Nil, false, nil
 	}
+
 	if err != nil {
 		return uuid.Nil, false, err
 	}
+
 	return c.ID, false, s.saveTransfer(ctx, r, c, next, accounts, rec.Decision.Cause)
 }
 
@@ -289,9 +333,11 @@ func (s *Service) ImportTarget(ctx context.Context, userID int64, accountID uuid
 	if err != nil {
 		return ImportTarget{}, err
 	}
+
 	if err := checkLeafBalance(ctx, s.repo, a); err != nil {
 		return ImportTarget{}, err
 	}
+
 	return ImportTarget{Currency: a.Instrument, Kind: string(a.Kind)}, nil
 }
 
@@ -302,10 +348,12 @@ func (s *Service) LinkedTransaction(ctx context.Context, userID int64, recordID 
 	if err != nil {
 		return uuid.Nil, false, err
 	}
+
 	t, err := s.repo.Transaction(ctx, userID, id)
 	if err != nil {
 		return uuid.Nil, false, err
 	}
+
 	return id, t.Origin == domain.OriginImport, nil
 }
 
@@ -354,6 +402,7 @@ func (s *Service) statementDue(ctx context.Context, r Repository, userID int64, 
 	if errors.Is(err, ErrNotFound) {
 		return domain.MonthOf(due), nil
 	}
+
 	return ref, err
 }
 
@@ -380,38 +429,47 @@ type ImportedUpdate struct {
 // posting carries is ErrNotFound.
 func (s *Service) UpdateImportedPosting(ctx context.Context, userID int64, recordID uuid.UUID, u ImportedUpdate) error {
 	var role string
+
 	err := s.repo.InTx(ctx, func(r Repository) error {
 		p, err := r.LockImportedPosting(ctx, userID, recordID)
 		if err != nil {
 			return err
 		}
+
 		if p.Status == domain.StatusReconciled {
 			return domain.ErrReconciled
 		}
+
 		status := p.Status
 		if !u.Pending {
 			status = domain.StatusCleared
 		}
+
 		var statementID uuid.UUID
 		if u.DueDate != nil && p.CardRole != "" && p.CardRole != domain.RolePayment && u.Kind != LineKindPayment {
 			ref, err := s.statementDue(ctx, r, userID, p.AccountID, *u.DueDate)
 			if err != nil {
 				return err
 			}
+
 			rules, err := r.BillingRules(ctx, userID, p.AccountID)
 			if err != nil {
 				return err
 			}
+
 			if statementID, err = s.ensureStatement(ctx, r, userID, p.AccountID, ref, rules); err != nil {
 				return err
 			}
 		}
+
 		role = p.CardRole
+
 		return r.SettleImportedPosting(ctx, userID, p.ID, status, statementID)
 	})
 	if err != nil || u.Kind != LineKindPayment || role != domain.RoleCredit {
 		return err
 	}
+
 	return s.repo.InTx(ctx, func(r Repository) error { return s.retypeAsPayment(ctx, r, userID, recordID) })
 }
 
@@ -422,31 +480,39 @@ func (s *Service) retypeAsPayment(ctx context.Context, r Repository, userID int6
 	if err != nil {
 		return err
 	}
+
 	prev, err := r.LockTransaction(ctx, userID, id)
 	if err != nil {
 		return err
 	}
+
 	transit, err := r.SystemAccount(ctx, userID, domain.RoleTransfersInTransit)
 	if err != nil {
 		return err
 	}
+
 	accounts, err := r.Accounts(ctx, userID, append(postingAccounts(prev), transit.ID))
 	if err != nil {
 		return err
 	}
+
 	next, err := prev.AsCardPayment(transit, accounts)
 	if err != nil {
 		return err
 	}
+
 	if err := s.bill(ctx, r, &next); err != nil {
 		return err
 	}
+
 	if err := r.ReplaceCategoryPostings(ctx, prev, next, reasonRetyped); err != nil {
 		return err
 	}
+
 	event := newTransactionEvent(next, accounts, prev)
 	event.PreviousDate = prev.Date.Format(time.DateOnly)
 	event.CategoriesChanged = true
+
 	return r.Publish(ctx, outbox.Event{Type: EventTransactionCorrected, UserID: userID, AggregateID: next.ID.String(), Payload: event})
 }
 
@@ -461,6 +527,7 @@ func (s *Service) ClearMatched(ctx context.Context, userID int64, recordID, txID
 	if err == nil && len(conflicts) > 0 {
 		return ErrAlreadyMatched
 	}
+
 	return err
 }
 
@@ -470,34 +537,43 @@ func (s *Service) ClearMatched(ctx context.Context, userID int64, recordID, txID
 // Repeating a match of the same record is a no-op.
 func (s *Service) ClearMatchedBatch(ctx context.Context, userID int64, ms []Match) ([]int, error) {
 	var conflicts []int
+
 	if len(ms) == 0 {
 		return nil, nil
 	}
+
 	err := s.repo.InTx(ctx, func(r Repository) error {
 		for i, m := range ms {
 			links, err := r.LockAccountPostingLinks(ctx, userID, m.TransactionID, m.AccountID)
 			if err != nil {
 				return err
 			}
+
 			if slices.ContainsFunc(links, func(l PostingLink) bool { return l.RecordID == m.RecordID }) {
 				continue
 			}
+
 			free := slices.IndexFunc(links, func(l PostingLink) bool { return l.RecordID == uuid.Nil })
 			if free < 0 || links[free].Voided {
 				conflicts = append(conflicts, i)
 				continue
 			}
+
 			if err := r.LinkExternalRecord(ctx, userID, links[free].PostingID, m.RecordID); err != nil {
 				return err
 			}
+
 			if m.KeepPending {
 				continue
 			}
+
 			if err := r.ClearPendingPostings(ctx, userID, m.TransactionID, m.AccountID); err != nil {
 				return err
 			}
 		}
+
 		return nil
 	})
+
 	return conflicts, err
 }

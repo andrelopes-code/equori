@@ -44,17 +44,22 @@ func toProblem(err error) (problem.Details, bool) {
 	if fe, ok := errors.AsType[*domain.FieldError](err); ok {
 		d := problem.New(http.StatusUnprocessableEntity, "validation_failed", fe.Error())
 		d.Errors = []problem.FieldError{{Field: fe.Field, Message: fe.Message}}
+
 		return d, true
 	}
+
 	if ce, ok := errors.AsType[*app.CapabilityError](err); ok {
 		d := problem.New(http.StatusUnprocessableEntity, "capability_missing", ce.Error())
 		d.Errors = []problem.FieldError{{Field: "targets", Message: ce.Error()}}
+
 		return d, true
 	}
+
 	if le, ok := errors.AsType[*app.LimitError](err); ok {
 		return problem.WithRetryAt(problem.New(http.StatusTooManyRequests, "assistant_exhausted",
 			"every language model of the assistant is cooling down or over its daily limit until retry_at"), le.RetryAt), true
 	}
+
 	switch {
 	case errors.Is(err, app.ErrChatUnavailable):
 		return problem.New(http.StatusServiceUnavailable, "assistant_unavailable", "no language model provider serves the assistant; add one in Settings"), true
@@ -63,6 +68,7 @@ func toProblem(err error) (problem.Details, bool) {
 	case errors.Is(err, app.ErrInvalidUsageRange):
 		d := problem.New(http.StatusBadRequest, "invalid_request", err.Error())
 		d.Errors = []problem.FieldError{{Field: "to", Message: "must be on or after from and at most 89 days after it"}}
+
 		return d, true
 	case errors.Is(err, app.ErrInvalidText):
 		return problem.New(http.StatusBadRequest, "invalid_request", err.Error()), true
@@ -71,6 +77,7 @@ func toProblem(err error) (problem.Details, bool) {
 	case errors.Is(err, domain.ErrKeyRequired):
 		d := problem.New(http.StatusUnprocessableEntity, "key_required", err.Error())
 		d.Errors = []problem.FieldError{{Field: "key", Message: "is required by the preset"}}
+
 		return d, true
 	case errors.Is(err, domain.ErrProviderNotFound):
 		return problem.New(http.StatusNotFound, "provider_not_found", err.Error()), true
@@ -91,6 +98,7 @@ func toProblem(err error) (problem.Details, bool) {
 	case errors.Is(err, app.ErrProviderUnavailable):
 		return problem.New(http.StatusBadGateway, "provider_unavailable", app.ErrProviderUnavailable.Error()), true
 	}
+
 	return problem.Details{}, false
 }
 
@@ -99,6 +107,7 @@ func caps(in []string) []Capability {
 	for i, c := range in {
 		out[i] = Capability(c)
 	}
+
 	return out
 }
 
@@ -108,14 +117,17 @@ func toProvider(v app.ProviderView) Provider {
 
 func (s *Server) ListPresets(context.Context, ListPresetsRequestObject) (ListPresetsResponseObject, error) {
 	presets := s.svc.Presets()
+
 	items := make([]Preset, len(presets))
 	for i, p := range presets {
 		models := make([]PresetModel, len(p.Models))
 		for j, m := range p.Models {
 			models[j] = PresetModel{Id: m.ID, Capabilities: caps(m.Capabilities)}
 		}
+
 		items[i] = Preset{Id: p.ID, Api: string(p.API), BaseUrl: p.BaseURL, KeyRequired: p.KeyRequired, Notice: Notice(p.Notice), Models: models}
 	}
+
 	return ListPresets200JSONResponse{Items: items}, nil
 }
 
@@ -124,10 +136,12 @@ func (s *Server) ListProviders(ctx context.Context, _ ListProvidersRequestObject
 	if err != nil {
 		return nil, err
 	}
+
 	items := make([]Provider, len(views))
 	for i, v := range views {
 		items[i] = toProvider(v)
 	}
+
 	return ListProviders200JSONResponse{Items: items}, nil
 }
 
@@ -135,17 +149,20 @@ func value(p *string) string {
 	if p == nil {
 		return ""
 	}
+
 	return *p
 }
 
 func (s *Server) CreateProvider(ctx context.Context, req CreateProviderRequestObject) (CreateProviderResponseObject, error) {
 	b := req.Body
+
 	v, err := s.svc.CreateProvider(ctx, auth.MustUserID(ctx), app.ProviderInput{
 		Preset: b.Preset, Name: b.Name, BaseURL: value(b.BaseUrl), Key: value(b.Key),
 	})
 	if err != nil {
 		return nil, err
 	}
+
 	return CreateProvider201JSONResponse(toProvider(v)), nil
 }
 
@@ -156,6 +173,7 @@ func (s *Server) UpdateProvider(ctx context.Context, req UpdateProviderRequestOb
 	if err != nil {
 		return nil, err
 	}
+
 	return UpdateProvider200JSONResponse(toProvider(v)), nil
 }
 
@@ -163,6 +181,7 @@ func (s *Server) DeleteProvider(ctx context.Context, req DeleteProviderRequestOb
 	if err := s.svc.DeleteProvider(ctx, auth.MustUserID(ctx), req.Id); err != nil {
 		return nil, err
 	}
+
 	return DeleteProvider204Response{}, nil
 }
 
@@ -171,9 +190,11 @@ func (s *Server) ListProviderModels(ctx context.Context, req ListProviderModelsR
 	if err != nil {
 		return nil, err
 	}
+
 	if ids == nil {
 		ids = []string{}
 	}
+
 	return ListProviderModels200JSONResponse{Items: ids}, nil
 }
 
@@ -186,6 +207,7 @@ func toUse(v app.UseView) Use {
 			Model: t.Model, Capabilities: caps(t.Capabilities),
 		}
 	}
+
 	return Use{Id: v.Use.ID, Needs: caps(v.Use.Needs), SendsFinancialData: v.Use.SendsFinancialData, Default: v.Default, Targets: targets}
 }
 
@@ -194,15 +216,18 @@ func (s *Server) ListUses(ctx context.Context, _ ListUsesRequestObject) (ListUse
 	if err != nil {
 		return nil, err
 	}
+
 	items := make([]Use, len(views))
 	for i, v := range views {
 		items[i] = toUse(v)
 	}
+
 	return ListUses200JSONResponse{Items: items}, nil
 }
 
 func (s *Server) SetUseChain(ctx context.Context, req SetUseChainRequestObject) (SetUseChainResponseObject, error) {
 	userID := auth.MustUserID(ctx)
+
 	in := make([]app.ChainInput, len(req.Body.Targets))
 	for i, t := range req.Body.Targets {
 		in[i] = app.ChainInput{ProviderID: uuid.UUID(t.ProviderId), Model: t.Model}
@@ -212,13 +237,17 @@ func (s *Server) SetUseChain(ctx context.Context, req SetUseChainRequestObject) 
 			}
 		}
 	}
+
 	if err := s.svc.SetChain(ctx, userID, req.Use, in); err != nil {
 		return nil, err
 	}
+
 	views, err := s.svc.Uses(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
+
 	i := slices.IndexFunc(views, func(v app.UseView) bool { return v.Use.ID == req.Use })
+
 	return SetUseChain200JSONResponse(toUse(views[i])), nil
 }

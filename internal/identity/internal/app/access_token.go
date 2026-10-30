@@ -33,9 +33,11 @@ func (s *Service) CreateAccessToken(ctx context.Context, userID int64, name, sco
 	if err != nil {
 		return "", domain.AccessToken{}, err
 	}
+
 	if err := s.repo.CreateAccessToken(ctx, t); err != nil {
 		return "", domain.AccessToken{}, err
 	}
+
 	return text, t, nil
 }
 
@@ -53,16 +55,21 @@ func (s *Service) VerifyAccessToken(ctx context.Context, text string) (domain.Ac
 	if !strings.HasPrefix(text, domain.AccessTokenPrefix) {
 		return domain.AccessToken{}, ErrInvalidAccessToken
 	}
+
 	now := s.now()
+
 	t, err := s.repo.AccessTokenByHash(ctx, domain.HashToken(text), now)
 	if errors.Is(err, ErrNotFound) {
 		return domain.AccessToken{}, ErrInvalidAccessToken
 	}
+
 	if err != nil {
 		return domain.AccessToken{}, err
 	}
+
 	if err := s.repo.TouchAccessToken(ctx, t, now); err != nil {
 		return domain.AccessToken{}, err
 	}
+
 	return t, nil
 }

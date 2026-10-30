@@ -24,40 +24,52 @@ func secretsCommand(args []string) error {
 		fmt.Fprintln(os.Stderr, rotateUsage)
 		return errUsage
 	}
+
 	if args[0] == "key" {
 		cfg, _, err := setup()
 		if err != nil {
 			return err
 		}
+
 		if cfg.SecretKey == "" {
 			return errors.New("no secret key is configured: set EQUORI_SECRET_KEY")
 		}
+
 		fmt.Println(base64.StdEncoding.EncodeToString([]byte(cfg.SecretKey)))
+
 		return nil
 	}
+
 	cfg, log, err := setup()
 	if err != nil {
 		return err
 	}
+
 	ctx := context.Background()
+
 	db, err := openDatabase(ctx, cfg, log, false)
 	if err != nil {
 		return err
 	}
 	defer db.Close(log)
+
 	app, err := server.New(db.Pool, serverConfig(cfg, nil), log)
 	if err != nil {
 		return err
 	}
+
 	n, err := app.Ingestion.RotateSecrets(ctx)
 	if err != nil {
 		return err
 	}
+
 	fmt.Printf("resealed %d credentials\n", n)
 	// A separate transaction: no transaction spans modules (ADR 002).
 	if n, err = app.Assistant.RotateSecrets(ctx); err != nil {
 		return err
 	}
+
 	fmt.Printf("resealed %d language model keys\n", n)
+
 	return nil
 }

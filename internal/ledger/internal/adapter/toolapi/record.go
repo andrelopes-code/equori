@@ -73,6 +73,7 @@ func recordTransaction(svc *app.Service) tool.Tool {
 		if err != nil {
 			return tool.Preview{}, err
 		}
+
 		pv := tool.Preview{Action: "record_transaction", Changes: []tool.Change{
 			{Field: "date", After: tool.DateValue(in.Date.Time)},
 			{Field: "description", After: tool.TextValue(in.Description)},
@@ -84,33 +85,42 @@ func recordTransaction(svc *app.Service) tool.Tool {
 			if d.account.IsCategory() {
 				field = "category"
 			}
+
 			pv.Changes = append(pv.Changes, tool.Change{Field: field, After: tool.TextValue(d.account.Name)})
 		}
+
 		if p.payeeID != uuid.Nil {
 			names, err := svc.PayeeNames(ctx, userID, []uuid.UUID{p.payeeID})
 			if err != nil {
 				return tool.Preview{}, err
 			}
+
 			pv.Changes = append(pv.Changes, tool.Change{Field: "payee", After: tool.TextValue(names[p.payeeID])})
 		}
+
 		if len(in.Tags) > 0 {
 			pv.Changes = append(pv.Changes, tool.Change{Field: "tags", After: tool.TextValue(strings.Join(in.Tags, ", "))})
 		}
+
 		if in.Installments > 0 {
 			pv.Changes = append(pv.Changes, tool.Change{Field: "installments", After: tool.TextValue(strconv.Itoa(in.Installments))})
 		}
+
 		if p.foreign {
 			pv.Changes = append(pv.Changes, tool.Change{Field: "rate", After: tool.TextValue(p.rate.String())}, tool.Change{Field: "amount", After: tool.MoneyValue(p.original)})
 		}
+
 		if p.exchange {
 			pv.Changes = append(pv.Changes, tool.Change{Field: "amount", After: tool.MoneyValue(p.toAmount)})
 		}
+
 		return pv, nil
 	}, func(ctx context.Context, userID int64, in recordTransactionIn) (recordTransactionOut, error) {
 		p, err := planRecord(ctx, svc, userID, in)
 		if err != nil {
 			return recordTransactionOut{}, err
 		}
+
 		var t domain.Transaction
 		switch {
 		case in.Installments > 0:
@@ -118,6 +128,7 @@ func recordTransaction(svc *app.Service) tool.Tool {
 			for i, d := range p.dests {
 				splits[i] = domain.Posting{AccountID: d.account.ID, Amount: d.amount}
 			}
+
 			t, _, err = svc.InstallmentPurchase(ctx, userID, app.InstallmentPurchaseInput{
 				CardAccountID: p.from.ID, Date: in.Date.Time, Description: in.Description, PayeeID: p.payeeID, Tags: in.Tags,
 				Splits: splits, Count: in.Installments,
@@ -137,33 +148,41 @@ func recordTransaction(svc *app.Service) tool.Tool {
 			for _, d := range p.dests {
 				postings = append(postings, domain.Posting{AccountID: d.account.ID, Amount: d.amount})
 			}
+
 			t, err = svc.RecordTransaction(ctx, userID, domain.Transaction{
 				Date: in.Date.Time, Description: in.Description, PayeeID: p.payeeID, Tags: in.Tags, Postings: postings, Origin: domain.OriginManual,
 			})
 		}
+
 		if err != nil {
 			return recordTransactionOut{}, err
 		}
+
 		return recordTransactionOut{TransactionID: t.ID.String(), Date: tool.DateOf(t.Date), Description: t.Description}, nil
 	})
 }
 
 func planRecord(ctx context.Context, svc *app.Service, userID int64, in recordTransactionIn) (recordPlan, error) {
 	var p recordPlan
+
 	fromID, err := requiredID(in.FromAccountID, "from_account_id")
 	if err != nil {
 		return p, err
 	}
+
 	if p.from, err = svc.Account(ctx, userID, fromID); err != nil {
 		return p, err
 	}
+
 	unit, err := svc.AmountOf(ctx, 0, p.from.Instrument)
 	if err != nil {
 		return p, err
 	}
+
 	if p.amount, err = tool.ParsePositive("amount", in.Amount, unit); err != nil {
 		return p, err
 	}
+
 	if p.payeeID, err = optionalID(in.PayeeID, "payee_id"); err != nil {
 		return p, err
 	}
@@ -171,6 +190,7 @@ func planRecord(ctx context.Context, svc *app.Service, userID int64, in recordTr
 	type target struct {
 		field, id, amount string
 	}
+
 	var targets []target
 	switch {
 	case len(in.Splits) > 0 && in.ToAccountID != "":
@@ -184,29 +204,35 @@ func planRecord(ctx context.Context, svc *app.Service, userID int64, in recordTr
 	default:
 		targets = []target{{"to_account_id", in.ToAccountID, in.Amount}}
 	}
+
 	sum := money.Money{}
 	for i, tg := range targets {
 		id, err := requiredID(tg.id, tg.field)
 		if err != nil {
 			return p, err
 		}
+
 		a, err := svc.Account(ctx, userID, id)
 		if err != nil {
 			return p, err
 		}
+
 		amount := p.amount
 		if len(in.Splits) > 0 {
 			if amount, err = tool.ParsePositive("splits["+strconv.Itoa(i)+"].amount", tg.amount, unit); err != nil {
 				return p, err
 			}
 		}
+
 		if i == 0 {
 			sum = amount
 		} else if sum, err = sum.Add(amount); err != nil {
 			return p, err
 		}
+
 		p.dests = append(p.dests, destination{account: a, amount: amount})
 	}
+
 	if len(in.Splits) > 0 && sum.Amount() != p.amount.Amount() {
 		return p, tool.InvalidArgument("splits", "must add up to amount")
 	}
@@ -217,6 +243,7 @@ func planRecord(ctx context.Context, svc *app.Service, userID int64, in recordTr
 		if in.Installments < 2 || in.Installments > 48 {
 			return p, tool.InvalidArgument("installments", "must be between 2 and 48")
 		}
+
 		if p.from.Kind != domain.KindCreditCard {
 			return p, tool.InvalidArgument("installments", "needs a credit card account in from_account_id")
 		}
@@ -226,29 +253,37 @@ func planRecord(ctx context.Context, svc *app.Service, userID int64, in recordTr
 				return p, tool.InvalidArgument(field, "is required with original_amount")
 			}
 		}
+
 		ounit, err := svc.AmountOf(ctx, 0, money.Currency(in.OriginalCurrency))
 		if err != nil {
 			return p, tool.InvalidArgument("original_currency", "is not a known currency")
 		}
+
 		if p.original, err = tool.ParsePositive("original_amount", in.OriginalAmount, ounit); err != nil {
 			return p, err
 		}
+
 		if p.rate, err = money.ParseRate(in.ExchangeRate); err != nil {
 			return p, tool.InvalidArgument("exchange_rate", "must be a positive decimal with at most 12 decimals")
 		}
+
 		p.foreign = true
 	case in.ToAmount != "" || to.Instrument != p.from.Instrument:
 		if in.ToAmount == "" {
 			return p, tool.InvalidArgument("to_amount", "is required when the accounts have different currencies")
 		}
+
 		tunit, err := svc.AmountOf(ctx, 0, to.Instrument)
 		if err != nil {
 			return p, err
 		}
+
 		if p.toAmount, err = tool.ParsePositive("to_amount", in.ToAmount, tunit); err != nil {
 			return p, err
 		}
+
 		p.exchange = true
 	}
+
 	return p, nil
 }

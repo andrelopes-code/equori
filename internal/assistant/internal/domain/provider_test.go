@@ -11,7 +11,9 @@ import (
 
 func TestNewProvider(t *testing.T) {
 	t.Parallel()
+
 	now := time.Date(2026, 10, 23, 12, 0, 0, 0, time.UTC)
+
 	tests := []struct {
 		name, preset, provName, baseURL string
 		hasKey                          bool
@@ -36,6 +38,7 @@ func TestNewProvider(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+
 			p, err := NewProvider(uuid.New(), 7, tt.preset, tt.provName, tt.baseURL, tt.hasKey, now)
 			switch {
 			case tt.wantErr != nil:
@@ -51,6 +54,7 @@ func TestNewProvider(t *testing.T) {
 				if err != nil {
 					t.Fatalf("NewProvider: %v", err)
 				}
+
 				if p.BaseURL != tt.wantURL || p.UserID != 7 || p.Preset != tt.preset || !p.CreatedAt.Equal(now) {
 					t.Fatalf("provider = %+v, want base URL %s", p, tt.wantURL)
 				}

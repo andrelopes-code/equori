@@ -15,6 +15,7 @@ func months(start, today time.Time) []time.Time {
 	for m := start; !m.After(today); m = m.AddDate(0, 1, 0) {
 		out = append(out, m)
 	}
+
 	return out
 }
 
@@ -45,6 +46,7 @@ func weekdaysOf(month time.Time, wd time.Weekday) []time.Time {
 			out = append(out, d)
 		}
 	}
+
 	return out
 }
 
@@ -53,15 +55,18 @@ func (s *seeder) at(d time.Time, run func()) {
 	if d.Before(s.start) || d.After(s.today) {
 		return
 	}
+
 	s.events = append(s.events, event{date: d, run: run})
 }
 
 func (s *seeder) runEvents() {
 	slices.SortStableFunc(s.events, func(a, b event) int { return a.date.Compare(b.date) })
+
 	for _, e := range s.events {
 		if s.err != nil {
 			return
 		}
+
 		e.run()
 	}
 }
@@ -69,12 +74,14 @@ func (s *seeder) runEvents() {
 // step returns the value of a price that changes on given months: steps maps "YYYY-MM" to the price from that month.
 func step(month time.Time, base int64, steps map[string]int64) int64 {
 	out := base
+
 	best := ""
 	for from, v := range steps {
 		if from <= ym(month) && from > best {
 			out, best = v, from
 		}
 	}
+
 	return out
 }
 
@@ -89,6 +96,7 @@ func (s *seeder) between(lo, hi int64, skew float64) int64 {
 	for i := 1.0; i < skew; i++ {
 		u *= s.rng.Float64()
 	}
+
 	return lo + int64(u*float64(hi-lo))
 }
 
@@ -98,13 +106,16 @@ func (s *seeder) pick(keys []string, weights []int) string {
 	for _, w := range weights {
 		total += w
 	}
+
 	n := s.rng.IntN(total)
 	for i, w := range weights {
 		if n < w {
 			return keys[i]
 		}
+
 		n -= w
 	}
+
 	return keys[len(keys)-1]
 }
 
@@ -123,12 +134,15 @@ func (s *seeder) ensure(date time.Time, key string, need int64) {
 	if short <= 0 {
 		return
 	}
+
 	from, ok := funders[key]
 	if !ok {
 		s.fail("%s holds %d cents and cannot pay %d on %s", key, s.bal[s.id(key)], need, iso(date))
 		return
 	}
+
 	top := (short + 60000) / 10000 * 10000
+
 	desc := map[string]string{
 		"nubank.checking": "Pix para Nubank",
 		"itau.checking":   "Resgate da poupança Itaú",
@@ -139,6 +153,7 @@ func (s *seeder) ensure(date time.Time, key string, need int64) {
 	if key == "wallet" {
 		top = (short + 15000) / 5000 * 5000
 	}
+
 	s.ensure(date, from, top)
 	s.record(iso(date), desc, nil, post(s.id(key), top), post(s.id(from), -top))
 }

@@ -31,17 +31,21 @@ func newIncomeFixture(t *testing.T) incomeFixture {
 	f.dividends = f.h.Account("Dividends", "income", "", nil)
 	f.jcp = f.h.Account("JCP", "income", "", nil)
 	f.incomeTax = f.h.Account("Income tax", "expense", "", map[string]any{"parent_id": systemAccount(t, f.h, "taxes")})
+
 	return f
 }
 
 func (f incomeFixture) income(t *testing.T, body map[string]any) incomeTx {
 	t.Helper()
 	var out incomeTx
+
 	r := f.h.Do(http.MethodPost, "/api/v1/investment-income", body)
 	if r.Status != http.StatusCreated {
 		t.Fatalf("income: %d %s", r.Status, r.Body)
 	}
+
 	r.Decode(t, &out)
+
 	return out
 }
 
@@ -62,6 +66,7 @@ func TestS22InvestmentIncome(t *testing.T) {
 
 	var read incomeTx
 	f.h.MustDo(http.MethodGet, "/api/v1/transactions/"+jcp.ID, nil, http.StatusOK, &read)
+
 	if read.Income == nil || read.Income.IncomeType != "jcp" || read.Income.AccountID != f.petr4 || read.Income.Gross["amount"] != float64(4500) || read.Income.Withheld["amount"] != float64(675) {
 		t.Fatalf("income detail = %+v", read.Income)
 	}
@@ -77,12 +82,15 @@ func TestInvestmentIncomeRules(t *testing.T) {
 			"gross": apitest.BRL(4500), "category_id": f.jcp,
 		}
 		body[k] = v
+
 		return body
 	}
+
 	zero := f.income(t, order("withheld", apitest.BRL(0)))
 	if len(zero.Postings) != 2 || zero.Postings[0].Amount["amount"] != float64(4500) {
 		t.Fatalf("JCP without withholding = %+v", zero.Postings)
 	}
+
 	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/investment-income", order("withheld", apitest.BRL(4500))), http.StatusUnprocessableEntity, "validation_failed", "withheld")
 	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/investment-income", order("category_id", f.travel)), http.StatusUnprocessableEntity, "validation_failed", "category_id")
 	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/investment-income", order("income_type", "Bad!")), http.StatusBadRequest, "invalid_request", "")

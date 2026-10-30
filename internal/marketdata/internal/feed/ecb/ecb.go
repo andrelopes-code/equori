@@ -33,7 +33,9 @@ func (Source) Codes(ins []feed.Instrument) []money.Currency {
 			out = append(out, in.Code)
 		}
 	}
+
 	slices.Sort(out)
+
 	return slices.Compact(out)
 }
 
@@ -54,29 +56,36 @@ func (s Source) Fetch(ctx context.Context, codes []money.Currency, from, to time
 	if err != nil {
 		return nil, fmt.Errorf("fetch ECB rates: %w", err)
 	}
+
 	var env envelope
 	if err := xml.Unmarshal(body, &env); err != nil {
 		return nil, fmt.Errorf("read ECB rates: %w", err)
 	}
+
 	var out []feed.Quote
 	for _, d := range env.Days {
 		date, err := time.Parse(time.DateOnly, d.Time)
 		if err != nil {
 			return nil, fmt.Errorf("read ECB date %q: %w", d.Time, err)
 		}
+
 		if date.Before(from) || date.After(to) {
 			continue
 		}
+
 		for _, r := range d.Rates {
 			if !slices.Contains(codes, money.Currency(r.Currency)) {
 				continue
 			}
+
 			rate, err := money.ParseRate(r.Rate)
 			if err != nil {
 				return nil, fmt.Errorf("read ECB %s rate on %s: %w", r.Currency, d.Time, err)
 			}
+
 			out = append(out, feed.Quote{Instrument: "EUR", Quote: money.Currency(r.Currency), Date: date, Value: rate})
 		}
 	}
+
 	return out, nil
 }

@@ -33,6 +33,7 @@ func ParseCurrency(s string) (Currency, error) {
 	if _, ok := minorUnits[c]; !ok {
 		return "", fmt.Errorf("%w: %q", ErrUnknownCurrency, s)
 	}
+
 	return c, nil
 }
 
@@ -47,7 +48,9 @@ func Currencies() []Currency {
 	for c := range minorUnits {
 		cs = append(cs, c)
 	}
+
 	slices.Sort(cs)
+
 	return cs
 }
 
@@ -63,9 +66,11 @@ func New(amount int64, currency Currency) (Money, error) {
 	if _, ok := minorUnits[currency]; !ok {
 		return Money{}, fmt.Errorf("%w: %q", ErrUnknownCurrency, currency)
 	}
+
 	if amount > MaxAmount || amount < -MaxAmount {
 		return Money{}, ErrOutOfRange
 	}
+
 	return Money{amount: amount, currency: currency, scale: minorUnits[currency]}, nil
 }
 
@@ -74,9 +79,11 @@ func NewOf(amount int64, code Currency, scale int) (Money, error) {
 	if !instrumentCode.MatchString(string(code)) || scale < 0 || scale > MaxScale {
 		return Money{}, fmt.Errorf("%w: %q with scale %d", ErrInvalidInstrument, code, scale)
 	}
+
 	if units, ok := minorUnits[code]; ok && int(units) != scale {
 		return Money{}, fmt.Errorf("%w: %s has scale %d", ErrInvalidInstrument, code, units)
 	}
+
 	return Money{amount: amount, currency: code, scale: int8(scale)}.checked()
 }
 
@@ -84,6 +91,7 @@ func (m Money) checked() (Money, error) {
 	if m.amount > MaxAmount || m.amount < -MaxAmount {
 		return Money{}, ErrOutOfRange
 	}
+
 	return m, nil
 }
 
@@ -97,6 +105,7 @@ func (m Money) Add(o Money) (Money, error) {
 	if m.currency != o.currency {
 		return Money{}, fmt.Errorf("%w: %s and %s", ErrCurrencyMismatch, m.currency, o.currency)
 	}
+
 	return Money{amount: m.amount + o.amount, currency: m.currency, scale: m.scale}.checked()
 }
 
@@ -104,6 +113,7 @@ func (m Money) Sub(o Money) (Money, error) {
 	if m.currency != o.currency {
 		return Money{}, fmt.Errorf("%w: %s and %s", ErrCurrencyMismatch, m.currency, o.currency)
 	}
+
 	return Money{amount: m.amount - o.amount, currency: m.currency, scale: m.scale}.checked()
 }
 
@@ -115,17 +125,22 @@ func (m Money) String() string { return string(m.currency) + " " + m.Decimal() }
 // Decimal formats the amount in the instrument's scale without the code, as "-1234.56".
 func (m Money) Decimal() string {
 	units := int(m.scale)
+
 	sign, abs := "", m.amount
 	if abs < 0 {
 		sign, abs = "-", -abs
 	}
+
 	digits := strconv.FormatInt(abs, 10)
 	if units == 0 {
 		return sign + digits
 	}
+
 	for len(digits) <= units {
 		digits = "0" + digits
 	}
+
 	cut := len(digits) - units
+
 	return sign + digits[:cut] + "." + digits[cut:]
 }

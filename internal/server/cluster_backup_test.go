@@ -25,35 +25,43 @@ func TestClusterBackupRestoresAcrossForms(t *testing.T) {
 	if bin == "" {
 		t.Fatal("EQUORI_TEST_POSTGRES_BIN is not set; run make test-cluster")
 	}
+
 	h := apitest.New(t, apitest.Today("2026-11-20"))
 	checking := h.Account("Nubank", "asset", "checking", nil)
 	food := h.Account("Food", "expense", "", nil)
 	h.Record("2026-10-14", apitest.Posting(checking, -23000), apitest.Posting(food, 23000))
 	h.Dispatch()
 	want := snapshot(t, h.Pool)
+
 	latest, err := postgres.LatestVersion()
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	external := dsnOf(h.Pool)
 
 	dump := filepath.Join(t.TempDir(), "compose.dump")
 	if err := backup.Dump(t.Context(), bin, external, dump); err != nil {
 		t.Fatal(err)
 	}
+
 	c, err := pgcluster.Start(t.Context(), t.TempDir(), bin)
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	defer func() { _ = c.Stop() }()
+
 	if err := backup.Restore(t.Context(), bin, c.DSN(pgcluster.Database), dump, latest); err != nil {
 		t.Fatal(err)
 	}
+
 	managed, err := postgres.Open(t.Context(), c.DSN(pgcluster.Database))
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer managed.Close()
+
 	if got := snapshot(t, managed); !slices.Equal(got, want) {
 		t.Fatalf("compose to managed differs:\n got %v\nwant %v", got, want)
 	}
@@ -62,11 +70,14 @@ func TestClusterBackupRestoresAcrossForms(t *testing.T) {
 	if err := backup.Dump(t.Context(), bin, c.DSN(pgcluster.Database), back); err != nil {
 		t.Fatal(err)
 	}
+
 	target := pgtest.Empty(t)
 	if err := backup.Restore(t.Context(), bin, dsnOf(target), back, latest); err != nil {
 		t.Fatal(err)
 	}
+
 	target.Reset()
+
 	if got := snapshot(t, target); !slices.Equal(got, want) {
 		t.Fatalf("managed to compose differs:\n got %v\nwant %v", got, want)
 	}

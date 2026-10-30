@@ -55,6 +55,7 @@ func TestSearchTransactionsTool(t *testing.T) {
 
 	var got searchOutput
 	toolOutput(t, h, "search_transactions", map[string]any{"query": "padaria"}, &got)
+
 	want := searchOutput{Transactions: []toolTransaction{{
 		ID: bakery.ID, Date: "2026-10-02", Description: "x", PayeeName: "Padaria Real", Tags: []string{"trip"},
 		Postings: []toolPosting{
@@ -68,17 +69,23 @@ func TestSearchTransactionsTool(t *testing.T) {
 
 	var first, second searchOutput
 	toolOutput(t, h, "search_transactions", map[string]any{"limit": 1}, &first)
+
 	if len(first.Transactions) != 1 || first.NextCursor == "" {
 		t.Fatalf("first page = %+v", first)
 	}
+
 	toolOutput(t, h, "search_transactions", map[string]any{"limit": 1, "cursor": first.NextCursor}, &second)
+
 	if len(second.Transactions) != 1 || second.NextCursor != "" {
 		t.Fatalf("second page = %+v", second)
 	}
+
 	ids := []string{first.Transactions[0].ID, second.Transactions[0].ID}
 	slices.Sort(ids)
+
 	wantIDs := []string{market.ID, bakery.ID}
 	slices.Sort(wantIDs)
+
 	if !slices.Equal(ids, wantIDs) {
 		t.Errorf("pages = %v, want %v", ids, wantIDs)
 	}
@@ -87,6 +94,7 @@ func TestSearchTransactionsTool(t *testing.T) {
 func TestSearchTransactionsToolArguments(t *testing.T) {
 	t.Parallel()
 	h := apitest.New(t, apitest.Today("2026-10-20"))
+
 	tests := []struct {
 		args  map[string]any
 		field string
@@ -105,6 +113,7 @@ func TestSearchTransactionsToolArguments(t *testing.T) {
 	if _, ok := search.InputSchema().Properties["payee_id"]; ok {
 		t.Error("search_transactions still takes payee_id")
 	}
+
 	h.ExpectToolError(h.Tool("search_transactions", map[string]any{"payee_id": "01a15a13-9fbe-78ca-88a0-21527276b813"}), "invalid_arguments", "")
 }
 
@@ -112,6 +121,7 @@ func TestSearchTransactionsToolIsolation(t *testing.T) {
 	t.Parallel()
 	h := apitest.New(t, apitest.Today("2026-10-20"))
 	other := h.Login("other@example.com")
+
 	var wallet, misc struct {
 		ID string `json:"id"`
 	}
@@ -125,12 +135,15 @@ func TestSearchTransactionsToolIsolation(t *testing.T) {
 		if a.class == "asset" {
 			body["kind"] = "cash"
 		}
+
 		r := h.Call(other, http.MethodPost, "/api/v1/accounts", body)
 		if r.Status != http.StatusCreated {
 			t.Fatalf("create account = %d: %s", r.Status, r.Body)
 		}
+
 		r.Decode(t, a.out)
 	}
+
 	r := h.Call(other, http.MethodPost, "/api/v1/transactions", map[string]any{
 		"date": "2026-10-01", "description": "Secret",
 		"postings": []map[string]any{apitest.Posting(wallet.ID, -100), apitest.Posting(misc.ID, 100)},
@@ -146,17 +159,21 @@ func TestSearchTransactionsToolIsolation(t *testing.T) {
 			ID string `json:"id"`
 		} `json:"items"`
 	}
+
 	r = h.Call(other, http.MethodGet, "/api/v1/transactions?q=secret", nil)
 	if r.Status != http.StatusOK {
 		t.Fatalf("list = %d: %s", r.Status, r.Body)
 	}
+
 	r.Decode(t, &theirs)
+
 	if len(theirs.Items) != 1 {
 		t.Fatalf("other user's search = %+v", theirs)
 	}
 
 	var got searchOutput
 	toolOutput(t, h, "search_transactions", map[string]any{"query": "secret"}, &got)
+
 	if got.Transactions == nil || len(got.Transactions) != 0 {
 		t.Errorf("owner sees %+v", got)
 	}

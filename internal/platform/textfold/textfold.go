@@ -26,6 +26,7 @@ func special(r rune) (rune, bool) {
 	case 'ſ':
 		return 's', true
 	}
+
 	return r, false
 }
 
@@ -35,14 +36,17 @@ func Rune(r rune) rune {
 	if base, ok := special(l); ok {
 		return base
 	}
+
 	if !unicode.Is(unicode.Latin, l) {
 		return l
 	}
+
 	for _, d := range norm.NFD.String(string(l)) {
 		if !unicode.Is(unicode.Mn, d) {
 			return d
 		}
 	}
+
 	return l
 }
 

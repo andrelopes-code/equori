@@ -11,8 +11,10 @@ import (
 
 func TestBuildIncome(t *testing.T) {
 	t.Parallel()
+
 	security, cash, category, taxes := uuid.New(), uuid.New(), uuid.New(), uuid.New()
 	amount := func(n int64) *money.Money { m := brl(t, n); return &m }
+
 	tests := []struct {
 		name     string
 		order    IncomeOrder
@@ -32,18 +34,22 @@ func TestBuildIncome(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.order.AccountID, tt.order.CashAccountID, tt.order.CategoryID, tt.order.WithheldCategoryID = security, cash, category, taxes
+
 			postings, income, err := BuildIncome(tt.order)
 			if err != nil {
 				t.Fatal(err)
 			}
+
 			if len(postings) != len(tt.want) {
 				t.Fatalf("postings = %+v", postings)
 			}
+
 			for i, w := range tt.want {
 				if postings[i].AccountID != w[0] || postings[i].Amount.Amount() != w[1] || postings[i].Weight != postings[i].Amount {
 					t.Fatalf("posting %d = %+v, want %v", i, postings[i], w)
 				}
 			}
+
 			if income.Withheld.Amount() != tt.withheld || income.Gross != tt.order.Gross || income.AccountID != security || income.Type != tt.order.Type {
 				t.Fatalf("income = %+v", income)
 			}
@@ -53,7 +59,9 @@ func TestBuildIncome(t *testing.T) {
 
 func TestBuildIncomeRejects(t *testing.T) {
 	t.Parallel()
+
 	amount := func(n int64) *money.Money { m := brl(t, n); return &m }
+
 	tests := []struct {
 		name  string
 		order IncomeOrder
@@ -69,6 +77,7 @@ func TestBuildIncomeRejects(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.order.AccountID, tt.order.CashAccountID, tt.order.CategoryID, tt.order.WithheldCategoryID = uuid.New(), uuid.New(), uuid.New(), uuid.New()
 			_, _, err := BuildIncome(tt.order)
+
 			var fe *FieldError
 			if !errors.As(err, &fe) || fe.Field != tt.field {
 				t.Fatalf("err = %v, want field %s", err, tt.field)

@@ -8,7 +8,9 @@ import (
 
 func TestLimit(t *testing.T) {
 	t.Parallel()
+
 	ptr := func(n int) *int { return &n }
+
 	tests := []struct {
 		name      string
 		requested *int
@@ -38,16 +40,19 @@ type key struct {
 
 func TestCursorRoundTrip(t *testing.T) {
 	t.Parallel()
+
 	in := key{Date: time.Date(2026, 10, 14, 0, 0, 0, 0, time.UTC), ID: 42}
 
 	cursor, err := EncodeCursor(in)
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	var out key
 	if err := DecodeCursor(cursor, &out); err != nil {
 		t.Fatal(err)
 	}
+
 	if !out.Date.Equal(in.Date) || out.ID != in.ID {
 		t.Fatalf("round trip = %+v, want %+v", out, in)
 	}
@@ -55,10 +60,12 @@ func TestCursorRoundTrip(t *testing.T) {
 
 func TestDecodeCursorRejectsGarbage(t *testing.T) {
 	t.Parallel()
+
 	foreign, err := EncodeCursor(map[string]int{"other": 1})
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	for _, cursor := range []string{"%%%", "bm90IGpzb24", foreign} {
 		var out key
 		if err := DecodeCursor(cursor, &out); !errors.Is(err, ErrInvalidCursor) {
@@ -69,9 +76,11 @@ func TestDecodeCursorRejectsGarbage(t *testing.T) {
 
 func TestTrim(t *testing.T) {
 	t.Parallel()
+
 	if items, more := Trim([]int{1, 2, 3}, 2); len(items) != 2 || !more {
 		t.Fatalf("Trim(3 rows, 2) = %v, %v", items, more)
 	}
+
 	if items, more := Trim([]int{1, 2}, 2); len(items) != 2 || more {
 		t.Fatalf("Trim(2 rows, 2) = %v, %v", items, more)
 	}
@@ -82,22 +91,27 @@ func TestReadAndNext(t *testing.T) {
 	type key struct {
 		N string `json:"n"`
 	}
+
 	next, err := Next(&key{N: "b"})
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	r, err := Read[key](nil, next)
 	if err != nil || r.Limit != DefaultLimit || r.After == nil || r.After.N != "b" {
 		t.Fatalf("Read = %+v, %v", r, err)
 	}
+
 	zero := 0
 	if _, err := Read[key](&zero, nil); !errors.Is(err, ErrInvalidLimit) {
 		t.Fatalf("limit 0: %v", err)
 	}
+
 	other := "eyJ4IjoxfQ" // {"x":1}
 	if _, err := Read[key](nil, &other); !errors.Is(err, ErrInvalidCursor) {
 		t.Fatalf("foreign cursor: %v", err)
 	}
+
 	if last, err := Next[key](nil); last != nil || err != nil {
 		t.Fatalf("Next(nil) = %v, %v", last, err)
 	}

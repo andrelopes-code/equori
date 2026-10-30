@@ -17,6 +17,7 @@ func MatchKey(payee uuid.UUID, raw string) string {
 	if payee != uuid.Nil {
 		return payeeKey + payee.String()
 	}
+
 	return descriptionKey + Normalize(raw)
 }
 
@@ -32,6 +33,8 @@ func SuggestedRule(matchKey string, category uuid.UUID) ([]Condition, []Action) 
 	if id, err := uuid.Parse(strings.TrimPrefix(matchKey, payeeKey)); strings.HasPrefix(matchKey, payeeKey) && err == nil {
 		return []Condition{{Field: FieldPayee, Operator: OpEquals, IDs: []uuid.UUID{id}}}, actions
 	}
+
 	text := strings.TrimPrefix(matchKey, descriptionKey)
+
 	return []Condition{{Field: FieldRawDescription, Operator: OpEquals, Text: []string{text}, normalized: []string{text}}}, actions
 }

@@ -19,6 +19,7 @@ func TestStatementPlacement(t *testing.T) {
 		PreviousClosingDate string `json:"previous_closing_date"`
 		PreviousDueDate     string `json:"previous_due_date"`
 	}
+
 	for _, tc := range []struct {
 		date string
 		want placement
@@ -31,6 +32,7 @@ func TestStatementPlacement(t *testing.T) {
 	} {
 		var got placement
 		h.MustDo(http.MethodGet, "/api/v1/accounts/"+card+"/statement-placement?date="+tc.date, nil, http.StatusOK, &got)
+
 		if got != tc.want {
 			t.Errorf("placement of %s = %+v, want %+v", tc.date, got, tc.want)
 		}
@@ -40,6 +42,7 @@ func TestStatementPlacement(t *testing.T) {
 		Items []struct{} `json:"items"`
 	}
 	h.MustDo(http.MethodGet, "/api/v1/accounts/"+card+"/statements", nil, http.StatusOK, &statements)
+
 	if len(statements.Items) != 0 {
 		t.Fatalf("statements = %d, want 0: a placement creates no statement", len(statements.Items))
 	}
@@ -71,10 +74,13 @@ func TestStatementPlacementFollowsStoredDates(t *testing.T) {
 		DueDate     string `json:"due_date"`
 	}
 	c.h.MustDo(http.MethodGet, "/api/v1/accounts/"+c.card+"/statement-placement?date=2026-10-31", nil, http.StatusOK, &got)
+
 	if got.Reference != "2026-11" || got.ClosingDate != "2026-11-01" || got.DueDate != "2026-11-10" {
 		t.Fatalf("placement of 2026-10-31 = %+v, want 2026-11 closing 2026-11-01 due 2026-11-10", got)
 	}
+
 	c.h.MustDo(http.MethodGet, "/api/v1/accounts/"+c.card+"/statement-placement?date=2026-11-01", nil, http.StatusOK, &got)
+
 	if got.Reference != "2026-12" {
 		t.Fatalf("placement of 2026-11-01 = %+v, want 2026-12", got)
 	}

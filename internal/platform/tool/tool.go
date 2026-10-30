@@ -28,6 +28,7 @@ func (e Effect) String() string {
 	case Destructive:
 		return "destructive"
 	}
+
 	return fmt.Sprintf("Effect(%d)", int(e))
 }
 
@@ -61,14 +62,17 @@ func New[In, Out any](s Spec, h func(ctx context.Context, userID int64, in In) (
 	case s.Effect < ReadOnly || s.Effect > Destructive:
 		panic(fmt.Sprintf("tool %s: invalid effect %d", s.Name, s.Effect))
 	}
+
 	input, in, err := schemaFor[In]()
 	if err != nil {
 		panic(fmt.Sprintf("tool %s: input: %v", s.Name, err))
 	}
+
 	output, out, err := schemaFor[Out]()
 	if err != nil {
 		panic(fmt.Sprintf("tool %s: output: %v", s.Name, err))
 	}
+
 	return Tool{
 		spec: s, input: input, output: output, in: in, out: out,
 		call: func(ctx context.Context, userID int64, args []byte) (any, error) {
@@ -77,6 +81,7 @@ func New[In, Out any](s Spec, h func(ctx context.Context, userID int64, in In) (
 			if err := json.Unmarshal(args, &v); err != nil {
 				return nil, invalidArguments(err.Error())
 			}
+
 			return h(ctx, userID, v)
 		},
 	}
@@ -87,16 +92,20 @@ func (t Tool) validate(args json.RawMessage) (json.RawMessage, *Error) {
 	if trimmed := bytes.TrimSpace(args); len(trimmed) == 0 || string(trimmed) == "null" {
 		args = json.RawMessage(`{}`)
 	}
+
 	var v any
 	if err := json.Unmarshal(args, &v); err != nil {
 		return nil, invalidArguments("arguments are not valid JSON: " + err.Error())
 	}
+
 	if _, ok := v.(map[string]any); !ok {
 		return nil, invalidArguments("arguments must be a JSON object")
 	}
+
 	if err := t.in.Validate(v); err != nil {
 		return nil, invalidArguments(err.Error())
 	}
+
 	return args, nil
 }
 
@@ -110,5 +119,6 @@ func (t Tool) ValidateOutput(content json.RawMessage) error {
 	if err := json.Unmarshal(content, &v); err != nil {
 		return err
 	}
+
 	return t.out.Validate(v)
 }

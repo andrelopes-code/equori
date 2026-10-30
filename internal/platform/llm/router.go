@@ -42,6 +42,7 @@ func NewRouter(clk *clock.Clock, log *slog.Logger, res Resolver, providers ...Pr
 	for _, p := range providers {
 		r.providers[p.Name()] = p
 	}
+
 	return r
 }
 
@@ -51,7 +52,9 @@ func (r *Router) Providers() []string {
 	for name := range r.providers {
 		names = append(names, name)
 	}
+
 	slices.Sort(names)
+
 	return names
 }
 
@@ -77,18 +80,22 @@ func (c *Client) bindings(ctx context.Context) ([]Binding, error) {
 		if r.res == nil {
 			return nil, nil
 		}
+
 		b, err := r.res.Resolve(ctx, *c.use)
 		if err != nil {
 			return nil, fmt.Errorf("resolve %s: %w", c.use.ID, err)
 		}
+
 		return b, nil
 	}
+
 	var out []Binding
 	for _, t := range c.chain {
 		if p, ok := r.providers[t.Provider]; ok {
 			out = append(out, Binding{Target: t, Provider: p})
 		}
 	}
+
 	return out, nil
 }
 
@@ -103,32 +110,39 @@ func (c *Client) Generate(ctx context.Context, req Request) (Response, error) {
 // error: the text already handed out belongs to this target (design 2026-10-26 E3).
 func (c *Client) Stream(ctx context.Context, req Request, onText func(string)) (Response, error) {
 	r := c.router
+
 	bindings, err := c.bindings(ctx)
 	if err != nil {
 		return Response{}, err
 	}
+
 	if req.Pin != (Target{}) {
 		bindings = slices.DeleteFunc(bindings, func(b Binding) bool { return b.Target != req.Pin })
 		if len(bindings) == 0 {
 			return Response{}, &ExhaustedError{RetryAt: r.clk.Now()}
 		}
 	}
+
 	for _, b := range bindings {
 		t, p := b.Target, b.Provider
 		if r.coolingDown(t) {
 			continue
 		}
+
 		begin := r.clk.Now()
 		started := false
+
 		var resp Response
 		if s, ok := p.(Streamer); ok && onText != nil {
 			resp, err = s.Stream(ctx, t.Model, req, func(text string) {
 				started = true
+
 				onText(text)
 			})
 		} else {
 			resp, err = p.Generate(ctx, t.Model, req)
 		}
+
 		elapsed := r.clk.Now().Sub(begin)
 		if err == nil {
 			resp.Target = t
@@ -140,29 +154,37 @@ func (c *Client) Stream(ctx context.Context, req Request, onText func(string)) (
 			if req.Schema != nil && checked && !json.Valid([]byte(resp.Text())) {
 				return Response{}, fmt.Errorf("generate with %s: %w", t, ErrMalformedOutput)
 			}
+
 			return resp, nil
 		}
+
 		if ctx.Err() != nil {
 			r.log.Warn("llm call", "provider", t.Provider, "model", t.Model, "outcome", "canceled", "duration", elapsed)
 			// The caller's context is done; the attempt is still recorded.
 			c.record(context.WithoutCancel(ctx), Attempt{Target: t, Outcome: "canceled"})
+
 			return Response{}, fmt.Errorf("generate with %s: %w", t, ctx.Err())
 		}
+
 		outcome, wait := classify(err)
 		if wait == 0 || started {
 			c.record(ctx, Attempt{Target: t, Outcome: outcome})
 			r.log.Warn("llm call", "provider", t.Provider, "model", t.Model, "outcome", outcome, "duration", elapsed)
+
 			return Response{}, fmt.Errorf("generate with %s: %w", t, err)
 		}
+
 		until := r.clk.Now().Add(wait)
 		r.setCooldown(t, until, outcome == "quota")
 		c.record(ctx, Attempt{Target: t, Outcome: outcome, CooldownUntil: until})
 		r.log.Warn("llm call", "provider", t.Provider, "model", t.Model, "outcome", outcome, "duration", elapsed,
 			"cooldown_until", until)
 	}
+
 	if len(bindings) == 0 {
 		return Response{}, ErrUnavailable
 	}
+
 	return Response{}, &ExhaustedError{RetryAt: r.earliestEnd(bindings), Transient: r.allTransient(bindings)}
 }
 
@@ -171,6 +193,7 @@ func (c *Client) record(ctx context.Context, a Attempt) {
 	if c.use == nil {
 		return
 	}
+
 	if rec, ok := c.router.res.(Recorder); ok {
 		a.Use = c.use.ID
 		rec.Record(ctx, a)
@@ -186,6 +209,7 @@ func classify(err error) (string, time.Duration) {
 		if quota.RetryAfter > 0 {
 			return "quota", quota.RetryAfter
 		}
+
 		return "quota", quotaCooldown
 	case errors.Is(err, ErrQuota):
 		return "quota", quotaCooldown
@@ -203,6 +227,7 @@ func classify(err error) (string, time.Duration) {
 func (r *Router) coolingDown(t Target) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
+
 	return r.cooldown[t].until.After(r.clk.Now())
 }
 
@@ -210,6 +235,7 @@ func (r *Router) coolingDown(t Target) bool {
 func (r *Router) setCooldown(t Target, until time.Time, quota bool) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
+
 	old := r.cooldown[t]
 	if until.After(old.until) {
 		r.cooldown[t] = cooldown{until: until, quota: quota || old.quota && old.until.After(r.clk.Now())}
@@ -220,23 +246,27 @@ func (r *Router) setCooldown(t Target, until time.Time, quota bool) {
 func (r *Router) allTransient(bindings []Binding) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
+
 	now := r.clk.Now()
 	for _, b := range bindings {
 		if c := r.cooldown[b.Target]; c.quota && c.until.After(now) {
 			return false
 		}
 	}
+
 	return true
 }
 
 func (r *Router) earliestEnd(bindings []Binding) time.Time {
 	r.mu.Lock()
 	defer r.mu.Unlock()
+
 	var earliest time.Time
 	for _, b := range bindings {
 		if end := r.cooldown[b.Target].until; earliest.IsZero() || end.Before(earliest) {
 			earliest = end
 		}
 	}
+
 	return earliest
 }

@@ -11,12 +11,15 @@ import (
 
 func TestPresets(t *testing.T) {
 	t.Parallel()
+
 	pattern := regexp.MustCompile(`^[a-z0-9_]{2,40}$`)
+
 	seen := map[string]bool{}
 	for _, p := range Presets() {
 		if !pattern.MatchString(p.ID) || seen[p.ID] {
 			t.Fatalf("preset ID %q is invalid or repeated", p.ID)
 		}
+
 		seen[p.ID] = true
 		if p.ID != PresetCustom {
 			if _, err := ValidateBaseURL(p.BaseURL); err != nil {
@@ -24,15 +27,18 @@ func TestPresets(t *testing.T) {
 			}
 		}
 	}
+
 	gemini, ok := FindPreset("gemini")
 	if !ok || gemini.API != APIGemini || gemini.Notice != NoticeTrains || !gemini.KeyRequired {
 		t.Fatalf("gemini preset = %+v", gemini)
 	}
+
 	for _, model := range []string{"gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite"} {
 		if got := ModelCapabilities("gemini", model, nil); !slices.Equal(got, []string{"tools", "structured_output"}) {
 			t.Fatalf("%s capabilities = %v", model, got)
 		}
 	}
+
 	if _, ok := FindPreset("nope"); ok {
 		t.Fatal("FindPreset(nope) found a preset")
 	}
@@ -40,6 +46,7 @@ func TestPresets(t *testing.T) {
 
 func TestModelCapabilities(t *testing.T) {
 	t.Parallel()
+
 	tests := []struct {
 		name, preset, model string
 		asserted, want      []string
@@ -51,6 +58,7 @@ func TestModelCapabilities(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+
 			if got := ModelCapabilities(tt.preset, tt.model, tt.asserted); !slices.Equal(got, tt.want) {
 				t.Fatalf("capabilities = %v, want %v", got, tt.want)
 			}
@@ -60,6 +68,7 @@ func TestModelCapabilities(t *testing.T) {
 
 func TestMissing(t *testing.T) {
 	t.Parallel()
+
 	got := Missing([]string{"tools", "structured_output"}, []string{"structured_output"})
 	if !slices.Equal(got, []string{"tools"}) {
 		t.Fatalf("Missing = %v, want [tools]", got)
@@ -68,9 +77,11 @@ func TestMissing(t *testing.T) {
 
 func TestValidateCapabilities(t *testing.T) {
 	t.Parallel()
+
 	if err := ValidateCapabilities([]string{"tools", "image_input"}); err != nil {
 		t.Fatalf("valid set: %v", err)
 	}
+
 	if fe, ok := errors.AsType[*FieldError](ValidateCapabilities([]string{"speech"})); !ok || fe.Field != "capabilities" {
 		t.Fatal("unknown capability accepted")
 	}
@@ -78,9 +89,11 @@ func TestValidateCapabilities(t *testing.T) {
 
 func TestNewChainTarget(t *testing.T) {
 	t.Parallel()
+
 	if _, err := NewChainTarget(uuid.New(), "m", []string{"tools"}); err != nil {
 		t.Fatalf("valid target: %v", err)
 	}
+
 	if fe, ok := errors.AsType[*FieldError](func() error { _, err := NewChainTarget(uuid.New(), " ", nil); return err }()); !ok || fe.Field != "model" {
 		t.Fatal("blank model accepted")
 	}

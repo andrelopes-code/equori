@@ -31,6 +31,7 @@ func EffectiveFact(facts []StatementFact) *StatementFact {
 			out = &facts[i]
 		}
 	}
+
 	return out
 }
 
@@ -43,18 +44,22 @@ func StatementOn(d time.Time, closing map[ReferenceMonth]time.Time, rules Rules,
 	if err != nil {
 		return ReferenceMonth{}, err
 	}
+
 	for m := projected.Add(-1); m.Compare(projected.Add(2)) <= 0; m = m.Add(1) {
 		r, err := rules.For(m)
 		if err != nil {
 			continue
 		}
+
 		c, ok := closing[m]
 		if !ok {
 			c = ruleClosing(m, r)
 		}
+
 		if d.Before(c) || (r.Assignment == AssignClosing && d.Equal(c)) {
 			return m, nil
 		}
 	}
+
 	return projected, nil
 }

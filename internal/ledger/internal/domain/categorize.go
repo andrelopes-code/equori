@@ -43,6 +43,7 @@ func (t Transaction) CategoryState(accounts map[uuid.UUID]Account) CategoryState
 			state = CategoryUncategorized
 		}
 	}
+
 	return state
 }
 
@@ -66,9 +67,11 @@ func (t Transaction) Categorize(c Categorization, accounts map[uuid.UUID]Account
 	if t.VoidedAt != nil {
 		return Transaction{}, ErrVoided
 	}
+
 	if c.ExpectedVersion != t.Version {
 		return Transaction{}, ErrVersionConflict
 	}
+
 	var kept, replaced []Posting
 	for _, p := range t.Postings {
 		if accounts[p.AccountID].IsCategory() {
@@ -77,25 +80,32 @@ func (t Transaction) Categorize(c Categorization, accounts map[uuid.UUID]Account
 			kept = append(kept, p)
 		}
 	}
+
 	if len(replaced) == 0 {
 		return Transaction{}, ErrNotCategorizable
 	}
+
 	if c.Parts != nil {
 		parts, err := categoryPostings(t, replaced, c.Parts, accounts)
 		if err != nil {
 			return Transaction{}, err
 		}
+
 		t.Postings = append(slices.Clip(kept), parts...)
 	}
+
 	if c.PayeeID != nil {
 		t.PayeeID = *c.PayeeID
 	}
+
 	tags, err := normalizeTags(append(slices.Clip(t.Tags), c.AddTags...))
 	if err != nil {
 		return Transaction{}, err
 	}
+
 	t.Tags = tags
 	t.Version++
+
 	return t, nil
 }
 
@@ -105,18 +115,23 @@ func (t Transaction) ReassignCategory(from uuid.UUID, into Account) (Transaction
 	if t.VoidedAt != nil {
 		return Transaction{}, ErrVoided
 	}
+
 	if !into.IsOpenOn(t.Date) {
 		return Transaction{}, &FieldError{Field: "into", Message: "account is not open on " + t.Date.Format(time.DateOnly), Err: ErrAccountClosed}
 	}
+
 	postings := make([]Posting, len(t.Postings))
 	for i, p := range t.Postings {
 		if p.AccountID == from {
 			p.ID, p.AccountID = uuid.Nil, into.ID
 		}
+
 		postings[i] = p
 	}
+
 	t.Postings = postings
 	t.Version++
+
 	return t, nil
 }
 
@@ -124,18 +139,24 @@ func categoryPostings(t Transaction, replaced []Posting, parts []CategoryPart, a
 	if len(parts) == 0 || len(parts) > maxCategoryParts {
 		return nil, invalid("parts", fmt.Sprintf("must have 1 to %d parts", maxCategoryParts))
 	}
+
 	instrument := replaced[0].Amount.Currency()
+
 	var total int64
 	for _, p := range replaced {
 		if p.Amount.Currency() != instrument || p.Weight != p.Amount {
 			return nil, invalid("parts", "category postings in several currencies cannot be categorized")
 		}
+
 		total += p.Amount.Amount()
 	}
+
 	out := make([]Posting, len(parts))
+
 	var sum int64
 	for i, part := range parts {
 		field := func(name string) string { return fmt.Sprintf("parts[%d].%s", i, name) }
+
 		a, ok := accounts[part.AccountID]
 		switch {
 		case !ok || a.UserID != t.UserID:
@@ -149,12 +170,15 @@ func categoryPostings(t Transaction, replaced []Posting, parts []CategoryPart, a
 		case part.Amount.IsZero():
 			return nil, invalid(field("amount"), "must not be zero")
 		}
+
 		sum += part.Amount.Amount()
 		out[i] = Posting{AccountID: a.ID, Amount: part.Amount, Weight: part.Amount, Status: defaultPostStatus}
 	}
+
 	if sum != total {
 		return nil, invalid("parts", fmt.Sprintf("must sum to %d", total))
 	}
+
 	return out, nil
 }
 
@@ -171,6 +195,8 @@ func categoryKeys(t Transaction, accounts map[uuid.UUID]Account) []string {
 			keys = append(keys, p.AccountID.String()+" "+p.Amount.String())
 		}
 	}
+
 	slices.Sort(keys)
+
 	return keys
 }

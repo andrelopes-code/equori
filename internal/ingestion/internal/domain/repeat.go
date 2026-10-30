@@ -30,8 +30,10 @@ func Repeats(lines, recorded []RepeatLine) map[int]bool {
 			order = append(order, i)
 		}
 	}
+
 	slices.SortStableFunc(order, func(a, b int) int {
 		x, y := lines[a], lines[b]
+
 		return cmp.Or(
 			cmp.Compare(rank(x), rank(y)),
 			x.Date.Compare(y.Date),
@@ -41,6 +43,7 @@ func Repeats(lines, recorded []RepeatLine) map[int]bool {
 
 	pool := slices.DeleteFunc(slices.Clone(recorded), func(r RepeatLine) bool { return r.Amount <= 0 })
 	taken := make([]bool, len(pool))
+
 	out := map[int]bool{}
 	for _, i := range order {
 		l := lines[i]
@@ -48,6 +51,7 @@ func Repeats(lines, recorded []RepeatLine) map[int]bool {
 			taken[j], out[i] = true, true
 			continue
 		}
+
 		pool, taken = append(pool, l), append(taken, false)
 	}
 
@@ -59,6 +63,7 @@ func rank(l RepeatLine) int {
 	if l.Kind == KindPayment {
 		return 0
 	}
+
 	return 1
 }
 
@@ -70,10 +75,12 @@ func nearestRepeated(l RepeatLine, pool []RepeatLine, taken []bool) int {
 		if taken[j] || r.Amount != l.Amount || (r.Kind != KindPayment && l.Kind != KindPayment) {
 			continue
 		}
+
 		d := r.Date.Sub(l.Date).Abs()
 		if d > RepeatDays*24*time.Hour {
 			continue
 		}
+
 		if best < 0 || d < gap {
 			best, gap = j, d
 		}

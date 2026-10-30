@@ -18,24 +18,32 @@ func TestReconcileAccountS26(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t, apitest.Today("2026-10-23"))
 	f.h.Record("2026-10-01", apitest.Posting(f.wallet, 320327), apitest.Posting(f.openingBalances, -320327))
+
 	balance := map[string]any{"account_id": f.wallet, "action": "record_balance", "date": "2026-10-23", "amount": "3201.17"}
 	if p := previewTool(t, f.h, "reconcile_account", balance); p.Target != "Wallet" || p.Changes[0].After.Amount != "3201.17" || p.Changes[1].After.Date != "2026-10-23" {
 		t.Fatalf("preview = %+v", p)
 	}
+
 	var out reconcileOut
 	toolOutput(t, f.h, "reconcile_account", balance, &out)
+
 	if out.Difference == nil || out.Difference.Amount != "-2.10" || out.Resolution != "" {
 		t.Fatalf("record_balance = %+v", out)
 	}
+
 	resolve := map[string]any{"account_id": f.wallet, "action": "resolve_difference", "resolution": "adjustment"}
+
 	p := previewTool(t, f.h, "reconcile_account", resolve)
 	if p.Basis == "" || p.Changes[0].After.Amount != "-2.10" {
 		t.Fatalf("preview = %+v", p)
 	}
+
 	toolOutput(t, f.h, "reconcile_account", resolve, &out)
+
 	if out.Resolution != "adjustment" {
 		t.Fatalf("resolve = %+v", out)
 	}
+
 	f.h.ExpectToolError(f.h.Tool("reconcile_account", resolve), "invalid_arguments", "account_id")
 	toolOutput(t, f.h, "reconcile_account", map[string]any{"account_id": f.wallet, "action": "unlock", "date": "2026-10-01"}, &out)
 }

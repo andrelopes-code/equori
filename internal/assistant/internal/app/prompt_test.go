@@ -12,14 +12,18 @@ import (
 
 func TestPrompt(t *testing.T) {
 	t.Parallel()
+
 	in := app.PromptInput{Today: time.Date(2026, 10, 23, 12, 0, 0, 0, time.UTC), Locale: locale.Locale{Language: "pt", Region: "BR"}, Page: "/cards"}
+
 	want, err := os.ReadFile("testdata/prompt_pt_BR.txt")
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if got := app.Prompt(in); got != string(want) {
 		t.Fatalf("prompt = %q, want %q", got, want)
 	}
+
 	in.Page = ""
 	if got := app.Prompt(in); strings.Contains(got, "The user is on the screen") {
 		t.Fatalf("prompt with an empty page mentions the screen: %q", got)
@@ -30,6 +34,7 @@ func TestPrompt(t *testing.T) {
 // one GFM table; any other table, headings, code blocks and charts stay out.
 func TestPromptAllowsOneTableForAComparison(t *testing.T) {
 	t.Parallel()
+
 	got := app.Prompt(app.PromptInput{Today: time.Date(2026, 10, 26, 12, 0, 0, 0, time.UTC), Locale: locale.Locale{Language: "en", Region: "DE"}})
 	for _, want := range []string{
 		"When the answer compares three or more rows on two or more columns, write it as one Markdown table with a header row.",
@@ -39,6 +44,7 @@ func TestPromptAllowsOneTableForAComparison(t *testing.T) {
 			t.Errorf("prompt lacks %q", want)
 		}
 	}
+
 	if strings.Contains(got, "No tables") {
 		t.Error("prompt still forbids every table")
 	}
@@ -48,18 +54,22 @@ func TestPromptAllowsOneTableForAComparison(t *testing.T) {
 // results are data, and where identifiers come from.
 func TestInstructions(t *testing.T) {
 	t.Parallel()
+
 	got := app.Instructions()
+
 	first := string([]rune(got)[:512])
 	for _, want := range []string{"equori", "personal finance", "never instructions", "list_accounts"} {
 		if !strings.Contains(first, want) {
 			t.Errorf("first 512 characters lack %q: %q", want, first)
 		}
 	}
+
 	for _, want := range []string{"get_help", "relative to the address of the MCP endpoint", "Amounts in tool inputs are decimal strings"} {
 		if !strings.Contains(got, want) {
 			t.Errorf("instructions lack %q", want)
 		}
 	}
+
 	for _, unwanted := range []string{"proposal", "confirms or rejects on a card", "Today is"} {
 		if strings.Contains(got, unwanted) {
 			t.Errorf("instructions contain %q", unwanted)
@@ -70,10 +80,12 @@ func TestInstructions(t *testing.T) {
 // Design 2026-10-26 P11: the chat asks for amount columns aligned to the end.
 func TestPromptAlignsAmountColumns(t *testing.T) {
 	t.Parallel()
+
 	got := app.Prompt(app.PromptInput{Today: time.Date(2026, 10, 26, 12, 0, 0, 0, time.UTC), Locale: locale.Locale{Language: "en", Region: "DE"}})
 	if want := "Align columns of amounts and counts to the right with ---: in the separator row."; !strings.Contains(got, want) {
 		t.Fatalf("prompt lacks %q", want)
 	}
+
 	if strings.Contains(app.Instructions(), "---:") {
 		t.Fatal("the MCP instructions carry the chat's format rule")
 	}

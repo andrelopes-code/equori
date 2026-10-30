@@ -8,7 +8,9 @@ import (
 
 func TestNewLimit(t *testing.T) {
 	t.Parallel()
+
 	one, zero, huge := int64(1), int64(0), int64(1<<31)
+
 	tests := []struct {
 		name, provider, model string
 		requests, tokens      *int64
@@ -26,14 +28,17 @@ func TestNewLimit(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+
 			l, err := NewLimit(tt.provider, tt.model, tt.requests, tt.tokens)
 			if tt.wantField != "" {
 				fe, ok := errors.AsType[*FieldError](err)
 				if !ok || fe.Field != tt.wantField {
 					t.Fatalf("err = %v, want a field error on %s", err, tt.wantField)
 				}
+
 				return
 			}
+
 			if err != nil || l.Cleared() != tt.cleared {
 				t.Fatalf("NewLimit = %+v, %v", l, err)
 			}

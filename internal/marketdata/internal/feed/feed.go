@@ -65,16 +65,21 @@ func Get(ctx context.Context, c *http.Client, url string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	resp, err := c.Do(req)
 	if err != nil {
 		return nil, err
 	}
+
 	defer func() { _ = resp.Body.Close() }()
+
 	if resp.StatusCode == http.StatusNotFound {
 		return nil, ErrNoData
 	}
+
 	if resp.StatusCode != http.StatusOK {
 		return nil, &StatusError{Code: resp.StatusCode}
 	}
+
 	return io.ReadAll(io.LimitReader(resp.Body, maxResponseBytes))
 }

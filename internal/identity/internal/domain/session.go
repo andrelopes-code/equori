@@ -21,6 +21,7 @@ func NewSession(userID int64, now time.Time) (token string, s Session) {
 	b := make([]byte, 32)
 	_, _ = rand.Read(b) // crypto/rand.Read never returns an error since Go 1.24.
 	token = base64.RawURLEncoding.EncodeToString(b)
+
 	return token, Session{
 		TokenHash: HashToken(token),
 		UserID:    userID,

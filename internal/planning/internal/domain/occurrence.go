@@ -37,5 +37,6 @@ func (o Occurrence) Shown(today time.Time, graceDays int) State {
 	if o.State == Expected && today.After(o.ExpectedOn.AddDate(0, 0, graceDays)) {
 		return Overdue
 	}
+
 	return o.State
 }

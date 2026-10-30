@@ -30,38 +30,47 @@ func (accountClass) Values() []string {
 // allAccounts reads every account of the user in the order of ListAccounts, by class and then name.
 func allAccounts(ctx context.Context, svc *app.Service, userID int64) (map[uuid.UUID]domain.Account, []domain.Account, error) {
 	var all []domain.Account
+
 	p := page.Request[app.AccountKey]{Limit: page.MaxLimit}
 	for {
 		rows, next, err := svc.ListAccounts(ctx, userID, p)
 		if err != nil {
 			return nil, nil, err
 		}
+
 		all = append(all, rows...)
+
 		if next == nil {
 			break
 		}
+
 		p.After = next
 	}
+
 	byID := make(map[uuid.UUID]domain.Account, len(all))
 	for _, a := range all {
 		byID[a.ID] = a
 	}
+
 	return byID, all, nil
 }
 
 // allPages reads every page of a listing at the largest page size.
 func allPages[T, K any](list func(page.Request[K]) ([]T, *K, error)) ([]T, error) {
 	var all []T
+
 	p := page.Request[K]{Limit: page.MaxLimit}
 	for {
 		rows, next, err := list(p)
 		if err != nil {
 			return nil, err
 		}
+
 		all = append(all, rows...)
 		if next == nil {
 			return all, nil
 		}
+
 		p.After = next
 	}
 }

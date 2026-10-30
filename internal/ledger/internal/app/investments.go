@@ -50,11 +50,14 @@ func (s *Service) InvestmentFacts(ctx context.Context, userID int64, brokerageID
 	if err != nil {
 		return InvestmentFacts{}, err
 	}
+
 	accounts, err := s.repo.AllAccounts(ctx, userID)
 	if err != nil {
 		return InvestmentFacts{}, err
 	}
+
 	out := InvestmentFacts{Currency: settings.BaseCurrency}
+
 	var ids []uuid.UUID
 	for _, a := range accounts {
 		if a.ParentID == brokerageID && a.HoldsSecurity() {
@@ -62,15 +65,20 @@ func (s *Service) InvestmentFacts(ctx context.Context, userID int64, brokerageID
 			ids = append(ids, a.ID)
 		}
 	}
+
 	if len(ids) == 0 {
 		return out, nil
 	}
+
 	if out.Postings, err = s.repo.SecurityPostings(ctx, userID, ids); err != nil {
 		return InvestmentFacts{}, err
 	}
+
 	if out.Trades, err = s.repo.SecurityTrades(ctx, userID, ids); err != nil {
 		return InvestmentFacts{}, err
 	}
+
 	out.Incomes, err = s.repo.SecurityIncomes(ctx, userID, ids)
+
 	return out, err
 }

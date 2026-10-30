@@ -25,20 +25,25 @@ func TestReconciliationScenarios(t *testing.T) {
 			t.Run(tc.name, func(t *testing.T) {
 				f := newFixture(t, apitest.Today("2026-11-05"))
 				f.h.Record("2026-09-30", apitest.Posting(f.emergency, 1000000), apitest.Posting(f.openingBalances, -1000000))
+
 				if resp := assertBalance(f.h, f.emergency, "2026-10-01", 1000000); resp.Status != http.StatusCreated {
 					t.Fatalf("previous assertion: status %d: %s", resp.Status, resp.Body)
 				}
+
 				var res assertionResult
 				assertBalance(f.h, f.emergency, "2026-10-31", tc.reported).Decode(t, &res)
+
 				if res.Difference.Amount != tc.diff || (res.ResolutionTransactionID != "") != tc.yield {
 					t.Fatalf("result = %+v", res)
 				}
+
 				if tc.yield {
 					want := map[string]int64{f.emergency: 8341, f.yield: -8341}
 					if got := amountsByAccount(f.h.Transaction(res.ResolutionTransactionID)); fmt.Sprint(got) != fmt.Sprint(want) {
 						t.Fatalf("yield postings = %v, want %v", got, want)
 					}
 				}
+
 				s := reconciliationOf(f.h, f.emergency)
 				if s.LastReconciledOn != tc.reconciledThrough || (s.OpenDifference == nil) != tc.yield {
 					t.Fatalf("reconciliation = %+v", s)
@@ -61,10 +66,12 @@ func TestReconciliationScenarios(t *testing.T) {
 		assertBalance(f.h, f.checking, "2026-10-31", 320117).Decode(t, &open)
 		var res assertionResult
 		f.h.MustDo(http.MethodPost, "/api/v1/balance-assertions/"+open.Assertion.ID+"/resolve", map[string]string{"resolution": "adjustment"}, http.StatusOK, &res)
+
 		want := map[string]int64{f.checking: -210, f.adjustments: 210}
 		if got := amountsByAccount(f.h.Transaction(res.ResolutionTransactionID)); fmt.Sprint(got) != fmt.Sprint(want) {
 			t.Fatalf("adjustment postings = %v, want %v", got, want)
 		}
+
 		if s := reconciliationOf(f.h, f.checking); s.LastReconciledOn != "2026-10-31" || s.OpenDifference != nil {
 			t.Fatalf("reconciliation = %+v", s)
 		}
@@ -77,19 +84,23 @@ func TestReconciliationScenarios(t *testing.T) {
 		other := f.h.Record("2026-10-15", apitest.Posting(f.checking, -5000), apitest.Posting(supermarket, 5000))
 		receipt := pdf(230 * 1024)
 		first := mustAttach(t, f.h, purchase, "receipt.pdf", receipt)
+
 		second := mustAttach(t, f.h, other, "receipt.pdf", receipt)
 		if n := blobCount(t, f.h); n != 1 || first.SHA256 != second.SHA256 {
 			t.Fatalf("blobs = %d, hashes %s and %s", n, first.SHA256, second.SHA256)
 		}
+
 		for _, tx := range []string{purchase, other} {
 			var list struct {
 				Items []attachmentView `json:"items"`
 			}
 			f.h.MustDo(http.MethodGet, "/api/v1/transactions/"+tx+"/attachments", nil, http.StatusOK, &list)
+
 			if len(list.Items) != 1 || list.Items[0].SHA256 != first.SHA256 {
 				t.Fatalf("attachments of %s = %+v", tx, list.Items)
 			}
 		}
+
 		f.h.ExpectProblem(attach(f.h, purchase, "large.pdf", pdf(12*mib)), http.StatusUnprocessableEntity, "validation_failed", "file")
 	})
 }

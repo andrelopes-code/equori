@@ -93,14 +93,17 @@ type turnState struct {
 func (t *turnState) add(id uuid.UUID) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
+
 	t.proposals = append(t.proposals, id)
 }
 
 func (t *turnState) take() []uuid.UUID {
 	t.mu.Lock()
 	defer t.mu.Unlock()
+
 	ids := t.proposals
 	t.proposals = nil
+
 	return ids
 }
 
@@ -109,6 +112,7 @@ func TurnConversation(ctx context.Context) uuid.UUID {
 	if t, ok := ctx.Value(turnKey{}).(*turnState); ok {
 		return t.conversationID
 	}
+
 	return uuid.Nil
 }
 
@@ -116,6 +120,7 @@ func truncateRunes(s string, n int) string {
 	if utf8.RuneCountInString(s) <= n {
 		return s
 	}
+
 	return string([]rune(s)[:n])
 }
 
@@ -126,57 +131,72 @@ func (s *Service) Turn(ctx context.Context, userID int64, in TurnInput, ev TurnE
 	if n := utf8.RuneCountInString(text); n < 1 || n > domain.MaxMessage {
 		return ErrInvalidText
 	}
+
 	now := s.now()
 	conv := domain.Conversation{ID: in.ConversationID, Title: domain.Title(text), CreatedAt: now, UpdatedAt: now}
 	var messages []domain.Message
+
 	var proposals []domain.Proposal
 	if in.ConversationID != uuid.Nil {
 		var err error
 		if _, err = s.repo.Conversation(ctx, userID, in.ConversationID); err != nil {
 			return err
 		}
+
 		if messages, err = s.repo.Messages(ctx, userID, in.ConversationID); err != nil {
 			return err
 		}
+
 		if proposals, err = s.repo.Proposals(ctx, userID, in.ConversationID); err != nil {
 			return err
 		}
 	}
+
 	use, ok := s.use(chatUseID)
 	if !ok {
 		return errors.New("use assistant.chat is not declared")
 	}
+
 	st, err := s.ChatState(ctx, userID, use)
 	if err != nil {
 		return err
 	}
+
 	if !st.Available {
 		if !st.RetryAt.IsZero() {
 			s.logTurn(ctx, userID, in.ConversationID, outcomeExhaust, AgentResult{}, now)
 			return &LimitError{RetryAt: st.RetryAt}
 		}
+
 		s.logTurn(ctx, userID, in.ConversationID, outcomeUnavail, AgentResult{}, now)
+
 		return ErrChatUnavailable
 	}
+
 	prof, err := s.profile(ctx, userID)
 	if err != nil {
 		return fmt.Errorf("read profile: %w", err)
 	}
+
 	if in.ConversationID == uuid.Nil {
 		conv.ID = uuid.New()
 		if err := s.repo.CreateConversation(ctx, userID, conv); err != nil {
 			return err
 		}
 	}
+
 	userMsg, err := s.repo.AppendMessage(ctx, userID, domain.Message{ID: uuid.New(), ConversationID: conv.ID, Role: domain.RoleUser, Content: text, CreatedAt: now})
 	if err != nil {
 		return err
 	}
+
 	ev.Turn(conv.ID, userMsg.ID)
 
 	state := &turnState{conversationID: conv.ID}
+
 	runCtx, cancel := context.WithTimeout(context.WithValue(ctx, turnKey{}, state), TurnTimeout)
 	defer cancel()
+
 	req := AgentRequest{
 		System:   Prompt(PromptInput{Today: s.today(), Locale: prof, Page: in.Page}),
 		History:  History(messages, proposals, now),
@@ -191,9 +211,11 @@ func (s *Service) Turn(ctx context.Context, userID int64, in TurnInput, ev TurnE
 			}
 		}
 	}
+
 	res, err := s.agent.Run(runCtx, userID, req, ev.Step, ev.Delta, discard)
 	if err != nil {
 		discard()
+
 		outcome := outcomeFailed
 		switch {
 		case ctx.Err() != nil:
@@ -205,32 +227,42 @@ func (s *Service) Turn(ctx context.Context, userID int64, in TurnInput, ev TurnE
 				outcome = outcomeExhaust
 			}
 		}
+
 		s.logTurn(ctx, userID, conv.ID, outcome, res, now)
+
 		stored := domain.OutcomeFailed
 		if outcome == outcomeCancel {
 			stored = domain.OutcomeCanceled
 		}
+
 		// The message records that the user's text got no answer; the client may already be gone.
 		if _, err := s.repo.AppendMessage(context.WithoutCancel(ctx), userID, domain.Message{
 			ID: uuid.New(), ConversationID: conv.ID, Role: domain.RoleAssistant, Outcome: stored, CreatedAt: s.now(),
 		}); err != nil {
 			s.log.ErrorContext(ctx, "assistant unanswered turn not stored", "error", err)
 		}
+
 		if outcome == outcomeCancel {
 			return nil
 		}
+
 		if outcome == outcomeFailed && !errors.Is(err, ErrTurnFailed) {
 			err = fmt.Errorf("%w: %w", ErrTurnFailed, err)
 		}
+
 		ev.Error(err)
+
 		return nil
 	}
+
 	outcome := domain.OutcomeAnswered
 	if res.StepLimit {
 		outcome = domain.OutcomeStepLimit
 	}
+
 	// The answer is stored even when the client left after the model returned: nothing else reads the turn.
 	storeCtx := context.WithoutCancel(ctx)
+
 	answer, err := s.repo.AppendMessage(storeCtx, userID, domain.Message{
 		ID: uuid.New(), ConversationID: conv.ID, Role: domain.RoleAssistant, Outcome: outcome,
 		Content: truncateRunes(strings.TrimSpace(res.Text), domain.MaxAnswer), CreatedAt: s.now(),
@@ -239,28 +271,35 @@ func (s *Service) Turn(ctx context.Context, userID int64, in TurnInput, ev TurnE
 		discard()
 		return s.failAfterStream(ctx, ev, err)
 	}
+
 	ids := state.take()
+
 	out := AnsweredMessage{Message: answer}
 	if len(ids) > 0 {
 		if err := s.repo.AttachProposals(storeCtx, userID, answer.ID, ids); err != nil {
 			return s.failAfterStream(ctx, ev, err)
 		}
+
 		for _, id := range ids {
 			p, err := s.repo.Proposal(storeCtx, userID, id)
 			if err != nil {
 				return s.failAfterStream(ctx, ev, err)
 			}
+
 			out.Proposals = append(out.Proposals, p)
 		}
 	}
+
 	s.logTurn(ctx, userID, conv.ID, string(outcome), res, now)
 	ev.Answer(out)
+
 	return nil
 }
 
 func (s *Service) failAfterStream(ctx context.Context, ev TurnEvents, err error) error {
 	s.log.ErrorContext(ctx, "assistant turn storage failed", "error", err)
 	ev.Error(fmt.Errorf("%w: %w", ErrTurnFailed, err))
+
 	return nil
 }
 

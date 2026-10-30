@@ -63,6 +63,7 @@ func parseManage(in manageRuleIn) (ids, error) {
 		{"category_id", in.CategoryID != ""}, {"payee_id", in.PayeeID != ""}, {"pattern", in.Pattern != ""},
 		{"match_type", in.MatchType != ""}, {"rule_ids", len(in.RuleIDs) > 0},
 	}
+
 	needed := map[manageRuleAction][]string{
 		"create_rule": {"name", "description_contains", "category_id"}, "change_rule": {"rule_id", "name", "description_contains", "category_id"},
 		"delete_rule": {"rule_id"}, "reorder_rules": {"rule_ids"}, "accept_suggestion": {"suggestion_id", "name"},
@@ -72,10 +73,13 @@ func parseManage(in manageRuleIn) (ids, error) {
 	if (in.Action == "create_rule" || in.Action == "change_rule") && in.PayeeID != "" {
 		needed = append(slices.Clone(needed), "payee_id")
 	}
+
 	if err := required(string(in.Action), fields, needed...); err != nil {
 		return ids{}, err
 	}
+
 	var p ids
+
 	var err error
 	for _, x := range []struct {
 		s, field string
@@ -88,13 +92,16 @@ func parseManage(in manageRuleIn) (ids, error) {
 			return ids{}, err
 		}
 	}
+
 	for _, s := range in.RuleIDs {
 		id, err := optionalID(s, "rule_ids")
 		if err != nil {
 			return ids{}, err
 		}
+
 		p.rules = append(p.rules, id)
 	}
+
 	return p, nil
 }
 
@@ -118,11 +125,14 @@ func manageRule(svc *app.Service, names Names, today func() time.Time) tool.Tool
 		if err != nil {
 			return tool.Preview{}, err
 		}
+
 		categories, payees, err := names(ctx, userID)
 		if err != nil {
 			return tool.Preview{}, err
 		}
+
 		pv := tool.Preview{Action: "manage_rule." + string(in.Action)}
+
 		text := tool.TextValue
 		switch in.Action {
 		case "create_rule", "change_rule":
@@ -130,30 +140,37 @@ func manageRule(svc *app.Service, names Names, today func() time.Time) tool.Tool
 			if err != nil {
 				return pv, err
 			}
+
 			rule.ID = p.rule
+
 			change := []tool.Change{{Field: "name", After: text(in.Name)}, {Field: "pattern", After: text(in.DescriptionContains)}, {Field: "category", After: text(categories[p.category])}}
 			if p.payee != uuid.Nil {
 				change = append(change, tool.Change{Field: "payee", After: text(payees[p.payee])})
 			}
+
 			pv.Target = "Rule " + in.Name
 			if in.Action == "change_rule" {
 				old, err := svc.Rule(ctx, userID, p.rule)
 				if err != nil {
 					return pv, err
 				}
+
 				rule.Enabled, rule.StopProcessing, rule.Priority = old.Enabled, old.StopProcessing, old.Priority
 				change[0].Before, change[1].Before, change[2].Before = text(old.Name), text(conditionsText(old.Conditions)), text(actionsText(old.Actions, categories, payees))
 			}
+
 			preview, err := svc.PreviewRule(ctx, userID, rule)
 			if err != nil {
 				return pv, err
 			}
+
 			pv.Changes = append(change, tool.Change{Field: "count", After: text(fmt.Sprintf("%d transactions of the last year", preview.WouldCategorize.Count))})
 		case "delete_rule":
 			old, err := svc.Rule(ctx, userID, p.rule)
 			if err != nil {
 				return pv, err
 			}
+
 			pv.Target, pv.Destructive = "Rule "+old.Name, true
 			pv.Changes = []tool.Change{{Field: "rule", Before: text(old.Name)}}
 		case "reorder_rules":
@@ -161,17 +178,22 @@ func manageRule(svc *app.Service, names Names, today func() time.Time) tool.Tool
 			if err != nil {
 				return pv, err
 			}
+
 			current := make([]uuid.UUID, len(rules))
+
 			byID := map[uuid.UUID]domain.Rule{}
 			for i, r := range rules {
 				current[i], byID[r.ID] = r.ID, r
 			}
+
 			sorted := slices.Clone(p.rules)
 			slices.SortFunc(sorted, compareIDs)
 			slices.SortFunc(current, compareIDs)
+
 			if !slices.Equal(sorted, current) {
 				return pv, &domain.FieldError{Field: "rule_ids", Message: "must list every rule exactly once", Err: domain.ErrValidation}
 			}
+
 			pv.Target = "Rule order"
 			for i, id := range p.rules {
 				if r := byID[id]; r.Priority != i+1 {
@@ -183,14 +205,17 @@ func manageRule(svc *app.Service, names Names, today func() time.Time) tool.Tool
 			if err != nil {
 				return pv, err
 			}
+
 			if s.State != app.SuggestionPending {
 				return pv, app.ErrSuggestionClosed
 			}
+
 			pv.Target = "Suggested rule " + conditionsText(s.Conditions)
 			if in.Action == "dismiss_suggestion" {
 				pv.Changes = []tool.Change{{Field: "status", Before: text(s.State), After: text(app.SuggestionDismissed)}}
 				break
 			}
+
 			pv.Changes = []tool.Change{
 				{Field: "rule", After: text(in.Name)}, {Field: "pattern", After: text(conditionsText(s.Conditions))},
 				{Field: "category", After: text(actionsText(s.Actions, categories, payees))},
@@ -200,6 +225,7 @@ func manageRule(svc *app.Service, names Names, today func() time.Time) tool.Tool
 			if err != nil {
 				return pv, err
 			}
+
 			pv.Target = "Categorization rules"
 			pv.Changes = []tool.Change{{Field: "count", After: text(fmt.Sprintf("%d uncategorized transactions", st.Uncategorized))}}
 		case "map_source_category":
@@ -207,9 +233,11 @@ func manageRule(svc *app.Service, names Names, today func() time.Time) tool.Tool
 			if err != nil {
 				return pv, err
 			}
+
 			if _, ok := categories[p.category]; !ok {
 				return pv, &domain.FieldError{Field: "category_id", Message: "unknown category", Err: domain.ErrValidation}
 			}
+
 			pv.Target = "Source category " + sc.Name
 			pv.Changes = []tool.Change{{Field: "category", Before: text(categories[sc.CategoryID]), After: text(categories[p.category])}}
 		case "create_alias", "change_alias", "delete_alias":
@@ -219,35 +247,44 @@ func manageRule(svc *app.Service, names Names, today func() time.Time) tool.Tool
 					return pv, err
 				}
 			}
+
 			if in.Action == "delete_alias" {
 				pv.Target, pv.Destructive = "Alias "+old.Pattern, true
 				pv.Changes = []tool.Change{{Field: "pattern", Before: text(old.Pattern)}, {Field: "payee", Before: text(payees[old.PayeeID])}}
+
 				break
 			}
+
 			if _, err := domain.NewAlias(in.alias(p.alias, p.payee)); err != nil {
 				return pv, err
 			}
+
 			if _, ok := payees[p.payee]; !ok {
 				return pv, &domain.FieldError{Field: "payee_id", Message: "unknown payee", Err: domain.ErrValidation}
 			}
+
 			pv.Target = "Alias " + in.Pattern
+
 			pv.Changes = []tool.Change{{Field: "pattern", After: text(in.Pattern)}, {Field: "kind", After: text(string(in.MatchType))}, {Field: "payee", After: text(payees[p.payee])}}
 			if in.Action == "change_alias" {
 				pv.Changes[0].Before, pv.Changes[1].Before, pv.Changes[2].Before = text(old.Pattern), text(string(old.MatchType)), text(payees[old.PayeeID])
 			}
 		}
+
 		return pv, nil
 	}, func(ctx context.Context, userID int64, in manageRuleIn) (manageRuleOut, error) {
 		p, err := parseManage(in)
 		if err != nil {
 			return manageRuleOut{}, err
 		}
+
 		switch in.Action {
 		case "create_rule", "change_rule":
 			rule, err := descriptionRule(in.Name, in.DescriptionContains, p.category, p.payee)
 			if err != nil {
 				return manageRuleOut{}, err
 			}
+
 			if in.Action == "create_rule" {
 				rule, err = svc.CreateRule(ctx, userID, rule)
 			} else {
@@ -255,9 +292,11 @@ func manageRule(svc *app.Service, names Names, today func() time.Time) tool.Tool
 				if oldErr != nil {
 					return manageRuleOut{}, oldErr
 				}
+
 				rule.ID, rule.Enabled, rule.StopProcessing = p.rule, old.Enabled, old.StopProcessing
 				rule, err = svc.ChangeRule(ctx, userID, rule)
 			}
+
 			return manageRuleOut{RuleID: rule.ID.String()}, err
 		case "delete_rule":
 			return manageRuleOut{Deleted: true}, svc.DeleteRule(ctx, userID, p.rule)
@@ -283,6 +322,7 @@ func manageRule(svc *app.Service, names Names, today func() time.Time) tool.Tool
 			a, err := svc.ChangeAlias(ctx, userID, in.alias(p.alias, p.payee))
 			return manageRuleOut{AliasID: a.ID.String()}, err
 		}
+
 		return manageRuleOut{Deleted: true}, svc.DeleteAlias(ctx, userID, p.alias)
 	})
 }
@@ -294,12 +334,15 @@ func findSuggestion(ctx context.Context, svc *app.Service, userID int64, id uuid
 		if err != nil {
 			return app.Suggestion{}, err
 		}
+
 		if i := slices.IndexFunc(items, func(s app.Suggestion) bool { return s.ID == id }); i >= 0 {
 			return items[i], nil
 		}
+
 		if next == nil {
 			return app.Suggestion{}, notFound()
 		}
+
 		r.After = next
 	}
 }
@@ -311,12 +354,15 @@ func findSourceCategory(ctx context.Context, svc *app.Service, userID int64, id 
 		if err != nil {
 			return app.SourceCategory{}, err
 		}
+
 		if i := slices.IndexFunc(items, func(c app.SourceCategory) bool { return c.ID == id }); i >= 0 {
 			return items[i], nil
 		}
+
 		if next == nil {
 			return app.SourceCategory{}, notFound()
 		}
+
 		r.After = next
 	}
 }

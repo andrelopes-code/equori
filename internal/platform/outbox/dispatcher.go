@@ -50,6 +50,7 @@ func (d *Dispatcher) Run(ctx context.Context) error {
 		return fmt.Errorf("acquire listen connection: %w", err)
 	}
 	defer conn.Release()
+
 	if _, err := conn.Exec(ctx, "LISTEN outbox"); err != nil {
 		return fmt.Errorf("listen outbox: %w", err)
 	}
@@ -59,19 +60,24 @@ func (d *Dispatcher) Run(ctx context.Context) error {
 		if _, err := d.drain(ctx); err != nil && ctx.Err() == nil {
 			d.log.ErrorContext(ctx, "outbox dispatch failed", "error", err)
 		}
+
 		if d.now().Sub(lastCleanup) >= cleanupInterval {
 			if err := d.cleanup(ctx); err != nil && ctx.Err() == nil {
 				d.log.ErrorContext(ctx, "outbox cleanup failed", "error", err)
 			}
+
 			lastCleanup = d.now()
 		}
 
 		waitCtx, cancel := context.WithTimeout(ctx, pollInterval)
 		_, err := conn.Conn().WaitForNotification(waitCtx)
+
 		cancel()
+
 		if ctx.Err() != nil {
 			return nil
 		}
+
 		if err != nil && !errors.Is(err, context.DeadlineExceeded) {
 			return fmt.Errorf("wait for outbox notification: %w", err)
 		}
@@ -84,6 +90,7 @@ func (d *Dispatcher) drain(ctx context.Context) (int, error) {
 	total := 0
 	for {
 		n, err := d.DispatchPending(ctx)
+
 		total += n
 		if err != nil || n == 0 {
 			return total, err
@@ -99,16 +106,19 @@ func (d *Dispatcher) DispatchPending(ctx context.Context) (int, error) {
 		if err != nil {
 			return delivered, err
 		}
+
 		for _, e := range events {
 			ok, err := d.deliver(ctx, s, e)
 			if err != nil {
 				return delivered, err
 			}
+
 			if ok {
 				delivered++
 			}
 		}
 	}
+
 	return delivered, nil
 }
 
@@ -124,9 +134,11 @@ func (d *Dispatcher) pending(ctx context.Context, s subscription) ([]Delivered, 
 	if err != nil {
 		return nil, fmt.Errorf("select pending %s events for %s: %w", s.eventType, s.consumer, err)
 	}
+
 	return pgx.CollectRows(rows, func(r pgx.CollectableRow) (Delivered, error) {
 		var e Delivered
 		err := r.Scan(&e.ID, &e.Type, &e.UserID, &e.AggregateID, &e.Payload, &e.OccurredAt)
+
 		return e, err
 	})
 }
@@ -137,6 +149,7 @@ func (d *Dispatcher) deliver(ctx context.Context, s subscription, e Delivered) (
 		if err := callHandler(ctx, s.handler, tx, e); err != nil {
 			return err
 		}
+
 		_, err := tx.Exec(ctx, `
 			INSERT INTO outbox_delivery (event_id, consumer, status, attempts, delivered_at)
 			VALUES ($1, $2, 'delivered', 1, $3)
@@ -144,11 +157,13 @@ func (d *Dispatcher) deliver(ctx context.Context, s subscription, e Delivered) (
 			SET status = 'delivered', attempts = outbox_delivery.attempts + 1,
 			    delivered_at = $3, next_attempt_at = NULL, last_error = NULL`,
 			e.ID, s.consumer, d.now())
+
 		return err
 	})
 	if handlerErr == nil {
 		return true, nil
 	}
+
 	if ctx.Err() != nil {
 		return false, ctx.Err()
 	}
@@ -166,7 +181,9 @@ func (d *Dispatcher) deliver(ctx context.Context, s subscription, e Delivered) (
 	if err != nil {
 		return false, fmt.Errorf("record failed delivery of %s to %s: %w", e.ID, s.consumer, err)
 	}
+
 	d.log.WarnContext(ctx, "outbox handler failed", "consumer", s.consumer, "event_id", e.ID, "error", handlerErr)
+
 	return false, nil
 }
 
@@ -178,6 +195,7 @@ func callHandler(ctx context.Context, h Handler, tx pgx.Tx, e Delivered) (err er
 			err = fmt.Errorf("handler panic: %v", r)
 		}
 	}()
+
 	return h(ctx, tx, e)
 }
 
@@ -189,5 +207,6 @@ func (d *Dispatcher) cleanup(ctx context.Context) error {
 		      SELECT 1 FROM outbox_delivery d
 		      WHERE d.event_id = e.id AND d.status IN ('retrying', 'failed'))`,
 		d.now().Add(-retention))
+
 	return err
 }

@@ -30,24 +30,31 @@ func (s *Service) SuggestForTransactions(ctx context.Context, userID int64, ids 
 	if err != nil {
 		return nil, false, err
 	}
+
 	if len(txs) != len(ids) {
 		return nil, false, ErrTransactionNotFound
 	}
+
 	items := make([]SuggestItem, len(txs))
 	for i, t := range txs {
 		if t.Class == "" {
 			return nil, false, ErrNotUncategorized
 		}
+
 		items[i] = SuggestItem{Description: t.Description, Class: t.Class}
 	}
+
 	out := make([]Suggestion, 0, len(items))
+
 	available := true
 	for start := 0; start < len(items); start += MaxSuggestions {
 		got, ok, err := s.Suggest(ctx, userID, items[start:min(start+MaxSuggestions, len(items))])
 		if err != nil {
 			return nil, false, err
 		}
+
 		out, available = append(out, got...), available && ok
 	}
+
 	return out, available, nil
 }

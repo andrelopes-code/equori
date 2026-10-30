@@ -15,12 +15,14 @@ func (r *Repository) InsertAttachment(ctx context.Context, a app.Attachment, con
 	if err != nil {
 		return app.Attachment{}, err
 	}
+
 	row, err := r.q.UpsertAttachment(ctx, UpsertAttachmentParams{
 		UserID: a.UserID, TransactionID: a.TransactionID, Sha256: a.SHA256, FileName: a.FileName, MediaType: a.MediaType,
 	})
 	if err != nil {
 		return app.Attachment{}, err
 	}
+
 	return app.Attachment{
 		ID: row.ID, UserID: row.UserID, TransactionID: row.TransactionID, FileName: row.FileName,
 		MediaType: row.MediaType, Size: int64(len(content)), SHA256: row.Sha256, CreatedAt: row.CreatedAt,
@@ -32,10 +34,12 @@ func (r *Repository) Attachments(ctx context.Context, userID int64, transactionI
 	if p.After != nil {
 		params.AfterCreated, params.AfterID = &p.After.CreatedAt, nullUUID(p.After.ID)
 	}
+
 	rows, err := r.q.ListAttachments(ctx, params)
 	if err != nil {
 		return nil, nil, err
 	}
+
 	items, next := pageOf(rows, p.Limit,
 		func(row ListAttachmentsRow) app.Attachment {
 			return app.Attachment{
@@ -46,6 +50,7 @@ func (r *Repository) Attachments(ctx context.Context, userID int64, transactionI
 		func(row ListAttachmentsRow) app.AttachmentKey {
 			return app.AttachmentKey{CreatedAt: row.CreatedAt, ID: row.ID}
 		})
+
 	return items, next, nil
 }
 
@@ -54,6 +59,7 @@ func (r *Repository) AttachmentContent(ctx context.Context, userID int64, id uui
 	if err != nil {
 		return app.AttachmentContent{}, notFound(err)
 	}
+
 	return app.AttachmentContent{FileName: row.FileName, MediaType: row.MediaType, Content: row.Content}, nil
 }
 
@@ -62,5 +68,6 @@ func (r *Repository) DeleteAttachment(ctx context.Context, userID int64, id uuid
 	if err != nil {
 		return notFound(err)
 	}
+
 	return r.q.DeleteUnreferencedBlob(ctx, DeleteUnreferencedBlobParams{UserID: userID, Sha256: sum})
 }

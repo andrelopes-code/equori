@@ -11,6 +11,7 @@ func rule(from string, closing, due int, assignment string) BillingCycleRule {
 	if err != nil {
 		panic(err)
 	}
+
 	return BillingCycleRule{EffectiveFrom: m, ClosingDay: closing, DueDay: due, Assignment: assignment, Adjustment: "following", Calendar: "br_banking"}
 }
 
@@ -19,15 +20,18 @@ func month(s string) ReferenceMonth {
 	if err != nil {
 		panic(err)
 	}
+
 	return m
 }
 
 func TestReferenceMonth(t *testing.T) {
 	t.Parallel()
+
 	m := month("2026-11")
 	if m.Add(2).String() != "2027-01" || m.Add(-11).String() != "2025-12" || !m.FirstDay().Equal(day("2026-11-01")) {
 		t.Fatalf("arithmetic on %s failed", m)
 	}
+
 	if _, err := ParseReferenceMonth("2026-13"); err == nil {
 		t.Fatal("month 13 accepted")
 	}
@@ -35,6 +39,7 @@ func TestReferenceMonth(t *testing.T) {
 
 func TestDatesFor(t *testing.T) {
 	t.Parallel()
+
 	tests := []struct {
 		rule         BillingCycleRule
 		month        string
@@ -57,10 +62,12 @@ func TestDatesFor(t *testing.T) {
 
 func TestStatementFor(t *testing.T) {
 	t.Parallel()
+
 	next := Rules{rule("2026-01", 3, 10, "next")}
 	closing := Rules{rule("2026-01", 3, 10, "closing")}
 	late := Rules{rule("2026-01", 31, 10, "next")}
 	lateClosing := Rules{rule("2026-01", 31, 10, "closing")}
+
 	tests := []struct {
 		rules    Rules
 		purchase string
@@ -84,11 +91,14 @@ func TestStatementFor(t *testing.T) {
 
 func TestStatementForRuleChange(t *testing.T) {
 	t.Parallel()
+
 	rules := Rules{rule("2026-01", 3, 10, "next"), rule("2026-12", 15, 22, "next")}
+
 	got, err := StatementFor(day("2026-11-10"), rules)
 	if err != nil || got.String() != "2026-12" {
 		t.Fatalf("StatementFor = %s, %v; want 2026-12", got, err)
 	}
+
 	if d := DatesFor(got, mustRule(t, rules, got)); d.Closing.Format(time.DateOnly) != "2026-12-15" {
 		t.Fatalf("closing = %s, want 2026-12-15", d.Closing.Format(time.DateOnly))
 	}
@@ -96,18 +106,22 @@ func TestStatementForRuleChange(t *testing.T) {
 
 func mustRule(t *testing.T, rules Rules, m ReferenceMonth) BillingCycleRule {
 	t.Helper()
+
 	r, err := rules.For(m)
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	return r
 }
 
 func TestNoBillingRule(t *testing.T) {
 	t.Parallel()
+
 	if _, err := StatementFor(day("2025-06-01"), Rules{rule("2026-01", 3, 10, "next")}); !errors.Is(err, ErrNoBillingRule) {
 		t.Fatalf("err = %v, want ErrNoBillingRule", err)
 	}
+
 	if _, err := (Rules{}).For(month("2026-01")); !errors.Is(err, ErrNoBillingRule) {
 		t.Fatalf("empty rules err = %v", err)
 	}
@@ -115,9 +129,11 @@ func TestNoBillingRule(t *testing.T) {
 
 func TestInstallmentStatement(t *testing.T) {
 	t.Parallel()
+
 	if got := InstallmentStatement(month("2026-11"), 3); got.String() != "2027-01" {
 		t.Fatalf("k=3: %s", got)
 	}
+
 	if got := InstallmentStatement(month("2026-11"), 10); got.String() != "2027-08" {
 		t.Fatalf("k=10: %s", got)
 	}
@@ -125,6 +141,7 @@ func TestInstallmentStatement(t *testing.T) {
 
 func TestSplitInstallments(t *testing.T) {
 	t.Parallel()
+
 	tests := []struct {
 		total int64
 		n     int
@@ -136,6 +153,7 @@ func TestSplitInstallments(t *testing.T) {
 	}
 	for _, tt := range tests {
 		parts := SplitInstallments(brl(t, tt.total), tt.n)
+
 		var sum int64
 		for i, p := range parts {
 			sum += p.Amount()
@@ -143,6 +161,7 @@ func TestSplitInstallments(t *testing.T) {
 				t.Errorf("split %d/%d part %d = %d, want %d", tt.total, tt.n, i, p.Amount(), tt.want[i])
 			}
 		}
+
 		if sum != tt.total {
 			t.Errorf("split %d/%d sums to %d", tt.total, tt.n, sum)
 		}
@@ -151,10 +170,12 @@ func TestSplitInstallments(t *testing.T) {
 
 func TestNewBillingCycleRule(t *testing.T) {
 	t.Parallel()
+
 	r, err := NewBillingCycleRule(BillingCycleRule{EffectiveFrom: month("2026-11"), ClosingDay: 3, DueDay: 10, Calendar: "weekend"})
 	if err != nil || r.Assignment != AssignNext || r.Adjustment != "following" || r.Calendar != "weekend" {
 		t.Fatalf("defaults = %+v, %v", r, err)
 	}
+
 	for field, in := range map[string]BillingCycleRule{
 		"calendar":               {ClosingDay: 3, DueDay: 10},
 		"closing_day":            {ClosingDay: 0, DueDay: 10},
@@ -169,6 +190,7 @@ func TestNewBillingCycleRule(t *testing.T) {
 
 func TestAllocate(t *testing.T) {
 	t.Parallel()
+
 	tests := []struct {
 		total  int64
 		shares []int64
@@ -181,6 +203,7 @@ func TestAllocate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		got := Allocate(tt.total, tt.shares)
+
 		var sum int64
 		for i := range got {
 			sum += got[i]
@@ -189,6 +212,7 @@ func TestAllocate(t *testing.T) {
 				break
 			}
 		}
+
 		if sum != tt.total {
 			t.Errorf("Allocate(%d, %v) sums to %d", tt.total, tt.shares, sum)
 		}
@@ -198,7 +222,9 @@ func TestAllocate(t *testing.T) {
 // A87: the closing date counted back from the nominal due date, before any calendar shift.
 func TestDatesForBeforeDue(t *testing.T) {
 	t.Parallel()
+
 	r := rule("2026-01", 0, 5, "next")
+
 	r.ClosingMode, r.ClosingDaysBeforeDue = ClosingBeforeDue, 7
 	for ref, want := range map[string][2]string{
 		"2026-09": {"2026-08-29", "2026-09-05"},
@@ -214,6 +240,7 @@ func TestDatesForBeforeDue(t *testing.T) {
 
 func TestNewBillingCycleRuleClosingModes(t *testing.T) {
 	t.Parallel()
+
 	for name, tc := range map[string]struct {
 		r     BillingCycleRule
 		field string
@@ -224,6 +251,7 @@ func TestNewBillingCycleRuleClosingModes(t *testing.T) {
 		"unknown closing adjustment": {BillingCycleRule{DueDay: 5, ClosingDay: 28, ClosingAdjustment: "sideways"}, "closing_adjustment"},
 	} {
 		_, err := NewBillingCycleRule(tc.r)
+
 		var fe *FieldError
 		if !errors.As(err, &fe) || fe.Field != tc.field {
 			t.Errorf("%s: err = %v, want a field error on %s", name, err, tc.field)

@@ -11,6 +11,7 @@ func month(s string) time.Time { return day(s + "-01") }
 
 func TestAverageMonths(t *testing.T) {
 	t.Parallel()
+
 	tests := []struct {
 		first string
 		want  int
@@ -29,6 +30,7 @@ func TestAverageMonths(t *testing.T) {
 
 func TestDivide(t *testing.T) {
 	t.Parallel()
+
 	tests := []struct {
 		total int64
 		n     int
@@ -48,6 +50,7 @@ func TestDivide(t *testing.T) {
 
 func TestPlanRows(t *testing.T) {
 	t.Parallel()
+
 	food, market, restaurant := uuid.MustParse("10000000-0000-4000-8000-000000000001"),
 		uuid.MustParse("10000000-0000-4000-8000-000000000002"), uuid.MustParse("10000000-0000-4000-8000-000000000003")
 	pets, closed, quiet := uuid.MustParse("10000000-0000-4000-8000-000000000004"),
@@ -75,10 +78,12 @@ func TestPlanRows(t *testing.T) {
 		FirstPosting: day("2026-08-15"),
 		HasPostings:  true,
 	}
+
 	rows, n := PlanRows(in)
 	if n != 3 {
 		t.Fatalf("average months = %d, want 3", n)
 	}
+
 	want := []PlanRow{
 		{CategoryID: food, BudgetID: in.Budgets[0].ID, Planned: 180000, LastMonth: 150000, Average: Divide(240000, 3), Counted: true,
 			NextChange: month("2027-01"), HasNextChange: true},
@@ -88,6 +93,7 @@ func TestPlanRows(t *testing.T) {
 	if len(rows) != len(want) {
 		t.Fatalf("rows = %+v, want %+v", rows, want)
 	}
+
 	for i := range want {
 		if rows[i] != want[i] {
 			t.Errorf("row %d = %+v, want %+v", i, rows[i], want[i])
@@ -97,7 +103,9 @@ func TestPlanRows(t *testing.T) {
 
 func TestPlanRowsWithoutHistory(t *testing.T) {
 	t.Parallel()
+
 	food := uuid.MustParse("10000000-0000-4000-8000-000000000001")
+
 	rows, n := PlanRows(PlanInput{Month: month("2026-11"), Categories: []PlanCategory{{ID: food, Open: true}}})
 	if n != 0 || len(rows) != 0 {
 		t.Fatalf("rows = %+v, months = %d, want none", rows, n)

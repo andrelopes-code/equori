@@ -11,6 +11,7 @@ func month(s string) time.Time {
 	if err != nil {
 		panic(err)
 	}
+
 	return m
 }
 
@@ -23,6 +24,7 @@ func facts(from string, n int, fill func(i int, f *MonthFacts)) []MonthFacts {
 			fill(i, &out[i])
 		}
 	}
+
 	return out
 }
 
@@ -35,6 +37,7 @@ func repeat(r Ratio, n int) []Ratio {
 	for i := range out {
 		out[i] = r
 	}
+
 	return out
 }
 
@@ -63,7 +66,9 @@ func TestIndicatorMonths(t *testing.T) {
 	t.Parallel()
 	t.Run("S154", func(t *testing.T) {
 		t.Parallel()
+
 		got := indicatorMonths(s154(), month("2026-04"))
+
 		want := IndicatorMonth{
 			Month: month("2026-10"), Income: 500000, Expense: 285000, Committed: 5000, DebtService: 125000,
 			Liquid: 1790000, Liabilities: 640000, HasMeans: true, MeanIncome: 500000, MeanExpense: 267500,
@@ -73,26 +78,33 @@ func TestIndicatorMonths(t *testing.T) {
 		if len(got) != 12 || !reflect.DeepEqual(got[11], want) {
 			t.Fatalf("last month = %+v, want %+v", got[len(got)-1], want)
 		}
+
 		if !got[0].Month.Equal(month("2025-11")) {
 			t.Fatalf("first month = %v", got[0].Month)
 		}
 	})
 	t.Run("S154 series", func(t *testing.T) {
 		t.Parallel()
+
 		got := indicatorMonths(s154(), month("2026-04"))
+
 		var savings, trailing []Ratio
 		for _, m := range got {
 			savings, trailing = append(savings, m.SavingsRate), append(trailing, m.TrailingSavingsRate)
 		}
+
 		wantSavings := append(append(repeat(because(ReasonNoIncome), 5), repeat(bp(5000), 3)...), repeat(bp(4300), 4)...)
 		wantTrailing := append(repeat(because(ReasonInsufficientHistory), 8), bp(5000), bp(4825), bp(4720), bp(4650))
+
 		if !reflect.DeepEqual(savings, wantSavings) {
 			t.Errorf("savings rates = %v, want %v", savings, wantSavings)
 		}
+
 		if !reflect.DeepEqual(trailing, wantTrailing) {
 			t.Errorf("trailing savings rates = %v, want %v", trailing, wantTrailing)
 		}
 	})
+
 	cases := []struct {
 		name  string
 		facts []MonthFacts
@@ -175,10 +187,12 @@ func TestIndicatorMonths(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			t.Parallel()
+
 			got := indicatorMonths(c.facts, c.first)
 			if len(got) != 12 || !got[11].Month.Equal(month("2026-10")) {
 				t.Fatalf("months = %+v", got)
 			}
+
 			c.check(t, got[11])
 		})
 	}

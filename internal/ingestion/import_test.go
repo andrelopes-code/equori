@@ -26,17 +26,21 @@ type batchView struct {
 
 func mustImport(t *testing.T, h *apitest.Harness, account, format, name string, content []byte) batchView {
 	t.Helper()
+
 	r := h.Import(account, format, name, content)
 	if r.Status != http.StatusCreated {
 		t.Fatalf("import status %d: %s", r.Status, r.Body)
 	}
+
 	var b batchView
 	r.Decode(t, &b)
 	var located batchView
 	h.MustDo(http.MethodGet, r.Header.Get("Location"), nil, http.StatusOK, &located)
+
 	if located.ID != b.ID {
 		t.Fatalf("Location %q resolves to %q", r.Header.Get("Location"), located.ID)
 	}
+
 	return b
 }
 
@@ -47,10 +51,12 @@ func counts(b batchView) string {
 
 func transactionCount(t *testing.T, h *apitest.Harness) int {
 	t.Helper()
+
 	var n int
 	if err := h.Pool.QueryRow(t.Context(), `SELECT count(*) FROM ledger_transaction`).Scan(&n); err != nil {
 		t.Fatal(err)
 	}
+
 	return n
 }
 
@@ -68,18 +74,22 @@ func TestImportOFX(t *testing.T) {
 	if got := counts(b); got != "received 3 ignored 0 matched 1 created 2 review 0" || b.Balance.Status != "recorded" {
 		t.Fatalf("first import: %s, balance %+v", got, b.Balance)
 	}
+
 	if m := h.Transaction(manual); m.Postings[0].Status != "reconciled" {
 		t.Fatalf("matched entry status = %q, want reconciled by the file balance", m.Postings[0].Status)
 	}
+
 	var status struct {
 		LastReconciledOn string `json:"last_reconciled_on"`
 	}
 	h.MustDo(http.MethodGet, "/api/v1/accounts/"+checking+"/reconciliation", nil, http.StatusOK, &status)
+
 	if status.LastReconciledOn != "2026-10-31" {
 		t.Fatalf("reconciliation = %+v", status)
 	}
 
 	before := transactionCount(t, h)
+
 	again := mustImport(t, h, checking, "ofx", "outubro.ofx", file)
 	if got := counts(again); got != "received 3 ignored 3 matched 0 created 0 review 0" || transactionCount(t, h) != before {
 		t.Fatalf("second import: %s", got)
@@ -95,6 +105,7 @@ func TestImportCSVWithIdenticalLines(t *testing.T) {
 		"date_column": "Data", "date_layout": "DD/MM/YYYY", "amount_column": "Valor", "decimal_separator": ",", "description_column": "Descrição",
 		"delimiter": "semicolon",
 	}, http.StatusOK, nil)
+
 	lines := func(n int) []byte {
 		return []byte("Data;Valor;Descrição\n" + strings.Repeat("07/10/2026;-8,50;Padaria\n", n))
 	}
@@ -120,10 +131,13 @@ func TestImportResumesAnInterruptedRecord(t *testing.T) {
 	checking := h.Account("Nubank checking", "asset", "checking", nil)
 	file := apitest.OFX("", apitest.OFXLine{Date: "20261012", Amount: "-120.00", FITID: "a2", Name: "Farmácia"})
 	mustImport(t, h, checking, "ofx", "a.ofx", file)
+
 	if _, err := h.Pool.Exec(t.Context(), `UPDATE ingestion_external_record SET state = 'received', transaction_id = NULL`); err != nil {
 		t.Fatal(err)
 	}
+
 	before := transactionCount(t, h)
+
 	b := mustImport(t, h, checking, "ofx", "a.ofx", file)
 	if got := counts(b); got != "received 1 ignored 0 matched 0 created 1 review 0" || transactionCount(t, h) != before {
 		t.Fatalf("resumed import: %s, transactions %d → %d", got, before, transactionCount(t, h))
@@ -138,12 +152,16 @@ func TestImportResumesAnInterruptedMatch(t *testing.T) {
 	checking := h.Account("Nubank checking", "asset", "checking", nil)
 	food := h.Account("Food", "expense", "", nil)
 	h.Record("2026-10-12", apitest.Posting(checking, -12000), apitest.Posting(food, 12000))
+
 	file := apitest.OFX("", apitest.OFXLine{Date: "20261012", Amount: "-120.00", FITID: "a2", Name: "Farmácia"})
 	mustImport(t, h, checking, "ofx", "a.ofx", file)
+
 	if _, err := h.Pool.Exec(t.Context(), `UPDATE ingestion_external_record SET state = 'received', transaction_id = NULL`); err != nil {
 		t.Fatal(err)
 	}
+
 	before := transactionCount(t, h)
+
 	b := mustImport(t, h, checking, "ofx", "a.ofx", file)
 	if got := counts(b); got != "received 1 ignored 0 matched 1 created 0 review 0" || transactionCount(t, h) != before {
 		t.Fatalf("resumed import: %s, transactions %d → %d", got, before, transactionCount(t, h))
@@ -157,6 +175,7 @@ func TestImportNeverLinksOneTransactionTwice(t *testing.T) {
 	checking := h.Account("Nubank checking", "asset", "checking", nil)
 	food := h.Account("Food", "expense", "", nil)
 	h.Record("2026-10-12", apitest.Posting(checking, -12000), apitest.Posting(food, 12000))
+
 	b := mustImport(t, h, checking, "ofx", "a.ofx", apitest.OFX("", apitest.OFXLine{Date: "20261012", Amount: "-120.00", FITID: "x1", Name: "Farmácia"}, apitest.OFXLine{Date: "20261012", Amount: "-120.00", FITID: "x2", Name: "Farmácia"}))
 	if got := counts(b); got != "received 2 ignored 0 matched 1 created 1 review 0" {
 		t.Fatalf("import: %s", got)
@@ -168,6 +187,7 @@ func TestImportSkipsAFutureBalance(t *testing.T) {
 	t.Parallel()
 	h := apitest.New(t, apitest.Today("2026-11-05"))
 	checking := h.Account("Nubank checking", "asset", "checking", nil)
+
 	b := mustImport(t, h, checking, "ofx", "a.ofx", apitest.OFX("<LEDGERBAL><BALAMT>-120.00<DTASOF>20261130</LEDGERBAL>", apitest.OFXLine{Date: "20261012", Amount: "-120.00", FITID: "a2", Name: "Farmácia"}))
 	if b.Balance.Status != "skipped" || b.Balance.Reason == "" || b.Counts.Created != 1 {
 		t.Fatalf("batch = %+v", b)
@@ -188,9 +208,11 @@ func TestImportRejectsBadRequests(t *testing.T) {
 		Items []any `json:"items"`
 	}
 	h.MustDo(http.MethodGet, "/api/v1/import-batches", nil, http.StatusOK, &list)
+
 	if len(list.Items) != 0 {
 		t.Fatalf("rejected files left batches: %v", list.Items)
 	}
+
 	other := h.Login("other@example.com")
 	h.ExpectProblem(h.UploadAs(other, "/api/v1/accounts/"+checking+"/imports", map[string]string{"format": "ofx"}, "a.ofx", apitest.OFX("")),
 		http.StatusNotFound, "not_found", "")

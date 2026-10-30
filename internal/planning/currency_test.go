@@ -37,15 +37,18 @@ func TestSchedulesInAnotherCurrency(t *testing.T) {
 		} `json:"items"`
 	}
 	h.MustDo(http.MethodGet, "/api/v1/occurrences?from=2026-11-01&to=2026-11-30&schedule_id="+created.ID, nil, http.StatusOK, &occ)
+
 	if len(occ.Items) != 1 || occ.Items[0].ExpectedAmount["currency"] != "USD" || occ.Items[0].ExpectedAmount["amount"] != float64(50000) {
 		t.Fatalf("occurrences = %+v", occ.Items)
 	}
+
 	h.Record("2026-11-05",
 		map[string]any{"account_id": wise, "amount": usd(-50000), "weight": apitest.BRL(-275000)},
 		apitest.Posting(f.rent, 275000),
 	)
 	h.Dispatch()
 	h.MustDo(http.MethodGet, "/api/v1/occurrences?from=2026-11-01&to=2026-11-30&schedule_id="+created.ID, nil, http.StatusOK, &occ)
+
 	if occ.Items[0].State != "realized" {
 		t.Fatalf("USD occurrence not realized: %+v", occ.Items)
 	}
@@ -57,6 +60,7 @@ func TestSchedulesInAnotherCurrency(t *testing.T) {
 		} `json:"points"`
 	}
 	h.MustDo(http.MethodGet, "/api/v1/accounts/"+wise+"/projection?to=2026-12-31", nil, http.StatusOK, &projection)
+
 	if projection.Opening["currency"] != "USD" || len(projection.Points) != 1 || projection.Points[0].Amount["currency"] != "USD" || projection.Points[0].Amount["amount"] != float64(-50000) {
 		t.Fatalf("projection = %+v", projection)
 	}
@@ -100,6 +104,7 @@ func TestS66ForeignSubscriptionCommitted(t *testing.T) {
 	f.price(t, "2026-10-30", "5.5")
 	var out committedOut
 	h.MustDo(http.MethodGet, "/api/v1/commitments?month=2026-12", nil, http.StatusOK, &out)
+
 	if out.Occurrences["amount"] != float64(5494) || out.Occurrences["currency"] != "BRL" || out.Total["amount"] != float64(5494) ||
 		len(out.Prices) != 1 || out.Prices[0].Value != "5.5" || out.Prices[0].Date != "2026-10-30" {
 		t.Fatalf("committed = %+v", out)
@@ -129,6 +134,7 @@ func TestS67GoalInForeignCurrency(t *testing.T) {
 	h.MustDo(http.MethodPost, "/api/v1/goals", map[string]any{
 		"name": "Trip", "target": usd(200000), "due_on": "2027-06-30", "account_ids": []string{wise, f.checking},
 	}, http.StatusCreated, &g)
+
 	if g.Current["amount"] != float64(150000) || g.Current["currency"] != "USD" || g.Remaining["amount"] != float64(50000) || g.ProgressBP != 7500 || len(g.Prices) != 1 || g.Prices[0].Value != "5.5" {
 		t.Fatalf("goal = %+v", g)
 	}
@@ -150,6 +156,7 @@ func TestS121GoalOverBrokerage(t *testing.T) {
 		map[string]any{"account_id": shares, "amount": map[string]any{"amount": 10, "currency": "MXRF11"}, "weight": apitest.BRL(10000)},
 		apitest.Posting(f.checking, -10000),
 	)
+
 	post := func(name string, accounts ...string) apitest.Response {
 		return h.Do(http.MethodPost, "/api/v1/goals", map[string]any{"name": name, "target": apitest.BRL(100000), "due_on": "2027-06-30", "account_ids": accounts})
 	}
@@ -178,22 +185,28 @@ func TestS121GoalOverBrokerage(t *testing.T) {
 		g.Parts[1].Value["amount"] != float64(10500) || g.Parts[1].Value["currency"] != "BRL" {
 		t.Fatalf("parts = %+v", g.Parts)
 	}
+
 	if g.Current["amount"] != float64(60500) || g.Current["currency"] != "BRL" || g.ProgressBP != 6050 || len(g.Prices) != 1 || g.Prices[0].Instrument != "MXRF11" || g.Prices[0].Value != "10.5" {
 		t.Fatalf("goal over the brokerage = %+v", g)
 	}
+
 	var list struct {
 		Items []struct {
 			Name string `json:"name"`
 		} `json:"items"`
 	}
 	h.MustDo(http.MethodGet, "/api/v1/goals", nil, http.StatusOK, &list)
+
 	if len(list.Items) != 1 {
 		t.Fatalf("goals = %+v", list.Items)
 	}
+
 	h.ExpectProblem(post("Both", xp, shares), http.StatusUnprocessableEntity, "validation_failed", "account_ids")
 	h.MustDo(http.MethodPost, "/api/v1/goals", map[string]any{"name": "Shares only", "target": apitest.BRL(100000), "due_on": "2027-06-30", "account_ids": []string{shares}}, http.StatusCreated, &g)
+
 	if g.Current["amount"] != float64(10500) {
 		t.Errorf("goal over the securities = %+v", g)
 	}
+
 	h.ExpectProblem(h.Do(http.MethodGet, "/api/v1/accounts/"+xp+"/projection?to=2026-12-31", nil), http.StatusUnprocessableEntity, "currency_unsupported", "id")
 }

@@ -29,6 +29,7 @@ func (b reimbursementBooks) candidates(t *testing.T, id string) candidateList {
 	t.Helper()
 	var out candidateList
 	b.h.MustDo(http.MethodGet, "/api/v1/transactions/"+id+"/reimbursement-candidates", nil, http.StatusOK, &out)
+
 	return out
 }
 
@@ -37,6 +38,7 @@ func (c candidateList) ids() []string {
 	for i, item := range c.Items {
 		out[i] = item.Transaction.ID
 	}
+
 	return out
 }
 
@@ -54,6 +56,7 @@ func TestReimbursementCandidatesRanking_S114(t *testing.T) {
 	if want := []string{older, newest, other}; !slices.Equal(got.ids(), want) {
 		t.Fatalf("candidates = %v, want %v", got.ids(), want)
 	}
+
 	if got.Items[0].Remaining.Amount != 1500 || got.Items[0].Remaining.Currency != "BRL" || got.Items[0].Allocated.Amount != 0 {
 		t.Fatalf("first = %+v, want remaining 1500 BRL and nothing allocated", got.Items[0])
 	}
@@ -74,6 +77,7 @@ func TestReimbursementCandidatesRemaining_S114(t *testing.T) {
 	if want := []string{whole, partial}; !slices.Equal(got.ids(), want) {
 		t.Fatalf("candidates = %v, want %v", got.ids(), want)
 	}
+
 	if got.Items[1].Remaining.Amount != 500 {
 		t.Fatalf("remaining of the partly reimbursed expense = %d, want 500", got.Items[1].Remaining.Amount)
 	}
@@ -106,6 +110,7 @@ func TestReimbursementCandidatesExclusions_S114(t *testing.T) {
 // S114: the suggestion is the only combination that adds up to the amount received (A117).
 func TestReimbursementCandidatesSuggestion_S114(t *testing.T) {
 	t.Parallel()
+
 	tests := []struct {
 		name     string
 		expenses []int64
@@ -121,10 +126,12 @@ func TestReimbursementCandidatesSuggestion_S114(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			b := newReimbursementBooks(t)
+
 			var ids []string
 			for i, amount := range tt.expenses {
 				ids = append(ids, b.expense("2026-10-1"+string(rune('0'+i)), amount))
 			}
+
 			inflow := b.inflow("2026-10-20", tt.inflow)
 
 			got := b.candidates(t, inflow)
@@ -133,8 +140,10 @@ func TestReimbursementCandidatesSuggestion_S114(t *testing.T) {
 			for _, i := range tt.want {
 				want = append(want, ids[i])
 			}
+
 			slices.Sort(want)
 			slices.Sort(got.Suggestion)
+
 			if !slices.Equal(got.Suggestion, want) {
 				t.Fatalf("suggestion = %v, want %v", got.Suggestion, want)
 			}
@@ -156,9 +165,11 @@ func TestReimbursementCandidatesAllocated_S114(t *testing.T) {
 	if want := []string{old, recent}; !slices.Equal(got.ids(), want) {
 		t.Fatalf("candidates = %v, want %v", got.ids(), want)
 	}
+
 	if got.Items[0].Allocated.Amount != 1000 || got.Items[0].Remaining.Amount != 1000 || got.Items[1].Allocated.Amount != 0 {
 		t.Fatalf("items = %+v", got.Items)
 	}
+
 	if got.Suggestion != nil {
 		t.Fatalf("suggestion = %v, want none", got.Suggestion)
 	}

@@ -7,11 +7,14 @@ import (
 
 func TestNewProfile(t *testing.T) {
 	t.Parallel()
+
 	base := Profile{HeaderRows: 1, DateColumn: "Data", DateLayout: LayoutDayMonthYear, AmountColumn: "Valor", DecimalSeparator: ",", DescriptionColumn: "Descrição"}
+
 	p, err := NewProfile(base)
 	if err != nil || p.Delimiter != "," || p.AmountSign != SignAsIs {
 		t.Fatalf("defaults: %+v, %v", p, err)
 	}
+
 	tests := []struct {
 		name  string
 		edit  func(*Profile)
@@ -34,11 +37,13 @@ func TestNewProfile(t *testing.T) {
 		p := base
 		tc.edit(&p)
 		_, err := NewProfile(p)
+
 		var fe *FieldError
 		if !errors.As(err, &fe) || fe.Field != tc.field || !errors.Is(err, ErrValidation) {
 			t.Errorf("%s: err = %v, want field %s", tc.name, err, tc.field)
 		}
 	}
+
 	positional := Profile{DateColumn: "1", DateLayout: LayoutISO, DebitColumn: "3", CreditColumn: "4", DecimalSeparator: ".", DescriptionColumn: "2"}
 	if _, err := NewProfile(positional); err != nil {
 		t.Fatalf("positional profile: %v", err)
@@ -47,6 +52,7 @@ func TestNewProfile(t *testing.T) {
 
 func TestDateLayoutParse(t *testing.T) {
 	t.Parallel()
+
 	for _, c := range []struct {
 		layout DateLayout
 		in     string

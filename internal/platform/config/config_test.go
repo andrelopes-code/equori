@@ -10,6 +10,7 @@ import (
 
 func TestLoad(t *testing.T) {
 	t.Parallel()
+
 	tests := []struct {
 		name    string
 		env     map[string]string
@@ -113,6 +114,7 @@ func TestLoad(t *testing.T) {
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("err = %v, wantErr %v", err, tt.wantErr)
 			}
+
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Fatalf("got %+v, want %+v", got, tt.want)
 			}
@@ -122,12 +124,14 @@ func TestLoad(t *testing.T) {
 
 func TestLoadNamedTimeZone(t *testing.T) {
 	t.Parallel()
+
 	cfg, err := Load(func(k string) string {
 		return map[string]string{"EQUORI_DATABASE_URL": "postgres://x", "EQUORI_TIMEZONE": "America/Sao_Paulo"}[k]
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if cfg.TimeZone.String() != "America/Sao_Paulo" {
 		t.Fatalf("TimeZone = %s", cfg.TimeZone)
 	}
@@ -136,6 +140,7 @@ func TestLoadNamedTimeZone(t *testing.T) {
 // ADR 008: integration keys are 32 bytes of standard base64.
 func TestLoadSecretKeys(t *testing.T) {
 	t.Parallel()
+
 	current := "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE="
 	previous := "AgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI="
 	base := func(kv ...string) func(string) string {
@@ -143,15 +148,19 @@ func TestLoadSecretKeys(t *testing.T) {
 		for i := 0; i < len(kv); i += 2 {
 			env[kv[i]] = kv[i+1]
 		}
+
 		return func(k string) string { return env[k] }
 	}
+
 	got, err := Load(base("EQUORI_SECRET_KEY", current, "EQUORI_SECRET_KEY_PREVIOUS", previous))
 	if err != nil || len(got.SecretKey) != 32 || got.SecretKey[0] != 1 || len(got.PreviousSecretKey) != 32 || got.PreviousSecretKey[0] != 2 {
 		t.Fatalf("keys = %x, %x, %v", got.SecretKey, got.PreviousSecretKey, err)
 	}
+
 	if got, err := Load(base()); err != nil || got.SecretKey != "" {
 		t.Fatalf("without keys = %+v, %v", got, err)
 	}
+
 	for name, getenv := range map[string]func(string) string{
 		"short key":                base("EQUORI_SECRET_KEY", "AQEB"),
 		"not base64":               base("EQUORI_SECRET_KEY", "not base64!"),
@@ -165,12 +174,14 @@ func TestLoadSecretKeys(t *testing.T) {
 
 func TestLoadPriceFeeds(t *testing.T) {
 	t.Parallel()
+
 	cfg, err := Load(func(k string) string {
 		return map[string]string{"EQUORI_DATABASE_URL": "postgres://x", "EQUORI_PRICE_FEEDS": " bcb_ptax, ,ecb"}[k]
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if want := []string{"bcb_ptax", "ecb"}; !reflect.DeepEqual(cfg.PriceFeeds, want) {
 		t.Fatalf("PriceFeeds = %v, want %v", cfg.PriceFeeds, want)
 	}

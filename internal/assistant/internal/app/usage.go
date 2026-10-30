@@ -37,6 +37,7 @@ func (s *Service) Record(ctx context.Context, userID int64, a Attempt) error {
 	if a.Outcome == "quota" {
 		cooling = a.CoolingUntil
 	}
+
 	return s.repo.AddUsage(ctx, domain.UsageEntry{
 		UserID: userID, Day: s.today(), ProviderID: a.ProviderID, Model: a.Model, UseID: a.UseID,
 		Failed: a.Outcome != "ok", Quota: a.Outcome == "quota",
@@ -55,6 +56,7 @@ func (s *Service) UsageByDay(ctx context.Context, userID int64, from, to time.Ti
 	if to.Before(from) || to.Sub(from) > (MaxUsageRangeDays-1)*24*time.Hour {
 		return nil, ErrInvalidUsageRange
 	}
+
 	return s.repo.UsageByDay(ctx, userID, from, to)
 }
 
@@ -72,15 +74,19 @@ func (s *Service) Usage(ctx context.Context, userID int64) ([]UsageRow, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	today := s.today()
+
 	summaries, err := s.repo.UsageSince(ctx, userID, today, today.AddDate(0, 0, 1-UsageDays))
 	if err != nil {
 		return nil, err
 	}
+
 	limits, err := s.repo.Limits(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
+
 	type key struct{ provider, model string }
 	rows := map[key]*UsageRow{}
 	var order []key
@@ -89,49 +95,62 @@ func (s *Service) Usage(ctx context.Context, userID int64) ([]UsageRow, error) {
 		if r, ok := rows[k]; ok {
 			return r
 		}
+
 		rows[k] = &UsageRow{Usage: domain.UsageSummary{ProviderID: provider, Model: model}, Limit: domain.Limit{ProviderID: provider, Model: model}}
 		order = append(order, k)
+
 		return rows[k]
 	}
+
 	now := s.now()
 	for _, u := range summaries {
 		if !u.CoolingUntil.After(now) {
 			u.CoolingUntil = time.Time{}
 		}
+
 		row(u.ProviderID, u.Model).Usage = u
 	}
+
 	for _, l := range limits {
 		row(l.ProviderID, l.Model).Limit = l
 	}
+
 	rank := func(id string) int {
 		i := slices.IndexFunc(providers, func(p ProviderView) bool { return p.ID == id })
 		if i < 0 {
 			return len(providers)
 		}
+
 		return i
 	}
 	slices.SortStableFunc(order, func(a, b key) int {
 		if d := rank(a.provider) - rank(b.provider); d != 0 {
 			return d
 		}
+
 		if a.model < b.model {
 			return -1
 		}
+
 		if a.model > b.model {
 			return 1
 		}
+
 		return 0
 	})
+
 	out := make([]UsageRow, 0, len(order))
 	for _, k := range order {
 		i := rank(k.provider)
 		if i == len(providers) {
 			continue // a provider deleted between the reads
 		}
+
 		r := rows[k]
 		r.Provider = providers[i]
 		out = append(out, *r)
 	}
+
 	return out, nil
 }
 
@@ -142,14 +161,17 @@ func (s *Service) SetLimit(ctx context.Context, userID int64, providerID, model 
 	if err != nil {
 		return err
 	}
+
 	if !slices.ContainsFunc(s.instance, func(in Instance) bool { return in.ID == providerID }) {
 		id, err := uuid.Parse(providerID)
 		if err != nil {
 			return domain.ErrProviderNotFound
 		}
+
 		if _, err := s.repo.Provider(ctx, userID, id); err != nil {
 			return err
 		}
 	}
+
 	return s.repo.SetLimit(ctx, userID, l)
 }

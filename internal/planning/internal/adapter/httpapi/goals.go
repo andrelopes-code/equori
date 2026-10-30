@@ -17,6 +17,7 @@ func toGoalAPI(g app.GoalView) Goal {
 	if g.Trailing != nil {
 		out.TrailingReturn = &TrailingReturn{PeriodMonths: g.Trailing.Months, AnnualBp: g.Trailing.BP}
 	}
+
 	return out
 }
 
@@ -24,6 +25,7 @@ func toGoalPartsAPI(ps []app.ValuedPart) *[]GoalPart {
 	if len(ps) == 0 {
 		return nil
 	}
+
 	out := make([]GoalPart, len(ps))
 	for i, p := range ps {
 		out[i] = GoalPart{
@@ -31,6 +33,7 @@ func toGoalPartsAPI(ps []app.ValuedPart) *[]GoalPart {
 			Quantity: toMoneyAPI(p.Quantity.Amount(), p.Quantity.Currency()), Value: toMoneyAPI(p.Value.Amount(), p.Value.Currency()),
 		}
 	}
+
 	return &out
 }
 
@@ -39,10 +42,12 @@ func (s *Server) CreateGoal(ctx context.Context, req CreateGoalRequestObject) (C
 	if err != nil {
 		return nil, err
 	}
+
 	g, err := s.svc.CreateGoal(ctx, auth.MustUserID(ctx), req.Body.Name, target, req.Body.DueOn.Time, req.Body.AccountIds)
 	if err != nil {
 		return nil, err
 	}
+
 	return CreateGoal201JSONResponse{Body: toGoalAPI(g), Headers: CreateGoal201ResponseHeaders{Location: location("/goals/", g.ID)}}, nil
 }
 
@@ -53,15 +58,19 @@ func (s *Server) UpdateGoal(ctx context.Context, req UpdateGoalRequestObject) (U
 		if err != nil {
 			return nil, err
 		}
+
 		patch.Target = &target
 	}
+
 	if req.Body.DueOn != nil {
 		patch.DueOn = &req.Body.DueOn.Time
 	}
+
 	g, err := s.svc.UpdateGoal(ctx, auth.MustUserID(ctx), req.Id, patch)
 	if err != nil {
 		return nil, err
 	}
+
 	return UpdateGoal200JSONResponse(toGoalAPI(g)), nil
 }
 
@@ -69,6 +78,7 @@ func (s *Server) DeleteGoal(ctx context.Context, req DeleteGoalRequestObject) (D
 	if err := s.svc.DeleteGoal(ctx, auth.MustUserID(ctx), req.Id); err != nil {
 		return nil, err
 	}
+
 	return DeleteGoal204Response{}, nil
 }
 
@@ -77,6 +87,7 @@ func (s *Server) GetGoal(ctx context.Context, req GetGoalRequestObject) (GetGoal
 	if err != nil {
 		return nil, err
 	}
+
 	return GetGoal200JSONResponse(toGoalAPI(g)), nil
 }
 
@@ -85,14 +96,18 @@ func (s *Server) ListGoals(ctx context.Context, req ListGoalsRequestObject) (Lis
 	if err != nil {
 		return nil, err
 	}
+
 	gs, next, err := s.svc.ListGoals(ctx, auth.MustUserID(ctx), p)
 	if err != nil {
 		return nil, err
 	}
+
 	out := ListGoals200JSONResponse{Items: make([]Goal, len(gs))}
 	for i, g := range gs {
 		out.Items[i] = toGoalAPI(g)
 	}
+
 	out.NextCursor, err = page.Next(next)
+
 	return out, err
 }

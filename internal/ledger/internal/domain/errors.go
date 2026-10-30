@@ -38,5 +38,6 @@ func WithFieldPrefix(prefix string, err error) error {
 	if !ok {
 		return err
 	}
+
 	return &FieldError{Field: prefix + fe.Field, Message: fe.Message, Err: fe.Err}
 }

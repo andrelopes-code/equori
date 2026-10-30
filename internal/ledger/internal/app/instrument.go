@@ -13,13 +13,16 @@ func AmountOf(ctx context.Context, ins Instruments, units int64, code money.Curr
 	if _, err := money.ParseCurrency(string(code)); err == nil {
 		return money.New(units, code)
 	}
+
 	if ins == nil {
 		return money.Money{}, fmt.Errorf("amount of %s: %w", code, ErrUnknownInstrument)
 	}
+
 	in, err := ins.Instrument(ctx, code)
 	if err != nil {
 		return money.Money{}, fmt.Errorf("amount of %s: %w", code, err)
 	}
+
 	return money.NewOf(units, code, in.Scale)
 }
 
@@ -33,10 +36,13 @@ func (s *Service) describeInstrument(ctx context.Context, a *domain.Account) err
 	if !a.HoldsSecurity() {
 		return nil
 	}
+
 	in, err := s.ins.Instrument(ctx, a.Instrument)
 	if err != nil {
 		return &domain.FieldError{Field: "currency", Message: "is not a known instrument", Err: domain.ErrValidation}
 	}
+
 	a.QuoteCurrency = in.QuoteCurrency
+
 	return nil
 }

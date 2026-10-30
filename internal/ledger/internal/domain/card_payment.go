@@ -17,8 +17,10 @@ func (t Transaction) AsCardPayment(transit Account, accounts map[uuid.UUID]Accou
 	if t.VoidedAt != nil {
 		return Transaction{}, ErrVoided
 	}
+
 	var card *Posting
 	next := t
+
 	next.Postings = nil
 	for _, p := range t.Postings {
 		a := accounts[p.AccountID]
@@ -27,6 +29,7 @@ func (t Transaction) AsCardPayment(transit Account, accounts map[uuid.UUID]Accou
 			if p.Status == StatusReconciled {
 				return Transaction{}, ErrReconciled
 			}
+
 			p.ID, p.CardRole, p.Statement, p.StatementID = uuid.Nil, RolePayment, nil, uuid.Nil
 			next.Postings = append(next.Postings, p)
 			card = &next.Postings[len(next.Postings)-1]
@@ -35,10 +38,13 @@ func (t Transaction) AsCardPayment(transit Account, accounts map[uuid.UUID]Accou
 			return Transaction{}, ErrNotRetypable
 		}
 	}
+
 	if card == nil {
 		return Transaction{}, ErrNotRetypable
 	}
+
 	next.Postings = append(next.Postings, Posting{AccountID: transit.ID, Amount: card.Amount.Neg()})
 	next.Version++
+
 	return NewTransaction(next, accounts)
 }

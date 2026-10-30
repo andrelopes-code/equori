@@ -33,6 +33,7 @@ func MCPPrompts() []MCPPrompt {
 				if !monthPattern.MatchString(month) {
 					return "", errors.New("month must be YYYY-MM")
 				}
+
 				return "Review my finances for " + month + ". Call get_category_totals for the income and expenses of the month by " +
 					"category and for the month before it, get_balances for the account balances, and search_transactions for the " +
 					"largest expenses of the month. Then summarize the total income, the total expenses and the result, the three " +
@@ -58,6 +59,7 @@ func MCPPrompts() []MCPPrompt {
 				if account == "" {
 					return "", errors.New("account is required")
 				}
+
 				return "Reconcile my account " + account + " against its statement. Call list_accounts to find it, " +
 					"get_account_details and get_account_history for its balance and recent movements, and search_transactions " +
 					"for the transactions not yet reconciled. Ask me for the closing balance and date of the statement, show the " +

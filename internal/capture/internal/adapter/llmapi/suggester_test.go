@@ -22,6 +22,7 @@ func TestSystemPrompt(t *testing.T) {
 			if !strings.Contains(got, tt.want) {
 				t.Errorf("prompt lacks %q:\n%s", tt.want, got)
 			}
+
 			if strings.Contains(got, "Brazilian owner") {
 				t.Errorf("prompt names a nationality:\n%s", got)
 			}

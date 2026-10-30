@@ -21,15 +21,19 @@ type returnOut struct {
 func (f fixture) returnOf(t *testing.T, account, from, to string) (apitest.Response, returnOut) {
 	t.Helper()
 	f.h.Dispatch()
+
 	query := fmt.Sprintf("from=%s&to=%s&value_in=BRL", from, to)
 	if account != "" {
 		query = "account_id=" + account + "&" + query
 	}
+
 	r := f.h.Do(http.MethodGet, "/api/v1/reports/return?"+query, nil)
+
 	var out returnOut
 	if r.Status == http.StatusOK {
 		r.Decode(t, &out)
 	}
+
 	return r, out
 }
 
@@ -46,6 +50,7 @@ func TestS126ReturnOfBrokerage(t *testing.T) {
 	if r.Status != http.StatusOK {
 		t.Fatalf("status %d: %s", r.Status, r.Body)
 	}
+
 	if got.AnnualBP != 500 || got.Opening["amount"] != float64(100000) || got.Closing["amount"] != float64(105000) || len(got.Flows) != 0 {
 		t.Fatalf("return = %+v", got)
 	}
@@ -53,6 +58,7 @@ func TestS126ReturnOfBrokerage(t *testing.T) {
 	// A contribution of 1,000.00 on 2026-04-30 and a closing value of 2,050.00 is 3.33%
 	// (solved independently with 50-digit decimals, days over 365).
 	f.h.Record("2026-04-30", apitest.Posting(checking, -100000), apitest.Posting(f.cash, 100000))
+
 	_, got = f.returnOf(t, f.xp, "2025-11-01", "2026-10-31")
 	if got.AnnualBP != 333 || got.Closing["amount"] != float64(205000) || len(got.Flows) != 1 || got.Flows[0].Date != "2026-04-30" || got.Flows[0].Amount["amount"] != float64(100000) {
 		t.Fatalf("return with a contribution = %+v", got)
@@ -78,6 +84,7 @@ func TestReturnOfTheWholePortfolio(t *testing.T) {
 	if r.Status != http.StatusOK {
 		t.Fatalf("status %d: %s", r.Status, r.Body)
 	}
+
 	if got.AnnualBP != 250 || got.Opening["amount"] != float64(200000) || got.Closing["amount"] != float64(205000) || len(got.Flows) != 0 {
 		t.Fatalf("portfolio return = %+v", got)
 	}
@@ -121,6 +128,7 @@ func TestReturnValuedInAnotherCurrency(t *testing.T) {
 	f.h.MustDo(http.MethodPost, "/api/v1/prices", map[string]any{"instrument": "USD", "quote_instrument": "BRL", "date": "2026-10-31", "value": "5"}, http.StatusCreated, nil)
 	var got returnOut
 	f.h.MustDo(http.MethodGet, url, nil, http.StatusOK, &got)
+
 	if got.AnnualBP != 500 || got.Opening["currency"] != "USD" || got.Opening["amount"] != float64(20000) || got.Closing["amount"] != float64(21000) {
 		t.Fatalf("return in USD = %+v", got)
 	}

@@ -64,61 +64,79 @@ func Run(ctx context.Context, client *Client, req Request, handlers map[string]T
 	start := slices.Clone(req.Messages)
 	history := slices.Clone(start)
 	var pin Target
+
 	step := 0
 	for step < opts.MaxSteps {
 		step++
 		req.Messages = history
 		req.Pin = pin
 		req.ToolChoice = ToolChoiceAuto
+
 		forced := opts.ForceAnswer && step == opts.MaxSteps
 		if forced {
 			req.ToolChoice = ToolChoiceNone
 		}
+
 		resp, err := client.Stream(ctx, req, opts.OnText)
 		if err != nil {
 			if pin != (Target{}) && !res.Restarted && errors.Is(err, ErrExhausted) {
 				if opts.OnRestart != nil {
 					opts.OnRestart()
 				}
+
 				history, pin, step, res.Restarted = slices.Clone(start), Target{}, 0, true
+
 				continue
 			}
+
 			res.History = history
+
 			return res, err
 		}
+
 		res.Usage.InputTokens += resp.Usage.InputTokens
+
 		res.Usage.OutputTokens += resp.Usage.OutputTokens
 		if opts.Pin && pin == (Target{}) {
 			pin = resp.Target
 		}
+
 		for i, p := range resp.Message.Parts {
 			if p.ToolCall != nil && p.ToolCall.ID == "" {
 				p.ToolCall.ID = fmt.Sprintf("call_%d_%d", step, i)
 			}
 		}
+
 		history = append(history, resp.Message)
+
 		res.Response, res.History, res.Steps = resp, history, step
 		if forced {
 			res.StepLimit = true
 			return res, nil
 		}
+
 		var toolCalls []ToolCall
 		for _, p := range resp.Message.Parts {
 			if p.ToolCall != nil {
 				toolCalls = append(toolCalls, *p.ToolCall)
 			}
 		}
+
 		results, err := runTools(ctx, handlers, toolCalls, opts)
 		if err != nil {
 			res.Response = Response{}
 			return res, err
 		}
+
 		if len(results) == 0 {
 			return res, nil
 		}
+
 		history = append(history, Message{Role: RoleTool, Parts: results})
 	}
+
 	res.Response, res.History = Response{}, history
+
 	return res, ErrTooManySteps
 }
 
@@ -130,15 +148,18 @@ func runTools(ctx context.Context, handlers map[string]ToolHandler, calls []Tool
 			opts.OnToolCall(c)
 		}
 	}
+
 	results := make([]Part, len(calls))
 	errs := make([]error, len(calls))
 	concurrent := func(c ToolCall) bool { return opts.Concurrent != nil && opts.Concurrent(c.Name) }
 	sem := make(chan struct{}, maxConcurrent)
+
 	var wg sync.WaitGroup
 	for i, c := range calls {
 		if !concurrent(c) {
 			continue
 		}
+
 		wg.Go(func() {
 			sem <- struct{}{}
 			defer func() { <-sem }()
@@ -148,47 +169,61 @@ func runTools(ctx context.Context, handlers map[string]ToolHandler, calls []Tool
 					errs[i] = fmt.Errorf("run tool %s: panic: %v", c.Name, p)
 				}
 			}()
+
 			r, err := runTool(ctx, handlers, c)
 			results[i], errs[i] = Part{ToolResult: &r}, err
 		})
 	}
+
 	wg.Wait()
+
 	if err := errors.Join(errs...); err != nil {
 		return nil, err
 	}
+
 	for i, c := range calls {
 		if concurrent(c) {
 			continue
 		}
+
 		r, err := runTool(ctx, handlers, c)
 		if err != nil {
 			return nil, err
 		}
+
 		results[i] = Part{ToolResult: &r}
 	}
+
 	return results, nil
 }
 
 func runTool(ctx context.Context, handlers map[string]ToolHandler, call ToolCall) (ToolResult, error) {
 	result := ToolResult{CallID: call.ID, Name: call.Name}
+
 	h, ok := handlers[call.Name]
 	if !ok {
 		result.Content, result.IsError = errorContent("unknown tool "+call.Name), true
 		return result, nil
 	}
+
 	out, err := h(ctx, call.Args)
 	if err != nil {
 		if ctx.Err() != nil || isContextError(err) {
 			return ToolResult{}, fmt.Errorf("run tool %s: %w", call.Name, err)
 		}
+
 		if te, ok := errors.AsType[*ToolError](err); ok {
 			result.Content, result.IsError = te.Content, true
 			return result, nil
 		}
+
 		result.Content, result.IsError = errorContent(err.Error()), true
+
 		return result, nil
 	}
+
 	result.Content = out
+
 	return result, nil
 }
 

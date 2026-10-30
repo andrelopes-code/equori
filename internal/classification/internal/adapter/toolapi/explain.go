@@ -63,6 +63,7 @@ func descriptionRule(name, text string, categoryID, payeeID uuid.UUID) (domain.R
 	if payeeID != uuid.Nil {
 		actions = append(actions, domain.ActionDoc{Type: string(domain.ActionSetPayee), PayeeID: payeeID})
 	}
+
 	return domain.RuleFromDocs(domain.Rule{Name: name, Enabled: true},
 		[]domain.ConditionDoc{{Field: string(domain.FieldDescription), Operator: string(domain.OpContains), Value: text}}, actions)
 }
@@ -81,6 +82,7 @@ func explainCategorization(svc *app.Service) tool.Tool {
 			{"description_contains", in.DescriptionContains != ""}, {"category_id", in.CategoryID != ""},
 		}
 		name := "view " + string(in.View)
+
 		var err error
 		switch in.View {
 		case "transactions":
@@ -90,25 +92,31 @@ func explainCategorization(svc *app.Service) tool.Tool {
 		default:
 			err = required(name, fields, "description_contains", "category_id")
 		}
+
 		if err != nil {
 			return explainCategorizationOut{}, err
 		}
+
 		switch in.View {
 		case "transactions":
 			if len(in.TransactionIDs) > 50 {
 				return explainCategorizationOut{}, tool.InvalidArgument("transaction_ids", "must have 1 to 50 ids")
 			}
+
 			ids := make([]uuid.UUID, len(in.TransactionIDs))
 			for i, s := range in.TransactionIDs {
 				if ids[i], err = optionalID(s, "transaction_ids"); err != nil {
 					return explainCategorizationOut{}, err
 				}
 			}
+
 			recs, err := svc.Categorizations(ctx, userID, ids)
 			if err != nil {
 				return explainCategorizationOut{}, err
 			}
+
 			out := explainCategorizationOut{Items: []categorizationView{}}
+
 			ruleNames := map[uuid.UUID]string{}
 			for _, r := range recs {
 				v := categorizationView{TransactionID: r.TransactionID.String(), Method: r.Method, DecidedAt: r.DecidedAt.Format(time.RFC3339)}
@@ -119,32 +127,42 @@ func explainCategorization(svc *app.Service) tool.Tool {
 						if err != nil && !errors.Is(err, app.ErrNotFound) {
 							return explainCategorizationOut{}, err
 						}
+
 						n = rule.Name
 						ruleNames[r.RuleID] = n
 					}
+
 					v.RuleName = n
 				}
+
 				out.Items = append(out.Items, v)
 			}
+
 			return out, nil
 		case "statistics":
 			if in.To.Before(in.From.Time) {
 				return explainCategorizationOut{}, tool.InvalidArgument("to", "must not be before from")
 			}
+
 			st, err := svc.Statistics(ctx, userID, in.From.Time, in.To.Time)
+
 			return explainCategorizationOut{Statistics: statisticsView{
 				From: in.From, To: in.To, Total: st.Total, Rule: st.Rule, Source: st.Source, History: st.History, Manual: st.Manual, Uncategorized: st.Uncategorized,
 			}}, err
 		}
+
 		category, err := optionalID(in.CategoryID, "category_id")
 		if err != nil {
 			return explainCategorizationOut{}, err
 		}
+
 		rule, err := descriptionRule("preview", in.DescriptionContains, category, uuid.Nil)
 		if err != nil {
 			return explainCategorizationOut{}, err
 		}
+
 		p, err := svc.PreviewRule(ctx, userID, rule)
+
 		return explainCategorizationOut{RulePreview: rulePreviewView{
 			DescriptionContains: in.DescriptionContains, WouldCategorize: p.WouldCategorize.Count, Conflicts: p.Conflicts.Count,
 		}}, err

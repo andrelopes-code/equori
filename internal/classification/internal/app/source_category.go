@@ -41,10 +41,12 @@ func (s *Service) MapSourceCategory(ctx context.Context, userID int64, id, categ
 		if err != nil {
 			return SourceCategory{}, err
 		}
+
 		if a, ok := accounts[categoryID]; !ok || !a.isCategory() || a.isUncategorized() {
 			return SourceCategory{}, &domain.FieldError{Field: "category_id", Message: "must be an income or expense category", Err: domain.ErrValidation}
 		}
 	}
+
 	return s.repo.MapSourceCategory(ctx, userID, id, categoryID)
 }
 
@@ -54,49 +56,60 @@ func (s *Service) sourceCategories(ctx context.Context, userID int64, lines []Im
 	out := make([]uuid.UUID, len(lines))
 	seen := map[LineCategory]int{}
 	byAggregator := map[string][]string{}
+
 	var order []LineCategory
 	for _, l := range lines {
 		c := l.SourceCategory
 		if c == nil {
 			continue
 		}
+
 		key := LineCategory{Aggregator: c.Aggregator, ExternalID: c.ExternalID}
 		if seen[key] == 0 {
 			order = append(order, key)
 			byAggregator[c.Aggregator] = append(byAggregator[c.Aggregator], c.ExternalID)
 		}
+
 		seen[key]++
 	}
+
 	if len(order) == 0 {
 		return out, nil
 	}
+
 	names := map[LineCategory]string{}
 	for _, l := range lines {
 		if c := l.SourceCategory; c != nil && c.Name != "" {
 			names[LineCategory{Aggregator: c.Aggregator, ExternalID: c.ExternalID}] = c.Name
 		}
 	}
+
 	counts := make([]SourceCategory, len(order))
 	for i, k := range order {
 		counts[i] = SourceCategory{Aggregator: k.Aggregator, ExternalID: k.ExternalID, Name: names[k], Count: seen[k]}
 	}
+
 	if err := s.repo.CountSourceCategories(ctx, userID, counts); err != nil {
 		return nil, err
 	}
+
 	mapped := map[LineCategory]uuid.UUID{}
 	for aggregator, ids := range byAggregator {
 		m, err := s.repo.MappedSourceCategories(ctx, userID, aggregator, ids)
 		if err != nil {
 			return nil, err
 		}
+
 		for id, category := range m {
 			mapped[LineCategory{Aggregator: aggregator, ExternalID: id}] = category
 		}
 	}
+
 	for i, l := range lines {
 		if c := l.SourceCategory; c != nil {
 			out[i] = mapped[LineCategory{Aggregator: c.Aggregator, ExternalID: c.ExternalID}]
 		}
 	}
+
 	return out, nil
 }

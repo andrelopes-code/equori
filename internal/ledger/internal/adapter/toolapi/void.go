@@ -38,6 +38,7 @@ func voidTransaction(svc *app.Service) tool.Tool {
 		if err != nil {
 			return tool.Preview{}, err
 		}
+
 		return tool.Preview{
 			Action: "void_transaction", Target: targetOf(t), Destructive: true, Basis: basisOf(t),
 			Changes: []tool.Change{
@@ -50,9 +51,11 @@ func voidTransaction(svc *app.Service) tool.Tool {
 		if err != nil {
 			return voidTransactionOut{}, err
 		}
+
 		if err := svc.VoidTransaction(ctx, userID, t.ID, in.Reason); err != nil {
 			return voidTransactionOut{}, err
 		}
+
 		return voidTransactionOut{TransactionID: t.ID.String(), Voided: true}, nil
 	})
 }
@@ -62,8 +65,10 @@ func voidTarget(ctx context.Context, svc *app.Service, userID int64, in voidTran
 	if err != nil {
 		return domain.Transaction{}, err
 	}
+
 	if in.Reason == "" {
 		return domain.Transaction{}, tool.InvalidArgument("reason", "is required")
 	}
+
 	return svc.Transaction(ctx, userID, id)
 }

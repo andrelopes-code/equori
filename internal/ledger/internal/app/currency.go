@@ -45,38 +45,48 @@ func (s *Service) RecordForeignPurchase(ctx context.Context, userID int64, in Fo
 		if err != nil {
 			return err
 		}
+
 		account, err := loadAccount(ctx, r, userID, in.AccountID, "account_id")
 		if err != nil {
 			return err
 		}
+
 		if !account.IsBalance() || account.Instrument != base {
 			return fieldErr("account_id", "must be a balance account in the base currency "+string(base), domain.ErrCurrencyUnsupported)
 		}
+
 		if err := s.expenseCategory(ctx, r, userID, in.CategoryID, "category_id"); err != nil {
 			return err
 		}
+
 		if _, err := money.ParseCurrency(string(in.Original.Currency())); err != nil || in.Original.Currency() == base || in.Original.IsZero() || in.Original.IsNegative() {
 			return fieldErr("original", "must be a positive amount of a currency other than "+string(base), domain.ErrValidation)
 		}
+
 		var bp int
 		if in.ForeignChargeRateBP != nil {
 			bp = *in.ForeignChargeRateBP
 		} else if bp, err = s.cardForeignChargeBP(ctx, r, userID, in.AccountID); err != nil {
 			return err
 		}
+
 		if bp < 0 || bp > 10000 {
 			return fieldErr("foreign_charge_rate_bp", "must be between 0 and 10000", domain.ErrValidation)
 		}
+
 		amount, err := money.Convert(in.Original, base, money.Leg{Rate: in.Rate})
 		if err != nil {
 			return fieldErr("rate", err.Error(), domain.ErrValidation)
 		}
+
 		charge, err := money.Fraction(amount, int64(bp), 10000)
 		if err != nil {
 			return err
 		}
+
 		original, negOriginal := in.Original, in.Original.Neg()
 		postings := []domain.Posting{{AccountID: in.CategoryID, Amount: amount, Original: &original}}
+
 		charges := []domain.Posting{{AccountID: in.AccountID, Amount: amount.Neg(), Original: &negOriginal, Statement: in.Statement}}
 		if !charge.IsZero() {
 			chargeCategory := in.ForeignChargeCategoryID
@@ -85,22 +95,28 @@ func (s *Service) RecordForeignPurchase(ctx context.Context, userID int64, in Fo
 				if err != nil {
 					return err
 				}
+
 				chargeCategory = taxes.ID
 			} else if err := s.expenseCategory(ctx, r, userID, chargeCategory, "foreign_charge_category_id"); err != nil {
 				return err
 			}
+
 			postings = append(postings, domain.Posting{AccountID: chargeCategory, Amount: charge})
 			charges = append(charges, domain.Posting{AccountID: in.AccountID, Amount: charge.Neg(), Statement: in.Statement})
 		}
+
 		if account.Kind != domain.KindCreditCard && in.Statement != nil {
 			return fieldErr("statement", "is only allowed on a card account", domain.ErrValidation)
 		}
+
 		created, err = s.insert(ctx, r, domain.Transaction{
 			UserID: userID, Date: in.Date, Description: in.Description, PayeeID: in.PayeeID,
 			Postings: append(postings, charges...),
 		})
+
 		return err
 	})
+
 	return created, err
 }
 
@@ -113,14 +129,17 @@ func (s *Service) Exchange(ctx context.Context, userID int64, in Exchange) (doma
 		if err != nil {
 			return err
 		}
+
 		from, err := loadAccount(ctx, r, userID, in.FromAccountID, "from_account_id")
 		if err != nil {
 			return err
 		}
+
 		to, err := loadAccount(ctx, r, userID, in.ToAccountID, "to_account_id")
 		if err != nil {
 			return err
 		}
+
 		switch {
 		case !from.IsBalance() || from.HoldsSecurity():
 			return fieldErr("from_account_id", "must be a balance account in a currency", domain.ErrValidation)
@@ -135,22 +154,27 @@ func (s *Service) Exchange(ctx context.Context, userID int64, in Exchange) (doma
 		case in.ToAmount.Currency() != to.Instrument || in.ToAmount.IsZero() || in.ToAmount.IsNegative():
 			return fieldErr("to_amount", "must be a positive amount in "+string(to.Instrument), domain.ErrValidation)
 		}
+
 		fee, err := money.New(0, base)
 		if err != nil {
 			return err
 		}
+
 		if in.Fee != nil {
 			if in.Fee.Currency() != base || in.Fee.IsNegative() {
 				return fieldErr("fee", "must be a non-negative amount in "+string(base), domain.ErrValidation)
 			}
+
 			fee = *in.Fee
 		}
+
 		var postings []domain.Posting
 		if from.Instrument == base {
 			debit, err := in.FromAmount.Add(fee)
 			if err != nil {
 				return err
 			}
+
 			postings = []domain.Posting{
 				{AccountID: from.ID, Amount: debit.Neg()},
 				{AccountID: to.ID, Amount: in.ToAmount, Weight: in.FromAmount},
@@ -160,14 +184,17 @@ func (s *Service) Exchange(ctx context.Context, userID int64, in Exchange) (doma
 			if err != nil {
 				return err
 			}
+
 			if credit.IsZero() || credit.IsNegative() {
 				return fieldErr("fee", "must be less than to_amount", domain.ErrValidation)
 			}
+
 			postings = []domain.Posting{
 				{AccountID: from.ID, Amount: in.FromAmount.Neg(), Weight: in.ToAmount.Neg()},
 				{AccountID: to.ID, Amount: credit},
 			}
 		}
+
 		if !fee.IsZero() {
 			feeCategory := in.FeeCategoryID
 			if feeCategory == uuid.Nil {
@@ -175,15 +202,20 @@ func (s *Service) Exchange(ctx context.Context, userID int64, in Exchange) (doma
 				if err != nil {
 					return err
 				}
+
 				feeCategory = fees.ID
 			} else if err := s.expenseCategory(ctx, r, userID, feeCategory, "fee_category_id"); err != nil {
 				return err
 			}
+
 			postings = []domain.Posting{postings[0], {AccountID: feeCategory, Amount: fee}, postings[1]}
 		}
+
 		created, err = s.insert(ctx, r, domain.Transaction{UserID: userID, Date: in.Date, Description: in.Description, BalancingCurrency: base, Postings: postings})
+
 		return err
 	})
+
 	return created, err
 }
 
@@ -193,51 +225,64 @@ func (s *Service) ValuedBalance(ctx context.Context, userID int64, accountID uui
 	if basis == "" {
 		basis = BasisBooked
 	}
+
 	if _, err := money.ParseCurrency(string(in)); err != nil {
 		return Balance{}, Conversion{}, fieldErr("value_in", "must be a supported currency", domain.ErrValidation)
 	}
+
 	if _, err := s.repo.Account(ctx, userID, accountID); err != nil {
 		return Balance{}, Conversion{}, err
 	}
+
 	totals, err := s.repo.TreeBalancesByInstrument(ctx, userID, accountID, date, basis)
 	if err != nil {
 		return Balance{}, Conversion{}, err
 	}
+
 	value, err := money.New(0, in)
 	if err != nil {
 		return Balance{}, Conversion{}, err
 	}
+
 	out := Conversion{Value: value}
+
 	var amount money.Money
 	for _, code := range slices.Sorted(maps.Keys(totals)) {
 		if amount, err = s.AmountOf(ctx, totals[code], code); err != nil {
 			return Balance{}, Conversion{}, err
 		}
+
 		c := Conversion{Value: amount}
 		if code != in {
 			if amount.IsZero() {
 				continue
 			}
+
 			c, err = s.prices.Convert(ctx, amount, in, date)
 			if errors.Is(err, ErrPriceMissing) {
 				return Balance{}, Conversion{}, fieldErr("value_in", err.Error(), ErrPriceMissing)
 			}
+
 			if err != nil {
 				return Balance{}, Conversion{}, err
 			}
 		}
+
 		if out.Value, err = out.Value.Add(c.Value); err != nil {
 			return Balance{}, Conversion{}, fmt.Errorf("sum valued balances: %w", err)
 		}
+
 		out.Prices = append(out.Prices, c.Prices...)
 		if !amount.IsZero() {
 			out.Parts = append(out.Parts, ValuedPart{Instrument: code, Quantity: amount, Value: c.Value})
 		}
 	}
+
 	b := Balance{AccountID: accountID, Date: date, Basis: basis, Amount: out.Value}
 	if len(totals) == 1 {
 		b.Amount = amount
 	}
+
 	return b, out, nil
 }
 
@@ -248,6 +293,7 @@ func (s *Service) ExternalFlows(ctx context.Context, userID int64, accountIDs []
 	if err := s.ownAccounts(ctx, userID, accountIDs); err != nil {
 		return nil, err
 	}
+
 	return s.repo.TreeExternalFlows(ctx, userID, accountIDs, from, to)
 }
 
@@ -257,6 +303,7 @@ func (s *Service) FirstPosting(ctx context.Context, userID int64, accountIDs []u
 	if err := s.ownAccounts(ctx, userID, accountIDs); err != nil {
 		return time.Time{}, false, err
 	}
+
 	return s.repo.TreeFirstPosting(ctx, userID, accountIDs)
 }
 
@@ -266,6 +313,7 @@ func (s *Service) ownAccounts(ctx context.Context, userID int64, accountIDs []uu
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -279,6 +327,7 @@ func loadAccount(ctx context.Context, r Repository, userID int64, id uuid.UUID, 
 	if errors.Is(err, ErrNotFound) {
 		return domain.Account{}, fieldErr(field, "unknown account", domain.ErrUnknownAccount)
 	}
+
 	return a, err
 }
 
@@ -287,9 +336,11 @@ func (s *Service) expenseCategory(ctx context.Context, r Repository, userID int6
 	if err != nil {
 		return err
 	}
+
 	if a.Class != domain.ClassExpense {
 		return fieldErr(field, "must be an expense category", domain.ErrValidation)
 	}
+
 	return nil
 }
 
@@ -300,10 +351,12 @@ func (s *Service) cardForeignChargeBP(ctx context.Context, r Repository, userID 
 	if err != nil {
 		return 0, err
 	}
+
 	for _, c := range cards {
 		if c.Active {
 			return c.ForeignChargeBP, nil
 		}
 	}
+
 	return s.regionForeignChargeBP(ctx, userID)
 }

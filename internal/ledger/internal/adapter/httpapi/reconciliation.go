@@ -29,6 +29,7 @@ func toAssertionResultAPI(res app.AssertionResult) AssertionResult {
 		r := AssertionResultResolution(res.Resolution)
 		out.Resolution = &r
 	}
+
 	return out
 }
 
@@ -37,32 +38,40 @@ func (s *Server) CreateBalanceAssertion(ctx context.Context, req CreateBalanceAs
 	if err != nil {
 		return nil, err
 	}
+
 	res, err := s.svc.AssertBalance(ctx, auth.MustUserID(ctx), req.Id, dateOf(req.Body.Date), amount, optString((*string)(req.Body.Source)))
 	if err != nil {
 		return nil, err
 	}
+
 	return CreateBalanceAssertion201JSONResponse(toAssertionResultAPI(res)), nil
 }
 
 func (s *Server) ListBalanceAssertions(ctx context.Context, req ListBalanceAssertionsRequestObject) (ListBalanceAssertionsResponseObject, error) {
 	userID := auth.MustUserID(ctx)
+
 	a, err := s.svc.Account(ctx, userID, req.Id)
 	if err != nil {
 		return nil, err
 	}
+
 	p, err := listPage[app.AssertionKey](req.Params.Limit, req.Params.Cursor)
 	if err != nil {
 		return nil, err
 	}
+
 	assertions, next, err := s.svc.BalanceAssertions(ctx, userID, req.Id, p)
 	if err != nil {
 		return nil, err
 	}
+
 	out := BalanceAssertionList{Items: make([]BalanceAssertion, len(assertions))}
 	for i, x := range assertions {
 		out.Items[i] = toAssertionAPI(x, a.Instrument)
 	}
+
 	out.NextCursor, err = page.Next(next)
+
 	return ListBalanceAssertions200JSONResponse(out), err
 }
 
@@ -71,6 +80,7 @@ func (s *Server) ResolveBalanceAssertion(ctx context.Context, req ResolveBalance
 	if err != nil {
 		return nil, err
 	}
+
 	return ResolveBalanceAssertion200JSONResponse(toAssertionResultAPI(res)), nil
 }
 
@@ -79,6 +89,7 @@ func (s *Server) GetReconciliationStatus(ctx context.Context, req GetReconciliat
 	if err != nil {
 		return nil, err
 	}
+
 	return GetReconciliationStatus200JSONResponse(out), nil
 }
 
@@ -87,10 +98,12 @@ func (s *Server) reconciliationStatus(ctx context.Context, userID int64, account
 	if err != nil {
 		return ReconciliationStatus{}, err
 	}
+
 	out := ReconciliationStatus{LastReconciledOn: apiOptDate(st.LastReconciledOn)}
 	if st.Open != nil {
 		out.OpenDifference = &OpenDifference{AssertionId: st.Open.AssertionID, Date: apiDate(st.Open.Date), Difference: toMoneyAPI(st.Open.Difference)}
 	}
+
 	return out, nil
 }
 
@@ -99,10 +112,12 @@ func (s *Server) UnlockAccount(ctx context.Context, req UnlockAccountRequestObje
 	if err := s.svc.Unlock(ctx, userID, req.Id, dateOf(req.Body.From)); err != nil {
 		return nil, err
 	}
+
 	out, err := s.reconciliationStatus(ctx, userID, req.Id)
 	if err != nil {
 		return nil, err
 	}
+
 	return UnlockAccount200JSONResponse(out), nil
 }
 
@@ -111,14 +126,17 @@ func (s *Server) ReconcileStatement(ctx context.Context, req ReconcileStatementR
 	if err != nil {
 		return nil, err
 	}
+
 	userID := auth.MustUserID(ctx)
 	if err := s.svc.ReconcileStatement(ctx, userID, req.Id, amount); err != nil {
 		return nil, err
 	}
+
 	out, err := s.statementDetail(ctx, userID, req.Id)
 	if err != nil {
 		return nil, err
 	}
+
 	return ReconcileStatement200JSONResponse(out), nil
 }
 

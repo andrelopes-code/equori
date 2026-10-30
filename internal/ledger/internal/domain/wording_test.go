@@ -10,6 +10,7 @@ import (
 // drops its argument.
 func TestWordingsFillEveryField(t *testing.T) {
 	t.Parallel()
+
 	english := reflect.ValueOf(English())
 	for name, w := range map[string]Wording{"pt": Portuguese()} {
 		v := reflect.ValueOf(w)

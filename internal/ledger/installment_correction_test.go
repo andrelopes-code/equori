@@ -20,6 +20,7 @@ func TestCorrectInstallmentPurchaseDetails(t *testing.T) {
 	if after.Version != 2 || after.Description != "Volante (6x)" || !reflect.DeepEqual(after.Postings, before.Postings) {
 		t.Fatalf("after = %+v, before = %+v", after, before)
 	}
+
 	if got := statementDescriptions(t, c, "2026-11"); len(got) != 1 || got[0] != "Volante (6x)" {
 		t.Errorf("statement descriptions = %v", got)
 	}
@@ -27,6 +28,7 @@ func TestCorrectInstallmentPurchaseDetails(t *testing.T) {
 
 func TestCorrectInstallmentPurchaseRefusesPostingsAndDate(t *testing.T) {
 	t.Parallel()
+
 	tests := []struct {
 		name        string
 		description string
@@ -47,6 +49,7 @@ func TestCorrectInstallmentPurchaseRefusesPostingsAndDate(t *testing.T) {
 			r := c.h.Do(http.MethodPut, "/api/v1/transactions/"+id, correctionOf(before, tt.description, tt.date, tt.delta))
 
 			c.h.ExpectProblem(r, http.StatusUnprocessableEntity, "validation_failed", "transaction_id")
+
 			if after := c.h.Transaction(id); !reflect.DeepEqual(after, before) {
 				t.Errorf("after = %+v, want %+v", after, before)
 			}
@@ -88,11 +91,13 @@ func correctionOf(v apitest.TransactionView, description, date string, delta int
 	for i, p := range v.Postings {
 		postings[i] = apitest.Posting(p.AccountID, p.Amount.Amount)
 	}
+
 	if delta != 0 {
 		postings[0] = apitest.Posting(v.Postings[0].AccountID, v.Postings[0].Amount.Amount-delta)
 		last := v.Postings[len(v.Postings)-1]
 		postings[len(postings)-1] = apitest.Posting(last.AccountID, last.Amount.Amount+delta)
 	}
+
 	return map[string]any{
 		"date":             date,
 		"description":      description,
@@ -110,9 +115,11 @@ func statementDescriptions(t *testing.T, c cardSetup, month string) []string {
 		} `json:"postings"`
 	}
 	c.h.MustDo(http.MethodGet, "/api/v1/statements/"+statements(t, c.h, c.card)[month].ID, nil, http.StatusOK, &detail)
+
 	out := make([]string, len(detail.Postings))
 	for i, p := range detail.Postings {
 		out[i] = p.Description
 	}
+
 	return out
 }

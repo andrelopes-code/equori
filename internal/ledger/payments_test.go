@@ -14,6 +14,7 @@ func (c cardSetup) statementID(t *testing.T, ref string) string {
 
 func (c cardSetup) payStatement(t *testing.T, ref, date string, amount int64) apitest.Response {
 	t.Helper()
+
 	return c.h.Do(http.MethodPost, "/api/v1/statements/"+c.statementID(t, ref)+"/payments",
 		map[string]any{"date": date, "from_account_id": c.checking, "amount": apitest.BRL(amount)})
 }
@@ -27,6 +28,7 @@ func TestStatementPaymentEndpoint(t *testing.T) {
 	if r.Status != http.StatusCreated {
 		t.Fatalf("payment status %d: %s", r.Status, r.Body)
 	}
+
 	var tx apitest.TransactionView
 	r.Decode(t, &tx)
 	card := cardPostings(tx, c.card)[0]
@@ -34,6 +36,7 @@ func TestStatementPaymentEndpoint(t *testing.T) {
 	if card.CardRole != "payment" || card.Statement != "2026-12" || card.Amount.Amount != 150000 {
 		t.Fatalf("payment posting = %+v", card)
 	}
+
 	if s := statements(t, c.h, c.card)["2026-11"]; s.Status != "paid" {
 		t.Fatalf("status = %s", s.Status)
 	}
@@ -48,6 +51,7 @@ func TestEarlyPaymentInTwoParts(t *testing.T) {
 		map[string]any{"date": "2026-10-28", "from_account_id": c.checking, "amount": apitest.BRL(30000)}, http.StatusCreated, nil)
 	c.h.MustDo(http.MethodPost, "/api/v1/statements/"+c.statementID(t, "2026-11")+"/payments",
 		map[string]any{"date": "2026-11-10", "from_account_id": c.checking, "amount": apitest.BRL(120001)}, http.StatusCreated, nil)
+
 	if s := statements(t, c.h, c.card)["2026-11"]; s.Status != "paid" || s.Payments != 30000 || s.Early != 30000 || s.AmountDue != 120001 {
 		t.Fatalf("statement = %+v", s)
 	}
@@ -65,6 +69,7 @@ func TestRevolvingInterestCharge(t *testing.T) {
 	if s := ss["2026-11"]; s.Status != "overdue" || s.Unpaid != 50000 {
 		t.Fatalf("2026-11 = %+v", s)
 	}
+
 	if s := ss["2026-12"]; s.Opening != 150000 || s.Charges != 6250 || s.Payments != 100000 || s.AmountDue != 56250 {
 		t.Fatalf("2026-12 = %+v", s)
 	}
@@ -83,23 +88,28 @@ func TestStatementFinancing(t *testing.T) {
 	if len(cards) != 7 || cards[0].CardRole != "payment" || cards[0].Amount.Amount != 200000 || cards[0].Statement != "2026-12" {
 		t.Fatalf("settlement posting = %+v", cards)
 	}
+
 	for k, p := range cards[1:] {
 		if p.Amount.Amount != -36340 || p.Installment == nil || p.Installment.Number != k+1 {
 			t.Fatalf("installment %d = %+v", k+1, p)
 		}
 	}
+
 	if cards[1].Statement != "2026-12" || cards[6].Statement != "2027-05" {
 		t.Fatalf("installments billed %s..%s, want 2026-12..2027-05", cards[1].Statement, cards[6].Statement)
 	}
+
 	var interest int64
 	for _, p := range res.Transaction.Postings {
 		if p.AccountID != c.card {
 			interest += p.Amount.Amount
 		}
 	}
+
 	if interest != 18040 {
 		t.Fatalf("interest = %d, want 18040", interest)
 	}
+
 	if s := statements(t, c.h, c.card)["2026-11"]; s.Status != "financed" {
 		t.Fatalf("status = %s, want financed", s.Status)
 	}

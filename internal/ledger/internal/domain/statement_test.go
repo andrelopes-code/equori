@@ -5,6 +5,7 @@ import "testing"
 func input(ref string, lines ...StatementLine) StatementInput {
 	m := month(ref)
 	d := DatesFor(m, rule("2026-01", 3, 10, "next"))
+
 	return StatementInput{Reference: m, Closing: d.Closing, Due: d.DueUnadjusted, Lines: lines}
 }
 
@@ -24,8 +25,10 @@ func payment(date string, a int64) StatementLine {
 // closing are billed on 2026-12 (A89).
 func TestSummarize(t *testing.T) {
 	t.Parallel()
+
 	financed := input("2026-11", charge("2026-10-14", 200000))
 	financed.Financed = true
+
 	tests := []struct {
 		name     string
 		in       []StatementInput
@@ -86,6 +89,7 @@ func TestSummarize(t *testing.T) {
 			if got[0].Status != tt.status || got[0].Unpaid != tt.unpaid {
 				t.Fatalf("summary = %+v; want status %s unpaid %d", got[0], tt.status, tt.unpaid)
 			}
+
 			if tt.opening2 != nil && got[1].Opening != *tt.opening2 {
 				t.Fatalf("next opening = %d, want %d", got[1].Opening, *tt.opening2)
 			}
@@ -95,6 +99,7 @@ func TestSummarize(t *testing.T) {
 
 func TestSummarizeAmounts(t *testing.T) {
 	t.Parallel()
+
 	got := Summarize([]StatementInput{input("2026-11",
 		charge("2026-10-14", 23000), charge("2026-10-20", 33334), credit("2026-10-21", 5000), payment("2026-10-28", 10000))}, day("2026-11-05"))[0]
 	if got.Charges != 56334 || got.Credits != 5000 || got.Payments != 10000 || got.AmountDue != 41334 ||
@@ -108,6 +113,7 @@ func TestSummarizeAmounts(t *testing.T) {
 // 2026-09 and before its payment.
 func TestSummarizeBalanceAtClosing(t *testing.T) {
 	t.Parallel()
+
 	sep := StatementInput{Reference: month("2026-09"), Closing: day("2026-08-28"), Due: day("2026-09-08"), Lines: []StatementLine{
 		charge("2026-08-20", 77354), charge("2026-08-27", 112089), credit("2026-08-18", 8614), payment("2026-08-04", 77354),
 	}}
@@ -118,15 +124,18 @@ func TestSummarizeBalanceAtClosing(t *testing.T) {
 	nov := StatementInput{Reference: month("2026-11"), Closing: day("2026-10-29"), Due: day("2026-11-05"), Lines: []StatementLine{
 		payment("2026-10-05", 78465),
 	}}
+
 	got := Summarize([]StatementInput{sep, oct, nov}, day("2026-10-20"))
 	if s := got[0]; s.AmountDue != 103475 || s.Settled != 103475 || s.Unpaid != 0 || s.Status != StatusPaid {
 		t.Fatalf("2026-09 = %+v", s)
 	}
+
 	if s := got[1]; s.Opening != 103475 || s.Charges != 228132 || s.Credits != 56957 || s.PriorCredits != 7290 ||
 		s.Payments != 196185 || s.EarlyPayments != 100000 || s.AmountDue != 78465 || s.BilledAmount != 178465 ||
 		s.Settled != 78465 || s.Unpaid != 0 || s.Status != StatusPaid {
 		t.Fatalf("2026-10 = %+v", s)
 	}
+
 	if s := got[2]; s.Opening != 78465 || s.AmountDue != 0 || s.EarlyPayments != 0 || s.Status != StatusOpen {
 		t.Fatalf("2026-11 = %+v", s)
 	}
@@ -134,6 +143,7 @@ func TestSummarizeBalanceAtClosing(t *testing.T) {
 
 func TestSummarizeEmptyStatementCarriesItsOpening(t *testing.T) {
 	t.Parallel()
+
 	got := Summarize([]StatementInput{
 		input("2026-10", charge("2026-09-14", 50000)), input("2026-11"), input("2026-12", charge("2026-11-14", 1000)),
 	}, day("2026-12-20"))
@@ -147,6 +157,7 @@ func TestSummarizeEmptyStatementCarriesItsOpening(t *testing.T) {
 // nets against that statement and leaves the payment whole.
 func TestSummarizeCreditBeforeClosingDoesNotSettle(t *testing.T) {
 	t.Parallel()
+
 	got := Summarize([]StatementInput{
 		input("2026-11", charge("2026-10-14", 150000)),
 		input("2026-12", charge("2026-10-13", 49666), credit("2026-10-20", 49666), payment("2026-11-10", 150000)),
@@ -154,6 +165,7 @@ func TestSummarizeCreditBeforeClosingDoesNotSettle(t *testing.T) {
 	if s := got[0]; s.Settled != 150000 || s.Status != StatusPaid {
 		t.Fatalf("2026-11 = %+v", s)
 	}
+
 	if s := got[1]; s.AmountDue != 0 || s.PriorCredits != 0 || s.EarlyPayments != 0 || s.BilledAmount != 0 {
 		t.Fatalf("2026-12 = %+v", s)
 	}
@@ -163,8 +175,10 @@ func TestSummarizeCreditBeforeClosingDoesNotSettle(t *testing.T) {
 // 2026-11 is overdue (after 2026-11-10).
 func TestSummarizeOpenAmount(t *testing.T) {
 	t.Parallel()
+
 	financed := input("2026-11", charge("2026-10-14", 123865))
 	financed.Financed = true
+
 	tests := []struct {
 		name  string
 		in    []StatementInput
@@ -220,7 +234,9 @@ func TestSummarizeOpenAmount(t *testing.T) {
 // A136: statement closing on 2026-10-29.
 func TestProvisional(t *testing.T) {
 	t.Parallel()
+
 	closing := day("2026-10-29")
+
 	tests := []struct {
 		name        string
 		basis       string
@@ -240,6 +256,7 @@ func TestProvisional(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+
 			if got := Provisional(tt.basis, day(tt.date), closing, tt.reconciled, tt.installment); got != tt.want {
 				t.Fatalf("Provisional = %v, want %v", got, tt.want)
 			}

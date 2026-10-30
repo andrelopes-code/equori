@@ -9,7 +9,9 @@ func ExactSubset(values []int64, target int64) ([]int, bool) {
 	if target <= 0 || len(values) == 0 || len(values) > maxSubsetValues {
 		return nil, false
 	}
+
 	var found []int
+
 	matches := 0
 	for mask := 1; mask < 1<<len(values); mask++ {
 		var sum int64
@@ -18,12 +20,15 @@ func ExactSubset(values []int64, target int64) ([]int, bool) {
 				sum += v
 			}
 		}
+
 		if sum != target {
 			continue
 		}
+
 		if matches++; matches > 1 {
 			return nil, false
 		}
+
 		found = found[:0]
 		for i := range values {
 			if mask&(1<<i) != 0 {
@@ -31,5 +36,6 @@ func ExactSubset(values []int64, target int64) ([]int, bool) {
 			}
 		}
 	}
+
 	return found, matches == 1
 }

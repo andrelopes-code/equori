@@ -42,6 +42,7 @@ var SuggestUse = llmapi.Use
 func New(pool *pgxpool.Pool, l *ledger.Module, c *classification.Module, profiles Profiles, router *llm.Router, clk clock.Clock, log *slog.Logger) *Module {
 	suggester := llmapi.New(router)
 	svc := app.NewService(ledgerPort{l}, classifierPort{c}, postgres.NewRepository(pool), profiles, suggester, clk)
+
 	return &Module{http: httpapi.NewServer(svc, log)}
 }
 
@@ -54,6 +55,7 @@ func (p ledgerPort) Vocabulary(ctx context.Context, userID int64) ([]app.Account
 	if err != nil {
 		return nil, nil, err
 	}
+
 	outAccounts := make([]app.Account, len(accounts))
 	for i, a := range accounts {
 		outAccounts[i] = app.Account{
@@ -61,10 +63,12 @@ func (p ledgerPort) Vocabulary(ctx context.Context, userID int64) ([]app.Account
 			Instrument: a.Instrument, Closed: a.ClosedOn != nil, Institution: a.Institution, CardsLastFour: a.CardsLastFour,
 		}
 	}
+
 	outPayees := make([]app.Payee, len(payees))
 	for i, x := range payees {
 		outPayees[i] = app.Payee{ID: x.ID, Name: x.Name}
 	}
+
 	return outAccounts, outPayees, nil
 }
 
@@ -81,12 +85,14 @@ func (p ledgerPort) Transactions(ctx context.Context, userID int64, ids []uuid.U
 	if err != nil {
 		return nil, err
 	}
+
 	out := make([]app.Transaction, len(facts))
 	for i, f := range facts {
 		out[i] = app.Transaction{ID: f.ID, Description: f.Description}
 		if f.Voided || f.CategoryState != "uncategorized" {
 			continue
 		}
+
 		for _, x := range f.Postings {
 			if class, ok := strings.CutPrefix(x.SystemRole, "uncategorized_"); ok {
 				out[i].Class = class
@@ -94,6 +100,7 @@ func (p ledgerPort) Transactions(ctx context.Context, userID int64, ids []uuid.U
 			}
 		}
 	}
+
 	return out, nil
 }
 
@@ -106,19 +113,23 @@ func (p classifierPort) Decide(ctx context.Context, userID int64, entries []app.
 	for i, e := range entries {
 		lines[i] = classification.ManualLine{AccountID: e.AccountID, Date: e.Date, Amount: e.Amount, Description: e.Description, NamedPayee: e.NamedPayee}
 	}
+
 	decisions, err := p.c.DecideManual(ctx, userID, lines)
 	if err != nil {
 		return nil, err
 	}
+
 	out := make([]app.Decision, len(decisions))
 	for i, d := range decisions {
 		if d == nil {
 			continue
 		}
+
 		out[i] = app.Decision{PayeeID: d.PayeeID, Tags: slices.Clone(d.AddTags)}
 		if len(d.Parts) == 1 && d.TransferTo == uuid.Nil {
 			out[i].CategoryID, out[i].Method = d.Parts[0].AccountID, d.Cause.Method
 		}
 	}
+
 	return out, nil
 }

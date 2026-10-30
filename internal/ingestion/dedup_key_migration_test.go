@@ -21,26 +21,33 @@ func TestDedupKeyMigration(t *testing.T) {
 	t.Parallel()
 	pool := pgtest.Empty(t)
 	ctx := t.Context()
+
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
 	if err := postgres.MigrateTo(ctx, pool, 53, log); err != nil {
 		t.Fatal(err)
 	}
+
 	uid := pgtest.CreateUser(t, pool)
+
 	var account, syncBatch, fileBatch uuid.UUID
 	if err := pool.QueryRow(ctx, `INSERT INTO ledger_account (user_id, name, account_class, kind, instrument, opened_on) VALUES ($1, 'Nubank', 'asset', 'checking', 'BRL', '2026-01-01') RETURNING id`, uid).Scan(&account); err != nil {
 		t.Fatal(err)
 	}
+
 	if err := pool.QueryRow(ctx, `INSERT INTO ingestion_batch (user_id, account_id, source, file_name, currency) VALUES ($1, $2, 'aggregator', NULL, 'BRL') RETURNING id`, uid, account).Scan(&syncBatch); err != nil {
 		t.Fatal(err)
 	}
+
 	if err := pool.QueryRow(ctx, `INSERT INTO ingestion_batch (user_id, account_id, source, file_name, currency) VALUES ($1, $2, 'ofx', 'extrato.ofx', 'BRL') RETURNING id`, uid, account).Scan(&fileBatch); err != nil {
 		t.Fatal(err)
 	}
+
 	legacy := func(source, externalID string) []byte {
 		sum := sha256.Sum256([]byte(account.String() + "\x00" + source + "\x00id\x00" + externalID))
 		return sum[:]
 	}
 	day := "2026-10-08"
+
 	lines := []struct {
 		batch      uuid.UUID
 		externalID string
@@ -56,14 +63,17 @@ func TestDedupKeyMigration(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
+
 	if err := postgres.Migrate(ctx, pool, log); err != nil {
 		t.Fatal(err)
 	}
+
 	for _, l := range lines {
 		var got []byte
 		if err := pool.QueryRow(ctx, `SELECT dedup_key FROM ingestion_external_record WHERE external_id = $1`, l.externalID).Scan(&got); err != nil {
 			t.Fatal(err)
 		}
+
 		want := domain.DedupKey(account, l.source, domain.NormalizedRecord{ExternalID: l.externalID}, 0)
 		if !bytes.Equal(got, want) {
 			t.Errorf("%s: dedup_key = %x; want %x", l.externalID, got, want)

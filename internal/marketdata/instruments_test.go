@@ -29,30 +29,39 @@ func TestDefineInstrument(t *testing.T) {
 
 	r := h.Do(http.MethodPost, "/api/v1/instruments", mxrf11())
 	var got instrumentAPI
+
 	if r.Status != http.StatusCreated {
 		t.Fatalf("status %d: %s", r.Status, r.Body)
 	}
+
 	r.Decode(t, &got)
+
 	if r.Header.Get("Location") != "/api/v1/instruments/MXRF11" {
 		t.Fatalf("Location = %q", r.Header.Get("Location"))
 	}
+
 	if got != (instrumentAPI{Code: "MXRF11", Type: "reit", Scale: 0, Name: "Maxi Renda", QuoteCurrency: "BRL", Exchange: "BVMF"}) {
 		t.Fatalf("instrument = %+v", got)
 	}
 
 	var read instrumentAPI
 	h.MustDo(http.MethodGet, "/api/v1/instruments/MXRF11", nil, http.StatusOK, &read)
+
 	if read != got {
 		t.Fatalf("read = %+v", read)
 	}
+
 	var list struct {
 		Items []instrumentAPI `json:"items"`
 	}
 	h.MustDo(http.MethodGet, "/api/v1/instruments?type=reit", nil, http.StatusOK, &list)
+
 	if len(list.Items) != 1 || list.Items[0].Code != "MXRF11" {
 		t.Fatalf("reit list = %+v", list)
 	}
+
 	h.MustDo(http.MethodGet, "/api/v1/instruments?type=currency", nil, http.StatusOK, &list)
+
 	brl := slices.IndexFunc(list.Items, func(i instrumentAPI) bool { return i.Code == "BRL" })
 	if len(list.Items) != len(money.Currencies()) || brl < 0 || list.Items[brl].QuoteCurrency != "" {
 		t.Fatalf("currency list = %+v", list.Items)
@@ -68,8 +77,10 @@ func TestDefineInstrumentValidation(t *testing.T) {
 	with := func(k string, v any) map[string]any {
 		in := mxrf11()
 		in[k] = v
+
 		return in
 	}
+
 	tests := []struct {
 		name  string
 		body  map[string]any
@@ -86,14 +97,17 @@ func TestDefineInstrumentValidation(t *testing.T) {
 			h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/instruments", tt.body), http.StatusUnprocessableEntity, "validation_failed", tt.field)
 		})
 	}
+
 	for _, body := range []map[string]any{with("exchange", "B3"), with("exchange", "bvmf"), with("type", "fii"), with("type", "bdr")} {
 		h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/instruments", body), http.StatusBadRequest, "invalid_request", "")
 	}
+
 	for _, body := range []map[string]any{with("exchange", "XNYS"), with("type", "depositary_receipt")} {
 		if r := h.Do(http.MethodPost, "/api/v1/instruments", body); r.Status != http.StatusCreated && r.Status != http.StatusConflict {
 			t.Fatalf("status %d: %s", r.Status, r.Body)
 		}
 	}
+
 	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/instruments", with("scale", 13)), http.StatusBadRequest, "invalid_request", "")
 	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/instruments", with("code", "mxrf11")), http.StatusBadRequest, "invalid_request", "")
 }
@@ -107,19 +121,24 @@ func TestS171EditInstrument(t *testing.T) {
 
 	var got instrumentAPI
 	h.MustDo(http.MethodPatch, "/api/v1/instruments/MXRF11", map[string]any{"name": "Maxi Renda FII", "subtype": "fii_papel"}, http.StatusOK, &got)
+
 	want := instrumentAPI{Code: "MXRF11", Type: "reit", Scale: 0, Name: "Maxi Renda FII", QuoteCurrency: "BRL", Subtype: "fii_papel"}
 	if got != want {
 		t.Fatalf("edited = %+v, want %+v", got, want)
 	}
+
 	var read instrumentAPI
 	h.MustDo(http.MethodGet, "/api/v1/instruments/MXRF11", nil, http.StatusOK, &read)
+
 	if read != want {
 		t.Fatalf("read = %+v, want %+v", read, want)
 	}
+
 	var prices struct {
 		Items []priceAPI `json:"items"`
 	}
 	h.MustDo(http.MethodGet, "/api/v1/prices?instrument=MXRF11&quote_instrument=BRL&from=2026-10-01&to=2026-10-31", nil, http.StatusOK, &prices)
+
 	if len(prices.Items) != 1 || prices.Items[0] != (priceAPI{Instrument: "MXRF11", QuoteInstrument: "BRL", Date: "2026-10-22", Value: "10.5", Source: "manual"}) {
 		t.Fatalf("prices = %+v", prices.Items)
 	}
@@ -140,6 +159,7 @@ func TestReconcileCurrencies(t *testing.T) {
 		if err := h.Pool.QueryRow(ctx, `SELECT count(*) FROM marketdata_instrument WHERE instrument_type = 'currency'`).Scan(&n); err != nil {
 			t.Fatal(err)
 		}
+
 		return n
 	}
 	if got, want := count(), len(money.Currencies()); got != want {
@@ -149,13 +169,16 @@ func TestReconcileCurrencies(t *testing.T) {
 	if _, err := h.Pool.Exec(ctx, `UPDATE marketdata_instrument SET name = 'Custom' WHERE code = 'EUR'`); err != nil {
 		t.Fatal(err)
 	}
+
 	if err := h.App.Marketdata.ReconcileCurrencies(ctx); err != nil {
 		t.Fatal(err)
 	}
+
 	var name string
 	if err := h.Pool.QueryRow(ctx, `SELECT name FROM marketdata_instrument WHERE code = 'EUR'`).Scan(&name); err != nil {
 		t.Fatal(err)
 	}
+
 	if name != "Custom" {
 		t.Errorf("EUR name = %q, want Custom", name)
 	}
@@ -167,22 +190,28 @@ func TestInstrumentSubtype(t *testing.T) {
 	cri := map[string]any{"code": "CRIXPTO", "type": "fixed_income", "scale": 2, "name": "CRI Xpto", "quote_currency": "BRL", "subtype": "cri"}
 	var got instrumentAPI
 	h.MustDo(http.MethodPost, "/api/v1/instruments", cri, http.StatusCreated, &got)
+
 	if got.Subtype != "cri" {
 		t.Fatalf("created = %+v", got)
 	}
+
 	var read instrumentAPI
 	h.MustDo(http.MethodGet, "/api/v1/instruments/CRIXPTO", nil, http.StatusOK, &read)
+
 	if read.Subtype != "cri" {
 		t.Fatalf("read = %+v", read)
 	}
 
 	var plain instrumentAPI
 	h.MustDo(http.MethodPost, "/api/v1/instruments", mxrf11(), http.StatusCreated, &plain)
+
 	if plain.Subtype != "" {
 		t.Fatalf("an instrument without subtype read %+v", plain)
 	}
+
 	var raw map[string]any
 	h.MustDo(http.MethodGet, "/api/v1/instruments/MXRF11", nil, http.StatusOK, &raw)
+
 	if _, ok := raw["subtype"]; ok {
 		t.Fatalf("subtype present on an instrument without one: %v", raw)
 	}

@@ -37,6 +37,7 @@ func (r *Repository) AccountCurrency(ctx context.Context, userID int64, accountI
 	case len(cs) > 1:
 		return "", app.ErrMixedInstruments
 	}
+
 	return cs[0], nil
 }
 
@@ -48,6 +49,7 @@ func (r *Repository) Rebuild(ctx context.Context, userID int64, accountID uuid.U
 		if err := q.DeleteAccountDaysFrom(ctx, DeleteAccountDaysFromParams{AccountID: accountID, Date: from}); err != nil {
 			return err
 		}
+
 		return q.InsertAccountDaysFrom(ctx, InsertAccountDaysFromParams{UserID: userID, AccountID: accountID, FromDate: from})
 	})
 }
@@ -57,6 +59,7 @@ func (r *Repository) AccountInstrument(ctx context.Context, userID int64, accoun
 	if errors.Is(err, pgx.ErrNoRows) {
 		return "", app.ErrNotFound
 	}
+
 	return instrument, err
 }
 
@@ -65,6 +68,7 @@ func (r *Repository) AccountName(ctx context.Context, userID int64, accountID uu
 	if errors.Is(err, pgx.ErrNoRows) {
 		return "", app.ErrNotFound
 	}
+
 	return name, err
 }
 
@@ -73,10 +77,12 @@ func (r *Repository) AccountFlows(ctx context.Context, userID int64, accountID u
 	if err != nil {
 		return nil, err
 	}
+
 	out := make([]app.Flow, len(rows))
 	for i, row := range rows {
 		out[i] = app.Flow{Date: row.Date, Inflow: row.InflowBooked, Outflow: row.OutflowBooked}
 	}
+
 	return out, nil
 }
 
@@ -85,10 +91,12 @@ func (r *Repository) TreeDailyDeltas(ctx context.Context, userID int64, accountI
 	if err != nil {
 		return nil, err
 	}
+
 	out := make([]app.DayDelta, len(rows))
 	for i, row := range rows {
 		out[i] = app.DayDelta{Date: row.Date, Booked: row.DeltaBooked, Settled: row.DeltaSettled}
 	}
+
 	return out, nil
 }
 
@@ -97,10 +105,12 @@ func (r *Repository) AllAccounts(ctx context.Context) ([]app.AccountRef, error) 
 	if err != nil {
 		return nil, err
 	}
+
 	out := make([]app.AccountRef, len(rows))
 	for i, row := range rows {
 		out[i] = app.AccountRef{UserID: row.UserID, AccountID: row.ID}
 	}
+
 	return out, nil
 }
 
@@ -109,9 +119,11 @@ func (r *Repository) CategoryTotals(ctx context.Context, userID int64, class str
 	if err != nil {
 		return nil, err
 	}
+
 	out := make([]app.CategoryRow, len(rows))
 	for i, row := range rows {
 		out[i] = app.CategoryRow{ID: row.ID, Name: row.Name, ParentID: row.ParentID.UUID, Instrument: row.Instrument, Closed: row.ClosedOn != nil, Total: row.Total}
 	}
+
 	return out, nil
 }

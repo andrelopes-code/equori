@@ -16,21 +16,26 @@ func (s *Service) CreateConnection(ctx context.Context, userID int64, integratio
 	if err := s.available(); err != nil {
 		return domain.Connection{}, err
 	}
+
 	i, err := s.repo.Integration(ctx, userID, integrationID)
 	if errors.Is(err, ErrNotFound) {
 		return domain.Connection{}, &domain.FieldError{Field: "integration_id", Message: "unknown integration"}
 	}
+
 	if err != nil {
 		return domain.Connection{}, err
 	}
+
 	creds, err := s.credentials(i)
 	if err != nil {
 		return domain.Connection{}, err
 	}
+
 	agg, err := s.aggregator(i.Aggregator)
 	if err != nil {
 		return domain.Connection{}, err
 	}
+
 	c, err := agg.Item(ctx, i.ID, creds, itemID)
 	switch {
 	case errors.Is(err, ErrAggregatorUnauthorized):
@@ -40,15 +45,20 @@ func (s *Service) CreateConnection(ctx context.Context, userID int64, integratio
 	case err != nil:
 		return domain.Connection{}, err
 	}
+
 	if c.Name, err = domain.ConnectionName(name, c.Name); err != nil {
 		return domain.Connection{}, err
 	}
+
 	c.UserID, c.IntegrationID, c.ExternalID = userID, i.ID, itemID
+
 	stored, err := s.repo.InsertConnection(ctx, c)
 	if err != nil {
 		return domain.Connection{}, err
 	}
+
 	stored.State, stored.Portal = agg.State(stored.ProviderStatus), agg.Portal()
+
 	return stored, nil
 }
 
@@ -61,14 +71,18 @@ func (s *Service) withState(ctx context.Context, c *domain.Connection, aggs map[
 		if err != nil {
 			return err
 		}
+
 		agg, _ = s.aggregator(i.Aggregator)
 		aggs[c.IntegrationID] = agg
 	}
+
 	if agg == nil {
 		c.State = domain.StateFailed
 		return nil
 	}
+
 	c.State, c.Portal = agg.State(c.ProviderStatus), agg.Portal()
+
 	return nil
 }
 
@@ -76,10 +90,12 @@ func (s *Service) Connection(ctx context.Context, userID int64, id uuid.UUID) (d
 	if err := s.available(); err != nil {
 		return domain.Connection{}, err
 	}
+
 	c, err := s.repo.Connection(ctx, userID, id)
 	if err != nil {
 		return domain.Connection{}, err
 	}
+
 	return c, s.withState(ctx, &c, map[uuid.UUID]Aggregator{})
 }
 
@@ -87,16 +103,19 @@ func (s *Service) ListConnections(ctx context.Context, userID int64, p page.Requ
 	if err := s.available(); err != nil {
 		return nil, nil, err
 	}
+
 	list, next, err := s.repo.ListConnections(ctx, userID, p)
 	if err != nil {
 		return nil, nil, err
 	}
+
 	aggs := map[uuid.UUID]Aggregator{}
 	for i := range list {
 		if err := s.withState(ctx, &list[i], aggs); err != nil {
 			return nil, nil, err
 		}
 	}
+
 	return list, next, nil
 }
 
@@ -104,6 +123,7 @@ func (s *Service) DeleteConnection(ctx context.Context, userID int64, id uuid.UU
 	if err := s.available(); err != nil {
 		return err
 	}
+
 	return s.repo.DeleteConnection(ctx, userID, id)
 }
 
@@ -112,35 +132,43 @@ func (s *Service) MapAccount(ctx context.Context, userID int64, connectionID, ex
 	if err := s.available(); err != nil {
 		return domain.ExternalAccount{}, err
 	}
+
 	c, err := s.repo.Connection(ctx, userID, connectionID)
 	if err != nil {
 		return domain.ExternalAccount{}, err
 	}
+
 	var ext *domain.ExternalAccount
 	for i := range c.Accounts {
 		if c.Accounts[i].ID == externalAccountID {
 			ext = &c.Accounts[i]
 		}
 	}
+
 	if ext == nil {
 		return domain.ExternalAccount{}, ErrNotFound
 	}
+
 	if err := m.Validate(); err != nil {
 		return domain.ExternalAccount{}, err
 	}
+
 	var target domain.ImportTarget
 	if !m.Ignored {
 		target, err = s.ledger.ImportTarget(ctx, userID, *m.AccountID)
 		if errors.Is(err, ErrNotFound) {
 			return domain.ExternalAccount{}, &domain.FieldError{Field: "account_id", Message: "unknown account"}
 		}
+
 		if err != nil {
 			return domain.ExternalAccount{}, err
 		}
 	}
+
 	mapped, err := ext.Apply(m, target)
 	if err != nil {
 		return domain.ExternalAccount{}, err
 	}
+
 	return s.repo.SaveMapping(ctx, mapped)
 }

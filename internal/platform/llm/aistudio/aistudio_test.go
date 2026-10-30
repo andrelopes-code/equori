@@ -26,20 +26,24 @@ type received struct {
 // testdata/fixture, recording the request into got.
 func serve(t *testing.T, status int, fixture string, got *received) *httptest.Server {
 	t.Helper()
+
 	body, err := os.ReadFile("testdata/" + fixture)
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		b, _ := io.ReadAll(r.Body)
 		if got != nil {
 			*got = received{method: r.Method, path: r.URL.Path, key: r.Header.Get("x-goog-api-key"), query: r.URL.RawQuery, body: b}
 		}
+
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(status)
 		_, _ = w.Write(body)
 	}))
 	t.Cleanup(srv.Close)
+
 	return srv
 }
 
@@ -49,17 +53,21 @@ func user(s string) llm.Message {
 
 func decode(t *testing.T, b []byte) map[string]any {
 	t.Helper()
+
 	var m map[string]any
 	if err := json.Unmarshal(b, &m); err != nil {
 		t.Fatalf("decode %s: %v", b, err)
 	}
+
 	return m
 }
 
 func TestGenerateRequest(t *testing.T) {
 	t.Parallel()
+
 	temperature := 0.2
 	call := llm.ToolCall{ID: "c1", Name: "balance", Args: json.RawMessage(`{"account":"x"}`)}
+
 	tests := []struct {
 		name string
 		req  llm.Request
@@ -115,13 +123,16 @@ func TestGenerateRequest(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			var got received
 			srv := serve(t, http.StatusOK, "text.json", &got)
+
 			p := aistudio.New(srv.URL, "k", srv.Client())
 			if _, err := p.Generate(context.Background(), "gemini-x", tt.req); err != nil {
 				t.Fatalf("Generate: %v", err)
 			}
+
 			if got.method != http.MethodPost || got.path != "/v1beta/models/gemini-x:generateContent" || got.key != "k" || got.query != "" {
 				t.Fatalf("request = %s %s?%s key %q", got.method, got.path, got.query, got.key)
 			}
+
 			if body, want := decode(t, got.body), decode(t, []byte(tt.want)); !reflect.DeepEqual(body, want) {
 				t.Fatalf("body = %s\nwant %s", got.body, tt.want)
 			}
@@ -131,6 +142,7 @@ func TestGenerateRequest(t *testing.T) {
 
 func TestGenerateResponse(t *testing.T) {
 	t.Parallel()
+
 	tests := []struct {
 		fixture string
 		want    llm.Response
@@ -184,10 +196,12 @@ func TestGenerateResponse(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.fixture, func(t *testing.T) {
 			srv := serve(t, http.StatusOK, tt.fixture, nil)
+
 			got, err := aistudio.New(srv.URL, "k", srv.Client()).Generate(context.Background(), "gemini-x", llm.Request{Messages: []llm.Message{user("hi")}})
 			if err != nil {
 				t.Fatalf("Generate: %v", err)
 			}
+
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Fatalf("response = %+v\nwant %+v", got, tt.want)
 			}
@@ -197,6 +211,7 @@ func TestGenerateResponse(t *testing.T) {
 
 func TestName(t *testing.T) {
 	t.Parallel()
+
 	if got := aistudio.New("http://x", "k", http.DefaultClient).Name(); got != "aistudio" {
 		t.Fatalf("Name() = %q, want aistudio", got)
 	}
@@ -213,13 +228,16 @@ func TestModels(t *testing.T) {
 			`{"name":"models/gemini-a","supportedGenerationMethods":["generateContent"]}]}`)
 	}))
 	t.Cleanup(srv.Close)
+
 	models, err := aistudio.New(srv.URL, "k", http.DefaultClient).Models(context.Background())
 	if err != nil {
 		t.Fatalf("Models: %v", err)
 	}
+
 	if got.method != http.MethodGet || got.path != "/v1beta/models" || got.key != "k" {
 		t.Fatalf("request = %+v", got)
 	}
+
 	if !reflect.DeepEqual(models, []string{"gemini-a", "gemini-b"}) {
 		t.Fatalf("models = %v, want [gemini-a gemini-b]", models)
 	}
@@ -227,6 +245,7 @@ func TestModels(t *testing.T) {
 
 func TestGenerateToolChoiceNone(t *testing.T) {
 	t.Parallel()
+
 	tools := []llm.Tool{{Name: "f", Parameters: json.RawMessage(`{"type":"object"}`)}}
 	for _, tt := range []struct {
 		choice llm.ToolChoice
@@ -234,11 +253,13 @@ func TestGenerateToolChoiceNone(t *testing.T) {
 	}{{llm.ToolChoiceNone, true}, {llm.ToolChoiceAuto, false}} {
 		var got received
 		srv := serve(t, http.StatusOK, "text.json", &got)
+
 		_, err := aistudio.New(srv.URL, "k", http.DefaultClient).Generate(context.Background(), "m1",
 			llm.Request{Messages: []llm.Message{user("hi")}, Tools: tools, ToolChoice: tt.choice})
 		if err != nil {
 			t.Fatalf("Generate: %v", err)
 		}
+
 		has := strings.Contains(string(got.body), `"toolConfig":{"functionCallingConfig":{"mode":"NONE"}}`)
 		if has != tt.want || (!tt.want && strings.Contains(string(got.body), "toolConfig")) {
 			t.Fatalf("choice %q: body %s", tt.choice, got.body)
@@ -249,29 +270,35 @@ func TestGenerateToolChoiceNone(t *testing.T) {
 // sse starts a fake Gemini API that answers with status and frames as server-sent events.
 func sse(t *testing.T, status int, frames []string, got *received) *httptest.Server {
 	t.Helper()
+
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		b, _ := io.ReadAll(r.Body)
 		*got = received{method: r.Method, path: r.URL.Path, key: r.Header.Get("x-goog-api-key"), query: r.URL.RawQuery, body: b}
 		w.Header().Set("Content-Type", "text/event-stream")
 		w.WriteHeader(status)
+
 		for _, f := range frames {
 			_, _ = io.WriteString(w, "data: "+f+"\r\n\r\n")
 		}
 	}))
 	t.Cleanup(srv.Close)
+
 	return srv
 }
 
 // Design 2026-10-26 E2.
 func TestStream(t *testing.T) {
 	t.Parallel()
+
 	text := func(s, finish string) string {
 		f := `{"candidates":[{"content":{"role":"model","parts":[{"text":` + strings.TrimSpace(mustJSON(s)) + `}]}`
 		if finish != "" {
 			f += `,"finishReason":"` + finish + `"`
 		}
+
 		return f + `}]}`
 	}
+
 	tests := []struct {
 		name   string
 		status int
@@ -342,9 +369,11 @@ func TestStream(t *testing.T) {
 			var chunks []string
 			resp, err := aistudio.New(srv.URL, "k", srv.Client()).Stream(context.Background(), "m",
 				llm.Request{Messages: []llm.Message{user("oi")}}, func(s string) { chunks = append(chunks, s) })
+
 			if got.path != "/v1beta/models/m:streamGenerateContent" || got.query != "alt=sse" || got.key != "k" {
 				t.Fatalf("request = %s ? %s, key %q", got.path, got.query, got.key)
 			}
+
 			tt.check(t, resp, chunks, err)
 		})
 	}
@@ -358,16 +387,19 @@ func mustJSON(s string) string {
 // Design 2026-10-26 E14: low thinking maps to thinkingLevel LOW (ai.google.dev/api/generate-content#ThinkingLevel).
 func TestThinkingWire(t *testing.T) {
 	t.Parallel()
+
 	for _, tt := range []struct {
 		thinking string
 		want     any
 	}{{"low", map[string]any{"thinkingLevel": "LOW"}}, {"", nil}} {
 		var got received
+
 		srv := serve(t, 200, "text.json", &got)
 		if _, err := aistudio.New(srv.URL, "k", srv.Client()).Generate(context.Background(), "m",
 			llm.Request{Messages: []llm.Message{user("oi")}, Thinking: tt.thinking}); err != nil {
 			t.Fatal(err)
 		}
+
 		cfg, _ := decode(t, got.body)["generationConfig"].(map[string]any)
 		if !reflect.DeepEqual(cfg["thinkingConfig"], tt.want) {
 			t.Fatalf("Thinking %q: generationConfig = %v, want thinkingConfig %v", tt.thinking, cfg, tt.want)

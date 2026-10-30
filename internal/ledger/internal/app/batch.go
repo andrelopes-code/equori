@@ -18,6 +18,7 @@ type BatchEntry struct {
 // entry's field is prefixed with entries[i] and the member that holds it.
 func (s *Service) RecordBatch(ctx context.Context, userID int64, entries []BatchEntry) ([]domain.Transaction, error) {
 	out := make([]domain.Transaction, len(entries))
+
 	err := s.repo.InTx(ctx, func(r Repository) error {
 		for i, e := range entries {
 			var err error
@@ -32,18 +33,22 @@ func (s *Service) RecordBatch(ctx context.Context, userID int64, entries []Batch
 				if errors.Is(err, ErrNotFound) {
 					err = &domain.FieldError{Field: "card_account_id", Message: "unknown account", Err: domain.ErrUnknownAccount}
 				}
+
 				err = domain.WithFieldPrefix(fmt.Sprintf("entries[%d].installment_purchase.", i), err)
 			default:
 				err = validationError(fmt.Sprintf("entries[%d]", i), "must hold exactly one of transaction and installment_purchase")
 			}
+
 			if err != nil {
 				return err
 			}
 		}
+
 		return nil
 	})
 	if err != nil {
 		return nil, err
 	}
+
 	return out, nil
 }

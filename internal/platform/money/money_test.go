@@ -7,15 +7,18 @@ import (
 
 func mustNew(t *testing.T, amount int64, c Currency) Money {
 	t.Helper()
+
 	m, err := New(amount, c)
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	return m
 }
 
 func TestNew(t *testing.T) {
 	t.Parallel()
+
 	tests := []struct {
 		name     string
 		amount   int64
@@ -37,6 +40,7 @@ func TestNew(t *testing.T) {
 			if !errors.Is(err, tt.want) {
 				t.Fatalf("err = %v, want %v", err, tt.want)
 			}
+
 			if err == nil && (m.Amount() != tt.amount || m.Currency() != tt.currency) {
 				t.Fatalf("got %v", m)
 			}
@@ -52,18 +56,23 @@ func TestArithmetic(t *testing.T) {
 	if sum, err := a.Add(b); err != nil || sum.Amount() != 1250 {
 		t.Fatalf("Add = %v, %v", sum, err)
 	}
+
 	if diff, err := b.Sub(a); err != nil || diff.Amount() != -750 || !diff.IsNegative() {
 		t.Fatalf("Sub = %v, %v", diff, err)
 	}
+
 	if n := a.Neg(); n.Amount() != -1000 || n.Currency() != "BRL" {
 		t.Fatalf("Neg = %v", n)
 	}
+
 	if _, err := a.Add(mustNew(t, 1, "USD")); !errors.Is(err, ErrCurrencyMismatch) {
 		t.Fatalf("Add across currencies err = %v", err)
 	}
+
 	if _, err := a.Sub(mustNew(t, 1, "USD")); !errors.Is(err, ErrCurrencyMismatch) {
 		t.Fatalf("Sub across currencies err = %v", err)
 	}
+
 	if _, err := mustNew(t, MaxAmount, "BRL").Add(mustNew(t, 1, "BRL")); !errors.Is(err, ErrOutOfRange) {
 		t.Fatalf("Add beyond MaxAmount err = %v", err)
 	}
@@ -71,6 +80,7 @@ func TestArithmetic(t *testing.T) {
 
 func TestString(t *testing.T) {
 	t.Parallel()
+
 	tests := []struct {
 		amount   int64
 		currency Currency
@@ -91,10 +101,12 @@ func TestString(t *testing.T) {
 
 func TestDecimal(t *testing.T) {
 	t.Parallel()
+
 	security, err := NewOf(150, "MXRF11", 0)
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	tests := []struct {
 		m    Money
 		want string
@@ -113,9 +125,11 @@ func TestDecimal(t *testing.T) {
 
 func TestParseCurrency(t *testing.T) {
 	t.Parallel()
+
 	if c, err := ParseCurrency("JPY"); err != nil || c.MinorUnits() != 0 {
 		t.Fatalf("ParseCurrency(JPY) = %q, %v", c, err)
 	}
+
 	if _, err := ParseCurrency("BTC"); !errors.Is(err, ErrUnknownCurrency) {
 		t.Fatalf("ParseCurrency(BTC) err = %v", err)
 	}
@@ -123,10 +137,12 @@ func TestParseCurrency(t *testing.T) {
 
 func TestCurrencies(t *testing.T) {
 	t.Parallel()
+
 	got := Currencies()
 	if len(got) != len(minorUnits) {
 		t.Fatalf("len = %d, want %d", len(got), len(minorUnits))
 	}
+
 	for i := 1; i < len(got); i++ {
 		if got[i-1] >= got[i] {
 			t.Fatalf("not sorted at %d: %v", i, got)
@@ -136,6 +152,7 @@ func TestCurrencies(t *testing.T) {
 
 func TestNewOf(t *testing.T) {
 	t.Parallel()
+
 	tests := []struct {
 		name   string
 		amount int64
@@ -159,6 +176,7 @@ func TestNewOf(t *testing.T) {
 			if !errors.Is(err, tt.want) {
 				t.Fatalf("err = %v, want %v", err, tt.want)
 			}
+
 			if err == nil && (m.Amount() != tt.amount || m.Currency() != tt.code || m.Scale() != tt.scale) {
 				t.Fatalf("got %v scale %d", m, m.Scale())
 			}
@@ -168,28 +186,36 @@ func TestNewOf(t *testing.T) {
 
 func TestInstrumentArithmeticKeepsScale(t *testing.T) {
 	t.Parallel()
+
 	a, _ := NewOf(150, "MXRF11", 0)
 	b, _ := NewOf(50, "MXRF11", 0)
+
 	got, err := a.Sub(b)
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if want, _ := NewOf(100, "MXRF11", 0); got != want {
 		t.Fatalf("got %v", got)
 	}
+
 	if sum, err := a.Add(b); err != nil || sum.Scale() != 0 || sum.Amount() != 200 {
 		t.Fatalf("sum = %v, %v", sum, err)
 	}
+
 	if n := a.Neg(); n.Scale() != 0 || n.Amount() != -150 {
 		t.Fatalf("neg = %v", n)
 	}
+
 	if brl := mustNew(t, 1, "BRL"); brl.Scale() != 2 {
 		t.Fatalf("BRL scale = %d", brl.Scale())
 	}
+
 	btc, _ := NewOf(123456789, "BTC", 8)
 	if got := btc.String(); got != "BTC 1.23456789" {
 		t.Fatalf("String = %q", got)
 	}
+
 	if got := a.String(); got != "MXRF11 150" {
 		t.Fatalf("String = %q", got)
 	}
@@ -197,17 +223,20 @@ func TestInstrumentArithmeticKeepsScale(t *testing.T) {
 
 func TestISOCurrencies(t *testing.T) {
 	t.Parallel()
+
 	for code, units := range map[string]int{"EUR": 2, "INR": 2, "KWD": 3, "ISK": 0, "JPY": 0} {
 		c, err := ParseCurrency(code)
 		if err != nil || c.MinorUnits() != units {
 			t.Errorf("%s: %v, units %d", code, err, c.MinorUnits())
 		}
 	}
+
 	for _, code := range []string{"XAU", "CLF", "XXX", "XTS"} {
 		if _, err := ParseCurrency(code); !errors.Is(err, ErrUnknownCurrency) {
 			t.Errorf("%s accepted", code)
 		}
 	}
+
 	if Name("BRL") != "Brazilian Real" {
 		t.Errorf("Name(BRL) = %q", Name("BRL"))
 	}

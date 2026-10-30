@@ -21,8 +21,10 @@ func (s *Service) SaveProfile(ctx context.Context, p domain.Profile) (domain.Pro
 	if err != nil {
 		return domain.Profile{}, err
 	}
+
 	if !slices.Contains(charset.Names(), p.Encoding) {
 		return domain.Profile{}, &domain.FieldError{Field: "encoding", Message: "must be one of " + strings.Join(charset.Names(), ", ")}
 	}
+
 	return s.repo.SaveProfile(ctx, p)
 }

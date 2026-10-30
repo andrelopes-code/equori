@@ -117,6 +117,7 @@ type Line struct {
 // defaultAccount is uuid.Nil when the owner chose none.
 func Read(text string, v Vocabulary, today time.Time, defaultAccount uuid.UUID) []Line {
 	idx := indexHandles(v.Accounts)
+
 	var lines []Line
 	for n, piece := range SplitLines(text) {
 		if t := strings.TrimSpace(piece); t != "" {
@@ -124,6 +125,7 @@ func Read(text string, v Vocabulary, today time.Time, defaultAccount uuid.UUID) 
 			lines = append(lines, r.read(n+1, t, idx))
 		}
 	}
+
 	return lines
 }
 
@@ -154,6 +156,7 @@ func (r *lineReader) mark(first, last int, role Role) {
 	for k := first; k < last; k++ {
 		r.words[k].role, r.words[k].phrase = role, r.phrases
 	}
+
 	r.phrases++
 }
 
@@ -180,25 +183,30 @@ func (r *lineReader) read(number int, text string, idx handleIndex) Line {
 		p, ok := readDate(r.words, i, r.today, r.vocabulary.Lexicon, r.vocabulary.Conventions.Order)
 		return p.words, p, ok
 	})
+
 	var amounts []amountAt
 	for i := 0; i < len(r.words); i++ {
 		if !r.words[i].free() {
 			continue
 		}
+
 		if p, ok := readAmount(r.words, i, r.vocabulary.Lexicon, r.vocabulary.Conventions); ok {
 			amounts = append(amounts, amountAt{p, i})
 			i += p.words - 1
 		}
 	}
+
 	transfer, income := r.keywords()
 	m, methodConflict := methodOf(r.methods())
 
 	plan := r.readInstallmentPhrases(installments, &amounts)
 	r.readDates(dates)
+
 	chosen := r.chooseAmount(amounts)
 	if chosen != nil && chosen.sign > 0 {
 		income = true
 	}
+
 	near := r.findNear(idx)
 	r.readAccounts(mentions, transfer, income, m, methodConflict)
 	r.settleNear(near)
@@ -207,6 +215,7 @@ func (r *lineReader) read(number int, text string, idx handleIndex) Line {
 	r.checkInstallments(plan)
 	r.line.Description = r.description(nil)
 	r.line.Segments = r.segments(text)
+
 	return r.line
 }
 
@@ -217,6 +226,7 @@ func (r *lineReader) readTags() {
 			if !slices.Contains(r.line.Tags, tag) {
 				r.line.Tags = append(r.line.Tags, tag)
 			}
+
 			r.mark(i, i+1, RoleTag)
 		}
 	}
@@ -229,12 +239,15 @@ func (r *lineReader) scan(role Role, read func(i int) (int, any, bool)) []any {
 		if !r.words[i].free() {
 			continue
 		}
+
 		if n, p, ok := read(i); ok {
 			r.mark(i, i+n, role)
+
 			out = append(out, p)
 			i += n - 1
 		}
 	}
+
 	return out
 }
 
@@ -244,6 +257,7 @@ func (r *lineReader) keywords() (transfer, income bool) {
 		if !w.free() {
 			continue
 		}
+
 		switch {
 		case slices.Contains(transferWords, w.norm):
 			transfer = true
@@ -253,8 +267,10 @@ func (r *lineReader) keywords() (transfer, income bool) {
 		default:
 			continue
 		}
+
 		r.mark(i, i+1, RoleKind)
 	}
+
 	return transfer, income
 }
 
@@ -263,9 +279,11 @@ func (r *lineReader) methods() []method {
 	for i, w := range r.words {
 		if m, ok := r.vocabulary.Lexicon.Methods[w.norm]; ok && w.free() {
 			named = append(named, m)
+
 			r.mark(i, i+1, RoleAccount)
 		}
 	}
+
 	return named
 }
 
@@ -280,19 +298,23 @@ func (r *lineReader) readInstallmentPhrases(phrases []any, amounts *[]amountAt) 
 		r.issue(IssueInvalidInstallments, FieldInstallments)
 		return nil
 	}
+
 	p := phrases[0].(installmentPhrase)
 	if !p.valid {
 		r.issue(IssueInvalidInstallments, FieldInstallments)
 		return nil
 	}
+
 	if p.each != nil {
 		each := *p.each
 		if p.count > 1 {
 			each.value = each.value.times(int64(p.count))
 		}
+
 		each.explicit = true
 		*amounts = append(*amounts, amountAt{each, -1})
 	}
+
 	return &p
 }
 
@@ -319,18 +341,22 @@ func (r *lineReader) chooseAmount(amounts []amountAt) *amountAt {
 			explicit = append(explicit, a)
 		}
 	}
+
 	pool := amounts
 	if len(explicit) > 0 {
 		pool = explicit
 	}
+
 	for _, a := range pool {
 		if a.at >= 0 {
 			r.mark(a.at, a.at+a.words, RoleAmount)
 		}
 	}
+
 	if len(pool) == 1 {
 		return &pool[0]
 	}
+
 	return nil
 }
 
@@ -344,27 +370,33 @@ func (r *lineReader) settleAmount(chosen *amountAt, amounts []amountAt) {
 		} else {
 			r.issue(IssueInvalidAmount, FieldAmount)
 		}
+
 		return
 	}
+
 	var pool []amountAt
 	for _, a := range amounts {
 		if a.at >= 0 && r.words[a.at].role == RoleAmount {
 			pool = append(pool, a)
 		}
 	}
+
 	if len(pool) == 0 {
 		r.issue(IssueMissingAmount, FieldAmount)
 		return
 	}
+
 	var choices []Choice
 	for _, a := range pool {
 		v, ok := a.value.minor(scale)
 		if !ok {
 			continue
 		}
+
 		others := func(i int) bool { return i != a.at && r.words[i].role == RoleAmount && !r.inPhrase(a, i) }
 		choices = append(choices, Choice{Amount: v, Description: r.description(others), Describes: true})
 	}
+
 	r.issue(IssueAmbiguousAmount, FieldAmount, choices...)
 }
 
@@ -374,14 +406,17 @@ func (r *lineReader) readAccounts(mentions []mention, transfer, income bool, m m
 	if income {
 		r.line.Kind = KindIncome
 	}
+
 	switch len(mentions) {
 	case 0:
 		if transfer {
 			r.line.Kind = KindTransfer
 			r.useDefault()
 			r.issue(IssueMissingDestination, FieldToAccount)
+
 			return
 		}
+
 		r.byMethod(m, methodConflict)
 	case 1:
 		one := mentions[0]
@@ -398,10 +433,12 @@ func (r *lineReader) readAccounts(mentions []mention, transfer, income bool, m m
 			if methodConflict {
 				m = ""
 			}
+
 			r.setAccount(r.resolve(one.accounts, m, FieldAccount), SourceText)
 		}
 	case 2:
 		r.line.Kind = KindTransfer
+
 		from, to := mentions[0], mentions[1]
 		switch {
 		case from.destination && !to.destination:
@@ -414,12 +451,14 @@ func (r *lineReader) readAccounts(mentions []mention, transfer, income bool, m m
 			r.issue(IssueAmbiguousTransfer, FieldToAccount)
 			return
 		}
+
 		r.setAccount(r.resolve(from.accounts, "", FieldAccount), SourceText)
 		r.line.ToAccountID = r.resolve(to.accounts, "", FieldToAccount)
 	default:
 		r.issue(IssueTooManyAccounts, FieldAccount)
 		return
 	}
+
 	r.checkTransfer()
 }
 
@@ -435,6 +474,7 @@ func (r *lineReader) useDefault() {
 		r.issue(IssueMissingAccount, FieldAccount)
 		return
 	}
+
 	r.line.AccountID, r.line.AccountSource = r.defaultAccount, SourceDefault
 }
 
@@ -445,6 +485,7 @@ func (r *lineReader) byMethod(m method, conflict bool) {
 		r.useDefault()
 		return
 	}
+
 	var fits []int
 	for i, a := range r.vocabulary.Accounts {
 		if conflict || m.admits(a) {
@@ -452,9 +493,11 @@ func (r *lineReader) byMethod(m method, conflict bool) {
 				r.line.AccountID, r.line.AccountSource = a.ID, SourceDefault
 				return
 			}
+
 			fits = append(fits, i)
 		}
 	}
+
 	r.setAccount(r.resolve(fits, "", FieldAccount), SourceText)
 }
 
@@ -466,6 +509,7 @@ func (r *lineReader) resolve(accounts []int, m method, field string) uuid.UUID {
 			left = append(left, i)
 		}
 	}
+
 	switch len(left) {
 	case 0:
 		r.issue(IssueUnknownAccount, field)
@@ -476,8 +520,10 @@ func (r *lineReader) resolve(accounts []int, m method, field string) uuid.UUID {
 		for k, i := range left {
 			choices[k] = Choice{AccountID: r.vocabulary.Accounts[i].ID}
 		}
+
 		r.issue(IssueAmbiguousAccount, field, choices...)
 	}
+
 	return uuid.Nil
 }
 
@@ -485,11 +531,14 @@ func (r *lineReader) checkTransfer() {
 	if r.line.Kind != KindTransfer || r.line.AccountID == uuid.Nil || r.line.ToAccountID == uuid.Nil {
 		return
 	}
+
 	if r.line.AccountID == r.line.ToAccountID {
 		r.issue(IssueSameAccount, FieldToAccount)
 		return
 	}
+
 	from, _ := r.vocabulary.account(r.line.AccountID)
+
 	to, _ := r.vocabulary.account(r.line.ToAccountID)
 	if from.Currency != to.Currency {
 		r.issue(IssueCurrencyMismatch, FieldToAccount)
@@ -501,6 +550,7 @@ func (r *lineReader) currency() money.Currency {
 	if a, ok := r.vocabulary.account(r.line.AccountID); ok {
 		return a.Currency
 	}
+
 	return r.vocabulary.Base
 }
 
@@ -508,11 +558,13 @@ func (r *lineReader) checkInstallments(p *installmentPhrase) {
 	if p == nil || p.count < 2 {
 		return
 	}
+
 	r.line.Installments = p.count
 	if r.line.Kind != KindExpense {
 		r.issue(IssueInstallmentsNotAllowed, FieldInstallments)
 		return
 	}
+
 	if a, ok := r.vocabulary.account(r.line.AccountID); ok && a.Kind != "credit_card" {
 		r.issue(IssueInstallmentsNotAllowed, FieldInstallments)
 	}
@@ -536,26 +588,32 @@ func (r *lineReader) join(include func(i int) bool) string {
 			parts = append(parts, w.core)
 		}
 	}
+
 	for len(parts) > 0 && slices.Contains(connectors, Normalize(parts[0])) {
 		parts = parts[1:]
 	}
+
 	for len(parts) > 0 && slices.Contains(connectors, Normalize(parts[len(parts)-1])) {
 		parts = parts[:len(parts)-1]
 	}
+
 	return capitalize(strings.Join(parts, " "))
 }
 
 // segments cuts text at word and phrase boundaries; the space inside a phrase takes its role.
 func (r *lineReader) segments(text string) []Segment {
 	var out []Segment
+
 	add := func(s string, role Role) {
 		if s == "" {
 			return
 		}
+
 		if n := len(out); n > 0 && out[n-1].Role == role {
 			out[n-1].Text += s
 			return
 		}
+
 		out = append(out, Segment{Text: s, Role: role})
 	}
 	for k, w := range r.words {
@@ -563,14 +621,18 @@ func (r *lineReader) segments(text string) []Segment {
 		if role == "" {
 			role = RoleText
 		}
+
 		add(text[w.start:w.end], role)
+
 		if k+1 < len(r.words) {
 			gap := RoleText
 			if next := r.words[k+1]; w.phrase >= 0 && next.phrase == w.phrase {
 				gap = role
 			}
+
 			add(text[w.end:r.words[k+1].start], gap)
 		}
 	}
+
 	return out
 }

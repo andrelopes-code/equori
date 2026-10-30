@@ -19,6 +19,7 @@ func intOf(p *int) int {
 	if p == nil {
 		return 0
 	}
+
 	return *p
 }
 
@@ -26,6 +27,7 @@ func optInt(v int) *int {
 	if v == 0 {
 		return nil
 	}
+
 	return &v
 }
 
@@ -38,15 +40,18 @@ func fromRecurrenceAPI(r Recurrence) domain.Rule {
 	if r.Adjustment != nil {
 		rule.Adjustment = string(*r.Adjustment)
 	}
+
 	if r.Weekday != nil {
 		w := weekdays[*r.Weekday]
 		rule.Weekday = &w
 	}
+
 	return rule
 }
 
 func toRecurrenceAPI(rule domain.Rule) Recurrence {
 	adjustment := RecurrenceAdjustment(rule.Adjustment)
+
 	out := Recurrence{
 		Frequency: RecurrenceFrequency(rule.Frequency), Interval: rule.Interval, DayOfMonth: optInt(rule.DayOfMonth),
 		Ordinal: optInt(rule.Ordinal), BusinessDayOrdinal: optInt(rule.BusinessDayOrdinal), Adjustment: &adjustment,
@@ -59,6 +64,7 @@ func toRecurrenceAPI(rule domain.Rule) Recurrence {
 			}
 		}
 	}
+
 	return out
 }
 
@@ -72,18 +78,22 @@ func toScheduleAPI(s domain.Schedule) Schedule {
 	for i, t := range s.Terms {
 		out.Terms[i] = ScheduleTerms{EffectiveFrom: apiDate(t.EffectiveFrom), Amount: toMoneyAPI(t.Amount, s.Currency), Recurrence: toRecurrenceAPI(t.Rule)}
 	}
+
 	for i, p := range s.Pauses {
 		out.Pauses[i] = SchedulePause{From: apiDate(p.From), To: apiDate(p.To)}
 	}
+
 	return out
 }
 
 func (s *Server) CreateSchedule(ctx context.Context, req CreateScheduleRequestObject) (CreateScheduleResponseObject, error) {
 	b := req.Body
+
 	amount, err := fromMoneyAPI("amount", b.Amount)
 	if err != nil {
 		return nil, err
 	}
+
 	created, err := s.svc.CreateSchedule(ctx, auth.MustUserID(ctx), app.ScheduleInput{
 		Kind: domain.Kind(b.Kind), AccountID: b.AccountId, CounterpartID: b.CounterpartId, PayeeID: optUUID(b.PayeeId),
 		Description: b.Description, Amount: amount, Rule: fromRecurrenceAPI(b.Recurrence), Calendar: stringOf(b.Calendar),
@@ -92,6 +102,7 @@ func (s *Server) CreateSchedule(ctx context.Context, req CreateScheduleRequestOb
 	if err != nil {
 		return nil, err
 	}
+
 	return CreateSchedule201JSONResponse{Body: toScheduleAPI(created), Headers: CreateSchedule201ResponseHeaders{Location: location("/schedules/", created.ID)}}, nil
 }
 
@@ -100,6 +111,7 @@ func (s *Server) GetSchedule(ctx context.Context, req GetScheduleRequestObject) 
 	if err != nil {
 		return nil, err
 	}
+
 	return GetSchedule200JSONResponse(toScheduleAPI(sch)), nil
 }
 
@@ -108,15 +120,19 @@ func (s *Server) ListSchedules(ctx context.Context, req ListSchedulesRequestObje
 	if err != nil {
 		return nil, err
 	}
+
 	ss, next, err := s.svc.ListSchedules(ctx, auth.MustUserID(ctx), p)
 	if err != nil {
 		return nil, err
 	}
+
 	out := ListSchedules200JSONResponse{Items: make([]Schedule, len(ss))}
 	for i, sch := range ss {
 		out.Items[i] = toScheduleAPI(sch)
 	}
+
 	out.NextCursor, err = page.Next(next)
+
 	return out, err
 }
 
@@ -133,7 +149,9 @@ func (s *Server) ListOccurrences(ctx context.Context, req ListOccurrencesRequest
 	if req.Params.State != nil {
 		state = domain.State(*req.Params.State)
 	}
+
 	var os []app.OccurrenceView
+
 	var err error
 	switch {
 	case req.Params.TransactionId != nil:
@@ -145,13 +163,16 @@ func (s *Server) ListOccurrences(ctx context.Context, req ListOccurrencesRequest
 	default:
 		os, err = s.svc.Occurrences(ctx, auth.MustUserID(ctx), req.Params.From.Time, req.Params.To.Time, optUUID(req.Params.ScheduleId), state)
 	}
+
 	if err != nil {
 		return nil, err
 	}
+
 	out := ListOccurrences200JSONResponse{Items: make([]Occurrence, len(os))}
 	for i, o := range os {
 		out.Items[i] = toOccurrenceAPI(o)
 	}
+
 	return out, nil
 }
 
@@ -159,5 +180,6 @@ func stringOf(p *string) string {
 	if p == nil {
 		return ""
 	}
+
 	return *p
 }

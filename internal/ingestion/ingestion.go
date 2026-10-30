@@ -59,24 +59,32 @@ func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, l *ledger.Module, c 
 		if cfg.PreviousSecretKey != "" {
 			previous = []byte(cfg.PreviousSecretKey)
 		}
+
 		b, err := secret.New([]byte(cfg.SecretKey), previous)
 		if err != nil {
 			return nil, err
 		}
+
 		// A redirect would leave the configured address (N17).
 		hc := &http.Client{CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
+
 		port, err := pluggy.NewPort(cfg.URLs["pluggy"], hc, cfg.Clock)
 		if err != nil {
 			return nil, err
 		}
+
 		in.Box = b
+
 		in.Aggregators, err = registry.New("aggregator", registry.Entry[app.Aggregator]{ID: port.ID(), Value: port})
 		if err != nil {
 			return nil, err
 		}
 	}
+
 	svc := app.NewService(postgres.NewRepository(pool), ledgerPort{l, c}, in)
+
 	dispatcher.Subscribe("ingestion", ledger.EventTransactionsPaired, followPairing)
+
 	return &Module{http: httpapi.NewServer(svc, log), svc: svc, ledger: l, log: log}, nil
 }
 
@@ -90,10 +98,12 @@ func (m *Module) accountNames(ctx context.Context, userID int64) (map[uuid.UUID]
 	if err != nil {
 		return nil, err
 	}
+
 	names := make(map[uuid.UUID]string, len(accounts))
 	for _, a := range accounts {
 		names[a.ID] = a.Name
 	}
+
 	return names, nil
 }
 
@@ -110,6 +120,7 @@ func (m *Module) Tick(ctx context.Context) {
 	for _, f := range failures {
 		m.log.Warn("sync failed", "user_id", f.UserID, "connection_id", f.ConnectionID.String(), "error", f.Err.Error())
 	}
+
 	if err != nil && ctx.Err() == nil {
 		m.log.Error("sync tick failed", "error", err.Error())
 	}
@@ -119,8 +130,10 @@ func (m *Module) Tick(ctx context.Context) {
 func (m *Module) RunScheduler(ctx context.Context, interval time.Duration) {
 	t := time.NewTicker(interval)
 	defer t.Stop()
+
 	for {
 		m.Tick(ctx)
+
 		select {
 		case <-ctx.Done():
 			return
@@ -139,6 +152,7 @@ func followPairing(ctx context.Context, tx pgx.Tx, e outbox.Delivered) error {
 	if err := json.Unmarshal(e.Payload, &p); err != nil {
 		return fmt.Errorf("decode %s: %w", e.Type, err)
 	}
+
 	return app.NewService(postgres.NewTxRepository(tx), nil, app.Integrations{}).FollowPairing(ctx, e.UserID, p.Kept, p.RecordIDs)
 }
 
@@ -172,6 +186,7 @@ func (p ledgerPort) translate(err error) error {
 	case errors.Is(err, ledger.ErrVoided):
 		return app.ErrTransactionVoided
 	}
+
 	return err
 }
 
@@ -186,6 +201,7 @@ func importLine(posting ledger.ImportedPosting, l app.Line) classification.Impor
 	if c := l.Category; c != nil {
 		line.SourceCategory = &classification.LineCategory{Aggregator: c.Aggregator, ExternalID: c.ID, Name: c.Name}
 	}
+
 	return line
 }
 
@@ -194,6 +210,7 @@ func (p ledgerPort) ImportTarget(ctx context.Context, userID int64, accountID uu
 	if errors.Is(err, ledger.ErrValidation) {
 		return domain.ImportTarget{}, &domain.FieldError{Field: "account_id", Message: "must be a balance account without sub-accounts"}
 	}
+
 	return domain.ImportTarget{Currency: t.Currency, Kind: t.Kind}, p.translate(err)
 }
 
@@ -204,29 +221,35 @@ func (p ledgerPort) LinkedTransaction(ctx context.Context, userID int64, recordI
 
 func (p ledgerPort) RecordImported(ctx context.Context, userID int64, lines []app.NewLine) ([]uuid.UUID, error) {
 	recs := make([]ledger.ImportedRecord, len(lines))
+
 	decide := make([]classification.ImportLine, len(lines))
 	for i, l := range lines {
 		posting, err := p.posting(l.Line)
 		if err != nil {
 			return nil, err
 		}
+
 		recs[i] = ledger.ImportedRecord{RecordID: l.RecordID, Posting: posting}
 		decide[i] = importLine(posting, l.Line)
 	}
+
 	decisions, err := p.c.DecideImport(ctx, userID, decide)
 	if err != nil {
 		return nil, err
 	}
+
 	for i := range recs {
 		recs[i].Decision = decisions[i]
 		if to := lines[i].Line.TransferTo; to != nil {
 			recs[i].Decision = &ledger.ImportDecision{TransferTo: *to, Cause: ledger.Cause{Method: "source"}}
 		}
 	}
+
 	ids, err := p.l.RecordImportedBatch(ctx, userID, recs)
 	if le, ok := errors.AsType[*ledger.LineError](err); ok {
 		return nil, &app.RejectedLine{Index: le.Index, Reason: le.Err}
 	}
+
 	return ids, p.translate(err)
 }
 
@@ -237,18 +260,22 @@ func (p ledgerPort) LinePayees(ctx context.Context, userID int64, lines []app.Li
 		if err != nil {
 			return nil, err
 		}
+
 		decide[i] = importLine(posting, l)
 	}
+
 	decisions, err := p.c.DecideImport(ctx, userID, decide)
 	if err != nil {
 		return nil, err
 	}
+
 	out := make([]uuid.UUID, len(lines))
 	for i, d := range decisions {
 		if d != nil {
 			out[i] = d.PayeeID
 		}
 	}
+
 	return out, nil
 }
 
@@ -258,15 +285,18 @@ func (p ledgerPort) ConfirmLine(ctx context.Context, userID int64, txID, account
 
 func (p ledgerPort) UnlinkedPostings(ctx context.Context, userID int64, accountID uuid.UUID, from, to time.Time) ([]domain.LedgerPosting, error) {
 	ps, err := p.l.UnlinkedPostings(ctx, userID, accountID, from, to)
+
 	out := make([]domain.LedgerPosting, len(ps))
 	for i, x := range ps {
 		out[i] = domain.LedgerPosting{TransactionID: x.TransactionID, Date: x.Date, Amount: x.Amount, PayeeID: x.PayeeID, Description: x.Description}
 	}
+
 	return out, p.translate(err)
 }
 
 func (p ledgerPort) UnconfirmedPostings(ctx context.Context, userID int64, accountID uuid.UUID, from, to time.Time) ([]domain.LedgerPosting, error) {
 	ps, err := p.l.UnconfirmedPostings(ctx, userID, accountID, from, to)
+
 	out := make([]domain.LedgerPosting, len(ps))
 	for i, x := range ps {
 		out[i] = domain.LedgerPosting{
@@ -274,6 +304,7 @@ func (p ledgerPort) UnconfirmedPostings(ctx context.Context, userID int64, accou
 			Description: x.Description, StatementID: x.StatementID,
 		}
 	}
+
 	return out, p.translate(err)
 }
 
@@ -282,7 +313,9 @@ func (p ledgerPort) ClearMatched(ctx context.Context, userID int64, ms []app.Mat
 	for i, m := range ms {
 		matches[i] = ledger.Match{RecordID: m.RecordID, TransactionID: m.TransactionID, AccountID: m.AccountID, KeepPending: m.Pending}
 	}
+
 	conflicts, err := p.l.ClearMatchedBatch(ctx, userID, matches)
+
 	return conflicts, p.translate(err)
 }
 
@@ -305,10 +338,12 @@ func (p ledgerPort) assert(ctx context.Context, userID int64, accountID uuid.UUI
 	if err != nil {
 		return err
 	}
+
 	err = assert(ctx, userID, accountID, b.Date, amount)
 	if errors.Is(err, ledger.ErrAlreadyReconciled) || errors.Is(err, ledger.ErrValidation) {
 		return fmt.Errorf("%w: %w", app.ErrBalanceRejected, err)
 	}
+
 	return p.translate(err)
 }
 
@@ -321,23 +356,28 @@ func (p ledgerPort) RecordInstallment(ctx context.Context, userID int64, l app.I
 	if err != nil {
 		return uuid.Nil, uuid.Nil, err
 	}
+
 	decisions, err := p.c.DecideImport(ctx, userID, []classification.ImportLine{importLine(posting, l.Line)})
 	if err != nil {
 		return uuid.Nil, uuid.Nil, err
 	}
+
 	var total *money.Money
 	if t := l.Installment.Total; t != nil {
 		m, err := money.New(*t, l.Line.Currency)
 		if err != nil {
 			return uuid.Nil, uuid.Nil, err
 		}
+
 		total = &m
 	}
+
 	txID, planID, err := p.l.RecordImportedInstallment(ctx, userID, ledger.ImportedInstallment{
 		RecordID: l.RecordID, CardAccountID: posting.AccountID, PurchaseDate: l.Installment.PurchaseDate, LineDate: posting.Date,
 		DueDate: l.Line.DueDate, Description: posting.Description, Number: l.Installment.Number, Count: l.Installment.Count,
 		Amount: posting.Amount.Neg(), Total: total, Decision: decisions[0],
 	})
+
 	return txID, planID, p.installmentError(err)
 }
 
@@ -346,9 +386,11 @@ func (p ledgerPort) LinkInstallment(ctx context.Context, userID int64, recordID,
 	if err != nil {
 		return uuid.Nil, err
 	}
+
 	txID, err := p.l.LinkInstallment(ctx, userID, recordID, planID, number, ledger.InstallmentConfirmation{
 		Amount: posting.Amount.Neg(), DueDate: l.DueDate, Pending: l.Pending,
 	})
+
 	return txID, p.installmentError(err)
 }
 
@@ -358,6 +400,7 @@ func (p ledgerPort) installmentError(err error) error {
 			return fmt.Errorf("%w: %w", app.ErrInstallmentRefused, err)
 		}
 	}
+
 	return p.translate(err)
 }
 
@@ -366,14 +409,17 @@ func (p ledgerPort) RecordStatementFacts(ctx context.Context, userID int64, acco
 	if err != nil {
 		return err
 	}
+
 	f := ledger.StatementFacts{Closing: b.Closing, Due: b.Due, Total: total}
 	if b.Minimum != nil {
 		minimum, err := money.New(*b.Minimum, c)
 		if err != nil {
 			return err
 		}
+
 		f.Minimum = &minimum
 	}
+
 	return p.translate(p.l.RecordStatementFacts(ctx, userID, accountID, f))
 }
 
@@ -382,6 +428,7 @@ func (p ledgerPort) RecordCardOpening(ctx context.Context, userID int64, account
 	if err != nil {
 		return err
 	}
+
 	return p.translate(p.l.RecordCardOpening(ctx, userID, accountID, b.Due, total))
 }
 

@@ -8,6 +8,7 @@ func DefaultBaseCurrency(region string) (money.Currency, bool) {
 	case "BR":
 		return "BRL", true
 	}
+
 	return "", false
 }
 
@@ -17,6 +18,7 @@ func DefaultForeignChargeBP(region string) int {
 	case "BR":
 		return 350
 	}
+
 	return 0
 }
 
@@ -28,6 +30,7 @@ func DefaultReserveYieldPercent(currency money.Currency) int64 {
 		// 0.1% per day, above the 0.0644% per day of 140% CDI at 12.3% per year.
 		return 3
 	}
+
 	return 0
 }
 
@@ -36,5 +39,6 @@ func DefaultWithholdingBP(region, incomeType string) int {
 	if region == "BR" && incomeType == "jcp" {
 		return 1500
 	}
+
 	return 0
 }

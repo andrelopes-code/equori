@@ -11,6 +11,7 @@ func bit(b bool) int32 {
 	if b {
 		return 1
 	}
+
 	return 0
 }
 
@@ -19,6 +20,7 @@ func (r *Repository) AddUsage(ctx context.Context, e domain.UsageEntry) error {
 	if !e.CoolingUntil.IsZero() {
 		until = &e.CoolingUntil
 	}
+
 	return r.q.AddUsage(ctx, AddUsageParams{
 		UserID: e.UserID, Day: e.Day, ProviderID: e.ProviderID, Model: e.Model, UseID: e.UseID,
 		Errors: bit(e.Failed), QuotaErrors: bit(e.Quota), InputTokens: e.InputTokens, OutputTokens: e.OutputTokens,
@@ -32,6 +34,7 @@ func (r *Repository) UsageSince(ctx context.Context, userID int64, today, since 
 	if err != nil {
 		return nil, err
 	}
+
 	out := make([]domain.UsageSummary, len(rows))
 	for i, row := range rows {
 		out[i] = domain.UsageSummary{
@@ -43,6 +46,7 @@ func (r *Repository) UsageSince(ctx context.Context, userID int64, today, since 
 			out[i].CoolingUntil = time.Time{}
 		}
 	}
+
 	return out, nil
 }
 
@@ -51,10 +55,12 @@ func (r *Repository) UsageByDay(ctx context.Context, userID int64, from, to time
 	if err != nil {
 		return nil, err
 	}
+
 	out := make([]domain.UsageDay, len(rows))
 	for i, row := range rows {
 		out[i] = domain.UsageDay{Day: row.Day, ProviderID: row.ProviderID, Model: row.Model, Requests: row.Requests, Errors: row.Errors, Tokens: row.Tokens}
 	}
+
 	return out, nil
 }
 
@@ -63,6 +69,7 @@ func (r *Repository) Limits(ctx context.Context, userID int64) ([]domain.Limit, 
 	if err != nil {
 		return nil, err
 	}
+
 	out := make([]domain.Limit, len(rows))
 	for i, row := range rows {
 		out[i] = domain.Limit{ProviderID: row.ProviderID, Model: row.Model, TokensPerDay: row.TokensPerDay}
@@ -71,6 +78,7 @@ func (r *Repository) Limits(ctx context.Context, userID int64) ([]domain.Limit, 
 			out[i].RequestsPerDay = &n
 		}
 	}
+
 	return out, nil
 }
 
@@ -79,11 +87,13 @@ func (r *Repository) SetLimit(ctx context.Context, userID int64, l domain.Limit)
 	if l.Cleared() {
 		return r.q.DeleteUsageLimit(ctx, DeleteUsageLimitParams{UserID: userID, ProviderID: l.ProviderID, Model: l.Model})
 	}
+
 	var requests *int32
 	if l.RequestsPerDay != nil {
 		n := int32(*l.RequestsPerDay) //nolint:gosec // domain.NewLimit keeps it within int32
 		requests = &n
 	}
+
 	return r.q.SetUsageLimit(ctx, SetUsageLimitParams{
 		UserID: userID, ProviderID: l.ProviderID, Model: l.Model, RequestsPerDay: requests, TokensPerDay: l.TokensPerDay,
 	})

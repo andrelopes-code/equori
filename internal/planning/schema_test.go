@@ -25,12 +25,14 @@ func TestSchemaInvariants(t *testing.T) {
 		_, err := h.Pool.Exec(ctx, sql, args...)
 		return err
 	}
+
 	pause := func(period string) error {
 		return exec(`INSERT INTO planning_schedule_pause (user_id, schedule_id, period) VALUES ($1, $2, $3::daterange)`, uid, id, period)
 	}
 	if err := pause("[2027-02-01,2027-03-31]"); err != nil {
 		t.Fatal(err)
 	}
+
 	realize := func(sequence int, txID any) error {
 		return exec(`UPDATE planning_occurrence SET state = 'realized', transaction_id = $3, realized_by = 'manual'
 			WHERE schedule_id = $1 AND sequence = $2`, id, sequence, txID)
@@ -38,21 +40,26 @@ func TestSchemaInvariants(t *testing.T) {
 	if err := realize(1, tx); err != nil {
 		t.Fatal(err)
 	}
+
 	other := h.Login("other@example.com")
 	var foreign struct {
 		ID string `json:"id"`
 	}
+
 	r := h.Call(other, http.MethodPost, "/api/v1/accounts", map[string]any{"name": "Other", "class": "asset", "kind": "checking", "currency": "BRL"})
 	if r.Status != http.StatusCreated {
 		t.Fatalf("other account: %d %s", r.Status, r.Body)
 	}
+
 	r.Decode(t, &foreign)
+
 	reference := func(source string, amount any) error {
 		return exec(`INSERT INTO planning_budget_reference (user_id, source, amount, currency) VALUES ($1, $2, $3, 'BRL')`, uid, source, amount)
 	}
 	if err := reference("fixed", 0); err != nil {
 		t.Fatal(err)
 	}
+
 	var otherID int64
 	if err := h.Pool.QueryRow(ctx, `SELECT id FROM identity_user WHERE email = 'other@example.com'`).Scan(&otherID); err != nil {
 		t.Fatal(err)

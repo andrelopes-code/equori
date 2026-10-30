@@ -18,15 +18,20 @@ func TestAccountAppearance(t *testing.T) {
 	c := newCategoryTree(t)
 	var out appearanceView
 	c.h.MustDo(http.MethodPut, "/api/v1/accounts/"+c.food+"/appearance", map[string]any{"color": 3, "icon": "utensils"}, http.StatusOK, &out)
+
 	if out.Color == nil || *out.Color != 3 || out.Icon == nil || *out.Icon != "utensils" {
 		t.Fatalf("appearance = %+v", out)
 	}
+
 	c.h.MustDo(http.MethodGet, "/api/v1/accounts/"+c.food, nil, http.StatusOK, &out)
+
 	if out.Color == nil || *out.Color != 3 || out.Icon == nil || *out.Icon != "utensils" {
 		t.Fatalf("read back = %+v", out)
 	}
+
 	var cleared appearanceView
 	c.h.MustDo(http.MethodPut, "/api/v1/accounts/"+c.food+"/appearance", map[string]any{"color": nil, "icon": nil}, http.StatusOK, &cleared)
+
 	if cleared.Color != nil || cleared.Icon != nil {
 		t.Fatalf("cleared = %+v", cleared)
 	}
@@ -37,6 +42,7 @@ func TestAccountAppearanceOnCreate(t *testing.T) {
 	c := newCategoryTree(t)
 	var out appearanceView
 	c.h.MustDo(http.MethodPost, "/api/v1/accounts", map[string]any{"name": "Pets", "class": "expense", "currency": "BRL", "color": 5, "icon": "paw-print"}, http.StatusCreated, &out)
+
 	if out.Color == nil || *out.Color != 5 || out.Icon == nil || *out.Icon != "paw-print" {
 		t.Fatalf("created = %+v", out)
 	}
@@ -51,20 +57,25 @@ func TestAccountAppearanceInList(t *testing.T) {
 		Items []appearanceView `json:"items"`
 	}
 	c.h.MustDo(http.MethodGet, "/api/v1/accounts?limit=200", nil, http.StatusOK, &list)
+
 	for _, item := range list.Items {
 		if item.ID != c.food {
 			continue
 		}
+
 		if item.Color == nil || *item.Color != 3 || item.Icon == nil || *item.Icon != "utensils" {
 			t.Fatalf("listed food = %+v", item)
 		}
+
 		return
 	}
+
 	t.Fatalf("food %s not listed", c.food)
 }
 
 func TestAccountAppearanceRejections(t *testing.T) {
 	t.Parallel()
+
 	c := newCategoryTree(t)
 	for _, body := range []map[string]any{
 		{"color": 9, "icon": nil},
@@ -81,13 +92,17 @@ func TestSetAccountParent(t *testing.T) {
 	c := newCategoryTree(t)
 	var out appearanceView
 	c.h.MustDo(http.MethodPut, "/api/v1/accounts/"+c.bakery+"/parent", map[string]any{"parent_id": nil}, http.StatusOK, &out)
+
 	if out.ParentID != "" {
 		t.Fatalf("bakery parent = %q, want top level", out.ParentID)
 	}
+
 	c.h.MustDo(http.MethodPut, "/api/v1/accounts/"+c.bakery+"/parent", map[string]any{"parent_id": c.delivery}, http.StatusOK, &out)
+
 	if out.ParentID != c.delivery {
 		t.Fatalf("bakery parent = %q, want delivery", out.ParentID)
 	}
+
 	c.h.ExpectProblem(c.h.Do(http.MethodPut, "/api/v1/accounts/"+c.food+"/parent", map[string]any{"parent_id": c.bakery}),
 		http.StatusUnprocessableEntity, "validation_failed", "parent_id")
 

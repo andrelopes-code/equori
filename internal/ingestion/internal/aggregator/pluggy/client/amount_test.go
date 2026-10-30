@@ -8,6 +8,7 @@ import (
 // P6 amendment A37: amounts are read from the number text, never through float64.
 func TestMinor(t *testing.T) {
 	t.Parallel()
+
 	tests := []struct {
 		raw  Decimal
 		want int64
@@ -32,6 +33,7 @@ func TestMinor(t *testing.T) {
 		if (err != nil) != tt.err || got != tt.want {
 			t.Errorf("Minor(%q) = %d, %v; want %d, error %v", tt.raw, got, err, tt.want, tt.err)
 		}
+
 		if err != nil && !errors.Is(err, ErrAmount) {
 			t.Errorf("Minor(%q) error %v is not ErrAmount", tt.raw, err)
 		}

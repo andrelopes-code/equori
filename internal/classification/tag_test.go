@@ -17,16 +17,19 @@ func TestRuleTagsFollowTagRenameAndMerge(t *testing.T) {
 		"postings": []any{apitest.Posting(b.checking, -100), apitest.Posting(b.travel, 100)}}, http.StatusCreated, nil)
 	createRule(t, b.h, "Hotel", []map[string]any{contains("hotel")}, []map[string]any{setCategory(b.travel), {"type": "add_tags", "tags": []any{"trip", "work"}}})
 	dispatch(t, b.h)
+
 	tags := func() string { return fmt.Sprint(ruleByName(t, b.h, "Hotel").Actions[1]["tags"]) }
 
 	b.h.MustDo(http.MethodPatch, "/api/v1/tags/trip", map[string]string{"name": "lisbon"}, http.StatusOK, nil)
 	dispatch(t, b.h)
+
 	if got := tags(); got != "[lisbon work]" {
 		t.Fatalf("rule tags after rename = %s", got)
 	}
 
 	b.h.MustDo(http.MethodPost, "/api/v1/tags/lisbon/merge", map[string]string{"into": "work"}, http.StatusOK, nil)
 	dispatch(t, b.h)
+
 	if got := tags(); got != "[work]" {
 		t.Fatalf("rule tags after merge = %s", got)
 	}

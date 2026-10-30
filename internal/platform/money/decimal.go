@@ -18,10 +18,13 @@ func ParseDecimal(s string, code Currency, scale int) (Money, error) {
 	if m == nil || len(m[3]) > scale {
 		return Money{}, fmt.Errorf("%w: %q with at most %d decimals", ErrInvalidDecimal, s, scale)
 	}
+
 	digits := m[2] + m[3] + strings.Repeat("0", scale-len(m[3]))
+
 	n, err := strconv.ParseInt(m[1]+digits, 10, 64)
 	if err != nil {
 		return Money{}, ErrOutOfRange
 	}
+
 	return NewOf(n, code, scale)
 }

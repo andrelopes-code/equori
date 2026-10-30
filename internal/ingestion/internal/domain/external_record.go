@@ -69,6 +69,7 @@ func ExternalStatusOf(r NormalizedRecord) string {
 	if r.Pending {
 		return ExternalPending
 	}
+
 	return ExternalPosted
 }
 

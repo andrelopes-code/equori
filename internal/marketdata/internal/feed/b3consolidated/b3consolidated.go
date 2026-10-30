@@ -40,6 +40,7 @@ func (Source) Codes(ins []feed.Instrument) []money.Currency {
 			out = append(out, in.Code)
 		}
 	}
+
 	return out
 }
 
@@ -52,11 +53,13 @@ func (c Source) Fetch(ctx context.Context, codes []money.Currency, from, to time
 	for _, code := range codes {
 		want[string(code)] = true
 	}
+
 	var out []feed.Quote
 	for d := from; !d.After(to); d = d.AddDate(0, 0, 1) {
 		if d.Weekday() == time.Saturday || d.Weekday() == time.Sunday {
 			continue
 		}
+
 		quotes, err := c.fetchDay(ctx, d, want)
 		switch {
 		case errors.Is(err, feed.ErrNoData):
@@ -66,8 +69,10 @@ func (c Source) Fetch(ctx context.Context, codes []money.Currency, from, to time
 		case err != nil:
 			return out, &feed.ScopeError{Key: "day", Value: d.Format(time.DateOnly), Err: err}
 		}
+
 		out = append(out, quotes...)
 	}
+
 	return out, nil
 }
 
@@ -82,22 +87,27 @@ func (c Source) fetchDay(ctx context.Context, day time.Time, want map[string]boo
 	if errors.As(err, &status) && status.Code == http.StatusBadRequest {
 		return nil, feed.ErrNoData
 	}
+
 	if err != nil {
 		return nil, fmt.Errorf("request the file: %w", err)
 	}
+
 	var ticket struct {
 		Token string `json:"token"`
 	}
 	if err := json.Unmarshal(body, &ticket); err != nil {
 		return nil, fmt.Errorf("read the download token: %w", err)
 	}
+
 	if ticket.Token == "" {
 		return nil, errors.New("read the download token: empty")
 	}
+
 	body, err = feed.Get(ctx, c.client, c.baseURL+"/api/download/?token="+url.QueryEscape(ticket.Token))
 	if err != nil {
 		return nil, fmt.Errorf("download the file: %w", err)
 	}
+
 	return parse(string(body), day, want)
 }
 
@@ -108,51 +118,66 @@ func parse(body string, day time.Time, want map[string]bool) ([]feed.Quote, erro
 	for i := range lines {
 		lines[i] = strings.TrimSuffix(lines[i], "\r")
 	}
+
 	status, ok := strings.CutPrefix(lines[0], "Status do Arquivo: ")
 	if !ok || len(lines) < 2 {
 		return nil, fmt.Errorf("line 1: %q is not a file status", lines[0])
 	}
+
 	if status != "Final" {
 		return nil, errNotFinal
 	}
+
 	header := strings.Split(lines[1], ";")
+
 	cols := make(map[string]int, len(header))
 	for i, name := range header {
 		cols[name] = i
 	}
+
 	dateCol, okDate := cols["RptDt"]
 	tickerCol, okTicker := cols["TckrSymb"]
+
 	priceCol, okPrice := cols["LastPric"]
 	if !okDate || !okTicker || !okPrice {
 		return nil, errors.New("line 2: the header lacks RptDt, TckrSymb or LastPric")
 	}
+
 	date := day.Format(time.DateOnly)
 	seen := make(map[string]bool)
+
 	var out []feed.Quote
 	for i, line := range lines[2:] {
 		n := i + 3
+
 		rec := strings.Split(line, ";")
 		if len(rec) != len(header) {
 			return nil, fmt.Errorf("line %d: %d fields, want %d", n, len(rec), len(header))
 		}
+
 		if rec[dateCol] != date {
 			return nil, fmt.Errorf("line %d: not a record of %s", n, date)
 		}
+
 		ticker := rec[tickerCol]
 		// An instrument without a trade on the day, such as an untraded option, has no last price.
 		if !want[ticker] || rec[priceCol] == "" {
 			continue
 		}
+
 		if seen[ticker] {
 			return nil, fmt.Errorf("line %d: %s appears twice", n, ticker)
 		}
+
 		seen[ticker] = true
 		// The file writes a decimal comma and no thousands separator.
 		value, err := money.ParseRate(strings.Replace(rec[priceCol], ",", ".", 1))
 		if err != nil {
 			return nil, fmt.Errorf("line %d: %w", n, err)
 		}
+
 		out = append(out, feed.Quote{Instrument: money.Currency(ticker), Quote: "BRL", Date: day, Value: value})
 	}
+
 	return out, nil
 }

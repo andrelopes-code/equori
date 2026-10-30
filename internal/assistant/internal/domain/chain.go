@@ -22,11 +22,14 @@ func NewChainTarget(providerID uuid.UUID, model string, capabilities []string) (
 	if model == "" || utf8.RuneCountInString(model) > maxModelLength {
 		return ChainTarget{}, invalid("model", "must have 1 to 200 characters")
 	}
+
 	if err := ValidateCapabilities(capabilities); err != nil {
 		return ChainTarget{}, err
 	}
+
 	if capabilities == nil {
 		capabilities = []string{} // the column is NOT NULL
 	}
+
 	return ChainTarget{ProviderID: providerID, Model: model, Capabilities: capabilities}, nil
 }

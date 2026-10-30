@@ -18,6 +18,7 @@ func parseMonth(field, s string) (time.Time, error) {
 	if err != nil {
 		return time.Time{}, &domain.FieldError{Field: field, Message: "must be a month YYYY-MM", Err: domain.ErrValidation}
 	}
+
 	return m, nil
 }
 
@@ -26,6 +27,7 @@ func toBudgetAPI(b domain.Budget) Budget {
 	for i, a := range b.Amounts {
 		out.Amounts[i] = BudgetAmount{EffectiveFrom: a.EffectiveFrom.Format(monthLayout), Amount: toMoneyAPI(a.Amount, b.Currency)}
 	}
+
 	return out
 }
 
@@ -34,14 +36,17 @@ func (s *Server) CreateBudget(ctx context.Context, req CreateBudgetRequestObject
 	if err != nil {
 		return nil, err
 	}
+
 	from, err := parseMonth("effective_from", req.Body.EffectiveFrom)
 	if err != nil {
 		return nil, err
 	}
+
 	b, err := s.svc.CreateBudget(ctx, auth.MustUserID(ctx), req.Body.CategoryId, amount, from, req.Body.Rollover)
 	if err != nil {
 		return nil, err
 	}
+
 	return CreateBudget201JSONResponse{Body: toBudgetAPI(b), Headers: CreateBudget201ResponseHeaders{Location: location("/budgets/", b.ID)}}, nil
 }
 
@@ -50,6 +55,7 @@ func (s *Server) GetBudget(ctx context.Context, req GetBudgetRequestObject) (Get
 	if err != nil {
 		return nil, err
 	}
+
 	return GetBudget200JSONResponse(toBudgetAPI(b)), nil
 }
 
@@ -57,6 +63,7 @@ func (s *Server) DeleteBudget(ctx context.Context, req DeleteBudgetRequestObject
 	if err := s.svc.DeleteBudget(ctx, auth.MustUserID(ctx), req.Id); err != nil {
 		return nil, err
 	}
+
 	return DeleteBudget204Response{}, nil
 }
 
@@ -65,15 +72,19 @@ func (s *Server) ListBudgets(ctx context.Context, req ListBudgetsRequestObject) 
 	if err != nil {
 		return nil, err
 	}
+
 	bs, next, err := s.svc.ListBudgets(ctx, auth.MustUserID(ctx), p)
 	if err != nil {
 		return nil, err
 	}
+
 	out := ListBudgets200JSONResponse{Items: make([]Budget, len(bs))}
 	for i, b := range bs {
 		out.Items[i] = toBudgetAPI(b)
 	}
+
 	out.NextCursor, err = page.Next(next)
+
 	return out, err
 }
 
@@ -82,14 +93,17 @@ func (s *Server) AddBudgetAmount(ctx context.Context, req AddBudgetAmountRequest
 	if err != nil {
 		return nil, err
 	}
+
 	from, err := parseMonth("effective_from", req.Body.EffectiveFrom)
 	if err != nil {
 		return nil, err
 	}
+
 	b, err := s.svc.AddBudgetAmount(ctx, auth.MustUserID(ctx), req.Id, from, amount)
 	if err != nil {
 		return nil, err
 	}
+
 	return AddBudgetAmount201JSONResponse(toBudgetAPI(b)), nil
 }
 
@@ -98,10 +112,12 @@ func (s *Server) GetBudgetProgress(ctx context.Context, req GetBudgetProgressReq
 	if err != nil {
 		return nil, err
 	}
+
 	p, currency, err := s.svc.BudgetProgress(ctx, auth.MustUserID(ctx), req.Id, month)
 	if err != nil {
 		return nil, err
 	}
+
 	return GetBudgetProgress200JSONResponse{
 		Month: p.Month.Format(monthLayout), Planned: toMoneyAPI(p.Planned, currency), Carried: toMoneyAPI(p.Carried, currency),
 		Spent: toMoneyAPI(p.Spent, currency), Available: toMoneyAPI(p.Available, currency),

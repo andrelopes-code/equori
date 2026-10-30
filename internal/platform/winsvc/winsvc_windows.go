@@ -28,9 +28,12 @@ type handler struct{ run func(context.Context) error }
 func (h handler) Execute(_ []string, req <-chan svc.ChangeRequest, status chan<- svc.Status) (bool, uint32) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
 	done := make(chan error, 1)
 	go func() { done <- h.run(ctx) }()
+
 	status <- svc.Status{State: svc.Running, Accepts: svc.AcceptStop | svc.AcceptPreShutdown}
+
 	stopping := false
 	for {
 		select {
@@ -40,6 +43,7 @@ func (h handler) Execute(_ []string, req <-chan svc.ChangeRequest, status chan<-
 			if err != nil && !stopping {
 				return true, 1
 			}
+
 			return false, 0
 		case r := <-req:
 			switch r.Cmd {
@@ -47,7 +51,9 @@ func (h handler) Execute(_ []string, req <-chan svc.ChangeRequest, status chan<-
 				status <- r.CurrentStatus
 			case svc.Stop, svc.PreShutdown:
 				status <- svc.Status{State: svc.StopPending}
+
 				stopping = true
+
 				cancel()
 			}
 		}
@@ -61,7 +67,9 @@ func Install(name, exe string, args []string, account string) error {
 	if err != nil {
 		return fmt.Errorf("connect to the service manager: %w", err)
 	}
+
 	defer func() { _ = m.Disconnect() }()
+
 	cfg := mgr.Config{
 		DisplayName:      name,
 		Description:      "Self-hosted personal finance manager",
@@ -69,6 +77,7 @@ func Install(name, exe string, args []string, account string) error {
 		ServiceStartName: account,
 		SidType:          windows.SERVICE_SID_TYPE_UNRESTRICTED,
 	}
+
 	s, err := m.OpenService(name)
 	if err == nil {
 		// An upgrade keeps the service and rewrites its configuration.
@@ -82,18 +91,23 @@ func Install(name, exe string, args []string, account string) error {
 	} else {
 		s, err = m.CreateService(name, exe, cfg, args...)
 	}
+
 	if err != nil {
 		return fmt.Errorf("register service %s: %w", name, err)
 	}
+
 	defer func() { _ = s.Close() }()
+
 	if err := s.SetRecoveryActions([]mgr.RecoveryAction{{Type: mgr.ServiceRestart, Delay: 5 * time.Second}}, 86400); err != nil {
 		return fmt.Errorf("set recovery of service %s: %w", name, err)
 	}
+
 	// serve that fails, a taken port for one, stops with an exit code instead of crashing; the
 	// restart applies to that too.
 	if err := s.SetRecoveryActionsOnNonCrashFailures(true); err != nil {
 		return fmt.Errorf("set recovery of service %s: %w", name, err)
 	}
+
 	return nil
 }
 
@@ -102,6 +116,7 @@ func commandLine(exe string, args []string) string {
 	for _, a := range args {
 		line += " " + windows.EscapeArg(a)
 	}
+
 	return line
 }
 
@@ -110,6 +125,7 @@ func Start(name string) error {
 		if err := s.Start(); err != nil && !errors.Is(err, windows.ERROR_SERVICE_ALREADY_RUNNING) {
 			return fmt.Errorf("start service %s: %w", name, err)
 		}
+
 		return nil
 	})
 }
@@ -122,20 +138,25 @@ func Stop(name string, wait time.Duration) error {
 		if err != nil && !errors.Is(err, windows.ERROR_SERVICE_NOT_ACTIVE) {
 			return fmt.Errorf("stop service %s: %w", name, err)
 		}
+
 		for deadline := time.Now().Add(wait); st.State != svc.Stopped; {
 			if time.Now().After(deadline) {
 				return fmt.Errorf("service %s did not stop within %s", name, wait)
 			}
+
 			time.Sleep(200 * time.Millisecond)
+
 			if st, err = s.Query(); err != nil {
 				return fmt.Errorf("query service %s: %w", name, err)
 			}
 		}
+
 		return nil
 	})
 	if errors.Is(err, windows.ERROR_SERVICE_DOES_NOT_EXIST) {
 		return nil
 	}
+
 	return err
 }
 
@@ -144,13 +165,16 @@ func Uninstall(name string) error {
 	if err := Stop(name, 90*time.Second); err != nil {
 		return err
 	}
+
 	err := withService(name, func(s *mgr.Service) error { return s.Delete() })
 	if errors.Is(err, windows.ERROR_SERVICE_DOES_NOT_EXIST) {
 		return nil
 	}
+
 	if err != nil {
 		return fmt.Errorf("delete service %s: %w", name, err)
 	}
+
 	return nil
 }
 
@@ -159,11 +183,15 @@ func withService(name string, f func(*mgr.Service) error) error {
 	if err != nil {
 		return fmt.Errorf("connect to the service manager: %w", err)
 	}
+
 	defer func() { _ = m.Disconnect() }()
+
 	s, err := m.OpenService(name)
 	if err != nil {
 		return err
 	}
+
 	defer func() { _ = s.Close() }()
+
 	return f(s)
 }

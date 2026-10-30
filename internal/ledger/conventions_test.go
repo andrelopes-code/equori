@@ -20,6 +20,7 @@ func TestTransitionsReturnTheResource(t *testing.T) {
 		VoidedAt string `json:"voided_at"`
 	}
 	h.MustDo(http.MethodPost, "/api/v1/transactions/"+tx+"/void", map[string]string{"reason": "duplicate"}, http.StatusOK, &voided)
+
 	if voided.ID != tx || voided.VoidedAt == "" {
 		t.Fatalf("void = %+v", voided)
 	}
@@ -29,6 +30,7 @@ func TestTransitionsReturnTheResource(t *testing.T) {
 		ClosedOn string `json:"closed_on"`
 	}
 	h.MustDo(http.MethodPost, "/api/v1/accounts/"+checking+"/close", map[string]string{"closed_on": "2026-10-31"}, http.StatusOK, &closed)
+
 	if closed.ID != checking || closed.ClosedOn != "2026-10-31" {
 		t.Fatalf("close = %+v", closed)
 	}
@@ -37,6 +39,7 @@ func TestTransitionsReturnTheResource(t *testing.T) {
 	assertBalance(r.h, r.reserve, "2026-10-31", 1000000)
 	var status reconciliationStatus
 	r.h.MustDo(http.MethodPost, "/api/v1/accounts/"+r.reserve+"/unlock", map[string]string{"from": "2026-10-01"}, http.StatusOK, &status)
+
 	if status.LastReconciledOn != "" || status.OpenDifference == nil {
 		t.Fatalf("unlock = %+v", status)
 	}
@@ -49,6 +52,7 @@ func TestTransitionsReturnTheResource(t *testing.T) {
 	}
 	id := statements(t, c.h, c.card)["2026-11"].ID
 	c.h.MustDo(http.MethodPost, "/api/v1/statements/"+id+"/reconcile", map[string]any{"amount_due": apitest.BRL(100000)}, http.StatusOK, &detail)
+
 	if detail.ID != id || !detail.Reconciled {
 		t.Fatalf("reconcile = %+v", detail)
 	}
@@ -59,6 +63,7 @@ func TestCreatedRecordsHaveLocation(t *testing.T) {
 	t.Parallel()
 	c := newCardSetup(t, "2026-11-12")
 	purchase := c.purchase("2026-10-14", 100000)
+
 	statement := statements(t, c.h, c.card)["2026-11"].ID
 	for _, tc := range []struct {
 		name string
@@ -73,11 +78,13 @@ func TestCreatedRecordsHaveLocation(t *testing.T) {
 			if tc.r.Status != http.StatusCreated {
 				t.Fatalf("status %d: %s", tc.r.Status, tc.r.Body)
 			}
+
 			var created idOnly
 			tc.r.Decode(t, &created)
 			loc := tc.r.Header.Get("Location")
 			var located idOnly
 			c.h.MustDo(http.MethodGet, loc, nil, http.StatusOK, &located)
+
 			if located.ID != created.ID {
 				t.Fatalf("Location %q resolves to %q, want %q", loc, located.ID, created.ID)
 			}

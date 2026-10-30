@@ -24,6 +24,7 @@ func newTxFixture(t *testing.T) txFixture {
 		closed:   mustAccount(t, Account{Class: ClassAsset, Kind: KindCash, ClosedOn: ptr(day("2026-02-28"))}),
 	}
 	f.accounts = accountMap(f.checking, f.food, f.wise, f.closed)
+
 	return f
 }
 
@@ -40,6 +41,7 @@ func (f txFixture) tx(postings ...Posting) Transaction {
 func TestNewTransactionBalanced(t *testing.T) {
 	t.Parallel()
 	f := newTxFixture(t)
+
 	got, err := NewTransaction(f.tx(
 		Posting{AccountID: f.checking.ID, Amount: brl(t, -23000)},
 		Posting{AccountID: f.food.ID, Amount: brl(t, 23000)},
@@ -47,14 +49,17 @@ func TestNewTransactionBalanced(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	for i, p := range got.Postings {
 		if p.Weight != p.Amount {
 			t.Errorf("postings[%d] weight %v != amount %v", i, p.Weight, p.Amount)
 		}
+
 		if p.Status != StatusCleared {
 			t.Errorf("postings[%d] status = %q, want cleared", i, p.Status)
 		}
 	}
+
 	if got.Version != 1 || got.Origin != OriginManual {
 		t.Fatalf("version %d origin %q", got.Version, got.Origin)
 	}
@@ -64,6 +69,7 @@ func TestNewTransactionRejections(t *testing.T) {
 	t.Parallel()
 	f := newTxFixture(t)
 	usd := func(a int64) money.Money { return mustMoney(t, a, "USD") }
+
 	tests := []struct {
 		name     string
 		tx       Transaction
@@ -82,16 +88,19 @@ func TestNewTransactionRejections(t *testing.T) {
 		{name: "description too long", tx: func() Transaction {
 			tx := f.tx(Posting{AccountID: f.checking.ID, Amount: brl(t, -100)}, Posting{AccountID: f.food.ID, Amount: brl(t, 100)})
 			tx.Description = strings.Repeat("x", 501)
+
 			return tx
 		}(), field: "description", sentinel: ErrValidation},
 		{name: "invalid tag", tx: func() Transaction {
 			tx := f.tx(Posting{AccountID: f.checking.ID, Amount: brl(t, -100)}, Posting{AccountID: f.food.ID, Amount: brl(t, 100)})
 			tx.Tags = []string{"café!"}
+
 			return tx
 		}(), field: "tags[0]", sentinel: ErrValidation},
 		{name: "unknown link type", tx: func() Transaction {
 			tx := f.tx(Posting{AccountID: f.checking.ID, Amount: brl(t, -100)}, Posting{AccountID: f.food.ID, Amount: brl(t, 100)})
 			tx.Links = []Link{{Type: "paid_by", Target: uuid.Must(uuid.NewV7())}}
+
 			return tx
 		}(), field: "links[0].type", sentinel: ErrValidation},
 	}
@@ -106,10 +115,12 @@ func TestNewTransactionRejections(t *testing.T) {
 func TestNewTransactionPostingLimit(t *testing.T) {
 	t.Parallel()
 	f := newTxFixture(t)
+
 	postings := make([]Posting, 0, MaxPostings+2)
 	for range MaxPostings/2 + 1 {
 		postings = append(postings, Posting{AccountID: f.checking.ID, Amount: brl(t, -1)}, Posting{AccountID: f.food.ID, Amount: brl(t, 1)})
 	}
+
 	_, err := NewTransaction(f.tx(postings...), f.accounts)
 	requireField(t, err, "postings", ErrValidation)
 }
@@ -117,6 +128,7 @@ func TestNewTransactionPostingLimit(t *testing.T) {
 func TestNewTransactionForeignCurrency(t *testing.T) {
 	t.Parallel()
 	f := newTxFixture(t)
+
 	got, err := NewTransaction(f.tx(
 		Posting{AccountID: f.checking.ID, Amount: brl(t, -548300)},
 		Posting{AccountID: f.wise.ID, Amount: mustMoney(t, 100000, "USD"), Weight: brl(t, 548300)},
@@ -124,6 +136,7 @@ func TestNewTransactionForeignCurrency(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if got.Postings[1].Weight != brl(t, 548300) {
 		t.Fatalf("weight = %v", got.Postings[1].Weight)
 	}
@@ -134,10 +147,12 @@ func TestTagsAreNormalized(t *testing.T) {
 	f := newTxFixture(t)
 	tx := f.tx(Posting{AccountID: f.checking.ID, Amount: brl(t, -100)}, Posting{AccountID: f.food.ID, Amount: brl(t, 100)})
 	tx.Tags = []string{"Trip Lisbon", "trip-lisbon", "work"}
+
 	got, err := NewTransaction(tx, f.accounts)
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if strings.Join(got.Tags, ",") != "trip-lisbon,work" {
 		t.Fatalf("tags = %v", got.Tags)
 	}
@@ -147,10 +162,12 @@ func recorded(t *testing.T, f txFixture) Transaction {
 	t.Helper()
 	tx := f.tx(Posting{AccountID: f.checking.ID, Amount: brl(t, -100)}, Posting{AccountID: f.food.ID, Amount: brl(t, 100)})
 	tx.ID = uuid.Must(uuid.NewV7())
+
 	got, err := NewTransaction(tx, f.accounts)
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	return got
 }
 
@@ -164,6 +181,7 @@ func TestCorrect(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if got.ID != orig.ID || got.Version != 2 || got.Postings[0].Amount != brl(t, -3200) {
 		t.Fatalf("corrected = %+v", got)
 	}
@@ -174,6 +192,7 @@ func TestCorrect(t *testing.T) {
 
 	reconciled := orig
 	reconciled.Postings = append([]Posting(nil), orig.Postings...)
+
 	reconciled.Postings[0].Status = StatusReconciled
 	if _, err := reconciled.Correct(next, 1, f.accounts); !errors.Is(err, ErrReconciled) {
 		t.Fatalf("reconciled err = %v", err)
@@ -183,9 +202,11 @@ func TestCorrect(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if _, err := voided.Correct(next, 1, f.accounts); !errors.Is(err, ErrVoided) {
 		t.Fatalf("voided correct err = %v", err)
 	}
+
 	if _, err := voided.Void(time.Now(), "again"); !errors.Is(err, ErrVoided) {
 		t.Fatalf("void twice err = %v", err)
 	}

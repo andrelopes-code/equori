@@ -20,6 +20,7 @@ func ParseReferenceMonth(s string) (ReferenceMonth, error) {
 	if err != nil {
 		return ReferenceMonth{}, invalid("reference_month", "must be YYYY-MM")
 	}
+
 	return ReferenceMonth{Year: t.Year(), Month: t.Month()}, nil
 }
 
@@ -72,6 +73,7 @@ func NewBillingCycleRule(r BillingCycleRule) (BillingCycleRule, error) {
 	if r.ClosingMode == "" {
 		r.ClosingMode = ClosingDay
 	}
+
 	switch {
 	case r.ClosingMode != ClosingDay && r.ClosingMode != ClosingBeforeDue:
 		return BillingCycleRule{}, invalid("closing_mode", "must be day or before_due")
@@ -82,32 +84,41 @@ func NewBillingCycleRule(r BillingCycleRule) (BillingCycleRule, error) {
 	case r.DueDay < 1 || r.DueDay > 31:
 		return BillingCycleRule{}, invalid("due_day", "must be between 1 and 31")
 	}
+
 	if r.ClosingMode == ClosingBeforeDue {
 		r.ClosingDay = 0
 	} else {
 		r.ClosingDaysBeforeDue = 0
 	}
+
 	if r.ClosingAdjustment == "" {
 		r.ClosingAdjustment = "none"
 	}
+
 	if !slices.Contains(adjustments, r.ClosingAdjustment) {
 		return BillingCycleRule{}, invalid("closing_adjustment", "must be none, following, preceding or modified_following")
 	}
+
 	if r.Assignment == "" {
 		r.Assignment = AssignNext
 	}
+
 	if r.Assignment != AssignNext && r.Assignment != AssignClosing {
 		return BillingCycleRule{}, invalid("closing_day_assignment", "must be next or closing")
 	}
+
 	if r.Adjustment == "" {
 		r.Adjustment = "following"
 	}
+
 	if !slices.Contains(adjustments, r.Adjustment) {
 		return BillingCycleRule{}, invalid("due_date_adjustment", "must be none, following, preceding or modified_following")
 	}
+
 	if r.Calendar == "" {
 		return BillingCycleRule{}, invalid("calendar", "is required")
 	}
+
 	return r, nil
 }
 
@@ -122,9 +133,11 @@ func (rs Rules) For(m ReferenceMonth) (BillingCycleRule, error) {
 			found = &rs[i]
 		}
 	}
+
 	if found == nil {
 		return BillingCycleRule{}, ErrNoBillingRule
 	}
+
 	return *found, nil
 }
 
@@ -142,10 +155,12 @@ func DatesFor(m ReferenceMonth, r BillingCycleRule) StatementDates {
 		due := m.dayIn(r.DueDay)
 		return StatementDates{Reference: m, Closing: due.AddDate(0, 0, -r.ClosingDaysBeforeDue), DueUnadjusted: due}
 	}
+
 	closingMonth := m
 	if r.ClosingDay >= r.DueDay {
 		closingMonth = m.Add(-1)
 	}
+
 	return StatementDates{Reference: m, Closing: closingMonth.dayIn(r.ClosingDay), DueUnadjusted: m.dayIn(r.DueDay)}
 }
 
@@ -155,15 +170,18 @@ func StatementFor(purchase time.Time, rules Rules) (ReferenceMonth, error) {
 	start := MonthOf(purchase).Add(-1)
 	for i := range 4 {
 		m := start.Add(i)
+
 		r, err := rules.For(m)
 		if errors.Is(err, ErrNoBillingRule) {
 			continue
 		}
+
 		closing := DatesFor(m, r).Closing
 		if purchase.Before(closing) || (r.Assignment == AssignClosing && purchase.Equal(closing)) {
 			return m, nil
 		}
 	}
+
 	return ReferenceMonth{}, ErrNoBillingRule
 }
 

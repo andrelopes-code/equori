@@ -16,11 +16,14 @@ func (r *Repository) CardFacts(ctx context.Context, userID int64, to time.Time) 
 	if err != nil {
 		return app.CardFacts{}, err
 	}
+
 	payments, err := r.q.CashPayments(ctx, CashPaymentsParams{UserID: userID, ToDate: to})
 	if err != nil {
 		return app.CardFacts{}, err
 	}
+
 	f := app.CardFacts{Categories: map[uuid.UUID]app.Shares{}, Origins: map[uuid.UUID]uuid.UUID{}}
+
 	var txs []uuid.UUID
 	for _, l := range lines {
 		f.Lines = append(f.Lines, app.CardLine{
@@ -30,29 +33,36 @@ func (r *Repository) CardFacts(ctx context.Context, userID int64, to time.Time) 
 		})
 		txs = append(txs, l.TransactionID)
 	}
+
 	for _, p := range payments {
 		f.Payments = append(f.Payments, app.CardPayment{
 			ID: p.ID, TransactionID: p.TransactionID, CardID: p.CardID, Date: p.BookedOn, Amount: p.Amount, Financing: p.Financing,
 		})
 	}
+
 	origins, err := r.q.CashOrigins(ctx, CashOriginsParams{UserID: userID, TransactionIds: txs})
 	if err != nil {
 		return app.CardFacts{}, err
 	}
+
 	for _, o := range origins {
 		f.Origins[o.FromTransactionID] = o.ToTransactionID
 		txs = append(txs, o.ToTransactionID)
 	}
+
 	postings, err := r.q.CashCategoryPostings(ctx, CashCategoryPostingsParams{UserID: userID, TransactionIds: txs})
 	if err != nil {
 		return app.CardFacts{}, err
 	}
+
 	for _, p := range postings {
 		if f.Categories[p.TransactionID] == nil {
 			f.Categories[p.TransactionID] = app.Shares{}
 		}
+
 		f.Categories[p.TransactionID][p.AccountID] += p.Amount
 	}
+
 	return f, nil
 }
 
@@ -61,10 +71,12 @@ func (r *Repository) OffCardTotals(ctx context.Context, userID int64, from, to t
 	if err != nil {
 		return nil, err
 	}
+
 	out := app.Shares{}
 	for _, row := range rows {
 		out[row.AccountID] = row.Total
 	}
+
 	return out, nil
 }
 
@@ -73,13 +85,16 @@ func (r *Repository) OffCardMonthTotals(ctx context.Context, userID int64, from,
 	if err != nil {
 		return nil, err
 	}
+
 	out := map[time.Time]app.Shares{}
 	for _, row := range rows {
 		if out[row.Month] == nil {
 			out[row.Month] = app.Shares{}
 		}
+
 		out[row.Month][row.AccountID] = row.Total
 	}
+
 	return out, nil
 }
 
@@ -88,6 +103,7 @@ func (r *Repository) StatementCard(ctx context.Context, userID int64, id uuid.UU
 	if errors.Is(err, pgx.ErrNoRows) {
 		return uuid.Nil, app.ErrNotFound
 	}
+
 	return card, err
 }
 
@@ -96,17 +112,21 @@ func (r *Repository) CardStatements(ctx context.Context, userID int64, cardID uu
 	if errors.Is(err, pgx.ErrNoRows) {
 		return "", nil, app.ErrNotFound
 	}
+
 	if err != nil {
 		return "", nil, err
 	}
+
 	rows, err := r.q.AnalyticsStatements(ctx, AnalyticsStatementsParams{UserID: userID, CardID: cardID})
 	if err != nil {
 		return "", nil, err
 	}
+
 	out := make([]app.StatementRef, len(rows))
 	for i, s := range rows {
 		out[i] = app.StatementRef{ID: s.ID, CardID: s.AccountID, Reference: s.ReferenceMonth, Closing: s.ClosingDate, PreviousClosing: s.PreviousClosing}
 	}
+
 	return instrument, out, nil
 }
 
@@ -115,9 +135,11 @@ func (r *Repository) ChargeCategories(ctx context.Context, userID int64) (map[uu
 	if err != nil {
 		return nil, err
 	}
+
 	out := make(map[uuid.UUID]bool, len(ids))
 	for _, id := range ids {
 		out[id] = true
 	}
+
 	return out, nil
 }

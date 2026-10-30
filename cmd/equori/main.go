@@ -42,6 +42,7 @@ func main() {
 	if len(os.Args) > 1 {
 		cmd = os.Args[1]
 	}
+
 	var err error
 	switch cmd {
 	case "serve":
@@ -50,17 +51,22 @@ func main() {
 			if err = openServiceLog(); err != nil {
 				break
 			}
+
 			err = winsvc.Run(serviceName, func(ctx context.Context) error {
 				err := serve(ctx)
 				if err != nil {
 					fmt.Fprintln(os.Stderr, err)
 				}
+
 				return err
 			})
+
 			break
 		}
+
 		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 		err = serve(ctx)
+
 		stop()
 	case "service":
 		if err = serviceCommand(os.Args[2:]); errors.Is(err, winsvc.ErrUnsupported) {
@@ -92,6 +98,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, "unknown command %q; available: serve, user, reporting, portfolio, planning, secrets, backup, restore, service, healthcheck, version\n", cmd)
 		os.Exit(2)
 	}
+
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
@@ -103,10 +110,12 @@ func serve(parent context.Context) error {
 	if err != nil {
 		return err
 	}
+
 	schema, err := postgres.LatestVersion()
 	if err != nil {
 		return err
 	}
+
 	log.Info("starting equori", "version", buildVersion(), "schema", schema, "timezone", cfg.TimeZone.String())
 
 	ctx, stop := context.WithCancel(parent)
@@ -122,9 +131,11 @@ func serve(parent context.Context) error {
 	if err != nil {
 		return err
 	}
+
 	if provider != "b" || locale != "C.UTF-8" {
 		log.Warn("text order follows the database host's locale; equori restore of a backup recreates the database with the builtin C.UTF-8 order", "provider", provider, "locale", locale)
 	}
+
 	// M6: serve exits when its postgres dies, and the service manager restarts both.
 	postgresExit := make(chan error, 1)
 	if db.Cluster != nil {
@@ -132,6 +143,7 @@ func serve(parent context.Context) error {
 			select {
 			case <-db.Cluster.Exited():
 				postgresExit <- fmt.Errorf("postgres exited: %w", db.Cluster.ExitErr())
+
 				stop()
 			case <-ctx.Done():
 			}
@@ -146,18 +158,22 @@ func serve(parent context.Context) error {
 			log.Error("first user setup", "error", err)
 		}
 	}
+
 	app, err := server.New(db.Pool, scfg, log)
 	if err != nil {
 		return err
 	}
+
 	if err := app.Marketdata.ReconcileCurrencies(ctx); err != nil {
 		return err
 	}
+
 	// W-U1: until the first user exists, the browser creates it with this token.
 	token, err := app.Identity.StartSetup(ctx)
 	if err != nil {
 		return err
 	}
+
 	if err := announceSetup(cfg, log, token); err != nil {
 		return err
 	}
@@ -165,9 +181,11 @@ func serve(parent context.Context) error {
 	// The dispatcher and the scheduler must stop before the pool closes.
 	dispatcherDone := make(chan error, 1)
 	go func() { dispatcherDone <- app.Dispatcher.Run(ctx) }()
+
 	schedulerDone := make(chan struct{})
 	go func() {
 		defer close(schedulerDone)
+
 		if cfg.SecretKey != "" {
 			app.Ingestion.RunScheduler(ctx, cfg.SyncInterval)
 		}
@@ -176,27 +194,33 @@ func serve(parent context.Context) error {
 	planningDone := make(chan struct{})
 	go func() {
 		defer close(planningDone)
+
 		app.Planning.RunScheduler(ctx, time.Hour)
 	}()
 	// P8 amendment A62: price feeds run at start and every 6 hours when enabled.
 	feedsDone := make(chan struct{})
 	go func() {
 		defer close(feedsDone)
+
 		app.Marketdata.RunFeeds(ctx, 6*time.Hour)
 	}()
+
 	backupsDone := make(chan struct{})
 	go func() {
 		defer close(backupsDone)
+
 		if db.Cluster != nil {
 			runPeriodicBackups(ctx, db, cfg, log)
 		}
 	}()
+
 	defer func() {
 		stop()
 		<-schedulerDone
 		<-planningDone
 		<-feedsDone
 		<-backupsDone
+
 		if err := <-dispatcherDone; err != nil {
 			log.Error("outbox dispatcher stopped", "error", err)
 		}
@@ -217,20 +241,25 @@ func reportingCommand(args []string) error {
 		fmt.Fprintln(os.Stderr, "usage: equori reporting rebuild")
 		return errUsage
 	}
+
 	cfg, log, err := setup()
 	if err != nil {
 		return err
 	}
+
 	ctx := context.Background()
+
 	db, err := openDatabase(ctx, cfg, log, false)
 	if err != nil {
 		return err
 	}
 	defer db.Close(log)
+
 	app, err := server.New(db.Pool, server.Config{}, log)
 	if err != nil {
 		return err
 	}
+
 	return app.Reporting.RebuildAll(ctx)
 }
 
@@ -240,20 +269,25 @@ func planningCommand(args []string) error {
 		fmt.Fprintln(os.Stderr, "usage: equori planning backfill")
 		return errUsage
 	}
+
 	cfg, log, err := setup()
 	if err != nil {
 		return err
 	}
+
 	ctx := context.Background()
+
 	db, err := openDatabase(ctx, cfg, log, false)
 	if err != nil {
 		return err
 	}
 	defer db.Close(log)
+
 	app, err := server.New(db.Pool, server.Config{}, log)
 	if err != nil {
 		return err
 	}
+
 	return app.Planning.Backfill(ctx)
 }
 
@@ -263,20 +297,25 @@ func portfolioCommand(args []string) error {
 		fmt.Fprintln(os.Stderr, "usage: equori portfolio rebuild")
 		return errUsage
 	}
+
 	cfg, log, err := setup()
 	if err != nil {
 		return err
 	}
+
 	ctx := context.Background()
+
 	db, err := openDatabase(ctx, cfg, log, false)
 	if err != nil {
 		return err
 	}
 	defer db.Close(log)
+
 	app, err := server.New(db.Pool, server.Config{}, log)
 	if err != nil {
 		return err
 	}
+
 	return app.Portfolio.RebuildAll(ctx)
 }
 
@@ -296,6 +335,7 @@ func aggregatorURLs(getenv func(string) string) map[string]string {
 			urls[id] = v
 		}
 	}
+
 	return urls
 }
 
@@ -307,6 +347,7 @@ func feedURLs(getenv func(string) string) map[string]string {
 			urls[id] = v
 		}
 	}
+
 	return urls
 }
 
@@ -316,6 +357,7 @@ func llmProviders(cfg config.Config) []llm.Provider {
 	if cfg.GeminiAPIKey == "" {
 		return nil
 	}
+
 	return []llm.Provider{aistudio.New(cfg.GeminiURL, cfg.GeminiAPIKey, &http.Client{Timeout: 2 * time.Minute})}
 }
 
@@ -327,25 +369,31 @@ func setup() (config.Config, *slog.Logger, error) {
 			if err != nil {
 				return config.Config{}, nil, err
 			}
+
 			getenv = config.WithFile(getenv, file)
 		}
 	}
+
 	cfg, err := config.Load(getenv)
 	if err != nil {
 		return config.Config{}, nil, err
 	}
+
 	if cfg.Managed() {
 		// W-M3: the first command creates the data directory private, before secret.key lands in it.
 		if err := pgcluster.PrepareDataDir(cfg.DataDir); err != nil {
 			return config.Config{}, nil, err
 		}
 	}
+
 	if cfg.Managed() && cfg.SecretKey == "" {
 		if cfg.SecretKey, err = secret.LoadOrCreateKey(filepath.Join(cfg.DataDir, "secret.key")); err != nil {
 			return config.Config{}, nil, err
 		}
 	}
+
 	log := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: cfg.LogLevel}))
+
 	return cfg, log, nil
 }
 
@@ -359,22 +407,28 @@ func healthcheck() int {
 		if err != nil {
 			return 1
 		}
+
 		port = p
 	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://"+net.JoinHostPort("127.0.0.1", port)+"/healthz", nil)
 	if err != nil {
 		return 1
 	}
+
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return 1
 	}
 	defer resp.Body.Close()
+
 	if resp.StatusCode != http.StatusOK {
 		return 1
 	}
+
 	return 0
 }
 
@@ -382,8 +436,10 @@ func buildVersion() string {
 	if version != "" {
 		return version
 	}
+
 	if info, ok := debug.ReadBuildInfo(); ok {
 		return info.Main.Version
 	}
+
 	return "unknown"
 }

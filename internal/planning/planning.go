@@ -47,8 +47,10 @@ func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, l *ledger.Module, md
 	for _, t := range []string{ledger.EventTransactionRecorded, ledger.EventTransactionCorrected, ledger.EventTransactionCategorized, ledger.EventTransactionVoided} {
 		dispatcher.Subscribe(consumer, t, m.handle)
 	}
+
 	dispatcher.Subscribe(consumer, ledger.EventCategoriesMerged, m.handleMerge)
 	dispatcher.Subscribe(consumer, ledger.EventPayeesMerged, m.handlePayeeMerge)
+
 	return m
 }
 
@@ -58,6 +60,7 @@ func (m *Module) handle(ctx context.Context, tx pgx.Tx, e outbox.Delivered) erro
 	if err := json.Unmarshal(e.Payload, &payload); err != nil {
 		return fmt.Errorf("decode %s: %w", e.Type, err)
 	}
+
 	return m.svc.WithRepository(postgres.NewTxRepository(tx)).HandleTransaction(ctx, app.TransactionChanged{
 		UserID: e.UserID, TransactionID: payload.TransactionID, AccountIDs: payload.AccountIDs,
 	})
@@ -69,6 +72,7 @@ func (m *Module) handleMerge(ctx context.Context, tx pgx.Tx, e outbox.Delivered)
 	if err := json.Unmarshal(e.Payload, &payload); err != nil {
 		return fmt.Errorf("decode %s: %w", e.Type, err)
 	}
+
 	return m.svc.WithRepository(postgres.NewTxRepository(tx)).HandleCategoriesMerged(ctx, e.UserID, payload.From, payload.Into)
 }
 
@@ -78,6 +82,7 @@ func (m *Module) handlePayeeMerge(ctx context.Context, tx pgx.Tx, e outbox.Deliv
 	if err := json.Unmarshal(e.Payload, &payload); err != nil {
 		return fmt.Errorf("decode %s: %w", e.Type, err)
 	}
+
 	return m.svc.WithRepository(postgres.NewTxRepository(tx)).HandlePayeesMerged(ctx, e.UserID, payload.From, payload.Into)
 }
 
@@ -94,10 +99,12 @@ func (t toolLedger) Accounts(ctx context.Context, userID int64) (map[uuid.UUID]t
 	if err != nil {
 		return nil, err
 	}
+
 	out := make(map[uuid.UUID]toolapi.Account, len(accounts))
 	for _, a := range accounts {
 		out[a.ID] = toolapi.Account{Name: a.Name, Instrument: a.Instrument}
 	}
+
 	return out, nil
 }
 
@@ -113,6 +120,7 @@ func (m *Module) CommittedTotal(ctx context.Context, userID int64, month time.Ti
 	if err != nil {
 		return money.Money{}, err
 	}
+
 	return money.New(c.Total, c.Currency)
 }
 
@@ -124,6 +132,7 @@ func (m *Module) Tick(ctx context.Context) {
 		m.log.ErrorContext(ctx, "planning tick", "error", err)
 		return
 	}
+
 	for _, f := range failures {
 		m.log.ErrorContext(ctx, "extend schedule", "schedule_id", f.Ref.ID, "error", f.Err)
 	}
@@ -139,8 +148,10 @@ func (m *Module) Backfill(ctx context.Context) error {
 func (m *Module) RunScheduler(ctx context.Context, interval time.Duration) {
 	t := time.NewTicker(interval)
 	defer t.Stop()
+
 	for {
 		m.Tick(ctx)
+
 		select {
 		case <-ctx.Done():
 			return
@@ -153,10 +164,12 @@ type ledgerPort struct{ l *ledger.Module }
 
 func (p ledgerPort) AccountFacts(ctx context.Context, userID int64) ([]app.Account, error) {
 	facts, err := p.l.AccountFacts(ctx, userID)
+
 	out := make([]app.Account, len(facts))
 	for i, a := range facts {
 		out[i] = app.Account{ID: a.ID, ParentID: a.ParentID, Class: a.Class, Kind: a.Kind, Instrument: a.Instrument, Closed: a.ClosedOn != nil}
 	}
+
 	return out, err
 }
 
@@ -174,14 +187,17 @@ func (p ledgerPort) AccountTransactionsBetween(ctx context.Context, userID int64
 
 func (p ledgerPort) TransactionFacts(ctx context.Context, userID int64, ids []uuid.UUID) ([]domain.Transaction, error) {
 	facts, err := p.l.TransactionFacts(ctx, userID, ids)
+
 	out := make([]domain.Transaction, len(facts))
 	for i, f := range facts {
 		t := domain.Transaction{ID: f.ID, Date: f.Date, PayeeID: f.PayeeID, Voided: f.Voided}
 		for _, fp := range f.Postings {
 			t.Postings = append(t.Postings, domain.Posting{AccountID: fp.AccountID, Amount: fp.Amount.Amount()})
 		}
+
 		out[i] = t
 	}
+
 	return out, err
 }
 
@@ -195,6 +211,7 @@ func (p ledgerPort) Balance(ctx context.Context, userID int64, accountID uuid.UU
 	if errors.Is(err, ledger.ErrMixedInstruments) {
 		return money.Money{}, fmt.Errorf("%w: %w", app.ErrMixedInstruments, err)
 	}
+
 	return m, err
 }
 
@@ -203,16 +220,20 @@ func (p ledgerPort) ValuedBalance(ctx context.Context, userID int64, accountID u
 	if errors.Is(err, ledger.ErrPriceMissing) {
 		return app.Valuation{}, fmt.Errorf("%w: %w", app.ErrPriceMissing, err)
 	}
+
 	if err != nil {
 		return app.Valuation{}, err
 	}
+
 	out := app.Valuation{Value: c.Value, Prices: make([]app.Price, len(c.Prices)), Parts: make([]app.ValuedPart, len(c.Parts))}
 	for i, x := range c.Prices {
 		out.Prices[i] = app.Price{Instrument: x.Instrument, Quote: x.Quote, Date: x.Date, Value: x.Value, Source: x.Source}
 	}
+
 	for i, x := range c.Parts {
 		out.Parts[i] = app.ValuedPart{AccountID: accountID, Instrument: x.Instrument, Quantity: x.Quantity, Value: x.Value}
 	}
+
 	return out, nil
 }
 
@@ -223,13 +244,16 @@ func (p pricesPort) Convert(ctx context.Context, q money.Money, to money.Currenc
 	if errors.Is(err, marketdata.ErrPriceMissing) {
 		return money.Money{}, nil, fmt.Errorf("%w: %w", app.ErrPriceMissing, err)
 	}
+
 	if err != nil {
 		return money.Money{}, nil, err
 	}
+
 	prices := make([]app.Price, len(c.Prices))
 	for i, x := range c.Prices {
 		prices[i] = app.Price{Instrument: x.Instrument, Quote: x.Quote, Date: x.Date, Value: x.Value, Source: x.Source}
 	}
+
 	return c.Value, prices, nil
 }
 
@@ -248,13 +272,16 @@ func (p ledgerPort) OwnCategoryMonthlyTotals(ctx context.Context, userID int64, 
 	if err != nil {
 		return nil, err
 	}
+
 	out := make(map[uuid.UUID]map[time.Time]int64)
 	for _, r := range rows {
 		if out[r.CategoryID] == nil {
 			out[r.CategoryID] = make(map[time.Time]int64)
 		}
+
 		out[r.CategoryID][r.Month] = r.Total.Amount()
 	}
+
 	return out, nil
 }
 
@@ -264,10 +291,12 @@ func (p ledgerPort) FirstPosting(ctx context.Context, userID int64, accountIDs [
 
 func (p ledgerPort) CategoryMonthlyTotals(ctx context.Context, userID int64, categoryID uuid.UUID, from, to time.Time) (map[time.Time]int64, error) {
 	ms, err := p.l.CategoryMonthlyTotals(ctx, userID, categoryID, from, to)
+
 	out := make(map[time.Time]int64, len(ms))
 	for m, v := range ms {
 		out[m] = v.Amount()
 	}
+
 	return out, err
 }
 
@@ -285,9 +314,11 @@ func (c calendarPort) Holidays(ctx context.Context, name string, year int) ([]ti
 	if errors.Is(err, marketdata.ErrUnknownCalendar) {
 		return nil, fmt.Errorf("%w: %w", app.ErrUnknownCalendar, err)
 	}
+
 	out := make([]time.Time, len(hs))
 	for i, h := range hs {
 		out[i] = h.Date
 	}
+
 	return out, err
 }

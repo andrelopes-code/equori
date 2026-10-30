@@ -37,40 +37,50 @@ func (s *Service) CategoryTotals(ctx context.Context, userID int64, class string
 	if days := int(to.Sub(from).Hours()/24) + 1; days < 1 || days > MaxCategoryDays {
 		return nil, ErrInvalidCategoryRange
 	}
+
 	rows, err := s.repo.CategoryTotals(ctx, userID, class, from, to)
 	if err != nil {
 		return nil, err
 	}
+
 	if view == ViewCash {
 		cash, err := s.cashTotals(ctx, userID, from, to)
 		if err != nil {
 			return nil, err
 		}
+
 		for i := range rows {
 			rows[i].Total = cash[rows[i].ID]
 		}
 	}
+
 	sign := int64(1)
 	if class == "income" {
 		sign = -1
 	}
+
 	subtree := make(map[uuid.UUID]int64, len(rows))
+
 	parent := make(map[uuid.UUID]uuid.UUID, len(rows))
 	for _, r := range rows {
 		parent[r.ID] = r.ParentID
 	}
+
 	for _, r := range rows {
 		for id := r.ID; id != uuid.Nil; id = parent[id] {
 			subtree[id] += r.Total * sign
 		}
 	}
+
 	out := make([]CategoryTotal, 0, len(rows))
 	for _, r := range rows {
 		t := CategoryTotal{AccountID: r.ID, Name: r.Name, ParentID: r.ParentID, Instrument: r.Instrument, Total: r.Total * sign, SubtreeTotal: subtree[r.ID]}
 		if r.Closed && t.Total == 0 && t.SubtreeTotal == 0 {
 			continue
 		}
+
 		out = append(out, t)
 	}
+
 	return out, nil
 }

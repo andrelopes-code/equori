@@ -77,13 +77,16 @@ func (s *Service) Providers(ctx context.Context, userID int64) ([]ProviderView, 
 	if err != nil {
 		return nil, err
 	}
+
 	out := make([]ProviderView, 0, len(ps)+len(s.instance))
 	for _, p := range ps {
 		out = append(out, view(p))
 	}
+
 	for _, in := range s.instance {
 		out = append(out, instanceView(in))
 	}
+
 	return out, nil
 }
 
@@ -91,9 +94,11 @@ func (s *Service) seal(userID int64, id uuid.UUID, key string) ([]byte, error) {
 	if key == "" {
 		return nil, nil
 	}
+
 	if s.box == nil {
 		return nil, ErrSecretKeyMissing
 	}
+
 	return s.box.Seal([]byte(key), keyRow(userID, id))
 }
 
@@ -102,12 +107,15 @@ func (s *Service) CreateProvider(ctx context.Context, userID int64, in ProviderI
 	if err != nil {
 		return ProviderView{}, err
 	}
+
 	if p.SealedKey, err = s.seal(userID, p.ID, in.Key); err != nil {
 		return ProviderView{}, err
 	}
+
 	if err := s.repo.InsertProvider(ctx, p); err != nil {
 		return ProviderView{}, err
 	}
+
 	return view(p), nil
 }
 
@@ -116,27 +124,33 @@ func (s *Service) UpdateProvider(ctx context.Context, userID int64, id uuid.UUID
 	if err != nil {
 		return ProviderView{}, err
 	}
+
 	if patch.Name != nil {
 		if err := p.Rename(*patch.Name); err != nil {
 			return ProviderView{}, err
 		}
 	}
+
 	if patch.BaseURL != nil {
 		if err := p.Move(*patch.BaseURL); err != nil {
 			return ProviderView{}, err
 		}
 	}
+
 	if patch.Key != nil {
 		if *patch.Key == "" && p.KeyRequired() {
 			return ProviderView{}, domain.ErrKeyRequired
 		}
+
 		if p.SealedKey, err = s.seal(userID, p.ID, *patch.Key); err != nil {
 			return ProviderView{}, err
 		}
 	}
+
 	if err := s.repo.UpdateProvider(ctx, p); err != nil {
 		return ProviderView{}, err
 	}
+
 	return view(p), nil
 }
 
@@ -150,11 +164,14 @@ func (s *Service) ProviderModels(ctx context.Context, userID int64, id uuid.UUID
 	if err != nil {
 		return nil, err
 	}
+
 	key, err := s.open(p)
 	if err != nil {
 		return nil, err
 	}
+
 	preset, _ := domain.FindPreset(p.Preset)
+
 	return s.models.Models(ctx, preset.API, p.BaseURL, key)
 }
 
@@ -162,13 +179,16 @@ func (s *Service) open(p domain.Provider) (string, error) {
 	if p.SealedKey == nil {
 		return "", nil
 	}
+
 	if s.box == nil {
 		return "", ErrSecretKeyMissing
 	}
+
 	plain, err := s.box.Open(p.SealedKey, keyRow(p.UserID, p.ID))
 	if err != nil {
 		return "", fmt.Errorf("provider %s: %w", p.ID, err)
 	}
+
 	return string(plain), nil
 }
 
@@ -178,14 +198,17 @@ func (s *Service) RotateSecrets(ctx context.Context) (int, error) {
 	if s.box == nil {
 		return 0, ErrSecretKeyMissing
 	}
+
 	return s.repo.ResealKeys(ctx, func(userID int64, id uuid.UUID, sealed []byte) ([]byte, error) {
 		if !s.box.NeedsReseal(sealed) {
 			return nil, nil
 		}
+
 		plain, err := s.box.Open(sealed, keyRow(userID, id))
 		if err != nil {
 			return nil, fmt.Errorf("provider %s: %w", id, err)
 		}
+
 		return s.box.Seal(plain, keyRow(userID, id))
 	})
 }
@@ -195,6 +218,7 @@ func (s *Service) use(id string) (Use, bool) {
 	if i < 0 {
 		return Use{}, false
 	}
+
 	return s.uses[i], true
 }
 

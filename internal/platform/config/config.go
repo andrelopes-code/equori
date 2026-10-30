@@ -59,55 +59,69 @@ func Load(getenv func(string) string) (Config, error) {
 			cfg.PriceFeeds = append(cfg.PriceFeeds, name)
 		}
 	}
+
 	for name := range strings.SplitSeq(getenv("EQUORI_INDEX_FEEDS"), ",") {
 		if name = strings.TrimSpace(name); name != "" {
 			cfg.IndexFeeds = append(cfg.IndexFeeds, name)
 		}
 	}
+
 	if cfg.GeminiURL == "" {
 		cfg.GeminiURL = "https://generativelanguage.googleapis.com"
 	}
+
 	cfg.SyncInterval = time.Hour
 	if v := getenv("EQUORI_SYNC_INTERVAL"); v != "" {
 		d, err := time.ParseDuration(v)
 		if err != nil {
 			return Config{}, fmt.Errorf("EQUORI_SYNC_INTERVAL: %w", err)
 		}
+
 		// Pluggy allows 360 requests per minute; a sync of one account takes several.
 		if d < time.Minute {
 			return Config{}, errors.New("EQUORI_SYNC_INTERVAL must be at least 1m")
 		}
+
 		cfg.SyncInterval = d
 	}
+
 	if v := getenv("EQUORI_WEB_DEV_PORT"); v != "" {
 		port, err := strconv.Atoi(v)
 		if err != nil || port < 1 || port > 65535 {
 			return Config{}, fmt.Errorf("EQUORI_WEB_DEV_PORT: %q is not a port", v)
 		}
+
 		cfg.WebDevPort = port
 	}
+
 	cfg.PostgresBin = getenv("EQUORI_POSTGRES_BIN")
+
 	cfg.BackupDir = getenv("EQUORI_BACKUP_DIR")
 	if cfg.DatabaseURL == "" {
 		cfg.DataDir = getenv("EQUORI_DATA_DIR")
 		if cfg.DataDir == "" {
 			cfg.DataDir = DefaultDataDir(runtime.GOOS, getenv)
 		}
+
 		if cfg.DataDir == "" {
 			return Config{}, errors.New("EQUORI_DATABASE_URL is not set and this system has no default data directory; set EQUORI_DATABASE_URL or EQUORI_DATA_DIR")
 		}
+
 		if cfg.BackupDir == "" {
 			cfg.BackupDir = filepath.Join(cfg.DataDir, "backups")
 		}
 	}
+
 	if cfg.HTTPAddr == "" {
 		cfg.HTTPAddr = ":8080"
 	}
+
 	if lvl := getenv("EQUORI_LOG_LEVEL"); lvl != "" {
 		if err := cfg.LogLevel.UnmarshalText([]byte(lvl)); err != nil {
 			return Config{}, fmt.Errorf("EQUORI_LOG_LEVEL: %w", err)
 		}
 	}
+
 	// The host's zone: a container without TZ and without zone files resolves to UTC.
 	cfg.TimeZone = time.Local
 	if name := getenv("EQUORI_TIMEZONE"); name != "" {
@@ -115,32 +129,41 @@ func Load(getenv func(string) string) (Config, error) {
 		if err != nil {
 			return Config{}, fmt.Errorf("EQUORI_TIMEZONE: %w", err)
 		}
+
 		cfg.TimeZone = tz
 	}
+
 	if v := getenv("EQUORI_INSECURE_COOKIES"); v != "" {
 		b, err := strconv.ParseBool(v)
 		if err != nil {
 			return Config{}, fmt.Errorf("EQUORI_INSECURE_COOKIES: %w", err)
 		}
+
 		cfg.InsecureCookies = b
 	}
+
 	if v := getenv("EQUORI_API_DOCS"); v != "" {
 		b, err := strconv.ParseBool(v)
 		if err != nil {
 			return Config{}, fmt.Errorf("EQUORI_API_DOCS: %w", err)
 		}
+
 		cfg.APIDocs = b
 	}
+
 	var err error
 	if cfg.SecretKey, err = secretKey(getenv, "EQUORI_SECRET_KEY"); err != nil {
 		return Config{}, err
 	}
+
 	if cfg.PreviousSecretKey, err = secretKey(getenv, "EQUORI_SECRET_KEY_PREVIOUS"); err != nil {
 		return Config{}, err
 	}
+
 	if cfg.PreviousSecretKey != "" && cfg.SecretKey == "" {
 		return Config{}, errors.New("EQUORI_SECRET_KEY_PREVIOUS is set without EQUORI_SECRET_KEY")
 	}
+
 	return cfg, nil
 }
 
@@ -149,9 +172,11 @@ func secretKey(getenv func(string) string, name string) (string, error) {
 	if v == "" {
 		return "", nil
 	}
+
 	k, err := base64.StdEncoding.DecodeString(v)
 	if err != nil || len(k) != 32 {
 		return "", fmt.Errorf("%s must be 32 bytes in standard base64", name)
 	}
+
 	return string(k), nil
 }

@@ -28,9 +28,11 @@ func Limit(requested *int) (int, error) {
 	if requested == nil {
 		return DefaultLimit, nil
 	}
+
 	if *requested < 1 || *requested > MaxLimit {
 		return 0, ErrInvalidLimit
 	}
+
 	return *requested, nil
 }
 
@@ -40,6 +42,7 @@ func EncodeCursor(key any) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	return base64.RawURLEncoding.EncodeToString(b), nil
 }
 
@@ -49,9 +52,11 @@ func DecodeCursor(cursor string, key any) error {
 	if err != nil {
 		return ErrInvalidCursor
 	}
+
 	if err := json.Unmarshal(b, key, json.RejectUnknownMembers(true)); err != nil {
 		return ErrInvalidCursor
 	}
+
 	return nil
 }
 
@@ -60,6 +65,7 @@ func Trim[T any](rows []T, limit int) (items []T, hasMore bool) {
 	if len(rows) > limit {
 		return rows[:limit], true
 	}
+
 	return rows, false
 }
 
@@ -70,14 +76,17 @@ func Read[K any](limit *int, cursor *string) (Request[K], error) {
 	if err != nil {
 		return Request[K]{}, err
 	}
+
 	r := Request[K]{Limit: n}
 	if cursor != nil {
 		var k K
 		if err := DecodeCursor(*cursor, &k); err != nil {
 			return Request[K]{}, err
 		}
+
 		r.After = &k
 	}
+
 	return r, nil
 }
 
@@ -86,9 +95,11 @@ func Next[K any](k *K) (*string, error) {
 	if k == nil {
 		return nil, nil
 	}
+
 	c, err := EncodeCursor(k)
 	if err != nil {
 		return nil, err
 	}
+
 	return &c, nil
 }

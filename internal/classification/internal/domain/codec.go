@@ -41,6 +41,7 @@ type ActionDoc struct {
 // Doc returns the transported form of c.
 func (c Condition) Doc() ConditionDoc {
 	d := ConditionDoc{Field: string(c.Field), Operator: string(c.Operator)}
+
 	var values []any
 	switch c.Field {
 	case FieldPayee, FieldAccount:
@@ -62,11 +63,13 @@ func (c Condition) Doc() ConditionDoc {
 			values = append(values, t)
 		}
 	}
+
 	if c.Operator == OpBetween || c.Operator == OpInList {
 		d.Value = values
 	} else if len(values) > 0 {
 		d.Value = values[0]
 	}
+
 	return d
 }
 
@@ -74,50 +77,60 @@ func (c Condition) Doc() ConditionDoc {
 // field prefixes the paths of the errors. NewRule validates the result.
 func ConditionFromDoc(field string, d ConditionDoc) (Condition, error) {
 	c := Condition{Field: Field(d.Field), Operator: Operator(d.Operator)}
+
 	values := []any{d.Value}
 	if c.Operator == OpBetween || c.Operator == OpInList {
 		list, ok := d.Value.([]any)
 		if !ok {
 			return Condition{}, invalid(field+".value", "must be an array")
 		}
+
 		values = list
 	}
+
 	bad := func(want string) (Condition, error) { return Condition{}, invalid(field+".value", "must be "+want) }
 	for _, v := range values {
 		switch c.Field {
 		case FieldPayee, FieldAccount:
 			s, ok := v.(string)
+
 			id, err := uuid.Parse(s)
 			if !ok || err != nil {
 				return bad("an id")
 			}
+
 			c.IDs = append(c.IDs, id)
 		case FieldAmount, FieldAbsoluteAmount:
 			m, ok := moneyValue(v)
 			if !ok {
 				return bad("money")
 			}
+
 			c.Money = append(c.Money, m)
 		case FieldDayOfMonth:
 			n, ok := integer(v)
 			if !ok {
 				return bad("an integer")
 			}
+
 			c.Ints = append(c.Ints, int(n))
 		case FieldInstallment:
 			b, ok := v.(bool)
 			if !ok {
 				return bad("a boolean")
 			}
+
 			c.Bool = b
 		default:
 			s, ok := v.(string)
 			if !ok {
 				return bad("a string")
 			}
+
 			c.Text = append(c.Text, s)
 		}
 	}
+
 	return c, nil
 }
 
@@ -126,6 +139,7 @@ func integer(v any) (int64, bool) {
 	if !ok || f != math.Trunc(f) || math.Abs(f) > 1<<53 {
 		return 0, false
 	}
+
 	return int64(f), true
 }
 
@@ -136,13 +150,17 @@ func moneyValue(v any) (money.Money, bool) {
 		return out, err == nil
 	case map[string]any:
 		amount, ok := integer(m["amount"])
+
 		currency, isString := m["currency"].(string)
 		if !ok || !isString || len(m) != 2 {
 			return money.Money{}, false
 		}
+
 		out, err := money.New(amount, money.Currency(currency))
+
 		return out, err == nil
 	}
+
 	return money.Money{}, false
 }
 
@@ -154,8 +172,10 @@ func (a Action) Doc() ActionDoc {
 		if p.Amount != nil {
 			pd.Amount = &MoneyDoc{Amount: p.Amount.Amount(), Currency: string(p.Amount.Currency())}
 		}
+
 		d.Parts = append(d.Parts, pd)
 	}
+
 	return d
 }
 
@@ -169,10 +189,13 @@ func ActionFromDoc(field string, d ActionDoc) (Action, error) {
 			if err != nil {
 				return Action{}, invalid(fmt.Sprintf("%s.parts[%d].amount", field, i), "must be money in a supported currency")
 			}
+
 			p.Amount = &m
 		}
+
 		a.Parts = append(a.Parts, p)
 	}
+
 	return a, nil
 }
 
@@ -185,15 +208,19 @@ func RuleFromDocs(r Rule, conditions []ConditionDoc, actions []ActionDoc) (Rule,
 		if err != nil {
 			return Rule{}, err
 		}
+
 		r.Conditions[i] = c
 	}
+
 	r.Actions = make([]Action, len(actions))
 	for i, d := range actions {
 		a, err := ActionFromDoc(fmt.Sprintf("actions[%d]", i), d)
 		if err != nil {
 			return Rule{}, err
 		}
+
 		r.Actions[i] = a
 	}
+
 	return NewRule(r)
 }

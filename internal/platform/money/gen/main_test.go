@@ -15,6 +15,7 @@ func entry(code, name, units string, attrs ...string) string {
 
 func TestGenerateRejectsExponentChange(t *testing.T) {
 	lock := map[string]LockEntry{"ISK": {0, "Iceland Krona"}}
+
 	_, _, err := Generate(listOne(entry("ISK", "Iceland Krona", "2")), lock)
 	if err == nil || !strings.Contains(err.Error(), "ISK") {
 		t.Fatalf("err = %v", err)
@@ -23,16 +24,20 @@ func TestGenerateRejectsExponentChange(t *testing.T) {
 
 func TestGenerateKeepsWithdrawnCodes(t *testing.T) {
 	lock := map[string]LockEntry{"SLL": {2, "Leone"}}
+
 	src, newLock, err := Generate(listOne(entry("EUR", "Euro", "2")), lock)
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if !strings.Contains(string(src), `"SLL": 2`) {
 		t.Errorf("source lacks SLL:\n%s", src)
 	}
+
 	if got := newLock["SLL"]; got != (LockEntry{2, "Leone"}) {
 		t.Errorf("lock SLL = %+v", got)
 	}
+
 	if got := newLock["EUR"]; got != (LockEntry{2, "Euro"}) {
 		t.Errorf("lock EUR = %+v", got)
 	}
@@ -49,14 +54,17 @@ func TestGenerateExcludes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	for _, code := range []string{"CLF", "XXX", "XAU"} {
 		if strings.Contains(string(src), `"`+code+`"`) {
 			t.Errorf("%s present", code)
 		}
+
 		if _, ok := newLock[code]; ok {
 			t.Errorf("%s in lock", code)
 		}
 	}
+
 	if !strings.Contains(string(src), `"EUR": 2`) {
 		t.Errorf("EUR absent:\n%s", src)
 	}

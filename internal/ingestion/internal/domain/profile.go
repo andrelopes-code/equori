@@ -33,24 +33,30 @@ func (l DateLayout) GoLayout() string {
 	if len(s) < 8 {
 		return ""
 	}
+
 	sep := ""
 	for _, r := range []string{"/", ".", "-", " "} {
 		if strings.Count(s, r) == 2 {
 			sep = r
 		}
 	}
+
 	parts := strings.Split(s, sep)
 	if sep == "" || len(parts) != 3 {
 		return ""
 	}
+
 	var day, month, year int
+
 	out := make([]string, 3)
 	for i, p := range parts {
 		g, ok := goTokens[p]
 		if !ok {
 			return ""
 		}
+
 		out[i] = g
+
 		switch p {
 		case "DD":
 			day++
@@ -60,9 +66,11 @@ func (l DateLayout) GoLayout() string {
 			year++
 		}
 	}
+
 	if day != 1 || month != 1 || year != 1 {
 		return ""
 	}
+
 	return strings.Join(out, sep)
 }
 
@@ -72,6 +80,7 @@ func (l DateLayout) Parse(s string) (time.Time, error) {
 	if g == "" {
 		return time.Time{}, fmt.Errorf("invalid date layout %q", string(l))
 	}
+
 	return time.Parse(g, s)
 }
 
@@ -108,12 +117,15 @@ func NewProfile(p Profile) (Profile, error) {
 	if p.Delimiter == "" {
 		p.Delimiter = ","
 	}
+
 	if p.AmountSign == "" {
 		p.AmountSign = SignAsIs
 	}
+
 	if p.Encoding == "" {
 		p.Encoding = "auto"
 	}
+
 	switch {
 	case p.Delimiter != "," && p.Delimiter != ";" && p.Delimiter != "\t" && p.Delimiter != "|":
 		return Profile{}, invalid("delimiter", `must be ",", ";", tab or "|"`)
@@ -134,24 +146,29 @@ func NewProfile(p Profile) (Profile, error) {
 	case (p.AmountColumn == "") == (p.DebitColumn == ""):
 		return Profile{}, invalid("amount_column", "set amount_column, or debit_column and credit_column")
 	}
+
 	columns := map[string]string{
 		"date_column": p.DateColumn, "description_column": p.DescriptionColumn, "amount_column": p.AmountColumn,
 		"debit_column": p.DebitColumn, "credit_column": p.CreditColumn, "id_column": p.IDColumn,
 	}
 	for _, field := range []string{"date_column", "description_column", "amount_column", "debit_column", "credit_column", "id_column"} {
 		c := columns[field]
+
 		required := field == "date_column" || field == "description_column"
 		if c == "" {
 			if required {
 				return Profile{}, invalid(field, "is required")
 			}
+
 			continue
 		}
+
 		if p.HeaderRows == 0 {
 			if n, err := strconv.Atoi(c); err != nil || n < 1 {
 				return Profile{}, invalid(field, "must be a column position from 1 when the file has no header row")
 			}
 		}
 	}
+
 	return p, nil
 }

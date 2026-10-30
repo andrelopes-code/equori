@@ -9,11 +9,13 @@ import (
 func TestSchemaRejectsInvalidPrices(t *testing.T) {
 	t.Parallel()
 	pool := pgtest.New(t)
+
 	ctx := t.Context()
 	if _, err := pool.Exec(ctx, `INSERT INTO marketdata_instrument (code, instrument_type, scale, name, quote_currency, exchange)
 		VALUES ('MXRF11', 'reit', 0, 'Maxi Renda', 'BRL', 'BVMF')`); err != nil {
 		t.Fatal(err)
 	}
+
 	tests := []struct {
 		name string
 		sql  string
@@ -42,6 +44,7 @@ func TestSchemaRejectsInvalidPrices(t *testing.T) {
 // ADR 025 F1.
 func TestSchemaRejectsInvalidFeeds(t *testing.T) {
 	t.Parallel()
+
 	pool := pgtest.New(t)
 	for name, sql := range map[string]string{
 		"identifier outside the pattern": `INSERT INTO marketdata_feed (id, enabled) VALUES ('B3', true)`,
@@ -58,6 +61,7 @@ func TestSchemaRejectsInvalidFeeds(t *testing.T) {
 // ADR 026 E3.
 func TestSchemaRejectsInvalidExpectations(t *testing.T) {
 	t.Parallel()
+
 	pool := pgtest.New(t)
 	for name, sql := range map[string]string{
 		"index outside the pattern":  `INSERT INTO marketdata_index_expectation (index_id, date, rate, survey_date, source) VALUES ('CDI', '2026-12-31', 0.13, '2026-10-23', 'br_focus')`,

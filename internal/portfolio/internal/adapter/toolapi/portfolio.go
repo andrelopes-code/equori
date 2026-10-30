@@ -80,10 +80,12 @@ func getPortfolio(svc *app.Service, names AccountNames, today func() time.Time) 
 			{"from", !in.From.IsZero()}, {"to", !in.To.IsZero()}, {"instrument_type", in.InstrumentType != ""},
 		}
 		name := "view " + string(in.View)
+
 		date := in.Date.Time
 		if date.IsZero() {
 			date = today()
 		}
+
 		var err error
 		switch in.View {
 		case "positions", "net_worth":
@@ -100,9 +102,11 @@ func getPortfolio(svc *app.Service, names AccountNames, today func() time.Time) 
 		default:
 			err = required(name, fields)
 		}
+
 		if err != nil {
 			return getPortfolioOut{}, err
 		}
+
 		switch in.View {
 		case "positions":
 			return positions(ctx, svc, names, userID, date)
@@ -111,32 +115,39 @@ func getPortfolio(svc *app.Service, names AccountNames, today func() time.Time) 
 			if err != nil {
 				return getPortfolioOut{}, err
 			}
+
 			out := getPortfolioOut{Total: tool.MoneyOf(r.Total), Groups: []groupView{}}
 			for _, g := range r.Groups {
 				out.Groups = append(out.Groups, groupView{Key: g.Key, Value: tool.MoneyOf(g.Value), ShareBP: g.ShareBP})
 			}
+
 			return out, nil
 		case "net_worth":
 			r, err := svc.NetWorth(ctx, userID, date, "")
 			if err != nil {
 				return getPortfolioOut{}, err
 			}
+
 			return getPortfolioOut{Assets: tool.MoneyOf(r.Assets), Liabilities: tool.MoneyOf(r.Liabilities), Net: tool.MoneyOf(r.Net)}, nil
 		case "return":
 			id, err := optionalID(in.AccountID, "account_id")
 			if err != nil {
 				return getPortfolioOut{}, err
 			}
+
 			r, err := svc.Return(ctx, userID, id, in.From.Time, in.To.Time, "")
 			if err != nil {
 				return getPortfolioOut{}, err
 			}
+
 			return getPortfolioOut{AnnualBP: r.AnnualBP, Opening: tool.MoneyOf(r.Opening), Closing: tool.MoneyOf(r.Closing)}, nil
 		case "income_types":
 			types, err := svc.IncomeTypes(ctx, userID)
 			return getPortfolioOut{IncomeTypes: nonNil(types)}, err
 		}
+
 		subtypes, err := svc.Subtypes(ctx, userID, string(in.InstrumentType))
+
 		return getPortfolioOut{Subtypes: nonNil(subtypes)}, err
 	})
 }
@@ -145,6 +156,7 @@ func nonNil(s []string) []string {
 	if s == nil {
 		return []string{}
 	}
+
 	return s
 }
 
@@ -155,6 +167,7 @@ func optionalFields(name string, fields []field, optional ...string) error {
 			return tool.InvalidArgument(f.name, "is not used by "+name)
 		}
 	}
+
 	return nil
 }
 
@@ -163,10 +176,12 @@ func positions(ctx context.Context, svc *app.Service, names AccountNames, userID
 	if err != nil {
 		return getPortfolioOut{}, err
 	}
+
 	named, err := names(ctx, userID)
 	if err != nil {
 		return getPortfolioOut{}, err
 	}
+
 	out := getPortfolioOut{Positions: []positionView{}}
 	for _, p := range ps {
 		v := positionView{
@@ -176,10 +191,13 @@ func positions(ctx context.Context, svc *app.Service, names AccountNames, userID
 		if p.AverageCost != nil {
 			v.AverageCost = p.AverageCost.String()
 		}
+
 		if p.MarketValue != nil {
 			v.MarketValue = tool.MoneyOf(*p.MarketValue)
 		}
+
 		out.Positions = append(out.Positions, v)
 	}
+
 	return out, nil
 }

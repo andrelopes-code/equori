@@ -72,40 +72,50 @@ const itemID = "01a140de-2df9-729e-9a70-f46e7ad59fcb"
 
 func serve(t *testing.T, method, path, contentType, body string) (*httptest.ResponseRecorder, string) {
 	t.Helper()
+
 	v, err := New([]byte(spec), "/api/v1")
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	var reached string
 	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		b, _ := io.ReadAll(r.Body)
 		reached = "handler:" + string(b)
 	})
+
 	req := httptest.NewRequestWithContext(t.Context(), method, path, strings.NewReader(body))
 	if contentType != "" {
 		req.Header.Set("Content-Type", contentType)
 	}
+
 	rec := httptest.NewRecorder()
 	v.Middleware(next).ServeHTTP(rec, req)
+
 	return rec, reached
 }
 
 func fields(t *testing.T, rec *httptest.ResponseRecorder) []string {
 	t.Helper()
+
 	var d problem.Details
 	if err := json.Unmarshal(rec.Body.Bytes(), &d); err != nil {
 		t.Fatalf("decode %s: %v", rec.Body, err)
 	}
+
 	out := make([]string, len(d.Errors))
 	for i, e := range d.Errors {
 		out[i] = e.Field
 	}
+
 	slices.Sort(out)
+
 	return out
 }
 
 func TestValidatorRejectsContractViolations(t *testing.T) {
 	t.Parallel()
+
 	tests := []struct {
 		name, method, path, contentType, body string
 		status                                int
@@ -132,9 +142,11 @@ func TestValidatorRejectsContractViolations(t *testing.T) {
 			if reached != "" {
 				t.Fatal("the handler ran for an invalid request")
 			}
+
 			if rec.Code != tc.status || rec.Header().Get("Content-Type") != problem.ContentType || !strings.Contains(rec.Body.String(), `"code":"`+tc.code+`"`) {
 				t.Fatalf("status %d: %s", rec.Code, rec.Body)
 			}
+
 			if got := fields(t, rec); !slices.Equal(got, tc.fields) {
 				t.Fatalf("fields = %v, want %v: %s", got, tc.fields, rec.Body)
 			}
@@ -144,6 +156,7 @@ func TestValidatorRejectsContractViolations(t *testing.T) {
 
 func TestValidatorPassesConformingRequests(t *testing.T) {
 	t.Parallel()
+
 	tests := []struct{ name, method, path, contentType, body string }{
 		{"json body reaches the handler intact", "POST", "/api/v1/items", "application/json; charset=utf-8", `{"name":"x","kind":"a","lines":[{"amount":-1}]}`},
 		{"uuid v7 path", "GET", "/api/v1/items/" + itemID, "", ""},
@@ -164,10 +177,12 @@ func TestValidatorPassesConformingRequests(t *testing.T) {
 
 func TestValidatorAnswersWrongMethod(t *testing.T) {
 	t.Parallel()
+
 	rec, reached := serve(t, "DELETE", "/api/v1/items", "", "")
 	if reached != "" || rec.Code != http.StatusMethodNotAllowed || !strings.Contains(rec.Body.String(), `"code":"method_not_allowed"`) {
 		t.Fatalf("status %d: %s", rec.Code, rec.Body)
 	}
+
 	if got := rec.Header().Get("Allow"); got != "GET, POST" {
 		t.Fatalf("Allow = %q", got)
 	}
@@ -184,6 +199,7 @@ func (u untouched) Read(p []byte) (int, error) {
 	if !*u.handler {
 		u.t.Error("the validator read the upload body")
 	}
+
 	return u.r.Read(p)
 }
 
@@ -191,13 +207,16 @@ func (u untouched) Close() error { return nil }
 
 func TestValidatorDoesNotReadUploads(t *testing.T) {
 	t.Parallel()
+
 	v, err := New([]byte(spec), "/api/v1")
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	var inHandler bool
 	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		inHandler = true
+
 		if b, _ := io.ReadAll(r.Body); string(b) != "--x--" {
 			t.Errorf("handler body = %q", b)
 		}
@@ -206,6 +225,7 @@ func TestValidatorDoesNotReadUploads(t *testing.T) {
 	req.Body = untouched{t: t, handler: &inHandler, r: strings.NewReader("--x--")}
 	req.Header.Set("Content-Type", "multipart/form-data; boundary=x")
 	v.Middleware(next).ServeHTTP(httptest.NewRecorder(), req)
+
 	if !inHandler {
 		t.Fatal("the handler did not run")
 	}

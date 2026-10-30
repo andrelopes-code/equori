@@ -31,27 +31,34 @@ type eventPayload struct {
 
 func events(t *testing.T, h *apitest.Harness, transaction string) map[string][]eventPayload {
 	t.Helper()
+
 	rows, err := h.Pool.Query(t.Context(), `SELECT type, payload FROM outbox_event WHERE aggregate_id = $1 ORDER BY id`, transaction)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer rows.Close()
+
 	out := map[string][]eventPayload{}
 	for rows.Next() {
 		var typ string
+
 		var raw []byte
 		if err := rows.Scan(&typ, &raw); err != nil {
 			t.Fatal(err)
 		}
+
 		var p eventPayload
 		if err := json.Unmarshal(raw, &p); err != nil {
 			t.Fatal(err)
 		}
+
 		out[typ] = append(out[typ], p)
 	}
+
 	if err := rows.Err(); err != nil {
 		t.Fatal(err)
 	}
+
 	return out
 }
 
@@ -62,6 +69,7 @@ func TestCategorizeReconciledTransaction(t *testing.T) {
 	sys := systemAccounts(h)
 	checking := h.Account("Nubank checking", "asset", "checking", nil)
 	salary := h.Account("Salary", "income", "", nil)
+
 	id := h.Record("2026-10-15", apitest.Posting(checking, 300000), apitest.Posting(sys["uncategorized_income"], -300000))
 	if r := assertBalance(h, checking, "2026-10-31", 300000); r.Status != http.StatusCreated {
 		t.Fatalf("assertion status %d: %s", r.Status, r.Body)
@@ -71,17 +79,21 @@ func TestCategorizeReconciledTransaction(t *testing.T) {
 	if r.Status != http.StatusOK {
 		t.Fatalf("status %d: %s", r.Status, r.Body)
 	}
+
 	var tx apitest.TransactionView
 	r.Decode(t, &tx)
+
 	if tx.Version != 2 || len(tx.Postings) != 2 {
 		t.Fatalf("transaction = %+v", tx)
 	}
+
 	for _, p := range tx.Postings {
 		want := map[string]string{checking: "reconciled", salary: "cleared"}[p.AccountID]
 		if want == "" || p.Status != want {
 			t.Fatalf("posting %+v, want status %q", p, want)
 		}
 	}
+
 	if s := reconciliationOf(h, checking); s.LastReconciledOn != "2026-10-31" {
 		t.Fatalf("reconciliation = %+v", s)
 	}
@@ -93,11 +105,13 @@ func TestCategorizeReconciledTransaction(t *testing.T) {
 		} `json:"items"`
 	}
 	h.MustDo(http.MethodGet, "/api/v1/transactions/"+id+"/versions", nil, http.StatusOK, &versions)
+
 	if len(versions.Items) != 1 || versions.Items[0].Version != 1 || versions.Items[0].Reason != "categorized" {
 		t.Fatalf("versions = %+v", versions)
 	}
 
 	h.Dispatch()
+
 	for account, want := range map[string]int64{salary: -300000, sys["uncategorized_income"]: 0} {
 		var out struct {
 			Items []struct {
@@ -108,6 +122,7 @@ func TestCategorizeReconciledTransaction(t *testing.T) {
 			} `json:"items"`
 		}
 		h.MustDo(http.MethodGet, fmt.Sprintf("/api/v1/reports/balances?account_id=%s&from=2026-10-15&to=2026-10-15", account), nil, http.StatusOK, &out)
+
 		if len(out.Items) != 1 || out.Items[0].Balance.Amount != want {
 			t.Fatalf("series of %s = %+v, want %d", account, out.Items, want)
 		}
@@ -147,10 +162,12 @@ func TestCategorizeKeepsCardPurchase(t *testing.T) {
 	c.h.MustDo(http.MethodPost, "/api/v1/transactions/"+id+"/categorize", map[string]any{
 		"expected_version": 1, "parts": []any{part(c.food, 20000), part(sys["uncategorized_expense"], 3000)},
 	}, http.StatusOK, nil)
+
 	after := c.h.Transaction(id)
 	if after.Postings[0] != before.Postings[0] || after.Postings[0].CardRole != "charge" || after.Postings[0].Statement != "2026-11" {
 		t.Fatalf("card posting = %+v, want %+v", after.Postings[0], before.Postings[0])
 	}
+
 	if got := amountsByAccount(after); len(after.Postings) != 3 || got[c.food] != 20000 || got[sys["uncategorized_expense"]] != 3000 {
 		t.Fatalf("postings = %+v", after.Postings)
 	}
@@ -163,10 +180,12 @@ func TestTransactionEventPayloads(t *testing.T) {
 	sys := systemAccounts(h)
 	checking := h.Account("Nubank checking", "asset", "checking", nil)
 	food := h.Account("Food", "expense", "", nil)
+
 	id := h.Record("2026-10-15", apitest.Posting(checking, -1000), apitest.Posting(sys["uncategorized_expense"], 1000))
 	if r := categorize(h, id, 1, part(food, 1000)); r.Status != http.StatusOK {
 		t.Fatalf("status %d: %s", r.Status, r.Body)
 	}
+
 	correct := func(version int, description string, postings ...map[string]any) {
 		h.MustDo(http.MethodPut, "/api/v1/transactions/"+id, map[string]any{
 			"date": "2026-10-15", "description": description, "postings": postings, "expected_version": version, "reason": "edit",
@@ -179,17 +198,21 @@ func TestTransactionEventPayloads(t *testing.T) {
 	got := events(t, h, id)
 	recorded, categorized := got["ledger.transaction_recorded.v1"], got["ledger.transaction_categorized.v1"]
 	corrected, voided := got["ledger.transaction_corrected.v1"], got["ledger.transaction_voided.v1"]
+
 	if len(recorded) != 1 || recorded[0].Version != 1 || recorded[0].Origin != "manual" || recorded[0].CategoryState != "uncategorized" || recorded[0].Cause != nil {
 		t.Fatalf("recorded = %+v", recorded)
 	}
+
 	if len(categorized) != 1 || categorized[0].Version != 2 || categorized[0].CategoryState != "categorized" ||
 		categorized[0].Cause == nil || categorized[0].Cause.Method != "manual" || categorized[0].Cause.RuleID != "" || len(categorized[0].AccountIDs) != 3 {
 		t.Fatalf("categorized = %+v", categorized)
 	}
+
 	if len(corrected) != 2 || corrected[0].Version != 3 || corrected[0].CategoriesChanged || corrected[0].CategoryState != "categorized" ||
 		corrected[1].Version != 4 || !corrected[1].CategoriesChanged || corrected[1].CategoryState != "uncategorized" {
 		t.Fatalf("corrected = %+v", corrected)
 	}
+
 	if len(voided) != 1 || voided[0].Version != 4 || voided[0].Origin != "manual" {
 		t.Fatalf("voided = %+v", voided)
 	}

@@ -18,6 +18,7 @@ func getAccount(t *testing.T, h *apitest.Harness, id string) accountView {
 	t.Helper()
 	var out accountView
 	h.MustDo(http.MethodGet, "/api/v1/accounts/"+id, nil, http.StatusOK, &out)
+
 	return out
 }
 
@@ -33,9 +34,11 @@ func TestMoveUnderDescendantIs422(t *testing.T) {
 		h.ExpectProblem(h.Do(http.MethodPatch, "/api/v1/accounts/"+food, map[string]any{"parent_id": target}),
 			http.StatusUnprocessableEntity, "validation_failed", "parent_id")
 	}
+
 	if a := getAccount(t, h, food); a.ParentID != "" {
 		t.Fatalf("food parent = %q", a.ParentID)
 	}
+
 	if a := getAccount(t, h, groceries); a.ParentID != food {
 		t.Fatalf("groceries parent = %q, want food", a.ParentID)
 	}
@@ -64,6 +67,7 @@ func newCategoryTreeWith(t *testing.T, opts ...apitest.Option) categoryTree {
 		} `json:"items"`
 	}
 	h.MustDo(http.MethodGet, "/api/v1/accounts?limit=200", nil, http.StatusOK, &accounts)
+
 	for _, a := range accounts.Items {
 		switch a.SystemRole {
 		case "uncategorized_expense":
@@ -72,10 +76,12 @@ func newCategoryTreeWith(t *testing.T, opts ...apitest.Option) categoryTree {
 			c.feesAccount = a.ID
 		}
 	}
+
 	c.checking = h.Account("Nubank", "asset", "checking", nil)
 	c.food = h.Account("Food", "expense", "", nil)
 	c.bakery = h.Account("Bakery", "expense", "", map[string]any{"parent_id": c.food})
 	c.delivery = h.Account("Delivery", "expense", "", map[string]any{"parent_id": c.food})
+
 	return c
 }
 
@@ -85,6 +91,7 @@ func (c categoryTree) close(id, on string) apitest.Response {
 
 func (c categoryTree) requireClosedOn(t *testing.T, want string, ids ...string) {
 	t.Helper()
+
 	for _, id := range ids {
 		if got := getAccount(t, c.h, id).ClosedOn; got != want {
 			t.Fatalf("account %s closed_on = %q, want %q", id, got, want)
@@ -99,15 +106,20 @@ func TestArchiveCategoryWithPostings(t *testing.T) {
 	c.h.Record("2026-10-10", apitest.Posting(c.checking, -850), apitest.Posting(c.bakery, 850))
 
 	var out accountView
+
 	r := c.close(c.food, "2026-10-31")
 	if r.Status != http.StatusOK {
 		t.Fatalf("close status %d: %s", r.Status, r.Body)
 	}
+
 	r.Decode(t, &out)
+
 	if out.ClosedOn != "2026-10-31" {
 		t.Fatalf("closed food = %+v", out)
 	}
+
 	c.requireClosedOn(t, "2026-10-31", c.bakery, c.delivery)
+
 	for _, id := range []string{c.food, c.bakery, c.delivery} {
 		if n := len(events(t, c.h, id)["ledger.account_closed.v1"]); n != 1 {
 			t.Fatalf("account %s has %d account_closed events, want 1", id, n)
@@ -166,6 +178,7 @@ func TestRenameArchivedChildOfArchivedParent(t *testing.T) {
 	c.h.MustDo(http.MethodPost, "/api/v1/accounts/"+c.food+"/close", map[string]string{"closed_on": "2026-10-31"}, http.StatusOK, nil)
 	var out accountView
 	c.h.MustDo(http.MethodPatch, "/api/v1/accounts/"+c.bakery, map[string]any{"name": "Old bakery"}, http.StatusOK, &out)
+
 	if out.Name != "Old bakery" || out.ClosedOn != "2026-10-31" {
 		t.Fatalf("bakery = %+v", out)
 	}
@@ -185,13 +198,17 @@ func TestReopenCategoryReopensAncestors(t *testing.T) {
 	if r.Status != http.StatusOK {
 		t.Fatalf("reopen status %d: %s", r.Status, r.Body)
 	}
+
 	var out accountView
 	r.Decode(t, &out)
+
 	if out.ID != c.bakery || out.ClosedOn != "" {
 		t.Fatalf("reopened bakery = %+v", out)
 	}
+
 	c.requireClosedOn(t, "", c.food)
 	c.requireClosedOn(t, "2026-10-31", c.delivery)
+
 	for id, want := range map[string]int{c.bakery: 1, c.food: 1, c.delivery: 0} {
 		if n := len(events(t, c.h, id)["ledger.account_reopened.v1"]); n != want {
 			t.Fatalf("account %s has %d account_reopened events, want %d", id, n, want)

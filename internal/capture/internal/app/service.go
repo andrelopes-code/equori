@@ -107,44 +107,55 @@ func NewService(l Ledger, c Classifier, h HintRepository, p Profiles, sg Suggest
 // Preview reads text into lines; a zero reference reads it against today (A128).
 func (s *Service) Preview(ctx context.Context, userID int64, text string, defaultAccount uuid.UUID, reference time.Time) ([]Line, error) {
 	blank := 0
+
 	pieces := domain.SplitLines(text)
 	for _, p := range pieces {
 		if strings.TrimSpace(p) == "" {
 			blank++
 		}
 	}
+
 	if len(pieces)-blank > MaxLines {
 		return nil, ErrTooManyLines
 	}
+
 	accounts, payees, err := s.ledger.Vocabulary(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
+
 	base, err := s.ledger.BaseCurrency(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
+
 	profile, err := s.profiles.Profile(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
+
 	v := vocabulary(accounts, base, profile)
 	if defaultAccount != uuid.Nil && !slices.ContainsFunc(v.Accounts, func(a domain.Account) bool { return a.ID == defaultAccount }) {
 		return nil, ErrDefaultAccount
 	}
+
 	y, m, d := s.ledger.Today().Date()
+
 	day := time.Date(y, m, d, 0, 0, 0, 0, time.UTC)
 	if !reference.IsZero() {
 		// A day ahead is accepted: the device that wrote the text may sit east of the instance's zone.
 		if reference.After(day.AddDate(0, 0, 1)) {
 			return nil, ErrReferenceDate
 		}
+
 		day = reference
 	}
+
 	read := domain.Read(text, v, day, defaultAccount)
 	lines := make([]Line, len(read))
 	names := payeeNames(payees)
 	var entries []Entry
+
 	var at []int
 	for i, l := range read {
 		lines[i] = Line{Line: l}
@@ -154,28 +165,35 @@ func (s *Service) Preview(ctx context.Context, userID int64, text string, defaul
 			at = append(at, i)
 		}
 	}
+
 	if len(entries) == 0 {
 		return lines, nil
 	}
+
 	decisions, err := s.classifier.Decide(ctx, userID, entries)
 	if err != nil {
 		return nil, err
 	}
+
 	for k, d := range decisions {
 		l := &lines[at[k]]
+
 		l.PayeeID = d.PayeeID
 		if l.PayeeID == uuid.Nil {
 			l.PayeeID = entries[k].NamedPayee
 		}
+
 		if d.CategoryID != uuid.Nil {
 			l.CategoryID, l.CategorySource = d.CategoryID, d.Method
 		}
+
 		for _, t := range d.Tags {
 			if !slices.Contains(l.Tags, t) {
 				l.Tags = append(l.Tags, t)
 			}
 		}
 	}
+
 	return lines, nil
 }
 
@@ -186,7 +204,9 @@ func vocabulary(accounts []Account, base money.Currency, profile locale.Locale) 
 	for _, a := range accounts {
 		parents[a.ParentID] = true
 	}
+
 	c := locale.ConventionsOf(profile)
+
 	v := domain.Vocabulary{
 		Base:        base,
 		Lexicon:     domain.Merge(lexiconOf(profile.Language), domain.English()),
@@ -196,18 +216,23 @@ func vocabulary(accounts []Account, base money.Currency, profile locale.Locale) 
 		if a.Closed || a.SystemRole != "" || parents[a.ID] || (a.Class != "asset" && a.Class != "liability") {
 			continue
 		}
+
 		if _, err := money.ParseCurrency(string(a.Instrument)); err != nil {
 			continue
 		}
+
 		handles := []string{a.Name}
 		if a.Institution != "" {
 			handles = append(handles, a.Institution)
 		}
+
 		for _, digits := range a.CardsLastFour {
 			handles = append(handles, "final "+digits, "*"+digits)
 		}
+
 		v.Accounts = append(v.Accounts, domain.Account{ID: a.ID, Class: a.Class, Kind: a.Kind, Currency: a.Instrument, Handles: handles})
 	}
+
 	return v
 }
 
@@ -216,6 +241,7 @@ func lexiconOf(language string) domain.Lexicon {
 	if language == "pt" {
 		return domain.Portuguese()
 	}
+
 	return domain.English()
 }
 
@@ -225,31 +251,39 @@ func entryOf(l domain.Line) (Entry, bool) {
 	if l.Kind == domain.KindTransfer || l.AccountID == uuid.Nil || l.Amount == 0 {
 		return Entry{}, false
 	}
+
 	amount := l.Amount
 	if l.Kind == domain.KindExpense {
 		amount = -amount
 	}
+
 	m, err := money.New(amount, l.Currency)
 	if err != nil {
 		return Entry{}, false
 	}
+
 	return Entry{AccountID: l.AccountID, Date: l.Date, Amount: m, Description: l.Description}, true
 }
 
 // payeeNames maps a normalized name to its payee; a name two payees share maps to none.
 func payeeNames(payees []Payee) map[string]uuid.UUID {
 	out := map[string]uuid.UUID{}
+
 	shared := map[string]bool{}
 	for _, p := range payees {
 		key := domain.Normalize(p.Name)
 		if _, ok := out[key]; ok {
 			shared[key] = true
 		}
+
 		out[key] = p.ID
 	}
+
 	for key := range shared {
 		delete(out, key)
 	}
+
 	delete(out, "")
+
 	return out
 }

@@ -26,6 +26,7 @@ func (e *QuotaError) Error() string {
 	if e.RetryAfter == 0 {
 		return ErrQuota.Error()
 	}
+
 	return fmt.Sprintf("%s, retry after %s", ErrQuota, e.RetryAfter)
 }
 

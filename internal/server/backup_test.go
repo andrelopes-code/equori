@@ -24,20 +24,24 @@ import (
 // compose runs a command in the database container that make check starts.
 func compose(t *testing.T, stdin []byte, args ...string) []byte {
 	t.Helper()
+
 	root, err := filepath.Abs("../..")
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	// The service that holds the test databases; make test sets it, db-test by default.
 	service := cmp.Or(os.Getenv("EQUORI_TEST_DB_SERVICE"), "db-test")
 	base := []string{"compose", "-f", filepath.Join(root, "compose.yaml"), "-f", filepath.Join(root, "compose.dev.yaml"), "exec", "-T", service}
 	cmd := exec.CommandContext(t.Context(), "docker", append(base, args...)...) //nolint:gosec // fixed binary; arguments built by the test
 	cmd.Stdin = bytes.NewReader(stdin)
 	var stdout, stderr bytes.Buffer
+
 	cmd.Stdout, cmd.Stderr = &stdout, &stderr
 	if err := cmd.Run(); err != nil {
 		t.Fatalf("docker %v: %v: %s", args, err, stderr.String())
 	}
+
 	return stdout.Bytes()
 }
 
@@ -47,21 +51,26 @@ func snapshot(t *testing.T, pool *pgxpool.Pool) []string {
 	t.Helper()
 	ctx := t.Context()
 	var out []string
+
 	rows, err := pool.Query(ctx, `SELECT tablename FROM pg_tables WHERE schemaname = 'public' ORDER BY 1`)
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	var tables []string
 	for rows.Next() {
 		var name string
 		if err := rows.Scan(&name); err != nil {
 			t.Fatal(err)
 		}
+
 		tables = append(tables, name)
 	}
+
 	if err := rows.Err(); err != nil {
 		t.Fatal(err)
 	}
+
 	queries := []string{
 		`SELECT account_id::text || ' ' || sum(amount) FROM ledger_posting WHERE NOT voided GROUP BY account_id ORDER BY 1`,
 		`SELECT account_id::text || ' ' || date || ' ' || balance_booked || ' ' || balance_settled FROM reporting_account_day ORDER BY 1`,
@@ -71,22 +80,27 @@ func snapshot(t *testing.T, pool *pgxpool.Pool) []string {
 	for _, table := range tables {
 		queries = append(queries, fmt.Sprintf(`SELECT '%s ' || count(*) FROM %q`, table, table))
 	}
+
 	for _, q := range queries {
 		rows, err := pool.Query(ctx, q)
 		if err != nil {
 			t.Fatalf("%s: %v", q, err)
 		}
+
 		for rows.Next() {
 			var line string
 			if err := rows.Scan(&line); err != nil {
 				t.Fatal(err)
 			}
+
 			out = append(out, line)
 		}
+
 		if err := rows.Err(); err != nil {
 			t.Fatal(err)
 		}
 	}
+
 	return out
 }
 
@@ -105,9 +119,11 @@ func TestRestoredBackupMatchesTheOriginal(t *testing.T) {
 	duplicate := h.Record("2026-10-15", apitest.Posting(checking, -500), apitest.Posting(food, 500))
 	h.MustDo(http.MethodPost, "/api/v1/transactions/"+duplicate+"/void", map[string]string{"reason": "duplicate"}, http.StatusOK, nil)
 	h.MustDo(http.MethodPost, "/api/v1/accounts/"+reserve+"/balance-assertions", map[string]any{"date": "2026-10-31", "amount": apitest.BRL(100841)}, http.StatusCreated, nil)
+
 	if r := h.Upload("/api/v1/transactions/"+groceries+"/attachments", "receipt.pdf", append([]byte("%PDF-1.7\n"), bytes.Repeat([]byte("x"), 4096)...)); r.Status != http.StatusCreated {
 		t.Fatalf("upload: %d %s", r.Status, r.Body)
 	}
+
 	h.Dispatch()
 	want := snapshot(t, h.Pool)
 
@@ -118,13 +134,16 @@ func TestRestoredBackupMatchesTheOriginal(t *testing.T) {
 	if got := snapshot(t, restored); !slices.Equal(got, want) {
 		t.Fatalf("restored database differs:\n got %v\nwant %v", got, want)
 	}
+
 	app, err := server.New(restored, server.Config{}, slog.New(slog.NewTextHandler(io.Discard, nil)))
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if err := app.Reporting.RebuildAll(context.Background()); err != nil {
 		t.Fatal(err)
 	}
+
 	if got := snapshot(t, restored); !slices.Equal(got, want) {
 		t.Fatalf("derived tables rebuilt on the restored database differ:\n got %v\nwant %v", got, want)
 	}

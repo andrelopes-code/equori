@@ -52,18 +52,23 @@ const maxProviderIDLength = 60
 
 func NewLimit(providerID, model string, requests, tokens *int64) (Limit, error) {
 	model = strings.TrimSpace(model)
+
 	if providerID == "" || utf8.RuneCountInString(providerID) > maxProviderIDLength {
 		return Limit{}, invalid("provider_id", "must have 1 to 60 characters")
 	}
+
 	if model == "" || utf8.RuneCountInString(model) > maxModelLength {
 		return Limit{}, invalid("model", "must have 1 to 200 characters")
 	}
+
 	if requests != nil && (*requests < 1 || *requests > 1<<31-1) {
 		return Limit{}, invalid("requests_per_day", "must be a positive integer")
 	}
+
 	if tokens != nil && *tokens < 1 {
 		return Limit{}, invalid("tokens_per_day", "must be a positive integer")
 	}
+
 	return Limit{ProviderID: providerID, Model: model, RequestsPerDay: requests, TokensPerDay: tokens}, nil
 }
 

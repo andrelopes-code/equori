@@ -27,10 +27,12 @@ func TestPTAX(t *testing.T) {
 			_, _ = w.Write([]byte(`{"value":[]}`))
 			return
 		}
+
 		if r.URL.Query().Get("@moeda") == "'EUR'" {
 			http.Error(w, "busy", http.StatusServiceUnavailable)
 			return
 		}
+
 		_, _ = w.Write([]byte(ptaxUSD))
 	}))
 	t.Cleanup(srv.Close)
@@ -40,10 +42,12 @@ func TestPTAX(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	want := "/ExchangeRatePeriod(moeda=@moeda,dataInicial=@dataInicial,dataFinalCotacao=@dataFinalCotacao)?@moeda='USD'&@dataInicial='10-29-2026'&@dataFinalCotacao='10-30-2026'&$format=json"
 	if rawURL != want {
 		t.Fatalf("request = %s", rawURL)
 	}
+
 	if len(got) != 2 || got[0].Instrument != "USD" || got[0].Quote != "BRL" || !got[0].Date.Equal(day("2026-10-29")) || got[0].Value.String() != "5.49500" ||
 		!got[1].Date.Equal(day("2026-10-30")) || got[1].Value.String() != "5.5" {
 		t.Fatalf("quotes = %+v", got)
@@ -52,6 +56,7 @@ func TestPTAX(t *testing.T) {
 	if got, err := src.Fetch(t.Context(), []money.Currency{"SEK"}, day("2026-10-29"), day("2026-10-30")); err != nil || len(got) != 0 {
 		t.Fatalf("empty answer = %+v, %v", got, err)
 	}
+
 	if _, err := src.Fetch(t.Context(), []money.Currency{"EUR"}, day("2026-10-29"), day("2026-10-30")); err == nil {
 		t.Fatal("a 503 answer returned no error")
 	}
@@ -62,15 +67,18 @@ func day(s string) time.Time {
 	if err != nil {
 		panic(err)
 	}
+
 	return d
 }
 
 func TestCodes(t *testing.T) {
 	t.Parallel()
+
 	ins := []feed.Instrument{
 		{Code: "BRL", Type: "currency"}, {Code: "USD", Type: "currency"}, {Code: "KWD", Type: "currency"},
 		{Code: "EUR", Type: "currency"}, {Code: "MXRF11", Type: "reit", Exchange: "BVMF", QuoteCurrency: "BRL"},
 	}
+
 	got := bcbptax.New(nil, "").Codes(ins)
 	if len(got) != 2 || got[0] != "USD" || got[1] != "EUR" {
 		t.Fatalf("codes = %v", got)

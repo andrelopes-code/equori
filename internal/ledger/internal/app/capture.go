@@ -35,15 +35,18 @@ func (s *Service) CaptureVocabulary(ctx context.Context, userID int64) ([]Captur
 	if err != nil {
 		return nil, nil, err
 	}
+
 	institutions, err := s.institutionNames(ctx, userID)
 	if err != nil {
 		return nil, nil, err
 	}
+
 	var out []CaptureAccount
 	for _, a := range accounts {
 		if a.Class == domain.ClassEquity {
 			continue
 		}
+
 		c := CaptureAccount{
 			ID: a.ID, ParentID: a.ParentID, Name: a.Name, Class: string(a.Class), Kind: string(a.Kind),
 			SystemRole: string(a.SystemRole), Instrument: a.Instrument, ClosedOn: a.ClosedOn, Institution: institutions[a.InstitutionID],
@@ -53,53 +56,65 @@ func (s *Service) CaptureVocabulary(ctx context.Context, userID int64) ([]Captur
 			if err != nil {
 				return nil, nil, err
 			}
+
 			for _, card := range cards {
 				if card.Active {
 					c.CardsLastFour = append(c.CardsLastFour, card.LastFour)
 				}
 			}
 		}
+
 		out = append(out, c)
 	}
+
 	payees, err := s.allPayees(ctx, userID)
 	if err != nil {
 		return nil, nil, err
 	}
+
 	return out, payees, nil
 }
 
 func (s *Service) institutionNames(ctx context.Context, userID int64) (map[uuid.UUID]string, error) {
 	names := map[uuid.UUID]string{}
+
 	req := page.Request[InstitutionKey]{Limit: page.MaxLimit}
 	for {
 		items, next, err := s.repo.ListInstitutions(ctx, userID, req)
 		if err != nil {
 			return nil, err
 		}
+
 		for _, i := range items {
 			names[i.ID] = i.Name
 		}
+
 		if next == nil {
 			return names, nil
 		}
+
 		req.After = next
 	}
 }
 
 func (s *Service) allPayees(ctx context.Context, userID int64) ([]CapturePayee, error) {
 	var out []CapturePayee
+
 	req := page.Request[PayeeKey]{Limit: page.MaxLimit}
 	for {
 		items, next, err := s.repo.ListPayees(ctx, userID, req)
 		if err != nil {
 			return nil, err
 		}
+
 		for _, p := range items {
 			out = append(out, CapturePayee{ID: p.ID, Name: p.Name})
 		}
+
 		if next == nil {
 			return out, nil
 		}
+
 		req.After = next
 	}
 }

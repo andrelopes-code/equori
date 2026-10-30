@@ -34,8 +34,10 @@ func (s *Service) Reimburse(ctx context.Context, userID int64, req Reimbursement
 	err := s.repo.InTx(ctx, func(r Repository) error {
 		var err error
 		out, err = s.reimburse(ctx, r, userID, req)
+
 		return err
 	})
+
 	return out, err
 }
 
@@ -46,58 +48,73 @@ func (s *Service) reimburse(ctx context.Context, r Repository, userID int64, req
 			ids = append(ids, a.OriginalID)
 		}
 	}
+
 	slices.SortFunc(ids, func(a, b uuid.UUID) int { return bytes.Compare(a[:], b[:]) })
 	locked := make(map[uuid.UUID]domain.Transaction, len(ids))
+
 	var all []domain.Transaction
 	for _, id := range ids {
 		t, err := r.LockTransaction(ctx, userID, id)
 		if err != nil {
 			return domain.Transaction{}, err
 		}
+
 		locked[id] = t
 		all = append(all, t)
 	}
+
 	uncategorized, err := r.SystemAccount(ctx, userID, domain.RoleUncategorizedIncome)
 	if err != nil {
 		return domain.Transaction{}, err
 	}
+
 	accountIDs := append(postingAccounts(all...), uncategorized.ID)
 	for _, a := range req.Allocations {
 		accountIDs = append(accountIDs, a.CategoryID)
 	}
+
 	accounts, err := r.Accounts(ctx, userID, accountIDs)
 	if err != nil {
 		return domain.Transaction{}, err
 	}
+
 	prev := locked[req.TransactionID]
+
 	allocations := make([]domain.Allocation, len(req.Allocations))
 	for i, a := range req.Allocations {
 		if err := checkAllocationCurrency(prev, accounts, i, a); err != nil {
 			return domain.Transaction{}, err
 		}
+
 		original := locked[a.OriginalID]
 		if a.CategoryID != uuid.Nil && a.OriginalID != req.TransactionID {
 			if original, err = s.recategorizeOriginal(ctx, r, original, accounts, a.CategoryID, req.Cause); err != nil {
 				return domain.Transaction{}, err
 			}
 		}
+
 		held, err := r.ReimbursedTotal(ctx, userID, a.OriginalID, req.TransactionID)
 		if err != nil {
 			return domain.Transaction{}, err
 		}
+
 		allocations[i] = domain.Allocation{Original: original, Amount: a.Amount.Amount(), HeldByOthers: held}
 	}
+
 	next, err := prev.Reimburse(req.ExpectedVersion, allocations, uncategorized, accounts)
 	if err != nil {
 		return domain.Transaction{}, err
 	}
+
 	if err := r.ReplaceCategoryPostings(ctx, prev, next, reasonCategorized); err != nil {
 		return domain.Transaction{}, err
 	}
+
 	links := slices.DeleteFunc(slices.Clone(next.Links), func(l domain.Link) bool { return l.Type != domain.LinkReimbursementOf })
 	if err := r.SetReimbursementLinks(ctx, userID, next.ID, links); err != nil {
 		return domain.Transaction{}, err
 	}
+
 	return next, s.publishCategorized(ctx, r, next, prev, accounts, req.Cause)
 }
 
@@ -108,6 +125,7 @@ func checkAllocationCurrency(t domain.Transaction, accounts map[uuid.UUID]domain
 			return validationError(fmt.Sprintf("allocations[%d].amount", i), "must be in the currency "+string(p.Amount.Currency()))
 		}
 	}
+
 	return nil
 }
 
@@ -116,17 +134,21 @@ func (s *Service) recategorizeOriginal(ctx context.Context, r Repository, origin
 	if c := accounts[category]; c.ID == uuid.Nil || c.Class != domain.ClassExpense {
 		return domain.Transaction{}, validationError("category_id", "must be an expense account")
 	}
+
 	parts, err := wholeCategory(original, accounts, category)
 	if err != nil {
 		return domain.Transaction{}, err
 	}
+
 	next, err := original.Categorize(domain.Categorization{ExpectedVersion: original.Version, Parts: parts}, accounts)
 	if err != nil {
 		return domain.Transaction{}, err
 	}
+
 	if err := r.ReplaceCategoryPostings(ctx, original, next, reasonCategorized); err != nil {
 		return domain.Transaction{}, err
 	}
+
 	return next, s.publishCategorized(ctx, r, next, original, accounts, cause)
 }
 
@@ -135,5 +157,6 @@ func (s *Service) publishCategorized(ctx context.Context, r Repository, next, pr
 	if cause.Method != "" {
 		event.Cause = &cause
 	}
+
 	return r.Publish(ctx, outbox.Event{Type: EventTransactionCategorized, UserID: next.UserID, AggregateID: next.ID.String(), Payload: event})
 }

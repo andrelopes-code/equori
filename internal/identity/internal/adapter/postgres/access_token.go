@@ -19,6 +19,7 @@ func (r *Repository) CreateAccessToken(ctx context.Context, t domain.AccessToken
 	}); err != nil {
 		return fmt.Errorf("create access token: %w", err)
 	}
+
 	return nil
 }
 
@@ -27,12 +28,14 @@ func (r *Repository) AccessTokens(ctx context.Context, userID int64) ([]domain.A
 	if err != nil {
 		return nil, fmt.Errorf("list access tokens: %w", err)
 	}
+
 	out := make([]domain.AccessToken, 0, len(rows))
 	for _, row := range rows {
 		out = append(out, domain.AccessToken{
 			ID: row.ID, UserID: row.UserID, Name: row.Name, Scope: row.Scope, CreatedAt: row.CreatedAt, ExpiresAt: row.ExpiresAt, LastUsedAt: row.LastUsedAt,
 		})
 	}
+
 	return out, nil
 }
 
@@ -41,9 +44,11 @@ func (r *Repository) DeleteAccessToken(ctx context.Context, userID int64, id uui
 	if err != nil {
 		return fmt.Errorf("delete access token: %w", err)
 	}
+
 	if n == 0 {
 		return app.ErrAccessTokenNotFound
 	}
+
 	return nil
 }
 
@@ -52,9 +57,11 @@ func (r *Repository) AccessTokenByHash(ctx context.Context, hash []byte, now tim
 	if errors.Is(err, pgx.ErrNoRows) {
 		return domain.AccessToken{}, app.ErrNotFound
 	}
+
 	if err != nil {
 		return domain.AccessToken{}, fmt.Errorf("get access token: %w", err)
 	}
+
 	return domain.AccessToken{
 		ID: row.ID, UserID: row.UserID, Name: row.Name, Scope: row.Scope, TokenHash: hash, CreatedAt: row.CreatedAt, ExpiresAt: row.ExpiresAt, LastUsedAt: row.LastUsedAt,
 	}, nil
@@ -64,5 +71,6 @@ func (r *Repository) TouchAccessToken(ctx context.Context, t domain.AccessToken,
 	if err := r.q.TouchAccessToken(ctx, TouchAccessTokenParams{UserID: t.UserID, ID: t.ID, LastUsedAt: &now}); err != nil {
 		return fmt.Errorf("touch access token: %w", err)
 	}
+
 	return nil
 }

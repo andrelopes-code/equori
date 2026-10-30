@@ -23,9 +23,11 @@ func TestInstitutionIdentifier(t *testing.T) {
 	}
 	nubank := map[string]any{"name": "Nubank", "identifier": map[string]string{"scheme": "br_ispb", "identifier": "18236120"}}
 	h.MustDo(http.MethodPost, "/api/v1/institutions", nubank, http.StatusCreated, &created)
+
 	if created.Name != "Nubank" || created.Identifier == nil || *created.Identifier != (identifierBody{"br_ispb", "18236120"}) {
 		t.Fatalf("created = %+v, want Nubank with br_ispb 18236120", created)
 	}
+
 	h.MustDo(http.MethodPost, "/api/v1/institutions", map[string]string{"name": "Wallet"}, http.StatusCreated, nil)
 
 	var list struct {
@@ -35,6 +37,7 @@ func TestInstitutionIdentifier(t *testing.T) {
 		} `json:"items"`
 	}
 	h.MustDo(http.MethodGet, "/api/v1/institutions", nil, http.StatusOK, &list)
+
 	if len(list.Items) != 2 || list.Items[0].Name != "Nubank" || list.Items[0].Identifier == nil || *list.Items[0].Identifier != (identifierBody{"br_ispb", "18236120"}) ||
 		list.Items[1].Name != "Wallet" || list.Items[1].Identifier != nil {
 		t.Fatalf("items = %+v, want Nubank br_ispb 18236120 then Wallet without identifier", list.Items)
@@ -57,15 +60,18 @@ func TestInstitutionIdentifierUpdate(t *testing.T) {
 	path := "/api/v1/institutions/" + inst.ID + "/identifier"
 
 	h.MustDo(http.MethodPut, path, map[string]string{"scheme": "bic", "identifier": "BOFAUS3NXXX"}, http.StatusOK, &inst)
+
 	if inst.Identifier == nil || *inst.Identifier != (identifierBody{"bic", "BOFAUS3NXXX"}) {
 		t.Fatalf("identifier = %+v, want bic BOFAUS3NXXX", inst.Identifier)
 	}
+
 	var got struct {
 		Items []struct {
 			Identifier *identifierBody `json:"identifier"`
 		} `json:"items"`
 	}
 	h.MustDo(http.MethodGet, "/api/v1/institutions", nil, http.StatusOK, &got)
+
 	if len(got.Items) != 1 || got.Items[0].Identifier == nil || *got.Items[0].Identifier != (identifierBody{"bic", "BOFAUS3NXXX"}) {
 		t.Fatalf("items = %+v, want bic BOFAUS3NXXX", got.Items)
 	}
@@ -96,6 +102,7 @@ func TestInstitutionIdentifierSchemes(t *testing.T) {
 		} `json:"items"`
 	}
 	h.MustDo(http.MethodGet, "/api/v1/institution-identifier-schemes", nil, http.StatusOK, &out)
+
 	want := []struct{ ID, Pattern string }{
 		{"bic", "^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$"},
 		{"br_ispb", "^[0-9]{8}$"},
@@ -103,6 +110,7 @@ func TestInstitutionIdentifierSchemes(t *testing.T) {
 	if len(out.Items) != len(want) {
 		t.Fatalf("items = %+v, want %+v", out.Items, want)
 	}
+
 	for i, w := range want {
 		if out.Items[i].ID != w.ID || out.Items[i].Pattern != w.Pattern {
 			t.Fatalf("item %d = %+v, want %+v", i, out.Items[i], w)

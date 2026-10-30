@@ -7,6 +7,7 @@ import (
 
 func TestDecideAssertion(t *testing.T) {
 	t.Parallel()
+
 	tests := []struct {
 		name              string
 		asserted, settled int64
@@ -27,15 +28,18 @@ func TestDecideAssertion(t *testing.T) {
 
 func TestCheckAssertionDate(t *testing.T) {
 	t.Parallel()
+
 	last := day("2026-10-31")
 	if err := CheckAssertionDate(day("2026-10-30"), &last); !errors.Is(err, ErrAlreadyReconciled) {
 		t.Fatalf("earlier date err = %v", err)
 	}
+
 	for _, d := range []string{"2026-10-31", "2026-11-30"} {
 		if err := CheckAssertionDate(day(d), &last); err != nil {
 			t.Fatalf("%s: %v", d, err)
 		}
 	}
+
 	if err := CheckAssertionDate(day("2026-01-01"), nil); err != nil {
 		t.Fatal(err)
 	}
@@ -43,6 +47,7 @@ func TestCheckAssertionDate(t *testing.T) {
 
 func TestYieldBound(t *testing.T) {
 	t.Parallel()
+
 	tests := []struct {
 		name    string
 		settled int64
@@ -70,6 +75,7 @@ func TestYieldBound(t *testing.T) {
 
 func TestDecideSyncedReserve(t *testing.T) {
 	t.Parallel()
+
 	tests := []struct {
 		name              string
 		asserted, settled int64
@@ -86,12 +92,14 @@ func TestDecideSyncedReserve(t *testing.T) {
 		{"equal without a previous assertion", 100292, 100292, 0, YieldAuto, AssertionOutcome{Resolution: ResolutionNone}},
 		{"equal with yield mode none", 100292, 100292, 1, YieldNone, AssertionOutcome{Resolution: ResolutionNone}},
 	}
+
 	const percent = 3
 	for _, tt := range tests {
 		if got := DecideSyncedReserve(tt.asserted, tt.settled, tt.days, tt.mode, percent); got != tt.want {
 			t.Errorf("%s: %+v, want %+v", tt.name, got, tt.want)
 		}
 	}
+
 	// A currency without a bound books no yield: the difference stays open for the owner.
 	if got := DecideSyncedReserve(100352, 100292, 1, YieldAuto, 0); got != (AssertionOutcome{Difference: 60}) {
 		t.Errorf("without a bound: %+v, want the difference open", got)

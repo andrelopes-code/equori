@@ -37,10 +37,12 @@ func (p *Provider) Generate(ctx context.Context, model string, req llm.Request) 
 		return llm.Response{}, err
 	}
 	defer resp.Body.Close()
+
 	var wire generateResponse
 	if err := json.NewDecoder(resp.Body).Decode(&wire); err != nil {
 		return llm.Response{}, fmt.Errorf("aistudio %s: decode response: %w", model, err)
 	}
+
 	return fromWire(wire), nil
 }
 
@@ -57,54 +59,70 @@ func (p *Provider) Stream(ctx context.Context, model string, req llm.Request, on
 	finish := ""
 	scanner := bufio.NewScanner(resp.Body)
 	scanner.Buffer(make([]byte, 0, 64<<10), 1<<20)
+
 	for scanner.Scan() {
 		data, ok := strings.CutPrefix(strings.TrimSpace(scanner.Text()), "data:")
 		if !ok {
 			continue
 		}
+
 		var chunk generateResponse
 		if err := json.Unmarshal([]byte(strings.TrimSpace(data)), &chunk); err != nil {
 			return llm.Response{}, fmt.Errorf("aistudio %s: decode chunk: %w", model, err)
 		}
+
 		if chunk.UsageMetadata.PromptTokenCount > 0 || chunk.UsageMetadata.CandidatesTokenCount > 0 {
 			merged.UsageMetadata = chunk.UsageMetadata
 		}
+
 		if chunk.PromptFeedback != nil {
 			merged.PromptFeedback = chunk.PromptFeedback
 		}
+
 		if len(chunk.Candidates) == 0 {
 			continue
 		}
+
 		c := chunk.Candidates[0]
 		if c.FinishReason != "" {
 			finish = c.FinishReason
 		}
+
 		if c.Content == nil {
 			continue
 		}
+
 		for _, np := range c.Content.Parts {
 			if np.Thought {
 				continue
 			}
+
 			if np.Text != nil && *np.Text != "" {
 				onText(*np.Text)
 			}
+
 			parts = mergePart(parts, np)
 		}
 	}
+
 	if err := scanner.Err(); err != nil {
 		if ctx.Err() != nil {
 			return llm.Response{}, fmt.Errorf("aistudio %s: %w", model, ctx.Err())
 		}
+
 		return llm.Response{}, fmt.Errorf("aistudio %s: read stream: %w: %w", model, llm.ErrTransient, err)
 	}
+
 	if merged.PromptFeedback != nil && merged.PromptFeedback.BlockReason != "" && len(parts) == 0 {
 		return fromWire(merged), nil
 	}
+
 	if finish == "" {
 		return llm.Response{}, fmt.Errorf("aistudio %s: stream ended without a finish reason: %w", model, llm.ErrTransient)
 	}
+
 	merged.Candidates = []candidate{{Content: &content{Role: "model", Parts: parts}, FinishReason: finish}}
+
 	return fromWire(merged), nil
 }
 
@@ -117,9 +135,11 @@ func mergePart(parts []part, np part) []part {
 			joined := *last.Text + *np.Text
 			last.Text = &joined
 			last.ThoughtSignature = np.ThoughtSignature
+
 			return parts
 		}
 	}
+
 	return append(parts, np)
 }
 
@@ -129,26 +149,35 @@ func (p *Provider) post(ctx context.Context, model, method string, req llm.Reque
 	if err != nil {
 		return nil, fmt.Errorf("encode request: %w", err)
 	}
+
 	endpoint := p.baseURL + "/v1beta/models/" + url.PathEscape(model) + method
+
 	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(body))
 	if err != nil {
 		return nil, fmt.Errorf("build request: %w", err)
 	}
+
 	httpReq.Header.Set("Content-Type", "application/json")
 	// The key goes in a header: a URL ends up in *url.Error strings and logs (N16).
 	httpReq.Header.Set("x-goog-api-key", p.apiKey)
+
 	resp, err := p.client.Do(httpReq)
 	if err != nil {
 		if ctx.Err() != nil {
 			return nil, fmt.Errorf("aistudio %s: %w", model, ctx.Err())
 		}
+
 		return nil, fmt.Errorf("aistudio %s: %w: %w", model, llm.ErrTransient, err)
 	}
+
 	if resp.StatusCode != http.StatusOK {
 		defer resp.Body.Close()
+
 		errBody, _ := io.ReadAll(io.LimitReader(resp.Body, 64<<10))
+
 		return nil, statusError(model, resp.StatusCode, errBody)
 	}
+
 	return resp, nil
 }
 
@@ -159,19 +188,24 @@ func (p *Provider) Models(ctx context.Context) ([]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("build request: %w", err)
 	}
+
 	httpReq.Header.Set("x-goog-api-key", p.apiKey)
+
 	resp, err := p.client.Do(httpReq)
 	if err != nil {
 		if ctx.Err() != nil {
 			return nil, fmt.Errorf("aistudio models: %w", ctx.Err())
 		}
+
 		return nil, fmt.Errorf("aistudio models: %w: %w", llm.ErrTransient, err)
 	}
 	defer resp.Body.Close()
+
 	if resp.StatusCode != http.StatusOK {
 		errBody, _ := io.ReadAll(io.LimitReader(resp.Body, 64<<10))
 		return nil, statusError("models", resp.StatusCode, errBody)
 	}
+
 	var wire struct {
 		Models []struct {
 			Name    string   `json:"name"`
@@ -181,13 +215,16 @@ func (p *Provider) Models(ctx context.Context) ([]string, error) {
 	if err := json.NewDecoder(resp.Body).Decode(&wire); err != nil {
 		return nil, fmt.Errorf("aistudio models: decode response: %w", err)
 	}
+
 	var ids []string
 	for _, m := range wire.Models {
 		if slices.Contains(m.Methods, "generateContent") {
 			ids = append(ids, strings.TrimPrefix(m.Name, "models/"))
 		}
 	}
+
 	slices.Sort(ids)
+
 	return ids, nil
 }
 
@@ -197,38 +234,47 @@ func toWire(req llm.Request) generateRequest {
 		s := req.System
 		w.SystemInstruction = &content{Parts: []part{{Text: &s}}}
 	}
+
 	for _, m := range req.Messages {
 		role := "user"
 		if m.Role == llm.RoleModel {
 			role = "model"
 		}
+
 		c := content{Role: role, Parts: []part{}}
 		for _, p := range m.Parts {
 			c.Parts = append(c.Parts, partToWire(p))
 		}
+
 		w.Contents = append(w.Contents, c)
 	}
+
 	if len(req.Tools) > 0 {
 		var decls []functionDeclaration
 		for _, t := range req.Tools {
 			decls = append(decls, functionDeclaration{Name: t.Name, Description: t.Description, ParametersJSONSchema: t.Parameters})
 		}
+
 		w.Tools = []tool{{FunctionDeclarations: decls}}
 		if req.ToolChoice == llm.ToolChoiceNone {
 			w.ToolConfig = &toolConfig{}
 			w.ToolConfig.FunctionCallingConfig.Mode = "NONE"
 		}
 	}
+
 	if req.Schema != nil || req.MaxOutputTokens > 0 || req.Temperature != nil || req.Thinking != "" {
 		cfg := &generationConfig{MaxOutputTokens: req.MaxOutputTokens, Temperature: req.Temperature}
 		if req.Schema != nil {
 			cfg.ResponseMimeType, cfg.ResponseJSONSchema = "application/json", req.Schema
 		}
+
 		if req.Thinking == "low" {
 			cfg.ThinkingConfig = &thinkingConfig{ThinkingLevel: "LOW"}
 		}
+
 		w.GenerationConfig = cfg
 	}
+
 	return w
 }
 
@@ -243,9 +289,11 @@ func partToWire(p llm.Part) part {
 		t := p.Text
 		w.Text = &t
 	}
+
 	if p.Signature != nil && p.Signature.Provider == name {
 		w.ThoughtSignature = p.Signature.Data
 	}
+
 	return w
 }
 
@@ -256,10 +304,13 @@ func asObject(content json.RawMessage) json.RawMessage {
 	if len(trimmed) > 0 && trimmed[0] == '{' {
 		return content
 	}
+
 	if len(trimmed) == 0 {
 		trimmed = []byte("null")
 	}
+
 	b, _ := json.Marshal(map[string]json.RawMessage{"result": trimmed})
+
 	return b
 }
 
@@ -276,15 +327,19 @@ func fromWire(w generateResponse) llm.Response {
 		if w.PromptFeedback != nil && w.PromptFeedback.BlockReason != "" {
 			resp.FinishReason = llm.FinishBlocked
 		}
+
 		return resp
 	}
+
 	c := w.Candidates[0]
+
 	hasCall := false
 	if c.Content != nil {
 		for _, p := range c.Content.Parts {
 			if p.Thought {
 				continue
 			}
+
 			var np llm.Part
 			switch {
 			case p.FunctionCall != nil:
@@ -293,13 +348,17 @@ func fromWire(w generateResponse) llm.Response {
 			case p.Text != nil:
 				np.Text = *p.Text
 			}
+
 			if len(p.ThoughtSignature) > 0 {
 				np.Signature = &llm.Signature{Provider: name, Data: p.ThoughtSignature}
 			}
+
 			resp.Message.Parts = append(resp.Message.Parts, np)
 		}
 	}
+
 	resp.FinishReason = finishReason(c.FinishReason, hasCall)
+
 	return resp
 }
 
@@ -309,9 +368,11 @@ func finishReason(reason string, hasCall bool) llm.FinishReason {
 		if hasCall {
 			return llm.FinishToolCalls
 		}
+
 		if reason == "" {
 			return llm.FinishOther
 		}
+
 		return llm.FinishStop
 	case "MAX_TOKENS":
 		return llm.FinishLength

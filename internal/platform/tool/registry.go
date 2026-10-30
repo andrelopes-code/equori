@@ -46,11 +46,14 @@ func NewRegistry(log *slog.Logger, groups ...Group) (*Registry, error) {
 			if _, ok := r.entries[name]; ok {
 				return nil, fmt.Errorf("duplicate tool %s", name)
 			}
+
 			r.entries[name] = entry{tool: t, errors: g.Errors}
 			r.names = append(r.names, name)
 		}
 	}
+
 	slices.Sort(r.names)
+
 	return r, nil
 }
 
@@ -60,6 +63,7 @@ func (r *Registry) Tools() []Tool {
 	for i, n := range r.names {
 		out[i] = r.entries[n].tool
 	}
+
 	return out
 }
 
@@ -75,6 +79,7 @@ func (r *Registry) Select(names ...string) (Set, error) {
 			return Set{}, fmt.Errorf("select tool %s: %w", n, ErrUnknownTool)
 		}
 	}
+
 	return Set{r: r, names: slices.Clone(names)}, nil
 }
 
@@ -85,42 +90,53 @@ func (r *Registry) Call(ctx context.Context, name string, args json.RawMessage) 
 	if !ok {
 		return Result{}, fmt.Errorf("call tool %s: %w", name, ErrUnknownTool)
 	}
+
 	userID, ok := auth.UserID(ctx)
 	if !ok {
 		return Result{}, fmt.Errorf("call tool %s: %w", name, ErrNoUser)
 	}
+
 	start := time.Now()
+
 	res, outcome, err := r.call(ctx, e, userID, args)
 	if err != nil {
 		outcome = "canceled"
 	}
+
 	r.log.LogAttrs(ctx, slog.LevelInfo, "tool call", slog.String("tool", name), slog.Int64("user_id", userID),
 		slog.String("effect", e.tool.spec.Effect.String()), slog.String("outcome", outcome),
 		slog.Duration("duration", time.Since(start)), slog.Int("bytes", len(res.Content)))
+
 	return res, err
 }
 
 func (r *Registry) call(ctx context.Context, e entry, userID int64, args json.RawMessage) (Result, string, error) {
 	name := e.tool.spec.Name
+
 	args, bad := e.tool.validate(args)
 	if bad != nil {
 		return failure(*bad)
 	}
+
 	out, err := e.tool.call(ctx, userID, args)
 	if err != nil {
 		if ctx.Err() != nil || errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 			return Result{}, "", fmt.Errorf("call tool %s: %w", name, err)
 		}
+
 		return r.mapError(ctx, e, err)
 	}
+
 	b, err := json.Marshal(out)
 	if err != nil {
 		return r.internal(ctx, name, err)
 	}
+
 	if len(b) > MaxResultBytes {
 		return failure(Error{Code: "result_too_large", Detail: fmt.Sprintf(
 			"the result has %d bytes, over the limit of %d; narrow the filters or lower limit", len(b), MaxResultBytes)})
 	}
+
 	return Result{Content: b}, "ok", nil
 }
 
@@ -129,14 +145,17 @@ func (r *Registry) mapError(ctx context.Context, e entry, err error) (Result, st
 	if ctx.Err() != nil || errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 		return Result{}, "", fmt.Errorf("tool %s: %w", e.tool.spec.Name, err)
 	}
+
 	if te, ok := errors.AsType[*Error](err); ok {
 		return failure(*te)
 	}
+
 	if e.errors != nil {
 		if te, ok := e.errors(err); ok {
 			return failure(te)
 		}
 	}
+
 	return r.internal(ctx, e.tool.spec.Name, err)
 }
 
@@ -150,6 +169,7 @@ func failure(e Error) (Result, string, error) {
 	if err != nil {
 		return Result{}, "", err
 	}
+
 	return Result{Content: b, IsError: true}, e.Code, nil
 }
 
@@ -164,6 +184,7 @@ func (s Set) Tools() []Tool {
 	for i, n := range s.names {
 		out[i] = s.r.entries[n].tool
 	}
+
 	return out
 }
 
@@ -171,5 +192,6 @@ func (s Set) Call(ctx context.Context, name string, args json.RawMessage) (Resul
 	if !slices.Contains(s.names, name) {
 		return Result{}, fmt.Errorf("call tool %s: %w", name, ErrUnknownTool)
 	}
+
 	return s.r.Call(ctx, name, args)
 }

@@ -19,10 +19,12 @@ func (r *Repository) Hints(ctx context.Context, userID int64, descriptions []str
 	if err != nil {
 		return nil, err
 	}
+
 	out := make([]app.Hint, len(rows))
 	for i, row := range rows {
 		out[i] = app.Hint{Class: row.Class, Description: row.Description, CategoryID: row.CategoryID.UUID, AnsweredAt: row.AnsweredAt}
 	}
+
 	return out, nil
 }
 

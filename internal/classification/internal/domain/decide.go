@@ -42,6 +42,7 @@ func (d Decision) Payee(s Subject) uuid.UUID {
 	if d.PayeeID != uuid.Nil {
 		return d.PayeeID
 	}
+
 	return s.PayeeID
 }
 
@@ -54,20 +55,25 @@ func Decide(s Subject, c Catalog) Decision {
 			d.PayeeID, s.PayeeID = p, p
 		}
 	}
+
 	subj := newSubject(s)
 	total := s.Amount.Neg()
+
 	categoryDecided, payeeDecided := false, false
 	for _, r := range c.Rules {
 		if !r.matches(subj) {
 			continue
 		}
+
 		parts, transfer, ok := r.allocation(total, c, s)
 		if !ok {
 			continue
 		}
+
 		if (parts != nil || transfer != uuid.Nil) && !categoryDecided {
 			d.Parts, d.TransferTo, d.Method, d.RuleID, categoryDecided = parts, transfer, MethodRule, r.ID, true
 		}
+
 		for _, a := range r.Actions {
 			switch a.Type {
 			case ActionSetPayee:
@@ -78,17 +84,21 @@ func Decide(s Subject, c Catalog) Decision {
 				d.AddTags = append(d.AddTags, a.Tags...)
 			}
 		}
+
 		if r.StopProcessing {
 			break
 		}
 	}
+
 	slices.Sort(d.AddTags)
+
 	d.AddTags = slices.Compact(d.AddTags)
 	if id := s.SourceCategory; !categoryDecided && id != uuid.Nil {
 		if cat, ok := c.Categories[id]; ok && cat.usable(total.Currency(), s.Date) {
 			d.Parts, d.Method, categoryDecided = []Allocation{{CategoryID: id, Amount: total}}, MethodSource, true
 		}
 	}
+
 	if !categoryDecided {
 		if id, ok := c.History[HistoryKey{PayeeID: d.Payee(s), Class: s.Class}]; ok && d.Payee(s) != uuid.Nil {
 			if cat, ok := c.Categories[id]; ok && cat.usable(total.Currency(), s.Date) {
@@ -96,6 +106,7 @@ func Decide(s Subject, c Catalog) Decision {
 			}
 		}
 	}
+
 	return d
 }
 
@@ -115,8 +126,10 @@ func (r Rule) allocation(total money.Money, c Catalog, s Subject) ([]Allocation,
 			if !ok || !target.usable(total.Currency(), s.Date) || slices.Contains(s.Accounts, a.AccountID) {
 				return nil, uuid.Nil, false
 			}
+
 			return nil, a.AccountID, true
 		}
 	}
+
 	return nil, uuid.Nil, true
 }

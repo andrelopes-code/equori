@@ -38,12 +38,15 @@ func TestInstrumentTerms(t *testing.T) {
 
 	var got termsAPI
 	h.MustDo(http.MethodPut, "/api/v1/instruments/CDBXPTO/terms", cdbTerms(), http.StatusOK, &got)
+
 	want := termsAPI{IssuedOn: "2026-01-02", MaturesOn: "2028-01-02", IndexID: "cdi", PercentOfIndexBP: 11000, DayCount: "bus252", FaceValue: 100000}
 	if got != want {
 		t.Fatalf("put = %+v, want %+v", got, want)
 	}
+
 	var read termsAPI
 	h.MustDo(http.MethodGet, "/api/v1/instruments/CDBXPTO/terms", nil, http.StatusOK, &read)
+
 	if read != want {
 		t.Fatalf("read = %+v", read)
 	}
@@ -52,14 +55,17 @@ func TestInstrumentTerms(t *testing.T) {
 	h.MustDo(http.MethodPut, "/api/v1/instruments/CDBXPTO/terms", map[string]any{
 		"issued_on": "2026-02-02", "matures_on": "2030-02-02", "index_id": "ipca", "spread_bp": 600, "day_count": "act365", "face_value": 100000,
 	}, http.StatusOK, &got)
+
 	if got != (termsAPI{IssuedOn: "2026-02-02", MaturesOn: "2030-02-02", IndexID: "ipca", PercentOfIndexBP: 10000, SpreadBP: 600, DayCount: "act365", FaceValue: 100000}) {
 		t.Fatalf("replaced = %+v", got)
 	}
+
 	// An instrument without an index is pre-fixed.
 	var prefixed termsAPI
 	h.MustDo(http.MethodPut, "/api/v1/instruments/CDBXPTO/terms", map[string]any{
 		"issued_on": "2026-02-02", "matures_on": "2030-02-02", "spread_bp": 1200, "day_count": "act365", "face_value": 100000,
 	}, http.StatusOK, &prefixed)
+
 	if prefixed.IndexID != "" || prefixed.SpreadBP != 1200 {
 		t.Fatalf("pre-fixed = %+v", prefixed)
 	}
@@ -71,6 +77,7 @@ func TestInstrumentTermsErrors(t *testing.T) {
 	h := apitest.New(t)
 	defineFixedIncome(t, h, "CDBXPTO")
 	h.MustDo(http.MethodPost, "/api/v1/instruments", mxrf11(), http.StatusCreated, nil)
+
 	put := func(code string, change map[string]any) apitest.Response {
 		body := cdbTerms()
 		for k, v := range change {
@@ -78,8 +85,10 @@ func TestInstrumentTermsErrors(t *testing.T) {
 				delete(body, k)
 				continue
 			}
+
 			body[k] = v
 		}
+
 		return h.Do(http.MethodPut, "/api/v1/instruments/"+code+"/terms", body)
 	}
 	h.ExpectProblem(put("MXRF11", nil), http.StatusUnprocessableEntity, "validation_failed", "code")
@@ -98,12 +107,15 @@ func TestInstrumentTermsErrors(t *testing.T) {
 func TestSchemaRejectsInvalidTerms(t *testing.T) {
 	t.Parallel()
 	pool := pgtest.New(t)
+
 	ctx := t.Context()
 	if _, err := pool.Exec(ctx, `INSERT INTO marketdata_instrument (code, instrument_type, scale, name, quote_currency)
 		VALUES ('CDBXPTO', 'fixed_income', 0, 'CDB', 'BRL'), ('PETR4', 'stock', 0, 'Petrobras', 'BRL')`); err != nil {
 		t.Fatal(err)
 	}
+
 	const cols = `INSERT INTO marketdata_fixed_income_terms (instrument_code, issued_on, matures_on, index_id, percent_of_index_bp, spread_bp, day_count, face_value) VALUES `
+
 	tests := []struct{ name, sql string }{
 		{"matures before issue", cols + `('CDBXPTO', '2026-01-02', '2026-01-02', 'cdi', 10000, 0, 'bus252', 100000)`},
 		{"zero face value", cols + `('CDBXPTO', '2026-01-02', '2027-01-02', 'cdi', 10000, 0, 'bus252', 0)`},

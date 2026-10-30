@@ -22,10 +22,13 @@ func ValidateIdentifier(scheme, identifier string) error {
 		if s.ID != scheme {
 			continue
 		}
+
 		if !s.Pattern.MatchString(identifier) {
 			return invalid("identifier", "must match "+s.Pattern.String())
 		}
+
 		return nil
 	}
+
 	return invalid("scheme", "must be a known identifier scheme")
 }

@@ -31,14 +31,17 @@ func TestListBalances(t *testing.T) {
 	}
 	list := func(query string) []item {
 		t.Helper()
+
 		r := h.Call(h.Client, http.MethodGet, "/api/v1/balances"+query, nil)
 		if r.Status != http.StatusOK {
 			t.Fatalf("GET balances%s = %d: %s", query, r.Status, r.Body)
 		}
+
 		var out struct {
 			Items []item `json:"items"`
 		}
 		r.Decode(t, &out)
+
 		return out.Items
 	}
 
@@ -61,6 +64,7 @@ func TestListBalances(t *testing.T) {
 			// Ordered by account name: Checking, Savings, Visa. Food is an expense and has no item.
 			wantIDs := []string{checking, savings, card}
 			ids := make([]string, len(items))
+
 			got := make([]int64, len(items))
 			for i, it := range items {
 				ids[i], got[i] = it.AccountID, it.Balance.Amount
@@ -68,9 +72,11 @@ func TestListBalances(t *testing.T) {
 					t.Errorf("item %d = basis %q date %q currency %q, want %q %q BRL", i, it.Basis, it.Date, it.Balance.Currency, tt.basis, tt.date)
 				}
 			}
+
 			if !slices.Equal(ids, wantIDs) {
 				t.Fatalf("account ids = %v, want %v", ids, wantIDs)
 			}
+
 			if !slices.Equal(got, tt.want) {
 				t.Errorf("amounts = %v, want %v", got, tt.want)
 			}
@@ -79,14 +85,17 @@ func TestListBalances(t *testing.T) {
 
 	t.Run("other user", func(t *testing.T) {
 		other := h.Login("other@example.com")
+
 		r := h.Call(other, http.MethodGet, "/api/v1/balances?date=2026-10-15", nil)
 		if r.Status != http.StatusOK {
 			t.Fatalf("status = %d: %s", r.Status, r.Body)
 		}
+
 		var out struct {
 			Items []item `json:"items"`
 		}
 		r.Decode(t, &out)
+
 		if out.Items == nil || len(out.Items) != 0 {
 			t.Errorf("items = %+v, want empty array", out.Items)
 		}
@@ -110,6 +119,7 @@ func TestListBalancesExcludesVoidedAndSumsLiability(t *testing.T) {
 	h.Record("2026-10-10", apitest.Posting(checking, -1000), apitest.Posting(food, 1000))
 	voided := h.Record("2026-10-11", apitest.Posting(checking, -9000), apitest.Posting(food, 9000))
 	h.MustDo(http.MethodPost, "/api/v1/transactions/"+voided+"/void", map[string]string{"reason": "duplicate"}, http.StatusOK, nil)
+
 	purchase := apitest.Posting(card, -5000)
 	purchase["settled_on"] = "2026-11-12"
 	h.Record("2026-10-12", purchase, apitest.Posting(food, 5000))
@@ -135,13 +145,16 @@ func TestListBalancesExcludesVoidedAndSumsLiability(t *testing.T) {
 			}
 			h.MustDo(http.MethodGet, "/api/v1/balances"+tt.query, nil, http.StatusOK, &out)
 			ids := make([]string, len(out.Items))
+
 			got := make([]int64, len(out.Items))
 			for i, it := range out.Items {
 				ids[i], got[i] = it.AccountID, it.Balance.Amount
 			}
+
 			if want := []string{checking, card}; !slices.Equal(ids, want) {
 				t.Fatalf("account ids = %v, want %v", ids, want)
 			}
+
 			if !slices.Equal(got, tt.want) {
 				t.Errorf("amounts = %v, want %v", got, tt.want)
 			}

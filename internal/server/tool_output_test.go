@@ -16,10 +16,12 @@ func TestToolOutputBudget(t *testing.T) {
 	t.Parallel()
 	h := apitest.New(t, apitest.Today("2026-10-23"))
 	checking := h.Account("Nubank checking", "asset", "checking", nil)
+
 	var categories []string
 	for i := range 24 {
 		categories = append(categories, h.Account(fmt.Sprintf("Supermarket %02d", i), "expense", "", nil))
 	}
+
 	var payees []string
 	for i := range 10 {
 		var p struct {
@@ -28,6 +30,7 @@ func TestToolOutputBudget(t *testing.T) {
 		h.MustDo(http.MethodPost, "/api/v1/payees", map[string]string{"name": fmt.Sprintf("Pão de Açúcar %02d", i)}, http.StatusCreated, &p)
 		payees = append(payees, p.ID)
 	}
+
 	var first string
 	for i := range 60 {
 		month := 9 + i%2
@@ -39,6 +42,7 @@ func TestToolOutputBudget(t *testing.T) {
 			"payee_id": payees[i%len(payees)],
 			"postings": []any{apitest.Posting(checking, -int64(10000+i)), apitest.Posting(categories[i%len(categories)], int64(10000+i))},
 		}, http.StatusCreated, &tx)
+
 		id := tx.ID
 		if first == "" {
 			first = id
@@ -51,6 +55,7 @@ func TestToolOutputBudget(t *testing.T) {
 	h.MustDo(http.MethodPost, "/api/v1/goals", map[string]any{
 		"name": "Emergency fund", "target": apitest.BRL(3000000), "due_on": "2027-06-30", "account_ids": []string{checking},
 	}, http.StatusCreated, nil)
+
 	for i := range 6 {
 		h.MustDo(http.MethodPost, "/api/v1/schedules", map[string]any{
 			"kind": "bill", "account_id": checking, "counterpart_id": categories[i], "description": fmt.Sprintf("Assinatura mensal %02d", i),
@@ -81,7 +86,9 @@ func TestToolOutputBudget(t *testing.T) {
 			t.Errorf("%s = error %s", tt.tool, r.Content)
 			continue
 		}
+
 		t.Logf("%s: %d bytes", tt.tool, len(r.Content))
+
 		if len(r.Content) > outputBudget {
 			t.Errorf("%s returned %d bytes, budget %d", tt.tool, len(r.Content), outputBudget)
 		}

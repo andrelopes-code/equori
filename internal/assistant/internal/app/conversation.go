@@ -15,11 +15,14 @@ func (s *Service) ConversationPage(ctx context.Context, userID int64, after *Con
 	if err != nil {
 		return nil, nil, err
 	}
+
 	if len(rows) <= limit {
 		return rows, nil, nil
 	}
+
 	rows = rows[:limit]
 	last := rows[limit-1]
+
 	return rows, &ConversationKey{UpdatedAt: last.UpdatedAt, ID: last.ID}, nil
 }
 
@@ -35,14 +38,17 @@ func (s *Service) Conversation(ctx context.Context, userID int64, id uuid.UUID) 
 	if err != nil {
 		return ConversationDetail{}, err
 	}
+
 	msgs, err := s.repo.Messages(ctx, userID, id)
 	if err != nil {
 		return ConversationDetail{}, err
 	}
+
 	ps, err := s.repo.Proposals(ctx, userID, id)
 	if err != nil {
 		return ConversationDetail{}, err
 	}
+
 	return ConversationDetail{Conversation: c, Messages: msgs, Proposals: ps}, nil
 }
 

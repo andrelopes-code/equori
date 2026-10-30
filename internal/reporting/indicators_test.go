@@ -24,6 +24,7 @@ func (r ratio) String() string {
 	if r.BP != nil {
 		return strconv.FormatInt(*r.BP, 10)
 	}
+
 	return r.Reason
 }
 
@@ -53,6 +54,7 @@ func indicators(t *testing.T, h *apitest.Harness, month string) indicatorReport 
 	t.Helper()
 	var out indicatorReport
 	h.MustDo(http.MethodGet, "/api/v1/reports/indicators?month="+month, nil, http.StatusOK, &out)
+
 	return out
 }
 
@@ -65,12 +67,15 @@ func interestAccount(t *testing.T, h *apitest.Harness) string {
 		} `json:"items"`
 	}
 	h.MustDo(http.MethodGet, "/api/v1/accounts?limit=200", nil, http.StatusOK, &out)
+
 	for _, a := range out.Items {
 		if a.SystemRole == "interest" {
 			return a.ID
 		}
 	}
+
 	t.Fatal("no system account interest")
+
 	return ""
 }
 
@@ -81,6 +86,7 @@ func opened(more map[string]any) map[string]any {
 	for k, v := range more {
 		out[k] = v
 	}
+
 	return out
 }
 
@@ -89,6 +95,7 @@ func months(from, to int) []string {
 	for m := from; m <= to; m++ {
 		out = append(out, fmt.Sprintf("2026-%02d", m))
 	}
+
 	return out
 }
 
@@ -97,6 +104,7 @@ func ratios(report indicatorReport, pick func(indicatorMonth) ratio) []string {
 	for i, m := range report.Months {
 		out[i] = pick(m).String()
 	}
+
 	return out
 }
 
@@ -122,10 +130,13 @@ func TestS154(t *testing.T) {
 		h.Record(m+"-10", apitest.Posting(checking, -150000), apitest.Posting(rent, 150000))
 		h.Record(m+"-15", apitest.Posting(checking, -100000), apitest.Posting(food, 100000))
 	}
+
 	h.Record("2026-06-01", apitest.Posting(checking, 1000000), apitest.Posting(loan, -1000000))
+
 	for _, m := range months(7, 10) {
 		h.Record(m+"-20", apitest.Posting(checking, -125000), apitest.Posting(loan, 90000), apitest.Posting(interest, 35000))
 	}
+
 	h.Record("2026-08-01", apitest.Posting(checking, -300000), apitest.Posting(savings, 300000))
 	h.Record("2026-08-02", apitest.Posting(checking, -400000), apitest.Posting(cdb, 400000))
 	h.Record("2026-10-01", apitest.Posting(checking, -60000), apitest.Posting(meal, 60000))
@@ -147,11 +158,14 @@ func TestS154(t *testing.T) {
 	var commitments struct {
 		Total amount `json:"total"`
 	}
+
 	r := h.Do(http.MethodGet, "/api/v1/commitments?month=2026-10", nil)
 	if r.Status != http.StatusOK {
 		t.Fatalf("commitments = %d: %s", r.Status, r.Body)
 	}
+
 	r.Decode(t, &commitments)
+
 	if commitments.Total.Amount != 5000 {
 		t.Fatalf("commitments of 2026-10 = %s, want total 5000", r.Body)
 	}
@@ -160,7 +174,9 @@ func TestS154(t *testing.T) {
 	if got.Currency != "BRL" || len(got.Months) != 12 || got.Months[0].Month != "2025-11" || got.Months[11].Month != "2026-10" {
 		t.Fatalf("report = %+v", got)
 	}
+
 	last := got.Months[11]
+
 	brl := func(v int64) amount { return amount{Amount: v, Currency: "BRL"} }
 	for _, c := range []struct {
 		name      string
@@ -177,9 +193,11 @@ func TestS154(t *testing.T) {
 			t.Errorf("%s = %+v, want %+v", c.name, c.got, c.want)
 		}
 	}
+
 	if last.MeanIncome == nil || *last.MeanIncome != brl(500000) || last.MeanExpense == nil || *last.MeanExpense != brl(267500) {
 		t.Errorf("means = %+v, %+v", last.MeanIncome, last.MeanExpense)
 	}
+
 	for _, c := range []struct {
 		name string
 		got  ratio
@@ -195,10 +213,12 @@ func TestS154(t *testing.T) {
 			t.Errorf("%s = %s, want %s", c.name, c.got, c.want)
 		}
 	}
+
 	wantSavings := slices.Concat(times("no_income", 5), times("5000", 3), times("4300", 4))
 	if s := ratios(got, func(m indicatorMonth) ratio { return m.SavingsRate }); !slices.Equal(s, wantSavings) {
 		t.Errorf("savings rates = %v, want %v", s, wantSavings)
 	}
+
 	wantTrailing := slices.Concat(times("insufficient_history", 8), []string{"5000", "4825", "4720", "4650"})
 	if s := ratios(got, func(m indicatorMonth) ratio { return m.TrailingSavingsRate }); !slices.Equal(s, wantTrailing) {
 		t.Errorf("trailing savings rates = %v, want %v", s, wantTrailing)
@@ -214,14 +234,17 @@ func TestS155(t *testing.T) {
 		if r.Status != http.StatusCreated {
 			t.Fatalf("create account = %d: %s", r.Status, r.Body)
 		}
+
 		var out struct {
 			ID string `json:"id"`
 		}
 		r.Decode(t, &out)
+
 		return out.ID
 	}
 	checking := create(map[string]any{"name": "Checking", "class": "asset", "kind": "checking", "currency": "BRL", "opened_on": "2026-01-01"})
 	salary := create(map[string]any{"name": "Salary", "class": "income", "currency": "BRL", "opened_on": "2026-01-01"})
+
 	r := h.Call(other, http.MethodPost, "/api/v1/transactions", map[string]any{
 		"date": "2026-10-05", "description": "salary",
 		"postings": []map[string]any{apitest.Posting(checking, 500000), apitest.Posting(salary, -500000)},
@@ -234,19 +257,24 @@ func TestS155(t *testing.T) {
 	if len(got.Months) != 12 {
 		t.Fatalf("months = %d", len(got.Months))
 	}
+
 	last := got.Months[11]
+
 	zero := amount{Currency: "BRL"}
 	for _, a := range []amount{last.Income, last.Expense, last.Committed, last.DebtService, last.LiquidBalance, last.Liabilities} {
 		if a != zero {
 			t.Errorf("amount = %+v, want 0 BRL in %+v", a, last)
 		}
 	}
+
 	if last.MeanIncome != nil || last.MeanExpense != nil {
 		t.Errorf("means = %+v, %+v", last.MeanIncome, last.MeanExpense)
 	}
+
 	if last.SavingsRate.String() != "no_income" {
 		t.Errorf("savings_rate = %s", last.SavingsRate)
 	}
+
 	for _, r := range []ratio{last.TrailingSavingsRate, last.Liquidity, last.CommittedShare, last.DebtServiceShare} {
 		if r.String() != "insufficient_history" {
 			t.Errorf("ratio = %s, want insufficient_history", r)
@@ -257,6 +285,7 @@ func TestS155(t *testing.T) {
 // salaryBooks records the books of S156.
 func salaryBooks(h *apitest.Harness) {
 	checking := h.Account("Checking", "asset", "checking", opened(nil))
+
 	salary := h.Account("Salary", "income", "", opened(nil))
 	for _, m := range months(7, 10) {
 		h.Record(m+"-05", apitest.Posting(checking, 500000), apitest.Posting(salary, -500000))
@@ -267,6 +296,7 @@ func TestS156(t *testing.T) {
 	t.Parallel()
 	h := apitest.New(t, apitest.Today("2026-10-20"))
 	salaryBooks(h)
+
 	last := indicators(t, h, "2026-10").Months[11]
 	for _, c := range []struct {
 		name string

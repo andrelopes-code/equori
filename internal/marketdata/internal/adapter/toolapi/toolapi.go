@@ -64,5 +64,6 @@ func required(name string, fields []field, needed ...string) error {
 			return tool.InvalidArgument(f.name, "is not used by "+name)
 		}
 	}
+
 	return nil
 }

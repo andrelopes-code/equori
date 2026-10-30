@@ -94,22 +94,27 @@ func (s *Service) HandleTransaction(ctx context.Context, userID int64, accountID
 	if err != nil {
 		return err
 	}
+
 	byID := make(map[uuid.UUID]Account, len(accounts))
 	for _, a := range accounts {
 		byID[a.ID] = a
 	}
+
 	seen := map[uuid.UUID]bool{}
 	for _, id := range accountIDs {
 		a, ok := byID[id]
+
 		parent, hasParent := byID[a.ParentID]
 		if !ok || a.Kind != kindBrokerage || !hasParent || parent.Kind != kindBrokerage || seen[parent.ID] {
 			continue
 		}
+
 		seen[parent.ID] = true
 		if err := s.rebuild(ctx, userID, parent.ID); err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -119,11 +124,13 @@ func (s *Service) RebuildAll(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+
 	for _, userID := range users {
 		if err := s.RebuildUser(ctx, userID); err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -133,12 +140,14 @@ func (s *Service) RebuildUser(ctx context.Context, userID int64) error {
 	if err != nil {
 		return err
 	}
+
 	ids := make([]uuid.UUID, 0, len(accounts))
 	for _, a := range accounts {
 		if a.Kind == kindBrokerage {
 			ids = append(ids, a.ID)
 		}
 	}
+
 	return s.HandleTransaction(ctx, userID, ids)
 }
 
@@ -148,11 +157,14 @@ func (s *Service) IncomeTypes(ctx context.Context, userID int64) ([]string, erro
 	if err != nil {
 		return nil, err
 	}
+
 	types := slices.Clone(domain.UniversalIncomeTypes)
 	if j != nil {
 		types = append(types, j.IncomeTypes()...)
 	}
+
 	slices.Sort(types)
+
 	return slices.Compact(types), nil
 }
 
@@ -163,6 +175,7 @@ func (s *Service) Subtypes(ctx context.Context, userID int64, instrumentType str
 	if err != nil || j == nil {
 		return []string{}, err
 	}
+
 	return j.Subtypes(instrumentType), nil
 }
 
@@ -171,14 +184,17 @@ func (s *Service) rebuild(ctx context.Context, userID int64, brokerageID uuid.UU
 	if err != nil {
 		return err
 	}
+
 	ids := make([]uuid.UUID, len(facts.Securities))
 	for i, sec := range facts.Securities {
 		ids[i] = sec.AccountID
 	}
+
 	j, err := s.juris.For(ctx, userID)
 	if err != nil {
 		return err
 	}
+
 	return s.repo.Replace(ctx, userID, ids, domain.Rebuild(facts, j))
 }
 
@@ -199,26 +215,32 @@ func (s *Service) Positions(ctx context.Context, userID int64, date time.Time, i
 	if err != nil {
 		return nil, err
 	}
+
 	rows, err := s.repo.PositionsAt(ctx, userID, date)
 	if err != nil {
 		return nil, err
 	}
+
 	out := make([]Position, 0, len(rows))
 	for _, row := range rows {
 		p := Position{AccountID: row.AccountID, Instrument: row.Instrument}
 		if p.Quantity, err = s.amount(ctx, row.Quantity, row.Instrument); err != nil {
 			return nil, err
 		}
+
 		if p.CostBasis, err = money.New(row.CostBasis, base); err != nil {
 			return nil, err
 		}
+
 		if row.Quantity > 0 && row.CostBasis > 0 {
 			avg, err := money.Quotient(p.CostBasis, p.Quantity, averageCostDecimals)
 			if err != nil {
 				return nil, err
 			}
+
 			p.AverageCost = &avg
 		}
+
 		value, prices, err := s.md.Convert(ctx, p.Quantity, base, date)
 		switch {
 		case errors.Is(err, ErrPriceMissing):
@@ -230,12 +252,16 @@ func (s *Service) Positions(ctx context.Context, userID int64, date time.Time, i
 				if value, more, err = s.md.Convert(ctx, value, in, date); err != nil {
 					return nil, fmt.Errorf("value the position of %s: %w", row.AccountID, err)
 				}
+
 				prices = append(prices, more...)
 			}
+
 			p.MarketValue, p.Prices = &value, prices
 		}
+
 		out = append(out, p)
 	}
+
 	return out, nil
 }
 
@@ -252,11 +278,14 @@ func (s *Service) TaxYear(ctx context.Context, userID int64, year int) (time.Tim
 	if err != nil {
 		return time.Time{}, time.Time{}, err
 	}
+
 	if j == nil {
 		from, to := domain.CalendarYear(year)
 		return from, to, nil
 	}
+
 	from, to := j.TaxYear(year)
+
 	return from, to, nil
 }
 
@@ -266,16 +295,19 @@ func (s *Service) RealizedResults(ctx context.Context, userID int64, year int) (
 	if err != nil {
 		return nil, err
 	}
+
 	rows, err := s.repo.RealizedResults(ctx, userID, from, to)
 	if err != nil {
 		return nil, err
 	}
+
 	out := make([]Result, len(rows))
 	for i, row := range rows {
 		r := Result{RealizedResult: row}
 		if r.QuantityAmount, err = s.amount(ctx, row.Quantity, row.Instrument); err != nil {
 			return nil, err
 		}
+
 		for _, x := range []struct {
 			units int64
 			dst   *money.Money
@@ -284,8 +316,10 @@ func (s *Service) RealizedResults(ctx context.Context, userID int64, year int) (
 				return nil, err
 			}
 		}
+
 		out[i] = r
 	}
+
 	return out, nil
 }
 
@@ -300,21 +334,26 @@ func (s *Service) IncomeEvents(ctx context.Context, userID int64, year int) ([]I
 	if err != nil {
 		return nil, err
 	}
+
 	rows, err := s.repo.IncomeEvents(ctx, userID, from, to)
 	if err != nil {
 		return nil, err
 	}
+
 	out := make([]IncomeEvent, len(rows))
 	for i, row := range rows {
 		e := IncomeEvent{IncomeEvent: row}
 		if e.GrossAmount, err = money.New(row.Gross, row.Currency); err != nil {
 			return nil, err
 		}
+
 		if e.WithheldAmount, err = money.New(row.Withheld, row.Currency); err != nil {
 			return nil, err
 		}
+
 		out[i] = e
 	}
+
 	return out, nil
 }
 
@@ -323,5 +362,6 @@ func (s *Service) amount(ctx context.Context, units int64, code money.Currency) 
 	if err != nil {
 		return money.Money{}, err
 	}
+
 	return money.NewOf(units, code, scale)
 }

@@ -19,9 +19,11 @@ func setupURL(addr, token string) string {
 	if err != nil {
 		host, port = "", addr
 	}
+
 	if ip := net.ParseIP(host); host == "" || (ip != nil && ip.IsUnspecified()) {
 		host = "127.0.0.1"
 	}
+
 	return "http://" + net.JoinHostPort(host, port) + "/setup#token=" + token
 }
 
@@ -31,13 +33,16 @@ func announceSetup(cfg config.Config, log *slog.Logger, token string) error {
 	if token != "" {
 		url := setupURL(cfg.HTTPAddr, token)
 		log.Info("first user setup", "url", url)
+
 		if cfg.Managed() {
 			if err := os.WriteFile(setupFile(cfg), []byte(url+"\n"), 0o600); err != nil {
 				return fmt.Errorf("write setup.url: %w", err)
 			}
 		}
+
 		return nil
 	}
+
 	return removeSetupFile(cfg)
 }
 
@@ -47,8 +52,10 @@ func removeSetupFile(cfg config.Config) error {
 	if !cfg.Managed() {
 		return nil
 	}
+
 	if err := os.Remove(setupFile(cfg)); err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return fmt.Errorf("remove setup.url: %w", err)
 	}
+
 	return nil
 }

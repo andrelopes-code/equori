@@ -53,18 +53,22 @@ func (s *Service) StatementAnalytics(ctx context.Context, userID int64, id uuid.
 	if err != nil {
 		return StatementAnalytics{}, err
 	}
+
 	instrument, refs, err := s.repo.CardStatements(ctx, userID, card)
 	if err != nil {
 		return StatementAnalytics{}, err
 	}
+
 	i := slices.IndexFunc(refs, func(r StatementRef) bool { return r.ID == id })
 	if i < 0 {
 		return StatementAnalytics{}, ErrNotFound
 	}
+
 	out, err := s.analyse(ctx, userID, instrument, refs[i:i+1])
 	if err != nil {
 		return StatementAnalytics{}, err
 	}
+
 	return out[0], nil
 }
 
@@ -75,9 +79,11 @@ func (s *Service) CardStatementAnalytics(ctx context.Context, userID int64, card
 	if err != nil {
 		return nil, err
 	}
+
 	refs = slices.DeleteFunc(refs, func(r StatementRef) bool { return r.Closing.After(today) })
 	refs = refs[:min(len(refs), MaxAnalyticsStatements)]
 	slices.Reverse(refs)
+
 	return s.analyse(ctx, userID, instrument, refs)
 }
 
@@ -86,11 +92,14 @@ func (s *Service) analyse(ctx context.Context, userID int64, instrument string, 
 	if err != nil {
 		return nil, err
 	}
+
 	charges, err := s.repo.ChargeCategories(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
+
 	_, categories := allocate(facts)
+
 	out := make([]StatementAnalytics, len(refs))
 	for i, ref := range refs {
 		byCategory := map[uuid.UUID]*CategoryParts{}
@@ -98,12 +107,14 @@ func (s *Service) analyse(ctx context.Context, userID int64, instrument string, 
 			if l.CardID != ref.CardID || !l.Statement.Equal(ref.Reference) {
 				continue
 			}
+
 			for category, v := range categories[l.ID] {
 				c := byCategory[category]
 				if c == nil {
 					c = &CategoryParts{CategoryID: category}
 					byCategory[category] = c
 				}
+
 				switch {
 				case l.Credit:
 					c.Credits += v
@@ -116,6 +127,7 @@ func (s *Service) analyse(ctx context.Context, userID int64, instrument string, 
 				}
 			}
 		}
+
 		a := StatementAnalytics{Statement: ref, Instrument: instrument}
 		for _, c := range byCategory {
 			a.Categories = append(a.Categories, *c)
@@ -124,10 +136,12 @@ func (s *Service) analyse(ctx context.Context, userID int64, instrument string, 
 			a.Charges += c.Charges
 			a.Credits += c.Credits
 		}
+
 		slices.SortFunc(a.Categories, func(x, y CategoryParts) int {
 			return cmp.Or(cmp.Compare(y.Total(), x.Total()), bytes.Compare(x.CategoryID[:], y.CategoryID[:]))
 		})
 		out[i] = a
 	}
+
 	return out, nil
 }

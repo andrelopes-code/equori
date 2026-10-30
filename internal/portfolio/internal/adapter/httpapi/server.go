@@ -43,6 +43,7 @@ func (s *Server) ListPositions(ctx context.Context, req ListPositionsRequestObje
 	if err != nil {
 		return nil, err
 	}
+
 	items := make([]Position, len(ps))
 	for i, p := range ps {
 		items[i] = Position{
@@ -52,28 +53,35 @@ func (s *Server) ListPositions(ctx context.Context, req ListPositionsRequestObje
 			avg := p.AverageCost.String()
 			items[i].AverageCost = &avg
 		}
+
 		if p.MarketValue != nil {
 			v := toMoney(*p.MarketValue)
+
 			prices := make([]Price, len(p.Prices))
 			for j, x := range p.Prices {
 				prices[j] = Price{Instrument: string(x.Instrument), QuoteInstrument: string(x.Quote), Date: date(x.Date), Value: x.Value.Reduced().String(), Source: x.Source}
 			}
+
 			items[i].MarketValue, items[i].Prices = &v, &prices
 		}
 	}
+
 	return ListPositions200JSONResponse{Items: items}, nil
 }
 
 func (s *Server) ListRealizedResults(ctx context.Context, req ListRealizedResultsRequestObject) (ListRealizedResultsResponseObject, error) {
 	userID := auth.MustUserID(ctx)
+
 	from, to, err := s.svc.TaxYear(ctx, userID, req.Params.Year)
 	if err != nil {
 		return nil, err
 	}
+
 	rs, err := s.svc.RealizedResults(ctx, userID, req.Params.Year)
 	if err != nil {
 		return nil, err
 	}
+
 	items := make([]RealizedResult, len(rs))
 	for i, r := range rs {
 		items[i] = RealizedResult{
@@ -82,19 +90,23 @@ func (s *Server) ListRealizedResults(ctx context.Context, req ListRealizedResult
 			Proceeds: toMoney(r.Proceeds), Result: toMoney(r.ResultAmount), TaxClass: optional(r.TaxClass),
 		}
 	}
+
 	return ListRealizedResults200JSONResponse{From: date(from), To: date(to.AddDate(0, 0, -1)), Items: items}, nil
 }
 
 func (s *Server) ListIncomeEvents(ctx context.Context, req ListIncomeEventsRequestObject) (ListIncomeEventsResponseObject, error) {
 	userID := auth.MustUserID(ctx)
+
 	from, to, err := s.svc.TaxYear(ctx, userID, req.Params.Year)
 	if err != nil {
 		return nil, err
 	}
+
 	es, err := s.svc.IncomeEvents(ctx, userID, req.Params.Year)
 	if err != nil {
 		return nil, err
 	}
+
 	items := make([]IncomeEvent, len(es))
 	for i, e := range es {
 		items[i] = IncomeEvent{
@@ -103,6 +115,7 @@ func (s *Server) ListIncomeEvents(ctx context.Context, req ListIncomeEventsReque
 			Gross: toMoney(e.GrossAmount), Withheld: toMoney(e.WithheldAmount),
 		}
 	}
+
 	return ListIncomeEvents200JSONResponse{From: date(from), To: date(to.AddDate(0, 0, -1)), Items: items}, nil
 }
 
@@ -111,10 +124,12 @@ func (s *Server) ListInvestmentIncomeTypes(ctx context.Context, _ ListInvestment
 	if err != nil {
 		return nil, err
 	}
+
 	items := make([]IncomeType, len(types))
 	for i, t := range types {
 		items[i] = IncomeType(t)
 	}
+
 	return ListInvestmentIncomeTypes200JSONResponse{Items: items}, nil
 }
 
@@ -123,6 +138,7 @@ func (s *Server) ListInstrumentSubtypes(ctx context.Context, req ListInstrumentS
 	if err != nil {
 		return nil, err
 	}
+
 	return ListInstrumentSubtypes200JSONResponse{Items: subtypes}, nil
 }
 
@@ -131,18 +147,22 @@ func (s *Server) GetReturn(ctx context.Context, req GetReturnRequestObject) (Get
 	if req.Params.ValueIn != nil {
 		in = money.Currency(*req.Params.ValueIn)
 	}
+
 	var account uuid.UUID
 	if req.Params.AccountId != nil {
 		account = *req.Params.AccountId
 	}
+
 	r, err := s.svc.Return(ctx, auth.MustUserID(ctx), account, req.Params.From.Time, req.Params.To.Time, in)
 	if err != nil {
 		return nil, err
 	}
+
 	out := GetReturn200JSONResponse{AnnualBp: r.AnnualBP, Opening: toMoney(r.Opening), Closing: toMoney(r.Closing), Flows: make([]ReturnFlow, len(r.Flows))}
 	for i, f := range r.Flows {
 		out.Flows[i] = ReturnFlow{Date: date(f.Date), Amount: toMoney(f.Amount)}
 	}
+
 	return out, nil
 }
 
@@ -151,10 +171,12 @@ func (s *Server) GetAllocation(ctx context.Context, req GetAllocationRequestObje
 	if err != nil {
 		return nil, err
 	}
+
 	out := GetAllocation200JSONResponse{Total: toMoney(r.Total), Groups: make([]AllocationGroup, len(r.Groups))}
 	for i, g := range r.Groups {
 		out.Groups[i] = AllocationGroup{Key: g.Key, Value: toMoney(g.Value), ShareBp: g.ShareBP}
 	}
+
 	return out, nil
 }
 
@@ -163,6 +185,7 @@ func (s *Server) GetNetWorth(ctx context.Context, req GetNetWorthRequestObject) 
 	if err != nil {
 		return nil, err
 	}
+
 	return GetNetWorth200JSONResponse{Assets: toMoney(r.Assets), Liabilities: toMoney(r.Liabilities), Net: toMoney(r.Net)}, nil
 }
 
@@ -171,6 +194,7 @@ func valueIn(p *string) money.Currency {
 	if p == nil {
 		return ""
 	}
+
 	return money.Currency(*p)
 }
 
@@ -179,6 +203,7 @@ func optional(s string) *string {
 	if s == "" {
 		return nil
 	}
+
 	return &s
 }
 
@@ -193,6 +218,7 @@ func ToProblem(err error) (problem.Details, bool) {
 	case errors.Is(err, app.ErrInvalidReturnRange):
 		d := problem.New(http.StatusBadRequest, "invalid_request", "from must not be after to, and the period must not exceed 366 days")
 		d.Errors = []problem.FieldError{{Field: "to", Message: "must be on or after from and at most 365 days after it"}}
+
 		return d, true
 	case errors.Is(err, app.ErrNotFound):
 		return problem.New(http.StatusNotFound, "not_found", "account not found"), true
@@ -201,5 +227,6 @@ func ToProblem(err error) (problem.Details, bool) {
 	case errors.Is(err, app.ErrReturnUndefined):
 		return problem.New(http.StatusUnprocessableEntity, "return_undefined", "no money was invested in the period, or the return has no solution"), true
 	}
+
 	return problem.Details{}, false
 }

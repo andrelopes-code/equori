@@ -56,12 +56,14 @@ type logBuffer struct {
 func (b *logBuffer) Write(p []byte) (int, error) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
+
 	return b.buf.Write(p)
 }
 
 func (b *logBuffer) String() string {
 	b.mu.Lock()
 	defer b.mu.Unlock()
+
 	return b.buf.String()
 }
 
@@ -74,7 +76,9 @@ func Today(date string) Option {
 	if err != nil {
 		panic(err)
 	}
+
 	clk := clock.New(time.UTC, func() time.Time { return d.Add(12 * time.Hour) })
+
 	return func(c *server.Config) { c.Clock = &clk }
 }
 
@@ -128,6 +132,7 @@ func Aggregator(id, url string) Option {
 		if c.AggregatorURLs == nil {
 			c.AggregatorURLs = map[string]string{}
 		}
+
 		c.AggregatorURLs[id], c.SecretKey = url, SecretKey
 	}
 }
@@ -144,6 +149,7 @@ func IndexFeeds(ids []string, urls map[string]string) Option {
 		if c.FeedURLs == nil {
 			c.FeedURLs = map[string]string{}
 		}
+
 		maps.Copy(c.FeedURLs, urls)
 	}
 }
@@ -158,37 +164,46 @@ func New(t testing.TB, opts ...Option) *Harness {
 	t.Helper()
 	h := Empty(t, opts...)
 	h.Client = h.Login("owner@example.com")
+
 	return h
 }
 
 // Empty is New without the owner: the instance has no user, as before the first-user setup.
 func Empty(t testing.TB, opts ...Option) *Harness {
 	t.Helper()
+
 	logs := &logBuffer{}
+
 	var out io.Writer = logs
 	if os.Getenv("EQUORI_TEST_LOG") == "1" {
 		out = io.MultiWriter(logs, os.Stderr)
 	}
+
 	h := &Harness{t: t, Pool: pgtest.New(t), logs: logs, log: slog.New(slog.NewTextHandler(out, &slog.HandlerOptions{Level: slog.LevelDebug}))}
 	h.server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { (*h.handler.Load()).ServeHTTP(w, r) }))
 	t.Cleanup(h.server.Close)
 	h.start(opts)
+
 	return h
 }
 
 func (h *Harness) start(opts []Option) {
 	h.t.Helper()
+
 	cfg := server.Config{}
 	for _, o := range opts {
 		o(&cfg)
 	}
+
 	app, err := server.New(h.Pool, cfg, h.log)
 	if err != nil {
 		h.t.Fatal(err)
 	}
+
 	if err := app.Marketdata.ReconcileCurrencies(h.t.Context()); err != nil {
 		h.t.Fatal(err)
 	}
+
 	h.App = app
 	h.handler.Store(&app.Handler)
 }
@@ -230,34 +245,42 @@ func (h *Harness) LoginMember(email string) *http.Client {
 
 func (h *Harness) login(email, role string, l locale.Locale, base money.Currency) *http.Client {
 	h.t.Helper()
+
 	if _, err := h.App.Identity.CreateUser(h.t.Context(), email, Password, role, l, base); err != nil {
 		h.t.Fatal(err)
 	}
+
 	h.Dispatch()
+
 	jar, err := cookiejar.New(nil)
 	if err != nil {
 		h.t.Fatal(err)
 	}
+
 	c := &http.Client{Jar: jar}
 	if r := h.Call(c, http.MethodPost, "/api/v1/session", map[string]string{"email": email, "password": Password}); r.Status != http.StatusNoContent {
 		h.t.Fatalf("login status %d: %s", r.Status, r.Body)
 	}
+
 	return c
 }
 
 // OwnerID is the user ID of the harness client's account.
 func (h *Harness) OwnerID() int64 {
 	h.t.Helper()
+
 	var id int64
 	if err := h.Pool.QueryRow(h.t.Context(), `SELECT id FROM identity_user WHERE email = 'owner@example.com'`).Scan(&id); err != nil {
 		h.t.Fatal(err)
 	}
+
 	return id
 }
 
 // Dispatch delivers every pending outbox event, as the dispatcher goroutine does in production.
 func (h *Harness) Dispatch() {
 	h.t.Helper()
+
 	if _, err := h.App.Dispatcher.DispatchPending(h.t.Context()); err != nil {
 		h.t.Fatal(err)
 	}
@@ -271,6 +294,7 @@ type Response struct {
 
 func (r Response) Decode(t testing.TB, v any) {
 	t.Helper()
+
 	if err := json.Unmarshal(r.Body, v); err != nil {
 		t.Fatalf("decode %s: %v", r.Body, err)
 	}
@@ -278,21 +302,26 @@ func (r Response) Decode(t testing.TB, v any) {
 
 func (h *Harness) Call(c *http.Client, method, path string, body any) Response {
 	h.t.Helper()
+
 	var reader io.Reader
 	if body != nil {
 		b, err := json.Marshal(body)
 		if err != nil {
 			h.t.Fatal(err)
 		}
+
 		reader = strings.NewReader(string(b))
 	}
+
 	req, err := http.NewRequestWithContext(h.t.Context(), method, h.server.URL+path, reader)
 	if err != nil {
 		h.t.Fatal(err)
 	}
+
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
+
 	return h.send(c, req)
 }
 
@@ -307,15 +336,18 @@ func (h *Harness) Send(c *http.Client, req *http.Request) Response {
 
 func (h *Harness) send(c *http.Client, req *http.Request) Response {
 	h.t.Helper()
+
 	resp, err := c.Do(req) //nolint:gosec // tests address the harness's own httptest server
 	if err != nil {
 		h.t.Fatal(err)
 	}
 	defer resp.Body.Close()
+
 	b, err := io.ReadAll(resp.Body)
 	if err != nil {
 		h.t.Fatal(err)
 	}
+
 	return Response{Status: resp.StatusCode, Header: resp.Header, Body: b}
 }
 
@@ -335,27 +367,34 @@ func (h *Harness) UploadWith(path string, fields map[string]string, fileName str
 func (h *Harness) UploadAs(c *http.Client, path string, fields map[string]string, fileName string, content []byte) Response {
 	h.t.Helper()
 	var body bytes.Buffer
+
 	w := multipart.NewWriter(&body)
 	for k, v := range fields {
 		if err := w.WriteField(k, v); err != nil {
 			h.t.Fatal(err)
 		}
 	}
+
 	part, err := w.CreateFormFile("file", fileName)
 	if err != nil {
 		h.t.Fatal(err)
 	}
+
 	if _, err := part.Write(content); err != nil {
 		h.t.Fatal(err)
 	}
+
 	if err := w.Close(); err != nil {
 		h.t.Fatal(err)
 	}
+
 	req, err := http.NewRequestWithContext(h.t.Context(), http.MethodPost, h.server.URL+path, &body)
 	if err != nil {
 		h.t.Fatal(err)
 	}
+
 	req.Header.Set("Content-Type", w.FormDataContentType())
+
 	return h.send(c, req)
 }
 
@@ -367,10 +406,12 @@ func (h *Harness) Do(method, path string, body any) Response {
 // MustDo fails the test unless the response has status; out, when not nil, receives the body.
 func (h *Harness) MustDo(method, path string, body any, status int, out any) {
 	h.t.Helper()
+
 	r := h.Do(method, path, body)
 	if r.Status != status {
 		h.t.Fatalf("%s %s = %d, want %d: %s", method, path, r.Status, status, r.Body)
 	}
+
 	if out != nil {
 		r.Decode(h.t, out)
 	}
@@ -379,9 +420,11 @@ func (h *Harness) MustDo(method, path string, body any, status int, out any) {
 // ExpectProblem checks an RFC 9457 response; field, when not empty, must be the first field error.
 func (h *Harness) ExpectProblem(r Response, status int, code, field string) {
 	h.t.Helper()
+
 	if r.Status != status {
 		h.t.Fatalf("status = %d, want %d: %s", r.Status, status, r.Body)
 	}
+
 	var p struct {
 		Code   string `json:"code"`
 		Errors []struct {
@@ -389,9 +432,11 @@ func (h *Harness) ExpectProblem(r Response, status int, code, field string) {
 		} `json:"errors"`
 	}
 	r.Decode(h.t, &p)
+
 	if p.Code != code {
 		h.t.Fatalf("code = %q, want %q: %s", p.Code, code, r.Body)
 	}
+
 	if field != "" && (len(p.Errors) == 0 || p.Errors[0].Field != field) {
 		h.t.Fatalf("field errors = %+v, want %q", p.Errors, field)
 	}
@@ -400,17 +445,21 @@ func (h *Harness) ExpectProblem(r Response, status int, code, field string) {
 // Account creates an account in BRL and returns its id.
 func (h *Harness) Account(name, class, kind string, extra map[string]any) string {
 	h.t.Helper()
+
 	body := map[string]any{"name": name, "class": class, "currency": "BRL"}
 	if kind != "" {
 		body["kind"] = kind
 	}
+
 	for k, v := range extra {
 		body[k] = v
 	}
+
 	var out struct {
 		ID string `json:"id"`
 	}
 	h.MustDo(http.MethodPost, "/api/v1/accounts", body, http.StatusCreated, &out)
+
 	return out.ID
 }
 
@@ -421,6 +470,7 @@ func (h *Harness) Record(date string, postings ...map[string]any) string {
 		ID string `json:"id"`
 	}
 	h.MustDo(http.MethodPost, "/api/v1/transactions", map[string]any{"date": date, "description": "test", "postings": postings}, http.StatusCreated, &out)
+
 	return out.ID
 }
 
@@ -437,6 +487,7 @@ func (h *Harness) Card(name string, closingDay, dueDay int, assignment string) s
 	h.MustDo(http.MethodPost, "/api/v1/accounts/"+id+"/billing-cycle-rules", map[string]any{
 		"effective_from": "2026-01", "closing_day": closingDay, "due_day": dueDay, "closing_day_assignment": assignment,
 	}, http.StatusCreated, nil)
+
 	return id
 }
 
@@ -445,6 +496,7 @@ func (h *Harness) Transaction(id string) TransactionView {
 	h.t.Helper()
 	var out TransactionView
 	h.MustDo(http.MethodGet, "/api/v1/transactions/"+id, nil, http.StatusOK, &out)
+
 	return out
 }
 

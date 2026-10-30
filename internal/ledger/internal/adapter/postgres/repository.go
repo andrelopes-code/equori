@@ -49,6 +49,7 @@ func NewRepository(db db, ins app.Instruments) *Repository {
 	if tx, ok := db.(pgx.Tx); ok {
 		r.tx = tx
 	}
+
 	return r
 }
 
@@ -62,6 +63,7 @@ func (r *Repository) Publish(ctx context.Context, e outbox.Event) error {
 	if r.tx == nil {
 		return errors.New("publish outside a transaction")
 	}
+
 	return outbox.Insert(ctx, r.tx, e)
 }
 
@@ -69,6 +71,7 @@ func notFound(err error) error {
 	if errors.Is(err, pgx.ErrNoRows) {
 		return app.ErrNotFound
 	}
+
 	return err
 }
 
@@ -77,6 +80,7 @@ func (r *Repository) Settings(ctx context.Context, userID int64) (app.Settings, 
 	if err != nil {
 		return app.Settings{}, notFound(err)
 	}
+
 	return app.Settings{UserID: row.UserID, BaseCurrency: money.Currency(row.BaseCurrency)}, nil
 }
 
@@ -97,6 +101,7 @@ func (r *Repository) InsertInstitution(ctx context.Context, i app.Institution) (
 	if err != nil {
 		return app.Institution{}, duplicateInstitution(err)
 	}
+
 	return toInstitution(row), nil
 }
 
@@ -105,6 +110,7 @@ func (r *Repository) SetInstitutionIdentifier(ctx context.Context, userID int64,
 	if err != nil {
 		return app.Institution{}, duplicateInstitution(notFound(err))
 	}
+
 	return toInstitution(row), nil
 }
 
@@ -113,6 +119,7 @@ func duplicateInstitution(err error) error {
 	if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.ConstraintName == "ledger_institution_identifier_key" {
 		return duplicate(err, "identifier")
 	}
+
 	return duplicate(err, "name")
 }
 
@@ -121,10 +128,12 @@ func (r *Repository) ListInstitutions(ctx context.Context, userID int64, p page.
 	if p.After != nil {
 		params.AfterName, params.AfterID = &p.After.Name, nullUUID(p.After.ID)
 	}
+
 	rows, err := r.q.ListInstitutions(ctx, params)
 	if err != nil {
 		return nil, nil, err
 	}
+
 	items, next := pageOf(rows, p.Limit,
 		func(row ListInstitutionsRow) app.Institution {
 			return toInstitution(LedgerInstitution{ID: row.ID, UserID: row.UserID, Name: row.Name, Code: row.Code, IdentifierScheme: row.IdentifierScheme, Identifier: row.Identifier})
@@ -132,6 +141,7 @@ func (r *Repository) ListInstitutions(ctx context.Context, userID int64, p page.
 		func(row ListInstitutionsRow) app.InstitutionKey {
 			return app.InstitutionKey{Name: row.SortName, ID: row.ID}
 		})
+
 	return items, next, nil
 }
 
@@ -140,6 +150,7 @@ func (r *Repository) InsertPayee(ctx context.Context, p app.Payee) (app.Payee, e
 	if err != nil {
 		return app.Payee{}, duplicate(err, "name")
 	}
+
 	return toPayee(row), nil
 }
 
@@ -148,6 +159,7 @@ func (r *Repository) RenamePayee(ctx context.Context, userID int64, id uuid.UUID
 	if err != nil {
 		return app.Payee{}, duplicate(notFound(err), "name")
 	}
+
 	return toPayee(row), nil
 }
 
@@ -160,6 +172,7 @@ func (r *Repository) TagUsage(ctx context.Context, userID int64, name string) (a
 	if err != nil {
 		return app.TagUsage{}, notFound(err)
 	}
+
 	return app.TagUsage{ID: row.ID, Name: row.Name, Transactions: int(row.Transactions)}, nil
 }
 
@@ -184,9 +197,11 @@ func (r *Repository) RetirePayee(ctx context.Context, userID int64, from, into u
 	if err := r.q.MoveVoidedPayee(ctx, MoveVoidedPayeeParams{UserID: userID, FromID: nullUUID(from), IntoID: nullUUID(into)}); err != nil {
 		return err
 	}
+
 	if err := r.q.MoveCounterpartyPayee(ctx, MoveCounterpartyPayeeParams{UserID: userID, FromID: nullUUID(from), IntoID: nullUUID(into)}); err != nil {
 		return err
 	}
+
 	return r.q.MarkPayeeMerged(ctx, MarkPayeeMergedParams{UserID: userID, FromID: from, IntoID: nullUUID(into)})
 }
 
@@ -195,6 +210,7 @@ func (r *Repository) Payee(ctx context.Context, userID int64, id uuid.UUID) (app
 	if err != nil {
 		return app.Payee{}, notFound(err)
 	}
+
 	return toPayee(row), nil
 }
 
@@ -203,10 +219,12 @@ func (r *Repository) PayeeNames(ctx context.Context, userID int64, ids []uuid.UU
 	if err != nil {
 		return nil, err
 	}
+
 	out := make(map[uuid.UUID]string, len(rows))
 	for _, row := range rows {
 		out[row.ID] = row.Name
 	}
+
 	return out, nil
 }
 
@@ -215,15 +233,18 @@ func (r *Repository) ListPayees(ctx context.Context, userID int64, p page.Reques
 	if p.After != nil {
 		params.AfterName, params.AfterID = &p.After.Name, nullUUID(p.After.ID)
 	}
+
 	rows, err := r.q.ListPayees(ctx, params)
 	if err != nil {
 		return nil, nil, err
 	}
+
 	items, next := pageOf(rows, p.Limit,
 		func(row ListPayeesRow) app.Payee {
 			return toPayee(LedgerPayee{ID: row.ID, UserID: row.UserID, Name: row.Name})
 		},
 		func(row ListPayeesRow) app.PayeeKey { return app.PayeeKey{Name: row.SortName, ID: row.ID} })
+
 	return items, next, nil
 }
 
@@ -232,11 +253,14 @@ func (r *Repository) ListTags(ctx context.Context, userID int64, p page.Request[
 	if p.After != nil {
 		params.AfterName = &p.After.Name
 	}
+
 	rows, err := r.q.ListTags(ctx, params)
 	if err != nil {
 		return nil, nil, err
 	}
+
 	items, next := pageOf(rows, p.Limit, func(name string) string { return name }, func(name string) app.TagKey { return app.TagKey{Name: name} })
+
 	return items, next, nil
 }
 
@@ -245,6 +269,7 @@ func (r *Repository) Account(ctx context.Context, userID int64, id uuid.UUID) (d
 	if err != nil {
 		return domain.Account{}, notFound(err)
 	}
+
 	return toAccount(row), nil
 }
 
@@ -253,10 +278,12 @@ func (r *Repository) Accounts(ctx context.Context, userID int64, ids []uuid.UUID
 	if err != nil {
 		return nil, err
 	}
+
 	out := make(map[uuid.UUID]domain.Account, len(rows))
 	for _, row := range rows {
 		out[row.ID] = toAccount(row)
 	}
+
 	return out, nil
 }
 
@@ -265,10 +292,12 @@ func (r *Repository) ListAccounts(ctx context.Context, userID int64, p page.Requ
 	if p.After != nil {
 		params.AfterClass, params.AfterName, params.AfterID = &p.After.Class, &p.After.Name, nullUUID(p.After.ID)
 	}
+
 	rows, err := r.q.ListAccounts(ctx, params)
 	if err != nil {
 		return nil, nil, err
 	}
+
 	items, next := pageOf(rows, p.Limit,
 		func(row ListAccountsRow) domain.Account {
 			return toAccount(LedgerAccount{
@@ -283,6 +312,7 @@ func (r *Repository) ListAccounts(ctx context.Context, userID int64, p page.Requ
 		func(row ListAccountsRow) app.AccountKey {
 			return app.AccountKey{Class: row.AccountClass, Name: row.SortName, ID: row.ID}
 		})
+
 	return items, next, nil
 }
 
@@ -297,6 +327,7 @@ func (r *Repository) InsertAccount(ctx context.Context, a domain.Account) (domai
 	if err != nil {
 		return domain.Account{}, referenceError(err)
 	}
+
 	return toAccount(row), nil
 }
 
@@ -309,6 +340,7 @@ func (r *Repository) UpdateAccount(ctx context.Context, a domain.Account) (domai
 	if err != nil {
 		return domain.Account{}, referenceError(notFound(err))
 	}
+
 	return toAccount(row), nil
 }
 
@@ -321,6 +353,7 @@ func (r *Repository) AccountTotals(ctx context.Context, userID int64, id uuid.UU
 	if err != nil {
 		return app.AccountTotals{}, err
 	}
+
 	return app.AccountTotals{Total: row.Total, LastBookedOn: row.LastBookedOn}, nil
 }
 
@@ -337,6 +370,7 @@ func (r *Repository) Transaction(ctx context.Context, userID int64, id uuid.UUID
 	if err != nil {
 		return domain.Transaction{}, notFound(err)
 	}
+
 	return r.complete(ctx, userID, row)
 }
 
@@ -345,6 +379,7 @@ func (r *Repository) LockTransaction(ctx context.Context, userID int64, id uuid.
 	if err != nil {
 		return domain.Transaction{}, notFound(err)
 	}
+
 	return r.complete(ctx, userID, row)
 }
 
@@ -353,6 +388,7 @@ func (r *Repository) complete(ctx context.Context, userID int64, row LedgerTrans
 	if err != nil {
 		return domain.Transaction{}, err
 	}
+
 	return ts[0], nil
 }
 
@@ -360,69 +396,86 @@ func (r *Repository) complete(ctx context.Context, userID int64, row LedgerTrans
 func (r *Repository) completeAll(ctx context.Context, userID int64, rows []LedgerTransaction) ([]domain.Transaction, error) {
 	ids := make([]uuid.UUID, len(rows))
 	byID := make(map[uuid.UUID]*domain.Transaction, len(rows))
+
 	out := make([]domain.Transaction, len(rows))
 	for i, row := range rows {
 		ids[i] = row.ID
 		out[i] = toTransaction(row)
 		byID[row.ID] = &out[i]
 	}
+
 	postings, err := r.q.ListPostings(ctx, ListPostingsParams{UserID: userID, TransactionIds: ids})
 	if err != nil {
 		return nil, err
 	}
+
 	for _, p := range postings {
 		posting, err := r.toPosting(ctx, p)
 		if err != nil {
 			return nil, err
 		}
+
 		t := byID[p.TransactionID]
 		t.Postings = append(t.Postings, posting)
 	}
+
 	tags, err := r.q.ListTransactionTags(ctx, ListTransactionTagsParams{UserID: userID, TransactionIds: ids})
 	if err != nil {
 		return nil, err
 	}
+
 	for _, tag := range tags {
 		t := byID[tag.TransactionID]
 		t.Tags = append(t.Tags, tag.Name)
 	}
+
 	links, err := r.q.ListLinksFrom(ctx, ListLinksFromParams{UserID: userID, TransactionIds: ids})
 	if err != nil {
 		return nil, err
 	}
+
 	for _, l := range links {
 		t := byID[l.FromTransactionID]
 		t.Links = append(t.Links, domain.Link{Type: domain.LinkType(l.LinkType), Target: l.ToTransactionID, Amount: storedAmount(l.Amount)})
 	}
+
 	trades, err := r.q.ListTrades(ctx, ListTradesParams{UserID: userID, TransactionIds: ids})
 	if err != nil {
 		return nil, err
 	}
+
 	for _, row := range trades {
 		trade, err := r.toTrade(ctx, row, byID[row.TransactionID])
 		if err != nil {
 			return nil, err
 		}
+
 		byID[row.TransactionID].Trade = &trade
 	}
+
 	incomes, err := r.q.ListInvestmentIncome(ctx, ListInvestmentIncomeParams{UserID: userID, TransactionIds: ids})
 	if err != nil {
 		return nil, err
 	}
+
 	for _, row := range incomes {
 		cur := money.Currency(row.Currency)
+
 		gross, err := money.New(row.Gross, cur)
 		if err != nil {
 			return nil, err
 		}
+
 		withheld, err := money.New(row.Withheld, cur)
 		if err != nil {
 			return nil, err
 		}
+
 		byID[row.TransactionID].Income = &domain.Income{
 			AccountID: row.AccountID, CashAccountID: row.CashAccountID, Type: domain.IncomeType(row.IncomeType), Gross: gross, Withheld: withheld,
 		}
 	}
+
 	return out, nil
 }
 
@@ -430,6 +483,7 @@ func (r *Repository) InsertTransaction(ctx context.Context, t domain.Transaction
 	if err := r.InsertTransactionRows(ctx, t); err != nil {
 		return domain.Transaction{}, err
 	}
+
 	return r.Transaction(ctx, t.UserID, t.ID)
 }
 
@@ -441,27 +495,32 @@ func (r *Repository) InsertTransactionRows(ctx context.Context, t domain.Transac
 	if err != nil {
 		return referenceError(err)
 	}
+
 	if err := r.writeChildren(ctx, t); err != nil {
 		return err
 	}
+
 	if in := t.Income; in != nil {
 		return r.q.InsertInvestmentIncome(ctx, InsertInvestmentIncomeParams{
 			TransactionID: t.ID, UserID: t.UserID, AccountID: in.AccountID, CashAccountID: in.CashAccountID, IncomeType: string(in.Type),
 			Gross: in.Gross.Amount(), Withheld: in.Withheld.Amount(), Currency: string(in.Gross.Currency()),
 		})
 	}
+
 	if tr := t.Trade; tr != nil {
 		var cost *int64
 		if tr.Cost != nil {
 			c := tr.Cost.Amount()
 			cost = &c
 		}
+
 		return r.q.InsertTrade(ctx, InsertTradeParams{
 			TransactionID: t.ID, UserID: t.UserID, AccountID: tr.AccountID, CashAccountID: tr.CashAccountID, Side: string(tr.Side),
 			Quantity: tr.Quantity.Amount(), UnitPrice: platformpg.NumericOf(tr.UnitPrice), Gross: tr.Gross.Amount(),
 			Fees: tr.Fees.Amount(), Taxes: tr.Taxes.Amount(), Cost: cost, Currency: string(tr.Gross.Currency()),
 		})
 	}
+
 	return nil
 }
 
@@ -472,21 +531,26 @@ func (r *Repository) toTrade(ctx context.Context, row LedgerTrade, t *domain.Tra
 			instrument = p.Amount.Currency()
 		}
 	}
+
 	quantity, err := app.AmountOf(ctx, r.ins, row.Quantity, instrument)
 	if err != nil {
 		return domain.Trade{}, fmt.Errorf("trade %s quantity: %w", row.TransactionID, err)
 	}
+
 	price, err := platformpg.RateOf(row.UnitPrice)
 	if err != nil {
 		return domain.Trade{}, err
 	}
+
 	cur := money.Currency(row.Currency)
+
 	amounts := make([]money.Money, 3)
 	for i, v := range []int64{row.Gross, row.Fees, row.Taxes} {
 		if amounts[i], err = money.New(v, cur); err != nil {
 			return domain.Trade{}, err
 		}
 	}
+
 	trade := domain.Trade{
 		AccountID: row.AccountID, CashAccountID: row.CashAccountID, Side: domain.Side(row.Side), Quantity: quantity, UnitPrice: price,
 		Gross: amounts[0], Fees: amounts[1], Taxes: amounts[2],
@@ -496,13 +560,16 @@ func (r *Repository) toTrade(ctx context.Context, row LedgerTrade, t *domain.Tra
 		if err != nil {
 			return domain.Trade{}, err
 		}
+
 		trade.Cost = &cost
 	}
+
 	return trade, nil
 }
 
 func (r *Repository) SecurityPostings(ctx context.Context, userID int64, accountIDs []uuid.UUID) ([]app.HoldingPosting, error) {
 	rows, err := r.q.SecurityPostings(ctx, SecurityPostingsParams{UserID: userID, AccountIds: accountIDs})
+
 	return mapAll(rows, func(row SecurityPostingsRow) app.HoldingPosting {
 		return app.HoldingPosting{AccountID: row.AccountID, TransactionID: row.TransactionID, Date: row.BookedOn, Quantity: row.Amount, Weight: row.Weight}
 	}), err
@@ -510,6 +577,7 @@ func (r *Repository) SecurityPostings(ctx context.Context, userID int64, account
 
 func (r *Repository) SecurityTrades(ctx context.Context, userID int64, accountIDs []uuid.UUID) ([]app.TradeFact, error) {
 	rows, err := r.q.SecurityTrades(ctx, SecurityTradesParams{UserID: userID, AccountIds: accountIDs})
+
 	return mapAll(rows, func(row SecurityTradesRow) app.TradeFact {
 		f := app.TradeFact{
 			TransactionID: row.TransactionID, AccountID: row.AccountID, Date: row.Date, Side: row.Side,
@@ -518,12 +586,14 @@ func (r *Repository) SecurityTrades(ctx context.Context, userID int64, accountID
 		if row.Cost != nil {
 			f.Cost = *row.Cost
 		}
+
 		return f
 	}), err
 }
 
 func (r *Repository) SecurityIncomes(ctx context.Context, userID int64, accountIDs []uuid.UUID) ([]app.IncomeFact, error) {
 	rows, err := r.q.SecurityIncomes(ctx, SecurityIncomesParams{UserID: userID, AccountIds: accountIDs})
+
 	return mapAll(rows, func(row SecurityIncomesRow) app.IncomeFact {
 		return app.IncomeFact{TransactionID: row.TransactionID, AccountID: row.AccountID, Date: row.Date, Type: row.IncomeType, Gross: row.Gross, Withheld: row.Withheld}
 	}), err
@@ -543,26 +613,32 @@ func (r *Repository) ReplaceTransaction(ctx context.Context, prev, next domain.T
 	if err != nil {
 		return err
 	}
+
 	if err := r.q.InsertVersion(ctx, InsertVersionParams{
 		TransactionID: prev.ID, Version: int32(prev.Version), Snapshot: snapshot, Reason: reason, //nolint:gosec // version is a small positive counter.
 	}); err != nil {
 		return err
 	}
+
 	if err := r.q.DeletePostings(ctx, prev.ID); err != nil {
 		return err
 	}
+
 	if err := r.q.DeleteTransactionTags(ctx, prev.ID); err != nil {
 		return err
 	}
+
 	if err := r.q.DeleteLinksFrom(ctx, prev.ID); err != nil {
 		return err
 	}
+
 	if err := r.q.UpdateTransaction(ctx, UpdateTransactionParams{
 		UserID: next.UserID, ID: next.ID, Date: next.Date, Description: next.Description, PayeeID: nullUUID(next.PayeeID),
 		BalancingCurrency: string(next.BalancingCurrency), Origin: string(next.Origin), Version: int32(next.Version), //nolint:gosec // version is a small positive counter.
 	}); err != nil {
 		return referenceError(err)
 	}
+
 	return r.writeChildren(ctx, next)
 }
 
@@ -573,42 +649,51 @@ func (r *Repository) ReplaceCategoryPostings(ctx context.Context, prev, next dom
 	if err != nil {
 		return err
 	}
+
 	if err := r.q.InsertVersion(ctx, InsertVersionParams{
 		TransactionID: prev.ID, Version: int32(prev.Version), Snapshot: snapshot, Reason: reason, //nolint:gosec // version is a small positive counter.
 	}); err != nil {
 		return err
 	}
+
 	var removed []uuid.UUID
 	for _, p := range prev.Postings {
 		if !slices.ContainsFunc(next.Postings, func(n domain.Posting) bool { return n.ID == p.ID }) {
 			removed = append(removed, p.ID)
 		}
 	}
+
 	if err := r.q.DeletePostingsByID(ctx, DeletePostingsByIDParams{TransactionID: prev.ID, Ids: removed}); err != nil {
 		return err
 	}
+
 	position, err := r.q.NextPostingPosition(ctx, prev.ID)
 	if err != nil {
 		return err
 	}
+
 	var added []domain.Posting
 	for _, p := range next.Postings {
 		if p.ID == uuid.Nil {
 			added = append(added, p)
 		}
 	}
+
 	if err := r.insertPostings(ctx, next, added, position); err != nil {
 		return err
 	}
+
 	if err := r.q.UpdateTransaction(ctx, UpdateTransactionParams{
 		UserID: next.UserID, ID: next.ID, Date: next.Date, Description: next.Description, PayeeID: nullUUID(next.PayeeID),
 		BalancingCurrency: string(next.BalancingCurrency), Origin: string(next.Origin), Version: int32(next.Version), //nolint:gosec // version is a small positive counter.
 	}); err != nil {
 		return referenceError(err)
 	}
+
 	if err := r.q.DeleteTransactionTags(ctx, prev.ID); err != nil {
 		return err
 	}
+
 	return r.writeTags(ctx, next)
 }
 
@@ -616,14 +701,17 @@ func (r *Repository) writeChildren(ctx context.Context, t domain.Transaction) er
 	if err := r.insertPostings(ctx, t, t.Postings, 0); err != nil {
 		return err
 	}
+
 	if err := r.writeTags(ctx, t); err != nil {
 		return err
 	}
+
 	for _, l := range t.Links {
 		if err := r.q.InsertLink(ctx, InsertLinkParams{UserID: t.UserID, FromTransactionID: t.ID, ToTransactionID: l.Target, LinkType: string(l.Type), Amount: linkAmount(l.Amount)}); err != nil {
 			return referenceError(err)
 		}
 	}
+
 	return nil
 }
 
@@ -641,12 +729,14 @@ func (r *Repository) insertPostings(ctx context.Context, t domain.Transaction, p
 			InstallmentCount: installmentCount(p.Installment), ExternalRecordID: nullUUID(p.ExternalRecordID),
 		}
 	}
+
 	var postingErr error
 	r.q.InsertPostings(ctx, postings).Exec(func(_ int, err error) {
 		if err != nil && postingErr == nil {
 			postingErr = err
 		}
 	})
+
 	return referenceError(postingErr)
 }
 
@@ -656,10 +746,12 @@ func (r *Repository) writeTags(ctx context.Context, t domain.Transaction) error 
 		if err != nil {
 			return err
 		}
+
 		if err := r.q.InsertTransactionTag(ctx, InsertTransactionTagParams{UserID: t.UserID, TransactionID: t.ID, TagID: tagID}); err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -676,10 +768,12 @@ func (r *Repository) ListTransactions(ctx context.Context, q app.TransactionQuer
 		params.AfterDate = &q.After.Date
 		params.AfterID = nullUUID(q.After.ID)
 	}
+
 	rows, err := r.q.ListTransactions(ctx, params)
 	if err != nil || len(rows) == 0 {
 		return nil, err
 	}
+
 	return r.completeAll(ctx, q.UserID, rows)
 }
 
@@ -688,18 +782,22 @@ func (r *Repository) Versions(ctx context.Context, userID int64, id uuid.UUID) (
 	if err != nil {
 		return nil, err
 	}
+
 	out := make([]app.Version, len(rows))
 	for i, row := range rows {
 		var s snapshot
 		if err := json.Unmarshal(row.Snapshot, &s); err != nil {
 			return nil, fmt.Errorf("decode version %d of %s: %w", row.Version, id, err)
 		}
+
 		t, err := s.transaction(ctx, r.ins)
 		if err != nil {
 			return nil, err
 		}
+
 		out[i] = app.Version{Version: int(row.Version), Reason: row.Reason, ReplacedAt: row.ReplacedAt, Transaction: t}
 	}
+
 	return out, nil
 }
 
@@ -707,6 +805,7 @@ func duplicate(err error, field string) error {
 	if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == uniqueViolation {
 		return &domain.FieldError{Field: field, Message: "already exists", Err: domain.ErrValidation}
 	}
+
 	return err
 }
 
@@ -716,24 +815,29 @@ func referenceError(err error) error {
 	if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == foreignKeyViolation {
 		return &domain.FieldError{Field: "reference", Message: "unknown reference: " + pgErr.ConstraintName, Err: domain.ErrUnknownAccount}
 	}
+
 	return err
 }
 
 func (r *Repository) TreeInstruments(ctx context.Context, userID int64, accountID uuid.UUID) ([]money.Currency, error) {
 	rows, err := r.q.TreeInstruments(ctx, TreeInstrumentsParams{UserID: userID, AccountID: accountID})
+
 	out := make([]money.Currency, len(rows))
 	for i, c := range rows {
 		out[i] = money.Currency(c)
 	}
+
 	return out, err
 }
 
 func (r *Repository) TreeBalancesByInstrument(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time, basis app.Basis) (map[money.Currency]int64, error) {
 	rows, err := r.q.TreeBalancesByInstrument(ctx, TreeBalancesByInstrumentParams{UserID: userID, AccountID: accountID, Settled: basis == app.BasisSettled, OnDate: &date})
+
 	out := make(map[money.Currency]int64, len(rows))
 	for _, row := range rows {
 		out[money.Currency(row.Instrument)] = row.Total
 	}
+
 	return out, err
 }
 
@@ -742,14 +846,17 @@ func (r *Repository) TreeExternalFlows(ctx context.Context, userID int64, accoun
 	if err != nil {
 		return nil, fmt.Errorf("tree external flows: %w", err)
 	}
+
 	out := make([]app.ExternalFlow, len(rows))
 	for i, row := range rows {
 		value, err := money.New(row.Flow, money.Currency(row.BalancingCurrency))
 		if err != nil {
 			return nil, fmt.Errorf("external flow of %s: %w", row.Date.Format(time.DateOnly), err)
 		}
+
 		out[i] = app.ExternalFlow{Date: row.Date, Value: value}
 	}
+
 	return out, nil
 }
 
@@ -758,6 +865,7 @@ func (r *Repository) TreeFirstPosting(ctx context.Context, userID int64, account
 	if err != nil {
 		return time.Time{}, false, fmt.Errorf("tree first posting: %w", err)
 	}
+
 	return row.FirstOn, row.Found, nil
 }
 
@@ -765,17 +873,21 @@ func (r *Repository) BalanceAt(ctx context.Context, userID int64, accountID uuid
 	if basis == app.BasisSettled {
 		return r.q.BalanceSettledAt(ctx, BalanceSettledAtParams{UserID: userID, AccountID: accountID, OnDate: &date})
 	}
+
 	return r.q.BalanceBookedAt(ctx, BalanceBookedAtParams{UserID: userID, AccountID: accountID, OnDate: date})
 }
 
 func (r *Repository) BalancesAt(ctx context.Context, userID int64, date time.Time, basis app.Basis) ([]app.AccountTotal, error) {
 	if basis == app.BasisSettled {
 		rows, err := r.q.AccountBalancesSettledAt(ctx, AccountBalancesSettledAtParams{UserID: userID, OnDate: &date})
+
 		return mapAll(rows, func(row AccountBalancesSettledAtRow) app.AccountTotal {
 			return app.AccountTotal{AccountID: row.ID, Instrument: money.Currency(row.Instrument), Total: row.Total}
 		}), err
 	}
+
 	rows, err := r.q.AccountBalancesBookedAt(ctx, AccountBalancesBookedAtParams{UserID: userID, OnDate: date})
+
 	return mapAll(rows, func(row AccountBalancesBookedAtRow) app.AccountTotal {
 		return app.AccountTotal{AccountID: row.ID, Instrument: money.Currency(row.Instrument), Total: row.Total}
 	}), err
@@ -790,10 +902,12 @@ func (r *Repository) CategoryMonthlyTotals(ctx context.Context, userID int64, ac
 	if err != nil {
 		return nil, err
 	}
+
 	out := make(map[time.Time]int64, len(rows))
 	for _, row := range rows {
 		out[row.Month] = row.Total
 	}
+
 	return out, nil
 }
 
@@ -802,10 +916,12 @@ func (r *Repository) OwnCategoryMonthlyTotals(ctx context.Context, userID int64,
 	if err != nil {
 		return nil, fmt.Errorf("own category monthly totals: %w", err)
 	}
+
 	out := make([]app.CategoryMonth, len(rows))
 	for i, row := range rows {
 		out[i] = app.CategoryMonth{CategoryID: row.AccountID, Month: row.Month, Total: row.Total}
 	}
+
 	return out, nil
 }
 
@@ -823,10 +939,12 @@ func (r *Repository) InsertBillingRule(ctx context.Context, userID int64, accoun
 		day := int16(rule.ClosingDay) //nolint:gosec // days are 1 to 31 (domain.NewBillingCycleRule).
 		p.ClosingDay = &day
 	}
+
 	row, err := r.q.InsertBillingRule(ctx, p)
 	if err != nil {
 		return domain.BillingCycleRule{}, duplicate(err, "effective_from")
 	}
+
 	return toBillingRule(row), nil
 }
 
@@ -840,6 +958,7 @@ func (r *Repository) InsertCreditLimit(ctx context.Context, userID int64, l app.
 	if err != nil {
 		return app.CreditLimit{}, err
 	}
+
 	return l, nil
 }
 
@@ -848,18 +967,22 @@ func (r *Repository) CreditLimits(ctx context.Context, userID int64, accountID u
 	if err != nil {
 		return nil, err
 	}
+
 	a, err := r.Account(ctx, userID, accountID)
 	if err != nil {
 		return nil, err
 	}
+
 	out := make([]app.CreditLimit, len(rows))
 	for i, row := range rows {
 		amount, err := money.New(row.Amount, a.Instrument)
 		if err != nil {
 			return nil, err
 		}
+
 		out[i] = app.CreditLimit{AccountID: row.AccountID, EffectiveFrom: row.EffectiveFrom, Amount: amount}
 	}
+
 	return out, nil
 }
 
@@ -868,6 +991,7 @@ func (r *Repository) InsertCard(ctx context.Context, c domain.Card) (domain.Card
 	if err != nil {
 		return domain.Card{}, referenceError(err)
 	}
+
 	return toCard(row), nil
 }
 
@@ -876,6 +1000,7 @@ func (r *Repository) SetCardActive(ctx context.Context, userID int64, id uuid.UU
 	if err != nil {
 		return domain.Card{}, notFound(err)
 	}
+
 	return toCard(row), nil
 }
 
@@ -895,14 +1020,17 @@ func (r *Repository) Statements(ctx context.Context, userID int64, accountID uui
 	if err != nil {
 		return nil, err
 	}
+
 	lines, err := r.q.ListStatementLines(ctx, ListStatementLinesParams{UserID: userID, AccountID: accountID})
 	if err != nil {
 		return nil, err
 	}
+
 	factRows, err := r.q.ListStatementFacts(ctx, ListStatementFactsParams{UserID: userID, AccountID: accountID})
 	if err != nil {
 		return nil, err
 	}
+
 	facts := make(map[uuid.UUID][]domain.StatementFact)
 	for _, f := range factRows {
 		facts[f.StatementID] = append(facts[f.StatementID], domain.StatementFact{
@@ -910,10 +1038,12 @@ func (r *Repository) Statements(ctx context.Context, userID int64, accountID uui
 			Total: f.Total, Minimum: f.Minimum,
 		})
 	}
+
 	byStatement := make(map[uuid.UUID][]domain.StatementLine)
 	for _, l := range lines {
 		byStatement[l.StatementID.UUID] = append(byStatement[l.StatementID.UUID], domain.StatementLine{Role: deref(l.CardRole), Amount: l.Amount, Date: l.BookedOn})
 	}
+
 	out := make([]app.Statement, len(rows))
 	for i, row := range rows {
 		out[i] = app.Statement{
@@ -925,6 +1055,7 @@ func (r *Repository) Statements(ctx context.Context, userID int64, accountID uui
 			Fact: domain.EffectiveFact(facts[row.ID]),
 		}
 	}
+
 	return out, nil
 }
 
@@ -934,10 +1065,12 @@ func (r *Repository) HasOpeningBalance(ctx context.Context, userID int64, accoun
 
 func (r *Repository) StatementClosings(ctx context.Context, userID int64, accountID uuid.UUID) (map[domain.ReferenceMonth]time.Time, error) {
 	rows, err := r.q.ListStatementClosings(ctx, ListStatementClosingsParams{UserID: userID, AccountID: accountID})
+
 	out := make(map[domain.ReferenceMonth]time.Time, len(rows))
 	for _, row := range rows {
 		out[domain.MonthOf(row.ReferenceMonth)] = row.ClosingDate
 	}
+
 	return out, err
 }
 
@@ -954,10 +1087,12 @@ func (r *Repository) DeleteStatementFact(ctx context.Context, userID int64, stat
 
 func (r *Repository) RedatablePostings(ctx context.Context, userID int64, accountID uuid.UUID) ([]app.RedatablePosting, error) {
 	rows, err := r.q.ListRedatablePostings(ctx, ListRedatablePostingsParams{UserID: userID, AccountID: accountID})
+
 	out := make([]app.RedatablePosting, len(rows))
 	for i, row := range rows {
 		out[i] = app.RedatablePosting{ID: row.ID, Date: row.BookedOn, StatementID: row.StatementID}
 	}
+
 	return out, err
 }
 
@@ -970,6 +1105,7 @@ func (r *Repository) StatementAccount(ctx context.Context, userID int64, stateme
 	if err != nil {
 		return uuid.Nil, notFound(err)
 	}
+
 	return row.AccountID, nil
 }
 
@@ -978,6 +1114,7 @@ func (r *Repository) StatementPostings(ctx context.Context, userID int64, statem
 	if err != nil {
 		return nil, err
 	}
+
 	out := make([]app.StatementPosting, len(rows))
 	for i, row := range rows {
 		out[i] = app.StatementPosting{
@@ -988,6 +1125,7 @@ func (r *Repository) StatementPostings(ctx context.Context, userID int64, statem
 			out[i].Installment = &domain.InstallmentRef{PlanID: row.InstallmentPlanID.UUID, Number: int(*row.InstallmentNumber), Count: int(*row.InstallmentCount)}
 		}
 	}
+
 	return out, nil
 }
 
@@ -996,12 +1134,14 @@ func (r *Repository) OpenStatementsFrom(ctx context.Context, userID int64, accou
 	if err != nil {
 		return nil, err
 	}
+
 	out := make([]app.Statement, len(rows))
 	for i, row := range rows {
 		out[i] = app.Statement{ID: row.ID, AccountID: row.AccountID, Input: domain.StatementInput{
 			Reference: domain.MonthOf(row.ReferenceMonth), Closing: row.ClosingDate, Due: row.DueDate,
 		}}
 	}
+
 	return out, nil
 }
 
@@ -1022,6 +1162,7 @@ func (r *Repository) SystemAccount(ctx context.Context, userID int64, role domai
 	if err != nil {
 		return domain.Account{}, notFound(err)
 	}
+
 	return toAccount(row), nil
 }
 
@@ -1042,18 +1183,22 @@ func (r *Repository) Plan(ctx context.Context, userID int64, id uuid.UUID) (doma
 	if err != nil {
 		return domain.InstallmentPlan{}, notFound(err)
 	}
+
 	card, err := r.Account(ctx, userID, row.AccountID)
 	if err != nil {
 		return domain.InstallmentPlan{}, err
 	}
+
 	principal, err := money.New(row.Principal, card.Instrument)
 	if err != nil {
 		return domain.InstallmentPlan{}, err
 	}
+
 	interest, err := money.New(row.Interest, card.Instrument)
 	if err != nil {
 		return domain.InstallmentPlan{}, err
 	}
+
 	return domain.InstallmentPlan{
 		ID: row.ID, UserID: row.UserID, AccountID: row.AccountID, OriginTransactionID: row.OriginTransactionID,
 		Kind: row.PlanKind, Count: int(row.InstallmentCount), Principal: principal, Interest: interest,
@@ -1066,6 +1211,7 @@ func (r *Repository) PlanState(ctx context.Context, userID int64, originID uuid.
 	if err != nil {
 		return false, false, err
 	}
+
 	return row.Cancelled, row.Anticipated, nil
 }
 
@@ -1074,10 +1220,12 @@ func (r *Repository) AnticipatedReferences(ctx context.Context, userID int64, or
 	if err != nil {
 		return nil, err
 	}
+
 	out := make(map[domain.ReferenceMonth]struct{}, len(rows))
 	for _, row := range rows {
 		out[domain.MonthOf(row)] = struct{}{}
 	}
+
 	return out, nil
 }
 
@@ -1086,10 +1234,12 @@ func (r *Repository) AnticipationCharges(ctx context.Context, userID int64, orig
 	if err != nil {
 		return nil, err
 	}
+
 	out := make([]app.PlanInstallment, len(rows))
 	for i, row := range rows {
 		out[i] = app.PlanInstallment{Amount: row.Amount, Reference: domain.MonthOf(row.ReferenceMonth), Closing: row.ClosingDate}
 	}
+
 	return out, nil
 }
 
@@ -1102,14 +1252,17 @@ func (r *Repository) PlanInstallments(ctx context.Context, userID int64, planID 
 	if err != nil {
 		return nil, err
 	}
+
 	out := make([]app.PlanInstallment, len(rows))
 	for i, row := range rows {
 		number := 0
 		if row.InstallmentNumber != nil {
 			number = int(*row.InstallmentNumber)
 		}
+
 		out[i] = app.PlanInstallment{Number: number, Amount: row.Amount, Reference: domain.MonthOf(row.ReferenceMonth), Closing: row.ClosingDate}
 	}
+
 	return out, nil
 }
 
@@ -1129,10 +1282,12 @@ func (r *Repository) ReimbursementCandidates(ctx context.Context, q app.Candidat
 	if err != nil {
 		return nil, err
 	}
+
 	out := make([]app.CandidateRow, len(rows))
 	for i, row := range rows {
 		out[i] = app.CandidateRow{ID: row.ID, Remaining: row.Remaining, Allocated: row.Allocated}
 	}
+
 	return out, nil
 }
 
@@ -1144,10 +1299,12 @@ func (r *Repository) ReimbursementSources(ctx context.Context, q app.SourceQuery
 	if err != nil {
 		return nil, err
 	}
+
 	out := make([]app.SourceRow, len(rows))
 	for i, row := range rows {
 		out[i] = app.SourceRow{ID: row.ID, Free: row.Free}
 	}
+
 	return out, nil
 }
 
@@ -1155,12 +1312,14 @@ func (r *Repository) SetReimbursementLinks(ctx context.Context, userID int64, fr
 	if err := r.q.DeleteReimbursementLinksFrom(ctx, DeleteReimbursementLinksFromParams{UserID: userID, FromTransactionID: from}); err != nil {
 		return err
 	}
+
 	for _, l := range links {
 		err := r.q.InsertLink(ctx, InsertLinkParams{UserID: userID, FromTransactionID: from, ToTransactionID: l.Target, LinkType: string(l.Type), Amount: linkAmount(l.Amount)})
 		if err != nil {
 			return referenceError(err)
 		}
 	}
+
 	return nil
 }
 
@@ -1176,9 +1335,11 @@ func (r *Repository) InsertDispute(ctx context.Context, d app.Dispute) (app.Disp
 	if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == uniqueViolation {
 		return app.Dispute{}, app.ErrDisputeOpen
 	}
+
 	if err != nil {
 		return app.Dispute{}, err
 	}
+
 	return toDispute(row), nil
 }
 
@@ -1187,10 +1348,12 @@ func (r *Repository) Disputes(ctx context.Context, userID int64, transactionID u
 	if err != nil {
 		return nil, err
 	}
+
 	out := make([]app.Dispute, len(rows))
 	for i, row := range rows {
 		out[i] = toDispute(row)
 	}
+
 	return out, nil
 }
 
@@ -1199,6 +1362,7 @@ func linkAmount(amount int64) *int64 {
 	if amount == 0 {
 		return nil
 	}
+
 	return &amount
 }
 
@@ -1206,6 +1370,7 @@ func storedAmount(v *int64) int64 {
 	if v == nil {
 		return 0
 	}
+
 	return *v
 }
 
@@ -1214,10 +1379,12 @@ func (r *Repository) LinksTo(ctx context.Context, userID int64, id uuid.UUID) ([
 	if err != nil {
 		return nil, err
 	}
+
 	out := make([]app.Reference, len(rows))
 	for i, row := range rows {
 		out[i] = app.Reference{Type: domain.LinkType(row.LinkType), Source: row.FromTransactionID, Amount: storedAmount(row.Amount), Currency: row.BalancingCurrency}
 	}
+
 	return out, nil
 }
 
@@ -1226,6 +1393,7 @@ func (r *Repository) LockDispute(ctx context.Context, userID int64, id uuid.UUID
 	if err != nil {
 		return app.Dispute{}, notFound(err)
 	}
+
 	return toDispute(row), nil
 }
 
@@ -1236,5 +1404,6 @@ func (r *Repository) ResolveDispute(ctx context.Context, d app.Dispute) (app.Dis
 	if err != nil {
 		return app.Dispute{}, err
 	}
+
 	return toDispute(row), nil
 }

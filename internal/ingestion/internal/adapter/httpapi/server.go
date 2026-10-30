@@ -47,18 +47,24 @@ func ToProblem(err error) (problem.Details, bool) {
 	if pe, ok := errors.AsType[*paramError](err); ok {
 		d := problem.New(http.StatusBadRequest, "invalid_request", pe.Error())
 		d.Errors = []problem.FieldError{{Field: pe.field, Message: pe.message}}
+
 		return d, true
 	}
+
 	if ue, ok := errors.AsType[*app.UnauthorizedError](err); ok {
 		d := problem.New(http.StatusUnprocessableEntity, "aggregator_unauthorized", ue.Error())
 		d.Errors = []problem.FieldError{{Field: ue.Field, Message: "rejected by the aggregator"}}
+
 		return d, true
 	}
+
 	if fe, ok := errors.AsType[*domain.FieldError](err); ok {
 		d := problem.New(http.StatusUnprocessableEntity, "validation_failed", fe.Error())
 		d.Errors = []problem.FieldError{{Field: fe.Field, Message: fe.Message}}
+
 		return d, true
 	}
+
 	switch {
 	case errors.Is(err, app.ErrNotFound):
 		return problem.New(http.StatusNotFound, "not_found", "resource not found"), true
@@ -80,6 +86,7 @@ func ToProblem(err error) (problem.Details, bool) {
 		// The cause stays out of the response: it may name the aggregator's address.
 		return problem.New(http.StatusBadGateway, "aggregator_unavailable", app.ErrAggregatorUnavailable.Error()), true
 	}
+
 	return problem.Details{}, false
 }
 
@@ -91,6 +98,7 @@ func listPage[K any](limit *int, cursor *string) (page.Request[K], error) {
 	case errors.Is(err, page.ErrInvalidCursor):
 		return r, &paramError{field: "cursor", message: "is not a cursor of this list"}
 	}
+
 	return r, err
 }
 
@@ -110,13 +118,16 @@ func toBatchAPI(b domain.Batch) ImportBatch {
 		out.PeriodFrom = &openapi_types.Date{Time: *b.PeriodFrom}
 		out.PeriodTo = &openapi_types.Date{Time: *b.PeriodTo}
 	}
+
 	if b.Balance.Date != nil {
 		out.Balance.Date = &openapi_types.Date{Time: *b.Balance.Date}
 		out.Balance.Amount = &Money{Amount: b.Balance.Amount, Currency: b.Currency}
 	}
+
 	if b.Balance.Reason != "" {
 		out.Balance.Reason = &b.Balance.Reason
 	}
+
 	return out
 }
 
@@ -125,14 +136,18 @@ func (s *Server) ListImportBatches(ctx context.Context, req ListImportBatchesReq
 	if err != nil {
 		return nil, err
 	}
+
 	batches, next, err := s.svc.ListBatches(ctx, auth.MustUserID(ctx), p)
 	if err != nil {
 		return nil, err
 	}
+
 	out := ListImportBatches200JSONResponse{Items: make([]ImportBatch, len(batches))}
 	for i, b := range batches {
 		out.Items[i] = toBatchAPI(b)
 	}
+
 	out.NextCursor, err = page.Next(next)
+
 	return out, err
 }

@@ -76,6 +76,7 @@ func prepareBudgetOrGoal(ctx context.Context, svc *app.Service, l Ledger, userID
 		{"source", in.Source != ""}, {"amounts", len(in.Amounts) > 0},
 	}
 	name := string(in.Action)
+
 	var err error
 	switch in.Action {
 	case "create_budget":
@@ -93,9 +94,11 @@ func prepareBudgetOrGoal(ctx context.Context, svc *app.Service, l Ledger, userID
 	case "save_plan":
 		err = required(name, fields, []string{"month", "amounts"}, "source", "amount")
 	}
+
 	if err != nil {
 		return budgetGoalPlan{}, err
 	}
+
 	var p budgetGoalPlan
 	for _, id := range []struct {
 		s, field string
@@ -105,27 +108,34 @@ func prepareBudgetOrGoal(ctx context.Context, svc *app.Service, l Ledger, userID
 			return budgetGoalPlan{}, err
 		}
 	}
+
 	for _, s := range in.AccountIDs {
 		id, err := optionalID(s, "account_ids")
 		if err != nil {
 			return budgetGoalPlan{}, err
 		}
+
 		p.accountIDs = append(p.accountIDs, id)
 	}
+
 	if p.month, err = parseMonth("month", in.Month, time.Time{}); err != nil {
 		return budgetGoalPlan{}, err
 	}
+
 	accounts, err := l.Accounts(ctx, userID)
 	if err != nil {
 		return budgetGoalPlan{}, err
 	}
+
 	for _, id := range p.accountIDs {
 		a, ok := accounts[id]
 		if !ok {
 			return budgetGoalPlan{}, validationError("account_ids", "must be balance accounts of the user")
 		}
+
 		p.accountNames = append(p.accountNames, a.Name)
 	}
+
 	var currency money.Currency
 	switch in.Action {
 	case "create_budget":
@@ -133,6 +143,7 @@ func prepareBudgetOrGoal(ctx context.Context, svc *app.Service, l Ledger, userID
 		if !ok {
 			return budgetGoalPlan{}, validationError("category_id", "must be an income or expense category of the user")
 		}
+
 		p.categoryName = a.Name
 		currency, err = l.BaseCurrency(ctx, userID)
 	case "set_budget_amount", "delete_budget":
@@ -145,22 +156,27 @@ func prepareBudgetOrGoal(ctx context.Context, svc *app.Service, l Ledger, userID
 		if currency, err = l.BaseCurrency(ctx, userID); err != nil {
 			return budgetGoalPlan{}, err
 		}
+
 		if p.plan, err = svc.BudgetPlan(ctx, userID, p.month); err != nil {
 			return budgetGoalPlan{}, err
 		}
+
 		unit, err := unitOf(currency)
 		if err != nil {
 			return budgetGoalPlan{}, err
 		}
+
 		for i, a := range in.Amounts {
 			id, err := optionalID(a.CategoryID, fmt.Sprintf("amounts[%d].category_id", i))
 			if err != nil {
 				return budgetGoalPlan{}, err
 			}
+
 			m, err := tool.ParseAmount(fmt.Sprintf("amounts[%d].amount", i), a.Amount, unit)
 			if err != nil {
 				return budgetGoalPlan{}, err
 			}
+
 			p.planAmounts = append(p.planAmounts, app.PlanAmount{CategoryID: id, Amount: m})
 			p.planNames = append(p.planNames, accounts[id].Name)
 		}
@@ -169,20 +185,25 @@ func prepareBudgetOrGoal(ctx context.Context, svc *app.Service, l Ledger, userID
 			currency = p.goal.Currency
 		}
 	}
+
 	if err != nil {
 		return budgetGoalPlan{}, err
 	}
+
 	if in.Amount != "" {
 		unit, err := unitOf(currency)
 		if err != nil {
 			return budgetGoalPlan{}, err
 		}
+
 		m, err := tool.ParsePositive("amount", in.Amount, unit)
 		if err != nil {
 			return budgetGoalPlan{}, err
 		}
+
 		p.amount = &m
 	}
+
 	return p, nil
 }
 
@@ -199,7 +220,9 @@ func manageBudgetOrGoal(svc *app.Service, l Ledger, _ clock.Clock) tool.Tool {
 		if err != nil {
 			return tool.Preview{}, err
 		}
+
 		pv := tool.Preview{Action: "manage_budget_or_goal." + string(in.Action)}
+
 		accounts := tool.TextValue(strings.Join(p.accountNames, ", "))
 		switch in.Action {
 		case "create_budget":
@@ -213,6 +236,7 @@ func manageBudgetOrGoal(svc *app.Service, l Ledger, _ clock.Clock) tool.Tool {
 			if err != nil {
 				return tool.Preview{}, err
 			}
+
 			pv.Target = "Budget " + p.categoryName
 			pv.Changes = []tool.Change{
 				{Field: "budget", After: tool.TextValue(p.categoryName)},
@@ -233,16 +257,20 @@ func manageBudgetOrGoal(svc *app.Service, l Ledger, _ clock.Clock) tool.Tool {
 			if in.Name != "" {
 				pv.Changes = append(pv.Changes, tool.Change{Field: "name", Before: tool.TextValue(p.goal.Name), After: tool.TextValue(in.Name)})
 			}
+
 			if p.amount != nil {
 				before, err := money.New(p.goal.Target, p.goal.Currency)
 				if err != nil {
 					return tool.Preview{}, err
 				}
+
 				pv.Changes = append(pv.Changes, tool.Change{Field: "target", Before: tool.MoneyValue(before), After: tool.MoneyValue(*p.amount)})
 			}
+
 			if !in.DueOn.IsZero() {
 				pv.Changes = append(pv.Changes, tool.Change{Field: "due_on", Before: tool.DateValue(p.goal.DueOn), After: tool.DateValue(in.DueOn.Time)})
 			}
+
 			if len(p.accountIDs) > 0 {
 				pv.Changes = append(pv.Changes, tool.Change{Field: "accounts", After: accounts})
 			}
@@ -251,32 +279,39 @@ func manageBudgetOrGoal(svc *app.Service, l Ledger, _ clock.Clock) tool.Tool {
 			pv.Changes = []tool.Change{{Field: "goal", Before: tool.TextValue(p.goal.Name)}}
 		case "save_plan":
 			pv.Target = "Budget plan " + p.month.Format(monthLayout)
+
 			pv.Changes = []tool.Change{{Field: "date", After: tool.DateValue(p.month)}}
 			if in.Source != "" {
 				pv.Changes = append(pv.Changes, tool.Change{Field: "source", After: tool.TextValue(string(in.Source))})
 			}
+
 			if p.amount != nil {
 				pv.Changes = append(pv.Changes, tool.Change{Field: "reference", After: tool.MoneyValue(*p.amount)})
 			}
+
 			planned := make(map[uuid.UUID]int64, len(p.plan.Rows))
 			for _, r := range p.plan.Rows {
 				planned[r.CategoryID] = r.Planned
 			}
+
 			for i, a := range p.planAmounts {
 				before, err := money.New(planned[a.CategoryID], p.plan.Currency)
 				if err != nil {
 					return tool.Preview{}, err
 				}
+
 				pv.Changes = append(pv.Changes, tool.Change{Field: "budget", After: tool.TextValue(p.planNames[i])},
 					tool.Change{Field: "amount", Before: tool.MoneyValue(before), After: tool.MoneyValue(a.Amount)})
 			}
 		}
+
 		return pv, nil
 	}, func(ctx context.Context, userID int64, in manageBudgetOrGoalIn) (manageBudgetOrGoalOut, error) {
 		p, err := prepareBudgetOrGoal(ctx, svc, l, userID, in)
 		if err != nil {
 			return manageBudgetOrGoalOut{}, err
 		}
+
 		switch in.Action {
 		case "create_budget":
 			b, err := svc.CreateBudget(ctx, userID, p.categoryID, *p.amount, p.month, in.Rollover)
@@ -298,25 +333,33 @@ func manageBudgetOrGoal(svc *app.Service, l Ledger, _ clock.Clock) tool.Tool {
 					if err != nil {
 						return manageBudgetOrGoalOut{}, err
 					}
+
 					fixed = &m
 				}
 			}
+
 			_, err := svc.SaveBudgetPlan(ctx, userID, p.month, source, fixed, p.planAmounts)
+
 			return manageBudgetOrGoalOut{}, err
 		case "update_goal":
 			patch := app.GoalPatch{Target: p.amount}
 			if in.Name != "" {
 				patch.Name = &in.Name
 			}
+
 			if !in.DueOn.IsZero() {
 				patch.DueOn = &in.DueOn.Time
 			}
+
 			if len(p.accountIDs) > 0 {
 				patch.AccountIDs = &p.accountIDs
 			}
+
 			_, err := svc.UpdateGoal(ctx, userID, p.goalID, patch)
+
 			return manageBudgetOrGoalOut{GoalID: p.goalID.String()}, err
 		}
+
 		return manageBudgetOrGoalOut{GoalID: p.goalID.String(), Deleted: true}, svc.DeleteGoal(ctx, userID, p.goalID)
 	})
 }

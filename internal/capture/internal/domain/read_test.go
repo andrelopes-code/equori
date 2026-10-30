@@ -53,11 +53,13 @@ func draftOf(l Line) draft {
 	for _, i := range l.Issues {
 		d.Issues = append(d.Issues, i.Code)
 	}
+
 	return d
 }
 
 func TestRead(t *testing.T) {
 	t.Parallel()
+
 	today := "2026-10-21"
 	for _, c := range []struct {
 		name, text string
@@ -129,10 +131,12 @@ func TestRead(t *testing.T) {
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			t.Parallel()
+
 			lines := Read(c.text, vocabulary(), wednesday, c.def)
 			if len(lines) != 1 {
 				t.Fatalf("lines = %d, want 1", len(lines))
 			}
+
 			if got := draftOf(lines[0]); !reflect.DeepEqual(got, c.want) {
 				t.Fatalf("got  %+v\nwant %+v", got, c.want)
 			}
@@ -143,7 +147,9 @@ func TestRead(t *testing.T) {
 // S104: two numbers without an explicit one give both readings, each with its description.
 func TestReadAmbiguousAmount(t *testing.T) {
 	t.Parallel()
+
 	l := Read("padaria 2 irmãos 15 wallet", vocabulary(), wednesday, uuid.Nil)[0]
+
 	want := []Issue{{Code: IssueAmbiguousAmount, Field: FieldAmount, Choices: []Choice{
 		{Amount: 200, Description: "Padaria irmãos 15", Describes: true},
 		{Amount: 1500, Description: "Padaria 2 irmãos", Describes: true},
@@ -155,6 +161,7 @@ func TestReadAmbiguousAmount(t *testing.T) {
 
 func TestReadAmbiguousAccount(t *testing.T) {
 	t.Parallel()
+
 	v := vocabulary(Account{ID: nubankCC, Class: "liability", Kind: "credit_card", Currency: "BRL", Handles: []string{"Nubank card", "Nubank"}})
 	for _, c := range []struct {
 		text    string
@@ -171,6 +178,7 @@ func TestReadAmbiguousAccount(t *testing.T) {
 		if l.AccountID != c.account {
 			t.Errorf("%q: account = %s, want %s", c.text, l.AccountID, c.account)
 		}
+
 		if c.issue == nil && len(l.Issues) > 0 || c.issue != nil && !reflect.DeepEqual(l.Issues, []Issue{*c.issue}) {
 			t.Errorf("%q: issues = %+v", c.text, l.Issues)
 		}
@@ -179,28 +187,34 @@ func TestReadAmbiguousAccount(t *testing.T) {
 
 func TestReadLinesAndSegments(t *testing.T) {
 	t.Parallel()
+
 	lines := Read("uber 32,50 itaú; ifood 58 3x final 1234\n\n  R$ 12 café   #manhã  \n", vocabulary(), wednesday, wallet)
 	if len(lines) != 3 || lines[0].Number != 1 || lines[1].Number != 2 || lines[2].Number != 4 {
 		t.Fatalf("lines = %+v", lines)
 	}
+
 	want := []Segment{
 		{"R$ 12", RoleAmount}, {" café   ", RoleText}, {"#manhã", RoleTag},
 	}
 	if l := lines[2]; !reflect.DeepEqual(l.Segments, want) || l.Text != "R$ 12 café   #manhã" {
 		t.Fatalf("segments = %+v of %q", l.Segments, l.Text)
 	}
+
 	got := lines[1].Segments
+
 	want = []Segment{
 		{"ifood ", RoleText}, {"58", RoleAmount}, {" ", RoleText}, {"3x", RoleInstallments}, {" ", RoleText}, {"final 1234", RoleAccount},
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("segments = %+v", got)
 	}
+
 	for _, l := range lines {
 		var b strings.Builder
 		for _, s := range l.Segments {
 			b.WriteString(s.Text)
 		}
+
 		if b.String() != l.Text {
 			t.Errorf("segments of line %d join to %q, want %q", l.Number, b.String(), l.Text)
 		}
@@ -209,11 +223,14 @@ func TestReadLinesAndSegments(t *testing.T) {
 
 func TestReadUsesTheAccountCurrency(t *testing.T) {
 	t.Parallel()
+
 	v := vocabulary(Account{ID: interAcct, Class: "asset", Kind: "checking", Currency: money.Currency("JPY"), Handles: []string{"Tokyo"}})
+
 	l := Read("ramen 1200 tokyo", v, wednesday, uuid.Nil)[0]
 	if l.Amount != 1200 || l.Currency != "JPY" {
 		t.Fatalf("amount = %d %s", l.Amount, l.Currency)
 	}
+
 	if l := Read("ramen 12,5 tokyo", v, wednesday, uuid.Nil)[0]; len(l.Issues) != 1 || l.Issues[0].Code != IssueInvalidAmount {
 		t.Fatalf("issues = %+v", l.Issues)
 	}
@@ -223,6 +240,7 @@ func TestReadUsesTheAccountCurrency(t *testing.T) {
 // default silently.
 func TestReadPossibleAccount(t *testing.T) {
 	t.Parallel()
+
 	for _, c := range []struct {
 		name, text string
 		def        uuid.UUID
@@ -245,6 +263,7 @@ func TestReadPossibleAccount(t *testing.T) {
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			t.Parallel()
+
 			l := Read(c.text, vocabulary(), wednesday, c.def)[0]
 			if l.AccountID != c.account || !reflect.DeepEqual(l.Issues, c.issues) {
 				t.Fatalf("account %s issues %+v", l.AccountID, l.Issues)
@@ -255,6 +274,7 @@ func TestReadPossibleAccount(t *testing.T) {
 
 func TestEditDistance(t *testing.T) {
 	t.Parallel()
+
 	for _, c := range []struct {
 		a, b string
 		want int
@@ -270,6 +290,7 @@ func TestEditDistance(t *testing.T) {
 
 func TestReadByConventions(t *testing.T) {
 	t.Parallel()
+
 	english := Merge(English(), English())
 	for _, c := range []struct {
 		name, text string
@@ -288,12 +309,15 @@ func TestReadByConventions(t *testing.T) {
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			t.Parallel()
+
 			v := Vocabulary{Base: "EUR", Lexicon: c.lex, Conventions: c.conv}
 			today := time.Date(2026, 11, 20, 0, 0, 0, 0, time.UTC)
+
 			lines := Read(c.text, v, today, uuid.Nil)
 			if len(lines) != 1 {
 				t.Fatalf("lines = %d, want 1", len(lines))
 			}
+
 			got := lines[0]
 			if got.Amount != c.amount || got.Date.Format(time.DateOnly) != c.date || got.Description != c.desc {
 				t.Fatalf("got %d %s %q, want %d %s %q", got.Amount, got.Date.Format(time.DateOnly), got.Description, c.amount, c.date, c.desc)

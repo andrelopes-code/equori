@@ -54,6 +54,7 @@ func handleCardPurchase(svc *app.Service) tool.Tool {
 		if err != nil {
 			return handleCardPurchaseOut{}, err
 		}
+
 		return run()
 	})
 }
@@ -61,30 +62,36 @@ func handleCardPurchase(svc *app.Service) tool.Tool {
 // nextOpenStatement returns the first open statement of the card from the month of date.
 func nextOpenStatement(ctx context.Context, svc *app.Service, userID int64, card uuid.UUID, date time.Time) (domain.ReferenceMonth, error) {
 	from := domain.MonthOf(date)
+
 	views, _, _, err := svc.Statements(ctx, userID, card, &from, nil, page.Request[app.StatementKey]{Limit: page.MaxLimit})
 	if err != nil {
 		return from, err
 	}
+
 	for _, v := range views {
 		if v.Summary.Status == "open" {
 			return v.Input.Reference, nil
 		}
 	}
+
 	return from.Add(1), nil
 }
 
 func planPurchase(ctx context.Context, svc *app.Service, userID int64, in handleCardPurchaseIn) (tool.Preview, func() (handleCardPurchaseOut, error), error) {
 	action := string(in.Action)
 	pv := tool.Preview{Action: "handle_card_purchase"}
+
 	id, err := requiredID(in.TransactionID, "transaction_id")
 	if err != nil {
 		return pv, nil, err
 	}
+
 	given := map[string]bool{
 		"transaction_id": true, "date": !in.Date.IsZero(), "amount": in.Amount != "", "outcome": in.Outcome != "",
 		"from_installment": in.FromInstallment != 0, "to_installment": in.ToInstallment != 0, "statement": in.Statement != "",
 	}
 	required := []string{"transaction_id"}
+
 	var optional []string
 	switch in.Action {
 	case "refund":
@@ -98,46 +105,59 @@ func planPurchase(ctx context.Context, svc *app.Service, userID int64, in handle
 	default:
 		required, optional = append(required, "amount", "from_installment", "to_installment"), []string{"date", "statement"}
 	}
+
 	if err := checkFields(action, given, required, optional...); err != nil {
 		return pv, nil, err
 	}
+
 	t, err := svc.Transaction(ctx, userID, id)
 	if err != nil {
 		return pv, nil, err
 	}
+
 	var cardPosting *domain.Posting
+
 	var planID uuid.UUID
 	for i, p := range t.Postings {
 		if p.CardRole == "" {
 			continue
 		}
+
 		if cardPosting == nil {
 			cardPosting = &t.Postings[i]
 		}
+
 		if p.Installment != nil {
 			planID = p.Installment.PlanID
 		}
 	}
+
 	if cardPosting == nil {
 		return pv, nil, tool.InvalidArgument("transaction_id", "is not a card purchase")
 	}
+
 	pv.Target, pv.Basis = "Purchase "+targetText(t), basisOf(t)
+
 	date := svc.Today()
 	if !in.Date.IsZero() {
 		date = in.Date.Time
 	}
+
 	var statement *domain.ReferenceMonth
 	if in.Statement != "" {
 		m, err := domain.ParseReferenceMonth(in.Statement)
 		if err != nil {
 			return pv, nil, tool.InvalidArgument("statement", "must be YYYY-MM")
 		}
+
 		statement = &m
 	}
+
 	unit, err := svc.AmountOf(ctx, 0, cardPosting.Amount.Currency())
 	if err != nil {
 		return pv, nil, err
 	}
+
 	text := tool.TextValue
 	dateChange := tool.Change{Field: "date", After: tool.DateValue(date)}
 	statementChange := func() {
@@ -145,6 +165,7 @@ func planPurchase(ctx context.Context, svc *app.Service, userID int64, in handle
 			pv.Changes = append(pv.Changes, tool.Change{Field: "statement", After: text(statement.String())})
 		}
 	}
+
 	created := func(t domain.Transaction, err error) (handleCardPurchaseOut, error) {
 		return handleCardPurchaseOut{TransactionID: t.ID.String()}, err
 	}
@@ -154,13 +175,17 @@ func planPurchase(ctx context.Context, svc *app.Service, userID int64, in handle
 		if err != nil {
 			return pv, nil, err
 		}
+
 		pv.Changes = []tool.Change{{Field: "amount", After: tool.MoneyValue(amount)}, dateChange}
+
 		statementChange()
+
 		return pv, func() (handleCardPurchaseOut, error) {
 			return created(svc.RefundPurchase(ctx, userID, t.ID, date, amount, statement))
 		}, nil
 	case "open_dispute":
 		pv.Changes = []tool.Change{{Field: "status", After: text("disputed")}, dateChange}
+
 		return pv, func() (handleCardPurchaseOut, error) {
 			_, err := svc.OpenDispute(ctx, userID, t.ID, date)
 			return handleCardPurchaseOut{TransactionID: t.ID.String()}, err
@@ -170,49 +195,63 @@ func planPurchase(ctx context.Context, svc *app.Service, userID int64, in handle
 		if err != nil {
 			return pv, nil, err
 		}
+
 		var open *app.Dispute
 		for i, d := range disputes {
 			if d.ResolvedOn == nil {
 				open = &disputes[i]
 			}
 		}
+
 		if open == nil {
 			return pv, nil, tool.InvalidArgument("transaction_id", "has no open dispute")
 		}
+
 		pv.Changes = []tool.Change{{Field: "status", Before: text("disputed"), After: text(string(in.Outcome))}, dateChange}
+
 		statementChange()
+
 		return pv, func() (handleCardPurchaseOut, error) {
 			d, err := svc.ResolveDispute(ctx, userID, open.ID, date, string(in.Outcome), statement)
 			if d.RefundTransactionID != uuid.Nil {
 				return handleCardPurchaseOut{TransactionID: d.RefundTransactionID.String()}, err
 			}
+
 			return handleCardPurchaseOut{TransactionID: t.ID.String()}, err
 		}, nil
 	}
+
 	if planID == uuid.Nil {
 		return pv, nil, tool.InvalidArgument("transaction_id", "is not an installment purchase")
 	}
+
 	if in.Action == "cancel_installments" {
 		pv.Changes = []tool.Change{{Field: "status", After: text("cancelled")}, dateChange}
+
 		statementChange()
+
 		return pv, func() (handleCardPurchaseOut, error) {
 			return created(svc.CancelPlan(ctx, userID, planID, date, statement))
 		}, nil
 	}
+
 	amount, err := tool.ParsePositive("amount", in.Amount, unit)
 	if err != nil {
 		return pv, nil, err
 	}
+
 	target, err := anticipationTarget(ctx, svc, userID, cardPosting.AccountID, date, statement)
 	if err != nil {
 		return pv, nil, err
 	}
+
 	pv.Changes = []tool.Change{
 		{Field: "installments", After: text(strconv.Itoa(in.FromInstallment) + "-" + strconv.Itoa(in.ToInstallment))},
 		{Field: "amount", After: tool.MoneyValue(amount)},
 		{Field: "statement", After: text(target.String())},
 		dateChange,
 	}
+
 	return pv, func() (handleCardPurchaseOut, error) {
 		return created(svc.AnticipatePlan(ctx, userID, planID, date, in.FromInstallment, in.ToInstallment, target, amount))
 	}, nil
@@ -222,5 +261,6 @@ func anticipationTarget(ctx context.Context, svc *app.Service, userID int64, car
 	if given != nil {
 		return *given, nil
 	}
+
 	return nextOpenStatement(ctx, svc, userID, card, date)
 }

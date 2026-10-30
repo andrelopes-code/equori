@@ -19,6 +19,7 @@ type books struct {
 // populate records one fact of each kind the round trip covers (export design E6).
 func populate(t *testing.T, h *apitest.Harness) books {
 	t.Helper()
+
 	b := books{
 		checking: h.Account("Checking", "asset", "checking", nil),
 		card:     h.Card("Visa", 3, 10, "next"),
@@ -32,9 +33,11 @@ func populate(t *testing.T, h *apitest.Harness) books {
 		"date": "2026-10-12", "description": "Mercado central", "tags": []string{"market"},
 		"postings": []map[string]any{apitest.Posting(b.card, -23000), apitest.Posting(b.food, 23000)},
 	}, http.StatusCreated, &tx)
+
 	if r := h.Upload("/api/v1/transactions/"+tx.ID+"/attachments", "receipt.pdf", []byte("%PDF-1.4 receipt")); r.Status != http.StatusCreated {
 		t.Fatalf("attachment = %d: %s", r.Status, r.Body)
 	}
+
 	h.MustDo(http.MethodPost, "/api/v1/installment-purchases", map[string]any{
 		"card_account_id": b.card, "date": "2026-10-20",
 		"splits":              []map[string]any{{"account_id": b.food, "amount": apitest.BRL(90000)}},
@@ -67,25 +70,30 @@ func populate(t *testing.T, h *apitest.Harness) books {
 	}, http.StatusCreated, nil)
 	h.MustDo(http.MethodPost, "/api/v1/prices", map[string]any{"instrument": "MXRF11", "quote_instrument": "BRL", "date": "2026-10-23", "value": "10.40"}, http.StatusCreated, nil)
 	h.Dispatch()
+
 	return b
 }
 
 func zipOf(t *testing.T, files map[string][]byte) []byte {
 	t.Helper()
 	var buf bytes.Buffer
+
 	z := zip.NewWriter(&buf)
 	for name, b := range files {
 		w, err := z.Create(name)
 		if err != nil {
 			t.Fatal(err)
 		}
+
 		if _, err := w.Write(b); err != nil {
 			t.Fatal(err)
 		}
 	}
+
 	if err := z.Close(); err != nil {
 		t.Fatal(err)
 	}
+
 	return buf.Bytes()
 }
 
@@ -105,28 +113,35 @@ func TestExportImportRoundTrip(t *testing.T) {
 			Rows int    `json:"rows"`
 		} `json:"tables"`
 	}
+
 	r := target.Upload(importPath, "equori-export-2026-10-26.zip", first)
 	if r.Status != http.StatusOK {
 		t.Fatalf("import = %d: %s", r.Status, r.Body)
 	}
+
 	r.Decode(t, &out)
+
 	if len(out.Tables) == 0 {
 		t.Fatalf("import = %s", r.Body)
 	}
 
 	before, after := archive(t, first), archive(t, export(t, target))
+
 	var m manifest
 	if err := json.Unmarshal(before["manifest.json"], &m); err != nil {
 		t.Fatal(err)
 	}
+
 	for _, table := range m.Tables {
 		if strings.HasPrefix(table.Name, "marketdata_") {
 			continue
 		}
+
 		if !bytes.Equal(before[table.File], after[table.File]) {
 			t.Errorf("%s differs:\nexported %s\nreimported %s", table.Name, before[table.File], after[table.File])
 		}
 	}
+
 	for _, a := range m.Attachments {
 		if !bytes.Equal(before[a.File], after[a.File]) {
 			t.Errorf("attachment %s differs", a.File)
@@ -167,6 +182,7 @@ func TestImportRejects(t *testing.T) {
 	for name, b := range files {
 		tampered[name] = b
 	}
+
 	tampered["tables/ledger_posting.jsonl"] = append([]byte(nil), files["tables/ledger_posting.jsonl"][1:]...)
 	empty.ExpectProblem(empty.Upload(importPath, "a.zip", zipOf(t, tampered)), http.StatusUnprocessableEntity, "archive_invalid", "file")
 
@@ -174,12 +190,15 @@ func TestImportRejects(t *testing.T) {
 	if err := json.Unmarshal(files["manifest.json"], &m); err != nil {
 		t.Fatal(err)
 	}
+
 	withManifest := func(m map[string]any) []byte {
 		out := map[string][]byte{}
 		for name, b := range files {
 			out[name] = b
 		}
+
 		out["manifest.json"], _ = json.Marshal(m)
+
 		return zipOf(t, out)
 	}
 	// ADR 021, V4.
@@ -191,19 +210,23 @@ func TestImportRejects(t *testing.T) {
 		InstanceVersion int `json:"instance_version"`
 	}
 	r.Decode(t, &tooNew)
+
 	if tooNew.ArchiveVersion != app.ArchiveVersion+1 || tooNew.InstanceVersion != app.ArchiveVersion {
 		t.Errorf("archive_too_new = %s", r.Body)
 	}
+
 	m["archive_version"] = 0.0
 	empty.ExpectProblem(empty.Upload(importPath, "a.zip", withManifest(m)), http.StatusUnprocessableEntity, "archive_invalid", "file")
 	m["archive_version"] = float64(app.ArchiveVersion)
 
 	tables := m["tables"].([]any)
 	tables[0].(map[string]any)["name"] = "identity_user"
+
 	foreign := map[string][]byte{}
 	for name, b := range files {
 		foreign[name] = b
 	}
+
 	foreign["manifest.json"], _ = json.Marshal(m)
 	empty.ExpectProblem(empty.Upload(importPath, "a.zip", zipOf(t, foreign)), http.StatusUnprocessableEntity, "archive_invalid", "file")
 
@@ -213,6 +236,7 @@ func TestImportRejects(t *testing.T) {
 		} `json:"items"`
 	}
 	empty.MustDo(http.MethodGet, "/api/v1/accounts?limit=200", nil, http.StatusOK, &accounts)
+
 	for _, a := range accounts.Items {
 		if a.SystemRole == "" {
 			t.Errorf("a refused import wrote accounts: %+v", accounts.Items)
@@ -228,23 +252,28 @@ func TestImportArchiveOfAnotherSchemaVersion(t *testing.T) {
 	source := apitest.New(t, apitest.Today("2026-10-26"))
 	populate(t, source)
 	files := archive(t, export(t, source))
+
 	var m map[string]any
 	if err := json.Unmarshal(files["manifest.json"], &m); err != nil {
 		t.Fatal(err)
 	}
+
 	m["schema_version"] = m["schema_version"].(float64) - 1
 	delete(m, "archive_version")
 	delete(m, "app_version")
 	files["manifest.json"], _ = json.Marshal(m)
 	target := apitest.New(t, apitest.Today("2026-10-26"))
+
 	r := target.Upload(importPath, "a.zip", zipOf(t, files))
 	if r.Status != http.StatusOK {
 		t.Fatalf("import = %d: %s", r.Status, r.Body)
 	}
+
 	var out struct {
 		ArchiveVersion int `json:"archive_version"`
 	}
 	r.Decode(t, &out)
+
 	if out.ArchiveVersion != 1 {
 		t.Errorf("archive_version = %s", r.Body)
 	}

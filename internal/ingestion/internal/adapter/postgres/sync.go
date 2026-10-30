@@ -16,6 +16,7 @@ func nullable(id *uuid.UUID) uuid.NullUUID {
 	if id == nil {
 		return uuid.NullUUID{}
 	}
+
 	return uuid.NullUUID{UUID: *id, Valid: true}
 }
 
@@ -23,12 +24,14 @@ func (r *Repository) UpdateRecordFacts(ctx context.Context, recs []domain.Extern
 	if len(recs) == 0 {
 		return nil
 	}
+
 	params := make([]UpdateRecordFactsParams, len(recs))
 	for i, rec := range recs {
 		raw, err := json.Marshal(rec.Raw)
 		if err != nil {
 			return err
 		}
+
 		f := factsOf(rec)
 		params[i] = UpdateRecordFactsParams{
 			UserID: rec.UserID, ID: rec.ID, Raw: raw, ExternalStatus: f.status, DueDate: f.dueDate,
@@ -37,12 +40,14 @@ func (r *Repository) UpdateRecordFacts(ctx context.Context, recs []domain.Extern
 			BookedOn: rec.Date, Amount: rec.Amount, ReviewReason: optional(rec.ReviewReason),
 		}
 	}
+
 	var first error
 	r.q.UpdateRecordFacts(ctx, params).Exec(func(_ int, err error) {
 		if err != nil && first == nil {
 			first = err
 		}
 	})
+
 	return first
 }
 
@@ -51,12 +56,14 @@ func (r *Repository) SyncedRecords(ctx context.Context, userID int64, accountID 
 	if err != nil {
 		return nil, err
 	}
+
 	out := make([]domain.ExternalRecord, len(rows))
 	for i, row := range rows {
 		if out[i], err = toRecord(row); err != nil {
 			return nil, err
 		}
 	}
+
 	return out, nil
 }
 
@@ -64,11 +71,13 @@ func (r *Repository) WithdrawRecords(ctx context.Context, userID int64, ids []uu
 	if len(ids) == 0 {
 		return nil
 	}
+
 	return pgx.BeginFunc(ctx, r.pool, func(tx pgx.Tx) error {
 		q := r.q.WithTx(tx)
 		if err := q.WithdrawReviewCounts(ctx, WithdrawReviewCountsParams{UserID: userID, RecordIds: ids}); err != nil {
 			return err
 		}
+
 		return q.WithdrawRecords(ctx, WithdrawRecordsParams{UserID: userID, RecordIds: ids})
 	})
 }
@@ -78,6 +87,7 @@ func (r *Repository) MarkAccountSynced(ctx context.Context, a domain.ExternalAcc
 	if a.Balance != nil {
 		params.BalanceOn, params.BalanceAmount = &a.Balance.Date, &a.Balance.Amount
 	}
+
 	return r.q.MarkAccountSynced(ctx, params)
 }
 
@@ -93,10 +103,12 @@ func (r *Repository) AllConnections(ctx context.Context) ([]app.ConnectionRef, e
 	if err != nil {
 		return nil, err
 	}
+
 	out := make([]app.ConnectionRef, len(rows))
 	for i, row := range rows {
 		out[i] = app.ConnectionRef{UserID: row.UserID, ID: row.ID}
 	}
+
 	return out, nil
 }
 
@@ -105,10 +117,12 @@ func (r *Repository) InstallmentPlans(ctx context.Context, userID int64, keys []
 	if err != nil {
 		return nil, err
 	}
+
 	out := make(map[string]uuid.UUID, len(rows))
 	for _, row := range rows {
 		out[string(row.PlanKey)] = row.PlanID
 	}
+
 	return out, nil
 }
 

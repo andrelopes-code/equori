@@ -52,6 +52,7 @@ func getFinancialIndicators(svc *app.Service, clk app.Clock) tool.Tool {
 	}, func(ctx context.Context, userID int64, in getFinancialIndicatorsIn) (getFinancialIndicatorsOut, error) {
 		now := clk.Now()
 		today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+
 		month := today
 		if in.Month != "" {
 			var err error
@@ -59,15 +60,18 @@ func getFinancialIndicators(svc *app.Service, clk app.Clock) tool.Tool {
 				return getFinancialIndicatorsOut{}, tool.InvalidArgument("month", "must be written YYYY-MM")
 			}
 		}
+
 		report, err := svc.Indicators(ctx, userID, month, today)
 		if err != nil {
 			return getFinancialIndicatorsOut{}, err
 		}
+
 		cur := money.Currency(report.Currency)
 		amount := func(v int64) (tool.Money, error) {
 			m, err := money.New(v, cur)
 			return tool.MoneyOf(m), err
 		}
+
 		out := getFinancialIndicatorsOut{Months: make([]indicatorView, len(report.Months))}
 		for i, m := range report.Months {
 			v := indicatorView{
@@ -86,16 +90,20 @@ func getFinancialIndicators(svc *app.Service, clk app.Clock) tool.Tool {
 					return getFinancialIndicatorsOut{}, err
 				}
 			}
+
 			if m.HasMeans {
 				if v.MeanIncome, err = amount(m.MeanIncome); err != nil {
 					return getFinancialIndicatorsOut{}, err
 				}
+
 				if v.MeanExpense, err = amount(m.MeanExpense); err != nil {
 					return getFinancialIndicatorsOut{}, err
 				}
 			}
+
 			out.Months[i] = v
 		}
+
 		return out, nil
 	})
 }
@@ -104,5 +112,6 @@ func ratioOf(r app.Ratio) ratioView {
 	if r.Reason != "" {
 		return ratioView{Reason: string(r.Reason)}
 	}
+
 	return ratioView{BP: r.BP}
 }

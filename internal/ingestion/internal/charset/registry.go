@@ -33,6 +33,7 @@ func Decoder(name string) (encoding.Encoding, bool) {
 	case "big5":
 		return traditionalchinese.Big5, true
 	}
+
 	return nil, false
 }
 

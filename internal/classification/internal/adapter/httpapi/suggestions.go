@@ -19,12 +19,15 @@ func toSuggestionAPI(s app.Suggestion) RuleSuggestion {
 		d := c.Doc()
 		out.Conditions[i] = RuleCondition{Field: RuleConditionField(d.Field), Operator: RuleConditionOperator(d.Operator), Value: d.Value}
 	}
+
 	for i, a := range s.Actions {
 		out.Actions[i] = toActionAPI(a.Doc())
 	}
+
 	if s.RuleID != uuid.Nil {
 		out.RuleId = &s.RuleID
 	}
+
 	return out
 }
 
@@ -33,19 +36,24 @@ func (s *Server) ListRuleSuggestions(ctx context.Context, req ListRuleSuggestion
 	if err != nil {
 		return nil, err
 	}
+
 	state := ""
 	if req.Params.State != nil {
 		state = string(*req.Params.State)
 	}
+
 	items, next, err := s.svc.ListSuggestions(ctx, auth.MustUserID(ctx), state, p)
 	if err != nil {
 		return nil, err
 	}
+
 	out := ListRuleSuggestions200JSONResponse{Items: make([]RuleSuggestion, len(items))}
 	for i, sg := range items {
 		out.Items[i] = toSuggestionAPI(sg)
 	}
+
 	out.NextCursor, err = page.Next(next)
+
 	return out, err
 }
 
@@ -54,6 +62,7 @@ func (s *Server) AcceptRuleSuggestion(ctx context.Context, req AcceptRuleSuggest
 	if err != nil {
 		return nil, err
 	}
+
 	return AcceptRuleSuggestion200JSONResponse(toSuggestionAPI(sg)), nil
 }
 
@@ -62,5 +71,6 @@ func (s *Server) DismissRuleSuggestion(ctx context.Context, req DismissRuleSugge
 	if err != nil {
 		return nil, err
 	}
+
 	return DismissRuleSuggestion200JSONResponse(toSuggestionAPI(sg)), nil
 }

@@ -40,10 +40,12 @@ func optionalID(s, field string) (uuid.UUID, error) {
 	if s == "" {
 		return uuid.Nil, nil
 	}
+
 	id, err := uuid.Parse(s)
 	if err != nil {
 		return uuid.Nil, tool.InvalidArgument(field, "is not a UUID")
 	}
+
 	return id, nil
 }
 
@@ -65,6 +67,7 @@ func required(name string, fields []field, needed []string, optional ...string) 
 			return tool.InvalidArgument(f.name, "is not used by "+name)
 		}
 	}
+
 	return nil
 }
 
@@ -73,6 +76,7 @@ func moneyOf(amount int64, currency money.Currency) (tool.Money, error) {
 	if err != nil {
 		return tool.Money{}, err
 	}
+
 	return tool.MoneyOf(m), nil
 }
 
@@ -86,10 +90,12 @@ func parseMonth(name, s string, def time.Time) (time.Time, error) {
 	if s == "" {
 		return def, nil
 	}
+
 	m, err := time.Parse(monthLayout, s)
 	if err != nil {
 		return time.Time{}, tool.InvalidArgument(name, "must be written YYYY-MM")
 	}
+
 	return m, nil
 }
 
@@ -102,16 +108,19 @@ func accountName(accounts map[uuid.UUID]Account, id uuid.UUID) string { return a
 // allSchedules reads every schedule of the user.
 func allSchedules(ctx context.Context, svc *app.Service, userID int64) ([]domain.Schedule, error) {
 	var out []domain.Schedule
+
 	r := page.Request[app.IDKey]{Limit: page.MaxLimit}
 	for {
 		ss, next, err := svc.ListSchedules(ctx, userID, r)
 		if err != nil {
 			return nil, err
 		}
+
 		out = append(out, ss...)
 		if next == nil {
 			return out, nil
 		}
+
 		r.After = next
 	}
 }

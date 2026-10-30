@@ -31,22 +31,27 @@ func TestTransactionFacts(t *testing.T) {
 	}, http.StatusOK, nil)
 
 	ids := []uuid.UUID{uuid.MustParse(edited), uuid.New(), uuid.MustParse(purchase.Transaction.ID)}
+
 	facts, err := h.App.Ledger.TransactionFacts(ctx, uid, ids)
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if len(facts) != 2 || facts[0].ID != ids[0] || facts[1].ID != ids[2] {
 		t.Fatalf("facts = %+v", facts)
 	}
+
 	e := facts[0]
 	if e.Version != 2 || e.Description != "Bakery" || e.RawDescription != "test" || e.Origin != "manual" || e.Voided ||
 		e.CategoryState != "uncategorized" || e.Date.Format("2006-01-02") != "2026-10-21" || len(e.Postings) != 2 {
 		t.Fatalf("edited = %+v", e)
 	}
+
 	p := facts[1]
 	if p.CategoryState != "categorized" || p.RawDescription != "Laptop" {
 		t.Fatalf("purchase = %+v", p)
 	}
+
 	var cardPosting, category *ledger.FactPosting
 	for i := range p.Postings {
 		switch p.Postings[i].AccountID.String() {
@@ -56,14 +61,17 @@ func TestTransactionFacts(t *testing.T) {
 			category = &p.Postings[i]
 		}
 	}
+
 	if cardPosting == nil || cardPosting.Class != "liability" || cardPosting.Kind != "credit_card" || !cardPosting.Installment {
 		t.Fatalf("card posting = %+v", cardPosting)
 	}
+
 	if category == nil || category.Class != "expense" || category.Kind != "" || category.Installment || category.Amount.Amount() <= 0 {
 		t.Fatalf("category posting = %+v", category)
 	}
 
 	h.MustDo(http.MethodPost, "/api/v1/transactions/"+edited+"/void", map[string]string{"reason": "duplicate"}, http.StatusOK, nil)
+
 	if facts, err = h.App.Ledger.TransactionFacts(ctx, uid, ids[:1]); err != nil || !facts[0].Voided {
 		t.Fatalf("voided facts = %+v, %v", facts, err)
 	}
@@ -74,20 +82,25 @@ func TestAccountFactsAndPayees(t *testing.T) {
 	h := apitest.New(t)
 	ctx, uid := t.Context(), h.OwnerID()
 	checking := h.Account("Nubank checking", "asset", "checking", nil)
+
 	facts, err := h.App.Ledger.AccountFacts(ctx, uid)
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	roles := 0
+
 	var found *ledger.AccountFact
 	for i, a := range facts {
 		if a.SystemRole != "" {
 			roles++
 		}
+
 		if a.ID.String() == checking {
 			found = &facts[i]
 		}
 	}
+
 	if roles != 12 || found == nil || found.Class != "asset" || found.Kind != "checking" || found.Instrument != "BRL" || found.ClosedOn != nil {
 		t.Fatalf("facts = %+v (system roles %d)", found, roles)
 	}
@@ -96,7 +109,9 @@ func TestAccountFactsAndPayees(t *testing.T) {
 		ID string `json:"id"`
 	}
 	h.MustDo(http.MethodPost, "/api/v1/payees", map[string]string{"name": "iFood"}, http.StatusCreated, &payee)
+
 	unknown := uuid.New()
+
 	missing, err := h.App.Ledger.MissingPayees(ctx, uid, []uuid.UUID{uuid.MustParse(payee.ID), unknown})
 	if err != nil || !slices.Equal(missing, []uuid.UUID{unknown}) {
 		t.Fatalf("missing = %v, %v", missing, err)
@@ -117,11 +132,13 @@ func TestLatestPayeeCategories(t *testing.T) {
 		ID string `json:"id"`
 	}
 	h.MustDo(http.MethodPost, "/api/v1/payees", map[string]string{"name": "iFood"}, http.StatusCreated, &payee)
+
 	record := func(date string, postings ...map[string]any) string {
 		var out struct {
 			ID string `json:"id"`
 		}
 		h.MustDo(http.MethodPost, "/api/v1/transactions", map[string]any{"date": date, "description": "iFood", "payee_id": payee.ID, "postings": postings}, http.StatusCreated, &out)
+
 		return out.ID
 	}
 	record("2026-10-01", apitest.Posting(checking, -1000), apitest.Posting(delivery, 1000))
@@ -132,10 +149,12 @@ func TestLatestPayeeCategories(t *testing.T) {
 	h.MustDo(http.MethodPost, "/api/v1/transactions/"+voided+"/void", map[string]string{"reason": "duplicate"}, http.StatusOK, nil)
 
 	pid := uuid.MustParse(payee.ID)
+
 	got, err := h.App.Ledger.LatestPayeeCategories(ctx, uid, []uuid.UUID{pid, uuid.New()})
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	want := map[ledger.PayeeClass]uuid.UUID{
 		{PayeeID: pid, Class: "expense"}: uuid.MustParse(delivery),
 		{PayeeID: pid, Class: "income"}:  uuid.MustParse(refunds),
@@ -157,12 +176,15 @@ func TestRecordImportedWithDecision(t *testing.T) {
 		ID string `json:"id"`
 	}
 	h.MustDo(http.MethodPost, "/api/v1/payees", map[string]string{"name": "Uber"}, http.StatusCreated, &payee)
+
 	rule := uuid.New()
 	pid := uuid.MustParse(payee.ID)
+
 	amount, err := money.New(2390, "BRL")
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	ids, err := h.App.Ledger.RecordImportedBatch(ctx, uid, []ledger.ImportedRecord{{
 		RecordID: uuid.New(), Posting: imported(t, checking, "2026-10-05", -2390),
 		Decision: &ledger.ImportDecision{
@@ -173,18 +195,22 @@ func TestRecordImportedWithDecision(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	tx := h.Transaction(ids[0].String())
 	if got := amountsByAccount(tx); tx.Version != 1 || len(tx.Postings) != 2 || got[transport] != 2390 || got[checking] != -2390 {
 		t.Fatalf("transaction = %+v", tx)
 	}
+
 	var full struct {
 		PayeeID string   `json:"payee_id"`
 		Tags    []string `json:"tags"`
 	}
 	h.MustDo(http.MethodGet, "/api/v1/transactions/"+ids[0].String(), nil, http.StatusOK, &full)
+
 	if full.PayeeID != payee.ID || !slices.Equal(full.Tags, []string{"ride"}) {
 		t.Fatalf("payee and tags = %+v", full)
 	}
+
 	recorded := events(t, h, ids[0].String())["ledger.transaction_recorded.v1"]
 	if len(recorded) != 1 || recorded[0].Origin != "import" || recorded[0].CategoryState != "categorized" ||
 		recorded[0].Cause == nil || recorded[0].Cause.Method != "rule" || recorded[0].Cause.RuleID != rule.String() {
@@ -210,10 +236,13 @@ func TestListUncategorizedTransactions(t *testing.T) {
 		} `json:"items"`
 	}
 	h.MustDo(http.MethodGet, "/api/v1/transactions?uncategorized=true", nil, http.StatusOK, &out)
+
 	if len(out.Items) != 1 || out.Items[0].ID != want {
 		t.Fatalf("items = %+v, want %s", out.Items, want)
 	}
+
 	h.MustDo(http.MethodGet, "/api/v1/transactions?uncategorized=false", nil, http.StatusOK, &out)
+
 	if len(out.Items) != 4 {
 		t.Fatalf("all items = %d, want 4", len(out.Items))
 	}

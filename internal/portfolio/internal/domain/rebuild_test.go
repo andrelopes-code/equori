@@ -12,6 +12,7 @@ func day(s string) time.Time {
 	if err != nil {
 		panic(err)
 	}
+
 	return d
 }
 
@@ -28,6 +29,7 @@ func (fixtureJurisdiction) TaxClass(instrumentType, _, exchange string) string {
 	if instrumentType == "reit" && exchange == "BVMF" {
 		return "fii"
 	}
+
 	return instrumentType
 }
 
@@ -35,11 +37,13 @@ func (fixtureJurisdiction) Treatment(incomeType, _ string) string {
 	if incomeType == "dividend" {
 		return "exempt"
 	}
+
 	return "exclusive"
 }
 
 func TestRebuild(t *testing.T) {
 	t.Parallel()
+
 	mxrf11, petr4 := uuid.New(), uuid.New()
 	buy1, buy2, sale, dividend, jcp := uuid.New(), uuid.New(), uuid.New(), uuid.New(), uuid.New()
 	f := Facts{
@@ -69,11 +73,13 @@ func TestRebuild(t *testing.T) {
 	if len(got.Days) != len(wantDays) {
 		t.Fatalf("days = %+v", got.Days)
 	}
+
 	for i, w := range wantDays {
 		if got.Days[i] != w {
 			t.Fatalf("day %d = %+v, want %+v", i, got.Days[i], w)
 		}
 	}
+
 	wantResult := RealizedResult{
 		TransactionID: sale, AccountID: mxrf11, Instrument: "MXRF11", Date: day("2026-10-20"), Month: day("2026-10-01"),
 		Quantity: 50, Cost: 50413, Proceeds: 53790, Result: 3377, TaxClass: "fii", Currency: "BRL",
@@ -81,6 +87,7 @@ func TestRebuild(t *testing.T) {
 	if len(got.Results) != 1 || got.Results[0] != wantResult {
 		t.Fatalf("results = %+v", got.Results)
 	}
+
 	wantIncomes := []IncomeEvent{
 		{TransactionID: dividend, AccountID: mxrf11, Instrument: "MXRF11", Date: day("2026-10-26"), Type: "dividend", TaxTreatment: "exempt", Gross: 1000, Currency: "BRL"},
 		{TransactionID: jcp, AccountID: petr4, Instrument: "PETR4", Date: day("2026-10-26"), Type: "jcp", TaxTreatment: "exclusive", Gross: 4500, Withheld: 675, Currency: "BRL"},
@@ -92,7 +99,9 @@ func TestRebuild(t *testing.T) {
 
 func TestRebuildFullSaleKeepsAZeroRow(t *testing.T) {
 	t.Parallel()
+
 	a := uuid.New()
+
 	got := Rebuild(Facts{
 		Currency:   "BRL",
 		Securities: []Security{{AccountID: a, Instrument: "MXRF11", Type: "reit", Exchange: "BVMF"}},
@@ -108,7 +117,9 @@ func TestRebuildFullSaleKeepsAZeroRow(t *testing.T) {
 
 func TestRebuildWithoutJurisdiction(t *testing.T) {
 	t.Parallel()
+
 	a, sale, dividend := uuid.New(), uuid.New(), uuid.New()
+
 	got := Rebuild(Facts{
 		Currency:   "EUR",
 		Securities: []Security{{AccountID: a, Instrument: "SAP", Type: "stock", Exchange: "XETR"}},
@@ -118,6 +129,7 @@ func TestRebuildWithoutJurisdiction(t *testing.T) {
 	if len(got.Results) != 1 || got.Results[0].TaxClass != "" {
 		t.Fatalf("results = %+v", got.Results)
 	}
+
 	if len(got.Incomes) != 1 || got.Incomes[0].TaxTreatment != "" {
 		t.Fatalf("incomes = %+v", got.Incomes)
 	}

@@ -11,24 +11,29 @@ import (
 
 func shares(t *testing.T, n int64) money.Money {
 	t.Helper()
+
 	m, err := money.NewOf(n, "MXRF11", 0)
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	return m
 }
 
 func price(t *testing.T, s string) money.Rate {
 	t.Helper()
+
 	r, err := money.ParseRate(s)
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	return r
 }
 
 func TestBuildTrade(t *testing.T) {
 	t.Parallel()
+
 	security, cash := uuid.New(), uuid.New()
 	accts := TradeAccounts{RealizedGains: uuid.New(), RealizedLosses: uuid.New(), Taxes: uuid.New()}
 	type line struct {
@@ -36,6 +41,7 @@ func TestBuildTrade(t *testing.T) {
 		amount, weight int64
 	}
 	fee := func(n int64) *money.Money { m := brl(t, n); return &m }
+
 	tests := []struct {
 		name    string
 		order   TradeOrder
@@ -91,19 +97,23 @@ func TestBuildTrade(t *testing.T) {
 			if tt.holding.CostBasis == (money.Money{}) {
 				tt.holding = Holding{Quantity: shares(t, 0), CostBasis: brl(t, 0)}
 			}
+
 			postings, trade, err := BuildTrade(tt.order, "BRL", tt.holding, accts)
 			if err != nil {
 				t.Fatal(err)
 			}
+
 			if len(postings) != len(tt.want) {
 				t.Fatalf("postings = %+v", postings)
 			}
+
 			for i, w := range tt.want {
 				p := postings[i]
 				if p.AccountID != w.account || p.Amount.Amount() != w.amount || p.Weight.Amount() != w.weight || p.Weight.Currency() != "BRL" {
 					t.Fatalf("posting %d = %+v, want %+v", i, p, w)
 				}
 			}
+
 			if (trade.Cost == nil) != (tt.cost == -1) || (trade.Cost != nil && trade.Cost.Amount() != tt.cost) {
 				t.Fatalf("cost = %v, want %d", trade.Cost, tt.cost)
 			}
@@ -113,9 +123,11 @@ func TestBuildTrade(t *testing.T) {
 
 func TestBuildTradeRejects(t *testing.T) {
 	t.Parallel()
+
 	accts := TradeAccounts{RealizedGains: uuid.New(), RealizedLosses: uuid.New(), Taxes: uuid.New()}
 	held := Holding{Quantity: shares(t, 100), CostBasis: brl(t, 100827)}
 	fee := func(n int64) *money.Money { m := brl(t, n); return &m }
+
 	tests := []struct {
 		name  string
 		order TradeOrder
@@ -132,6 +144,7 @@ func TestBuildTradeRejects(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.order.AccountID, tt.order.CashAccountID = uuid.New(), uuid.New()
 			_, _, err := BuildTrade(tt.order, "BRL", held, accts)
+
 			var fe *FieldError
 			if !errors.As(err, &fe) || fe.Field != tt.field {
 				t.Fatalf("err = %v, want field %s", err, tt.field)

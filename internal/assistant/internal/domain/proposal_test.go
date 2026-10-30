@@ -7,10 +7,12 @@ import (
 
 func TestExpired(t *testing.T) {
 	t.Parallel()
+
 	at := func(h, m, s int) time.Time { return time.Date(2026, 10, 23, h, m, s, 0, time.UTC) }
 	pending := Proposal{Status: ProposalPending, CreatedAt: at(10, 0, 0), ExpiresAt: at(10, 15, 0)}
 	executed := pending
 	executed.Status = ProposalExecuted
+
 	tests := []struct {
 		name string
 		p    Proposal

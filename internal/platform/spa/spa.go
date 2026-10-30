@@ -38,16 +38,20 @@ func Handler(fsys fs.FS) http.Handler {
 		if r.Method != http.MethodGet && r.Method != http.MethodHead {
 			w.Header().Set("Allow", "GET, HEAD")
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+
 			return
 		}
+
 		if fsys == nil {
 			http.NotFound(w, r)
 			return
 		}
+
 		name := strings.TrimPrefix(path.Clean("/"+r.URL.Path), "/")
 		if serveFile(w, r, fsys, name) {
 			return
 		}
+
 		if name == assetsDir || strings.HasPrefix(name, assetsDir+"/") || !serveFile(w, r, fsys, indexName) {
 			http.NotFound(w, r)
 		}
@@ -61,14 +65,17 @@ func serveFile(w http.ResponseWriter, r *http.Request, fsys fs.FS, name string) 
 		return false
 	}
 	defer f.Close()
+
 	info, err := f.Stat()
 	if err != nil || !info.Mode().IsRegular() {
 		return false
 	}
+
 	content, ok := f.(io.ReadSeeker)
 	if !ok {
 		return false
 	}
+
 	switch {
 	case name == indexName || name == "sw.js":
 		// The browser must see a new service worker on the next load (ADR 028, W11; ADR 022, P2).
@@ -77,11 +84,14 @@ func serveFile(w http.ResponseWriter, r *http.Request, fsys fs.FS, name string) 
 		// Vite names every file under assets/ by its content hash.
 		w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
 	}
+
 	if ct, ok := contentTypes[path.Ext(name)]; ok {
 		w.Header().Set("Content-Type", ct)
 	}
+
 	// ServeContent serves index.html under its own name; http.ServeFileFS would redirect it to "./".
 	http.ServeContent(w, r, name, info.ModTime(), content)
+
 	return true
 }
 
@@ -93,12 +103,15 @@ func DevRedirect(port int) http.Handler {
 		if r.Method != http.MethodGet && r.Method != http.MethodHead {
 			w.Header().Set("Allow", "GET, HEAD")
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+
 			return
 		}
+
 		host := r.Host
 		if h, _, err := net.SplitHostPort(r.Host); err == nil {
 			host = h
 		}
+
 		target := url.URL{Scheme: "http", Host: net.JoinHostPort(host, strconv.Itoa(port)), Path: r.URL.Path, RawQuery: r.URL.RawQuery}
 		http.Redirect(w, r, target.String(), http.StatusTemporaryRedirect)
 	})

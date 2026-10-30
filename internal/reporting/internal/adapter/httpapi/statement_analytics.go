@@ -15,6 +15,7 @@ func toParts(p app.StatementParts, instrument string) StatementParts {
 
 func toItem(a app.StatementAnalytics) StatementAnalyticsItem {
 	p := toParts(a.StatementParts, a.Instrument)
+
 	return StatementAnalyticsItem{
 		StatementId: a.Statement.ID, Reference: a.Statement.Reference.Format("2006-01"),
 		Purchases: p.Purchases, Installments: p.Installments, Charges: p.Charges, Credits: p.Credits, Total: p.Total,
@@ -26,7 +27,9 @@ func (s *Server) GetStatementAnalytics(ctx context.Context, req GetStatementAnal
 	if err != nil {
 		return nil, err
 	}
+
 	item := toItem(a)
+
 	out := GetStatementAnalytics200JSONResponse{
 		StatementId: item.StatementId, Reference: item.Reference, Purchases: item.Purchases, Installments: item.Installments,
 		Charges: item.Charges, Credits: item.Credits, Total: item.Total, Categories: make([]StatementCategoryParts, len(a.Categories)),
@@ -37,19 +40,23 @@ func (s *Server) GetStatementAnalytics(ctx context.Context, req GetStatementAnal
 			CategoryId: c.CategoryID, Purchases: p.Purchases, Installments: p.Installments, Charges: p.Charges, Credits: p.Credits, Total: p.Total,
 		}
 	}
+
 	return out, nil
 }
 
 func (s *Server) GetCardStatementAnalytics(ctx context.Context, req GetCardStatementAnalyticsRequestObject) (GetCardStatementAnalyticsResponseObject, error) {
 	now := s.clock.Now()
 	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+
 	as, err := s.svc.CardStatementAnalytics(ctx, auth.MustUserID(ctx), req.Id, today)
 	if err != nil {
 		return nil, err
 	}
+
 	out := GetCardStatementAnalytics200JSONResponse{Items: make([]StatementAnalyticsItem, len(as))}
 	for i, a := range as {
 		out.Items[i] = toItem(a)
 	}
+
 	return out, nil
 }

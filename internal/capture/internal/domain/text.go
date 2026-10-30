@@ -15,6 +15,7 @@ func Normalize(s string) string {
 	for i, w := range words {
 		words[i] = textfold.String(w)
 	}
+
 	return strings.Join(words, " ")
 }
 
@@ -37,6 +38,7 @@ func (w *word) free() bool { return w.role == "" }
 
 func splitWords(line string) []word {
 	var words []word
+
 	start := -1
 	for i, r := range line {
 		if unicode.IsSpace(r) {
@@ -44,15 +46,19 @@ func splitWords(line string) []word {
 				words = append(words, newWord(line, start, i))
 				start = -1
 			}
+
 			continue
 		}
+
 		if start < 0 {
 			start = i
 		}
 	}
+
 	if start >= 0 {
 		words = append(words, newWord(line, start, len(line)))
 	}
+
 	return words
 }
 
@@ -67,5 +73,6 @@ func capitalize(s string) string {
 	if r == utf8.RuneError {
 		return s
 	}
+
 	return string(unicode.ToUpper(r)) + s[size:]
 }

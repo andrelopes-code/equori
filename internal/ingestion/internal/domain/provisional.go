@@ -22,9 +22,12 @@ func Superseded(lines []NormalizedRecord) map[int]bool {
 			posted = append(posted, i)
 		}
 	}
+
 	byDate := func(a, b int) int { return lines[a].Date.Compare(lines[b].Date) }
 	slices.SortStableFunc(pending, byDate)
+
 	out := map[int]bool{}
+
 	taken := map[int]bool{}
 	for _, p := range pending {
 		best, gap := -1, time.Duration(0)
@@ -32,17 +35,21 @@ func Superseded(lines []NormalizedRecord) map[int]bool {
 			if taken[q] || lines[q].Amount != lines[p].Amount {
 				continue
 			}
+
 			d := lines[q].Date.Sub(lines[p].Date).Abs()
 			if d > supersedeDays*24*time.Hour {
 				continue
 			}
+
 			if best < 0 || cmp.Compare(d, gap) < 0 {
 				best, gap = q, d
 			}
 		}
+
 		if best >= 0 {
 			taken[best], out[p] = true, true
 		}
 	}
+
 	return out
 }

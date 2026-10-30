@@ -7,15 +7,18 @@ import (
 
 func rate(t *testing.T, s string) Rate {
 	t.Helper()
+
 	r, err := ParseRate(s)
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	return r
 }
 
 func TestConvert(t *testing.T) {
 	t.Parallel()
+
 	tests := []struct {
 		name string
 		from Money
@@ -40,6 +43,7 @@ func TestConvert(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+
 			if got != tt.want {
 				t.Fatalf("got %v, want %v", got, tt.want)
 			}
@@ -49,12 +53,15 @@ func TestConvert(t *testing.T) {
 
 func TestConvertRejects(t *testing.T) {
 	t.Parallel()
+
 	if _, err := Convert(mustNew(t, 1, "USD"), "XYZ", Leg{Rate: rate(t, "1")}); !errors.Is(err, ErrUnknownCurrency) {
 		t.Fatalf("unknown currency err = %v", err)
 	}
+
 	if _, err := Convert(mustNew(t, 1, "USD"), "BRL"); !errors.Is(err, ErrCurrencyMismatch) {
 		t.Fatalf("no legs across currencies err = %v", err)
 	}
+
 	if _, err := Convert(mustNew(t, MaxAmount, "USD"), "BRL", Leg{Rate: rate(t, "2")}); !errors.Is(err, ErrOutOfRange) {
 		t.Fatalf("overflow err = %v", err)
 	}
@@ -62,6 +69,7 @@ func TestConvertRejects(t *testing.T) {
 
 func TestFraction(t *testing.T) {
 	t.Parallel()
+
 	tests := []struct {
 		name     string
 		m        Money
@@ -81,6 +89,7 @@ func TestFraction(t *testing.T) {
 			}
 		})
 	}
+
 	if _, err := Fraction(mustNew(t, 1, "BRL"), 1, 0); err == nil {
 		t.Fatal("zero denominator accepted")
 	}
@@ -88,10 +97,12 @@ func TestFraction(t *testing.T) {
 
 func TestQuotient(t *testing.T) {
 	t.Parallel()
+
 	got, err := Quotient(mustNew(t, 151240, "BRL"), mustNewOf(t, 150, "MXRF11", 0), 4)
 	if err != nil || got.String() != "10.0827" {
 		t.Fatalf("got %v, %v", got, err)
 	}
+
 	if _, err := Quotient(mustNew(t, 1, "BRL"), mustNewOf(t, 0, "MXRF11", 0), 4); err == nil {
 		t.Fatal("zero divisor accepted")
 	}
@@ -99,9 +110,11 @@ func TestQuotient(t *testing.T) {
 
 func mustNewOf(t *testing.T, amount int64, code Currency, scale int) Money {
 	t.Helper()
+
 	m, err := NewOf(amount, code, scale)
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	return m
 }

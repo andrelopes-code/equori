@@ -19,20 +19,26 @@ func RateOf(n pgtype.Numeric) (money.Rate, error) {
 	if !n.Valid || n.NaN || n.Int == nil {
 		return money.Rate{}, fmt.Errorf("read rate: %w", money.ErrInvalidRate)
 	}
+
 	m, exp := new(big.Int).Set(n.Int), n.Exp
+
 	ten := big.NewInt(10)
 	for ; exp > 0; exp-- {
 		m.Mul(m, ten)
 	}
+
 	for mod := new(big.Int); exp < 0; exp++ {
 		q, r := new(big.Int).QuoRem(m, ten, mod)
 		if r.Sign() != 0 {
 			break
 		}
+
 		m = q
 	}
+
 	if !m.IsInt64() {
 		return money.Rate{}, fmt.Errorf("read rate %s: %w", m, money.ErrInvalidRate)
 	}
+
 	return money.NewRate(m.Int64(), int(-exp))
 }

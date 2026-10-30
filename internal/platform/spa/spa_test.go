@@ -12,12 +12,14 @@ const index = `<!doctype html><div id="root"></div>`
 
 func TestHandler(t *testing.T) {
 	t.Parallel()
+
 	fsys := fstest.MapFS{
 		"index.html":         {Data: []byte(index)},
 		"assets/app-1a2b.js": {Data: []byte("console.log(1)")},
 		"favicon.svg":        {Data: []byte("<svg/>")},
 		"sw.js":              {Data: []byte("self")},
 	}
+
 	tests := []struct {
 		name         string
 		method       string
@@ -48,9 +50,11 @@ func TestHandler(t *testing.T) {
 			if rec.Code != tc.status {
 				t.Fatalf("status = %d, want %d; body = %q", rec.Code, tc.status, rec.Body.String())
 			}
+
 			if got := rec.Body.String(); got != tc.body {
 				t.Errorf("body = %q, want %q", got, tc.body)
 			}
+
 			for header, want := range map[string]string{
 				"Cache-Control": tc.cacheControl,
 				"Content-Type":  tc.contentType,
@@ -66,6 +70,7 @@ func TestHandler(t *testing.T) {
 
 func TestHandlerWithoutIndex(t *testing.T) {
 	t.Parallel()
+
 	for name, fsys := range map[string]fs.FS{"empty": fstest.MapFS{}, "nil": nil} {
 		for _, path := range []string{"/", "/accounts"} {
 			t.Run(name+" "+path, func(t *testing.T) {
@@ -84,6 +89,7 @@ func TestHandlerWithoutIndex(t *testing.T) {
 // host, keeping the path and the query.
 func TestDevRedirect(t *testing.T) {
 	t.Parallel()
+
 	tests := []struct {
 		name, method, host, target string
 		status                     int
@@ -100,6 +106,7 @@ func TestDevRedirect(t *testing.T) {
 			r.Host = tt.host
 			w := httptest.NewRecorder()
 			DevRedirect(5173).ServeHTTP(w, r)
+
 			if w.Code != tt.status || w.Header().Get("Location") != tt.location {
 				t.Fatalf("status %d, location %q; want %d, %q", w.Code, w.Header().Get("Location"), tt.status, tt.location)
 			}

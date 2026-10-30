@@ -11,6 +11,7 @@ import (
 
 func TestDefaultWithholdingBP(t *testing.T) {
 	t.Parallel()
+
 	tests := []struct {
 		region, incomeType string
 		want               int
@@ -33,10 +34,12 @@ func TestJCPIncomeOutsideBRHasNoDefaultWithholding(t *testing.T) {
 	pt := h.LoginAs("pt@example.com", locale.Locale{Language: "pt", Region: "PT"}, "EUR")
 	create := func(path string, body map[string]any, out any) {
 		t.Helper()
+
 		r := h.Call(pt, http.MethodPost, path, body)
 		if r.Status != http.StatusCreated {
 			t.Fatalf("POST %s status = %d: %s", path, r.Status, r.Body)
 		}
+
 		if out != nil {
 			r.Decode(t, out)
 		}
@@ -49,14 +52,18 @@ func TestJCPIncomeOutsideBRHasNoDefaultWithholding(t *testing.T) {
 	create("/api/v1/instruments", inst, nil)
 	var broker idOut
 	create("/api/v1/institutions", map[string]any{"name": "Broker"}, &broker)
+
 	account := func(name, kind, currency string, extra map[string]any) string {
 		t.Helper()
+
 		body := map[string]any{"name": name, "class": "asset", "kind": kind, "currency": currency}
 		for k, v := range extra {
 			body[k] = v
 		}
+
 		var out idOut
 		create("/api/v1/accounts", body, &out)
+
 		return out.ID
 	}
 	parent := account("Broker", "brokerage", "EUR", map[string]any{"institution_id": broker.ID})
@@ -71,9 +78,11 @@ func TestJCPIncomeOutsideBRHasNoDefaultWithholding(t *testing.T) {
 		"account_id": alpha, "cash_account_id": cash, "income_type": "jcp", "date": "2026-10-22",
 		"gross": map[string]any{"amount": 4500, "currency": "EUR"}, "category_id": income.ID,
 	}, &tx)
+
 	if tx.Income == nil || tx.Income.Withheld["amount"] != float64(0) {
 		t.Fatalf("income detail = %+v", tx.Income)
 	}
+
 	if len(tx.Postings) != 2 || tx.Postings[0].Amount["amount"] != float64(4500) {
 		t.Fatalf("postings = %+v", tx.Postings)
 	}

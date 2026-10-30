@@ -16,6 +16,7 @@ func ids(xs ...string) []uuid.UUID {
 	for i, x := range xs {
 		out[i] = uuid.MustParse(x)
 	}
+
 	return out
 }
 
@@ -28,13 +29,16 @@ const (
 // A137: difference = amount due − institution total.
 func TestExplainDifference(t *testing.T) {
 	t.Parallel()
+
 	many := make([]DifferenceCandidate, 0, 25)
 	for i := range 20 {
 		many = append(many, DifferenceCandidate{TransactionID: uuid.New(), Date: day("2026-10-28"), Amount: -100000 - int64(i)})
 	}
+
 	for range 5 {
 		many = append(many, DifferenceCandidate{TransactionID: uuid.New(), Date: day("2026-10-20"), Amount: -7})
 	}
+
 	tests := []struct {
 		name       string
 		difference int64

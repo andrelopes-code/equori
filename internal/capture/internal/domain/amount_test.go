@@ -4,6 +4,7 @@ import "testing"
 
 func TestReadAmount(t *testing.T) {
 	t.Parallel()
+
 	for _, c := range []struct {
 		text     string
 		minor    int64
@@ -43,14 +44,18 @@ func TestReadAmount(t *testing.T) {
 	} {
 		t.Run(c.text, func(t *testing.T) {
 			t.Parallel()
+
 			ws := splitWords(c.text)
+
 			p, ok := readAmount(ws, 0, Merge(Portuguese(), English()), Conventions{',', '.', DMY})
 			if ok != c.ok {
 				t.Fatalf("ok = %v, want %v", ok, c.ok)
 			}
+
 			if !ok {
 				return
 			}
+
 			minor, _ := p.value.minor(2)
 			if minor != c.minor || p.explicit != c.explicit || p.sign != c.sign || p.words != c.words {
 				t.Fatalf("got %d explicit %v sign %d words %d, want %d %v %d %d", minor, p.explicit, p.sign, p.words, c.minor, c.explicit, c.sign, c.words)
@@ -61,6 +66,7 @@ func TestReadAmount(t *testing.T) {
 
 func TestDecimalMinor(t *testing.T) {
 	t.Parallel()
+
 	for _, c := range []struct {
 		d     decimal
 		scale int

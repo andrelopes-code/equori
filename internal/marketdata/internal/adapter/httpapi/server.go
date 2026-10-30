@@ -72,6 +72,7 @@ func (s *Server) ListHolidays(ctx context.Context, req ListHolidaysRequestObject
 	if err != nil {
 		return nil, err
 	}
+
 	return ListHolidays200JSONResponse{Items: hs}, nil
 }
 
@@ -80,6 +81,7 @@ func (s *Server) ListCalendars(ctx context.Context, _ ListCalendarsRequestObject
 	if err != nil {
 		return nil, err
 	}
+
 	return ListCalendars200JSONResponse(list), nil
 }
 
@@ -93,8 +95,10 @@ func ToProblem(err error) (problem.Details, bool) {
 	if fe, ok := errors.AsType[*domain.FieldError](err); ok {
 		d := problem.New(http.StatusUnprocessableEntity, "validation_failed", fe.Error())
 		d.Errors = []problem.FieldError{{Field: fe.Field, Message: fe.Message}}
+
 		return d, true
 	}
+
 	switch {
 	case errors.Is(err, ErrNotFound):
 		return problem.New(http.StatusNotFound, "not_found", "unknown calendar"), true
@@ -113,5 +117,6 @@ func ToProblem(err error) (problem.Details, bool) {
 	case errors.Is(err, domain.ErrInstrumentExists):
 		return problem.New(http.StatusConflict, "instrument_exists", err.Error()), true
 	}
+
 	return problem.Details{}, false
 }

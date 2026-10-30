@@ -10,14 +10,17 @@ import (
 
 func TestPlanKey(t *testing.T) {
 	t.Parallel()
+
 	card := uuid.MustParse("01900000-0000-7000-8000-000000000001")
 	i := Installment{Number: 3, Count: 6, PurchaseDate: time.Date(2026, 8, 14, 0, 0, 0, 0, time.UTC)}
+
 	key := PlanKey(card, i, "LOJA EXEMPLO 03/06")
 	for _, same := range []string{"Loja Exemplo 04/06", "LOJA  EXEMPLO PARC 5/6", "loja exemplo parcela 6 de 6", "LOJA EXEMPLO"} {
 		if !bytes.Equal(PlanKey(card, i, same), key) {
 			t.Errorf("%q has another key", same)
 		}
 	}
+
 	other := []struct {
 		name string
 		key  []byte

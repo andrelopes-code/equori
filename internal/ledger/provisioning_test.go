@@ -15,11 +15,14 @@ func TestProvisioningUsesTheChosenCurrency(t *testing.T) {
 	var s struct {
 		BaseCurrency string `json:"base_currency"`
 	}
+
 	r := h.Call(c, http.MethodGet, "/api/v1/settings", nil)
 	if r.Status != http.StatusOK {
 		t.Fatalf("status %d", r.Status)
 	}
+
 	r.Decode(t, &s)
+
 	if s.BaseCurrency != "EUR" {
 		t.Fatalf("base = %s", s.BaseCurrency)
 	}

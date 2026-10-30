@@ -21,15 +21,19 @@ type referencedView struct {
 
 func getReferencedBy(t *testing.T, c cardSetup, id string) []referenceView {
 	t.Helper()
+
 	r := c.h.Do(http.MethodGet, "/api/v1/transactions/"+id, nil)
 	if r.Status != http.StatusOK {
 		t.Fatalf("get transaction status = %d, body = %s", r.Status, r.Body)
 	}
+
 	var v referencedView
 	r.Decode(t, &v)
+
 	if v.ReferencedBy == nil {
 		t.Fatalf("referenced_by absent for %s, want an array", id)
 	}
+
 	return *v.ReferencedBy
 }
 
@@ -40,7 +44,9 @@ func sourcesOf(refs []referenceView, linkType string) []string {
 			out = append(out, r.Source)
 		}
 	}
+
 	sort.Strings(out)
+
 	return out
 }
 
@@ -55,6 +61,7 @@ func TestReferencedBy(t *testing.T) {
 		var first, second apitest.TransactionView
 		refund(c.h, laptop.Transaction.ID, "2026-11-15", 5000).Decode(t, &first)
 		refund(c.h, laptop.Transaction.ID, "2026-11-16", 10000).Decode(t, &second)
+
 		if first.ID == "" || second.ID == "" {
 			t.Fatalf("refund ids = %q, %q", first.ID, second.ID)
 		}
@@ -62,14 +69,17 @@ func TestReferencedBy(t *testing.T) {
 		refs := getReferencedBy(t, c, laptop.Transaction.ID)
 		want := []string{first.ID, second.ID}
 		sort.Strings(want)
+
 		if len(refs) != 2 || !reflect.DeepEqual(sourcesOf(refs, "refund_of"), want) {
 			t.Fatalf("referenced_by = %+v, want two refund_of with sources %v", refs, want)
 		}
+
 		if refs[0].Source > refs[1].Source {
 			t.Fatalf("referenced_by = %+v, want ordered by source", refs)
 		}
 
 		c.h.MustDo(http.MethodPost, "/api/v1/transactions/"+first.ID+"/void", map[string]string{"reason": "mistake"}, http.StatusOK, nil)
+
 		refs = getReferencedBy(t, c, laptop.Transaction.ID)
 		if len(refs) != 1 || refs[0].Type != "refund_of" || refs[0].Source != second.ID {
 			t.Fatalf("referenced_by after void = %+v, want refund_of %s", refs, second.ID)
@@ -85,6 +95,7 @@ func TestReferencedBy(t *testing.T) {
 			map[string]any{"resolved_on": "2026-12-02", "outcome": "won", "statement": "2026-12"}, http.StatusOK, &resolved)
 
 		refs := getReferencedBy(t, c, charge)
+
 		want := []referenceView{{Type: "chargeback_of", Source: resolved.RefundTransactionID}}
 		if resolved.RefundTransactionID == "" || !reflect.DeepEqual(refs, want) {
 			t.Fatalf("referenced_by = %+v, want %+v", refs, want)
@@ -93,6 +104,7 @@ func TestReferencedBy(t *testing.T) {
 
 	t.Run("no inbound link yields an empty array", func(t *testing.T) {
 		c := newCardSetup(t, "2026-11-20")
+
 		refs := getReferencedBy(t, c, c.purchase("2026-10-14", 23000))
 		if refs == nil || len(refs) != 0 {
 			t.Fatalf("referenced_by = %#v, want empty array", refs)

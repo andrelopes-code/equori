@@ -49,6 +49,7 @@ func listPayeesAndTags(svc *app.Service) tool.Tool {
 		q := strings.ToLower(in.Query)
 		match := func(name string) bool { return strings.Contains(strings.ToLower(name), q) }
 		var out listPayeesAndTagsOut
+
 		var err error
 		switch in.Kind {
 		case "payees":
@@ -58,12 +59,14 @@ func listPayeesAndTags(svc *app.Service) tool.Tool {
 			}); err != nil {
 				return out, err
 			}
+
 			views := []payeeView{}
 			for _, r := range rows {
 				if match(r.Name) {
 					views = append(views, payeeView{PayeeID: r.ID.String(), Name: r.Name})
 				}
 			}
+
 			out.Payees, out.NextCursor, err = tool.PageOf(views, func(v payeeView) string { return v.PayeeID }, in.PageArgs)
 		case "tags":
 			var rows []string
@@ -72,12 +75,14 @@ func listPayeesAndTags(svc *app.Service) tool.Tool {
 			}); err != nil {
 				return out, err
 			}
+
 			tags := []string{}
 			for _, r := range rows {
 				if match(r) {
 					tags = append(tags, r)
 				}
 			}
+
 			out.Tags, out.NextCursor, err = tool.PageOf(tags, func(s string) string { return s }, in.PageArgs)
 		default:
 			var rows []app.Institution
@@ -86,14 +91,17 @@ func listPayeesAndTags(svc *app.Service) tool.Tool {
 			}); err != nil {
 				return out, err
 			}
+
 			views := []institutionView{}
 			for _, r := range rows {
 				if match(r.Name) {
 					views = append(views, institutionView{InstitutionID: r.ID.String(), Name: r.Name})
 				}
 			}
+
 			out.Institutions, out.NextCursor, err = tool.PageOf(views, func(v institutionView) string { return v.InstitutionID }, in.PageArgs)
 		}
+
 		return out, err
 	})
 }

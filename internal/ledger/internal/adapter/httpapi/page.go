@@ -15,5 +15,6 @@ func listPage[K any](limit *int, cursor *string) (page.Request[K], error) {
 	case errors.Is(err, page.ErrInvalidCursor):
 		return r, &paramError{field: "cursor", message: "is not a cursor of this list"}
 	}
+
 	return r, err
 }

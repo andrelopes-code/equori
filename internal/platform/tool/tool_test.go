@@ -31,17 +31,21 @@ var searchSpec = Spec{Name: "search_things", Description: "Search things.", Effe
 // assertJSON compares v, marshalled, with want as JSON values, ignoring member order.
 func assertJSON(t *testing.T, v any, want string) {
 	t.Helper()
+
 	b, err := json.Marshal(v)
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	var got, exp any
 	if err := json.Unmarshal(b, &got); err != nil {
 		t.Fatal(err)
 	}
+
 	if err := json.Unmarshal([]byte(want), &exp); err != nil {
 		t.Fatal(err)
 	}
+
 	if !reflect.DeepEqual(got, exp) {
 		t.Errorf("got %s\nwant %s", b, want)
 	}
@@ -49,6 +53,7 @@ func assertJSON(t *testing.T, v any, want string) {
 
 func TestNewInfersSchemas(t *testing.T) {
 	t.Parallel()
+
 	tl := New(searchSpec, search)
 	assertJSON(t, tl.InputSchema(), `{"type":"object","additionalProperties":false,"required":["query"],"properties":{
 		"query":{"type":"string","description":"text to find"},
@@ -59,6 +64,7 @@ func TestNewInfersSchemas(t *testing.T) {
 		"total":{"type":"object","additionalProperties":false,"required":["amount","currency"],"properties":{
 			"amount":{"type":"string","description":"decimal amount in the instrument's scale, such as -1234.56"},
 			"currency":{"type":"string","description":"currency or instrument code"}}}}}`)
+
 	if tl.Spec() != searchSpec {
 		t.Errorf("Spec() = %+v", tl.Spec())
 	}
@@ -87,6 +93,7 @@ func TestNewRejects(t *testing.T) {
 		Counts map[string]int `json:"counts"`
 	}
 	spec := func(name string) Spec { return Spec{Name: name, Description: "d", Effect: ReadOnly} }
+
 	tests := []struct {
 		name string
 		new  func()
@@ -117,10 +124,12 @@ func TestNewRejects(t *testing.T) {
 				if r == nil {
 					t.Fatal("New did not panic")
 				}
+
 				if msg := fmt.Sprint(r); !strings.Contains(msg, tt.text) {
 					t.Errorf("panic %q does not mention %q", msg, tt.text)
 				}
 			}()
+
 			tt.new()
 		})
 	}
@@ -128,10 +137,12 @@ func TestNewRejects(t *testing.T) {
 
 func TestValidateOutput(t *testing.T) {
 	t.Parallel()
+
 	tl := New(searchSpec, search)
 	if err := tl.ValidateOutput([]byte(`{"total":{"amount":"1.00","currency":"BRL"}}`)); err != nil {
 		t.Errorf("valid output: %v", err)
 	}
+
 	if err := tl.ValidateOutput([]byte(`{"total":{"amount":1}}`)); err == nil {
 		t.Error("invalid output passed")
 	}

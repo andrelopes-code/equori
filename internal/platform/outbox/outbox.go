@@ -38,6 +38,7 @@ func Insert(ctx context.Context, tx pgx.Tx, e Event) error {
 	if err != nil {
 		return fmt.Errorf("marshal %s payload: %w", e.Type, err)
 	}
+
 	// One round trip: the insert and the notification travel in one statement.
 	_, err = tx.Exec(ctx, `WITH inserted AS (
 		INSERT INTO outbox_event (user_id, type, aggregate_id, payload) VALUES ($1, $2, $3, $4) RETURNING 1
@@ -46,5 +47,6 @@ func Insert(ctx context.Context, tx pgx.Tx, e Event) error {
 	if err != nil {
 		return fmt.Errorf("insert %s event: %w", e.Type, err)
 	}
+
 	return nil
 }

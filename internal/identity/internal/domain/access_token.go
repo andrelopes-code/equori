@@ -45,9 +45,11 @@ func NewAccessToken(userID int64, name, scope string, days int, now time.Time) (
 	case !slices.Contains(AccessTokenDays, days):
 		return "", AccessToken{}, &FieldError{Field: "expires_in_days", Message: "must be 30, 90 or 365"}
 	}
+
 	b := make([]byte, 32)
 	_, _ = rand.Read(b) // crypto/rand.Read never returns an error since Go 1.24.
 	text := AccessTokenPrefix + base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(b)
+
 	return text, AccessToken{
 		ID: uuid.New(), UserID: userID, Name: name, Scope: scope, TokenHash: HashToken(text),
 		CreatedAt: now, ExpiresAt: now.AddDate(0, 0, days),

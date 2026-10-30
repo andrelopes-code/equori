@@ -21,6 +21,7 @@ func (f fixedJurisdiction) For(context.Context, int64) (domain.Jurisdiction, err
 
 func TestTaxYear(t *testing.T) {
 	t.Parallel()
+
 	day := func(y int, m time.Month, d int) time.Time { return time.Date(y, m, d, 0, 0, 0, 0, time.UTC) }
 	for _, c := range []struct {
 		name     string
@@ -41,14 +42,18 @@ func TestTaxYear(t *testing.T) {
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			t.Parallel()
+
 			svc := app.NewService(nil, nil, nil, fixedJurisdiction{c.j})
+
 			from, to, err := svc.TaxYear(t.Context(), 1, 2026)
 			if err != nil {
 				t.Fatal(err)
 			}
+
 			if !from.Equal(c.from) || !to.Equal(c.to) {
 				t.Fatalf("range = %v to %v, want %v to %v", from, to, c.from, c.to)
 			}
+
 			for d, want := range c.contains {
 				if got := !d.Before(from) && d.Before(to); got != want {
 					t.Errorf("%v in year 2026 = %v, want %v", d.Format(time.DateOnly), got, want)

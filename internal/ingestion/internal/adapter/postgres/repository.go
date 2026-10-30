@@ -43,12 +43,15 @@ func toBatch(row IngestionBatch) domain.Batch {
 	if row.ExternalAccountID.Valid {
 		b.ExternalAccountID = &row.ExternalAccountID.UUID
 	}
+
 	if row.BalanceAmount != nil {
 		b.Balance.Amount = *row.BalanceAmount
 	}
+
 	if row.BalanceReason != nil {
 		b.Balance.Reason = *row.BalanceReason
 	}
+
 	return b
 }
 
@@ -57,13 +60,16 @@ func (r *Repository) ListBatches(ctx context.Context, userID int64, p page.Reque
 	if p.After != nil {
 		params.AfterStarted, params.AfterID = &p.After.StartedAt, uuid.NullUUID{UUID: p.After.ID, Valid: true}
 	}
+
 	rows, err := r.q.ListBatches(ctx, params)
 	if err != nil {
 		return nil, nil, err
 	}
+
 	out, next := trimPage(rows, p.Limit, toBatch, func(row IngestionBatch) app.BatchKey {
 		return app.BatchKey{StartedAt: row.StartedAt, ID: row.ID}
 	})
+
 	return out, next, nil
 }
 
@@ -71,13 +77,17 @@ func (r *Repository) ListBatches(ctx context.Context, userID int64, p page.Reque
 // row is the next page's cursor when the extra row exists.
 func trimPage[R, T, K any](rows []R, limit int, convert func(R) T, key func(R) K) ([]T, *K) {
 	kept, more := page.Trim(rows, limit)
+
 	out := make([]T, len(kept))
 	for i, row := range kept {
 		out[i] = convert(row)
 	}
+
 	if !more {
 		return out, nil
 	}
+
 	k := key(kept[len(kept)-1])
+
 	return out, &k
 }

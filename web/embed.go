@@ -18,6 +18,7 @@ func Dist() fs.FS {
 		// fs.Sub fails only on an invalid directory name; "dist" is a constant valid one.
 		panic(err)
 	}
+
 	return dist
 }
 

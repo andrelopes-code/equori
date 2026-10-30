@@ -20,10 +20,12 @@ type priceAPI struct {
 
 func feedPrice(t *testing.T, source, date, value string) marketdata.Price {
 	t.Helper()
+
 	v, err := money.ParseRate(value)
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	return marketdata.Price{Instrument: "USD", Quote: "BRL", Date: day(date), Value: v, Source: source}
 }
 
@@ -37,11 +39,14 @@ func TestManualPriceWinsOverFeed(t *testing.T) {
 	if err := md.RecordPrices(ctx, []marketdata.Price{feedPrice(t, "bcb_ptax", "2026-10-30", "5.4950")}); err != nil {
 		t.Fatal(err)
 	}
+
 	var created priceAPI
 	h.MustDo(http.MethodPost, "/api/v1/prices", map[string]any{"instrument": "USD", "quote_instrument": "BRL", "date": "2026-10-30", "value": "5.5000"}, http.StatusCreated, &created)
+
 	if created != (priceAPI{Instrument: "USD", QuoteInstrument: "BRL", Date: "2026-10-30", Value: "5.5", Source: "manual"}) {
 		t.Fatalf("created = %+v", created)
 	}
+
 	if err := md.RecordPrices(ctx, []marketdata.Price{feedPrice(t, "bcb_ptax", "2026-10-30", "5.4960"), feedPrice(t, "bcb_ptax", "2026-10-29", "5.4800")}); err != nil {
 		t.Fatal(err)
 	}
@@ -50,6 +55,7 @@ func TestManualPriceWinsOverFeed(t *testing.T) {
 		Items []priceAPI `json:"items"`
 	}
 	h.MustDo(http.MethodGet, "/api/v1/prices?instrument=USD&quote_instrument=BRL&from=2026-10-01&to=2026-10-31", nil, http.StatusOK, &list)
+
 	want := []priceAPI{
 		{Instrument: "USD", QuoteInstrument: "BRL", Date: "2026-10-29", Value: "5.48", Source: "bcb_ptax"},
 		{Instrument: "USD", QuoteInstrument: "BRL", Date: "2026-10-30", Value: "5.5", Source: "manual"},
@@ -62,6 +68,7 @@ func TestManualPriceWinsOverFeed(t *testing.T) {
 	if err != nil || !ok || !p.Date.Equal(day("2026-10-30")) || p.Value.String() != "5.5" || p.Source != "manual" {
 		t.Fatalf("PriceOnOrBefore = %+v, %v, %v", p, ok, err)
 	}
+
 	if _, ok, err := md.PriceOnOrBefore(ctx, "USD", "BRL", day("2026-10-28")); err != nil || ok {
 		t.Fatalf("price before the first = %v, %v", ok, err)
 	}
@@ -73,6 +80,7 @@ func TestRecordPriceValidation(t *testing.T) {
 	price := func(k, v string) map[string]any {
 		in := map[string]any{"instrument": "USD", "quote_instrument": "BRL", "date": "2026-10-30", "value": "5.5"}
 		in[k] = v
+
 		return in
 	}
 	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/prices", price("instrument", "PETR4")), http.StatusUnprocessableEntity, "validation_failed", "instrument")
@@ -96,10 +104,13 @@ func TestImportPrices(t *testing.T) {
 
 	bad := "instrument,quote_instrument,date,value\nMXRF11,BRL,2026-10-28,9.30\nMXRF11,BRL,2026-13-01,9.31\n"
 	h.ExpectProblem(h.Upload("/api/v1/prices/import", "prices.csv", []byte(bad)), http.StatusUnprocessableEntity, "validation_failed", "line 3")
+
 	header := "date,instrument,quote_instrument,value\n"
 	h.ExpectProblem(h.Upload("/api/v1/prices/import", "prices.csv", []byte(header)), http.StatusUnprocessableEntity, "validation_failed", "line 1")
+
 	unknown := "instrument,quote_instrument,date,value\nPETR4,BRL,2026-10-28,30.10\n"
 	h.ExpectProblem(h.Upload("/api/v1/prices/import", "prices.csv", []byte(unknown)), http.StatusUnprocessableEntity, "validation_failed", "line 2")
+
 	tooMany := "instrument,quote_instrument,date,value\n" + strings.Repeat("MXRF11,BRL,2026-10-28,9.30\n", 10001)
 	h.ExpectProblem(h.Upload("/api/v1/prices/import", "prices.csv", []byte(tooMany)), http.StatusUnprocessableEntity, "validation_failed", "file")
 
@@ -107,6 +118,7 @@ func TestImportPrices(t *testing.T) {
 		Items []priceAPI `json:"items"`
 	}
 	h.MustDo(http.MethodGet, "/api/v1/prices?instrument=MXRF11&quote_instrument=BRL&from=2026-10-01&to=2026-10-31", nil, http.StatusOK, &none)
+
 	if len(none.Items) != 0 {
 		t.Fatalf("a rejected file stored %+v", none.Items)
 	}
@@ -115,18 +127,23 @@ func TestImportPrices(t *testing.T) {
 	var out struct {
 		Recorded int `json:"recorded"`
 	}
+
 	r := h.Upload("/api/v1/prices/import", "prices.csv", []byte(good))
 	if r.Status != http.StatusOK {
 		t.Fatalf("import status %d: %s", r.Status, r.Body)
 	}
+
 	r.Decode(t, &out)
+
 	if out.Recorded != 2 {
 		t.Fatalf("recorded = %d: %s", out.Recorded, r.Body)
 	}
+
 	var list struct {
 		Items []priceAPI `json:"items"`
 	}
 	h.MustDo(http.MethodGet, "/api/v1/prices?instrument=MXRF11&quote_instrument=BRL&from=2026-10-01&to=2026-10-31", nil, http.StatusOK, &list)
+
 	if len(list.Items) != 2 || list.Items[1] != (priceAPI{Instrument: "MXRF11", QuoteInstrument: "BRL", Date: "2026-10-29", Value: "9.36", Source: "csv"}) {
 		t.Fatalf("prices = %+v", list.Items)
 	}

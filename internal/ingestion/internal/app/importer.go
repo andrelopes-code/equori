@@ -165,15 +165,19 @@ func (s *Service) Import(ctx context.Context, f ImportFile) (domain.Batch, error
 	case len(f.Content) > MaxFileBytes:
 		return domain.Batch{}, fileError("must be at most 10 MiB")
 	}
+
 	target, err := s.ledger.ImportTarget(ctx, f.UserID, f.AccountID)
 	if err != nil {
 		return domain.Batch{}, err
 	}
+
 	currency := target.Currency
+
 	st, err := s.read(ctx, f, currency)
 	if err != nil {
 		return domain.Batch{}, err
 	}
+
 	unlock, err := s.repo.LockAccountImports(ctx, f.AccountID)
 	if err != nil {
 		return domain.Batch{}, err
@@ -187,11 +191,14 @@ func (s *Service) Import(ctx context.Context, f ImportFile) (domain.Batch, error
 	if err != nil {
 		return domain.Batch{}, err
 	}
+
 	if err := s.importRecords(ctx, &batch, currency, st.Records, nil); err != nil {
 		return domain.Batch{}, err
 	}
+
 	if st.Balance != nil {
 		batch.Balance = domain.FileBalance{Status: domain.BalanceRecorded, Date: &st.Balance.Date, Amount: st.Balance.Amount}
+
 		err := s.ledger.AssertBalance(ctx, f.UserID, f.AccountID, *st.Balance, currency)
 		if errors.Is(err, ErrBalanceRejected) {
 			batch.Balance.Status, batch.Balance.Reason = domain.BalanceSkipped, err.Error()
@@ -199,6 +206,7 @@ func (s *Service) Import(ctx context.Context, f ImportFile) (domain.Batch, error
 			return domain.Batch{}, err
 		}
 	}
+
 	return s.repo.CompleteBatch(ctx, batch)
 }
 
@@ -209,22 +217,28 @@ func (s *Service) read(ctx context.Context, f ImportFile, currency money.Currenc
 		if errors.Is(err, ErrNotFound) {
 			return domain.Statement{}, &domain.FieldError{Field: "format", Message: "the account has no CSV profile; set it with PUT /accounts/{id}/csv-profile"}
 		}
+
 		if err != nil {
 			return domain.Statement{}, err
 		}
+
 		st, err := csvfile.Parse(f.Content, p, scale)
 		if err != nil {
 			return domain.Statement{}, fileError(err.Error())
 		}
+
 		return st, nil
 	}
+
 	st, err := ofx.Parse(f.Content, scale)
 	if err != nil {
 		return domain.Statement{}, fileError(err.Error())
 	}
+
 	if st.Currency != "" && st.Currency != string(currency) {
 		return domain.Statement{}, fileError(fmt.Sprintf("is in %s and the account in %s", st.Currency, currency))
 	}
+
 	return st, nil
 }
 
@@ -237,6 +251,7 @@ func (s *Service) read(ctx context.Context, f ImportFile, currency money.Currenc
 func (s *Service) importRecords(ctx context.Context, batch *domain.Batch, currency money.Currency, lines []domain.NormalizedRecord, transferTo func(domain.NormalizedRecord) *uuid.UUID) error {
 	sync := batch.Source == domain.SourceAggregator
 	ordinals := domain.Ordinals{}
+
 	claims := make([]domain.ExternalRecord, len(lines))
 	for i, r := range lines {
 		claims[i] = domain.ExternalRecord{
@@ -248,10 +263,12 @@ func (s *Service) importRecords(ctx context.Context, batch *domain.Batch, curren
 			withFacts(&claims[i], r)
 		}
 	}
+
 	claimed, err := s.repo.ClaimRecords(ctx, claims)
 	if err != nil {
 		return err
 	}
+
 	batch.Counts.Received = len(lines)
 	for i := range claimed {
 		if rec := &claimed[i].Record; claimed[i].Existed && rec.State == domain.StateWithdrawn {
@@ -266,6 +283,7 @@ func (s *Service) importRecords(ctx context.Context, batch *domain.Batch, curren
 	if err != nil {
 		return err
 	}
+
 	var (
 		pending []*domain.ExternalRecord
 		updated []domain.ExternalRecord
@@ -286,44 +304,56 @@ func (s *Service) importRecords(ctx context.Context, batch *domain.Batch, curren
 			withFacts(rec, r)
 			line := Line{AccountID: rec.AccountID, Currency: currency, Date: rec.Date, Amount: rec.Amount, Description: truncate(rec.Description), Pending: r.Pending, DueDate: r.DueDate, Category: r.Category, Kind: r.Kind}
 			retried, again = append(retried, rec), append(again, InstallmentLine{RecordID: rec.ID, Line: line, Installment: *r.Installment})
+
 			continue
 		}
+
 		if claimed[i].Existed && rec.State != domain.StateReceived {
 			changed, err := s.update(ctx, sync, rec, lines[i])
 			if err != nil {
 				return err
 			}
+
 			if changed {
 				batch.Counts.Updated++
+
 				updated = append(updated, *rec)
 			} else {
 				batch.Counts.Ignored++
 			}
+
 			continue
 		}
+
 		rec.BatchID = batch.ID
 		pending = append(pending, rec)
 		r := lines[i]
+
 		line := Line{AccountID: rec.AccountID, Currency: currency, Date: rec.Date, Amount: rec.Amount, Description: truncate(rec.Description), Pending: r.Pending, DueDate: r.DueDate, Category: r.Category, Kind: r.Kind}
 		if transferTo != nil {
 			line.TransferTo = transferTo(r)
 		}
+
 		if sync && r.Installment != nil && r.Amount < 0 {
 			// A40: the line goes to its installment purchase; a resumed one finds its own link.
 			parts = append(parts, InstallmentLine{RecordID: rec.ID, Line: line, Installment: *r.Installment})
 			continue
 		}
+
 		if claimed[i].Existed {
 			done, err := s.resume(ctx, rec)
 			if err != nil {
 				return err
 			}
+
 			if done {
 				continue
 			}
 		}
+
 		scoring = append(scoring, scoredLine{rec: rec, line: line})
 	}
+
 	assigned, err := s.assign(ctx, batch.UserID, scoring, postings)
 	if err != nil {
 		return err
@@ -343,6 +373,7 @@ func (s *Service) importRecords(ctx context.Context, batch *domain.Batch, curren
 			rec.State, rec.ReviewReason = domain.StateNeedsReview, domain.ReviewRepeated
 			continue
 		}
+
 		switch a.Zone {
 		case domain.ZoneNew:
 			creates, created = append(creates, NewLine{RecordID: rec.ID, Line: line}), append(created, rec)
@@ -351,6 +382,7 @@ func (s *Service) importRecords(ctx context.Context, batch *domain.Batch, curren
 			matched = append(matched, rec)
 		default:
 			rec.State, rec.ReviewReason, rec.Scores = domain.StateNeedsReview, string(a.Zone), a.Candidates
+
 			rec.Candidates = make([]uuid.UUID, len(a.Candidates))
 			for j, c := range a.Candidates {
 				rec.Candidates[j] = c.TransactionID
@@ -362,34 +394,42 @@ func (s *Service) importRecords(ctx context.Context, batch *domain.Batch, curren
 	if err != nil {
 		return err
 	}
+
 	for i, rec := range matched {
 		rec.State, rec.TransactionID = domain.StateMatched, matches[i].TransactionID
 		if slices.Contains(conflicts, i) {
 			rec.State, rec.TransactionID, rec.Candidates = domain.StateNeedsReview, uuid.Nil, []uuid.UUID{matches[i].TransactionID}
 			continue
 		}
+
 		if err := s.billMatched(ctx, rec, matches[i].Pending); err != nil {
 			return err
 		}
 	}
+
 	if err := s.create(ctx, batch.UserID, sync, creates, created); err != nil {
 		return err
 	}
+
 	if err := s.installments(ctx, batch, parts, pending); err != nil {
 		return err
 	}
+
 	if err := s.installments(ctx, batch, again, retried); err != nil {
 		return err
 	}
+
 	for _, rec := range retried {
 		if rec.State == domain.StateNeedsReview {
 			batch.Counts.Ignored++
 			continue
 		}
+
 		// The record stays in its batch, which counts it as resolved.
 		if err := s.repo.ResolveRecord(ctx, *rec); err != nil {
 			return err
 		}
+
 		batch.Counts.Updated++
 	}
 
@@ -398,9 +438,11 @@ func (s *Service) importRecords(ctx context.Context, batch *domain.Batch, curren
 		batch.Counts.Count(rec.State)
 		outcomes[i] = *rec
 	}
+
 	if err := s.repo.UpdateRecordFacts(ctx, updated); err != nil {
 		return err
 	}
+
 	return s.repo.SaveOutcomes(ctx, outcomes)
 }
 
@@ -409,11 +451,13 @@ func (s *Service) importRecords(ctx context.Context, batch *domain.Batch, curren
 func (s *Service) create(ctx context.Context, userID int64, sync bool, creates []NewLine, created []*domain.ExternalRecord) error {
 	for {
 		ids, err := s.ledger.RecordImported(ctx, userID, creates)
+
 		rejected, ok := errors.AsType[*RejectedLine](err)
 		switch {
 		case ok && sync:
 			created[rejected.Index].State = domain.StateNeedsReview
 			creates, created = slices.Delete(creates, rejected.Index, rejected.Index+1), slices.Delete(created, rejected.Index, rejected.Index+1)
+
 			continue
 		case ok:
 			rec := created[rejected.Index]
@@ -421,9 +465,11 @@ func (s *Service) create(ctx context.Context, userID int64, sync bool, creates [
 		case err != nil:
 			return err
 		}
+
 		for i, rec := range created {
 			rec.State, rec.TransactionID = domain.StateCreated, ids[i]
 		}
+
 		return nil
 	}
 }
@@ -432,6 +478,7 @@ func (s *Service) create(ctx context.Context, userID int64, sync bool, creates [
 func withFacts(rec *domain.ExternalRecord, r domain.NormalizedRecord) {
 	rec.ExternalStatus, rec.DueDate, rec.Installment, rec.BalanceAfter, rec.Raw = domain.ExternalStatusOf(r), r.DueDate, r.Installment, r.BalanceAfter, r.Raw
 	rec.LineKind = r.Kind
+
 	rec.CategoryID = ""
 	if r.Category != nil {
 		rec.CategoryID = r.Category.ID
@@ -446,13 +493,17 @@ func (s *Service) update(ctx context.Context, sync bool, rec *domain.ExternalRec
 	if !sync || (rec.State != domain.StateMatched && rec.State != domain.StateCreated) {
 		return false, nil
 	}
+
 	settled := rec.ExternalStatus != domain.ExternalStatusOf(r) || !sameDate(rec.DueDate, r.DueDate)
 	retype := r.Kind == domain.KindPayment && rec.LineKind != r.Kind
+
 	moved := rec.Amount != r.Amount || !rec.Date.Equal(r.Date)
 	if !settled && !retype && !moved {
 		return false, nil
 	}
+
 	var notes []string
+
 	applied := rec.LineKind
 	if settled || retype {
 		err := s.ledger.UpdateImportedPosting(ctx, rec.UserID, rec.ID, r.Pending, r.DueDate, r.Kind)
@@ -467,21 +518,27 @@ func (s *Service) update(ctx context.Context, sync bool, rec *domain.ExternalRec
 			return false, err
 		}
 	}
+
 	if moved {
 		note, err := s.followLine(ctx, rec, r)
 		if err != nil {
 			return false, err
 		}
+
 		if note != "" {
 			notes = append(notes, note)
 		}
 	}
+
 	withFacts(rec, r)
+
 	if !retype {
 		// A type the ledger did not take stays unapplied, so a later sync offers it again (A88).
 		rec.LineKind = applied
 	}
+
 	rec.UnappliedChange = strings.Join(notes, "; ")
+
 	return true, nil
 }
 
@@ -494,6 +551,7 @@ func (s *Service) followLine(ctx context.Context, rec *domain.ExternalRecord, r 
 	if rec.Installment != nil || rec.TransactionID == uuid.Nil {
 		return kept, nil
 	}
+
 	err := s.ledger.ConfirmLine(ctx, rec.UserID, rec.TransactionID, rec.AccountID, r.Amount, r.Date)
 	switch {
 	case errors.Is(err, ErrReconciled):
@@ -504,7 +562,9 @@ func (s *Service) followLine(ctx context.Context, rec *domain.ExternalRecord, r 
 	case err != nil:
 		return "", err
 	}
+
 	rec.Amount, rec.Date, rec.ReviewReason = r.Amount, r.Date, ""
+
 	return "", nil
 }
 
@@ -515,6 +575,7 @@ func (s *Service) billMatched(ctx context.Context, rec *domain.ExternalRecord, p
 	if rec.DueDate == nil {
 		return nil
 	}
+
 	err := s.ledger.UpdateImportedPosting(ctx, rec.UserID, rec.ID, pending, rec.DueDate, "")
 	switch {
 	case errors.Is(err, ErrReconciled):
@@ -522,6 +583,7 @@ func (s *Service) billMatched(ctx context.Context, rec *domain.ExternalRecord, p
 	case err != nil && !errors.Is(err, ErrNotFound):
 		return err
 	}
+
 	return nil
 }
 
@@ -529,6 +591,7 @@ func billNote(due *time.Time) string {
 	if due == nil {
 		return ""
 	}
+
 	return " on the bill due " + due.Format(time.DateOnly)
 }
 
@@ -543,16 +606,20 @@ func (s *Service) unlinked(ctx context.Context, batch *domain.Batch, claimed []C
 		if c.Existed {
 			continue
 		}
+
 		if from.IsZero() || c.Record.Date.Before(from) {
 			from = c.Record.Date
 		}
+
 		if c.Record.Date.After(to) {
 			to = c.Record.Date
 		}
 	}
+
 	if from.IsZero() {
 		return nil, nil
 	}
+
 	return s.ledger.UnlinkedPostings(ctx, batch.UserID, batch.AccountID, from.AddDate(0, 0, -domain.MatchHardLimit), to.AddDate(0, 0, domain.MatchHardLimit))
 }
 
@@ -586,11 +653,13 @@ func (s *Service) repeats(
 			if from.IsZero() || l.Date.Before(from) {
 				from = l.Date
 			}
+
 			if l.Date.After(to) {
 				to = l.Date
 			}
 		}
 	}
+
 	if len(fresh) == 0 {
 		return nil, nil
 	}
@@ -637,25 +706,31 @@ func (s *Service) assign(ctx context.Context, userID int64, lines []scoredLine, 
 	if len(lines) == 0 {
 		return nil, nil
 	}
+
 	if len(postings) == 0 {
 		out := make([]domain.Assignment, len(lines))
 		for i := range out {
 			out[i].Zone = domain.ZoneNew
 		}
+
 		return out, nil
 	}
+
 	plain := make([]Line, len(lines))
 	for i, l := range lines {
 		plain[i] = l.line
 	}
+
 	payees, err := s.ledger.LinePayees(ctx, userID, plain)
 	if err != nil {
 		return nil, err
 	}
+
 	compared := make([]domain.MatchLine, len(lines))
 	for i, l := range lines {
 		compared[i] = domain.MatchLine{Date: l.rec.Date, Amount: l.rec.Amount, PayeeID: payees[i], Description: l.rec.Description}
 	}
+
 	return domain.Assign(compared, postings), nil
 }
 
@@ -666,13 +741,16 @@ func (s *Service) resume(ctx context.Context, rec *domain.ExternalRecord) (bool,
 	if errors.Is(err, ErrNotFound) {
 		return false, nil
 	}
+
 	if err != nil {
 		return false, err
 	}
+
 	rec.State, rec.TransactionID = domain.StateMatched, txID
 	if imported {
 		rec.State = domain.StateCreated
 	}
+
 	return true, nil
 }
 
@@ -682,5 +760,6 @@ func truncate(s string) string {
 	if utf8.RuneCountInString(s) <= maxDescription {
 		return s
 	}
+
 	return string([]rune(s)[:maxDescription])
 }

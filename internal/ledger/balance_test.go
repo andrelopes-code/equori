@@ -11,10 +11,12 @@ import (
 
 func (f ledgerFixture) balance(t *testing.T, accountID domain.Account, on string, basis app.Basis) int64 {
 	t.Helper()
+
 	b, err := f.svc.BalanceAt(t.Context(), f.userID, accountID.ID, date(on), basis)
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	return b.Amount.Amount()
 }
 
@@ -22,6 +24,7 @@ func TestBalanceBookedVsSettled(t *testing.T) {
 	t.Parallel()
 	f := newLedgerFixture(t)
 	settled := date("2026-10-19")
+
 	_, err := f.svc.RecordTransaction(t.Context(), f.userID, domain.Transaction{
 		Date: date("2026-10-17"),
 		Postings: []domain.Posting{
@@ -36,9 +39,11 @@ func TestBalanceBookedVsSettled(t *testing.T) {
 	if got := f.balance(t, f.checking, "2026-10-18", app.BasisBooked); got != -8000 {
 		t.Fatalf("booked balance on 2026-10-18 = %d, want -8000", got)
 	}
+
 	if got := f.balance(t, f.checking, "2026-10-18", app.BasisSettled); got != 0 {
 		t.Fatalf("settled balance on 2026-10-18 = %d, want 0", got)
 	}
+
 	if got := f.balance(t, f.checking, "2026-10-19", app.BasisSettled); got != -8000 {
 		t.Fatalf("settled balance on 2026-10-19 = %d, want -8000", got)
 	}
@@ -67,6 +72,7 @@ func TestBalanceAtDateIncludesThatDay(t *testing.T) {
 	if got := f.balance(t, f.checking, "2026-10-13", app.BasisBooked); got != 0 {
 		t.Fatalf("balance the day before = %d", got)
 	}
+
 	if got := f.balance(t, f.checking, "2026-10-14", app.BasisBooked); got != -2300 {
 		t.Fatalf("balance on the day = %d", got)
 	}
@@ -77,6 +83,7 @@ func TestParentBalanceSumsChildren(t *testing.T) {
 	f := newLedgerFixture(t)
 	parent := f.createAccount(t, domain.Account{Name: "Nubank", Class: domain.ClassAsset, Kind: domain.KindChecking})
 	child := f.createAccount(t, domain.Account{Name: "Nubank account", Class: domain.ClassAsset, Kind: domain.KindChecking, ParentID: parent.ID})
+
 	reserve := f.createAccount(t, domain.Account{Name: "Emergency", Class: domain.ClassAsset, Kind: domain.KindReserve, ParentID: parent.ID})
 	for _, p := range [][2]any{{child, int64(500000)}, {reserve, int64(100000)}} {
 		_, err := f.svc.RecordTransaction(t.Context(), f.userID, domain.Transaction{
@@ -110,6 +117,7 @@ func TestParentBalanceSumsChildren(t *testing.T) {
 func TestBalanceUnknownAccount(t *testing.T) {
 	t.Parallel()
 	f := newLedgerFixture(t)
+
 	other := provisionedUser(t, f.pool, f.dispatcher)
 	if _, err := f.svc.BalanceAt(t.Context(), other, f.checking.ID, time.Now(), app.BasisBooked); !errors.Is(err, app.ErrNotFound) {
 		t.Fatalf("balance of another user's account err = %v, want ErrNotFound", err)

@@ -31,13 +31,16 @@ func (s *Service) Flows(ctx context.Context, userID int64, accountID uuid.UUID, 
 	if days < 1 || days > MaxFlowDays {
 		return nil, "", ErrInvalidFlowRange
 	}
+
 	instrument, err := s.repo.AccountInstrument(ctx, userID, accountID)
 	if err != nil {
 		return nil, "", err
 	}
+
 	flows, err := s.repo.AccountFlows(ctx, userID, accountID, from, to)
 	if err != nil {
 		return nil, "", err
 	}
+
 	return flows, instrument, nil
 }

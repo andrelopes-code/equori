@@ -21,6 +21,7 @@ func TestS185RepeatedPaymentWaitsForReview(t *testing.T) {
 	f.sync()
 
 	f.assertRepeated(card, "pay-copy")
+
 	if b := f.batches(card)[0]; b.Counts.NeedsReview != 1 || b.Counts.Created != 0 {
 		t.Fatalf("batch counts = %+v", b.Counts)
 	}
@@ -46,6 +47,7 @@ func TestS185RepeatedPaymentInOneRead(t *testing.T) {
 	if state, _ := f.recordOf("pay-a"); state != "created" {
 		t.Fatalf("pay-a record = %s", state)
 	}
+
 	f.assertRepeated(card, "pay-b")
 }
 
@@ -82,6 +84,7 @@ func TestS185DistinctLinesAreRecorded(t *testing.T) {
 			t.Errorf("%s record = %s, want created", id, state)
 		}
 	}
+
 	if n := f.count(`SELECT count(*) FROM ledger_posting WHERE account_id = $1 AND NOT voided`, card); n != 6 {
 		t.Fatalf("card postings = %d, want 6", n)
 	}
@@ -93,6 +96,7 @@ func (f syncFixture) assertRepeated(card, externalID string) {
 	f.h.T().Helper()
 	var state string
 	var reason, tx *string
+
 	err := f.h.Pool.QueryRow(f.h.T().Context(),
 		`SELECT state, review_reason, transaction_id::text FROM ingestion_external_record WHERE external_id = $1`,
 		externalID,
@@ -100,9 +104,11 @@ func (f syncFixture) assertRepeated(card, externalID string) {
 	if err != nil {
 		f.h.T().Fatal(err)
 	}
+
 	if state != "needs_review" || reason == nil || *reason != "repeated" || tx != nil {
 		f.h.T().Fatalf("%s record = %s, reason %v, transaction %v", externalID, state, reason, tx)
 	}
+
 	payments := f.count(`SELECT count(*) FROM ledger_posting p JOIN ledger_transaction t ON t.id = p.transaction_id
 		WHERE p.account_id = $1 AND p.amount = 78465 AND t.voided_at IS NULL`, card)
 	if payments != 1 {

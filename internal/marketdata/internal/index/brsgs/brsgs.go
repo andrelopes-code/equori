@@ -55,10 +55,12 @@ type item struct {
 func (s Source) Fetch(ctx context.Context, from, to time.Time) ([]index.Rate, error) {
 	q := url.Values{"formato": {"json"}, "dataInicial": {from.Format(dateLayout)}, "dataFinal": {to.Format(dateLayout)}}
 	u := fmt.Sprintf("%s/dados/serie/bcdata.sgs.%d/dados?%s", s.base, s.series, q.Encode())
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", s.id, err)
 	}
+
 	resp, err := s.hc.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", s.id, err)
@@ -68,29 +70,36 @@ func (s Source) Fetch(ctx context.Context, from, to time.Time) ([]index.Rate, er
 	if resp.StatusCode == http.StatusNotFound {
 		return nil, nil
 	}
+
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("%s: status %d", s.id, resp.StatusCode)
 	}
+
 	body, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseBytes))
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", s.id, err)
 	}
+
 	var items []item
 	if err := json.Unmarshal(body, &items); err != nil {
 		return nil, fmt.Errorf("%s: decode: %w", s.id, err)
 	}
+
 	out := make([]index.Rate, 0, len(items))
 	for _, it := range items {
 		date, err := time.Parse(dateLayout, it.Date)
 		if err != nil {
 			return out, fmt.Errorf("%s: date %q: %w", s.id, it.Date, err)
 		}
+
 		value, err := percentToFraction(it.Value)
 		if err != nil {
 			return out, fmt.Errorf("%s: value of %s: %w", s.id, it.Date, err)
 		}
+
 		out = append(out, index.Rate{Date: date, Value: value})
 	}
+
 	return out, nil
 }
 
@@ -100,10 +109,13 @@ func percentToFraction(percent string) (string, error) {
 	if !ok {
 		return "", fmt.Errorf("%q is not a decimal", percent)
 	}
+
 	r.Quo(r, big.NewRat(100, 1))
+
 	text := r.FloatString(decimals)
 	if back, _ := new(big.Rat).SetString(text); back.Cmp(r) != 0 {
 		return "", fmt.Errorf("%q has more than %d decimals once a fraction", percent, decimals)
 	}
+
 	return text, nil
 }

@@ -27,6 +27,7 @@ func AnnualReturnBP(flows []CashFlow) (bp int, ok bool) {
 	if len(flows) < 2 || !slices.ContainsFunc(flows, func(f CashFlow) bool { return f.Amount < 0 }) {
 		return 0, false
 	}
+
 	sorted := slices.SortedStableFunc(slices.Values(flows), func(a, b CashFlow) int { return a.Date.Compare(b.Date) })
 	first := sorted[0].Date
 	value := func(rate float64) float64 {
@@ -35,18 +36,23 @@ func AnnualReturnBP(flows []CashFlow) (bp int, ok bool) {
 			years := f.Date.Sub(first).Hours() / 24 / 365
 			sum += float64(f.Amount) / math.Pow(1+rate, years)
 		}
+
 		return sum
 	}
 	lo, hi := minRate, maxRate
+
 	vlo, vhi := value(lo), value(hi)
 	if vlo == 0 {
 		return int(math.RoundToEven(lo * 10000)), true
 	}
+
 	if (vlo > 0) == (vhi > 0) {
 		return 0, false
 	}
+
 	for range solverMax {
 		mid := (lo + hi) / 2
+
 		vm := value(mid)
 		if (vm > 0) == (vlo > 0) {
 			lo, vlo = mid, vm
@@ -54,5 +60,6 @@ func AnnualReturnBP(flows []CashFlow) (bp int, ok bool) {
 			hi = mid
 		}
 	}
+
 	return int(math.RoundToEven((lo + hi) / 2 * 10000)), true
 }

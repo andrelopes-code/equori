@@ -11,6 +11,7 @@ func day(s string) time.Time {
 	if err != nil {
 		panic(err)
 	}
+
 	return d
 }
 
@@ -23,6 +24,7 @@ func (s *seeder) installments(d time.Time, card, category, payee, desc string, t
 	if len(tags) > 0 {
 		body["tags"] = tags
 	}
+
 	var out struct {
 		PlanID      string `json:"plan_id"`
 		Transaction struct {
@@ -30,6 +32,7 @@ func (s *seeder) installments(d time.Time, card, category, payee, desc string, t
 		} `json:"transaction"`
 	}
 	s.do(http.MethodPost, "/installment-purchases", body, &out)
+
 	return out.Transaction.ID, out.PlanID
 }
 
@@ -63,6 +66,7 @@ func (s *seeder) lisbon() {
 	s.at(day("2025-04-02"), func() {
 		s.foreign(day("2025-04-02"), "card.nubank", "travel.lodging", "Booking.com", "Hotel em Alfama, 9 noites", 124000, "6.2140")
 	})
+
 	eur := []struct {
 		date, category, payee, desc string
 		cents                       int64

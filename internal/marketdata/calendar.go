@@ -51,6 +51,7 @@ func (m *Module) calendar(name string) (calendar.Calendar, error) {
 	if err != nil {
 		return calendar.Calendar{}, fmt.Errorf("%w: %q", ErrUnknownCalendar, name)
 	}
+
 	return c, nil
 }
 
@@ -59,10 +60,12 @@ func (m *Module) Holidays(ctx context.Context, name string, year int) ([]Holiday
 	if err != nil {
 		return nil, err
 	}
+
 	var hs []Holiday
 	for _, h := range cal.Holidays(year) {
 		hs = append(hs, Holiday{Date: h.Date, Name: h.Name, Source: "rule"})
 	}
+
 	rows, err := m.q.ListInstanceHolidays(ctx, postgres.ListInstanceHolidaysParams{
 		Calendar: name,
 		FromDate: time.Date(year, time.January, 1, 0, 0, 0, 0, time.UTC),
@@ -71,10 +74,13 @@ func (m *Module) Holidays(ctx context.Context, name string, year int) ([]Holiday
 	if err != nil {
 		return nil, err
 	}
+
 	for _, r := range rows {
 		hs = append(hs, Holiday{Date: r.Date, Name: r.Name, Source: "instance"})
 	}
+
 	slices.SortFunc(hs, func(a, b Holiday) int { return a.Date.Compare(b.Date) })
+
 	return hs, nil
 }
 
@@ -83,18 +89,22 @@ func (m *Module) IsBusinessDay(ctx context.Context, name string, d time.Time) (b
 	if err != nil {
 		return false, err
 	}
+
 	if cal.IsWeekend(d) {
 		return false, nil
 	}
+
 	for _, h := range cal.Holidays(d.Year()) {
 		if h.Date.Equal(d) {
 			return false, nil
 		}
 	}
+
 	instance, err := m.q.IsInstanceHoliday(ctx, postgres.IsInstanceHolidayParams{Calendar: name, Date: d})
 	if err != nil {
 		return false, err
 	}
+
 	return !instance, nil
 }
 
@@ -107,6 +117,7 @@ func (m *Module) Adjust(ctx context.Context, name string, d time.Time, a Adjustm
 		if _, err := m.IsBusinessDay(ctx, name, d); err != nil {
 			return time.Time{}, err
 		}
+
 		return d, nil
 	case AdjustFollowing:
 		return m.shift(ctx, name, d, 1)
@@ -117,6 +128,7 @@ func (m *Module) Adjust(ctx context.Context, name string, d time.Time, a Adjustm
 		if err != nil || next.Month() == d.Month() {
 			return next, err
 		}
+
 		return m.shift(ctx, name, d, -1)
 	default:
 		return time.Time{}, fmt.Errorf("unknown adjustment %q", a)
@@ -129,7 +141,9 @@ func (m *Module) shift(ctx context.Context, name string, d time.Time, step int) 
 		if err != nil || ok {
 			return d, err
 		}
+
 		d = d.AddDate(0, 0, step)
 	}
+
 	return time.Time{}, fmt.Errorf("no business day within %d days of %s", maxShift, d.Format(time.DateOnly))
 }

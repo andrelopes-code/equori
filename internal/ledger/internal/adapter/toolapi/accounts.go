@@ -49,25 +49,30 @@ func listAccounts(svc *app.Service) tool.Tool {
 		if err != nil {
 			return listAccountsOut{}, err
 		}
+
 		institutions, err := allPages(func(p page.Request[app.InstitutionKey]) ([]app.Institution, *app.InstitutionKey, error) {
 			return svc.ListInstitutions(ctx, userID, p)
 		})
 		if err != nil {
 			return listAccountsOut{}, err
 		}
+
 		names := make(map[uuid.UUID]string, len(institutions))
 		for _, i := range institutions {
 			names[i.ID] = i.Name
 		}
+
 		settings, err := svc.Settings(ctx, userID)
 		if err != nil {
 			return listAccountsOut{}, err
 		}
+
 		views := []accountView{}
 		for _, a := range all {
 			if (in.Class != "" && string(a.Class) != string(in.Class)) || (a.ClosedOn != nil && !in.IncludeClosed) {
 				continue
 			}
+
 			v := accountView{
 				ID: a.ID.String(), Name: a.Name, Class: string(a.Class), Kind: string(a.Kind), Currency: string(a.Instrument),
 				SystemRole: string(a.SystemRole), Closed: a.ClosedOn != nil, InstitutionName: names[a.InstitutionID],
@@ -75,10 +80,13 @@ func listAccounts(svc *app.Service) tool.Tool {
 			if a.ParentID != uuid.Nil {
 				v.ParentID, v.ParentName = a.ParentID.String(), byID[a.ParentID].Name
 			}
+
 			views = append(views, v)
 		}
+
 		out := listAccountsOut{BaseCurrency: string(settings.BaseCurrency)}
 		out.Accounts, out.NextCursor, err = tool.PageOf(views, func(v accountView) string { return v.ID }, in.PageArgs)
+
 		return out, err
 	})
 }
@@ -126,34 +134,42 @@ func getBalances(svc *app.Service) tool.Tool {
 		if in.Date.IsZero() {
 			date = svc.Today()
 		}
+
 		b := app.Basis(in.Basis)
 		if b == "" {
 			b = app.BasisBooked
 		}
+
 		balances, err := svc.BalancesAt(ctx, userID, date, b)
 		if err != nil {
 			return getBalancesOut{}, err
 		}
+
 		amounts := make(map[uuid.UUID]tool.Money, len(balances))
 		for _, bal := range balances {
 			if !bal.Amount.IsZero() {
 				amounts[bal.AccountID] = tool.MoneyOf(bal.Amount)
 			}
 		}
+
 		_, all, err := allAccounts(ctx, svc, userID)
 		if err != nil {
 			return getBalancesOut{}, err
 		}
+
 		views := []balanceView{}
 		for _, a := range all {
 			m, ok := amounts[a.ID]
 			if !ok || (in.Class != "" && string(a.Class) != string(in.Class)) {
 				continue
 			}
+
 			views = append(views, balanceView{AccountID: a.ID.String(), AccountName: a.Name, Class: string(a.Class), Balance: m})
 		}
+
 		out := getBalancesOut{Date: tool.DateOf(date), Basis: string(b)}
 		out.Balances, out.NextCursor, err = tool.PageOf(views, func(v balanceView) string { return v.AccountID }, in.PageArgs)
+
 		return out, err
 	})
 }

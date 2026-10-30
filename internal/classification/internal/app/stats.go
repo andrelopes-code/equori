@@ -17,11 +17,13 @@ func (s *Service) Statistics(ctx context.Context, userID int64, from, to time.Ti
 	if err != nil {
 		return Statistics{}, err
 	}
+
 	st := Statistics{
 		Rule: counts[MethodRule], Source: counts[MethodSource], History: counts[MethodHistory],
 		Manual: counts[MethodManual], Uncategorized: counts[""],
 	}
 	st.Total = st.Rule + st.Source + st.History + st.Manual + st.Uncategorized
+
 	return st, nil
 }
 

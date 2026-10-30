@@ -68,5 +68,6 @@ func regionName(region string) (string, bool) {
 	case "KR":
 		return "South Korea", true
 	}
+
 	return "", false
 }

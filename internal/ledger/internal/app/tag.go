@@ -46,17 +46,22 @@ func (s *Service) RenameTag(ctx context.Context, userID int64, name, newName str
 	if err != nil {
 		return TagUsage{}, err
 	}
+
 	var tag TagUsage
 	err = s.repo.InTx(ctx, func(r Repository) error {
 		if tag, err = r.TagUsage(ctx, userID, name); err != nil || tag.Name == newName {
 			return err
 		}
+
 		if err := r.RenameTag(ctx, userID, tag.ID, newName); err != nil {
 			return err
 		}
+
 		tag.Name = newName
+
 		return r.Publish(ctx, outbox.Event{Type: EventTagRenamed, UserID: userID, AggregateID: tag.ID.String(), Payload: TagRenamed{From: name, Into: newName}})
 	})
+
 	return tag, err
 }
 
@@ -69,6 +74,7 @@ func (s *Service) MergeTag(ctx context.Context, userID int64, from, into string)
 		if err != nil {
 			return err
 		}
+
 		invalid := func(message string) error {
 			return &domain.FieldError{Field: "into", Message: message, Err: domain.ErrValidation}
 		}
@@ -77,28 +83,36 @@ func (s *Service) MergeTag(ctx context.Context, userID int64, from, into string)
 		} else if err != nil {
 			return err
 		}
+
 		if src.ID == dest.ID {
 			return invalid("must differ from the tag")
 		}
+
 		replace := func(tags []string) []string {
 			out := append(slices.DeleteFunc(slices.Clone(tags), func(t string) bool { return t == from }), into)
 			slices.Sort(out)
+
 			return slices.Compact(out)
 		}
 		if err := retag(ctx, r, userID, src.ID, replace, reasonMerged); err != nil {
 			return err
 		}
+
 		if err := r.MoveTagLinks(ctx, userID, src.ID, dest.ID); err != nil {
 			return err
 		}
+
 		if err := r.DeleteTag(ctx, userID, src.ID); err != nil {
 			return err
 		}
+
 		if dest, err = r.TagUsage(ctx, userID, into); err != nil {
 			return err
 		}
+
 		return r.Publish(ctx, outbox.Event{Type: EventTagRenamed, UserID: userID, AggregateID: src.ID.String(), Payload: TagRenamed{From: from, Into: into}})
 	})
+
 	return dest, err
 }
 
@@ -110,15 +124,18 @@ func (s *Service) DeleteTag(ctx context.Context, userID int64, name string) erro
 		if err != nil {
 			return err
 		}
+
 		drop := func(tags []string) []string {
 			return slices.DeleteFunc(slices.Clone(tags), func(t string) bool { return t == name })
 		}
 		if err := retag(ctx, r, userID, tag.ID, drop, reasonTagDeleted); err != nil {
 			return err
 		}
+
 		if err := r.DeleteTag(ctx, userID, tag.ID); err != nil {
 			return err
 		}
+
 		return r.Publish(ctx, outbox.Event{Type: EventTagDeleted, UserID: userID, AggregateID: tag.ID.String(), Payload: TagDeleted{Name: name}})
 	})
 }
@@ -130,26 +147,33 @@ func retag(ctx context.Context, r Repository, userID int64, tagID uuid.UUID, cha
 	if err != nil {
 		return err
 	}
+
 	for _, id := range ids {
 		prev, err := r.LockTransaction(ctx, userID, id)
 		if err != nil {
 			return err
 		}
+
 		next := prev
 		next.Tags = change(prev.Tags)
 		next.Version++
+
 		accounts, err := r.Accounts(ctx, userID, postingAccounts(prev))
 		if err != nil {
 			return err
 		}
+
 		if err := r.ReplaceCategoryPostings(ctx, prev, next, reason); err != nil {
 			return err
 		}
+
 		event := newTransactionEvent(next, accounts, prev)
+
 		event.Cause = &Cause{Method: CauseMerge}
 		if err := r.Publish(ctx, outbox.Event{Type: EventTransactionCategorized, UserID: userID, AggregateID: next.ID.String(), Payload: event}); err != nil {
 			return err
 		}
 	}
+
 	return nil
 }

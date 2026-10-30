@@ -66,23 +66,28 @@ func (s Source) Fetch(ctx context.Context, from, to time.Time) ([]index.Rate, er
 	if err != nil {
 		return nil, err
 	}
+
 	slices.SortFunc(pubs, func(a, b publication) int { return a.date.Compare(b.date) })
+
 	var out []index.Rate
 	for i, p := range pubs {
 		value, err := perDay(p.percent)
 		if err != nil {
 			return out, fmt.Errorf("%s: value of %s: %w", s.id, p.date.Format(time.DateOnly), err)
 		}
+
 		next := p.date.AddDate(0, 0, 1)
 		if i+1 < len(pubs) {
 			next = pubs[i+1].date
 		}
+
 		for d := p.date; d.Before(next); d = d.AddDate(0, 0, 1) {
 			if !d.Before(from) && !d.After(to) {
 				out = append(out, index.Rate{Date: d, Value: value})
 			}
 		}
 	}
+
 	return out, nil
 }
 
@@ -93,6 +98,7 @@ func perDay(percent string) (string, error) {
 	if !ok {
 		return "", fmt.Errorf("%q is not a decimal", percent)
 	}
+
 	return r.Quo(r, big.NewRat(36000, 1)).FloatString(decimals), nil
 }
 
@@ -101,18 +107,22 @@ func get(ctx context.Context, s Source, u string) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", s.id, err)
 	}
+
 	resp, err := s.hc.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", s.id, err)
 	}
 	defer resp.Body.Close()
+
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("%s: status %d", s.id, resp.StatusCode)
 	}
+
 	body, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseBytes))
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", s.id, err)
 	}
+
 	return body, nil
 }
 
@@ -120,36 +130,44 @@ func get(ctx context.Context, s Source, u string) ([]byte, error) {
 // Portal, series EST.B.EU000A2X2A25.WT; a period without data answers an empty body.
 func readECB(ctx context.Context, s Source, from, to time.Time) ([]publication, error) {
 	q := url.Values{"startPeriod": {from.Format(time.DateOnly)}, "endPeriod": {to.Format(time.DateOnly)}, "format": {"csvdata"}}
+
 	body, err := get(ctx, s, s.base+"/service/data/EST/B.EU000A2X2A25.WT?"+q.Encode())
 	if err != nil || strings.TrimSpace(string(body)) == "" {
 		return nil, err
 	}
+
 	records, err := csv.NewReader(strings.NewReader(string(body))).ReadAll()
 	if err != nil {
 		return nil, fmt.Errorf("%s: decode: %w", s.id, err)
 	}
+
 	dateAt, valueAt := slices.Index(records[0], "TIME_PERIOD"), slices.Index(records[0], "OBS_VALUE")
 	if dateAt < 0 || valueAt < 0 {
 		return nil, fmt.Errorf("%s: decode: no TIME_PERIOD or OBS_VALUE column", s.id)
 	}
+
 	out := make([]publication, 0, len(records)-1)
 	for _, rec := range records[1:] {
 		date, err := time.Parse(time.DateOnly, rec[dateAt])
 		if err != nil {
 			return out, fmt.Errorf("%s: date %q: %w", s.id, rec[dateAt], err)
 		}
+
 		out = append(out, publication{date: date, percent: rec[valueAt]})
 	}
+
 	return out, nil
 }
 
 // readNYFed reads SOFR from the Markets Data API of the Federal Reserve Bank of New York.
 func readNYFed(ctx context.Context, s Source, from, to time.Time) ([]publication, error) {
 	q := url.Values{"startDate": {from.Format(time.DateOnly)}, "endDate": {to.Format(time.DateOnly)}}
+
 	body, err := get(ctx, s, s.base+"/api/rates/secured/sofr/search.json?"+q.Encode())
 	if err != nil {
 		return nil, err
 	}
+
 	var doc struct {
 		RefRates []struct {
 			Date    string         `json:"effectiveDate"`
@@ -159,16 +177,20 @@ func readNYFed(ctx context.Context, s Source, from, to time.Time) ([]publication
 	if err := json.Unmarshal(body, &doc); err != nil {
 		return nil, fmt.Errorf("%s: decode: %w", s.id, err)
 	}
+
 	out := make([]publication, 0, len(doc.RefRates))
 	for _, r := range doc.RefRates {
 		date, err := time.Parse(time.DateOnly, r.Date)
 		if err != nil {
 			return out, fmt.Errorf("%s: date %q: %w", s.id, r.Date, err)
 		}
+
 		if r.Percent.Kind() != '0' {
 			return out, errors.New(s.id + ": percentRate of " + r.Date + " is not a number")
 		}
+
 		out = append(out, publication{date: date, percent: string(r.Percent)})
 	}
+
 	return out, nil
 }

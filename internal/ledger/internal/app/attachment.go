@@ -50,13 +50,16 @@ func (s *Service) Attach(ctx context.Context, userID int64, transactionID uuid.U
 	case len(content) > MaxAttachmentBytes:
 		return Attachment{}, validationError("file", "must be at most 10 MiB")
 	}
+
 	mediaType, _, err := mime.ParseMediaType(detected)
 	if err != nil || !attachmentMediaTypes[mediaType] {
 		return Attachment{}, validationError("file", "must be a PDF, JPEG, PNG, WebP or plain text file")
 	}
+
 	if _, err := s.repo.Transaction(ctx, userID, transactionID); err != nil {
 		return Attachment{}, err
 	}
+
 	sum := sha256.Sum256(content)
 	var created Attachment
 	err = s.repo.InTx(ctx, func(r Repository) error {
@@ -64,8 +67,10 @@ func (s *Service) Attach(ctx context.Context, userID int64, transactionID uuid.U
 		created, err = r.InsertAttachment(ctx, Attachment{
 			UserID: userID, TransactionID: transactionID, FileName: fileName, MediaType: mediaType, SHA256: sum[:],
 		}, content)
+
 		return err
 	})
+
 	return created, err
 }
 
@@ -73,6 +78,7 @@ func (s *Service) Attachments(ctx context.Context, userID int64, transactionID u
 	if _, err := s.repo.Transaction(ctx, userID, transactionID); err != nil {
 		return nil, nil, err
 	}
+
 	return s.repo.Attachments(ctx, userID, transactionID, p)
 }
 

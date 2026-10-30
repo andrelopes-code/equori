@@ -48,6 +48,7 @@ func New(t testing.TB, clientID, secret string) *Server {
 	}
 	s.srv = httptest.NewServer(http.HandlerFunc(s.serve))
 	t.Cleanup(s.srv.Close)
+
 	return s
 }
 
@@ -58,6 +59,7 @@ func (s *Server) HTTPClient() *http.Client { return s.srv.Client() }
 func (s *Server) SetCredentials(clientID, secret string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
 	s.secrets[clientID] = secret
 }
 
@@ -68,6 +70,7 @@ func (s *Server) AddItem(it client.Item) { s.AddItemTo(s.first, it) }
 func (s *Server) AddItemTo(clientID string, it client.Item) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
 	s.items[it.ID] = it
 	s.owners[it.ID] = clientID
 }
@@ -75,6 +78,7 @@ func (s *Server) AddItemTo(clientID string, it client.Item) {
 func (s *Server) AddAccount(itemID string, a client.Account) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
 	s.accounts[itemID] = append(s.accounts[itemID], a)
 }
 
@@ -82,6 +86,7 @@ func (s *Server) AddAccount(itemID string, a client.Account) {
 func (s *Server) SetAccountBalance(accountID string, balance client.Decimal) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
 	for item, as := range s.accounts {
 		for i := range as {
 			if as[i].ID == accountID {
@@ -95,10 +100,12 @@ func (s *Server) SetAccountBalance(accountID string, balance client.Decimal) {
 func (s *Server) AddReservedBalance(accountID string, r client.ReservedBalance) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
 	s.eachAccount(accountID, func(a *client.Account) {
 		if a.BankData == nil {
 			a.BankData = &client.BankData{}
 		}
+
 		a.BankData.ReservedBalances = append(a.BankData.ReservedBalances, r)
 	})
 }
@@ -107,10 +114,12 @@ func (s *Server) AddReservedBalance(accountID string, r client.ReservedBalance) 
 func (s *Server) SetReservedAmount(accountID, identification string, amount client.Decimal) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
 	s.eachAccount(accountID, func(a *client.Account) {
 		if a.BankData == nil {
 			return
 		}
+
 		for i := range a.BankData.ReservedBalances {
 			if r := &a.BankData.ReservedBalances[i]; r.Identification == identification && len(r.AvailableAmounts) > 0 {
 				r.AvailableAmounts[0].Amount = amount
@@ -123,10 +132,12 @@ func (s *Server) SetReservedAmount(accountID, identification string, amount clie
 func (s *Server) RenameReservedBalance(accountID, identification, name string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
 	s.eachAccount(accountID, func(a *client.Account) {
 		if a.BankData == nil {
 			return
 		}
+
 		for i := range a.BankData.ReservedBalances {
 			if r := &a.BankData.ReservedBalances[i]; r.Identification == identification {
 				r.Name = name
@@ -139,6 +150,7 @@ func (s *Server) RenameReservedBalance(accountID, identification, name string) {
 func (s *Server) RemoveReservedBalance(accountID, identification string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
 	s.eachAccount(accountID, func(a *client.Account) {
 		if a.BankData != nil {
 			a.BankData.ReservedBalances = slices.DeleteFunc(a.BankData.ReservedBalances, func(r client.ReservedBalance) bool { return r.Identification == identification })
@@ -150,6 +162,7 @@ func (s *Server) RemoveReservedBalance(accountID, identification string) {
 func (s *Server) SetItemUpdatedAt(itemID, at string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
 	if it, ok := s.items[itemID]; ok {
 		it.LastUpdatedAt = &at
 		s.items[itemID] = it
@@ -160,6 +173,7 @@ func (s *Server) SetItemUpdatedAt(itemID, at string) {
 func (s *Server) SetItemNextAutoSync(itemID, at string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
 	if it, ok := s.items[itemID]; ok {
 		it.NextAutoSyncAt = &at
 		s.items[itemID] = it
@@ -179,6 +193,7 @@ func (s *Server) eachAccount(accountID string, fn func(*client.Account)) {
 func (s *Server) AddBill(accountID string, b client.Bill) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
 	s.bills[accountID] = append(s.bills[accountID], b)
 }
 
@@ -186,11 +201,13 @@ func (s *Server) AddBill(accountID string, b client.Bill) {
 func (s *Server) AddTransaction(accountID string, t client.Transaction) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
 	ts := s.transactions[accountID]
 	if i := slices.IndexFunc(ts, func(x client.Transaction) bool { return x.ID == t.ID }); i >= 0 {
 		ts[i] = t
 		return
 	}
+
 	s.transactions[accountID] = append(ts, t)
 }
 
@@ -198,6 +215,7 @@ func (s *Server) AddTransaction(accountID string, t client.Transaction) {
 func (s *Server) RemoveTransaction(accountID, id string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
 	s.transactions[accountID] = slices.DeleteFunc(s.transactions[accountID], func(x client.Transaction) bool { return x.ID == id })
 }
 
@@ -205,6 +223,7 @@ func (s *Server) RemoveTransaction(accountID, id string) {
 func (s *Server) FailNext(status, n int) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
 	s.failStatus, s.failCount = status, n
 }
 
@@ -213,6 +232,7 @@ func (s *Server) FailNext(status, n int) {
 func (s *Server) FailTransactions(accountID string, status int) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
 	s.failing[accountID] = status
 }
 
@@ -220,6 +240,7 @@ func (s *Server) FailTransactions(accountID string, status int) {
 func (s *Server) RevokeKeys() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
 	clear(s.keys)
 }
 
@@ -227,6 +248,7 @@ func (s *Server) RevokeKeys() {
 func (s *Server) SetNext(next string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
 	s.next = next
 }
 
@@ -234,21 +256,26 @@ func (s *Server) SetNext(next string) {
 func (s *Server) Requests(path string) int {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
 	return s.requests[path]
 }
 
 func (s *Server) serve(w http.ResponseWriter, r *http.Request) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
 	s.requests[r.URL.Path]++
 	if s.failCount > 0 {
 		s.failCount--
 		if s.failStatus == http.StatusTooManyRequests {
 			w.Header().Set("Retry-After", "7")
 		}
+
 		w.WriteHeader(s.failStatus)
+
 		return
 	}
+
 	if r.URL.Path == "/auth" && r.Method == http.MethodPost {
 		var in struct {
 			ClientID     string `json:"clientId"`
@@ -258,26 +285,32 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
+
 		s.issued++
 		key := "key-" + strconv.Itoa(s.issued)
 		s.keys[key] = in.ClientID
 		write(w, map[string]string{"apiKey": key})
+
 		return
 	}
+
 	app, ok := s.keys[r.Header.Get("X-API-KEY")]
 	if !ok {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
+
 	q := r.URL.Query()
 	switch {
 	case strings.HasPrefix(r.URL.Path, "/items/"):
 		id := strings.TrimPrefix(r.URL.Path, "/items/")
+
 		it, ok := s.items[id]
 		if !ok || s.owners[id] != app {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
+
 		write(w, it)
 	case r.URL.Path == "/accounts":
 		write(w, map[string]any{"page": 1, "totalPages": 1, "results": nonNil(s.accounts[q.Get("itemId")])})
@@ -295,6 +328,7 @@ func (s *Server) transactionPage(w http.ResponseWriter, q url.Values) {
 		w.WriteHeader(status)
 		return
 	}
+
 	var match []client.Transaction
 	for _, t := range s.transactions[q.Get("accountId")] {
 		day := t.Date[:min(10, len(t.Date))]
@@ -302,8 +336,10 @@ func (s *Server) transactionPage(w http.ResponseWriter, q url.Values) {
 			match = append(match, t)
 		}
 	}
+
 	start, _ := strconv.Atoi(q.Get("after"))
 	end := min(start+s.pageSize, len(match))
+
 	var next *string
 	if end < len(match) {
 		v := q
@@ -311,9 +347,11 @@ func (s *Server) transactionPage(w http.ResponseWriter, q url.Values) {
 		n := "?" + v.Encode()
 		next = &n
 	}
+
 	if s.next != "" && start == 0 {
 		next = &s.next
 	}
+
 	write(w, map[string]any{"results": nonNil(match[start:end]), "next": next})
 }
 
@@ -321,11 +359,13 @@ func nonNil[T any](s []T) []T {
 	if s == nil {
 		return []T{}
 	}
+
 	return s
 }
 
 func write(w http.ResponseWriter, v any) {
 	w.Header().Set("Content-Type", "application/json")
+
 	if err := json.MarshalWrite(w, v); err != nil {
 		panic(fmt.Sprintf("pluggytest: encode: %v", err))
 	}

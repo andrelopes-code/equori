@@ -8,6 +8,7 @@ import (
 
 func TestNormalizeEmail(t *testing.T) {
 	t.Parallel()
+
 	tests := []struct {
 		in      string
 		want    string
@@ -26,8 +27,10 @@ func TestNormalizeEmail(t *testing.T) {
 				if !errors.Is(err, ErrInvalidEmail) {
 					t.Fatalf("err = %v, want ErrInvalidEmail", err)
 				}
+
 				return
 			}
+
 			if err != nil || got != tt.want {
 				t.Fatalf("got %q, %v; want %q", got, err, tt.want)
 			}
@@ -37,6 +40,7 @@ func TestNormalizeEmail(t *testing.T) {
 
 func TestValidatePassword(t *testing.T) {
 	t.Parallel()
+
 	tests := []struct {
 		name string
 		in   string

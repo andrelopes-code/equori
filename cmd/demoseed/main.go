@@ -35,39 +35,51 @@ func run(args []string) error {
 	fs.StringVar(&cfg.url, "url", "http://127.0.0.1:8080", "address of the running application")
 	fs.StringVar(&cfg.email, "email", "demo@equori.local", "email of the demo user")
 	fs.StringVar(&cfg.password, "password", os.Getenv("EQUORI_DEMO_PASSWORD"), "password of the demo user; default $EQUORI_DEMO_PASSWORD")
+
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
+
 	if cfg.password == "" {
 		return errors.New("a password is required: set -password or EQUORI_DEMO_PASSWORD")
 	}
+
 	loc, err := time.LoadLocation("America/Sao_Paulo")
 	if err != nil {
 		return fmt.Errorf("load location: %w", err)
 	}
+
 	cfg.today = time.Now().In(loc)
 	if *today != "" {
 		if cfg.today, err = time.Parse(time.DateOnly, *today); err != nil {
 			return fmt.Errorf("-today: %w", err)
 		}
 	}
+
 	jar, err := cookiejar.New(nil)
 	if err != nil {
 		return fmt.Errorf("cookie jar: %w", err)
 	}
+
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
+
 	s := newSeeder(ctx, cfg.url, &http.Client{Jar: jar, Timeout: time.Minute})
 	s.login(cfg.email, cfg.password)
+
 	if err := seed(s, cfg); err != nil {
 		return err
 	}
+
 	// Classification reads the transactions from the outbox, which the running application drains in the background.
 	time.Sleep(5 * time.Second)
+
 	if err := s.runRules(); err != nil {
 		return err
 	}
+
 	fmt.Fprintf(os.Stderr, "seeded %s with %d requests\n", cfg.email, s.calls)
+
 	return nil
 }
 
@@ -94,6 +106,7 @@ func seed(s *seeder, cfg config) error {
 	s.importCSV()
 	s.touchOccurrences()
 	s.goals()
+
 	return s.err
 }
 

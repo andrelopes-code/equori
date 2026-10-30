@@ -57,16 +57,19 @@ func getTaxYear(svc *app.Service, names AccountNames) tool.Tool {
 		if err != nil {
 			return getTaxYearOut{}, err
 		}
+
 		from, to, err := svc.TaxYear(ctx, userID, in.Year)
 		if err != nil {
 			return getTaxYearOut{}, err
 		}
+
 		out := getTaxYearOut{From: tool.DateOf(from), To: tool.DateOf(to.AddDate(0, 0, -1))}
 		if in.View != "income" {
 			rs, err := svc.RealizedResults(ctx, userID, in.Year)
 			if err != nil {
 				return getTaxYearOut{}, err
 			}
+
 			out.Sales = []saleView{}
 			for _, r := range rs {
 				out.Sales = append(out.Sales, saleView{
@@ -76,11 +79,13 @@ func getTaxYear(svc *app.Service, names AccountNames) tool.Tool {
 				})
 			}
 		}
+
 		if in.View != "sales" {
 			es, err := svc.IncomeEvents(ctx, userID, in.Year)
 			if err != nil {
 				return getTaxYearOut{}, err
 			}
+
 			out.Income = []incomeView{}
 			for _, e := range es {
 				out.Income = append(out.Income, incomeView{
@@ -89,6 +94,7 @@ func getTaxYear(svc *app.Service, names AccountNames) tool.Tool {
 				})
 			}
 		}
+
 		return out, nil
 	})
 }

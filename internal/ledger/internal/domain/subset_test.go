@@ -7,6 +7,7 @@ import (
 
 func TestExactSubset(t *testing.T) {
 	t.Parallel()
+
 	tests := []struct {
 		name   string
 		values []int64
@@ -27,6 +28,7 @@ func TestExactSubset(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+
 			got, found := ExactSubset(tt.values, tt.target)
 			if found != tt.found || !slices.Equal(got, tt.want) {
 				t.Fatalf("ExactSubset(%v, %d) = %v, %v; want %v, %v", tt.values, tt.target, got, found, tt.want, tt.found)

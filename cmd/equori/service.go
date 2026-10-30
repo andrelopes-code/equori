@@ -37,7 +37,9 @@ func serviceCommand(args []string) error {
 			return winsvc.Uninstall(serviceName)
 		}
 	}
+
 	fmt.Fprintln(os.Stderr, serviceUsage)
+
 	return errUsage
 }
 
@@ -48,23 +50,29 @@ func installService() error {
 	if err != nil {
 		return fmt.Errorf("locate equori: %w", err)
 	}
+
 	if err := winsvc.Install(serviceName, exe, []string{"serve"}, serviceAccount); err != nil {
 		return err
 	}
+
 	dir := config.DefaultDataDir(runtime.GOOS, os.Getenv)
 	if dir == "" {
 		return errors.New("this system has no default data directory")
 	}
+
 	u, err := user.Current()
 	if err != nil {
 		return fmt.Errorf("read the current account: %w", err)
 	}
+
 	if err := pgcluster.PrepareDataDir(dir, serviceAccount, u.Username); err != nil {
 		return err
 	}
+
 	if err := writeDefaultEnv(filepath.Join(dir, "equori.env")); err != nil {
 		return err
 	}
+
 	return winsvc.Start(serviceName)
 }
 
@@ -74,16 +82,20 @@ func writeDefaultEnv(path string) error {
 	if errors.Is(err, fs.ErrExist) {
 		return nil
 	}
+
 	if err != nil {
 		return fmt.Errorf("create %s: %w", path, err)
 	}
+
 	_, err = f.WriteString("EQUORI_HTTP_ADDR=127.0.0.1:8080\n")
 	if cerr := f.Close(); err == nil {
 		err = cerr
 	}
+
 	if err != nil {
 		return fmt.Errorf("write %s: %w", path, err)
 	}
+
 	return nil
 }
 
@@ -94,13 +106,17 @@ func openServiceLog() error {
 	if dir == "" {
 		return errors.New("this system has no default data directory")
 	}
+
 	if err := pgcluster.PrepareDataDir(dir); err != nil {
 		return err
 	}
+
 	f, err := winsvc.OpenLog(filepath.Join(dir, "log", "equori.log"), 10<<20)
 	if err != nil {
 		return err
 	}
+
 	os.Stdout, os.Stderr = f, f
+
 	return nil
 }

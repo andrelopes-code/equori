@@ -77,12 +77,15 @@ func (s *Service) HandleEvent(ctx context.Context, e Event) error {
 	if e.Origin == originSystem {
 		return nil
 	}
+
 	if e.Type == EventVoided {
 		return s.repo.MarkVoided(ctx, Record{TransactionID: e.TransactionID, UserID: e.UserID, Version: e.Version, Date: e.Date, DecidedAt: e.OccurredAt})
 	}
+
 	if e.CategoryState == stateNone {
 		return s.repo.DeleteCategorization(ctx, e.UserID, e.TransactionID, e.Version)
 	}
+
 	rec := Record{TransactionID: e.TransactionID, UserID: e.UserID, Version: e.Version, Date: e.Date, DecidedAt: e.OccurredAt}
 	switch {
 	case e.CategoryState == stateUncategorized:
@@ -91,9 +94,11 @@ func (s *Service) HandleEvent(ctx context.Context, e Event) error {
 		if errors.Is(err, ErrNotFound) {
 			return errRecordPending
 		}
+
 		if err != nil {
 			return err
 		}
+
 		rec.Method, rec.RuleID, rec.Corrected, rec.MatchKey, rec.CategoryID = prev.Method, prev.RuleID, prev.Corrected, prev.MatchKey, prev.CategoryID
 	case e.Cause.Method != "":
 		rec.Method, rec.RuleID = e.Cause.Method, e.Cause.RuleID
@@ -103,28 +108,34 @@ func (s *Service) HandleEvent(ctx context.Context, e Event) error {
 		if errors.Is(err, ErrNotFound) {
 			return errRecordPending
 		}
+
 		if err != nil {
 			return err
 		}
+
 		rec.Method, rec.RuleID, rec.Corrected, rec.MatchKey, rec.CategoryID = prev.Method, prev.RuleID, prev.Corrected, prev.MatchKey, prev.CategoryID
 	default:
 		rec.Method = MethodManual
 		rec.Corrected = e.Type == EventCorrected
 	}
+
 	if rec.Corrected && e.Cause.Method != causeMerge && (e.Cause.Method != "" || e.CategoriesChanged) {
 		if err := s.describeCorrection(ctx, &rec); err != nil {
 			return err
 		}
 	}
+
 	if e.Type == EventRecorded && e.CategoryState == stateUncategorized && e.Origin != originImport {
 		if _, err := s.classify(ctx, e.UserID, []uuid.UUID{e.TransactionID}); err != nil {
 			return fmt.Errorf("classify %s: %w", e.TransactionID, err)
 		}
 	}
+
 	written, err := s.repo.UpsertCategorization(ctx, rec)
 	if err != nil || !written || !rec.Corrected || e.Cause.Method == causeMerge {
 		return err
 	}
+
 	return s.suggest(ctx, rec)
 }
 
@@ -134,16 +145,20 @@ func (s *Service) describeCorrection(ctx context.Context, rec *Record) error {
 	if err != nil || len(facts) == 0 {
 		return err
 	}
+
 	f := facts[0]
 	rec.MatchKey = domain.MatchKey(f.PayeeID, f.RawDescription)
+
 	var categories []FactPosting
 	for _, p := range f.Postings {
 		if p.isCategory() {
 			categories = append(categories, p)
 		}
 	}
+
 	if len(categories) == 1 && !categories[0].isUncategorized() {
 		rec.CategoryID = categories[0].AccountID
 	}
+
 	return nil
 }

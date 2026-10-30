@@ -25,6 +25,7 @@ func categoryTotals(t *testing.T, h *apitest.Harness, query string) []categoryTo
 		Items []categoryTotal `json:"items"`
 	}
 	h.MustDo(http.MethodGet, "/api/v1/reports/categories?"+query, nil, http.StatusOK, &out)
+
 	return out.Items
 }
 
@@ -46,19 +47,23 @@ func TestS76CategoryTotals(t *testing.T) {
 
 	items := categoryTotals(t, h, "from=2026-10-01&to=2026-10-31&class=expense")
 	got := map[string][2]int64{}
+
 	var order []string
 	for _, it := range items {
 		got[it.AccountID] = [2]int64{it.Total.Amount, it.SubtreeTotal.Amount}
+
 		order = append(order, it.AccountID)
 		if it.Total.Currency != "BRL" {
 			t.Fatalf("currency of %s = %q", it.AccountID, it.Total.Currency)
 		}
 	}
+
 	for id, want := range map[string][2]int64{food: {0, 7500}, delivery: {5500, 5500}, groceries: {2000, 2000}, travel: {2390, 2390}} {
 		if got[id] != want {
 			t.Errorf("account %s = %v, want %v", id, got[id], want)
 		}
 	}
+
 	// Name order; the system expense categories of the user sit among them.
 	pos := func(id string) int { return slices.Index(order, id) }
 	if pos(delivery) > pos(food) || pos(food) > pos(groceries) || pos(groceries) > pos(travel) {
@@ -73,19 +78,23 @@ func TestCategoryTotalsIncomeIsPositive(t *testing.T) {
 	salary := h.Account("Salary", "income", "", nil)
 	h.Record("2026-10-05", apitest.Posting(checking, 300000), apitest.Posting(salary, -300000))
 	h.Dispatch()
+
 	for _, it := range categoryTotals(t, h, "from=2026-10-01&to=2026-10-31&class=income") {
 		if it.AccountID == salary {
 			if it.Total.Amount != 300000 || it.SubtreeTotal.Amount != 300000 {
 				t.Fatalf("salary = %+v", it)
 			}
+
 			return
 		}
 	}
+
 	t.Fatal("salary missing")
 }
 
 func TestCategoryTotalsRange(t *testing.T) {
 	t.Parallel()
+
 	h := apitest.New(t)
 	for _, q := range []string{"from=2026-10-31&to=2026-10-01&class=expense", "from=2026-01-01&to=2027-01-02&class=expense"} {
 		h.ExpectProblem(h.Do(http.MethodGet, "/api/v1/reports/categories?"+q, nil), http.StatusBadRequest, "invalid_request", "to")
@@ -101,6 +110,7 @@ func TestCategoryTotalsOtherUser(t *testing.T) {
 		ID string `json:"id"`
 	}
 	h.Call(other, http.MethodPost, "/api/v1/accounts", map[string]any{"name": "Food", "class": "expense", "currency": "BRL"}).Decode(t, &foreign)
+
 	for _, it := range categoryTotals(t, h, "from=2026-10-01&to=2026-10-31&class=expense") {
 		if it.AccountID == foreign.ID {
 			t.Fatalf("another user's category listed: %+v", it)

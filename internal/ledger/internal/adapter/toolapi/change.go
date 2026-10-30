@@ -66,11 +66,14 @@ func changeTransaction(svc *app.Service) tool.Tool {
 		if err != nil {
 			return tool.Preview{}, err
 		}
+
 		pv := tool.Preview{Action: "change_transaction", Target: targetOf(p.current), Basis: basisOf(p.current)}
+
 		accounts, _, err := allAccounts(ctx, svc, userID)
 		if err != nil {
 			return pv, err
 		}
+
 		switch in.Action {
 		case "correct":
 			pv.Changes, err = correctionChanges(ctx, svc, userID, p, accounts)
@@ -81,6 +84,7 @@ func changeTransaction(svc *app.Service) tool.Tool {
 					before = a.Name
 				}
 			}
+
 			pv.Changes = []tool.Change{{Field: "account", Before: tool.TextValue(before), After: tool.TextValue(p.transfer.Name)}}
 		default:
 			var total money.Money
@@ -92,14 +96,17 @@ func changeTransaction(svc *app.Service) tool.Tool {
 					return pv, err
 				}
 			}
+
 			pv.Changes = append(pv.Changes, tool.Change{Field: "amount", After: tool.MoneyValue(total)})
 		}
+
 		return pv, err
 	}, func(ctx context.Context, userID int64, in changeTransactionIn) (changeTransactionOut, error) {
 		p, err := planChange(ctx, svc, userID, in)
 		if err != nil {
 			return changeTransactionOut{}, err
 		}
+
 		var id uuid.UUID
 		switch in.Action {
 		case "correct":
@@ -121,10 +128,13 @@ func changeTransaction(svc *app.Service) tool.Tool {
 				id = t.ID
 			}
 		}
+
 		if err != nil {
 			return changeTransactionOut{}, err
 		}
+
 		t, err := svc.Transaction(ctx, userID, id)
+
 		return changeTransactionOut{TransactionID: id.String(), Version: t.Version}, err
 	})
 }
@@ -140,18 +150,22 @@ func unusedFields(action string, given map[string]bool, used ...string) error {
 			return tool.InvalidArgument(f, "is not used by "+action)
 		}
 	}
+
 	return nil
 }
 
 func planChange(ctx context.Context, svc *app.Service, userID int64, in changeTransactionIn) (changePlan, error) {
 	var p changePlan
+
 	id, err := requiredID(in.TransactionID, "transaction_id")
 	if err != nil {
 		return p, err
 	}
+
 	if p.current, err = svc.Transaction(ctx, userID, id); err != nil {
 		return p, err
 	}
+
 	given := map[string]bool{
 		"reason": in.Reason != "", "date": !in.Date.IsZero(), "description": in.Description != "", "payee_id": in.PayeeID != "",
 		"tags": in.Tags != nil, "amount": in.Amount != "", "from_account_id": in.FromAccountID != "",
@@ -162,51 +176,63 @@ func planChange(ctx context.Context, svc *app.Service, userID int64, in changeTr
 		if err := unusedFields("correct", given, "reason", "date", "description", "payee_id", "tags", "amount", "from_account_id", "to_account_id"); err != nil {
 			return p, err
 		}
+
 		if in.Reason == "" {
 			return p, tool.InvalidArgument("reason", "is required for correct")
 		}
+
 		if err := installmentFields(p.current, given); err != nil {
 			return p, err
 		}
+
 		p.next, err = correctedTransaction(ctx, svc, userID, p.current, in)
 	case "make_transfer":
 		if err := unusedFields("make_transfer", given, "to_account_id"); err != nil {
 			return p, err
 		}
+
 		var to uuid.UUID
 		if to, err = requiredID(in.ToAccountID, "to_account_id"); err != nil {
 			return p, err
 		}
+
 		p.transfer, err = svc.Account(ctx, userID, to)
 	default:
 		if err := unusedFields("reimburse", given, "allocations"); err != nil {
 			return p, err
 		}
+
 		if len(in.Allocations) == 0 {
 			return p, tool.InvalidArgument("allocations", "is required for reimburse")
 		}
+
 		var unit money.Money
 		for _, po := range p.current.Postings {
 			unit = po.Amount
 			break
 		}
+
 		for _, a := range in.Allocations {
 			var expenseID uuid.UUID
 			if expenseID, err = requiredID(a.ExpenseID, "allocations"); err != nil {
 				return p, err
 			}
+
 			expense, err := svc.Transaction(ctx, userID, expenseID)
 			if err != nil {
 				return p, err
 			}
+
 			amount, err := tool.ParsePositive("allocations", a.Amount, unit)
 			if err != nil {
 				return p, err
 			}
+
 			p.allocs = append(p.allocs, app.AllocationRequest{OriginalID: expenseID, Amount: amount})
 			p.expenses = append(p.expenses, expense)
 		}
 	}
+
 	return p, err
 }
 
@@ -215,15 +241,18 @@ func installmentFields(cur domain.Transaction, given map[string]bool) error {
 	if !cur.HasInstallments() {
 		return nil
 	}
+
 	var blocked []string
 	for _, f := range []string{"date", "amount", "from_account_id", "to_account_id"} {
 		if given[f] {
 			blocked = append(blocked, f)
 		}
 	}
+
 	if len(blocked) == 0 {
 		return nil
 	}
+
 	return tool.InvalidArgument(blocked[0], strings.Join(blocked, ", ")+
 		" of an installment purchase change through refunds, cancellation or anticipation: handle_card_purchase does")
 }
@@ -233,9 +262,11 @@ func sides(t domain.Transaction) (from, to int, ok bool) {
 	if len(t.Postings) != 2 {
 		return 0, 0, false
 	}
+
 	if t.Postings[0].Amount.IsNegative() {
 		return 0, 1, true
 	}
+
 	return 1, 0, true
 }
 
@@ -247,91 +278,115 @@ func correctedTransaction(ctx context.Context, svc *app.Service, userID int64, c
 	for _, po := range cur.Postings {
 		next.Postings = append(next.Postings, domain.Posting{AccountID: po.AccountID, Amount: po.Amount, Weight: po.Weight, Memo: po.Memo})
 	}
+
 	if !in.Date.IsZero() {
 		next.Date = in.Date.Time
 	}
+
 	if in.Description != "" {
 		next.Description = in.Description
 	}
+
 	if in.PayeeID != "" {
 		id, err := optionalID(in.PayeeID, "payee_id")
 		if err != nil {
 			return next, err
 		}
+
 		next.PayeeID = id
 	}
+
 	if in.Tags != nil {
 		next.Tags = in.Tags
 	}
+
 	from, to, two := sides(cur)
 	for field, given := range map[string]bool{"amount": in.Amount != "", "from_account_id": in.FromAccountID != "", "to_account_id": in.ToAccountID != ""} {
 		if given && !two {
 			return next, tool.InvalidArgument(field, "applies only to a transaction with one source and one destination")
 		}
 	}
+
 	if in.Amount != "" {
 		amount, err := tool.ParsePositive("amount", in.Amount, cur.Postings[from].Amount)
 		if err != nil {
 			return next, err
 		}
+
 		next.Postings[from].Amount, next.Postings[to].Amount = amount.Neg(), amount
 		next.Postings[from].Weight, next.Postings[to].Weight = money.Money{}, money.Money{}
 	}
+
 	for idx, s := range map[int]string{from: in.FromAccountID, to: in.ToAccountID} {
 		if s == "" {
 			continue
 		}
+
 		field := "from_account_id"
 		if idx == to {
 			field = "to_account_id"
 		}
+
 		id, err := requiredID(s, field)
 		if err != nil {
 			return next, err
 		}
+
 		a, err := svc.Account(ctx, userID, id)
 		if err != nil {
 			return next, err
 		}
+
 		next.Postings[idx].AccountID = a.ID
 	}
+
 	return next, nil
 }
 
 func correctionChanges(ctx context.Context, svc *app.Service, userID int64, p changePlan, accounts map[uuid.UUID]domain.Account) ([]tool.Change, error) {
 	cur, next := p.current, p.next
+
 	var out []tool.Change
 	if !cur.Date.Equal(next.Date) {
 		out = append(out, tool.Change{Field: "date", Before: tool.DateValue(cur.Date), After: tool.DateValue(next.Date)})
 	}
+
 	if cur.Description != next.Description {
 		out = append(out, tool.Change{Field: "description", Before: tool.TextValue(cur.Description), After: tool.TextValue(next.Description)})
 	}
+
 	if cur.PayeeID != next.PayeeID {
 		names, err := svc.PayeeNames(ctx, userID, []uuid.UUID{cur.PayeeID, next.PayeeID})
 		if err != nil {
 			return nil, err
 		}
+
 		out = append(out, tool.Change{Field: "payee", Before: tool.TextValue(names[cur.PayeeID]), After: tool.TextValue(names[next.PayeeID])})
 	}
+
 	if a, b := strings.Join(cur.Tags, ", "), strings.Join(next.Tags, ", "); a != b {
 		out = append(out, tool.Change{Field: "tags", Before: tool.TextValue(a), After: tool.TextValue(b)})
 	}
+
 	if from, to, ok := sides(cur); ok {
 		if a, b := cur.Postings[to].Amount, next.Postings[to].Amount; a != b {
 			out = append(out, tool.Change{Field: "amount", Before: tool.MoneyValue(a), After: tool.MoneyValue(b)})
 		}
+
 		for _, i := range []int{from, to} {
 			a, b := accounts[cur.Postings[i].AccountID], accounts[next.Postings[i].AccountID]
 			if a.ID == b.ID {
 				continue
 			}
+
 			field := "account"
 			if b.IsCategory() {
 				field = "category"
 			}
+
 			out = append(out, tool.Change{Field: field, Before: tool.TextValue(a.Name), After: tool.TextValue(b.Name)})
 		}
 	}
+
 	return out, nil
 }

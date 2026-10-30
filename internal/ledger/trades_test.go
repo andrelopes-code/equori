@@ -26,24 +26,31 @@ type tradeTx struct {
 
 func (f investFixture) trade(t *testing.T, side, date string, quantity int64, price string, fees int64) tradeTx {
 	t.Helper()
+
 	body := map[string]any{"account_id": f.mxrf11, "cash_account_id": f.cash, "side": side, "date": date, "quantity": units(quantity, "MXRF11"), "unit_price": price}
 	if fees != 0 {
 		body["fees"] = apitest.BRL(fees)
 	}
+
 	var out tradeTx
+
 	r := f.h.Do(http.MethodPost, "/api/v1/trades", body)
 	if r.Status != http.StatusCreated {
 		t.Fatalf("trade %s %s: %d %s", side, date, r.Status, r.Body)
 	}
+
 	r.Decode(t, &out)
+
 	return out
 }
 
 func expectPostings(t *testing.T, got []postingOut, want ...[3]any) {
 	t.Helper()
+
 	if len(got) != len(want) {
 		t.Fatalf("postings = %+v", got)
 	}
+
 	for i, w := range want {
 		amount, _ := amountOf(got[i])
 		if got[i].AccountID != w[0] || amount != w[1] || got[i].Weight["amount"] != float64(w[2].(int64)) {
@@ -59,6 +66,7 @@ func TestS21PurchaseAndSale(t *testing.T) {
 
 	buy := f.trade(t, "buy", "2026-10-05", 150, "10.05", 490)
 	expectPostings(t, buy.Postings, [3]any{f.cash, int64(-151240), int64(-151240)}, [3]any{f.mxrf11, int64(150), int64(151240)})
+
 	if buy.Trade == nil || buy.Trade.Side != "buy" || buy.Trade.Gross["amount"] != float64(150750) || buy.Trade.Fees["amount"] != float64(490) || buy.Trade.Cost != nil || buy.Trade.UnitPrice != "10.05" {
 		t.Fatalf("buy detail = %+v", buy.Trade)
 	}
@@ -68,6 +76,7 @@ func TestS21PurchaseAndSale(t *testing.T) {
 		[3]any{f.cash, int64(53790), int64(53790)}, [3]any{f.mxrf11, int64(-50), int64(-50413)}, [3]any{gains, int64(-3377), int64(-3377)})
 	var read tradeTx
 	f.h.MustDo(http.MethodGet, "/api/v1/transactions/"+sell.ID, nil, http.StatusOK, &read)
+
 	if read.Trade == nil || read.Trade.Cost["amount"] != float64(50413) || read.Trade.Quantity["amount"] != float64(50) || read.Trade.Taxes["amount"] != float64(0) {
 		t.Fatalf("sale detail = %+v", read.Trade)
 	}
@@ -83,11 +92,14 @@ func TestFullSaleLeavesNoCost(t *testing.T) {
 	f.h.ExpectProblem(f.h.Do(http.MethodPost, "/api/v1/trades", map[string]any{
 		"account_id": f.mxrf11, "cash_account_id": f.cash, "side": "sell", "date": "2026-10-21", "quantity": units(101, "MXRF11"), "unit_price": "10",
 	}), http.StatusUnprocessableEntity, "validation_failed", "quantity")
+
 	all := f.trade(t, "sell", "2026-10-21", 100, "10", 0)
 	if all.Trade.Cost["amount"] != float64(100827) {
 		t.Fatalf("full sale cost = %+v", all.Trade.Cost)
 	}
+
 	f.trade(t, "buy", "2026-10-22", 10, "9.00", 0)
+
 	half := f.trade(t, "sell", "2026-10-23", 5, "9.00", 0)
 	if half.Trade.Cost["amount"] != float64(4500) || len(half.Postings) != 2 {
 		t.Fatalf("sale after a full sale = %+v", half)
@@ -103,6 +115,7 @@ func TestTradeValidation(t *testing.T) {
 	order := func(k string, v any) map[string]any {
 		body := map[string]any{"account_id": f.mxrf11, "cash_account_id": f.cash, "side": "buy", "date": "2026-10-05", "quantity": units(10, "MXRF11"), "unit_price": "10"}
 		body[k] = v
+
 		return body
 	}
 	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/trades", order("taxes", apitest.BRL(100))), http.StatusUnprocessableEntity, "validation_failed", "taxes")
@@ -135,9 +148,11 @@ func TestLaterSaleLocksEarlierPostings(t *testing.T) {
 
 	var read tradeTx
 	h.MustDo(http.MethodGet, "/api/v1/transactions/"+sell.ID, nil, http.StatusOK, &read)
+
 	if read.Trade.Cost["amount"] != float64(50413) {
 		t.Fatalf("sale cost changed: %+v", read.Trade)
 	}
+
 	h.MustDo(http.MethodPost, "/api/v1/transactions/"+sell.ID+"/void", map[string]string{"reason": "wrong"}, http.StatusOK, nil)
 	h.MustDo(http.MethodPost, "/api/v1/transactions/"+buy.ID+"/void", map[string]string{"reason": "typo"}, http.StatusOK, nil)
 }
@@ -172,15 +187,19 @@ func TestSecurityPostingsWaitForTheAccountLock(t *testing.T) {
 	t.Parallel()
 	f := newInvestFixture(t)
 	f.trade(t, "buy", "2026-10-05", 150, "10.05", 490)
+
 	ctx := t.Context()
+
 	tx, err := f.h.Pool.Begin(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	defer func() { _ = tx.Rollback(ctx) }()
 	// A sale in flight: it holds the account row and commits after the change has started.
 	user := f.h.OwnerID()
 	var sale string
+
 	steps := []func() error{
 		func() error {
 			_, err := tx.Exec(ctx, `SELECT id FROM ledger_account WHERE id = $1 FOR UPDATE`, f.mxrf11)
@@ -193,11 +212,13 @@ func TestSecurityPostingsWaitForTheAccountLock(t *testing.T) {
 		func() error {
 			_, err := tx.Exec(ctx, `INSERT INTO ledger_posting (user_id, transaction_id, account_id, position, amount, weight, booked_on, status)
 				VALUES ($1, $2, $3, 0, 1008, 1008, '2026-10-20', 'cleared'), ($1, $2, $4, 1, -1, -1008, '2026-10-20', 'cleared')`, user, sale, f.cash, f.mxrf11)
+
 			return err
 		},
 		func() error {
 			_, err := tx.Exec(ctx, `INSERT INTO ledger_trade (transaction_id, user_id, account_id, cash_account_id, side, quantity, unit_price, gross, fees, taxes, cost, currency)
 				VALUES ($1, $2, $3, $4, 'sell', 1, 10.08, 1008, 0, 0, 1008, 'BRL')`, sale, user, f.mxrf11, f.cash)
+
 			return err
 		},
 	}
@@ -222,12 +243,15 @@ func TestSecurityPostingsWaitForTheAccountLock(t *testing.T) {
 			WHERE NOT l.granted AND a.datname = current_database()`).Scan(&n); err != nil {
 			t.Fatalf("the change never waited for the account lock: %v", err)
 		}
+
 		if n > 0 {
 			break
 		}
 	}
+
 	if err := tx.Commit(ctx); err != nil {
 		t.Fatal(err)
 	}
+
 	f.h.ExpectProblem(<-done, http.StatusConflict, "later_sale_exists", "")
 }

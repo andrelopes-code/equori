@@ -20,14 +20,17 @@ func (s *seeder) payStatements(date time.Time, card, payer string) {
 	}
 	q := url.Values{"from": {ym(date.AddDate(0, -2, 0))}, "to": {ym(date.AddDate(0, 1, 0))}}
 	s.do(http.MethodGet, "/accounts/"+s.id(card)+"/statements?"+q.Encode(), nil, &out)
+
 	for _, st := range out.Items {
 		if s.err != nil {
 			return
 		}
+
 		due, err := time.Parse(time.DateOnly, st.DueDate)
 		if err != nil || st.Status == "open" || st.Unpaid.Amount <= 0 || due.After(date.AddDate(0, 0, 5)) {
 			continue
 		}
+
 		s.ensure(date, payer, st.Unpaid.Amount)
 		s.do(http.MethodPost, "/statements/"+st.ID+"/payments", map[string]any{"date": iso(date), "from_account_id": s.id(payer), "amount": st.Unpaid}, nil)
 		s.bal[s.id(payer)] -= st.Unpaid.Amount

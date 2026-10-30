@@ -12,5 +12,6 @@ func versionText(app string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	return fmt.Sprintf("equori %s\nschema %d\npostgresql >= %d\n", app, schema, postgres.MinMajor), nil
 }

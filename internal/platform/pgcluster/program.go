@@ -24,6 +24,7 @@ func Bin(explicit string) (string, error) {
 	if err != nil {
 		exe = ""
 	}
+
 	return bin(explicit, exe)
 }
 
@@ -32,18 +33,22 @@ func bin(explicit, exe string) (string, error) {
 		if _, err := exec.LookPath(filepath.Join(explicit, "postgres")); err != nil {
 			return "", fmt.Errorf("EQUORI_POSTGRES_BIN %s: %w", explicit, err)
 		}
+
 		return explicit, nil
 	}
+
 	if exe != "" {
 		bundled := filepath.Join(filepath.Dir(exe), "postgresql", "bin")
 		if _, err := exec.LookPath(filepath.Join(bundled, "postgres")); err == nil {
 			return bundled, nil
 		}
 	}
+
 	path, err := exec.LookPath("postgres")
 	if err != nil {
 		return "", fmt.Errorf("find postgres on PATH; set EQUORI_POSTGRES_BIN to the directory of the PostgreSQL programs: %w", err)
 	}
+
 	return filepath.Dir(path), nil
 }
 
@@ -53,6 +58,7 @@ func Major(ctx context.Context, program string) (int, error) {
 	if err != nil {
 		return 0, fmt.Errorf("run %s --version: %w", program, err)
 	}
+
 	return parseMajor(string(out))
 }
 
@@ -61,5 +67,6 @@ func parseMajor(out string) (int, error) {
 	if m == nil {
 		return 0, fmt.Errorf("parse version %q: no PostgreSQL major", strings.TrimSpace(out))
 	}
+
 	return strconv.Atoi(m[1])
 }

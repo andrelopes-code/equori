@@ -22,9 +22,11 @@ func toExport(e app.Export) Export {
 		sum := hex.EncodeToString(e.SHA256)
 		out.Size, out.Sha256, out.ArchiveVersion = &e.Size, &sum, &e.ArchiveVersion
 	}
+
 	if e.Problem != "" {
 		out.Problem = &e.Problem
 	}
+
 	return out
 }
 
@@ -33,6 +35,7 @@ func (s *Server) RequestExport(ctx context.Context, _ RequestExportRequestObject
 	if err != nil {
 		return nil, err
 	}
+
 	return RequestExport202JSONResponse(toExport(e)), nil
 }
 
@@ -41,6 +44,7 @@ func (s *Server) GetExport(ctx context.Context, _ GetExportRequestObject) (GetEx
 	if err != nil {
 		return nil, err
 	}
+
 	return GetExport200JSONResponse(toExport(e)), nil
 }
 
@@ -49,7 +53,9 @@ func (s *Server) GetExportContent(ctx context.Context, _ GetExportContentRequest
 	if err != nil {
 		return nil, err
 	}
+
 	disposition := `attachment; filename="equori-export-` + requested.Format(time.DateOnly) + `.zip"`
+
 	return GetExportContent200ApplicationzipResponse{
 		Body: bytes.NewReader(content), ContentLength: int64(len(content)),
 		Headers: GetExportContent200ResponseHeaders{ContentDisposition: &disposition},
@@ -63,22 +69,29 @@ func (s *Server) ImportArchive(ctx context.Context, req ImportArchiveRequestObje
 		if errors.Is(err, io.EOF) {
 			return nil, errFileRequired
 		}
+
 		if err != nil {
 			return nil, fmt.Errorf("%w: %w", app.ErrArchiveInvalid, err)
 		}
+
 		if part.FormName() != "file" {
 			continue
 		}
+
 		if archive, err = io.ReadAll(io.LimitReader(part, app.MaxArchiveBytes+1)); err != nil {
 			return nil, fmt.Errorf("%w: %w", app.ErrArchiveInvalid, err)
 		}
+
 		break
 	}
+
 	res, err := s.exports.Import(ctx, auth.MustUserID(ctx), archive)
 	if err != nil {
 		return nil, err
 	}
+
 	counts := res.Tables
+
 	out := ImportArchive200JSONResponse{ArchiveVersion: res.ArchiveVersion, Tables: make([]struct {
 		Name string `json:"name"`
 		Rows int    `json:"rows"`
@@ -86,5 +99,6 @@ func (s *Server) ImportArchive(ctx context.Context, req ImportArchiveRequestObje
 	for i, c := range counts {
 		out.Tables[i].Name, out.Tables[i].Rows = c.Name, c.Rows
 	}
+
 	return out, nil
 }

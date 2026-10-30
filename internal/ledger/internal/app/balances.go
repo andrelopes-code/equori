@@ -16,25 +16,31 @@ func (s *Service) BalanceAt(ctx context.Context, userID int64, accountID uuid.UU
 	if err != nil {
 		return Balance{}, err
 	}
+
 	a, err := s.repo.Account(ctx, userID, accountID)
 	if err != nil {
 		return Balance{}, err
 	}
+
 	instruments, err := s.repo.TreeInstruments(ctx, userID, accountID)
 	if err != nil {
 		return Balance{}, err
 	}
+
 	if len(instruments) > 1 {
 		return Balance{}, ErrMixedInstruments
 	}
+
 	total, err := s.repo.BalanceAt(ctx, userID, accountID, date, basis)
 	if err != nil {
 		return Balance{}, err
 	}
+
 	amount, err := s.AmountOf(ctx, total, a.Instrument)
 	if err != nil {
 		return Balance{}, err
 	}
+
 	return Balance{AccountID: accountID, Date: date, Basis: basis, Amount: amount}, nil
 }
 
@@ -56,18 +62,22 @@ func (s *Service) BalancesAt(ctx context.Context, userID int64, date time.Time, 
 	if err != nil {
 		return nil, err
 	}
+
 	totals, err := s.repo.BalancesAt(ctx, userID, date, basis)
 	if err != nil {
 		return nil, err
 	}
+
 	out := make([]Balance, len(totals))
 	for i, t := range totals {
 		amount, err := s.AmountOf(ctx, t.Total, t.Instrument)
 		if err != nil {
 			return nil, err
 		}
+
 		out[i] = Balance{AccountID: t.AccountID, Date: date, Basis: basis, Amount: amount}
 	}
+
 	return out, nil
 }
 
@@ -78,13 +88,16 @@ func (s *Service) CategoryTotal(ctx context.Context, userID int64, categoryID uu
 	if err != nil {
 		return money.Money{}, err
 	}
+
 	if _, err := s.repo.Account(ctx, userID, categoryID); err != nil {
 		return money.Money{}, err
 	}
+
 	total, err := s.repo.CategoryTotal(ctx, userID, categoryID, from, to)
 	if err != nil {
 		return money.Money{}, err
 	}
+
 	return money.New(total, settings.BaseCurrency)
 }
 
@@ -103,7 +116,9 @@ func (s *Service) OwnCategoryMonthlyTotals(ctx context.Context, userID int64, cl
 	if err != nil {
 		return nil, "", err
 	}
+
 	rows, err := s.repo.OwnCategoryMonthlyTotals(ctx, userID, class, from, to)
+
 	return rows, settings.BaseCurrency, err
 }
 
@@ -113,18 +128,22 @@ func (s *Service) CategoryMonthlyTotals(ctx context.Context, userID int64, categ
 	if err != nil {
 		return nil, err
 	}
+
 	if _, err := s.repo.Account(ctx, userID, categoryID); err != nil {
 		return nil, err
 	}
+
 	totals, err := s.repo.CategoryMonthlyTotals(ctx, userID, categoryID, from, to)
 	if err != nil {
 		return nil, err
 	}
+
 	out := make(map[time.Time]money.Money, len(totals))
 	for m, total := range totals {
 		if out[m], err = money.New(total, settings.BaseCurrency); err != nil {
 			return nil, err
 		}
 	}
+
 	return out, nil
 }

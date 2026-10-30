@@ -52,6 +52,7 @@ func (Source) Codes(ins []feed.Instrument) []money.Currency {
 			out = append(out, in.Code)
 		}
 	}
+
 	return out
 }
 
@@ -63,20 +64,25 @@ func (c Source) Fetch(ctx context.Context, codes []money.Currency, from, to time
 	for i, code := range codes {
 		tickers[i] = string(code)
 	}
+
 	var out []feed.Quote
 	for d := from; !d.After(to); d = d.AddDate(0, 0, 1) {
 		if d.Weekday() == time.Saturday || d.Weekday() == time.Sunday {
 			continue
 		}
+
 		quotes, err := c.FetchDay(ctx, d, tickers)
 		if errors.Is(err, feed.ErrNoData) {
 			continue
 		}
+
 		if err != nil {
 			return out, &feed.ScopeError{Key: "day", Value: d.Format(time.DateOnly), Err: err}
 		}
+
 		out = append(out, quotes...)
 	}
+
 	return out, nil
 }
 
@@ -84,51 +90,64 @@ func (c Source) Fetch(ctx context.Context, codes []money.Currency, from, to time
 // A malformed file returns an error and no quote.
 func (c Source) FetchDay(ctx context.Context, day time.Time, tickers []string) ([]feed.Quote, error) {
 	name := "COTAHIST_D" + day.Format("02012006")
+
 	body, err := feed.Get(ctx, c.client, c.baseURL+"/"+name+".ZIP")
 	if err != nil {
 		return nil, fmt.Errorf("fetch %s: %w", name, err)
 	}
+
 	zr, err := zip.NewReader(bytes.NewReader(body), int64(len(body)))
 	if err != nil {
 		return nil, fmt.Errorf("open %s: %w", name, err)
 	}
+
 	if len(zr.File) != 1 {
 		return nil, fmt.Errorf("open %s: %d files in the ZIP", name, len(zr.File))
 	}
+
 	f, err := zr.File[0].Open()
 	if err != nil {
 		return nil, fmt.Errorf("open %s: %w", name, err)
 	}
+
 	defer func() { _ = f.Close() }()
 
 	want := day.Format("20060102")
 	var out []feed.Quote
+
 	sc := bufio.NewScanner(f)
 	for line := 1; sc.Scan(); line++ {
 		rec := strings.Map(ascii, strings.TrimRight(sc.Text(), "\r"))
 		if !strings.HasPrefix(rec, "01") {
 			continue
 		}
+
 		if len(rec) != recordLength || rec[dateFrom:dateTo] != want {
 			return nil, fmt.Errorf("read %s line %d: not a record of %s", name, line, want)
 		}
+
 		ticker := strings.TrimSpace(rec[tickerFrom:tickerTo])
 		if rec[marketFrom:marketTo] != spotMarket || !slices.Contains(tickers, ticker) {
 			continue
 		}
+
 		cents, err := strconv.ParseInt(rec[closeFrom:closeTo], 10, 64)
 		if err != nil {
 			return nil, fmt.Errorf("read %s line %d: %w", name, line, err)
 		}
+
 		value, err := money.NewRate(cents, 2)
 		if err != nil {
 			return nil, fmt.Errorf("read %s line %d: %w", name, line, err)
 		}
+
 		out = append(out, feed.Quote{Instrument: money.Currency(ticker), Quote: "BRL", Date: day, Value: value})
 	}
+
 	if err := sc.Err(); err != nil {
 		return nil, fmt.Errorf("read %s: %w", name, err)
 	}
+
 	return out, nil
 }
 
@@ -139,5 +158,6 @@ func ascii(r rune) rune {
 	if r > unicode.MaxASCII {
 		return '?'
 	}
+
 	return r
 }

@@ -7,6 +7,7 @@ import (
 
 func TestAllocate(t *testing.T) {
 	t.Parallel()
+
 	tests := []struct {
 		name  string
 		items []Holding

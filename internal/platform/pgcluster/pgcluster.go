@@ -61,15 +61,18 @@ func Start(ctx context.Context, dir, bin string) (*Cluster, error) {
 	if err := checkPrivileges(); err != nil {
 		return nil, err
 	}
+
 	lock, err := lockDir(dir)
 	if err != nil {
 		return nil, err
 	}
+
 	c, err := start(ctx, dir, bin, lock)
 	if err != nil {
 		_ = lock.Close()
 		return nil, err
 	}
+
 	return c, nil
 }
 
@@ -79,28 +82,36 @@ func Attach(ctx context.Context, dir, bin string) (*Cluster, error) {
 	if err := checkPrivileges(); err != nil {
 		return nil, err
 	}
+
 	lock, err := lockDir(dir)
 	if errors.Is(err, ErrBusy) {
 		socket, err := socketDir(dir)
 		if err != nil {
 			return nil, err
 		}
+
 		c := &Cluster{dir: dir, bin: bin, socket: socket}
+
 		conn, err := pgx.Connect(ctx, c.DSN(Database))
 		if err != nil {
 			return nil, fmt.Errorf("connect to the server of equori serve: %w", err)
 		}
+
 		_ = conn.Close(ctx)
+
 		return c, nil
 	}
+
 	if err != nil {
 		return nil, err
 	}
+
 	c, err := start(ctx, dir, bin, lock)
 	if err != nil {
 		_ = lock.Close()
 		return nil, err
 	}
+
 	return c, nil
 }
 
@@ -110,6 +121,7 @@ func PrepareDataDir(dir string, accounts ...string) error {
 	if err := prepareDataDir(dir, accounts); err != nil {
 		return fmt.Errorf("prepare data directory: %w", err)
 	}
+
 	return nil
 }
 
@@ -117,14 +129,17 @@ func lockDir(dir string) (*os.File, error) {
 	if err := PrepareDataDir(dir); err != nil {
 		return nil, err
 	}
+
 	f, err := os.OpenFile(filepath.Join(dir, "equori.lock"), os.O_CREATE|os.O_RDWR, 0o600) //nolint:gosec // G304: the data directory is the owner's configuration.
 	if err != nil {
 		return nil, fmt.Errorf("open lock: %w", err)
 	}
+
 	if err := lockFile(f); err != nil {
 		_ = f.Close()
 		return nil, err
 	}
+
 	return f, nil
 }
 
@@ -133,52 +148,65 @@ func start(ctx context.Context, dir, bin string, lock *os.File) (*Cluster, error
 	if err != nil {
 		return nil, err
 	}
+
 	if err := privateDir(socket); err != nil {
 		return nil, err
 	}
+
 	major, err := Major(ctx, filepath.Join(bin, "postgres"))
 	if err != nil {
 		return nil, err
 	}
+
 	if major < postgres.MinMajor {
 		return nil, fmt.Errorf("PostgreSQL %d is older than %d, the oldest the migrations run on", major, postgres.MinMajor)
 	}
+
 	pgdata := filepath.Join(dir, "pg")
 	if err := initialize(ctx, bin, pgdata, major); err != nil {
 		return nil, err
 	}
+
 	if err := stopLeftover(ctx, bin, pgdata, socket); err != nil {
 		return nil, err
 	}
+
 	// Not CommandContext: the server outlives the start context and stops in Stop, after HTTP.
 	cmd := exec.Command(filepath.Join(bin, "postgres"), "-D", pgdata, "-k", socket, //nolint:gosec,noctx // G204: the programs directory is the owner's configuration.
 		"-c", "listen_addresses=", "-c", "max_connections="+maxConnections)
 	cmd.Stdout, cmd.Stderr = os.Stderr, os.Stderr
+
 	p, err := newProc(cmd)
 	if err != nil {
 		return nil, err
 	}
+
 	if err := cmd.Start(); err != nil {
 		p.close()
 		return nil, fmt.Errorf("start postgres: %w", err)
 	}
+
 	c := &Cluster{dir: dir, bin: bin, socket: socket, lock: lock, cmd: cmd, proc: p, done: make(chan struct{})}
 	go func() {
 		c.exitErr = cmd.Wait()
 		close(c.done)
 	}()
+
 	if err := p.started(cmd); err != nil {
 		_ = c.stopChild()
 		return nil, err
 	}
+
 	if err := c.waitReady(ctx); err != nil {
 		_ = c.stopChild()
 		return nil, err
 	}
+
 	if err := c.ensureDatabase(ctx); err != nil {
 		_ = c.stopChild()
 		return nil, err
 	}
+
 	return c, nil
 }
 
@@ -189,19 +217,24 @@ func initialize(ctx context.Context, bin, pgdata string, major int) error {
 		if err != nil {
 			return fmt.Errorf("read PG_VERSION: %w", err)
 		}
+
 		if have != major {
 			return fmt.Errorf("%w: data directory %d, programs %d; see the upgrade design of the release that changed the major", ErrMajorMismatch, have, major)
 		}
+
 		return nil
 	}
+
 	if !errors.Is(err, fs.ErrNotExist) {
 		return fmt.Errorf("read PG_VERSION: %w", err)
 	}
+
 	out, err := exec.CommandContext(ctx, filepath.Join(bin, "initdb"), "-D", pgdata, "-U", role, //nolint:gosec // G204: as above.
 		"--encoding=UTF8", "--locale=C", "--locale-provider=builtin", "--builtin-locale=C.UTF-8", "--auth=trust").CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("initdb: %w: %s", err, out)
 	}
+
 	// M5: one local line; access control is the mode of the socket directory.
 	return os.WriteFile(filepath.Join(pgdata, "pg_hba.conf"), []byte("local all all trust\n"), 0o600) //nolint:gosec // G703: the data directory is the owner's configuration.
 }
@@ -211,6 +244,7 @@ func stopLeftover(ctx context.Context, bin, pgdata, socket string) error {
 	if _, err := os.Stat(pidFile); errors.Is(err, fs.ErrNotExist) { //nolint:gosec // G703: as above.
 		return nil
 	}
+
 	if !answers(ctx, socket) {
 		// Stale: this process holds equori.lock and no server answers on the socket. After a container
 		// restart the file's PID names another process, and postgres would refuse to start beside it.
@@ -219,12 +253,15 @@ func stopLeftover(ctx context.Context, bin, pgdata, socket string) error {
 				return fmt.Errorf("remove stale %s: %w", name, err)
 			}
 		}
+
 		return nil
 	}
+
 	out, err := exec.CommandContext(ctx, filepath.Join(bin, "pg_ctl"), "stop", "-D", pgdata, "-m", "fast", "-w", "-t", "60").CombinedOutput() //nolint:gosec // G204: as above.
 	if err != nil {
 		return fmt.Errorf("stop the server left running: %w: %s", err, out)
 	}
+
 	return nil
 }
 
@@ -233,12 +270,15 @@ func stopLeftover(ctx context.Context, bin, pgdata, socket string) error {
 func answers(ctx context.Context, socket string) bool {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
+
 	conn, err := pgx.Connect(ctx, (&Cluster{socket: socket}).DSN("postgres"))
 	if err == nil {
 		_ = conn.Close(ctx)
 		return true
 	}
+
 	var pgErr *pgconn.PgError
+
 	return errors.As(err, &pgErr)
 }
 
@@ -250,14 +290,17 @@ func (c *Cluster) waitReady(ctx context.Context) error {
 			return fmt.Errorf("postgres exited during start: %w", c.exitErr)
 		default:
 		}
+
 		conn, err := pgx.Connect(ctx, c.DSN("postgres"))
 		if err == nil {
 			_ = conn.Close(ctx)
 			return nil
 		}
+
 		if time.Now().After(deadline) {
 			return fmt.Errorf("postgres not ready after %s: %w", stopWait, err)
 		}
+
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
@@ -272,16 +315,20 @@ func (c *Cluster) ensureDatabase(ctx context.Context) error {
 		return fmt.Errorf("connect to postgres: %w", err)
 	}
 	defer conn.Close(ctx)
+
 	var exists bool
 	if err := conn.QueryRow(ctx, "SELECT EXISTS (SELECT 1 FROM pg_database WHERE datname = $1)", Database).Scan(&exists); err != nil {
 		return fmt.Errorf("look up database: %w", err)
 	}
+
 	if exists {
 		return nil
 	}
+
 	if _, err := conn.Exec(ctx, "CREATE DATABASE "+Database); err != nil {
 		return fmt.Errorf("create database: %w", err)
 	}
+
 	return nil
 }
 
@@ -293,6 +340,7 @@ func (c *Cluster) Stop() error {
 			_ = c.lock.Close()
 		}
 	}()
+
 	return c.stopChild()
 }
 
@@ -300,15 +348,19 @@ func (c *Cluster) stopChild() error {
 	if c.cmd == nil {
 		return nil
 	}
+
 	select {
 	case <-c.done:
 		return nil
 	default:
 	}
+
 	defer c.proc.close()
+
 	if err := c.proc.stop(c, false); err != nil {
 		return err
 	}
+
 	select {
 	case <-c.done:
 		return nil
@@ -316,6 +368,7 @@ func (c *Cluster) stopChild() error {
 		// Immediate shutdown; the next start runs crash recovery.
 		_ = c.proc.stop(c, true)
 		<-c.done
+
 		return fmt.Errorf("postgres did not stop within %s; sent immediate shutdown", stopWait)
 	}
 }

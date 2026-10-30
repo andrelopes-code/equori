@@ -66,13 +66,16 @@ var unitWords = map[domain.Frequency][2]string{
 
 func describeTerms(r domain.Rule, from time.Time) string {
 	words := unitWords[r.Frequency]
+
 	s := words[0]
 	if r.Interval > 1 {
 		s = fmt.Sprintf("every %d %s", r.Interval, words[1])
 	}
+
 	if r.DayOfMonth != 0 {
 		s += fmt.Sprintf(" on day %d", r.DayOfMonth)
 	}
+
 	return s + " from " + from.Format(time.DateOnly)
 }
 
@@ -90,6 +93,7 @@ func prepareSchedule(ctx context.Context, svc *app.Service, l Ledger, userID int
 		{"from", !in.From.IsZero()}, {"to", !in.To.IsZero()},
 	}
 	name := string(in.Action)
+
 	var err error
 	switch in.Action {
 	case "create":
@@ -111,10 +115,13 @@ func prepareSchedule(ctx context.Context, svc *app.Service, l Ledger, userID int
 	case "end":
 		err = required(name, fields, []string{"schedule_id", "from"})
 	}
+
 	if err != nil {
 		return schedulePlan{}, err
 	}
+
 	var p schedulePlan
+
 	var scheduleID uuid.UUID
 	for _, id := range []struct {
 		s, field string
@@ -127,11 +134,13 @@ func prepareSchedule(ctx context.Context, svc *app.Service, l Ledger, userID int
 			return schedulePlan{}, err
 		}
 	}
+
 	if scheduleID != uuid.Nil {
 		if p.schedule, err = svc.Schedule(ctx, userID, scheduleID); err != nil {
 			return schedulePlan{}, err
 		}
 	}
+
 	unit := money.Money{}
 	switch in.Action {
 	case "create":
@@ -139,17 +148,21 @@ func prepareSchedule(ctx context.Context, svc *app.Service, l Ledger, userID int
 		if err != nil {
 			return schedulePlan{}, err
 		}
+
 		var ok bool
 		if p.account, ok = accounts[p.accountID]; !ok {
 			return schedulePlan{}, validationError("account_id", "must be a balance account of the user")
 		}
+
 		if p.counterpart, ok = accounts[p.counterID]; !ok {
 			return schedulePlan{}, validationError("counterpart_id", "does not fit kind "+string(in.Kind))
 		}
+
 		unit, err = unitOf(p.account.Instrument)
 		if err != nil {
 			return schedulePlan{}, err
 		}
+
 		rule := domain.Rule{
 			Frequency: domain.Frequency(in.Frequency), Interval: max(in.Interval, 1), DayOfMonth: in.DayOfMonth,
 			Adjustment: "none", Start: in.Start.Time,
@@ -157,11 +170,13 @@ func prepareSchedule(ctx context.Context, svc *app.Service, l Ledger, userID int
 		if !in.Until.IsZero() {
 			rule.Until = &in.Until.Time
 		}
+
 		p.rule = &rule
 	case "change_terms":
 		if unit, err = unitOf(p.schedule.Currency); err != nil {
 			return schedulePlan{}, err
 		}
+
 		if in.Frequency != "" {
 			last := p.schedule.Terms[len(p.schedule.Terms)-1].Rule
 			p.rule = &domain.Rule{
@@ -173,27 +188,33 @@ func prepareSchedule(ctx context.Context, svc *app.Service, l Ledger, userID int
 		if in.To.Before(in.From.Time) {
 			return schedulePlan{}, validationError("to", "must not be before from")
 		}
+
 		for _, q := range p.schedule.Pauses {
 			if !in.From.After(q.To) && !in.To.Before(q.From) {
 				return schedulePlan{}, app.ErrPauseOverlap
 			}
 		}
 	}
+
 	if (in.Action == "change_terms" || in.Action == "pause" || in.Action == "end") && p.schedule.EndsOn != nil && !in.From.Before(*p.schedule.EndsOn) {
 		return schedulePlan{}, app.ErrScheduleEnded
 	}
+
 	if p.rule != nil {
 		if err := p.rule.Validate(); err != nil {
 			return schedulePlan{}, err
 		}
 	}
+
 	if in.Amount != "" {
 		m, err := tool.ParsePositive("amount", in.Amount, unit)
 		if err != nil {
 			return schedulePlan{}, err
 		}
+
 		p.amount = &m
 	}
+
 	return p, nil
 }
 
@@ -210,14 +231,17 @@ func manageSchedule(svc *app.Service, l Ledger, clk clock.Clock) tool.Tool {
 		if err != nil {
 			return tool.Preview{}, err
 		}
+
 		pv := tool.Preview{Action: "manage_schedule." + string(in.Action)}
 		switch in.Action {
 		case "create":
 			pv.Target = "Schedule " + in.Description
+
 			counterpart := "category"
 			if in.Kind == "transfer" || in.Kind == "savings" {
 				counterpart = "account"
 			}
+
 			pv.Changes = []tool.Change{
 				{Field: "schedule", After: tool.TextValue(in.Description)},
 				{Field: "amount", After: tool.MoneyValue(*p.amount)},
@@ -226,40 +250,49 @@ func manageSchedule(svc *app.Service, l Ledger, clk clock.Clock) tool.Tool {
 				{Field: counterpart, After: tool.TextValue(p.counterpart.Name)},
 				{Field: "date", After: tool.DateValue(in.Start.Time)},
 			}
+
 			return pv, nil
 		case "change_terms":
 			last := p.schedule.Terms[len(p.schedule.Terms)-1]
+
 			pv.Target, pv.Basis = "Schedule "+p.schedule.Description, last.EffectiveFrom.Format(time.DateOnly)+"|"+fmt.Sprint(last.Amount)
 			if p.amount != nil {
 				before, err := money.New(last.Amount, p.schedule.Currency)
 				if err != nil {
 					return tool.Preview{}, err
 				}
+
 				pv.Changes = append(pv.Changes, tool.Change{Field: "amount", Before: tool.MoneyValue(before), After: tool.MoneyValue(*p.amount)})
 			}
+
 			if p.rule != nil {
 				pv.Changes = append(pv.Changes, tool.Change{Field: "terms",
 					Before: tool.TextValue(describeTerms(last.Rule, last.EffectiveFrom)), After: tool.TextValue(describeTerms(*p.rule, in.From.Time))})
 			}
+
 			pv.Changes = append(pv.Changes, tool.Change{Field: "date", After: tool.DateValue(in.From.Time)})
 		case "pause", "end":
 			last := p.schedule.Terms[len(p.schedule.Terms)-1]
 			pv.Target, pv.Basis = "Schedule "+p.schedule.Description, last.EffectiveFrom.Format(time.DateOnly)+"|"+fmt.Sprint(last.Amount)
+
 			after := "ends on " + in.From.Format(time.DateOnly)
 			if in.Action == "pause" {
 				after = "paused from " + in.From.Format(time.DateOnly) + " to " + in.To.Format(time.DateOnly)
 			}
+
 			pv.Changes = []tool.Change{
 				{Field: "schedule", Before: tool.TextValue(p.schedule.Description), After: tool.TextValue(after)},
 				{Field: "date", After: tool.DateValue(in.From.Time)},
 			}
 		}
+
 		return pv, nil
 	}, func(ctx context.Context, userID int64, in manageScheduleIn) (scheduleView, error) {
 		p, err := prepareSchedule(ctx, svc, l, userID, in)
 		if err != nil {
 			return scheduleView{}, err
 		}
+
 		var s domain.Schedule
 		switch in.Action {
 		case "create":
@@ -274,13 +307,16 @@ func manageSchedule(svc *app.Service, l Ledger, clk clock.Clock) tool.Tool {
 		default:
 			s, err = svc.End(ctx, userID, p.schedule.ID, in.From.Time)
 		}
+
 		if err != nil {
 			return scheduleView{}, err
 		}
+
 		accounts, err := l.Accounts(ctx, userID)
 		if err != nil {
 			return scheduleView{}, err
 		}
+
 		return toScheduleView(s, accounts, clk.Today(), nil, true)
 	})
 }

@@ -28,19 +28,24 @@ func NewProvider(id uuid.UUID, userID int64, preset, name, baseURL string, hasKe
 	if !ok {
 		return Provider{}, invalid("preset", "is not a known preset")
 	}
+
 	out := Provider{ID: id, UserID: userID, Preset: preset, CreatedAt: now}
 	if err := out.Rename(name); err != nil {
 		return Provider{}, err
 	}
+
 	if baseURL == "" {
 		baseURL = p.BaseURL
 	}
+
 	if err := out.Move(baseURL); err != nil {
 		return Provider{}, err
 	}
+
 	if p.KeyRequired && !hasKey {
 		return Provider{}, ErrKeyRequired
 	}
+
 	return out, nil
 }
 
@@ -49,7 +54,9 @@ func (p *Provider) Rename(name string) error {
 	if name == "" || utf8.RuneCountInString(name) > maxNameLength {
 		return invalid("name", "must have 1 to 60 characters")
 	}
+
 	p.Name = name
+
 	return nil
 }
 
@@ -58,7 +65,9 @@ func (p *Provider) Move(baseURL string) error {
 	if err != nil {
 		return err
 	}
+
 	p.BaseURL = u
+
 	return nil
 }
 
@@ -77,5 +86,6 @@ func ValidateBaseURL(raw string) (string, error) {
 		u.User != nil || u.RawQuery != "" || u.Fragment != "" || u.ForceQuery {
 		return "", invalid("base_url", "must be an http or https URL with a host and no credentials, query or fragment")
 	}
+
 	return strings.TrimSuffix(u.String(), "/"), nil
 }

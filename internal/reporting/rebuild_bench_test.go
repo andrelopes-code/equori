@@ -14,6 +14,7 @@ import (
 func BenchmarkRebuildAll(b *testing.B) {
 	pool := pgtest.New(b)
 	userID := pgtest.CreateUser(b, pool)
+
 	var checking, food string
 	for _, a := range []struct {
 		dst         *string
@@ -26,6 +27,7 @@ func BenchmarkRebuildAll(b *testing.B) {
 			b.Fatal(err)
 		}
 	}
+
 	_, err := pool.Exec(b.Context(), `
 		WITH tx AS (
 			INSERT INTO ledger_transaction (user_id, date, description, balancing_currency, origin)
@@ -40,10 +42,12 @@ func BenchmarkRebuildAll(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
+
 	app, err := server.New(pool, server.Config{}, slog.New(slog.NewTextHandler(io.Discard, nil)))
 	if err != nil {
 		b.Fatal(err)
 	}
+
 	for b.Loop() {
 		if err := app.Reporting.RebuildAll(b.Context()); err != nil {
 			b.Fatal(err)

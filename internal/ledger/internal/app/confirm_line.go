@@ -20,13 +20,17 @@ func (s *Service) ConfirmLine(ctx context.Context, userID int64, txID, accountID
 	if err != nil {
 		return err
 	}
+
 	if tx.VoidedAt != nil {
 		return domain.ErrVoided
 	}
+
 	next, changed, err := tx.ToLine(accountID, amount, date)
 	if err != nil || !changed {
 		return err
 	}
+
 	_, err = s.CorrectTransaction(ctx, userID, txID, tx.Version, next, lineReason)
+
 	return err
 }

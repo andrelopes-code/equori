@@ -17,11 +17,13 @@ func newCardBooks(t *testing.T) cardBooks {
 	b := cardBooks{books: newBooks(t)}
 	b.card = b.h.Card("Itaú Visa", 3, 10, "next")
 	b.h.Record("2026-10-14", apitest.Posting(b.card, -150000), apitest.Posting(b.food, 150000))
+
 	return b
 }
 
 func (b cardBooks) importCard(t *testing.T, lines ...apitest.OFXLine) {
 	t.Helper()
+
 	if r := b.h.Import(b.card, "ofx", "fatura.ofx", apitest.CardOFX(lines...)); r.Status != http.StatusCreated {
 		t.Fatalf("card import status %d: %s", r.Status, r.Body)
 	}
@@ -33,6 +35,7 @@ func (b cardBooks) transactions(t *testing.T) []apitest.TransactionView {
 		Items []apitest.TransactionView `json:"items"`
 	}
 	b.h.MustDo(http.MethodGet, "/api/v1/transactions?account_id="+b.card+"&from=2026-11-01", nil, http.StatusOK, &out)
+
 	return out.Items
 }
 
@@ -48,6 +51,7 @@ func TestRuleTransfersCardPayment(t *testing.T) {
 	if len(txs) != 1 || len(txs[0].Postings) != 2 {
 		t.Fatalf("card transactions = %+v", txs)
 	}
+
 	for _, p := range txs[0].Postings {
 		if p.AccountID == b.card && (p.CardRole != "payment" || p.Statement != "2026-12" || p.Amount.Amount != 150000) {
 			t.Fatalf("card posting = %+v", p)
@@ -67,10 +71,12 @@ func TestRuleCompletesCardPayment(t *testing.T) {
 	if len(txs) != 1 || txs[0].Version != 2 {
 		t.Fatalf("card transactions = %+v", txs)
 	}
+
 	got := map[string]int64{}
 	for _, p := range txs[0].Postings {
 		got[p.AccountID] = p.Amount.Amount
 	}
+
 	if len(got) != 2 || got[b.checking] != -150000 || got[b.card] != 150000 {
 		t.Fatalf("postings = %v", got)
 	}
@@ -90,19 +96,23 @@ func TestRunRulesPairsImportedSides(t *testing.T) {
 		Categorized int `json:"categorized"`
 	}
 	b.h.MustDo(http.MethodPost, "/api/v1/rules/run", nil, http.StatusOK, &run)
+
 	if run.Examined != 2 || run.Categorized != 1 {
 		t.Fatalf("run = %+v", run)
 	}
+
 	var live []apitest.TransactionView
 	for _, tx := range b.transactions(t) {
 		var full struct {
 			VoidedAt *string `json:"voided_at"`
 		}
 		b.h.MustDo(http.MethodGet, "/api/v1/transactions/"+tx.ID, nil, http.StatusOK, &full)
+
 		if full.VoidedAt == nil {
 			live = append(live, tx)
 		}
 	}
+
 	if len(live) != 1 || len(live[0].Postings) != 2 {
 		t.Fatalf("live card transactions = %+v", live)
 	}
@@ -120,6 +130,7 @@ func TestRuleMarksReimbursable(t *testing.T) {
 	if len(txs) != 1 {
 		t.Fatalf("card transactions = %+v", txs)
 	}
+
 	got := map[string]string{}
 	for _, p := range txs[0].Postings {
 		got[p.AccountID] = p.CardRole
@@ -127,6 +138,7 @@ func TestRuleMarksReimbursable(t *testing.T) {
 			t.Fatalf("receivable posting = %+v", p)
 		}
 	}
+
 	if len(got) != 2 || got[b.card] != "charge" {
 		t.Fatalf("postings = %+v", txs[0].Postings)
 	}
@@ -135,6 +147,7 @@ func TestRuleMarksReimbursable(t *testing.T) {
 // P5b Review Focus 5 for rules.
 func TestTransferActionRejections(t *testing.T) {
 	t.Parallel()
+
 	b := newCardBooks(t)
 	for _, tt := range []struct {
 		name    string

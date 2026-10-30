@@ -13,10 +13,12 @@ func (s *Server) ListMarketDataFeeds(ctx context.Context, _ ListMarketDataFeedsR
 	if err != nil {
 		return nil, err
 	}
+
 	items := make([]MarketDataFeed, len(fs))
 	for i, f := range fs {
 		items[i] = feedOf(f)
 	}
+
 	return ListMarketDataFeeds200JSONResponse{Items: items}, nil
 }
 
@@ -25,6 +27,7 @@ func (s *Server) SetMarketDataFeed(ctx context.Context, req SetMarketDataFeedReq
 	if err != nil {
 		return nil, err
 	}
+
 	return SetMarketDataFeed200JSONResponse(feedOf(f)), nil
 }
 
@@ -32,6 +35,7 @@ func (s *Server) RefreshMarketData(ctx context.Context, _ RefreshMarketDataReque
 	if err := s.svc.Refresh(ctx); err != nil {
 		return nil, err
 	}
+
 	return RefreshMarketData202Response{}, nil
 }
 
@@ -43,5 +47,6 @@ func feedOf(f domain.Feed) MarketDataFeed {
 	if f.Last != nil {
 		out.Last = &openapi_types.Date{Time: *f.Last}
 	}
+
 	return out
 }

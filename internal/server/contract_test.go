@@ -17,11 +17,14 @@ func problemFields(t *testing.T, r apitest.Response) []string {
 		} `json:"errors"`
 	}
 	r.Decode(t, &p)
+
 	out := make([]string, len(p.Errors))
 	for i, e := range p.Errors {
 		out[i] = e.Field
 	}
+
 	slices.Sort(out)
+
 	return out
 }
 
@@ -59,16 +62,20 @@ func TestContractRejectsNonConformingRequests(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+
 			if tc.contentType != "" {
 				req.Header.Set("Content-Type", tc.contentType)
 			}
+
 			r := h.Send(h.Client, req)
 			h.ExpectProblem(r, tc.status, tc.code, "")
+
 			if got := problemFields(t, r); !slices.Equal(got, tc.fields) {
 				t.Fatalf("fields = %v, want %v: %s", got, tc.fields, r.Body)
 			}
 		})
 	}
+
 	if r := h.Do("DELETE", "/api/v1/accounts", nil); r.Header.Get("Allow") != "GET, POST" {
 		t.Fatalf("Allow = %q", r.Header.Get("Allow"))
 	}
@@ -88,15 +95,18 @@ func TestContractReportsEveryInvalidField(t *testing.T) {
 	h := apitest.New(t)
 	r := h.Do("POST", "/api/v1/accounts", map[string]any{"name": "", "class": "foo", "kind": "", "currency": "brl"})
 	h.ExpectProblem(r, http.StatusBadRequest, "invalid_request", "")
+
 	if got, want := problemFields(t, r), []string{"class", "currency", "kind", "name"}; !slices.Equal(got, want) {
 		t.Fatalf("fields = %v, want %v: %s", got, want, r.Body)
 	}
 
 	checking := h.Account("Nubank", "asset", "checking", nil)
+
 	postings := make([]map[string]any, 501)
 	for i := range postings {
 		postings[i] = apitest.Posting(checking, 1)
 	}
+
 	r = h.Do("POST", "/api/v1/transactions", map[string]any{"date": "2026-10-01", "postings": postings})
 	h.ExpectProblem(r, http.StatusBadRequest, "invalid_request", "postings")
 }

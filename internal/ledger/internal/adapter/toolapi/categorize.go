@@ -48,11 +48,14 @@ func categorizeTransactions(svc *app.Service) tool.Tool {
 		if err != nil {
 			return tool.Preview{}, err
 		}
+
 		keys := make([]string, len(p.items))
 		for i, it := range p.items {
 			keys[i] = it.ID.String() + ":" + strconv.Itoa(it.ExpectedVersion)
 		}
+
 		slices.Sort(keys)
+
 		pv := tool.Preview{
 			Action: "categorize_transactions", Target: strconv.Itoa(len(p.items)) + " transactions", Basis: strings.Join(keys, ","),
 			Changes: []tool.Change{{Field: "category", After: tool.TextValue(p.category.Name)}},
@@ -62,36 +65,44 @@ func categorizeTransactions(svc *app.Service) tool.Tool {
 			if err != nil {
 				return tool.Preview{}, err
 			}
+
 			pv.Changes = append(pv.Changes, tool.Change{Field: "payee", After: tool.TextValue(names[p.payeeID])})
 		}
+
 		return pv, nil
 	}, func(ctx context.Context, userID int64, in categorizeTransactionsIn) (categorizeTransactionsOut, error) {
 		p, err := planCategorize(ctx, svc, userID, in)
 		if err != nil {
 			return categorizeTransactionsOut{}, err
 		}
+
 		errs, err := svc.CategorizeMany(ctx, userID, p.category.ID, p.items)
 		if err != nil {
 			return categorizeTransactionsOut{}, err
 		}
+
 		out := categorizeTransactionsOut{Results: make([]categorizeResult, len(p.items))}
 		for i, it := range p.items {
 			out.Results[i] = categorizeResult{TransactionID: it.ID.String(), Status: bulkStatus(errs[i])}
 			if errs[i] != nil || p.payeeID == uuid.Nil {
 				continue
 			}
+
 			t, err := svc.Transaction(ctx, userID, it.ID)
 			if err != nil {
 				return out, err
 			}
+
 			cerrs, err := svc.Categorize(ctx, userID, []app.Categorization{{
 				TransactionID: it.ID, ExpectedVersion: t.Version, PayeeID: &p.payeeID, Cause: app.Cause{Method: app.MethodManual},
 			}})
 			if err != nil {
 				return out, err
 			}
+
 			out.Results[i].Status = bulkStatus(cerrs[0])
 		}
+
 		return out, nil
 	})
 }
@@ -108,6 +119,7 @@ func bulkStatus(err error) string {
 	case errors.Is(err, domain.ErrVoided):
 		return "transaction_voided"
 	}
+
 	return "not_categorizable"
 }
 
@@ -116,29 +128,37 @@ func planCategorize(ctx context.Context, svc *app.Service, userID int64, in cate
 	if n := len(in.TransactionIDs); n < 1 || n > 50 {
 		return p, tool.InvalidArgument("transaction_ids", "must have between 1 and 50 items")
 	}
+
 	categoryID, err := requiredID(in.CategoryID, "category_id")
 	if err != nil {
 		return p, err
 	}
+
 	if p.payeeID, err = optionalID(in.PayeeID, "payee_id"); err != nil {
 		return p, err
 	}
+
 	if p.category, err = svc.Account(ctx, userID, categoryID); err != nil {
 		return p, err
 	}
+
 	if !p.category.IsCategory() {
 		return p, tool.InvalidArgument("category_id", "must be an income or expense category")
 	}
+
 	for _, s := range in.TransactionIDs {
 		id, err := requiredID(s, "transaction_ids")
 		if err != nil {
 			return p, err
 		}
+
 		t, err := svc.Transaction(ctx, userID, id)
 		if err != nil {
 			return p, err
 		}
+
 		p.items = append(p.items, app.BulkItem{ID: id, ExpectedVersion: t.Version})
 	}
+
 	return p, nil
 }

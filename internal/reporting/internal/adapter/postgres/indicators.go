@@ -19,9 +19,11 @@ func (r *Repository) FirstPosting(ctx context.Context, userID int64) (time.Time,
 	if errors.Is(err, pgx.ErrNoRows) {
 		return time.Time{}, false, nil
 	}
+
 	if err != nil {
 		return time.Time{}, false, err
 	}
+
 	return first, true, nil
 }
 
@@ -30,6 +32,7 @@ func (r *Repository) IndicatorAccounts(ctx context.Context, userID int64) ([]app
 	if err != nil {
 		return nil, err
 	}
+
 	out := make([]app.IndicatorAccount, len(rows))
 	for i, row := range rows {
 		out[i] = app.IndicatorAccount{
@@ -37,6 +40,7 @@ func (r *Repository) IndicatorAccounts(ctx context.Context, userID int64) ([]app
 			Interest: row.Interest, ExcludedFromLiquidity: row.ExcludedFromLiquidity,
 		}
 	}
+
 	return out, nil
 }
 
@@ -45,9 +49,11 @@ func (r *Repository) LoanPrincipalByMonth(ctx context.Context, userID int64, fro
 	if err != nil {
 		return nil, err
 	}
+
 	out := make(map[time.Time]int64, len(rows))
 	for _, row := range rows {
 		out[row.Month] = row.Total
 	}
+
 	return out, nil
 }

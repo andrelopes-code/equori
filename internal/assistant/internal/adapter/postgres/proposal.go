@@ -20,9 +20,11 @@ func toProposal(row AssistantProposal) domain.Proposal {
 	if row.MessageID.Valid {
 		p.MessageID = row.MessageID.UUID
 	}
+
 	if row.DecidedAt != nil {
 		p.DecidedAt = *row.DecidedAt
 	}
+
 	return p
 }
 
@@ -40,6 +42,7 @@ func (r *Repository) Proposal(ctx context.Context, userID int64, id uuid.UUID) (
 	if errors.Is(err, pgx.ErrNoRows) {
 		return domain.Proposal{}, domain.ErrProposalNotFound
 	}
+
 	return toProposal(row), err
 }
 
@@ -48,10 +51,12 @@ func (r *Repository) Proposals(ctx context.Context, userID int64, conversationID
 	if err != nil {
 		return nil, err
 	}
+
 	out := make([]domain.Proposal, len(rows))
 	for i, row := range rows {
 		out[i] = toProposal(row)
 	}
+
 	return out, nil
 }
 
@@ -60,6 +65,7 @@ func (r *Repository) ClaimProposal(ctx context.Context, userID int64, id uuid.UU
 	if errors.Is(err, pgx.ErrNoRows) {
 		return domain.Proposal{}, false, nil
 	}
+
 	return toProposal(row), err == nil, err
 }
 

@@ -29,6 +29,7 @@ func (b books) suggest(t *testing.T, items ...map[string]string) suggestionsView
 	t.Helper()
 	var out suggestionsView
 	b.h.MustDo(http.MethodPost, "/api/v1/capture/suggestions", map[string]any{"items": items}, http.StatusOK, &out)
+
 	return out
 }
 
@@ -40,6 +41,7 @@ func item(description, kind string) map[string]string {
 // category of the other class never named.
 func TestSuggestCategories(t *testing.T) {
 	t.Parallel()
+
 	provider := llmtest.New("aistudio",
 		// Options in class and path order: 1 Supermarket, 2 Transport (expense).
 		answer(`{"items":[{"description":1,"category":1},{"description":2,"category":2},{"description":3,"category":9}]}`),
@@ -51,16 +53,19 @@ func TestSuggestCategories(t *testing.T) {
 		got.Items[1].CategoryID != "" || got.Items[2].CategoryID != "" {
 		t.Fatalf("suggestions = %+v", got)
 	}
+
 	calls := provider.Requests()
 	if len(calls) != 1 {
 		t.Fatalf("calls = %d, want 1", len(calls))
 	}
+
 	prompt := calls[0].Request.Messages[0].Parts[0].Text
 	for _, want := range []string{"1. [expense] Supermarket\n", "2. [expense] Transport\n", "1. [expense] Padaria São João\n", "2. [income] Freela\n"} {
 		if !strings.Contains(prompt, want) {
 			t.Errorf("prompt lacks %q:\n%s", want, prompt)
 		}
 	}
+
 	if calls[0].Request.Schema == nil {
 		t.Error("request carries no response schema")
 	}
@@ -72,6 +77,7 @@ func TestSuggestCategories(t *testing.T) {
 		again.Items[1].CategoryID != "" || again.Items[2].CategoryID != "" {
 		t.Fatalf("kept = %+v", again)
 	}
+
 	if len(provider.Requests()) != 1 {
 		t.Fatalf("calls = %d, want 1", len(provider.Requests()))
 	}
@@ -80,10 +86,12 @@ func TestSuggestCategories(t *testing.T) {
 func TestSuggestCategoriesWithoutModel(t *testing.T) {
 	t.Parallel()
 	b := newBooks(t)
+
 	got := b.suggest(t, item("Padaria", "expense"))
 	if got.Available || len(got.Items) != 1 || got.Items[0].CategoryID != "" {
 		t.Fatalf("suggestions = %+v", got)
 	}
+
 	b.h.ExpectProblem(b.h.Do(http.MethodPost, "/api/v1/capture/suggestions", map[string]any{"items": []any{}}),
 		http.StatusBadRequest, "invalid_request", "items")
 }
@@ -91,13 +99,16 @@ func TestSuggestCategoriesWithoutModel(t *testing.T) {
 // A quota refusal keeps nothing; while the target cools down the answer stays unavailable.
 func TestSuggestCategoriesAfterQuota(t *testing.T) {
 	t.Parallel()
+
 	provider := llmtest.New("aistudio",
 		llmtest.Step{Model: "gemini-3.5-flash-lite", Err: &llm.QuotaError{}},
 	)
+
 	b := newBooks(t, apitest.LLM(provider))
 	if got := b.suggest(t, item("Padaria", "expense")); got.Available || got.Items[0].CategoryID != "" {
 		t.Fatalf("suggestions = %+v", got)
 	}
+
 	if got := b.suggest(t, item("Padaria", "expense")); got.Available {
 		t.Fatalf("suggestions = %+v", got)
 	}

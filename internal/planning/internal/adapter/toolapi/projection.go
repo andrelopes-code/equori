@@ -42,39 +42,49 @@ func projectBalance(svc *app.Service, l Ledger) tool.Tool {
 		if err != nil {
 			return projectBalanceOut{}, err
 		}
+
 		p, err := svc.Project(ctx, userID, id, in.To.Time)
 		if err != nil {
 			return projectBalanceOut{}, err
 		}
+
 		accounts, err := l.Accounts(ctx, userID)
 		if err != nil {
 			return projectBalanceOut{}, err
 		}
+
 		schedules, err := allSchedules(ctx, svc, userID)
 		if err != nil {
 			return projectBalanceOut{}, err
 		}
+
 		descriptions := make(map[uuid.UUID]string, len(schedules))
 		for _, s := range schedules {
 			descriptions[s.ID] = s.Description
 		}
+
 		out := projectBalanceOut{AccountName: accountName(accounts, id), From: tool.DateOf(p.From), To: tool.DateOf(p.To), Points: []projectionPoint{}}
 		if out.Opening, err = moneyOf(p.Opening, p.Currency); err != nil {
 			return out, err
 		}
+
 		if out.Closing, err = moneyOf(p.Closing, p.Currency); err != nil {
 			return out, err
 		}
+
 		for _, pt := range p.Points {
 			v := projectionPoint{Date: tool.DateOf(pt.Date), Description: descriptions[pt.ScheduleID]}
 			if v.Amount, err = moneyOf(pt.Amount, p.Currency); err != nil {
 				return out, err
 			}
+
 			if v.Balance, err = moneyOf(pt.Balance, p.Currency); err != nil {
 				return out, err
 			}
+
 			out.Points = append(out.Points, v)
 		}
+
 		return out, nil
 	})
 }

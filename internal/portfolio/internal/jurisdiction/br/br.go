@@ -39,6 +39,7 @@ func (Jurisdiction) TaxClass(instrumentType, subtype, exchange string) string {
 	if class, ok := subtypeClass[instrumentType][subtype]; ok {
 		return class
 	}
+
 	if exchange == bvmf {
 		switch instrumentType {
 		case "reit":
@@ -47,6 +48,7 @@ func (Jurisdiction) TaxClass(instrumentType, subtype, exchange string) string {
 			return "bdr"
 		}
 	}
+
 	return instrumentType
 }
 
@@ -58,10 +60,12 @@ func (Jurisdiction) Treatment(incomeType, taxClass string) string {
 		if taxClass == "fixed_income_exempt" {
 			return "exempt"
 		}
+
 		return "exclusive"
 	case "jcp", "distribution":
 		return "exclusive"
 	}
+
 	return ""
 }
 
@@ -70,6 +74,8 @@ func (Jurisdiction) Subtypes(instrumentType string) []string {
 	for subtype := range subtypeClass[instrumentType] {
 		subtypes = append(subtypes, subtype)
 	}
+
 	slices.Sort(subtypes)
+
 	return subtypes
 }

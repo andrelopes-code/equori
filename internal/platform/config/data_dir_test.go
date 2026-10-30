@@ -4,7 +4,9 @@ import "testing"
 
 func TestDefaultDataDir(t *testing.T) {
 	t.Parallel()
+
 	env := func(m map[string]string) func(string) string { return func(k string) string { return m[k] } }
+
 	tests := []struct {
 		goos string
 		env  map[string]string

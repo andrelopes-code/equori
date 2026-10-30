@@ -21,12 +21,14 @@ type scheduleSpec struct {
 func netSalary(month time.Time) int64 {
 	g := gross(month)
 	inss := inssOf(month)
+
 	return g - inss - irrfOf(g-inss, month) - healthPlanDiscount
 }
 
 func schedules(start time.Time) []scheduleSpec {
 	s0 := iso(start)
 	jan26 := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+
 	return []scheduleSpec{
 		{key: "salary", kind: "income", account: "itau.checking", counterpart: "income.salary", payee: "Tarsus Tecnologia Ltda", desc: "Salário", cents: netSalary(start), businessDay: 5, start: s0,
 			terms: map[string]int64{"2026-01-01": netSalary(jan26)}, toleranceBP: 1500},
@@ -67,6 +69,7 @@ func (s *seeder) buildSchedules() {
 		} else {
 			rec["day_of_month"] = sp.day
 		}
+
 		body := map[string]any{
 			"kind": sp.kind, "account_id": s.id(sp.account), "counterpart_id": s.id(sp.counterpart), "description": sp.desc,
 			"amount": brl(sp.cents), "recurrence": rec,
@@ -74,18 +77,23 @@ func (s *seeder) buildSchedules() {
 		if sp.payee != "" {
 			body["payee_id"] = s.id("payee." + sp.payee)
 		}
+
 		if sp.toleranceBP > 0 {
 			body["match_tolerance_bp"] = sp.toleranceBP
 		}
+
 		id := s.create("/schedules", body)
+
 		s.ids["schedule."+sp.key] = id
 		for _, from := range slices.Sorted(maps.Keys(sp.terms)) {
 			s.do(http.MethodPost, "/schedules/"+id+"/terms", map[string]any{"effective_from": from, "amount": brl(sp.terms[from])}, nil)
 		}
+
 		if sp.until != "" {
 			s.do(http.MethodPost, "/schedules/"+id+"/end", map[string]any{"from": sp.until}, nil)
 		}
 	}
+
 	// The gym is paused while the owner travels in Portugal.
 	s.do(http.MethodPost, "/schedules/"+s.id("schedule.gym")+"/pauses", map[string]any{"from": "2025-07-01", "to": "2025-07-31"}, nil)
 }

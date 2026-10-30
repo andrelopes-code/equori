@@ -19,6 +19,7 @@ func mapAll[R, T any](rows []R, f func(R) T) []T {
 	for i, r := range rows {
 		out[i] = f(r)
 	}
+
 	return out
 }
 
@@ -26,11 +27,14 @@ func mapAll[R, T any](rows []R, f func(R) T) []T {
 // key of the last kept row when more rows follow (ADR 005, section 4).
 func pageOf[R, T, K any](rows []R, limit int, item func(R) T, key func(R) K) ([]T, *K) {
 	kept, more := page.Trim(rows, limit)
+
 	out := mapAll(kept, item)
 	if !more {
 		return out, nil
 	}
+
 	k := key(kept[len(kept)-1])
+
 	return out, &k
 }
 
@@ -41,6 +45,7 @@ func nullString(s string) *string {
 	if s == "" {
 		return nil
 	}
+
 	return &s
 }
 
@@ -48,6 +53,7 @@ func deref(s *string) string {
 	if s == nil {
 		return ""
 	}
+
 	return *s
 }
 
@@ -59,7 +65,9 @@ func originalAmount(m *money.Money) *int64 {
 	if m == nil {
 		return nil
 	}
+
 	a := m.Amount()
+
 	return &a
 }
 
@@ -67,7 +75,9 @@ func originalInstrument(m *money.Money) *string {
 	if m == nil {
 		return nil
 	}
+
 	c := string(m.Currency())
+
 	return &c
 }
 
@@ -94,6 +104,7 @@ func colorOf(c *int16) int {
 	if c == nil {
 		return 0
 	}
+
 	return int(*c)
 }
 
@@ -102,7 +113,9 @@ func nullColor(c int) *int16 {
 	if c == 0 {
 		return nil
 	}
+
 	v := int16(c) //nolint:gosec // NewAccount keeps the colour in 1..8.
+
 	return &v
 }
 
@@ -119,10 +132,12 @@ func (r *Repository) toPosting(ctx context.Context, row ListPostingsRow) (domain
 	if err != nil {
 		return domain.Posting{}, fmt.Errorf("posting %s amount: %w", row.ID, err)
 	}
+
 	weight, err := money.New(row.Weight, money.Currency(row.BalancingCurrency))
 	if err != nil {
 		return domain.Posting{}, fmt.Errorf("posting %s weight: %w", row.ID, err)
 	}
+
 	p := domain.Posting{
 		ID: row.ID, AccountID: row.AccountID, Amount: amount, Weight: weight,
 		Status: domain.PostingStatus(row.Status), SettledOn: row.SettledOn, Memo: deref(row.Memo),
@@ -133,16 +148,20 @@ func (r *Repository) toPosting(ctx context.Context, row ListPostingsRow) (domain
 		m := domain.MonthOf(*row.StatementReference)
 		p.Statement = &m
 	}
+
 	if row.InstallmentPlanID.Valid && row.InstallmentNumber != nil && row.InstallmentCount != nil {
 		p.Installment = &domain.InstallmentRef{PlanID: row.InstallmentPlanID.UUID, Number: int(*row.InstallmentNumber), Count: int(*row.InstallmentCount)}
 	}
+
 	if row.OriginalAmount != nil && row.OriginalInstrument != nil {
 		orig, err := money.New(*row.OriginalAmount, money.Currency(*row.OriginalInstrument))
 		if err != nil {
 			return domain.Posting{}, fmt.Errorf("posting %s original amount: %w", row.ID, err)
 		}
+
 		p.Original = &orig
 	}
+
 	return p, nil
 }
 
@@ -192,6 +211,7 @@ func toSnapshot(t domain.Transaction) snapshot {
 	for _, l := range t.Links {
 		s.Links = append(s.Links, snapshotLink{Type: string(l.Type), Target: l.Target, Amount: l.Amount})
 	}
+
 	for _, p := range t.Postings {
 		sp := snapshotPosting{
 			AccountID: p.AccountID, Amount: p.Amount.Amount(), Currency: string(p.Amount.Currency()), Weight: p.Weight.Amount(),
@@ -200,12 +220,15 @@ func toSnapshot(t domain.Transaction) snapshot {
 		if p.SettledOn != nil {
 			sp.SettledOn = p.SettledOn.Format(time.DateOnly)
 		}
+
 		if p.Statement != nil {
 			sp.Statement = p.Statement.String()
 		}
+
 		sp.StatementID, sp.StatementBasis, sp.CardRole, sp.Installment = p.StatementID, p.StatementBasis, p.CardRole, p.Installment
 		s.Postings = append(s.Postings, sp)
 	}
+
 	return s
 }
 
@@ -214,6 +237,7 @@ func (s snapshot) transaction(ctx context.Context, ins app.Instruments) (domain.
 	if err != nil {
 		return domain.Transaction{}, err
 	}
+
 	t := domain.Transaction{
 		ID: s.ID, UserID: s.UserID, Date: d, Description: s.Description, PayeeID: s.PayeeID,
 		BalancingCurrency: money.Currency(s.BalancingCurrency), Origin: domain.Origin(s.Origin), Version: s.Version, Tags: s.Tags,
@@ -221,15 +245,18 @@ func (s snapshot) transaction(ctx context.Context, ins app.Instruments) (domain.
 	for _, l := range s.Links {
 		t.Links = append(t.Links, domain.Link{Type: domain.LinkType(l.Type), Target: l.Target, Amount: l.Amount})
 	}
+
 	for _, sp := range s.Postings {
 		amount, err := app.AmountOf(ctx, ins, sp.Amount, money.Currency(sp.Currency))
 		if err != nil {
 			return domain.Transaction{}, err
 		}
+
 		weight, err := money.New(sp.Weight, t.BalancingCurrency)
 		if err != nil {
 			return domain.Transaction{}, err
 		}
+
 		p := domain.Posting{
 			AccountID: sp.AccountID, Amount: amount, Weight: weight, Status: domain.PostingStatus(sp.Status), Memo: sp.Memo,
 			StatementID: sp.StatementID, StatementBasis: sp.StatementBasis, CardRole: sp.CardRole, Installment: sp.Installment,
@@ -239,24 +266,31 @@ func (s snapshot) transaction(ctx context.Context, ins app.Instruments) (domain.
 			if err != nil {
 				return domain.Transaction{}, err
 			}
+
 			p.Statement = &m
 		}
+
 		if sp.SettledOn != "" {
 			settled, err := time.Parse(time.DateOnly, sp.SettledOn)
 			if err != nil {
 				return domain.Transaction{}, err
 			}
+
 			p.SettledOn = &settled
 		}
+
 		if sp.OriginalAmount != nil && sp.OriginalInstrument != nil {
 			orig, err := money.New(*sp.OriginalAmount, money.Currency(*sp.OriginalInstrument))
 			if err != nil {
 				return domain.Transaction{}, err
 			}
+
 			p.Original = &orig
 		}
+
 		t.Postings = append(t.Postings, p)
 	}
+
 	return t, nil
 }
 
@@ -269,9 +303,11 @@ func toBillingRule(row LedgerBillingCycleRule) domain.BillingCycleRule {
 	if row.ClosingDay != nil {
 		r.ClosingDay = int(*row.ClosingDay)
 	}
+
 	if row.ClosingDaysBeforeDue != nil {
 		r.ClosingDaysBeforeDue = int(*row.ClosingDaysBeforeDue)
 	}
+
 	return r
 }
 
@@ -283,6 +319,7 @@ func installmentPlan(i *domain.InstallmentRef) uuid.NullUUID {
 	if i == nil {
 		return uuid.NullUUID{}
 	}
+
 	return nullUUID(i.PlanID)
 }
 
@@ -290,7 +327,9 @@ func installmentNumber(i *domain.InstallmentRef) *int16 {
 	if i == nil {
 		return nil
 	}
+
 	n := int16(i.Number) //nolint:gosec // at most 420 installments.
+
 	return &n
 }
 
@@ -298,6 +337,8 @@ func installmentCount(i *domain.InstallmentRef) *int16 {
 	if i == nil {
 		return nil
 	}
+
 	n := int16(i.Count) //nolint:gosec // at most 420 installments.
+
 	return &n
 }

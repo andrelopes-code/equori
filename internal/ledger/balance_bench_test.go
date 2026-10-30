@@ -10,6 +10,7 @@ import (
 // transactions with 150,000 postings, half of them on the measured account.
 func BenchmarkBalanceAt(b *testing.B) {
 	f := newLedgerFixture(b)
+
 	_, err := f.pool.Exec(b.Context(), `
 		WITH tx AS (
 			INSERT INTO ledger_transaction (user_id, date, description, balancing_currency, origin)
@@ -24,6 +25,7 @@ func BenchmarkBalanceAt(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
+
 	for b.Loop() {
 		if _, err := f.svc.BalanceAt(b.Context(), f.userID, f.checking.ID, date("2025-12-31"), app.BasisBooked); err != nil {
 			b.Fatal(err)

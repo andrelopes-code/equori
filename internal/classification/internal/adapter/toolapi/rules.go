@@ -74,14 +74,17 @@ func listRules(svc *app.Service, names Names) tool.Tool {
 		if in.RuleID != "" && in.Kind != "rules" {
 			return listRulesOut{}, tool.InvalidArgument("rule_id", "is not used by kind "+string(in.Kind))
 		}
+
 		ruleID, err := optionalID(in.RuleID, "rule_id")
 		if err != nil {
 			return listRulesOut{}, err
 		}
+
 		categories, payees, err := names(ctx, userID)
 		if err != nil {
 			return listRulesOut{}, err
 		}
+
 		var out listRulesOut
 		switch in.Kind {
 		case "rules":
@@ -89,25 +92,31 @@ func listRules(svc *app.Service, names Names) tool.Tool {
 			if err != nil {
 				return out, err
 			}
+
 			var rules []domain.Rule
+
 			var next *app.RuleKey
 			if ruleID != uuid.Nil {
 				one, err := svc.Rule(ctx, userID, ruleID)
 				if err != nil {
 					return out, err
 				}
+
 				rules = []domain.Rule{one}
 			} else if rules, next, err = svc.ListRules(ctx, userID, p); err != nil {
 				return out, err
 			}
+
 			ids := make([]uuid.UUID, len(rules))
 			for i, r := range rules {
 				ids[i] = r.ID
 			}
+
 			usage, err := svc.RuleUsage(ctx, userID, ids)
 			if err != nil {
 				return out, err
 			}
+
 			out.Rules = []ruleView{}
 			for _, r := range rules {
 				out.Rules = append(out.Rules, ruleView{
@@ -115,60 +124,76 @@ func listRules(svc *app.Service, names Names) tool.Tool {
 					ConditionsText: conditionsText(r.Conditions), ActionsText: actionsText(r.Actions, categories, payees), CategorizedCount: usage[r.ID].Count,
 				})
 			}
+
 			out.NextCursor, err = nextCursor(next)
+
 			return out, err
 		case "suggestions":
 			p, err := pageRequest[app.SuggestionKey](in.PageArgs)
 			if err != nil {
 				return out, err
 			}
+
 			items, next, err := svc.ListSuggestions(ctx, userID, app.SuggestionPending, p)
 			if err != nil {
 				return out, err
 			}
+
 			out.Suggestions = []suggestionView{}
 			for _, s := range items {
 				ex := make([]string, len(s.Examples))
 				for i, id := range s.Examples {
 					ex[i] = id.String()
 				}
+
 				out.Suggestions = append(out.Suggestions, suggestionView{
 					SuggestionID: s.ID.String(), ConditionsText: conditionsText(s.Conditions), ActionsText: actionsText(s.Actions, categories, payees), ExampleTransactionIDs: ex,
 				})
 			}
+
 			out.NextCursor, err = nextCursor(next)
+
 			return out, err
 		case "source_categories":
 			p, err := pageRequest[app.NameKey](in.PageArgs)
 			if err != nil {
 				return out, err
 			}
+
 			items, next, err := svc.ListSourceCategories(ctx, userID, p)
 			if err != nil {
 				return out, err
 			}
+
 			out.SourceCategories = []sourceCategoryView{}
 			for _, c := range items {
 				out.SourceCategories = append(out.SourceCategories, sourceCategoryView{
 					SourceCategoryID: c.ID.String(), Aggregator: c.Aggregator, Name: c.Name, Count: c.Count, CategoryName: categories[c.CategoryID],
 				})
 			}
+
 			out.NextCursor, err = nextCursor(next)
+
 			return out, err
 		}
+
 		p, err := pageRequest[app.AliasKey](in.PageArgs)
 		if err != nil {
 			return out, err
 		}
+
 		items, next, err := svc.ListAliases(ctx, userID, p)
 		if err != nil {
 			return out, err
 		}
+
 		out.PayeeAliases = []aliasView{}
 		for _, a := range items {
 			out.PayeeAliases = append(out.PayeeAliases, aliasView{AliasID: a.ID.String(), Pattern: a.Pattern, MatchType: string(a.MatchType), PayeeName: payees[a.PayeeID]})
 		}
+
 		out.NextCursor, err = nextCursor(next)
+
 		return out, err
 	})
 }

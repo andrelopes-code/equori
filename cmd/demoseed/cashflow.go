@@ -10,16 +10,20 @@ func (s *seeder) expense(d time.Time, via, category, payee, desc string, cents i
 	if via == "alelo.meal" && s.bal[s.id(via)] < cents {
 		via = "card.nubank"
 	}
+
 	if !strings.HasPrefix(via, "card.") {
 		s.ensure(d, via, cents)
 	}
+
 	extra := map[string]any{}
 	if payee != "" {
 		extra["payee_id"] = s.id("payee." + payee)
 	}
+
 	if len(tags) > 0 {
 		extra["tags"] = tags
 	}
+
 	s.record(iso(d), desc, extra, post(s.id(via), -cents), post(s.id(category), cents))
 }
 
@@ -52,6 +56,7 @@ func irrfOf(base int64, month time.Time) int64 {
 	if ym(month) >= "2025-05" {
 		deduction = 90873
 	}
+
 	return base*275/1000 - deduction
 }
 
@@ -81,9 +86,11 @@ func (s *seeder) extras() {
 			if inss > 0 {
 				ps = append(ps, post(s.id("tax.inss"), inss))
 			}
+
 			if irrf > 0 {
 				ps = append(ps, post(s.id("tax.irrf"), irrf))
 			}
+
 			ps = append(ps, post(s.id(account), g-inss-irrf))
 			s.record(d, desc, map[string]any{"payee_id": s.id("payee.Tarsus Tecnologia Ltda")}, ps...)
 		})
@@ -162,13 +169,16 @@ func (s *seeder) fixedBills(month time.Time) {
 		if (b.from != "" && ym(month) < b.from) || (b.until != "" && ym(month) > b.until) {
 			continue
 		}
+
 		cents := step(month, b.base, b.steps)
 		if b.seasonal != nil {
 			cents = int64(float64(cents) * b.seasonal[month.Month()-1])
 		}
+
 		if b.noise > 0 {
 			cents = s.jitter(cents, b.noise)
 		}
+
 		d := onDay(month, b.day)
 		s.at(d, func() { s.expense(d, b.via, b.category, b.payee, b.desc, cents, b.tags...) })
 	}
@@ -181,6 +191,7 @@ func (s *seeder) cashflow() {
 		s.spending(m)
 		s.statementPayments(m)
 	}
+
 	s.extras()
 	s.purchases()
 	s.transfers()

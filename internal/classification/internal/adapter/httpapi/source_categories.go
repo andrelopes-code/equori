@@ -17,6 +17,7 @@ func toSourceCategoryAPI(c app.SourceCategory) SourceCategory {
 	if c.CategoryID != uuid.Nil {
 		out.CategoryId = &c.CategoryID
 	}
+
 	return out
 }
 
@@ -25,15 +26,19 @@ func (s *Server) ListSourceCategories(ctx context.Context, req ListSourceCategor
 	if err != nil {
 		return nil, err
 	}
+
 	cs, next, err := s.svc.ListSourceCategories(ctx, auth.MustUserID(ctx), p)
 	if err != nil {
 		return nil, err
 	}
+
 	out := ListSourceCategories200JSONResponse{Items: make([]SourceCategory, len(cs))}
 	for i, c := range cs {
 		out.Items[i] = toSourceCategoryAPI(c)
 	}
+
 	out.NextCursor, err = page.Next(next)
+
 	return out, err
 }
 
@@ -42,9 +47,11 @@ func (s *Server) MapSourceCategory(ctx context.Context, req MapSourceCategoryReq
 	if req.Body.CategoryId != nil {
 		category = *req.Body.CategoryId
 	}
+
 	c, err := s.svc.MapSourceCategory(ctx, auth.MustUserID(ctx), req.Id, category)
 	if err != nil {
 		return nil, err
 	}
+
 	return MapSourceCategory200JSONResponse(toSourceCategoryAPI(c)), nil
 }

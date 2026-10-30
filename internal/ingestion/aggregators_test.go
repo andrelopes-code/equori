@@ -24,21 +24,26 @@ func TestAggregators(t *testing.T) {
 		Items []aggregatorView `json:"items"`
 	}
 	a.h.MustDo(http.MethodGet, "/api/v1/aggregators", nil, http.StatusOK, &list)
+
 	if len(list.Items) != 1 {
 		t.Fatalf("items = %+v", list.Items)
 	}
+
 	got := list.Items[0]
 	if got.ID != "pluggy" || got.Name != "Pluggy" || got.ConnectMethod != "reference" {
 		t.Fatalf("aggregator = %+v", got)
 	}
+
 	type field struct {
 		Name   string
 		Secret bool
 	}
+
 	var fields []field
 	for _, f := range got.CredentialFields {
 		fields = append(fields, field{f.Name, f.Secret})
 	}
+
 	if want := []field{{"client_id", false}, {"client_secret", true}}; !reflect.DeepEqual(fields, want) {
 		t.Fatalf("fields = %+v, want %+v", fields, want)
 	}

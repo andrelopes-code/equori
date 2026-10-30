@@ -17,8 +17,10 @@ func TestProfileSchema(t *testing.T) {
 	t.Parallel()
 	pool := pgtest.New(t)
 	pgtest.CreateUser(t, pool)
+
 	for _, set := range []string{"language = 'PT'", "region = 'br'", "language = 'p'", "region = 'BRA'"} {
 		_, err := pool.Exec(t.Context(), "UPDATE identity_user SET "+set)
+
 		pgErr, ok := errors.AsType[*pgconn.PgError](err)
 		if !ok || pgErr.Code != checkViolation {
 			t.Errorf("UPDATE identity_user SET %s: error = %v, want check violation", set, err)
@@ -35,10 +37,12 @@ func TestAccessTokenSchema(t *testing.T) {
 	user := pgtest.CreateUser(t, pool)
 	insert := `INSERT INTO identity_access_token (id, user_id, name, scope, token_hash, created_at, expires_at)
 		VALUES (gen_random_uuid(), $1, 'x', $2, $3, '2026-10-27T12:00:00Z', $4)`
+
 	hash := func(b byte) []byte { return bytes.Repeat([]byte{b}, 32) }
 	if _, err := pool.Exec(t.Context(), insert, user, "read", hash(1), "2026-11-27T12:00:00Z"); err != nil {
 		t.Fatal(err)
 	}
+
 	for _, tt := range []struct {
 		name    string
 		scope   string

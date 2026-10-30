@@ -27,10 +27,12 @@ func NewFactory() Factory {
 		Timeout:       2 * time.Minute,
 		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
 	}
+
 	return func(api, baseURL, key string) llm.Provider {
 		if api == string(domain.APIGemini) {
 			return aistudio.New(baseURL, key, hc)
 		}
+
 		return openai.New(baseURL, key, hc)
 	}
 }
@@ -40,9 +42,11 @@ func ToUse(u llm.Use) app.Use {
 	for _, n := range u.Needs {
 		out.Needs = append(out.Needs, string(n))
 	}
+
 	for _, d := range u.Default {
 		out.Default = append(out.Default, app.DefaultTarget{Preset: d.Preset, Model: d.Model})
 	}
+
 	return out
 }
 
@@ -61,6 +65,7 @@ func NewResolver(svc *app.Service, instance []llm.Provider, build Factory, log *
 	for _, p := range instance {
 		m[p.Name()] = p
 	}
+
 	return &Resolver{svc: svc, instance: m, build: build, log: log}
 }
 
@@ -71,6 +76,7 @@ func (r *Resolver) Record(ctx context.Context, a llm.Attempt) {
 	if !ok {
 		return
 	}
+
 	err := r.svc.Record(ctx, userID, app.Attempt{
 		ProviderID: a.Target.Provider, Model: a.Target.Model, UseID: a.Use, Outcome: a.Outcome,
 		InputTokens: int64(a.Usage.InputTokens), OutputTokens: int64(a.Usage.OutputTokens), CoolingUntil: a.CooldownUntil,
@@ -82,21 +88,26 @@ func (r *Resolver) Record(ctx context.Context, a llm.Attempt) {
 
 func (r *Resolver) Resolve(ctx context.Context, use llm.Use) ([]llm.Binding, error) {
 	userID, hasUser := auth.UserID(ctx)
+
 	targets, err := r.svc.Resolve(ctx, userID, hasUser, ToUse(use))
 	if le, ok := errors.AsType[*app.LimitError](err); ok {
 		return nil, &llm.ExhaustedError{RetryAt: le.RetryAt}
 	}
+
 	if err != nil {
 		return nil, err
 	}
+
 	out := make([]llm.Binding, 0, len(targets))
 	for _, t := range targets {
 		p := r.instance[t.ProviderID]
 		if !t.Instance {
 			p = r.build(string(t.API), t.BaseURL, t.Key)
 		}
+
 		out = append(out, llm.Binding{Target: llm.Target{Provider: t.ProviderID, Model: t.Model}, Provider: p})
 	}
+
 	return out, nil
 }
 
@@ -110,6 +121,7 @@ func (m Models) Models(ctx context.Context, api domain.API, baseURL, key string)
 	if !ok {
 		return nil, fmt.Errorf("list models of %s: %w", api, app.ErrProviderUnavailable)
 	}
+
 	ids, err := lister.Models(ctx)
 	switch {
 	case err == nil:

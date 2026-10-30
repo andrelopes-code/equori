@@ -15,10 +15,13 @@ func (d *Decimal) UnmarshalJSON(b []byte) error {
 		*d = ""
 		return nil
 	}
+
 	if len(b) == 0 || b[0] == '"' {
 		return errors.New("amount is not a JSON number")
 	}
+
 	*d = Decimal(b)
+
 	return nil
 }
 
@@ -26,6 +29,7 @@ func (d Decimal) MarshalJSON() ([]byte, error) {
 	if d == "" {
 		return []byte("null"), nil
 	}
+
 	return []byte(d), nil
 }
 

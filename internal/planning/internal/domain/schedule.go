@@ -72,23 +72,29 @@ func (s Schedule) Validate() error {
 	default:
 		return invalid("kind", "must be bill, income, subscription, transfer or savings")
 	}
+
 	if n := len([]rune(s.Description)); n < 1 || n > 200 {
 		return invalid("description", "must have 1 to 200 characters")
 	}
+
 	if s.ToleranceBP < 0 || s.ToleranceBP > 10000 {
 		return invalid("match_tolerance_bp", "must be between 0 and 10000")
 	}
+
 	if s.GraceDays < 0 || s.GraceDays > 31 {
 		return invalid("grace_days", "must be between 0 and 31")
 	}
+
 	for _, t := range s.Terms {
 		if t.Amount <= 0 {
 			return invalid("amount", "must be positive")
 		}
+
 		if err := t.Rule.Validate(); err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -98,6 +104,7 @@ func (s Schedule) Validate() error {
 // on or after EndsOn consume their sequence and produce nothing (A52).
 func (s Schedule) Planned(from, to time.Time, days BusinessDays) []Planned {
 	var out []Planned
+
 	last := 0
 	for i, t := range s.Terms {
 		upper := to
@@ -106,12 +113,14 @@ func (s Schedule) Planned(from, to time.Time, days BusinessDays) []Planned {
 				upper = next
 			}
 		}
+
 		// The first version starts at the rule's start, whose date a preceding adjustment may
 		// move before it.
 		lower := t.EffectiveFrom
 		if i == 0 {
 			lower = time.Time{}
 		}
+
 		for j, d := range t.Rule.Dates(lower, upper, days) {
 			seq := d.Sequence
 			switch {
@@ -120,13 +129,17 @@ func (s Schedule) Planned(from, to time.Time, days BusinessDays) []Planned {
 			case i > 0:
 				seq = last + 1
 			}
+
 			last = seq
+
 			if d.Date.Before(from) || s.Paused(d.Date) || (s.EndsOn != nil && !d.Date.Before(*s.EndsOn)) {
 				continue
 			}
+
 			out = append(out, Planned{Sequence: seq, Date: d.Date, Amount: t.Amount})
 		}
 	}
+
 	return out
 }
 
@@ -137,5 +150,6 @@ func (s Schedule) Paused(d time.Time) bool {
 			return true
 		}
 	}
+
 	return false
 }

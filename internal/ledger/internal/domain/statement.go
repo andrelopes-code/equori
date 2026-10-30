@@ -73,6 +73,7 @@ type StatementSummary struct {
 // statement dated after its closing, in date order, up to today (A89, A96).
 func Summarize(in []StatementInput, today time.Time) []StatementSummary {
 	out := make([]StatementSummary, len(in))
+
 	var opening int64
 	for i, s := range in {
 		sum := StatementSummary{Reference: s.Reference, Opening: opening}
@@ -86,34 +87,42 @@ func Summarize(in []StatementInput, today time.Time) []StatementSummary {
 				sum.Payments += l.Amount
 			}
 		}
+
 		sum.AmountDue = sum.Opening + sum.Charges - sum.Credits - sum.Payments
 		out[i] = sum
 		opening = sum.AmountDue
 	}
+
 	if len(out) > 0 {
 		// The first statement's payments settled nothing equori holds.
 		out[0].EarlyPayments = out[0].Payments
 	}
+
 	for i := range out {
 		var next []StatementLine
 		if i+1 < len(in) {
 			next = in[i+1].Lines
 		}
+
 		credits, payments := settle(&out[i], in[i].Closing, next, today)
+
 		out[i].Unpaid = max(out[i].AmountDue, 0) - out[i].Settled
 		if i+1 < len(out) {
 			out[i+1].PriorCredits = credits
 			out[i+1].EarlyPayments = out[i+1].Payments - payments
 		}
 	}
+
 	for i, s := range in {
 		out[i].BilledAmount = out[i].AmountDue + out[i].EarlyPayments
 		out[i].Status = status(s, out[i], today)
+
 		out[i].OpenAmount = out[i].AmountDue
 		if i > 0 && (out[i-1].Status == StatusClosed || out[i-1].Status == StatusPartiallyPaid) {
 			out[i].OpenAmount -= out[i-1].Unpaid
 		}
 	}
+
 	return out
 }
 
@@ -123,15 +132,19 @@ func Summarize(in []StatementInput, today time.Time) []StatementSummary {
 // nets against the next statement instead (A96).
 func settle(sum *StatementSummary, closing time.Time, next []StatementLine, today time.Time) (credits, payments int64) {
 	inflows := slices.SortedStableFunc(slices.Values(next), func(a, b StatementLine) int { return a.Date.Compare(b.Date) })
+
 	left := max(sum.AmountDue, 0)
 	for _, l := range inflows {
 		if left == 0 || l.Date.After(today) {
 			break
 		}
+
 		if (l.Role != RoleCredit && l.Role != RolePayment) || !l.Date.After(closing) {
 			continue
 		}
+
 		used := min(l.Amount, left)
+
 		left -= used
 		if l.Role == RoleCredit {
 			credits += used
@@ -139,7 +152,9 @@ func settle(sum *StatementSummary, closing time.Time, next []StatementLine, toda
 			payments += used
 		}
 	}
+
 	sum.Settled = max(sum.AmountDue, 0) - left
+
 	return credits, payments
 }
 
@@ -151,6 +166,7 @@ func status(s StatementInput, sum StatementSummary, today time.Time) string {
 		if sum.AmountDue <= 0 && sum.BilledAmount > 0 {
 			return StatusPaid
 		}
+
 		return StatusOpen
 	case sum.Unpaid <= 0:
 		return StatusPaid

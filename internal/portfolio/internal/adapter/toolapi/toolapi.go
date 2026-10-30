@@ -23,10 +23,12 @@ func optionalID(s, field string) (uuid.UUID, error) {
 	if s == "" {
 		return uuid.Nil, nil
 	}
+
 	id, err := uuid.Parse(s)
 	if err != nil {
 		return uuid.Nil, tool.InvalidArgument(field, "is not a UUID")
 	}
+
 	return id, nil
 }
 
@@ -46,5 +48,6 @@ func required(name string, fields []field, needed ...string) error {
 			return tool.InvalidArgument(f.name, "is not used by "+name)
 		}
 	}
+
 	return nil
 }

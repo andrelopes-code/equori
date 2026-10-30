@@ -118,13 +118,16 @@ func NewTransaction(t Transaction, accounts map[uuid.UUID]Account) (Transaction,
 	if t.Date.IsZero() {
 		return Transaction{}, invalid("date", "is required")
 	}
+
 	t.Description = strings.TrimSpace(t.Description)
 	if utf8.RuneCountInString(t.Description) > maxTextLength {
 		return Transaction{}, invalid("description", "must have at most 500 characters")
 	}
+
 	if _, err := money.ParseCurrency(string(t.BalancingCurrency)); err != nil {
 		return Transaction{}, invalid("balancing_currency", "must be a supported currency")
 	}
+
 	switch t.Origin {
 	case "":
 		t.Origin = OriginManual
@@ -132,72 +135,89 @@ func NewTransaction(t Transaction, accounts map[uuid.UUID]Account) (Transaction,
 	default:
 		return Transaction{}, invalid("origin", "is not a known origin")
 	}
+
 	if t.Version == 0 {
 		t.Version = initialVersion
 	}
+
 	if len(t.Postings) < 2 {
 		return Transaction{}, &FieldError{Field: "postings", Message: "at least two postings are required", Err: ErrTooFewPostings}
 	}
+
 	if len(t.Postings) > MaxPostings {
 		return Transaction{}, invalid("postings", fmt.Sprintf("must have at most %d postings", MaxPostings))
 	}
 
 	postings := make([]Posting, len(t.Postings))
 	var sum int64
+
 	hasCategory := false
 	for _, p := range t.Postings {
 		if a, ok := accounts[p.AccountID]; ok && (a.Class == ClassIncome || a.Class == ClassExpense) {
 			hasCategory = true
 		}
 	}
+
 	for i, p := range t.Postings {
 		checked, err := checkPosting(i, p, t, accounts)
 		if err != nil {
 			return Transaction{}, err
 		}
+
 		if checked, err = checkCardPosting(i, checked, accounts[checked.AccountID], hasCategory); err != nil {
 			return Transaction{}, err
 		}
+
 		postings[i] = checked
 		// |weight| ≤ 2^53 and at most 500 postings: the sum fits in int64.
 		sum += checked.Weight.Amount()
 	}
+
 	if sum != 0 {
 		return Transaction{}, &FieldError{Field: "postings", Message: fmt.Sprintf("weights sum to %d instead of zero", sum), Err: ErrUnbalanced}
 	}
+
 	t.Postings = postings
 
 	tags, err := normalizeTags(t.Tags)
 	if err != nil {
 		return Transaction{}, err
 	}
+
 	t.Tags = tags
 	for i, l := range t.Links {
 		if !slices.Contains(linkTypes, l.Type) {
 			return Transaction{}, invalid(fmt.Sprintf("links[%d].type", i), "is not a known link type")
 		}
+
 		if l.Target == uuid.Nil || l.Target == t.ID {
 			return Transaction{}, invalid(fmt.Sprintf("links[%d].target", i), "must reference another transaction")
 		}
+
 		if l.Amount < 0 || (l.Amount != 0 && l.Type != LinkReimbursementOf) {
 			return Transaction{}, invalid(fmt.Sprintf("links[%d].amount", i), "must be positive and only on a reimbursement_of link")
 		}
 	}
+
 	return t, nil
 }
 
 func checkPosting(i int, p Posting, t Transaction, accounts map[uuid.UUID]Account) (Posting, error) {
 	field := func(name string) string { return fmt.Sprintf("postings[%d].%s", i, name) }
+
 	a, ok := accounts[p.AccountID]
 	if !ok || a.UserID != t.UserID {
 		return Posting{}, &FieldError{Field: field("account_id"), Message: "unknown account", Err: ErrUnknownAccount}
 	}
+
 	if !a.IsOpenOn(t.Date) {
 		return Posting{}, &FieldError{Field: field("account_id"), Message: "account is not open on the transaction date", Err: ErrAccountClosed}
 	}
+
 	if p.Amount.Currency() != a.Instrument {
 		return Posting{}, invalid(field("amount"), "must be in the account currency "+string(a.Instrument))
 	}
+
 	if p.Amount.IsZero() {
 		return Posting{}, invalid(field("amount"), "must not be zero")
 	}
@@ -224,17 +244,21 @@ func checkPosting(i int, p Posting, t Transaction, accounts map[uuid.UUID]Accoun
 	default:
 		return Posting{}, invalid(field("status"), "must be pending, cleared or reconciled")
 	}
+
 	if o := p.Original; o != nil {
 		if _, err := money.ParseCurrency(string(o.Currency())); err != nil || o.Currency() == a.Instrument || o.IsZero() || o.IsNegative() != p.Amount.IsNegative() {
 			return Posting{}, invalid(field("original"), "must be a non-zero amount of another currency with the sign of the amount")
 		}
 	}
+
 	if p.SettledOn != nil && p.SettledOn.Before(t.Date) {
 		return Posting{}, invalid(field("settled_on"), "must not be before the transaction date")
 	}
+
 	if utf8.RuneCountInString(p.Memo) > maxTextLength {
 		return Posting{}, invalid(field("memo"), "must have at most 500 characters")
 	}
+
 	return p, nil
 }
 
@@ -246,6 +270,7 @@ func NormalizeTag(name, field string) (string, error) {
 	if err != nil {
 		return "", invalid(field, "must use letters, digits and hyphens, up to 60 characters")
 	}
+
 	return tags[0], nil
 }
 
@@ -257,9 +282,12 @@ func normalizeTags(in []string) ([]string, error) {
 		if utf8.RuneCountInString(tag) > maxTagLength || !tagPattern.MatchString(tag) {
 			return nil, invalid(fmt.Sprintf("tags[%d]", i), "must use letters, digits and hyphens, up to 60 characters")
 		}
+
 		out = append(out, tag)
 	}
+
 	slices.Sort(out)
+
 	return slices.Compact(out), nil
 }
 
@@ -268,9 +296,11 @@ func (t Transaction) Correct(next Transaction, expectedVersion int, accounts map
 	if err := t.checkMutable(); err != nil {
 		return Transaction{}, err
 	}
+
 	if expectedVersion != t.Version {
 		return Transaction{}, ErrVersionConflict
 	}
+
 	next.ID = t.ID
 	next.UserID = t.UserID
 	next.Version = t.Version + 1
@@ -278,14 +308,17 @@ func (t Transaction) Correct(next Transaction, expectedVersion int, accounts map
 	if next.Links == nil {
 		next.Links = t.Links
 	}
+
 	postings, err := keepRecordLinks(t.Postings, next.Postings)
 	if err != nil {
 		return Transaction{}, err
 	}
+
 	next.Postings = keepStatementBasis(t.Postings, postings)
 	if next.Origin == "" {
 		next.Origin = t.Origin
 	}
+
 	return NewTransaction(next, accounts)
 }
 
@@ -301,6 +334,7 @@ func (t Transaction) CorrectDetails(next Transaction, expectedVersion int) (Tran
 	if err := t.checkMutable(); err != nil {
 		return Transaction{}, err
 	}
+
 	if expectedVersion != t.Version {
 		return Transaction{}, ErrVersionConflict
 	}
@@ -309,10 +343,12 @@ func (t Transaction) CorrectDetails(next Transaction, expectedVersion int) (Tran
 	if !next.Date.Equal(t.Date) {
 		blocked = append(blocked, "date")
 	}
+
 	same := func(a, b Posting) bool { return a.AccountID == b.AccountID && a.Amount == b.Amount && a.Memo == b.Memo }
 	if !slices.EqualFunc(t.Postings, next.Postings, same) {
 		blocked = append(blocked, "postings")
 	}
+
 	if len(blocked) > 0 {
 		return Transaction{}, invalid("transaction_id", "the "+strings.Join(blocked, " and ")+
 			" of installment transactions change through refunds, cancellation or anticipation")
@@ -342,12 +378,15 @@ func keepRecordLinks(prev, next []Posting) ([]Posting, error) {
 		if p.ExternalRecordID == uuid.Nil {
 			continue
 		}
+
 		i := slices.IndexFunc(next, func(n Posting) bool { return n.AccountID == p.AccountID && n.ExternalRecordID == uuid.Nil })
 		if i < 0 {
 			return nil, invalid("postings", "must keep a posting on account "+p.AccountID.String()+", which an imported record confirms")
 		}
+
 		next[i].ExternalRecordID = p.ExternalRecordID
 	}
+
 	return next, nil
 }
 
@@ -359,10 +398,12 @@ func keepStatementBasis(prev, next []Posting) []Posting {
 		if p.Statement == nil {
 			continue
 		}
+
 		i := nthOnAccount(next, p.AccountID, ordinalOnAccount(prev, k))
 		if i < 0 {
 			continue
 		}
+
 		s := next[i].Statement
 		switch {
 		case s != nil && *s == *p.Statement:
@@ -371,6 +412,7 @@ func keepStatementBasis(prev, next []Posting) []Posting {
 			next[i].Statement, next[i].StatementBasis = p.Statement, p.StatementBasis
 		}
 	}
+
 	return next
 }
 
@@ -382,6 +424,7 @@ func ordinalOnAccount(ps []Posting, k int) int {
 			n++
 		}
 	}
+
 	return n
 }
 
@@ -391,11 +434,14 @@ func nthOnAccount(ps []Posting, account uuid.UUID, n int) int {
 		if p.AccountID != account {
 			continue
 		}
+
 		if n == 0 {
 			return i
 		}
+
 		n--
 	}
+
 	return -1
 }
 
@@ -403,12 +449,15 @@ func (t Transaction) Void(at time.Time, reason string) (Transaction, error) {
 	if err := t.checkMutable(); err != nil {
 		return Transaction{}, err
 	}
+
 	reason = strings.TrimSpace(reason)
 	if utf8.RuneCountInString(reason) > maxTextLength {
 		return Transaction{}, invalid("reason", "must have at most 500 characters")
 	}
+
 	t.VoidedAt = &at
 	t.VoidReason = reason
+
 	return t, nil
 }
 
@@ -416,11 +465,13 @@ func (t Transaction) checkMutable() error {
 	if t.VoidedAt != nil {
 		return ErrVoided
 	}
+
 	for _, p := range t.Postings {
 		if p.Status == StatusReconciled {
 			return ErrReconciled
 		}
 	}
+
 	return nil
 }
 
@@ -433,8 +484,10 @@ func checkCardPosting(i int, p Posting, a Account, hasCategory bool) (Posting, e
 		if p.Statement != nil || p.CardRole != "" || p.Installment != nil {
 			return Posting{}, invalid(field("statement"), "statements, card roles and installments apply to credit card postings only")
 		}
+
 		return p, nil
 	}
+
 	if p.CardRole == "" {
 		switch {
 		case p.Amount.IsNegative():
@@ -445,6 +498,7 @@ func checkCardPosting(i int, p Posting, a Account, hasCategory bool) (Posting, e
 			p.CardRole = RolePayment
 		}
 	}
+
 	switch p.CardRole {
 	case RoleCharge:
 		if !p.Amount.IsNegative() {
@@ -457,5 +511,6 @@ func checkCardPosting(i int, p Posting, a Account, hasCategory bool) (Posting, e
 	default:
 		return Posting{}, invalid(field("card_role"), "must be charge, credit or payment")
 	}
+
 	return p, nil
 }

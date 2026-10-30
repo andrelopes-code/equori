@@ -88,10 +88,12 @@ func (s *seeder) count(h habit, month time.Time) int {
 	if h.chance > 0 && s.rng.Float64() > h.chance {
 		n = 0
 	}
+
 	if h.season != nil {
 		f := h.season[month.Month()-1]
 		n = int(float64(n)*f + s.rng.Float64())
 	}
+
 	return n
 }
 
@@ -100,6 +102,7 @@ func (s *seeder) dayOf(h habit, month time.Time) time.Time {
 	last := month.AddDate(0, 1, -1).Day()
 	for {
 		d := onDay(month, 1+s.rng.IntN(last))
+
 		wd := d.Weekday()
 		if !h.weekend || wd == time.Friday || wd == time.Saturday || wd == time.Sunday || s.rng.Float64() < .25 {
 			return d
@@ -112,18 +115,22 @@ func (s *seeder) spending(month time.Time) {
 		if h.from != "" && ym(month) < h.from {
 			continue
 		}
+
 		for range s.count(h, month) {
 			d := s.dayOf(h, month)
 			payee := h.payees[s.rng.IntN(len(h.payees))]
+
 			cents := s.between(h.lo, h.hi, h.skew) * lifestyle / 100
 			if h.round {
 				cents -= cents % 10
 			}
+
 			via := s.pick(h.vias, h.weights)
 			desc := fmt.Sprintf(h.desc, payee)
 			s.at(d, func() { s.expense(d, via, h.category, payee, desc, cents, h.tags...) })
 		}
 	}
+
 	s.therapy(month)
 	s.sharedDinners(month)
 }
@@ -135,6 +142,7 @@ func (s *seeder) therapy(month time.Time) {
 		if s.rng.Float64() < .1 {
 			continue
 		}
+
 		s.at(d, func() {
 			s.expense(d, "nubank.checking", "health.therapy", "Clínica Mente Aberta", "Sessão de terapia", cents)
 		})

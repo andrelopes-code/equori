@@ -77,16 +77,19 @@ func (s *Service) cashTotals(ctx context.Context, userID int64, from, to time.Ti
 	if err != nil {
 		return nil, err
 	}
+
 	facts, err := s.repo.CardFacts(ctx, userID, to)
 	if err != nil {
 		return nil, err
 	}
+
 	payments, _ := allocate(facts)
 	for _, p := range payments {
 		if !p.date.Before(from) && !p.date.After(to) {
 			add(out, p.shares)
 		}
 	}
+
 	return out, nil
 }
 
@@ -97,21 +100,26 @@ func (s *Service) cashMonthTotals(ctx context.Context, userID int64, from, to ti
 	if err != nil {
 		return nil, err
 	}
+
 	facts, err := s.repo.CardFacts(ctx, userID, to)
 	if err != nil {
 		return nil, err
 	}
+
 	payments, _ := allocate(facts)
 	for _, p := range payments {
 		if p.date.Before(from) || p.date.After(to) {
 			continue
 		}
+
 		m := firstOfMonth(p.date)
 		if out[m] == nil {
 			out[m] = Shares{}
 		}
+
 		add(out[m], p.shares)
 	}
+
 	return out, nil
 }
 
@@ -121,21 +129,26 @@ func (s *Service) CategoryCashPayments(ctx context.Context, userID int64, catego
 	if days := int(to.Sub(from).Hours()/24) + 1; days < 1 || days > MaxCategoryDays {
 		return nil, "", ErrInvalidCategoryRange
 	}
+
 	instrument, err := s.repo.AccountCurrency(ctx, userID, categoryID)
 	if err != nil {
 		return nil, "", err
 	}
+
 	facts, err := s.repo.CardFacts(ctx, userID, to)
 	if err != nil {
 		return nil, "", err
 	}
+
 	payments, _ := allocate(facts)
+
 	var out []CashPayment
 	for _, p := range payments {
 		if v := p.shares[categoryID]; v != 0 && !p.date.Before(from) && !p.date.After(to) {
 			out = append(out, CashPayment{Date: p.date, Amount: v, CardID: p.card, StatementID: p.statement, StatementReference: p.reference, PaymentTransactionID: p.transaction})
 		}
 	}
+
 	return out, instrument, nil
 }
 
@@ -154,6 +167,7 @@ func allocate(f CardFacts) ([]payment, map[uuid.UUID]Shares) {
 			financing[p.TransactionID] = true
 		}
 	}
+
 	categories := lineCategories(f)
 	type bucket struct {
 		card, id  uuid.UUID
@@ -162,22 +176,27 @@ func allocate(f CardFacts) ([]payment, map[uuid.UUID]Shares) {
 	}
 	var buckets []*bucket
 	bucketOf := map[uuid.UUID]*bucket{}
+
 	byTx := map[uuid.UUID][]CardLine{}
 	for _, l := range f.Lines {
 		if !l.Base {
 			continue
 		}
+
 		if financing[l.TransactionID] {
 			// CV7: an installment of a financing has no categories until the financing applies.
 			categories[l.ID] = Shares{}
 		}
+
 		if n := len(buckets); n == 0 || buckets[n-1].card != l.CardID || !buckets[n-1].statement.Equal(l.Statement) {
 			buckets = append(buckets, &bucket{card: l.CardID, id: l.StatementID, statement: l.Statement, shares: Shares{}})
 		}
+
 		bucketOf[l.ID] = buckets[len(buckets)-1]
 		byTx[l.TransactionID] = append(byTx[l.TransactionID], l)
 		add(buckets[len(buckets)-1].shares, categories[l.ID])
 	}
+
 	var out []payment
 	for _, p := range f.Payments {
 		// A statement owing nothing passes what it holds to the next statement of its card (CV8).
@@ -187,36 +206,47 @@ func allocate(f CardFacts) ([]payment, map[uuid.UUID]Shares) {
 				b.shares = Shares{}
 			}
 		}
+
 		left := p.Amount
+
 		moved := Shares{}
 		for _, b := range buckets {
 			if left <= 0 {
 				break
 			}
+
 			due := sum(b.shares)
 			if b.card != p.CardID || due <= 0 {
 				continue
 			}
+
 			share := distribute(min(left, due), b.shares)
 			add(b.shares, negate(share))
+
 			left -= min(left, due)
+
 			if p.Financing {
 				add(moved, share)
 				continue
 			}
+
 			out = append(out, payment{date: p.Date, card: p.CardID, statement: b.id, reference: b.statement, transaction: p.TransactionID, shares: share})
 		}
+
 		if !p.Financing {
 			continue
 		}
+
 		// CV7: the principal moves into the installments beside the financing's interest.
 		rest := clone(f.Categories[p.TransactionID])
 		add(rest, moved)
+
 		for _, l := range spread(byTx[p.TransactionID], rest) {
 			add(bucketOf[l.id].shares, l.shares)
 			categories[l.id] = l.shares
 		}
 	}
+
 	return out, categories
 }
 
@@ -234,48 +264,59 @@ func spread(lines []CardLine, rest Shares) []lineShares {
 			out[i] = lineShares{l.ID, rest}
 			break
 		}
+
 		share := distribute(-l.Amount, rest)
 		out[i] = lineShares{l.ID, share}
 		rest = clone(rest)
 		add(rest, negate(share))
 	}
+
 	return out
 }
 
 // lineCategories gives each card line its categories (CV2).
 func lineCategories(f CardFacts) map[uuid.UUID]Shares {
 	byTx := map[uuid.UUID][]CardLine{}
+
 	var txs []uuid.UUID
 	for _, l := range f.Lines {
 		if _, ok := byTx[l.TransactionID]; !ok {
 			txs = append(txs, l.TransactionID)
 		}
+
 		byTx[l.TransactionID] = append(byTx[l.TransactionID], l)
 	}
+
 	cardTotal := map[uuid.UUID]int64{}
 	for _, l := range f.Lines {
 		cardTotal[l.TransactionID] -= l.Amount
 	}
+
 	out := map[uuid.UUID]Shares{}
 	for _, tx := range txs {
 		lines := byTx[tx]
 		rest := Shares{}
 		add(rest, f.Categories[tx])
 		var others []CardLine
+
 		origin, reverses := f.Origins[tx]
 		for _, l := range lines {
 			if reverses && l.Credit && cardTotal[origin] != 0 {
 				share := scale(-l.Amount, cardTotal[origin], f.Categories[origin])
 				out[l.ID] = share
 				add(rest, negate(share))
+
 				continue
 			}
+
 			others = append(others, l)
 		}
+
 		for _, l := range spread(others, rest) {
 			out[l.id] = l.shares
 		}
 	}
+
 	return out
 }
 
@@ -292,22 +333,28 @@ func scale(x, d int64, weights Shares) Shares {
 	if d == 0 || len(weights) == 0 {
 		return out
 	}
+
 	ids := make([]uuid.UUID, 0, len(weights))
 	for id := range weights {
 		ids = append(ids, id)
 	}
+
 	slices.SortFunc(ids, func(a, b uuid.UUID) int { return bytes.Compare(a[:], b[:]) })
 	var given int64
+
 	largest := ids[0]
 	for _, id := range ids {
 		w := weights[id]
 		out[id] = floorDiv(x, w, d)
+
 		given += out[id]
 		if abs(w) > abs(weights[largest]) {
 			largest = id
 		}
 	}
+
 	out[largest] += floorDiv(x, sum(weights), d) - given
+
 	return out
 }
 
@@ -318,6 +365,7 @@ func floorDiv(a, b, d int64) int64 {
 	if d < 0 && m.Sign() != 0 {
 		q.Sub(q, big.NewInt(1))
 	}
+
 	return q.Int64()
 }
 
@@ -325,6 +373,7 @@ func abs(v int64) int64 {
 	if v < 0 {
 		return -v
 	}
+
 	return v
 }
 
@@ -333,6 +382,7 @@ func sum(s Shares) int64 {
 	for _, v := range s {
 		n += v
 	}
+
 	return n
 }
 
@@ -347,11 +397,13 @@ func negate(s Shares) Shares {
 	for id, v := range s {
 		out[id] = -v
 	}
+
 	return out
 }
 
 func clone(s Shares) Shares {
 	out := make(Shares, len(s))
 	add(out, s)
+
 	return out
 }

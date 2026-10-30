@@ -24,10 +24,12 @@ func optionalID(s, field string) (uuid.UUID, error) {
 	if s == "" {
 		return uuid.Nil, nil
 	}
+
 	id, err := uuid.Parse(s)
 	if err != nil {
 		return uuid.Nil, tool.InvalidArgument(field, "is not a UUID")
 	}
+
 	return id, nil
 }
 
@@ -47,6 +49,7 @@ func required(name string, fields []field, needed ...string) error {
 			return tool.InvalidArgument(f.name, "is not used by "+name)
 		}
 	}
+
 	return nil
 }
 
@@ -55,14 +58,17 @@ func pageRequest[K any](args tool.PageArgs) (page.Request[K], error) {
 	if err != nil {
 		return page.Request[K]{}, err
 	}
+
 	r := page.Request[K]{Limit: n}
 	if args.Cursor != "" {
 		var k K
 		if page.DecodeCursor(args.Cursor, &k) != nil {
 			return page.Request[K]{}, tool.InvalidArgument("cursor", "is not a next_cursor of this list; start again without cursor")
 		}
+
 		r.After = &k
 	}
+
 	return r, nil
 }
 
@@ -70,6 +76,7 @@ func nextCursor[K any](k *K) (string, error) {
 	if k == nil {
 		return "", nil
 	}
+
 	return page.EncodeCursor(k)
 }
 
@@ -78,5 +85,6 @@ func moneyOf(amount int64, currency string) (tool.Money, error) {
 	if err != nil {
 		return tool.Money{}, err
 	}
+
 	return tool.MoneyOf(m), nil
 }

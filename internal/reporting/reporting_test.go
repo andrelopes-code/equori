@@ -21,10 +21,12 @@ func series(t *testing.T, h *apitest.Harness, account, from, to, basis string) m
 		Items []seriesItem `json:"items"`
 	}
 	h.MustDo(http.MethodGet, fmt.Sprintf("/api/v1/reports/balances?account_id=%s&from=%s&to=%s&basis=%s", account, from, to, basis), nil, http.StatusOK, &out)
+
 	m := make(map[string]int64, len(out.Items))
 	for _, it := range out.Items {
 		m[it.Date] = it.Balance.Amount
 	}
+
 	return m
 }
 
@@ -36,6 +38,7 @@ func balanceAt(t *testing.T, h *apitest.Harness, account, date, basis string) in
 		} `json:"balance"`
 	}
 	h.MustDo(http.MethodGet, "/api/v1/accounts/"+account+"/balance?date="+date+"&basis="+basis, nil, http.StatusOK, &out)
+
 	return out.Balance.Amount
 }
 
@@ -57,6 +60,7 @@ func TestSeriesFollowsRecordedTransactions(t *testing.T) {
 		if len(got) != 10 {
 			t.Fatalf("%s series has %d days, want 10", basis, len(got))
 		}
+
 		for day := 1; day <= 10; day++ {
 			d := fmt.Sprintf("2026-10-%02d", day)
 			if want := balanceAt(t, h, checking, d, basis); got[d] != want {

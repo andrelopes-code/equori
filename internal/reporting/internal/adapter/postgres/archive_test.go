@@ -14,19 +14,23 @@ import (
 func TestEveryTableIsClassified(t *testing.T) {
 	t.Parallel()
 	pool := pgtest.New(t)
+
 	rows, err := pool.Query(t.Context(), `SELECT table_name FROM information_schema.tables
 		WHERE table_schema = current_schema() AND table_type = 'BASE TABLE' ORDER BY table_name`)
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	all, err := pgx.CollectRows(rows, pgx.RowTo[string])
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	facts, err := FactTables(t.Context(), pool)
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	// marketdata_feed holds the instance's feed settings (ADR 025 F1) and marketdata_index_expectation
 	// the latest survey a feed fetches again (ADR 026 E3); neither holds a user's rows.
 	other := []string{"goose_db_version", "identity_user", "ledger_transaction_version", "marketdata_feed",
@@ -36,6 +40,7 @@ func TestEveryTableIsClassified(t *testing.T) {
 			t.Errorf("table %s is neither exported nor named as left out", table)
 		}
 	}
+
 	for _, table := range append(slices.Clone(sharedTables), notExported...) {
 		if !slices.Contains(all, table) {
 			t.Errorf("table %s does not exist", table)

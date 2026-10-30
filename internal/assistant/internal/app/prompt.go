@@ -38,5 +38,6 @@ func guide(data guideData) string {
 	if err := guideTemplate.Execute(&b, data); err != nil {
 		panic(err) // the template and its data are fixed at build time
 	}
+
 	return b.String()
 }

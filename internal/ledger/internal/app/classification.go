@@ -44,25 +44,31 @@ func (s *Service) TransactionFacts(ctx context.Context, userID int64, ids []uuid
 	if err != nil || len(ts) == 0 {
 		return nil, err
 	}
+
 	raw, err := s.repo.RawDescriptions(ctx, userID, ids)
 	if err != nil {
 		return nil, err
 	}
+
 	accounts, err := s.repo.Accounts(ctx, userID, postingAccounts(ts...))
 	if err != nil {
 		return nil, err
 	}
+
 	byID := make(map[uuid.UUID]int, len(ts))
 	for i, t := range ts {
 		byID[t.ID] = i
 	}
+
 	out := make([]TransactionFacts, 0, len(ts))
 	for _, id := range ids {
 		i, ok := byID[id]
 		if !ok {
 			continue
 		}
+
 		t := ts[i]
+
 		f := TransactionFacts{
 			ID: t.ID, Version: t.Version, Date: t.Date, Description: t.Description, RawDescription: t.Description,
 			PayeeID: t.PayeeID, Origin: string(t.Origin), Voided: t.VoidedAt != nil, CategoryState: string(t.CategoryState(accounts)),
@@ -71,6 +77,7 @@ func (s *Service) TransactionFacts(ctx context.Context, userID int64, ids []uuid
 		if d, ok := raw[t.ID]; ok {
 			f.RawDescription = d
 		}
+
 		for j, p := range t.Postings {
 			a := accounts[p.AccountID]
 			f.Postings[j] = FactPosting{
@@ -78,8 +85,10 @@ func (s *Service) TransactionFacts(ctx context.Context, userID int64, ids []uuid
 				Amount: p.Amount, Installment: p.Installment != nil,
 			}
 		}
+
 		out = append(out, f)
 	}
+
 	return out, nil
 }
 
@@ -97,6 +106,7 @@ func (s *Service) AccountFacts(ctx context.Context, userID int64) ([]AccountFact
 	if err != nil {
 		return nil, err
 	}
+
 	out := make([]AccountFact, len(as))
 	for i, a := range as {
 		out[i] = AccountFact{
@@ -104,6 +114,7 @@ func (s *Service) AccountFacts(ctx context.Context, userID int64) ([]AccountFact
 			Instrument: a.Instrument, OpenedOn: a.OpenedOn, ClosedOn: a.ClosedOn,
 		}
 	}
+
 	return out, nil
 }
 
@@ -113,12 +124,14 @@ func (s *Service) MissingPayees(ctx context.Context, userID int64, ids []uuid.UU
 	if err != nil {
 		return nil, err
 	}
+
 	var missing []uuid.UUID
 	for _, id := range ids {
 		if _, ok := found[id]; !ok {
 			missing = append(missing, id)
 		}
 	}
+
 	return missing, nil
 }
 

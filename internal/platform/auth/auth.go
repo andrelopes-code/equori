@@ -22,5 +22,6 @@ func MustUserID(ctx context.Context) int64 {
 	if !ok {
 		panic("auth: no authenticated user in context")
 	}
+
 	return id
 }

@@ -28,6 +28,7 @@ func day(s string) time.Time {
 	if err != nil {
 		panic(err)
 	}
+
 	return d
 }
 
@@ -43,6 +44,7 @@ func TestS16ForeignPurchase(t *testing.T) {
 	iof := h.Account("IOF", "expense", "", map[string]any{"parent_id": f.taxes})
 
 	var tx transactionOut
+
 	r := h.Do(http.MethodPost, "/api/v1/foreign-purchases", map[string]any{
 		"account_id": f.itauVisa, "category_id": travel, "date": "2026-10-22", "description": "Hotel",
 		"original": units(10000, "USD"), "rate": "5.4830", "foreign_charge_rate_bp": 350, "foreign_charge_category_id": iof,
@@ -50,10 +52,13 @@ func TestS16ForeignPurchase(t *testing.T) {
 	if r.Status != http.StatusCreated {
 		t.Fatalf("status %d: %s", r.Status, r.Body)
 	}
+
 	r.Decode(t, &tx)
+
 	if r.Header.Get("Location") != "/api/v1/transactions/"+tx.ID || len(tx.Postings) != 4 {
 		t.Fatalf("Location %q, postings %+v", r.Header.Get("Location"), tx.Postings)
 	}
+
 	want := []struct {
 		account   string
 		amount    int64
@@ -68,6 +73,7 @@ func TestS16ForeignPurchase(t *testing.T) {
 	for i, w := range want {
 		p := tx.Postings[i]
 		amount, _ := amountOf(p)
+
 		hasOriginal := p.Original != nil && p.Original["amount"] == float64(10000)*sign(w.amount) && p.Original["currency"] == "USD"
 		if p.AccountID != w.account || amount != w.amount || hasOriginal != w.original || p.Statement != w.statement {
 			t.Fatalf("posting %d = %+v", i, p)
@@ -78,6 +84,7 @@ func TestS16ForeignPurchase(t *testing.T) {
 		"account_id": f.itauVisa, "category_id": travel, "date": "2026-10-22", "original": units(10000, "USD"), "rate": "5.4830", "foreign_charge_rate_bp": 0,
 	})
 	r.Decode(t, &tx)
+
 	if r.Status != http.StatusCreated || len(tx.Postings) != 2 {
 		t.Fatalf("without IOF: %d %+v", r.Status, tx.Postings)
 	}
@@ -98,6 +105,7 @@ func sign(n int64) float64 {
 	if n < 0 {
 		return -1
 	}
+
 	return 1
 }
 
@@ -109,6 +117,7 @@ func TestS17CurrencyExchange(t *testing.T) {
 	fees := systemAccount(t, h, "fees")
 
 	var tx transactionOut
+
 	r := h.Do(http.MethodPost, "/api/v1/exchanges", map[string]any{
 		"from_account_id": f.checking, "to_account_id": wise, "date": "2026-10-14",
 		"from_amount": apitest.BRL(548300), "to_amount": units(100000, "USD"), "fee": apitest.BRL(3000),
@@ -116,7 +125,9 @@ func TestS17CurrencyExchange(t *testing.T) {
 	if r.Status != http.StatusCreated {
 		t.Fatalf("status %d: %s", r.Status, r.Body)
 	}
+
 	r.Decode(t, &tx)
+
 	want := []struct {
 		account        string
 		amount, weight int64
@@ -128,6 +139,7 @@ func TestS17CurrencyExchange(t *testing.T) {
 	}
 	for i, w := range want {
 		p := tx.Postings[i]
+
 		amount, currency := amountOf(p)
 		if p.AccountID != w.account || amount != w.amount || currency != w.currency || p.Weight["amount"] != float64(w.weight) {
 			t.Fatalf("posting %d = %+v", i, p)
@@ -135,16 +147,19 @@ func TestS17CurrencyExchange(t *testing.T) {
 	}
 
 	md := h.App.Marketdata
+
 	rate := func(s string) money.Rate {
 		r, err := money.ParseRate(s)
 		if err != nil {
 			t.Fatal(err)
 		}
+
 		return r
 	}
 	if err := md.RecordPrices(t.Context(), []marketdata.Price{{Instrument: "USD", Quote: "BRL", Date: day("2026-10-30"), Value: rate("5.4950"), Source: "bcb_ptax"}}); err != nil {
 		t.Fatal(err)
 	}
+
 	h.MustDo(http.MethodPost, "/api/v1/prices", map[string]any{"instrument": "USD", "quote_instrument": "BRL", "date": "2026-10-30", "value": "5.5000"}, http.StatusCreated, nil)
 
 	var bal struct {
@@ -158,10 +173,12 @@ func TestS17CurrencyExchange(t *testing.T) {
 		} `json:"prices"`
 	}
 	h.MustDo(http.MethodGet, "/api/v1/accounts/"+wise+"/balance?date=2026-11-01&value_in=BRL", nil, http.StatusOK, &bal)
+
 	if bal.Balance["amount"] != float64(100000) || bal.Value["amount"] != float64(550000) || bal.Value["currency"] != "BRL" ||
 		len(bal.Prices) != 1 || bal.Prices[0].Value != "5.5" || bal.Prices[0].Source != "manual" || bal.Prices[0].Date != "2026-10-30" {
 		t.Fatalf("valued balance = %+v", bal)
 	}
+
 	h.ExpectProblem(h.Do(http.MethodGet, "/api/v1/accounts/"+wise+"/balance?date=2026-10-29&value_in=BRL", nil), http.StatusUnprocessableEntity, "price_missing", "value_in")
 
 	// Selling dollars: the fee reduces the credit of the base-currency side.
@@ -172,7 +189,9 @@ func TestS17CurrencyExchange(t *testing.T) {
 	if r.Status != http.StatusCreated {
 		t.Fatalf("sell status %d: %s", r.Status, r.Body)
 	}
+
 	r.Decode(t, &tx)
+
 	want = []struct {
 		account        string
 		amount, weight int64
@@ -184,6 +203,7 @@ func TestS17CurrencyExchange(t *testing.T) {
 	}
 	for i, w := range want {
 		p := tx.Postings[i]
+
 		amount, currency := amountOf(p)
 		if p.AccountID != w.account || amount != w.amount || currency != w.currency || p.Weight["amount"] != float64(w.weight) {
 			t.Fatalf("sell posting %d = %+v", i, p)
@@ -220,6 +240,7 @@ func TestValuedBalanceOfMixedParent(t *testing.T) {
 		} `json:"prices"`
 	}
 	h.MustDo(http.MethodGet, "/api/v1/accounts/"+f.xp+"/balance?date=2026-11-01&value_in=BRL", nil, http.StatusOK, &bal)
+
 	if bal.Value["amount"] != float64(-10840) || bal.Balance["amount"] != float64(-10840) || bal.Balance["currency"] != "BRL" || len(bal.Prices) != 1 || bal.Prices[0].Instrument != "MXRF11" {
 		t.Fatalf("valued XP = %+v", bal)
 	}

@@ -12,7 +12,9 @@ func oct(d int) time.Time { return time.Date(2026, 10, d, 0, 0, 0, 0, time.UTC) 
 // A98, A99: the comparison of a line with each posting the blocking keeps.
 func TestScore(t *testing.T) {
 	t.Parallel()
+
 	uber, ifood, drogasil := uuid.New(), uuid.New(), uuid.New()
+
 	tests := []struct {
 		name    string
 		line    MatchLine
@@ -48,8 +50,10 @@ func TestScore(t *testing.T) {
 // A100: the zone of each line; postings are assigned one to one, highest score first.
 func TestAssign(t *testing.T) {
 	t.Parallel()
+
 	uber := uuid.New()
 	a, b, c := uuid.New(), uuid.New(), uuid.New()
+
 	tests := []struct {
 		name     string
 		lines    []MatchLine
@@ -121,10 +125,12 @@ func TestAssign(t *testing.T) {
 			if len(got) != len(tt.want) {
 				t.Fatalf("assignments = %+v", got)
 			}
+
 			for i, w := range tt.want {
 				if got[i].Zone != w.Zone || got[i].TransactionID != w.TransactionID {
 					t.Fatalf("line %d = %+v, want zone %s, transaction %s", i, got[i], w.Zone, w.TransactionID)
 				}
+
 				if (w.Zone == ZoneProbable || w.Zone == ZoneAmbiguous) && len(got[i].Candidates) == 0 {
 					t.Fatalf("line %d in review without candidates", i)
 				}

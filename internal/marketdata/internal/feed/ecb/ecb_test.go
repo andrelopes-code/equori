@@ -19,20 +19,24 @@ func day(s string) time.Time {
 	if err != nil {
 		panic(err)
 	}
+
 	return d
 }
 
 func TestECB(t *testing.T) {
 	t.Parallel()
+
 	body, err := os.ReadFile("testdata/eurofxref-hist-90d.xml")
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/missing.xml" {
 			http.NotFound(w, r)
 			return
 		}
+
 		_, _ = w.Write(body)
 	}))
 	t.Cleanup(srv.Close)
@@ -50,6 +54,7 @@ func TestECB(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if len(got) != 1 || got[0].Instrument != "EUR" || got[0].Quote != "USD" || !got[0].Date.Equal(day("2026-10-20")) || got[0].Value.String() != "1.0832" {
 		t.Fatalf("quotes = %+v", got)
 	}
@@ -58,6 +63,7 @@ func TestECB(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if len(got) != 4 {
 		t.Fatalf("quotes = %+v", got)
 	}

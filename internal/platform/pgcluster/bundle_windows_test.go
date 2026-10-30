@@ -23,25 +23,31 @@ func TestBundleImportsResolve(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+
 		for _, e := range entries {
 			name := strings.ToLower(e.Name())
 			if !strings.HasSuffix(name, ".exe") && !strings.HasSuffix(name, ".dll") {
 				continue
 			}
+
 			f, err := pe.Open(filepath.Join(dir, e.Name()))
 			if err != nil {
 				t.Fatal(err)
 			}
+
 			libs, err := f.ImportedLibraries()
 			_ = f.Close()
+
 			if err != nil {
 				t.Fatal(err)
 			}
+
 			for _, lib := range libs {
 				l := strings.ToLower(lib)
 				if strings.HasPrefix(l, "api-ms-win-crt-") || slices.Contains(windowsDLLs, strings.TrimSuffix(l, ".dll")) {
 					continue
 				}
+
 				if _, err := os.Stat(filepath.Join(bin, l)); err != nil {
 					t.Errorf("%s imports %s, which is neither in %s nor shipped by Windows", e.Name(), lib, bin)
 				}

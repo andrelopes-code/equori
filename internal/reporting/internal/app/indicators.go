@@ -61,38 +61,48 @@ func (s *Service) Indicators(ctx context.Context, userID int64, month, today tim
 	if s.commitments == nil || s.valuations == nil {
 		return IndicatorReport{}, errors.New("indicators: sources not set")
 	}
+
 	current := firstOfMonth(today)
+
 	month = firstOfMonth(month)
 	if month.After(current) {
 		return IndicatorReport{}, ErrInvalidMonth
 	}
+
 	base, err := s.repo.BaseCurrency(ctx, userID)
 	if err != nil {
 		return IndicatorReport{}, err
 	}
+
 	monthEnd := func(m time.Time) time.Time {
 		if m.Equal(current) {
 			return today
 		}
+
 		return m.AddDate(0, 1, -1)
 	}
 	start := month.AddDate(0, -23, 0)
+
 	totals, err := s.cashMonthTotals(ctx, userID, start, monthEnd(month))
 	if err != nil {
 		return IndicatorReport{}, err
 	}
+
 	loans, err := s.repo.LoanPrincipalByMonth(ctx, userID, start, monthEnd(month))
 	if err != nil {
 		return IndicatorReport{}, err
 	}
+
 	accounts, err := s.repo.IndicatorAccounts(ctx, userID)
 	if err != nil {
 		return IndicatorReport{}, err
 	}
+
 	first, ok, err := s.repo.FirstPosting(ctx, userID)
 	if err != nil {
 		return IndicatorReport{}, err
 	}
+
 	var firstMonth time.Time
 	if ok {
 		firstMonth = firstOfMonth(first)
@@ -111,6 +121,7 @@ func (s *Service) Indicators(ctx context.Context, userID int64, month, today tim
 		case a.Class == "liability":
 			liability[a.ID] = true
 		}
+
 		if a.Interest && inBase {
 			interest[a.ID] = true
 		}
@@ -120,6 +131,7 @@ func (s *Service) Indicators(ctx context.Context, userID int64, month, today tim
 	for i := range facts {
 		m := start.AddDate(0, i, 0)
 		shares := totals[m]
+
 		f := MonthFacts{Month: m, DebtService: loans[m]}
 		for id, v := range shares {
 			switch {
@@ -128,15 +140,18 @@ func (s *Service) Indicators(ctx context.Context, userID int64, month, today tim
 			case expense[id]:
 				f.Expense += v
 			}
+
 			if interest[id] {
 				f.DebtService += v
 			}
 		}
+
 		if i >= 12 {
 			values, err := s.valuations.ValuedBalances(ctx, userID, monthEnd(m))
 			if err != nil {
 				return IndicatorReport{}, err
 			}
+
 			for id, v := range values {
 				switch {
 				case liquid[id]:
@@ -145,17 +160,22 @@ func (s *Service) Indicators(ctx context.Context, userID int64, month, today tim
 					f.Liabilities -= v.Amount()
 				}
 			}
+
 			c, err := s.commitments.CommittedTotal(ctx, userID, m)
 			if err != nil {
 				return IndicatorReport{}, err
 			}
+
 			if string(c.Currency()) != base {
 				return IndicatorReport{}, fmt.Errorf("committed of %s in %s, base %s", m.Format("2006-01"), c.Currency(), base)
 			}
+
 			f.Committed = c.Amount()
 		}
+
 		facts[i] = f
 	}
+
 	return IndicatorReport{Currency: base, Months: indicatorMonths(facts, firstMonth)}, nil
 }
 

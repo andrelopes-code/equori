@@ -82,12 +82,15 @@ func integrationBody(name, clientID, secret string) map[string]any {
 
 func (a aggregator) integrate(c *http.Client, name, clientID, secret string) integrationView {
 	a.h.T().Helper()
+
 	r := a.h.Call(c, http.MethodPost, "/api/v1/integrations", integrationBody(name, clientID, secret))
 	if r.Status != http.StatusCreated {
 		a.h.T().Fatalf("create integration status %d: %s", r.Status, r.Body)
 	}
+
 	var out integrationView
 	r.Decode(a.h.T(), &out)
+
 	return out
 }
 
@@ -98,23 +101,29 @@ func (a aggregator) connect(c *http.Client, integrationID, itemID string) apites
 
 func (a aggregator) mustConnect(c *http.Client, integrationID, itemID string) connectionView {
 	a.h.T().Helper()
+
 	r := a.connect(c, integrationID, itemID)
 	if r.Status != http.StatusCreated {
 		a.h.T().Fatalf("create connection status %d: %s", r.Status, r.Body)
 	}
+
 	var out connectionView
 	r.Decode(a.h.T(), &out)
+
 	return out
 }
 
 func (a aggregator) connection(c *http.Client, id string) connectionView {
 	a.h.T().Helper()
+
 	r := a.h.Call(c, http.MethodGet, "/api/v1/connections/"+id, nil)
 	if r.Status != http.StatusOK {
 		a.h.T().Fatalf("get connection status %d: %s", r.Status, r.Body)
 	}
+
 	var out connectionView
 	r.Decode(a.h.T(), &out)
+
 	return out
 }
 
@@ -129,16 +138,19 @@ func externalAccount(c connectionView, subtype string) externalAccountView {
 			return x
 		}
 	}
+
 	return externalAccountView{}
 }
 
 // assertNoSecrets checks the test's log for values that must never be logged (A44, N16).
 func assertNoSecrets(t *testing.T, h *apitest.Harness, values ...string) {
 	t.Helper()
+
 	logs := h.Logs()
 	if !strings.Contains(logs, "/api/v1/integrations") {
 		t.Fatalf("log capture holds no request: %q", logs)
 	}
+
 	for _, v := range append(values, pluggySecret, nubankItem, "12345678", "key-1") {
 		if strings.Contains(logs, v) {
 			t.Errorf("log contains %q", v)
@@ -158,19 +170,24 @@ func TestConnectItemAndMapAccounts(t *testing.T) {
 	if r.Status != http.StatusCreated {
 		t.Fatalf("create integration status %d: %s", r.Status, r.Body)
 	}
+
 	var in integrationView
 	r.Decode(t, &in)
+
 	if r.Header.Get("Location") != "/api/v1/integrations/"+in.ID || in.Aggregator != "pluggy" || in.Name != "Meu Pluggy" || in.UpdatedAt == "" {
 		t.Fatalf("integration = %+v, location %q", in, r.Header.Get("Location"))
 	}
+
 	if bytes.Contains(r.Body, []byte(pluggySecret)) || bytes.Contains(r.Body, []byte(pluggyClient)) {
 		t.Fatalf("response carries the credentials: %s", r.Body)
 	}
+
 	// N15: the stored value holds neither credential in clear.
 	var sealed []byte
 	if err := a.h.Pool.QueryRow(t.Context(), `SELECT credential_ciphertext FROM ingestion_integration WHERE id = $1`, in.ID).Scan(&sealed); err != nil {
 		t.Fatal(err)
 	}
+
 	if bytes.Contains(sealed, []byte(pluggySecret)) || bytes.Contains(sealed, []byte(pluggyClient)) {
 		t.Fatal("credentials stored in clear")
 	}
@@ -179,29 +196,37 @@ func TestConnectItemAndMapAccounts(t *testing.T) {
 	if r.Status != http.StatusCreated {
 		t.Fatalf("create connection status %d: %s", r.Status, r.Body)
 	}
+
 	var conn connectionView
 	r.Decode(t, &conn)
+
 	if r.Header.Get("Location") != "/api/v1/connections/"+conn.ID || conn.IntegrationID != in.ID || conn.ExternalID != nubankItem ||
 		conn.Name != "Nubank" || conn.ProviderStatus != "UPDATED" || conn.State != "ok" || conn.Portal != "Meu Pluggy" ||
 		conn.LastItemUpdateAt != "2026-11-12T06:00:00Z" || len(conn.Accounts) != 3 {
 		t.Fatalf("connection = %+v", conn)
 	}
+
 	// The status texts that send the owner to the aggregator name its portal from here, not the
 	// web catalog: the read of a stored connection carries it too.
 	r = a.h.Do(http.MethodGet, "/api/v1/connections/"+conn.ID, nil)
 	if r.Status != http.StatusOK {
 		t.Fatalf("get connection status %d: %s", r.Status, r.Body)
 	}
+
 	var read connectionView
 	r.Decode(t, &read)
+
 	if read.Portal != "Meu Pluggy" {
 		t.Fatalf("read portal = %q", read.Portal)
 	}
+
 	ext := externalAccount(conn, pluggy.SubtypeChecking)
+
 	want := externalAccountView{ID: ext.ID, Type: "BANK", Subtype: pluggy.SubtypeChecking, Name: "Conta Corrente", NumberLast4: "6789", Currency: "BRL", State: "pending"}
 	if ext != want {
 		t.Fatalf("checking = %+v, want %+v", ext, want)
 	}
+
 	if card := externalAccount(conn, pluggy.SubtypeCard); card.NumberLast4 != "4321" || card.Type != pluggy.TypeCredit || card.State != "pending" {
 		t.Fatalf("card = %+v", card)
 	}
@@ -210,46 +235,59 @@ func TestConnectItemAndMapAccounts(t *testing.T) {
 	if r.Status != http.StatusOK {
 		t.Fatalf("map checking status %d: %s", r.Status, r.Body)
 	}
+
 	var mapped externalAccountView
 	r.Decode(t, &mapped)
+
 	want.State, want.AccountID, want.SyncFrom = "mapped", checking, "2026-10-01"
 	if mapped != want {
 		t.Fatalf("mapped = %+v, want %+v", mapped, want)
 	}
+
 	if r := a.mapAccount(a.h.Client, conn.ID, externalAccount(conn, pluggy.SubtypeCard).ID, map[string]any{"account_id": visa, "sync_from": "2026-10-01"}); r.Status != http.StatusOK {
 		t.Fatalf("map card status %d: %s", r.Status, r.Body)
 	}
+
 	if r := a.mapAccount(a.h.Client, conn.ID, externalAccount(conn, pluggy.SubtypeSavings).ID, map[string]any{"ignored": true}); r.Status != http.StatusOK {
 		t.Fatalf("ignore savings status %d: %s", r.Status, r.Body)
 	}
 
 	got := a.connection(a.h.Client, conn.ID)
+
 	states := map[string]string{}
 	for _, x := range got.Accounts {
 		states[x.Subtype] = x.State + " " + x.AccountID
 	}
+
 	if states[pluggy.SubtypeChecking] != "mapped "+checking || states[pluggy.SubtypeCard] != "mapped "+visa || states[pluggy.SubtypeSavings] != "ignored " {
 		t.Fatalf("states = %v", states)
 	}
+
 	var list struct {
 		Items []connectionView `json:"items"`
 	}
 	a.h.MustDo(http.MethodGet, "/api/v1/connections", nil, http.StatusOK, &list)
+
 	if len(list.Items) != 1 || list.Items[0].ID != conn.ID || len(list.Items[0].Accounts) != 3 {
 		t.Fatalf("connections = %+v", list.Items)
 	}
+
 	var integrations struct {
 		Items []integrationView `json:"items"`
 	}
 	a.h.MustDo(http.MethodGet, "/api/v1/integrations", nil, http.StatusOK, &integrations)
+
 	if len(integrations.Items) != 1 || integrations.Items[0] != in {
 		t.Fatalf("integrations = %+v, want %+v", integrations.Items, in)
 	}
+
 	var one integrationView
 	a.h.MustDo(http.MethodGet, "/api/v1/integrations/"+in.ID, nil, http.StatusOK, &one)
+
 	if one != in {
 		t.Fatalf("integration = %+v, want %+v", one, in)
 	}
+
 	assertNoSecrets(t, a.h)
 }
 
@@ -294,6 +332,7 @@ func TestMapAccountRejections(t *testing.T) {
 			a.h.ExpectProblem(a.mapAccount(a.h.Client, conn.ID, ext, tc.body), http.StatusUnprocessableEntity, "validation_failed", tc.field)
 		})
 	}
+
 	if got := externalAccount(a.connection(a.h.Client, conn.ID), pluggy.SubtypeChecking); got.State != "pending" {
 		t.Fatalf("rejected mappings changed the account: %+v", got)
 	}
@@ -301,9 +340,11 @@ func TestMapAccountRejections(t *testing.T) {
 	if r := a.mapAccount(a.h.Client, conn.ID, externalAccount(conn, pluggy.SubtypeSavings).ID, map[string]any{"account_id": reserve, "sync_from": "2026-10-01"}); r.Status != http.StatusOK {
 		t.Fatalf("savings to reserve status %d: %s", r.Status, r.Body)
 	}
+
 	if r := a.mapAccount(a.h.Client, conn.ID, ext, map[string]any{"account_id": checking, "sync_from": "2026-10-01"}); r.Status != http.StatusOK {
 		t.Fatalf("map checking status %d: %s", r.Status, r.Body)
 	}
+
 	// Two feeds into one account would assert two balances on it.
 	a.h.ExpectProblem(a.mapAccount(a.h.Client, inter.ID, externalAccount(inter, pluggy.SubtypeChecking).ID, map[string]any{"account_id": checking, "sync_from": "2026-10-01"}),
 		http.StatusUnprocessableEntity, "validation_failed", "account_id")
@@ -321,6 +362,7 @@ func TestIntegrationCredentials(t *testing.T) {
 
 	a.h.ExpectProblem(a.h.Do(http.MethodPost, "/api/v1/integrations", integrationBody("Meu Pluggy", pluggyClient, "wrong-secret-77")),
 		http.StatusUnprocessableEntity, "aggregator_unauthorized", "client_secret")
+
 	var stored int
 	if err := a.h.Pool.QueryRow(t.Context(), `SELECT count(*) FROM ingestion_integration`).Scan(&stored); err != nil || stored != 0 {
 		t.Fatalf("stored = %d, %v", stored, err)
@@ -329,6 +371,7 @@ func TestIntegrationCredentials(t *testing.T) {
 	in := a.integrate(a.h.Client, "Meu Pluggy", pluggyClient, pluggySecret)
 	a.h.ExpectProblem(a.h.Do(http.MethodPost, "/api/v1/integrations", integrationBody("Meu Pluggy", pluggyClient, pluggySecret)),
 		http.StatusUnprocessableEntity, "validation_failed", "name")
+
 	credentials := "/api/v1/integrations/" + in.ID + "/credentials"
 	a.h.ExpectProblem(a.h.Do(http.MethodPut, credentials, map[string]any{"client_id": pluggyClient, "client_secret": "wrong-secret-77"}),
 		http.StatusUnprocessableEntity, "aggregator_unauthorized", "client_secret")
@@ -337,9 +380,11 @@ func TestIntegrationCredentials(t *testing.T) {
 	a.p.SetCredentials(pluggyClient, "secret-rotated-19")
 	var updated integrationView
 	a.h.MustDo(http.MethodPut, credentials, map[string]any{"client_id": pluggyClient, "client_secret": "secret-rotated-19"}, http.StatusOK, &updated)
+
 	if updated.ID != in.ID || updated.Name != in.Name {
 		t.Fatalf("updated = %+v", updated)
 	}
+
 	a.p.RevokeKeys()
 	a.serveItem(pluggyClient, "item-inter-52c8", "Inter")
 	inter := a.mustConnect(a.h.Client, in.ID, "item-inter-52c8")
@@ -349,10 +394,12 @@ func TestIntegrationCredentials(t *testing.T) {
 
 	path := "/api/v1/integrations/" + in.ID
 	a.h.ExpectProblem(a.h.Do(http.MethodDelete, path, nil), http.StatusConflict, "integration_in_use", "")
+
 	for _, c := range []string{conn.ID, inter.ID} {
 		a.h.MustDo(http.MethodDelete, "/api/v1/connections/"+c, nil, http.StatusNoContent, nil)
 		a.h.ExpectProblem(a.h.Do(http.MethodGet, "/api/v1/connections/"+c, nil), http.StatusNotFound, "not_found", "")
 	}
+
 	a.h.MustDo(http.MethodDelete, path, nil, http.StatusNoContent, nil)
 	a.h.ExpectProblem(a.h.Do(http.MethodGet, path, nil), http.StatusNotFound, "not_found", "")
 	assertNoSecrets(t, a.h, "wrong-secret-77", "secret-rotated-19")
@@ -363,11 +410,14 @@ func (a aggregator) connections(c *http.Client) []connectionView {
 	var out struct {
 		Items []connectionView `json:"items"`
 	}
+
 	r := a.h.Call(c, http.MethodGet, "/api/v1/connections", nil)
 	if r.Status != http.StatusOK {
 		a.h.T().Fatalf("list connections status %d: %s", r.Status, r.Body)
 	}
+
 	r.Decode(a.h.T(), &out)
+
 	return out.Items
 }
 
@@ -378,40 +428,49 @@ func TestTwoIntegrations(t *testing.T) {
 	a := newAggregator(t)
 	a.p.SetCredentials("client-2b7d", "secret-2c90")
 	first := a.integrate(a.h.Client, "Meu Pluggy 1", pluggyClient, pluggySecret)
+
 	second := a.integrate(a.h.Client, "Meu Pluggy 2", "client-2b7d", "secret-2c90")
 	for i := range 5 {
 		item := fmt.Sprintf("item-first-%d", i)
 		a.serveItem(pluggyClient, item, fmt.Sprintf("Bank %d", i))
 		a.mustConnect(a.h.Client, first.ID, item)
 	}
+
 	for i := range 3 {
 		item := fmt.Sprintf("item-second-%d", i)
 		a.serveItem("client-2b7d", item, fmt.Sprintf("Bank %d", 5+i))
 		a.mustConnect(a.h.Client, second.ID, item)
 	}
+
 	if got := a.p.Requests("/auth"); got != 2 {
 		t.Fatalf("POST /auth requests = %d, want one per integration", got)
 	}
+
 	var page struct {
 		Items      []connectionView `json:"items"`
 		NextCursor string           `json:"next_cursor"`
 	}
 	a.h.MustDo(http.MethodGet, "/api/v1/connections?limit=5", nil, http.StatusOK, &page)
+
 	if len(page.Items) != 5 || page.NextCursor == "" {
 		t.Fatalf("first page = %d items, cursor %q", len(page.Items), page.NextCursor)
 	}
+
 	seen := map[string]bool{}
 	for _, c := range page.Items {
 		seen[c.ID] = true
 	}
+
 	var last struct {
 		Items      []connectionView `json:"items"`
 		NextCursor string           `json:"next_cursor"`
 	}
 	a.h.MustDo(http.MethodGet, "/api/v1/connections?limit=5&cursor="+page.NextCursor, nil, http.StatusOK, &last)
+
 	for _, c := range last.Items {
 		seen[c.ID] = true
 	}
+
 	if len(last.Items) != 3 || last.NextCursor != "" || len(seen) != 8 {
 		t.Fatalf("second page = %d items, cursor %q, %d distinct", len(last.Items), last.NextCursor, len(seen))
 	}
@@ -443,9 +502,11 @@ func TestIntegrationIsolation(t *testing.T) {
 		Items []integrationView `json:"items"`
 	}
 	a.h.Call(other, http.MethodGet, "/api/v1/integrations", nil).Decode(t, &integrations)
+
 	if len(integrations.Items) != 0 || len(a.connections(other)) != 0 {
 		t.Fatalf("other sees integrations %+v", integrations.Items)
 	}
+
 	for _, r := range []apitest.Response{
 		a.h.Call(other, http.MethodGet, "/api/v1/integrations/"+in.ID, nil),
 		a.h.Call(other, http.MethodPut, "/api/v1/integrations/"+in.ID+"/credentials", map[string]any{"client_id": pluggyClient, "client_secret": pluggySecret}),
@@ -456,12 +517,14 @@ func TestIntegrationIsolation(t *testing.T) {
 	} {
 		a.h.ExpectProblem(r, http.StatusNotFound, "not_found", "")
 	}
+
 	a.h.ExpectProblem(a.connect(other, in.ID, nubankItem), http.StatusUnprocessableEntity, "validation_failed", "integration_id")
 
 	own := a.integrate(other, "Meu Pluggy", pluggyClient, pluggySecret)
 	otherConn := a.mustConnect(other, own.ID, nubankItem)
 	a.h.ExpectProblem(a.mapAccount(other, otherConn.ID, externalAccount(otherConn, pluggy.SubtypeChecking).ID, map[string]any{"account_id": checking, "sync_from": "2026-10-01"}),
 		http.StatusUnprocessableEntity, "validation_failed", "account_id")
+
 	if got := externalAccount(a.connection(a.h.Client, conn.ID), pluggy.SubtypeChecking); got.State != "pending" {
 		t.Fatalf("owner's account = %+v", got)
 	}
@@ -470,6 +533,7 @@ func TestIntegrationIsolation(t *testing.T) {
 // ADR 008 K2: without EQUORI_SECRET_KEY integrations are unavailable.
 func TestIntegrationsWithoutKey(t *testing.T) {
 	t.Parallel()
+
 	h := apitest.New(t)
 	for _, r := range []apitest.Response{
 		h.Do(http.MethodPost, "/api/v1/integrations", integrationBody("Meu Pluggy", pluggyClient, pluggySecret)),
@@ -487,10 +551,12 @@ func TestCredentialsBoundToTheirRow(t *testing.T) {
 	a := newAggregator(t)
 	a.serveItem(pluggyClient, nubankItem, "Nubank")
 	first := a.integrate(a.h.Client, "Meu Pluggy 1", pluggyClient, pluggySecret)
+
 	second := a.integrate(a.h.Client, "Meu Pluggy 2", pluggyClient, pluggySecret)
 	if _, err := a.h.Pool.Exec(t.Context(), `UPDATE ingestion_integration SET credential_ciphertext = (SELECT credential_ciphertext FROM ingestion_integration WHERE id = $1) WHERE id = $2`, first.ID, second.ID); err != nil {
 		t.Fatal(err)
 	}
+
 	a.h.Restart(apitest.Aggregator("pluggy", a.p.URL()))
 	a.h.ExpectProblem(a.connect(a.h.Client, second.ID, nubankItem), http.StatusConflict, "integration_unavailable", "")
 	a.mustConnect(a.h.Client, first.ID, nubankItem)
@@ -508,12 +574,14 @@ func TestSecretRotation(t *testing.T) {
 
 	next := strings.Repeat("n", 32)
 	a.h.Restart(apitest.Aggregator("pluggy", a.p.URL()), apitest.SecretKeys(next, apitest.SecretKey))
+
 	for i, want := range []int{2, 0} {
 		n, err := a.h.App.Ingestion.RotateSecrets(t.Context())
 		if err != nil || n != want {
 			t.Fatalf("rotation %d = %d, %v; want %d", i, n, err, want)
 		}
 	}
+
 	a.h.Restart(apitest.Aggregator("pluggy", a.p.URL()), apitest.SecretKeys(next, ""))
 	a.mustConnect(a.h.Client, in.ID, nubankItem)
 	a.h.Restart(apitest.Aggregator("pluggy", a.p.URL()))
@@ -523,6 +591,7 @@ func TestSecretRotation(t *testing.T) {
 // A Pluggy that does not answer is a 502, not an internal error.
 func TestAggregatorUnavailable(t *testing.T) {
 	t.Parallel()
+
 	closed := httptest.NewServer(http.NotFoundHandler())
 	closed.Close()
 	h := apitest.New(t, apitest.Aggregator("pluggy", closed.URL))
@@ -536,13 +605,17 @@ func TestSecretRotationSkipsImportedIntegration(t *testing.T) {
 	t.Parallel()
 	a := newAggregator(t)
 	a.serveItem(pluggyClient, nubankItem, "Nubank")
+
 	in := a.integrate(a.h.Client, "Meu Pluggy", pluggyClient, pluggySecret)
 	if _, err := a.h.Pool.Exec(t.Context(), `UPDATE ingestion_integration SET credential_ciphertext = ''`); err != nil {
 		t.Fatal(err)
 	}
+
 	a.h.Restart(apitest.Aggregator("pluggy", a.p.URL()), apitest.SecretKeys(strings.Repeat("n", 32), apitest.SecretKey))
+
 	if n, err := a.h.App.Ingestion.RotateSecrets(t.Context()); err != nil || n != 0 {
 		t.Fatalf("rotation = %d, %v; want 0", n, err)
 	}
+
 	a.h.ExpectProblem(a.connect(a.h.Client, in.ID, nubankItem), http.StatusConflict, "integration_unavailable", "")
 }

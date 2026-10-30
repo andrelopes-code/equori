@@ -25,18 +25,22 @@ func (t turnStream) VisitSendAssistantMessageResponse(w http.ResponseWriter) err
 
 func (s *Server) SendAssistantMessage(ctx context.Context, req SendAssistantMessageRequestObject) (SendAssistantMessageResponseObject, error) {
 	userID := auth.MustUserID(ctx)
+
 	in := app.TurnInput{Text: req.Body.Text}
 	if req.Body.ConversationId != nil {
 		in.ConversationID = *req.Body.ConversationId
 	}
+
 	if req.Body.Page != nil {
 		in.Page = *req.Body.Page
 	}
+
 	return turnStream{run: func(w http.ResponseWriter) error {
 		st := &eventStream{s: s, ctx: ctx, w: w, rc: http.NewResponseController(w)}
 		if err := s.svc.Turn(ctx, userID, in, st); err != nil {
 			s.writeProblem(ctx, w, err)
 		}
+
 		return nil
 	}}, nil
 }
@@ -45,9 +49,12 @@ func (s *Server) problemOf(ctx context.Context, err error) problem.Details {
 	d, ok := toProblem(err)
 	if !ok {
 		d = problem.New(http.StatusInternalServerError, "internal_error", "")
+
 		s.log.ErrorContext(ctx, "request failed", "error", err)
 	}
+
 	d.RequestID = httpserver.RequestID(ctx)
+
 	return d
 }
 
@@ -73,11 +80,13 @@ func (e *eventStream) send(name string, data any) {
 		e.w.Header().Set("Cache-Control", "no-store")
 		e.w.WriteHeader(http.StatusOK)
 	}
+
 	b, err := json.Marshal(data)
 	if err != nil {
 		e.s.log.ErrorContext(e.ctx, "assistant event not encoded", "event", name, "error", err)
 		return
 	}
+
 	if _, err := fmt.Fprintf(e.w, "event: %s\ndata: %s\n\n", name, b); err == nil {
 		_ = e.rc.Flush()
 	}
@@ -97,6 +106,7 @@ func (e *eventStream) Answer(m app.AnsweredMessage) {
 		e.Error(err)
 		return
 	}
+
 	e.send("answer", out)
 }
 

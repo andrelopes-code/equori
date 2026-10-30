@@ -106,18 +106,23 @@ func toWire(model string, req llm.Request) chatRequest {
 	if req.System != "" {
 		w.Messages = append(w.Messages, message{Role: "system", Content: &req.System})
 	}
+
 	for _, m := range req.Messages {
 		w.Messages = append(w.Messages, messagesToWire(m)...)
 	}
+
 	for _, t := range req.Tools {
 		w.Tools = append(w.Tools, tool{Type: "function", Function: functionDef{Name: t.Name, Description: t.Description, Parameters: t.Parameters}})
 	}
+
 	if len(w.Tools) > 0 && req.ToolChoice == llm.ToolChoiceNone {
 		w.ToolChoice = "none"
 	}
+
 	if req.Schema != nil {
 		w.ResponseFormat = &responseFormat{Type: "json_schema", JSONSchema: jsonSchema{Name: "answer", Schema: req.Schema}}
 	}
+
 	return w
 }
 
@@ -132,13 +137,17 @@ func messagesToWire(m llm.Message) []message {
 				out = append(out, message{Role: "tool", Content: &content, ToolCallID: p.ToolResult.CallID})
 			}
 		}
+
 		return out
 	}
+
 	role := "user"
 	if m.Role == llm.RoleModel {
 		role = "assistant"
 	}
+
 	w := message{Role: role}
+
 	var text strings.Builder
 	for _, p := range m.Parts {
 		switch {
@@ -149,9 +158,11 @@ func messagesToWire(m llm.Message) []message {
 			text.WriteString(p.Text)
 		}
 	}
+
 	if s := text.String(); s != "" || len(w.ToolCalls) == 0 {
 		w.Content = &s
 	}
+
 	return []message{w}
 }
 
@@ -164,18 +175,23 @@ func fromWire(w chatResponse) llm.Response {
 		resp.FinishReason = llm.FinishOther
 		return resp
 	}
+
 	c := w.Choices[0]
 	if c.Message.Content != nil && *c.Message.Content != "" {
 		resp.Message.Parts = append(resp.Message.Parts, llm.Part{Text: *c.Message.Content})
 	}
+
 	for _, tc := range c.Message.ToolCalls {
 		args := json.RawMessage(tc.Function.Arguments)
 		if len(args) == 0 {
 			args = json.RawMessage(`{}`)
 		}
+
 		resp.Message.Parts = append(resp.Message.Parts, llm.Part{ToolCall: &llm.ToolCall{ID: tc.ID, Name: tc.Function.Name, Args: args}})
 	}
+
 	resp.FinishReason = finishReason(c.FinishReason, len(c.Message.ToolCalls) > 0)
+
 	return resp
 }
 

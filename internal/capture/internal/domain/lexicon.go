@@ -50,6 +50,7 @@ func Merge(primary, fallback Lexicon) Lexicon {
 			out.LumpSum = append(out.LumpSum, slices.Clone(phrase))
 		}
 	}
+
 	return out
 }
 
@@ -58,7 +59,9 @@ func mergeMap[K comparable, V any](primary, fallback map[K]V) map[K]V {
 	if out == nil {
 		out = map[K]V{}
 	}
+
 	maps.Copy(out, primary)
+
 	return out
 }
 
@@ -69,6 +72,7 @@ func mergeList(primary, fallback []string) []string {
 			out = append(out, w)
 		}
 	}
+
 	return out
 }
 
@@ -83,6 +87,7 @@ func (l Lexicon) cutSymbol(s string) (string, bool) {
 			return rest, true
 		}
 	}
+
 	return s, false
 }
 
@@ -92,10 +97,12 @@ func (l Lexicon) cutSuffixFactor(s string) (string, int64, bool) {
 		if len(k) != 1 {
 			continue
 		}
+
 		if rest, ok := strings.CutSuffix(s, k); ok {
 			return rest, f, true
 		}
 	}
+
 	return s, 1, false
 }
 
@@ -104,6 +111,8 @@ func (l Lexicon) wordFactor(w string) (int64, bool) {
 	if len(w) == 1 {
 		return 0, false
 	}
+
 	f, ok := l.Multipliers[w]
+
 	return f, ok
 }

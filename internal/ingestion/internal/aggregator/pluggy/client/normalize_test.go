@@ -9,10 +9,12 @@ func ptr[T any](v T) *T { return &v }
 
 func saoPaulo(t *testing.T) *time.Location {
 	t.Helper()
+
 	loc, err := time.LoadLocation("America/Sao_Paulo")
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	return loc
 }
 
@@ -31,6 +33,7 @@ func TestNormalize(t *testing.T) {
 		if err != nil || !ok {
 			t.Fatal(ok, err)
 		}
+
 		if r.ExternalID != "t1" || r.Amount != -850 || r.Date.Format(time.DateOnly) != "2026-10-07" || r.Description != "PAG*PADARIA" ||
 			r.Pending || r.BalanceAfter == nil || *r.BalanceAfter != 123456 || r.Category == nil || r.Category.ID != "01010000" || r.Category.Name != "Bakery" {
 			t.Fatalf("record = %+v", r)
@@ -91,7 +94,9 @@ func TestNormalize(t *testing.T) {
 
 func TestNormalizeReserveTransfer(t *testing.T) {
 	t.Parallel()
+
 	checking := Account{ID: "acc-1", Type: "BANK", Subtype: SubtypeChecking, CurrencyCode: "BRL"}
+
 	const reserveOp = "TRANSFERENCIA_SALDO_RESERVADO"
 	for _, tc := range []struct {
 		name        string
@@ -116,6 +121,7 @@ func TestNormalizeReserveTransfer(t *testing.T) {
 			if err != nil || !ok {
 				t.Fatal(ok, err)
 			}
+
 			if r.ReserveName != tc.want {
 				t.Fatalf("ReserveName = %q, want %q", r.ReserveName, tc.want)
 			}

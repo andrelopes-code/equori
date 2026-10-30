@@ -45,13 +45,16 @@ var eventTypes = map[string]string{
 
 func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, l *ledger.Module, log *slog.Logger) *Module {
 	port := ledgerPort{l}
+
 	svc := app.NewService(postgres.NewRepository(pool), port)
 	for _, ledgerType := range []string{ledger.EventTransactionRecorded, ledger.EventTransactionCorrected, ledger.EventTransactionCategorized, ledger.EventTransactionVoided} {
 		dispatcher.Subscribe(consumer, ledgerType, port.handle)
 	}
+
 	dispatcher.Subscribe(consumer, ledger.EventCategoriesMerged, port.handleMerge)
 	dispatcher.Subscribe(consumer, ledger.EventPayeesMerged, port.handlePayeeMerge)
 	dispatcher.Subscribe(consumer, ledger.EventTagRenamed, port.handleTagRename)
+
 	return &Module{http: httpapi.NewServer(svc, log), svc: svc, ledger: l}
 }
 
@@ -61,6 +64,7 @@ func (p ledgerPort) handleMerge(ctx context.Context, tx pgx.Tx, e outbox.Deliver
 	if err := json.Unmarshal(e.Payload, &payload); err != nil {
 		return fmt.Errorf("decode %s: %w", e.Type, err)
 	}
+
 	return app.NewService(postgres.NewTxRepository(tx), p).HandleCategoriesMerged(ctx, e.UserID, payload.From, payload.Into)
 }
 
@@ -70,6 +74,7 @@ func (p ledgerPort) handlePayeeMerge(ctx context.Context, tx pgx.Tx, e outbox.De
 	if err := json.Unmarshal(e.Payload, &payload); err != nil {
 		return fmt.Errorf("decode %s: %w", e.Type, err)
 	}
+
 	return app.NewService(postgres.NewTxRepository(tx), p).HandlePayeesMerged(ctx, e.UserID, payload.From, payload.Into)
 }
 
@@ -79,6 +84,7 @@ func (p ledgerPort) handleTagRename(ctx context.Context, tx pgx.Tx, e outbox.Del
 	if err := json.Unmarshal(e.Payload, &payload); err != nil {
 		return fmt.Errorf("decode %s: %w", e.Type, err)
 	}
+
 	return app.NewService(postgres.NewTxRepository(tx), p).HandleTagRenamed(ctx, e.UserID, payload.From, payload.Into)
 }
 
@@ -88,10 +94,12 @@ func (p ledgerPort) handle(ctx context.Context, tx pgx.Tx, e outbox.Delivered) e
 	if err := json.Unmarshal(e.Payload, &payload); err != nil {
 		return fmt.Errorf("decode %s: %w", e.Type, err)
 	}
+
 	date, err := time.Parse(time.DateOnly, payload.Date)
 	if err != nil {
 		return fmt.Errorf("%s date: %w", e.Type, err)
 	}
+
 	event := app.Event{
 		Type: eventTypes[e.Type], UserID: e.UserID, TransactionID: payload.TransactionID, Version: payload.Version, Date: date,
 		Origin: payload.Origin, CategoryState: payload.CategoryState, CategoriesChanged: payload.CategoriesChanged, OccurredAt: e.OccurredAt,
@@ -99,6 +107,7 @@ func (p ledgerPort) handle(ctx context.Context, tx pgx.Tx, e outbox.Delivered) e
 	if payload.Cause != nil {
 		event.Cause = app.Cause{Method: payload.Cause.Method, RuleID: payload.Cause.RuleID}
 	}
+
 	return app.NewService(postgres.NewTxRepository(tx), p).HandleEvent(ctx, event)
 }
 
@@ -112,13 +121,16 @@ func (m *Module) names(ctx context.Context, userID int64) (categories, payees ma
 	if err != nil {
 		return nil, nil, err
 	}
+
 	categories, payees = make(map[uuid.UUID]string, len(accounts)), make(map[uuid.UUID]string, len(ps))
 	for _, a := range accounts {
 		categories[a.ID] = a.Name
 	}
+
 	for _, p := range ps {
 		payees[p.ID] = p.Name
 	}
+
 	return categories, payees, nil
 }
 
@@ -137,12 +149,14 @@ func (m *Module) DecideImport(ctx context.Context, userID int64, lines []ImportL
 	if err != nil {
 		return nil, err
 	}
+
 	out := make([]*ledger.ImportDecision, len(decisions))
 	for i, d := range decisions {
 		if d != nil {
 			out[i] = importDecision(*d)
 		}
 	}
+
 	return out, nil
 }
 
@@ -154,6 +168,7 @@ func importDecisions(ds []domain.Decision) []*ledger.ImportDecision {
 			out[i] = importDecision(d)
 		}
 	}
+
 	return out
 }
 
@@ -164,6 +179,7 @@ func importDecision(d domain.Decision) *ledger.ImportDecision {
 	for _, a := range d.Parts {
 		out.Parts = append(out.Parts, ledger.CategoryPart{AccountID: a.CategoryID, Amount: a.Amount})
 	}
+
 	return out
 }
 
@@ -187,10 +203,12 @@ func (m *Module) DecideManual(ctx context.Context, userID int64, lines []ManualL
 			NamedPayee: l.NamedPayee,
 		}
 	}
+
 	decisions, err := m.svc.DecideManual(ctx, userID, in)
 	if err != nil {
 		return nil, err
 	}
+
 	return importDecisions(decisions), nil
 }
 
@@ -198,6 +216,7 @@ type ledgerPort struct{ l *ledger.Module }
 
 func (p ledgerPort) AccountFacts(ctx context.Context, userID int64) ([]app.Account, error) {
 	facts, err := p.l.AccountFacts(ctx, userID)
+
 	out := make([]app.Account, len(facts))
 	for i, a := range facts {
 		out[i] = app.Account{
@@ -205,11 +224,13 @@ func (p ledgerPort) AccountFacts(ctx context.Context, userID int64) ([]app.Accou
 			Instrument: a.Instrument, OpenedOn: a.OpenedOn, ClosedOn: a.ClosedOn,
 		}
 	}
+
 	return out, err
 }
 
 func (p ledgerPort) TransactionFacts(ctx context.Context, userID int64, ids []uuid.UUID) ([]app.TransactionFacts, error) {
 	facts, err := p.l.TransactionFacts(ctx, userID, ids)
+
 	out := make([]app.TransactionFacts, len(facts))
 	for i, f := range facts {
 		out[i] = app.TransactionFacts{
@@ -221,15 +242,18 @@ func (p ledgerPort) TransactionFacts(ctx context.Context, userID int64, ids []uu
 			out[i].Postings[j] = app.FactPosting{AccountID: x.AccountID, Class: x.Class, Kind: x.Kind, SystemRole: x.SystemRole, Amount: x.Amount, Installment: x.Installment}
 		}
 	}
+
 	return out, err
 }
 
 func (p ledgerPort) LatestPayeeCategories(ctx context.Context, userID int64, payees []uuid.UUID) (map[domain.HistoryKey]uuid.UUID, error) {
 	latest, err := p.l.LatestPayeeCategories(ctx, userID, payees)
+
 	out := make(map[domain.HistoryKey]uuid.UUID, len(latest))
 	for k, v := range latest {
 		out[domain.HistoryKey{PayeeID: k.PayeeID, Class: k.Class}] = v
 	}
+
 	return out, err
 }
 
@@ -247,6 +271,7 @@ func (p ledgerPort) Categorize(ctx context.Context, userID int64, cs []app.Categ
 			}
 		}
 	}
+
 	return p.l.Categorize(ctx, userID, items)
 }
 
@@ -263,6 +288,7 @@ func (p ledgerPort) Transfer(ctx context.Context, userID int64, t app.TransferRe
 			return false, nil
 		}
 	}
+
 	return err == nil, err
 }
 

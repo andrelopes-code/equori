@@ -17,6 +17,7 @@ func serve(t *testing.T, h http.Handler, req *http.Request) (*httptest.ResponseR
 	var logs bytes.Buffer
 	rec := httptest.NewRecorder()
 	Middleware(h, slog.New(slog.NewJSONHandler(&logs, nil))).ServeHTTP(rec, req)
+
 	return rec, logs.String()
 }
 
@@ -33,9 +34,11 @@ func TestMiddlewareRequestID(t *testing.T) {
 	if got == "" || got == "client-supplied" {
 		t.Fatalf("X-Request-ID = %q, want a generated ID", got)
 	}
+
 	if seen != got {
 		t.Fatalf("context request ID = %q, header = %q", seen, got)
 	}
+
 	if !strings.Contains(logs, `"request_id":"`+got+`"`) {
 		t.Fatalf("access log lacks request_id: %s", logs)
 	}
@@ -43,6 +46,7 @@ func TestMiddlewareRequestID(t *testing.T) {
 
 func TestMiddlewareAccessLogStatus(t *testing.T) {
 	t.Parallel()
+
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusTeapot)
 		_, _ = io.WriteString(w, "abc")
@@ -58,18 +62,22 @@ func TestMiddlewareAccessLogStatus(t *testing.T) {
 
 func TestMiddlewareRecoversPanic(t *testing.T) {
 	t.Parallel()
+
 	h := http.HandlerFunc(func(http.ResponseWriter, *http.Request) { panic("boom") })
 	rec, logs := serve(t, h, httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil))
 
 	if rec.Code != http.StatusInternalServerError {
 		t.Fatalf("status = %d, want 500", rec.Code)
 	}
+
 	if ct := rec.Header().Get("Content-Type"); ct != problem.ContentType {
 		t.Fatalf("content type = %q", ct)
 	}
+
 	if strings.Contains(rec.Body.String(), "boom") {
 		t.Fatalf("panic value leaked to client: %s", rec.Body.String())
 	}
+
 	if !strings.Contains(logs, "panic serving request") {
 		t.Fatalf("panic not logged: %s", logs)
 	}
@@ -77,6 +85,7 @@ func TestMiddlewareRecoversPanic(t *testing.T) {
 
 func TestMiddlewareRejectsCrossOriginWrite(t *testing.T) {
 	t.Parallel()
+
 	called := false
 	h := http.HandlerFunc(func(http.ResponseWriter, *http.Request) { called = true })
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/api/v1/x", nil)
@@ -104,7 +113,9 @@ func TestMiddlewareLimitsBody(t *testing.T) {
 
 func TestMiddlewareRaisesBodyLimitForRoute(t *testing.T) {
 	t.Parallel()
+
 	limits := []BodyLimit{{Pattern: "POST /files/{id}", Bytes: 2 * maxBodyBytes}}
+
 	tests := []struct {
 		name, method, path string
 		size               int
@@ -121,6 +132,7 @@ func TestMiddlewareRaisesBodyLimitForRoute(t *testing.T) {
 			h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { _, readErr = io.ReadAll(r.Body) })
 			req := httptest.NewRequestWithContext(t.Context(), tc.method, tc.path, strings.NewReader(strings.Repeat("a", tc.size)))
 			Middleware(h, slog.New(slog.DiscardHandler), limits...).ServeHTTP(httptest.NewRecorder(), req)
+
 			if _, rejected := problem.Transport(readErr); rejected != tc.rejected {
 				t.Fatalf("rejected = %v, want %v (err %v)", rejected, tc.rejected, readErr)
 			}
@@ -135,6 +147,7 @@ func TestNotFound(t *testing.T) {
 	if rec.Code != http.StatusNotFound || rec.Header().Get("Content-Type") != problem.ContentType {
 		t.Fatalf("status = %d, content type = %q; want 404 problem", rec.Code, rec.Header().Get("Content-Type"))
 	}
+
 	if !strings.Contains(rec.Body.String(), `"code":"not_found"`) || !strings.Contains(rec.Body.String(), `"request_id":"`) {
 		t.Fatalf("body = %s", rec.Body.String())
 	}
@@ -143,6 +156,7 @@ func TestNotFound(t *testing.T) {
 // ADR 007, C9; ADR 028 for non-API responses.
 func TestMiddlewareSetsSecurityHeaders(t *testing.T) {
 	t.Parallel()
+
 	common := map[string]string{"X-Content-Type-Options": "nosniff", "Referrer-Policy": "no-referrer"}
 	byKind := map[bool]map[string]string{
 		true: {"Content-Security-Policy": "default-src 'none'; frame-ancestors 'none'", "Cache-Control": "no-store"},
@@ -156,6 +170,7 @@ func TestMiddlewareSetsSecurityHeaders(t *testing.T) {
 		problem.Write(w, problem.New(http.StatusConflict, "conflict", "conflict"))
 	})
 	panicking := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { panic("boom") })
+
 	tests := []struct {
 		name string
 		h    http.Handler
@@ -176,6 +191,7 @@ func TestMiddlewareSetsSecurityHeaders(t *testing.T) {
 					t.Errorf("%s = %q, want %q", k, got, v)
 				}
 			}
+
 			for k, want := range byKind[tc.api] {
 				if got := rec.Header().Get(k); got != want {
 					t.Errorf("%s = %q, want %q", k, got, want)

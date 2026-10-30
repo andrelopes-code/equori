@@ -50,6 +50,7 @@ func Transport(err error) (Details, bool) {
 	if _, ok := errors.AsType[*http.MaxBytesError](err); ok {
 		return New(http.StatusRequestEntityTooLarge, "request_too_large", "request body is too large"), true
 	}
+
 	return Details{}, false
 }
 

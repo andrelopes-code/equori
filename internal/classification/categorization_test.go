@@ -18,6 +18,7 @@ func categorizationOf(t *testing.T, h *apitest.Harness, tx string) categorizatio
 	t.Helper()
 	var out categorizationView
 	h.MustDo(http.MethodGet, "/api/v1/transactions/"+tx+"/categorization", nil, http.StatusOK, &out)
+
 	return out
 }
 
@@ -25,6 +26,7 @@ func method(c categorizationView) string {
 	if c.Method == nil {
 		return "uncategorized"
 	}
+
 	return *c.Method
 }
 
@@ -34,15 +36,18 @@ func method(c categorizationView) string {
 // stops a delivery that keeps publishing, so a slow machine never fails it.
 func dispatch(t *testing.T, h *apitest.Harness) {
 	t.Helper()
+
 	for range 100 {
 		n, err := h.App.Dispatcher.DispatchPending(t.Context())
 		if err != nil {
 			t.Fatalf("dispatch: %v", err)
 		}
+
 		if n == 0 {
 			return
 		}
 	}
+
 	t.Fatal("dispatch: events still pending after 100 rounds")
 }
 
@@ -61,33 +66,39 @@ func newBooks(t *testing.T) books {
 		} `json:"items"`
 	}
 	h.MustDo(http.MethodGet, "/api/v1/accounts?limit=200", nil, http.StatusOK, &accounts)
+
 	b := books{h: h}
 	for _, a := range accounts.Items {
 		if a.SystemRole == "uncategorized_expense" {
 			b.uncategorized = a.ID
 		}
 	}
+
 	b.checking = h.Account("Nubank checking", "asset", "checking", nil)
 	b.savings = h.Account("Savings", "asset", "savings", nil)
 	b.transport = h.Account("Ride-hailing", "expense", "", nil)
 	b.travel = h.Account("Travel", "expense", "", nil)
 	b.food = h.Account("Food", "expense", "", nil)
 	b.delivery = h.Account("Delivery", "expense", "", nil)
+
 	return b
 }
 
 // record posts a manual transaction; category is the expense account, or b.uncategorized.
 func (b books) record(t *testing.T, date, description, payee, category string, amount int64) string {
 	t.Helper()
+
 	body := map[string]any{"date": date, "description": description,
 		"postings": []any{apitest.Posting(b.checking, -amount), apitest.Posting(category, amount)}}
 	if payee != "" {
 		body["payee_id"] = payee
 	}
+
 	var out struct {
 		ID string `json:"id"`
 	}
 	b.h.MustDo(http.MethodPost, "/api/v1/transactions", body, http.StatusCreated, &out)
+
 	return out.ID
 }
 
@@ -100,11 +111,14 @@ func (b books) categorize(t *testing.T, tx string, version int, category string,
 
 func categoryOf(t *testing.T, h *apitest.Harness, tx string) (int, map[string]int64) {
 	t.Helper()
+
 	v := h.Transaction(tx)
+
 	m := map[string]int64{}
 	for _, p := range v.Postings {
 		m[p.AccountID] += p.Amount.Amount
 	}
+
 	return v.Version, m
 }
 
@@ -120,6 +134,7 @@ func TestNewTransactionIsClassifiedByRule(t *testing.T) {
 	if version != 2 || postings[b.transport] != 2390 || postings[b.uncategorized] != 0 {
 		t.Fatalf("version %d, postings %v", version, postings)
 	}
+
 	if c := categorizationOf(t, b.h, tx); method(c) != "rule" || c.RuleID != rule.ID || c.TransactionID != tx {
 		t.Fatalf("categorization = %+v", c)
 	}
@@ -130,12 +145,14 @@ func TestOwnerCategorizationIsManual(t *testing.T) {
 	b := newBooks(t)
 	tx := b.record(t, "2026-10-14", "PADARIA", "", b.uncategorized, 1000)
 	dispatch(t, b.h)
+
 	if c := categorizationOf(t, b.h, tx); method(c) != "uncategorized" || c.RuleID != "" {
 		t.Fatalf("before = %+v", c)
 	}
 
 	b.categorize(t, tx, 1, b.food, 1000)
 	dispatch(t, b.h)
+
 	if c := categorizationOf(t, b.h, tx); method(c) != "manual" {
 		t.Fatalf("after categorize = %+v", c)
 	}
@@ -145,6 +162,7 @@ func TestOwnerCategorizationIsManual(t *testing.T) {
 		"postings": []any{apitest.Posting(b.checking, -1000), apitest.Posting(b.food, 1000)},
 	}, http.StatusOK, nil)
 	dispatch(t, b.h)
+
 	if c := categorizationOf(t, b.h, tx); method(c) != "manual" {
 		t.Fatalf("after rename = %+v", c)
 	}
@@ -160,8 +178,10 @@ func TestCategorizationFollowsTheHighestVersion(t *testing.T) {
 	b := newBooks(t)
 	tx := b.record(t, "2026-10-14", "PADARIA", "", b.uncategorized, 1000)
 	b.categorize(t, tx, 1, b.food, 1000)
+
 	exec := func(sql string) {
 		t.Helper()
+
 		if _, err := b.h.Pool.Exec(t.Context(), sql, tx); err != nil {
 			t.Fatal(err)
 		}
@@ -171,9 +191,11 @@ func TestCategorizationFollowsTheHighestVersion(t *testing.T) {
 		SELECT id, 'classification', 'retrying', 1, now() + interval '1 hour' FROM outbox_event
 		WHERE aggregate_id = $1 AND type = 'ledger.transaction_recorded.v1'`)
 	dispatch(t, b.h)
+
 	check := func(when string) {
 		t.Helper()
 		var version int
+
 		err := b.h.Pool.QueryRow(t.Context(), `SELECT transaction_version FROM classification_categorization WHERE transaction_id = $1`, tx).Scan(&version)
 		if c := categorizationOf(t, b.h, tx); method(c) != "manual" || err != nil || version != 2 {
 			t.Fatalf("%s: categorization %+v, row version %d, %v", when, c, version, err)
@@ -196,12 +218,14 @@ func TestCategorizationFollowsTheHighestVersion(t *testing.T) {
 func TestRunRules(t *testing.T) {
 	t.Parallel()
 	b := newBooks(t)
+
 	batch := b.h.Import(b.checking, "ofx", "nubank.ofx", apitest.OFX("",
 		apitest.OFXLine{Date: "20261014", Amount: "-23.90", FITID: "u1", Name: "UBER *TRIP"},
 		apitest.OFXLine{Date: "20261015", Amount: "-31.00", FITID: "u2", Name: "UBER *EATS"}))
 	if batch.Status != http.StatusCreated {
 		t.Fatalf("import status %d: %s", batch.Status, batch.Body)
 	}
+
 	var list struct {
 		Items []struct {
 			ID          string `json:"id"`
@@ -209,14 +233,17 @@ func TestRunRules(t *testing.T) {
 		} `json:"items"`
 	}
 	b.h.MustDo(http.MethodGet, "/api/v1/transactions?uncategorized=true", nil, http.StatusOK, &list)
+
 	ids := map[string]string{}
 	for _, it := range list.Items {
 		ids[it.Description] = it.ID
 	}
+
 	trip, eats := ids["UBER *TRIP"], ids["UBER *EATS"]
 	if trip == "" || eats == "" {
 		t.Fatalf("imported = %+v", list.Items)
 	}
+
 	b.categorize(t, trip, 1, b.travel, 2390)
 	split := b.h.Record("2026-10-16", apitest.Posting(b.checking, -1000), apitest.Posting(b.food, 600), apitest.Posting(b.uncategorized, 400))
 	dispatch(t, b.h)
@@ -227,24 +254,31 @@ func TestRunRules(t *testing.T) {
 		Categorized int `json:"categorized"`
 	}
 	b.h.MustDo(http.MethodPost, "/api/v1/rules/run", nil, http.StatusOK, &run)
+
 	if run.Examined != 1 || run.Categorized != 1 {
 		t.Fatalf("run = %+v", run)
 	}
+
 	dispatch(t, b.h)
 
 	if _, postings := categoryOf(t, b.h, eats); postings[b.transport] != 3100 {
 		t.Fatalf("eats postings = %v", postings)
 	}
+
 	if c := categorizationOf(t, b.h, eats); method(c) != "rule" || c.RuleID != rule.ID {
 		t.Fatalf("eats categorization = %+v", c)
 	}
+
 	if version, postings := categoryOf(t, b.h, trip); version != 2 || postings[b.travel] != 2390 {
 		t.Fatalf("trip version %d, postings %v", version, postings)
 	}
+
 	if version, _ := categoryOf(t, b.h, split); version != 1 {
 		t.Fatalf("owner split changed to version %d", version)
 	}
+
 	b.h.MustDo(http.MethodPost, "/api/v1/rules/run", nil, http.StatusOK, &run)
+
 	if run.Examined != 0 || run.Categorized != 0 {
 		t.Fatalf("second run = %+v", run)
 	}
@@ -275,8 +309,10 @@ func TestCategorizationStatistics(t *testing.T) {
 	if _, postings := categoryOf(t, b.h, history); postings[b.delivery] != 4500 {
 		t.Fatalf("history postings = %v", postings)
 	}
+
 	var st map[string]any
 	b.h.MustDo(http.MethodGet, "/api/v1/categorization-statistics?from=2026-10-01&to=2026-10-31", nil, http.StatusOK, &st)
+
 	want := map[string]any{"from": "2026-10-01", "to": "2026-10-31", "total": float64(5), "rule": float64(1), "source": float64(0),
 		"history": float64(1), "manual": float64(2), "uncategorized": float64(1)}
 	for k, v := range want {
@@ -284,5 +320,6 @@ func TestCategorizationStatistics(t *testing.T) {
 			t.Fatalf("statistics = %v, want %v", st, want)
 		}
 	}
+
 	b.h.ExpectProblem(b.h.Do(http.MethodGet, "/api/v1/categorization-statistics?from=2026-10-01", nil), http.StatusBadRequest, "invalid_request", "to")
 }

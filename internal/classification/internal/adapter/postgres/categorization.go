@@ -15,6 +15,7 @@ func nullString(s string) *string {
 	if s == "" {
 		return nil
 	}
+
 	return &s
 }
 
@@ -26,9 +27,11 @@ func toRecord(row ClassificationCategorization) app.Record {
 	if row.Method != nil {
 		rec.Method = *row.Method
 	}
+
 	if row.MatchKey != nil {
 		rec.MatchKey = *row.MatchKey
 	}
+
 	return rec
 }
 
@@ -37,6 +40,7 @@ func (r *Repository) Categorization(ctx context.Context, userID int64, transacti
 	if err != nil {
 		return app.Record{}, notFound(err)
 	}
+
 	return toRecord(row), nil
 }
 
@@ -46,6 +50,7 @@ func (r *Repository) UpsertCategorization(ctx context.Context, rec app.Record) (
 		TransactionDate: rec.Date, Method: nullString(rec.Method), RuleID: nullUUID(rec.RuleID), Corrected: rec.Corrected,
 		MatchKey: nullString(rec.MatchKey), CategoryID: nullUUID(rec.CategoryID), DecidedAt: rec.DecidedAt,
 	})
+
 	return n == 1, err
 }
 
@@ -67,18 +72,23 @@ func (r *Repository) PendingCategorizations(ctx context.Context, userID int64, a
 	if after != nil {
 		params.AfterDate, params.AfterID = &after.Date, nullUUID(after.ID)
 	}
+
 	rows, err := r.q.PendingCategorizations(ctx, params)
 	if err != nil || len(rows) == 0 {
 		return nil, nil, err
 	}
+
 	ids := make([]uuid.UUID, len(rows))
 	for i, row := range rows {
 		ids[i] = row.TransactionID
 	}
+
 	if len(rows) < limit {
 		return ids, nil, nil
 	}
+
 	last := rows[len(rows)-1]
+
 	return ids, &app.PendingKey{Date: last.TransactionDate, ID: last.TransactionID}, nil
 }
 
@@ -87,10 +97,12 @@ func (r *Repository) CountMethods(ctx context.Context, userID int64, from, to ti
 	if err != nil {
 		return nil, err
 	}
+
 	out := make(map[string]int, len(rows))
 	for _, row := range rows {
 		out[row.Method] = int(row.N)
 	}
+
 	return out, nil
 }
 
@@ -99,10 +111,12 @@ func (r *Repository) Categorizations(ctx context.Context, userID int64, ids []uu
 	if err != nil {
 		return nil, err
 	}
+
 	out := make([]app.Record, len(rows))
 	for i, row := range rows {
 		out[i] = toRecord(row)
 	}
+
 	return out, nil
 }
 
@@ -111,10 +125,12 @@ func (r *Repository) RuleUsage(ctx context.Context, userID int64, ids []uuid.UUI
 	if err != nil {
 		return nil, err
 	}
+
 	out := make(map[uuid.UUID]app.RuleUsage, len(rows))
 	for _, row := range rows {
 		out[row.RuleID] = app.RuleUsage{Count: int(row.N), Last: row.LastDecidedAt}
 	}
+
 	return out, nil
 }
 
@@ -123,17 +139,22 @@ func (r *Repository) PreviewCandidates(ctx context.Context, userID int64, from, 
 	if after != nil {
 		params.AfterDate, params.AfterID = &after.Date, nullUUID(after.ID)
 	}
+
 	rows, err := r.q.PreviewCandidates(ctx, params)
 	if err != nil || len(rows) == 0 {
 		return nil, nil, err
 	}
+
 	ids := make([]uuid.UUID, len(rows))
 	for i, row := range rows {
 		ids[i] = row.TransactionID
 	}
+
 	if len(rows) < limit {
 		return ids, nil, nil
 	}
+
 	last := rows[len(rows)-1]
+
 	return ids, &app.PendingKey{Date: last.TransactionDate, ID: last.TransactionID}, nil
 }

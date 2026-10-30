@@ -96,6 +96,7 @@ func SystemRoles() []SystemRole {
 	for i, r := range systemRoles {
 		out[i] = r.role
 	}
+
 	return out
 }
 
@@ -105,6 +106,7 @@ func (r SystemRole) Class() Class {
 			return s.class
 		}
 	}
+
 	return ""
 }
 
@@ -115,6 +117,7 @@ func (r SystemRole) DefaultName() string {
 			return s.name
 		}
 	}
+
 	return ""
 }
 
@@ -149,10 +152,12 @@ func NewAccount(a Account) (Account, error) {
 	if n := utf8.RuneCountInString(a.Name); n == 0 || n > maxNameLength {
 		return Account{}, invalid("name", "must have 1 to 120 characters")
 	}
+
 	kinds, ok := kindsByClass[a.Class]
 	if !ok {
 		return Account{}, invalid("class", "must be asset, liability, equity, income or expense")
 	}
+
 	switch {
 	case a.IsBalance() && a.Kind == "":
 		return Account{}, invalid("kind", "is required for asset and liability accounts")
@@ -161,15 +166,19 @@ func NewAccount(a Account) (Account, error) {
 	case a.IsBalance() && !slices.Contains(kinds, a.Kind):
 		return Account{}, invalid("kind", "is not allowed for class "+string(a.Class))
 	}
+
 	if a.HoldsSecurity() && (a.Class != ClassAsset || a.Kind != KindBrokerage || a.ParentID == uuid.Nil) {
 		return Account{}, invalid("currency", "a security is held only by a brokerage account that is a child of a brokerage account")
 	}
+
 	if a.OpenedOn.IsZero() {
 		return Account{}, invalid("opened_on", "is required")
 	}
+
 	if a.ClosedOn != nil && a.ClosedOn.Before(a.OpenedOn) {
 		return Account{}, invalid("closed_on", "must not be before opened_on")
 	}
+
 	switch a.YieldMode {
 	case "":
 		a.YieldMode = YieldNone
@@ -180,12 +189,15 @@ func NewAccount(a Account) (Account, error) {
 	default:
 		return Account{}, invalid("yield_mode", "must be none or auto")
 	}
+
 	if a.Color < 0 || a.Color > 8 {
 		return Account{}, invalid("color", "must be 1 to 8")
 	}
+
 	if a.SystemRole != "" && a.SystemRole.Class() != a.Class {
 		return Account{}, invalid("system_role", "does not match the account class")
 	}
+
 	return a, nil
 }
 
@@ -224,5 +236,6 @@ func ValidateParent(child, parent Account) error {
 	case child.IsBalance() && child.InstitutionID != parent.InstitutionID:
 		return invalid("parent_id", "must be at the same institution")
 	}
+
 	return nil
 }

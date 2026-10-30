@@ -21,10 +21,12 @@ func (s *Service) writerFor(ctx context.Context, userID int64) (writer, error) {
 	if err != nil {
 		return writer{}, fmt.Errorf("read profile: %w", err)
 	}
+
 	w := domain.English()
 	if l.Language == "pt" {
 		w = domain.Portuguese()
 	}
+
 	return writer{w, locale.ConventionsOf(l).DateLayout()}, nil
 }
 
@@ -32,5 +34,6 @@ func (w writer) yield(first, last time.Time) string {
 	if first.Equal(last) {
 		return fmt.Sprintf(w.YieldDay, last.Format(w.layout))
 	}
+
 	return fmt.Sprintf(w.YieldPeriod, first.Format(w.layout), last.Format(w.layout))
 }

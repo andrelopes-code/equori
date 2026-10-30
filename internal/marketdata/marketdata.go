@@ -84,6 +84,7 @@ func New(pool *pgxpool.Pool) *Module {
 	if err != nil {
 		panic(fmt.Sprintf("marketdata: %v", err)) // the entries are literals; a failure is a programming error
 	}
+
 	return &Module{pool: pool, q: postgres.New(pool), calendars: calendars}
 }
 
@@ -97,19 +98,24 @@ func (m *Module) Tools() tool.Group {
 				for i, d := range c.Weekend {
 					weekend[i] = string(d)
 				}
+
 				out = append(out, toolapi.Calendar{ID: c.Id, Weekend: weekend})
 			}
+
 			return out
 		},
 		Holidays: func(ctx context.Context, calendar string, year int) ([]toolapi.Holiday, error) {
 			hs, err := m.listHolidays(ctx, calendar, year)
+
 			out := make([]toolapi.Holiday, len(hs))
 			for i, h := range hs {
 				out[i] = toolapi.Holiday{Date: h.Date.Time, Name: h.Name, Source: string(h.Source)}
 			}
+
 			return out, err
 		},
 	}
+
 	return tool.Group{Tools: toolapi.Tools(m, cals), Errors: tool.FromProblem(httpapi.ToProblem)}
 }
 
@@ -122,13 +128,16 @@ func (m *Module) listHolidays(ctx context.Context, calendar string, year int) ([
 	if errors.Is(err, ErrUnknownCalendar) {
 		return nil, httpapi.ErrNotFound
 	}
+
 	if err != nil {
 		return nil, err
 	}
+
 	out := make([]httpapi.Holiday, len(hs))
 	for i, h := range hs {
 		out[i] = httpapi.NewHoliday(openapi_types.Date{Time: h.Date}, h.Name, h.Source)
 	}
+
 	return out, nil
 }
 
@@ -137,20 +146,25 @@ func (m *Module) calendarList(ctx context.Context) (httpapi.CalendarList, error)
 	if err != nil {
 		return httpapi.CalendarList{}, fmt.Errorf("read profile: %w", err)
 	}
+
 	return httpapi.CalendarList{Items: m.listCalendars(), Default: m.DefaultCalendar(l.Region)}, nil
 }
 
 func (m *Module) listCalendars() []httpapi.Calendar {
 	ids := m.calendars.IDs()
+
 	out := make([]httpapi.Calendar, len(ids))
 	for i, id := range ids {
 		cal, _ := m.calendars.Get(id)
+
 		weekend := make([]httpapi.CalendarWeekend, len(cal.Weekend))
 		for j, wd := range cal.Weekend {
 			weekend[j] = httpapi.CalendarWeekend(strings.ToLower(wd.String()))
 		}
+
 		out[i] = httpapi.Calendar{Id: id, Weekend: weekend}
 	}
+
 	return out
 }
 
@@ -159,9 +173,11 @@ func (m *Module) Instrument(ctx context.Context, code string) (Instrument, error
 	if errors.Is(err, pgx.ErrNoRows) {
 		return Instrument{}, ErrUnknownInstrument
 	}
+
 	if err != nil {
 		return Instrument{}, err
 	}
+
 	return toInstrument(row), nil
 }
 
@@ -172,19 +188,23 @@ func (m *Module) Currencies(ctx context.Context) ([]Instrument, error) {
 // ListInstruments returns the instruments of type typ, or all of them for "".
 func (m *Module) ListInstruments(ctx context.Context, typ string) ([]Instrument, error) {
 	var rows []postgres.MarketdataInstrument
+
 	var err error
 	if typ == "" {
 		rows, err = m.q.ListInstruments(ctx)
 	} else {
 		rows, err = m.q.ListInstrumentsByType(ctx, typ)
 	}
+
 	if err != nil {
 		return nil, err
 	}
+
 	out := make([]Instrument, len(rows))
 	for i, r := range rows {
 		out[i] = toInstrument(r)
 	}
+
 	return out, nil
 }
 
@@ -194,14 +214,18 @@ func (m *Module) DefineInstrument(ctx context.Context, in Instrument) (Instrumen
 	if err != nil {
 		return Instrument{}, err
 	}
+
 	quote, err := m.Instrument(ctx, string(in.QuoteCurrency))
 	if errors.Is(err, ErrUnknownInstrument) || (err == nil && quote.Type != domain.TypeCurrency) {
 		return Instrument{}, &domain.FieldError{Field: "quote_currency", Message: "must be a currency"}
 	}
+
 	if err != nil {
 		return Instrument{}, err
 	}
+
 	quoteCode := string(in.QuoteCurrency)
+
 	n, err := m.q.InsertInstrument(ctx, postgres.InsertInstrumentParams{
 		Code: string(in.Code), InstrumentType: in.Type, Scale: int16(in.Scale), //nolint:gosec // G115: Validate bounds the scale to 0–12
 		Name: in.Name, QuoteCurrency: &quoteCode, Exchange: optional(in.Exchange), Subtype: optional(in.Subtype),
@@ -209,9 +233,11 @@ func (m *Module) DefineInstrument(ctx context.Context, in Instrument) (Instrumen
 	if err != nil {
 		return Instrument{}, fmt.Errorf("insert instrument: %w", err)
 	}
+
 	if n == 0 {
 		return Instrument{}, ErrInstrumentExists
 	}
+
 	return in, nil
 }
 
@@ -222,22 +248,27 @@ func (m *Module) EditInstrument(ctx context.Context, code, name, exchange, subty
 	if err != nil {
 		return Instrument{}, err
 	}
+
 	if in.Type == domain.TypeCurrency {
 		return Instrument{}, &domain.FieldError{Field: "code", Message: "is a currency"}
 	}
+
 	in.Name, in.Exchange, in.Subtype = name, exchange, subtype
 	if in, err = in.Validate(); err != nil {
 		return Instrument{}, err
 	}
+
 	n, err := m.q.UpdateInstrument(ctx, postgres.UpdateInstrumentParams{
 		Code: code, Name: in.Name, Exchange: optional(in.Exchange), Subtype: optional(in.Subtype),
 	})
 	if err != nil {
 		return Instrument{}, fmt.Errorf("update instrument: %w", err)
 	}
+
 	if n == 0 {
 		return Instrument{}, ErrUnknownInstrument
 	}
+
 	return in, nil
 }
 
@@ -245,6 +276,7 @@ func optional(s string) *string {
 	if s == "" {
 		return nil
 	}
+
 	return &s
 }
 
@@ -253,11 +285,14 @@ func toInstrument(r postgres.MarketdataInstrument) Instrument {
 	if r.QuoteCurrency != nil {
 		in.QuoteCurrency = money.Currency(*r.QuoteCurrency)
 	}
+
 	if r.Exchange != nil {
 		in.Exchange = *r.Exchange
 	}
+
 	if r.Subtype != nil {
 		in.Subtype = *r.Subtype
 	}
+
 	return in
 }

@@ -14,10 +14,12 @@ import (
 
 func brl(t testing.TB, amount int64) money.Money {
 	t.Helper()
+
 	m, err := money.New(amount, "BRL")
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	return m
 }
 
@@ -28,6 +30,7 @@ func day(s string) time.Time {
 	if err != nil {
 		panic(err)
 	}
+
 	return d
 }
 
@@ -35,6 +38,7 @@ func id() uuid.UUID { return uuid.Must(uuid.NewV7()) }
 
 func TestNormalize(t *testing.T) {
 	t.Parallel()
+
 	tests := map[string]string{
 		"PADARIA SÃO JOÃO":        "padaria sao joao",
 		"  Padaria   São\tJoão  ": "padaria sao joao",
@@ -66,6 +70,7 @@ func newRuleFixture() ruleFixture {
 		f.closed: {Class: "expense", Instrument: "BRL", OpenedOn: day("2026-01-01"), ClosedOn: ptr(day("2026-09-30"))},
 		f.salary: {Class: "income", Instrument: "BRL", OpenedOn: day("2026-01-01")},
 	}
+
 	return f
 }
 
@@ -79,26 +84,33 @@ func (f ruleFixture) subject(t *testing.T, description string, amount int64) Sub
 
 func mustRule(t *testing.T, r Rule) Rule {
 	t.Helper()
+
 	if r.Name == "" {
 		r.Name = "rule"
 	}
+
 	if r.ID == uuid.Nil {
 		r.ID = id()
 	}
+
 	r.Enabled = true
+
 	got, err := NewRule(r)
 	if err != nil {
 		t.Fatalf("NewRule: %v", err)
 	}
+
 	return got
 }
 
 func TestConditionsHold(t *testing.T) {
 	t.Parallel()
+
 	f := newRuleFixture()
 	s := f.subject(t, "PADARIA SÃO JOÃO 12", -4590)
 	s.PayeeID = f.payee
 	s.RawDescription = "PAG*PadariaSaoJoao"
+
 	tests := []struct {
 		name string
 		c    Condition
@@ -143,8 +155,10 @@ func TestConditionsHold(t *testing.T) {
 
 func TestNewRuleRejections(t *testing.T) {
 	t.Parallel()
+
 	setCategory := []Action{{Type: ActionSetCategory, CategoryID: id()}}
 	contains := []Condition{{Field: FieldDescription, Operator: OpContains, Text: []string{"uber"}}}
+
 	tests := []struct {
 		name  string
 		r     Rule
@@ -173,6 +187,7 @@ func TestNewRuleRejections(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := NewRule(tt.r)
+
 			fe, ok := errors.AsType[*FieldError](err)
 			if !ok || fe.Field != tt.field || !errors.Is(err, ErrValidation) {
 				t.Fatalf("err = %v, want field %q", err, tt.field)
@@ -183,12 +198,14 @@ func TestNewRuleRejections(t *testing.T) {
 
 func TestAliasOrder(t *testing.T) {
 	t.Parallel()
+
 	ifood, other, regex := id(), id(), id()
 	mk := func(pattern string, mt MatchType, payee uuid.UUID) Alias {
 		a, err := NewAlias(Alias{ID: id(), Pattern: pattern, MatchType: mt, PayeeID: payee})
 		if err != nil {
 			t.Fatal(err)
 		}
+
 		return a
 	}
 	aliases := []Alias{
@@ -199,6 +216,7 @@ func TestAliasOrder(t *testing.T) {
 		mk("IFD*IFOOD SÃO PAULO", MatchEquals, ifood),
 	}
 	SortAliases(aliases)
+
 	tests := map[string]uuid.UUID{
 		"IFD*IFOOD SAO PAULO": ifood, // equals beats every other type
 		"IFD*IFOOD CAMPINAS":  ifood, // the longer starts_with pattern wins
@@ -211,9 +229,11 @@ func TestAliasOrder(t *testing.T) {
 			t.Errorf("ResolvePayee(%q) = %v, %v; want %v", raw, got, ok, want)
 		}
 	}
+
 	if _, ok := ResolvePayee("UBER", aliases); ok {
 		t.Error("UBER resolved to a payee")
 	}
+
 	if _, err := NewAlias(Alias{Pattern: "(", MatchType: MatchRegex, PayeeID: ifood}); err == nil {
 		t.Error("invalid regex accepted")
 	}
@@ -221,6 +241,7 @@ func TestAliasOrder(t *testing.T) {
 
 func TestDecideMergesRules(t *testing.T) {
 	t.Parallel()
+
 	f := newRuleFixture()
 	posto := mustRule(t, Rule{Priority: 1, Conditions: []Condition{{Field: FieldDescription, Operator: OpContains, Text: []string{"posto"}}},
 		Actions: []Action{{Type: ActionSetCategory, CategoryID: f.fuel}}})
@@ -236,12 +257,14 @@ func TestDecideMergesRules(t *testing.T) {
 	}
 
 	posto.StopProcessing = true
+
 	d = Decide(s, Catalog{Rules: []Rule{posto, shell}, Categories: f.categories})
 	if d.RuleID != posto.ID || len(d.AddTags) != 0 || d.PayeeID != uuid.Nil {
 		t.Fatalf("decision with stop = %+v", d)
 	}
 
 	closed := mustRule(t, Rule{Priority: 1, StopProcessing: true, Conditions: posto.Conditions, Actions: []Action{{Type: ActionSetCategory, CategoryID: f.closed}}})
+
 	d = Decide(s, Catalog{Rules: []Rule{closed, shell}, Categories: f.categories})
 	if d.RuleID != shell.ID || !slices.Equal(d.Parts, []Allocation{{f.travel, brl(t, 15000)}}) {
 		t.Fatalf("decision with closed category = %+v", d)
@@ -254,11 +277,14 @@ func TestDecideMergesRules(t *testing.T) {
 
 func TestDecideAliasAndHistory(t *testing.T) {
 	t.Parallel()
+
 	f := newRuleFixture()
+
 	alias, err := NewAlias(Alias{ID: id(), Pattern: "ifd*", MatchType: MatchStartsWith, PayeeID: f.payee})
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	history := map[HistoryKey]uuid.UUID{{PayeeID: f.payee, Class: "expense"}: f.food, {PayeeID: f.payee, Class: "income"}: f.salary}
 	c := Catalog{Aliases: []Alias{alias}, Categories: f.categories, History: history}
 
@@ -268,6 +294,7 @@ func TestDecideAliasAndHistory(t *testing.T) {
 	}
 
 	refund := f.subject(t, "IFD*IFOOD SAO PAULO", 4500)
+
 	refund.Class = "income"
 	if d = Decide(refund, c); !slices.Equal(d.Parts, []Allocation{{f.salary, brl(t, -4500)}}) {
 		t.Fatalf("income decision = %+v", d)
@@ -278,6 +305,7 @@ func TestDecideAliasAndHistory(t *testing.T) {
 	}
 
 	known := f.subject(t, "IFD*IFOOD", -4500)
+
 	known.PayeeID = id()
 	if d = Decide(known, c); d.PayeeID != uuid.Nil || d.Method != "" {
 		t.Fatalf("a transaction with a payee got %+v", d)
@@ -286,8 +314,10 @@ func TestDecideAliasAndHistory(t *testing.T) {
 
 func TestAllocate(t *testing.T) {
 	t.Parallel()
+
 	f := newRuleFixture()
 	split := []Part{{CategoryID: f.groceries, Percent: 8000}, {CategoryID: f.cleaning, Remainder: true}}
+
 	tests := []struct {
 		name  string
 		total int64
@@ -319,40 +349,51 @@ func TestAllocate(t *testing.T) {
 // Every split of every total sums to the total without zero parts (Review Focus 5).
 func TestAllocateSumsToTotal(t *testing.T) {
 	t.Parallel()
+
 	f := newRuleFixture()
 	rng := rand.New(rand.NewPCG(1, 2))
+
 	cats := []uuid.UUID{f.food, f.groceries, f.cleaning, f.travel, f.fuel}
 	for range 5000 {
 		total := rng.Int64N(1<<53) - 1<<52
 		if rng.IntN(2) == 0 {
 			total = rng.Int64N(20001) - 10000
 		}
+
 		if total == 0 {
 			continue
 		}
+
 		n := 1 + rng.IntN(4)
 		parts := make([]Part, 0, n+1)
+
 		left := 9999
 		for i := range n {
 			if left == 0 {
 				break
 			}
+
 			p := 1 + rng.IntN(left)
 			left -= p
 			parts = append(parts, Part{CategoryID: cats[i], Percent: p})
 		}
+
 		parts = append(parts, Part{CategoryID: cats[4], Remainder: true})
+
 		got, ok := Allocate(brl(t, total), parts, f.categories, day("2026-10-14"))
 		if !ok {
 			t.Fatalf("Allocate(%d, %+v) failed", total, parts)
 		}
+
 		var sum int64
 		for _, a := range got {
 			if a.Amount.IsZero() || a.Amount.IsNegative() != (total < 0) {
 				t.Fatalf("Allocate(%d, %+v) = %v", total, parts, got)
 			}
+
 			sum += a.Amount.Amount()
 		}
+
 		if sum != total {
 			t.Fatalf("Allocate(%d, %+v) sums to %d", total, parts, sum)
 		}
@@ -361,18 +402,23 @@ func TestAllocateSumsToTotal(t *testing.T) {
 
 func TestMatchKey(t *testing.T) {
 	t.Parallel()
+
 	payee := id()
 	if got := MatchKey(payee, "IFD*IFOOD"); got != "payee:"+payee.String() {
 		t.Errorf("with payee = %q", got)
 	}
+
 	if got := MatchKey(uuid.Nil, " PADARIA  SÃO JOÃO "); got != "description:padaria sao joao" {
 		t.Errorf("without payee = %q", got)
 	}
+
 	category := id()
+
 	conditions, actions := SuggestedRule(MatchKey(uuid.Nil, "PADARIA SÃO JOÃO"), category)
 	if _, err := NewRule(Rule{Name: "r", Conditions: conditions, Actions: actions}); err != nil || conditions[0].Field != FieldRawDescription || conditions[0].Text[0] != "padaria sao joao" {
 		t.Errorf("suggested rule = %+v, %+v: %v", conditions, actions, err)
 	}
+
 	conditions, _ = SuggestedRule(MatchKey(payee, "IFD*IFOOD"), category)
 	if conditions[0].Field != FieldPayee || conditions[0].IDs[0] != payee {
 		t.Errorf("suggested rule with payee = %+v", conditions)

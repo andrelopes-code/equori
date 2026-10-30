@@ -18,22 +18,28 @@ func ReadEnvFile(path string) (map[string]string, error) {
 	if errors.Is(err, fs.ErrNotExist) {
 		return map[string]string{}, nil
 	}
+
 	if err != nil {
 		return nil, fmt.Errorf("read %s: %w", path, err)
 	}
+
 	values := map[string]string{}
 	for n, line := range strings.Split(string(b), "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" || strings.HasPrefix(line, "#") {
 			continue
 		}
+
 		key, value, ok := strings.Cut(line, "=")
+
 		key = strings.TrimSpace(key)
 		if !ok || !envKey.MatchString(key) {
 			return nil, fmt.Errorf("%s line %d: want KEY=VALUE with KEY in upper case", path, n+1)
 		}
+
 		values[key] = strings.TrimSpace(value)
 	}
+
 	return values, nil
 }
 
@@ -43,6 +49,7 @@ func WithFile(getenv func(string) string, file map[string]string) func(string) s
 		if v := getenv(key); v != "" {
 			return v
 		}
+
 		return file[key]
 	}
 }

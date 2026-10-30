@@ -32,15 +32,19 @@ func LatestVersion() (int64, error) {
 	if err != nil {
 		return 0, fmt.Errorf("list migrations: %w", err)
 	}
+
 	var latest int64
 	for _, name := range names {
 		prefix, _, _ := strings.Cut(filepath.Base(name), "_")
+
 		v, err := strconv.ParseInt(prefix, 10, 64)
 		if err != nil {
 			return 0, fmt.Errorf("parse migration version %q: %w", name, err)
 		}
+
 		latest = max(latest, v)
 	}
+
 	return latest, nil
 }
 
@@ -49,10 +53,12 @@ func Open(ctx context.Context, url string) (*pgxpool.Pool, error) {
 	if err != nil {
 		return nil, fmt.Errorf("create pool: %w", err)
 	}
+
 	if err := pool.Ping(ctx); err != nil {
 		pool.Close()
 		return nil, fmt.Errorf("ping database: %w", err)
 	}
+
 	return pool, nil
 }
 
@@ -72,18 +78,23 @@ func MigrateTo(ctx context.Context, pool *pgxpool.Pool, version int64, log *slog
 	if err != nil {
 		return fmt.Errorf("read schema version: %w", err)
 	}
+
 	sources := provider.ListSources()
+
 	latest := sources[len(sources)-1].Version
 	if current > latest {
 		return fmt.Errorf("%w: database at version %d, this binary knows up to %d; restore a backup taken before the upgrade, or run a release that knows version %d", ErrSchemaAhead, current, latest, current)
 	}
+
 	results, err := provider.UpTo(ctx, version)
 	if err != nil {
 		return fmt.Errorf("apply migrations: %w", err)
 	}
+
 	for _, r := range results {
 		log.Info("migration applied", "version", r.Source.Version, "duration", r.Duration)
 	}
+
 	return nil
 }
 
@@ -95,13 +106,16 @@ func Pending(ctx context.Context, pool *pgxpool.Pool) (current int64, pending bo
 		return 0, false, err
 	}
 	defer sqlDB.Close()
+
 	if current, err = provider.GetDBVersion(ctx); err != nil {
 		return 0, false, fmt.Errorf("read schema version: %w", err)
 	}
+
 	latest, err := LatestVersion()
 	if err != nil {
 		return 0, false, err
 	}
+
 	return current, current > 0 && current < latest, nil
 }
 
@@ -111,6 +125,7 @@ func Locale(ctx context.Context, pool *pgxpool.Pool) (provider, locale string, e
 	if err != nil {
 		return "", "", fmt.Errorf("read database locale: %w", err)
 	}
+
 	return provider, locale, nil
 }
 
@@ -119,11 +134,14 @@ func newProvider(pool *pgxpool.Pool) (*goose.Provider, *sql.DB, error) {
 	if err != nil {
 		return nil, nil, err
 	}
+
 	sqlDB := stdlib.OpenDBFromPool(pool)
+
 	provider, err := goose.NewProvider(goose.DialectPostgres, sqlDB, dir)
 	if err != nil {
 		_ = sqlDB.Close()
 		return nil, nil, fmt.Errorf("create migration provider: %w", err)
 	}
+
 	return provider, sqlDB, nil
 }

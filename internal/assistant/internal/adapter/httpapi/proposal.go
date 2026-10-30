@@ -15,17 +15,21 @@ func (s *Server) toProposal(p domain.Proposal) (AssistantProposal, error) {
 	if p.Expired(s.svc.Now()) {
 		out.Status = AssistantProposalStatusExpired
 	}
+
 	if err := json.Unmarshal(p.Preview, &out.Preview); err != nil {
 		return AssistantProposal{}, fmt.Errorf("decode preview of proposal %s: %w", p.ID, err)
 	}
+
 	if len(p.Result) > 0 {
 		if err := json.Unmarshal(p.Result, &out.Result); err != nil {
 			return AssistantProposal{}, fmt.Errorf("decode result of proposal %s: %w", p.ID, err)
 		}
 	}
+
 	if !p.DecidedAt.IsZero() {
 		out.DecidedAt = &p.DecidedAt
 	}
+
 	return out, nil
 }
 
@@ -34,7 +38,9 @@ func (s *Server) ConfirmAssistantProposal(ctx context.Context, req ConfirmAssist
 	if err != nil {
 		return nil, err
 	}
+
 	out, err := s.toProposal(p)
+
 	return ConfirmAssistantProposal200JSONResponse(out), err
 }
 
@@ -43,6 +49,8 @@ func (s *Server) RejectAssistantProposal(ctx context.Context, req RejectAssistan
 	if err != nil {
 		return nil, err
 	}
+
 	out, err := s.toProposal(p)
+
 	return RejectAssistantProposal200JSONResponse(out), err
 }

@@ -31,10 +31,12 @@ func TestCategorizationsByTransaction(t *testing.T) {
 		Items []categorizationItem `json:"items"`
 	}
 	b.h.MustDo(http.MethodGet, "/api/v1/categorizations?"+q.Encode(), nil, http.StatusOK, &out)
+
 	got := map[string]categorizationItem{}
 	for _, it := range out.Items {
 		got[it.TransactionID] = it
 	}
+
 	if len(out.Items) != 2 || got[manual].Method != "manual" || got[byRule].Method != "rule" || got[byRule].RuleID == "" {
 		t.Fatalf("categorizations = %+v", out.Items)
 	}
@@ -43,10 +45,12 @@ func TestCategorizationsByTransaction(t *testing.T) {
 func TestCategorizationsLimit(t *testing.T) {
 	t.Parallel()
 	b := newBooks(t)
+
 	ids := make([]string, 201)
 	for i := range ids {
 		ids[i] = "transaction_id=01a15600-0000-7000-8000-000000000000"
 	}
+
 	b.h.ExpectProblem(b.h.Do(http.MethodGet, "/api/v1/categorizations?"+strings.Join(ids, "&"), nil), http.StatusBadRequest, "invalid_request", "transaction_id")
 }
 
@@ -68,9 +72,11 @@ func TestRuleUsage(t *testing.T) {
 		LastCategorizedAt string `json:"last_categorized_at"`
 	}
 	b.h.MustDo(http.MethodGet, "/api/v1/rules/"+rule.ID, nil, http.StatusOK, &got)
+
 	if got.CategorizedCount != 2 || got.LastCategorizedAt == "" {
 		t.Fatalf("rule usage = %+v", got)
 	}
+
 	var list struct {
 		Items []struct {
 			ID                string  `json:"id"`
@@ -79,10 +85,12 @@ func TestRuleUsage(t *testing.T) {
 		} `json:"items"`
 	}
 	b.h.MustDo(http.MethodGet, "/api/v1/rules", nil, http.StatusOK, &list)
+
 	for _, r := range list.Items {
 		if r.ID == idle.ID && (r.CategorizedCount != 0 || r.LastCategorizedAt != nil) {
 			t.Fatalf("idle rule = %+v", r)
 		}
+
 		if r.ID == rule.ID && r.CategorizedCount != 2 {
 			t.Fatalf("listed rule = %+v", r)
 		}

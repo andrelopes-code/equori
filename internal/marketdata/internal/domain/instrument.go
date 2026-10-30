@@ -50,6 +50,7 @@ func (in Instrument) Validate() (Instrument, error) {
 	case in.Subtype != "" && !subtypePattern.MatchString(in.Subtype):
 		return in, invalid("subtype", "must match ^[a-z0-9_]{2,40}$")
 	}
+
 	return in, nil
 }
 

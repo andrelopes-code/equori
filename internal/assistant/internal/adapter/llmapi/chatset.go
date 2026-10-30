@@ -32,8 +32,10 @@ func NewChatSet(set tool.Set) (app.Tools, error) {
 		if s.Effect != tool.ReadOnly && !t.HasPreview() {
 			return nil, fmt.Errorf("chat tool %s writes and has no preview", s.Name)
 		}
+
 		effects[s.Name] = s.Effect
 	}
+
 	return chatSet{Set: set, effects: effects}, nil
 }
 
@@ -46,13 +48,16 @@ func ChatHandlers(svc *app.Service, tools app.Tools, set tool.Set, conversationI
 		if e, _ := tools.Effect(name); e == tool.ReadOnly {
 			continue
 		}
+
 		handlers[name] = func(ctx context.Context, args json.RawMessage) (json.RawMessage, error) {
 			out, err := svc.Propose(ctx, auth.MustUserID(ctx), conversationID(ctx), name, args)
 			if tf, ok := errors.AsType[*app.ToolFailure](err); ok {
 				return nil, &llm.ToolError{Content: tf.Content}
 			}
+
 			return out, err
 		}
 	}
+
 	return decls, handlers
 }

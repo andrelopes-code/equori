@@ -26,6 +26,7 @@ func TestBillingCycleRules(t *testing.T) {
 		} `json:"items"`
 	}
 	h.MustDo(http.MethodGet, "/api/v1/accounts/"+card+"/billing-cycle-rules", nil, http.StatusOK, &rules)
+
 	if len(rules.Items) != 2 || rules.Items[0].EffectiveFrom != "2026-01" || rules.Items[0].ClosingDayAssignment != "closing" ||
 		rules.Items[1].ClosingDay != 15 || rules.Items[1].DueDateAdjustment != "following" {
 		t.Fatalf("rules = %+v", rules.Items)
@@ -66,6 +67,7 @@ func TestCreditLimitAndAvailableLimit(t *testing.T) {
 		} `json:"items"`
 	}
 	h.MustDo(http.MethodGet, "/api/v1/accounts/"+card+"/credit-limits", nil, http.StatusOK, &limits)
+
 	if len(limits.Items) != 1 || limits.Items[0].EffectiveFrom != "2026-01-01" || limits.Items[0].Amount.Amount != 1000000 {
 		t.Fatalf("limits = %+v, want one version of 1000000 from 2026-01-01", limits.Items)
 	}
@@ -81,6 +83,7 @@ func TestCreditLimitAndAvailableLimit(t *testing.T) {
 		} `json:"card"`
 	}
 	h.MustDo(http.MethodGet, "/api/v1/accounts/"+card, nil, http.StatusOK, &acc)
+
 	if acc.Card.CreditLimit.Amount != 1000000 || acc.Card.AvailableLimit.Amount != 1000000 {
 		t.Fatalf("card = %+v", acc.Card)
 	}
@@ -112,6 +115,7 @@ func TestAccountListCarriesCardLimits(t *testing.T) {
 		} `json:"items"`
 	}
 	h.MustDo(http.MethodGet, "/api/v1/accounts", nil, http.StatusOK, &list)
+
 	cards := map[string]bool{}
 	for _, a := range list.Items {
 		switch a.Name {
@@ -119,6 +123,7 @@ func TestAccountListCarriesCardLimits(t *testing.T) {
 			if a.Card == nil || a.Card.CreditLimit.Amount != 1000000 || a.Card.AvailableLimit.Amount != 971360 {
 				t.Fatalf("Itaú Visa card = %+v, want limit 1000000 and 971360 free", a.Card)
 			}
+
 			cards[a.Name] = true
 		case "Nubank", "Food":
 			if a.Card != nil {
@@ -126,6 +131,7 @@ func TestAccountListCarriesCardLimits(t *testing.T) {
 			}
 		}
 	}
+
 	if !cards["Itaú Visa"] {
 		t.Fatalf("items = %+v, want Itaú Visa", list.Items)
 	}
@@ -146,6 +152,7 @@ func TestCards(t *testing.T) {
 		} `json:"items"`
 	}
 	h.MustDo(http.MethodGet, "/api/v1/accounts/"+card+"/cards", nil, http.StatusOK, &cards)
+
 	if len(cards.Items) != 1 || cards.Items[0].LastFour != "4021" || !cards.Items[0].Virtual || !cards.Items[0].Active {
 		t.Fatalf("cards = %+v", cards.Items)
 	}
@@ -168,9 +175,11 @@ func TestCardActivation(t *testing.T) {
 		Active bool   `json:"active"`
 	}
 	h.MustDo(http.MethodPost, "/api/v1/accounts/"+account+"/cards", map[string]any{"holder": "Owner", "last_four": "4021"}, http.StatusCreated, &created)
+
 	if !created.Active {
 		t.Fatalf("created card = %+v, want active", created)
 	}
+
 	path := "/api/v1/cards/" + created.ID
 
 	type cardBody struct {
@@ -181,18 +190,22 @@ func TestCardActivation(t *testing.T) {
 	}
 	var card cardBody
 	h.MustDo(http.MethodPatch, path, map[string]any{"active": false}, http.StatusOK, &card)
+
 	if card != (cardBody{ID: created.ID, Holder: "Owner", LastFour: "4021", Active: false}) {
 		t.Fatalf("deactivated card = %+v", card)
 	}
+
 	var list struct {
 		Items []cardBody `json:"items"`
 	}
 	h.MustDo(http.MethodGet, "/api/v1/accounts/"+account+"/cards", nil, http.StatusOK, &list)
+
 	if len(list.Items) != 1 || list.Items[0].Active {
 		t.Fatalf("cards after deactivation = %+v", list.Items)
 	}
 
 	h.MustDo(http.MethodPatch, path, map[string]any{"active": true}, http.StatusOK, &card)
+
 	if !card.Active {
 		t.Fatalf("reactivated card = %+v", card)
 	}
@@ -202,6 +215,7 @@ func TestCardActivation(t *testing.T) {
 	other := h.Login("other@example.com")
 	h.ExpectProblem(h.Call(other, http.MethodPatch, path, map[string]any{"active": false}), http.StatusNotFound, "not_found", "")
 	h.MustDo(http.MethodGet, "/api/v1/accounts/"+account+"/cards", nil, http.StatusOK, &list)
+
 	if len(list.Items) != 1 || !list.Items[0].Active {
 		t.Fatalf("cards after other user's patch = %+v", list.Items)
 	}

@@ -20,6 +20,7 @@ type reimbursementBooks struct {
 func newReimbursementBooks(t *testing.T) reimbursementBooks {
 	t.Helper()
 	h := apitest.New(t, apitest.Today("2026-10-21"))
+
 	return reimbursementBooks{
 		h:        h,
 		sys:      systemAccounts(h),
@@ -45,6 +46,7 @@ func alloc(original string, amount int64) map[string]any {
 func allocIn(original string, amount int64, category string) map[string]any {
 	a := alloc(original, amount)
 	a["category_id"] = category
+
 	return a
 }
 
@@ -52,6 +54,7 @@ func reimburse(h *apitest.Harness, id string, version int, allocations ...map[st
 	if allocations == nil {
 		allocations = []map[string]any{}
 	}
+
 	return h.Do(http.MethodPost, "/api/v1/transactions/"+id+"/reimbursement", map[string]any{"expected_version": version, "allocations": allocations})
 }
 
@@ -83,6 +86,7 @@ func (v reimbursedView) amountOn(account string) int64 {
 			sum += p.Amount.Amount
 		}
 	}
+
 	return sum
 }
 
@@ -90,6 +94,7 @@ func getReimbursed(t *testing.T, h *apitest.Harness, id string) reimbursedView {
 	t.Helper()
 	var out reimbursedView
 	h.MustDo(http.MethodGet, "/api/v1/transactions/"+id, nil, http.StatusOK, &out)
+
 	return out
 }
 
@@ -105,12 +110,15 @@ func octoberExpense(t *testing.T, h *apitest.Harness, account string) int64 {
 		} `json:"items"`
 	}
 	h.MustDo(http.MethodGet, "/api/v1/reports/categories?from=2026-10-01&to=2026-10-31&class=expense", nil, http.StatusOK, &out)
+
 	for _, item := range out.Items {
 		if item.AccountID == account {
 			return item.Total.Amount
 		}
 	}
+
 	t.Fatalf("category %s absent from the report", account)
+
 	return 0
 }
 
@@ -120,11 +128,13 @@ func (v reimbursedView) held(target string) int64 {
 			return l.Amount.Amount
 		}
 	}
+
 	return 0
 }
 
 func mustReimburse(t *testing.T, h *apitest.Harness, id string, version int, allocations ...map[string]any) {
 	t.Helper()
+
 	if r := reimburse(h, id, version, allocations...); r.Status != http.StatusOK {
 		t.Fatalf("status %d: %s", r.Status, r.Body)
 	}
@@ -135,6 +145,7 @@ func TestReimbursementNetsExpense_S113(t *testing.T) {
 	t.Parallel()
 	b := newReimbursementBooks(t)
 	expense := b.expense("2026-10-17", 1500)
+
 	inflow := b.inflow("2026-10-20", 1500)
 	if got := octoberExpense(t, b.h, b.car); got != 1500 {
 		t.Fatalf("Car before = %d, want 1500", got)
@@ -146,13 +157,16 @@ func TestReimbursementNetsExpense_S113(t *testing.T) {
 	if got.Version != 2 || got.amountOn(b.nubank) != 1500 || got.amountOn(b.car) != -1500 || got.amountOn(b.sys["uncategorized_income"]) != 0 {
 		t.Fatalf("reimbursement = %+v", got)
 	}
+
 	if len(got.Links) != 1 || got.Links[0].Type != "reimbursement_of" || got.Links[0].Target != expense || got.held(expense) != 1500 {
 		t.Fatalf("links = %+v, want reimbursement_of %s holding 1500", got.Links, expense)
 	}
+
 	original := getReimbursed(t, b.h, expense)
 	if len(original.ReferencedBy) != 1 || original.ReferencedBy[0].Type != "reimbursement_of" || original.ReferencedBy[0].Source != inflow {
 		t.Fatalf("referenced_by = %+v, want reimbursement_of %s", original.ReferencedBy, inflow)
 	}
+
 	if got := octoberExpense(t, b.h, b.car); got != 0 {
 		t.Fatalf("Car after = %d, want 0", got)
 	}
@@ -171,9 +185,11 @@ func TestReimbursementTwoExpensesOneInflow_S114(t *testing.T) {
 	if got.amountOn(b.nubank) != 10000 || got.amountOn(b.car) != -10000 || got.amountOn(b.sys["uncategorized_income"]) != 0 {
 		t.Fatalf("inflow = %+v", got)
 	}
+
 	if len(got.Links) != 2 || got.held(first) != 5000 || got.held(second) != 5000 {
 		t.Fatalf("links = %+v, want 5000 on each expense", got.Links)
 	}
+
 	if got := octoberExpense(t, b.h, b.car); got != 0 {
 		t.Fatalf("Car after = %d, want 0", got)
 	}
@@ -187,16 +203,20 @@ func TestReimbursementHalfOfAnExpense_S114(t *testing.T) {
 	first, second, third := b.inflow("2026-10-15", 10000), b.inflow("2026-10-16", 10000), b.inflow("2026-10-17", 100)
 
 	mustReimburse(t, b.h, first, 1, alloc(expense, 10000))
+
 	if got := octoberExpense(t, b.h, b.car); got != 10000 {
 		t.Fatalf("Car after the first = %d, want 10000", got)
 	}
+
 	mustReimburse(t, b.h, second, 1, alloc(expense, 10000))
+
 	if got := octoberExpense(t, b.h, b.car); got != 0 {
 		t.Fatalf("Car after the second = %d, want 0", got)
 	}
 
 	r := reimburse(b.h, third, 1, alloc(expense, 100))
 	b.h.ExpectProblem(r, http.StatusUnprocessableEntity, "validation_failed", "allocations[0].original_id")
+
 	if !strings.Contains(string(r.Body), "20100") || !strings.Contains(string(r.Body), "20000") {
 		t.Fatalf("detail does not name both totals: %s", r.Body)
 	}
@@ -228,9 +248,11 @@ func TestReimbursementReplaceUsesHeldByOthers_S114(t *testing.T) {
 
 	r := reimburse(b.h, second, 2, alloc(expense, 10001))
 	b.h.ExpectProblem(r, http.StatusUnprocessableEntity, "validation_failed", "allocations[0].original_id")
+
 	if !strings.Contains(string(r.Body), "20001") {
 		t.Fatalf("detail does not name the total: %s", r.Body)
 	}
+
 	mustReimburse(t, b.h, second, 2, alloc(expense, 10000))
 
 	got := getReimbursed(t, b.h, second)
@@ -253,6 +275,7 @@ func TestReimbursementEmptyListUndoes_S114(t *testing.T) {
 	if len(got.Links) != 0 || got.amountOn(b.car) != 0 || got.amountOn(b.sys["uncategorized_income"]) != -10000 {
 		t.Fatalf("inflow = %+v", got)
 	}
+
 	b.h.ExpectProblem(reimburse(b.h, other, 1), http.StatusUnprocessableEntity, "validation_failed", "allocations")
 }
 
@@ -282,6 +305,7 @@ func TestReimbursementCategoryMovesExpense_S114(t *testing.T) {
 	if got := getReimbursed(t, b.h, expense); got.Version != 2 || got.amountOn(b.maintain) != 1500 || got.amountOn(b.car) != 0 {
 		t.Fatalf("expense = %+v", got)
 	}
+
 	if got := getReimbursed(t, b.h, inflow); got.amountOn(b.maintain) != -1500 || got.amountOn(b.car) != 0 {
 		t.Fatalf("inflow = %+v", got)
 	}

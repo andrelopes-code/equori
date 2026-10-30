@@ -20,15 +20,18 @@ func TestSchema(t *testing.T) {
 	pool := pgtest.New(t)
 	ctx := t.Context()
 	a, b := pgtest.CreateUser(t, pool), pgtest.CreateUser(t, pool)
+
 	const provider = "11111111-1111-1111-1111-111111111111"
 	if _, err := pool.Exec(ctx, `INSERT INTO assistant_provider (id, user_id, preset, name, base_url, created_at)
 		VALUES ($1, $2, 'ollama', 'Local', 'http://127.0.0.1:11434/v1', now())`, provider, a); err != nil {
 		t.Fatal(err)
 	}
+
 	const conv = "22222222-2222-2222-2222-222222222222"
 	if _, err := pool.Exec(ctx, `INSERT INTO assistant_conversation VALUES ($1, $2, 'T', now(), now())`, conv, a); err != nil {
 		t.Fatal(err)
 	}
+
 	msg := func(user int64, role, content string, outcome any) (string, []any) {
 		return `INSERT INTO assistant_message VALUES (gen_random_uuid(), $1, $2, 1, $3, $4, $5, now())`, []any{user, conv, role, content, outcome}
 	}
@@ -71,17 +74,21 @@ func TestSchema(t *testing.T) {
 	add("executed without decided_at", func() (string, []any) { return proposal("executed", hash, "", "2026-10-23T10:15:00Z") }, checkViolation)
 	add("basis", func() (string, []any) { return proposal("pending", "abc", "", "2026-10-23T10:15:00Z") }, checkViolation)
 	add("expires_at equals created_at", func() (string, []any) { return proposal("pending", hash, "", "2026-10-23T10:00:00Z") }, checkViolation)
+
 	for _, tt := range tests {
 		_, err := pool.Exec(ctx, tt.sql, tt.args...)
+
 		pgErr, ok := errors.AsType[*pgconn.PgError](err)
 		if !ok || pgErr.Code != tt.code {
 			t.Errorf("%s: error = %v, want SQLSTATE %s", tt.name, err, tt.code)
 		}
 	}
+
 	sql, args := msg(a, "assistant", "", "answered")
 	if _, err := pool.Exec(ctx, sql, args...); err != nil {
 		t.Errorf("assistant message with empty content rejected: %v", err)
 	}
+
 	if _, err := pool.Exec(ctx, `INSERT INTO assistant_message VALUES (gen_random_uuid(), $1, $2, 2, 'assistant', '', 'canceled', now())`, a, conv); err != nil {
 		t.Errorf("assistant message canceled rejected: %v", err)
 	}
@@ -91,5 +98,6 @@ func nilIfEmpty(s string) any {
 	if s == "" {
 		return nil
 	}
+
 	return s
 }

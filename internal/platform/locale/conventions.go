@@ -23,6 +23,7 @@ func (c Conventions) DateLayout() string {
 	case MDY:
 		return "01/02/2006"
 	}
+
 	return "2006-01-02"
 }
 
@@ -38,6 +39,7 @@ func ConventionsOf(l Locale) Conventions {
 	case "US", "CA":
 		return Conventions{'.', ',', MDY}
 	}
+
 	return Conventions{'.', ',', YMD}
 }
 
@@ -48,6 +50,7 @@ func EnglishName(l Locale) string {
 	if !ok {
 		region = l.Region
 	}
+
 	return languageName(l.Language) + " (" + region + ")"
 }
 
@@ -66,5 +69,6 @@ func languageName(language string) string {
 	case "it":
 		return "Italian"
 	}
+
 	return language
 }

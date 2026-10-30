@@ -23,6 +23,7 @@ func fromMoneyAPI(field string, m Money) (money.Money, error) {
 	if err != nil {
 		return money.Money{}, &domain.FieldError{Field: field, Message: err.Error(), Err: domain.ErrValidation}
 	}
+
 	return v, nil
 }
 
@@ -31,6 +32,7 @@ func linkAmountAPI(amount int64, currency string) *Money {
 	if amount == 0 {
 		return nil
 	}
+
 	return &Money{Amount: amount, Currency: currency}
 }
 
@@ -48,7 +50,9 @@ func optDate(d *openapi_types.Date) *time.Time {
 	if d == nil {
 		return nil
 	}
+
 	t := d.Time
+
 	return &t
 }
 
@@ -56,6 +60,7 @@ func apiOptDate(t *time.Time) *openapi_types.Date {
 	if t == nil {
 		return nil
 	}
+
 	return &openapi_types.Date{Time: *t}
 }
 
@@ -63,6 +68,7 @@ func optUUID(id *openapi_types.UUID) uuid.UUID {
 	if id == nil {
 		return uuid.Nil
 	}
+
 	return *id
 }
 
@@ -70,6 +76,7 @@ func apiOptUUID(id uuid.UUID) *openapi_types.UUID {
 	if id == uuid.Nil {
 		return nil
 	}
+
 	return &id
 }
 
@@ -77,6 +84,7 @@ func optString(s *string) string {
 	if s == nil {
 		return ""
 	}
+
 	return *s
 }
 
@@ -84,11 +92,13 @@ func apiOptString(s string) *string {
 	if s == "" {
 		return nil
 	}
+
 	return &s
 }
 
 func toAccountAPI(a domain.Account) Account {
 	excluded := a.ExcludedFromLiquidity
+
 	out := Account{
 		ExcludedFromLiquidity: &excluded,
 		Id:                    a.ID, Name: a.Name, Class: AccountClass(a.Class), Currency: string(a.Instrument),
@@ -100,14 +110,17 @@ func toAccountAPI(a domain.Account) Account {
 		k := AccountKind(a.Kind)
 		out.Kind = &k
 	}
+
 	if a.Color != 0 {
 		c := a.Color
 		out.Color = &c
 	}
+
 	if a.Icon != "" {
 		i := CategoryIcon(a.Icon)
 		out.Icon = &i
 	}
+
 	return out
 }
 
@@ -119,18 +132,23 @@ func fromAccountInput(in AccountInput) domain.Account {
 	if in.Kind != nil {
 		a.Kind = domain.Kind(*in.Kind)
 	}
+
 	if in.OpenedOn != nil {
 		a.OpenedOn = in.OpenedOn.Time
 	}
+
 	if in.YieldMode != nil {
 		a.YieldMode = domain.YieldMode(*in.YieldMode)
 	}
+
 	if in.Color != nil {
 		a.Color = *in.Color
 	}
+
 	if in.Icon != nil {
 		a.Icon = string(*in.Icon)
 	}
+
 	return a
 }
 
@@ -144,6 +162,7 @@ func fromTransactionInput(ctx context.Context, in TransactionInput, amounts amou
 	if in.Tags != nil {
 		t.Tags = *in.Tags
 	}
+
 	if in.Links != nil {
 		// An empty list is not an omitted one: a correction clears the first and keeps the second.
 		t.Links = []domain.Link{}
@@ -152,15 +171,19 @@ func fromTransactionInput(ctx context.Context, in TransactionInput, amounts amou
 			if l.Amount != nil {
 				link.Amount = l.Amount.Amount
 			}
+
 			t.Links = append(t.Links, link)
 		}
 	}
+
 	for i, p := range in.Postings {
 		field := func(name string) string { return fmt.Sprintf("postings[%d].%s", i, name) }
+
 		amount, err := amounts(ctx, p.Amount.Amount, money.Currency(p.Amount.Currency))
 		if err != nil {
 			return domain.Transaction{}, &domain.FieldError{Field: field("amount"), Message: err.Error(), Err: domain.ErrValidation}
 		}
+
 		posting := domain.Posting{
 			AccountID: p.AccountId, Amount: amount, SettledOn: optDate(p.SettledOn), Memo: optString(p.Memo),
 		}
@@ -169,28 +192,36 @@ func fromTransactionInput(ctx context.Context, in TransactionInput, amounts amou
 				return domain.Transaction{}, err
 			}
 		}
+
 		if p.Original != nil {
 			orig, err := fromMoneyAPI(field("original"), *p.Original)
 			if err != nil {
 				return domain.Transaction{}, err
 			}
+
 			posting.Original = &orig
 		}
+
 		if p.Status != nil {
 			posting.Status = domain.PostingStatus(*p.Status)
 		}
+
 		if p.Statement != nil {
 			m, err := domain.ParseReferenceMonth(*p.Statement)
 			if err != nil {
 				return domain.Transaction{}, &domain.FieldError{Field: field("statement"), Message: "must be YYYY-MM", Err: domain.ErrValidation}
 			}
+
 			posting.Statement, posting.StatementBasis = &m, domain.BasisOwner
 		}
+
 		if p.CardRole != nil {
 			posting.CardRole = string(*p.CardRole)
 		}
+
 		t.Postings = append(t.Postings, posting)
 	}
+
 	return t, nil
 }
 
@@ -204,12 +235,14 @@ func toTransactionAPI(t domain.Transaction) Transaction {
 	for _, l := range t.Links {
 		out.Links = append(out.Links, Link{Type: LinkType(l.Type), Target: l.Target, Amount: linkAmountAPI(l.Amount, string(t.BalancingCurrency))})
 	}
+
 	if in := t.Income; in != nil {
 		out.InvestmentIncome = &InvestmentIncome{
 			AccountId: in.AccountID, CashAccountId: in.CashAccountID, IncomeType: IncomeType(in.Type),
 			Gross: toMoneyAPI(in.Gross), Withheld: toMoneyAPI(in.Withheld),
 		}
 	}
+
 	if tr := t.Trade; tr != nil {
 		out.Trade = &Trade{
 			AccountId: tr.AccountID, CashAccountId: tr.CashAccountID, Side: TradeSide(tr.Side), Quantity: toMoneyAPI(tr.Quantity),
@@ -220,6 +253,7 @@ func toTransactionAPI(t domain.Transaction) Transaction {
 			out.Trade.Cost = &cost
 		}
 	}
+
 	for _, p := range t.Postings {
 		ap := Posting{
 			Id: p.ID, AccountId: p.AccountID, Amount: toMoneyAPI(p.Amount), Weight: toMoneyAPI(p.Weight),
@@ -229,19 +263,24 @@ func toTransactionAPI(t domain.Transaction) Transaction {
 			o := toMoneyAPI(*p.Original)
 			ap.Original = &o
 		}
+
 		if p.Statement != nil {
 			ref := p.Statement.String()
 			ap.Statement = &ref
 		}
+
 		if p.CardRole != "" {
 			role := PostingCardRole(p.CardRole)
 			ap.CardRole = &role
 		}
+
 		if p.Installment != nil {
 			ap.Installment = &Installment{PlanId: p.Installment.PlanID, Number: p.Installment.Number, Count: p.Installment.Count}
 		}
+
 		out.Postings = append(out.Postings, ap)
 	}
+
 	return out
 }
 
@@ -250,6 +289,7 @@ func toInstitutionAPI(i app.Institution) Institution {
 	if i.Identifier != (app.InstitutionIdentifier{}) {
 		out.Identifier = &InstitutionIdentifier{Scheme: i.Identifier.Scheme, Identifier: i.Identifier.Value}
 	}
+
 	return out
 }
 

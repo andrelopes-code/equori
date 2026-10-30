@@ -40,10 +40,12 @@ func FromProblem(m func(error) (problem.Details, bool)) func(error) (Error, bool
 		if !ok {
 			return Error{}, false
 		}
+
 		e := Error{Code: d.Code, Detail: d.Detail}
 		for _, f := range d.Errors {
 			e.Errors = append(e.Errors, FieldError{Field: f.Field, Message: f.Message})
 		}
+
 		return e, true
 	}
 }

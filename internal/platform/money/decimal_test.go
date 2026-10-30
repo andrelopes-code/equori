@@ -7,6 +7,7 @@ import (
 
 func TestParseDecimal(t *testing.T) {
 	t.Parallel()
+
 	tests := []struct {
 		name  string
 		in    string
@@ -29,16 +30,20 @@ func TestParseDecimal(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+
 			got, err := ParseDecimal(tt.in, tt.code, tt.scale)
 			if tt.err {
 				if !errors.Is(err, ErrInvalidDecimal) {
 					t.Fatalf("err = %v, want ErrInvalidDecimal", err)
 				}
+
 				return
 			}
+
 			if err != nil {
 				t.Fatal(err)
 			}
+
 			if got.Amount() != tt.want || got.Currency() != tt.code || got.Scale() != tt.scale {
 				t.Errorf("got %v scale %d, want %d %s scale %d", got, got.Scale(), tt.want, tt.code, tt.scale)
 			}

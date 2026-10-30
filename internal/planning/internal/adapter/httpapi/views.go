@@ -11,6 +11,7 @@ func (s *Server) GetProjection(ctx context.Context, req GetProjectionRequestObje
 	if err != nil {
 		return nil, err
 	}
+
 	out := GetProjection200JSONResponse{
 		AccountId: p.AccountID, From: apiDate(p.From), To: apiDate(p.To),
 		Opening: toMoneyAPI(p.Opening, p.Currency), Closing: toMoneyAPI(p.Closing, p.Currency),
@@ -22,6 +23,7 @@ func (s *Server) GetProjection(ctx context.Context, req GetProjectionRequestObje
 			Amount: toMoneyAPI(pt.Amount, p.Currency), Balance: toMoneyAPI(pt.Balance, p.Currency),
 		}
 	}
+
 	return out, nil
 }
 
@@ -30,10 +32,12 @@ func (s *Server) GetCommitted(ctx context.Context, req GetCommittedRequestObject
 	if err != nil {
 		return nil, err
 	}
+
 	c, err := s.svc.Committed(ctx, auth.MustUserID(ctx), month)
 	if err != nil {
 		return nil, err
 	}
+
 	return GetCommitted200JSONResponse{
 		Month: c.Month.Format(monthLayout), Installments: toMoneyAPI(c.Installments, c.Currency),
 		Occurrences: toMoneyAPI(c.Occurrences, c.Currency), Total: toMoneyAPI(c.Total, c.Currency), Prices: toPricesAPI(c.Prices),

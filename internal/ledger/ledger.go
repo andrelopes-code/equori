@@ -187,13 +187,16 @@ func (p pricesAdapter) Convert(ctx context.Context, q money.Money, to money.Curr
 	if errors.Is(err, marketdata.ErrPriceMissing) {
 		return app.Conversion{}, fmt.Errorf("%w: %w", app.ErrPriceMissing, err)
 	}
+
 	if err != nil {
 		return app.Conversion{}, err
 	}
+
 	out := app.Conversion{Value: c.Value, Prices: make([]app.Price, len(c.Prices))}
 	for i, x := range c.Prices {
 		out.Prices[i] = app.Price{Instrument: x.Instrument, Quote: x.Quote, Date: x.Date, Value: x.Value, Source: x.Source}
 	}
+
 	return out, nil
 }
 
@@ -217,32 +220,40 @@ func (c *instruments) Instrument(ctx context.Context, code money.Currency) (app.
 	c.mu.Lock()
 	in, ok := c.cache[code]
 	c.mu.Unlock()
+
 	if ok {
 		return in, nil
 	}
+
 	m, err := c.md.Instrument(ctx, string(code))
 	if errors.Is(err, marketdata.ErrUnknownInstrument) {
 		return app.Instrument{}, app.ErrUnknownInstrument
 	}
+
 	if err != nil {
 		return app.Instrument{}, err
 	}
+
 	in = app.Instrument{Code: m.Code, Scale: m.Scale, QuoteCurrency: m.QuoteCurrency}
+
 	c.mu.Lock()
 	c.cache[code] = in
 	c.mu.Unlock()
+
 	return in, nil
 }
 
 func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, md MarketData, profiles Profiles, clk clock.Clock, log *slog.Logger) *Module {
 	ins := &instruments{md: md, cache: map[money.Currency]app.Instrument{}}
 	svc := app.NewService(postgres.NewRepository(pool, ins), clk, calendarAdapter{md}, ins, pricesAdapter{md}, profiles, regionDefaults{})
+
 	dispatcher.Subscribe("ledger-provisioning", "identity.user_created.v2", provision)
 	// A139: a change on a card may close a reported statement's difference; the bank sends the
 	// bill once, so the ledger settles again after every change rather than at the next bill.
 	for _, event := range []string{app.EventTransactionRecorded, app.EventTransactionCorrected, app.EventTransactionVoided} {
 		dispatcher.Subscribe("ledger-statement-settlement", event, settleCards(svc))
 	}
+
 	return &Module{http: httpapi.NewServer(svc, log), svc: svc}
 }
 
@@ -388,14 +399,17 @@ func (m *Module) OwnCategoryMonthlyTotals(ctx context.Context, userID int64, cla
 	if err != nil {
 		return nil, err
 	}
+
 	out := make([]CategoryMonth, len(rows))
 	for i, r := range rows {
 		total, err := money.New(r.Total, base)
 		if err != nil {
 			return nil, err
 		}
+
 		out[i] = CategoryMonth{CategoryID: r.CategoryID, Month: r.Month, Total: total}
 	}
+
 	return out, nil
 }
 
@@ -545,6 +559,8 @@ func provision(ctx context.Context, tx pgx.Tx, e outbox.Delivered) error {
 	if err := json.Unmarshal(e.Payload, &p); err != nil {
 		return fmt.Errorf("decode %s: %w", e.Type, err)
 	}
+
 	svc := app.NewService(postgres.NewRepository(tx, nil), clock.New(time.UTC, time.Now), nil, nil, nil, nil, nil)
+
 	return svc.Provision(ctx, p.UserID, p.BaseCurrency)
 }

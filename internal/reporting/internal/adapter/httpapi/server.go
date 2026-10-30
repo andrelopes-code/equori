@@ -40,14 +40,17 @@ func (s *Server) GetBalanceSeries(ctx context.Context, req GetBalanceSeriesReque
 	if req.Params.Basis != nil {
 		basis = app.Basis(*req.Params.Basis)
 	}
+
 	points, currency, err := s.svc.Series(ctx, auth.MustUserID(ctx), req.Params.AccountId, req.Params.From.Time, req.Params.To.Time, basis)
 	if err != nil {
 		return nil, err
 	}
+
 	out := GetBalanceSeries200JSONResponse{Items: make([]BalancePoint, len(points))}
 	for i, p := range points {
 		out.Items[i] = BalancePoint{Date: dateOf(p), Balance: Money{Amount: p.Balance, Currency: currency}}
 	}
+
 	return out, nil
 }
 
@@ -56,12 +59,14 @@ func (s *Server) GetAccountFlows(ctx context.Context, req GetAccountFlowsRequest
 	if err != nil {
 		return nil, err
 	}
+
 	out := GetAccountFlows200JSONResponse{Items: make([]FlowDay, len(flows))}
 	for i, f := range flows {
 		out.Items[i] = FlowDay{
 			Date: flowDate(f), Inflow: Money{Amount: f.Inflow, Currency: instrument}, Outflow: Money{Amount: f.Outflow, Currency: instrument},
 		}
 	}
+
 	return out, nil
 }
 
@@ -70,16 +75,19 @@ func (s *Server) GetCategoryTotals(ctx context.Context, req GetCategoryTotalsReq
 	if req.Params.View != nil {
 		view = app.View(*req.Params.View)
 	}
+
 	totals, err := s.svc.CategoryTotals(ctx, auth.MustUserID(ctx), string(req.Params.Class), req.Params.From.Time, req.Params.To.Time, view)
 	if err != nil {
 		return nil, err
 	}
+
 	out := GetCategoryTotals200JSONResponse{Items: make([]CategoryTotal, len(totals))}
 	for i, t := range totals {
 		out.Items[i] = CategoryTotal{
 			AccountId: t.AccountID, Total: Money{Amount: t.Total, Currency: t.Instrument}, SubtreeTotal: Money{Amount: t.SubtreeTotal, Currency: t.Instrument},
 		}
 	}
+
 	return out, nil
 }
 
@@ -88,6 +96,7 @@ func (s *Server) ListCategoryCashPayments(ctx context.Context, req ListCategoryC
 	if err != nil {
 		return nil, err
 	}
+
 	out := ListCategoryCashPayments200JSONResponse{Items: make([]CategoryCashPayment, len(payments))}
 	for i, p := range payments {
 		out.Items[i] = CategoryCashPayment{
@@ -95,6 +104,7 @@ func (s *Server) ListCategoryCashPayments(ctx context.Context, req ListCategoryC
 			CardAccountId: p.CardID, StatementId: p.StatementID, StatementReference: p.StatementReference.Format("2006-01"), PaymentTransactionId: p.PaymentTransactionID,
 		}
 	}
+
 	return out, nil
 }
 
@@ -105,33 +115,40 @@ func ToProblem(err error) (problem.Details, bool) {
 	case errors.Is(err, app.ErrInvalidRange):
 		d := problem.New(http.StatusBadRequest, "invalid_request", "from must not be after to, and the range must not exceed 3660 days")
 		d.Errors = []problem.FieldError{{Field: "to", Message: "must be on or after from and at most 3660 days after it"}}
+
 		return d, true
 	case errors.Is(err, app.ErrInvalidCategoryRange):
 		d := problem.New(http.StatusBadRequest, "invalid_request", "from must not be after to, and the period must not exceed 366 days")
 		d.Errors = []problem.FieldError{{Field: "to", Message: "must be on or after from and at most 365 days after it"}}
+
 		return d, true
 	case errors.Is(err, app.ErrInvalidMonth):
 		d := problem.New(http.StatusBadRequest, "invalid_request", "month must not be after the current month")
 		d.Errors = []problem.FieldError{{Field: "month", Message: "must not be after the current month"}}
+
 		return d, true
 	case errors.Is(err, app.ErrPriceMissing):
 		return problem.New(http.StatusUnprocessableEntity, "price_missing", err.Error()), true
 	case errors.Is(err, app.ErrInvalidFlowRange):
 		d := problem.New(http.StatusBadRequest, "invalid_request", "from must not be after to, and the range must not exceed 366 days")
 		d.Errors = []problem.FieldError{{Field: "to", Message: "must be on or after from and at most 365 days after it"}}
+
 		return d, true
 	case errors.Is(err, errFileRequired):
 		d := problem.New(http.StatusBadRequest, "invalid_request", err.Error())
 		d.Errors = []problem.FieldError{{Field: "file", Message: "is required"}}
+
 		return d, true
 	case errors.Is(err, app.ErrArchiveInvalid):
 		d := problem.New(http.StatusUnprocessableEntity, "archive_invalid", err.Error())
 		d.Errors = []problem.FieldError{{Field: "file", Message: err.Error()}}
+
 		return d, true
 	case errors.As(err, &tooNew):
 		d := problem.New(http.StatusUnprocessableEntity, "archive_too_new", err.Error())
 		d.Errors = []problem.FieldError{{Field: "file", Message: err.Error()}}
 		d.ArchiveVersion, d.InstanceVersion = &tooNew.Archive, &tooNew.Instance
+
 		return d, true
 	case errors.Is(err, app.ErrImportNotEmpty):
 		return problem.New(http.StatusConflict, "import_not_empty", err.Error()), true
@@ -148,5 +165,6 @@ func ToProblem(err error) (problem.Details, bool) {
 	case errors.Is(err, app.ErrMixedInstruments):
 		return problem.New(http.StatusUnprocessableEntity, "mixed_instruments", err.Error()), true
 	}
+
 	return problem.Details{}, false
 }

@@ -24,6 +24,7 @@ func (r *Repository) CountSourceCategories(ctx context.Context, userID int64, se
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -32,10 +33,12 @@ func (r *Repository) MappedSourceCategories(ctx context.Context, userID int64, a
 	if err != nil {
 		return nil, err
 	}
+
 	out := make(map[string]uuid.UUID, len(rows))
 	for _, row := range rows {
 		out[row.ExternalID] = row.CategoryID
 	}
+
 	return out, nil
 }
 
@@ -44,19 +47,25 @@ func (r *Repository) ListSourceCategories(ctx context.Context, userID int64, p p
 	if p.After != nil {
 		params.AfterName, params.AfterID = &p.After.Name, uuid.NullUUID{UUID: p.After.ID, Valid: true}
 	}
+
 	rows, err := r.q.ListSourceCategories(ctx, params)
 	if err != nil {
 		return nil, nil, err
 	}
+
 	kept, more := page.Trim(rows, p.Limit)
+
 	out := make([]app.SourceCategory, len(kept))
 	for i, row := range kept {
 		out[i] = toSourceCategory(row)
 	}
+
 	if !more {
 		return out, nil, nil
 	}
+
 	last := kept[len(kept)-1]
+
 	return out, &app.NameKey{Name: last.Name, ID: last.ID}, nil
 }
 
@@ -65,6 +74,7 @@ func (r *Repository) MapSourceCategory(ctx context.Context, userID int64, id, ca
 	if err != nil {
 		return app.SourceCategory{}, notFound(err)
 	}
+
 	return toSourceCategory(row), nil
 }
 
@@ -72,15 +82,19 @@ func (r *Repository) MergeCategory(ctx context.Context, userID int64, from, into
 	if err := r.q.DeleteMergeCollidingSuggestions(ctx, DeleteMergeCollidingSuggestionsParams{UserID: userID, FromID: from.String(), IntoID: into.String()}); err != nil {
 		return err
 	}
+
 	if err := r.q.MergeSuggestions(ctx, MergeSuggestionsParams{UserID: userID, FromID: from.String(), IntoID: into.String()}); err != nil {
 		return err
 	}
+
 	if err := r.q.MergeRuleActions(ctx, MergeRuleActionsParams{UserID: userID, FromID: from.String(), IntoID: into.String()}); err != nil {
 		return err
 	}
+
 	if err := r.q.MergeSourceCategories(ctx, MergeSourceCategoriesParams{UserID: userID, FromID: uuid.NullUUID{UUID: from, Valid: true}, IntoID: uuid.NullUUID{UUID: into, Valid: true}}); err != nil {
 		return err
 	}
+
 	return r.q.MergeCategorizations(ctx, MergeCategorizationsParams{UserID: userID, FromID: uuid.NullUUID{UUID: from, Valid: true}, IntoID: uuid.NullUUID{UUID: into, Valid: true}})
 }
 
@@ -93,14 +107,18 @@ func (r *Repository) MergePayee(ctx context.Context, userID int64, from, into uu
 	if err := r.q.MergePayeeAliases(ctx, MergePayeeAliasesParams{UserID: userID, FromID: from, IntoID: into}); err != nil {
 		return err
 	}
+
 	if err := r.q.DeletePayeeMergeCollidingSuggestions(ctx, DeletePayeeMergeCollidingSuggestionsParams{UserID: userID, FromID: f, IntoID: i}); err != nil {
 		return err
 	}
+
 	if err := r.q.MergePayeeSuggestions(ctx, MergePayeeSuggestionsParams{UserID: userID, FromID: f, IntoID: i}); err != nil {
 		return err
 	}
+
 	if err := r.q.MergePayeeRules(ctx, MergePayeeRulesParams{UserID: userID, FromID: f, IntoID: i}); err != nil {
 		return err
 	}
+
 	return r.q.MergePayeeMatchKeys(ctx, MergePayeeMatchKeysParams{UserID: userID, FromID: f, IntoID: i})
 }

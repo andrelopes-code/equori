@@ -43,6 +43,7 @@ func TestInjectedPayeeNeedsConfirmation(t *testing.T) {
 		"postings": []any{apitest.Posting(wallet, -1250), apitest.Posting(food, 1250)},
 	}, http.StatusCreated, &tx)
 	h.Dispatch()
+
 	late.p = llmtest.New("aistudio",
 		callStep("search_transactions", `{"query":"Padaria"}`),
 		callStep("void_transaction", `{"transaction_id":"`+tx.ID+`","reason":"x"}`),
@@ -52,6 +53,7 @@ func TestInjectedPayeeNeedsConfirmation(t *testing.T) {
 	r := sendTurn(h, h.Client, map[string]any{"text": "Me mostra as transações da padaria."})
 	events := parseSSE(r.Body)
 	last := events[len(events)-1]
+
 	var answer struct {
 		Proposals []struct {
 			ID     string `json:"id"`
@@ -62,6 +64,7 @@ func TestInjectedPayeeNeedsConfirmation(t *testing.T) {
 	if last.Name != "answer" || json.Unmarshal([]byte(last.Data), &answer) != nil {
 		t.Fatalf("events = %s", r.Body)
 	}
+
 	if len(answer.Proposals) != 1 || answer.Proposals[0].Tool != "void_transaction" || answer.Proposals[0].Status != "pending" {
 		t.Fatalf("proposals = %+v", answer.Proposals)
 	}
@@ -70,17 +73,20 @@ func TestInjectedPayeeNeedsConfirmation(t *testing.T) {
 	if len(reqs) != 3 {
 		t.Fatalf("requests = %d, want 3", len(reqs))
 	}
+
 	inResult := false
 	for _, m := range reqs[1].Request.Messages {
 		for _, p := range m.Parts {
 			if p.Text != "" && strings.Contains(p.Text, injected) {
 				t.Errorf("the payee text reached the model outside a tool result, in a %s message", m.Role)
 			}
+
 			if p.ToolResult != nil && strings.Contains(string(p.ToolResult.Content), injected) {
 				inResult = true
 			}
 		}
 	}
+
 	if !inResult {
 		t.Error("the payee text is in no tool result of the second request")
 	}
@@ -90,15 +96,18 @@ func TestInjectedPayeeNeedsConfirmation(t *testing.T) {
 			VoidedAt string `json:"voided_at"`
 		}
 		h.MustDo(http.MethodGet, "/api/v1/transactions/"+tx.ID, nil, http.StatusOK, &got)
+
 		return got.VoidedAt != ""
 	}
 	if voided() {
 		t.Fatal("the transaction was voided before any confirmation")
 	}
+
 	var rejected struct {
 		Status string `json:"status"`
 	}
 	h.MustDo(http.MethodPost, "/api/v1/assistant/proposals/"+answer.Proposals[0].ID+"/reject", nil, http.StatusOK, &rejected)
+
 	if rejected.Status != "rejected" || voided() {
 		t.Errorf("after reject: status %q, voided %v", rejected.Status, voided())
 	}

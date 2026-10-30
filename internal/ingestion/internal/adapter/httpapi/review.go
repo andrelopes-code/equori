@@ -20,10 +20,12 @@ func toRecordAPI(r domain.ExternalRecord, currency string) ExternalRecord {
 		UnappliedChange: ref(r.UnappliedChange),
 	}
 	copy(out.Candidates, r.Candidates)
+
 	if r.ReviewReason != "" {
 		reason := ExternalRecordReviewReason(r.ReviewReason)
 		out.ReviewReason = &reason
 	}
+
 	if len(r.Scores) > 0 {
 		scored := make([]ScoredCandidate, len(r.Scores))
 		for i, s := range r.Scores {
@@ -32,11 +34,14 @@ func toRecordAPI(r domain.ExternalRecord, currency string) ExternalRecord {
 				Date: ScoredCandidateDate(s.Date), Counterparty: ScoredCandidateCounterparty(s.Counterparty),
 			}
 		}
+
 		out.ScoredCandidates = &scored
 	}
+
 	if r.TransactionID != uuid.Nil {
 		out.TransactionId = &r.TransactionID
 	}
+
 	return out
 }
 
@@ -45,19 +50,24 @@ func (s *Server) ListBatchRecords(ctx context.Context, req ListBatchRecordsReque
 	if err != nil {
 		return nil, err
 	}
+
 	var state domain.RecordState
 	if req.Params.State != nil {
 		state = domain.RecordState(*req.Params.State)
 	}
+
 	recs, next, b, err := s.svc.Records(ctx, auth.MustUserID(ctx), req.Id, state, p)
 	if err != nil {
 		return nil, err
 	}
+
 	out := ListBatchRecords200JSONResponse{Items: make([]ExternalRecord, len(recs))}
 	for i, r := range recs {
 		out.Items[i] = toRecordAPI(r, b.Currency)
 	}
+
 	out.NextCursor, err = page.Next(next)
+
 	return out, err
 }
 
@@ -66,10 +76,12 @@ func (s *Server) ResolveExternalRecord(ctx context.Context, req ResolveExternalR
 	if req.Body.TransactionId != nil {
 		txID = *req.Body.TransactionId
 	}
+
 	rec, b, err := s.svc.Resolve(ctx, auth.MustUserID(ctx), req.Id, string(req.Body.Action), txID)
 	if err != nil {
 		return nil, err
 	}
+
 	return ResolveExternalRecord200JSONResponse(toRecordAPI(rec, b.Currency)), nil
 }
 
@@ -87,6 +99,7 @@ func (s *Server) ListUnconfirmed(ctx context.Context, req ListUnconfirmedRequest
 	if err != nil {
 		return nil, err
 	}
+
 	out := ListUnconfirmed200JSONResponse{Items: make([]UnconfirmedEntry, len(ps))}
 	for i, p := range ps {
 		out.Items[i] = UnconfirmedEntry{
@@ -96,9 +109,11 @@ func (s *Server) ListUnconfirmed(ctx context.Context, req ListUnconfirmedRequest
 		if p.PayeeID != uuid.Nil {
 			out.Items[i].PayeeId = &p.PayeeID
 		}
+
 		if p.StatementID != uuid.Nil {
 			out.Items[i].StatementId = &p.StatementID
 		}
 	}
+
 	return out, nil
 }

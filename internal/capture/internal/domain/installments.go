@@ -28,23 +28,29 @@ func readInstallments(ws []word, i int, lex Lexicon, conv Conventions) (installm
 		if j < len(ws) && ws[j].free() {
 			return ws[j].norm
 		}
+
 		return ""
 	}
 	if lex.isLumpSum(at(i), at(i+1)) {
 		return installmentPhrase{valid: true, words: 2}, true
 	}
+
 	j := i
+
 	parcelled := false
 	if k := slices.Index(lex.InstallmentLeads, at(j)); k >= 0 && at(j) != "" {
 		connective := lex.InstallmentLeads[len(lex.InstallmentLeads)-1]
+
 		j++
 		if at(j-1) != connective {
 			parcelled = true
+
 			if at(j) == connective {
 				j++
 			}
 		}
 	}
+
 	n, size := 0, 0
 	switch {
 	case timesWord.MatchString(at(j)):
@@ -56,15 +62,18 @@ func readInstallments(ws []word, i int, lex Lexicon, conv Conventions) (installm
 	default:
 		return installmentPhrase{}, false
 	}
+
 	p := installmentPhrase{count: n, valid: n >= 1 && n <= maxInstallments, words: j + size - i}
 	if n == 1 {
 		p.count = 0
 	}
+
 	if end := j + size; slices.Contains(lex.Of, at(end)) && at(end+1) != "" {
 		if each, ok := readAmount(ws, end+1, lex, conv); ok {
 			p.each = &each
 			p.words += 1 + each.words
 		}
 	}
+
 	return p, true
 }

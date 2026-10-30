@@ -60,33 +60,40 @@ func searchTransactions(svc *app.Service) tool.Tool {
 		if err != nil {
 			return searchTransactionsOut{}, err
 		}
+
 		rows, next, err := svc.ListTransactions(ctx, q)
 		if err != nil {
 			return searchTransactionsOut{}, err
 		}
+
 		accounts, _, err := allAccounts(ctx, svc, userID)
 		if err != nil {
 			return searchTransactionsOut{}, err
 		}
+
 		var payeeIDs []uuid.UUID
 		for _, t := range rows {
 			if t.PayeeID != uuid.Nil {
 				payeeIDs = append(payeeIDs, t.PayeeID)
 			}
 		}
+
 		payees, err := svc.PayeeNames(ctx, userID, payeeIDs)
 		if err != nil {
 			return searchTransactionsOut{}, err
 		}
+
 		out := searchTransactionsOut{Transactions: make([]transactionView, len(rows))}
 		for i, t := range rows {
 			out.Transactions[i] = viewOf(t, accounts, payees)
 		}
+
 		if next != nil {
 			if out.NextCursor, err = page.EncodeCursor(next); err != nil {
 				return searchTransactionsOut{}, err
 			}
 		}
+
 		return out, nil
 	})
 }
@@ -99,6 +106,7 @@ func viewOf(t domain.Transaction, accounts map[uuid.UUID]domain.Account, payees 
 	if len(t.Tags) > 0 {
 		v.Tags = t.Tags
 	}
+
 	for j, p := range t.Postings {
 		a := accounts[p.AccountID]
 		v.Postings[j] = postingView{
@@ -106,32 +114,40 @@ func viewOf(t domain.Transaction, accounts map[uuid.UUID]domain.Account, payees 
 			Amount: tool.MoneyOf(p.Amount), Memo: p.Memo,
 		}
 	}
+
 	return v
 }
 
 // transactionQuery checks the argument values the schema cannot: identifiers, limit and cursor.
 func transactionQuery(userID int64, in searchTransactionsIn) (app.TransactionQuery, error) {
 	q := app.TransactionQuery{UserID: userID, Tag: in.Tag, Q: in.Query, Uncategorized: in.Uncategorized}
+
 	var err error
 	if q.AccountID, err = optionalID(in.AccountID, "account_id"); err != nil {
 		return q, err
 	}
+
 	if q.Limit, err = tool.Limit(in.Limit); err != nil {
 		return q, err
 	}
+
 	if in.Cursor != "" {
 		var after app.TransactionCursor
 		if err := page.DecodeCursor(in.Cursor, &after); err != nil {
 			return q, tool.InvalidArgument("cursor", "is not a next_cursor of search_transactions")
 		}
+
 		q.After = &after
 	}
+
 	if !in.From.IsZero() {
 		q.From = &in.From.Time
 	}
+
 	if !in.To.IsZero() {
 		q.To = &in.To.Time
 	}
+
 	return q, nil
 }
 
@@ -139,9 +155,11 @@ func optionalID(s, field string) (uuid.UUID, error) {
 	if s == "" {
 		return uuid.Nil, nil
 	}
+
 	id, err := uuid.Parse(s)
 	if err != nil {
 		return uuid.Nil, tool.InvalidArgument(field, "is not a UUID")
 	}
+
 	return id, nil
 }

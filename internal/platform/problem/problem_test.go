@@ -11,6 +11,7 @@ import (
 
 func TestWrite(t *testing.T) {
 	t.Parallel()
+
 	rec := httptest.NewRecorder()
 	d := New(http.StatusNotFound, "account_not_found", "account 42 does not exist")
 	d.RequestID = "req-1"
@@ -20,13 +21,16 @@ func TestWrite(t *testing.T) {
 	if rec.Code != http.StatusNotFound {
 		t.Fatalf("status = %d, want %d", rec.Code, http.StatusNotFound)
 	}
+
 	if ct := rec.Header().Get("Content-Type"); ct != ContentType {
 		t.Fatalf("content type = %q, want %q", ct, ContentType)
 	}
+
 	var got map[string]any
 	if err := json.Unmarshal(rec.Body.Bytes(), &got); err != nil {
 		t.Fatal(err)
 	}
+
 	want := map[string]any{
 		"type":       "about:blank",
 		"title":      "Not Found",
@@ -40,6 +44,7 @@ func TestWrite(t *testing.T) {
 			t.Errorf("%s = %v, want %v", k, got[k], v)
 		}
 	}
+
 	if _, ok := got["errors"]; ok {
 		t.Errorf("errors present without field errors")
 	}
@@ -47,14 +52,18 @@ func TestWrite(t *testing.T) {
 
 func TestRetryAt(t *testing.T) {
 	t.Parallel()
+
 	at := time.Date(2026, 10, 23, 15, 4, 5, 0, time.UTC)
 	rec := httptest.NewRecorder()
 	Write(rec, WithRetryAt(New(http.StatusTooManyRequests, "assistant_exhausted", ""), at))
+
 	if body := rec.Body.String(); !strings.Contains(body, `"retry_at":"2026-10-23T15:04:05Z"`) {
 		t.Fatalf("body = %s", body)
 	}
+
 	rec = httptest.NewRecorder()
 	Write(rec, New(http.StatusTooManyRequests, "assistant_exhausted", ""))
+
 	if body := rec.Body.String(); strings.Contains(body, "retry_at") {
 		t.Fatalf("body = %s", body)
 	}

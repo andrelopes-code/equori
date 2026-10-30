@@ -31,8 +31,10 @@ func lockFile(f *os.File) error {
 		if errors.Is(err, syscall.EWOULDBLOCK) {
 			return ErrBusy
 		}
+
 		return fmt.Errorf("lock data directory: %w", err)
 	}
+
 	return nil
 }
 
@@ -42,14 +44,17 @@ func privateDir(path string) error {
 	if err := os.MkdirAll(path, 0o700); err != nil {
 		return fmt.Errorf("create %s: %w", path, err)
 	}
+
 	info, err := os.Lstat(path)
 	if err != nil {
 		return fmt.Errorf("inspect %s: %w", path, err)
 	}
+
 	st, ok := info.Sys().(*syscall.Stat_t)
 	if !info.IsDir() || info.Mode().Perm() != 0o700 || !ok || int(st.Uid) != os.Getuid() {
 		return fmt.Errorf("%s must be a directory of this user with mode 0700, found %v", path, info.Mode())
 	}
+
 	return nil
 }
 
@@ -59,6 +64,7 @@ func refuseRoot(euid int) error {
 	if euid == 0 {
 		return ErrRoot
 	}
+
 	return nil
 }
 
@@ -79,9 +85,11 @@ func (p *proc) stop(c *Cluster, immediate bool) error {
 	if immediate {
 		sig = syscall.SIGQUIT
 	}
+
 	if err := c.cmd.Process.Signal(sig); err != nil && !errors.Is(err, os.ErrProcessDone) {
 		return fmt.Errorf("signal postgres: %w", err)
 	}
+
 	return nil
 }
 

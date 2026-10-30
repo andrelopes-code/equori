@@ -12,9 +12,11 @@ func cardPosting(account string, amount int64, statement, role string) map[strin
 	if statement != "" {
 		p["statement"] = statement
 	}
+
 	if role != "" {
 		p["card_role"] = role
 	}
+
 	return p
 }
 
@@ -35,10 +37,12 @@ func TestCardPurchaseStatements(t *testing.T) {
 	}
 	for _, tt := range tests {
 		id := h.Record(tt.date, apitest.Posting(tt.card, -23000), apitest.Posting(food, 23000))
+
 		got := h.Transaction(id).Postings[0]
 		if got.Statement != tt.want || got.CardRole != "charge" {
 			t.Errorf("purchase on %s: statement %q role %q, want %s charge", tt.date, got.Statement, got.CardRole, tt.want)
 		}
+
 		if p := h.Transaction(id).Postings[1]; p.Statement != "" || p.CardRole != "" {
 			t.Errorf("expense posting got statement %q role %q", p.Statement, p.CardRole)
 		}
@@ -50,6 +54,7 @@ func TestExplicitStatementOverride(t *testing.T) {
 	h := apitest.New(t)
 	card := h.Card("Itaú Visa", 3, 10, "next")
 	food := h.Account("Food", "expense", "", nil)
+
 	id := h.Record("2026-10-14", cardPosting(card, -1000, "2027-01", ""), apitest.Posting(food, 1000))
 	if got := h.Transaction(id).Postings[0].Statement; got != "2027-01" {
 		t.Fatalf("statement = %q, want 2027-01", got)
@@ -72,6 +77,7 @@ func TestCardRoleDefaults(t *testing.T) {
 	if refund.CardRole != "credit" || reward.CardRole != "credit" {
 		t.Fatalf("refund %q, cashback %q; want credit", refund.CardRole, reward.CardRole)
 	}
+
 	if pay.CardRole != "payment" || pay.Statement != "2026-12" {
 		t.Fatalf("payment role %q statement %q; want payment on the statement of its cycle 2026-12 (A89)", pay.CardRole, pay.Statement)
 	}
@@ -114,6 +120,7 @@ func TestCorrectingDateMovesStatement(t *testing.T) {
 	correction["expected_version"] = 1
 	correction["reason"] = "wrong date"
 	h.MustDo(http.MethodPut, "/api/v1/transactions/"+id, correction, http.StatusOK, nil)
+
 	if got := h.Transaction(id).Postings[0].Statement; got != "2026-12" {
 		t.Fatalf("statement after correction = %q, want 2026-12", got)
 	}
@@ -135,6 +142,7 @@ func TestPurchaseConsumesLimit(t *testing.T) {
 		} `json:"card"`
 	}
 	h.MustDo(http.MethodGet, "/api/v1/accounts/"+card, nil, http.StatusOK, &acc)
+
 	if acc.Card.AvailableLimit.Amount != 977000 {
 		t.Fatalf("available limit = %d, want 977000", acc.Card.AvailableLimit.Amount)
 	}

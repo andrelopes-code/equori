@@ -50,11 +50,14 @@ func newHarness(t *testing.T, cfg identity.Config) *harness {
 	mux.Handle("/api/", httpserver.NotFound())
 	srv := httptest.NewServer(httpserver.Middleware(m.RequireSession(mux), log))
 	t.Cleanup(srv.Close)
+
 	jar, err := cookiejar.New(nil)
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	h.module, h.server, h.client = m, srv, &http.Client{Jar: jar}
+
 	return h
 }
 
@@ -66,22 +69,27 @@ type response struct {
 
 func (h *harness) do(method, path, body string) response {
 	h.t.Helper()
+
 	req, err := http.NewRequestWithContext(h.t.Context(), method, h.server.URL+path, strings.NewReader(body))
 	if err != nil {
 		h.t.Fatal(err)
 	}
+
 	if body != "" {
 		req.Header.Set("Content-Type", "application/json")
 	}
+
 	resp, err := h.client.Do(req)
 	if err != nil {
 		h.t.Fatal(err)
 	}
 	defer resp.Body.Close()
+
 	b, err := io.ReadAll(resp.Body)
 	if err != nil {
 		h.t.Fatal(err)
 	}
+
 	return response{status: resp.StatusCode, header: resp.Header, body: b}
 }
 
@@ -92,9 +100,11 @@ func (h *harness) login(pw string) response {
 
 func expectProblem(t *testing.T, resp response, status int, code string) {
 	t.Helper()
+
 	if resp.status != status {
 		t.Fatalf("status = %d, want %d", resp.status, status)
 	}
+
 	var body struct {
 		Code      string `json:"code"`
 		RequestID string `json:"request_id"`
@@ -102,6 +112,7 @@ func expectProblem(t *testing.T, resp response, status int, code string) {
 	if err := json.Unmarshal(resp.body, &body); err != nil {
 		t.Fatal(err)
 	}
+
 	if body.Code != code || body.RequestID == "" {
 		t.Fatalf("problem = %+v, want code %q and a request_id", body, code)
 	}
@@ -109,6 +120,7 @@ func expectProblem(t *testing.T, resp response, status int, code string) {
 
 func TestSessionLifecycle(t *testing.T) {
 	t.Parallel()
+
 	h := newHarness(t, identity.Config{})
 	if _, err := h.module.CreateUser(t.Context(), email, password, identity.RoleAdmin, locale.Locale{Language: "pt", Region: "BR"}, "BRL"); err != nil {
 		t.Fatal(err)
@@ -124,6 +136,7 @@ func TestSessionLifecycle(t *testing.T) {
 	if resp.status != http.StatusOK {
 		t.Fatalf("me status = %d, want 200", resp.status)
 	}
+
 	var me struct {
 		ID    int64  `json:"id"`
 		Email string `json:"email"`
@@ -132,6 +145,7 @@ func TestSessionLifecycle(t *testing.T) {
 	if err := json.Unmarshal(resp.body, &me); err != nil {
 		t.Fatal(err)
 	}
+
 	if me.ID == 0 || me.Email != email || me.Role != identity.RoleAdmin {
 		t.Fatalf("me = %+v", me)
 	}
@@ -139,11 +153,13 @@ func TestSessionLifecycle(t *testing.T) {
 	if resp := h.do(http.MethodDelete, "/api/v1/session", ""); resp.status != http.StatusNoContent {
 		t.Fatalf("logout status = %d, want 204", resp.status)
 	}
+
 	expectProblem(t, h.do(http.MethodGet, "/api/v1/me", ""), http.StatusUnauthorized, "unauthenticated")
 }
 
 func TestLoginFailures(t *testing.T) {
 	t.Parallel()
+
 	h := newHarness(t, identity.Config{})
 	if _, err := h.module.CreateUser(t.Context(), email, password, identity.RoleMember, locale.Locale{Language: "pt", Region: "BR"}, "BRL"); err != nil {
 		t.Fatal(err)
@@ -157,6 +173,7 @@ func TestLoginFailures(t *testing.T) {
 	for range 5 {
 		expectProblem(t, h.login("wrong password!"), http.StatusUnauthorized, "invalid_credentials")
 	}
+
 	// The correct password is refused while the email is throttled.
 	expectProblem(t, h.login(password), http.StatusTooManyRequests, "too_many_attempts")
 }
@@ -184,10 +201,12 @@ func TestRequireSessionDeniesByDefault(t *testing.T) {
 
 func TestUnknownAPIRoute(t *testing.T) {
 	t.Parallel()
+
 	h := newHarness(t, identity.Config{})
 	if _, err := h.module.CreateUser(t.Context(), email, password, identity.RoleMember, locale.Locale{Language: "pt", Region: "BR"}, "BRL"); err != nil {
 		t.Fatal(err)
 	}
+
 	h.login(password)
 
 	expectProblem(t, h.do(http.MethodGet, "/api/v1/nope", ""), http.StatusNotFound, "not_found")
@@ -203,15 +222,19 @@ func TestLoginBodyTooLarge(t *testing.T) {
 
 func TestConcurrentLoginAttemptsRespectLimit(t *testing.T) {
 	t.Parallel()
+
 	h := newHarness(t, identity.Config{})
 	if _, err := h.module.CreateUser(t.Context(), email, password, identity.RoleMember, locale.Locale{Language: "pt", Region: "BR"}, "BRL"); err != nil {
 		t.Fatal(err)
 	}
+
 	var wg sync.WaitGroup
+
 	statuses := make(chan int, 20)
 	for range 20 {
 		wg.Go(func() { statuses <- h.login("wrong password!").status })
 	}
+
 	wg.Wait()
 	close(statuses)
 
@@ -221,6 +244,7 @@ func TestConcurrentLoginAttemptsRespectLimit(t *testing.T) {
 			unauthorized++
 		}
 	}
+
 	if unauthorized != 5 {
 		t.Fatalf("%d of 20 concurrent attempts reached password verification, want 5", unauthorized)
 	}
@@ -228,6 +252,7 @@ func TestConcurrentLoginAttemptsRespectLimit(t *testing.T) {
 
 func TestSessionCookieAttributes(t *testing.T) {
 	t.Parallel()
+
 	h := newHarness(t, identity.Config{SecureCookies: true})
 	if _, err := h.module.CreateUser(t.Context(), email, password, identity.RoleMember, locale.Locale{Language: "pt", Region: "BR"}, "BRL"); err != nil {
 		t.Fatal(err)
@@ -249,15 +274,19 @@ func TestCreateUserValidation(t *testing.T) {
 	if _, err := h.module.CreateUser(ctx, "not an email", password, identity.RoleMember, locale.Locale{Language: "pt", Region: "BR"}, "BRL"); err == nil {
 		t.Fatal("invalid email accepted")
 	}
+
 	if _, err := h.module.CreateUser(ctx, email, "short", identity.RoleMember, locale.Locale{Language: "pt", Region: "BR"}, "BRL"); err == nil {
 		t.Fatal("short password accepted")
 	}
+
 	if _, err := h.module.CreateUser(ctx, email, password, "owner", locale.Locale{Language: "pt", Region: "BR"}, "BRL"); err == nil {
 		t.Fatal("unknown role accepted")
 	}
+
 	if _, err := h.module.CreateUser(ctx, email, password, identity.RoleMember, locale.Locale{Language: "pt", Region: "BR"}, "BRL"); err != nil {
 		t.Fatal(err)
 	}
+
 	if _, err := h.module.CreateUser(ctx, "ANN@example.com", password, identity.RoleMember, locale.Locale{Language: "pt", Region: "BR"}, "BRL"); !errors.Is(err, identity.ErrEmailTaken) {
 		t.Fatalf("duplicate email with different case err = %v, want ErrEmailTaken", err)
 	}
@@ -265,10 +294,12 @@ func TestCreateUserValidation(t *testing.T) {
 
 func mustURL(t *testing.T, raw string) *url.URL {
 	t.Helper()
+
 	u, err := url.Parse(raw)
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	return u
 }
 
@@ -283,11 +314,13 @@ func TestCreateUserPublishesEvent(t *testing.T) {
 
 	var n int
 	var userID int64
+
 	err = h.pool.QueryRow(t.Context(),
 		`SELECT count(*), max(user_id) FROM outbox_event WHERE type = 'identity.user_created.v2'`).Scan(&n, &userID)
 	if err != nil || n != 1 || userID != u.ID {
 		t.Fatalf("events = %d for user %d, %v; want 1 for user %d", n, userID, err, u.ID)
 	}
+
 	var payload struct {
 		UserID       int64
 		Email        string
@@ -295,13 +328,16 @@ func TestCreateUserPublishesEvent(t *testing.T) {
 		Region       string
 		BaseCurrency string `json:"base_currency"`
 	}
+
 	var raw []byte
 	if err := h.pool.QueryRow(t.Context(), `SELECT payload FROM outbox_event WHERE type = 'identity.user_created.v2'`).Scan(&raw); err != nil {
 		t.Fatal(err)
 	}
+
 	if err := json.Unmarshal(raw, &payload); err != nil {
 		t.Fatal(err)
 	}
+
 	if payload.Language != "pt" || payload.Region != "BR" || payload.BaseCurrency != "BRL" || payload.Email != email {
 		t.Fatalf("payload = %+v", payload)
 	}

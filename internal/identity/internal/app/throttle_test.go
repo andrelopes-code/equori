@@ -10,6 +10,7 @@ import (
 
 func TestThrottle(t *testing.T) {
 	t.Parallel()
+
 	start := time.Date(2026, 10, 14, 12, 0, 0, 0, time.UTC)
 	th := newThrottle(3, 15*time.Minute)
 
@@ -18,18 +19,22 @@ func TestThrottle(t *testing.T) {
 			t.Fatalf("attempt %d refused within the limit", i+1)
 		}
 	}
+
 	if th.attempt("a", start.Add(3*time.Minute)) {
 		t.Fatal("attempt accepted beyond the limit")
 	}
+
 	if !th.attempt("b", start.Add(3*time.Minute)) {
 		t.Fatal("limit of one key affects another key")
 	}
+
 	// The first attempt (t=0) leaves the window at t=15m.
 	if !th.attempt("a", start.Add(15*time.Minute)) {
 		t.Fatal("attempt refused after the oldest one left the window")
 	}
 
 	th.reset("a")
+
 	if _, ok := th.attempts["a"]; ok {
 		t.Fatal("reset kept attempts")
 	}
@@ -37,9 +42,11 @@ func TestThrottle(t *testing.T) {
 
 func TestThrottleConcurrentAttempts(t *testing.T) {
 	t.Parallel()
+
 	now := time.Date(2026, 10, 14, 12, 0, 0, 0, time.UTC)
 	th := newThrottle(5, 15*time.Minute)
 	var accepted atomic.Int32
+
 	var wg sync.WaitGroup
 	for range 100 {
 		wg.Go(func() {
@@ -48,6 +55,7 @@ func TestThrottleConcurrentAttempts(t *testing.T) {
 			}
 		})
 	}
+
 	wg.Wait()
 
 	if got := accepted.Load(); got != 5 {
@@ -57,7 +65,9 @@ func TestThrottleConcurrentAttempts(t *testing.T) {
 
 func TestThrottleSweepsStaleKeys(t *testing.T) {
 	t.Parallel()
+
 	start := time.Date(2026, 10, 14, 12, 0, 0, 0, time.UTC)
+
 	th := newThrottle(5, time.Minute)
 	for i := range maxThrottleKeys {
 		th.attempt(strconv.Itoa(i), start)

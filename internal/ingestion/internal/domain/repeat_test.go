@@ -9,6 +9,7 @@ import (
 
 func TestRepeats(t *testing.T) {
 	t.Parallel()
+
 	tests := []struct {
 		name     string
 		lines    []RepeatLine

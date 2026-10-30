@@ -37,6 +37,7 @@ func newInvestFixture(t *testing.T, opts ...apitest.Option) investFixture {
 	f.petr4 = child("XP PETR4", "PETR4")
 	f.nubank = h.Account("Nubank checking", "asset", "checking", nil)
 	f.travel = h.Account("Travel", "expense", "", nil)
+
 	return f
 }
 
@@ -53,6 +54,7 @@ func TestSecurityAccounts(t *testing.T) {
 		Currency string `json:"currency"`
 	}
 	h.MustDo(http.MethodGet, "/api/v1/accounts/"+f.mxrf11, nil, http.StatusOK, &acc)
+
 	if acc.Currency != "MXRF11" {
 		t.Fatalf("currency = %q", acc.Currency)
 	}
@@ -69,6 +71,7 @@ func TestSecurityAccounts(t *testing.T) {
 		} `json:"postings"`
 	}
 	h.MustDo(http.MethodGet, "/api/v1/transactions/"+id, nil, http.StatusOK, &tx)
+
 	if p := tx.Postings[1]; p.AccountID != f.mxrf11 || p.Amount["amount"] != float64(150) || p.Amount["currency"] != "MXRF11" || p.Weight["amount"] != float64(151240) {
 		t.Fatalf("security posting = %+v", p)
 	}
@@ -80,10 +83,13 @@ func TestSecurityAccounts(t *testing.T) {
 		} `json:"balance"`
 	}
 	h.MustDo(http.MethodGet, "/api/v1/accounts/"+f.mxrf11+"/balance?date=2026-10-31", nil, http.StatusOK, &bal)
+
 	if bal.Balance.Amount != 150 || bal.Balance.Currency != "MXRF11" {
 		t.Fatalf("MXRF11 balance = %+v", bal.Balance)
 	}
+
 	h.MustDo(http.MethodGet, "/api/v1/accounts/"+f.cash+"/balance?date=2026-10-31", nil, http.StatusOK, &bal)
+
 	if bal.Balance.Amount != -151240 || bal.Balance.Currency != "BRL" {
 		t.Fatalf("XP cash balance = %+v", bal.Balance)
 	}
@@ -102,6 +108,7 @@ func TestSecurityAccountRules(t *testing.T) {
 		for k, v := range extra {
 			body[k] = v
 		}
+
 		return h.Do(http.MethodPost, "/api/v1/accounts", body)
 	}
 	usdBroker := h.Account("Avenue", "asset", "brokerage", map[string]any{"institution_id": f.institution, "currency": "USD"})
@@ -118,6 +125,7 @@ func TestOriginalAmountRules(t *testing.T) {
 	t.Parallel()
 	f := newInvestFixture(t)
 	h := f.h
+
 	record := func(original map[string]any) apitest.Response {
 		return h.Do(http.MethodPost, "/api/v1/transactions", map[string]any{"date": "2026-10-22", "description": "hotel", "postings": []map[string]any{
 			{"account_id": f.travel, "amount": apitest.BRL(54830), "original": original},
@@ -127,6 +135,7 @@ func TestOriginalAmountRules(t *testing.T) {
 	if r := record(units(10000, "USD")); r.Status != http.StatusCreated {
 		t.Fatalf("valid original: %d %s", r.Status, r.Body)
 	}
+
 	h.ExpectProblem(record(units(54830, "BRL")), http.StatusUnprocessableEntity, "validation_failed", "postings[0].original")
 	h.ExpectProblem(record(units(-10000, "USD")), http.StatusUnprocessableEntity, "validation_failed", "postings[0].original")
 	h.ExpectProblem(record(units(10, "MXRF11")), http.StatusUnprocessableEntity, "validation_failed", "postings[0].original")

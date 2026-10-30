@@ -26,10 +26,12 @@ type apiError struct {
 func statusError(model string, status int, body []byte) error {
 	var e apiError
 	_ = json.Unmarshal(body, &e) // a body that is not JSON leaves e empty
+
 	prefix := fmt.Sprintf("aistudio %s: status %d", model, status)
 	if e.Error.Message != "" {
 		prefix += ": " + e.Error.Message
 	}
+
 	switch status {
 	case http.StatusTooManyRequests:
 		return fmt.Errorf("%s: %w", prefix, &llm.QuotaError{RetryAfter: retryAfter(e)})
@@ -50,9 +52,11 @@ func retryAfter(e apiError) time.Duration {
 		if d.Type != retryInfoType {
 			continue
 		}
+
 		if delay, err := time.ParseDuration(d.RetryDelay); err == nil && delay > 0 {
 			return delay
 		}
 	}
+
 	return 0
 }

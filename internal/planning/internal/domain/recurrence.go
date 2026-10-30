@@ -49,48 +49,62 @@ func (r Rule) Validate() error {
 	default:
 		return invalid("recurrence.frequency", "must be daily, weekly, monthly or yearly")
 	}
+
 	if r.Interval < 1 {
 		return invalid("recurrence.interval", "must be at least 1")
 	}
+
 	selectors := 0
 	if r.DayOfMonth != 0 {
 		selectors++
+
 		if r.DayOfMonth != -1 && (r.DayOfMonth < 1 || r.DayOfMonth > 31) {
 			return invalid("recurrence.day_of_month", "must be between 1 and 31, or -1")
 		}
 	}
+
 	if r.Weekday != nil || r.Ordinal != 0 {
 		selectors++
+
 		if r.Ordinal != -1 && (r.Ordinal < 1 || r.Ordinal > 5) {
 			return invalid("recurrence.ordinal", "must be between 1 and 5, or -1, with a weekday")
 		}
+
 		if r.Weekday == nil {
 			return invalid("recurrence.weekday", "is required with an ordinal")
 		}
 	}
+
 	if r.BusinessDayOrdinal != 0 {
 		selectors++
+
 		if r.BusinessDayOrdinal != -1 && (r.BusinessDayOrdinal < 1 || r.BusinessDayOrdinal > 23) {
 			return invalid("recurrence.business_day_ordinal", "must be between 1 and 23, or -1")
 		}
 	}
+
 	if r.Frequency == Monthly && selectors != 1 {
 		return invalid("recurrence", "a monthly rule takes exactly one of day_of_month, weekday with ordinal, business_day_ordinal")
 	}
+
 	if r.Frequency != Monthly && selectors != 0 {
 		return invalid("recurrence", "only a monthly rule takes a day selector")
 	}
+
 	switch r.Adjustment {
 	case "", "none", "following", "preceding", "modified_following":
 	default:
 		return invalid("recurrence.adjustment", "must be none, following, preceding or modified_following")
 	}
+
 	if r.Until != nil && r.Until.Before(r.Start) {
 		return invalid("recurrence.until", "must not be before start")
 	}
+
 	if r.Count < 0 {
 		return invalid("recurrence.count", "must not be negative")
 	}
+
 	return nil
 }
 
@@ -98,23 +112,28 @@ func (r Rule) Validate() error {
 // Until and Count apply to the unadjusted dates.
 func (r Rule) Dates(from, to time.Time, days BusinessDays) []Dated {
 	var out []Dated
+
 	seq := 0
 	for k := 0; ; k++ {
 		base, ok := r.base(k, days)
 		if base.After(to.AddDate(0, 0, maxShift)) || (r.Until != nil && base.After(*r.Until)) {
 			return out
 		}
+
 		if !ok || base.Before(r.Start) {
 			continue
 		}
+
 		seq++
 		if r.Count > 0 && seq > r.Count {
 			return out
 		}
+
 		d := base
 		if r.BusinessDayOrdinal == 0 {
 			d = adjust(base, r.Adjustment, days)
 		}
+
 		if !d.Before(from) && !d.After(to) {
 			out = append(out, Dated{Sequence: seq, Date: d})
 		}
@@ -132,7 +151,9 @@ func (r Rule) base(k int, days BusinessDays) (time.Time, bool) {
 	case Yearly:
 		return dayInMonth(s.Year()+k*r.Interval, s.Month(), s.Day()), true
 	}
+
 	first := time.Date(s.Year(), s.Month()+time.Month(k*r.Interval), 1, 0, 0, 0, 0, time.UTC)
+
 	y, m := first.Year(), first.Month()
 	switch {
 	case r.DayOfMonth == -1:
@@ -155,6 +176,7 @@ func dayInMonth(y int, m time.Month, d int) time.Time {
 	if last := lastDay(y, m); d > last.Day() {
 		return last
 	}
+
 	return time.Date(y, m, d, 0, 0, 0, 0, time.UTC)
 }
 
@@ -162,14 +184,17 @@ func dayInMonth(y int, m time.Month, d int) time.Time {
 func nthWeekday(y int, m time.Month, w time.Weekday, n int) time.Time {
 	first := time.Date(y, m, 1, 0, 0, 0, 0, time.UTC)
 	d := first.AddDate(0, 0, (int(w)-int(first.Weekday())+7)%7)
+
 	var last time.Time
 	for i := 1; d.Month() == m; i++ {
 		if i == n {
 			return d
 		}
+
 		last = d
 		d = d.AddDate(0, 0, 7)
 	}
+
 	return last
 }
 
@@ -178,17 +203,21 @@ func nthWeekday(y int, m time.Month, w time.Weekday, n int) time.Time {
 func nthBusinessDay(y int, m time.Month, n int, days BusinessDays) (time.Time, bool) {
 	first := time.Date(y, m, 1, 0, 0, 0, 0, time.UTC)
 	last, found := first, false
+
 	i := 0
 	for d := first; d.Month() == m; d = d.AddDate(0, 0, 1) {
 		if !days.IsBusinessDay(d) {
 			continue
 		}
+
 		i++
 		if i == n {
 			return d, true
 		}
+
 		last, found = d, true
 	}
+
 	return last, found
 }
 
@@ -202,8 +231,10 @@ func adjust(d time.Time, adjustment string, days BusinessDays) time.Time {
 		if f := shift(d, 1, days); f.Month() == d.Month() {
 			return f
 		}
+
 		return shift(d, -1, days)
 	}
+
 	return d
 }
 
@@ -211,5 +242,6 @@ func shift(d time.Time, step int, days BusinessDays) time.Time {
 	for i := 0; i <= maxShift && !days.IsBusinessDay(d); i++ {
 		d = d.AddDate(0, 0, step)
 	}
+
 	return d
 }

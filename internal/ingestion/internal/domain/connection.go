@@ -40,15 +40,19 @@ func ConnectionName(name, connector string) (string, error) {
 		if utf8.RuneCountInString(name) > maxNameLength {
 			return "", invalid("name", "must have 1 to 60 characters")
 		}
+
 		return name, nil
 	}
+
 	name = strings.TrimSpace(connector)
 	if r := []rune(name); len(r) > maxNameLength {
 		name = string(r[:maxNameLength])
 	}
+
 	if name == "" {
 		return "", invalid("name", "is required: the item has no connector name")
 	}
+
 	return name, nil
 }
 
@@ -90,6 +94,7 @@ func (a ExternalAccount) SyncWindow(today time.Time) (from, to time.Time) {
 			from = f
 		}
 	}
+
 	return from, today
 }
 
@@ -121,6 +126,7 @@ func (a ExternalAccount) State() MappingState {
 	case a.Ignored:
 		return MappingIgnored
 	}
+
 	return MappingPending
 }
 
@@ -130,8 +136,10 @@ func LastDigits(number string) string {
 		if unicode.IsDigit(r) && r < utf8.RuneSelf {
 			return r
 		}
+
 		return -1
 	}, number)
+
 	return digits[max(0, len(digits)-4):]
 }
 
@@ -173,6 +181,7 @@ func (m Mapping) Validate() error {
 	case m.SyncFrom == nil:
 		return invalid("sync_from", "is required with account_id")
 	}
+
 	return nil
 }
 
@@ -181,16 +190,21 @@ func (a ExternalAccount) Apply(m Mapping, target ImportTarget) (ExternalAccount,
 	if err := m.Validate(); err != nil {
 		return a, err
 	}
+
 	if m.Ignored {
 		a.AccountID, a.SyncFrom, a.Ignored = nil, nil, true
 		return a, nil
 	}
+
 	if string(target.Currency) != a.Currency {
 		return a, invalid("account_id", "must have the external account's currency "+a.Currency)
 	}
+
 	if !slices.Contains(compatibleKinds[a.Subtype], target.Kind) {
 		return a, invalid("account_id", "kind "+target.Kind+" cannot receive a "+a.Subtype+" account")
 	}
+
 	a.AccountID, a.SyncFrom, a.Ignored = m.AccountID, m.SyncFrom, false
+
 	return a, nil
 }

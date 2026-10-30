@@ -24,7 +24,9 @@ func list(dir, prefix string) ([]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("list backups: %w", err)
 	}
+
 	slices.Sort(names)
+
 	return names, nil
 }
 
@@ -34,11 +36,13 @@ func Prune(dir, prefix string, keep int) error {
 	if err != nil {
 		return err
 	}
+
 	for _, name := range names[:max(0, len(names)-keep)] {
 		if err := os.Remove(name); err != nil {
 			return fmt.Errorf("prune backup: %w", err)
 		}
 	}
+
 	return nil
 }
 
@@ -48,6 +52,7 @@ func Newest(dir, prefix string) (string, error) {
 	if err != nil || len(names) == 0 {
 		return "", err
 	}
+
 	return names[len(names)-1], nil
 }
 
@@ -57,9 +62,11 @@ func Due(dir string, now time.Time, every time.Duration) (bool, error) {
 	if err != nil || newest == "" {
 		return err == nil, err
 	}
+
 	info, err := os.Stat(newest)
 	if err != nil {
 		return false, fmt.Errorf("inspect backup: %w", err)
 	}
+
 	return now.Sub(info.ModTime()) >= every, nil
 }

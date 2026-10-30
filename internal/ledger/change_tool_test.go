@@ -15,20 +15,26 @@ func TestChangeTransactionCorrect(t *testing.T) {
 	id := f.h.Record("2026-10-20", apitest.Posting(f.checking, -12000), apitest.Posting(f.food, 12000))
 	args := map[string]any{"transaction_id": id, "action": "correct", "amount": "130.00", "reason": "typo"}
 	p := previewTool(t, f.h, "change_transaction", args)
+
 	want := tool.Change{Field: "amount", Before: tool.Value{Amount: "120.00", Currency: "BRL"}, After: tool.Value{Amount: "130.00", Currency: "BRL"}}
 	if !slices.Contains(p.Changes, want) || p.Basis != "v1" {
 		t.Fatalf("preview = %+v", p)
 	}
+
 	var out writeOut
 	toolOutput(t, f.h, "change_transaction", args, &out)
+
 	if out.Version != 2 || !slices.Equal(postingAmounts(t, f.h, id), []int64{-13000, 13000}) {
 		t.Errorf("out = %+v", out)
 	}
+
 	var got getTransactionOut
 	toolOutput(t, f.h, "get_transaction", map[string]any{"transaction_id": id}, &got)
+
 	if len(got.History) != 1 || got.History[0].Reason != "typo" {
 		t.Errorf("history = %+v", got.History)
 	}
+
 	delete(args, "reason")
 	f.h.ExpectToolError(f.h.Tool("change_transaction", args), "invalid_arguments", "reason")
 }
@@ -46,15 +52,19 @@ func TestChangeTransactionTransfer(t *testing.T) {
 	id := f.h.Record("2026-10-20", apitest.Posting(f.checking, -5000), apitest.Posting(f.food, 5000))
 	args := map[string]any{"transaction_id": id, "action": "make_transfer", "to_account_id": f.emergency}
 	p := previewTool(t, f.h, "change_transaction", args)
+
 	want := tool.Change{Field: "account", Before: tool.TextValue("Food"), After: tool.TextValue("Emergency fund")}
 	if len(p.Changes) != 1 || p.Changes[0] != want {
 		t.Fatalf("preview = %+v", p)
 	}
+
 	var out writeOut
 	toolOutput(t, f.h, "change_transaction", args, &out)
+
 	if !slices.Equal(postingAmounts(t, f.h, out.TransactionID), []int64{-5000, 5000}) {
 		t.Errorf("out = %+v", out)
 	}
+
 	f.h.ExpectToolError(f.h.Tool("change_transaction", map[string]any{"transaction_id": id, "action": "make_transfer"}), "invalid_arguments", "to_account_id")
 }
 
@@ -64,15 +74,19 @@ func TestChangeTransactionReimburse(t *testing.T) {
 	expense := b.expense("2026-10-17", 1500)
 	inflow := b.inflow("2026-10-20", 1500)
 	args := map[string]any{"transaction_id": inflow, "action": "reimburse", "allocations": []map[string]any{{"expense_id": expense, "amount": "15.00"}}}
+
 	p := previewTool(t, b.h, "change_transaction", args)
 	if len(p.Changes) != 2 || p.Changes[0].Field != "transaction" || p.Changes[1].After.Amount != "15.00" {
 		t.Fatalf("preview = %+v", p)
 	}
+
 	var out writeOut
 	toolOutput(t, b.h, "change_transaction", args, &out)
+
 	if out.Version != 2 {
 		t.Errorf("out = %+v", out)
 	}
+
 	b.h.ExpectToolError(b.h.Tool("change_transaction", map[string]any{"transaction_id": inflow, "action": "reimburse"}), "invalid_arguments", "allocations")
 }
 

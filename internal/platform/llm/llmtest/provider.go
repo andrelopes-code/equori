@@ -45,6 +45,7 @@ func (p *Provider) Generate(_ context.Context, model string, req llm.Request) (l
 	if err != nil {
 		return llm.Response{}, err
 	}
+
 	return step.Response, step.Err
 }
 
@@ -53,24 +54,30 @@ func (p *Provider) Stream(_ context.Context, model string, req llm.Request, onTe
 	if err != nil {
 		return llm.Response{}, err
 	}
+
 	for _, c := range step.Chunks {
 		onText(c)
 	}
+
 	return step.Response, step.Err
 }
 
 func (p *Provider) next(model string, req llm.Request) (Step, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
+
 	p.calls = append(p.calls, Call{Model: model, Request: req})
 	if len(p.steps) == 0 {
 		return Step{}, fmt.Errorf("llmtest %s: unexpected call for model %s", p.name, model)
 	}
+
 	step := p.steps[0]
 	if step.Model != model {
 		return Step{}, fmt.Errorf("llmtest %s: call for model %s, want %s", p.name, model, step.Model)
 	}
+
 	p.steps = p.steps[1:]
+
 	return step, nil
 }
 
@@ -78,5 +85,6 @@ func (p *Provider) next(model string, req llm.Request) (Step, error) {
 func (p *Provider) Requests() []Call {
 	p.mu.Lock()
 	defer p.mu.Unlock()
+
 	return append([]Call(nil), p.calls...)
 }

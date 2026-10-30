@@ -112,6 +112,7 @@ func getMarketData(svc Service, cals Calendars) tool.Tool {
 			{"calendar", in.Calendar != ""}, {"year", in.Year != 0}, {"index", in.Index != ""},
 		}
 		name := "view " + string(in.View)
+
 		var err error
 		switch in.View {
 		case "instrument":
@@ -127,22 +128,27 @@ func getMarketData(svc Service, cals Calendars) tool.Tool {
 		default:
 			err = required(name, fields)
 		}
+
 		if err != nil {
 			return getMarketDataOut{}, err
 		}
+
 		switch in.View {
 		case "instruments":
 			rows, err := svc.ListInstruments(ctx, "")
+
 			out := getMarketDataOut{Instruments: []instrumentView{}}
 			for _, r := range rows {
 				out.Instruments = append(out.Instruments, toInstrumentView(r))
 			}
+
 			return out, err
 		case "instrument":
 			r, err := svc.Instrument(ctx, in.Code)
 			if err != nil {
 				return getMarketDataOut{}, err
 			}
+
 			v := toInstrumentView(r)
 			if t, err := svc.Terms(ctx, in.Code); err == nil {
 				v.Terms, err = toTermsView(t, r.QuoteCurrency)
@@ -152,53 +158,67 @@ func getMarketData(svc Service, cals Calendars) tool.Tool {
 			} else if !errors.Is(err, domain.ErrNoTerms) {
 				return getMarketDataOut{}, err
 			}
+
 			return getMarketDataOut{Instrument: v}, nil
 		case "prices":
 			if in.To.Before(in.From.Time) || in.To.Sub(in.From.Time) > domain.MaxPriceRange*24*time.Hour {
 				return getMarketDataOut{}, tool.InvalidArgument("to", "must be between from and 366 days after from")
 			}
+
 			rows, err := svc.ListPrices(ctx, money.Currency(in.Code), money.Currency(in.Quote), in.From.Time, in.To.Time)
+
 			out := getMarketDataOut{Prices: []priceView{}}
 			for _, p := range rows {
 				out.Prices = append(out.Prices, priceView{Date: tool.DateOf(p.Date), Value: p.Value.Reduced().String()})
 			}
+
 			return out, err
 		case "indexes":
 			rows, err := svc.Indexes(ctx)
+
 			out := getMarketDataOut{Indexes: []indexView{}}
 			for _, x := range rows {
 				out.Indexes = append(out.Indexes, indexView{ID: x.ID, Period: x.Period, First: tool.DateOf(x.First), Last: tool.DateOf(x.Last), Expected: x.Expected})
 			}
+
 			return out, err
 		case "index_rates":
 			rows, err := svc.IndexRates(ctx, in.Index, in.From.Time, in.To.Time)
+
 			out := getMarketDataOut{IndexRates: []indexRateView{}}
 			for _, r := range rows {
 				out.IndexRates = append(out.IndexRates, indexRateView{Date: tool.DateOf(r.Date), Rate: r.Rate})
 			}
+
 			return out, err
 		case "index_expectations":
 			x, err := svc.Expectations(ctx, in.Index)
 			if err != nil {
 				return getMarketDataOut{}, err
 			}
+
 			v := indexExpectationsView{SurveyDate: tool.DateOf(x.SurveyDate), Points: []indexRateView{}}
 			for _, p := range x.Points {
 				v.Points = append(v.Points, indexRateView{Date: tool.DateOf(p.Date), Rate: p.Rate})
 			}
+
 			return getMarketDataOut{IndexExpectations: v}, nil
 		case "calendars":
 			out := getMarketDataOut{Calendars: []calendarView{}}
 			for _, c := range cals.List() {
 				out.Calendars = append(out.Calendars, calendarView(c))
 			}
+
 			return out, nil
 		}
+
 		rows, err := cals.Holidays(ctx, in.Calendar, in.Year)
+
 		out := getMarketDataOut{Holidays: []holidayView{}}
 		for _, h := range rows {
 			out.Holidays = append(out.Holidays, holidayView{Date: tool.DateOf(h.Date), Name: h.Name, Source: h.Source})
 		}
+
 		return out, err
 	})
 }
@@ -208,6 +228,7 @@ func toTermsView(t domain.Terms, quote money.Currency) (termsView, error) {
 	if err != nil {
 		return termsView{}, err
 	}
+
 	return termsView{
 		IssuedOn: tool.DateOf(t.IssuedOn), MaturesOn: tool.DateOf(t.MaturesOn), IndexID: t.IndexID,
 		PercentOfIndexBP: t.PercentOfIndexBP, SpreadBP: t.SpreadBP, DayCount: t.DayCount, FaceValue: tool.MoneyOf(face),

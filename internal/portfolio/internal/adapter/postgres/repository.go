@@ -28,12 +28,15 @@ func (r *Repository) Replace(ctx context.Context, userID int64, accountIDs []uui
 	if err := r.q.DeletePositionDays(ctx, DeletePositionDaysParams{UserID: userID, AccountIds: accountIDs}); err != nil {
 		return err
 	}
+
 	if err := r.q.DeleteRealizedResults(ctx, DeleteRealizedResultsParams{UserID: userID, AccountIds: accountIDs}); err != nil {
 		return err
 	}
+
 	if err := r.q.DeleteIncomeEvents(ctx, DeleteIncomeEventsParams{UserID: userID, AccountIds: accountIDs}); err != nil {
 		return err
 	}
+
 	for _, d := range rb.Days {
 		if err := r.q.InsertPositionDay(ctx, InsertPositionDayParams{
 			UserID: userID, AccountID: d.AccountID, Instrument: string(d.Instrument), Date: d.Date, Quantity: d.Quantity, CostBasis: d.CostBasis,
@@ -41,6 +44,7 @@ func (r *Repository) Replace(ctx context.Context, userID int64, accountIDs []uui
 			return err
 		}
 	}
+
 	for _, x := range rb.Results {
 		if err := r.q.InsertRealizedResult(ctx, InsertRealizedResultParams{
 			UserID: userID, TransactionID: x.TransactionID, AccountID: x.AccountID, Instrument: string(x.Instrument), Date: x.Date, Month: x.Month,
@@ -49,6 +53,7 @@ func (r *Repository) Replace(ctx context.Context, userID int64, accountIDs []uui
 			return err
 		}
 	}
+
 	for _, e := range rb.Incomes {
 		if err := r.q.InsertIncomeEvent(ctx, InsertIncomeEventParams{
 			UserID: userID, TransactionID: e.TransactionID, AccountID: e.AccountID, Instrument: string(e.Instrument), Date: e.Date,
@@ -57,20 +62,24 @@ func (r *Repository) Replace(ctx context.Context, userID int64, accountIDs []uui
 			return err
 		}
 	}
+
 	return nil
 }
 
 func (r *Repository) PositionsAt(ctx context.Context, userID int64, date time.Time) ([]domain.PositionDay, error) {
 	rows, err := r.q.PositionsAt(ctx, PositionsAtParams{UserID: userID, OnDate: date})
+
 	out := make([]domain.PositionDay, len(rows))
 	for i, row := range rows {
 		out[i] = domain.PositionDay{AccountID: row.AccountID, Instrument: money.Currency(row.Instrument), Date: row.Date, Quantity: row.Quantity, CostBasis: row.CostBasis}
 	}
+
 	return out, err
 }
 
 func (r *Repository) RealizedResults(ctx context.Context, userID int64, from, to time.Time) ([]domain.RealizedResult, error) {
 	rows, err := r.q.ListRealizedResults(ctx, ListRealizedResultsParams{UserID: userID, FromDate: from, ToDate: to})
+
 	out := make([]domain.RealizedResult, len(rows))
 	for i, row := range rows {
 		out[i] = domain.RealizedResult{
@@ -78,11 +87,13 @@ func (r *Repository) RealizedResults(ctx context.Context, userID int64, from, to
 			Quantity: row.Quantity, Cost: row.Cost, Proceeds: row.Proceeds, Result: row.Result, TaxClass: deref(row.TaxClass), Currency: money.Currency(row.Currency),
 		}
 	}
+
 	return out, err
 }
 
 func (r *Repository) IncomeEvents(ctx context.Context, userID int64, from, to time.Time) ([]domain.IncomeEvent, error) {
 	rows, err := r.q.ListIncomeEvents(ctx, ListIncomeEventsParams{UserID: userID, FromDate: from, ToDate: to})
+
 	out := make([]domain.IncomeEvent, len(rows))
 	for i, row := range rows {
 		out[i] = domain.IncomeEvent{
@@ -90,6 +101,7 @@ func (r *Repository) IncomeEvents(ctx context.Context, userID int64, from, to ti
 			Type: row.IncomeType, TaxTreatment: deref(row.TaxTreatment), Gross: row.Gross, Withheld: row.Withheld, Currency: money.Currency(row.Currency),
 		}
 	}
+
 	return out, err
 }
 
@@ -102,6 +114,7 @@ func optional(s string) *string {
 	if s == "" {
 		return nil
 	}
+
 	return &s
 }
 
@@ -109,5 +122,6 @@ func deref(s *string) string {
 	if s == nil {
 		return ""
 	}
+
 	return *s
 }

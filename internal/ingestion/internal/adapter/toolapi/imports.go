@@ -113,50 +113,62 @@ func getImports(svc *app.Service, names AccountNames) tool.Tool {
 		Effect: tool.ReadOnly,
 	}, func(ctx context.Context, userID int64, in getImportsIn) (getImportsOut, error) {
 		fields := []field{{"batch_id", in.BatchID != ""}, {"state", in.State != ""}, {"account_id", in.AccountID != ""}}
+
 		named, err := names(ctx, userID)
 		if err != nil {
 			return getImportsOut{}, err
 		}
+
 		switch in.View {
 		case "records":
 			// state is optional for records.
 			if err := required("records", []field{fields[0], fields[2]}, "batch_id"); err != nil {
 				return getImportsOut{}, err
 			}
+
 			return records(ctx, svc, userID, in, named)
 		case "unconfirmed":
 			if err := required("unconfirmed", fields, "account_id"); err != nil {
 				return getImportsOut{}, err
 			}
+
 			return unconfirmed(ctx, svc, userID, in, named)
 		case "connections":
 			if err := required("connections", fields); err != nil {
 				return getImportsOut{}, err
 			}
+
 			return connections(ctx, svc, userID, in, named)
 		}
+
 		if err := required("batches", fields); err != nil {
 			return getImportsOut{}, err
 		}
+
 		p, err := pageRequest[app.BatchKey](in.PageArgs)
 		if err != nil {
 			return getImportsOut{}, err
 		}
+
 		batches, next, err := svc.ListBatches(ctx, userID, p)
 		if err != nil {
 			return getImportsOut{}, err
 		}
+
 		out := getImportsOut{Batches: []batchView{}}
 		for _, b := range batches {
 			out.Batches = append(out.Batches, toBatchView(b, named))
 		}
+
 		out.NextCursor, err = nextCursor(next)
+
 		return out, err
 	})
 }
 
 func toBatchView(b domain.Batch, named map[uuid.UUID]string) batchView {
 	c := b.Counts
+
 	return batchView{
 		BatchID: b.ID.String(), AccountName: named[b.AccountID], Source: string(b.Source), FileName: b.FileName,
 		StartedAt: b.StartedAt.UTC().Format(time.RFC3339),
@@ -172,23 +184,29 @@ func records(ctx context.Context, svc *app.Service, userID int64, in getImportsI
 	if err != nil {
 		return getImportsOut{}, err
 	}
+
 	p, err := pageRequest[app.RecordKey](in.PageArgs)
 	if err != nil {
 		return getImportsOut{}, err
 	}
+
 	recs, next, b, err := svc.Records(ctx, userID, id, domain.RecordState(in.State), p)
 	if err != nil {
 		return getImportsOut{}, err
 	}
+
 	out := getImportsOut{BatchID: b.ID.String(), AccountName: named[b.AccountID], Records: []recordView{}}
 	for _, r := range recs {
 		v, err := toRecordView(r, b.Currency)
 		if err != nil {
 			return getImportsOut{}, err
 		}
+
 		out.Records = append(out.Records, v)
 	}
+
 	out.NextCursor, err = nextCursor(next)
+
 	return out, err
 }
 
@@ -197,6 +215,7 @@ func toRecordView(r domain.ExternalRecord, currency string) (recordView, error) 
 	if err != nil {
 		return recordView{}, err
 	}
+
 	v := recordView{
 		RecordID: r.ID.String(), Date: tool.DateOf(r.Date), Description: r.Description, Amount: amount,
 		State: string(r.State), ReviewReason: r.ReviewReason,
@@ -204,6 +223,7 @@ func toRecordView(r domain.ExternalRecord, currency string) (recordView, error) 
 	for _, c := range r.Candidates {
 		v.Candidates = append(v.Candidates, c.String())
 	}
+
 	return v, nil
 }
 
@@ -212,20 +232,25 @@ func unconfirmed(ctx context.Context, svc *app.Service, userID int64, in getImpo
 	if err != nil {
 		return getImportsOut{}, err
 	}
+
 	ps, currency, err := svc.Unconfirmed(ctx, userID, id)
 	if err != nil {
 		return getImportsOut{}, err
 	}
+
 	views := []unconfirmedView{}
 	for _, p := range ps {
 		amount, err := moneyOf(p.Amount, string(currency))
 		if err != nil {
 			return getImportsOut{}, err
 		}
+
 		views = append(views, unconfirmedView{TransactionID: p.TransactionID.String(), Date: tool.DateOf(p.Date), Description: p.Description, Amount: amount})
 	}
+
 	out := getImportsOut{AccountID: in.AccountID, AccountName: named[id]}
 	out.Unconfirmed, out.NextCursor, err = tool.PageOf(views, func(v unconfirmedView) string { return v.TransactionID }, in.PageArgs)
+
 	return out, err
 }
 
@@ -234,43 +259,54 @@ func connections(ctx context.Context, svc *app.Service, userID int64, in getImpo
 	if err != nil {
 		return getImportsOut{}, err
 	}
+
 	cs, next, err := svc.ListConnections(ctx, userID, p)
 	if err != nil {
 		return getImportsOut{}, err
 	}
+
 	out := getImportsOut{Connections: []connectionView{}, Integrations: []integrationView{}}
 	for _, c := range cs {
 		v := connectionView{ConnectionID: c.ID.String(), Name: c.Name, State: string(c.State), LastError: c.LastError, Accounts: []externalAccountView{}}
 		if c.LastSyncedAt != nil {
 			v.LastSyncedAt = c.LastSyncedAt.UTC().Format(time.RFC3339)
 		}
+
 		for _, a := range c.Accounts {
 			ev := externalAccountView{ExternalAccountID: a.ID.String(), Name: a.Name, State: string(a.State())}
 			if a.AccountID != nil {
 				ev.AccountName = named[*a.AccountID]
 			}
+
 			v.Accounts = append(v.Accounts, ev)
 		}
+
 		out.Connections = append(out.Connections, v)
 	}
+
 	if out.NextCursor, err = nextCursor(next); err != nil {
 		return getImportsOut{}, err
 	}
+
 	aggregators := map[string]string{}
 	for _, a := range svc.Aggregators() {
 		aggregators[a.ID()] = a.Name()
 	}
+
 	// shortcut: integrations are listed up to one page of tool.MaxLimit; a household has a handful.
 	is, _, err := svc.ListIntegrations(ctx, userID, page.Request[app.NameKey]{Limit: tool.MaxLimit})
 	if err != nil {
 		return getImportsOut{}, err
 	}
+
 	for _, i := range is {
 		name := aggregators[string(i.Aggregator)]
 		if name == "" {
 			name = string(i.Aggregator)
 		}
+
 		out.Integrations = append(out.Integrations, integrationView{IntegrationID: i.ID.String(), Name: i.Name, Aggregator: name})
 	}
+
 	return out, nil
 }

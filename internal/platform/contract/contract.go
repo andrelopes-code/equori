@@ -44,14 +44,18 @@ func New(spec []byte, prefix string) (*Validator, error) {
 			return err
 		}))
 	})
+
 	loader := openapi3.NewLoader()
+
 	doc, err := loader.LoadFromData(spec)
 	if err != nil {
 		return nil, fmt.Errorf("load API contract: %w", err)
 	}
+
 	if err := doc.Validate(loader.Context); err != nil {
 		return nil, fmt.Errorf("validate API contract: %w", err)
 	}
+
 	v := &Validator{prefix: prefix, routes: http.NewServeMux(), byKey: map[string]*routers.Route{}}
 	for path, item := range doc.Paths.Map() {
 		for method, op := range item.Operations() {
@@ -64,6 +68,7 @@ func New(spec []byte, prefix string) (*Validator, error) {
 			v.byKey[pattern] = &routers.Route{Spec: doc, Path: path, PathItem: item, Method: method, Operation: &unsecured}
 		}
 	}
+
 	return v, nil
 }
 
@@ -80,20 +85,26 @@ func (v *Validator) Middleware(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 			return
 		}
+
 		route := v.route(r)
 		if route == nil {
 			if allow := v.allowed(r); allow != "" {
 				w.Header().Set("Allow", allow)
 				write(w, r, problem.New(http.StatusMethodNotAllowed, "method_not_allowed", r.Method+" is not allowed on "+r.URL.Path))
+
 				return
 			}
+
 			next.ServeHTTP(w, r)
+
 			return
 		}
+
 		if d, ok := v.check(r, route); !ok {
 			write(w, r, d)
 			return
 		}
+
 		next.ServeHTTP(w, r)
 	})
 }
@@ -102,11 +113,13 @@ func (v *Validator) allowed(r *http.Request) string {
 	var allow []string
 	for _, m := range methods {
 		probe := r.Clone(r.Context())
+
 		probe.Method = m
 		if v.route(probe) != nil {
 			allow = append(allow, m)
 		}
 	}
+
 	return strings.Join(allow, ", ")
 }
 
@@ -118,6 +131,7 @@ func write(w http.ResponseWriter, r *http.Request, d problem.Details) {
 func invalid(errs ...problem.FieldError) problem.Details {
 	d := problem.New(http.StatusBadRequest, "invalid_request", "the request does not match the API contract")
 	d.Errors = errs
+
 	return d
 }
 
@@ -128,6 +142,7 @@ func (v *Validator) check(r *http.Request, route *routers.Route) (problem.Detail
 		if !ok {
 			return d, false
 		}
+
 		switch {
 		case strings.HasPrefix(mediaType, "multipart/"):
 			opts.ExcludeRequestBody = true // uploads are read once, by the handler
@@ -137,15 +152,18 @@ func (v *Validator) check(r *http.Request, route *routers.Route) (problem.Detail
 			}
 		}
 	}
+
 	err := openapi3filter.ValidateRequest(r.Context(), &openapi3filter.RequestValidationInput{
 		Request: r, PathParams: pathParams(route.Path, strings.TrimPrefix(r.URL.Path, v.prefix)), Route: route, Options: opts,
 	})
 	if err == nil {
 		return problem.Details{}, true
 	}
+
 	if d, ok := problem.Transport(err); ok {
 		return d, false
 	}
+
 	return invalid(violations(err)...), false
 }
 
@@ -155,14 +173,17 @@ func checkMediaType(r *http.Request, body *openapi3.RequestBody) (string, proble
 	if header == "" && !body.Required {
 		return "", problem.Details{}, true
 	}
+
 	mediaType, _, err := mime.ParseMediaType(header)
 	if err == nil && body.Content.Get(mediaType) != nil {
 		return mediaType, problem.Details{}, true
 	}
+
 	declared := make([]string, 0, len(body.Content))
 	for t := range body.Content {
 		declared = append(declared, t)
 	}
+
 	return "", problem.New(http.StatusUnsupportedMediaType, "unsupported_media_type", "Content-Type must be "+strings.Join(declared, " or ")), false
 }
 
@@ -173,8 +194,10 @@ func checkJSON(r *http.Request) (problem.Details, bool) {
 		if d, ok := problem.Transport(err); ok {
 			return d, false
 		}
+
 		return invalid(problem.FieldError{Field: "body", Message: "could not be read"}), false
 	}
+
 	r.Body = io.NopCloser(bytes.NewReader(b))
 	switch {
 	case len(bytes.TrimSpace(b)) == 0:
@@ -182,18 +205,21 @@ func checkJSON(r *http.Request) (problem.Details, bool) {
 	case !jsontext.Value(b).IsValid():
 		return invalid(problem.FieldError{Field: "body", Message: "must be exactly one JSON value"}), false
 	}
+
 	return problem.Details{}, true
 }
 
 // pathParams pairs the {name} segments of the template with the request path.
 func pathParams(template, path string) map[string]string {
 	params := map[string]string{}
+
 	names, values := strings.Split(template, "/"), strings.Split(path, "/")
 	for i, n := range names {
 		if strings.HasPrefix(n, "{") && strings.HasSuffix(n, "}") && i < len(values) {
 			params[n[1:len(n)-1]] = values[i]
 		}
 	}
+
 	return params
 }
 
@@ -223,10 +249,12 @@ func violations(err error) []problem.FieldError {
 			if e.Parameter != nil {
 				field = e.Parameter.Name
 			}
+
 			if e.Err == nil {
 				add(problem.FieldError{Field: orBody(field), Message: e.Reason})
 				return
 			}
+
 			walk(e.Err, field)
 		case *openapi3.SchemaError:
 			add(schemaViolation(e, field))
@@ -237,10 +265,12 @@ func violations(err error) []problem.FieldError {
 				walk(inner, field)
 				return
 			}
+
 			add(problem.FieldError{Field: orBody(field), Message: err.Error()})
 		}
 	}
 	walk(err, "")
+
 	return out
 }
 
@@ -254,6 +284,7 @@ func schemaViolation(e *openapi3.SchemaError, param string) problem.FieldError {
 	} else if missingMember.MatchString(e.Reason) {
 		message = "is required"
 	}
+
 	field := param
 	for _, seg := range path {
 		if _, err := strconv.Atoi(seg); err == nil {
@@ -264,6 +295,7 @@ func schemaViolation(e *openapi3.SchemaError, param string) problem.FieldError {
 			field += "." + seg
 		}
 	}
+
 	return problem.FieldError{Field: orBody(field), Message: message}
 }
 
@@ -271,5 +303,6 @@ func orBody(field string) string {
 	if field == "" {
 		return "body"
 	}
+
 	return field
 }

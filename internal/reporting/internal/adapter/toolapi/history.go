@@ -58,52 +58,66 @@ func getAccountHistory(svc *app.Service) tool.Tool {
 		if err != nil {
 			return getAccountHistoryOut{}, tool.InvalidArgument("account_id", "is not a UUID")
 		}
+
 		if in.To.Before(in.From.Time) || in.To.After(in.From.AddDate(0, 0, app.MaxFlowDays-1)) {
 			return getAccountHistoryOut{}, tool.InvalidArgument("to", "must be on or after from and at most 365 days after it")
 		}
+
 		name, err := svc.AccountName(ctx, userID, id)
 		if err != nil {
 			return getAccountHistoryOut{}, err
 		}
+
 		out := getAccountHistoryOut{AccountID: in.AccountID, AccountName: name, View: string(in.View)}
 		if in.View == "flows" {
 			flows, instrument, err := svc.Flows(ctx, userID, id, in.From.Time, in.To.Time)
 			if err != nil {
 				return getAccountHistoryOut{}, err
 			}
+
 			out.Currency, out.Days = instrument, []flowView{}
 			for _, f := range flows {
 				inflow, err := money.New(f.Inflow, money.Currency(instrument))
 				if err != nil {
 					return getAccountHistoryOut{}, err
 				}
+
 				outflow, err := money.New(f.Outflow, money.Currency(instrument))
 				if err != nil {
 					return getAccountHistoryOut{}, err
 				}
+
 				out.Days = append(out.Days, flowView{Date: tool.DateOf(f.Date), Inflow: tool.MoneyOf(inflow), Outflow: tool.MoneyOf(outflow)})
 			}
+
 			return out, nil
 		}
+
 		points, currency, err := svc.Series(ctx, userID, id, in.From.Time, in.To.Time, app.BasisBooked)
 		if err != nil {
 			return getAccountHistoryOut{}, err
 		}
+
 		weekly := len(points) > maxDailyPoints
+
 		out.Currency, out.Granularity, out.Points = currency, "day", []pointView{}
 		if weekly {
 			out.Granularity = "week"
 		}
+
 		for i, p := range points {
 			if weekly && p.Date.Weekday() != time.Sunday && i != len(points)-1 {
 				continue
 			}
+
 			m, err := money.New(p.Balance, money.Currency(currency))
 			if err != nil {
 				return getAccountHistoryOut{}, err
 			}
+
 			out.Points = append(out.Points, pointView{Date: tool.DateOf(p.Date), Balance: tool.MoneyOf(m)})
 		}
+
 		return out, nil
 	})
 }

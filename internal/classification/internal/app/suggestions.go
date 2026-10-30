@@ -47,11 +47,14 @@ func (s *Service) suggest(ctx context.Context, rec Record) error {
 	if rec.CategoryID == uuid.Nil || rec.MatchKey == "" {
 		return nil
 	}
+
 	examples, err := s.repo.CorrectedExamples(ctx, rec.UserID, rec.MatchKey, rec.CategoryID, maxExamples)
 	if err != nil || len(examples) < 2 {
 		return err
 	}
+
 	conditions, actions := domain.SuggestedRule(rec.MatchKey, rec.CategoryID)
+
 	return s.repo.UpsertSuggestion(ctx, Suggestion{
 		UserID: rec.UserID, Fingerprint: domain.Fingerprint(rec.MatchKey, rec.CategoryID),
 		Conditions: conditions, Actions: actions, Examples: examples, CreatedAt: rec.DecidedAt,
@@ -70,19 +73,25 @@ func (s *Service) AcceptSuggestion(ctx context.Context, userID int64, id uuid.UU
 		if err != nil {
 			return err
 		}
+
 		if sg.State != SuggestionPending {
 			return ErrSuggestionClosed
 		}
+
 		rule, err := s.checkRule(ctx, userID, domain.Rule{Name: name, Enabled: true, Conditions: sg.Conditions, Actions: sg.Actions})
 		if err != nil {
 			return err
 		}
+
 		if rule, err = r.InsertRule(ctx, userID, rule); err != nil {
 			return err
 		}
+
 		out, err = r.DecideSuggestion(ctx, userID, id, SuggestionAccepted, rule.ID)
+
 		return err
 	})
+
 	return out, err
 }
 
@@ -93,11 +102,15 @@ func (s *Service) DismissSuggestion(ctx context.Context, userID int64, id uuid.U
 		if err != nil {
 			return err
 		}
+
 		if sg.State != SuggestionPending {
 			return ErrSuggestionClosed
 		}
+
 		out, err = r.DecideSuggestion(ctx, userID, id, SuggestionDismissed, uuid.Nil)
+
 		return err
 	})
+
 	return out, err
 }

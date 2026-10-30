@@ -39,6 +39,7 @@ type occurrencePlan struct {
 
 func prepareOccurrence(in manageOccurrenceIn) (occurrencePlan, error) {
 	fields := []field{{"transaction_id", in.TransactionID != ""}, {"date", !in.Date.IsZero()}, {"reason", in.Reason != ""}}
+
 	var err error
 	switch in.Action {
 	case "realize":
@@ -50,14 +51,18 @@ func prepareOccurrence(in manageOccurrenceIn) (occurrencePlan, error) {
 	case "unrealize":
 		err = required(string(in.Action), fields, nil)
 	}
+
 	if err != nil {
 		return occurrencePlan{}, err
 	}
+
 	var p occurrencePlan
 	if p.occurrence, err = optionalID(in.OccurrenceID, "occurrence_id"); err != nil {
 		return occurrencePlan{}, err
 	}
+
 	p.transaction, err = optionalID(in.TransactionID, "transaction_id")
+
 	return p, err
 }
 
@@ -74,24 +79,30 @@ func manageOccurrence(svc *app.Service) tool.Tool {
 		if err != nil {
 			return tool.Preview{}, err
 		}
+
 		o, err := svc.Occurrence(ctx, userID, p.occurrence)
 		if err != nil {
 			return tool.Preview{}, err
 		}
+
 		sch, err := svc.Schedule(ctx, userID, o.ScheduleID)
 		if err != nil {
 			return tool.Preview{}, err
 		}
+
 		wantState := domain.Expected
 		if in.Action == "unrealize" {
 			wantState = domain.Realized
 		}
+
 		if o.State != wantState {
 			return tool.Preview{}, app.ErrOccurrenceClosed
 		}
+
 		name := sch.Description + " expected " + o.ExpectedOn.Format(time.DateOnly)
 		pv := tool.Preview{Action: "manage_occurrence." + string(in.Action), Target: "Occurrence " + name, Basis: string(o.State)}
 		pv.Changes = []tool.Change{{Field: "occurrence", After: tool.TextValue(name)}}
+
 		status := func(after string) tool.Change {
 			return tool.Change{Field: "status", Before: tool.TextValue(string(o.Shown)), After: tool.TextValue(after)}
 		}
@@ -107,19 +118,23 @@ func manageOccurrence(svc *app.Service) tool.Tool {
 			if sch.EndsOn != nil && !in.Date.Before(*sch.EndsOn) {
 				return tool.Preview{}, app.ErrScheduleEnded
 			}
+
 			if sch.Paused(in.Date.Time) {
 				return tool.Preview{}, validationError("date", "falls inside a pause of the schedule")
 			}
+
 			pv.Changes = append(pv.Changes, tool.Change{Field: "date", Before: tool.DateValue(o.ExpectedOn), After: tool.DateValue(in.Date.Time)})
 		case "unrealize":
 			pv.Changes = append(pv.Changes, status("expected"), tool.Change{Field: "transaction", Before: tool.TextValue(o.TransactionID.String())})
 		}
+
 		return pv, nil
 	}, func(ctx context.Context, userID int64, in manageOccurrenceIn) (manageOccurrenceOut, error) {
 		p, err := prepareOccurrence(in)
 		if err != nil {
 			return manageOccurrenceOut{}, err
 		}
+
 		var o app.OccurrenceView
 		switch in.Action {
 		case "realize":
@@ -131,13 +146,16 @@ func manageOccurrence(svc *app.Service) tool.Tool {
 		default:
 			o, err = svc.Unrealize(ctx, userID, p.occurrence)
 		}
+
 		if err != nil {
 			return manageOccurrenceOut{}, err
 		}
+
 		out := manageOccurrenceOut{OccurrenceID: o.ID.String(), State: string(o.Shown), ExpectedOn: tool.DateOf(o.ExpectedOn)}
 		if o.TransactionID != uuid.Nil {
 			out.TransactionID = o.TransactionID.String()
 		}
+
 		return out, nil
 	})
 }

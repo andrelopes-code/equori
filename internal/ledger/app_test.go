@@ -43,6 +43,7 @@ func newLedgerFixture(t testing.TB) ledgerFixture {
 	f.userID = provisionedUser(t, pool, d)
 	f.checking = f.createAccount(t, domain.Account{Name: "Nubank checking", Class: domain.ClassAsset, Kind: domain.KindChecking})
 	f.food = f.createAccount(t, domain.Account{Name: "Food", Class: domain.ClassExpense})
+
 	return f
 }
 
@@ -50,6 +51,7 @@ func newLedgerFixture(t testing.TB) ledgerFixture {
 func provisionedUser(t testing.TB, pool *pgxpool.Pool, d *outbox.Dispatcher) int64 {
 	t.Helper()
 	userID := pgtest.CreateUser(t, pool)
+
 	err := pgx.BeginFunc(t.Context(), pool, func(tx pgx.Tx) error {
 		return outbox.Insert(t.Context(), tx, outbox.Event{
 			Type: "identity.user_created.v2", UserID: userID, AggregateID: "u",
@@ -59,31 +61,38 @@ func provisionedUser(t testing.TB, pool *pgxpool.Pool, d *outbox.Dispatcher) int
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if _, err := d.DispatchPending(t.Context()); err != nil {
 		t.Fatal(err)
 	}
+
 	return userID
 }
 
 func (f ledgerFixture) createAccount(t testing.TB, a domain.Account) domain.Account {
 	t.Helper()
+
 	a.UserID = f.userID
 	if a.Instrument == "" {
 		a.Instrument = "BRL"
 	}
+
 	got, err := f.svc.CreateAccount(t.Context(), f.userID, a)
 	if err != nil {
 		t.Fatalf("CreateAccount(%s): %v", a.Name, err)
 	}
+
 	return got
 }
 
 func brl(t *testing.T, amount int64) money.Money {
 	t.Helper()
+
 	m, err := money.New(amount, "BRL")
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	return m
 }
 
@@ -92,11 +101,13 @@ func date(s string) time.Time {
 	if err != nil {
 		panic(err)
 	}
+
 	return d
 }
 
 func (f ledgerFixture) expense(t *testing.T, on string, amount int64) domain.Transaction {
 	t.Helper()
+
 	tx, err := f.svc.RecordTransaction(t.Context(), f.userID, domain.Transaction{
 		Date:        date(on),
 		Description: "expense",
@@ -108,15 +119,18 @@ func (f ledgerFixture) expense(t *testing.T, on string, amount int64) domain.Tra
 	if err != nil {
 		t.Fatalf("RecordTransaction: %v", err)
 	}
+
 	return tx
 }
 
 func (f ledgerFixture) eventCount(t *testing.T, eventType string) int {
 	t.Helper()
+
 	var n int
 	if err := f.pool.QueryRow(t.Context(), `SELECT count(*) FROM outbox_event WHERE type = $1`, eventType).Scan(&n); err != nil {
 		t.Fatal(err)
 	}
+
 	return n
 }
 
@@ -128,16 +142,19 @@ func TestProvisionCreatesSystemAccounts(t *testing.T) {
 	if err != nil || settings.BaseCurrency != "BRL" {
 		t.Fatalf("settings = %+v, %v", settings, err)
 	}
+
 	accounts, _, err := f.svc.ListAccounts(t.Context(), f.userID, page.Request[app.AccountKey]{Limit: page.MaxLimit})
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	roles := map[domain.SystemRole]domain.Class{}
 	for _, a := range accounts {
 		if a.SystemRole != "" {
 			roles[a.SystemRole] = a.Class
 		}
 	}
+
 	for _, r := range domain.SystemRoles() {
 		if roles[r] != r.Class() {
 			t.Errorf("system role %s: class %q, want %q", r, roles[r], r.Class())
@@ -147,6 +164,7 @@ func TestProvisionCreatesSystemAccounts(t *testing.T) {
 	if err := f.svc.Provision(t.Context(), f.userID, "BRL"); err != nil {
 		t.Fatal(err)
 	}
+
 	again, _, _ := f.svc.ListAccounts(t.Context(), f.userID, page.Request[app.AccountKey]{Limit: page.MaxLimit})
 	if len(again) != len(accounts) {
 		t.Fatalf("second provisioning created %d accounts", len(again)-len(accounts))
@@ -163,9 +181,11 @@ func TestRecordTransactionPublishesEvent(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if len(got.Postings) != 2 || got.Postings[0].AccountID != f.checking.ID || got.Postings[1].Amount != brl(t, 23000) {
 		t.Fatalf("stored postings = %+v", got.Postings)
 	}
+
 	if n := f.eventCount(t, "ledger.transaction_recorded.v1"); n != 1 {
 		t.Fatalf("recorded events = %d, want 1", n)
 	}
@@ -175,6 +195,7 @@ func TestRecordRejectsForeignAccount(t *testing.T) {
 	t.Parallel()
 	f := newLedgerFixture(t)
 	otherUser := provisionedUser(t, f.pool, f.dispatcher)
+
 	otherFood, err := f.svc.CreateAccount(t.Context(), otherUser, domain.Account{
 		UserID: otherUser, Name: "Food", Class: domain.ClassExpense, Instrument: "BRL",
 	})
@@ -189,6 +210,7 @@ func TestRecordRejectsForeignAccount(t *testing.T) {
 			{AccountID: otherFood.ID, Amount: brl(t, 100)},
 		},
 	})
+
 	fe, ok := errors.AsType[*domain.FieldError](err)
 	if !ok || !errors.Is(err, domain.ErrUnknownAccount) || fe.Field != "postings[1].account_id" {
 		t.Fatalf("err = %v, want unknown account on postings[1].account_id", err)
@@ -210,16 +232,20 @@ func TestCorrectWritesVersion(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if corrected.Version != 2 {
 		t.Fatalf("version = %d", corrected.Version)
 	}
+
 	versions, err := f.svc.Versions(t.Context(), f.userID, tx.ID)
 	if err != nil || len(versions) != 1 || versions[0].Version != 1 || versions[0].Reason != "typo" {
 		t.Fatalf("versions = %+v, %v", versions, err)
 	}
+
 	if versions[0].Transaction.Postings[0].Amount != brl(t, -2300) {
 		t.Fatalf("snapshot postings = %+v", versions[0].Transaction.Postings)
 	}
+
 	if n := f.eventCount(t, "ledger.transaction_corrected.v1"); n != 1 {
 		t.Fatalf("corrected events = %d", n)
 	}
@@ -231,6 +257,7 @@ func TestConcurrentCorrectionsConflict(t *testing.T) {
 	tx := f.expense(t, "2026-10-14", 2300)
 
 	var wg sync.WaitGroup
+
 	errs := make([]error, 2)
 	for i := range 2 {
 		wg.Go(func() {
@@ -243,6 +270,7 @@ func TestConcurrentCorrectionsConflict(t *testing.T) {
 			}, "race")
 		})
 	}
+
 	wg.Wait()
 
 	conflicts := 0
@@ -254,6 +282,7 @@ func TestConcurrentCorrectionsConflict(t *testing.T) {
 			t.Fatalf("unexpected error: %v", err)
 		}
 	}
+
 	if conflicts != 1 {
 		t.Fatalf("conflicts = %d, want exactly 1 (errs %v)", conflicts, errs)
 	}
@@ -267,10 +296,12 @@ func TestVoidKeepsHistory(t *testing.T) {
 	if err := f.svc.VoidTransaction(t.Context(), f.userID, tx.ID, "duplicate"); err != nil {
 		t.Fatal(err)
 	}
+
 	got, err := f.svc.Transaction(t.Context(), f.userID, tx.ID)
 	if err != nil || got.VoidedAt == nil || got.VoidReason != "duplicate" {
 		t.Fatalf("voided = %+v, %v", got, err)
 	}
+
 	if err := f.svc.VoidTransaction(t.Context(), f.userID, tx.ID, "again"); !errors.Is(err, domain.ErrVoided) {
 		t.Fatalf("second void err = %v", err)
 	}
@@ -289,6 +320,7 @@ func TestCloseAccountRequiresZeroBalance(t *testing.T) {
 	if err := f.svc.CloseAccount(t.Context(), f.userID, empty.ID, date("2026-10-31")); err != nil {
 		t.Fatal(err)
 	}
+
 	if n := f.eventCount(t, "ledger.account_closed.v1"); n != 1 {
 		t.Fatalf("closed events = %d", n)
 	}
@@ -297,6 +329,7 @@ func TestCloseAccountRequiresZeroBalance(t *testing.T) {
 func TestListTransactionsCursor(t *testing.T) {
 	t.Parallel()
 	f := newLedgerFixture(t)
+
 	want := map[uuid.UUID]bool{}
 	for _, d := range []string{"2026-10-01", "2026-10-05", "2026-10-05", "2026-10-05", "2026-10-05", "2026-10-05", "2026-10-09"} {
 		want[f.expense(t, d, 100).ID] = true
@@ -304,28 +337,35 @@ func TestListTransactionsCursor(t *testing.T) {
 
 	seen := map[uuid.UUID]bool{}
 	var cursor *app.TransactionCursor
+
 	var prev *domain.Transaction
 	for range 10 {
 		page, next, err := f.svc.ListTransactions(t.Context(), app.TransactionQuery{UserID: f.userID, After: cursor, Limit: 2})
 		if err != nil {
 			t.Fatal(err)
 		}
+
 		for _, tx := range page {
 			if seen[tx.ID] {
 				t.Fatalf("transaction %s returned twice", tx.ID)
 			}
+
 			seen[tx.ID] = true
 			if prev != nil && (tx.Date.After(prev.Date) || (tx.Date.Equal(prev.Date) && tx.ID.String() > prev.ID.String())) {
 				t.Fatalf("order broken: %s %s after %s %s", tx.Date, tx.ID, prev.Date, prev.ID)
 			}
+
 			p := tx
 			prev = &p
 		}
+
 		if next == nil {
 			break
 		}
+
 		cursor = next
 	}
+
 	if len(seen) != len(want) {
 		t.Fatalf("saw %d transactions, want %d", len(seen), len(want))
 	}

@@ -20,9 +20,11 @@ func (e ErrorWriter) Write(w http.ResponseWriter, r *http.Request, err error) {
 	if !ok {
 		d, ok = e.Map(err)
 	}
+
 	if !ok {
 		d = problem.New(http.StatusInternalServerError, "internal_error", "")
 	}
+
 	e.write(w, r, d, err)
 }
 
@@ -33,6 +35,7 @@ func (e ErrorWriter) WriteRequestError(w http.ResponseWriter, r *http.Request, e
 	if !ok {
 		d = problem.New(http.StatusBadRequest, "invalid_request", "malformed request")
 	}
+
 	e.write(w, r, d, err)
 }
 
@@ -41,5 +44,6 @@ func (e ErrorWriter) write(w http.ResponseWriter, r *http.Request, d problem.Det
 	if d.Status >= http.StatusInternalServerError {
 		e.Log.ErrorContext(r.Context(), "request failed", "error", err, "request_id", d.RequestID)
 	}
+
 	problem.Write(w, d)
 }

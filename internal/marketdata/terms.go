@@ -21,13 +21,16 @@ func (m *Module) PutTerms(ctx context.Context, code string, t Terms) (Terms, err
 	if err := t.Validate(); err != nil {
 		return Terms{}, err
 	}
+
 	in, err := m.Instrument(ctx, code)
 	if err != nil {
 		return Terms{}, err
 	}
+
 	if in.Type != typeFixedIncome {
 		return Terms{}, &domain.FieldError{Field: "code", Message: "terms belong to a fixed_income instrument"}
 	}
+
 	err = pgx.BeginFunc(ctx, m.pool, func(tx pgx.Tx) error {
 		q := m.q.WithTx(tx)
 		if err := q.PutTerms(ctx, postgres.PutTermsParams{
@@ -36,9 +39,11 @@ func (m *Module) PutTerms(ctx context.Context, code string, t Terms) (Terms, err
 		}); err != nil {
 			return fmt.Errorf("put terms: %w", err)
 		}
+
 		// The accrued prices follow the terms: the next tick computes them again.
 		return q.DeletePricesBySource(ctx, postgres.DeletePricesBySourceParams{Source: sourceAccrual, Instrument: code})
 	})
+
 	return t, err
 }
 
@@ -48,9 +53,11 @@ func (m *Module) Terms(ctx context.Context, code string) (Terms, error) {
 	if errors.Is(err, pgx.ErrNoRows) {
 		return Terms{}, ErrNoTerms
 	}
+
 	if err != nil {
 		return Terms{}, err
 	}
+
 	return toTerms(row), nil
 }
 
@@ -62,5 +69,6 @@ func toTerms(r postgres.MarketdataFixedIncomeTerm) Terms {
 	if r.IndexID != nil {
 		t.IndexID = *r.IndexID
 	}
+
 	return t
 }

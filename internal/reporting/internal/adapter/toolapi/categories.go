@@ -50,28 +50,35 @@ func getCategoryTotals(svc *app.Service) tool.Tool {
 		if err != nil {
 			return getCategoryTotalsOut{}, err
 		}
+
 		names := make(map[uuid.UUID]string, len(totals))
 		for _, t := range totals {
 			names[t.AccountID] = t.Name
 		}
+
 		views := []categoryView{}
 		for _, t := range active(totals) {
 			total, err := money.New(t.Total, money.Currency(t.Instrument))
 			if err != nil {
 				return getCategoryTotalsOut{}, err
 			}
+
 			subtree, err := money.New(t.SubtreeTotal, money.Currency(t.Instrument))
 			if err != nil {
 				return getCategoryTotalsOut{}, err
 			}
+
 			v := categoryView{AccountID: t.AccountID.String(), Name: t.Name, Total: tool.MoneyOf(total), SubtreeTotal: tool.MoneyOf(subtree)}
 			if t.ParentID != uuid.Nil {
 				v.ParentID, v.ParentName = t.ParentID.String(), names[t.ParentID]
 			}
+
 			views = append(views, v)
 		}
+
 		out := getCategoryTotalsOut{From: in.From, To: in.To}
 		out.Categories, out.NextCursor, err = tool.PageOf(views, func(v categoryView) string { return v.AccountID }, in.PageArgs)
+
 		return out, err
 	})
 }
@@ -83,20 +90,24 @@ func active(totals []app.CategoryTotal) []app.CategoryTotal {
 	for _, t := range totals {
 		parent[t.AccountID] = t.ParentID
 	}
+
 	keep := map[uuid.UUID]bool{}
 	for _, t := range totals {
 		if t.Total == 0 {
 			continue
 		}
+
 		for id := t.AccountID; id != uuid.Nil && !keep[id]; id = parent[id] {
 			keep[id] = true
 		}
 	}
+
 	var out []app.CategoryTotal
 	for _, t := range totals {
 		if keep[t.AccountID] {
 			out = append(out, t)
 		}
 	}
+
 	return out
 }

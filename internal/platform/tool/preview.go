@@ -23,6 +23,7 @@ func ParseAmount(field, s string, unit money.Money) (money.Money, error) {
 	if err != nil {
 		return money.Money{}, InvalidArgument(field, fmt.Sprintf("must be a decimal such as 125.90 with at most %d decimals", unit.Scale()))
 	}
+
 	return m, nil
 }
 
@@ -32,9 +33,11 @@ func ParsePositive(field, s string, unit money.Money) (money.Money, error) {
 	if err != nil {
 		return money.Money{}, err
 	}
+
 	if m.Amount() <= 0 {
 		return money.Money{}, InvalidArgument(field, "must be greater than zero")
 	}
+
 	return m, nil
 }
 
@@ -83,6 +86,7 @@ var ChangeFields = []string{
 func PreviewDigest(p Preview) string {
 	b, _ := json.Marshal(p) // Preview holds only strings, bools and slices of them.
 	sum := sha256.Sum256(append(b, p.Basis...))
+
 	return hex.EncodeToString(sum[:])
 }
 
@@ -92,14 +96,17 @@ func NewWrite[In, Out any](s Spec, preview func(ctx context.Context, userID int6
 	if s.Effect == ReadOnly {
 		panic(fmt.Sprintf("tool %s: a read-only tool has no preview", s.Name))
 	}
+
 	t := New(s, h)
 	t.preview = func(ctx context.Context, userID int64, args []byte) (Preview, error) {
 		var v In
 		if err := json.Unmarshal(args, &v); err != nil {
 			return Preview{}, invalidArguments(err.Error())
 		}
+
 		return preview(ctx, userID, v)
 	}
+
 	return t
 }
 
@@ -111,42 +118,52 @@ func (r *Registry) Preview(ctx context.Context, name string, args json.RawMessag
 	if !ok {
 		return Preview{}, Result{}, fmt.Errorf("preview tool %s: %w", name, ErrUnknownTool)
 	}
+
 	userID, ok := auth.UserID(ctx)
 	if !ok {
 		return Preview{}, Result{}, fmt.Errorf("preview tool %s: %w", name, ErrNoUser)
 	}
+
 	if !e.tool.HasPreview() {
 		return Preview{}, Result{}, fmt.Errorf("preview tool %s: %w", name, ErrNoPreview)
 	}
+
 	start := time.Now()
+
 	p, res, outcome, err := r.preview(ctx, e, userID, args)
 	if err != nil {
 		outcome = "canceled"
 	}
+
 	r.log.LogAttrs(ctx, slog.LevelInfo, "tool preview", slog.String("tool", name), slog.Int64("user_id", userID),
 		slog.String("effect", e.tool.spec.Effect.String()), slog.String("outcome", outcome),
 		slog.Duration("duration", time.Since(start)), slog.Int("bytes", len(res.Content)))
+
 	return p, res, err
 }
 
 func (r *Registry) preview(ctx context.Context, e entry, userID int64, args json.RawMessage) (Preview, Result, string, error) {
 	name := e.tool.spec.Name
+
 	args, bad := e.tool.validate(args)
 	if bad != nil {
 		res, outcome, err := failure(*bad)
 		return Preview{}, res, outcome, err
 	}
+
 	p, err := e.tool.preview(ctx, userID, args)
 	if err != nil {
 		res, outcome, err := r.mapError(ctx, e, err)
 		return Preview{}, res, outcome, err
 	}
+
 	for _, c := range p.Changes {
 		if !slices.Contains(ChangeFields, c.Field) {
 			res, outcome, err := r.internal(ctx, name, fmt.Errorf("preview field %q is not in ChangeFields", c.Field))
 			return Preview{}, res, outcome, err
 		}
 	}
+
 	return p, Result{}, "ok", nil
 }
 
@@ -155,5 +172,6 @@ func (s Set) Preview(ctx context.Context, name string, args json.RawMessage) (Pr
 	if !slices.Contains(s.names, name) {
 		return Preview{}, Result{}, fmt.Errorf("preview tool %s: %w", name, ErrUnknownTool)
 	}
+
 	return s.r.Preview(ctx, name, args)
 }

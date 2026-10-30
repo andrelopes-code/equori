@@ -12,6 +12,7 @@ import (
 
 func TestRateOf(t *testing.T) {
 	t.Parallel()
+
 	tests := []struct {
 		name string
 		in   pgtype.Numeric
@@ -29,12 +30,15 @@ func TestRateOf(t *testing.T) {
 			}
 		})
 	}
+
 	for _, bad := range []pgtype.Numeric{{}, {NaN: true, Valid: true}, {Int: big.NewInt(0), Valid: true}} {
 		if _, err := postgres.RateOf(bad); err == nil {
 			t.Fatalf("RateOf(%+v) accepted", bad)
 		}
 	}
+
 	r, _ := money.ParseRate("10.0827")
+
 	back, err := postgres.RateOf(postgres.NumericOf(r))
 	if err != nil || back != r {
 		t.Fatalf("round trip = %v, %v", back, err)

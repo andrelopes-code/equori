@@ -64,14 +64,17 @@ func Accrue(t Terms, quoteScale int, rates []IndexRate, from, to time.Time) ([]D
 	if err := t.Validate(); err != nil {
 		return nil, err
 	}
+
 	end := to
 	if t.MaturesOn.Before(end) {
 		end = t.MaturesOn
 	}
+
 	parsed, err := parseRates(rates)
 	if err != nil {
 		return nil, err
 	}
+
 	percent := ratio(int64(t.PercentOfIndexBP), 10000)
 	dayRoot := spreadRoot(t)
 	scale := new(big.Float).SetPrec(precision).SetInt(new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(quoteScale)), nil))
@@ -81,14 +84,17 @@ func Accrue(t Terms, quoteScale int, rates []IndexRate, from, to time.Time) ([]D
 	var out []DatedPrice
 	index := newFloat().SetInt64(1)
 	businessDays := 0
+
 	next := 0
 	for _, d := range pricedDays(t, parsed, end) {
 		if t.IndexID == IndexCDI {
 			for next < len(parsed) && !parsed[next].date.After(d) {
 				if parsed[next].date.After(t.IssuedOn) {
 					index.Mul(index, newFloat().Add(newFloat().SetInt64(1), newFloat().Mul(parsed[next].rate, percent)))
+
 					businessDays++
 				}
+
 				next++
 			}
 		} else {
@@ -96,20 +102,25 @@ func Accrue(t Terms, quoteScale int, rates []IndexRate, from, to time.Time) ([]D
 				if !parsed[next].date.Before(t.IssuedOn) {
 					index.Mul(index, newFloat().Add(newFloat().SetInt64(1), parsed[next].rate))
 				}
+
 				next++
 			}
 		}
+
 		if d.Before(from) {
 			continue
 		}
+
 		days := int(d.Sub(t.IssuedOn).Hours() / 24)
 		if t.DayCount == DayCountBus252 {
 			days = businessDays
 		}
+
 		price := newFloat().Mul(face, index)
 		price.Mul(price, power(dayRoot, days))
 		out = append(out, DatedPrice{Date: d, Value: price.Text('f', priceDecimals)})
 	}
+
 	return out, nil
 }
 
@@ -125,18 +136,23 @@ func parseRates(rates []IndexRate) ([]parsedRate, error) {
 		if !ok {
 			return nil, fmt.Errorf("rate of %s: %q is not a decimal", r.Date.Format(time.DateOnly), r.Rate)
 		}
+
 		out[i] = parsedRate{date: r.Date, rate: v}
 	}
+
 	slices.SortStableFunc(out, func(a, b parsedRate) int { return a.date.Compare(b.date) })
+
 	return out, nil
 }
 
 // pricedDays lists the days up to end that have a price, oldest first, from the issue date.
 func pricedDays(t Terms, rates []parsedRate, end time.Time) []time.Time {
 	var days []time.Time
+
 	if t.IssuedOn.After(end) {
 		return nil
 	}
+
 	if t.IndexID == IndexCDI {
 		days = append(days, t.IssuedOn)
 		for _, r := range rates {
@@ -144,13 +160,16 @@ func pricedDays(t Terms, rates []parsedRate, end time.Time) []time.Time {
 				days = append(days, r.date)
 			}
 		}
+
 		return days
 	}
+
 	for d := t.IssuedOn; !d.After(end); d = d.AddDate(0, 0, 1) {
 		if wd := d.Weekday(); wd != time.Saturday && wd != time.Sunday {
 			days = append(days, d)
 		}
 	}
+
 	return days
 }
 
@@ -168,10 +187,12 @@ func spreadRoot(t Terms) *big.Float {
 	if t.SpreadBP == 0 {
 		return one
 	}
+
 	n := daysPerYear
 	if t.DayCount == DayCountBus252 {
 		n = businessDaysPerYear
 	}
+
 	a := newFloat().Add(one, ratio(int64(t.SpreadBP), 10000))
 	// Newton's method on x^n = a from 1 + spread/n, which lies above the root.
 	x := newFloat().Add(one, ratio(int64(t.SpreadBP), int64(10000*n)))
@@ -182,18 +203,22 @@ func spreadRoot(t Terms) *big.Float {
 		step.Quo(step, newFloat().Mul(newFloat().SetInt64(int64(n)), xn1))
 		x.Sub(x, step)
 	}
+
 	return x
 }
 
 // power is x^n for n >= 0 by repeated squaring.
 func power(x *big.Float, n int) *big.Float {
 	result := newFloat().SetInt64(1)
+
 	base := newFloat().Copy(x)
 	for ; n > 0; n >>= 1 {
 		if n&1 == 1 {
 			result.Mul(result, base)
 		}
+
 		base.Mul(base, base)
 	}
+
 	return result
 }

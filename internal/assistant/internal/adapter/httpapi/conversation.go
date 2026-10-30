@@ -22,16 +22,20 @@ func (s *Server) toMessage(m domain.Message, proposals []domain.Proposal) (Assis
 		o := AssistantMessageOutcome(m.Outcome)
 		out.Outcome = &o
 	}
+
 	for _, p := range proposals {
 		if p.MessageID != m.ID {
 			continue
 		}
+
 		v, err := s.toProposal(p)
 		if err != nil {
 			return AssistantMessage{}, err
 		}
+
 		out.Proposals = append(out.Proposals, v)
 	}
+
 	return out, nil
 }
 
@@ -45,17 +49,21 @@ func (s *Server) ListAssistantConversations(ctx context.Context, req ListAssista
 	case err != nil:
 		return nil, err
 	}
+
 	rows, next, err := s.svc.ConversationPage(ctx, auth.MustUserID(ctx), r.After, r.Limit)
 	if err != nil {
 		return nil, err
 	}
+
 	out := AssistantConversationPage{Items: make([]AssistantConversation, len(rows))}
 	for i, c := range rows {
 		out.Items[i] = toConversation(c)
 	}
+
 	if out.NextCursor, err = page.Next(next); err != nil {
 		return nil, err
 	}
+
 	return ListAssistantConversations200JSONResponse(out), nil
 }
 
@@ -64,13 +72,16 @@ func (s *Server) GetAssistantConversation(ctx context.Context, req GetAssistantC
 	if err != nil {
 		return nil, err
 	}
+
 	c := d.Conversation
+
 	out := AssistantConversationDetail{Id: c.ID, Title: c.Title, CreatedAt: c.CreatedAt, UpdatedAt: c.UpdatedAt, Messages: make([]AssistantMessage, len(d.Messages))}
 	for i, m := range d.Messages {
 		if out.Messages[i], err = s.toMessage(m, d.Proposals); err != nil {
 			return nil, err
 		}
 	}
+
 	return GetAssistantConversation200JSONResponse(out), nil
 }
 
@@ -78,6 +89,7 @@ func (s *Server) DeleteAssistantConversation(ctx context.Context, req DeleteAssi
 	if err := s.svc.DeleteConversation(ctx, auth.MustUserID(ctx), req.Id); err != nil {
 		return nil, err
 	}
+
 	return DeleteAssistantConversation204Response{}, nil
 }
 
@@ -85,5 +97,6 @@ func (s *Server) DeleteAssistantConversations(ctx context.Context, _ DeleteAssis
 	if err := s.svc.DeleteConversations(ctx, auth.MustUserID(ctx)); err != nil {
 		return nil, err
 	}
+
 	return DeleteAssistantConversations204Response{}, nil
 }

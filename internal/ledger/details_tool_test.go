@@ -24,9 +24,11 @@ func TestGetAccountDetailsCard(t *testing.T) {
 	c.purchase("2026-11-05", 10000)
 	var got accountDetailsOut
 	toolOutput(t, c.h, "get_account_details", map[string]any{"account_id": c.card, "purchase_date": "2026-11-05"}, &got)
+
 	if got.Card == nil || got.Card.Placement == nil || got.Card.Placement.Reference != "2026-12" {
 		t.Fatalf("card = %+v", got.Card)
 	}
+
 	if len(got.Card.Statements) != 1 || got.Card.Statements[0].Reference != "2026-12" {
 		t.Errorf("statements = %+v", got.Card.Statements)
 	}
@@ -40,6 +42,7 @@ func TestGetAccountDetailsNotCard(t *testing.T) {
 	h.ExpectToolError(h.Tool("get_account_details", map[string]any{"account_id": checking, "purchase_date": "2026-11-05"}), "invalid_arguments", "purchase_date")
 	var got accountDetailsOut
 	toolOutput(t, h, "get_account_details", map[string]any{"account_id": checking}, &got)
+
 	if got.Card != nil {
 		t.Errorf("card = %+v", got.Card)
 	}

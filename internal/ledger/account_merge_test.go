@@ -16,6 +16,7 @@ type mergeBooks struct {
 func newMergeBooks(t *testing.T) mergeBooks {
 	t.Helper()
 	c := newCategoryTreeWith(t, apitest.Today("2026-11-05"))
+
 	return mergeBooks{
 		categoryTree: c,
 		travel:       c.h.Account("Travel", "expense", "", nil),
@@ -43,8 +44,10 @@ func TestMergeMovesPostingsAndChildren(t *testing.T) {
 	if r.Status != http.StatusOK {
 		t.Fatalf("merge status %d: %s", r.Status, r.Body)
 	}
+
 	var into accountView
 	r.Decode(t, &into)
+
 	if into.ID != m.travel {
 		t.Fatalf("merge returned %+v, want travel", into)
 	}
@@ -53,42 +56,52 @@ func TestMergeMovesPostingsAndChildren(t *testing.T) {
 	if got := amountsByAccount(v); v.Version != 2 || len(v.Postings) != 3 || got[m.travel] != 1000 || got[m.food] != 0 {
 		t.Fatalf("split after merge: version %d, %d postings, amounts %v", v.Version, len(v.Postings), got)
 	}
+
 	var memo string
 	if err := m.h.Pool.QueryRow(t.Context(), `SELECT memo FROM ledger_posting WHERE transaction_id = $1 AND account_id = $2 AND amount = 600`, split, m.travel).Scan(&memo); err != nil || memo != "lunch" {
 		t.Fatalf("moved posting memo = %q, %v", memo, err)
 	}
+
 	if v := m.h.Transaction(voided); v.Version != 1 || amountsByAccount(v)[m.food] != 300 {
 		t.Fatalf("voided after merge: %+v", v)
 	}
+
 	for _, child := range []string{m.bakery, m.delivery} {
 		if a := getAccount(t, m.h, child); a.ParentID != m.travel {
 			t.Fatalf("child %s parent = %q, want travel", child, a.ParentID)
 		}
 	}
+
 	m.requireClosedOn(t, "2026-11-05", m.food)
 	var merged []struct {
 		From string `json:"from"`
 		Into string `json:"into"`
 	}
+
 	rows, err := m.h.Pool.Query(t.Context(), `SELECT payload FROM outbox_event WHERE type = 'ledger.categories_merged.v1' AND aggregate_id = $1`, m.food)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer rows.Close()
+
 	for rows.Next() {
 		var raw []byte
 		var p struct {
 			From string `json:"from"`
 			Into string `json:"into"`
 		}
+
 		if err := rows.Scan(&raw); err != nil {
 			t.Fatal(err)
 		}
+
 		if err := json.Unmarshal(raw, &p); err != nil {
 			t.Fatal(err)
 		}
+
 		merged = append(merged, p)
 	}
+
 	if len(merged) != 1 || merged[0].From != m.food || merged[0].Into != m.travel {
 		t.Fatalf("categories_merged events = %+v", merged)
 	}
@@ -100,6 +113,7 @@ func TestMergeKeepsOtherSplitParts(t *testing.T) {
 	m := newMergeBooks(t)
 	tx := m.h.Record("2026-10-10", apitest.Posting(m.checking, -1000), apitest.Posting(m.food, 700), apitest.Posting(m.transport, 300))
 	m.h.MustDo(http.MethodPost, "/api/v1/accounts/"+m.food+"/merge", map[string]string{"into": m.travel}, http.StatusOK, nil)
+
 	if got := amountsByAccount(m.h.Transaction(tx)); got[m.travel] != 700 || got[m.transport] != 300 || got[m.checking] != -1000 {
 		t.Fatalf("postings = %v", got)
 	}
@@ -110,6 +124,7 @@ func TestMergeRejections(t *testing.T) {
 	m := newMergeBooks(t)
 	closed := m.h.Account("Closed", "expense", "", nil)
 	m.h.MustDo(http.MethodPost, "/api/v1/accounts/"+closed+"/close", map[string]string{"closed_on": "2026-10-31"}, http.StatusOK, nil)
+
 	for _, c := range []struct {
 		name, from, into, code string
 	}{
@@ -125,6 +140,7 @@ func TestMergeRejections(t *testing.T) {
 			if c.code == "system_account" {
 				field = ""
 			}
+
 			m.h.ExpectProblem(m.merge(c.from, c.into), http.StatusUnprocessableEntity, c.code, field)
 			m.requireClosedOn(t, "", c.from)
 		})

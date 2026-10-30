@@ -33,6 +33,7 @@ func (s *Service) Records(ctx context.Context, userID int64, batchID uuid.UUID, 
 	if err != nil {
 		return nil, nil, domain.Batch{}, err
 	}
+
 	recs, next, err := s.repo.Records(ctx, userID, batchID, state, p)
 	if err != nil {
 		return nil, nil, domain.Batch{}, err
@@ -68,75 +69,93 @@ func (s *Service) Resolve(ctx context.Context, userID int64, recordID uuid.UUID,
 	if action != ActionMatch && action != ActionCreate && action != ActionDiscard {
 		return domain.ExternalRecord{}, domain.Batch{}, &domain.FieldError{Field: "action", Message: "must be match, create or discard"}
 	}
+
 	found, err := s.repo.Record(ctx, userID, recordID)
 	if err != nil {
 		return domain.ExternalRecord{}, domain.Batch{}, err
 	}
+
 	unlock, err := s.repo.LockAccountImports(ctx, found.AccountID)
 	if err != nil {
 		return domain.ExternalRecord{}, domain.Batch{}, err
 	}
 	defer unlock()
+
 	rec, err := s.repo.Record(ctx, userID, recordID)
 	if err != nil {
 		return domain.ExternalRecord{}, domain.Batch{}, err
 	}
+
 	if rec.State != domain.StateNeedsReview {
 		return domain.ExternalRecord{}, domain.Batch{}, ErrRecordResolved
 	}
+
 	b, err := s.repo.Batch(ctx, userID, rec.BatchID)
 	if err != nil {
 		return domain.ExternalRecord{}, domain.Batch{}, err
 	}
+
 	// The candidates stored at import stay accepted, so a choice the ledger now refuses (a voided
 	// or reconciled entry) is refused by its own rule.
 	stored := rec.Candidates
 	if err := s.refreshCandidates(ctx, &rec, currencyOf(b)); err != nil {
 		return domain.ExternalRecord{}, domain.Batch{}, err
 	}
+
 	for _, id := range stored {
 		if !slices.Contains(rec.Candidates, id) {
 			rec.Candidates = append(rec.Candidates, id)
 		}
 	}
+
 	switch action {
 	case ActionMatch:
 		if !slices.Contains(rec.Candidates, txID) {
 			return domain.ExternalRecord{}, domain.Batch{}, &domain.FieldError{Field: "transaction_id", Message: "must be one of the record's candidates"}
 		}
+
 		// A101: the institution's amount and date win; the owner's classification stays.
 		if err := s.ledger.ConfirmLine(ctx, userID, txID, rec.AccountID, rec.Amount, rec.Date); err != nil {
 			return domain.ExternalRecord{}, domain.Batch{}, err
 		}
+
 		conflicts, err := s.ledger.ClearMatched(ctx, userID, []Match{{RecordID: rec.ID, TransactionID: txID, AccountID: rec.AccountID}})
 		if err != nil {
 			return domain.ExternalRecord{}, domain.Batch{}, err
 		}
+
 		if len(conflicts) > 0 {
 			return domain.ExternalRecord{}, domain.Batch{}, ErrAlreadyMatched
 		}
+
 		// A136: the line's bill places the posting, as an automatic match does.
 		if err := s.billMatched(ctx, &rec, false); err != nil {
 			return domain.ExternalRecord{}, domain.Batch{}, err
 		}
+
 		rec.State, rec.TransactionID = domain.StateMatched, txID
 	case ActionCreate:
 		line := Line{AccountID: rec.AccountID, Currency: currencyOf(b), Date: rec.Date, Amount: rec.Amount, Description: truncate(rec.Description)}
+
 		ids, err := s.ledger.RecordImported(ctx, userID, []NewLine{{RecordID: rec.ID, Line: line}})
 		if errors.Is(err, ErrLineRejected) {
 			return domain.ExternalRecord{}, domain.Batch{}, &domain.FieldError{Field: "action", Message: err.Error()}
 		}
+
 		if err != nil {
 			return domain.ExternalRecord{}, domain.Batch{}, err
 		}
+
 		rec.State, rec.TransactionID = domain.StateCreated, ids[0]
 	case ActionDiscard:
 		rec.State = domain.StateDiscarded
 	}
+
 	rec.Candidates = nil
 	if err := s.repo.ResolveRecord(ctx, rec); err != nil {
 		return domain.ExternalRecord{}, domain.Batch{}, err
 	}
+
 	return rec, b, nil
 }
 
@@ -148,15 +167,19 @@ func (s *Service) Unconfirmed(ctx context.Context, userID int64, accountID uuid.
 	if err != nil {
 		return nil, "", err
 	}
+
 	feed, err := s.repo.AccountFeed(ctx, userID, accountID)
 	if err != nil || feed.From == nil || feed.To == nil {
 		return nil, target.Currency, err
 	}
+
 	to := feed.To.AddDate(0, 0, -domain.MatchHardLimit-1)
 	if to.Before(*feed.From) {
 		return nil, target.Currency, nil
 	}
+
 	ps, err := s.ledger.UnconfirmedPostings(ctx, userID, accountID, *feed.From, to)
+
 	return ps, target.Currency, err
 }
 
@@ -178,6 +201,7 @@ func (s *Service) Reopen(ctx context.Context, userID int64, recordID uuid.UUID) 
 	if err != nil {
 		return domain.ExternalRecord{}, domain.Batch{}, err
 	}
+
 	if !reopened {
 		return domain.ExternalRecord{}, domain.Batch{}, ErrRecordNotDiscarded
 	}
@@ -210,12 +234,14 @@ func (s *Service) refreshCandidates(ctx context.Context, rec *domain.ExternalRec
 	}
 
 	line := Line{AccountID: rec.AccountID, Currency: currency, Date: rec.Date, Amount: rec.Amount, Description: truncate(rec.Description)}
+
 	assigned, err := s.assign(ctx, rec.UserID, []scoredLine{{rec: rec, line: line}}, postings)
 	if err != nil {
 		return err
 	}
 
 	rec.Scores = assigned[0].Candidates
+
 	rec.Candidates = make([]uuid.UUID, len(rec.Scores))
 	for i, c := range rec.Scores {
 		rec.Candidates[i] = c.TransactionID

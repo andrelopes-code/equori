@@ -16,19 +16,24 @@ func TestPluggyPortCapabilities(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if p.ID() != "pluggy" {
 		t.Errorf("ID = %q", p.ID())
 	}
+
 	wantFields := []domain.CredentialField{{Name: "client_id", Secret: false}, {Name: "client_secret", Secret: true}}
 	if got := p.CredentialFields(); !slices.Equal(got, wantFields) {
 		t.Errorf("CredentialFields = %v", got)
 	}
+
 	if p.ConnectMethod() != "reference" {
 		t.Errorf("ConnectMethod = %q", p.ConnectMethod())
 	}
+
 	if p.MinSyncInterval() != time.Minute {
 		t.Errorf("MinSyncInterval = %v", p.MinSyncInterval())
 	}
+
 	for status, want := range map[string]domain.ConnectionState{
 		"LOGIN_ERROR": domain.StateNeedsOwner, "OUTDATED": domain.StateNeedsOwner, "WAITING_USER_INPUT": domain.StateNeedsOwner,
 		"UPDATED": domain.StateOK, "ERROR": domain.StateFailed, "UPDATING": domain.StateFailed,

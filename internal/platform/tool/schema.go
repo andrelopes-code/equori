@@ -29,29 +29,36 @@ func schemaFor[T any]() (*jsonschema.Schema, *jsonschema.Resolved, error) {
 	if t.Kind() != reflect.Struct {
 		return nil, nil, fmt.Errorf("%s is not a struct, and the schema must be an object", t)
 	}
+
 	types := map[reflect.Type]*jsonschema.Schema{}
 	if err := collectTypes(t, types, map[reflect.Type]bool{}); err != nil {
 		return nil, nil, err
 	}
+
 	s, err := jsonschema.For[T](&jsonschema.ForOptions{TypeSchemas: types})
 	if err != nil {
 		return nil, nil, err
 	}
+
 	b, err := json.Marshal(s)
 	if err != nil {
 		return nil, nil, err
 	}
+
 	var node any
 	if err := json.Unmarshal(b, &node); err != nil {
 		return nil, nil, err
 	}
+
 	if err := checkKeywords(node, "#"); err != nil {
 		return nil, nil, err
 	}
+
 	r, err := s.Resolve(nil)
 	if err != nil {
 		return nil, nil, err
 	}
+
 	return s, r, nil
 }
 
@@ -62,6 +69,7 @@ func collectTypes(t reflect.Type, types map[reflect.Type]*jsonschema.Schema, see
 	if seen[t] {
 		return nil
 	}
+
 	seen[t] = true
 	switch {
 	case t == dateType:
@@ -69,13 +77,17 @@ func collectTypes(t reflect.Type, types map[reflect.Type]*jsonschema.Schema, see
 		return nil
 	case t.Kind() == reflect.String && t.Implements(enumeratedType):
 		values := reflect.Zero(t).Interface().(Enumerated).Values()
+
 		enum := make([]any, len(values))
 		for i, v := range values {
 			enum[i] = v
 		}
+
 		types[t] = &jsonschema.Schema{Type: "string", Enum: enum}
+
 		return nil
 	}
+
 	switch t.Kind() {
 	case reflect.Struct:
 		for f := range t.Fields() {
@@ -87,14 +99,17 @@ func collectTypes(t reflect.Type, types map[reflect.Type]*jsonschema.Schema, see
 		if err := collectTypes(t.Elem(), types, seen); err != nil {
 			return err
 		}
+
 		items, err := jsonschema.ForType(t.Elem(), &jsonschema.ForOptions{TypeSchemas: types})
 		if err != nil {
 			return err
 		}
+
 		types[t] = &jsonschema.Schema{Type: "array", Items: items}
 	case reflect.Array, reflect.Pointer, reflect.Map:
 		return collectTypes(t.Elem(), types, seen)
 	}
+
 	return nil
 }
 
@@ -103,17 +118,21 @@ func checkKeywords(node any, path string) error {
 	if !ok {
 		return fmt.Errorf("%s: schema is not an object", path)
 	}
+
 	for k := range s {
 		if !keywords[k] {
 			return fmt.Errorf("%s: keyword %q is outside ADR 012 T4", path, k)
 		}
 	}
+
 	if _, ok := s["type"].(string); !ok {
 		return fmt.Errorf("%s: type must be one string, got %v", path, s["type"])
 	}
+
 	if ap, ok := s["additionalProperties"]; ok && ap != false {
 		return fmt.Errorf("%s: additionalProperties must be false", path)
 	}
+
 	if props, ok := s["properties"].(map[string]any); ok {
 		for name, p := range props {
 			if err := checkKeywords(p, path+"/properties/"+name); err != nil {
@@ -121,8 +140,10 @@ func checkKeywords(node any, path string) error {
 			}
 		}
 	}
+
 	if items, ok := s["items"]; ok {
 		return checkKeywords(items, path+"/items")
 	}
+
 	return nil
 }

@@ -32,20 +32,24 @@ func (s *Service) InstallmentPlan(ctx context.Context, userID int64, id uuid.UUI
 	if err != nil {
 		return PlanView{}, err
 	}
+
 	installments, err := s.repo.PlanInstallments(ctx, userID, id)
 	if err != nil {
 		return PlanView{}, err
 	}
+
 	cancelled, anticipated, err := s.repo.PlanState(ctx, userID, plan.OriginTransactionID)
 	if err != nil {
 		return PlanView{}, err
 	}
+
 	var credited map[domain.ReferenceMonth]struct{}
 	if anticipated && !cancelled {
 		if credited, err = s.repo.AnticipatedReferences(ctx, userID, plan.OriginTransactionID); err != nil {
 			return PlanView{}, err
 		}
 	}
+
 	view := PlanView{Plan: plan, Status: "active", Installments: make([]ScheduledInstallment, len(installments))}
 	switch {
 	case cancelled:
@@ -53,9 +57,11 @@ func (s *Service) InstallmentPlan(ctx context.Context, userID int64, id uuid.UUI
 	case anticipated:
 		view.Status = "anticipated"
 	}
+
 	for i, in := range installments {
 		_, anticipatedHere := credited[in.Reference]
 		view.Installments[i] = ScheduledInstallment{Number: in.Number, Reference: in.Reference, Amount: -in.Amount, Reversed: cancelled || anticipatedHere}
 	}
+
 	return view, nil
 }

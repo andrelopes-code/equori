@@ -20,6 +20,7 @@ func (r *Repository) LockAccount(ctx context.Context, userID int64, id uuid.UUID
 	if err != nil {
 		return domain.Account{}, notFound(err)
 	}
+
 	return toAccount(row), nil
 }
 
@@ -37,6 +38,7 @@ func (r *Repository) InsertBalanceAssertion(ctx context.Context, a app.BalanceAs
 	if err != nil {
 		return app.BalanceAssertion{}, err
 	}
+
 	return toAssertion(row, false), nil
 }
 
@@ -45,6 +47,7 @@ func (r *Repository) BalanceAssertion(ctx context.Context, userID int64, id uuid
 	if err != nil {
 		return app.BalanceAssertion{}, notFound(err)
 	}
+
 	return toAssertion(LedgerBalanceAssertion{
 		ID: row.ID, UserID: row.UserID, AccountID: row.AccountID, Date: row.Date,
 		Amount: row.Amount, Source: row.Source, RecordedAt: row.RecordedAt,
@@ -56,10 +59,12 @@ func (r *Repository) BalanceAssertionPage(ctx context.Context, userID int64, acc
 	if p.After != nil {
 		params.AfterDate, params.AfterID = &p.After.Date, nullUUID(p.After.ID)
 	}
+
 	rows, err := r.q.ListBalanceAssertionPage(ctx, params)
 	if err != nil {
 		return nil, nil, err
 	}
+
 	items, next := pageOf(rows, p.Limit,
 		func(row ListBalanceAssertionPageRow) app.BalanceAssertion {
 			return toAssertion(LedgerBalanceAssertion{
@@ -70,6 +75,7 @@ func (r *Repository) BalanceAssertionPage(ctx context.Context, userID int64, acc
 		func(row ListBalanceAssertionPageRow) app.AssertionKey {
 			return app.AssertionKey{Date: row.Date, ID: row.ID}
 		})
+
 	return items, next, nil
 }
 
@@ -78,6 +84,7 @@ func (r *Repository) BalanceAssertions(ctx context.Context, userID int64, accoun
 	if err != nil {
 		return nil, err
 	}
+
 	out := make([]app.BalanceAssertion, len(rows))
 	for i, row := range rows {
 		out[i] = toAssertion(LedgerBalanceAssertion{
@@ -85,6 +92,7 @@ func (r *Repository) BalanceAssertions(ctx context.Context, userID int64, accoun
 			Amount: row.Amount, Source: row.Source, RecordedAt: row.RecordedAt,
 		}, row.Reconciled)
 	}
+
 	return out, nil
 }
 
@@ -93,9 +101,11 @@ func optionalDate(d time.Time, err error) (*time.Time, error) {
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	}
+
 	if err != nil {
 		return nil, err
 	}
+
 	return &d, nil
 }
 
@@ -117,6 +127,7 @@ func (r *Repository) InsertReconciliation(ctx context.Context, rec app.Reconcili
 	if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == uniqueViolation {
 		return domain.ErrAlreadyReconciled
 	}
+
 	return err
 }
 
@@ -133,11 +144,14 @@ func (r *Repository) UnlockAccount(ctx context.Context, userID int64, accountID 
 	if r.tx == nil {
 		return errors.New("unlock outside a transaction")
 	}
+
 	if err := r.q.EnableReconciledUnlock(ctx); err != nil {
 		return err
 	}
+
 	if err := r.q.UnreconcileAccountPostings(ctx, UnreconcileAccountPostingsParams{UserID: userID, AccountID: accountID, FromDate: from}); err != nil {
 		return err
 	}
+
 	return r.q.DeleteReconciliationsFrom(ctx, DeleteReconciliationsFromParams{UserID: userID, AccountID: accountID, FromDate: from})
 }

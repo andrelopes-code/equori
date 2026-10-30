@@ -49,14 +49,17 @@ type userCreated struct {
 // CreateUser publishes identity.user_created.v2 in the same transaction.
 func (r *Repository) CreateUser(ctx context.Context, u domain.User, base money.Currency) (domain.User, error) {
 	var created domain.User
+
 	err := pgx.BeginFunc(ctx, r.db, func(tx pgx.Tx) error {
 		var err error
 		created, err = r.insertUser(ctx, tx, u, base)
+
 		return err
 	})
 	if err != nil {
 		return domain.User{}, err
 	}
+
 	return created, nil
 }
 
@@ -64,24 +67,30 @@ func (r *Repository) CreateUser(ctx context.Context, u domain.User, base money.C
 // insert one step for concurrent requests (W-U4).
 func (r *Repository) CreateFirstUser(ctx context.Context, u domain.User, base money.Currency) (domain.User, error) {
 	var created domain.User
+
 	err := pgx.BeginFunc(ctx, r.db, func(tx pgx.Tx) error {
 		q := r.q.WithTx(tx)
 		if err := q.LockUsers(ctx); err != nil {
 			return err
 		}
+
 		exists, err := q.AnyUser(ctx)
 		if err != nil {
 			return err
 		}
+
 		if exists {
 			return app.ErrSetupComplete
 		}
+
 		created, err = r.insertUser(ctx, tx, u, base)
+
 		return err
 	})
 	if err != nil {
 		return domain.User{}, err
 	}
+
 	return created, nil
 }
 
@@ -100,9 +109,11 @@ func (r *Repository) insertUser(ctx context.Context, tx pgx.Tx, u domain.User, b
 	if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == uniqueViolation {
 		return domain.User{}, app.ErrEmailTaken
 	}
+
 	if err != nil {
 		return domain.User{}, err
 	}
+
 	if err := outbox.Insert(ctx, tx, outbox.Event{
 		Type:        userCreatedEvent,
 		UserID:      row.ID,
@@ -111,6 +122,7 @@ func (r *Repository) insertUser(ctx context.Context, tx pgx.Tx, u domain.User, b
 	}); err != nil {
 		return domain.User{}, err
 	}
+
 	return toUser(row), nil
 }
 
@@ -119,6 +131,7 @@ func (r *Repository) UpdateProfile(ctx context.Context, userID int64, l locale.L
 	if err != nil {
 		return domain.User{}, notFound(err)
 	}
+
 	return toUser(row), nil
 }
 
@@ -127,6 +140,7 @@ func (r *Repository) UserByID(ctx context.Context, userID int64) (domain.User, e
 	if err != nil {
 		return domain.User{}, notFound(err)
 	}
+
 	return toUser(row), nil
 }
 
@@ -135,6 +149,7 @@ func (r *Repository) UserByEmail(ctx context.Context, email string) (domain.User
 	if err != nil {
 		return domain.User{}, notFound(err)
 	}
+
 	return toUser(row), nil
 }
 
@@ -152,6 +167,7 @@ func (r *Repository) UserBySession(ctx context.Context, tokenHash []byte, now ti
 	if err != nil {
 		return domain.User{}, notFound(err)
 	}
+
 	return toUser(row), nil
 }
 
@@ -179,5 +195,6 @@ func notFound(err error) error {
 	if errors.Is(err, pgx.ErrNoRows) {
 		return app.ErrNotFound
 	}
+
 	return err
 }

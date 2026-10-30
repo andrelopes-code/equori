@@ -72,6 +72,7 @@ func (s *Service) CreateUser(ctx context.Context, email, plain string, role doma
 	if err != nil {
 		return domain.User{}, err
 	}
+
 	return s.repo.CreateUser(ctx, u, base)
 }
 
@@ -81,24 +82,32 @@ func (s *Service) newUser(ctx context.Context, email, plain string, role domain.
 	if err != nil {
 		return domain.User{}, err
 	}
+
 	if err := domain.ValidatePassword(plain); err != nil {
 		return domain.User{}, err
 	}
+
 	if !role.Valid() {
 		return domain.User{}, domain.ErrInvalidRole
 	}
+
 	if err := validateLocale(l); err != nil {
 		return domain.User{}, err
 	}
+
 	if _, err := money.ParseCurrency(string(base)); err != nil {
 		return domain.User{}, &domain.FieldError{Field: "base_currency", Message: "must be an ISO 4217 currency code"}
 	}
+
 	release, err := s.acquireHashSlot(ctx)
 	if err != nil {
 		return domain.User{}, err
 	}
+
 	hash := password.Hash(plain)
+
 	release()
+
 	return domain.User{Email: email, PasswordHash: hash, Role: role, Language: l.Language, Region: l.Region}, nil
 }
 
@@ -106,9 +115,11 @@ func validateLocale(l locale.Locale) error {
 	if !locale.ValidLanguage(l.Language) {
 		return &domain.FieldError{Field: "language", Message: "must be an ISO 639 language code"}
 	}
+
 	if !locale.ValidRegion(l.Region) {
 		return &domain.FieldError{Field: "region", Message: "must be an ISO 3166-1 alpha-2 code"}
 	}
+
 	return nil
 }
 
@@ -118,6 +129,7 @@ func (s *Service) Profile(ctx context.Context, userID int64) (locale.Locale, err
 	if err != nil {
 		return locale.Locale{}, fmt.Errorf("load user %d: %w", userID, err)
 	}
+
 	return locale.Locale{Language: user.Language, Region: user.Region}, nil
 }
 
@@ -127,6 +139,7 @@ func (s *Service) IsAdmin(ctx context.Context, userID int64) (bool, error) {
 	if err != nil {
 		return false, fmt.Errorf("load user %d: %w", userID, err)
 	}
+
 	return user.Role == domain.RoleAdmin, nil
 }
 
@@ -137,13 +150,16 @@ func (s *Service) ProfileChange(ctx context.Context, userID int64, language, reg
 	if err != nil {
 		return locale.Locale{}, locale.Locale{}, err
 	}
+
 	after = before
 	if language != "" {
 		after.Language = language
 	}
+
 	if region != "" {
 		after.Region = region
 	}
+
 	return before, after, validateLocale(after)
 }
 
@@ -153,12 +169,15 @@ func (s *Service) UpdateProfile(ctx context.Context, current domain.User, langua
 	if language != "" {
 		l.Language = language
 	}
+
 	if region != "" {
 		l.Region = region
 	}
+
 	if err := validateLocale(l); err != nil {
 		return domain.User{}, err
 	}
+
 	return s.repo.UpdateProfile(ctx, current.ID, l)
 }
 
@@ -177,6 +196,7 @@ func (s *Service) Login(ctx context.Context, email, plain string) (Session, erro
 	if emailErr != nil || len(plain) > 4*domain.MaxPasswordLength {
 		return Session{}, ErrInvalidCredentials
 	}
+
 	if !s.throttle.attempt(email, now) {
 		return Session{}, ErrTooManyAttempts
 	}
@@ -187,22 +207,27 @@ func (s *Service) Login(ctx context.Context, email, plain string) (Session, erro
 		if _, err := s.verify(ctx, plain, s.dummyHash); err != nil {
 			return Session{}, err
 		}
+
 		return Session{}, ErrInvalidCredentials
 	case err != nil:
 		return Session{}, fmt.Errorf("load user: %w", err)
 	}
+
 	ok, err := s.verify(ctx, plain, user.PasswordHash)
 	if err != nil {
 		return Session{}, fmt.Errorf("verify password of user %d: %w", user.ID, err)
 	}
+
 	if !ok || user.Disabled {
 		return Session{}, ErrInvalidCredentials
 	}
+
 	s.throttle.reset(email)
 
 	if err := s.repo.DeleteExpiredSessions(ctx, now); err != nil {
 		return Session{}, fmt.Errorf("delete expired sessions: %w", err)
 	}
+
 	return s.startSession(ctx, user.ID, now)
 }
 
@@ -211,6 +236,7 @@ func (s *Service) startSession(ctx context.Context, userID int64, now time.Time)
 	if err := s.repo.CreateSession(ctx, session); err != nil {
 		return Session{}, fmt.Errorf("create session: %w", err)
 	}
+
 	return Session{UserID: userID, Token: token, ExpiresAt: session.ExpiresAt}, nil
 }
 
@@ -229,6 +255,7 @@ func (s *Service) Authenticate(ctx context.Context, token string) (domain.User, 
 	case user.Disabled:
 		return domain.User{}, ErrUnauthenticated
 	}
+
 	return user, nil
 }
 
@@ -238,12 +265,14 @@ func (s *Service) verify(ctx context.Context, plain, hash string) (bool, error) 
 		return false, err
 	}
 	defer release()
+
 	return password.Verify(plain, hash)
 }
 
 func (s *Service) acquireHashSlot(ctx context.Context) (release func(), err error) {
 	ctx, cancel := context.WithTimeout(ctx, hashSlotWait)
 	defer cancel()
+
 	select {
 	case s.hashSlots <- struct{}{}:
 		return func() { <-s.hashSlots }, nil

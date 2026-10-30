@@ -28,29 +28,35 @@ func properties(path string, s *jsonschema.Schema, f func(path string, p *jsonsc
 	if s == nil {
 		return
 	}
+
 	for name, p := range s.Properties {
 		f(path+"."+name, p)
 		properties(path+"."+name, p, f)
 	}
+
 	properties(path+"[]", s.Items, f)
 }
 
 func TestToolCatalogQuality(t *testing.T) {
 	t.Parallel()
+
 	total := 0
 	for _, tl := range chatTools(t) {
 		s := tl.Spec()
 		if !strings.HasPrefix(s.Description, "Use ") && !strings.Contains(s.Description, ". Use ") {
 			t.Errorf("tool %s: the description has no sentence starting \"Use \"", s.Name)
 		}
+
 		if !strings.HasPrefix(s.Description, "Do not use ") && !strings.Contains(s.Description, ". Do not use ") {
 			t.Errorf("tool %s: the description has no sentence starting \"Do not use \"", s.Name)
 		}
+
 		properties(s.Name, tl.InputSchema(), func(path string, p *jsonschema.Schema) {
 			if strings.TrimSpace(p.Description) == "" {
 				t.Errorf("tool input %s has no description", path)
 			}
 		})
+
 		decl, err := json.Marshal(struct {
 			Name        string             `json:"name"`
 			Description string             `json:"description"`
@@ -59,11 +65,14 @@ func TestToolCatalogQuality(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+
 		if len(decl) > maxDeclaration {
 			t.Errorf("tool %s: declaration of %d bytes exceeds %d", s.Name, len(decl), maxDeclaration)
 		}
+
 		total += len(decl)
 	}
+
 	if total > maxCatalog {
 		t.Errorf("catalog of %d bytes exceeds %d", total, maxCatalog)
 	}
@@ -73,6 +82,7 @@ func TestToolCatalogQuality(t *testing.T) {
 // from the context, never from an argument.
 func TestToolInputsHaveNoUser(t *testing.T) {
 	t.Parallel()
+
 	user := regexp.MustCompile(`(?i)user`)
 	for _, tl := range chatTools(t) {
 		properties(tl.Spec().Name, tl.InputSchema(), func(path string, _ *jsonschema.Schema) {

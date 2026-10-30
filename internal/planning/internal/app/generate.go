@@ -23,6 +23,7 @@ func (b businessDays) IsBusinessDay(d time.Time) bool {
 	if d.Weekday() == time.Saturday || d.Weekday() == time.Sunday {
 		return false
 	}
+
 	return !b[d]
 }
 
@@ -35,10 +36,12 @@ func (s *Service) days(ctx context.Context, calendar string, from, to time.Time)
 		if err != nil {
 			return nil, fmt.Errorf("load holidays %d: %w", y, err)
 		}
+
 		for _, h := range hs {
 			out[h] = true
 		}
 	}
+
 	return out, nil
 }
 
@@ -49,9 +52,11 @@ func (s *Service) generate(ctx context.Context, repo Repository, userID int64, s
 	if !sch.GeneratedUntil.Before(horizon) {
 		return nil
 	}
+
 	if err := s.fill(ctx, repo, userID, sch, sch.GeneratedUntil.AddDate(0, 0, 1), horizon); err != nil {
 		return err
 	}
+
 	return repo.SetGeneratedUntil(ctx, userID, sch.ID, horizon)
 }
 
@@ -64,36 +69,45 @@ func (s *Service) fill(ctx context.Context, repo Repository, userID int64, sch d
 	if err != nil {
 		return err
 	}
+
 	planned := sch.Planned(from, to, days)
 	if err := repo.InsertOccurrences(ctx, userID, sch.ID, planned); err != nil {
 		return err
 	}
+
 	today := s.clk.Today()
 	if len(planned) == 0 || planned[0].Date.After(today.AddDate(0, 0, domain.MatchWindowDays)) {
 		return nil
 	}
+
 	first := planned[0].Date
+
 	ids, err := s.ledger.AccountTransactionsBetween(ctx, userID, sch.AccountID,
 		first.AddDate(0, 0, -domain.MatchWindowDays), today.AddDate(0, 0, domain.MatchWindowDays))
 	if err != nil {
 		return err
 	}
+
 	for _, id := range ids {
 		e := TransactionChanged{UserID: userID, TransactionID: id, AccountIDs: []uuid.UUID{sch.AccountID}}
 		if err := s.reevaluate(ctx, repo, e); err != nil {
 			return err
 		}
 	}
+
 	created := clock.DateOf(sch.CreatedAt, s.clk.Location())
+
 	open, err := repo.ExpectedOccurrences(ctx, userID, []uuid.UUID{sch.ID}, first, created.AddDate(0, 0, -1))
 	if err != nil {
 		return err
 	}
+
 	for _, o := range open {
 		if _, err := repo.Skip(ctx, userID, o.ID, ""); err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -104,18 +118,21 @@ func (s *Service) Backfill(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+
 	for _, ref := range refs {
 		err := s.repo.InTx(ctx, func(repo Repository) error {
 			sch, err := repo.LockSchedule(ctx, ref.UserID, ref.ID)
 			if err != nil {
 				return err
 			}
+
 			return s.fill(ctx, repo, ref.UserID, sch, time.Time{}, sch.GeneratedUntil)
 		})
 		if err != nil {
 			return fmt.Errorf("backfill schedule %s: %w", ref.ID, err)
 		}
 	}
+
 	return nil
 }
 
@@ -131,6 +148,7 @@ func (s *Service) Tick(ctx context.Context) ([]Failure, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	var failures []Failure
 	for _, ref := range refs {
 		err := s.repo.InTx(ctx, func(repo Repository) error {
@@ -138,11 +156,13 @@ func (s *Service) Tick(ctx context.Context) ([]Failure, error) {
 			if err != nil {
 				return err
 			}
+
 			return s.generate(ctx, repo, ref.UserID, sch)
 		})
 		if err != nil {
 			failures = append(failures, Failure{Ref: ref, Err: err})
 		}
 	}
+
 	return failures, nil
 }

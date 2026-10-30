@@ -32,6 +32,7 @@ func NewService(repo Repository, l Ledger, cal Calendar, profiles Profiles, pric
 func (s *Service) WithRepository(repo Repository) *Service {
 	c := *s
 	c.repo = repo
+
 	return &c
 }
 
@@ -52,18 +53,22 @@ func (s *Service) CreateSchedule(ctx context.Context, userID int64, in ScheduleI
 	if in.Rule.Adjustment == "" {
 		in.Rule.Adjustment = "none"
 	}
+
 	if in.Calendar == "" {
 		p, err := s.profiles.Profile(ctx, userID)
 		if err != nil {
 			return domain.Schedule{}, fmt.Errorf("read profile: %w", err)
 		}
+
 		in.Calendar = s.cal.DefaultCalendar(p.Region)
 	}
+
 	if _, err := s.cal.Holidays(ctx, in.Calendar, s.clk.Today().Year()); errors.Is(err, ErrUnknownCalendar) {
 		return domain.Schedule{}, &domain.FieldError{Field: "calendar", Message: "is not a known calendar", Err: domain.ErrValidation}
 	} else if err != nil {
 		return domain.Schedule{}, fmt.Errorf("check calendar: %w", err)
 	}
+
 	sch := domain.Schedule{Calendar: in.Calendar,
 		Kind: in.Kind, AccountID: in.AccountID, CounterpartID: in.CounterpartID, PayeeID: in.PayeeID,
 		Description: in.Description, Currency: in.Amount.Currency(),
@@ -73,31 +78,38 @@ func (s *Service) CreateSchedule(ctx context.Context, userID int64, in ScheduleI
 	if in.ToleranceBP != nil {
 		sch.ToleranceBP = *in.ToleranceBP
 	}
+
 	if in.GraceDays != nil {
 		sch.GraceDays = *in.GraceDays
 	}
+
 	if err := sch.Validate(); err != nil {
 		return domain.Schedule{}, err
 	}
+
 	if err := s.checkAccounts(ctx, userID, sch); err != nil {
 		return domain.Schedule{}, err
 	}
+
 	// Nothing is generated yet: occurrences start at the rule's first date, which a preceding
 	// adjustment may move before its start (A127).
 	sch.GeneratedUntil = time.Time{}
 	// The creation date bounds the skipped past (A127), so it follows the application clock.
 	sch.CreatedAt = s.clk.Now()
 	var created domain.Schedule
+
 	err := s.repo.InTx(ctx, func(repo Repository) error {
 		var err error
 		if created, err = repo.InsertSchedule(ctx, userID, sch); err != nil {
 			return err
 		}
+
 		return s.generate(ctx, repo, userID, created)
 	})
 	if err != nil {
 		return domain.Schedule{}, err
 	}
+
 	return s.repo.Schedule(ctx, userID, created.ID)
 }
 
@@ -109,22 +121,29 @@ func (s *Service) checkAccounts(ctx context.Context, userID int64, sch domain.Sc
 	if err != nil {
 		return err
 	}
+
 	accounts := make(map[uuid.UUID]Account, len(facts))
 	for _, a := range facts {
 		accounts[a.ID] = a
 	}
+
 	balance := func(a Account) bool { return a.Class == "asset" || a.Class == "liability" }
+
 	account, ok := accounts[sch.AccountID]
 	if !ok || !balance(account) {
 		return &domain.FieldError{Field: "account_id", Message: "must be a balance account of the user", Err: domain.ErrValidation}
 	}
+
 	if _, err := money.ParseCurrency(string(account.Instrument)); err != nil {
 		return &CurrencyError{Field: "account_id"}
 	}
+
 	if sch.Currency != account.Instrument {
 		return &domain.FieldError{Field: "amount.currency", Message: "must be the currency of account_id " + string(account.Instrument), Err: domain.ErrValidation}
 	}
+
 	counterpart, ok := accounts[sch.CounterpartID]
+
 	var fits bool
 	switch sch.Kind {
 	case domain.Bill, domain.Subscription:
@@ -134,21 +153,26 @@ func (s *Service) checkAccounts(ctx context.Context, userID int64, sch domain.Sc
 	case domain.Transfer, domain.Savings:
 		fits = balance(counterpart) && counterpart.ID != sch.AccountID
 	}
+
 	if !ok || !fits {
 		return &domain.FieldError{Field: "counterpart_id", Message: "does not fit kind " + string(sch.Kind), Err: domain.ErrValidation}
 	}
+
 	if (sch.Kind == domain.Transfer || sch.Kind == domain.Savings) && counterpart.Instrument != account.Instrument {
 		return &CurrencyError{Field: "counterpart_id"}
 	}
+
 	if sch.PayeeID != uuid.Nil {
 		missing, err := s.ledger.MissingPayees(ctx, userID, []uuid.UUID{sch.PayeeID})
 		if err != nil {
 			return err
 		}
+
 		if len(missing) > 0 {
 			return &domain.FieldError{Field: "payee_id", Message: "is not a payee of the user", Err: domain.ErrValidation}
 		}
 	}
+
 	return nil
 }
 
@@ -176,10 +200,12 @@ func (s *Service) Occurrences(ctx context.Context, userID int64, from, to time.T
 	if to.Before(from) || to.Sub(from) > maxRangeDays*24*time.Hour {
 		return nil, &domain.FieldError{Field: "to", Message: "must be on or after from, at most 366 days later", Err: domain.ErrValidation}
 	}
+
 	os, err := s.repo.Occurrences(ctx, userID, from, to, scheduleID)
 	if err != nil {
 		return nil, err
 	}
+
 	return s.occurrenceViews(ctx, userID, os, state)
 }
 
@@ -189,6 +215,7 @@ func (s *Service) OccurrencesOfTransaction(ctx context.Context, userID int64, tx
 	if err != nil {
 		return nil, err
 	}
+
 	return s.occurrenceViews(ctx, userID, os, "")
 }
 
@@ -197,18 +224,23 @@ func (s *Service) occurrenceViews(ctx context.Context, userID int64, os []domain
 	if err != nil {
 		return nil, err
 	}
+
 	byID := make(map[uuid.UUID]domain.Schedule, len(schedules))
 	for _, sch := range schedules {
 		byID[sch.ID] = sch
 	}
+
 	today := s.clk.Today()
+
 	out := make([]OccurrenceView, 0, len(os))
 	for _, o := range os {
 		sch := byID[o.ScheduleID]
+
 		v := OccurrenceView{Occurrence: o, Shown: o.Shown(today, sch.GraceDays), Currency: sch.Currency}
 		if state == "" || v.Shown == state {
 			out = append(out, v)
 		}
 	}
+
 	return out, nil
 }

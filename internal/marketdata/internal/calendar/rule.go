@@ -28,10 +28,13 @@ func (n NthWeekday) dateIn(year int) time.Time {
 	if n.N < 0 {
 		last := time.Date(year, n.Month+1, 0, 0, 0, 0, 0, time.UTC)
 		back := (int(last.Weekday()) - int(n.Weekday) + 7) % 7
+
 		return last.AddDate(0, 0, -back-7*(-n.N-1))
 	}
+
 	first := time.Date(year, n.Month, 1, 0, 0, 0, 0, time.UTC)
 	fwd := (int(n.Weekday) - int(first.Weekday()) + 7) % 7
+
 	return first.AddDate(0, 0, fwd+7*(n.N-1))
 }
 
@@ -60,5 +63,6 @@ func (o Observed) apply(d time.Time) time.Time {
 			return d.AddDate(0, 0, 1)
 		}
 	}
+
 	return d
 }

@@ -16,6 +16,7 @@ func installmentPurchase(t testing.TB, h *apitest.Harness, body map[string]any) 
 	t.Helper()
 	var out purchaseResult
 	h.MustDo(http.MethodPost, "/api/v1/installment-purchases", body, http.StatusCreated, &out)
+
 	return out
 }
 
@@ -26,6 +27,7 @@ func cardPostings(v apitest.TransactionView, card string) []apitest.PostingView 
 			out = append(out, p)
 		}
 	}
+
 	return out
 }
 
@@ -45,9 +47,11 @@ func TestInstallmentPurchaseWithoutInterest(t *testing.T) {
 		amount    int64
 		statement string
 	}{{-33334, "2026-11"}, {-33333, "2026-12"}, {-33333, "2027-01"}}
+
 	if len(cards) != 3 {
 		t.Fatalf("card postings = %d", len(cards))
 	}
+
 	for i, w := range want {
 		p := cards[i]
 		if p.Amount.Amount != w.amount || p.Statement != w.statement || p.CardRole != "charge" ||
@@ -62,15 +66,18 @@ func TestInstallmentPurchaseWithoutInterest(t *testing.T) {
 		} `json:"balance"`
 	}
 	h.MustDo(http.MethodGet, "/api/v1/accounts/"+card+"/balance?date=2026-10-31", nil, http.StatusOK, &bal)
+
 	if bal.Balance.Amount != -100000 {
 		t.Fatalf("card balance = %d, want -100000", bal.Balance.Amount)
 	}
+
 	var commit struct {
 		Amount struct {
 			Amount int64 `json:"amount"`
 		} `json:"amount"`
 	}
 	h.MustDo(http.MethodGet, "/api/v1/accounts/"+card+"/commitments?month=2026-12", nil, http.StatusOK, &commit)
+
 	if commit.Amount.Amount != 33333 {
 		t.Fatalf("committed for 2026-12 = %d, want 33333", commit.Amount.Amount)
 	}
@@ -92,17 +99,20 @@ func TestInstallmentPurchaseWithInterest(t *testing.T) {
 	if len(cards) != 10 || cards[0].Statement != "2026-11" || cards[9].Statement != "2027-08" {
 		t.Fatalf("card postings = %+v", cards)
 	}
+
 	for _, p := range cards {
 		if p.Amount.Amount != -22254 {
 			t.Fatalf("installment amount = %d, want -22254", p.Amount.Amount)
 		}
 	}
+
 	var interest int64
 	for _, p := range res.Transaction.Postings {
 		if p.AccountID != card && p.AccountID != electronics {
 			interest += p.Amount.Amount
 		}
 	}
+
 	if interest != 22540 {
 		t.Fatalf("interest postings sum = %d, want 22540", interest)
 	}
@@ -119,10 +129,12 @@ func TestInstallmentAmountsOverride(t *testing.T) {
 		"installment_count":   3,
 		"installment_amounts": []map[string]any{apitest.BRL(33333), apitest.BRL(33333), apitest.BRL(33334)},
 	}
+
 	res := installmentPurchase(t, h, body)
 	if got := cardPostings(res.Transaction, card)[2].Amount.Amount; got != -33334 {
 		t.Fatalf("third installment = %d, want -33334", got)
 	}
+
 	body["installment_amounts"] = []map[string]any{apitest.BRL(33333), apitest.BRL(33333), apitest.BRL(33333)}
 	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/installment-purchases", body), http.StatusUnprocessableEntity, "validation_failed", "installment_amounts")
 }
@@ -144,6 +156,7 @@ func TestRuleChangeMovesFutureStatementDates(t *testing.T) {
 	if s := ss["2027-01"]; s.DueDate != "2027-01-22" || s.Charges != 33333 {
 		t.Fatalf("2027-01 = %+v, want due 2027-01-22 with the third installment", s)
 	}
+
 	if s := ss["2026-12"]; s.DueDate != "2026-12-10" {
 		t.Fatalf("2026-12 = %+v, want due 2026-12-10 under the old rule", s)
 	}
@@ -158,6 +171,7 @@ func TestTwoInstallmentPurchasesGetDistinctIDs(t *testing.T) {
 		"card_account_id": card, "date": "2026-10-20",
 		"splits": []map[string]any{{"account_id": electronics, "amount": apitest.BRL(100000)}}, "installment_count": 2,
 	}
+
 	a, b := installmentPurchase(t, h, body), installmentPurchase(t, h, body)
 	if a.Transaction.ID == b.Transaction.ID || a.Transaction.ID == "00000000-0000-0000-0000-000000000000" {
 		t.Fatalf("transaction ids %s and %s", a.Transaction.ID, b.Transaction.ID)

@@ -23,6 +23,7 @@ func (m *Module) RecordPrices(ctx context.Context, ps []Price) error {
 			return err
 		}
 	}
+
 	return m.upsert(ctx, ps)
 }
 
@@ -32,6 +33,7 @@ func (m *Module) ImportPrices(ctx context.Context, content []byte) (int, error) 
 	if err != nil {
 		return 0, err
 	}
+
 	checked := map[money.Currency]Instrument{}
 	for i, p := range ps {
 		if err := m.validatePrice(ctx, p, checked); err != nil {
@@ -39,9 +41,11 @@ func (m *Module) ImportPrices(ctx context.Context, content []byte) (int, error) 
 			if errors.As(err, &fe) {
 				return 0, &domain.FieldError{Field: fmt.Sprintf("line %d", i+2), Message: fe.Field + " " + fe.Message}
 			}
+
 			return 0, err
 		}
 	}
+
 	return len(ps), m.upsert(ctx, ps)
 }
 
@@ -50,33 +54,43 @@ func (m *Module) validatePrice(ctx context.Context, p Price, checked map[money.C
 		if in, ok := checked[code]; ok {
 			return in, true, nil
 		}
+
 		in, err := m.Instrument(ctx, string(code))
 		if errors.Is(err, ErrUnknownInstrument) {
 			return Instrument{}, false, nil
 		}
+
 		if err != nil {
 			return Instrument{}, false, err
 		}
+
 		checked[code] = in
+
 		return in, true, nil
 	}
+
 	_, ok, err := lookup(p.Instrument)
 	if err != nil {
 		return err
 	}
+
 	if !ok {
 		return &domain.FieldError{Field: "instrument", Message: "is not a known instrument"}
 	}
+
 	quote, ok, err := lookup(p.Quote)
 	if err != nil {
 		return err
 	}
+
 	if !ok || quote.Type != domain.TypeCurrency || p.Quote == p.Instrument {
 		return &domain.FieldError{Field: "quote_instrument", Message: "must be a currency other than the instrument"}
 	}
+
 	if !domain.StorableRate(p.Value) {
 		return &domain.FieldError{Field: "value", Message: "must be positive with at most 18 integer digits"}
 	}
+
 	return nil
 }
 
@@ -88,6 +102,7 @@ func (m *Module) upsert(ctx context.Context, ps []Price) error {
 			if err != nil {
 				return err
 			}
+
 			if err := q.UpsertPrice(ctx, postgres.UpsertPriceParams{
 				Instrument: string(p.Instrument), QuoteInstrument: string(p.Quote), Date: p.Date,
 				Value: platformpg.NumericOf(p.Value), Source: p.Source, Priority: priority,
@@ -95,6 +110,7 @@ func (m *Module) upsert(ctx context.Context, ps []Price) error {
 				return fmt.Errorf("record price: %w", err)
 			}
 		}
+
 		return nil
 	})
 }
@@ -105,7 +121,9 @@ func (m *Module) PriceOnOrBefore(ctx context.Context, instrument, quote money.Cu
 	if err != nil || len(rows) == 0 {
 		return Price{}, false, err
 	}
+
 	p, err := toPrice(rows[0])
+
 	return p, err == nil, err
 }
 
@@ -114,16 +132,19 @@ func (m *Module) ListPrices(ctx context.Context, instrument, quote money.Currenc
 	if err := domain.ValidRange(from, to); err != nil {
 		return nil, err
 	}
+
 	rows, err := m.q.ListChosenPrices(ctx, postgres.ListChosenPricesParams{Instrument: string(instrument), QuoteInstrument: string(quote), FromDate: from, ToDate: to})
 	if err != nil {
 		return nil, err
 	}
+
 	out := make([]Price, len(rows))
 	for i, r := range rows {
 		if out[i], err = toPrice(r); err != nil {
 			return nil, err
 		}
 	}
+
 	return out, nil
 }
 
@@ -132,5 +153,6 @@ func toPrice(r postgres.MarketdataPrice) (Price, error) {
 	if err != nil {
 		return Price{}, err
 	}
+
 	return Price{Instrument: money.Currency(r.Instrument), Quote: money.Currency(r.QuoteInstrument), Date: r.Date, Value: v, Source: r.Source}, nil
 }

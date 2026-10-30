@@ -34,5 +34,6 @@ func retryAfter(h http.Header) time.Duration {
 	if err != nil || s <= 0 {
 		return 0
 	}
+
 	return time.Duration(s) * time.Second
 }

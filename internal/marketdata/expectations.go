@@ -35,24 +35,29 @@ func expectationEntries() []expectationEntry {
 // screen (ADR 026 E4).
 func ExpectationSourceIDs() []string {
 	entries := expectationEntries()
+
 	ids := make([]string, len(entries))
 	for i, e := range entries {
 		ids[i] = e.id
 	}
+
 	return ids
 }
 
 // NewExpectationSources builds every expectation source; urls overrides a source's base URL.
 func NewExpectationSources(urls map[string]string, hc *http.Client) []expectation.Source {
 	entries := expectationEntries()
+
 	out := make([]expectation.Source, len(entries))
 	for i, e := range entries {
 		url := urls[e.id]
 		if url == "" {
 			url = e.defaultURL
 		}
+
 		out[i] = e.build(hc, url)
 	}
+
 	return out
 }
 
@@ -62,26 +67,32 @@ func (m *Module) tickExpectation(ctx context.Context, src expectation.Source) er
 	if err != nil {
 		return err
 	}
+
 	tx, err := m.pool.Begin(ctx)
 	if err != nil {
 		return err
 	}
+
 	defer func() { _ = tx.Rollback(ctx) }()
+
 	q := m.q.WithTx(tx)
 	if err := q.DeleteIndexExpectations(ctx, src.Index()); err != nil {
 		return fmt.Errorf("delete the expectations of %s: %w", src.Index(), err)
 	}
+
 	for _, p := range survey.Points {
 		var rate pgtype.Numeric
 		if err := rate.Scan(p.Rate); err != nil {
 			return fmt.Errorf("expectation of %s: %w", p.Date.Format("2006-01-02"), err)
 		}
+
 		if err := q.InsertIndexExpectation(ctx, postgres.InsertIndexExpectationParams{
 			IndexID: src.Index(), Date: p.Date, Rate: rate, SurveyDate: survey.Date, Source: src.ID(),
 		}); err != nil {
 			return fmt.Errorf("store the expectation of %s: %w", p.Date.Format("2006-01-02"), err)
 		}
 	}
+
 	return tx.Commit(ctx)
 }
 
@@ -93,6 +104,7 @@ func (m *Module) expectedIndexes(on map[string]bool) []string {
 			out = append(out, src.Index())
 		}
 	}
+
 	return out
 }
 
@@ -102,23 +114,29 @@ func (m *Module) Expectations(ctx context.Context, id string) (IndexExpectations
 	if err != nil {
 		return IndexExpectations{}, err
 	}
+
 	if !slices.Contains(m.expectedIndexes(on), id) {
 		return IndexExpectations{}, domain.ErrUnknownIndex
 	}
+
 	rows, err := m.q.ListIndexExpectations(ctx, id)
 	if err != nil {
 		return IndexExpectations{}, fmt.Errorf("list the expectations of %s: %w", id, err)
 	}
+
 	if len(rows) == 0 {
 		return IndexExpectations{}, domain.ErrUnknownIndex
 	}
+
 	out := IndexExpectations{SurveyDate: rows[0].SurveyDate, Points: make([]IndexRate, len(rows))}
 	for i, r := range rows {
 		v, err := r.Rate.Value()
 		if err != nil {
 			return IndexExpectations{}, fmt.Errorf("expectation of %s: %w", r.Date.Format("2006-01-02"), err)
 		}
+
 		out.Points[i] = IndexRate{Date: r.Date, Rate: fmt.Sprint(v)}
 	}
+
 	return out, nil
 }

@@ -52,10 +52,12 @@ func (s *Service) DeferPostings(ctx context.Context, userID int64, statementID u
 func deferred(t domain.Transaction, statementID uuid.UUID) (domain.Transaction, error) {
 	next := t
 	next.Postings = slices.Clone(t.Postings)
+
 	moved := false
 	for i, p := range next.Postings {
 		// The correction carries the record links over itself (A27).
 		next.Postings[i].ExternalRecordID = uuid.Nil
+
 		if p.StatementID != statementID {
 			continue
 		}

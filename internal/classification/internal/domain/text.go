@@ -13,5 +13,6 @@ func Normalize(s string) string {
 	for i, w := range words {
 		words[i] = textfold.String(w)
 	}
+
 	return strings.Join(words, " ")
 }

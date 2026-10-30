@@ -19,9 +19,11 @@ func notFound(err error) error {
 	if errors.Is(err, pgx.ErrNoRows) {
 		return app.ErrNotFound
 	}
+
 	if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == foreignKeyViolation {
 		return app.ErrNotFound
 	}
+
 	return err
 }
 
@@ -29,6 +31,7 @@ func optional(s string) *string {
 	if s == "" {
 		return nil
 	}
+
 	return &s
 }
 
@@ -36,6 +39,7 @@ func value(s *string) string {
 	if s == nil {
 		return ""
 	}
+
 	return *s
 }
 
@@ -53,6 +57,7 @@ func (r *Repository) Profile(ctx context.Context, userID int64, accountID uuid.U
 	if err != nil {
 		return domain.Profile{}, notFound(err)
 	}
+
 	return toProfile(row), nil
 }
 
@@ -66,5 +71,6 @@ func (r *Repository) SaveProfile(ctx context.Context, p domain.Profile) (domain.
 	if err != nil {
 		return domain.Profile{}, notFound(err)
 	}
+
 	return toProfile(row), nil
 }

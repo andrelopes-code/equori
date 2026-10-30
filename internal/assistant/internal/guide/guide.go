@@ -27,7 +27,9 @@ func Article(topic string) (string, bool) {
 	if !slices.Contains(topics, topic) {
 		return "", false
 	}
+
 	b, err := articles.ReadFile("articles/" + topic + ".md")
+
 	return string(b), err == nil
 }
 
@@ -47,15 +49,18 @@ func ParseMap(b []byte) ([]Screen, error) {
 	if err := json.Unmarshal(b, &screens); err != nil {
 		return nil, fmt.Errorf("parse navigation map: %w", err)
 	}
+
 	for _, s := range screens {
 		if !pathPattern.MatchString(s.Path) {
 			return nil, fmt.Errorf("navigation map: path %q does not match %s", s.Path, pathPattern)
 		}
+
 		for _, topic := range s.Topics {
 			if !slices.Contains(topics, topic) {
 				return nil, fmt.Errorf("navigation map: path %s has unknown topic %q", s.Path, topic)
 			}
 		}
 	}
+
 	return screens, nil
 }

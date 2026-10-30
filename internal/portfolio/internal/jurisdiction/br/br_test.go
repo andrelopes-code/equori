@@ -8,6 +8,7 @@ import (
 
 func TestBR(t *testing.T) {
 	t.Parallel()
+
 	j := New()
 	for _, c := range []struct{ instrumentType, subtype, exchange, want string }{
 		{"reit", "", "BVMF", "fii"},
@@ -27,6 +28,7 @@ func TestBR(t *testing.T) {
 			t.Errorf("TaxClass(%q, %q, %q) = %q, want %q", c.instrumentType, c.subtype, c.exchange, got, c.want)
 		}
 	}
+
 	for incomeType, want := range map[string]string{
 		"dividend": "exempt", "jcp": "exclusive", "interest": "exclusive",
 		"coupon": "exclusive", "distribution": "exclusive", "other": "",
@@ -35,6 +37,7 @@ func TestBR(t *testing.T) {
 			t.Errorf("Treatment(%q) = %q, want %q", incomeType, got, want)
 		}
 	}
+
 	for _, c := range []struct{ incomeType, taxClass, want string }{
 		{"coupon", "fixed_income_exempt", "exempt"},
 		{"interest", "fixed_income_exempt", "exempt"},
@@ -45,12 +48,15 @@ func TestBR(t *testing.T) {
 			t.Errorf("Treatment(%q, %q) = %q, want %q", c.incomeType, c.taxClass, got, c.want)
 		}
 	}
+
 	if j.ID() != "br" || len(j.IncomeTypes()) != 1 || j.IncomeTypes()[0] != "jcp" {
 		t.Errorf("ID = %q, IncomeTypes = %v", j.ID(), j.IncomeTypes())
 	}
+
 	if got, want := j.Subtypes("fund"), []string{"equity_fund", "fixed_income_fund", "multimarket"}; !slices.Equal(got, want) {
 		t.Errorf("Subtypes(fund) = %v, want %v", got, want)
 	}
+
 	if got := j.Subtypes("stock"); len(got) != 0 {
 		t.Errorf("Subtypes(stock) = %v, want none", got)
 	}
@@ -58,10 +64,12 @@ func TestBR(t *testing.T) {
 
 func TestTaxYear(t *testing.T) {
 	t.Parallel()
+
 	from, to := New().TaxYear(2026)
 	if want := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC); !from.Equal(want) {
 		t.Errorf("from = %v, want %v", from, want)
 	}
+
 	if want := time.Date(2027, 1, 1, 0, 0, 0, 0, time.UTC); !to.Equal(want) {
 		t.Errorf("to = %v, want %v", to, want)
 	}

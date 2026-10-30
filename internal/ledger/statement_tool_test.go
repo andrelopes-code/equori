@@ -21,9 +21,11 @@ func TestGetStatementTool(t *testing.T) {
 		} `json:"lines"`
 	}
 	toolOutput(t, c.h, "get_statement", map[string]any{"statement_id": id}, &got)
+
 	if got.Charges.Amount != "75.50" || len(got.Lines) != 2 {
 		t.Errorf("statement = %+v", got)
 	}
+
 	c.h.ExpectToolError(c.h.Tool("get_statement", map[string]any{"statement_id": "nope"}), "invalid_arguments", "statement_id")
 }
 
@@ -46,8 +48,10 @@ func TestGetStatementOtherUser(t *testing.T) {
 		} `json:"items"`
 	}
 	h.Call(other, http.MethodGet, "/api/v1/accounts/"+card.ID+"/statements?from=2026-01&to=2027-12", nil).Decode(t, &list)
+
 	if len(list.Items) == 0 {
 		t.Fatal("no statements")
 	}
+
 	h.ExpectToolError(h.Tool("get_statement", map[string]any{"statement_id": list.Items[0].ID}), "not_found", "")
 }

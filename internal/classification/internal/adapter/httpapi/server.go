@@ -43,23 +43,29 @@ func ToProblem(err error) (problem.Details, bool) {
 	if pe, ok := errors.AsType[*paramError](err); ok {
 		d := problem.New(http.StatusBadRequest, "invalid_request", pe.Error())
 		d.Errors = []problem.FieldError{{Field: pe.field, Message: pe.message}}
+
 		return d, true
 	}
+
 	fe, ok := errors.AsType[*domain.FieldError](err)
 	if !ok && errors.Is(err, app.ErrAliasExists) {
 		fe, ok = &domain.FieldError{Field: "pattern", Message: err.Error()}, true
 	}
+
 	if ok {
 		d := problem.New(http.StatusUnprocessableEntity, "validation_failed", fe.Error())
 		d.Errors = []problem.FieldError{{Field: fe.Field, Message: fe.Message}}
+
 		return d, true
 	}
+
 	switch {
 	case errors.Is(err, app.ErrNotFound):
 		return problem.New(http.StatusNotFound, "not_found", "resource not found"), true
 	case errors.Is(err, app.ErrSuggestionClosed):
 		return problem.New(http.StatusConflict, "suggestion_closed", err.Error()), true
 	}
+
 	return problem.Details{}, false
 }
 
@@ -71,5 +77,6 @@ func listPage[K any](limit *int, cursor *string) (page.Request[K], error) {
 	case errors.Is(err, page.ErrInvalidCursor):
 		return r, &paramError{field: "cursor", message: "is not a cursor of this list"}
 	}
+
 	return r, err
 }

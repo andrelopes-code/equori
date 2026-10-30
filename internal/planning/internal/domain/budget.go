@@ -28,13 +28,16 @@ func MonthOf(d time.Time) time.Time { return time.Date(d.Year(), d.Month(), 1, 0
 // planned returns the amount in force in month; ok is false before the first amount.
 func (b Budget) planned(month time.Time) (int64, bool) {
 	var amount int64
+
 	ok := false
 	for _, a := range b.Amounts {
 		if a.EffectiveFrom.After(month) {
 			break
 		}
+
 		amount, ok = a.Amount, true
 	}
+
 	return amount, ok
 }
 
@@ -51,20 +54,26 @@ func (b Budget) Progress(month time.Time, spent func(month time.Time) (int64, er
 	if _, ok := b.planned(month); !ok {
 		return Progress{}, false, nil
 	}
+
 	var p Progress
+
 	var carried int64
 	for m := b.Amounts[0].EffectiveFrom; !m.After(month); m = m.AddDate(0, 1, 0) {
 		planned, _ := b.planned(m)
+
 		s, err := spent(m)
 		if err != nil {
 			return Progress{}, true, err
 		}
+
 		p = Progress{Month: m, Planned: planned, Carried: carried, Spent: s, Available: planned + carried - s}
+
 		carried = 0
 		if b.Rollover {
 			carried = p.Available
 		}
 	}
+
 	return p, true, nil
 }
 

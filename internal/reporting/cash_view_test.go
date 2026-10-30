@@ -54,6 +54,7 @@ func newCardOn(t *testing.T, today string) card {
 		} `json:"items"`
 	}
 	h.MustDo(http.MethodGet, "/api/v1/accounts?limit=200", nil, http.StatusOK, &accounts)
+
 	for _, a := range accounts.Items {
 		switch a.SystemRole {
 		case "discounts":
@@ -62,6 +63,7 @@ func newCardOn(t *testing.T, today string) card {
 			c.interest = a.ID
 		}
 	}
+
 	return c
 }
 
@@ -75,6 +77,7 @@ func (c card) pay(t *testing.T, statement, date string, amount int64) string {
 	c.h.MustDo(http.MethodPost, "/api/v1/statements/"+id+"/payments", map[string]any{
 		"date": date, "from_account_id": c.checking, "amount": apitest.BRL(amount),
 	}, http.StatusCreated, &tx)
+
 	return tx.ID
 }
 
@@ -91,22 +94,27 @@ func totals(t *testing.T, h *apitest.Harness, class, view, from, to string) map[
 	}
 	// The accrual view reads the balance series, which the outbox builds.
 	h.Dispatch()
+
 	path := "/api/v1/reports/categories?class=" + class + "&from=" + from + "&to=" + to
 	if view != "" {
 		path += "&view=" + view
 	}
+
 	h.MustDo(http.MethodGet, path, nil, http.StatusOK, &out)
+
 	m := map[string]int64{}
 	for _, it := range out.Items {
 		if it.Total.Amount != 0 {
 			m[it.AccountID] = it.Total.Amount
 		}
 	}
+
 	return m
 }
 
 func expectTotals(t *testing.T, got, want map[string]int64) {
 	t.Helper()
+
 	if !maps.Equal(got, want) {
 		t.Errorf("totals = %v, want %v", got, want)
 	}
@@ -154,9 +162,11 @@ func TestS146(t *testing.T) {
 		} `json:"items"`
 	}
 	c.h.MustDo(http.MethodGet, "/api/v1/transactions?account_id="+c.supermarket, nil, http.StatusOK, &market)
+
 	if len(market.Items) != 1 {
 		t.Fatalf("supermarket transactions = %+v", market.Items)
 	}
+
 	c.h.MustDo(http.MethodPost, "/api/v1/transactions/"+market.Items[0].ID+"/refunds", map[string]any{"date": "2026-10-25", "amount": apitest.BRL(3000)}, http.StatusCreated, nil)
 	c.pay(t, "2026-11", "2026-11-10", 53334)
 	expectTotals(t, totals(t, c.h, "expense", "cash", "2026-11-01", "2026-11-30"), map[string]int64{c.supermarket: 20000, c.electronics: 33334})
@@ -194,6 +204,7 @@ func cashPayments(t *testing.T, h *apitest.Harness, category, from, to string) [
 		Items []cashPayment `json:"items"`
 	}
 	h.MustDo(http.MethodGet, "/api/v1/reports/categories/"+category+"/cash-payments?from="+from+"&to="+to, nil, http.StatusOK, &out)
+
 	return out.Items
 }
 
@@ -206,6 +217,7 @@ func TestS149(t *testing.T) {
 	december := c.pay(t, "2026-12", "2026-12-10", 47333)
 	c.pay(t, "2027-01", "2027-01-10", 47333)
 	c.pay(t, "2027-02", "2027-02-10", 14000)
+
 	months := []struct {
 		from, to string
 		want     map[string]int64
@@ -219,19 +231,23 @@ func TestS149(t *testing.T) {
 		got := totals(t, c.h, "expense", "cash", m.from, m.to)
 		expectTotals(t, got, m.want)
 		expectTotals(t, totals(t, c.h, "expense", "cash", m.from, m.to), got)
+
 		for category, total := range m.want {
 			var sum int64
 			for _, p := range cashPayments(t, c.h, category, m.from, m.to) {
 				sum += p.Amount.Amount
 			}
+
 			if sum != total {
 				t.Errorf("cash payments of %s in %s sum to %d, want %d", category, m.from, sum, total)
 			}
 		}
 	}
+
 	// N20: the amount names the statement and the payment.
 	got := cashPayments(t, c.h, c.interest, "2026-12-01", "2026-12-31")
 	want := cashPayment{Date: "2026-12-10", CardAccountID: c.card, StatementID: c.statementID(t, "2026-12"), StatementReference: "2026-12", PaymentTransactionID: december}
+
 	want.Amount.Amount, want.Amount.Currency = 666, "BRL"
 	if len(got) != 1 || got[0] != want {
 		t.Fatalf("cash payments of interest = %+v, want %+v", got, want)

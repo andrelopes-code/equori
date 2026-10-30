@@ -38,6 +38,7 @@ func getHelp(screens []guide.Screen) tool.Tool {
 		if !ok {
 			return getHelpOut{}, tool.InvalidArgument("topic", "is not an article of the guide")
 		}
+
 		out := getHelpOut{Topic: string(in.Topic), Article: article, Screens: []helpScreen{}}
 		for _, s := range screens {
 			for _, topic := range s.Topics {
@@ -47,6 +48,7 @@ func getHelp(screens []guide.Screen) tool.Tool {
 				}
 			}
 		}
+
 		return out, nil
 	})
 }

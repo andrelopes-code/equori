@@ -28,6 +28,7 @@ func reservedByName(c connectionView, name string) externalAccountView {
 			return x
 		}
 	}
+
 	return externalAccountView{}
 }
 
@@ -37,9 +38,11 @@ func TestS68ReservedBalanceMapping(t *testing.T) {
 	t.Parallel()
 	a := newAggregator(t)
 	a.serveItem(pluggyClient, nubankItem, "Nubank")
+
 	it := pluggy.Item{ID: mercadoPagoItem, Status: pluggy.StatusUpdated, LastUpdatedAt: new("2026-11-12T06:00:00.000Z")}
 	it.Connector.Name = "Mercado Pago"
 	a.p.AddItemTo(pluggyClient, it)
+
 	checkingID := mercadoPagoItem + "-checking"
 	a.p.AddAccount(mercadoPagoItem, pluggy.Account{ID: checkingID, Type: "BANK", Subtype: pluggy.SubtypeChecking, Name: "Mercado Pago", Number: checkingNumber, Balance: "500.05", CurrencyCode: "BRL"})
 	a.p.AddReservedBalance(checkingID, reserved("Cofrinho Mercado Livre", "res-cofrinho", "1002.92"))
@@ -60,15 +63,18 @@ func TestS68ReservedBalanceMapping(t *testing.T) {
 	if len(conn.Accounts) != 3 {
 		t.Fatalf("accounts = %+v", conn.Accounts)
 	}
+
 	for _, x := range conn.Accounts {
 		if x.State != "pending" {
 			t.Fatalf("account = %+v, want pending", x)
 		}
 	}
+
 	cofrinho := reservedByName(conn, "Cofrinho Mercado Livre")
 	if cofrinho.Type != "BANK" || cofrinho.Subtype != "RESERVED_BALANCE" || cofrinho.NumberLast4 != "" || cofrinho.Currency != "BRL" {
 		t.Fatalf("cofrinho = %+v", cofrinho)
 	}
+
 	if algum := reservedByName(conn, "Algum dinheiro"); algum.Subtype != "RESERVED_BALANCE" || algum.NumberLast4 != "" {
 		t.Fatalf("algum dinheiro = %+v", algum)
 	}
@@ -80,20 +86,26 @@ func TestS68ReservedBalanceMapping(t *testing.T) {
 	if r := a.mapAccount(a.h.Client, conn.ID, mp.ID, map[string]any{"account_id": checking, "sync_from": "2026-11-11"}); r.Status != http.StatusOK {
 		t.Fatalf("map checking status %d: %s", r.Status, r.Body)
 	}
+
 	a.p.AddReservedBalance(checkingID, reserved("Viagem", "res-viagem", "250.00"))
+
 	if err := a.h.App.Ingestion.SyncConnection(t.Context(), a.h.OwnerID(), uuid.MustParse(conn.ID)); err != nil {
 		t.Fatalf("sync: %v", err)
 	}
+
 	conn = a.connection(a.h.Client, conn.ID)
 	if len(conn.Accounts) != 4 {
 		t.Fatalf("accounts after the sync = %+v", conn.Accounts)
 	}
+
 	if v := reservedByName(conn, "Viagem"); v.State != "pending" || v.Subtype != "RESERVED_BALANCE" || v.Currency != "BRL" {
 		t.Fatalf("viagem = %+v", v)
 	}
+
 	if got := externalAccount(conn, pluggy.SubtypeChecking); got.State != "mapped" || got.AccountID != checking {
 		t.Fatalf("checking = %+v", got)
 	}
+
 	if got := reservedByName(conn, "Cofrinho Mercado Livre"); got.ID != cofrinho.ID || got.State != "pending" {
 		t.Fatalf("cofrinho after the sync = %+v", got)
 	}
@@ -102,17 +114,21 @@ func TestS68ReservedBalanceMapping(t *testing.T) {
 	if err := a.h.App.Ingestion.SyncConnection(t.Context(), a.h.OwnerID(), uuid.MustParse(conn.ID)); err != nil {
 		t.Fatalf("second sync: %v", err)
 	}
+
 	if got := a.connection(a.h.Client, conn.ID); len(got.Accounts) != 4 {
 		t.Fatalf("accounts after the second sync = %+v", got.Accounts)
 	}
 
 	reserve := a.h.Account("MP Cofrinho", "asset", "reserve", nil)
 	var mapped externalAccountView
+
 	r := a.mapAccount(a.h.Client, conn.ID, cofrinho.ID, map[string]any{"account_id": reserve, "sync_from": "2026-11-11"})
 	if r.Status != http.StatusOK {
 		t.Fatalf("map cofrinho status %d: %s", r.Status, r.Body)
 	}
+
 	r.Decode(t, &mapped)
+
 	if mapped.State != "mapped" || mapped.AccountID != reserve || mapped.SyncFrom != "2026-11-11" || mapped.Subtype != "RESERVED_BALANCE" {
 		t.Fatalf("mapped cofrinho = %+v", mapped)
 	}
@@ -121,6 +137,7 @@ func TestS68ReservedBalanceMapping(t *testing.T) {
 	if len(nubank.Accounts) != 3 {
 		t.Fatalf("nubank accounts = %+v", nubank.Accounts)
 	}
+
 	for _, x := range nubank.Accounts {
 		if x.Subtype == "RESERVED_BALANCE" {
 			t.Fatalf("nubank lists a reserve: %+v", x)
@@ -141,12 +158,15 @@ func openingBalances(f syncFixture) string {
 		} `json:"items"`
 	}
 	f.h.MustDo(http.MethodGet, "/api/v1/accounts?limit=200", nil, http.StatusOK, &accounts)
+
 	for _, a := range accounts.Items {
 		if a.SystemRole == "opening_balances" {
 			return a.ID
 		}
 	}
+
 	f.h.T().Fatal("no opening balances account")
+
 	return ""
 }
 
@@ -159,6 +179,7 @@ func TestS68ReservedBalanceSync(t *testing.T) {
 	it := pluggy.Item{ID: mercadoPagoItem, Status: pluggy.StatusUpdated, LastUpdatedAt: new("2026-11-10T15:00:00.000Z")}
 	it.Connector.Name = "Mercado Pago"
 	a.p.AddItemTo(pluggyClient, it)
+
 	checkingID := mercadoPagoItem + "-checking"
 	a.p.AddAccount(mercadoPagoItem, pluggy.Account{ID: checkingID, Type: "BANK", Subtype: pluggy.SubtypeChecking, Name: "Mercado Pago", Number: checkingNumber, Balance: "500.05", CurrencyCode: "BRL"})
 	a.p.AddReservedBalance(checkingID, reserved("Cofrinho Mercado Livre", "res-cofrinho", "1002.92"))
@@ -168,6 +189,7 @@ func TestS68ReservedBalanceSync(t *testing.T) {
 	checking := a.h.Account("Mercado Pago", "asset", "checking", nil)
 	reserve := a.h.Account("MP Cofrinho", "asset", "reserve", nil)
 	a.h.Record("2026-11-10", apitest.Posting(reserve, 100292), apitest.Posting(openingBalances(f), -100292))
+
 	body := func(account string) map[string]any {
 		return map[string]any{"account_id": account, "sync_from": "2026-11-11"}
 	}
@@ -178,17 +200,21 @@ func TestS68ReservedBalanceSync(t *testing.T) {
 	}
 
 	f.sync()
+
 	if n := a.p.Requests("/v2/transactions"); n != 1 {
 		t.Fatalf("transaction requests = %d, want 1 (the checking account only)", n)
 	}
+
 	got := f.batches(reserve)
 	if len(got) != 1 {
 		t.Fatalf("reserve batches = %+v", got)
 	}
+
 	b := got[0]
 	if b.Counts.Received != 0 || b.Source != "aggregator" || b.Balance.Status != "recorded" || b.Balance.Date != "2026-11-10" || b.Balance.Amount.Amount != 100292 {
 		t.Fatalf("reserve batch = %+v", b)
 	}
+
 	as := f.assertions(reserve)
 	if len(as) != 1 || as[0].Source != "aggregator" || !as[0].Reconciled || as[0].Date != "2026-11-10" || as[0].Amount.Amount != 100292 {
 		t.Fatalf("assertions = %+v", as)
@@ -197,10 +223,12 @@ func TestS68ReservedBalanceSync(t *testing.T) {
 	a.p.RemoveReservedBalance(checkingID, "res-cofrinho")
 	a.p.SetItemUpdatedAt(mercadoPagoItem, "2026-11-11T15:00:00.000Z")
 	f.sync()
+
 	got = f.batches(reserve)
 	if len(got) != 2 || got[0].Balance.Status != "none" || got[0].Counts.Received != 0 {
 		t.Fatalf("reserve batches after the reserve disappeared = %+v", got)
 	}
+
 	if as := f.assertions(reserve); len(as) != 1 {
 		t.Fatalf("assertions after the reserve disappeared = %+v", as)
 	}
@@ -214,6 +242,7 @@ func reserveAfterFirstSync(t *testing.T, yieldMode string) (f syncFixture, reser
 	it := pluggy.Item{ID: mercadoPagoItem, Status: pluggy.StatusUpdated, LastUpdatedAt: new("2026-11-10T15:00:00.000Z")}
 	it.Connector.Name = "Mercado Pago"
 	a.p.AddItemTo(pluggyClient, it)
+
 	checkingID := mercadoPagoItem + "-checking"
 	a.p.AddAccount(mercadoPagoItem, pluggy.Account{ID: checkingID, Type: "BANK", Subtype: pluggy.SubtypeChecking, Name: "Mercado Pago", Number: checkingNumber, Balance: "500.05", CurrencyCode: "BRL"})
 	a.p.AddReservedBalance(checkingID, reserved("Cofrinho Mercado Livre", "res-cofrinho", "1002.92"))
@@ -221,14 +250,18 @@ func reserveAfterFirstSync(t *testing.T, yieldMode string) (f syncFixture, reser
 	f = syncFixture{aggregator: a, conn: a.mustConnect(a.h.Client, in.ID, mercadoPagoItem)}
 	reserve = a.h.Account("MP Cofrinho", "asset", "reserve", map[string]any{"yield_mode": yieldMode})
 	a.h.Record("2026-11-10", apitest.Posting(reserve, 100292), apitest.Posting(openingBalances(f), -100292))
+
 	body := map[string]any{"account_id": reserve, "sync_from": "2026-11-11"}
 	if r := a.mapAccount(a.h.Client, f.conn.ID, reservedByName(f.conn, "Cofrinho Mercado Livre").ID, body); r.Status != http.StatusOK {
 		t.Fatalf("map status %d: %s", r.Status, r.Body)
 	}
+
 	f.sync()
+
 	if as := f.assertions(reserve); len(as) != 1 || !as[0].Reconciled || as[0].Date != "2026-11-10" {
 		t.Fatalf("assertions after the first sync = %+v", as)
 	}
+
 	return f, reserve, checkingID
 }
 
@@ -243,6 +276,7 @@ func (f syncFixture) syncReserve(checkingID, day string, amount pluggy.Decimal) 
 // yieldTransactions returns the yield transactions of the account, oldest first.
 func (f syncFixture) yieldTransactions(account string) []apitest.TransactionView {
 	f.h.T().Helper()
+
 	rows, err := f.h.Pool.Query(f.h.T().Context(), `
 		SELECT DISTINCT t.id::text, t.date FROM ledger_transaction t
 		JOIN ledger_posting p ON p.transaction_id = t.id
@@ -251,18 +285,23 @@ func (f syncFixture) yieldTransactions(account string) []apitest.TransactionView
 		f.h.T().Fatal(err)
 	}
 	defer rows.Close()
+
 	var out []apitest.TransactionView
 	for rows.Next() {
 		var id string
+
 		var date time.Time
 		if err := rows.Scan(&id, &date); err != nil {
 			f.h.T().Fatal(err)
 		}
+
 		out = append(out, f.h.Transaction(id))
 	}
+
 	if err := rows.Err(); err != nil {
 		f.h.T().Fatal(err)
 	}
+
 	return out
 }
 
@@ -278,23 +317,28 @@ func (f syncFixture) reserveDifference(account string) (int64, bool) {
 		} `json:"open_difference"`
 	}
 	f.h.MustDo(http.MethodGet, "/api/v1/accounts/"+account+"/reconciliation", nil, http.StatusOK, &out)
+
 	if out.OpenDifference == nil {
 		return 0, false
 	}
+
 	return out.OpenDifference.Difference.Amount, true
 }
 
 func wantYield(t *testing.T, f syncFixture, reserve, description string, amount int64) {
 	t.Helper()
+
 	ys := f.yieldTransactions(reserve)
 	if len(ys) != 1 || ys[0].Description != description || ys[0].Origin != "system" || len(ys[0].Postings) != 2 {
 		t.Fatalf("yield transactions = %+v, want one %q", ys, description)
 	}
+
 	for _, p := range ys[0].Postings {
 		want := -amount
 		if p.AccountID == reserve {
 			want = amount
 		}
+
 		if p.Amount.Amount != want {
 			t.Fatalf("posting = %+v, want %d", p, want)
 		}
@@ -309,24 +353,30 @@ func TestS69BoundedReserveYield(t *testing.T) {
 		f, reserve, checkingID := reserveAfterFirstSync(t, "auto")
 		// B = floor(100292 * 3 * 1 / 3000) = 100.
 		f.syncReserve(checkingID, "2026-11-11", "1003.52")
+
 		as := f.assertions(reserve)
 		if len(as) != 2 || as[0].Date != "2026-11-11" || !as[0].Reconciled || as[0].Amount.Amount != 100352 {
 			t.Fatalf("assertions = %+v", as)
 		}
+
 		wantYield(t, f, reserve, "Rendimento de 11/11/2026", 60)
+
 		if _, open := f.reserveDifference(reserve); open {
 			t.Fatal("a yield leaves no open difference")
 		}
 
 		// B = floor(100352 * 3 * 1 / 3000) = 100; the difference 101 exceeds it.
 		f.syncReserve(checkingID, "2026-11-12", "1004.53")
+
 		as = f.assertions(reserve)
 		if len(as) != 3 || as[0].Date != "2026-11-12" || as[0].Reconciled {
 			t.Fatalf("assertions = %+v", as)
 		}
+
 		if d, open := f.reserveDifference(reserve); !open || d != 101 {
 			t.Fatalf("open difference = %d, %v; want 101", d, open)
 		}
+
 		if n := len(f.yieldTransactions(reserve)); n != 1 {
 			t.Fatalf("yield transactions = %d, want 1", n)
 		}
@@ -336,10 +386,12 @@ func TestS69BoundedReserveYield(t *testing.T) {
 		f, reserve, checkingID := reserveAfterFirstSync(t, "auto")
 		f.syncReserve(checkingID, "2026-11-11", "1003.52")
 		f.syncReserve(checkingID, "2026-11-12", "1004.52")
+
 		as := f.assertions(reserve)
 		if len(as) != 3 || as[0].Date != "2026-11-12" || !as[0].Reconciled {
 			t.Fatalf("assertions = %+v", as)
 		}
+
 		ys := f.yieldTransactions(reserve)
 		if len(ys) != 2 || ys[1].Description != "Rendimento de 12/11/2026" || ys[1].Postings[0].Amount.Amount+ys[1].Postings[1].Amount.Amount != 0 {
 			t.Fatalf("yield transactions = %+v", ys)
@@ -349,9 +401,11 @@ func TestS69BoundedReserveYield(t *testing.T) {
 	t.Run("amount below the settled balance", func(t *testing.T) {
 		f, reserve, checkingID := reserveAfterFirstSync(t, "auto")
 		f.syncReserve(checkingID, "2026-11-11", "1002.00")
+
 		if d, open := f.reserveDifference(reserve); !open || d != -92 {
 			t.Fatalf("open difference = %d, %v; want -92", d, open)
 		}
+
 		if n := len(f.yieldTransactions(reserve)); n != 0 {
 			t.Fatalf("yield transactions = %d, want 0", n)
 		}
@@ -363,20 +417,25 @@ func TestS69BoundedReserveYield(t *testing.T) {
 		f, reserve, checkingID := reserveAfterFirstSync(t, "auto")
 		// 100292 + 60 of yield − 20000 withdrawn.
 		f.syncReserve(checkingID, "2026-11-11", "803.52")
+
 		if d, open := f.reserveDifference(reserve); !open || d != -19940 {
 			t.Fatalf("open difference = %d, %v; want -19940", d, open)
 		}
+
 		f.h.Record("2026-11-11", apitest.Posting(reserve, -20000), apitest.Posting(openingBalances(f), 20000))
 		// B = floor(80352 * 3 * 1 / 3000) = 80; 60 + 48 in one difference would exceed it.
 		f.syncReserve(checkingID, "2026-11-12", "804.00")
+
 		as := f.assertions(reserve)
 		if len(as) != 3 || !as[0].Reconciled || !as[1].Reconciled || !as[2].Reconciled {
 			t.Fatalf("assertions = %+v", as)
 		}
+
 		ys := f.yieldTransactions(reserve)
 		if len(ys) != 2 || ys[0].Description != "Rendimento de 11/11/2026" || ys[1].Description != "Rendimento de 12/11/2026" {
 			t.Fatalf("yield transactions = %+v", ys)
 		}
+
 		for i, want := range []int64{60, 48} {
 			for _, p := range ys[i].Postings {
 				if p.AccountID == reserve && p.Amount.Amount != want {
@@ -384,6 +443,7 @@ func TestS69BoundedReserveYield(t *testing.T) {
 				}
 			}
 		}
+
 		if _, open := f.reserveDifference(reserve); open {
 			t.Fatal("both days booked their yield; no difference stays open")
 		}
@@ -392,12 +452,15 @@ func TestS69BoundedReserveYield(t *testing.T) {
 	t.Run("yield mode none", func(t *testing.T) {
 		f, reserve, checkingID := reserveAfterFirstSync(t, "none")
 		f.syncReserve(checkingID, "2026-11-11", "1003.52")
+
 		if as := f.assertions(reserve); len(as) != 2 || as[0].Reconciled {
 			t.Fatalf("assertions = %+v", as)
 		}
+
 		if d, open := f.reserveDifference(reserve); !open || d != 60 {
 			t.Fatalf("open difference = %d, %v; want 60", d, open)
 		}
+
 		if n := len(f.yieldTransactions(reserve)); n != 0 {
 			t.Fatalf("yield transactions = %d, want 0", n)
 		}
@@ -411,14 +474,18 @@ func TestS69BoundedReserveYield(t *testing.T) {
 		f.h.MustDo(http.MethodPost, "/api/v1/accounts/"+reserve+"/balance-assertions", body, http.StatusCreated, nil)
 		f.h.MustDo(http.MethodPost, "/api/v1/accounts/"+reserve+"/balance-assertions", body, http.StatusCreated, nil)
 		f.syncReserve(checkingID, "2026-11-11", "1003.52")
+
 		as := f.assertions(reserve)
 		if len(as) != 3 || !as[0].Reconciled || !as[1].Reconciled || !as[2].Reconciled {
 			t.Fatalf("assertions = %+v", as)
 		}
+
 		wantYield(t, f, reserve, "Rendimento de 11/11/2026", 60)
+
 		if n := f.count(`SELECT count(*) FROM ledger_reconciliation WHERE account_id = $1 AND date = '2026-11-11' AND resolution = 'yield' AND difference = 60`, reserve); n != 1 {
 			t.Fatalf("yield reconciliations = %d, want 1", n)
 		}
+
 		if n := f.count(`SELECT count(*) FROM ledger_reconciliation WHERE account_id = $1 AND date = '2026-11-11' AND resolution = 'none' AND difference = 0`, reserve); n != 1 {
 			t.Fatalf("none reconciliations = %d, want 1", n)
 		}
@@ -433,6 +500,7 @@ func TestS69ReserveYieldBoundByCurrency(t *testing.T) {
 	it := pluggy.Item{ID: mercadoPagoItem, Status: pluggy.StatusUpdated, LastUpdatedAt: new("2026-11-10T15:00:00.000Z")}
 	it.Connector.Name = "Mercado Pago"
 	a.p.AddItemTo(pluggyClient, it)
+
 	checkingID := mercadoPagoItem + "-checking"
 	a.p.AddAccount(mercadoPagoItem, pluggy.Account{ID: checkingID, Type: "BANK", Subtype: pluggy.SubtypeChecking, Name: "Mercado Pago", Number: checkingNumber, Balance: "500.05", CurrencyCode: "EUR"})
 	a.p.AddReservedBalance(checkingID, pluggy.ReservedBalance{
@@ -450,14 +518,18 @@ func TestS69ReserveYieldBoundByCurrency(t *testing.T) {
 		"date": "2026-11-10", "description": "test",
 		"postings": []map[string]any{eur(reserve, 100292), eur(opening, -100292)},
 	}, http.StatusCreated, nil)
+
 	if r := a.mapAccount(a.h.Client, f.conn.ID, reservedByName(f.conn, "Cofrinho Mercado Livre").ID, map[string]any{"account_id": reserve, "sync_from": "2026-11-11"}); r.Status != http.StatusOK {
 		t.Fatalf("map status %d: %s", r.Status, r.Body)
 	}
+
 	f.sync()
 	f.syncReserve(checkingID, "2026-11-11", "1003.52")
+
 	if d, open := f.reserveDifference(reserve); !open || d != 60 {
 		t.Fatalf("open difference = %d, %v; want 60", d, open)
 	}
+
 	if n := len(f.yieldTransactions(reserve)); n != 0 {
 		t.Fatalf("yield transactions = %d, want 0", n)
 	}
@@ -478,6 +550,7 @@ func reserveTransfers(t *testing.T) (f syncFixture, checking, cofrinho, algum st
 	it := pluggy.Item{ID: mercadoPagoItem, Status: pluggy.StatusUpdated, LastUpdatedAt: new("2026-11-11T15:00:00.000Z")}
 	it.Connector.Name = "Mercado Pago"
 	a.p.AddItemTo(pluggyClient, it)
+
 	checkingID := mercadoPagoItem + "-checking"
 	a.p.AddAccount(mercadoPagoItem, pluggy.Account{ID: checkingID, Type: "BANK", Subtype: pluggy.SubtypeChecking, Name: "Mercado Pago", Number: checkingNumber, Balance: "500.05", CurrencyCode: "BRL"})
 	a.p.AddReservedBalance(checkingID, reserved("Cofrinho Mercado Livre", "res-cofrinho", "300.00"))
@@ -491,6 +564,7 @@ func reserveTransfers(t *testing.T) (f syncFixture, checking, cofrinho, algum st
 	a.h.Record("2026-10-31", apitest.Posting(checking, 100000), apitest.Posting(openingBalances(f), -100000))
 	a.h.Record("2026-11-10", apitest.Posting(cofrinho, 10000), apitest.Posting(openingBalances(f), -10000))
 	a.h.Record("2026-11-10", apitest.Posting(algum, 20000), apitest.Posting(openingBalances(f), -20000))
+
 	mapping := []struct{ external, ledger, from string }{
 		{externalAccount(f.conn, pluggy.SubtypeChecking).ID, checking, "2026-11-01"},
 		{reservedByName(f.conn, "Cofrinho Mercado Livre").ID, cofrinho, "2026-11-11"},
@@ -501,10 +575,12 @@ func reserveTransfers(t *testing.T) (f syncFixture, checking, cofrinho, algum st
 			t.Fatalf("map status %d: %s", r.Status, r.Body)
 		}
 	}
+
 	a.p.AddTransaction(checkingID, reserveLine("t-into", "2026-11-11", "Dinheiro reservado Cofrinho Mercado Livre", "-200.00"))
 	a.p.AddTransaction(checkingID, reserveLine("t-out", "2026-11-11", "Dinheiro retirado Algum dinheiro", "100.00"))
 	a.p.AddTransaction(checkingID, reserveLine("t-unknown", "2026-11-11", "Dinheiro retirado Aaa", "50.00"))
 	a.p.AddTransaction(checkingID, reserveLine("t-before", "2026-11-10", "Dinheiro reservado Cofrinho Mercado Livre", "-30.00"))
+
 	return f, checking, cofrinho, algum
 }
 
@@ -522,20 +598,25 @@ func TestS70ReserveTransfers(t *testing.T) {
 		if len(as) != 1 || as[0].Source != "aggregator" || !as[0].Reconciled || as[0].Date != "2026-11-11" {
 			t.Fatalf("assertions of %s after the first sync = %+v", reserve, as)
 		}
+
 		if n := f.count(`SELECT count(*) FROM ledger_reconciliation WHERE account_id = $1 AND assertion_id IS NOT NULL AND resolution = 'none' AND difference = 0`, reserve); n != 1 {
 			t.Fatalf("reconciliations of %s with resolution none = %d, want 1", reserve, n)
 		}
 	}
+
 	postings := func(externalID string) map[string]int64 {
 		t.Helper()
+
 		state, tx := f.recordOf(externalID)
 		if tx == "" {
 			t.Fatalf("record %s is %s without a transaction", externalID, state)
 		}
+
 		out := map[string]int64{}
 		for _, p := range f.h.Transaction(tx).Postings {
 			out[p.AccountID] = p.Amount.Amount
 		}
+
 		return out
 	}
 	for _, c := range []struct {
@@ -549,17 +630,20 @@ func TestS70ReserveTransfers(t *testing.T) {
 			t.Fatalf("postings of %s = %v, want %v", c.external, got, c.want)
 		}
 	}
+
 	for _, id := range []string{"t-unknown", "t-before"} {
 		got := postings(id)
 		if _, ok := got[cofrinho]; ok {
 			t.Fatalf("postings of %s = %v, want none on a reserve", id, got)
 		}
+
 		if _, ok := got[algum]; ok {
 			t.Fatalf("postings of %s = %v, want none on a reserve", id, got)
 		}
 	}
 
 	f.sync()
+
 	if b := f.batches(checking)[0]; b.Counts.Received != 4 || b.Counts.Created != 0 {
 		t.Fatalf("second sync batch = %+v, want 4 received and none created", b.Counts)
 	}
@@ -573,6 +657,7 @@ func TestS70AmbiguousReserveName(t *testing.T) {
 	it := pluggy.Item{ID: mercadoPagoItem, Status: pluggy.StatusUpdated, LastUpdatedAt: new("2026-11-11T15:00:00.000Z")}
 	it.Connector.Name = "Mercado Pago"
 	a.p.AddItemTo(pluggyClient, it)
+
 	checkingID := mercadoPagoItem + "-checking"
 	a.p.AddAccount(mercadoPagoItem, pluggy.Account{ID: checkingID, Type: "BANK", Subtype: pluggy.SubtypeChecking, Name: "Mercado Pago", Number: checkingNumber, Balance: "500.05", CurrencyCode: "BRL"})
 	a.p.AddReservedBalance(checkingID, reserved("Cofrinho", "res-first", "0.00"))
@@ -584,15 +669,18 @@ func TestS70AmbiguousReserveName(t *testing.T) {
 	first := a.h.Account("MP Cofrinho 1", "asset", "reserve", nil)
 	second := a.h.Account("MP Cofrinho 2", "asset", "reserve", nil)
 	a.h.Record("2026-10-31", apitest.Posting(checking, 100000), apitest.Posting(openingBalances(f), -100000))
+
 	var reserves []string
 	for _, x := range f.conn.Accounts {
 		if x.Subtype == "RESERVED_BALANCE" {
 			reserves = append(reserves, x.ID)
 		}
 	}
+
 	if len(reserves) != 2 {
 		t.Fatalf("reserves = %+v", f.conn.Accounts)
 	}
+
 	for _, m := range []struct{ external, ledger, from string }{
 		{externalAccount(f.conn, pluggy.SubtypeChecking).ID, checking, "2026-11-01"},
 		{reserves[0], first, "2026-11-11"},
@@ -602,13 +690,16 @@ func TestS70AmbiguousReserveName(t *testing.T) {
 			t.Fatalf("map status %d: %s", r.Status, r.Body)
 		}
 	}
+
 	a.p.AddTransaction(checkingID, reserveLine("t-ambiguous", "2026-11-11", "Dinheiro reservado Cofrinho", "-50.00"))
 
 	f.sync()
+
 	state, tx := f.recordOf("t-ambiguous")
 	if tx == "" {
 		t.Fatalf("record is %s without a transaction", state)
 	}
+
 	for _, p := range f.h.Transaction(tx).Postings {
 		if p.AccountID == first || p.AccountID == second {
 			t.Fatalf("posting %+v on a reserve, want none", p)
@@ -628,10 +719,12 @@ func TestS68ReserveWithoutParentCurrency(t *testing.T) {
 	})
 	f.p.SetItemUpdatedAt(mercadoPagoItem, "2026-11-11T15:00:00.000Z")
 	f.sync()
+
 	got := f.batches(reserve)
 	if len(got) != 2 || got[0].Balance.Status != "none" {
 		t.Fatalf("reserve batches = %+v, want a second batch with balance none", got)
 	}
+
 	if as := f.assertions(reserve); len(as) != 1 {
 		t.Fatalf("assertions = %+v, want the one of the first sync", as)
 	}
@@ -645,6 +738,7 @@ func TestS90RenamedReserve(t *testing.T) {
 	it := pluggy.Item{ID: mercadoPagoItem, Status: pluggy.StatusUpdated, LastUpdatedAt: new("2026-11-11T15:00:00.000Z")}
 	it.Connector.Name = "Mercado Pago"
 	a.p.AddItemTo(pluggyClient, it)
+
 	checkingID := mercadoPagoItem + "-checking"
 	a.p.AddAccount(mercadoPagoItem, pluggy.Account{ID: checkingID, Type: "BANK", Subtype: pluggy.SubtypeChecking, Name: "Mercado Pago", Number: checkingNumber, Balance: "500.05", CurrencyCode: "BRL"})
 	a.p.AddReservedBalance(checkingID, reserved("Aaa", "res-aaa", "100.00"))
@@ -655,6 +749,7 @@ func TestS90RenamedReserve(t *testing.T) {
 	reserve := a.h.Account("MP Reserva", "asset", "reserve", nil)
 	a.h.Record("2026-10-31", apitest.Posting(checking, 100000), apitest.Posting(openingBalances(f), -100000))
 	a.h.Record("2026-11-10", apitest.Posting(reserve, 10000), apitest.Posting(openingBalances(f), -10000))
+
 	for _, m := range []struct{ external, ledger, from string }{
 		{externalAccount(f.conn, pluggy.SubtypeChecking).ID, checking, "2026-11-01"},
 		{reservedByName(f.conn, "Aaa").ID, reserve, "2026-11-11"},
@@ -663,6 +758,7 @@ func TestS90RenamedReserve(t *testing.T) {
 			t.Fatalf("map status %d: %s", r.Status, r.Body)
 		}
 	}
+
 	f.sync()
 
 	a.p.RenameReservedBalance(checkingID, "res-aaa", "Algum dinheiro")
@@ -676,6 +772,7 @@ func TestS90RenamedReserve(t *testing.T) {
 	if x := reservedByName(conn, "Algum dinheiro"); x.ID != reservedByName(f.conn, "Aaa").ID || x.State != "mapped" {
 		t.Fatalf("accounts after the rename = %+v", conn.Accounts)
 	}
+
 	for _, c := range []struct {
 		external string
 		want     map[string]int64
@@ -687,20 +784,25 @@ func TestS90RenamedReserve(t *testing.T) {
 		if tx == "" {
 			t.Fatalf("record %s is %s without a transaction", c.external, state)
 		}
+
 		got := map[string]int64{}
 		for _, p := range f.h.Transaction(tx).Postings {
 			got[p.AccountID] = p.Amount.Amount
 		}
+
 		if !maps.Equal(got, c.want) {
 			t.Fatalf("postings of %s = %v, want %v", c.external, got, c.want)
 		}
 	}
+
 	// The reserve meets the reported 110.00 with both transfers booked.
 	as := f.assertions(reserve)
+
 	reconciled := false
 	for _, x := range as {
 		reconciled = reconciled || (x.Date == "2026-11-12" && x.Reconciled)
 	}
+
 	if !reconciled {
 		t.Fatalf("reserve assertions = %+v, want 2026-11-12 reconciled", as)
 	}
@@ -714,6 +816,7 @@ func TestReserveCurrentNameWinsOverFormerName(t *testing.T) {
 	it := pluggy.Item{ID: mercadoPagoItem, Status: pluggy.StatusUpdated, LastUpdatedAt: new("2026-11-11T15:00:00.000Z")}
 	it.Connector.Name = "Mercado Pago"
 	a.p.AddItemTo(pluggyClient, it)
+
 	checkingID := mercadoPagoItem + "-checking"
 	a.p.AddAccount(mercadoPagoItem, pluggy.Account{ID: checkingID, Type: "BANK", Subtype: pluggy.SubtypeChecking, Name: "Mercado Pago", Number: checkingNumber, Balance: "500.05", CurrencyCode: "BRL"})
 	a.p.AddReservedBalance(checkingID, reserved("Viagem", "res-old", "0.00"))
@@ -724,8 +827,10 @@ func TestReserveCurrentNameWinsOverFormerName(t *testing.T) {
 	house := a.h.Account("MP Casa", "asset", "reserve", nil)
 	trip := a.h.Account("MP Viagem", "asset", "reserve", nil)
 	a.h.Record("2026-10-31", apitest.Posting(checking, 100000), apitest.Posting(openingBalances(f), -100000))
+
 	mapTo := func(external, ledger, from string) {
 		t.Helper()
+
 		if r := a.mapAccount(a.h.Client, f.conn.ID, external, map[string]any{"account_id": ledger, "sync_from": from}); r.Status != http.StatusOK {
 			t.Fatalf("map status %d: %s", r.Status, r.Body)
 		}
@@ -744,14 +849,17 @@ func TestReserveCurrentNameWinsOverFormerName(t *testing.T) {
 	a.p.AddTransaction(checkingID, reserveLine("t-trip", "2026-11-12", "Dinheiro reservado Viagem", "-40.00"))
 	a.p.SetItemUpdatedAt(mercadoPagoItem, "2026-11-12T16:00:00.000Z")
 	f.sync()
+
 	state, tx := f.recordOf("t-trip")
 	if tx == "" {
 		t.Fatalf("record is %s without a transaction", state)
 	}
+
 	got := map[string]int64{}
 	for _, p := range f.h.Transaction(tx).Postings {
 		got[p.AccountID] = p.Amount.Amount
 	}
+
 	if want := (map[string]int64{checking: -4000, trip: 4000}); !maps.Equal(got, want) {
 		t.Fatalf("postings = %v, want %v", got, want)
 	}

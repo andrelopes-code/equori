@@ -20,10 +20,13 @@ func (m *brl) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &v); err != nil {
 		return err
 	}
+
 	if v.Currency != "BRL" {
 		return fmt.Errorf("currency %q, want BRL", v.Currency)
 	}
+
 	*m = brl(v.Amount)
+
 	return nil
 }
 
@@ -52,10 +55,12 @@ func statements(t testing.TB, h *apitest.Harness, card string) map[string]statem
 		Items []statementView `json:"items"`
 	}
 	h.MustDo(http.MethodGet, "/api/v1/accounts/"+card+"/statements?from=2026-01&to=2027-12", nil, http.StatusOK, &out)
+
 	m := map[string]statementView{}
 	for _, s := range out.Items {
 		m[s.Reference] = s
 	}
+
 	return m
 }
 
@@ -89,6 +94,7 @@ func TestStatementFullPayment(t *testing.T) {
 	if s := ss["2026-11"]; s.AmountDue != 150000 || s.Payments != 0 || s.Settled != 150000 || s.Unpaid != 0 || s.Status != "paid" || s.DueDate != "2026-11-10" {
 		t.Fatalf("2026-11 = %+v", s)
 	}
+
 	if s := ss["2026-12"]; s.Payments != 150000 || s.Early != 0 || s.AmountDue != 0 {
 		t.Fatalf("2026-12 = %+v", s)
 	}
@@ -105,6 +111,7 @@ func TestStatementPartialPaymentCarries(t *testing.T) {
 	if s := ss["2026-11"]; s.Status != "overdue" || s.Unpaid != 50000 {
 		t.Fatalf("2026-11 = %+v", s)
 	}
+
 	if s := ss["2026-12"]; s.Opening != 150000 || s.AmountDue != 56250 || s.Status != "open" {
 		t.Fatalf("2026-12 = %+v", s)
 	}
@@ -114,6 +121,7 @@ func TestStatementPartialPaymentCarries(t *testing.T) {
 // statement 2026-12 leaves out its unpaid amount until it is overdue.
 func TestStatementOpenAmount_S180(t *testing.T) {
 	t.Parallel()
+
 	for _, tt := range []struct {
 		today string
 		want  brl
@@ -141,6 +149,7 @@ func TestStatementOverpaymentBecomesCredit(t *testing.T) {
 	if s := ss["2026-11"]; s.Status != "paid" || s.Unpaid != 0 {
 		t.Fatalf("2026-11 = %+v", s)
 	}
+
 	if s := ss["2026-12"]; s.Opening != 150000 || s.AmountDue != -9000 || s.Early != 10000 {
 		t.Fatalf("2026-12 = %+v", s)
 	}
@@ -176,8 +185,10 @@ func TestStatementDetail(t *testing.T) {
 		} `json:"postings"`
 	}
 	c.h.MustDo(http.MethodGet, "/api/v1/statements/"+id, nil, http.StatusOK, &detail)
+
 	if detail.AmountDue != 24000 || len(detail.Postings) != 2 || detail.Postings[0].Date != "2026-10-14" || detail.Postings[0].Amount.Amount != -23000 {
 		t.Fatalf("detail = %+v", detail)
 	}
+
 	c.h.ExpectProblem(c.h.Do(http.MethodGet, "/api/v1/statements/00000000-0000-7000-8000-000000000000", nil), http.StatusNotFound, "not_found", "")
 }

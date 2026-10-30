@@ -14,6 +14,7 @@ type batchBooks struct {
 
 func newBatchBooks(t *testing.T) batchBooks {
 	h := apitest.New(t, apitest.Today("2026-10-21"))
+
 	return batchBooks{
 		h:         h,
 		checking:  h.Account("Nubank checking", "asset", "checking", nil),
@@ -36,6 +37,7 @@ func (b batchBooks) count(t *testing.T) int {
 		Items []apitest.TransactionView `json:"items"`
 	}
 	b.h.MustDo(http.MethodGet, "/api/v1/transactions", nil, http.StatusOK, &page)
+
 	return len(page.Items)
 }
 
@@ -58,15 +60,18 @@ func TestTransactionBatchRecordsEveryEntry(t *testing.T) {
 	if len(out.Items) != 3 {
 		t.Fatalf("items = %d, want 3", len(out.Items))
 	}
+
 	for i, want := range []string{"Mercado", "Uber", "Ifood"} {
 		if out.Items[i].Description != want || out.Items[i].Origin != "manual" {
 			t.Errorf("item %d = %q origin %q, want %q manual", i, out.Items[i].Description, out.Items[i].Origin, want)
 		}
 	}
+
 	charges := cardPostings(out.Items[2], b.card)
 	if len(charges) != 3 || charges[0].Installment == nil || charges[0].Installment.Count != 3 {
 		t.Fatalf("installment postings = %+v", charges)
 	}
+
 	if got := b.count(t); got != 3 {
 		t.Fatalf("recorded = %d, want 3", got)
 	}
@@ -84,6 +89,7 @@ func TestTransactionBatchIsAtomic(t *testing.T) {
 		b.expense("2026-10-20", "Taxi", closed, b.transport, 3000),
 	}})
 	b.h.ExpectProblem(r, http.StatusUnprocessableEntity, "validation_failed", "entries[1].transaction.postings[0].account_id")
+
 	if got := b.count(t); got != 0 {
 		t.Fatalf("recorded = %d, want 0", got)
 	}
@@ -96,6 +102,7 @@ func TestTransactionBatchRejections(t *testing.T) {
 		"card_account_id": b.checking, "date": "2026-10-21",
 		"splits": []map[string]any{{"account_id": b.food, "amount": apitest.BRL(5800)}}, "installment_count": 3,
 	}
+
 	unknown := "0192b7a0-0000-7000-8000-000000000000"
 	for _, c := range []struct {
 		name, code, field string
@@ -116,8 +123,10 @@ func TestTransactionBatchRejections(t *testing.T) {
 			b.h.ExpectProblem(r, http.StatusUnprocessableEntity, c.code, c.field)
 		})
 	}
+
 	b.h.ExpectProblem(b.h.Do(http.MethodPost, "/api/v1/transaction-batches", map[string]any{"entries": []map[string]any{}}),
 		http.StatusBadRequest, "invalid_request", "entries")
+
 	if got := b.count(t); got != 0 {
 		t.Fatalf("recorded = %d, want 0", got)
 	}

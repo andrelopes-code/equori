@@ -8,8 +8,10 @@ import (
 
 func TestTitle(t *testing.T) {
 	t.Parallel()
+
 	words := strings.Repeat("abcdefghi ", 10)[:100]
 	noSpaces := strings.Repeat("x", 100)
+
 	tests := []struct {
 		name, in string
 		check    func(t *testing.T, got string)

@@ -41,36 +41,44 @@ func (s *Service) PreviewRule(ctx context.Context, userID int64, r domain.Rule) 
 	if err != nil {
 		return RulePreview{}, err
 	}
+
 	c, accounts, err := s.catalog(ctx, userID)
 	if err != nil {
 		return RulePreview{}, err
 	}
+
 	c.Rules = []domain.Rule{r}
 	today := s.ledger.Today()
 	var out RulePreview
+
 	var after *PendingKey
 	for {
 		ids, next, err := s.repo.PreviewCandidates(ctx, userID, today.AddDate(0, 0, -previewDays), today, after, runPage)
 		if err != nil {
 			return RulePreview{}, err
 		}
+
 		facts, err := s.ledger.TransactionFacts(ctx, userID, ids)
 		if err != nil {
 			return RulePreview{}, err
 		}
+
 		byID := make(map[uuid.UUID]TransactionFacts, len(facts))
 		for _, f := range facts {
 			byID[f.ID] = f
 		}
+
 		for _, id := range ids {
 			f, ok := byID[id]
 			if !ok || f.Voided {
 				continue
 			}
+
 			d := domain.Decide(subjectOf(f, accounts), c)
 			if d.Method != domain.MethodRule {
 				continue
 			}
+
 			switch {
 			case f.CategoryState == stateUncategorized:
 				out.WouldCategorize.add(id)
@@ -78,9 +86,11 @@ func (s *Service) PreviewRule(ctx context.Context, userID int64, r domain.Rule) 
 				out.Conflicts.add(id)
 			}
 		}
+
 		if next == nil {
 			return out, nil
 		}
+
 		after = next
 	}
 }
@@ -92,12 +102,15 @@ func sameAllocation(parts []domain.Allocation, postings []FactPosting) bool {
 	for _, p := range parts {
 		decided = append(decided, p.CategoryID.String()+" "+p.Amount.String())
 	}
+
 	for _, p := range postings {
 		if p.isCategory() {
 			current = append(current, p.AccountID.String()+" "+p.Amount.String())
 		}
 	}
+
 	slices.Sort(decided)
 	slices.Sort(current)
+
 	return strings.Join(decided, ",") == strings.Join(current, ",")
 }

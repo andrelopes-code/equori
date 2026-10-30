@@ -24,6 +24,7 @@ func chatState(t *testing.T, h *apitest.Harness) chatView {
 	t.Helper()
 	var v chatView
 	h.MustDo(http.MethodGet, "/api/v1/assistant/chat", nil, http.StatusOK, &v)
+
 	return v
 }
 
@@ -32,6 +33,7 @@ func TestChatState(t *testing.T) {
 	t.Run("instance provider", func(t *testing.T) {
 		t.Parallel()
 		h := apitest.New(t, apitest.LLM(llmtest.New("aistudio")))
+
 		want := chatView{Available: true, ProviderName: "aistudio", Model: "gemini-3.5-flash-lite", Notice: "trains"}
 		if got := chatState(t, h); got != want {
 			t.Fatalf("state = %+v, want %+v", got, want)
@@ -39,6 +41,7 @@ func TestChatState(t *testing.T) {
 	})
 	t.Run("every target cooling", func(t *testing.T) {
 		t.Parallel()
+
 		quota := func(model string) llmtest.Step {
 			return llmtest.Step{Model: model, Err: &llm.QuotaError{RetryAfter: time.Hour}}
 		}
@@ -49,18 +52,22 @@ func TestChatState(t *testing.T) {
 			Items []usageView `json:"items"`
 		}
 		h.MustDo(http.MethodGet, "/api/v1/assistant/usage", nil, http.StatusOK, &rows)
+
 		if len(rows.Items) != 3 {
 			t.Fatalf("usage = %+v", rows.Items)
 		}
+
 		var earliest time.Time
 		for i, row := range rows.Items {
 			if row.CoolingUntil == nil {
 				t.Fatalf("usage = %+v", rows.Items)
 			}
+
 			if c := *row.CoolingUntil; i == 0 || c.Before(earliest) {
 				earliest = c
 			}
 		}
+
 		got := chatState(t, h)
 		if got.Available || got.ProviderName != "" || got.RetryAt == nil || !got.RetryAt.Equal(earliest) {
 			t.Fatalf("state = %+v, want unavailable until %v", got, earliest)
@@ -68,6 +75,7 @@ func TestChatState(t *testing.T) {
 	})
 	t.Run("no provider", func(t *testing.T) {
 		t.Parallel()
+
 		h := apitest.New(t)
 		if got := chatState(t, h); got != (chatView{}) {
 			t.Fatalf("state = %+v, want only available=false", got)

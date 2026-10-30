@@ -27,10 +27,13 @@ func (t Transaction) Reimburse(expectedVersion int, allocations []Allocation, un
 	if t.VoidedAt != nil || slices.ContainsFunc(allocations, func(a Allocation) bool { return a.Original.VoidedAt != nil }) {
 		return Transaction{}, ErrVoided
 	}
+
 	if expectedVersion != t.Version {
 		return Transaction{}, ErrVersionConflict
 	}
+
 	var total int64
+
 	var instrument money.Currency
 	for _, p := range t.Postings {
 		if accounts[p.AccountID].IsCategory() {
@@ -38,21 +41,26 @@ func (t Transaction) Reimburse(expectedVersion int, allocations []Allocation, un
 			instrument = p.Amount.Currency()
 		}
 	}
+
 	if instrument == "" || total >= 0 {
 		return Transaction{}, ErrNotCategorizable
 	}
+
 	isReimbursement := func(l Link) bool { return l.Type == LinkReimbursementOf }
 	if len(allocations) == 0 && !slices.ContainsFunc(t.Links, isReimbursement) {
 		return Transaction{}, invalid("allocations", "must not be empty")
 	}
+
 	links := slices.DeleteFunc(slices.Clone(t.Links), isReimbursement)
 	var parts []CategoryPart
 	var allocated int64
+
 	seen := make(map[uuid.UUID]bool, len(allocations))
 	for i, a := range allocations {
 		field := func(name string) string { return fmt.Sprintf("allocations[%d].%s", i, name) }
 		var shares []int64
 		var spent []Posting
+
 		var expense int64
 		for _, p := range a.Original.Postings {
 			if accounts[p.AccountID].Class == ClassExpense && p.Amount.Amount() > 0 {
@@ -61,6 +69,7 @@ func (t Transaction) Reimburse(expectedVersion int, allocations []Allocation, un
 				expense += p.Amount.Amount()
 			}
 		}
+
 		switch {
 		case a.Amount <= 0:
 			return Transaction{}, invalid(field("amount"), "must be positive")
@@ -75,34 +84,44 @@ func (t Transaction) Reimburse(expectedVersion int, allocations []Allocation, un
 		case a.HeldByOthers+a.Amount > expense:
 			return Transaction{}, invalid(field("original_id"), fmt.Sprintf("reimbursements would total %d, above the expense %d", a.HeldByOthers+a.Amount, expense))
 		}
+
 		seen[a.Original.ID] = true
 		for j, share := range Allocate(a.Amount, shares) {
 			if share == 0 {
 				continue
 			}
+
 			m, err := money.New(-share, instrument)
 			if err != nil {
 				return Transaction{}, err
 			}
+
 			parts = append(parts, CategoryPart{AccountID: spent[j].AccountID, Amount: m})
 		}
+
 		allocated += a.Amount
 		links = append(links, Link{Type: LinkReimbursementOf, Target: a.Original.ID, Amount: a.Amount})
 	}
+
 	if allocated > -total {
 		return Transaction{}, invalid("allocations", fmt.Sprintf("allocations total %d, above the inflow %d", allocated, -total))
 	}
+
 	if rest := -total - allocated; rest > 0 {
 		m, err := money.New(-rest, instrument)
 		if err != nil {
 			return Transaction{}, err
 		}
+
 		parts = append(parts, CategoryPart{AccountID: uncategorized.ID, Amount: m})
 	}
+
 	next, err := t.Categorize(Categorization{ExpectedVersion: expectedVersion, Parts: parts}, accounts)
 	if err != nil {
 		return Transaction{}, err
 	}
+
 	next.Links = links
+
 	return next, nil
 }

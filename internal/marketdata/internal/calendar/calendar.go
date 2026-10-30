@@ -32,9 +32,12 @@ func (c Calendar) Holidays(year int) []Holiday {
 		if (r.From != 0 && year < r.From) || (r.To != 0 && year > r.To) {
 			continue
 		}
+
 		out = append(out, Holiday{Date: r.Observed.apply(r.Date.dateIn(year)), Name: r.Name})
 	}
+
 	slices.SortStableFunc(out, func(a, b Holiday) int { return a.Date.Compare(b.Date) })
+
 	return out
 }
 
@@ -55,5 +58,6 @@ func Easter(year int) time.Time {
 	m := (a + 11*h + 22*l) / 451
 	month := (h + l - 7*m + 114) / 31
 	day := (h+l-7*m+114)%31 + 1
+
 	return time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.UTC)
 }

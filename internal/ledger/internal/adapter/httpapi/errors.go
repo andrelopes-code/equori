@@ -21,11 +21,14 @@ func ToProblem(err error) (problem.Details, bool) {
 	if pe, ok := errors.AsType[*paramError](err); ok {
 		d := problem.New(http.StatusBadRequest, "invalid_request", pe.Error())
 		d.Errors = []problem.FieldError{{Field: pe.field, Message: pe.message}}
+
 		return d, true
 	}
+
 	if errors.Is(err, errInvalidRequest) {
 		return problem.New(http.StatusBadRequest, "invalid_request", "malformed request"), true
 	}
+
 	if fe, ok := errors.AsType[*domain.FieldError](err); ok {
 		code := "validation_failed"
 		switch {
@@ -36,10 +39,13 @@ func ToProblem(err error) (problem.Details, bool) {
 		case errors.Is(err, app.ErrPriceMissing):
 			code = "price_missing"
 		}
+
 		d := problem.New(http.StatusUnprocessableEntity, code, fe.Error())
 		d.Errors = []problem.FieldError{{Field: fe.Field, Message: fe.Message}}
+
 		return d, true
 	}
+
 	switch {
 	case errors.Is(err, app.ErrNotFound):
 		return problem.New(http.StatusNotFound, "not_found", "resource not found"), true

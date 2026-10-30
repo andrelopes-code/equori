@@ -30,14 +30,17 @@ type historyOut struct {
 
 func accountHistory(t *testing.T, h *apitest.Harness, args map[string]any) historyOut {
 	t.Helper()
+
 	r := h.Tool("get_account_history", args)
 	if r.IsError {
 		t.Fatalf("get_account_history = error %s", r.Content)
 	}
+
 	var out historyOut
 	if err := json.Unmarshal(r.Content, &out); err != nil {
 		t.Fatal(err)
 	}
+
 	return out
 }
 
@@ -55,7 +58,9 @@ func TestAccountHistoryToolBalances(t *testing.T) {
 	if got.AccountID != checking || got.AccountName != "Checking" || got.Currency != "BRL" || got.View != "balances" || got.Granularity != "day" {
 		t.Errorf("header = %+v", got)
 	}
+
 	want := []string{"0.00", "0.00", "1000.00", "1000.00", "1000.00", "974.50", "974.50", "974.50", "974.50", "974.50"}
+
 	var balances []string
 	for i, p := range got.Points {
 		balances = append(balances, p.Balance.Amount)
@@ -63,9 +68,11 @@ func TestAccountHistoryToolBalances(t *testing.T) {
 			t.Errorf("point %d date = %s, want %s", i, p.Date, wantDate)
 		}
 	}
+
 	if !reflect.DeepEqual(balances, want) {
 		t.Errorf("balances = %v, want %v", balances, want)
 	}
+
 	if got.Days != nil {
 		t.Errorf("days = %+v, want none for balances", got.Days)
 	}
@@ -81,9 +88,11 @@ func TestAccountHistoryToolWeekly(t *testing.T) {
 	if got.Granularity != "week" {
 		t.Errorf("granularity = %q, want week", got.Granularity)
 	}
+
 	if n := len(got.Points); n != 29 {
 		t.Errorf("points = %d, want 29 Sundays", n)
 	}
+
 	if first, last := got.Points[0].Date, got.Points[len(got.Points)-1].Date; first != "2026-01-04" || last != "2026-07-19" {
 		t.Errorf("first, last = %s, %s; want 2026-01-04, 2026-07-19", first, last)
 	}
@@ -109,9 +118,11 @@ func TestAccountHistoryToolFlows(t *testing.T) {
 	if got.View != "flows" || got.Granularity != "" || got.Points != nil || len(got.Days) != 2 {
 		t.Fatalf("flows = %+v", got)
 	}
+
 	if d := got.Days[0]; d.Date != "2026-10-03" || d.Inflow.Amount != "1000.00" || d.Outflow.Amount != "0.00" {
 		t.Errorf("day 0 = %+v", d)
 	}
+
 	if d := got.Days[1]; d.Date != "2026-10-06" || d.Inflow.Amount != "0.00" || d.Outflow.Amount != "25.50" {
 		t.Errorf("day 1 = %+v", d)
 	}
@@ -130,16 +141,19 @@ func TestAccountHistoryToolOtherUser(t *testing.T) {
 	t.Parallel()
 	h := apitest.New(t, apitest.Today("2026-10-20"))
 	other := h.LoginAs("other@example.com", locale.Locale{Language: "pt", Region: "BR"}, "BRL")
+
 	r := h.Call(other, http.MethodPost, "/api/v1/accounts", map[string]any{"name": "Theirs", "class": "asset", "kind": "checking", "currency": "BRL"})
 	if r.Status != http.StatusCreated {
 		t.Fatalf("create account status %d: %s", r.Status, r.Body)
 	}
+
 	var account struct {
 		ID string `json:"id"`
 	}
 	if err := json.Unmarshal(r.Body, &account); err != nil {
 		t.Fatal(err)
 	}
+
 	for _, view := range []string{"balances", "flows"} {
 		h.ExpectToolError(h.Tool("get_account_history", map[string]any{"account_id": account.ID, "view": view, "from": "2026-10-01", "to": "2026-10-10"}), "not_found", "")
 	}

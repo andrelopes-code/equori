@@ -22,41 +22,52 @@ func (s *Service) RecordTrade(ctx context.Context, userID int64, o domain.TradeO
 		if err != nil {
 			return err
 		}
+
 		security, cash, err := s.brokerageAccounts(ctx, r, userID, o.AccountID, o.CashAccountID, base)
 		if err != nil {
 			return err
 		}
+
 		if o.Quantity.Currency() != security.Instrument {
 			return fieldErr("quantity", "must be an amount of "+string(security.Instrument), domain.ErrValidation)
 		}
+
 		// Two sales of one account serialize on its row, so each reads the holding the other left.
 		if _, err := r.LockAccount(ctx, userID, security.ID); err != nil {
 			return err
 		}
+
 		quantity, basis, err := r.Holding(ctx, userID, security.ID, o.Date)
 		if err != nil {
 			return err
 		}
+
 		var h domain.Holding
 		if h.Quantity, err = s.AmountOf(ctx, quantity, security.Instrument); err != nil {
 			return err
 		}
+
 		if h.CostBasis, err = money.New(basis, base); err != nil {
 			return err
 		}
+
 		accts, err := s.tradeAccounts(ctx, r, userID, o.TaxesCategoryID, "taxes_category_id")
 		if err != nil {
 			return err
 		}
+
 		postings, trade, err := domain.BuildTrade(o, cash.Instrument, h, accts)
 		if err != nil {
 			return err
 		}
+
 		created, err = s.insert(ctx, r, domain.Transaction{
 			UserID: userID, Date: o.Date, Description: o.Description, BalancingCurrency: base, Postings: postings, Trade: &trade,
 		})
+
 		return err
 	})
+
 	return created, err
 }
 
@@ -69,37 +80,47 @@ func (s *Service) RecordIncome(ctx context.Context, userID int64, o domain.Incom
 		if err != nil {
 			return err
 		}
+
 		if _, _, err := s.brokerageAccounts(ctx, r, userID, o.AccountID, o.CashAccountID, base); err != nil {
 			return err
 		}
+
 		category, err := loadAccount(ctx, r, userID, o.CategoryID, "category_id")
 		if err != nil {
 			return err
 		}
+
 		if category.Class != domain.ClassIncome {
 			return fieldErr("category_id", "must be an income category", domain.ErrValidation)
 		}
+
 		accts, err := s.tradeAccounts(ctx, r, userID, o.WithheldCategoryID, "withheld_category_id")
 		if err != nil {
 			return err
 		}
+
 		o.WithheldCategoryID = accts.Taxes
 		if o.Withheld == nil {
 			profile, err := s.profiles.Profile(ctx, userID)
 			if err != nil {
 				return fmt.Errorf("read profile: %w", err)
 			}
+
 			o.DefaultWithholdingBP = s.defaults.WithholdingBP(profile.Region, string(o.Type))
 		}
+
 		postings, income, err := domain.BuildIncome(o)
 		if err != nil {
 			return err
 		}
+
 		created, err = s.insert(ctx, r, domain.Transaction{
 			UserID: userID, Date: o.Date, Description: o.Description, BalancingCurrency: base, Postings: postings, Income: &income,
 		})
+
 		return err
 	})
+
 	return created, err
 }
 
@@ -110,19 +131,24 @@ func (s *Service) brokerageAccounts(ctx context.Context, r Repository, userID in
 	if err != nil {
 		return domain.Account{}, domain.Account{}, err
 	}
+
 	if !security.HoldsSecurity() {
 		return domain.Account{}, domain.Account{}, fieldErr("account_id", "must hold a security", domain.ErrValidation)
 	}
+
 	cash, err := loadAccount(ctx, r, userID, cashID, "cash_account_id")
 	if err != nil {
 		return domain.Account{}, domain.Account{}, err
 	}
+
 	if cash.HoldsSecurity() || cash.ParentID != security.ParentID {
 		return domain.Account{}, domain.Account{}, fieldErr("cash_account_id", "must be a cash account of the brokerage holding account_id", domain.ErrValidation)
 	}
+
 	if cash.Instrument != base {
 		return domain.Account{}, domain.Account{}, fieldErr("cash_account_id", "must be in the base currency "+string(base), domain.ErrCurrencyUnsupported)
 	}
+
 	return security, cash, nil
 }
 
@@ -138,14 +164,18 @@ func (s *Service) tradeAccounts(ctx context.Context, r Repository, userID int64,
 		if err != nil {
 			return domain.TradeAccounts{}, err
 		}
+
 		*x.id = a.ID
 	}
+
 	if taxesCategory != uuid.Nil {
 		if err := s.expenseCategory(ctx, r, userID, taxesCategory, field); err != nil {
 			return domain.TradeAccounts{}, err
 		}
+
 		accts.Taxes = taxesCategory
 	}
+
 	return accts, nil
 }
 
@@ -158,24 +188,30 @@ func checkLaterSales(ctx context.Context, r Repository, userID int64, date time.
 			ids = append(ids, p.AccountID)
 		}
 	}
+
 	if len(ids) == 0 {
 		return nil
 	}
+
 	// A sale locks its account before reading the holding; locking here, in id order,
 	// makes a concurrent change wait for that sale and then see it.
 	slices.SortFunc(ids, func(a, b uuid.UUID) int { return bytes.Compare(a[:], b[:]) })
+
 	for _, id := range slices.Compact(ids) {
 		if _, err := r.LockAccount(ctx, userID, id); err != nil {
 			return err
 		}
 	}
+
 	later, err := r.LaterSaleExists(ctx, userID, ids, date, exclude)
 	if err != nil {
 		return err
 	}
+
 	if later {
 		return ErrLaterSaleExists
 	}
+
 	return nil
 }
 

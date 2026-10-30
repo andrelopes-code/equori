@@ -99,34 +99,42 @@ func getTransaction(svc *app.Service) tool.Tool {
 		if err != nil {
 			return getTransactionOut{}, err
 		}
+
 		t, err := svc.Transaction(ctx, userID, id)
 		if err != nil {
 			return getTransactionOut{}, err
 		}
+
 		accounts, _, err := allAccounts(ctx, svc, userID)
 		if err != nil {
 			return getTransactionOut{}, err
 		}
+
 		versions, err := svc.Versions(ctx, userID, id)
 		if err != nil {
 			return getTransactionOut{}, err
 		}
+
 		attachments, _, err := svc.Attachments(ctx, userID, id, page.Request[app.AttachmentKey]{Limit: 20})
 		if err != nil {
 			return getTransactionOut{}, err
 		}
+
 		disputes, err := svc.Disputes(ctx, userID, id)
 		if err != nil {
 			return getTransactionOut{}, err
 		}
+
 		refs, err := svc.ReferencedBy(ctx, userID, id)
 		if err != nil {
 			return getTransactionOut{}, err
 		}
+
 		payeeIDs := []uuid.UUID{}
 		if t.PayeeID != uuid.Nil {
 			payeeIDs = append(payeeIDs, t.PayeeID)
 		}
+
 		payees, err := svc.PayeeNames(ctx, userID, payeeIDs)
 		if err != nil {
 			return getTransactionOut{}, err
@@ -135,6 +143,7 @@ func getTransaction(svc *app.Service) tool.Tool {
 		out := getTransactionOut{
 			History: []historyEntry{}, Attachments: []attachmentView{}, Disputes: []disputeView{},
 		}
+
 		out.Transaction = transactionDetailView{
 			transactionView: viewOf(t, accounts, payees), Version: t.Version,
 			Links: []linkView{}, ReferencedBy: []linkView{},
@@ -144,34 +153,44 @@ func getTransaction(svc *app.Service) tool.Tool {
 			if err != nil {
 				return getTransactionOut{}, err
 			}
+
 			out.Transaction.Links = append(out.Transaction.Links, v)
 		}
+
 		for _, r := range refs {
 			v, err := linkOf(string(r.Type), r.Source, r.Amount, money.Currency(r.Currency))
 			if err != nil {
 				return getTransactionOut{}, err
 			}
+
 			out.Transaction.ReferencedBy = append(out.Transaction.ReferencedBy, v)
 		}
+
 		for _, v := range versions {
 			out.History = append(out.History, historyEntry{Version: v.Version, Reason: v.Reason, ReplacedAt: v.ReplacedAt.Format(time.RFC3339)})
 		}
+
 		for _, a := range attachments {
 			out.Attachments = append(out.Attachments, attachmentView{FileName: a.FileName, Size: a.Size})
 		}
+
 		for _, d := range disputes {
 			v := disputeView{DisputeID: d.ID.String(), OpenedOn: tool.DateOf(d.OpenedOn), Outcome: d.Outcome}
 			if d.ResolvedOn != nil {
 				v.ResolvedOn = tool.DateOf(*d.ResolvedOn)
 			}
+
 			out.Disputes = append(out.Disputes, v)
 		}
+
 		if out.InstallmentPlan, err = installmentPlanOf(ctx, svc, userID, t); err != nil {
 			return getTransactionOut{}, err
 		}
+
 		if in.IncludeReimbursement {
 			err = reimbursementsOf(ctx, svc, userID, id, &out)
 		}
+
 		return out, err
 	})
 }
@@ -181,11 +200,14 @@ func linkOf(kind string, target uuid.UUID, amount int64, currency money.Currency
 	if amount == 0 {
 		return v, nil
 	}
+
 	m, err := money.New(amount, currency)
 	if err != nil {
 		return v, err
 	}
+
 	v.Amount = tool.MoneyOf(m)
+
 	return v, nil
 }
 
@@ -194,20 +216,25 @@ func installmentPlanOf(ctx context.Context, svc *app.Service, userID int64, t do
 		if p.Installment == nil {
 			continue
 		}
+
 		plan, err := svc.InstallmentPlan(ctx, userID, p.Installment.PlanID)
 		if err != nil {
 			return installmentPlanView{}, err
 		}
+
 		out := installmentPlanView{PlanID: plan.Plan.ID.String(), Count: plan.Plan.Count, Status: plan.Status, Installments: []installmentView{}}
 		for _, i := range plan.Installments {
 			amount, err := minorMoney(plan.Plan.Principal, i.Amount)
 			if err != nil {
 				return installmentPlanView{}, err
 			}
+
 			out.Installments = append(out.Installments, installmentView{Number: i.Number, Amount: amount, Statement: i.Reference.String(), Reversed: i.Reversed})
 		}
+
 		return out, nil
 	}
+
 	return installmentPlanView{}, nil
 }
 
@@ -216,22 +243,26 @@ func reimbursementsOf(ctx context.Context, svc *app.Service, userID int64, id uu
 	if err != nil {
 		return err
 	}
+
 	for _, c := range candidates {
 		out.ReimbursementCandidate = append(out.ReimbursementCandidate, candidateView{
 			TransactionID: c.Transaction.ID.String(), Date: tool.DateOf(c.Transaction.Date),
 			Description: c.Transaction.Description, Remaining: tool.MoneyOf(c.Remaining),
 		})
 	}
+
 	sources, err := svc.ReimbursementSources(ctx, userID, id)
 	if err != nil {
 		return err
 	}
+
 	for _, s := range sources {
 		out.ReimbursementSources = append(out.ReimbursementSources, sourceView{
 			TransactionID: s.Transaction.ID.String(), Date: tool.DateOf(s.Transaction.Date),
 			Description: s.Transaction.Description, Free: tool.MoneyOf(s.Free),
 		})
 	}
+
 	return nil
 }
 
@@ -241,5 +272,6 @@ func requiredID(s, field string) (uuid.UUID, error) {
 	if err == nil && id == uuid.Nil {
 		return id, tool.InvalidArgument(field, "is required")
 	}
+
 	return id, err
 }

@@ -14,10 +14,12 @@ import (
 
 func jarClient(t *testing.T) *http.Client {
 	t.Helper()
+
 	jar, err := cookiejar.New(nil)
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	return &http.Client{Jar: jar}
 }
 
@@ -25,6 +27,7 @@ func jarClient(t *testing.T) *http.Client {
 // read them from the extension point instead of naming a country.
 func regions(t *testing.T) (withDefault, without string) {
 	t.Helper()
+
 	for _, r := range locale.Regions() {
 		if _, ok := ledger.DefaultBaseCurrency(r); ok {
 			if withDefault == "" {
@@ -34,18 +37,22 @@ func regions(t *testing.T) (withDefault, without string) {
 			without = r
 		}
 	}
+
 	if withDefault == "" || without == "" {
 		t.Fatal("the ledger has no region with a default base currency and one without")
 	}
+
 	return withDefault, without
 }
 
 func startSetup(t *testing.T, h *apitest.Harness) string {
 	t.Helper()
+
 	token, err := h.App.Identity.StartSetup(t.Context())
 	if err != nil || token == "" {
 		t.Fatalf("StartSetup = %q, %v; want a token", token, err)
 	}
+
 	return token
 }
 
@@ -60,23 +67,30 @@ func TestSetupRequiredUntilTheFirstUser(t *testing.T) {
 	var st struct {
 		Required bool `json:"required"`
 	}
+
 	r := h.Call(c, http.MethodGet, "/api/v1/setup", nil)
 	if r.Status != http.StatusOK {
 		t.Fatalf("status %d: %s", r.Status, r.Body)
 	}
+
 	r.Decode(t, &st)
+
 	if !st.Required {
 		t.Fatalf("required = false before the first user: %s", r.Body)
 	}
+
 	withDefault, _ := regions(t)
 	if r := h.Call(c, http.MethodPost, "/api/v1/setup", setupBody(startSetup(t, h), "ann@example.com", withDefault)); r.Status != http.StatusCreated {
 		t.Fatalf("setup status %d: %s", r.Status, r.Body)
 	}
+
 	r = h.Call(c, http.MethodGet, "/api/v1/setup", nil)
 	if r.Status != http.StatusOK {
 		t.Fatalf("status %d: %s", r.Status, r.Body)
 	}
+
 	r.Decode(t, &st)
+
 	if st.Required {
 		t.Fatal("required = true after the first user")
 	}
@@ -87,10 +101,12 @@ func TestSetupCreatesTheAdmin(t *testing.T) {
 	h := apitest.Empty(t)
 	c := jarClient(t)
 	withDefault, _ := regions(t)
+
 	r := h.Call(c, http.MethodPost, "/api/v1/setup", setupBody(startSetup(t, h), "ann@example.com", withDefault))
 	if r.Status != http.StatusCreated {
 		t.Fatalf("status %d: %s", r.Status, r.Body)
 	}
+
 	var u struct {
 		Email    string `json:"email"`
 		Role     string `json:"role"`
@@ -98,22 +114,28 @@ func TestSetupCreatesTheAdmin(t *testing.T) {
 		Region   string `json:"region"`
 	}
 	r.Decode(t, &u)
+
 	if u.Email != "ann@example.com" || u.Role != identity.RoleAdmin || u.Language != "en" || u.Region != withDefault {
 		t.Fatalf("user = %+v", u)
 	}
+
 	me := h.Call(c, http.MethodGet, "/api/v1/me", nil)
 	if me.Status != http.StatusOK {
 		t.Fatalf("GET /me with the setup cookie: status %d", me.Status)
 	}
+
 	h.Dispatch() // the ledger opens its settings from identity.user_created
+
 	settings := h.Call(c, http.MethodGet, "/api/v1/settings", nil)
 	if settings.Status != http.StatusOK {
 		t.Fatalf("GET /settings: status %d", settings.Status)
 	}
+
 	var s struct {
 		BaseCurrency string `json:"base_currency"`
 	}
 	settings.Decode(t, &s)
+
 	if want, _ := ledger.DefaultBaseCurrency(withDefault); s.BaseCurrency != string(want) {
 		t.Fatalf("base currency = %q, want %q", s.BaseCurrency, want)
 	}
@@ -132,10 +154,12 @@ func TestSetupRejectsAnotherToken(t *testing.T) {
 func TestSetupClosesAfterTheFirstUser(t *testing.T) {
 	h := apitest.Empty(t)
 	token := startSetup(t, h)
+
 	withDefault, _ := regions(t)
 	if r := h.Call(jarClient(t), http.MethodPost, "/api/v1/setup", setupBody(token, "ann@example.com", withDefault)); r.Status != http.StatusCreated {
 		t.Fatalf("status %d: %s", r.Status, r.Body)
 	}
+
 	r := h.Call(jarClient(t), http.MethodPost, "/api/v1/setup", setupBody(token, "bob@example.com", withDefault))
 	h.ExpectProblem(r, http.StatusConflict, "setup_complete", "")
 
@@ -152,13 +176,16 @@ func TestSetupConcurrentRequests(t *testing.T) {
 	token := startSetup(t, h)
 	withDefault, _ := regions(t)
 	statuses := make([]int, 2)
+
 	var wg sync.WaitGroup
 	for i, email := range []string{"ann@example.com", "bob@example.com"} {
 		wg.Go(func() {
 			statuses[i] = h.Call(jarClient(t), http.MethodPost, "/api/v1/setup", setupBody(token, email, withDefault)).Status
 		})
 	}
+
 	wg.Wait()
+
 	created, conflicts := 0, 0
 	for _, s := range statuses {
 		switch s {
@@ -168,6 +195,7 @@ func TestSetupConcurrentRequests(t *testing.T) {
 			conflicts++
 		}
 	}
+
 	if created != 1 || conflicts != 1 {
 		t.Fatalf("statuses = %v, want one 201 and one 409", statuses)
 	}
@@ -179,6 +207,7 @@ func TestSetupValidation(t *testing.T) {
 	token := startSetup(t, h)
 	r := h.Call(jarClient(t), http.MethodPost, "/api/v1/setup", setupBody(token, "ann@example.com", "ZZ"))
 	h.ExpectProblem(r, http.StatusUnprocessableEntity, "validation_failed", "region")
+
 	_, without := regions(t)
 	r = h.Call(jarClient(t), http.MethodPost, "/api/v1/setup", setupBody(token, "ann@example.com", without))
 	h.ExpectProblem(r, http.StatusUnprocessableEntity, "validation_failed", "base_currency")

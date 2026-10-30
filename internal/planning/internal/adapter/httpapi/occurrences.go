@@ -11,6 +11,7 @@ func (s *Server) RealizeOccurrence(ctx context.Context, req RealizeOccurrenceReq
 	if err != nil {
 		return nil, err
 	}
+
 	return RealizeOccurrence200JSONResponse(toOccurrenceAPI(o)), nil
 }
 
@@ -19,5 +20,6 @@ func (s *Server) UnrealizeOccurrence(ctx context.Context, req UnrealizeOccurrenc
 	if err != nil {
 		return nil, err
 	}
+
 	return UnrealizeOccurrence200JSONResponse(toOccurrenceAPI(o)), nil
 }

@@ -23,9 +23,11 @@ func (g Goal) Validate() error {
 	if n := len([]rune(g.Name)); n < 1 || n > 60 {
 		return invalid("name", "must have 1 to 60 characters")
 	}
+
 	if g.Target <= 0 {
 		return invalid("target", "must be positive")
 	}
+
 	return nil
 }
 
@@ -49,5 +51,6 @@ func (g Goal) Measure(current int64) GoalProgress {
 		q, _ := bits.Div64(hi, lo, uint64(g.Target)) //nolint:gosec // 0 < current < target here
 		p.ProgressBP = int(q)                        //nolint:gosec // q < 10000
 	}
+
 	return p
 }

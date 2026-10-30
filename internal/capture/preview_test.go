@@ -61,6 +61,7 @@ func newBooks(t *testing.T, opts ...apitest.Option) books {
 			ID string `json:"id"`
 		}
 		h.MustDo(http.MethodPost, "/api/v1/institutions", map[string]any{"name": name}, http.StatusCreated, &out)
+
 		return out.ID
 	}
 	nubank, itau := institution("Nubank"), institution("Itaú")
@@ -89,28 +90,34 @@ func newBooks(t *testing.T, opts ...apitest.Option) books {
 		"date": "2026-10-01", "description": "ride", "payee_id": b.uber,
 		"postings": []map[string]any{apitest.Posting(b.wallet, -1500), apitest.Posting(b.transport, 1500)},
 	}, http.StatusCreated, nil)
+
 	return b
 }
 
 func (b books) preview(t *testing.T, text, defaultAccount string) []lineView {
 	t.Helper()
+
 	body := map[string]any{"text": text}
 	if defaultAccount != "" {
 		body["default_account_id"] = defaultAccount
 	}
+
 	var out struct {
 		Lines []lineView `json:"lines"`
 	}
 	b.h.MustDo(http.MethodPost, "/api/v1/capture/preview", body, http.StatusOK, &out)
+
 	return out.Lines
 }
 
 func (b books) one(t *testing.T, text, defaultAccount string) lineView {
 	t.Helper()
+
 	lines := b.preview(t, text, defaultAccount)
 	if len(lines) != 1 {
 		t.Fatalf("lines = %d, want 1", len(lines))
 	}
+
 	return lines[0]
 }
 
@@ -119,6 +126,7 @@ func codes(l lineView) string {
 	for _, i := range l.Issues {
 		out = append(out, i.Code)
 	}
+
 	return strings.Join(out, ",")
 }
 
@@ -126,6 +134,7 @@ func amount(l lineView) int64 {
 	if l.Amount == nil {
 		return 0
 	}
+
 	return l.Amount.Amount
 }
 
@@ -145,9 +154,11 @@ func TestPreviewScenarios(t *testing.T) {
 		if len(lines) != 2 || lines[0].Line != 1 || lines[1].Line != 2 {
 			t.Fatalf("lines = %+v", lines)
 		}
+
 		if l := lines[0]; l.AccountID != b.visa || amount(l) != 3250 || l.PayeeID != b.uber {
 			t.Fatalf("first = %+v", l)
 		}
+
 		if l := lines[1]; l.AccountID != b.visa || amount(l) != 5800 || l.Installments != 3 || len(l.Issues) != 0 {
 			t.Fatalf("second = %+v", l)
 		}
@@ -173,6 +184,7 @@ func TestPreviewScenarios(t *testing.T) {
 		if codes(l) != "ambiguous_amount" || len(l.Issues[0].Choices) != 2 {
 			t.Fatalf("line = %+v", l)
 		}
+
 		c := l.Issues[0].Choices
 		if c[0].Amount.Amount != 200 || c[0].Description != "Padaria irmãos 15" || c[1].Amount.Amount != 1500 || c[1].Description != "Padaria 2 irmãos" {
 			t.Fatalf("choices = %+v", c)
@@ -182,6 +194,7 @@ func TestPreviewScenarios(t *testing.T) {
 		if l := b.one(t, "cinema 40", ""); codes(l) != "missing_account" || l.AccountID != "" {
 			t.Fatalf("line = %+v", l)
 		}
+
 		if l := b.one(t, "cinema 40", b.wallet); codes(l) != "" || l.AccountID != b.wallet || l.AccountSource != "default" {
 			t.Fatalf("line = %+v", l)
 		}
@@ -190,6 +203,7 @@ func TestPreviewScenarios(t *testing.T) {
 		if l := b.one(t, "almoço 32 nubank", ""); l.AccountID != b.checking || codes(l) != "" {
 			t.Fatalf("line = %+v", l)
 		}
+
 		if l := b.one(t, "almoço 32 itaú débito", ""); codes(l) != "unknown_account" {
 			t.Fatalf("line = %+v", l)
 		}
@@ -225,6 +239,7 @@ func TestPreviewScenarios(t *testing.T) {
 		if codes(l) != "possible_account" || l.AccountID != b.wallet || l.AccountSource != "default" {
 			t.Fatalf("line = %+v", l)
 		}
+
 		c := l.Issues[0].Choices
 		if len(c) != 2 || c[0].AccountID != b.checking || c[0].Description != "Almoço" || c[1].AccountID != b.wallet || c[1].Description != "Almoço nubnak" {
 			t.Fatalf("choices = %+v", c)
@@ -238,10 +253,12 @@ func TestPreviewScenarios(t *testing.T) {
 	})
 	t.Run("segments join to the line", func(t *testing.T) {
 		l := b.one(t, "  R$ 12 café   #manhã wallet ", "")
+
 		var sb strings.Builder
 		for _, s := range l.Segments {
 			sb.WriteString(s.Text)
 		}
+
 		if sb.String() != l.Text || l.Text != "R$ 12 café   #manhã wallet" || l.Segments[0].Role != "amount" {
 			t.Fatalf("segments = %+v", l.Segments)
 		}
@@ -262,6 +279,7 @@ func TestPreviewRejections(t *testing.T) {
 		http.StatusUnprocessableEntity, "validation_failed", "default_account_id")
 	b.h.ExpectProblem(b.h.Do(http.MethodPost, "/api/v1/capture/preview", map[string]any{"text": strings.Repeat("a", 10001)}),
 		http.StatusBadRequest, "invalid_request", "text")
+
 	if lines := b.preview(t, strings.Repeat("café 5\n\n", 100), b.wallet); len(lines) != 100 {
 		t.Fatalf("lines = %d, want 100", len(lines))
 	}
@@ -275,6 +293,7 @@ func TestPreviewCandidates(t *testing.T) {
 	b.h.MustDo(http.MethodPost, "/api/v1/accounts/"+old+"/close", map[string]string{"closed_on": "2026-10-15"}, http.StatusOK, nil)
 	b.h.ExpectProblem(b.h.Do(http.MethodPost, "/api/v1/capture/preview", map[string]any{"text": "café 5", "default_account_id": old}),
 		http.StatusUnprocessableEntity, "validation_failed", "default_account_id")
+
 	if l := b.one(t, "café 5 old wallet", b.checking); l.AccountID != b.wallet || l.Description != "Café old" {
 		t.Fatalf("line = %+v", l)
 	}
@@ -291,9 +310,11 @@ func TestPreviewReferenceDate(t *testing.T) {
 		}
 		b.h.MustDo(http.MethodPost, "/api/v1/capture/preview",
 			map[string]any{"text": text, "default_account_id": b.wallet, "reference_date": reference}, http.StatusOK, &out)
+
 		if len(out.Lines) != 1 {
 			t.Fatalf("lines = %d, want 1", len(out.Lines))
 		}
+
 		return out.Lines[0]
 	}
 	t.Run("S151", func(t *testing.T) {
@@ -310,6 +331,7 @@ func TestPreviewReferenceDate(t *testing.T) {
 		if l := at(t, "mercado 30", "2026-10-22"); l.Date != "2026-10-22" {
 			t.Fatalf("date = %s, want 2026-10-22 (today plus one day)", l.Date)
 		}
+
 		b.h.ExpectProblem(b.h.Do(http.MethodPost, "/api/v1/capture/preview",
 			map[string]any{"text": "mercado 30", "reference_date": "2026-10-23"}),
 			http.StatusUnprocessableEntity, "validation_failed", "reference_date")

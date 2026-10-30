@@ -50,6 +50,7 @@ func New(cfg Config) http.Handler {
 		if g, ok := grantFrom(r.Context()); ok && g.Write {
 			return write
 		}
+
 		return read
 	}, &sdk.StreamableHTTPOptions{
 		Stateless: true, MaxRequestBodyBytes: maxBodyBytes, Logger: cfg.Log,
@@ -62,6 +63,7 @@ func New(cfg Config) http.Handler {
 		g, _ := grantFrom(ctx)
 		return &sdkauth.TokenInfo{Extra: map[string]any{grantExtra: g}}, nil
 	}, &sdkauth.RequireBearerTokenOptions{AllowMissingExpiration: true})
+
 	return authenticate(cfg.Verify, carry(h))
 }
 
@@ -69,16 +71,19 @@ const grantExtra = "equori_grant"
 
 func newServer(cfg Config, write bool) *sdk.Server {
 	s := sdk.NewServer(&sdk.Implementation{Name: "equori", Version: cfg.Version}, &sdk.ServerOptions{Instructions: cfg.Instructions})
+
 	var listed []string
 	for _, name := range cfg.Names {
 		t, ok := cfg.Registry.Tool(name)
 		if !ok {
 			continue
 		}
+
 		spec := t.Spec()
 		if !write && spec.Effect != tool.ReadOnly {
 			continue
 		}
+
 		listed = append(listed, name)
 		destructive := spec.Effect == tool.Destructive
 		s.AddTool(&sdk.Tool{
@@ -86,9 +91,11 @@ func newServer(cfg Config, write bool) *sdk.Server {
 			Annotations: &sdk.ToolAnnotations{ReadOnlyHint: spec.Effect == tool.ReadOnly, DestructiveHint: &destructive, IdempotentHint: spec.Idempotent},
 		}, callTool(cfg, spec))
 	}
+
 	for _, p := range cfg.Prompts {
 		addPrompt(s, p)
 	}
+
 	if !write {
 		// X14: a read token reaches no write tool, also by calling it without listing it.
 		s.AddReceivingMiddleware(func(next sdk.MethodHandler) sdk.MethodHandler {
@@ -96,10 +103,12 @@ func newServer(cfg Config, write bool) *sdk.Server {
 				if call, ok := req.(*sdk.CallToolRequest); ok && method == "tools/call" && !slices.Contains(listed, call.Params.Name) {
 					return toolResult(tool.Result{Content: notAllowed, IsError: true}), nil
 				}
+
 				return next(ctx, method, req)
 			}
 		})
 	}
+
 	return s
 }
 
@@ -112,8 +121,10 @@ func callTool(cfg Config, spec tool.Spec) sdk.ToolHandler {
 		if info := req.Extra.TokenInfo; info != nil {
 			g, _ = info.Extra[grantExtra].(Grant)
 		}
+
 		start := time.Now()
 		res, err := cfg.Registry.Call(auth.WithUserID(ctx, g.UserID), spec.Name, req.Params.Arguments)
+
 		outcome := "ok"
 		switch {
 		case err != nil:
@@ -125,12 +136,15 @@ func callTool(cfg Config, spec tool.Spec) sdk.ToolHandler {
 			_ = json.Unmarshal(res.Content, &e)
 			outcome = e.Code
 		}
+
 		cfg.Log.LogAttrs(ctx, slog.LevelInfo, "mcp call", slog.String("token_id", g.TokenID), slog.Int64("user_id", g.UserID),
 			slog.String("tool", spec.Name), slog.String("effect", spec.Effect.String()), slog.String("outcome", outcome),
 			slog.Duration("duration", time.Since(start)), slog.Int("bytes", len(res.Content)))
+
 		if err != nil {
 			return nil, err
 		}
+
 		return toolResult(res), nil
 	}
 }

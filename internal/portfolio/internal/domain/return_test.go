@@ -4,7 +4,9 @@ import "testing"
 
 func TestAnnualReturnBP(t *testing.T) {
 	t.Parallel()
+
 	flow := func(d string, amount int64) CashFlow { return CashFlow{Date: day(d), Amount: amount} }
+
 	tests := []struct {
 		name   string
 		flows  []CashFlow

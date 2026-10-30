@@ -17,6 +17,7 @@ var errKnown = errors.New("known")
 
 func TestErrorWriter(t *testing.T) {
 	t.Parallel()
+
 	tests := []struct {
 		name    string
 		request bool
@@ -41,6 +42,7 @@ func TestErrorWriter(t *testing.T) {
 					if errors.Is(err, errKnown) {
 						return problem.New(http.StatusConflict, "known_conflict", "known"), true
 					}
+
 					return problem.Details{}, false
 				},
 			}
@@ -58,12 +60,15 @@ func TestErrorWriter(t *testing.T) {
 			if err := json.Unmarshal(rec.Body.Bytes(), &d); err != nil {
 				t.Fatal(err)
 			}
+
 			if rec.Code != tc.status || d.Code != tc.code || d.RequestID == "" || d.RequestID != rec.Header().Get("X-Request-ID") {
 				t.Fatalf("status %d: %s", rec.Code, rec.Body)
 			}
+
 			if tc.status >= 500 && (d.Detail != "" || strings.Contains(rec.Body.String(), "database down")) {
 				t.Fatalf("internal error leaked: %s", rec.Body)
 			}
+
 			if logged := strings.Contains(logs.String(), d.RequestID); logged != tc.logged {
 				t.Fatalf("logged = %v, want %v: %s", logged, tc.logged, logs.String())
 			}

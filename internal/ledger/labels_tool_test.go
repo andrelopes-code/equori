@@ -10,10 +10,12 @@ import (
 
 func TestListPayeesAndTagsTool(t *testing.T) {
 	t.Parallel()
+
 	h := apitest.New(t, apitest.Today("2026-10-23"))
 	for _, n := range []string{"Uber", "Padaria"} {
 		h.MustDo(http.MethodPost, "/api/v1/payees", map[string]string{"name": n}, http.StatusCreated, nil)
 	}
+
 	checking := h.Account("Checking", "asset", "checking", nil)
 	food := h.Account("Food", "expense", "", nil)
 	h.MustDo(http.MethodPost, "/api/v1/transactions", map[string]any{
@@ -27,16 +29,20 @@ func TestListPayeesAndTagsTool(t *testing.T) {
 		} `json:"payees"`
 	}
 	toolOutput(t, h, "list_payees_and_tags", map[string]any{"kind": "payees", "query": "ub"}, &payees)
+
 	if len(payees.Payees) != 1 || payees.Payees[0].Name != "Uber" {
 		t.Errorf("payees = %+v", payees)
 	}
+
 	var tags struct {
 		Tags []string `json:"tags"`
 	}
 	toolOutput(t, h, "list_payees_and_tags", map[string]any{"kind": "tags"}, &tags)
+
 	if !slices.Equal(tags.Tags, []string{"trip"}) {
 		t.Errorf("tags = %v", tags.Tags)
 	}
+
 	h.ExpectToolError(h.Tool("list_payees_and_tags", map[string]any{"kind": "other"}), "invalid_arguments", "")
 }
 
@@ -56,6 +62,7 @@ func TestListAccountsInstitution(t *testing.T) {
 		} `json:"accounts"`
 	}
 	toolOutput(t, h, "list_accounts", map[string]any{"class": "asset"}, &out)
+
 	if out.BaseCurrency != "BRL" || len(out.Accounts) != 1 || out.Accounts[0].InstitutionName != "Itaú" {
 		t.Errorf("list_accounts = %+v", out)
 	}

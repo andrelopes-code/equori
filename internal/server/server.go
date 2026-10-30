@@ -97,11 +97,14 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	dispatcher := outbox.NewDispatcher(pool, log)
+
 	clk := clock.New(time.UTC, time.Now)
 	if cfg.Clock != nil {
 		clk = *cfg.Clock
 	}
+
 	identityModule := identity.New(pool, identity.Config{
 		SecureCookies: cfg.SecureCookies, DefaultCurrency: ledger.DefaultBaseCurrency, SetupDone: cfg.SetupDone,
 	}, log)
@@ -110,17 +113,21 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 	if _, err := marketdata.NewSources(cfg.PriceFeeds, nil, feedClient); err != nil {
 		return nil, err
 	}
+
 	if _, err := marketdata.NewIndexSources(cfg.IndexFeeds, nil, feedClient); err != nil {
 		return nil, err
 	}
+
 	sources, err := marketdata.NewSources(marketdata.SourceIDs(), cfg.FeedURLs, feedClient)
 	if err != nil {
 		return nil, err
 	}
+
 	indexSources, err := marketdata.NewIndexSources(marketdata.IndexSourceIDs(), cfg.FeedURLs, feedClient)
 	if err != nil {
 		return nil, err
 	}
+
 	marketdataModule := marketdata.New(pool).WithFeeds(marketdata.FeedConfig{
 		Sources: sources, Indexes: indexSources, Expectations: marketdata.NewExpectationSources(cfg.FeedURLs, feedClient), Seed: slices.Concat(cfg.PriceFeeds, cfg.IndexFeeds),
 		Client: feedClient, Clock: clk, Log: log,
@@ -130,6 +137,7 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 	version := cmp.Or(cfg.Version, "dev")
 	reportingModule := reporting.New(pool, dispatcher, clk, log, version)
 	classificationModule := classification.New(pool, dispatcher, ledgerModule, log)
+
 	assistantModule, err := assistant.New(pool, assistant.Config{
 		SecretKey: cfg.SecretKey, PreviousSecretKey: cfg.PreviousSecretKey, Instance: cfg.LLMProviders,
 		Uses: []llm.Use{capture.SuggestUse, assistant.ChatUse}, Navigation: web.NavigationMap(), Locale: identityModule.Profile, Clock: clk, NewProvider: cfg.LLMFactory,
@@ -138,26 +146,32 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	router := llm.NewRouter(&clk, log, assistantModule.Resolver(), cfg.LLMProviders...)
 	assistantModule.UseRouter(router)
 	captureModule := capture.New(pool, ledgerModule, classificationModule, identityModule, router, clk, log)
+
 	ingestionModule, err := ingestion.New(pool, dispatcher, ledgerModule, classificationModule, ingestion.Config{
 		SecretKey: cfg.SecretKey, PreviousSecretKey: cfg.PreviousSecretKey, URLs: cfg.AggregatorURLs, Clock: clk,
 	}, log)
 	if err != nil {
 		return nil, err
 	}
+
 	portfolioModule, err := portfolio.New(pool, dispatcher, ledgerModule, marketdataModule, identityModule, log)
 	if err != nil {
 		return nil, err
 	}
+
 	reportingModule.OnImport(portfolioModule.RebuildUser)
 	planningModule := planning.New(pool, dispatcher, ledgerModule, marketdataModule, identityModule, portfolioModule, clk, log)
 	reportingModule.UseIndicatorSources(planningModule, portfolioModule)
+
 	tools, err := tool.NewRegistry(log, append([]tool.Group{ledgerModule.Tools(), reportingModule.Tools(), ingestionModule.Tools(), planningModule.Tools(), portfolioModule.Tools(), marketdataModule.Tools(), classificationModule.Tools(), identityModule.Tools(), assistantModule.Tools()}, cfg.ExtraTools...)...)
 	if err != nil {
 		return nil, err
 	}
+
 	chatNames := slices.Collect(func(yield func(string) bool) {
 		for _, t := range tools.Tools() {
 			if !yield(t.Spec().Name) {
@@ -165,19 +179,23 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 			}
 		}
 	})
+
 	chatTools, err := tools.Select(chatNames...)
 	if err != nil {
 		return nil, err
 	}
+
 	if err := assistantModule.UseTools(chatTools); err != nil {
 		return nil, err
 	}
 
 	mux := http.NewServeMux()
 	mux.Handle("GET /healthz", httpserver.Health(pool))
+
 	if cfg.APIDocs {
 		apidoc.Register(mux, api.Contract)
 	}
+
 	identityModule.RegisterRoutes(mux)
 	assistantModule.RegisterRoutes(mux)
 	ledgerModule.RegisterRoutes(mux)
@@ -205,9 +223,11 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 			if errors.Is(err, identity.ErrInvalidAccessToken) {
 				return mcp.Grant{}, mcp.ErrInvalidToken
 			}
+
 			if err != nil {
 				return mcp.Grant{}, err
 			}
+
 			return mcp.Grant{TokenID: g.TokenID.String(), UserID: g.UserID, Write: g.Scope == "write"}, nil
 		},
 	}))
@@ -238,7 +258,9 @@ func mcpPrompts() []mcp.Prompt {
 		for _, a := range p.Arguments {
 			args = append(args, mcp.PromptArgument(a))
 		}
+
 		out = append(out, mcp.Prompt{Name: p.Name, Description: p.Description, Arguments: args, Render: p.Render})
 	}
+
 	return out
 }

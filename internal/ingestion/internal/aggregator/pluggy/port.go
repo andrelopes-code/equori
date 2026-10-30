@@ -32,10 +32,12 @@ func NewPort(baseURL string, hc *http.Client, clk clock.Clock) (*Port, error) {
 	if baseURL == "" {
 		baseURL = DefaultURL
 	}
+
 	c, err := client.NewClient(baseURL, hc, clk.Now)
 	if err != nil {
 		return nil, err
 	}
+
 	return &Port{sessions: client.NewSessions(c), loc: clk.Location()}, nil
 }
 
@@ -62,6 +64,7 @@ func (p Port) State(status string) domain.ConnectionState {
 	case "UPDATED":
 		return domain.StateOK
 	}
+
 	return domain.StateFailed
 }
 
@@ -74,6 +77,7 @@ func (p Port) translate(err error) error {
 	case errors.Is(err, client.ErrNotFound):
 		return app.ErrItemNotFound
 	}
+
 	return fmt.Errorf("%w: %w", app.ErrAggregatorUnavailable, err)
 }
 
@@ -86,10 +90,12 @@ func (p Port) session(ctx context.Context, id uuid.UUID, c domain.Credentials, f
 		if err != nil {
 			return p.translate(err)
 		}
+
 		err = fn(s)
 		if !errors.Is(err, client.ErrUnauthorized) || attempt == 1 {
 			return p.translate(err)
 		}
+
 		p.sessions.Forget(key)
 	}
 }
@@ -108,30 +114,38 @@ func (p Port) Item(ctx context.Context, id uuid.UUID, c domain.Credentials, item
 		if err != nil {
 			return err
 		}
+
 		accounts, err := s.Accounts(ctx, itemID)
 		if err != nil {
 			return err
 		}
+
 		out = domain.Connection{Name: it.Connector.Name, ProviderStatus: it.Status}
 		if out.LastItemUpdateAt, err = updatedAt(it); err != nil {
 			return err
 		}
+
 		out.Accounts = externalAccounts(accounts)
+
 		return nil
 	})
+
 	return out, err
 }
 
 func (p Port) Accounts(ctx context.Context, id uuid.UUID, c domain.Credentials, itemID string) ([]domain.ExternalAccount, error) {
 	var out []domain.ExternalAccount
+
 	err := p.session(ctx, id, c, func(s *client.Session) error {
 		accounts, err := s.Accounts(ctx, itemID)
 		out = externalAccounts(accounts)
+
 		return err
 	})
 	if errors.Is(err, app.ErrItemNotFound) {
 		return nil, fmt.Errorf("%w: the item is gone", app.ErrAggregatorUnavailable)
 	}
+
 	return out, err
 }
 
@@ -140,6 +154,7 @@ func (p Port) Accounts(ctx context.Context, id uuid.UUID, c domain.Credentials, 
 // already listed, is left out: the identification is the external key of the connection.
 func externalAccounts(accounts []client.Account) []domain.ExternalAccount {
 	var out []domain.ExternalAccount
+
 	seen := map[string]bool{}
 	for _, a := range accounts {
 		out = append(out, domain.ExternalAccount{
@@ -149,37 +164,45 @@ func externalAccounts(accounts []client.Account) []domain.ExternalAccount {
 		if a.BankData == nil {
 			continue
 		}
+
 		for _, r := range a.BankData.ReservedBalances {
 			held := slices.ContainsFunc(r.AvailableAmounts, func(x client.ReservedAmount) bool { return x.CurrencyCode == a.CurrencyCode })
 			if !held || r.Identification == "" || seen[r.Identification] {
 				continue
 			}
+
 			seen[r.Identification] = true
 			out = append(out, domain.ExternalAccount{
 				ExternalID: r.Identification, Type: a.Type, Subtype: client.SubtypeReserve, Name: r.Name, Currency: a.CurrencyCode,
 			})
 		}
 	}
+
 	return out
 }
 
 func (p Port) ItemState(ctx context.Context, id uuid.UUID, c domain.Credentials, itemID string) (app.ItemState, error) {
 	var state app.ItemState
+
 	err := p.session(ctx, id, c, func(s *client.Session) error {
 		it, err := s.Item(ctx, itemID)
 		if err != nil {
 			return err
 		}
+
 		state.Status = it.Status
 		if state.UpdatedAt, err = itemInstant("lastUpdatedAt", it.LastUpdatedAt); err != nil {
 			return err
 		}
+
 		state.NextUpdateAt, err = itemInstant("nextAutoSyncAt", it.NextAutoSyncAt)
+
 		return err
 	})
 	if errors.Is(err, app.ErrItemNotFound) {
 		return app.ItemState{}, fmt.Errorf("%w: the item is gone", app.ErrAggregatorUnavailable)
 	}
+
 	return state, err
 }
 
@@ -191,29 +214,36 @@ func itemInstant(field string, v *string) (*time.Time, error) {
 	if v == nil {
 		return nil, nil
 	}
+
 	at, err := time.Parse(time.RFC3339Nano, *v)
 	if err != nil {
 		return nil, fmt.Errorf("pluggy GET /items/{id}: %s is not an RFC 3339 instant", field)
 	}
+
 	return &at, nil
 }
 
 func (p Port) ReadAccount(ctx context.Context, id uuid.UUID, c domain.Credentials, itemID, accountID string, from, to time.Time, scale int) (domain.AccountRead, error) {
 	var out domain.AccountRead
+
 	err := p.session(ctx, id, c, func(s *client.Session) error {
 		it, err := s.Item(ctx, itemID)
 		if err != nil {
 			return err
 		}
+
 		accounts, err := s.Accounts(ctx, itemID)
 		if err != nil {
 			return err
 		}
+
 		i := slices.IndexFunc(accounts, func(a client.Account) bool { return a.ID == accountID })
 		if i < 0 {
 			return p.readReserve(it, accounts, accountID, scale, &out)
 		}
+
 		a := accounts[i]
+
 		bills := map[string]client.Bill{}
 		if a.Subtype == client.SubtypeCard {
 			// Bills come from Open Finance connections only; without them lines bill by the cycle.
@@ -221,6 +251,7 @@ func (p Port) ReadAccount(ctx context.Context, id uuid.UUID, c domain.Credential
 			if err != nil && !errors.Is(err, client.ErrNotFound) {
 				return err
 			}
+
 			for _, b := range bs {
 				bills[b.ID] = b
 				if bill, err := client.ReadBill(b, scale, p.loc); err == nil {
@@ -228,14 +259,17 @@ func (p Port) ReadAccount(ctx context.Context, id uuid.UUID, c domain.Credential
 				}
 			}
 		}
+
 		ts, err := s.Transactions(ctx, a.ID, from, to)
 		if err != nil {
 			return err
 		}
+
 		out.ItemStatus = it.Status
 		if out.ItemUpdatedAt, err = updatedAt(it); err != nil {
 			return err
 		}
+
 		if a.Subtype != client.SubtypeCard && out.ItemUpdatedAt != nil {
 			// A42: the balance holds at the item's last update.
 			if amount, err := client.Minor(a.Balance, scale); err == nil {
@@ -243,6 +277,7 @@ func (p Port) ReadAccount(ctx context.Context, id uuid.UUID, c domain.Credential
 				out.Balance = &domain.Balance{Date: time.Date(l.Year(), l.Month(), l.Day(), 0, 0, 0, 0, time.UTC), Amount: amount}
 			}
 		}
+
 		for _, t := range ts {
 			out.Seen = append(out.Seen, t.ID)
 			r, ok, err := client.Normalize(t, a, bills, scale, p.loc)
@@ -252,11 +287,13 @@ func (p Port) ReadAccount(ctx context.Context, id uuid.UUID, c domain.Credential
 				out.Records = append(out.Records, r)
 			}
 		}
+
 		return nil
 	})
 	if errors.Is(err, app.ErrItemNotFound) {
 		return out, fmt.Errorf("%w: the item is gone", app.ErrAggregatorUnavailable)
 	}
+
 	return out, err
 }
 
@@ -268,15 +305,19 @@ func (p Port) readReserve(it client.Item, accounts []client.Account, identificat
 		if a.BankData == nil {
 			continue
 		}
+
 		for _, r := range a.BankData.ReservedBalances {
 			if r.Identification != identification {
 				continue
 			}
+
 			var err error
+
 			*out = domain.AccountRead{ItemStatus: it.Status}
 			if out.ItemUpdatedAt, err = updatedAt(it); err != nil {
 				return err
 			}
+
 			var (
 				total int64
 				held  bool
@@ -285,20 +326,25 @@ func (p Port) readReserve(it client.Item, accounts []client.Account, identificat
 				if x.CurrencyCode != a.CurrencyCode {
 					continue
 				}
+
 				amount, err := client.Minor(x.Amount, scale)
 				if err != nil {
 					held = false
 					break
 				}
+
 				total += amount
 				held = true
 			}
+
 			if held && out.ItemUpdatedAt != nil {
 				l := out.ItemUpdatedAt.In(p.loc)
 				out.Balance = &domain.Balance{Date: time.Date(l.Year(), l.Month(), l.Day(), 0, 0, 0, 0, time.UTC), Amount: total}
 			}
+
 			return nil
 		}
 	}
+
 	return app.ErrAccountGone
 }

@@ -25,6 +25,7 @@ func parseNumber(s string, c Conventions) (decimal, bool) {
 		if !allDigits(f) || !wholeNumber(w, c.Group) {
 			return decimal{}, false
 		}
+
 		whole, frac = strings.ReplaceAll(w, string(c.Group), ""), f
 	} else {
 		parts := strings.Split(s, string(c.Group))
@@ -39,14 +40,17 @@ func parseNumber(s string, c Conventions) (decimal, bool) {
 			return decimal{}, false
 		}
 	}
+
 	digits := strings.TrimLeft(whole+frac, "0")
 	if len(digits) > maxDigits {
 		return decimal{}, false
 	}
+
 	m, err := strconv.ParseInt("0"+digits, 10, 64)
 	if err != nil {
 		return decimal{}, false
 	}
+
 	return decimal{mantissa: m, exp: len(frac)}, true
 }
 
@@ -54,11 +58,13 @@ func allDigits(s string) bool {
 	if s == "" {
 		return false
 	}
+
 	for _, r := range s {
 		if r < '0' || r > '9' {
 			return false
 		}
 	}
+
 	return true
 }
 
@@ -68,14 +74,17 @@ func wholeNumber(s string, group rune) bool {
 	if len(parts) == 1 {
 		return allDigits(s)
 	}
+
 	if !allDigits(parts[0]) || len(parts[0]) > 3 {
 		return false
 	}
+
 	for _, p := range parts[1:] {
 		if len(p) != 3 || !allDigits(p) {
 			return false
 		}
 	}
+
 	return true
 }
 
@@ -91,19 +100,24 @@ func (d decimal) minor(scale int) (int64, bool) {
 	for exp > scale && m%10 == 0 {
 		m, exp = m/10, exp-1
 	}
+
 	if exp > scale || m == 0 {
 		return 0, false
 	}
+
 	for ; exp < scale; exp++ {
 		m *= 10
 	}
+
 	limit := int64(maxUnits)
 	for range scale {
 		limit = limit*10 + 9
 	}
+
 	if m > limit {
 		return 0, false
 	}
+
 	return m, true
 }
 
@@ -121,45 +135,56 @@ func readAmount(ws []word, i int, lex Lexicon, conv Conventions) (amountPhrase, 
 	var p amountPhrase
 	s := ws[i].norm
 	p.words = 1
+
 	s, p.sign = cutSign(s)
 	if rest, ok := lex.cutSymbol(s); ok {
 		s = rest
+
 		p.explicit = true
 		if p.sign == 0 {
 			s, p.sign = cutSign(s)
 		}
 	}
+
 	if p.sign != 0 {
 		p.explicit = true
 	}
+
 	if s == "" {
 		if !p.explicit || i+1 >= len(ws) || !ws[i+1].free() {
 			return amountPhrase{}, false
 		}
+
 		s = ws[i+1].norm
 		p.words = 2
 	}
+
 	factor := int64(1)
 	if rest, f, ok := lex.cutSuffixFactor(s); ok {
 		s, factor, p.explicit = rest, f, true
 	}
+
 	v, ok := parseNumber(s, conv)
 	if !ok {
 		return amountPhrase{}, false
 	}
+
 	if j := i + p.words; factor == 1 && j < len(ws) && ws[j].free() {
 		if f, ok := lex.wordFactor(ws[j].norm); ok {
 			factor, p.explicit = f, true
 			p.words++
 		}
 	}
+
 	if j := i + p.words; j < len(ws) && ws[j].free() {
 		if _, ok := lex.CurrencyWords[ws[j].norm]; ok {
 			p.explicit = true
 			p.words++
 		}
 	}
+
 	p.value = v.times(factor)
+
 	return p, true
 }
 
@@ -170,5 +195,6 @@ func cutSign(s string) (string, int) {
 	case strings.HasPrefix(s, "-"):
 		return s[1:], -1
 	}
+
 	return s, 0
 }

@@ -23,6 +23,7 @@ func anticipatedTV(t *testing.T, today string) (c cardSetup, planID string) {
 	c.h.MustDo(http.MethodPost, "/api/v1/installment-plans/"+res.PlanID+"/anticipation", map[string]any{
 		"date": "2027-01-15", "from_installment": 5, "to_installment": 10, "target_statement": "2027-02", "amount": apitest.BRL(126000),
 	}, http.StatusCreated, nil)
+
 	return c, res.PlanID
 }
 
@@ -31,6 +32,7 @@ func cancelPlan(t *testing.T, c cardSetup, planID, date string) apitest.Transact
 	t.Helper()
 	var out apitest.TransactionView
 	c.h.MustDo(http.MethodPost, "/api/v1/installment-plans/"+planID+"/cancellation", map[string]any{"date": date}, http.StatusCreated, &out)
+
 	return out
 }
 
@@ -39,6 +41,7 @@ func cancelPlan(t *testing.T, c cardSetup, planID, date string) apitest.Transact
 func checkCancellationBalances(t *testing.T, c cardSetup, v apitest.TransactionView) {
 	t.Helper()
 	discounts := systemAccount(t, c.h, "discounts")
+
 	var categories, discount int64
 	for _, p := range v.Postings {
 		switch p.AccountID {
@@ -49,6 +52,7 @@ func checkCancellationBalances(t *testing.T, c cardSetup, v apitest.TransactionV
 			categories += p.Amount.Amount
 		}
 	}
+
 	if categories != -222540 || discount != 7524 {
 		t.Fatalf("categories %d, discount %d, want -222540 and 7524", categories, discount)
 	}
@@ -64,10 +68,12 @@ func TestS172CancellationAfterAnticipationBeforeItsClosing(t *testing.T) {
 	c, planID := anticipatedTV(t, "2027-01-20")
 	v := cancelPlan(t, c, planID, "2027-01-20")
 	checkCancellationBalances(t, c, v)
+
 	ss := statements(t, c.h, c.card)
 	if net(ss["2027-02"]) != -3*22254 {
 		t.Errorf("2027-02 net = %d, want %d", net(ss["2027-02"]), -3*22254)
 	}
+
 	for _, ref := range []string{"2027-03", "2027-05", "2027-08"} {
 		if net(ss[ref]) != 0 {
 			t.Errorf("%s net = %d, want 0", ref, net(ss[ref]))
@@ -82,13 +88,16 @@ func TestS173CancellationAfterAnticipationBilled(t *testing.T) {
 	c, planID := anticipatedTV(t, "2027-02-20")
 	v := cancelPlan(t, c, planID, "2027-02-20")
 	checkCancellationBalances(t, c, v)
+
 	ss := statements(t, c.h, c.card)
 	if net(ss["2027-03"]) != -(4*22254 + 126000) {
 		t.Errorf("2027-03 net = %d, want %d", net(ss["2027-03"]), -(4*22254 + 126000))
 	}
+
 	if net(ss["2027-02"]) != 22254+126000 {
 		t.Errorf("2027-02 net = %d, want %d", net(ss["2027-02"]), 22254+126000)
 	}
+
 	for _, ref := range []string{"2027-05", "2027-08"} {
 		if net(ss[ref]) != 0 {
 			t.Errorf("%s net = %d, want 0", ref, net(ss[ref]))

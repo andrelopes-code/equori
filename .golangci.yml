@@ -13,7 +13,15 @@ linters:
     - errorlint
     - gosec
     - noctx
+    - wsl_v5
   settings:
+    # A declaration stays beside the block that uses it; a closing brace is followed by a blank line.
+    wsl_v5:
+      allow-whole-block: true
+      disable:
+        - decl
+      enable:
+        - after-block
     depguard:
       rules:
         domain:

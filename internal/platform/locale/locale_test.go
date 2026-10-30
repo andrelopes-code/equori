@@ -53,13 +53,17 @@ func TestRegionsAreTheAssignedCodes(t *testing.T) {
 	if len(codes) != 249 {
 		t.Fatalf("len(Regions()) = %d, want 249", len(codes))
 	}
+
 	if !slices.IsSorted(codes) {
 		t.Fatal("Regions() is not sorted")
 	}
+
 	if slices.Compact(slices.Clone(codes)) == nil || len(slices.Compact(slices.Clone(codes))) != 249 {
 		t.Fatal("Regions() has duplicates")
 	}
+
 	codes[0] = "XX"
+
 	if locale.Regions()[0] == "XX" {
 		t.Fatal("Regions() shares state between calls")
 	}

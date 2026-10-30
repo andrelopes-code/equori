@@ -74,6 +74,7 @@ func instancePreset(name string) string {
 	if name == "aistudio" {
 		return "gemini"
 	}
+
 	return name
 }
 
@@ -84,24 +85,30 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*Module, error) {
 		if cfg.PreviousSecretKey != "" {
 			previous = []byte(cfg.PreviousSecretKey)
 		}
+
 		b, err := secret.New([]byte(cfg.SecretKey), previous)
 		if err != nil {
 			return nil, err
 		}
+
 		box = b
 	}
+
 	build := llmapi.Factory(cfg.NewProvider)
 	if build == nil {
 		build = llmapi.NewFactory()
 	}
+
 	instance := make([]app.Instance, 0, len(cfg.Instance))
 	for _, p := range cfg.Instance {
 		instance = append(instance, app.Instance{ID: p.Name(), Preset: instancePreset(p.Name())})
 	}
+
 	uses := make([]app.Use, 0, len(cfg.Uses))
 	for _, u := range cfg.Uses {
 		uses = append(uses, llmapi.ToUse(u))
 	}
+
 	var screens []guide.Screen
 	if len(cfg.Navigation) > 0 {
 		var err error
@@ -109,12 +116,15 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*Module, error) {
 			return nil, err
 		}
 	}
+
 	svc := app.NewService(postgres.NewRepository(pool), box, llmapi.NewModels(build), instance, uses, cfg.Clock.Now, cfg.Clock.Today, log)
+
 	wait := cfg.Wait
 	if wait == nil {
 		wait = func(ctx context.Context, until time.Time) error {
 			timer := time.NewTimer(until.Sub(cfg.Clock.Now()))
 			defer timer.Stop()
+
 			select {
 			case <-timer.C:
 				return nil
@@ -123,6 +133,7 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*Module, error) {
 			}
 		}
 	}
+
 	return &Module{svc: svc, resolver: llmapi.NewResolver(svc, cfg.Instance, build, log), http: httpapi.NewServer(svc, log), screens: screens, locale: cfg.Locale, wait: wait}, nil
 }
 
@@ -135,9 +146,11 @@ func (m *Module) UseTools(set tool.Set) error {
 	if err != nil {
 		return err
 	}
+
 	m.svc.UseTools(tools)
 	m.chat = set
 	m.bindAgent(tools)
+
 	return nil
 }
 
@@ -151,9 +164,11 @@ func (m *Module) bindAgent(tools app.Tools) {
 	if tools != nil {
 		m.tools = tools
 	}
+
 	if m.tools == nil || m.router == nil {
 		return
 	}
+
 	m.svc.UseAgent(llmapi.NewAgent(m.router.Use(ChatUse), m.svc, m.tools, m.chat, m.wait), m.locale)
 }
 
@@ -187,7 +202,9 @@ func Prompts() []Prompt {
 		for _, a := range p.Arguments {
 			args = append(args, PromptArgument(a))
 		}
+
 		out = append(out, Prompt{Name: p.Name, Description: p.Description, Arguments: args, Render: p.Render})
 	}
+
 	return out
 }

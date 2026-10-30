@@ -40,6 +40,7 @@ type noteFake struct {
 func newNoteFake() *noteFake {
 	f := &noteFake{}
 	f.basis.Store("v1")
+
 	return f
 }
 
@@ -57,7 +58,9 @@ func (f *noteFake) group() tool.Group {
 			if f.fail.Load() {
 				return noteOut{}, tool.InvalidArgument("name", "exists")
 			}
+
 			f.count.Add(1)
+
 			return noteOut{OK: true}, nil
 		})}}
 }
@@ -77,25 +80,31 @@ type proposalEnv struct {
 
 func newProposalEnv(t *testing.T) proposalEnv {
 	t.Helper()
+
 	note := newNoteFake()
 	now := &atomic.Pointer[time.Time]{}
 	start := time.Date(2026, 10, 23, 12, 0, 0, 0, time.UTC)
 	now.Store(&start)
+
 	h := apitest.New(t, apitest.ExtraTools(note.group()), apitest.Clock(func() time.Time { return *now.Load() }))
+
 	return proposalEnv{h: h, note: note, now: now}
 }
 
 // propose stores a pending proposal of user's through the module and returns its ID.
 func (e proposalEnv) propose(t *testing.T, userID int64, text string) string {
 	t.Helper()
+
 	conv := domain.Conversation{ID: uuid.New(), Title: "t", CreatedAt: *e.now.Load(), UpdatedAt: *e.now.Load()}
 	if err := postgres.NewRepository(e.h.Pool).CreateConversation(t.Context(), userID, conv); err != nil {
 		t.Fatal(err)
 	}
+
 	content, err := assistant.ProposeForTest(e.h.App.Assistant, t.Context(), userID, conv.ID, "note_for_test", json.RawMessage(`{"text":"`+text+`"}`))
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	var out struct {
 		ProposalID string `json:"proposal_id"`
 		Status     string `json:"status"`
@@ -103,18 +112,22 @@ func (e proposalEnv) propose(t *testing.T, userID int64, text string) string {
 	if err := json.Unmarshal(content, &out); err != nil {
 		t.Fatal(err)
 	}
+
 	if out.Status != "awaiting_confirmation" {
 		t.Fatalf("content = %s", content)
 	}
+
 	return out.ProposalID
 }
 
 func (e proposalEnv) status(t *testing.T, id string) string {
 	t.Helper()
+
 	var s string
 	if err := e.h.Pool.QueryRow(t.Context(), `SELECT status FROM assistant_proposal WHERE id = $1`, id).Scan(&s); err != nil {
 		t.Fatal(err)
 	}
+
 	return s
 }
 
@@ -126,10 +139,12 @@ func (e proposalEnv) post(id, verb string) apitest.Response {
 func TestProposeStoresPending(t *testing.T) {
 	t.Parallel()
 	e := newProposalEnv(t)
+
 	id := e.propose(t, e.h.OwnerID(), "x")
 	if got := e.status(t, id); got != "pending" {
 		t.Fatalf("status = %s", got)
 	}
+
 	if n := e.note.count.Load(); n != 0 {
 		t.Fatalf("handler ran %d times", n)
 	}
@@ -140,16 +155,21 @@ func TestConfirmExecutesOnce(t *testing.T) {
 	t.Parallel()
 	e := newProposalEnv(t)
 	id := e.propose(t, e.h.OwnerID(), "x")
+
 	r := e.post(id, "confirm")
 	if r.Status != http.StatusOK {
 		t.Fatalf("confirm = %d: %s", r.Status, r.Body)
 	}
+
 	var p proposalView
 	r.Decode(t, &p)
+
 	if p.Status != "executed" || p.ID != id || p.Tool != "note_for_test" || p.Result["ok"] != true {
 		t.Fatalf("proposal = %+v", p)
 	}
+
 	e.h.ExpectProblem(e.post(id, "confirm"), http.StatusConflict, "proposal_closed", "")
+
 	if n := e.note.count.Load(); n != 1 {
 		t.Fatalf("handler ran %d times", n)
 	}
@@ -160,11 +180,14 @@ func TestConfirmConcurrent(t *testing.T) {
 	e := newProposalEnv(t)
 	id := e.propose(t, e.h.OwnerID(), "x")
 	var wg sync.WaitGroup
+
 	got := make([]apitest.Response, 2)
 	for i := range got {
 		wg.Go(func() { got[i] = e.post(id, "confirm") })
 	}
+
 	wg.Wait()
+
 	ok, closed := 0, 0
 	for _, r := range got {
 		switch r.Status {
@@ -172,9 +195,11 @@ func TestConfirmConcurrent(t *testing.T) {
 			ok++
 		case http.StatusConflict:
 			e.h.ExpectProblem(r, http.StatusConflict, "proposal_closed", "")
+
 			closed++
 		}
 	}
+
 	if ok != 1 || closed != 1 || e.note.count.Load() != 1 {
 		t.Fatalf("ok = %d, closed = %d, runs = %d", ok, closed, e.note.count.Load())
 	}
@@ -188,6 +213,7 @@ func TestConfirmExpired(t *testing.T) {
 	later := e.now.Load().Add(domain.ProposalTTL)
 	e.now.Store(&later)
 	e.h.ExpectProblem(e.post(id, "confirm"), http.StatusConflict, "proposal_expired", "")
+
 	if n := e.note.count.Load(); n != 0 {
 		t.Fatalf("handler ran %d times", n)
 	}
@@ -200,9 +226,11 @@ func TestConfirmStale(t *testing.T) {
 	id := e.propose(t, e.h.OwnerID(), "x")
 	e.note.basis.Store("v2")
 	e.h.ExpectProblem(e.post(id, "confirm"), http.StatusConflict, "proposal_stale", "")
+
 	if got := e.status(t, id); got != "stale" {
 		t.Fatalf("status = %s", got)
 	}
+
 	if n := e.note.count.Load(); n != 0 {
 		t.Fatalf("handler ran %d times", n)
 	}
@@ -214,13 +242,17 @@ func TestRejectThenConfirm(t *testing.T) {
 	id := e.propose(t, e.h.OwnerID(), "x")
 	r := e.post(id, "reject")
 	var p proposalView
+
 	if r.Status != http.StatusOK {
 		t.Fatalf("reject = %d: %s", r.Status, r.Body)
 	}
+
 	r.Decode(t, &p)
+
 	if p.Status != "rejected" {
 		t.Fatalf("proposal = %+v", p)
 	}
+
 	e.h.ExpectProblem(e.post(id, "confirm"), http.StatusConflict, "proposal_closed", "")
 }
 
@@ -232,6 +264,7 @@ func TestProposalOtherUser(t *testing.T) {
 	other := e.h.Login("other@example.com")
 	r := e.h.Call(other, http.MethodPost, "/api/v1/assistant/proposals/"+id+"/confirm", nil)
 	e.h.ExpectProblem(r, http.StatusNotFound, "proposal_not_found", "")
+
 	if got := e.status(t, id); got != "pending" {
 		t.Fatalf("status = %s", got)
 	}
@@ -242,12 +275,15 @@ func TestConfirmToolFailure(t *testing.T) {
 	e := newProposalEnv(t)
 	id := e.propose(t, e.h.OwnerID(), "x")
 	e.note.fail.Store(true)
+
 	r := e.post(id, "confirm")
 	if r.Status != http.StatusOK {
 		t.Fatalf("confirm = %d: %s", r.Status, r.Body)
 	}
+
 	var p proposalView
 	r.Decode(t, &p)
+
 	if p.Status != "failed" || p.Result["code"] != "invalid_arguments" {
 		t.Fatalf("proposal = %+v", p)
 	}
@@ -255,16 +291,20 @@ func TestConfirmToolFailure(t *testing.T) {
 
 func TestChatSetRefusesWriteWithoutPreview(t *testing.T) {
 	t.Parallel()
+
 	bare := tool.New(tool.Spec{Name: "bare_write", Description: "Writes.", Effect: tool.Write},
 		func(context.Context, int64, noteIn) (noteOut, error) { return noteOut{}, nil })
+
 	reg, err := tool.NewRegistry(slog.New(slog.DiscardHandler), tool.Group{Tools: []tool.Tool{bare}})
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	set, err := reg.Select("bare_write")
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if _, err := llmapi.NewChatSet(set); err == nil || !strings.Contains(err.Error(), "bare_write") {
 		t.Fatalf("err = %v", err)
 	}

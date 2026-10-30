@@ -15,6 +15,7 @@ const (
 
 func (s *Server) PutInstrumentTerms(ctx context.Context, req PutInstrumentTermsRequestObject) (PutInstrumentTermsResponseObject, error) {
 	b := req.Body
+
 	t := domain.Terms{
 		IssuedOn: b.IssuedOn.Time, MaturesOn: b.MaturesOn.Time, DayCount: string(b.DayCount), FaceValue: b.FaceValue,
 		PercentOfIndexBP: defaultPercentOfIndexBP, SpreadBP: defaultSpreadBP,
@@ -22,16 +23,20 @@ func (s *Server) PutInstrumentTerms(ctx context.Context, req PutInstrumentTermsR
 	if b.IndexId != nil {
 		t.IndexID = *b.IndexId
 	}
+
 	if b.PercentOfIndexBp != nil {
 		t.PercentOfIndexBP = *b.PercentOfIndexBp
 	}
+
 	if b.SpreadBp != nil {
 		t.SpreadBP = *b.SpreadBp
 	}
+
 	out, err := s.svc.PutTerms(ctx, req.Code, t)
 	if err != nil {
 		return nil, err
 	}
+
 	return PutInstrumentTerms200JSONResponse(toTermsAPI(out)), nil
 }
 
@@ -40,6 +45,7 @@ func (s *Server) GetInstrumentTerms(ctx context.Context, req GetInstrumentTermsR
 	if err != nil {
 		return nil, err
 	}
+
 	return GetInstrumentTerms200JSONResponse(toTermsAPI(t)), nil
 }
 
@@ -52,5 +58,6 @@ func toTermsAPI(t domain.Terms) FixedIncomeTerms {
 		index := t.IndexID
 		out.IndexId = &index
 	}
+
 	return out
 }

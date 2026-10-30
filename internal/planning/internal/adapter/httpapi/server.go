@@ -46,6 +46,7 @@ func (e *paramError) Error() string { return e.field + ": " + e.message }
 func fieldProblem(status int, code string, field, message string) problem.Details {
 	d := problem.New(status, code, field+": "+message)
 	d.Errors = []problem.FieldError{{Field: field, Message: message}}
+
 	return d
 }
 
@@ -54,12 +55,15 @@ func ToProblem(err error) (problem.Details, bool) {
 	if pe, ok := errors.AsType[*paramError](err); ok {
 		return fieldProblem(http.StatusBadRequest, "invalid_request", pe.field, pe.message), true
 	}
+
 	if ce, ok := errors.AsType[*app.CurrencyError](err); ok {
 		return fieldProblem(http.StatusUnprocessableEntity, "currency_unsupported", ce.Field, app.ErrCurrencyUnsupported.Error()), true
 	}
+
 	if fe, ok := errors.AsType[*domain.FieldError](err); ok {
 		return fieldProblem(http.StatusUnprocessableEntity, "validation_failed", fe.Field, fe.Message), true
 	}
+
 	switch {
 	case errors.Is(err, app.ErrNotFound):
 		return problem.New(http.StatusNotFound, "not_found", "resource not found"), true
@@ -78,6 +82,7 @@ func ToProblem(err error) (problem.Details, bool) {
 	case errors.Is(err, app.ErrBudgetExists):
 		return problem.New(http.StatusConflict, "budget_exists", err.Error()), true
 	}
+
 	return problem.Details{}, false
 }
 
@@ -89,6 +94,7 @@ func listPage[K any](limit *int, cursor *string) (page.Request[K], error) {
 	case errors.Is(err, page.ErrInvalidCursor):
 		return r, &paramError{field: "cursor", message: "is not a cursor of this list"}
 	}
+
 	return r, err
 }
 
@@ -96,6 +102,7 @@ func toPricesAPI(ps []app.Price) *[]Price {
 	if len(ps) == 0 {
 		return nil
 	}
+
 	out := make([]Price, len(ps))
 	for i, p := range ps {
 		out[i] = Price{
@@ -103,6 +110,7 @@ func toPricesAPI(ps []app.Price) *[]Price {
 			Value: p.Value.Reduced().String(), Source: p.Source,
 		}
 	}
+
 	return &out
 }
 
@@ -115,6 +123,7 @@ func fromMoneyAPI(field string, m Money) (money.Money, error) {
 	if err != nil {
 		return money.Money{}, &domain.FieldError{Field: field, Message: err.Error(), Err: domain.ErrValidation}
 	}
+
 	return v, nil
 }
 
@@ -130,7 +139,9 @@ func optDate(d *openapi_types.Date) *time.Time {
 	if d == nil {
 		return nil
 	}
+
 	t := d.Time
+
 	return &t
 }
 
@@ -138,6 +149,7 @@ func apiOptDate(t *time.Time) *openapi_types.Date {
 	if t == nil {
 		return nil
 	}
+
 	return &openapi_types.Date{Time: *t}
 }
 
@@ -145,6 +157,7 @@ func optUUID(id *openapi_types.UUID) uuid.UUID {
 	if id == nil {
 		return uuid.Nil
 	}
+
 	return *id
 }
 
@@ -152,5 +165,6 @@ func apiOptUUID(id uuid.UUID) *openapi_types.UUID {
 	if id == uuid.Nil {
 		return nil
 	}
+
 	return &id
 }

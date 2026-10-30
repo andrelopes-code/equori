@@ -26,11 +26,13 @@ func newCategorizeFixture(t *testing.T) categorizeFixture {
 		savings:       mustAccount(t, Account{Class: ClassAsset, Kind: KindSavings}),
 	}
 	f.accounts = accountMap(f.checking, f.card, f.uncategorized, f.income, f.food, f.cleaning, f.closed, f.usdFood, f.savings)
+
 	return f
 }
 
 func (f categorizeFixture) record(t *testing.T, postings ...Posting) Transaction {
 	t.Helper()
+
 	tx, err := NewTransaction(Transaction{
 		ID: uuid.Must(uuid.NewV7()), UserID: 1, Date: day("2026-10-14"), Description: "UBER *TRIP",
 		BalancingCurrency: "BRL", Postings: postings, Tags: []string{"work"},
@@ -38,12 +40,14 @@ func (f categorizeFixture) record(t *testing.T, postings ...Posting) Transaction
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	return tx
 }
 
 func TestCategoryState(t *testing.T) {
 	t.Parallel()
 	f := newCategorizeFixture(t)
+
 	tests := []struct {
 		name     string
 		postings []Posting
@@ -79,12 +83,15 @@ func TestCategorizeReplacesOnlyCategoryPostings(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if next.Version != 2 || next.PayeeID != payee || !slices.Equal(next.Tags, []string{"groceries", "work"}) {
 		t.Fatalf("next = %+v", next)
 	}
+
 	if len(next.Postings) != 3 || next.Postings[0] != prev.Postings[0] {
 		t.Fatalf("balance-sheet posting changed: %+v", next.Postings)
 	}
+
 	for i, want := range []struct {
 		account uuid.UUID
 		amount  int64
@@ -94,6 +101,7 @@ func TestCategorizeReplacesOnlyCategoryPostings(t *testing.T) {
 			t.Fatalf("postings[%d] = %+v", i+1, p)
 		}
 	}
+
 	if !CategoriesChanged(prev, next, f.accounts) {
 		t.Fatal("CategoriesChanged = false")
 	}
@@ -108,6 +116,7 @@ func TestCategorizeKeepsCardPosting(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if next.Postings[0] != prev.Postings[0] || next.Postings[0].CardRole != RoleCharge {
 		t.Fatalf("card posting = %+v, want %+v", next.Postings[0], prev.Postings[0])
 	}
@@ -123,6 +132,7 @@ func TestCategorizeWithoutPartsKeepsPostings(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if !slices.Equal(next.Postings, prev.Postings) || next.PayeeID != payee || CategoriesChanged(prev, next, f.accounts) {
 		t.Fatalf("next = %+v", next)
 	}
@@ -139,6 +149,7 @@ func TestCategorizeRejections(t *testing.T) {
 	part := func(a Account, amount int64) []CategoryPart {
 		return []CategoryPart{{AccountID: a.ID, Amount: mustMoney(t, amount, a.Instrument)}}
 	}
+
 	tests := []struct {
 		name  string
 		tx    Transaction
@@ -165,6 +176,7 @@ func TestCategorizeRejections(t *testing.T) {
 			if !errors.Is(err, tt.err) {
 				t.Fatalf("err = %v, want %v", err, tt.err)
 			}
+
 			if fe, ok := errors.AsType[*FieldError](err); tt.field != "" && (!ok || fe.Field != tt.field) {
 				t.Fatalf("err = %v, want field %q", err, tt.field)
 			}

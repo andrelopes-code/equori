@@ -41,13 +41,17 @@ func (s *Service) StartSetup(ctx context.Context) (string, error) {
 	if err != nil || exists {
 		return "", err
 	}
+
 	b := make([]byte, 32)
 	if _, err := rand.Read(b); err != nil {
 		return "", fmt.Errorf("generate setup token: %w", err)
 	}
+
 	s.setup.mu.Lock()
 	defer s.setup.mu.Unlock()
+
 	s.setup.token = base64.RawURLEncoding.EncodeToString(b)
+
 	return s.setup.token, nil
 }
 
@@ -62,41 +66,52 @@ func (s *Service) CompleteSetup(ctx context.Context, token, email, plain string,
 	if err != nil {
 		return Session{}, domain.User{}, err
 	}
+
 	if !required {
 		return Session{}, domain.User{}, ErrSetupComplete
 	}
+
 	s.setup.mu.Lock()
 	stored := s.setup.token
 	s.setup.mu.Unlock()
+
 	if stored == "" || subtle.ConstantTimeCompare([]byte(token), []byte(stored)) != 1 {
 		return Session{}, domain.User{}, ErrSetupTokenInvalid
 	}
+
 	if base == "" && locale.ValidRegion(l.Region) {
 		var ok bool
 		if s.setup.hooks.DefaultCurrency != nil {
 			base, ok = s.setup.hooks.DefaultCurrency(l.Region)
 		}
+
 		if !ok {
 			return Session{}, domain.User{}, &domain.FieldError{Field: "base_currency", Message: "is required for this region"}
 		}
 	}
+
 	u, err := s.newUser(ctx, email, plain, domain.RoleAdmin, l, base)
 	if err != nil {
 		return Session{}, domain.User{}, err
 	}
+
 	created, err := s.repo.CreateFirstUser(ctx, u, base)
 	if err != nil {
 		return Session{}, domain.User{}, err
 	}
+
 	s.setup.mu.Lock()
 	s.setup.token = ""
 	s.setup.mu.Unlock()
+
 	if s.setup.hooks.Done != nil {
 		s.setup.hooks.Done()
 	}
+
 	session, err := s.startSession(ctx, created.ID, s.now())
 	if err != nil {
 		return Session{}, domain.User{}, err
 	}
+
 	return session, created, nil
 }

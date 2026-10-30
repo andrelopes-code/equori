@@ -30,14 +30,17 @@ func TestRuleDocsRoundTrip(t *testing.T) {
 			{Type: ActionSetPayee, PayeeID: id()},
 		},
 	})
+
 	conditions := make([]ConditionDoc, len(r.Conditions))
 	for i, c := range r.Conditions {
 		conditions[i] = c.Doc()
 	}
+
 	actions := make([]ActionDoc, len(r.Actions))
 	for i, a := range r.Actions {
 		actions[i] = a.Doc()
 	}
+
 	raw, err := json.Marshal(struct {
 		C []ConditionDoc
 		A []ActionDoc
@@ -45,6 +48,7 @@ func TestRuleDocsRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	var decoded struct {
 		C []ConditionDoc
 		A []ActionDoc
@@ -52,10 +56,12 @@ func TestRuleDocsRoundTrip(t *testing.T) {
 	if err := json.Unmarshal(raw, &decoded); err != nil {
 		t.Fatal(err)
 	}
+
 	got, err := RuleFromDocs(Rule{ID: r.ID, Name: r.Name, Enabled: true}, decoded.C, decoded.A)
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if !reflect.DeepEqual(got, r) {
 		t.Fatalf("round trip = %+v\nwant %+v", got, r)
 	}
@@ -63,6 +69,7 @@ func TestRuleDocsRoundTrip(t *testing.T) {
 
 func TestConditionFromDocRejections(t *testing.T) {
 	t.Parallel()
+
 	tests := []struct {
 		name string
 		doc  ConditionDoc
@@ -78,6 +85,7 @@ func TestConditionFromDocRejections(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := ConditionFromDoc("conditions[0]", tt.doc)
+
 			fe, ok := errors.AsType[*FieldError](err)
 			if !ok || fe.Field != "conditions[0].value" {
 				t.Fatalf("err = %v", err)

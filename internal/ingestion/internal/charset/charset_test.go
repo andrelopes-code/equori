@@ -8,8 +8,10 @@ import (
 
 func TestDecode(t *testing.T) {
 	t.Parallel()
+
 	cyrillic, _ := charmap.Windows1251.NewEncoder().String("Магазин")
 	latin, _ := charmap.Windows1252.NewEncoder().String("Café")
+
 	tests := []struct {
 		name string
 		in   []byte
@@ -33,6 +35,7 @@ func TestDecode(t *testing.T) {
 			t.Errorf("%s: Decode(%q, %s) = %q, %v; want %q", tc.name, tc.in, tc.enc, got, err, tc.want)
 		}
 	}
+
 	if _, err := Decode([]byte("x"), "ebcdic"); err == nil {
 		t.Error("ebcdic accepted")
 	}
@@ -40,11 +43,13 @@ func TestDecode(t *testing.T) {
 
 func TestNames(t *testing.T) {
 	t.Parallel()
+
 	for _, name := range Names() {
 		if _, err := Decode([]byte("x"), name); err != nil {
 			t.Errorf("listed name %s: %v", name, err)
 		}
 	}
+
 	if len(Names()) != 11 || Names()[0] != "auto" {
 		t.Errorf("Names = %v", Names())
 	}

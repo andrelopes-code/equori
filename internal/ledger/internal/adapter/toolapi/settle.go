@@ -51,6 +51,7 @@ func settleStatement(svc *app.Service) tool.Tool {
 		if err != nil {
 			return settleStatementOut{}, err
 		}
+
 		return run()
 	})
 }
@@ -58,20 +59,24 @@ func settleStatement(svc *app.Service) tool.Tool {
 func planSettle(ctx context.Context, svc *app.Service, userID int64, in settleStatementIn) (tool.Preview, func() (settleStatementOut, error), error) {
 	action := string(in.Action)
 	pv := tool.Preview{Action: "settle_statement"}
+
 	id, err := requiredID(in.StatementID, "statement_id")
 	if err != nil {
 		return pv, nil, err
 	}
+
 	fromID, err := optionalID(in.FromAccountID, "from_account_id")
 	if err != nil {
 		return pv, nil, err
 	}
+
 	given := map[string]bool{
 		"statement_id": true, "date": !in.Date.IsZero(), "amount": in.Amount != "", "from_account_id": in.FromAccountID != "",
 		"installment_count": in.InstallmentCount != 0, "installment_amount": in.InstallmentAmount != "", "due_date": !in.DueDate.IsZero(), "closing_date": !in.ClosingDate.IsZero(),
 		"transaction_ids": len(in.TransactionIDs) > 0,
 	}
 	required := []string{"statement_id"}
+
 	var optional []string
 	switch in.Action {
 	case "pay":
@@ -85,32 +90,41 @@ func planSettle(ctx context.Context, svc *app.Service, userID int64, in settleSt
 	case "defer_postings":
 		required = append(required, "transaction_ids")
 	}
+
 	if err := checkFields(action, given, required, optional...); err != nil {
 		return pv, nil, err
 	}
+
 	v, card, _, err := svc.Statement(ctx, userID, id)
 	if err != nil {
 		return pv, nil, err
 	}
+
 	unit, err := svc.AmountOf(ctx, 0, card.Instrument)
 	if err != nil {
 		return pv, nil, err
 	}
+
 	due, err := minorMoney(unit, v.Summary.AmountDue)
 	if err != nil {
 		return pv, nil, err
 	}
+
 	unpaid, err := minorMoney(unit, v.Summary.Unpaid)
 	if err != nil {
 		return pv, nil, err
 	}
+
 	pv.Target = "Statement " + v.Input.Reference.String() + " of " + card.Name
 	pv.Basis = due.Amount + ":" + unpaid.Amount
+
 	date := svc.Today()
 	if !in.Date.IsZero() {
 		date = in.Date.Time
 	}
+
 	out := settleStatementOut{StatementID: id.String()}
+
 	parse := func(field, s string) (money.Money, error) { return tool.ParsePositive(field, s, unit) }
 	switch in.Action {
 	case "pay":
@@ -118,14 +132,18 @@ func planSettle(ctx context.Context, svc *app.Service, userID int64, in settleSt
 		if err != nil {
 			return pv, nil, err
 		}
+
 		from, err := svc.Account(ctx, userID, fromID)
 		if err != nil {
 			return pv, nil, err
 		}
+
 		pv.Changes = []tool.Change{{Field: "amount", After: tool.MoneyValue(amount)}, {Field: "account", After: tool.TextValue(from.Name)}, {Field: "date", After: tool.DateValue(date)}}
+
 		return pv, func() (settleStatementOut, error) {
 			t, err := svc.PayStatement(ctx, userID, id, date, from.ID, amount)
 			out.TransactionID = t.ID.String()
+
 			return out, err
 		}, nil
 	case "finance":
@@ -133,14 +151,17 @@ func planSettle(ctx context.Context, svc *app.Service, userID int64, in settleSt
 		if err != nil {
 			return pv, nil, err
 		}
+
 		pv.Changes = []tool.Change{
 			{Field: "installments", After: tool.TextValue(strconv.Itoa(in.InstallmentCount))},
 			{Field: "amount", After: tool.MoneyValue(amount)},
 			{Field: "date", After: tool.DateValue(date)},
 		}
+
 		return pv, func() (settleStatementOut, error) {
 			t, _, err := svc.FinanceStatement(ctx, userID, id, date, in.InstallmentCount, amount)
 			out.TransactionID = t.ID.String()
+
 			return out, err
 		}, nil
 	case "confirm_amount_due":
@@ -148,19 +169,24 @@ func planSettle(ctx context.Context, svc *app.Service, userID int64, in settleSt
 		if err != nil {
 			return pv, nil, err
 		}
+
 		pv.Changes = []tool.Change{{Field: "amount", Before: tool.Value{Amount: due.Amount, Currency: due.Currency}, After: tool.MoneyValue(amount)}}
+
 		return pv, func() (settleStatementOut, error) { return out, svc.ReconcileStatement(ctx, userID, id, amount) }, nil
 	case "set_facts":
 		amount, err := parse("amount", in.Amount)
 		if err != nil {
 			return pv, nil, err
 		}
+
 		f := app.StatementFacts{Due: in.DueDate.Time, Total: amount}
+
 		pv.Changes = []tool.Change{{Field: "amount", After: tool.MoneyValue(amount)}, {Field: "due_on", After: tool.DateValue(in.DueDate.Time)}}
 		if !in.ClosingDate.IsZero() {
 			f.Closing = &in.ClosingDate.Time
 			pv.Changes = append(pv.Changes, tool.Change{Field: "date", After: tool.DateValue(in.ClosingDate.Time)})
 		}
+
 		return pv, func() (settleStatementOut, error) { return out, svc.SetOwnerFacts(ctx, userID, id, f) }, nil
 	case "defer_postings":
 		txIDs := make([]uuid.UUID, len(in.TransactionIDs))
@@ -169,7 +195,9 @@ func planSettle(ctx context.Context, svc *app.Service, userID int64, in settleSt
 				return pv, nil, err
 			}
 		}
+
 		pv.Changes = []tool.Change{{Field: "statement", Before: tool.TextValue(v.Input.Reference.String()), After: tool.TextValue(v.Input.Reference.Add(1).String())}}
+
 		return pv, func() (settleStatementOut, error) { return out, svc.DeferPostings(ctx, userID, id, txIDs) }, nil
 	default:
 		pv.Changes = []tool.Change{{Field: "due_on", Before: tool.DateValue(v.Input.Due)}}

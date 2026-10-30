@@ -51,10 +51,12 @@ var (
 // NormalizeEmail returns the trimmed, lowercased address. Display names ("Ann <a@b.c>") are rejected.
 func NormalizeEmail(s string) (string, error) {
 	s = strings.ToLower(strings.TrimSpace(s))
+
 	addr, err := mail.ParseAddress(s)
 	if err != nil || addr.Address != s {
 		return "", ErrInvalidEmail
 	}
+
 	return s, nil
 }
 
@@ -65,5 +67,6 @@ func ValidatePassword(p string) error {
 	case n > MaxPasswordLength:
 		return ErrPasswordTooLong
 	}
+
 	return nil
 }

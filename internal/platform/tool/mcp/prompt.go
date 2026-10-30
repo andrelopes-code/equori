@@ -23,12 +23,14 @@ func addPrompt(s *sdk.Server, p Prompt) {
 	for _, a := range p.Arguments {
 		args = append(args, &sdk.PromptArgument{Name: a.Name, Description: a.Description, Required: a.Required})
 	}
+
 	s.AddPrompt(&sdk.Prompt{Name: p.Name, Description: p.Description, Arguments: args},
 		func(_ context.Context, req *sdk.GetPromptRequest) (*sdk.GetPromptResult, error) {
 			text, err := p.Render(req.Params.Arguments)
 			if err != nil {
 				return nil, err
 			}
+
 			return &sdk.GetPromptResult{Messages: []*sdk.PromptMessage{{Role: "user", Content: &sdk.TextContent{Text: text}}}}, nil
 		})
 }

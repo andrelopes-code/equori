@@ -12,6 +12,7 @@ func day(s string) time.Time {
 	if err != nil {
 		panic(err)
 	}
+
 	return d
 }
 
@@ -20,6 +21,7 @@ func days(ss ...string) []time.Time {
 	for i, s := range ss {
 		out[i] = day(s)
 	}
+
 	return out
 }
 
@@ -30,6 +32,7 @@ func (h holidays) IsBusinessDay(d time.Time) bool {
 	if d.Weekday() == time.Saturday || d.Weekday() == time.Sunday {
 		return false
 	}
+
 	return !slices.ContainsFunc(h, d.Equal)
 }
 
@@ -42,6 +45,7 @@ func ptr(t time.Time) *time.Time { return &t }
 
 func TestRuleDates(t *testing.T) {
 	t.Parallel()
+
 	tests := []struct {
 		name     string
 		rule     Rule
@@ -156,6 +160,7 @@ func TestRuleDates(t *testing.T) {
 			if err := tt.rule.Validate(); err != nil {
 				t.Fatalf("Validate() = %v", err)
 			}
+
 			got := tt.rule.Dates(day(tt.from), day(tt.to), brazil)
 			if !slices.EqualFunc(got, tt.want, func(a, b Dated) bool { return a.Sequence == b.Sequence && a.Date.Equal(b.Date) }) {
 				t.Errorf("Dates() = %v, want %v", got, tt.want)
@@ -166,7 +171,9 @@ func TestRuleDates(t *testing.T) {
 
 func TestRuleValidate(t *testing.T) {
 	t.Parallel()
+
 	start := day("2026-11-01")
+
 	tests := []struct {
 		name  string
 		rule  Rule
@@ -188,10 +195,12 @@ func TestRuleValidate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.rule.Validate()
+
 			var fe *FieldError
 			if !errors.As(err, &fe) || !errors.Is(err, ErrValidation) {
 				t.Fatalf("Validate() = %v, want a field error", err)
 			}
+
 			if fe.Field != tt.field {
 				t.Errorf("field = %q, want %q", fe.Field, tt.field)
 			}

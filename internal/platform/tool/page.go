@@ -16,6 +16,7 @@ func Limit(n int) (int, error) {
 	case n < 1 || n > MaxLimit:
 		return 0, InvalidArgument("limit", "must be between 1 and 50")
 	}
+
 	return n, nil
 }
 
@@ -39,22 +40,29 @@ func Paginate[T any](items []T, key func(T) string, limit int, cursor string) ([
 		if err := page.DecodeCursor(cursor, &k); err != nil {
 			return nil, "", invalidCursor()
 		}
+
 		i := 0
 		for i < len(items) && key(items[i]) != k.Key {
 			i++
 		}
+
 		if i == len(items) {
 			return nil, "", invalidCursor()
 		}
+
 		start = i + 1
 	}
+
 	end := min(start+limit, len(items))
 	out := make([]T, end-start)
 	copy(out, items[start:end])
+
 	if end == len(items) {
 		return out, "", nil
 	}
+
 	next, err := page.EncodeCursor(pageKey{Key: key(items[end-1])})
+
 	return out, next, err
 }
 
@@ -68,5 +76,6 @@ func PageOf[T any](items []T, key func(T) string, args PageArgs) ([]T, string, e
 	if err != nil {
 		return nil, "", err
 	}
+
 	return Paginate(items, key, limit, args.Cursor)
 }

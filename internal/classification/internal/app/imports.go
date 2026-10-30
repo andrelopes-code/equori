@@ -26,29 +26,35 @@ func (s *Service) DecideImport(ctx context.Context, userID int64, lines []Import
 	if len(lines) == 0 {
 		return nil, nil
 	}
+
 	c, accounts, err := s.catalog(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
+
 	sources, err := s.sourceCategories(ctx, userID, lines)
 	if err != nil {
 		return nil, err
 	}
+
 	subjects := make([]domain.Subject, len(lines))
 	for i, l := range lines {
 		subjects[i] = lineSubject(l, accounts, originImport)
 		subjects[i].SourceCategory = sources[i]
 	}
+
 	decisions, err := s.decideAll(ctx, userID, c, subjects)
 	if err != nil {
 		return nil, err
 	}
+
 	out := make([]*domain.Decision, len(decisions))
 	for i := range decisions {
 		if d := decisions[i]; d.Method != "" || d.PayeeID != uuid.Nil || len(d.AddTags) > 0 {
 			out[i] = &decisions[i]
 		}
 	}
+
 	return out, nil
 }
 
@@ -65,10 +71,12 @@ func (s *Service) DecideManual(ctx context.Context, userID int64, lines []Manual
 	if len(lines) == 0 {
 		return nil, nil
 	}
+
 	c, accounts, err := s.catalog(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
+
 	subjects := make([]domain.Subject, len(lines))
 	for i, l := range lines {
 		subjects[i] = lineSubject(l.ImportLine, accounts, originManual)
@@ -76,6 +84,7 @@ func (s *Service) DecideManual(ctx context.Context, userID int64, lines []Manual
 			subjects[i].PayeeID = l.NamedPayee
 		}
 	}
+
 	return s.decideAll(ctx, userID, c, subjects)
 }
 
@@ -84,6 +93,7 @@ func lineSubject(l ImportLine, accounts map[uuid.UUID]Account, origin string) do
 	if l.Amount.IsNegative() {
 		class = "expense"
 	}
+
 	return domain.Subject{
 		Date: l.Date, Description: l.Description, RawDescription: l.Description, Amount: l.Amount,
 		Accounts: []uuid.UUID{l.AccountID}, AccountKinds: []string{accounts[l.AccountID].Kind}, Source: origin, Class: class,

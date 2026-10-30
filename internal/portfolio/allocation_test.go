@@ -29,6 +29,7 @@ func allocationFixture(t *testing.T) (fixture, string) {
 	f.trade(t, "buy", "2026-10-10", 10, "10.00", 0)
 	f.h.MustDo(http.MethodPost, "/api/v1/prices", map[string]any{"instrument": "MXRF11", "quote_instrument": "BRL", "date": "2026-10-30", "value": "10.5"}, http.StatusCreated, nil)
 	f.h.Dispatch()
+
 	return f, checking
 }
 
@@ -36,6 +37,7 @@ func (f fixture) allocation(t *testing.T, by string) allocationOut {
 	t.Helper()
 	var out allocationOut
 	f.h.MustDo(http.MethodGet, "/api/v1/reports/allocation?date=2026-11-01&by="+by, nil, http.StatusOK, &out)
+
 	return out
 }
 
@@ -74,6 +76,7 @@ func TestAllocationErrors(t *testing.T) {
 
 	var empty allocationOut
 	f.h.MustDo(http.MethodGet, "/api/v1/reports/allocation?date=2026-09-01&by=type", nil, http.StatusOK, &empty)
+
 	if empty.Total["amount"] != float64(0) || len(empty.Groups) != 0 {
 		t.Fatalf("allocation before any posting = %+v", empty)
 	}
@@ -97,5 +100,6 @@ func TestS129NetWorth(t *testing.T) {
 	if out.Assets["amount"] != float64(220500) || out.Liabilities["amount"] != float64(120000) || out.Net["amount"] != float64(100500) {
 		t.Fatalf("net worth = %+v", out)
 	}
+
 	f.h.ExpectProblem(f.h.Do(http.MethodGet, fmt.Sprintf("/api/v1/reports/net-worth?date=2026-11-01&value_in=%s", "USD"), nil), http.StatusUnprocessableEntity, "price_missing", "")
 }

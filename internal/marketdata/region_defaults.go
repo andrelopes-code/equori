@@ -7,6 +7,7 @@ func (m *Module) DefaultCalendar(region string) string {
 	if region == "BR" {
 		return CalendarBRBanking
 	}
+
 	return "weekend"
 }
 
@@ -21,6 +22,7 @@ func SuggestedFeeds(region string) []string {
 	case slices.Contains(euroArea, region):
 		return []string{"ecb", "eu_estr", "ea_hicp"}
 	}
+
 	return nil
 }
 

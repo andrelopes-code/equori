@@ -14,12 +14,15 @@ func profile(edit func(*domain.Profile)) domain.Profile {
 	if edit != nil {
 		edit(&p)
 	}
+
 	return p
 }
 
 func TestParse(t *testing.T) {
 	t.Parallel()
+
 	day := func(s string) time.Time { d, _ := time.Parse(time.DateOnly, s); return d }
+
 	tests := []struct {
 		name    string
 		in      []byte
@@ -51,14 +54,17 @@ func TestParse(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+
 			if len(st.Records) != len(tc.amounts) {
 				t.Fatalf("records = %+v", st.Records)
 			}
+
 			for i, want := range tc.amounts {
 				if st.Records[i].Amount != want {
 					t.Errorf("record %d amount = %d, want %d", i, st.Records[i].Amount, want)
 				}
 			}
+
 			f := st.Records[0]
 			if f.ExternalID != tc.first.ExternalID || !f.Date.Equal(tc.first.Date) || f.Description != tc.first.Description {
 				t.Fatalf("first = %+v", f)
@@ -69,6 +75,7 @@ func TestParse(t *testing.T) {
 
 func TestParseRejects(t *testing.T) {
 	t.Parallel()
+
 	tests := []struct {
 		name, in, want string
 		p              domain.Profile
@@ -90,6 +97,7 @@ func TestParseRejects(t *testing.T) {
 
 func TestParseDeclaredEncoding(t *testing.T) {
 	t.Parallel()
+
 	tests := []struct {
 		name     string
 		in       []byte
@@ -106,6 +114,7 @@ func TestParseDeclaredEncoding(t *testing.T) {
 				p.DescriptionColumn = "Описание"
 			}
 		})
+
 		st, err := Parse(tc.in, p, 2)
 		if err != nil || len(st.Records) != 1 || st.Records[0].Description != tc.want {
 			t.Errorf("%s: records = %+v, err = %v", tc.name, st.Records, err)

@@ -7,6 +7,7 @@ import (
 
 func TestParseRate(t *testing.T) {
 	t.Parallel()
+
 	tests := []struct {
 		in       string
 		mantissa int64
@@ -33,6 +34,7 @@ func TestParseRate(t *testing.T) {
 			if !errors.Is(err, tt.want) {
 				t.Fatalf("err = %v, want %v", err, tt.want)
 			}
+
 			if err == nil && (r.Mantissa() != tt.mantissa || r.Scale() != tt.scale || r.String() != tt.in) {
 				t.Fatalf("got %d e-%d %q", r.Mantissa(), r.Scale(), r.String())
 			}
@@ -42,12 +44,15 @@ func TestParseRate(t *testing.T) {
 
 func TestNewRate(t *testing.T) {
 	t.Parallel()
+
 	if r, err := NewRate(936, 2); err != nil || r.String() != "9.36" {
 		t.Fatalf("got %v, %v", r, err)
 	}
+
 	if r, err := NewRate(5, 3); err != nil || r.String() != "0.005" {
 		t.Fatalf("got %v, %v", r, err)
 	}
+
 	for _, c := range []struct {
 		m int64
 		s int
@@ -60,11 +65,13 @@ func TestNewRate(t *testing.T) {
 
 func TestRateReduced(t *testing.T) {
 	t.Parallel()
+
 	for in, want := range map[string]string{"5.5000": "5.5", "10.00": "10", "0.0050": "0.005", "9.36": "9.36"} {
 		r, err := ParseRate(in)
 		if err != nil {
 			t.Fatal(err)
 		}
+
 		if got := r.Reduced().String(); got != want {
 			t.Errorf("Reduced(%s) = %s, want %s", in, got, want)
 		}

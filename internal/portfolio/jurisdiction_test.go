@@ -27,6 +27,7 @@ func (f fixture) incomeEvents(t *testing.T) []incomeEventOut {
 		Items []incomeEventOut `json:"items"`
 	}
 	f.h.MustDo(http.MethodGet, "/api/v1/income-events?year=2026", nil, http.StatusOK, &out)
+
 	return out.Items
 }
 
@@ -36,11 +37,13 @@ func (f fixture) incomeTypes(t *testing.T) []string {
 		Items []string `json:"items"`
 	}
 	f.h.MustDo(http.MethodGet, "/api/v1/investment-income-types", nil, http.StatusOK, &out)
+
 	return out.Items
 }
 
 func (f fixture) moveToRegion(t *testing.T, region string) {
 	t.Helper()
+
 	if _, err := f.h.Pool.Exec(t.Context(), `UPDATE identity_user SET region = $1`, region); err != nil {
 		t.Fatal(err)
 	}
@@ -51,10 +54,12 @@ func TestJurisdictionBRTreatments(t *testing.T) {
 	f := newFixture(t)
 	f.income(t, f.mxrf11, "dividend", 1000, f.dividends)
 	f.income(t, f.petr4, "jcp", 4500, f.jcp)
+
 	es := f.incomeEvents(t)
 	if len(es) != 2 || es[0].TaxTreatment == nil || *es[0].TaxTreatment != "exempt" || es[1].TaxTreatment == nil || *es[1].TaxTreatment != "exclusive" {
 		t.Fatalf("events = %+v", es)
 	}
+
 	if got, want := f.incomeTypes(t), []string{"coupon", "distribution", "dividend", "interest", "jcp"}; !slices.Equal(got, want) {
 		t.Fatalf("types = %v, want %v", got, want)
 	}
@@ -66,10 +71,12 @@ func TestJurisdictionWithoutDefaultHasNoTreatment(t *testing.T) {
 	f.moveToRegion(t, "DE")
 	f.income(t, f.mxrf11, "dividend", 1000, f.dividends)
 	f.income(t, f.petr4, "jcp", 4500, f.jcp)
+
 	es := f.incomeEvents(t)
 	if len(es) != 2 || es[0].IncomeType != "dividend" || es[0].TaxTreatment != nil || es[1].IncomeType != "jcp" || es[1].TaxTreatment != nil {
 		t.Fatalf("events = %+v", es)
 	}
+
 	if got, want := f.incomeTypes(t), []string{"coupon", "distribution", "dividend", "interest"}; !slices.Equal(got, want) {
 		t.Fatalf("types = %v, want %v", got, want)
 	}
@@ -89,12 +96,15 @@ func TestRebuildAllRestoresTaxData(t *testing.T) {
 	f := newFixture(t)
 	f.income(t, f.mxrf11, "dividend", 1000, f.dividends)
 	f.incomeEvents(t)
+
 	if _, err := f.h.Pool.Exec(t.Context(), `UPDATE portfolio_income_event SET tax_treatment = NULL`); err != nil {
 		t.Fatal(err)
 	}
+
 	if err := f.h.App.Portfolio.RebuildAll(t.Context()); err != nil {
 		t.Fatal(err)
 	}
+
 	es := f.incomeEvents(t)
 	if len(es) != 1 || es[0].TaxTreatment == nil || *es[0].TaxTreatment != "exempt" {
 		t.Fatalf("events = %+v", es)
@@ -106,14 +116,17 @@ func TestRebuildAllRestoresUserWithoutDerivedRows(t *testing.T) {
 	f := newFixture(t)
 	f.income(t, f.mxrf11, "dividend", 1000, f.dividends)
 	f.incomeEvents(t)
+
 	for _, table := range []string{"portfolio_position_day", "portfolio_realized_result", "portfolio_income_event"} {
 		if _, err := f.h.Pool.Exec(t.Context(), "DELETE FROM "+table); err != nil {
 			t.Fatal(err)
 		}
 	}
+
 	if err := f.h.App.Portfolio.RebuildAll(t.Context()); err != nil {
 		t.Fatal(err)
 	}
+
 	if es := f.incomeEvents(t); len(es) != 1 {
 		t.Fatalf("events = %+v", es)
 	}
@@ -121,17 +134,20 @@ func TestRebuildAllRestoresUserWithoutDerivedRows(t *testing.T) {
 
 func TestTaxYearRangeInResponses(t *testing.T) {
 	t.Parallel()
+
 	for _, region := range []string{"BR", "DE"} {
 		t.Run(region, func(t *testing.T) {
 			t.Parallel()
 			f := newFixture(t)
 			f.moveToRegion(t, region)
+
 			for _, path := range []string{"/api/v1/realized-results?year=2026", "/api/v1/income-events?year=2026"} {
 				var out struct {
 					From string `json:"from"`
 					To   string `json:"to"`
 				}
 				f.h.MustDo(http.MethodGet, path, nil, http.StatusOK, &out)
+
 				if out.From != "2026-01-01" || out.To != "2026-12-31" {
 					t.Errorf("%s range = %s to %s, want 2026-01-01 to 2026-12-31", path, out.From, out.To)
 				}

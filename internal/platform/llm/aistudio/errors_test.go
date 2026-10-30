@@ -24,12 +24,14 @@ func generate(ctx context.Context, p *aistudio.Provider) error {
 
 func TestGenerateErrors(t *testing.T) {
 	t.Parallel()
+
 	quota := func(want time.Duration) func(*testing.T, error) {
 		return func(t *testing.T, err error) {
 			var q *llm.QuotaError
 			if !errors.As(err, &q) || !errors.Is(err, llm.ErrQuota) {
 				t.Fatalf("err = %v, want QuotaError", err)
 			}
+
 			if q.RetryAfter != want {
 				t.Fatalf("RetryAfter = %v, want %v", q.RetryAfter, want)
 			}
@@ -40,11 +42,13 @@ func TestGenerateErrors(t *testing.T) {
 			if !errors.Is(err, want) {
 				t.Fatalf("err = %v, want %v", err, want)
 			}
+
 			if !strings.Contains(err.Error(), contains) {
 				t.Fatalf("err = %q, want it to contain %q", err, contains)
 			}
 		}
 	}
+
 	tests := []struct {
 		name    string
 		status  int
@@ -74,6 +78,7 @@ func TestGenerateErrors(t *testing.T) {
 	t.Run("server unreachable", func(t *testing.T) {
 		srv := httptest.NewServer(http.NotFoundHandler())
 		srv.Close()
+
 		if err := generate(context.Background(), aistudio.New(srv.URL, "k", http.DefaultClient)); !errors.Is(err, llm.ErrTransient) {
 			t.Fatalf("err = %v, want ErrTransient", err)
 		}
@@ -86,6 +91,7 @@ func TestGenerateErrors(t *testing.T) {
 			<-r.Context().Done()
 		}))
 		t.Cleanup(srv.Close)
+
 		p := aistudio.New(srv.URL, "k", &http.Client{Timeout: 50 * time.Millisecond})
 		if err := generate(context.Background(), p); !errors.Is(err, llm.ErrTransient) {
 			t.Fatalf("err = %v, want ErrTransient", err)
@@ -96,6 +102,7 @@ func TestGenerateErrors(t *testing.T) {
 		srv := serve(t, http.StatusOK, "text.json", nil)
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()
+
 		err := generate(ctx, aistudio.New(srv.URL, "k", srv.Client()))
 		if !errors.Is(err, context.Canceled) || errors.Is(err, llm.ErrTransient) {
 			t.Fatalf("err = %v, want context.Canceled only", err)
@@ -108,6 +115,7 @@ func TestKeyNeverExposed(t *testing.T) {
 	const key = "AIzaTESTKEY"
 	closed := httptest.NewServer(http.NotFoundHandler())
 	closed.Close()
+
 	tests := []struct {
 		name string
 		url  func(t *testing.T) string
@@ -121,13 +129,16 @@ func TestKeyNeverExposed(t *testing.T) {
 			var logs bytes.Buffer
 			clk := clock.New(time.UTC, func() time.Time { return time.Date(2026, 10, 16, 12, 0, 0, 0, time.UTC) })
 			router := llm.NewRouter(&clk, slog.New(slog.NewJSONHandler(&logs, nil)), nil, aistudio.New(tt.url(t), key, http.DefaultClient))
+
 			_, err := router.Client(llm.Target{Provider: "aistudio", Model: "gemini-x"}).Generate(context.Background(), llm.Request{Messages: []llm.Message{user("hi")}})
 			if err == nil {
 				t.Fatal("Generate succeeded, want an error")
 			}
+
 			if strings.Contains(err.Error(), key) || strings.Contains(logs.String(), key) {
 				t.Fatalf("key exposed: err %q, logs %s", err, logs.String())
 			}
+
 			if logs.Len() == 0 {
 				t.Fatal("no log record written")
 			}

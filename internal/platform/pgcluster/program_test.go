@@ -8,6 +8,7 @@ import (
 
 func TestParseMajor(t *testing.T) {
 	t.Parallel()
+
 	tests := []struct {
 		out  string
 		want int
@@ -28,13 +29,16 @@ func TestParseMajor(t *testing.T) {
 
 func TestBinExplicit(t *testing.T) {
 	t.Parallel()
+
 	dir := t.TempDir()
 	if err := os.WriteFile(filepath.Join(dir, "postgres"+exeSuffix), []byte("#!/bin/sh\n"), 0o755); err != nil {
 		t.Fatal(err)
 	}
+
 	if got, err := Bin(dir); err != nil || got != dir {
 		t.Fatalf("Bin(%q) = %q, %v", dir, got, err)
 	}
+
 	if _, err := Bin(t.TempDir()); err == nil {
 		t.Fatal("Bin of a directory without postgres: want an error")
 	}
@@ -45,7 +49,9 @@ func TestBinFromPath(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dir, "postgres"+exeSuffix), []byte("#!/bin/sh\n"), 0o755); err != nil {
 		t.Fatal(err)
 	}
+
 	t.Setenv("PATH", dir)
+
 	if got, err := Bin(""); err != nil || got != dir {
 		t.Fatalf(`Bin("") = %q, %v; want %q`, got, err, dir)
 	}
@@ -53,14 +59,18 @@ func TestBinFromPath(t *testing.T) {
 
 func TestBinBesideExecutable(t *testing.T) {
 	root := t.TempDir()
+
 	dir := filepath.Join(root, "postgresql", "bin")
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		t.Fatal(err)
 	}
+
 	if err := os.WriteFile(filepath.Join(dir, "postgres"+exeSuffix), []byte("#!/bin/sh\n"), 0o755); err != nil {
 		t.Fatal(err)
 	}
+
 	t.Setenv("PATH", t.TempDir())
+
 	if got, err := bin("", filepath.Join(root, "equori")); err != nil || got != dir {
 		t.Fatalf(`bin("", exe) = %q, %v; want %q`, got, err, dir)
 	}
@@ -69,15 +79,18 @@ func TestBinBesideExecutable(t *testing.T) {
 func TestBinExplicitWins(t *testing.T) {
 	root := t.TempDir()
 	beside := filepath.Join(root, "postgresql", "bin")
+
 	explicit := t.TempDir()
 	for _, dir := range []string{beside, explicit} {
 		if err := os.MkdirAll(dir, 0o700); err != nil {
 			t.Fatal(err)
 		}
+
 		if err := os.WriteFile(filepath.Join(dir, "postgres"+exeSuffix), []byte("#!/bin/sh\n"), 0o755); err != nil {
 			t.Fatal(err)
 		}
 	}
+
 	if got, err := bin(explicit, filepath.Join(root, "equori")); err != nil || got != explicit {
 		t.Fatalf("bin(explicit, exe) = %q, %v; want %q", got, err, explicit)
 	}

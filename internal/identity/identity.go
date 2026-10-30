@@ -61,6 +61,7 @@ type Module struct {
 func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) *Module {
 	svc := app.NewService(postgres.NewRepository(pool), time.Now)
 	svc.UseSetupHooks(app.SetupHooks{DefaultCurrency: cfg.DefaultCurrency, Done: cfg.SetupDone})
+
 	return &Module{svc: svc, http: httpapi.NewServer(svc, cfg.SecureCookies, log)}
 }
 
@@ -93,6 +94,7 @@ func (m *Module) VerifyAccessToken(ctx context.Context, token string) (AccessGra
 	if err != nil {
 		return AccessGrant{}, err
 	}
+
 	return AccessGrant{TokenID: t.ID, UserID: t.UserID, Scope: t.Scope}, nil
 }
 
@@ -101,5 +103,6 @@ func (m *Module) CreateUser(ctx context.Context, email, password, role string, l
 	if err != nil {
 		return User{}, err
 	}
+
 	return User{ID: u.ID, Email: u.Email, Role: string(u.Role)}, nil
 }

@@ -4,6 +4,7 @@ import "testing"
 
 func TestMinorUnits(t *testing.T) {
 	t.Parallel()
+
 	tests := []struct {
 		in      string
 		decimal rune
@@ -27,6 +28,7 @@ func TestMinorUnits(t *testing.T) {
 		if tc.decimal == ',' {
 			group = '.'
 		}
+
 		got, err := MinorUnits(tc.in, tc.decimal, group, 2)
 		if (err == nil) != tc.ok || got != tc.want {
 			t.Errorf("MinorUnits(%q, %q) = %d, %v; want %d, ok %v", tc.in, tc.decimal, got, err, tc.want, tc.ok)
@@ -36,6 +38,7 @@ func TestMinorUnits(t *testing.T) {
 
 func TestMinorUnitsConventions(t *testing.T) {
 	t.Parallel()
+
 	for _, c := range []struct {
 		in             string
 		decimal, group rune

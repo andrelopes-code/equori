@@ -95,6 +95,7 @@ func (s *seeder) buildRules() {
 	for _, r := range rules {
 		s.create("/rules", map[string]any{"name": r.name, "conditions": r.conditions, "actions": r.actions(s), "stop_processing": r.stop})
 	}
+
 	for _, a := range aliases {
 		s.create("/payee-aliases", map[string]any{"pattern": a.pattern, "match_type": a.match, "payee_id": s.id("payee." + a.payee)})
 	}
@@ -104,8 +105,10 @@ func (s *seeder) buildRules() {
 func (s *seeder) runRules() error {
 	var out struct{ Examined, Categorized int }
 	s.do(http.MethodPost, "/rules/run", nil, &out)
+
 	if s.err == nil {
 		fmt.Fprintf(os.Stderr, "rules examined %d transactions and categorized %d\n", out.Examined, out.Categorized)
 	}
+
 	return s.err
 }

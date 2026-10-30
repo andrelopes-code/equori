@@ -19,10 +19,12 @@ func ValidRegion(s string) bool {
 	if len(s) != 2 {
 		return false
 	}
+
 	for _, code := range Regions() {
 		if code == s {
 			return true
 		}
 	}
+
 	return false
 }

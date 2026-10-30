@@ -35,6 +35,7 @@ func (f fixture) projection(account, to string) projectionView {
 	f.h.T().Helper()
 	var out projectionView
 	f.h.MustDo(http.MethodGet, "/api/v1/accounts/"+account+"/projection?to="+to, nil, http.StatusOK, &out)
+
 	return out
 }
 
@@ -44,10 +45,12 @@ func TestS62Projection(t *testing.T) {
 	f := newFixture(t, "2026-11-01")
 	f.h.Record("2026-10-30", apitest.Posting(f.checking, 500000), apitest.Posting(f.salary, -500000))
 	rent, salary := f.rentSchedule(), f.salarySchedule()
+
 	got := f.projection(f.checking, "2026-12-31")
 	if got.AccountID != f.checking || got.From != "2026-11-01" || got.To != "2026-12-31" || got.Opening.Amount != 500000 || got.Closing.Amount != 1080000 {
 		t.Fatalf("projection = %+v", got)
 	}
+
 	want := []struct {
 		date            string
 		schedule        string
@@ -61,6 +64,7 @@ func TestS62Projection(t *testing.T) {
 	if len(got.Points) != len(want) {
 		t.Fatalf("points = %+v", got.Points)
 	}
+
 	for i, w := range want {
 		p := got.Points[i]
 		if p.Date != w.date || p.ScheduleID != w.schedule || p.Amount.Amount != w.amount || p.Balance.Amount != w.balance || p.OccurrenceID == "" {
@@ -76,13 +80,16 @@ func TestProjectionEdges(t *testing.T) {
 	f.h.MustDo(http.MethodPost, "/api/v1/occurrences/"+f.occurrence(rent, 2).ID+"/skip", map[string]string{}, http.StatusOK, nil)
 	f.h.Record("2026-12-20", apitest.Posting(f.checking, -10000), apitest.Posting(f.rent, 10000))
 	f.h.Restart(apitest.Today("2026-11-10"))
+
 	got := f.projection(f.checking, "2026-12-31")
 	if len(got.Points) != 1 || got.Points[0].Date != "2026-11-10" || got.Points[0].Amount.Amount != -210000 {
 		t.Fatalf("points = %+v, want the overdue rent dated today and no skipped occurrence", got.Points)
 	}
+
 	if got.Opening.Amount != 0 || got.Closing.Amount != -220000 {
 		t.Errorf("opening %d, closing %d, want 0 and -220000", got.Opening.Amount, got.Closing.Amount)
 	}
+
 	f.h.ExpectProblem(f.h.Do(http.MethodGet, "/api/v1/accounts/"+f.checking+"/projection?to=2027-11-11", nil), http.StatusUnprocessableEntity, "validation_failed", "to")
 	f.h.ExpectProblem(f.h.Do(http.MethodGet, "/api/v1/accounts/"+f.checking+"/projection?to=2026-11-10", nil), http.StatusUnprocessableEntity, "validation_failed", "to")
 	f.h.ExpectProblem(f.h.Do(http.MethodGet, "/api/v1/accounts/"+f.rent+"/projection?to=2026-12-31", nil), http.StatusUnprocessableEntity, "validation_failed", "id")
@@ -110,11 +117,14 @@ func TestS63CommittedAmount(t *testing.T) {
 		Total        money  `json:"total"`
 	}
 	f.h.MustDo(http.MethodGet, "/api/v1/commitments?month=2026-12", nil, http.StatusOK, &got)
+
 	if got.Month != "2026-12" || got.Installments.Amount != 33333 || got.Occurrences.Amount != 213990 || got.Total.Amount != 247323 {
 		t.Fatalf("commitments = %+v", got)
 	}
+
 	f.h.MustDo(http.MethodPost, "/api/v1/occurrences/"+f.occurrence(streaming, 2).ID+"/skip", map[string]string{}, http.StatusOK, nil)
 	f.h.MustDo(http.MethodGet, "/api/v1/commitments?month=2026-12", nil, http.StatusOK, &got)
+
 	if got.Occurrences.Amount != 210000 || got.Total.Amount != 243333 {
 		t.Fatalf("commitments after skipping the streaming = %+v", got)
 	}

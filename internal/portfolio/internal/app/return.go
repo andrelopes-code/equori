@@ -51,10 +51,12 @@ func (s *Service) Return(ctx context.Context, userID int64, accountID uuid.UUID,
 	if accountID != uuid.Nil {
 		return s.returnOf(ctx, userID, []uuid.UUID{accountID}, from, to, in)
 	}
+
 	roots, err := s.brokerageRoots(ctx, userID)
 	if err != nil {
 		return ReturnReport{}, err
 	}
+
 	return s.returnOf(ctx, userID, roots, from, to, in)
 }
 
@@ -64,16 +66,19 @@ func (s *Service) brokerageRoots(ctx context.Context, userID int64) ([]uuid.UUID
 	if err != nil {
 		return nil, err
 	}
+
 	kinds := make(map[uuid.UUID]string, len(accounts))
 	for _, a := range accounts {
 		kinds[a.ID] = a.Kind
 	}
+
 	var roots []uuid.UUID
 	for _, a := range accounts {
 		if a.Kind == kindBrokerage && kinds[a.ParentID] != kindBrokerage {
 			roots = append(roots, a.ID)
 		}
 	}
+
 	return roots, nil
 }
 
@@ -82,27 +87,35 @@ func (s *Service) returnOf(ctx context.Context, userID int64, accountIDs []uuid.
 	if to.Before(from) || to.Sub(from) > (MaxReturnDays-1)*24*time.Hour {
 		return ReturnReport{}, ErrInvalidReturnRange
 	}
+
 	if in == "" {
 		base, err := s.ledger.BaseCurrency(ctx, userID)
 		if err != nil {
 			return ReturnReport{}, err
 		}
+
 		in = base
 	}
+
 	start := from.AddDate(0, 0, -1)
+
 	opening, err := s.valued(ctx, userID, accountIDs, start, in)
 	if err != nil {
 		return ReturnReport{}, err
 	}
+
 	closing, err := s.valued(ctx, userID, accountIDs, to, in)
 	if err != nil {
 		return ReturnReport{}, err
 	}
+
 	flows, err := s.ledger.ExternalFlows(ctx, userID, accountIDs, from, to)
 	if err != nil {
 		return ReturnReport{}, err
 	}
+
 	report := ReturnReport{Opening: opening, Closing: closing}
+
 	cash := []domain.CashFlow{{Date: start, Amount: -opening.Amount()}, {Date: to, Amount: closing.Amount()}}
 	for _, f := range flows {
 		value := f.Value
@@ -111,14 +124,18 @@ func (s *Service) returnOf(ctx context.Context, userID int64, accountIDs []uuid.
 				return ReturnReport{}, fmt.Errorf("value the flow of %s: %w", f.Date.Format(time.DateOnly), err)
 			}
 		}
+
 		report.Flows = append(report.Flows, ReturnFlow{Date: f.Date, Amount: value})
 		cash = append(cash, domain.CashFlow{Date: f.Date, Amount: -value.Amount()})
 	}
+
 	bp, ok := domain.AnnualReturnBP(cash)
 	if !ok {
 		return ReturnReport{}, ErrReturnUndefined
 	}
+
 	report.AnnualBP = bp
+
 	return report, nil
 }
 
@@ -128,15 +145,18 @@ func (s *Service) valued(ctx context.Context, userID int64, accountIDs []uuid.UU
 	if err != nil {
 		return money.Money{}, err
 	}
+
 	for _, id := range accountIDs {
 		v, err := s.ledger.ValuedBalance(ctx, userID, id, date, in)
 		if err != nil {
 			return money.Money{}, err
 		}
+
 		if total, err = total.Add(v); err != nil {
 			return money.Money{}, fmt.Errorf("sum valued balances: %w", err)
 		}
 	}
+
 	return total, nil
 }
 
@@ -156,17 +176,22 @@ func (s *Service) TrailingReturn(ctx context.Context, userID int64, accountIDs [
 	if err != nil || !found || first.After(today.AddDate(0, -minHistoryMonths, 0)) {
 		return 0, 0, false, err
 	}
+
 	from := today.AddDate(0, 0, -trailingDays)
 	if first.After(from) {
 		from = first
 	}
+
 	report, err := s.returnOf(ctx, userID, accountIDs, from, today, in)
 	if errors.Is(err, ErrReturnUndefined) || errors.Is(err, ErrPriceMissing) {
 		return 0, 0, false, nil
 	}
+
 	if err != nil || len(report.Flows) == 0 {
 		return 0, 0, false, err
 	}
+
 	months = min(maxTrailingMonths, int(math.Round(today.Sub(from).Hours()/24/daysPerMonth)))
+
 	return report.AnnualBP, months, true, nil
 }

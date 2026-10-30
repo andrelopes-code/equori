@@ -10,6 +10,7 @@ var wednesday = time.Date(2026, 10, 21, 0, 0, 0, 0, time.UTC)
 
 func TestReadDate(t *testing.T) {
 	t.Parallel()
+
 	for _, c := range []struct {
 		text  string
 		today time.Time
@@ -43,15 +44,18 @@ func TestReadDate(t *testing.T) {
 	} {
 		t.Run(c.text, func(t *testing.T) {
 			t.Parallel()
+
 			p, ok := readDate(splitWords(c.text), 0, c.today, Merge(Portuguese(), English()), DMY)
 			if !ok {
 				t.Fatal("not read as a date")
 			}
+
 			if p.valid != c.valid || p.words != c.words || (c.valid && p.date.Format(time.DateOnly) != c.want) {
 				t.Fatalf("got %s valid %v words %d, want %s %v %d", p.date.Format(time.DateOnly), p.valid, p.words, c.want, c.valid, c.words)
 			}
 		})
 	}
+
 	for _, text := range []string{"dia", "dia x", "12", "1/2/3", "domingueira"} {
 		if _, ok := readDate(splitWords(text), 0, wednesday, Merge(Portuguese(), English()), DMY); ok {
 			t.Errorf("%q read as a date", text)
@@ -61,6 +65,7 @@ func TestReadDate(t *testing.T) {
 
 func TestReadInstallments(t *testing.T) {
 	t.Parallel()
+
 	for _, c := range []struct {
 		text  string
 		count int
@@ -84,19 +89,23 @@ func TestReadInstallments(t *testing.T) {
 	} {
 		t.Run(c.text, func(t *testing.T) {
 			t.Parallel()
+
 			p, ok := readInstallments(splitWords(c.text), 0, Merge(Portuguese(), English()), Conventions{',', '.', DMY})
 			if !ok {
 				t.Fatal("not read as installments")
 			}
+
 			var each int64
 			if p.each != nil {
 				each, _ = p.each.value.minor(2)
 			}
+
 			if p.count != c.count || p.valid != c.valid || each != c.each || p.words != c.words {
 				t.Fatalf("got count %d valid %v each %d words %d, want %d %v %d %d", p.count, p.valid, each, p.words, c.count, c.valid, c.each, c.words)
 			}
 		})
 	}
+
 	for _, text := range []string{"em casa", "parcelado", "3", "x3", "3 dias"} {
 		if _, ok := readInstallments(splitWords(text), 0, Merge(Portuguese(), English()), Conventions{',', '.', DMY}); ok {
 			t.Errorf("%q read as installments", text)

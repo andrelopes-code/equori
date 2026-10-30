@@ -24,30 +24,37 @@ type Group struct {
 // the shares add up to 10000. A total that is not positive has no shares.
 func Allocate(items []Holding) []Group {
 	byKey := map[string]int64{}
+
 	var total int64
 	for _, h := range items {
 		byKey[h.Key] += h.Value
 		total += h.Value
 	}
+
 	groups := make([]Group, 0, len(byKey))
 	for key, value := range byKey {
 		groups = append(groups, Group{Key: key, Value: value})
 	}
+
 	slices.SortFunc(groups, func(a, b Group) int {
 		return cmp.Or(cmp.Compare(b.Value, a.Value), cmp.Compare(a.Key, b.Key))
 	})
+
 	if total <= 0 {
 		return groups
 	}
+
 	assigned := 0
 	for i := range groups {
 		if i == len(groups)-1 {
 			groups[i].ShareBP = 10000 - assigned
 			break
 		}
+
 		groups[i].ShareBP = int(shareBP(groups[i].Value, total)) //nolint:gosec // the share of a group of a positive total lies within a few multiples of 10000
 		assigned += groups[i].ShareBP
 	}
+
 	return groups
 }
 

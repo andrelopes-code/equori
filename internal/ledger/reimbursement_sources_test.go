@@ -25,6 +25,7 @@ func (b reimbursementBooks) sources(t *testing.T, id string) sourceList {
 	t.Helper()
 	var out sourceList
 	b.h.MustDo(http.MethodGet, "/api/v1/transactions/"+id+"/reimbursement-sources", nil, http.StatusOK, &out)
+
 	return out
 }
 
@@ -33,6 +34,7 @@ func (s sourceList) ids() []string {
 	for i, item := range s.Items {
 		out[i] = item.Transaction.ID
 	}
+
 	return out
 }
 
@@ -61,6 +63,7 @@ func TestReimbursementSources_S114(t *testing.T) {
 	if want := []string{soonest, partly}; !slices.Equal(got.ids(), want) {
 		t.Fatalf("sources = %v, want %v", got.ids(), want)
 	}
+
 	if got.Items[0].Free.Amount != 3000 || got.Items[0].Free.Currency != "BRL" || got.Items[1].Free.Amount != 3000 {
 		t.Fatalf("free = %+v, want 3000 and 3000", got.Items)
 	}

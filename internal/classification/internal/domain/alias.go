@@ -38,20 +38,25 @@ func NewAlias(a Alias) (Alias, error) {
 	if n := utf8.RuneCountInString(a.Pattern); n == 0 || n > maxTextValue || strings.TrimSpace(a.Pattern) == "" {
 		return Alias{}, invalid("pattern", fmt.Sprintf("must have 1 to %d characters", maxTextValue))
 	}
+
 	if !slices.Contains(matchOrder, a.MatchType) {
 		return Alias{}, invalid("match_type", "must be equals, starts_with, contains or regex")
 	}
+
 	if a.PayeeID == uuid.Nil {
 		return Alias{}, invalid("payee_id", "is required")
 	}
+
 	a.normalized = Normalize(a.Pattern)
 	if a.MatchType == MatchRegex {
 		re, err := regexp.Compile(a.Pattern)
 		if err != nil {
 			return Alias{}, invalid("pattern", "is not a valid RE2 pattern")
 		}
+
 		a.re = re
 	}
+
 	return a, nil
 }
 
@@ -66,6 +71,7 @@ func (a Alias) matches(original, normalized string) bool {
 	case MatchRegex:
 		return a.re.MatchString(original)
 	}
+
 	return false
 }
 
@@ -89,5 +95,6 @@ func ResolvePayee(raw string, sorted []Alias) (uuid.UUID, bool) {
 			return a.PayeeID, true
 		}
 	}
+
 	return uuid.Nil, false
 }

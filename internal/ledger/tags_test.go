@@ -24,6 +24,7 @@ func TestTagsInAnyScript(t *testing.T) {
 		Tags []string `json:"tags"`
 	}
 	h.MustDo(http.MethodGet, "/api/v1/transactions/"+created.ID, nil, http.StatusOK, &got)
+
 	if want := []string{"a-b", "café", "праздник"}; !slices.Equal(got.Tags, want) {
 		t.Fatalf("tags = %q, want %q", got.Tags, want)
 	}

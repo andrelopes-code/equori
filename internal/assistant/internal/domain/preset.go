@@ -70,6 +70,7 @@ func FindPreset(id string) (Preset, bool) {
 	if i < 0 {
 		return Preset{}, false
 	}
+
 	return Presets()[i], true
 }
 
@@ -80,6 +81,7 @@ func ModelCapabilities(preset, model string, asserted []string) []string {
 			return p.Models[i].Capabilities
 		}
 	}
+
 	return asserted
 }
 
@@ -91,6 +93,7 @@ func Missing(needs, have []string) []string {
 			out = append(out, n)
 		}
 	}
+
 	return out
 }
 
@@ -100,5 +103,6 @@ func ValidateCapabilities(caps []string) error {
 			return invalid("capabilities", "unknown capability "+c)
 		}
 	}
+
 	return nil
 }

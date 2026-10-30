@@ -32,6 +32,7 @@ func (u useView) chain() []string {
 	for _, t := range u.Targets {
 		out = append(out, t.ProviderName+"/"+t.Model+"/"+t.Notice)
 	}
+
 	return out
 }
 
@@ -41,10 +42,12 @@ func uses(t *testing.T, h *apitest.Harness) map[string]useView {
 		Items []useView `json:"items"`
 	}
 	h.MustDo(http.MethodGet, "/api/v1/assistant/uses", nil, http.StatusOK, &list)
+
 	out := map[string]useView{}
 	for _, u := range list.Items {
 		out[u.ID] = u
 	}
+
 	return out
 }
 
@@ -52,11 +55,13 @@ func equal(a, b []string) bool {
 	if len(a) != len(b) {
 		return false
 	}
+
 	for i := range a {
 		if a[i] != b[i] {
 			return false
 		}
 	}
+
 	return true
 }
 
@@ -66,11 +71,13 @@ func TestListUsesA5(t *testing.T) {
 	h := harness(t, newFakes())
 	createProvider(t, h, h.Client, map[string]any{"preset": "groq", "name": "Groq", "key": "k"})
 	got := uses(t, h)
+
 	suggest, chat := got["capture.suggest"], got["assistant.chat"]
 	if !suggest.Default || !suggest.SendsFinancialData || !equal(suggest.Needs, []string{"structured_output"}) ||
 		!equal(suggest.chain(), []string{"aistudio/gemini-3.5-flash-lite/trains"}) {
 		t.Fatalf("capture.suggest = %+v", suggest)
 	}
+
 	if !chat.Default || !equal(chat.chain(), []string{"aistudio/gemini-3.5-flash-lite/trains", "aistudio/gemini-3.1-flash-lite/trains", "aistudio/gemini-3.5-flash/trains", "Groq/openai/gpt-oss-120b/provider_terms"}) {
 		t.Fatalf("assistant.chat = %+v", chat)
 	}
@@ -95,16 +102,20 @@ func TestSetUseChainA6A11(t *testing.T) {
 
 	var set useView
 	h.MustDo(http.MethodPut, path, map[string]any{"targets": []any{target("llama", "tools"), target("qwen", "tools", "structured_output")}}, http.StatusOK, &set)
+
 	if set.Default || !equal(set.chain(), []string{"Box/llama/provider_terms", "Box/qwen/provider_terms"}) {
 		t.Fatalf("set chain = %+v", set)
 	}
+
 	h.MustDo(http.MethodPut, path, map[string]any{"targets": []any{}}, http.StatusOK, &set)
+
 	if !set.Default || !equal(set.chain(), []string{"aistudio/gemini-3.5-flash-lite/trains", "aistudio/gemini-3.1-flash-lite/trains", "aistudio/gemini-3.5-flash/trains"}) {
 		t.Fatalf("restored chain = %+v", set)
 	}
 
 	h.MustDo(http.MethodPut, path, map[string]any{"targets": []any{target("llama", "tools")}}, http.StatusOK, &set)
 	h.MustDo(http.MethodDelete, "/api/v1/assistant/providers/"+p.ID, nil, http.StatusNoContent, nil)
+
 	if chat := uses(t, h)["assistant.chat"]; !chat.Default || !equal(chat.chain(), []string{"aistudio/gemini-3.5-flash-lite/trains", "aistudio/gemini-3.1-flash-lite/trains", "aistudio/gemini-3.5-flash/trains"}) {
 		t.Fatalf("chain after delete = %+v", chat)
 	}
@@ -119,6 +130,7 @@ func structured(text string) llmtest.Step {
 // A7: a use's call reaches the user's provider and moves to the next target on quota.
 func TestUserChainCallA7(t *testing.T) {
 	t.Parallel()
+
 	f := newFakes()
 	h := harness(t, f)
 	p := createProvider(t, h, h.Client, map[string]any{"preset": "groq", "name": "Groq", "key": "ka"})
@@ -126,18 +138,21 @@ func TestUserChainCallA7(t *testing.T) {
 	second := structured(`{"items":[]}`)
 	second.Model = "m2"
 	provider := f.script("ka", first, second)
+
 	h.MustDo(http.MethodPut, "/api/v1/assistant/uses/capture.suggest/chain", map[string]any{"targets": []any{
 		map[string]any{"provider_id": p.ID, "model": "m1", "capabilities": []string{"structured_output"}},
 		map[string]any{"provider_id": p.ID, "model": "m2", "capabilities": []string{"structured_output"}},
 	}}, http.StatusOK, nil)
 
 	ctx := auth.WithUserID(t.Context(), h.OwnerID())
+
 	resp, err := h.App.LLM.Use(capture.SuggestUse).Generate(ctx, llm.Request{
 		Messages: []llm.Message{{Role: llm.RoleUser, Parts: []llm.Part{{Text: "x"}}}}, Schema: []byte(`{"type":"object"}`),
 	})
 	if err != nil {
 		t.Fatalf("Generate: %v", err)
 	}
+
 	if resp.Target != (llm.Target{Provider: p.ID, Model: "m2"}) || len(provider.Requests()) != 2 {
 		t.Fatalf("target = %v, calls = %d", resp.Target, len(provider.Requests()))
 	}
@@ -147,12 +162,14 @@ func TestUserChainCallA7(t *testing.T) {
 // and model available.
 func TestCooldownPerUserA8(t *testing.T) {
 	t.Parallel()
+
 	f := newFakes()
 	h := apitest.New(t, apitest.SecretKeys(apitest.SecretKey, ""), apitest.LLMFactory(f.build))
 	other := h.Login("other@example.com")
 	createProvider(t, h, h.Client, map[string]any{"preset": "groq", "name": "Groq", "key": "ka"})
 	createProvider(t, h, other, map[string]any{"preset": "groq", "name": "Groq", "key": "kb"})
 	f.script("ka", llmtest.Step{Model: "openai/gpt-oss-120b", Err: &llm.QuotaError{}})
+
 	answer := structured("ok")
 	answer.Model = "openai/gpt-oss-120b"
 	f.script("kb", answer)
@@ -161,11 +178,14 @@ func TestCooldownPerUserA8(t *testing.T) {
 	if err := h.Pool.QueryRow(t.Context(), `SELECT id FROM identity_user WHERE email = 'other@example.com'`).Scan(&otherID); err != nil {
 		t.Fatal(err)
 	}
+
 	req := llm.Request{Messages: []llm.Message{{Role: llm.RoleUser, Parts: []llm.Part{{Text: "x"}}}}}
+
 	client := h.App.LLM.Use(assistant.ChatUse)
 	if _, err := client.Generate(auth.WithUserID(t.Context(), h.OwnerID()), req); !errors.Is(err, llm.ErrExhausted) {
 		t.Fatalf("owner err = %v, want ErrExhausted", err)
 	}
+
 	if resp, err := client.Generate(auth.WithUserID(t.Context(), otherID), req); err != nil || resp.Text() != "ok" {
 		t.Fatalf("other user = %+v, %v", resp, err)
 	}

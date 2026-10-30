@@ -112,10 +112,12 @@ func getAccountDetails(svc *app.Service) tool.Tool {
 		if err != nil {
 			return getAccountDetailsOut{}, err
 		}
+
 		a, err := svc.Account(ctx, userID, id)
 		if err != nil {
 			return getAccountDetailsOut{}, err
 		}
+
 		isCard := a.Kind == domain.KindCreditCard
 		if !isCard {
 			switch {
@@ -127,10 +129,12 @@ func getAccountDetails(svc *app.Service) tool.Tool {
 				return getAccountDetailsOut{}, tool.InvalidArgument("statements_from", "applies only to a credit card account")
 			}
 		}
+
 		var month, from *domain.ReferenceMonth
 		if month, err = parseMonth(in.Month, "month"); err != nil {
 			return getAccountDetailsOut{}, err
 		}
+
 		if from, err = parseMonth(in.StatementsFrom, "statements_from"); err != nil {
 			return getAccountDetailsOut{}, err
 		}
@@ -142,27 +146,34 @@ func getAccountDetails(svc *app.Service) tool.Tool {
 			},
 			BalanceAssertions: []assertionView{},
 		}
+
 		unit, err := svc.AmountOf(ctx, 0, a.Instrument)
 		if err != nil {
 			return out, err
 		}
+
 		if out.Reconciliation, err = reconciliationOf(ctx, svc, userID, id); err != nil {
 			return out, err
 		}
+
 		assertions, _, err := svc.BalanceAssertions(ctx, userID, id, page.Request[app.AssertionKey]{Limit: 5})
 		if err != nil {
 			return out, err
 		}
+
 		for _, b := range assertions {
 			amount, err := minorMoney(unit, b.Amount)
 			if err != nil {
 				return out, err
 			}
+
 			out.BalanceAssertions = append(out.BalanceAssertions, assertionView{Date: tool.DateOf(b.Date), Amount: amount, Reconciled: b.Reconciled, Source: b.Source})
 		}
+
 		if isCard {
 			out.Card, err = cardDetailsOf(ctx, svc, userID, a, unit, in, month, from)
 		}
+
 		return out, err
 	})
 }
@@ -171,10 +182,12 @@ func parseMonth(s, field string) (*domain.ReferenceMonth, error) {
 	if s == "" {
 		return nil, nil
 	}
+
 	m, err := domain.ParseReferenceMonth(s)
 	if err != nil {
 		return nil, tool.InvalidArgument(field, "must be written YYYY-MM")
 	}
+
 	return &m, nil
 }
 
@@ -183,13 +196,16 @@ func reconciliationOf(ctx context.Context, svc *app.Service, userID int64, id uu
 	if err != nil {
 		return reconciliationView{}, err
 	}
+
 	var out reconciliationView
 	if st.LastReconciledOn != nil {
 		out.LastReconciledOn = tool.DateOf(*st.LastReconciledOn)
 	}
+
 	if o := st.Open; o != nil {
 		out.OpenDifference = openDifferenceView{AssertionID: o.AssertionID.String(), Date: tool.DateOf(o.Date), Difference: tool.MoneyOf(o.Difference)}
 	}
+
 	return out, nil
 }
 
@@ -197,37 +213,46 @@ func cardDetailsOf(ctx context.Context, svc *app.Service, userID int64, a domain
 	in getAccountDetailsIn, month, from *domain.ReferenceMonth) (cardDetailsView, error) {
 	today := svc.Today()
 	out := cardDetailsView{Cards: []cardView{}, Statements: []statementRowView{}}
+
 	cards, err := svc.Cards(ctx, userID, a.ID)
 	if err != nil {
 		return cardDetailsView{}, err
 	}
+
 	for _, c := range cards {
 		out.Cards = append(out.Cards, cardView{CardID: c.ID.String(), Holder: c.Holder, LastFour: c.LastFour, Virtual: c.Virtual, Active: c.Active})
 	}
+
 	limits, err := svc.CreditLimits(ctx, userID, a.ID)
 	if err != nil {
 		return cardDetailsView{}, err
 	}
+
 	if len(limits) > 0 {
 		sum, err := svc.CardSummary(ctx, userID, a)
 		if err != nil {
 			return cardDetailsView{}, err
 		}
+
 		if sum != nil {
 			out.CreditLimit, out.AvailableLimit = tool.MoneyOf(sum.CreditLimit), tool.MoneyOf(sum.AvailableLimit)
 		}
 	}
+
 	rules, err := svc.BillingRules(ctx, userID, a.ID)
 	if err != nil {
 		return cardDetailsView{}, err
 	}
+
 	if r, err := rules.For(domain.MonthOf(today)); err == nil {
 		out.BillingCycle = billingCycleView{ClosingDay: r.ClosingDay, DueDay: r.DueDay, EffectiveFrom: r.EffectiveFrom.String()}
 	}
+
 	if from == nil {
 		m := domain.MonthOf(today.AddDate(0, -6, 0))
 		from = &m
 	}
+
 	views, err := allPages(func(p page.Request[app.StatementKey]) ([]app.StatementView, *app.StatementKey, error) {
 		rows, next, _, err := svc.Statements(ctx, userID, a.ID, from, nil, p)
 		return rows, next, err
@@ -235,33 +260,41 @@ func cardDetailsOf(ctx context.Context, svc *app.Service, userID int64, a domain
 	if err != nil {
 		return cardDetailsView{}, err
 	}
+
 	for _, v := range views {
 		due, err := minorMoney(unit, v.Summary.AmountDue)
 		if err != nil {
 			return cardDetailsView{}, err
 		}
+
 		unpaid, err := minorMoney(unit, v.Summary.Unpaid)
 		if err != nil {
 			return cardDetailsView{}, err
 		}
+
 		out.Statements = append(out.Statements, statementRowView{
 			StatementID: v.ID.String(), Reference: v.Input.Reference.String(), ClosingDate: tool.DateOf(v.Input.Closing),
 			DueDate: tool.DateOf(v.Input.Due), Status: v.Summary.Status, AmountDue: due, Unpaid: unpaid,
 		})
 	}
+
 	if !in.PurchaseDate.IsZero() {
 		pl, err := svc.PlaceStatement(ctx, userID, a.ID, in.PurchaseDate.Time)
 		if err != nil {
 			return cardDetailsView{}, err
 		}
+
 		out.Placement = placementView{Reference: pl.Reference.String(), ClosingDate: tool.DateOf(pl.Closing), DueDate: tool.DateOf(pl.Due)}
 	}
+
 	if month != nil {
 		m, err := svc.Commitment(ctx, userID, a.ID, *month)
 		if err != nil {
 			return cardDetailsView{}, err
 		}
+
 		out.Committed = commitmentView{Month: month.String(), Amount: tool.MoneyOf(m)}
 	}
+
 	return out, nil
 }

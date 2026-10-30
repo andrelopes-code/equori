@@ -31,6 +31,7 @@ func NewIntegration(id uuid.UUID, userID int64, p AggregatorID, name string) (In
 	if name == "" || utf8.RuneCountInString(name) > maxNameLength {
 		return Integration{}, invalid("name", "must have 1 to 60 characters")
 	}
+
 	return Integration{ID: id, UserID: userID, Aggregator: p, Name: name}, nil
 }
 
@@ -52,10 +53,12 @@ func (c Credentials) Validate(fields []CredentialField) error {
 			return invalid("credentials."+f.Name, "is required")
 		}
 	}
+
 	for _, name := range slices.Sorted(maps.Keys(c)) {
 		if !declared[name] {
 			return invalid("credentials."+name, "is not a field of this aggregator")
 		}
 	}
+
 	return nil
 }

@@ -46,11 +46,14 @@ func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, clk clock.Clock, log
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("decode %s: %w", e.Type, err)
 		}
+
 		return exports.Build(ctx, e.UserID, p.ExportID)
 	})
+
 	for _, eventType := range []string{ledger.EventTransactionRecorded, ledger.EventTransactionCorrected, ledger.EventTransactionCategorized, ledger.EventTransactionVoided} {
 		dispatcher.Subscribe("reporting-series", eventType, rebuildSeries)
 	}
+
 	return &Module{svc: svc, exports: exports, http: httpapi.NewServer(svc, exports, clk, log), clk: clk}
 }
 
@@ -110,6 +113,7 @@ func priceMissing(err error) error {
 	if errors.Is(err, marketdata.ErrPriceMissing) {
 		return fmt.Errorf("%w: %w", app.ErrPriceMissing, err)
 	}
+
 	return err
 }
 
@@ -122,18 +126,22 @@ func rebuildSeries(ctx context.Context, tx pgx.Tx, e outbox.Delivered) error {
 	if err := json.Unmarshal(e.Payload, &p); err != nil {
 		return fmt.Errorf("decode %s: %w", e.Type, err)
 	}
+
 	from, err := time.Parse(time.DateOnly, p.Date)
 	if err != nil {
 		return fmt.Errorf("%s date: %w", e.Type, err)
 	}
+
 	if p.PreviousDate != "" {
 		prev, err := time.Parse(time.DateOnly, p.PreviousDate)
 		if err != nil {
 			return fmt.Errorf("%s previous_date: %w", e.Type, err)
 		}
+
 		if prev.Before(from) {
 			from = prev
 		}
 	}
+
 	return app.NewService(postgres.NewRepository(tx)).RebuildAccounts(ctx, e.UserID, p.AccountIDs, from)
 }

@@ -48,6 +48,7 @@ func recordInvestment(svc *app.Service) tool.Tool {
 		if err != nil {
 			return recordInvestmentOut{}, err
 		}
+
 		return run()
 	})
 }
@@ -55,52 +56,65 @@ func recordInvestment(svc *app.Service) tool.Tool {
 func planInvestment(ctx context.Context, svc *app.Service, userID int64, in recordInvestmentIn) (tool.Preview, func() (recordInvestmentOut, error), error) {
 	action := string(in.Kind)
 	pv := tool.Preview{Action: "record_investment"}
+
 	accountID, err := requiredID(in.AccountID, "account_id")
 	if err != nil {
 		return pv, nil, err
 	}
+
 	cashID, err := requiredID(in.CashAccountID, "cash_account_id")
 	if err != nil {
 		return pv, nil, err
 	}
+
 	categoryID, err := optionalID(in.CategoryID, "category_id")
 	if err != nil {
 		return pv, nil, err
 	}
+
 	given := map[string]bool{
 		"account_id": true, "cash_account_id": true, "date": !in.Date.IsZero(), "quantity": in.Quantity != "", "unit_price": in.UnitPrice != "",
 		"fees": in.Fees != "", "taxes": in.Taxes != "", "gross": in.Gross != "", "withheld": in.Withheld != "", "income_type": in.IncomeType != "", "category_id": in.CategoryID != "",
 	}
+
 	base := []string{"account_id", "cash_account_id", "date"}
 	if in.Kind == "income" {
 		err = checkFields(action, given, append(base, "gross", "income_type", "category_id"), "withheld")
 	} else {
 		err = checkFields(action, given, append(base, "quantity", "unit_price"), "fees", "taxes")
 	}
+
 	if err != nil {
 		return pv, nil, err
 	}
+
 	security, err := svc.Account(ctx, userID, accountID)
 	if err != nil {
 		return pv, nil, err
 	}
+
 	cash, err := svc.Account(ctx, userID, cashID)
 	if err != nil {
 		return pv, nil, err
 	}
+
 	cashUnit, err := svc.AmountOf(ctx, 0, cash.Instrument)
 	if err != nil {
 		return pv, nil, err
 	}
+
 	optional := func(field, s string) (*money.Money, error) {
 		if s == "" {
 			return nil, nil
 		}
+
 		m, err := tool.ParsePositive(field, s, cashUnit)
+
 		return &m, err
 	}
 	pv.Target = security.Name
 	pv.Changes = []tool.Change{{Field: "instrument", After: tool.TextValue(string(security.Instrument))}}
+
 	amountChange := func(m *money.Money) {
 		if m != nil {
 			pv.Changes = append(pv.Changes, tool.Change{Field: "amount", After: tool.MoneyValue(*m)})
@@ -111,50 +125,63 @@ func planInvestment(ctx context.Context, svc *app.Service, userID int64, in reco
 		if err != nil {
 			return pv, nil, err
 		}
+
 		withheld, err := optional("withheld", in.Withheld)
 		if err != nil {
 			return pv, nil, err
 		}
+
 		o := domain.IncomeOrder{
 			AccountID: security.ID, CashAccountID: cash.ID, CategoryID: categoryID, Type: domain.IncomeType(in.IncomeType),
 			Date: in.Date.Time, Gross: gross, Withheld: withheld,
 		}
 		amountChange(&gross)
 		amountChange(withheld)
+
 		pv.Changes = append(pv.Changes, tool.Change{Field: "account", After: tool.TextValue(cash.Name)}, tool.Change{Field: "date", After: tool.DateValue(in.Date.Time)})
+
 		return pv, func() (recordInvestmentOut, error) {
 			t, err := svc.RecordIncome(ctx, userID, o)
 			return recordInvestmentOut{TransactionID: t.ID.String()}, err
 		}, nil
 	}
+
 	secUnit, err := svc.AmountOf(ctx, 0, security.Instrument)
 	if err != nil {
 		return pv, nil, err
 	}
+
 	quantity, err := tool.ParsePositive("quantity", in.Quantity, secUnit)
 	if err != nil {
 		return pv, nil, err
 	}
+
 	price, err := money.ParseRate(in.UnitPrice)
 	if err != nil {
 		return pv, nil, tool.InvalidArgument("unit_price", "must be a positive decimal with at most 12 decimals")
 	}
+
 	fees, err := optional("fees", in.Fees)
 	if err != nil {
 		return pv, nil, err
 	}
+
 	taxes, err := optional("taxes", in.Taxes)
 	if err != nil {
 		return pv, nil, err
 	}
+
 	o := domain.TradeOrder{
 		AccountID: security.ID, CashAccountID: cash.ID, Side: domain.Side(in.Kind), Date: in.Date.Time,
 		Quantity: quantity, UnitPrice: price, Fees: fees, Taxes: taxes,
 	}
 	pv.Changes = append(pv.Changes, tool.Change{Field: "quantity", After: tool.TextValue(quantity.Decimal())}, tool.Change{Field: "price", After: tool.TextValue(price.String())})
+
 	amountChange(fees)
 	amountChange(taxes)
+
 	pv.Changes = append(pv.Changes, tool.Change{Field: "account", After: tool.TextValue(cash.Name)}, tool.Change{Field: "date", After: tool.DateValue(in.Date.Time)})
+
 	return pv, func() (recordInvestmentOut, error) {
 		t, err := svc.RecordTrade(ctx, userID, o)
 		return recordInvestmentOut{TransactionID: t.ID.String()}, err

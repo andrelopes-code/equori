@@ -40,12 +40,15 @@ func TestGetTransactionTool(t *testing.T) {
 
 	var got getTransactionOut
 	toolOutput(t, h, "get_transaction", map[string]any{"transaction_id": id}, &got)
+
 	if got.Transaction.Version != 2 || len(got.History) != 1 || got.History[0].Version != 1 || got.History[0].Reason != "typo" {
 		t.Fatalf("version/history = %d %+v", got.Transaction.Version, got.History)
 	}
+
 	if p := got.Transaction.Postings; len(p) != 2 || p[0].Amount.Amount != "-130.00" || p[1].Amount.Amount != "130.00" {
 		t.Errorf("postings = %+v", p)
 	}
+
 	h.ExpectToolError(h.Tool("get_transaction", map[string]any{"transaction_id": "nope"}), "invalid_arguments", "transaction_id")
 }
 
@@ -58,9 +61,11 @@ func TestGetTransactionInstallments(t *testing.T) {
 	})
 	var got getTransactionOut
 	toolOutput(t, c.h, "get_transaction", map[string]any{"transaction_id": res.Transaction.ID}, &got)
+
 	if got.InstallmentPlan == nil || got.InstallmentPlan.Count != 3 || len(got.InstallmentPlan.Installments) != 3 {
 		t.Fatalf("plan = %+v", got.InstallmentPlan)
 	}
+
 	for _, i := range got.InstallmentPlan.Installments {
 		if i.Amount.Amount != "100.00" {
 			t.Errorf("installment %d = %s", i.Number, i.Amount)
@@ -72,6 +77,7 @@ func TestGetTransactionOtherUser(t *testing.T) {
 	t.Parallel()
 	h := apitest.New(t, apitest.Today("2026-10-23"))
 	other := h.Login("other@example.com")
+
 	var a, b, tx struct {
 		ID string `json:"id"`
 	}
@@ -80,6 +86,7 @@ func TestGetTransactionOtherUser(t *testing.T) {
 	}{"A": &a, "B": &b} {
 		h.Call(other, http.MethodPost, "/api/v1/accounts", map[string]any{"name": name, "class": "asset", "currency": "BRL", "kind": "checking"}).Decode(t, out)
 	}
+
 	h.Call(other, http.MethodPost, "/api/v1/transactions", map[string]any{
 		"date": "2026-10-20", "description": "x", "postings": []map[string]any{apitest.Posting(a.ID, -100), apitest.Posting(b.ID, 100)},
 	}).Decode(t, &tx)

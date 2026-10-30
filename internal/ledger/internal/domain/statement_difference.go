@@ -53,17 +53,21 @@ func ExplainDifference(difference int64, lineCount int, candidates []DifferenceC
 func pick(cs []DifferenceCandidate, size int, target int64) []uuid.UUID {
 	chosen := make([]int, 0, size)
 	var walk func(from int, left int64) bool
+
 	walk = func(from int, left int64) bool {
 		if len(chosen) == size {
 			return left == 0
 		}
+
 		for i := from; i <= len(cs)-(size-len(chosen)); i++ {
 			chosen = append(chosen, i)
 			if walk(i+1, left+cs[i].Amount) {
 				return true
 			}
+
 			chosen = chosen[:len(chosen)-1]
 		}
+
 		return false
 	}
 	if !walk(0, target) {

@@ -10,20 +10,25 @@ func DefaultDataDir(goos string, getenv func(string) string) string {
 		if data := getenv("ProgramData"); data != "" {
 			return data + `\equori`
 		}
+
 		return ""
 	}
+
 	home := getenv("HOME")
 	if home == "" {
 		return ""
 	}
+
 	switch goos {
 	case "linux":
 		if xdg := getenv("XDG_DATA_HOME"); xdg != "" {
 			return path.Join(xdg, "equori")
 		}
+
 		return path.Join(home, ".local", "share", "equori")
 	case "darwin":
 		return path.Join(home, "Library", "Application Support", "equori")
 	}
+
 	return ""
 }

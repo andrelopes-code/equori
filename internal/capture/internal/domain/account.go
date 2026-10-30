@@ -36,6 +36,7 @@ func (v Vocabulary) account(id uuid.UUID) (Account, bool) {
 	if i < 0 {
 		return Account{}, false
 	}
+
 	return v.Accounts[i], true
 }
 
@@ -53,10 +54,12 @@ func indexHandles(accounts []Account) handleIndex {
 			if key == "" || slices.Contains(idx.accounts[key], i) {
 				continue
 			}
+
 			idx.accounts[key] = append(idx.accounts[key], i)
 			idx.maxWords = max(idx.maxWords, len(strings.Fields(key)))
 		}
 	}
+
 	return idx
 }
 
@@ -69,12 +72,14 @@ type mention struct {
 // findMentions marks the longest handle at each position, left to right.
 func (r *lineReader) findMentions(idx handleIndex) []mention {
 	var out []mention
+
 	ws := r.words
 	for i := 0; i < len(ws); {
 		length := 0
 		for n := min(idx.maxWords, len(ws)-i); n >= 1; n-- {
 			if accounts, ok := idx.accounts[r.key(i, n)]; ok {
 				m := mention{accounts: accounts}
+
 				first := i
 				if i > 0 && ws[i-1].free() {
 					switch {
@@ -84,14 +89,19 @@ func (r *lineReader) findMentions(idx handleIndex) []mention {
 						m.source, first = true, i-1
 					}
 				}
+
 				r.mark(first, i+n, RoleAccount)
+
 				out = append(out, m)
 				length = n
+
 				break
 			}
 		}
+
 		i += max(length, 1)
 	}
+
 	return out
 }
 
@@ -103,8 +113,10 @@ func (r *lineReader) key(i, n int) string {
 		if !w.free() || w.norm == "" {
 			return ""
 		}
+
 		parts[k] = w.norm
 	}
+
 	return strings.Join(parts, " ")
 }
 
@@ -128,6 +140,7 @@ func (m method) admits(a Account) bool {
 	case methodCash:
 		return a.Kind == "cash"
 	}
+
 	return true
 }
 
@@ -136,15 +149,18 @@ func (m method) admits(a Account) bool {
 func methodOf(named []method) (m method, conflict bool) {
 	groups := slices.Clone(named)
 	slices.Sort(groups)
+
 	groups = slices.Compact(groups)
 	if len(groups) > 1 {
 		groups = slices.DeleteFunc(groups, func(x method) bool { return x == methodCard })
 	}
+
 	switch len(groups) {
 	case 0:
 		return "", false
 	case 1:
 		return groups[0], false
 	}
+
 	return "", true
 }

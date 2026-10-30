@@ -30,11 +30,14 @@ func TestCSVProfile(t *testing.T) {
 	body := map[string]any{"date_column": "Data", "date_layout": "DD/MM/YYYY", "amount_column": "Valor", "decimal_separator": ".", "description_column": "Descrição"}
 	var saved csvProfile
 	h.MustDo(http.MethodPut, path, body, http.StatusOK, &saved)
+
 	if saved.Delimiter != "comma" || saved.HeaderRows != 1 || saved.AmountSign != "as_is" || saved.AmountColumn != "Valor" || saved.Encoding != "auto" || saved.GroupSeparator != "," {
 		t.Fatalf("saved = %+v", saved)
 	}
+
 	var got csvProfile
 	h.MustDo(http.MethodGet, path, nil, http.StatusOK, &got)
+
 	if got != saved {
 		t.Fatalf("got %+v, saved %+v", got, saved)
 	}
@@ -50,6 +53,7 @@ func TestCSVProfile(t *testing.T) {
 	h.ExpectProblem(h.Do(http.MethodPut, path, body), http.StatusUnprocessableEntity, "validation_failed", "encoding")
 	body["encoding"] = "windows-1251"
 	h.MustDo(http.MethodPut, path, body, http.StatusOK, &saved)
+
 	if saved.Encoding != "windows-1251" {
 		t.Fatalf("encoding = %q", saved.Encoding)
 	}
@@ -62,6 +66,7 @@ func TestCSVProfile(t *testing.T) {
 	h.ExpectProblem(h.Do(http.MethodPut, path, body), http.StatusUnprocessableEntity, "validation_failed", "date_layout")
 	body["date_layout"] = "DD.MM.YYYY"
 	h.MustDo(http.MethodPut, path, body, http.StatusOK, &saved)
+
 	if saved.DateLayout != "DD.MM.YYYY" || saved.GroupSeparator != "'" {
 		t.Fatalf("formats = %q, %q", saved.DateLayout, saved.GroupSeparator)
 	}

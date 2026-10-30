@@ -50,6 +50,7 @@ func reconcileAccount(svc *app.Service) tool.Tool {
 		if err != nil {
 			return reconcileAccountOut{}, err
 		}
+
 		return run()
 	})
 }
@@ -57,11 +58,14 @@ func reconcileAccount(svc *app.Service) tool.Tool {
 func planReconcile(ctx context.Context, svc *app.Service, userID int64, in reconcileAccountIn) (tool.Preview, func() (reconcileAccountOut, error), error) {
 	action := string(in.Action)
 	pv := tool.Preview{Action: "reconcile_account"}
+
 	id, err := requiredID(in.AccountID, "account_id")
 	if err != nil {
 		return pv, nil, err
 	}
+
 	given := map[string]bool{"account_id": true, "date": !in.Date.IsZero(), "amount": in.Amount != "", "resolution": in.Resolution != ""}
+
 	var required []string
 	switch in.Action {
 	case "record_balance":
@@ -71,13 +75,16 @@ func planReconcile(ctx context.Context, svc *app.Service, userID int64, in recon
 	default:
 		required = []string{"date"}
 	}
+
 	if err := checkFields(action, given, append([]string{"account_id"}, required...)); err != nil {
 		return pv, nil, err
 	}
+
 	a, err := svc.Account(ctx, userID, id)
 	if err != nil {
 		return pv, nil, err
 	}
+
 	pv.Target = a.Name
 	switch in.Action {
 	case "record_balance":
@@ -85,11 +92,14 @@ func planReconcile(ctx context.Context, svc *app.Service, userID int64, in recon
 		if err != nil {
 			return pv, nil, err
 		}
+
 		amount, err := tool.ParseAmount("amount", in.Amount, unit)
 		if err != nil {
 			return pv, nil, err
 		}
+
 		pv.Changes = []tool.Change{{Field: "amount", After: tool.MoneyValue(amount)}, {Field: "date", After: tool.DateValue(in.Date.Time)}}
+
 		return pv, func() (reconcileAccountOut, error) {
 			res, err := svc.AssertBalance(ctx, userID, a.ID, in.Date.Time, amount, app.SourceManual)
 			return assertionOut(a.ID.String(), res), err
@@ -99,21 +109,25 @@ func planReconcile(ctx context.Context, svc *app.Service, userID int64, in recon
 		if err != nil {
 			return pv, nil, err
 		}
+
 		if st.Open == nil {
 			return pv, nil, tool.InvalidArgument("account_id", "has no open difference")
 		}
+
 		pv.Basis = st.Open.AssertionID.String() + ":" + st.Open.Difference.Decimal()
 		pv.Changes = []tool.Change{
 			{Field: "amount", After: tool.MoneyValue(st.Open.Difference)},
 			{Field: "date", After: tool.DateValue(st.Open.Date)},
 			{Field: "status", Before: tool.TextValue("open difference"), After: tool.TextValue(string(in.Resolution))},
 		}
+
 		return pv, func() (reconcileAccountOut, error) {
 			res, err := svc.ResolveAssertion(ctx, userID, st.Open.AssertionID, domain.Resolution(in.Resolution))
 			return assertionOut(a.ID.String(), res), err
 		}, nil
 	default:
 		pv.Changes = []tool.Change{{Field: "date", After: tool.DateValue(in.Date.Time)}, {Field: "status", Before: tool.TextValue("reconciled"), After: tool.TextValue("unlocked")}}
+
 		return pv, func() (reconcileAccountOut, error) {
 			return reconcileAccountOut{AccountID: a.ID.String()}, svc.Unlock(ctx, userID, a.ID, in.Date.Time)
 		}, nil

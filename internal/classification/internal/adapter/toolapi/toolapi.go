@@ -28,10 +28,12 @@ func optionalID(s, field string) (uuid.UUID, error) {
 	if s == "" {
 		return uuid.Nil, nil
 	}
+
 	id, err := uuid.Parse(s)
 	if err != nil {
 		return uuid.Nil, tool.InvalidArgument(field, "is not a UUID")
 	}
+
 	return id, nil
 }
 
@@ -51,6 +53,7 @@ func required(name string, fields []field, needed ...string) error {
 			return tool.InvalidArgument(f.name, "is not used by "+name)
 		}
 	}
+
 	return nil
 }
 
@@ -59,14 +62,17 @@ func pageRequest[K any](args tool.PageArgs) (page.Request[K], error) {
 	if err != nil {
 		return page.Request[K]{}, err
 	}
+
 	r := page.Request[K]{Limit: n}
 	if args.Cursor != "" {
 		var k K
 		if page.DecodeCursor(args.Cursor, &k) != nil {
 			return page.Request[K]{}, tool.InvalidArgument("cursor", "is not a next_cursor of this list; start again without cursor")
 		}
+
 		r.After = &k
 	}
+
 	return r, nil
 }
 
@@ -74,6 +80,7 @@ func nextCursor[K any](k *K) (string, error) {
 	if k == nil {
 		return "", nil
 	}
+
 	return page.EncodeCursor(k)
 }
 
@@ -82,6 +89,7 @@ func conditionsText(cs []domain.Condition) string {
 	parts := make([]string, len(cs))
 	for i, c := range cs {
 		d := c.Doc()
+
 		var v string
 		if s, ok := d.Value.(string); ok {
 			v = fmt.Sprintf("%q", s)
@@ -89,8 +97,10 @@ func conditionsText(cs []domain.Condition) string {
 			b, _ := json.Marshal(d.Value) // a condition value is a string, number or list of them
 			v = string(b)
 		}
+
 		parts[i] = strings.ReplaceAll(d.Field, "_", " ") + " " + strings.ReplaceAll(d.Operator, "_", " ") + " " + v
 	}
+
 	return strings.Join(parts, " and ")
 }
 
@@ -99,6 +109,7 @@ func actionsText(as []domain.Action, categories, payees map[uuid.UUID]string) st
 	parts := make([]string, len(as))
 	for i, a := range as {
 		d := a.Doc()
+
 		text := strings.ReplaceAll(d.Type, "_", " ")
 		switch {
 		case d.CategoryID != uuid.Nil:
@@ -110,24 +121,29 @@ func actionsText(as []domain.Action, categories, payees map[uuid.UUID]string) st
 		case len(d.Tags) > 0:
 			text += " " + strings.Join(d.Tags, ", ")
 		}
+
 		parts[i] = text
 	}
+
 	return strings.Join(parts, ", ")
 }
 
 // allRules reads every rule in priority order.
 func allRules(ctx context.Context, svc *app.Service, userID int64) ([]domain.Rule, error) {
 	var all []domain.Rule
+
 	p := page.Request[app.RuleKey]{Limit: page.MaxLimit}
 	for {
 		rows, next, err := svc.ListRules(ctx, userID, p)
 		if err != nil {
 			return nil, err
 		}
+
 		all = append(all, rows...)
 		if next == nil {
 			return all, nil
 		}
+
 		p.After = next
 	}
 }

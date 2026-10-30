@@ -34,6 +34,7 @@ func (r *Repository) InTx(ctx context.Context, fn func(app.Repository) error) er
 	if r.pool == nil {
 		return fn(r)
 	}
+
 	return pgx.BeginFunc(ctx, r.pool, func(tx pgx.Tx) error { return fn(NewTxRepository(tx)) })
 }
 
@@ -41,6 +42,7 @@ func notFound(err error) error {
 	if errors.Is(err, pgx.ErrNoRows) {
 		return app.ErrNotFound
 	}
+
 	return err
 }
 
@@ -50,7 +52,9 @@ func intPtr(v int) *int32 {
 	if v == 0 {
 		return nil
 	}
+
 	n := int32(v) //nolint:gosec // rule fields are validated to small ranges (A48)
+
 	return &n
 }
 
@@ -58,6 +62,7 @@ func fromPtr(p *int32) int {
 	if p == nil {
 		return 0
 	}
+
 	return int(*p)
 }
 
@@ -71,23 +76,28 @@ func (r *Repository) InsertSchedule(ctx context.Context, userID int64, s domain.
 	if err != nil {
 		return domain.Schedule{}, fmt.Errorf("insert schedule: %w", err)
 	}
+
 	for _, t := range s.Terms {
 		if err := r.insertTerms(ctx, userID, row.ID, t); err != nil {
 			return domain.Schedule{}, err
 		}
 	}
+
 	out := toSchedule(row)
 	out.Terms = s.Terms
+
 	return out, nil
 }
 
 func (r *Repository) insertTerms(ctx context.Context, userID int64, scheduleID uuid.UUID, t domain.Terms) error {
 	rule := t.Rule
+
 	var weekday *int32
 	if rule.Weekday != nil {
 		w := int32(*rule.Weekday) //nolint:gosec // a weekday is 0-6
 		weekday = &w
 	}
+
 	err := r.q.InsertTerms(ctx, InsertTermsParams{
 		UserID: userID, ScheduleID: scheduleID, EffectiveFrom: t.EffectiveFrom, Frequency: string(rule.Frequency),
 		Interval: int32(rule.Interval), DayOfMonth: intPtr(rule.DayOfMonth), Weekday: weekday, Ordinal: intPtr(rule.Ordinal), //nolint:gosec // interval is at most 120 (contract)
@@ -96,6 +106,7 @@ func (r *Repository) insertTerms(ctx context.Context, userID int64, scheduleID u
 	if err != nil {
 		return fmt.Errorf("insert schedule terms: %w", err)
 	}
+
 	return nil
 }
 
@@ -118,6 +129,7 @@ func toTerms(row PlanningScheduleTerm) domain.Terms {
 		w := time.Weekday(*row.Weekday)
 		rule.Weekday = &w
 	}
+
 	return domain.Terms{EffectiveFrom: row.EffectiveFrom, Rule: rule, Amount: row.Amount, FirstSequence: fromPtr(row.FirstSequence)}
 }
 
@@ -126,30 +138,37 @@ func (r *Repository) complete(ctx context.Context, rows []PlanningSchedule) ([]d
 	if len(rows) == 0 {
 		return nil, nil
 	}
+
 	ids := make([]uuid.UUID, len(rows))
 	byID := make(map[uuid.UUID]*domain.Schedule, len(rows))
+
 	out := make([]domain.Schedule, len(rows))
 	for i, row := range rows {
 		ids[i] = row.ID
 		out[i] = toSchedule(row)
 		byID[row.ID] = &out[i]
 	}
+
 	terms, err := r.q.ListTerms(ctx, ListTermsParams{UserID: rows[0].UserID, ScheduleIds: ids})
 	if err != nil {
 		return nil, fmt.Errorf("list schedule terms: %w", err)
 	}
+
 	for _, t := range terms {
 		s := byID[t.ScheduleID]
 		s.Terms = append(s.Terms, toTerms(t))
 	}
+
 	pauses, err := r.q.ListPauses(ctx, ListPausesParams{UserID: rows[0].UserID, ScheduleIds: ids})
 	if err != nil {
 		return nil, fmt.Errorf("list schedule pauses: %w", err)
 	}
+
 	for _, p := range pauses {
 		s := byID[p.ScheduleID]
 		s.Pauses = append(s.Pauses, domain.Pause{From: p.FromDate, To: p.ToDate})
 	}
+
 	return out, nil
 }
 
@@ -157,10 +176,12 @@ func (r *Repository) one(ctx context.Context, row PlanningSchedule, err error) (
 	if err != nil {
 		return domain.Schedule{}, notFound(err)
 	}
+
 	out, err := r.complete(ctx, []PlanningSchedule{row})
 	if err != nil {
 		return domain.Schedule{}, err
 	}
+
 	return out[0], nil
 }
 
@@ -181,6 +202,7 @@ func keyset(p page.Request[app.IDKey]) (uuid.NullUUID, int32) {
 	if p.After != nil {
 		after = nullUUID(p.After.ID)
 	}
+
 	return after, int32(p.Limit + 1) //nolint:gosec // limit is at most page.MaxLimit
 }
 
@@ -189,18 +211,23 @@ func trim[R any](rows []R, limit int, id func(R) uuid.UUID) ([]R, *app.IDKey) {
 	if len(rows) <= limit {
 		return rows, nil
 	}
+
 	rows = rows[:limit]
+
 	return rows, &app.IDKey{ID: id(rows[len(rows)-1])}
 }
 
 func (r *Repository) ListSchedules(ctx context.Context, userID int64, p page.Request[app.IDKey]) ([]domain.Schedule, *app.IDKey, error) {
 	after, limit := keyset(p)
+
 	rows, err := r.q.ListSchedules(ctx, ListSchedulesParams{UserID: userID, AfterID: after, RowLimit: limit})
 	if err != nil {
 		return nil, nil, fmt.Errorf("list schedules: %w", err)
 	}
+
 	rows, next := trim(rows, p.Limit, func(s PlanningSchedule) uuid.UUID { return s.ID })
 	out, err := r.complete(ctx, rows)
+
 	return out, next, err
 }
 
@@ -209,6 +236,7 @@ func (r *Repository) Schedules(ctx context.Context, userID int64) ([]domain.Sche
 	if err != nil {
 		return nil, fmt.Errorf("list schedules of user: %w", err)
 	}
+
 	return r.complete(ctx, rows)
 }
 
@@ -217,10 +245,12 @@ func (r *Repository) SchedulesBehind(ctx context.Context, horizon time.Time) ([]
 	if err != nil {
 		return nil, fmt.Errorf("list schedules behind: %w", err)
 	}
+
 	out := make([]app.ScheduleRef, len(rows))
 	for i, row := range rows {
 		out[i] = app.ScheduleRef{UserID: row.UserID, ID: row.ID}
 	}
+
 	return out, nil
 }
 
@@ -229,10 +259,12 @@ func (r *Repository) ScheduleRefs(ctx context.Context) ([]app.ScheduleRef, error
 	if err != nil {
 		return nil, fmt.Errorf("list schedules: %w", err)
 	}
+
 	out := make([]app.ScheduleRef, len(rows))
 	for i, row := range rows {
 		out[i] = app.ScheduleRef{UserID: row.UserID, ID: row.ID}
 	}
+
 	return out, nil
 }
 
@@ -244,15 +276,18 @@ func (r *Repository) InsertOccurrences(ctx context.Context, userID int64, schedu
 	if len(ps) == 0 {
 		return nil
 	}
+
 	arg := InsertOccurrencesParams{UserID: userID, ScheduleID: scheduleID}
 	for _, p := range ps {
 		arg.Sequences = append(arg.Sequences, int32(p.Sequence)) //nolint:gosec // sequences stay far below 2^31
 		arg.Dates = append(arg.Dates, p.Date.Format(time.DateOnly))
 		arg.Amounts = append(arg.Amounts, p.Amount)
 	}
+
 	if err := r.q.InsertOccurrences(ctx, arg); err != nil {
 		return fmt.Errorf("insert occurrences: %w", err)
 	}
+
 	return nil
 }
 
@@ -265,9 +300,11 @@ func toOccurrence(row PlanningOccurrence) domain.Occurrence {
 	if row.RealizedBy != nil {
 		o.RealizedBy = *row.RealizedBy
 	}
+
 	if row.SkipReason != nil {
 		o.SkipReason = *row.SkipReason
 	}
+
 	return o
 }
 
@@ -276,10 +313,12 @@ func (r *Repository) Occurrences(ctx context.Context, userID int64, from, to tim
 	if err != nil {
 		return nil, fmt.Errorf("list occurrences: %w", err)
 	}
+
 	out := make([]domain.Occurrence, len(rows))
 	for i, row := range rows {
 		out[i] = toOccurrence(row)
 	}
+
 	return out, nil
 }
 
@@ -288,10 +327,12 @@ func (r *Repository) OccurrencesOfTransaction(ctx context.Context, userID int64,
 	if err != nil {
 		return nil, fmt.Errorf("list occurrences of a transaction: %w", err)
 	}
+
 	out := make([]domain.Occurrence, len(rows))
 	for i, row := range rows {
 		out[i] = toOccurrence(row)
 	}
+
 	return out, nil
 }
 
@@ -300,6 +341,7 @@ func (r *Repository) SchedulesTouching(ctx context.Context, userID int64, accoun
 	if err != nil {
 		return nil, fmt.Errorf("list schedules of accounts: %w", err)
 	}
+
 	return r.complete(ctx, rows)
 }
 
@@ -308,6 +350,7 @@ func (r *Repository) OccurrenceByTransaction(ctx context.Context, userID int64, 
 	if err != nil {
 		return domain.Occurrence{}, notFound(err)
 	}
+
 	return toOccurrence(row), nil
 }
 
@@ -316,10 +359,12 @@ func (r *Repository) ExpectedOccurrences(ctx context.Context, userID int64, sche
 	if err != nil {
 		return nil, fmt.Errorf("list expected occurrences: %w", err)
 	}
+
 	out := make([]domain.Occurrence, len(rows))
 	for i, row := range rows {
 		out[i] = toOccurrence(row)
 	}
+
 	return out, nil
 }
 
@@ -328,6 +373,7 @@ func (r *Repository) LockOccurrence(ctx context.Context, userID int64, id uuid.U
 	if err != nil {
 		return domain.Occurrence{}, notFound(err)
 	}
+
 	return toOccurrence(row), nil
 }
 
@@ -336,6 +382,7 @@ func closed(err error) error {
 	if errors.Is(err, pgx.ErrNoRows) {
 		return app.ErrOccurrenceClosed
 	}
+
 	return err
 }
 
@@ -345,9 +392,11 @@ func (r *Repository) Realize(ctx context.Context, userID int64, id, txID uuid.UU
 	if pe, ok := errors.AsType[*pgconn.PgError](err); ok && pe.Code == uniqueViolation {
 		return domain.Occurrence{}, app.ErrTransactionInUse
 	}
+
 	if err != nil {
 		return domain.Occurrence{}, closed(err)
 	}
+
 	return toOccurrence(row), nil
 }
 
@@ -356,6 +405,7 @@ func (r *Repository) Release(ctx context.Context, userID int64, id uuid.UUID, de
 	if err != nil {
 		return domain.Occurrence{}, closed(err)
 	}
+
 	return toOccurrence(row), nil
 }
 
@@ -366,10 +416,12 @@ func (r *Repository) Skip(ctx context.Context, userID int64, id uuid.UUID, reaso
 	if reason != "" {
 		p = &reason
 	}
+
 	row, err := r.q.SkipOccurrence(ctx, SkipOccurrenceParams{UserID: userID, ID: id, SkipReason: p})
 	if err != nil {
 		return domain.Occurrence{}, closed(err)
 	}
+
 	return toOccurrence(row), nil
 }
 
@@ -378,6 +430,7 @@ func (r *Repository) Move(ctx context.Context, userID int64, id uuid.UUID, date 
 	if err != nil {
 		return domain.Occurrence{}, closed(err)
 	}
+
 	return toOccurrence(row), nil
 }
 
@@ -386,6 +439,7 @@ func (r *Repository) DeleteExpected(ctx context.Context, userID int64, scheduleI
 	if err != nil {
 		return nil, fmt.Errorf("delete expected occurrences: %w", err)
 	}
+
 	return removed, nil
 }
 
@@ -394,10 +448,12 @@ func (r *Repository) KeptOccurrences(ctx context.Context, userID int64, schedule
 	if err != nil {
 		return nil, fmt.Errorf("list kept occurrences: %w", err)
 	}
+
 	out := make([]domain.Occurrence, len(rows))
 	for i, row := range rows {
 		out[i] = toOccurrence(row)
 	}
+
 	return out, nil
 }
 
@@ -410,9 +466,11 @@ func (r *Repository) InsertPause(ctx context.Context, userID int64, scheduleID u
 	if pe, ok := errors.AsType[*pgconn.PgError](err); ok && pe.Code == exclusionViolation {
 		return app.ErrPauseOverlap
 	}
+
 	if err != nil {
 		return fmt.Errorf("insert pause: %w", err)
 	}
+
 	return nil
 }
 
@@ -427,14 +485,17 @@ func (r *Repository) InsertBudget(ctx context.Context, userID int64, b domain.Bu
 	if pe, ok := errors.AsType[*pgconn.PgError](err); ok && pe.Code == uniqueViolation {
 		return domain.Budget{}, app.ErrBudgetExists
 	}
+
 	if err != nil {
 		return domain.Budget{}, fmt.Errorf("insert budget: %w", err)
 	}
+
 	for _, a := range b.Amounts {
 		if err := r.InsertBudgetAmount(ctx, userID, row.ID, a); err != nil {
 			return domain.Budget{}, err
 		}
 	}
+
 	return r.oneBudget(ctx, row, nil)
 }
 
@@ -443,6 +504,7 @@ func (r *Repository) InsertBudgetAmount(ctx context.Context, userID int64, budge
 	if err != nil {
 		return fmt.Errorf("insert budget amount: %w", err)
 	}
+
 	return nil
 }
 
@@ -450,22 +512,27 @@ func (r *Repository) completeBudgets(ctx context.Context, rows []PlanningBudget)
 	if len(rows) == 0 {
 		return nil, nil
 	}
+
 	ids := make([]uuid.UUID, len(rows))
 	out := make([]domain.Budget, len(rows))
+
 	byID := make(map[uuid.UUID]*domain.Budget, len(rows))
 	for i, row := range rows {
 		ids[i] = row.ID
 		out[i] = domain.Budget{ID: row.ID, CategoryID: row.CategoryAccountID, Rollover: row.Rollover, Currency: money.Currency(row.Currency)}
 		byID[row.ID] = &out[i]
 	}
+
 	amounts, err := r.q.ListBudgetAmounts(ctx, ListBudgetAmountsParams{UserID: rows[0].UserID, BudgetIds: ids})
 	if err != nil {
 		return nil, fmt.Errorf("list budget amounts: %w", err)
 	}
+
 	for _, a := range amounts {
 		b := byID[a.BudgetID]
 		b.Amounts = append(b.Amounts, domain.BudgetAmount{EffectiveFrom: a.EffectiveFrom, Amount: a.Amount})
 	}
+
 	return out, nil
 }
 
@@ -473,10 +540,12 @@ func (r *Repository) oneBudget(ctx context.Context, row PlanningBudget, err erro
 	if err != nil {
 		return domain.Budget{}, notFound(err)
 	}
+
 	out, err := r.completeBudgets(ctx, []PlanningBudget{row})
 	if err != nil {
 		return domain.Budget{}, err
 	}
+
 	return out[0], nil
 }
 
@@ -490,9 +559,11 @@ func (r *Repository) DeleteBudget(ctx context.Context, userID int64, id uuid.UUI
 	if err != nil {
 		return fmt.Errorf("delete budget: %w", err)
 	}
+
 	if n == 0 {
 		return app.ErrNotFound
 	}
+
 	return nil
 }
 
@@ -503,12 +574,15 @@ func (r *Repository) LockBudget(ctx context.Context, userID int64, id uuid.UUID)
 
 func (r *Repository) ListBudgets(ctx context.Context, userID int64, p page.Request[app.IDKey]) ([]domain.Budget, *app.IDKey, error) {
 	after, limit := keyset(p)
+
 	rows, err := r.q.ListBudgets(ctx, ListBudgetsParams{UserID: userID, AfterID: after, RowLimit: limit})
 	if err != nil {
 		return nil, nil, fmt.Errorf("list budgets: %w", err)
 	}
+
 	rows, next := trim(rows, p.Limit, func(b PlanningBudget) uuid.UUID { return b.ID })
 	out, err := r.completeBudgets(ctx, rows)
+
 	return out, next, err
 }
 
@@ -517,6 +591,7 @@ func (r *Repository) Budgets(ctx context.Context, userID int64) ([]domain.Budget
 	if err != nil {
 		return nil, fmt.Errorf("list all budgets: %w", err)
 	}
+
 	return r.completeBudgets(ctx, rows)
 }
 
@@ -525,6 +600,7 @@ func (r *Repository) UpsertBudgetAmount(ctx context.Context, userID int64, budge
 	if err != nil {
 		return fmt.Errorf("upsert budget amount: %w", err)
 	}
+
 	return nil
 }
 
@@ -533,13 +609,16 @@ func (r *Repository) BudgetReference(ctx context.Context, userID int64) (domain.
 	if errors.Is(err, pgx.ErrNoRows) {
 		return domain.Reference{}, false, nil
 	}
+
 	if err != nil {
 		return domain.Reference{}, false, fmt.Errorf("get budget reference: %w", err)
 	}
+
 	out := domain.Reference{Source: domain.ReferenceSource(row.Source)}
 	if row.Amount != nil {
 		out.Fixed, out.HasFixed = *row.Amount, true
 	}
+
 	return out, true, nil
 }
 
@@ -548,10 +627,12 @@ func (r *Repository) SaveBudgetReference(ctx context.Context, userID int64, ref 
 	if ref.HasFixed {
 		amount = &ref.Fixed
 	}
+
 	err := r.q.UpsertBudgetReference(ctx, UpsertBudgetReferenceParams{UserID: userID, Source: string(ref.Source), Amount: amount, Currency: string(currency)})
 	if err != nil {
 		return fmt.Errorf("save budget reference: %w", err)
 	}
+
 	return nil
 }
 
@@ -560,12 +641,15 @@ func (r *Repository) InsertGoal(ctx context.Context, userID int64, g domain.Goal
 	if pe, ok := errors.AsType[*pgconn.PgError](err); ok && pe.Code == uniqueViolation {
 		return domain.Goal{}, &domain.FieldError{Field: "name", Message: "is the name of another goal", Err: domain.ErrValidation}
 	}
+
 	if err != nil {
 		return domain.Goal{}, fmt.Errorf("insert goal: %w", err)
 	}
+
 	if err := r.q.InsertGoalAccounts(ctx, InsertGoalAccountsParams{UserID: userID, GoalID: row.ID, AccountIds: g.AccountIDs}); err != nil {
 		return domain.Goal{}, fmt.Errorf("insert goal accounts: %w", err)
 	}
+
 	return r.oneGoal(ctx, row, nil)
 }
 
@@ -574,15 +658,19 @@ func (r *Repository) UpdateGoal(ctx context.Context, userID int64, g domain.Goal
 	if pe, ok := errors.AsType[*pgconn.PgError](err); ok && pe.Code == uniqueViolation {
 		return domain.Goal{}, &domain.FieldError{Field: "name", Message: "is the name of another goal", Err: domain.ErrValidation}
 	}
+
 	if err != nil {
 		return r.oneGoal(ctx, row, err)
 	}
+
 	if err := r.q.DeleteGoalAccounts(ctx, DeleteGoalAccountsParams{UserID: userID, GoalID: g.ID}); err != nil {
 		return domain.Goal{}, fmt.Errorf("delete goal accounts: %w", err)
 	}
+
 	if err := r.q.InsertGoalAccounts(ctx, InsertGoalAccountsParams{UserID: userID, GoalID: g.ID, AccountIds: g.AccountIDs}); err != nil {
 		return domain.Goal{}, fmt.Errorf("insert goal accounts: %w", err)
 	}
+
 	return r.oneGoal(ctx, row, nil)
 }
 
@@ -591,9 +679,11 @@ func (r *Repository) DeleteGoal(ctx context.Context, userID int64, id uuid.UUID)
 	if err != nil {
 		return fmt.Errorf("delete goal: %w", err)
 	}
+
 	if n == 0 {
 		return app.ErrNotFound
 	}
+
 	return nil
 }
 
@@ -601,22 +691,27 @@ func (r *Repository) completeGoals(ctx context.Context, rows []PlanningGoal) ([]
 	if len(rows) == 0 {
 		return nil, nil
 	}
+
 	ids := make([]uuid.UUID, len(rows))
 	out := make([]domain.Goal, len(rows))
+
 	byID := make(map[uuid.UUID]*domain.Goal, len(rows))
 	for i, row := range rows {
 		ids[i] = row.ID
 		out[i] = domain.Goal{ID: row.ID, Name: row.Name, Target: row.Target, Currency: money.Currency(row.Currency), DueOn: row.DueOn}
 		byID[row.ID] = &out[i]
 	}
+
 	accounts, err := r.q.ListGoalAccounts(ctx, ListGoalAccountsParams{UserID: rows[0].UserID, GoalIds: ids})
 	if err != nil {
 		return nil, fmt.Errorf("list goal accounts: %w", err)
 	}
+
 	for _, a := range accounts {
 		g := byID[a.GoalID]
 		g.AccountIDs = append(g.AccountIDs, a.AccountID)
 	}
+
 	return out, nil
 }
 
@@ -624,10 +719,12 @@ func (r *Repository) oneGoal(ctx context.Context, row PlanningGoal, err error) (
 	if err != nil {
 		return domain.Goal{}, notFound(err)
 	}
+
 	out, err := r.completeGoals(ctx, []PlanningGoal{row})
 	if err != nil {
 		return domain.Goal{}, err
 	}
+
 	return out[0], nil
 }
 
@@ -638,12 +735,15 @@ func (r *Repository) Goal(ctx context.Context, userID int64, id uuid.UUID) (doma
 
 func (r *Repository) ListGoals(ctx context.Context, userID int64, p page.Request[app.IDKey]) ([]domain.Goal, *app.IDKey, error) {
 	after, limit := keyset(p)
+
 	rows, err := r.q.ListGoals(ctx, ListGoalsParams{UserID: userID, AfterID: after, RowLimit: limit})
 	if err != nil {
 		return nil, nil, fmt.Errorf("list goals: %w", err)
 	}
+
 	rows, next := trim(rows, p.Limit, func(g PlanningGoal) uuid.UUID { return g.ID })
 	out, err := r.completeGoals(ctx, rows)
+
 	return out, next, err
 }
 
@@ -651,9 +751,11 @@ func (r *Repository) MergeCategory(ctx context.Context, userID int64, from, into
 	if err := r.q.DeleteMergedBudget(ctx, DeleteMergedBudgetParams{UserID: userID, FromID: from, IntoID: into}); err != nil {
 		return err
 	}
+
 	if err := r.q.MoveMergedBudget(ctx, MoveMergedBudgetParams{UserID: userID, FromID: from, IntoID: into}); err != nil {
 		return err
 	}
+
 	return r.q.MergeScheduleAccounts(ctx, MergeScheduleAccountsParams{UserID: userID, FromID: from, IntoID: into})
 }
 

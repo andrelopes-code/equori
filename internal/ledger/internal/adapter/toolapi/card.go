@@ -54,6 +54,7 @@ func manageCard(svc *app.Service) tool.Tool {
 		if err != nil {
 			return manageCardOut{}, err
 		}
+
 		return run()
 	})
 }
@@ -63,18 +64,22 @@ func cardText(c domain.Card) string { return c.Holder + " " + c.LastFour }
 func planCard(ctx context.Context, svc *app.Service, userID int64, in manageCardIn) (tool.Preview, func() (manageCardOut, error), error) {
 	action := string(in.Action)
 	pv := tool.Preview{Action: "manage_card"}
+
 	id, err := requiredID(in.AccountID, "account_id")
 	if err != nil {
 		return pv, nil, err
 	}
+
 	cardID, err := optionalID(in.CardID, "card_id")
 	if err != nil {
 		return pv, nil, err
 	}
+
 	given := map[string]bool{
 		"account_id": true, "card_id": in.CardID != "", "holder": in.Holder != "", "last_four": in.LastFour != "", "virtual": in.Virtual, "active": in.Active,
 		"amount": in.Amount != "", "effective_from": !in.EffectiveFrom.IsZero(), "closing_day": in.ClosingDay != 0, "due_day": in.DueDay != 0,
 	}
+
 	var required, optional []string
 	switch in.Action {
 	case "add_card":
@@ -86,28 +91,36 @@ func planCard(ctx context.Context, svc *app.Service, userID int64, in manageCard
 	default:
 		required = []string{"closing_day", "due_day", "effective_from"}
 	}
+
 	if err := checkFields(action, given, append([]string{"account_id"}, required...), optional...); err != nil {
 		return pv, nil, err
 	}
+
 	a, err := svc.Account(ctx, userID, id)
 	if err != nil {
 		return pv, nil, err
 	}
+
 	if a.Kind != domain.KindCreditCard {
 		return pv, nil, tool.InvalidArgument("account_id", "is not a credit card account")
 	}
+
 	pv.Target = a.Name
+
 	out := manageCardOut{AccountID: a.ID.String(), Action: action}
 	switch in.Action {
 	case "add_card":
 		if !lastFourPattern.MatchString(in.LastFour) {
 			return pv, nil, tool.InvalidArgument("last_four", "must be four digits")
 		}
+
 		c := domain.Card{AccountID: a.ID, Holder: in.Holder, LastFour: in.LastFour, Virtual: in.Virtual}
 		pv.Changes = []tool.Change{{Field: "card", After: tool.TextValue(cardText(c))}}
+
 		return pv, func() (manageCardOut, error) {
 			created, err := svc.AddCard(ctx, userID, c, nil)
 			out.ID = created.ID.String()
+
 			return out, err
 		}, nil
 	case "set_card_active":
@@ -115,40 +128,50 @@ func planCard(ctx context.Context, svc *app.Service, userID int64, in manageCard
 		if err != nil {
 			return pv, nil, err
 		}
+
 		for _, c := range cards {
 			if c.ID != cardID {
 				continue
 			}
+
 			status := func(active bool) tool.Value {
 				if active {
 					return tool.TextValue("active")
 				}
+
 				return tool.TextValue("inactive")
 			}
 			pv.Changes = []tool.Change{
 				{Field: "card", After: tool.TextValue(cardText(c))},
 				{Field: "status", Before: status(c.Active), After: status(in.Active)},
 			}
+
 			return pv, func() (manageCardOut, error) {
 				_, err := svc.SetCardActive(ctx, userID, c.ID, in.Active)
 				out.ID = c.ID.String()
+
 				return out, err
 			}, nil
 		}
+
 		return pv, nil, app.ErrNotFound
 	case "set_credit_limit":
 		unit, err := svc.AmountOf(ctx, 0, a.Instrument)
 		if err != nil {
 			return pv, nil, err
 		}
+
 		amount, err := tool.ParsePositive("amount", in.Amount, unit)
 		if err != nil {
 			return pv, nil, err
 		}
+
 		pv.Changes = []tool.Change{{Field: "limit", After: tool.MoneyValue(amount)}, {Field: "date", After: tool.DateValue(in.EffectiveFrom.Time)}}
+
 		return pv, func() (manageCardOut, error) {
 			_, err := svc.AddCreditLimit(ctx, userID, app.CreditLimit{AccountID: a.ID, EffectiveFrom: in.EffectiveFrom.Time, Amount: amount})
 			out.ID = a.ID.String()
+
 			return out, err
 		}, nil
 	default:
@@ -161,9 +184,11 @@ func planCard(ctx context.Context, svc *app.Service, userID int64, in manageCard
 			{Field: "due_day", After: tool.TextValue(strconv.Itoa(in.DueDay))},
 			{Field: "date", After: tool.DateValue(rule.EffectiveFrom.FirstDay())},
 		}
+
 		return pv, func() (manageCardOut, error) {
 			_, err := svc.AddBillingRule(ctx, userID, a.ID, rule)
 			out.ID = a.ID.String()
+
 			return out, err
 		}, nil
 	}

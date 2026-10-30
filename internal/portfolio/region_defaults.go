@@ -6,5 +6,6 @@ func defaultJurisdiction(region string) (string, bool) {
 	case "BR":
 		return "br", true
 	}
+
 	return "", false
 }
