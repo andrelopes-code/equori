@@ -4,7 +4,9 @@ Status: approved
 
 Implementation order, derived from the dependencies between contexts (chapter 4). Each phase gets its own implementation plan before any code is written; each plan is executed in slices of at most three tasks.
 
-## 9.1 Dependency graph
+Current work: version 1.0, phases P10 to P16 (section 9.4). Sections 9.1 to 9.3 record phases P1 to P9, all delivered; plans and specs cite them by phase.
+
+## 9.1 Delivered phases: dependency graph
 
 ```mermaid
 flowchart LR
@@ -25,7 +27,7 @@ flowchart LR
   P2 -. API contract stable .-> W[Web interface track]
 ```
 
-## 9.2 Phases
+## 9.2 Delivered phases P1 to P9
 
 | Phase | Scope | Scenarios | Exit criterion |
 |---|---|---|---|
@@ -42,7 +44,7 @@ flowchart LR
 | P9 Reporting and export | Accrual and cash views; net worth; statement analytics; export and import round trip | S30 | SC6; N13 |
 | Web interface | Separate track once the P2 API contract is stable: SPA embedded in the binary (ADR 028) | — | SC4, N21, N22 |
 
-## 9.3 Next step
+## 9.3 Delivery record of P1 to P9
 
 P1 to P9 are delivered; the SC1 check of P6 waits for the owner (`docs/operations/pluggy.md`, section 5). P9 delivered the cash view of `getCategoryTotals` and the statement analytics (`docs/plans/2026-10-26-p9-cash-view.md`, S30, S145 to S148), and the export and import round trip (`docs/specs/2026-10-26-export-design.md`, SC6, N13). Left out of P9: the cash view of a financed statement and of revolving credit, which no scenario fixes, and the import of an archive of another schema version.
 
@@ -50,11 +52,9 @@ Amendment of 2026-10-26: the cash view of a financed statement and of revolving 
 
 Amendment of 2026-10-26: the import of an archive of another schema version leaves the list above. ADR 021 versions the archive, and an archive of any earlier version imports into any later one.
 
-Amendment of 2026-10-30: the next step is P10 (section 9.4), starting with the design spec of shared books.
-
 ## 9.4 Version 1.0
 
-Status: approved by the owner on 2026-10-30. Input: the owner's competitive study of 2026-10-30 and the owner's answers recorded in it.
+Status: approved by the owner on 2026-10-30. Input: the owner's competitive study of 2026-10-30 and the owner's answers recorded in it. Next step: P10, starting with the design spec of shared books.
 
 ### 9.4.1 Scope decisions
 
