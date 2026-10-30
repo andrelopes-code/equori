@@ -1,11 +1,12 @@
 export {
+  booksQuery,
   institutionsQuery,
   instrumentsQuery,
   payeesQuery,
   settingsQuery,
   setupKeys,
   useCreateInstitution,
-  useChooseRegion,
+  useUpdateBooks,
   useCreatePayee,
 } from "@/features/setup/api";
 export { validateSettingsSearch } from "@/features/setup/settings-search";

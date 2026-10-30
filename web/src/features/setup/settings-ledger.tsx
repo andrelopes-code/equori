@@ -11,6 +11,7 @@ import {
   settingsQuery,
   useUpdateSettings,
 } from "@/features/setup/api";
+import { SettingsBooksPlace } from "@/features/setup/settings-books-place";
 import { SettingsGroup } from "@/features/setup/settings-group";
 import { SettingsRow } from "@/features/setup/settings-row";
 import { SettingsSection } from "@/features/setup/settings-section";
@@ -98,6 +99,8 @@ export function SettingsLedger() {
           </SettingsRow>
         )}
       </SettingsGroup>
+
+      <SettingsBooksPlace />
     </SettingsSection>
   );
 }

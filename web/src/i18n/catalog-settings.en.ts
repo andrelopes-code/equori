@@ -7,9 +7,9 @@ export const settingsEn = {
   "settings.summary.account": "Signed-in identity, role and session.",
   "settings.summary.appearance":
     "Theme, colours, shape, text and motion of the interface.",
-  "settings.summary.language": "Language, and how dates and numbers read.",
+  "settings.summary.language": "Language of the app.",
   "settings.summary.privacy": "Amounts hidden on screen.",
-  "settings.summary.finances": "Base currency and prices.",
+  "settings.summary.finances": "Base currency, region, time zone and prices.",
   "settings.summary.calendars": "Holidays that move scheduled dates.",
   "settings.summary.integrations": "Aggregator credentials.",
   "settings.summary.assistant": "Language model providers, uses and spending.",
@@ -57,6 +57,12 @@ export const settingsEn = {
   "settings.language.help": "Words of the interface.",
   "settings.region.help":
     "Date and number formats, and the regional catalogues.",
+  "settings.books.place": "Region and time",
+  "settings.timeZone": "Time zone",
+  "settings.timeZone.help":
+    "The day that counts as today, and the first day of each month.",
+  "settings.timeZone.regionDefault": "Region default ({zone})",
+  "problem.time_zone_invalid": "The time zone is not an IANA time zone name.",
   "settings.language.exampleDescription":
     "Today's date and a number, as the chosen region writes them.",
   "settings.ledger.instrumentsTitle": "Prices",

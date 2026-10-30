@@ -109,7 +109,7 @@ export const catalogPtBR: Catalog = {
   "settings.account.role.member": "Membro",
   "settings.language.title": "Idioma e região",
   "settings.language.description":
-    "O idioma define os textos. A região define como datas e números são escritos.",
+    "O idioma define os textos do app e do assistente.",
   "settings.language.example": "Exemplo",
   "settings.language.date": "Data",
   "settings.language.number": "Número",

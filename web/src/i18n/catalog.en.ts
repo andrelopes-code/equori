@@ -106,7 +106,7 @@ export const catalogEn = {
   "settings.account.role.member": "Member",
   "settings.language.title": "Language and region",
   "settings.language.description":
-    "The language sets the text. The region sets how dates and numbers are written.",
+    "The language sets the text of the app and of the assistant.",
   "settings.language.example": "Example",
   "settings.language.date": "Date",
   "settings.language.number": "Number",

@@ -9,9 +9,9 @@ export const settingsPtBR: Record<keyof typeof settingsEn, string> = {
   "settings.summary.account": "Identidade conectada, papel e sessão.",
   "settings.summary.appearance":
     "Tema, cores, forma, texto e movimento da interface.",
-  "settings.summary.language": "Idioma, e como datas e números são escritos.",
+  "settings.summary.language": "Idioma do app.",
   "settings.summary.privacy": "Valores ocultos na tela.",
-  "settings.summary.finances": "Moeda base e cotações.",
+  "settings.summary.finances": "Moeda base, região, fuso horário e cotações.",
   "settings.summary.calendars": "Feriados que deslocam datas agendadas.",
   "settings.summary.integrations": "Credenciais de agregadores.",
   "settings.summary.assistant":
@@ -60,6 +60,12 @@ export const settingsPtBR: Record<keyof typeof settingsEn, string> = {
   "settings.language.help": "Palavras da interface.",
   "settings.region.help":
     "Formatos de data e número, e os catálogos regionais.",
+  "settings.books.place": "Região e horário",
+  "settings.timeZone": "Fuso horário",
+  "settings.timeZone.help":
+    "O dia que conta como hoje e o primeiro dia de cada mês.",
+  "settings.timeZone.regionDefault": "Padrão da região ({zone})",
+  "problem.time_zone_invalid": "O fuso horário não é um nome de fuso IANA.",
   "settings.language.exampleDescription":
     "A data de hoje e um número, como a região escolhida os escreve.",
   "settings.ledger.instrumentsTitle": "Cotações",

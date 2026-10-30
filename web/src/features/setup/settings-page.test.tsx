@@ -55,6 +55,18 @@ function api(sent: Sent[], options: Options = {}) {
       sent.push({ route: "DELETE /session", body: null });
       return new Response(null, { status: 204 });
     },
+    "GET /api/v1/books/current": () =>
+      json(200, {
+        region: "BR",
+        time_zone: null,
+        default_time_zone: "America/Sao_Paulo",
+      }),
+    "PATCH /api/v1/books/current": record("PATCH /books/current", (body) =>
+      json(200, {
+        default_time_zone: "America/Sao_Paulo",
+        ...(body as object),
+      }),
+    ),
     "GET /api/v1/transactions": () =>
       json(200, {
         items: transactions ? [{ id: 1 }] : [],
@@ -76,7 +88,7 @@ describe("settings page", () => {
   // them in jsdom takes most of the default timeout on a loaded machine.
   it("names the regions in the active locale and sends the chosen one", async () => {
     const sent: Sent[] = [];
-    await renderApp("/settings?section=language", {
+    await renderApp("/settings?section=finances", {
       fetch: api(sent),
     });
     await userEvent.click(
@@ -93,8 +105,8 @@ describe("settings page", () => {
     );
     await waitFor(() => {
       expect(sent).toContainEqual({
-        route: "PATCH /me",
-        body: { region: "PT" },
+        route: "PATCH /books/current",
+        body: { region: "PT", time_zone: null },
       });
     });
     expect(document.documentElement.lang).toBe("pt-PT");

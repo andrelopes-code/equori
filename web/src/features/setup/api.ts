@@ -134,22 +134,32 @@ export function useCreatePayee() {
   });
 }
 
-// Applies the region at once, so formats follow, and stores it in the profile.
-export function useChooseRegion(): (region: string) => void {
+export type BooksSettings = components["schemas"]["BooksSettings"];
+export type BooksSettingsInput = components["schemas"]["BooksSettingsInput"];
+
+export function booksQuery(api: Client<paths>) {
+  return queryOptions({
+    queryKey: ["books", "current"] as const,
+    queryFn: async () => unwrap(await api.GET("/books/current")),
+  });
+}
+
+// Applies the region at once, so formats follow, and stores it with the book.
+export function useUpdateBooks() {
   const api = useApi();
   const queryClient = useQueryClient();
   const { locale, setLocale } = useAppLocaleState();
-  const update = useMutation({
-    mutationFn: async (region: string) =>
-      unwrap(await api.PATCH("/me", { body: { region } })),
-    onSuccess: (me) => {
-      queryClient.setQueryData(meQuery(api).queryKey, me);
+  return useMutation({
+    mutationFn: async (body: BooksSettingsInput) =>
+      unwrap(await api.PATCH("/books/current", { body })),
+    onMutate: (input) => {
+      setLocale({ ...locale, region: input.region });
+    },
+    onSuccess: async (books) => {
+      queryClient.setQueryData(booksQuery(api).queryKey, books);
+      await queryClient.invalidateQueries({ queryKey: meQuery(api).queryKey });
     },
   });
-  return (region) => {
-    setLocale({ ...locale, region });
-    update.mutate(region);
-  };
 }
 
 export type ModelProvider = components["schemas"]["Provider"];
