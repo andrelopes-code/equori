@@ -362,6 +362,8 @@ export const accountsEn = {
   "positions.noPrice": "No price",
   "positions.empty": "This brokerage holds no investment.",
   "positions.total": "Total of the priced positions",
+  "sync.source": "Source",
+  "sync.freshness": "Freshness",
   "sync.connection": "Connection",
   "sync.external": "External account",
   "sync.status": "Bank connection status",

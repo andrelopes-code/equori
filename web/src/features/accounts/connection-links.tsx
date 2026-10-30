@@ -27,7 +27,7 @@ import {
 import { ConnectionDeleteDialog } from "@/features/accounts/connection-delete-dialog";
 import { ConnectionTimesList } from "@/features/accounts/connection-times-list";
 import { formatDate } from "@/i18n/format";
-import { subtypeWords } from "@/features/accounts/sync-tab";
+import { subtypeWords } from "@/features/accounts/external-subtype";
 import type { MessageKey } from "@/i18n/catalog.en";
 import { routeTo } from "@/ui/route-to";
 import { Presence } from "@/ui/presence";

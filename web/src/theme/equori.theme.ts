@@ -58,6 +58,31 @@ const darkNeutral = (l: number) => ({
   c: { scale: 0.22, max: 0.08 },
 });
 
+// Workaround for Slotted issue #58: no token sets a tag's inline inset. The text stood 6 px
+// inside the border of a small tag and read cramped; each size gains 2 px, the height stays.
+// Beside the remove button the body keeps the family's end padding, its gap.
+const tagInsetRule = `
+[data-ui="tag"] > [data-part="body"] {
+  padding-inline: calc(var(--slotted-space-4) + var(--slotted-space-1));
+}
+
+[data-ui="tag"][data-size="sm"] > [data-part="body"] {
+  padding-inline: var(--slotted-space-4);
+}
+
+[data-ui="tag"][data-size="lg"] > [data-part="body"] {
+  padding-inline: calc(var(--slotted-space-5) + var(--slotted-space-1));
+}
+
+[data-ui="tag"] > [data-part="body"]:has(+ [data-part="remove"]) {
+  padding-inline-end: var(--slotted-space-2);
+}
+
+[data-ui="tag"][data-size="lg"] > [data-part="body"]:has(+ [data-part="remove"]) {
+  padding-inline-end: var(--slotted-space-3);
+}
+`;
+
 // Workaround for Slotted issue #39: only the tooltip's content fades, so its arrow stays opaque
 // and reads as a separate piece on open and close. The arrow takes the content's three fade rules.
 // Half of the arrow's square lies over the content: while both fade, that half composites twice
@@ -266,6 +291,7 @@ export default extendTheme(
       paletteScrimRule,
       sheetSlideRule,
       tooltipArrowFadeRule,
+      tagInsetRule,
     ],
   },
   { name: "equori" },

@@ -292,6 +292,22 @@ describe("Sync tab", () => {
     expect(sent).toEqual(["sync"]);
   });
 
+  it("groups the link's source apart from its freshness", async () => {
+    await renderApp(`/accounts/${checkingID}?tab=sync`, { fetch: api() });
+
+    const source = await screen.findByRole("region", {
+      name: catalogEn["sync.source"],
+    });
+    const freshness = screen.getByRole("region", {
+      name: catalogEn["sync.freshness"],
+    });
+
+    expect(within(source).getByText("Conta Corrente")).toBeInTheDocument();
+    expect(
+      within(freshness).getByText(catalogEn["sync.provider.UPDATED"]),
+    ).toBeInTheDocument();
+  });
+
   it("stops syncing the account after a confirmation", async () => {
     const bodies: unknown[] = [];
     await renderApp(`/accounts/${checkingID}?tab=sync`, {

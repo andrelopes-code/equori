@@ -144,3 +144,10 @@ test("a question's legend is a field label's size", () => {
     /\[data-ui="field-group"\] > \[data-part="legend"\] \{\s*font-size: var\(--slotted-control-font-size-md\);/,
   );
 });
+
+test("a tag keeps its height and stands its text 2 px further from each side", () => {
+  assert.match(
+    css,
+    /\[data-ui="tag"\]\[data-size="sm"\] > \[data-part="body"\] \{\s*padding-inline: var\(--slotted-space-4\);/,
+  );
+});

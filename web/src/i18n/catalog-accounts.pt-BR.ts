@@ -361,6 +361,8 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "positions.noPrice": "Sem cotação",
   "positions.empty": "Esta corretora não tem investimentos.",
   "positions.total": "Total das posições cotadas",
+  "sync.source": "Origem",
+  "sync.freshness": "Atualização",
   "sync.connection": "Conexão",
   "sync.external": "Conta externa",
   "sync.status": "Situação na conexão bancária",

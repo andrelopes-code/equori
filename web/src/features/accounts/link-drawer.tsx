@@ -26,7 +26,7 @@ import type { components } from "@/api/schema.gen";
 import { compatibleKinds, kindTitle } from "@/features/accounts/account-kinds";
 import { AccountAvatar } from "@/features/accounts/account-avatar";
 import { useMapExternalAccount } from "@/features/accounts/api";
-import { subtypeWords } from "@/features/accounts/sync-tab";
+import { subtypeWords } from "@/features/accounts/external-subtype";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { DateInput } from "@/ui/date-input";

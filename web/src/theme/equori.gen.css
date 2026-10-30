@@ -1893,5 +1893,25 @@
     [data-ui="tooltip"][data-open][data-positioned] > [data-part="arrow"] {
       animation: slotted-tooltip-fade var(--slotted-duration-medium) var(--slotted-easing-enter);
     }
+
+    [data-ui="tag"] > [data-part="body"] {
+      padding-inline: calc(var(--slotted-space-4) + var(--slotted-space-1));
+    }
+
+    [data-ui="tag"][data-size="sm"] > [data-part="body"] {
+      padding-inline: var(--slotted-space-4);
+    }
+
+    [data-ui="tag"][data-size="lg"] > [data-part="body"] {
+      padding-inline: calc(var(--slotted-space-5) + var(--slotted-space-1));
+    }
+
+    [data-ui="tag"] > [data-part="body"]:has(+ [data-part="remove"]) {
+      padding-inline-end: var(--slotted-space-2);
+    }
+
+    [data-ui="tag"][data-size="lg"] > [data-part="body"]:has(+ [data-part="remove"]) {
+      padding-inline-end: var(--slotted-space-3);
+    }
   }
 }
