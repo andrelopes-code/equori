@@ -45,7 +45,7 @@ type CardPayment struct {
 // Shares are amounts per category, signed as the category postings.
 type Shares map[uuid.UUID]int64
 
-// CardFacts are the card lines and payments of a user, the category postings of the
+// CardFacts are the card lines and payments of a book, the category postings of the
 // transactions that hold the lines or that a line's transaction anticipates or cancels, and
 // that purchase per transaction.
 type CardFacts struct {

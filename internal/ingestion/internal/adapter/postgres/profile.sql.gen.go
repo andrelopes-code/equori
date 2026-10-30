@@ -127,7 +127,7 @@ type UpsertProfileParams struct {
 	GroupSeparator    string
 }
 
-// The WHERE keeps another user's profile out of reach: no row comes back for it.
+// The WHERE keeps another book's profile out of reach: no row comes back for it.
 func (q *Queries) UpsertProfile(ctx context.Context, arg UpsertProfileParams) (IngestionCsvProfile, error) {
 	row := q.db.QueryRow(ctx, upsertProfile,
 		arg.BooksID,

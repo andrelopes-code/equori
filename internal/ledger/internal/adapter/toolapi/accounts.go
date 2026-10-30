@@ -30,7 +30,7 @@ type accountView struct {
 }
 
 type listAccountsOut struct {
-	BaseCurrency string        `json:"base_currency" jsonschema:"currency of the user's totals"`
+	BaseCurrency string        `json:"base_currency" jsonschema:"currency of the book's totals"`
 	Accounts     []accountView `json:"accounts"`
 	NextCursor   string        `json:"next_cursor,omitzero" jsonschema:"present when more accounts follow; pass it as cursor"`
 }
@@ -38,8 +38,8 @@ type listAccountsOut struct {
 func listAccounts(svc *app.Service) tool.Tool {
 	return tool.New(tool.Spec{
 		Name: "list_accounts",
-		Description: "Lists the user's accounts and categories by class and then name, with the IDs the other tools take, " +
-			"each account's institution, and the user's base currency. " +
+		Description: "Lists the book's accounts and categories by class and then name, with the IDs the other tools take, " +
+			"each account's institution, and the book's base currency. " +
 			"Income and expense accounts are the categories of transactions; a child account carries its parent. " +
 			"Use it to find the ID of an account or category named by the user. " +
 			"Do not use it for balances: get_balances returns them.",

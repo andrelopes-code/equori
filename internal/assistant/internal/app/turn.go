@@ -32,7 +32,7 @@ var (
 	ErrInvalidText     = errors.New("the message must have between 1 and 4000 characters")
 )
 
-// AgentRequest is what the agent sends to the model: the prompt, the earlier turns and the user's text.
+// AgentRequest is what the agent sends to the model: the prompt, the earlier turns and the book's text.
 // Deadline is the instant the turn ends, on the instance clock.
 type AgentRequest struct {
 	System   string
@@ -124,7 +124,7 @@ func truncateRunes(s string, n int) string {
 	return string([]rune(s)[:n])
 }
 
-// Turn runs one user message through the model and reports through ev (spec 6). An error returned before ev.Turn
+// Turn runs one book message through the model and reports through ev (spec 6). An error returned before ev.Turn
 // has been called leaves the stream unstarted; after it, failures reach ev.Error.
 func (s *Service) Turn(ctx context.Context, booksID int64, in TurnInput, ev TurnEvents) error {
 	text := strings.TrimSpace(in.Text)
@@ -235,7 +235,7 @@ func (s *Service) Turn(ctx context.Context, booksID int64, in TurnInput, ev Turn
 			stored = domain.OutcomeCanceled
 		}
 
-		// The message records that the user's text got no answer; the client may already be gone.
+		// The message records that the book's text got no answer; the client may already be gone.
 		if _, err := s.repo.AppendMessage(context.WithoutCancel(ctx), booksID, domain.Message{
 			ID: uuid.New(), ConversationID: conv.ID, Role: domain.RoleAssistant, Outcome: stored, CreatedAt: s.now(),
 		}); err != nil {

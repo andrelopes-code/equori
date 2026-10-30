@@ -22,10 +22,10 @@ type Target struct {
 	Capabilities []string
 }
 
-// Resolve returns the ordered targets of use for a user (ADR 019 D7): the user's chain,
-// else the use's defaults matched against the user's providers and then the instance
+// Resolve returns the ordered targets of use for a book (ADR 019 D7): the book's chain,
+// else the use's defaults matched against the book's providers and then the instance
 // providers. Targets lacking a needed capability and providers whose key does not open are
-// left out. Without a user, only instance providers are matched.
+// left out. Without a book, only instance providers are matched.
 func (s *Service) Resolve(ctx context.Context, booksID int64, hasBooks bool, use Use) ([]Target, error) {
 	targets, err := s.candidates(ctx, booksID, hasBooks, use)
 	if err != nil || !hasBooks || len(targets) == 0 {
@@ -161,7 +161,7 @@ func (e *LimitError) Is(target error) bool { return target == ErrLimitReached }
 
 type targetKey struct{ provider, model string }
 
-// budget holds a user's declared limits and today's usage per provider and model.
+// budget holds a book's declared limits and today's usage per provider and model.
 type budget struct {
 	limits map[targetKey]domain.Limit
 	usage  map[targetKey]domain.UsageSummary

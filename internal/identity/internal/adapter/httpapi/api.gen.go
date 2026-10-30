@@ -167,7 +167,7 @@ type CompleteSetupJSONRequestBody = SetupInput
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
-	// ListAccessTokens The user's personal access tokens for MCP, newest first, without their text.
+	// ListAccessTokens The book's personal access tokens for MCP, newest first, without their text.
 	// (GET /access-tokens)
 	ListAccessTokens(w http.ResponseWriter, r *http.Request)
 	// CreateAccessToken Create a personal access token that opens /mcp only; the answer holds its text once.
@@ -176,10 +176,10 @@ type ServerInterface interface {
 	// DeleteAccessToken Delete a personal access token; it stops working at once.
 	// (DELETE /access-tokens/{id})
 	DeleteAccessToken(w http.ResponseWriter, r *http.Request, id ID)
-	// GetCurrentUser Return the authenticated user.
+	// GetCurrentUser Return the authenticated member.
 	// (GET /me)
 	GetCurrentUser(w http.ResponseWriter, r *http.Request)
-	// UpdateCurrentUser Change the language or region of the authenticated user.
+	// UpdateCurrentUser Change the language or region of the authenticated member.
 	// (PATCH /me)
 	UpdateCurrentUser(w http.ResponseWriter, r *http.Request)
 	// DeleteSession Log out and end the current session.
@@ -188,10 +188,10 @@ type ServerInterface interface {
 	// CreateSession Log in and start a session.
 	// (POST /session)
 	CreateSession(w http.ResponseWriter, r *http.Request)
-	// GetSetup Report whether the first user is still to be created (ADR 003, amendment of 2026-10-27).
+	// GetSetup Report whether the first member is still to be created (ADR 003, amendment of 2026-10-27).
 	// (GET /setup)
 	GetSetup(w http.ResponseWriter, r *http.Request)
-	// CompleteSetup Create the first user, an admin, with the setup token, and start a session.
+	// CompleteSetup Create the first member, an admin, with the setup token, and start a session.
 	// (POST /setup)
 	CompleteSetup(w http.ResponseWriter, r *http.Request)
 }
@@ -1000,7 +1000,7 @@ func (response CompleteSetup503ApplicationProblemPlusJSONResponse) VisitComplete
 
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
-	// ListAccessTokens The user's personal access tokens for MCP, newest first, without their text.
+	// ListAccessTokens The book's personal access tokens for MCP, newest first, without their text.
 	// (GET /access-tokens)
 	ListAccessTokens(ctx context.Context, request ListAccessTokensRequestObject) (ListAccessTokensResponseObject, error)
 	// CreateAccessToken Create a personal access token that opens /mcp only; the answer holds its text once.
@@ -1009,10 +1009,10 @@ type StrictServerInterface interface {
 	// DeleteAccessToken Delete a personal access token; it stops working at once.
 	// (DELETE /access-tokens/{id})
 	DeleteAccessToken(ctx context.Context, request DeleteAccessTokenRequestObject) (DeleteAccessTokenResponseObject, error)
-	// GetCurrentUser Return the authenticated user.
+	// GetCurrentUser Return the authenticated member.
 	// (GET /me)
 	GetCurrentUser(ctx context.Context, request GetCurrentUserRequestObject) (GetCurrentUserResponseObject, error)
-	// UpdateCurrentUser Change the language or region of the authenticated user.
+	// UpdateCurrentUser Change the language or region of the authenticated member.
 	// (PATCH /me)
 	UpdateCurrentUser(ctx context.Context, request UpdateCurrentUserRequestObject) (UpdateCurrentUserResponseObject, error)
 	// DeleteSession Log out and end the current session.
@@ -1021,10 +1021,10 @@ type StrictServerInterface interface {
 	// CreateSession Log in and start a session.
 	// (POST /session)
 	CreateSession(ctx context.Context, request CreateSessionRequestObject) (CreateSessionResponseObject, error)
-	// GetSetup Report whether the first user is still to be created (ADR 003, amendment of 2026-10-27).
+	// GetSetup Report whether the first member is still to be created (ADR 003, amendment of 2026-10-27).
 	// (GET /setup)
 	GetSetup(ctx context.Context, request GetSetupRequestObject) (GetSetupResponseObject, error)
-	// CompleteSetup Create the first user, an admin, with the setup token, and start a session.
+	// CompleteSetup Create the first member, an admin, with the setup token, and start a session.
 	// (POST /setup)
 	CompleteSetup(ctx context.Context, request CompleteSetupRequestObject) (CompleteSetupResponseObject, error)
 }

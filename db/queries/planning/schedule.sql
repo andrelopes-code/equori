@@ -167,7 +167,7 @@ WHERE
     AND id = @id;
 
 -- name: ScheduleRefs :many
--- Every schedule across users: what a backfill of their history reads (P7 amendment A127).
+-- Every schedule across books: what a backfill of their history reads (P7 amendment A127).
 SELECT
     books_id,
     id
@@ -178,7 +178,7 @@ ORDER BY
     id;
 
 -- name: SchedulesBehind :many
--- A53: schedules whose occurrences stop before the horizon, across users.
+-- A53: schedules whose occurrences stop before the horizon, across books.
 SELECT
     books_id,
     id

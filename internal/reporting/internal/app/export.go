@@ -28,7 +28,7 @@ const (
 	ExportFailed  ExportStatus = "failed"
 )
 
-// Export is the user's export; Size and SHA256 are set when ready, Problem when failed.
+// Export is the book's export; Size and SHA256 are set when ready, Problem when failed.
 type Export struct {
 	ID          uuid.UUID
 	Status      ExportStatus
@@ -47,7 +47,7 @@ type ExportRepository interface {
 	RequestExport(ctx context.Context, booksID int64, at time.Time) (e Export, ok bool, err error)
 	Export(ctx context.Context, booksID int64) (Export, error)
 	ExportContent(ctx context.Context, booksID int64) (Export, []byte, error)
-	// BuildArchive reads every fact of the user from one snapshot (export design E1, E2).
+	// BuildArchive reads every fact of the book from one snapshot (export design E1, E2).
 	BuildArchive(ctx context.Context, booksID int64, at time.Time) ([]byte, error)
 	FinishExport(ctx context.Context, booksID int64, id uuid.UUID, at time.Time, archive []byte, problem string) error
 }
@@ -61,7 +61,7 @@ type Exports struct {
 	rebuilds []func(ctx context.Context, booksID int64) error
 }
 
-// NewExports takes the rebuilds of every derived table, run for the user after an import.
+// NewExports takes the rebuilds of every derived table, run for the book after an import.
 func NewExports(repo ExportRepository, imports ImportRepository, clk Clock, rebuilds ...func(ctx context.Context, booksID int64) error) *Exports {
 	return &Exports{repo: repo, imports: imports, clock: clk, rebuilds: rebuilds}
 }

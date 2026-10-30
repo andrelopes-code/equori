@@ -71,7 +71,7 @@ func (s *Service) vetGoal(ctx context.Context, booksID int64, g domain.Goal) (Go
 	for _, id := range g.AccountIDs {
 		a, ok := byID[id]
 		if !ok || (a.Class != "asset" && a.Class != "liability") {
-			return GoalView{}, &domain.FieldError{Field: "account_ids", Message: "must be balance accounts of the user", Err: domain.ErrValidation}
+			return GoalView{}, &domain.FieldError{Field: "account_ids", Message: "must be balance accounts of the book", Err: domain.ErrValidation}
 		}
 	}
 

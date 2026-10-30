@@ -151,7 +151,7 @@ func prepareSchedule(ctx context.Context, svc *app.Service, l Ledger, booksID in
 
 		var ok bool
 		if p.account, ok = accounts[p.accountID]; !ok {
-			return schedulePlan{}, validationError("account_id", "must be a balance account of the user")
+			return schedulePlan{}, validationError("account_id", "must be a balance account of the book")
 		}
 
 		if p.counterpart, ok = accounts[p.counterID]; !ok {

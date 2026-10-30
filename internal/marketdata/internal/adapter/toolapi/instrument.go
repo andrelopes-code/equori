@@ -128,7 +128,7 @@ func manageInstrument(svc Service) tool.Tool {
 		Description: "Proposes defining or renaming a security for the whole instance, recording a manual price, or setting the terms of a fixed income instrument. " +
 			"Use it when the user needs a security that does not exist yet or a price that is missing. " +
 			"Do not use it to buy or sell: record_investment does. " +
-			"Instruments and prices are shared by every user of the instance; the user confirms first.",
+			"Instruments and prices are shared by every book of the instance; the user confirms first.",
 		Effect: tool.Write,
 	}, func(ctx context.Context, _ int64, in manageInstrumentIn) (tool.Preview, error) {
 		if err := checkInstrumentArgs(in); err != nil {

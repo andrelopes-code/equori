@@ -39,7 +39,7 @@ type Module struct {
 	ledger *ledger.Module
 }
 
-// Profiles is the part of identity the module uses to pick a user's jurisdiction.
+// Profiles is the part of identity the module uses to pick a book's jurisdiction.
 type Profiles interface {
 	Profile(ctx context.Context, booksID int64) (locale.Locale, error)
 }
@@ -92,7 +92,7 @@ func (m *Module) handle(ctx context.Context, tx pgx.Tx, e outbox.Delivered) erro
 // RebuildAll recomputes every derived row from the ledger (equori portfolio rebuild).
 func (m *Module) RebuildAll(ctx context.Context) error { return m.svc.RebuildAll(ctx) }
 
-// RebuildBooks recomputes the user's derived rows, after an import of an export archive.
+// RebuildBooks recomputes the book's derived rows, after an import of an export archive.
 func (m *Module) RebuildBooks(ctx context.Context, booksID int64) error {
 	return m.svc.RebuildBooks(ctx, booksID)
 }

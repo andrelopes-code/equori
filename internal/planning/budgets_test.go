@@ -108,7 +108,7 @@ func TestBudgetErrors(t *testing.T) {
 
 	other := f.h.Login("other@example.com")
 	if r := f.h.Call(other, http.MethodGet, "/api/v1/budgets/"+id, nil); r.Status != http.StatusNotFound {
-		t.Errorf("other user's budget status = %d", r.Status)
+		t.Errorf("other book's budget status = %d", r.Status)
 	}
 
 	var list struct {
@@ -134,7 +134,7 @@ func TestS144DeleteBudget(t *testing.T) {
 
 	other := f.h.Login("other@example.com")
 	if r := f.h.Call(other, http.MethodDelete, "/api/v1/budgets/"+id, nil); r.Status != http.StatusNotFound {
-		t.Fatalf("other user's delete = %d", r.Status)
+		t.Fatalf("other book's delete = %d", r.Status)
 	}
 
 	f.h.MustDo(http.MethodDelete, "/api/v1/budgets/"+id, nil, http.StatusNoContent, nil)

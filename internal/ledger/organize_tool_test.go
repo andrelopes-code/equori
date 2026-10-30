@@ -13,7 +13,7 @@ type manageOut struct {
 	Name   string `json:"name"`
 }
 
-// otherUserAccount creates an account owned by a second user.
+// otherUserAccount creates an account owned by a second book.
 func otherUserAccount(t *testing.T, h *apitest.Harness, name, class, kind string) string {
 	t.Helper()
 

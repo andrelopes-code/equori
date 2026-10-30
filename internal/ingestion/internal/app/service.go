@@ -26,9 +26,9 @@ type Repository interface {
 	MoveRecords(ctx context.Context, booksID int64, recordIDs []uuid.UUID, transactionID uuid.UUID) error
 	ListBatches(ctx context.Context, booksID int64, p page.Request[BatchKey]) ([]domain.Batch, *BatchKey, error)
 	Profile(ctx context.Context, booksID int64, accountID uuid.UUID) (domain.Profile, error)
-	// SaveProfile returns ErrNotFound when the account does not belong to the user.
+	// SaveProfile returns ErrNotFound when the account does not belong to the book.
 	SaveProfile(ctx context.Context, p domain.Profile) (domain.Profile, error)
-	// InsertBatch returns ErrNotFound when the account does not belong to the user.
+	// InsertBatch returns ErrNotFound when the account does not belong to the book.
 	InsertBatch(ctx context.Context, b domain.Batch) (domain.Batch, error)
 	// CompleteBatch stores the counts and the file balance and marks the batch complete.
 	CompleteBatch(ctx context.Context, b domain.Batch) (domain.Batch, error)
@@ -55,7 +55,7 @@ type Repository interface {
 	UpdateCredentials(ctx context.Context, booksID int64, id uuid.UUID, sealed []byte) (domain.Integration, error)
 	// DeleteIntegration returns ErrIntegrationInUse while a connection uses the integration.
 	DeleteIntegration(ctx context.Context, booksID int64, id uuid.UUID) error
-	// ResealCredentials replaces, in one database transaction, every user's sealed
+	// ResealCredentials replaces, in one database transaction, every book's sealed
 	// credentials for which reseal returns a value, and returns how many it replaced.
 	ResealCredentials(ctx context.Context, reseal func(booksID int64, id uuid.UUID, sealed []byte) ([]byte, error)) (int, error)
 	// InsertConnection stores the connection and its accounts in one database transaction; a
@@ -90,7 +90,7 @@ type Repository interface {
 	// InstallmentPlans returns the ledger plans of the keys that have one, by key.
 	InstallmentPlans(ctx context.Context, booksID int64, keys [][]byte) (map[string]uuid.UUID, error)
 	SaveInstallmentPlan(ctx context.Context, booksID int64, accountID uuid.UUID, key []byte, planID uuid.UUID) error
-	// AllConnections lists every user's connections, for the scheduler.
+	// AllConnections lists every book's connections, for the scheduler.
 	AllConnections(ctx context.Context) ([]ConnectionRef, error)
 }
 

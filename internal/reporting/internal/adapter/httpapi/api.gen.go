@@ -414,7 +414,7 @@ type ServerInterface interface {
 	// RequestExport Request an archive of every fact of the books (SC6, docs/specs/2026-10-26-export-design.md).
 	// (POST /exports)
 	RequestExport(w http.ResponseWriter, r *http.Request)
-	// GetExport The user's export and its status; 404 when none was requested.
+	// GetExport The book's export and its status; 404 when none was requested.
 	// (GET /exports/current)
 	GetExport(w http.ResponseWriter, r *http.Request)
 	// GetExportContent Download the archive of a ready export; 409 export_not_ready otherwise.
@@ -1692,7 +1692,7 @@ type StrictServerInterface interface {
 	// RequestExport Request an archive of every fact of the books (SC6, docs/specs/2026-10-26-export-design.md).
 	// (POST /exports)
 	RequestExport(ctx context.Context, request RequestExportRequestObject) (RequestExportResponseObject, error)
-	// GetExport The user's export and its status; 404 when none was requested.
+	// GetExport The book's export and its status; 404 when none was requested.
 	// (GET /exports/current)
 	GetExport(ctx context.Context, request GetExportRequestObject) (GetExportResponseObject, error)
 	// GetExportContent Download the archive of a ready export; 409 export_not_ready otherwise.

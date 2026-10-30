@@ -50,7 +50,7 @@ func call(ctx context.Context, h *apitest.Harness, use llm.Use) error {
 }
 
 // U-A1, U-A3: an answered call and a quota refusal give one row with both, the tokens and the
-// cooldown end; another user's usage never appears.
+// cooldown end; another book's usage never appears.
 func TestUsageA1A3(t *testing.T) {
 	t.Parallel()
 
@@ -88,15 +88,15 @@ func TestUsageA1A3(t *testing.T) {
 
 	r := h.Call(other, http.MethodGet, "/api/v1/assistant/usage", nil)
 	if r.Status != http.StatusOK {
-		t.Fatalf("other user's usage = %d", r.Status)
+		t.Fatalf("other book's usage = %d", r.Status)
 	}
 
 	if r.Decode(t, &list); len(list.Items) != 0 {
-		t.Fatalf("other user sees %+v", list.Items)
+		t.Fatalf("other book sees %+v", list.Items)
 	}
 }
 
-// U-A2: a call without a user and a fixed-chain call record nothing.
+// U-A2: a call without a book and a fixed-chain call record nothing.
 func TestUsageWithoutUseOrUserA2(t *testing.T) {
 	t.Parallel()
 
@@ -107,7 +107,7 @@ func TestUsageWithoutUseOrUserA2(t *testing.T) {
 
 	h := apitest.New(t, apitest.LLM(llmtest.New("aistudio", answer, fixed)))
 	if err := call(t.Context(), h, assistant.ChatUse); err != nil {
-		t.Fatalf("call without a user: %v", err)
+		t.Fatalf("call without a book: %v", err)
 	}
 
 	ctx := auth.WithBooksID(t.Context(), h.OwnerID())
@@ -122,7 +122,7 @@ func TestUsageWithoutUseOrUserA2(t *testing.T) {
 	}
 }
 
-// U-A4, U-A5: limits on the instance provider and on the user's own; another user's provider
+// U-A4, U-A5: limits on the instance provider and on the book's own; another book's provider
 // is not found; deleting a provider removes its usage and limits.
 func TestUsageLimitsA4A5(t *testing.T) {
 	t.Parallel()
@@ -229,7 +229,7 @@ func TestUsageDays(t *testing.T) {
 
 	other := h.Login("other@example.com")
 	if got := usageDays(t, h, other, "from=2026-10-20&to=2026-10-22"); len(got) != 0 {
-		t.Fatalf("other user sees %+v", got)
+		t.Fatalf("other book sees %+v", got)
 	}
 
 	for _, q := range []string{"from=2026-10-20&to=2027-01-20", "from=2026-10-22&to=2026-10-20", "to=2026-10-22", "from=2026-10-20"} {

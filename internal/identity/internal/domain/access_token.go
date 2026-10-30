@@ -22,7 +22,7 @@ const (
 	maxTokenName      = 80
 )
 
-// AccessToken opens /mcp for one user. It is persisted by TokenHash only; the text is shown once.
+// AccessToken opens /mcp for one member. It is persisted by TokenHash only; the text is shown once.
 type AccessToken struct {
 	ID         uuid.UUID
 	MemberID   int64

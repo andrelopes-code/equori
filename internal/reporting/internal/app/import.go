@@ -19,7 +19,7 @@ var (
 	ErrArchiveInvalid = errors.New("the archive does not read as an export of this instance")
 	ErrArchiveTooNew  = errors.New("the archive was written by a later version")
 	ErrImportNotEmpty = errors.New("the books already hold facts")
-	ErrImportConflict = errors.New("an identifier of the archive belongs to another user")
+	ErrImportConflict = errors.New("an identifier of the archive belongs to another book")
 )
 
 // ArchiveTable is a table of an archive with one JSON object per row.
@@ -72,7 +72,7 @@ type archiveManifest struct {
 	} `json:"attachments"`
 }
 
-// Import migrates an archive of an earlier version, restores it into the books of a user
+// Import migrates an archive of an earlier version, restores it into the books of a book
 // without facts, then rebuilds the derived tables (export design E4, ADR 021).
 func (s *Exports) Import(ctx context.Context, booksID int64, archive []byte) (ImportResult, error) {
 	files, err := unzip(archive)

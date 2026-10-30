@@ -180,7 +180,7 @@ func (s *seeder) listAccounts() []accountRow {
 	return all
 }
 
-// loadSystemAccounts waits for the ledger to provision the user, then registers each system account as "system.<role>". The provisioning runs from the outbox, so a user created a moment ago may not have them yet.
+// loadSystemAccounts waits for the ledger to provision the book, then registers each system account as "system.<role>". The provisioning runs from the outbox, so a book created a moment ago may not have them yet.
 func (s *seeder) loadSystemAccounts() {
 	deadline := time.Now().Add(30 * time.Second)
 	for s.err == nil {
@@ -197,7 +197,7 @@ func (s *seeder) loadSystemAccounts() {
 		}
 
 		if time.Now().After(deadline) {
-			s.fail("the ledger did not provision the user within 30 seconds")
+			s.fail("the ledger did not provision the book within 30 seconds")
 			return
 		}
 
@@ -210,11 +210,11 @@ func (s *seeder) loadSystemAccounts() {
 	}
 }
 
-// requireEmpty fails when the user already owns an account that is not a system account.
+// requireEmpty fails when the book already owns an account that is not a system account.
 func (s *seeder) requireEmpty() {
 	for _, a := range s.listAccounts() {
 		if a.SystemRole == "" && s.err == nil {
-			s.fail("the user already owns account %q; drop the user and create it again before seeding", a.Name)
+			s.fail("the book already owns account %q; drop the user and create it again before seeding", a.Name)
 		}
 	}
 }

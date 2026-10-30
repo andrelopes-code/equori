@@ -148,7 +148,7 @@ func TestS68ReservedBalanceMapping(t *testing.T) {
 	a.h.ExpectProblem(a.h.Call(other, http.MethodGet, "/api/v1/connections/"+conn.ID, nil), http.StatusNotFound, "not_found", "")
 }
 
-// openingBalances returns the id of the user's Opening balances account.
+// openingBalances returns the id of the book's Opening balances account.
 func openingBalances(f syncFixture) string {
 	f.h.T().Helper()
 	var accounts struct {

@@ -110,7 +110,7 @@ func (d DayDelta) pick(b Basis) int64 {
 	return d.Booked
 }
 
-// AccountName returns the name of one of the user's accounts, or ErrNotFound.
+// AccountName returns the name of one of the book's accounts, or ErrNotFound.
 func (s *Service) AccountName(ctx context.Context, booksID int64, accountID uuid.UUID) (string, error) {
 	return s.repo.AccountName(ctx, booksID, accountID)
 }
@@ -131,12 +131,12 @@ var earliest = time.Date(1900, 1, 1, 0, 0, 0, 0, time.UTC)
 
 func (s *Service) RebuildAll(ctx context.Context) error { return s.rebuild(ctx, 0) }
 
-// RebuildBooks recomputes the series of every account of the user, after an import.
+// RebuildBooks recomputes the series of every account of the book, after an import.
 func (s *Service) RebuildBooks(ctx context.Context, booksID int64) error {
 	return s.rebuild(ctx, booksID)
 }
 
-// rebuild recomputes the accounts of booksID, or of every user when it is zero.
+// rebuild recomputes the accounts of booksID, or of every book when it is zero.
 func (s *Service) rebuild(ctx context.Context, booksID int64) error {
 	refs, err := s.repo.AllAccounts(ctx)
 	if err != nil {

@@ -130,7 +130,7 @@ func prepareBudgetOrGoal(ctx context.Context, svc *app.Service, l Ledger, booksI
 	for _, id := range p.accountIDs {
 		a, ok := accounts[id]
 		if !ok {
-			return budgetGoalPlan{}, validationError("account_ids", "must be balance accounts of the user")
+			return budgetGoalPlan{}, validationError("account_ids", "must be balance accounts of the book")
 		}
 
 		p.accountNames = append(p.accountNames, a.Name)
@@ -141,7 +141,7 @@ func prepareBudgetOrGoal(ctx context.Context, svc *app.Service, l Ledger, booksI
 	case "create_budget":
 		a, ok := accounts[p.categoryID]
 		if !ok {
-			return budgetGoalPlan{}, validationError("category_id", "must be an income or expense category of the user")
+			return budgetGoalPlan{}, validationError("category_id", "must be an income or expense category of the book")
 		}
 
 		p.categoryName = a.Name

@@ -112,7 +112,7 @@ type Transaction struct {
 }
 
 // NewTransaction validates t against the accounts its postings reference and returns
-// it with defaults applied. accounts must contain every account of the user that a
+// it with defaults applied. accounts must contain every account of the book that a
 // posting may reference; a missing id is reported as ErrUnknownAccount.
 func NewTransaction(t Transaction, accounts map[uuid.UUID]Account) (Transaction, error) {
 	if t.Date.IsZero() {

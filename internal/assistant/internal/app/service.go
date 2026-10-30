@@ -71,7 +71,7 @@ func instanceView(in Instance) ProviderView {
 
 func (s *Service) Presets() []domain.Preset { return domain.Presets() }
 
-// Providers returns the user's providers in creation order, then the instance providers.
+// Providers returns the book's providers in creation order, then the instance providers.
 func (s *Service) Providers(ctx context.Context, booksID int64) ([]ProviderView, error) {
 	ps, err := s.repo.Providers(ctx, booksID)
 	if err != nil {
@@ -192,7 +192,7 @@ func (s *Service) open(p domain.Provider) (string, error) {
 	return string(plain), nil
 }
 
-// RotateSecrets reseals every user's keys under the current key in one database
+// RotateSecrets reseals every book's keys under the current key in one database
 // transaction and returns how many changed (ADR 008 K4).
 func (s *Service) RotateSecrets(ctx context.Context) (int, error) {
 	if s.box == nil {

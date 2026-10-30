@@ -91,7 +91,7 @@ func newProposalEnv(t *testing.T) proposalEnv {
 	return proposalEnv{h: h, note: note, now: now}
 }
 
-// propose stores a pending proposal of user's through the module and returns its ID.
+// propose stores a pending proposal of the book through the module and returns its ID.
 func (e proposalEnv) propose(t *testing.T, booksID int64, text string) string {
 	t.Helper()
 
@@ -256,7 +256,7 @@ func TestRejectThenConfirm(t *testing.T) {
 	e.h.ExpectProblem(e.post(id, "confirm"), http.StatusConflict, "proposal_closed", "")
 }
 
-// S136 (part): another user's proposal is not found.
+// S136 (part): another book's proposal is not found.
 func TestProposalOtherUser(t *testing.T) {
 	t.Parallel()
 	e := newProposalEnv(t)

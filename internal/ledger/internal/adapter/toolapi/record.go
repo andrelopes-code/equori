@@ -45,7 +45,7 @@ type destination struct {
 	amount  money.Money
 }
 
-// recordPlan is a record_transaction request resolved against the user's accounts.
+// recordPlan is a record_transaction request resolved against the book's accounts.
 type recordPlan struct {
 	from     domain.Account
 	amount   money.Money

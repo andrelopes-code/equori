@@ -156,7 +156,7 @@ func TestMCPListsToolsByScope(t *testing.T) {
 	}
 }
 
-// X16, X12, ADR 003: the result is the registry's, as structured content and one text block, for the token's user only.
+// X16, X12, ADR 003: the result is the registry's, as structured content and one text block, for the token's book only.
 func TestMCPCallTool(t *testing.T) {
 	t.Parallel()
 	h := apitest.New(t)

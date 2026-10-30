@@ -12,7 +12,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/locale"
 )
 
-// Use is the use of ADR 014 L6; each user may replace its chain (ADR 019).
+// Use is the use of ADR 014 L6; each book may replace its chain (ADR 019).
 var Use = llm.Use{
 	ID:                 "capture.suggest",
 	Needs:              []llm.Capability{llm.CapStructuredOutput},

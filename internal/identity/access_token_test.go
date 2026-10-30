@@ -73,7 +73,7 @@ func TestAccessTokens(t *testing.T) {
 
 	other := h.Login("bob@example.com")
 	if items := listTokens(t, h, other); len(items) != 0 {
-		t.Fatalf("other user lists %v", items)
+		t.Fatalf("other member lists %v", items)
 	}
 
 	h.ExpectProblem(h.Call(other, http.MethodDelete, "/api/v1/access-tokens/"+tok.ID, nil), http.StatusNotFound, "access_token_not_found", "")

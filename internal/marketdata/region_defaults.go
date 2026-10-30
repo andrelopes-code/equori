@@ -11,7 +11,7 @@ func (m *Module) DefaultCalendar(region string) string {
 	return "weekend"
 }
 
-// SuggestedFeeds names the feeds suggested to a user of region (ADR 025 F3); a suggestion
+// SuggestedFeeds names the feeds suggested to a book of region (ADR 025 F3); a suggestion
 // enables nothing.
 func SuggestedFeeds(region string) []string {
 	switch {

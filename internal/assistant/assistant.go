@@ -1,4 +1,4 @@
-// Package assistant stores each user's language model providers and chains, and resolves
+// Package assistant stores each book's language model providers and chains, and resolves
 // the targets of a use (ADR 019).
 package assistant
 
@@ -40,7 +40,7 @@ var ChatUse = llm.Use{
 
 type Config struct {
 	SecretKey, PreviousSecretKey string
-	// Instance are the providers configured through the environment, shared by every user.
+	// Instance are the providers configured through the environment, shared by every book.
 	Instance []llm.Provider
 	Uses     []llm.Use
 	// Navigation is web/src/navigation/navigation-map.json (spec 9); empty means no screens.
@@ -48,7 +48,7 @@ type Config struct {
 	// Locale returns a user's language and region for the system prompt.
 	Locale func(context.Context, int64) (locale.Locale, error)
 	Clock  clock.Clock
-	// NewProvider builds a user's provider; nil builds the real adapters.
+	// NewProvider builds a book's provider; nil builds the real adapters.
 	NewProvider func(api, baseURL, key string) llm.Provider
 	// Wait blocks a chat turn until a transient cooldown ends (design 2026-10-26 E6); nil uses a timer on Clock.
 	Wait func(ctx context.Context, until time.Time) error

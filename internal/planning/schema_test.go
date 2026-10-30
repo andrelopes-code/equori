@@ -12,7 +12,7 @@ import (
 )
 
 // The database rejects rows that break I07 (occurrence side), I08 for schedule terms,
-// overlapping pauses and references to another user's accounts (7.3, 7.6).
+// overlapping pauses and references to another book's accounts (7.3, 7.6).
 func TestSchemaInvariants(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t, "2026-11-01")
@@ -82,7 +82,7 @@ func TestSchemaInvariants(t *testing.T) {
 		{"expected with a transaction", func() error {
 			return exec(`UPDATE planning_occurrence SET transaction_id = $2 WHERE schedule_id = $1 AND sequence = 4`, id, tx)
 		}},
-		{"schedule on another user's account", func() error {
+		{"schedule on another book's account", func() error {
 			return exec(`INSERT INTO planning_schedule (books_id, kind, account_id, counterpart_id, description, match_tolerance_bp, grace_days, generated_until)
 				VALUES ($1, 'bill', $2, $3, 'x', 1000, 3, '2026-11-01')`, uid, foreign.ID, f.rent)
 		}},
@@ -94,7 +94,7 @@ func TestSchemaInvariants(t *testing.T) {
 			return exec(`INSERT INTO planning_occurrence (books_id, schedule_id, sequence, expected_on, expected_amount, state)
 				VALUES ($1, $2, 1, '2026-11-05', 210000, 'expected')`, uid, id)
 		}},
-		{"two references for one user", func() error { return reference("fixed", 100) }},
+		{"two references for one book", func() error { return reference("fixed", 100) }},
 		{"reference with an unknown source", func() error {
 			return exec(`INSERT INTO planning_budget_reference (books_id, source, amount, currency) VALUES ($1, 'monthly_income', NULL, 'BRL')`, otherID)
 		}},

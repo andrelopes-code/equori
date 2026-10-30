@@ -152,7 +152,7 @@ func TestSearchTransactionsToolIsolation(t *testing.T) {
 		t.Fatalf("create transaction = %d: %s", r.Status, r.Body)
 	}
 
-	// The other user finds the transaction with the same query, so the owner's empty result
+	// The other book finds the transaction with the same query, so the owner's empty result
 	// comes from isolation, not from the query.
 	var theirs struct {
 		Items []struct {
@@ -168,7 +168,7 @@ func TestSearchTransactionsToolIsolation(t *testing.T) {
 	r.Decode(t, &theirs)
 
 	if len(theirs.Items) != 1 {
-		t.Fatalf("other user's search = %+v", theirs)
+		t.Fatalf("other book's search = %+v", theirs)
 	}
 
 	var got searchOutput

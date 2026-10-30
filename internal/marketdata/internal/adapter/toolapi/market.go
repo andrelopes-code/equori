@@ -103,7 +103,7 @@ func getMarketData(svc Service, cals Calendars) tool.Tool {
 		Description: "Returns market data of the instance: instruments with their type and scale, one instrument with its fixed income terms, prices of an instrument in a period, business-day calendars, a calendar's holidays in a year, " +
 			"the stored economic indexes, the rates of one index in a period, or the annual rates a market survey expects for one index (where the indexes view says expected). " +
 			"Use it for prices, securities, holidays and index rates. " +
-			"Do not use it for the user's holdings: get_portfolio does.",
+			"Do not use it for the book's holdings: get_portfolio does.",
 		Effect:     tool.ReadOnly,
 		Idempotent: true,
 	}, func(ctx context.Context, _ int64, in getMarketDataIn) (getMarketDataOut, error) {

@@ -131,7 +131,7 @@ func (s *Service) checkAccounts(ctx context.Context, booksID int64, sch domain.S
 
 	account, ok := accounts[sch.AccountID]
 	if !ok || !balance(account) {
-		return &domain.FieldError{Field: "account_id", Message: "must be a balance account of the user", Err: domain.ErrValidation}
+		return &domain.FieldError{Field: "account_id", Message: "must be a balance account of the book", Err: domain.ErrValidation}
 	}
 
 	if _, err := money.ParseCurrency(string(account.Instrument)); err != nil {
@@ -169,7 +169,7 @@ func (s *Service) checkAccounts(ctx context.Context, booksID int64, sch domain.S
 		}
 
 		if len(missing) > 0 {
-			return &domain.FieldError{Field: "payee_id", Message: "is not a payee of the user", Err: domain.ErrValidation}
+			return &domain.FieldError{Field: "payee_id", Message: "is not a payee of the book", Err: domain.ErrValidation}
 		}
 	}
 

@@ -41,7 +41,7 @@ WHERE
     AND id = $2;
 
 -- name: LockAllKeys :many
--- Rotation (ADR 008 K4) reseals every user's keys: the one query without a user filter.
+-- Rotation (ADR 008 K4) reseals every book's keys: the one query without a book filter.
 SELECT
     id,
     books_id,

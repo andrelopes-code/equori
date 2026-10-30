@@ -66,7 +66,7 @@ func TestSchemaInvariants(t *testing.T) {
 
 			return exec(source, uid)
 		}()},
-		{"A41: a source category maps to an account of its user", exec(`INSERT INTO classification_source_category (books_id, aggregator, external_id, name, category_id)
+		{"A41: a source category maps to an account of its book", exec(`INSERT INTO classification_source_category (books_id, aggregator, external_id, name, category_id)
 			VALUES ($1, 'pluggy', '07000000', 'Travel', gen_random_uuid())`, uid)},
 		{"positive priority", rule(0, 1)},
 		{"known rule schema version", rule(2, 2)},

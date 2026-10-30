@@ -1546,12 +1546,12 @@ type Institution struct {
 	Code *string            `json:"code,omitempty"`
 	Id   openapi_types.UUID `json:"id"`
 
-	// Identifier Identifier of the institution in a scheme, unique per user and scheme (ADR 013).
+	// Identifier Identifier of the institution in a scheme, unique per book and scheme (ADR 013).
 	Identifier *InstitutionIdentifier `json:"identifier,omitempty"`
 	Name       string                 `json:"name"`
 }
 
-// InstitutionIdentifier Identifier of the institution in a scheme, unique per user and scheme (ADR 013).
+// InstitutionIdentifier Identifier of the institution in a scheme, unique per book and scheme (ADR 013).
 type InstitutionIdentifier struct {
 	Identifier string `json:"identifier"`
 	Scheme     string `json:"scheme"`
@@ -1578,7 +1578,7 @@ type InstitutionIdentifierSchemeList struct {
 type InstitutionInput struct {
 	Code *string `json:"code,omitempty"`
 
-	// Identifier Identifier of the institution in a scheme, unique per user and scheme (ADR 013).
+	// Identifier Identifier of the institution in a scheme, unique per book and scheme (ADR 013).
 	Identifier *InstitutionIdentifier `json:"identifier,omitempty"`
 	Name       string                 `json:"name"`
 }

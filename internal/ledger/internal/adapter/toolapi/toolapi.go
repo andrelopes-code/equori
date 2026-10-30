@@ -27,7 +27,7 @@ func (accountClass) Values() []string {
 	return []string{"asset", "liability", "equity", "income", "expense"}
 }
 
-// allAccounts reads every account of the user in the order of ListAccounts, by class and then name.
+// allAccounts reads every account of the book in the order of ListAccounts, by class and then name.
 func allAccounts(ctx context.Context, svc *app.Service, booksID int64) (map[uuid.UUID]domain.Account, []domain.Account, error) {
 	var all []domain.Account
 

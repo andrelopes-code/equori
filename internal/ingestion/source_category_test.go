@@ -138,7 +138,7 @@ func TestSourceCategory(t *testing.T) {
 
 	other := f.h.Login("other@example.com")
 	if got := f.sourceCategories(other); len(got) != 0 {
-		t.Fatalf("other user sees %+v", got)
+		t.Fatalf("other book sees %+v", got)
 	}
 
 	f.h.ExpectProblem(f.h.Call(other, http.MethodPut, path, map[string]any{"category_id": nil}), http.StatusNotFound, "not_found", "")

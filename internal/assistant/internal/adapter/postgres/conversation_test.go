@@ -72,11 +72,11 @@ func TestConversation(t *testing.T) {
 	}
 
 	if _, err := repo.Conversation(ctx, b, c1.ID); !errors.Is(err, domain.ErrConversationNotFound) {
-		t.Fatalf("other user's Conversation error = %v", err)
+		t.Fatalf("other book's Conversation error = %v", err)
 	}
 
 	if err := repo.DeleteConversation(ctx, b, c1.ID); !errors.Is(err, domain.ErrConversationNotFound) {
-		t.Fatalf("other user's DeleteConversation error = %v", err)
+		t.Fatalf("other book's DeleteConversation error = %v", err)
 	}
 
 	if err := repo.DeleteConversations(ctx, b); err != nil {
@@ -84,6 +84,6 @@ func TestConversation(t *testing.T) {
 	}
 
 	if all, _ := repo.Conversations(ctx, a, nil, 10); len(all) != 3 {
-		t.Fatalf("user A has %d conversations, want 3", len(all))
+		t.Fatalf("book A has %d conversations, want 3", len(all))
 	}
 }

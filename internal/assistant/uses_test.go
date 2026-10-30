@@ -65,7 +65,7 @@ func equal(a, b []string) bool {
 	return true
 }
 
-// A5: default chains resolved against the user's providers and the instance provider.
+// A5: default chains resolved against the book's providers and the instance provider.
 func TestListUsesA5(t *testing.T) {
 	t.Parallel()
 	h := harness(t, newFakes())
@@ -127,7 +127,7 @@ func structured(text string) llmtest.Step {
 	}}
 }
 
-// A7: a use's call reaches the user's provider and moves to the next target on quota.
+// A7: a use's call reaches the book's provider and moves to the next target on quota.
 func TestUserChainCallA7(t *testing.T) {
 	t.Parallel()
 
@@ -158,7 +158,7 @@ func TestUserChainCallA7(t *testing.T) {
 	}
 }
 
-// A8: a quota error on one user's provider leaves another user's provider of the same preset
+// A8: a quota error on one book's provider leaves another book's provider of the same preset
 // and model available.
 func TestCooldownPerUserA8(t *testing.T) {
 	t.Parallel()
@@ -184,6 +184,6 @@ func TestCooldownPerUserA8(t *testing.T) {
 	}
 
 	if resp, err := client.Generate(auth.WithBooksID(t.Context(), otherID), req); err != nil || resp.Text() != "ok" {
-		t.Fatalf("other user = %+v, %v", resp, err)
+		t.Fatalf("other book = %+v, %v", resp, err)
 	}
 }

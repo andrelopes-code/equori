@@ -84,9 +84,9 @@ Everything is in English: identifiers, files, packages, comments, log messages, 
 - HTTP errors are RFC 9457 problems written with `internal/platform/problem` (ADR 004).
 - Language model calls go through `internal/platform/llm` (ADR 009); each module declares its chain in code.
 - Tools for language models are declared in `adapter/toolapi` and composed in `internal/server` (ADR 012).
-- Handlers get the user with `auth.MustUserID(ctx)` (`internal/platform/auth`) and pass it to `app` explicitly. `identity.RequireSession` authenticates every `/api/` route except login.
+- Handlers get the book with `auth.MustBooksID(ctx)` and the member with `auth.MustMemberID(ctx)` (`internal/platform/auth`) and pass them to `app` explicitly. `identity.RequireSession` authenticates every `/api/` route except login.
 - `*.gen.go` and `*.gen.ts` files are generated; never edit them. A new module adds an entry to `sqlc.yaml`, `db/queries/<module>/`, a tag in `api/openapi.yaml` and `adapter/httpapi/oapi-codegen.yaml`.
-- Every business table has `user_id`; every query on it filters by `user_id` (ADR 003).
+- Every business table has `books_id`; every query on it filters by `books_id` (ADR 003, ADR 029).
 - Web code follows `docs/contributing/web.md`.
 
 ## Regions

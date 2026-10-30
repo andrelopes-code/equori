@@ -1,4 +1,4 @@
-// Package domain holds the language model providers of a user and the rules of their chains.
+// Package domain holds the language model providers of a book and the rules of their chains.
 package domain
 
 import "errors"

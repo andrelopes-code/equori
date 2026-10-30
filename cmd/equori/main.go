@@ -352,7 +352,7 @@ func feedURLs(getenv func(string) string) map[string]string {
 }
 
 // llmProviders returns the providers the environment configures for the whole instance;
-// each user adds their own on the settings screen (ADR 019).
+// each book adds its own on the settings screen (ADR 019).
 func llmProviders(cfg config.Config) []llm.Provider {
 	if cfg.GeminiAPIKey == "" {
 		return nil

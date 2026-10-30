@@ -89,7 +89,7 @@ type Ledger interface {
 	AccountFacts(ctx context.Context, booksID int64) ([]Account, error)
 	MissingPayees(ctx context.Context, booksID int64, ids []uuid.UUID) ([]uuid.UUID, error)
 	BaseCurrency(ctx context.Context, booksID int64) (money.Currency, error)
-	// TransactionFacts returns the user's transactions among ids; unknown ids are omitted.
+	// TransactionFacts returns the book's transactions among ids; unknown ids are omitted.
 	TransactionFacts(ctx context.Context, booksID int64, ids []uuid.UUID) ([]domain.Transaction, error)
 	// AccountTransactionsBetween returns the non-voided transactions with a posting on the
 	// account dated in [from, to], by date.
@@ -136,7 +136,7 @@ type IDKey struct {
 	ID uuid.UUID `json:"i"`
 }
 
-// ScheduleRef names a schedule across users.
+// ScheduleRef names a schedule across books.
 type ScheduleRef struct {
 	BooksID int64
 	ID      uuid.UUID
@@ -156,7 +156,7 @@ type Repository interface {
 	ListSchedules(ctx context.Context, booksID int64, p page.Request[IDKey]) ([]domain.Schedule, *IDKey, error)
 	Schedules(ctx context.Context, booksID int64) ([]domain.Schedule, error)
 	SchedulesBehind(ctx context.Context, horizon time.Time) ([]ScheduleRef, error)
-	// ScheduleRefs returns every schedule across users.
+	// ScheduleRefs returns every schedule across books.
 	ScheduleRefs(ctx context.Context) ([]ScheduleRef, error)
 	SetGeneratedUntil(ctx context.Context, booksID int64, id uuid.UUID, d time.Time) error
 	InsertOccurrences(ctx context.Context, booksID int64, scheduleID uuid.UUID, ps []domain.Planned) error
@@ -195,9 +195,9 @@ type Repository interface {
 	Budget(ctx context.Context, booksID int64, id uuid.UUID) (domain.Budget, error)
 	LockBudget(ctx context.Context, booksID int64, id uuid.UUID) (domain.Budget, error)
 	ListBudgets(ctx context.Context, booksID int64, p page.Request[IDKey]) ([]domain.Budget, *IDKey, error)
-	// DeleteBudget removes the budget with its amounts; ErrNotFound when it is not the user's.
+	// DeleteBudget removes the budget with its amounts; ErrNotFound when it is not the book's.
 	DeleteBudget(ctx context.Context, booksID int64, id uuid.UUID) error
-	// Budgets returns every budget of the user with its amounts.
+	// Budgets returns every budget of the book with its amounts.
 	Budgets(ctx context.Context, booksID int64) ([]domain.Budget, error)
 	// UpsertBudgetAmount replaces the version of a.EffectiveFrom or inserts it (A130).
 	UpsertBudgetAmount(ctx context.Context, booksID int64, budgetID uuid.UUID, a domain.BudgetAmount) error
@@ -209,8 +209,8 @@ type Repository interface {
 	InsertGoal(ctx context.Context, booksID int64, g domain.Goal) (domain.Goal, error)
 	Goal(ctx context.Context, booksID int64, id uuid.UUID) (domain.Goal, error)
 	ListGoals(ctx context.Context, booksID int64, p page.Request[IDKey]) ([]domain.Goal, *IDKey, error)
-	// UpdateGoal replaces the fields and the accounts of g.ID; ErrNotFound when it is not the user's.
+	// UpdateGoal replaces the fields and the accounts of g.ID; ErrNotFound when it is not the book's.
 	UpdateGoal(ctx context.Context, booksID int64, g domain.Goal) (domain.Goal, error)
-	// DeleteGoal removes the goal with its accounts; ErrNotFound when it is not the user's.
+	// DeleteGoal removes the goal with its accounts; ErrNotFound when it is not the book's.
 	DeleteGoal(ctx context.Context, booksID int64, id uuid.UUID) error
 }

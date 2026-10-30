@@ -162,7 +162,7 @@ WHERE
     AND id = @id;
 
 -- name: ListAllConnections :many
--- The scheduler checks every user's connections (A43); each sync then filters by its user.
+-- The scheduler checks every book's connections (A43); each sync then filters by its book.
 SELECT
     id,
     books_id

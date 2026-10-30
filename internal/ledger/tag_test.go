@@ -155,7 +155,7 @@ func TestDeleteTag(t *testing.T) {
 	h.ExpectProblem(h.Do(http.MethodDelete, "/api/v1/tags/trip", nil), http.StatusNotFound, "not_found", "")
 }
 
-// ADR 003: the tag of another user is not found by any tag operation.
+// ADR 003: the tag of another book is not found by any tag operation.
 func TestTagOfAnotherUser(t *testing.T) {
 	t.Parallel()
 	s := newTaggedSetup(t)

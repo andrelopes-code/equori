@@ -64,7 +64,7 @@ func TestS76CategoryTotals(t *testing.T) {
 		}
 	}
 
-	// Name order; the system expense categories of the user sit among them.
+	// Name order; the system expense categories of the book sit among them.
 	pos := func(id string) int { return slices.Index(order, id) }
 	if pos(delivery) > pos(food) || pos(food) > pos(groceries) || pos(groceries) > pos(travel) {
 		t.Fatalf("order = %v", order)
@@ -101,7 +101,7 @@ func TestCategoryTotalsRange(t *testing.T) {
 	}
 }
 
-// ADR 003: another user's categories are not listed.
+// ADR 003: another book's categories are not listed.
 func TestCategoryTotalsOtherUser(t *testing.T) {
 	t.Parallel()
 	h := apitest.New(t)
@@ -113,7 +113,7 @@ func TestCategoryTotalsOtherUser(t *testing.T) {
 
 	for _, it := range categoryTotals(t, h, "from=2026-10-01&to=2026-10-31&class=expense") {
 		if it.AccountID == foreign.ID {
-			t.Fatalf("another user's category listed: %+v", it)
+			t.Fatalf("another book's category listed: %+v", it)
 		}
 	}
 }

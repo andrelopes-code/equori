@@ -60,7 +60,7 @@ type IndicatorAccountsRow struct {
 	Interest              bool
 }
 
-// Every account of the user; interest marks the system category interest and its descendants.
+// Every account of the book; interest marks the system category interest and its descendants.
 func (q *Queries) IndicatorAccounts(ctx context.Context, booksID int64) ([]IndicatorAccountsRow, error) {
 	rows, err := q.db.Query(ctx, indicatorAccounts, booksID)
 	if err != nil {
@@ -118,7 +118,7 @@ LIMIT
     1
 `
 
-// The earliest booked date of the user's postings that are not voided.
+// The earliest booked date of the book's postings that are not voided.
 func (q *Queries) IndicatorFirstPosting(ctx context.Context, booksID int64) (time.Time, error) {
 	row := q.db.QueryRow(ctx, indicatorFirstPosting, booksID)
 	var booked_on time.Time

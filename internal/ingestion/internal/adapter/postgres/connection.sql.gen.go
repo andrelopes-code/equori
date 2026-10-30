@@ -389,7 +389,7 @@ type ListAllConnectionsRow struct {
 	BooksID int64
 }
 
-// The scheduler checks every user's connections (A43); each sync then filters by its user.
+// The scheduler checks every book's connections (A43); each sync then filters by its book.
 func (q *Queries) ListAllConnections(ctx context.Context) ([]ListAllConnectionsRow, error) {
 	rows, err := q.db.Query(ctx, listAllConnections)
 	if err != nil {

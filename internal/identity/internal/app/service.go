@@ -26,7 +26,7 @@ var (
 // Repository returns ErrNotFound for missing rows and ErrEmailTaken on duplicate email.
 type Repository interface {
 	CreateMember(ctx context.Context, u domain.Member, region string, base money.Currency) (domain.Member, int64, error)
-	// CreateFirstMember returns ErrSetupComplete when a user exists.
+	// CreateFirstMember returns ErrSetupComplete when a member exists.
 	CreateFirstMember(ctx context.Context, u domain.Member, region string, base money.Currency) (domain.Member, int64, error)
 	AnyMember(ctx context.Context) (bool, error)
 	// UpdateProfile stores the language of the member and the region of the books in one transaction.
@@ -83,7 +83,7 @@ func (s *Service) CreateMember(ctx context.Context, email, plain string, role do
 	return created, err
 }
 
-// newMember validates a new user and hashes its password.
+// newMember validates a new member and hashes its password.
 func (s *Service) newMember(ctx context.Context, email, plain string, role domain.Role, l locale.Locale, base money.Currency) (domain.Member, error) {
 	email, err := domain.NormalizeEmail(email)
 	if err != nil {
@@ -214,12 +214,12 @@ func (s *Service) Login(ctx context.Context, email, plain string) (Session, erro
 
 		return Session{}, ErrInvalidCredentials
 	case err != nil:
-		return Session{}, fmt.Errorf("load user: %w", err)
+		return Session{}, fmt.Errorf("load member: %w", err)
 	}
 
 	ok, err := s.verify(ctx, plain, user.PasswordHash)
 	if err != nil {
-		return Session{}, fmt.Errorf("verify password of user %d: %w", user.ID, err)
+		return Session{}, fmt.Errorf("verify password of member %d: %w", user.ID, err)
 	}
 
 	if !ok || user.Disabled {

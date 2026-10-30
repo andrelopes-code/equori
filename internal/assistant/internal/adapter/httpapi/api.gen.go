@@ -323,7 +323,7 @@ type Provider struct {
 	// Id A UUID, or the adapter name of an instance provider.
 	Id string `json:"id"`
 
-	// Instance Configured through the environment for every user; read-only.
+	// Instance Configured through the environment for every book; read-only.
 	Instance bool   `json:"instance"`
 	Name     string `json:"name"`
 
@@ -490,10 +490,10 @@ type ServerInterface interface {
 	// GetAssistantChat Whether the conversation can be used now, with the target it would reach and when to retry.
 	// (GET /assistant/chat)
 	GetAssistantChat(w http.ResponseWriter, r *http.Request)
-	// DeleteAssistantConversations Delete every conversation of the user with its messages and proposals.
+	// DeleteAssistantConversations Delete every conversation of the book with its messages and proposals.
 	// (DELETE /assistant/conversations)
 	DeleteAssistantConversations(w http.ResponseWriter, r *http.Request)
-	// ListAssistantConversations The user's conversations, most recently updated first.
+	// ListAssistantConversations The book's conversations, most recently updated first.
 	// (GET /assistant/conversations)
 	ListAssistantConversations(w http.ResponseWriter, r *http.Request, params ListAssistantConversationsParams)
 	// DeleteAssistantConversation Delete a conversation with its messages and proposals; 404 conversation_not_found.
@@ -511,7 +511,7 @@ type ServerInterface interface {
 	// RejectAssistantProposal Reject a pending proposal.
 	// (POST /assistant/proposals/{id}/reject)
 	RejectAssistantProposal(w http.ResponseWriter, r *http.Request, id ID)
-	// ListProviders The user's providers in creation order, then the instance providers; never a key.
+	// ListProviders The book's providers in creation order, then the instance providers; never a key.
 	// (GET /assistant/providers)
 	ListProviders(w http.ResponseWriter, r *http.Request)
 	// CreateProvider Store a provider; its key is sealed under EQUORI_SECRET_KEY (ADR 008).
@@ -529,19 +529,19 @@ type ServerInterface interface {
 	// SendAssistantMessage Run one conversation turn and stream its progress as Server-Sent Events.
 	// (POST /assistant/turns)
 	SendAssistantMessage(w http.ResponseWriter, r *http.Request)
-	// ListUsage The user's usage per provider and model today and over the last 30 days, with declared limits (ADR 019 U6).
+	// ListUsage The book's usage per provider and model today and over the last 30 days, with declared limits (ADR 019 U6).
 	// (GET /assistant/usage)
 	ListUsage(w http.ResponseWriter, r *http.Request)
-	// ListUsageDays The user's usage per day, provider and model over a range of at most 90 days.
+	// ListUsageDays The book's usage per day, provider and model over a range of at most 90 days.
 	// (GET /assistant/usage/days)
 	ListUsageDays(w http.ResponseWriter, r *http.Request, params ListUsageDaysParams)
 	// SetUsageLimit Declare the daily limits of a provider and model; absent quotas remove them.
 	// (PUT /assistant/usage/limits)
 	SetUsageLimit(w http.ResponseWriter, r *http.Request)
-	// ListUses Every declared use with its effective chain for the user.
+	// ListUses Every declared use with its effective chain for the book.
 	// (GET /assistant/uses)
 	ListUses(w http.ResponseWriter, r *http.Request)
-	// SetUseChain Replace the user's chain of a use; an empty list restores the default.
+	// SetUseChain Replace the book's chain of a use; an empty list restores the default.
 	// (PUT /assistant/uses/{use}/chain)
 	SetUseChain(w http.ResponseWriter, r *http.Request, use string)
 }
@@ -2204,10 +2204,10 @@ type StrictServerInterface interface {
 	// GetAssistantChat Whether the conversation can be used now, with the target it would reach and when to retry.
 	// (GET /assistant/chat)
 	GetAssistantChat(ctx context.Context, request GetAssistantChatRequestObject) (GetAssistantChatResponseObject, error)
-	// DeleteAssistantConversations Delete every conversation of the user with its messages and proposals.
+	// DeleteAssistantConversations Delete every conversation of the book with its messages and proposals.
 	// (DELETE /assistant/conversations)
 	DeleteAssistantConversations(ctx context.Context, request DeleteAssistantConversationsRequestObject) (DeleteAssistantConversationsResponseObject, error)
-	// ListAssistantConversations The user's conversations, most recently updated first.
+	// ListAssistantConversations The book's conversations, most recently updated first.
 	// (GET /assistant/conversations)
 	ListAssistantConversations(ctx context.Context, request ListAssistantConversationsRequestObject) (ListAssistantConversationsResponseObject, error)
 	// DeleteAssistantConversation Delete a conversation with its messages and proposals; 404 conversation_not_found.
@@ -2225,7 +2225,7 @@ type StrictServerInterface interface {
 	// RejectAssistantProposal Reject a pending proposal.
 	// (POST /assistant/proposals/{id}/reject)
 	RejectAssistantProposal(ctx context.Context, request RejectAssistantProposalRequestObject) (RejectAssistantProposalResponseObject, error)
-	// ListProviders The user's providers in creation order, then the instance providers; never a key.
+	// ListProviders The book's providers in creation order, then the instance providers; never a key.
 	// (GET /assistant/providers)
 	ListProviders(ctx context.Context, request ListProvidersRequestObject) (ListProvidersResponseObject, error)
 	// CreateProvider Store a provider; its key is sealed under EQUORI_SECRET_KEY (ADR 008).
@@ -2243,19 +2243,19 @@ type StrictServerInterface interface {
 	// SendAssistantMessage Run one conversation turn and stream its progress as Server-Sent Events.
 	// (POST /assistant/turns)
 	SendAssistantMessage(ctx context.Context, request SendAssistantMessageRequestObject) (SendAssistantMessageResponseObject, error)
-	// ListUsage The user's usage per provider and model today and over the last 30 days, with declared limits (ADR 019 U6).
+	// ListUsage The book's usage per provider and model today and over the last 30 days, with declared limits (ADR 019 U6).
 	// (GET /assistant/usage)
 	ListUsage(ctx context.Context, request ListUsageRequestObject) (ListUsageResponseObject, error)
-	// ListUsageDays The user's usage per day, provider and model over a range of at most 90 days.
+	// ListUsageDays The book's usage per day, provider and model over a range of at most 90 days.
 	// (GET /assistant/usage/days)
 	ListUsageDays(ctx context.Context, request ListUsageDaysRequestObject) (ListUsageDaysResponseObject, error)
 	// SetUsageLimit Declare the daily limits of a provider and model; absent quotas remove them.
 	// (PUT /assistant/usage/limits)
 	SetUsageLimit(ctx context.Context, request SetUsageLimitRequestObject) (SetUsageLimitResponseObject, error)
-	// ListUses Every declared use with its effective chain for the user.
+	// ListUses Every declared use with its effective chain for the book.
 	// (GET /assistant/uses)
 	ListUses(ctx context.Context, request ListUsesRequestObject) (ListUsesResponseObject, error)
-	// SetUseChain Replace the user's chain of a use; an empty list restores the default.
+	// SetUseChain Replace the book's chain of a use; an empty list restores the default.
 	// (PUT /assistant/uses/{use}/chain)
 	SetUseChain(ctx context.Context, request SetUseChainRequestObject) (SetUseChainResponseObject, error)
 }

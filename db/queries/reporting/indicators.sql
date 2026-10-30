@@ -7,7 +7,7 @@ WHERE
     books_id = @books_id;
 
 -- name: IndicatorFirstPosting :one
--- The earliest booked date of the user's postings that are not voided.
+-- The earliest booked date of the book's postings that are not voided.
 SELECT
     booked_on
 FROM
@@ -21,7 +21,7 @@ LIMIT
     1;
 
 -- name: IndicatorAccounts :many
--- Every account of the user; interest marks the system category interest and its descendants.
+-- Every account of the book; interest marks the system category interest and its descendants.
 WITH RECURSIVE
     interest AS (
         SELECT

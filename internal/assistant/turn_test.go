@@ -403,7 +403,7 @@ func TestTurnClientDisconnect(t *testing.T) {
 	}
 }
 
-// S136: another user's conversation is not found.
+// S136: another book's conversation is not found.
 func TestTurnOtherUserConversation(t *testing.T) {
 	t.Parallel()
 

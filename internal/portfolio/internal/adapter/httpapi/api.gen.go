@@ -317,10 +317,10 @@ type ServerInterface interface {
 	// ListIncomeEvents Investment income of a year by tax treatment (D1).
 	// (GET /income-events)
 	ListIncomeEvents(w http.ResponseWriter, r *http.Request, params ListIncomeEventsParams)
-	// ListInstrumentSubtypes Subtypes of an instrument type that the user's jurisdiction knows; none without a jurisdiction.
+	// ListInstrumentSubtypes Subtypes of an instrument type that the book's jurisdiction knows; none without a jurisdiction.
 	// (GET /instrument-subtypes)
 	ListInstrumentSubtypes(w http.ResponseWriter, r *http.Request, params ListInstrumentSubtypesParams)
-	// ListInvestmentIncomeTypes Income types the user's jurisdiction accepts.
+	// ListInvestmentIncomeTypes Income types the book's jurisdiction accepts.
 	// (GET /investment-income-types)
 	ListInvestmentIncomeTypes(w http.ResponseWriter, r *http.Request)
 	// ListPositions Positions of the security accounts at the end of a date, valued with stored prices.
@@ -1295,10 +1295,10 @@ type StrictServerInterface interface {
 	// ListIncomeEvents Investment income of a year by tax treatment (D1).
 	// (GET /income-events)
 	ListIncomeEvents(ctx context.Context, request ListIncomeEventsRequestObject) (ListIncomeEventsResponseObject, error)
-	// ListInstrumentSubtypes Subtypes of an instrument type that the user's jurisdiction knows; none without a jurisdiction.
+	// ListInstrumentSubtypes Subtypes of an instrument type that the book's jurisdiction knows; none without a jurisdiction.
 	// (GET /instrument-subtypes)
 	ListInstrumentSubtypes(ctx context.Context, request ListInstrumentSubtypesRequestObject) (ListInstrumentSubtypesResponseObject, error)
-	// ListInvestmentIncomeTypes Income types the user's jurisdiction accepts.
+	// ListInvestmentIncomeTypes Income types the book's jurisdiction accepts.
 	// (GET /investment-income-types)
 	ListInvestmentIncomeTypes(ctx context.Context, request ListInvestmentIncomeTypesRequestObject) (ListInvestmentIncomeTypesResponseObject, error)
 	// ListPositions Positions of the security accounts at the end of a date, valued with stored prices.

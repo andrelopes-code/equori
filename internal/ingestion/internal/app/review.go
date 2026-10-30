@@ -50,7 +50,7 @@ func (s *Service) Records(ctx context.Context, booksID int64, batchID uuid.UUID,
 
 // Resolve settles a record that needs review with the owner's choice (chapter 4, 4.3.3,
 // ResolveMatch) and moves it between the batch counts.
-// Record returns one of the user's external records.
+// Record returns one of the book's external records.
 func (s *Service) Record(ctx context.Context, booksID int64, id uuid.UUID) (domain.ExternalRecord, error) {
 	rec, err := s.repo.Record(ctx, booksID, id)
 	if err != nil {

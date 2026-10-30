@@ -12,7 +12,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/portfolio/internal/app"
 )
 
-// AccountNames returns the names of the user's accounts by ID.
+// AccountNames returns the names of the book's accounts by ID.
 type AccountNames func(ctx context.Context, booksID int64) (map[uuid.UUID]string, error)
 
 func Tools(svc *app.Service, names AccountNames, today func() time.Time) []tool.Tool {

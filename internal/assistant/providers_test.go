@@ -15,7 +15,7 @@ import (
 )
 
 // fakes hands the module one scripted provider per key, so a test reaches the provider a
-// user configured.
+// book configured.
 type fakes struct {
 	mu     sync.Mutex
 	byKey  map[string]*fake
@@ -186,7 +186,7 @@ func TestUpdateProvider(t *testing.T) {
 	h.ExpectProblem(h.Do(http.MethodPatch, path, map[string]any{"name": " "}), http.StatusUnprocessableEntity, "validation_failed", "name")
 }
 
-// A4: another user reaches none of the owner's providers.
+// A4: another book reaches none of the owner's providers.
 func TestProviderIsolationA4(t *testing.T) {
 	t.Parallel()
 	h := harness(t, newFakes())
@@ -210,7 +210,7 @@ func TestProviderIsolationA4(t *testing.T) {
 	if r := h.Call(other, http.MethodGet, "/api/v1/assistant/providers", nil); r.Status != http.StatusOK {
 		t.Fatalf("list = %d", r.Status)
 	} else if r.Decode(t, &list); len(list.Items) != 1 || !list.Items[0].Instance {
-		t.Fatalf("other user's providers = %+v", list.Items)
+		t.Fatalf("other book's providers = %+v", list.Items)
 	}
 }
 

@@ -38,7 +38,7 @@ func addExcludedFromLiquidity(tables []ArchiveTable) ([]ArchiveTable, error) {
 }
 
 // addBudgetReference moves a version 2 archive to version 3, which adds planning_budget_reference
-// (budget plan amendment A131). Version 2 has no rows for it, and a user without a stored choice
+// (budget plan amendment A131). Version 2 has no rows for it, and a book without a stored choice
 // reads the default reference, so every table carries over unchanged.
 func addBudgetReference(tables []ArchiveTable) ([]ArchiveTable, error) {
 	out := make([]ArchiveTable, len(tables))

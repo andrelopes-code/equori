@@ -69,7 +69,7 @@ func NewResolver(svc *app.Service, instance []llm.Provider, build Factory, log *
 	return &Resolver{svc: svc, instance: m, build: build, log: log}
 }
 
-// Record adds an attempt to the user's usage; a call without a user is not recorded, and a
+// Record adds an attempt to the book's usage; a call without a book is not recorded, and a
 // failed write is logged without failing the call (ADR 019 U1, U2).
 func (r *Resolver) Record(ctx context.Context, a llm.Attempt) {
 	booksID, ok := auth.BooksID(ctx)

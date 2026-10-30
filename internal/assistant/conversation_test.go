@@ -76,7 +76,7 @@ func TestConversationListAndDelete(t *testing.T) {
 	h.ExpectProblem(h.Do(http.MethodDelete, "/api/v1/assistant/conversations/"+first, nil), http.StatusNotFound, "conversation_not_found", "")
 }
 
-// S141: deleting all conversations leaves another user's untouched.
+// S141: deleting all conversations leaves another book's untouched.
 func TestConversationDeleteAll(t *testing.T) {
 	t.Parallel()
 	h, tick := conversationHarness(t, 2)

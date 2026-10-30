@@ -29,13 +29,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Report whether the first user is still to be created (ADR 003, amendment of 2026-10-27). */
+        /** Report whether the first member is still to be created (ADR 003, amendment of 2026-10-27). */
         get: operations["getSetup"];
         put?: never;
         /**
-         * Create the first user, an admin, with the setup token, and start a session.
-         * @description The token is the one serve logs and writes to setup.url while no user exists. A token
-         *     that differs is 403 setup_token_invalid; once a user exists, 409 setup_complete. Without
+         * Create the first member, an admin, with the setup token, and start a session.
+         * @description The token is the one serve logs and writes to setup.url while no member exists. A token
+         *     that differs is 403 setup_token_invalid; once a member exists, 409 setup_complete. Without
          *     base_currency the default of the region applies; a region without one is 422 on
          *     base_currency.
          */
@@ -53,14 +53,14 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Return the authenticated user. */
+        /** Return the authenticated member. */
         get: operations["getCurrentUser"];
         put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
-        /** Change the language or region of the authenticated user. */
+        /** Change the language or region of the authenticated member. */
         patch: operations["updateCurrentUser"];
         trace?: never;
     };
@@ -71,7 +71,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The user's personal access tokens for MCP, newest first, without their text. */
+        /** The book's personal access tokens for MCP, newest first, without their text. */
         get: operations["listAccessTokens"];
         put?: never;
         /**
@@ -601,7 +601,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Income types the user's jurisdiction accepts. */
+        /** Income types the book's jurisdiction accepts. */
         get: operations["listInvestmentIncomeTypes"];
         put?: never;
         post?: never;
@@ -624,7 +624,7 @@ export interface paths {
          *     outside it; income, expense and tax postings are performance. Opening is valued on the day before from, closing
          *     on to, flows on their dates, all in value_in (the base currency by default). annual_bp is the internal rate of
          *     return, days over 365, rounded half to even to basis points. Without account_id the tree is every brokerage account
-         *     of the user with its sub-accounts, and a transfer between two of them is not a flow. 422 return_undefined when
+         *     of the book with its sub-accounts, and a transfer between two of them is not a flow. 422 return_undefined when
          *     no money was invested.
          */
         get: operations["getReturn"];
@@ -687,7 +687,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Subtypes of an instrument type that the user's jurisdiction knows; none without a jurisdiction. */
+        /** Subtypes of an instrument type that the book's jurisdiction knows; none without a jurisdiction. */
         get: operations["listInstrumentSubtypes"];
         put?: never;
         post?: never;
@@ -905,7 +905,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The user's export and its status; 404 when none was requested. */
+        /** The book's export and its status; 404 when none was requested. */
         get: operations["getExport"];
         put?: never;
         post?: never;
@@ -946,8 +946,8 @@ export interface paths {
          * @description The request body limit of this route is 257 MiB. 422 archive_invalid for an archive that does not read,
          *     a checksum that differs, a table the instance does not export or an archive_version below 1; 422
          *     archive_too_new, with archive_version and instance_version, for an archive of a later version (ADR 021);
-         *     an archive of an earlier version is migrated before any write; 409 import_not_empty when the user holds a transaction or an account without a system
-         *     role; 409 import_conflict when an identifier belongs to another user of the instance. A refused import
+         *     an archive of an earlier version is migrated before any write; 409 import_not_empty when the book holds a transaction or an account without a system
+         *     role; 409 import_conflict when an identifier belongs to another book of the instance. A refused import
          *     writes nothing.
          */
         post: operations["importArchive"];
@@ -1515,7 +1515,7 @@ export interface paths {
          * Name a category for existing uncategorized transactions (ADR 014 L1a).
          * @description Each transaction is asked as a capture line of its class with its description, under the use capture.suggest.
          *     Nothing is recorded; categorizeTransactions records an accepted suggestion. 404 not_found when an id is not
-         *     one of the user's transactions; 422 transaction_not_uncategorized when one is not an uncategorized expense or
+         *     one of the book's transactions; 422 transaction_not_uncategorized when one is not an uncategorized expense or
          *     income.
          */
         post: operations["suggestTransactionCategories"];
@@ -1549,7 +1549,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The user's providers in creation order, then the instance providers; never a key. */
+        /** The book's providers in creation order, then the instance providers; never a key. */
         get: operations["listProviders"];
         put?: never;
         /**
@@ -1610,7 +1610,7 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * The user's usage per provider and model today and over the last 30 days, with declared limits (ADR 019 U6).
+         * The book's usage per provider and model today and over the last 30 days, with declared limits (ADR 019 U6).
          * @description Today is the instance's date; a provider resets its quota on its own schedule.
          */
         get: operations["listUsage"];
@@ -1630,7 +1630,7 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * The user's usage per day, provider and model over a range of at most 90 days.
+         * The book's usage per day, provider and model over a range of at most 90 days.
          * @description Both ends are included and the figures sum the uses. A day without use has no row.
          */
         get: operations["listUsageDays"];
@@ -1708,11 +1708,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The user's conversations, most recently updated first. */
+        /** The book's conversations, most recently updated first. */
         get: operations["listAssistantConversations"];
         put?: never;
         post?: never;
-        /** Delete every conversation of the user with its messages and proposals. */
+        /** Delete every conversation of the book with its messages and proposals. */
         delete: operations["deleteAssistantConversations"];
         options?: never;
         head?: never;
@@ -1778,7 +1778,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Every declared use with its effective chain for the user. */
+        /** Every declared use with its effective chain for the book. */
         get: operations["listUses"];
         put?: never;
         post?: never;
@@ -1797,7 +1797,7 @@ export interface paths {
         };
         get?: never;
         /**
-         * Replace the user's chain of a use; an empty list restores the default.
+         * Replace the book's chain of a use; an empty list restores the default.
          * @description 422 capability_missing when a model lacks a capability the use needs.
          */
         put: operations["setUseChain"];
@@ -3192,7 +3192,7 @@ export interface components {
             base_url: string;
             has_key: boolean;
             notice: components["schemas"]["Notice"];
-            /** @description Configured through the environment for every user; read-only. */
+            /** @description Configured through the environment for every book; read-only. */
             instance: boolean;
         };
         ProviderList: {
@@ -4406,7 +4406,7 @@ export interface components {
             /** @enum {string} */
             kind: "price" | "index" | "expectation";
             enabled: boolean;
-            /** @description Suggested for the calling user's region (ADR 025 F3); a suggestion enables nothing. */
+            /** @description Suggested for the calling book's region (ADR 025 F3); a suggestion enables nothing. */
             suggested: boolean;
             /**
              * Format: date
@@ -4576,7 +4576,7 @@ export interface components {
             code?: string;
             identifier?: components["schemas"]["InstitutionIdentifier"];
         };
-        /** @description Identifier of the institution in a scheme, unique per user and scheme (ADR 013). */
+        /** @description Identifier of the institution in a scheme, unique per book and scheme (ADR 013). */
         InstitutionIdentifier: {
             scheme: string;
             identifier: string;
@@ -5711,7 +5711,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description First user created and signed in. */
+            /** @description First member created and signed in. */
             201: {
                 headers: {
                     "Set-Cookie"?: string;
@@ -5738,7 +5738,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Authenticated user. */
+            /** @description Authenticated member. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -5763,7 +5763,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Updated user. */
+            /** @description Updated member. */
             200: {
                 headers: {
                     [name: string]: unknown;

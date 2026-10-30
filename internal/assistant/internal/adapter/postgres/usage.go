@@ -28,7 +28,7 @@ func (r *Repository) AddUsage(ctx context.Context, e domain.UsageEntry) error {
 	})
 }
 
-// UsageSince sums the user's usage per provider and model from since to today, both inclusive.
+// UsageSince sums the book's usage per provider and model from since to today, both inclusive.
 func (r *Repository) UsageSince(ctx context.Context, booksID int64, today, since time.Time) ([]domain.UsageSummary, error) {
 	rows, err := r.q.UsageSince(ctx, UsageSinceParams{BooksID: booksID, Today: today, Since: since})
 	if err != nil {

@@ -42,7 +42,7 @@ type Ledger interface {
 	Balances(ctx context.Context, booksID int64, date time.Time) ([]AccountBalance, error)
 }
 
-// Jurisdictions gives the tax jurisdiction of a user; a nil result means none applies.
+// Jurisdictions gives the tax jurisdiction of a book; a nil result means none applies.
 type Jurisdictions interface {
 	For(ctx context.Context, booksID int64) (domain.Jurisdiction, error)
 }
@@ -118,7 +118,7 @@ func (s *Service) HandleTransaction(ctx context.Context, booksID int64, accountI
 	return nil
 }
 
-// RebuildAll rebuilds every brokerage of every user that has one or has derived rows (equori portfolio rebuild).
+// RebuildAll rebuilds every brokerage of every book that has one or has derived rows (equori portfolio rebuild).
 func (s *Service) RebuildAll(ctx context.Context) error {
 	users, err := s.repo.BooksToRebuild(ctx)
 	if err != nil {
@@ -134,7 +134,7 @@ func (s *Service) RebuildAll(ctx context.Context) error {
 	return nil
 }
 
-// RebuildBooks recomputes the derived rows of every brokerage account of the user.
+// RebuildBooks recomputes the derived rows of every brokerage account of the book.
 func (s *Service) RebuildBooks(ctx context.Context, booksID int64) error {
 	accounts, err := s.ledger.AccountFacts(ctx, booksID)
 	if err != nil {
@@ -151,7 +151,7 @@ func (s *Service) RebuildBooks(ctx context.Context, booksID int64) error {
 	return s.HandleTransaction(ctx, booksID, ids)
 }
 
-// IncomeTypes returns the universal income types plus those of the user's jurisdiction, sorted.
+// IncomeTypes returns the universal income types plus those of the book's jurisdiction, sorted.
 func (s *Service) IncomeTypes(ctx context.Context, booksID int64) ([]string, error) {
 	j, err := s.juris.For(ctx, booksID)
 	if err != nil {
@@ -168,7 +168,7 @@ func (s *Service) IncomeTypes(ctx context.Context, booksID int64) ([]string, err
 	return slices.Compact(types), nil
 }
 
-// Subtypes returns the subtypes of an instrument type that the user's jurisdiction knows; none
+// Subtypes returns the subtypes of an instrument type that the book's jurisdiction knows; none
 // when the user has no jurisdiction.
 func (s *Service) Subtypes(ctx context.Context, booksID int64, instrumentType string) ([]string, error) {
 	j, err := s.juris.For(ctx, booksID)
@@ -271,7 +271,7 @@ type Result struct {
 	CostAmount, Proceeds, ResultAmount money.Money
 }
 
-// TaxYear returns the tax year that starts in year under the user's jurisdiction: from inclusive,
+// TaxYear returns the tax year that starts in year under the book's jurisdiction: from inclusive,
 // to exclusive.
 func (s *Service) TaxYear(ctx context.Context, booksID int64, year int) (time.Time, time.Time, error) {
 	j, err := s.juris.For(ctx, booksID)

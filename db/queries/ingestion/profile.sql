@@ -8,7 +8,7 @@ WHERE
     AND account_id = $2;
 
 -- name: UpsertProfile :one
--- The WHERE keeps another user's profile out of reach: no row comes back for it.
+-- The WHERE keeps another book's profile out of reach: no row comes back for it.
 INSERT INTO
     ingestion_csv_profile (
         books_id,

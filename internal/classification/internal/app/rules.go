@@ -80,7 +80,7 @@ func (s *Service) ReorderRules(ctx context.Context, booksID int64, ids []uuid.UU
 
 func compareIDs(a, b uuid.UUID) int { return slices.Compare(a[:], b[:]) }
 
-// checkRule validates r and its references to the user's categories, payees and accounts.
+// checkRule validates r and its references to the book's categories, payees and accounts.
 func (s *Service) checkRule(ctx context.Context, booksID int64, r domain.Rule) (domain.Rule, error) {
 	r, err := domain.NewRule(r)
 	if err != nil {

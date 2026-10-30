@@ -7,7 +7,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/tool"
 )
 
-// Tool calls a tool of App.Tools as the harness client's user. A successful output must
+// Tool calls a tool of App.Tools as the harness client's member. A successful output must
 // match the tool's output schema.
 func (h *Harness) Tool(name string, args any) tool.Result {
 	h.t.Helper()

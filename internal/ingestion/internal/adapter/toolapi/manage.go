@@ -302,7 +302,7 @@ func previewMapping(ctx context.Context, svc *app.Service, names AccountNames, b
 
 	to, ok := named[a.account]
 	if !ok {
-		return tool.Preview{}, &domain.FieldError{Field: "account_id", Message: "must be a balance account of the user"}
+		return tool.Preview{}, &domain.FieldError{Field: "account_id", Message: "must be a balance account of the book"}
 	}
 
 	change := tool.Change{Field: "account", After: tool.TextValue(to)}

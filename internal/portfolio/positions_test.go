@@ -55,7 +55,7 @@ func TestPositionsFollowLedgerChanges(t *testing.T) {
 	r.Decode(t, &out)
 
 	if r.Status != http.StatusOK || len(out.Items) != 0 {
-		t.Fatalf("another user's positions = %d %+v", r.Status, out.Items)
+		t.Fatalf("another book's positions = %d %+v", r.Status, out.Items)
 	}
 
 	f.h.ExpectProblem(f.h.Do(http.MethodGet, "/api/v1/realized-results?year=1800", nil), http.StatusBadRequest, "invalid_request", "")

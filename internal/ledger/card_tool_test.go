@@ -13,7 +13,7 @@ type cardOut struct {
 	ID        string `json:"id"`
 }
 
-// otherUserCardPurchase creates a card purchase owned by a second user and returns the purchase and its statement.
+// otherUserCardPurchase creates a card purchase owned by a second book and returns the purchase and its statement.
 func otherUserCardPurchase(t *testing.T, h *apitest.Harness) (card, purchase, statement string) {
 	t.Helper()
 

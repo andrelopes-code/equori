@@ -64,7 +64,7 @@ func TestUsage(t *testing.T) {
 	}
 
 	if other, _ := repo.UsageSince(ctx, b, today, today); len(other) != 1 || !other[0].CoolingUntil.IsZero() {
-		t.Fatalf("other user's summary = %+v", other)
+		t.Fatalf("other book's summary = %+v", other)
 	}
 }
 

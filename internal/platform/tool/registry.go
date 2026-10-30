@@ -83,8 +83,8 @@ func (r *Registry) Select(names ...string) (Set, error) {
 	return Set{r: r, names: slices.Clone(names)}, nil
 }
 
-// Call runs a tool for the user in ctx. It returns a Go error only for an unknown tool, a
-// context without a user and a canceled context; every other failure is a Result with IsError.
+// Call runs a tool for the book in ctx. It returns a Go error only for an unknown tool, a
+// context without a book and a canceled context; every other failure is a Result with IsError.
 func (r *Registry) Call(ctx context.Context, name string, args json.RawMessage) (Result, error) {
 	e, ok := r.entries[name]
 	if !ok {

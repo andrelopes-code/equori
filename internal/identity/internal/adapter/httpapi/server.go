@@ -50,7 +50,7 @@ func (s *Server) Register(mux *http.ServeMux) {
 type memberKey struct{}
 
 // RequireSession rejects every /api/ request without a valid session, except login and the
-// first-user setup.
+// first member setup.
 // Deny by default: a new endpoint is protected without opting in.
 func (s *Server) RequireSession(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -85,7 +85,7 @@ func isLogin(r *http.Request) bool {
 	return r.Method == http.MethodPost && r.URL.Path == BaseURL+"/session"
 }
 
-// isSetup: the setup token, not a session, guards the first-user setup (W-U8).
+// isSetup: the setup token, not a session, guards the first member setup (W-U8).
 func isSetup(r *http.Request) bool {
 	return (r.Method == http.MethodGet || r.Method == http.MethodPost) && r.URL.Path == BaseURL+"/setup"
 }
@@ -234,9 +234,9 @@ func ToProblem(err error) (problem.Details, bool) {
 	case errors.Is(err, app.ErrSetupTokenInvalid):
 		return problem.New(http.StatusForbidden, "setup_token_invalid", "the setup token is not the one this instance issued"), true
 	case errors.Is(err, app.ErrSetupComplete):
-		return problem.New(http.StatusConflict, "setup_complete", "the first user exists; sign in instead"), true
+		return problem.New(http.StatusConflict, "setup_complete", "the first member exists; sign in instead"), true
 	case errors.Is(err, app.ErrAccessTokenNotFound):
-		return problem.New(http.StatusNotFound, "access_token_not_found", "no access token of the user has this ID"), true
+		return problem.New(http.StatusNotFound, "access_token_not_found", "no access token of the member has this ID"), true
 	case errors.Is(err, app.ErrBusy):
 		return problem.New(http.StatusServiceUnavailable, "server_busy", "server is busy; retry shortly"), true
 	}

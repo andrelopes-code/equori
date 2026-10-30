@@ -1,5 +1,5 @@
 // Package apitest runs the application of internal/server against a test
-// database and drives it over HTTP with a logged-in user.
+// database and drives it over HTTP with a logged-in member.
 package apitest
 
 import (
@@ -103,7 +103,7 @@ func LLMWait(f func(context.Context, time.Time) error) Option {
 	return func(c *server.Config) { c.LLMWait = f }
 }
 
-// LLMFactory builds the providers users configure, in place of the real adapters.
+// LLMFactory builds the providers members configure, in place of the real adapters.
 func LLMFactory(f func(api, baseURL, key string) llm.Provider) Option {
 	return func(c *server.Config) { c.LLMFactory = f }
 }
@@ -168,7 +168,7 @@ func New(t testing.TB, opts ...Option) *Harness {
 	return h
 }
 
-// Empty is New without the owner: the instance has no user, as before the first-user setup.
+// Empty is New without the owner: the instance has no member, as before the first-user setup.
 func Empty(t testing.TB, opts ...Option) *Harness {
 	t.Helper()
 
@@ -231,19 +231,19 @@ func (h *Harness) Logs() string { return h.logs.String() }
 // T returns the test the harness reports to.
 func (h *Harness) T() testing.TB { return h.t }
 
-// Login is LoginAs for a Brazilian user with BRL as base currency.
+// Login is LoginAs for a Brazilian member with BRL as base currency.
 func (h *Harness) Login(email string) *http.Client {
 	h.t.Helper()
 	return h.LoginAs(email, locale.Locale{Language: "pt", Region: "BR"}, "BRL")
 }
 
-// LoginAs creates the user, runs the outbox so the ledger provisions it, and returns a client with its session.
+// LoginAs creates the member, runs the outbox so the ledger provisions it, and returns a client with its session.
 func (h *Harness) LoginAs(email string, l locale.Locale, base money.Currency) *http.Client {
 	h.t.Helper()
 	return h.login(email, identity.RoleAdmin, l, base)
 }
 
-// LoginMember is Login for a user with the role member.
+// LoginMember is Login for a member with the role member.
 func (h *Harness) LoginMember(email string) *http.Client {
 	h.t.Helper()
 	return h.login(email, identity.RoleMember, locale.Locale{Language: "pt", Region: "BR"}, "BRL")

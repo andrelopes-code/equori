@@ -65,7 +65,7 @@ func TestS126ReturnOfBrokerage(t *testing.T) {
 	}
 }
 
-// The return without account_id covers every brokerage tree of the user as one tree.
+// The return without account_id covers every brokerage tree of the book as one tree.
 func TestReturnOfTheWholePortfolio(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -89,7 +89,7 @@ func TestReturnOfTheWholePortfolio(t *testing.T) {
 		t.Fatalf("portfolio return = %+v", got)
 	}
 
-	// Another user has no brokerage: no money was invested.
+	// Another book has no brokerage: no money was invested.
 	stranger := f.h.Login("stranger@example.com")
 	f.h.ExpectProblem(f.h.Call(stranger, http.MethodGet, "/api/v1/reports/return?from=2025-11-01&to=2026-10-31", nil), http.StatusUnprocessableEntity, "return_undefined", "")
 }

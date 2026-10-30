@@ -255,7 +255,7 @@ func TestScheduleOfAnotherUser(t *testing.T) {
 	r.Decode(t, &out)
 
 	if r.Status != http.StatusOK || len(out.Items) != 0 {
-		t.Fatalf("other user's occurrences = %d %+v", r.Status, out.Items)
+		t.Fatalf("other book's occurrences = %d %+v", r.Status, out.Items)
 	}
 
 	r = f.h.Call(other, http.MethodPost, "/api/v1/schedules", map[string]any{

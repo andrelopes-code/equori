@@ -108,7 +108,7 @@ func TestGoalErrors(t *testing.T) {
 	r.Decode(t, &list)
 
 	if r.Status != http.StatusOK || len(list.Items) != 0 {
-		t.Errorf("other user's goals = %d %+v", r.Status, list.Items)
+		t.Errorf("other book's goals = %d %+v", r.Status, list.Items)
 	}
 }
 
@@ -157,7 +157,7 @@ func TestGoalUpdateErrors(t *testing.T) {
 
 	other := f.h.Login("other@example.com")
 	if r := f.h.Call(other, http.MethodPatch, "/api/v1/goals/"+first.ID, map[string]any{"name": "Mine"}); r.Status != http.StatusNotFound {
-		t.Errorf("other user's update = %d", r.Status)
+		t.Errorf("other book's update = %d", r.Status)
 	}
 }
 
@@ -169,7 +169,7 @@ func TestS120DeleteGoal(t *testing.T) {
 
 	other := f.h.Login("other@example.com")
 	if r := f.h.Call(other, http.MethodDelete, "/api/v1/goals/"+created.ID, nil); r.Status != http.StatusNotFound {
-		t.Fatalf("other user's delete = %d", r.Status)
+		t.Fatalf("other book's delete = %d", r.Status)
 	}
 
 	f.h.MustDo(http.MethodDelete, "/api/v1/goals/"+created.ID, nil, http.StatusNoContent, nil)

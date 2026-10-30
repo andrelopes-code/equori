@@ -41,7 +41,7 @@ type listPayeesAndTagsOut struct {
 func listPayeesAndTags(svc *app.Service) tool.Tool {
 	return tool.New(tool.Spec{
 		Name: "list_payees_and_tags",
-		Description: "Lists the user's payees, the tags in use or the institutions, by name, with IDs. " +
+		Description: "Lists the book's payees, the tags in use or the institutions, by name, with IDs. " +
 			"Use it to find the payee_id a write takes or to check whether a payee, tag or institution exists. " +
 			"Do not use it for transactions of a payee: search_transactions with query does that.",
 		Effect: tool.ReadOnly,

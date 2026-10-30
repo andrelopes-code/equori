@@ -34,7 +34,7 @@ type IndicatorAccount struct {
 
 type IndicatorRepository interface {
 	BaseCurrency(ctx context.Context, booksID int64) (string, error)
-	// FirstPosting is the earliest booked date of the user's postings that are not voided; ok is false without one.
+	// FirstPosting is the earliest booked date of the book's postings that are not voided; ok is false without one.
 	FirstPosting(ctx context.Context, booksID int64) (first time.Time, ok bool, err error)
 	IndicatorAccounts(ctx context.Context, booksID int64) ([]IndicatorAccount, error)
 	// OffCardMonthTotals is OffCardTotals per month, keyed by the first day of the month.

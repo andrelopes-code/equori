@@ -13,7 +13,7 @@ type SyncFailure struct {
 	Err          error
 }
 
-// Tick syncs every user's connections whose item has data newer than their last sync (P6
+// Tick syncs every book's connections whose item has data newer than their last sync (P6
 // amendment A43). A failing connection does not stop the others.
 func (s *Service) Tick(ctx context.Context) ([]SyncFailure, error) {
 	if err := s.available(); err != nil {

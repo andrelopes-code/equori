@@ -36,7 +36,7 @@ func TestProposal(t *testing.T) {
 
 	p := newProposal(t, repo, a, c.ID)
 	if got, ok, err := repo.ClaimProposal(ctx, b, p.ID, t0); err != nil || ok || got.ID != uuid.Nil {
-		t.Fatalf("other user's claim = %+v, %v, %v", got, ok, err)
+		t.Fatalf("other book's claim = %+v, %v, %v", got, ok, err)
 	}
 
 	if got, ok, err := repo.ClaimProposal(ctx, a, p.ID, t0.Add(time.Minute)); err != nil || !ok || got.Status != domain.ProposalExecuting {
@@ -103,7 +103,7 @@ func TestProposal(t *testing.T) {
 	}
 
 	if _, err := repo.Proposal(ctx, b, p.ID); err == nil {
-		t.Fatal("other user read the proposal")
+		t.Fatal("other book read the proposal")
 	}
 
 	if err := repo.DeleteConversation(ctx, a, c.ID); err != nil {

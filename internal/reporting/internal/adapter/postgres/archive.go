@@ -33,7 +33,7 @@ var notExported = []string{
 	"reporting_account_day", "reporting_export",
 }
 
-// sharedTables hold rows of every user; the archive carries all of them.
+// sharedTables hold rows of every book; the archive carries all of them.
 var sharedTables = []string{
 	"marketdata_holiday", "marketdata_index_rate", "marketdata_instrument", "marketdata_fixed_income_terms", "marketdata_price",
 }
@@ -42,7 +42,7 @@ var sharedTables = []string{
 var rowExpressions = map[string]string{
 	// The bytes travel as a file of their own.
 	"ledger_attachment_blob": `to_jsonb(t) - 'books_id' - 'content'`,
-	// The credential is sealed for the source instance and user (ADR 008); it never travels.
+	// The credential is sealed for the source instance and book (ADR 008); it never travels.
 	"ingestion_integration": `(to_jsonb(t) - 'books_id') || jsonb_build_object('credential_ciphertext', ''::bytea)`,
 }
 

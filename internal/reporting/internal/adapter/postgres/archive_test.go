@@ -32,7 +32,7 @@ func TestEveryTableIsClassified(t *testing.T) {
 	}
 
 	// marketdata_feed holds the instance's feed settings (ADR 025 F1) and marketdata_index_expectation
-	// the latest survey a feed fetches again (ADR 026 E3); neither holds a user's rows.
+	// the latest survey a feed fetches again (ADR 026 E3); neither holds a book's rows.
 	other := []string{"goose_db_version", "identity_books", "identity_member", "ledger_transaction_version", "marketdata_feed",
 		"marketdata_index_expectation", "outbox_delivery"}
 	for _, table := range all {

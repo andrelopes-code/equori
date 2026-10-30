@@ -12,7 +12,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/llm"
 )
 
-// S138: a request limit stops the target of the user who declared it and nobody else.
+// S138: a request limit stops the target of the book that declared it and nobody else.
 func TestDailyLimitS138(t *testing.T) {
 	t.Parallel()
 
@@ -61,7 +61,7 @@ func TestDailyLimitS138(t *testing.T) {
 
 	for range 2 {
 		if _, err := client.Generate(auth.WithBooksID(t.Context(), otherID), req); err != nil {
-			t.Fatalf("other user's call: %v", err)
+			t.Fatalf("other book's call: %v", err)
 		}
 	}
 }

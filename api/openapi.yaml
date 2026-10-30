@@ -9,7 +9,7 @@ servers:
   - url: /api/v1
 tags:
   - name: identity
-    description: Users and sessions.
+    description: Members and sessions.
   - name: ledger
     description: Accounts, transactions and balances.
   - name: reporting
@@ -27,7 +27,7 @@ tags:
   - name: capture
     description: Transaction drafts read from text the owner writes.
   - name: assistant
-    description: Language model providers of each user and the chain of each use (ADR 019).
+    description: Language model providers of each book and the chain of each use (ADR 019).
 paths:
   /session:
     post:
@@ -77,7 +77,7 @@ paths:
     get:
       tags: [identity]
       operationId: getSetup
-      summary: Report whether the first user is still to be created (ADR 003, amendment of 2026-10-27).
+      summary: Report whether the first member is still to be created (ADR 003, amendment of 2026-10-27).
       security: []
       responses:
         "200":
@@ -89,10 +89,10 @@ paths:
     post:
       tags: [identity]
       operationId: completeSetup
-      summary: Create the first user, an admin, with the setup token, and start a session.
+      summary: Create the first member, an admin, with the setup token, and start a session.
       description: |
-        The token is the one serve logs and writes to setup.url while no user exists. A token
-        that differs is 403 setup_token_invalid; once a user exists, 409 setup_complete. Without
+        The token is the one serve logs and writes to setup.url while no member exists. A token
+        that differs is 403 setup_token_invalid; once a member exists, 409 setup_complete. Without
         base_currency the default of the region applies; a region without one is 422 on
         base_currency.
       security: []
@@ -104,7 +104,7 @@ paths:
               $ref: "#/components/schemas/SetupInput"
       responses:
         "201":
-          description: First user created and signed in.
+          description: First member created and signed in.
           headers:
             Set-Cookie:
               schema:
@@ -129,10 +129,10 @@ paths:
     get:
       tags: [identity]
       operationId: getCurrentUser
-      summary: Return the authenticated user.
+      summary: Return the authenticated member.
       responses:
         "200":
-          description: Authenticated user.
+          description: Authenticated member.
           content:
             application/json:
               schema:
@@ -142,7 +142,7 @@ paths:
     patch:
       tags: [identity]
       operationId: updateCurrentUser
-      summary: Change the language or region of the authenticated user.
+      summary: Change the language or region of the authenticated member.
       requestBody:
         required: true
         content:
@@ -151,7 +151,7 @@ paths:
               $ref: "#/components/schemas/UpdateUserInput"
       responses:
         "200":
-          description: Updated user.
+          description: Updated member.
           content:
             application/json:
               schema:
@@ -164,7 +164,7 @@ paths:
     get:
       tags: [identity]
       operationId: listAccessTokens
-      summary: The user's personal access tokens for MCP, newest first, without their text.
+      summary: The book's personal access tokens for MCP, newest first, without their text.
       responses:
         "200":
           description: OK.
@@ -1080,7 +1080,7 @@ paths:
     get:
       tags: [portfolio]
       operationId: listInvestmentIncomeTypes
-      summary: Income types the user's jurisdiction accepts.
+      summary: Income types the book's jurisdiction accepts.
       responses:
         "200":
           description: OK.
@@ -1100,7 +1100,7 @@ paths:
         outside it; income, expense and tax postings are performance. Opening is valued on the day before from, closing
         on to, flows on their dates, all in value_in (the base currency by default). annual_bp is the internal rate of
         return, days over 365, rounded half to even to basis points. Without account_id the tree is every brokerage account
-        of the user with its sub-accounts, and a transfer between two of them is not a flow. 422 return_undefined when
+        of the book with its sub-accounts, and a transfer between two of them is not a flow. 422 return_undefined when
         no money was invested.
       parameters:
         - name: account_id
@@ -1221,7 +1221,7 @@ paths:
     get:
       tags: [portfolio]
       operationId: listInstrumentSubtypes
-      summary: Subtypes of an instrument type that the user's jurisdiction knows; none without a jurisdiction.
+      summary: Subtypes of an instrument type that the book's jurisdiction knows; none without a jurisdiction.
       parameters:
         - name: type
           in: query
@@ -1523,7 +1523,7 @@ paths:
     get:
       tags: [reporting]
       operationId: getExport
-      summary: The user's export and its status; 404 when none was requested.
+      summary: The book's export and its status; 404 when none was requested.
       responses:
         "200":
           description: OK.
@@ -1567,8 +1567,8 @@ paths:
         The request body limit of this route is 257 MiB. 422 archive_invalid for an archive that does not read,
         a checksum that differs, a table the instance does not export or an archive_version below 1; 422
         archive_too_new, with archive_version and instance_version, for an archive of a later version (ADR 021);
-        an archive of an earlier version is migrated before any write; 409 import_not_empty when the user holds a transaction or an account without a system
-        role; 409 import_conflict when an identifier belongs to another user of the instance. A refused import
+        an archive of an earlier version is migrated before any write; 409 import_not_empty when the book holds a transaction or an account without a system
+        role; 409 import_conflict when an identifier belongs to another book of the instance. A refused import
         writes nothing.
       requestBody:
         required: true
@@ -2579,7 +2579,7 @@ paths:
       description: |
         Each transaction is asked as a capture line of its class with its description, under the use capture.suggest.
         Nothing is recorded; categorizeTransactions records an accepted suggestion. 404 not_found when an id is not
-        one of the user's transactions; 422 transaction_not_uncategorized when one is not an uncategorized expense or
+        one of the book's transactions; 422 transaction_not_uncategorized when one is not an uncategorized expense or
         income.
       requestBody:
         required: true
@@ -2620,7 +2620,7 @@ paths:
     get:
       tags: [assistant]
       operationId: listProviders
-      summary: The user's providers in creation order, then the instance providers; never a key.
+      summary: The book's providers in creation order, then the instance providers; never a key.
       responses:
         "200":
           description: OK.
@@ -2724,7 +2724,7 @@ paths:
     get:
       tags: [assistant]
       operationId: listUsage
-      summary: The user's usage per provider and model today and over the last 30 days, with declared limits (ADR 019 U6).
+      summary: The book's usage per provider and model today and over the last 30 days, with declared limits (ADR 019 U6).
       description: Today is the instance's date; a provider resets its quota on its own schedule.
       responses:
         "200":
@@ -2739,7 +2739,7 @@ paths:
     get:
       tags: [assistant]
       operationId: listUsageDays
-      summary: The user's usage per day, provider and model over a range of at most 90 days.
+      summary: The book's usage per day, provider and model over a range of at most 90 days.
       description: Both ends are included and the figures sum the uses. A day without use has no row.
       parameters:
         - name: from
@@ -2838,7 +2838,7 @@ paths:
     get:
       tags: [assistant]
       operationId: listAssistantConversations
-      summary: The user's conversations, most recently updated first.
+      summary: The book's conversations, most recently updated first.
       parameters:
         - $ref: "#/components/parameters/Limit"
         - $ref: "#/components/parameters/Cursor"
@@ -2856,7 +2856,7 @@ paths:
     delete:
       tags: [assistant]
       operationId: deleteAssistantConversations
-      summary: Delete every conversation of the user with its messages and proposals.
+      summary: Delete every conversation of the book with its messages and proposals.
       responses:
         "204":
           description: Deleted.
@@ -2937,7 +2937,7 @@ paths:
     get:
       tags: [assistant]
       operationId: listUses
-      summary: Every declared use with its effective chain for the user.
+      summary: Every declared use with its effective chain for the book.
       responses:
         "200":
           description: OK.
@@ -2951,7 +2951,7 @@ paths:
     put:
       tags: [assistant]
       operationId: setUseChain
-      summary: Replace the user's chain of a use; an empty list restores the default.
+      summary: Replace the book's chain of a use; an empty list restores the default.
       description: 422 capability_missing when a model lacks a capability the use needs.
       parameters:
         - name: use
@@ -5428,7 +5428,7 @@ components:
           $ref: "#/components/schemas/Notice"
         instance:
           type: boolean
-          description: Configured through the environment for every user; read-only.
+          description: Configured through the environment for every book; read-only.
     ProviderList:
       type: object
       required: [items]
@@ -7653,7 +7653,7 @@ components:
           type: boolean
         suggested:
           type: boolean
-          description: Suggested for the calling user's region (ADR 025 F3); a suggestion enables nothing.
+          description: Suggested for the calling book's region (ADR 025 F3); a suggestion enables nothing.
         last:
           type: string
           format: date
@@ -7975,7 +7975,7 @@ components:
       type: object
       additionalProperties: false
       required: [scheme, identifier]
-      description: Identifier of the institution in a scheme, unique per user and scheme (ADR 013).
+      description: Identifier of the institution in a scheme, unique per book and scheme (ADR 013).
       properties:
         scheme:
           type: string

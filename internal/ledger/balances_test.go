@@ -83,7 +83,7 @@ func TestListBalances(t *testing.T) {
 		})
 	}
 
-	t.Run("other user", func(t *testing.T) {
+	t.Run("other book", func(t *testing.T) {
 		other := h.Login("other@example.com")
 
 		r := h.Call(other, http.MethodGet, "/api/v1/balances?date=2026-10-15", nil)

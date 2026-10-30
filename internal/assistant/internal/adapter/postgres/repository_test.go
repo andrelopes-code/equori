@@ -45,7 +45,7 @@ func TestProviders(t *testing.T) {
 	}
 
 	if err := repo.InsertProvider(ctx, provider(t, b, "Local", nil)); err != nil {
-		t.Fatalf("same name for another user: %v", err)
+		t.Fatalf("same name for another book: %v", err)
 	}
 
 	got, err := repo.Provider(ctx, a, p.ID)
@@ -58,7 +58,7 @@ func TestProviders(t *testing.T) {
 	}
 
 	if _, err := repo.Provider(ctx, b, p.ID); !errors.Is(err, domain.ErrProviderNotFound) {
-		t.Fatalf("other user's Provider err = %v, want ErrProviderNotFound", err)
+		t.Fatalf("other book's Provider err = %v, want ErrProviderNotFound", err)
 	}
 
 	p.Name, p.SealedKey = "Renamed", nil
@@ -70,7 +70,7 @@ func TestProviders(t *testing.T) {
 
 	other.BooksID = b
 	if err := repo.UpdateProvider(ctx, other); !errors.Is(err, domain.ErrProviderNotFound) {
-		t.Fatalf("other user's UpdateProvider err = %v, want ErrProviderNotFound", err)
+		t.Fatalf("other book's UpdateProvider err = %v, want ErrProviderNotFound", err)
 	}
 
 	list, err := repo.Providers(ctx, a)
@@ -79,7 +79,7 @@ func TestProviders(t *testing.T) {
 	}
 
 	if err := repo.DeleteProvider(ctx, b, p.ID); !errors.Is(err, domain.ErrProviderNotFound) {
-		t.Fatalf("other user's DeleteProvider err = %v, want ErrProviderNotFound", err)
+		t.Fatalf("other book's DeleteProvider err = %v, want ErrProviderNotFound", err)
 	}
 
 	if err := repo.DeleteProvider(ctx, a, p.ID); err != nil {
@@ -116,7 +116,7 @@ func TestChains(t *testing.T) {
 
 	foreign := []domain.ChainTarget{{ProviderID: q.ID, Model: "m", Capabilities: []string{}}}
 	if err := repo.ReplaceChain(ctx, a, "assistant.chat", foreign); !errors.Is(err, domain.ErrProviderNotFound) {
-		t.Fatalf("chain on another user's provider err = %v, want ErrProviderNotFound", err)
+		t.Fatalf("chain on another book's provider err = %v, want ErrProviderNotFound", err)
 	}
 
 	if chains, _ := repo.Chains(ctx, a); len(chains["assistant.chat"]) != 2 {
@@ -152,7 +152,7 @@ func TestResealKeys(t *testing.T) {
 		seen = append(seen, id)
 
 		if booksID != a || string(sealed) != "old" {
-			t.Errorf("reseal got user %d, sealed %q", booksID, sealed)
+			t.Errorf("reseal got book %d, sealed %q", booksID, sealed)
 		}
 
 		return []byte("new"), nil

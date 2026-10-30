@@ -810,7 +810,7 @@ func duplicate(err error, field string) error {
 }
 
 // referenceError turns a composite foreign key violation into ErrUnknownAccount: the
-// database refused a reference to a row of another user or a missing row (DD3).
+// database refused a reference to a row of another book or a missing row (DD3).
 func referenceError(err error) error {
 	if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == foreignKeyViolation {
 		return &domain.FieldError{Field: "reference", Message: "unknown reference: " + pgErr.ConstraintName, Err: domain.ErrUnknownAccount}

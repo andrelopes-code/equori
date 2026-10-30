@@ -271,7 +271,7 @@ func TestOccurrencesOfATransaction(t *testing.T) {
 	r.Decode(t, &out)
 
 	if r.Status != http.StatusOK || len(out.Items) != 0 {
-		t.Fatalf("another user's occurrences of the transaction = %d %+v", r.Status, out.Items)
+		t.Fatalf("another book's occurrences of the transaction = %d %+v", r.Status, out.Items)
 	}
 
 	f.h.ExpectProblem(f.h.Do(http.MethodGet, "/api/v1/occurrences?to=2026-12-31", nil), http.StatusBadRequest, "invalid_request", "from")

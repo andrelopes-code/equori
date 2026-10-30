@@ -22,7 +22,7 @@ func TestRepositoryUsers(t *testing.T) {
 	}
 
 	if created.ID == 0 || created.Email != in.Email || created.Role != in.Role || created.Disabled {
-		t.Fatalf("unexpected user %+v", created)
+		t.Fatalf("unexpected member %+v", created)
 	}
 
 	if _, _, err := repo.CreateMember(ctx, in, "BR", "BRL"); !errors.Is(err, app.ErrEmailTaken) {
@@ -57,7 +57,7 @@ func TestRepositorySessions(t *testing.T) {
 	}
 
 	if got, gotBooks, err := repo.MemberBySession(ctx, s.TokenHash, now); err != nil || got.ID != user.ID || gotBooks != booksID {
-		t.Fatalf("MemberBySession = %+v, %d, %v; want user %d, books %d", got, gotBooks, err, user.ID, booksID)
+		t.Fatalf("MemberBySession = %+v, %d, %v; want member %d, books %d", got, gotBooks, err, user.ID, booksID)
 	}
 
 	if _, _, err := repo.MemberBySession(ctx, s.TokenHash, s.ExpiresAt); !errors.Is(err, app.ErrNotFound) {

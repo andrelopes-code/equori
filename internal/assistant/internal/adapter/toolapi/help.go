@@ -30,7 +30,7 @@ type getHelpOut struct {
 func getHelp(screens []guide.Screen) tool.Tool {
 	return tool.New(tool.Spec{
 		Name:        "get_help",
-		Description: "Returns an article of the equori guide: what a concept means in this app, how a task is done, and the screens where it is done with their paths. Use it for how-to and where-is questions, for concepts such as postings, statements or reconciliation, and for tasks the assistant cannot do, such as adding bank credentials or importing a file. Do not use it for the user's own data: the other tools return it.",
+		Description: "Returns an article of the equori guide: what a concept means in this app, how a task is done, and the screens where it is done with their paths. Use it for how-to and where-is questions, for concepts such as postings, statements or reconciliation, and for tasks the assistant cannot do, such as adding bank credentials or importing a file. Do not use it for the book's own data: the other tools return it.",
 		Effect:      tool.ReadOnly,
 		Idempotent:  true,
 	}, func(_ context.Context, _ int64, in getHelpIn) (getHelpOut, error) {

@@ -53,7 +53,7 @@ func TestSchema(t *testing.T) {
 		{"negative position", `INSERT INTO assistant_chain_target VALUES ($1, 'assistant.chat', -1, $2, 'm', '{}')`, []any{a, provider}, checkViolation},
 		{"empty model", `INSERT INTO assistant_chain_target VALUES ($1, 'assistant.chat', 0, $2, '', '{}')`, []any{a, provider}, checkViolation},
 		{"unknown capability", `INSERT INTO assistant_chain_target VALUES ($1, 'assistant.chat', 0, $2, 'm', '{speech}')`, []any{a, provider}, checkViolation},
-		{"another user's provider", `INSERT INTO assistant_chain_target VALUES ($1, 'assistant.chat', 0, $2, 'm', '{}')`, []any{b, provider}, foreignKeyViolation},
+		{"another book's provider", `INSERT INTO assistant_chain_target VALUES ($1, 'assistant.chat', 0, $2, 'm', '{}')`, []any{b, provider}, foreignKeyViolation},
 	}
 	add := func(name string, f func() (string, []any), code string) {
 		sql, args := f()
@@ -63,7 +63,7 @@ func TestSchema(t *testing.T) {
 			code      string
 		}{name, sql, args, code})
 	}
-	add("message of another user's conversation", other, foreignKeyViolation)
+	add("message of another book's conversation", other, foreignKeyViolation)
 	add("role system", func() (string, []any) { return msg(a, "system", "x", nil) }, checkViolation)
 	add("user message with outcome", func() (string, []any) { return msg(a, "user", "x", "answered") }, checkViolation)
 	add("assistant message without outcome", func() (string, []any) { return msg(a, "assistant", "x", nil) }, checkViolation)

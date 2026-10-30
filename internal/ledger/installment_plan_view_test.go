@@ -168,7 +168,7 @@ func TestInstallmentPlanView(t *testing.T) {
 		}
 	})
 
-	t.Run("other user and unknown id", func(t *testing.T) {
+	t.Run("other book and unknown id", func(t *testing.T) {
 		c := newCardSetup(t, "2026-10-20")
 		laptop := installmentPurchase(t, c.h, laptopBody(c, c.h.Account("Electronics", "expense", "", nil)))
 

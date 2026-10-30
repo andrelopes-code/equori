@@ -172,7 +172,7 @@ type LockAllCredentialsRow struct {
 	CredentialCiphertext []byte
 }
 
-// Rotation (ADR 008 K4) reseals every user's values: the one query without a user filter.
+// Rotation (ADR 008 K4) reseals every book's values: the one query without a book filter.
 func (q *Queries) LockAllCredentials(ctx context.Context) ([]LockAllCredentialsRow, error) {
 	rows, err := q.db.Query(ctx, lockAllCredentials)
 	if err != nil {

@@ -307,7 +307,7 @@ func TestS163SaveErrors(t *testing.T) {
 	}{
 		{"past month", "2026-10", "month", map[string]any{"source": "average_income", "amounts": amounts(food, apitest.BRL(1))}},
 		{"category twice", "2026-11", "amounts[1].category_id", map[string]any{"source": "average_income", "amounts": amounts(food, apitest.BRL(1), food, apitest.BRL(2))}},
-		{"another user's category", "2026-11", "amounts[0].category_id", map[string]any{"source": "average_income", "amounts": amounts(foreign.ID, apitest.BRL(1))}},
+		{"another book's category", "2026-11", "amounts[0].category_id", map[string]any{"source": "average_income", "amounts": amounts(foreign.ID, apitest.BRL(1))}},
 		{"income category", "2026-11", "amounts[0].category_id", map[string]any{"source": "average_income", "amounts": amounts(f.salary, apitest.BRL(1))}},
 		{"closed category", "2026-11", "amounts[0].category_id", map[string]any{"source": "average_income", "amounts": amounts(old, apitest.BRL(1))}},
 		{"negative amount", "2026-11", "amounts[0].amount", map[string]any{"source": "average_income", "amounts": amounts(food, apitest.BRL(-1))}},

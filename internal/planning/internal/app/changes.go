@@ -13,7 +13,7 @@ import (
 // lastDate bounds deletions that run to the end of a schedule.
 var lastDate = time.Date(9999, 12, 31, 0, 0, 0, 0, time.UTC)
 
-// changeOccurrence applies change to an occurrence of the user and returns it as read.
+// changeOccurrence applies change to an occurrence of the book and returns it as read.
 func (s *Service) changeOccurrence(ctx context.Context, booksID int64, id uuid.UUID,
 	change func(Repository, domain.Occurrence, domain.Schedule) (domain.Occurrence, error),
 ) (OccurrenceView, error) {

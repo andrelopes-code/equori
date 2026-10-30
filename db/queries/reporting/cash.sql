@@ -1,5 +1,5 @@
 -- name: CashCardLines :many
--- Charge and credit postings of the user's cards by card and statement; base marks a card in
+-- Charge and credit postings of the book's cards by card and statement; base marks a card in
 -- the base currency (CV1, CV6). A line of an installment plan carries the date of its purchase.
 SELECT
     p.id,
@@ -39,7 +39,7 @@ ORDER BY
     p.id;
 
 -- name: CashPayments :many
--- CV4: payments of the user's cards in the base currency up to a date, in the order they apply.
+-- CV4: payments of the book's cards in the base currency up to a date, in the order they apply.
 -- financing marks the payment of a transaction that created a financing plan (CV7).
 SELECT
     p.id,

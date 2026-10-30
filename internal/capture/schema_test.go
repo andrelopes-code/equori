@@ -35,7 +35,7 @@ func TestSchemaInvariants(t *testing.T) {
 		{"empty description", hint(uid, "expense", "", nil)},
 		{"description over 500 characters", hint(uid, "expense", strings.Repeat("a", 501), nil)},
 		{"second answer for one description", hint(uid, "expense", "padaria", nil)},
-		{"category of another user", hint(otherID, "expense", "padaria", food)},
+		{"category of another book", hint(otherID, "expense", "padaria", food)},
 	} {
 		if c.err == nil {
 			t.Errorf("%s: accepted", c.name)

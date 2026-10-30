@@ -69,7 +69,7 @@ func getPortfolio(svc *app.Service, names AccountNames, today func() time.Time) 
 	return tool.New(tool.Spec{
 		Name: "get_portfolio",
 		Description: "Returns investment views at a date: positions with quantity, cost and market value; allocation by instrument type, currency or institution; net worth; or the annual return of an account over a period. " +
-			"Also lists the income types and instrument subtypes the user's tax jurisdiction accepts. " +
+			"Also lists the income types and instrument subtypes the book's tax jurisdiction accepts. " +
 			"Use it for questions about investments and net worth. " +
 			"Do not use it for cash balances only: get_balances does; nor for a tax year: get_tax_year does.",
 		Effect:     tool.ReadOnly,

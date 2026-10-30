@@ -341,7 +341,7 @@ type MarketDataFeed struct {
 	// Stale Enabled, and its next publication is overdue (ADR 025 F9).
 	Stale bool `json:"stale"`
 
-	// Suggested Suggested for the calling user's region (ADR 025 F3); a suggestion enables nothing.
+	// Suggested Suggested for the calling book's region (ADR 025 F3); a suggestion enables nothing.
 	Suggested bool `json:"suggested"`
 }
 

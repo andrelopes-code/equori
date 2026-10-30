@@ -59,7 +59,7 @@ func (p Plan) Unassigned() (int64, bool) {
 	return ref - p.Installments - p.Savings - p.Planned, ok
 }
 
-// BudgetPlan returns the plan of month for the user.
+// BudgetPlan returns the plan of month for the book.
 func (s *Service) BudgetPlan(ctx context.Context, booksID int64, month time.Time) (Plan, error) {
 	month = domain.MonthOf(month)
 	if month.After(s.horizon()) {
@@ -294,7 +294,7 @@ func (s *Service) SaveBudgetPlan(ctx context.Context, booksID int64, month time.
 	for i, a := range amounts {
 		prefix := fmt.Sprintf("amounts[%d].", i)
 		if c, ok := byID[a.CategoryID]; !ok || c.Class != "expense" || c.Closed {
-			return Plan{}, &domain.FieldError{Field: prefix + "category_id", Message: "must be an open expense category of the user", Err: domain.ErrValidation}
+			return Plan{}, &domain.FieldError{Field: prefix + "category_id", Message: "must be an open expense category of the book", Err: domain.ErrValidation}
 		}
 
 		if seen[a.CategoryID] {

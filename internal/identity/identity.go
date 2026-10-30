@@ -1,4 +1,4 @@
-// Package identity manages users and sessions (ADR 003). It is the only entry
+// Package identity manages members and sessions (ADR 003). It is the only entry
 // point to the module for the rest of the application.
 package identity
 
@@ -50,7 +50,7 @@ type Member struct {
 type Config struct {
 	SecureCookies bool
 	// DefaultCurrency is the base currency of a region (ADR 016); SetupDone runs after the
-	// first-user setup (W-U5).
+	// first member setup (W-U5).
 	DefaultCurrency func(region string) (money.Currency, bool)
 	SetupDone       func()
 }
@@ -69,7 +69,7 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) *Module {
 
 func (m *Module) RegisterRoutes(mux *http.ServeMux) { m.http.Register(mux) }
 
-// StartSetup returns the token of the first-user setup while no user exists, and "" afterwards.
+// StartSetup returns the token of the first member setup while no member exists, and "" afterwards.
 func (m *Module) StartSetup(ctx context.Context) (string, error) { return m.svc.StartSetup(ctx) }
 
 // Profile returns the language and region of the books; the member is the context's, or 0 without one.

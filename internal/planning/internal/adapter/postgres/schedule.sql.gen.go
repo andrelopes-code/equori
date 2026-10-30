@@ -611,7 +611,7 @@ type ScheduleRefsRow struct {
 	ID      uuid.UUID
 }
 
-// Every schedule across users: what a backfill of their history reads (P7 amendment A127).
+// Every schedule across books: what a backfill of their history reads (P7 amendment A127).
 func (q *Queries) ScheduleRefs(ctx context.Context) ([]ScheduleRefsRow, error) {
 	rows, err := q.db.Query(ctx, scheduleRefs)
 	if err != nil {
@@ -654,7 +654,7 @@ type SchedulesBehindRow struct {
 	ID      uuid.UUID
 }
 
-// A53: schedules whose occurrences stop before the horizon, across users.
+// A53: schedules whose occurrences stop before the horizon, across books.
 func (q *Queries) SchedulesBehind(ctx context.Context, horizon time.Time) ([]SchedulesBehindRow, error) {
 	rows, err := q.db.Query(ctx, schedulesBehind, horizon)
 	if err != nil {

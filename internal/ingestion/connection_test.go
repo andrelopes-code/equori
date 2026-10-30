@@ -486,8 +486,8 @@ func TestTwoIntegrations(t *testing.T) {
 	assertNoSecrets(t, a.h, "secret-2c90", "secret-2c91")
 }
 
-// S58 (credentials, connections and mappings): another user sees none of them; the same
-// item may be connected by both users (A45).
+// S58 (credentials, connections and mappings): another book sees none of them; the same
+// item may be connected by both books (A45).
 func TestIntegrationIsolation(t *testing.T) {
 	t.Parallel()
 	a := newAggregator(t)

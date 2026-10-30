@@ -59,7 +59,7 @@ func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, clk clock.Clock, log
 
 func (m *Module) RegisterRoutes(mux *http.ServeMux) { m.http.Register(mux) }
 
-// OnImport adds the rebuild of another module's derived tables, run for the user after an
+// OnImport adds the rebuild of another module's derived tables, run for the book after an
 // import of an export archive (export design E4).
 func (m *Module) OnImport(rebuild func(ctx context.Context, booksID int64) error) {
 	m.exports.OnImport(rebuild)

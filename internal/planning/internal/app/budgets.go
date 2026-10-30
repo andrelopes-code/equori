@@ -15,7 +15,7 @@ import (
 // ErrBudgetExists refuses a second budget for a category (P7 amendment A54).
 var ErrBudgetExists = errors.New("the category already has a budget")
 
-// category returns the category account of the user and checks the base currency: budgets
+// category returns the category account of the book and checks the base currency: budgets
 // stay in it (P7 amendment A47, kept by P8 amendment A72).
 func (s *Service) category(ctx context.Context, booksID int64, id uuid.UUID) (Account, money.Currency, error) {
 	base, err := s.ledger.BaseCurrency(ctx, booksID)
@@ -44,7 +44,7 @@ func (s *Service) category(ctx context.Context, booksID int64, id uuid.UUID) (Ac
 		return a, base, nil
 	}
 
-	return Account{}, "", &domain.FieldError{Field: "category_id", Message: "must be an income or expense category of the user", Err: domain.ErrValidation}
+	return Account{}, "", &domain.FieldError{Field: "category_id", Message: "must be an income or expense category of the book", Err: domain.ErrValidation}
 }
 
 func checkBudgetAmount(m money.Money, currency money.Currency) error {

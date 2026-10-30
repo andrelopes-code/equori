@@ -65,7 +65,7 @@ type listRulesOut struct {
 func listRules(svc *app.Service, names Names) tool.Tool {
 	return tool.New(tool.Spec{
 		Name: "list_rules",
-		Description: "Lists categorization rules by priority, rules suggested from the user's repeated corrections, the categories an aggregator assigned to imported lines, or payee aliases. " +
+		Description: "Lists categorization rules by priority, rules suggested from the book's repeated corrections, the categories an aggregator assigned to imported lines, or payee aliases. " +
 			"Use it to see why transactions get a category automatically or what suggestions are waiting. " +
 			"Do not use it for one transaction's categorization: explain_categorization does.",
 		Effect:     tool.ReadOnly,

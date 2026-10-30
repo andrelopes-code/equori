@@ -1825,7 +1825,7 @@
   },
   {
     "name": "get_help",
-    "description": "Returns an article of the equori guide: what a concept means in this app, how a task is done, and the screens where it is done with their paths. Use it for how-to and where-is questions, for concepts such as postings, statements or reconciliation, and for tasks the assistant cannot do, such as adding bank credentials or importing a file. Do not use it for the user's own data: the other tools return it.",
+    "description": "Returns an article of the equori guide: what a concept means in this app, how a task is done, and the screens where it is done with their paths. Use it for how-to and where-is questions, for concepts such as postings, statements or reconciliation, and for tasks the assistant cannot do, such as adding bank credentials or importing a file. Do not use it for the book's own data: the other tools return it.",
     "effect": "read_only",
     "idempotent": true,
     "input_schema": {
@@ -2230,7 +2230,7 @@
   },
   {
     "name": "get_market_data",
-    "description": "Returns market data of the instance: instruments with their type and scale, one instrument with its fixed income terms, prices of an instrument in a period, business-day calendars, a calendar's holidays in a year, the stored economic indexes, the rates of one index in a period, or the annual rates a market survey expects for one index (where the indexes view says expected). Use it for prices, securities, holidays and index rates. Do not use it for the user's holdings: get_portfolio does.",
+    "description": "Returns market data of the instance: instruments with their type and scale, one instrument with its fixed income terms, prices of an instrument in a period, business-day calendars, a calendar's holidays in a year, the stored economic indexes, the rates of one index in a period, or the annual rates a market survey expects for one index (where the indexes view says expected). Use it for prices, securities, holidays and index rates. Do not use it for the book's holdings: get_portfolio does.",
     "effect": "read_only",
     "idempotent": true,
     "input_schema": {
@@ -2615,7 +2615,7 @@
   },
   {
     "name": "get_portfolio",
-    "description": "Returns investment views at a date: positions with quantity, cost and market value; allocation by instrument type, currency or institution; net worth; or the annual return of an account over a period. Also lists the income types and instrument subtypes the user's tax jurisdiction accepts. Use it for questions about investments and net worth. Do not use it for cash balances only: get_balances does; nor for a tax year: get_tax_year does.",
+    "description": "Returns investment views at a date: positions with quantity, cost and market value; allocation by instrument type, currency or institution; net worth; or the annual return of an account over a period. Also lists the income types and instrument subtypes the book's tax jurisdiction accepts. Use it for questions about investments and net worth. Do not use it for cash balances only: get_balances does; nor for a tax year: get_tax_year does.",
     "effect": "read_only",
     "idempotent": true,
     "input_schema": {
@@ -3923,7 +3923,7 @@
   },
   {
     "name": "list_accounts",
-    "description": "Lists the user's accounts and categories by class and then name, with the IDs the other tools take, each account's institution, and the user's base currency. Income and expense accounts are the categories of transactions; a child account carries its parent. Use it to find the ID of an account or category named by the user. Do not use it for balances: get_balances returns them.",
+    "description": "Lists the book's accounts and categories by class and then name, with the IDs the other tools take, each account's institution, and the book's base currency. Income and expense accounts are the categories of transactions; a child account carries its parent. Use it to find the ID of an account or category named by the user. Do not use it for balances: get_balances returns them.",
     "effect": "read_only",
     "idempotent": false,
     "input_schema": {
@@ -3960,7 +3960,7 @@
       "properties": {
         "base_currency": {
           "type": "string",
-          "description": "currency of the user's totals"
+          "description": "currency of the book's totals"
         },
         "accounts": {
           "type": "array",
@@ -4024,7 +4024,7 @@
   },
   {
     "name": "list_payees_and_tags",
-    "description": "Lists the user's payees, the tags in use or the institutions, by name, with IDs. Use it to find the payee_id a write takes or to check whether a payee, tag or institution exists. Do not use it for transactions of a payee: search_transactions with query does that.",
+    "description": "Lists the book's payees, the tags in use or the institutions, by name, with IDs. Use it to find the payee_id a write takes or to check whether a payee, tag or institution exists. Do not use it for transactions of a payee: search_transactions with query does that.",
     "effect": "read_only",
     "idempotent": false,
     "input_schema": {
@@ -4114,7 +4114,7 @@
   },
   {
     "name": "list_rules",
-    "description": "Lists categorization rules by priority, rules suggested from the user's repeated corrections, the categories an aggregator assigned to imported lines, or payee aliases. Use it to see why transactions get a category automatically or what suggestions are waiting. Do not use it for one transaction's categorization: explain_categorization does.",
+    "description": "Lists categorization rules by priority, rules suggested from the book's repeated corrections, the categories an aggregator assigned to imported lines, or payee aliases. Use it to see why transactions get a category automatically or what suggestions are waiting. Do not use it for one transaction's categorization: explain_categorization does.",
     "effect": "read_only",
     "idempotent": true,
     "input_schema": {
@@ -5079,7 +5079,7 @@
   },
   {
     "name": "manage_instrument",
-    "description": "Proposes defining or renaming a security for the whole instance, recording a manual price, or setting the terms of a fixed income instrument. Use it when the user needs a security that does not exist yet or a price that is missing. Do not use it to buy or sell: record_investment does. Instruments and prices are shared by every user of the instance; the user confirms first.",
+    "description": "Proposes defining or renaming a security for the whole instance, recording a manual price, or setting the terms of a fixed income instrument. Use it when the user needs a security that does not exist yet or a price that is missing. Do not use it to buy or sell: record_investment does. Instruments and prices are shared by every book of the instance; the user confirms first.",
     "effect": "write",
     "idempotent": false,
     "input_schema": {
@@ -6146,7 +6146,7 @@
   },
   {
     "name": "search_transactions",
-    "description": "Searches the user's transactions, newest first, with their payee, tags and postings; each posting names its account or category. Use it to find transactions by text, account, category, tag, period or missing category, and to get the transaction_id other tools take. Do not use it for totals by category: get_category_totals adds them up. Filters combine; narrow them instead of reading many pages.",
+    "description": "Searches the book's transactions, newest first, with their payee, tags and postings; each posting names its account or category. Use it to find transactions by text, account, category, tag, period or missing category, and to get the transaction_id other tools take. Do not use it for totals by category: get_category_totals adds them up. Filters combine; narrow them instead of reading many pages.",
     "effect": "read_only",
     "idempotent": false,
     "input_schema": {
@@ -6369,7 +6369,7 @@
   },
   {
     "name": "update_profile",
-    "description": "Proposes changing the user's language or region, which set the language of the app and of these answers and the format of numbers and dates. Use it when the user asks to switch language or region. Do not use it for the base currency, which is fixed after the first transaction. The user confirms first.",
+    "description": "Proposes changing the member's language or region, which set the language of the app and of these answers and the format of numbers and dates. Use it when the user asks to switch language or region. Do not use it for the base currency, which is fixed after the first transaction. The user confirms first.",
     "effect": "write",
     "idempotent": false,
     "input_schema": {

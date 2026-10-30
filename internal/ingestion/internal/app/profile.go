@@ -15,7 +15,7 @@ func (s *Service) Profile(ctx context.Context, booksID int64, accountID uuid.UUI
 	return s.repo.Profile(ctx, booksID, accountID)
 }
 
-// SaveProfile replaces the account's CSV profile; an account of another user is ErrNotFound.
+// SaveProfile replaces the account's CSV profile; an account of another book is ErrNotFound.
 func (s *Service) SaveProfile(ctx context.Context, p domain.Profile) (domain.Profile, error) {
 	p, err := domain.NewProfile(p)
 	if err != nil {

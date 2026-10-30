@@ -367,7 +367,7 @@ type Repository interface {
 	RawDescriptions(ctx context.Context, booksID int64, ids []uuid.UUID) (map[uuid.UUID]string, error)
 	AllAccounts(ctx context.Context, booksID int64) ([]domain.Account, error)
 	ExistingPayees(ctx context.Context, booksID int64, ids []uuid.UUID) (map[uuid.UUID]struct{}, error)
-	// PayeeNames omits identifiers of other users and unknown identifiers.
+	// PayeeNames omits identifiers of other books and unknown identifiers.
 	PayeeNames(ctx context.Context, booksID int64, ids []uuid.UUID) (map[uuid.UUID]string, error)
 	LatestPayeeCategories(ctx context.Context, booksID int64, payees []uuid.UUID) (map[PayeeClass]uuid.UUID, error)
 	VoidTransaction(ctx context.Context, t domain.Transaction) error

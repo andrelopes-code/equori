@@ -45,7 +45,7 @@ type Payee struct {
 type Ledger interface {
 	Vocabulary(ctx context.Context, booksID int64) ([]Account, []Payee, error)
 	BaseCurrency(ctx context.Context, booksID int64) (money.Currency, error)
-	// Transactions returns the user's transactions among ids in the order of ids; unknown ids
+	// Transactions returns the book's transactions among ids in the order of ids; unknown ids
 	// are omitted.
 	Transactions(ctx context.Context, booksID int64, ids []uuid.UUID) ([]Transaction, error)
 	Today() time.Time
@@ -82,7 +82,7 @@ type Line struct {
 	CategorySource string
 }
 
-// Profiles supplies the language and region a user's lines are read in.
+// Profiles supplies the language and region a book's lines are read in.
 type Profiles interface {
 	Profile(ctx context.Context, booksID int64) (locale.Locale, error)
 }

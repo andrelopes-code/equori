@@ -133,7 +133,7 @@ func (s *Service) Realize(ctx context.Context, booksID int64, id, txID uuid.UUID
 		}
 
 		if len(facts) == 0 || facts[0].Voided {
-			return &domain.FieldError{Field: "transaction_id", Message: "is not a transaction of the user in force", Err: domain.ErrValidation}
+			return &domain.FieldError{Field: "transaction_id", Message: "is not a transaction of the book in force", Err: domain.ErrValidation}
 		}
 
 		if _, ok := facts[0].On(sch.AccountID); !ok {
@@ -187,7 +187,7 @@ func (s *Service) view(o domain.Occurrence, sch domain.Schedule) OccurrenceView 
 	return OccurrenceView{Occurrence: o, Shown: o.Shown(s.clk.Today(), sch.GraceDays), Currency: sch.Currency}
 }
 
-// Occurrence reads one occurrence of the user.
+// Occurrence reads one occurrence of the book.
 func (s *Service) Occurrence(ctx context.Context, booksID int64, id uuid.UUID) (OccurrenceView, error) {
 	o, err := s.repo.LockOccurrence(ctx, booksID, id)
 	if err != nil {

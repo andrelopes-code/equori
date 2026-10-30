@@ -257,7 +257,7 @@ func TestDBRejectsSaleWithoutCost(t *testing.T) {
 	requireViolation(t, err, checkViolation, "")
 }
 
-// Spec §5.7: an identifier has a scheme, is set with it, and names one institution of a user.
+// Spec §5.7: an identifier has a scheme, is set with it, and names one institution of a book.
 func TestInstitutionIdentifierChecks(t *testing.T) {
 	t.Parallel()
 	f := newSchemaFixture(t)

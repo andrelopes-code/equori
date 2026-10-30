@@ -83,7 +83,7 @@ func TestListTransactionsSearch(t *testing.T) {
 
 		r := h.Call(other, http.MethodPost, "/api/v1/accounts", body)
 		if r.Status != http.StatusCreated {
-			t.Fatalf("other user account %s = %d: %s", name, r.Status, r.Body)
+			t.Fatalf("other book account %s = %d: %s", name, r.Status, r.Body)
 		}
 
 		r.Decode(t, out)
@@ -94,7 +94,7 @@ func TestListTransactionsSearch(t *testing.T) {
 
 	r := h.Call(other, http.MethodPost, "/api/v1/transactions", otherBody)
 	if r.Status != http.StatusCreated {
-		t.Fatalf("other user transaction = %d: %s", r.Status, r.Body)
+		t.Fatalf("other book transaction = %d: %s", r.Status, r.Body)
 	}
 
 	var otherTx idOnly
@@ -112,7 +112,7 @@ func TestListTransactionsSearch(t *testing.T) {
 		{"percent is literal", h.Client, "q=" + url.QueryEscape("%"), []string{d}},
 		{"underscore is literal", h.Client, "q=_", []string{}},
 		{"combined with account filter", h.Client, "q=mercado&account_id=" + food, []string{a}},
-		{"other user sees only its own match", other, "q=mercado", []string{otherTx.ID}},
+		{"other book sees only its own match", other, "q=mercado", []string{otherTx.ID}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

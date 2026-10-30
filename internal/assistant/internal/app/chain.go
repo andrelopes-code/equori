@@ -11,7 +11,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/assistant/internal/domain"
 )
 
-// UseView is a use with its effective chain for one user; Default reports that the chain
+// UseView is a use with its effective chain for one book; Default reports that the chain
 // comes from the use's declaration.
 type UseView struct {
 	Use     Use
@@ -61,7 +61,7 @@ func (s *Service) Uses(ctx context.Context, booksID int64) ([]UseView, error) {
 	return out, nil
 }
 
-// SetChain stores the user's chain for a use; an empty list restores the default.
+// SetChain stores the book's chain for a use; an empty list restores the default.
 func (s *Service) SetChain(ctx context.Context, booksID int64, useID string, in []ChainInput) error {
 	use, ok := s.use(useID)
 	if !ok {

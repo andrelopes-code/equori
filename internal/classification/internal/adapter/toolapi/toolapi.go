@@ -17,7 +17,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/tool"
 )
 
-// Names returns the names of the user's categories and payees by ID.
+// Names returns the names of the book's categories and payees by ID.
 type Names func(ctx context.Context, booksID int64) (categories, payees map[uuid.UUID]string, err error)
 
 func Tools(svc *app.Service, names Names, today func() time.Time) []tool.Tool {

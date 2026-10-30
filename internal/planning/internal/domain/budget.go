@@ -86,7 +86,7 @@ const (
 	SourceFixed          ReferenceSource = "fixed"
 )
 
-// Reference is a user's choice of reference income; Fixed holds the amount of SourceFixed.
+// Reference is a book's choice of reference income; Fixed holds the amount of SourceFixed.
 type Reference struct {
 	Source   ReferenceSource
 	Fixed    int64

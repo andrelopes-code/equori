@@ -234,7 +234,7 @@ func (r *Repository) ListSchedules(ctx context.Context, booksID int64, p page.Re
 func (r *Repository) Schedules(ctx context.Context, booksID int64) ([]domain.Schedule, error) {
 	rows, err := r.q.SchedulesOfBooks(ctx, booksID)
 	if err != nil {
-		return nil, fmt.Errorf("list schedules of user: %w", err)
+		return nil, fmt.Errorf("list schedules of books: %w", err)
 	}
 
 	return r.complete(ctx, rows)

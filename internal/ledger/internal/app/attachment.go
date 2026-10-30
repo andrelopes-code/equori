@@ -38,7 +38,7 @@ type AttachmentContent struct {
 	Content   []byte
 }
 
-// Attach stores content once per user and hash (D2); attaching the same file to the
+// Attach stores content once per book and hash (D2); attaching the same file to the
 // same transaction again returns the existing attachment. detected is the media type
 // sniffed from the content, never the one the client declares.
 func (s *Service) Attach(ctx context.Context, booksID int64, transactionID uuid.UUID, fileName, detected string, content []byte) (Attachment, error) {

@@ -255,7 +255,7 @@ func (s *Service) DeleteIntegration(ctx context.Context, booksID int64, id uuid.
 	return nil
 }
 
-// RotateSecrets reseals every user's credentials under the current key in one database
+// RotateSecrets reseals every book's credentials under the current key in one database
 // transaction and returns how many changed (ADR 008 K4). A value that opens with neither
 // key aborts the rotation.
 func (s *Service) RotateSecrets(ctx context.Context) (int, error) {

@@ -60,7 +60,7 @@ func setupBody(token, email, region string) map[string]string {
 	return map[string]string{"token": token, "email": email, "password": "correct horse battery", "language": "en", "region": region}
 }
 
-// W-U2: the setup is required until the first user exists.
+// W-U2: the setup is required until the first member exists.
 func TestSetupRequiredUntilTheFirstUser(t *testing.T) {
 	h := apitest.Empty(t)
 	c := jarClient(t)
@@ -76,7 +76,7 @@ func TestSetupRequiredUntilTheFirstUser(t *testing.T) {
 	r.Decode(t, &st)
 
 	if !st.Required {
-		t.Fatalf("required = false before the first user: %s", r.Body)
+		t.Fatalf("required = false before the first member: %s", r.Body)
 	}
 
 	withDefault, _ := regions(t)
@@ -92,7 +92,7 @@ func TestSetupRequiredUntilTheFirstUser(t *testing.T) {
 	r.Decode(t, &st)
 
 	if st.Required {
-		t.Fatal("required = true after the first user")
+		t.Fatal("required = true after the first member")
 	}
 }
 
@@ -116,7 +116,7 @@ func TestSetupCreatesTheAdmin(t *testing.T) {
 	r.Decode(t, &u)
 
 	if u.Email != "ann@example.com" || u.Role != identity.RoleAdmin || u.Language != "en" || u.Region != withDefault {
-		t.Fatalf("user = %+v", u)
+		t.Fatalf("member = %+v", u)
 	}
 
 	me := h.Call(c, http.MethodGet, "/api/v1/me", nil)
@@ -150,7 +150,7 @@ func TestSetupRejectsAnotherToken(t *testing.T) {
 	h.ExpectProblem(r, http.StatusForbidden, "setup_token_invalid", "")
 }
 
-// W-U3, W-U7: setup_complete after a setup, and after a user created by the CLI.
+// W-U3, W-U7: setup_complete after a setup, and after a member created by the CLI.
 func TestSetupClosesAfterTheFirstUser(t *testing.T) {
 	h := apitest.Empty(t)
 	token := startSetup(t, h)

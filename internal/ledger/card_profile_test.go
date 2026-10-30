@@ -217,7 +217,7 @@ func TestCardActivation(t *testing.T) {
 	h.MustDo(http.MethodGet, "/api/v1/accounts/"+account+"/cards", nil, http.StatusOK, &list)
 
 	if len(list.Items) != 1 || !list.Items[0].Active {
-		t.Fatalf("cards after other user's patch = %+v", list.Items)
+		t.Fatalf("cards after other book's patch = %+v", list.Items)
 	}
 
 	h.ExpectProblem(h.Do(http.MethodPatch, "/api/v1/cards/00000000-0000-4000-8000-000000000000", map[string]any{"active": false}), http.StatusNotFound, "not_found", "")

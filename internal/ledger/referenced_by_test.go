@@ -111,7 +111,7 @@ func TestReferencedBy(t *testing.T) {
 		}
 	})
 
-	t.Run("other user and unknown id answer 404", func(t *testing.T) {
+	t.Run("other book and unknown id answer 404", func(t *testing.T) {
 		c := newCardSetup(t, "2026-11-20")
 		charge := c.purchase("2026-10-14", 23000)
 		refund(c.h, charge, "2026-10-20", 1000)

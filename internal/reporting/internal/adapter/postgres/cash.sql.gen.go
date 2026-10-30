@@ -154,7 +154,7 @@ type CashCardLinesRow struct {
 	Anticipation     bool
 }
 
-// Charge and credit postings of the user's cards by card and statement; base marks a card in
+// Charge and credit postings of the book's cards by card and statement; base marks a card in
 // the base currency (CV1, CV6). A line of an installment plan carries the date of its purchase.
 func (q *Queries) CashCardLines(ctx context.Context, booksID int64) ([]CashCardLinesRow, error) {
 	rows, err := q.db.Query(ctx, cashCardLines, booksID)
@@ -456,7 +456,7 @@ type CashPaymentsRow struct {
 	Financing     bool
 }
 
-// CV4: payments of the user's cards in the base currency up to a date, in the order they apply.
+// CV4: payments of the book's cards in the base currency up to a date, in the order they apply.
 // financing marks the payment of a transaction that created a financing plan (CV7).
 func (q *Queries) CashPayments(ctx context.Context, arg CashPaymentsParams) ([]CashPaymentsRow, error) {
 	rows, err := q.db.Query(ctx, cashPayments, arg.BooksID, arg.ToDate)

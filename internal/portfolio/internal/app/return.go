@@ -46,7 +46,7 @@ type ReturnReport struct {
 
 // Return values the account tree the day before from and on to, values each external flow at the
 // price of its date, and solves the annual rate of the result. in defaults to the base currency.
-// The nil accountID is every brokerage tree of the user.
+// The nil accountID is every brokerage tree of the book.
 func (s *Service) Return(ctx context.Context, booksID int64, accountID uuid.UUID, from, to time.Time, in money.Currency) (ReturnReport, error) {
 	if accountID != uuid.Nil {
 		return s.returnOf(ctx, booksID, []uuid.UUID{accountID}, from, to, in)

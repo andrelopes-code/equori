@@ -16,7 +16,7 @@ import (
 
 var (
 	ErrSetupTokenInvalid = errors.New("the setup token differs")
-	ErrSetupComplete     = errors.New("the first user exists")
+	ErrSetupComplete     = errors.New("the first member exists")
 )
 
 // SetupHooks connect the setup to the rest of the instance: the default base currency of a
@@ -34,7 +34,7 @@ type setup struct {
 
 func (s *Service) UseSetupHooks(h SetupHooks) { s.setup.hooks = h }
 
-// StartSetup returns a new setup token while no user exists, and "" afterwards (W-U1). The token
+// StartSetup returns a new setup token while no member exists, and "" afterwards (W-U1). The token
 // lives in memory only: a restart issues another.
 func (s *Service) StartSetup(ctx context.Context) (string, error) {
 	exists, err := s.repo.AnyMember(ctx)
@@ -60,7 +60,7 @@ func (s *Service) SetupRequired(ctx context.Context) (bool, error) {
 	return !exists, err
 }
 
-// CompleteSetup creates the first user, an admin, and signs it in (W-U3, W-U4).
+// CompleteSetup creates the first member, an admin, and signs it in (W-U3, W-U4).
 func (s *Service) CompleteSetup(ctx context.Context, token, email, plain string, l locale.Locale, base money.Currency) (Session, domain.Member, error) {
 	required, err := s.SetupRequired(ctx)
 	if err != nil {

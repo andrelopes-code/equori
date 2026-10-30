@@ -13,7 +13,7 @@ import (
 
 type AggregatorID string
 
-// Integration is one aggregator application of a user (P6 amendment A34). Its credentials
+// Integration is one aggregator application of a book (P6 amendment A34). Its credentials
 // travel only sealed (ADR 008).
 type Integration struct {
 	ID                uuid.UUID

@@ -328,13 +328,13 @@ func (m *Module) Categorize(ctx context.Context, booksID int64, cs []Categorizat
 	return m.svc.Categorize(ctx, booksID, cs)
 }
 
-// AccountTransactionsBetween returns the user's non-voided transactions with a posting on the
+// AccountTransactionsBetween returns the book's non-voided transactions with a posting on the
 // account dated in [from, to], by date.
 func (m *Module) AccountTransactionsBetween(ctx context.Context, booksID int64, accountID uuid.UUID, from, to time.Time) ([]uuid.UUID, error) {
 	return m.svc.AccountTransactionsBetween(ctx, booksID, accountID, from, to)
 }
 
-// TransactionFacts returns the facts of the user's transactions among ids in the order of
+// TransactionFacts returns the facts of the book's transactions among ids in the order of
 // ids; unknown ids are omitted.
 func (m *Module) TransactionFacts(ctx context.Context, booksID int64, ids []uuid.UUID) ([]TransactionFacts, error) {
 	return m.svc.TransactionFacts(ctx, booksID, ids)
@@ -430,7 +430,7 @@ func (m *Module) InvestmentFacts(ctx context.Context, booksID int64, brokerageID
 	return m.svc.InvestmentFacts(ctx, booksID, brokerageID)
 }
 
-// BaseCurrency returns the user's base currency, as GET /settings reads it.
+// BaseCurrency returns the book's base currency, as GET /settings reads it.
 func (m *Module) BaseCurrency(ctx context.Context, booksID int64) (money.Currency, error) {
 	s, err := m.svc.Settings(ctx, booksID)
 	return s.BaseCurrency, err
@@ -450,7 +450,7 @@ func (m *Module) AccountFacts(ctx context.Context, booksID int64) ([]AccountFact
 	return m.svc.AccountFacts(ctx, booksID)
 }
 
-// MissingPayees returns the ids that are not payees of the user.
+// MissingPayees returns the ids that are not payees of the book.
 func (m *Module) MissingPayees(ctx context.Context, booksID int64, ids []uuid.UUID) ([]uuid.UUID, error) {
 	return m.svc.MissingPayees(ctx, booksID, ids)
 }

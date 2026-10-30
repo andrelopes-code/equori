@@ -120,6 +120,6 @@ func TestBalanceUnknownAccount(t *testing.T) {
 
 	other := provisionedUser(t, f.pool, f.dispatcher)
 	if _, err := f.svc.BalanceAt(t.Context(), other, f.checking.ID, time.Now(), app.BasisBooked); !errors.Is(err, app.ErrNotFound) {
-		t.Fatalf("balance of another user's account err = %v, want ErrNotFound", err)
+		t.Fatalf("balance of another book's account err = %v, want ErrNotFound", err)
 	}
 }

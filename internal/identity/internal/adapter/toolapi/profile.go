@@ -21,7 +21,7 @@ type updateProfileOut struct {
 func updateProfile(svc *app.Service) tool.Tool {
 	return tool.NewWrite(tool.Spec{
 		Name: "update_profile",
-		Description: "Proposes changing the user's language or region, which set the language of the app and of these answers " +
+		Description: "Proposes changing the member's language or region, which set the language of the app and of these answers " +
 			"and the format of numbers and dates. " +
 			"Use it when the user asks to switch language or region. " +
 			"Do not use it for the base currency, which is fixed after the first transaction. " +

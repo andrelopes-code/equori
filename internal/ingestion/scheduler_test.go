@@ -125,8 +125,8 @@ func TestCheckRecordsNextItemUpdate(t *testing.T) {
 	}
 }
 
-// S58: two users sync on one tick; each ledger receives only its own lines, and neither
-// user can sync the other's connection.
+// S58: two books sync on one tick; each ledger receives only its own lines, and neither
+// book can sync the other's connection.
 func TestTickOverTwoUsers(t *testing.T) {
 	t.Parallel()
 	f := newSyncFixture(t)
@@ -175,7 +175,7 @@ func TestTickOverTwoUsers(t *testing.T) {
 		}
 
 		if rows.Err() != nil || len(ids) != 1 || ids[0] != want {
-			t.Fatalf("user %d records = %v, want [%s]", user, ids, want)
+			t.Fatalf("books %d records = %v, want [%s]", user, ids, want)
 		}
 	}
 

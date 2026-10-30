@@ -9,7 +9,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/locale"
 )
 
-// S186: the first-user setup creates the member, its book and the owner membership.
+// S186: the first member setup creates the member, its book and the owner membership.
 func TestSetupCreatesBooks(t *testing.T) {
 	h := apitest.Empty(t)
 	token := startSetup(t, h)

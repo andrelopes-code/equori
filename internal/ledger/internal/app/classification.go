@@ -37,7 +37,7 @@ func (s *Service) AccountTransactionsBetween(ctx context.Context, booksID int64,
 	return s.repo.AccountTransactionsBetween(ctx, booksID, accountID, from, to)
 }
 
-// TransactionFacts returns the facts of the user's transactions among ids, in the order of
+// TransactionFacts returns the facts of the book's transactions among ids, in the order of
 // ids; unknown ids are omitted.
 func (s *Service) TransactionFacts(ctx context.Context, booksID int64, ids []uuid.UUID) ([]TransactionFacts, error) {
 	ts, err := s.repo.TransactionsByIDs(ctx, booksID, ids)
@@ -118,7 +118,7 @@ func (s *Service) AccountFacts(ctx context.Context, booksID int64) ([]AccountFac
 	return out, nil
 }
 
-// MissingPayees returns the ids that are not payees of the user, in input order.
+// MissingPayees returns the ids that are not payees of the book, in input order.
 func (s *Service) MissingPayees(ctx context.Context, booksID int64, ids []uuid.UUID) ([]uuid.UUID, error) {
 	found, err := s.repo.ExistingPayees(ctx, booksID, ids)
 	if err != nil {

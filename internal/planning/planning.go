@@ -91,7 +91,7 @@ func (m *Module) Tools() tool.Group {
 	return tool.Group{Tools: toolapi.Tools(m.svc, toolLedger{m.ledger}, m.clk), Errors: tool.FromProblem(httpapi.ToProblem)}
 }
 
-// toolLedger gives the tools the names and instruments of the user's accounts and categories.
+// toolLedger gives the tools the names and instruments of the book's accounts and categories.
 type toolLedger struct{ l *ledger.Module }
 
 func (t toolLedger) Accounts(ctx context.Context, booksID int64) (map[uuid.UUID]toolapi.Account, error) {

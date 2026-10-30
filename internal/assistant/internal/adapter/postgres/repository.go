@@ -103,7 +103,7 @@ func (r *Repository) DeleteProvider(ctx context.Context, booksID int64, id uuid.
 	})
 }
 
-// Chains returns the user's chain targets by use ID, in position order.
+// Chains returns the book's chain targets by use ID, in position order.
 func (r *Repository) Chains(ctx context.Context, booksID int64) (map[string][]domain.ChainTarget, error) {
 	rows, err := r.q.ListChainTargets(ctx, booksID)
 	if err != nil {
@@ -118,8 +118,8 @@ func (r *Repository) Chains(ctx context.Context, booksID int64) (map[string][]do
 	return out, nil
 }
 
-// ReplaceChain stores targets as the user's chain for useID; an empty list deletes it. A
-// target on a provider the user does not own returns ErrProviderNotFound.
+// ReplaceChain stores targets as the book's chain for useID; an empty list deletes it. A
+// target on a provider the book does not own returns ErrProviderNotFound.
 func (r *Repository) ReplaceChain(ctx context.Context, booksID int64, useID string, targets []domain.ChainTarget) error {
 	return pgx.BeginFunc(ctx, r.pool, func(tx pgx.Tx) error {
 		q := r.q.WithTx(tx)

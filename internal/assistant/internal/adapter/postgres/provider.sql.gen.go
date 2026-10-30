@@ -152,7 +152,7 @@ type LockAllKeysRow struct {
 	SealedKey []byte
 }
 
-// Rotation (ADR 008 K4) reseals every user's keys: the one query without a user filter.
+// Rotation (ADR 008 K4) reseals every book's keys: the one query without a book filter.
 func (q *Queries) LockAllKeys(ctx context.Context) ([]LockAllKeysRow, error) {
 	rows, err := q.db.Query(ctx, lockAllKeys)
 	if err != nil {

@@ -44,7 +44,7 @@ func (s *Service) Project(ctx context.Context, booksID int64, accountID uuid.UUI
 
 	i := slices.IndexFunc(facts, func(a Account) bool { return a.ID == accountID })
 	if i < 0 || (facts[i].Class != "asset" && facts[i].Class != "liability") {
-		return Projection{}, &domain.FieldError{Field: "id", Message: "must be a balance account of the user", Err: domain.ErrValidation}
+		return Projection{}, &domain.FieldError{Field: "id", Message: "must be a balance account of the book", Err: domain.ErrValidation}
 	}
 
 	schedules, err := s.repo.SchedulesTouching(ctx, booksID, []uuid.UUID{accountID})

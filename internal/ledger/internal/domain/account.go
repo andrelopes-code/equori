@@ -110,7 +110,7 @@ func (r SystemRole) Class() Class {
 	return ""
 }
 
-// DefaultName is the name given to the system account when the user is provisioned.
+// DefaultName is the name given to the system account when the book is provisioned.
 func (r SystemRole) DefaultName() string {
 	for _, s := range systemRoles {
 		if s.role == r {

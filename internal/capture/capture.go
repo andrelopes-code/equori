@@ -29,7 +29,7 @@ type Module struct {
 	http *httpapi.Server
 }
 
-// Profiles is the part of identity the module uses to read a user's lines by language and region.
+// Profiles is the part of identity the module uses to read a book's lines by language and region.
 type Profiles interface {
 	Profile(ctx context.Context, booksID int64) (locale.Locale, error)
 }

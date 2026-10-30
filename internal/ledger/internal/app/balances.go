@@ -82,7 +82,7 @@ func (s *Service) BalancesAt(ctx context.Context, booksID int64, date time.Time,
 }
 
 // CategoryTotal returns the weights of the postings of a category subtree booked in
-// [from, to), in the user's base currency (P7 amendment A54).
+// [from, to), in the book's base currency (P7 amendment A54).
 func (s *Service) CategoryTotal(ctx context.Context, booksID int64, categoryID uuid.UUID, from, to time.Time) (money.Money, error) {
 	settings, err := s.repo.Settings(ctx, booksID)
 	if err != nil {

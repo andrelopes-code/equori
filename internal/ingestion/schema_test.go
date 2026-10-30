@@ -37,7 +37,7 @@ func TestSchemaInvariants(t *testing.T) {
 		name string
 		err  error
 	}{
-		{"I10: a deduplication key once per user", record(1, "received", nil)},
+		{"I10: a deduplication key once per book", record(1, "received", nil)},
 		{"I07: a transaction linked to one record", record(2, "matched", tx)},
 		{"a created record names its transaction", record(3, "created", nil)},
 		{"a received record names no transaction", record(4, "received", tx)},
@@ -132,13 +132,13 @@ func TestConnectionSchemaInvariants(t *testing.T) {
 		name string
 		err  error
 	}{
-		{"A34: an integration name once per user", exec(`INSERT INTO ingestion_integration (id, books_id, aggregator, name, credential_ciphertext) VALUES (uuidv7(), $1, 'pluggy', 'Meu Pluggy', '\x01')`, uid)},
+		{"A34: an integration name once per book", exec(`INSERT INTO ingestion_integration (id, books_id, aggregator, name, credential_ciphertext) VALUES (uuidv7(), $1, 'pluggy', 'Meu Pluggy', '\x01')`, uid)},
 		{"A34: an integration with connections is not deleted", exec(`DELETE FROM ingestion_integration WHERE id = $1`, integration)},
 		{"an item once per integration", exec(`INSERT INTO ingestion_connection (books_id, integration_id, external_id, name, provider_status) VALUES ($1, $2, 'item-1', 'Again', 'UPDATED')`, uid, integration)},
 		{"A35: one feed per ledger account", external("acc-2", checking, "2026-10-01", false)},
 		{"A35: a mapped account has a start date", external("acc-3", savings, nil, false)},
 		{"A35: an ignored account is not mapped", external("acc-4", savings, "2026-10-01", true)},
-		{"ADR 003: a mapping stays within its user", external("acc-5", otherAccount, "2026-10-01", false)},
+		{"ADR 003: a mapping stays within its book", external("acc-5", otherAccount, "2026-10-01", false)},
 		{"an aggregator is an identifier", exec(`INSERT INTO ingestion_integration (id, books_id, aggregator, name, credential_ciphertext) VALUES (uuidv7(), $1, 'Bad Id', 'Other', '\x01')`, uid)},
 		{"open_finance is no batch source", batch("open_finance", "", nil)},
 		{"a file batch has a file name", batch("ofx", "", nil)},

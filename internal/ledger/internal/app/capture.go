@@ -29,7 +29,7 @@ type CapturePayee struct {
 	Name string
 }
 
-// CaptureVocabulary returns the balance accounts, the categories and the live payees of the user.
+// CaptureVocabulary returns the balance accounts, the categories and the live payees of the book.
 func (s *Service) CaptureVocabulary(ctx context.Context, booksID int64) ([]CaptureAccount, []CapturePayee, error) {
 	accounts, err := s.repo.AllAccounts(ctx, booksID)
 	if err != nil {

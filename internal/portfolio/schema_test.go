@@ -20,7 +20,7 @@ func TestSchemaRejectsInvalidRows(t *testing.T) {
 	}
 
 	tests := map[string]string{
-		"another user's account": `INSERT INTO portfolio_position_day (books_id, account_id, instrument, date, quantity, cost_basis) VALUES ($2, $1, 'BRL', '2026-10-05', 1, 1)`,
+		"another book's account": `INSERT INTO portfolio_position_day (books_id, account_id, instrument, date, quantity, cost_basis) VALUES ($2, $1, 'BRL', '2026-10-05', 1, 1)`,
 		"unknown tax treatment":  `INSERT INTO portfolio_income_event (books_id, transaction_id, account_id, instrument, date, income_type, tax_treatment, gross, withheld, currency) VALUES ($3, gen_random_uuid(), $1, 'BRL', '2026-10-05', 'dividend', 'Taxable!', 1, 0, 'BRL')`,
 		"malformed income type":  `INSERT INTO portfolio_income_event (books_id, transaction_id, account_id, instrument, date, income_type, tax_treatment, gross, withheld, currency) VALUES ($3, gen_random_uuid(), $1, 'BRL', '2026-10-05', 'Bad!', 'exempt', 1, 0, 'BRL')`,
 		"malformed tax class":    `INSERT INTO portfolio_realized_result (books_id, transaction_id, account_id, instrument, date, month, quantity, cost, proceeds, result, tax_class, currency) VALUES ($3, gen_random_uuid(), $1, 'BRL', '2026-10-05', '2026-10-01', 1, 1, 1, 0, 'Bad!', 'BRL')`,

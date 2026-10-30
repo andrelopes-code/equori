@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// Provider is one language model service of a user. Its key travels only sealed (ADR 008).
+// Provider is one language model service of a book. Its key travels only sealed (ADR 008).
 type Provider struct {
 	ID        uuid.UUID
 	BooksID   int64

@@ -66,7 +66,7 @@ func (r *Repository) CreateMember(ctx context.Context, u domain.Member, region s
 	return created, booksID, nil
 }
 
-// CreateFirstMember creates u only while no user exists; the table lock makes the check and the
+// CreateFirstMember creates u only while no member exists; the table lock makes the check and the
 // insert one step for concurrent requests (W-U4).
 func (r *Repository) CreateFirstMember(ctx context.Context, u domain.Member, region string, base money.Currency) (domain.Member, int64, error) {
 	var (

@@ -48,7 +48,7 @@ type searchTransactionsOut struct {
 func searchTransactions(svc *app.Service) tool.Tool {
 	return tool.New(tool.Spec{
 		Name: "search_transactions",
-		Description: "Searches the user's transactions, newest first, with their payee, tags and postings; " +
+		Description: "Searches the book's transactions, newest first, with their payee, tags and postings; " +
 			"each posting names its account or category. " +
 			"Use it to find transactions by text, account, category, tag, period or missing category, " +
 			"and to get the transaction_id other tools take. " +

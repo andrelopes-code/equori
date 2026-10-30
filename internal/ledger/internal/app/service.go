@@ -47,7 +47,7 @@ func NewService(repo Repository, clock Clock, cal Calendar, ins Instruments, pri
 // Today is the date of the ledger's clock.
 func (s *Service) Today() time.Time { return s.clock.Today() }
 
-// Provision creates the settings and system accounts of a new user. It is idempotent.
+// Provision creates the settings and system accounts of a new book. It is idempotent.
 func (s *Service) Provision(ctx context.Context, booksID int64, base money.Currency) error {
 	return s.repo.InTx(ctx, func(r Repository) error {
 		if _, err := r.Settings(ctx, booksID); err == nil {

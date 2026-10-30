@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// ChainTarget is one model of one provider in a user's chain for a use. Capabilities are
+// ChainTarget is one model of one provider in a book's chain for a use. Capabilities are
 // the owner's assertion; ModelCapabilities prefers the preset's.
 type ChainTarget struct {
 	ProviderID   uuid.UUID
