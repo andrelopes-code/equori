@@ -1,6 +1,6 @@
 # Households and access: design
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-10-30
 - Phase: P11 of `docs/domain/09-roadmap.md`, section 9.4
 - Decision records: ADR 029 (amended), ADR 003 (amended), ADR 030 (new, second factor)
@@ -94,6 +94,7 @@ Each table has the columns ID, decision and reason. The plan cites the ID and do
 | ID | Decision | Reason |
 |---|---|---|
 | HA28 | `assistant_conversation` gains `member_id bigint NOT NULL`, filled with the owner of the book with the lowest member ID, and the foreign key `(member_id, books_id)` to `identity_membership ON DELETE CASCADE`. Every conversation query filters by `books_id` and `member_id`. A conversation of another member is 404. Usage and limits stay per book. | Shared-books design section 10 moves the privacy of conversations to P11: a conversation holds one person's questions. Before P11 each book has one member, so the fill is exact. Spend is a book matter (ADR 019). |
+| HA55 | The export archive carries no row of `assistant_conversation`, `assistant_message` or `assistant_proposal`. Archive version 5 drops the three tables from older archives (ADR 021, V2). | An export by any member would otherwise carry the conversations of the other members (HA28), and a conversation row names a member that another instance does not have. Owner decision of 2026-10-30. |
 
 ### 4.6 Browser keys under the books ID
 
@@ -207,6 +208,7 @@ New `Problem.code` values, each with an HTTP test (CONTRIBUTING, Tests): `book_r
 - ADR 003: amendment: the login rule of HA3; an invitation creates a member (HA26); the second factor moves from "Not covered" to ADR 030.
 - ADR 030 (new): second factor: TOTP, recovery codes, passkeys without a dependency, the `uqr` dependency of the web, reset by the CLI.
 - ADR 024: the effective scope of HA16.
+- `docs/specs/2026-10-26-export-design.md`, E2: the conversation tables of HA55 and `identity_invitation` stay out of the archive.
 - `docs/specs/2026-10-30-shared-books-design.md`, section 5: the row of browser keys follows HA29 and HA30.
 - `docs/domain/02-ubiquitous-language.md`: invitation, required book role, second factor, recovery code, passkey.
 - `docs/domain/06-scenarios.md`: S192 to S202.
@@ -243,6 +245,6 @@ New `Problem.code` values, each with an HTTP test (CONTRIBUTING, Tests): `book_r
 
 P11 is executed in three plans, in this order (section 9.4.3):
 
-1. Households API: HA1 to HA28; S192 to S198; the `x-book-role` of every existing operation.
+1. Households API: HA1 to HA28 and HA55; S192 to S198; the `x-book-role` of every existing operation.
 2. Households web: HA29 to HA32, HA51, HA52, HA54.
 3. Second factor: HA33 to HA50, HA53, ADR 030; S199 to S202.
