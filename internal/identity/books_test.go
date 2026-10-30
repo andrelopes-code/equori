@@ -2,6 +2,7 @@ package identity_test
 
 import (
 	"net/http"
+	"slices"
 	"testing"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
@@ -131,5 +132,79 @@ func TestLoginPrefersOwnerBooks(t *testing.T) {
 
 	if ownerBooks <= writeBooks || got != ownerBooks {
 		t.Fatalf("session books = %d, want owner books %d (write books %d)", got, ownerBooks, writeBooks)
+	}
+}
+
+// S187: two members of one instance each see only the rows of their own book.
+func TestBooksIsolation(t *testing.T) {
+	h := apitest.New(t)
+	checking := h.Account("Checking", "asset", "checking", nil)
+	other := h.Login("other@example.com")
+
+	r := h.Call(other, http.MethodPost, "/api/v1/accounts", map[string]any{
+		"name":     "Savings",
+		"class":    "asset",
+		"kind":     "savings",
+		"currency": "BRL",
+	})
+	if r.Status != http.StatusCreated {
+		t.Fatalf("status %d: %s", r.Status, r.Body)
+	}
+
+	var created struct {
+		ID string `json:"id"`
+	}
+	r.Decode(t, &created)
+	savings := created.ID
+
+	tests := []struct {
+		name    string
+		call    func(method, path string) apitest.Response
+		holds   string
+		lacks   string
+		foreign string
+	}{
+		{
+			name:    "owner",
+			call:    func(method, path string) apitest.Response { return h.Do(method, path, nil) },
+			holds:   "Checking",
+			lacks:   "Savings",
+			foreign: savings,
+		},
+		{
+			name:    "other",
+			call:    func(method, path string) apitest.Response { return h.Call(other, method, path, nil) },
+			holds:   "Savings",
+			lacks:   "Checking",
+			foreign: checking,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			list := tt.call(http.MethodGet, "/api/v1/accounts?limit=100")
+			if list.Status != http.StatusOK {
+				t.Fatalf("status %d: %s", list.Status, list.Body)
+			}
+
+			var page struct {
+				Items []struct {
+					Name string `json:"name"`
+				} `json:"items"`
+			}
+			list.Decode(t, &page)
+
+			names := make([]string, 0, len(page.Items))
+			for _, item := range page.Items {
+				names = append(names, item.Name)
+			}
+
+			if !slices.Contains(names, tt.holds) || slices.Contains(names, tt.lacks) {
+				t.Errorf("names = %v; want %q and not %q", names, tt.holds, tt.lacks)
+			}
+
+			get := tt.call(http.MethodGet, "/api/v1/accounts/"+tt.foreign)
+			h.ExpectProblem(get, http.StatusNotFound, "not_found", "")
+		})
 	}
 }
