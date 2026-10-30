@@ -31,7 +31,13 @@ func (s *Service) Tick(ctx context.Context) ([]SyncFailure, error) {
 			return failures, ctx.Err()
 		}
 
-		if _, _, err := s.sync(ctx, ref.BooksID, ref.ID, false); err != nil {
+		bctx, err := s.inBooks(ctx, ref.BooksID)
+		if err != nil {
+			failures = append(failures, SyncFailure{BooksID: ref.BooksID, ConnectionID: ref.ID, Err: err})
+			continue
+		}
+
+		if _, _, err := s.sync(bctx, ref.BooksID, ref.ID, false); err != nil {
 			failures = append(failures, SyncFailure{BooksID: ref.BooksID, ConnectionID: ref.ID, Err: err})
 		}
 	}

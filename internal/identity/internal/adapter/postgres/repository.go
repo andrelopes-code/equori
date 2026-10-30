@@ -163,6 +163,15 @@ func (r *Repository) Locale(ctx context.Context, booksID, memberID int64) (local
 	return locale.Locale{Language: row.Language, Region: row.Region}, nil
 }
 
+func (r *Repository) BooksZone(ctx context.Context, booksID int64) (string, *string, error) {
+	row, err := r.q.GetBooksZone(ctx, booksID)
+	if err != nil {
+		return "", nil, notFound(err)
+	}
+
+	return row.Region, row.TimeZone, nil
+}
+
 func (r *Repository) LoginBooks(ctx context.Context, memberID int64) (int64, error) {
 	booksID, err := r.q.GetLoginBooks(ctx, memberID)
 	if err != nil {

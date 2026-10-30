@@ -122,13 +122,18 @@ func (s *Service) Backfill(ctx context.Context) error {
 	}
 
 	for _, ref := range refs {
-		err := s.repo.InTx(ctx, func(repo Repository) error {
-			sch, err := repo.LockSchedule(ctx, ref.BooksID, ref.ID)
+		bctx, err := s.profiles.InBooks(ctx, ref.BooksID)
+		if err != nil {
+			return fmt.Errorf("backfill schedule %s: %w", ref.ID, err)
+		}
+
+		err = s.repo.InTx(bctx, func(repo Repository) error {
+			sch, err := repo.LockSchedule(bctx, ref.BooksID, ref.ID)
 			if err != nil {
 				return err
 			}
 
-			return s.fill(ctx, repo, ref.BooksID, sch, time.Time{}, sch.GeneratedUntil)
+			return s.fill(bctx, repo, ref.BooksID, sch, time.Time{}, sch.GeneratedUntil)
 		})
 		if err != nil {
 			return fmt.Errorf("backfill schedule %s: %w", ref.ID, err)
@@ -146,20 +151,27 @@ type Failure struct {
 
 // Tick extends every schedule whose occurrences stop before the horizon (A53).
 func (s *Service) Tick(ctx context.Context) ([]Failure, error) {
-	refs, err := s.repo.SchedulesBehind(ctx, s.horizon(ctx))
+	// A book's today is at most one day after UTC's; generate stops at the book's horizon.
+	refs, err := s.repo.SchedulesBehind(ctx, s.horizon(ctx).AddDate(0, 0, 1))
 	if err != nil {
 		return nil, err
 	}
 
 	var failures []Failure
 	for _, ref := range refs {
-		err := s.repo.InTx(ctx, func(repo Repository) error {
-			sch, err := repo.LockSchedule(ctx, ref.BooksID, ref.ID)
+		bctx, err := s.profiles.InBooks(ctx, ref.BooksID)
+		if err != nil {
+			failures = append(failures, Failure{Ref: ref, Err: err})
+			continue
+		}
+
+		err = s.repo.InTx(bctx, func(repo Repository) error {
+			sch, err := repo.LockSchedule(bctx, ref.BooksID, ref.ID)
 			if err != nil {
 				return err
 			}
 
-			return s.generate(ctx, repo, ref.BooksID, sch)
+			return s.generate(bctx, repo, ref.BooksID, sch)
 		})
 		if err != nil {
 			failures = append(failures, Failure{Ref: ref, Err: err})

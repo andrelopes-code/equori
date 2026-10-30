@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"slices"
 	"testing"
+	"time"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
 )
@@ -270,4 +271,37 @@ func TestOccurrenceRangeLimit(t *testing.T) {
 	f := newFixture(t, "2026-11-01")
 	f.h.ExpectProblem(f.h.Do(http.MethodGet, "/api/v1/occurrences?from=2026-11-01&to=2027-12-06", nil), http.StatusUnprocessableEntity, "validation_failed", "to")
 	f.h.ExpectProblem(f.h.Do(http.MethodGet, "/api/v1/occurrences?from=2026-11-02&to=2026-11-01", nil), http.StatusUnprocessableEntity, "validation_failed", "to")
+}
+
+// TestTickInBooksTimeZone: BK20. The scheduler generates up to the horizon of the book's today.
+func TestTickInBooksTimeZone(t *testing.T) {
+	t.Parallel()
+
+	f := newFixture(t, "2026-11-01")
+	id := f.schedule("bill", f.checking, f.rent, 210000, monthly("2026-11-01", 5, ""), nil)
+	generatedUntil := func() string {
+		var got string
+		if err := f.h.Pool.QueryRow(t.Context(),
+			`SELECT generated_until::text FROM planning_schedule WHERE id = $1`, id).Scan(&got); err != nil {
+			t.Fatal(err)
+		}
+
+		return got
+	}
+
+	if got := generatedUntil(); got != "2027-11-01" {
+		t.Fatalf("generated_until after create = %s, want 2027-11-01", got)
+	}
+
+	if _, err := f.h.Pool.Exec(t.Context(),
+		`UPDATE identity_books SET time_zone = 'Asia/Tokyo' WHERE id = $1`, f.h.OwnerID()); err != nil {
+		t.Fatal(err)
+	}
+
+	f.h.Restart(apitest.Clock(func() time.Time { return time.Date(2026, 11, 1, 20, 0, 0, 0, time.UTC) }))
+	f.h.App.Planning.Tick(t.Context())
+
+	if got := generatedUntil(); got != "2027-11-02" {
+		t.Fatalf("generated_until after tick = %s, want 2027-11-02", got)
+	}
 }

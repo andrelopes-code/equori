@@ -314,3 +314,36 @@ func TestInterruptedSyncCompletes(t *testing.T) {
 		t.Fatalf("checking batch = %+v", b)
 	}
 }
+
+// TestSyncDatesInBooksTimeZone: BK19, BK20. A line at 01:30 UTC of 2026-10-21 is booked on
+// 2026-10-20 in São Paulo, the default of the owner's region BR.
+func TestSyncDatesInBooksTimeZone(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name string
+		run  func(f syncFixture)
+	}{
+		{name: "sync now", run: func(f syncFixture) { f.mustSyncNow(f.conn.ID) }},
+		{name: "tick", run: func(f syncFixture) { f.tick() }},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			f := newSyncFixture(t)
+			tx := bankLine("tx-1", "2026-10-21", "-120.00")
+			tx.Date = "2026-10-21T01:30:00.000Z"
+			f.line(pluggy.SubtypeChecking, tx)
+			f.mapTo(pluggy.SubtypeChecking, f.checking)
+
+			tt.run(f)
+
+			got := f.count("SELECT count(*) FROM ingestion_external_record WHERE external_id = 'tx-1' AND booked_on = '2026-10-20'")
+			if got != 1 {
+				t.Fatalf("records booked on 2026-10-20 = %d, want 1", got)
+			}
+		})
+	}
+}

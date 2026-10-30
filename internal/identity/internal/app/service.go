@@ -35,6 +35,8 @@ type Repository interface {
 	Locale(ctx context.Context, booksID, memberID int64) (locale.Locale, error)
 	// LoginBooks returns ErrNotFound without rows.
 	LoginBooks(ctx context.Context, memberID int64) (int64, error)
+	// BooksZone returns ErrNotFound without the row; timeZone is nil while the book uses the default of its region.
+	BooksZone(ctx context.Context, booksID int64) (region string, timeZone *string, err error)
 	MemberByID(ctx context.Context, memberID int64) (domain.Member, error)
 	MemberByEmail(ctx context.Context, email string) (domain.Member, error)
 	CreateSession(ctx context.Context, s domain.Session) error
@@ -52,9 +54,10 @@ const (
 )
 
 type Service struct {
-	repo     Repository
-	now      func() time.Time
-	throttle *throttle
+	repo            Repository
+	now             func() time.Time
+	defaultTimeZone func(region string) string
+	throttle        *throttle
 	// hashSlots caps concurrent argon2id runs; each one allocates 19 MiB.
 	hashSlots chan struct{}
 	// dummyHash is verified when the email is unknown, so both failure paths cost one argon2id run.
@@ -62,13 +65,14 @@ type Service struct {
 	setup     setup
 }
 
-func NewService(repo Repository, now func() time.Time) *Service {
+func NewService(repo Repository, now func() time.Time, defaultTimeZone func(region string) string) *Service {
 	return &Service{
-		repo:      repo,
-		now:       now,
-		throttle:  newThrottle(loginAttemptLimit, loginAttemptWindow),
-		hashSlots: make(chan struct{}, runtime.NumCPU()),
-		dummyHash: password.Hash("dummy password for timing equalization"),
+		repo:            repo,
+		now:             now,
+		defaultTimeZone: defaultTimeZone,
+		throttle:        newThrottle(loginAttemptLimit, loginAttemptWindow),
+		hashSlots:       make(chan struct{}, runtime.NumCPU()),
+		dummyHash:       password.Hash("dummy password for timing equalization"),
 	}
 }
 
@@ -128,6 +132,26 @@ func validateLocale(l locale.Locale) error {
 	}
 
 	return nil
+}
+
+// Location returns the book's time_zone, or the default of its region while null.
+func (s *Service) Location(ctx context.Context, booksID int64) (*time.Location, error) {
+	region, timeZone, err := s.repo.BooksZone(ctx, booksID)
+	if err != nil {
+		return nil, fmt.Errorf("load time zone of books %d: %w", booksID, err)
+	}
+
+	name := s.defaultTimeZone(region)
+	if timeZone != nil {
+		name = *timeZone
+	}
+
+	loc, err := time.LoadLocation(name)
+	if err != nil {
+		return nil, fmt.Errorf("load location of books %d: %w", booksID, err)
+	}
+
+	return loc, nil
 }
 
 // Profile returns the language and region of the books for the member (BK27).

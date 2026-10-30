@@ -11,6 +11,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/identity/internal/app"
 	"github.com/andrelopes-code/equori/internal/identity/internal/domain"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
+	"github.com/andrelopes-code/equori/internal/platform/clock"
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/platform/locale"
 	"github.com/andrelopes-code/equori/internal/platform/money"
@@ -71,7 +72,13 @@ func (s *Server) RequireSession(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx := auth.WithIdentity(r.Context(), user.ID, booksID)
+		loc, err := s.svc.Location(r.Context(), booksID)
+		if err != nil {
+			s.errs.Write(w, r, err)
+			return
+		}
+
+		ctx := clock.WithLocation(auth.WithIdentity(r.Context(), user.ID, booksID), loc)
 		ctx = context.WithValue(ctx, memberKey{}, user)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})

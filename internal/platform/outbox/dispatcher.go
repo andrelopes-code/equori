@@ -31,6 +31,8 @@ type Dispatcher struct {
 	log  *slog.Logger
 	subs []subscription
 	now  func() time.Time
+	// inBooks builds the context of a delivery from the event's books ID; nil keeps the dispatcher's.
+	inBooks func(ctx context.Context, booksID int64) (context.Context, error)
 }
 
 func NewDispatcher(pool *pgxpool.Pool, log *slog.Logger) *Dispatcher {
@@ -41,6 +43,12 @@ func NewDispatcher(pool *pgxpool.Pool, log *slog.Logger) *Dispatcher {
 // state; renaming a consumer redelivers every retained event to it.
 func (d *Dispatcher) Subscribe(consumer, eventType string, h Handler) {
 	d.subs = append(d.subs, subscription{consumer: consumer, eventType: eventType, handler: h})
+}
+
+// UseBooks sets the context of every delivery from the event's books ID; without it handlers run
+// in the dispatcher's context. An error of inBooks counts as an error of the handler.
+func (d *Dispatcher) UseBooks(inBooks func(ctx context.Context, booksID int64) (context.Context, error)) {
+	d.inBooks = inBooks
 }
 
 // Run dispatches until ctx is canceled, woken by NOTIFY or every pollInterval.
@@ -146,7 +154,17 @@ func (d *Dispatcher) pending(ctx context.Context, s subscription) ([]Delivered, 
 // deliver reports false when the handler failed and the failure was recorded for retry.
 func (d *Dispatcher) deliver(ctx context.Context, s subscription, e Delivered) (bool, error) {
 	handlerErr := pgx.BeginFunc(ctx, d.pool, func(tx pgx.Tx) error {
-		if err := callHandler(ctx, s.handler, tx, e); err != nil {
+		hctx := ctx
+
+		if d.inBooks != nil {
+			var err error
+
+			if hctx, err = d.inBooks(ctx, e.BooksID); err != nil {
+				return fmt.Errorf("context of books %d: %w", e.BooksID, err)
+			}
+		}
+
+		if err := callHandler(hctx, s.handler, tx, e); err != nil {
 			return err
 		}
 

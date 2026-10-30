@@ -114,6 +114,8 @@ type Service struct {
 	aggs  registry.Registry[Aggregator]
 	now   func() time.Time
 	today func(context.Context) time.Time
+	// inBooks gives each scheduled sync the context of its book (BK20).
+	inBooks func(ctx context.Context, booksID int64) (context.Context, error)
 }
 
 // Integrations are what aggregator integrations need; the zero value leaves them unavailable.
@@ -123,10 +125,12 @@ type Integrations struct {
 	// Now and Today are the instance's clock (ADR 005).
 	Now   func() time.Time
 	Today func(context.Context) time.Time
+	// InBooks gives each scheduled sync the context of its book (BK20).
+	InBooks func(ctx context.Context, booksID int64) (context.Context, error)
 }
 
 func NewService(repo Repository, ledger Ledger, in Integrations) *Service {
-	return &Service{repo: repo, ledger: ledger, box: in.Box, aggs: in.Aggregators, now: in.Now, today: in.Today}
+	return &Service{repo: repo, ledger: ledger, box: in.Box, aggs: in.Aggregators, now: in.Now, today: in.Today, inBooks: in.InBooks}
 }
 
 // FollowPairing points the records that a ledger pairing moved to the kept transaction

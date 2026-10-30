@@ -129,6 +129,8 @@ type Calendar interface {
 // Profiles gives the language and region of a book (identity).
 type Profiles interface {
 	Profile(ctx context.Context, booksID int64) (locale.Locale, error)
+	// InBooks returns ctx with the book as the active book and its location (BK20).
+	InBooks(ctx context.Context, booksID int64) (context.Context, error)
 }
 
 // IDKey is the sort key of lists in creation order.

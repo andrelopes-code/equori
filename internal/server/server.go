@@ -108,6 +108,7 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 	identityModule := identity.New(pool, identity.Config{
 		SecureCookies: cfg.SecureCookies, DefaultCurrency: ledger.DefaultBaseCurrency, SetupDone: cfg.SetupDone,
 	}, log)
+	dispatcher.UseBooks(identityModule.InBooks)
 	feedClient := &http.Client{Timeout: time.Minute}
 	// The variables are validated here and seed the stored feed settings (ADR 025 F2, F4).
 	if _, err := marketdata.NewSources(cfg.PriceFeeds, nil, feedClient); err != nil {
@@ -153,6 +154,7 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 
 	ingestionModule, err := ingestion.New(pool, dispatcher, ledgerModule, classificationModule, ingestion.Config{
 		SecretKey: cfg.SecretKey, PreviousSecretKey: cfg.PreviousSecretKey, URLs: cfg.AggregatorURLs, Clock: clk,
+		InBooks: identityModule.InBooks,
 	}, log)
 	if err != nil {
 		return nil, err
@@ -228,7 +230,14 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 				return mcp.Grant{}, err
 			}
 
-			return mcp.Grant{TokenID: g.TokenID.String(), MemberID: g.MemberID, BooksID: g.BooksID, Write: g.Scope == "write"}, nil
+			loc, err := identityModule.Location(ctx, g.BooksID)
+			if err != nil {
+				return mcp.Grant{}, err
+			}
+
+			return mcp.Grant{
+				TokenID: g.TokenID.String(), MemberID: g.MemberID, BooksID: g.BooksID, Write: g.Scope == "write", Location: loc,
+			}, nil
 		},
 	}))
 	root.Handle("/", identityModule.RequireSession(validator.Middleware(mux)))

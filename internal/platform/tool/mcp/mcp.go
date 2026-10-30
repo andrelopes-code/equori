@@ -14,6 +14,7 @@ import (
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/andrelopes-code/equori/internal/platform/auth"
+	"github.com/andrelopes-code/equori/internal/platform/clock"
 	"github.com/andrelopes-code/equori/internal/platform/tool"
 )
 
@@ -23,6 +24,8 @@ type Grant struct {
 	MemberID int64
 	BooksID  int64
 	Write    bool
+	// Location is the book's location for dates (BK19); nil reads as UTC.
+	Location *time.Location
 }
 
 // Verify checks a token. ErrInvalidToken answers 401; any other error answers 500.
@@ -124,7 +127,7 @@ func callTool(cfg Config, spec tool.Spec) sdk.ToolHandler {
 		}
 
 		start := time.Now()
-		res, err := cfg.Registry.Call(auth.WithIdentity(ctx, g.MemberID, g.BooksID), spec.Name, req.Params.Arguments)
+		res, err := cfg.Registry.Call(clock.WithLocation(auth.WithIdentity(ctx, g.MemberID, g.BooksID), g.Location), spec.Name, req.Params.Arguments)
 
 		outcome := "ok"
 		switch {

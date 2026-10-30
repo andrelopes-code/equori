@@ -145,6 +145,28 @@ func (q *Queries) DeleteSession(ctx context.Context, tokenHash []byte) error {
 	return err
 }
 
+const getBooksZone = `-- name: GetBooksZone :one
+SELECT
+    region,
+    time_zone
+FROM
+    identity_books
+WHERE
+    id = $1
+`
+
+type GetBooksZoneRow struct {
+	Region   string
+	TimeZone *string
+}
+
+func (q *Queries) GetBooksZone(ctx context.Context, id int64) (GetBooksZoneRow, error) {
+	row := q.db.QueryRow(ctx, getBooksZone, id)
+	var i GetBooksZoneRow
+	err := row.Scan(&i.Region, &i.TimeZone)
+	return i, err
+}
+
 const getLocale = `-- name: GetLocale :one
 SELECT
     b.region,

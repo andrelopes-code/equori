@@ -303,6 +303,8 @@ func (p ledgerPort) CategoryMonthlyTotals(ctx context.Context, booksID int64, ca
 // Profiles is the part of identity the module uses to default a schedule's calendar.
 type Profiles interface {
 	Profile(ctx context.Context, booksID int64) (locale.Locale, error)
+	// InBooks returns ctx with the book as the active book and its location (BK20).
+	InBooks(ctx context.Context, booksID int64) (context.Context, error)
 }
 
 type calendarPort struct{ md *marketdata.Module }

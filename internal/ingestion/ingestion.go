@@ -47,13 +47,15 @@ type Config struct {
 	// aggregator without an entry uses its own default.
 	URLs  map[string]string
 	Clock clock.Clock
+	// InBooks gives each scheduled sync the context of its book (BK20).
+	InBooks func(ctx context.Context, booksID int64) (context.Context, error)
 }
 
 // AggregatorIDs lists the aggregators this build offers, in ascending order.
 func AggregatorIDs() []string { return []string{"pluggy"} }
 
 func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, l *ledger.Module, c *classification.Module, cfg Config, log *slog.Logger) (*Module, error) {
-	in := app.Integrations{Now: cfg.Clock.Now, Today: cfg.Clock.Today}
+	in := app.Integrations{Now: cfg.Clock.Now, Today: cfg.Clock.Today, InBooks: cfg.InBooks}
 	if cfg.SecretKey != "" {
 		var previous []byte
 		if cfg.PreviousSecretKey != "" {

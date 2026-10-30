@@ -13,6 +13,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/andrelopes-code/equori/internal/platform/clock"
 	"github.com/andrelopes-code/equori/internal/platform/outbox"
 	"github.com/andrelopes-code/equori/internal/platform/postgres/pgtest"
 )
@@ -119,6 +120,86 @@ func TestDeliveredCarriesEvent(t *testing.T) {
 
 	if got.Type != eventType || got.BooksID != booksID || got.AggregateID != "agg-1" || payload["n"] != 7 || got.OccurredAt.IsZero() {
 		t.Fatalf("delivered = %+v, payload %v", got, payload)
+	}
+}
+
+func TestDeliveryRunsInBooksContext(t *testing.T) {
+	t.Parallel()
+
+	tokyo, err := time.LoadLocation("Asia/Tokyo")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		name       string
+		inBooks    func(ctx context.Context, booksID int64) (context.Context, error)
+		wantRuns   int32
+		wantStatus string
+	}{
+		{
+			name: "location",
+			inBooks: func(ctx context.Context, _ int64) (context.Context, error) {
+				return clock.WithLocation(ctx, tokyo), nil
+			},
+			wantRuns:   1,
+			wantStatus: "delivered",
+		},
+		{
+			name: "error",
+			inBooks: func(context.Context, int64) (context.Context, error) {
+				return nil, errors.New("no book")
+			},
+			wantRuns:   0,
+			wantStatus: "retrying",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			pool := pgtest.New(t)
+			booksID := pgtest.CreateBooks(t, pool)
+			d := newDispatcher(pool)
+
+			var gotBooksID atomic.Int64
+
+			d.UseBooks(func(ctx context.Context, id int64) (context.Context, error) {
+				gotBooksID.Store(id)
+
+				return tt.inBooks(ctx, id)
+			})
+
+			var runs atomic.Int32
+
+			var zone atomic.Value
+
+			d.Subscribe("c", eventType, func(ctx context.Context, _ pgx.Tx, _ outbox.Delivered) error {
+				runs.Add(1)
+				zone.Store(clock.Location(ctx).String())
+
+				return nil
+			})
+			insertEvent(t, pool, outbox.Event{Type: eventType, BooksID: booksID, AggregateID: "x", Payload: 1})
+
+			dispatch(t, d)
+
+			if runs.Load() != tt.wantRuns {
+				t.Fatalf("handler runs = %d, want %d", runs.Load(), tt.wantRuns)
+			}
+
+			if gotBooksID.Load() != booksID {
+				t.Fatalf("UseBooks books ID = %d, want %d", gotBooksID.Load(), booksID)
+			}
+
+			if tt.wantRuns == 1 && zone.Load() != "Asia/Tokyo" {
+				t.Fatalf("location in handler = %v, want Asia/Tokyo", zone.Load())
+			}
+
+			if status, _ := delivery(t, pool, "c"); status != tt.wantStatus {
+				t.Fatalf("status = %s, want %s", status, tt.wantStatus)
+			}
+		})
 	}
 }
 

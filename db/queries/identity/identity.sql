@@ -126,3 +126,12 @@ SELECT
         FROM
             identity_member
     );
+
+-- name: GetBooksZone :one
+SELECT
+    region,
+    time_zone
+FROM
+    identity_books
+WHERE
+    id = $1;
