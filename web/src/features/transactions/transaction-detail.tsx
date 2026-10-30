@@ -173,6 +173,7 @@ export function TransactionDetail({
 
   return (
     <DetailPanel
+      className={host === "page" ? styles.page : undefined}
       recordKey={tx.id}
       level={host === "page" ? "1" : "2"}
       scroll={host === "pane" ? "self" : "ancestor"}

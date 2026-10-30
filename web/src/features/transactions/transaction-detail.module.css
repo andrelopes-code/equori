@@ -1,4 +1,10 @@
 @layer app {
+  /* The page has the width the pane lacks: the facts column takes the form aside's 20rem
+     instead of the panel's 16rem. */
+  .page {
+    --slotted-detail-panel-aside-size-md: 20rem;
+  }
+
   /* The header blurs what scrolls under it, and a blurred box is not cut by the pane's rounded
      overflow: its square top corners show over the pane's border. It takes the pane's inner radius
      itself, so the glass stays and the corners follow the pane. */
