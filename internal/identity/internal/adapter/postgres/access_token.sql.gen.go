@@ -14,14 +14,15 @@ import (
 
 const createAccessToken = `-- name: CreateAccessToken :exec
 INSERT INTO
-    identity_access_token (id, user_id, name, scope, token_hash, created_at, expires_at)
+    identity_access_token (id, member_id, books_id, name, scope, token_hash, created_at, expires_at)
 VALUES
-    ($1, $2, $3, $4, $5, $6, $7)
+    ($1, $2, $3, $4, $5, $6, $7, $8)
 `
 
 type CreateAccessTokenParams struct {
 	ID        uuid.UUID
-	UserID    int64
+	MemberID  int64
+	BooksID   int64
 	Name      string
 	Scope     string
 	TokenHash []byte
@@ -32,7 +33,8 @@ type CreateAccessTokenParams struct {
 func (q *Queries) CreateAccessToken(ctx context.Context, arg CreateAccessTokenParams) error {
 	_, err := q.db.Exec(ctx, createAccessToken,
 		arg.ID,
-		arg.UserID,
+		arg.MemberID,
+		arg.BooksID,
 		arg.Name,
 		arg.Scope,
 		arg.TokenHash,
@@ -45,17 +47,17 @@ func (q *Queries) CreateAccessToken(ctx context.Context, arg CreateAccessTokenPa
 const deleteAccessToken = `-- name: DeleteAccessToken :execrows
 DELETE FROM identity_access_token
 WHERE
-    user_id = $1
+    member_id = $1
     AND id = $2
 `
 
 type DeleteAccessTokenParams struct {
-	UserID int64
-	ID     uuid.UUID
+	MemberID int64
+	ID       uuid.UUID
 }
 
 func (q *Queries) DeleteAccessToken(ctx context.Context, arg DeleteAccessTokenParams) (int64, error) {
-	result, err := q.db.Exec(ctx, deleteAccessToken, arg.UserID, arg.ID)
+	result, err := q.db.Exec(ctx, deleteAccessToken, arg.MemberID, arg.ID)
 	if err != nil {
 		return 0, err
 	}
@@ -65,7 +67,8 @@ func (q *Queries) DeleteAccessToken(ctx context.Context, arg DeleteAccessTokenPa
 const getAccessTokenByHash = `-- name: GetAccessTokenByHash :one
 SELECT
     id,
-    user_id,
+    member_id,
+    books_id,
     name,
     scope,
     created_at,
@@ -85,7 +88,8 @@ type GetAccessTokenByHashParams struct {
 
 type GetAccessTokenByHashRow struct {
 	ID         uuid.UUID
-	UserID     int64
+	MemberID   int64
+	BooksID    int64
 	Name       string
 	Scope      string
 	CreatedAt  time.Time
@@ -93,13 +97,14 @@ type GetAccessTokenByHashRow struct {
 	LastUsedAt *time.Time
 }
 
-// Verification knows only the token; the hash identifies the user (design 2026-10-26 X12).
+// Verification knows only the token; the hash identifies the member and the book.
 func (q *Queries) GetAccessTokenByHash(ctx context.Context, arg GetAccessTokenByHashParams) (GetAccessTokenByHashRow, error) {
 	row := q.db.QueryRow(ctx, getAccessTokenByHash, arg.TokenHash, arg.ExpiresAt)
 	var i GetAccessTokenByHashRow
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
+		&i.MemberID,
+		&i.BooksID,
 		&i.Name,
 		&i.Scope,
 		&i.CreatedAt,
@@ -112,7 +117,8 @@ func (q *Queries) GetAccessTokenByHash(ctx context.Context, arg GetAccessTokenBy
 const listAccessTokens = `-- name: ListAccessTokens :many
 SELECT
     id,
-    user_id,
+    member_id,
+    books_id,
     name,
     scope,
     created_at,
@@ -121,15 +127,22 @@ SELECT
 FROM
     identity_access_token
 WHERE
-    user_id = $1
+    member_id = $1
+    AND books_id = $2
 ORDER BY
     created_at DESC,
     id
 `
 
+type ListAccessTokensParams struct {
+	MemberID int64
+	BooksID  int64
+}
+
 type ListAccessTokensRow struct {
 	ID         uuid.UUID
-	UserID     int64
+	MemberID   int64
+	BooksID    int64
 	Name       string
 	Scope      string
 	CreatedAt  time.Time
@@ -137,8 +150,8 @@ type ListAccessTokensRow struct {
 	LastUsedAt *time.Time
 }
 
-func (q *Queries) ListAccessTokens(ctx context.Context, userID int64) ([]ListAccessTokensRow, error) {
-	rows, err := q.db.Query(ctx, listAccessTokens, userID)
+func (q *Queries) ListAccessTokens(ctx context.Context, arg ListAccessTokensParams) ([]ListAccessTokensRow, error) {
+	rows, err := q.db.Query(ctx, listAccessTokens, arg.MemberID, arg.BooksID)
 	if err != nil {
 		return nil, err
 	}
@@ -148,7 +161,8 @@ func (q *Queries) ListAccessTokens(ctx context.Context, userID int64) ([]ListAcc
 		var i ListAccessTokensRow
 		if err := rows.Scan(
 			&i.ID,
-			&i.UserID,
+			&i.MemberID,
+			&i.BooksID,
 			&i.Name,
 			&i.Scope,
 			&i.CreatedAt,
@@ -170,7 +184,7 @@ UPDATE identity_access_token
 SET
     last_used_at = $3
 WHERE
-    user_id = $1
+    member_id = $1
     AND id = $2
     AND (
         last_used_at IS NULL
@@ -179,13 +193,13 @@ WHERE
 `
 
 type TouchAccessTokenParams struct {
-	UserID     int64
+	MemberID   int64
 	ID         uuid.UUID
 	LastUsedAt *time.Time
 }
 
 // X8: last_used_at moves at most once a minute.
 func (q *Queries) TouchAccessToken(ctx context.Context, arg TouchAccessTokenParams) error {
-	_, err := q.db.Exec(ctx, touchAccessToken, arg.UserID, arg.ID, arg.LastUsedAt)
+	_, err := q.db.Exec(ctx, touchAccessToken, arg.MemberID, arg.ID, arg.LastUsedAt)
 	return err
 }

@@ -25,7 +25,8 @@ const (
 // AccessToken opens /mcp for one user. It is persisted by TokenHash only; the text is shown once.
 type AccessToken struct {
 	ID         uuid.UUID
-	UserID     int64
+	MemberID   int64
+	BooksID    int64
 	Name       string
 	Scope      string
 	TokenHash  []byte
@@ -35,7 +36,7 @@ type AccessToken struct {
 }
 
 // NewAccessToken returns the token text, eqt_ and 32 random bytes in unpadded base32, and its record.
-func NewAccessToken(userID int64, name, scope string, days int, now time.Time) (string, AccessToken, error) {
+func NewAccessToken(memberID, booksID int64, name, scope string, days int, now time.Time) (string, AccessToken, error) {
 	name = strings.TrimSpace(name)
 	switch {
 	case name == "" || utf8.RuneCountInString(name) > maxTokenName:
@@ -51,7 +52,7 @@ func NewAccessToken(userID int64, name, scope string, days int, now time.Time) (
 	text := AccessTokenPrefix + base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(b)
 
 	return text, AccessToken{
-		ID: uuid.New(), UserID: userID, Name: name, Scope: scope, TokenHash: HashToken(text),
+		ID: uuid.New(), MemberID: memberID, BooksID: booksID, Name: name, Scope: scope, TokenHash: HashToken(text),
 		CreatedAt: now, ExpiresAt: now.AddDate(0, 0, days),
 	}, nil
 }

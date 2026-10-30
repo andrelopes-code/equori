@@ -312,25 +312,30 @@ func TestCreateUserPublishesEvent(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	var booksID int64
+	if err := h.pool.QueryRow(t.Context(), `SELECT books_id FROM identity_membership WHERE member_id = $1`, u.ID).Scan(&booksID); err != nil {
+		t.Fatal(err)
+	}
+
 	var n int
 	var userID int64
 
 	err = h.pool.QueryRow(t.Context(),
-		`SELECT count(*), max(user_id) FROM outbox_event WHERE type = 'identity.user_created.v2'`).Scan(&n, &userID)
-	if err != nil || n != 1 || userID != u.ID {
-		t.Fatalf("events = %d for user %d, %v; want 1 for user %d", n, userID, err, u.ID)
+		`SELECT count(*), max(user_id) FROM outbox_event WHERE type = 'identity.books_created.v1'`).Scan(&n, &userID)
+	if err != nil || n != 1 || userID != booksID {
+		t.Fatalf("events = %d for books %d, %v; want 1 for books %d", n, userID, err, booksID)
 	}
 
 	var payload struct {
-		UserID       int64
-		Email        string
-		Language     string
-		Region       string
+		BooksID      int64  `json:"books_id"`
+		MemberID     int64  `json:"member_id"`
+		Language     string `json:"language"`
+		Region       string `json:"region"`
 		BaseCurrency string `json:"base_currency"`
 	}
 
 	var raw []byte
-	if err := h.pool.QueryRow(t.Context(), `SELECT payload FROM outbox_event WHERE type = 'identity.user_created.v2'`).Scan(&raw); err != nil {
+	if err := h.pool.QueryRow(t.Context(), `SELECT payload FROM outbox_event WHERE type = 'identity.books_created.v1'`).Scan(&raw); err != nil {
 		t.Fatal(err)
 	}
 
@@ -338,7 +343,7 @@ func TestCreateUserPublishesEvent(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if payload.Language != "pt" || payload.Region != "BR" || payload.BaseCurrency != "BRL" || payload.Email != email {
+	if payload.BooksID != booksID || payload.MemberID != u.ID || payload.Language != "pt" || payload.Region != "BR" || payload.BaseCurrency != "BRL" {
 		t.Fatalf("payload = %+v", payload)
 	}
 }

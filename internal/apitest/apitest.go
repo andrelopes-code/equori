@@ -265,16 +265,36 @@ func (h *Harness) login(email, role string, l locale.Locale, base money.Currency
 	return c
 }
 
-// OwnerID is the user ID of the harness client's account.
-func (h *Harness) OwnerID() int64 {
+// BooksIDOf returns the books ID that the member with email logs in to (BK12).
+func (h *Harness) BooksIDOf(email string) int64 {
 	h.t.Helper()
 
 	var id int64
-	if err := h.Pool.QueryRow(h.t.Context(), `SELECT id FROM identity_user WHERE email = 'owner@example.com'`).Scan(&id); err != nil {
+	if err := h.Pool.QueryRow(h.t.Context(),
+		`SELECT ms.books_id FROM identity_membership ms JOIN identity_member m ON m.id = ms.member_id
+		WHERE m.email = $1 ORDER BY (ms.role <> 'owner'), ms.books_id LIMIT 1`, email).Scan(&id); err != nil {
 		h.t.Fatal(err)
 	}
 
 	return id
+}
+
+// MemberIDOf returns the member ID of email.
+func (h *Harness) MemberIDOf(email string) int64 {
+	h.t.Helper()
+
+	var id int64
+	if err := h.Pool.QueryRow(h.t.Context(), `SELECT id FROM identity_member WHERE email = $1`, email).Scan(&id); err != nil {
+		h.t.Fatal(err)
+	}
+
+	return id
+}
+
+// OwnerID returns BooksIDOf("owner@example.com").
+func (h *Harness) OwnerID() int64 {
+	h.t.Helper()
+	return h.BooksIDOf("owner@example.com")
 }
 
 // Dispatch delivers every pending outbox event, as the dispatcher goroutine does in production.

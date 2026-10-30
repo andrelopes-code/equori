@@ -228,7 +228,7 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 				return mcp.Grant{}, err
 			}
 
-			return mcp.Grant{TokenID: g.TokenID.String(), UserID: g.UserID, Write: g.Scope == "write"}, nil
+			return mcp.Grant{TokenID: g.TokenID.String(), MemberID: g.MemberID, BooksID: g.BooksID, Write: g.Scope == "write"}, nil
 		},
 	}))
 	root.Handle("/", identityModule.RequireSession(validator.Middleware(mux)))

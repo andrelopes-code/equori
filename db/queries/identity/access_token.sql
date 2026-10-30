@@ -1,13 +1,14 @@
 -- name: CreateAccessToken :exec
 INSERT INTO
-    identity_access_token (id, user_id, name, scope, token_hash, created_at, expires_at)
+    identity_access_token (id, member_id, books_id, name, scope, token_hash, created_at, expires_at)
 VALUES
-    ($1, $2, $3, $4, $5, $6, $7);
+    ($1, $2, $3, $4, $5, $6, $7, $8);
 
 -- name: ListAccessTokens :many
 SELECT
     id,
-    user_id,
+    member_id,
+    books_id,
     name,
     scope,
     created_at,
@@ -16,7 +17,8 @@ SELECT
 FROM
     identity_access_token
 WHERE
-    user_id = $1
+    member_id = $1
+    AND books_id = $2
 ORDER BY
     created_at DESC,
     id;
@@ -24,14 +26,15 @@ ORDER BY
 -- name: DeleteAccessToken :execrows
 DELETE FROM identity_access_token
 WHERE
-    user_id = $1
+    member_id = $1
     AND id = $2;
 
 -- name: GetAccessTokenByHash :one
--- Verification knows only the token; the hash identifies the user (design 2026-10-26 X12).
+-- Verification knows only the token; the hash identifies the member and the book.
 SELECT
     id,
-    user_id,
+    member_id,
+    books_id,
     name,
     scope,
     created_at,
@@ -49,7 +52,7 @@ UPDATE identity_access_token
 SET
     last_used_at = $3
 WHERE
-    user_id = $1
+    member_id = $1
     AND id = $2
     AND (
         last_used_at IS NULL

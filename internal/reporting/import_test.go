@@ -220,7 +220,7 @@ func TestImportRejects(t *testing.T) {
 	m["archive_version"] = float64(app.ArchiveVersion)
 
 	tables := m["tables"].([]any)
-	tables[0].(map[string]any)["name"] = "identity_user"
+	tables[0].(map[string]any)["name"] = "identity_member"
 
 	foreign := map[string][]byte{}
 	for name, b := range files {

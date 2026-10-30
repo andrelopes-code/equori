@@ -23,7 +23,6 @@ type User struct {
 	PasswordHash string
 	Role         Role
 	Language     string
-	Region       string
 	Disabled     bool
 }
 

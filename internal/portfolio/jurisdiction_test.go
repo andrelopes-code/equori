@@ -44,7 +44,7 @@ func (f fixture) incomeTypes(t *testing.T) []string {
 func (f fixture) moveToRegion(t *testing.T, region string) {
 	t.Helper()
 
-	if _, err := f.h.Pool.Exec(t.Context(), `UPDATE identity_user SET region = $1`, region); err != nil {
+	if _, err := f.h.Pool.Exec(t.Context(), `UPDATE identity_books SET region = $1`, region); err != nil {
 		t.Fatal(err)
 	}
 }

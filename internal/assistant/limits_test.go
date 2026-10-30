@@ -20,10 +20,7 @@ func TestDailyLimitS138(t *testing.T) {
 	h := harness(t, f, apitest.Today("2026-10-23"))
 	other := h.Login("other@example.com")
 
-	var otherID int64
-	if err := h.Pool.QueryRow(t.Context(), `SELECT id FROM identity_user WHERE email = 'other@example.com'`).Scan(&otherID); err != nil {
-		t.Fatal(err)
-	}
+	otherID := h.BooksIDOf("other@example.com")
 
 	answer := structured("ok")
 	answer.Model = "gemini-3.5-flash"

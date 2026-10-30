@@ -16,6 +16,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/identity/internal/adapter/toolapi"
 	"github.com/andrelopes-code/equori/internal/identity/internal/app"
 	"github.com/andrelopes-code/equori/internal/identity/internal/domain"
+	"github.com/andrelopes-code/equori/internal/platform/auth"
 	"github.com/andrelopes-code/equori/internal/platform/locale"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/tool"
@@ -32,11 +33,12 @@ var (
 	ErrInvalidAccessToken = app.ErrInvalidAccessToken
 )
 
-// AccessGrant is what a valid personal access token allows: one user's tools under a scope (design 2026-10-26 X12).
+// AccessGrant is what a valid personal access token allows: one member's tools in one book under a scope (design 2026-10-26 X12).
 type AccessGrant struct {
-	TokenID uuid.UUID
-	UserID  int64
-	Scope   string
+	TokenID  uuid.UUID
+	MemberID int64
+	BooksID  int64
+	Scope    string
 }
 
 type User struct {
@@ -70,14 +72,16 @@ func (m *Module) RegisterRoutes(mux *http.ServeMux) { m.http.Register(mux) }
 // StartSetup returns the token of the first-user setup while no user exists, and "" afterwards.
 func (m *Module) StartSetup(ctx context.Context) (string, error) { return m.svc.StartSetup(ctx) }
 
-// Profile returns the language and region of a user.
-func (m *Module) Profile(ctx context.Context, userID int64) (locale.Locale, error) {
-	return m.svc.Profile(ctx, userID)
+// Profile returns the language and region of the books; the member is the context's, or 0 without one.
+func (m *Module) Profile(ctx context.Context, booksID int64) (locale.Locale, error) {
+	memberID, _ := auth.MemberID(ctx)
+
+	return m.svc.Profile(ctx, booksID, memberID)
 }
 
-// IsAdmin reports whether a user has the role admin.
-func (m *Module) IsAdmin(ctx context.Context, userID int64) (bool, error) {
-	return m.svc.IsAdmin(ctx, userID)
+// IsAdmin reports whether a member has the role admin.
+func (m *Module) IsAdmin(ctx context.Context, memberID int64) (bool, error) {
+	return m.svc.IsAdmin(ctx, memberID)
 }
 
 // RequireSession must wrap the whole HTTP handler: it is the single authentication gate for /api/.
@@ -95,7 +99,7 @@ func (m *Module) VerifyAccessToken(ctx context.Context, token string) (AccessGra
 		return AccessGrant{}, err
 	}
 
-	return AccessGrant{TokenID: t.ID, UserID: t.UserID, Scope: t.Scope}, nil
+	return AccessGrant{TokenID: t.ID, MemberID: t.MemberID, BooksID: t.BooksID, Scope: t.Scope}, nil
 }
 
 func (m *Module) CreateUser(ctx context.Context, email, password, role string, l locale.Locale, baseCurrency money.Currency) (User, error) {

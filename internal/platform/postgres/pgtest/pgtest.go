@@ -190,8 +190,39 @@ func create(t testing.TB, template string) *pgxpool.Pool {
 	return pool
 }
 
-// CreateUser inserts an identity_user row with a unique email, language en and region US, and returns its id.
+// CreateMember inserts a member (language en) with a unique email, a book of region US and an owner membership.
+func CreateMember(t testing.TB, pool *pgxpool.Pool) (memberID, booksID int64) {
+	t.Helper()
+	email := strings.ToLower(rand.Text()) + "@example.com"
+
+	err := pool.QueryRow(context.Background(),
+		`INSERT INTO identity_member (email, password_hash, role, language) VALUES ($1, 'x', 'admin', 'en') RETURNING id`, email).Scan(&memberID)
+	if err != nil {
+		t.Fatalf("create member: %v", err)
+	}
+
+	if err := pool.QueryRow(context.Background(), `INSERT INTO identity_books (region) VALUES ('US') RETURNING id`).Scan(&booksID); err != nil {
+		t.Fatalf("create books: %v", err)
+	}
+
+	if _, err := pool.Exec(context.Background(),
+		`INSERT INTO identity_membership (member_id, books_id, role) VALUES ($1, $2, 'owner')`, memberID, booksID); err != nil {
+		t.Fatalf("create membership: %v", err)
+	}
+
+	return memberID, booksID
+}
+
+// CreateUser returns the books ID of CreateMember.
 func CreateUser(t testing.TB, pool *pgxpool.Pool) int64 {
+	t.Helper()
+	_, booksID := CreateMember(t, pool)
+
+	return booksID
+}
+
+// CreateUserBeforeBooks inserts an identity_user row (language en, region US) in a schema migrated below version 69.
+func CreateUserBeforeBooks(t testing.TB, pool *pgxpool.Pool) int64 {
 	t.Helper()
 	var id int64
 	email := strings.ToLower(rand.Text()) + "@example.com"

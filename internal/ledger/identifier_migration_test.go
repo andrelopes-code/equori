@@ -20,7 +20,7 @@ func TestInstitutionISPBBecomesIdentifier(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	uid := pgtest.CreateUser(t, pool)
+	uid := pgtest.CreateUserBeforeBooks(t, pool)
 	if _, err := pool.Exec(ctx, `INSERT INTO ledger_institution (user_id, name, ispb) VALUES ($1, 'Banco do Brasil', '00000000'), ($1, 'BB', '00360305'), ($1, 'Wallet', NULL)`, uid); err != nil {
 		t.Fatal(err)
 	}

@@ -116,7 +116,7 @@ func TestVerifyAccessToken(t *testing.T) {
 	tok := createToken(t, h, h.Client, "write")
 
 	grant, err := h.App.Identity.VerifyAccessToken(t.Context(), *tok.Token)
-	if err != nil || grant.UserID != h.OwnerID() || grant.Scope != "write" || grant.TokenID.String() != tok.ID {
+	if err != nil || grant.MemberID != h.MemberIDOf("owner@example.com") || grant.BooksID != h.OwnerID() || grant.Scope != "write" || grant.TokenID.String() != tok.ID {
 		t.Fatalf("grant = %+v, %v", grant, err)
 	}
 

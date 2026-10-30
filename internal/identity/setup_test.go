@@ -124,7 +124,7 @@ func TestSetupCreatesTheAdmin(t *testing.T) {
 		t.Fatalf("GET /me with the setup cookie: status %d", me.Status)
 	}
 
-	h.Dispatch() // the ledger opens its settings from identity.user_created
+	h.Dispatch() // the ledger opens its settings from identity.books_created
 
 	settings := h.Call(c, http.MethodGet, "/api/v1/settings", nil)
 	if settings.Status != http.StatusOK {

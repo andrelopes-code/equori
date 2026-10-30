@@ -60,10 +60,7 @@ func TestSchemaInvariants(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var otherID int64
-	if err := h.Pool.QueryRow(ctx, `SELECT id FROM identity_user WHERE email = 'other@example.com'`).Scan(&otherID); err != nil {
-		t.Fatal(err)
-	}
+	otherID := h.BooksIDOf("other@example.com")
 
 	tests := []struct {
 		name string

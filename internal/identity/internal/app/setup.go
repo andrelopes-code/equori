@@ -95,7 +95,7 @@ func (s *Service) CompleteSetup(ctx context.Context, token, email, plain string,
 		return Session{}, domain.User{}, err
 	}
 
-	created, err := s.repo.CreateFirstUser(ctx, u, base)
+	created, booksID, err := s.repo.CreateFirstUser(ctx, u, l.Region, base)
 	if err != nil {
 		return Session{}, domain.User{}, err
 	}
@@ -108,7 +108,7 @@ func (s *Service) CompleteSetup(ctx context.Context, token, email, plain string,
 		s.setup.hooks.Done()
 	}
 
-	session, err := s.startSession(ctx, created.ID, s.now())
+	session, err := s.startSession(ctx, created.ID, booksID, s.now())
 	if err != nil {
 		return Session{}, domain.User{}, err
 	}

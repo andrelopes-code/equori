@@ -199,7 +199,7 @@ func TestMCPCallTool(t *testing.T) {
 		}
 	}
 
-	for _, want := range []string{"token_id=", "user_id=", "tool=list_accounts", "effect=read_only", "outcome=ok", "duration=", "bytes="} {
+	for _, want := range []string{"token_id=", "member_id=", "books_id=", "tool=list_accounts", "effect=read_only", "outcome=ok", "duration=", "bytes="} {
 		if !strings.Contains(line, want) {
 			t.Fatalf("mcp call log = %q, want %q", line, want)
 		}

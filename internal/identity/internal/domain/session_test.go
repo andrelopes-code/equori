@@ -11,8 +11,8 @@ func TestNewSession(t *testing.T) {
 
 	now := time.Date(2026, 10, 14, 12, 0, 0, 0, time.UTC)
 
-	token, s := NewSession(7, now)
-	other, _ := NewSession(7, now)
+	token, s := NewSession(7, 9, now)
+	other, _ := NewSession(7, 9, now)
 
 	if token == other {
 		t.Fatal("two sessions share a token")
@@ -22,7 +22,7 @@ func TestNewSession(t *testing.T) {
 		t.Fatal("TokenHash does not match HashToken(token)")
 	}
 
-	if s.UserID != 7 || !s.CreatedAt.Equal(now) || !s.ExpiresAt.Equal(now.Add(SessionTTL)) {
+	if s.MemberID != 7 || s.BooksID != 9 || !s.CreatedAt.Equal(now) || !s.ExpiresAt.Equal(now.Add(SessionTTL)) {
 		t.Fatalf("unexpected session %+v", s)
 	}
 }

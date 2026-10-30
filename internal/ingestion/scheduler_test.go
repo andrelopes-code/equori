@@ -155,10 +155,7 @@ func TestTickOverTwoUsers(t *testing.T) {
 
 	f.tick()
 
-	var otherID int64
-	if err := f.h.Pool.QueryRow(t.Context(), `SELECT id FROM identity_user WHERE email = 'other@example.com'`).Scan(&otherID); err != nil {
-		t.Fatal(err)
-	}
+	otherID := f.h.BooksIDOf("other@example.com")
 
 	for user, want := range map[int64]string{f.h.OwnerID(): "tx-owner", otherID: "tx-other"} {
 		var ids []string

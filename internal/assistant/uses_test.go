@@ -174,10 +174,7 @@ func TestCooldownPerUserA8(t *testing.T) {
 	answer.Model = "openai/gpt-oss-120b"
 	f.script("kb", answer)
 
-	var otherID int64
-	if err := h.Pool.QueryRow(t.Context(), `SELECT id FROM identity_user WHERE email = 'other@example.com'`).Scan(&otherID); err != nil {
-		t.Fatal(err)
-	}
+	otherID := h.BooksIDOf("other@example.com")
 
 	req := llm.Request{Messages: []llm.Message{{Role: llm.RoleUser, Parts: []llm.Part{{Text: "x"}}}}}
 

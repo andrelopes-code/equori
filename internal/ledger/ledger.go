@@ -247,7 +247,7 @@ func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, md MarketData, profi
 	ins := &instruments{md: md, cache: map[money.Currency]app.Instrument{}}
 	svc := app.NewService(postgres.NewRepository(pool, ins), clk, calendarAdapter{md}, ins, pricesAdapter{md}, profiles, regionDefaults{})
 
-	dispatcher.Subscribe("ledger-provisioning", "identity.user_created.v2", provision)
+	dispatcher.Subscribe("ledger-provisioning", "identity.books_created.v1", provision)
 	// A139: a change on a card may close a reported statement's difference; the bank sends the
 	// bill once, so the ledger settles again after every change rather than at the next bill.
 	for _, event := range []string{app.EventTransactionRecorded, app.EventTransactionCorrected, app.EventTransactionVoided} {
@@ -536,8 +536,8 @@ func (m *Module) BodyLimits() []httpserver.BodyLimit {
 	return []httpserver.BodyLimit{{Pattern: "POST /api/v1/transactions/{id}/attachments", Bytes: 11 << 20}}
 }
 
-type userCreated struct {
-	UserID       int64          `json:"user_id"`
+type booksCreated struct {
+	BooksID      int64          `json:"books_id"`
 	BaseCurrency money.Currency `json:"base_currency"`
 }
 
@@ -555,12 +555,12 @@ func settleCards(svc *app.Service) outbox.Handler {
 }
 
 func provision(ctx context.Context, tx pgx.Tx, e outbox.Delivered) error {
-	var p userCreated
+	var p booksCreated
 	if err := json.Unmarshal(e.Payload, &p); err != nil {
 		return fmt.Errorf("decode %s: %w", e.Type, err)
 	}
 
 	svc := app.NewService(postgres.NewRepository(tx, nil), clock.New(time.UTC, time.Now), nil, nil, nil, nil, nil)
 
-	return svc.Provision(ctx, p.UserID, p.BaseCurrency)
+	return svc.Provision(ctx, p.BooksID, p.BaseCurrency)
 }

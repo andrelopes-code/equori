@@ -16,7 +16,7 @@ SELECT
         SELECT
             1
         FROM
-            identity_user
+            identity_member
     )
 `
 
@@ -27,56 +27,46 @@ func (q *Queries) AnyUser(ctx context.Context) (bool, error) {
 	return exists, err
 }
 
-const createSession = `-- name: CreateSession :exec
+const createBooks = `-- name: CreateBooks :one
 INSERT INTO
-    identity_session (token_hash, user_id, created_at, expires_at)
+    identity_books (region)
+VALUES
+    ($1)
+RETURNING
+    id
+`
+
+func (q *Queries) CreateBooks(ctx context.Context, region string) (int64, error) {
+	row := q.db.QueryRow(ctx, createBooks, region)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
+}
+
+const createMember = `-- name: CreateMember :one
+INSERT INTO
+    identity_member (email, password_hash, role, language)
 VALUES
     ($1, $2, $3, $4)
-`
-
-type CreateSessionParams struct {
-	TokenHash []byte
-	UserID    int64
-	CreatedAt time.Time
-	ExpiresAt time.Time
-}
-
-func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) error {
-	_, err := q.db.Exec(ctx, createSession,
-		arg.TokenHash,
-		arg.UserID,
-		arg.CreatedAt,
-		arg.ExpiresAt,
-	)
-	return err
-}
-
-const createUser = `-- name: CreateUser :one
-INSERT INTO
-    identity_user (email, password_hash, role, language, region)
-VALUES
-    ($1, $2, $3, $4, $5)
 RETURNING
-    id, email, password_hash, role, disabled_at, created_at, language, region
+    id, email, password_hash, role, disabled_at, created_at, language
 `
 
-type CreateUserParams struct {
+type CreateMemberParams struct {
 	Email        string
 	PasswordHash string
 	Role         string
 	Language     string
-	Region       string
 }
 
-func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (IdentityUser, error) {
-	row := q.db.QueryRow(ctx, createUser,
+func (q *Queries) CreateMember(ctx context.Context, arg CreateMemberParams) (IdentityMember, error) {
+	row := q.db.QueryRow(ctx, createMember,
 		arg.Email,
 		arg.PasswordHash,
 		arg.Role,
 		arg.Language,
-		arg.Region,
 	)
-	var i IdentityUser
+	var i IdentityMember
 	err := row.Scan(
 		&i.ID,
 		&i.Email,
@@ -85,9 +75,52 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (Identit
 		&i.DisabledAt,
 		&i.CreatedAt,
 		&i.Language,
-		&i.Region,
 	)
 	return i, err
+}
+
+const createMembership = `-- name: CreateMembership :exec
+INSERT INTO
+    identity_membership (member_id, books_id, role)
+VALUES
+    ($1, $2, $3)
+`
+
+type CreateMembershipParams struct {
+	MemberID int64
+	BooksID  int64
+	Role     string
+}
+
+func (q *Queries) CreateMembership(ctx context.Context, arg CreateMembershipParams) error {
+	_, err := q.db.Exec(ctx, createMembership, arg.MemberID, arg.BooksID, arg.Role)
+	return err
+}
+
+const createSession = `-- name: CreateSession :exec
+INSERT INTO
+    identity_session (token_hash, member_id, books_id, created_at, expires_at)
+VALUES
+    ($1, $2, $3, $4, $5)
+`
+
+type CreateSessionParams struct {
+	TokenHash []byte
+	MemberID  int64
+	BooksID   int64
+	CreatedAt time.Time
+	ExpiresAt time.Time
+}
+
+func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) error {
+	_, err := q.db.Exec(ctx, createSession,
+		arg.TokenHash,
+		arg.MemberID,
+		arg.BooksID,
+		arg.CreatedAt,
+		arg.ExpiresAt,
+	)
+	return err
 }
 
 const deleteExpiredSessions = `-- name: DeleteExpiredSessions :exec
@@ -112,18 +145,75 @@ func (q *Queries) DeleteSession(ctx context.Context, tokenHash []byte) error {
 	return err
 }
 
+const getLocale = `-- name: GetLocale :one
+SELECT
+    b.region,
+    m.language
+FROM
+    identity_books b
+    JOIN identity_membership ms ON ms.books_id = b.id
+    JOIN identity_member m ON m.id = ms.member_id
+WHERE
+    b.id = $1
+ORDER BY
+    (m.id = $2::bigint) DESC,
+    (ms.role <> 'owner'),
+    m.id
+LIMIT
+    1
+`
+
+type GetLocaleParams struct {
+	BooksID  int64
+	MemberID int64
+}
+
+type GetLocaleRow struct {
+	Region   string
+	Language string
+}
+
+// BK27: the context's member when it belongs to the book, else the book's first owner.
+func (q *Queries) GetLocale(ctx context.Context, arg GetLocaleParams) (GetLocaleRow, error) {
+	row := q.db.QueryRow(ctx, getLocale, arg.BooksID, arg.MemberID)
+	var i GetLocaleRow
+	err := row.Scan(&i.Region, &i.Language)
+	return i, err
+}
+
+const getLoginBooks = `-- name: GetLoginBooks :one
+SELECT
+    books_id
+FROM
+    identity_membership
+WHERE
+    member_id = $1
+ORDER BY
+    (role <> 'owner'),
+    books_id
+LIMIT
+    1
+`
+
+func (q *Queries) GetLoginBooks(ctx context.Context, memberID int64) (int64, error) {
+	row := q.db.QueryRow(ctx, getLoginBooks, memberID)
+	var books_id int64
+	err := row.Scan(&books_id)
+	return books_id, err
+}
+
 const getUserByEmail = `-- name: GetUserByEmail :one
 SELECT
-    id, email, password_hash, role, disabled_at, created_at, language, region
+    id, email, password_hash, role, disabled_at, created_at, language
 FROM
-    identity_user
+    identity_member
 WHERE
     email = $1
 `
 
-func (q *Queries) GetUserByEmail(ctx context.Context, email string) (IdentityUser, error) {
+func (q *Queries) GetUserByEmail(ctx context.Context, email string) (IdentityMember, error) {
 	row := q.db.QueryRow(ctx, getUserByEmail, email)
-	var i IdentityUser
+	var i IdentityMember
 	err := row.Scan(
 		&i.ID,
 		&i.Email,
@@ -132,23 +222,22 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (IdentityUse
 		&i.DisabledAt,
 		&i.CreatedAt,
 		&i.Language,
-		&i.Region,
 	)
 	return i, err
 }
 
 const getUserByID = `-- name: GetUserByID :one
 SELECT
-    id, email, password_hash, role, disabled_at, created_at, language, region
+    id, email, password_hash, role, disabled_at, created_at, language
 FROM
-    identity_user
+    identity_member
 WHERE
     id = $1
 `
 
-func (q *Queries) GetUserByID(ctx context.Context, id int64) (IdentityUser, error) {
+func (q *Queries) GetUserByID(ctx context.Context, id int64) (IdentityMember, error) {
 	row := q.db.QueryRow(ctx, getUserByID, id)
-	var i IdentityUser
+	var i IdentityMember
 	err := row.Scan(
 		&i.ID,
 		&i.Email,
@@ -157,17 +246,23 @@ func (q *Queries) GetUserByID(ctx context.Context, id int64) (IdentityUser, erro
 		&i.DisabledAt,
 		&i.CreatedAt,
 		&i.Language,
-		&i.Region,
 	)
 	return i, err
 }
 
 const getUserBySession = `-- name: GetUserBySession :one
 SELECT
-    u.id, u.email, u.password_hash, u.role, u.disabled_at, u.created_at, u.language, u.region
+    m.id,
+    m.email,
+    m.password_hash,
+    m.role,
+    m.disabled_at,
+    m.created_at,
+    m.language,
+    s.books_id
 FROM
     identity_session s
-    JOIN identity_user u ON u.id = s.user_id
+    JOIN identity_member m ON m.id = s.member_id
 WHERE
     s.token_hash = $1
     AND s.expires_at > $2
@@ -178,9 +273,20 @@ type GetUserBySessionParams struct {
 	ExpiresAt time.Time
 }
 
-func (q *Queries) GetUserBySession(ctx context.Context, arg GetUserBySessionParams) (IdentityUser, error) {
+type GetUserBySessionRow struct {
+	ID           int64
+	Email        string
+	PasswordHash string
+	Role         string
+	DisabledAt   *time.Time
+	CreatedAt    time.Time
+	Language     string
+	BooksID      int64
+}
+
+func (q *Queries) GetUserBySession(ctx context.Context, arg GetUserBySessionParams) (GetUserBySessionRow, error) {
 	row := q.db.QueryRow(ctx, getUserBySession, arg.TokenHash, arg.ExpiresAt)
-	var i IdentityUser
+	var i GetUserBySessionRow
 	err := row.Scan(
 		&i.ID,
 		&i.Email,
@@ -189,13 +295,13 @@ func (q *Queries) GetUserBySession(ctx context.Context, arg GetUserBySessionPara
 		&i.DisabledAt,
 		&i.CreatedAt,
 		&i.Language,
-		&i.Region,
+		&i.BooksID,
 	)
 	return i, err
 }
 
 const lockUsers = `-- name: LockUsers :exec
-LOCK TABLE identity_user IN EXCLUSIVE MODE
+LOCK TABLE identity_member IN EXCLUSIVE MODE
 `
 
 // The first-user setup creates its admin under this lock, so two requests yield one admin (W-U4).
@@ -204,35 +310,38 @@ func (q *Queries) LockUsers(ctx context.Context) error {
 	return err
 }
 
-const updateProfile = `-- name: UpdateProfile :one
-UPDATE identity_user
+const updateLanguage = `-- name: UpdateLanguage :exec
+UPDATE identity_member
 SET
-    language = $2,
-    region = $3
+    language = $2
 WHERE
     id = $1
-RETURNING
-    id, email, password_hash, role, disabled_at, created_at, language, region
 `
 
-type UpdateProfileParams struct {
+type UpdateLanguageParams struct {
 	ID       int64
 	Language string
-	Region   string
 }
 
-func (q *Queries) UpdateProfile(ctx context.Context, arg UpdateProfileParams) (IdentityUser, error) {
-	row := q.db.QueryRow(ctx, updateProfile, arg.ID, arg.Language, arg.Region)
-	var i IdentityUser
-	err := row.Scan(
-		&i.ID,
-		&i.Email,
-		&i.PasswordHash,
-		&i.Role,
-		&i.DisabledAt,
-		&i.CreatedAt,
-		&i.Language,
-		&i.Region,
-	)
-	return i, err
+func (q *Queries) UpdateLanguage(ctx context.Context, arg UpdateLanguageParams) error {
+	_, err := q.db.Exec(ctx, updateLanguage, arg.ID, arg.Language)
+	return err
+}
+
+const updateRegion = `-- name: UpdateRegion :exec
+UPDATE identity_books
+SET
+    region = $2
+WHERE
+    id = $1
+`
+
+type UpdateRegionParams struct {
+	ID     int64
+	Region string
+}
+
+func (q *Queries) UpdateRegion(ctx context.Context, arg UpdateRegionParams) error {
+	_, err := q.db.Exec(ctx, updateRegion, arg.ID, arg.Region)
+	return err
 }

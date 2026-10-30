@@ -17,11 +17,12 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/tool"
 )
 
-// Grant is what a verified token allows: one user's tools, every tool of the set when Write.
+// Grant is what a verified token allows: one member's tools in one book, every tool of the set when Write.
 type Grant struct {
-	TokenID string
-	UserID  int64
-	Write   bool
+	TokenID  string
+	MemberID int64
+	BooksID  int64
+	Write    bool
 }
 
 // Verify checks a token. ErrInvalidToken answers 401; any other error answers 500.
@@ -123,7 +124,7 @@ func callTool(cfg Config, spec tool.Spec) sdk.ToolHandler {
 		}
 
 		start := time.Now()
-		res, err := cfg.Registry.Call(auth.WithUserID(ctx, g.UserID), spec.Name, req.Params.Arguments)
+		res, err := cfg.Registry.Call(auth.WithIdentity(ctx, g.MemberID, g.BooksID), spec.Name, req.Params.Arguments)
 
 		outcome := "ok"
 		switch {
@@ -137,7 +138,7 @@ func callTool(cfg Config, spec tool.Spec) sdk.ToolHandler {
 			outcome = e.Code
 		}
 
-		cfg.Log.LogAttrs(ctx, slog.LevelInfo, "mcp call", slog.String("token_id", g.TokenID), slog.Int64("user_id", g.UserID),
+		cfg.Log.LogAttrs(ctx, slog.LevelInfo, "mcp call", slog.String("token_id", g.TokenID), slog.Int64("member_id", g.MemberID), slog.Int64("books_id", g.BooksID),
 			slog.String("tool", spec.Name), slog.String("effect", spec.Effect.String()), slog.String("outcome", outcome),
 			slog.Duration("duration", time.Since(start)), slog.Int("bytes", len(res.Content)))
 

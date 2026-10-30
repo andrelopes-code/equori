@@ -8,7 +8,7 @@ import (
 )
 
 func (s *Server) ListAccessTokens(ctx context.Context, _ ListAccessTokensRequestObject) (ListAccessTokensResponseObject, error) {
-	tokens, err := s.svc.AccessTokens(ctx, auth.MustUserID(ctx))
+	tokens, err := s.svc.AccessTokens(ctx, auth.MustMemberID(ctx), auth.MustBooksID(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -26,7 +26,7 @@ func (s *Server) CreateAccessToken(ctx context.Context, req CreateAccessTokenReq
 		return nil, errInvalidRequest
 	}
 
-	text, t, err := s.svc.CreateAccessToken(ctx, auth.MustUserID(ctx), req.Body.Name, req.Body.Scope, req.Body.ExpiresInDays)
+	text, t, err := s.svc.CreateAccessToken(ctx, auth.MustMemberID(ctx), auth.MustBooksID(ctx), req.Body.Name, req.Body.Scope, req.Body.ExpiresInDays)
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +38,7 @@ func (s *Server) CreateAccessToken(ctx context.Context, req CreateAccessTokenReq
 }
 
 func (s *Server) DeleteAccessToken(ctx context.Context, req DeleteAccessTokenRequestObject) (DeleteAccessTokenResponseObject, error) {
-	if err := s.svc.DeleteAccessToken(ctx, auth.MustUserID(ctx), req.Id); err != nil {
+	if err := s.svc.DeleteAccessToken(ctx, auth.MustMemberID(ctx), req.Id); err != nil {
 		return nil, err
 	}
 

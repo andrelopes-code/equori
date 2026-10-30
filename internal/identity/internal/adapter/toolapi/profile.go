@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/andrelopes-code/equori/internal/identity/internal/app"
-	"github.com/andrelopes-code/equori/internal/identity/internal/domain"
+	"github.com/andrelopes-code/equori/internal/platform/auth"
 	"github.com/andrelopes-code/equori/internal/platform/tool"
 )
 
@@ -32,7 +32,7 @@ func updateProfile(svc *app.Service) tool.Tool {
 			return tool.Preview{}, tool.InvalidArgument("language", "or region is required")
 		}
 
-		before, after, err := svc.ProfileChange(ctx, userID, in.Language, in.Region)
+		before, after, err := svc.ProfileChange(ctx, userID, auth.MustMemberID(ctx), in.Language, in.Region)
 		if err != nil {
 			return tool.Preview{}, err
 		}
@@ -46,16 +46,11 @@ func updateProfile(svc *app.Service) tool.Tool {
 			return updateProfileOut{}, tool.InvalidArgument("language", "or region is required")
 		}
 
-		before, _, err := svc.ProfileChange(ctx, userID, in.Language, in.Region)
+		l, err := svc.UpdateProfile(ctx, userID, auth.MustMemberID(ctx), in.Language, in.Region)
 		if err != nil {
 			return updateProfileOut{}, err
 		}
 
-		u, err := svc.UpdateProfile(ctx, domain.User{ID: userID, Language: before.Language, Region: before.Region}, in.Language, in.Region)
-		if err != nil {
-			return updateProfileOut{}, err
-		}
-
-		return updateProfileOut{Language: u.Language, Region: u.Region}, nil
+		return updateProfileOut{Language: l.Language, Region: l.Region}, nil
 	})
 }

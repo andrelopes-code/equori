@@ -21,7 +21,7 @@ func TestUpdateProfileTool(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	p, r, err := h.App.Tools.Preview(auth.WithUserID(t.Context(), h.OwnerID()), "update_profile", b)
+	p, r, err := h.App.Tools.Preview(auth.WithIdentity(t.Context(), h.MemberIDOf("owner@example.com"), h.BooksIDOf("owner@example.com")), "update_profile", b)
 	if err != nil || r.IsError {
 		t.Fatalf("preview = %v, %s", err, r.Content)
 	}

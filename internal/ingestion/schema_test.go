@@ -94,12 +94,9 @@ func TestConnectionSchemaInvariants(t *testing.T) {
 		_, err := h.Pool.Exec(ctx, sql, args...)
 		return err
 	}
-	var otherID int64
 	var otherAccount, integration, connection string
 
-	if err := h.Pool.QueryRow(ctx, `SELECT id FROM identity_user WHERE email = 'other@example.com'`).Scan(&otherID); err != nil {
-		t.Fatal(err)
-	}
+	otherID := h.BooksIDOf("other@example.com")
 
 	if err := h.Pool.QueryRow(ctx, `SELECT id FROM ledger_account WHERE user_id = $1 LIMIT 1`, otherID).Scan(&otherAccount); err != nil {
 		t.Fatal(err)

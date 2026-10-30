@@ -65,13 +65,13 @@ func (s *Server) RequireSession(next http.Handler) http.Handler {
 			return
 		}
 
-		user, err := s.svc.Authenticate(r.Context(), cookie.Value)
+		user, booksID, err := s.svc.Authenticate(r.Context(), cookie.Value)
 		if err != nil {
 			s.errs.Write(w, r, err)
 			return
 		}
 
-		ctx := auth.WithUserID(r.Context(), user.ID)
+		ctx := auth.WithIdentity(r.Context(), user.ID, booksID)
 		ctx = context.WithValue(ctx, userKey{}, user)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
@@ -115,7 +115,7 @@ func (s *Server) CompleteSetup(ctx context.Context, req CompleteSetupRequestObje
 	s.log.InfoContext(ctx, "first user created", "user_id", user.ID, "request_id", httpserver.RequestID(ctx))
 	cookie := s.cookie(session.Token, session.ExpiresAt)
 
-	return CompleteSetup201JSONResponse{Body: toAPIUser(user), Headers: CompleteSetup201ResponseHeaders{SetCookie: &cookie}}, nil
+	return CompleteSetup201JSONResponse{Body: toAPIUser(user, locale.Locale{Language: user.Language, Region: b.Region}), Headers: CompleteSetup201ResponseHeaders{SetCookie: &cookie}}, nil
 }
 
 func (s *Server) CreateSession(ctx context.Context, req CreateSessionRequestObject) (CreateSessionResponseObject, error) {
@@ -134,7 +134,7 @@ func (s *Server) CreateSession(ctx context.Context, req CreateSessionRequestObje
 		return nil, err
 	}
 
-	s.log.InfoContext(ctx, "login succeeded", "user_id", session.UserID, "request_id", httpserver.RequestID(ctx))
+	s.log.InfoContext(ctx, "login succeeded", "user_id", session.MemberID, "books_id", session.BooksID, "request_id", httpserver.RequestID(ctx))
 	cookie := s.cookie(session.Token, session.ExpiresAt)
 
 	return CreateSession204Response{Headers: CreateSession204ResponseHeaders{SetCookie: &cookie}}, nil
@@ -158,7 +158,12 @@ func (s *Server) GetCurrentUser(ctx context.Context, _ GetCurrentUserRequestObje
 		return nil, app.ErrUnauthenticated
 	}
 
-	return GetCurrentUser200JSONResponse(toAPIUser(user)), nil
+	l, err := s.svc.Profile(ctx, auth.MustBooksID(ctx), user.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return GetCurrentUser200JSONResponse(toAPIUser(user, l)), nil
 }
 
 func (s *Server) UpdateCurrentUser(ctx context.Context, req UpdateCurrentUserRequestObject) (UpdateCurrentUserResponseObject, error) {
@@ -171,16 +176,16 @@ func (s *Server) UpdateCurrentUser(ctx context.Context, req UpdateCurrentUserReq
 		return nil, errInvalidRequest
 	}
 
-	updated, err := s.svc.UpdateProfile(ctx, user, deref(req.Body.Language), deref(req.Body.Region))
+	l, err := s.svc.UpdateProfile(ctx, auth.MustBooksID(ctx), user.ID, deref(req.Body.Language), deref(req.Body.Region))
 	if err != nil {
 		return nil, err
 	}
 
-	return UpdateCurrentUser200JSONResponse(toAPIUser(updated)), nil
+	return UpdateCurrentUser200JSONResponse(toAPIUser(user, l)), nil
 }
 
-func toAPIUser(u domain.User) User {
-	return User{Id: u.ID, Email: u.Email, Role: UserRole(u.Role), Language: u.Language, Region: u.Region}
+func toAPIUser(u domain.User, l locale.Locale) User {
+	return User{Id: u.ID, Email: u.Email, Role: UserRole(u.Role), Language: l.Language, Region: l.Region}
 }
 
 func deref(s *string) string {

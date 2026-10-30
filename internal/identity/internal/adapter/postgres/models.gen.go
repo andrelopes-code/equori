@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-type IdentityUser struct {
+type IdentityMember struct {
 	ID           int64
 	Email        string
 	PasswordHash string
@@ -16,5 +16,4 @@ type IdentityUser struct {
 	DisabledAt   *time.Time
 	CreatedAt    time.Time
 	Language     string
-	Region       string
 }

@@ -20,7 +20,7 @@ func TestAggregatorTermMigration(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	uid := pgtest.CreateUser(t, pool)
+	uid := pgtest.CreateUserBeforeBooks(t, pool)
 	var account string
 
 	statements := []string{

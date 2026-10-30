@@ -14,9 +14,9 @@ func TestRepositoryUsers(t *testing.T) {
 	t.Parallel()
 	ctx := t.Context()
 	repo := NewRepository(pgtest.New(t))
-	in := domain.User{Email: "ann@example.com", PasswordHash: "h", Role: domain.RoleAdmin, Language: "pt", Region: "BR"}
+	in := domain.User{Email: "ann@example.com", PasswordHash: "h", Role: domain.RoleAdmin, Language: "pt"}
 
-	created, err := repo.CreateUser(ctx, in, "BRL")
+	created, _, err := repo.CreateUser(ctx, in, "BR", "BRL")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -25,7 +25,7 @@ func TestRepositoryUsers(t *testing.T) {
 		t.Fatalf("unexpected user %+v", created)
 	}
 
-	if _, err := repo.CreateUser(ctx, in, "BRL"); !errors.Is(err, app.ErrEmailTaken) {
+	if _, _, err := repo.CreateUser(ctx, in, "BR", "BRL"); !errors.Is(err, app.ErrEmailTaken) {
 		t.Fatalf("duplicate email err = %v, want ErrEmailTaken", err)
 	}
 
@@ -44,23 +44,23 @@ func TestRepositorySessions(t *testing.T) {
 	ctx := t.Context()
 	repo := NewRepository(pgtest.New(t))
 
-	user, err := repo.CreateUser(ctx, domain.User{Email: "ann@example.com", PasswordHash: "h", Role: domain.RoleMember, Language: "pt", Region: "BR"}, "BRL")
+	user, booksID, err := repo.CreateUser(ctx, domain.User{Email: "ann@example.com", PasswordHash: "h", Role: domain.RoleMember, Language: "pt"}, "BR", "BRL")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	now := time.Date(2026, 10, 14, 12, 0, 0, 0, time.UTC)
 
-	_, s := domain.NewSession(user.ID, now)
+	_, s := domain.NewSession(user.ID, booksID, now)
 	if err := repo.CreateSession(ctx, s); err != nil {
 		t.Fatal(err)
 	}
 
-	if got, err := repo.UserBySession(ctx, s.TokenHash, now); err != nil || got.ID != user.ID {
-		t.Fatalf("UserBySession = %+v, %v; want user %d", got, err, user.ID)
+	if got, gotBooks, err := repo.UserBySession(ctx, s.TokenHash, now); err != nil || got.ID != user.ID || gotBooks != booksID {
+		t.Fatalf("UserBySession = %+v, %d, %v; want user %d, books %d", got, gotBooks, err, user.ID, booksID)
 	}
 
-	if _, err := repo.UserBySession(ctx, s.TokenHash, s.ExpiresAt); !errors.Is(err, app.ErrNotFound) {
+	if _, _, err := repo.UserBySession(ctx, s.TokenHash, s.ExpiresAt); !errors.Is(err, app.ErrNotFound) {
 		t.Fatalf("expired session err = %v, want ErrNotFound", err)
 	}
 
@@ -68,11 +68,11 @@ func TestRepositorySessions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := repo.UserBySession(ctx, s.TokenHash, now); !errors.Is(err, app.ErrNotFound) {
+	if _, _, err := repo.UserBySession(ctx, s.TokenHash, now); !errors.Is(err, app.ErrNotFound) {
 		t.Fatalf("session survived DeleteExpiredSessions: err = %v", err)
 	}
 
-	_, s2 := domain.NewSession(user.ID, now)
+	_, s2 := domain.NewSession(user.ID, booksID, now)
 	if err := repo.CreateSession(ctx, s2); err != nil {
 		t.Fatal(err)
 	}
@@ -81,7 +81,7 @@ func TestRepositorySessions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := repo.UserBySession(ctx, s2.TokenHash, now); !errors.Is(err, app.ErrNotFound) {
+	if _, _, err := repo.UserBySession(ctx, s2.TokenHash, now); !errors.Is(err, app.ErrNotFound) {
 		t.Fatalf("session survived DeleteSession: err = %v", err)
 	}
 }
