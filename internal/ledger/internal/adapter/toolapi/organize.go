@@ -52,6 +52,22 @@ type manageAccountsAndPayeesOut struct {
 	Name   string `json:"name"`
 }
 
+type organizeRun func() (manageAccountsAndPayeesOut, error)
+
+// organizeCall holds the parsed arguments of one manage_accounts_and_payees call.
+type organizeCall struct {
+	svc           *app.Service
+	userID        int64
+	in            manageAccountsAndPayeesIn
+	action        string
+	given         map[string]bool
+	accountID     uuid.UUID
+	parentID      uuid.UUID
+	institutionID uuid.UUID
+	intoID        uuid.UUID
+	payeeID       uuid.UUID
+}
+
 // checkFields requires the fields an action needs and rejects the ones it does not read.
 func checkFields(action string, given map[string]bool, required []string, optional ...string) error {
 	for _, f := range required {
@@ -129,327 +145,477 @@ func accountName(ctx context.Context, svc *app.Service, userID int64, id uuid.UU
 	return a.Name, err
 }
 
-func planOrganize(ctx context.Context, svc *app.Service, userID int64, in manageAccountsAndPayeesIn) (tool.Preview, func() (manageAccountsAndPayeesOut, error), error) {
-	action := string(in.Action)
+func planOrganize(
+	ctx context.Context,
+	svc *app.Service,
+	userID int64,
+	in manageAccountsAndPayeesIn,
+) (tool.Preview, organizeRun, error) {
 	pv := tool.Preview{Action: "manage_accounts_and_payees"}
-	given := map[string]bool{
-		"account_id": in.AccountID != "", "name": in.Name != "", "class": in.Class != "", "kind": in.Kind != "", "currency": in.Currency != "",
-		"parent_id": in.ParentID != "", "institution_id": in.InstitutionID != "", "date": !in.Date.IsZero(), "into_id": in.IntoID != "", "payee_id": in.PayeeID != "",
-		"tag": in.Tag != "", "into_tag": in.IntoTag != "",
-	}
 
-	accountID, err := optionalID(in.AccountID, "account_id")
+	c, err := newOrganizeCall(svc, userID, in)
 	if err != nil {
 		return pv, nil, err
+	}
+
+	run, err := c.plan(ctx, &pv)
+
+	return pv, run, err
+}
+
+func newOrganizeCall(
+	svc *app.Service,
+	userID int64,
+	in manageAccountsAndPayeesIn,
+) (organizeCall, error) {
+	accountID, err := optionalID(in.AccountID, "account_id")
+	if err != nil {
+		return organizeCall{}, err
 	}
 
 	parentID, err := optionalID(in.ParentID, "parent_id")
 	if err != nil {
-		return pv, nil, err
+		return organizeCall{}, err
 	}
 
 	institutionID, err := optionalID(in.InstitutionID, "institution_id")
 	if err != nil {
-		return pv, nil, err
+		return organizeCall{}, err
 	}
 
 	intoID, err := optionalID(in.IntoID, "into_id")
 	if err != nil {
-		return pv, nil, err
+		return organizeCall{}, err
 	}
 
 	payeeID, err := optionalID(in.PayeeID, "payee_id")
 	if err != nil {
-		return pv, nil, err
+		return organizeCall{}, err
+	}
+
+	return organizeCall{
+		svc:           svc,
+		userID:        userID,
+		in:            in,
+		action:        string(in.Action),
+		given:         givenFields(in),
+		accountID:     accountID,
+		parentID:      parentID,
+		institutionID: institutionID,
+		intoID:        intoID,
+		payeeID:       payeeID,
+	}, nil
+}
+
+func givenFields(in manageAccountsAndPayeesIn) map[string]bool {
+	return map[string]bool{
+		"account_id": in.AccountID != "", "name": in.Name != "", "class": in.Class != "", "kind": in.Kind != "", "currency": in.Currency != "",
+		"parent_id": in.ParentID != "", "institution_id": in.InstitutionID != "", "date": !in.Date.IsZero(), "into_id": in.IntoID != "", "payee_id": in.PayeeID != "",
+		"tag": in.Tag != "", "into_tag": in.IntoTag != "",
+	}
+}
+
+func (c organizeCall) plan(ctx context.Context, pv *tool.Preview) (organizeRun, error) {
+	switch c.in.Action {
+	case "create_account":
+		return c.planCreateAccount(ctx, pv)
+	case "update_account":
+		return c.planUpdateAccount(ctx, pv)
+	case "close_account", "reopen_account":
+		return c.planCloseOrReopenAccount(ctx, pv)
+	case "merge_category":
+		return c.planMergeCategory(ctx, pv)
+	case "create_payee", "create_institution":
+		return c.planCreatePayeeOrInstitution(ctx, pv)
+	case "rename_payee":
+		return c.planRenamePayee(ctx, pv)
+	case "rename_tag":
+		return c.planRenameTag(ctx, pv)
+	case "merge_tag":
+		return c.planMergeTag(ctx, pv)
+	case "delete_tag":
+		return c.planDeleteTag(ctx, pv)
+	default:
+		return c.planMergePayee(ctx, pv)
+	}
+}
+
+func (c organizeCall) planCreateAccount(ctx context.Context, pv *tool.Preview) (organizeRun, error) {
+	required := []string{"name", "class"}
+	if c.in.Class == "asset" || c.in.Class == "liability" {
+		required = append(required, "kind")
+	}
+
+	if err := c.check(
+		required,
+		"kind",
+		"currency",
+		"parent_id",
+		"institution_id",
+	); err != nil {
+		return nil, err
+	}
+
+	settings, err := c.svc.Settings(ctx, c.userID)
+	if err != nil {
+		return nil, err
+	}
+
+	currency := settings.BaseCurrency
+	if c.in.Currency != "" {
+		currency = money.Currency(c.in.Currency)
+	}
+
+	a := domain.Account{
+		Name: c.in.Name, Class: domain.Class(c.in.Class), Kind: domain.Kind(c.in.Kind), Instrument: currency,
+		ParentID: c.parentID, InstitutionID: c.institutionID, OpenedOn: c.svc.Today(),
+	}
+	pv.Target = c.in.Name
+
+	if err := c.describeNewAccount(ctx, pv, currency); err != nil {
+		return nil, err
+	}
+
+	return func() (manageAccountsAndPayeesOut, error) {
+		created, err := c.svc.CreateAccount(ctx, c.userID, a)
+		return manageAccountsAndPayeesOut{Action: c.action, ID: created.ID.String(), Name: created.Name}, err
+	}, nil
+}
+
+func (c organizeCall) describeNewAccount(
+	ctx context.Context,
+	pv *tool.Preview,
+	currency money.Currency,
+) error {
+	text := tool.TextValue
+
+	pv.Changes = []tool.Change{{Field: "name", After: text(c.in.Name)}, {Field: "class", After: text(string(c.in.Class))}}
+	if c.in.Kind != "" {
+		pv.Changes = append(pv.Changes, tool.Change{Field: "kind", After: text(string(c.in.Kind))})
+	}
+
+	pv.Changes = append(pv.Changes, tool.Change{Field: "currency", After: text(string(currency))})
+	if c.parentID != uuid.Nil {
+		parent, err := accountName(ctx, c.svc, c.userID, c.parentID)
+		if err != nil {
+			return err
+		}
+
+		pv.Changes = append(pv.Changes, tool.Change{Field: "parent", After: text(parent)})
+	}
+
+	if c.institutionID != uuid.Nil {
+		name, err := institutionName(ctx, c.svc, c.userID, c.institutionID)
+		if err != nil {
+			return err
+		}
+
+		pv.Changes = append(pv.Changes, tool.Change{Field: "institution", After: text(name)})
+	}
+
+	return nil
+}
+
+func (c organizeCall) planUpdateAccount(ctx context.Context, pv *tool.Preview) (organizeRun, error) {
+	text := tool.TextValue
+
+	if err := c.check([]string{"account_id"}, "name", "parent_id", "institution_id"); err != nil {
+		return nil, err
+	}
+
+	if c.in.Name == "" && c.parentID == uuid.Nil && c.institutionID == uuid.Nil {
+		return nil, tool.InvalidArgument("name", "one of name, parent_id or institution_id is required for update_account")
+	}
+
+	a, err := c.svc.Account(ctx, c.userID, c.accountID)
+	if err != nil {
+		return nil, err
+	}
+
+	pv.Target = a.Name
+
+	var patch app.AccountPatch
+	if c.in.Name != "" {
+		patch.Name = &c.in.Name
+		pv.Changes = append(pv.Changes, tool.Change{Field: "name", Before: text(a.Name), After: text(c.in.Name)})
+	}
+
+	if err := c.patchParent(ctx, pv, &patch, a.ParentID); err != nil {
+		return nil, err
+	}
+
+	if err := c.patchInstitution(ctx, pv, &patch, a.InstitutionID); err != nil {
+		return nil, err
+	}
+
+	return func() (manageAccountsAndPayeesOut, error) {
+		updated, err := c.svc.UpdateAccount(ctx, c.userID, a.ID, patch)
+		return manageAccountsAndPayeesOut{Action: c.action, ID: a.ID.String(), Name: updated.Name}, err
+	}, nil
+}
+
+func (c organizeCall) patchParent(
+	ctx context.Context,
+	pv *tool.Preview,
+	patch *app.AccountPatch,
+	current uuid.UUID,
+) error {
+	if c.parentID == uuid.Nil {
+		return nil
 	}
 
 	text := tool.TextValue
-	switch in.Action {
-	case "create_account":
-		required := []string{"name", "class"}
-		if in.Class == "asset" || in.Class == "liability" {
-			required = append(required, "kind")
-		}
 
-		if err := checkFields(action, given, required, "kind", "currency", "parent_id", "institution_id"); err != nil {
-			return pv, nil, err
-		}
-
-		settings, err := svc.Settings(ctx, userID)
-		if err != nil {
-			return pv, nil, err
-		}
-
-		currency := settings.BaseCurrency
-		if in.Currency != "" {
-			currency = money.Currency(in.Currency)
-		}
-
-		a := domain.Account{
-			Name: in.Name, Class: domain.Class(in.Class), Kind: domain.Kind(in.Kind), Instrument: currency,
-			ParentID: parentID, InstitutionID: institutionID, OpenedOn: svc.Today(),
-		}
-		pv.Target = in.Name
-
-		pv.Changes = []tool.Change{{Field: "name", After: text(in.Name)}, {Field: "class", After: text(string(in.Class))}}
-		if in.Kind != "" {
-			pv.Changes = append(pv.Changes, tool.Change{Field: "kind", After: text(string(in.Kind))})
-		}
-
-		pv.Changes = append(pv.Changes, tool.Change{Field: "currency", After: text(string(currency))})
-		if parentID != uuid.Nil {
-			parent, err := accountName(ctx, svc, userID, parentID)
-			if err != nil {
-				return pv, nil, err
-			}
-
-			pv.Changes = append(pv.Changes, tool.Change{Field: "parent", After: text(parent)})
-		}
-
-		if institutionID != uuid.Nil {
-			name, err := institutionName(ctx, svc, userID, institutionID)
-			if err != nil {
-				return pv, nil, err
-			}
-
-			pv.Changes = append(pv.Changes, tool.Change{Field: "institution", After: text(name)})
-		}
-
-		return pv, func() (manageAccountsAndPayeesOut, error) {
-			created, err := svc.CreateAccount(ctx, userID, a)
-			return manageAccountsAndPayeesOut{Action: action, ID: created.ID.String(), Name: created.Name}, err
-		}, nil
-	case "update_account":
-		if err := checkFields(action, given, []string{"account_id"}, "name", "parent_id", "institution_id"); err != nil {
-			return pv, nil, err
-		}
-
-		if in.Name == "" && parentID == uuid.Nil && institutionID == uuid.Nil {
-			return pv, nil, tool.InvalidArgument("name", "one of name, parent_id or institution_id is required for update_account")
-		}
-
-		a, err := svc.Account(ctx, userID, accountID)
-		if err != nil {
-			return pv, nil, err
-		}
-
-		pv.Target = a.Name
-
-		var patch app.AccountPatch
-		if in.Name != "" {
-			patch.Name = &in.Name
-			pv.Changes = append(pv.Changes, tool.Change{Field: "name", Before: text(a.Name), After: text(in.Name)})
-		}
-
-		if parentID != uuid.Nil {
-			before, err := accountName(ctx, svc, userID, a.ParentID)
-			if err != nil {
-				return pv, nil, err
-			}
-
-			after, err := accountName(ctx, svc, userID, parentID)
-			if err != nil {
-				return pv, nil, err
-			}
-
-			patch.ParentID = &parentID
-
-			pv.Changes = append(pv.Changes, tool.Change{Field: "parent", Before: text(before), After: text(after)})
-		}
-
-		if institutionID != uuid.Nil {
-			var before string
-			if a.InstitutionID != uuid.Nil {
-				if before, err = institutionName(ctx, svc, userID, a.InstitutionID); err != nil {
-					return pv, nil, err
-				}
-			}
-
-			after, err := institutionName(ctx, svc, userID, institutionID)
-			if err != nil {
-				return pv, nil, err
-			}
-
-			patch.InstitutionID = &institutionID
-
-			pv.Changes = append(pv.Changes, tool.Change{Field: "institution", Before: text(before), After: text(after)})
-		}
-
-		return pv, func() (manageAccountsAndPayeesOut, error) {
-			updated, err := svc.UpdateAccount(ctx, userID, a.ID, patch)
-			return manageAccountsAndPayeesOut{Action: action, ID: a.ID.String(), Name: updated.Name}, err
-		}, nil
-	case "close_account", "reopen_account":
-		closing := in.Action == "close_account"
-
-		optional := []string{}
-		if closing {
-			optional = append(optional, "date")
-		}
-
-		if err := checkFields(action, given, []string{"account_id"}, optional...); err != nil {
-			return pv, nil, err
-		}
-
-		a, err := svc.Account(ctx, userID, accountID)
-		if err != nil {
-			return pv, nil, err
-		}
-
-		pv.Target = a.Name
-
-		date := svc.Today()
-		if !in.Date.IsZero() {
-			date = in.Date.Time
-		}
-
-		if closing {
-			pv.Changes = []tool.Change{{Field: "status", Before: text("active"), After: text("closed")}, {Field: "date", After: tool.DateValue(date)}}
-		} else {
-			pv.Changes = []tool.Change{{Field: "status", Before: text("closed"), After: text("active")}}
-		}
-
-		return pv, func() (manageAccountsAndPayeesOut, error) {
-			if closing {
-				return manageAccountsAndPayeesOut{Action: action, ID: a.ID.String(), Name: a.Name}, svc.CloseAccount(ctx, userID, a.ID, date)
-			}
-
-			_, err := svc.ReopenAccount(ctx, userID, a.ID)
-
-			return manageAccountsAndPayeesOut{Action: action, ID: a.ID.String(), Name: a.Name}, err
-		}, nil
-	case "merge_category":
-		if err := checkFields(action, given, []string{"account_id", "into_id"}); err != nil {
-			return pv, nil, err
-		}
-
-		from, err := svc.Account(ctx, userID, accountID)
-		if err != nil {
-			return pv, nil, err
-		}
-
-		into, err := svc.Account(ctx, userID, intoID)
-		if err != nil {
-			return pv, nil, err
-		}
-
-		pv.Target, pv.Destructive = from.Name, true
-		pv.Changes = []tool.Change{{Field: "category", Before: text(from.Name), After: text(into.Name)}}
-
-		return pv, func() (manageAccountsAndPayeesOut, error) {
-			merged, err := svc.MergeCategories(ctx, userID, from.ID, into.ID)
-			return manageAccountsAndPayeesOut{Action: action, ID: merged.ID.String(), Name: merged.Name}, err
-		}, nil
-	case "create_payee", "create_institution":
-		if err := checkFields(action, given, []string{"name"}); err != nil {
-			return pv, nil, err
-		}
-
-		pv.Target = in.Name
-		pv.Changes = []tool.Change{{Field: "name", After: text(in.Name)}}
-
-		return pv, func() (manageAccountsAndPayeesOut, error) {
-			if in.Action == "create_payee" {
-				p, err := svc.CreatePayee(ctx, userID, in.Name)
-				return manageAccountsAndPayeesOut{Action: action, ID: p.ID.String(), Name: p.Name}, err
-			}
-
-			i, err := svc.CreateInstitution(ctx, userID, app.Institution{Name: in.Name})
-
-			return manageAccountsAndPayeesOut{Action: action, ID: i.ID.String(), Name: i.Name}, err
-		}, nil
-	case "rename_payee":
-		if err := checkFields(action, given, []string{"payee_id", "name"}); err != nil {
-			return pv, nil, err
-		}
-
-		p, err := payeeByID(ctx, svc, userID, payeeID)
-		if err != nil {
-			return pv, nil, err
-		}
-
-		pv.Target = p.Name
-		pv.Changes = []tool.Change{{Field: "name", Before: text(p.Name), After: text(in.Name)}}
-
-		return pv, func() (manageAccountsAndPayeesOut, error) {
-			renamed, err := svc.RenamePayee(ctx, userID, p.ID, in.Name)
-			return manageAccountsAndPayeesOut{Action: action, ID: p.ID.String(), Name: renamed.Name}, err
-		}, nil
-	case "rename_tag":
-		if err := checkFields(action, given, []string{"tag", "name"}); err != nil {
-			return pv, nil, err
-		}
-
-		tag, err := svc.Tag(ctx, userID, in.Tag)
-		if err != nil {
-			return pv, nil, err
-		}
-
-		name, err := domain.NormalizeTag(in.Name, "name")
-		if err != nil {
-			return pv, nil, err
-		}
-
-		pv.Target = tag.Name
-		pv.Changes = []tool.Change{{Field: "name", Before: text(tag.Name), After: text(name)}}
-
-		return pv, func() (manageAccountsAndPayeesOut, error) {
-			renamed, err := svc.RenameTag(ctx, userID, tag.Name, name)
-			return manageAccountsAndPayeesOut{Action: action, Name: renamed.Name}, err
-		}, nil
-	case "merge_tag":
-		if err := checkFields(action, given, []string{"tag", "into_tag"}); err != nil {
-			return pv, nil, err
-		}
-
-		from, err := svc.Tag(ctx, userID, in.Tag)
-		if err != nil {
-			return pv, nil, err
-		}
-
-		pv.Target, pv.Destructive = from.Name, true
-		pv.Changes = []tool.Change{{Field: "tags", Before: text(from.Name), After: text(in.IntoTag)}}
-
-		return pv, func() (manageAccountsAndPayeesOut, error) {
-			merged, err := svc.MergeTag(ctx, userID, from.Name, in.IntoTag)
-			return manageAccountsAndPayeesOut{Action: action, Name: merged.Name}, err
-		}, nil
-	case "delete_tag":
-		if err := checkFields(action, given, []string{"tag"}); err != nil {
-			return pv, nil, err
-		}
-
-		tag, err := svc.Tag(ctx, userID, in.Tag)
-		if err != nil {
-			return pv, nil, err
-		}
-
-		pv.Target, pv.Destructive = tag.Name, true
-
-		return pv, func() (manageAccountsAndPayeesOut, error) {
-			return manageAccountsAndPayeesOut{Action: action, Name: tag.Name}, svc.DeleteTag(ctx, userID, tag.Name)
-		}, nil
-	default:
-		if err := checkFields(action, given, []string{"payee_id", "into_id"}); err != nil {
-			return pv, nil, err
-		}
-
-		from, err := payeeByID(ctx, svc, userID, payeeID)
-		if err != nil {
-			return pv, nil, err
-		}
-
-		into, err := payeeByID(ctx, svc, userID, intoID)
-		if err != nil {
-			return pv, nil, err
-		}
-
-		pv.Target, pv.Destructive = from.Name, true
-		pv.Changes = []tool.Change{{Field: "payee", Before: text(from.Name), After: text(into.Name)}}
-
-		return pv, func() (manageAccountsAndPayeesOut, error) {
-			merged, err := svc.MergePayees(ctx, userID, from.ID, into.ID)
-			return manageAccountsAndPayeesOut{Action: action, ID: merged.ID.String(), Name: merged.Name}, err
-		}, nil
+	before, err := accountName(ctx, c.svc, c.userID, current)
+	if err != nil {
+		return err
 	}
+
+	after, err := accountName(ctx, c.svc, c.userID, c.parentID)
+	if err != nil {
+		return err
+	}
+
+	patch.ParentID = &c.parentID
+
+	pv.Changes = append(pv.Changes, tool.Change{Field: "parent", Before: text(before), After: text(after)})
+
+	return nil
+}
+
+func (c organizeCall) patchInstitution(
+	ctx context.Context,
+	pv *tool.Preview,
+	patch *app.AccountPatch,
+	current uuid.UUID,
+) error {
+	if c.institutionID == uuid.Nil {
+		return nil
+	}
+
+	text := tool.TextValue
+
+	var before string
+	if current != uuid.Nil {
+		var err error
+		if before, err = institutionName(ctx, c.svc, c.userID, current); err != nil {
+			return err
+		}
+	}
+
+	after, err := institutionName(ctx, c.svc, c.userID, c.institutionID)
+	if err != nil {
+		return err
+	}
+
+	patch.InstitutionID = &c.institutionID
+
+	pv.Changes = append(pv.Changes, tool.Change{Field: "institution", Before: text(before), After: text(after)})
+
+	return nil
+}
+
+func (c organizeCall) planCloseOrReopenAccount(ctx context.Context, pv *tool.Preview) (organizeRun, error) {
+	text := tool.TextValue
+	closing := c.in.Action == "close_account"
+
+	optional := []string{}
+	if closing {
+		optional = append(optional, "date")
+	}
+
+	if err := c.check([]string{"account_id"}, optional...); err != nil {
+		return nil, err
+	}
+
+	a, err := c.svc.Account(ctx, c.userID, c.accountID)
+	if err != nil {
+		return nil, err
+	}
+
+	pv.Target = a.Name
+
+	date := c.svc.Today()
+	if !c.in.Date.IsZero() {
+		date = c.in.Date.Time
+	}
+
+	if closing {
+		pv.Changes = []tool.Change{{Field: "status", Before: text("active"), After: text("closed")}, {Field: "date", After: tool.DateValue(date)}}
+	} else {
+		pv.Changes = []tool.Change{{Field: "status", Before: text("closed"), After: text("active")}}
+	}
+
+	return func() (manageAccountsAndPayeesOut, error) {
+		if closing {
+			return manageAccountsAndPayeesOut{Action: c.action, ID: a.ID.String(), Name: a.Name}, c.svc.CloseAccount(ctx, c.userID, a.ID, date)
+		}
+
+		_, err := c.svc.ReopenAccount(ctx, c.userID, a.ID)
+
+		return manageAccountsAndPayeesOut{Action: c.action, ID: a.ID.String(), Name: a.Name}, err
+	}, nil
+}
+
+func (c organizeCall) planMergeCategory(ctx context.Context, pv *tool.Preview) (organizeRun, error) {
+	text := tool.TextValue
+
+	if err := c.check([]string{"account_id", "into_id"}); err != nil {
+		return nil, err
+	}
+
+	from, err := c.svc.Account(ctx, c.userID, c.accountID)
+	if err != nil {
+		return nil, err
+	}
+
+	into, err := c.svc.Account(ctx, c.userID, c.intoID)
+	if err != nil {
+		return nil, err
+	}
+
+	pv.Target, pv.Destructive = from.Name, true
+	pv.Changes = []tool.Change{{Field: "category", Before: text(from.Name), After: text(into.Name)}}
+
+	return func() (manageAccountsAndPayeesOut, error) {
+		merged, err := c.svc.MergeCategories(ctx, c.userID, from.ID, into.ID)
+		return manageAccountsAndPayeesOut{Action: c.action, ID: merged.ID.String(), Name: merged.Name}, err
+	}, nil
+}
+
+func (c organizeCall) planCreatePayeeOrInstitution(ctx context.Context, pv *tool.Preview) (organizeRun, error) {
+	text := tool.TextValue
+
+	if err := c.check([]string{"name"}); err != nil {
+		return nil, err
+	}
+
+	pv.Target = c.in.Name
+	pv.Changes = []tool.Change{{Field: "name", After: text(c.in.Name)}}
+
+	return func() (manageAccountsAndPayeesOut, error) {
+		if c.in.Action == "create_payee" {
+			p, err := c.svc.CreatePayee(ctx, c.userID, c.in.Name)
+			return manageAccountsAndPayeesOut{Action: c.action, ID: p.ID.String(), Name: p.Name}, err
+		}
+
+		i, err := c.svc.CreateInstitution(ctx, c.userID, app.Institution{Name: c.in.Name})
+
+		return manageAccountsAndPayeesOut{Action: c.action, ID: i.ID.String(), Name: i.Name}, err
+	}, nil
+}
+
+func (c organizeCall) planRenamePayee(ctx context.Context, pv *tool.Preview) (organizeRun, error) {
+	text := tool.TextValue
+
+	if err := c.check([]string{"payee_id", "name"}); err != nil {
+		return nil, err
+	}
+
+	p, err := payeeByID(ctx, c.svc, c.userID, c.payeeID)
+	if err != nil {
+		return nil, err
+	}
+
+	pv.Target = p.Name
+	pv.Changes = []tool.Change{{Field: "name", Before: text(p.Name), After: text(c.in.Name)}}
+
+	return func() (manageAccountsAndPayeesOut, error) {
+		renamed, err := c.svc.RenamePayee(ctx, c.userID, p.ID, c.in.Name)
+		return manageAccountsAndPayeesOut{Action: c.action, ID: p.ID.String(), Name: renamed.Name}, err
+	}, nil
+}
+
+func (c organizeCall) planRenameTag(ctx context.Context, pv *tool.Preview) (organizeRun, error) {
+	text := tool.TextValue
+
+	if err := c.check([]string{"tag", "name"}); err != nil {
+		return nil, err
+	}
+
+	tag, err := c.svc.Tag(ctx, c.userID, c.in.Tag)
+	if err != nil {
+		return nil, err
+	}
+
+	name, err := domain.NormalizeTag(c.in.Name, "name")
+	if err != nil {
+		return nil, err
+	}
+
+	pv.Target = tag.Name
+	pv.Changes = []tool.Change{{Field: "name", Before: text(tag.Name), After: text(name)}}
+
+	return func() (manageAccountsAndPayeesOut, error) {
+		renamed, err := c.svc.RenameTag(ctx, c.userID, tag.Name, name)
+		return manageAccountsAndPayeesOut{Action: c.action, Name: renamed.Name}, err
+	}, nil
+}
+
+func (c organizeCall) planMergeTag(ctx context.Context, pv *tool.Preview) (organizeRun, error) {
+	text := tool.TextValue
+
+	if err := c.check([]string{"tag", "into_tag"}); err != nil {
+		return nil, err
+	}
+
+	from, err := c.svc.Tag(ctx, c.userID, c.in.Tag)
+	if err != nil {
+		return nil, err
+	}
+
+	pv.Target, pv.Destructive = from.Name, true
+	pv.Changes = []tool.Change{{Field: "tags", Before: text(from.Name), After: text(c.in.IntoTag)}}
+
+	return func() (manageAccountsAndPayeesOut, error) {
+		merged, err := c.svc.MergeTag(ctx, c.userID, from.Name, c.in.IntoTag)
+		return manageAccountsAndPayeesOut{Action: c.action, Name: merged.Name}, err
+	}, nil
+}
+
+func (c organizeCall) planDeleteTag(ctx context.Context, pv *tool.Preview) (organizeRun, error) {
+	if err := c.check([]string{"tag"}); err != nil {
+		return nil, err
+	}
+
+	tag, err := c.svc.Tag(ctx, c.userID, c.in.Tag)
+	if err != nil {
+		return nil, err
+	}
+
+	pv.Target, pv.Destructive = tag.Name, true
+
+	return func() (manageAccountsAndPayeesOut, error) {
+		return manageAccountsAndPayeesOut{Action: c.action, Name: tag.Name}, c.svc.DeleteTag(ctx, c.userID, tag.Name)
+	}, nil
+}
+
+func (c organizeCall) planMergePayee(ctx context.Context, pv *tool.Preview) (organizeRun, error) {
+	text := tool.TextValue
+
+	if err := c.check([]string{"payee_id", "into_id"}); err != nil {
+		return nil, err
+	}
+
+	from, err := payeeByID(ctx, c.svc, c.userID, c.payeeID)
+	if err != nil {
+		return nil, err
+	}
+
+	into, err := payeeByID(ctx, c.svc, c.userID, c.intoID)
+	if err != nil {
+		return nil, err
+	}
+
+	pv.Target, pv.Destructive = from.Name, true
+	pv.Changes = []tool.Change{{Field: "payee", Before: text(from.Name), After: text(into.Name)}}
+
+	return func() (manageAccountsAndPayeesOut, error) {
+		merged, err := c.svc.MergePayees(ctx, c.userID, from.ID, into.ID)
+		return manageAccountsAndPayeesOut{Action: c.action, ID: merged.ID.String(), Name: merged.Name}, err
+	}, nil
+}
+
+func (c organizeCall) check(required []string, optional ...string) error {
+	return checkFields(c.action, c.given, required, optional...)
 }
