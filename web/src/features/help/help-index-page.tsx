@@ -34,7 +34,7 @@ export function HelpIndexPage() {
         <Stack gap={8}>
           <HelpFeatured id="first-month" />
 
-          <Grid columns={3} minItemWidth="md" gap={6} align="start">
+          <Grid columns={3} minItemWidth="md" gap={6}>
             <HelpKindCard kind="howto" />
             <HelpKindCard kind="reference" />
             <HelpKindCard kind="explanation" />

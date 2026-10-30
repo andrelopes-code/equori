@@ -20,7 +20,7 @@ export function HelpKindCard({ kind }: HelpKindCardProps) {
   return (
     <Card>
       <CardHeader>
-        <Heading level={2} size="md">
+        <Heading level={2} size="lg">
           {t(`help.kind.${kind}`)}
         </Heading>
         <Text size="sm" tone="muted">
@@ -28,7 +28,7 @@ export function HelpKindCard({ kind }: HelpKindCardProps) {
         </Text>
       </CardHeader>
       <CardBody>
-        <List aria-label={t(`help.kind.${kind}`)}>
+        <List aria-label={t(`help.kind.${kind}`)} variant="ruled" inset>
           {pages.map(({ id }) => (
             <HelpIndexItem key={id} id={id} />
           ))}
