@@ -54,7 +54,7 @@ Amendment of 2026-10-26: the import of an archive of another schema version leav
 
 ## 9.4 Version 1.0
 
-Status: approved by the owner on 2026-10-30. Input: the owner's competitive study of 2026-10-30 and the owner's answers recorded in it. Next step: P10, starting with the design spec of shared books.
+Status: approved by the owner on 2026-10-30. Input: the owner's competitive study of 2026-10-30, "O que os usuários reclamam nos apps de finanças" (https://claude.ai/artifact/YMqiwrXg5GJxoW8rVDSfpi#ab301e77-6893.m4ag25fxkb2.34601), and the owner's answers recorded in it. Next step: P10, starting with the design spec of shared books.
 
 ### 9.4.1 Scope decisions
 
