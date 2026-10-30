@@ -526,9 +526,18 @@ describe("CategoriesPage", () => {
       "Pets",
     );
     await userEvent.click(
-      within(dialog).getByRole("radio", { name: "Colour 5" }),
+      within(dialog).getByRole("button", {
+        name: catalogEn["appearance.choose"],
+      }),
     );
-    await userEvent.click(within(dialog).getByRole("radio", { name: "dog" }));
+    await userEvent.click(
+      await screen.findByRole("radio", { name: "Colour 5" }),
+    );
+    await userEvent.click(screen.getByRole("radio", { name: "dog" }));
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => {
+      expect(screen.queryByRole("radio", { name: "dog" })).toBeNull();
+    });
     await userEvent.click(
       within(dialog).getByRole("button", {
         name: catalogEn["category.create.confirm"],
@@ -566,8 +575,17 @@ describe("CategoriesPage", () => {
     await userEvent.clear(name);
     await userEvent.type(name, "Leisure");
     await userEvent.click(
-      within(dialog).getByRole("radio", { name: "Colour 3" }),
+      within(dialog).getByRole("button", {
+        name: catalogEn["appearance.choose"],
+      }),
     );
+    await userEvent.click(
+      await screen.findByRole("radio", { name: "Colour 3" }),
+    );
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => {
+      expect(screen.queryByRole("radio", { name: "Colour 3" })).toBeNull();
+    });
     await userEvent.click(
       within(dialog).getByRole("button", { name: catalogEn["detail.save"] }),
     );
@@ -575,6 +593,43 @@ describe("CategoriesPage", () => {
       expect(sent).toEqual([
         { route: "rename", body: { name: "Leisure" } },
         { route: "appearance", body: { color: 3, icon: null } },
+      ]);
+    });
+  });
+
+  it("moves a category under a parent of its class chosen in the category picker", async () => {
+    const sent: Sent[] = [];
+    await renderApp("/categories", { fetch: api(sent) });
+    await findRow("Fun");
+    await openMenu("Fun");
+    await userEvent.click(
+      await screen.findByRole("menuitem", { name: catalogEn["category.edit"] }),
+    );
+    const dialog = await screen.findByRole("dialog");
+    // The label reads "Under (optional)".
+    const picker = within(dialog).getByRole("combobox", {
+      name: new RegExp(`^${catalogEn["category.parent"]}`),
+    });
+    expect(picker).toHaveAttribute(
+      "placeholder",
+      catalogEn["category.topLevel"],
+    );
+    await userEvent.click(picker);
+    await waitFor(() => {
+      expect(screen.getAllByRole("option").length).toBeGreaterThan(0);
+    });
+    // Not itself, not an income category, not the uncategorized bucket.
+    const names = screen
+      .getAllByRole("option")
+      .map((o) => o.querySelector('[data-ui="highlight"]')?.textContent);
+    expect(names).toEqual(["Food", "Food › Groceries"]);
+    await userEvent.click(screen.getByRole("option", { name: /Groceries/ }));
+    await userEvent.click(
+      within(dialog).getByRole("button", { name: catalogEn["detail.save"] }),
+    );
+    await waitFor(() => {
+      expect(sent).toEqual([
+        { route: "parent", body: { parent_id: "groceries" } },
       ]);
     });
   });

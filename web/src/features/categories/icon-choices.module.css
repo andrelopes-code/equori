@@ -1,0 +1,112 @@
+@layer app {
+  /* Each group's tiles stand at the comfortable target, as many per line as fit. */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(
+      auto-fill,
+      minmax(var(--slotted-target-comfortable), 1fr)
+    );
+    gap: var(--slotted-space-1);
+  }
+
+  /* The chosen tile takes the chosen colour, as the mark will. */
+  .icons {
+    --tile-ink: var(--slotted-text);
+  }
+  .icons[data-color="1"] {
+    --tile-ink: var(--slotted-data-1);
+  }
+  .icons[data-color="2"] {
+    --tile-ink: var(--slotted-data-2);
+  }
+  .icons[data-color="3"] {
+    --tile-ink: var(--slotted-data-3);
+  }
+  .icons[data-color="4"] {
+    --tile-ink: var(--slotted-data-4);
+  }
+  .icons[data-color="5"] {
+    --tile-ink: var(--slotted-data-5);
+  }
+  .icons[data-color="6"] {
+    --tile-ink: var(--slotted-data-6);
+  }
+  .icons[data-color="7"] {
+    --tile-ink: var(--slotted-data-7);
+  }
+  .icons[data-color="8"] {
+    --tile-ink: var(--slotted-data-8);
+  }
+
+  .option {
+    position: relative;
+    display: inline-grid;
+    place-items: center;
+    min-inline-size: var(--slotted-target-min);
+    min-block-size: var(--slotted-target-min);
+    cursor: pointer;
+  }
+
+  /* The radio stays in the accessibility tree and takes focus; the drawing is its label. */
+  .radio {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .tile {
+    display: inline-grid;
+    place-items: center;
+    box-sizing: border-box;
+    inline-size: var(--slotted-target-comfortable);
+    block-size: var(--slotted-target-comfortable);
+    border: var(--slotted-border-width-thick) solid transparent;
+    border-radius: var(--slotted-radius-md);
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-control-font-size-md);
+    font-weight: var(--slotted-font-weight-semibold);
+    transition:
+      background-color var(--slotted-control-transition-duration)
+        var(--slotted-control-transition-easing),
+      color var(--slotted-control-transition-duration)
+        var(--slotted-control-transition-easing);
+  }
+
+  .glyph {
+    inline-size: 50%;
+    block-size: 50%;
+  }
+
+  .option:hover .tile {
+    background: var(--slotted-tone-secondary-subtle-hover);
+    color: var(--slotted-text);
+  }
+
+  /* checked: an edge in the text colour, so it reads without the ground (OE-06). The ground is
+     the ink at the strength the category mark uses. */
+  .radio:checked + .tile {
+    border-color: var(--slotted-text);
+    background: color-mix(in oklab, var(--tile-ink) 18%, transparent);
+    color: var(--tile-ink);
+  }
+
+  .radio:focus-visible + .tile {
+    outline: var(--slotted-focus-ring-width) solid
+      var(--slotted-focus-ring-color);
+    outline-offset: var(--slotted-focus-ring-offset);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tile {
+      transition: none;
+    }
+  }
+
+  @media (forced-colors: active) {
+    .radio:checked + .tile {
+      border-color: Highlight;
+    }
+  }
+}

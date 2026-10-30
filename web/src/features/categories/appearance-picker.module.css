@@ -1,123 +1,50 @@
 @layer app {
-  /* The icon grid holds 80 tiles at the comfortable target, as many per line as fit. It scrolls
-     inside the dialog instead of growing it; the half row it shows at the bottom says it scrolls,
-     a height no token measures. */
-  .icons {
-    display: grid;
-    grid-template-columns: repeat(
-      auto-fill,
-      minmax(var(--slotted-target-comfortable), 1fr)
-    );
-    /* A scroller of bounded height sizes auto rows to their minimum, which would overlap tiles. */
-    grid-auto-rows: var(--slotted-target-comfortable);
-    gap: var(--slotted-space-1);
-    max-block-size: calc(var(--slotted-target-comfortable) * 4.5);
-    overflow-y: auto;
-    padding: var(--slotted-space-3);
-    border: var(--slotted-border-width-thin) solid var(--slotted-border-subtle);
-    border-radius: var(--slotted-radius-lg);
-    background: var(--slotted-surface-sunken);
-    scrollbar-gutter: stable;
+  /* The mark that chooses the look stands before the name it marks, as the tree draws them. */
+  .row {
+    display: flex;
+    align-items: center;
+    gap: var(--slotted-space-4);
   }
 
-  /* The chosen tile takes the chosen colour, as the mark will. */
-  .icons {
-    --tile-ink: var(--slotted-text);
-  }
-  .icons[data-color="1"] {
-    --tile-ink: var(--slotted-data-1);
-  }
-  .icons[data-color="2"] {
-    --tile-ink: var(--slotted-data-2);
-  }
-  .icons[data-color="3"] {
-    --tile-ink: var(--slotted-data-3);
-  }
-  .icons[data-color="4"] {
-    --tile-ink: var(--slotted-data-4);
-  }
-  .icons[data-color="5"] {
-    --tile-ink: var(--slotted-data-5);
-  }
-  .icons[data-color="6"] {
-    --tile-ink: var(--slotted-data-6);
-  }
-  .icons[data-color="7"] {
-    --tile-ink: var(--slotted-data-7);
-  }
-  .icons[data-color="8"] {
-    --tile-ink: var(--slotted-data-8);
+  .row > :last-child {
+    flex: 1;
+    min-inline-size: 0;
   }
 
-  .option {
-    position: relative;
+  .trigger {
     display: inline-grid;
+    flex: none;
     place-items: center;
-    min-inline-size: var(--slotted-target-min);
-    min-block-size: var(--slotted-target-min);
-    cursor: pointer;
-  }
-
-  /* The radio stays in the accessibility tree and takes focus; the drawing is its label. */
-  .radio {
-    position: absolute;
-    inset: 0;
-    margin: 0;
-    opacity: 0;
-    cursor: pointer;
-  }
-
-  .tile {
-    display: inline-grid;
-    place-items: center;
-    box-sizing: border-box;
-    inline-size: var(--slotted-target-comfortable);
-    block-size: var(--slotted-target-comfortable);
-    border: var(--slotted-border-width-thick) solid transparent;
+    padding: 0;
+    border: none;
     border-radius: var(--slotted-radius-md);
-    color: var(--slotted-text-muted);
-    font-size: var(--slotted-control-font-size-md);
-    font-weight: var(--slotted-font-weight-semibold);
-    transition:
-      background-color var(--slotted-control-transition-duration)
-        var(--slotted-control-transition-easing),
-      color var(--slotted-control-transition-duration)
-        var(--slotted-control-transition-easing);
+    background: none;
+    cursor: pointer;
+    transition: box-shadow var(--slotted-control-transition-duration)
+      var(--slotted-control-transition-easing);
   }
 
-  .glyph {
-    inline-size: 50%;
-    block-size: 50%;
+  .trigger:hover,
+  .trigger[aria-expanded="true"] {
+    box-shadow: 0 0 0 var(--slotted-border-width-thick)
+      var(--slotted-border-strong);
   }
 
-  .option:hover .tile {
-    background: var(--slotted-tone-secondary-subtle-hover);
-    color: var(--slotted-text);
-  }
-
-  /* checked: an edge in the text colour, so it reads without the ground (OE-06). The ground is
-     the ink at the strength the category mark uses. */
-  .radio:checked + .tile {
-    border-color: var(--slotted-text);
-    background: color-mix(in oklab, var(--tile-ink) 18%, transparent);
-    color: var(--tile-ink);
-  }
-
-  .radio:focus-visible + .tile {
+  .trigger:focus-visible {
     outline: var(--slotted-focus-ring-width) solid
       var(--slotted-focus-ring-color);
     outline-offset: var(--slotted-focus-ring-offset);
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .tile {
+    .trigger {
       transition: none;
     }
   }
 
   @media (forced-colors: active) {
-    .radio:checked + .tile {
-      border-color: Highlight;
+    .trigger {
+      border: var(--slotted-border-width-thin) solid ButtonText;
     }
   }
 }

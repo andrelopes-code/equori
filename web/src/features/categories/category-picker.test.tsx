@@ -4,7 +4,10 @@ import { useState } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { CategoryPicker } from "@/features/categories/category-picker";
-import { readRecentCategories } from "@/features/categories/recent-categories";
+import {
+  readRecentCategories,
+  rememberCategory,
+} from "@/features/categories/recent-categories";
 import { fakeApi, json } from "@/testing/fake-api";
 import { renderWithProviders } from "@/testing/render-app";
 
@@ -57,9 +60,11 @@ function api(posted: unknown[] = []) {
 function Harness({
   onChange,
   amount,
+  exclude,
 }: {
   onChange: (id: string | null) => void;
   amount?: number;
+  exclude?: ReadonlySet<string>;
 }) {
   const [value, setValue] = useState<string | null>(null);
   return (
@@ -67,6 +72,7 @@ function Harness({
       aria-label="Category"
       value={value}
       amount={amount ?? -1}
+      {...(exclude === undefined ? {} : { exclude })}
       onChange={(id) => {
         setValue(id);
         onChange(id);
@@ -133,5 +139,24 @@ describe("CategoryPicker", () => {
     expect(posted).toEqual([
       { name: "Pets", class: "expense", currency: "BRL" },
     ]);
+  });
+
+  it("offers no excluded category, among the recent ones either", async () => {
+    rememberCategory("salary");
+    rememberCategory("groceries");
+    renderWithProviders(
+      <Harness onChange={vi.fn()} exclude={new Set(["salary"])} />,
+      { fetch: api() },
+    );
+
+    await userEvent.click(screen.getByRole("combobox", { name: "Category" }));
+
+    await waitFor(() => {
+      expect(screen.getAllByRole("option").length).toBeGreaterThan(0);
+    });
+    const names = screen
+      .getAllByRole("option")
+      .map((o) => o.querySelector('[data-ui="highlight"]')?.textContent);
+    expect(names).not.toContain("Salary");
   });
 });

@@ -1,24 +1,24 @@
-import { Field, FieldLabel } from "@slotted/react/field";
+import {
+  Popover,
+  PopoverAnchor,
+  PopoverBody,
+  PopoverContent,
+  PopoverLayer,
+  PopoverTrigger,
+} from "@slotted/react/popover";
 import { Stack } from "@slotted/react/stack";
+import { Text } from "@slotted/react/typography";
+import type { ReactNode } from "react";
 
 import styles from "@/features/categories/appearance-picker.module.css";
-import {
-  CategoryIcon,
-  categoryIconNames,
-} from "@/features/categories/category-icon";
+import { CategoryMark } from "@/features/categories/category-mark";
 import type { CategoryIconName } from "@/features/categories/category-paths";
+import { IconChoices } from "@/features/categories/icon-choices";
 import { useT } from "@/i18n/i18n-provider";
 import { ColorSwatches } from "@/ui/color-swatches";
 
-// Families read: radio-group, toggle-group, color-picker. None draws a choice as a swatch of a
-// data slot or as a glyph tile, so the two groups are the app's own over native radios: the
-// platform gives them their name, arrow keys and form value.
-export function AppearancePicker({
-  name,
-  color,
-  icon,
-  onChange,
-}: {
+interface AppearancePickerProps {
+  // The name the mark draws its initial from while no icon is chosen.
   name: string;
   color: number | null;
   icon: CategoryIconName | null;
@@ -26,65 +26,83 @@ export function AppearancePicker({
     color: number | null;
     icon: CategoryIconName | null;
   }) => void;
-}) {
+  // The name's text field, drawn after the mark; the panel opens under both, as wide as the row.
+  children: ReactNode;
+}
+
+// Families read: popover, avatar. The category's mark is the trigger: it previews the look the
+// panel chooses, so the form draws no separate preview. The panel takes the row's width, since
+// the popover's own widths (at most 24rem) fit neither the colours nor the icons on one line.
+export function AppearancePicker({
+  name,
+  color,
+  icon,
+  onChange,
+  children,
+}: AppearancePickerProps) {
   const t = useT();
+
   return (
-    <Stack gap={5}>
-      <Field>
-        <FieldLabel>{t("appearance.color")}</FieldLabel>
-        <ColorSwatches
-          name="color"
-          label={t("appearance.color")}
-          value={color}
-          onChange={(next) => {
-            onChange({ color: next, icon });
-          }}
-        />
-      </Field>
-      <Field>
-        <FieldLabel>{t("appearance.icon")}</FieldLabel>
-        <div
-          role="radiogroup"
-          aria-label={t("appearance.icon")}
-          className={styles.icons}
-          data-color={color ?? undefined}
-        >
-          <label className={styles.option} title={t("appearance.noIcon")}>
-            <input
-              type="radio"
-              name="icon"
-              className={styles.radio}
-              checked={icon === null}
-              onChange={() => {
-                onChange({ color, icon: null });
-              }}
-              aria-label={t("appearance.noIcon")}
+    <Popover width="anchor" align="start" initialFocus="input:checked">
+      <PopoverAnchor
+        render={(props) => (
+          <div {...props} className={styles.row}>
+            <PopoverTrigger
+              render={(triggerProps) => (
+                <button
+                  {...triggerProps}
+                  type="button"
+                  className={styles.trigger}
+                  aria-label={t("appearance.choose")}
+                >
+                  <CategoryMark
+                    name={name}
+                    color={color ?? undefined}
+                    icon={icon ?? undefined}
+                    variant="solid"
+                  />
+                </button>
+              )}
             />
-            <span className={styles.tile}>
-              {Array.from(name.trim())[0]?.toLocaleUpperCase() ?? ""}
-            </span>
-          </label>
-          {categoryIconNames.map((glyph) => (
-            <label key={glyph} className={styles.option} title={glyph}>
-              <input
-                type="radio"
-                name="icon"
-                className={styles.radio}
-                checked={icon === glyph}
-                onChange={() => {
-                  onChange({ color, icon: glyph });
-                }}
-                aria-label={glyph}
-              />
-              <span className={styles.tile}>
-                <span className={styles.glyph}>
-                  <CategoryIcon name={glyph} />
-                </span>
-              </span>
-            </label>
-          ))}
-        </div>
-      </Field>
-    </Stack>
+            {children}
+          </div>
+        )}
+      />
+      <PopoverLayer>
+        <PopoverContent aria-label={t("appearance.choose")}>
+          <PopoverBody>
+            <Stack gap={6}>
+              <Stack gap={2}>
+                <Text size="sm" weight="medium">
+                  {t("appearance.color")}
+                </Text>
+                <ColorSwatches
+                  name="color"
+                  label={t("appearance.color")}
+                  value={color}
+                  onChange={(next) => {
+                    onChange({ color: next, icon });
+                  }}
+                />
+              </Stack>
+
+              <Stack gap={2}>
+                <Text size="sm" weight="medium">
+                  {t("appearance.icon")}
+                </Text>
+                <IconChoices
+                  name={name}
+                  color={color}
+                  icon={icon}
+                  onChange={(next) => {
+                    onChange({ color, icon: next });
+                  }}
+                />
+              </Stack>
+            </Stack>
+          </PopoverBody>
+        </PopoverContent>
+      </PopoverLayer>
+    </Popover>
   );
 }

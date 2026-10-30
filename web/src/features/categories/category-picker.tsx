@@ -76,7 +76,10 @@ export function CategoryPicker({
   const known = chosen === undefined ? [] : [toEntity(chosen)];
   const recent = recentIds.flatMap((id) => {
     const entry = byId.get(id);
-    return entry === undefined || entry.archived || entry.uncategorized
+    return entry === undefined ||
+      entry.archived ||
+      entry.uncategorized ||
+      exclude?.has(id) === true
       ? []
       : [{ ...toEntity(entry), group: undefined }];
   });
