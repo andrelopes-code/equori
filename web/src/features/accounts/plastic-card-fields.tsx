@@ -49,7 +49,7 @@ export function PlasticCardFields({
         </Field>
 
         <Field
-          className={widths.short}
+          className={widths.medium}
           invalid={lastFourError !== undefined}
           required
         >
