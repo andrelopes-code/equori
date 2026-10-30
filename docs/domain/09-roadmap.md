@@ -105,15 +105,15 @@ P11, P12 and P13 depend only on P10 and can run side by side. Each phase is spec
 
 ### 9.4.3 Plans
 
-The planning model writes the spec and the plan of each phase: Opus, effort high. The implementing model executes the plan: Sonnet, effort medium or high. The implementing model makes no design decision. Every choice that changes behavior, schema, contract or user-facing text is written in the plan. A case the plan does not cover stops execution.
+The planning model writes the spec and the plan of each phase: Opus, effort high. The implementing model executes the plan: Sonnet, effort medium or high, as a subagent that the planning session dispatches and answers directly; the owner does not carry messages between them. The implementing model makes no design decision. Every choice that changes behavior, schema, contract or user-facing text is written in the plan. A case the plan does not cover stops execution.
 
 Order of work for a phase:
 
 1. Spec in `docs/specs/`, when the design is open. It records each decision and its reason. The plan cites the spec section and does not repeat the reason.
 2. Plan in `docs/superpowers/plans/`, written after the planning model reads the code each task touches.
-3. Plan check by the planning model in a new session: every path, symbol and command named in the plan exists; every expected test value is derived; no question is open. Before it hands the plan over, the check clears with the owner, in one question, every precondition a stop condition below would hit: files of another session in the working tree, an environment value, a pending owner decision.
-4. Execution by the implementing model of the whole plan in one session. Each slice ends with its commits and its checkpoint, and execution continues with the next slice without waiting for the owner. It stops only on a condition below.
-5. Review by the planning model at the end of the plan: the diff against the plan's edge cases and the phase's exit criterion.
+3. Plan check by the planning model in a new session, the session that then runs steps 4 and 5: every path, symbol and command named in the plan exists; every expected test value is derived; every Contract artifact passes the tool that reads it (a migration passes `make gen` and goose up and down); no question is open. Before execution, the check clears with the owner, in one question, every precondition a stop condition below would hit: files of another session in the working tree, an environment value, a pending owner decision.
+4. Execution: the planning session dispatches one implementing subagent per task, in plan order, one at a time, with the task's effort. Each slice ends with its commits and its checkpoint, and the session continues with the next slice without waiting for the owner.
+5. Review by the planning model at the end of the plan, in the same session: the diff against the plan's edge cases and the phase's exit criterion.
 
 The Status column of section 9.4.2 names the step a phase is in: `open` before step 1, then `spec`, `plan`, `check`, `execution`, `review`, and `delivered` once the exit criterion passes. The model that starts a step updates the column in the commit of that step.
 
@@ -148,7 +148,9 @@ The implementing model stops, writes the checkpoint and reports when any conditi
 - The plan contradicts itself, an ADR, a spec or `CONTRIBUTING.md`.
 - A verification command fails after two fix attempts.
 
-After a stop, the planning model amends the plan. The implementing model resumes from the checkpoint.
+After a stop, the planning model amends the plan and resumes the same subagent with the amendment. The owner is asked only for a decision that the spec, an ADR or the owner's earlier answers do not settle.
+
+A new session starts only after a spec or a plan is written, after a plan is reviewed, or when the context reaches the limits of the execution slice protocol.
 
 A model that ends its turn by recommending a new session, for the next step of this section or for any other task, gives the owner the message to send in that session:
 
