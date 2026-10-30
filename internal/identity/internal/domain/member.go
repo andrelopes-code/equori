@@ -15,6 +15,8 @@ const (
 	RoleMember Role = "member"
 )
 
+const maxBooksName = 80
+
 func (r Role) Valid() bool { return r == RoleAdmin || r == RoleMember }
 
 type Member struct {
@@ -57,6 +59,16 @@ func NormalizeEmail(s string) (string, error) {
 	}
 
 	return s, nil
+}
+
+// DefaultBooksName is the name of a book created without one: the email cut to 80 characters (HA1).
+func DefaultBooksName(email string) string {
+	runes := []rune(email)
+	if len(runes) > maxBooksName {
+		return string(runes[:maxBooksName])
+	}
+
+	return email
 }
 
 func ValidatePassword(p string) error {

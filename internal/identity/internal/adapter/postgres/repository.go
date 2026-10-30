@@ -121,7 +121,7 @@ func (r *Repository) insertMember(ctx context.Context, tx pgx.Tx, u domain.Membe
 		return domain.Member{}, 0, err
 	}
 
-	booksID, err := q.CreateBooks(ctx, region)
+	booksID, err := q.CreateBooks(ctx, CreateBooksParams{Region: region, Name: domain.DefaultBooksName(u.Email)})
 	if err != nil {
 		return domain.Member{}, 0, err
 	}
@@ -172,8 +172,35 @@ func (r *Repository) BooksZone(ctx context.Context, booksID int64) (string, *str
 	return row.Region, row.TimeZone, nil
 }
 
-func (r *Repository) UpdateBooksSettings(ctx context.Context, booksID int64, region string, timeZone *string) error {
-	return r.q.UpdateBooksSettings(ctx, UpdateBooksSettingsParams{ID: booksID, Region: region, TimeZone: timeZone})
+func (r *Repository) BooksName(ctx context.Context, booksID int64) (string, error) {
+	name, err := r.q.GetBooksName(ctx, booksID)
+	if err != nil {
+		return "", notFound(err)
+	}
+
+	return name, nil
+}
+
+func (r *Repository) UpdateBooksSettings(ctx context.Context, booksID int64, region string, timeZone, name *string) (string, error) {
+	stored, err := r.q.UpdateBooksSettings(ctx, UpdateBooksSettingsParams{ID: booksID, Region: region, TimeZone: timeZone, Name: name})
+	if err != nil {
+		return "", notFound(err)
+	}
+
+	return stored, nil
+}
+
+func (r *Repository) TouchMembership(ctx context.Context, memberID, booksID int64, at time.Time) error {
+	n, err := r.q.TouchMembership(ctx, TouchMembershipParams{MemberID: memberID, BooksID: booksID, LastActiveAt: at})
+	if err != nil {
+		return err
+	}
+
+	if n == 0 {
+		return app.ErrNotFound
+	}
+
+	return nil
 }
 
 func (r *Repository) Appearance(ctx context.Context, memberID int64) ([]byte, error) {

@@ -71,7 +71,7 @@ func TestMembershipSchema(t *testing.T) {
 	member, books := pgtest.CreateMember(t, pool)
 
 	var other int64
-	if err := pool.QueryRow(t.Context(), `INSERT INTO identity_books (region) VALUES ('US') RETURNING id`).Scan(&other); err != nil {
+	if err := pool.QueryRow(t.Context(), `INSERT INTO identity_books (region, name) VALUES ('US', 'test') RETURNING id`).Scan(&other); err != nil {
 		t.Fatal(err)
 	}
 

@@ -29,15 +29,20 @@ func (q *Queries) AnyMember(ctx context.Context) (bool, error) {
 
 const createBooks = `-- name: CreateBooks :one
 INSERT INTO
-    identity_books (region)
+    identity_books (region, name)
 VALUES
-    ($1)
+    ($1, $2)
 RETURNING
     id
 `
 
-func (q *Queries) CreateBooks(ctx context.Context, region string) (int64, error) {
-	row := q.db.QueryRow(ctx, createBooks, region)
+type CreateBooksParams struct {
+	Region string
+	Name   string
+}
+
+func (q *Queries) CreateBooks(ctx context.Context, arg CreateBooksParams) (int64, error) {
+	row := q.db.QueryRow(ctx, createBooks, arg.Region, arg.Name)
 	var id int64
 	err := row.Scan(&id)
 	return id, err
@@ -162,6 +167,22 @@ func (q *Queries) GetAppearance(ctx context.Context, id int64) ([]byte, error) {
 	return appearance, err
 }
 
+const getBooksName = `-- name: GetBooksName :one
+SELECT
+    name
+FROM
+    identity_books
+WHERE
+    id = $1
+`
+
+func (q *Queries) GetBooksName(ctx context.Context, id int64) (string, error) {
+	row := q.db.QueryRow(ctx, getBooksName, id)
+	var name string
+	err := row.Scan(&name)
+	return name, err
+}
+
 const getBooksZone = `-- name: GetBooksZone :one
 SELECT
     region,
@@ -228,12 +249,13 @@ FROM
 WHERE
     member_id = $1
 ORDER BY
-    (role <> 'owner'),
+    last_active_at DESC,
     books_id
 LIMIT
     1
 `
 
+// HA3: the membership of the last visit; ties go to the lowest books ID.
 func (q *Queries) GetLoginBooks(ctx context.Context, memberID int64) (int64, error) {
 	row := q.db.QueryRow(ctx, getLoginBooks, memberID)
 	var books_id int64
@@ -369,24 +391,58 @@ func (q *Queries) SetAppearance(ctx context.Context, arg SetAppearanceParams) er
 	return err
 }
 
-const updateBooksSettings = `-- name: UpdateBooksSettings :exec
+const touchMembership = `-- name: TouchMembership :execrows
+UPDATE identity_membership
+SET
+    last_active_at = $3
+WHERE
+    member_id = $1
+    AND books_id = $2
+`
+
+type TouchMembershipParams struct {
+	MemberID     int64
+	BooksID      int64
+	LastActiveAt time.Time
+}
+
+func (q *Queries) TouchMembership(ctx context.Context, arg TouchMembershipParams) (int64, error) {
+	result, err := q.db.Exec(ctx, touchMembership, arg.MemberID, arg.BooksID, arg.LastActiveAt)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const updateBooksSettings = `-- name: UpdateBooksSettings :one
 UPDATE identity_books
 SET
     region = $2,
-    time_zone = $3
+    time_zone = $3,
+    name = coalesce($4, name)
 WHERE
     id = $1
+RETURNING
+    name
 `
 
 type UpdateBooksSettingsParams struct {
 	ID       int64
 	Region   string
 	TimeZone *string
+	Name     *string
 }
 
-func (q *Queries) UpdateBooksSettings(ctx context.Context, arg UpdateBooksSettingsParams) error {
-	_, err := q.db.Exec(ctx, updateBooksSettings, arg.ID, arg.Region, arg.TimeZone)
-	return err
+func (q *Queries) UpdateBooksSettings(ctx context.Context, arg UpdateBooksSettingsParams) (string, error) {
+	row := q.db.QueryRow(ctx, updateBooksSettings,
+		arg.ID,
+		arg.Region,
+		arg.TimeZone,
+		arg.Name,
+	)
+	var name string
+	err := row.Scan(&name)
+	return name, err
 }
 
 const updateLanguage = `-- name: UpdateLanguage :exec

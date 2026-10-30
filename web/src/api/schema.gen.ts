@@ -101,7 +101,7 @@ export interface paths {
         options?: never;
         head?: never;
         /**
-         * Change the region and the time zone of the active book.
+         * Change the name, the region and the time zone of the active book.
          * @description A null time_zone restores the region's default. 422 time_zone_invalid when time_zone is not
          *     an IANA time zone name; 422 validation_failed when region is not an ISO 3166-1 alpha-2 code.
          */
@@ -5624,6 +5624,7 @@ export interface components {
             [key: string]: unknown;
         };
         BooksSettings: {
+            name: string;
             region: string;
             /** @description IANA time zone name; null while the book uses default_time_zone. */
             time_zone: string | null;
@@ -5633,6 +5634,7 @@ export interface components {
         BooksSettingsInput: {
             region: string;
             time_zone: string | null;
+            name?: string;
         };
         SetupStatus: {
             required: boolean;

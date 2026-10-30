@@ -8,9 +8,9 @@ RETURNING
 
 -- name: CreateBooks :one
 INSERT INTO
-    identity_books (region)
+    identity_books (region, name)
 VALUES
-    ($1)
+    ($1, $2)
 RETURNING
     id;
 
@@ -53,6 +53,7 @@ LIMIT
     1;
 
 -- name: GetLoginBooks :one
+-- HA3: the membership of the last visit; ties go to the lowest books ID.
 SELECT
     books_id
 FROM
@@ -60,7 +61,7 @@ FROM
 WHERE
     member_id = $1
 ORDER BY
-    (role <> 'owner'),
+    last_active_at DESC,
     books_id
 LIMIT
     1;
@@ -136,13 +137,32 @@ FROM
 WHERE
     id = $1;
 
--- name: UpdateBooksSettings :exec
+-- name: UpdateBooksSettings :one
 UPDATE identity_books
 SET
     region = $2,
-    time_zone = $3
+    time_zone = $3,
+    name = coalesce(sqlc.narg (name), name)
+WHERE
+    id = $1
+RETURNING
+    name;
+
+-- name: GetBooksName :one
+SELECT
+    name
+FROM
+    identity_books
 WHERE
     id = $1;
+
+-- name: TouchMembership :execrows
+UPDATE identity_membership
+SET
+    last_active_at = $3
+WHERE
+    member_id = $1
+    AND books_id = $2;
 
 -- name: GetAppearance :one
 SELECT

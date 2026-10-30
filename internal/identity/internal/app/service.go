@@ -40,8 +40,11 @@ type Repository interface {
 	LoginBooks(ctx context.Context, memberID int64) (int64, error)
 	// BooksZone returns ErrNotFound without the row; timeZone is nil while the book uses the default of its region.
 	BooksZone(ctx context.Context, booksID int64) (region string, timeZone *string, err error)
-	// UpdateBooksSettings stores the region and the time_zone of the books.
-	UpdateBooksSettings(ctx context.Context, booksID int64, region string, timeZone *string) error
+	BooksName(ctx context.Context, booksID int64) (string, error)
+	// UpdateBooksSettings returns the stored name; a nil name keeps it.
+	UpdateBooksSettings(ctx context.Context, booksID int64, region string, timeZone, name *string) (string, error)
+	// TouchMembership returns ErrNotFound without the membership.
+	TouchMembership(ctx context.Context, memberID, booksID int64, at time.Time) error
 	// Appearance returns the stored JSON object of the member.
 	Appearance(ctx context.Context, memberID int64) ([]byte, error)
 	// SetAppearance replaces the stored JSON object of the member.
@@ -208,6 +211,7 @@ func (s *Service) ProfileChange(ctx context.Context, booksID, memberID int64, la
 
 // BooksSettings are the settings of one book (BK22).
 type BooksSettings struct {
+	Name   string
 	Region string
 	// TimeZone is nil while the book uses DefaultTimeZone.
 	TimeZone        *string
@@ -221,12 +225,17 @@ func (s *Service) BooksSettings(ctx context.Context, booksID int64) (BooksSettin
 		return BooksSettings{}, fmt.Errorf("load settings of books %d: %w", booksID, err)
 	}
 
-	return BooksSettings{Region: region, TimeZone: timeZone, DefaultTimeZone: s.defaultTimeZone(region)}, nil
+	name, err := s.repo.BooksName(ctx, booksID)
+	if err != nil {
+		return BooksSettings{}, fmt.Errorf("load name of books %d: %w", booksID, err)
+	}
+
+	return BooksSettings{Name: name, Region: region, TimeZone: timeZone, DefaultTimeZone: s.defaultTimeZone(region)}, nil
 }
 
-// UpdateBooksSettings validates and stores the region and the time zone; a nil timeZone restores
-// the default of the region.
-func (s *Service) UpdateBooksSettings(ctx context.Context, booksID int64, region string, timeZone *string) (BooksSettings, error) {
+// UpdateBooksSettings validates and stores the name, the region and the time zone; a nil name keeps
+// the stored one and a nil timeZone restores the default of the region.
+func (s *Service) UpdateBooksSettings(ctx context.Context, booksID int64, region string, timeZone, name *string) (BooksSettings, error) {
 	if !locale.ValidRegion(region) {
 		return BooksSettings{}, &domain.FieldError{Field: "region", Message: "must be an ISO 3166-1 alpha-2 code"}
 	}
@@ -235,11 +244,12 @@ func (s *Service) UpdateBooksSettings(ctx context.Context, booksID int64, region
 		return BooksSettings{}, ErrTimeZoneInvalid
 	}
 
-	if err := s.repo.UpdateBooksSettings(ctx, booksID, region, timeZone); err != nil {
+	stored, err := s.repo.UpdateBooksSettings(ctx, booksID, region, timeZone, name)
+	if err != nil {
 		return BooksSettings{}, fmt.Errorf("update settings of books %d: %w", booksID, err)
 	}
 
-	return BooksSettings{Region: region, TimeZone: timeZone, DefaultTimeZone: s.defaultTimeZone(region)}, nil
+	return BooksSettings{Name: stored, Region: region, TimeZone: timeZone, DefaultTimeZone: s.defaultTimeZone(region)}, nil
 }
 
 // Appearance returns the stored JSON object of the member.
@@ -335,6 +345,10 @@ func (s *Service) Login(ctx context.Context, email, plain string) (Session, erro
 
 	if err != nil {
 		return Session{}, fmt.Errorf("load login books of member %d: %w", user.ID, err)
+	}
+
+	if err := s.repo.TouchMembership(ctx, user.ID, booksID, now); err != nil {
+		return Session{}, fmt.Errorf("touch membership of member %d in books %d: %w", user.ID, booksID, err)
 	}
 
 	return s.startSession(ctx, user.ID, booksID, now)

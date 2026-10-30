@@ -70,6 +70,7 @@ type Appearance map[string]interface{}
 type BooksSettings struct {
 	// DefaultTimeZone The IANA time zone name of the region (BK18).
 	DefaultTimeZone string `json:"default_time_zone"`
+	Name            string `json:"name"`
 	Region          string `json:"region"`
 
 	// TimeZone IANA time zone name; null while the book uses default_time_zone.
@@ -78,6 +79,7 @@ type BooksSettings struct {
 
 // BooksSettingsInput defines model for BooksSettingsInput.
 type BooksSettingsInput struct {
+	Name     *string `json:"name,omitempty"`
 	Region   string  `json:"region"`
 	TimeZone *string `json:"time_zone"`
 }
@@ -203,7 +205,7 @@ type ServerInterface interface {
 	// GetCurrentBooks Return the settings of the active book (ADR 029 BK22).
 	// (GET /books/current)
 	GetCurrentBooks(w http.ResponseWriter, r *http.Request)
-	// UpdateCurrentBooks Change the region and the time zone of the active book.
+	// UpdateCurrentBooks Change the name, the region and the time zone of the active book.
 	// (PATCH /books/current)
 	UpdateCurrentBooks(w http.ResponseWriter, r *http.Request)
 	// GetCurrentUser Return the authenticated member.
@@ -1314,7 +1316,7 @@ type StrictServerInterface interface {
 	// GetCurrentBooks Return the settings of the active book (ADR 029 BK22).
 	// (GET /books/current)
 	GetCurrentBooks(ctx context.Context, request GetCurrentBooksRequestObject) (GetCurrentBooksResponseObject, error)
-	// UpdateCurrentBooks Change the region and the time zone of the active book.
+	// UpdateCurrentBooks Change the name, the region and the time zone of the active book.
 	// (PATCH /books/current)
 	UpdateCurrentBooks(ctx context.Context, request UpdateCurrentBooksRequestObject) (UpdateCurrentBooksResponseObject, error)
 	// GetCurrentUser Return the authenticated member.

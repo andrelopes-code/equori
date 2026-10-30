@@ -201,7 +201,7 @@ func CreateMember(t testing.TB, pool *pgxpool.Pool) (memberID, booksID int64) {
 		t.Fatalf("create member: %v", err)
 	}
 
-	if err := pool.QueryRow(context.Background(), `INSERT INTO identity_books (region) VALUES ('US') RETURNING id`).Scan(&booksID); err != nil {
+	if err := pool.QueryRow(context.Background(), `INSERT INTO identity_books (region, name) VALUES ('US', 'test') RETURNING id`).Scan(&booksID); err != nil {
 		t.Fatalf("create books: %v", err)
 	}
 

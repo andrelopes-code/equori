@@ -3,6 +3,7 @@ package identity_test
 import (
 	"net/http"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
@@ -15,10 +16,10 @@ func TestBooksSettings(t *testing.T) {
 	t.Parallel()
 	h := apitest.New(t)
 
-	initial := map[string]any{"region": "BR", "time_zone": nil, "default_time_zone": "America/Sao_Paulo"}
+	initial := map[string]any{"region": "BR", "time_zone": nil, "default_time_zone": "America/Sao_Paulo", "name": "owner@example.com"}
 	assertBooksSettings(t, h, http.MethodGet, nil, initial)
 
-	us := map[string]any{"region": "US", "time_zone": nil, "default_time_zone": "UTC"}
+	us := map[string]any{"region": "US", "time_zone": nil, "default_time_zone": "UTC", "name": "owner@example.com"}
 	assertBooksSettings(t, h, http.MethodPatch, map[string]any{"region": "US", "time_zone": nil}, us)
 
 	var me struct {
@@ -30,7 +31,7 @@ func TestBooksSettings(t *testing.T) {
 		t.Fatalf("me.region = %q, want US", me.Region)
 	}
 
-	tokyo := map[string]any{"region": "BR", "time_zone": "Asia/Tokyo", "default_time_zone": "America/Sao_Paulo"}
+	tokyo := map[string]any{"region": "BR", "time_zone": "Asia/Tokyo", "default_time_zone": "America/Sao_Paulo", "name": "owner@example.com"}
 	assertBooksSettings(t, h, http.MethodPatch, map[string]any{"region": "BR", "time_zone": "Asia/Tokyo"}, tokyo)
 	assertBooksSettings(t, h, http.MethodGet, nil, tokyo)
 }
@@ -62,9 +63,52 @@ func TestBooksSettingsProblems(t *testing.T) {
 
 			h.ExpectProblem(h.Do(tt.method, tt.path, tt.body), tt.status, tt.code, tt.field)
 
-			initial := map[string]any{"region": "BR", "time_zone": nil, "default_time_zone": "America/Sao_Paulo"}
+			initial := map[string]any{"region": "BR", "time_zone": nil, "default_time_zone": "America/Sao_Paulo", "name": "owner@example.com"}
 			assertBooksSettings(t, h, http.MethodGet, nil, initial)
 		})
+	}
+}
+
+// HA1: a book has a name; PATCH changes it only when the body carries it.
+func TestBooksName(t *testing.T) {
+	t.Parallel()
+	h := apitest.New(t)
+
+	tests := []struct {
+		name   string
+		method string
+		body   map[string]any
+		status int
+		want   string
+		field  string
+	}{
+		{"default", http.MethodGet, nil, http.StatusOK, "owner@example.com", ""},
+		{"rename", http.MethodPatch, map[string]any{"region": "BR", "time_zone": nil, "name": "Casa"}, http.StatusOK, "Casa", ""},
+		{"absent keeps", http.MethodPatch, map[string]any{"region": "BR", "time_zone": nil}, http.StatusOK, "Casa", ""},
+		{"empty", http.MethodPatch, map[string]any{"region": "BR", "time_zone": nil, "name": ""}, http.StatusBadRequest, "", "name"},
+		{"81 characters", http.MethodPatch, map[string]any{"region": "BR", "time_zone": nil, "name": strings.Repeat("a", 81)}, http.StatusBadRequest, "", "name"},
+	}
+
+	for _, tt := range tests {
+		r := h.Do(tt.method, booksSettingsPath, tt.body)
+		if tt.status != http.StatusOK {
+			h.ExpectProblem(r, tt.status, "invalid_request", tt.field)
+
+			continue
+		}
+
+		if r.Status != tt.status {
+			t.Fatalf("%s: status %d: %s", tt.name, r.Status, r.Body)
+		}
+
+		var got struct {
+			Name string `json:"name"`
+		}
+		r.Decode(t, &got)
+
+		if got.Name != tt.want {
+			t.Errorf("%s: name = %q, want %q", tt.name, got.Name, tt.want)
+		}
 	}
 }
 

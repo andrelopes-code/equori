@@ -21,7 +21,7 @@ func (s *Server) UpdateCurrentBooks(ctx context.Context, req UpdateCurrentBooksR
 		return nil, errInvalidRequest
 	}
 
-	settings, err := s.svc.UpdateBooksSettings(ctx, auth.MustBooksID(ctx), req.Body.Region, req.Body.TimeZone)
+	settings, err := s.svc.UpdateBooksSettings(ctx, auth.MustBooksID(ctx), req.Body.Region, req.Body.TimeZone, req.Body.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -30,5 +30,5 @@ func (s *Server) UpdateCurrentBooks(ctx context.Context, req UpdateCurrentBooksR
 }
 
 func toAPIBooksSettings(b app.BooksSettings) BooksSettings {
-	return BooksSettings{Region: b.Region, TimeZone: b.TimeZone, DefaultTimeZone: b.DefaultTimeZone}
+	return BooksSettings{Name: b.Name, Region: b.Region, TimeZone: b.TimeZone, DefaultTimeZone: b.DefaultTimeZone}
 }

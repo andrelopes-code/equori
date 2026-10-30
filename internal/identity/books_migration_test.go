@@ -95,7 +95,7 @@ func TestBooksBackfill(t *testing.T) {
 	}
 
 	var next int64
-	if err := pool.QueryRow(ctx, `INSERT INTO identity_books (region) VALUES ('PT') RETURNING id`).Scan(&next); err != nil || next <= second {
+	if err := pool.QueryRow(ctx, `INSERT INTO identity_books (region, name) VALUES ('PT', 'test') RETURNING id`).Scan(&next); err != nil || next <= second {
 		t.Errorf("next books ID = %d, %v; want greater than %d", next, err, second)
 	}
 
@@ -120,7 +120,11 @@ func TestBooksColumnRename(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, books := pgtest.CreateMember(t, pool)
+	// pgtest.CreateMember lists the name column, which version 69 lacks.
+	var books int64
+	if err := pool.QueryRow(ctx, `INSERT INTO identity_books (region) VALUES ('US') RETURNING id`).Scan(&books); err != nil {
+		t.Fatal(err)
+	}
 
 	var transaction string
 	if err := pool.QueryRow(ctx, `INSERT INTO ledger_transaction (user_id, date, description, balancing_currency, origin) VALUES ($1, '2026-10-30', 'Coffee', 'BRL', 'manual') RETURNING id`, books).Scan(&transaction); err != nil {

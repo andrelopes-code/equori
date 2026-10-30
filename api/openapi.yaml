@@ -217,7 +217,7 @@ paths:
     patch:
       tags: [identity]
       operationId: updateCurrentBooks
-      summary: Change the region and the time zone of the active book.
+      summary: Change the name, the region and the time zone of the active book.
       description: |
         A null time_zone restores the region's default. 422 time_zone_invalid when time_zone is not
         an IANA time zone name; 422 validation_failed when region is not an ISO 3166-1 alpha-2 code.
@@ -10096,8 +10096,10 @@ components:
       description: Appearance choices by name (scheme, accent, themes, ...); the web defines names and values.
     BooksSettings:
       type: object
-      required: [region, time_zone, default_time_zone]
+      required: [name, region, time_zone, default_time_zone]
       properties:
+        name:
+          type: string
         region:
           type: string
           pattern: "^[A-Z]{2}$"
@@ -10120,6 +10122,10 @@ components:
           type: string
           nullable: true
           maxLength: 64
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
     SetupStatus:
       type: object
       required: [required]

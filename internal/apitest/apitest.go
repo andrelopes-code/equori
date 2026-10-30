@@ -182,7 +182,7 @@ func Empty(t testing.TB, opts ...Option) *Harness {
 	h := &Harness{t: t, Pool: pgtest.New(t), logs: logs, log: slog.New(slog.NewTextHandler(out, &slog.HandlerOptions{Level: slog.LevelDebug}))}
 
 	// BK17: a book without members, so a member ID never equals a books ID by chance.
-	if _, err := h.Pool.Exec(t.Context(), `INSERT INTO identity_books (region) VALUES ('US')`); err != nil {
+	if _, err := h.Pool.Exec(t.Context(), `INSERT INTO identity_books (region, name) VALUES ('US', 'empty')`); err != nil {
 		t.Fatal(err)
 	}
 
@@ -271,14 +271,14 @@ func (h *Harness) login(email, role string, l locale.Locale, base money.Currency
 	return c
 }
 
-// BooksIDOf returns the books ID that the member with email logs in to (BK12).
+// BooksIDOf returns the books ID that the member with email logs in to (HA3).
 func (h *Harness) BooksIDOf(email string) int64 {
 	h.t.Helper()
 
 	var id int64
 	if err := h.Pool.QueryRow(h.t.Context(),
 		`SELECT ms.books_id FROM identity_membership ms JOIN identity_member m ON m.id = ms.member_id
-		WHERE m.email = $1 ORDER BY (ms.role <> 'owner'), ms.books_id LIMIT 1`, email).Scan(&id); err != nil {
+		WHERE m.email = $1 ORDER BY ms.last_active_at DESC, ms.books_id LIMIT 1`, email).Scan(&id); err != nil {
 		h.t.Fatal(err)
 	}
 
