@@ -1,11 +1,18 @@
 @layer app {
-  /* The pages beside the page on show, as the settings page lays its panes. The column keeps the
-     measure of its longest title; no token holds it. */
+  /* The pages beside the page on show, in the measures of the settings page's column, so the two
+     columns read alike; no token holds them. */
   .layout {
     display: grid;
     align-items: start;
     gap: var(--slotted-space-9);
-    grid-template-columns: 15rem minmax(0, 1fr);
+    grid-template-columns: 14rem minmax(0, 1fr);
+  }
+
+  @media (max-width: 1023px) {
+    .layout {
+      gap: var(--slotted-space-7);
+      grid-template-columns: 12rem minmax(0, 1fr);
+    }
   }
 
   .navigation {
@@ -13,6 +20,12 @@
     inset-block-start: calc(
       var(--slotted-page-sticky-top, 0px) + var(--slotted-space-6)
     );
+  }
+
+  /* Workaround for Slotted issue #59: a section label keeps the offset of the icon column, and the
+     rows of the help hold no icon, so the label starts where the row labels start. */
+  .navigation [data-part="section-label"] {
+    padding-inline: var(--slotted-app-shell-row-inset, var(--slotted-space-4));
   }
 
   /* The text keeps the reading line, and from 1280 px the list of its sections stands beside it;

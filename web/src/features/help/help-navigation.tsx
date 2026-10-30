@@ -24,7 +24,6 @@ export function HelpNavigation({ current }: HelpNavigationProps) {
       mode="expanded"
       // A navigation of its own inside the page, not the shell's column.
       landmark
-      truncate="none"
     >
       {helpKinds.map((kind) => (
         <SideNavigationSection key={kind}>
