@@ -21,6 +21,7 @@ var (
 	ErrTooManyAttempts    = errors.New("too many login attempts")
 	ErrUnauthenticated    = errors.New("unauthenticated")
 	ErrBusy               = errors.New("too many concurrent password operations")
+	ErrTimeZoneInvalid    = errors.New("time zone is not an IANA name")
 )
 
 // Repository returns ErrNotFound for missing rows and ErrEmailTaken on duplicate email.
@@ -37,6 +38,8 @@ type Repository interface {
 	LoginBooks(ctx context.Context, memberID int64) (int64, error)
 	// BooksZone returns ErrNotFound without the row; timeZone is nil while the book uses the default of its region.
 	BooksZone(ctx context.Context, booksID int64) (region string, timeZone *string, err error)
+	// UpdateBooksSettings stores the region and the time_zone of the books.
+	UpdateBooksSettings(ctx context.Context, booksID int64, region string, timeZone *string) error
 	MemberByID(ctx context.Context, memberID int64) (domain.Member, error)
 	MemberByEmail(ctx context.Context, email string) (domain.Member, error)
 	CreateSession(ctx context.Context, s domain.Session) error
@@ -194,6 +197,42 @@ func (s *Service) ProfileChange(ctx context.Context, booksID, memberID int64, la
 	return before, after, validateLocale(after)
 }
 
+// BooksSettings are the settings of one book (BK22).
+type BooksSettings struct {
+	Region string
+	// TimeZone is nil while the book uses DefaultTimeZone.
+	TimeZone        *string
+	DefaultTimeZone string
+}
+
+// BooksSettings returns the region and the time zone of the books.
+func (s *Service) BooksSettings(ctx context.Context, booksID int64) (BooksSettings, error) {
+	region, timeZone, err := s.repo.BooksZone(ctx, booksID)
+	if err != nil {
+		return BooksSettings{}, fmt.Errorf("load settings of books %d: %w", booksID, err)
+	}
+
+	return BooksSettings{Region: region, TimeZone: timeZone, DefaultTimeZone: s.defaultTimeZone(region)}, nil
+}
+
+// UpdateBooksSettings validates and stores the region and the time zone; a nil timeZone restores
+// the default of the region.
+func (s *Service) UpdateBooksSettings(ctx context.Context, booksID int64, region string, timeZone *string) (BooksSettings, error) {
+	if !locale.ValidRegion(region) {
+		return BooksSettings{}, &domain.FieldError{Field: "region", Message: "must be an ISO 3166-1 alpha-2 code"}
+	}
+
+	if timeZone != nil && !validTimeZone(*timeZone) {
+		return BooksSettings{}, ErrTimeZoneInvalid
+	}
+
+	if err := s.repo.UpdateBooksSettings(ctx, booksID, region, timeZone); err != nil {
+		return BooksSettings{}, fmt.Errorf("update settings of books %d: %w", booksID, err)
+	}
+
+	return BooksSettings{Region: region, TimeZone: timeZone, DefaultTimeZone: s.defaultTimeZone(region)}, nil
+}
+
 // UpdateProfile changes the language of the member and the region of the books; an empty field keeps the stored value.
 func (s *Service) UpdateProfile(ctx context.Context, booksID, memberID int64, language, region string) (locale.Locale, error) {
 	_, l, err := s.ProfileChange(ctx, booksID, memberID, language, region)
@@ -316,4 +355,15 @@ func (s *Service) acquireHashSlot(ctx context.Context) (release func(), err erro
 	case <-ctx.Done():
 		return nil, ErrBusy
 	}
+}
+
+// validTimeZone rejects the empty name and "Local", which LoadLocation accepts.
+func validTimeZone(name string) bool {
+	if name == "" || name == "Local" {
+		return false
+	}
+
+	_, err := time.LoadLocation(name)
+
+	return err == nil
 }

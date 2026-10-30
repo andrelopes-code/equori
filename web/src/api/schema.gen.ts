@@ -60,8 +60,30 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** Change the language or region of the authenticated member. */
+        /** Change the language of the authenticated member. */
         patch: operations["updateCurrentUser"];
+        trace?: never;
+    };
+    "/books/current": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Return the settings of the active book (ADR 029 BK22). */
+        get: operations["getCurrentBooks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Change the region and the time zone of the active book.
+         * @description A null time_zone restores the region's default. 422 time_zone_invalid when time_zone is not
+         *     an IANA time zone name; 422 validation_failed when region is not an ISO 3166-1 alpha-2 code.
+         */
+        patch: operations["updateCurrentBooks"];
         trace?: never;
     };
     "/access-tokens": {
@@ -5552,7 +5574,17 @@ export interface components {
         };
         UpdateUserInput: {
             language?: string;
-            region?: string;
+        };
+        BooksSettings: {
+            region: string;
+            /** @description IANA time zone name; null while the book uses default_time_zone. */
+            time_zone: string | null;
+            /** @description The IANA time zone name of the region (BK18). */
+            default_time_zone: string;
+        };
+        BooksSettingsInput: {
+            region: string;
+            time_zone: string | null;
         };
         SetupStatus: {
             required: boolean;
@@ -5772,6 +5804,54 @@ export interface operations {
                     "application/json": components["schemas"]["User"];
                 };
             };
+            401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    getCurrentBooks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Settings of the active book. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BooksSettings"];
+                };
+            };
+            401: components["responses"]["Problem"];
+        };
+    };
+    updateCurrentBooks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BooksSettingsInput"];
+            };
+        };
+        responses: {
+            /** @description Updated settings. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BooksSettings"];
+                };
+            };
+            400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
         };

@@ -142,7 +142,7 @@ paths:
     patch:
       tags: [identity]
       operationId: updateCurrentUser
-      summary: Change the language or region of the authenticated member.
+      summary: Change the language of the authenticated member.
       requestBody:
         required: true
         content:
@@ -156,6 +156,46 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /books/current:
+    get:
+      tags: [identity]
+      operationId: getCurrentBooks
+      summary: Return the settings of the active book (ADR 029 BK22).
+      responses:
+        "200":
+          description: Settings of the active book.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BooksSettings"
+        "401":
+          $ref: "#/components/responses/Problem"
+    patch:
+      tags: [identity]
+      operationId: updateCurrentBooks
+      summary: Change the region and the time zone of the active book.
+      description: |
+        A null time_zone restores the region's default. 422 time_zone_invalid when time_zone is not
+        an IANA time zone name; 422 validation_failed when region is not an ISO 3166-1 alpha-2 code.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BooksSettingsInput"
+      responses:
+        "200":
+          description: Updated settings.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BooksSettings"
+        "400":
+          $ref: "#/components/responses/Problem"
         "401":
           $ref: "#/components/responses/Problem"
         "422":
@@ -9963,9 +10003,32 @@ components:
         language:
           type: string
           pattern: "^[a-z]{2,3}$"
+    BooksSettings:
+      type: object
+      required: [region, time_zone, default_time_zone]
+      properties:
         region:
           type: string
           pattern: "^[A-Z]{2}$"
+        time_zone:
+          type: string
+          nullable: true
+          description: IANA time zone name; null while the book uses default_time_zone.
+        default_time_zone:
+          type: string
+          description: The IANA time zone name of the region (BK18).
+    BooksSettingsInput:
+      type: object
+      additionalProperties: false
+      required: [region, time_zone]
+      properties:
+        region:
+          type: string
+          pattern: "^[A-Z]{2}$"
+        time_zone:
+          type: string
+          nullable: true
+          maxLength: 64
     SetupStatus:
       type: object
       required: [required]

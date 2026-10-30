@@ -172,6 +172,10 @@ func (r *Repository) BooksZone(ctx context.Context, booksID int64) (string, *str
 	return row.Region, row.TimeZone, nil
 }
 
+func (r *Repository) UpdateBooksSettings(ctx context.Context, booksID int64, region string, timeZone *string) error {
+	return r.q.UpdateBooksSettings(ctx, UpdateBooksSettingsParams{ID: booksID, Region: region, TimeZone: timeZone})
+}
+
 func (r *Repository) LoginBooks(ctx context.Context, memberID int64) (int64, error) {
 	booksID, err := r.q.GetLoginBooks(ctx, memberID)
 	if err != nil {

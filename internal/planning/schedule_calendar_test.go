@@ -103,8 +103,8 @@ func TestScheduleCalendarFromRegion(t *testing.T) {
 	}
 
 	// Review Focus 1: a region change keeps the calendar of existing schedules.
-	if r := h.Call(de, http.MethodPatch, "/api/v1/me", map[string]string{"region": "BR"}); r.Status != http.StatusOK {
-		t.Fatalf("patch me status = %d: %s", r.Status, r.Body)
+	if r := h.Call(de, http.MethodPatch, "/api/v1/books/current", map[string]any{"region": "BR", "time_zone": nil}); r.Status != http.StatusOK {
+		t.Fatalf("patch books status = %d: %s", r.Status, r.Body)
 	}
 
 	r := h.Call(de, http.MethodGet, "/api/v1/schedules/"+deID, nil)

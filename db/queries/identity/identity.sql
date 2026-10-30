@@ -135,3 +135,11 @@ FROM
     identity_books
 WHERE
     id = $1;
+
+-- name: UpdateBooksSettings :exec
+UPDATE identity_books
+SET
+    region = $2,
+    time_zone = $3
+WHERE
+    id = $1;

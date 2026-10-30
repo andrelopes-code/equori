@@ -332,6 +332,26 @@ func (q *Queries) LockMembers(ctx context.Context) error {
 	return err
 }
 
+const updateBooksSettings = `-- name: UpdateBooksSettings :exec
+UPDATE identity_books
+SET
+    region = $2,
+    time_zone = $3
+WHERE
+    id = $1
+`
+
+type UpdateBooksSettingsParams struct {
+	ID       int64
+	Region   string
+	TimeZone *string
+}
+
+func (q *Queries) UpdateBooksSettings(ctx context.Context, arg UpdateBooksSettingsParams) error {
+	_, err := q.db.Exec(ctx, updateBooksSettings, arg.ID, arg.Region, arg.TimeZone)
+	return err
+}
+
 const updateLanguage = `-- name: UpdateLanguage :exec
 UPDATE identity_member
 SET

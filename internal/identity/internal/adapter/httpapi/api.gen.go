@@ -63,6 +63,22 @@ type AccessTokenList struct {
 	Items []AccessToken `json:"items"`
 }
 
+// BooksSettings defines model for BooksSettings.
+type BooksSettings struct {
+	// DefaultTimeZone The IANA time zone name of the region (BK18).
+	DefaultTimeZone string `json:"default_time_zone"`
+	Region          string `json:"region"`
+
+	// TimeZone IANA time zone name; null while the book uses default_time_zone.
+	TimeZone *string `json:"time_zone"`
+}
+
+// BooksSettingsInput defines model for BooksSettingsInput.
+type BooksSettingsInput struct {
+	Region   string  `json:"region"`
+	TimeZone *string `json:"time_zone"`
+}
+
 // Credentials defines model for Credentials.
 type Credentials struct {
 	Email    string `json:"email"`
@@ -124,7 +140,6 @@ type SetupStatus struct {
 // UpdateUserInput defines model for UpdateUserInput.
 type UpdateUserInput struct {
 	Language *string `json:"language,omitempty"`
-	Region   *string `json:"region,omitempty"`
 }
 
 // User defines model for User.
@@ -156,6 +171,9 @@ type DeleteSessionParams struct {
 // CreateAccessTokenJSONRequestBody defines body for CreateAccessToken for application/json ContentType.
 type CreateAccessTokenJSONRequestBody = AccessTokenInput
 
+// UpdateCurrentBooksJSONRequestBody defines body for UpdateCurrentBooks for application/json ContentType.
+type UpdateCurrentBooksJSONRequestBody = BooksSettingsInput
+
 // UpdateCurrentUserJSONRequestBody defines body for UpdateCurrentUser for application/json ContentType.
 type UpdateCurrentUserJSONRequestBody = UpdateUserInput
 
@@ -176,10 +194,16 @@ type ServerInterface interface {
 	// DeleteAccessToken Delete a personal access token; it stops working at once.
 	// (DELETE /access-tokens/{id})
 	DeleteAccessToken(w http.ResponseWriter, r *http.Request, id ID)
+	// GetCurrentBooks Return the settings of the active book (ADR 029 BK22).
+	// (GET /books/current)
+	GetCurrentBooks(w http.ResponseWriter, r *http.Request)
+	// UpdateCurrentBooks Change the region and the time zone of the active book.
+	// (PATCH /books/current)
+	UpdateCurrentBooks(w http.ResponseWriter, r *http.Request)
 	// GetCurrentUser Return the authenticated member.
 	// (GET /me)
 	GetCurrentUser(w http.ResponseWriter, r *http.Request)
-	// UpdateCurrentUser Change the language or region of the authenticated member.
+	// UpdateCurrentUser Change the language of the authenticated member.
 	// (PATCH /me)
 	UpdateCurrentUser(w http.ResponseWriter, r *http.Request)
 	// DeleteSession Log out and end the current session.
@@ -250,6 +274,34 @@ func (siw *ServerInterfaceWrapper) DeleteAccessToken(w http.ResponseWriter, r *h
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.DeleteAccessToken(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetCurrentBooks operation middleware
+func (siw *ServerInterfaceWrapper) GetCurrentBooks(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetCurrentBooks(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateCurrentBooks operation middleware
+func (siw *ServerInterfaceWrapper) UpdateCurrentBooks(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateCurrentBooks(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -490,6 +542,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/setup", wrapper.CompleteSetup)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/me", wrapper.GetCurrentUser)
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/me", wrapper.UpdateCurrentUser)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/books/current", wrapper.GetCurrentBooks)
+	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/books/current", wrapper.UpdateCurrentBooks)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/access-tokens", wrapper.ListAccessTokens)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/access-tokens", wrapper.CreateAccessToken)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/access-tokens/{id}", wrapper.DeleteAccessToken)
@@ -630,6 +684,109 @@ func (response DeleteAccessToken404ApplicationProblemPlusJSONResponse) VisitDele
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCurrentBooksRequestObject struct {
+}
+
+type GetCurrentBooksResponseObject interface {
+	VisitGetCurrentBooksResponse(w http.ResponseWriter) error
+}
+
+type GetCurrentBooks200JSONResponse BooksSettings
+
+func (response GetCurrentBooks200JSONResponse) VisitGetCurrentBooksResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCurrentBooks401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetCurrentBooks401ApplicationProblemPlusJSONResponse) VisitGetCurrentBooksResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateCurrentBooksRequestObject struct {
+	Body *UpdateCurrentBooksJSONRequestBody
+}
+
+type UpdateCurrentBooksResponseObject interface {
+	VisitUpdateCurrentBooksResponse(w http.ResponseWriter) error
+}
+
+type UpdateCurrentBooks200JSONResponse BooksSettings
+
+func (response UpdateCurrentBooks200JSONResponse) VisitUpdateCurrentBooksResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateCurrentBooks400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response UpdateCurrentBooks400ApplicationProblemPlusJSONResponse) VisitUpdateCurrentBooksResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateCurrentBooks401ApplicationProblemPlusJSONResponse Problem
+
+func (response UpdateCurrentBooks401ApplicationProblemPlusJSONResponse) VisitUpdateCurrentBooksResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateCurrentBooks422ApplicationProblemPlusJSONResponse Problem
+
+func (response UpdateCurrentBooks422ApplicationProblemPlusJSONResponse) VisitUpdateCurrentBooksResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -1009,10 +1166,16 @@ type StrictServerInterface interface {
 	// DeleteAccessToken Delete a personal access token; it stops working at once.
 	// (DELETE /access-tokens/{id})
 	DeleteAccessToken(ctx context.Context, request DeleteAccessTokenRequestObject) (DeleteAccessTokenResponseObject, error)
+	// GetCurrentBooks Return the settings of the active book (ADR 029 BK22).
+	// (GET /books/current)
+	GetCurrentBooks(ctx context.Context, request GetCurrentBooksRequestObject) (GetCurrentBooksResponseObject, error)
+	// UpdateCurrentBooks Change the region and the time zone of the active book.
+	// (PATCH /books/current)
+	UpdateCurrentBooks(ctx context.Context, request UpdateCurrentBooksRequestObject) (UpdateCurrentBooksResponseObject, error)
 	// GetCurrentUser Return the authenticated member.
 	// (GET /me)
 	GetCurrentUser(ctx context.Context, request GetCurrentUserRequestObject) (GetCurrentUserResponseObject, error)
-	// UpdateCurrentUser Change the language or region of the authenticated member.
+	// UpdateCurrentUser Change the language of the authenticated member.
 	// (PATCH /me)
 	UpdateCurrentUser(ctx context.Context, request UpdateCurrentUserRequestObject) (UpdateCurrentUserResponseObject, error)
 	// DeleteSession Log out and end the current session.
@@ -1142,6 +1305,61 @@ func (sh *strictHandler) DeleteAccessToken(w http.ResponseWriter, r *http.Reques
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(DeleteAccessTokenResponseObject); ok {
 		if err := validResponse.VisitDeleteAccessTokenResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetCurrentBooks operation middleware
+func (sh *strictHandler) GetCurrentBooks(w http.ResponseWriter, r *http.Request) {
+	var request GetCurrentBooksRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetCurrentBooks(ctx, request.(GetCurrentBooksRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetCurrentBooks")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetCurrentBooksResponseObject); ok {
+		if err := validResponse.VisitGetCurrentBooksResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateCurrentBooks operation middleware
+func (sh *strictHandler) UpdateCurrentBooks(w http.ResponseWriter, r *http.Request) {
+	var request UpdateCurrentBooksRequestObject
+
+	var body UpdateCurrentBooksJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateCurrentBooks(ctx, request.(UpdateCurrentBooksRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateCurrentBooks")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateCurrentBooksResponseObject); ok {
+		if err := validResponse.VisitUpdateCurrentBooksResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

@@ -31,6 +31,8 @@ var exposure = map[string]string{
 	"deleteSession":                    "-session",
 	"getCurrentUser":                   "-session",
 	"updateCurrentUser":                "update_profile",
+	"getCurrentBooks":                  "-session",
+	"updateCurrentBooks":               "update_profile",
 	"getSettings":                      "list_accounts",
 	"updateSettings":                   "-setup",
 	"listInstitutions":                 "list_payees_and_tags",

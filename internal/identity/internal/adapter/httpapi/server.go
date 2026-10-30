@@ -183,7 +183,7 @@ func (s *Server) UpdateCurrentUser(ctx context.Context, req UpdateCurrentUserReq
 		return nil, errInvalidRequest
 	}
 
-	l, err := s.svc.UpdateProfile(ctx, auth.MustBooksID(ctx), user.ID, deref(req.Body.Language), deref(req.Body.Region))
+	l, err := s.svc.UpdateProfile(ctx, auth.MustBooksID(ctx), user.ID, deref(req.Body.Language), "")
 	if err != nil {
 		return nil, err
 	}
@@ -232,6 +232,8 @@ func ToProblem(err error) (problem.Details, bool) {
 	switch {
 	case errors.Is(err, errInvalidRequest):
 		return problem.New(http.StatusBadRequest, "invalid_request", "malformed request"), true
+	case errors.Is(err, app.ErrTimeZoneInvalid):
+		return problem.New(http.StatusUnprocessableEntity, "time_zone_invalid", "the time zone is not an IANA time zone name"), true
 	case errors.Is(err, app.ErrInvalidCredentials):
 		return problem.New(http.StatusUnauthorized, "invalid_credentials", "email or password is incorrect"), true
 	case errors.Is(err, app.ErrUnauthenticated):
