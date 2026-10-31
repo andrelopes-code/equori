@@ -84,6 +84,7 @@ import {
   validatePlanningSearch,
 } from "@/features/planning";
 import {
+  InvitePage,
   LoginPage,
   SetupPage,
   hasUnsuffixedBookKeys,
@@ -164,6 +165,12 @@ const setupRoute = createRoute({
       throw redirect({ to: "/login", search: { redirect: undefined } });
   },
   component: SetupPage,
+});
+
+const inviteRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/invite",
+  component: InvitePage,
 });
 
 async function setupState(context: {
@@ -546,6 +553,7 @@ const previewRoutes = import.meta.env.DEV
 export const routeTree = rootRoute.addChildren([
   loginRoute,
   setupRoute,
+  inviteRoute,
   offlineRoute,
   ...previewRoutes,
   authedRoute.addChildren([

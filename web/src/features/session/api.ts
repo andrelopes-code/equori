@@ -19,6 +19,9 @@ export const sessionKeys = {
 };
 
 export type BooksMembership = components["schemas"]["BooksMembership"];
+export type InvitationPreview = components["schemas"]["InvitationPreview"];
+export type AcceptInvitationInput =
+  components["schemas"]["AcceptInvitationInput"];
 
 export function meQuery(api: Client<paths>) {
   return queryOptions({
@@ -56,6 +59,26 @@ export function useSwitchBooks() {
       );
     },
     onSuccess: reloadHome,
+  });
+}
+
+// POST /invitations/preview; a 404 is final, so the query does not retry.
+export function invitationPreviewQuery(api: Client<paths>, token: string) {
+  return queryOptions({
+    queryKey: ["invitation", token] as const,
+    queryFn: async () =>
+      unwrap(await api.POST("/invitations/preview", { body: { token } })),
+    retry: false,
+  });
+}
+
+// POST /invitations/accept; the answer is 204.
+export function useAcceptInvitation() {
+  const api = useApi();
+  return useMutation({
+    mutationFn: async (input: AcceptInvitationInput) => {
+      await unwrap(await api.POST("/invitations/accept", { body: input }));
+    },
   });
 }
 
