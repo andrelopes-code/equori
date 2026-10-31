@@ -553,6 +553,10 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "links.connectionState.consent_expiring": "Consentimento a vencer",
   "links.needsOwner":
     "O agregador aguarda uma ação que só o titular pode fazer. Conclua-a no agregador e sincronize de novo.",
+  "links.stalled":
+    "O banco não envia dados novos há {hours} horas. Sincronize de novo; se continuar assim, confira a conexão no {portal}.",
+  "links.consentExpiring":
+    "O consentimento desta conexão vence em {date}. Renove-o no {portal} para a sincronização continuar.",
   "links.syncFrom": "Importa a partir de",
   "links.batches": "Importações criadas",
   "links.batch": "Importação de {account}",

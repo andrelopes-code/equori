@@ -554,6 +554,10 @@ export const accountsEn = {
   "links.connectionState.consent_expiring": "Consent expiring",
   "links.needsOwner":
     "The aggregator waits for an action only the owner can take. Complete it at the aggregator, then sync again.",
+  "links.stalled":
+    "The bank has sent no new data for {hours} hours. Sync again; if it stays this way, check the connection at {portal}.",
+  "links.consentExpiring":
+    "The consent of this connection expires on {date}. Renew it at {portal} so syncs continue.",
   "links.syncFrom": "Imports from",
   "links.batches": "Imports created",
   "links.batch": "Import of {account}",
