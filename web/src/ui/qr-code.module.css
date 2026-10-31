@@ -1,0 +1,14 @@
+@layer app {
+  .code {
+    display: block;
+    inline-size: 12rem;
+    block-size: 12rem;
+    padding: var(--slotted-space-2);
+    background: var(--slotted-surface);
+    border-radius: var(--slotted-radius-md);
+  }
+
+  .modules {
+    fill: var(--slotted-text);
+  }
+}

@@ -10,12 +10,15 @@ import { SettingsLedger } from "@/features/setup/settings-ledger";
 import { SettingsMarketData } from "@/features/setup/settings-market-data";
 import { SettingsMembers } from "@/features/setup/settings-members";
 import { SettingsPrivacy } from "@/features/setup/settings-privacy";
+import { SettingsSecurity } from "@/features/setup/settings-security";
 import type { SettingsTopic } from "@/features/setup/settings-topics";
 
 export function SettingsPane({ topic }: { topic: SettingsTopic }) {
   switch (topic) {
     case "account":
       return <SettingsAccount />;
+    case "security":
+      return <SettingsSecurity />;
     case "appearance":
       return <SettingsAppearance />;
     case "language":

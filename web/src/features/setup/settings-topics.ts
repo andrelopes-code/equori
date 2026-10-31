@@ -17,6 +17,12 @@ export const settingsTopics = [
     summary: "settings.summary.account",
   },
   {
+    id: "security",
+    group: "personal",
+    title: "settings.security.title",
+    summary: "settings.summary.security",
+  },
+  {
     id: "appearance",
     group: "personal",
     title: "settings.appearance.title",

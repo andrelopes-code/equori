@@ -250,6 +250,7 @@ describe("settings page", () => {
           .map((link) => link.textContent),
       ).toEqual([
         catalogPtBR["settings.account.title"],
+        catalogPtBR["settings.security.title"],
         catalogPtBR["settings.appearance.title"],
         catalogPtBR["settings.language.title"],
         catalogPtBR["settings.privacy.title"],
