@@ -947,3 +947,7 @@ The scenarios of `docs/specs/2026-10-30-households-access-design.md`, section 6:
 ### S199–S202 Second factor (P11)
 
 The scenarios of `docs/specs/2026-10-30-households-access-design.md`, section 6: a login finishes with a TOTP code once (S199), with a passkey (S200) or with a recovery code once (S201); five wrong values end the pending login (S202).
+
+### S214–S221 Protected data (A154–A159)
+
+The scenarios of `docs/specs/2026-10-31-protected-data-design.md`, section "Scenarios": external mode backs up before a migration and a failed backup stops it (S214); a periodic backup writes an encrypted copy and keeps seven (S215); a copy restored into an empty database reproduces every row, balance and net worth (S216); a folder that cannot be written marks the copy late (S217); a member gets 403 on every operation of the module (S218); the diagnostic file holds no seeded name, description or amount (S219); the version check runs only with consent and on a release binary (S220); "Back up now" writes a backup and a copy (S221).
