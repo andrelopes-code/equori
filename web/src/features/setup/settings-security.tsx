@@ -1,3 +1,4 @@
+import { SkeletonText } from "@slotted/react/skeleton";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
@@ -12,8 +13,11 @@ import { useT } from "@/i18n/i18n-provider";
 
 export function SettingsSecurity() {
   const t = useT();
-  const { data: factor } = useQuery(secondFactorQuery(useApi()));
+  const { data: factor, isPending } = useQuery(secondFactorQuery(useApi()));
   const [codes, setCodes] = useState<string[] | null>(null);
+
+  const anyFactor =
+    factor !== undefined && (factor.totp || factor.passkeys.length > 0);
 
   const handleCloseCodes = () => {
     setCodes(null);
@@ -25,16 +29,21 @@ export function SettingsSecurity() {
       title={t("settings.security.title")}
       description={t("settings.summary.security")}
     >
-      <SecurityTotpGroup enabled={factor?.totp ?? false} onCodes={setCodes} />
-      <SecurityPasskeysGroup
-        passkeys={factor?.passkeys ?? []}
-        onCodes={setCodes}
-      />
-      <SecurityRecoveryGroup
-        factor={factor?.totp ?? false}
-        left={factor?.recovery_codes_left ?? 0}
-        onCodes={setCodes}
-      />
+      {isPending && <SkeletonText lines={3} />}
+      {factor !== undefined && (
+        <>
+          <SecurityTotpGroup enabled={factor.totp} onCodes={setCodes} />
+          <SecurityPasskeysGroup
+            passkeys={factor.passkeys}
+            onCodes={setCodes}
+          />
+          <SecurityRecoveryGroup
+            factor={anyFactor}
+            left={factor.recovery_codes_left}
+            onCodes={setCodes}
+          />
+        </>
+      )}
       {codes !== null && (
         <RecoveryCodesDialog codes={codes} onClose={handleCloseCodes} />
       )}

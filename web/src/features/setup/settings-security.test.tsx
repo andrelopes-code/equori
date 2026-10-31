@@ -27,7 +27,7 @@ const setup = {
 function api(
   factor: Factor,
   sent: Sent[],
-  overrides: Record<string, () => Response> = {},
+  overrides: Record<string, () => Response | Promise<Response>> = {},
 ) {
   return fakeApi({
     "GET /api/v1/me": () =>
@@ -207,6 +207,35 @@ describe("security settings", () => {
 
     expect(await screen.findByText("ABCD EFGH IJKL MNOP")).toBeVisible();
     expect(sent).toEqual([{ route: "regenerate", body: { password: "x" } }]);
+  });
+
+  it("counts the recovery codes of a member with only a passkey", async () => {
+    const passkey = {
+      id: "p1",
+      name: "Laptop",
+      created_at: "2026-10-31T12:00:00Z",
+    };
+    await renderApp("/settings?section=security", {
+      fetch: api({ ...off, passkeys: [passkey], recovery_codes_left: 10 }, []),
+    });
+    const view = await section();
+
+    expect(await view.findByText("Códigos restantes: 10")).toBeVisible();
+    expect(view.queryByText(pt["security.recovery.none"])).toBeNull();
+  });
+
+  it("states no factor before the second factor answers", async () => {
+    await renderApp("/settings?section=security", {
+      fetch: api(off, [], {
+        "GET /api/v1/me/second-factor": () =>
+          new Promise<Response>(() => undefined),
+      }),
+    });
+    const view = await section();
+
+    expect(view.queryByText(pt["security.off"])).toBeNull();
+    expect(view.queryByText(pt["security.passkeys.empty"])).toBeNull();
+    expect(view.queryByText(pt["security.recovery.none"])).toBeNull();
   });
 });
 

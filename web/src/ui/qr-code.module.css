@@ -1,6 +1,7 @@
 @layer app {
   .code {
     display: block;
+    /* The measure of a scannable code: no theme token holds a drawn shape's size (CP-05). */
     inline-size: 12rem;
     block-size: 12rem;
     padding: var(--slotted-space-2);
