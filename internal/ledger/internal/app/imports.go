@@ -474,7 +474,7 @@ func (s *Service) UpdateImportedPosting(ctx context.Context, booksID int64, reco
 		}
 
 		role = p.CardRole
-		changed = status != p.Status || (billed && statementID != p.StatementID) || retype
+		changed = status != p.Status || (billed && statementID != p.StatementID)
 
 		return r.SettleImportedPosting(ctx, booksID, p.ID, status, statementID)
 	})
@@ -482,7 +482,12 @@ func (s *Service) UpdateImportedPosting(ctx context.Context, booksID int64, reco
 		return changed, err
 	}
 
-	return changed, s.repo.InTx(ctx, func(r Repository) error { return s.retypeAsPayment(ctx, r, booksID, recordID) })
+	err = s.repo.InTx(ctx, func(r Repository) error { return s.retypeAsPayment(ctx, r, booksID, recordID) })
+	if err != nil {
+		return changed, err
+	}
+
+	return true, nil
 }
 
 // retypeAsPayment rewrites the transaction carrying the record as a card payment against

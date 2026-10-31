@@ -656,9 +656,11 @@ func (s *Service) update(ctx context.Context, sync bool, rec *domain.ExternalRec
 		switch {
 		case errors.Is(err, ErrReconciled):
 			notes = append(notes, "the aggregator reports the line "+strings.ToLower(domain.ExternalStatusOf(r))+billNote(r.DueDate)+"; the posting is reconciled and keeps its status and statement")
+			rec.ReviewReason = domain.ReviewChanged
 			retype = false
 		case errors.Is(err, ErrNotRetypable):
 			notes = append(notes, "the aggregator reports the line as a card payment; the transaction changed since its import and keeps its categories")
+			rec.ReviewReason = domain.ReviewChanged
 			retype = false
 		case err != nil && !errors.Is(err, ErrNotFound):
 			return false, false, err
@@ -688,6 +690,10 @@ func (s *Service) update(ctx context.Context, sync bool, rec *domain.ExternalRec
 	}
 
 	rec.UnappliedChange = strings.Join(notes, "; ")
+
+	if rec.UnappliedChange == "" && rec.ReviewReason == domain.ReviewChanged {
+		rec.ReviewReason = ""
+	}
 
 	return true, changed || (rec.UnappliedChange != "" && rec.UnappliedChange != previous), nil
 }
@@ -743,6 +749,7 @@ func (s *Service) billMatched(ctx context.Context, rec *domain.ExternalRecord, p
 	_, err := s.ledger.UpdateImportedPosting(ctx, rec.BooksID, rec.ID, pending, rec.DueDate, "")
 	switch {
 	case errors.Is(err, ErrReconciled):
+		rec.ReviewReason = domain.ReviewChanged
 		rec.UnappliedChange = "the aggregator reports the line" + billNote(rec.DueDate) + "; the posting is reconciled and keeps its status and statement"
 	case err != nil && !errors.Is(err, ErrNotFound):
 		return err

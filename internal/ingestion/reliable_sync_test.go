@@ -405,6 +405,108 @@ func TestS206DateChangedAfterReconciliation(t *testing.T) {
 	}
 }
 
+// A147 rule 4: a change the ledger refuses leaves the review reason changed; a line that
+// returns to the ledger's values clears it. The next sync counts the line ignored.
+func TestA147RefusedChangesWaitForReview(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name        string
+		arrange     func(f syncFixture, card string) (id, tx string)
+		changed     func(id string) pluggy.Transaction
+		wantReason  string
+		wantRole    string
+		wantAmount  int64
+		wantIgnored bool
+	}{
+		{
+			name: "bill on a reconciled posting",
+			arrange: func(f syncFixture, card string) (string, string) {
+				f.line(pluggy.SubtypeCard, cardLine("card-b", "2026-11-02", "20.00", "PENDING", nil))
+				f.sync()
+				f.p.AddBill(nubankItem+"-card", pluggy.Bill{ID: "bill-dec", DueDate: "2026-12-10T00:00:00.000Z", TotalAmount: "0"})
+				f.reconcileStatement(card, "2026-11")
+				_, tx := f.recordOf("card-b")
+
+				return "card-b", tx
+			},
+			changed: func(id string) pluggy.Transaction {
+				return cardLine(id, "2026-11-02", "20.00", "POSTED", new("bill-dec"))
+			},
+			wantReason: "changed",
+			wantAmount: -2000,
+		},
+		{
+			name: "refused payment type",
+			arrange: func(f syncFixture, card string) (string, string) {
+				f.line(pluggy.SubtypeCard, cardLine("pay-1", "2026-11-05", "-961.85", "POSTED", new("bill-nov")))
+				f.sync()
+				_, tx := f.recordOf("pay-1")
+				gifts := f.h.Account("Gifts", "income", "", nil)
+				f.h.MustDo(http.MethodPost, "/api/v1/transactions/"+tx+"/categorize", map[string]any{
+					"expected_version": 1, "parts": []map[string]any{{"account_id": gifts, "amount": apitest.BRL(-96185)}},
+				}, http.StatusOK, nil)
+
+				return "pay-1", tx
+			},
+			changed: func(id string) pluggy.Transaction {
+				return typedCardLine(id, "2026-11-05", "-961.85", "PAGAMENTO_FATURA")
+			},
+			wantReason: "changed",
+			wantRole:   "credit",
+			wantAmount: 96185,
+		},
+		{
+			name: "line returns to the ledger's amount",
+			arrange: func(f syncFixture, card string) (string, string) {
+				f.line(pluggy.SubtypeCard, cardLine("card-5", "2026-11-03", "50.00", "POSTED", new("bill-nov")))
+				f.sync()
+				_, tx := f.recordOf("card-5")
+				f.reconcileStatement(card, "2026-11")
+				f.line(pluggy.SubtypeCard, cardLine("card-5", "2026-11-03", "55.00", "POSTED", new("bill-nov")))
+				f.sync()
+
+				return "card-5", tx
+			},
+			changed: func(id string) pluggy.Transaction {
+				return cardLine(id, "2026-11-03", "50.00", "POSTED", new("bill-nov"))
+			},
+			wantAmount:  -5000,
+			wantIgnored: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			f, card := newCardSync(t)
+			id, tx := tt.arrange(f, card)
+
+			f.line(pluggy.SubtypeCard, tt.changed(id))
+			f.sync()
+
+			if reason, change := f.recordFacts(id); reason != tt.wantReason || (tt.wantReason == "") != (change == "") {
+				t.Fatalf("facts = %q, %q, want reason %q", reason, change, tt.wantReason)
+			}
+
+			p := f.cardPosting(tx, card)
+			if p.Amount.Amount != tt.wantAmount || (tt.wantRole != "" && p.CardRole != tt.wantRole) {
+				t.Fatalf("posting = %+v, want amount %d role %q", p, tt.wantAmount, tt.wantRole)
+			}
+
+			if c := f.batches(card)[0].Counts; tt.wantIgnored && c.Ignored != 1 {
+				t.Fatalf("changed sync counts = %+v, want ignored 1", c)
+			}
+
+			f.sync()
+
+			if c := f.batches(card)[0].Counts; c.Updated != 0 || c.Ignored != 1 {
+				t.Fatalf("counts = updated %d, ignored %d, want 0 and 1", c.Updated, c.Ignored)
+			}
+		})
+	}
+}
+
 // movingClock is an instance clock a test moves between syncs.
 type movingClock struct{ at atomic.Int64 }
 

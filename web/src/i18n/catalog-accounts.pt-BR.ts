@@ -498,7 +498,7 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "batch.reason.probable":
     "A melhor transação pontua entre os limites: confirme ou escolha outro caminho.",
   "batch.reason.changed":
-    "A conexão bancária alterou a linha depois de associada.",
+    "O banco mudou esta linha depois da conciliação. Corrija a transação ou mantenha o valor conciliado.",
   "batch.reason.repeated":
     "Parece repetir um pagamento da fatura já registrado. Crie se foram dois pagamentos; descarte se for o mesmo.",
   "batch.unapplied": "Alteração não aplicada: {change}",

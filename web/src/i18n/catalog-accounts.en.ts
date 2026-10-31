@@ -499,7 +499,7 @@ export const accountsEn = {
   "batch.reason.probable":
     "The best transaction scores between the thresholds: confirm it or choose another way.",
   "batch.reason.changed":
-    "The bank connection changed the line after it was matched.",
+    "The bank changed this line after reconciliation. Correct the transaction or keep the reconciled amount.",
   "batch.reason.repeated":
     "Looks like a card payment already recorded. Create it if there were two payments; discard it if it is the same one.",
   "batch.unapplied": "Change not applied: {change}",
