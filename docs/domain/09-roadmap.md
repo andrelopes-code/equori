@@ -91,7 +91,7 @@ flowchart LR
   P15 --> P16[P16 Test and release]
 ```
 
-P11, P12 and P13 depend only on P10 and can run side by side. Each phase is specified, planned and executed under section 9.4.3.
+P11, P12 and P13 depend only on P10; the owner runs them one after the other, in table order. Each phase is specified, planned and executed under section 9.4.3.
 
 | Phase | Status | Scope | Exit criterion |
 |---|---|---|---|
@@ -157,7 +157,8 @@ A model that ends its turn by recommending a new session, for the next step of t
 - The message stands alone: it names the step, the plan or spec file, the checkpoint `.claude/progress/current.md`, the model and effort of the step, and the expected result and stop.
 - It sits at the end of the reply, in one fenced code block, preceded by a line that starts with the marker 🔴 and names the target session, for example `🔴 Prompt for the new session (plan check, Opus, effort high):`.
 - The marker is the only emoji allowed in a reply or document of this project; it exists so the owner finds the message among the rest of the reply.
-- A reply that recommends two sessions gives one marked block per session, in the order of execution.
+- A reply gives exactly one marked block. The owner runs one session at a time and clears it before sending the next message, so phases that could run side by side run one after the other, in the order of the table of section 9.4.2.
+- A step that waits on the owner, such as the owner tasks of a reviewed plan, goes into the next message as its first item: the new session asks the owner for the result in its single question and records it before the step it names.
 
 ### 9.4.4 After 1.0
 
