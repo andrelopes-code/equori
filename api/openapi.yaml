@@ -22,6 +22,8 @@ tags:
     description: Instruments, prices and business-day calendars.
   - name: ingestion
     description: File imports, aggregator integrations and connections, external records and their review.
+  - name: instance
+    description: Backups, the encrypted copy, the diagnostic file and the version notice of the instance.
   - name: classification
     description: Categorization rules, payee aliases, suggestions and categorization methods.
   - name: planning
@@ -6210,6 +6212,43 @@ paths:
           $ref: "#/components/responses/Problem"
         "409":
           $ref: "#/components/responses/Problem"
+  /instance/backup:
+    get:
+      tags: [instance]
+      operationId: getBackup
+      x-book-role: read
+      summary: Backups and encrypted copy of the instance; admin only (P13 A157).
+      responses:
+        "200":
+          description: The state.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BackupStatus"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+    post:
+      tags: [instance]
+      operationId: runBackup
+      x-book-role: read
+      summary: Write a periodic backup and its copy now; admin only. 409 backup_off without EQUORI_BACKUP_DIR; 500 backup_failed.
+      responses:
+        "200":
+          description: The new state.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BackupStatus"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "500":
+          $ref: "#/components/responses/Problem"
 security:
   - sessionCookie: []
 components:
@@ -7688,6 +7727,50 @@ components:
         next_cursor:
           type: string
           description: Absent on the last page.
+    BackupStatus:
+      type: object
+      additionalProperties: false
+      required: [backups, copy]
+      properties:
+        backups:
+          $ref: "#/components/schemas/BackupState"
+        copy:
+          $ref: "#/components/schemas/CopyStatus"
+    BackupState:
+      type: object
+      additionalProperties: false
+      required: [state, periodic_at, pre_migration_at, late]
+      properties:
+        state:
+          type: string
+          enum: ["on", "off"]
+        periodic_at:
+          type: string
+          format: date-time
+          nullable: true
+        pre_migration_at:
+          type: string
+          format: date-time
+          nullable: true
+        late:
+          type: boolean
+    CopyStatus:
+      type: object
+      additionalProperties: false
+      required: [state, copied_at, file, late]
+      properties:
+        state:
+          type: string
+          enum: [folder_unset, password_unset, ok, folder_not_writable, failed]
+        copied_at:
+          type: string
+          format: date-time
+          nullable: true
+        file:
+          type: string
+          nullable: true
+        late:
+          type: boolean
     SyncSchedule:
       type: object
       additionalProperties: false
@@ -11358,7 +11441,8 @@ components:
             budget_exists, instrument_exists, mixed_instruments, price_missing, later_sale_exists,
             investment_transaction, system_account, attachment_not_inlineable, archive_too_new,
             setup_token_invalid, setup_complete, book_role_required, books_not_found, member_not_found,
-            last_owner, already_member, invitation_not_found, invitation_email_mismatch.
+            last_owner, already_member, invitation_not_found, invitation_email_mismatch,
+            backup_off, backup_failed, password_invalid.
         request_id:
           type: string
         retry_at:

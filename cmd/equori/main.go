@@ -20,7 +20,9 @@ import (
 	_ "time/tzdata" // A book's time zone must resolve in images without a zoneinfo database (BK19).
 
 	"github.com/andrelopes-code/equori/internal/ingestion"
+	"github.com/andrelopes-code/equori/internal/instance"
 	"github.com/andrelopes-code/equori/internal/marketdata"
+	"github.com/andrelopes-code/equori/internal/platform/backup"
 	"github.com/andrelopes-code/equori/internal/platform/clock"
 	"github.com/andrelopes-code/equori/internal/platform/config"
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
@@ -151,6 +153,9 @@ func serve(parent context.Context) error {
 	clk := clock.New(time.Now)
 	scfg := serverConfig(cfg, &clk)
 	scfg.Web, scfg.WebDevPort, scfg.Version = web.Dist(), cfg.WebDevPort, buildVersion()
+	scfg.Instance.Dump = func(ctx context.Context, path string) error {
+		return backup.Dump(ctx, db.Bin, db.DSN, path)
+	}
 	scfg.SetupDone = func() {
 		if err := removeSetupFile(cfg); err != nil {
 			log.Error("first user setup", "error", err)
@@ -207,9 +212,7 @@ func serve(parent context.Context) error {
 	go func() {
 		defer close(backupsDone)
 
-		if cfg.BackupDir != "" {
-			runPeriodicBackups(ctx, db, cfg, log)
-		}
+		app.Instance.RunBackups(ctx)
 	}()
 
 	defer func() {
@@ -318,10 +321,16 @@ func portfolioCommand(args []string) error {
 }
 
 func serverConfig(cfg config.Config, clk *clock.Clock) server.Config {
+	mode := "external"
+	if cfg.Managed() {
+		mode = "managed"
+	}
+
 	return server.Config{
 		SecureCookies: !cfg.InsecureCookies, Clock: clk, APIDocs: cfg.APIDocs,
 		SecretKey: cfg.SecretKey, PreviousSecretKey: cfg.PreviousSecretKey, AggregatorURLs: aggregatorURLs(os.Getenv),
 		FeedURLs: feedURLs(os.Getenv),
+		Instance: instance.Config{Mode: mode, BackupDir: cfg.BackupDir, CopyDir: cfg.CopyDir},
 	}
 }
 

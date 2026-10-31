@@ -3643,6 +3643,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/instance/backup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Backups and encrypted copy of the instance; admin only (P13 A157). */
+        get: operations["getBackup"];
+        put?: never;
+        /** Write a periodic backup and its copy now; admin only. 409 backup_off without EQUORI_BACKUP_DIR; 500 backup_failed. */
+        post: operations["runBackup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -4442,6 +4460,27 @@ export interface components {
             items: components["schemas"]["ExternalRecord"][];
             /** @description Absent on the last page. */
             next_cursor?: string;
+        };
+        BackupStatus: {
+            backups: components["schemas"]["BackupState"];
+            copy: components["schemas"]["CopyStatus"];
+        };
+        BackupState: {
+            /** @enum {string} */
+            state: "on" | "off";
+            /** Format: date-time */
+            periodic_at: string | null;
+            /** Format: date-time */
+            pre_migration_at: string | null;
+            late: boolean;
+        };
+        CopyStatus: {
+            /** @enum {string} */
+            state: "folder_unset" | "password_unset" | "ok" | "folder_not_writable" | "failed";
+            /** Format: date-time */
+            copied_at: string | null;
+            file: string | null;
+            late: boolean;
         };
         SyncSchedule: {
             /** Format: int32 */
@@ -6269,7 +6308,8 @@ export interface components {
              *     budget_exists, instrument_exists, mixed_instruments, price_missing, later_sale_exists,
              *     investment_transaction, system_account, attachment_not_inlineable, archive_too_new,
              *     setup_token_invalid, setup_complete, book_role_required, books_not_found, member_not_found,
-             *     last_owner, already_member, invitation_not_found, invitation_email_mismatch.
+             *     last_owner, already_member, invitation_not_found, invitation_email_mismatch,
+             *     backup_off, backup_failed, password_invalid.
              */
             code: string;
             request_id?: string;
@@ -12705,6 +12745,52 @@ export interface operations {
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
             409: components["responses"]["Problem"];
+        };
+    };
+    getBackup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The state. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BackupStatus"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+        };
+    };
+    runBackup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The new state. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BackupStatus"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
         };
     };
 }

@@ -128,6 +128,22 @@ func APIDocs() Option {
 	return func(c *server.Config) { c.APIDocs = true }
 }
 
+// FakeDumpContent is what FakeDump writes.
+const FakeDumpContent = "equori test dump\n"
+
+// FakeDump writes FakeDumpContent to path with mode 0600, in place of pg_dump.
+func FakeDump(_ context.Context, path string) error {
+	return os.WriteFile(path, []byte(FakeDumpContent), 0o600)
+}
+
+// Backups turns automatic backups on in dir, with the encrypted copy folder copyDir ("" for none);
+// dump replaces pg_dump.
+func Backups(dir, copyDir string, dump func(ctx context.Context, path string) error) Option {
+	return func(c *server.Config) {
+		c.Instance.BackupDir, c.Instance.CopyDir, c.Instance.Dump = dir, copyDir, dump
+	}
+}
+
 // SecretKey is the integration key Pluggy sets (32 bytes).
 const SecretKey = "equori-test-secret-key-32-bytes!" //nolint:gosec // G101: a fixed key for test databases only
 

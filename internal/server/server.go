@@ -22,6 +22,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/classification"
 	"github.com/andrelopes-code/equori/internal/identity"
 	"github.com/andrelopes-code/equori/internal/ingestion"
+	"github.com/andrelopes-code/equori/internal/instance"
 	"github.com/andrelopes-code/equori/internal/ledger"
 	"github.com/andrelopes-code/equori/internal/marketdata"
 	"github.com/andrelopes-code/equori/internal/planning"
@@ -76,6 +77,8 @@ type Config struct {
 	FeedURLs   map[string]string
 	// ExtraTools join the registry and the chat set; production passes none.
 	ExtraTools []tool.Group
+	// Instance configures backups and the encrypted copy; New sets Version, the keys, Clock and Admins.
+	Instance instance.Config
 }
 
 type App struct {
@@ -91,6 +94,7 @@ type App struct {
 	Ledger     *ledger.Module
 	Reporting  *reporting.Module
 	Ingestion  *ingestion.Module
+	Instance   *instance.Module
 	Planning   *planning.Module
 	Portfolio  *portfolio.Module
 }
@@ -175,6 +179,16 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 		return nil, err
 	}
 
+	instanceConfig := cfg.Instance
+	instanceConfig.Mode = cmp.Or(instanceConfig.Mode, "external")
+	instanceConfig.Version, instanceConfig.Clock, instanceConfig.Admins = version, clk, identityModule
+	instanceConfig.SecretKey, instanceConfig.PreviousSecretKey = cfg.SecretKey, cfg.PreviousSecretKey
+
+	instanceModule, err := instance.New(pool, instanceConfig, log)
+	if err != nil {
+		return nil, err
+	}
+
 	assistantModule.UseNotices(accountNotices(ledgerModule, ingestionModule))
 
 	portfolioModule, err := portfolio.New(pool, dispatcher, ledgerModule, marketdataModule, identityModule, log)
@@ -220,6 +234,7 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 	ledgerModule.RegisterRoutes(mux)
 	reportingModule.RegisterRoutes(mux)
 	ingestionModule.RegisterRoutes(mux)
+	instanceModule.RegisterRoutes(mux)
 	classificationModule.RegisterRoutes(mux)
 	captureModule.RegisterRoutes(mux)
 	planningModule.RegisterRoutes(mux)
@@ -272,6 +287,7 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 		Ledger:     ledgerModule,
 		Reporting:  reportingModule,
 		Ingestion:  ingestionModule,
+		Instance:   instanceModule,
 		Planning:   planningModule,
 		Portfolio:  portfolioModule,
 		Marketdata: marketdataModule,

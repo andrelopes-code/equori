@@ -73,6 +73,8 @@ linters:
               desc: platform must not depend on business modules (ADR 002)
             - pkg: github.com/andrelopes-code/equori/internal/portfolio
               desc: platform must not depend on business modules (ADR 002)
+            - pkg: github.com/andrelopes-code/equori/internal/instance
+              desc: platform must not depend on business modules (ADR 002)
   exclusions:
     presets:
       - std-error-handling

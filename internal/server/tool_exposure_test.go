@@ -58,6 +58,8 @@ var exposure = map[string]string{
 	"updateCurrentBooks":               "-owner",
 	"getSyncSchedule":                  "-instance",
 	"setSyncSchedule":                  "-instance",
+	"getBackup":                        "-instance",
+	"runBackup":                        "-instance",
 	"getSettings":                      "list_accounts",
 	"updateSettings":                   "-setup",
 	"listInstitutions":                 "list_payees_and_tags",

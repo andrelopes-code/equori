@@ -5,13 +5,11 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"log/slog"
 	"os"
 	"path/filepath"
 	"time"
 
 	"github.com/andrelopes-code/equori/internal/platform/backup"
-	"github.com/andrelopes-code/equori/internal/platform/config"
 	"github.com/andrelopes-code/equori/internal/platform/pgcluster"
 	"github.com/andrelopes-code/equori/internal/platform/postgres"
 )
@@ -21,35 +19,6 @@ const backupUsage = `usage: equori backup [--out FILE]
 
 backup writes a pg_dump archive; restore replaces the database with one.
 In managed mode, restore refuses to run while equori serve runs.`
-
-// runPeriodicBackups writes a periodic backup when the newest is 24 hours old, checked every hour (B3).
-func runPeriodicBackups(ctx context.Context, db *database, cfg config.Config, log *slog.Logger) {
-	tick := time.NewTicker(time.Hour)
-	defer tick.Stop()
-
-	for {
-		if due, err := backup.Due(cfg.BackupDir, time.Now(), 24*time.Hour); err != nil {
-			log.Error("periodic backup", "error", err)
-		} else if due {
-			latest, _ := postgres.LatestVersion()
-
-			path := filepath.Join(cfg.BackupDir, backup.Name(backup.Periodic, time.Now().UTC(), latest))
-			if err := backup.Dump(ctx, db.Bin, db.DSN, path); err != nil {
-				log.Error("periodic backup", "error", err)
-			} else if err := backup.Prune(cfg.BackupDir, backup.Periodic, 7); err != nil {
-				log.Error("prune periodic backups", "error", err)
-			} else {
-				log.Info("periodic backup", "path", path)
-			}
-		}
-
-		select {
-		case <-ctx.Done():
-			return
-		case <-tick.C:
-		}
-	}
-}
 
 func backupCommand(args []string) error {
 	fs := flag.NewFlagSet("backup", flag.ContinueOnError)

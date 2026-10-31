@@ -66,6 +66,14 @@ func TestLoad(t *testing.T) {
 			},
 		},
 		{
+			name: "copy directory",
+			env:  map[string]string{"EQUORI_DATABASE_URL": "postgres://x", "EQUORI_COPY_DIR": "/copies"},
+			want: Config{
+				DatabaseURL: "postgres://x", CopyDir: "/copies",
+				HTTPAddr: ":8080", LogLevel: slog.LevelInfo,
+			},
+		},
+		{
 			name:    "invalid insecure cookies",
 			env:     map[string]string{"EQUORI_DATABASE_URL": "postgres://x", "EQUORI_INSECURE_COOKIES": "maybe"},
 			wantErr: true,

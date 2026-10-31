@@ -16,8 +16,10 @@ type Config struct {
 	// DataDir, PostgresBin and BackupDir serve managed mode (ADR 022, M1 to M3); DataDir is empty
 	// in external mode.
 	DataDir, PostgresBin, BackupDir string
-	HTTPAddr                        string
-	LogLevel                        slog.Level
+	// CopyDir is the container path of the encrypted copy folder (P13 A155.1); empty when unset.
+	CopyDir  string
+	HTTPAddr string
+	LogLevel slog.Level
 	// InsecureCookies drops the Secure cookie attribute for plain-HTTP LAN deployments (ADR 003).
 	InsecureCookies bool
 	// APIDocs serves the API reference at /docs and the contract at /openapi.yaml without a session.
@@ -56,6 +58,8 @@ func Load(getenv func(string) string) (Config, error) {
 	cfg.PostgresBin = getenv("EQUORI_POSTGRES_BIN")
 
 	cfg.BackupDir = getenv("EQUORI_BACKUP_DIR")
+	cfg.CopyDir = getenv("EQUORI_COPY_DIR")
+
 	if cfg.DatabaseURL == "" {
 		cfg.DataDir = getenv("EQUORI_DATA_DIR")
 		if cfg.DataDir == "" {
