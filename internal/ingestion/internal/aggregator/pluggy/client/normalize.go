@@ -29,6 +29,10 @@ func Normalize(t Transaction, a Account, bills map[string]Bill, scale int, loc *
 		r.Description = *t.DescriptionRaw
 	}
 
+	if t.ProviderID != nil && *t.ProviderID != "" {
+		r.InstitutionID = *t.ProviderID
+	}
+
 	if r.Date, err = Date(t.Date, loc); err != nil {
 		return domain.NormalizedRecord{}, false, fmt.Errorf("transaction %s: %w", t.ID, err)
 	}
@@ -168,6 +172,10 @@ func raw(t Transaction) map[string]string {
 
 	if t.CategoryID != nil {
 		m["category_id"] = *t.CategoryID
+	}
+
+	if t.ProviderID != nil && *t.ProviderID != "" {
+		m["provider_id"] = *t.ProviderID
 	}
 
 	if t.OperationType != nil {

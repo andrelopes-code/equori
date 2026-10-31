@@ -94,6 +94,8 @@ type Transaction struct {
 	Status                  string        `json:"status"`
 	OperationType           *string       `json:"operationType"`
 	CreditCardMetadata      *CardMetadata `json:"creditCardMetadata"`
+	ProviderID              *string       `json:"providerId"`
+	CreatedAt               string        `json:"createdAt"`
 }
 
 type CardMetadata struct {

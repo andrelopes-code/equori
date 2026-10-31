@@ -39,6 +39,29 @@ func TestNormalize(t *testing.T) {
 			t.Fatalf("record = %+v", r)
 		}
 	})
+	t.Run("institution line id", func(t *testing.T) {
+		line := Transaction{ID: "t1", Description: "Padaria", CurrencyCode: "BRL", Amount: "-8.5", Date: "2026-10-07T00:00:00.000Z", Status: "POSTED"}
+
+		without, ok, err := Normalize(line, checking, bills, 2, loc)
+		if err != nil || !ok {
+			t.Fatal(ok, err)
+		}
+
+		if _, has := without.Raw["provider_id"]; without.InstitutionID != "" || has {
+			t.Fatalf("without provider id: InstitutionID %q, raw %v", without.InstitutionID, without.Raw)
+		}
+
+		line.ProviderID = ptr("p-1")
+
+		with, ok, err := Normalize(line, checking, bills, 2, loc)
+		if err != nil || !ok {
+			t.Fatal(ok, err)
+		}
+
+		if with.InstitutionID != "p-1" || with.Raw["provider_id"] != "p-1" {
+			t.Fatalf("with provider id: InstitutionID %q, raw %v", with.InstitutionID, with.Raw)
+		}
+	})
 	t.Run("bank pending is skipped", func(t *testing.T) {
 		if _, ok, err := Normalize(Transaction{ID: "t2", Amount: "-10", Date: "2026-11-20T00:00:00.000Z", Status: statusPending, CurrencyCode: "BRL"}, checking, bills, 2, loc); ok || err != nil {
 			t.Fatalf("ok %v, err %v", ok, err)

@@ -426,15 +426,17 @@ func (s *Service) applyStoredChange(
 	rec *domain.ExternalRecord,
 	r domain.NormalizedRecord,
 ) error {
-	changed, err := s.update(ctx, p.sync, rec, r)
+	reported, changed, err := s.update(ctx, p.sync, rec, r)
 	if err != nil {
 		return err
 	}
 
+	if reported {
+		p.updated = append(p.updated, *rec)
+	}
+
 	if changed {
 		p.batch.Counts.Updated++
-
-		p.updated = append(p.updated, *rec)
 	} else {
 		p.batch.Counts.Ignored++
 	}
@@ -623,18 +625,21 @@ func withFacts(rec *domain.ExternalRecord, r domain.NormalizedRecord) {
 // update applies an aggregator's change to a stored line that the ledger recorded (P6 A36):
 // a posted line clears its posting, a bill moves a card posting to the bill's statement.
 // A reconciled posting and an amount change stay out of the ledger and are described on
-// the record. It reports whether the aggregator changed the line.
-func (s *Service) update(ctx context.Context, sync bool, rec *domain.ExternalRecord, r domain.NormalizedRecord) (bool, error) {
+// the record. reported is true when the line differs from the stored facts, changed when the
+// ledger or the record's unapplied change took the difference (P12 A143).
+func (s *Service) update(ctx context.Context, sync bool, rec *domain.ExternalRecord, r domain.NormalizedRecord) (reported, changed bool, err error) {
 	if !sync || (rec.State != domain.StateMatched && rec.State != domain.StateCreated) {
-		return false, nil
+		return false, false, nil
 	}
+
+	identified := rec.InstitutionID == "" && r.InstitutionID != ""
 
 	settled := rec.ExternalStatus != domain.ExternalStatusOf(r) || !sameDate(rec.DueDate, r.DueDate)
 	retype := r.Kind == domain.KindPayment && rec.LineKind != r.Kind
 
 	moved := rec.Amount != r.Amount || !rec.Date.Equal(r.Date)
-	if !settled && !retype && !moved {
-		return false, nil
+	if !settled && !retype && !moved && !identified {
+		return false, false, nil
 	}
 
 	var notes []string
@@ -650,14 +655,14 @@ func (s *Service) update(ctx context.Context, sync bool, rec *domain.ExternalRec
 			notes = append(notes, "the aggregator reports the line as a card payment; the transaction changed since its import and keeps its categories")
 			retype = false
 		case err != nil && !errors.Is(err, ErrNotFound):
-			return false, err
+			return false, false, err
 		}
 	}
 
 	if moved {
 		note, err := s.followLine(ctx, rec, r)
 		if err != nil {
-			return false, err
+			return false, false, err
 		}
 
 		if note != "" {
@@ -674,7 +679,7 @@ func (s *Service) update(ctx context.Context, sync bool, rec *domain.ExternalRec
 
 	rec.UnappliedChange = strings.Join(notes, "; ")
 
-	return true, nil
+	return true, settled || retype || moved, nil
 }
 
 // followLine corrects the transaction of a linked line to the line's new amount and date
