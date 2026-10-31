@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useApi } from "@/api/api-context";
 import { secondFactorQuery } from "@/features/setup/api";
 import { RecoveryCodesDialog } from "@/features/setup/recovery-codes-dialog";
+import { SecurityPasskeysGroup } from "@/features/setup/security-passkeys-group";
 import { SecurityRecoveryGroup } from "@/features/setup/security-recovery-group";
 import { SecurityTotpGroup } from "@/features/setup/security-totp-group";
 import { SettingsSection } from "@/features/setup/settings-section";
@@ -25,6 +26,10 @@ export function SettingsSecurity() {
       description={t("settings.summary.security")}
     >
       <SecurityTotpGroup enabled={factor?.totp ?? false} onCodes={setCodes} />
+      <SecurityPasskeysGroup
+        passkeys={factor?.passkeys ?? []}
+        onCodes={setCodes}
+      />
       <SecurityRecoveryGroup
         factor={factor?.totp ?? false}
         left={factor?.recovery_codes_left ?? 0}
