@@ -1,12 +1,21 @@
 services:
   app:
-    # A release attaches this file with the default set to its version (V7 of the distribution design); from a clone, compose builds the dev image.
-    image: ghcr.io/andrelopes-code/equori:${EQUORI_VERSION:-dev}
-    build: .
+    # A release attaches this file with the default set to its version (V7 of the distribution design); from a clone, compose builds the standalone stage.
+    image: ghcr.io/andrelopes-code/equori:${EQUORI_VERSION:-dev}-standalone
+    build:
+      context: .
+      target: standalone
     ports:
       - "8080:8080"
     environment:
       EQUORI_DATABASE_URL: postgres://equori:${POSTGRES_PASSWORD:-equori}@db:5432/equori?sslmode=disable
+      # P13 A154, A155: backups and the encrypted copy run in the app container.
+      EQUORI_BACKUP_DIR: /backups
+      EQUORI_POSTGRES_BIN: /usr/lib/postgresql/18/bin
+      EQUORI_COPY_DIR: /copies
+    volumes:
+      - backups:/backups
+      - ${EQUORI_COPY_FOLDER:-./copies}:/copies
     depends_on:
       db:
         condition: service_healthy
@@ -31,3 +40,4 @@ services:
 
 volumes:
   pgdata:
+  backups:

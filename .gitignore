@@ -1,5 +1,6 @@
 /bin/
 /dist/
+/copies/
 /.env
 web/node_modules/
 web/dist/*

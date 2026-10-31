@@ -29,7 +29,7 @@ RUN --mount=type=cache,target=/go/pkg/mod \
 FROM postgres:18 AS standalone
 COPY --from=build /out/equori /usr/local/bin/equori
 ENV EQUORI_DATA_DIR=/data EQUORI_POSTGRES_BIN=/usr/lib/postgresql/18/bin
-RUN mkdir -p /data && chown postgres:postgres /data
+RUN mkdir -p /data /backups /copies && chown postgres:postgres /data /backups /copies
 USER postgres
 VOLUME /data
 EXPOSE 8080

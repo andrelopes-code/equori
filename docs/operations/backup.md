@@ -25,11 +25,11 @@ in `%ProgramData%\equori\backups`, which only SYSTEM, the service and that accou
 dump written with `--out` elsewhere takes the permissions of its folder, which the mode 0600 of
 the other systems does not replace (ADR 023, W-B1).
 
-Compose keeps the dump inside the `db` container, because the application image holds no
-`pg_dump`. Commands run from the directory of `compose.yaml`:
+Compose runs the standalone image, which holds `pg_dump`. `EQUORI_BACKUP_DIR` is `/backups`,
+the named volume `backups`. The command runs from the directory of `compose.yaml`:
 
 ```sh
-docker compose exec -T db pg_dump -U equori -Fc -d equori > equori-$(date +%F).dump
+docker compose exec app equori backup
 ```
 
 ## Automatic backups

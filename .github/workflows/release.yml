@@ -237,8 +237,8 @@ jobs:
       - name: Pin compose.yaml to the release
         run: |
           version=${GITHUB_REF_NAME#v}
-          sed -e "s/\${EQUORI_VERSION:-dev}/\${EQUORI_VERSION:-$version}/" -e '/^    build: \.$/d' compose.yaml > dist/compose.yaml
-          grep -q "equori:\${EQUORI_VERSION:-$version}" dist/compose.yaml
+          sed -e "s/\${EQUORI_VERSION:-dev}/\${EQUORI_VERSION:-$version}/" -e '/^    build:$/,/^      target: standalone$/d' compose.yaml > dist/compose.yaml
+          grep -q "equori:\${EQUORI_VERSION:-$version}-standalone" dist/compose.yaml
       # Present only when the windows job signed it (W-R6).
       - uses: actions/download-artifact@v8
         continue-on-error: true
