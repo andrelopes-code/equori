@@ -440,6 +440,29 @@ func (q *Queries) MoveReviewCount(ctx context.Context, arg MoveReviewCountParams
 	return err
 }
 
+const moveUndoneCount = `-- name: MoveUndoneCount :exec
+UPDATE ingestion_batch
+SET
+    needs_review = needs_review + 1,
+    matched = matched - ($1::text = 'matched')::int,
+    created = created - ($1::text = 'created')::int
+WHERE
+    books_id = $2
+    AND id = $3
+`
+
+type MoveUndoneCountParams struct {
+	LeftState string
+	BooksID   int64
+	ID        uuid.UUID
+}
+
+// A148: an undone record enters review in its batch and leaves the count of its state.
+func (q *Queries) MoveUndoneCount(ctx context.Context, arg MoveUndoneCountParams) error {
+	_, err := q.db.Exec(ctx, moveUndoneCount, arg.LeftState, arg.BooksID, arg.ID)
+	return err
+}
+
 const reidentifyRecord = `-- name: ReidentifyRecord :exec
 UPDATE ingestion_external_record
 SET
@@ -502,6 +525,72 @@ type ReopenRecordParams struct {
 // A140: a discarded record returns to review.
 func (q *Queries) ReopenRecord(ctx context.Context, arg ReopenRecordParams) (int64, error) {
 	result, err := q.db.Exec(ctx, reopenRecord, arg.BooksID, arg.ID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const undoRecordDecision = `-- name: UndoRecordDecision :execrows
+UPDATE ingestion_external_record
+SET
+    external_id = $1,
+    dedup_key = $2,
+    raw = $3,
+    booked_on = $4,
+    amount = $5,
+    state = $6,
+    transaction_id = $7,
+    candidates = $8,
+    candidate_scores = $9,
+    review_reason = $10,
+    unapplied_change = $11,
+    kept = $12,
+    decision = NULL,
+    decision_undo = '{}'
+WHERE
+    books_id = $13
+    AND id = $14
+    AND decision = $15::text
+`
+
+type UndoRecordDecisionParams struct {
+	ExternalID      *string
+	DedupKey        []byte
+	Raw             []byte
+	BookedOn        time.Time
+	Amount          int64
+	State           string
+	TransactionID   uuid.NullUUID
+	Candidates      []uuid.UUID
+	CandidateScores []byte
+	ReviewReason    *string
+	UnappliedChange *string
+	Kept            bool
+	BooksID         int64
+	ID              uuid.UUID
+	Decision        string
+}
+
+// A148: a record after the undo of its decision; no row when the decision changed meanwhile.
+func (q *Queries) UndoRecordDecision(ctx context.Context, arg UndoRecordDecisionParams) (int64, error) {
+	result, err := q.db.Exec(ctx, undoRecordDecision,
+		arg.ExternalID,
+		arg.DedupKey,
+		arg.Raw,
+		arg.BookedOn,
+		arg.Amount,
+		arg.State,
+		arg.TransactionID,
+		arg.Candidates,
+		arg.CandidateScores,
+		arg.ReviewReason,
+		arg.UnappliedChange,
+		arg.Kept,
+		arg.BooksID,
+		arg.ID,
+		arg.Decision,
+	)
 	if err != nil {
 		return 0, err
 	}

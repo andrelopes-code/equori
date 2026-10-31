@@ -204,6 +204,7 @@ var exposure = map[string]string{
 	"listUnconfirmed":                  "get_imports",
 	"resolveExternalRecord":            "manage_imports",
 	"reopenExternalRecord":             "manage_imports",
+	"undoExternalRecordDecision":       "manage_imports",
 	"listAggregators":                  "get_imports",
 	"listIntegrations":                 "get_imports",
 	"createIntegration":                "-secret",

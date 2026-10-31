@@ -264,3 +264,37 @@ SET
 WHERE
     books_id = @books_id
     AND id = @id;
+
+-- name: UndoRecordDecision :execrows
+-- A148: a record after the undo of its decision; no row when the decision changed meanwhile.
+UPDATE ingestion_external_record
+SET
+    external_id = sqlc.narg (external_id),
+    dedup_key = @dedup_key,
+    raw = @raw,
+    booked_on = @booked_on,
+    amount = @amount,
+    state = @state,
+    transaction_id = sqlc.narg (transaction_id),
+    candidates = @candidates,
+    candidate_scores = @candidate_scores,
+    review_reason = sqlc.narg (review_reason),
+    unapplied_change = sqlc.narg (unapplied_change),
+    kept = @kept,
+    decision = NULL,
+    decision_undo = '{}'
+WHERE
+    books_id = @books_id
+    AND id = @id
+    AND decision = @decision::text;
+
+-- name: MoveUndoneCount :exec
+-- A148: an undone record enters review in its batch and leaves the count of its state.
+UPDATE ingestion_batch
+SET
+    needs_review = needs_review + 1,
+    matched = matched - (@left_state::text = 'matched')::int,
+    created = created - (@left_state::text = 'created')::int
+WHERE
+    books_id = @books_id
+    AND id = @id;

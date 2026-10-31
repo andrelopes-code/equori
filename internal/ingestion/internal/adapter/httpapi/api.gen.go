@@ -886,6 +886,9 @@ type ServerInterface interface {
 	// ResolveExternalRecord Resolve a record that needs review.
 	// (POST /external-records/{id}/resolve)
 	ResolveExternalRecord(w http.ResponseWriter, r *http.Request, id ID)
+	// UndoExternalRecordDecision Undo the record's last automatic decision (A148).
+	// (POST /external-records/{id}/undo)
+	UndoExternalRecordDecision(w http.ResponseWriter, r *http.Request, id ID)
 	// ListImportBatches Import batches, newest first.
 	// (GET /import-batches)
 	ListImportBatches(w http.ResponseWriter, r *http.Request, params ListImportBatchesParams)
@@ -1261,6 +1264,32 @@ func (siw *ServerInterfaceWrapper) ResolveExternalRecord(w http.ResponseWriter, 
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ResolveExternalRecord(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UndoExternalRecordDecision operation middleware
+func (siw *ServerInterfaceWrapper) UndoExternalRecordDecision(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UndoExternalRecordDecision(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1707,6 +1736,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/unconfirmed", wrapper.ListUnconfirmed)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/external-records/{id}/reopen", wrapper.ReopenExternalRecord)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/external-records/{id}/resolve", wrapper.ResolveExternalRecord)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/external-records/{id}/undo", wrapper.UndoExternalRecordDecision)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/aggregators", wrapper.ListAggregators)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/integrations", wrapper.ListIntegrations)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/integrations", wrapper.CreateIntegration)
@@ -2629,6 +2659,72 @@ func (response ResolveExternalRecord422ApplicationProblemPlusJSONResponse) Visit
 	return err
 }
 
+type UndoExternalRecordDecisionRequestObject struct {
+	Id ID `json:"id"`
+}
+
+type UndoExternalRecordDecisionResponseObject interface {
+	VisitUndoExternalRecordDecisionResponse(w http.ResponseWriter) error
+}
+
+type UndoExternalRecordDecision200JSONResponse ExternalRecord
+
+func (response UndoExternalRecordDecision200JSONResponse) VisitUndoExternalRecordDecisionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UndoExternalRecordDecision401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response UndoExternalRecordDecision401ApplicationProblemPlusJSONResponse) VisitUndoExternalRecordDecisionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UndoExternalRecordDecision404ApplicationProblemPlusJSONResponse Problem
+
+func (response UndoExternalRecordDecision404ApplicationProblemPlusJSONResponse) VisitUndoExternalRecordDecisionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UndoExternalRecordDecision409ApplicationProblemPlusJSONResponse Problem
+
+func (response UndoExternalRecordDecision409ApplicationProblemPlusJSONResponse) VisitUndoExternalRecordDecisionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListImportBatchesRequestObject struct {
 	Params ListImportBatchesParams
 }
@@ -3279,6 +3375,9 @@ type StrictServerInterface interface {
 	// ResolveExternalRecord Resolve a record that needs review.
 	// (POST /external-records/{id}/resolve)
 	ResolveExternalRecord(ctx context.Context, request ResolveExternalRecordRequestObject) (ResolveExternalRecordResponseObject, error)
+	// UndoExternalRecordDecision Undo the record's last automatic decision (A148).
+	// (POST /external-records/{id}/undo)
+	UndoExternalRecordDecision(ctx context.Context, request UndoExternalRecordDecisionRequestObject) (UndoExternalRecordDecisionResponseObject, error)
 	// ListImportBatches Import batches, newest first.
 	// (GET /import-batches)
 	ListImportBatches(ctx context.Context, request ListImportBatchesRequestObject) (ListImportBatchesResponseObject, error)
@@ -3713,6 +3812,32 @@ func (sh *strictHandler) ResolveExternalRecord(w http.ResponseWriter, r *http.Re
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ResolveExternalRecordResponseObject); ok {
 		if err := validResponse.VisitResolveExternalRecordResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UndoExternalRecordDecision operation middleware
+func (sh *strictHandler) UndoExternalRecordDecision(w http.ResponseWriter, r *http.Request, id ID) {
+	var request UndoExternalRecordDecisionRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UndoExternalRecordDecision(ctx, request.(UndoExternalRecordDecisionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UndoExternalRecordDecision")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UndoExternalRecordDecisionResponseObject); ok {
+		if err := validResponse.VisitUndoExternalRecordDecisionResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

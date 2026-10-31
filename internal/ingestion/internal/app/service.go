@@ -45,6 +45,11 @@ type Repository interface {
 	ResolveRecord(ctx context.Context, r domain.ExternalRecord) error
 	// ReopenRecord returns a discarded record to review; false when it is not discarded.
 	ReopenRecord(ctx context.Context, booksID int64, id, batchID uuid.UUID) (bool, error)
+	// SaveUndo stores, in one database transaction, a record after the undo of its decision
+	// decided, moves an undone record that entered review out of the count of left, and inserts
+	// line, when not nil, as a new record in review (A148). ErrNoDecision when the record no
+	// longer carries decided.
+	SaveUndo(ctx context.Context, rec domain.ExternalRecord, decided domain.DecisionKind, left domain.RecordState, line *domain.ExternalRecord) error
 	// LockAccountImports serializes the imports of one account until unlock runs.
 	LockAccountImports(ctx context.Context, accountID uuid.UUID) (unlock func(), err error)
 

@@ -3069,6 +3069,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/external-records/{id}/undo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Undo the record's last automatic decision (A148).
+         * @description linked releases the posting and returns the record to review (probable); followed returns
+         *     the transaction to its amount and date before the change and leaves the record in review
+         *     (changed); withdrawn links the record to its posting again and keeps it from later
+         *     withdrawals; re_identified returns the record to its previous external id and records the
+         *     line as a new record in review (probable). A record without a decision returns no_decision.
+         */
+        post: operations["undoExternalRecordDecision"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/aggregators": {
         parameters: {
             query?: never;
@@ -11570,6 +11594,31 @@ export interface operations {
             404: components["responses"]["Problem"];
             409: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
+        };
+    };
+    undoExternalRecordDecision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExternalRecord"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
         };
     };
     listAggregators: {

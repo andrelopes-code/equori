@@ -122,3 +122,12 @@ func (s *Server) ListUnconfirmed(ctx context.Context, req ListUnconfirmedRequest
 
 	return out, nil
 }
+
+func (s *Server) UndoExternalRecordDecision(ctx context.Context, req UndoExternalRecordDecisionRequestObject) (UndoExternalRecordDecisionResponseObject, error) {
+	rec, b, err := s.svc.UndoDecision(ctx, auth.MustBooksID(ctx), req.Id)
+	if err != nil {
+		return nil, err
+	}
+
+	return UndoExternalRecordDecision200JSONResponse(toRecordAPI(rec, b.Currency)), nil
+}

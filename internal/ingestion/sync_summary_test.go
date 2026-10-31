@@ -2,6 +2,7 @@ package ingestion_test
 
 import (
 	"net/http"
+	"slices"
 	"testing"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
@@ -159,8 +160,129 @@ func TestA149ReviewChangeIsListedWithoutDecision(t *testing.T) {
 	}
 }
 
+// S212 (A148): undoing a zone link releases the posting and returns the line to review.
+func TestS212UndoLinkedLine(t *testing.T) {
+	t.Parallel()
+	m := newMatching(t, map[string]string{"Uber": "Uberrides"})
+	entry := m.manual("2026-10-20", -712, "Uber", "Uber")
+	m.lineOn("uber-1", "2026-10-20", "Dl *Uberrides", "-7.12")
+	m.sync()
+
+	r := m.undo("uber-1")
+	if r.Status != http.StatusOK {
+		t.Fatalf("undo status = %d, body %s", r.Status, r.Body)
+	}
+
+	var got struct {
+		State         string   `json:"state"`
+		ReviewReason  string   `json:"review_reason"`
+		Candidates    []string `json:"candidates"`
+		TransactionID string   `json:"transaction_id"`
+		Decision      string   `json:"decision"`
+	}
+	r.Decode(t, &got)
+
+	if got.State != "needs_review" || got.ReviewReason != "probable" || !slices.Equal(got.Candidates, []string{entry}) ||
+		got.TransactionID != "" || got.Decision != "" {
+		t.Fatalf("undone record = %+v, want needs_review, probable, candidate %s, no transaction, no decision", got, entry)
+	}
+
+	if c := m.batches(m.checking)[0].Counts; c.Matched != 0 || c.NeedsReview != 1 {
+		t.Fatalf("counts = matched %d, needs_review %d, want 0 and 1", c.Matched, c.NeedsReview)
+	}
+
+	m.h.ExpectProblem(m.undo("uber-1"), http.StatusConflict, "no_decision", "")
+
+	m.sync()
+
+	if state, tx := m.recordOf("uber-1"); state != "needs_review" || tx != "" {
+		t.Fatalf("record after the next sync = %s on %q, want needs_review without a transaction", state, tx)
+	}
+
+	linked := m.count("SELECT count(*) FROM ledger_posting WHERE transaction_id = $1 AND external_record_id IS NOT NULL", entry)
+	if linked != 0 {
+		t.Fatalf("postings of the entry linked to a record = %d, want 0", linked)
+	}
+}
+
+// S212 (A148): undoing a withdrawal links the line to its posting again and keeps it from
+// later withdrawals.
+func TestS212UndoWithdrawnLine(t *testing.T) {
+	t.Parallel()
+	f := newSyncFixture(t)
+	f.mapTo(pluggy.SubtypeChecking, f.checking)
+	f.line(pluggy.SubtypeChecking, bankLine("tx-1", "2026-11-05", "-10.00"))
+	f.line(pluggy.SubtypeChecking, bankLine("tx-2", "2026-11-06", "-20.00"))
+	f.sync()
+
+	_, tx := f.recordOf("tx-1")
+
+	f.p.RemoveTransaction(nubankItem+"-checking", "tx-1")
+	f.sync()
+
+	r := f.undo("tx-1")
+	if r.Status != http.StatusOK {
+		t.Fatalf("undo status = %d, body %s", r.Status, r.Body)
+	}
+
+	var got struct {
+		State         string `json:"state"`
+		TransactionID string `json:"transaction_id"`
+	}
+	r.Decode(t, &got)
+
+	if got.State != "created" || got.TransactionID != tx {
+		t.Fatalf("undone record = %s on %s, want created on %s", got.State, got.TransactionID, tx)
+	}
+
+	if _, _, kept := f.decisionOf("tx-1"); !kept {
+		t.Fatal("kept = false after the undo, want true")
+	}
+
+	f.sync()
+
+	if state, got := f.recordOf("tx-1"); state != "created" || got != tx {
+		t.Fatalf("record after the next sync = %s on %s, want created on %s", state, got, tx)
+	}
+
+	if w := f.batches(f.checking)[0].Counts.Withdrawn; w != 0 {
+		t.Fatalf("withdrawn = %d, want 0", w)
+	}
+
+	f.h.ExpectProblem(f.undo("tx-1"), http.StatusConflict, "no_decision", "")
+}
+
+// A148: the posting of a withdrawn record that another line took cannot be linked back.
+func TestA148UndoOfAWithdrawalWhoseEntryIsLinkedAgain(t *testing.T) {
+	t.Parallel()
+	f, _ := newCardSync(t)
+	f.line(pluggy.SubtypeCard, cardLine("card-p", "2026-11-12", "30.00", "PENDING", nil))
+	f.sync()
+
+	f.p.RemoveTransaction(nubankItem+"-card", "card-p")
+	f.line(pluggy.SubtypeCard, cardLine("card-q", "2026-11-12", "30.00", "POSTED", nil))
+	f.sync()
+
+	f.h.ExpectProblem(f.undo("card-p"), http.StatusConflict, "already_matched", "")
+
+	if decision, _, _ := f.decisionOf("card-p"); decision != "withdrawn" {
+		t.Fatalf("decision = %q, want withdrawn", decision)
+	}
+}
+
+// A148: a line a sync did not decide has nothing to undo.
+func TestA148UndoWithoutDecision(t *testing.T) {
+	t.Parallel()
+	f := newSyncFixture(t)
+	f.mapTo(pluggy.SubtypeChecking, f.checking)
+	f.line(pluggy.SubtypeChecking, bankLine("tx-1", "2026-11-05", "-10.00"))
+	f.sync()
+
+	f.h.ExpectProblem(f.undo("tx-1"), http.StatusConflict, "no_decision", "")
+}
+
 // recordID returns the id of a line's record.
-func (f syncFixture) recordID(externalID string) string { //nolint:unused // used from task 3 of the sync summary plan
+func (f syncFixture) recordID(externalID string) string {
 	f.h.T().Helper()
 
 	return f.text(`SELECT id::text FROM ingestion_external_record WHERE external_id = $1`, externalID)
@@ -196,4 +318,11 @@ func (f syncFixture) decisionOf(externalID string) (decision, summaryBatch strin
 	}
 
 	return decision, summaryBatch, kept
+}
+
+// undo posts the undo of a line's record decision.
+func (f syncFixture) undo(externalID string) apitest.Response {
+	f.h.T().Helper()
+
+	return f.h.Do(http.MethodPost, "/api/v1/external-records/"+f.recordID(externalID)+"/undo", nil)
 }

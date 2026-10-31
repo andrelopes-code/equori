@@ -5166,6 +5166,33 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /external-records/{id}/undo:
+    post:
+      tags: [ingestion]
+      operationId: undoExternalRecordDecision
+      x-book-role: write
+      summary: Undo the record's last automatic decision (A148).
+      description: |
+        linked releases the posting and returns the record to review (probable); followed returns
+        the transaction to its amount and date before the change and leaves the record in review
+        (changed); withdrawn links the record to its posting again and keeps it from later
+        withdrawals; re_identified returns the record to its previous external id and records the
+        line as a new record in review (probable). A record without a decision returns no_decision.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExternalRecord"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
   /aggregators:
     get:
       tags: [ingestion]

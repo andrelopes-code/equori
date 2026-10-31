@@ -540,7 +540,7 @@ func (s *Service) withdraw(ctx context.Context, batch *domain.Batch, seen []stri
 
 	var gone []uuid.UUID
 	for _, rec := range stored {
-		if returned[rec.ExternalID] {
+		if returned[rec.ExternalID] || rec.Kept {
 			continue
 		}
 
