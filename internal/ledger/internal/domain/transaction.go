@@ -301,6 +301,12 @@ func (t Transaction) Correct(next Transaction, expectedVersion int, accounts map
 		return Transaction{}, ErrVersionConflict
 	}
 
+	return t.correctTo(next, accounts)
+}
+
+// correctTo validates next as the version after t, keeping t's links, record links,
+// statement basis and origin where next names none.
+func (t Transaction) correctTo(next Transaction, accounts map[uuid.UUID]Account) (Transaction, error) {
 	next.ID = t.ID
 	next.BooksID = t.BooksID
 	next.Version = t.Version + 1

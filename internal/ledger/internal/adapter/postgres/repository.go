@@ -608,6 +608,20 @@ func (r *Repository) LaterSaleExists(ctx context.Context, booksID int64, account
 	return r.q.LaterSaleExists(ctx, LaterSaleExistsParams{BooksID: booksID, AccountIds: accountIDs, OnDate: date, Exclude: exclude})
 }
 
+// ReplaceReconciledTransaction bypasses the I05 trigger for the current database transaction
+// only (P12 A147 rule 3).
+func (r *Repository) ReplaceReconciledTransaction(ctx context.Context, prev, next domain.Transaction, reason string) error {
+	if r.tx == nil {
+		return errors.New("replace reconciled transaction outside a transaction")
+	}
+
+	if err := r.q.EnableReconciledUnlock(ctx); err != nil {
+		return err
+	}
+
+	return r.ReplaceTransaction(ctx, prev, next, reason)
+}
+
 func (r *Repository) ReplaceTransaction(ctx context.Context, prev, next domain.Transaction, reason string) error {
 	snapshot, err := json.Marshal(toSnapshot(prev))
 	if err != nil {

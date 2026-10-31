@@ -297,6 +297,114 @@ func TestS208HeldBillWritesNoNote(t *testing.T) {
 	}
 }
 
+// S206 (A147): a date change on a reconciled card posting follows the line while the posting
+// keeps its statement; a date that leaves the statement, or a bank account, leaves the review
+// reason changed.
+func TestS206DateChangedAfterReconciliation(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name          string
+		card          bool
+		externalID    string
+		first         func(id string) pluggy.Transaction
+		reconcile     func(f syncFixture, card string)
+		changed       func(id string) pluggy.Transaction
+		wantDate      string
+		wantReason    string
+		wantStatement string
+		wantAmount    int64
+		wantVersion   int
+	}{
+		{
+			name:       "card, same statement",
+			card:       true,
+			externalID: "card-6",
+			first: func(id string) pluggy.Transaction {
+				return cardLine(id, "2026-11-03", "7.12", "POSTED", new("bill-nov"))
+			},
+			reconcile: reconcileCardStatement,
+			changed: func(id string) pluggy.Transaction {
+				return cardLine(id, "2026-11-02", "7.12", "POSTED", new("bill-nov"))
+			},
+			wantDate:      "2026-11-02",
+			wantStatement: "2026-11",
+			wantAmount:    -712,
+			wantVersion:   2,
+		},
+		{
+			name:       "card, statement chosen by date moves",
+			card:       true,
+			externalID: "card-7",
+			first: func(id string) pluggy.Transaction {
+				return cardLine(id, "2026-11-02", "7.12", "PENDING", nil)
+			},
+			reconcile: reconcileCardStatement,
+			changed: func(id string) pluggy.Transaction {
+				return cardLine(id, "2026-11-04", "7.12", "PENDING", nil)
+			},
+			wantDate:      "2026-11-02",
+			wantReason:    "changed",
+			wantStatement: "2026-11",
+			wantAmount:    -712,
+			wantVersion:   1,
+		},
+		{
+			name:       "checking",
+			externalID: "tx-6",
+			first: func(id string) pluggy.Transaction {
+				return bankLine(id, "2026-11-05", "-7.12")
+			},
+			reconcile: func(f syncFixture, _ string) {
+				body := map[string]any{"date": "2026-11-05", "amount": apitest.BRL(-712)}
+				f.h.MustDo(http.MethodPost, "/api/v1/accounts/"+f.checking+"/balance-assertions", body, http.StatusCreated, nil)
+			},
+			changed: func(id string) pluggy.Transaction {
+				return bankLine(id, "2026-11-04", "-7.12")
+			},
+			wantDate:    "2026-11-05",
+			wantReason:  "changed",
+			wantAmount:  -712,
+			wantVersion: 1,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			f, account, subtype := newDateFixture(t, tt.card)
+			f.line(subtype, tt.first(tt.externalID))
+			f.sync()
+			_, tx := f.recordOf(tt.externalID)
+			tt.reconcile(f, account)
+
+			f.line(subtype, tt.changed(tt.externalID))
+			f.sync()
+
+			got := f.h.Transaction(tx)
+			if got.Date != tt.wantDate || got.Version != tt.wantVersion {
+				t.Fatalf("transaction = %s v%d, want %s v%d", got.Date, got.Version, tt.wantDate, tt.wantVersion)
+			}
+
+			p := f.cardPosting(tx, account)
+			if p.Status != "reconciled" || p.Statement != tt.wantStatement || p.Amount.Amount != tt.wantAmount {
+				t.Fatalf("posting = %+v, want reconciled on %q at %d", p, tt.wantStatement, tt.wantAmount)
+			}
+
+			if reason, _ := f.recordFacts(tt.externalID); reason != tt.wantReason {
+				t.Fatalf("review reason = %q, want %q", reason, tt.wantReason)
+			}
+
+			if tt.wantReason == "" {
+				if c := f.batches(account)[0].Counts; c.Updated != 1 {
+					t.Fatalf("updated = %d, want 1", c.Updated)
+				}
+			}
+		})
+	}
+}
+
 // movingClock is an instance clock a test moves between syncs.
 type movingClock struct{ at atomic.Int64 }
 
@@ -364,4 +472,26 @@ func (f syncFixture) reconcileStatement(card, month string) {
 
 	st := statements.Items[0]
 	f.h.MustDo(http.MethodPost, "/api/v1/statements/"+st.ID+"/reconcile", map[string]any{"amount_due": apitest.BRL(st.AmountDue.Amount)}, http.StatusOK, nil)
+}
+
+// newDateFixture returns the fixture of S206: a card, or the checking account, mapped to its
+// aggregator account, with that account's id and subtype.
+func newDateFixture(t *testing.T, card bool) (f syncFixture, account, subtype string) {
+	t.Helper()
+
+	if card {
+		f, account = newCardSync(t)
+
+		return f, account, pluggy.SubtypeCard
+	}
+
+	f = newSyncFixture(t)
+	f.mapTo(pluggy.SubtypeChecking, f.checking)
+
+	return f, f.checking, pluggy.SubtypeChecking
+}
+
+func reconcileCardStatement(f syncFixture, card string) {
+	f.h.T().Helper()
+	f.reconcileStatement(card, "2026-11")
 }

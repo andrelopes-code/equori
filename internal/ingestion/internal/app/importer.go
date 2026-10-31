@@ -100,6 +100,9 @@ type Ledger interface {
 	// ConfirmLine corrects the transaction to the line's amount and date (A101); a voided
 	// transaction is ErrTransactionVoided and a reconciled posting ErrReconciled.
 	ConfirmLine(ctx context.Context, booksID int64, txID, accountID uuid.UUID, amount int64, date time.Time) error
+	// MoveReconciledDate moves a transaction with a reconciled card posting to the line's date
+	// when every reconciled posting keeps its statement (A147); else ErrReconciled.
+	MoveReconciledDate(ctx context.Context, booksID int64, txID, accountID uuid.UUID, date time.Time) error
 	// ClearMatched links the matches and returns the indexes of those whose transaction
 	// already carries another record.
 	ClearMatched(ctx context.Context, booksID int64, ms []Match) (conflicts []int, err error)
@@ -705,6 +708,15 @@ func (s *Service) followLine(ctx context.Context, rec *domain.ExternalRecord, r 
 	}
 
 	err := s.ledger.ConfirmLine(ctx, rec.BooksID, rec.TransactionID, rec.AccountID, r.Amount, r.Date)
+	if errors.Is(err, ErrReconciled) && r.Amount == rec.Amount {
+		// Only the date changed: a card posting keeps its statement (A147 rule 3).
+		if err = s.ledger.MoveReconciledDate(ctx, rec.BooksID, rec.TransactionID, rec.AccountID, r.Date); err == nil {
+			rec.Date, rec.ReviewReason = r.Date, ""
+
+			return "", true, nil
+		}
+	}
+
 	switch {
 	case errors.Is(err, ErrReconciled):
 		rec.ReviewReason = domain.ReviewChanged

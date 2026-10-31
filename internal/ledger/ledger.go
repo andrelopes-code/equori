@@ -316,6 +316,11 @@ func (m *Module) ConfirmLine(ctx context.Context, booksID int64, txID, accountID
 	return m.svc.ConfirmLine(ctx, booksID, txID, accountID, amount, date)
 }
 
+// MoveReconciledDate moves a transaction to its card line's date on a kept statement (P12 A147).
+func (m *Module) MoveReconciledDate(ctx context.Context, booksID int64, txID, accountID uuid.UUID, date time.Time) error {
+	return m.svc.MoveReconciledDate(ctx, booksID, txID, accountID, date)
+}
+
 // ClearMatched links an external record to a transaction and clears its pending postings.
 func (m *Module) ClearMatched(ctx context.Context, booksID int64, recordID, txID, accountID uuid.UUID) error {
 	return m.svc.ClearMatched(ctx, booksID, recordID, txID, accountID)

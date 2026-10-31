@@ -359,6 +359,9 @@ type Repository interface {
 	// InsertTransactionRows writes a validated, billed transaction without reading it back.
 	InsertTransactionRows(ctx context.Context, t domain.Transaction) error
 	ReplaceTransaction(ctx context.Context, prev, next domain.Transaction, reason string) error
+	// ReplaceReconciledTransaction is ReplaceTransaction with the I05 trigger bypassed for the
+	// current database transaction (A147 rule 3).
+	ReplaceReconciledTransaction(ctx context.Context, prev, next domain.Transaction, reason string) error
 	// ReplaceCategoryPostings stores next, which differs from prev only in its category
 	// postings, description, payee, tags and version; other postings keep their rows.
 	ReplaceCategoryPostings(ctx context.Context, prev, next domain.Transaction, reason string) error

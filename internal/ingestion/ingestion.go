@@ -298,6 +298,10 @@ func (p ledgerPort) ConfirmLine(ctx context.Context, booksID int64, txID, accoun
 	return p.translate(p.l.ConfirmLine(ctx, booksID, txID, accountID, amount, date))
 }
 
+func (p ledgerPort) MoveReconciledDate(ctx context.Context, booksID int64, txID, accountID uuid.UUID, date time.Time) error {
+	return p.translate(p.l.MoveReconciledDate(ctx, booksID, txID, accountID, date))
+}
+
 func (p ledgerPort) UnlinkedPostings(ctx context.Context, booksID int64, accountID uuid.UUID, from, to time.Time) ([]domain.LedgerPosting, error) {
 	ps, err := p.l.UnlinkedPostings(ctx, booksID, accountID, from, to)
 

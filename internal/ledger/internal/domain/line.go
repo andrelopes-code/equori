@@ -1,12 +1,62 @@
 package domain
 
 import (
+	"slices"
 	"time"
 
 	"github.com/google/uuid"
 
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )
+
+// MoveReconciledDate returns t on date, its amount unchanged, for a line whose date changed
+// after its card posting was reconciled (P12 A147 rule 3). The posting on accountID and every
+// reconciled posting must be card postings, else ErrReconciled; the postings keep their status.
+// changed is false when date already holds.
+func (t Transaction) MoveReconciledDate(accountID uuid.UUID, date time.Time, accounts map[uuid.UUID]Account) (next Transaction, changed bool, err error) {
+	if t.VoidedAt != nil {
+		return Transaction{}, false, ErrVoided
+	}
+
+	at := slices.IndexFunc(t.Postings, func(p Posting) bool { return p.AccountID == accountID })
+	if at == -1 {
+		return Transaction{}, false, invalid("account_id", "has no posting in the transaction")
+	}
+
+	if t.Postings[at].CardRole == "" {
+		return Transaction{}, false, ErrReconciled
+	}
+
+	if slices.ContainsFunc(t.Postings, func(p Posting) bool { return p.Status == StatusReconciled && p.CardRole == "" }) {
+		return Transaction{}, false, ErrReconciled
+	}
+
+	next, changed, err = t.ToLine(accountID, t.Postings[at].Amount.Amount(), date)
+	if err != nil || !changed {
+		return t, false, err
+	}
+
+	next, err = t.correctTo(next, accounts)
+
+	return next, err == nil, err
+}
+
+// KeepsReconciledStatements reports whether each reconciled posting of t has, at the same
+// ordinal on its account in next, a posting on the same statement.
+func (t Transaction) KeepsReconciledStatements(next Transaction) bool {
+	for k, p := range t.Postings {
+		if p.Status != StatusReconciled {
+			continue
+		}
+
+		i := nthOnAccount(next.Postings, p.AccountID, ordinalOnAccount(t.Postings, k))
+		if i == -1 || p.Statement == nil || next.Postings[i].Statement == nil || *next.Postings[i].Statement != *p.Statement {
+			return false
+		}
+	}
+
+	return true
+}
 
 // ToLine returns t corrected to a statement line it is matched to (A101): the posting on
 // accountID takes amount and the transaction takes date; the other postings scale to the new
