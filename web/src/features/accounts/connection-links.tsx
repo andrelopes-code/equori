@@ -13,6 +13,7 @@ import { ConnectionAccountsTable } from "@/features/accounts/connection-accounts
 import type { ConnectionMessage } from "@/features/accounts/connection-account-actions";
 import { ConnectionBatches } from "@/features/accounts/connection-batches";
 import { ConnectionDeleteDialog } from "@/features/accounts/connection-delete-dialog";
+import { ConnectionSyncs } from "@/features/accounts/connection-syncs";
 import { ConnectionStateAlert } from "@/features/accounts/connection-state-alert";
 import { ConnectionTimesList } from "@/features/accounts/connection-times-list";
 import type { MessageKey } from "@/i18n/catalog.en";
@@ -151,6 +152,7 @@ export function ConnectionLinks({
         onLink={onLink}
         onMessage={setMessage}
       />
+      <ConnectionSyncs connection={connection} accounts={accounts} />
     </Stack>
   );
 }

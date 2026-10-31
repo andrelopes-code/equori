@@ -229,6 +229,8 @@ export function accountRoutes(
       }),
     "GET /api/v1/balances": balancesAt,
     "GET /api/v1/connections": () => json(200, { items: [connectionFixture] }),
+    [`GET /api/v1/connections/${connectionID}/syncs`]: () =>
+      json(200, { items: [] }),
     "GET /api/v1/goals": () => json(200, { items: [] }),
     "GET /api/v1/schedules": () => json(200, { items: [] }),
     "GET /api/v1/payees": () => json(200, { items: [] }),

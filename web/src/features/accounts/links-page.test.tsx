@@ -34,6 +34,52 @@ function api(
   );
 }
 
+const syncRuns = {
+  items: [
+    {
+      sync_id: "f1000000-0000-4000-8000-000000000001",
+      started_at: "2026-10-17T07:00:00Z",
+      batches: [
+        {
+          id: "e1000000-0000-4000-8000-000000000002",
+          account_id: checkingID,
+          source: "aggregator",
+          counts: {
+            received: 2,
+            ignored: 0,
+            matched: 0,
+            created: 1,
+            needs_review: 0,
+            discarded: 0,
+            updated: 0,
+            withdrawn: 1,
+            re_identified: 0,
+          },
+          balance: {},
+          started_at: "2026-10-17T07:00:00Z",
+        },
+      ],
+      records: [
+        {
+          id: "r1",
+          date: "2026-10-16",
+          description: "Uber",
+          state: "withdrawn",
+          decision: "withdrawn",
+          amount: { amount: -4500, currency: "BRL" },
+        },
+        {
+          id: "r2",
+          date: "2026-10-16",
+          description: "Padaria",
+          state: "created",
+          amount: { amount: -1200, currency: "BRL" },
+        },
+      ],
+    },
+  ],
+};
+
 function words(key: keyof typeof catalogEn, values: Record<string, string>) {
   return Object.entries(values).reduce<string>(
     (text, [k, v]) => text.replace(`{${k}}`, v),
@@ -294,6 +340,60 @@ describe("Account links", () => {
     expect(link).toHaveAttribute(
       "href",
       `/accounts/${checkingID}/imports/${batch.id}`,
+    );
+  });
+
+  it("lists the recent syncs of a connection and undoes a decision", async () => {
+    const log: { route: string }[] = [];
+    await renderApp("/accounts/links", {
+      fetch: api(log, {
+        [`GET /api/v1/connections/${connectionID}/syncs`]: () =>
+          json(200, syncRuns),
+        "POST /api/v1/external-records/r1/undo": () => {
+          log.push({ route: "undo r1" });
+          return json(200, {
+            ...syncRuns.items[0]?.records[0],
+            state: "created",
+          });
+        },
+      }),
+    });
+
+    expect(
+      await screen.findByText("Nubank: 1 created, 1 withdrawn"),
+    ).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Undo Padaria" })).toBeNull();
+    const table = await screen.findByRole("table", {
+      name: /Lines of the sync of/,
+    });
+    expect(
+      within(table).getByRole("cell", { name: "Withdrawn" }),
+    ).toBeVisible();
+    expect(within(table).getByRole("cell", { name: "Created" })).toBeVisible();
+
+    await userEvent.click(screen.getByRole("button", { name: "Undo Uber" }));
+
+    await waitFor(() => {
+      expect(log).toEqual([{ route: "undo r1" }]);
+    });
+  });
+
+  it("says why a decision cannot be undone", async () => {
+    await renderApp("/accounts/links", {
+      fetch: api([], {
+        [`GET /api/v1/connections/${connectionID}/syncs`]: () =>
+          json(200, syncRuns),
+        "POST /api/v1/external-records/r1/undo": () =>
+          problem(409, "no_decision"),
+      }),
+    });
+
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Undo Uber" }),
+    );
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      catalogEn["problem.no_decision"],
     );
   });
 

@@ -555,6 +555,16 @@ export function useReopenRecord() {
   );
 }
 
+export function useUndoDecision() {
+  return useApiMutation(async (api, id: string) =>
+    unwrap(
+      await api.POST("/external-records/{id}/undo", {
+        params: { path: { id } },
+      }),
+    ),
+  );
+}
+
 export function useMapExternalAccount() {
   return useApiMutation(
     async (
@@ -633,6 +643,16 @@ export function connectionsListQuery(api: Client<paths>) {
     queryFn: async () =>
       unwrap(
         await api.GET("/connections", { params: { query: { limit: 100 } } }),
+      ),
+  });
+}
+
+export function connectionSyncsQuery(api: Client<paths>, id: string) {
+  return queryOptions({
+    queryKey: ["connections", id, "syncs"] as const,
+    queryFn: async () =>
+      unwrap(
+        await api.GET("/connections/{id}/syncs", { params: { path: { id } } }),
       ),
   });
 }
