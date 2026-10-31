@@ -82,6 +82,25 @@ func TestClientReadsItemAccountsBillsAndTransactions(t *testing.T) {
 	}
 }
 
+func TestClientReadsTransactionsCreatedSince(t *testing.T) {
+	t.Parallel()
+	srv := pluggytest.New(t, "client-id", "client-secret")
+	srv.AddTransaction("acc-1", client.Transaction{ID: "t-old", Amount: "-1", CurrencyCode: "BRL", Date: "2026-10-15T00:00:00.000Z", Status: "POSTED", CreatedAt: "2026-11-12T10:59:59.000Z"})
+	srv.AddTransaction("acc-1", client.Transaction{ID: "t-new", Amount: "-1", CurrencyCode: "BRL", Date: "2026-10-15T00:00:00.000Z", Status: "POSTED", CreatedAt: "2026-11-12T11:00:00.000Z"})
+	srv.AddTransaction("acc-1", client.Transaction{ID: "t-none", Amount: "-1", CurrencyCode: "BRL", Date: "2026-10-15T00:00:00.000Z", Status: "POSTED"})
+	c, _ := newClient(t, srv, &fakeClock{now: time.Date(2026, 11, 12, 12, 0, 0, 0, time.UTC)})
+
+	s, err := c.Session(t.Context(), "client-id", "client-secret")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	txs, err := s.TransactionsCreatedSince(t.Context(), "acc-1", time.Date(2026, 11, 12, 11, 0, 0, 0, time.UTC))
+	if err != nil || len(txs) != 1 || txs[0].ID != "t-new" {
+		t.Fatalf("transactions = %+v, %v", txs, err)
+	}
+}
+
 func TestClientRetriesAndRenewsKeys(t *testing.T) {
 	t.Parallel()
 	srv := pluggytest.New(t, "client-id", "client-secret")

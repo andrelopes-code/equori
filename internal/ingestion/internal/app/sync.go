@@ -200,7 +200,16 @@ func (s *Service) syncAccount(ctx context.Context, agg Aggregator, c domain.Conn
 		readFrom = from.AddDate(0, 0, -cycleLookback)
 	}
 
-	read, err := agg.ReadAccount(ctx, c.IntegrationID, creds, c.ExternalID, ext.ExternalID, readFrom.AddDate(0, 0, -1), to.AddDate(0, 0, 1), target.Currency.MinorUnits())
+	var createdFrom *time.Time
+
+	if ext.LastReadAt != nil {
+		since := ext.LastReadAt.Add(-domain.CreatedMargin)
+		createdFrom = &since
+	}
+
+	readStart := s.now()
+
+	read, err := agg.ReadAccount(ctx, c.IntegrationID, creds, c.ExternalID, ext.ExternalID, readFrom.AddDate(0, 0, -1), to.AddDate(0, 0, 1), createdFrom, target.Currency.MinorUnits())
 	if errors.Is(err, ErrAccountGone) && ext.Subtype == domain.SubtypeReservedBalance {
 		// A reserved balance the item stopped reporting syncs without a balance (D2).
 		read, err = domain.AccountRead{}, nil
@@ -210,7 +219,7 @@ func (s *Service) syncAccount(ctx context.Context, agg Aggregator, c domain.Conn
 		return domain.Batch{}, fmt.Errorf("account %s: %w", ext.ID, err)
 	}
 
-	read = withoutSuperseded(read)
+	read = withoutSuperseded(withCreated(read, *ext.SyncFrom))
 	if !first {
 		read = fromSyncStart(read, *ext.SyncFrom)
 	}
@@ -303,6 +312,7 @@ func (s *Service) syncAccount(ctx context.Context, agg Aggregator, c domain.Conn
 	}
 
 	ext.LastSyncedOn = &today
+	ext.LastReadAt = &readStart
 
 	return batch, s.repo.MarkAccountSynced(ctx, ext)
 }
@@ -359,6 +369,20 @@ func fromCycleStart(read domain.AccountRead, syncFrom, from time.Time) (domain.A
 	}
 
 	return read, prev, from
+}
+
+// withCreated adds the lines created since the last read to the records: one whose id the
+// date read returned is dropped, and so is one dated before syncFrom (A144, A145).
+func withCreated(read domain.AccountRead, syncFrom time.Time) domain.AccountRead {
+	for _, r := range read.Created {
+		if r.Date.Before(syncFrom) || slices.Contains(read.Seen, r.ExternalID) {
+			continue
+		}
+
+		read.Records = append(read.Records, r)
+	}
+
+	return read
 }
 
 // withoutSuperseded drops the pending lines that a posted line of the same read replaces:

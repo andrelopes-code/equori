@@ -224,10 +224,22 @@ func (s *Session) Bills(ctx context.Context, accountID string) ([]Bill, error) {
 // Transactions returns the account's transactions dated in [from, to], following the
 // cursor of GET /v2/transactions. A cursor is a query string; one that names a host is refused (N17).
 func (s *Session) Transactions(ctx context.Context, accountID string, from, to time.Time) ([]Transaction, error) {
-	const label, path = "GET /v2/transactions", "/v2/transactions"
-	target := s.c.base.String() + path + "?" + url.Values{
+	return s.transactions(ctx, url.Values{
 		"accountId": {accountID}, "dateFrom": {from.Format(dateLayout)}, "dateTo": {to.Format(dateLayout)},
-	}.Encode()
+	})
+}
+
+// TransactionsCreatedSince lists an account's transactions the aggregator created at or
+// after since (A144).
+func (s *Session) TransactionsCreatedSince(ctx context.Context, accountID string, since time.Time) ([]Transaction, error) {
+	return s.transactions(ctx, url.Values{
+		"accountId": {accountID}, "createdAtFrom": {since.UTC().Format(time.RFC3339)},
+	})
+}
+
+func (s *Session) transactions(ctx context.Context, q url.Values) ([]Transaction, error) {
+	const label, path = "GET /v2/transactions", "/v2/transactions"
+	target := s.c.base.String() + path + "?" + q.Encode()
 
 	var out []Transaction
 	for {

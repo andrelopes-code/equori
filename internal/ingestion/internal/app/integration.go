@@ -62,9 +62,10 @@ type Aggregator interface {
 	// ItemState returns the item's status, last update and next automatic update.
 	ItemState(ctx context.Context, integrationID uuid.UUID, c domain.Credentials, itemID string) (ItemState, error)
 	// ReadAccount returns an account of the item with its lines dated in [from, to], in minor
-	// units of scale; ErrAccountGone when the item no longer lists the account. A reserved balance
-	// is found by its identification and read without lines (A74).
-	ReadAccount(ctx context.Context, integrationID uuid.UUID, c domain.Credentials, itemID, accountID string, from, to time.Time, scale int) (domain.AccountRead, error)
+	// units of scale; with createdFrom, also the lines the aggregator created at or after it,
+	// in Created (A144). ErrAccountGone when the item no longer lists the account. A reserved
+	// balance is found by its identification and read without lines (A74).
+	ReadAccount(ctx context.Context, integrationID uuid.UUID, c domain.Credentials, itemID, accountID string, from, to time.Time, createdFrom *time.Time, scale int) (domain.AccountRead, error)
 	Forget(integrationID uuid.UUID)
 }
 

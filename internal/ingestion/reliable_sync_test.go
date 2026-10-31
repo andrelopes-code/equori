@@ -2,8 +2,11 @@ package ingestion_test
 
 import (
 	"fmt"
+	"sync/atomic"
 	"testing"
+	"time"
 
+	"github.com/andrelopes-code/equori/internal/apitest"
 	pluggy "github.com/andrelopes-code/equori/internal/ingestion/internal/aggregator/pluggy/client"
 )
 
@@ -154,4 +157,67 @@ func TestA145LineBeforeSyncFromIsDropped(t *testing.T) {
 	if c := f.batches(f.checking)[0].Counts; c.Received != 1 {
 		t.Fatalf("received = %d, want 1", c.Received)
 	}
+}
+
+// S204 (A144): a line the aggregator creates after the last read, dated inside a window
+// already read, arrives through the creation read once.
+func TestS204LateLineIsRead(t *testing.T) {
+	t.Parallel()
+	clk := newMovingClock(t, "2026-11-12T12:00:00Z")
+	f := newSyncFixture(t, apitest.Clock(clk.now))
+	card := f.h.Card("Nubank card", 3, 10, "next")
+	f.mapTo(pluggy.SubtypeCard, card)
+	f.p.AddBill(nubankItem+"-card", pluggy.Bill{ID: "bill-nov", DueDate: "2026-11-10T00:00:00.000Z", TotalAmount: "0.00"})
+	f.sync()
+
+	late := cardLine("late-1", "2026-10-05", "120.00", "POSTED", new("bill-nov"))
+	late.CreatedAt = "2026-11-13T11:30:00.000Z"
+	f.line(pluggy.SubtypeCard, late)
+	clk.set(t, "2026-11-13T12:00:00Z")
+	f.sync()
+
+	if state, _ := f.recordOf("late-1"); state != "created" {
+		t.Fatalf("late-1 state = %s, want created", state)
+	}
+
+	if c := f.batches(card)[0].Counts; c.Created != 1 {
+		t.Fatalf("created = %d, want 1", c.Created)
+	}
+
+	clk.set(t, "2026-11-14T12:00:00Z")
+	f.sync()
+
+	if c := f.batches(card)[0].Counts; c.Ignored != 1 || c.Created != 0 {
+		t.Fatalf("counts = ignored %d, created %d, want 1 and 0", c.Ignored, c.Created)
+	}
+
+	if n := f.count(`SELECT count(*) FROM ledger_posting WHERE account_id = $1 AND amount = -12000 AND NOT voided`, card); n != 1 {
+		t.Fatalf("postings of 120.00 = %d, want 1", n)
+	}
+}
+
+// movingClock is an instance clock a test moves between syncs.
+type movingClock struct{ at atomic.Int64 }
+
+func newMovingClock(t *testing.T, at string) *movingClock {
+	t.Helper()
+
+	c := &movingClock{}
+	c.set(t, at)
+
+	return c
+}
+
+func (c *movingClock) now() time.Time { return time.Unix(0, c.at.Load()).UTC() }
+
+// set moves the clock to at, an RFC 3339 instant.
+func (c *movingClock) set(t *testing.T, at string) {
+	t.Helper()
+
+	v, err := time.Parse(time.RFC3339, at)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	c.at.Store(v.UnixNano())
 }

@@ -221,7 +221,7 @@ func itemInstant(field string, v *string) (*time.Time, error) {
 	return &at, nil
 }
 
-func (p Port) ReadAccount(ctx context.Context, id uuid.UUID, c domain.Credentials, itemID, accountID string, from, to time.Time, scale int) (domain.AccountRead, error) {
+func (p Port) ReadAccount(ctx context.Context, id uuid.UUID, c domain.Credentials, itemID, accountID string, from, to time.Time, createdFrom *time.Time, scale int) (domain.AccountRead, error) {
 	var out domain.AccountRead
 
 	err := p.session(ctx, id, c, func(s *client.Session) error {
@@ -283,6 +283,21 @@ func (p Port) ReadAccount(ctx context.Context, id uuid.UUID, c domain.Credential
 			// assertion then reports the difference.
 			if err == nil && ok {
 				out.Records = append(out.Records, r)
+			}
+		}
+
+		if createdFrom == nil {
+			return nil
+		}
+
+		created, err := s.TransactionsCreatedSince(ctx, a.ID, *createdFrom)
+		if err != nil {
+			return err
+		}
+
+		for _, t := range created {
+			if r, ok, err := client.Normalize(t, a, bills, scale, clock.Location(ctx)); err == nil && ok {
+				out.Created = append(out.Created, r)
 			}
 		}
 

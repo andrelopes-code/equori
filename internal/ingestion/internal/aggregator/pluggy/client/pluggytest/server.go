@@ -12,6 +12,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/andrelopes-code/equori/internal/ingestion/internal/aggregator/pluggy/client"
 )
@@ -331,8 +332,7 @@ func (s *Server) transactionPage(w http.ResponseWriter, q url.Values) {
 
 	var match []client.Transaction
 	for _, t := range s.transactions[q.Get("accountId")] {
-		day := t.Date[:min(10, len(t.Date))]
-		if day >= q.Get("dateFrom") && day <= q.Get("dateTo") {
+		if matches(t, q) {
 			match = append(match, t)
 		}
 	}
@@ -353,6 +353,24 @@ func (s *Server) transactionPage(w http.ResponseWriter, q url.Values) {
 	}
 
 	write(w, map[string]any{"results": nonNil(match[start:end]), "next": next})
+}
+
+// matches applies createdAtFrom when given, else dateFrom and dateTo.
+func matches(t client.Transaction, q url.Values) bool {
+	if since := q.Get("createdAtFrom"); since != "" {
+		from, err := time.Parse(time.RFC3339Nano, since)
+		if err != nil || t.CreatedAt == "" {
+			return false
+		}
+
+		created, err := time.Parse(time.RFC3339Nano, t.CreatedAt)
+
+		return err == nil && !created.Before(from)
+	}
+
+	day := t.Date[:min(10, len(t.Date))]
+
+	return day >= q.Get("dateFrom") && day <= q.Get("dateTo")
 }
 
 func nonNil[T any](s []T) []T {
