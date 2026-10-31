@@ -34,7 +34,7 @@ func runPeriodicBackups(ctx context.Context, db *database, cfg config.Config, lo
 			latest, _ := postgres.LatestVersion()
 
 			path := filepath.Join(cfg.BackupDir, backup.Name(backup.Periodic, time.Now().UTC(), latest))
-			if err := backup.Dump(ctx, db.Cluster.Bin(), db.DSN, path); err != nil {
+			if err := backup.Dump(ctx, db.Bin, db.DSN, path); err != nil {
 				log.Error("periodic backup", "error", err)
 			} else if err := backup.Prune(cfg.BackupDir, backup.Periodic, 7); err != nil {
 				log.Error("prune periodic backups", "error", err)
@@ -54,7 +54,7 @@ func runPeriodicBackups(ctx context.Context, db *database, cfg config.Config, lo
 func backupCommand(args []string) error {
 	fs := flag.NewFlagSet("backup", flag.ContinueOnError)
 
-	out := fs.String("out", "", "file to write; default the backup directory in managed mode, the current directory otherwise")
+	out := fs.String("out", "", "file to write; default EQUORI_BACKUP_DIR when set, the current directory otherwise")
 	if err := fs.Parse(args); err != nil || fs.NArg() != 0 {
 		fmt.Fprintln(os.Stderr, backupUsage)
 		return errUsage
@@ -93,7 +93,7 @@ func backupCommand(args []string) error {
 	path := *out
 	if path == "" {
 		path = backup.Name(backup.Manual, time.Now().UTC(), latest)
-		if cfg.Managed() {
+		if cfg.BackupDir != "" {
 			path = filepath.Join(cfg.BackupDir, path)
 		}
 	}

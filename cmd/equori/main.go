@@ -207,7 +207,7 @@ func serve(parent context.Context) error {
 	go func() {
 		defer close(backupsDone)
 
-		if db.Cluster != nil {
+		if cfg.BackupDir != "" {
 			runPeriodicBackups(ctx, db, cfg, log)
 		}
 	}()

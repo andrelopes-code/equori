@@ -20,23 +20,14 @@ type database struct {
 	Pool    *pgxpool.Pool
 	Cluster *pgcluster.Cluster // nil in external mode
 	DSN     string             // connection string for pg_dump and pg_restore
+	Bin     string             // programs directory; "" in external mode without EQUORI_BACKUP_DIR
 }
 
 // openDatabase attaches (or, for serve, starts) the managed server, backs up before pending
-// migrations in managed mode, and migrates.
+// migrations when a backup directory is set, and migrates.
 func openDatabase(ctx context.Context, cfg config.Config, log *slog.Logger, serving bool) (*database, error) {
 	if !cfg.Managed() {
-		pool, err := postgres.Open(ctx, cfg.DatabaseURL)
-		if err != nil {
-			return nil, err
-		}
-
-		if err := postgres.Migrate(ctx, pool, log); err != nil {
-			pool.Close()
-			return nil, err
-		}
-
-		return &database{Pool: pool, DSN: cfg.DatabaseURL}, nil
+		return openExternal(ctx, cfg, log)
 	}
 
 	bin, err := pgcluster.Bin(cfg.PostgresBin)
@@ -54,13 +45,13 @@ func openDatabase(ctx context.Context, cfg config.Config, log *slog.Logger, serv
 		return nil, err
 	}
 
-	d := &database{Cluster: cluster, DSN: cluster.DSN(pgcluster.Database)}
+	d := &database{Cluster: cluster, DSN: cluster.DSN(pgcluster.Database), Bin: cluster.Bin()}
 	if d.Pool, err = postgres.Open(ctx, d.DSN); err != nil {
 		_ = cluster.Stop()
 		return nil, err
 	}
 
-	if err := d.migrateManaged(ctx, cfg, log); err != nil {
+	if err := d.migrate(ctx, cfg, log); err != nil {
 		d.Close(log)
 		return nil, err
 	}
@@ -68,18 +59,47 @@ func openDatabase(ctx context.Context, cfg config.Config, log *slog.Logger, serv
 	return d, nil
 }
 
-// migrateManaged takes the pre-migration backup of B3, then migrates; a schema ahead of the binary
-// names the newest pre-migration backup (V4).
-func (d *database) migrateManaged(ctx context.Context, cfg config.Config, log *slog.Logger) error {
+// openExternal opens the database named by EQUORI_DATABASE_URL. With EQUORI_BACKUP_DIR set, the
+// programs must exist before the migration, so that a missing pg_dump never skips the backup (A154.4).
+func openExternal(ctx context.Context, cfg config.Config, log *slog.Logger) (*database, error) {
+	d := &database{DSN: cfg.DatabaseURL}
+
+	if cfg.BackupDir != "" {
+		bin, err := pgcluster.Bin(cfg.PostgresBin)
+		if err != nil {
+			return nil, fmt.Errorf("back up before migrating into %s: %w", cfg.BackupDir, err)
+		}
+
+		d.Bin = bin
+	}
+
+	pool, err := postgres.Open(ctx, cfg.DatabaseURL)
+	if err != nil {
+		return nil, err
+	}
+
+	d.Pool = pool
+
+	if err := d.migrate(ctx, cfg, log); err != nil {
+		d.Close(log)
+		return nil, err
+	}
+
+	return d, nil
+}
+
+// migrate takes the pre-migration backup of B3 when a backup directory is set, then migrates; a
+// schema ahead of the binary names the newest pre-migration backup (V4).
+func (d *database) migrate(ctx context.Context, cfg config.Config, log *slog.Logger) error {
 	current, pending, err := postgres.Pending(ctx, d.Pool)
 	if err != nil {
 		return err
 	}
 
-	if pending {
+	if pending && cfg.BackupDir != "" {
 		path := filepath.Join(cfg.BackupDir, backup.Name(backup.PreMigration, time.Now().UTC(), current))
-		if err := backup.Dump(ctx, d.Cluster.Bin(), d.DSN, path); err != nil {
-			return fmt.Errorf("back up before migrating: %w", err)
+		if err := backup.Dump(ctx, d.Bin, d.DSN, path); err != nil {
+			return fmt.Errorf("back up before migrating into %s: %w", cfg.BackupDir, err)
 		}
 
 		log.Info("backup before migrations", "path", path)
@@ -90,7 +110,7 @@ func (d *database) migrateManaged(ctx context.Context, cfg config.Config, log *s
 	}
 
 	err = postgres.Migrate(ctx, d.Pool, log)
-	if errors.Is(err, postgres.ErrSchemaAhead) {
+	if errors.Is(err, postgres.ErrSchemaAhead) && cfg.BackupDir != "" {
 		if newest, nerr := backup.Newest(cfg.BackupDir, backup.PreMigration); nerr == nil && newest != "" {
 			return fmt.Errorf("%w; newest pre-migration backup: %s (equori restore %s)", err, newest, newest)
 		}
