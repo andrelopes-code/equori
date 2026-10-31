@@ -75,6 +75,7 @@ type Repository interface {
 	DeleteExpiredSessions(ctx context.Context, now time.Time) error
 	AccessTokenRepository
 	InvitationRepository
+	SecondFactorRepository
 }
 
 // MaxAppearanceBytes bounds the encoded appearance object (BK21).
@@ -97,6 +98,7 @@ type Service struct {
 	// dummyHash is verified when the email is unknown, so both failure paths cost one argon2id run.
 	dummyHash string
 	setup     setup
+	box       Sealer
 }
 
 func NewService(repo Repository, now func() time.Time, defaultTimeZone func(region string) string) *Service {

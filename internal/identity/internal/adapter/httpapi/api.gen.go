@@ -205,6 +205,19 @@ type MemberRoleInput struct {
 	Role BookRole `json:"role"`
 }
 
+// Passkey defines model for Passkey.
+type Passkey struct {
+	CreatedAt  time.Time          `json:"created_at"`
+	Id         openapi_types.UUID `json:"id"`
+	LastUsedAt *time.Time         `json:"last_used_at,omitempty"`
+	Name       string             `json:"name"`
+}
+
+// PasswordInput defines model for PasswordInput.
+type PasswordInput struct {
+	Password string `json:"password"`
+}
+
 // Problem defines model for Problem.
 type Problem struct {
 	// ArchiveVersion The archive_version of a refused archive (archive_too_new, ADR 021).
@@ -237,6 +250,21 @@ type Problem struct {
 	Type    string     `json:"type"`
 }
 
+// RecoveryCodes defines model for RecoveryCodes.
+type RecoveryCodes struct {
+	// RecoveryCodes 16 base32 characters each; empty when a second factor existed before.
+	RecoveryCodes []string `json:"recovery_codes"`
+}
+
+// SecondFactor defines model for SecondFactor.
+type SecondFactor struct {
+	Passkeys          []Passkey `json:"passkeys"`
+	RecoveryCodesLeft int       `json:"recovery_codes_left"`
+
+	// Totp True with a confirmed TOTP secret.
+	Totp bool `json:"totp"`
+}
+
 // SetupInput defines model for SetupInput.
 type SetupInput struct {
 	BaseCurrency *string `json:"base_currency,omitempty"`
@@ -255,6 +283,20 @@ type SetupStatus struct {
 // SwitchBooksInput defines model for SwitchBooksInput.
 type SwitchBooksInput struct {
 	BooksId int64 `json:"books_id"`
+}
+
+// TotpCodeInput defines model for TotpCodeInput.
+type TotpCodeInput struct {
+	Code string `json:"code"`
+}
+
+// TotpSetup defines model for TotpSetup.
+type TotpSetup struct {
+	// Secret Base32 without padding, 32 characters.
+	Secret string `json:"secret"`
+
+	// Uri otpauth URI for a QR code.
+	Uri string `json:"uri"`
 }
 
 // UpdateUserInput defines model for UpdateUserInput.
@@ -287,6 +329,11 @@ type TagName = string
 
 // AcceptInvitationParams defines parameters for AcceptInvitation.
 type AcceptInvitationParams struct {
+	EquoriSession *SessionCookie `form:"equori_session,omitempty" json:"equori_session,omitempty"`
+}
+
+// ConfirmTotpParams defines parameters for ConfirmTotp.
+type ConfirmTotpParams struct {
 	EquoriSession *SessionCookie `form:"equori_session,omitempty" json:"equori_session,omitempty"`
 }
 
@@ -326,6 +373,15 @@ type UpdateCurrentUserJSONRequestBody = UpdateUserInput
 
 // SetMemberAppearanceJSONRequestBody defines body for SetMemberAppearance for application/json ContentType.
 type SetMemberAppearanceJSONRequestBody = Appearance
+
+// RegenerateRecoveryCodesJSONRequestBody defines body for RegenerateRecoveryCodes for application/json ContentType.
+type RegenerateRecoveryCodesJSONRequestBody = PasswordInput
+
+// ConfirmTotpJSONRequestBody defines body for ConfirmTotp for application/json ContentType.
+type ConfirmTotpJSONRequestBody = TotpCodeInput
+
+// DisableTotpJSONRequestBody defines body for DisableTotp for application/json ContentType.
+type DisableTotpJSONRequestBody = PasswordInput
 
 // CreateSessionJSONRequestBody defines body for CreateSession for application/json ContentType.
 type CreateSessionJSONRequestBody = Credentials
@@ -398,6 +454,21 @@ type ServerInterface interface {
 	// ListMyBooks List the books of the member's memberships (HA5).
 	// (GET /me/books)
 	ListMyBooks(w http.ResponseWriter, r *http.Request)
+	// RegenerateRecoveryCodes Replace every recovery code; the answer holds them once (HA37).
+	// (POST /me/recovery-codes)
+	RegenerateRecoveryCodes(w http.ResponseWriter, r *http.Request)
+	// GetSecondFactor The member's second factors (HA39).
+	// (GET /me/second-factor)
+	GetSecondFactor(w http.ResponseWriter, r *http.Request)
+	// StartTotp Store a new unconfirmed TOTP secret and return it once (HA35).
+	// (POST /me/totp)
+	StartTotp(w http.ResponseWriter, r *http.Request)
+	// ConfirmTotp Confirm the TOTP secret with a code of the app (HA35, HA37).
+	// (POST /me/totp/confirm)
+	ConfirmTotp(w http.ResponseWriter, r *http.Request, params ConfirmTotpParams)
+	// DisableTotp Delete the TOTP secret; the recovery codes go with the last factor (HA35, HA37).
+	// (POST /me/totp/disable)
+	DisableTotp(w http.ResponseWriter, r *http.Request)
 	// DeleteSession Log out and end the current session.
 	// (DELETE /session)
 	DeleteSession(w http.ResponseWriter, r *http.Request, params DeleteSessionParams)
@@ -773,6 +844,97 @@ func (siw *ServerInterfaceWrapper) ListMyBooks(w http.ResponseWriter, r *http.Re
 	handler.ServeHTTP(w, r)
 }
 
+// RegenerateRecoveryCodes operation middleware
+func (siw *ServerInterfaceWrapper) RegenerateRecoveryCodes(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RegenerateRecoveryCodes(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetSecondFactor operation middleware
+func (siw *ServerInterfaceWrapper) GetSecondFactor(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetSecondFactor(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// StartTotp operation middleware
+func (siw *ServerInterfaceWrapper) StartTotp(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.StartTotp(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ConfirmTotp operation middleware
+func (siw *ServerInterfaceWrapper) ConfirmTotp(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ConfirmTotpParams
+
+	{
+		var cookie *http.Cookie
+
+		if cookie, err = r.Cookie("equori_session"); err == nil {
+			var value SessionCookie
+			err = runtime.BindStyledParameterWithOptions("simple", "equori_session", cookie.Value, &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationCookie, Explode: true, Required: false, Type: "string", Format: ""})
+			if err != nil {
+				siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "equori_session", Err: err})
+				return
+			}
+			params.EquoriSession = &value
+
+		}
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ConfirmTotp(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DisableTotp operation middleware
+func (siw *ServerInterfaceWrapper) DisableTotp(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DisableTotp(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // DeleteSession operation middleware
 func (siw *ServerInterfaceWrapper) DeleteSession(w http.ResponseWriter, r *http.Request) {
 
@@ -1030,6 +1192,11 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/access-tokens", wrapper.ListAccessTokens)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/access-tokens", wrapper.CreateAccessToken)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/access-tokens/{id}", wrapper.DeleteAccessToken)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/me/second-factor", wrapper.GetSecondFactor)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/me/totp", wrapper.StartTotp)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/me/totp/confirm", wrapper.ConfirmTotp)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/me/totp/disable", wrapper.DisableTotp)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/me/recovery-codes", wrapper.RegenerateRecoveryCodes)
 
 	return m
 }
@@ -2204,6 +2371,371 @@ func (response ListMyBooks401ApplicationProblemPlusJSONResponse) VisitListMyBook
 	return err
 }
 
+type RegenerateRecoveryCodesRequestObject struct {
+	Body *RegenerateRecoveryCodesJSONRequestBody
+}
+
+type RegenerateRecoveryCodesResponseObject interface {
+	VisitRegenerateRecoveryCodesResponse(w http.ResponseWriter) error
+}
+
+type RegenerateRecoveryCodes200JSONResponse RecoveryCodes
+
+func (response RegenerateRecoveryCodes200JSONResponse) VisitRegenerateRecoveryCodesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RegenerateRecoveryCodes400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response RegenerateRecoveryCodes400ApplicationProblemPlusJSONResponse) VisitRegenerateRecoveryCodesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RegenerateRecoveryCodes401ApplicationProblemPlusJSONResponse Problem
+
+func (response RegenerateRecoveryCodes401ApplicationProblemPlusJSONResponse) VisitRegenerateRecoveryCodesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RegenerateRecoveryCodes403ApplicationProblemPlusJSONResponse Problem
+
+func (response RegenerateRecoveryCodes403ApplicationProblemPlusJSONResponse) VisitRegenerateRecoveryCodesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RegenerateRecoveryCodes409ApplicationProblemPlusJSONResponse Problem
+
+func (response RegenerateRecoveryCodes409ApplicationProblemPlusJSONResponse) VisitRegenerateRecoveryCodesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RegenerateRecoveryCodes429ApplicationProblemPlusJSONResponse Problem
+
+func (response RegenerateRecoveryCodes429ApplicationProblemPlusJSONResponse) VisitRegenerateRecoveryCodesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(429)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RegenerateRecoveryCodes503ApplicationProblemPlusJSONResponse Problem
+
+func (response RegenerateRecoveryCodes503ApplicationProblemPlusJSONResponse) VisitRegenerateRecoveryCodesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetSecondFactorRequestObject struct {
+}
+
+type GetSecondFactorResponseObject interface {
+	VisitGetSecondFactorResponse(w http.ResponseWriter) error
+}
+
+type GetSecondFactor200JSONResponse SecondFactor
+
+func (response GetSecondFactor200JSONResponse) VisitGetSecondFactorResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetSecondFactor401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetSecondFactor401ApplicationProblemPlusJSONResponse) VisitGetSecondFactorResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type StartTotpRequestObject struct {
+}
+
+type StartTotpResponseObject interface {
+	VisitStartTotpResponse(w http.ResponseWriter) error
+}
+
+type StartTotp200JSONResponse TotpSetup
+
+func (response StartTotp200JSONResponse) VisitStartTotpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type StartTotp401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response StartTotp401ApplicationProblemPlusJSONResponse) VisitStartTotpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type StartTotp409ApplicationProblemPlusJSONResponse Problem
+
+func (response StartTotp409ApplicationProblemPlusJSONResponse) VisitStartTotpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConfirmTotpRequestObject struct {
+	Params ConfirmTotpParams
+	Body   *ConfirmTotpJSONRequestBody
+}
+
+type ConfirmTotpResponseObject interface {
+	VisitConfirmTotpResponse(w http.ResponseWriter) error
+}
+
+type ConfirmTotp200JSONResponse RecoveryCodes
+
+func (response ConfirmTotp200JSONResponse) VisitConfirmTotpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConfirmTotp400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ConfirmTotp400ApplicationProblemPlusJSONResponse) VisitConfirmTotpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConfirmTotp401ApplicationProblemPlusJSONResponse Problem
+
+func (response ConfirmTotp401ApplicationProblemPlusJSONResponse) VisitConfirmTotpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConfirmTotp409ApplicationProblemPlusJSONResponse Problem
+
+func (response ConfirmTotp409ApplicationProblemPlusJSONResponse) VisitConfirmTotpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConfirmTotp422ApplicationProblemPlusJSONResponse Problem
+
+func (response ConfirmTotp422ApplicationProblemPlusJSONResponse) VisitConfirmTotpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DisableTotpRequestObject struct {
+	Body *DisableTotpJSONRequestBody
+}
+
+type DisableTotpResponseObject interface {
+	VisitDisableTotpResponse(w http.ResponseWriter) error
+}
+
+type DisableTotp204Response struct {
+}
+
+func (response DisableTotp204Response) VisitDisableTotpResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DisableTotp400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response DisableTotp400ApplicationProblemPlusJSONResponse) VisitDisableTotpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DisableTotp401ApplicationProblemPlusJSONResponse Problem
+
+func (response DisableTotp401ApplicationProblemPlusJSONResponse) VisitDisableTotpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DisableTotp403ApplicationProblemPlusJSONResponse Problem
+
+func (response DisableTotp403ApplicationProblemPlusJSONResponse) VisitDisableTotpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DisableTotp429ApplicationProblemPlusJSONResponse Problem
+
+func (response DisableTotp429ApplicationProblemPlusJSONResponse) VisitDisableTotpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(429)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DisableTotp503ApplicationProblemPlusJSONResponse Problem
+
+func (response DisableTotp503ApplicationProblemPlusJSONResponse) VisitDisableTotpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type DeleteSessionRequestObject struct {
 	Params DeleteSessionParams
 }
@@ -2602,6 +3134,21 @@ type StrictServerInterface interface {
 	// ListMyBooks List the books of the member's memberships (HA5).
 	// (GET /me/books)
 	ListMyBooks(ctx context.Context, request ListMyBooksRequestObject) (ListMyBooksResponseObject, error)
+	// RegenerateRecoveryCodes Replace every recovery code; the answer holds them once (HA37).
+	// (POST /me/recovery-codes)
+	RegenerateRecoveryCodes(ctx context.Context, request RegenerateRecoveryCodesRequestObject) (RegenerateRecoveryCodesResponseObject, error)
+	// GetSecondFactor The member's second factors (HA39).
+	// (GET /me/second-factor)
+	GetSecondFactor(ctx context.Context, request GetSecondFactorRequestObject) (GetSecondFactorResponseObject, error)
+	// StartTotp Store a new unconfirmed TOTP secret and return it once (HA35).
+	// (POST /me/totp)
+	StartTotp(ctx context.Context, request StartTotpRequestObject) (StartTotpResponseObject, error)
+	// ConfirmTotp Confirm the TOTP secret with a code of the app (HA35, HA37).
+	// (POST /me/totp/confirm)
+	ConfirmTotp(ctx context.Context, request ConfirmTotpRequestObject) (ConfirmTotpResponseObject, error)
+	// DisableTotp Delete the TOTP secret; the recovery codes go with the last factor (HA35, HA37).
+	// (POST /me/totp/disable)
+	DisableTotp(ctx context.Context, request DisableTotpRequestObject) (DisableTotpResponseObject, error)
 	// DeleteSession Log out and end the current session.
 	// (DELETE /session)
 	DeleteSession(ctx context.Context, request DeleteSessionRequestObject) (DeleteSessionResponseObject, error)
@@ -3204,6 +3751,149 @@ func (sh *strictHandler) ListMyBooks(w http.ResponseWriter, r *http.Request) {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListMyBooksResponseObject); ok {
 		if err := validResponse.VisitListMyBooksResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RegenerateRecoveryCodes operation middleware
+func (sh *strictHandler) RegenerateRecoveryCodes(w http.ResponseWriter, r *http.Request) {
+	var request RegenerateRecoveryCodesRequestObject
+
+	var body RegenerateRecoveryCodesJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RegenerateRecoveryCodes(ctx, request.(RegenerateRecoveryCodesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RegenerateRecoveryCodes")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RegenerateRecoveryCodesResponseObject); ok {
+		if err := validResponse.VisitRegenerateRecoveryCodesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetSecondFactor operation middleware
+func (sh *strictHandler) GetSecondFactor(w http.ResponseWriter, r *http.Request) {
+	var request GetSecondFactorRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetSecondFactor(ctx, request.(GetSecondFactorRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetSecondFactor")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetSecondFactorResponseObject); ok {
+		if err := validResponse.VisitGetSecondFactorResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// StartTotp operation middleware
+func (sh *strictHandler) StartTotp(w http.ResponseWriter, r *http.Request) {
+	var request StartTotpRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.StartTotp(ctx, request.(StartTotpRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "StartTotp")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(StartTotpResponseObject); ok {
+		if err := validResponse.VisitStartTotpResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ConfirmTotp operation middleware
+func (sh *strictHandler) ConfirmTotp(w http.ResponseWriter, r *http.Request, params ConfirmTotpParams) {
+	var request ConfirmTotpRequestObject
+
+	request.Params = params
+
+	var body ConfirmTotpJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ConfirmTotp(ctx, request.(ConfirmTotpRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ConfirmTotp")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ConfirmTotpResponseObject); ok {
+		if err := validResponse.VisitConfirmTotpResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DisableTotp operation middleware
+func (sh *strictHandler) DisableTotp(w http.ResponseWriter, r *http.Request) {
+	var request DisableTotpRequestObject
+
+	var body DisableTotpJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DisableTotp(ctx, request.(DisableTotpRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DisableTotp")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DisableTotpResponseObject); ok {
+		if err := validResponse.VisitDisableTotpResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

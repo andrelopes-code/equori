@@ -72,7 +72,12 @@ func userCommand(args []string) error {
 		role = identity.RoleAdmin
 	}
 
-	user, err := identity.New(db.Pool, identity.Config{}, log).CreateMember(ctx, *email, password, role, l, base)
+	module, err := identity.New(db.Pool, identity.Config{}, log)
+	if err != nil {
+		return err
+	}
+
+	user, err := module.CreateMember(ctx, *email, password, role, l, base)
 	if err != nil {
 		return fmt.Errorf("create user: %w", err)
 	}

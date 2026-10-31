@@ -88,6 +88,11 @@ func Clock(now func() time.Time) Option {
 	return func(c *server.Config) { c.Clock = &clk }
 }
 
+// IdentityClock replaces the clock of sessions and second factors with now.
+func IdentityClock(now func() time.Time) Option {
+	return func(c *server.Config) { c.IdentityNow = now }
+}
+
 // ExtraTools adds tool groups to the registry and the chat set.
 func ExtraTools(groups ...tool.Group) Option {
 	return func(c *server.Config) { c.ExtraTools = append(c.ExtraTools, groups...) }

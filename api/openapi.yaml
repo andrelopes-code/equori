@@ -583,6 +583,132 @@ paths:
           $ref: "#/components/responses/Problem"
         "404":
           $ref: "#/components/responses/Problem"
+  /me/second-factor:
+    get:
+      tags: [identity]
+      operationId: getSecondFactor
+      x-book-role: read
+      summary: The member's second factors (HA39).
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SecondFactor"
+        "401":
+          $ref: "#/components/responses/Problem"
+  /me/totp:
+    post:
+      tags: [identity]
+      operationId: startTotp
+      x-book-role: read
+      summary: Store a new unconfirmed TOTP secret and return it once (HA35).
+      description: |
+        Replaces an unconfirmed secret. 409 totp_enabled when a confirmed secret exists; 409
+        secret_key_missing when the server has no EQUORI_SECRET_KEY.
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TotpSetup"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+  /me/totp/confirm:
+    post:
+      tags: [identity]
+      operationId: confirmTotp
+      x-book-role: read
+      summary: Confirm the TOTP secret with a code of the app (HA35, HA37).
+      description: |
+        422 totp_code_invalid for a wrong code or without a secret to confirm. When no second factor
+        existed, the answer holds 10 recovery codes, shown only here, and the member's other sessions
+        end; otherwise the list is empty.
+      parameters:
+        - $ref: "#/components/parameters/SessionCookie"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TotpCodeInput"
+      responses:
+        "200":
+          description: Confirmed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecoveryCodes"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /me/totp/disable:
+    post:
+      tags: [identity]
+      operationId: disableTotp
+      x-book-role: read
+      summary: Delete the TOTP secret; the recovery codes go with the last factor (HA35, HA37).
+      description: 403 password_invalid for a wrong password.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PasswordInput"
+      responses:
+        "204":
+          description: Deleted.
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "429":
+          $ref: "#/components/responses/Problem"
+        "503":
+          $ref: "#/components/responses/Problem"
+  /me/recovery-codes:
+    post:
+      tags: [identity]
+      operationId: regenerateRecoveryCodes
+      x-book-role: read
+      summary: Replace every recovery code; the answer holds them once (HA37).
+      description: 403 password_invalid for a wrong password; 409 second_factor_missing without a second factor.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PasswordInput"
+      responses:
+        "200":
+          description: Replaced.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecoveryCodes"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "429":
+          $ref: "#/components/responses/Problem"
+        "503":
+          $ref: "#/components/responses/Problem"
   /settings:
     get:
       tags: [ledger]
@@ -10756,6 +10882,68 @@ components:
           description: Required when no member has the invited email.
         language:
           type: string
+    SecondFactor:
+      type: object
+      required: [totp, passkeys, recovery_codes_left]
+      properties:
+        totp:
+          type: boolean
+          description: True with a confirmed TOTP secret.
+        passkeys:
+          type: array
+          items:
+            $ref: "#/components/schemas/Passkey"
+        recovery_codes_left:
+          type: integer
+    Passkey:
+      type: object
+      required: [id, name, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        last_used_at:
+          type: string
+          format: date-time
+    TotpSetup:
+      type: object
+      required: [secret, uri]
+      properties:
+        secret:
+          type: string
+          description: Base32 without padding, 32 characters.
+        uri:
+          type: string
+          description: otpauth URI for a QR code.
+    TotpCodeInput:
+      type: object
+      additionalProperties: false
+      required: [code]
+      properties:
+        code:
+          type: string
+          pattern: "^[0-9]{6}$"
+    PasswordInput:
+      type: object
+      additionalProperties: false
+      required: [password]
+      properties:
+        password:
+          type: string
+    RecoveryCodes:
+      type: object
+      required: [recovery_codes]
+      properties:
+        recovery_codes:
+          type: array
+          description: 16 base32 characters each; empty when a second factor existed before.
+          items:
+            type: string
     CreateBooksInput:
       type: object
       additionalProperties: false

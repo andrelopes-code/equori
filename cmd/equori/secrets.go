@@ -71,5 +71,11 @@ func secretsCommand(args []string) error {
 
 	fmt.Printf("resealed %d language model keys\n", n)
 
+	if n, err = app.Identity.RotateSecrets(ctx); err != nil {
+		return err
+	}
+
+	fmt.Printf("resealed %d authenticator secrets\n", n)
+
 	return nil
 }

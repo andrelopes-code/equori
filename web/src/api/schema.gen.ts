@@ -340,6 +340,106 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/me/second-factor": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The member's second factors (HA39). */
+        get: operations["getSecondFactor"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/totp": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Store a new unconfirmed TOTP secret and return it once (HA35).
+         * @description Replaces an unconfirmed secret. 409 totp_enabled when a confirmed secret exists; 409
+         *     secret_key_missing when the server has no EQUORI_SECRET_KEY.
+         */
+        post: operations["startTotp"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/totp/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm the TOTP secret with a code of the app (HA35, HA37).
+         * @description 422 totp_code_invalid for a wrong code or without a secret to confirm. When no second factor
+         *     existed, the answer holds 10 recovery codes, shown only here, and the member's other sessions
+         *     end; otherwise the list is empty.
+         */
+        post: operations["confirmTotp"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/totp/disable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Delete the TOTP secret; the recovery codes go with the last factor (HA35, HA37).
+         * @description 403 password_invalid for a wrong password.
+         */
+        post: operations["disableTotp"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/recovery-codes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Replace every recovery code; the answer holds them once (HA37).
+         * @description 403 password_invalid for a wrong password; 409 second_factor_missing without a second factor.
+         */
+        post: operations["regenerateRecoveryCodes"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/settings": {
         parameters: {
             query?: never;
@@ -5894,6 +5994,37 @@ export interface components {
             password?: string;
             language?: string;
         };
+        SecondFactor: {
+            /** @description True with a confirmed TOTP secret. */
+            totp: boolean;
+            passkeys: components["schemas"]["Passkey"][];
+            recovery_codes_left: number;
+        };
+        Passkey: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            last_used_at?: string;
+        };
+        TotpSetup: {
+            /** @description Base32 without padding, 32 characters. */
+            secret: string;
+            /** @description otpauth URI for a QR code. */
+            uri: string;
+        };
+        TotpCodeInput: {
+            code: string;
+        };
+        PasswordInput: {
+            password: string;
+        };
+        RecoveryCodes: {
+            /** @description 16 base32 characters each; empty when a second factor existed before. */
+            recovery_codes: string[];
+        };
         CreateBooksInput: {
             name?: string;
             region: string;
@@ -6591,6 +6722,136 @@ export interface operations {
             };
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
+        };
+    };
+    getSecondFactor: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SecondFactor"];
+                };
+            };
+            401: components["responses"]["Problem"];
+        };
+    };
+    startTotp: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TotpSetup"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+        };
+    };
+    confirmTotp: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                equori_session?: components["parameters"]["SessionCookie"];
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TotpCodeInput"];
+            };
+        };
+        responses: {
+            /** @description Confirmed. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecoveryCodes"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    disableTotp: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordInput"];
+            };
+        };
+        responses: {
+            /** @description Deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            429: components["responses"]["Problem"];
+            503: components["responses"]["Problem"];
+        };
+    };
+    regenerateRecoveryCodes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordInput"];
+            };
+        };
+        responses: {
+            /** @description Replaced. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecoveryCodes"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            429: components["responses"]["Problem"];
+            503: components["responses"]["Problem"];
         };
     };
     getSettings: {

@@ -20,6 +20,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/clock"
 	"github.com/andrelopes-code/equori/internal/platform/locale"
 	"github.com/andrelopes-code/equori/internal/platform/money"
+	"github.com/andrelopes-code/equori/internal/platform/secret"
 	"github.com/andrelopes-code/equori/internal/platform/tool"
 )
 
@@ -56,6 +57,10 @@ type Config struct {
 	// first member setup (W-U5).
 	DefaultCurrency func(region string) (money.Currency, bool)
 	SetupDone       func()
+	// SecretKey and PreviousSecretKey seal TOTP secrets (ADR 008); empty disables TOTP.
+	SecretKey, PreviousSecretKey string
+	// Now is the clock of sessions and second factors; nil is time.Now.
+	Now func() time.Time
 }
 
 type Module struct {
@@ -63,14 +68,36 @@ type Module struct {
 	http *httpapi.Server
 }
 
-func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) *Module {
-	svc := app.NewService(postgres.NewRepository(pool), time.Now, DefaultTimeZone)
+func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*Module, error) {
+	now := cfg.Now
+	if now == nil {
+		now = time.Now
+	}
+
+	svc := app.NewService(postgres.NewRepository(pool), now, DefaultTimeZone)
 	svc.UseSetupHooks(app.SetupHooks{DefaultCurrency: cfg.DefaultCurrency, Done: cfg.SetupDone})
 
-	return &Module{svc: svc, http: httpapi.NewServer(svc, cfg.SecureCookies, log)}
+	if cfg.SecretKey != "" {
+		var previous []byte
+		if cfg.PreviousSecretKey != "" {
+			previous = []byte(cfg.PreviousSecretKey)
+		}
+
+		box, err := secret.New([]byte(cfg.SecretKey), previous)
+		if err != nil {
+			return nil, err
+		}
+
+		svc.UseSealer(box)
+	}
+
+	return &Module{svc: svc, http: httpapi.NewServer(svc, cfg.SecureCookies, log)}, nil
 }
 
 func (m *Module) RegisterRoutes(mux *http.ServeMux) { m.http.Register(mux) }
+
+// RotateSecrets reseals every TOTP secret under the current key (ADR 008).
+func (m *Module) RotateSecrets(ctx context.Context) (int, error) { return m.svc.RotateSecrets(ctx) }
 
 // StartSetup returns the token of the first member setup while no member exists, and "" afterwards.
 func (m *Module) StartSetup(ctx context.Context) (string, error) { return m.svc.StartSetup(ctx) }

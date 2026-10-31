@@ -54,6 +54,8 @@ type Config struct {
 	WebDevPort int
 	// APIDocs registers GET /docs and GET /openapi.yaml.
 	APIDocs bool
+	// IdentityNow replaces the clock of identity; tests set it, production passes none.
+	IdentityNow func() time.Time
 	// SecretKey and PreviousSecretKey seal integration credentials (ADR 008): 32 raw bytes,
 	// empty when unset.
 	SecretKey, PreviousSecretKey string
@@ -107,9 +109,18 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 		clk = *cfg.Clock
 	}
 
-	identityModule := identity.New(pool, identity.Config{
-		SecureCookies: cfg.SecureCookies, DefaultCurrency: ledger.DefaultBaseCurrency, SetupDone: cfg.SetupDone,
+	identityModule, err := identity.New(pool, identity.Config{
+		SecureCookies:     cfg.SecureCookies,
+		DefaultCurrency:   ledger.DefaultBaseCurrency,
+		SetupDone:         cfg.SetupDone,
+		SecretKey:         cfg.SecretKey,
+		PreviousSecretKey: cfg.PreviousSecretKey,
+		Now:               cfg.IdentityNow,
 	}, log)
+	if err != nil {
+		return nil, err
+	}
+
 	dispatcher.UseBooks(identityModule.InBooks)
 	feedClient := &http.Client{Timeout: time.Minute}
 	// Config.PriceFeeds and Config.IndexFeeds are validated here and seed the stored feed settings

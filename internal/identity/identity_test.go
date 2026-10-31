@@ -45,7 +45,11 @@ func newHarness(t *testing.T, cfg identity.Config) *harness {
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
 	pool := pgtest.New(t)
 	h.pool = pool
-	m := identity.New(pool, cfg, log)
+	m, err := identity.New(pool, cfg, log)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	mux := http.NewServeMux()
 	m.RegisterRoutes(mux)
 	mux.HandleFunc("GET /api/v1/probe", func(http.ResponseWriter, *http.Request) { h.probeCalls.Add(1) })

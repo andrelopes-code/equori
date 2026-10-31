@@ -261,6 +261,22 @@ func ToProblem(err error) (problem.Details, bool) {
 		return problem.New(http.StatusForbidden, "invitation_email_mismatch", "the invitation is for another email"), true
 	case errors.Is(err, app.ErrAccessTokenNotFound):
 		return problem.New(http.StatusNotFound, "access_token_not_found", "no access token of the member has this ID"), true
+	case errors.Is(err, app.ErrTOTPEnabled):
+		return problem.New(http.StatusConflict, "totp_enabled", "the authenticator app is already enabled"), true
+	case errors.Is(err, app.ErrTOTPCodeInvalid):
+		return problem.New(http.StatusUnprocessableEntity, "totp_code_invalid", "the code does not match the secret"), true
+	case errors.Is(err, app.ErrPasswordInvalid):
+		return problem.New(http.StatusForbidden, "password_invalid", "the password is incorrect"), true
+	case errors.Is(err, app.ErrPasskeyInvalid):
+		return problem.New(http.StatusUnprocessableEntity, "passkey_invalid", "the passkey failed verification"), true
+	case errors.Is(err, app.ErrPasskeyNotFound):
+		return problem.New(http.StatusNotFound, "passkey_not_found", "the member has no passkey with this ID"), true
+	case errors.Is(err, app.ErrSecondFactorInvalid):
+		return problem.New(http.StatusUnauthorized, "second_factor_invalid", "the second factor is wrong"), true
+	case errors.Is(err, app.ErrSecondFactorMissing):
+		return problem.New(http.StatusConflict, "second_factor_missing", "the member has no second factor"), true
+	case errors.Is(err, app.ErrSecretKeyMissing):
+		return problem.New(http.StatusConflict, "secret_key_missing", "EQUORI_SECRET_KEY is not set"), true
 	case errors.Is(err, app.ErrBusy):
 		return problem.New(http.StatusServiceUnavailable, "server_busy", "server is busy; retry shortly"), true
 	}
