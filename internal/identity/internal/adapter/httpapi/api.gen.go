@@ -347,6 +347,7 @@ type SetupInput struct {
 	Password     string  `json:"password"`
 	Region       string  `json:"region"`
 	Token        string  `json:"token"`
+	UpdateCheck  bool    `json:"update_check"`
 }
 
 // SetupStatus defines model for SetupStatus.

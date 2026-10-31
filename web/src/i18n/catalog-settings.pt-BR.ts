@@ -254,4 +254,9 @@ export const settingsPtBR: Record<keyof typeof settingsEn, string> = {
   "studio.section.grounds": "Fundo e camadas",
   "studio.section.lines": "Linhas e relevo",
   "studio.section.reading": "Leitura",
+  "about.updateCheck.question": "Verificar novas versões?",
+  "about.updateCheck.help":
+    "O equori consulta o GitHub uma vez por dia pela versão mais recente. A requisição não leva dados desta instância.",
+  "about.updateCheck.yes": "Sim, verificar",
+  "about.updateCheck.no": "Não",
 };

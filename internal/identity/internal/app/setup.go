@@ -20,9 +20,10 @@ var (
 )
 
 // SetupHooks connect the setup to the rest of the instance: the default base currency of a
-// region (ADR 016) and the removal of setup.url.
+// region (ADR 016), the update check consent of the instance and the removal of setup.url.
 type SetupHooks struct {
 	DefaultCurrency func(region string) (money.Currency, bool)
+	UpdateCheck     func(ctx context.Context, consent bool) error
 	Done            func()
 }
 
@@ -33,6 +34,11 @@ type setup struct {
 }
 
 func (s *Service) UseSetupHooks(h SetupHooks) { s.setup.hooks = h }
+
+// UseUpdateCheck sets the hook that stores the update check consent given at setup.
+func (s *Service) UseUpdateCheck(f func(ctx context.Context, consent bool) error) {
+	s.setup.hooks.UpdateCheck = f
+}
 
 // StartSetup returns a new setup token while no member exists, and "" afterwards (W-U1). The token
 // lives in memory only: a restart issues another.
@@ -61,7 +67,7 @@ func (s *Service) SetupRequired(ctx context.Context) (bool, error) {
 }
 
 // CompleteSetup creates the first member, an admin, and signs it in (W-U3, W-U4).
-func (s *Service) CompleteSetup(ctx context.Context, token, email, plain string, l locale.Locale, base money.Currency) (Session, domain.Member, error) {
+func (s *Service) CompleteSetup(ctx context.Context, token, email, plain string, l locale.Locale, base money.Currency, updateCheck bool) (Session, domain.Member, error) {
 	required, err := s.SetupRequired(ctx)
 	if err != nil {
 		return Session{}, domain.Member{}, err
@@ -101,6 +107,12 @@ func (s *Service) CompleteSetup(ctx context.Context, token, email, plain string,
 	s.setup.mu.Lock()
 	s.setup.token = ""
 	s.setup.mu.Unlock()
+
+	if s.setup.hooks.UpdateCheck != nil {
+		if err := s.setup.hooks.UpdateCheck(ctx, updateCheck); err != nil {
+			return Session{}, domain.Member{}, fmt.Errorf("store update check: %w", err)
+		}
+	}
 
 	if s.setup.hooks.Done != nil {
 		s.setup.hooks.Done()

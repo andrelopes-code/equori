@@ -114,7 +114,7 @@ func (s *Server) CompleteSetup(ctx context.Context, req CompleteSetupRequestObje
 	b := req.Body
 
 	session, user, err := s.svc.CompleteSetup(ctx, b.Token, b.Email, b.Password,
-		locale.Locale{Language: b.Language, Region: b.Region}, money.Currency(deref(b.BaseCurrency)))
+		locale.Locale{Language: b.Language, Region: b.Region}, money.Currency(deref(b.BaseCurrency)), b.UpdateCheck)
 	if err != nil {
 		return nil, err
 	}

@@ -47,7 +47,7 @@ function field(label: string) {
   return screen.findByLabelText(label, { exact: false, selector: "input" });
 }
 
-async function fill(region: string | null) {
+async function fill(region: string | null, check: "yes" | "no" | null = "yes") {
   const actor = userEvent.setup();
   await actor.type(await field(catalogEn["setup.email"]), "ann@example.com");
   await actor.type(
@@ -59,6 +59,13 @@ async function fill(region: string | null) {
       await screen.findByRole("combobox", { name: catalogEn["setup.region"] }),
     );
     await actor.click(await screen.findByRole("option", { name: region }));
+  }
+  if (check !== null) {
+    await actor.click(
+      await screen.findByRole("radio", {
+        name: catalogEn[`about.updateCheck.${check}`],
+      }),
+    );
   }
   await actor.click(
     screen.getByRole("button", { name: catalogEn["setup.submit"] }),
@@ -85,6 +92,7 @@ describe("first-user setup", () => {
           password: "correct horse battery",
           language: "en",
           region: "PT",
+          update_check: true,
         },
       ]);
     });
@@ -125,6 +133,25 @@ describe("first-user setup", () => {
       await screen.findAllByText(catalogEn["setup.required"]),
     ).toHaveLength(2);
     expect(state.bodies).toEqual([]);
+  });
+
+  it("asks for the update check answer before it sends anything", async () => {
+    const { fetch, state } = setupApi({ required: true });
+    await renderApp("/setup#token=abc", { fetch });
+    await fill("Portugal", null);
+    expect(
+      await screen.findAllByText(catalogEn["setup.required"]),
+    ).toHaveLength(2);
+    expect(state.bodies).toEqual([]);
+  });
+
+  it("sends a refusal of the update check as false", async () => {
+    const { fetch, state } = setupApi({ required: true });
+    await renderApp("/setup#token=abc", { fetch });
+    await fill("Portugal", "no");
+    await waitFor(() => {
+      expect(state.bodies).toMatchObject([{ update_check: false }]);
+    });
   });
 
   it("goes to the login when the first user already exists", async () => {

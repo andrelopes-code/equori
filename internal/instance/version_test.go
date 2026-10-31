@@ -2,6 +2,7 @@ package instance_test
 
 import (
 	"net/http"
+	"net/http/cookiejar"
 	"net/http/httptest"
 	"slices"
 	"strings"
@@ -10,6 +11,7 @@ import (
 	"time"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
+	"github.com/andrelopes-code/equori/internal/platform/locale"
 )
 
 const (
@@ -110,6 +112,45 @@ func TestA159FailedCheckKeepsAnswer(t *testing.T) {
 	}
 }
 
+func TestA159SetupStoresConsent(t *testing.T) {
+	t.Parallel()
+
+	t.Run("consent is stored", func(t *testing.T) {
+		t.Parallel()
+
+		h := apitest.Empty(t)
+		client := setupClient(t)
+
+		r := h.Call(client, http.MethodPost, "/api/v1/setup", setupBody(t, h, map[string]any{"update_check": true}))
+		if r.Status != http.StatusCreated {
+			t.Fatalf("setup: status = %d, want 201: %s", r.Status, r.Body)
+		}
+
+		r = h.Call(client, http.MethodGet, versionPath, nil)
+		if r.Status != http.StatusOK {
+			t.Fatalf("get version: status = %d, want 200: %s", r.Status, r.Body)
+		}
+
+		var got versionStatus
+		r.Decode(t, &got)
+
+		if got.UpdateCheck == nil || !*got.UpdateCheck {
+			t.Fatalf("update_check = %v, want true", got.UpdateCheck)
+		}
+	})
+
+	t.Run("a body without update_check is rejected", func(t *testing.T) {
+		t.Parallel()
+
+		h := apitest.Empty(t)
+
+		r := h.Call(setupClient(t), http.MethodPost, "/api/v1/setup", setupBody(t, h, nil))
+		if r.Status != http.StatusBadRequest {
+			t.Fatalf("setup: status = %d, want 400: %s", r.Status, r.Body)
+		}
+	})
+}
+
 func newReleaseStub(t *testing.T) *releaseStub {
 	t.Helper()
 
@@ -204,4 +245,39 @@ func putUpdateCheck(t *testing.T, h *apitest.Harness, consent bool) versionStatu
 	r.Decode(t, &got)
 
 	return got
+}
+
+func setupClient(t *testing.T) *http.Client {
+	t.Helper()
+
+	jar, err := cookiejar.New(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return &http.Client{Jar: jar}
+}
+
+// setupBody holds the fields of POST /setup; extra overrides or adds fields.
+func setupBody(t *testing.T, h *apitest.Harness, extra map[string]any) map[string]any {
+	t.Helper()
+
+	token, err := h.App.Identity.StartSetup(t.Context())
+	if err != nil || token == "" {
+		t.Fatalf("StartSetup = %q, %v; want a token", token, err)
+	}
+
+	body := map[string]any{
+		"token":         token,
+		"email":         "ann@example.com",
+		"password":      "correct horse battery",
+		"language":      "en",
+		"region":        locale.Regions()[0],
+		"base_currency": "BRL",
+	}
+	for k, v := range extra {
+		body[k] = v
+	}
+
+	return body
 }

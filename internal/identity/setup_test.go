@@ -56,8 +56,8 @@ func startSetup(t *testing.T, h *apitest.Harness) string {
 	return token
 }
 
-func setupBody(token, email, region string) map[string]string {
-	return map[string]string{"token": token, "email": email, "password": "correct horse battery", "language": "en", "region": region}
+func setupBody(token, email, region string) map[string]any {
+	return map[string]any{"token": token, "email": email, "password": "correct horse battery", "language": "en", "region": region, "update_check": false}
 }
 
 // W-U2: the setup is required until the first member exists.

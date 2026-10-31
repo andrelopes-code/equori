@@ -37,7 +37,7 @@ export interface paths {
          * @description The token is the one serve logs and writes to setup.url while no member exists. A token
          *     that differs is 403 setup_token_invalid; once a member exists, 409 setup_complete. Without
          *     base_currency the default of the region applies; a region without one is 422 on
-         *     base_currency.
+         *     base_currency. update_check answers the question of P13 A159.1.
          */
         post: operations["completeSetup"];
         delete?: never;
@@ -6437,6 +6437,7 @@ export interface components {
             language: string;
             region: string;
             base_currency?: string;
+            update_check: boolean;
         };
         Problem: {
             type: string;

@@ -250,4 +250,9 @@ export const settingsEn = {
   "studio.section.grounds": "Ground and layers",
   "studio.section.lines": "Lines and relief",
   "studio.section.reading": "Reading",
+  "about.updateCheck.question": "Check for new versions?",
+  "about.updateCheck.help":
+    "equori asks GitHub for the latest release once a day. The request carries no data of this instance.",
+  "about.updateCheck.yes": "Yes, check",
+  "about.updateCheck.no": "No",
 } as const;

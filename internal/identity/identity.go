@@ -101,6 +101,11 @@ func (m *Module) RegisterRoutes(mux *http.ServeMux) { m.http.Register(mux) }
 // RotateSecrets reseals every TOTP secret under the current key (ADR 008).
 func (m *Module) RotateSecrets(ctx context.Context) (int, error) { return m.svc.RotateSecrets(ctx) }
 
+// UseUpdateCheck sets the function that stores the update check consent given at setup.
+func (m *Module) UseUpdateCheck(f func(ctx context.Context, consent bool) error) {
+	m.svc.UseUpdateCheck(f)
+}
+
 // StartSetup returns the token of the first member setup while no member exists, and "" afterwards.
 func (m *Module) StartSetup(ctx context.Context) (string, error) { return m.svc.StartSetup(ctx) }
 

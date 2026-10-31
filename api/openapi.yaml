@@ -114,7 +114,7 @@ paths:
         The token is the one serve logs and writes to setup.url while no member exists. A token
         that differs is 403 setup_token_invalid; once a member exists, 409 setup_complete. Without
         base_currency the default of the region applies; a region without one is 422 on
-        base_currency.
+        base_currency. update_check answers the question of P13 A159.1.
       security: []
       requestBody:
         required: true
@@ -11656,7 +11656,7 @@ components:
     SetupInput:
       type: object
       additionalProperties: false
-      required: [token, email, password, language, region]
+      required: [token, email, password, language, region, update_check]
       properties:
         token:
           type: string
@@ -11673,6 +11673,8 @@ components:
         base_currency:
           type: string
           pattern: "^[A-Z]{3}$"
+        update_check:
+          type: boolean
     Problem:
       type: object
       required: [type, title, status, code]

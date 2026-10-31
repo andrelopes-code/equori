@@ -16,9 +16,9 @@ import { TextField } from "@slotted/react/text-field";
 import { Heading, Text } from "@slotted/react/typography";
 import { useEffect, useMemo, useState } from "react";
 
-import { ProblemError, fieldErrors, problemMessage } from "@/api/problem";
-import { useCompleteSetup } from "@/features/session/api";
+import { UpdateCheckChoice } from "@/features/instance";
 import styles from "@/features/session/login-page.module.css";
+import { useSetupSubmit } from "@/features/session/use-setup-submit";
 import { useAppLocaleState, useT } from "@/i18n/i18n-provider";
 import { languages, matchLanguage } from "@/i18n/languages";
 import type { Language } from "@/i18n/languages";
@@ -38,15 +38,20 @@ export function SetupPage() {
   const { tag } = useAppLocaleState();
   const hash = useRouterState({ select: (s) => s.location.hash });
   const [token] = useState(() => tokenOf(hash));
-  const complete = useCompleteSetup();
   // The language is a choice among the catalogs, the region a choice among the assigned codes:
   // both are one pick from a fixed list, which a select answers in one step.
   const [language, setLanguage] = useState<Language>(() =>
     matchLanguage(navigator.languages),
   );
   const [region, setRegion] = useState<string | null>(null);
+  const [updateCheck, setUpdateCheck] = useState<boolean | null>(null);
   const [errors, setErrors] = useState<FormErrors>({});
-  const [failure, setFailure] = useState<string | null>(null);
+  const { submit, failure, pending } = useSetupSubmit({
+    token,
+    language,
+    region,
+    updateCheck,
+  });
 
   useEffect(() => {
     if (hash !== "")
@@ -59,44 +64,18 @@ export function SetupPage() {
   );
   const regionChoices = useMemo(() => regionChoicesFor(tag), [tag]);
 
-  const submit = async (values: Record<string, unknown>) => {
-    setFailure(null);
-    if (region === null) return { region: t("setup.required") };
-    const currency =
-      typeof values.base_currency === "string"
-        ? values.base_currency.trim().toUpperCase()
-        : "";
-    try {
-      await complete.mutateAsync({
-        token,
-        email: String(values.email),
-        password: String(values.password),
-        language,
-        region,
-        ...(currency === "" ? {} : { base_currency: currency }),
-      });
-    } catch (error) {
-      if (error instanceof ProblemError) {
-        if (error.problem.code === "setup_complete") {
-          await router.navigate({
-            to: "/login",
-            search: { redirect: undefined },
-          });
-          return undefined;
-        }
-        const fields = fieldErrors(error.problem);
-        if (Object.keys(fields).length > 0) return fields;
-        setFailure(problemMessage(error.problem, t));
-        return undefined;
-      }
-      setFailure(t("problem.internal_error"));
-      return undefined;
-    }
-    await router.navigate({ to: "/" });
-    return undefined;
-  };
-
   const regionError = errors.region;
+  const updateCheckError = errors.update_check?.join(" ");
+
+  function handleUpdateCheckChange(value: boolean) {
+    setUpdateCheck(value);
+    setErrors((prev) =>
+      Object.fromEntries(
+        Object.entries(prev).filter(([k]) => k !== "update_check"),
+      ),
+    );
+  }
+
   return (
     <Page width="content" ground="surface">
       <PageBody>
@@ -121,7 +100,7 @@ export function SetupPage() {
                 onSubmit={submit}
                 errors={errors}
                 onErrorsChange={setErrors}
-                loading={complete.isPending}
+                loading={pending}
               >
                 <Field required>
                   <FieldLabel>{t("setup.email")}</FieldLabel>
@@ -195,6 +174,13 @@ export function SetupPage() {
                     {t("setup.currency.help")}
                   </FieldDescription>
                 </Field>
+                <UpdateCheckChoice
+                  value={updateCheck}
+                  {...(updateCheckError === undefined
+                    ? {}
+                    : { error: updateCheckError })}
+                  onChange={handleUpdateCheckChange}
+                />
                 {failure !== null && (
                   <InlineMessage
                     tone="danger"
@@ -206,12 +192,7 @@ export function SetupPage() {
                   </InlineMessage>
                 )}
                 <FormActions align="stretch">
-                  <Button
-                    type="submit"
-                    size="lg"
-                    fullWidth
-                    loading={complete.isPending}
-                  >
+                  <Button type="submit" size="lg" fullWidth loading={pending}>
                     {t("setup.submit")}
                   </Button>
                 </FormActions>
