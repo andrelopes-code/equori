@@ -1,7 +1,8 @@
 import type { SettingsTopic } from "@/features/setup/settings-topics";
 
 // Lucide geometry (ISC licence) on its 24-unit grid: user, shield, palette, globe, eye-off, wallet,
-// calendar, users, plug, chart-line, sparkles, terminal, database, chevron-right and chevron-left.
+// calendar, users, plug, chart-line, sparkles, terminal, database, archive, info, chevron-right and
+// chevron-left.
 const PATHS: Record<SettingsTopic | "next" | "previous", readonly string[]> = {
   account: [
     "M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2",
@@ -62,6 +63,12 @@ const PATHS: Record<SettingsTopic | "next" | "previous", readonly string[]> = {
     "M3 5v14a9 3 0 0 0 18 0V5",
     "M3 12a9 3 0 0 0 18 0",
   ],
+  backup: [
+    "M3 3h18a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z",
+    "M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8",
+    "M10 12h4",
+  ],
+  about: ["M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20z", "M12 16v-4", "M12 8h.01"],
   next: ["m9 18 6-6-6-6"],
   previous: ["m15 18-6-6 6-6"],
 };

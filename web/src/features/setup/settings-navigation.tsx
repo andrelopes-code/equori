@@ -12,6 +12,10 @@ import {
   SideNavigationSectionLabel,
 } from "@slotted/react/side-navigation";
 
+import { useQuery } from "@tanstack/react-query";
+
+import { useApi } from "@/api/api-context";
+import { meQuery } from "@/features/session";
 import { SettingsIcon } from "@/features/setup/settings-icon";
 import {
   settingsGroups,
@@ -31,6 +35,10 @@ export function SettingsNavigation({
   index: boolean;
 }) {
   const t = useT();
+  const api = useApi();
+  const admin = useQuery(meQuery(api)).data?.role === "admin";
+  const topics = settingsTopics.filter((topic) => admin || !("admin" in topic));
+
   return (
     <SideNavigation
       aria-label={t("settings.contents")}
@@ -47,7 +55,7 @@ export function SettingsNavigation({
             {t(group.title)}
           </SideNavigationSectionLabel>
           <SideNavigationList>
-            {settingsTopics
+            {topics
               .filter((topic) => topic.group === group.id)
               .map((topic) => (
                 <SideNavigationItem key={topic.id} value={topic.id}>

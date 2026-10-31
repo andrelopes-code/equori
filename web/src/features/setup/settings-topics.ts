@@ -88,11 +88,26 @@ export const settingsTopics = [
     title: "settings.data.title",
     summary: "settings.summary.data",
   },
+  {
+    id: "backup",
+    group: "system",
+    title: "settings.backup.title",
+    summary: "settings.summary.backup",
+    admin: true,
+  },
+  {
+    id: "about",
+    group: "system",
+    title: "settings.about.title",
+    summary: "settings.summary.about",
+    admin: true,
+  },
 ] as const satisfies readonly {
   id: string;
   group: (typeof settingsGroups)[number]["id"];
   title: MessageKey;
   summary: MessageKey;
+  admin?: true;
 }[];
 
 export type SettingsTopic = (typeof settingsTopics)[number]["id"];

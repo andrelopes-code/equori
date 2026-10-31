@@ -17,6 +17,7 @@ interface Options {
   transactions?: boolean;
   language?: string;
   region?: string;
+  role?: string;
 }
 
 function api(sent: Sent[], options: Options = {}) {
@@ -25,6 +26,7 @@ function api(sent: Sent[], options: Options = {}) {
     transactions = false,
     language = "pt",
     region = "BR",
+    role = "admin",
   } = options;
   const record =
     (route: string, answer: (body: unknown) => Response) =>
@@ -38,7 +40,7 @@ function api(sent: Sent[], options: Options = {}) {
       json(200, {
         id: 1,
         email: "a@b.c",
-        role: "admin",
+        role,
         language,
         region,
       }),
@@ -262,7 +264,22 @@ describe("settings page", () => {
         catalogPtBR["settings.assistant.title"],
         catalogPtBR["settings.external_access.title"],
         catalogPtBR["settings.data.title"],
+        catalogPtBR["settings.backup.title"],
+        catalogPtBR["settings.about.title"],
       ]);
+    });
+
+    it("hides the instance sections from a member", async () => {
+      await renderApp("/settings", { fetch: api([], { role: "member" }) });
+      const contents = await screen.findByRole("navigation", {
+        name: catalogPtBR["settings.contents"],
+      });
+      const names = within(contents)
+        .getAllByRole("link")
+        .map((link) => link.textContent);
+      expect(names).toContain(catalogPtBR["settings.data.title"]);
+      expect(names).not.toContain(catalogPtBR["settings.backup.title"]);
+      expect(names).not.toContain(catalogPtBR["settings.about.title"]);
     });
   });
 

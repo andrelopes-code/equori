@@ -259,4 +259,47 @@ export const settingsPtBR: Record<keyof typeof settingsEn, string> = {
     "O equori consulta o GitHub uma vez por dia pela versão mais recente. A requisição não leva dados desta instância.",
   "about.updateCheck.yes": "Sim, verificar",
   "about.updateCheck.no": "Não",
+  "settings.backup.title": "Backup",
+  "settings.summary.backup": "Backups diários e a cópia criptografada.",
+  "settings.about.title": "Sobre",
+  "settings.summary.about": "Versão, atualizações e arquivo de diagnóstico.",
+  "backup.backups.title": "Backups",
+  "backup.periodic": "Último backup diário: {date}",
+  "backup.periodic.none": "Nenhum backup diário ainda.",
+  "backup.preMigration": "Último backup antes de uma atualização: {date}",
+  "backup.preMigration.none": "Nenhum backup antes de uma atualização ainda.",
+  "backup.late": "O último backup diário tem mais de 48 horas.",
+  "backup.off":
+    "Os backups automáticos estão desligados. Defina EQUORI_BACKUP_DIR para ligá-los.",
+  "backup.run": "Fazer backup agora",
+  "backup.copy.title": "Cópia criptografada",
+  "backup.copy.folder_unset":
+    "Sem pasta de cópia. Defina EQUORI_COPY_DIR com uma pasta montada.",
+  "backup.copy.password_unset": "Sem senha de cópia. Defina uma abaixo.",
+  "backup.copy.ok": "Última cópia: {date}, {file}",
+  "backup.copy.none": "Nenhuma cópia ainda; o próximo backup grava uma.",
+  "backup.copy.folder_not_writable":
+    "Não foi possível gravar na pasta de cópia.",
+  "backup.copy.failed": "A última cópia falhou.",
+  "backup.copy.late": "A cópia criptografada está atrasada.",
+  "backup.password.title": "Senha da cópia",
+  "backup.password.help":
+    "No mínimo 12 caracteres, diferente da senha de acesso. Cópias já gravadas mantêm a senha com que foram gravadas.",
+  "backup.password.field": "Nova senha da cópia",
+  "backup.password.repeat": "Repita a senha",
+  "backup.password.mismatch": "As senhas são diferentes.",
+  "backup.password.save": "Salvar senha",
+  "backup.password.saved": "Senha da cópia salva.",
+  "about.version": "Versão {version}",
+  "about.latest.newer": "A versão {version} está disponível.",
+  "about.latest.notes": "Notas da versão",
+  "about.latest.current": "Esta é a versão mais recente.",
+  "about.diagnostic": "Baixar arquivo de diagnóstico",
+  "about.diagnostic.help":
+    "Versões, configurações e avisos recentes, sem valores, nomes ou descrições.",
+  "problem.backup_off":
+    "Os backups automáticos estão desligados nesta instância.",
+  "problem.backup_failed": "O backup falhou. O log do servidor contém a causa.",
+  "problem.password_too_short":
+    "A senha da cópia precisa de no mínimo 12 caracteres.",
 };

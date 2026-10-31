@@ -1,6 +1,8 @@
+import { SettingsAbout } from "@/features/setup/settings-about";
 import { SettingsAccount } from "@/features/setup/settings-account";
 import { SettingsAppearance } from "@/features/setup/settings-appearance";
 import { SettingsAssistant } from "@/features/setup/settings-assistant";
+import { SettingsBackup } from "@/features/setup/settings-backup";
 import { SettingsCalendars } from "@/features/setup/settings-calendars";
 import { SettingsData } from "@/features/setup/settings-data";
 import { SettingsExternalAccess } from "@/features/setup/settings-external-access";
@@ -41,5 +43,9 @@ export function SettingsPane({ topic }: { topic: SettingsTopic }) {
       return <SettingsExternalAccess />;
     case "data":
       return <SettingsData />;
+    case "backup":
+      return <SettingsBackup />;
+    case "about":
+      return <SettingsAbout />;
   }
 }
