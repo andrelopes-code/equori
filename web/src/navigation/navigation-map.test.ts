@@ -29,11 +29,13 @@ function fullPaths(node: RouteNode, out: Set<string>): Set<string> {
 newRouter();
 const routes = fullPaths(routeTree as RouteNode, new Set());
 // /offline opens without the server, where no assistant answers (P3 of ADR 022); /setup opens
-// before the first user exists, who could ask one (W-U6 of the Windows design).
+// before the first user exists, who could ask one (W-U6 of the Windows design); /invite opens only
+// from an invitation link, whose token no assistant holds (HA25).
 const unmapped = new Set([
   "/login",
   "/offline",
   "/setup",
+  "/invite",
   "/preview/account-card",
   "/accounts",
   "",
