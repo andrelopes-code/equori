@@ -68,6 +68,35 @@ func (r *Repository) SyncedRecords(ctx context.Context, booksID int64, accountID
 	return out, nil
 }
 
+func (r *Repository) RecordsByLineIDs(ctx context.Context, booksID int64, accountID uuid.UUID, externalIDs, institutionIDs []string) ([]domain.ExternalRecord, error) {
+	rows, err := r.q.ListRecordsByLineIDs(ctx, ListRecordsByLineIDsParams{
+		BooksID: booksID, AccountID: accountID, ExternalIds: externalIDs, InstitutionIds: institutionIDs,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	out := make([]domain.ExternalRecord, len(rows))
+	for i, row := range rows {
+		if out[i], err = toRecord(row); err != nil {
+			return nil, err
+		}
+	}
+
+	return out, nil
+}
+
+func (r *Repository) Reidentify(ctx context.Context, booksID int64, id uuid.UUID, externalID string, dedupKey []byte, raw map[string]string) error {
+	payload, err := json.Marshal(raw)
+	if err != nil {
+		return err
+	}
+
+	return r.q.ReidentifyRecord(ctx, ReidentifyRecordParams{
+		BooksID: booksID, ID: id, ExternalID: &externalID, DedupKey: dedupKey, Raw: payload,
+	})
+}
+
 func (r *Repository) WithdrawRecords(ctx context.Context, booksID int64, ids []uuid.UUID) error {
 	if len(ids) == 0 {
 		return nil

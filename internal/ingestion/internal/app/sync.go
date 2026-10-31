@@ -234,6 +234,10 @@ func (s *Service) syncAccount(ctx context.Context, agg Aggregator, c domain.Conn
 		return domain.Batch{}, err
 	}
 
+	if err := s.reidentify(ctx, &batch, read); err != nil {
+		return domain.Batch{}, err
+	}
+
 	if err := s.withdraw(ctx, &batch, read.Seen, from, to); err != nil {
 		return domain.Batch{}, err
 	}
@@ -429,6 +433,42 @@ func reserveNames(reserves []domain.ExternalAccount, names func(domain.ExternalA
 	}
 
 	return out
+}
+
+// reidentify gives the stored record of a line the line's new external id when the aggregator
+// returns the line under another id and the same institution line id (A143); the claim of
+// the line then finds that record.
+func (s *Service) reidentify(ctx context.Context, batch *domain.Batch, read domain.AccountRead) error {
+	var externalIDs, institutionIDs []string
+
+	for _, r := range read.Records {
+		if r.InstitutionID != "" {
+			externalIDs = append(externalIDs, r.ExternalID)
+			institutionIDs = append(institutionIDs, r.InstitutionID)
+		}
+	}
+
+	if len(institutionIDs) == 0 {
+		return nil
+	}
+
+	stored, err := s.repo.RecordsByLineIDs(ctx, batch.BooksID, batch.AccountID, externalIDs, institutionIDs)
+	if err != nil {
+		return err
+	}
+
+	for i, rec := range domain.Reidentifications(read.Records, read.Seen, stored) {
+		line := read.Records[i]
+		key := domain.DedupKey(batch.AccountID, domain.SourceAggregator, line, 0)
+
+		if err := s.repo.Reidentify(ctx, batch.BooksID, rec.ID, line.ExternalID, key, line.Raw); err != nil {
+			return err
+		}
+
+		batch.Counts.ReIdentified++
+	}
+
+	return nil
 }
 
 // withdraw marks withdrawn the account's aggregator records the window covers that the

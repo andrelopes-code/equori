@@ -85,6 +85,11 @@ type Repository interface {
 	// SyncedRecords lists the account's aggregator records booked in [from, to] that are
 	// neither withdrawn nor discarded.
 	SyncedRecords(ctx context.Context, booksID int64, accountID uuid.UUID, from, to time.Time) ([]domain.ExternalRecord, error)
+	// RecordsByLineIDs lists the account's aggregator records whose external id or
+	// institution line id is among the given ones (A143).
+	RecordsByLineIDs(ctx context.Context, booksID int64, accountID uuid.UUID, externalIDs, institutionIDs []string) ([]domain.ExternalRecord, error)
+	// Reidentify gives a record the external id, deduplication key and raw payload of a line (A143).
+	Reidentify(ctx context.Context, booksID int64, id uuid.UUID, externalID string, dedupKey []byte, raw map[string]string) error
 	// WithdrawRecords marks records withdrawn and takes them out of their batches' review counts.
 	WithdrawRecords(ctx context.Context, booksID int64, ids []uuid.UUID) error
 	// MarkAccountSynced stores the account's last synced date and asserted balance.
