@@ -19,7 +19,7 @@ var (
 	ErrBackupOff     = errors.New("automatic backups are off; set EQUORI_BACKUP_DIR")
 	ErrBackupFailed  = errors.New("the backup failed; the server log holds the cause")
 
-	ErrPasswordInvalid  = errors.New("the copy password needs at least 12 characters")
+	ErrPasswordTooShort = errors.New("the copy password needs at least 12 characters")
 	ErrSecretKeyMissing = errors.New("the copy password needs EQUORI_SECRET_KEY")
 )
 

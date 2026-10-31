@@ -188,7 +188,7 @@ type Problem struct {
 	// investment_transaction, system_account, attachment_not_inlineable, archive_too_new,
 	// setup_token_invalid, setup_complete, book_role_required, books_not_found, member_not_found,
 	// last_owner, already_member, invitation_not_found, invitation_email_mismatch,
-	// backup_off, backup_failed, password_invalid.
+	// backup_off, backup_failed, password_too_short.
 	Code   string        `json:"code"`
 	Detail *string       `json:"detail,omitempty"`
 	Errors *[]FieldError `json:"errors,omitempty"`
@@ -241,7 +241,7 @@ type ServerInterface interface {
 	// RunBackup Write a periodic backup and its copy now; admin only. 409 backup_off without EQUORI_BACKUP_DIR; 500 backup_failed.
 	// (POST /instance/backup)
 	RunBackup(w http.ResponseWriter, r *http.Request)
-	// SetCopyPassword Set the password of the encrypted copies; admin only. 400 password_invalid below 12 characters; 409 secret_key_missing without EQUORI_SECRET_KEY.
+	// SetCopyPassword Set the password of the encrypted copies; admin only. 400 password_too_short below 12 characters; 409 secret_key_missing without EQUORI_SECRET_KEY.
 	// (PUT /instance/backup/copy-password)
 	SetCopyPassword(w http.ResponseWriter, r *http.Request)
 	// GetDiagnostic The diagnostic file, without amounts, names or descriptions; admin only (P13 A158).
@@ -870,7 +870,7 @@ type StrictServerInterface interface {
 	// RunBackup Write a periodic backup and its copy now; admin only. 409 backup_off without EQUORI_BACKUP_DIR; 500 backup_failed.
 	// (POST /instance/backup)
 	RunBackup(ctx context.Context, request RunBackupRequestObject) (RunBackupResponseObject, error)
-	// SetCopyPassword Set the password of the encrypted copies; admin only. 400 password_invalid below 12 characters; 409 secret_key_missing without EQUORI_SECRET_KEY.
+	// SetCopyPassword Set the password of the encrypted copies; admin only. 400 password_too_short below 12 characters; 409 secret_key_missing without EQUORI_SECRET_KEY.
 	// (PUT /instance/backup/copy-password)
 	SetCopyPassword(ctx context.Context, request SetCopyPasswordRequestObject) (SetCopyPasswordResponseObject, error)
 	// GetDiagnostic The diagnostic file, without amounts, names or descriptions; admin only (P13 A158).

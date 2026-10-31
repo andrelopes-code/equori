@@ -3669,7 +3669,7 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Set the password of the encrypted copies; admin only. 400 password_invalid below 12 characters; 409 secret_key_missing without EQUORI_SECRET_KEY. */
+        /** Set the password of the encrypted copies; admin only. 400 password_too_short below 12 characters; 409 secret_key_missing without EQUORI_SECRET_KEY. */
         put: operations["setCopyPassword"];
         post?: never;
         delete?: never;
@@ -6457,7 +6457,7 @@ export interface components {
              *     investment_transaction, system_account, attachment_not_inlineable, archive_too_new,
              *     setup_token_invalid, setup_complete, book_role_required, books_not_found, member_not_found,
              *     last_owner, already_member, invitation_not_found, invitation_email_mismatch,
-             *     backup_off, backup_failed, password_invalid.
+             *     backup_off, backup_failed, password_too_short.
              */
             code: string;
             request_id?: string;

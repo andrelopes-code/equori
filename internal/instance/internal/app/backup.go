@@ -78,7 +78,7 @@ func (s *Service) SetCopyPassword(ctx context.Context, memberID int64, password 
 	}
 
 	if utf8.RuneCountInString(password) < domain.MinPasswordLength {
-		return ErrPasswordInvalid
+		return ErrPasswordTooShort
 	}
 
 	if s.box == nil {

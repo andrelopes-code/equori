@@ -104,7 +104,7 @@ Operations, tag `instance`:
 |---|---|---|
 | `getBackup` | `GET /instance/backup` | 200 `BackupStatus` |
 | `runBackup` | `POST /instance/backup` | 200 `BackupStatus`; 409 `backup_off` without a backup directory; 500 `backup_failed` |
-| `setCopyPassword` | `PUT /instance/backup/copy-password` | 204; 400 `password_invalid` below 12 characters |
+| `setCopyPassword` | `PUT /instance/backup/copy-password` | 204; 400 `password_too_short` below 12 characters |
 | `getDiagnostic` | `GET /instance/diagnostic` | 200 `application/json` attachment |
 | `getVersion` | `GET /instance/version` | 200 `VersionStatus` |
 | `setUpdateCheck` | `PUT /instance/version/update-check` | 200 `VersionStatus` |

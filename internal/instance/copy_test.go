@@ -112,7 +112,7 @@ func TestA155PasswordLength(t *testing.T) {
 	h := apitest.New(t, apitest.SecretKeys(keyA, ""), apitest.Backups(t.TempDir(), t.TempDir(), apitest.FakeDump))
 
 	r := h.Do(http.MethodPut, copyPasswordPath, map[string]string{"password": "short pass1"})
-	h.ExpectProblem(r, http.StatusBadRequest, "password_invalid", "")
+	h.ExpectProblem(r, http.StatusBadRequest, "password_too_short", "")
 
 	var p struct {
 		Detail string `json:"detail"`
