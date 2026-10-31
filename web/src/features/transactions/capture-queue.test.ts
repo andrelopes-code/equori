@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { forgetDeviceUser, rememberDeviceUser } from "@/features/session";
 import {
   QueueWriteError,
   enqueueCapture,
@@ -18,6 +19,7 @@ const entry = (userId: number, text: string) => ({
 describe("capture queue", () => {
   beforeEach(() => {
     localStorage.clear();
+    rememberDeviceUser({ id: 7, email: "owner@equori.test", booksId: 3 });
   });
   afterEach(() => {
     vi.restoreAllMocks();
@@ -58,7 +60,7 @@ describe("capture queue", () => {
 
   it("skips stored entries of another shape", () => {
     localStorage.setItem(
-      "equori.capture.queue",
+      "equori.capture.queue.3",
       JSON.stringify([
         { id: "x" },
         {
@@ -80,5 +82,23 @@ describe("capture queue", () => {
     enqueueCapture(entry(7, "uber 12"));
     expect(persist).toHaveBeenCalledTimes(1);
     vi.unstubAllGlobals();
+  });
+
+  it("stores entries under the key of the device's book", () => {
+    enqueueCapture(entry(7, "uber 12"));
+    expect(localStorage.getItem("equori.capture.queue.3")).not.toBeNull();
+    expect(localStorage.getItem("equori.capture.queue")).toBeNull();
+  });
+
+  it("reads the queue of another book as empty", () => {
+    enqueueCapture(entry(7, "uber 12"));
+    rememberDeviceUser({ id: 7, email: "owner@equori.test", booksId: 4 });
+    expect(readQueue(7)).toEqual([]);
+  });
+
+  it("throws without a device user", () => {
+    forgetDeviceUser();
+    expect(() => enqueueCapture(entry(7, "uber 12"))).toThrow(QueueWriteError);
+    expect(readQueue(7)).toEqual([]);
   });
 });

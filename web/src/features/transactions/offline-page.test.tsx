@@ -3,7 +3,10 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { rememberDeviceUser } from "@/features/session";
-import { readQueue } from "@/features/transactions/capture-queue";
+import {
+  enqueueCapture,
+  readQueue,
+} from "@/features/transactions/capture-queue";
 import { catalogEn } from "@/i18n/catalog.en";
 import { fakeApi } from "@/testing/fake-api";
 import { renderApp } from "@/testing/render-app";
@@ -22,7 +25,7 @@ describe("OfflinePage", () => {
   });
 
   it("queues a text for the device's last user with the day it was written", async () => {
-    rememberDeviceUser({ id: 7, email: "owner@equori.test" });
+    rememberDeviceUser({ id: 7, email: "owner@equori.test", booksId: 3 });
     await renderApp("/offline", { fetch: offline(), today: "2026-10-18" });
     expect(
       screen.getByText("Queued for owner@equori.test"),
@@ -39,7 +42,7 @@ describe("OfflinePage", () => {
   });
 
   it("discards an entry on request", async () => {
-    rememberDeviceUser({ id: 7, email: "owner@equori.test" });
+    rememberDeviceUser({ id: 7, email: "owner@equori.test", booksId: 3 });
     await renderApp("/offline", { fetch: offline() });
     await userEvent.type(screen.getByRole("textbox"), "uber 12");
     await userEvent.click(
@@ -53,7 +56,7 @@ describe("OfflinePage", () => {
   });
 
   it("keeps the text when the device refuses the write", async () => {
-    rememberDeviceUser({ id: 7, email: "owner@equori.test" });
+    rememberDeviceUser({ id: 7, email: "owner@equori.test", booksId: 3 });
     await renderApp("/offline", { fetch: offline() });
     await userEvent.type(screen.getByRole("textbox"), "uber 12");
     vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
@@ -74,8 +77,22 @@ describe("OfflinePage", () => {
     expect(screen.queryByRole("textbox")).toBeNull();
   });
 
+  it("shows no entry queued in another book", async () => {
+    rememberDeviceUser({ id: 7, email: "owner@equori.test", booksId: 4 });
+    enqueueCapture({
+      userId: 7,
+      text: "uber 12",
+      defaultAccountId: null,
+      capturedOn: "2026-10-18",
+    });
+    rememberDeviceUser({ id: 7, email: "owner@equori.test", booksId: 3 });
+    await renderApp("/offline", { fetch: offline() });
+    expect(screen.getByText(catalogEn["offline.empty"])).toBeInTheDocument();
+    expect(screen.queryByText("uber 12")).toBeNull();
+  });
+
   it("tries the server again", async () => {
-    rememberDeviceUser({ id: 7, email: "owner@equori.test" });
+    rememberDeviceUser({ id: 7, email: "owner@equori.test", booksId: 3 });
     const { router } = await renderApp("/offline", { fetch: offline() });
     await userEvent.click(
       screen.getByRole("button", { name: catalogEn["offline.retry"] }),

@@ -8,6 +8,7 @@ import {
   readRecentCategories,
   rememberCategory,
 } from "@/features/categories/recent-categories";
+import { rememberDeviceUser } from "@/features/session";
 import { fakeApi, json } from "@/testing/fake-api";
 import { renderWithProviders } from "@/testing/render-app";
 
@@ -83,6 +84,7 @@ function Harness({
 
 beforeEach(() => {
   localStorage.clear();
+  rememberDeviceUser({ id: 1, email: "a@b.c", booksId: 1 });
 });
 
 describe("CategoryPicker", () => {

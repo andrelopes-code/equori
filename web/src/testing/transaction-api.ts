@@ -62,7 +62,14 @@ export function transactionFixture(
 
 // Routes every page that loads a transaction needs besides the transaction itself.
 export const sharedRoutes = {
-  "GET /api/v1/me": () => json(200, { id: 1, email: "a@b.c", role: "admin" }),
+  "GET /api/v1/me": () =>
+    json(200, {
+      id: 1,
+      email: "a@b.c",
+      role: "admin",
+      books_id: 1,
+      book_role: "owner",
+    }),
   "GET /api/v1/settings": () => json(200, { base_currency: "BRL" }),
   "GET /api/v1/instruments": () =>
     json(200, {

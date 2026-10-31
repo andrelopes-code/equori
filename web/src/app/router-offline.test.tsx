@@ -23,11 +23,17 @@ describe("offline redirect", () => {
             role: "admin",
             language: "en",
             region: "US",
+            books_id: 5,
+            book_role: "owner",
           }),
       }),
     });
     await waitFor(() => {
-      expect(readDeviceUser()).toEqual({ id: 7, email: "owner@equori.test" });
+      expect(readDeviceUser()).toEqual({
+        id: 7,
+        email: "owner@equori.test",
+        booksId: 5,
+      });
     });
   });
 
@@ -48,7 +54,7 @@ describe("offline redirect", () => {
   });
 
   it("opens /offline when the profile request gets no answer", async () => {
-    rememberDeviceUser({ id: 7, email: "owner@equori.test" });
+    rememberDeviceUser({ id: 7, email: "owner@equori.test", booksId: 5 });
     const { router } = await renderApp("/transactions", {
       fetch: fakeApi({
         "GET /api/v1/me": () =>

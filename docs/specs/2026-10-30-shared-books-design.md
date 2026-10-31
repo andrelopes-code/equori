@@ -110,7 +110,8 @@ Environment level holds only values needed before the database opens, security b
 | Privacy mode `equori.privacy` | Browser | `localStorage` (ADR 018, P1) |
 | Navigation layout `equori.nav`, entry form `equori.entry.form` | Browser | `localStorage` |
 | Language before login `equori.locale` | Browser | `localStorage`, overwritten by the member's language after login |
-| `equori.capture.defaultAccount`, `equori.capture.queue`, `equori.recent-categories`, `equori.plan.collapsed`, `equori.device.user` | Browser | `localStorage`, under a key that includes the books ID: the values hold IDs of one book |
+| `equori.capture.defaultAccount`, `equori.capture.queue`, `equori.recent-categories`, `equori.plan.collapsed` | Browser | `localStorage` under `<key>.<booksId>`: the values hold IDs of one book (households access HA29) |
+| `equori.device.user` | Browser | `localStorage`, keeps its name and holds `booksId`, the active book of the last online session (households access HA30) |
 
 `EQUORI_TEST_LOG` and `EQUORI_DEMO_PASSWORD` configure test and demo tools, not the application, and stay out of the table.
 

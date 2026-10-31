@@ -190,7 +190,7 @@ const authedRoute = createRoute({
         retry: (count, error) =>
           !(error instanceof ProblemError && error.status < 500) && count < 1,
       });
-      rememberDeviceUser({ id: me.id, email: me.email });
+      rememberDeviceUser({ id: me.id, email: me.email, booksId: me.books_id });
     } catch (error) {
       if (error instanceof ProblemError && error.status === 401) {
         // eslint-disable-next-line @typescript-eslint/only-throw-error -- TanStack Router redirects are thrown objects.

@@ -15,10 +15,22 @@ describe("device user", () => {
     expect(readDeviceUser()).toBeNull();
   });
 
-  it("keeps id and email until forgotten", () => {
-    rememberDeviceUser({ id: 7, email: "owner@equori.test" });
-    expect(readDeviceUser()).toEqual({ id: 7, email: "owner@equori.test" });
+  it("keeps id, email and books ID until forgotten", () => {
+    rememberDeviceUser({ id: 7, email: "owner@equori.test", booksId: 3 });
+    expect(readDeviceUser()).toEqual({
+      id: 7,
+      email: "owner@equori.test",
+      booksId: 3,
+    });
     forgetDeviceUser();
+    expect(readDeviceUser()).toBeNull();
+  });
+
+  it("ignores a value stored before the books ID", () => {
+    localStorage.setItem(
+      "equori.device.user",
+      '{"id":7,"email":"owner@equori.test"}',
+    );
     expect(readDeviceUser()).toBeNull();
   });
 

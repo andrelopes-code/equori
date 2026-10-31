@@ -5,6 +5,7 @@ const key = "equori.device.user";
 export interface DeviceUser {
   id: number;
   email: string;
+  booksId: number;
 }
 
 function isDeviceUser(v: unknown): v is DeviceUser {
@@ -12,7 +13,8 @@ function isDeviceUser(v: unknown): v is DeviceUser {
     typeof v === "object" &&
     v !== null &&
     typeof (v as Record<string, unknown>).id === "number" &&
-    typeof (v as Record<string, unknown>).email === "string"
+    typeof (v as Record<string, unknown>).email === "string" &&
+    typeof (v as Record<string, unknown>).booksId === "number"
   );
 }
 
@@ -20,7 +22,11 @@ export function rememberDeviceUser(user: DeviceUser): void {
   try {
     localStorage.setItem(
       key,
-      JSON.stringify({ id: user.id, email: user.email }),
+      JSON.stringify({
+        id: user.id,
+        email: user.email,
+        booksId: user.booksId,
+      }),
     );
   } catch {
     // The device keeps no user; the offline screen then offers no queue.
@@ -32,7 +38,9 @@ export function readDeviceUser(): DeviceUser | null {
     const raw = localStorage.getItem(key);
     if (raw === null) return null;
     const v: unknown = JSON.parse(raw);
-    return isDeviceUser(v) ? { id: v.id, email: v.email } : null;
+    return isDeviceUser(v)
+      ? { id: v.id, email: v.email, booksId: v.booksId }
+      : null;
   } catch {
     return null;
   }

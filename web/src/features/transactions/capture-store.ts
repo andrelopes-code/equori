@@ -1,3 +1,4 @@
+import { bookKey, bookKeyNames } from "@/features/session";
 import type {
   LineDraft,
   LineOverride,
@@ -7,7 +8,6 @@ import type {
 // browser tab's session; the default account and the entry form last used are preferences
 // kept across sessions. Storage may refuse access; the page then starts empty.
 const draftKey = "equori.capture.draft";
-const defaultAccountKey = "equori.capture.defaultAccount";
 const entryFormKey = "equori.entry.form";
 
 export interface CaptureDraft {
@@ -68,17 +68,21 @@ export function writeCaptureDraft(draft: CaptureDraft): void {
 }
 
 export function readDefaultAccount(): string | null {
+  const key = bookKey(bookKeyNames.defaultAccount);
+  if (key === null) return null;
   try {
-    return localStorage.getItem(defaultAccountKey);
+    return localStorage.getItem(key);
   } catch {
     return null;
   }
 }
 
 export function writeDefaultAccount(id: string | null): void {
+  const key = bookKey(bookKeyNames.defaultAccount);
+  if (key === null) return;
   try {
-    if (id === null) localStorage.removeItem(defaultAccountKey);
-    else localStorage.setItem(defaultAccountKey, id);
+    if (id === null) localStorage.removeItem(key);
+    else localStorage.setItem(key, id);
   } catch {
     // The choice holds for this visit only.
   }

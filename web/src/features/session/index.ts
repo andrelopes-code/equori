@@ -9,6 +9,8 @@ export { AppearanceSync } from "@/features/session/appearance-sync";
 export { LoginPage } from "@/features/session/login-page";
 export { SetupPage } from "@/features/session/setup-page";
 export { useLogout } from "@/features/session/use-logout";
+export { bookKey, bookKeyNames } from "@/features/session/book-keys";
+export type { BookKeyName } from "@/features/session/book-keys";
 export {
   forgetDeviceUser,
   readDeviceUser,

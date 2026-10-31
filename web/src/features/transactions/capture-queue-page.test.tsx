@@ -6,6 +6,7 @@ import {
   enqueueCapture,
   findQueued,
 } from "@/features/transactions/capture-queue";
+import { rememberDeviceUser } from "@/features/session";
 import { catalogEn } from "@/i18n/catalog.en";
 import { fakeApi, json, problem } from "@/testing/fake-api";
 import { renderApp } from "@/testing/render-app";
@@ -53,6 +54,7 @@ function routes(preview: (req: Request) => Promise<Response> | Response) {
 
 beforeEach(() => {
   localStorage.clear();
+  rememberDeviceUser({ id: 1, email: "a@b.c", booksId: 1 });
   batchRoute.mockClear();
 });
 

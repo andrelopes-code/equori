@@ -24,6 +24,10 @@ import type {
   PlanSegment,
   SegmentTone,
 } from "@/features/planning/plan-allocation-bar";
+import {
+  readCollapsed,
+  writeCollapsed,
+} from "@/features/planning/plan-collapsed";
 import { PlanDiscardDialog } from "@/features/planning/plan-discard-dialog";
 import { PlanDistributeDialog } from "@/features/planning/plan-distribute-dialog";
 import { planGroups } from "@/features/planning/plan-groups";
@@ -46,8 +50,6 @@ import { useMediaQuery } from "@/ui/use-media-query";
 
 type BudgetPlan = components["schemas"]["BudgetPlan"];
 
-// Per-browser convenience: the groups a reader folded stay folded (spec 5.1).
-const collapsedKey = "equori.plan.collapsed";
 const groupTones: readonly SegmentTone[] = [
   "data-1",
   "data-2",
@@ -58,28 +60,6 @@ const groupTones: readonly SegmentTone[] = [
   "data-7",
   "data-8",
 ];
-
-function readCollapsed(): Set<string> {
-  try {
-    const raw = localStorage.getItem(collapsedKey);
-    const parsed: unknown = raw === null ? [] : JSON.parse(raw);
-    return new Set(
-      Array.isArray(parsed)
-        ? parsed.filter((v): v is string => typeof v === "string")
-        : [],
-    );
-  } catch {
-    return new Set();
-  }
-}
-
-function writeCollapsed(ids: ReadonlySet<string>) {
-  try {
-    localStorage.setItem(collapsedKey, JSON.stringify([...ids]));
-  } catch {
-    // A browser without storage keeps the groups open on the next visit.
-  }
-}
 
 function previous(month: string): string {
   const [y, m] = month.split("-").map(Number);

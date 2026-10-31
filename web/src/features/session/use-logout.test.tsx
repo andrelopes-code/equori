@@ -24,7 +24,7 @@ beforeEach(() => {
 });
 
 it("forgets the device user on logout", async () => {
-  rememberDeviceUser({ id: 7, email: "owner@equori.test" });
+  rememberDeviceUser({ id: 7, email: "owner@equori.test", booksId: 1 });
   renderWithRouter(<LogoutProbe />, {
     path: "/",
     fetch: fakeApi({

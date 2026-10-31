@@ -1,5 +1,6 @@
+import { bookKey, bookKeyNames } from "@/features/session";
+
 // P4 of ADR 022: texts written without the server, kept until recorded or discarded.
-const key = "equori.capture.queue";
 
 export interface QueuedCapture {
   id: string;
@@ -28,6 +29,8 @@ function isQueued(v: unknown): v is QueuedCapture {
 }
 
 function readAll(): QueuedCapture[] {
+  const key = bookKey(bookKeyNames.captureQueue);
+  if (key === null) return [];
   try {
     const raw = localStorage.getItem(key);
     if (raw === null) return [];
@@ -53,6 +56,10 @@ export function enqueueCapture(
   entry: Omit<QueuedCapture, "id" | "createdAt">,
   now?: Date,
 ): QueuedCapture {
+  const key = bookKey(bookKeyNames.captureQueue);
+  if (key === null) {
+    throw new QueueWriteError("the device holds no user to queue for");
+  }
   const all = readAll();
   const queued: QueuedCapture = {
     ...entry,
@@ -72,6 +79,8 @@ export function enqueueCapture(
 }
 
 export function removeQueued(id: string): void {
+  const key = bookKey(bookKeyNames.captureQueue);
+  if (key === null) return;
   try {
     localStorage.setItem(
       key,
