@@ -170,3 +170,43 @@ func TestDropConversations(t *testing.T) {
 		t.Fatalf("input has %d tables, want 4", len(v4))
 	}
 }
+
+// Reliable sync amendments A143, A146, A148, ADR 021 V2: version 5 rows of
+// ingestion_external_record report their own amount and date, with no decision to undo and not
+// kept; version 5 rows of ingestion_batch re-identified no line and were not an empty read.
+func TestAddReliableSync(t *testing.T) {
+	t.Parallel()
+
+	v5 := []ArchiveTable{
+		{
+			Name: "ingestion_external_record",
+			Rows: [][]byte{[]byte(`{"amount":-713,"booked_on":"2026-03-02","id":"a"}`)},
+		},
+		{Name: "ingestion_batch", Rows: [][]byte{[]byte(`{"id":"b"}`)}},
+		{Name: "ledger_payee", Rows: [][]byte{[]byte(`{"id":"c"}`)}},
+	}
+
+	got, err := addReliableSync(v5)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	record := `{"amount":-713,"booked_on":"2026-03-02","decision_undo":{},"id":"a","kept":false,` +
+		`"reported_amount":-713,"reported_on":"2026-03-02"}`
+	if string(got[0].Rows[0]) != record {
+		t.Fatalf("ingestion_external_record row = %s", got[0].Rows[0])
+	}
+
+	if string(got[1].Rows[0]) != `{"id":"b","re_identified":0,"read_empty":false}` {
+		t.Fatalf("ingestion_batch row = %s", got[1].Rows[0])
+	}
+
+	input := `{"amount":-713,"booked_on":"2026-03-02","id":"a"}`
+	if string(got[2].Rows[0]) != `{"id":"c"}` || string(v5[0].Rows[0]) != input {
+		t.Fatalf("other table %s, input %s", got[2].Rows[0], v5[0].Rows[0])
+	}
+
+	if ArchiveVersion != 6 {
+		t.Fatalf("ArchiveVersion = %d, want 6", ArchiveVersion)
+	}
+}

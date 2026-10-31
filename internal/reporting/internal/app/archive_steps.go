@@ -9,7 +9,7 @@ import (
 
 // ArchiveVersion is the archive_version this instance writes and the highest it reads
 // (ADR 021). It is the number of steps in archiveSteps plus 1.
-const ArchiveVersion = 5
+const ArchiveVersion = 6
 
 // ArchiveStep migrates the tables of an archive from one version to the next; it is pure and
 // leaves its input unchanged (ADR 021, V3).
@@ -17,7 +17,10 @@ type ArchiveStep func([]ArchiveTable) ([]ArchiveTable, error)
 
 // archiveSteps holds at index i the step from version i+1 to i+2. A change to an exported
 // table appends its step here and increments ArchiveVersion in the same commit (ADR 021, V2).
-var archiveSteps = []ArchiveStep{addExcludedFromLiquidity, addBudgetReference, addStatementBasis, dropConversations}
+var archiveSteps = []ArchiveStep{
+	addExcludedFromLiquidity, addBudgetReference, addStatementBasis, dropConversations,
+	addReliableSync,
+}
 
 // migrateArchive applies the steps from version from to the last one, in order.
 func migrateArchive(tables []ArchiveTable, from int, steps []ArchiveStep) ([]ArchiveTable, error) {
@@ -71,9 +74,36 @@ func dropConversations(tables []ArchiveTable) ([]ArchiveTable, error) {
 	return out, nil
 }
 
+// addReliableSync moves a version 5 archive to version 6, which adds the columns of the reliable
+// sync (amendments A143 to A153). Each record reports its own amount and date, as migration
+// 00077 gives existing rows, with no decision to undo and not kept; each batch re-identified no
+// line and was not an empty read. The new nullable columns read null.
+func addReliableSync(tables []ArchiveTable) ([]ArchiveTable, error) {
+	tables, err := editRows(tables, "ingestion_external_record", func(fields map[string]jsontext.Value) {
+		fields["reported_amount"] = fields["amount"]
+		fields["reported_on"] = fields["booked_on"]
+		fields["decision_undo"] = jsontext.Value("{}")
+		fields["kept"] = jsontext.Value("false")
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return editRows(tables, "ingestion_batch", func(fields map[string]jsontext.Value) {
+		fields["re_identified"] = jsontext.Value("0")
+		fields["read_empty"] = jsontext.Value("false")
+	})
+}
+
 // withField returns tables with field set to value in every row of table; the input is left
 // unchanged.
 func withField(tables []ArchiveTable, table, field string, value jsontext.Value) ([]ArchiveTable, error) {
+	return editRows(tables, table, func(fields map[string]jsontext.Value) { fields[field] = value })
+}
+
+// editRows returns tables with edit applied to the fields of every row of table; the input is
+// left unchanged.
+func editRows(tables []ArchiveTable, table string, edit func(map[string]jsontext.Value)) ([]ArchiveTable, error) {
 	out := make([]ArchiveTable, len(tables))
 	for i, t := range tables {
 		out[i] = ArchiveTable{Name: t.Name, Rows: slices.Clone(t.Rows)}
@@ -87,7 +117,7 @@ func withField(tables []ArchiveTable, table, field string, value jsontext.Value)
 				return nil, fmt.Errorf("%s row %d: %w", table, j, err)
 			}
 
-			fields[field] = value
+			edit(fields)
 
 			b, err := json.Marshal(fields, json.Deterministic(true))
 			if err != nil {
