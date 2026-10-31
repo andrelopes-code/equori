@@ -1,16 +1,12 @@
 import { useRouter, useSearch } from "@tanstack/react-router";
-import { Button } from "@slotted/react/button";
-import { Field, FieldLabel } from "@slotted/react/field";
-import { Form, FormActions } from "@slotted/react/form";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { Page, PageBody } from "@slotted/react/page";
 import { Stack } from "@slotted/react/stack";
-import { TextField } from "@slotted/react/text-field";
-import { Heading, Text } from "@slotted/react/typography";
-import { useRef, useState } from "react";
+import { Text } from "@slotted/react/typography";
+import { useState } from "react";
 
-import { ProblemError, problemMessage } from "@/api/problem";
-import { useLogin } from "@/features/session/api";
+import type { SecondFactorChallenge } from "@/features/session/api";
+import { LoginPasswordForm } from "@/features/session/login-password-form";
+import { LoginSecondFactor } from "@/features/session/login-second-factor";
 import styles from "@/features/session/login-page.module.css";
 import { useT } from "@/i18n/i18n-provider";
 import { BrandMark } from "@/ui/brand-mark";
@@ -19,27 +15,20 @@ export function LoginPage() {
   const t = useT();
   const router = useRouter();
   const { redirect } = useSearch({ from: "/login" });
-  const login = useLogin();
-  const passwordRef = useRef<HTMLInputElement>(null);
+  const [challenge, setChallenge] = useState<SecondFactorChallenge | null>(
+    null,
+  );
   const [failure, setFailure] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
 
-  const submit = async (values: Record<string, unknown>) => {
-    setFailure(null);
-    try {
-      await login.mutateAsync({
-        email: String(values.email),
-        password: String(values.password),
-      });
-    } catch (error) {
-      setFailure(
-        error instanceof ProblemError
-          ? problemMessage(error.problem, t)
-          : t("problem.internal_error"),
-      );
-      passwordRef.current?.focus();
-      return;
-    }
+  const handleDone = () => {
     router.history.push(redirect ?? "/");
+  };
+
+  const handleRestart = (message: string | null) => {
+    setChallenge(null);
+    setFailure(message);
+    setAttempt(attempt + 1);
   };
 
   // Own element (CP-04): no family draws a brand panel beside a form. `page-header` is the
@@ -74,54 +63,20 @@ export function LoginPage() {
         <PageBody>
           <div className={styles.formArea}>
             <Stack gap={8} className={styles.panel}>
-              <Stack gap={2}>
-                <Heading level={1} size="2xl">
-                  {t("login.title")}
-                </Heading>
-                <Text tone="muted">{t("login.subtitle")}</Text>
-              </Stack>
-              <Form onSubmit={submit} loading={login.isPending}>
-                <Field required>
-                  <FieldLabel>{t("login.email")}</FieldLabel>
-                  <TextField
-                    name="email"
-                    type="email"
-                    size="lg"
-                    autoComplete="username"
-                  />
-                </Field>
-                <Field required>
-                  <FieldLabel>{t("login.password")}</FieldLabel>
-                  <TextField
-                    ref={passwordRef}
-                    name="password"
-                    type="password"
-                    size="lg"
-                    revealable
-                    autoComplete="current-password"
-                  />
-                </Field>
-                {failure !== null && (
-                  <InlineMessage
-                    tone="danger"
-                    live="assertive"
-                    size="md"
-                    className={styles.failure}
-                  >
-                    {failure}
-                  </InlineMessage>
-                )}
-                <FormActions align="stretch">
-                  <Button
-                    type="submit"
-                    size="lg"
-                    fullWidth
-                    loading={login.isPending}
-                  >
-                    {t("login.submit")}
-                  </Button>
-                </FormActions>
-              </Form>
+              {challenge === null ? (
+                <LoginPasswordForm
+                  key={attempt}
+                  initialFailure={failure}
+                  onChallenge={setChallenge}
+                  onDone={handleDone}
+                />
+              ) : (
+                <LoginSecondFactor
+                  challenge={challenge}
+                  onDone={handleDone}
+                  onRestart={handleRestart}
+                />
+              )}
             </Stack>
           </div>
         </PageBody>
