@@ -60,6 +60,7 @@ var exposure = map[string]string{
 	"setSyncSchedule":                  "-instance",
 	"getBackup":                        "-instance",
 	"runBackup":                        "-instance",
+	"setCopyPassword":                  "-instance",
 	"getSettings":                      "list_accounts",
 	"updateSettings":                   "-setup",
 	"listInstitutions":                 "list_payees_and_tags",

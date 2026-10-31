@@ -6249,6 +6249,29 @@ paths:
           $ref: "#/components/responses/Problem"
         "500":
           $ref: "#/components/responses/Problem"
+  /instance/backup/copy-password:
+    put:
+      tags: [instance]
+      operationId: setCopyPassword
+      x-book-role: read
+      summary: Set the password of the encrypted copies; admin only. 400 password_invalid below 12 characters; 409 secret_key_missing without EQUORI_SECRET_KEY.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CopyPasswordInput"
+      responses:
+        "204":
+          description: Stored.
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
 security:
   - sessionCookie: []
 components:
@@ -7771,6 +7794,14 @@ components:
           nullable: true
         late:
           type: boolean
+    CopyPasswordInput:
+      type: object
+      additionalProperties: false
+      required: [password]
+      properties:
+        password:
+          type: string
+          maxLength: 1024
     SyncSchedule:
       type: object
       additionalProperties: false

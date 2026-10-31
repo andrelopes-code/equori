@@ -76,6 +76,11 @@ type BackupStatus struct {
 	Copy    CopyStatus  `json:"copy"`
 }
 
+// CopyPasswordInput defines model for CopyPasswordInput.
+type CopyPasswordInput struct {
+	Password string `json:"password"`
+}
+
 // CopyStatus defines model for CopyStatus.
 type CopyStatus struct {
 	CopiedAt *time.Time      `json:"copied_at"`
@@ -129,6 +134,9 @@ type Problem struct {
 // TagName defines model for TagName.
 type TagName = string
 
+// SetCopyPasswordJSONRequestBody defines body for SetCopyPassword for application/json ContentType.
+type SetCopyPasswordJSONRequestBody = CopyPasswordInput
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// GetBackup Backups and encrypted copy of the instance; admin only (P13 A157).
@@ -137,6 +145,9 @@ type ServerInterface interface {
 	// RunBackup Write a periodic backup and its copy now; admin only. 409 backup_off without EQUORI_BACKUP_DIR; 500 backup_failed.
 	// (POST /instance/backup)
 	RunBackup(w http.ResponseWriter, r *http.Request)
+	// SetCopyPassword Set the password of the encrypted copies; admin only. 400 password_invalid below 12 characters; 409 secret_key_missing without EQUORI_SECRET_KEY.
+	// (PUT /instance/backup/copy-password)
+	SetCopyPassword(w http.ResponseWriter, r *http.Request)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -167,6 +178,20 @@ func (siw *ServerInterfaceWrapper) RunBackup(w http.ResponseWriter, r *http.Requ
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.RunBackup(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SetCopyPassword operation middleware
+func (siw *ServerInterfaceWrapper) SetCopyPassword(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SetCopyPassword(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -298,6 +323,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/instance/backup", wrapper.GetBackup)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/instance/backup", wrapper.RunBackup)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/instance/backup/copy-password", wrapper.SetCopyPassword)
 
 	return m
 }
@@ -434,6 +460,80 @@ func (response RunBackup500ApplicationProblemPlusJSONResponse) VisitRunBackupRes
 	return err
 }
 
+type SetCopyPasswordRequestObject struct {
+	Body *SetCopyPasswordJSONRequestBody
+}
+
+type SetCopyPasswordResponseObject interface {
+	VisitSetCopyPasswordResponse(w http.ResponseWriter) error
+}
+
+type SetCopyPassword204Response struct {
+}
+
+func (response SetCopyPassword204Response) VisitSetCopyPasswordResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type SetCopyPassword400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response SetCopyPassword400ApplicationProblemPlusJSONResponse) VisitSetCopyPasswordResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetCopyPassword401ApplicationProblemPlusJSONResponse Problem
+
+func (response SetCopyPassword401ApplicationProblemPlusJSONResponse) VisitSetCopyPasswordResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetCopyPassword403ApplicationProblemPlusJSONResponse Problem
+
+func (response SetCopyPassword403ApplicationProblemPlusJSONResponse) VisitSetCopyPasswordResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetCopyPassword409ApplicationProblemPlusJSONResponse Problem
+
+func (response SetCopyPassword409ApplicationProblemPlusJSONResponse) VisitSetCopyPasswordResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// GetBackup Backups and encrypted copy of the instance; admin only (P13 A157).
@@ -442,6 +542,9 @@ type StrictServerInterface interface {
 	// RunBackup Write a periodic backup and its copy now; admin only. 409 backup_off without EQUORI_BACKUP_DIR; 500 backup_failed.
 	// (POST /instance/backup)
 	RunBackup(ctx context.Context, request RunBackupRequestObject) (RunBackupResponseObject, error)
+	// SetCopyPassword Set the password of the encrypted copies; admin only. 400 password_invalid below 12 characters; 409 secret_key_missing without EQUORI_SECRET_KEY.
+	// (PUT /instance/backup/copy-password)
+	SetCopyPassword(ctx context.Context, request SetCopyPasswordRequestObject) (SetCopyPasswordResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
@@ -524,6 +627,37 @@ func (sh *strictHandler) RunBackup(w http.ResponseWriter, r *http.Request) {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(RunBackupResponseObject); ok {
 		if err := validResponse.VisitRunBackupResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SetCopyPassword operation middleware
+func (sh *strictHandler) SetCopyPassword(w http.ResponseWriter, r *http.Request) {
+	var request SetCopyPasswordRequestObject
+
+	var body SetCopyPasswordJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SetCopyPassword(ctx, request.(SetCopyPasswordRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SetCopyPassword")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SetCopyPasswordResponseObject); ok {
+		if err := validResponse.VisitSetCopyPasswordResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

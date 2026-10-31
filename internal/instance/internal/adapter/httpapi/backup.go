@@ -25,6 +25,14 @@ func (s *Server) RunBackup(ctx context.Context, _ RunBackupRequestObject) (RunBa
 	return RunBackup200JSONResponse(toBackupStatus(status)), nil
 }
 
+func (s *Server) SetCopyPassword(ctx context.Context, request SetCopyPasswordRequestObject) (SetCopyPasswordResponseObject, error) {
+	if err := s.svc.SetCopyPassword(ctx, auth.MustMemberID(ctx), request.Body.Password); err != nil {
+		return nil, err
+	}
+
+	return SetCopyPassword204Response{}, nil
+}
+
 func toBackupStatus(s domain.BackupStatus) BackupStatus {
 	state := BackupStateState("off")
 	if s.On {

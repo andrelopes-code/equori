@@ -16,6 +16,9 @@ var (
 	ErrAdminRequired = errors.New("only an admin reads or changes the instance's backups, diagnostic and version settings")
 	ErrBackupOff     = errors.New("automatic backups are off; set EQUORI_BACKUP_DIR")
 	ErrBackupFailed  = errors.New("the backup failed; the server log holds the cause")
+
+	ErrPasswordInvalid  = errors.New("the copy password needs at least 12 characters")
+	ErrSecretKeyMissing = errors.New("the copy password needs EQUORI_SECRET_KEY")
 )
 
 type Repository interface {
@@ -29,6 +32,13 @@ type Admins interface {
 	IsAdmin(ctx context.Context, memberID int64) (bool, error)
 }
 
+// Sealer is the secret box of ADR 008.
+type Sealer interface {
+	Seal(plaintext, associated []byte) ([]byte, error)
+	Open(sealed, associated []byte) ([]byte, error)
+	NeedsReseal(sealed []byte) bool
+}
+
 // Config is what the service needs from the module's configuration.
 type Config struct {
 	BackupDir string
@@ -40,6 +50,7 @@ type Config struct {
 type Service struct {
 	repo   Repository
 	admins Admins
+	box    Sealer // nil without EQUORI_SECRET_KEY
 	clock  clock.Clock
 	cfg    Config
 	log    *slog.Logger
@@ -47,8 +58,8 @@ type Service struct {
 	backups sync.Mutex
 }
 
-func NewService(repo Repository, admins Admins, clk clock.Clock, cfg Config, log *slog.Logger) *Service {
-	return &Service{repo: repo, admins: admins, clock: clk, cfg: cfg, log: log}
+func NewService(repo Repository, admins Admins, box Sealer, clk clock.Clock, cfg Config, log *slog.Logger) *Service {
+	return &Service{repo: repo, admins: admins, box: box, clock: clk, cfg: cfg, log: log}
 }
 
 func (s *Service) requireAdmin(ctx context.Context, memberID int64) error {

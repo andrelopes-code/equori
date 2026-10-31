@@ -3661,6 +3661,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/instance/backup/copy-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set the password of the encrypted copies; admin only. 400 password_invalid below 12 characters; 409 secret_key_missing without EQUORI_SECRET_KEY. */
+        put: operations["setCopyPassword"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -4481,6 +4498,9 @@ export interface components {
             copied_at: string | null;
             file: string | null;
             late: boolean;
+        };
+        CopyPasswordInput: {
+            password: string;
         };
         SyncSchedule: {
             /** Format: int32 */
@@ -12791,6 +12811,32 @@ export interface operations {
             403: components["responses"]["Problem"];
             409: components["responses"]["Problem"];
             500: components["responses"]["Problem"];
+        };
+    };
+    setCopyPassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CopyPasswordInput"];
+            };
+        };
+        responses: {
+            /** @description Stored. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
         };
     };
 }

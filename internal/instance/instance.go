@@ -14,6 +14,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/instance/internal/app"
 	"github.com/andrelopes-code/equori/internal/platform/clock"
 	platformpostgres "github.com/andrelopes-code/equori/internal/platform/postgres"
+	"github.com/andrelopes-code/equori/internal/platform/secret"
 )
 
 type Admins interface {
@@ -43,7 +44,12 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*Module, error) {
 		return nil, err
 	}
 
-	svc := app.NewService(postgres.NewRepository(pool), cfg.Admins, cfg.Clock, app.Config{
+	box, err := newSealer(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	svc := app.NewService(postgres.NewRepository(pool), cfg.Admins, box, cfg.Clock, app.Config{
 		BackupDir: cfg.BackupDir,
 		CopyDir:   cfg.CopyDir,
 		Dump:      cfg.Dump,
@@ -58,3 +64,21 @@ func (m *Module) RegisterRoutes(mux *http.ServeMux) { m.http.Register(mux) }
 // RunBackups writes a periodic backup every 24 hours until ctx ends; it returns at once when
 // BackupDir is empty.
 func (m *Module) RunBackups(ctx context.Context) { m.svc.RunBackups(ctx) }
+
+// RotateSecrets reseals the copy password under the current key (ADR 008 K4) and returns how
+// many values it resealed.
+func (m *Module) RotateSecrets(ctx context.Context) (int, error) { return m.svc.RotateSecrets(ctx) }
+
+// newSealer returns a nil interface, not a nil *secret.Box, without a secret key.
+func newSealer(cfg Config) (app.Sealer, error) {
+	if cfg.SecretKey == "" {
+		return nil, nil //nolint:nilnil // no key means no sealer; the service checks for nil.
+	}
+
+	var previous []byte
+	if cfg.PreviousSecretKey != "" {
+		previous = []byte(cfg.PreviousSecretKey)
+	}
+
+	return secret.New([]byte(cfg.SecretKey), previous)
+}

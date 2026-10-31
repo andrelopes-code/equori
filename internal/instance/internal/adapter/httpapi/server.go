@@ -42,6 +42,10 @@ func ToProblem(err error) (problem.Details, bool) {
 	case errors.Is(err, app.ErrBackupFailed):
 		// The cause stays out of the response: pg_dump output can carry row values (A158).
 		return problem.New(http.StatusInternalServerError, "backup_failed", app.ErrBackupFailed.Error()), true
+	case errors.Is(err, app.ErrPasswordInvalid):
+		return problem.New(http.StatusBadRequest, "password_invalid", app.ErrPasswordInvalid.Error()), true
+	case errors.Is(err, app.ErrSecretKeyMissing):
+		return problem.New(http.StatusConflict, "secret_key_missing", app.ErrSecretKeyMissing.Error()), true
 	}
 
 	return problem.Details{}, false
