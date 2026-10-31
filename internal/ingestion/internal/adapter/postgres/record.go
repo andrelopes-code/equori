@@ -23,6 +23,19 @@ type scoreRow struct {
 	Counterparty  string    `json:"counterparty"`
 }
 
+// undoRow is a record's Undo as decision_undo stores it (A148); WithdrawRecords and
+// ReidentifyRecord build the same keys in SQL.
+type undoRow struct {
+	Amount        int64             `json:"amount,omitzero"`
+	On            string            `json:"on,omitzero"` // time.DateOnly
+	State         string            `json:"state,omitzero"`
+	TransactionID string            `json:"transaction_id,omitzero"`
+	ReviewReason  string            `json:"review_reason,omitzero"`
+	ExternalID    string            `json:"external_id,omitzero"`
+	DedupKey      []byte            `json:"dedup_key,omitzero"`
+	Raw           map[string]string `json:"raw,omitzero"`
+}
+
 func toRecord(row IngestionExternalRecord) (domain.ExternalRecord, error) {
 	var raw map[string]string
 	if err := json.Unmarshal(row.Raw, &raw); err != nil {
@@ -34,6 +47,11 @@ func toRecord(row IngestionExternalRecord) (domain.ExternalRecord, error) {
 		return domain.ExternalRecord{}, err
 	}
 
+	undo, err := decodeUndo(row.DecisionUndo)
+	if err != nil {
+		return domain.ExternalRecord{}, err
+	}
+
 	rec := domain.ExternalRecord{
 		ID: row.ID, BooksID: row.BooksID, BatchID: row.BatchID, AccountID: row.AccountID, ExternalID: value(row.ExternalID),
 		DedupKey: row.DedupKey, Raw: raw, Date: row.BookedOn, Amount: row.Amount, Description: row.Description,
@@ -42,6 +60,7 @@ func toRecord(row IngestionExternalRecord) (domain.ExternalRecord, error) {
 		BalanceAfter: row.BalanceAfter, LineKind: value(row.LineKind), UnappliedChange: value(row.UnappliedChange),
 		ReviewReason: value(row.ReviewReason), InstitutionID: value(row.InstitutionID),
 		ReportedAmount: row.ReportedAmount, ReportedOn: row.ReportedOn,
+		Decision: domain.DecisionKind(value(row.Decision)), Undo: undo, SummaryBatchID: row.SummaryBatchID.UUID, Kept: row.Kept,
 	}
 	for _, s := range scores {
 		rec.Scores = append(rec.Scores, domain.Scored{
@@ -157,11 +176,17 @@ func outcome(rec domain.ExternalRecord) (SaveRecordOutcomesParams, error) {
 	}
 
 	stored, err := json.Marshal(scores)
+	if err != nil {
+		return SaveRecordOutcomesParams{}, err
+	}
+
+	undo, err := encodeUndo(rec.Undo)
 
 	return SaveRecordOutcomesParams{
 		BooksID: rec.BooksID, ID: rec.ID, BatchID: rec.BatchID, State: string(rec.State),
 		TransactionID: uuid.NullUUID{UUID: rec.TransactionID, Valid: rec.TransactionID != uuid.Nil}, Candidates: candidates,
 		ReviewReason: optional(rec.ReviewReason), CandidateScores: stored,
+		Decision: optional(string(rec.Decision)), DecisionUndo: undo, SummaryBatchID: nullableID(rec.SummaryBatchID),
 	}, err
 }
 
@@ -196,6 +221,7 @@ func (r *Repository) InsertBatch(ctx context.Context, b domain.Batch) (domain.Ba
 	row, err := r.q.InsertBatch(ctx, InsertBatchParams{
 		BooksID: b.BooksID, AccountID: b.AccountID, Source: string(b.Source), FileName: optional(b.FileName),
 		Currency: b.Currency, PeriodFrom: b.PeriodFrom, PeriodTo: b.PeriodTo, ExternalAccountID: nullable(b.ExternalAccountID),
+		SyncID: nullableID(b.SyncID),
 	})
 	if err != nil {
 		return domain.Batch{}, notFound(err)
@@ -321,4 +347,47 @@ func (r *Repository) ReopenRecord(ctx context.Context, booksID int64, id, batchI
 	})
 
 	return reopened, err
+}
+
+func encodeUndo(u domain.Undo) ([]byte, error) {
+	row := undoRow{
+		Amount: u.Amount, State: string(u.State), ReviewReason: u.ReviewReason,
+		ExternalID: u.ExternalID, DedupKey: u.DedupKey, Raw: u.Raw,
+	}
+	if !u.On.IsZero() {
+		row.On = u.On.Format(time.DateOnly)
+	}
+
+	if u.TransactionID != uuid.Nil {
+		row.TransactionID = u.TransactionID.String()
+	}
+
+	return json.Marshal(row)
+}
+
+func decodeUndo(stored []byte) (domain.Undo, error) {
+	var row undoRow
+	if err := json.Unmarshal(stored, &row); err != nil {
+		return domain.Undo{}, err
+	}
+
+	u := domain.Undo{
+		Amount: row.Amount, State: domain.RecordState(row.State), ReviewReason: row.ReviewReason,
+		ExternalID: row.ExternalID, DedupKey: row.DedupKey, Raw: row.Raw,
+	}
+
+	var err error
+	if row.On != "" {
+		if u.On, err = time.Parse(time.DateOnly, row.On); err != nil {
+			return domain.Undo{}, err
+		}
+	}
+
+	if row.TransactionID != "" {
+		if u.TransactionID, err = uuid.Parse(row.TransactionID); err != nil {
+			return domain.Undo{}, err
+		}
+	}
+
+	return u, nil
 }

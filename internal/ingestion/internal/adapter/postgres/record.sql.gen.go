@@ -14,7 +14,7 @@ import (
 
 const getRecord = `-- name: GetRecord :one
 SELECT
-    id, books_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change, line_kind, review_reason, candidate_scores, institution_id, reported_amount, reported_on
+    id, books_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change, line_kind, review_reason, candidate_scores, institution_id, reported_amount, reported_on, decision, decision_undo, summary_batch_id, kept
 FROM
     ingestion_external_record
 WHERE
@@ -57,13 +57,17 @@ func (q *Queries) GetRecord(ctx context.Context, arg GetRecordParams) (Ingestion
 		&i.InstitutionID,
 		&i.ReportedAmount,
 		&i.ReportedOn,
+		&i.Decision,
+		&i.DecisionUndo,
+		&i.SummaryBatchID,
+		&i.Kept,
 	)
 	return i, err
 }
 
 const listBatchRecords = `-- name: ListBatchRecords :many
 SELECT
-    id, books_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change, line_kind, review_reason, candidate_scores, institution_id, reported_amount, reported_on
+    id, books_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change, line_kind, review_reason, candidate_scores, institution_id, reported_amount, reported_on, decision, decision_undo, summary_batch_id, kept
 FROM
     ingestion_external_record
 WHERE
@@ -133,6 +137,10 @@ func (q *Queries) ListBatchRecords(ctx context.Context, arg ListBatchRecordsPara
 			&i.InstitutionID,
 			&i.ReportedAmount,
 			&i.ReportedOn,
+			&i.Decision,
+			&i.DecisionUndo,
+			&i.SummaryBatchID,
+			&i.Kept,
 		); err != nil {
 			return nil, err
 		}
@@ -146,7 +154,7 @@ func (q *Queries) ListBatchRecords(ctx context.Context, arg ListBatchRecordsPara
 
 const listRecordsByKeys = `-- name: ListRecordsByKeys :many
 SELECT
-    id, books_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change, line_kind, review_reason, candidate_scores, institution_id, reported_amount, reported_on
+    id, books_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change, line_kind, review_reason, candidate_scores, institution_id, reported_amount, reported_on, decision, decision_undo, summary_batch_id, kept
 FROM
     ingestion_external_record
 WHERE
@@ -195,6 +203,10 @@ func (q *Queries) ListRecordsByKeys(ctx context.Context, arg ListRecordsByKeysPa
 			&i.InstitutionID,
 			&i.ReportedAmount,
 			&i.ReportedOn,
+			&i.Decision,
+			&i.DecisionUndo,
+			&i.SummaryBatchID,
+			&i.Kept,
 		); err != nil {
 			return nil, err
 		}
@@ -208,7 +220,7 @@ func (q *Queries) ListRecordsByKeys(ctx context.Context, arg ListRecordsByKeysPa
 
 const listRecordsByLineIDs = `-- name: ListRecordsByLineIDs :many
 SELECT
-    id, books_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change, line_kind, review_reason, candidate_scores, institution_id, reported_amount, reported_on
+    id, books_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change, line_kind, review_reason, candidate_scores, institution_id, reported_amount, reported_on, decision, decision_undo, summary_batch_id, kept
 FROM
     ingestion_external_record
 WHERE
@@ -270,6 +282,10 @@ func (q *Queries) ListRecordsByLineIDs(ctx context.Context, arg ListRecordsByLin
 			&i.InstitutionID,
 			&i.ReportedAmount,
 			&i.ReportedOn,
+			&i.Decision,
+			&i.DecisionUndo,
+			&i.SummaryBatchID,
+			&i.Kept,
 		); err != nil {
 			return nil, err
 		}
@@ -283,7 +299,7 @@ func (q *Queries) ListRecordsByLineIDs(ctx context.Context, arg ListRecordsByLin
 
 const listSyncedRecords = `-- name: ListSyncedRecords :many
 SELECT
-    id, books_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change, line_kind, review_reason, candidate_scores, institution_id, reported_amount, reported_on
+    id, books_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change, line_kind, review_reason, candidate_scores, institution_id, reported_amount, reported_on, decision, decision_undo, summary_batch_id, kept
 FROM
     ingestion_external_record
 WHERE
@@ -343,6 +359,10 @@ func (q *Queries) ListSyncedRecords(ctx context.Context, arg ListSyncedRecordsPa
 			&i.InstitutionID,
 			&i.ReportedAmount,
 			&i.ReportedOn,
+			&i.Decision,
+			&i.DecisionUndo,
+			&i.SummaryBatchID,
+			&i.Kept,
 		); err != nil {
 			return nil, err
 		}

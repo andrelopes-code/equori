@@ -49,13 +49,26 @@ type Batch struct {
 	// ExternalAccountID is the mapped account a sync read; nil for files and after the
 	// connection is deleted.
 	ExternalAccountID *uuid.UUID
-	Currency          string
-	PeriodFrom        *time.Time
-	PeriodTo          *time.Time
-	Counts            Counts
+	// SyncID is the sync run that made the batch; Nil for files (A149).
+	SyncID     uuid.UUID
+	Currency   string
+	PeriodFrom *time.Time
+	PeriodTo   *time.Time
+	Counts     Counts
 	// ReadEmpty: the date read returned no line while the account held records in the window (A146).
 	ReadEmpty   bool
 	Balance     FileBalance
 	StartedAt   time.Time
 	CompletedAt *time.Time
 }
+
+// SyncRun is one sync of a connection: its batches and the records its summary lists (A149).
+type SyncRun struct {
+	ID        uuid.UUID
+	StartedAt time.Time
+	Batches   []Batch
+	Records   []ExternalRecord
+}
+
+// SyncRunsListed is how many sync runs a connection lists (A149).
+const SyncRunsListed = 10

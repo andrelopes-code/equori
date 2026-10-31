@@ -20,6 +20,10 @@ func nullable(id *uuid.UUID) uuid.NullUUID {
 	return uuid.NullUUID{UUID: *id, Valid: true}
 }
 
+func nullableID(id uuid.UUID) uuid.NullUUID {
+	return uuid.NullUUID{UUID: id, Valid: id != uuid.Nil}
+}
+
 func (r *Repository) UpdateRecordFacts(ctx context.Context, recs []domain.ExternalRecord) error {
 	if len(recs) == 0 {
 		return nil
@@ -32,6 +36,11 @@ func (r *Repository) UpdateRecordFacts(ctx context.Context, recs []domain.Extern
 			return err
 		}
 
+		undo, err := encodeUndo(rec.Undo)
+		if err != nil {
+			return err
+		}
+
 		f := factsOf(rec)
 		params[i] = UpdateRecordFactsParams{
 			BooksID: rec.BooksID, ID: rec.ID, Raw: raw, ExternalStatus: f.status, DueDate: f.dueDate,
@@ -39,6 +48,7 @@ func (r *Repository) UpdateRecordFacts(ctx context.Context, recs []domain.Extern
 			LineKind: f.kind, UnappliedChange: optional(rec.UnappliedChange),
 			BookedOn: rec.Date, Amount: rec.Amount, ReviewReason: optional(rec.ReviewReason),
 			InstitutionID: f.institution, ReportedAmount: rec.ReportedAmount, ReportedOn: rec.ReportedOn,
+			Decision: optional(string(rec.Decision)), DecisionUndo: undo, SummaryBatchID: nullableID(rec.SummaryBatchID),
 		}
 	}
 

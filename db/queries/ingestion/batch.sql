@@ -25,7 +25,8 @@ INSERT INTO
         currency,
         period_from,
         period_to,
-        external_account_id
+        external_account_id,
+        sync_id
     )
 VALUES
     (
@@ -36,7 +37,8 @@ VALUES
         @currency,
         sqlc.narg (period_from),
         sqlc.narg (period_to),
-        sqlc.narg (external_account_id)
+        sqlc.narg (external_account_id),
+        sqlc.narg (sync_id)
     )
 RETURNING
     *;

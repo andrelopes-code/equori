@@ -59,6 +59,14 @@ type ExternalRecord struct {
 	LineKind string
 	// UnappliedChange describes an aggregator change the ledger did not take.
 	UnappliedChange string
+	// Decision is the record's last automatic decision, empty when none is undoable, and Undo
+	// what undoing it restores (A148).
+	Decision DecisionKind
+	Undo     Undo
+	// SummaryBatchID is the batch of the sync run whose summary lists the record (A149).
+	SummaryBatchID uuid.UUID
+	// Kept: the owner undid the record's withdrawal; withdrawal skips it (A148).
+	Kept bool
 }
 
 // Why a record waits for review (A100, A102, A142); the first two are the zones of Assign.

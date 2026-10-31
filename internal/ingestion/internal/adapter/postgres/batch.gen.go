@@ -65,7 +65,7 @@ VALUES
     )
 ON CONFLICT (books_id, dedup_key) DO NOTHING
 RETURNING
-    id, books_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change, line_kind, review_reason, candidate_scores, institution_id, reported_amount, reported_on
+    id, books_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change, line_kind, review_reason, candidate_scores, institution_id, reported_amount, reported_on, decision, decision_undo, summary_batch_id, kept
 `
 
 type InsertRecordsBatchResults struct {
@@ -165,6 +165,10 @@ func (b *InsertRecordsBatchResults) QueryRow(f func(int, IngestionExternalRecord
 			&i.InstitutionID,
 			&i.ReportedAmount,
 			&i.ReportedOn,
+			&i.Decision,
+			&i.DecisionUndo,
+			&i.SummaryBatchID,
+			&i.Kept,
 		)
 		if f != nil {
 			f(t, i, err)
@@ -185,10 +189,13 @@ SET
     transaction_id = $3,
     candidates = $4,
     review_reason = $5,
-    candidate_scores = $6
+    candidate_scores = $6,
+    decision = $7,
+    decision_undo = $8,
+    summary_batch_id = $9
 WHERE
-    books_id = $7
-    AND id = $8
+    books_id = $10
+    AND id = $11
 `
 
 type SaveRecordOutcomesBatchResults struct {
@@ -204,6 +211,9 @@ type SaveRecordOutcomesParams struct {
 	Candidates      []uuid.UUID
 	ReviewReason    *string
 	CandidateScores []byte
+	Decision        *string
+	DecisionUndo    []byte
+	SummaryBatchID  uuid.NullUUID
 	BooksID         int64
 	ID              uuid.UUID
 }
@@ -218,6 +228,9 @@ func (q *Queries) SaveRecordOutcomes(ctx context.Context, arg []SaveRecordOutcom
 			a.Candidates,
 			a.ReviewReason,
 			a.CandidateScores,
+			a.Decision,
+			a.DecisionUndo,
+			a.SummaryBatchID,
 			a.BooksID,
 			a.ID,
 		}
@@ -265,10 +278,13 @@ SET
     review_reason = $12,
     institution_id = coalesce(institution_id, $13),
     reported_amount = $14,
-    reported_on = $15
+    reported_on = $15,
+    decision = $16,
+    decision_undo = $17,
+    summary_batch_id = $18
 WHERE
-    books_id = $16
-    AND id = $17
+    books_id = $19
+    AND id = $20
 `
 
 type UpdateRecordFactsBatchResults struct {
@@ -293,6 +309,9 @@ type UpdateRecordFactsParams struct {
 	InstitutionID     *string
 	ReportedAmount    int64
 	ReportedOn        time.Time
+	Decision          *string
+	DecisionUndo      []byte
+	SummaryBatchID    uuid.NullUUID
 	BooksID           int64
 	ID                uuid.UUID
 }
@@ -317,6 +336,9 @@ func (q *Queries) UpdateRecordFacts(ctx context.Context, arg []UpdateRecordFacts
 			a.InstitutionID,
 			a.ReportedAmount,
 			a.ReportedOn,
+			a.Decision,
+			a.DecisionUndo,
+			a.SummaryBatchID,
 			a.BooksID,
 			a.ID,
 		}

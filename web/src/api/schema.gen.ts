@@ -4334,6 +4334,11 @@ export interface components {
             /** @description A change the aggregator reported that the ledger did not take (P6 amendment A36). */
             unapplied_change?: string;
             /**
+             * @description The last automatic decision of a sync, present while POST /external-records/{id}/undo can revert it (A148).
+             * @enum {string}
+             */
+            decision?: "linked" | "followed" | "withdrawn" | "re_identified";
+            /**
              * @description Why the record waits for review (A100, A102, A142).
              * @enum {string}
              */
@@ -4424,6 +4429,11 @@ export interface components {
              * @description The mapped account a sync read; absent for files and after its connection is deleted.
              */
             external_account_id?: string;
+            /**
+             * Format: uuid
+             * @description The sync run that made the batch; the batches of one run share it (A149). Absent for files.
+             */
+            sync_id?: string;
             /** Format: date */
             period_from?: string;
             /** Format: date */

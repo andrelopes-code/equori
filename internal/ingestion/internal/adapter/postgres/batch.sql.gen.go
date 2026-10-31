@@ -34,7 +34,7 @@ WHERE
     books_id = $15
     AND id = $16
 RETURNING
-    id, books_id, account_id, source, file_name, currency, period_from, period_to, received, ignored, matched, created, needs_review, discarded, balance_date, balance_amount, balance_status, balance_reason, started_at, completed_at, external_account_id, updated, withdrawn, re_identified, read_empty
+    id, books_id, account_id, source, file_name, currency, period_from, period_to, received, ignored, matched, created, needs_review, discarded, balance_date, balance_amount, balance_status, balance_reason, started_at, completed_at, external_account_id, updated, withdrawn, re_identified, read_empty, sync_id
 `
 
 type CompleteBatchParams struct {
@@ -102,13 +102,14 @@ func (q *Queries) CompleteBatch(ctx context.Context, arg CompleteBatchParams) (I
 		&i.Withdrawn,
 		&i.ReIdentified,
 		&i.ReadEmpty,
+		&i.SyncID,
 	)
 	return i, err
 }
 
 const getBatch = `-- name: GetBatch :one
 SELECT
-    id, books_id, account_id, source, file_name, currency, period_from, period_to, received, ignored, matched, created, needs_review, discarded, balance_date, balance_amount, balance_status, balance_reason, started_at, completed_at, external_account_id, updated, withdrawn, re_identified, read_empty
+    id, books_id, account_id, source, file_name, currency, period_from, period_to, received, ignored, matched, created, needs_review, discarded, balance_date, balance_amount, balance_status, balance_reason, started_at, completed_at, external_account_id, updated, withdrawn, re_identified, read_empty, sync_id
 FROM
     ingestion_batch
 WHERE
@@ -150,6 +151,7 @@ func (q *Queries) GetBatch(ctx context.Context, arg GetBatchParams) (IngestionBa
 		&i.Withdrawn,
 		&i.ReIdentified,
 		&i.ReadEmpty,
+		&i.SyncID,
 	)
 	return i, err
 }
@@ -164,7 +166,8 @@ INSERT INTO
         currency,
         period_from,
         period_to,
-        external_account_id
+        external_account_id,
+        sync_id
     )
 VALUES
     (
@@ -175,10 +178,11 @@ VALUES
         $5,
         $6,
         $7,
-        $8
+        $8,
+        $9
     )
 RETURNING
-    id, books_id, account_id, source, file_name, currency, period_from, period_to, received, ignored, matched, created, needs_review, discarded, balance_date, balance_amount, balance_status, balance_reason, started_at, completed_at, external_account_id, updated, withdrawn, re_identified, read_empty
+    id, books_id, account_id, source, file_name, currency, period_from, period_to, received, ignored, matched, created, needs_review, discarded, balance_date, balance_amount, balance_status, balance_reason, started_at, completed_at, external_account_id, updated, withdrawn, re_identified, read_empty, sync_id
 `
 
 type InsertBatchParams struct {
@@ -190,6 +194,7 @@ type InsertBatchParams struct {
 	PeriodFrom        *time.Time
 	PeriodTo          *time.Time
 	ExternalAccountID uuid.NullUUID
+	SyncID            uuid.NullUUID
 }
 
 func (q *Queries) InsertBatch(ctx context.Context, arg InsertBatchParams) (IngestionBatch, error) {
@@ -202,6 +207,7 @@ func (q *Queries) InsertBatch(ctx context.Context, arg InsertBatchParams) (Inges
 		arg.PeriodFrom,
 		arg.PeriodTo,
 		arg.ExternalAccountID,
+		arg.SyncID,
 	)
 	var i IngestionBatch
 	err := row.Scan(
@@ -230,13 +236,14 @@ func (q *Queries) InsertBatch(ctx context.Context, arg InsertBatchParams) (Inges
 		&i.Withdrawn,
 		&i.ReIdentified,
 		&i.ReadEmpty,
+		&i.SyncID,
 	)
 	return i, err
 }
 
 const listBatches = `-- name: ListBatches :many
 SELECT
-    id, books_id, account_id, source, file_name, currency, period_from, period_to, received, ignored, matched, created, needs_review, discarded, balance_date, balance_amount, balance_status, balance_reason, started_at, completed_at, external_account_id, updated, withdrawn, re_identified, read_empty
+    id, books_id, account_id, source, file_name, currency, period_from, period_to, received, ignored, matched, created, needs_review, discarded, balance_date, balance_amount, balance_status, balance_reason, started_at, completed_at, external_account_id, updated, withdrawn, re_identified, read_empty, sync_id
 FROM
     ingestion_batch
 WHERE
@@ -299,6 +306,7 @@ func (q *Queries) ListBatches(ctx context.Context, arg ListBatchesParams) ([]Ing
 			&i.Withdrawn,
 			&i.ReIdentified,
 			&i.ReadEmpty,
+			&i.SyncID,
 		); err != nil {
 			return nil, err
 		}

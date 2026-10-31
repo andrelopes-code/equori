@@ -7537,6 +7537,10 @@ components:
         unapplied_change:
           type: string
           description: A change the aggregator reported that the ledger did not take (P6 amendment A36).
+        decision:
+          type: string
+          enum: [linked, followed, withdrawn, re_identified]
+          description: The last automatic decision of a sync, present while POST /external-records/{id}/undo can revert it (A148).
         review_reason:
           type: string
           enum: [ambiguous, probable, changed, repeated]
@@ -7692,6 +7696,10 @@ components:
           type: string
           format: uuid
           description: The mapped account a sync read; absent for files and after its connection is deleted.
+        sync_id:
+          type: string
+          format: uuid
+          description: The sync run that made the batch; the batches of one run share it (A149). Absent for files.
         period_from:
           type: string
           format: date

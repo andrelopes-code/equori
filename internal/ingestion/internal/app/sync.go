@@ -85,6 +85,8 @@ func (s *Service) syncItem(ctx context.Context, c *domain.Connection, force bool
 		return nil, err
 	}
 
+	syncID := uuid.Must(uuid.NewV7())
+
 	var batches []domain.Batch
 	// Reserved balances sync after the other accounts, so that the transfers the lines of a
 	// bank account book come before the reserve assertion (A74).
@@ -96,7 +98,7 @@ func (s *Service) syncItem(ctx context.Context, c *domain.Connection, force bool
 			continue
 		}
 
-		b, err := s.syncAccount(ctx, agg, *c, ext, creds)
+		b, err := s.syncAccount(ctx, agg, *c, ext, creds, syncID)
 		if err != nil {
 			return batches, err
 		}
@@ -175,7 +177,7 @@ func (s *Service) addMissingAccounts(ctx context.Context, agg Aggregator, c *dom
 // first, unless the read is empty (A146), so that a line returned with a new
 // id finds its released posting (A38); then the lines go through the P4 pipeline, and a
 // bank balance becomes a balance assertion (A42).
-func (s *Service) syncAccount(ctx context.Context, agg Aggregator, c domain.Connection, ext domain.ExternalAccount, creds domain.Credentials) (domain.Batch, error) {
+func (s *Service) syncAccount(ctx context.Context, agg Aggregator, c domain.Connection, ext domain.ExternalAccount, creds domain.Credentials, syncID uuid.UUID) (domain.Batch, error) {
 	accountID := *ext.AccountID
 
 	target, err := s.ledger.ImportTarget(ctx, c.BooksID, accountID)
@@ -241,7 +243,7 @@ func (s *Service) syncAccount(ctx context.Context, agg Aggregator, c domain.Conn
 	}
 
 	batch, err := s.repo.InsertBatch(ctx, domain.Batch{
-		BooksID: c.BooksID, AccountID: accountID, Source: domain.SourceAggregator, ExternalAccountID: &ext.ID,
+		BooksID: c.BooksID, AccountID: accountID, Source: domain.SourceAggregator, ExternalAccountID: &ext.ID, SyncID: syncID,
 		Currency: string(target.Currency), PeriodFrom: &from, PeriodTo: &to, Balance: domain.FileBalance{Status: domain.BalanceNone},
 	})
 	if err != nil {

@@ -65,7 +65,10 @@ SET
     transaction_id = sqlc.narg (transaction_id),
     candidates = @candidates,
     review_reason = sqlc.narg (review_reason),
-    candidate_scores = @candidate_scores
+    candidate_scores = @candidate_scores,
+    decision = sqlc.narg (decision),
+    decision_undo = @decision_undo,
+    summary_batch_id = sqlc.narg (summary_batch_id)
 WHERE
     books_id = @books_id
     AND id = @id;
@@ -159,7 +162,10 @@ SET
     review_reason = sqlc.narg (review_reason),
     institution_id = coalesce(institution_id, sqlc.narg (institution_id)),
     reported_amount = @reported_amount,
-    reported_on = @reported_on
+    reported_on = @reported_on,
+    decision = sqlc.narg (decision),
+    decision_undo = @decision_undo,
+    summary_batch_id = sqlc.narg (summary_batch_id)
 WHERE
     books_id = @books_id
     AND id = @id;

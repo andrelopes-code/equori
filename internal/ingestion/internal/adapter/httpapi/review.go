@@ -42,6 +42,11 @@ func toRecordAPI(r domain.ExternalRecord, currency string) ExternalRecord {
 		out.TransactionId = &r.TransactionID
 	}
 
+	if r.Decision != "" {
+		decision := ExternalRecordDecision(r.Decision)
+		out.Decision = &decision
+	}
+
 	return out
 }
 

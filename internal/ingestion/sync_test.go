@@ -15,6 +15,7 @@ type syncBatch struct {
 	AccountID         string `json:"account_id"`
 	Source            string `json:"source"`
 	ExternalAccountID string `json:"external_account_id"`
+	SyncID            string `json:"sync_id"`
 	PeriodFrom        string `json:"period_from"`
 	PeriodTo          string `json:"period_to"`
 	Counts            struct {

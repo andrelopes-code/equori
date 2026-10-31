@@ -36,6 +36,7 @@ type IngestionBatch struct {
 	Withdrawn         int32
 	ReIdentified      int32
 	ReadEmpty         bool
+	SyncID            uuid.NullUUID
 }
 
 type IngestionConnection struct {
@@ -120,6 +121,10 @@ type IngestionExternalRecord struct {
 	InstitutionID     *string
 	ReportedAmount    int64
 	ReportedOn        time.Time
+	Decision          *string
+	DecisionUndo      []byte
+	SummaryBatchID    uuid.NullUUID
+	Kept              bool
 }
 
 type IngestionIntegration struct {

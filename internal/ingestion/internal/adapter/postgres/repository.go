@@ -39,7 +39,7 @@ func toBatch(row IngestionBatch) domain.Batch {
 		},
 		ReadEmpty: row.ReadEmpty,
 		Balance:   domain.FileBalance{Status: domain.BalanceStatus(row.BalanceStatus), Date: row.BalanceDate},
-		StartedAt: row.StartedAt, CompletedAt: row.CompletedAt,
+		StartedAt: row.StartedAt, CompletedAt: row.CompletedAt, SyncID: row.SyncID.UUID,
 	}
 	if row.ExternalAccountID.Valid {
 		b.ExternalAccountID = &row.ExternalAccountID.UUID

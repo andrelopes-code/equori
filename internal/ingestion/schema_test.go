@@ -49,6 +49,10 @@ func TestSchemaInvariants(t *testing.T) {
 			VALUES ($1, $2, $3, $4, '{}', '2026-10-01', -100, -100, '2026-10-01', 'x', '')`, uid, batch, checking, append(make([]byte, 31), 10))},
 		{"a record holds the reported amount", exec(`INSERT INTO ingestion_external_record (books_id, batch_id, account_id, dedup_key, raw, booked_on, amount, reported_amount, reported_on, description)
 			VALUES ($1, $2, $3, $4, '{}', '2026-10-01', -100, NULL, '2026-10-01', 'x')`, uid, batch, checking, append(make([]byte, 31), 11))},
+		{"a record decision outside the closed set", exec(`INSERT INTO ingestion_external_record (books_id, batch_id, account_id, dedup_key, raw, booked_on, amount, reported_amount, reported_on, description, state, decision)
+			VALUES ($1, $2, $3, $4, '{}', '2026-10-01', -100, -100, '2026-10-01', 'x', 'received', 'other')`, uid, batch, checking, append(make([]byte, 31), 20))},
+		{"a file batch carries no sync run", exec(`INSERT INTO ingestion_batch (books_id, account_id, source, file_name, currency, sync_id)
+			VALUES ($1, $2, 'ofx', 'b.ofx', 'BRL', gen_random_uuid())`, uid, checking)},
 		{"profile with an amount column and debit and credit columns", exec(`INSERT INTO ingestion_csv_profile
 			(books_id, account_id, date_column, date_layout, amount_column, debit_column, credit_column, decimal_separator, description_column)
 			VALUES ($1, $2, 'Data', 'DD/MM/YYYY', 'Valor', 'Débito', 'Crédito', ',', 'Descrição')`, uid, checking)},

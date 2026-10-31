@@ -127,6 +127,30 @@ func (e ExternalAccountState) Valid() bool {
 	}
 }
 
+// Defines values for ExternalRecordDecision.
+const (
+	ExternalRecordDecisionFollowed     ExternalRecordDecision = "followed"
+	ExternalRecordDecisionLinked       ExternalRecordDecision = "linked"
+	ExternalRecordDecisionReIdentified ExternalRecordDecision = "re_identified"
+	ExternalRecordDecisionWithdrawn    ExternalRecordDecision = "withdrawn"
+)
+
+// Valid indicates whether the value is a known member of the ExternalRecordDecision enum.
+func (e ExternalRecordDecision) Valid() bool {
+	switch e {
+	case ExternalRecordDecisionFollowed:
+		return true
+	case ExternalRecordDecisionLinked:
+		return true
+	case ExternalRecordDecisionReIdentified:
+		return true
+	case ExternalRecordDecisionWithdrawn:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ExternalRecordReviewReason.
 const (
 	Ambiguous ExternalRecordReviewReason = "ambiguous"
@@ -500,11 +524,14 @@ type ExternalRecord struct {
 	BatchId   openapi_types.UUID `json:"batch_id"`
 
 	// Candidates Transactions the record may confirm, while it needs review.
-	Candidates  []openapi_types.UUID `json:"candidates"`
-	Date        openapi_types.Date   `json:"date"`
-	Description string               `json:"description"`
-	ExternalId  *string              `json:"external_id,omitempty"`
-	Id          openapi_types.UUID   `json:"id"`
+	Candidates []openapi_types.UUID `json:"candidates"`
+	Date       openapi_types.Date   `json:"date"`
+
+	// Decision The last automatic decision of a sync, present while POST /external-records/{id}/undo can revert it (A148).
+	Decision    *ExternalRecordDecision `json:"decision,omitempty"`
+	Description string                  `json:"description"`
+	ExternalId  *string                 `json:"external_id,omitempty"`
+	Id          openapi_types.UUID      `json:"id"`
 
 	// ReviewReason Why the record waits for review (A100, A102, A142).
 	ReviewReason *ExternalRecordReviewReason `json:"review_reason,omitempty"`
@@ -517,6 +544,9 @@ type ExternalRecord struct {
 	// UnappliedChange A change the aggregator reported that the ledger did not take (P6 amendment A36).
 	UnappliedChange *string `json:"unapplied_change,omitempty"`
 }
+
+// ExternalRecordDecision The last automatic decision of a sync, present while POST /external-records/{id}/undo can revert it (A148).
+type ExternalRecordDecision string
 
 // ExternalRecordReviewReason Why the record waits for review (A100, A102, A142).
 type ExternalRecordReviewReason string
@@ -576,6 +606,9 @@ type ImportBatch struct {
 	ReadEmpty *bool             `json:"read_empty,omitempty"`
 	Source    ImportBatchSource `json:"source"`
 	StartedAt time.Time         `json:"started_at"`
+
+	// SyncId The sync run that made the batch; the batches of one run share it (A149). Absent for files.
+	SyncId *openapi_types.UUID `json:"sync_id,omitempty"`
 }
 
 // ImportBatchSource defines model for ImportBatch.Source.

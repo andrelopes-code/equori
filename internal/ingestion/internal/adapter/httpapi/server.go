@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/google/uuid"
 	openapi_types "github.com/oapi-codegen/runtime/types"
 
 	"github.com/andrelopes-code/equori/internal/ingestion/internal/app"
@@ -118,6 +119,10 @@ func toBatchAPI(b domain.Batch) ImportBatch {
 	}
 	if b.ReadEmpty {
 		out.ReadEmpty = &b.ReadEmpty
+	}
+
+	if b.SyncID != uuid.Nil {
+		out.SyncId = &b.SyncID
 	}
 
 	if b.PeriodFrom != nil {
