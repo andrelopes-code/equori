@@ -147,6 +147,16 @@ func Backups(dir, copyDir string, dump func(ctx context.Context, path string) er
 	}
 }
 
+// Version sets the version of the running app.
+func Version(v string) Option {
+	return func(c *server.Config) { c.Version = v }
+}
+
+// ReleaseURL replaces the latest-release address of the version check.
+func ReleaseURL(url string) Option {
+	return func(c *server.Config) { c.Instance.ReleaseURL = url }
+}
+
 // SecretKey is the integration key Pluggy sets (32 bytes).
 const SecretKey = "equori-test-secret-key-32-bytes!" //nolint:gosec // G101: a fixed key for test databases only
 

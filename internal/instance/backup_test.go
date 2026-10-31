@@ -218,6 +218,11 @@ func TestS218MemberGetsAdminRequired(t *testing.T) {
 		http.StatusForbidden, "admin_required", "",
 	)
 	h.ExpectProblem(h.Call(member, http.MethodGet, diagnosticPath, nil), http.StatusForbidden, "admin_required", "")
+	h.ExpectProblem(h.Call(member, http.MethodGet, versionPath, nil), http.StatusForbidden, "admin_required", "")
+	h.ExpectProblem(
+		h.Call(member, http.MethodPut, updateCheckPath, map[string]bool{"update_check": true}),
+		http.StatusForbidden, "admin_required", "",
+	)
 }
 
 func getBackup(t *testing.T, h *apitest.Harness) backupStatus {

@@ -62,6 +62,8 @@ var exposure = map[string]string{
 	"runBackup":                        "-instance",
 	"setCopyPassword":                  "-instance",
 	"getDiagnostic":                    "-instance",
+	"getVersion":                       "-instance",
+	"setUpdateCheck":                   "-instance",
 	"getSettings":                      "list_accounts",
 	"updateSettings":                   "-setup",
 	"listInstitutions":                 "list_payees_and_tags",

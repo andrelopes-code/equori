@@ -204,11 +204,34 @@ type Problem struct {
 	Type    string     `json:"type"`
 }
 
+// Release defines model for Release.
+type Release struct {
+	CheckedAt time.Time `json:"checked_at"`
+	Url       string    `json:"url"`
+	Version   string    `json:"version"`
+}
+
+// UpdateCheckInput defines model for UpdateCheckInput.
+type UpdateCheckInput struct {
+	UpdateCheck bool `json:"update_check"`
+}
+
+// VersionStatus defines model for VersionStatus.
+type VersionStatus struct {
+	Latest      *Release `json:"latest"`
+	Newer       bool     `json:"newer"`
+	UpdateCheck *bool    `json:"update_check"`
+	Version     string   `json:"version"`
+}
+
 // TagName defines model for TagName.
 type TagName = string
 
 // SetCopyPasswordJSONRequestBody defines body for SetCopyPassword for application/json ContentType.
 type SetCopyPasswordJSONRequestBody = CopyPasswordInput
+
+// SetUpdateCheckJSONRequestBody defines body for SetUpdateCheck for application/json ContentType.
+type SetUpdateCheckJSONRequestBody = UpdateCheckInput
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
@@ -224,6 +247,12 @@ type ServerInterface interface {
 	// GetDiagnostic The diagnostic file, without amounts, names or descriptions; admin only (P13 A158).
 	// (GET /instance/diagnostic)
 	GetDiagnostic(w http.ResponseWriter, r *http.Request)
+	// GetVersion Version of the binary and the newest release found; admin only (P13 A159).
+	// (GET /instance/version)
+	GetVersion(w http.ResponseWriter, r *http.Request)
+	// SetUpdateCheck Allow or refuse the daily request for the latest release; admin only.
+	// (PUT /instance/version/update-check)
+	SetUpdateCheck(w http.ResponseWriter, r *http.Request)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -282,6 +311,34 @@ func (siw *ServerInterfaceWrapper) GetDiagnostic(w http.ResponseWriter, r *http.
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetDiagnostic(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetVersion operation middleware
+func (siw *ServerInterfaceWrapper) GetVersion(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetVersion(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SetUpdateCheck operation middleware
+func (siw *ServerInterfaceWrapper) SetUpdateCheck(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SetUpdateCheck(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -415,6 +472,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/instance/backup", wrapper.RunBackup)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/instance/backup/copy-password", wrapper.SetCopyPassword)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/instance/diagnostic", wrapper.GetDiagnostic)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/instance/version", wrapper.GetVersion)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/instance/version/update-check", wrapper.SetUpdateCheck)
 
 	return m
 }
@@ -686,6 +745,123 @@ func (response GetDiagnostic403ApplicationProblemPlusJSONResponse) VisitGetDiagn
 	return err
 }
 
+type GetVersionRequestObject struct {
+}
+
+type GetVersionResponseObject interface {
+	VisitGetVersionResponse(w http.ResponseWriter) error
+}
+
+type GetVersion200JSONResponse VersionStatus
+
+func (response GetVersion200JSONResponse) VisitGetVersionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetVersion401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetVersion401ApplicationProblemPlusJSONResponse) VisitGetVersionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetVersion403ApplicationProblemPlusJSONResponse Problem
+
+func (response GetVersion403ApplicationProblemPlusJSONResponse) VisitGetVersionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetUpdateCheckRequestObject struct {
+	Body *SetUpdateCheckJSONRequestBody
+}
+
+type SetUpdateCheckResponseObject interface {
+	VisitSetUpdateCheckResponse(w http.ResponseWriter) error
+}
+
+type SetUpdateCheck200JSONResponse VersionStatus
+
+func (response SetUpdateCheck200JSONResponse) VisitSetUpdateCheckResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetUpdateCheck400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response SetUpdateCheck400ApplicationProblemPlusJSONResponse) VisitSetUpdateCheckResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetUpdateCheck401ApplicationProblemPlusJSONResponse Problem
+
+func (response SetUpdateCheck401ApplicationProblemPlusJSONResponse) VisitSetUpdateCheckResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetUpdateCheck403ApplicationProblemPlusJSONResponse Problem
+
+func (response SetUpdateCheck403ApplicationProblemPlusJSONResponse) VisitSetUpdateCheckResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// GetBackup Backups and encrypted copy of the instance; admin only (P13 A157).
@@ -700,6 +876,12 @@ type StrictServerInterface interface {
 	// GetDiagnostic The diagnostic file, without amounts, names or descriptions; admin only (P13 A158).
 	// (GET /instance/diagnostic)
 	GetDiagnostic(ctx context.Context, request GetDiagnosticRequestObject) (GetDiagnosticResponseObject, error)
+	// GetVersion Version of the binary and the newest release found; admin only (P13 A159).
+	// (GET /instance/version)
+	GetVersion(ctx context.Context, request GetVersionRequestObject) (GetVersionResponseObject, error)
+	// SetUpdateCheck Allow or refuse the daily request for the latest release; admin only.
+	// (PUT /instance/version/update-check)
+	SetUpdateCheck(ctx context.Context, request SetUpdateCheckRequestObject) (SetUpdateCheckResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
@@ -837,6 +1019,61 @@ func (sh *strictHandler) GetDiagnostic(w http.ResponseWriter, r *http.Request) {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetDiagnosticResponseObject); ok {
 		if err := validResponse.VisitGetDiagnosticResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetVersion operation middleware
+func (sh *strictHandler) GetVersion(w http.ResponseWriter, r *http.Request) {
+	var request GetVersionRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetVersion(ctx, request.(GetVersionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetVersion")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetVersionResponseObject); ok {
+		if err := validResponse.VisitGetVersionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SetUpdateCheck operation middleware
+func (sh *strictHandler) SetUpdateCheck(w http.ResponseWriter, r *http.Request) {
+	var request SetUpdateCheckRequestObject
+
+	var body SetUpdateCheckJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SetUpdateCheck(ctx, request.(SetUpdateCheckRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SetUpdateCheck")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SetUpdateCheckResponseObject); ok {
+		if err := validResponse.VisitSetUpdateCheckResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

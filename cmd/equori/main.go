@@ -216,6 +216,13 @@ func serve(parent context.Context) error {
 		app.Marketdata.RunFeeds(ctx, 6*time.Hour)
 	}()
 
+	versionsDone := make(chan struct{})
+	go func() {
+		defer close(versionsDone)
+
+		app.Instance.RunVersionChecks(ctx)
+	}()
+
 	backupsDone := make(chan struct{})
 	go func() {
 		defer close(backupsDone)
@@ -229,6 +236,7 @@ func serve(parent context.Context) error {
 		<-planningDone
 		<-feedsDone
 		<-backupsDone
+		<-versionsDone
 
 		if err := <-dispatcherDone; err != nil {
 			log.Error("outbox dispatcher stopped", "error", err)

@@ -6293,6 +6293,48 @@ paths:
           $ref: "#/components/responses/Problem"
         "403":
           $ref: "#/components/responses/Problem"
+  /instance/version:
+    get:
+      tags: [instance]
+      operationId: getVersion
+      x-book-role: read
+      summary: Version of the binary and the newest release found; admin only (P13 A159).
+      responses:
+        "200":
+          description: The state.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VersionStatus"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+  /instance/version/update-check:
+    put:
+      tags: [instance]
+      operationId: setUpdateCheck
+      x-book-role: read
+      summary: Allow or refuse the daily request for the latest release; admin only.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCheckInput"
+      responses:
+        "200":
+          description: The state.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VersionStatus"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
 security:
   - sessionCookie: []
 components:
@@ -7823,6 +7865,40 @@ components:
         password:
           type: string
           maxLength: 1024
+    UpdateCheckInput:
+      type: object
+      additionalProperties: false
+      required: [update_check]
+      properties:
+        update_check:
+          type: boolean
+    VersionStatus:
+      type: object
+      additionalProperties: false
+      required: [version, update_check, latest, newer]
+      properties:
+        version:
+          type: string
+        update_check:
+          type: boolean
+          nullable: true
+        latest:
+          $ref: "#/components/schemas/Release"
+        newer:
+          type: boolean
+    Release:
+      type: object
+      nullable: true
+      additionalProperties: false
+      required: [version, url, checked_at]
+      properties:
+        version:
+          type: string
+        url:
+          type: string
+        checked_at:
+          type: string
+          format: date-time
     Diagnostic:
       type: object
       additionalProperties: false

@@ -36,6 +36,11 @@ type Catalog interface {
 	Server(ctx context.Context) (domain.Server, error)
 }
 
+// Releases reads the newest release of the project.
+type Releases interface {
+	Latest(ctx context.Context) (tag, url string, err error)
+}
+
 type Admins interface {
 	IsAdmin(ctx context.Context, memberID int64) (bool, error)
 }
@@ -63,19 +68,24 @@ type Config struct {
 }
 
 type Service struct {
-	repo    Repository
-	catalog Catalog
-	admins  Admins
-	box     Sealer // nil without EQUORI_SECRET_KEY
-	clock   clock.Clock
-	cfg     Config
-	log     *slog.Logger
+	repo     Repository
+	catalog  Catalog
+	releases Releases
+	admins   Admins
+	box      Sealer // nil without EQUORI_SECRET_KEY
+	clock    clock.Clock
+	cfg      Config
+	log      *slog.Logger
 	// backups serializes Backup, so "Back up now" and the periodic backup never write together.
 	backups sync.Mutex
+	// versions guards latest and lastCheck.
+	versions  sync.Mutex
+	latest    *domain.Release
+	lastCheck time.Time
 }
 
-func NewService(repo Repository, catalog Catalog, admins Admins, box Sealer, clk clock.Clock, cfg Config, log *slog.Logger) *Service {
-	return &Service{repo: repo, catalog: catalog, admins: admins, box: box, clock: clk, cfg: cfg, log: log}
+func NewService(repo Repository, catalog Catalog, releases Releases, admins Admins, box Sealer, clk clock.Clock, cfg Config, log *slog.Logger) *Service {
+	return &Service{repo: repo, catalog: catalog, releases: releases, admins: admins, box: box, clock: clk, cfg: cfg, log: log}
 }
 
 func (s *Service) requireAdmin(ctx context.Context, memberID int64) error {

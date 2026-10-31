@@ -3,6 +3,7 @@
 package instance
 
 import (
+	"cmp"
 	"context"
 	"log/slog"
 	"net/http"
@@ -13,6 +14,7 @@ import (
 
 	"github.com/andrelopes-code/equori/internal/instance/internal/adapter/httpapi"
 	"github.com/andrelopes-code/equori/internal/instance/internal/adapter/postgres"
+	"github.com/andrelopes-code/equori/internal/instance/internal/adapter/releases"
 	"github.com/andrelopes-code/equori/internal/instance/internal/app"
 	"github.com/andrelopes-code/equori/internal/instance/internal/domain"
 	"github.com/andrelopes-code/equori/internal/platform/clock"
@@ -21,6 +23,9 @@ import (
 	platformpostgres "github.com/andrelopes-code/equori/internal/platform/postgres"
 	"github.com/andrelopes-code/equori/internal/platform/secret"
 )
+
+// LatestReleaseURL is the only address the version check requests (A159.2).
+const LatestReleaseURL = "https://api.github.com/repos/andrelopes-code/equori/releases/latest"
 
 // LogRecordsKept is how many warn and error records the diagnostic file holds (A158).
 const LogRecordsKept = 200
@@ -48,6 +53,7 @@ type Config struct {
 	Dump        func(ctx context.Context, path string) error
 	Environment []string
 	Log         func() []logring.Record
+	ReleaseURL  string // "" is LatestReleaseURL
 	// Set by internal/server.
 	Version                      string
 	SecretKey, PreviousSecretKey string
@@ -73,7 +79,7 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*Module, error) {
 		return nil, err
 	}
 
-	svc := app.NewService(postgres.NewRepository(pool), postgres.NewCatalog(pool), cfg.Admins, box, cfg.Clock, app.Config{
+	svc := app.NewService(postgres.NewRepository(pool), postgres.NewCatalog(pool), releases.NewClient(cmp.Or(cfg.ReleaseURL, LatestReleaseURL)), cfg.Admins, box, cfg.Clock, app.Config{
 		BackupDir:   cfg.BackupDir,
 		CopyDir:     cfg.CopyDir,
 		Dump:        cfg.Dump,
@@ -94,6 +100,18 @@ func (m *Module) RegisterRoutes(mux *http.ServeMux) { m.http.Register(mux) }
 // RunBackups writes a periodic backup every 24 hours until ctx ends; it returns at once when
 // BackupDir is empty.
 func (m *Module) RunBackups(ctx context.Context) { m.svc.RunBackups(ctx) }
+
+// RunVersionChecks checks for a newer release at start and every 24 hours until ctx ends; it
+// requests nothing without the admin's consent.
+func (m *Module) RunVersionChecks(ctx context.Context) { m.svc.RunVersionChecks(ctx) }
+
+// CheckVersion runs one check now, under the rules of A159.2.
+func (m *Module) CheckVersion(ctx context.Context) error { return m.svc.CheckVersion(ctx) }
+
+// StoreUpdateCheck stores the answer given at setup; it checks no role.
+func (m *Module) StoreUpdateCheck(ctx context.Context, consent bool) error {
+	return m.svc.StoreUpdateCheck(ctx, consent)
+}
 
 // RotateSecrets reseals the copy password under the current key (ADR 008 K4) and returns how
 // many values it resealed.
