@@ -341,6 +341,10 @@ func (s *Service) claimLines(ctx context.Context, p *importPlan) error {
 			Amount:      r.Amount,
 			Description: r.Description,
 			State:       domain.StateReceived,
+
+			InstitutionID:  r.InstitutionID,
+			ReportedAmount: r.Amount,
+			ReportedOn:     r.Date,
 		}
 		if p.sync {
 			withFacts(&claims[i], r)
@@ -604,6 +608,11 @@ func (s *Service) create(ctx context.Context, booksID int64, sync bool, creates 
 func withFacts(rec *domain.ExternalRecord, r domain.NormalizedRecord) {
 	rec.ExternalStatus, rec.DueDate, rec.Installment, rec.BalanceAfter, rec.Raw = domain.ExternalStatusOf(r), r.DueDate, r.Installment, r.BalanceAfter, r.Raw
 	rec.LineKind = r.Kind
+	rec.ReportedAmount, rec.ReportedOn = r.Amount, r.Date
+
+	if rec.InstitutionID == "" {
+		rec.InstitutionID = r.InstitutionID
+	}
 
 	rec.CategoryID = ""
 	if r.Category != nil {

@@ -46,6 +46,11 @@ type ExternalRecord struct {
 
 	// What an aggregator reported, to detect its later changes (P6 A36); empty for files.
 	ExternalStatus string
+	InstitutionID  string
+	// ReportedAmount and ReportedOn are the institution's last report; Amount and Date
+	// hold the ledger's values (A147).
+	ReportedAmount int64
+	ReportedOn     time.Time
 	DueDate        *time.Time
 	Installment    *Installment
 	CategoryID     string

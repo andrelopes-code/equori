@@ -61,9 +61,11 @@ type aggregator struct {
 	p *pluggytest.Server
 }
 
-func newAggregator(t *testing.T) aggregator {
+func newAggregator(t *testing.T, opts ...apitest.Option) aggregator {
 	p := pluggytest.New(t, pluggyClient, pluggySecret)
-	return aggregator{h: apitest.New(t, apitest.Today("2026-11-12"), apitest.Aggregator("pluggy", p.URL())), p: p}
+	opts = append([]apitest.Option{apitest.Today("2026-11-12"), apitest.Aggregator("pluggy", p.URL())}, opts...)
+
+	return aggregator{h: apitest.New(t, opts...), p: p}
 }
 
 // serveItem adds an item with a checking account, a credit card and a savings account.

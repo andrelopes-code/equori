@@ -17,8 +17,8 @@ func toConnection(row IngestionConnection) domain.Connection {
 	return domain.Connection{
 		ID: row.ID, BooksID: row.BooksID, IntegrationID: row.IntegrationID, ExternalID: row.ExternalID, Name: row.Name,
 		ProviderStatus: row.ProviderStatus, LastItemUpdateAt: row.LastItemUpdateAt, NextItemUpdateAt: row.NextItemUpdateAt,
-		LastSyncedAt: row.LastSyncedAt,
-		LastError:    value(row.LastError), CreatedAt: row.CreatedAt,
+		LastSyncedAt: row.LastSyncedAt, ConsentExpiresAt: row.ConsentExpiresAt,
+		LastError: value(row.LastError), CreatedAt: row.CreatedAt,
 	}
 }
 
@@ -28,6 +28,7 @@ func toExternalAccount(row IngestionExternalAccount) domain.ExternalAccount {
 		Type: row.Type, Subtype: row.Subtype, Name: row.Name, FormerNames: row.FormerNames, NumberLast4: value(row.NumberLast4),
 		Currency: row.Currency,
 		Ignored:  row.Ignored, LastSyncedOn: row.LastSyncedOn,
+		LastReadAt: row.LastReadAt, LastDeepReadOn: row.LastDeepReadOn,
 	}
 	if row.AccountID.Valid {
 		a.AccountID, a.SyncFrom = &row.AccountID.UUID, row.SyncFrom

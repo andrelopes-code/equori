@@ -4421,6 +4421,8 @@ export interface components {
             /** Format: date */
             period_to?: string;
             counts: components["schemas"]["ImportCounts"];
+            /** @description Present and true when the date read returned no line while the account held records in the window; nothing was withdrawn (A146). */
+            read_empty?: boolean;
             balance: components["schemas"]["ImportBalance"];
             /** Format: date-time */
             started_at: string;
@@ -4430,7 +4432,8 @@ export interface components {
         /**
          * @description Records of the batch by outcome; received is the number of lines read. updated counts
          *     stored lines an aggregator changed (status, bill or amount); withdrawn counts stored
-         *     lines it stopped returning (P6 amendments A36, A38).
+         *     lines it stopped returning (P6 amendments A36, A38). re_identified counts stored lines
+         *     the institution line id joined to a new external id (A143).
          */
         ImportCounts: {
             received: number;
@@ -4441,6 +4444,8 @@ export interface components {
             discarded: number;
             updated: number;
             withdrawn: number;
+            /** @description Stored lines that took the external id of a line carrying their institution line id (A143). */
+            re_identified: number;
         };
         /** @description The balance the file reports and what became of it (chapter 3, F4). */
         ImportBalance: {

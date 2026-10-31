@@ -38,6 +38,7 @@ func (r *Repository) UpdateRecordFacts(ctx context.Context, recs []domain.Extern
 			InstallmentNumber: f.number, InstallmentCount: f.count, CategoryID: f.category, BalanceAfter: f.balanceAfter,
 			LineKind: f.kind, UnappliedChange: optional(rec.UnappliedChange),
 			BookedOn: rec.Date, Amount: rec.Amount, ReviewReason: optional(rec.ReviewReason),
+			InstitutionID: f.institution, ReportedAmount: rec.ReportedAmount, ReportedOn: rec.ReportedOn,
 		}
 	}
 
@@ -83,7 +84,7 @@ func (r *Repository) WithdrawRecords(ctx context.Context, booksID int64, ids []u
 }
 
 func (r *Repository) MarkAccountSynced(ctx context.Context, a domain.ExternalAccount) error {
-	params := MarkAccountSyncedParams{BooksID: a.BooksID, ID: a.ID, LastSyncedOn: a.LastSyncedOn}
+	params := MarkAccountSyncedParams{BooksID: a.BooksID, ID: a.ID, LastSyncedOn: a.LastSyncedOn, LastReadAt: a.LastReadAt, LastDeepReadOn: a.LastDeepReadOn}
 	if a.Balance != nil {
 		params.BalanceOn, params.BalanceAmount = &a.Balance.Date, &a.Balance.Amount
 	}
@@ -95,6 +96,7 @@ func (r *Repository) SaveConnectionState(ctx context.Context, c domain.Connectio
 	return r.q.SaveConnectionState(ctx, SaveConnectionStateParams{
 		BooksID: c.BooksID, ID: c.ID, ProviderStatus: c.ProviderStatus, LastItemUpdateAt: c.LastItemUpdateAt,
 		NextItemUpdateAt: c.NextItemUpdateAt, LastSyncedAt: c.LastSyncedAt, LastError: optional(c.LastError),
+		ConsentExpiresAt: c.ConsentExpiresAt,
 	})
 }
 

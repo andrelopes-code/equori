@@ -18,15 +18,17 @@ type syncBatch struct {
 	PeriodFrom        string `json:"period_from"`
 	PeriodTo          string `json:"period_to"`
 	Counts            struct {
-		Received    int `json:"received"`
-		Ignored     int `json:"ignored"`
-		Matched     int `json:"matched"`
-		Created     int `json:"created"`
-		NeedsReview int `json:"needs_review"`
-		Updated     int `json:"updated"`
-		Withdrawn   int `json:"withdrawn"`
+		Received     int `json:"received"`
+		Ignored      int `json:"ignored"`
+		Matched      int `json:"matched"`
+		Created      int `json:"created"`
+		NeedsReview  int `json:"needs_review"`
+		Updated      int `json:"updated"`
+		Withdrawn    int `json:"withdrawn"`
+		ReIdentified int `json:"re_identified"`
 	} `json:"counts"`
-	Balance struct {
+	ReadEmpty bool `json:"read_empty"`
+	Balance   struct {
 		Status string `json:"status"`
 		Date   string `json:"date"`
 		Amount struct {
@@ -42,8 +44,8 @@ type syncFixture struct {
 	checking string // Nubank checking in the ledger
 }
 
-func newSyncFixture(t *testing.T) syncFixture {
-	a := newAggregator(t)
+func newSyncFixture(t *testing.T, opts ...apitest.Option) syncFixture {
+	a := newAggregator(t, opts...)
 	a.serveItem(pluggyClient, nubankItem, "Nubank")
 	in := a.integrate(a.h.Client, "Meu Pluggy", pluggyClient, pluggySecret)
 	f := syncFixture{aggregator: a, conn: a.mustConnect(a.h.Client, in.ID, nubankItem)}
@@ -147,6 +149,15 @@ func TestSyncBankAccount(t *testing.T) {
 		b.Counts.Received != 3 || b.Counts.Matched != 1 || b.Counts.Created != 2 || b.Counts.Ignored != 0 ||
 		b.Balance.Status != "recorded" || b.Balance.Date != "2026-11-12" || b.Balance.Amount.Amount != 283410 {
 		t.Fatalf("batch = %+v", b)
+	}
+
+	if b.Counts.ReIdentified != 0 {
+		t.Fatalf("re_identified = %d, want 0", b.Counts.ReIdentified)
+	}
+
+	reported := f.count("SELECT count(*) FROM ingestion_external_record WHERE reported_amount = amount AND reported_on = booked_on")
+	if all := f.count("SELECT count(*) FROM ingestion_external_record"); reported != all {
+		t.Fatalf("records with reported values equal to the ledger's = %d of %d", reported, all)
 	}
 
 	if state, tx := f.recordOf("tx-1"); state != "matched" || tx != manual {

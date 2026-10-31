@@ -106,7 +106,7 @@ func (q *Queries) DeleteConnection(ctx context.Context, arg DeleteConnectionPara
 
 const externalAccountsOf = `-- name: ExternalAccountsOf :many
 SELECT
-    id, books_id, connection_id, external_account_id, type, subtype, name, number_last4, currency, account_id, sync_from, ignored, last_synced_on, balance_on, balance_amount, former_names
+    id, books_id, connection_id, external_account_id, type, subtype, name, number_last4, currency, account_id, sync_from, ignored, last_synced_on, balance_on, balance_amount, former_names, last_read_at, last_deep_read_on
 FROM
     ingestion_external_account
 WHERE
@@ -148,6 +148,8 @@ func (q *Queries) ExternalAccountsOf(ctx context.Context, arg ExternalAccountsOf
 			&i.BalanceOn,
 			&i.BalanceAmount,
 			&i.FormerNames,
+			&i.LastReadAt,
+			&i.LastDeepReadOn,
 		); err != nil {
 			return nil, err
 		}
@@ -161,7 +163,7 @@ func (q *Queries) ExternalAccountsOf(ctx context.Context, arg ExternalAccountsOf
 
 const getConnection = `-- name: GetConnection :one
 SELECT
-    id, books_id, integration_id, external_id, name, provider_status, last_item_update_at, last_synced_at, last_error, created_at, next_item_update_at
+    id, books_id, integration_id, external_id, name, provider_status, last_item_update_at, last_synced_at, last_error, created_at, next_item_update_at, consent_expires_at
 FROM
     ingestion_connection
 WHERE
@@ -189,6 +191,7 @@ func (q *Queries) GetConnection(ctx context.Context, arg GetConnectionParams) (I
 		&i.LastError,
 		&i.CreatedAt,
 		&i.NextItemUpdateAt,
+		&i.ConsentExpiresAt,
 	)
 	return i, err
 }
@@ -213,7 +216,7 @@ VALUES
         $6
     )
 RETURNING
-    id, books_id, integration_id, external_id, name, provider_status, last_item_update_at, last_synced_at, last_error, created_at, next_item_update_at
+    id, books_id, integration_id, external_id, name, provider_status, last_item_update_at, last_synced_at, last_error, created_at, next_item_update_at, consent_expires_at
 `
 
 type InsertConnectionParams struct {
@@ -247,6 +250,7 @@ func (q *Queries) InsertConnection(ctx context.Context, arg InsertConnectionPara
 		&i.LastError,
 		&i.CreatedAt,
 		&i.NextItemUpdateAt,
+		&i.ConsentExpiresAt,
 	)
 	return i, err
 }
@@ -275,7 +279,7 @@ VALUES
         $8
     )
 RETURNING
-    id, books_id, connection_id, external_account_id, type, subtype, name, number_last4, currency, account_id, sync_from, ignored, last_synced_on, balance_on, balance_amount, former_names
+    id, books_id, connection_id, external_account_id, type, subtype, name, number_last4, currency, account_id, sync_from, ignored, last_synced_on, balance_on, balance_amount, former_names, last_read_at, last_deep_read_on
 `
 
 type InsertExternalAccountParams struct {
@@ -318,6 +322,8 @@ func (q *Queries) InsertExternalAccount(ctx context.Context, arg InsertExternalA
 		&i.BalanceOn,
 		&i.BalanceAmount,
 		&i.FormerNames,
+		&i.LastReadAt,
+		&i.LastDeepReadOn,
 	)
 	return i, err
 }
@@ -412,7 +418,7 @@ func (q *Queries) ListAllConnections(ctx context.Context) ([]ListAllConnectionsR
 
 const listConnections = `-- name: ListConnections :many
 SELECT
-    id, books_id, integration_id, external_id, name, provider_status, last_item_update_at, last_synced_at, last_error, created_at, next_item_update_at
+    id, books_id, integration_id, external_id, name, provider_status, last_item_update_at, last_synced_at, last_error, created_at, next_item_update_at, consent_expires_at
 FROM
     ingestion_connection
 WHERE
@@ -461,6 +467,7 @@ func (q *Queries) ListConnections(ctx context.Context, arg ListConnectionsParams
 			&i.LastError,
 			&i.CreatedAt,
 			&i.NextItemUpdateAt,
+			&i.ConsentExpiresAt,
 		); err != nil {
 			return nil, err
 		}
@@ -477,18 +484,22 @@ UPDATE ingestion_external_account
 SET
     last_synced_on = $1,
     balance_on = $2,
-    balance_amount = $3
+    balance_amount = $3,
+    last_read_at = $4,
+    last_deep_read_on = $5
 WHERE
-    books_id = $4
-    AND id = $5
+    books_id = $6
+    AND id = $7
 `
 
 type MarkAccountSyncedParams struct {
-	LastSyncedOn  *time.Time
-	BalanceOn     *time.Time
-	BalanceAmount *int64
-	BooksID       int64
-	ID            uuid.UUID
+	LastSyncedOn   *time.Time
+	BalanceOn      *time.Time
+	BalanceAmount  *int64
+	LastReadAt     *time.Time
+	LastDeepReadOn *time.Time
+	BooksID        int64
+	ID             uuid.UUID
 }
 
 func (q *Queries) MarkAccountSynced(ctx context.Context, arg MarkAccountSyncedParams) error {
@@ -496,6 +507,8 @@ func (q *Queries) MarkAccountSynced(ctx context.Context, arg MarkAccountSyncedPa
 		arg.LastSyncedOn,
 		arg.BalanceOn,
 		arg.BalanceAmount,
+		arg.LastReadAt,
+		arg.LastDeepReadOn,
 		arg.BooksID,
 		arg.ID,
 	)
@@ -532,10 +545,11 @@ SET
     last_item_update_at = $2,
     next_item_update_at = $3,
     last_synced_at = $4,
-    last_error = $5
+    last_error = $5,
+    consent_expires_at = $6
 WHERE
-    books_id = $6
-    AND id = $7
+    books_id = $7
+    AND id = $8
 `
 
 type SaveConnectionStateParams struct {
@@ -544,6 +558,7 @@ type SaveConnectionStateParams struct {
 	NextItemUpdateAt *time.Time
 	LastSyncedAt     *time.Time
 	LastError        *string
+	ConsentExpiresAt *time.Time
 	BooksID          int64
 	ID               uuid.UUID
 }
@@ -555,6 +570,7 @@ func (q *Queries) SaveConnectionState(ctx context.Context, arg SaveConnectionSta
 		arg.NextItemUpdateAt,
 		arg.LastSyncedAt,
 		arg.LastError,
+		arg.ConsentExpiresAt,
 		arg.BooksID,
 		arg.ID,
 	)
@@ -572,7 +588,7 @@ WHERE
     AND connection_id = $5
     AND id = $6
 RETURNING
-    id, books_id, connection_id, external_account_id, type, subtype, name, number_last4, currency, account_id, sync_from, ignored, last_synced_on, balance_on, balance_amount, former_names
+    id, books_id, connection_id, external_account_id, type, subtype, name, number_last4, currency, account_id, sync_from, ignored, last_synced_on, balance_on, balance_amount, former_names, last_read_at, last_deep_read_on
 `
 
 type SaveMappingParams struct {
@@ -611,6 +627,8 @@ func (q *Queries) SaveMapping(ctx context.Context, arg SaveMappingParams) (Inges
 		&i.BalanceOn,
 		&i.BalanceAmount,
 		&i.FormerNames,
+		&i.LastReadAt,
+		&i.LastDeepReadOn,
 	)
 	return i, err
 }

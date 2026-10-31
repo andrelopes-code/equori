@@ -30,8 +30,8 @@ func TestSchemaInvariants(t *testing.T) {
 	}
 
 	record := func(key byte, state string, transaction any) error {
-		return exec(`INSERT INTO ingestion_external_record (books_id, batch_id, account_id, dedup_key, raw, booked_on, amount, description, state, transaction_id)
-			VALUES ($1, $2, $3, $4, '{}', '2026-10-01', -100, 'x', $5, $6)`, uid, batch, checking, append(make([]byte, 31), key), state, transaction)
+		return exec(`INSERT INTO ingestion_external_record (books_id, batch_id, account_id, dedup_key, raw, booked_on, amount, reported_amount, reported_on, description, state, transaction_id)
+			VALUES ($1, $2, $3, $4, '{}', '2026-10-01', -100, -100, '2026-10-01', 'x', $5, $6)`, uid, batch, checking, append(make([]byte, 31), key), state, transaction)
 	}
 	if err := record(1, "created", tx); err != nil {
 		t.Fatal(err)
@@ -45,11 +45,15 @@ func TestSchemaInvariants(t *testing.T) {
 		{"I07: a transaction linked to one record", record(2, "matched", tx)},
 		{"a created record names its transaction", record(3, "created", nil)},
 		{"a received record names no transaction", record(4, "received", tx)},
+		{"an institution line id is never empty", exec(`INSERT INTO ingestion_external_record (books_id, batch_id, account_id, dedup_key, raw, booked_on, amount, reported_amount, reported_on, description, institution_id)
+			VALUES ($1, $2, $3, $4, '{}', '2026-10-01', -100, -100, '2026-10-01', 'x', '')`, uid, batch, checking, append(make([]byte, 31), 10))},
+		{"a record holds the reported amount", exec(`INSERT INTO ingestion_external_record (books_id, batch_id, account_id, dedup_key, raw, booked_on, amount, reported_amount, reported_on, description)
+			VALUES ($1, $2, $3, $4, '{}', '2026-10-01', -100, NULL, '2026-10-01', 'x')`, uid, batch, checking, append(make([]byte, 31), 11))},
 		{"profile with an amount column and debit and credit columns", exec(`INSERT INTO ingestion_csv_profile
 			(books_id, account_id, date_column, date_layout, amount_column, debit_column, credit_column, decimal_separator, description_column)
 			VALUES ($1, $2, 'Data', 'DD/MM/YYYY', 'Valor', 'Débito', 'Crédito', ',', 'Descrição')`, uid, checking)},
-		{"an installment within its count", exec(`INSERT INTO ingestion_external_record (books_id, batch_id, account_id, dedup_key, raw, booked_on, amount, description, installment_number, installment_count)
-			VALUES ($1, $2, $3, $4, '{}', '2026-10-01', -100, 'x', 7, 6)`, uid, batch, checking, append(make([]byte, 31), 9))},
+		{"an installment within its count", exec(`INSERT INTO ingestion_external_record (books_id, batch_id, account_id, dedup_key, raw, booked_on, amount, reported_amount, reported_on, description, installment_number, installment_count)
+			VALUES ($1, $2, $3, $4, '{}', '2026-10-01', -100, -100, '2026-10-01', 'x', 7, 6)`, uid, batch, checking, append(make([]byte, 31), 9))},
 		{"profile encoding outside the identifier pattern", exec(`INSERT INTO ingestion_csv_profile
 			(books_id, account_id, date_column, date_layout, amount_column, decimal_separator, description_column, encoding)
 			VALUES ($1, $2, 'Data', 'DD/MM/YYYY', 'Valor', ',', 'Descrição', 'Windows 1252')`, uid, checking)},

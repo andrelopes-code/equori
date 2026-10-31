@@ -544,7 +544,8 @@ type ImportBatch struct {
 
 	// Counts Records of the batch by outcome; received is the number of lines read. updated counts
 	// stored lines an aggregator changed (status, bill or amount); withdrawn counts stored
-	// lines it stopped returning (P6 amendments A36, A38).
+	// lines it stopped returning (P6 amendments A36, A38). re_identified counts stored lines
+	// the institution line id joined to a new external id (A143).
 	Counts ImportCounts `json:"counts"`
 
 	// ExternalAccountId The mapped account a sync read; absent for files and after its connection is deleted.
@@ -555,8 +556,11 @@ type ImportBatch struct {
 	Id         openapi_types.UUID  `json:"id"`
 	PeriodFrom *openapi_types.Date `json:"period_from,omitempty"`
 	PeriodTo   *openapi_types.Date `json:"period_to,omitempty"`
-	Source     ImportBatchSource   `json:"source"`
-	StartedAt  time.Time           `json:"started_at"`
+
+	// ReadEmpty Present and true when the date read returned no line while the account held records in the window; nothing was withdrawn (A146).
+	ReadEmpty *bool             `json:"read_empty,omitempty"`
+	Source    ImportBatchSource `json:"source"`
+	StartedAt time.Time         `json:"started_at"`
 }
 
 // ImportBatchSource defines model for ImportBatch.Source.
@@ -572,16 +576,20 @@ type ImportBatchList struct {
 
 // ImportCounts Records of the batch by outcome; received is the number of lines read. updated counts
 // stored lines an aggregator changed (status, bill or amount); withdrawn counts stored
-// lines it stopped returning (P6 amendments A36, A38).
+// lines it stopped returning (P6 amendments A36, A38). re_identified counts stored lines
+// the institution line id joined to a new external id (A143).
 type ImportCounts struct {
 	Created     int `json:"created"`
 	Discarded   int `json:"discarded"`
 	Ignored     int `json:"ignored"`
 	Matched     int `json:"matched"`
 	NeedsReview int `json:"needs_review"`
-	Received    int `json:"received"`
-	Updated     int `json:"updated"`
-	Withdrawn   int `json:"withdrawn"`
+
+	// ReIdentified Stored lines that took the external id of a line carrying their institution line id (A143).
+	ReIdentified int `json:"re_identified"`
+	Received     int `json:"received"`
+	Updated      int `json:"updated"`
+	Withdrawn    int `json:"withdrawn"`
 }
 
 // Integration defines model for Integration.

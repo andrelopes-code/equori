@@ -9,6 +9,9 @@ type NormalizedRecord struct {
 	Amount      int64 // minor units, from the account's point of view: negative leaves the account
 	Description string
 	Raw         map[string]string // the source fields, stored unchanged
+	// InstitutionID is the institution's own id of the line, as the aggregator relays it;
+	// empty when the source has none (P12 A143).
+	InstitutionID string
 
 	// Aggregator fields (P6 amendments A36, A39, A40, A41).
 	Pending      bool       // the source has not settled it yet

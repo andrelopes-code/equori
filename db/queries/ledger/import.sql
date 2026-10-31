@@ -191,18 +191,22 @@ FOR UPDATE OF
     t;
 
 -- name: LockImportedPosting :one
--- The posting an external record confirms (P6 amendment A36).
+-- The posting an external record confirms (P6 amendment A36) and the due date of its statement (A147).
 SELECT
-    id,
-    account_id,
-    status,
-    card_role
+    p.id,
+    p.account_id,
+    p.status,
+    p.card_role,
+    p.statement_id,
+    s.due_date AS statement_due
 FROM
-    ledger_posting
+    ledger_posting p
+    LEFT JOIN ledger_statement s ON s.id = p.statement_id
 WHERE
-    books_id = @books_id
-    AND external_record_id = @external_record_id
-FOR UPDATE;
+    p.books_id = @books_id
+    AND p.external_record_id = @external_record_id
+FOR UPDATE OF
+    p;
 
 -- name: SettleImportedPosting :exec
 -- A136: a statement the line's bill states makes the institution the posting's basis.

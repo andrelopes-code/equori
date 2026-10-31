@@ -36,7 +36,10 @@ INSERT INTO
         installment_count,
         category_id,
         balance_after,
-        line_kind
+        line_kind,
+        institution_id,
+        reported_amount,
+        reported_on
     )
 VALUES
     (
@@ -55,11 +58,14 @@ VALUES
         $13,
         $14,
         $15,
-        $16
+        $16,
+        $17,
+        $18,
+        $19
     )
 ON CONFLICT (books_id, dedup_key) DO NOTHING
 RETURNING
-    id, books_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change, line_kind, review_reason, candidate_scores
+    id, books_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change, line_kind, review_reason, candidate_scores, institution_id, reported_amount, reported_on
 `
 
 type InsertRecordsBatchResults struct {
@@ -85,6 +91,9 @@ type InsertRecordsParams struct {
 	CategoryID        *string
 	BalanceAfter      *int64
 	LineKind          *string
+	InstitutionID     *string
+	ReportedAmount    int64
+	ReportedOn        time.Time
 }
 
 // A row comes back only for a new key; a conflict is pgx.ErrNoRows for that item.
@@ -108,6 +117,9 @@ func (q *Queries) InsertRecords(ctx context.Context, arg []InsertRecordsParams) 
 			a.CategoryID,
 			a.BalanceAfter,
 			a.LineKind,
+			a.InstitutionID,
+			a.ReportedAmount,
+			a.ReportedOn,
 		}
 		batch.Queue(insertRecords, vals...)
 	}
@@ -150,6 +162,9 @@ func (b *InsertRecordsBatchResults) QueryRow(f func(int, IngestionExternalRecord
 			&i.LineKind,
 			&i.ReviewReason,
 			&i.CandidateScores,
+			&i.InstitutionID,
+			&i.ReportedAmount,
+			&i.ReportedOn,
 		)
 		if f != nil {
 			f(t, i, err)
@@ -247,10 +262,13 @@ SET
     unapplied_change = $9,
     booked_on = $10,
     amount = $11,
-    review_reason = $12
+    review_reason = $12,
+    institution_id = coalesce(institution_id, $13),
+    reported_amount = $14,
+    reported_on = $15
 WHERE
-    books_id = $13
-    AND id = $14
+    books_id = $16
+    AND id = $17
 `
 
 type UpdateRecordFactsBatchResults struct {
@@ -272,6 +290,9 @@ type UpdateRecordFactsParams struct {
 	BookedOn          time.Time
 	Amount            int64
 	ReviewReason      *string
+	InstitutionID     *string
+	ReportedAmount    int64
+	ReportedOn        time.Time
 	BooksID           int64
 	ID                uuid.UUID
 }
@@ -293,6 +314,9 @@ func (q *Queries) UpdateRecordFacts(ctx context.Context, arg []UpdateRecordFacts
 			a.BookedOn,
 			a.Amount,
 			a.ReviewReason,
+			a.InstitutionID,
+			a.ReportedAmount,
+			a.ReportedOn,
 			a.BooksID,
 			a.ID,
 		}

@@ -35,8 +35,9 @@ func toBatch(row IngestionBatch) domain.Batch {
 		Counts: domain.Counts{
 			Received: int(row.Received), Ignored: int(row.Ignored), Matched: int(row.Matched),
 			Created: int(row.Created), NeedsReview: int(row.NeedsReview), Discarded: int(row.Discarded),
-			Updated: int(row.Updated), Withdrawn: int(row.Withdrawn),
+			Updated: int(row.Updated), Withdrawn: int(row.Withdrawn), ReIdentified: int(row.ReIdentified),
 		},
+		ReadEmpty: row.ReadEmpty,
 		Balance:   domain.FileBalance{Status: domain.BalanceStatus(row.BalanceStatus), Date: row.BalanceDate},
 		StartedAt: row.StartedAt, CompletedAt: row.CompletedAt,
 	}

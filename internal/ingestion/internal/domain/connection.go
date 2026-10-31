@@ -29,6 +29,8 @@ type Connection struct {
 	// it (A95).
 	NextItemUpdateAt *time.Time
 	LastSyncedAt     *time.Time
+	// ConsentExpiresAt is the consent expiry the aggregator reports; nil when it does not expire (A151).
+	ConsentExpiresAt *time.Time
 	LastError        string
 	CreatedAt        time.Time
 	Accounts         []ExternalAccount
@@ -56,6 +58,14 @@ func ConnectionName(name, connector string) (string, error) {
 	return name, nil
 }
 
+const (
+	// DeepReadDays is the reach of the periodic re-read and DeepReadEvery its period (A153).
+	DeepReadDays  = 90
+	DeepReadEvery = 7
+	// CreatedMargin starts the creation read before the previous read (A144).
+	CreatedMargin = time.Hour
+)
+
 type MappingState string
 
 const (
@@ -81,6 +91,10 @@ type ExternalAccount struct {
 	SyncFrom     *time.Time
 	Ignored      bool
 	LastSyncedOn *time.Time
+	// LastReadAt is when the account's last read started (A144).
+	LastReadAt *time.Time
+	// LastDeepReadOn is the date of the account's last periodic re-read (A153).
+	LastDeepReadOn *time.Time
 	// Balance is the last balance a sync asserted for the account (A42).
 	Balance *Balance
 }
@@ -107,6 +121,9 @@ type AccountRead struct {
 	Records []NormalizedRecord
 	// Seen holds the id of every line returned, recorded or not.
 	Seen []string
+	// Created holds the lines the aggregator created at or after the instant the sync named,
+	// whatever their date (A144); never part of Seen.
+	Created []NormalizedRecord
 	// Bills are a card's statements as the institution reports them (A85).
 	Bills []Bill
 }

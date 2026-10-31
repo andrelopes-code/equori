@@ -431,16 +431,20 @@ func (q *Queries) LockAccountPostingLinks(ctx context.Context, arg LockAccountPo
 
 const lockImportedPosting = `-- name: LockImportedPosting :one
 SELECT
-    id,
-    account_id,
-    status,
-    card_role
+    p.id,
+    p.account_id,
+    p.status,
+    p.card_role,
+    p.statement_id,
+    s.due_date AS statement_due
 FROM
-    ledger_posting
+    ledger_posting p
+    LEFT JOIN ledger_statement s ON s.id = p.statement_id
 WHERE
-    books_id = $1
-    AND external_record_id = $2
-FOR UPDATE
+    p.books_id = $1
+    AND p.external_record_id = $2
+FOR UPDATE OF
+    p
 `
 
 type LockImportedPostingParams struct {
@@ -449,13 +453,15 @@ type LockImportedPostingParams struct {
 }
 
 type LockImportedPostingRow struct {
-	ID        uuid.UUID
-	AccountID uuid.UUID
-	Status    string
-	CardRole  *string
+	ID           uuid.UUID
+	AccountID    uuid.UUID
+	Status       string
+	CardRole     *string
+	StatementID  uuid.NullUUID
+	StatementDue *time.Time
 }
 
-// The posting an external record confirms (P6 amendment A36).
+// The posting an external record confirms (P6 amendment A36) and the due date of its statement (A147).
 func (q *Queries) LockImportedPosting(ctx context.Context, arg LockImportedPostingParams) (LockImportedPostingRow, error) {
 	row := q.db.QueryRow(ctx, lockImportedPosting, arg.BooksID, arg.ExternalRecordID)
 	var i LockImportedPostingRow
@@ -464,6 +470,8 @@ func (q *Queries) LockImportedPosting(ctx context.Context, arg LockImportedPosti
 		&i.AccountID,
 		&i.Status,
 		&i.CardRole,
+		&i.StatementID,
+		&i.StatementDue,
 	)
 	return i, err
 }

@@ -20,7 +20,7 @@ const (
 // Counts are the records of one batch by outcome; Received is the number of lines read.
 // Updated and Withdrawn count stored records an aggregator changed or stopped returning.
 type Counts struct {
-	Received, Ignored, Matched, Created, NeedsReview, Discarded, Updated, Withdrawn int
+	Received, Ignored, Matched, Created, NeedsReview, Discarded, Updated, Withdrawn, ReIdentified int
 }
 
 type BalanceStatus string
@@ -53,7 +53,9 @@ type Batch struct {
 	PeriodFrom        *time.Time
 	PeriodTo          *time.Time
 	Counts            Counts
-	Balance           FileBalance
-	StartedAt         time.Time
-	CompletedAt       *time.Time
+	// ReadEmpty: the date read returned no line while the account held records in the window (A146).
+	ReadEmpty   bool
+	Balance     FileBalance
+	StartedAt   time.Time
+	CompletedAt *time.Time
 }

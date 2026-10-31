@@ -17,7 +17,10 @@ INSERT INTO
         installment_count,
         category_id,
         balance_after,
-        line_kind
+        line_kind,
+        institution_id,
+        reported_amount,
+        reported_on
     )
 VALUES
     (
@@ -36,7 +39,10 @@ VALUES
         sqlc.narg (installment_count),
         sqlc.narg (category_id),
         sqlc.narg (balance_after),
-        sqlc.narg (line_kind)
+        sqlc.narg (line_kind),
+        sqlc.narg (institution_id),
+        @reported_amount,
+        @reported_on
     )
 ON CONFLICT (books_id, dedup_key) DO NOTHING
 RETURNING
@@ -150,7 +156,10 @@ SET
     unapplied_change = sqlc.narg (unapplied_change),
     booked_on = @booked_on,
     amount = @amount,
-    review_reason = sqlc.narg (review_reason)
+    review_reason = sqlc.narg (review_reason),
+    institution_id = coalesce(institution_id, sqlc.narg (institution_id)),
+    reported_amount = @reported_amount,
+    reported_on = @reported_on
 WHERE
     books_id = @books_id
     AND id = @id;
@@ -199,3 +208,29 @@ SET
 WHERE
     books_id = @books_id
     AND id = ANY (@record_ids::UUID[]);
+
+-- name: ListRecordsByLineIDs :many
+-- A143: the account's aggregator records that hold an external id or an institution line id of a read.
+SELECT
+    *
+FROM
+    ingestion_external_record
+WHERE
+    books_id = @books_id
+    AND account_id = @account_id
+    AND external_status IS NOT NULL
+    AND (
+        external_id = ANY (@external_ids::TEXT[])
+        OR institution_id = ANY (@institution_ids::TEXT[])
+    );
+
+-- name: ReidentifyRecord :exec
+-- A143: the record takes the external id, deduplication key and raw payload of its line.
+UPDATE ingestion_external_record
+SET
+    external_id = @external_id,
+    dedup_key = @dedup_key,
+    raw = @raw
+WHERE
+    books_id = @books_id
+    AND id = @id;

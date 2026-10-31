@@ -40,7 +40,8 @@ func toRecord(row IngestionExternalRecord) (domain.ExternalRecord, error) {
 		State: domain.RecordState(row.State), TransactionID: row.TransactionID.UUID, Candidates: row.Candidates,
 		ExternalStatus: value(row.ExternalStatus), DueDate: row.DueDate, CategoryID: value(row.CategoryID),
 		BalanceAfter: row.BalanceAfter, LineKind: value(row.LineKind), UnappliedChange: value(row.UnappliedChange),
-		ReviewReason: value(row.ReviewReason),
+		ReviewReason: value(row.ReviewReason), InstitutionID: value(row.InstitutionID),
+		ReportedAmount: row.ReportedAmount, ReportedOn: row.ReportedOn,
 	}
 	for _, s := range scores {
 		rec.Scores = append(rec.Scores, domain.Scored{
@@ -58,13 +59,15 @@ func toRecord(row IngestionExternalRecord) (domain.ExternalRecord, error) {
 // facts are the aggregator columns of a record.
 type facts struct {
 	status, category, kind *string
+	institution            *string
 	number, count          *int32
 	dueDate                *time.Time
 	balanceAfter           *int64
 }
 
 func factsOf(rec domain.ExternalRecord) facts {
-	f := facts{status: optional(rec.ExternalStatus), category: optional(rec.CategoryID), kind: optional(rec.LineKind), dueDate: rec.DueDate, balanceAfter: rec.BalanceAfter}
+	f := facts{status: optional(rec.ExternalStatus), category: optional(rec.CategoryID), kind: optional(rec.LineKind), dueDate: rec.DueDate, balanceAfter: rec.BalanceAfter,
+		institution: optional(rec.InstitutionID)}
 	if i := rec.Installment; i != nil {
 		n, c := int32(i.Number), int32(i.Count) //nolint:gosec // at most 420 installments (ledger rule)
 		f.number, f.count = &n, &c
@@ -94,6 +97,7 @@ func (r *Repository) ClaimRecords(ctx context.Context, recs []domain.ExternalRec
 			DedupKey: rec.DedupKey, Raw: raw, BookedOn: rec.Date, Amount: rec.Amount, Description: rec.Description,
 			ExternalStatus: f.status, DueDate: f.dueDate, InstallmentNumber: f.number, InstallmentCount: f.count,
 			CategoryID: f.category, BalanceAfter: f.balanceAfter, LineKind: f.kind,
+			InstitutionID: f.institution, ReportedAmount: rec.ReportedAmount, ReportedOn: rec.ReportedOn,
 		}
 	}
 
@@ -207,6 +211,7 @@ func (r *Repository) CompleteBatch(ctx context.Context, b domain.Batch) (domain.
 		BooksID: b.BooksID, ID: b.ID, Received: int32(c.Received), Ignored: int32(c.Ignored), Matched: int32(c.Matched), //nolint:gosec // line counts of a 10 MiB file
 		Created: int32(c.Created), NeedsReview: int32(c.NeedsReview), Discarded: int32(c.Discarded), //nolint:gosec // line counts of a 10 MiB file
 		Updated: int32(c.Updated), Withdrawn: int32(c.Withdrawn), //nolint:gosec // line counts of one account window
+		ReIdentified: int32(c.ReIdentified), ReadEmpty: b.ReadEmpty, //nolint:gosec // line counts of one account window
 		BalanceStatus: string(b.Balance.Status), BalanceReason: optional(b.Balance.Reason), BalanceDate: b.Balance.Date,
 	}
 	if b.Balance.Date != nil {

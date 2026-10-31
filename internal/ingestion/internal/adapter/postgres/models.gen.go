@@ -34,6 +34,8 @@ type IngestionBatch struct {
 	ExternalAccountID uuid.NullUUID
 	Updated           int32
 	Withdrawn         int32
+	ReIdentified      int32
+	ReadEmpty         bool
 }
 
 type IngestionConnection struct {
@@ -48,6 +50,7 @@ type IngestionConnection struct {
 	LastError        *string
 	CreatedAt        time.Time
 	NextItemUpdateAt *time.Time
+	ConsentExpiresAt *time.Time
 }
 
 type IngestionCsvProfile struct {
@@ -86,6 +89,8 @@ type IngestionExternalAccount struct {
 	BalanceOn         *time.Time
 	BalanceAmount     *int64
 	FormerNames       []string
+	LastReadAt        *time.Time
+	LastDeepReadOn    *time.Time
 }
 
 type IngestionExternalRecord struct {
@@ -112,6 +117,9 @@ type IngestionExternalRecord struct {
 	LineKind          *string
 	ReviewReason      *string
 	CandidateScores   []byte
+	InstitutionID     *string
+	ReportedAmount    int64
+	ReportedOn        time.Time
 }
 
 type IngestionIntegration struct {

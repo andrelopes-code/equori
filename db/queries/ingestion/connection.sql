@@ -144,7 +144,9 @@ UPDATE ingestion_external_account
 SET
     last_synced_on = @last_synced_on,
     balance_on = sqlc.narg (balance_on),
-    balance_amount = sqlc.narg (balance_amount)
+    balance_amount = sqlc.narg (balance_amount),
+    last_read_at = sqlc.narg (last_read_at),
+    last_deep_read_on = sqlc.narg (last_deep_read_on)
 WHERE
     books_id = @books_id
     AND id = @id;
@@ -156,7 +158,8 @@ SET
     last_item_update_at = sqlc.narg (last_item_update_at),
     next_item_update_at = sqlc.narg (next_item_update_at),
     last_synced_at = sqlc.narg (last_synced_at),
-    last_error = sqlc.narg (last_error)
+    last_error = sqlc.narg (last_error),
+    consent_expires_at = sqlc.narg (consent_expires_at)
 WHERE
     books_id = @books_id
     AND id = @id;
