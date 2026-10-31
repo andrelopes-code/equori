@@ -18,6 +18,7 @@ const backupUsage = `usage: equori backup [--out FILE]
        equori restore FILE
 
 backup writes a pg_dump archive; restore replaces the database with one.
+restore also accepts an encrypted copy (.age) and reads its password from stdin.
 In managed mode, restore refuses to run while equori serve runs.`
 
 func backupCommand(args []string) error {
@@ -102,6 +103,13 @@ func restoreCommand(args []string) error {
 		return err
 	}
 
+	file, cleanup, err := plainDump(file)
+	if err != nil {
+		return err
+	}
+
+	defer cleanup()
+
 	// Restore never calls openDatabase, which would migrate before the drop.
 	if cfg.Managed() {
 		c, err := pgcluster.Attach(ctx, cfg.DataDir, bin)
@@ -127,4 +135,41 @@ func restoreCommand(args []string) error {
 	fmt.Printf("restored %s; the next start applies newer migrations\n", file)
 
 	return nil
+}
+
+// plainDump returns file when it is a dump. For an encrypted copy it returns a decrypted
+// temporary file, which cleanup removes.
+func plainDump(file string) (string, func(), error) {
+	isCopy, err := backup.IsCopy(file)
+	if err != nil {
+		return "", nil, err
+	}
+
+	if !isCopy {
+		return file, func() {}, nil
+	}
+
+	password, err := readPassword()
+	if err != nil {
+		return "", nil, err
+	}
+
+	tmp, err := os.CreateTemp("", "equori-restore-*.dump")
+	if err != nil {
+		return "", nil, fmt.Errorf("create temporary dump: %w", err)
+	}
+
+	cleanup := func() { _ = os.Remove(tmp.Name()) }
+
+	if err := tmp.Close(); err != nil {
+		cleanup()
+		return "", nil, fmt.Errorf("close temporary dump: %w", err)
+	}
+
+	if err := backup.Decrypt(file, tmp.Name(), password); err != nil {
+		cleanup()
+		return "", nil, err
+	}
+
+	return tmp.Name(), cleanup, nil
 }

@@ -42,6 +42,27 @@ the data directory; `EQUORI_BACKUP_DIR` overrides it.
 `backups/` sits on the same disk as the data. A disk failure loses both; copy the files to
 another disk or host.
 
+## Encrypted copy
+
+The copy folder is the host folder that compose mounts on `/copies` of the app container. It is
+`./copies` next to `compose.yaml`; `EQUORI_COPY_FOLDER` selects another folder. The container
+runs as uid 999, the `postgres` user of the image, so on a Linux host the folder needs that owner:
+
+```sh
+mkdir -p copies && sudo chown 999:999 copies
+```
+
+The admin sets the copy password on the backup screen (at least 12 characters, separate from
+the login password). After each backup, when the folder and the password are set, equori
+writes `<backup file name>.age` into the folder and keeps the 7 newest periodic copies. The
+copy is a dump in the age format (ADR 031); equori stores the password encrypted with
+`EQUORI_SECRET_KEY`, and a lost password makes its copies unreadable. A copy opens without
+equori:
+
+```sh
+age -d -o FILE COPY
+```
+
 ## Restore
 
 ```sh
@@ -66,6 +87,24 @@ docker compose exec -T db createdb --template=template0 --locale-provider=builti
 docker compose exec -T db pg_restore -U equori --no-owner --exit-on-error -d equori < equori-2026-10-16.dump
 docker compose start app
 ```
+
+## Restore an encrypted copy
+
+`equori restore FILE` detects a file with the age header, reads the copy password from standard
+input, decrypts into a temporary file of mode 0600 and restores it as above. The temporary file
+is removed on every exit path. A wrong password ends with exit status 1 and the message "the
+copy password does not open this file"; the database stays untouched.
+
+Compose:
+
+```sh
+docker compose stop app
+docker compose run --rm -T app restore /copies/FILE
+docker compose start app
+```
+
+Managed mode and Windows run `equori restore FILE` with the same stop and start steps as a
+plain dump.
 
 ## Moving between forms
 
