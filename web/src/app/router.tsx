@@ -86,7 +86,10 @@ import {
 import {
   LoginPage,
   SetupPage,
+  hasUnsuffixedBookKeys,
   meQuery,
+  moveUnsuffixedBookKeys,
+  myBooksQuery,
   rememberDeviceUser,
   setupQuery,
 } from "@/features/session";
@@ -191,6 +194,13 @@ const authedRoute = createRoute({
           !(error instanceof ProblemError && error.status < 500) && count < 1,
       });
       rememberDeviceUser({ id: me.id, email: me.email, booksId: me.books_id });
+      if (hasUnsuffixedBookKeys()) {
+        // HA31: a failed list leaves the keys for the next load.
+        const books = await context.queryClient
+          .query(myBooksQuery(context.api))
+          .catch(() => undefined);
+        if (books !== undefined) moveUnsuffixedBookKeys(books);
+      }
     } catch (error) {
       if (error instanceof ProblemError && error.status === 401) {
         // eslint-disable-next-line @typescript-eslint/only-throw-error -- TanStack Router redirects are thrown objects.

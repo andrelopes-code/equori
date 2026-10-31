@@ -7,14 +7,17 @@ import type { Client } from "openapi-fetch";
 
 import { useApi } from "@/api/api-context";
 import { unwrap } from "@/api/problem";
-import type { paths } from "@/api/schema.gen";
+import type { components, paths } from "@/api/schema.gen";
 import { useAppLocale } from "@/i18n/i18n-provider";
 import type { Language } from "@/i18n/languages";
 
 export const sessionKeys = {
   me: ["session", "me"] as const,
   setup: ["session", "setup"] as const,
+  books: ["session", "books"] as const,
 };
+
+export type BooksMembership = components["schemas"]["BooksMembership"];
 
 export function meQuery(api: Client<paths>) {
   return queryOptions({
@@ -28,6 +31,17 @@ export function setupQuery(api: Client<paths>) {
   return queryOptions({
     queryKey: sessionKeys.setup,
     queryFn: async () => unwrap(await api.GET("/setup")),
+  });
+}
+
+// GET /me/books, the items in books ID order.
+export function myBooksQuery(api: Client<paths>) {
+  return queryOptions({
+    queryKey: sessionKeys.books,
+    queryFn: async () => {
+      const { items } = await unwrap(await api.GET("/me/books"));
+      return [...items].sort((a, b) => a.id - b.id);
+    },
   });
 }
 
