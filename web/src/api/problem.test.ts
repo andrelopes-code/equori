@@ -72,6 +72,39 @@ describe("problemMessage", () => {
   });
 });
 
+describe("problemMessage of households codes", () => {
+  it.each([
+    [
+      "book_role_required",
+      "Your role in this book does not allow this change.",
+    ],
+    [
+      "books_not_found",
+      "The book does not exist or you are not a member of it.",
+    ],
+    ["member_not_found", "The member is not part of this book."],
+    [
+      "last_owner",
+      "The book needs at least one owner. Make another member owner first.",
+    ],
+    ["already_member", "This email is already a member of the book."],
+    ["invitation_not_found", "The invitation does not exist or has expired."],
+    [
+      "invitation_email_mismatch",
+      "The invitation is for another email. Sign out and sign in with the invited email.",
+    ],
+  ])("maps %s to its text", (code, text) => {
+    const problem: Problem = {
+      type: "about:blank",
+      title: "Forbidden",
+      status: 403,
+      code,
+    };
+
+    expect(problemMessage(problem, t)).toBe(text);
+  });
+});
+
 describe("fieldErrors", () => {
   it("maps each field to its message", () => {
     expect(

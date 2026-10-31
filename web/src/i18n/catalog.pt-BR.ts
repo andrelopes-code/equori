@@ -2,6 +2,7 @@ import { budgetPlanPtBR } from "@/i18n/catalog-budget-plan.pt-BR";
 import { calculatorsPtBR } from "@/i18n/catalog-calculators.pt-BR";
 import { marketDataPtBR } from "@/i18n/catalog-market-data.pt-BR";
 import { accountsPtBR } from "@/i18n/catalog-accounts.pt-BR";
+import { householdsPtBR } from "@/i18n/catalog-households.pt-BR";
 import { instrumentsPtBR } from "@/i18n/catalog-instruments.pt-BR";
 import { portfolioPtBR } from "@/i18n/catalog-portfolio.pt-BR";
 import { reportsPtBR } from "@/i18n/catalog-reports.pt-BR";
@@ -13,6 +14,7 @@ export const catalogPtBR: Catalog = {
   ...calculatorsPtBR,
   ...marketDataPtBR,
   ...accountsPtBR,
+  ...householdsPtBR,
   ...instrumentsPtBR,
   ...portfolioPtBR,
   ...reportsPtBR,
