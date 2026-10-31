@@ -112,6 +112,7 @@ func TestSecondFactorSchema(t *testing.T) {
 	if err := pool.QueryRow(t.Context(), `SELECT count(*) FROM identity_passkey WHERE member_id = $1`, member).Scan(&left); err != nil {
 		t.Fatal(err)
 	}
+
 	if left != 0 {
 		t.Errorf("passkeys after deleting the member = %d, want 0", left)
 	}

@@ -122,6 +122,7 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 	}
 
 	dispatcher.UseBooks(identityModule.InBooks)
+
 	feedClient := &http.Client{Timeout: time.Minute}
 	// Config.PriceFeeds and Config.IndexFeeds are validated here and seed the stored feed settings
 	// (ADR 025 F2, F4); production passes none (BK25).
