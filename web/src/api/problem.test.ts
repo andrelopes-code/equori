@@ -140,3 +140,30 @@ describe("unwrap", () => {
     expect((error as ProblemError).problem).toEqual(adrExample);
   });
 });
+
+describe("problemMessage of second-factor codes", () => {
+  it.each([
+    ["totp_enabled", "The authenticator app is already on."],
+    [
+      "totp_code_invalid",
+      "The code is wrong or expired. Enter the current code of the app.",
+    ],
+    ["password_invalid", "The password is incorrect."],
+    ["passkey_invalid", "The passkey could not be verified. Try again."],
+    ["passkey_not_found", "The passkey no longer exists."],
+    ["second_factor_invalid", "The code or the passkey is not valid."],
+    [
+      "second_factor_missing",
+      "Turn on the authenticator app or add a passkey first.",
+    ],
+  ])("reads %s as its catalog text", (code, text) => {
+    const problem: Problem = {
+      type: "about:blank",
+      title: "Title",
+      status: 422,
+      code,
+    };
+
+    expect(problemMessage(problem, t)).toBe(text);
+  });
+});

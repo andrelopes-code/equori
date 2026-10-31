@@ -99,11 +99,28 @@ export function useCompleteSetup() {
   });
 }
 
+export type SecondFactorChallenge =
+  components["schemas"]["SecondFactorChallenge"];
+export type SecondFactorInput = components["schemas"]["SecondFactorInput"];
+
+// POST /session: undefined on 204, the challenge on 202 (HA46).
 export function useLogin() {
   const api = useApi();
   return useMutation({
-    mutationFn: async (credentials: { email: string; password: string }) => {
-      await unwrap(await api.POST("/session", { body: credentials }));
+    mutationFn: async (credentials: {
+      email: string;
+      password: string;
+    }): Promise<SecondFactorChallenge | undefined> =>
+      unwrap(await api.POST("/session", { body: credentials })),
+  });
+}
+
+// POST /session/second-factor; the answer is 204.
+export function useCompleteSecondFactor() {
+  const api = useApi();
+  return useMutation({
+    mutationFn: async (input: SecondFactorInput) => {
+      await unwrap(await api.POST("/session/second-factor", { body: input }));
     },
   });
 }

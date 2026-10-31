@@ -27,3 +27,9 @@ export {
 } from "@/features/session/device-user";
 export type { DeviceUser } from "@/features/session/device-user";
 export { reloadHome } from "@/features/session/reload-home";
+export {
+  PasskeyCeremonyError,
+  createPasskeyCredential,
+  passkeysAvailable,
+} from "@/features/session/passkey-ceremony";
+export type { PasskeyCredential } from "@/features/session/passkey-ceremony";

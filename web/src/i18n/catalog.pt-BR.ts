@@ -6,6 +6,7 @@ import { householdsPtBR } from "@/i18n/catalog-households.pt-BR";
 import { instrumentsPtBR } from "@/i18n/catalog-instruments.pt-BR";
 import { portfolioPtBR } from "@/i18n/catalog-portfolio.pt-BR";
 import { reportsPtBR } from "@/i18n/catalog-reports.pt-BR";
+import { securityPtBR } from "@/i18n/catalog-security.pt-BR";
 import { settingsPtBR } from "@/i18n/catalog-settings.pt-BR";
 import type { Catalog } from "@/i18n/catalog.en";
 
@@ -18,6 +19,7 @@ export const catalogPtBR: Catalog = {
   ...instrumentsPtBR,
   ...portfolioPtBR,
   ...reportsPtBR,
+  ...securityPtBR,
   ...settingsPtBR,
   "nav.home": "Início",
   "nav.label": "Navegação principal",

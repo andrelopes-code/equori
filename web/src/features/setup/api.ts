@@ -8,7 +8,11 @@ import type { Client } from "openapi-fetch";
 import { useApi } from "@/api/api-context";
 import { unwrap } from "@/api/problem";
 import type { components, paths } from "@/api/schema.gen";
-import { meQuery, reloadHome } from "@/features/session";
+import {
+  createPasskeyCredential,
+  meQuery,
+  reloadHome,
+} from "@/features/session";
 import type { BooksMembership } from "@/features/session";
 import { useAppLocaleState } from "@/i18n/i18n-provider";
 
@@ -649,5 +653,104 @@ export function useRefreshMarketData() {
   const api = useApi();
   return useMutation({
     mutationFn: async () => unwrap(await api.POST("/market-data/refresh")),
+  });
+}
+
+export type SecondFactor = components["schemas"]["SecondFactor"];
+export type Passkey = components["schemas"]["Passkey"];
+export type TotpSetup = components["schemas"]["TotpSetup"];
+
+const secondFactorKey = ["me", "second-factor"] as const;
+
+export function secondFactorQuery(api: Client<paths>) {
+  return queryOptions({
+    queryKey: secondFactorKey,
+    queryFn: async () => unwrap(await api.GET("/me/second-factor")),
+  });
+}
+
+// POST /me/totp
+export function useStartTotp() {
+  const api = useApi();
+  return useMutation({
+    mutationFn: async () => unwrap(await api.POST("/me/totp")),
+  });
+}
+
+// POST /me/totp/confirm; the answer holds the recovery codes of a first factor.
+export function useConfirmTotp() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (code: string) =>
+      (await unwrap(await api.POST("/me/totp/confirm", { body: { code } })))
+        .recovery_codes,
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: secondFactorKey }),
+  });
+}
+
+// POST /me/totp/disable
+export function useDisableTotp() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (password: string) => {
+      await unwrap(await api.POST("/me/totp/disable", { body: { password } }));
+    },
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: secondFactorKey }),
+  });
+}
+
+// POST /me/passkeys/options, the browser ceremony, then POST /me/passkeys.
+export function useAddPasskey() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (name: string) => {
+      const options = await unwrap(await api.POST("/me/passkeys/options"));
+      const credential = await createPasskeyCredential(options);
+
+      return unwrap(
+        await api.POST("/me/passkeys", { body: { name, ...credential } }),
+      );
+    },
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: secondFactorKey }),
+  });
+}
+
+// POST /me/passkeys/{id}/remove
+export function useRemovePasskey() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, password }: { id: string; password: string }) => {
+      await unwrap(
+        await api.POST("/me/passkeys/{id}/remove", {
+          params: { path: { id } },
+          body: { password },
+        }),
+      );
+    },
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: secondFactorKey }),
+  });
+}
+
+// POST /me/recovery-codes
+export function useRegenerateRecoveryCodes() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (password: string) =>
+      (
+        await unwrap(
+          await api.POST("/me/recovery-codes", { body: { password } }),
+        )
+      ).recovery_codes,
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: secondFactorKey }),
   });
 }

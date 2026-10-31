@@ -6,6 +6,7 @@ import { householdsEn } from "@/i18n/catalog-households.en";
 import { instrumentsEn } from "@/i18n/catalog-instruments.en";
 import { portfolioEn } from "@/i18n/catalog-portfolio.en";
 import { reportsEn } from "@/i18n/catalog-reports.en";
+import { securityEn } from "@/i18n/catalog-security.en";
 import { settingsEn } from "@/i18n/catalog-settings.en";
 
 export const catalogEn = {
@@ -17,6 +18,7 @@ export const catalogEn = {
   ...instrumentsEn,
   ...portfolioEn,
   ...reportsEn,
+  ...securityEn,
   ...settingsEn,
   "nav.home": "Home",
   "nav.label": "Main navigation",
