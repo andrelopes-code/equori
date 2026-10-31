@@ -18,6 +18,7 @@ import { CommandMenu } from "@/app/shell/command-menu";
 import { DesktopNav } from "@/app/shell/desktop-nav";
 import { PhoneDock } from "@/app/shell/phone-dock";
 import { PhoneGate } from "@/app/shell/phone-gate";
+import { ReadOnlyNotice } from "@/app/shell/read-only-notice";
 import { TopAppBar } from "@/app/shell/top-app-bar";
 import { useEditing } from "@/app/shell/use-editing";
 import {
@@ -143,6 +144,8 @@ export function AppFrame() {
               }
         }
       >
+        <ReadOnlyNotice />
+
         {/* 32 px beside a column, 16 px on a phone. */}
         <PageDefaultsProvider inset={wide ? 9 : 6}>
           <PageHeaderDefaultsProvider variant="plain" material>
