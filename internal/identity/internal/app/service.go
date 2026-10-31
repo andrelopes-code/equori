@@ -343,61 +343,80 @@ type Session struct {
 	ExpiresAt time.Time
 }
 
-// Login counts every attempt against the email, including the successful one,
-// which then clears the count.
-func (s *Service) Login(ctx context.Context, email, plain string) (Session, error) {
+// Login counts every attempt against the email. A right password without a second factor clears
+// the count and returns a session. With a second factor it returns a pending login and keeps the
+// count until the second factor is right (HA46, HA47).
+func (s *Service) Login(ctx context.Context, email, plain, origin string) (Session, *PendingLogin, error) {
 	now := s.now()
 	email, emailErr := domain.NormalizeEmail(email)
 	// Byte bound equivalent to MaxPasswordLength runes (at most 4 bytes each); rejects before hashing.
 	if emailErr != nil || len(plain) > 4*domain.MaxPasswordLength {
-		return Session{}, ErrInvalidCredentials
+		return Session{}, nil, ErrInvalidCredentials
 	}
 
 	if !s.throttle.attempt(email, now) {
-		return Session{}, ErrTooManyAttempts
+		return Session{}, nil, ErrTooManyAttempts
 	}
 
 	user, err := s.repo.MemberByEmail(ctx, email)
 	switch {
 	case errors.Is(err, ErrNotFound):
 		if _, err := s.verify(ctx, plain, s.dummyHash); err != nil {
-			return Session{}, err
+			return Session{}, nil, err
 		}
 
-		return Session{}, ErrInvalidCredentials
+		return Session{}, nil, ErrInvalidCredentials
 	case err != nil:
-		return Session{}, fmt.Errorf("load member: %w", err)
+		return Session{}, nil, fmt.Errorf("load member: %w", err)
 	}
 
 	ok, err := s.verify(ctx, plain, user.PasswordHash)
 	if err != nil {
-		return Session{}, fmt.Errorf("verify password of member %d: %w", user.ID, err)
+		return Session{}, nil, fmt.Errorf("verify password of member %d: %w", user.ID, err)
 	}
 
 	if !ok || user.Disabled {
-		return Session{}, ErrInvalidCredentials
+		return Session{}, nil, ErrInvalidCredentials
+	}
+
+	factor, err := s.repo.HasSecondFactor(ctx, user.ID)
+	if err != nil {
+		return Session{}, nil, fmt.Errorf("check second factor of member %d: %w", user.ID, err)
+	}
+
+	if factor {
+		pending, err := s.startPendingLogin(ctx, user.ID, origin, now)
+
+		return Session{}, pending, err
 	}
 
 	s.throttle.reset(email)
 
 	if err := s.repo.DeleteExpiredSessions(ctx, now); err != nil {
-		return Session{}, fmt.Errorf("delete expired sessions: %w", err)
+		return Session{}, nil, fmt.Errorf("delete expired sessions: %w", err)
 	}
 
 	booksID, err := s.repo.LoginBooks(ctx, user.ID)
 	if errors.Is(err, ErrNotFound) {
-		return Session{}, ErrInvalidCredentials
+		return Session{}, nil, ErrInvalidCredentials
 	}
 
 	if err != nil {
-		return Session{}, fmt.Errorf("load login books of member %d: %w", user.ID, err)
+		return Session{}, nil, fmt.Errorf("load login books of member %d: %w", user.ID, err)
 	}
 
-	if err := s.repo.TouchMembership(ctx, user.ID, booksID, now); err != nil {
-		return Session{}, fmt.Errorf("touch membership of member %d in books %d: %w", user.ID, booksID, err)
+	session, err := s.finishLogin(ctx, user.ID, booksID, now)
+
+	return session, nil, err
+}
+
+// finishLogin books the login in the membership and starts the session.
+func (s *Service) finishLogin(ctx context.Context, memberID, booksID int64, now time.Time) (Session, error) {
+	if err := s.repo.TouchMembership(ctx, memberID, booksID, now); err != nil {
+		return Session{}, fmt.Errorf("touch membership of member %d in books %d: %w", memberID, booksID, err)
 	}
 
-	return s.startSession(ctx, user.ID, booksID, now)
+	return s.startSession(ctx, memberID, booksID, now)
 }
 
 func (s *Service) startSession(ctx context.Context, memberID, booksID int64, now time.Time) (Session, error) {

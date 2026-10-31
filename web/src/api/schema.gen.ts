@@ -13,7 +13,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Log in and start a session. */
+        /** Log in; a member with a second factor receives 202 and finishes with completeSecondFactor (HA46). */
         post: operations["createSession"];
         /** Log out and end the current session. */
         delete: operations["deleteSession"];
@@ -496,6 +496,29 @@ export interface paths {
          * @description 403 password_invalid for a wrong password; 404 passkey_not_found for an ID the member does not have.
          */
         post: operations["removePasskey"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/session/second-factor": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Finish a pending login with a second factor (HA47).
+         * @description Exactly one of totp_code, recovery_code and passkey, else 400 invalid_request. A wrong value
+         *     is 401 second_factor_invalid, and the fifth ends the pending login; a missing or expired
+         *     pending login is 401 unauthenticated. 409 secret_key_missing for a TOTP code on a server
+         *     without EQUORI_SECRET_KEY.
+         */
+        post: operations["completeSecondFactor"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6107,6 +6130,25 @@ export interface components {
             /** @description 16 base32 characters each; empty when a second factor existed before. */
             recovery_codes: string[];
         };
+        SecondFactorChallenge: {
+            methods: ("totp" | "passkey" | "recovery_code")[];
+            /** @description Null when no passkey of the member has the RP ID of the request; base64url values. */
+            passkey: {
+                challenge: string;
+                allow_credentials: string[];
+            } | null;
+        };
+        SecondFactorInput: {
+            totp_code?: string;
+            recovery_code?: string;
+            /** @description Base64url values without padding. */
+            passkey?: {
+                credential_id: string;
+                client_data_json: string;
+                authenticator_data: string;
+                signature: string;
+            };
+        };
         CreateBooksInput: {
             name?: string;
             region: string;
@@ -6184,6 +6226,7 @@ export interface components {
         Limit: number;
         Cursor: string;
         SessionCookie: string;
+        LoginCookie: string;
         /** @description The browser's origin; its host name is the WebAuthn RP ID (HA42). */
         Origin: string;
     };
@@ -6196,7 +6239,10 @@ export interface operations {
     createSession: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description The browser's origin; its host name is the WebAuthn RP ID (HA42). */
+                Origin?: components["parameters"]["Origin"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -6206,6 +6252,16 @@ export interface operations {
             };
         };
         responses: {
+            /** @description The password is right and the member has a second factor; the cookie equori_login holds the pending login for 5 minutes. */
+            202: {
+                headers: {
+                    "Set-Cookie"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SecondFactorChallenge"];
+                };
+            };
             /** @description Session created. */
             204: {
                 headers: {
@@ -7023,6 +7079,37 @@ export interface operations {
             404: components["responses"]["Problem"];
             429: components["responses"]["Problem"];
             503: components["responses"]["Problem"];
+        };
+    };
+    completeSecondFactor: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description The browser's origin; its host name is the WebAuthn RP ID (HA42). */
+                Origin?: components["parameters"]["Origin"];
+            };
+            path?: never;
+            cookie?: {
+                equori_login?: components["parameters"]["LoginCookie"];
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SecondFactorInput"];
+            };
+        };
+        responses: {
+            /** @description Session created; the response also expires equori_login. */
+            204: {
+                headers: {
+                    "Set-Cookie"?: string;
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
         };
     };
     getSettings: {

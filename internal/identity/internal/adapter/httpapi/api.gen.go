@@ -38,6 +38,27 @@ func (e BookRole) Valid() bool {
 	}
 }
 
+// Defines values for SecondFactorChallengeMethods.
+const (
+	SecondFactorChallengeMethodsPasskey      SecondFactorChallengeMethods = "passkey"
+	SecondFactorChallengeMethodsRecoveryCode SecondFactorChallengeMethods = "recovery_code"
+	SecondFactorChallengeMethodsTotp         SecondFactorChallengeMethods = "totp"
+)
+
+// Valid indicates whether the value is a known member of the SecondFactorChallengeMethods enum.
+func (e SecondFactorChallengeMethods) Valid() bool {
+	switch e {
+	case SecondFactorChallengeMethodsPasskey:
+		return true
+	case SecondFactorChallengeMethodsRecoveryCode:
+		return true
+	case SecondFactorChallengeMethodsTotp:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for UserRole.
 const (
 	Admin  UserRole = "admin"
@@ -290,6 +311,33 @@ type SecondFactor struct {
 	Totp bool `json:"totp"`
 }
 
+// SecondFactorChallenge defines model for SecondFactorChallenge.
+type SecondFactorChallenge struct {
+	Methods []SecondFactorChallengeMethods `json:"methods"`
+
+	// Passkey Null when no passkey of the member has the RP ID of the request; base64url values.
+	Passkey *struct {
+		AllowCredentials []string `json:"allow_credentials"`
+		Challenge        string   `json:"challenge"`
+	} `json:"passkey"`
+}
+
+// SecondFactorChallengeMethods defines model for SecondFactorChallenge.Methods.
+type SecondFactorChallengeMethods string
+
+// SecondFactorInput defines model for SecondFactorInput.
+type SecondFactorInput struct {
+	// Passkey Base64url values without padding.
+	Passkey *struct {
+		AuthenticatorData string `json:"authenticator_data"`
+		ClientDataJson    string `json:"client_data_json"`
+		CredentialId      string `json:"credential_id"`
+		Signature         string `json:"signature"`
+	} `json:"passkey,omitempty"`
+	RecoveryCode *string `json:"recovery_code,omitempty"`
+	TotpCode     *string `json:"totp_code,omitempty"`
+}
+
 // SetupInput defines model for SetupInput.
 type SetupInput struct {
 	BaseCurrency *string `json:"base_currency,omitempty"`
@@ -346,6 +394,9 @@ type UserRole string
 // ID defines model for ID.
 type ID = openapi_types.UUID
 
+// LoginCookie defines model for LoginCookie.
+type LoginCookie = string
+
 // Origin defines model for Origin.
 type Origin = string
 
@@ -383,9 +434,22 @@ type DeleteSessionParams struct {
 	EquoriSession *SessionCookie `form:"equori_session,omitempty" json:"equori_session,omitempty"`
 }
 
+// CreateSessionParams defines parameters for CreateSession.
+type CreateSessionParams struct {
+	// Origin The browser's origin; its host name is the WebAuthn RP ID (HA42).
+	Origin *Origin `json:"Origin,omitempty"`
+}
+
 // SwitchBooksParams defines parameters for SwitchBooks.
 type SwitchBooksParams struct {
 	EquoriSession *SessionCookie `form:"equori_session,omitempty" json:"equori_session,omitempty"`
+}
+
+// CompleteSecondFactorParams defines parameters for CompleteSecondFactor.
+type CompleteSecondFactorParams struct {
+	// Origin The browser's origin; its host name is the WebAuthn RP ID (HA42).
+	Origin      *Origin      `json:"Origin,omitempty"`
+	EquoriLogin *LoginCookie `form:"equori_login,omitempty" json:"equori_login,omitempty"`
 }
 
 // CreateAccessTokenJSONRequestBody defines body for CreateAccessToken for application/json ContentType.
@@ -435,6 +499,9 @@ type CreateSessionJSONRequestBody = Credentials
 
 // SwitchBooksJSONRequestBody defines body for SwitchBooks for application/json ContentType.
 type SwitchBooksJSONRequestBody = SwitchBooksInput
+
+// CompleteSecondFactorJSONRequestBody defines body for CompleteSecondFactor for application/json ContentType.
+type CompleteSecondFactorJSONRequestBody = SecondFactorInput
 
 // CompleteSetupJSONRequestBody defines body for CompleteSetup for application/json ContentType.
 type CompleteSetupJSONRequestBody = SetupInput
@@ -528,12 +595,15 @@ type ServerInterface interface {
 	// DeleteSession Log out and end the current session.
 	// (DELETE /session)
 	DeleteSession(w http.ResponseWriter, r *http.Request, params DeleteSessionParams)
-	// CreateSession Log in and start a session.
+	// CreateSession Log in; a member with a second factor receives 202 and finishes with completeSecondFactor (HA46).
 	// (POST /session)
-	CreateSession(w http.ResponseWriter, r *http.Request)
+	CreateSession(w http.ResponseWriter, r *http.Request, params CreateSessionParams)
 	// SwitchBooks Move the current session to another book of the member (HA4).
 	// (PUT /session/books)
 	SwitchBooks(w http.ResponseWriter, r *http.Request, params SwitchBooksParams)
+	// CompleteSecondFactor Finish a pending login with a second factor (HA47).
+	// (POST /session/second-factor)
+	CompleteSecondFactor(w http.ResponseWriter, r *http.Request, params CompleteSecondFactorParams)
 	// GetSetup Report whether the first member is still to be created (ADR 003, amendment of 2026-10-27).
 	// (GET /setup)
 	GetSetup(w http.ResponseWriter, r *http.Request)
@@ -1152,8 +1222,35 @@ func (siw *ServerInterfaceWrapper) DeleteSession(w http.ResponseWriter, r *http.
 // CreateSession operation middleware
 func (siw *ServerInterfaceWrapper) CreateSession(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateSessionParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Origin" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Origin")]; found {
+		var Origin Origin
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Origin", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Origin", valueList[0], &Origin, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Origin", Err: err})
+			return
+		}
+
+		params.Origin = &Origin
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CreateSession(w, r)
+		siw.Handler.CreateSession(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1189,6 +1286,62 @@ func (siw *ServerInterfaceWrapper) SwitchBooks(w http.ResponseWriter, r *http.Re
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.SwitchBooks(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CompleteSecondFactor operation middleware
+func (siw *ServerInterfaceWrapper) CompleteSecondFactor(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CompleteSecondFactorParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Origin" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Origin")]; found {
+		var Origin Origin
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Origin", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Origin", valueList[0], &Origin, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Origin", Err: err})
+			return
+		}
+
+		params.Origin = &Origin
+
+	}
+
+	{
+		var cookie *http.Cookie
+
+		if cookie, err = r.Cookie("equori_login"); err == nil {
+			var value LoginCookie
+			err = runtime.BindStyledParameterWithOptions("simple", "equori_login", cookie.Value, &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationCookie, Explode: true, Required: false, Type: "string", Format: ""})
+			if err != nil {
+				siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "equori_login", Err: err})
+				return
+			}
+			params.EquoriLogin = &value
+
+		}
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CompleteSecondFactor(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1379,6 +1532,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/me/passkeys/options", wrapper.CreatePasskeyOptions)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/me/passkeys", wrapper.CreatePasskey)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/me/passkeys/{id}/remove", wrapper.RemovePasskey)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/session/second-factor", wrapper.CompleteSecondFactor)
 
 	return m
 }
@@ -3181,11 +3335,36 @@ func (response DeleteSession401ApplicationProblemPlusJSONResponse) VisitDeleteSe
 }
 
 type CreateSessionRequestObject struct {
-	Body *CreateSessionJSONRequestBody
+	Params CreateSessionParams
+	Body   *CreateSessionJSONRequestBody
 }
 
 type CreateSessionResponseObject interface {
 	VisitCreateSessionResponse(w http.ResponseWriter) error
+}
+
+type CreateSession202ResponseHeaders struct {
+	SetCookie *string
+}
+
+type CreateSession202JSONResponse struct {
+	Body    SecondFactorChallenge
+	Headers CreateSession202ResponseHeaders
+}
+
+func (response CreateSession202JSONResponse) VisitCreateSessionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.SetCookie != nil {
+		w.Header().Set("Set-Cookie", fmt.Sprint(*response.Headers.SetCookie))
+	}
+	w.WriteHeader(202)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type CreateSession204ResponseHeaders struct {
@@ -3333,6 +3512,75 @@ func (response SwitchBooks404ApplicationProblemPlusJSONResponse) VisitSwitchBook
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CompleteSecondFactorRequestObject struct {
+	Params CompleteSecondFactorParams
+	Body   *CompleteSecondFactorJSONRequestBody
+}
+
+type CompleteSecondFactorResponseObject interface {
+	VisitCompleteSecondFactorResponse(w http.ResponseWriter) error
+}
+
+type CompleteSecondFactor204ResponseHeaders struct {
+	SetCookie *string
+}
+
+type CompleteSecondFactor204Response struct {
+	Headers CompleteSecondFactor204ResponseHeaders
+}
+
+func (response CompleteSecondFactor204Response) VisitCompleteSecondFactorResponse(w http.ResponseWriter) error {
+	if response.Headers.SetCookie != nil {
+		w.Header().Set("Set-Cookie", fmt.Sprint(*response.Headers.SetCookie))
+	}
+	w.WriteHeader(204)
+	return nil
+}
+
+type CompleteSecondFactor400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response CompleteSecondFactor400ApplicationProblemPlusJSONResponse) VisitCompleteSecondFactorResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CompleteSecondFactor401ApplicationProblemPlusJSONResponse Problem
+
+func (response CompleteSecondFactor401ApplicationProblemPlusJSONResponse) VisitCompleteSecondFactorResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CompleteSecondFactor409ApplicationProblemPlusJSONResponse Problem
+
+func (response CompleteSecondFactor409ApplicationProblemPlusJSONResponse) VisitCompleteSecondFactorResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -3565,12 +3813,15 @@ type StrictServerInterface interface {
 	// DeleteSession Log out and end the current session.
 	// (DELETE /session)
 	DeleteSession(ctx context.Context, request DeleteSessionRequestObject) (DeleteSessionResponseObject, error)
-	// CreateSession Log in and start a session.
+	// CreateSession Log in; a member with a second factor receives 202 and finishes with completeSecondFactor (HA46).
 	// (POST /session)
 	CreateSession(ctx context.Context, request CreateSessionRequestObject) (CreateSessionResponseObject, error)
 	// SwitchBooks Move the current session to another book of the member (HA4).
 	// (PUT /session/books)
 	SwitchBooks(ctx context.Context, request SwitchBooksRequestObject) (SwitchBooksResponseObject, error)
+	// CompleteSecondFactor Finish a pending login with a second factor (HA47).
+	// (POST /session/second-factor)
+	CompleteSecondFactor(ctx context.Context, request CompleteSecondFactorRequestObject) (CompleteSecondFactorResponseObject, error)
 	// GetSetup Report whether the first member is still to be created (ADR 003, amendment of 2026-10-27).
 	// (GET /setup)
 	GetSetup(ctx context.Context, request GetSetupRequestObject) (GetSetupResponseObject, error)
@@ -4433,8 +4684,10 @@ func (sh *strictHandler) DeleteSession(w http.ResponseWriter, r *http.Request, p
 }
 
 // CreateSession operation middleware
-func (sh *strictHandler) CreateSession(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) CreateSession(w http.ResponseWriter, r *http.Request, params CreateSessionParams) {
 	var request CreateSessionRequestObject
+
+	request.Params = params
 
 	var body CreateSessionJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -4489,6 +4742,39 @@ func (sh *strictHandler) SwitchBooks(w http.ResponseWriter, r *http.Request, par
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(SwitchBooksResponseObject); ok {
 		if err := validResponse.VisitSwitchBooksResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CompleteSecondFactor operation middleware
+func (sh *strictHandler) CompleteSecondFactor(w http.ResponseWriter, r *http.Request, params CompleteSecondFactorParams) {
+	var request CompleteSecondFactorRequestObject
+
+	request.Params = params
+
+	var body CompleteSecondFactorJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CompleteSecondFactor(ctx, request.(CompleteSecondFactorRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CompleteSecondFactor")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CompleteSecondFactorResponseObject); ok {
+		if err := validResponse.VisitCompleteSecondFactorResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

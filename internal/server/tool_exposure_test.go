@@ -13,6 +13,7 @@ var exposure = map[string]string{
 	"createPasskeyOptions":             "-session",
 	"createPasskey":                    "-session",
 	"removePasskey":                    "-session",
+	"completeSecondFactor":             "-session",
 	"startTotp":                        "-session",
 	"confirmTotp":                      "-session",
 	"disableTotp":                      "-session",

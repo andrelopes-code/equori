@@ -4,9 +4,12 @@ import (
 	"context"
 	"encoding/base64"
 	"errors"
+	"net/http"
+	"time"
 
 	"github.com/andrelopes-code/equori/internal/identity/internal/app"
 	"github.com/andrelopes-code/equori/internal/identity/internal/domain"
+	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 )
 
 func (s *Server) GetSecondFactor(ctx context.Context, _ GetSecondFactorRequestObject) (GetSecondFactorResponseObject, error) {
@@ -159,6 +162,75 @@ func (s *Server) RemovePasskey(ctx context.Context, req RemovePasskeyRequestObje
 	return RemovePasskey204Response{}, nil
 }
 
+func (s *Server) CompleteSecondFactor(ctx context.Context, req CompleteSecondFactorRequestObject) (CompleteSecondFactorResponseObject, error) {
+	if req.Body == nil {
+		return nil, errInvalidRequest
+	}
+
+	answer, err := toSecondFactorAnswer(req.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	result, err := s.svc.CompleteSecondFactor(ctx, deref(req.Params.EquoriLogin), deref(req.Params.Origin), answer)
+	if errors.Is(err, app.ErrSecondFactorInvalid) {
+		s.log.WarnContext(ctx, "login failed", "member_id", result.Session.MemberID, "reason", err.Error(),
+			"request_id", httpserver.RequestID(ctx))
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	attrs := []any{"member_id", result.Session.MemberID, "books_id", result.Session.BooksID, "method", result.Method}
+	if result.Method == app.MethodRecoveryCode {
+		attrs = append(attrs, "recovery_codes_left", result.RecoveryCodesLeft)
+	}
+
+	s.log.InfoContext(ctx, "login succeeded", append(attrs, "request_id", httpserver.RequestID(ctx))...)
+
+	return secondFactorDone{
+		session: s.cookie(result.Session.Token, result.Session.ExpiresAt),
+		login:   s.loginCookie("", time.Unix(0, 0)),
+	}, nil
+}
+
+// secondFactorDone answers 204 with the session cookie and an expired pending login cookie.
+type secondFactorDone struct {
+	session, login string
+}
+
+func (d secondFactorDone) VisitCompleteSecondFactorResponse(w http.ResponseWriter) error {
+	w.Header().Add("Set-Cookie", d.session)
+	w.Header().Add("Set-Cookie", d.login)
+	w.WriteHeader(http.StatusNoContent)
+
+	return nil
+}
+
+func (s *Server) pendingLoginResponse(p *app.PendingLogin) CreateSessionResponseObject {
+	challenge := SecondFactorChallenge{Methods: make([]SecondFactorChallengeMethods, 0, len(p.Methods))}
+	for _, m := range p.Methods {
+		challenge.Methods = append(challenge.Methods, SecondFactorChallengeMethods(m))
+	}
+
+	if p.Passkey != nil {
+		allow := make([]string, 0, len(p.Passkey.AllowCredentials))
+		for _, id := range p.Passkey.AllowCredentials {
+			allow = append(allow, encodeBinary(id))
+		}
+
+		challenge.Passkey = &struct {
+			AllowCredentials []string `json:"allow_credentials"`
+			Challenge        string   `json:"challenge"`
+		}{AllowCredentials: allow, Challenge: encodeBinary(p.Passkey.Challenge)}
+	}
+
+	cookie := s.loginCookie(p.Token, p.ExpiresAt)
+
+	return CreateSession202JSONResponse{Body: challenge, Headers: CreateSession202ResponseHeaders{SetCookie: &cookie}}
+}
+
 func currentMember(ctx context.Context) (domain.Member, error) {
 	member, ok := ctx.Value(memberKey{}).(domain.Member)
 	if !ok {
@@ -200,4 +272,48 @@ func nonNil(codes []string) []string {
 	}
 
 	return codes
+}
+
+// toSecondFactorAnswer requires exactly one answer field; a value that is not base64url decodes to
+// an empty value, which fails verification and counts as an attempt.
+func toSecondFactorAnswer(b *CompleteSecondFactorJSONRequestBody) (app.SecondFactorAnswer, error) {
+	given := 0
+
+	if b.TotpCode != nil {
+		given++
+	}
+
+	if b.RecoveryCode != nil {
+		given++
+	}
+
+	if b.Passkey != nil {
+		given++
+	}
+
+	if given != 1 {
+		return app.SecondFactorAnswer{}, errInvalidRequest
+	}
+
+	answer := app.SecondFactorAnswer{TOTPCode: deref(b.TotpCode), RecoveryCode: deref(b.RecoveryCode)}
+
+	if b.Passkey != nil {
+		answer.Passkey = &app.Assertion{
+			CredentialID:      decodeOrEmpty(b.Passkey.CredentialId),
+			ClientDataJSON:    decodeOrEmpty(b.Passkey.ClientDataJson),
+			AuthenticatorData: decodeOrEmpty(b.Passkey.AuthenticatorData),
+			Signature:         decodeOrEmpty(b.Passkey.Signature),
+		}
+	}
+
+	return answer, nil
+}
+
+func decodeOrEmpty(s string) []byte {
+	b, err := base64.RawURLEncoding.DecodeString(s)
+	if err != nil {
+		return nil
+	}
+
+	return b
 }

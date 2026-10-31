@@ -224,3 +224,22 @@ func (k softKey) registrationData(rpID string, flags byte) []byte {
 
 	return append(data, 0xa0)
 }
+
+func (k softKey) assertionData(rpID string, flags byte, counter uint32) []byte {
+	hash := sha256.Sum256([]byte(rpID))
+	data := append(hash[:], flags)
+
+	return binary.BigEndian.AppendUint32(data, counter)
+}
+
+func (k softKey) sign(authData, clientData []byte) []byte {
+	clientHash := sha256.Sum256(clientData)
+	digest := sha256.Sum256(append(slices.Clone(authData), clientHash[:]...))
+
+	sig, err := ecdsa.SignASN1(rand.Reader, k.private, digest[:])
+	if err != nil {
+		panic(err)
+	}
+
+	return sig
+}

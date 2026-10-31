@@ -1,6 +1,7 @@
 package app
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -27,6 +28,9 @@ const (
 	MethodTOTP         = "totp"
 	MethodPasskey      = "passkey"
 	MethodRecoveryCode = "recovery_code"
+
+	// secondFactorAttempts ends a pending login at the fifth wrong value (HA47).
+	secondFactorAttempts = 5
 )
 
 // Sealer seals values bound to their row (ADR 008).
@@ -364,6 +368,213 @@ func (s *Service) RotateSecrets(ctx context.Context) (int, error) {
 
 		return s.box.Seal(plain, domain.TOTPRow(memberID))
 	})
+}
+
+// CompleteSecondFactor finishes a pending login with one answer. ErrSecondFactorInvalid is returned
+// with the member of the pending login in Session.MemberID, for the log line.
+func (s *Service) CompleteSecondFactor(ctx context.Context, loginToken, origin string, a SecondFactorAnswer) (SecondFactorLogin, error) {
+	now := s.now()
+	hash := domain.HashToken(loginToken)
+
+	pending, err := s.repo.LoginChallenge(ctx, hash, now)
+	switch {
+	case errors.Is(err, ErrNotFound):
+		return SecondFactorLogin{}, ErrUnauthenticated
+	case err != nil:
+		return SecondFactorLogin{}, fmt.Errorf("load pending login: %w", err)
+	}
+
+	result := SecondFactorLogin{Session: Session{MemberID: pending.MemberID}}
+
+	method, left, ok, err := s.useSecondFactor(ctx, pending, origin, a, now)
+	if err != nil {
+		return result, err
+	}
+
+	if !ok {
+		if err := s.repo.FailLoginChallenge(ctx, hash, secondFactorAttempts); err != nil {
+			return result, fmt.Errorf("count wrong second factor of member %d: %w", pending.MemberID, err)
+		}
+
+		return result, ErrSecondFactorInvalid
+	}
+
+	session, err := s.finishSecondFactor(ctx, hash, pending.MemberID, now)
+	if err != nil {
+		return result, err
+	}
+
+	return SecondFactorLogin{Session: session, Method: method, RecoveryCodesLeft: left}, nil
+}
+
+// startPendingLogin stores a pending login of the member and returns its token and methods.
+func (s *Service) startPendingLogin(ctx context.Context, memberID int64, origin string, now time.Time) (*PendingLogin, error) {
+	if _, err := s.repo.LoginBooks(ctx, memberID); errors.Is(err, ErrNotFound) {
+		return nil, ErrInvalidCredentials
+	} else if err != nil {
+		return nil, fmt.Errorf("load login books of member %d: %w", memberID, err)
+	}
+
+	state, err := s.repo.SecondFactor(ctx, memberID)
+	if err != nil {
+		return nil, fmt.Errorf("load second factor of member %d: %w", memberID, err)
+	}
+
+	if err := s.repo.DeleteExpiredLoginChallenges(ctx, now); err != nil {
+		return nil, fmt.Errorf("delete expired pending logins: %w", err)
+	}
+
+	token, challenge := domain.NewLoginChallenge(memberID, now)
+	if err := s.repo.CreateLoginChallenge(ctx, challenge); err != nil {
+		return nil, fmt.Errorf("create pending login of member %d: %w", memberID, err)
+	}
+
+	pending := &PendingLogin{Token: token, ExpiresAt: challenge.ExpiresAt}
+
+	if state.TOTP {
+		pending.Methods = append(pending.Methods, MethodTOTP)
+	}
+
+	if allowed := credentialsOf(state.Passkeys, origin); len(allowed) > 0 {
+		pending.Methods = append(pending.Methods, MethodPasskey)
+		pending.Passkey = &PasskeyRequest{Challenge: challenge.Challenge, AllowCredentials: allowed}
+	}
+
+	pending.Methods = append(pending.Methods, MethodRecoveryCode)
+
+	return pending, nil
+}
+
+// credentialsOf returns the credential IDs of the passkeys with the RP ID of origin.
+func credentialsOf(passkeys []domain.Passkey, origin string) [][]byte {
+	rpID, ok := domain.RPID(origin)
+	if !ok {
+		return nil
+	}
+
+	var ids [][]byte
+
+	for _, p := range passkeys {
+		if p.RPID == rpID {
+			ids = append(ids, p.CredentialID)
+		}
+	}
+
+	return ids
+}
+
+// useSecondFactor consumes the factor of the answer; ok is false for a refused value.
+func (s *Service) useSecondFactor(ctx context.Context, pending domain.LoginChallenge, origin string, a SecondFactorAnswer, now time.Time) (method string, left int, ok bool, err error) {
+	switch {
+	case a.TOTPCode != "":
+		ok, err = s.useTOTP(ctx, pending.MemberID, a.TOTPCode, now)
+
+		return MethodTOTP, 0, ok, err
+	case a.RecoveryCode != "":
+		left, ok, err = s.useRecoveryCode(ctx, pending.MemberID, a.RecoveryCode)
+
+		return MethodRecoveryCode, left, ok, err
+	case a.Passkey != nil:
+		ok, err = s.usePasskey(ctx, pending, origin, *a.Passkey, now)
+
+		return MethodPasskey, 0, ok, err
+	}
+
+	return "", 0, false, nil
+}
+
+func (s *Service) useTOTP(ctx context.Context, memberID int64, code string, now time.Time) (bool, error) {
+	if s.box == nil {
+		return false, ErrSecretKeyMissing
+	}
+
+	stored, err := s.repo.TOTP(ctx, memberID)
+	switch {
+	case errors.Is(err, ErrNotFound):
+		return false, nil
+	case err != nil:
+		return false, fmt.Errorf("load totp of member %d: %w", memberID, err)
+	case !stored.Confirmed:
+		return false, nil
+	}
+
+	secret, err := s.box.Open(stored.Sealed, domain.TOTPRow(memberID))
+	if err != nil {
+		return false, fmt.Errorf("open totp secret of member %d: %w", memberID, err)
+	}
+
+	step, ok := domain.MatchTOTP(secret, code, now, stored.LastStep)
+	if !ok {
+		return false, nil
+	}
+
+	return s.repo.UseTOTPStep(ctx, memberID, step)
+}
+
+func (s *Service) useRecoveryCode(ctx context.Context, memberID int64, code string) (int, bool, error) {
+	hash, ok := domain.HashRecoveryCode(code)
+	if !ok {
+		return 0, false, nil
+	}
+
+	return s.repo.UseRecoveryCode(ctx, memberID, hash)
+}
+
+func (s *Service) usePasskey(ctx context.Context, pending domain.LoginChallenge, origin string, a Assertion, now time.Time) (bool, error) {
+	state, err := s.repo.SecondFactor(ctx, pending.MemberID)
+	if err != nil {
+		return false, fmt.Errorf("load second factor of member %d: %w", pending.MemberID, err)
+	}
+
+	rpID, _ := domain.RPID(origin)
+
+	for _, p := range state.Passkeys {
+		if p.RPID != rpID || !bytes.Equal(p.CredentialID, a.CredentialID) {
+			continue
+		}
+
+		counter, err := domain.VerifyAssertion(a.ClientDataJSON, a.AuthenticatorData, a.Signature, p.PublicKey, p.Algorithm, pending.Challenge, origin)
+		if err != nil {
+			return false, nil
+		}
+
+		return s.repo.UsePasskey(ctx, pending.MemberID, p.ID, counter, now)
+	}
+
+	return false, nil
+}
+
+// finishSecondFactor consumes the pending login after a right factor and starts the session.
+func (s *Service) finishSecondFactor(ctx context.Context, tokenHash []byte, memberID int64, now time.Time) (Session, error) {
+	deleted, err := s.repo.DeleteLoginChallenge(ctx, tokenHash)
+	if err != nil {
+		return Session{}, fmt.Errorf("delete pending login of member %d: %w", memberID, err)
+	}
+
+	if !deleted {
+		return Session{}, ErrUnauthenticated
+	}
+
+	member, err := s.repo.MemberByID(ctx, memberID)
+	if err != nil {
+		return Session{}, fmt.Errorf("load member %d: %w", memberID, err)
+	}
+
+	if member.Disabled {
+		return Session{}, ErrUnauthenticated
+	}
+
+	s.throttle.reset(member.Email)
+
+	booksID, err := s.repo.LoginBooks(ctx, memberID)
+	switch {
+	case errors.Is(err, ErrNotFound):
+		return Session{}, ErrUnauthenticated
+	case err != nil:
+		return Session{}, fmt.Errorf("load login books of member %d: %w", memberID, err)
+	}
+
+	return s.finishLogin(ctx, memberID, booksID, now)
 }
 
 // checkPassword counts against the login throttle of the member's email and runs argon2id in a hash slot.

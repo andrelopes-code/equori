@@ -22,7 +22,8 @@ const (
 	CookieName = "equori_session"
 	BaseURL    = "/api/v1"
 
-	rolePublic = "public"
+	loginCookieName = "equori_login"
+	rolePublic      = "public"
 )
 
 var _ StrictServerInterface = (*Server)(nil)
@@ -129,7 +130,7 @@ func (s *Server) CreateSession(ctx context.Context, req CreateSessionRequestObje
 		return nil, errInvalidRequest
 	}
 
-	session, err := s.svc.Login(ctx, req.Body.Email, req.Body.Password)
+	session, pending, err := s.svc.Login(ctx, req.Body.Email, req.Body.Password, deref(req.Params.Origin))
 	switch {
 	case errors.Is(err, app.ErrInvalidCredentials), errors.Is(err, app.ErrTooManyAttempts):
 		s.log.WarnContext(ctx, "login failed", "email", req.Body.Email, "reason", err.Error(),
@@ -140,7 +141,12 @@ func (s *Server) CreateSession(ctx context.Context, req CreateSessionRequestObje
 		return nil, err
 	}
 
-	s.log.InfoContext(ctx, "login succeeded", "member_id", session.MemberID, "books_id", session.BooksID, "request_id", httpserver.RequestID(ctx))
+	if pending != nil {
+		return s.pendingLoginResponse(pending), nil
+	}
+
+	s.log.InfoContext(ctx, "login succeeded", "member_id", session.MemberID, "books_id", session.BooksID,
+		"method", app.MethodPassword, "request_id", httpserver.RequestID(ctx))
 	cookie := s.cookie(session.Token, session.ExpiresAt)
 
 	return CreateSession204Response{Headers: CreateSession204ResponseHeaders{SetCookie: &cookie}}, nil
@@ -208,6 +214,22 @@ func (s *Server) cookie(value string, expires time.Time) string {
 		Name:     CookieName,
 		Value:    value,
 		Path:     "/",
+		Expires:  expires,
+		HttpOnly: true,
+		Secure:   s.secureCookies,
+		SameSite: http.SameSiteLaxMode,
+	}
+
+	return c.String()
+}
+
+// loginCookie is the cookie of a pending login, sent only to the session routes.
+func (s *Server) loginCookie(value string, expires time.Time) string {
+	//nolint:gosec // G124: Secure is false only when EQUORI_INSECURE_COOKIES=true (ADR 003).
+	c := http.Cookie{
+		Name:     loginCookieName,
+		Value:    value,
+		Path:     "/api/v1/session",
 		Expires:  expires,
 		HttpOnly: true,
 		Secure:   s.secureCookies,

@@ -36,8 +36,10 @@ paths:
       tags: [identity]
       operationId: createSession
       x-book-role: public
-      summary: Log in and start a session.
+      summary: Log in; a member with a second factor receives 202 and finishes with completeSecondFactor (HA46).
       security: []
+      parameters:
+        - $ref: "#/components/parameters/Origin"
       requestBody:
         required: true
         content:
@@ -45,6 +47,16 @@ paths:
             schema:
               $ref: "#/components/schemas/Credentials"
       responses:
+        "202":
+          description: The password is right and the member has a second factor; the cookie equori_login holds the pending login for 5 minutes.
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SecondFactorChallenge"
         "204":
           description: Session created.
           headers:
@@ -790,6 +802,40 @@ paths:
         "429":
           $ref: "#/components/responses/Problem"
         "503":
+          $ref: "#/components/responses/Problem"
+  /session/second-factor:
+    post:
+      tags: [identity]
+      operationId: completeSecondFactor
+      x-book-role: public
+      summary: Finish a pending login with a second factor (HA47).
+      description: |
+        Exactly one of totp_code, recovery_code and passkey, else 400 invalid_request. A wrong value
+        is 401 second_factor_invalid, and the fifth ends the pending login; a missing or expired
+        pending login is 401 unauthenticated. 409 secret_key_missing for a TOTP code on a server
+        without EQUORI_SECRET_KEY.
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/LoginCookie"
+        - $ref: "#/components/parameters/Origin"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SecondFactorInput"
+      responses:
+        "204":
+          description: Session created; the response also expires equori_login.
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "409":
           $ref: "#/components/responses/Problem"
   /settings:
     get:
@@ -6174,6 +6220,12 @@ components:
       required: false
       schema:
         type: string
+    LoginCookie:
+      name: equori_login
+      in: cookie
+      required: false
+      schema:
+        type: string
     Origin:
       name: Origin
       in: header
@@ -11080,6 +11132,55 @@ components:
           description: 16 base32 characters each; empty when a second factor existed before.
           items:
             type: string
+    SecondFactorChallenge:
+      type: object
+      required: [methods, passkey]
+      properties:
+        methods:
+          type: array
+          items:
+            type: string
+            enum: [totp, passkey, recovery_code]
+        passkey:
+          type: object
+          nullable: true
+          description: Null when no passkey of the member has the RP ID of the request; base64url values.
+          required: [challenge, allow_credentials]
+          properties:
+            challenge:
+              type: string
+            allow_credentials:
+              type: array
+              items:
+                type: string
+    SecondFactorInput:
+      type: object
+      additionalProperties: false
+      properties:
+        totp_code:
+          type: string
+          pattern: "^[0-9]{6}$"
+        recovery_code:
+          type: string
+          maxLength: 32
+        passkey:
+          type: object
+          additionalProperties: false
+          required: [credential_id, client_data_json, authenticator_data, signature]
+          description: Base64url values without padding.
+          properties:
+            credential_id:
+              type: string
+              maxLength: 2048
+            client_data_json:
+              type: string
+              maxLength: 8192
+            authenticator_data:
+              type: string
+              maxLength: 8192
+            signature:
+              type: string
+              maxLength: 2048
     CreateBooksInput:
       type: object
       additionalProperties: false
