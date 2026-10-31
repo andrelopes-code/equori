@@ -47,6 +47,12 @@ export const settingsTopics = [
     summary: "settings.summary.calendars",
   },
   {
+    id: "members",
+    group: "books",
+    title: "settings.members.title",
+    summary: "settings.summary.members",
+  },
+  {
     id: "integrations",
     group: "connections",
     title: "settings.integrations.title",

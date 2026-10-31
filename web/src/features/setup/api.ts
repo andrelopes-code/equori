@@ -8,7 +8,7 @@ import type { Client } from "openapi-fetch";
 import { useApi } from "@/api/api-context";
 import { unwrap } from "@/api/problem";
 import type { components, paths } from "@/api/schema.gen";
-import { meQuery } from "@/features/session";
+import { meQuery, reloadHome } from "@/features/session";
 import type { BooksMembership } from "@/features/session";
 import { useAppLocaleState } from "@/i18n/i18n-provider";
 
@@ -170,6 +170,58 @@ export function useCreateBooks() {
   return useMutation({
     mutationFn: async (body: CreateBooksInput): Promise<BooksMembership> =>
       unwrap(await api.POST("/books", { body })),
+  });
+}
+
+export type BooksMember = components["schemas"]["BooksMember"];
+export type BookRole = components["schemas"]["BookRole"];
+
+export function membersQuery(api: Client<paths>) {
+  return queryOptions({
+    queryKey: ["books", "members"] as const,
+    queryFn: async () =>
+      (await unwrap(await api.GET("/books/current/members"))).items,
+  });
+}
+
+export function useUpdateMember() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { memberId: number; role: BookRole }) =>
+      unwrap(
+        await api.PATCH("/books/current/members/{memberId}", {
+          params: { path: { memberId: input.memberId } },
+          body: { role: input.role },
+        }),
+      ),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: membersQuery(api).queryKey }),
+  });
+}
+
+export function useRemoveMember() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (memberId: number) =>
+      unwrap(
+        await api.DELETE("/books/current/members/{memberId}", {
+          params: { path: { memberId } },
+        }),
+      ),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: membersQuery(api).queryKey }),
+  });
+}
+
+// Leaving ends the session's book: the reload reads the account's next book (HA32).
+export function useLeaveBooks() {
+  const api = useApi();
+  return useMutation({
+    mutationFn: async () =>
+      unwrap(await api.DELETE("/books/current/membership")),
+    onSuccess: reloadHome,
   });
 }
 

@@ -255,6 +255,7 @@ describe("settings page", () => {
         catalogPtBR["settings.privacy.title"],
         catalogPtBR["settings.ledger.title"],
         catalogPtBR["calendar.title"],
+        catalogPtBR["settings.members.title"],
         catalogPtBR["settings.integrations.title"],
         catalogPtBR["settings.market_data.title"],
         catalogPtBR["settings.assistant.title"],

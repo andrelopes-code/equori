@@ -8,6 +8,7 @@ import { SettingsIntegrations } from "@/features/setup/settings-integrations";
 import { SettingsLanguage } from "@/features/setup/settings-language";
 import { SettingsLedger } from "@/features/setup/settings-ledger";
 import { SettingsMarketData } from "@/features/setup/settings-market-data";
+import { SettingsMembers } from "@/features/setup/settings-members";
 import { SettingsPrivacy } from "@/features/setup/settings-privacy";
 import type { SettingsTopic } from "@/features/setup/settings-topics";
 
@@ -25,6 +26,8 @@ export function SettingsPane({ topic }: { topic: SettingsTopic }) {
       return <SettingsLedger />;
     case "calendars":
       return <SettingsCalendars />;
+    case "members":
+      return <SettingsMembers />;
     case "integrations":
       return <SettingsIntegrations />;
     case "market_data":
