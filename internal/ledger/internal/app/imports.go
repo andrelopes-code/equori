@@ -411,6 +411,8 @@ type ImportedPostingState struct {
 	ID, AccountID uuid.UUID
 	Status        domain.PostingStatus
 	CardRole      string
+	StatementID   uuid.UUID
+	StatementDue  *time.Time
 }
 
 // ImportedUpdate is what an aggregator now reports about a recorded line (P6 amendment A36).
@@ -424,19 +426,28 @@ type ImportedUpdate struct {
 
 // UpdateImportedPosting clears the posting of a line the aggregator reports posted, bills a
 // card posting on the statement of its bill and retypes a card credit the source now types
-// as a payment. A reconciled posting is ErrReconciled and stays as it is; a transaction
-// changed since its import is domain.ErrNotRetypable after the other changes; a record no
-// posting carries is ErrNotFound.
-func (s *Service) UpdateImportedPosting(ctx context.Context, booksID int64, recordID uuid.UUID, u ImportedUpdate) error {
+// as a payment; changed is true when the posting or the transaction took a difference. A
+// reconciled posting that is not pending, needs no retype and sits on the statement due on
+// the line's bill is (false, nil) (P12 A147); another reconciled posting is ErrReconciled and
+// stays as it is. A transaction changed since its import is domain.ErrNotRetypable after the
+// other changes; a record no posting carries is ErrNotFound.
+func (s *Service) UpdateImportedPosting(ctx context.Context, booksID int64, recordID uuid.UUID, u ImportedUpdate) (changed bool, err error) {
 	var role string
 
-	err := s.repo.InTx(ctx, func(r Repository) error {
+	err = s.repo.InTx(ctx, func(r Repository) error {
 		p, err := r.LockImportedPosting(ctx, booksID, recordID)
 		if err != nil {
 			return err
 		}
 
+		billed := u.DueDate != nil && p.CardRole != "" && p.CardRole != domain.RolePayment && u.Kind != LineKindPayment
+		retype := u.Kind == LineKindPayment && p.CardRole == domain.RoleCredit
+
 		if p.Status == domain.StatusReconciled {
+			if !u.Pending && !retype && (!billed || (p.StatementDue != nil && p.StatementDue.Equal(*u.DueDate))) {
+				return nil
+			}
+
 			return domain.ErrReconciled
 		}
 
@@ -446,7 +457,7 @@ func (s *Service) UpdateImportedPosting(ctx context.Context, booksID int64, reco
 		}
 
 		var statementID uuid.UUID
-		if u.DueDate != nil && p.CardRole != "" && p.CardRole != domain.RolePayment && u.Kind != LineKindPayment {
+		if billed {
 			ref, err := s.statementDue(ctx, r, booksID, p.AccountID, *u.DueDate)
 			if err != nil {
 				return err
@@ -463,14 +474,15 @@ func (s *Service) UpdateImportedPosting(ctx context.Context, booksID int64, reco
 		}
 
 		role = p.CardRole
+		changed = status != p.Status || (billed && statementID != p.StatementID) || retype
 
 		return r.SettleImportedPosting(ctx, booksID, p.ID, status, statementID)
 	})
 	if err != nil || u.Kind != LineKindPayment || role != domain.RoleCredit {
-		return err
+		return changed, err
 	}
 
-	return s.repo.InTx(ctx, func(r Repository) error { return s.retypeAsPayment(ctx, r, booksID, recordID) })
+	return changed, s.repo.InTx(ctx, func(r Repository) error { return s.retypeAsPayment(ctx, r, booksID, recordID) })
 }
 
 // retypeAsPayment rewrites the transaction carrying the record as a card payment against

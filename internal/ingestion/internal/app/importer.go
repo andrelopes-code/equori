@@ -110,11 +110,12 @@ type Ledger interface {
 	// AssertSyncedReserve is AssertSyncedBalance for a reserved balance, which books bounded
 	// yield on a positive difference (A75).
 	AssertSyncedReserve(ctx context.Context, booksID int64, accountID uuid.UUID, b domain.Balance, c money.Currency) error
-	// UpdateImportedPosting applies a later report on a recorded line (A36): ErrReconciled
-	// leaves the posting as it is; ErrNotFound when no posting carries the record.
-	// kind KindPayment retypes a card credit as a payment; ErrNotRetypable when the
-	// transaction changed since its import.
-	UpdateImportedPosting(ctx context.Context, booksID int64, recordID uuid.UUID, pending bool, dueDate *time.Time, kind string) error
+	// UpdateImportedPosting applies a later report on a recorded line (A36) and reports
+	// whether the posting changed. A reconciled posting that already holds the reported
+	// status and bill is (false, nil) (A147); one that does not is ErrReconciled. kind
+	// KindPayment retypes a card credit as a payment; ErrNotRetypable when the transaction
+	// changed since its import. ErrNotFound when no posting carries the record.
+	UpdateImportedPosting(ctx context.Context, booksID int64, recordID uuid.UUID, pending bool, dueDate *time.Time, kind string) (bool, error)
 	// RecordStatementFacts records a card bill on the ledger statement due on its due date (A85).
 	RecordStatementFacts(ctx context.Context, booksID int64, accountID uuid.UUID, b domain.Bill, c money.Currency) error
 	// RecordCardOpening opens a card that has no opening balance with the total of the bill
@@ -626,7 +627,7 @@ func withFacts(rec *domain.ExternalRecord, r domain.NormalizedRecord) {
 // a posted line clears its posting, a bill moves a card posting to the bill's statement.
 // A reconciled posting and an amount change stay out of the ledger and are described on
 // the record. reported is true when the line differs from the stored facts, changed when the
-// ledger or the record's unapplied change took the difference (P12 A143).
+// ledger took the difference or the record's unapplied change text is new (P12 A147).
 func (s *Service) update(ctx context.Context, sync bool, rec *domain.ExternalRecord, r domain.NormalizedRecord) (reported, changed bool, err error) {
 	if !sync || (rec.State != domain.StateMatched && rec.State != domain.StateCreated) {
 		return false, false, nil
@@ -637,7 +638,7 @@ func (s *Service) update(ctx context.Context, sync bool, rec *domain.ExternalRec
 	settled := rec.ExternalStatus != domain.ExternalStatusOf(r) || !sameDate(rec.DueDate, r.DueDate)
 	retype := r.Kind == domain.KindPayment && rec.LineKind != r.Kind
 
-	moved := rec.Amount != r.Amount || !rec.Date.Equal(r.Date)
+	moved := rec.ReportedAmount != r.Amount || !rec.ReportedOn.Equal(r.Date)
 	if !settled && !retype && !moved && !identified {
 		return false, false, nil
 	}
@@ -646,7 +647,9 @@ func (s *Service) update(ctx context.Context, sync bool, rec *domain.ExternalRec
 
 	applied := rec.LineKind
 	if settled || retype {
-		err := s.ledger.UpdateImportedPosting(ctx, rec.BooksID, rec.ID, r.Pending, r.DueDate, r.Kind)
+		posted, err := s.ledger.UpdateImportedPosting(ctx, rec.BooksID, rec.ID, r.Pending, r.DueDate, r.Kind)
+		changed = posted
+
 		switch {
 		case errors.Is(err, ErrReconciled):
 			notes = append(notes, "the aggregator reports the line "+strings.ToLower(domain.ExternalStatusOf(r))+billNote(r.DueDate)+"; the posting is reconciled and keeps its status and statement")
@@ -660,15 +663,19 @@ func (s *Service) update(ctx context.Context, sync bool, rec *domain.ExternalRec
 	}
 
 	if moved {
-		note, err := s.followLine(ctx, rec, r)
+		note, followed, err := s.followLine(ctx, rec, r)
 		if err != nil {
 			return false, false, err
 		}
+
+		changed = changed || followed
 
 		if note != "" {
 			notes = append(notes, note)
 		}
 	}
+
+	previous := rec.UnappliedChange
 
 	withFacts(rec, r)
 
@@ -679,33 +686,38 @@ func (s *Service) update(ctx context.Context, sync bool, rec *domain.ExternalRec
 
 	rec.UnappliedChange = strings.Join(notes, "; ")
 
-	return true, settled || retype || moved, nil
+	return true, changed || (rec.UnappliedChange != "" && rec.UnappliedChange != previous), nil
 }
 
 // followLine corrects the transaction of a linked line to the line's new amount and date
-// (A102). A reconciled posting keeps them: the record describes the change and is flagged
+// (A102) and reports whether the ledger took them. A line equal to the ledger's values needs
+// nothing. A reconciled posting keeps them: the record describes the change and is flagged
 // with review reason changed. An installment keeps the amount its plan fixes.
-func (s *Service) followLine(ctx context.Context, rec *domain.ExternalRecord, r domain.NormalizedRecord) (string, error) {
+func (s *Service) followLine(ctx context.Context, rec *domain.ExternalRecord, r domain.NormalizedRecord) (string, bool, error) {
+	if rec.Amount == r.Amount && rec.Date.Equal(r.Date) {
+		return "", false, nil
+	}
+
 	kept := fmt.Sprintf("the aggregator reports %d minor units on %s; the ledger keeps %d on %s",
 		r.Amount, r.Date.Format(time.DateOnly), rec.Amount, rec.Date.Format(time.DateOnly))
 	if rec.Installment != nil || rec.TransactionID == uuid.Nil {
-		return kept, nil
+		return kept, false, nil
 	}
 
 	err := s.ledger.ConfirmLine(ctx, rec.BooksID, rec.TransactionID, rec.AccountID, r.Amount, r.Date)
 	switch {
 	case errors.Is(err, ErrReconciled):
 		rec.ReviewReason = domain.ReviewChanged
-		return kept, nil
+		return kept, false, nil
 	case errors.Is(err, ErrTransactionVoided), errors.Is(err, ErrNotFound):
-		return kept, nil
+		return kept, false, nil
 	case err != nil:
-		return "", err
+		return "", false, err
 	}
 
 	rec.Amount, rec.Date, rec.ReviewReason = r.Amount, r.Date, ""
 
-	return "", nil
+	return "", true, nil
 }
 
 // billMatched moves a matched card posting to the statement of the line's bill, as update
@@ -716,7 +728,7 @@ func (s *Service) billMatched(ctx context.Context, rec *domain.ExternalRecord, p
 		return nil
 	}
 
-	err := s.ledger.UpdateImportedPosting(ctx, rec.BooksID, rec.ID, pending, rec.DueDate, "")
+	_, err := s.ledger.UpdateImportedPosting(ctx, rec.BooksID, rec.ID, pending, rec.DueDate, "")
 	switch {
 	case errors.Is(err, ErrReconciled):
 		rec.UnappliedChange = "the aggregator reports the line" + billNote(rec.DueDate) + "; the posting is reconciled and keeps its status and statement"

@@ -53,7 +53,13 @@ func (r *Repository) LockImportedPosting(ctx context.Context, booksID int64, rec
 		return app.ImportedPostingState{}, notFound(err)
 	}
 
-	p := app.ImportedPostingState{ID: row.ID, AccountID: row.AccountID, Status: domain.PostingStatus(row.Status)}
+	p := app.ImportedPostingState{
+		ID:           row.ID,
+		AccountID:    row.AccountID,
+		Status:       domain.PostingStatus(row.Status),
+		StatementID:  row.StatementID.UUID,
+		StatementDue: row.StatementDue,
+	}
 	if row.CardRole != nil {
 		p.CardRole = *row.CardRole
 	}

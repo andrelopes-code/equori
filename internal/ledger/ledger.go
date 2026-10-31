@@ -481,8 +481,8 @@ func (m *Module) AssertSyncedReserve(ctx context.Context, booksID int64, account
 }
 
 // UpdateImportedPosting applies an aggregator's later report on a recorded line (P6 A36);
-// a reconciled posting is ErrReconciled.
-func (m *Module) UpdateImportedPosting(ctx context.Context, booksID int64, recordID uuid.UUID, u ImportedUpdate) error {
+// a reconciled posting that already holds the report is (false, nil), another is ErrReconciled.
+func (m *Module) UpdateImportedPosting(ctx context.Context, booksID int64, recordID uuid.UUID, u ImportedUpdate) (bool, error) {
 	return m.svc.UpdateImportedPosting(ctx, booksID, recordID, u)
 }
 

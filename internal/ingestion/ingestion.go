@@ -362,8 +362,10 @@ func (p ledgerPort) assert(ctx context.Context, booksID int64, accountID uuid.UU
 	return p.translate(err)
 }
 
-func (p ledgerPort) UpdateImportedPosting(ctx context.Context, booksID int64, recordID uuid.UUID, pending bool, dueDate *time.Time, kind string) error {
-	return p.translate(p.l.UpdateImportedPosting(ctx, booksID, recordID, ledger.ImportedUpdate{Pending: pending, DueDate: dueDate, Kind: kind}))
+func (p ledgerPort) UpdateImportedPosting(ctx context.Context, booksID int64, recordID uuid.UUID, pending bool, dueDate *time.Time, kind string) (bool, error) {
+	changed, err := p.l.UpdateImportedPosting(ctx, booksID, recordID, ledger.ImportedUpdate{Pending: pending, DueDate: dueDate, Kind: kind})
+
+	return changed, p.translate(err)
 }
 
 func (p ledgerPort) RecordInstallment(ctx context.Context, booksID int64, l app.InstallmentLine) (uuid.UUID, uuid.UUID, error) {

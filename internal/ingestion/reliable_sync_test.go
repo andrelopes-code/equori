@@ -240,6 +240,63 @@ func TestS213PeriodicReread(t *testing.T) {
 	}
 }
 
+// S205 (A147): an amount change on a reconciled posting leaves the review reason changed and
+// counts once; the next sync, with the line unchanged, counts it ignored.
+func TestS205AmountChangedAfterReconciliation(t *testing.T) {
+	t.Parallel()
+	f, card := newCardSync(t)
+	f.line(pluggy.SubtypeCard, cardLine("card-5", "2026-11-03", "50.00", "POSTED", new("bill-nov")))
+	f.sync()
+	_, tx := f.recordOf("card-5")
+	f.reconcileStatement(card, "2026-11")
+
+	f.line(pluggy.SubtypeCard, cardLine("card-5", "2026-11-03", "55.00", "POSTED", new("bill-nov")))
+	f.sync()
+
+	if p := f.cardPosting(tx, card); p.Status != "reconciled" || p.Amount.Amount != -5000 {
+		t.Fatalf("posting = %+v, want reconciled at -5000", p)
+	}
+
+	if reason, change := f.recordFacts("card-5"); reason != "changed" || change == "" {
+		t.Fatalf("facts = %q, %q, want reason changed and a change", reason, change)
+	}
+
+	if c := f.batches(card)[0].Counts; c.Updated != 1 {
+		t.Fatalf("updated = %d, want 1", c.Updated)
+	}
+
+	f.sync()
+
+	if c := f.batches(card)[0].Counts; c.Updated != 0 || c.Ignored != 1 {
+		t.Fatalf("counts = updated %d, ignored %d, want 0 and 1", c.Updated, c.Ignored)
+	}
+
+	if p := f.cardPosting(tx, card); p.Amount.Amount != -5000 {
+		t.Fatalf("posting amount = %d, want -5000", p.Amount.Amount)
+	}
+}
+
+// S208 (A147): a reconciled posting that already sits on the line's bill takes the posted
+// status without a note and counts ignored.
+func TestS208HeldBillWritesNoNote(t *testing.T) {
+	t.Parallel()
+	f, card := newCardSync(t)
+	f.line(pluggy.SubtypeCard, cardLine("card-8", "2026-11-03", "40.00", "PENDING", new("bill-nov")))
+	f.sync()
+	f.reconcileStatement(card, "2026-11")
+
+	f.line(pluggy.SubtypeCard, cardLine("card-8", "2026-11-03", "40.00", "POSTED", new("bill-nov")))
+	f.sync()
+
+	if reason, change := f.recordFacts("card-8"); reason != "" || change != "" {
+		t.Fatalf("facts = %q, %q, want none", reason, change)
+	}
+
+	if c := f.batches(card)[0].Counts; c.Updated != 0 || c.Ignored != 1 {
+		t.Fatalf("counts = updated %d, ignored %d, want 0 and 1", c.Updated, c.Ignored)
+	}
+}
+
 // movingClock is an instance clock a test moves between syncs.
 type movingClock struct{ at atomic.Int64 }
 
@@ -264,4 +321,47 @@ func (c *movingClock) set(t *testing.T, at string) {
 	}
 
 	c.at.Store(v.UnixNano())
+}
+
+// recordFacts returns the review reason and the unapplied change of a line's record, empty when null.
+func (f syncFixture) recordFacts(externalID string) (reason, change string) {
+	f.h.T().Helper()
+
+	var r, c *string
+	if err := f.h.Pool.QueryRow(f.h.T().Context(), `SELECT review_reason, unapplied_change FROM ingestion_external_record WHERE external_id = $1`, externalID).Scan(&r, &c); err != nil {
+		f.h.T().Fatal(err)
+	}
+
+	if r != nil {
+		reason = *r
+	}
+
+	if c != nil {
+		change = *c
+	}
+
+	return reason, change
+}
+
+// reconcileStatement reconciles the card statement of month (YYYY-MM) at its amount due,
+// as TestSyncUpdateOfAReconciledPosting does.
+func (f syncFixture) reconcileStatement(card, month string) {
+	f.h.T().Helper()
+
+	var statements struct {
+		Items []struct {
+			ID        string `json:"id"`
+			AmountDue struct {
+				Amount int64 `json:"amount"`
+			} `json:"amount_due"`
+		} `json:"items"`
+	}
+	f.h.MustDo(http.MethodGet, "/api/v1/accounts/"+card+"/statements?from="+month+"&to="+month, nil, http.StatusOK, &statements)
+
+	if len(statements.Items) != 1 {
+		f.h.T().Fatalf("statements = %+v, want one", statements.Items)
+	}
+
+	st := statements.Items[0]
+	f.h.MustDo(http.MethodPost, "/api/v1/statements/"+st.ID+"/reconcile", map[string]any{"amount_due": apitest.BRL(st.AmountDue.Amount)}, http.StatusOK, nil)
 }
