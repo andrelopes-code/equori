@@ -170,3 +170,59 @@ func (r *Repository) InstallmentPlans(ctx context.Context, booksID int64, keys [
 func (r *Repository) SaveInstallmentPlan(ctx context.Context, booksID int64, accountID uuid.UUID, key []byte, planID uuid.UUID) error {
 	return r.q.SaveInstallmentPlan(ctx, SaveInstallmentPlanParams{BooksID: booksID, AccountID: accountID, PlanKey: key, PlanID: planID})
 }
+
+func (r *Repository) SyncRuns(ctx context.Context, booksID int64, connectionID uuid.UUID, limit int) ([]domain.SyncRun, error) {
+	heads, err := r.q.ListConnectionSyncs(ctx, ListConnectionSyncsParams{
+		BooksID:      booksID,
+		ConnectionID: connectionID,
+		RowLimit:     int32(limit), //nolint:gosec // limit is domain.SyncRunsListed
+	})
+	if err != nil || len(heads) == 0 {
+		return nil, err
+	}
+
+	syncIDs := make([]uuid.UUID, len(heads))
+	index := make(map[uuid.UUID]int, len(heads))
+
+	runs := make([]domain.SyncRun, len(heads))
+	for i, h := range heads {
+		syncIDs[i] = h.SyncID
+		index[h.SyncID] = i
+		runs[i] = domain.SyncRun{ID: h.SyncID, StartedAt: h.StartedAt}
+	}
+
+	batchRows, err := r.q.ListSyncBatches(ctx, ListSyncBatchesParams{BooksID: booksID, SyncIds: syncIDs})
+	if err != nil {
+		return nil, err
+	}
+
+	var batchIDs []uuid.UUID
+	for _, row := range batchRows {
+		b := toBatch(row)
+		runs[index[b.SyncID]].Batches = append(runs[index[b.SyncID]].Batches, b)
+		batchIDs = append(batchIDs, b.ID)
+	}
+
+	owner := make(map[uuid.UUID]int, len(batchIDs))
+	for i, run := range runs {
+		for _, b := range run.Batches {
+			owner[b.ID] = i
+		}
+	}
+
+	recRows, err := r.q.ListSummaryRecords(ctx, ListSummaryRecordsParams{BooksID: booksID, BatchIds: batchIDs})
+	if err != nil {
+		return nil, err
+	}
+
+	for _, row := range recRows {
+		rec, err := toRecord(row)
+		if err != nil {
+			return nil, err
+		}
+
+		runs[owner[rec.SummaryBatchID]].Records = append(runs[owner[rec.SummaryBatchID]].Records, rec)
+	}
+
+	return runs, nil
+}

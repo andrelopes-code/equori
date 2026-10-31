@@ -1,9 +1,12 @@
 package ingestion_test
 
 import (
+	"fmt"
 	"net/http"
 	"slices"
 	"testing"
+
+	"github.com/google/uuid"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
 	pluggy "github.com/andrelopes-code/equori/internal/ingestion/internal/aggregator/pluggy/client"
@@ -429,6 +432,94 @@ func TestA148UndoReidentification(t *testing.T) {
 	f.h.ExpectProblem(f.undo("pay-2"), http.StatusConflict, "no_decision", "")
 }
 
+// A149: the summary lists the runs that decided or created, newest first, with their records.
+func TestA149SyncSummary(t *testing.T) {
+	t.Parallel()
+	f, card := newCardSync(t)
+	f.line(pluggy.SubtypeCard, cardLine("c-1", "2026-11-03", "10.00", "POSTED", new("bill-nov")))
+	f.line(pluggy.SubtypeCard, cardLine("c-2", "2026-11-04", "20.00", "POSTED", new("bill-nov")))
+	f.sync()
+	f.sync()
+	f.p.RemoveTransaction(nubankItem+"-card", "c-2")
+	f.sync()
+
+	runs := f.syncs()
+	if len(runs) != 2 {
+		t.Fatalf("runs = %d, want 2", len(runs))
+	}
+
+	if runs[0].SyncID != f.batches(card)[0].SyncID || len(runs[0].Batches) != 1 || runs[0].Batches[0].Counts.Withdrawn != 1 {
+		t.Fatalf("run 0 = %+v, want the last sync with one batch that withdrew one line", runs[0])
+	}
+
+	if len(runs[0].Records) != 1 || runs[0].Records[0].ExternalID != "c-2" || runs[0].Records[0].State != "withdrawn" || runs[0].Records[0].Decision != "withdrawn" {
+		t.Fatalf("run 0 records = %+v, want c-2 withdrawn by decision", runs[0].Records)
+	}
+
+	if runs[1].SyncID != f.batches(card)[2].SyncID {
+		t.Fatalf("run 1 = %s, want the first sync %s", runs[1].SyncID, f.batches(card)[2].SyncID)
+	}
+
+	if len(runs[1].Records) != 1 || runs[1].Records[0].ExternalID != "c-1" || runs[1].Records[0].State != "created" || runs[1].Records[0].Decision != "" {
+		t.Fatalf("run 1 records = %+v, want c-1 created without decision", runs[1].Records)
+	}
+}
+
+// A149: at most ten runs are listed, newest first.
+func TestA149SyncSummaryListsTenRuns(t *testing.T) {
+	t.Parallel()
+	f := newSyncFixture(t)
+	f.mapTo(pluggy.SubtypeChecking, f.checking)
+
+	for i := range 12 {
+		f.line(pluggy.SubtypeChecking, bankLine(fmt.Sprintf("tx-%02d", i), "2026-11-05", "-1.00"))
+		f.sync()
+	}
+
+	runs := f.syncs()
+	if len(runs) != 10 {
+		t.Fatalf("runs = %d, want 10", len(runs))
+	}
+
+	if runs[0].SyncID != f.batches(f.checking)[0].SyncID || runs[9].SyncID != f.batches(f.checking)[9].SyncID {
+		t.Fatalf("runs = %s ... %s, want the ten newest syncs", runs[0].SyncID, runs[9].SyncID)
+	}
+}
+
+// S205 (A149): a change that leaves review reason changed is listed in the run that made it.
+func TestS205SummaryListsTheChange(t *testing.T) {
+	t.Parallel()
+	f, card := newCardSync(t)
+	f.line(pluggy.SubtypeCard, cardLine("card-5", "2026-11-03", "50.00", "POSTED", new("bill-nov")))
+	f.sync()
+	f.reconcileStatement(card, "2026-11")
+	f.line(pluggy.SubtypeCard, cardLine("card-5", "2026-11-03", "55.00", "POSTED", new("bill-nov")))
+	f.sync()
+
+	run := f.syncs()[0]
+	if run.SyncID != f.batches(card)[0].SyncID {
+		t.Fatalf("sync id = %s, want %s", run.SyncID, f.batches(card)[0].SyncID)
+	}
+
+	if len(run.Records) != 1 || run.Records[0].ExternalID != "card-5" || run.Records[0].ReviewReason != "changed" || run.Records[0].Decision != "" {
+		t.Fatalf("records = %+v, want card-5 changed without decision", run.Records)
+	}
+
+	f.sync()
+
+	if got := f.syncs()[0].SyncID; got != run.SyncID {
+		t.Fatalf("sync id after a quiet run = %s, want %s", got, run.SyncID)
+	}
+}
+
+// A149: a connection of another book or none returns not_found.
+func TestA149SyncsOfAnUnknownConnection(t *testing.T) {
+	t.Parallel()
+	f := newSyncFixture(t)
+
+	f.h.ExpectProblem(f.h.Do(http.MethodGet, "/api/v1/connections/"+uuid.NewString()+"/syncs", nil), http.StatusNotFound, "not_found", "")
+}
+
 // recordID returns the id of a line's record.
 func (f syncFixture) recordID(externalID string) string {
 	f.h.T().Helper()
@@ -473,4 +564,32 @@ func (f syncFixture) undo(externalID string) apitest.Response {
 	f.h.T().Helper()
 
 	return f.h.Do(http.MethodPost, "/api/v1/external-records/"+f.recordID(externalID)+"/undo", nil)
+}
+
+// syncRunView is a sync run as GET /connections/{id}/syncs reports it.
+type syncRunView struct {
+	SyncID    string          `json:"sync_id"`
+	StartedAt string          `json:"started_at"`
+	Batches   []syncBatch     `json:"batches"`
+	Records   []summaryRecord `json:"records"`
+}
+
+type summaryRecord struct {
+	ID           string `json:"id"`
+	ExternalID   string `json:"external_id"`
+	AccountID    string `json:"account_id"`
+	State        string `json:"state"`
+	ReviewReason string `json:"review_reason"`
+	Decision     string `json:"decision"`
+}
+
+// syncs returns the connection's sync runs as GET /connections/{id}/syncs reports them.
+func (f syncFixture) syncs() []syncRunView {
+	f.h.T().Helper()
+	var out struct {
+		Items []syncRunView `json:"items"`
+	}
+	f.h.MustDo(http.MethodGet, "/api/v1/connections/"+f.conn.ID+"/syncs", nil, http.StatusOK, &out)
+
+	return out.Items
 }

@@ -5453,6 +5453,30 @@ paths:
           $ref: "#/components/responses/Problem"
         "502":
           $ref: "#/components/responses/Problem"
+  /connections/{id}/syncs:
+    get:
+      tags: [ingestion]
+      operationId: listConnectionSyncs
+      x-book-role: read
+      summary: The last 10 sync runs of the connection that decided, created or placed a line in review (A149).
+      description: |
+        Newest first. Each run lists its batches, one per mapped account, and the records its
+        summary lists: those the run linked, changed, withdrew, re-identified, created, matched or
+        placed in review. A record a later run decided belongs to that run. A run that changed
+        nothing is not listed.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncRunList"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
   /connections/{id}/accounts/{external_account_id}:
     put:
       tags: [ingestion]
@@ -7456,6 +7480,34 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ImportBatch"
+    SyncRunList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/SyncRun"
+    SyncRun:
+      type: object
+      description: One sync of a connection, manual or scheduled (A149).
+      required: [sync_id, started_at, batches, records]
+      properties:
+        sync_id:
+          type: string
+          format: uuid
+        started_at:
+          type: string
+          format: date-time
+        batches:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImportBatch"
+        records:
+          type: array
+          description: The records the run's summary lists, by date.
+          items:
+            $ref: "#/components/schemas/ExternalRecord"
     ConnectionList:
       type: object
       required: [items]

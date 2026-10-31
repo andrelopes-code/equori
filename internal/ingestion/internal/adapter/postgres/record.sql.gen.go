@@ -297,6 +297,76 @@ func (q *Queries) ListRecordsByLineIDs(ctx context.Context, arg ListRecordsByLin
 	return items, nil
 }
 
+const listSummaryRecords = `-- name: ListSummaryRecords :many
+SELECT
+    id, books_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change, line_kind, review_reason, candidate_scores, institution_id, reported_amount, reported_on, decision, decision_undo, summary_batch_id, kept
+FROM
+    ingestion_external_record
+WHERE
+    books_id = $1
+    AND summary_batch_id = ANY ($2::UUID[])
+ORDER BY
+    booked_on,
+    id
+`
+
+type ListSummaryRecordsParams struct {
+	BooksID  int64
+	BatchIds []uuid.UUID
+}
+
+// A149: the records the summaries of the given batches list.
+func (q *Queries) ListSummaryRecords(ctx context.Context, arg ListSummaryRecordsParams) ([]IngestionExternalRecord, error) {
+	rows, err := q.db.Query(ctx, listSummaryRecords, arg.BooksID, arg.BatchIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []IngestionExternalRecord
+	for rows.Next() {
+		var i IngestionExternalRecord
+		if err := rows.Scan(
+			&i.ID,
+			&i.BooksID,
+			&i.BatchID,
+			&i.AccountID,
+			&i.ExternalID,
+			&i.DedupKey,
+			&i.Raw,
+			&i.BookedOn,
+			&i.Amount,
+			&i.Description,
+			&i.State,
+			&i.TransactionID,
+			&i.Candidates,
+			&i.ExternalStatus,
+			&i.DueDate,
+			&i.InstallmentNumber,
+			&i.InstallmentCount,
+			&i.CategoryID,
+			&i.BalanceAfter,
+			&i.UnappliedChange,
+			&i.LineKind,
+			&i.ReviewReason,
+			&i.CandidateScores,
+			&i.InstitutionID,
+			&i.ReportedAmount,
+			&i.ReportedOn,
+			&i.Decision,
+			&i.DecisionUndo,
+			&i.SummaryBatchID,
+			&i.Kept,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listSyncedRecords = `-- name: ListSyncedRecords :many
 SELECT
     id, books_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change, line_kind, review_reason, candidate_scores, institution_id, reported_amount, reported_on, decision, decision_undo, summary_batch_id, kept

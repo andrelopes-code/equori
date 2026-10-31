@@ -1913,7 +1913,7 @@
   },
   {
     "name": "get_imports",
-    "description": "Returns import activity: statement import batches with their counts, the records of a batch and those needing review, entries of an account that no bank line confirmed, and bank connections with their sync state and accounts. Use it for whether a bank synced, what an import did or what needs review. Do not use it for the transactions themselves: search_transactions does.",
+    "description": "Returns import activity: statement import batches with their counts, the records of a batch and those needing review, entries of an account that no bank line confirmed, bank connections with their sync state and accounts, and the recent syncs of a connection with the automatic decisions they made. Use it for whether a bank synced, what an import did or what needs review. Do not use it for the transactions themselves: search_transactions does.",
     "effect": "read_only",
     "idempotent": false,
     "input_schema": {
@@ -1926,7 +1926,8 @@
             "batches",
             "records",
             "unconfirmed",
-            "connections"
+            "connections",
+            "syncs"
           ]
         },
         "batch_id": {
@@ -1948,6 +1949,10 @@
         "account_id": {
           "type": "string",
           "description": "for unconfirmed: balance account from list_accounts"
+        },
+        "connection_id": {
+          "type": "string",
+          "description": "for syncs: connection from the connections view"
         },
         "limit": {
           "type": "integer",
@@ -2013,6 +2018,9 @@
                     "type": "integer"
                   },
                   "withdrawn": {
+                    "type": "integer"
+                  },
+                  "re_identified": {
                     "type": "integer"
                   }
                 },
@@ -2083,6 +2091,10 @@
                   "type": "string"
                 },
                 "description": "transactions the record may match, best first; get_transaction describes them"
+              },
+              "decision": {
+                "type": "string",
+                "description": "linked, followed, withdrawn or re_identified: the automatic decision undo_decision of manage_imports reverts"
               }
             },
             "required": [
@@ -2194,6 +2206,155 @@
               "name",
               "state",
               "accounts"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "syncs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "sync_id": {
+                "type": "string"
+              },
+              "started_at": {
+                "type": "string",
+                "description": "RFC 3339 time"
+              },
+              "batches": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "batch_id": {
+                      "type": "string"
+                    },
+                    "account_name": {
+                      "type": "string"
+                    },
+                    "source": {
+                      "type": "string",
+                      "description": "file format, or the aggregator for a sync"
+                    },
+                    "file_name": {
+                      "type": "string"
+                    },
+                    "started_at": {
+                      "type": "string",
+                      "description": "RFC 3339 time"
+                    },
+                    "counts": {
+                      "type": "object",
+                      "properties": {
+                        "received": {
+                          "type": "integer"
+                        },
+                        "ignored": {
+                          "type": "integer"
+                        },
+                        "matched": {
+                          "type": "integer"
+                        },
+                        "created": {
+                          "type": "integer"
+                        },
+                        "needs_review": {
+                          "type": "integer"
+                        },
+                        "discarded": {
+                          "type": "integer"
+                        },
+                        "updated": {
+                          "type": "integer"
+                        },
+                        "withdrawn": {
+                          "type": "integer"
+                        },
+                        "re_identified": {
+                          "type": "integer"
+                        }
+                      },
+                      "description": "lines by outcome; absent outcomes are zero",
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "batch_id",
+                    "source",
+                    "started_at",
+                    "counts"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "records": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "record_id": {
+                      "type": "string"
+                    },
+                    "date": {
+                      "type": "string",
+                      "format": "date"
+                    },
+                    "description": {
+                      "type": "string"
+                    },
+                    "amount": {
+                      "type": "object",
+                      "properties": {
+                        "amount": {
+                          "type": "string",
+                          "description": "decimal amount in the instrument's scale, such as -1234.56"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "description": "currency or instrument code"
+                        }
+                      },
+                      "required": [
+                        "amount",
+                        "currency"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "state": {
+                      "type": "string"
+                    },
+                    "review_reason": {
+                      "type": "string"
+                    },
+                    "candidates": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "transactions the record may match, best first; get_transaction describes them"
+                    },
+                    "decision": {
+                      "type": "string",
+                      "description": "linked, followed, withdrawn or re_identified: the automatic decision undo_decision of manage_imports reverts"
+                    }
+                  },
+                  "required": [
+                    "record_id",
+                    "date",
+                    "description",
+                    "amount",
+                    "state"
+                  ],
+                  "additionalProperties": false
+                },
+                "description": "lines of the run with an automatic decision"
+              }
+            },
+            "required": [
+              "sync_id",
+              "started_at",
+              "batches"
             ],
             "additionalProperties": false
           }
@@ -5044,6 +5205,9 @@
                     "type": "integer"
                   },
                   "withdrawn": {
+                    "type": "integer"
+                  },
+                  "re_identified": {
                     "type": "integer"
                   }
                 },

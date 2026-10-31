@@ -15,7 +15,7 @@ import (
 type importsView string
 
 func (importsView) Values() []string {
-	return []string{"batches", "records", "unconfirmed", "connections"}
+	return []string{"batches", "records", "unconfirmed", "connections", "syncs"}
 }
 
 type recordState string
@@ -25,22 +25,24 @@ func (recordState) Values() []string {
 }
 
 type getImportsIn struct {
-	View      importsView `json:"view" jsonschema:"what to return"`
-	BatchID   string      `json:"batch_id,omitzero" jsonschema:"for records: batch from the batches view"`
-	State     recordState `json:"state,omitzero" jsonschema:"for records: keep records in this state"`
-	AccountID string      `json:"account_id,omitzero" jsonschema:"for unconfirmed: balance account from list_accounts"`
+	View         importsView `json:"view" jsonschema:"what to return"`
+	BatchID      string      `json:"batch_id,omitzero" jsonschema:"for records: batch from the batches view"`
+	State        recordState `json:"state,omitzero" jsonschema:"for records: keep records in this state"`
+	AccountID    string      `json:"account_id,omitzero" jsonschema:"for unconfirmed: balance account from list_accounts"`
+	ConnectionID string      `json:"connection_id,omitzero" jsonschema:"for syncs: connection from the connections view"`
 	tool.PageArgs
 }
 
 type countsView struct {
-	Received    int `json:"received,omitzero"`
-	Ignored     int `json:"ignored,omitzero"`
-	Matched     int `json:"matched,omitzero"`
-	Created     int `json:"created,omitzero"`
-	NeedsReview int `json:"needs_review,omitzero"`
-	Discarded   int `json:"discarded,omitzero"`
-	Updated     int `json:"updated,omitzero"`
-	Withdrawn   int `json:"withdrawn,omitzero"`
+	Received     int `json:"received,omitzero"`
+	Ignored      int `json:"ignored,omitzero"`
+	Matched      int `json:"matched,omitzero"`
+	Created      int `json:"created,omitzero"`
+	NeedsReview  int `json:"needs_review,omitzero"`
+	Discarded    int `json:"discarded,omitzero"`
+	Updated      int `json:"updated,omitzero"`
+	Withdrawn    int `json:"withdrawn,omitzero"`
+	ReIdentified int `json:"re_identified,omitzero"`
 }
 
 type batchView struct {
@@ -60,6 +62,14 @@ type recordView struct {
 	State        string     `json:"state"`
 	ReviewReason string     `json:"review_reason,omitzero"`
 	Candidates   []string   `json:"candidates,omitzero" jsonschema:"transactions the record may match, best first; get_transaction describes them"`
+	Decision     string     `json:"decision,omitzero" jsonschema:"linked, followed, withdrawn or re_identified: the automatic decision undo_decision of manage_imports reverts"`
+}
+
+type syncView struct {
+	SyncID    string       `json:"sync_id"`
+	StartedAt string       `json:"started_at" jsonschema:"RFC 3339 time"`
+	Batches   []batchView  `json:"batches"`
+	Records   []recordView `json:"records,omitzero" jsonschema:"lines of the run with an automatic decision"`
 }
 
 type unconfirmedView struct {
@@ -99,6 +109,7 @@ type getImportsOut struct {
 	Records      []recordView      `json:"records,omitzero"`
 	Unconfirmed  []unconfirmedView `json:"unconfirmed,omitzero"`
 	Connections  []connectionView  `json:"connections,omitzero"`
+	Syncs        []syncView        `json:"syncs,omitzero"`
 	Integrations []integrationView `json:"integrations,omitzero"`
 	NextCursor   string            `json:"next_cursor,omitzero" jsonschema:"present when more items follow; pass it as cursor"`
 }
@@ -107,12 +118,12 @@ func getImports(svc *app.Service, names AccountNames) tool.Tool {
 	return tool.New(tool.Spec{
 		Name: "get_imports",
 		Description: "Returns import activity: statement import batches with their counts, the records of a batch and those needing review, " +
-			"entries of an account that no bank line confirmed, and bank connections with their sync state and accounts. " +
+			"entries of an account that no bank line confirmed, bank connections with their sync state and accounts, and the recent syncs of a connection with the automatic decisions they made. " +
 			"Use it for whether a bank synced, what an import did or what needs review. " +
 			"Do not use it for the transactions themselves: search_transactions does.",
 		Effect: tool.ReadOnly,
 	}, func(ctx context.Context, booksID int64, in getImportsIn) (getImportsOut, error) {
-		fields := []field{{"batch_id", in.BatchID != ""}, {"state", in.State != ""}, {"account_id", in.AccountID != ""}}
+		fields := []field{{"batch_id", in.BatchID != ""}, {"state", in.State != ""}, {"account_id", in.AccountID != ""}, {"connection_id", in.ConnectionID != ""}}
 
 		named, err := names(ctx, booksID)
 		if err != nil {
@@ -122,7 +133,7 @@ func getImports(svc *app.Service, names AccountNames) tool.Tool {
 		switch in.View {
 		case "records":
 			// state is optional for records.
-			if err := required("records", []field{fields[0], fields[2]}, "batch_id"); err != nil {
+			if err := required("records", []field{fields[0], fields[2], fields[3]}, "batch_id"); err != nil {
 				return getImportsOut{}, err
 			}
 
@@ -133,6 +144,12 @@ func getImports(svc *app.Service, names AccountNames) tool.Tool {
 			}
 
 			return unconfirmed(ctx, svc, booksID, in, named)
+		case "syncs":
+			if err := required("syncs", fields, "connection_id"); err != nil {
+				return getImportsOut{}, err
+			}
+
+			return syncs(ctx, svc, booksID, in, named)
 		case "connections":
 			if err := required("connections", fields); err != nil {
 				return getImportsOut{}, err
@@ -174,7 +191,7 @@ func toBatchView(b domain.Batch, named map[uuid.UUID]string) batchView {
 		StartedAt: b.StartedAt.UTC().Format(time.RFC3339),
 		Counts: countsView{
 			Received: c.Received, Ignored: c.Ignored, Matched: c.Matched, Created: c.Created,
-			NeedsReview: c.NeedsReview, Discarded: c.Discarded, Updated: c.Updated, Withdrawn: c.Withdrawn,
+			NeedsReview: c.NeedsReview, Discarded: c.Discarded, Updated: c.Updated, Withdrawn: c.Withdrawn, ReIdentified: c.ReIdentified,
 		},
 	}
 }
@@ -218,13 +235,53 @@ func toRecordView(r domain.ExternalRecord, currency string) (recordView, error) 
 
 	v := recordView{
 		RecordID: r.ID.String(), Date: tool.DateOf(r.Date), Description: r.Description, Amount: amount,
-		State: string(r.State), ReviewReason: r.ReviewReason,
+		State: string(r.State), ReviewReason: r.ReviewReason, Decision: string(r.Decision),
 	}
 	for _, c := range r.Candidates {
 		v.Candidates = append(v.Candidates, c.String())
 	}
 
 	return v, nil
+}
+
+func syncs(ctx context.Context, svc *app.Service, booksID int64, in getImportsIn, named map[uuid.UUID]string) (getImportsOut, error) {
+	id, err := optionalID(in.ConnectionID, "connection_id")
+	if err != nil {
+		return getImportsOut{}, err
+	}
+
+	runs, err := svc.SyncRuns(ctx, booksID, id)
+	if err != nil {
+		return getImportsOut{}, err
+	}
+
+	out := getImportsOut{Syncs: []syncView{}}
+	for _, run := range runs {
+		currency := make(map[uuid.UUID]string, len(run.Batches))
+		v := syncView{SyncID: run.ID.String(), StartedAt: run.StartedAt.UTC().Format(time.RFC3339), Batches: []batchView{}}
+
+		for _, b := range run.Batches {
+			v.Batches = append(v.Batches, toBatchView(b, named))
+			currency[b.ID] = b.Currency
+		}
+
+		for _, r := range run.Records {
+			if r.Decision == "" {
+				continue
+			}
+
+			rv, err := toRecordView(r, currency[r.SummaryBatchID])
+			if err != nil {
+				return getImportsOut{}, err
+			}
+
+			v.Records = append(v.Records, rv)
+		}
+
+		out.Syncs = append(out.Syncs, v)
+	}
+
+	return out, nil
 }
 
 func unconfirmed(ctx context.Context, svc *app.Service, booksID int64, in getImportsIn, named map[uuid.UUID]string) (getImportsOut, error) {

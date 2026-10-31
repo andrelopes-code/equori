@@ -205,6 +205,7 @@ var exposure = map[string]string{
 	"resolveExternalRecord":            "manage_imports",
 	"reopenExternalRecord":             "manage_imports",
 	"undoExternalRecordDecision":       "manage_imports",
+	"listConnectionSyncs":              "get_imports",
 	"listAggregators":                  "get_imports",
 	"listIntegrations":                 "get_imports",
 	"createIntegration":                "-secret",

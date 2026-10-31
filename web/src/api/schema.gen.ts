@@ -3232,6 +3232,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/connections/{id}/syncs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The last 10 sync runs of the connection that decided, created or placed a line in review (A149).
+         * @description Newest first. Each run lists its batches, one per mapped account, and the records its
+         *     summary lists: those the run linked, changed, withdrew, re-identified, created, matched or
+         *     placed in review. A record a later run decided belongs to that run. A run that changed
+         *     nothing is not listed.
+         */
+        get: operations["listConnectionSyncs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/connections/{id}/accounts/{external_account_id}": {
         parameters: {
             query?: never;
@@ -4289,6 +4312,19 @@ export interface components {
         SyncResult: {
             connection: components["schemas"]["Connection"];
             batches: components["schemas"]["ImportBatch"][];
+        };
+        SyncRunList: {
+            items: components["schemas"]["SyncRun"][];
+        };
+        /** @description One sync of a connection, manual or scheduled (A149). */
+        SyncRun: {
+            /** Format: uuid */
+            sync_id: string;
+            /** Format: date-time */
+            started_at: string;
+            batches: components["schemas"]["ImportBatch"][];
+            /** @description The records the run's summary lists, by date. */
+            records: components["schemas"]["ExternalRecord"][];
         };
         ConnectionList: {
             items: components["schemas"]["Connection"][];
@@ -11904,6 +11940,30 @@ export interface operations {
             409: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
             502: components["responses"]["Problem"];
+        };
+    };
+    listConnectionSyncs: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SyncRunList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
         };
     };
     mapExternalAccount: {

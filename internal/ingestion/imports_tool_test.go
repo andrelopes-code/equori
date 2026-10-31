@@ -260,3 +260,39 @@ func TestManageImportsUndoDecision(t *testing.T) {
 	f.h.ExpectToolError(f.h.Tool("manage_imports", args), "no_decision", "")
 	f.h.ExpectToolError(f.h.Tool("manage_imports", map[string]any{"action": "undo_decision"}), "invalid_arguments", "record_id")
 }
+
+func TestGetImportsToolSyncs(t *testing.T) {
+	t.Parallel()
+	f := newSyncFixture(t)
+	f.mapTo(pluggy.SubtypeChecking, f.checking)
+	f.line(pluggy.SubtypeChecking, bankLine("tx-1", "2026-11-05", "-10.00"))
+	f.line(pluggy.SubtypeChecking, bankLine("tx-2", "2026-11-06", "-20.00"))
+	f.sync()
+	f.p.RemoveTransaction(nubankItem+"-checking", "tx-1")
+	f.sync()
+
+	var got struct {
+		Syncs []struct {
+			Records []struct {
+				RecordID string `json:"record_id"`
+				Decision string `json:"decision"`
+			} `json:"records"`
+		} `json:"syncs"`
+	}
+	toolOutput(t, f.h, "get_imports", map[string]any{"view": "syncs", "connection_id": f.conn.ID}, &got)
+
+	if len(got.Syncs) != 2 {
+		t.Fatalf("syncs = %d, want 2", len(got.Syncs))
+	}
+
+	if r := got.Syncs[0].Records; len(r) != 1 || r[0].RecordID != f.recordID("tx-1") || r[0].Decision != "withdrawn" {
+		t.Errorf("syncs[0].records = %+v, want tx-1 withdrawn", r)
+	}
+
+	if r := got.Syncs[1].Records; len(r) != 0 {
+		t.Errorf("syncs[1].records = %+v, want none", r)
+	}
+
+	f.h.ExpectToolError(f.h.Tool("get_imports", map[string]any{"view": "syncs"}), "invalid_arguments", "connection_id")
+	f.h.ExpectToolError(f.h.Tool("get_imports", map[string]any{"view": "batches", "connection_id": f.conn.ID}), "invalid_arguments", "connection_id")
+}

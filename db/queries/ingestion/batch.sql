@@ -84,3 +84,45 @@ SELECT
 -- name: UnlockAccountImports :exec
 SELECT
     pg_advisory_unlock(hashtextextended (sqlc.arg (account_key)::text, 0));
+
+-- name: ListConnectionSyncs :many
+-- A149: the newest sync runs of a connection whose summary lists a record.
+SELECT
+    b.sync_id::uuid AS sync_id,
+    min(b.started_at)::timestamptz AS started_at
+FROM
+    ingestion_batch b
+    JOIN ingestion_external_account a ON a.books_id = b.books_id
+    AND a.id = b.external_account_id
+WHERE
+    b.books_id = @books_id
+    AND a.connection_id = @connection_id
+    AND b.sync_id IS NOT NULL
+    AND EXISTS (
+        SELECT
+            1
+        FROM
+            ingestion_external_record r
+        WHERE
+            r.books_id = b.books_id
+            AND r.summary_batch_id = b.id
+    )
+GROUP BY
+    b.sync_id
+ORDER BY
+    started_at DESC
+LIMIT
+    @row_limit;
+
+-- name: ListSyncBatches :many
+-- A149: every batch of the given sync runs.
+SELECT
+    *
+FROM
+    ingestion_batch
+WHERE
+    books_id = @books_id
+    AND sync_id = ANY (@sync_ids::UUID[])
+ORDER BY
+    started_at,
+    id;

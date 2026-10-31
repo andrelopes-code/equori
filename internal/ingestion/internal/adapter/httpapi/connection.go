@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/google/uuid"
 	openapi_types "github.com/oapi-codegen/runtime/types"
 
 	"github.com/andrelopes-code/equori/internal/ingestion/internal/app"
@@ -127,6 +128,35 @@ func (s *Server) SyncConnection(ctx context.Context, req SyncConnectionRequestOb
 	out := SyncConnection200JSONResponse{Connection: toConnectionAPI(c), Batches: make([]ImportBatch, len(batches))}
 	for i, b := range batches {
 		out.Batches[i] = toBatchAPI(b)
+	}
+
+	return out, nil
+}
+
+func (s *Server) ListConnectionSyncs(ctx context.Context, req ListConnectionSyncsRequestObject) (ListConnectionSyncsResponseObject, error) {
+	runs, err := s.svc.SyncRuns(ctx, auth.MustBooksID(ctx), req.Id)
+	if err != nil {
+		return nil, err
+	}
+
+	out := ListConnectionSyncs200JSONResponse{Items: make([]SyncRun, len(runs))}
+	for i, run := range runs {
+		currency := make(map[uuid.UUID]string, len(run.Batches))
+		item := SyncRun{
+			SyncId: run.ID, StartedAt: run.StartedAt.UTC(),
+			Batches: make([]ImportBatch, len(run.Batches)), Records: make([]ExternalRecord, len(run.Records)),
+		}
+
+		for j, b := range run.Batches {
+			item.Batches[j] = toBatchAPI(b)
+			currency[b.ID] = b.Currency
+		}
+
+		for j, r := range run.Records {
+			item.Records[j] = toRecordAPI(r, currency[r.SummaryBatchID])
+		}
+
+		out.Items[i] = item
 	}
 
 	return out, nil

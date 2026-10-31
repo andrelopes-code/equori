@@ -298,3 +298,16 @@ SET
 WHERE
     books_id = @books_id
     AND id = @id;
+
+-- name: ListSummaryRecords :many
+-- A149: the records the summaries of the given batches list.
+SELECT
+    *
+FROM
+    ingestion_external_record
+WHERE
+    books_id = @books_id
+    AND summary_batch_id = ANY (@batch_ids::UUID[])
+ORDER BY
+    booked_on,
+    id;

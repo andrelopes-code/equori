@@ -50,6 +50,9 @@ type Repository interface {
 	// line, when not nil, as a new record in review (A148). ErrNoDecision when the record no
 	// longer carries decided.
 	SaveUndo(ctx context.Context, rec domain.ExternalRecord, decided domain.DecisionKind, left domain.RecordState, line *domain.ExternalRecord) error
+	// SyncRuns lists the newest sync runs of the connection whose summary lists a record, at
+	// most limit, with their batches and those records (A149).
+	SyncRuns(ctx context.Context, booksID int64, connectionID uuid.UUID, limit int) ([]domain.SyncRun, error)
 	// LockAccountImports serializes the imports of one account until unlock runs.
 	LockAccountImports(ctx context.Context, accountID uuid.UUID) (unlock func(), err error)
 

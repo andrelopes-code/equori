@@ -748,6 +748,21 @@ type SyncResult struct {
 	Connection Connection    `json:"connection"`
 }
 
+// SyncRun One sync of a connection, manual or scheduled (A149).
+type SyncRun struct {
+	Batches []ImportBatch `json:"batches"`
+
+	// Records The records the run's summary lists, by date.
+	Records   []ExternalRecord   `json:"records"`
+	StartedAt time.Time          `json:"started_at"`
+	SyncId    openapi_types.UUID `json:"sync_id"`
+}
+
+// SyncRunList defines model for SyncRunList.
+type SyncRunList struct {
+	Items []SyncRun `json:"items"`
+}
+
 // SyncSchedule defines model for SyncSchedule.
 type SyncSchedule struct {
 	Minutes int32 `json:"minutes"`
@@ -880,6 +895,9 @@ type ServerInterface interface {
 	// SyncConnection Sync every mapped account of the connection now (P6 amendment A43).
 	// (POST /connections/{id}/sync)
 	SyncConnection(w http.ResponseWriter, r *http.Request, id ID)
+	// ListConnectionSyncs The last 10 sync runs of the connection that decided, created or placed a line in review (A149).
+	// (GET /connections/{id}/syncs)
+	ListConnectionSyncs(w http.ResponseWriter, r *http.Request, id ID)
 	// ReopenExternalRecord Return a discarded record to review (A140).
 	// (POST /external-records/{id}/reopen)
 	ReopenExternalRecord(w http.ResponseWriter, r *http.Request, id ID)
@@ -1212,6 +1230,32 @@ func (siw *ServerInterfaceWrapper) SyncConnection(w http.ResponseWriter, r *http
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.SyncConnection(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListConnectionSyncs operation middleware
+func (siw *ServerInterfaceWrapper) ListConnectionSyncs(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListConnectionSyncs(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1748,6 +1792,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/connections/{id}", wrapper.DeleteConnection)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/connections/{id}", wrapper.GetConnection)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/connections/{id}/sync", wrapper.SyncConnection)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/connections/{id}/syncs", wrapper.ListConnectionSyncs)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/connections/{id}/accounts/{external_account_id}", wrapper.MapExternalAccount)
 
 	return m
@@ -2508,6 +2553,58 @@ func (response SyncConnection502ApplicationProblemPlusJSONResponse) VisitSyncCon
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(502)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListConnectionSyncsRequestObject struct {
+	Id ID `json:"id"`
+}
+
+type ListConnectionSyncsResponseObject interface {
+	VisitListConnectionSyncsResponse(w http.ResponseWriter) error
+}
+
+type ListConnectionSyncs200JSONResponse SyncRunList
+
+func (response ListConnectionSyncs200JSONResponse) VisitListConnectionSyncsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListConnectionSyncs401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListConnectionSyncs401ApplicationProblemPlusJSONResponse) VisitListConnectionSyncsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListConnectionSyncs404ApplicationProblemPlusJSONResponse Problem
+
+func (response ListConnectionSyncs404ApplicationProblemPlusJSONResponse) VisitListConnectionSyncsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -3369,6 +3466,9 @@ type StrictServerInterface interface {
 	// SyncConnection Sync every mapped account of the connection now (P6 amendment A43).
 	// (POST /connections/{id}/sync)
 	SyncConnection(ctx context.Context, request SyncConnectionRequestObject) (SyncConnectionResponseObject, error)
+	// ListConnectionSyncs The last 10 sync runs of the connection that decided, created or placed a line in review (A149).
+	// (GET /connections/{id}/syncs)
+	ListConnectionSyncs(ctx context.Context, request ListConnectionSyncsRequestObject) (ListConnectionSyncsResponseObject, error)
 	// ReopenExternalRecord Return a discarded record to review (A140).
 	// (POST /external-records/{id}/reopen)
 	ReopenExternalRecord(ctx context.Context, request ReopenExternalRecordRequestObject) (ReopenExternalRecordResponseObject, error)
@@ -3753,6 +3853,32 @@ func (sh *strictHandler) SyncConnection(w http.ResponseWriter, r *http.Request, 
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(SyncConnectionResponseObject); ok {
 		if err := validResponse.VisitSyncConnectionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListConnectionSyncs operation middleware
+func (sh *strictHandler) ListConnectionSyncs(w http.ResponseWriter, r *http.Request, id ID) {
+	var request ListConnectionSyncsRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListConnectionSyncs(ctx, request.(ListConnectionSyncsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListConnectionSyncs")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListConnectionSyncsResponseObject); ok {
+		if err := validResponse.VisitListConnectionSyncsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

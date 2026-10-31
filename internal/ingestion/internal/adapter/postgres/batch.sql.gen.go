@@ -318,6 +318,133 @@ func (q *Queries) ListBatches(ctx context.Context, arg ListBatchesParams) ([]Ing
 	return items, nil
 }
 
+const listConnectionSyncs = `-- name: ListConnectionSyncs :many
+SELECT
+    b.sync_id::uuid AS sync_id,
+    min(b.started_at)::timestamptz AS started_at
+FROM
+    ingestion_batch b
+    JOIN ingestion_external_account a ON a.books_id = b.books_id
+    AND a.id = b.external_account_id
+WHERE
+    b.books_id = $1
+    AND a.connection_id = $2
+    AND b.sync_id IS NOT NULL
+    AND EXISTS (
+        SELECT
+            1
+        FROM
+            ingestion_external_record r
+        WHERE
+            r.books_id = b.books_id
+            AND r.summary_batch_id = b.id
+    )
+GROUP BY
+    b.sync_id
+ORDER BY
+    started_at DESC
+LIMIT
+    $3
+`
+
+type ListConnectionSyncsParams struct {
+	BooksID      int64
+	ConnectionID uuid.UUID
+	RowLimit     int32
+}
+
+type ListConnectionSyncsRow struct {
+	SyncID    uuid.UUID
+	StartedAt time.Time
+}
+
+// A149: the newest sync runs of a connection whose summary lists a record.
+func (q *Queries) ListConnectionSyncs(ctx context.Context, arg ListConnectionSyncsParams) ([]ListConnectionSyncsRow, error) {
+	rows, err := q.db.Query(ctx, listConnectionSyncs, arg.BooksID, arg.ConnectionID, arg.RowLimit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListConnectionSyncsRow
+	for rows.Next() {
+		var i ListConnectionSyncsRow
+		if err := rows.Scan(&i.SyncID, &i.StartedAt); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listSyncBatches = `-- name: ListSyncBatches :many
+SELECT
+    id, books_id, account_id, source, file_name, currency, period_from, period_to, received, ignored, matched, created, needs_review, discarded, balance_date, balance_amount, balance_status, balance_reason, started_at, completed_at, external_account_id, updated, withdrawn, re_identified, read_empty, sync_id
+FROM
+    ingestion_batch
+WHERE
+    books_id = $1
+    AND sync_id = ANY ($2::UUID[])
+ORDER BY
+    started_at,
+    id
+`
+
+type ListSyncBatchesParams struct {
+	BooksID int64
+	SyncIds []uuid.UUID
+}
+
+// A149: every batch of the given sync runs.
+func (q *Queries) ListSyncBatches(ctx context.Context, arg ListSyncBatchesParams) ([]IngestionBatch, error) {
+	rows, err := q.db.Query(ctx, listSyncBatches, arg.BooksID, arg.SyncIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []IngestionBatch
+	for rows.Next() {
+		var i IngestionBatch
+		if err := rows.Scan(
+			&i.ID,
+			&i.BooksID,
+			&i.AccountID,
+			&i.Source,
+			&i.FileName,
+			&i.Currency,
+			&i.PeriodFrom,
+			&i.PeriodTo,
+			&i.Received,
+			&i.Ignored,
+			&i.Matched,
+			&i.Created,
+			&i.NeedsReview,
+			&i.Discarded,
+			&i.BalanceDate,
+			&i.BalanceAmount,
+			&i.BalanceStatus,
+			&i.BalanceReason,
+			&i.StartedAt,
+			&i.CompletedAt,
+			&i.ExternalAccountID,
+			&i.Updated,
+			&i.Withdrawn,
+			&i.ReIdentified,
+			&i.ReadEmpty,
+			&i.SyncID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const lockAccountImports = `-- name: LockAccountImports :exec
 SELECT
     pg_advisory_lock(hashtextextended ($1::text, 0))
