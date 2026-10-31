@@ -14,6 +14,7 @@ import { LeaveBooksDialog } from "@/features/setup/leave-books-dialog";
 import { MemberRemoveDialog } from "@/features/setup/member-remove-dialog";
 import { MemberRow } from "@/features/setup/member-row";
 import { SettingsGroup } from "@/features/setup/settings-group";
+import { SettingsInvitations } from "@/features/setup/settings-invitations";
 import { SettingsSection } from "@/features/setup/settings-section";
 import { meQuery } from "@/features/session";
 import { useT } from "@/i18n/i18n-provider";
@@ -85,6 +86,7 @@ export function SettingsMembers() {
           </div>
         </Stack>
       </SettingsGroup>
+      {me?.book_role === "owner" && <SettingsInvitations />}
       {open?.kind === "remove" && (
         <MemberRemoveDialog member={open.member} onClose={close} />
       )}

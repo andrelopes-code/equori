@@ -215,6 +215,47 @@ export function useRemoveMember() {
   });
 }
 
+export type Invitation = components["schemas"]["Invitation"];
+export type InvitationInput = components["schemas"]["InvitationInput"];
+
+export function invitationsQuery(api: Client<paths>) {
+  return queryOptions({
+    queryKey: ["books", "invitations"] as const,
+    queryFn: async () =>
+      (await unwrap(await api.GET("/books/current/invitations"))).items,
+  });
+}
+
+export function useCreateInvitation() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: InvitationInput): Promise<Invitation> =>
+      unwrap(await api.POST("/books/current/invitations", { body })),
+    onSuccess: () =>
+      queryClient.invalidateQueries({
+        queryKey: invitationsQuery(api).queryKey,
+      }),
+  });
+}
+
+export function useDeleteInvitation() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) =>
+      unwrap(
+        await api.DELETE("/books/current/invitations/{id}", {
+          params: { path: { id } },
+        }),
+      ),
+    onSuccess: () =>
+      queryClient.invalidateQueries({
+        queryKey: invitationsQuery(api).queryKey,
+      }),
+  });
+}
+
 // Leaving ends the session's book: the reload reads the account's next book (HA32).
 export function useLeaveBooks() {
   const api = useApi();
