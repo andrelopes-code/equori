@@ -440,6 +440,68 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/me/passkeys/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start a passkey registration; the challenge lasts 5 minutes (HA44).
+         * @description 422 passkey_invalid without an http or https Origin.
+         */
+        post: operations["createPasskeyOptions"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/passkeys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Register a passkey on the host of the request (HA41 to HA44).
+         * @description 422 passkey_invalid when a check fails or the challenge is missing or expired. When no
+         *     second factor existed, the answer holds 10 recovery codes, shown only here, and the member's
+         *     other sessions end; otherwise the list is empty.
+         */
+        post: operations["createPasskey"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/passkeys/{id}/remove": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Delete a passkey; the recovery codes go with the last factor (HA44, HA37).
+         * @description 403 password_invalid for a wrong password; 404 passkey_not_found for an ID the member does not have.
+         */
+        post: operations["removePasskey"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/settings": {
         parameters: {
             query?: never;
@@ -6009,6 +6071,26 @@ export interface components {
             /** Format: date-time */
             last_used_at?: string;
         };
+        /** @description Base64url values without padding. */
+        PasskeyOptions: {
+            challenge: string;
+            user_id: string;
+            user_name: string;
+            exclude_credentials: string[];
+        };
+        /** @description Base64url values without padding. */
+        PasskeyInput: {
+            name: string;
+            client_data_json: string;
+            authenticator_data: string;
+            public_key: string;
+            algorithm: number;
+        };
+        PasskeyCreated: {
+            passkey: components["schemas"]["Passkey"];
+            /** @description As in RecoveryCodes. */
+            recovery_codes: string[];
+        };
         TotpSetup: {
             /** @description Base32 without padding, 32 characters. */
             secret: string;
@@ -6102,6 +6184,8 @@ export interface components {
         Limit: number;
         Cursor: string;
         SessionCookie: string;
+        /** @description The browser's origin; its host name is the WebAuthn RP ID (HA42). */
+        Origin: string;
     };
     requestBodies: never;
     headers: never;
@@ -6850,6 +6934,93 @@ export interface operations {
             401: components["responses"]["Problem"];
             403: components["responses"]["Problem"];
             409: components["responses"]["Problem"];
+            429: components["responses"]["Problem"];
+            503: components["responses"]["Problem"];
+        };
+    };
+    createPasskeyOptions: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description The browser's origin; its host name is the WebAuthn RP ID (HA42). */
+                Origin?: components["parameters"]["Origin"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PasskeyOptions"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    createPasskey: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description The browser's origin; its host name is the WebAuthn RP ID (HA42). */
+                Origin?: components["parameters"]["Origin"];
+            };
+            path?: never;
+            cookie?: {
+                equori_session?: components["parameters"]["SessionCookie"];
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasskeyInput"];
+            };
+        };
+        responses: {
+            /** @description Registered. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PasskeyCreated"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    removePasskey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordInput"];
+            };
+        };
+        responses: {
+            /** @description Deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
             429: components["responses"]["Problem"];
             503: components["responses"]["Problem"];
         };

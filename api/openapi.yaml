@@ -709,6 +709,88 @@ paths:
           $ref: "#/components/responses/Problem"
         "503":
           $ref: "#/components/responses/Problem"
+  /me/passkeys/options:
+    post:
+      tags: [identity]
+      operationId: createPasskeyOptions
+      x-book-role: read
+      summary: Start a passkey registration; the challenge lasts 5 minutes (HA44).
+      description: 422 passkey_invalid without an http or https Origin.
+      parameters:
+        - $ref: "#/components/parameters/Origin"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PasskeyOptions"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /me/passkeys:
+    post:
+      tags: [identity]
+      operationId: createPasskey
+      x-book-role: read
+      summary: Register a passkey on the host of the request (HA41 to HA44).
+      description: |
+        422 passkey_invalid when a check fails or the challenge is missing or expired. When no
+        second factor existed, the answer holds 10 recovery codes, shown only here, and the member's
+        other sessions end; otherwise the list is empty.
+      parameters:
+        - $ref: "#/components/parameters/SessionCookie"
+        - $ref: "#/components/parameters/Origin"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PasskeyInput"
+      responses:
+        "201":
+          description: Registered.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PasskeyCreated"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /me/passkeys/{id}/remove:
+    post:
+      tags: [identity]
+      operationId: removePasskey
+      x-book-role: read
+      summary: Delete a passkey; the recovery codes go with the last factor (HA44, HA37).
+      description: 403 password_invalid for a wrong password; 404 passkey_not_found for an ID the member does not have.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PasswordInput"
+      responses:
+        "204":
+          description: Deleted.
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "429":
+          $ref: "#/components/responses/Problem"
+        "503":
+          $ref: "#/components/responses/Problem"
   /settings:
     get:
       tags: [ledger]
@@ -6092,6 +6174,13 @@ components:
       required: false
       schema:
         type: string
+    Origin:
+      name: Origin
+      in: header
+      required: false
+      description: The browser's origin; its host name is the WebAuthn RP ID (HA42).
+      schema:
+        type: string
   responses:
     Problem:
       description: Error.
@@ -10910,6 +10999,53 @@ components:
         last_used_at:
           type: string
           format: date-time
+    PasskeyOptions:
+      type: object
+      required: [challenge, user_id, user_name, exclude_credentials]
+      description: Base64url values without padding.
+      properties:
+        challenge:
+          type: string
+        user_id:
+          type: string
+        user_name:
+          type: string
+        exclude_credentials:
+          type: array
+          items:
+            type: string
+    PasskeyInput:
+      type: object
+      additionalProperties: false
+      required: [name, client_data_json, authenticator_data, public_key, algorithm]
+      description: Base64url values without padding.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 60
+        client_data_json:
+          type: string
+          maxLength: 8192
+        authenticator_data:
+          type: string
+          maxLength: 8192
+        public_key:
+          type: string
+          maxLength: 8192
+        algorithm:
+          type: integer
+    PasskeyCreated:
+      type: object
+      required: [passkey, recovery_codes]
+      properties:
+        passkey:
+          $ref: "#/components/schemas/Passkey"
+        recovery_codes:
+          type: array
+          description: As in RecoveryCodes.
+          items:
+            type: string
     TotpSetup:
       type: object
       required: [secret, uri]
