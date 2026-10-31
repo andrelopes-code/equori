@@ -549,6 +549,8 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "links.connectionState.ok": "Conectada",
   "links.connectionState.needs_owner": "Precisa de você",
   "links.connectionState.failed": "Com falha",
+  "links.connectionState.stalled": "Parada",
+  "links.connectionState.consent_expiring": "Consentimento a vencer",
   "links.needsOwner":
     "O agregador aguarda uma ação que só o titular pode fazer. Conclua-a no agregador e sincronize de novo.",
   "links.syncFrom": "Importa a partir de",

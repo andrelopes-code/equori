@@ -7383,8 +7383,12 @@ components:
           type: string
         state:
           type: string
-          enum: [ok, needs_owner, failed]
-          description: The aggregator-neutral reading of provider_status.
+          enum: [ok, needs_owner, failed, stalled, consent_expiring]
+          description: |
+            The aggregator-neutral reading of provider_status. stalled: the aggregator reports
+            the item ready but the institution's data or the last sync is more than 72 hours
+            old (A150). consent_expiring: the consent expires within 14 days (A151). An expired
+            consent reads needs_owner (A146).
         provider_status:
           type: string
           description: The item status the aggregator reported, verbatim.
@@ -7399,6 +7403,10 @@ components:
           type: string
           format: date-time
           description: When the aggregator will next update the item, as the last check read it (A95). The owner cannot bring it forward.
+        consent_expires_at:
+          type: string
+          format: date-time
+          description: When the consent the owner gave the institution expires; absent when it does not expire (A151).
         last_synced_at:
           type: string
           format: date-time

@@ -507,6 +507,71 @@ func TestA147RefusedChangesWaitForReview(t *testing.T) {
 	}
 }
 
+// S209 (A146): an expired consent reads needs_owner and the sync reads nothing.
+func TestS209ExpiredConsentIsNotSynced(t *testing.T) {
+	t.Parallel()
+	f := newSyncFixture(t)
+	f.p.SetItemConsentExpiresAt(nubankItem, "2026-11-11T00:00:00.000Z")
+	f.mapTo(pluggy.SubtypeChecking, f.checking)
+	f.line(pluggy.SubtypeChecking, bankLine("tx-1", "2026-11-05", "-10.00"))
+
+	res := f.mustSyncNow(f.conn.ID)
+	if len(res.Batches) != 0 {
+		t.Fatalf("batches = %d, want 0", len(res.Batches))
+	}
+
+	if state, _ := f.connectionState(); state != "needs_owner" {
+		t.Fatalf("state = %s, want needs_owner", state)
+	}
+
+	if n := f.count(`SELECT count(*) FROM ingestion_external_record WHERE external_id = 'tx-1'`); n != 0 {
+		t.Fatalf("records of tx-1 = %d, want 0", n)
+	}
+}
+
+// S210 (A150): a ready connection whose institution data is over 72 hours old is stalled.
+func TestS210StalledConnection(t *testing.T) {
+	t.Parallel()
+	f := newSyncFixture(t)
+	f.mapTo(pluggy.SubtypeChecking, f.checking)
+
+	f.p.SetItemUpdatedAt(nubankItem, "2026-11-09T11:00:00.000Z")
+	f.sync()
+
+	if state, _ := f.connectionState(); state != "stalled" {
+		t.Fatalf("state = %s, want stalled", state)
+	}
+
+	f.p.SetItemUpdatedAt(nubankItem, "2026-11-09T13:00:00.000Z")
+	f.sync()
+
+	if state, _ := f.connectionState(); state != "ok" {
+		t.Fatalf("state = %s, want ok", state)
+	}
+}
+
+// S211 (A151): a consent that expires within 14 days reads consent_expiring.
+func TestS211ExpiringConsent(t *testing.T) {
+	t.Parallel()
+	f := newSyncFixture(t)
+	f.mapTo(pluggy.SubtypeChecking, f.checking)
+
+	f.p.SetItemConsentExpiresAt(nubankItem, "2026-11-25T12:00:00.000Z")
+	f.sync()
+
+	state, expiry := f.connectionState()
+	if state != "consent_expiring" || expiry != "2026-11-25T12:00:00Z" {
+		t.Fatalf("state = %s, consent_expires_at = %q, want consent_expiring and 2026-11-25T12:00:00Z", state, expiry)
+	}
+
+	f.p.SetItemConsentExpiresAt(nubankItem, "2026-11-27T12:00:00.000Z")
+	f.sync()
+
+	if state, _ := f.connectionState(); state != "ok" {
+		t.Fatalf("state = %s, want ok", state)
+	}
+}
+
 // movingClock is an instance clock a test moves between syncs.
 type movingClock struct{ at atomic.Int64 }
 
@@ -596,4 +661,13 @@ func newDateFixture(t *testing.T, card bool) (f syncFixture, account, subtype st
 func reconcileCardStatement(f syncFixture, card string) {
 	f.h.T().Helper()
 	f.reconcileStatement(card, "2026-11")
+}
+
+// connectionState returns the connection's state and consent expiry as GET /connections/{id} reports them.
+func (f syncFixture) connectionState() (state, consentExpiresAt string) {
+	f.h.T().Helper()
+
+	c := f.connection(f.h.Client, f.conn.ID)
+
+	return c.State, c.ConsentExpiresAt
 }

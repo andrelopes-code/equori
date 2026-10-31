@@ -193,7 +193,11 @@ func (p Port) ItemState(ctx context.Context, id uuid.UUID, c domain.Credentials,
 			return err
 		}
 
-		state.NextUpdateAt, err = itemInstant("nextAutoSyncAt", it.NextAutoSyncAt)
+		if state.NextUpdateAt, err = itemInstant("nextAutoSyncAt", it.NextAutoSyncAt); err != nil {
+			return err
+		}
+
+		state.ConsentExpiresAt, err = itemInstant("consentExpiresAt", it.ConsentExpiresAt)
 
 		return err
 	})

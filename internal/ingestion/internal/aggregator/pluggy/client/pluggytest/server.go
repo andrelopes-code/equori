@@ -181,6 +181,17 @@ func (s *Server) SetItemNextAutoSync(itemID, at string) {
 	}
 }
 
+// SetItemConsentExpiresAt changes the consent expiry an item reports.
+func (s *Server) SetItemConsentExpiresAt(itemID, at string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if it, ok := s.items[itemID]; ok {
+		it.ConsentExpiresAt = &at
+		s.items[itemID] = it
+	}
+}
+
 func (s *Server) eachAccount(accountID string, fn func(*client.Account)) {
 	for _, as := range s.accounts {
 		for i := range as {

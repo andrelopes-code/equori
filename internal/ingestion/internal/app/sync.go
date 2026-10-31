@@ -74,10 +74,10 @@ func (s *Service) syncItem(ctx context.Context, c *domain.Connection, force bool
 	}
 
 	status, updatedAt := state.Status, state.UpdatedAt
-	c.ProviderStatus, c.NextItemUpdateAt, c.LastError = status, state.NextUpdateAt, ""
+	c.ProviderStatus, c.NextItemUpdateAt, c.ConsentExpiresAt, c.LastError = status, state.NextUpdateAt, state.ConsentExpiresAt, ""
 
 	newer := updatedAt != nil && (c.LastItemUpdateAt == nil || updatedAt.After(*c.LastItemUpdateAt))
-	if agg.State(status) == domain.StateNeedsOwner || (!force && c.LastSyncedAt != nil && !newer) {
+	if c.StateAt(agg.State(status), s.now()) == domain.StateNeedsOwner || (!force && c.LastSyncedAt != nil && !newer) {
 		return nil, nil
 	}
 

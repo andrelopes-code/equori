@@ -2150,7 +2150,8 @@
                 "type": "string"
               },
               "state": {
-                "type": "string"
+                "type": "string",
+                "description": "ok, needs_owner, failed, stalled (no institution data for more than 72 hours) or consent_expiring (consent expires within 14 days)"
               },
               "last_synced_at": {
                 "type": "string",

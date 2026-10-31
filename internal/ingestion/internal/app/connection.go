@@ -81,7 +81,7 @@ func (s *Service) withState(ctx context.Context, c *domain.Connection, aggs map[
 		return nil
 	}
 
-	c.State, c.Portal = agg.State(c.ProviderStatus), agg.Portal()
+	c.State, c.Portal = c.StateAt(agg.State(c.ProviderStatus), s.now()), agg.Portal()
 
 	return nil
 }

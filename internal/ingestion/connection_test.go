@@ -52,6 +52,7 @@ type connectionView struct {
 	LastItemUpdateAt string                `json:"last_item_update_at"`
 	NextItemUpdateAt string                `json:"next_item_update_at"`
 	LastSyncedAt     string                `json:"last_synced_at"`
+	ConsentExpiresAt string                `json:"consent_expires_at"`
 	LastError        string                `json:"last_error"`
 	Accounts         []externalAccountView `json:"accounts"`
 }

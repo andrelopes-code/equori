@@ -550,6 +550,8 @@ export const accountsEn = {
   "links.connectionState.ok": "Connected",
   "links.connectionState.needs_owner": "Needs you",
   "links.connectionState.failed": "Failed",
+  "links.connectionState.stalled": "Stalled",
+  "links.connectionState.consent_expiring": "Consent expiring",
   "links.needsOwner":
     "The aggregator waits for an action only the owner can take. Complete it at the aggregator, then sync again.",
   "links.syncFrom": "Imports from",

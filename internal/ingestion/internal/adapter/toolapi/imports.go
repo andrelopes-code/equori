@@ -79,7 +79,7 @@ type externalAccountView struct {
 type connectionView struct {
 	ConnectionID string                `json:"connection_id"`
 	Name         string                `json:"name"`
-	State        string                `json:"state"`
+	State        string                `json:"state" jsonschema:"ok, needs_owner, failed, stalled (no institution data for more than 72 hours) or consent_expiring (consent expires within 14 days)"`
 	LastSyncedAt string                `json:"last_synced_at,omitzero" jsonschema:"RFC 3339 time"`
 	LastError    string                `json:"last_error,omitzero"`
 	Accounts     []externalAccountView `json:"accounts"`

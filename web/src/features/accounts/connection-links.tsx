@@ -28,6 +28,8 @@ const stateTones = {
   ok: "success",
   needs_owner: "warning",
   failed: "danger",
+  stalled: "warning",
+  consent_expiring: "warning",
 } as const;
 
 const providerWords: Record<string, MessageKey> = {

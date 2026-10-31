@@ -4229,10 +4229,13 @@ export interface components {
             external_id: string;
             name: string;
             /**
-             * @description The aggregator-neutral reading of provider_status.
+             * @description The aggregator-neutral reading of provider_status. stalled: the aggregator reports
+             *     the item ready but the institution's data or the last sync is more than 72 hours
+             *     old (A150). consent_expiring: the consent expires within 14 days (A151). An expired
+             *     consent reads needs_owner (A146).
              * @enum {string}
              */
-            state: "ok" | "needs_owner" | "failed";
+            state: "ok" | "needs_owner" | "failed" | "stalled" | "consent_expiring";
             /** @description The item status the aggregator reported, verbatim. */
             provider_status: string;
             /** @description The aggregator's site or app where the owner acts on the item; absent when the aggregator names none. */
@@ -4247,6 +4250,11 @@ export interface components {
              * @description When the aggregator will next update the item, as the last check read it (A95). The owner cannot bring it forward.
              */
             next_item_update_at?: string;
+            /**
+             * Format: date-time
+             * @description When the consent the owner gave the institution expires; absent when it does not expire (A151).
+             */
+            consent_expires_at?: string;
             /** Format: date-time */
             last_synced_at?: string;
             last_error?: string;

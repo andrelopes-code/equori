@@ -286,4 +286,6 @@ type ItemState struct {
 	Status       string
 	UpdatedAt    *time.Time
 	NextUpdateAt *time.Time
+	// ConsentExpiresAt is the consent expiry the aggregator reports; nil when it does not expire.
+	ConsentExpiresAt *time.Time
 }

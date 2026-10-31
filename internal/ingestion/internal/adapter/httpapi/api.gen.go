@@ -21,19 +21,25 @@ import (
 
 // Defines values for ConnectionState.
 const (
-	Failed     ConnectionState = "failed"
-	NeedsOwner ConnectionState = "needs_owner"
-	Ok         ConnectionState = "ok"
+	ConsentExpiring ConnectionState = "consent_expiring"
+	Failed          ConnectionState = "failed"
+	NeedsOwner      ConnectionState = "needs_owner"
+	Ok              ConnectionState = "ok"
+	Stalled         ConnectionState = "stalled"
 )
 
 // Valid indicates whether the value is a known member of the ConnectionState enum.
 func (e ConnectionState) Valid() bool {
 	switch e {
+	case ConsentExpiring:
+		return true
 	case Failed:
 		return true
 	case NeedsOwner:
 		return true
 	case Ok:
+		return true
+	case Stalled:
 		return true
 	default:
 		return false
@@ -378,12 +384,15 @@ type AggregatorList struct {
 
 // Connection defines model for Connection.
 type Connection struct {
-	Accounts      []ExternalAccount  `json:"accounts"`
-	CreatedAt     time.Time          `json:"created_at"`
-	ExternalId    string             `json:"external_id"`
-	Id            openapi_types.UUID `json:"id"`
-	IntegrationId openapi_types.UUID `json:"integration_id"`
-	LastError     *string            `json:"last_error,omitempty"`
+	Accounts []ExternalAccount `json:"accounts"`
+
+	// ConsentExpiresAt When the consent the owner gave the institution expires; absent when it does not expire (A151).
+	ConsentExpiresAt *time.Time         `json:"consent_expires_at,omitempty"`
+	CreatedAt        time.Time          `json:"created_at"`
+	ExternalId       string             `json:"external_id"`
+	Id               openapi_types.UUID `json:"id"`
+	IntegrationId    openapi_types.UUID `json:"integration_id"`
+	LastError        *string            `json:"last_error,omitempty"`
 
 	// LastItemUpdateAt When the aggregator last updated the item from the institution, as of the last sync; the ledger holds the data of this update.
 	LastItemUpdateAt *time.Time `json:"last_item_update_at,omitempty"`
@@ -399,11 +408,17 @@ type Connection struct {
 	// ProviderStatus The item status the aggregator reported, verbatim.
 	ProviderStatus string `json:"provider_status"`
 
-	// State The aggregator-neutral reading of provider_status.
+	// State The aggregator-neutral reading of provider_status. stalled: the aggregator reports
+	// the item ready but the institution's data or the last sync is more than 72 hours
+	// old (A150). consent_expiring: the consent expires within 14 days (A151). An expired
+	// consent reads needs_owner (A146).
 	State ConnectionState `json:"state"`
 }
 
-// ConnectionState The aggregator-neutral reading of provider_status.
+// ConnectionState The aggregator-neutral reading of provider_status. stalled: the aggregator reports
+// the item ready but the institution's data or the last sync is more than 72 hours
+// old (A150). consent_expiring: the consent expires within 14 days (A151). An expired
+// consent reads needs_owner (A146).
 type ConnectionState string
 
 // ConnectionInput defines model for ConnectionInput.
