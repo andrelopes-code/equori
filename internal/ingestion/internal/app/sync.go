@@ -184,7 +184,7 @@ func (s *Service) syncAccount(ctx context.Context, agg Aggregator, c domain.Conn
 	}
 
 	today := s.today(ctx)
-	from, to := ext.SyncWindow(today)
+	from, to, deep := ext.SyncWindow(today)
 
 	unlock, err := s.repo.LockAccountImports(ctx, accountID)
 	if err != nil {
@@ -313,6 +313,10 @@ func (s *Service) syncAccount(ctx context.Context, agg Aggregator, c domain.Conn
 
 	ext.LastSyncedOn = &today
 	ext.LastReadAt = &readStart
+
+	if deep {
+		ext.LastDeepReadOn = &today
+	}
 
 	return batch, s.repo.MarkAccountSynced(ctx, ext)
 }

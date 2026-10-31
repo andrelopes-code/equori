@@ -2,6 +2,7 @@ package ingestion_test
 
 import (
 	"fmt"
+	"net/http"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -193,6 +194,49 @@ func TestS204LateLineIsRead(t *testing.T) {
 
 	if n := f.count(`SELECT count(*) FROM ledger_posting WHERE account_id = $1 AND amount = -12000 AND NOT voided`, card); n != 1 {
 		t.Fatalf("postings of 120.00 = %d, want 1", n)
+	}
+}
+
+// S213 (A153): a change to a line older than 30 days is read once a week, by the re-read of
+// the last 90 days.
+func TestS213PeriodicReread(t *testing.T) {
+	t.Parallel()
+	clk := newMovingClock(t, "2026-11-12T12:00:00Z")
+	f := newSyncFixture(t, apitest.Clock(clk.now))
+
+	r := f.mapAccount(f.h.Client, f.conn.ID, externalAccount(f.conn, pluggy.SubtypeChecking).ID, map[string]any{"account_id": f.checking, "sync_from": "2026-08-01"})
+	if r.Status != http.StatusOK {
+		t.Fatalf("map status %d: %s", r.Status, r.Body)
+	}
+
+	f.line(pluggy.SubtypeChecking, bankLine("old-1", "2026-09-13", "-80.00"))
+	f.sync()
+
+	_, tx := f.recordOf("old-1")
+
+	f.line(pluggy.SubtypeChecking, bankLine("old-1", "2026-09-13", "-85.00"))
+	clk.set(t, "2026-11-13T12:00:00Z")
+	f.sync()
+
+	const posting = `SELECT count(*) FROM ledger_posting WHERE transaction_id = $1 AND account_id = $2 AND amount = $3`
+
+	if n := f.count(posting, tx, f.checking, -8000); n != 1 {
+		t.Fatalf("postings of -80.00 after the daily sync = %d, want 1", n)
+	}
+
+	if c := f.batches(f.checking)[0].Counts; c.Updated != 0 {
+		t.Fatalf("updated after the daily sync = %d, want 0", c.Updated)
+	}
+
+	clk.set(t, "2026-11-19T12:00:00Z")
+	f.sync()
+
+	if n := f.count(posting, tx, f.checking, -8500); n != 1 {
+		t.Fatalf("postings of -85.00 after the weekly sync = %d, want 1", n)
+	}
+
+	if c := f.batches(f.checking)[0].Counts; c.Updated != 1 {
+		t.Fatalf("updated after the weekly sync = %d, want 1", c.Updated)
 	}
 }
 

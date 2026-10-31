@@ -99,17 +99,27 @@ type ExternalAccount struct {
 	Balance *Balance
 }
 
-// SyncWindow is the period a sync reads: from the mapping's start date on the first sync,
-// then from 30 days before the last synced date, through today (A36).
-func (a ExternalAccount) SyncWindow(today time.Time) (from, to time.Time) {
+// SyncWindow is the period a sync reads, through today: from the mapping's start date on
+// the first sync; on a deep read from the later of that date and 90 days ago; otherwise
+// from 30 days before the last synced date (A36, A153).
+func (a ExternalAccount) SyncWindow(today time.Time) (from, to time.Time, deep bool) {
 	from = *a.SyncFrom
-	if a.LastSyncedOn != nil {
-		if f := a.LastSyncedOn.AddDate(0, 0, -30); f.After(from) {
-			from = f
-		}
+	if a.LastSyncedOn == nil {
+		return from, today, true
 	}
 
-	return from, today
+	deep = a.LastDeepReadOn == nil || !today.Before(a.LastDeepReadOn.AddDate(0, 0, DeepReadEvery))
+
+	start := a.LastSyncedOn.AddDate(0, 0, -30)
+	if deep {
+		start = today.AddDate(0, 0, -DeepReadDays)
+	}
+
+	if start.After(from) {
+		from = start
+	}
+
+	return from, today, deep
 }
 
 // AccountRead is one account of an item as an aggregator reports it for a window.
