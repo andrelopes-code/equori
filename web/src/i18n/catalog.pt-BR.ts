@@ -1679,6 +1679,8 @@ export const catalogPtBR: Catalog = {
   "schedules.ends": "Termina em",
   "schedules.yearly": "Por ano",
   "schedules.none": "Nenhuma",
+  "schedules.recurringShare":
+    "Contas e assinaturas anuais consomem {percent} da receita anual em {currency}.",
   "schedules.empty": "Nenhum agendamento ainda",
   "schedules.emptyHint":
     "Um agendamento registra uma conta, uma receita, uma assinatura, uma transferência ou uma poupança que se repete.",

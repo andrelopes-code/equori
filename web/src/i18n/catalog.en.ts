@@ -1659,6 +1659,8 @@ export const catalogEn = {
   "schedules.ends": "Ends on",
   "schedules.yearly": "Per year",
   "schedules.none": "None",
+  "schedules.recurringShare":
+    "Yearly bills and subscriptions take {percent} of yearly income in {currency}.",
   "schedules.empty": "No schedule yet",
   "schedules.emptyHint":
     "A schedule states a bill, an income, a subscription, a transfer or a saving that repeats.",

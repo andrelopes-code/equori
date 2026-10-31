@@ -38,6 +38,17 @@ async function pick(label: string, text: string) {
 }
 
 describe("Schedules tab", () => {
+  it("states the share of the yearly income the yearly bills and subscriptions take", async () => {
+    await renderApp("/planning?tab=schedules", { fetch: api() });
+
+    const mark = await screen.findByText("42.80%");
+
+    expect(mark.tagName).toBe("MARK");
+    expect(mark.closest("[data-ui='highlight']")).toHaveTextContent(
+      words("schedules.recurringShare", { percent: "42.80%", currency: "BRL" }),
+    );
+  });
+
   it("states what each schedule moves in a year, and leaves a transfer out", async () => {
     await renderApp("/planning?tab=schedules", { fetch: api() });
     const table = await screen.findByRole("table", {

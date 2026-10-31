@@ -9,6 +9,7 @@ import {
   PageHeaderTitleArea,
   PageHeaderTitleRow,
 } from "@slotted/react/page-header";
+import { Stack } from "@slotted/react/stack";
 import { Tab, TabList, Tabs } from "@slotted/react/tabs";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
@@ -19,6 +20,7 @@ import { HelpLink } from "@/features/help";
 import { AgendaTab } from "@/features/planning/agenda-tab";
 import { BudgetsArea } from "@/features/planning/budgets-area";
 import { PlanningFooter } from "@/features/planning/planning-footer";
+import { RecurringShareNotice } from "@/features/planning/recurring-share-notice";
 import { SchedulesTab } from "@/features/planning/schedules-tab";
 import { SubscriptionsTab } from "@/features/planning/subscriptions-tab";
 import type {
@@ -148,7 +150,13 @@ export function PlanningPage() {
             {shownTab === "agenda" && (
               <AgendaTab month={month} onMonth={changeMonth} />
             )}
-            {shownTab === "schedules" && <SchedulesTab onCreate={create} />}
+            {shownTab === "schedules" && (
+              <Stack gap={4}>
+                <RecurringShareNotice />
+
+                <SchedulesTab onCreate={create} />
+              </Stack>
+            )}
             {shownTab === "subscriptions" && <SubscriptionsTab />}
             {shownTab === "budgets" && (
               <BudgetsArea
