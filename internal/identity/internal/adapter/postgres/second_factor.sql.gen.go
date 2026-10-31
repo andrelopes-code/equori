@@ -37,6 +37,32 @@ func (q *Queries) ConfirmTOTP(ctx context.Context, arg ConfirmTOTPParams) (int64
 	return result.RowsAffected(), nil
 }
 
+const countLoginAttempt = `-- name: CountLoginAttempt :one
+UPDATE identity_login_challenge
+SET
+    attempts = attempts + 1
+WHERE
+    token_hash = $1
+    AND expires_at > $2
+    AND attempts < $3
+RETURNING
+    attempts
+`
+
+type CountLoginAttemptParams struct {
+	TokenHash   []byte
+	Now         time.Time
+	MaxAttempts int32
+}
+
+// HA47: the attempt is counted before the check, so answers sent at once share the limit.
+func (q *Queries) CountLoginAttempt(ctx context.Context, arg CountLoginAttemptParams) (int32, error) {
+	row := q.db.QueryRow(ctx, countLoginAttempt, arg.TokenHash, arg.Now, arg.MaxAttempts)
+	var attempts int32
+	err := row.Scan(&attempts)
+	return attempts, err
+}
+
 const countRecoveryCodes = `-- name: CountRecoveryCodes :one
 SELECT
     count(*)::integer
@@ -204,23 +230,6 @@ WHERE
 func (q *Queries) DeleteTOTP(ctx context.Context, memberID int64) error {
 	_, err := q.db.Exec(ctx, deleteTOTP, memberID)
 	return err
-}
-
-const failLoginChallenge = `-- name: FailLoginChallenge :one
-UPDATE identity_login_challenge
-SET
-    attempts = attempts + 1
-WHERE
-    token_hash = $1
-RETURNING
-    attempts
-`
-
-func (q *Queries) FailLoginChallenge(ctx context.Context, tokenHash []byte) (int32, error) {
-	row := q.db.QueryRow(ctx, failLoginChallenge, tokenHash)
-	var attempts int32
-	err := row.Scan(&attempts)
-	return attempts, err
 }
 
 const getLoginChallenge = `-- name: GetLoginChallenge :one

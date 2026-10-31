@@ -2,11 +2,15 @@ package identity_test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"fmt"
+	"maps"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -211,6 +215,46 @@ func TestSecondFactorAttempts(t *testing.T) {
 
 	if !strings.Contains(h.Logs(), `reason="second factor invalid"`) {
 		t.Fatal(`logs hold no reason="second factor invalid"`)
+	}
+}
+
+// HA47: wrong answers sent at once to one pending login are still checked at most five times.
+func TestSecondFactorAttemptsInParallel(t *testing.T) {
+	t.Parallel()
+
+	h, _ := loginHarness(t)
+	secret, _ := enableTOTP(t, h)
+	wrong := "000000"
+
+	if domain.TOTPCode(secret, domain.TOTPStepAt(loginNow)+1) == wrong {
+		wrong = "000001"
+	}
+
+	c, _ := passwordLogin(t, h, "owner@example.com")
+
+	const requests = 20
+
+	codes := make(chan string, requests)
+
+	var wg sync.WaitGroup
+
+	for range requests {
+		wg.Go(func() {
+			codes <- parallelAnswer(t.Context(), h.URL(), c, wrong)
+		})
+	}
+
+	wg.Wait()
+	close(codes)
+
+	counts := map[string]int{}
+	for code := range codes {
+		counts[code]++
+	}
+
+	want := map[string]int{"second_factor_invalid": 5, "unauthenticated": requests - 5}
+	if !maps.Equal(counts, want) {
+		t.Fatalf("answers = %v; want %v", counts, want)
 	}
 }
 
@@ -459,4 +503,34 @@ func (k softKey) assertion(credentialID, challenge []byte, counter uint32, origi
 		"authenticator_data": b64(authData),
 		"signature":          b64(k.sign(authData, clientData)),
 	}}
+}
+
+// parallelAnswer posts a TOTP code from a goroutine and returns the problem code, or a description
+// of what failed, since t.Fatal must not run outside the test goroutine.
+func parallelAnswer(ctx context.Context, baseURL string, c *http.Client, code string) string {
+	body := strings.NewReader(fmt.Sprintf(`{"totp_code":%q}`, code))
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, baseURL+"/api/v1/session/second-factor", body)
+	if err != nil {
+		return err.Error()
+	}
+
+	req.Header.Set("Origin", baseURL)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.Do(req) //nolint:gosec // tests address the harness's own httptest server
+	if err != nil {
+		return err.Error()
+	}
+	defer resp.Body.Close()
+
+	var problem struct {
+		Code string `json:"code"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&problem); err != nil {
+		return fmt.Sprintf("status %d: %v", resp.StatusCode, err)
+	}
+
+	return problem.Code
 }

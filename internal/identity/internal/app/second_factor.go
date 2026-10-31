@@ -123,8 +123,9 @@ type SecondFactorRepository interface {
 	CreateLoginChallenge(ctx context.Context, c domain.LoginChallenge) error
 	// LoginChallenge returns ErrNotFound for an unknown or expired token hash.
 	LoginChallenge(ctx context.Context, tokenHash []byte, now time.Time) (domain.LoginChallenge, error)
-	// FailLoginChallenge counts a wrong value and deletes the row when the count reaches limit.
-	FailLoginChallenge(ctx context.Context, tokenHash []byte, limit int) error
+	// CountLoginAttempt counts one answer before it is checked; ok is false when the pending login is
+	// unknown, expired or has used limit attempts.
+	CountLoginAttempt(ctx context.Context, tokenHash []byte, now time.Time, limit int32) (attempts int32, ok bool, err error)
 	// DeleteLoginChallenge returns false when no row was deleted.
 	DeleteLoginChallenge(ctx context.Context, tokenHash []byte) (bool, error)
 	DeleteExpiredLoginChallenges(ctx context.Context, now time.Time) error
@@ -386,14 +387,29 @@ func (s *Service) CompleteSecondFactor(ctx context.Context, loginToken, origin s
 
 	result := SecondFactorLogin{Session: Session{MemberID: pending.MemberID}}
 
+	if a.TOTPCode != "" && s.box == nil {
+		return result, ErrSecretKeyMissing
+	}
+
+	attempts, counted, err := s.repo.CountLoginAttempt(ctx, hash, now, secondFactorAttempts)
+	if err != nil {
+		return result, fmt.Errorf("count second factor attempt of member %d: %w", pending.MemberID, err)
+	}
+
+	if !counted {
+		return result, ErrUnauthenticated
+	}
+
 	method, left, ok, err := s.useSecondFactor(ctx, pending, origin, a, now)
 	if err != nil {
 		return result, err
 	}
 
 	if !ok {
-		if err := s.repo.FailLoginChallenge(ctx, hash, secondFactorAttempts); err != nil {
-			return result, fmt.Errorf("count wrong second factor of member %d: %w", pending.MemberID, err)
+		if attempts >= secondFactorAttempts {
+			if _, err := s.repo.DeleteLoginChallenge(ctx, hash); err != nil {
+				return result, fmt.Errorf("delete pending login of member %d: %w", pending.MemberID, err)
+			}
 		}
 
 		return result, ErrSecondFactorInvalid

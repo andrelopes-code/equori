@@ -256,12 +256,15 @@ WHERE
     token_hash = $1
     AND expires_at > $2;
 
--- name: FailLoginChallenge :one
+-- name: CountLoginAttempt :one
+-- HA47: the attempt is counted before the check, so answers sent at once share the limit.
 UPDATE identity_login_challenge
 SET
     attempts = attempts + 1
 WHERE
-    token_hash = $1
+    token_hash = sqlc.arg (token_hash)
+    AND expires_at > sqlc.arg (now)
+    AND attempts < sqlc.arg (max_attempts)
 RETURNING
     attempts;
 

@@ -237,23 +237,17 @@ func (r *Repository) LoginChallenge(ctx context.Context, tokenHash []byte, now t
 	return domain.LoginChallenge{TokenHash: row.TokenHash, MemberID: row.MemberID, Challenge: row.Challenge, ExpiresAt: row.ExpiresAt}, nil
 }
 
-func (r *Repository) FailLoginChallenge(ctx context.Context, tokenHash []byte, limit int) error {
-	attempts, err := r.q.FailLoginChallenge(ctx, tokenHash)
+func (r *Repository) CountLoginAttempt(ctx context.Context, tokenHash []byte, now time.Time, limit int32) (int32, bool, error) {
+	attempts, err := r.q.CountLoginAttempt(ctx, CountLoginAttemptParams{TokenHash: tokenHash, Now: now, MaxAttempts: limit})
 	if errors.Is(err, pgx.ErrNoRows) {
-		return nil
+		return 0, false, nil
 	}
 
 	if err != nil {
-		return err
+		return 0, false, err
 	}
 
-	if int(attempts) < limit {
-		return nil
-	}
-
-	_, err = r.q.DeleteLoginChallenge(ctx, tokenHash)
-
-	return err
+	return attempts, true, nil
 }
 
 func (r *Repository) DeleteLoginChallenge(ctx context.Context, tokenHash []byte) (bool, error) {
