@@ -42,11 +42,17 @@ func (s *Service) UndoDecision(ctx context.Context, booksID int64, recordID uuid
 
 	decided, left := rec.Decision, rec.State
 
+	var line *domain.ExternalRecord
+
 	switch decided {
 	case domain.DecisionLinked:
 		err = s.undoLinked(ctx, &rec, b)
 	case domain.DecisionWithdrawn:
 		err = s.undoWithdrawn(ctx, &rec, b)
+	case domain.DecisionFollowed:
+		err = s.undoFollowed(ctx, &rec)
+	case domain.DecisionReidentified:
+		line, err = s.undoReidentified(ctx, &rec)
 	default:
 		err = ErrNoDecision
 	}
@@ -57,7 +63,7 @@ func (s *Service) UndoDecision(ctx context.Context, booksID int64, recordID uuid
 
 	rec.Decision, rec.Undo = "", domain.Undo{}
 
-	if err := s.repo.SaveUndo(ctx, rec, decided, left, nil); err != nil {
+	if err := s.repo.SaveUndo(ctx, rec, decided, left, line); err != nil {
 		return domain.ExternalRecord{}, domain.Batch{}, err
 	}
 
@@ -98,4 +104,48 @@ func (s *Service) undoWithdrawn(ctx context.Context, rec *domain.ExternalRecord,
 	rec.Candidates, rec.Scores = nil, nil
 
 	return s.refreshCandidates(ctx, rec, currencyOf(b))
+}
+
+// undoFollowed gives the transaction back the amount and date it had before the followed
+// change and flags the record as changed, since the aggregator still reports the other values.
+func (s *Service) undoFollowed(ctx context.Context, rec *domain.ExternalRecord) error {
+	u := rec.Undo
+
+	err := s.ledger.ConfirmLine(ctx, rec.BooksID, rec.TransactionID, rec.AccountID, u.Amount, u.On)
+	if errors.Is(err, ErrReconciled) && u.Amount == rec.Amount {
+		err = s.ledger.MoveReconciledDate(ctx, rec.BooksID, rec.TransactionID, rec.AccountID, u.On)
+	}
+
+	if err != nil {
+		return err
+	}
+
+	rec.UnappliedChange = keptNote(rec.ReportedAmount, rec.ReportedOn, u.Amount, u.On)
+	rec.Amount, rec.Date, rec.ReviewReason = u.Amount, u.On, domain.ReviewChanged
+
+	return nil
+}
+
+// undoReidentified restores the previous external id of the record and returns the line it
+// had taken as a new record in review of the batch of the re-identifying run.
+func (s *Service) undoReidentified(ctx context.Context, rec *domain.ExternalRecord) (*domain.ExternalRecord, error) {
+	b, err := s.repo.Batch(ctx, rec.BooksID, rec.SummaryBatchID)
+	if err != nil {
+		return nil, err
+	}
+
+	line := *rec
+	line.ID, line.BatchID, line.TransactionID = uuid.Nil, b.ID, uuid.Nil
+	line.Date, line.Amount = rec.ReportedOn, rec.ReportedAmount
+	line.State, line.ReviewReason, line.UnappliedChange = domain.StateNeedsReview, domain.ReviewProbable, ""
+	line.Decision, line.Undo, line.SummaryBatchID, line.Kept = "", domain.Undo{}, b.ID, false
+
+	if err := s.refreshCandidates(ctx, &line, currencyOf(b)); err != nil {
+		return nil, err
+	}
+
+	u := rec.Undo
+	rec.ExternalID, rec.DedupKey, rec.Raw = u.ExternalID, u.DedupKey, u.Raw
+
+	return &line, nil
 }

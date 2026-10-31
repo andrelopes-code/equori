@@ -79,7 +79,7 @@ var ChangeFields = []string{
 	"kind", "currency", "parent", "institution", "limit", "closing_day", "due_day", "card", "installments",
 	"statement", "quantity", "price", "rule", "pattern", "priority", "schedule", "occurrence", "budget",
 	"goal", "target", "due_on", "accounts", "language", "region", "connection", "record", "reason",
-	"instrument", "terms", "count", "rate", "transaction", "source", "reference",
+	"instrument", "terms", "count", "rate", "transaction", "source", "reference", "decision",
 }
 
 // PreviewDigest is the hex SHA-256 of the encoded preview followed by its Basis.

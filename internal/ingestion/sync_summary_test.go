@@ -281,6 +281,154 @@ func TestA148UndoWithoutDecision(t *testing.T) {
 	f.h.ExpectProblem(f.undo("tx-1"), http.StatusConflict, "no_decision", "")
 }
 
+// S206 (A148): undoing a followed date restores the ledger's date on a reconciled card posting
+// and keeps the posting on its statement; the next sync counts nothing.
+func TestS206UndoFollowedDate(t *testing.T) {
+	t.Parallel()
+	f, card := newCardSync(t)
+	f.line(pluggy.SubtypeCard, cardLine("card-6", "2026-11-03", "7.12", "POSTED", new("bill-nov")))
+	f.sync()
+
+	_, tx := f.recordOf("card-6")
+
+	f.reconcileStatement(card, "2026-11")
+	f.line(pluggy.SubtypeCard, cardLine("card-6", "2026-11-02", "7.12", "POSTED", new("bill-nov")))
+	f.sync()
+
+	r := f.undo("card-6")
+	if r.Status != http.StatusOK {
+		t.Fatalf("undo status = %d, body %s", r.Status, r.Body)
+	}
+
+	var got struct {
+		ReviewReason string `json:"review_reason"`
+		Date         string `json:"date"`
+		Decision     string `json:"decision"`
+	}
+	r.Decode(t, &got)
+
+	if got.ReviewReason != "changed" || got.Date != "2026-11-03" || got.Decision != "" {
+		t.Fatalf("undone record = %+v, want changed on 2026-11-03 without decision", got)
+	}
+
+	if tr := f.h.Transaction(tx); tr.Date != "2026-11-03" || tr.Version != 3 {
+		t.Fatalf("transaction = %s v%d, want 2026-11-03 v3", tr.Date, tr.Version)
+	}
+
+	if p := f.cardPosting(tx, card); p.Status != "reconciled" || p.Statement != "2026-11" || p.Amount.Amount != -712 {
+		t.Fatalf("posting = %+v, want reconciled on 2026-11 at -712", p)
+	}
+
+	const note = "the aggregator reports -712 minor units on 2026-11-02; the ledger keeps -712 on 2026-11-03"
+	if reason, change := f.recordFacts("card-6"); reason != "changed" || change != note {
+		t.Fatalf("facts = %q, %q; want changed, %q", reason, change, note)
+	}
+
+	f.sync()
+
+	if c := f.batches(card)[0].Counts; c.Updated != 0 || c.Ignored != 1 {
+		t.Fatalf("counts = updated %d, ignored %d, want 0 and 1", c.Updated, c.Ignored)
+	}
+
+	if tr := f.h.Transaction(tx); tr.Date != "2026-11-03" {
+		t.Fatalf("transaction date after the next sync = %s, want 2026-11-03", tr.Date)
+	}
+}
+
+// S213 (A148): undoing a followed amount restores the ledger's amount on an unreconciled
+// posting.
+func TestS213UndoFollowedAmount(t *testing.T) {
+	t.Parallel()
+	clk := newMovingClock(t, "2026-11-12T12:00:00Z")
+	f := newSyncFixture(t, apitest.Clock(clk.now))
+
+	r := f.mapAccount(f.h.Client, f.conn.ID, externalAccount(f.conn, pluggy.SubtypeChecking).ID, map[string]any{"account_id": f.checking, "sync_from": "2026-08-01"})
+	if r.Status != http.StatusOK {
+		t.Fatalf("map status %d: %s", r.Status, r.Body)
+	}
+
+	f.line(pluggy.SubtypeChecking, bankLine("old-1", "2026-09-13", "-80.00"))
+	f.sync()
+
+	_, tx := f.recordOf("old-1")
+
+	f.line(pluggy.SubtypeChecking, bankLine("old-1", "2026-09-13", "-85.00"))
+	clk.set(t, "2026-11-19T12:00:00Z")
+	f.sync()
+
+	if u := f.undo("old-1"); u.Status != http.StatusOK {
+		t.Fatalf("undo status = %d, body %s", u.Status, u.Body)
+	}
+
+	const posting = `SELECT count(*) FROM ledger_posting WHERE transaction_id = $1 AND account_id = $2 AND amount = $3`
+	if n := f.count(posting, tx, f.checking, -8000); n != 1 {
+		t.Fatalf("postings of -80.00 after the undo = %d, want 1", n)
+	}
+
+	const note = "the aggregator reports -8500 minor units on 2026-09-13; the ledger keeps -8000 on 2026-09-13"
+	if reason, change := f.recordFacts("old-1"); reason != "changed" || change != note {
+		t.Fatalf("facts = %q, %q; want changed, %q", reason, change, note)
+	}
+
+	f.h.ExpectProblem(f.undo("old-1"), http.StatusConflict, "no_decision", "")
+}
+
+// A148: undoing a re-identification restores the previous external id and returns the line to
+// review as a new record of the run's batch.
+func TestA148UndoReidentification(t *testing.T) {
+	t.Parallel()
+	f, card := newCardSync(t)
+	paid := typedCardLine("pay-1", "2026-11-05", "-784.65", "PAGAMENTO_FATURA")
+	paid.ProviderID = new("p-1")
+	f.line(pluggy.SubtypeCard, paid)
+	f.sync()
+
+	_, tx := f.recordOf("pay-1")
+
+	f.p.RemoveTransaction(nubankItem+"-card", "pay-1")
+
+	again := typedCardLine("pay-2", "2026-11-05", "-784.65", "PAGAMENTO_FATURA")
+	again.ProviderID = new("p-1")
+	f.line(pluggy.SubtypeCard, again)
+	f.sync()
+
+	id := f.recordID("pay-2")
+
+	r := f.h.Do(http.MethodPost, "/api/v1/external-records/"+id+"/undo", nil)
+	if r.Status != http.StatusOK {
+		t.Fatalf("undo status = %d, body %s", r.Status, r.Body)
+	}
+
+	var got struct {
+		ExternalID    string `json:"external_id"`
+		State         string `json:"state"`
+		TransactionID string `json:"transaction_id"`
+	}
+	r.Decode(t, &got)
+
+	if got.ExternalID != "pay-1" || got.State != "created" || got.TransactionID != tx {
+		t.Fatalf("undone record = %+v, want pay-1 created on %s", got, tx)
+	}
+
+	if state, linked := f.recordOf("pay-2"); state != "needs_review" || linked != "" {
+		t.Fatalf("pay-2 record = %s on %q, want needs_review without a transaction", state, linked)
+	}
+
+	if reason, _ := f.recordFacts("pay-2"); reason != "probable" {
+		t.Fatalf("pay-2 review reason = %q, want probable", reason)
+	}
+
+	const batchOf = `SELECT batch_id::text FROM ingestion_external_record WHERE external_id = 'pay-2'`
+
+	b := f.batches(card)[0]
+	if got := f.text(batchOf); got != b.ID || b.Counts.NeedsReview != 1 {
+		t.Fatalf("pay-2 batch = %s, needs_review = %d; want %s and 1", got, b.Counts.NeedsReview, b.ID)
+	}
+
+	f.h.ExpectProblem(f.undo("pay-1"), http.StatusConflict, "no_decision", "")
+	f.h.ExpectProblem(f.undo("pay-2"), http.StatusConflict, "no_decision", "")
+}
+
 // recordID returns the id of a line's record.
 func (f syncFixture) recordID(externalID string) string {
 	f.h.T().Helper()

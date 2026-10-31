@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
+	pluggy "github.com/andrelopes-code/equori/internal/ingestion/internal/aggregator/pluggy/client"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
 	"github.com/andrelopes-code/equori/internal/platform/locale"
 	"github.com/andrelopes-code/equori/internal/platform/tool"
@@ -216,4 +217,46 @@ func TestManageImportsConnections(t *testing.T) {
 
 	a.h.ExpectProblem(a.h.Do(http.MethodGet, "/api/v1/connections/"+conn.ID, nil), http.StatusNotFound, "not_found", "")
 	a.h.ExpectToolError(a.h.Tool("manage_imports", map[string]any{"action": "sync"}), "invalid_arguments", "connection_id")
+}
+
+func TestManageImportsUndoDecision(t *testing.T) {
+	t.Parallel()
+	f := newSyncFixture(t)
+	f.mapTo(pluggy.SubtypeChecking, f.checking)
+	f.line(pluggy.SubtypeChecking, bankLine("tx-1", "2026-11-05", "-10.00"))
+	f.line(pluggy.SubtypeChecking, bankLine("tx-2", "2026-11-06", "-20.00"))
+	f.sync()
+
+	_, tx := f.recordOf("tx-1")
+
+	f.p.RemoveTransaction(nubankItem+"-checking", "tx-1")
+	f.sync()
+
+	args := map[string]any{"action": "undo_decision", "record_id": f.recordID("tx-1")}
+
+	p, r := preview(t, f.h, "manage_imports", args)
+	if r.IsError {
+		t.Fatalf("preview = error %s", r.Content)
+	}
+
+	want := tool.Preview{Action: "manage_imports.undo_decision", Target: "Bank line line tx-1 of 2026-11-05", Changes: []tool.Change{
+		{Field: "decision", Before: tool.TextValue("withdrawn")},
+	}}
+	if !reflect.DeepEqual(p, want) {
+		t.Errorf("preview = %+v, want %+v", p, want)
+	}
+
+	var got struct {
+		RecordID      string `json:"record_id"`
+		State         string `json:"state"`
+		TransactionID string `json:"transaction_id"`
+	}
+	toolOutput(t, f.h, "manage_imports", args, &got)
+
+	if got.RecordID != f.recordID("tx-1") || got.State != "created" || got.TransactionID != tx {
+		t.Errorf("undone = %+v, want tx-1 created on %s", got, tx)
+	}
+
+	f.h.ExpectToolError(f.h.Tool("manage_imports", args), "no_decision", "")
+	f.h.ExpectToolError(f.h.Tool("manage_imports", map[string]any{"action": "undo_decision"}), "invalid_arguments", "record_id")
 }
