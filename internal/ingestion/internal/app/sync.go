@@ -506,7 +506,7 @@ func (s *Service) reidentify(ctx context.Context, batch *domain.Batch, read doma
 		line := read.Records[i]
 		key := domain.DedupKey(batch.AccountID, domain.SourceAggregator, line, 0)
 
-		if err := s.repo.Reidentify(ctx, batch.BooksID, rec.ID, line.ExternalID, key, line.Raw); err != nil {
+		if err := s.repo.Reidentify(ctx, batch.BooksID, batch.ID, rec.ID, line.ExternalID, key, line.Raw); err != nil {
 			return err
 		}
 
@@ -555,5 +555,5 @@ func (s *Service) withdraw(ctx context.Context, batch *domain.Batch, seen []stri
 
 	batch.Counts.Withdrawn = len(gone)
 
-	return s.repo.WithdrawRecords(ctx, batch.BooksID, gone)
+	return s.repo.WithdrawRecords(ctx, batch.BooksID, batch.ID, gone)
 }

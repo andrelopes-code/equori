@@ -96,18 +96,18 @@ func (r *Repository) RecordsByLineIDs(ctx context.Context, booksID int64, accoun
 	return out, nil
 }
 
-func (r *Repository) Reidentify(ctx context.Context, booksID int64, id uuid.UUID, externalID string, dedupKey []byte, raw map[string]string) error {
+func (r *Repository) Reidentify(ctx context.Context, booksID int64, batchID, id uuid.UUID, externalID string, dedupKey []byte, raw map[string]string) error {
 	payload, err := json.Marshal(raw)
 	if err != nil {
 		return err
 	}
 
 	return r.q.ReidentifyRecord(ctx, ReidentifyRecordParams{
-		BooksID: booksID, ID: id, ExternalID: &externalID, DedupKey: dedupKey, Raw: payload,
+		BooksID: booksID, ID: id, ExternalID: &externalID, DedupKey: dedupKey, Raw: payload, BatchID: batchID,
 	})
 }
 
-func (r *Repository) WithdrawRecords(ctx context.Context, booksID int64, ids []uuid.UUID) error {
+func (r *Repository) WithdrawRecords(ctx context.Context, booksID int64, batchID uuid.UUID, ids []uuid.UUID) error {
 	if len(ids) == 0 {
 		return nil
 	}
@@ -118,7 +118,7 @@ func (r *Repository) WithdrawRecords(ctx context.Context, booksID int64, ids []u
 			return err
 		}
 
-		return q.WithdrawRecords(ctx, WithdrawRecordsParams{BooksID: booksID, RecordIds: ids})
+		return q.WithdrawRecords(ctx, WithdrawRecordsParams{BooksID: booksID, RecordIds: ids, BatchID: batchID})
 	})
 }
 

@@ -88,10 +88,12 @@ type Repository interface {
 	// RecordsByLineIDs lists the account's aggregator records whose external id or
 	// institution line id is among the given ones (A143).
 	RecordsByLineIDs(ctx context.Context, booksID int64, accountID uuid.UUID, externalIDs, institutionIDs []string) ([]domain.ExternalRecord, error)
-	// Reidentify gives a record the external id, deduplication key and raw payload of a line (A143).
-	Reidentify(ctx context.Context, booksID int64, id uuid.UUID, externalID string, dedupKey []byte, raw map[string]string) error
-	// WithdrawRecords marks records withdrawn and takes them out of their batches' review counts.
-	WithdrawRecords(ctx context.Context, booksID int64, ids []uuid.UUID) error
+	// Reidentify gives a record the external id, deduplication key and raw payload of a line,
+	// as a decision of the batch's sync run (A143, A148).
+	Reidentify(ctx context.Context, booksID int64, batchID, id uuid.UUID, externalID string, dedupKey []byte, raw map[string]string) error
+	// WithdrawRecords marks records withdrawn by the batch's sync run, keeps what each was for
+	// its undo, and takes them out of their batches' review counts (A38, A148).
+	WithdrawRecords(ctx context.Context, booksID int64, batchID uuid.UUID, ids []uuid.UUID) error
 	// MarkAccountSynced stores the account's last synced date and asserted balance.
 	MarkAccountSynced(ctx context.Context, a domain.ExternalAccount) error
 	// SaveConnectionState stores the connection's provider status, item update, last sync and error.

@@ -430,7 +430,7 @@ func (s *Service) applyStoredChange(
 	rec *domain.ExternalRecord,
 	r domain.NormalizedRecord,
 ) error {
-	reported, changed, err := s.update(ctx, p.sync, rec, r)
+	reported, changed, err := s.update(ctx, p.sync, p.batch.ID, rec, r)
 	if err != nil {
 		return err
 	}
@@ -476,6 +476,10 @@ func (s *Service) linkMatches(ctx context.Context, p *importPlan) error {
 		if err := s.billMatched(ctx, rec, p.matches[i].Pending); err != nil {
 			return err
 		}
+
+		if rec.ReviewReason != domain.ReviewChanged {
+			rec.Decision, rec.Undo = domain.DecisionLinked, domain.Undo{}
+		}
 	}
 
 	return nil
@@ -511,6 +515,11 @@ func (s *Service) saveOutcomes(ctx context.Context, p *importPlan) error {
 	outcomes := make([]domain.ExternalRecord, len(p.pending))
 	for i, rec := range p.pending {
 		p.batch.Counts.Count(rec.State)
+
+		if p.sync && rec.State != domain.StateReceived {
+			rec.SummaryBatchID = p.batch.ID
+		}
+
 		outcomes[i] = *rec
 	}
 
@@ -577,6 +586,7 @@ func reopenWithdrawn(claimed []Claim, lines []domain.NormalizedRecord) {
 			withFacts(rec, lines[i])
 			rec.Date, rec.Amount, rec.State, rec.TransactionID, rec.Candidates = lines[i].Date, lines[i].Amount, domain.StateReceived, uuid.Nil, nil
 			rec.ReviewReason, rec.Scores = "", nil
+			rec.Decision, rec.Undo = "", domain.Undo{}
 			claimed[i].Existed = false
 		}
 	}
@@ -631,7 +641,7 @@ func withFacts(rec *domain.ExternalRecord, r domain.NormalizedRecord) {
 // A reconciled posting and an amount change stay out of the ledger and are described on
 // the record. reported is true when the line differs from the stored facts, changed when the
 // ledger took the difference or the record's unapplied change text is new (P12 A147).
-func (s *Service) update(ctx context.Context, sync bool, rec *domain.ExternalRecord, r domain.NormalizedRecord) (reported, changed bool, err error) {
+func (s *Service) update(ctx context.Context, sync bool, batchID uuid.UUID, rec *domain.ExternalRecord, r domain.NormalizedRecord) (reported, changed bool, err error) {
 	if !sync || (rec.State != domain.StateMatched && rec.State != domain.StateCreated) {
 		return false, false, nil
 	}
@@ -668,7 +678,7 @@ func (s *Service) update(ctx context.Context, sync bool, rec *domain.ExternalRec
 	}
 
 	if moved {
-		note, followed, err := s.followLine(ctx, rec, r)
+		note, followed, err := s.followLine(ctx, batchID, rec, r)
 		if err != nil {
 			return false, false, err
 		}
@@ -695,20 +705,24 @@ func (s *Service) update(ctx context.Context, sync bool, rec *domain.ExternalRec
 		rec.ReviewReason = ""
 	}
 
-	return true, changed || (rec.UnappliedChange != "" && rec.UnappliedChange != previous), nil
+	changed = changed || (rec.UnappliedChange != "" && rec.UnappliedChange != previous)
+	if changed && rec.ReviewReason == domain.ReviewChanged {
+		rec.Decision, rec.Undo, rec.SummaryBatchID = "", domain.Undo{}, batchID
+	}
+
+	return true, changed, nil
 }
 
 // followLine corrects the transaction of a linked line to the line's new amount and date
 // (A102) and reports whether the ledger took them. A line equal to the ledger's values needs
 // nothing. A reconciled posting keeps them: the record describes the change and is flagged
 // with review reason changed. An installment keeps the amount its plan fixes.
-func (s *Service) followLine(ctx context.Context, rec *domain.ExternalRecord, r domain.NormalizedRecord) (string, bool, error) {
+func (s *Service) followLine(ctx context.Context, batchID uuid.UUID, rec *domain.ExternalRecord, r domain.NormalizedRecord) (string, bool, error) {
 	if rec.Amount == r.Amount && rec.Date.Equal(r.Date) {
 		return "", false, nil
 	}
 
-	kept := fmt.Sprintf("the aggregator reports %d minor units on %s; the ledger keeps %d on %s",
-		r.Amount, r.Date.Format(time.DateOnly), rec.Amount, rec.Date.Format(time.DateOnly))
+	kept := keptNote(r.Amount, r.Date, rec.Amount, rec.Date)
 	if rec.Installment != nil || rec.TransactionID == uuid.Nil {
 		return kept, false, nil
 	}
@@ -717,6 +731,7 @@ func (s *Service) followLine(ctx context.Context, rec *domain.ExternalRecord, r 
 	if errors.Is(err, ErrReconciled) && r.Amount == rec.Amount {
 		// Only the date changed: a card posting keeps its statement (A147 rule 3).
 		if err = s.ledger.MoveReconciledDate(ctx, rec.BooksID, rec.TransactionID, rec.AccountID, r.Date); err == nil {
+			rec.Decision, rec.Undo, rec.SummaryBatchID = domain.DecisionFollowed, domain.Undo{Amount: rec.Amount, On: rec.Date}, batchID
 			rec.Date, rec.ReviewReason = r.Date, ""
 
 			return "", true, nil
@@ -733,9 +748,16 @@ func (s *Service) followLine(ctx context.Context, rec *domain.ExternalRecord, r 
 		return "", false, err
 	}
 
+	rec.Decision, rec.Undo, rec.SummaryBatchID = domain.DecisionFollowed, domain.Undo{Amount: rec.Amount, On: rec.Date}, batchID
 	rec.Amount, rec.Date, rec.ReviewReason = r.Amount, r.Date, ""
 
 	return "", true, nil
+}
+
+// keptNote describes a line the ledger keeps at other values (A102).
+func keptNote(reported int64, reportedOn time.Time, amount int64, on time.Time) string {
+	return fmt.Sprintf("the aggregator reports %d minor units on %s; the ledger keeps %d on %s",
+		reported, reportedOn.Format(time.DateOnly), amount, on.Format(time.DateOnly))
 }
 
 // billMatched moves a matched card posting to the statement of the line's bill, as update

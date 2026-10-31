@@ -445,26 +445,39 @@ UPDATE ingestion_external_record
 SET
     external_id = $1,
     dedup_key = $2,
-    raw = $3
+    raw = $3,
+    decision = 're_identified',
+    decision_undo = jsonb_build_object(
+        'external_id',
+        external_id,
+        'dedup_key',
+        encode(dedup_key, 'base64'),
+        'raw',
+        raw
+    ),
+    summary_batch_id = $4::uuid
 WHERE
-    books_id = $4
-    AND id = $5
+    books_id = $5
+    AND id = $6
 `
 
 type ReidentifyRecordParams struct {
 	ExternalID *string
 	DedupKey   []byte
 	Raw        []byte
+	BatchID    uuid.UUID
 	BooksID    int64
 	ID         uuid.UUID
 }
 
-// A143: the record takes the external id, deduplication key and raw payload of its line.
+// A143: the record takes the external id, deduplication key and raw payload of its line;
+// A148: the decision keeps the previous ones, for its undo.
 func (q *Queries) ReidentifyRecord(ctx context.Context, arg ReidentifyRecordParams) error {
 	_, err := q.db.Exec(ctx, reidentifyRecord,
 		arg.ExternalID,
 		arg.DedupKey,
 		arg.Raw,
+		arg.BatchID,
 		arg.BooksID,
 		arg.ID,
 	)
@@ -500,19 +513,33 @@ UPDATE ingestion_external_record
 SET
     state = 'withdrawn',
     transaction_id = NULL,
-    candidates = '{}'
+    candidates = '{}',
+    decision = 'withdrawn',
+    decision_undo = jsonb_strip_nulls(
+        jsonb_build_object(
+            'state',
+            state,
+            'transaction_id',
+            transaction_id,
+            'review_reason',
+            review_reason
+        )
+    ),
+    summary_batch_id = $1::uuid
 WHERE
-    books_id = $1
-    AND id = ANY ($2::UUID[])
+    books_id = $2
+    AND id = ANY ($3::UUID[])
 `
 
 type WithdrawRecordsParams struct {
+	BatchID   uuid.UUID
 	BooksID   int64
 	RecordIds []uuid.UUID
 }
 
+// A38, A148: the decision keeps what the record was, for its undo.
 func (q *Queries) WithdrawRecords(ctx context.Context, arg WithdrawRecordsParams) error {
-	_, err := q.db.Exec(ctx, withdrawRecords, arg.BooksID, arg.RecordIds)
+	_, err := q.db.Exec(ctx, withdrawRecords, arg.BatchID, arg.BooksID, arg.RecordIds)
 	return err
 }
 

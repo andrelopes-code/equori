@@ -206,11 +206,24 @@ WHERE
     AND b.id = w.batch_id;
 
 -- name: WithdrawRecords :exec
+-- A38, A148: the decision keeps what the record was, for its undo.
 UPDATE ingestion_external_record
 SET
     state = 'withdrawn',
     transaction_id = NULL,
-    candidates = '{}'
+    candidates = '{}',
+    decision = 'withdrawn',
+    decision_undo = jsonb_strip_nulls(
+        jsonb_build_object(
+            'state',
+            state,
+            'transaction_id',
+            transaction_id,
+            'review_reason',
+            review_reason
+        )
+    ),
+    summary_batch_id = @batch_id::uuid
 WHERE
     books_id = @books_id
     AND id = ANY (@record_ids::UUID[]);
@@ -231,12 +244,23 @@ WHERE
     );
 
 -- name: ReidentifyRecord :exec
--- A143: the record takes the external id, deduplication key and raw payload of its line.
+-- A143: the record takes the external id, deduplication key and raw payload of its line;
+-- A148: the decision keeps the previous ones, for its undo.
 UPDATE ingestion_external_record
 SET
     external_id = @external_id,
     dedup_key = @dedup_key,
-    raw = @raw
+    raw = @raw,
+    decision = 're_identified',
+    decision_undo = jsonb_build_object(
+        'external_id',
+        external_id,
+        'dedup_key',
+        encode(dedup_key, 'base64'),
+        'raw',
+        raw
+    ),
+    summary_batch_id = @batch_id::uuid
 WHERE
     books_id = @books_id
     AND id = @id;
