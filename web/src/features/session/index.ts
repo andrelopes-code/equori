@@ -5,6 +5,7 @@ export {
   setupQuery,
   useChooseLanguage,
   useSaveAppearance,
+  useSwitchBooks,
 } from "@/features/session/api";
 export { AppearanceSync } from "@/features/session/appearance-sync";
 export { LoginPage } from "@/features/session/login-page";
@@ -24,3 +25,4 @@ export {
   rememberDeviceUser,
 } from "@/features/session/device-user";
 export type { DeviceUser } from "@/features/session/device-user";
+export { reloadHome } from "@/features/session/reload-home";

@@ -8,6 +8,7 @@ import type { Client } from "openapi-fetch";
 import { useApi } from "@/api/api-context";
 import { unwrap } from "@/api/problem";
 import type { components, paths } from "@/api/schema.gen";
+import { reloadHome } from "@/features/session/reload-home";
 import { useAppLocale } from "@/i18n/i18n-provider";
 import type { Language } from "@/i18n/languages";
 
@@ -42,6 +43,19 @@ export function myBooksQuery(api: Client<paths>) {
       const { items } = await unwrap(await api.GET("/me/books"));
       return [...items].sort((a, b) => a.id - b.id);
     },
+  });
+}
+
+// PUT /session/books; the reload reads the session under the new book.
+export function useSwitchBooks() {
+  const api = useApi();
+  return useMutation({
+    mutationFn: async (booksId: number) => {
+      await unwrap(
+        await api.PUT("/session/books", { body: { books_id: booksId } }),
+      );
+    },
+    onSuccess: reloadHome,
   });
 }
 

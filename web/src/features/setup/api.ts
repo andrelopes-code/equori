@@ -9,6 +9,7 @@ import { useApi } from "@/api/api-context";
 import { unwrap } from "@/api/problem";
 import type { components, paths } from "@/api/schema.gen";
 import { meQuery } from "@/features/session";
+import type { BooksMembership } from "@/features/session";
 import { useAppLocaleState } from "@/i18n/i18n-provider";
 
 export const setupKeys = {
@@ -159,6 +160,16 @@ export function useUpdateBooks() {
       queryClient.setQueryData(booksQuery(api).queryKey, books);
       await queryClient.invalidateQueries({ queryKey: meQuery(api).queryKey });
     },
+  });
+}
+
+export type CreateBooksInput = components["schemas"]["CreateBooksInput"];
+
+export function useCreateBooks() {
+  const api = useApi();
+  return useMutation({
+    mutationFn: async (body: CreateBooksInput): Promise<BooksMembership> =>
+      unwrap(await api.POST("/books", { body })),
   });
 }
 

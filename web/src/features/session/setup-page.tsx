@@ -22,7 +22,7 @@ import styles from "@/features/session/login-page.module.css";
 import { useAppLocaleState, useT } from "@/i18n/i18n-provider";
 import { languages, matchLanguage } from "@/i18n/languages";
 import type { Language } from "@/i18n/languages";
-import { regions } from "@/i18n/regions";
+import { regionChoicesFor } from "@/i18n/regions";
 import { ChoiceSelect } from "@/ui/choice-select";
 
 // The token arrives in the fragment of the address serve printed (W-U1, W-U6 of the Windows
@@ -57,12 +57,7 @@ export function SetupPage() {
     () => languages.map((l) => ({ value: l.language, label: l.nativeName })),
     [],
   );
-  const regionChoices = useMemo(() => {
-    const names = new Intl.DisplayNames([tag], { type: "region" });
-    return regions
-      .map((code) => ({ value: code, label: names.of(code) ?? code }))
-      .sort((a, b) => a.label.localeCompare(b.label, tag));
-  }, [tag]);
+  const regionChoices = useMemo(() => regionChoicesFor(tag), [tag]);
 
   const submit = async (values: Record<string, unknown>) => {
     setFailure(null);

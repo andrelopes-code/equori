@@ -9,7 +9,7 @@ import { SettingsGroup } from "@/features/setup/settings-group";
 import { SettingsRow } from "@/features/setup/settings-row";
 import { timeZoneChoices } from "@/features/setup/time-zone-choices";
 import { useAppLocaleState, useT } from "@/i18n/i18n-provider";
-import { regions } from "@/i18n/regions";
+import { regionChoicesFor } from "@/i18n/regions";
 import { ChoiceSelect } from "@/ui/choice-select";
 
 export function SettingsBooksPlace() {
@@ -19,12 +19,7 @@ export function SettingsBooksPlace() {
   const books = useQuery(booksQuery(api));
   const update = useUpdateBooks();
 
-  const regionChoices = useMemo(() => {
-    const names = new Intl.DisplayNames([tag], { type: "region" });
-    return regions
-      .map((code) => ({ value: code, label: names.of(code) ?? code }))
-      .sort((a, b) => a.label.localeCompare(b.label, tag));
-  }, [tag]);
+  const regionChoices = useMemo(() => regionChoicesFor(tag), [tag]);
 
   const defaultZone = books.data?.default_time_zone ?? "";
   const zoneChoices = useMemo(

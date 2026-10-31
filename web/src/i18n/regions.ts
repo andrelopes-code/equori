@@ -250,3 +250,13 @@ export const regions = [
   "ZM",
   "ZW",
 ] as const;
+
+// Region codes named in the language of tag, sorted by that name.
+export function regionChoicesFor(
+  tag: string,
+): { value: string; label: string }[] {
+  const names = new Intl.DisplayNames([tag], { type: "region" });
+  return regions
+    .map((code) => ({ value: code, label: names.of(code) ?? code }))
+    .sort((a, b) => a.label.localeCompare(b.label, tag));
+}

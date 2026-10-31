@@ -14,3 +14,4 @@ export { AppearanceStudio } from "@/features/setup/appearance-studio";
 export { SettingsPage } from "@/features/setup/settings-page";
 export { useScale } from "@/features/setup/instruments";
 export { catalogLabel } from "@/features/setup/catalog-label";
+export { NewBooksDialog } from "@/features/setup/new-books-dialog";
