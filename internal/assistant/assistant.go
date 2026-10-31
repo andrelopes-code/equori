@@ -54,6 +54,9 @@ type Config struct {
 	Wait func(ctx context.Context, until time.Time) error
 }
 
+// AccountNotice is an account whose figures an answer qualifies (P12 A152).
+type AccountNotice = app.AccountNotice
+
 type Module struct {
 	svc      *app.Service
 	resolver *llmapi.Resolver
@@ -155,6 +158,11 @@ func (m *Module) UseTools(set tool.Set) error {
 	m.bindAgent(tools)
 
 	return nil
+}
+
+// UseNotices sets the lookup of the accounts the system prompt names (P12 A152).
+func (m *Module) UseNotices(n func(context.Context, int64) ([]AccountNotice, error)) {
+	m.svc.UseNotices(n)
 }
 
 // UseRouter sets the router the chat calls models through.

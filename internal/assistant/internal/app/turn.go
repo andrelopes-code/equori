@@ -57,6 +57,11 @@ type Agent interface {
 	Run(ctx context.Context, booksID int64, req AgentRequest, onStep func(tool string), onText func(text string), onRestart func()) (AgentResult, error)
 }
 
+// UseNotices sets the lookup of the accounts the system prompt names (A152).
+func (s *Service) UseNotices(n func(context.Context, int64) ([]AccountNotice, error)) {
+	s.notices = n
+}
+
 // UseAgent sets the agent and the profile lookup the chat needs; the chat does not run without them.
 func (s *Service) UseAgent(a Agent, profile func(context.Context, int64) (locale.Locale, error)) {
 	s.agent, s.profile = a, profile
@@ -179,6 +184,13 @@ func (s *Service) Turn(ctx context.Context, booksID, memberID int64, in TurnInpu
 		return fmt.Errorf("read profile: %w", err)
 	}
 
+	var notices []AccountNotice
+	if s.notices != nil {
+		if notices, err = s.notices(ctx, booksID); err != nil {
+			return fmt.Errorf("read account notices: %w", err)
+		}
+	}
+
 	if in.ConversationID == uuid.Nil {
 		conv.ID = uuid.New()
 		if err := s.repo.CreateConversation(ctx, booksID, memberID, conv); err != nil {
@@ -199,7 +211,7 @@ func (s *Service) Turn(ctx context.Context, booksID, memberID int64, in TurnInpu
 	defer cancel()
 
 	req := AgentRequest{
-		System:   Prompt(PromptInput{Today: clock.DateOf(s.now(), clock.Location(ctx)), Locale: prof, Page: in.Page}),
+		System:   Prompt(PromptInput{Today: clock.DateOf(s.now(), clock.Location(ctx)), Locale: prof, Page: in.Page, Notices: notices}),
 		History:  History(messages, proposals, now),
 		Text:     text,
 		Deadline: s.now().Add(TurnTimeout),

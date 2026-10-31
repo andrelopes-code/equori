@@ -25,6 +25,7 @@ type Service struct {
 	tools    Tools
 	agent    Agent
 	profile  func(context.Context, int64) (locale.Locale, error)
+	notices  func(context.Context, int64) ([]AccountNotice, error)
 }
 
 // NewService takes the clock as now (an instant) and today (the UTC date of usage days).

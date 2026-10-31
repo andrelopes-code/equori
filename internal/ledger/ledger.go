@@ -100,6 +100,7 @@ type (
 	TransactionFacts = app.TransactionFacts
 	FactPosting      = app.FactPosting
 	AccountFact      = app.AccountFact
+	AccountCheck     = app.AccountCheck
 	PayeeClass       = app.PayeeClass
 )
 
@@ -453,6 +454,11 @@ func (m *Module) CaptureVocabulary(ctx context.Context, booksID int64) ([]Captur
 
 func (m *Module) AccountFacts(ctx context.Context, booksID int64) ([]AccountFact, error) {
 	return m.svc.AccountFacts(ctx, booksID)
+}
+
+// AccountChecks lists the open balance accounts with their open differences (P12 A152).
+func (m *Module) AccountChecks(ctx context.Context, booksID int64) ([]AccountCheck, error) {
+	return m.svc.AccountChecks(ctx, booksID)
 }
 
 // MissingPayees returns the ids that are not payees of the book.

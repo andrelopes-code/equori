@@ -8,6 +8,7 @@ import (
 
 	"github.com/andrelopes-code/equori/internal/assistant/internal/app"
 	"github.com/andrelopes-code/equori/internal/platform/locale"
+	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
 func TestPrompt(t *testing.T) {
@@ -88,5 +89,37 @@ func TestPromptAlignsAmountColumns(t *testing.T) {
 
 	if strings.Contains(app.Instructions(), "---:") {
 		t.Fatal("the MCP instructions carry the chat's format rule")
+	}
+}
+
+func TestPromptNamesAccountsWithAWarning(t *testing.T) {
+	t.Parallel()
+
+	updated := time.Date(2026, 10, 28, 0, 0, 0, 0, time.UTC)
+
+	diff, err := money.New(-1230, "BRL")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got := app.Prompt(app.PromptInput{
+		Today:  time.Date(2026, 10, 31, 12, 0, 0, 0, time.UTC),
+		Locale: locale.Locale{Language: "en", Region: "BR"},
+		Notices: []app.AccountNotice{
+			{Name: "Nubank card", ConnectionState: "stalled", LastUpdateOn: &updated},
+			{Name: "Checking", Difference: &diff, DifferenceOn: time.Date(2026, 10, 30, 0, 0, 0, 0, time.UTC), Unconfirmed: 3},
+		},
+	})
+
+	want := "\n\nAccounts with a warning\n" +
+		"- Nubank card: connection stalled; last institution update 2026-10-28.\n" +
+		"- Checking: open difference of -12.30 BRL on 2026-10-30; unconfirmed entries: 3.\n" +
+		"An answer that states a figure of a listed account names the account and its warning in one sentence.\n\nChanges"
+	if !strings.Contains(got, want) {
+		t.Fatalf("prompt lacks the block %q: %q", want, got)
+	}
+
+	if strings.Contains(app.Instructions(), "Accounts with a warning") {
+		t.Error("the MCP instructions name accounts with a warning")
 	}
 }

@@ -595,3 +595,46 @@ func (s *Service) reconcile(ctx context.Context, r Repository, rec Reconciliatio
 		Payload: AccountReconciledEvent{AccountID: rec.AccountID, Date: rec.Date.Format(time.DateOnly)},
 	})
 }
+
+// AccountCheck is an open leaf asset or liability account with the open difference of its
+// latest balance assertion; Difference is nil without one or when it is zero (P12 A152).
+type AccountCheck struct {
+	ID           uuid.UUID
+	Name         string
+	Difference   *money.Money
+	DifferenceOn time.Time
+}
+
+// AccountChecks lists every open leaf asset and liability account in AllAccounts order (A152).
+func (s *Service) AccountChecks(ctx context.Context, booksID int64) ([]AccountCheck, error) {
+	all, err := s.repo.AllAccounts(ctx, booksID)
+	if err != nil {
+		return nil, err
+	}
+
+	parents := make(map[uuid.UUID]bool, len(all))
+	for _, a := range all {
+		parents[a.ParentID] = true
+	}
+
+	var out []AccountCheck
+	for _, a := range all {
+		if (a.Class != domain.ClassAsset && a.Class != domain.ClassLiability) || a.ClosedOn != nil || parents[a.ID] {
+			continue
+		}
+
+		st, err := s.ReconciliationStatus(ctx, booksID, a.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		c := AccountCheck{ID: a.ID, Name: a.Name}
+		if st.Open != nil && st.Open.Difference.Amount() != 0 {
+			c.Difference, c.DifferenceOn = &st.Open.Difference, st.Open.Date
+		}
+
+		out = append(out, c)
+	}
+
+	return out, nil
+}

@@ -546,3 +546,27 @@ func TestTurnStreamsText(t *testing.T) {
 		t.Fatalf("answer = %s", events[5].Data)
 	}
 }
+
+func TestTurnNamesAccountsWithAWarning(t *testing.T) {
+	t.Parallel()
+
+	p := llmtest.New("aistudio", textStep("ok"))
+	h := turnHarness(t, p)
+	checking := h.Account("Checking", "asset", "checking", nil)
+	salary := h.Account("Salary", "income", "", nil)
+
+	h.Record("2026-10-01", apitest.Posting(checking, 320327), apitest.Posting(salary, -320327))
+	h.MustDo(http.MethodPost, "/api/v1/accounts/"+checking+"/balance-assertions",
+		map[string]any{"date": "2026-10-20", "amount": apitest.BRL(320117)}, http.StatusCreated, nil)
+
+	r := sendTurn(h, h.Client, map[string]any{"text": "Saldo?"})
+	if r.Status != http.StatusOK {
+		t.Fatalf("status = %d: %s", r.Status, r.Body)
+	}
+
+	want := "\n\nAccounts with a warning\n- Checking: open difference of -2.10 BRL on 2026-10-20.\n" +
+		"An answer that states a figure of a listed account names the account and its warning in one sentence.\n\nChanges"
+	if got := p.Requests()[0].Request.System; !strings.Contains(got, want) {
+		t.Fatalf("system lacks the block %q: %q", want, got)
+	}
+}

@@ -175,6 +175,8 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 		return nil, err
 	}
 
+	assistantModule.UseNotices(accountNotices(ledgerModule, ingestionModule))
+
 	portfolioModule, err := portfolio.New(pool, dispatcher, ledgerModule, marketdataModule, identityModule, log)
 	if err != nil {
 		return nil, err

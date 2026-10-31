@@ -460,3 +460,11 @@ func (p ledgerPort) SettleReportedStatements(ctx context.Context, booksID int64,
 func (p ledgerPort) ReleaseRecord(ctx context.Context, booksID int64, recordID uuid.UUID) error {
 	return p.translate(p.l.ReleaseRecord(ctx, booksID, recordID))
 }
+
+// FeedState is the feed of a ledger account (P12 A152).
+type FeedState = app.FeedState
+
+// FeedStates reads the feed of each given ledger account (P12 A152).
+func (m *Module) FeedStates(ctx context.Context, booksID int64, accountIDs []uuid.UUID) (map[uuid.UUID]FeedState, error) {
+	return m.svc.FeedStates(ctx, booksID, accountIDs)
+}
