@@ -51,7 +51,7 @@ The instance has one user until further notice. Data stays isolated by `user_id`
 ## Not covered
 
 - Encryption of stored integration credentials (bank tokens): separate ADR before the first integration.
-- Multi-factor authentication and OIDC login.
+- OIDC login. Multi-factor authentication moved to ADR 030.
 
 ## Amendment of 2026-10-27 (ADR 023)
 
@@ -80,3 +80,7 @@ Personal access tokens open the MCP endpoint, and only it:
 ## Amendment of 2026-10-30 (P11, households)
 
 A login opens the membership with the latest `last_active_at`, ties broken by the lowest books ID; this replaces the login sentence of the amendment of 2026-10-30 (ADR 029). An owner invites an email to a book with a single-use token valid for 7 days; when no member has the email, its acceptance creates a member with instance role `member` and the given password and language. Self-registration stays impossible: acceptance needs a token.
+
+## Amendment of 2026-10-31 (ADR 030)
+
+A member with TOTP or a passkey finishes a login with a second factor (ADR 030). A right password of such a member does not clear the attempt count of the email; the right second factor clears it. The login log line names the method: `password`, `totp`, `passkey` or `recovery_code`.

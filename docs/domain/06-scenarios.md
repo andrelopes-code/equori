@@ -943,3 +943,7 @@ The scenarios of `docs/specs/2026-10-30-shared-books-design.md`, section 7: setu
 ### S192–S198 Households (P11)
 
 The scenarios of `docs/specs/2026-10-30-households-access-design.md`, section 6: each book role reaches the operations of its rank and no other (S192); a book without membership is 404 (S193); an invitation creates a new member (S194) or adds a book to an existing one (S195); a book keeps its last owner (S196); a demoted member's token stops writing (S197); a conversation is visible only to its member (S198).
+
+### S199–S202 Second factor (P11)
+
+The scenarios of `docs/specs/2026-10-30-households-access-design.md`, section 6: a login finishes with a TOTP code once (S199), with a passkey (S200) or with a recovery code once (S201); five wrong values end the pending login (S202).

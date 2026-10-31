@@ -203,6 +203,11 @@ erDiagram
 | `identity_session` | `token_hash` PK, `member_id`, `books_id`, `created_at`, `expires_at` | `(member_id, books_id)` references `identity_membership`, `ON DELETE CASCADE` |
 | `identity_access_token` | `id` PK, `member_id`, `books_id`, `name`, `scope`, `token_hash`, `created_at`, `expires_at`, `last_used_at` | `(member_id, books_id)` references `identity_membership`, `ON DELETE CASCADE` |
 | `identity_invitation` | `id` uuid PK, `books_id`, `email`, `role` (book role), `token_hash`, `invited_by`, `created_at`, `expires_at` | `UNIQUE (books_id, email)`; `token_hash` unique; `role IN ('owner', 'write', 'read')`; `books_id` and `invited_by` `ON DELETE CASCADE` |
+| `identity_totp` | `member_id` PK, `sealed_secret`, `confirmed_at`, `last_step`, `created_at` | `member_id` `ON DELETE CASCADE`; the secret is sealed (ADR 008) |
+| `identity_recovery_code` | `member_id`, `code_hash`, `created_at` | PK `(member_id, code_hash)`; `member_id` `ON DELETE CASCADE` |
+| `identity_passkey` | `id` uuid PK, `member_id`, `credential_id`, `public_key`, `algorithm`, `sign_count`, `rp_id`, `name`, `created_at`, `last_used_at` | `credential_id` unique; `algorithm IN (-7, -8, -257)`; `name` 1 to 60 characters; `member_id` `ON DELETE CASCADE` |
+| `identity_passkey_challenge` | `member_id` PK, `challenge`, `expires_at` | `member_id` `ON DELETE CASCADE` |
+| `identity_login_challenge` | `token_hash` PK, `member_id`, `challenge`, `attempts`, `expires_at` | `member_id` `ON DELETE CASCADE` |
 | `assistant_conversation` | `id` uuid PK, `books_id`, `member_id`, `title`, `created_at`, `updated_at` | `(member_id, books_id)` references `identity_membership`, `ON DELETE CASCADE` |
 | `outbox_event` | ADR 006 | |
 | `<module>_processed_event` | `event_id`, `processed_at` | `PRIMARY KEY (event_id)`; Portfolio keeps none, its rebuild is idempotent |

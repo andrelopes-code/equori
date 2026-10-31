@@ -209,3 +209,6 @@ classDiagram
 | Active book | Livro ativo | The book of the current session or access token. | |
 | Required book role | Papel exigido | The lowest book role an operation accepts: `read`, `write` or `owner`, or `public` without a session. | |
 | Invitation | Convite | A single-use link, created by an owner, that adds one email to one book with one book role. | |
+| Second factor | Segundo fator | A TOTP code, a passkey or a recovery code, asked after the password of a member who enabled TOTP or registered a passkey (ADR 030). | |
+| Recovery code | Código de recuperação | A single-use code that replaces the other second factors once. | |
+| Passkey | Chave de acesso | A WebAuthn credential of a device or password manager, used as a second factor on one host. | |
