@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"slices"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -104,6 +106,50 @@ func (d *Dispatcher) drain(ctx context.Context) (int, error) {
 			return total, err
 		}
 	}
+}
+
+// Count is the pending and failed deliveries of one event type, summed over its subscriptions.
+type Count struct {
+	Type            string
+	Pending, Failed int64
+}
+
+// Counts returns, per event type, the deliveries still to run and the ones that gave up, sorted
+// by type. A delivery is pending when its consumer has no row for the event or a retrying one.
+func (d *Dispatcher) Counts(ctx context.Context) ([]Count, error) {
+	byType := map[string]*Count{}
+
+	for _, s := range d.subs {
+		var pending, failed int64
+
+		err := d.pool.QueryRow(ctx, `
+			SELECT count(*) FILTER (WHERE d.event_id IS NULL OR d.status = 'retrying'),
+			       count(*) FILTER (WHERE d.status = 'failed')
+			FROM outbox_event e
+			LEFT JOIN outbox_delivery d ON d.event_id = e.id AND d.consumer = $2
+			WHERE e.type = $1`, s.eventType, s.consumer).Scan(&pending, &failed)
+		if err != nil {
+			return nil, fmt.Errorf("count %s deliveries for %s: %w", s.eventType, s.consumer, err)
+		}
+
+		c := byType[s.eventType]
+		if c == nil {
+			c = &Count{Type: s.eventType}
+			byType[s.eventType] = c
+		}
+
+		c.Pending += pending
+		c.Failed += failed
+	}
+
+	out := make([]Count, 0, len(byType))
+	for _, c := range byType {
+		out = append(out, *c)
+	}
+
+	slices.SortFunc(out, func(a, b Count) int { return strings.Compare(a.Type, b.Type) })
+
+	return out, nil
 }
 
 // DispatchPending runs one pass over every subscription and returns the number of successful deliveries.

@@ -77,7 +77,7 @@ type Config struct {
 	FeedURLs   map[string]string
 	// ExtraTools join the registry and the chat set; production passes none.
 	ExtraTools []tool.Group
-	// Instance configures backups and the encrypted copy; New sets Version, the keys, Clock and Admins.
+	// Instance configures backups and the encrypted copy; New sets Version, the keys, Clock, Admins, Outbox and Connections.
 	Instance instance.Config
 }
 
@@ -183,6 +183,7 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 	instanceConfig.Mode = cmp.Or(instanceConfig.Mode, "external")
 	instanceConfig.Version, instanceConfig.Clock, instanceConfig.Admins = version, clk, identityModule
 	instanceConfig.SecretKey, instanceConfig.PreviousSecretKey = cfg.SecretKey, cfg.PreviousSecretKey
+	instanceConfig.Outbox, instanceConfig.Connections = dispatcher.Counts, connections(ingestionModule)
 
 	instanceModule, err := instance.New(pool, instanceConfig, log)
 	if err != nil {

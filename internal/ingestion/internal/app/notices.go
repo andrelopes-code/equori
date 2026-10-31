@@ -77,3 +77,47 @@ func (s *Service) unconfirmedCount(ctx context.Context, booksID int64, accountID
 
 	return len(ps), err
 }
+
+// ConnectionDiagnostic is one connection as the diagnostic file reports it: no name, item or
+// account (P13 A158). Failed is true when the stored last error is not empty.
+type ConnectionDiagnostic struct {
+	ID         uuid.UUID
+	Aggregator string
+	State      string
+	LastUpdate *time.Time
+	Failed     bool
+}
+
+// ConnectionDiagnostics lists every book's connections for the diagnostic file; without
+// integrations it returns none.
+func (s *Service) ConnectionDiagnostics(ctx context.Context) ([]ConnectionDiagnostic, error) {
+	if s.available() != nil {
+		return nil, nil
+	}
+
+	refs, err := s.repo.AllConnections(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	out := make([]ConnectionDiagnostic, 0, len(refs))
+
+	for _, ref := range refs {
+		c, err := s.Connection(ctx, ref.BooksID, ref.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		i, err := s.repo.Integration(ctx, c.BooksID, c.IntegrationID)
+		if err != nil {
+			return nil, err
+		}
+
+		out = append(out, ConnectionDiagnostic{
+			ID: c.ID, Aggregator: string(i.Aggregator), State: string(c.State),
+			LastUpdate: c.LastItemUpdateAt, Failed: c.LastError != "",
+		})
+	}
+
+	return out, nil
+}

@@ -24,9 +24,11 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/andrelopes-code/equori/internal/identity"
+	"github.com/andrelopes-code/equori/internal/instance"
 	"github.com/andrelopes-code/equori/internal/platform/clock"
 	"github.com/andrelopes-code/equori/internal/platform/llm"
 	"github.com/andrelopes-code/equori/internal/platform/locale"
+	"github.com/andrelopes-code/equori/internal/platform/logring"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/postgres/pgtest"
 	"github.com/andrelopes-code/equori/internal/platform/tool"
@@ -42,6 +44,7 @@ type Harness struct {
 	server *httptest.Server
 	Client *http.Client
 	log    *slog.Logger
+	ring   *logring.Ring
 	logs   *logBuffer
 	// handler is what the test server runs; Restart swaps it while server goroutines read it.
 	handler atomic.Pointer[http.Handler]
@@ -200,7 +203,8 @@ func Empty(t testing.TB, opts ...Option) *Harness {
 		out = io.MultiWriter(logs, os.Stderr)
 	}
 
-	h := &Harness{t: t, Pool: pgtest.New(t), logs: logs, log: slog.New(slog.NewTextHandler(out, &slog.HandlerOptions{Level: slog.LevelDebug}))}
+	ring := logring.New(slog.NewTextHandler(out, &slog.HandlerOptions{Level: slog.LevelDebug}), instance.LogRecordsKept, instance.LogKeys)
+	h := &Harness{t: t, Pool: pgtest.New(t), logs: logs, ring: ring, log: slog.New(ring)}
 
 	// BK17: a book without members, so a member ID never equals a books ID by chance.
 	if _, err := h.Pool.Exec(t.Context(), `INSERT INTO identity_books (region, name) VALUES ('US', 'empty')`); err != nil {
@@ -218,6 +222,8 @@ func (h *Harness) start(opts []Option) {
 	h.t.Helper()
 
 	cfg := server.Config{}
+	cfg.Instance.Log = h.ring.Records
+
 	for _, o := range opts {
 		o(&cfg)
 	}
@@ -245,6 +251,9 @@ func (h *Harness) Restart(opts ...Option) {
 // Close stops the server after the requests in flight finish, so a test can read what a
 // request left behind after its client went away; the harness serves no request afterwards.
 func (h *Harness) Close() { h.server.Close() }
+
+// Logger returns the logger the server writes through; the diagnostic file reads its warnings.
+func (h *Harness) Logger() *slog.Logger { return h.log }
 
 // Logs returns every log line written so far, at debug level and above.
 func (h *Harness) Logs() string { return h.logs.String() }

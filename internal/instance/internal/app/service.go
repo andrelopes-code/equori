@@ -10,6 +10,8 @@ import (
 
 	"github.com/andrelopes-code/equori/internal/instance/internal/domain"
 	"github.com/andrelopes-code/equori/internal/platform/clock"
+	"github.com/andrelopes-code/equori/internal/platform/logring"
+	"github.com/andrelopes-code/equori/internal/platform/outbox"
 )
 
 var (
@@ -28,6 +30,12 @@ type Repository interface {
 	SetUpdateCheck(ctx context.Context, consent bool) error
 }
 
+// Catalog reads the database's own catalog for the diagnostic file.
+type Catalog interface {
+	Tables(ctx context.Context) ([]domain.Table, error)
+	Server(ctx context.Context) (domain.Server, error)
+}
+
 type Admins interface {
 	IsAdmin(ctx context.Context, memberID int64) (bool, error)
 }
@@ -44,22 +52,30 @@ type Config struct {
 	BackupDir string
 	CopyDir   string
 	Dump      func(ctx context.Context, path string) error
-	Schema    int64
+	// Schema is the schema version of the binary.
+	Schema      int64
+	Mode        string
+	Version     string
+	Environment []string
+	Log         func() []logring.Record
+	Outbox      func(ctx context.Context) ([]outbox.Count, error)
+	Connections func(ctx context.Context) ([]domain.Connection, error)
 }
 
 type Service struct {
-	repo   Repository
-	admins Admins
-	box    Sealer // nil without EQUORI_SECRET_KEY
-	clock  clock.Clock
-	cfg    Config
-	log    *slog.Logger
+	repo    Repository
+	catalog Catalog
+	admins  Admins
+	box     Sealer // nil without EQUORI_SECRET_KEY
+	clock   clock.Clock
+	cfg     Config
+	log     *slog.Logger
 	// backups serializes Backup, so "Back up now" and the periodic backup never write together.
 	backups sync.Mutex
 }
 
-func NewService(repo Repository, admins Admins, box Sealer, clk clock.Clock, cfg Config, log *slog.Logger) *Service {
-	return &Service{repo: repo, admins: admins, box: box, clock: clk, cfg: cfg, log: log}
+func NewService(repo Repository, catalog Catalog, admins Admins, box Sealer, clk clock.Clock, cfg Config, log *slog.Logger) *Service {
+	return &Service{repo: repo, catalog: catalog, admins: admins, box: box, clock: clk, cfg: cfg, log: log}
 }
 
 func (s *Service) requireAdmin(ctx context.Context, memberID int64) error {

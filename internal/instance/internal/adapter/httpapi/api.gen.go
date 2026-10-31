@@ -12,6 +12,8 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+
+	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
 // Defines values for BackupStateState.
@@ -59,6 +61,24 @@ func (e CopyStatusState) Valid() bool {
 	}
 }
 
+// Defines values for DiagnosticMode.
+const (
+	External DiagnosticMode = "external"
+	Managed  DiagnosticMode = "managed"
+)
+
+// Valid indicates whether the value is a known member of the DiagnosticMode enum.
+func (e DiagnosticMode) Valid() bool {
+	switch e {
+	case External:
+		return true
+	case Managed:
+		return true
+	default:
+		return false
+	}
+}
+
 // BackupState defines model for BackupState.
 type BackupState struct {
 	Late           bool             `json:"late"`
@@ -91,6 +111,59 @@ type CopyStatus struct {
 
 // CopyStatusState defines model for CopyStatus.State.
 type CopyStatusState string
+
+// Diagnostic defines model for Diagnostic.
+type Diagnostic struct {
+	Arch   string `json:"arch"`
+	Backup struct {
+		Backups BackupState `json:"backups"`
+		Copy    struct {
+			CopiedAt *time.Time `json:"copied_at"`
+			Late     bool       `json:"late"`
+			State    string     `json:"state"`
+		} `json:"copy"`
+	} `json:"backup"`
+	Connections []struct {
+		Aggregator string             `json:"aggregator"`
+		Failed     bool               `json:"failed"`
+		Id         openapi_types.UUID `json:"id"`
+		LastUpdate *time.Time         `json:"last_update"`
+		State      string             `json:"state"`
+	} `json:"connections"`
+	Environment []string  `json:"environment"`
+	GeneratedAt time.Time `json:"generated_at"`
+	Go          string    `json:"go"`
+	Log         []struct {
+		Attrs   map[string]string `json:"attrs"`
+		Level   string            `json:"level"`
+		Message string            `json:"message"`
+		Time    time.Time         `json:"time"`
+	} `json:"log"`
+	Mode   DiagnosticMode `json:"mode"`
+	Os     string         `json:"os"`
+	Outbox []struct {
+		Failed  int64  `json:"failed"`
+		Pending int64  `json:"pending"`
+		Type    string `json:"type"`
+	} `json:"outbox"`
+	Postgres struct {
+		Locale         string `json:"locale"`
+		LocaleProvider string `json:"locale_provider"`
+		Version        string `json:"version"`
+	} `json:"postgres"`
+	Schema struct {
+		Binary   int64 `json:"binary"`
+		Database int64 `json:"database"`
+	} `json:"schema"`
+	Tables []struct {
+		Name string `json:"name"`
+		Rows int64  `json:"rows"`
+	} `json:"tables"`
+	Version string `json:"version"`
+}
+
+// DiagnosticMode defines model for Diagnostic.Mode.
+type DiagnosticMode string
 
 // FieldError defines model for FieldError.
 type FieldError struct {
@@ -148,6 +221,9 @@ type ServerInterface interface {
 	// SetCopyPassword Set the password of the encrypted copies; admin only. 400 password_invalid below 12 characters; 409 secret_key_missing without EQUORI_SECRET_KEY.
 	// (PUT /instance/backup/copy-password)
 	SetCopyPassword(w http.ResponseWriter, r *http.Request)
+	// GetDiagnostic The diagnostic file, without amounts, names or descriptions; admin only (P13 A158).
+	// (GET /instance/diagnostic)
+	GetDiagnostic(w http.ResponseWriter, r *http.Request)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -192,6 +268,20 @@ func (siw *ServerInterfaceWrapper) SetCopyPassword(w http.ResponseWriter, r *htt
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.SetCopyPassword(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetDiagnostic operation middleware
+func (siw *ServerInterfaceWrapper) GetDiagnostic(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetDiagnostic(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -324,6 +414,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/instance/backup", wrapper.GetBackup)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/instance/backup", wrapper.RunBackup)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/instance/backup/copy-password", wrapper.SetCopyPassword)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/instance/diagnostic", wrapper.GetDiagnostic)
 
 	return m
 }
@@ -534,6 +625,67 @@ func (response SetCopyPassword409ApplicationProblemPlusJSONResponse) VisitSetCop
 	return err
 }
 
+type GetDiagnosticRequestObject struct {
+}
+
+type GetDiagnosticResponseObject interface {
+	VisitGetDiagnosticResponse(w http.ResponseWriter) error
+}
+
+type GetDiagnostic200ResponseHeaders struct {
+	ContentDisposition *string
+}
+
+type GetDiagnostic200JSONResponse struct {
+	Body    Diagnostic
+	Headers GetDiagnostic200ResponseHeaders
+}
+
+func (response GetDiagnostic200JSONResponse) VisitGetDiagnosticResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.ContentDisposition != nil {
+		w.Header().Set("Content-Disposition", fmt.Sprint(*response.Headers.ContentDisposition))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDiagnostic401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetDiagnostic401ApplicationProblemPlusJSONResponse) VisitGetDiagnosticResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDiagnostic403ApplicationProblemPlusJSONResponse Problem
+
+func (response GetDiagnostic403ApplicationProblemPlusJSONResponse) VisitGetDiagnosticResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// GetBackup Backups and encrypted copy of the instance; admin only (P13 A157).
@@ -545,6 +697,9 @@ type StrictServerInterface interface {
 	// SetCopyPassword Set the password of the encrypted copies; admin only. 400 password_invalid below 12 characters; 409 secret_key_missing without EQUORI_SECRET_KEY.
 	// (PUT /instance/backup/copy-password)
 	SetCopyPassword(ctx context.Context, request SetCopyPasswordRequestObject) (SetCopyPasswordResponseObject, error)
+	// GetDiagnostic The diagnostic file, without amounts, names or descriptions; admin only (P13 A158).
+	// (GET /instance/diagnostic)
+	GetDiagnostic(ctx context.Context, request GetDiagnosticRequestObject) (GetDiagnosticResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
@@ -658,6 +813,30 @@ func (sh *strictHandler) SetCopyPassword(w http.ResponseWriter, r *http.Request)
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(SetCopyPasswordResponseObject); ok {
 		if err := validResponse.VisitSetCopyPasswordResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetDiagnostic operation middleware
+func (sh *strictHandler) GetDiagnostic(w http.ResponseWriter, r *http.Request) {
+	var request GetDiagnosticRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetDiagnostic(ctx, request.(GetDiagnosticRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetDiagnostic")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetDiagnosticResponseObject); ok {
+		if err := validResponse.VisitGetDiagnosticResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

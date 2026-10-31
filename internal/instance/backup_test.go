@@ -217,6 +217,7 @@ func TestS218MemberGetsAdminRequired(t *testing.T) {
 		h.Call(member, http.MethodPut, copyPasswordPath, map[string]string{"password": "correct horse battery"}),
 		http.StatusForbidden, "admin_required", "",
 	)
+	h.ExpectProblem(h.Call(member, http.MethodGet, diagnosticPath, nil), http.StatusForbidden, "admin_required", "")
 }
 
 func getBackup(t *testing.T, h *apitest.Harness) backupStatus {

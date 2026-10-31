@@ -22,6 +22,10 @@ func (s *Service) BackupStatus(ctx context.Context, memberID int64) (domain.Back
 		return domain.BackupStatus{}, err
 	}
 
+	return s.backupStatus(ctx)
+}
+
+func (s *Service) backupStatus(ctx context.Context) (domain.BackupStatus, error) {
 	settings, err := s.repo.Settings(ctx)
 	if err != nil {
 		return domain.BackupStatus{}, err

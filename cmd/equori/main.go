@@ -1,7 +1,6 @@
 package main
 
 import (
-	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -11,7 +10,6 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
-	"runtime"
 	"runtime/debug"
 	"slices"
 	"strings"
@@ -26,6 +24,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/clock"
 	"github.com/andrelopes-code/equori/internal/platform/config"
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
+	"github.com/andrelopes-code/equori/internal/platform/logring"
 	"github.com/andrelopes-code/equori/internal/platform/pgcluster"
 	"github.com/andrelopes-code/equori/internal/platform/postgres"
 	"github.com/andrelopes-code/equori/internal/platform/secret"
@@ -111,6 +110,14 @@ func serve(parent context.Context) error {
 		return err
 	}
 
+	ring := logring.New(log.Handler(), instance.LogRecordsKept, instance.LogKeys)
+	log = slog.New(ring)
+
+	file, err := readEnvFile(os.Getenv)
+	if err != nil {
+		return err
+	}
+
 	schema, err := postgres.LatestVersion()
 	if err != nil {
 		return err
@@ -153,6 +160,7 @@ func serve(parent context.Context) error {
 	clk := clock.New(time.Now)
 	scfg := serverConfig(cfg, &clk)
 	scfg.Web, scfg.WebDevPort, scfg.Version = web.Dist(), cfg.WebDevPort, buildVersion()
+	scfg.Instance.Log, scfg.Instance.Environment = ring.Records, envNames(os.Environ(), file)
 	scfg.Instance.Dump = func(ctx context.Context, path string) error {
 		return backup.Dump(ctx, db.Bin, db.DSN, path)
 	}
@@ -359,17 +367,12 @@ func feedURLs(getenv func(string) string) map[string]string {
 }
 
 func setup() (config.Config, *slog.Logger, error) {
-	getenv := os.Getenv
-	if getenv("EQUORI_DATABASE_URL") == "" {
-		if dir := cmp.Or(getenv("EQUORI_DATA_DIR"), config.DefaultDataDir(runtime.GOOS, getenv)); dir != "" {
-			file, err := config.ReadEnvFile(filepath.Join(dir, "equori.env"))
-			if err != nil {
-				return config.Config{}, nil, err
-			}
-
-			getenv = config.WithFile(getenv, file)
-		}
+	file, err := readEnvFile(os.Getenv)
+	if err != nil {
+		return config.Config{}, nil, err
 	}
+
+	getenv := config.WithFile(os.Getenv, file)
 
 	cfg, err := config.Load(getenv)
 	if err != nil {

@@ -73,3 +73,4 @@ Every requirement has a measurable criterion and a verification method. Performa
 | N26 | Limits: 500 postings per transaction; 420 installments per plan; 10 MiB per attachment and per imported file; 1 MiB per request body except attachment upload and file import (11 MiB). |
 | N27 | A binary refuses a database that holds a migration it does not know (ADR 022, V4); verified by `TestMigrateRefusesNewerSchema`. |
 | N28 | A dump of each form restores into each other form with every fact (ADR 022, B4); verified by `TestClusterBackupRestoresAcrossForms`. |
+| N29 | The diagnostic file holds no amount, name or description; verified by `TestS219DiagnosticHoldsNoBookData`. |

@@ -6272,6 +6272,27 @@ paths:
           $ref: "#/components/responses/Problem"
         "409":
           $ref: "#/components/responses/Problem"
+  /instance/diagnostic:
+    get:
+      tags: [instance]
+      operationId: getDiagnostic
+      x-book-role: read
+      summary: The diagnostic file, without amounts, names or descriptions; admin only (P13 A158).
+      responses:
+        "200":
+          description: equori-diagnostic-<YYYY-MM-DD>.json as an attachment.
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Diagnostic"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
 security:
   - sessionCookie: []
 components:
@@ -7802,6 +7823,136 @@ components:
         password:
           type: string
           maxLength: 1024
+    Diagnostic:
+      type: object
+      additionalProperties: false
+      required: [generated_at, version, schema, go, os, arch, mode, postgres, environment, tables, backup, connections, outbox, log]
+      properties:
+        generated_at:
+          type: string
+          format: date-time
+        version:
+          type: string
+        schema:
+          type: object
+          additionalProperties: false
+          required: [database, binary]
+          properties:
+            database:
+              type: integer
+              format: int64
+            binary:
+              type: integer
+              format: int64
+        go:
+          type: string
+        os:
+          type: string
+        arch:
+          type: string
+        mode:
+          type: string
+          enum: [managed, external]
+        postgres:
+          type: object
+          additionalProperties: false
+          required: [version, locale_provider, locale]
+          properties:
+            version:
+              type: string
+            locale_provider:
+              type: string
+            locale:
+              type: string
+        environment:
+          type: array
+          items:
+            type: string
+        tables:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [name, rows]
+            properties:
+              name:
+                type: string
+              rows:
+                type: integer
+                format: int64
+        backup:
+          type: object
+          additionalProperties: false
+          required: [backups, copy]
+          properties:
+            backups:
+              $ref: "#/components/schemas/BackupState"
+            copy:
+              type: object
+              additionalProperties: false
+              required: [state, copied_at, late]
+              properties:
+                state:
+                  type: string
+                copied_at:
+                  type: string
+                  format: date-time
+                  nullable: true
+                late:
+                  type: boolean
+        connections:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [id, aggregator, state, last_update, failed]
+            properties:
+              id:
+                type: string
+                format: uuid
+              aggregator:
+                type: string
+              state:
+                type: string
+              last_update:
+                type: string
+                format: date-time
+                nullable: true
+              failed:
+                type: boolean
+        outbox:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [type, pending, failed]
+            properties:
+              type:
+                type: string
+              pending:
+                type: integer
+                format: int64
+              failed:
+                type: integer
+                format: int64
+        log:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [time, level, message, attrs]
+            properties:
+              time:
+                type: string
+                format: date-time
+              level:
+                type: string
+              message:
+                type: string
+              attrs:
+                type: object
+                additionalProperties:
+                  type: string
     SyncSchedule:
       type: object
       additionalProperties: false

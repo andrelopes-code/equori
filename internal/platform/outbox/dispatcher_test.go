@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"log/slog"
+	"slices"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -473,5 +474,50 @@ func TestN10HandlerEffectAppliedOnceAfterCrashBeforeDelivery(t *testing.T) {
 
 	if status, attempts := delivery(t, pool, "c"); status != "delivered" || attempts != 1 {
 		t.Fatalf("delivery = %s after %d attempts, want delivered after 1", status, attempts)
+	}
+}
+
+func TestCounts(t *testing.T) {
+	t.Parallel()
+	pool := pgtest.New(t)
+	booksID := pgtest.CreateBooks(t, pool)
+	d := newDispatcher(pool)
+	noop := func(context.Context, pgx.Tx, outbox.Delivered) error { return nil }
+	d.Subscribe("c1", "t1", noop)
+	d.Subscribe("c2", "t1", noop)
+	d.Subscribe("c1", "t2", noop)
+
+	for _, typ := range []string{"t1", "t1", "t1", "t2"} {
+		insertEvent(t, pool, outbox.Event{Type: typ, BooksID: booksID, AggregateID: "x", Payload: 1})
+	}
+
+	var ids []string
+
+	rows, err := pool.Query(t.Context(), `SELECT id::text FROM outbox_event WHERE type = 't1' ORDER BY id`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if ids, err = pgx.CollectRows(rows, pgx.RowTo[string]); err != nil {
+		t.Fatal(err)
+	}
+
+	for i, row := range []struct{ consumer, status string }{{"c1", "delivered"}, {"c1", "failed"}, {"c2", "retrying"}} {
+		_, err := pool.Exec(t.Context(),
+			`INSERT INTO outbox_delivery (event_id, consumer, status, attempts) VALUES ($1, $2, $3, 1)`,
+			ids[i], row.consumer, row.status)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	got, err := d.Counts(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := []outbox.Count{{Type: "t1", Pending: 4, Failed: 1}, {Type: "t2", Pending: 1, Failed: 0}}
+	if !slices.Equal(got, want) {
+		t.Fatalf("counts = %+v, want %+v", got, want)
 	}
 }

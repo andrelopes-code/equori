@@ -3678,6 +3678,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/instance/diagnostic": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The diagnostic file, without amounts, names or descriptions; admin only (P13 A158). */
+        get: operations["getDiagnostic"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -4501,6 +4518,67 @@ export interface components {
         };
         CopyPasswordInput: {
             password: string;
+        };
+        Diagnostic: {
+            /** Format: date-time */
+            generated_at: string;
+            version: string;
+            schema: {
+                /** Format: int64 */
+                database: number;
+                /** Format: int64 */
+                binary: number;
+            };
+            go: string;
+            os: string;
+            arch: string;
+            /** @enum {string} */
+            mode: "managed" | "external";
+            postgres: {
+                version: string;
+                locale_provider: string;
+                locale: string;
+            };
+            environment: string[];
+            tables: {
+                name: string;
+                /** Format: int64 */
+                rows: number;
+            }[];
+            backup: {
+                backups: components["schemas"]["BackupState"];
+                copy: {
+                    state: string;
+                    /** Format: date-time */
+                    copied_at: string | null;
+                    late: boolean;
+                };
+            };
+            connections: {
+                /** Format: uuid */
+                id: string;
+                aggregator: string;
+                state: string;
+                /** Format: date-time */
+                last_update: string | null;
+                failed: boolean;
+            }[];
+            outbox: {
+                type: string;
+                /** Format: int64 */
+                pending: number;
+                /** Format: int64 */
+                failed: number;
+            }[];
+            log: {
+                /** Format: date-time */
+                time: string;
+                level: string;
+                message: string;
+                attrs: {
+                    [key: string]: string;
+                };
+            }[];
         };
         SyncSchedule: {
             /** Format: int32 */
@@ -12837,6 +12915,29 @@ export interface operations {
             401: components["responses"]["Problem"];
             403: components["responses"]["Problem"];
             409: components["responses"]["Problem"];
+        };
+    };
+    getDiagnostic: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description equori-diagnostic-<YYYY-MM-DD>.json as an attachment. */
+            200: {
+                headers: {
+                    "Content-Disposition"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Diagnostic"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
         };
     };
 }

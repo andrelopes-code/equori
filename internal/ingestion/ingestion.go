@@ -468,3 +468,11 @@ type FeedState = app.FeedState
 func (m *Module) FeedStates(ctx context.Context, booksID int64, accountIDs []uuid.UUID) (map[uuid.UUID]FeedState, error) {
 	return m.svc.FeedStates(ctx, booksID, accountIDs)
 }
+
+// ConnectionDiagnostic is one connection as the diagnostic file reports it (P13 A158).
+type ConnectionDiagnostic = app.ConnectionDiagnostic
+
+// ConnectionDiagnostics lists every book's connections for the diagnostic file (P13 A158).
+func (m *Module) ConnectionDiagnostics(ctx context.Context) ([]ConnectionDiagnostic, error) {
+	return m.svc.ConnectionDiagnostics(ctx)
+}
