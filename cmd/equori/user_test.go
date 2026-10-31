@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"strings"
 	"testing"
 
@@ -40,6 +41,33 @@ func TestUserSettings(t *testing.T) {
 
 			if got != tt.want || l != (locale.Locale{Language: tt.language, Region: tt.region}) {
 				t.Fatalf("got %v %v", l, got)
+			}
+		})
+	}
+}
+
+func TestResetArgs(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		args    []string
+		want    string
+		wantErr error
+	}{
+		{"email", []string{"--email", "a@b.c"}, "a@b.c", nil},
+		{"no arguments", []string{}, "", errUsage},
+		{"empty email", []string{"--email", ""}, "", errUsage},
+		{"positional argument", []string{"--email", "a@b.c", "extra"}, "", errUsage},
+		{"unknown flag", []string{"--admin"}, "", errUsage},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			got, err := resetArgs(tt.args)
+			if !errors.Is(err, tt.wantErr) || got != tt.want {
+				t.Fatalf("got %q, %v; want %q, %v", got, err, tt.want, tt.wantErr)
 			}
 		})
 	}

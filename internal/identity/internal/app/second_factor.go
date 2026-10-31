@@ -407,6 +407,25 @@ func (s *Service) CompleteSecondFactor(ctx context.Context, loginToken, origin s
 	return SecondFactorLogin{Session: session, Method: method, RecoveryCodesLeft: left}, nil
 }
 
+// ResetSecondFactor deletes the second factor, pending logins and sessions of the member with email (HA49).
+func (s *Service) ResetSecondFactor(ctx context.Context, email string) (int64, error) {
+	email, err := domain.NormalizeEmail(email)
+	if err != nil {
+		return 0, ErrNotFound
+	}
+
+	m, err := s.repo.MemberByEmail(ctx, email)
+	if err != nil {
+		return 0, err
+	}
+
+	if err := s.repo.ResetSecondFactor(ctx, m.ID); err != nil {
+		return 0, err
+	}
+
+	return m.ID, nil
+}
+
 // startPendingLogin stores a pending login of the member and returns its token and methods.
 func (s *Service) startPendingLogin(ctx context.Context, memberID int64, origin string, now time.Time) (*PendingLogin, error) {
 	if _, err := s.repo.LoginBooks(ctx, memberID); errors.Is(err, ErrNotFound) {

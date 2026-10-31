@@ -19,18 +19,32 @@ import (
 )
 
 const userUsage = `usage: equori user create --email EMAIL --language LANG --region REGION [--currency CODE] [--admin]
+       equori user reset-second-factor --email EMAIL
 
-The password is read from stdin: prompted without echo on a terminal,
-otherwise the first line of input.`
+create reads the password from stdin: prompted without echo on a terminal,
+otherwise the first line of input.
+
+reset-second-factor deletes the member's TOTP, passkeys, recovery codes, pending
+logins and sessions (ADR 030).`
 
 var errUsage = errors.New("invalid arguments")
 
 func userCommand(args []string) error {
-	if len(args) == 0 || args[0] != "create" {
-		fmt.Fprintln(os.Stderr, userUsage)
-		return errUsage
+	if len(args) > 0 {
+		switch args[0] {
+		case "create":
+			return createUser(args[1:])
+		case "reset-second-factor":
+			return resetSecondFactor(args[1:])
+		}
 	}
 
+	fmt.Fprintln(os.Stderr, userUsage)
+
+	return errUsage
+}
+
+func createUser(args []string) error {
 	fs := flag.NewFlagSet("user create", flag.ContinueOnError)
 	fs.SetOutput(io.Discard)
 	email := fs.String("email", "", "")
@@ -39,7 +53,7 @@ func userCommand(args []string) error {
 	currency := fs.String("currency", "", "")
 
 	admin := fs.Bool("admin", false, "")
-	if err := fs.Parse(args[1:]); err != nil || *email == "" || *language == "" || *region == "" || fs.NArg() > 0 {
+	if err := fs.Parse(args); err != nil || *email == "" || *language == "" || *region == "" || fs.NArg() > 0 {
 		fmt.Fprintln(os.Stderr, userUsage)
 		return errUsage
 	}
@@ -85,6 +99,58 @@ func userCommand(args []string) error {
 	fmt.Fprintf(os.Stderr, "created %s user %s (id %d)\n", user.Role, user.Email, user.ID)
 
 	return nil
+}
+
+func resetSecondFactor(args []string) error {
+	email, err := resetArgs(args)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, userUsage)
+		return err
+	}
+
+	cfg, log, err := setup()
+	if err != nil {
+		return err
+	}
+
+	ctx := context.Background()
+
+	db, err := openDatabase(ctx, cfg, log, false)
+	if err != nil {
+		return err
+	}
+	defer db.Close(log)
+
+	module, err := identity.New(db.Pool, identity.Config{}, log)
+	if err != nil {
+		return err
+	}
+
+	id, err := module.ResetSecondFactor(ctx, email)
+	if errors.Is(err, identity.ErrUnknownEmail) {
+		return fmt.Errorf("no user has email %s", email)
+	}
+
+	if err != nil {
+		return fmt.Errorf("reset second factor: %w", err)
+	}
+
+	fmt.Fprintf(os.Stderr, "reset the second factor of user %s (id %d)\n", email, id)
+
+	return nil
+}
+
+// resetArgs parses the flags of reset-second-factor; --email is required and no positional argument is allowed.
+func resetArgs(args []string) (string, error) {
+	fs := flag.NewFlagSet("user reset-second-factor", flag.ContinueOnError)
+	fs.SetOutput(io.Discard)
+	email := fs.String("email", "", "")
+
+	if err := fs.Parse(args); err != nil || *email == "" || fs.NArg() > 0 {
+		return "", errUsage
+	}
+
+	return *email, nil
 }
 
 // userSettings resolves the profile and base currency of a new user; without a currency the region default applies.

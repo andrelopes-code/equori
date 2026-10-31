@@ -31,6 +31,8 @@ const (
 
 var (
 	ErrEmailTaken = app.ErrEmailTaken
+	// ErrUnknownEmail is returned by ResetSecondFactor when no member has the email.
+	ErrUnknownEmail = app.ErrNotFound
 	// ErrInvalidAccessToken is a malformed, unknown, expired or deleted access token.
 	ErrInvalidAccessToken = app.ErrInvalidAccessToken
 )
@@ -157,4 +159,9 @@ func (m *Module) CreateMember(ctx context.Context, email, password, role string,
 	}
 
 	return Member{ID: u.ID, Email: u.Email, Role: string(u.Role)}, nil
+}
+
+// ResetSecondFactor deletes the second factor, pending logins and sessions of the member with email (HA49).
+func (m *Module) ResetSecondFactor(ctx context.Context, email string) (memberID int64, err error) {
+	return m.svc.ResetSecondFactor(ctx, email)
 }
