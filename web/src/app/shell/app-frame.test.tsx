@@ -238,6 +238,24 @@ describe("desktop column", () => {
     });
   });
 
+  // The splitter and the pane share one limit: a CSS minimum above the splitter's own leaves a
+  // stretch of the drag where the pointer moves and the pane does not.
+  it("bounds the assistant pane by the splitter alone, at 30% of the shell", async () => {
+    const user = userEvent.setup();
+    await renderApp("/", { width: 1440, fetch: assistantFetch() });
+    await user.keyboard("a");
+    const splitter = await screen.findByRole("separator", {
+      name: "Resize panel",
+    });
+
+    const aside = document.querySelector(
+      '[data-ui="app-shell"] [data-part="aside"]',
+    );
+
+    expect(splitter).toHaveAttribute("aria-valuemin", "30");
+    expect(aside).not.toHaveStyle({ minWidth: "30vw" });
+  });
+
   it("overlays the assistant without a scrim from 600 to 1199 px", async () => {
     const user = userEvent.setup();
     await renderApp("/", { width: 1024, fetch: assistantFetch() });

@@ -35,7 +35,7 @@ export function AssistantAside({
   }
 
   return (
-    <AppShellAside style={{ minWidth: "30vw" }} onKeyDown={handleKeyDown}>
+    <AppShellAside onKeyDown={handleKeyDown}>
       <AppShellAsideResizer />
 
       <AppShellAsideHeader>

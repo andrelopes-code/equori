@@ -36,6 +36,10 @@ import { applyDensity, readDensity } from "@/theme/density";
 
 const stickyFooter = "var(--slotted-page-sticky-bottom, 0px)";
 
+// The assistant pane's smallest share of the shell. The splitter alone enforces it: a CSS minimum
+// beside it leaves a stretch of the drag where the pointer moves and the pane does not.
+const ASIDE_MIN_EXTENT = 0.3;
+
 // One AppShell holds both layouts, so the routed page keeps its place in the tree when the
 // width crosses the desktop step: the regions of the other layout render as null beside it.
 export function AppFrame() {
@@ -92,6 +96,8 @@ export function AppFrame() {
       collapsedTo={wide ? "rail" : "hidden"}
       // P9: from 1200 px the assistant is a pane beside the page, which narrows.
       asideMode="inline"
+      defaultAsideExtent={ASIDE_MIN_EXTENT}
+      minAsideExtent={ASIDE_MIN_EXTENT}
       asideOpen={beside && assistantOpen}
       onAsideOpenChange={setAssistantOpen}
       messages={{
