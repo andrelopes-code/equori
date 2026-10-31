@@ -28,10 +28,14 @@ import type { ReactNode } from "react";
 
 import { useApi } from "@/api/api-context";
 import { destinations } from "@/app/shell/destinations";
+import { MoreBooks } from "@/app/shell/more-books";
 import styles from "@/app/shell/more-sheet.module.css";
 import { ShellIcon } from "@/app/shell/shell-icon";
 import type { ShellIconName } from "@/app/shell/shell-icon";
+import { useBooks } from "@/app/shell/use-books";
+import { errorText } from "@/api/problem";
 import { meQuery, useChooseLanguage, useLogout } from "@/features/session";
+import { NewBooksDialog } from "@/features/setup";
 import { useAppLocaleState, useT } from "@/i18n/i18n-provider";
 import { isLanguage, languages } from "@/i18n/languages";
 import { densities, useDensity } from "@/theme/density";
@@ -77,7 +81,9 @@ export function MoreSheet({
   const [density, setDensity] = useDensity();
   const { language } = useAppLocaleState();
   const chooseLanguage = useChooseLanguage();
+  const books = useBooks();
   const [open, setOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
   const { data: me } = useQuery({ ...meQuery(useApi()), staleTime: Infinity });
 
   const change = (next: boolean) => {
@@ -85,102 +91,127 @@ export function MoreSheet({
     onOpenChange(next);
   };
 
+  const description =
+    me !== undefined && books.items.length >= 2 && books.active
+      ? [me.email, books.active.name].join(" · ")
+      : me?.email;
+
   return (
-    <Drawer side="bottom" open={open} onOpenChange={change}>
-      <DrawerTrigger render={trigger} />
-      <DrawerPanel className={styles.sheet}>
-        <DrawerResizer />
-        <DrawerHeader>
-          <DrawerTitle>{t("more.title")}</DrawerTitle>
-          {me !== undefined && (
-            <DrawerDescription>{me.email}</DrawerDescription>
-          )}
-        </DrawerHeader>
-        <DrawerBody>
-          <div className={styles.body}>
-            <List aria-label={t("more.title")}>
-              {listed.map((target) => (
-                <ListItem key={target.key} size="lg">
-                  <ListItemLink
-                    href={target.to}
-                    onClick={(event) => {
-                      event.preventDefault();
-                      change(false);
-                      void navigate({ to: target.to });
+    <>
+      <Drawer side="bottom" open={open} onOpenChange={change}>
+        <DrawerTrigger render={trigger} />
+        <DrawerPanel className={styles.sheet}>
+          <DrawerResizer />
+          <DrawerHeader>
+            <DrawerTitle>{t("more.title")}</DrawerTitle>
+            {description !== undefined && (
+              <DrawerDescription>{description}</DrawerDescription>
+            )}
+          </DrawerHeader>
+          <DrawerBody>
+            <div className={styles.body}>
+              <List aria-label={t("more.title")}>
+                {listed.map((target) => (
+                  <ListItem key={target.key} size="lg">
+                    <ListItemLink
+                      href={target.to}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        change(false);
+                        void navigate({ to: target.to });
+                      }}
+                    >
+                      {mark(target.icon)}
+                      <ListItemBody>
+                        <ListItemLabel>{t(target.label)}</ListItemLabel>
+                      </ListItemBody>
+                    </ListItemLink>
+                  </ListItem>
+                ))}
+              </List>
+              <MoreBooks
+                items={books.items}
+                onSwitch={books.switchTo}
+                onNew={() => {
+                  change(false);
+                  setCreating(true);
+                }}
+              />
+              <div className={styles.choices}>
+                <Field>
+                  <FieldLabel>{t("more.scheme")}</FieldLabel>
+                  <SegmentedControl
+                    fullWidth
+                    value={scheme}
+                    onValueChange={(next) => {
+                      if (isScheme(next)) setScheme(next);
                     }}
                   >
-                    {mark(target.icon)}
+                    {schemes.map((s) => (
+                      <Segment key={s} value={s}>
+                        {t(`scheme.${s}`)}
+                      </Segment>
+                    ))}
+                  </SegmentedControl>
+                </Field>
+                <Field>
+                  <FieldLabel>{t("more.density")}</FieldLabel>
+                  <SegmentedControl
+                    fullWidth
+                    value={density}
+                    onValueChange={(next) => {
+                      if (isDensity(next)) setDensity(next);
+                    }}
+                  >
+                    {densities.map((d) => (
+                      <Segment key={d} value={d}>
+                        {t(`density.${d}`)}
+                      </Segment>
+                    ))}
+                  </SegmentedControl>
+                </Field>
+                <Field>
+                  <FieldLabel>{t("more.language")}</FieldLabel>
+                  <SegmentedControl
+                    fullWidth
+                    value={language}
+                    onValueChange={(next) => {
+                      if (isLanguage(next)) chooseLanguage(next);
+                    }}
+                  >
+                    {languages.map((l) => (
+                      <Segment key={l.language} value={l.language}>
+                        {l.nativeName}
+                      </Segment>
+                    ))}
+                  </SegmentedControl>
+                </Field>
+              </div>
+              <List aria-label={t("more.logout")}>
+                <ListItem size="lg" tone="danger">
+                  <ListItemButton onClick={logout}>
+                    {mark("logout")}
                     <ListItemBody>
-                      <ListItemLabel>{t(target.label)}</ListItemLabel>
+                      <ListItemLabel>{t("more.logout")}</ListItemLabel>
                     </ListItemBody>
-                  </ListItemLink>
+                  </ListItemButton>
                 </ListItem>
-              ))}
-            </List>
-            <div className={styles.choices}>
-              <Field>
-                <FieldLabel>{t("more.scheme")}</FieldLabel>
-                <SegmentedControl
-                  fullWidth
-                  value={scheme}
-                  onValueChange={(next) => {
-                    if (isScheme(next)) setScheme(next);
-                  }}
-                >
-                  {schemes.map((s) => (
-                    <Segment key={s} value={s}>
-                      {t(`scheme.${s}`)}
-                    </Segment>
-                  ))}
-                </SegmentedControl>
-              </Field>
-              <Field>
-                <FieldLabel>{t("more.density")}</FieldLabel>
-                <SegmentedControl
-                  fullWidth
-                  value={density}
-                  onValueChange={(next) => {
-                    if (isDensity(next)) setDensity(next);
-                  }}
-                >
-                  {densities.map((d) => (
-                    <Segment key={d} value={d}>
-                      {t(`density.${d}`)}
-                    </Segment>
-                  ))}
-                </SegmentedControl>
-              </Field>
-              <Field>
-                <FieldLabel>{t("more.language")}</FieldLabel>
-                <SegmentedControl
-                  fullWidth
-                  value={language}
-                  onValueChange={(next) => {
-                    if (isLanguage(next)) chooseLanguage(next);
-                  }}
-                >
-                  {languages.map((l) => (
-                    <Segment key={l.language} value={l.language}>
-                      {l.nativeName}
-                    </Segment>
-                  ))}
-                </SegmentedControl>
-              </Field>
+              </List>
+              {failed && <p role="alert">{t("more.logoutFailed")}</p>}
+              {books.error !== null && (
+                <p role="alert">{errorText(books.error, t)}</p>
+              )}
             </div>
-            <List aria-label={t("more.logout")}>
-              <ListItem size="lg" tone="danger">
-                <ListItemButton onClick={logout}>
-                  {mark("logout")}
-                  <ListItemBody>
-                    <ListItemLabel>{t("more.logout")}</ListItemLabel>
-                  </ListItemBody>
-                </ListItemButton>
-              </ListItem>
-            </List>
-            {failed && <p role="alert">{t("more.logoutFailed")}</p>}
-          </div>
-        </DrawerBody>
-      </DrawerPanel>
-    </Drawer>
+          </DrawerBody>
+        </DrawerPanel>
+      </Drawer>
+      {creating && (
+        <NewBooksDialog
+          onClose={() => {
+            setCreating(false);
+          }}
+        />
+      )}
+    </>
   );
 }

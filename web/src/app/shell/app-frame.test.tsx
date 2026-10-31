@@ -397,6 +397,7 @@ describe("desktop column", () => {
     ).toEqual([
       catalogEn["more.settings"],
       catalogEn["more.help"],
+      catalogEn["books.new"],
       catalogEn["privacy.hide"],
       catalogEn["scheme.dark"],
       catalogEn["scheme.light"],

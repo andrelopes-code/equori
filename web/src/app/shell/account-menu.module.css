@@ -40,6 +40,21 @@
     outline-offset: var(--slotted-focus-ring-offset);
   }
 
+  .identity {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-inline-size: 0;
+  }
+
+  .books {
+    overflow: hidden;
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-xs);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .name {
     flex: 1 1 auto;
     min-inline-size: 0;
