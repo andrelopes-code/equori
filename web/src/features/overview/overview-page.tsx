@@ -16,6 +16,7 @@ import {
 } from "@slotted/react/page-header";
 import { useState } from "react";
 
+import { ReleaseNotice } from "@/features/instance";
 import { AttentionBlock } from "@/features/overview/attention-block";
 import { BalanceChartBlock } from "@/features/overview/balance-chart-block";
 import { BudgetsBlock } from "@/features/overview/budgets-block";
@@ -120,6 +121,8 @@ export function OverviewPage() {
       </PageHeader>
       <PageBody>
         <Stack gap={6}>
+          <ReleaseNotice />
+
           <FirstStepsBlock />
 
           <DashboardGrid
