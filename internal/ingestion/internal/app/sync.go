@@ -170,8 +170,9 @@ func (s *Service) addMissingAccounts(ctx context.Context, agg Aggregator, c *dom
 	return nil
 }
 
-// syncAccount reads one mapped account for its window and records it as one batch: lines
-// the aggregator stopped returning are withdrawn first, so that a line returned with a new
+// syncAccount reads one mapped account for its window, widened by one day on each side
+// (A145), and records it as one batch: lines the aggregator stopped returning are withdrawn
+// first, unless the read is empty (A146), so that a line returned with a new
 // id finds its released posting (A38); then the lines go through the P4 pipeline, and a
 // bank balance becomes a balance assertion (A42).
 func (s *Service) syncAccount(ctx context.Context, agg Aggregator, c domain.Connection, ext domain.ExternalAccount, creds domain.Credentials) (domain.Batch, error) {
@@ -199,7 +200,7 @@ func (s *Service) syncAccount(ctx context.Context, agg Aggregator, c domain.Conn
 		readFrom = from.AddDate(0, 0, -cycleLookback)
 	}
 
-	read, err := agg.ReadAccount(ctx, c.IntegrationID, creds, c.ExternalID, ext.ExternalID, readFrom, to, target.Currency.MinorUnits())
+	read, err := agg.ReadAccount(ctx, c.IntegrationID, creds, c.ExternalID, ext.ExternalID, readFrom.AddDate(0, 0, -1), to.AddDate(0, 0, 1), target.Currency.MinorUnits())
 	if errors.Is(err, ErrAccountGone) && ext.Subtype == domain.SubtypeReservedBalance {
 		// A reserved balance the item stopped reporting syncs without a balance (D2).
 		read, err = domain.AccountRead{}, nil
@@ -210,6 +211,10 @@ func (s *Service) syncAccount(ctx context.Context, agg Aggregator, c domain.Conn
 	}
 
 	read = withoutSuperseded(read)
+	if !first {
+		read = fromSyncStart(read, *ext.SyncFrom)
+	}
+
 	for _, r := range read.Records {
 		if r.Category != nil {
 			r.Category.Aggregator = agg.ID()
@@ -382,6 +387,16 @@ func withoutSuperseded(read domain.AccountRead) domain.AccountRead {
 	return read
 }
 
+// fromSyncStart drops the lines dated before syncFrom, which bounds the import (A35, A145);
+// Seen keeps them, so that a stored record is not withdrawn for a line the read returned.
+func fromSyncStart(read domain.AccountRead, syncFrom time.Time) domain.AccountRead {
+	read.Records = slices.DeleteFunc(slices.Clone(read.Records), func(r domain.NormalizedRecord) bool {
+		return r.Date.Before(syncFrom)
+	})
+
+	return read
+}
+
 // reserveTransfers resolves the reserve a bank line moves money into or out of from the
 // reserve's name (A76), or from a former name that no mapped reserve holds as its current one
 // (A94). A name held by two mapped reserves at the same rank is ambiguous and resolves to
@@ -471,23 +486,26 @@ func (s *Service) reidentify(ctx context.Context, batch *domain.Batch, read doma
 	return nil
 }
 
-// withdraw marks withdrawn the account's aggregator records the window covers that the
-// aggregator no longer returns, and releases their postings (A38). The first and last days
-// of the window are left out: the aggregator filters by its own calendar day, which may
-// differ from the record's date by one.
+// withdraw marks withdrawn the account's aggregator records dated in [from, to], both days
+// included, that the aggregator no longer returns, and releases their postings (A38). The
+// read asks one day more on each side, so the aggregator's own calendar day cannot hide a
+// line of the window (A145). A read that returns no line while the window holds records
+// withdraws nothing and marks the batch (A146).
 func (s *Service) withdraw(ctx context.Context, batch *domain.Batch, seen []string, from, to time.Time) error {
-	if !from.AddDate(0, 0, 1).Before(to) {
-		return nil
-	}
-
 	returned := make(map[string]bool, len(seen))
 	for _, id := range seen {
 		returned[id] = true
 	}
 
-	stored, err := s.repo.SyncedRecords(ctx, batch.BooksID, batch.AccountID, from.AddDate(0, 0, 1), to.AddDate(0, 0, -1))
+	stored, err := s.repo.SyncedRecords(ctx, batch.BooksID, batch.AccountID, from, to)
 	if err != nil {
 		return err
+	}
+
+	if len(seen) == 0 && len(stored) > 0 {
+		batch.ReadEmpty = true
+
+		return nil
 	}
 
 	var gone []uuid.UUID

@@ -180,8 +180,8 @@ func TestSyncBankAccount(t *testing.T) {
 	}
 
 	bs = f.batches(f.checking)
-	// The window starts 30 days before the last synced date: only tx-3 is read again.
-	if len(bs) != 3 || bs[0].Counts.Received != 1 || bs[0].Counts.Ignored != 1 || bs[0].Counts.Created+bs[0].Counts.Matched+bs[0].Counts.Updated != 0 ||
+	// The window starts 30 days before the last synced date and the read one day earlier (A145): tx-2 and tx-3 are read again.
+	if len(bs) != 3 || bs[0].Counts.Received != 2 || bs[0].Counts.Ignored != 2 || bs[0].Counts.Created+bs[0].Counts.Matched+bs[0].Counts.Updated != 0 ||
 		bs[0].Balance.Status != "none" || bs[0].PeriodFrom != "2026-10-13" {
 		t.Fatalf("repeated batch = %+v", bs[0])
 	}
