@@ -1,40 +1,27 @@
 import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
 import { Button } from "@slotted/react/button";
 import { Inline } from "@slotted/react/inline";
-import { Link } from "@slotted/react/link";
 import { Stack } from "@slotted/react/stack";
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableColumnHeader,
-  TableContent,
-  TableHead,
-  TableRow,
-  TableRowHeader,
-} from "@slotted/react/table";
 import { Tag } from "@slotted/react/tag";
-import { Heading, Text } from "@slotted/react/typography";
+import { Heading } from "@slotted/react/typography";
 import { useState } from "react";
 
 import { errorText } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
-import {
-  useMapExternalAccount,
-  useSyncConnection,
-} from "@/features/accounts/api";
+import { useSyncConnection } from "@/features/accounts/api";
+import { ConnectionAccountsTable } from "@/features/accounts/connection-accounts-table";
+import type { ConnectionMessage } from "@/features/accounts/connection-account-actions";
+import { ConnectionBatches } from "@/features/accounts/connection-batches";
 import { ConnectionDeleteDialog } from "@/features/accounts/connection-delete-dialog";
+import { ConnectionStateAlert } from "@/features/accounts/connection-state-alert";
 import { ConnectionTimesList } from "@/features/accounts/connection-times-list";
-import { formatDate } from "@/i18n/format";
-import { subtypeWords } from "@/features/accounts/external-subtype";
 import type { MessageKey } from "@/i18n/catalog.en";
-import { routeTo } from "@/ui/route-to";
+import { useT } from "@/i18n/i18n-provider";
 import { Presence } from "@/ui/presence";
-import { useAppLocale, useT } from "@/i18n/i18n-provider";
 
 type Account = components["schemas"]["Account"];
 type Connection = components["schemas"]["Connection"];
+type ExternalAccount = components["schemas"]["ExternalAccount"];
 type ImportBatch = components["schemas"]["ImportBatch"];
 
 const stateTones = {
@@ -42,7 +29,6 @@ const stateTones = {
   needs_owner: "warning",
   failed: "danger",
 } as const;
-type ExternalAccount = components["schemas"]["ExternalAccount"];
 
 const providerWords: Record<string, MessageKey> = {
   UPDATED: "sync.provider.UPDATED",
@@ -52,69 +38,28 @@ const providerWords: Record<string, MessageKey> = {
   WAITING_USER_INPUT: "sync.provider.WAITING_USER_INPUT",
 };
 
+interface ConnectionLinksProps {
+  connection: Connection;
+  accounts: Map<string, Account>;
+  onLink: (external: ExternalAccount) => void;
+}
+
 // One connection: its provider's state, a sync on demand, and each account it brings with the
 // ledger account that account feeds.
 export function ConnectionLinks({
   connection,
   accounts,
   onLink,
-}: {
-  connection: Connection;
-  accounts: Map<string, Account>;
-  onLink: (external: ExternalAccount) => void;
-}) {
+}: ConnectionLinksProps) {
   const t = useT();
-  const [locale] = useAppLocale();
   const sync = useSyncConnection();
   const [batches, setBatches] = useState<ImportBatch[]>([]);
   const [deleting, setDeleting] = useState(false);
-  const ignore = useMapExternalAccount();
-  const [message, setMessage] = useState<{
-    tone: "success" | "danger";
-    text: string;
-  } | null>(null);
-  const actions = (external: ExternalAccount) => (
-    <Inline gap={2} justify="end">
-      <Button
-        size="sm"
-        variant={external.state === "pending" ? "solid" : "outline"}
-        onClick={() => {
-          onLink(external);
-        }}
-      >
-        {external.state === "mapped" ? t("links.change") : t("links.link")}
-      </Button>
-      {external.state === "pending" && (
-        <Button
-          size="sm"
-          variant="ghost"
-          tone="secondary"
-          loading={
-            ignore.isPending && ignore.variables.externalId === external.id
-          }
-          onClick={() => {
-            setMessage(null);
-            ignore
-              .mutateAsync({
-                connectionId: connection.id,
-                externalId: external.id,
-                mapping: { ignored: true },
-              })
-              .catch((caught: unknown) => {
-                setMessage({
-                  tone: "danger",
-                  text: errorText(caught, t),
-                });
-              });
-          }}
-        >
-          {t("links.ignore")}
-        </Button>
-      )}
-    </Inline>
-  );
+  const [message, setMessage] = useState<ConnectionMessage | null>(null);
+
   const provider = providerWords[connection.provider_status];
   const portal = connection.portal ?? t("sync.portal.none");
+
   return (
     <Stack
       gap={8}
@@ -176,13 +121,7 @@ export function ConnectionLinks({
         </Inline>
       </Inline>
       <ConnectionTimesList connection={connection} />
-      {connection.state === "needs_owner" && (
-        <Alert tone="warning">
-          <AlertContent>
-            <AlertDescription>{t("links.needsOwner")}</AlertDescription>
-          </AlertContent>
-        </Alert>
-      )}
+      <ConnectionStateAlert connection={connection} />
       {(message !== null || connection.last_error !== undefined) && (
         <Alert tone={message?.tone ?? "danger"} live="polite">
           <AlertContent>
@@ -193,29 +132,7 @@ export function ConnectionLinks({
           </AlertContent>
         </Alert>
       )}
-      {batches.length > 0 && (
-        <Stack gap={1}>
-          <Text size="sm" tone="muted">
-            {t("links.batches")}
-          </Text>
-          {batches.map((batch) => (
-            <Text size="sm" key={batch.id}>
-              <Link
-                variant="neutral"
-                underline="hover"
-                render={routeTo({
-                  to: "/accounts/$id/imports/$batchId",
-                  params: { id: batch.account_id, batchId: batch.id },
-                })}
-              >
-                {t("links.batch", {
-                  account: accounts.get(batch.account_id)?.name ?? "",
-                })}
-              </Link>
-            </Text>
-          ))}
-        </Stack>
-      )}
+      <ConnectionBatches batches={batches} accounts={accounts} />
       <Presence value={deleting ? connection : undefined}>
         {(target) => (
           <ConnectionDeleteDialog
@@ -226,84 +143,12 @@ export function ConnectionLinks({
           />
         )}
       </Presence>
-      <Table columns={6} variant="framed">
-        <TableContent>
-          <TableCaption>{connection.name}</TableCaption>
-          <TableHead>
-            <TableRow>
-              <TableColumnHeader>{t("sync.external")}</TableColumnHeader>
-              <TableColumnHeader>{t("accountForm.currency")}</TableColumnHeader>
-              <TableColumnHeader>{t("sync.from")}</TableColumnHeader>
-              <TableColumnHeader>{t("sync.lastSynced")}</TableColumnHeader>
-              <TableColumnHeader>{t("links.state")}</TableColumnHeader>
-              <TableColumnHeader align="end">
-                {t("links.actions")}
-              </TableColumnHeader>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {connection.accounts.map((external) => {
-              const subtype = subtypeWords[external.subtype];
-              const target =
-                external.account_id === undefined
-                  ? undefined
-                  : accounts.get(external.account_id);
-              return (
-                <TableRow key={external.id} value={external.id}>
-                  <TableRowHeader>
-                    <Stack gap={0}>
-                      <Text size="sm" weight="medium">
-                        {external.name}
-                      </Text>
-                      <Text size="xs" tone="muted">
-                        {[
-                          subtype === undefined ? external.subtype : t(subtype),
-                          external.number_last4 === undefined
-                            ? undefined
-                            : t("account.lastFour", {
-                                digits: external.number_last4,
-                              }),
-                        ]
-                          .filter((p) => p !== undefined)
-                          .join(" · ")}
-                      </Text>
-                    </Stack>
-                  </TableRowHeader>
-                  <TableCell>{external.currency}</TableCell>
-                  <TableCell>
-                    {external.sync_from === undefined
-                      ? t("sync.never")
-                      : formatDate(external.sync_from, locale)}
-                  </TableCell>
-                  <TableCell>
-                    {external.last_synced_on === undefined
-                      ? t("sync.never")
-                      : formatDate(external.last_synced_on, locale)}
-                  </TableCell>
-                  <TableCell>
-                    {external.state === "mapped" ? (
-                      <Tag size="sm" tone="success">
-                        {t("links.state.mapped", {
-                          account: target?.name ?? "",
-                        })}
-                      </Tag>
-                    ) : external.state === "ignored" ? (
-                      <Tag size="sm" tone="secondary">
-                        {t("links.state.ignored")}
-                      </Tag>
-                    ) : (
-                      <Tag size="sm" tone="warning">
-                        {t("links.state.pending")}
-                      </Tag>
-                    )}
-                  </TableCell>
-                  <TableCell align="end">{actions(external)}</TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </TableContent>
-      </Table>
+      <ConnectionAccountsTable
+        connection={connection}
+        accounts={accounts}
+        onLink={onLink}
+        onMessage={setMessage}
+      />
     </Stack>
   );
 }
