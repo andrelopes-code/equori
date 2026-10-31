@@ -50,6 +50,7 @@ func newHarness(t *testing.T, cfg identity.Config) *harness {
 	m.RegisterRoutes(mux)
 	mux.HandleFunc("GET /api/v1/probe", func(http.ResponseWriter, *http.Request) { h.probeCalls.Add(1) })
 	mux.Handle("/api/", httpserver.NotFound())
+
 	validator, err := contract.New(api.Contract, "/api/v1")
 	if err != nil {
 		t.Fatal(err)

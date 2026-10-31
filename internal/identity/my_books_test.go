@@ -39,6 +39,7 @@ func TestMyBooks(t *testing.T) {
 
 	h.MustDo(http.MethodGet, "/api/v1/accounts", nil, http.StatusOK, &accounts)
 	provisioned := len(accounts.Items)
+
 	h.Account("Only O", "asset", "checking", nil)
 
 	var me meView

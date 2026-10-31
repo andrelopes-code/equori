@@ -128,7 +128,10 @@ func TestChangeRoleConcurrent(t *testing.T) {
 	close(start)
 	wg.Wait()
 
-	if !(errs[0] == nil && errors.Is(errs[1], app.ErrLastOwner)) && !(errs[1] == nil && errors.Is(errs[0], app.ErrLastOwner)) {
+	first := errs[0] == nil && errors.Is(errs[1], app.ErrLastOwner)
+	second := errs[1] == nil && errors.Is(errs[0], app.ErrLastOwner)
+
+	if !first && !second {
 		t.Fatalf("errors = %v, want nil and ErrLastOwner", errs)
 	}
 

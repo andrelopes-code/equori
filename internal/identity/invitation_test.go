@@ -188,6 +188,7 @@ func TestInvitationProblems(t *testing.T) {
 	h := apitest.New(t)
 	bob := h.Login("bob@example.com")
 	h.Login("carol@example.com")
+
 	invitations := "/api/v1/books/current/invitations"
 
 	post := func(email, role string) apitest.Response {
