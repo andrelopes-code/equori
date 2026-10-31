@@ -42,11 +42,13 @@ export function moveUnsuffixedBookKeys(
       const value = localStorage.getItem(name);
       if (value === null) continue;
 
-      localStorage.removeItem(name);
+      // The write comes first: a refused write keeps the value for the next load.
       const key = `${name}.${String(target)}`;
       if (target !== null && localStorage.getItem(key) === null) {
         localStorage.setItem(key, value);
       }
+
+      localStorage.removeItem(name);
     }
   } catch {
     // A refused storage leaves the keys as they are.

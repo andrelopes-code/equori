@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { BooksMembership } from "@/features/session/api";
 import {
@@ -108,5 +108,19 @@ describe("moveUnsuffixedBookKeys", () => {
       [`${bookKeyNames.recentCategories}.5`]: '["c1"]',
       [`${bookKeyNames.planCollapsed}.5`]: '["g1"]',
     });
+  });
+
+  it("keeps the unsuffixed value when the storage refuses the write", () => {
+    localStorage.setItem(bookKeyNames.recentCategories, '["c1"]');
+    const setItem = vi
+      .spyOn(Storage.prototype, "setItem")
+      .mockImplementation(() => {
+        throw new DOMException("full", "QuotaExceededError");
+      });
+
+    moveUnsuffixedBookKeys(books);
+    setItem.mockRestore();
+
+    expect(localStorage.getItem(bookKeyNames.recentCategories)).toBe('["c1"]');
   });
 });
