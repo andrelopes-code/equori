@@ -18,9 +18,9 @@ import { useT } from "@/i18n/i18n-provider";
 export function ReleaseNotice() {
   const t = useT();
   const api = useApi();
-  // The router has loaded /me before the overview draws, so mounting does not request it again.
+  // The router has loaded /me before the overview draws; the notice reuses that answer.
   const admin =
-    useQuery({ ...meQuery(api), refetchOnMount: false }).data?.role === "admin";
+    useQuery({ ...meQuery(api), staleTime: Infinity }).data?.role === "admin";
   const version = useQuery({ ...versionQuery(api), enabled: admin });
   const [dismissed, dismiss] = useReleaseDismissal();
 
