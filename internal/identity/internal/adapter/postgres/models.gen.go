@@ -31,3 +31,16 @@ type IdentityMember struct {
 	Language     string
 	Appearance   []byte
 }
+
+type IdentityPasskey struct {
+	ID           uuid.UUID
+	MemberID     int64
+	CredentialID []byte
+	PublicKey    []byte
+	Algorithm    int32
+	SignCount    int64
+	RpID         string
+	Name         string
+	CreatedAt    time.Time
+	LastUsedAt   *time.Time
+}

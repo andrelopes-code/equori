@@ -34,8 +34,11 @@ func TestEveryTableIsClassified(t *testing.T) {
 	// marketdata_feed holds the instance's feed settings (ADR 025 F1) and marketdata_index_expectation
 	// the latest survey a feed fetches again (ADR 026 E3); neither holds a book's rows.
 	// ingestion_instance_settings holds the instance's sync interval (ADR 029 BK23).
-	other := []string{"goose_db_version", "identity_books", "identity_member", "ingestion_instance_settings", "ledger_transaction_version",
-		"marketdata_feed", "marketdata_index_expectation", "outbox_delivery"}
+	// identity_totp, identity_recovery_code, identity_passkey, identity_passkey_challenge and
+	// identity_login_challenge hold a member's second factor (ADR 030); they have no books_id.
+	other := []string{"goose_db_version", "identity_books", "identity_login_challenge", "identity_member", "identity_passkey",
+		"identity_passkey_challenge", "identity_recovery_code", "identity_totp", "ingestion_instance_settings",
+		"ledger_transaction_version", "marketdata_feed", "marketdata_index_expectation", "outbox_delivery"}
 	for _, table := range all {
 		if !slices.Contains(facts, table) && !slices.Contains(sharedTables, table) && !slices.Contains(notExported, table) && !slices.Contains(other, table) {
 			t.Errorf("table %s is neither exported nor named as left out", table)

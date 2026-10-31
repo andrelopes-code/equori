@@ -3,6 +3,7 @@ package identity_test
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"slices"
 	"testing"
 
@@ -62,6 +63,57 @@ func TestAppearanceSchema(t *testing.T) {
 		if pgErr, ok := errors.AsType[*pgconn.PgError](err); !ok || pgErr.Code != tt.code {
 			t.Errorf("%s: error = %v, want SQLSTATE %s", tt.sql, err, tt.code)
 		}
+	}
+}
+
+func TestSecondFactorSchema(t *testing.T) {
+	t.Parallel()
+	pool := pgtest.New(t)
+	member, _ := pgtest.CreateMember(t, pool)
+
+	passkey := func(credential, algorithm, name string) string {
+		return fmt.Sprintf(`INSERT INTO identity_passkey (id, member_id, credential_id, public_key, algorithm, sign_count, rp_id, name, created_at)
+			VALUES (gen_random_uuid(), $1, '%s', '\x02', %s, 0, 'localhost', %s, now())`, credential, algorithm, name)
+	}
+	if _, err := pool.Exec(t.Context(), passkey(`\x01`, "-7", "'Phone'"), member); err != nil {
+		t.Fatal(err)
+	}
+
+	recovery := `INSERT INTO identity_recovery_code (member_id, code_hash, created_at) VALUES ($1, '\x01', now())`
+	if _, err := pool.Exec(t.Context(), recovery, member); err != nil {
+		t.Fatal(err)
+	}
+
+	for _, tt := range []struct {
+		name string
+		sql  string
+		args []any
+		code string
+	}{
+		{"duplicate credential ID", passkey(`\x01`, "-7", "'Phone'"), []any{member}, uniqueViolation},
+		{"algorithm outside the set", passkey(`\x03`, "-35", "'Phone'"), []any{member}, checkViolation},
+		{"empty name", passkey(`\x04`, "-7", "''"), []any{member}, checkViolation},
+		{"name of 61 characters", passkey(`\x05`, "-7", "repeat('a', 61)"), []any{member}, checkViolation},
+		{"second recovery code with the same hash", recovery, []any{member}, uniqueViolation},
+		{"TOTP of an absent member", `INSERT INTO identity_totp (member_id, sealed_secret, created_at) VALUES (-1, '\x01', now())`, nil, foreignKeyViolation},
+		{"login challenge of an absent member", `INSERT INTO identity_login_challenge (token_hash, member_id, challenge, expires_at) VALUES ('\x01', -1, '\x02', now())`, nil, foreignKeyViolation},
+	} {
+		_, err := pool.Exec(t.Context(), tt.sql, tt.args...)
+		if pgErr, ok := errors.AsType[*pgconn.PgError](err); !ok || pgErr.Code != tt.code {
+			t.Errorf("%s: error = %v, want SQLSTATE %s", tt.name, err, tt.code)
+		}
+	}
+
+	if _, err := pool.Exec(t.Context(), `DELETE FROM identity_member WHERE id = $1`, member); err != nil {
+		t.Fatal(err)
+	}
+
+	var left int
+	if err := pool.QueryRow(t.Context(), `SELECT count(*) FROM identity_passkey WHERE member_id = $1`, member).Scan(&left); err != nil {
+		t.Fatal(err)
+	}
+	if left != 0 {
+		t.Errorf("passkeys after deleting the member = %d, want 0", left)
 	}
 }
 
