@@ -1,5 +1,5 @@
 import { Button } from "@slotted/react/button";
-import { Field, FieldLabel } from "@slotted/react/field";
+import { Field } from "@slotted/react/field";
 import { Form, FormActions } from "@slotted/react/form";
 import { OtpInput } from "@slotted/react/otp-input";
 import { Stack } from "@slotted/react/stack";
@@ -9,6 +9,7 @@ import type {
   SecondFactorChallenge,
   SecondFactorInput,
 } from "@/features/session/api";
+import styles from "@/features/session/login-page.module.css";
 import { useT } from "@/i18n/i18n-provider";
 
 interface LoginCodeFormProps {
@@ -25,6 +26,9 @@ export function LoginCodeForm({
   const t = useT();
   const hasTotp = methods.includes("totp");
   const [recovery, setRecovery] = useState(!hasTotp);
+  const label = recovery
+    ? t("login.secondFactor.recovery")
+    : t("login.secondFactor.totp");
 
   const handleSubmit = (values: Record<string, unknown>) => {
     const code = String(values.code);
@@ -43,14 +47,11 @@ export function LoginCodeForm({
         loading={pending}
       >
         <Field required>
-          <FieldLabel>
-            {recovery
-              ? t("login.secondFactor.recovery")
-              : t("login.secondFactor.totp")}
-          </FieldLabel>
           {recovery ? (
             <OtpInput
               name="code"
+              aria-label={label}
+              className={styles.code}
               size="lg"
               type="alphanumeric"
               length={16}
@@ -59,7 +60,14 @@ export function LoginCodeForm({
               autoComplete="off"
             />
           ) : (
-            <OtpInput name="code" size="lg" length={6} groups={[3, 3]} />
+            <OtpInput
+              name="code"
+              aria-label={label}
+              className={styles.code}
+              size="lg"
+              length={6}
+              groups={[3, 3]}
+            />
           )}
         </Field>
         <FormActions align="stretch">

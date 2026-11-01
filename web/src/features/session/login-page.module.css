@@ -45,6 +45,16 @@
     margin-block-start: var(--slotted-space-6);
   }
 
+  /* The code boxes stand in the middle of the panel, not at the Field's start edge. */
+  .code {
+    justify-self: center;
+    max-inline-size: 100%;
+  }
+
+  .centered {
+    text-align: center;
+  }
+
   .lockup {
     display: inline-flex;
     align-items: center;

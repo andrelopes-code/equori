@@ -11,6 +11,7 @@ import type {
   SecondFactorInput,
 } from "@/features/session/api";
 import { LoginCodeForm } from "@/features/session/login-code-form";
+import styles from "@/features/session/login-page.module.css";
 import {
   PasskeyCeremonyError,
   getPasskeyAssertion,
@@ -79,7 +80,7 @@ export function LoginSecondFactor({
 
   return (
     <>
-      <Stack gap={2}>
+      <Stack gap={2} className={styles.centered}>
         <Heading level={1} size="2xl">
           {t("login.secondFactor.title")}
         </Heading>
