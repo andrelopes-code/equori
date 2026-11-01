@@ -633,33 +633,38 @@ func (s *Service) correct(ctx context.Context, r Repository, prev, next domain.T
 
 func (s *Service) VoidTransaction(ctx context.Context, booksID int64, id uuid.UUID, reason string) error {
 	return s.repo.InTx(ctx, func(r Repository) error {
-		prev, err := r.LockTransaction(ctx, booksID, id)
-		if err != nil {
-			return err
-		}
+		return s.voidIn(ctx, r, booksID, id, reason)
+	})
+}
 
-		if err := checkLaterSales(ctx, r, booksID, prev.Date, prev.Postings, id); err != nil {
-			return err
-		}
+// voidIn is VoidTransaction inside the database transaction of r.
+func (s *Service) voidIn(ctx context.Context, r Repository, booksID int64, id uuid.UUID, reason string) error {
+	prev, err := r.LockTransaction(ctx, booksID, id)
+	if err != nil {
+		return err
+	}
 
-		voided, err := prev.Void(s.clock.Now(), reason)
-		if err != nil {
-			return err
-		}
+	if err := checkLaterSales(ctx, r, booksID, prev.Date, prev.Postings, id); err != nil {
+		return err
+	}
 
-		if err := r.VoidTransaction(ctx, voided); err != nil {
-			return err
-		}
+	voided, err := prev.Void(s.clock.Now(), reason)
+	if err != nil {
+		return err
+	}
 
-		accounts, err := r.Accounts(ctx, booksID, postingAccounts(prev))
-		if err != nil {
-			return err
-		}
+	if err := r.VoidTransaction(ctx, voided); err != nil {
+		return err
+	}
 
-		return r.Publish(ctx, outbox.Event{
-			Type: EventTransactionVoided, BooksID: booksID, AggregateID: id.String(),
-			Payload: newTransactionEvent(voided, accounts),
-		})
+	accounts, err := r.Accounts(ctx, booksID, postingAccounts(prev))
+	if err != nil {
+		return err
+	}
+
+	return r.Publish(ctx, outbox.Event{
+		Type: EventTransactionVoided, BooksID: booksID, AggregateID: id.String(),
+		Payload: newTransactionEvent(voided, accounts),
 	})
 }
 

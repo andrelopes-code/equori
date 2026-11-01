@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json/v2"
+	"fmt"
 	"io"
 	"io/fs"
 	"log/slog"
@@ -615,4 +616,37 @@ type PostingView struct {
 		Count  int    `json:"count"`
 		PlanID string `json:"plan_id"`
 	} `json:"installment"`
+}
+
+// Rows runs a query and returns one string per row, the columns joined by a space.
+func (h *Harness) Rows(sql string, args ...any) []string {
+	h.t.Helper()
+
+	rows, err := h.Pool.Query(h.t.Context(), sql, args...)
+	if err != nil {
+		h.t.Fatalf("query: %v", err)
+	}
+	defer rows.Close()
+
+	var out []string
+
+	for rows.Next() {
+		values, err := rows.Values()
+		if err != nil {
+			h.t.Fatalf("scan: %v", err)
+		}
+
+		parts := make([]string, len(values))
+		for i, v := range values {
+			parts[i] = fmt.Sprint(v)
+		}
+
+		out = append(out, strings.Join(parts, " "))
+	}
+
+	if err := rows.Err(); err != nil {
+		h.t.Fatalf("rows: %v", err)
+	}
+
+	return out
 }

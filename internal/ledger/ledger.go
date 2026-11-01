@@ -153,6 +153,7 @@ var (
 	ErrNotRetypable           = domain.ErrNotRetypable
 	ErrMixedInstruments       = app.ErrMixedInstruments
 	ErrPriceMissing           = app.ErrPriceMissing
+	ErrNotGroupable           = app.ErrNotGroupable
 )
 
 // Calendar is the part of marketdata the ledger uses to shift due dates.
@@ -574,4 +575,29 @@ func provision(ctx context.Context, tx pgx.Tx, e outbox.Delivered) error {
 	svc := app.NewService(postgres.NewRepository(tx, nil), clock.New(time.Now), nil, nil, nil, nil, nil)
 
 	return svc.Provision(ctx, p.BooksID, p.BaseCurrency)
+}
+
+// GroupPart is one line of a group that confirms an entry (A169).
+type GroupPart = app.GroupPart
+
+// ConfirmGroup confirms an entry by the lines of a group: its posting on the account becomes
+// one posting per line, each linked to its record (A169).
+func (m *Module) ConfirmGroup(
+	ctx context.Context,
+	booksID int64,
+	txID,
+	accountID uuid.UUID,
+	parts []GroupPart,
+) error {
+	return m.svc.ConfirmGroup(ctx, booksID, txID, accountID, parts)
+}
+
+// GroupableTransactions returns the transactions among txIDs that a group may take over (A167).
+func (m *Module) GroupableTransactions(
+	ctx context.Context,
+	booksID int64,
+	txIDs []uuid.UUID) ([]uuid.UUID,
+	error,
+) {
+	return m.svc.GroupableTransactions(ctx, booksID, txIDs)
 }
