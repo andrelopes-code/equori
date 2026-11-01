@@ -167,3 +167,170 @@ func grp(ids ...byte) []uuid.UUID {
 }
 
 func gid(n byte) uuid.UUID { return uuid.UUID{15: n} }
+
+// A168: a group is proposed for an entry with exactly one group, not shared with another entry.
+func TestFindGroups(t *testing.T) {
+	t.Parallel()
+
+	e1 := LedgerPosting{TransactionID: gid(201), Date: oct(20), Amount: -11840}
+	e2 := LedgerPosting{TransactionID: gid(202), Date: oct(20), Amount: -11840}
+	e3 := LedgerPosting{TransactionID: gid(203), Date: oct(20), Amount: -11500}
+	e4 := LedgerPosting{TransactionID: gid(204), Date: oct(20), Amount: -5000}
+	fee := []GroupLine{gl(1, 20, -11440, true), gl(2, 21, -400, true)}
+
+	tests := []struct {
+		name    string
+		entries []LedgerPosting
+		lines   []GroupLine
+		want    []GroupMatch
+	}{
+		{
+			name:    "S234 one entry, one group",
+			entries: []LedgerPosting{e1},
+			lines:   fee,
+			want:    []GroupMatch{{TransactionID: gid(201), RecordIDs: grp(1, 2)}},
+		},
+		{
+			name:    "S237 two entries with the same group",
+			entries: []LedgerPosting{e1, e2},
+			lines:   fee,
+		},
+		{
+			name:    "two groups for one entry",
+			entries: []LedgerPosting{e1},
+			lines: []GroupLine{
+				gl(1, 20, -11440, true), gl(2, 20, -400, true),
+				gl(3, 20, -11000, true), gl(4, 20, -840, true),
+			},
+		},
+		{
+			name:    "a line shared by two entries removes both",
+			entries: []LedgerPosting{e1, e3},
+			lines:   append(slices.Clone(fee), gl(3, 20, -60, true)),
+		},
+		{
+			name:    "independent entries are both proposed, in entry order",
+			entries: []LedgerPosting{e1, e4},
+			lines:   append(slices.Clone(fee), gl(3, 20, -4800, true), gl(4, 20, -200, true)),
+			want: []GroupMatch{
+				{TransactionID: gid(201), RecordIDs: grp(1, 2)},
+				{TransactionID: gid(204), RecordIDs: grp(3, 4)},
+			},
+		},
+		{
+			name:    "an entry listed twice is searched once",
+			entries: []LedgerPosting{e1, e1},
+			lines:   fee,
+			want:    []GroupMatch{{TransactionID: gid(201), RecordIDs: grp(1, 2)}},
+		},
+		{
+			name:    "no entry",
+			entries: nil,
+			lines:   fee,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			got := FindGroups(tt.entries, tt.lines)
+			if !slices.EqualFunc(got, tt.want, sameMatch) {
+				t.Fatalf("matches = %v, want %v", got, tt.want)
+			}
+
+			checkMatches(t, tt.entries, tt.lines, got)
+		})
+	}
+}
+
+// The result does not depend on the order of the input or on the sign of the amounts.
+func TestFindGroupsSymmetry(t *testing.T) {
+	t.Parallel()
+
+	entries := []LedgerPosting{
+		{TransactionID: gid(201), Date: oct(20), Amount: -11840},
+		{TransactionID: gid(204), Date: oct(20), Amount: -5000},
+	}
+	lines := []GroupLine{
+		gl(1, 20, -11440, true), gl(2, 21, -400, true),
+		gl(3, 20, -4800, true), gl(4, 20, -200, true),
+	}
+	want := []GroupMatch{
+		{TransactionID: gid(201), RecordIDs: grp(1, 2)},
+		{TransactionID: gid(204), RecordIDs: grp(3, 4)},
+	}
+
+	reversedEntries := slices.Clone(entries)
+	slices.Reverse(reversedEntries)
+
+	reversedLines := slices.Clone(lines)
+	slices.Reverse(reversedLines)
+
+	got := FindGroups(reversedEntries, reversedLines)
+	slices.Reverse(got)
+
+	if !slices.EqualFunc(got, want, sameMatch) {
+		t.Fatalf("reversed input: matches = %v, want %v", got, want)
+	}
+
+	negated := FindGroups(negate(entries, lines))
+	if !slices.EqualFunc(negated, want, sameMatch) {
+		t.Fatalf("negated amounts: matches = %v, want %v", negated, want)
+	}
+}
+
+func sameMatch(a, b GroupMatch) bool {
+	return a.TransactionID == b.TransactionID && slices.Equal(a.RecordIDs, b.RecordIDs)
+}
+
+// checkMatches verifies the conditions of A167 on every match, independently of the search.
+func checkMatches(t *testing.T, entries []LedgerPosting, lines []GroupLine, got []GroupMatch) {
+	t.Helper()
+
+	byEntry := map[uuid.UUID]LedgerPosting{}
+	for _, e := range entries {
+		byEntry[e.TransactionID] = e
+	}
+
+	byLine := map[uuid.UUID]GroupLine{}
+	for _, l := range lines {
+		byLine[l.RecordID] = l
+	}
+
+	for _, m := range got {
+		e := byEntry[m.TransactionID]
+
+		var sum int64
+
+		anchor, fresh := false, false
+
+		for _, id := range m.RecordIDs {
+			l := byLine[id]
+			sum += l.Amount
+			anchor = anchor || withinBound(l.Amount, e.Amount)
+			fresh = fresh || l.New
+
+			if dayGap(l.Date, e.Date) > MatchHardLimit {
+				t.Fatalf("line %s is %d days from the entry", id, dayGap(l.Date, e.Date))
+			}
+		}
+
+		if len(m.RecordIDs) < 2 || len(m.RecordIDs) > 3 || sum != e.Amount || !anchor || !fresh {
+			t.Fatalf("match %v breaks A167: sum %d, entry %d, anchor %t, new %t",
+				m, sum, e.Amount, anchor, fresh)
+		}
+	}
+}
+
+func negate(entries []LedgerPosting, lines []GroupLine) ([]LedgerPosting, []GroupLine) {
+	es, ls := slices.Clone(entries), slices.Clone(lines)
+	for i := range es {
+		es[i].Amount = -es[i].Amount
+	}
+
+	for i := range ls {
+		ls[i].Amount = -ls[i].Amount
+	}
+
+	return es, ls
+}

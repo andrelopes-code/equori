@@ -31,7 +31,44 @@ type GroupMatch struct {
 
 // FindGroups decides every entry (A168): a match for an entry with exactly one group whose lines
 // belong to no group of another entry. The entries and the lines belong to one account.
-func FindGroups(entries []LedgerPosting, lines []GroupLine) []GroupMatch { return nil }
+func FindGroups(entries []LedgerPosting, lines []GroupLine) []GroupMatch {
+	found := make([][][]uuid.UUID, len(entries))
+	owners := map[uuid.UUID]map[uuid.UUID]bool{}
+	seen := map[uuid.UUID]bool{}
+
+	for i, e := range entries {
+		if seen[e.TransactionID] {
+			continue
+		}
+
+		seen[e.TransactionID] = true
+		found[i] = groupsOf(e, lines)
+
+		for _, g := range found[i] {
+			for _, id := range g {
+				if owners[id] == nil {
+					owners[id] = map[uuid.UUID]bool{}
+				}
+
+				owners[id][e.TransactionID] = true
+			}
+		}
+	}
+
+	shared := func(id uuid.UUID) bool { return len(owners[id]) > 1 }
+
+	var out []GroupMatch
+
+	for i, e := range entries {
+		if len(found[i]) != 1 || slices.ContainsFunc(found[i][0], shared) {
+			continue
+		}
+
+		out = append(out, GroupMatch{TransactionID: e.TransactionID, RecordIDs: found[i][0]})
+	}
+
+	return out
+}
 
 // groupsOf lists the groups of A167 for one entry, pairs and triples of lines, each ascending by
 // id and all in ascending order; nil when the entry has none or more than groupEligibleMax
