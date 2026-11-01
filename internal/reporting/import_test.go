@@ -3,8 +3,11 @@ package reporting_test
 import (
 	"archive/zip"
 	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"net/http"
+	"slices"
 	"strings"
 	"testing"
 
@@ -245,6 +248,71 @@ func TestImportRejects(t *testing.T) {
 	}
 }
 
+// S253, S254 (A179): an archive that names a row of another book is refused and writes nothing.
+// A composite key with books_id refuses S253; the single-column key of S254 needs the check.
+func TestS253S254ImportNamesAnotherBook(t *testing.T) {
+	t.Parallel()
+	h := apitest.New(t, apitest.Today("2026-10-26"))
+	victim := populate(t, h)
+
+	var listed struct {
+		Items []struct {
+			ID string `json:"id"`
+		} `json:"items"`
+	}
+	h.MustDo(http.MethodGet, "/api/v1/transactions?limit=1", nil, http.StatusOK, &listed)
+
+	source := apitest.New(t, apitest.Today("2026-10-26"))
+	populate(t, source)
+	files := archive(t, export(t, source))
+	other := h.Login("other@example.com")
+
+	for _, c := range []struct {
+		name, table, code string
+		status            int
+		edit              func(rows []map[string]any) []map[string]any
+	}{
+		{"S253 posting on an account of another book", "ledger_posting", "archive_invalid", http.StatusUnprocessableEntity, func(rows []map[string]any) []map[string]any {
+			// A card posting names its statement, which only a card account takes (23514).
+			i := slices.IndexFunc(rows, func(r map[string]any) bool { return r["statement_id"] == nil })
+			rows[i]["account_id"] = victim.food
+
+			return rows
+		}},
+		{"S254 version of a transaction of another book", "ledger_transaction_version", "import_conflict", http.StatusConflict, func(rows []map[string]any) []map[string]any {
+			return append(rows, map[string]any{
+				"transaction_id": listed.Items[0].ID, "version": 1, "snapshot": map[string]any{},
+				"reason": "correction", "replaced_at": "2026-10-26T00:00:00Z",
+			})
+		}},
+	} {
+		r := h.UploadAs(other, importPath, nil, "a.zip", edited(t, files, c.table, c.edit))
+		if r.Status != c.status || !strings.Contains(string(r.Body), `"code":"`+c.code+`"`) {
+			t.Errorf("%s: import = %d %s, want %d %s", c.name, r.Status, r.Body, c.status, c.code)
+		}
+	}
+
+	var accounts struct {
+		Items []struct {
+			SystemRole string `json:"system_role"`
+		} `json:"items"`
+	}
+
+	r := h.Call(other, http.MethodGet, "/api/v1/accounts?limit=200", nil)
+	if r.Status != http.StatusOK {
+		t.Fatalf("accounts = %d: %s", r.Status, r.Body)
+	}
+
+	r.Decode(t, &accounts)
+
+	for _, a := range accounts.Items {
+		if a.SystemRole == "" {
+			t.Errorf("a refused import wrote accounts: %+v", accounts.Items)
+			break
+		}
+	}
+}
+
 // ADR 021, V1: schema_version no longer gates an import, and an archive written before
 // archive_version existed reads as version 1.
 func TestImportArchiveOfAnotherSchemaVersion(t *testing.T) {
@@ -277,4 +345,65 @@ func TestImportArchiveOfAnotherSchemaVersion(t *testing.T) {
 	if out.ArchiveVersion != 1 {
 		t.Errorf("archive_version = %s", r.Body)
 	}
+}
+
+// edited rewrites the rows of one table of an archive and its manifest entry (rows, sha256).
+func edited(t *testing.T, files map[string][]byte, table string, edit func([]map[string]any) []map[string]any) []byte {
+	t.Helper()
+
+	var m map[string]any
+	if err := json.Unmarshal(files["manifest.json"], &m); err != nil {
+		t.Fatal(err)
+	}
+
+	var entry map[string]any
+	for _, e := range m["tables"].([]any) {
+		if e.(map[string]any)["name"] == table {
+			entry = e.(map[string]any)
+		}
+	}
+
+	if entry == nil {
+		t.Fatalf("manifest has no table %s", table)
+	}
+
+	file := entry["file"].(string)
+
+	var rows []map[string]any
+	for line := range bytes.Lines(files[file]) {
+		d := json.NewDecoder(bytes.NewReader(line))
+		d.UseNumber()
+
+		row := map[string]any{}
+		if err := d.Decode(&row); err != nil {
+			t.Fatal(err)
+		}
+
+		rows = append(rows, row)
+	}
+
+	written := edit(rows)
+
+	var body bytes.Buffer
+	for _, row := range written {
+		b, err := json.Marshal(row)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		body.Write(append(b, '\n'))
+	}
+
+	sum := sha256.Sum256(body.Bytes())
+	entry["rows"], entry["sha256"] = len(written), hex.EncodeToString(sum[:])
+
+	out := map[string][]byte{}
+	for name, b := range files {
+		out[name] = b
+	}
+
+	out[file] = body.Bytes()
+	out["manifest.json"], _ = json.Marshal(m)
+
+	return zipOf(t, out)
 }

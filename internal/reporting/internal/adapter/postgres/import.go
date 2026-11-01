@@ -155,6 +155,15 @@ func (r *Exports) Import(ctx context.Context, booksID int64, tables []app.Archiv
 				}
 			}
 
+			col, err := foreignBook(ctx, tx, t, rows, booksID)
+			if err != nil {
+				return fmt.Errorf("check %s: %w", t, err)
+			}
+
+			if col != "" {
+				return fmt.Errorf("%w: %s.%s", app.ErrImportConflict, t, col)
+			}
+
 			n, err := insert(ctx, tx, t, rows, booksID, slices.Contains(sharedTables, t))
 			if err != nil {
 				return fmt.Errorf("import %s: %w", t, err)
@@ -182,6 +191,10 @@ func (r *Exports) Import(ctx context.Context, booksID int64, tables []app.Archiv
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) && pgErr.Code == "23505" {
 		return nil, fmt.Errorf("%w: %s", app.ErrImportConflict, pgErr.ConstraintName)
+	}
+
+	if errors.As(err, &pgErr) && pgErr.Code == "23503" {
+		return nil, fmt.Errorf("%w: %s", app.ErrArchiveInvalid, pgErr.ConstraintName)
 	}
 
 	return counts, err
@@ -225,6 +238,50 @@ func insert(ctx context.Context, tx pgx.Tx, table string, rows [][]byte, booksID
 	tag, err := tx.Exec(ctx, sql, args...)
 
 	return int(tag.RowsAffected()), err
+}
+
+// foreignBook returns the column of table through which a row of rows names a row of
+// another book, or "" when none does (A179). It reads single-column foreign keys whose
+// referenced table has books_id; a reference to a row of the same import names no row yet.
+func foreignBook(ctx context.Context, tx pgx.Tx, table string, rows [][]byte, booksID int64) (string, error) {
+	keys, err := tx.Query(ctx, `SELECT a.attname::text, c.confrelid::regclass::text, f.attname::text
+		FROM pg_constraint c
+		JOIN pg_attribute a ON a.attrelid = c.conrelid AND a.attnum = c.conkey[1]
+		JOIN pg_attribute f ON f.attrelid = c.confrelid AND f.attnum = c.confkey[1]
+		WHERE c.contype = 'f' AND c.conrelid = $1::regclass AND cardinality(c.conkey) = 1
+			AND EXISTS (SELECT 1 FROM pg_attribute b
+				WHERE b.attrelid = c.confrelid AND b.attname = 'books_id' AND NOT b.attisdropped)
+		ORDER BY 1`, pgx.Identifier{table}.Sanitize())
+	if err != nil {
+		return "", err
+	}
+
+	type key struct{ col, ref, refCol string }
+
+	found, err := pgx.CollectRows(keys, func(row pgx.CollectableRow) (key, error) {
+		var k key
+
+		return k, row.Scan(&k.col, &k.ref, &k.refCol)
+	})
+	if err != nil {
+		return "", err
+	}
+
+	for _, k := range found {
+		var names bool
+		if err := tx.QueryRow(ctx, fmt.Sprintf(`SELECT EXISTS (SELECT 1 FROM jsonb_populate_recordset(NULL::%s, $1::jsonb) r
+			JOIN %s x ON x.%s = r.%s WHERE x.books_id <> $2)`,
+			pgx.Identifier{table}.Sanitize(), k.ref, pgx.Identifier{k.refCol}.Sanitize(), pgx.Identifier{k.col}.Sanitize()),
+			jsonArray(rows), booksID).Scan(&names); err != nil {
+			return "", err
+		}
+
+		if names {
+			return k.col, nil
+		}
+	}
+
+	return "", nil
 }
 
 func jsonArray(rows [][]byte) []byte {
