@@ -440,7 +440,7 @@ An OFX credit card statement for Itaú Visa: −230.00 on 2026-10-14 is a `charg
 | M28 | S02 |
 | M29 | S31 |
 
-The import flow (F4) is covered by S32–S36; classification (F5) by S37–S44 and S98 (amendment A105); the category tree and its tools by S72–S79 (amendments A73–A84 of `docs/specs/2026-10-19-categorization-design.md`); transfers from imports by S45–S50; aggregator sync by S51–S59, S68–S71 and S90; matching by score by S91–S97 (amendments A98–A104); card statements from the institution by S80–S89 (amendments A85–A93); schedules (F7) by S27–S29 and the planning views by S60–S63; deleting a budget by S144; the budget plan by S158 to S166 (`docs/specs/2026-10-27-budget-plan-design.md`); currencies and investments (F9) by S16, S17, S21, S22 and S64–S67; editing and deleting goals by S119 and S120; goals over brokerage accounts by S121; tax treatment by instrument subtype by S122; editing an instrument by S171; the return of an account tree by S126 and S127 and of a goal by S130; allocation and net worth by S128 and S129; fixed income accrual by S123 to S125; reimbursement of recorded expenses by S113 and S114 (amendment A117); text capture and the transaction batch by S99–S112 and S151–S153 (amendments A106–A116 of `docs/specs/2026-10-21-text-capture-design.md`); the assistant by S131–S142 (section 6.20).
+The import flow (F4) is covered by S32–S36; classification (F5) by S37–S44 and S98 (amendment A105); the category tree and its tools by S72–S79 (amendments A73–A84 of `docs/specs/2026-10-19-categorization-design.md`); transfers from imports by S45–S50; aggregator sync by S51–S59, S68–S71 and S90; matching by score by S91–S97 (amendments A98–A104); card statements from the institution by S80–S89 (amendments A85–A93); schedules (F7) by S27–S29 and the planning views by S60–S63; deleting a budget by S144; the budget plan by S158 to S166 (`docs/specs/2026-10-27-budget-plan-design.md`) and its savings target by S262 to S264 (`docs/specs/2026-11-01-savings-target-design.md`); currencies and investments (F9) by S16, S17, S21, S22 and S64–S67; editing and deleting goals by S119 and S120; goals over brokerage accounts by S121; tax treatment by instrument subtype by S122; editing an instrument by S171; the return of an account tree by S126 and S127 and of a goal by S130; allocation and net worth by S128 and S129; fixed income accrual by S123 to S125; reimbursement of recorded expenses by S113 and S114 (amendment A117); text capture and the transaction batch by S99–S112 and S151–S153 (amendments A106–A116 of `docs/specs/2026-10-21-text-capture-design.md`); the assistant by S131–S142 (section 6.20).
 
 ## 6.13 Classification
 
@@ -963,3 +963,15 @@ The scenarios of `docs/specs/2026-11-01-first-use-help-design.md`, section "Scen
 ### S253–S261 Test and release (A178–A186)
 
 The scenarios of `docs/specs/2026-11-01-test-release-design.md`, section "Scenarios": an archive that names a row of another book is refused and writes nothing (S253, S254); the institution catalogue finds an entry by trade name and lists prefix matches first (S255, S256); the walkthrough institution reads as required (S257); a pt-BR count of 0 reads "Nenhum resultado" (S258); the exit criteria of P10 to P15 are checked (S259); testers record their first transactions without outside help (S260); real accounts of three banks for two weeks end with no open defect of data loss, duplication or exposure (S261).
+
+### S262 Rate, target and gap
+
+A fixed reference of 8,000.00 and savings occurrences of 1,200.00 in the month: `GET /budget-plan` returns `savings_rate_bp` 1500. After `PUT` with `savings_target_bp` 2500, the plan returns `savings_target` 2,000.00 and `savings_gap` 800.00. With savings of 2,000.00 or more the gap is 0.00.
+
+### S263 Stored and cleared
+
+Before any save, the plan has no `savings_target_bp`. A `PUT` with 2500 makes `GET` return 2500. A second `PUT` without the field makes `GET` return no target and no `savings_target` or `savings_gap`. A reference of zero returns no rate, target amount or gap, and keeps `savings_target_bp`. A save through `manage_budget_or_goal` with `save_plan` keeps the stored target.
+
+### S264 Invalid target
+
+`PUT` with `savings_target_bp` 10001 and with -1 return 422 on `savings_target_bp` and store nothing. A direct SQL update of the column to 10001 is rejected by the database.

@@ -355,8 +355,8 @@ func TestS164ReferenceRoundTrip(t *testing.T) {
 	}
 }
 
-// S254: the plan states savings as a share of the reference, the target amount and the gap.
-func TestS254SavingsRateTargetGap(t *testing.T) {
+// S262: the plan states savings as a share of the reference, the target amount and the gap.
+func TestS262SavingsRateTargetGap(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t, "2026-12-02")
 	f.schedule("savings", f.checking, f.savings, 120000, monthly("2026-12-01", 10, ""), nil)
@@ -378,9 +378,9 @@ func TestS254SavingsRateTargetGap(t *testing.T) {
 	}
 }
 
-// S255: the target is stored with the reference, cleared by a save without it, and kept without
+// S263: the target is stored with the reference, cleared by a save without it, and kept without
 // figures when the reference is zero.
-func TestS255SavingsTargetStoredAndCleared(t *testing.T) {
+func TestS263SavingsTargetStoredAndCleared(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t, "2026-11-10")
 
@@ -408,8 +408,8 @@ func TestS255SavingsTargetStoredAndCleared(t *testing.T) {
 	}
 }
 
-// S256: a target outside 0 to 10000 is a 422 on its field and stores nothing.
-func TestS256SavingsTargetInvalid(t *testing.T) {
+// S264: a target outside 0 to 10000 is a 422 on its field and stores nothing.
+func TestS264SavingsTargetInvalid(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t, "2026-11-10")
 
