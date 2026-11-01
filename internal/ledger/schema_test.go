@@ -324,3 +324,32 @@ func TestDBInvestmentIncomeTypeIsAnIdentifier(t *testing.T) {
 		t.Fatalf("identifier rejected: %v", err)
 	}
 }
+
+// A172 (I07): a record confirms one posting.
+func TestDBRejectsOneRecordOnTwoPostings(t *testing.T) {
+	t.Parallel()
+	f := newSchemaFixture(t)
+
+	var record string
+	if err := f.pool.QueryRow(t.Context(), `SELECT gen_random_uuid()::text`).Scan(&record); err != nil {
+		t.Fatal(err)
+	}
+
+	link := func() error {
+		id, err := f.recordTx(t, f.booksID, "2026-03-01", postingRow{f.checking, -10000}, postingRow{f.food, 10000})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		_, err = f.pool.Exec(t.Context(),
+			`UPDATE ledger_posting SET external_record_id = $1 WHERE transaction_id = $2 AND position = 0`, record, id)
+
+		return err
+	}
+
+	if err := link(); err != nil {
+		t.Fatal(err)
+	}
+
+	requireViolation(t, link(), uniqueViolation, "ledger_posting_external_record_idx")
+}

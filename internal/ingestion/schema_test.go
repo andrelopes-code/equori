@@ -42,7 +42,6 @@ func TestSchemaInvariants(t *testing.T) {
 		err  error
 	}{
 		{"I10: a deduplication key once per book", record(1, "received", nil)},
-		{"I07: a transaction linked to one record", record(2, "matched", tx)},
 		{"a created record names its transaction", record(3, "created", nil)},
 		{"a received record names no transaction", record(4, "received", tx)},
 		{"an institution line id is never empty", exec(`INSERT INTO ingestion_external_record (books_id, batch_id, account_id, dedup_key, raw, booked_on, amount, reported_amount, reported_on, description, institution_id)
