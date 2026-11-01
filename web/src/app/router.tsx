@@ -99,6 +99,7 @@ import {
   SettingsPage,
   validateSettingsSearch,
 } from "@/features/setup";
+import { StartPage } from "@/features/start";
 import {
   CapturePage,
   CaptureQueuePage,
@@ -253,6 +254,12 @@ const institutionsRoute = createRoute({
   getParentRoute: () => accountsLayoutRoute,
   path: "institutions",
   component: InstitutionsPage,
+});
+
+const startRoute = createRoute({
+  getParentRoute: () => authedRoute,
+  path: "start",
+  component: StartPage,
 });
 
 const newAccountRoute = createRoute({
@@ -558,6 +565,7 @@ export const routeTree = rootRoute.addChildren([
   ...previewRoutes,
   authedRoute.addChildren([
     homeRoute,
+    startRoute,
     transactionsRoute,
     newTransactionRoute,
     captureRoute,
