@@ -125,3 +125,76 @@ func (t Transaction) ToLine(accountID uuid.UUID, amount int64, date time.Time) (
 
 	return next, true, nil
 }
+
+// LinePart is one line of a group (A169): the amount of its posting and whether the institution
+// has settled it.
+type LinePart struct {
+	Amount  int64
+	Pending bool
+}
+
+// SplitToLines returns t with the first posting on accountID replaced by one posting per part, in
+// order, and the date set to date (A169). The parts sum to the replaced amount, so the other
+// postings keep theirs. A statement the date chose is derived again (A136).
+func (t Transaction) SplitToLines(accountID uuid.UUID, date time.Time, parts []LinePart) (Transaction, error) {
+	at := slices.IndexFunc(t.Postings, func(p Posting) bool { return p.AccountID == accountID })
+	if at < 0 {
+		return Transaction{}, invalid("account_id", "has no posting in the transaction")
+	}
+
+	if len(parts) < 2 {
+		return Transaction{}, invalid("parts", "a group has at least two lines")
+	}
+
+	old := t.Postings[at].Amount
+
+	var sum int64
+
+	for _, part := range parts {
+		if part.Amount == 0 || (part.Amount < 0) != (old.Amount() < 0) {
+			return Transaction{}, invalid("parts", "each must be nonzero and carry the sign of the posting")
+		}
+
+		sum += part.Amount
+	}
+
+	if sum != old.Amount() {
+		return Transaction{}, invalid("parts", "must sum to the amount of the posting they replace")
+	}
+
+	next := t
+	next.Date = date
+	next.Postings = make([]Posting, 0, len(t.Postings)+len(parts)-1)
+
+	for i, p := range t.Postings {
+		p.ID, p.Weight, p.StatementID, p.ExternalRecordID = uuid.Nil, money.Money{}, uuid.Nil, uuid.Nil
+		if p.StatementBasis == BasisDate || p.StatementBasis == "" {
+			p.Statement = nil
+		}
+
+		if i != at {
+			next.Postings = append(next.Postings, p)
+
+			continue
+		}
+
+		for _, part := range parts {
+			split := p
+			split.Status = StatusCleared
+
+			if part.Pending {
+				split.Status = StatusPending
+			}
+
+			amount, err := money.New(part.Amount, old.Currency())
+			if err != nil {
+				return Transaction{}, err
+			}
+
+			split.Amount = amount
+			next.Postings = append(next.Postings, split)
+		}
+	}
+
+	return next, nil
+}
