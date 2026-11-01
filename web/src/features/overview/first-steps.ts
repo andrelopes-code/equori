@@ -21,7 +21,7 @@ export function firstSteps(facts: FirstStepsFacts): FirstStep[] {
     {
       id: "account",
       done: facts.hasAccount,
-      destination: { to: "/accounts/new" },
+      destination: { to: "/start" },
     },
     {
       id: "transactions",

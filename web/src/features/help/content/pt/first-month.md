@@ -4,6 +4,8 @@ Este roteiro leva do cadastro da primeira conta ao primeiro relatório. Cada pas
 
 ## 1. Cadastre suas contas
 
+O [roteiro de primeiro uso](/start) cria suas contas a partir de uma lista de instituições. Os passos abaixo fazem o mesmo à mão.
+
 Em [Contas](/accounts), escolha **Nova conta**. Escolha o tipo: conta bancária, poupança, dinheiro, cartão de crédito, empréstimo e outros. Cada tipo tem uma frase que explica para que serve.
 
 Informe o **saldo inicial**: o saldo que a instituição mostra no dia em que o equori começa a acompanhar a conta. Num cartão, é o valor devido nesse dia.

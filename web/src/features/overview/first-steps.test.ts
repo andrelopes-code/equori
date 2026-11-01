@@ -11,7 +11,7 @@ describe("firstSteps", () => {
         hasUncategorized: false,
       }),
     ).toEqual([
-      { id: "account", done: false, destination: { to: "/accounts/new" } },
+      { id: "account", done: false, destination: { to: "/start" } },
       {
         id: "transactions",
         done: false,

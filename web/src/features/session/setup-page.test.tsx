@@ -107,7 +107,7 @@ describe("first-user setup", () => {
       ]);
     });
     await waitFor(() => {
-      expect(router.state.location.pathname).toBe("/");
+      expect(router.state.location.pathname).toBe("/start");
     });
   });
 

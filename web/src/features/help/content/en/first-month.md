@@ -4,6 +4,8 @@ This walkthrough goes from your first account to your first report. Each step ta
 
 ## 1. Add your accounts
 
+The [first-use walkthrough](/start) creates your accounts from a list of institutions. The steps below do the same by hand.
+
 In [Accounts](/accounts), choose **New account**. Pick the kind: bank account, savings, cash, credit card, loan and others. Each kind has a sentence that says what it is for.
 
 Enter the **opening balance**: the balance the institution shows on the day equori starts following the account. For a card, it is the amount owed that day.

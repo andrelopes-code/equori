@@ -955,3 +955,7 @@ The scenarios of `docs/specs/2026-10-31-protected-data-design.md`, section "Scen
 ### S222–S233 Installation (A160–A166)
 
 The scenarios of `docs/specs/2026-10-31-installation-design.md`, section "Scenarios": an invalid configuration is reported in one block without the value of a secret (S222, S223); an unknown variable logs a warning (S224); a failed database connection or listen names its variable (S225, S226); the installation script installs, runs again, takes a free port and stops without Docker (S227 to S230); the first access names the book and its time zone (S231) and preselects the region of the browser (S232); the owner checks macOS and Windows (S233).
+
+### S241–S252 First use and help (A173–A177)
+
+The scenarios of `docs/specs/2026-11-01-first-use-help-design.md`, section "Scenarios": setup opens the walkthrough and an invitation does not (S241, S242); the walkthrough creates accounts and offers the entry choices (S243 to S245); the first steps list points to it (S246); the overview notices due statements and budgets over their amount (S247, S248); the help pages cover installation, connecting a bank and troubleshooting (S249, S250); a person reaches the first transaction without a typed address (S251); the owner checks the walkthrough and the help pages in the review (S252).

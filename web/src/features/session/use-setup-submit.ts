@@ -71,7 +71,7 @@ export function useSetupSubmit({
       setFailure(t("problem.internal_error"));
       return undefined;
     }
-    await router.navigate({ to: "/" });
+    await router.navigate({ to: "/start" });
     return undefined;
   };
 

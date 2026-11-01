@@ -6,6 +6,12 @@
     "tasks": ["see the month at a glance"]
   },
   {
+    "path": "/start",
+    "topics": ["getting_started", "accounts_and_categories"],
+    "screen": "First-use walkthrough",
+    "tasks": ["create the first accounts", "choose how entries arrive"]
+  },
+  {
     "path": "/transactions",
     "topics": [
       "transactions_and_postings",

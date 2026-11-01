@@ -109,6 +109,8 @@ Uma página selecionada pela curadoria recebe um botão "Sobre esta tela" no cab
 
 Uma lista de primeiros passos na visão geral, visível até ser concluída ou dispensada. Os itens são escolhidos pela curadoria entre as tarefas sem as quais o app não mostra nada útil. Cada item abre a tela da tarefa. Um tour guiado entra só numa tela selecionada pela curadoria, abre só quando a pessoa pede ("Mostrar como funciona") e nunca abre sozinho.
 
+O roteiro `/start` abre sozinho uma vez, depois do setup. Ele é uma tela de criação, não um tour: não cobre nenhuma tela, e "Agora não" sai dele.
+
 ### Camada 4: documentação de uso
 
 Arquivos Markdown em pt-BR e en, no repositório, organizados por Diátaxis:
