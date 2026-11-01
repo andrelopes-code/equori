@@ -43,7 +43,9 @@
 
   /* The fields of a row keep their own widths, 1rem apart: a field with a width step stops at
      it and the next one starts beside it, so no half-column hole opens between them; a field
-     without a step takes what is left (docs/contributing/forms.md, F2). */
+     without a step takes what is left (docs/contributing/forms.md, F2). The 16rem basis fits a
+     label of about 30 characters on one line; a narrower body stacks the fields instead of
+     wrapping a label, which would push its control below its neighbour's. */
   .row {
     display: flex;
     flex-wrap: wrap;
@@ -52,7 +54,7 @@
   }
 
   .row > * {
-    flex: 1 1 12rem;
+    flex: 1 1 16rem;
     min-inline-size: 0;
   }
 
