@@ -1,8 +1,11 @@
 import {
-  MenuGroup,
+  Menu,
+  MenuContent,
   MenuItem,
   MenuRadioGroup,
   MenuRadioItem,
+  MenuSeparator,
+  MenuTrigger,
 } from "@slotted/react/menu";
 
 import type { useBooks } from "@/app/shell/use-books";
@@ -13,12 +16,19 @@ interface AccountBooksProps {
   onNew: () => void;
 }
 
+// With one book the menu offers only the creation; with two or more the books stand in a
+// submenu.
 export function AccountBooks({ books, onNew }: AccountBooksProps) {
   const t = useT();
 
+  if (books.items.length < 2) {
+    return <MenuItem onSelect={onNew}>{t("books.new")}</MenuItem>;
+  }
+
   return (
-    <MenuGroup label={t("books.label")}>
-      {books.items.length >= 2 && (
+    <Menu>
+      <MenuTrigger>{t("books.label")}</MenuTrigger>
+      <MenuContent>
         <MenuRadioGroup
           aria-label={t("books.label")}
           value={String(books.active?.id)}
@@ -32,8 +42,9 @@ export function AccountBooks({ books, onNew }: AccountBooksProps) {
             </MenuRadioItem>
           ))}
         </MenuRadioGroup>
-      )}
-      <MenuItem onSelect={onNew}>{t("books.new")}</MenuItem>
-    </MenuGroup>
+        <MenuSeparator />
+        <MenuItem onSelect={onNew}>{t("books.new")}</MenuItem>
+      </MenuContent>
+    </Menu>
   );
 }

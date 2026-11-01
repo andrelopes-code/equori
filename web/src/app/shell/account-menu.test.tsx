@@ -33,6 +33,16 @@ function api(items: unknown[], sent: unknown[], put?: Response) {
   });
 }
 
+async function openBooks() {
+  const user = await openMenu();
+  await user.click(
+    await screen.findByRole("menuitem", {
+      name: new RegExp(pt["books.label"]),
+    }),
+  );
+  return user;
+}
+
 async function openMenu() {
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: pt["nav.user"] }));
@@ -54,6 +64,11 @@ describe("account menu books", () => {
     await waitFor(() => expect(trigger).toHaveTextContent("Casal"));
 
     const user = await openMenu();
+
+    expect(screen.queryByRole("menuitemradio", { name: "Casal" })).toBeNull();
+    await user.click(
+      screen.getByRole("menuitem", { name: new RegExp(pt["books.label"]) }),
+    );
 
     expect(
       await screen.findByRole("menuitemradio", { name: "Casal" }),
@@ -91,6 +106,25 @@ describe("account menu books", () => {
     ).toBeInTheDocument();
   });
 
+  it("creates a book from the books submenu", async () => {
+    await renderApp("/help", { fetch: api([casa, casal], []) });
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: pt["nav.user"] }),
+      ).toHaveTextContent("Casal"),
+    );
+
+    const user = await openBooks();
+    await user.click(
+      await screen.findByRole("menuitem", { name: pt["books.new"] }),
+    );
+
+    const dialog = await screen.findByRole("dialog");
+    expect(
+      within(dialog).getByRole("heading", { name: pt["books.new"] }),
+    ).toBeInTheDocument();
+  });
+
   it("shows the problem of a failed switch", async () => {
     const sent: unknown[] = [];
     await renderApp("/help", {
@@ -102,7 +136,7 @@ describe("account menu books", () => {
       ).toHaveTextContent("Casal"),
     );
 
-    const user = await openMenu();
+    const user = await openBooks();
     await user.click(
       await screen.findByRole("menuitemradio", { name: "Casa" }),
     );
