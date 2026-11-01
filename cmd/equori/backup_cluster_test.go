@@ -3,11 +3,13 @@
 package main
 
 import (
-	"fmt"
 	"io"
 	"log/slog"
+	"net"
+	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -34,8 +36,7 @@ func TestClusterBackupDoesNotMigrate(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cc := pool.Config().ConnConfig
-	t.Setenv("EQUORI_DATABASE_URL", fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", cc.Host, cc.Port, cc.User, cc.Password, cc.Database))
+	t.Setenv("EQUORI_DATABASE_URL", dsnOf(pool))
 	t.Setenv("EQUORI_POSTGRES_BIN", bin)
 
 	if err := backupCommand([]string{"--out", filepath.Join(t.TempDir(), "b.dump")}); err != nil {
@@ -279,9 +280,18 @@ func keptRows(t *testing.T, pool *pgxpool.Pool) int {
 	return n
 }
 
+// dsnOf is the URL form that EQUORI_DATABASE_URL accepts (P14).
 func dsnOf(pool *pgxpool.Pool) string {
 	cc := pool.Config().ConnConfig
-	return fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", cc.Host, cc.Port, cc.User, cc.Password, cc.Database)
+	u := url.URL{
+		Scheme:   "postgres",
+		User:     url.UserPassword(cc.User, cc.Password),
+		Host:     net.JoinHostPort(cc.Host, strconv.Itoa(int(cc.Port))),
+		Path:     "/" + cc.Database,
+		RawQuery: "sslmode=disable",
+	}
+
+	return u.String()
 }
 
 func discardLogger() *slog.Logger {
