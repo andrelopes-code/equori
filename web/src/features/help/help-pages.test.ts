@@ -39,6 +39,38 @@ describe("help pages", () => {
     }
   });
 
+  it("holds the pages of the first-use help with their kinds (S249)", () => {
+    expect(helpPages).toEqual(
+      expect.arrayContaining([
+        { id: "installation", kind: "howto" },
+        { id: "connect-bank", kind: "howto" },
+        { id: "troubleshooting", kind: "reference" },
+      ]),
+    );
+  });
+
+  it.each(languages.map((l) => l.language))(
+    "gives troubleshooting an entry of its own for each symptom in %s (S249)",
+    async (language) => {
+      const text = await loadHelpPage(language, "US", "troubleshooting");
+
+      expect(text?.match(/^## \S/gm)?.length ?? 0).toBeGreaterThanOrEqual(9);
+    },
+  );
+
+  it.each(["connect-bank", "troubleshooting"])(
+    "adds the passage of region BR to %s and none for US (S250)",
+    async (id) => {
+      const neutral = await loadHelpPage("en", "US", id);
+      const brazil = await loadHelpPage("en", "BR", id);
+
+      expect(neutral).not.toBeNull();
+      expect(neutral).not.toContain("Meu Pluggy");
+      expect(brazil?.startsWith(neutral ?? "")).toBe(true);
+      expect(brazil).toContain("Meu Pluggy");
+    },
+  );
+
   it("has no page for an unknown id", async () => {
     expect(await loadHelpPage("en", "US", "nope")).toBeNull();
   });

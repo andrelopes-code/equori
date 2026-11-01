@@ -23,10 +23,13 @@ export const helpPages: readonly HelpPageEntry[] = [
   { id: "pay-statement", kind: "howto" },
   { id: "check-balance", kind: "howto" },
   { id: "category-rule", kind: "howto" },
+  { id: "installation", kind: "howto" },
+  { id: "connect-bank", kind: "howto" },
   { id: "glossary", kind: "reference" },
   { id: "statement", kind: "reference" },
   { id: "portfolio", kind: "reference" },
   { id: "budget-plan", kind: "reference" },
+  { id: "troubleshooting", kind: "reference" },
   { id: "how-money-is-recorded", kind: "explanation" },
   { id: "bank-connections", kind: "explanation" },
 ];

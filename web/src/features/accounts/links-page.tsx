@@ -50,7 +50,7 @@ export function LinksPage() {
     <>
       <HeaderSlot slot="subheading">{t("links.subtitle")}</HeaderSlot>
       <HeaderSlot slot="actions">
-        <HelpLink page="bank-connections" />
+        <HelpLink page="connect-bank" />
       </HeaderSlot>
       <PageBody>
         {connections.isError ? (
