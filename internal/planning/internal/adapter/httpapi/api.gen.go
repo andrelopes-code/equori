@@ -217,13 +217,21 @@ type BudgetPlan struct {
 	Planned        Money               `json:"planned"`
 
 	// Prices Prices that value occurrences in another currency at today (P8 amendment A72).
-	Prices         *[]Price         `json:"prices,omitempty"`
-	ReceivedIncome Money            `json:"received_income"`
-	Reference      *Money           `json:"reference,omitempty"`
-	Rows           []BudgetPlanRow  `json:"rows"`
-	Savings        Money            `json:"savings"`
-	Source         BudgetPlanSource `json:"source"`
-	Unassigned     *Money           `json:"unassigned,omitempty"`
+	Prices         *[]Price        `json:"prices,omitempty"`
+	ReceivedIncome Money           `json:"received_income"`
+	Reference      *Money          `json:"reference,omitempty"`
+	Rows           []BudgetPlanRow `json:"rows"`
+	Savings        Money           `json:"savings"`
+	SavingsGap     *Money          `json:"savings_gap,omitempty"`
+
+	// SavingsRateBp savings as basis points of reference, truncated; absent without a reference above zero (A188).
+	SavingsRateBp *int   `json:"savings_rate_bp,omitempty"`
+	SavingsTarget *Money `json:"savings_target,omitempty"`
+
+	// SavingsTargetBp The stored savings target in basis points of the reference; absent without one (A187).
+	SavingsTargetBp *int             `json:"savings_target_bp,omitempty"`
+	Source          BudgetPlanSource `json:"source"`
+	Unassigned      *Money           `json:"unassigned,omitempty"`
 }
 
 // BudgetPlanAmount defines model for BudgetPlanAmount.
@@ -244,7 +252,11 @@ type BudgetPlanInput struct {
 	// Amounts The changed categories only.
 	Amounts []BudgetPlanAmount `json:"amounts"`
 	Fixed   *Money             `json:"fixed,omitempty"`
-	Source  BudgetPlanSource   `json:"source"`
+
+	// SavingsTargetBp The share of the reference set aside, in basis points, from 0 to 10000 (savings target A187, checked by the
+	// server as a 422 on this field). A save without it clears the stored target.
+	SavingsTargetBp *int             `json:"savings_target_bp,omitempty"`
+	Source          BudgetPlanSource `json:"source"`
 }
 
 // BudgetPlanRow A category of the plan. last_month and average read the subtree of a budgeted category and the own postings

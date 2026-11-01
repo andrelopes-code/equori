@@ -26,7 +26,13 @@ type planView struct {
 	Savings        money  `json:"savings"`
 	Planned        money  `json:"planned"`
 	Unassigned     *money `json:"unassigned"`
-	Rows           []struct {
+
+	SavingsTargetBP *int   `json:"savings_target_bp"`
+	SavingsRateBP   *int   `json:"savings_rate_bp"`
+	SavingsTarget   *money `json:"savings_target"`
+	SavingsGap      *money `json:"savings_gap"`
+
+	Rows []struct {
 		CategoryID string `json:"category_id"`
 		BudgetID   string `json:"budget_id"`
 		Planned    money  `json:"planned"`
@@ -346,6 +352,74 @@ func TestS164ReferenceRoundTrip(t *testing.T) {
 
 	if again := f.plan("2026-12"); again.Source != "fixed" || amountOf(again.Reference) != 600000 {
 		t.Fatalf("next month = %+v", again)
+	}
+}
+
+// S254: the plan states savings as a share of the reference, the target amount and the gap.
+func TestS254SavingsRateTargetGap(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t, "2026-12-02")
+	f.schedule("savings", f.checking, f.savings, 120000, monthly("2026-12-01", 10, ""), nil)
+
+	fixed := map[string]any{"source": "fixed", "fixed": apitest.BRL(800000), "amounts": []map[string]any{}}
+	if got := f.savePlan("2026-12", fixed); got.SavingsRateBP == nil || *got.SavingsRateBP != 1500 || got.SavingsTarget != nil || got.SavingsGap != nil {
+		t.Fatalf("plan without a target = %+v", got)
+	}
+
+	fixed["savings_target_bp"] = 2500
+	if got := f.savePlan("2026-12", fixed); amountOf(got.SavingsTarget) != 200000 || amountOf(got.SavingsGap) != 80000 {
+		t.Fatalf("plan with a target = target %v gap %v", got.SavingsTarget, got.SavingsGap)
+	}
+
+	f.schedule("savings", f.checking, f.savings, 80000, monthly("2026-12-01", 20, ""), nil)
+
+	if got := f.plan("2026-12"); amountOf(got.SavingsTarget) != 200000 || amountOf(got.SavingsGap) != 0 {
+		t.Fatalf("plan at the target = target %v gap %v", got.SavingsTarget, got.SavingsGap)
+	}
+}
+
+// S255: the target is stored with the reference, cleared by a save without it, and kept without
+// figures when the reference is zero.
+func TestS255SavingsTargetStoredAndCleared(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t, "2026-11-10")
+
+	if got := f.plan("2026-11"); got.SavingsTargetBP != nil {
+		t.Fatalf("plan before any save = %+v", got)
+	}
+
+	body := map[string]any{"source": "fixed", "fixed": apitest.BRL(600000), "savings_target_bp": 2500, "amounts": []map[string]any{}}
+	f.savePlan("2026-11", body)
+
+	if got := f.plan("2026-12"); got.SavingsTargetBP == nil || *got.SavingsTargetBP != 2500 {
+		t.Fatalf("next month = %+v", got)
+	}
+
+	body["fixed"] = apitest.BRL(0)
+	if got := f.savePlan("2026-11", body); got.SavingsTargetBP == nil || *got.SavingsTargetBP != 2500 ||
+		got.SavingsRateBP != nil || got.SavingsTarget != nil || got.SavingsGap != nil {
+		t.Fatalf("zero reference = %+v", got)
+	}
+
+	delete(body, "savings_target_bp")
+
+	if got := f.savePlan("2026-11", body); got.SavingsTargetBP != nil {
+		t.Fatalf("after a save without the field = %+v", got)
+	}
+}
+
+// S256: a target outside 0 to 10000 is a 422 on its field and stores nothing.
+func TestS256SavingsTargetInvalid(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t, "2026-11-10")
+
+	for _, bp := range []int{10001, -1} {
+		body := map[string]any{"source": "fixed", "fixed": apitest.BRL(600000), "savings_target_bp": bp, "amounts": []map[string]any{}}
+		f.h.ExpectProblem(f.h.Do(http.MethodPut, "/api/v1/budget-plan?month=2026-11", body), http.StatusUnprocessableEntity, "validation_failed", "savings_target_bp")
+	}
+
+	if got := f.plan("2026-11"); got.SavingsTargetBP != nil || got.Source == "fixed" && got.Fixed != nil {
+		t.Fatalf("plan after errors = %+v", got)
 	}
 }
 

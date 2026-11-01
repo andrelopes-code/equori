@@ -7126,6 +7126,11 @@ components:
           $ref: "#/components/schemas/BudgetPlanSource"
         fixed:
           $ref: "#/components/schemas/Money"
+        savings_target_bp:
+          type: integer
+          description: |
+            The share of the reference set aside, in basis points, from 0 to 10000 (savings target A187, checked by the
+            server as a 422 on this field). A save without it clears the stored target.
         amounts:
           type: array
           description: The changed categories only.
@@ -7171,6 +7176,16 @@ components:
         planned:
           $ref: "#/components/schemas/Money"
         unassigned:
+          $ref: "#/components/schemas/Money"
+        savings_target_bp:
+          type: integer
+          description: The stored savings target in basis points of the reference; absent without one (A187).
+        savings_rate_bp:
+          type: integer
+          description: savings as basis points of reference, truncated; absent without a reference above zero (A188).
+        savings_target:
+          $ref: "#/components/schemas/Money"
+        savings_gap:
           $ref: "#/components/schemas/Money"
         prices:
           type: array

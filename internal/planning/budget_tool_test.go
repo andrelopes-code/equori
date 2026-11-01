@@ -337,3 +337,22 @@ func TestS166SavePlanTool(t *testing.T) {
 
 	f.h.ExpectToolError(f.h.Tool("manage_budget_or_goal", map[string]any{"action": "save_plan", "month": "2026-11"}), "invalid_arguments", "amounts")
 }
+
+// A187: a save through the assistant writes the stored savings target back unchanged.
+func TestSavePlanToolKeepsSavingsTarget(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t, "2026-11-10")
+	food := f.h.Account("Food", "expense", "", nil)
+	f.savePlan("2026-11", map[string]any{"source": "fixed", "fixed": apitest.BRL(850000), "savings_target_bp": 2500, "amounts": []map[string]any{}})
+
+	var out toolManaged
+	toolOutput(t, f.h, "manage_budget_or_goal", map[string]any{
+		"action": "save_plan", "month": "2026-11",
+		"amounts": []map[string]any{{"category_id": food, "amount": "1500.00"}},
+	}, &out)
+
+	got := f.plan("2026-11")
+	if got.SavingsTargetBP == nil || *got.SavingsTargetBP != 2500 || amountOf(got.SavingsTarget) != 212500 || got.Planned.Amount != 150000 {
+		t.Fatalf("plan after the tool save = %+v", got)
+	}
+}

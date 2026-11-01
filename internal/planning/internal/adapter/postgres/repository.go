@@ -619,6 +619,10 @@ func (r *Repository) BudgetReference(ctx context.Context, booksID int64) (domain
 		out.Fixed, out.HasFixed = *row.Amount, true
 	}
 
+	if row.SavingsTargetBp != nil {
+		out.TargetBP, out.HasTarget = int(*row.SavingsTargetBp), true
+	}
+
 	return out, true, nil
 }
 
@@ -628,7 +632,19 @@ func (r *Repository) SaveBudgetReference(ctx context.Context, booksID int64, ref
 		amount = &ref.Fixed
 	}
 
-	err := r.q.UpsertBudgetReference(ctx, UpsertBudgetReferenceParams{BooksID: booksID, Source: string(ref.Source), Amount: amount, Currency: string(currency)})
+	var target *int32
+	if ref.HasTarget {
+		bp := int32(ref.TargetBP)
+		target = &bp
+	}
+
+	err := r.q.UpsertBudgetReference(ctx, UpsertBudgetReferenceParams{
+		BooksID:         booksID,
+		Source:          string(ref.Source),
+		Amount:          amount,
+		Currency:        string(currency),
+		SavingsTargetBp: target,
+	})
 	if err != nil {
 		return fmt.Errorf("save budget reference: %w", err)
 	}

@@ -86,9 +86,12 @@ const (
 	SourceFixed          ReferenceSource = "fixed"
 )
 
-// Reference is a book's choice of reference income; Fixed holds the amount of SourceFixed.
+// Reference is a book's choice of reference income; Fixed holds the amount of SourceFixed and
+// TargetBP the savings target in basis points of the reference (A187).
 type Reference struct {
-	Source   ReferenceSource
-	Fixed    int64
-	HasFixed bool
+	Source    ReferenceSource
+	Fixed     int64
+	HasFixed  bool
+	TargetBP  int
+	HasTarget bool
 }

@@ -11,7 +11,7 @@ import (
 
 const getBudgetReference = `-- name: GetBudgetReference :one
 SELECT
-    books_id, source, amount, currency
+    books_id, source, amount, currency, savings_target_bp
 FROM
     planning_budget_reference
 WHERE
@@ -26,27 +26,36 @@ func (q *Queries) GetBudgetReference(ctx context.Context, booksID int64) (Planni
 		&i.Source,
 		&i.Amount,
 		&i.Currency,
+		&i.SavingsTargetBp,
 	)
 	return i, err
 }
 
 const upsertBudgetReference = `-- name: UpsertBudgetReference :exec
 INSERT INTO
-    planning_budget_reference (books_id, source, amount, currency)
+    planning_budget_reference (books_id, source, amount, currency, savings_target_bp)
 VALUES
-    ($1, $2, $3, $4)
+    (
+        $1,
+        $2,
+        $3,
+        $4,
+        $5
+    )
 ON CONFLICT (books_id) DO UPDATE
 SET
     source = EXCLUDED.source,
     amount = EXCLUDED.amount,
-    currency = EXCLUDED.currency
+    currency = EXCLUDED.currency,
+    savings_target_bp = EXCLUDED.savings_target_bp
 `
 
 type UpsertBudgetReferenceParams struct {
-	BooksID  int64
-	Source   string
-	Amount   *int64
-	Currency string
+	BooksID         int64
+	Source          string
+	Amount          *int64
+	Currency        string
+	SavingsTargetBp *int32
 }
 
 func (q *Queries) UpsertBudgetReference(ctx context.Context, arg UpsertBudgetReferenceParams) error {
@@ -55,6 +64,7 @@ func (q *Queries) UpsertBudgetReference(ctx context.Context, arg UpsertBudgetRef
 		arg.Source,
 		arg.Amount,
 		arg.Currency,
+		arg.SavingsTargetBp,
 	)
 	return err
 }

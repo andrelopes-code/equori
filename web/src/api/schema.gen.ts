@@ -4149,6 +4149,11 @@ export interface components {
         BudgetPlanInput: {
             source: components["schemas"]["BudgetPlanSource"];
             fixed?: components["schemas"]["Money"];
+            /**
+             * @description The share of the reference set aside, in basis points, from 0 to 10000 (savings target A187, checked by the
+             *     server as a 422 on this field). A save without it clears the stored target.
+             */
+            savings_target_bp?: number;
             /** @description The changed categories only. */
             amounts: components["schemas"]["BudgetPlanAmount"][];
         };
@@ -4172,6 +4177,12 @@ export interface components {
             savings: components["schemas"]["Money"];
             planned: components["schemas"]["Money"];
             unassigned?: components["schemas"]["Money"];
+            /** @description The stored savings target in basis points of the reference; absent without one (A187). */
+            savings_target_bp?: number;
+            /** @description savings as basis points of reference, truncated; absent without a reference above zero (A188). */
+            savings_rate_bp?: number;
+            savings_target?: components["schemas"]["Money"];
+            savings_gap?: components["schemas"]["Money"];
             /** @description Prices that value occurrences in another currency at today (P8 amendment A72). */
             prices?: components["schemas"]["Price"][];
             rows: components["schemas"]["BudgetPlanRow"][];

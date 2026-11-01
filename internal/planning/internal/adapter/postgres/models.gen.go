@@ -28,10 +28,11 @@ type PlanningBudgetAmount struct {
 }
 
 type PlanningBudgetReference struct {
-	BooksID  int64
-	Source   string
-	Amount   *int64
-	Currency string
+	BooksID         int64
+	Source          string
+	Amount          *int64
+	Currency        string
+	SavingsTargetBp *int32
 }
 
 type PlanningGoal struct {

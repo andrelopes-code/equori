@@ -338,7 +338,12 @@ func manageBudgetOrGoal(svc *app.Service, l Ledger, _ clock.Clock) tool.Tool {
 				}
 			}
 
-			_, err := svc.SaveBudgetPlan(ctx, booksID, p.month, source, fixed, p.planAmounts)
+			var target *int
+			if p.plan.Reference.HasTarget {
+				target = &p.plan.Reference.TargetBP
+			}
+
+			_, err := svc.SaveBudgetPlan(ctx, booksID, p.month, source, fixed, target, p.planAmounts)
 
 			return manageBudgetOrGoalOut{}, err
 		case "update_goal":

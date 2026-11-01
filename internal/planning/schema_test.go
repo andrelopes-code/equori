@@ -107,6 +107,12 @@ func TestSchemaInvariants(t *testing.T) {
 		{"negative fixed reference", func() error {
 			return exec(`INSERT INTO planning_budget_reference (books_id, source, amount, currency) VALUES ($1, 'fixed', -1, 'BRL')`, otherID)
 		}},
+		{"savings target above 10000", func() error {
+			return exec(`INSERT INTO planning_budget_reference (books_id, source, amount, currency, savings_target_bp) VALUES ($1, 'fixed', 0, 'BRL', 10001)`, otherID)
+		}},
+		{"negative savings target", func() error {
+			return exec(`INSERT INTO planning_budget_reference (books_id, source, amount, currency, savings_target_bp) VALUES ($1, 'fixed', 0, 'BRL', -1)`, otherID)
+		}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

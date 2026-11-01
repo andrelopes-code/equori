@@ -47,6 +47,20 @@ func toBudgetPlanAPI(p app.Plan) BudgetPlan {
 		out.AverageMonths = &p.AverageMonths
 	}
 
+	if p.Reference.HasTarget {
+		out.SavingsTargetBp = &p.Reference.TargetBP
+	}
+
+	if rate, ok := p.SavingsRate(); ok {
+		out.SavingsRateBp = &rate
+	}
+
+	if target, ok := p.SavingsTarget(); ok {
+		out.SavingsTarget = optional(&target)
+		gap, _ := p.SavingsGap()
+		out.SavingsGap = optional(&gap)
+	}
+
 	if ref, ok := p.ReferenceAmount(); ok {
 		out.Reference = optional(&ref)
 		rest, _ := p.Unassigned()
@@ -110,7 +124,7 @@ func (s *Server) SaveBudgetPlan(ctx context.Context, req SaveBudgetPlanRequestOb
 		amounts[i] = app.PlanAmount{CategoryID: a.CategoryId, Amount: m}
 	}
 
-	p, err := s.svc.SaveBudgetPlan(ctx, auth.MustBooksID(ctx), month, domain.ReferenceSource(req.Body.Source), fixed, amounts)
+	p, err := s.svc.SaveBudgetPlan(ctx, auth.MustBooksID(ctx), month, domain.ReferenceSource(req.Body.Source), fixed, req.Body.SavingsTargetBp, amounts)
 	if err != nil {
 		return nil, err
 	}

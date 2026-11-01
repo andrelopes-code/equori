@@ -13,6 +13,9 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
+// basisPoints is the denominator of the shares of a plan: 10000 basis points are the whole.
+const basisPoints = 10000
+
 // Plan is the budget plan of a month (budget plan amendments A129 and A131). Expected is nil
 // when the book has no income schedule and Average when no month of history exists.
 type Plan struct {
@@ -57,6 +60,41 @@ func (p Plan) ReferenceAmount() (int64, bool) {
 func (p Plan) Unassigned() (int64, bool) {
 	ref, ok := p.ReferenceAmount()
 	return ref - p.Installments - p.Savings - p.Planned, ok
+}
+
+// SavingsRate is savings as basis points of the reference, truncated; false unless the
+// reference is above zero (A188).
+func (p Plan) SavingsRate() (int, bool) {
+	ref, ok := p.ReferenceAmount()
+	if !ok || ref <= 0 {
+		return 0, false
+	}
+
+	return int(p.Savings/ref*basisPoints + p.Savings%ref*basisPoints/ref), true
+}
+
+// SavingsTarget is the reference times the stored target, rounded half up; false without a
+// target or a reference above zero (A188).
+func (p Plan) SavingsTarget() (int64, bool) {
+	ref, ok := p.ReferenceAmount()
+	if !ok || ref <= 0 || !p.Reference.HasTarget {
+		return 0, false
+	}
+
+	// ref = q×10000 + r keeps the product within int64.
+	bp := int64(p.Reference.TargetBP)
+
+	return ref/basisPoints*bp + (ref%basisPoints*bp+basisPoints/2)/basisPoints, true
+}
+
+// SavingsGap is what the target still lacks of the month's savings, never below zero (A188).
+func (p Plan) SavingsGap() (int64, bool) {
+	target, ok := p.SavingsTarget()
+	if !ok {
+		return 0, false
+	}
+
+	return max(target-p.Savings, 0), true
 }
 
 // BudgetPlan returns the plan of month for the book.
@@ -251,11 +289,24 @@ type PlanAmount struct {
 // SaveBudgetPlan stores the reference choice and sets each listed category's amount from month
 // on, in one transaction (A130): the version of month is replaced, a category without a budget
 // gets one when its amount is above zero, and versions of other months stay.
-// fixed is read only with SourceFixed.
-func (s *Service) SaveBudgetPlan(ctx context.Context, booksID int64, month time.Time, source domain.ReferenceSource, fixed *money.Money, amounts []PlanAmount) (Plan, error) {
+// fixed is read only with SourceFixed. targetBP is the savings target in basis points; nil
+// clears it (A187).
+func (s *Service) SaveBudgetPlan(
+	ctx context.Context,
+	booksID int64,
+	month time.Time,
+	source domain.ReferenceSource,
+	fixed *money.Money,
+	targetBP *int,
+	amounts []PlanAmount,
+) (Plan, error) {
 	month = domain.MonthOf(month)
 	if month.Before(domain.MonthOf(s.clk.Today(ctx))) || month.After(s.horizon(ctx)) {
 		return Plan{}, &domain.FieldError{Field: "month", Message: "must be from the current month to today + 12 months", Err: domain.ErrValidation}
+	}
+
+	if targetBP != nil && (*targetBP < 0 || *targetBP > basisPoints) {
+		return Plan{}, &domain.FieldError{Field: "savings_target_bp", Message: "must be from 0 to 10000", Err: domain.ErrValidation}
 	}
 
 	base, err := s.ledger.BaseCurrency(ctx, booksID)
@@ -264,6 +315,10 @@ func (s *Service) SaveBudgetPlan(ctx context.Context, booksID int64, month time.
 	}
 
 	ref := domain.Reference{Source: source}
+	if targetBP != nil {
+		ref.TargetBP, ref.HasTarget = *targetBP, true
+	}
+
 	if source == domain.SourceFixed {
 		if fixed == nil {
 			return Plan{}, &domain.FieldError{Field: "fixed", Message: "is required with the fixed source", Err: domain.ErrValidation}
