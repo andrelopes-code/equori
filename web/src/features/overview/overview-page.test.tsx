@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
+import { formatDate } from "@/i18n/format";
 import { fakeApi, json, problem } from "@/testing/fake-api";
 import { expectNoAmounts, hideAmounts } from "@/testing/privacy";
 import { renderApp } from "@/testing/render-app";
@@ -12,6 +13,9 @@ import {
   cardRoutes,
   reserveID,
   cardID,
+  closedStatementID,
+  openStatementID,
+  statement,
   connectionFixture,
   checkingID,
   foodID,
@@ -23,6 +27,7 @@ import {
   foodBudget,
   fuelBudget,
   parkingBudget,
+  progressByBudget,
 } from "@/testing/budget-api";
 import { occurrence, salaryID, schedules } from "@/testing/planning-api";
 import { indicatorsFixture } from "@/testing/report-api";
@@ -571,6 +576,49 @@ describe("overview page", () => {
         name: /Transactions the bank did not report/,
       });
       expect(link.getAttribute("href")).toBe(`/cards/${cardID}/statements/s1`);
+    });
+
+    // S247, S248
+    it("notices a statement due soon and the budgets over their amount", async () => {
+      const unpaid = statement(closedStatementID, "2026-10", "closed", {
+        due_date: "2026-11-12",
+        unpaid: money(50000),
+      });
+      const paid = statement(openStatementID, "2026-11", "closed", {
+        due_date: "2026-11-11",
+      });
+      await renderApp("/", {
+        today: "2026-11-10",
+        fetch: api({
+          "GET /api/v1/transactions": uncategorized([]),
+          [`GET /api/v1/accounts/${cardID}/statements`]: () =>
+            json(200, { items: [unpaid, paid] }),
+          "GET /api/v1/budgets": () => json(200, { items: [foodBudget] }),
+          [`GET /api/v1/budgets/${foodBudget.id}/progress`]: () =>
+            json(200, progressByBudget[foodBudget.id]?.["2026-11"]),
+        }),
+      });
+      const region = await screen.findByRole("article", { name: "Attention" });
+      await waitFor(() => {
+        expect(within(region).getAllByRole("listitem")).toHaveLength(2);
+      });
+      const rows = within(region)
+        .getAllByRole("listitem")
+        .map((row) => row.textContent);
+      expect(rows[0]).toMatch(
+        new RegExp(
+          `Card statement to pay.*Itaú Visa: due on ${formatDate("2026-11-12", "en")}.*500\\.00`,
+        ),
+      );
+      expect(rows[1]).toMatch(/Budgets over their amount.*1/);
+      expect(
+        within(region)
+          .getAllByRole("link")
+          .map((link) => link.getAttribute("href")),
+      ).toEqual([
+        `/cards/${cardID}/statements/${closedStatementID}`,
+        "/planning",
+      ]);
     });
 
     it("says that nothing needs attention", async () => {
