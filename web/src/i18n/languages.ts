@@ -3,13 +3,28 @@ import { PT_BR } from "@slotted/core/i18n/pt-BR";
 import { catalogEn } from "@/i18n/catalog.en";
 import { catalogPtBR } from "@/i18n/catalog.pt-BR";
 
+// CLDR puts 0 in the "one" form of pt, so "{count, plural, one {# resultado} ...}" reads
+// "0 resultado" (A183).
+const results =
+  "{count, plural, =0 {Nenhum resultado} one {# resultado} other {# resultados}}";
+
+const slottedPt = {
+  ...PT_BR,
+  cascader: { ...PT_BR.cascader, results },
+  combobox: { ...PT_BR.combobox, count: results },
+  commandPalette: { ...PT_BR.commandPalette, count: results },
+  entityPicker: { ...PT_BR.entityPicker, count: results },
+  multiSelect: { ...PT_BR.multiSelect, count: results },
+  select: { ...PT_BR.select, count: results },
+};
+
 export const languages = [
   { language: "en", nativeName: "English", catalog: catalogEn },
   {
     language: "pt",
     nativeName: "Português",
     catalog: catalogPtBR,
-    slotted: PT_BR,
+    slotted: slottedPt,
   },
 ] as const;
 

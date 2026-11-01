@@ -1,3 +1,4 @@
+import { formatMessage } from "@slotted/core/i18n";
 import { describe, expect, it } from "vitest";
 
 import { languages, matchLanguage } from "@/i18n/languages";
@@ -19,5 +20,28 @@ describe("languages", () => {
       "English",
       "Português",
     ]);
+  });
+});
+
+describe("Slotted pt messages", () => {
+  const pt = languages.find((l) => l.language === "pt");
+  const slotted = pt !== undefined && "slotted" in pt ? pt.slotted : undefined;
+
+  // S258 (A183).
+  it.each([
+    [0, "Nenhum resultado"],
+    [1, "1 resultado"],
+    [2, "2 resultados"],
+  ])("reads a count of %i as %s", (count, want) => {
+    expect(
+      [
+        slotted?.cascader.results,
+        slotted?.combobox.count,
+        slotted?.commandPalette.count,
+        slotted?.entityPicker.count,
+        slotted?.multiSelect.count,
+        slotted?.select.count,
+      ].map((m) => formatMessage(m ?? "", { count }, "pt-BR")),
+    ).toEqual(Array(6).fill(want));
   });
 });

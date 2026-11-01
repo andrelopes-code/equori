@@ -273,4 +273,13 @@ describe("First-use walkthrough", () => {
       expect(router.state.location.pathname).toBe("/");
     });
   });
+
+  // S257 (A182): a row needs its institution, so its label has no "(optional)".
+  it("labels the institution of a row without optional", async () => {
+    await renderApp("/start", { fetch: api([]) });
+    const label = await screen.findByText(catalogEn["start.where.institution"]);
+    expect(label.closest("label")?.textContent).toBe(
+      catalogEn["start.where.institution"],
+    );
+  });
 });

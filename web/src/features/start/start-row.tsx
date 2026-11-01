@@ -38,7 +38,7 @@ export function StartRow({
   return (
     <Stack gap={4}>
       <Inline gap={3} align="end" wrap="wrap">
-        <Field>
+        <Field required>
           <FieldLabel>{t("start.where.institution")}</FieldLabel>
           <InstitutionField
             value={row.institutionId}
