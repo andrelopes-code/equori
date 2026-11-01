@@ -98,6 +98,10 @@ func (s *Service) Resolve(ctx context.Context, booksID int64, recordID uuid.UUID
 		return domain.ExternalRecord{}, domain.Batch{}, err
 	}
 
+	if rec.ReviewReason == domain.ReviewGroup {
+		return s.resolveGroup(ctx, booksID, rec, b, action, txID)
+	}
+
 	// The candidates stored at import stay accepted, so a choice the ledger now refuses (a voided
 	// or reconciled entry) is refused by its own rule.
 	stored := rec.Candidates
