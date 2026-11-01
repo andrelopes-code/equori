@@ -13,6 +13,7 @@ import {
   progressByBudget,
 } from "@/testing/budget-api";
 import { json, problem } from "@/testing/fake-api";
+import { moneyValue } from "@/testing/money-value";
 import { renderApp } from "@/testing/render-app";
 
 async function pick(label: string, text: string) {
@@ -123,8 +124,10 @@ describe("Budget page", () => {
     const figures = await screen.findByRole("region", {
       name: catalogEn["budget.monthFigures"],
     });
-    for (const amount of ["R$1,800.00", "R$300.00", "R$2,300.00", "−R$200.00"])
-      expect(await within(figures).findByText(amount)).toBeInTheDocument();
+    for (const amount of ["R$1,800.00", "R$300.00", "R$2,300.00", "R$−200.00"])
+      expect(
+        await within(figures).findByText(moneyValue(amount)),
+      ).toBeInTheDocument();
   });
 
   it("lists the amounts by month", async () => {

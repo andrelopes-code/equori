@@ -13,6 +13,7 @@ import {
   statementFixtures,
 } from "@/testing/account-api";
 import { fakeApi, json } from "@/testing/fake-api";
+import { moneyValue } from "@/testing/money-value";
 import { renderApp } from "@/testing/render-app";
 
 type Route = (req: Request) => Response | Promise<Response>;
@@ -41,9 +42,15 @@ describe("CardsPage", () => {
     const figures = await screen.findByRole("region", {
       name: catalogEn["cards.figures"],
     });
-    expect(await within(figures).findByText("R$2,500.00")).toBeInTheDocument();
-    expect(within(figures).getByText("R$1,800.00")).toBeInTheDocument();
-    expect(within(figures).getByText("R$5,500.00")).toBeInTheDocument();
+    expect(
+      await within(figures).findByText(moneyValue("R$2,500.00")),
+    ).toBeInTheDocument();
+    expect(
+      within(figures).getByText(moneyValue("R$1,800.00")),
+    ).toBeInTheDocument();
+    expect(
+      within(figures).getByText(moneyValue("R$5,500.00")),
+    ).toBeInTheDocument();
     expect(
       within(figures).getByText(words("cards.dueNote", { date: "10/25/2026" })),
     ).toBeInTheDocument();

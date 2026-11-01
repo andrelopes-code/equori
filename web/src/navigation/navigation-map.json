@@ -365,6 +365,12 @@
     ]
   },
   {
+    "path": "/settings/appearance",
+    "topics": ["settings_language_and_region"],
+    "screen": "Appearance",
+    "tasks": ["change the theme, colours, density and fonts"]
+  },
+  {
     "path": "/help",
     "topics": ["getting_started"],
     "screen": "Help",

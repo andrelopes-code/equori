@@ -11,6 +11,7 @@ import {
   connectionFixture,
 } from "@/testing/account-api";
 import { fakeApi, json, problem } from "@/testing/fake-api";
+import { moneyValue } from "@/testing/money-value";
 import { renderApp } from "@/testing/render-app";
 
 function api(queries: URLSearchParams[] = [], overrides = {}) {
@@ -42,10 +43,16 @@ describe("AccountsPage", () => {
       name: catalogEn["balanceSheet.figures"],
     });
     await waitFor(() => {
-      expect(within(figures).getByText("R$15,390.55")).toBeInTheDocument();
+      expect(
+        within(figures).getByText(moneyValue("R$15,390.55")),
+      ).toBeInTheDocument();
     });
-    expect(within(figures).getByText("R$14,500.00")).toBeInTheDocument();
-    expect(within(figures).getByText("R$890.55")).toBeInTheDocument();
+    expect(
+      within(figures).getByText(moneyValue("R$14,500.00")),
+    ).toBeInTheDocument();
+    expect(
+      within(figures).getByText(moneyValue("R$890.55")),
+    ).toBeInTheDocument();
   });
 
   it("compares with the balances of 30 days earlier", async () => {
