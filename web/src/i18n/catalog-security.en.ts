@@ -17,6 +17,7 @@ export const securityEn = {
   "security.done": "Done",
   "security.copy": "Copy",
   "security.copied": "Copied",
+  "security.copyFailed": "Not copied: select the text",
   "security.confirm": "Confirm",
   "security.totp.title": "Authenticator app",
   "security.totp.description":

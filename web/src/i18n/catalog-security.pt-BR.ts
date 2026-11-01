@@ -20,6 +20,7 @@ export const securityPtBR: Record<keyof typeof securityEn, string> = {
   "security.done": "Concluir",
   "security.copy": "Copiar",
   "security.copied": "Copiado",
+  "security.copyFailed": "Não copiou: selecione o texto",
   "security.confirm": "Confirmar",
   "security.totp.title": "App autenticador",
   "security.totp.description":
