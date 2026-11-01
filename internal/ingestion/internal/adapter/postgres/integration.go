@@ -13,10 +13,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/page"
 )
 
-const (
-	uniqueViolation   = "23505"
-	restrictViolation = "23001"
-)
+const uniqueViolation = "23505"
 
 // violates reports the error of the named constraint and code.
 func violates(err error, code, constraint string) bool {
@@ -80,7 +77,7 @@ func (r *Repository) UpdateCredentials(ctx context.Context, booksID int64, id uu
 func (r *Repository) DeleteIntegration(ctx context.Context, booksID int64, id uuid.UUID) error {
 	n, err := r.q.DeleteIntegration(ctx, DeleteIntegrationParams{BooksID: booksID, ID: id})
 	switch {
-	case violates(err, restrictViolation, "ingestion_connection_integration_fkey"):
+	case violates(err, foreignKeyViolation, "ingestion_connection_integration_fkey"):
 		return app.ErrIntegrationInUse
 	case err != nil:
 		return err
