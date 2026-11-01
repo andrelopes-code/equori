@@ -327,7 +327,12 @@ func (s *Service) importRecords(
 		return err
 	}
 
-	p.route(assigned, repeated)
+	grouped, err := s.groupedLines(ctx, p, assigned, repeated, postings)
+	if err != nil {
+		return err
+	}
+
+	p.route(assigned, repeated, grouped)
 
 	if err := s.linkMatches(ctx, p); err != nil {
 		return err
@@ -554,12 +559,19 @@ func (p *importPlan) offerAgain(rec *domain.ExternalRecord, r domain.NormalizedR
 	p.retried, p.again = append(p.retried, rec), append(p.again, InstallmentLine{RecordID: rec.ID, Line: line, Installment: *r.Installment})
 }
 
-func (p *importPlan) route(assigned []domain.Assignment, repeated map[int]bool) {
+func (p *importPlan) route(assigned []domain.Assignment, repeated map[int]bool, grouped map[int]uuid.UUID) {
 	for i, a := range assigned {
 		rec, line := p.scoring[i].rec, p.scoring[i].line
 		if repeated[i] {
 			// A142: the source reports a recorded payment under a second id.
 			rec.State, rec.ReviewReason = domain.StateNeedsReview, domain.ReviewRepeated
+			continue
+		}
+
+		if entry, ok := grouped[i]; ok {
+			// A168: the lines of a group wait for the owner with the entry as their candidate.
+			rec.State, rec.ReviewReason, rec.Candidates = domain.StateNeedsReview, domain.ReviewGroup, []uuid.UUID{entry}
+
 			continue
 		}
 
