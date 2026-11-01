@@ -243,6 +243,37 @@ WHERE
         OR institution_id = ANY (@institution_ids::TEXT[])
     );
 
+-- name: ListCreatedRecords :many
+-- A167: the lines the import created in a window; a group may take them over.
+SELECT
+    *
+FROM
+    ingestion_external_record
+WHERE
+    books_id = @books_id
+    AND account_id = @account_id
+    AND state = 'created'
+    AND booked_on BETWEEN @from_date::date AND @to_date::date
+ORDER BY
+    booked_on,
+    id;
+
+-- name: ListGroupRecords :many
+-- A168: the lines in review that wait with the entry as their candidate.
+SELECT
+    *
+FROM
+    ingestion_external_record
+WHERE
+    books_id = @books_id
+    AND account_id = @account_id
+    AND state = 'needs_review'
+    AND review_reason = 'group'
+    AND @entry::uuid = ANY (candidates)
+ORDER BY
+    booked_on,
+    id;
+
 -- name: ReidentifyRecord :exec
 -- A143: the record takes the external id, deduplication key and raw payload of its line;
 -- A148: the decision keeps the previous ones, for its undo.

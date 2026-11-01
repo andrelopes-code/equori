@@ -14,6 +14,9 @@ import (
 
 var ErrRecordResolved = errors.New("the record does not need review")
 
+// ErrGroupChanged: the lines of a group no longer confirm their entry (A169).
+var ErrGroupChanged = errors.New("the group of lines changed since the review")
+
 // ErrRecordNotDiscarded: only a discarded record can be reopened (A140).
 var ErrRecordNotDiscarded = errors.New("the record is not discarded")
 

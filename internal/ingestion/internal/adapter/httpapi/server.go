@@ -77,6 +77,8 @@ func ToProblem(err error) (problem.Details, bool) {
 		return problem.New(http.StatusConflict, "record_not_discarded", err.Error()), true
 	case errors.Is(err, app.ErrNoDecision):
 		return problem.New(http.StatusConflict, "no_decision", err.Error()), true
+	case errors.Is(err, app.ErrGroupChanged):
+		return problem.New(http.StatusConflict, "group_changed", err.Error()), true
 	case errors.Is(err, app.ErrAlreadyMatched):
 		return problem.New(http.StatusConflict, "already_matched", err.Error()), true
 	case errors.Is(err, app.ErrTransactionVoided):

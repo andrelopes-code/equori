@@ -60,6 +60,16 @@ type NewLine struct {
 	Line     Line
 }
 
+// GroupPart is one line of a group that confirms an entry (A169): its record, amount, date and
+// status, and the transaction the import created for it, uuid.Nil for a line without one.
+type GroupPart struct {
+	RecordID  uuid.UUID
+	Amount    int64
+	Date      time.Time
+	Pending   bool
+	CreatedTx uuid.UUID
+}
+
 // Match links an external record to the transaction it confirms; a pending line leaves the
 // posting pending.
 type Match struct {
@@ -100,6 +110,11 @@ type Ledger interface {
 	// ConfirmLine corrects the transaction to the line's amount and date (A101); a voided
 	// transaction is ErrTransactionVoided and a reconciled posting ErrReconciled.
 	ConfirmLine(ctx context.Context, booksID int64, txID, accountID uuid.UUID, amount int64, date time.Time) error
+	// GroupableTransactions returns the transactions among txIDs that a group may take over (A167).
+	GroupableTransactions(ctx context.Context, booksID int64, txIDs []uuid.UUID) ([]uuid.UUID, error)
+	// ConfirmGroup confirms the entry by the lines of a group (A169); ErrGroupChanged when the
+	// entry cannot take one.
+	ConfirmGroup(ctx context.Context, booksID int64, txID, accountID uuid.UUID, parts []GroupPart) error
 	// MoveReconciledDate moves a transaction with a reconciled card posting to the line's date
 	// when every reconciled posting keeps its statement (A147); else ErrReconciled.
 	MoveReconciledDate(ctx context.Context, booksID int64, txID, accountID uuid.UUID, date time.Time) error

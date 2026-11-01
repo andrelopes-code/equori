@@ -155,6 +155,7 @@ func (e ExternalRecordDecision) Valid() bool {
 const (
 	Ambiguous ExternalRecordReviewReason = "ambiguous"
 	Changed   ExternalRecordReviewReason = "changed"
+	Group     ExternalRecordReviewReason = "group"
 	Probable  ExternalRecordReviewReason = "probable"
 	Repeated  ExternalRecordReviewReason = "repeated"
 )
@@ -165,6 +166,8 @@ func (e ExternalRecordReviewReason) Valid() bool {
 	case Ambiguous:
 		return true
 	case Changed:
+		return true
+	case Group:
 		return true
 	case Probable:
 		return true
@@ -533,7 +536,7 @@ type ExternalRecord struct {
 	ExternalId  *string                 `json:"external_id,omitempty"`
 	Id          openapi_types.UUID      `json:"id"`
 
-	// ReviewReason Why the record waits for review (A100, A102, A142).
+	// ReviewReason Why the record waits for review (A100, A102, A142, A168).
 	ReviewReason *ExternalRecordReviewReason `json:"review_reason,omitempty"`
 
 	// ScoredCandidates The candidates as matching scored them, best first (A99, A100).
@@ -548,7 +551,7 @@ type ExternalRecord struct {
 // ExternalRecordDecision The last automatic decision of a sync, present while POST /external-records/{id}/undo can revert it (A148).
 type ExternalRecordDecision string
 
-// ExternalRecordReviewReason Why the record waits for review (A100, A102, A142).
+// ExternalRecordReviewReason Why the record waits for review (A100, A102, A142, A168).
 type ExternalRecordReviewReason string
 
 // ExternalRecordState defines model for ExternalRecord.State.
@@ -691,7 +694,7 @@ type Problem struct {
 	// server_busy, invalid_account, version_conflict, transaction_voided, posting_reconciled,
 	// account_not_empty, settings_locked, statement_not_closed, statement_financed, dispute_open, dispute_resolved,
 	// already_reconciled, difference_remains, method_not_allowed, unsupported_media_type,
-	// record_resolved, already_matched, not_categorizable, suggestion_closed, pairing_ambiguous,
+	// record_resolved, already_matched, group_changed, not_categorizable, suggestion_closed, pairing_ambiguous,
 	// integration_unavailable, aggregator_unauthorized, aggregator_unavailable, integration_in_use,
 	// currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended,
 	// budget_exists, instrument_exists, mixed_instruments, price_missing, later_sale_exists,

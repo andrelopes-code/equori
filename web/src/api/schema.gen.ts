@@ -4487,10 +4487,10 @@ export interface components {
              */
             decision?: "linked" | "followed" | "withdrawn" | "re_identified";
             /**
-             * @description Why the record waits for review (A100, A102, A142).
+             * @description Why the record waits for review (A100, A102, A142, A168).
              * @enum {string}
              */
-            review_reason?: "ambiguous" | "probable" | "changed" | "repeated";
+            review_reason?: "ambiguous" | "probable" | "changed" | "repeated" | "group";
             /** @description The candidates as matching scored them, best first (A99, A100). */
             scored_candidates?: components["schemas"]["ScoredCandidate"][];
         };
@@ -6454,7 +6454,7 @@ export interface components {
              *     server_busy, invalid_account, version_conflict, transaction_voided, posting_reconciled,
              *     account_not_empty, settings_locked, statement_not_closed, statement_financed, dispute_open, dispute_resolved,
              *     already_reconciled, difference_remains, method_not_allowed, unsupported_media_type,
-             *     record_resolved, already_matched, not_categorizable, suggestion_closed, pairing_ambiguous,
+             *     record_resolved, already_matched, group_changed, not_categorizable, suggestion_closed, pairing_ambiguous,
              *     integration_unavailable, aggregator_unauthorized, aggregator_unavailable, integration_in_use,
              *     currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended,
              *     budget_exists, instrument_exists, mixed_instruments, price_missing, later_sale_exists,

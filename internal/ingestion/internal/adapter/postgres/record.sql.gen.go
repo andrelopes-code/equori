@@ -152,6 +152,159 @@ func (q *Queries) ListBatchRecords(ctx context.Context, arg ListBatchRecordsPara
 	return items, nil
 }
 
+const listCreatedRecords = `-- name: ListCreatedRecords :many
+SELECT
+    id, books_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change, line_kind, review_reason, candidate_scores, institution_id, reported_amount, reported_on, decision, decision_undo, summary_batch_id, kept
+FROM
+    ingestion_external_record
+WHERE
+    books_id = $1
+    AND account_id = $2
+    AND state = 'created'
+    AND booked_on BETWEEN $3::date AND $4::date
+ORDER BY
+    booked_on,
+    id
+`
+
+type ListCreatedRecordsParams struct {
+	BooksID   int64
+	AccountID uuid.UUID
+	FromDate  time.Time
+	ToDate    time.Time
+}
+
+// A167: the lines the import created in a window; a group may take them over.
+func (q *Queries) ListCreatedRecords(ctx context.Context, arg ListCreatedRecordsParams) ([]IngestionExternalRecord, error) {
+	rows, err := q.db.Query(ctx, listCreatedRecords,
+		arg.BooksID,
+		arg.AccountID,
+		arg.FromDate,
+		arg.ToDate,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []IngestionExternalRecord
+	for rows.Next() {
+		var i IngestionExternalRecord
+		if err := rows.Scan(
+			&i.ID,
+			&i.BooksID,
+			&i.BatchID,
+			&i.AccountID,
+			&i.ExternalID,
+			&i.DedupKey,
+			&i.Raw,
+			&i.BookedOn,
+			&i.Amount,
+			&i.Description,
+			&i.State,
+			&i.TransactionID,
+			&i.Candidates,
+			&i.ExternalStatus,
+			&i.DueDate,
+			&i.InstallmentNumber,
+			&i.InstallmentCount,
+			&i.CategoryID,
+			&i.BalanceAfter,
+			&i.UnappliedChange,
+			&i.LineKind,
+			&i.ReviewReason,
+			&i.CandidateScores,
+			&i.InstitutionID,
+			&i.ReportedAmount,
+			&i.ReportedOn,
+			&i.Decision,
+			&i.DecisionUndo,
+			&i.SummaryBatchID,
+			&i.Kept,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listGroupRecords = `-- name: ListGroupRecords :many
+SELECT
+    id, books_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change, line_kind, review_reason, candidate_scores, institution_id, reported_amount, reported_on, decision, decision_undo, summary_batch_id, kept
+FROM
+    ingestion_external_record
+WHERE
+    books_id = $1
+    AND account_id = $2
+    AND state = 'needs_review'
+    AND review_reason = 'group'
+    AND $3::uuid = ANY (candidates)
+ORDER BY
+    booked_on,
+    id
+`
+
+type ListGroupRecordsParams struct {
+	BooksID   int64
+	AccountID uuid.UUID
+	Entry     uuid.UUID
+}
+
+// A168: the lines in review that wait with the entry as their candidate.
+func (q *Queries) ListGroupRecords(ctx context.Context, arg ListGroupRecordsParams) ([]IngestionExternalRecord, error) {
+	rows, err := q.db.Query(ctx, listGroupRecords, arg.BooksID, arg.AccountID, arg.Entry)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []IngestionExternalRecord
+	for rows.Next() {
+		var i IngestionExternalRecord
+		if err := rows.Scan(
+			&i.ID,
+			&i.BooksID,
+			&i.BatchID,
+			&i.AccountID,
+			&i.ExternalID,
+			&i.DedupKey,
+			&i.Raw,
+			&i.BookedOn,
+			&i.Amount,
+			&i.Description,
+			&i.State,
+			&i.TransactionID,
+			&i.Candidates,
+			&i.ExternalStatus,
+			&i.DueDate,
+			&i.InstallmentNumber,
+			&i.InstallmentCount,
+			&i.CategoryID,
+			&i.BalanceAfter,
+			&i.UnappliedChange,
+			&i.LineKind,
+			&i.ReviewReason,
+			&i.CandidateScores,
+			&i.InstitutionID,
+			&i.ReportedAmount,
+			&i.ReportedOn,
+			&i.Decision,
+			&i.DecisionUndo,
+			&i.SummaryBatchID,
+			&i.Kept,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listRecordsByKeys = `-- name: ListRecordsByKeys :many
 SELECT
     id, books_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change, line_kind, review_reason, candidate_scores, institution_id, reported_amount, reported_on, decision, decision_undo, summary_batch_id, kept

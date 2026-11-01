@@ -200,6 +200,8 @@ func (p ledgerPort) translate(err error) error {
 		return app.ErrNotRetypable
 	case errors.Is(err, ledger.ErrVoided):
 		return app.ErrTransactionVoided
+	case errors.Is(err, ledger.ErrNotGroupable):
+		return app.ErrGroupChanged
 	}
 
 	return err
@@ -292,6 +294,21 @@ func (p ledgerPort) LinePayees(ctx context.Context, booksID int64, lines []app.L
 	}
 
 	return out, nil
+}
+
+func (p ledgerPort) GroupableTransactions(ctx context.Context, booksID int64, txIDs []uuid.UUID) ([]uuid.UUID, error) {
+	ids, err := p.l.GroupableTransactions(ctx, booksID, txIDs)
+
+	return ids, p.translate(err)
+}
+
+func (p ledgerPort) ConfirmGroup(ctx context.Context, booksID int64, txID, accountID uuid.UUID, parts []app.GroupPart) error {
+	out := make([]ledger.GroupPart, len(parts))
+	for i, part := range parts {
+		out[i] = ledger.GroupPart(part)
+	}
+
+	return p.translate(p.l.ConfirmGroup(ctx, booksID, txID, accountID, out))
 }
 
 func (p ledgerPort) ConfirmLine(ctx context.Context, booksID int64, txID, accountID uuid.UUID, amount int64, date time.Time) error {

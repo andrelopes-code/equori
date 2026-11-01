@@ -78,6 +78,39 @@ func (r *Repository) SyncedRecords(ctx context.Context, booksID int64, accountID
 	return out, nil
 }
 
+func (r *Repository) CreatedRecords(ctx context.Context, booksID int64, accountID uuid.UUID, from, to time.Time) ([]domain.ExternalRecord, error) {
+	rows, err := r.q.ListCreatedRecords(ctx, ListCreatedRecordsParams{
+		BooksID: booksID, AccountID: accountID, FromDate: from, ToDate: to,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return toRecords(rows)
+}
+
+func (r *Repository) GroupRecords(ctx context.Context, booksID int64, accountID, entry uuid.UUID) ([]domain.ExternalRecord, error) {
+	rows, err := r.q.ListGroupRecords(ctx, ListGroupRecordsParams{BooksID: booksID, AccountID: accountID, Entry: entry})
+	if err != nil {
+		return nil, err
+	}
+
+	return toRecords(rows)
+}
+
+func toRecords(rows []IngestionExternalRecord) ([]domain.ExternalRecord, error) {
+	out := make([]domain.ExternalRecord, len(rows))
+
+	for i, row := range rows {
+		var err error
+		if out[i], err = toRecord(row); err != nil {
+			return nil, err
+		}
+	}
+
+	return out, nil
+}
+
 func (r *Repository) RecordsByLineIDs(ctx context.Context, booksID int64, accountID uuid.UUID, externalIDs, institutionIDs []string) ([]domain.ExternalRecord, error) {
 	rows, err := r.q.ListRecordsByLineIDs(ctx, ListRecordsByLineIDsParams{
 		BooksID: booksID, AccountID: accountID, ExternalIds: externalIDs, InstitutionIds: institutionIDs,

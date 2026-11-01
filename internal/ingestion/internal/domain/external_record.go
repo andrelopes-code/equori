@@ -75,6 +75,7 @@ const (
 	ReviewProbable  = string(ZoneProbable)
 	ReviewChanged   = "changed"
 	ReviewRepeated  = "repeated"
+	ReviewGroup     = "group"
 )
 
 // ExternalStatusOf is the aggregator status of a normalized line.

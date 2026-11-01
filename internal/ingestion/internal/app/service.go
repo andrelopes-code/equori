@@ -24,6 +24,10 @@ type BatchKey struct {
 type Repository interface {
 	// MoveRecords points the linked records among recordIDs to the transaction.
 	MoveRecords(ctx context.Context, booksID int64, recordIDs []uuid.UUID, transactionID uuid.UUID) error
+	// CreatedRecords lists the account's records in state created dated in [from, to] (A167).
+	CreatedRecords(ctx context.Context, booksID int64, accountID uuid.UUID, from, to time.Time) ([]domain.ExternalRecord, error)
+	// GroupRecords lists the account's records in review reason group whose candidate is entry (A168).
+	GroupRecords(ctx context.Context, booksID int64, accountID, entry uuid.UUID) ([]domain.ExternalRecord, error)
 	ListBatches(ctx context.Context, booksID int64, p page.Request[BatchKey]) ([]domain.Batch, *BatchKey, error)
 	Profile(ctx context.Context, booksID int64, accountID uuid.UUID) (domain.Profile, error)
 	// SaveProfile returns ErrNotFound when the account does not belong to the book.
