@@ -193,6 +193,7 @@ func create(t testing.TB, template string) *pgxpool.Pool {
 // CreateMember inserts a member (language en) with a unique email, a book of region US and an owner membership.
 func CreateMember(t testing.TB, pool *pgxpool.Pool) (memberID, booksID int64) {
 	t.Helper()
+
 	email := strings.ToLower(rand.Text()) + "@example.com"
 
 	err := pool.QueryRow(context.Background(),
