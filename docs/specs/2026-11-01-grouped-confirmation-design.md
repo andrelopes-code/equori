@@ -64,7 +64,7 @@ A group never links an entry in the sync. The review is the only way to confirm 
 
 - `match`: the group is confirmed in one database transaction.
   - The entry's transaction gets a new version (A3) with reason `matched to the institution's lines`.
-  - The entry's account posting is replaced by one posting per line, with the line's amount and date and the line's `external_record_id`. Each posting takes the statement of its line's bill (A36).
+  - The entry's account posting is replaced by one posting per line, with the line's amount and the line's `external_record_id`. A posting is pending when its line is pending. The transaction takes the date of the earliest line; a transaction has one date. Each posting takes the statement of its line's bill (A36, A136).
   - The entry's other postings stay. The sum of the new postings equals the replaced one, so no category part changes. The owner's description, payee, categories and tags stay.
   - Each line already `created` is re-pointed to its new posting and its created transaction is voided with reason `grouped with the owner's entry`. Every other line of the group becomes `matched`.
 - `create`: every line of the group is created as its own transaction. The entry stays unconfirmed.
