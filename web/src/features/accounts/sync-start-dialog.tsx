@@ -50,7 +50,7 @@ export function SyncStartDialog({
           <DialogDescription>{t("sync.changeStartHint")}</DialogDescription>
         </DialogHeader>
         <DialogBody>
-          <Field invalid={error !== null}>
+          <Field invalid={error !== null} required>
             <FieldLabel>{t("sync.from")}</FieldLabel>
             <DateInput
               name="sync_from"

@@ -134,6 +134,19 @@ describe("Account links", () => {
     });
   });
 
+  it("marks the start date of the link as required", async () => {
+    await renderApp("/accounts/links", { fetch: api([]) });
+    await userEvent.click(
+      within(await row("Caixinha Viagem")).getByRole("button", {
+        name: catalogEn["links.link"],
+      }),
+    );
+
+    const drawer = within(await screen.findByRole("dialog"));
+    expect(drawer.getByText(catalogEn["sync.from"])).toBeVisible();
+    expect(drawer.queryByText(/optional/i)).toBeNull();
+  });
+
   it("offers only a new account when nothing compatible exists", async () => {
     await renderApp("/accounts/links", {
       fetch: api([], {

@@ -138,7 +138,7 @@ export function MoreSheet({
                 }}
               />
               <div className={styles.choices}>
-                <Field>
+                <Field necessity="none">
                   <FieldLabel>{t("more.scheme")}</FieldLabel>
                   <SegmentedControl
                     fullWidth
@@ -154,7 +154,7 @@ export function MoreSheet({
                     ))}
                   </SegmentedControl>
                 </Field>
-                <Field>
+                <Field necessity="none">
                   <FieldLabel>{t("more.density")}</FieldLabel>
                   <SegmentedControl
                     fullWidth
@@ -170,7 +170,7 @@ export function MoreSheet({
                     ))}
                   </SegmentedControl>
                 </Field>
-                <Field>
+                <Field necessity="none">
                   <FieldLabel>{t("more.language")}</FieldLabel>
                   <SegmentedControl
                     fullWidth

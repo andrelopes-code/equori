@@ -48,6 +48,13 @@ describe("more sheet books", () => {
     vi.mocked(reloadHome).mockClear();
   });
 
+  it("writes no necessity word on the settings it applies at once", async () => {
+    const { sheet } = await openSheet([casa, casal], []);
+
+    expect(sheet.getByText(pt["more.scheme"])).toBeVisible();
+    expect(sheet.queryByText(/opcional/i)).toBeNull();
+  });
+
   it("names the active book and switches to another", async () => {
     const sent: unknown[] = [];
     const { user, sheet, root } = await openSheet([casa, casal], sent);
