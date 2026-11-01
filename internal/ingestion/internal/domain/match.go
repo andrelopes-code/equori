@@ -97,12 +97,11 @@ func Score(l MatchLine, p LedgerPosting) (Scored, bool) {
 		return Scored{}, false
 	}
 
-	days := int(p.Date.Sub(l.Date).Hours() / 24)
-	days = max(days, -days)
+	days := dayGap(p.Date, l.Date)
 	diff := abs(l.Amount - p.Amount)
 	base := abs(l.Amount)
 
-	inBound := diff*100 <= base*amountBoundPercent || (base < smallAmount && diff <= smallAmountBound)
+	inBound := withinBound(l.Amount, p.Amount)
 	if days > MatchHardLimit || !inBound {
 		return Scored{}, false
 	}
@@ -281,6 +280,20 @@ func words(s string) map[string]bool {
 }
 
 func abs(n int64) int64 { return max(n, -n) }
+
+// withinBound reports whether a posting is within the amount blocking of A98 for a line.
+func withinBound(line, posting int64) bool {
+	diff, base := abs(line-posting), abs(line)
+
+	return diff*100 <= base*amountBoundPercent || (base < smallAmount && diff <= smallAmountBound)
+}
+
+// dayGap is the distance in whole days between two dates.
+func dayGap(a, b time.Time) int {
+	days := int(a.Sub(b).Hours() / 24)
+
+	return max(days, -days)
+}
 
 // Feed is the span of an account's lines from an institution: from the mapping's start or the
 // first imported period to the last synced date or the end of the last imported period; nil
