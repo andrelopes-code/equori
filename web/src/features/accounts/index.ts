@@ -49,3 +49,8 @@ export { billingRuleBody } from "@/features/accounts/create-account-steps";
 export { adjustmentLabel } from "@/features/accounts/billing-rule-fields";
 export { AccountsLayout } from "@/features/accounts/accounts-layout";
 export { accountRoute } from "@/features/accounts/account-route";
+export {
+  emptyAccountDraft,
+  emptyCardSetup,
+} from "@/features/accounts/account-draft";
+export type { AccountDraft } from "@/features/accounts/account-draft";
