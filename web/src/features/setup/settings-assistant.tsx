@@ -10,7 +10,6 @@ import { InlineMessage } from "@slotted/react/inline-message";
 import { List, ListEmpty, ListSection } from "@slotted/react/list";
 import {
   ListItem,
-  ListItemActions,
   ListItemBody,
   ListItemContent,
   ListItemDescription,
@@ -18,6 +17,7 @@ import {
   ListItemLabel,
 } from "@slotted/react/list-item";
 import { SkeletonText } from "@slotted/react/skeleton";
+import { Inline } from "@slotted/react/inline";
 import { Stack } from "@slotted/react/stack";
 import { Tag } from "@slotted/react/tag";
 import { useQuery } from "@tanstack/react-query";
@@ -174,6 +174,58 @@ export function SettingsAssistant() {
                                     : "assistant.provider.noKey",
                                 )}`}
                           </ListItemDescription>
+                          {!provider.instance && (
+                            <Inline gap={2} wrap="wrap">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                tone="secondary"
+                                loading={
+                                  check.isPending &&
+                                  check.variables === provider.id
+                                }
+                                onClick={() => {
+                                  check.mutate(provider.id);
+                                }}
+                              >
+                                {t("assistant.key.check")}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                tone="secondary"
+                                onClick={() => {
+                                  setOpen({ kind: "models", provider });
+                                }}
+                              >
+                                {t("assistant.provider.models")}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                tone="secondary"
+                                onClick={() => {
+                                  setOpen({ kind: "edit", provider });
+                                }}
+                              >
+                                {t("assistant.provider.edit")}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                tone="danger"
+                                loading={
+                                  remove.isPending &&
+                                  remove.variables === provider.id
+                                }
+                                onClick={() => {
+                                  remove.mutate(provider.id);
+                                }}
+                              >
+                                {t("assistant.provider.delete")}
+                              </Button>
+                            </Inline>
+                          )}
                         </ListItemBody>
                         <ListItemEnd>
                           <NoticeTag notice={provider.notice} />
@@ -188,57 +240,6 @@ export function SettingsAssistant() {
                             })}
                           {check.isError && errorText(check.error, t)}
                         </ListItemDescription>
-                      )}
-                      {!provider.instance && (
-                        <ListItemActions>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            tone="secondary"
-                            loading={
-                              check.isPending && check.variables === provider.id
-                            }
-                            onClick={() => {
-                              check.mutate(provider.id);
-                            }}
-                          >
-                            {t("assistant.key.check")}
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            tone="secondary"
-                            onClick={() => {
-                              setOpen({ kind: "models", provider });
-                            }}
-                          >
-                            {t("assistant.provider.models")}
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            tone="secondary"
-                            onClick={() => {
-                              setOpen({ kind: "edit", provider });
-                            }}
-                          >
-                            {t("assistant.provider.edit")}
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            tone="danger"
-                            loading={
-                              remove.isPending &&
-                              remove.variables === provider.id
-                            }
-                            onClick={() => {
-                              remove.mutate(provider.id);
-                            }}
-                          >
-                            {t("assistant.provider.delete")}
-                          </Button>
-                        </ListItemActions>
                       )}
                     </ListItem>
                   ))}
@@ -280,6 +281,18 @@ export function SettingsAssistant() {
                                       .join(" → ")}
                               </ListItemDescription>
                               <UsePrivacy use={use} />
+                              <Inline gap={2} wrap="wrap">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  tone="secondary"
+                                  onClick={() => {
+                                    setOpen({ kind: "chain", use });
+                                  }}
+                                >
+                                  {t("assistant.use.edit")}
+                                </Button>
+                              </Inline>
                             </ListItemBody>
                             <ListItemEnd>
                               <Tag
@@ -299,18 +312,6 @@ export function SettingsAssistant() {
                               </Tag>
                             </ListItemEnd>
                           </ListItemContent>
-                          <ListItemActions>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              tone="secondary"
-                              onClick={() => {
-                                setOpen({ kind: "chain", use });
-                              }}
-                            >
-                              {t("assistant.use.edit")}
-                            </Button>
-                          </ListItemActions>
                         </ListItem>
                       ))}
                     </ListSection>

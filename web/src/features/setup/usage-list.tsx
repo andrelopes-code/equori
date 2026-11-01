@@ -2,7 +2,6 @@ import { Button } from "@slotted/react/button";
 import { ListEmpty, ListSection } from "@slotted/react/list";
 import {
   ListItem,
-  ListItemActions,
   ListItemBody,
   ListItemContent,
   ListItemDescription,
@@ -10,6 +9,7 @@ import {
   ListItemLabel,
 } from "@slotted/react/list-item";
 import { ProgressBar } from "@slotted/react/progress-indicator";
+import { Inline } from "@slotted/react/inline";
 import { Stack } from "@slotted/react/stack";
 import { Tag } from "@slotted/react/tag";
 import { useMemo } from "react";
@@ -139,6 +139,18 @@ export function UsageList({
                     )}
                   </Stack>
                 )}
+                <Inline gap={2} wrap="wrap">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    tone="secondary"
+                    onClick={() => {
+                      onLimits(row);
+                    }}
+                  >
+                    {t("assistant.usage.limits")}
+                  </Button>
+                </Inline>
               </ListItemBody>
               {status !== null && (
                 <ListItemEnd>
@@ -156,18 +168,6 @@ export function UsageList({
                 </ListItemEnd>
               )}
             </ListItemContent>
-            <ListItemActions>
-              <Button
-                size="sm"
-                variant="ghost"
-                tone="secondary"
-                onClick={() => {
-                  onLimits(row);
-                }}
-              >
-                {t("assistant.usage.limits")}
-              </Button>
-            </ListItemActions>
           </ListItem>
         );
       })}
