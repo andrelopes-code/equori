@@ -60,6 +60,10 @@ export const settingsPtBR: Record<keyof typeof settingsEn, string> = {
   "settings.language.help": "Palavras da interface.",
   "settings.region.help":
     "Formatos de data e número, e os catálogos regionais.",
+  "settings.books.title": "Livro",
+  "settings.books.name": "Nome",
+  "settings.books.name.help":
+    "Aparece na troca de livro e para as pessoas que você convida.",
   "settings.books.place": "Região e horário",
   "settings.timeZone": "Fuso horário",
   "settings.timeZone.help":

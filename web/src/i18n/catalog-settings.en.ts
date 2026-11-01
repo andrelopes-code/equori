@@ -57,6 +57,10 @@ export const settingsEn = {
   "settings.language.help": "Words of the interface.",
   "settings.region.help":
     "Date and number formats, and the regional catalogues.",
+  "settings.books.title": "Book",
+  "settings.books.name": "Name",
+  "settings.books.name.help":
+    "Shown in the book switcher and to the people you invite.",
   "settings.books.place": "Region and time",
   "settings.timeZone": "Time zone",
   "settings.timeZone.help":
