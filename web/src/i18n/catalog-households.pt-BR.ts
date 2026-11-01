@@ -7,6 +7,7 @@ export const householdsPtBR: Record<keyof typeof householdsEn, string> = {
   "problem.member_not_found": "O membro não faz parte deste livro.",
   "problem.last_owner":
     "O livro precisa de pelo menos um dono. Torne outro membro dono antes.",
+  "problem.email_taken": "Já existe um membro com este e-mail.",
   "problem.already_member": "Este e-mail já é membro do livro.",
   "problem.invitation_not_found": "O convite não existe ou expirou.",
   "problem.invitation_email_mismatch":
@@ -40,6 +41,18 @@ export const householdsPtBR: Record<keyof typeof householdsEn, string> = {
   "members.leaveTitle": "Sair deste livro?",
   "members.leaveHint":
     "Você perde o acesso aos dados deste livro e suas conversas com o assistente nele são apagadas. A sessão termina.",
+  "accounts.invite.title": "Contas desta instância",
+  "accounts.invite.description":
+    "Crie uma conta separada, com livro próprio, para outra pessoa.",
+  "accounts.invite.create": "Criar conta",
+  "accounts.invite.dialogTitle": "Nova conta",
+  "accounts.invite.hint":
+    "A pessoa recebe um link, escolhe a senha e vê apenas um livro só dela.",
+  "accounts.invite.linkTitle": "Link para {email}",
+  "accounts.invite.linkHint":
+    "Envie este link para {email}. Funciona uma vez, expira em {date} e não será mostrado de novo.",
+  "accounts.invite.copy": "Copiar link",
+  "invite.accountSummary": "{inviter} criou uma conta para {email}.",
   "invitations.title": "Convites",
   "invitations.empty": "Nenhum convite pendente.",
   "invitations.create": "Convidar",

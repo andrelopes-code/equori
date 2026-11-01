@@ -7,6 +7,7 @@ export const householdsEn = {
   "problem.member_not_found": "The member is not part of this book.",
   "problem.last_owner":
     "The book needs at least one owner. Make another member owner first.",
+  "problem.email_taken": "A member already has this email.",
   "problem.already_member": "This email is already a member of the book.",
   "problem.invitation_not_found":
     "The invitation does not exist or has expired.",
@@ -41,6 +42,18 @@ export const householdsEn = {
   "members.leaveTitle": "Leave this book?",
   "members.leaveHint":
     "You lose access to this book's data and your assistant conversations in it are deleted. The session ends.",
+  "accounts.invite.title": "Accounts of this instance",
+  "accounts.invite.description":
+    "Create a separate account, with a book of its own, for another person.",
+  "accounts.invite.create": "Create account",
+  "accounts.invite.dialogTitle": "New account",
+  "accounts.invite.hint":
+    "The person receives a link, chooses a password and sees only a book of their own.",
+  "accounts.invite.linkTitle": "Link for {email}",
+  "accounts.invite.linkHint":
+    "Send this link to {email}. It works once, expires on {date} and is not shown again.",
+  "accounts.invite.copy": "Copy link",
+  "invite.accountSummary": "{inviter} created an account for {email}.",
   "invitations.title": "Invitations",
   "invitations.empty": "No pending invitation.",
   "invitations.create": "Invite",

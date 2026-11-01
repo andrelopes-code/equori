@@ -243,6 +243,20 @@ export function useCreateInvitation() {
   });
 }
 
+export type AccountInvitation = components["schemas"]["AccountInvitation"];
+export type AccountInvitationInput =
+  components["schemas"]["AccountInvitationInput"];
+
+export function useCreateAccountInvitation() {
+  const api = useApi();
+  return useMutation({
+    mutationFn: async (
+      body: AccountInvitationInput,
+    ): Promise<AccountInvitation> =>
+      unwrap(await api.POST("/account-invitations", { body })),
+  });
+}
+
 export function useDeleteInvitation() {
   const api = useApi();
   const queryClient = useQueryClient();

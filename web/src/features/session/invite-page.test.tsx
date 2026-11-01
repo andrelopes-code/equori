@@ -51,6 +51,32 @@ beforeEach(() => {
 });
 
 describe("invite page", () => {
+  it("says that an account is created for an invitation of its own kind", async () => {
+    const calls = newCalls();
+    await renderApp("/invite#token=tok_account", {
+      fetch: api(calls, {
+        preview: () =>
+          json(200, {
+            kind: "account",
+            books_name: "",
+            inviter_email: "ana@example.com",
+            role: "owner",
+            email: "irma@example.com",
+            member_exists: false,
+          }),
+      }),
+    });
+
+    expect(
+      await screen.findByText(
+        "ana@example.com created an account for irma@example.com.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByText(catalogEn["invite.newMember"]),
+    ).toBeVisible();
+  });
+
   it("accepts as a new member with a password and a language", async () => {
     const calls = newCalls();
     const { router } = await renderApp("/invite#token=tok_abc", {

@@ -1,0 +1,16 @@
+@layer app {
+  .link {
+    padding: var(--slotted-space-4);
+    border-radius: var(--slotted-radius-md);
+    background: var(--slotted-surface-sunken);
+    font-family: var(--slotted-font-family-mono);
+    overflow-wrap: anywhere;
+    user-select: all;
+  }
+
+  .actions {
+    display: flex;
+    justify-content: center;
+    margin-block-start: var(--slotted-space-5);
+  }
+}

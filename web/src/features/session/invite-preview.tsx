@@ -20,12 +20,17 @@ export function InvitePreview({ token, preview }: InvitePreviewProps) {
   return (
     <Stack gap={6}>
       <Text>
-        {t("invite.summary", {
-          inviter: preview.inviter_email,
-          email: preview.email,
-          books: preview.books_name,
-          role: t(`members.role.${preview.role}`),
-        })}
+        {preview.kind === "account"
+          ? t("invite.accountSummary", {
+              inviter: preview.inviter_email,
+              email: preview.email,
+            })
+          : t("invite.summary", {
+              inviter: preview.inviter_email,
+              email: preview.email,
+              books: preview.books_name,
+              role: t(`members.role.${preview.role}`),
+            })}
       </Text>
 
       {preview.member_exists ? (
