@@ -60,7 +60,7 @@ func (r *Repository) CreateMember(ctx context.Context, u domain.Member, region s
 
 	err := pgx.BeginFunc(ctx, r.db, func(tx pgx.Tx) error {
 		var err error
-		created, booksID, err = r.insertMember(ctx, tx, u, region, base)
+		created, booksID, err = r.insertMember(ctx, tx, u, region, base, domain.DefaultBooksName(u.Email))
 
 		return err
 	})
@@ -73,7 +73,7 @@ func (r *Repository) CreateMember(ctx context.Context, u domain.Member, region s
 
 // CreateFirstMember creates u only while no member exists; the table lock makes the check and the
 // insert one step for concurrent requests (W-U4).
-func (r *Repository) CreateFirstMember(ctx context.Context, u domain.Member, region string, base money.Currency) (domain.Member, int64, error) {
+func (r *Repository) CreateFirstMember(ctx context.Context, u domain.Member, b app.FirstBooks) (domain.Member, int64, error) {
 	var (
 		created domain.Member
 		booksID int64
@@ -94,7 +94,16 @@ func (r *Repository) CreateFirstMember(ctx context.Context, u domain.Member, reg
 			return app.ErrSetupComplete
 		}
 
-		created, booksID, err = r.insertMember(ctx, tx, u, region, base)
+		created, booksID, err = r.insertMember(ctx, tx, u, b.Region, b.Base, b.Name)
+		if err != nil {
+			return err
+		}
+
+		if b.TimeZone == nil {
+			return nil
+		}
+
+		_, err = q.UpdateBooksSettings(ctx, UpdateBooksSettingsParams{ID: booksID, Region: b.Region, TimeZone: b.TimeZone})
 
 		return err
 	})
@@ -109,7 +118,7 @@ func (r *Repository) AnyMember(ctx context.Context) (bool, error) {
 	return r.q.AnyMember(ctx)
 }
 
-func (r *Repository) insertMember(ctx context.Context, tx pgx.Tx, u domain.Member, region string, base money.Currency) (domain.Member, int64, error) {
+func (r *Repository) insertMember(ctx context.Context, tx pgx.Tx, u domain.Member, region string, base money.Currency, name string) (domain.Member, int64, error) {
 	q := r.q.WithTx(tx)
 
 	row, err := q.CreateMember(ctx, CreateMemberParams{
@@ -126,7 +135,7 @@ func (r *Repository) insertMember(ctx context.Context, tx pgx.Tx, u domain.Membe
 		return domain.Member{}, 0, err
 	}
 
-	booksID, err := r.insertBooks(ctx, tx, row.ID, row.Language, domain.DefaultBooksName(u.Email), region, base)
+	booksID, err := r.insertBooks(ctx, tx, row.ID, row.Language, name, region, base)
 	if err != nil {
 		return domain.Member{}, 0, err
 	}

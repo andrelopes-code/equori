@@ -38,7 +38,7 @@ var (
 type Repository interface {
 	CreateMember(ctx context.Context, u domain.Member, region string, base money.Currency) (domain.Member, int64, error)
 	// CreateFirstMember returns ErrSetupComplete when a member exists.
-	CreateFirstMember(ctx context.Context, u domain.Member, region string, base money.Currency) (domain.Member, int64, error)
+	CreateFirstMember(ctx context.Context, u domain.Member, b FirstBooks) (domain.Member, int64, error)
 	AnyMember(ctx context.Context) (bool, error)
 	// UpdateProfile stores the language of the member and the region of the books in one transaction.
 	UpdateProfile(ctx context.Context, memberID, booksID int64, l locale.Locale) error
@@ -76,6 +76,14 @@ type Repository interface {
 	AccessTokenRepository
 	InvitationRepository
 	SecondFactorRepository
+}
+
+// FirstBooks is the book that CreateFirstMember creates with the first member.
+type FirstBooks struct {
+	Name, Region string
+	Base         money.Currency
+	// TimeZone is nil to keep the region's default.
+	TimeZone *string
 }
 
 // MaxAppearanceBytes bounds the encoded appearance object (BK21).

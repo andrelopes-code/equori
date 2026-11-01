@@ -113,8 +113,16 @@ func (s *Server) CompleteSetup(ctx context.Context, req CompleteSetupRequestObje
 
 	b := req.Body
 
-	session, user, err := s.svc.CompleteSetup(ctx, b.Token, b.Email, b.Password,
-		locale.Locale{Language: b.Language, Region: b.Region}, money.Currency(deref(b.BaseCurrency)), b.UpdateCheck)
+	session, user, err := s.svc.CompleteSetup(ctx, app.SetupRequest{
+		Token:        b.Token,
+		Email:        b.Email,
+		Password:     b.Password,
+		Locale:       locale.Locale{Language: b.Language, Region: b.Region},
+		BaseCurrency: money.Currency(deref(b.BaseCurrency)),
+		UpdateCheck:  b.UpdateCheck,
+		BooksName:    b.BooksName,
+		TimeZone:     b.TimeZone,
+	})
 	if err != nil {
 		return nil, err
 	}

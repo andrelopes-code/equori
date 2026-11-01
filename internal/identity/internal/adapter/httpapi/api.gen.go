@@ -342,10 +342,12 @@ type SecondFactorInput struct {
 // SetupInput defines model for SetupInput.
 type SetupInput struct {
 	BaseCurrency *string `json:"base_currency,omitempty"`
+	BooksName    *string `json:"books_name,omitempty"`
 	Email        string  `json:"email"`
 	Language     string  `json:"language"`
 	Password     string  `json:"password"`
 	Region       string  `json:"region"`
+	TimeZone     *string `json:"time_zone,omitempty"`
 	Token        string  `json:"token"`
 	UpdateCheck  bool    `json:"update_check"`
 }

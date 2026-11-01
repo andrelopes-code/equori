@@ -212,3 +212,111 @@ func TestSetupValidation(t *testing.T) {
 	r = h.Call(jarClient(t), http.MethodPost, "/api/v1/setup", setupBody(token, "ann@example.com", without))
 	h.ExpectProblem(r, http.StatusUnprocessableEntity, "validation_failed", "base_currency")
 }
+
+// S231: the setup names the first book and sets its time zone; a zone equal to the region's
+// default is stored as null.
+func TestS231SetupNamesTheBook(t *testing.T) {
+	tests := []struct {
+		name       string
+		fields     map[string]any
+		status     int
+		code       string
+		field      string
+		wantBooks  map[string]any
+		wantNoUser bool
+	}{
+		{
+			name:      "named, own zone",
+			fields:    map[string]any{"books_name": "Casa", "time_zone": "America/Manaus"},
+			status:    http.StatusCreated,
+			wantBooks: map[string]any{"name": "Casa", "time_zone": "America/Manaus", "default_time_zone": "America/Sao_Paulo"},
+		},
+		{
+			name:      "region default zone",
+			fields:    map[string]any{"time_zone": "America/Sao_Paulo"},
+			status:    http.StatusCreated,
+			wantBooks: map[string]any{"name": "ann@example.com", "time_zone": nil, "default_time_zone": "America/Sao_Paulo"},
+		},
+		{
+			name:      "trimmed name",
+			fields:    map[string]any{"books_name": "  Casa  "},
+			status:    http.StatusCreated,
+			wantBooks: map[string]any{"name": "Casa", "time_zone": nil, "default_time_zone": "America/Sao_Paulo"},
+		},
+		{
+			name:       "unknown zone",
+			fields:     map[string]any{"time_zone": "Mars/Base"},
+			status:     http.StatusUnprocessableEntity,
+			code:       "time_zone_invalid",
+			wantNoUser: true,
+		},
+		{
+			name:       "blank name",
+			fields:     map[string]any{"books_name": "   "},
+			status:     http.StatusUnprocessableEntity,
+			code:       "validation_failed",
+			field:      "books_name",
+			wantNoUser: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			h := apitest.Empty(t)
+			c := jarClient(t)
+			body := setupBody(startSetup(t, h), "ann@example.com", "BR")
+			body["base_currency"] = "BRL"
+
+			for k, v := range tt.fields {
+				body[k] = v
+			}
+
+			r := h.Call(c, http.MethodPost, "/api/v1/setup", body)
+			if tt.status != http.StatusCreated {
+				h.ExpectProblem(r, tt.status, tt.code, tt.field)
+			} else if r.Status != tt.status {
+				t.Fatalf("status %d: %s", r.Status, r.Body)
+			}
+
+			if tt.wantNoUser {
+				var st struct {
+					Required bool `json:"required"`
+				}
+
+				got := h.Call(c, http.MethodGet, "/api/v1/setup", nil)
+				if got.Status != http.StatusOK {
+					t.Fatalf("GET /setup status %d: %s", got.Status, got.Body)
+				}
+
+				got.Decode(t, &st)
+
+				if !st.Required {
+					t.Fatalf("required = false after a rejected setup: %s", got.Body)
+				}
+
+				return
+			}
+
+			got := h.Call(c, http.MethodGet, "/api/v1/books/current", nil)
+			if got.Status != http.StatusOK {
+				t.Fatalf("GET /books/current status %d: %s", got.Status, got.Body)
+			}
+
+			var books struct {
+				Name            string  `json:"name"`
+				TimeZone        *string `json:"time_zone"`
+				DefaultTimeZone string  `json:"default_time_zone"`
+			}
+			got.Decode(t, &books)
+
+			if books.Name != tt.wantBooks["name"] || books.DefaultTimeZone != tt.wantBooks["default_time_zone"] {
+				t.Fatalf("books = %+v, want %v", books, tt.wantBooks)
+			}
+
+			if want, _ := tt.wantBooks["time_zone"].(string); (books.TimeZone == nil) != (tt.wantBooks["time_zone"] == nil) ||
+				(books.TimeZone != nil && *books.TimeZone != want) {
+				t.Fatalf("time_zone = %v, want %v", books.TimeZone, tt.wantBooks["time_zone"])
+			}
+		})
+	}
+}
