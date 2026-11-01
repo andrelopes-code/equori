@@ -74,12 +74,12 @@ A resolution of one line applies to the whole group. The record of a line `creat
 
 ## A170 Confirmed and awaiting amounts
 
-The amount of an open statement (A89) gains two parts for an account with a feed (A103, condition 4):
+The activity of a statement (A89), its amount due less its opening, gains two parts for an account that has a feed:
 
-- the **confirmed amount**: the sum of the statement's non-voided postings of the account that carry an external record, a pending line included;
+- the **confirmed amount**: the sum of the statement's non-voided postings of the account that carry an external record, a pending line included, signed as the amount due counts them (charges positive, credits and payments negative);
 - the **awaiting amount**: the sum of those that carry none.
 
-Their sum equals the statement amount. An account without a feed reports neither part.
+Their sum equals the amount due less the opening. An account has a feed when at least one non-voided posting of it carries an external record; the ledger reads no other module. An account without a feed reports neither part.
 
 The awaiting amount is not an error: an entry recorded a minute ago is awaiting. The attention state of an unconfirmed entry (A103, A133) is unchanged. The institution's reported total, when present, stays authoritative over the sum of the lines, and the residual difference is shown, never absorbed.
 
@@ -102,7 +102,7 @@ No rule reads a regional value. The sum is over `amount`, in minor units of the 
 
 ## Contract
 
-- `ExternalRecord.review_reason` adds `group`. `ExternalRecord.group_record_ids`, optional, lists the other lines of the group and appears only with that reason.
+- `ExternalRecord.review_reason` adds `group`. `ExternalRecord.group_record_ids`, optional, lists the other lines of the group and appears only on the read of one record in review `group`, not in lists.
 - `StatementSummary` and `StatementDetail` gain `confirmed_amount` and `awaiting_amount`, both optional.
 - `Problem.code`: none new.
 - Review text of `group`, pt-BR: "Este lançamento parece ser a soma destas linhas do banco. Confirme para dividi-lo nas linhas do banco."
@@ -117,7 +117,7 @@ No rule reads a regional value. The sum is over `amount`, in minor units of the 
 | S237 | Two groups. Two entries of −118.40 dated 2026-10-30 and the lines of S234. No group is proposed and the lines are created. The confirmed amount is 118.40 and the awaiting amount 236.80. |
 | S238 | Group dissolved. The review of S234. `discard` on the −4.00 line creates the −114.40 line as a transaction and leaves the entry awaiting. `create` on either line creates both and leaves the entry awaiting. |
 | S239 | Bound. 41 lines within 10 days of an entry of −118.40, among them −114.40 and −4.00. No group is searched and the lines are created. The awaiting amount shows the entry. |
-| S240 | Account without a feed. A card with entries and no mapped external account or imported file reports neither `confirmed_amount` nor `awaiting_amount`. |
+| S240 | Account without a feed. A card with entries and no posting that carries an external record reports neither `confirmed_amount` nor `awaiting_amount`. |
 
 Each scenario has a test through `internal/apitest` that fails on the current code. The search of A167 has property tests in package `domain`: order of the lines, sign, ties, the limit of 40 and the window of 3 days.
 
