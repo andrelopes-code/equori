@@ -9,6 +9,7 @@ import type { components } from "@/api/schema.gen";
 import styles from "@/features/planning/budget-plan.module.css";
 import { planShare } from "@/features/planning/plan-math";
 import { PlanFigure } from "@/features/planning/plan-figure";
+import { PlanSavingsTarget } from "@/features/planning/plan-savings-target";
 import type { PlanFormat } from "@/features/planning/use-plan-format";
 import { useT } from "@/i18n/i18n-provider";
 import { MoneyInput } from "@/ui/money-input";
@@ -34,7 +35,9 @@ export function PlanReferencePanel({
   format,
   editable,
   bar,
+  target,
   onSource,
+  onTarget,
 }: {
   plan: BudgetPlan;
   source: Source;
@@ -46,7 +49,9 @@ export function PlanReferencePanel({
   format: PlanFormat;
   editable: boolean;
   bar: ReactNode;
+  target: number | undefined;
   onSource: (source: Source, fixed?: number) => void;
+  onTarget: (bp: number | undefined) => void;
 }) {
   const t = useT();
   const over = unassigned !== undefined && unassigned < 0;
@@ -223,6 +228,14 @@ export function PlanReferencePanel({
                 />
               )}
             </div>
+            <PlanSavingsTarget
+              reference={reference}
+              savings={plan.savings.amount}
+              target={target}
+              editable={editable}
+              format={format}
+              onTarget={onTarget}
+            />
           </div>
         </div>
       </CardBody>

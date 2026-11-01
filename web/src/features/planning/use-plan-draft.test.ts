@@ -135,4 +135,35 @@ describe("usePlanDraft", () => {
     });
     expect(result.current.pending).toBe(2);
   });
+
+  it("carries the stored savings target in every payload", () => {
+    const stored = budgetPlan("2026-11", { savings_target_bp: 2500 });
+    const { result } = renderHook(() => usePlanDraft(stored));
+    act(() => {
+      result.current.set(energy.id, 20500);
+    });
+    expect(result.current.target).toBe(2500);
+    expect(result.current.payload()).toMatchObject({ savings_target_bp: 2500 });
+  });
+
+  it("counts a changed or cleared savings target as one pending change", () => {
+    const stored = budgetPlan("2026-11", { savings_target_bp: 2500 });
+    const { result } = renderHook(() => usePlanDraft(stored));
+    act(() => {
+      result.current.setTarget(3000);
+    });
+    expect(result.current.pending).toBe(1);
+    expect(result.current.payload()).toMatchObject({ savings_target_bp: 3000 });
+    act(() => {
+      result.current.setTarget(undefined);
+    });
+    expect(result.current.pending).toBe(1);
+    expect(result.current.target).toBeUndefined();
+    expect(result.current.payload()).not.toHaveProperty("savings_target_bp");
+    act(() => {
+      result.current.discard();
+    });
+    expect(result.current.pending).toBe(0);
+    expect(result.current.target).toBe(2500);
+  });
 });

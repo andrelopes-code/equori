@@ -12,6 +12,8 @@ interface Snapshot {
   drafts: ReadonlyMap<string, number>;
   source: BudgetPlanSource | undefined;
   fixed: number | undefined;
+  // The savings target in basis points: undefined is untouched, null is cleared.
+  target: number | null | undefined;
 }
 
 interface State extends Snapshot {
@@ -22,6 +24,7 @@ type Action =
   | { type: "set"; id: string; amount: number }
   | { type: "revert"; id: string }
   | { type: "source"; source: BudgetPlanSource; fixed: number | undefined }
+  | { type: "target"; target: number | null }
   | { type: "bulk"; next: Snapshot }
   | { type: "undo" }
   | { type: "reset" };
@@ -30,6 +33,7 @@ const empty: State = {
   drafts: new Map(),
   source: undefined,
   fixed: undefined,
+  target: undefined,
   undo: [],
 };
 
@@ -47,6 +51,8 @@ function reduce(state: State, action: Action): State {
     }
     case "source":
       return { ...state, source: action.source, fixed: action.fixed };
+    case "target":
+      return { ...state, target: action.target };
     case "bulk": {
       const { undo, ...now } = state;
       return { ...action.next, undo: [...undo, now] };
@@ -73,6 +79,10 @@ export function usePlanDraft(plan: BudgetPlan) {
     ...r,
     draft: state.drafts.get(r.category_id) ?? r.planned.amount,
   }));
+  const target =
+    state.target === undefined
+      ? plan.savings_target_bp
+      : (state.target ?? undefined);
   const reference =
     source === "expected_income"
       ? plan.expected_income?.amount
@@ -88,10 +98,12 @@ export function usePlanDraft(plan: BudgetPlan) {
   const referenceChanged =
     source !== plan.source ||
     (source === "fixed" && fixed !== plan.fixed?.amount);
+  const targetChanged = target !== plan.savings_target_bp;
   const now: Snapshot = {
     drafts: state.drafts,
     source: state.source,
     fixed: state.fixed,
+    target: state.target,
   };
   const withDrafts = (changes: ReadonlyMap<string, number>) => {
     const drafts = new Map(state.drafts);
@@ -102,10 +114,12 @@ export function usePlanDraft(plan: BudgetPlan) {
     rows,
     source,
     fixed,
+    target,
     reference,
     planned,
     unassigned,
-    pending: changed.length + (referenceChanged ? 1 : 0),
+    pending:
+      changed.length + (referenceChanged ? 1 : 0) + (targetChanged ? 1 : 0),
     delta: changed.reduce(
       (sum, r) => sum + (r.counted ? r.draft - r.planned.amount : 0),
       0,
@@ -119,6 +133,9 @@ export function usePlanDraft(plan: BudgetPlan) {
     },
     setSource(next: BudgetPlanSource, amount?: number) {
       dispatch({ type: "source", source: next, fixed: amount });
+    },
+    setTarget(bp: number | undefined) {
+      dispatch({ type: "target", target: bp ?? null });
     },
     apply(changes: ReadonlyMap<string, number>) {
       if (changes.size > 0)
@@ -158,7 +175,12 @@ export function usePlanDraft(plan: BudgetPlan) {
     discard() {
       dispatch({
         type: "bulk",
-        next: { drafts: new Map(), source: undefined, fixed: undefined },
+        next: {
+          drafts: new Map(),
+          source: undefined,
+          fixed: undefined,
+          target: undefined,
+        },
       });
     },
     // After a save the fetched plan holds the drafts; nothing is left to undo.
@@ -171,6 +193,8 @@ export function usePlanDraft(plan: BudgetPlan) {
         ...(source === "fixed" && fixed !== undefined
           ? { fixed: { amount: fixed, currency: plan.currency } }
           : {}),
+        // A save without the field clears the stored target (savings target A187).
+        ...(target === undefined ? {} : { savings_target_bp: target }),
         amounts: changed.map((r) => ({
           category_id: r.category_id,
           amount: { amount: r.draft, currency: plan.currency },

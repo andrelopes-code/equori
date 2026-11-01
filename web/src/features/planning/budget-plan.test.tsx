@@ -27,6 +27,12 @@ const figure = async (text: string) =>
 const input = (name: string) =>
   screen.findByRole("textbox", { name: words("plan.input", { name }) });
 
+// A field's accessible name carries the family's marker after its label.
+const targetField = () =>
+  screen.findByRole("textbox", {
+    name: (name) => name.startsWith(catalogEn["plan.savingsTarget"]),
+  });
+
 async function renderPlan(fetch = budgetPlanApi(), path = november) {
   const view = await renderApp(path, { fetch, today });
   await panel();
@@ -450,5 +456,77 @@ describe("Budget plan", () => {
     );
     await screen.findByText(catalogEn["plan.privacy"]);
     expectNoAmounts(container, ["6,000.00", "600000", "340.00"]);
+  });
+
+  it("holds the savings target empty until one is typed", async () => {
+    await renderPlan();
+    const field = await targetField();
+    expect(field).toHaveValue("");
+    expect(
+      within(await panel()).queryByText(catalogEn["plan.savingsGap"]),
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows the savings rate, the target amount and the gap", async () => {
+    await renderPlan(
+      budgetPlanApi((month) =>
+        budgetPlan(month, { savings: money(170000), savings_target_bp: 2500 }),
+      ),
+    );
+    const view = within(await panel());
+    expect(await view.findByText(catalogEn["plan.savingsRate"])).toBeVisible();
+    // The bar below draws the same share; the line is the one beside its label.
+    const line = view.getByText(catalogEn["plan.savingsRate"]).parentElement;
+    if (line === null) throw new Error("no rate line");
+    expect(within(line).getByText("20.0%")).toBeInTheDocument();
+    expect(view.getByText("R$2,125.00")).toBeInTheDocument();
+    expect(view.getByText("R$425.00")).toBeInTheDocument();
+    expect(await targetField()).toHaveValue("25");
+  });
+
+  it("shows no gap once the savings reach the target", async () => {
+    await renderPlan(
+      budgetPlanApi((month) =>
+        budgetPlan(month, { savings: money(250000), savings_target_bp: 2500 }),
+      ),
+    );
+    const view = within(await panel());
+    expect(await view.findByText("R$2,125.00")).toBeInTheDocument();
+    expect(
+      view.queryByText(catalogEn["plan.savingsGap"]),
+    ).not.toBeInTheDocument();
+  });
+
+  it("saves a typed savings target with the plan", async () => {
+    let sent: unknown;
+    const fetch = budgetPlanApi(undefined, {
+      "PUT /api/v1/budget-plan": async (req: Request) => {
+        sent = await req.json();
+        return json(200, budgetPlan("2026-11"));
+      },
+    });
+    await renderPlan(fetch);
+    await userEvent.type(await targetField(), "25");
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["plan.save"] }),
+    );
+    await waitFor(() => {
+      expect(sent).toEqual({
+        source: "expected_income",
+        savings_target_bp: 2500,
+        amounts: [],
+      });
+    });
+  });
+
+  it("shows no amount of the target in privacy mode", async () => {
+    localStorage.setItem("equori.privacy", "hidden");
+    const { container } = await renderPlan(
+      budgetPlanApi((month) =>
+        budgetPlan(month, { savings: money(170000), savings_target_bp: 2500 }),
+      ),
+    );
+    await screen.findByText(catalogEn["plan.privacy"]);
+    expectNoAmounts(container, ["2,125.00", "425.00", "212500", "42500"]);
   });
 });

@@ -405,8 +405,12 @@ export function PlanEditor({
             format={format}
             editable={editable}
             bar={bar}
+            target={draft.target}
             onSource={(source, fixed) => {
               draft.setSource(source, fixed);
+            }}
+            onTarget={(bp) => {
+              draft.setTarget(bp);
             }}
           />
         </div>
