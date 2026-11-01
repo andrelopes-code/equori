@@ -42,6 +42,8 @@ pre-commit:
               - "web/src/theme/equori.theme.ts"
               - "web/src/theme/equori-glass.theme.ts"
               - "web/src/theme/glass/**"
+              - "internal/platform/config/variables.go"
+              - "internal/platform/config/gen/**"
             run: make gen-check
 
 # Sequential: run beside the Go tests, the vitest workers starve and time out (41 of 1494 tests).

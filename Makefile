@@ -47,6 +47,7 @@ lint: $(TOOLS)
 # Each module's adapter/httpapi holds an oapi-codegen.yaml selecting its tag from api/openapi.yaml.
 gen: $(TOOLS) $(WEB_DEPS)
 	go run ./internal/platform/money/gen
+	go run ./internal/platform/config/gen
 	$(BIN)/sqlc generate
 	for cfg in $$(find internal -name oapi-codegen.yaml); do \
 		(cd $$(dirname $$cfg) && $(BIN)/oapi-codegen -config oapi-codegen.yaml $(CURDIR)/api/openapi.yaml) || exit 1; \
@@ -59,8 +60,8 @@ gen: $(TOOLS) $(WEB_DEPS)
 	cd web && node src/theme/surface-gen.ts > src/theme/surface.gen.css
 
 gen-check: gen
-	git diff --exit-code -- '*.gen.go' '*.gen.ts' '*.gen.css'
-	test -z "$$(git ls-files --others --exclude-standard -- '*.gen.go' '*.gen.ts' '*.gen.css')"
+	git diff --exit-code -- '*.gen.go' '*.gen.ts' '*.gen.css' docs/install/configuration.md docs/install/configuration.pt-BR.md env.example
+	test -z "$$(git ls-files --others --exclude-standard -- '*.gen.go' '*.gen.ts' '*.gen.css' docs/install/configuration.md docs/install/configuration.pt-BR.md env.example)"
 
 tidy-check:
 	go mod tidy -diff

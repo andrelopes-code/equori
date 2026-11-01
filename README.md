@@ -77,20 +77,7 @@ Create the first user: while no user exists, every start logs a line `first user
 docker compose exec app /equori user create --email you@example.com --language <code> --region <country> --admin
 ```
 
-| Variable | Default | Description |
-|---|---|---|
-| `EQUORI_DATABASE_URL` | set by `compose.yaml` | PostgreSQL connection URL; unset, equori runs its own PostgreSQL server over `EQUORI_DATA_DIR` (managed mode) |
-| `EQUORI_DATA_DIR` | per-user data directory; `%ProgramData%\equori` on Windows | Data directory of managed mode |
-| `EQUORI_POSTGRES_BIN` | `postgresql/bin` beside the executable, else the directory of `postgres` on `PATH` | Directory of the PostgreSQL 18 programs for managed mode, `equori backup` and `equori restore` |
-| `EQUORI_BACKUP_DIR` | `<data directory>/backups` | Directory of the automatic backups of managed mode |
-| `EQUORI_HTTP_ADDR` | `:8080` | HTTP listen address |
-| `EQUORI_LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error` |
-| `EQUORI_INSECURE_COOKIES` | `false` | `true` drops the `Secure` cookie attribute; required to log in over plain HTTP from another host |
-| `EQUORI_API_DOCS` | `false` | `true` serves the API reference at `/docs` and the contract at `/openapi.yaml`, both without a session |
-| `EQUORI_SECRET_KEY` | unset | 32 bytes in standard base64 (`openssl rand -base64 32`) that seal integration credentials (ADR 008); without it integrations are unavailable, except in managed mode, which generates `secret.key` in the data directory (`equori secrets key` prints it). Keep it outside backups |
-| `EQUORI_SECRET_KEY_PREVIOUS` | unset | The replaced key during a rotation: `equori secrets rotate` reseals every credential, then remove it |
-| `EQUORI_AGGREGATOR_PLUGGY_URL` | `https://api.pluggy.ai` | Base URL of the Pluggy API |
-| `POSTGRES_PASSWORD` | `equori` | Database password used by `compose.yaml` |
+Every variable, its default and an example: [docs/install/configuration.md](docs/install/configuration.md).
 
 Data lives in the `pgdata` Docker volume. Back it up with:
 
