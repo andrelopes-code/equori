@@ -99,6 +99,7 @@ Managed mode is the mode in which `equori` runs its own PostgreSQL server as a c
 | R5 | The formula template, its renderer (`scripts/render-formula.sh`, `make formula-test`) and the `homebrew` release job exist. The tap repository `andrelopes-code/homebrew-equori` exists since 2026-10-26 and holds no formula until the first tag. |
 | R6 | The `homebrew` job reads the secret `HOMEBREW_TAP_TOKEN`, set on 2026-10-26: a fine-grained token with contents access to the tap repository only. |
 | D8 | `docs/operations/remote-access.md`. |
+| D9 | `scripts/install.sh` (Linux, macOS) and `scripts/install.ps1` (Windows) install and upgrade compose in `~/equori` with one pasted command. The release attaches both and `env.example`, pinned by `scripts/pin-assets.sh`; the `image` job runs `scripts/install-smoke.sh` (S227 to S230) before any push; the owner checks macOS and Windows (P14 A163, A166). |
 
 ## Settled during planning
 

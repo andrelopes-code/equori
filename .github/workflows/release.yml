@@ -120,6 +120,8 @@ jobs:
           build-args: VERSION=${{ github.ref_name }}
       - run: test "$(docker run --rm equori:standalone version | head -1)" = "equori ${{ github.ref_name }}"
       - run: scripts/standalone-smoke.sh equori:standalone
+      # P14 A166.2: the pasted command installs this image before it is pushed.
+      - run: scripts/install-smoke.sh equori:standalone "${GITHUB_REF_NAME#v}"
       - id: push
         uses: docker/build-push-action@v6
         with:
@@ -234,11 +236,8 @@ jobs:
         with:
           name: dist
           path: dist/
-      - name: Pin compose.yaml to the release
-        run: |
-          version=${GITHUB_REF_NAME#v}
-          sed -e "s/\${EQUORI_VERSION:-dev}/\${EQUORI_VERSION:-$version}/" -e '/^    build:$/,/^      target: standalone$/d' compose.yaml > dist/compose.yaml
-          grep -q "equori:\${EQUORI_VERSION:-$version}-standalone" dist/compose.yaml
+      - name: Pin the installation assets to the release
+        run: scripts/pin-assets.sh "${GITHUB_REF_NAME#v}" dist
       # Present only when the windows job signed it (W-R6).
       - uses: actions/download-artifact@v8
         continue-on-error: true
@@ -251,7 +250,7 @@ jobs:
         run: |
           flags=(--generate-notes --verify-tag)
           if [[ "$GITHUB_REF_NAME" == *-* ]]; then flags+=(--prerelease); fi
-          assets=(dist/*.tar.gz dist/compose.yaml)
+          assets=(dist/*.tar.gz dist/compose.yaml dist/install.sh dist/install.ps1 dist/env.example)
           for installer in dist/*_windows_amd64_setup.exe; do
             [[ -e "$installer" ]] || continue
             (cd dist && sha256sum "$(basename "$installer")" >> SHA256SUMS)
