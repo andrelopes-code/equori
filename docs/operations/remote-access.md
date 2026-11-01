@@ -4,13 +4,15 @@ The phone needs HTTPS for three things: installing the application, keeping the 
 
 ## Tailscale
 
-This setup serves equori bound to `127.0.0.1:8080`, as the Homebrew service runs it, and compose on port 8080. Tailscale Serve publishes that port to the owner's tailnet over HTTPS:
+This setup serves equori bound to `127.0.0.1:8080`, as the Homebrew service runs it, and compose on `127.0.0.1` and the port of `EQUORI_PORT` in `.env` (8080 by default). Tailscale Serve publishes that port to the owner's tailnet over HTTPS:
 
 ```sh
 tailscale serve --bg 8080
 tailscale serve status
 tailscale serve reset
 ```
+
+With compose on another port, the command names the port of `EQUORI_PORT`.
 
 `tailscale serve status` prints the address `https://<machine>.<tailnet>.ts.net`, which the phone opens. `tailscale serve reset` removes the configuration.
 
@@ -21,7 +23,7 @@ tailscale serve reset
 
 ## Reverse proxy with a domain
 
-This setup suits a VPS or a host with a public name. A reverse proxy holds the public certificate and forwards to equori. Caddy example:
+This setup suits a VPS or a host with a public name. A reverse proxy holds the public certificate and forwards to equori. With compose, the port is that of `EQUORI_PORT`. Caddy example:
 
 ```
 equori.example.com {
@@ -33,7 +35,7 @@ The proxy keeps the `Host` header, which is Caddy's default. The cross-origin pr
 
 ## Plain HTTP on a LAN
 
-The application runs over `http://<lan address>:8080` with `EQUORI_INSECURE_COOKIES=true`. The Homebrew service listens on `127.0.0.1:8080` only: its environment sets `EQUORI_HTTP_ADDR`, and a process value wins over `equori.env` (ADR 022, C2). LAN access from a Homebrew installation therefore runs `EQUORI_HTTP_ADDR=0.0.0.0:8080 EQUORI_INSECURE_COOKIES=true equori serve` outside the service. A browser refuses the secure-context features over plain HTTP:
+The application runs over `http://<lan address>:8080` with `EQUORI_INSECURE_COOKIES=true`. The Homebrew service listens on `127.0.0.1:8080` only: its environment sets `EQUORI_HTTP_ADDR`, and a process value wins over `equori.env` (ADR 022, C2). LAN access from a Homebrew installation therefore runs `EQUORI_HTTP_ADDR=0.0.0.0:8080 EQUORI_INSECURE_COOKIES=true equori serve` outside the service. Compose: `.env` sets `EQUORI_HOST_IP=0.0.0.0` and `EQUORI_INSECURE_COOKIES=true`, then `docker compose up -d` in the installation directory applies them. A browser refuses the secure-context features over plain HTTP:
 
 | Works | Does not work |
 |---|---|
