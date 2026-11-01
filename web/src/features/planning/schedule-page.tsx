@@ -4,6 +4,7 @@ import {
   DescriptionListItem,
   DescriptionListTerm,
 } from "@slotted/react/description-list";
+import { Grid } from "@slotted/react/grid";
 import { Page, PageBody } from "@slotted/react/page";
 import {
   PageHeader,
@@ -129,6 +130,7 @@ export function SchedulePage() {
               <HeaderAction
                 label={t("schedule.pause")}
                 glyph="pause"
+                wordsOnly
                 onClick={() => {
                   setDialog("pause");
                 }}
@@ -136,6 +138,7 @@ export function SchedulePage() {
               <HeaderAction
                 label={t("schedule.end")}
                 glyph="stop"
+                wordsOnly
                 onClick={() => {
                   setDialog("end");
                 }}
@@ -155,7 +158,12 @@ export function SchedulePage() {
       </PageHeader>
       <PageBody>
         <Stack gap={6}>
-          <DescriptionList layout="stack" aria-label={t("schedule.facts")}>
+          <DescriptionList
+            layout="stack"
+            variant="framed"
+            columns={3}
+            aria-label={t("schedule.facts")}
+          >
             <DescriptionListItem>
               <DescriptionListTerm>{t("schedule.account")}</DescriptionListTerm>
               <DescriptionListDescription>
@@ -210,65 +218,69 @@ export function SchedulePage() {
               </DescriptionListDescription>
             </DescriptionListItem>
           </DescriptionList>
-          <Table columns={3} variant="framed">
-            <TableContent>
-              <TableCaption>{t("schedule.terms")}</TableCaption>
-              <TableHead>
-                <TableRow>
-                  <TableColumnHeader>
-                    {t("schedule.effectiveFrom")}
-                  </TableColumnHeader>
-                  <TableColumnHeader numeric>
-                    {t("schedule.amount")}
-                  </TableColumnHeader>
-                  <TableColumnHeader>
-                    {t("schedules.recurrence")}
-                  </TableColumnHeader>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {s.terms.map((v) => (
-                  <TableRow key={v.effective_from} value={v.effective_from}>
-                    <TableRowHeader>
-                      {formatDate(v.effective_from, locale)}
-                    </TableRowHeader>
-                    <TableCell numeric>
-                      {fmt.money(v.amount, scale(v.amount.currency))}
-                    </TableCell>
-                    <TableCell>
-                      {recurrenceWords(v.recurrence, t, locale)}
-                    </TableCell>
+          <Grid columns={2} gap={6} minItemWidth="lg">
+            <Table columns={3} variant="framed">
+              <TableContent>
+                <TableCaption>{t("schedule.terms")}</TableCaption>
+                <TableHead>
+                  <TableRow>
+                    <TableColumnHeader>
+                      {t("schedule.effectiveFrom")}
+                    </TableColumnHeader>
+                    <TableColumnHeader numeric>
+                      {t("schedule.amount")}
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                      {t("schedules.recurrence")}
+                    </TableColumnHeader>
                   </TableRow>
-                ))}
-              </TableBody>
-            </TableContent>
-          </Table>
-          <Table columns={2} variant="framed">
-            <TableContent>
-              <TableCaption>{t("schedule.pauses")}</TableCaption>
-              <TableHead>
-                <TableRow>
-                  <TableColumnHeader>
-                    {t("schedule.pauseFrom")}
-                  </TableColumnHeader>
-                  <TableColumnHeader>{t("schedule.pauseTo")}</TableColumnHeader>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {s.pauses.length === 0 && (
-                  <TableEmpty>{t("schedule.noPauses")}</TableEmpty>
-                )}
-                {s.pauses.map((p) => (
-                  <TableRow key={p.from} value={p.from}>
-                    <TableRowHeader>
-                      {formatDate(p.from, locale)}
-                    </TableRowHeader>
-                    <TableCell>{formatDate(p.to, locale)}</TableCell>
+                </TableHead>
+                <TableBody>
+                  {s.terms.map((v) => (
+                    <TableRow key={v.effective_from} value={v.effective_from}>
+                      <TableRowHeader>
+                        {formatDate(v.effective_from, locale)}
+                      </TableRowHeader>
+                      <TableCell numeric>
+                        {fmt.money(v.amount, scale(v.amount.currency))}
+                      </TableCell>
+                      <TableCell>
+                        {recurrenceWords(v.recurrence, t, locale)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </TableContent>
+            </Table>
+            <Table columns={2} variant="framed">
+              <TableContent>
+                <TableCaption>{t("schedule.pauses")}</TableCaption>
+                <TableHead>
+                  <TableRow>
+                    <TableColumnHeader>
+                      {t("schedule.pauseFrom")}
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                      {t("schedule.pauseTo")}
+                    </TableColumnHeader>
                   </TableRow>
-                ))}
-              </TableBody>
-            </TableContent>
-          </Table>
+                </TableHead>
+                <TableBody>
+                  {s.pauses.length === 0 && (
+                    <TableEmpty>{t("schedule.noPauses")}</TableEmpty>
+                  )}
+                  {s.pauses.map((p) => (
+                    <TableRow key={p.from} value={p.from}>
+                      <TableRowHeader>
+                        {formatDate(p.from, locale)}
+                      </TableRowHeader>
+                      <TableCell>{formatDate(p.to, locale)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </TableContent>
+            </Table>
+          </Grid>
           <AgendaTable
             caption={t("schedule.occurrences")}
             view={view}
