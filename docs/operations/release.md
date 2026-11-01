@@ -10,6 +10,7 @@ A release is a pushed tag `vX.Y.Z`; `.github/workflows/release.yml` builds the i
 4. Tag and push: `git tag vX.Y.Z && git push origin vX.Y.Z`.
 5. Add the line `Export archive_version: <N>` to the release notes (ADR 021, V9; `docs/operations/export.md`).
 6. The job `windows` publishes the installer only when the secrets `AZURE_TENANT_ID`, `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET`, `ARTIFACT_SIGNING_ENDPOINT`, `ARTIFACT_SIGNING_ACCOUNT` and `ARTIFACT_SIGNING_PROFILE` exist (ADR 023, W-R5, W-R6); without them its notice says so and the release carries no installer.
+7. Owner check of macOS and Windows (P14 A166.4): on a fresh macOS machine and on a fresh Windows machine or virtual machine, follow the prerequisites of `docs/install/macos.md` and `docs/install/windows.md`, paste the command of the guide, and confirm that the setup screen opens. The release notes name the version and the date of each check.
 
 ## PostgreSQL for Windows
 

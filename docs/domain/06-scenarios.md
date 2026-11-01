@@ -951,3 +951,7 @@ The scenarios of `docs/specs/2026-10-30-households-access-design.md`, section 6:
 ### S214–S221 Protected data (A154–A159)
 
 The scenarios of `docs/specs/2026-10-31-protected-data-design.md`, section "Scenarios": external mode backs up before a migration and a failed backup stops it (S214); a periodic backup writes an encrypted copy and keeps seven (S215); a copy restored into an empty database reproduces every row, balance and net worth (S216); a folder that cannot be written marks the copy late (S217); a member gets 403 on every operation of the module (S218); the diagnostic file holds no seeded name, description or amount (S219); the version check runs only with consent and on a release binary (S220); "Back up now" writes a backup and a copy (S221).
+
+### S222–S233 Installation (A160–A166)
+
+The scenarios of `docs/specs/2026-10-31-installation-design.md`, section "Scenarios": an invalid configuration is reported in one block without the value of a secret (S222, S223); an unknown variable logs a warning (S224); a failed database connection or listen names its variable (S225, S226); the installation script installs, runs again, takes a free port and stops without Docker (S227 to S230); the first access names the book and its time zone (S231) and preselects the region of the browser (S232); the owner checks macOS and Windows (S233).

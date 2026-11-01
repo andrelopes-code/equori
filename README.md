@@ -19,40 +19,25 @@ Status: early development. The HTTP API and the web interface cover the ledger, 
 
 ## Run
 
+Linux and macOS:
+
 ```sh
-curl -fsSLO https://github.com/andrelopes-code/equori/releases/latest/download/compose.yaml
-POSTGRES_PASSWORD=change-me docker compose up -d
+curl -fsSL https://github.com/andrelopes-code/equori/releases/latest/download/install.sh | sh
 ```
 
-The downloaded compose.yaml names the image of its release; a newer release ships its own.
+Windows (PowerShell):
+
+```powershell
+irm https://github.com/andrelopes-code/equori/releases/latest/download/install.ps1 | iex
+```
+
+The command installs equori under Docker Compose in `~/equori` (`%USERPROFILE%\equori` on Windows) and opens the first access; run again, it upgrades. Guides: [Linux](docs/install/linux.md), [macOS](docs/install/macos.md), [Windows](docs/install/windows.md); in Portuguese: [Linux](docs/install/linux.pt-BR.md), [macOS](docs/install/macos.pt-BR.md), [Windows](docs/install/windows.pt-BR.md).
 
 Archives: each release attaches `equori_<version>_<os>_<arch>.tar.gz` for Linux and macOS and `SHA256SUMS`. The binary needs `EQUORI_DATABASE_URL` pointing to PostgreSQL 18 or later. Verify an archive with:
 
 ```sh
 gh attestation verify equori_<version>_linux_amd64.tar.gz --repo andrelopes-code/equori
 ```
-
-### Windows
-
-Each release attaches `equori_<version>_windows_amd64_setup.exe` for Windows 10 (1803 or later) and Windows 11, on x64 and on Arm through emulation. The installer holds PostgreSQL 18 and installs the service `equori`, which starts with Windows and listens on `http://127.0.0.1:8080`. It asks for administrator rights once.
-
-When it finishes, the browser opens on the screen that creates the first user. To use equori in a window of its own, open it in Edge or Chrome and choose "Install this site as an app". The Start menu entry `equori` opens it later.
-
-- Data, backups, `secret.key`, `equori.env` and the log (`log\equori.log`) live in `%ProgramData%\equori`.
-- Another port: set `EQUORI_HTTP_ADDR=127.0.0.1:<port>` in `%ProgramData%\equori\equori.env`, then restart the service (`Restart-Service equori` in an administrator terminal).
-- Before `equori restore`, stop the service: `equori service stop` in an administrator terminal.
-- Uninstalling from Settings > Apps asks whether to delete `%ProgramData%\equori`; the answer No keeps it for a later installation.
-
-### Homebrew (macOS, Linux)
-
-```sh
-brew install andrelopes-code/equori/equori
-brew services start equori
-```
-
-Then open the setup URL that the first start writes to `setup.url` in the data directory (`~/Library/Application Support/equori` on macOS, `~/.local/share/equori` on Linux) and to the log.
-
-Phone access over HTTPS: [docs/operations/remote-access.md](docs/operations/remote-access.md).
 
 ### One container
 
@@ -90,6 +75,30 @@ Commands: `serve` (the default), `user create`, `backup`, `restore`, `secrets ke
 Backup and restore: [docs/operations/backup.md](docs/operations/backup.md). Export, import and archive compatibility between versions: [docs/operations/export.md](docs/operations/export.md). Bank sync through Pluggy and Meu Pluggy: [docs/operations/pluggy.md](docs/operations/pluggy.md).
 
 The Postgres major version is pinned to 18. To upgrade the major version, dump the database, recreate the volume with the new image and restore the dump.
+
+## Outside the supported set of 1.0
+
+### Windows
+
+Each release attaches `equori_<version>_windows_amd64_setup.exe` for Windows 10 (1803 or later) and Windows 11, on x64 and on Arm through emulation. The installer holds PostgreSQL 18 and installs the service `equori`, which starts with Windows and listens on `http://127.0.0.1:8080`. It asks for administrator rights once.
+
+When it finishes, the browser opens on the screen that creates the first user. To use equori in a window of its own, open it in Edge or Chrome and choose "Install this site as an app". The Start menu entry `equori` opens it later.
+
+- Data, backups, `secret.key`, `equori.env` and the log (`log\equori.log`) live in `%ProgramData%\equori`.
+- Another port: set `EQUORI_HTTP_ADDR=127.0.0.1:<port>` in `%ProgramData%\equori\equori.env`, then restart the service (`Restart-Service equori` in an administrator terminal).
+- Before `equori restore`, stop the service: `equori service stop` in an administrator terminal.
+- Uninstalling from Settings > Apps asks whether to delete `%ProgramData%\equori`; the answer No keeps it for a later installation.
+
+### Homebrew (macOS, Linux)
+
+```sh
+brew install andrelopes-code/equori/equori
+brew services start equori
+```
+
+Then open the setup URL that the first start writes to `setup.url` in the data directory (`~/Library/Application Support/equori` on macOS, `~/.local/share/equori` on Linux) and to the log.
+
+Phone access over HTTPS: [docs/operations/remote-access.md](docs/operations/remote-access.md).
 
 ## Development
 

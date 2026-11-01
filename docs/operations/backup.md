@@ -46,7 +46,7 @@ another disk or host.
 
 The copy folder is the host folder that compose mounts on `/copies` of the app container. It is
 `./copies` next to `compose.yaml`; `EQUORI_COPY_FOLDER` selects another folder. The container
-runs as uid 999, the `postgres` user of the image, so on a Linux host the folder needs that owner:
+runs as uid 999, the `postgres` user of the image, so on a Linux host the folder needs that owner. The installation script creates `copies` and gives the mount to uid 999 at each run; a folder set later in `EQUORI_COPY_FOLDER` needs the same change before the next start:
 
 ```sh
 mkdir -p copies && sudo chown 999:999 copies
