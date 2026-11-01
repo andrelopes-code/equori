@@ -43,7 +43,7 @@ func (s *Service) Records(ctx context.Context, booksID int64, batchID uuid.UUID,
 	}
 
 	for i := range recs {
-		if err := s.refreshCandidates(ctx, &recs[i], currencyOf(b)); err != nil {
+		if err := s.refreshReview(ctx, &recs[i], currencyOf(b)); err != nil {
 			return nil, nil, domain.Batch{}, err
 		}
 	}
@@ -65,7 +65,7 @@ func (s *Service) Record(ctx context.Context, booksID int64, id uuid.UUID) (doma
 		return domain.ExternalRecord{}, err
 	}
 
-	return rec, s.refreshCandidates(ctx, &rec, currencyOf(b))
+	return rec, s.refreshReview(ctx, &rec, currencyOf(b))
 }
 
 func (s *Service) Resolve(ctx context.Context, booksID int64, recordID uuid.UUID, action string, txID uuid.UUID) (domain.ExternalRecord, domain.Batch, error) {
@@ -229,6 +229,32 @@ func (s *Service) Reopen(ctx context.Context, booksID int64, recordID uuid.UUID)
 // refreshCandidates scores a record in review against the postings of its account that no
 // record links now, so a transaction recorded after the import is offered and one linked
 // since is not (A140).
+// refreshReview prepares a record in review for reading. A record in review group keeps its
+// entry as the only candidate and lists the other lines of its group; a group that no longer
+// holds lists none. Another record has its candidates scored again.
+func (s *Service) refreshReview(ctx context.Context, rec *domain.ExternalRecord, currency money.Currency) error {
+	if rec.State != domain.StateNeedsReview || rec.ReviewReason != domain.ReviewGroup {
+		return s.refreshCandidates(ctx, rec, currency)
+	}
+
+	members, err := s.groupOf(ctx, *rec)
+	if errors.Is(err, ErrGroupChanged) {
+		return nil
+	}
+
+	if err != nil {
+		return err
+	}
+
+	for _, m := range members {
+		if m.Record.ID != rec.ID {
+			rec.GroupIDs = append(rec.GroupIDs, m.Record.ID)
+		}
+	}
+
+	return nil
+}
+
 func (s *Service) refreshCandidates(ctx context.Context, rec *domain.ExternalRecord, currency money.Currency) error {
 	if rec.State != domain.StateNeedsReview {
 		return nil

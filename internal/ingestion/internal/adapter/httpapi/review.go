@@ -38,6 +38,10 @@ func toRecordAPI(r domain.ExternalRecord, currency string) ExternalRecord {
 		out.ScoredCandidates = &scored
 	}
 
+	if len(r.GroupIDs) > 0 {
+		out.GroupRecordIds = &r.GroupIDs
+	}
+
 	if r.TransactionID != uuid.Nil {
 		out.TransactionId = &r.TransactionID
 	}

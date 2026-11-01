@@ -534,7 +534,10 @@ type ExternalRecord struct {
 	Decision    *ExternalRecordDecision `json:"decision,omitempty"`
 	Description string                  `json:"description"`
 	ExternalId  *string                 `json:"external_id,omitempty"`
-	Id          openapi_types.UUID      `json:"id"`
+
+	// GroupRecordIds The other lines of the group, while review_reason is group (A168).
+	GroupRecordIds *[]openapi_types.UUID `json:"group_record_ids,omitempty"`
+	Id             openapi_types.UUID    `json:"id"`
 
 	// ReviewReason Why the record waits for review (A100, A102, A142, A168).
 	ReviewReason *ExternalRecordReviewReason `json:"review_reason,omitempty"`

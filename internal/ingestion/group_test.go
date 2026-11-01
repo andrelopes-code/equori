@@ -238,3 +238,47 @@ func TestS235SumNotExactLeavesTheEntryAwaiting(t *testing.T) {
 type moneyView struct {
 	Amount int64 `json:"amount"`
 }
+
+// A168: a record in review group lists the other lines of its group and keeps its entry.
+func TestGroupRecordsListTheirGroup(t *testing.T) {
+	t.Parallel()
+	f, _, entry := groupFixture(t)
+
+	var batch string
+	if err := f.h.Pool.QueryRow(t.Context(),
+		`SELECT batch_id::text FROM ingestion_external_record WHERE external_id = 'a'`).Scan(&batch); err != nil {
+		t.Fatal(err)
+	}
+
+	var list struct {
+		Items []struct {
+			ExternalID     string   `json:"external_id"`
+			ID             string   `json:"id"`
+			Candidates     []string `json:"candidates"`
+			GroupRecordIDs []string `json:"group_record_ids"`
+		} `json:"items"`
+	}
+
+	f.h.MustDo(http.MethodGet, "/api/v1/import-batches/"+batch+"/records?state=needs_review", nil, http.StatusOK, &list)
+
+	ids := map[string]string{}
+	for _, it := range list.Items {
+		ids[it.ExternalID] = it.ID
+	}
+
+	if len(list.Items) != 2 {
+		t.Fatalf("records in review = %d, want 2", len(list.Items))
+	}
+
+	for _, it := range list.Items {
+		other := ids["a"]
+		if it.ExternalID == "a" {
+			other = ids["b"]
+		}
+
+		if !slices.Equal(it.GroupRecordIDs, []string{other}) || !slices.Equal(it.Candidates, []string{entry}) {
+			t.Fatalf("record %s: group %v candidates %v, want [%s] and [%s]",
+				it.ExternalID, it.GroupRecordIDs, it.Candidates, other, entry)
+		}
+	}
+}

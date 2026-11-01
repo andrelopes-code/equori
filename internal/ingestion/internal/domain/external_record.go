@@ -67,6 +67,9 @@ type ExternalRecord struct {
 	SummaryBatchID uuid.UUID
 	// Kept: the owner undid the record's withdrawal; withdrawal skips it (A148).
 	Kept bool
+	// GroupIDs are the other lines of the group of a record in review reason group; it is
+	// computed when the record is read and never stored (A168).
+	GroupIDs []uuid.UUID
 }
 
 // Why a record waits for review (A100, A102, A142); the first two are the zones of Assign.

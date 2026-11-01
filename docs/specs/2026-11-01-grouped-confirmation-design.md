@@ -102,7 +102,7 @@ No rule reads a regional value. The sum is over `amount`, in minor units of the 
 
 ## Contract
 
-- `ExternalRecord.review_reason` adds `group`. `ExternalRecord.group_record_ids`, optional, lists the other lines of the group and appears only on the read of one record in review `group`, not in lists.
+- `ExternalRecord.review_reason` adds `group`. `ExternalRecord.group_record_ids`, optional, lists the other lines of the group and appears only on a record in review `group`, in the records of a batch and on the read of one record.
 - `StatementSummary` and `StatementDetail` gain `confirmed_amount` and `awaiting_amount`, both optional.
 - `Problem.code`: none new.
 - Review text of `group`, pt-BR: "Este lançamento parece ser a soma destas linhas do banco. Confirme para dividi-lo nas linhas do banco."

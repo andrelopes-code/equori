@@ -4491,6 +4491,8 @@ export interface components {
              * @enum {string}
              */
             review_reason?: "ambiguous" | "probable" | "changed" | "repeated" | "group";
+            /** @description The other lines of the group, while review_reason is group (A168). */
+            group_record_ids?: string[];
             /** @description The candidates as matching scored them, best first (A99, A100). */
             scored_candidates?: components["schemas"]["ScoredCandidate"][];
         };
