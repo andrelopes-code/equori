@@ -33,6 +33,8 @@ irm https://github.com/andrelopes-code/equori/releases/latest/download/install.p
 
 The command installs equori under Docker Compose in `~/equori` (`%USERPROFILE%\equori` on Windows) and opens the first access; run again, it upgrades. Guides: [Linux](docs/install/linux.md), [macOS](docs/install/macos.md), [Windows](docs/install/windows.md); in Portuguese: [Linux](docs/install/linux.pt-BR.md), [macOS](docs/install/macos.pt-BR.md), [Windows](docs/install/windows.pt-BR.md).
 
+Phone access over HTTPS: [docs/operations/remote-access.md](docs/operations/remote-access.md).
+
 Archives: each release attaches `equori_<version>_<os>_<arch>.tar.gz` for Linux and macOS and `SHA256SUMS`. The binary needs `EQUORI_DATABASE_URL` pointing to PostgreSQL 18 or later. Verify an archive with:
 
 ```sh
@@ -97,8 +99,6 @@ brew services start equori
 ```
 
 Then open the setup URL that the first start writes to `setup.url` in the data directory (`~/Library/Application Support/equori` on macOS, `~/.local/share/equori` on Linux) and to the log.
-
-Phone access over HTTPS: [docs/operations/remote-access.md](docs/operations/remote-access.md).
 
 ## Development
 
