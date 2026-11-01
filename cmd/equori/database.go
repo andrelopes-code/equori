@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/andrelopes-code/equori/internal/platform/backup"
@@ -75,7 +76,7 @@ func openExternal(ctx context.Context, cfg config.Config, log *slog.Logger) (*da
 
 	pool, err := postgres.Open(ctx, cfg.DatabaseURL)
 	if err != nil {
-		return nil, err
+		return nil, connectError(cfg.DatabaseURL, err)
 	}
 
 	d.Pool = pool
@@ -86,6 +87,22 @@ func openExternal(ctx context.Context, cfg config.Config, log *slog.Logger) (*da
 	}
 
 	return d, nil
+}
+
+// connectError names the database of EQUORI_DATABASE_URL without its password (A161.5).
+func connectError(databaseURL string, err error) error {
+	pc, perr := pgx.ParseConfig(databaseURL)
+	if perr != nil {
+		return fmt.Errorf("cannot connect to the database of EQUORI_DATABASE_URL: %w", err)
+	}
+
+	return fmt.Errorf(
+		"cannot connect to the database of EQUORI_DATABASE_URL (host %s, port %d, database %s): %w",
+		pc.Host,
+		pc.Port,
+		pc.Database,
+		err,
+	)
 }
 
 // migrate takes the pre-migration backup of B3 when a backup directory is set, then migrates; a

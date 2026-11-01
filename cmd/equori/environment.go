@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log/slog"
 	"slices"
 	"strings"
 
@@ -29,6 +30,24 @@ func envNames(environ []string, file map[string]string) []string {
 	slices.Sort(names)
 
 	return slices.Compact(names)
+}
+
+// startWarnings logs the removed and the unknown EQUORI_ variables of names and, in external mode,
+// a missing secret key (A161.4, A161.7).
+func startWarnings(log *slog.Logger, cfg config.Config, getenv func(string) string, names []string) {
+	for _, r := range config.RemovedVariables(getenv) {
+		log.Warn("environment variable removed", "variable", r.Name, "replaced_by", r.Screen)
+	}
+
+	for _, name := range names {
+		if !config.Known(name) {
+			log.Warn("environment variable unknown", "variable", name)
+		}
+	}
+
+	if !cfg.Managed() && cfg.SecretKey == "" {
+		log.Warn("EQUORI_SECRET_KEY is not set: bank connections, the second factor and the copy password are unavailable")
+	}
 }
 
 // readEnvFile reads equori.env of the data directory; it returns none while EQUORI_DATABASE_URL

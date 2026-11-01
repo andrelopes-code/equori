@@ -242,7 +242,7 @@ func serve(parent context.Context) error {
 		}
 	}()
 
-	err = httpserver.Run(ctx, cfg.HTTPAddr, app.Handler, log)
+	err = listenError(cfg.HTTPAddr, httpserver.Run(ctx, cfg.HTTPAddr, app.Handler, log))
 	select {
 	case perr := <-postgresExit:
 		return perr
@@ -384,9 +384,7 @@ func setup() (config.Config, *slog.Logger, error) {
 	}
 
 	log := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: cfg.LogLevel}))
-	for _, r := range config.RemovedVariables(getenv) {
-		log.Warn("environment variable removed", "variable", r.Name, "replaced_by", r.Screen)
-	}
+	startWarnings(log, cfg, getenv, envNames(os.Environ(), file))
 
 	return cfg, log, nil
 }
