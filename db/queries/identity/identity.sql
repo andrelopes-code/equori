@@ -259,3 +259,27 @@ DELETE FROM identity_membership
 WHERE
     books_id = $1
     AND member_id = $2;
+
+-- name: CountBooksMembers :one
+-- DB3: the members of one book.
+SELECT
+    count(*)
+FROM
+    identity_membership
+WHERE
+    books_id = $1;
+
+-- name: CountMemberBooks :one
+-- DB4: the books one member belongs to.
+SELECT
+    count(*)
+FROM
+    identity_membership
+WHERE
+    member_id = $1;
+
+-- name: DeleteBooks :exec
+-- DB5: every table of the book cascades from this row.
+DELETE FROM identity_books
+WHERE
+    id = $1;

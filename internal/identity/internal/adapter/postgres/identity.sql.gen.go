@@ -27,6 +27,40 @@ func (q *Queries) AnyMember(ctx context.Context) (bool, error) {
 	return exists, err
 }
 
+const countBooksMembers = `-- name: CountBooksMembers :one
+SELECT
+    count(*)
+FROM
+    identity_membership
+WHERE
+    books_id = $1
+`
+
+// DB3: the members of one book.
+func (q *Queries) CountBooksMembers(ctx context.Context, booksID int64) (int64, error) {
+	row := q.db.QueryRow(ctx, countBooksMembers, booksID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countMemberBooks = `-- name: CountMemberBooks :one
+SELECT
+    count(*)
+FROM
+    identity_membership
+WHERE
+    member_id = $1
+`
+
+// DB4: the books one member belongs to.
+func (q *Queries) CountMemberBooks(ctx context.Context, memberID int64) (int64, error) {
+	row := q.db.QueryRow(ctx, countMemberBooks, memberID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const countOtherOwners = `-- name: CountOtherOwners :one
 SELECT
     count(*)
@@ -149,6 +183,18 @@ func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) er
 		arg.CreatedAt,
 		arg.ExpiresAt,
 	)
+	return err
+}
+
+const deleteBooks = `-- name: DeleteBooks :exec
+DELETE FROM identity_books
+WHERE
+    id = $1
+`
+
+// DB5: every table of the book cascades from this row.
+func (q *Queries) DeleteBooks(ctx context.Context, id int64) error {
+	_, err := q.db.Exec(ctx, deleteBooks, id)
 	return err
 }
 

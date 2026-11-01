@@ -284,6 +284,16 @@ export function useLeaveBooks() {
   });
 }
 
+// Deleting ends the session's book like leaving: the reload reads the account's next book (DB6).
+export function useDeleteBooks() {
+  const api = useApi();
+  return useMutation({
+    mutationFn: async (name: string) =>
+      unwrap(await api.DELETE("/books/current", { body: { name } })),
+    onSuccess: reloadHome,
+  });
+}
+
 export type SyncSchedule = components["schemas"]["SyncSchedule"];
 
 export function syncScheduleQuery(api: Client<paths>) {

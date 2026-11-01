@@ -37,6 +37,16 @@ export const householdsPtBR: Record<keyof typeof householdsEn, string> = {
   "members.removeTitle": "Remover {email}?",
   "members.removeHint":
     "O membro perde o acesso a este livro. As sessões, os tokens de acesso e as conversas com o assistente dele neste livro são apagados.",
+  "books.delete": "Excluir livro",
+  "books.delete.title": "Excluir este livro?",
+  "books.delete.hint":
+    "Todas as contas, transações, orçamentos, agendamentos e conexões de “{name}” são apagados de vez. A sessão termina. O livro não pode ter outros membros.",
+  "books.delete.confirm": "Digite o nome do livro para confirmar",
+  "problem.confirmation_mismatch": "O nome digitado não é o nome do livro.",
+  "problem.books_has_members":
+    "Remova os outros membros do livro antes de excluí-lo.",
+  "problem.last_books":
+    "Este é o seu único livro. Crie outro antes de excluí-lo.",
   "members.leave": "Sair deste livro",
   "members.leaveTitle": "Sair deste livro?",
   "members.leaveHint":

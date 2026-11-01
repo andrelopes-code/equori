@@ -44,6 +44,7 @@ var exposure = map[string]string{
 	"switchBooks":                      "-session",
 	"listMembers":                      "-session",
 	"leaveBooks":                       "-session",
+	"deleteCurrentBooks":               "-owner",
 	"updateMember":                     "-owner",
 	"removeMember":                     "-owner",
 	"listInvitations":                  "-owner",

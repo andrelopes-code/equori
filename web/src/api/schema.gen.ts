@@ -99,7 +99,13 @@ export interface paths {
         get: operations["getCurrentBooks"];
         put?: never;
         post?: never;
-        delete?: never;
+        /**
+         * Delete the active book with all its data; the session ends with it (DB1).
+         * @description The body repeats the book name; a different value is 422 confirmation_mismatch. 409
+         *     books_has_members while another member belongs to the book; 409 last_books while the book is
+         *     the only one of a member, because that member could not sign in again.
+         */
+        delete: operations["deleteCurrentBooks"];
         options?: never;
         head?: never;
         /**
@@ -6321,6 +6327,10 @@ export interface components {
             /** @description The IANA time zone name of the region (BK18). */
             default_time_zone: string;
         };
+        DeleteBooksInput: {
+            /** @description The name of the active book, typed again to confirm. */
+            name: string;
+        };
         BooksSettingsInput: {
             region: string;
             time_zone: string | null;
@@ -6517,6 +6527,7 @@ export interface components {
              *     investment_transaction, system_account, attachment_not_inlineable, archive_too_new,
              *     setup_token_invalid, setup_complete, book_role_required, books_not_found, member_not_found,
              *     last_owner, already_member, invitation_not_found, invitation_email_mismatch,
+             *     confirmation_mismatch, books_has_members, last_books,
              *     backup_off, backup_failed, password_too_short.
              */
             code: string;
@@ -6795,6 +6806,34 @@ export interface operations {
                 };
             };
             401: components["responses"]["Problem"];
+        };
+    };
+    deleteCurrentBooks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeleteBooksInput"];
+            };
+        };
+        responses: {
+            /** @description Deleted; the session cookie is cleared. */
+            204: {
+                headers: {
+                    "Set-Cookie"?: string;
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
         };
     };
     updateCurrentBooks: {

@@ -53,6 +53,21 @@ func (s *Server) LeaveBooks(ctx context.Context, _ LeaveBooksRequestObject) (Lea
 	return LeaveBooks204Response{Headers: LeaveBooks204ResponseHeaders{SetCookie: &cookie}}, nil
 }
 
+// DeleteCurrentBooks ends the session of the caller with the book (DB6), so it answers the expired cookie.
+func (s *Server) DeleteCurrentBooks(ctx context.Context, req DeleteCurrentBooksRequestObject) (DeleteCurrentBooksResponseObject, error) {
+	if req.Body == nil {
+		return nil, errInvalidRequest
+	}
+
+	if err := s.svc.DeleteBooks(ctx, auth.MustBooksID(ctx), auth.MustMemberID(ctx), req.Body.Name); err != nil {
+		return nil, err
+	}
+
+	cookie := s.cookie("", time.Unix(0, 0))
+
+	return DeleteCurrentBooks204Response{Headers: DeleteCurrentBooks204ResponseHeaders{SetCookie: &cookie}}, nil
+}
+
 func toAPIBooksMember(m app.Membership) BooksMember {
 	return BooksMember{MemberId: m.MemberID, Email: m.Email, Role: BookRole(m.Role), CreatedAt: m.CreatedAt}
 }

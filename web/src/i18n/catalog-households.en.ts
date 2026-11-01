@@ -38,6 +38,17 @@ export const householdsEn = {
   "members.removeTitle": "Remove {email}?",
   "members.removeHint":
     "The member loses access to this book. Their sessions, access tokens and assistant conversations in this book are deleted.",
+  "books.delete": "Delete book",
+  "books.delete.title": "Delete this book?",
+  "books.delete.hint":
+    "Every account, transaction, budget, schedule and connection of “{name}” is deleted for good. The session ends. The book must have no other member.",
+  "books.delete.confirm": "Type the book name to confirm",
+  "problem.confirmation_mismatch":
+    "The typed name is not the name of the book.",
+  "problem.books_has_members":
+    "Remove the other members of the book before deleting it.",
+  "problem.last_books":
+    "This is your only book. Create another one before deleting it.",
   "members.leave": "Leave this book",
   "members.leaveTitle": "Leave this book?",
   "members.leaveHint":

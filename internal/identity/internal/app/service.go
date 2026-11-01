@@ -27,6 +27,9 @@ var (
 	ErrBookRoleRequired        = errors.New("book role required")
 	ErrMemberNotFound          = errors.New("member not found")
 	ErrLastOwner               = errors.New("last owner")
+	ErrConfirmationMismatch    = errors.New("the typed name is not the book name")
+	ErrBooksHasMembers         = errors.New("the book has other members")
+	ErrLastBooks               = errors.New("the only book of a member")
 	ErrAlreadyMember           = errors.New("already a member")
 	ErrInvitationNotFound      = errors.New("invitation not found")
 	ErrInvitationEmailMismatch = errors.New("invitation for another email")
@@ -62,6 +65,9 @@ type Repository interface {
 	// ChangeRole and RemoveMembership lock the book row first; ErrMemberNotFound, ErrLastOwner.
 	ChangeRole(ctx context.Context, booksID, memberID int64, role auth.BookRole) error
 	RemoveMembership(ctx context.Context, booksID, memberID int64) error
+	// DeleteBooks deletes the book with all its data under the lock of its row (DB1 to DB5):
+	// ErrConfirmationMismatch, ErrBooksHasMembers, ErrLastBooks.
+	DeleteBooks(ctx context.Context, booksID, memberID int64, name string) error
 	// CreateBooks creates the book and its owner membership and publishes identity.books_created.v1.
 	CreateBooks(ctx context.Context, memberID int64, language, name, region string, base money.Currency) (int64, error)
 	// Appearance returns the stored JSON object of the member.
@@ -539,6 +545,11 @@ func (s *Service) ChangeRole(ctx context.Context, booksID, memberID int64, role 
 // RemoveMembership deletes a membership with its sessions and tokens: ErrMemberNotFound, ErrLastOwner (HA20, HA22).
 func (s *Service) RemoveMembership(ctx context.Context, booksID, memberID int64) error {
 	return s.repo.RemoveMembership(ctx, booksID, memberID)
+}
+
+// DeleteBooks deletes the book of the caller after the typed name matches (DB1 to DB6).
+func (s *Service) DeleteBooks(ctx context.Context, booksID, memberID int64, name string) error {
+	return s.repo.DeleteBooks(ctx, booksID, memberID, name)
 }
 
 func (s *Service) verify(ctx context.Context, plain, hash string) (bool, error) {

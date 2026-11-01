@@ -317,6 +317,51 @@ func (r *Repository) RemoveMembership(ctx context.Context, booksID, memberID int
 	})
 }
 
+// DeleteBooks runs the checks of DB2 to DB4 under the lock of the book row, then deletes the row
+// with the constraints deferred to the commit, so the cascade empties tables that reference each other.
+func (r *Repository) DeleteBooks(ctx context.Context, booksID, memberID int64, name string) error {
+	return pgx.BeginFunc(ctx, r.db, func(tx pgx.Tx) error {
+		q := r.q.WithTx(tx)
+
+		if err := q.LockBooks(ctx, booksID); err != nil {
+			return err
+		}
+
+		stored, err := q.GetBooksName(ctx, booksID)
+		if err != nil {
+			return notFound(err)
+		}
+
+		if stored != name {
+			return app.ErrConfirmationMismatch
+		}
+
+		members, err := q.CountBooksMembers(ctx, booksID)
+		if err != nil {
+			return err
+		}
+
+		if members > 1 {
+			return app.ErrBooksHasMembers
+		}
+
+		books, err := q.CountMemberBooks(ctx, memberID)
+		if err != nil {
+			return err
+		}
+
+		if books < 2 {
+			return app.ErrLastBooks
+		}
+
+		if _, err := tx.Exec(ctx, `SET CONSTRAINTS ALL DEFERRED`); err != nil {
+			return err
+		}
+
+		return q.DeleteBooks(ctx, booksID)
+	})
+}
+
 // changeMembership runs apply under the lock of the book row (HA21); leaves is true when apply
 // takes the owner role away from the membership, which then needs another owner.
 func (r *Repository) changeMembership(ctx context.Context, booksID, memberID int64, leaves bool, apply func(*Queries) error) error {

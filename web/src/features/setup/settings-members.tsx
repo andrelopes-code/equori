@@ -10,6 +10,7 @@ import { useApi } from "@/api/api-context";
 import { errorText } from "@/api/problem";
 import { membersQuery, useUpdateMember } from "@/features/setup/api";
 import type { BooksMember } from "@/features/setup/api";
+import { DeleteBooksDialog } from "@/features/setup/delete-books-dialog";
 import { LeaveBooksDialog } from "@/features/setup/leave-books-dialog";
 import { MemberRemoveDialog } from "@/features/setup/member-remove-dialog";
 import { MemberRow } from "@/features/setup/member-row";
@@ -20,7 +21,10 @@ import { SettingsSection } from "@/features/setup/settings-section";
 import { meQuery } from "@/features/session";
 import { useT } from "@/i18n/i18n-provider";
 
-type Open = { kind: "remove"; member: BooksMember } | { kind: "leave" };
+type Open =
+  | { kind: "remove"; member: BooksMember }
+  | { kind: "leave" }
+  | { kind: "delete" };
 
 // The members of the active book and their roles (HA52). Only an owner changes a role or removes
 // a member; every member can leave.
@@ -85,6 +89,20 @@ export function SettingsMembers() {
               {t("members.leave")}
             </Button>
           </div>
+          {me?.book_role === "owner" && (
+            <div>
+              <Button
+                size="sm"
+                variant="outline"
+                tone="danger"
+                onClick={() => {
+                  setOpen({ kind: "delete" });
+                }}
+              >
+                {t("books.delete")}
+              </Button>
+            </div>
+          )}
         </Stack>
       </SettingsGroup>
       {me?.book_role === "owner" && <SettingsInvitations />}
@@ -93,6 +111,7 @@ export function SettingsMembers() {
         <MemberRemoveDialog member={open.member} onClose={close} />
       )}
       {open?.kind === "leave" && <LeaveBooksDialog onClose={close} />}
+      {open?.kind === "delete" && <DeleteBooksDialog onClose={close} />}
     </SettingsSection>
   );
 }

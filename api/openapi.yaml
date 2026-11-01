@@ -268,6 +268,38 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+    delete:
+      tags: [identity]
+      operationId: deleteCurrentBooks
+      x-book-role: owner
+      summary: Delete the active book with all its data; the session ends with it (DB1).
+      description: |
+        The body repeats the book name; a different value is 422 confirmation_mismatch. 409
+        books_has_members while another member belongs to the book; 409 last_books while the book is
+        the only one of a member, because that member could not sign in again.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeleteBooksInput"
+      responses:
+        "204":
+          description: Deleted; the session cookie is cleared.
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
   /me/books:
     get:
       tags: [identity]
@@ -11384,6 +11416,14 @@ components:
         default_time_zone:
           type: string
           description: The IANA time zone name of the region (BK18).
+    DeleteBooksInput:
+      type: object
+      additionalProperties: false
+      required: [name]
+      properties:
+        name:
+          type: string
+          description: The name of the active book, typed again to confirm.
     BooksSettingsInput:
       type: object
       additionalProperties: false
@@ -11803,6 +11843,7 @@ components:
             investment_transaction, system_account, attachment_not_inlineable, archive_too_new,
             setup_token_invalid, setup_complete, book_role_required, books_not_found, member_not_found,
             last_owner, already_member, invitation_not_found, invitation_email_mismatch,
+            confirmation_mismatch, books_has_members, last_books,
             backup_off, backup_failed, password_too_short.
         request_id:
           type: string

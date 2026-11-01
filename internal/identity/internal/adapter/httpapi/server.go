@@ -283,6 +283,12 @@ func ToProblem(err error) (problem.Details, bool) {
 		return problem.New(http.StatusNotFound, "member_not_found", "no member of this book has this ID"), true
 	case errors.Is(err, app.ErrLastOwner):
 		return problem.New(http.StatusConflict, "last_owner", "the book must keep at least one owner"), true
+	case errors.Is(err, app.ErrConfirmationMismatch):
+		return problem.New(http.StatusUnprocessableEntity, "confirmation_mismatch", "the typed name is not the name of the book"), true
+	case errors.Is(err, app.ErrBooksHasMembers):
+		return problem.New(http.StatusConflict, "books_has_members", "remove the other members before deleting the book"), true
+	case errors.Is(err, app.ErrLastBooks):
+		return problem.New(http.StatusConflict, "last_books", "a member keeps at least one book"), true
 	case errors.Is(err, app.ErrAlreadyMember):
 		return problem.New(http.StatusConflict, "already_member", "the email already has a membership in this book"), true
 	case errors.Is(err, app.ErrAdminRequired):
