@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   catalogueEntries,
   displayName,
+  loadBrandNames,
   sortInstitutions,
 } from "@/features/accounts/institution-catalogue";
 import type { LogoIndex } from "@/features/accounts/institution-logo";
@@ -43,6 +44,30 @@ describe("catalogueEntries", () => {
         name: "Itaú Unibanco",
         legalName: "ITAÚ UNIBANCO S.A.",
       },
+    ]);
+  });
+
+  // S255 (A181).
+  it("names an entry by its trade name when the catalogue has one", () => {
+    expect(
+      catalogueEntries(
+        index,
+        [],
+        "pt-BR",
+        new Map([["18236120", "Nubank"]]),
+      ).map((e) => e.name),
+    ).toEqual(["Banco do Brasil", "Itaú Unibanco", "Nubank"]);
+  });
+});
+
+describe("loadBrandNames", () => {
+  // S255 (A181): the package ships the trade names.
+  it("reads Nubank and Itaú from bancos.json", async () => {
+    const brands = await loadBrandNames();
+
+    expect([brands.get("18236120"), brands.get("60701190")]).toEqual([
+      "Nubank",
+      "Itaú",
     ]);
   });
 });

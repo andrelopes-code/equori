@@ -64,9 +64,7 @@ describe("InstitutionsPage", () => {
     const dialog = await screen.findByRole("dialog");
     const input = within(dialog).getByRole("combobox");
     await userEvent.type(input, "Itaú Uni");
-    await userEvent.click(
-      await screen.findByRole("option", { name: /^Itaú Unibanco/ }),
-    );
+    await userEvent.click(await screen.findByRole("option", { name: /^Itaú/ }));
     await userEvent.click(
       within(dialog).getByRole("button", { name: catalogEn["detail.save"] }),
     );

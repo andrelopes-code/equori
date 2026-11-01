@@ -25,11 +25,28 @@ export function searchEntities(
             plain(text).includes(needle),
           ),
         );
+  const ranked = rank(found, needle, entities);
   const start = page * size;
   return {
-    items: found.slice(start, start + size),
-    hasMore: found.length > start + size,
+    items: ranked.slice(start, start + size),
+    hasMore: ranked.length > start + size,
   };
+}
+
+// Group order first (as the groups first appear in the list), then labels that start with the
+// query; the sort is stable, so the catalogue order breaks the remaining ties.
+function rank(
+  found: readonly Entity[],
+  needle: string,
+  entities: readonly Entity[],
+): Entity[] {
+  const groups = [...new Set(entities.map((e) => e.group))];
+  const prefix = (e: Entity) => (plain(e.label).startsWith(needle) ? 0 : 1);
+  return [...found].sort(
+    (a, b) =>
+      groups.indexOf(a.group) - groups.indexOf(b.group) ||
+      prefix(a) - prefix(b),
+  );
 }
 
 // The bank catalogue holds about 500 institutions with a logo: the picker asks for a page at a

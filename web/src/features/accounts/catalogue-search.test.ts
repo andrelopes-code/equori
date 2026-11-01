@@ -30,4 +30,30 @@ describe("searchEntities", () => {
       searchEntities(entities, "341", 0, 20).items.map((e) => e.id),
     ).toEqual(["e3"]);
   });
+
+  // S256 (A181).
+  it.each([
+    [
+      [
+        { id: "b", label: "Banco ItauBank" },
+        { id: "i", label: "Itaú" },
+      ],
+      ["i", "b"],
+    ],
+    [
+      [
+        { id: "m", label: "Banco Itaú", group: "Mine" },
+        { id: "b", label: "Banco ItauBank", group: "Catalogue" },
+        { id: "i", label: "Itaú", group: "Catalogue" },
+      ],
+      ["m", "i", "b"],
+    ],
+  ])(
+    "lists the labels that start with the query first, group by group",
+    (list, want) => {
+      expect(searchEntities(list, "ita", 0).items.map((e) => e.id)).toEqual(
+        want,
+      );
+    },
+  );
 });

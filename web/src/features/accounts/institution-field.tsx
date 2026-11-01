@@ -5,7 +5,10 @@ import { useMemo, useRef, useState } from "react";
 
 import { useApi } from "@/api/api-context";
 import type { components } from "@/api/schema.gen";
-import { catalogueEntries } from "@/features/accounts/institution-catalogue";
+import {
+  brandNamesQuery,
+  catalogueEntries,
+} from "@/features/accounts/institution-catalogue";
 import { catalogueSource } from "@/features/accounts/catalogue-search";
 import { InstitutionOption } from "@/features/accounts/institution-option";
 import {
@@ -69,6 +72,7 @@ export function InstitutionField({
   const api = useApi();
   const institutions = useQuery(institutionsQuery(api));
   const index = useQuery(logoIndexQuery);
+  const brands = useQuery(brandNamesQuery);
   const create = useCreateInstitution();
   const [created, setCreated] = useState<Entity[]>([]);
   // The names of institutions created here, read before the list query has them.
@@ -87,6 +91,7 @@ export function InstitutionField({
             logos,
             owned.map((i) => ({ ispb: ispbOf(i) })),
             locale,
+            brands.data,
           ).map((entry): Entity => {
             const src = logoURL(logos, entry.ispb);
             return {
@@ -103,7 +108,7 @@ export function InstitutionField({
             };
           });
     return [...mine, ...catalogue];
-  }, [institutions.data, index.data, t, locale, region]);
+  }, [institutions.data, index.data, brands.data, t, locale, region]);
 
   const source = useMemo(() => catalogueSource(items), [items]);
 
@@ -146,7 +151,7 @@ export function InstitutionField({
         const entry =
           index.data === undefined
             ? undefined
-            : catalogueEntries(index.data, [], locale).find(
+            : catalogueEntries(index.data, [], locale, brands.data).find(
                 (e) => e.ispb === ispb,
               );
         if (entry === undefined) return;

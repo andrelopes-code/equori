@@ -17,7 +17,10 @@ import { useId, useMemo, useState } from "react";
 import { errorText } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
 import { useSetInstitutionIdentifier } from "@/features/accounts/api";
-import { catalogueEntries } from "@/features/accounts/institution-catalogue";
+import {
+  brandNamesQuery,
+  catalogueEntries,
+} from "@/features/accounts/institution-catalogue";
 import { catalogueSource } from "@/features/accounts/catalogue-search";
 import {
   ispbOf,
@@ -46,6 +49,7 @@ export function SetLogoDialog({
   const overlayOpen = useOverlayOpen();
   const formId = useId();
   const index = useQuery(logoIndexQuery);
+  const brands = useQuery(brandNamesQuery);
   const save = useSetInstitutionIdentifier();
   const [ispb, setISPB] = useState<string | null>(ispbOf(institution) ?? null);
   const [error, setError] = useState<string | null>(null);
@@ -55,7 +59,7 @@ export function SetLogoDialog({
   const items = useMemo((): Entity[] => {
     const logos = index.data;
     if (logos === undefined) return [];
-    return catalogueEntries(logos, [], locale).map((entry) => {
+    return catalogueEntries(logos, [], locale, brands.data).map((entry) => {
       const src = logoURL(logos, entry.ispb);
       return {
         id: entry.ispb,
@@ -69,7 +73,7 @@ export function SetLogoDialog({
         },
       };
     });
-  }, [index.data, locale]);
+  }, [index.data, brands.data, locale]);
   const source = useMemo(() => catalogueSource(items), [items]);
   return (
     <Dialog open={overlayOpen} size="sm" onOpenChange={change}>

@@ -1,3 +1,5 @@
+import { queryOptions } from "@tanstack/react-query";
+
 import type { LogoIndex } from "@/features/accounts/institution-logo";
 
 export interface CatalogueEntry {
@@ -7,6 +9,10 @@ export interface CatalogueEntry {
   name: string;
   legalName: string;
 }
+
+// bancos.json names an institution by its trade name ("Nubank") where the logo index holds
+// the legal one (A181); an entry without one keeps the name read from the legal name.
+export type BrandNames = ReadonlyMap<string, string>;
 
 const legalSuffix =
   /\s*(?:S\.?\/?A\.?|LTDA\.?|EIRELI|ME|S\/A)\s*$|\s+-\s+.*$/iu;
@@ -39,12 +45,30 @@ export function displayName(legal: string): string {
 
 const png = 1;
 
+export async function loadBrandNames(): Promise<BrandNames> {
+  const file = await import("logos-bancos-br/data/bancos.json");
+  return new Map(
+    file.default.banks.flatMap((b) =>
+      "displayName" in b && typeof b.displayName === "string"
+        ? [[b.ispb, b.displayName] as const]
+        : [],
+    ),
+  );
+}
+
+export const brandNamesQuery = queryOptions({
+  queryKey: ["institutions", "brand-names"] as const,
+  queryFn: loadBrandNames,
+  staleTime: Infinity,
+});
+
 // The catalogue entries an institution can be created from: those with a logo, by name, without
 // the ones the owner already has.
 export function catalogueEntries(
   index: LogoIndex,
   owned: readonly { ispb?: string | undefined }[],
   locale: string,
+  brands: BrandNames = new Map(),
 ): CatalogueEntry[] {
   const taken = new Set(
     owned.flatMap((i) => (i.ispb === undefined ? [] : [i.ispb])),
@@ -60,7 +84,7 @@ export function catalogueEntries(
             {
               ispb,
               code: typeof code === "string" ? code : undefined,
-              name: displayName(legalName),
+              name: brands.get(ispb) ?? displayName(legalName),
               legalName,
             },
           ]
