@@ -1,7 +1,6 @@
 package main
 
 import (
-	"cmp"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -102,7 +101,7 @@ func writeDefaultEnv(path string) error {
 // openServiceLog sends the output of the service, equori's and its postgres's, to log\equori.log
 // before the configuration is read, so a wrong setting of equori.env reaches the log too (W-S4).
 func openServiceLog() error {
-	dir := cmp.Or(os.Getenv("EQUORI_DATA_DIR"), config.DefaultDataDir(runtime.GOOS, os.Getenv))
+	dir := config.DataDir(os.Getenv)
 	if dir == "" {
 		return errors.New("this system has no default data directory")
 	}

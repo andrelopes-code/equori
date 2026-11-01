@@ -12,7 +12,6 @@ import (
 	"path/filepath"
 	"runtime/debug"
 	"slices"
-	"strings"
 	"syscall"
 	"time"
 	_ "time/tzdata" // A book's time zone must resolve in images without a zoneinfo database (BK19).
@@ -344,34 +343,18 @@ func serverConfig(cfg config.Config, clk *clock.Clock) server.Config {
 
 	return server.Config{
 		SecureCookies: !cfg.InsecureCookies, Clock: clk, APIDocs: cfg.APIDocs,
-		SecretKey: cfg.SecretKey, PreviousSecretKey: cfg.PreviousSecretKey, AggregatorURLs: aggregatorURLs(os.Getenv),
-		FeedURLs: feedURLs(os.Getenv),
+		SecretKey: cfg.SecretKey, PreviousSecretKey: cfg.PreviousSecretKey, AggregatorURLs: cfg.AggregatorURLs,
+		FeedURLs: cfg.FeedURLs,
 		Instance: instance.Config{Mode: mode, BackupDir: cfg.BackupDir, CopyDir: cfg.CopyDir},
 	}
 }
 
-// aggregatorURLs reads EQUORI_AGGREGATOR_<ID>_URL for each aggregator the ingestion module offers.
-func aggregatorURLs(getenv func(string) string) map[string]string {
-	urls := make(map[string]string)
-	for _, id := range ingestion.AggregatorIDs() {
-		if v := getenv("EQUORI_AGGREGATOR_" + strings.ToUpper(id) + "_URL"); v != "" {
-			urls[id] = v
-		}
+// families returns the IDs of the aggregators and feeds that the modules offer.
+func families() config.Families {
+	return config.Families{
+		Aggregators: ingestion.AggregatorIDs(),
+		Feeds:       slices.Concat(marketdata.SourceIDs(), marketdata.IndexSourceIDs(), marketdata.ExpectationSourceIDs()),
 	}
-
-	return urls
-}
-
-// feedURLs reads EQUORI_FEED_<ID>_URL for each price feed the marketdata module offers.
-func feedURLs(getenv func(string) string) map[string]string {
-	urls := make(map[string]string)
-	for _, id := range slices.Concat(marketdata.SourceIDs(), marketdata.IndexSourceIDs(), marketdata.ExpectationSourceIDs()) {
-		if v := getenv("EQUORI_FEED_" + strings.ToUpper(id) + "_URL"); v != "" {
-			urls[id] = v
-		}
-	}
-
-	return urls
 }
 
 func setup() (config.Config, *slog.Logger, error) {
@@ -382,7 +365,7 @@ func setup() (config.Config, *slog.Logger, error) {
 
 	getenv := config.WithFile(os.Getenv, file)
 
-	cfg, err := config.Load(getenv)
+	cfg, err := config.Load(getenv, families())
 	if err != nil {
 		return config.Config{}, nil, err
 	}
@@ -412,14 +395,14 @@ func setup() (config.Config, *slog.Logger, error) {
 //
 //nolint:gosec // G704: host is fixed to 127.0.0.1; only the port comes from EQUORI_HTTP_ADDR.
 func healthcheck() int {
-	port := "8080"
-	if addr := os.Getenv("EQUORI_HTTP_ADDR"); addr != "" {
-		_, p, err := net.SplitHostPort(addr)
-		if err != nil {
-			return 1
-		}
+	cfg, err := config.Load(os.Getenv, config.Families{})
+	if err != nil {
+		return 1
+	}
 
-		port = p
+	_, port, err := net.SplitHostPort(cfg.HTTPAddr)
+	if err != nil {
+		return 1
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)

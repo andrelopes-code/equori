@@ -1,9 +1,6 @@
 package main
 
 import (
-	"cmp"
-	"path/filepath"
-	"runtime"
 	"slices"
 	"strings"
 
@@ -37,14 +34,10 @@ func envNames(environ []string, file map[string]string) []string {
 // readEnvFile reads equori.env of the data directory; it returns none while EQUORI_DATABASE_URL
 // is set (external mode) or no data directory is known.
 func readEnvFile(getenv func(string) string) (map[string]string, error) {
-	if getenv("EQUORI_DATABASE_URL") != "" {
-		return nil, nil //nolint:nilnil // no file in external mode.
+	path := config.EnvFilePath(getenv)
+	if path == "" {
+		return nil, nil //nolint:nilnil // no file in external mode or without a data directory.
 	}
 
-	dir := cmp.Or(getenv("EQUORI_DATA_DIR"), config.DefaultDataDir(runtime.GOOS, getenv))
-	if dir == "" {
-		return nil, nil //nolint:nilnil // no data directory, no file.
-	}
-
-	return config.ReadEnvFile(filepath.Join(dir, "equori.env"))
+	return config.ReadEnvFile(path)
 }
