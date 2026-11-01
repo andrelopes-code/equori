@@ -23,7 +23,7 @@ Checked on 2026-11-01 at `a098cc0b`.
 | P14 | review | S233: macOS and Windows owner checks (release checklist step 7). The host is Linux 6.8.0 without `/dev/kvm`, without `vmx` or `svm` CPU flags, and without `qemu-system-x86_64`, `VBoxManage`, `vagrant` or `pwsh` |
 | P15 | delivered | The four S252 findings (A181 to A183; the fourth is out of scope) |
 
-`make check` on 2026-11-01 stops at `make lint` with one finding: `internal/platform/postgres/pgtest/pgtest.go:196` (`wsl_v5`). The web suite holds four failures:
+`make check` on 2026-11-01 stops at `make lint` with one finding: `internal/platform/postgres/pgtest/pgtest.go:196` (`wsl_v5`). Run one by one, `make test-race` passes (75 packages) and `make web-static` passes. `make test-cluster` fails four tests of `cmd/equori` (`TestClusterBackupDoesNotMigrate`, `TestClusterBackupDefaultsToBackupDir`, `TestClusterRestoreWrongCopyPassword`, `TestClusterRestoreCopyCommand`): `dsnOf` and `TestClusterBackupDoesNotMigrate` of `backup_cluster_test.go` set `EQUORI_DATABASE_URL` to a key-value DSN, which the start-up validation of P14 refuses ("expected a postgres:// or postgresql:// URL"). The web suite holds four failures (2330 of 2334 pass):
 
 | Test | Cause |
 |---|---|
@@ -46,7 +46,7 @@ The review covers the HTTP surface, authentication, authorization between books,
 | Authorization | 247 operations in `api/openapi.yaml`, each with `x-book-role`: 6 `public`, 132 `read`, 96 `write`, 13 `owner`; `internal/server/book_role_test.go`. Instance operations check `IsAdmin` in the module (`instance/internal/app/service.go`, `marketdata/feed_settings.go`) | Pass |
 | Attachments | `GetAttachmentContent`: `attachment` disposition and `default-src 'none'` by default; `inline` only for `app.Inlineable` types | Pass |
 | SQL | sqlc queries; the dynamic SQL of the archive (`reporting/internal/adapter/postgres/import.go`, `archive.go`) quotes every identifier with `pgx.Identifier.Sanitize` and binds every value | Pass |
-| Archive import between books | `insert` keeps every column of an archive row but `books_id`. Foreign keys are single-column, except `ingestion_batch (books_id, id)`. An archive row can name the identifier of a row of another book: a posting of book B on an account of book A, or a `ledger_transaction_version` row (a table without `books_id`) of a transaction of book A | Finding SR1, A179 |
+| Archive import between books | `insert` keeps every column of an archive row but `books_id`. On 2026-11-01, 77 of the 129 foreign keys are composite with `books_id`, so a row that names another book's row fails with `23503` and the import answers 500 `internal_error` without writing. One exported foreign key is single-column to a table with `books_id`: `ledger_transaction_version.transaction_id`, in a table without `books_id`. An archive version row naming a transaction of another book imports with 200 and attaches its snapshot to that transaction (plan check, 2026-11-01) | Finding SR1, A179 |
 | Shared market data | Archive rows of `sharedTables` insert with `ON CONFLICT DO NOTHING`. `recordPrice`, `importPrices` and `defineInstrument` already write the same tables with the role `write` | Accepted: the archive adds no write that the role lacks |
 | Language model address | A provider's `base_url` reaches any host the server reaches. The presets `ollama` and `lmstudio` (`assistant/internal/domain/preset.go`) need loopback addresses. The operations are `owner` | Accepted: a filter of private addresses removes the local presets of ADR 019 |
 | Go dependencies | `make vuln`: 0 vulnerabilities in called code; `golang.org/x/crypto` v0.58.0 carries GO-2026-5932 (`openpgp`, no fix), a package equori does not import | Accepted |
@@ -56,11 +56,13 @@ The review covers the HTTP surface, authentication, authorization between books,
 
 ## A179 An archive import stays inside its book
 
-Rule: before the rows of a table are inserted, the import checks every single-column foreign key of that table whose referenced table has a `books_id` column. A row whose referenced row exists with another `books_id` rejects the whole import with 409 `import_conflict`, and the transaction writes nothing (export design E4).
+Rule 1: before the rows of a table are inserted, the import checks every single-column foreign key of that table whose referenced table has a `books_id` column. A row whose referenced row exists with another `books_id` rejects the whole import with 409 `import_conflict`. The transaction writes nothing (export design E4).
 
-Reason: the existing `import_conflict` (`app.ErrImportConflict`, "an identifier of the archive belongs to another book") names this case. No new `Problem.code` and no change of `api/openapi.yaml` follow.
+Rule 2: a `23503` foreign key violation during the import answers 422 `archive_invalid` with field `file`, in place of 500. A composite key cannot tell a row of another book from a missing row; neither exists in the importing book, so the archive does not read as an export of that book.
 
-The check reads the catalog (`pg_constraint`) as `loadOrder` does, so a table added by a later migration is covered without a list. A reference to a table without `books_id` (shared market data) is not checked. A reference to a row of the same import is checked after that row's table is inserted, which `loadOrder` guarantees, except the `laterReferences` columns, which the final `UPDATE` sets with `t.books_id = $2` and which the check covers before that `UPDATE`.
+Reason: the existing codes name both cases: `import_conflict` reads "an identifier of the archive belongs to another book", `archive_invalid` reads "the archive does not read as an export of this instance". No new `Problem.code` and no change of `api/openapi.yaml` follow.
+
+The check of rule 1 reads the catalog (`pg_constraint`) as `loadOrder` does, so a table added by a later migration is covered without a list. A reference to a table without `books_id` (shared market data) is not checked. A reference to a row of the same import names no row yet and passes.
 
 ## A180 Web dependency advisories
 
@@ -86,6 +88,7 @@ The CLDR plural rule of `pt` classifies 0 as `one`, so the Slotted pt-BR message
 ## A184 Known failures
 
 - `pgtest.go:196`: the blank line the `wsl_v5` rule asks for.
+- `cmd/equori/backup_cluster_test.go`: `dsnOf` returns a `postgres://` URL, and `TestClusterBackupDoesNotMigrate` sets `EQUORI_DATABASE_URL` from `dsnOf(pool)`. Reason: P14 specifies the URL form; the tests set a value that no supported configuration uses.
 - The three figure tests: each `getByText`/`findByText` of an amount takes `moneyValue(<same text>)`. The expected texts are unchanged.
 - The navigation map gains the entry `{"path": "/settings/appearance", "topics": ["settings_language_and_region"], "screen": "Appearance", "tasks": ["change the theme, colours, density and fonts"]}` after `/settings`. Reason: the studio is a screen a person reaches from the settings, and the assistant links screens by this map.
 
@@ -129,7 +132,7 @@ A181 reads Brazilian trade names from the catalogue of the `br_ispb` scheme. A18
 
 | ID | Scenario | Test |
 |---|---|---|
-| S253 | An archive whose posting names an account of another book is refused with 409 `import_conflict`; the importing book holds no new account | `internal/reporting/import_test.go` |
+| S253 | An archive whose posting names an account of another book is refused with 422 `archive_invalid`; the importing book holds no new account | `internal/reporting/import_test.go` |
 | S254 | An archive whose `ledger_transaction_version` row names a transaction of another book is refused with 409 `import_conflict` | `internal/reporting/import_test.go` |
 | S255 | The catalogue search "Nubank" lists the entry of ISPB 18236120 named "Nubank" | `web/src/features/accounts/institution-catalogue.test.ts` |
 | S256 | The search "Ita" lists "Itaú" before "Banco ItauBank" | `web/src/features/accounts/catalogue-search.test.ts` |
