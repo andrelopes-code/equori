@@ -199,3 +199,42 @@ func (f syncFixture) resolveStatus(externalID string, body map[string]any, statu
 
 	f.h.MustDo(http.MethodPost, "/api/v1/external-records/"+record+"/resolve", body, status, out)
 }
+
+// S235 (A170): without an exact sum the lines are created and the entry stays awaiting.
+func TestS235SumNotExactLeavesTheEntryAwaiting(t *testing.T) {
+	t.Parallel()
+	f, card := newCardSync(t)
+	food := f.h.Account("Food", "expense", "", nil)
+	f.h.Record("2026-10-30", apitest.Posting(card, -11840), apitest.Posting(food, 11840))
+	f.line(pluggy.SubtypeCard, cardLine("a", "2026-10-30", "114.40", "PENDING", nil))
+	f.line(pluggy.SubtypeCard, cardLine("b", "2026-10-31", "3.90", "PENDING", nil))
+	f.sync()
+
+	if review := f.count(`SELECT count(*) FROM ingestion_external_record WHERE review_reason = 'group'`); review != 0 {
+		t.Fatalf("records in review group = %d, want 0", review)
+	}
+
+	var list struct {
+		Items []struct {
+			AmountDue       moneyView  `json:"amount_due"`
+			ConfirmedAmount *moneyView `json:"confirmed_amount"`
+			AwaitingAmount  *moneyView `json:"awaiting_amount"`
+		} `json:"items"`
+	}
+
+	f.h.MustDo(http.MethodGet, "/api/v1/accounts/"+card+"/statements?from=2026-11&to=2026-11", nil, http.StatusOK, &list)
+
+	if len(list.Items) != 1 || list.Items[0].ConfirmedAmount == nil || list.Items[0].AwaitingAmount == nil {
+		t.Fatalf("statements = %+v, want one with both parts", list.Items)
+	}
+
+	got := list.Items[0]
+	if got.AmountDue.Amount != 23670 || got.ConfirmedAmount.Amount != 11830 || got.AwaitingAmount.Amount != 11840 {
+		t.Fatalf("amount due %d, confirmed %d, awaiting %d, want 23670, 11830, 11840",
+			got.AmountDue.Amount, got.ConfirmedAmount.Amount, got.AwaitingAmount.Amount)
+	}
+}
+
+type moneyView struct {
+	Amount int64 `json:"amount"`
+}

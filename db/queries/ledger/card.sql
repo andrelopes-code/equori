@@ -145,7 +145,8 @@ SELECT
     p.statement_id,
     p.card_role,
     p.amount,
-    p.booked_on
+    p.booked_on,
+    (p.external_record_id IS NOT NULL)::boolean AS confirmed
 FROM
     ledger_posting p
 WHERE

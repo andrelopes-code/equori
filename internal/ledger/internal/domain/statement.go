@@ -38,6 +38,8 @@ type StatementLine struct {
 	Role   string
 	Amount int64
 	Date   time.Time
+	// Confirmed: an external record of the institution confirms the posting (A170).
+	Confirmed bool
 }
 
 type StatementInput struct {
@@ -66,6 +68,13 @@ type StatementSummary struct {
 	// OpenAmount leaves out the previous statement's unpaid amount until it is overdue, as the
 	// institution's open bill does (A138).
 	OpenAmount int64
+
+	// Feed: some posting of the account carries an external record. ConfirmedAmount and
+	// AwaitingAmount split AmountDue − Opening by that link, signed as AmountDue counts the
+	// lines; both are zero without a feed (A170).
+	Feed            bool
+	ConfirmedAmount int64
+	AwaitingAmount  int64
 }
 
 // Summarize walks consecutive statements of one card in reference order. Each opens with
@@ -74,10 +83,22 @@ type StatementSummary struct {
 func Summarize(in []StatementInput, today time.Time) []StatementSummary {
 	out := make([]StatementSummary, len(in))
 
+	feed := slices.ContainsFunc(in, func(s StatementInput) bool {
+		return slices.ContainsFunc(s.Lines, func(l StatementLine) bool { return l.Confirmed })
+	})
+
 	var opening int64
 	for i, s := range in {
-		sum := StatementSummary{Reference: s.Reference, Opening: opening}
+		sum := StatementSummary{Reference: s.Reference, Opening: opening, Feed: feed}
 		for _, l := range s.Lines {
+			if feed {
+				if l.Confirmed {
+					sum.ConfirmedAmount -= l.Amount
+				} else {
+					sum.AwaitingAmount -= l.Amount
+				}
+			}
+
 			switch l.Role {
 			case RoleCharge:
 				sum.Charges -= l.Amount

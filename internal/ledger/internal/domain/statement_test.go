@@ -263,3 +263,55 @@ func TestProvisional(t *testing.T) {
 		})
 	}
 }
+
+func confirmed(l StatementLine) StatementLine {
+	l.Confirmed = true
+
+	return l
+}
+
+// A170: the activity of a statement splits into what the institution confirmed and what waits.
+func TestSummarizeConfirmedAndAwaiting(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name      string
+		lines     []StatementLine
+		feed      bool
+		confirmed int64
+		awaiting  int64
+	}{
+		{
+			name: "S235 a charge confirmed and a charge awaiting", feed: true,
+			lines:     []StatementLine{confirmed(charge("2026-10-30", 11830)), charge("2026-10-30", 11840)},
+			confirmed: 11830, awaiting: 11840,
+		},
+		{
+			name: "credits and payments count with the sign of the amount due", feed: true,
+			lines: []StatementLine{
+				confirmed(charge("2026-10-14", 23000)), credit("2026-10-21", 5000), confirmed(payment("2026-10-28", 10000)),
+			},
+			confirmed: 13000, awaiting: -5000,
+		},
+		{
+			name:  "S240 no posting carries a record",
+			lines: []StatementLine{charge("2026-10-30", 11840)},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			got := Summarize([]StatementInput{input("2026-11", tt.lines...)}, day("2026-11-05"))[0]
+			if got.Feed != tt.feed || got.ConfirmedAmount != tt.confirmed || got.AwaitingAmount != tt.awaiting {
+				t.Fatalf("feed %t confirmed %d awaiting %d, want %t %d %d",
+					got.Feed, got.ConfirmedAmount, got.AwaitingAmount, tt.feed, tt.confirmed, tt.awaiting)
+			}
+
+			if tt.feed && got.ConfirmedAmount+got.AwaitingAmount != got.AmountDue-got.Opening {
+				t.Fatalf("parts %d + %d, want amount due %d less opening %d",
+					got.ConfirmedAmount, got.AwaitingAmount, got.AmountDue, got.Opening)
+			}
+		})
+	}
+}

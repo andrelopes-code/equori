@@ -938,7 +938,8 @@ SELECT
     p.statement_id,
     p.card_role,
     p.amount,
-    p.booked_on
+    p.booked_on,
+    (p.external_record_id IS NOT NULL)::boolean AS confirmed
 FROM
     ledger_posting p
 WHERE
@@ -958,6 +959,7 @@ type ListStatementLinesRow struct {
 	CardRole    *string
 	Amount      int64
 	BookedOn    time.Time
+	Confirmed   bool
 }
 
 func (q *Queries) ListStatementLines(ctx context.Context, arg ListStatementLinesParams) ([]ListStatementLinesRow, error) {
@@ -974,6 +976,7 @@ func (q *Queries) ListStatementLines(ctx context.Context, arg ListStatementLines
 			&i.CardRole,
 			&i.Amount,
 			&i.BookedOn,
+			&i.Confirmed,
 		); err != nil {
 			return nil, err
 		}

@@ -96,3 +96,28 @@ func TestGroupableTransactions(t *testing.T) {
 		t.Fatalf("a manual and an unknown transaction: got %v, err %v, want none", got, err)
 	}
 }
+
+// S240 (A170): an account whose postings no record confirms reports neither part.
+func TestS240AnAccountWithoutAFeedReportsNoParts(t *testing.T) {
+	t.Parallel()
+	h := apitest.New(t, apitest.Today("2026-10-31"))
+	card := h.Card("Nubank card", 3, 10, "next")
+	food := h.Account("Food", "expense", "", nil)
+	h.Record("2026-10-30", apitest.Posting(card, -11840), apitest.Posting(food, 11840))
+
+	var list struct {
+		Items []map[string]any `json:"items"`
+	}
+
+	h.MustDo(http.MethodGet, "/api/v1/accounts/"+card+"/statements?from=2026-11&to=2026-11", nil, http.StatusOK, &list)
+
+	if len(list.Items) != 1 {
+		t.Fatalf("statements = %d, want 1", len(list.Items))
+	}
+
+	for _, key := range []string{"confirmed_amount", "awaiting_amount"} {
+		if _, ok := list.Items[0][key]; ok {
+			t.Fatalf("statement reports %s without a feed", key)
+		}
+	}
+}

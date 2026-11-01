@@ -1055,7 +1055,9 @@ func (r *Repository) Statements(ctx context.Context, booksID int64, accountID uu
 
 	byStatement := make(map[uuid.UUID][]domain.StatementLine)
 	for _, l := range lines {
-		byStatement[l.StatementID.UUID] = append(byStatement[l.StatementID.UUID], domain.StatementLine{Role: deref(l.CardRole), Amount: l.Amount, Date: l.BookedOn})
+		byStatement[l.StatementID.UUID] = append(byStatement[l.StatementID.UUID], domain.StatementLine{
+			Role: deref(l.CardRole), Amount: l.Amount, Date: l.BookedOn, Confirmed: l.Confirmed,
+		})
 	}
 
 	out := make([]app.Statement, len(rows))

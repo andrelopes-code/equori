@@ -25,6 +25,11 @@ func toStatementAPI(v app.StatementView, currency money.Currency) StatementSumma
 		EarlyPayments: m(v.Summary.EarlyPayments), BilledAmount: m(v.Summary.BilledAmount),
 		OpenAmount: m(v.Summary.OpenAmount),
 	}
+	if v.Summary.Feed {
+		confirmed, awaiting := m(v.Summary.ConfirmedAmount), m(v.Summary.AwaitingAmount)
+		out.ConfirmedAmount, out.AwaitingAmount = &confirmed, &awaiting
+	}
+
 	if f := v.Fact; f != nil {
 		fact := StatementFact{Source: StatementFactSource(f.Source), ClosingDate: apiOptDate(f.Closing), DueDate: apiDate(f.Due), Total: m(f.Total)}
 		if f.Minimum != nil {
@@ -144,7 +149,7 @@ func (s *Server) statementDetail(ctx context.Context, booksID int64, id uuid.UUI
 		Status: StatementDetailStatus(summary.Status), Reconciled: summary.Reconciled, Postings: make([]StatementPosting, len(postings)),
 		Settled: summary.Settled, PriorCredits: summary.PriorCredits, EarlyPayments: summary.EarlyPayments,
 		BilledAmount: summary.BilledAmount, Institution: summary.Institution, AmountDifference: summary.AmountDifference,
-		OpenAmount: summary.OpenAmount,
+		OpenAmount: summary.OpenAmount, ConfirmedAmount: summary.ConfirmedAmount, AwaitingAmount: summary.AwaitingAmount,
 	}
 	if e := v.Explanation; e.Move != nil {
 		out.DifferenceProposal = &DifferenceProposal{TransactionIds: e.Move, Amount: *summary.AmountDifference}
