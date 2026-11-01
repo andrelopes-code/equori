@@ -333,7 +333,7 @@ Each invariant is enforced in the domain and covered by a scenario in chapter 6.
 | I04 | A posting on any other account belongs to no statement. |
 | I05 | `reconciled` postings are never edited or deleted; changes are new transactions linked to the original. A statement's closing date does not freeze its postings (P2 amendment A3). |
 | I06 | The total refunded or cancelled for a purchase never exceeds its original amount. |
-| I07 | An occurrence is realized by at most one transaction; an external record confirms at most one posting, and a transaction holds at most one record per account (P5b amendment A27). |
+| I07 | An occurrence is realized by at most one transaction; an external record confirms at most one posting, and a posting is confirmed by at most one record (P5b amendment A27, A172). |
 | I08 | Effective-dated values never overlap: at any date exactly one version is in force. |
 | I09 | A posting's account is open on the transaction date. |
 | I10 | A deduplication key appears at most once per user. |

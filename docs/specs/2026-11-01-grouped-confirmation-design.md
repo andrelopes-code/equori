@@ -1,6 +1,6 @@
-# Grouped confirmation (amendments A167 to A171)
+# Grouped confirmation (amendments A167 to A172)
 
-Phase P12 of `docs/domain/09-roadmap.md`, section 9.4.2. Amends A98 to A101 of `2026-10-20-record-matching-design.md` and the statement amount of A89. Scenarios S234 to S240.
+Phase P12 of `docs/domain/09-roadmap.md`, section 9.4.2. Amends A98 to A101 of `2026-10-20-record-matching-design.md`, the statement amount of A89 and invariant I07 (P5b amendment A27). Scenarios S234 to S240.
 
 ## Goal
 
@@ -91,6 +91,10 @@ Where no group is found, A170 shows the entry as awaiting the institution. The o
 
 - Both lines in one batch: both wait in review `group`.
 - The anchor in an earlier batch, created before the second line existed: the later line waits in review `group` and lists the entry. The earlier line is re-pointed at the `match`. Until then the statement counts both the entry and the created anchor, and A170 shows the entry as awaiting.
+
+## A172 One record per posting
+
+I07 said that a transaction holds at most one record per account. A confirmed group (A169) holds one record per posting on the account. I07 now reads: an external record confirms at most one posting, and a posting is confirmed by at most one record. The partial unique index `ingestion_record_transaction_idx` on `(books_id, transaction_id, account_id)` becomes a non-unique index with the same columns and condition. The column `ledger_posting.external_record_id` and the unique index `ledger_posting_external_record_idx` hold the invariant. The ingestion schema test of the former rule is removed and a ledger schema test violates the new one with direct SQL.
 
 ## Regions
 

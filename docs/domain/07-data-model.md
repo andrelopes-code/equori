@@ -237,7 +237,7 @@ erDiagram
 | I03, I04 Statement only on card postings | Trigger: `statement_id` set if and only if the account kind is `credit_card`, and the statement belongs to the same account. |
 | I05 Immutable postings | Trigger rejects `UPDATE` and `DELETE` of a posting whose status is `reconciled`, except the void copy and a change of its external record link (P6 A38); an explicit unlock (P3) sets `equori.unlock_reconciled`. Corrections of such transactions go through new transactions. |
 | I06 Refund ceiling | Domain check inside the database transaction that locks the origin plan row (`SELECT ... FOR UPDATE`). |
-| I07 One match per occurrence and record | Partial unique indexes (7.3); `ledger_posting.external_record_id` unique per user: a record confirms one posting (P5b amendment A27). |
+| I07 One match per occurrence and record | Partial unique indexes (7.3); `ledger_posting.external_record_id` unique per user: a record confirms one posting and a posting holds one record (P5b amendment A27, A172). |
 | I08 No overlapping versions | `UNIQUE (subject_id, effective_from)` and the "latest effective_from" rule; exclusion constraint for pause periods. |
 | I09 Account open on the date | Trigger compares `booked_on` with `opened_on` and `closed_on`. |
 | I10 Unique deduplication key | `UNIQUE (books_id, dedup_key)`. |
