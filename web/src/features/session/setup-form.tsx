@@ -13,6 +13,8 @@ import { useMemo, useState } from "react";
 
 import { UpdateCheckChoice } from "@/features/instance";
 import styles from "@/features/session/login-page.module.css";
+import { regionFromLanguage } from "@/features/session/region-from-language";
+import { SetupBooksFields } from "@/features/session/setup-books-fields";
 import { useSetupSubmit } from "@/features/session/use-setup-submit";
 import { useAppLocaleState, useT } from "@/i18n/i18n-provider";
 import { languages, matchLanguage } from "@/i18n/languages";
@@ -32,13 +34,19 @@ export function SetupForm({ token }: SetupFormProps) {
   const [language, setLanguage] = useState<Language>(() =>
     matchLanguage(navigator.languages),
   );
-  const [region, setRegion] = useState<string | null>(null);
+  const [region, setRegion] = useState<string | null>(() =>
+    regionFromLanguage(navigator.language),
+  );
+  const [timeZone, setTimeZone] = useState<string>(
+    () => Intl.DateTimeFormat().resolvedOptions().timeZone,
+  );
   const [updateCheck, setUpdateCheck] = useState<boolean | null>(null);
   const [errors, setErrors] = useState<FormErrors>({});
   const { submit, failure, pending } = useSetupSubmit({
     token,
     language,
     region,
+    timeZone,
     updateCheck,
   });
 
@@ -138,6 +146,8 @@ export function SetupForm({ token }: SetupFormProps) {
         />
         <FieldDescription>{t("setup.currency.help")}</FieldDescription>
       </Field>
+
+      <SetupBooksFields timeZone={timeZone} onTimeZoneChange={setTimeZone} />
 
       <UpdateCheckChoice
         value={updateCheck}

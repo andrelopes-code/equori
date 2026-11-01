@@ -10,6 +10,7 @@ interface UseSetupSubmitProps {
   token: string;
   language: Language;
   region: string | null;
+  timeZone: string;
   updateCheck: boolean | null;
 }
 
@@ -19,6 +20,7 @@ export function useSetupSubmit({
   token,
   language,
   region,
+  timeZone,
   updateCheck,
 }: UseSetupSubmitProps) {
   const t = useT();
@@ -38,6 +40,8 @@ export function useSetupSubmit({
       typeof values.base_currency === "string"
         ? values.base_currency.trim().toUpperCase()
         : "";
+    const booksName =
+      typeof values.books_name === "string" ? values.books_name.trim() : "";
     try {
       await complete.mutateAsync({
         token,
@@ -47,6 +51,8 @@ export function useSetupSubmit({
         region,
         update_check: updateCheck,
         ...(currency === "" ? {} : { base_currency: currency }),
+        ...(booksName === "" ? {} : { books_name: booksName }),
+        ...(timeZone === "" ? {} : { time_zone: timeZone }),
       });
     } catch (error) {
       if (error instanceof ProblemError) {

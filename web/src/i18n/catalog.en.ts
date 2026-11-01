@@ -330,6 +330,10 @@ export const catalogEn = {
   "setup.currency": "Base currency",
   "setup.currency.help":
     "A three-letter code such as the one on a bank statement. Leave it empty to use the region's currency, when it has one.",
+  "setup.booksName": "Book name",
+  "setup.booksName.placeholder": "Home",
+  "setup.booksName.help": "Empty, the book takes the email above.",
+  "setup.timeZone.regionDefault": "Region default",
   "setup.submit": "Create and sign in",
   "setup.required": "Required.",
   "setup.token_missing":

@@ -337,6 +337,10 @@ export const catalogPtBR: Catalog = {
   "setup.currency": "Moeda base",
   "setup.currency.help":
     "Um código de três letras, como o de um extrato bancário. Deixe vazio para usar a moeda da região, quando ela tiver uma.",
+  "setup.booksName": "Nome do livro",
+  "setup.booksName.placeholder": "Casa",
+  "setup.booksName.help": "Vazio, o livro recebe o e-mail acima.",
+  "setup.timeZone.regionDefault": "Padrão da região",
   "setup.submit": "Criar e entrar",
   "setup.required": "Obrigatório.",
   "setup.token_missing":

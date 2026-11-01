@@ -13,5 +13,6 @@ export { validateSettingsSearch } from "@/features/setup/settings-search";
 export { AppearanceStudio } from "@/features/setup/appearance-studio";
 export { SettingsPage } from "@/features/setup/settings-page";
 export { useScale } from "@/features/setup/instruments";
+export { timeZoneChoices } from "@/features/setup/time-zone-choices";
 export { catalogLabel } from "@/features/setup/catalog-label";
 export { NewBooksDialog } from "@/features/setup/new-books-dialog";

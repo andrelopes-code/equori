@@ -1,6 +1,6 @@
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
 import { catalogPtBR } from "@/i18n/catalog.pt-BR";
@@ -72,6 +72,15 @@ async function fill(region: string | null, check: "yes" | "no" | null = "yes") {
   );
 }
 
+beforeEach(() => {
+  const real = Intl.DateTimeFormat().resolvedOptions();
+  vi.spyOn(navigator, "language", "get").mockReturnValue("en");
+  vi.spyOn(Intl.DateTimeFormat.prototype, "resolvedOptions").mockReturnValue({
+    ...real,
+    timeZone: "America/Manaus",
+  });
+});
+
 afterEach(() => {
   vi.restoreAllMocks();
 });
@@ -93,6 +102,7 @@ describe("first-user setup", () => {
           language: "en",
           region: "PT",
           update_check: true,
+          time_zone: "America/Manaus",
         },
       ]);
     });
@@ -133,6 +143,48 @@ describe("first-user setup", () => {
       await screen.findAllByText(catalogEn["setup.required"]),
     ).toHaveLength(2);
     expect(state.bodies).toEqual([]);
+  });
+
+  it("S232 preselects the region of the browser language", async () => {
+    vi.spyOn(navigator, "language", "get").mockReturnValue("pt-BR");
+    const { fetch, state } = setupApi({ required: true });
+    await renderApp("/setup#token=abc", { fetch });
+    await fill(null);
+    await waitFor(() => {
+      expect(state.bodies).toMatchObject([{ region: "BR" }]);
+    });
+  });
+
+  it("sends the book name", async () => {
+    const { fetch, state } = setupApi({ required: true });
+    await renderApp("/setup#token=abc", { fetch });
+    const actor = userEvent.setup();
+    await actor.type(await field(catalogEn["setup.booksName"]), "Casa");
+    await fill("Portugal");
+    await waitFor(() => {
+      expect(state.bodies).toMatchObject([{ books_name: "Casa" }]);
+    });
+  });
+
+  it("sends no time zone when the region default is chosen", async () => {
+    const { fetch, state } = setupApi({ required: true });
+    await renderApp("/setup#token=abc", { fetch });
+    const actor = userEvent.setup();
+    await actor.click(
+      await screen.findByRole("combobox", {
+        name: catalogEn["settings.timeZone"],
+      }),
+    );
+    await actor.click(
+      await screen.findByRole("option", {
+        name: catalogEn["setup.timeZone.regionDefault"],
+      }),
+    );
+    await fill("Portugal");
+    await waitFor(() => {
+      expect(state.bodies).toHaveLength(1);
+    });
+    expect(state.bodies[0]).not.toHaveProperty("time_zone");
   });
 
   it("asks for the update check answer before it sends anything", async () => {
