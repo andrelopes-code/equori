@@ -1,5 +1,4 @@
 import { Button } from "@slotted/react/button";
-import { CodeBlock } from "@slotted/react/code-block";
 import {
   Dialog,
   DialogBody,
@@ -9,8 +8,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@slotted/react/dialog";
+import { Text } from "@slotted/react/typography";
 
+import { CopyButton } from "@/features/setup/copy-button";
 import { groupsOfFour } from "@/features/setup/groups-of-four";
+import styles from "@/features/setup/recovery-codes-dialog.module.css";
 import { useT } from "@/i18n/i18n-provider";
 
 interface RecoveryCodesDialogProps {
@@ -38,10 +40,22 @@ export function RecoveryCodesDialog({
           </DialogDescription>
         </DialogHeader>
         <DialogBody>
-          <CodeBlock
-            code={codes.map(groupsOfFour).join("\n")}
-            title={t("security.recovery.title")}
-          />
+          <ol className={styles.codes}>
+            {codes.map((code) => (
+              <li key={code}>
+                <Text size="md" className={styles.code}>
+                  {groupsOfFour(code)}
+                </Text>
+              </li>
+            ))}
+          </ol>
+
+          <div className={styles.actions}>
+            <CopyButton
+              text={codes.join("\n")}
+              label={t("security.recovery.copyAll")}
+            />
+          </div>
         </DialogBody>
         <DialogFooter>
           <Button onClick={onClose}>{t("security.done")}</Button>

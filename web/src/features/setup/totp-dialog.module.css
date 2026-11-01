@@ -1,0 +1,50 @@
+@layer app {
+  .flow {
+    display: flex;
+    flex-direction: column;
+    gap: var(--slotted-space-8);
+  }
+
+  .step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--slotted-space-5);
+    text-align: center;
+  }
+
+  /* A field is a size container, so a centered one shrinks to nothing: it takes the step's width
+     and the boxes stand in its middle. */
+  .field {
+    align-self: stretch;
+  }
+
+  .otp {
+    justify-self: center;
+    max-inline-size: 100%;
+  }
+
+  .key {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--slotted-space-3);
+  }
+
+  .keyRow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: var(--slotted-space-4);
+  }
+
+  .secret {
+    padding: var(--slotted-space-2) var(--slotted-space-4);
+    border-radius: var(--slotted-radius-md);
+    background: var(--slotted-surface-sunken);
+    font-family: var(--slotted-font-family-mono);
+    letter-spacing: 0.04em;
+    user-select: all;
+  }
+}

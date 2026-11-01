@@ -61,7 +61,7 @@ export function PasskeyDialog({ onClose, onCodes }: PasskeyDialogProps) {
         </DialogHeader>
         <DialogBody>
           <Stack gap={4}>
-            <Field>
+            <Field required>
               <FieldLabel>{t("security.passkeys.name")}</FieldLabel>
               <TextField value={name} maxLength={60} onValueChange={setName} />
               <FieldDescription>

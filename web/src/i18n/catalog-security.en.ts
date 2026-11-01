@@ -15,6 +15,8 @@ export const securityEn = {
   "security.on": "On",
   "security.off": "Off",
   "security.done": "Done",
+  "security.copy": "Copy",
+  "security.copied": "Copied",
   "security.confirm": "Confirm",
   "security.totp.title": "Authenticator app",
   "security.totp.description":
@@ -22,7 +24,11 @@ export const securityEn = {
   "security.totp.enable": "Set up",
   "security.totp.disable": "Turn off",
   "security.totp.dialogTitle": "Set up the authenticator app",
-  "security.totp.scan": "Scan the code with the app, or type the key in it.",
+  "security.totp.scan":
+    "Add this account to an authenticator app, then confirm with the code it shows.",
+  "security.totp.step1": "Scan the QR code with the app",
+  "security.totp.keyHint": "No camera? Type this key in the app.",
+  "security.totp.step2": "Enter the 6-digit code",
   "security.totp.qr": "QR code for the authenticator app",
   "security.totp.secret": "Key",
   "security.totp.code": "Code of the app",
@@ -53,6 +59,7 @@ export const securityEn = {
     "Each code replaces the second factor once, when the app or the passkey is not at hand.",
   "security.recovery.left": "Codes left: {count}",
   "security.recovery.none": "Recovery codes exist while a second factor is on.",
+  "security.recovery.copyAll": "Copy all codes",
   "security.recovery.regenerate": "Generate new codes",
   "security.recovery.regenerateTitle": "Generate new recovery codes?",
   "security.recovery.regenerateHint":

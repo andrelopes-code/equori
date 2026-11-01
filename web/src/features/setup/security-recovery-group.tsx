@@ -1,11 +1,11 @@
 import { Button } from "@slotted/react/button";
-import { Stack } from "@slotted/react/stack";
 import { Text } from "@slotted/react/typography";
 import { useState } from "react";
 
 import { useRegenerateRecoveryCodes } from "@/features/setup/api";
 import { PasswordDialog } from "@/features/setup/password-dialog";
 import { SettingsGroup } from "@/features/setup/settings-group";
+import styles from "@/features/setup/settings-page.module.css";
 import { useT } from "@/i18n/i18n-provider";
 
 interface SecurityRecoveryGroupProps {
@@ -41,12 +41,19 @@ export function SecurityRecoveryGroup({
       description={t("security.recovery.description")}
     >
       {factor ? (
-        <Stack gap={4}>
-          <Text size="sm">{t("security.recovery.left", { count: left })}</Text>
-          <Button variant="outline" onClick={handleOpen}>
-            {t("security.recovery.regenerate")}
-          </Button>
-        </Stack>
+        <div className={styles.row}>
+          <div className={styles.rowText}>
+            <Text size="sm" weight="medium">
+              {t("security.recovery.left", { count: left })}
+            </Text>
+          </div>
+
+          <div className={styles.rowControl}>
+            <Button variant="outline" onClick={handleOpen}>
+              {t("security.recovery.regenerate")}
+            </Button>
+          </div>
+        </div>
       ) : (
         <Text size="sm" tone="muted">
           {t("security.recovery.none")}

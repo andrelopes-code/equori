@@ -1,5 +1,4 @@
 import { Button } from "@slotted/react/button";
-import { CodeBlock } from "@slotted/react/code-block";
 import {
   Dialog,
   DialogBody,
@@ -9,16 +8,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@slotted/react/dialog";
-import { Field, FieldLabel } from "@slotted/react/field";
+import { Divider } from "@slotted/react/divider";
+import { Field } from "@slotted/react/field";
 import { InlineMessage } from "@slotted/react/inline-message";
 import { OtpInput } from "@slotted/react/otp-input";
-import { Stack } from "@slotted/react/stack";
+import { Heading } from "@slotted/react/typography";
 import { useState } from "react";
 
 import { errorText } from "@/api/problem";
 import { useConfirmTotp } from "@/features/setup/api";
 import type { TotpSetup } from "@/features/setup/api";
-import { groupsOfFour } from "@/features/setup/groups-of-four";
+import styles from "@/features/setup/totp-dialog.module.css";
+import { TotpKey } from "@/features/setup/totp-key";
 import { useT } from "@/i18n/i18n-provider";
 import { QrCode } from "@/ui/qr-code";
 
@@ -59,27 +60,42 @@ export function TotpDialog({ setup, onClose, onCodes }: TotpDialogProps) {
           <DialogDescription>{t("security.totp.scan")}</DialogDescription>
         </DialogHeader>
         <DialogBody>
-          <Stack gap={4}>
-            <QrCode value={setup.uri} label={t("security.totp.qr")} />
-            <CodeBlock
-              code={groupsOfFour(setup.secret)}
-              title={t("security.totp.secret")}
-            />
-            <Field>
-              <FieldLabel>{t("security.totp.code")}</FieldLabel>
-              <OtpInput
-                length={6}
-                groups={[3, 3]}
-                value={code}
-                onValueChange={setCode}
-              />
-            </Field>
-            {failure !== null && (
-              <InlineMessage tone="danger" role="alert">
-                {errorText(failure, t)}
-              </InlineMessage>
-            )}
-          </Stack>
+          <div className={styles.flow}>
+            <section className={styles.step}>
+              <Heading level={3} size="sm">
+                {t("security.totp.step1")}
+              </Heading>
+              <QrCode value={setup.uri} label={t("security.totp.qr")} />
+              <TotpKey secret={setup.secret} />
+            </section>
+
+            <Divider decorative />
+
+            <section className={styles.step}>
+              <Heading level={3} size="sm">
+                {t("security.totp.step2")}
+              </Heading>
+              <Field
+                required
+                invalid={failure !== null}
+                className={styles.field}
+              >
+                <OtpInput
+                  className={styles.otp}
+                  aria-label={t("security.totp.code")}
+                  length={6}
+                  groups={[3, 3]}
+                  value={code}
+                  onValueChange={setCode}
+                />
+              </Field>
+              {failure !== null && (
+                <InlineMessage tone="danger" role="alert">
+                  {errorText(failure, t)}
+                </InlineMessage>
+              )}
+            </section>
+          </div>
         </DialogBody>
         <DialogFooter>
           <Button variant="ghost" tone="secondary" onClick={onClose}>

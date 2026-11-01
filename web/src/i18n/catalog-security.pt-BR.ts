@@ -18,6 +18,8 @@ export const securityPtBR: Record<keyof typeof securityEn, string> = {
   "security.on": "Ativado",
   "security.off": "Desativado",
   "security.done": "Concluir",
+  "security.copy": "Copiar",
+  "security.copied": "Copiado",
   "security.confirm": "Confirmar",
   "security.totp.title": "App autenticador",
   "security.totp.description":
@@ -25,7 +27,11 @@ export const securityPtBR: Record<keyof typeof securityEn, string> = {
   "security.totp.enable": "Configurar",
   "security.totp.disable": "Desativar",
   "security.totp.dialogTitle": "Configurar o app autenticador",
-  "security.totp.scan": "Leia o código com o app ou digite a chave nele.",
+  "security.totp.scan":
+    "Adicione esta conta a um app autenticador e confirme com o código que ele mostrar.",
+  "security.totp.step1": "Leia o QR code com o app",
+  "security.totp.keyHint": "Sem câmera? Digite esta chave no app.",
+  "security.totp.step2": "Digite o código de 6 dígitos",
   "security.totp.qr": "QR code para o app autenticador",
   "security.totp.secret": "Chave",
   "security.totp.code": "Código do app",
@@ -57,6 +63,7 @@ export const securityPtBR: Record<keyof typeof securityEn, string> = {
   "security.recovery.left": "Códigos restantes: {count}",
   "security.recovery.none":
     "Os códigos de recuperação existem enquanto um segundo fator está ativo.",
+  "security.recovery.copyAll": "Copiar todos os códigos",
   "security.recovery.regenerate": "Gerar novos códigos",
   "security.recovery.regenerateTitle": "Gerar novos códigos de recuperação?",
   "security.recovery.regenerateHint":

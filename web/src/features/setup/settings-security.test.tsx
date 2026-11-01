@@ -176,6 +176,29 @@ describe("security settings", () => {
     expect(sent).toEqual([{ route: "disable", body: { password: "x" } }]);
   });
 
+  it("marks the password and the code of the second factor as required", async () => {
+    await renderApp("/settings?section=security", { fetch: api(on, []) });
+    const view = await section();
+
+    await userEvent.click(
+      await view.findByRole("button", { name: pt["security.totp.disable"] }),
+    );
+
+    const dialog = within(await screen.findByRole("dialog"));
+    expect(dialog.getByLabelText(pt["login.password"], field)).toBeVisible();
+    expect(dialog.queryByText(/opcional/i)).toBeNull();
+  });
+
+  it("marks the code of the authenticator app as required", async () => {
+    await renderApp("/settings?section=security", { fetch: api(off, []) });
+    const dialog = await openTotpDialog(await section());
+
+    expect(
+      await dialog.findByLabelText(pt["security.totp.code"], field),
+    ).toBeVisible();
+    expect(dialog.queryByText(/opcional/i)).toBeNull();
+  });
+
   it("keeps the dialog open on a wrong password", async () => {
     const fetch = api(on, [], {
       "POST /api/v1/me/totp/disable": () => problem(403, "password_invalid"),

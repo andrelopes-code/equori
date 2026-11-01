@@ -61,7 +61,7 @@ export function PasswordDialog({
         </DialogHeader>
         <DialogBody>
           <Stack gap={4}>
-            <Field>
+            <Field required>
               <FieldLabel>{t("login.password")}</FieldLabel>
               <TextField
                 type="password"

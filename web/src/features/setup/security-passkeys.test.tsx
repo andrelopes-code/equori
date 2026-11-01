@@ -189,6 +189,21 @@ describe("passkeys in the security pane", () => {
     ]);
   });
 
+  it("marks the passkey name as required", async () => {
+    await renderApp("/settings?section=security", { fetch: api([], []) });
+    const view = await section();
+
+    await userEvent.click(
+      await view.findByRole("button", { name: pt["security.passkeys.add"] }),
+    );
+
+    const dialog = within(await screen.findByRole("dialog"));
+    expect(
+      dialog.getByLabelText(pt["security.passkeys.name"], field),
+    ).toBeVisible();
+    expect(dialog.queryByText(/opcional/i)).toBeNull();
+  });
+
   it("closes the dialog without recovery codes when none are issued", async () => {
     const fetch = api([], [], {
       "POST /api/v1/me/passkeys": () =>

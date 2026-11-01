@@ -1,0 +1,27 @@
+@layer app {
+  .codes {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--slotted-space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .code {
+    display: block;
+    padding: var(--slotted-space-3) var(--slotted-space-4);
+    border-radius: var(--slotted-radius-md);
+    background: var(--slotted-surface-sunken);
+    font-family: var(--slotted-font-family-mono);
+    letter-spacing: 0.04em;
+    text-align: center;
+    user-select: all;
+  }
+
+  .actions {
+    display: flex;
+    justify-content: center;
+    margin-block-start: var(--slotted-space-6);
+  }
+}
