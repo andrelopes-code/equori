@@ -235,11 +235,24 @@ New `Problem.code` values, each with an HTTP test (CONTRIBUTING, Tests): `book_r
 | Hiding write controls of existing screens for a `read` member | After 1.0 |
 | Offer of the second factor at first access and when remote access is set up | P14 |
 | Invitation by e-mail | 1.x (section 9.4.4, notices outside equori) |
-| Deleting a book | After 1.0 |
 | Transfer between books, consolidated report, shared expense across books | After 1.0 (section 9.4.4) |
 | Admin screens that list and disable members; password change and reset | Not planned for 1.0 (ADR 003, Deferred) |
 | Login with a passkey without password; attestation verification | Not planned |
 | Moving the instance-role checks of HA14 into the authorization point | Not planned |
+
+## 10.1 Amendment of 2026-11-01: deleting a book
+
+The owner brought "Deleting a book" into 1.0, so a book created by mistake can be removed.
+
+| ID | Rule |
+|---|---|
+| DB1 | `DELETE /api/v1/books/current` (`owner`, `deleteCurrentBooks`) deletes the active book. |
+| DB2 | The body `{name}` repeats the book name; another value is 422 `confirmation_mismatch`. |
+| DB3 | A book with another member is 409 `books_has_members`. |
+| DB4 | The only book of a member is 409 `last_books`; the member could not sign in again (HA22). |
+| DB5 | The delete is one `DELETE FROM identity_books` in a transaction with `SET CONSTRAINTS ALL DEFERRED`; the composite keys between tables of a book are `DEFERRABLE INITIALLY IMMEDIATE` (migration 00084). |
+| DB6 | The session ends with the membership; the answer is 204 and clears the cookie, as `leaveBooks`. |
+| DB7 | The members settings show "Delete book" to an `owner`; the dialog asks the book name. |
 
 ## 11. Plans
 
