@@ -84,3 +84,7 @@ A login opens the membership with the latest `last_active_at`, ties broken by th
 ## Amendment of 2026-10-31 (ADR 030)
 
 A member with TOTP or a passkey finishes a login with a second factor (ADR 030). A right password of such a member does not clear the attempt count of the email; the right second factor clears it. The login log line names the method: `password`, `totp`, `passkey` or `recovery_code`.
+
+## Amendment of 2026-11-01 (account invitation)
+
+An instance admin invites an email to an account of its own through `POST /api/v1/account-invitations` (email and region, optionally the base currency). The answer holds a single-use token valid for 7 days, shown once. Accepting it through `/api/v1/invitations/accept` creates a member with the instance role `member` and a book of its own, with the given password and language, and starts a session. The preview of a token carries `kind`: `books` for the invitation of ADR 029, `account` for this one. A member that is not an admin gets 403 `admin_required`; an email that has a member gets 409 `email_taken`. The command `equori user create` stays for installation and recovery. Self-registration stays impossible: acceptance needs a token.
