@@ -58,10 +58,11 @@
     min-inline-size: 0;
   }
 
-  /* The aside stands beside the column once both fit: 40rem, the gap and 20rem. */
+  /* The aside stands beside the column once both fit: 40rem, the gap and 20rem. It takes the
+     room the page leaves, up to 36rem, so its lines wrap less. */
   @container (min-width: 62rem) {
     .layout:has(> .aside) {
-      grid-template-columns: minmax(0, 40rem) 20rem;
+      grid-template-columns: minmax(0, 40rem) minmax(20rem, 36rem);
     }
 
     .aside {

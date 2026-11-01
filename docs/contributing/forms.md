@@ -73,7 +73,7 @@ A field with no step is `full`.
 - A description is at most one line at the column's width: about 90 characters, measured in the longest translation of the catalog.
 - A label takes `FieldHelp` (through `ui/field-title`) when it is a term of accounting, banking or investing ("payee", "withheld", "basis points", "postings"), or when a reader could take it for another field of the form ("fees" beside "taxes", "security account" beside "cash account"). The help defines the term in at most two sentences and names no regional value. A label every reader knows ("Date", "Category", "Description") takes none.
 - A `Checkbox` has no `FieldLabel`: the definition of the term it names is its own description, under its label.
-- From 62rem of the form's width the aside stands beside the column, 20rem wide, and sticks under the page's chrome (LA-06). Below, it follows the last field.
+- From 62rem of the form's width the aside stands beside the column, from 20rem up to 36rem wide as the page allows, and sticks under the page's chrome (LA-06). Below, it follows the last field.
 
 - A sentence that follows from the answers (the statement a purchase falls on, what a payment leaves unpaid, the total of an installment plan) is the `FieldDescription` of the field whose answer completes it, with `live="polite"`. It is never a `Text` standing between fields: a loose `Text` is 13 px in full ink, reads as a field of its own and is linked to no control.
 - A description and an error under the same control: the error comes first, the description stays.
