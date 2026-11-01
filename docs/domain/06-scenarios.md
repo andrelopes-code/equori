@@ -959,3 +959,7 @@ The scenarios of `docs/specs/2026-10-31-installation-design.md`, section "Scenar
 ### S241–S252 First use and help (A173–A177)
 
 The scenarios of `docs/specs/2026-11-01-first-use-help-design.md`, section "Scenarios": setup opens the walkthrough and an invitation does not (S241, S242); the walkthrough creates accounts and offers the entry choices (S243 to S245); the first steps list points to it (S246); the overview notices due statements and budgets over their amount (S247, S248); the help pages cover installation, connecting a bank and troubleshooting (S249, S250); a person reaches the first transaction without a typed address (S251); the owner checks the walkthrough and the help pages in the review (S252).
+
+### S253–S261 Test and release (A178–A186)
+
+The scenarios of `docs/specs/2026-11-01-test-release-design.md`, section "Scenarios": an archive that names a row of another book is refused and writes nothing (S253, S254); the institution catalogue finds an entry by trade name and lists prefix matches first (S255, S256); the walkthrough institution reads as required (S257); a pt-BR count of 0 reads "Nenhum resultado" (S258); the exit criteria of P10 to P15 are checked (S259); testers record their first transactions without outside help (S260); real accounts of three banks for two weeks end with no open defect of data loss, duplication or exposure (S261).
