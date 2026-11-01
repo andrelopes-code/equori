@@ -8,4 +8,6 @@ sed -e "s/\${EQUORI_VERSION:-dev}/\${EQUORI_VERSION:-$version}/" -e '/^    build
 grep -q "equori:\${EQUORI_VERSION:-$version}-standalone" "$out/compose.yaml"
 sed "s/^version=dev\$/version=$version/" scripts/install.sh >"$out/install.sh"
 grep -qx "version=$version" "$out/install.sh"
+sed "s/^\$version = 'dev'\$/\$version = '$version'/" scripts/install.ps1 >"$out/install.ps1"
+grep -qx "\$version = '$version'" "$out/install.ps1"
 cp env.example "$out/env.example"

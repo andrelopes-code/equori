@@ -52,6 +52,12 @@ jobs:
         shell: pwsh
     steps:
       - uses: actions/checkout@v5
+      # P14 A166.3: Windows PowerShell 5.1, the shell of the pasted command, parses install.ps1.
+      - shell: powershell
+        run: |
+          $errors = $null
+          $null = [System.Management.Automation.Language.Parser]::ParseFile("$PWD\scripts\install.ps1", [ref]$null, [ref]$errors)
+          if ($errors) { $errors | ForEach-Object { Write-Error $_.Message }; exit 1 }
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
