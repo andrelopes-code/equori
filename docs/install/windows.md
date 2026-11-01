@@ -9,7 +9,7 @@ Portuguese: [windows.pt-BR.md](windows.pt-BR.md)
 
 ## Installation
 
-Run the command in a terminal PowerShell:
+Run the command in PowerShell:
 
 ```powershell
 irm https://github.com/andrelopes-code/equori/releases/latest/download/install.ps1 | iex
@@ -67,7 +67,9 @@ Correction: Install the Compose plugin until `docker compose version` succeeds, 
 
 ### I4 Docker does not use WSL 2
 
-Message: "Without `wsl.exe`: Windows Subsystem for Linux is missing. Run wsl --install in a terminal opened as administrator, restart Windows, then run this command again. Otherwise: Docker Desktop does not use the WSL 2 engine. Turn on Settings > General > "Use the WSL 2 based engine", then run this command again."
+Message without `wsl.exe`: "Windows Subsystem for Linux is missing. Run wsl --install in a terminal opened as administrator, restart Windows, then run this command again."
+
+Message with `wsl.exe`: "Docker Desktop does not use the WSL 2 engine. Turn on Settings > General > "Use the WSL 2 based engine", then run this command again."
 
 Correction: Without `wsl.exe`, run `wsl --install` in a terminal opened as administrator and restart Windows. Otherwise, turn on Settings > General > "Use the WSL 2 based engine" in Docker Desktop. Then run the installation command again.
 

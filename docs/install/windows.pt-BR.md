@@ -67,7 +67,9 @@ Correção: Instale o plugin Compose até `docker compose version` funcionar e e
 
 ### I4 Docker sem WSL 2
 
-Mensagem: "Sem `wsl.exe`: O Subsistema do Windows para Linux está ausente. Execute wsl --install num terminal aberto como administrador, reinicie o Windows e execute este comando de novo. Senão: O Docker Desktop não usa o motor WSL 2. Ative Settings > General > "Use the WSL 2 based engine" e execute este comando de novo."
+Mensagem sem `wsl.exe`: "O Subsistema do Windows para Linux está ausente. Execute wsl --install num terminal aberto como administrador, reinicie o Windows e execute este comando de novo."
+
+Mensagem com `wsl.exe`: "O Docker Desktop não usa o motor WSL 2. Ative Settings > General > "Use the WSL 2 based engine" e execute este comando de novo."
 
 Correção: Sem `wsl.exe`, execute `wsl --install` num terminal aberto como administrador e reinicie o Windows. Senão, ative Settings > General > "Use the WSL 2 based engine" no Docker Desktop. Depois execute o comando de instalação de novo.
 
