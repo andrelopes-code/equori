@@ -107,11 +107,11 @@ P11, P12 and P13 depend only on P10; the owner runs them one after the other, in
 
 The planning model writes the spec and the plan of each phase: Opus, effort high. The implementing model executes the plan: Sonnet, effort medium or high, as a subagent that the planning session dispatches and answers directly; the owner does not carry messages between them. The implementing model makes no design decision. Every choice that changes behavior, schema, contract or user-facing text is written in the plan. A case the plan does not cover stops execution.
 
-Order of work for a phase:
+Order of work for a phase, every step in one session of the planning model, without a question to the owner:
 
 1. Spec in `docs/specs/`, when the design is open. It records each decision and its reason. The plan cites the spec section and does not repeat the reason.
 2. Plan in `docs/superpowers/plans/`, written after the planning model reads the code each task touches.
-3. Plan check by the planning model in a new session, the session that then runs steps 4 and 5: every path, symbol and command named in the plan exists; every expected test value is derived; every Contract artifact passes the tool that reads it (a migration passes `make gen` and goose up and down); no question is open. Before execution, the check clears with the owner, in one question, every precondition a stop condition below would hit: files of another session in the working tree, an environment value, a pending owner decision.
+3. Plan check by the planning model: every path, symbol and command named in the plan exists; every expected test value is derived; every Contract artifact passes the tool that reads it (a migration passes `make gen` and goose up and down); no question is open. Before execution, the check resolves every precondition a stop condition below would hit (files of another session in the working tree, an environment value, a pending decision) and records the resolution in the plan.
 4. Execution: the planning session dispatches one implementing subagent per task, in plan order, one at a time, with the task's effort. Each slice ends with its commits and its checkpoint, and the session continues with the next slice without waiting for the owner.
 5. Review by the planning model at the end of the plan, in the same session: the diff against the plan's edge cases and the phase's exit criterion.
 
