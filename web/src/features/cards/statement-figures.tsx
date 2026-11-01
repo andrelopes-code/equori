@@ -2,6 +2,7 @@ import { Text } from "@slotted/react/typography";
 import { Stack } from "@slotted/react/stack";
 
 import type { components } from "@/api/schema.gen";
+import { AwaitingNote } from "@/features/cards/awaiting-note";
 import { DifferenceProposal } from "@/features/cards/difference-proposal";
 import { UnconfirmedNotice } from "@/features/cards/unconfirmed-notice";
 import { formatDate } from "@/i18n/format";
@@ -98,6 +99,7 @@ export function StatementFigures({
           total: money(statement.amount_due),
         })}
       </Text>
+      <AwaitingNote statement={statement} scale={scale} />
       <DifferenceProposal statement={statement} scale={scale} />
       <UnconfirmedNotice statement={statement} />
     </Stack>

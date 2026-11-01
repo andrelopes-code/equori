@@ -172,6 +172,27 @@ describe("CardPage", () => {
     });
   });
 
+  it("splits the statement into what the bank confirmed and what it awaits (A170)", async () => {
+    await renderApp(`/cards/${cardID}/statements/${openStatementID}`, {
+      fetch: api([], {
+        [`GET /api/v1/statements/${openStatementID}`]: () =>
+          json(200, {
+            ...statementFixtures[1],
+            postings: [],
+            confirmed_amount: money(53907),
+            awaiting_amount: money(11840),
+          }),
+      }),
+    });
+    expect(
+      await screen.findByText(
+        catalogEn["statement.awaiting"]
+          .replace("{confirmed}", "R$539.07")
+          .replace("{awaiting}", "R$118.40"),
+      ),
+    ).toBeInTheDocument();
+  });
+
   it("opens the foreign purchase entry with the card chosen", async () => {
     const { router } = await renderApp(`/cards/${cardID}`, { fetch: api() });
     await userEvent.click(

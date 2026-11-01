@@ -189,6 +189,44 @@ describe("Import batch", () => {
     expect(within(best).getByText("9")).toBeInTheDocument();
   });
 
+  it("confirms a group of lines with its entry (A168)", async () => {
+    const log: { route: string; body?: unknown }[] = [];
+    const group = {
+      review_reason: "group",
+      candidates: ["t1"],
+      scored_candidates: undefined,
+      group_record_ids: ["r2"],
+    };
+    await renderApp(`${path}?record=r1`, {
+      fetch: api(log, {
+        "GET /api/v1/import-batches/b1/records": () =>
+          json(200, {
+            items: [
+              record("r1", "Padaria", group),
+              record("r2", "Taxa", group),
+            ],
+          }),
+      }),
+    });
+    expect(
+      await screen.findByText(catalogEn["batch.reason.group"]),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(words("batch.group.lines", { count: "2" })),
+    ).toBeInTheDocument();
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["batch.group.confirm"] }),
+    );
+    await waitFor(() => {
+      expect(log.filter((l) => l.route === "resolve r1")).toEqual([
+        {
+          route: "resolve r1",
+          body: { action: "match", transaction_id: "t1" },
+        },
+      ]);
+    });
+  });
+
   it("matches the line with a candidate and moves to the next line", async () => {
     const log: { route: string; body?: unknown }[] = [];
     const { router } = await renderApp(`${path}?record=r1`, {

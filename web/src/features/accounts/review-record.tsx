@@ -8,8 +8,8 @@ import { useState } from "react";
 import { ProblemError, errorText } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
 import { useResolveRecord } from "@/features/accounts/api";
-import { CandidateCard } from "@/features/accounts/candidate-card";
-import { linkScore, reviewScore } from "@/features/accounts/candidate-score";
+import { CandidateList } from "@/features/accounts/candidate-list";
+import { GroupConfirm } from "@/features/accounts/group-confirm";
 import type { MessageKey } from "@/i18n/catalog.en";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
@@ -26,6 +26,7 @@ const reasonWords: Record<
   probable: "batch.reason.probable",
   changed: "batch.reason.changed",
   repeated: "batch.reason.repeated",
+  group: "batch.reason.group",
 };
 
 // The line waiting for review, the transactions it may confirm best first, and the three ways
@@ -74,7 +75,6 @@ export function ReviewRecord({
         setPending(null);
       });
   };
-  const candidates = record.scored_candidates ?? [];
   return (
     <Stack gap={5}>
       <Stack gap={2}>
@@ -128,29 +128,28 @@ export function ReviewRecord({
           {t("batch.discard")}
         </Button>
       </Inline>
-      <Stack gap={3}>
-        <Heading level={3} size="sm">
-          {t("batch.candidates", { count: candidates.length })}
-        </Heading>
-        <Text size="sm" tone="muted">
-          {t("batch.bands", { link: linkScore, review: reviewScore })}
-        </Text>
-        {candidates.map((candidate) => (
-          <CandidateCard
-            key={candidate.transaction_id}
-            candidate={candidate}
-            accountId={record.account_id}
-            scale={scale}
-            busy={pending === candidate.transaction_id}
-            onMatch={() => {
-              run(
-                { action: "match", transaction_id: candidate.transaction_id },
-                candidate.transaction_id,
-              );
-            }}
-          />
-        ))}
-      </Stack>
+      {record.review_reason === "group" && (
+        <GroupConfirm
+          record={record}
+          busy={pending === "group"}
+          onConfirm={(transactionId) => {
+            run({ action: "match", transaction_id: transactionId }, "group");
+          }}
+        />
+      )}
+      {record.review_reason !== "group" && (
+        <CandidateList
+          record={record}
+          scale={scale}
+          pending={pending}
+          onMatch={(transactionId) => {
+            run(
+              { action: "match", transaction_id: transactionId },
+              transactionId,
+            );
+          }}
+        />
+      )}
     </Stack>
   );
 }

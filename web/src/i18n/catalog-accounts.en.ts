@@ -502,6 +502,10 @@ export const accountsEn = {
     "The bank changed this line after reconciliation. Correct the transaction or keep the reconciled amount.",
   "batch.reason.repeated":
     "Looks like a card payment already recorded. Create it if there were two payments; discard it if it is the same one.",
+  "batch.reason.group":
+    "This entry looks like the sum of these bank lines. Confirm to split it into the bank's lines.",
+  "batch.group.confirm": "Confirm the group",
+  "batch.group.lines": "Group of {count} bank lines.",
   "batch.unapplied": "Change not applied: {change}",
   "batch.create": "Create a new transaction",
   "batch.discard": "Discard the line",
@@ -744,6 +748,8 @@ export const accountsEn = {
   "statement.unconfirmedTitle": "The bank has not reported: {names}",
   "statement.unconfirmedMatches":
     "This statement's total matches the bank's, which confirms these transactions. Use Reconcile to record it; the notice leaves the overview.",
+  "statement.awaiting":
+    "Confirmed by the bank: {confirmed}. Awaiting the bank: {awaiting}.",
   "statement.unconfirmedHelp":
     "A duplicated or mistyped transaction is resolved by voiding or correcting it. A correct transaction is confirmed when the bank sends its line, or when you reconcile the statement with the bank's total.",
   "statement.provisional": "Provisional statement",

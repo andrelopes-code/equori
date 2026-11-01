@@ -501,6 +501,10 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
     "O banco mudou esta linha depois da conciliação. Corrija a transação ou mantenha o valor conciliado.",
   "batch.reason.repeated":
     "Parece repetir um pagamento da fatura já registrado. Crie se foram dois pagamentos; descarte se for o mesmo.",
+  "batch.reason.group":
+    "Este lançamento parece ser a soma destas linhas do banco. Confirme para dividi-lo nas linhas do banco.",
+  "batch.group.confirm": "Confirmar o grupo",
+  "batch.group.lines": "Grupo de {count} linhas do banco.",
   "batch.unapplied": "Alteração não aplicada: {change}",
   "batch.create": "Criar uma nova transação",
   "batch.discard": "Descartar a linha",
@@ -744,6 +748,8 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "statement.unconfirmedTitle": "O banco não informou: {names}",
   "statement.unconfirmedMatches":
     "O total desta fatura bate com o do banco, o que confirma estas transações. Use Conferir para registrar isso; o aviso sai da visão geral.",
+  "statement.awaiting":
+    "Confirmado pelo banco: {confirmed}. Aguardando o banco: {awaiting}.",
   "statement.unconfirmedHelp":
     "Uma transação duplicada ou digitada errada se resolve anulando ou corrigindo. Uma transação correta se confirma quando o banco envia a linha dela, ou quando você confere a fatura com o total do banco.",
   "statement.provisional": "Fatura provisória",
