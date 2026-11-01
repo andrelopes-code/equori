@@ -268,7 +268,7 @@ func (c organizeCall) planCreateAccount(ctx context.Context, pv *tool.Preview) (
 
 	a := domain.Account{
 		Name: c.in.Name, Class: domain.Class(c.in.Class), Kind: domain.Kind(c.in.Kind), Instrument: currency,
-		ParentID: c.parentID, InstitutionID: c.institutionID, OpenedOn: c.svc.Today(ctx),
+		ParentID: c.parentID, InstitutionID: c.institutionID,
 	}
 	pv.Target = c.in.Name
 

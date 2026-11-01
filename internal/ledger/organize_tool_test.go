@@ -56,6 +56,20 @@ func TestManageAccountsCreateCategory(t *testing.T) {
 	}
 }
 
+func TestManageAccountsCreatedCategoryAcceptsEarlierTransactions(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t, apitest.Today("2026-10-23"))
+	id := f.h.Record("2026-10-20", apitest.Posting(f.checking, -4590), apitest.Posting(f.restaurant, 4590))
+
+	var out manageOut
+	toolOutput(t, f.h, "manage_accounts_and_payees", map[string]any{"action": "create_account", "name": "Pets", "class": "expense"}, &out)
+
+	res := categorize(f.h, id, 1, part(out.ID, 4590))
+	if res.Status != http.StatusOK {
+		t.Fatalf("categorize into the new category = %d %s", res.Status, res.Body)
+	}
+}
+
 func TestManageAccountsInvalidArguments(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t, apitest.Today("2026-10-23"))
