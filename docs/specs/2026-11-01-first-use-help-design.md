@@ -37,7 +37,7 @@ Read on 2026-11-01 at `4371e1a1`.
 5. Step 3 lists the created accounts and three actions: "Connect a bank" (`/accounts/links`), "Import a file" (`/accounts/$id/import` of the first account created whose kind imports a file), "Record a transaction" (`/transactions/new`). The last is the main action. A link to the help page `connect-bank` follows the list.
 6. The walkthrough keeps its state in memory only. A reload starts it again at step 1; the accounts already created stay and show in the institution field. Reason: the state lasts minutes, and the account form's draft storage serves one account.
 7. `/start` opens for every member and every book. A member with role `read` gets the 403 problem of `createAccount` in the group, as on the account form. Reason: the web does not gate screens by role today; a gate for one screen would differ from every other screen.
-8. Texts in both catalogs, `catalog.en.ts` and `catalog.pt-BR.ts`. The screen follows the phone rules of `docs/contributing/mobile.md`.
+8. Texts in both catalogs, `catalog.en.ts` and `catalog.pt-BR.ts`. `/start` is desktop-only (ADR 027, S2): on the phone it shows the notice of ADR 027, S4. Reason: the installation script opens setup on the computer (A163.11), and the account sections the walkthrough reuses belong to `/accounts/new`, a desktop-only route.
 
 ## A174 Entry points
 
@@ -75,7 +75,7 @@ Two kinds join the attention block of the overview, after `connections`: `statem
 ## A177 Check of the exit criterion
 
 1. S251 is a Vitest test through `renderApp` and `fakeApi`. It starts at `/start` on an empty book and ends with a `createTransaction` request. It acts only by `getByRole` with the accessible name the catalog gives, or by `getByLabelText`; it never calls `navigate` and never renders a route by path after the first. Reason: an action the screen does not name cannot be found by a reader without outside help.
-2. S252 is the review step of the plan. The planning model runs a disposable Playwright script from the session's scratchpad against `make run-prod`, at 1280 and at 390 pixels wide. The script opens the setup URL of the log and completes setup. It then follows only visible text to a recorded transaction, and saves at most four screenshots. Its outcome goes in the plan's Review. The script does not enter the repository. Reason: the repository has no browser runner, and a new dependency needs an ADR (`CONTRIBUTING.md`, Code).
+2. S252 is the review step of the plan. The planning model runs a disposable Playwright script from the session's scratchpad against a fresh installation made by `install.sh` with the image of the working tree, at 1280 pixels wide, and at 390 pixels for the notice of A173.8. The script opens the setup URL printed by the installation and completes setup. It then follows only visible text to a recorded transaction, and saves at most four screenshots. Its outcome goes in the plan's Review. The script does not enter the repository. Reason: the repository has no browser runner, and a new dependency needs an ADR (`CONTRIBUTING.md`, Code).
 
 ## Regions
 
@@ -104,7 +104,7 @@ Documents: `docs/specs/2026-10-29-ui-clarity-design.md`, Camada 3 (A174.5); `doc
 | S249 | The help index in `en` and in `pt` | `installation` and `connect-bank` under how-to, `troubleshooting` under reference; `help-pages.test.ts` passes for the three ids |
 | S250 | `connect-bank` with region `BR`, then with region `US` | The BR passage follows the page; then the page alone, with no name of a regional system |
 | S251 | Exit criterion: the unaided walk of A177.1 | A `createTransaction` request is sent, with no `navigate` call in the test |
-| S252 | Exit criterion: the browser walk of A177.2 | A transaction recorded at both widths; outcome in the plan's Review |
+| S252 | Exit criterion: the browser walk of A177.2 | At 1280: a transaction recorded (`createTransaction` 201). At 390: setup completes and `/start` shows the notice of ADR 027, S4. Outcome in the plan's Review |
 
 ## Out of scope
 
