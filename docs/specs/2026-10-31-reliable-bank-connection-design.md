@@ -193,4 +193,4 @@ The migration columns and their names, the shape of the stored undo values, the 
 
 ## Owner task
 
-After one week of syncs, count the posted card lines whose institution line id equals that of a withdrawn pending line. The count tells whether A143 or A145 joins pending and posted lines at Pluggy; both rules stay.
+None. Both A143 and A145 stay whichever of them joins pending and posted lines at Pluggy; real syncs are checked by S261 (`2026-11-01-test-release-design.md`).

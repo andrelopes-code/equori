@@ -18,7 +18,7 @@ Checked on 2026-11-01 at `a098cc0b`.
 |---|---|---|
 | P10 | delivered | None |
 | P11 | review | None in the exit criterion. Owner tasks of the three P11 plans: an invited person checks each role; two books on a phone and on a computer; a passkey on a phone and on a computer over HTTPS; TOTP with an authenticator app; `equori user reset-second-factor` |
-| P12 | review | A143 query, due on or after 2026-11-07: migration 77 was applied to `equori-db-1` on 2026-10-31 23:54 UTC. The query returns 0 on 2026-11-01. Owner task of the grouped confirmation review plan: resolve a group with `match` after a real sync |
+| P12 | review | None in the exit criterion. Owner task of the grouped confirmation review plan: resolve a group with `match` after a real sync |
 | P13 | review | None. The plan Review records both exit tests passing |
 | P14 | review | S233: macOS and Windows owner checks (release checklist step 7). The host is Linux 6.8.0 without `/dev/kvm`, without `vmx` or `svm` CPU flags, and without `qemu-system-x86_64`, `VBoxManage`, `vagrant` or `pwsh` |
 | P15 | delivered | The four S252 findings (A181 to A183; the fourth is out of scope) |
@@ -100,12 +100,12 @@ The last task of the plan runs the tests that carry each exit criterion and reco
 |---|---|---|---|
 | P10 | Every test passes after the rename; a schema test rejects a business row without a book; each setting has one level and one source | `make check` | delivered (unchanged) |
 | P11 | An HTTP test per role and per access without membership (404); login tests with TOTP, with a passkey and with a recovery code | `go test ./internal/identity/... ./internal/server/...`, S199 to S202 | delivered when the tests pass. The owner tasks of the P11 plans move to A186 |
-| P12 | Replays of the October 2026 incidents; a stalled connection on the overview; a grouped entry without duplicate | `go test ./internal/ingestion/... ./internal/ledger/...`, S203 to S213, S234 to S240 | review until the A143 query runs on or after 2026-11-07 (plan `2026-10-31-p12-reliable-bank-connection.md`, Owner tasks) |
+| P12 | Replays of the October 2026 incidents; a stalled connection on the overview; a grouped entry without duplicate | `go test ./internal/ingestion/... ./internal/ledger/...`, S203 to S213, S234 to S240 | delivered when the tests pass. The owner task of the grouped confirmation plan moves to A186 |
 | P13 | An encrypted copy restored into an empty instance; the diagnostic file holds no book data | `TestClusterS216EncryptedCopyRestores` (`make test-cluster`), `TestS219DiagnosticHoldsNoBookData` | delivered when the tests pass |
 | P14 | A clean machine of each system reaches first access with one pasted command | `make install-smoke` (Linux, S227); S233 for macOS and Windows | review until the release notes record S233 |
 | P15 | P16 testers record their first transactions without outside help | S260 | delivered (unchanged); S260 confirms it |
 
-Reason for P11 and P13: section 9.4.3 sets `delivered` once the exit criterion passes, and neither criterion names an owner check.
+Reason for P11, P12 and P13: section 9.4.3 sets `delivered` once the exit criterion passes, and no criterion of the three names an owner check or a waiting period.
 
 ## A186 Owner tasks and the tag
 
@@ -115,7 +115,7 @@ The tag needs each item below. The release checklist (`docs/operations/release.m
 2. S260 (P15): at least two testers besides the owner install equori, follow the walkthrough and record their first transactions without outside help.
 3. S261: the owner and the testers use real accounts of at least three banks, through Meu Pluggy or file import, for at least two weeks; each defect becomes a GitHub issue, and an issue of data loss, duplication or exposure carries the label of its kind.
 4. The owner tasks of the P11 plans (Current state).
-5. The A143 query of P12 and the grouped `match` after a real sync.
+5. The grouped `match` of P12 after a real sync.
 6. `git tag v1.0.0` and its push, by the owner, after steps 1 to 8 of the checklist.
 
 ## Regions
