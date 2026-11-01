@@ -343,3 +343,34 @@ func TestInvitationSchema(t *testing.T) {
 		t.Errorf("invitations of the deleted book = %d, %v; want 0", n, err)
 	}
 }
+
+// One pending account invitation per email; the token hash is unique; the region and the currency
+// keep their shapes.
+func TestAccountInvitationSchema(t *testing.T) {
+	t.Parallel()
+	pool := pgtest.New(t)
+	member, _ := pgtest.CreateMember(t, pool)
+
+	insert := `INSERT INTO identity_account_invitation (id, email, region, base_currency, token_hash, invited_by, created_at, expires_at)
+		VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, '2026-11-01T12:00:00Z', '2026-11-08T12:00:00Z')`
+
+	if _, err := pool.Exec(t.Context(), insert, "a@example.com", "BR", "BRL", bytes.Repeat([]byte{1}, 32), member); err != nil {
+		t.Fatal(err)
+	}
+
+	for _, tt := range []struct {
+		name string
+		args []any
+		code string
+	}{
+		{"second row of the email", []any{"a@example.com", "BR", "BRL", bytes.Repeat([]byte{2}, 32), member}, uniqueViolation},
+		{"second row of the token hash", []any{"b@example.com", "BR", "BRL", bytes.Repeat([]byte{1}, 32), member}, uniqueViolation},
+		{"region in lower case", []any{"c@example.com", "br", "BRL", bytes.Repeat([]byte{3}, 32), member}, checkViolation},
+		{"currency of two letters", []any{"d@example.com", "BR", "BR", bytes.Repeat([]byte{4}, 32), member}, checkViolation},
+	} {
+		_, err := pool.Exec(t.Context(), insert, tt.args...)
+		if pgErr, ok := errors.AsType[*pgconn.PgError](err); !ok || pgErr.Code != tt.code {
+			t.Errorf("%s: error = %v, want SQLSTATE %s", tt.name, err, tt.code)
+		}
+	}
+}

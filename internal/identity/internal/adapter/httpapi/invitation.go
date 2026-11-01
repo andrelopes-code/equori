@@ -6,6 +6,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/identity/internal/app"
 	"github.com/andrelopes-code/equori/internal/identity/internal/domain"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
+	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
 func (s *Server) ListInvitations(ctx context.Context, _ ListInvitationsRequestObject) (ListInvitationsResponseObject, error) {
@@ -38,6 +39,27 @@ func (s *Server) CreateInvitation(ctx context.Context, req CreateInvitationReque
 	return CreateInvitation201JSONResponse(out), nil
 }
 
+func (s *Server) CreateAccountInvitation(ctx context.Context, req CreateAccountInvitationRequestObject) (CreateAccountInvitationResponseObject, error) {
+	if req.Body == nil {
+		return nil, errInvalidRequest
+	}
+
+	b := req.Body
+
+	token, inv, err := s.svc.CreateAccountInvitation(ctx, auth.MustMemberID(ctx), b.Email, b.Region, money.Currency(deref(b.BaseCurrency)))
+	if err != nil {
+		return nil, err
+	}
+
+	return CreateAccountInvitation201JSONResponse{
+		Email:        inv.Email,
+		Region:       inv.Region,
+		BaseCurrency: inv.BaseCurrency,
+		ExpiresAt:    inv.ExpiresAt,
+		Token:        token,
+	}, nil
+}
+
 func (s *Server) DeleteInvitation(ctx context.Context, req DeleteInvitationRequestObject) (DeleteInvitationResponseObject, error) {
 	if err := s.svc.DeleteInvitation(ctx, auth.MustBooksID(ctx), req.Id); err != nil {
 		return nil, err
@@ -57,6 +79,7 @@ func (s *Server) PreviewInvitation(ctx context.Context, req PreviewInvitationReq
 	}
 
 	return PreviewInvitation200JSONResponse{
+		Kind:         InvitationPreviewKind(p.Kind),
 		BooksName:    p.BooksName,
 		InviterEmail: p.InviterEmail,
 		Role:         BookRole(p.Role),

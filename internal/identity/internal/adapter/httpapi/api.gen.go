@@ -38,6 +38,24 @@ func (e BookRole) Valid() bool {
 	}
 }
 
+// Defines values for InvitationPreviewKind.
+const (
+	Account InvitationPreviewKind = "account"
+	Books   InvitationPreviewKind = "books"
+)
+
+// Valid indicates whether the value is a known member of the InvitationPreviewKind enum.
+func (e InvitationPreviewKind) Valid() bool {
+	switch e {
+	case Account:
+		return true
+	case Books:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for SecondFactorChallengeMethods.
 const (
 	SecondFactorChallengeMethodsPasskey      SecondFactorChallengeMethods = "passkey"
@@ -112,6 +130,22 @@ type AccessTokenInput struct {
 // AccessTokenList defines model for AccessTokenList.
 type AccessTokenList struct {
 	Items []AccessToken `json:"items"`
+}
+
+// AccountInvitation defines model for AccountInvitation.
+type AccountInvitation struct {
+	BaseCurrency string    `json:"base_currency"`
+	Email        string    `json:"email"`
+	ExpiresAt    time.Time `json:"expires_at"`
+	Region       string    `json:"region"`
+	Token        string    `json:"token"`
+}
+
+// AccountInvitationInput defines model for AccountInvitationInput.
+type AccountInvitationInput struct {
+	BaseCurrency *string `json:"base_currency,omitempty"`
+	Email        string  `json:"email"`
+	Region       string  `json:"region"`
 }
 
 // Appearance Appearance choices by name (scheme, accent, themes, ...); the web defines names and values.
@@ -209,12 +243,18 @@ type InvitationList struct {
 
 // InvitationPreview defines model for InvitationPreview.
 type InvitationPreview struct {
-	BooksName    string   `json:"books_name"`
-	Email        string   `json:"email"`
-	InviterEmail string   `json:"inviter_email"`
-	MemberExists bool     `json:"member_exists"`
-	Role         BookRole `json:"role"`
+	BooksName    string `json:"books_name"`
+	Email        string `json:"email"`
+	InviterEmail string `json:"inviter_email"`
+
+	// Kind account is an invitation to a book of its own; books_name is then empty.
+	Kind         InvitationPreviewKind `json:"kind"`
+	MemberExists bool                  `json:"member_exists"`
+	Role         BookRole              `json:"role"`
 }
+
+// InvitationPreviewKind account is an invitation to a book of its own; books_name is then empty.
+type InvitationPreviewKind string
 
 // InvitationToken defines model for InvitationToken.
 type InvitationToken struct {
@@ -459,6 +499,9 @@ type CompleteSecondFactorParams struct {
 // CreateAccessTokenJSONRequestBody defines body for CreateAccessToken for application/json ContentType.
 type CreateAccessTokenJSONRequestBody = AccessTokenInput
 
+// CreateAccountInvitationJSONRequestBody defines body for CreateAccountInvitation for application/json ContentType.
+type CreateAccountInvitationJSONRequestBody = AccountInvitationInput
+
 // CreateBooksJSONRequestBody defines body for CreateBooks for application/json ContentType.
 type CreateBooksJSONRequestBody = CreateBooksInput
 
@@ -521,6 +564,9 @@ type ServerInterface interface {
 	// DeleteAccessToken Delete a personal access token; it stops working at once.
 	// (DELETE /access-tokens/{id})
 	DeleteAccessToken(w http.ResponseWriter, r *http.Request, id ID)
+	// CreateAccountInvitation Invite an email to an account with a book of its own; instance admin only.
+	// (POST /account-invitations)
+	CreateAccountInvitation(w http.ResponseWriter, r *http.Request)
 	// CreateBooks Create a book with the member as owner; the session stays in its book (HA6).
 	// (POST /books)
 	CreateBooks(w http.ResponseWriter, r *http.Request)
@@ -670,6 +716,20 @@ func (siw *ServerInterfaceWrapper) DeleteAccessToken(w http.ResponseWriter, r *h
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.DeleteAccessToken(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateAccountInvitation operation middleware
+func (siw *ServerInterfaceWrapper) CreateAccountInvitation(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateAccountInvitation(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1523,6 +1583,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/books/current/invitations", wrapper.ListInvitations)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/books/current/invitations", wrapper.CreateInvitation)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/books/current/invitations/{id}", wrapper.DeleteInvitation)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/account-invitations", wrapper.CreateAccountInvitation)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/invitations/preview", wrapper.PreviewInvitation)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/invitations/accept", wrapper.AcceptInvitation)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/access-tokens", wrapper.ListAccessTokens)
@@ -1674,6 +1735,100 @@ func (response DeleteAccessToken404ApplicationProblemPlusJSONResponse) VisitDele
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateAccountInvitationRequestObject struct {
+	Body *CreateAccountInvitationJSONRequestBody
+}
+
+type CreateAccountInvitationResponseObject interface {
+	VisitCreateAccountInvitationResponse(w http.ResponseWriter) error
+}
+
+type CreateAccountInvitation201JSONResponse AccountInvitation
+
+func (response CreateAccountInvitation201JSONResponse) VisitCreateAccountInvitationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateAccountInvitation400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response CreateAccountInvitation400ApplicationProblemPlusJSONResponse) VisitCreateAccountInvitationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateAccountInvitation401ApplicationProblemPlusJSONResponse Problem
+
+func (response CreateAccountInvitation401ApplicationProblemPlusJSONResponse) VisitCreateAccountInvitationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateAccountInvitation403ApplicationProblemPlusJSONResponse Problem
+
+func (response CreateAccountInvitation403ApplicationProblemPlusJSONResponse) VisitCreateAccountInvitationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateAccountInvitation409ApplicationProblemPlusJSONResponse Problem
+
+func (response CreateAccountInvitation409ApplicationProblemPlusJSONResponse) VisitCreateAccountInvitationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateAccountInvitation422ApplicationProblemPlusJSONResponse Problem
+
+func (response CreateAccountInvitation422ApplicationProblemPlusJSONResponse) VisitCreateAccountInvitationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -3739,6 +3894,9 @@ type StrictServerInterface interface {
 	// DeleteAccessToken Delete a personal access token; it stops working at once.
 	// (DELETE /access-tokens/{id})
 	DeleteAccessToken(ctx context.Context, request DeleteAccessTokenRequestObject) (DeleteAccessTokenResponseObject, error)
+	// CreateAccountInvitation Invite an email to an account with a book of its own; instance admin only.
+	// (POST /account-invitations)
+	CreateAccountInvitation(ctx context.Context, request CreateAccountInvitationRequestObject) (CreateAccountInvitationResponseObject, error)
 	// CreateBooks Create a book with the member as owner; the session stays in its book (HA6).
 	// (POST /books)
 	CreateBooks(ctx context.Context, request CreateBooksRequestObject) (CreateBooksResponseObject, error)
@@ -3947,6 +4105,37 @@ func (sh *strictHandler) DeleteAccessToken(w http.ResponseWriter, r *http.Reques
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(DeleteAccessTokenResponseObject); ok {
 		if err := validResponse.VisitDeleteAccessTokenResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateAccountInvitation operation middleware
+func (sh *strictHandler) CreateAccountInvitation(w http.ResponseWriter, r *http.Request) {
+	var request CreateAccountInvitationRequestObject
+
+	var body CreateAccountInvitationJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateAccountInvitation(ctx, request.(CreateAccountInvitationRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateAccountInvitation")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateAccountInvitationResponseObject); ok {
+		if err := validResponse.VisitCreateAccountInvitationResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

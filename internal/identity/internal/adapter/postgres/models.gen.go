@@ -10,6 +10,17 @@ import (
 	"github.com/google/uuid"
 )
 
+type IdentityAccountInvitation struct {
+	ID           uuid.UUID
+	Email        string
+	Region       string
+	BaseCurrency string
+	TokenHash    []byte
+	InvitedBy    int64
+	CreatedAt    time.Time
+	ExpiresAt    time.Time
+}
+
 type IdentityInvitation struct {
 	ID        uuid.UUID
 	BooksID   int64

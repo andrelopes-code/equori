@@ -111,6 +111,7 @@ func (r *Repository) InvitationPreview(ctx context.Context, tokenHash []byte, no
 	}
 
 	return app.InvitationPreview{
+		Kind:         app.InvitationKindBooks,
 		BooksID:      row.BooksID,
 		BooksName:    row.BooksName,
 		InviterEmail: row.InviterEmail,

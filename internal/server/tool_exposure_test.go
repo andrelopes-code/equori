@@ -48,6 +48,7 @@ var exposure = map[string]string{
 	"removeMember":                     "-owner",
 	"listInvitations":                  "-owner",
 	"createInvitation":                 "-owner",
+	"createAccountInvitation":          "-instance",
 	"deleteInvitation":                 "-owner",
 	"previewInvitation":                "-session",
 	"acceptInvitation":                 "-session",

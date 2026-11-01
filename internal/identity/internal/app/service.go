@@ -18,6 +18,7 @@ import (
 var (
 	ErrNotFound                = errors.New("not found")
 	ErrEmailTaken              = errors.New("email already registered")
+	ErrAdminRequired           = errors.New("the instance role admin is required")
 	ErrInvalidCredentials      = errors.New("invalid credentials")
 	ErrTooManyAttempts         = errors.New("too many login attempts")
 	ErrUnauthenticated         = errors.New("unauthenticated")

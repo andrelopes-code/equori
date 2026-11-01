@@ -105,7 +105,7 @@ func TestBooksBackfill(t *testing.T) {
 	}
 
 	// The tables of ADR 030 hold a member's second factor, as identity_session holds its sessions.
-	if err := pool.QueryRow(ctx, `SELECT count(*) FROM pg_constraint WHERE contype = 'f' AND confrelid = 'identity_member'::regclass AND conrelid NOT IN ('identity_session'::regclass, 'identity_access_token'::regclass, 'identity_membership'::regclass, 'identity_invitation'::regclass, 'identity_totp'::regclass, 'identity_recovery_code'::regclass, 'identity_passkey'::regclass, 'identity_passkey_challenge'::regclass, 'identity_login_challenge'::regclass)`).Scan(&n); err != nil || n != 0 {
+	if err := pool.QueryRow(ctx, `SELECT count(*) FROM pg_constraint WHERE contype = 'f' AND confrelid = 'identity_member'::regclass AND conrelid NOT IN ('identity_session'::regclass, 'identity_access_token'::regclass, 'identity_membership'::regclass, 'identity_invitation'::regclass, 'identity_account_invitation'::regclass, 'identity_totp'::regclass, 'identity_recovery_code'::regclass, 'identity_passkey'::regclass, 'identity_passkey_challenge'::regclass, 'identity_login_challenge'::regclass)`).Scan(&n); err != nil || n != 0 {
 		t.Errorf("business foreign keys to identity_member = %d, %v; want 0", n, err)
 	}
 }

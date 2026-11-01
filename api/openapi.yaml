@@ -479,6 +479,40 @@ paths:
           $ref: "#/components/responses/Problem"
         "404":
           $ref: "#/components/responses/Problem"
+  /account-invitations:
+    post:
+      tags: [identity]
+      operationId: createAccountInvitation
+      x-book-role: read
+      summary: Invite an email to an account with a book of its own; instance admin only.
+      description: |
+        The answer holds the token once. The new member chooses its password when it accepts the
+        invitation. Without base_currency, the default of the region; a region without one is 422
+        on base_currency. 403 admin_required for a member; 409 email_taken when a member has the
+        email; 422 validation_failed on email or region.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccountInvitationInput"
+      responses:
+        "201":
+          description: Created; token is shown only here.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountInvitation"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
   /invitations/preview:
     post:
       tags: [identity]
@@ -11467,10 +11501,42 @@ components:
           type: string
           minLength: 1
           maxLength: 64
+    AccountInvitationInput:
+      type: object
+      additionalProperties: false
+      required: [email, region]
+      properties:
+        email:
+          type: string
+        region:
+          type: string
+          pattern: "^[A-Z]{2}$"
+        base_currency:
+          type: string
+          pattern: "^[A-Z]{3}$"
+    AccountInvitation:
+      type: object
+      required: [email, region, base_currency, expires_at, token]
+      properties:
+        email:
+          type: string
+        region:
+          type: string
+        base_currency:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+        token:
+          type: string
     InvitationPreview:
       type: object
-      required: [books_name, inviter_email, role, email, member_exists]
+      required: [kind, books_name, inviter_email, role, email, member_exists]
       properties:
+        kind:
+          type: string
+          enum: [books, account]
+          description: account is an invitation to a book of its own; books_name is then empty.
         books_name:
           type: string
         inviter_email:

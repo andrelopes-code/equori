@@ -263,6 +263,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/account-invitations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Invite an email to an account with a book of its own; instance admin only.
+         * @description The answer holds the token once. The new member chooses its password when it accepts the
+         *     invitation. Without base_currency, the default of the region; a region without one is 422
+         *     on base_currency. 403 admin_required for a member; 409 email_taken when a member has the
+         *     email; 422 validation_failed on email or region.
+         */
+        post: operations["createAccountInvitation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/invitations/preview": {
         parameters: {
             query?: never;
@@ -6352,7 +6375,25 @@ export interface components {
         InvitationToken: {
             token: string;
         };
+        AccountInvitationInput: {
+            email: string;
+            region: string;
+            base_currency?: string;
+        };
+        AccountInvitation: {
+            email: string;
+            region: string;
+            base_currency: string;
+            /** Format: date-time */
+            expires_at: string;
+            token: string;
+        };
         InvitationPreview: {
+            /**
+             * @description account is an invitation to a book of its own; books_name is then empty.
+             * @enum {string}
+             */
+            kind: "books" | "account";
             books_name: string;
             inviter_email: string;
             role: components["schemas"]["BookRole"];
@@ -7025,6 +7066,35 @@ export interface operations {
             401: components["responses"]["Problem"];
             403: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
+        };
+    };
+    createAccountInvitation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccountInvitationInput"];
+            };
+        };
+        responses: {
+            /** @description Created; token is shown only here. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountInvitation"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
         };
     };
     previewInvitation: {

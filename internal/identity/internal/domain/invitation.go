@@ -24,9 +24,7 @@ type Invitation struct {
 
 // NewInvitation returns the token, shown once, and the invitation that stores its hash (HA24).
 func NewInvitation(booksID, invitedBy int64, email, role string, now time.Time) (token string, inv Invitation) {
-	b := make([]byte, 32)
-	_, _ = rand.Read(b) // crypto/rand.Read never returns an error since Go 1.24.
-	token = base64.RawURLEncoding.EncodeToString(b)
+	token = newToken()
 
 	return token, Invitation{
 		ID:        uuid.New(),
@@ -38,4 +36,40 @@ func NewInvitation(booksID, invitedBy int64, email, role string, now time.Time) 
 		CreatedAt: now,
 		ExpiresAt: now.Add(InvitationTTL),
 	}
+}
+
+// AccountInvitation invites an email to a member of its own with a book of its own; like
+// Invitation it is persisted by TokenHash only.
+type AccountInvitation struct {
+	ID           uuid.UUID
+	Email        string
+	Region       string
+	BaseCurrency string
+	TokenHash    []byte
+	InvitedBy    int64
+	CreatedAt    time.Time
+	ExpiresAt    time.Time
+}
+
+// NewAccountInvitation returns the token, shown once, and the invitation that stores its hash.
+func NewAccountInvitation(invitedBy int64, email, region, baseCurrency string, now time.Time) (token string, inv AccountInvitation) {
+	token = newToken()
+
+	return token, AccountInvitation{
+		ID:           uuid.New(),
+		Email:        email,
+		Region:       region,
+		BaseCurrency: baseCurrency,
+		TokenHash:    HashToken(token),
+		InvitedBy:    invitedBy,
+		CreatedAt:    now,
+		ExpiresAt:    now.Add(InvitationTTL),
+	}
+}
+
+func newToken() string {
+	b := make([]byte, 32)
+	_, _ = rand.Read(b) // crypto/rand.Read never returns an error since Go 1.24.
+
+	return base64.RawURLEncoding.EncodeToString(b)
 }
