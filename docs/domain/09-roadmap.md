@@ -101,7 +101,7 @@ P11, P12 and P13 depend only on P10; the owner runs them one after the other, in
 | P13 Protected data | review | Daily backup in every form; encrypted copy to a chosen folder; backup screen; backup before every migration; diagnostic file; consented new-version notice | An encrypted copy restored into an empty instance reproduces every fact and derived value; a test proves the diagnostic file holds no amount, name or description |
 | P14 Installation | review | A configuration map in code that generates the installation guide and the example `.env`; start-up validation that names the variable, the expected value and an example; a one-command script (Docker check, WSL2 on Windows, free port, secret key, database password); first access by region and book; guides for Linux, macOS and Windows | A clean machine of each system reaches first access with one pasted command, checked in the release job or by a documented owner check |
 | P15 First use and help | delivered | First-use walkthrough; help pages for installation, bank connection and troubleshooting in both languages; in-app notices for due statements and budgets | P16 testers record their first transactions without outside help |
-| P16 Test and release | spec | Security review; the owner and close people use real accounts of several banks; fixes; check of every exit criterion of P10 to P15; tag `v1.0.0` (ADR 022, V1) | Every exit criterion passes; no open defect of data loss, duplication or exposure |
+| P16 Test and release | plan | Security review; the owner and close people use real accounts of several banks; fixes; check of every exit criterion of P10 to P15; tag `v1.0.0` (ADR 022, V1) | Every exit criterion passes; no open defect of data loss, duplication or exposure |
 
 ### 9.4.3 Plans
 

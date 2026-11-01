@@ -77,7 +77,7 @@ Reason: `bancos.json` ships in the package already pinned (`logos-bancos-br` 0.8
 
 ## A182 The walkthrough row names its institution as required
 
-A row of the walkthrough counts only with an institution (P15 A173). The `InstitutionField` of `start-row.tsx` reads "Instituição" without "(opcional)": `InstitutionField` accepts `required` and passes it to its field, and `StartRow` sets it.
+A row of the walkthrough counts only with an institution (P15 A173). The `Field` that holds the institution in `StartRow` (`start-row.tsx`) sets `required`, so its label reads "Instituição" without "(opcional)" (F7 of `slotted-locale.tsx`).
 
 ## A183 Zero results in Portuguese
 
@@ -133,7 +133,7 @@ A181 reads Brazilian trade names from the catalogue of the `br_ispb` scheme. A18
 | S254 | An archive whose `ledger_transaction_version` row names a transaction of another book is refused with 409 `import_conflict` | `internal/reporting/import_test.go` |
 | S255 | The catalogue search "Nubank" lists the entry of ISPB 18236120 named "Nubank" | `web/src/features/accounts/institution-catalogue.test.ts` |
 | S256 | The search "Ita" lists "Itaú" before "Banco ItauBank" | `web/src/features/accounts/catalogue-search.test.ts` |
-| S257 | The institution field of a walkthrough row reads "Institution" without "(optional)" | `web/src/features/start/start-row.test.tsx` |
+| S257 | The institution field of a walkthrough row reads "Institution" without "(optional)" | `web/src/features/start/start-page.test.tsx` |
 | S258 | A pt-BR count message reads "Nenhum resultado" for 0 and "1 resultado" for 1 | `web/src/i18n/languages.test.ts` |
 | S259 | The exit criteria of P10 to P15 are checked (A185) | Plan Review |
 | S260 | Testers record their first transactions without outside help | Owner task |
