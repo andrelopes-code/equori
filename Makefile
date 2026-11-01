@@ -18,7 +18,7 @@ SQL_FMT := web/node_modules/.bin/sql-formatter
 LOCAL_ENV ?= $(HOME)/.config/equori/local.env
 LOAD_ENV := set -a && . ./dev.env && { [ ! -f "$(LOCAL_ENV)" ] || . "$(LOCAL_ENV)"; } && { [ ! -f .env ] || . ./.env; } && set +a
 
-.PHONY: check static fmt fmt-check lint tidy-check gen gen-check test test-race perf vuln build dist upgrade-test test-cluster test-exchange standalone-smoke formula-test dev db-up db-down db-test-up run-dev run-prod hooks tools web-deps web-build web-check web-static web-test web-dev demo demo-user demo-reset
+.PHONY: check static fmt fmt-check lint tidy-check gen gen-check test test-race perf vuln build dist upgrade-test test-cluster test-exchange standalone-smoke install-smoke formula-test dev db-up db-down db-test-up run-dev run-prod hooks tools web-deps web-build web-check web-static web-test web-dev demo demo-user demo-reset
 
 # Everything, the Go tests under -race included: CI runs it on every pull request. The web build
 # comes first: the Go tests compile package web, which embeds web/dist. The web tests come last:
@@ -138,6 +138,10 @@ upgrade-test:
 standalone-smoke:
 	docker build --target standalone -t equori:standalone .
 	scripts/standalone-smoke.sh equori:standalone
+
+install-smoke:
+	docker build --target standalone -t equori:standalone .
+	scripts/install-smoke.sh equori:standalone 0.0.0-smoke
 
 # The formula renders to the reviewed golden file, and a missing target fails the render.
 formula-test:
