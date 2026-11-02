@@ -31,6 +31,24 @@ const questionLegendRule = `
 }
 `;
 
+// Owner review of 2026-11-02: the choices of a question stood against its description (0.375rem,
+// the family's gap between a legend and its choices); they stand 0.75rem below it.
+const questionChoicesRule = `
+[data-ui="field-group"] > :is([data-part="description"], [data-part="error"]) + [data-part="content"] {
+  margin-block-start: var(--slotted-space-5);
+}
+`;
+
+// Owner review of 2026-11-02: a section title read as a field label set further apart. A section
+// after another opens with a rule over its legend; the first one has nothing above to part from.
+const sectionRule = `
+[data-ui="field-group"][data-kind="section"]:not(:first-child) > [data-part="legend"] {
+  inline-size: 100%;
+  padding-block-start: var(--slotted-space-6);
+  border-block-start: var(--slotted-border-width-thin) solid var(--slotted-border-subtle);
+}
+`;
+
 // A light palette dims the page less: the material already sets it apart.
 const paletteScrimRule = `
 &[data-slotted-scheme="light"] [data-ui="dialog"]:has([data-ui="command-palette"]) {
@@ -276,6 +294,8 @@ export default extendTheme(
       summaryRule,
       currentDestinationRule,
       questionLegendRule,
+      questionChoicesRule,
+      sectionRule,
       paletteScrimRule,
       sheetSlideRule,
       tooltipArrowFadeRule,

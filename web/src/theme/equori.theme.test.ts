@@ -141,3 +141,17 @@ test("a tag keeps its height and stands its text 2 px further from each side", (
     /\[data-ui="tag"\]\[data-size="sm"\] \{\s*--slotted-tag-inset-inline: var\(--slotted-space-4\);/,
   );
 });
+
+test("the choices of a question stand clear of the description or error above them", () => {
+  assert.match(
+    css,
+    /\[data-ui="field-group"\] > :is\(\[data-part="description"\], \[data-part="error"\]\) \+ \[data-part="content"\]\s*\{[^}]*margin-block-start: var\(--slotted-space-5\)/,
+  );
+});
+
+test("a section after another is set apart by a rule over its legend", () => {
+  assert.match(
+    css,
+    /\[data-ui="field-group"\]\[data-kind="section"\]:not\(:first-child\) > \[data-part="legend"\]\s*\{[^}]*border-block-start: var\(--slotted-border-width-thin\) solid var\(--slotted-border-subtle\)/,
+  );
+});

@@ -332,6 +332,7 @@ export const catalogPtBR: Catalog = {
   "setup.section.account": "Conta",
   "setup.section.place": "Idioma e região",
   "setup.section.books": "Livro",
+  "setup.section.updates": "Atualizações",
   "setup.email": "E-mail",
   "setup.password": "Senha",
   "setup.password.help": "Pelo menos 12 caracteres.",

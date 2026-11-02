@@ -137,13 +137,15 @@ export function SetupForm({ token }: SetupFormProps) {
           />
         </FormSection>
 
-        <UpdateCheckChoice
-          value={updateCheck}
-          {...(updateCheckError === undefined
-            ? {}
-            : { error: updateCheckError })}
-          onChange={handleUpdateCheckChange}
-        />
+        <FormSection legend={t("setup.section.updates")}>
+          <UpdateCheckChoice
+            value={updateCheck}
+            {...(updateCheckError === undefined
+              ? {}
+              : { error: updateCheckError })}
+            onChange={handleUpdateCheckChange}
+          />
+        </FormSection>
       </FormLayout>
 
       {failure !== null && (

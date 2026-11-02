@@ -325,6 +325,7 @@ export const catalogEn = {
   "setup.section.account": "Account",
   "setup.section.place": "Language and region",
   "setup.section.books": "Book",
+  "setup.section.updates": "Updates",
   "setup.email": "Email",
   "setup.password": "Password",
   "setup.password.help": "At least 12 characters.",

@@ -233,6 +233,14 @@ describe("first-user setup", () => {
         name: catalogEn["setup.currency"],
       }),
     ).toBeInTheDocument();
+    const updates = screen.getByRole("group", {
+      name: catalogEn["setup.section.updates"],
+    });
+    expect(
+      within(updates).getByRole("radio", {
+        name: catalogEn["about.updateCheck.yes"],
+      }),
+    ).toBeInTheDocument();
   });
 
   it("sends no time zone when the region default is chosen", async () => {
