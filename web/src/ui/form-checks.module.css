@@ -1,0 +1,9 @@
+@layer app {
+  /* Checkboxes in sequence stand 0.75rem apart: 1.5rem between fields would read them as
+     unrelated questions (docs/contributing/forms.md, F5). */
+  .checks {
+    display: flex;
+    flex-direction: column;
+    gap: var(--slotted-space-5);
+  }
+}

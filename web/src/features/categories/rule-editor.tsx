@@ -54,6 +54,7 @@ import { payeesQuery, settingsQuery, useScale } from "@/features/setup";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMediaQuery, wideQuery } from "@/ui/use-media-query";
 import { PageBack } from "@/ui/page-back";
+import { FormChecks } from "@/ui/form-checks";
 import { FormLayout } from "@/ui/form-layout";
 import { FormSection } from "@/ui/form-section";
 
@@ -398,22 +399,24 @@ export function RuleEditor({ rule }: { rule: Rule | null }) {
                 </div>
               </Stack>
             </FormSection>
-            <Checkbox
-              checked={draft.enabled}
-              onCheckedChange={(checked) => {
-                update({ ...draft, enabled: checked });
-              }}
-            >
-              {t("ruleEditor.enabled")}
-            </Checkbox>
-            <Checkbox
-              checked={draft.stop_processing}
-              onCheckedChange={(checked) => {
-                update({ ...draft, stop_processing: checked });
-              }}
-            >
-              {t("ruleEditor.stop")}
-            </Checkbox>
+            <FormChecks>
+              <Checkbox
+                checked={draft.enabled}
+                onCheckedChange={(checked) => {
+                  update({ ...draft, enabled: checked });
+                }}
+              >
+                {t("ruleEditor.enabled")}
+              </Checkbox>
+              <Checkbox
+                checked={draft.stop_processing}
+                onCheckedChange={(checked) => {
+                  update({ ...draft, stop_processing: checked });
+                }}
+              >
+                {t("ruleEditor.stop")}
+              </Checkbox>
+            </FormChecks>
           </FormLayout>
         )}
       </PageBody>

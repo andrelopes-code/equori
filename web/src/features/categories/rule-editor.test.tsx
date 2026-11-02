@@ -142,6 +142,21 @@ describe("rule editor", () => {
     expect(sent.filter((s) => s.route !== "preview")).toEqual([]);
   });
 
+  it("keeps the two switches of a rule together, apart from the sections", async () => {
+    await renderApp("/categories/rules/r1", { fetch: api([]) });
+    const on = await screen.findByRole("checkbox", {
+      name: catalogEn["ruleEditor.enabled"],
+    });
+    const stop = screen.getByRole("checkbox", {
+      name: catalogEn["ruleEditor.stop"],
+    });
+    const onRoot = on.closest('[data-ui="checkbox"]');
+    const stopRoot = stop.closest('[data-ui="checkbox"]');
+
+    expect(onRoot?.parentElement).toBe(stopRoot?.parentElement);
+    expect(onRoot?.parentElement?.children).toHaveLength(2);
+  });
+
   it("replaces an existing rule and deletes it", async () => {
     const sent: Sent[] = [];
     const { router } = await renderApp("/categories/rules/r1", {
