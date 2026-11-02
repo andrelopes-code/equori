@@ -32,20 +32,21 @@ const questionLegendRule = `
 `;
 
 // Owner review of 2026-11-02: the choices of a question stood against its description (0.375rem,
-// the family's gap between a legend and its choices); they stand 0.75rem below it.
+// the family's gap between a legend and its choices). A group's description and error are inline
+// messages; the choices stand 1rem below them.
 const questionChoicesRule = `
-[data-ui="field-group"] > :is([data-part="description"], [data-part="error"]) + [data-part="content"] {
-  margin-block-start: var(--slotted-space-5);
+[data-ui="field-group"] > [data-ui="inline-message"] + [data-part="content"] {
+  margin-block-start: var(--slotted-space-6);
 }
 `;
 
-// Owner review of 2026-11-02: a section title read as a field label set further apart. A section
-// after another opens with a rule over its legend; the first one has nothing above to part from.
+// Owner review of 2026-11-02: a section title spaced further from the fields read as a label.
+// The title closes over a rule, so each section is a block with a heading.
 const sectionRule = `
-[data-ui="field-group"][data-kind="section"]:not(:first-child) > [data-part="legend"] {
+[data-ui="field-group"][data-kind="section"] > [data-part="legend"] {
   inline-size: 100%;
-  padding-block-start: var(--slotted-space-6);
-  border-block-start: var(--slotted-border-width-thin) solid var(--slotted-border-subtle);
+  padding-block-end: var(--slotted-space-4);
+  border-block-end: var(--slotted-border-width-thin) solid var(--slotted-border-strong);
 }
 `;
 

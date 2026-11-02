@@ -1835,14 +1835,14 @@
       font-size: var(--slotted-control-font-size-md);
     }
 
-    [data-ui="field-group"] > :is([data-part="description"], [data-part="error"]) + [data-part="content"] {
-      margin-block-start: var(--slotted-space-5);
+    [data-ui="field-group"] > [data-ui="inline-message"] + [data-part="content"] {
+      margin-block-start: var(--slotted-space-6);
     }
 
-    [data-ui="field-group"][data-kind="section"]:not(:first-child) > [data-part="legend"] {
+    [data-ui="field-group"][data-kind="section"] > [data-part="legend"] {
       inline-size: 100%;
-      padding-block-start: var(--slotted-space-6);
-      border-block-start: var(--slotted-border-width-thin) solid var(--slotted-border-subtle);
+      padding-block-end: var(--slotted-space-4);
+      border-block-end: var(--slotted-border-width-thin) solid var(--slotted-border-strong);
     }
 
     &[data-slotted-scheme="light"] [data-ui="dialog"]:has([data-ui="command-palette"]) {

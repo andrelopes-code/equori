@@ -142,16 +142,17 @@ test("a tag keeps its height and stands its text 2 px further from each side", (
   );
 });
 
-test("the choices of a question stand clear of the description or error above them", () => {
+test("the choices of a question stand clear of the message above them", () => {
+  // The description and the error of a group are inline messages, not parts of their own.
   assert.match(
     css,
-    /\[data-ui="field-group"\] > :is\(\[data-part="description"\], \[data-part="error"\]\) \+ \[data-part="content"\]\s*\{[^}]*margin-block-start: var\(--slotted-space-5\)/,
+    /\[data-ui="field-group"\] > \[data-ui="inline-message"\] \+ \[data-part="content"\]\s*\{[^}]*margin-block-start: var\(--slotted-space-6\)/,
   );
 });
 
-test("a section after another is set apart by a rule over its legend", () => {
+test("the legend of a section stands over a rule that closes its heading", () => {
   assert.match(
     css,
-    /\[data-ui="field-group"\]\[data-kind="section"\]:not\(:first-child\) > \[data-part="legend"\]\s*\{[^}]*border-block-start: var\(--slotted-border-width-thin\) solid var\(--slotted-border-subtle\)/,
+    /\[data-ui="field-group"\]\[data-kind="section"\] > \[data-part="legend"\]\s*\{[^}]*border-block-end: var\(--slotted-border-width-thin\) solid var\(--slotted-border-strong\)/,
   );
 });
