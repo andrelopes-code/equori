@@ -358,6 +358,12 @@ func (r *Repository) DeleteBooks(ctx context.Context, booksID, memberID int64, n
 			return err
 		}
 
+		// The cascade deletes reconciled postings, which ledger_protect_reconciled refuses
+		// unless the transaction unlocks them.
+		if _, err := tx.Exec(ctx, `SELECT set_config('equori.unlock_reconciled', 'on', TRUE)`); err != nil {
+			return err
+		}
+
 		return q.DeleteBooks(ctx, booksID)
 	})
 }

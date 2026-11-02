@@ -145,6 +145,32 @@ func TestDeleteCurrentBooks(t *testing.T) {
 	}
 }
 
+// DB5: the postings reconciled against a statement go with the book.
+func TestDeleteCurrentBooksWithReconciledPostings(t *testing.T) {
+	t.Parallel()
+	h := apitest.New(t)
+
+	var created booksMembership
+	h.MustDo(http.MethodPost, "/api/v1/books", map[string]any{"name": "Casal", "region": "BR"}, http.StatusCreated, &created)
+	h.Dispatch()
+	expectStatus(t, h.Do(http.MethodPut, "/api/v1/session/books", map[string]any{"books_id": created.ID}), http.StatusNoContent)
+
+	checking := h.Account("Checking", "asset", "checking", nil)
+	salary := h.Account("Salary", "income", "", nil)
+	h.Record("2026-10-05", apitest.Posting(checking, 100000), apitest.Posting(salary, -100000))
+
+	if _, err := h.Pool.Exec(t.Context(), `UPDATE ledger_posting SET status = 'reconciled' WHERE books_id = $1`, created.ID); err != nil {
+		t.Fatalf("reconcile postings: %v", err)
+	}
+
+	expectStatus(t, h.Do(http.MethodDelete, "/api/v1/books/current", map[string]any{"name": "Casal"}), http.StatusNoContent)
+
+	var postings int
+	if err := h.Pool.QueryRow(t.Context(), `SELECT count(*) FROM ledger_posting WHERE books_id = $1`, created.ID).Scan(&postings); err != nil || postings != 0 {
+		t.Fatalf("posting rows = %d, %v; want 0", postings, err)
+	}
+}
+
 // DB2, DB3, DB4 and HA13: the refusals of a delete.
 func TestDeleteCurrentBooksRefusals(t *testing.T) {
 	t.Parallel()
