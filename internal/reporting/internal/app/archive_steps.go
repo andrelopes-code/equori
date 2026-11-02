@@ -9,7 +9,7 @@ import (
 
 // ArchiveVersion is the archive_version this instance writes and the highest it reads
 // (ADR 021). It is the number of steps in archiveSteps plus 1.
-const ArchiveVersion = 6
+const ArchiveVersion = 7
 
 // ArchiveStep migrates the tables of an archive from one version to the next; it is pure and
 // leaves its input unchanged (ADR 021, V3).
@@ -19,7 +19,7 @@ type ArchiveStep func([]ArchiveTable) ([]ArchiveTable, error)
 // table appends its step here and increments ArchiveVersion in the same commit (ADR 021, V2).
 var archiveSteps = []ArchiveStep{
 	addExcludedFromLiquidity, addBudgetReference, addStatementBasis, dropConversations,
-	addReliableSync,
+	addReliableSync, addSavingsTarget,
 }
 
 // migrateArchive applies the steps from version from to the last one, in order.
@@ -93,6 +93,13 @@ func addReliableSync(tables []ArchiveTable) ([]ArchiveTable, error) {
 		fields["re_identified"] = jsontext.Value("0")
 		fields["read_empty"] = jsontext.Value("false")
 	})
+}
+
+// addSavingsTarget moves a version 6 archive to version 7, which adds savings_target_bp to
+// planning_budget_reference (migration 00082). The column is nullable, so a version 6 row reads
+// no target and the step leaves every row unchanged.
+func addSavingsTarget(tables []ArchiveTable) ([]ArchiveTable, error) {
+	return tables, nil
 }
 
 // withField returns tables with field set to value in every row of table; the input is left

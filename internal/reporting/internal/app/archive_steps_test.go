@@ -206,7 +206,27 @@ func TestAddReliableSync(t *testing.T) {
 		t.Fatalf("other table %s, input %s", got[2].Rows[0], v5[0].Rows[0])
 	}
 
-	if ArchiveVersion != 6 {
-		t.Fatalf("ArchiveVersion = %d, want 6", ArchiveVersion)
+	if ArchiveVersion < 6 {
+		t.Fatalf("ArchiveVersion = %d, want at least 6", ArchiveVersion)
+	}
+}
+
+// Version 6 rows of planning_budget_reference hold no savings target; the column reads null.
+func TestAddSavingsTarget(t *testing.T) {
+	t.Parallel()
+
+	v6 := []ArchiveTable{{Name: "planning_budget_reference", Rows: [][]byte{[]byte(`{"id":"a"}`)}}}
+
+	got, err := addSavingsTarget(v6)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(got) != 1 || string(got[0].Rows[0]) != `{"id":"a"}` {
+		t.Fatalf("planning_budget_reference = %v", got)
+	}
+
+	if ArchiveVersion != 7 {
+		t.Fatalf("ArchiveVersion = %d, want 7", ArchiveVersion)
 	}
 }
