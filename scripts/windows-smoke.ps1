@@ -41,7 +41,7 @@ if ($version -ne "equori $Tag") { throw "version is '$version', want 'equori $Ta
 
 $url = (Get-Content "$data\setup.url" -Raw).Trim()
 $token = ([uri]$url).Fragment -replace '^#token=', ''
-$body = @{ token = $token; email = 'smoke@equori.test'; password = 'equori-smoke-test'; language = 'en'; region = $Region; base_currency = $Currency } | ConvertTo-Json
+$body = @{ token = $token; email = 'smoke@equori.test'; password = 'equori-smoke-test'; language = 'en'; region = $Region; base_currency = $Currency; update_check = $false } | ConvertTo-Json
 $r = Invoke-WebRequest -UseBasicParsing -Method Post -ContentType 'application/json' -Body $body "$base/api/v1/setup"
 if ($r.StatusCode -ne 201) { throw "setup answered $($r.StatusCode)" }
 # The cookie is Secure: a browser sends it to the loopback address, the .NET client does not.
