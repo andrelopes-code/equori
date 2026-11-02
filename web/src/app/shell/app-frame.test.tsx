@@ -383,7 +383,7 @@ describe("desktop column", () => {
     expect(await screen.findByRole("dialog")).toBeInTheDocument();
   });
 
-  it("holds settings, help, books and log out in the account menu", async () => {
+  it("holds settings, help, books, the quick choices and log out in the account menu", async () => {
     const user = userEvent.setup();
     await renderApp("/", { fetch: newFetch() });
     await user.click(
@@ -398,8 +398,61 @@ describe("desktop column", () => {
       catalogEn["more.settings"],
       catalogEn["more.help"],
       catalogEn["books.new"],
+      catalogEn["privacy.hide"],
+      catalogEn["more.scheme"],
+      catalogEn["more.density"],
+      catalogEn["more.language"],
       catalogEn["more.logout"],
     ]);
+  });
+
+  it("switches the scheme from its submenu", async () => {
+    const user = userEvent.setup();
+    await renderApp("/", { fetch: newFetch() });
+    await user.click(
+      screen.getByRole("button", { name: catalogEn["nav.user"] }),
+    );
+    await user.click(
+      await screen.findByRole("menuitem", { name: catalogEn["more.scheme"] }),
+    );
+    await user.click(
+      await screen.findByRole("menuitemradio", {
+        name: catalogEn["scheme.light"],
+      }),
+    );
+    expect(html).toHaveAttribute("data-slotted-scheme", "light");
+  });
+
+  it("switches the density from its submenu", async () => {
+    const user = userEvent.setup();
+    await renderApp("/", { fetch: newFetch() });
+    await user.click(
+      screen.getByRole("button", { name: catalogEn["nav.user"] }),
+    );
+    await user.click(
+      await screen.findByRole("menuitem", { name: catalogEn["more.density"] }),
+    );
+    await user.click(
+      await screen.findByRole("menuitemradio", {
+        name: catalogEn["density.compact"],
+      }),
+    );
+    expect(html).toHaveAttribute("data-slotted-density", "compact");
+    expect(localStorage.getItem("equori.density")).toBe("compact");
+  });
+
+  it("hides the amounts from the account menu", async () => {
+    const user = userEvent.setup();
+    await renderApp("/", { fetch: newFetch() });
+    await user.click(
+      screen.getByRole("button", { name: catalogEn["nav.user"] }),
+    );
+    const item = await screen.findByRole("menuitemcheckbox", {
+      name: catalogEn["privacy.hide"],
+    });
+    expect(item).toHaveAttribute("aria-checked", "false");
+    await user.click(item);
+    expect(localStorage.getItem("equori.privacy")).toBe("hidden");
   });
 
   it("toggles the amounts from the palette", async () => {
