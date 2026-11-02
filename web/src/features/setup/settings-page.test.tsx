@@ -212,18 +212,18 @@ describe("settings page", () => {
         name: catalogPtBR["settings.contents"],
       });
       expect(
-        within(contents).getByText(catalogPtBR["settings.summary.privacy"]),
+        within(contents).getByText(catalogPtBR["settings.summary.appearance"]),
       ).toBeVisible();
       expect(screen.queryByRole("heading", { level: 2 })).toBeNull();
       await userEvent.click(
         within(contents).getByRole("link", {
-          name: new RegExp(catalogPtBR["settings.privacy.title"]),
+          name: new RegExp(catalogPtBR["settings.appearance.title"]),
         }),
       );
       expect(
         await screen.findByRole("heading", {
           level: 1,
-          name: catalogPtBR["settings.privacy.title"],
+          name: catalogPtBR["settings.appearance.title"],
         }),
       ).toBeVisible();
       expect(
@@ -254,16 +254,14 @@ describe("settings page", () => {
         catalogPtBR["settings.account.title"],
         catalogPtBR["settings.security.title"],
         catalogPtBR["settings.appearance.title"],
-        catalogPtBR["settings.language.title"],
-        catalogPtBR["settings.privacy.title"],
         catalogPtBR["settings.ledger.title"],
         catalogPtBR["calendar.title"],
         catalogPtBR["settings.members.title"],
+        catalogPtBR["settings.data.title"],
         catalogPtBR["settings.integrations.title"],
         catalogPtBR["settings.market_data.title"],
         catalogPtBR["settings.assistant.title"],
         catalogPtBR["settings.external_access.title"],
-        catalogPtBR["settings.data.title"],
         catalogPtBR["settings.backup.title"],
         catalogPtBR["settings.about.title"],
       ]);
@@ -289,7 +287,7 @@ describe("settings page", () => {
     });
 
     it("hides the amounts through a switch and remembers it", async () => {
-      await renderApp("/settings?section=privacy", { fetch: api([]) });
+      await renderApp("/settings?section=appearance", { fetch: api([]) });
       const toggle = await screen.findByRole("switch", {
         name: catalogPtBR["privacy.hide"],
       });
@@ -302,7 +300,7 @@ describe("settings page", () => {
 
   describe("format example", () => {
     it("writes the date and the number as the pt-BR locale does", async () => {
-      await renderApp("/settings?section=language", { fetch: api([]) });
+      await renderApp("/settings?section=appearance", { fetch: api([]) });
       const example = await screen.findByRole("group", {
         name: catalogPtBR["settings.language.example"],
       });
@@ -311,7 +309,7 @@ describe("settings page", () => {
     });
 
     it("writes the date and the number as the en-US locale does", async () => {
-      await renderApp("/settings?section=language", {
+      await renderApp("/settings?section=appearance", {
         fetch: api([], { language: "en", region: "US" }),
       });
       const example = await screen.findByRole("group", {

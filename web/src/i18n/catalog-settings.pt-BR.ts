@@ -2,15 +2,13 @@ import type { settingsEn } from "@/i18n/catalog-settings.en";
 
 // The words of the settings screen in pt-BR, spread into catalogPtBR.
 export const settingsPtBR: Record<keyof typeof settingsEn, string> = {
-  "settings.group.personal": "Pessoal",
-  "settings.group.books": "Finanças",
+  "settings.group.personal": "Conta",
+  "settings.group.books": "Livro",
   "settings.group.connections": "Conexões",
   "settings.group.system": "Sistema",
   "settings.summary.account": "Identidade conectada, papel e sessão.",
   "settings.summary.appearance":
-    "Tema, cores, forma, texto e movimento da interface.",
-  "settings.summary.language": "Idioma do app.",
-  "settings.summary.privacy": "Valores ocultos na tela.",
+    "Tema, forma, texto, idioma e valores ocultos na tela.",
   "settings.summary.finances": "Moeda base, região, fuso horário e cotações.",
   "settings.summary.calendars": "Feriados que deslocam datas agendadas.",
   "settings.summary.integrations": "Credenciais de agregadores.",

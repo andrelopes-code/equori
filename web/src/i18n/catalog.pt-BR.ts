@@ -139,7 +139,8 @@ export const catalogPtBR: Catalog = {
   "settings.experimental.glassDescription":
     "Painéis translúcidos sobre um fundo de luzes na cor do tom. Só no esquema escuro, inclusive o do sistema.",
   "settings.privacy.title": "Privacidade",
-  "settings.privacy.description": "Substitui todos os valores por ••••.",
+  "settings.privacy.description":
+    "Substitui todos os valores por ••••. Vale só neste dispositivo.",
   "settings.integrations.title": "Integrações",
   "settings.data.title": "Dados",
   "settings.data.description":
@@ -313,7 +314,7 @@ export const catalogPtBR: Catalog = {
   "problem.use_not_found": "A função não existe.",
   "problem.provider_unauthorized": "O provedor recusou a chave.",
   "problem.provider_unavailable": "O provedor não respondeu.",
-  "settings.ledger.title": "Finanças",
+  "settings.ledger.title": "Geral",
   "settings.ledger.description": "Vale para todas as suas contas.",
   "settings.baseCurrency.help":
     "Os totais entre contas são expressos nesta moeda.",

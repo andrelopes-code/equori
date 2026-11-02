@@ -1,6 +1,6 @@
 import type { SettingsTopic } from "@/features/setup/settings-topics";
 
-// Lucide geometry (ISC licence) on its 24-unit grid: user, shield, palette, globe, eye-off, wallet,
+// Lucide geometry (ISC licence) on its 24-unit grid: user, shield, palette, wallet,
 // calendar, users, plug, chart-line, sparkles, terminal, database, archive, info, chevron-right and
 // chevron-left.
 const PATHS: Record<SettingsTopic | "next" | "previous", readonly string[]> = {
@@ -17,17 +17,6 @@ const PATHS: Record<SettingsTopic | "next" | "previous", readonly string[]> = {
     "M17.5 10a.5.5 0 1 1 0 1 .5.5 0 0 1 0-1z",
     "M8.5 7a.5.5 0 1 1 0 1 .5.5 0 0 1 0-1z",
     "M6.5 12a.5.5 0 1 1 0 1 .5.5 0 0 1 0-1z",
-  ],
-  language: [
-    "M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20z",
-    "M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20",
-    "M2 12h20",
-  ],
-  privacy: [
-    "M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49",
-    "M14.084 14.158a3 3 0 0 1-4.242-4.242",
-    "M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143",
-    "m2 2 20 20",
   ],
   finances: [
     "M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1",

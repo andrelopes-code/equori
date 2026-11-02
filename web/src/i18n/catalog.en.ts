@@ -136,7 +136,8 @@ export const catalogEn = {
   "settings.experimental.glassDescription":
     "Translucent panels over a ground of lights in the tone's colour. Dark scheme only, the system's included.",
   "settings.privacy.title": "Privacy",
-  "settings.privacy.description": "Replaces every amount with ••••.",
+  "settings.privacy.description":
+    "Replaces every amount with ••••. Applies to this browser only.",
   "settings.integrations.title": "Integrations",
   "settings.data.title": "Data",
   "settings.data.description":
@@ -306,7 +307,7 @@ export const catalogEn = {
   "problem.use_not_found": "The feature does not exist.",
   "problem.provider_unauthorized": "The provider rejected the key.",
   "problem.provider_unavailable": "The provider did not answer.",
-  "settings.ledger.title": "Finances",
+  "settings.ledger.title": "General",
   "settings.ledger.description": "Applies to all your accounts.",
   "settings.baseCurrency.help":
     "Totals across accounts are stated in this currency.",

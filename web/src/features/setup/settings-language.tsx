@@ -2,7 +2,6 @@ import { useChooseLanguage } from "@/features/session";
 import { SettingsExample } from "@/features/setup/settings-example";
 import { SettingsGroup } from "@/features/setup/settings-group";
 import { SettingsRow } from "@/features/setup/settings-row";
-import { SettingsSection } from "@/features/setup/settings-section";
 import { useAppLocaleState, useT } from "@/i18n/i18n-provider";
 import { languages } from "@/i18n/languages";
 import { ChoiceSelect } from "@/ui/choice-select";
@@ -19,12 +18,11 @@ export function SettingsLanguage() {
   const chooseLanguage = useChooseLanguage();
 
   return (
-    <SettingsSection
-      topic="language"
-      title={t("settings.language.title")}
-      description={t("settings.language.description")}
-    >
-      <SettingsGroup>
+    <>
+      <SettingsGroup
+        title={t("settings.language.title")}
+        description={t("settings.language.description")}
+      >
         <SettingsRow
           label={t("settings.language")}
           description={t("settings.language.help")}
@@ -47,6 +45,6 @@ export function SettingsLanguage() {
       >
         <SettingsExample />
       </SettingsGroup>
-    </SettingsSection>
+    </>
   );
 }

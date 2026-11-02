@@ -1,6 +1,8 @@
 import { ButtonLink } from "@slotted/react/button";
 
 import { SettingsGroup } from "@/features/setup/settings-group";
+import { SettingsLanguage } from "@/features/setup/settings-language";
+import { SettingsPrivacy } from "@/features/setup/settings-privacy";
 import { SettingsRow } from "@/features/setup/settings-row";
 import { SettingsSection } from "@/features/setup/settings-section";
 import { useThemeLibrary } from "@/features/setup/use-theme-library";
@@ -17,7 +19,6 @@ export function SettingsAppearance() {
       topic="appearance"
       title={t("settings.appearance.title")}
       description={t("settings.summary.appearance")}
-      local
     >
       <SettingsGroup>
         <SettingsRow
@@ -29,6 +30,8 @@ export function SettingsAppearance() {
           </ButtonLink>
         </SettingsRow>
       </SettingsGroup>
+      <SettingsLanguage />
+      <SettingsPrivacy />
     </SettingsSection>
   );
 }

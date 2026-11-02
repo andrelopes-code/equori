@@ -4,12 +4,8 @@ import { Avatar } from "@slotted/react/avatar";
 import { Icon } from "@slotted/react/icon";
 import {
   Menu,
-  MenuCheckboxItem,
   MenuContent,
-  MenuGroup,
   MenuItem,
-  MenuRadioGroup,
-  MenuRadioItem,
   MenuSeparator,
   MenuTrigger,
 } from "@slotted/react/menu";
@@ -22,23 +18,9 @@ import styles from "@/app/shell/account-menu.module.css";
 import { ShellIcon } from "@/app/shell/shell-icon";
 import { useBooks } from "@/app/shell/use-books";
 import { errorText } from "@/api/problem";
-import { meQuery, useChooseLanguage, useLogout } from "@/features/session";
+import { meQuery, useLogout } from "@/features/session";
 import { NewBooksDialog } from "@/features/setup";
-import { useAppLocaleState, useT } from "@/i18n/i18n-provider";
-import { isLanguage, languages } from "@/i18n/languages";
-import { usePrivacy } from "@/privacy/privacy-provider";
-import { densities, useDensity } from "@/theme/density";
-import type { Density } from "@/theme/density";
-import { schemes, useScheme } from "@/theme/scheme";
-import type { Scheme } from "@/theme/scheme";
-
-function isScheme(value: string): value is Scheme {
-  return (schemes as readonly string[]).includes(value);
-}
-
-function isDensity(value: string): value is Density {
-  return (densities as readonly string[]).includes(value);
-}
+import { useT } from "@/i18n/i18n-provider";
 
 // The column's foot: the signed-in account, and the menu of what belongs to it. In the rail
 // only the avatar remains.
@@ -46,11 +28,6 @@ export function AccountMenu({ compact }: { compact: boolean }) {
   const t = useT();
   const navigate = useNavigate();
   const { logout, failed } = useLogout();
-  const [scheme, setScheme] = useScheme();
-  const [density, setDensity] = useDensity();
-  const { hidden, setHidden } = usePrivacy();
-  const { language } = useAppLocaleState();
-  const chooseLanguage = useChooseLanguage();
   const books = useBooks();
   const [creating, setCreating] = useState(false);
   // The session guard has loaded /me; the menu reads that answer without asking again.
@@ -109,63 +86,6 @@ export function AccountMenu({ compact }: { compact: boolean }) {
               setCreating(true);
             }}
           />
-          <MenuCheckboxItem
-            icon={
-              <Icon size="sm">
-                <ShellIcon name={hidden ? "eye-off" : "eye"} />
-              </Icon>
-            }
-            checked={hidden}
-            onCheckedChange={setHidden}
-          >
-            {t("privacy.hide")}
-          </MenuCheckboxItem>
-          <MenuSeparator />
-          <MenuGroup label={t("more.scheme")}>
-            <MenuRadioGroup
-              aria-label={t("more.scheme")}
-              value={scheme}
-              onValueChange={(next) => {
-                if (isScheme(next)) setScheme(next);
-              }}
-            >
-              {schemes.map((s) => (
-                <MenuRadioItem key={s} value={s}>
-                  {t(`scheme.${s}`)}
-                </MenuRadioItem>
-              ))}
-            </MenuRadioGroup>
-          </MenuGroup>
-          <MenuGroup label={t("more.density")}>
-            <MenuRadioGroup
-              aria-label={t("more.density")}
-              value={density}
-              onValueChange={(next) => {
-                if (isDensity(next)) setDensity(next);
-              }}
-            >
-              {densities.map((d) => (
-                <MenuRadioItem key={d} value={d}>
-                  {t(`density.${d}`)}
-                </MenuRadioItem>
-              ))}
-            </MenuRadioGroup>
-          </MenuGroup>
-          <MenuGroup label={t("more.language")}>
-            <MenuRadioGroup
-              aria-label={t("more.language")}
-              value={language}
-              onValueChange={(next) => {
-                if (isLanguage(next)) chooseLanguage(next);
-              }}
-            >
-              {languages.map((l) => (
-                <MenuRadioItem key={l.language} value={l.language}>
-                  {l.nativeName}
-                </MenuRadioItem>
-              ))}
-            </MenuRadioGroup>
-          </MenuGroup>
           <MenuSeparator />
           <MenuItem
             tone="danger"

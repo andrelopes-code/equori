@@ -29,18 +29,6 @@ export const settingsTopics = [
     summary: "settings.summary.appearance",
   },
   {
-    id: "language",
-    group: "personal",
-    title: "settings.language.title",
-    summary: "settings.summary.language",
-  },
-  {
-    id: "privacy",
-    group: "personal",
-    title: "settings.privacy.title",
-    summary: "settings.summary.privacy",
-  },
-  {
     id: "finances",
     group: "books",
     title: "settings.ledger.title",
@@ -57,6 +45,12 @@ export const settingsTopics = [
     group: "books",
     title: "settings.members.title",
     summary: "settings.summary.members",
+  },
+  {
+    id: "data",
+    group: "books",
+    title: "settings.data.title",
+    summary: "settings.summary.data",
   },
   {
     id: "integrations",
@@ -81,12 +75,6 @@ export const settingsTopics = [
     group: "connections",
     title: "settings.external_access.title",
     summary: "settings.summary.external_access",
-  },
-  {
-    id: "data",
-    group: "system",
-    title: "settings.data.title",
-    summary: "settings.summary.data",
   },
   {
     id: "backup",

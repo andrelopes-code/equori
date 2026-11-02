@@ -1,14 +1,12 @@
 // The words of the settings screen's panes and appearance choices, spread into catalogEn.
 export const settingsEn = {
-  "settings.group.personal": "Personal",
-  "settings.group.books": "Finances",
+  "settings.group.personal": "Account",
+  "settings.group.books": "Book",
   "settings.group.connections": "Connections",
   "settings.group.system": "System",
   "settings.summary.account": "Signed-in identity, role and session.",
   "settings.summary.appearance":
-    "Theme, colours, shape, text and motion of the interface.",
-  "settings.summary.language": "Language of the app.",
-  "settings.summary.privacy": "Amounts hidden on screen.",
+    "Theme, shape, text, language and amounts hidden on screen.",
   "settings.summary.finances": "Base currency, region, time zone and prices.",
   "settings.summary.calendars": "Holidays that move scheduled dates.",
   "settings.summary.integrations": "Aggregator credentials.",
