@@ -329,6 +329,9 @@ export const catalogPtBR: Catalog = {
   "setup.title": "Criar o primeiro usuário",
   "setup.subtitle":
     "Este usuário administra esta instalação. O idioma e a região definem como o equori escreve números, datas e valores.",
+  "setup.section.account": "Conta",
+  "setup.section.place": "Idioma e região",
+  "setup.section.books": "Livro",
   "setup.email": "E-mail",
   "setup.password": "Senha",
   "setup.password.help": "Pelo menos 12 caracteres.",
@@ -337,7 +340,8 @@ export const catalogPtBR: Catalog = {
   "setup.region.placeholder": "Escolha uma região",
   "setup.currency": "Moeda base",
   "setup.currency.help":
-    "Um código de três letras, como o de um extrato bancário. Deixe vazio para usar a moeda da região, quando ela tiver uma.",
+    "No padrão, vale a moeda da região. Algumas regiões não têm uma.",
+  "setup.currency.regionDefault": "Padrão da região",
   "setup.booksName": "Nome do livro",
   "setup.booksName.placeholder": "Casa",
   "setup.booksName.help": "Vazio, o livro recebe o e-mail acima.",

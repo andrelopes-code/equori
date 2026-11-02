@@ -322,6 +322,9 @@ export const catalogEn = {
   "setup.title": "Create the first user",
   "setup.subtitle":
     "This user administers this installation. Its language and region set how equori writes numbers, dates and money.",
+  "setup.section.account": "Account",
+  "setup.section.place": "Language and region",
+  "setup.section.books": "Book",
   "setup.email": "Email",
   "setup.password": "Password",
   "setup.password.help": "At least 12 characters.",
@@ -330,7 +333,8 @@ export const catalogEn = {
   "setup.region.placeholder": "Choose a region",
   "setup.currency": "Base currency",
   "setup.currency.help":
-    "A three-letter code such as the one on a bank statement. Leave it empty to use the region's currency, when it has one.",
+    "At the default, the region's currency applies. Some regions have none.",
+  "setup.currency.regionDefault": "Region default",
   "setup.booksName": "Book name",
   "setup.booksName.placeholder": "Home",
   "setup.booksName.help": "Empty, the book takes the email above.",

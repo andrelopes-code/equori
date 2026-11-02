@@ -1,19 +1,14 @@
 import { Button } from "@slotted/react/button";
-import {
-  Field,
-  FieldDescription,
-  FieldError,
-  FieldLabel,
-} from "@slotted/react/field";
+import { Field, FieldError, FieldLabel } from "@slotted/react/field";
 import { Form, FormActions } from "@slotted/react/form";
 import type { FormErrors } from "@slotted/react/form";
 import { InlineMessage } from "@slotted/react/inline-message";
-import { TextField } from "@slotted/react/text-field";
 import { useMemo, useState } from "react";
 
 import { UpdateCheckChoice } from "@/features/instance";
 import styles from "@/features/session/login-page.module.css";
 import { regionFromLanguage } from "@/features/session/region-from-language";
+import { SetupAccountFields } from "@/features/session/setup-account-fields";
 import { SetupBooksFields } from "@/features/session/setup-books-fields";
 import { useSetupSubmit } from "@/features/session/use-setup-submit";
 import { useAppLocaleState, useT } from "@/i18n/i18n-provider";
@@ -21,6 +16,8 @@ import { languages, matchLanguage } from "@/i18n/languages";
 import type { Language } from "@/i18n/languages";
 import { regionChoicesFor } from "@/i18n/regions";
 import { ChoiceSelect } from "@/ui/choice-select";
+import { FormLayout } from "@/ui/form-layout";
+import { FormSection } from "@/ui/form-section";
 
 interface SetupFormProps {
   token: string;
@@ -37,6 +34,7 @@ export function SetupForm({ token }: SetupFormProps) {
   const [region, setRegion] = useState<string | null>(() =>
     regionFromLanguage(navigator.language),
   );
+  const [currency, setCurrency] = useState("");
   const [timeZone, setTimeZone] = useState<string>(
     () => Intl.DateTimeFormat().resolvedOptions().timeZone,
   );
@@ -46,6 +44,7 @@ export function SetupForm({ token }: SetupFormProps) {
     token,
     language,
     region,
+    currency,
     timeZone,
     updateCheck,
   });
@@ -57,6 +56,7 @@ export function SetupForm({ token }: SetupFormProps) {
   const regionChoices = useMemo(() => regionChoicesFor(tag), [tag]);
 
   const regionError = errors.region;
+  const currencyError = errors.base_currency?.join(" ");
   const updateCheckError = errors.update_check?.join(" ");
 
   function handleLanguageChange(next: string | string[] | null) {
@@ -66,17 +66,22 @@ export function SetupForm({ token }: SetupFormProps) {
 
   function handleRegionChange(next: string | string[] | null) {
     if (typeof next === "string") setRegion(next);
-    setErrors((prev) =>
-      Object.fromEntries(Object.entries(prev).filter(([k]) => k !== "region")),
-    );
+    clearError("region");
+  }
+
+  function handleCurrencyChange(next: string) {
+    setCurrency(next);
+    clearError("base_currency");
   }
 
   function handleUpdateCheckChange(value: boolean) {
     setUpdateCheck(value);
+    clearError("update_check");
+  }
+
+  function clearError(key: string) {
     setErrors((prev) =>
-      Object.fromEntries(
-        Object.entries(prev).filter(([k]) => k !== "update_check"),
-      ),
+      Object.fromEntries(Object.entries(prev).filter(([k]) => k !== key)),
     );
   }
 
@@ -87,73 +92,59 @@ export function SetupForm({ token }: SetupFormProps) {
       onErrorsChange={setErrors}
       loading={pending}
     >
-      <Field required>
-        <FieldLabel>{t("setup.email")}</FieldLabel>
-        <TextField
-          name="email"
-          type="email"
-          size="lg"
-          autoComplete="username"
+      <FormLayout>
+        <SetupAccountFields />
+
+        <FormSection legend={t("setup.section.place")}>
+          <Field required>
+            <FieldLabel>{t("setup.language")}</FieldLabel>
+            <ChoiceSelect
+              label={t("setup.language")}
+              choices={languageChoices}
+              value={language}
+              multiple={false}
+              onChange={handleLanguageChange}
+            />
+          </Field>
+
+          <Field
+            required
+            {...(regionError === undefined ? {} : { invalid: true })}
+          >
+            <FieldLabel>{t("setup.region")}</FieldLabel>
+            <ChoiceSelect
+              label={t("setup.region")}
+              choices={regionChoices}
+              value={region}
+              multiple={false}
+              placeholder={t("setup.region.placeholder")}
+              invalid={regionError !== undefined}
+              onChange={handleRegionChange}
+            />
+            {regionError !== undefined && (
+              <FieldError>{regionError.join(" ")}</FieldError>
+            )}
+          </Field>
+        </FormSection>
+
+        <FormSection legend={t("setup.section.books")}>
+          <SetupBooksFields
+            currency={currency}
+            currencyError={currencyError}
+            timeZone={timeZone}
+            onCurrencyChange={handleCurrencyChange}
+            onTimeZoneChange={setTimeZone}
+          />
+        </FormSection>
+
+        <UpdateCheckChoice
+          value={updateCheck}
+          {...(updateCheckError === undefined
+            ? {}
+            : { error: updateCheckError })}
+          onChange={handleUpdateCheckChange}
         />
-      </Field>
-
-      <Field required>
-        <FieldLabel>{t("setup.password")}</FieldLabel>
-        <TextField
-          name="password"
-          type="password"
-          size="lg"
-          revealable
-          autoComplete="new-password"
-        />
-        <FieldDescription>{t("setup.password.help")}</FieldDescription>
-      </Field>
-
-      <Field required>
-        <FieldLabel>{t("setup.language")}</FieldLabel>
-        <ChoiceSelect
-          label={t("setup.language")}
-          choices={languageChoices}
-          value={language}
-          multiple={false}
-          onChange={handleLanguageChange}
-        />
-      </Field>
-
-      <Field required {...(regionError === undefined ? {} : { invalid: true })}>
-        <FieldLabel>{t("setup.region")}</FieldLabel>
-        <ChoiceSelect
-          label={t("setup.region")}
-          choices={regionChoices}
-          value={region}
-          multiple={false}
-          placeholder={t("setup.region.placeholder")}
-          invalid={regionError !== undefined}
-          onChange={handleRegionChange}
-        />
-        {regionError !== undefined && (
-          <FieldError>{regionError.join(" ")}</FieldError>
-        )}
-      </Field>
-
-      <Field>
-        <FieldLabel>{t("setup.currency")}</FieldLabel>
-        <TextField
-          name="base_currency"
-          size="lg"
-          maxLength={3}
-          autoComplete="off"
-        />
-        <FieldDescription>{t("setup.currency.help")}</FieldDescription>
-      </Field>
-
-      <SetupBooksFields timeZone={timeZone} onTimeZoneChange={setTimeZone} />
-
-      <UpdateCheckChoice
-        value={updateCheck}
-        {...(updateCheckError === undefined ? {} : { error: updateCheckError })}
-        onChange={handleUpdateCheckChange}
-      />
+      </FormLayout>
 
       {failure !== null && (
         <InlineMessage
@@ -167,7 +158,7 @@ export function SetupForm({ token }: SetupFormProps) {
       )}
 
       <FormActions align="stretch">
-        <Button type="submit" size="lg" fullWidth loading={pending}>
+        <Button type="submit" fullWidth loading={pending}>
           {t("setup.submit")}
         </Button>
       </FormActions>

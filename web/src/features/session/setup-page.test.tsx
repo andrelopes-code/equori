@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -164,6 +164,75 @@ describe("first-user setup", () => {
     await waitFor(() => {
       expect(state.bodies).toMatchObject([{ books_name: "Casa" }]);
     });
+  });
+
+  it("sends the base currency chosen by name", async () => {
+    const { fetch, state } = setupApi({ required: true });
+    await renderApp("/setup#token=abc", { fetch });
+    const actor = userEvent.setup();
+    await actor.click(
+      await screen.findByRole("combobox", {
+        name: catalogEn["setup.currency"],
+      }),
+    );
+    await actor.click(await screen.findByRole("option", { name: "EUR Euro" }));
+    await fill("Portugal");
+    await waitFor(() => {
+      expect(state.bodies).toMatchObject([{ base_currency: "EUR" }]);
+    });
+  });
+
+  it("sends no base currency while the region default stays", async () => {
+    const { fetch, state } = setupApi({ required: true });
+    await renderApp("/setup#token=abc", { fetch });
+    await fill("Portugal");
+    await waitFor(() => {
+      expect(state.bodies).toHaveLength(1);
+    });
+    expect(state.bodies[0]).not.toHaveProperty("base_currency");
+  });
+
+  it("shows the refusal of the base currency under its field", async () => {
+    const { fetch, state } = setupApi({
+      required: true,
+      complete: () =>
+        problem(422, "validation_failed", {
+          errors: [{ field: "base_currency", message: "Choose a currency." }],
+        }),
+    });
+    await renderApp("/setup#token=abc", { fetch });
+    await fill("Portugal");
+    // FM-03: the same words under the control and in the form's summary.
+    expect(await screen.findAllByText("Choose a currency.")).toHaveLength(2);
+    expect(state.bodies).toHaveLength(1);
+  });
+
+  it("groups the fields by topic", async () => {
+    const { fetch } = setupApi({ required: true });
+    await renderApp("/setup#token=abc", { fetch });
+    await screen.findByRole("button", { name: catalogEn["setup.submit"] });
+    const account = screen.getByRole("group", {
+      name: catalogEn["setup.section.account"],
+    });
+    const place = screen.getByRole("group", {
+      name: catalogEn["setup.section.place"],
+    });
+    const books = screen.getByRole("group", {
+      name: catalogEn["setup.section.books"],
+    });
+    expect(
+      within(account).getByLabelText(catalogEn["setup.email"], {
+        exact: false,
+      }),
+    ).toBeInTheDocument();
+    expect(
+      within(place).getByRole("combobox", { name: catalogEn["setup.region"] }),
+    ).toBeInTheDocument();
+    expect(
+      within(books).getByRole("combobox", {
+        name: catalogEn["setup.currency"],
+      }),
+    ).toBeInTheDocument();
   });
 
   it("sends no time zone when the region default is chosen", async () => {

@@ -10,6 +10,7 @@ interface UseSetupSubmitProps {
   token: string;
   language: Language;
   region: string | null;
+  currency: string;
   timeZone: string;
   updateCheck: boolean | null;
 }
@@ -20,6 +21,7 @@ export function useSetupSubmit({
   token,
   language,
   region,
+  currency,
   timeZone,
   updateCheck,
 }: UseSetupSubmitProps) {
@@ -36,10 +38,6 @@ export function useSetupSubmit({
         ...(updateCheck === null ? { update_check: t("setup.required") } : {}),
       };
     }
-    const currency =
-      typeof values.base_currency === "string"
-        ? values.base_currency.trim().toUpperCase()
-        : "";
     const booksName =
       typeof values.books_name === "string" ? values.books_name.trim() : "";
     try {
