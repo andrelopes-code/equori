@@ -44,7 +44,7 @@ docker compose start
 
 ## Troubleshooting
 
-Each entry quotes the message printed by the installation command or by equori, then gives the correction. Every stop of the installation command ends with the line `Guide: <url>` that links the entry.
+Each entry quotes the message printed by the installation command or by equori, then gives the correction. Every stop of the installation command ends with the line `How to fix: <url>` that links the entry.
 
 ### I1 Docker is not installed
 

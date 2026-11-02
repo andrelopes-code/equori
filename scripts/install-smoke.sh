@@ -36,7 +36,15 @@ chmod +x "$work/bin/xdg-open"
 env=$work/home/equori/.env
 
 install() {
-	HOME=$work/home PATH=$work/bin:$PATH EQUORI_INSTALL_SOURCE=$work/dist LANG=C.UTF-8 sh "$work/dist/install.sh"
+	HOME=$work/home PATH=$work/bin:$PATH EQUORI_INSTALL_SOURCE=$work/dist LANG=C.UTF-8 sh "$work/dist/install.sh" 2>&1
+}
+
+# quiet fails when the output holds compose output or a carriage return (A190.2, A190.5).
+quiet() {
+	if grep -qE "Container |Pull|$(printf '\r')" <<<"$1"; then
+		echo "$2: the output holds compose output or a carriage return" >&2
+		exit 1
+	fi
 }
 
 set +e
@@ -46,6 +54,9 @@ set -e
 [[ $status == 1 ]]
 grep -q 'Docker is not installed or not on the PATH' <<<"$out"
 grep -q "docs/install/linux.md#i1-docker-is-not-installed" <<<"$out"
+grep -q '^  \[!!\] Docker' <<<"$out"
+grep -q '^Error: Docker is not installed' <<<"$out"
+grep -q '^How to fix: https://' <<<"$out"
 [[ ! -e $work/home/equori ]]
 echo "S230 stops without docker and writes nothing"
 
@@ -60,6 +71,11 @@ code=$(curl -s -o /dev/null -w '%{http_code}' -H 'Content-Type: application/json
 	-d "{\"token\":\"${url#*#token=}\",\"email\":\"smoke@equori.test\",\"password\":\"equori-smoke-test\",\"language\":\"en\",\"region\":\"US\",\"base_currency\":\"USD\",\"update_check\":false}" \
 	"http://127.0.0.1:$port/api/v1/setup")
 [[ $code == 201 ]]
+grep -qx "equori $version" <<<"$out"
+grep -qx "Installing into $work/home/equori" <<<"$out"
+[[ $(grep -c '^  \[ok\] ' <<<"$out") == 5 ]]
+[[ -s $work/home/equori/install.log ]]
+quiet "$out" S227
 echo "S227 installed on port $port; the setup token creates the first member"
 
 cp "$env" "$work/env.before"
@@ -71,6 +87,9 @@ if grep -q '#token=' <<<"$out"; then
 	exit 1
 fi
 grep -q "Address: http://127.0.0.1:$port/" <<<"$out"
+grep -qx "Upgrading $work/home/equori" <<<"$out"
+grep -q 'docker compose stop' <<<"$out"
+quiet "$out" S228
 curl -fsS -o /dev/null "http://127.0.0.1:$port/healthz"
 echo "S228 a second run keeps .env and prints no token"
 

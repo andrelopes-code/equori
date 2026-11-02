@@ -10,6 +10,10 @@ function Invoke-EquoriInstall {
     $repo = 'andrelopes-code/equori'
     $dir = Join-Path $env:USERPROFILE 'equori'
     $envFile = Join-Path $dir '.env'
+    $log = Join-Path $dir 'install.log'
+    # The running step is rewritten in place only on a console (A190.2).
+    $tty = -not [Console]::IsOutputRedirected
+    $step = @{ Label = ''; Started = Get-Date; Width = 0 }
     $pt = (Get-Culture).Name -like 'pt*'
     if ($version -eq 'dev') {
         $ref = 'main'
@@ -22,28 +26,117 @@ function Invoke-EquoriInstall {
     if ($pt) { $guide += '.pt-BR' }
     $guide += '.md'
 
+    function Pick($en, $ptText) {
+        if ($pt) { return $ptText }
+        return $en
+    }
+
     function Say($en, $ptText) {
-        if ($pt) { Write-Host $ptText } else { Write-Host $en }
+        Write-Host (Pick $en $ptText)
+    }
+
+    function Start-Step($en, $ptText) {
+        $step.Label = Pick $en $ptText
+        $step.Started = Get-Date
+        Show-Tick
+    }
+
+    function Show-Tick {
+        if (-not $tty) { return }
+
+        $text = '  [..] {0} {1} s' -f $step.Label, (Get-Elapsed)
+        $step.Width = [Math]::Max($step.Width, $text.Length)
+        Write-Host ("`r" + $text) -NoNewline
+    }
+
+    function Get-Elapsed {
+        return [int]((Get-Date) - $step.Started).TotalSeconds
+    }
+
+    # Write-Line ends the running step with its mark; the padding covers the longer running text.
+    function Write-Line($mark, $color, $text) {
+        if ($tty) { Write-Host "`r" -NoNewline }
+
+        Write-Host '  ' -NoNewline
+        Write-Host $mark -ForegroundColor $color -NoNewline
+        Write-Host (" $text").PadRight([Math]::Max(0, $step.Width - 6))
+        $step.Label = ''
+        $step.Width = 0
+    }
+
+    function Complete-Step($detail) {
+        $text = $step.Label
+        if ($detail) { $text += " $detail" }
+
+        $seconds = Get-Elapsed
+        if ($seconds -ge 2) { $text += " ($seconds s)" }
+
+        Write-Line '[ok]' Green $text
+    }
+
+    function Set-StepFailed {
+        if ($step.Label) { Write-Line '[!!]' Red $step.Label }
     }
 
     function Stop-Install($anchorEn, $anchorPt, $en, $ptText) {
-        if ($pt) {
-            Write-Host $ptText -ForegroundColor Red
-            Write-Host "Guia: $guide#$anchorPt"
-        } else {
-            Write-Host $en -ForegroundColor Red
-            Write-Host "Guide: $guide#$anchorEn"
-        }
+        Set-StepFailed
+        Write-Host ''
+        Write-Host ((Pick 'Error: ' 'Erro: ') + (Pick $en $ptText)) -ForegroundColor Red
+        Write-Host ((Pick 'How to fix: ' 'Como resolver: ') + $guide + '#' + (Pick $anchorEn $anchorPt))
         return 1
     }
 
-    Say 'Checking Docker' 'Verificando o Docker'
+    # Invoke-Logged runs docker with its output in the log; a failure prints the end of the log (A190.5).
+    function Invoke-Logged([string[]]$arguments) {
+        $docker = (Get-Command docker).Source
+        $p = Start-Process -FilePath $docker -ArgumentList $arguments -WorkingDirectory $dir -NoNewWindow -PassThru `
+            -RedirectStandardOutput "$log.out" -RedirectStandardError "$log.err"
+        # Reading the handle keeps the exit code of a process that ends before the loop looks.
+        $null = $p.Handle
+        while (-not $p.HasExited) {
+            Show-Tick
+            Start-Sleep -Seconds 1
+        }
+
+        $p.WaitForExit()
+        Get-Content "$log.out", "$log.err" | Add-Content $log
+        Remove-Item "$log.out", "$log.err"
+        if ($p.ExitCode -eq 0) { return 0 }
+
+        Set-StepFailed
+        Write-Host ''
+        Get-Content $log -Tail 20 | Out-Host
+        Say "Full log: $log" "Log completo: $log"
+        return 1
+    }
+
+    Write-Host "equori $version" -ForegroundColor White
+    if (Test-Path $envFile) {
+        Say "Upgrading $dir" "Atualizando $dir"
+    } else {
+        Say "Installing into $dir" "Instalando em $dir"
+    }
+    Write-Host ''
+
+    Start-Step 'Docker' 'Docker'
     if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
         return (Stop-Install 'i1-docker-is-not-installed' 'i1-docker-ausente' `
             'Docker is not installed or not on the PATH. Install Docker, then run this command again.' `
             "O Docker n${at}o est${aa} instalado ou n${at}o est${aa} no PATH. Instale o Docker e execute este comando de novo.")
     }
     docker info *> $null
+    $desktop = Join-Path $env:ProgramFiles 'Docker\Docker\Docker Desktop.exe'
+    if ($LASTEXITCODE -ne 0 -and (Test-Path $desktop)) {
+        # Docker Desktop installed but not started: start it and wait up to 120 seconds (A190.4).
+        Start-Process $desktop
+        $step.Label = Pick 'Docker (starting Docker Desktop)' 'Docker (abrindo o Docker Desktop)'
+        do {
+            Show-Tick
+            Start-Sleep -Seconds 1
+            docker info *> $null
+        } while ($LASTEXITCODE -ne 0 -and (Get-Elapsed) -lt 120)
+        $step.Label = 'Docker'
+    }
     if ($LASTEXITCODE -ne 0) {
         return (Stop-Install 'i2-docker-does-not-answer' 'i2-docker-sem-resposta' `
             'Docker does not answer. Start Docker Desktop, or on Linux start the docker service and add the user to the docker group.' `
@@ -68,6 +161,9 @@ function Invoke-EquoriInstall {
             "O Docker Desktop n${at}o usa o motor WSL 2. Ative Settings > General > ""Use the WSL 2 based engine"" e execute este comando de novo.")
     }
 
+    Complete-Step (docker version --format '{{.Server.Version}}' 2> $null)
+
+    Start-Step "Files of version $version" "Arquivos da vers${at}o $version"
     if ((Test-Path (Join-Path $dir 'compose.yaml')) -and -not (Test-Path $envFile)) {
         return (Stop-Install 'i5-composeyaml-without-env' 'i5-composeyaml-sem-env' `
             "$dir holds compose.yaml without .env: an installation made without this script. Write .env with the database password of that installation; the guide shows how." `
@@ -100,7 +196,6 @@ function Invoke-EquoriInstall {
         $created = $true
     }
 
-    Say "Downloading equori $version into $dir" "Baixando o equori $version em $dir"
     foreach ($name in 'compose.yaml', 'env.example') {
         $part = Join-Path $dir "$name.part"
         try {
@@ -144,26 +239,33 @@ function Invoke-EquoriInstall {
     }
 
     $null = New-Item -ItemType Directory -Force -Path (Join-Path $dir 'copies')
-    Say "Starting equori on port $port" "Iniciando o equori na porta $port"
+    Complete-Step
+    Set-Content -Path $log -Value $null
+
+    Start-Step 'Image' 'Imagem'
+    if ((Invoke-Logged 'compose', 'pull', '--ignore-pull-failures') -ne 0) { return 1 }
+    Complete-Step
+
+    Start-Step 'Containers' "Cont${ec}ineres"
+    if ((Invoke-Logged 'compose', 'up', '-d') -ne 0) { return 1 }
+    Complete-Step
+
     Push-Location $dir
     try {
-        docker compose pull --ignore-pull-failures | Out-Host
-        docker compose up -d | Out-Host
-        if ($LASTEXITCODE -ne 0) { return 1 }
-
-        Say 'Waiting for equori to answer' 'Aguardando a resposta do equori'
+        Start-Step "Answer on port $port" "Resposta na porta $port"
         $ready = $false
-        for ($i = 0; $i -lt 90; $i++) {
+        while (-not $ready -and (Get-Elapsed) -lt 180) {
             try {
                 $r = Invoke-WebRequest -UseBasicParsing -TimeoutSec 5 -Uri "http://127.0.0.1:$port/healthz"
-                if ($r.StatusCode -eq 200) {
-                    $ready = $true
-                    break
-                }
+                $ready = $r.StatusCode -eq 200
             } catch { }
-            Start-Sleep -Seconds 2
+            if (-not $ready) {
+                Show-Tick
+                Start-Sleep -Seconds 1
+            }
         }
         if (-not $ready) {
+            Set-StepFailed
             docker compose logs --no-log-prefix --tail 20 app | Out-Host
             return (Stop-Install 'i8-equori-does-not-start' 'i8-equori-sem-resposta' `
                 "equori did not answer on http://127.0.0.1:$port/healthz within 180 seconds; its last log lines are above." `
@@ -179,15 +281,23 @@ function Invoke-EquoriInstall {
                 $url = "http://127.0.0.1:$port/setup#token=$($Matches[1])"
             }
         }
+        Complete-Step
     } finally {
         Pop-Location
     }
 
     Start-Process $url
-    Say "equori is installed in $dir." "O equori est${aa} instalado em $dir."
-    Say "Address: $url" "Endere${cc}o: $url"
-    Say "Keep a copy of $dir\.env apart from the backups: it holds the secret key, without which the bank connections cannot be read." `
-        "Guarde uma c${oa}pia de $dir\.env longe dos backups: ela cont${ea}m a chave secreta, sem a qual as conex${ot}es banc${aa}rias n${at}o podem ser lidas."
+    Write-Host ''
+    Write-Host (Pick "equori is installed in $dir." "O equori est${aa} instalado em $dir.") -ForegroundColor Green
+    Write-Host (Pick 'Address: ' "Endere${cc}o: ") -NoNewline
+    Write-Host $url -ForegroundColor Cyan
+    Write-Host ''
+    Write-Host (Pick "Keep a copy of $dir\.env apart from the backups: it holds the secret key, without which the bank connections cannot be read." `
+        "Guarde uma c${oa}pia de $dir\.env longe dos backups: ela cont${ea}m a chave secreta, sem a qual as conex${ot}es banc${aa}rias n${at}o podem ser lidas.") -ForegroundColor Yellow
+    Write-Host ''
+    Say "To stop:    cd $dir; docker compose stop" "Para parar:     cd $dir; docker compose stop"
+    Say "To start:   cd $dir; docker compose start" "Para iniciar:   cd $dir; docker compose start"
+    Say 'To upgrade: run the installation command again.' "Para atualizar: execute de novo o comando de instala${cc}${at}o."
     return 0
 }
 

@@ -70,7 +70,7 @@ irm https://github.com/andrelopes-code/equori/releases/latest/download/install.p
 Steps, in order. Each stop prints one message and the link to the guide section that corrects it, exits with status 1 and leaves no file behind.
 
 1. Language of the messages: Portuguese when `LANG` (`sh`) or `(Get-Culture).Name` (PowerShell) starts with `pt`, English otherwise. Reason: section 9.4.1, Languages; a language without texts gets English.
-2. Docker check: `docker` on the path, `docker info` answers, `docker compose version` answers. Each failure is its own stop: Docker absent, Docker not answering (daemon stopped, or on Linux a user outside the `docker` group), Compose v2 absent. The script installs nothing on the system. Reason: an installation of Docker needs administrator rights, differs per distribution, and on Windows needs a restart that ends the script.
+2. Docker check: `docker` on the path, `docker info` answers, `docker compose version` answers. Each failure is its own stop: Docker absent, Docker not answering (daemon stopped, or on Linux a user outside the `docker` group), Compose v2 absent. On macOS and Windows, A190.4 starts Docker Desktop before the stop of a Docker not answering. The script installs nothing on the system. Reason: an installation of Docker needs administrator rights, differs per distribution, and on Windows needs a restart that ends the script.
 3. WSL2 on Windows: `docker info --format '{{.KernelVersion}}'` contains `WSL2`. Otherwise the stop names the Docker Desktop setting "Use the WSL 2 based engine", or `wsl --install` when `wsl.exe` is absent. Reason: section 9.4.1, Forms, sets Docker Desktop with WSL2; the kernel version is the one value that tells the WSL2 engine from the Hyper-V engine.
 4. Directory: `~/equori` (`%USERPROFILE%\equori` on Windows), created when absent. A directory that holds `compose.yaml` and no `.env` is a stop. Reason: an installation made by the earlier README has a database password the script cannot know; a new password would fail on the existing volume.
 5. Downloads `compose.yaml` and `env.example` of the pinned release into the directory, replacing `compose.yaml`.
@@ -83,6 +83,18 @@ Steps, in order. Each stop prints one message and the link to the guide section 
 12. Final lines: the directory, the address, and the instruction to keep a copy of `.env` apart from the backups, because it holds the secret key (ADR 008, K2).
 
 `EQUORI_INSTALL_SOURCE`, when set, names a local directory read in place of the downloads of step 5. The release job of A166 sets it; the guides do not name it.
+
+## A190 Installation output
+
+Amendment of 2026-11-02. Reason: in the owner's run on Windows, the output of `docker compose` filled the screen, the wait of step 10 printed nothing for up to 180 seconds, and a Docker Desktop that had not been started stopped the script. The rules hold for both scripts of A163.
+
+1. Header: `equori <version>`, then `Installing into <dir>` when `.env` is absent, or `Upgrading <dir>` when it is present.
+2. Steps: five lines, in order: Docker (steps 2 and 3 of A163, with the version that `docker version` reports), the files of the version (steps 4 to 7), the image (`docker compose pull`), the containers (step 8 and `docker compose up -d`), the answer (step 10). A finished step prints `[ok] <label>`, with its duration when it took 2 seconds or more. A step that ends in a stop prints `[!!] <label>`. On a terminal, a running step rewrites `[..] <label> <seconds> s` in place every second. When the output is not a terminal, only the finished line is printed.
+3. Colors: green for `[ok]`, red for `[!!]` and the stop message, yellow for the instruction about `.env`. The `sh` script colors only a terminal, and only when `NO_COLOR` is unset.
+4. Docker Desktop: on macOS and Windows, when `docker info` fails and Docker Desktop is installed (`open -a Docker` succeeds; `%ProgramFiles%\Docker\Docker\Docker Desktop.exe` exists), the script starts it and waits up to 120 seconds for `docker info` to answer. The stop of a Docker not answering comes after that wait. Linux keeps the stop of A163.2.
+5. Log: the output of `docker compose pull`, `run` and `up` goes to `<dir>/install.log`. Each run of the script overwrites it. A failed step prints the last 20 lines of the log and its path.
+6. Stop: `Error: <message>` (`Erro:`), then `How to fix: <link>` (`Como resolver:`).
+7. Final lines, after those of A163.12: the commands to stop and start equori (`docker compose stop` and `docker compose start` in `<dir>`), and the upgrade (the installation command again).
 
 ## A164 First access by region and book
 

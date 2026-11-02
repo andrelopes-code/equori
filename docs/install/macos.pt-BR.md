@@ -44,7 +44,7 @@ docker compose start
 
 ## Solução de problemas
 
-Cada entrada cita a mensagem impressa pelo comando de instalação ou pelo equori e traz a correção. Toda parada do comando de instalação termina com a linha `Guia: <url>` que aponta para a entrada.
+Cada entrada cita a mensagem impressa pelo comando de instalação ou pelo equori e traz a correção. Toda parada do comando de instalação termina com a linha `Como resolver: <url>` que aponta para a entrada.
 
 ### I1 Docker ausente
 
