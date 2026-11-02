@@ -167,7 +167,15 @@ func TestDeleteCurrentBooksRefusals(t *testing.T) {
 		var created booksMembership
 		h.MustDo(http.MethodPost, "/api/v1/books", map[string]any{"name": "Dupla", "region": "BR"}, http.StatusCreated, &created)
 		expectStatus(t, h.Do(http.MethodPut, "/api/v1/session/books", map[string]any{"books_id": created.ID}), http.StatusNoContent)
-		h.Pool.Exec(t.Context(), `INSERT INTO identity_membership (member_id, books_id, role) VALUES ($1, $2, 'read')`, h.MemberIDOf("writer@example.com"), created.ID)
+
+		if _, err := h.Pool.Exec(
+			t.Context(),
+			`INSERT INTO identity_membership (member_id, books_id, role) VALUES ($1, $2, 'read')`,
+			h.MemberIDOf("writer@example.com"),
+			created.ID,
+		); err != nil {
+			t.Fatal(err)
+		}
 
 		h.ExpectProblem(h.Do(http.MethodDelete, "/api/v1/books/current", map[string]any{"name": "Dupla"}), http.StatusConflict, "books_has_members", "")
 	})
