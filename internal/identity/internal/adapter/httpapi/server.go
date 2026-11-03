@@ -196,6 +196,15 @@ func (s *Server) UpdateCurrentUser(ctx context.Context, req UpdateCurrentUserReq
 		return nil, errInvalidRequest
 	}
 
+	if req.Body.DisplayName != nil {
+		name, err := s.svc.SetDisplayName(ctx, user.ID, *req.Body.DisplayName)
+		if err != nil {
+			return nil, err
+		}
+
+		user.DisplayName = name
+	}
+
 	l, err := s.svc.UpdateProfile(ctx, auth.MustBooksID(ctx), user.ID, deref(req.Body.Language), "")
 	if err != nil {
 		return nil, err
@@ -205,7 +214,25 @@ func (s *Server) UpdateCurrentUser(ctx context.Context, req UpdateCurrentUserReq
 }
 
 func toAPIUser(u domain.Member, l locale.Locale, booksID int64, role auth.BookRole) User {
-	return User{Id: u.ID, Email: u.Email, Role: UserRole(u.Role), Language: l.Language, Region: l.Region, BooksId: booksID, BookRole: BookRole(role)}
+	return User{
+		Id:          u.ID,
+		Email:       u.Email,
+		DisplayName: optional(u.DisplayName),
+		Role:        UserRole(u.Role),
+		Language:    l.Language,
+		Region:      l.Region,
+		BooksId:     booksID,
+		BookRole:    BookRole(role),
+	}
+}
+
+// optional returns nil for an empty string, so the API omits the field.
+func optional(s string) *string {
+	if s == "" {
+		return nil
+	}
+
+	return &s
 }
 
 func deref(s *string) string {

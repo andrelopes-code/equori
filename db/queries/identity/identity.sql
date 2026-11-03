@@ -27,6 +27,13 @@ SET
 WHERE
     id = $1;
 
+-- name: UpdateDisplayName :exec
+UPDATE identity_member
+SET
+    display_name = $2
+WHERE
+    id = $1;
+
 -- name: UpdateRegion :exec
 UPDATE identity_books
 SET
@@ -97,6 +104,7 @@ SELECT
     m.disabled_at,
     m.created_at,
     m.language,
+    m.display_name,
     s.books_id,
     ms.role AS book_role
 FROM
@@ -207,6 +215,7 @@ WHERE
 SELECT
     ms.member_id,
     m.email,
+    m.display_name,
     ms.role,
     ms.created_at
 FROM

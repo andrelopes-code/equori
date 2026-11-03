@@ -74,6 +74,8 @@ type Repository interface {
 	Appearance(ctx context.Context, memberID int64) ([]byte, error)
 	// SetAppearance replaces the stored JSON object of the member.
 	SetAppearance(ctx context.Context, memberID int64, doc []byte) error
+	// SetDisplayName stores the name of the member; an empty name clears it.
+	SetDisplayName(ctx context.Context, memberID int64, name string) error
 	MemberByID(ctx context.Context, memberID int64) (domain.Member, error)
 	MemberByEmail(ctx context.Context, email string) (domain.Member, error)
 	CreateSession(ctx context.Context, s domain.Session) error
@@ -351,6 +353,21 @@ func (s *Service) UpdateProfile(ctx context.Context, booksID, memberID int64, la
 	return l, nil
 }
 
+// SetDisplayName stores the trimmed name of the member; an empty name clears it. It returns the
+// stored name, or a *domain.FieldError for an invalid one.
+func (s *Service) SetDisplayName(ctx context.Context, memberID int64, name string) (string, error) {
+	name, err := domain.NormalizeDisplayName(name)
+	if err != nil {
+		return "", err
+	}
+
+	if err := s.repo.SetDisplayName(ctx, memberID, name); err != nil {
+		return "", fmt.Errorf("store display name of member %d: %w", memberID, err)
+	}
+
+	return name, nil
+}
+
 type Session struct {
 	MemberID  int64
 	BooksID   int64
@@ -477,10 +494,11 @@ type BooksMembership struct {
 }
 
 type Membership struct {
-	MemberID  int64
-	Email     string
-	Role      auth.BookRole
-	CreatedAt time.Time
+	MemberID    int64
+	Email       string
+	DisplayName string
+	Role        auth.BookRole
+	CreatedAt   time.Time
 }
 
 // Books lists the books of the member's memberships, by ID; Active marks activeBooksID (HA5).

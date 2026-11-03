@@ -299,7 +299,13 @@ func (r *Repository) Members(ctx context.Context, booksID int64) ([]app.Membersh
 
 	out := make([]app.Membership, 0, len(rows))
 	for _, row := range rows {
-		out = append(out, app.Membership{MemberID: row.MemberID, Email: row.Email, Role: auth.BookRole(row.Role), CreatedAt: row.CreatedAt})
+		out = append(out, app.Membership{
+			MemberID:    row.MemberID,
+			Email:       row.Email,
+			DisplayName: deref(row.DisplayName),
+			Role:        auth.BookRole(row.Role),
+			CreatedAt:   row.CreatedAt,
+		})
 	}
 
 	return out, nil
@@ -415,6 +421,16 @@ func (r *Repository) SetAppearance(ctx context.Context, memberID int64, doc []by
 	return r.q.SetAppearance(ctx, SetAppearanceParams{ID: memberID, Appearance: doc})
 }
 
+// SetDisplayName stores the name; an empty name clears it.
+func (r *Repository) SetDisplayName(ctx context.Context, memberID int64, name string) error {
+	var stored *string
+	if name != "" {
+		stored = &name
+	}
+
+	return r.q.UpdateDisplayName(ctx, UpdateDisplayNameParams{ID: memberID, DisplayName: stored})
+}
+
 func (r *Repository) LoginBooks(ctx context.Context, memberID int64) (int64, error) {
 	booksID, err := r.q.GetLoginBooks(ctx, memberID)
 	if err != nil {
@@ -460,7 +476,7 @@ func (r *Repository) MemberBySession(ctx context.Context, tokenHash []byte, now 
 
 	user := toMember(IdentityMember{
 		ID: row.ID, Email: row.Email, PasswordHash: row.PasswordHash, Role: row.Role,
-		DisabledAt: row.DisabledAt, CreatedAt: row.CreatedAt, Language: row.Language,
+		DisabledAt: row.DisabledAt, CreatedAt: row.CreatedAt, Language: row.Language, DisplayName: row.DisplayName,
 	})
 
 	return app.Access{Member: user, BooksID: row.BooksID, Role: auth.BookRole(row.BookRole)}, nil
@@ -481,8 +497,17 @@ func toMember(row IdentityMember) domain.Member {
 		PasswordHash: row.PasswordHash,
 		Role:         domain.Role(row.Role),
 		Language:     row.Language,
+		DisplayName:  deref(row.DisplayName),
 		Disabled:     row.DisabledAt != nil,
 	}
+}
+
+func deref(s *string) string {
+	if s == nil {
+		return ""
+	}
+
+	return *s
 }
 
 func notFound(err error) error {

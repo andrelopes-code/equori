@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/jackc/pgx/v5"
@@ -62,6 +63,25 @@ func TestAppearanceSchema(t *testing.T) {
 		_, err := pool.Exec(t.Context(), tt.sql, member)
 		if pgErr, ok := errors.AsType[*pgconn.PgError](err); !ok || pgErr.Code != tt.code {
 			t.Errorf("%s: error = %v, want SQLSTATE %s", tt.sql, err, tt.code)
+		}
+	}
+}
+
+func TestDisplayNameSchema(t *testing.T) {
+	t.Parallel()
+	pool := pgtest.New(t)
+	member, _ := pgtest.CreateMember(t, pool)
+
+	for _, name := range []string{"", strings.Repeat("a", 61), "Ann\nLee"} {
+		_, err := pool.Exec(t.Context(), `UPDATE identity_member SET display_name = $2 WHERE id = $1`, member, name)
+		if pgErr, ok := errors.AsType[*pgconn.PgError](err); !ok || pgErr.Code != checkViolation {
+			t.Errorf("display_name = %q: error = %v, want check violation", name, err)
+		}
+	}
+
+	for _, name := range []*string{nil, new(strings.Repeat("é", 60))} {
+		if _, err := pool.Exec(t.Context(), `UPDATE identity_member SET display_name = $2 WHERE id = $1`, member, name); err != nil {
+			t.Errorf("display_name = %v: %v", name, err)
 		}
 	}
 }

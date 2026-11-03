@@ -69,5 +69,11 @@ func (s *Server) DeleteCurrentBooks(ctx context.Context, req DeleteCurrentBooksR
 }
 
 func toAPIBooksMember(m app.Membership) BooksMember {
-	return BooksMember{MemberId: m.MemberID, Email: m.Email, Role: BookRole(m.Role), CreatedAt: m.CreatedAt}
+	return BooksMember{
+		MemberId:    m.MemberID,
+		Email:       m.Email,
+		DisplayName: optional(m.DisplayName),
+		Role:        BookRole(m.Role),
+		CreatedAt:   m.CreatedAt,
+	}
 }

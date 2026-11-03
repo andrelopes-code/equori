@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/mail"
 	"strings"
+	"unicode"
 	"unicode/utf8"
 )
 
@@ -15,7 +16,10 @@ const (
 	RoleMember Role = "member"
 )
 
-const maxBooksName = 80
+const (
+	maxBooksName   = 80
+	maxDisplayName = 60
+)
 
 func (r Role) Valid() bool { return r == RoleAdmin || r == RoleMember }
 
@@ -25,6 +29,7 @@ type Member struct {
 	PasswordHash string
 	Role         Role
 	Language     string
+	DisplayName  string
 	Disabled     bool
 }
 
@@ -56,6 +61,21 @@ func NormalizeEmail(s string) (string, error) {
 	addr, err := mail.ParseAddress(s)
 	if err != nil || addr.Address != s {
 		return "", ErrInvalidEmail
+	}
+
+	return s, nil
+}
+
+// NormalizeDisplayName returns the trimmed name; an empty result clears the name.
+func NormalizeDisplayName(s string) (string, error) {
+	s = strings.TrimSpace(s)
+
+	if utf8.RuneCountInString(s) > maxDisplayName {
+		return "", &FieldError{Field: "display_name", Message: "must have at most 60 characters"}
+	}
+
+	if strings.ContainsFunc(s, unicode.IsControl) {
+		return "", &FieldError{Field: "display_name", Message: "must not contain control characters"}
 	}
 
 	return s, nil

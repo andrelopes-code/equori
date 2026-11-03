@@ -166,7 +166,7 @@ paths:
       tags: [identity]
       operationId: updateCurrentUser
       x-book-role: read
-      summary: Change the language of the authenticated member.
+      summary: Change the language or the display name of the authenticated member.
       requestBody:
         required: true
         content:
@@ -7964,7 +7964,7 @@ components:
     VersionStatus:
       type: object
       additionalProperties: false
-      required: [version, update_check, latest, newer]
+      required: [version, update_check, latest, newer, distribution]
       properties:
         version:
           type: string
@@ -7975,6 +7975,12 @@ components:
           $ref: "#/components/schemas/Release"
         newer:
           type: boolean
+        distribution:
+          description: >-
+            The form of the instance, whose upgrade differs: compose for compose.yaml,
+            managed for managed mode, other otherwise (A194).
+          type: string
+          enum: [compose, managed, other]
     Release:
       type: object
       nullable: true
@@ -11375,6 +11381,9 @@ components:
           format: int64
         email:
           type: string
+        display_name:
+          type: string
+          description: Absent while the member has not chosen one.
         role:
           type: string
           enum: [admin, member]
@@ -11396,6 +11405,11 @@ components:
         language:
           type: string
           pattern: "^[a-z]{2,3}$"
+        display_name:
+          type: string
+          description: |
+            Trimmed; at most 60 characters, no control characters (422 validation_failed on
+            display_name). An empty value clears it.
     Appearance:
       type: object
       additionalProperties: true
@@ -11474,6 +11488,9 @@ components:
           format: int64
         email:
           type: string
+        display_name:
+          type: string
+          description: Absent while the member has not chosen one.
         role:
           $ref: "#/components/schemas/BookRole"
         created_at:
