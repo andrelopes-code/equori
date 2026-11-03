@@ -1,5 +1,5 @@
 import "@/app/app.css";
-import "@/app/utilities.css";
+import "@/app/tailwind.css";
 import "@slotted/react/styles.css";
 import "@fontsource-variable/geist";
 import "@fontsource-variable/geist-mono";

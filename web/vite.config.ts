@@ -1,3 +1,4 @@
+import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig, type Plugin } from "vite";
 import { configDefaults } from "vitest/config";
@@ -16,7 +17,7 @@ const slottedReactDOM: Plugin = {
 };
 
 export default defineConfig({
-  plugins: [react(), slottedReactDOM],
+  plugins: [react(), tailwindcss(), slottedReactDOM],
   optimizeDeps: { rolldownOptions: { plugins: [slottedReactDOM] } },
   // tsconfig.json paths are the single definition of the @/ alias.
   resolve: { tsconfigPaths: true },

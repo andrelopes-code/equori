@@ -1,0 +1,24 @@
+/* Tailwind utilities on the Slotted space scale. Only the utilities are imported: no preflight, so
+   the library's reset stands, and no default theme, so there is no Tailwind palette, type scale or
+   spacing multiple. A utility with no entry below emits nothing.
+
+   The number of a spacing utility is the Slotted token: ms-2 is --slotted-space-2, where Tailwind's
+   ms-2 is 0.5rem. `inline` writes the token into the rule, so the value follows the density and
+   scheme set on any ancestor. The layer order is declared in app.css. */
+@import "tailwindcss/utilities.css" layer(utilities);
+
+@theme inline {
+  --spacing-0: 0;
+  --spacing-1: var(--slotted-space-1);
+  --spacing-2: var(--slotted-space-2);
+  --spacing-3: var(--slotted-space-3);
+  --spacing-4: var(--slotted-space-4);
+  --spacing-5: var(--slotted-space-5);
+  --spacing-6: var(--slotted-space-6);
+  --spacing-7: var(--slotted-space-7);
+  --spacing-8: var(--slotted-space-8);
+  --spacing-9: var(--slotted-space-9);
+  --spacing-10: var(--slotted-space-10);
+  --spacing-11: var(--slotted-space-11);
+  --spacing-12: var(--slotted-space-12);
+}

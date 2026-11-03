@@ -1,4 +1,4 @@
-@layer slotted, app;
+@layer slotted, app, utilities;
 
 /* The shell is block-size 100% capped at 100dvh (scroll="content"): it needs a definite-height ancestor chain, or it computes to 0. */
 @layer app {
