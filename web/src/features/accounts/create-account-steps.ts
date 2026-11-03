@@ -24,7 +24,11 @@ export const stepLabel: Record<StepKey, MessageKey> = {
   opening: "accountSetup.step.opening",
 };
 
-export function accountInput(draft: AccountDraft): AccountInput {
+// institutionId is the draft's own unless a pending institution was created for it.
+export function accountInput(
+  draft: AccountDraft,
+  institutionId: string | null = draft.institutionId,
+): AccountInput {
   const kind = draft.kind ?? "checking";
   return {
     name: draft.name.trim(),
@@ -32,9 +36,7 @@ export function accountInput(draft: AccountDraft): AccountInput {
     kind,
     currency: draft.currency,
     opened_on: draft.openedOn,
-    ...(draft.institutionId === null
-      ? {}
-      : { institution_id: draft.institutionId }),
+    ...(institutionId === null ? {} : { institution_id: institutionId }),
     ...(draft.parentId === null ? {} : { parent_id: draft.parentId }),
     yield_mode: yieldCapable(kind) && draft.yieldAuto ? "auto" : "none",
     ...(draft.color === null ? {} : { color: draft.color }),

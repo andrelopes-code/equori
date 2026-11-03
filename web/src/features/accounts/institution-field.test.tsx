@@ -4,6 +4,7 @@ import { useState } from "react";
 import { describe, expect, it } from "vitest";
 
 import { InstitutionField } from "@/features/accounts/institution-field";
+import type { PendingInstitution } from "@/features/accounts/institution-field";
 import { accountRoutes, nubankID } from "@/testing/account-api";
 import { fakeApi, json } from "@/testing/fake-api";
 import { renderWithProviders } from "@/testing/render-app";
@@ -21,6 +22,39 @@ function Harness({ onPick }: { onPick: (id: string | null) => void }) {
         onPick(id);
       }}
     />
+  );
+}
+
+function DeferredHarness({
+  onPick,
+}: {
+  onPick: (id: string | null, pending: PendingInstitution | null) => void;
+}) {
+  const [value, setValue] = useState<string | null>(null);
+  const [pending, setPending] = useState<PendingInstitution | null>(null);
+  return (
+    <InstitutionField
+      aria-label={label}
+      deferred
+      value={value}
+      pending={pending}
+      onChange={(id, _name, next) => {
+        setValue(id);
+        setPending(next ?? null);
+        onPick(id, next ?? null);
+      }}
+    />
+  );
+}
+
+function recordingPost(bodies: unknown[]) {
+  return fakeApi(
+    accountRoutes({
+      "POST /api/v1/institutions": async (req) => {
+        bodies.push(await req.json());
+        return json(201, { id: "created" });
+      },
+    }),
   );
 }
 
@@ -151,5 +185,67 @@ describe("InstitutionField", () => {
     expect(
       option.querySelector("img")?.closest('[aria-hidden="true"]'),
     ).not.toBeNull();
+  });
+
+  it("holds a catalogue institution as pending and creates nothing", async () => {
+    const bodies: unknown[] = [];
+    let picked: [string | null, PendingInstitution | null] = [null, null];
+    renderWithProviders(
+      <DeferredHarness
+        onPick={(id, pending) => {
+          picked = [id, pending];
+        }}
+      />,
+      { fetch: recordingPost(bodies) },
+    );
+    await choose("Banco do Bra", /^Banco do Brasil/);
+    await waitFor(() => {
+      expect(picked).toEqual([
+        null,
+        {
+          name: "Banco do Brasil",
+          code: "001",
+          identifier: { scheme: "br_ispb", identifier: "00000000" },
+        },
+      ]);
+    });
+    expect(screen.getByRole("combobox", { name: label })).toHaveValue(
+      "Banco do Brasil",
+    );
+    expect(bodies).toEqual([]);
+  });
+
+  it("holds a typed institution as pending and creates nothing", async () => {
+    const bodies: unknown[] = [];
+    let picked: PendingInstitution | null = null;
+    renderWithProviders(
+      <DeferredHarness
+        onPick={(_id, pending) => {
+          picked = pending;
+        }}
+      />,
+      { fetch: recordingPost(bodies) },
+    );
+    await choose("Cooperativa Zeta", /Cooperativa Zeta/);
+    await waitFor(() => {
+      expect(picked).toEqual({ name: "Cooperativa Zeta" });
+    });
+    expect(bodies).toEqual([]);
+  });
+
+  it("picks an existing institution without a pending one", async () => {
+    let picked: [string | null, PendingInstitution | null] = [null, null];
+    renderWithProviders(
+      <DeferredHarness
+        onPick={(id, pending) => {
+          picked = [id, pending];
+        }}
+      />,
+      { fetch: recordingPost([]) },
+    );
+    await choose("Nub", /^Nubank/);
+    await waitFor(() => {
+      expect(picked).toEqual([nubankID, null]);
+    });
   });
 });

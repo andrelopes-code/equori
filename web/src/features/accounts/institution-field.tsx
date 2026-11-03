@@ -23,6 +23,14 @@ import { useAppLocale, useAppLocaleState, useT } from "@/i18n/i18n-provider";
 type Institution = components["schemas"]["Institution"];
 
 const cataloguePrefix = "catalogue:";
+const pendingPrefix = "pending:";
+
+// An institution chosen in a form and not yet created: the form creates it with the account.
+export interface PendingInstitution {
+  name: string;
+  code?: string;
+  identifier?: { scheme: string; identifier: string };
+}
 
 // The catalogue is the Brazilian bank list (scheme br_ispb); other regions offer none.
 function offersCatalogue(region: string): boolean {
@@ -56,13 +64,23 @@ function entityOf(
 // creates the institution with its ISPB, so its logo follows every account of it.
 export function InstitutionField({
   value,
+  pending = null,
+  deferred = false,
   onChange,
   invalid,
   "aria-label": ariaLabel,
 }: {
   value: string | null;
+  // The institution a deferred field holds before it exists; `value` is null then.
+  pending?: PendingInstitution | null;
+  // A deferred field creates nothing: a new choice reaches `onChange` as a pending institution.
+  deferred?: boolean;
   // The name rides along, so a caller that just created the institution need not read it back.
-  onChange: (id: string | null, name?: string) => void;
+  onChange: (
+    id: string | null,
+    name?: string,
+    pending?: PendingInstitution,
+  ) => void;
   invalid?: boolean;
   "aria-label"?: string;
 }) {
@@ -112,6 +130,13 @@ export function InstitutionField({
 
   const source = useMemo(() => catalogueSource(items), [items]);
 
+  const pendingEntity = (choice: PendingInstitution): Entity =>
+    entityOf(
+      { id: pendingId(choice), name: choice.name },
+      logoOf(choice.identifier, index.data),
+      t("institutionField.mine"),
+    );
+
   const remember = (institution: Institution): Entity => {
     const entity = entityOf(
       institution,
@@ -127,8 +152,10 @@ export function InstitutionField({
     <EntityPicker
       source={source}
       searchDelay={100}
-      entities={created}
-      value={value}
+      entities={
+        pending === null ? created : [...created, pendingEntity(pending)]
+      }
+      value={pending === null ? value : pendingId(pending)}
       openOn="focus"
       width="content"
       media="none"
@@ -140,6 +167,7 @@ export function InstitutionField({
           onChange(null);
           return;
         }
+        if (next.startsWith(pendingPrefix)) return;
         if (!next.startsWith(cataloguePrefix)) {
           onChange(
             next,
@@ -155,18 +183,26 @@ export function InstitutionField({
                 (e) => e.ispb === ispb,
               );
         if (entry === undefined) return;
-        void create
-          .mutateAsync({
-            name: entry.name,
-            ...(entry.code === undefined ? {} : { code: entry.code }),
-            identifier: { scheme: "br_ispb", identifier: ispb },
-          })
-          .then((institution) => {
-            remember(institution);
-            onChange(institution.id, institution.name);
-          });
+        const chosen: PendingInstitution = {
+          name: entry.name,
+          ...(entry.code === undefined ? {} : { code: entry.code }),
+          identifier: { scheme: "br_ispb", identifier: ispb },
+        };
+        if (deferred) {
+          onChange(null, chosen.name, chosen);
+          return;
+        }
+        void create.mutateAsync(chosen).then((institution) => {
+          remember(institution);
+          onChange(institution.id, institution.name);
+        });
       }}
       onCreate={async (query) => {
+        if (deferred) {
+          const typed = { name: query.trim() };
+          onChange(null, typed.name, typed);
+          return pendingEntity(typed);
+        }
         const institution = await create.mutateAsync({ name: query.trim() });
         return remember(institution);
       }}
@@ -175,4 +211,8 @@ export function InstitutionField({
       {...(ariaLabel === undefined ? {} : { "aria-label": ariaLabel })}
     />
   );
+}
+
+function pendingId(pending: PendingInstitution): string {
+  return `${pendingPrefix}${pending.identifier?.identifier ?? pending.name}`;
 }

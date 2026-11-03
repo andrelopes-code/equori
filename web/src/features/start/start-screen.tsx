@@ -155,5 +155,11 @@ export function StartScreen({ base, scale, stored }: StartScreenProps) {
 }
 
 function newRow(key: string): StartRow {
-  return { key, institutionId: null, institutionName: "", kinds: [] };
+  return {
+    key,
+    institutionId: null,
+    pendingInstitution: null,
+    institutionName: "",
+    kinds: [],
+  };
 }

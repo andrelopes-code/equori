@@ -1,5 +1,6 @@
 import type { components } from "@/api/schema.gen";
 import type { Kind } from "@/features/accounts/account-kinds";
+import type { PendingInstitution } from "@/features/accounts/institution-field";
 import type { MessageKey } from "@/i18n/catalog.en";
 
 type Account = components["schemas"]["Account"];
@@ -30,6 +31,8 @@ export interface AccountDraft {
   kind: Kind | null;
   name: string;
   institutionId: string | null;
+  // An institution chosen in the form and created with the account; institutionId is null then.
+  pendingInstitution: PendingInstitution | null;
   currency: string;
   openedOn: string;
   parentId: string | null;
@@ -63,6 +66,7 @@ export function emptyAccountDraft(
     kind: null,
     name: "",
     institutionId: null,
+    pendingInstitution: null,
     currency,
     openedOn: today,
     parentId: null,
@@ -82,6 +86,8 @@ export function isDraft(value: unknown): value is AccountDraft {
   return (
     (draft.kind === null || typeof draft.kind === "string") &&
     typeof draft.name === "string" &&
+    (draft.pendingInstitution === null ||
+      typeof draft.pendingInstitution === "object") &&
     typeof draft.currency === "string" &&
     typeof draft.openedOn === "string" &&
     typeof draft.opening === "number" &&
@@ -156,6 +162,7 @@ export function draftFromAccount(account: Account): AccountDraft {
     kind: account.kind ?? null,
     name: account.name,
     institutionId: account.institution_id ?? null,
+    pendingInstitution: null,
     currency: account.currency,
     // The edit form never sends it; an account always has one.
     openedOn: account.opened_on ?? "",

@@ -62,9 +62,14 @@ export function AccountIdentitySection({
       <Field invalid={errors.institution_id !== undefined}>
         <FieldLabel>{t("accountForm.institution")}</FieldLabel>
         <InstitutionField
+          deferred
           value={draft.institutionId}
-          onChange={(institutionId) => {
-            onPatch({ institutionId });
+          pending={draft.pendingInstitution}
+          onChange={(institutionId, _name, pendingInstitution) => {
+            onPatch({
+              institutionId,
+              pendingInstitution: pendingInstitution ?? null,
+            });
           }}
         />
         {errors.institution_id !== undefined && (

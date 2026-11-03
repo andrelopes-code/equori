@@ -75,6 +75,8 @@ function isRow(value: unknown): value is StartRow {
   return (
     typeof row.key === "string" &&
     (row.institutionId === null || typeof row.institutionId === "string") &&
+    (row.pendingInstitution === null ||
+      typeof row.pendingInstitution === "object") &&
     typeof row.institutionName === "string" &&
     Array.isArray(row.kinds)
   );

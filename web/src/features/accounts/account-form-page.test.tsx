@@ -16,6 +16,7 @@ import { optionalName } from "@/testing/optional-name";
 import { renderApp } from "@/testing/render-app";
 
 const createdID = "e0000000-0000-4000-8000-0000000000aa";
+const newInstitutionID = "e0000000-0000-4000-8000-0000000000bb";
 
 interface Sent {
   route: string;
@@ -45,6 +46,9 @@ function api(
           yield_mode: "none",
           opened_on: "2026-10-17",
         }),
+      ),
+      "POST /api/v1/institutions": record("POST /institutions", (body) =>
+        json(201, { ...(body as object), id: newInstitutionID }),
       ),
       [`GET /api/v1/accounts/${createdID}`]: () =>
         json(200, {
@@ -182,6 +186,45 @@ describe("New account", () => {
     ]);
   });
 
+  it("creates a catalogue institution only when the account is created", async () => {
+    const sent: Sent[] = [];
+    const { router } = await renderApp("/accounts/new?kind=checking", {
+      fetch: api(sent),
+    });
+    await userEvent.type(
+      await screen.findByRole("textbox", {
+        name: catalogEn["accountForm.name"],
+      }),
+      "Conta BB",
+    );
+    const institution = screen.getByRole("combobox", {
+      name: new RegExp(catalogEn["accountForm.institution"]),
+    });
+    await userEvent.click(institution);
+    await userEvent.type(institution, "Banco do Bra");
+    await userEvent.click(
+      await screen.findByRole("option", { name: /^Banco do Brasil/ }),
+    );
+    expect(sent).toEqual([]);
+
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["accountForm.create"] }),
+    );
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe(`/accounts/${createdID}`);
+    });
+    expect(sent.map((s) => s.route)).toEqual([
+      "POST /institutions",
+      "POST /accounts",
+    ]);
+    expect(sent[0]?.body).toEqual({
+      name: "Banco do Brasil",
+      code: "001",
+      identifier: { scheme: "br_ispb", identifier: "00000000" },
+    });
+    expect(sent[1]?.body).toMatchObject({ institution_id: newInstitutionID });
+  });
+
   it("states the server's field errors under their fields and in the summary", async () => {
     await renderApp("/accounts/new?kind=checking", {
       fetch: api([], {
@@ -278,6 +321,38 @@ describe("New account", () => {
 });
 
 describe("Edit account", () => {
+  it("creates a chosen catalogue institution when the account is saved", async () => {
+    const sent: Sent[] = [];
+    const { router } = await renderApp(`/accounts/${checkingID}/edit`, {
+      fetch: api(sent),
+    });
+    const name = await screen.findByRole("textbox", {
+      name: catalogEn["accountForm.name"],
+    });
+    await waitFor(() => {
+      expect(name).toHaveValue("Nubank");
+    });
+    const institution = screen.getByRole("combobox", {
+      name: new RegExp(catalogEn["accountForm.institution"]),
+    });
+    await userEvent.click(institution);
+    await userEvent.clear(institution);
+    await userEvent.type(institution, "Banco do Bra");
+    await userEvent.click(
+      await screen.findByRole("option", { name: /^Banco do Brasil/ }),
+    );
+    expect(sent).toEqual([]);
+
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["detail.save"] }),
+    );
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe(`/accounts/${checkingID}`);
+    });
+    expect(sent.map((s) => s.route)).toEqual(["POST /institutions", "PATCH"]);
+    expect(sent[1]?.body).toEqual({ institution_id: newInstitutionID });
+  });
+
   it("sends only the field that moved", async () => {
     const sent: Sent[] = [];
     const { router } = await renderApp(`/accounts/${checkingID}/edit`, {

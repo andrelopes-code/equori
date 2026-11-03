@@ -41,7 +41,8 @@ export function AccountPreview({
   const institution = institutions.data?.find(
     (i) => i.id === draft.institutionId,
   );
-  const logo = logoOf(institution?.identifier, index.data);
+  const chosen = institution ?? draft.pendingInstitution;
+  const logo = logoOf(chosen?.identifier, index.data);
   const group =
     kindGroups.find((g) => g.kinds.includes(kind))?.key ?? "accounts";
   const card = draft.card;
@@ -63,7 +64,7 @@ export function AccountPreview({
           <AccountMark
             shape={shapeOf(kind)}
             size="lg"
-            name={institution?.name ?? name}
+            name={chosen?.name ?? name}
             color={draft.color ?? undefined}
             logo={logo}
           />
@@ -77,9 +78,9 @@ export function AccountPreview({
                 group: t(kindGroupLabel[group]),
               })}
             </Text>
-            {institution !== undefined && (
+            {chosen !== null && (
               <Text size="sm" tone="muted">
-                {institution.name}
+                {chosen.name}
               </Text>
             )}
           </Stack>

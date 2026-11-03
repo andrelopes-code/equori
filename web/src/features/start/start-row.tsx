@@ -33,7 +33,7 @@ export function StartRow({
   onRemove,
 }: StartRowProps) {
   const t = useT();
-  const chosen = row.institutionId !== null;
+  const chosen = row.institutionId !== null || row.pendingInstitution !== null;
 
   return (
     <Stack gap={4}>
@@ -41,13 +41,16 @@ export function StartRow({
         <Field required>
           <FieldLabel>{t("start.where.institution")}</FieldLabel>
           <InstitutionField
+            deferred
             value={row.institutionId}
+            pending={row.pendingInstitution}
             aria-label={t("start.where.institution")}
-            onChange={(institutionId, name) => {
+            onChange={(institutionId, name, pendingInstitution) => {
               onChange({
                 ...row,
                 institutionId,
-                institutionName: institutionId === null ? "" : (name ?? ""),
+                pendingInstitution: pendingInstitution ?? null,
+                institutionName: name ?? "",
               });
             }}
           />

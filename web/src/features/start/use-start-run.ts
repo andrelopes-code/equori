@@ -9,6 +9,7 @@ import {
   createAccountSteps,
   draftProblems,
   useCreateAccount,
+  useEnsureInstitution,
   writePendingSetup,
 } from "@/features/accounts";
 import type { AccountDraft } from "@/features/accounts";
@@ -38,6 +39,7 @@ export function useStartRun(
   const t = useT();
   const api = useApi();
   const create = useCreateAccount();
+  const ensureInstitution = useEnsureInstitution();
   const accounts = useQuery(accountsQuery(api));
   const [groups, setGroups] = useState<GroupRun[]>([...initial]);
   const [running, setRunning] = useState(false);
@@ -83,7 +85,9 @@ export function useStartRun(
 
     let account;
     try {
-      account = await create.mutateAsync(accountInput(draft));
+      account = await create.mutateAsync(
+        accountInput(draft, await ensureInstitution(draft)),
+      );
     } catch (error) {
       commit(index, {
         ...pending,

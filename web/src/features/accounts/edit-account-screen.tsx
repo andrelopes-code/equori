@@ -27,6 +27,7 @@ import {
   useUpdateAccount,
 } from "@/features/accounts/api";
 import { yieldCapable } from "@/features/accounts/account-kinds";
+import { useEnsureInstitution } from "@/features/accounts/use-ensure-institution";
 import { useT } from "@/i18n/i18n-provider";
 import { FormLayout } from "@/ui/form-layout";
 
@@ -66,6 +67,7 @@ export function EditAccountScreen({
   const update = useUpdateAccount();
   const setParent = useSetParent();
   const setAppearance = useSetAppearance();
+  const ensureInstitution = useEnsureInstitution();
   const [start] = useState(() => draftFromAccount(account));
   const [draft, setDraft] = useState(start);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -94,7 +96,8 @@ export function EditAccountScreen({
     setSummary(null);
     setRunning(true);
     try {
-      const patch = movedPatch(start, draft);
+      const institutionId = await ensureInstitution(draft);
+      const patch = movedPatch(start, { ...draft, institutionId });
       if (Object.keys(patch).length > 0) {
         await update.mutateAsync({ id: account.id, patch });
       }

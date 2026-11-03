@@ -22,6 +22,7 @@ const ctx = {
 const emptyRow: StartRow = {
   key: "r0",
   institutionId: null,
+  pendingInstitution: null,
   institutionName: "",
   kinds: [],
 };
@@ -31,7 +32,23 @@ function rowWith(
   kinds: readonly StartKind[],
   name = "Nubank",
 ): StartRow {
-  return { key: id, institutionId: id, institutionName: name, kinds };
+  return {
+    key: id,
+    institutionId: id,
+    pendingInstitution: null,
+    institutionName: name,
+    kinds,
+  };
+}
+
+function pendingRow(kinds: readonly StartKind[]): StartRow {
+  return {
+    key: "p1",
+    institutionId: null,
+    pendingInstitution: { name: "Banco Zeta" },
+    institutionName: "Banco Zeta",
+    kinds,
+  };
 }
 
 describe("canContinue", () => {
@@ -53,6 +70,12 @@ describe("canContinue", () => {
     {
       name: "institution with a kind",
       rows: [rowWith("i1", ["checking"])],
+      cash: false,
+      want: true,
+    },
+    {
+      name: "pending institution with a kind",
+      rows: [pendingRow(["checking"])],
       cash: false,
       want: true,
     },
@@ -92,6 +115,24 @@ describe("startDrafts", () => {
     expect(drafts.map((d) => d.currency)).toEqual(Array(3).fill(ctx.currency));
     expect(drafts.map((d) => d.opening)).toEqual([0, 0, 0]);
     expect(drafts.map((d) => d.card)).toEqual(Array(3).fill(emptyCardSetup()));
+  });
+
+  it("carries the pending institution to every draft of its row", () => {
+    const drafts = startDrafts(
+      [pendingRow(["checking", "savings"])],
+      false,
+      ctx,
+    );
+
+    expect(drafts.map((d) => d.name)).toEqual([
+      "Banco Zeta checking",
+      "Banco Zeta savings",
+    ]);
+    expect(drafts.map((d) => d.institutionId)).toEqual([null, null]);
+    expect(drafts.map((d) => d.pendingInstitution)).toEqual([
+      { name: "Banco Zeta" },
+      { name: "Banco Zeta" },
+    ]);
   });
 
   it("returns no draft without a row and without cash", () => {

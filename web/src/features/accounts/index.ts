@@ -57,6 +57,8 @@ export type { AccountDraft } from "@/features/accounts/account-draft";
 export { AccountOpeningSection } from "@/features/accounts/account-opening-section";
 export { CardSetupSection } from "@/features/accounts/card-setup-section";
 export { InstitutionField } from "@/features/accounts/institution-field";
+export type { PendingInstitution } from "@/features/accounts/institution-field";
+export { useEnsureInstitution } from "@/features/accounts/use-ensure-institution";
 export {
   accountInput,
   createAccountSteps,

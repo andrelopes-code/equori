@@ -33,6 +33,7 @@ import {
 } from "@/features/accounts/create-account-steps";
 import { KindChooser } from "@/features/accounts/kind-chooser";
 import { writePendingSetup } from "@/features/accounts/pending-setup";
+import { useEnsureInstitution } from "@/features/accounts/use-ensure-institution";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { FormLayout } from "@/ui/form-layout";
@@ -59,6 +60,7 @@ export function NewAccountScreen({
   const today = useToday();
   const navigate = useNavigate();
   const create = useCreateAccount();
+  const ensureInstitution = useEnsureInstitution();
   const [draft, setDraft] = useState<AccountDraft>(() => {
     const stored = readAccountDraft(draftKey) ?? emptyAccountDraft(today, base);
     return {
@@ -97,7 +99,9 @@ export function NewAccountScreen({
     setRunning(true);
     let account: Account;
     try {
-      account = await create.mutateAsync(accountInput(draft));
+      account = await create.mutateAsync(
+        accountInput(draft, await ensureInstitution(draft)),
+      );
     } catch (error) {
       if (error instanceof ProblemError) setErrors(fieldErrors(error.problem));
       setSummary(errorText(error, t));
