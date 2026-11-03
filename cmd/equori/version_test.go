@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/andrelopes-code/equori/internal/platform/postgres"
+	"github.com/andrelopes-code/equori/internal/reporting"
 )
 
 func TestVersionText(t *testing.T) {
@@ -20,7 +21,8 @@ func TestVersionText(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := fmt.Sprintf("equori v0.1.0\nschema %d\npostgresql >= 18\n", latest)
+	// S268 (A192.1)
+	want := fmt.Sprintf("equori v0.1.0\nschema %d\npostgresql >= 18\narchive %d\n", latest, reporting.ArchiveVersion)
 	if got != want {
 		t.Fatalf("versionText() = %q, want %q", got, want)
 	}

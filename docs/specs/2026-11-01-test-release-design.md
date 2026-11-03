@@ -116,7 +116,7 @@ The tag needs each item below. The release checklist (`docs/operations/release.m
 3. S261: the owner and the testers use real accounts of at least three banks, through Meu Pluggy or file import, for at least two weeks; each defect becomes a GitHub issue, and an issue of data loss, duplication or exposure carries the label of its kind.
 4. The owner tasks of the P11 plans (Current state).
 5. The grouped `match` of P12 after a real sync.
-6. `git tag v1.0.0` and its push, by the owner, after steps 1 to 8 of the checklist.
+6. `git tag v1.0.0` and its push, by the owner, after steps 1 to 5 of the checklist (renumbered by A192 of `docs/specs/2026-11-03-update-flow-design.md`).
 
 ## Regions
 

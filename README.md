@@ -82,7 +82,7 @@ The Postgres major version is pinned to 18. To upgrade the major version, dump t
 
 ### Windows
 
-Each release attaches `equori_<version>_windows_amd64_setup.exe` for Windows 10 (1803 or later) and Windows 11, on x64 and on Arm through emulation. The installer holds PostgreSQL 18 and installs the service `equori`, which starts with Windows and listens on `http://127.0.0.1:8080`. It asks for administrator rights once.
+The supported form on Windows is the command of [docs/install/windows.md](docs/install/windows.md). A release attaches `equori_<version>_windows_amd64_setup.exe` only when the release job signed it (ADR 023, W-R6); a release without it has no Windows installer. The installer runs on Windows 10 (1803 or later) and Windows 11, on x64 and on Arm through emulation. The installer holds PostgreSQL 18 and installs the service `equori`, which starts with Windows and listens on `http://127.0.0.1:8080`. It asks for administrator rights once.
 
 When it finishes, the browser opens on the screen that creates the first user. To use equori in a window of its own, open it in Edge or Chrome and choose "Install this site as an app". The Start menu entry `equori` opens it later.
 

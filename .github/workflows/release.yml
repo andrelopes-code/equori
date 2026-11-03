@@ -248,7 +248,15 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          flags=(--generate-notes --verify-tag)
+          # A192.2: the binary names the archive version its exports carry (ADR 021, V9).
+          name="equori_${GITHUB_REF_NAME#v}_linux_amd64"
+          tar -xzf "dist/$name.tar.gz" -C "$RUNNER_TEMP" "$name/equori"
+          archive=$("$RUNNER_TEMP/$name/equori" version | sed -n 's/^archive \([0-9][0-9]*\)$/\1/p')
+          if [[ -z "$archive" ]]; then
+            echo "::error::equori version printed no archive line"
+            exit 1
+          fi
+          flags=(--generate-notes --verify-tag --notes "Export archive_version: $archive")
           if [[ "$GITHUB_REF_NAME" == *-* ]]; then flags+=(--prerelease); fi
           assets=(dist/*.tar.gz dist/compose.yaml dist/install.sh dist/install.ps1 dist/env.example)
           for installer in dist/*_windows_amd64_setup.exe; do

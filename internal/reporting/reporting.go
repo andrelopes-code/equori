@@ -27,6 +27,9 @@ import (
 	"github.com/andrelopes-code/equori/internal/reporting/internal/app"
 )
 
+// ArchiveVersion is the archive_version of the exports of this binary (ADR 021, V9).
+const ArchiveVersion = app.ArchiveVersion
+
 type Module struct {
 	svc     *app.Service
 	exports *app.Exports

@@ -964,6 +964,10 @@ The scenarios of `docs/specs/2026-11-01-first-use-help-design.md`, section "Scen
 
 The scenarios of `docs/specs/2026-11-01-test-release-design.md`, section "Scenarios": an archive that names a row of another book is refused and writes nothing (S253, S254); the institution catalogue finds an entry by trade name and lists prefix matches first (S255, S256); the walkthrough institution reads as required (S257); a pt-BR count of 0 reads "Nenhum resultado" (S258); the exit criteria of P10 to P15 are checked (S259); testers record their first transactions without outside help (S260); real accounts of three banks for two weeks end with no open defect of data loss, duplication or exposure (S261).
 
+### S268–S272 Update flow (A192–A197)
+
+The scenarios of `docs/specs/2026-11-03-update-flow-design.md`, section "Scenarios": `equori version` names the archive version (S268); the notice shows the upgrade command of a compose instance and none of a managed one (S269, S270); the script names the version it replaces (S271); the API reports the distribution (S272).
+
 ### S262 Rate, target and gap
 
 A fixed reference of 8,000.00 and savings occurrences of 1,200.00 in the month: `GET /budget-plan` returns `savings_rate_bp` 1500. After `PUT` with `savings_target_bp` 2500, the plan returns `savings_target` 2,000.00 and `savings_gap` 800.00. With savings of 2,000.00 or more the gap is 0.00.
