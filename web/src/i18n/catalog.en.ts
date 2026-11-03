@@ -92,7 +92,7 @@ export const catalogEn = {
   "help.loadFailed": "Help could not be loaded",
   "more.help": "Help",
   "more.settings": "Settings",
-  "more.scheme": "Colour scheme",
+  "more.scheme": "Mode",
   "more.density": "Density",
   "density.comfortable": "Comfortable",
   "density.compact": "Compact",

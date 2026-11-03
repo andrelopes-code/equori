@@ -95,7 +95,7 @@ export const catalogPtBR: Catalog = {
   "help.loadFailed": "Não foi possível carregar a ajuda",
   "more.help": "Ajuda",
   "more.settings": "Configurações",
-  "more.scheme": "Esquema de cores",
+  "more.scheme": "Modo",
   "more.density": "Densidade",
   "density.comfortable": "Confortável",
   "density.compact": "Compacta",
