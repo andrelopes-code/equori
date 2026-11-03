@@ -150,9 +150,22 @@ test("the choices of a question stand clear of the message above them", () => {
   );
 });
 
-test("the legend of a section stands over a rule that closes its heading", () => {
+test("a section reserves a transparent bar in the gutter, so nothing shifts when it shows", () => {
   assert.match(
     css,
-    /\[data-ui="field-group"\]\[data-kind="section"\] > \[data-part="legend"\]\s*\{[^}]*border-block-end: var\(--slotted-border-width-thin\) solid var\(--slotted-border-strong\)/,
+    /\[data-ui="field-group"\]\[data-kind="section"\]\s*\{[^}]*margin-inline-start: calc\(var\(--slotted-space-6\) \* -1\);[^}]*border-inline-start: calc\(var\(--slotted-border-width-thick\) \* 1\.5\) solid transparent/,
   );
+});
+
+test("a section under the pointer or holding the focus shows its bar and keeps the colour of its title", () => {
+  const rule =
+    /\[data-ui="field-group"\]\[data-kind="section"\]:is\(:hover, :focus-within\)\s*\{[^}]*\}/.exec(
+      css,
+    )?.[0] ?? "";
+  assert.notEqual(rule, "");
+  assert.match(
+    rule,
+    /border-inline-start-color: var\(--slotted-tone-accent-solid\)/,
+  );
+  assert.doesNotMatch(rule, /legend-color/);
 });

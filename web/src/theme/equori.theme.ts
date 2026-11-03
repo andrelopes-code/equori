@@ -40,13 +40,21 @@ const questionChoicesRule = `
 }
 `;
 
-// Owner review of 2026-11-02: a section title spaced further from the fields read as a label.
-// The title closes over a rule, so each section is a block with a heading.
+// Owner review of 2026-11-02 (trial): a section title spaced further from the fields read as a
+// label, and a change of background does not show where the page has the same background. The
+// section reserves a bar in the gutter, transparent at rest, so the content stays aligned with
+// the page. Under the pointer or holding the focus, the bar takes the accent colour; the title
+// keeps its colour (owner review, 2026-11-02).
 const sectionRule = `
-[data-ui="field-group"][data-kind="section"] > [data-part="legend"] {
-  inline-size: 100%;
-  padding-block-end: var(--slotted-space-4);
-  border-block-end: var(--slotted-border-width-thin) solid var(--slotted-border-strong);
+[data-ui="field-group"][data-kind="section"] {
+  margin-inline-start: calc(var(--slotted-space-6) * -1);
+  padding-inline-start: calc(var(--slotted-space-6) - var(--slotted-border-width-thick) * 1.5);
+  border-inline-start: calc(var(--slotted-border-width-thick) * 1.5) solid transparent;
+  transition: border-color var(--slotted-duration-short) var(--slotted-easing-standard);
+}
+
+[data-ui="field-group"][data-kind="section"]:is(:hover, :focus-within) {
+  border-inline-start-color: var(--slotted-tone-accent-solid);
 }
 `;
 
