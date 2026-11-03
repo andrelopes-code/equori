@@ -225,7 +225,7 @@ describe("PlanningPage budgets", () => {
     await userEvent.click(
       await screen.findByRole("menuitem", { name: catalogEn["budget.delete"] }),
     );
-    const dialog = await screen.findByRole("dialog", {
+    const dialog = await screen.findByRole("alertdialog", {
       name: words("budget.deleteTitle", { name: "Food" }),
     });
     expect(deleted).toEqual([]);

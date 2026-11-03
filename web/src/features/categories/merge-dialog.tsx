@@ -1,25 +1,13 @@
-import {
-  AlertDialog,
-  DialogBody,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@slotted/react/dialog";
-import { Button } from "@slotted/react/button";
 import { Field, FieldLabel } from "@slotted/react/field";
-import { InlineMessage } from "@slotted/react/inline-message";
-import { Stack } from "@slotted/react/stack";
 import { useState } from "react";
 
 import { errorText } from "@/api/problem";
 import { useMergeCategory } from "@/features/categories/api";
-import { CategoryPicker } from "@/features/categories/category-picker";
 import { subtreeOf } from "@/features/categories/category-paths";
 import type { CategoryEntry } from "@/features/categories/category-paths";
+import { CategoryPicker } from "@/features/categories/category-picker";
 import { useT } from "@/i18n/i18n-provider";
-import { useStableCallback } from "@/ui/use-stable-callback";
+import { ConfirmDialog } from "@/ui/confirm-dialog";
 
 // A75: the source's postings, rules and budgets move to the destination, and the source closes.
 export function MergeDialog({
@@ -34,66 +22,49 @@ export function MergeDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const t = useT();
-  const change = useStableCallback(onOpenChange);
   const merge = useMergeCategory();
   const [into, setInto] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
   const excluded = subtreeOf(entries, source.id);
+
+  function handleConfirm() {
+    if (into === null) return;
+    setError(null);
+    merge
+      .mutateAsync({ id: source.id, into })
+      .then(() => {
+        onOpenChange(false);
+      })
+      .catch((caught: unknown) => {
+        setError(errorText(caught, t));
+      });
+  }
+
   return (
-    <AlertDialog open={open} onOpenChange={change}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t("merge.title", { name: source.path })}</DialogTitle>
-          <DialogDescription>{t("merge.description")}</DialogDescription>
-        </DialogHeader>
-        <DialogBody>
-          <Stack gap={4}>
-            <Field required>
-              <FieldLabel>{t("merge.into")}</FieldLabel>
-              <CategoryPicker
-                value={into}
-                amount={source.class === "income" ? 1 : -1}
-                exclude={excluded}
-                portal={false}
-                onChange={setInto}
-              />
-            </Field>
-            {error !== null && (
-              <InlineMessage tone="danger">{error}</InlineMessage>
-            )}
-          </Stack>
-        </DialogBody>
-        <DialogFooter>
-          <Button
-            variant="ghost"
-            tone="secondary"
-            onClick={() => {
-              onOpenChange(false);
-            }}
-          >
-            {t("detail.cancel")}
-          </Button>
-          <Button
-            tone="danger"
-            disabled={into === null}
-            loading={merge.isPending}
-            onClick={() => {
-              if (into === null) return;
-              setError(null);
-              merge
-                .mutateAsync({ id: source.id, into })
-                .then(() => {
-                  onOpenChange(false);
-                })
-                .catch((caught: unknown) => {
-                  setError(errorText(caught, t));
-                });
-            }}
-          >
-            {t("merge.confirm")}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </AlertDialog>
+    <ConfirmDialog
+      open={open}
+      title={t("merge.title", { name: source.path })}
+      description={t("merge.description")}
+      confirmLabel={t("merge.confirm")}
+      confirmDisabled={into === null}
+      pending={merge.isPending}
+      error={error}
+      onConfirm={handleConfirm}
+      onCancel={() => {
+        onOpenChange(false);
+      }}
+    >
+      <Field required>
+        <FieldLabel>{t("merge.into")}</FieldLabel>
+        <CategoryPicker
+          value={into}
+          amount={source.class === "income" ? 1 : -1}
+          exclude={excluded}
+          portal={false}
+          onChange={setInto}
+        />
+      </Field>
+    </ConfirmDialog>
   );
 }

@@ -92,7 +92,7 @@ describe("goal actions", () => {
     const sent: { method: string; body: unknown }[] = [];
     await renderApp("/goals", { fetch: api(sent) });
     await openMenu(catalogEn["goals.delete"]);
-    const dialog = await screen.findByRole("dialog", {
+    const dialog = await screen.findByRole("alertdialog", {
       name: "Delete Emergency fund?",
     });
     await userEvent.click(
@@ -102,7 +102,7 @@ describe("goal actions", () => {
       expect(sent).toEqual([{ method: "DELETE", body: null }]);
     });
     await waitFor(() => {
-      expect(screen.queryByRole("dialog")).toBeNull();
+      expect(screen.queryByRole("alertdialog")).toBeNull();
     });
   });
 
@@ -110,14 +110,14 @@ describe("goal actions", () => {
     const sent: { method: string; body: unknown }[] = [];
     await renderApp("/goals", { fetch: api(sent) });
     await openMenu(catalogEn["goals.delete"]);
-    const dialog = await screen.findByRole("dialog", {
+    const dialog = await screen.findByRole("alertdialog", {
       name: "Delete Emergency fund?",
     });
     await userEvent.click(
       within(dialog).getByRole("button", { name: catalogEn["detail.cancel"] }),
     );
     await waitFor(() => {
-      expect(screen.queryByRole("dialog")).toBeNull();
+      expect(screen.queryByRole("alertdialog")).toBeNull();
     });
     expect(sent).toEqual([]);
   });

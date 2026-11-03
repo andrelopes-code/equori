@@ -387,7 +387,7 @@ describe("Budget plan", () => {
     await userEvent.click(
       screen.getByRole("radio", { name: catalogEn["plan.view.track"] }),
     );
-    const dialog = await screen.findByRole("dialog", {
+    const dialog = await screen.findByRole("alertdialog", {
       name: catalogEn["plan.discardTitleOne"],
     });
     await userEvent.click(
@@ -396,7 +396,7 @@ describe("Budget plan", () => {
       }),
     );
     await waitFor(() => {
-      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
     });
     expect(await input("Energy")).toHaveValue("1,800.00");
     expect(

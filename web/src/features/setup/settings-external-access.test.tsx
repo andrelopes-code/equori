@@ -169,7 +169,7 @@ describe("external access settings", () => {
         name: pt["settings.external_access.delete"],
       }),
     );
-    const confirm = within(await screen.findByRole("dialog"));
+    const confirm = within(await screen.findByRole("alertdialog"));
     await userEvent.click(
       confirm.getByRole("button", {
         name: pt["settings.external_access.delete"],

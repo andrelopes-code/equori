@@ -242,7 +242,7 @@ describe("integrations settings", () => {
         name: pt["settings.integrations.delete"],
       }),
     );
-    const dialog = await screen.findByRole("dialog");
+    const dialog = await screen.findByRole("alertdialog");
     await userEvent.click(
       within(dialog).getByRole("button", {
         name: pt["settings.integrations.delete"],
@@ -269,7 +269,7 @@ describe("integrations settings", () => {
         name: en["settings.integrations.delete"],
       }),
     );
-    const dialog = await screen.findByRole("dialog");
+    const dialog = await screen.findByRole("alertdialog");
     await userEvent.click(
       within(dialog).getByRole("button", {
         name: en["settings.integrations.delete"],

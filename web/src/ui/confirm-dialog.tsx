@@ -25,7 +25,11 @@ interface ConfirmDialogProps {
   // The one sentence the dialog announces: what the action does to what.
   description: string;
   confirmLabel: string;
+  // The answer that keeps things as they are; "Cancel" unless another words it better.
+  cancelLabel?: string;
   tone?: "danger" | "warning" | "accent";
+  // Whether the dialog stands open, for a caller that keeps it mounted; else its Presence says.
+  open?: boolean;
   pending?: boolean;
   confirmDisabled?: boolean;
   // The answer of a failed action, shown above the buttons.
@@ -43,7 +47,9 @@ export function ConfirmDialog({
   title,
   description,
   confirmLabel,
+  cancelLabel,
   tone = "danger",
+  open,
   pending = false,
   confirmDisabled = false,
   error = null,
@@ -66,7 +72,7 @@ export function ConfirmDialog({
   const hasBody = Children.toArray(children).length > 0 || error !== null;
 
   return (
-    <AlertDialog open={overlayOpen} tone={tone} onOpenChange={change}>
+    <AlertDialog open={open ?? overlayOpen} tone={tone} onOpenChange={change}>
       <DialogContent>
         <DialogHeader>
           <AlertDialogIcon />
@@ -95,7 +101,7 @@ export function ConfirmDialog({
               </Button>
             )}
           >
-            {t("detail.cancel")}
+            {cancelLabel ?? t("detail.cancel")}
           </AlertDialogCancel>
           <AlertDialogAction
             render={(props) => (

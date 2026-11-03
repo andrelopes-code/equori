@@ -63,7 +63,7 @@ describe("members settings", () => {
     await userEvent.click(
       bia.getByRole("button", { name: pt["members.remove"] }),
     );
-    const dialog = within(await screen.findByRole("dialog"));
+    const dialog = within(await screen.findByRole("alertdialog"));
     expect(
       dialog.getByText(
         pt["members.removeTitle"].replace("{email}", "bia@example.com"),
@@ -116,7 +116,7 @@ describe("members settings", () => {
     await userEvent.click(
       await screen.findByRole("button", { name: pt["members.leave"] }),
     );
-    const dialog = within(await screen.findByRole("dialog"));
+    const dialog = within(await screen.findByRole("alertdialog"));
     expect(dialog.getByText(pt["members.leaveTitle"])).toBeVisible();
     await userEvent.click(
       dialog.getByRole("button", { name: pt["members.leave"] }),
@@ -134,7 +134,7 @@ describe("members settings", () => {
     await userEvent.click(
       await screen.findByRole("button", { name: pt["members.leave"] }),
     );
-    const dialog = within(await screen.findByRole("dialog"));
+    const dialog = within(await screen.findByRole("alertdialog"));
     await userEvent.click(
       dialog.getByRole("button", { name: pt["members.leave"] }),
     );

@@ -223,7 +223,7 @@ describe("Budget page", () => {
     await userEvent.click(
       await screen.findByRole("menuitem", { name: catalogEn["budget.delete"] }),
     );
-    const dialog = await screen.findByRole("dialog");
+    const dialog = await screen.findByRole("alertdialog");
     await userEvent.click(
       within(dialog).getByRole("button", { name: catalogEn["budget.delete"] }),
     );

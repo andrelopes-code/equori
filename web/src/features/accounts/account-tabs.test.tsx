@@ -355,7 +355,7 @@ describe("Sync tab", () => {
     await userEvent.click(
       await screen.findByRole("button", { name: catalogEn["sync.stop"] }),
     );
-    const dialog = await screen.findByRole("dialog");
+    const dialog = await screen.findByRole("alertdialog");
     await userEvent.click(
       within(dialog).getByRole("button", {
         name: catalogEn["sync.stopConfirm"],
