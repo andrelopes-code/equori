@@ -6,6 +6,7 @@ import { meQuery } from "@/features/session";
 import { catalogEn } from "@/i18n/catalog.en";
 import { fakeApi, json, problem } from "@/testing/fake-api";
 import { renderApp } from "@/testing/render-app";
+import { applyScheme, readScheme } from "@/theme/scheme";
 
 const user = { id: 1, email: "a@b.c", role: "admin" };
 
@@ -17,11 +18,14 @@ function sessionApi(opts: {
   loggedIn: boolean;
   login?: () => Response;
   logout?: () => Response;
+  me?: object;
 }) {
   const state = { loggedIn: opts.loggedIn, bodies: [] as string[], logouts: 0 };
   const fetch = fakeApi({
     "GET /api/v1/me": () =>
-      state.loggedIn ? json(200, user) : problem(401, "unauthenticated"),
+      state.loggedIn
+        ? json(200, opts.me ?? user)
+        : problem(401, "unauthenticated"),
     "POST /api/v1/session": async (req) => {
       state.bodies.push(await req.text());
       const response = opts.login?.() ?? new Response(null, { status: 204 });
@@ -37,6 +41,8 @@ function sessionApi(opts: {
     "GET /api/v1/transactions": () => json(200, { items: [] }),
     "GET /api/v1/institutions": () => json(200, { items: [] }),
     "GET /api/v1/payees": () => json(200, { items: [] }),
+    "GET /api/v1/me/appearance": () => json(200, { scheme: "light" }),
+    "PUT /api/v1/me/appearance": () => json(200, {}),
   });
   return { fetch, state };
 }
@@ -77,6 +83,37 @@ describe("login", () => {
       expect(router.state.location.pathname).toBe("/transactions");
     });
     expect(state.bodies).toEqual(['{"email":"a@b.c","password":"pw"}']);
+  });
+
+  // BK21: a browser with no copy of the appearance takes the member's after the sign-in.
+  it("applies the member's stored appearance after signing in", async () => {
+    applyScheme("dark");
+    const { fetch } = sessionApi({ loggedIn: false });
+    const { router } = await renderApp("/login", { fetch });
+
+    await signIn("a@b.c", "pw");
+
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/");
+    });
+    await waitFor(() => {
+      expect(readScheme()).toBe("light");
+    });
+  });
+
+  // The profile is the source of truth for the language once a session exists.
+  it("applies the member's language after signing in", async () => {
+    const { fetch } = sessionApi({
+      loggedIn: false,
+      me: { ...user, language: "pt", region: "BR" },
+    });
+    await renderApp("/login", { fetch });
+
+    await signIn("a@b.c", "pw");
+
+    await waitFor(() => {
+      expect(document.documentElement.lang).toBe("pt-BR");
+    });
   });
 
   it.each([

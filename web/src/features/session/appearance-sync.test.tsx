@@ -1,6 +1,7 @@
 import { act, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { AppearanceSync } from "@/features/session/appearance-sync";
 import { fakeApi, json, problem } from "@/testing/fake-api";
 import { renderWithProviders } from "@/testing/render-app";
 import { applyScheme, readScheme } from "@/theme/scheme";
@@ -38,7 +39,7 @@ describe("AppearanceSync", () => {
   it("replaces the browser copy with the server object", async () => {
     const puts: unknown[] = [];
     applyScheme("dark");
-    renderWithProviders(<div />, {
+    renderWithProviders(<AppearanceSync />, {
       fetch: api({ scheme: "light" }, puts),
     });
 
@@ -55,7 +56,7 @@ describe("AppearanceSync", () => {
   it("sends the browser copy when the server object is empty", async () => {
     const puts: unknown[] = [];
     applyScheme("light");
-    renderWithProviders(<div />, { fetch: api({}, puts) });
+    renderWithProviders(<AppearanceSync />, { fetch: api({}, puts) });
 
     await waitFor(() => {
       expect(puts).toEqual([{ scheme: "light" }]);
@@ -64,7 +65,7 @@ describe("AppearanceSync", () => {
 
   it("saves a later change once, 300 ms after the last one", async () => {
     const puts: unknown[] = [];
-    renderWithProviders(<div />, {
+    renderWithProviders(<AppearanceSync />, {
       fetch: api({ scheme: "light" }, puts),
     });
     await waitFor(() => {
@@ -92,7 +93,7 @@ describe("AppearanceSync", () => {
   it("requests nothing without a session", async () => {
     const puts: unknown[] = [];
     const fetch = api({}, puts, false);
-    renderWithProviders(<div />, { fetch });
+    renderWithProviders(<AppearanceSync />, { fetch });
 
     await act(async () => {
       await vi.advanceTimersByTimeAsync(1000);

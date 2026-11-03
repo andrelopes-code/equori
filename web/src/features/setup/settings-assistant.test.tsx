@@ -205,10 +205,9 @@ function api(
   });
 }
 
-async function section() {
-  const heading = await screen.findByRole("heading", {
-    name: pt["settings.assistant.title"],
-  });
+// The shell applies the language of the profile before the section draws (BK21).
+async function section(title = pt["settings.assistant.title"]) {
+  const heading = await screen.findByRole("heading", { name: title });
   const root = heading.closest("section");
   if (root === null) throw new Error("no section around the heading");
   return within(root);
@@ -296,7 +295,7 @@ describe("assistant settings", () => {
     await renderApp("/settings?section=assistant", {
       fetch: api([], { me: { language: "en", region: "DE" } }),
     });
-    const view = await section();
+    const view = await section(en["settings.assistant.title"]);
     expect(await view.findAllByText(en["assistant.use.sends"])).toHaveLength(2);
     expect(view.getByText(en["assistant.use.local"])).toBeVisible();
     expect(
@@ -442,7 +441,7 @@ describe("assistant settings", () => {
           }),
       }),
     });
-    const view = await section();
+    const view = await section(en["settings.assistant.title"]);
     const row = (await view.findByText("Groq")).closest("li");
     if (row === null) throw new Error("no provider row");
     await userEvent.click(

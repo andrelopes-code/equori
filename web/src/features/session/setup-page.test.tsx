@@ -73,6 +73,8 @@ async function fill(region: string | null, check: "yes" | "no" | null = "yes") {
 }
 
 beforeEach(() => {
+  // A completed setup stores the profile locale; the next test starts from none.
+  localStorage.clear();
   const real = Intl.DateTimeFormat().resolvedOptions();
   vi.spyOn(navigator, "language", "get").mockReturnValue("en");
   vi.spyOn(Intl.DateTimeFormat.prototype, "resolvedOptions").mockReturnValue({

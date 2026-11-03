@@ -31,8 +31,10 @@ import { useExtent } from "@/app/shell/use-extent";
 import { useScrollState } from "@/app/shell/use-scroll-state";
 import { useWide } from "@/app/shell/use-wide";
 import { AssistantPanel, useBeside } from "@/features/assistant";
+import { AppearanceSync } from "@/features/session";
 import { useCaptureQueueNotice } from "@/features/transactions";
 import { useT } from "@/i18n/i18n-provider";
+import { ProfileLocale } from "@/i18n/profile-locale";
 import { applyDensity, readDensity } from "@/theme/density";
 
 const stickyFooter = "var(--slotted-page-sticky-bottom, 0px)";
@@ -175,6 +177,10 @@ export function AppFrame() {
         beside={beside}
       />
       <ToastRegion />
+      {/* BK21: mounted with the session, so a sign-in reads the member's choices; above the
+          router, a 401 on /login cleared the cache under their queries and they never updated. */}
+      <ProfileLocale />
+      <AppearanceSync />
     </AppShell>
   );
 }

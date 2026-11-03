@@ -9,6 +9,7 @@ import {
 import { AppProviders } from "@/app/providers";
 import { AppRouterProvider, newRouter } from "@/app/router";
 import type { AppRouter } from "@/app/router";
+import { ProfileLocale } from "@/i18n/profile-locale";
 import { setViewport } from "@/testing/viewport";
 
 export async function renderApp(
@@ -34,7 +35,8 @@ export async function renderApp(
   return { ...result, router };
 }
 
-// Renders one component under the application's providers, without the router.
+// Renders one component under the application's providers, without the router. ProfileLocale
+// stands for the shell, which mounts it with the session.
 export function renderWithProviders(
   ui: ReactNode,
   opts: { today?: string; fetch: typeof fetch },
@@ -45,6 +47,7 @@ export function renderWithProviders(
       today={opts.today ?? "2026-10-17"}
       retryDelay={0}
     >
+      <ProfileLocale />
       {ui}
     </AppProviders>,
     { reactStrictMode: true },
@@ -65,6 +68,7 @@ export function renderWithRouter(
       today={opts.today ?? "2026-10-17"}
       retryDelay={0}
     >
+      <ProfileLocale />
       <RouterContextProvider router={router}>{ui}</RouterContextProvider>
     </AppProviders>,
     { reactStrictMode: true },
