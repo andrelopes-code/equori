@@ -101,9 +101,9 @@ func TestUsageWithoutUseOrUserA2(t *testing.T) {
 	t.Parallel()
 
 	answer := structured(`{}`)
-	answer.Model = "gemini-3.5-flash-lite"
+	answer.Model = "gemini-3.5-flash"
 	fixed := answer
-	fixed.Model = "gemini-3.5-flash"
+	fixed.Model = "gemini-3.5-flash-lite"
 
 	h := apitest.New(t, apitest.LLM(llmtest.New("aistudio", answer, fixed)))
 	if err := call(t.Context(), h, assistant.ChatUse); err != nil {
@@ -111,7 +111,7 @@ func TestUsageWithoutUseOrUserA2(t *testing.T) {
 	}
 
 	ctx := auth.WithBooksID(t.Context(), h.OwnerID())
-	if _, err := h.App.LLM.Client(llm.Target{Provider: "aistudio", Model: "gemini-3.5-flash"}).Generate(ctx, llm.Request{
+	if _, err := h.App.LLM.Client(llm.Target{Provider: "aistudio", Model: "gemini-3.5-flash-lite"}).Generate(ctx, llm.Request{
 		Messages: []llm.Message{{Role: llm.RoleUser, Parts: []llm.Part{{Text: "x"}}}},
 	}); err != nil {
 		t.Fatalf("fixed chain: %v", err)
@@ -183,11 +183,11 @@ func TestUsageDays(t *testing.T) {
 	t.Parallel()
 
 	lite := structured(`{"items":[]}`)
-	lite.Model = "gemini-3.5-flash-lite"
+	lite.Model = "gemini-3.5-flash"
 	lite.Response.Usage = llm.Usage{InputTokens: 40, OutputTokens: 2}
-	refused := llmtest.Step{Model: "gemini-3.5-flash-lite", Err: &llm.QuotaError{RetryAfter: time.Hour}}
+	refused := llmtest.Step{Model: "gemini-3.5-flash", Err: &llm.QuotaError{RetryAfter: time.Hour}}
 	flash := structured(`{"items":[]}`)
-	flash.Model = "gemini-3.1-flash-lite"
+	flash.Model = "gemini-3.5-flash-lite"
 	flash.Response.Usage = llm.Usage{InputTokens: 10, OutputTokens: 5}
 	var day atomic.Int64
 	start := time.Date(2026, 10, 20, 12, 0, 0, 0, time.UTC)
@@ -207,9 +207,9 @@ func TestUsageDays(t *testing.T) {
 
 	// Day 2 has no use; on day 3 the lite model refused and the call moved to the next target.
 	want := []usageDayView{
-		{Day: "2026-10-20", ProviderID: "aistudio", Model: "gemini-3.5-flash-lite", Requests: 1, Tokens: 42},
-		{Day: "2026-10-22", ProviderID: "aistudio", Model: "gemini-3.1-flash-lite", Requests: 1, Tokens: 15},
-		{Day: "2026-10-22", ProviderID: "aistudio", Model: "gemini-3.5-flash-lite", Requests: 1, Errors: 1},
+		{Day: "2026-10-20", ProviderID: "aistudio", Model: "gemini-3.5-flash", Requests: 1, Tokens: 42},
+		{Day: "2026-10-22", ProviderID: "aistudio", Model: "gemini-3.5-flash", Requests: 1, Errors: 1},
+		{Day: "2026-10-22", ProviderID: "aistudio", Model: "gemini-3.5-flash-lite", Requests: 1, Tokens: 15},
 	}
 
 	got := usageDays(t, h, h.Client, "from=2026-10-20&to=2026-10-22")

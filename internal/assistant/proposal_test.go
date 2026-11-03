@@ -670,7 +670,7 @@ func TestRestartDiscardsWaiting(t *testing.T) {
 	steps := []llmtest.Step{
 		{}, // set once the parent exists
 		{Model: chatModel, Err: &llm.QuotaError{RetryAfter: time.Hour}},
-		{Model: "gemini-3.1-flash-lite", Response: textStep("ok").Response},
+		{Model: "gemini-3.5-flash-lite", Response: textStep("ok").Response},
 	}
 	p := llmtest.New("aistudio", steps...)
 	e := newProposalEnv(t, apitest.LLM(p))
@@ -713,7 +713,9 @@ func TestChatDeclarationsCarryProposal(t *testing.T) {
 	e := newProposalEnv(t)
 
 	decls, _ := assistant.ChatHandlersForTest(e.h.App.Assistant, func(context.Context) uuid.UUID { return uuid.Nil })
+
 	effects := map[string]tool.Effect{}
+
 	for _, tl := range e.h.App.Tools.Tools() {
 		effects[tl.Spec().Name] = tl.Spec().Effect
 	}
@@ -775,8 +777,11 @@ func TestChatHandlerStoresSuggestion(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		var suggested bool
-		var reason string
+		var (
+			suggested bool
+			reason    string
+		)
+
 		if err := e.h.Pool.QueryRow(t.Context(), `SELECT suggested, reason FROM assistant_proposal WHERE id = $1`, got.ProposalID).Scan(&suggested, &reason); err != nil {
 			t.Fatal(err)
 		}

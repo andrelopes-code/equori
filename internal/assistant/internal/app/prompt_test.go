@@ -14,7 +14,15 @@ import (
 func TestPrompt(t *testing.T) {
 	t.Parallel()
 
-	in := app.PromptInput{Today: time.Date(2026, 10, 23, 12, 0, 0, 0, time.UTC), Locale: locale.Locale{Language: "pt", Region: "BR"}, Page: "/cards"}
+	in := app.PromptInput{
+		Today:  time.Date(2026, 10, 23, 12, 0, 0, 0, time.UTC),
+		Locale: locale.Locale{Language: "pt", Region: "BR"},
+		Page:   "/cards",
+		Book: []app.BookRead{
+			{Tool: "list_accounts", Text: `{"accounts":[]}`},
+			{Tool: "list_schedules", Text: "(too long; call list_schedules)"},
+		},
+	}
 
 	want, err := os.ReadFile("testdata/prompt_pt_BR.txt")
 	if err != nil {
@@ -71,7 +79,11 @@ func TestInstructions(t *testing.T) {
 		}
 	}
 
-	for _, unwanted := range []string{"proposal", "confirms or rejects on a card", "Today is"} {
+	if !strings.Contains(got, "Patterns\n") {
+		t.Error("instructions lack Patterns")
+	}
+
+	for _, unwanted := range []string{"Book at the start", "proposal", "confirms or rejects on a card", "Today is"} {
 		if strings.Contains(got, unwanted) {
 			t.Errorf("instructions contain %q", unwanted)
 		}

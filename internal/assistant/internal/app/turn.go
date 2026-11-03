@@ -17,9 +17,9 @@ import (
 )
 
 const (
-	MaxSteps       = 6
-	TurnTimeout    = 90 * time.Second
-	WriteDeadline  = 120 * time.Second
+	MaxSteps       = 12
+	TurnTimeout    = 150 * time.Second
+	WriteDeadline  = 180 * time.Second
 	chatUseID      = "assistant.chat"
 	outcomeFailed  = "failed"
 	outcomeCancel  = "canceled"
@@ -206,12 +206,13 @@ func (s *Service) Turn(ctx context.Context, booksID, memberID int64, in TurnInpu
 	ev.Turn(conv.ID, userMsg.ID)
 
 	state := &turnState{conversationID: conv.ID}
+	book := s.bookReads(ctx, booksID)
 
 	runCtx, cancel := context.WithTimeout(context.WithValue(ctx, turnKey{}, state), TurnTimeout)
 	defer cancel()
 
 	req := AgentRequest{
-		System:   Prompt(PromptInput{Today: clock.DateOf(s.now(), clock.Location(ctx)), Locale: prof, Page: in.Page, Notices: notices}),
+		System:   Prompt(PromptInput{Today: clock.DateOf(s.now(), clock.Location(ctx)), Locale: prof, Page: in.Page, Notices: notices, Book: book}),
 		History:  History(messages, proposals, now),
 		Text:     text,
 		Deadline: s.now().Add(TurnTimeout),

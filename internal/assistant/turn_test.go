@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"slices"
 	"strings"
@@ -24,7 +25,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/tool"
 )
 
-const chatModel = "gemini-3.5-flash-lite"
+const chatModel = "gemini-3.5-flash"
 
 func textStep(s string) llmtest.Step {
 	return llmtest.Step{Model: chatModel, Response: llm.Response{
@@ -158,8 +159,14 @@ func TestTurnRead(t *testing.T) {
 	req := p.Requests()[0].Request
 
 	today := time.Date(2026, 10, 23, 0, 0, 0, 0, time.UTC)
-	if want := app.Prompt(app.PromptInput{Today: today, Locale: locale.Locale{Language: "pt", Region: "BR"}, Page: "/cards"}); req.System != want {
-		t.Fatalf("system = %q, want %q", req.System, want)
+
+	bare := app.Prompt(app.PromptInput{Today: today, Locale: locale.Locale{Language: "pt", Region: "BR"}, Page: "/cards"})
+	if head, _, _ := strings.Cut(bare, "\n\nData\n"); !strings.HasPrefix(req.System, head) {
+		t.Fatalf("system = %q, want prefix %q", req.System, head)
+	}
+
+	if !strings.Contains(req.System, "\n\nBook at the start of this turn\nlist_accounts: {") || !strings.Contains(req.System, "\nlist_schedules: ") {
+		t.Fatalf("system lacks the turn-start reads: %q", req.System)
 	}
 
 	var want, got []string
@@ -250,7 +257,7 @@ func TestTurnExhausted(t *testing.T) {
 	quota := func(model string) llmtest.Step {
 		return llmtest.Step{Model: model, Err: &llm.QuotaError{RetryAfter: time.Hour}}
 	}
-	p := llmtest.New("aistudio", quota("gemini-3.5-flash-lite"), quota("gemini-3.1-flash-lite"), quota("gemini-3.5-flash"))
+	p := llmtest.New("aistudio", quota("gemini-3.5-flash"), quota("gemini-3.5-flash-lite"), quota("gemini-3.1-flash-lite"))
 	h := turnHarness(t, p)
 	ctx := auth.WithBooksID(t.Context(), h.OwnerID())
 	_, _ = h.App.LLM.Use(assistant.ChatUse).Generate(ctx, llm.Request{Messages: []llm.Message{{Role: llm.RoleUser, Parts: []llm.Part{{Text: "x"}}}}})
@@ -293,8 +300,8 @@ func TestTurnFallback(t *testing.T) {
 	p := llmtest.New("aistudio",
 		callStep("get_balances", `{}`),
 		llmtest.Step{Model: chatModel, Err: &llm.QuotaError{RetryAfter: time.Hour}},
-		llmtest.Step{Model: "gemini-3.1-flash-lite", Response: callStep("get_balances", `{}`).Response},
-		llmtest.Step{Model: "gemini-3.1-flash-lite", Response: textStep("ok").Response},
+		llmtest.Step{Model: "gemini-3.5-flash-lite", Response: callStep("get_balances", `{}`).Response},
+		llmtest.Step{Model: "gemini-3.5-flash-lite", Response: textStep("ok").Response},
 	)
 	h := turnHarness(t, p)
 	r := sendTurn(h, h.Client, map[string]any{"text": "saldo"})
@@ -308,6 +315,55 @@ func TestTurnFallback(t *testing.T) {
 
 	if line := lastTurnLog(h); !strings.Contains(line, "restarted=true") {
 		t.Fatalf("turn log = %q", line)
+	}
+}
+
+// Spec 2026-11-03 §8: an output above 12 KiB and a failed read are replaced by a line that names the tool.
+func TestTurnBookTooLong(t *testing.T) {
+	t.Parallel()
+
+	p := llmtest.New("aistudio", textStep("ok"))
+	h := turnHarness(t, p)
+	bookTools(t, h, strings.Repeat("a", 13*1024))
+
+	r := sendTurn(h, h.Client, map[string]any{"text": "saldo"})
+	if r.Status != http.StatusOK {
+		t.Fatalf("status = %d: %s", r.Status, r.Body)
+	}
+
+	system := p.Requests()[0].Request.System
+	if !strings.Contains(system, "\nlist_accounts: (too long; call list_accounts)\nlist_schedules: (unavailable; call list_schedules)\n") {
+		t.Fatalf("system lacks the replacement lines: %q", system)
+	}
+}
+
+type bookOut struct {
+	Text string `json:"text"`
+}
+
+// bookTools replaces the chat tools by a list_accounts that returns text and a list_schedules that fails.
+func bookTools(t *testing.T, h *apitest.Harness, text string) {
+	t.Helper()
+
+	reg, err := tool.NewRegistry(slog.New(slog.DiscardHandler), tool.Group{Tools: []tool.Tool{
+		tool.New(tool.Spec{Name: "list_accounts", Description: "Lists accounts.", Effect: tool.ReadOnly},
+			func(context.Context, int64, struct{}) (bookOut, error) { return bookOut{Text: text}, nil }),
+		tool.New(tool.Spec{Name: "list_schedules", Description: "Lists schedules.", Effect: tool.ReadOnly},
+			func(context.Context, int64, struct{}) (bookOut, error) {
+				return bookOut{}, tool.InvalidArgument("x", "broken")
+			}),
+	}})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	set, err := reg.Select("list_accounts", "list_schedules")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := h.App.Assistant.UseTools(set); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -481,7 +537,7 @@ func TestTurnTransientIsNotALimit(t *testing.T) {
 
 		return h, &waits
 	}
-	steps := []llmtest.Step{transient("gemini-3.5-flash-lite"), transient("gemini-3.1-flash-lite"), transient("gemini-3.5-flash")}
+	steps := []llmtest.Step{transient("gemini-3.5-flash"), transient("gemini-3.5-flash-lite"), transient("gemini-3.1-flash-lite")}
 	t.Run("waits and answers", func(t *testing.T) {
 		t.Parallel()
 		h, waits := harness(t, llmtest.New("aistudio", append(slices.Clone(steps), textStep("ok"))...))

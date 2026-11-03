@@ -20,6 +20,7 @@ var guideTemplate = template.Must(template.New("guide").Parse(guideText))
 type guideData struct {
 	Audience, Today, Language, Region, Page string
 	Notices                                 []string
+	Book                                    []BookRead
 }
 
 // AccountNotice is an account whose figures an answer qualifies (P12 A152).
@@ -42,7 +43,12 @@ type PromptInput struct {
 	Page   string
 	// Notices are the accounts the chat prompt names with their warning (A152).
 	Notices []AccountNotice
+	// Book holds the outputs of the turn-start reads, in order (spec 2026-11-03 §8).
+	Book []BookRead
 }
+
+// BookRead is one turn-start read: the tool and its output, or the replacement text of spec §8.
+type BookRead struct{ Tool, Text string }
 
 // Prompt renders the system prompt of a turn (spec 10).
 func Prompt(p PromptInput) string {
@@ -58,6 +64,7 @@ func Prompt(p PromptInput) string {
 		Region:   p.Locale.Region,
 		Page:     p.Page,
 		Notices:  notices,
+		Book:     p.Book,
 	})
 }
 

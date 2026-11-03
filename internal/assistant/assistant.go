@@ -29,9 +29,9 @@ var ChatUse = llm.Use{
 	Needs:              []llm.Capability{llm.CapTools},
 	SendsFinancialData: true,
 	Default: []llm.DefaultTarget{
+		{Preset: "gemini", Model: "gemini-3.5-flash"},
 		{Preset: "gemini", Model: "gemini-3.5-flash-lite"},
 		{Preset: "gemini", Model: "gemini-3.1-flash-lite"},
-		{Preset: "gemini", Model: "gemini-3.5-flash"},
 		{Preset: "groq", Model: "openai/gpt-oss-120b"},
 		{Preset: "mistral", Model: "mistral-small-latest"},
 		{Preset: "ollama", Model: "qwen3:32b"},
