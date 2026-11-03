@@ -197,19 +197,43 @@
     display: none;
   }
 
-  /* The ring shows a goal's progress around a reserve; the plate shrinks inside it by the
-     ring's width and a gap of the page's ground. */
-  .mark[data-ring] {
-    padding: var(--slotted-border-width-thick);
-    border-radius: var(--slotted-radius-full);
-    background: conic-gradient(
-      var(--slotted-tone-accent-solid) var(--mark-progress),
-      var(--slotted-border-subtle) 0
-    );
+  /* The face gives up the ring's width and a gap of 1, 1.5 and 2 px, less the 2 px the ring
+     passes beyond the box. */
+  .mark[data-ring] > :first-child {
+    margin: 1.5px;
   }
 
-  .mark[data-ring] > :first-child {
-    box-shadow: 0 0 0 var(--slotted-border-width-thin) var(--slotted-surface);
+  .mark[data-ring][data-size="md"] > :first-child {
+    margin: 2.5px;
+  }
+
+  .mark[data-ring][data-size="lg"] > :first-child {
+    margin: 3.5px;
+  }
+
+  /* The ring shows a goal's progress around a reserve, outside the mark's box and centred on it;
+     the arc starts at twelve o'clock and ends in a round cap. The track is the text at a sixth of
+     its strength: no token holds a track that shows on both grounds. */
+  .ring {
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-start: 50%;
+    overflow: visible;
+    fill: none;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+  }
+
+  .track {
+    stroke: color-mix(in oklab, var(--slotted-text) 16%, transparent);
+  }
+
+  .arc {
+    stroke: var(--slotted-tone-accent-solid);
+    stroke-linecap: round;
+    transform: rotate(-90deg);
+    transform-box: fill-box;
+    transform-origin: center;
   }
 
   /* An unavailable account fades to 45 % and loses its colour; no disabled token holds an
@@ -222,9 +246,16 @@
   @media (forced-colors: active) {
     .face,
     .plate,
-    .badge,
-    .mark[data-ring] {
+    .badge {
       border: var(--slotted-border-width-thin) solid CanvasText;
+    }
+
+    .track {
+      stroke: GrayText;
+    }
+
+    .arc {
+      stroke: Highlight;
     }
   }
 }

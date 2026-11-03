@@ -284,7 +284,11 @@ describe("AccountField on a wide screen", () => {
       "[data-ring]",
     );
     await waitFor(() => {
-      expect(ring?.style.getPropertyValue("--mark-progress")).toBe("42.5%");
+      expect(
+        ring
+          ?.querySelector("circle[stroke-dasharray]")
+          ?.getAttribute("stroke-dasharray"),
+      ).toBe("42.5 100");
     });
     expect(item(option("Visa"))?.querySelector("[data-shape]")).toHaveAttribute(
       "data-shape",

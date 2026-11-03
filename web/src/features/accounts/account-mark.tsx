@@ -1,3 +1,4 @@
+import { AccountMarkRing } from "@/features/accounts/account-mark-ring";
 import type { AccountShape } from "@/features/accounts/account-shape";
 import styles from "@/features/accounts/account-mark.module.css";
 
@@ -33,13 +34,6 @@ export function AccountMark({
       data-color={color}
       data-ring={ring || undefined}
       data-disabled={disabled || undefined}
-      style={
-        ring
-          ? {
-              ["--mark-progress" as string]: `${String(Math.min(Math.max(progress, 0), 10000) / 100)}%`,
-            }
-          : undefined
-      }
       aria-hidden="true"
     >
       {logo === undefined ? (
@@ -50,6 +44,7 @@ export function AccountMark({
         </span>
       )}
       {shape === "card" && <span className={styles.badge} />}
+      {ring && <AccountMarkRing progress={progress} size={size} />}
     </span>
   );
 }

@@ -53,10 +53,13 @@ describe("AccountMark", () => {
       <AccountMark shape="circle" name="Viagem" progress={4250} />,
     );
     const mark = container.firstElementChild as HTMLElement;
+    const arc = () => container.querySelector("circle[stroke-dasharray]");
     expect(mark.getAttribute("data-ring")).toBe("true");
-    expect(mark.style.getPropertyValue("--mark-progress")).toBe("42.5%");
+    expect(arc()?.getAttribute("stroke-dasharray")).toBe("42.5 100");
     rerender(<AccountMark shape="circle" name="Viagem" progress={12000} />);
-    expect(mark.style.getPropertyValue("--mark-progress")).toBe("100%");
+    expect(arc()?.getAttribute("stroke-dasharray")).toBe("100 100");
+    rerender(<AccountMark shape="circle" name="Viagem" progress={0} />);
+    expect(arc()).toBeNull();
   });
 
   it("draws no ring outside a circle", () => {
