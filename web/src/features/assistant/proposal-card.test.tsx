@@ -17,6 +17,8 @@ const pending: Proposal = {
   id: "p1",
   tool: "record_transaction",
   status: "pending",
+  suggested: false,
+  waiting_for: [],
   preview: {
     action: "record_transaction",
     target: "Checking",

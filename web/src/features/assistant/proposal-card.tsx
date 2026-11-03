@@ -39,6 +39,8 @@ const tones = {
   stale: "warning",
   expired: "warning",
   discarded: "secondary",
+  waiting: "accent",
+  blocked: "secondary",
 } as const;
 
 interface ProposalCardProps {

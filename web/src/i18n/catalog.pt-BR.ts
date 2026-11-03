@@ -1437,6 +1437,8 @@ export const catalogPtBR: Catalog = {
   "assistant.proposal.hint.expired":
     "A proposta expirou antes de uma decisão. Peça de novo ao assistente.",
   "assistant.proposal.status.discarded": "Descartada",
+  "assistant.proposal.status.waiting": "Aguardando",
+  "assistant.proposal.status.blocked": "Bloqueada",
   "assistant.step.list_accounts": "Lendo contas",
   "assistant.step.get_balances": "Lendo saldos",
   "assistant.step.search_transactions": "Buscando transações",

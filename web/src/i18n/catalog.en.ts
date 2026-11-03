@@ -1430,6 +1430,8 @@ export const catalogEn = {
   "assistant.proposal.hint.expired":
     "This proposal expired before a decision. Ask the assistant again.",
   "assistant.proposal.status.discarded": "Discarded",
+  "assistant.proposal.status.waiting": "Waiting",
+  "assistant.proposal.status.blocked": "Blocked",
   "assistant.step.list_accounts": "Reading accounts",
   "assistant.step.get_balances": "Reading balances",
   "assistant.step.search_transactions": "Searching transactions",
