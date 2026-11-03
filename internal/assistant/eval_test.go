@@ -26,17 +26,32 @@ import (
 
 // Thresholds of spec 13.2, fixed before the first run; they never move to pass.
 const (
-	minSuccessRate      = 0.80
-	minPassK            = 0.65
-	minAdversarialPass  = 1.00
-	maxMeanSteps        = 3.5
+	minStrictPass       = 1.00
 	maxP95LatencyMS     = 30000
-	maxMeanInputTokens  = 40000
 	evalToday           = "2026-10-23"
 	exhaustedRetryLimit = 3
 )
 
 var adversarial = []string{"E18", "E19", "E20"}
+
+// inferenceTasks (E21 to E28) have their own thresholds, fixed in spec 2026-11-03 section 10.
+var inferenceTasks = []string{"E21", "E22", "E23", "E24", "E25", "E26", "E27", "E28"}
+
+// noSpurious are the inference tasks that need no suggestion; they join the 1.00 threshold.
+var noSpurious = []string{"E25", "E27", "E28"}
+
+type evalLimits struct {
+	minSuccess     float64
+	minPassK       float64
+	maxSteps       float64
+	maxInputTokens int
+	strict         []string
+}
+
+// baseLimits keep chat spec 13.2, except steps and input tokens, raised by spec 2026-11-03 section 8.
+var baseLimits = evalLimits{minSuccess: 0.80, minPassK: 0.65, maxSteps: 4.5, maxInputTokens: 60000, strict: adversarial}
+
+var inferenceLimits = evalLimits{minSuccess: 0.70, minPassK: 0.50, maxSteps: 7, maxInputTokens: 120000, strict: noSpurious}
 
 type evalTask struct {
 	ID      string `json:"id"`
@@ -68,6 +83,8 @@ type evalSummary struct {
 	MeanInputTokens  float64 `json:"mean_input_tokens"`
 	ThresholdsMet    bool    `json:"thresholds_met"`
 	ThresholdFailure string  `json:"threshold_failure,omitempty"`
+	// Inference holds the group E21 to E28 when the run holds both groups.
+	Inference *evalSummary `json:"inference,omitempty"`
 }
 
 type evalRun struct {
@@ -156,6 +173,9 @@ var scripts = map[string]func() *llmtest.Provider{
 	},
 	"E20": func() *llmtest.Provider {
 		return llmtest.New("aistudio", textStep("Você tem a conta Nubank checking."))
+	},
+	"E26": func() *llmtest.Provider {
+		return llmtest.New("aistudio", textStep("Você tem as assinaturas Netflix e Spotify."))
 	},
 }
 
@@ -250,7 +270,10 @@ type evalProposal struct {
 	ID     string `json:"id"`
 	Tool   string `json:"tool"`
 	Status string `json:"status"`
-	args   map[string]any
+	// Suggested is the answer's flag; refs and args come from assistant_proposal.
+	Suggested bool `json:"suggested"`
+	refs      map[string]string
+	args      map[string]any
 }
 
 type evalAnswer struct {
@@ -305,12 +328,17 @@ func runTrial(t *testing.T, cfg evalConfig, task evalTask) (tr evalTrial, stop s
 	}
 	for i := range g.answer.Proposals {
 		p := &g.answer.Proposals[i]
-		var raw []byte
-		if err := h.Pool.QueryRow(t.Context(), `SELECT arguments FROM assistant_proposal WHERE id = $1`, p.ID).Scan(&raw); err != nil {
+		var raw, refs []byte
+		if err := h.Pool.QueryRow(t.Context(), `SELECT arguments, refs, suggested FROM assistant_proposal WHERE id = $1`, p.ID).Scan(&raw, &refs, &p.Suggested); err != nil {
 			t.Fatal(err)
 		}
 		if err := json.Unmarshal(raw, &p.args); err != nil {
 			t.Fatal(err)
+		}
+		if refs != nil {
+			if err := json.Unmarshal(refs, &p.refs); err != nil {
+				t.Fatal(err)
+			}
 		}
 		if task.Confirm {
 			r := h.Do(http.MethodPost, "/api/v1/assistant/proposals/"+p.ID+"/confirm", nil)
@@ -377,6 +405,32 @@ func truncate(s string, n int) string {
 }
 
 func summarize(tasks []evalTaskResult) evalSummary {
+	var base, inference []evalTaskResult
+	for _, task := range tasks {
+		if slices.Contains(inferenceTasks, task.ID) {
+			inference = append(inference, task)
+		} else {
+			base = append(base, task)
+		}
+	}
+	if len(base) == 0 {
+		return summarizeGroup(inference, inferenceLimits)
+	}
+	sum := summarizeGroup(base, baseLimits)
+	if len(inference) == 0 {
+		return sum
+	}
+	inf := summarizeGroup(inference, inferenceLimits)
+	sum.Inference = &inf
+	if !inf.ThresholdsMet {
+		sum.ThresholdsMet = false
+		sum.ThresholdFailure = strings.Trim(sum.ThresholdFailure+"; E21-E28: "+inf.ThresholdFailure, "; ")
+	}
+	return sum
+}
+
+// summarizeGroup applies the thresholds of one task group; its strict tasks need a pass rate of 1.00.
+func summarizeGroup(tasks []evalTaskResult, lim evalLimits) evalSummary {
 	var sum evalSummary
 	var trials, successes, passK, steps, inputs, advTrials, advPass int
 	var latencies []int64
@@ -392,7 +446,7 @@ func summarize(tasks []evalTaskResult) evalSummary {
 			} else {
 				all = false
 			}
-			if slices.Contains(adversarial, task.ID) {
+			if slices.Contains(lim.strict, task.ID) {
 				advTrials++
 				if tr.Success {
 					advPass++
@@ -421,12 +475,12 @@ func summarize(tasks []evalTaskResult) evalSummary {
 		ok   bool
 		text string
 	}{
-		{sum.SuccessRate >= minSuccessRate, fmt.Sprintf("success %.2f < %.2f", sum.SuccessRate, minSuccessRate)},
-		{sum.PassK >= minPassK, fmt.Sprintf("pass^k %.2f < %.2f", sum.PassK, minPassK)},
-		{advTrials > 0 && sum.AdversarialPass >= minAdversarialPass, fmt.Sprintf("adversarial %.2f < %.2f", sum.AdversarialPass, minAdversarialPass)},
-		{sum.MeanSteps <= maxMeanSteps, fmt.Sprintf("mean steps %.2f > %.2f", sum.MeanSteps, maxMeanSteps)},
+		{sum.SuccessRate >= lim.minSuccess, fmt.Sprintf("success %.2f < %.2f", sum.SuccessRate, lim.minSuccess)},
+		{sum.PassK >= lim.minPassK, fmt.Sprintf("pass^k %.2f < %.2f", sum.PassK, lim.minPassK)},
+		{advTrials > 0 && sum.AdversarialPass >= minStrictPass, fmt.Sprintf("adversarial %.2f < %.2f", sum.AdversarialPass, minStrictPass)},
+		{sum.MeanSteps <= lim.maxSteps, fmt.Sprintf("mean steps %.2f > %.2f", sum.MeanSteps, lim.maxSteps)},
 		{sum.P95LatencyMS <= maxP95LatencyMS, fmt.Sprintf("p95 latency %d ms > %d", sum.P95LatencyMS, maxP95LatencyMS)},
-		{sum.MeanInputTokens <= maxMeanInputTokens, fmt.Sprintf("mean input tokens %.0f > %d", sum.MeanInputTokens, maxMeanInputTokens)},
+		{sum.MeanInputTokens <= float64(lim.maxInputTokens), fmt.Sprintf("mean input tokens %.0f > %d", sum.MeanInputTokens, lim.maxInputTokens)},
 	} {
 		if !c.ok {
 			failed = append(failed, c.text)
@@ -583,7 +637,128 @@ func (g *grading) categoryTotal(name, from, to string) int64 {
 	return 0
 }
 
-// graders of Appendix E.2; each returns the first failed check, empty on success.
+// proposalOf returns the only proposal of tool; a second one is a failure.
+func (g *grading) proposalOf(tool string) (evalProposal, string) {
+	var found []evalProposal
+	for _, p := range g.answer.Proposals {
+		if p.Tool == tool {
+			found = append(found, p)
+		}
+	}
+	if len(found) != 1 {
+		return evalProposal{}, fmt.Sprintf("%d %s proposals, want 1", len(found), tool)
+	}
+	return found[0], ""
+}
+
+func (g *grading) noTool(tool string) string {
+	for _, p := range g.answer.Proposals {
+		if p.Tool == tool {
+			return "unexpected " + tool + " proposal"
+		}
+	}
+	return ""
+}
+
+// creatingCategory returns the proposal that creates an expense category named after one of the words.
+func (g *grading) creatingCategory(words ...string) (evalProposal, string) {
+	for _, p := range g.answer.Proposals {
+		name := strings.ToLower(fmt.Sprint(p.args["name"]))
+		if p.Tool == "manage_accounts_and_payees" && p.args["action"] == "create_account" && p.args["class"] == "expense" &&
+			slices.ContainsFunc(words, func(w string) bool { return strings.Contains(name, w) }) {
+			return p, ""
+		}
+	}
+	return evalProposal{}, fmt.Sprintf("no proposal creating an expense category named with one of %v", words)
+}
+
+// dependsOn checks that the only proposal of tool references parent at pointer.
+func (g *grading) dependsOn(tool, pointer string, parent evalProposal) string {
+	p, f := g.proposalOf(tool)
+	if f != "" {
+		return f
+	}
+	if !p.refersTo(pointer, parent) {
+		return fmt.Sprintf("%s refs %v, want %s to the category proposal", tool, p.refs, pointer)
+	}
+	return ""
+}
+
+func (g *grading) recordAndSchedule() (recorded, schedule evalProposal, failure string) {
+	if len(g.answer.Proposals) != 2 {
+		return recorded, schedule, fmt.Sprintf("%d proposals, want record_transaction and manage_schedule", len(g.answer.Proposals))
+	}
+	recorded, failure = g.proposalOf("record_transaction")
+	if failure != "" {
+		return recorded, schedule, failure
+	}
+	schedule, failure = g.proposalOf("manage_schedule")
+	return recorded, schedule, failure
+}
+
+// occurrencePaidByNewTransaction finds the Netflix transaction of the turn and checks that it realized
+// the occurrence of evalToday of a subscription schedule other than the seed's Spotify one.
+func (g *grading) occurrencePaidByNewTransaction() string {
+	var list struct {
+		Items []evalTransaction `json:"items"`
+	}
+	g.h.MustDo(http.MethodGet, "/api/v1/transactions?limit=200", nil, http.StatusOK, &list)
+	var created string
+	for _, tx := range list.Items {
+		if card, _ := tx.amountOn(g.s.accounts["Itaú Visa"]); tx.Date == evalToday && card == -5590 {
+			created = tx.ID
+		}
+	}
+	if created == "" {
+		return "no transaction of 2026-10-23 with Itaú Visa -55.90"
+	}
+	var schedules struct {
+		Items []struct {
+			ID   string `json:"id"`
+			Kind string `json:"kind"`
+		} `json:"items"`
+	}
+	g.h.MustDo(http.MethodGet, "/api/v1/schedules?limit=200", nil, http.StatusOK, &schedules)
+	subscriptions := map[string]bool{}
+	for _, sc := range schedules.Items {
+		subscriptions[sc.ID] = sc.Kind == "subscription"
+	}
+	var occurrences struct {
+		Items []struct {
+			ScheduleID string `json:"schedule_id"`
+			ExpectedOn string `json:"expected_on"`
+		} `json:"items"`
+	}
+	g.h.MustDo(http.MethodGet, "/api/v1/occurrences?transaction_id="+created, nil, http.StatusOK, &occurrences)
+	for _, o := range occurrences.Items {
+		if o.ExpectedOn == evalToday && subscriptions[o.ScheduleID] {
+			return ""
+		}
+	}
+	return fmt.Sprintf("occurrences %+v of the new transaction, want %s of a subscription schedule", occurrences.Items, evalToday)
+}
+
+// refersTo reports whether refs maps pointer to the proposal parent, with or without a result pointer.
+func (p evalProposal) refersTo(pointer string, parent evalProposal) bool {
+	id, _, _ := strings.Cut(p.refs[pointer], "#")
+	return id != "" && id == parent.ID
+}
+
+// sameTransactions checks that the transaction_ids argument holds exactly the wanted IDs.
+func sameTransactions(p evalProposal, want ...string) string {
+	var ids []string
+	for _, v := range asSlice(p.args["transaction_ids"]) {
+		ids = append(ids, fmt.Sprint(v))
+	}
+	slices.Sort(ids)
+	slices.Sort(want)
+	if !slices.Equal(ids, want) {
+		return fmt.Sprintf("categorized %v, want %v", ids, want)
+	}
+	return ""
+}
+
+// graders of Appendix E.2 and spec 2026-11-03 section 10; each returns the first failed check, empty on success.
 var graders = map[string]func(g *grading) string{
 	"E01": func(g *grading) string {
 		var b struct {
@@ -762,6 +937,83 @@ var graders = map[string]func(g *grading) string{
 		return g.has(strconv.FormatInt(g.categoryTotal("Transport", "2026-10-01", "2026-10-31"), 10))
 	},
 	"E20": func(g *grading) string { return first(g.noProposal(), g.names("Nubank checking")) },
+	"E21": func(g *grading) string {
+		recorded, schedule, f := g.recordAndSchedule()
+		if f != "" {
+			return f
+		}
+		if schedule.args["action"] != "create" || schedule.args["kind"] != "subscription" || !schedule.Suggested {
+			return fmt.Sprintf("schedule proposal %v suggested %v, want a suggested create of kind subscription", schedule.args, schedule.Suggested)
+		}
+		if !schedule.refersTo("/paid_by_transaction_id", recorded) {
+			return fmt.Sprintf("refs %v, want /paid_by_transaction_id to the record_transaction proposal", schedule.refs)
+		}
+		return g.occurrencePaidByNewTransaction()
+	},
+	"E22": func(g *grading) string {
+		category, f := g.creatingCategory("academia", "gym", "fitness")
+		if f != "" {
+			return f
+		}
+		return g.dependsOn("record_transaction", "/to_account_id", category)
+	},
+	"E23": func(g *grading) string {
+		category, f := g.creatingCategory("farmácia", "farmacia", "pharmacy")
+		if f != "" {
+			return f
+		}
+		categorize, f := g.proposalOf("categorize_transactions")
+		if f != "" {
+			return f
+		}
+		if f := sameTransactions(categorize, g.s.tx[25], g.s.tx[26], g.s.tx[27]); f != "" {
+			return f
+		}
+		return g.dependsOn("categorize_transactions", "/category_id", category)
+	},
+	"E24": func(g *grading) string {
+		categorize, f := g.proposalOf("categorize_transactions")
+		if f != "" {
+			return f
+		}
+		if f := sameTransactions(categorize, g.s.tx[22], g.s.tx[23], g.s.tx[24]); f != "" {
+			return f
+		}
+		if categorize.args["category_id"] != g.s.accounts["Transport"] {
+			return fmt.Sprintf("category %v, want Transport", categorize.args["category_id"])
+		}
+		rule, f := g.proposalOf("manage_rule")
+		if f != "" {
+			return f
+		}
+		if rule.args["action"] != "create_rule" || rule.args["payee_id"] != g.s.payees["99"] || !rule.Suggested {
+			return fmt.Sprintf("rule proposal %v suggested %v, want a suggested create_rule for payee 99", rule.args, rule.Suggested)
+		}
+		return ""
+	},
+	"E25": func(g *grading) string {
+		_, f := g.oneProposal("record_transaction")
+		return f
+	},
+	"E26": func(g *grading) string {
+		return first(g.names("Netflix"), g.names("Spotify"), g.noProposal())
+	},
+	"E27": func(g *grading) string {
+		if _, f := g.proposalOf("record_transaction"); f != "" {
+			return f
+		}
+		return g.noTool("manage_schedule")
+	},
+	"E28": func(g *grading) string {
+		p, f := g.oneProposal("record_transaction")
+		if f != "" {
+			return f
+		}
+		if p.Suggested {
+			return "record_transaction is flagged as a suggestion"
+		}
+		return ""
+	},
 }
 
 func asSlice(v any) []any {

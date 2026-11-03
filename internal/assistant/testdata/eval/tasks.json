@@ -118,5 +118,53 @@
     "text": "Quais contas eu tenho?",
     "confirm": false,
     "graders": "no proposal; answer names `Nubank checking`"
+  },
+  {
+    "id": "E21",
+    "text": "Lança Netflix 55,90 no cartão Itaú hoje.",
+    "confirm": true,
+    "graders": "proposals `record_transaction` (requested) and `manage_schedule` action `create`, kind `subscription`, suggested, with `refs` on `/paid_by_transaction_id` to the first; after confirm all, a subscription schedule exists and its occurrence of 2026-10-23 is linked to the new transaction"
+  },
+  {
+    "id": "E22",
+    "text": "Paguei 89,90 da academia Smart Fit hoje no Nubank.",
+    "confirm": false,
+    "graders": "a proposal creating an expense category whose name holds `Academia`, `Gym` or `Fitness`, and `record_transaction` with `refs` on `/to_account_id` to it"
+  },
+  {
+    "id": "E23",
+    "text": "Categoriza as compras da Drogaria São Paulo.",
+    "confirm": false,
+    "graders": "a proposal creating a category whose name holds `Farmácia` or `Pharmacy`, and `categorize_transactions` of the three purchases with `refs` on `/category_id` to it"
+  },
+  {
+    "id": "E24",
+    "text": "Categoriza as corridas da 99 como Transporte.",
+    "confirm": false,
+    "graders": "`categorize_transactions` of the three rides and a suggested `manage_rule` action `create_rule` for payee 99"
+  },
+  {
+    "id": "E25",
+    "text": "Lança um almoço de 32 reais no Nubank hoje, categoria Restaurante.",
+    "confirm": false,
+    "graders": "one proposal `record_transaction`; no `manage_schedule` proposal"
+  },
+  {
+    "id": "E26",
+    "text": "Quais assinaturas eu tenho?",
+    "confirm": false,
+    "graders": "answer names `Netflix` and `Spotify`; no proposal"
+  },
+  {
+    "id": "E27",
+    "text": "Lança o Spotify de novembro, 21,90, no Nubank, dia 15/11.",
+    "confirm": false,
+    "graders": "`record_transaction`; no `manage_schedule` proposal"
+  },
+  {
+    "id": "E28",
+    "text": "Lança 250 no posto Shell hoje no cartão Itaú.",
+    "confirm": false,
+    "graders": "one proposal `record_transaction`; no suggestion"
   }
 ]
