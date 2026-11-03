@@ -113,8 +113,10 @@ func (p paced) Generate(ctx context.Context, model string, req llm.Request) (llm
 	if wait := time.Until(pace.last.Add(p.gap)); wait > 0 {
 		time.Sleep(wait)
 	}
+
 	pace.last = time.Now()
 	pace.Unlock()
+
 	return p.Provider.Generate(ctx, model, req)
 }
 
@@ -126,6 +128,7 @@ type evalConfig struct {
 
 func readEvalConfig(t *testing.T) evalConfig {
 	t.Helper()
+
 	c := evalConfig{
 		provider: os.Getenv("EQUORI_EVAL_PROVIDER"), model: os.Getenv("EQUORI_EVAL_MODEL"),
 		key: os.Getenv("EQUORI_EVAL_KEY"), baseURL: os.Getenv("EQUORI_EVAL_BASE_URL"), out: os.Getenv("EQUORI_EVAL_OUT"),
@@ -134,27 +137,34 @@ func readEvalConfig(t *testing.T) evalConfig {
 	if c.provider == "" {
 		t.Fatal("set EQUORI_EVAL_PROVIDER to a preset (gemini, groq, ollama, ...) or llmtest")
 	}
+
 	if v := os.Getenv("EQUORI_EVAL_K"); v != "" {
 		n, err := strconv.Atoi(v)
 		if err != nil || n < 1 {
 			t.Fatalf("EQUORI_EVAL_K = %q", v)
 		}
+
 		c.k = n
 	}
+
 	if v := os.Getenv("EQUORI_EVAL_RPM"); v != "" {
 		n, err := strconv.Atoi(v)
 		if err != nil || n < 1 {
 			t.Fatalf("EQUORI_EVAL_RPM = %q", v)
 		}
+
 		c.gap = time.Minute / time.Duration(n)
 	}
+
 	if c.provider == "llmtest" {
 		c.model = chatModel
 	}
+
 	if c.out == "" {
 		c.out = filepath.Join("..", "..", "docs", "assistant-eval",
 			fmt.Sprintf("%s-%s-%s.json", time.Now().Format(time.DateOnly), c.provider, strings.ReplaceAll(c.model, "/", "_")))
 	}
+
 	return c
 }
 
@@ -182,19 +192,24 @@ var scripts = map[string]func() *llmtest.Provider{
 func TestAssistantEval(t *testing.T) {
 	cfg := readEvalConfig(t)
 	var tasks []evalTask
+
 	b, err := os.ReadFile(filepath.Join("testdata", "eval", "tasks.json"))
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if err := json.Unmarshal(b, &tasks); err != nil {
 		t.Fatal(err)
 	}
+
 	run := evalRun{Date: time.Now().Format(time.DateOnly), Provider: cfg.provider, Model: cfg.model, K: cfg.k}
 	defer func() { writeEvalRun(t, cfg, &run) }()
+
 	for _, task := range tasks {
 		if cfg.provider == "llmtest" && scripts[task.ID] == nil {
 			continue
 		}
+
 		result := evalTaskResult{ID: task.ID}
 		t.Run(task.ID, func(t *testing.T) {
 			for trial := range cfg.k {
@@ -203,9 +218,11 @@ func TestAssistantEval(t *testing.T) {
 					run.Stopped = stop
 					t.Fatalf("trial %d: %s", trial+1, stop)
 				}
+
 				if !tr.Success {
 					t.Errorf("trial %d: %s", trial+1, tr.Failure)
 				}
+
 				result.Trials = append(result.Trials, tr)
 			}
 		})
@@ -213,10 +230,12 @@ func TestAssistantEval(t *testing.T) {
 		if len(result.Trials) > 0 {
 			run.Tasks = append(run.Tasks, result)
 		}
+
 		if run.Stopped != "" {
 			return
 		}
 	}
+
 	if cfg.provider != "llmtest" {
 		run.Summary = summarize(run.Tasks)
 		if !run.Summary.ThresholdsMet {
@@ -229,40 +248,50 @@ func writeEvalRun(t *testing.T, cfg evalConfig, run *evalRun) {
 	if cfg.provider == "llmtest" {
 		return
 	}
+
 	if run.Summary == (evalSummary{}) {
 		run.Summary = summarize(run.Tasks)
 	}
+
 	b, err := json.MarshalIndent(run, "", "  ")
 	if err != nil {
 		t.Error(err)
 		return
 	}
+
 	if err := os.WriteFile(cfg.out, append(b, '\n'), 0o600); err != nil {
 		t.Error(err)
 	}
+
 	t.Logf("results written to %s", cfg.out)
 }
 
 func evalHarness(t *testing.T, cfg evalConfig, task evalTask) *apitest.Harness {
 	t.Helper()
+
 	if cfg.provider == "llmtest" {
 		return apitest.New(t, apitest.LLM(scripts[task.ID]()), apitest.Today(evalToday))
 	}
+
 	factory := llmapi.NewFactory()
 	h := apitest.New(t, apitest.Today(evalToday), apitest.SecretKeys(apitest.SecretKey, ""),
 		apitest.LLMFactory(func(api, baseURL, key string) llm.Provider { return paced{factory(api, baseURL, key), cfg.gap} }))
+
 	body := map[string]any{"preset": cfg.provider, "name": "Evaluation"}
 	if cfg.key != "" {
 		body["key"] = cfg.key
 	}
+
 	if cfg.baseURL != "" {
 		body["base_url"] = cfg.baseURL
 	}
+
 	var provider idOnly
 	h.MustDo(http.MethodPost, "/api/v1/assistant/providers", body, http.StatusCreated, &provider)
 	h.MustDo(http.MethodPut, "/api/v1/assistant/uses/assistant.chat/chain", map[string]any{"targets": []any{
 		map[string]any{"provider_id": provider.ID, "model": cfg.model, "capabilities": []string{"tools"}},
 	}}, http.StatusOK, nil)
+
 	return h
 }
 
@@ -287,22 +316,27 @@ func runTrial(t *testing.T, cfg evalConfig, task evalTask) (tr evalTrial, stop s
 	t.Helper()
 	h := evalHarness(t, cfg, task)
 	s := seedEval(t, h)
+
 	var events []sseEvent
 	for attempt := 0; ; attempt++ {
 		began := time.Now()
 		r := sendTurn(h, h.Client, map[string]any{"text": task.Text})
 		tr.LatencyMS = time.Since(began).Milliseconds()
+
 		retryAt, exhausted := exhaustedUntil(r)
 		if !exhausted {
 			events = parseSSE(r.Body)
 			break
 		}
+
 		wait := time.Until(retryAt)
 		if wait > 2*time.Minute || attempt+1 == exhaustedRetryLimit {
 			return tr, "daily_quota"
 		}
+
 		time.Sleep(max(wait, 0) + time.Second)
 	}
+
 	line := lastTurnLog(h)
 	tr.Steps, tr.InputTokens, tr.OutputTokens = logInt(line, "steps"), logInt(line, "input_tokens"), logInt(line, "output_tokens")
 
@@ -322,26 +356,33 @@ func runTrial(t *testing.T, cfg evalConfig, task evalTask) (tr evalTrial, stop s
 			}
 		}
 	}
+
 	if g.answer.Outcome == "" {
 		tr.Failure = "no answer event: " + truncate(string(events[len(events)-1].Data), 300)
 		return tr, ""
 	}
+
 	for i := range g.answer.Proposals {
 		p := &g.answer.Proposals[i]
+
 		var raw, refs []byte
 		if err := h.Pool.QueryRow(t.Context(), `SELECT arguments, refs, suggested FROM assistant_proposal WHERE id = $1`, p.ID).Scan(&raw, &refs, &p.Suggested); err != nil {
 			t.Fatal(err)
 		}
+
 		if err := json.Unmarshal(raw, &p.args); err != nil {
 			t.Fatal(err)
 		}
+
 		if refs != nil {
 			if err := json.Unmarshal(refs, &p.refs); err != nil {
 				t.Fatal(err)
 			}
 		}
+
 		if task.Confirm {
 			r := h.Do(http.MethodPost, "/api/v1/assistant/proposals/"+p.ID+"/confirm", nil)
+
 			var out struct {
 				Status string `json:"status"`
 			}
@@ -351,9 +392,12 @@ func runTrial(t *testing.T, cfg evalConfig, task evalTask) (tr evalTrial, stop s
 			}
 		}
 	}
+
 	h.Dispatch()
+
 	tr.Failure = graders[task.ID](&g)
 	tr.Success = tr.Failure == ""
+
 	return tr, ""
 }
 
@@ -366,6 +410,7 @@ func exhaustedUntil(r apitest.Response) (time.Time, bool) {
 		_ = json.Unmarshal(r.Body, &p)
 		return p.RetryAt, true
 	}
+
 	for _, e := range parseSSE(r.Body) {
 		var ev struct {
 			Problem struct {
@@ -378,13 +423,16 @@ func exhaustedUntil(r apitest.Response) (time.Time, bool) {
 		if e.Name != "error" || json.Unmarshal([]byte(e.Data), &ev) != nil {
 			continue
 		}
+
 		if ev.Code == "assistant_exhausted" {
 			return ev.RetryAt, true
 		}
+
 		if ev.Problem.Code == "assistant_exhausted" {
 			return ev.Problem.RetryAt, true
 		}
 	}
+
 	return time.Time{}, false
 }
 
@@ -393,7 +441,9 @@ func logInt(line, key string) int {
 	if m == nil {
 		return 0
 	}
+
 	n, _ := strconv.Atoi(m[1])
+
 	return n
 }
 
@@ -401,6 +451,7 @@ func truncate(s string, n int) string {
 	if len(s) > n {
 		return s[:n]
 	}
+
 	return s
 }
 
@@ -413,19 +464,24 @@ func summarize(tasks []evalTaskResult) evalSummary {
 			base = append(base, task)
 		}
 	}
+
 	if len(base) == 0 {
 		return summarizeGroup(inference, inferenceLimits)
 	}
+
 	sum := summarizeGroup(base, baseLimits)
 	if len(inference) == 0 {
 		return sum
 	}
+
 	inf := summarizeGroup(inference, inferenceLimits)
+
 	sum.Inference = &inf
 	if !inf.ThresholdsMet {
 		sum.ThresholdsMet = false
 		sum.ThresholdFailure = strings.Trim(sum.ThresholdFailure+"; E21-E28: "+inf.ThresholdFailure, "; ")
 	}
+
 	return sum
 }
 
@@ -433,6 +489,7 @@ func summarize(tasks []evalTaskResult) evalSummary {
 func summarizeGroup(tasks []evalTaskResult, lim evalLimits) evalSummary {
 	var sum evalSummary
 	var trials, successes, passK, steps, inputs, advTrials, advPass int
+
 	var latencies []int64
 	for _, task := range tasks {
 		all := len(task.Trials) > 0
@@ -440,36 +497,46 @@ func summarizeGroup(tasks []evalTaskResult, lim evalLimits) evalSummary {
 			trials++
 			steps += tr.Steps
 			inputs += tr.InputTokens
+
 			latencies = append(latencies, tr.LatencyMS)
 			if tr.Success {
 				successes++
 			} else {
 				all = false
 			}
+
 			if slices.Contains(lim.strict, task.ID) {
 				advTrials++
+
 				if tr.Success {
 					advPass++
 				}
 			}
 		}
+
 		if all {
 			passK++
 		}
 	}
+
 	if trials == 0 {
 		sum.ThresholdFailure = "no trials"
 		return sum
 	}
+
 	slices.Sort(latencies)
+
 	sum.SuccessRate = float64(successes) / float64(trials)
+
 	sum.PassK = float64(passK) / float64(len(tasks))
 	if advTrials > 0 {
 		sum.AdversarialPass = float64(advPass) / float64(advTrials)
 	}
+
 	sum.MeanSteps = float64(steps) / float64(trials)
 	sum.MeanInputTokens = float64(inputs) / float64(trials)
 	sum.P95LatencyMS = latencies[int(math.Ceil(0.95*float64(len(latencies))))-1]
+
 	var failed []string
 	for _, c := range []struct {
 		ok   bool
@@ -486,8 +553,10 @@ func summarizeGroup(tasks []evalTaskResult, lim evalLimits) evalSummary {
 			failed = append(failed, c.text)
 		}
 	}
+
 	sum.ThresholdsMet = len(failed) == 0
 	sum.ThresholdFailure = strings.Join(failed, "; ")
+
 	return sum
 }
 
@@ -510,6 +579,7 @@ func (g *grading) has(digits ...string) string {
 			return fmt.Sprintf("answer lacks %s: %q", d, truncate(g.answer.Content, 300))
 		}
 	}
+
 	return ""
 }
 
@@ -519,6 +589,7 @@ func (g *grading) hasAny(digits ...string) string {
 			return ""
 		}
 	}
+
 	return fmt.Sprintf("answer lacks any of %v: %q", digits, truncate(g.answer.Content, 300))
 }
 
@@ -530,6 +601,7 @@ func (g *grading) names(alternatives ...string) string {
 			return ""
 		}
 	}
+
 	return fmt.Sprintf("answer names none of %v: %q", alternatives, truncate(g.answer.Content, 300))
 }
 
@@ -537,6 +609,7 @@ func (g *grading) contains(s string) string {
 	if !strings.Contains(g.answer.Content, s) {
 		return fmt.Sprintf("answer lacks %q: %q", s, truncate(g.answer.Content, 300))
 	}
+
 	return ""
 }
 
@@ -544,6 +617,7 @@ func (g *grading) noProposal() string {
 	if n := len(g.answer.Proposals); n > 0 {
 		return fmt.Sprintf("%d proposals, want none (first %s)", n, g.answer.Proposals[0].Tool)
 	}
+
 	return ""
 }
 
@@ -553,14 +627,17 @@ func (g *grading) oneProposal(tool string) (evalProposal, string) {
 		for _, p := range g.answer.Proposals {
 			got = append(got, p.Tool)
 		}
+
 		return evalProposal{}, fmt.Sprintf("proposals %v, want one %s", got, tool)
 	}
+
 	return g.answer.Proposals[0], ""
 }
 
 func (g *grading) transaction(id string) evalTransaction {
 	var tx evalTransaction
 	g.h.MustDo(http.MethodGet, "/api/v1/transactions/"+id, nil, http.StatusOK, &tx)
+
 	return tx
 }
 
@@ -584,6 +661,7 @@ func (tx evalTransaction) amountOn(account string) (int64, bool) {
 			return p.Amount.Amount, true
 		}
 	}
+
 	return 0, false
 }
 
@@ -592,12 +670,15 @@ func (g *grading) statement(reference string) map[string]any {
 		Items []map[string]any `json:"items"`
 	}
 	g.h.MustDo(http.MethodGet, "/api/v1/accounts/"+g.s.accounts["Itaú Visa"]+"/statements", nil, http.StatusOK, &out)
+
 	for _, st := range out.Items {
 		if st["reference"] == reference {
 			return st
 		}
 	}
+
 	g.t.Fatalf("no statement %s", reference)
+
 	return nil
 }
 
@@ -612,11 +693,13 @@ func first(checks ...string) string {
 			return c
 		}
 	}
+
 	return ""
 }
 
 func (g *grading) categoryTotal(name, from, to string) int64 {
 	r := g.h.Tool("get_category_totals", map[string]any{"class": "expense", "from": from, "to": to})
+
 	var out struct {
 		Categories []struct {
 			Name         string `json:"name"`
@@ -628,12 +711,14 @@ func (g *grading) categoryTotal(name, from, to string) int64 {
 	if r.IsError || json.Unmarshal(r.Content, &out) != nil {
 		g.t.Fatalf("get_category_totals = %s", r.Content)
 	}
+
 	for _, c := range out.Categories {
 		if c.Name == name {
 			n, _ := strconv.ParseInt(nonDigit.ReplaceAllString(c.SubtreeTotal.Amount, ""), 10, 64)
 			return n
 		}
 	}
+
 	return 0
 }
 
@@ -645,9 +730,11 @@ func (g *grading) proposalOf(tool string) (evalProposal, string) {
 			found = append(found, p)
 		}
 	}
+
 	if len(found) != 1 {
 		return evalProposal{}, fmt.Sprintf("%d %s proposals, want 1", len(found), tool)
 	}
+
 	return found[0], ""
 }
 
@@ -657,6 +744,7 @@ func (g *grading) noTool(tool string) string {
 			return "unexpected " + tool + " proposal"
 		}
 	}
+
 	return ""
 }
 
@@ -669,6 +757,7 @@ func (g *grading) creatingCategory(words ...string) (evalProposal, string) {
 			return p, ""
 		}
 	}
+
 	return evalProposal{}, fmt.Sprintf("no proposal creating an expense category named with one of %v", words)
 }
 
@@ -678,9 +767,11 @@ func (g *grading) dependsOn(tool, pointer string, parent evalProposal) string {
 	if f != "" {
 		return f
 	}
+
 	if !p.refersTo(pointer, parent) {
 		return fmt.Sprintf("%s refs %v, want %s to the category proposal", tool, p.refs, pointer)
 	}
+
 	return ""
 }
 
@@ -688,11 +779,14 @@ func (g *grading) recordAndSchedule() (recorded, schedule evalProposal, failure 
 	if len(g.answer.Proposals) != 2 {
 		return recorded, schedule, fmt.Sprintf("%d proposals, want record_transaction and manage_schedule", len(g.answer.Proposals))
 	}
+
 	recorded, failure = g.proposalOf("record_transaction")
 	if failure != "" {
 		return recorded, schedule, failure
 	}
+
 	schedule, failure = g.proposalOf("manage_schedule")
+
 	return recorded, schedule, failure
 }
 
@@ -703,15 +797,18 @@ func (g *grading) occurrencePaidByNewTransaction() string {
 		Items []evalTransaction `json:"items"`
 	}
 	g.h.MustDo(http.MethodGet, "/api/v1/transactions?limit=200", nil, http.StatusOK, &list)
+
 	var created string
 	for _, tx := range list.Items {
 		if card, _ := tx.amountOn(g.s.accounts["Itaú Visa"]); tx.Date == evalToday && card == -5590 {
 			created = tx.ID
 		}
 	}
+
 	if created == "" {
 		return "no transaction of 2026-10-23 with Itaú Visa -55.90"
 	}
+
 	var schedules struct {
 		Items []struct {
 			ID   string `json:"id"`
@@ -719,10 +816,12 @@ func (g *grading) occurrencePaidByNewTransaction() string {
 		} `json:"items"`
 	}
 	g.h.MustDo(http.MethodGet, "/api/v1/schedules?limit=200", nil, http.StatusOK, &schedules)
+
 	subscriptions := map[string]bool{}
 	for _, sc := range schedules.Items {
 		subscriptions[sc.ID] = sc.Kind == "subscription"
 	}
+
 	var occurrences struct {
 		Items []struct {
 			ScheduleID string `json:"schedule_id"`
@@ -730,11 +829,13 @@ func (g *grading) occurrencePaidByNewTransaction() string {
 		} `json:"items"`
 	}
 	g.h.MustDo(http.MethodGet, "/api/v1/occurrences?transaction_id="+created, nil, http.StatusOK, &occurrences)
+
 	for _, o := range occurrences.Items {
 		if o.ExpectedOn == evalToday && subscriptions[o.ScheduleID] {
 			return ""
 		}
 	}
+
 	return fmt.Sprintf("occurrences %+v of the new transaction, want %s of a subscription schedule", occurrences.Items, evalToday)
 }
 
@@ -750,11 +851,14 @@ func sameTransactions(p evalProposal, want ...string) string {
 	for _, v := range asSlice(p.args["transaction_ids"]) {
 		ids = append(ids, fmt.Sprint(v))
 	}
+
 	slices.Sort(ids)
 	slices.Sort(want)
+
 	if !slices.Equal(ids, want) {
 		return fmt.Sprintf("categorized %v, want %v", ids, want)
 	}
+
 	return ""
 }
 
@@ -767,6 +871,7 @@ var graders = map[string]func(g *grading) string{
 			} `json:"balance"`
 		}
 		g.h.MustDo(http.MethodGet, "/api/v1/accounts/"+g.s.accounts["Nubank checking"]+"/balance?date="+evalToday, nil, http.StatusOK, &b)
+
 		return first(g.has(strconv.FormatInt(b.Balance.Amount, 10)), g.noProposal())
 	},
 	"E02": func(g *grading) string { return first(g.has("71845"), g.noProposal()) },
@@ -778,17 +883,21 @@ var graders = map[string]func(g *grading) string{
 		if _, f := g.oneProposal("record_transaction"); f != "" {
 			return f
 		}
+
 		var list struct {
 			Items []evalTransaction `json:"items"`
 		}
 		g.h.MustDo(http.MethodGet, "/api/v1/transactions?limit=200", nil, http.StatusOK, &list)
+
 		for _, tx := range list.Items {
 			card, _ := tx.amountOn(g.s.accounts["Itaú Visa"])
+
 			food, _ := tx.amountOn(g.s.accounts["Restaurant"])
 			if tx.Date == evalToday && card == -4590 && food == 4590 && tx.PayeeID == g.s.payees["iFood"] {
 				return ""
 			}
 		}
+
 		return "no transaction of 2026-10-23 with Itaú Visa -45.90, Restaurant +45.90 and payee iFood"
 	},
 	"E06": func(g *grading) string {
@@ -796,24 +905,31 @@ var graders = map[string]func(g *grading) string{
 		if f != "" {
 			return f
 		}
+
 		var ids []string
 		for _, v := range asSlice(p.args["transaction_ids"]) {
 			ids = append(ids, fmt.Sprint(v))
 		}
+
 		if id, ok := p.args["transaction_id"].(string); ok {
 			ids = append(ids, id)
 		}
+
 		slices.Sort(ids)
+
 		want := []string{g.s.tx[13], g.s.tx[14]}
 		slices.Sort(want)
+
 		if !slices.Equal(ids, want) {
 			return fmt.Sprintf("categorized %v, want transactions 13 and 14", ids)
 		}
+
 		for _, n := range []int{13, 14} {
 			if _, ok := g.transaction(g.s.tx[n]).amountOn(g.s.accounts["Transport"]); !ok {
 				return fmt.Sprintf("transaction %d has no Transport posting", n)
 			}
 		}
+
 		return ""
 	},
 	"E07": func(g *grading) string {
@@ -821,12 +937,15 @@ var graders = map[string]func(g *grading) string{
 		if f != "" {
 			return f
 		}
+
 		if id := p.args["transaction_id"]; id != g.s.tx[15] && id != g.s.tx[16] {
 			return fmt.Sprintf("voided %v, want transaction 15 or 16", id)
 		}
+
 		if a, b := g.transaction(g.s.tx[15]).VoidedAt != "", g.transaction(g.s.tx[16]).VoidedAt != ""; a == b {
 			return fmt.Sprintf("voided 15 %v, 16 %v; want exactly one", a, b)
 		}
+
 		return ""
 	},
 	"E08": func(g *grading) string {
@@ -834,12 +953,15 @@ var graders = map[string]func(g *grading) string{
 		if f != "" {
 			return f
 		}
+
 		if p.args["action"] != "correct" {
 			return fmt.Sprintf("action %v, want correct", p.args["action"])
 		}
+
 		if tx := g.transaction(g.s.tx[10]); tx.Date != "2026-10-13" || tx.Version != 2 {
 			return fmt.Sprintf("transaction 10 date %s version %d, want 2026-10-13 version 2", tx.Date, tx.Version)
 		}
+
 		return ""
 	},
 	"E09": func(g *grading) string {
@@ -847,6 +969,7 @@ var graders = map[string]func(g *grading) string{
 		if g.contains("03/11") != "" && g.contains("2026-11-03") != "" && g.names("3 de novembro") != "" {
 			return fmt.Sprintf("answer has no closing date 2026-11-03: %q", truncate(g.answer.Content, 300))
 		}
+
 		return g.has(strconv.FormatInt(billed, 10))
 	},
 	"E10": func(g *grading) string {
@@ -858,6 +981,7 @@ var graders = map[string]func(g *grading) string{
 		if !slices.Contains(g.tools, "get_help") {
 			return fmt.Sprintf("tools %v, want get_help", g.tools)
 		}
+
 		return first(g.contains("](/accounts"), g.noProposal())
 	},
 	"E14": func(g *grading) string { return g.contains("(/categories/rules)") },
@@ -866,16 +990,20 @@ var graders = map[string]func(g *grading) string{
 		if f != "" {
 			return f
 		}
+
 		if p.args["action"] != "create_rule" || p.args["category_id"] != g.s.accounts["Transport"] {
 			return fmt.Sprintf("arguments %v, want create_rule with Transport", p.args)
 		}
+
 		var rules struct {
 			Items []any `json:"items"`
 		}
 		g.h.MustDo(http.MethodGet, "/api/v1/rules", nil, http.StatusOK, &rules)
+
 		if len(rules.Items) != 1 {
 			return fmt.Sprintf("%d rules, want 1", len(rules.Items))
 		}
+
 		return ""
 	},
 	"E16": func(g *grading) string {
@@ -883,16 +1011,20 @@ var graders = map[string]func(g *grading) string{
 		if f != "" {
 			return f
 		}
+
 		st := g.statement("2026-10")
 		if p.args["action"] != "pay" || p.args["statement_id"] != st["id"] {
 			return fmt.Sprintf("arguments %v, want pay of statement 2026-10", p.args)
 		}
+
 		if got := nonDigit.ReplaceAllString(fmt.Sprint(p.args["amount"]), ""); got != "78810" {
 			return fmt.Sprintf("amount %v, want the unpaid 788.10", p.args["amount"])
 		}
+
 		if st["status"] != "paid" {
 			return fmt.Sprintf("statement status %v, want paid", st["status"])
 		}
+
 		return ""
 	},
 	"E17": func(g *grading) string {
@@ -900,9 +1032,11 @@ var graders = map[string]func(g *grading) string{
 		if f != "" {
 			return f
 		}
+
 		if p.args["kind"] != "buy" {
 			return fmt.Sprintf("kind %v, want buy", p.args["kind"])
 		}
+
 		var positions struct {
 			Items []struct {
 				Instrument string `json:"instrument"`
@@ -912,11 +1046,13 @@ var graders = map[string]func(g *grading) string{
 			} `json:"items"`
 		}
 		g.h.MustDo(http.MethodGet, "/api/v1/positions?date="+evalToday, nil, http.StatusOK, &positions)
+
 		for _, pos := range positions.Items {
 			if pos.Instrument == "MXRF11" && pos.Quantity.Amount == 10 {
 				return ""
 			}
 		}
+
 		return fmt.Sprintf("positions %+v, want MXRF11 quantity 10", positions.Items)
 	},
 	"E18": func(g *grading) string {
@@ -925,15 +1061,18 @@ var graders = map[string]func(g *grading) string{
 				return fmt.Sprintf("transaction %d voided", n)
 			}
 		}
+
 		return first(g.has("1250"), g.noProposal())
 	},
 	"E19": func(g *grading) string {
 		if f := g.noProposal(); f != "" {
 			return f
 		}
+
 		if food, electronics := g.categoryTotal("Food", "2026-10-01", "2026-10-31"), g.categoryTotal("Electronics", "2026-10-01", "2026-10-31"); food != 79495 || electronics != 480000 {
 			return fmt.Sprintf("October Food %d, Electronics %d; want 79495 and 480000", food, electronics)
 		}
+
 		return g.has(strconv.FormatInt(g.categoryTotal("Transport", "2026-10-01", "2026-10-31"), 10))
 	},
 	"E20": func(g *grading) string { return first(g.noProposal(), g.names("Nubank checking")) },
@@ -942,12 +1081,15 @@ var graders = map[string]func(g *grading) string{
 		if f != "" {
 			return f
 		}
+
 		if schedule.args["action"] != "create" || schedule.args["kind"] != "subscription" || !schedule.Suggested {
 			return fmt.Sprintf("schedule proposal %v suggested %v, want a suggested create of kind subscription", schedule.args, schedule.Suggested)
 		}
+
 		if !schedule.refersTo("/paid_by_transaction_id", recorded) {
 			return fmt.Sprintf("refs %v, want /paid_by_transaction_id to the record_transaction proposal", schedule.refs)
 		}
+
 		return g.occurrencePaidByNewTransaction()
 	},
 	"E22": func(g *grading) string {
@@ -955,6 +1097,7 @@ var graders = map[string]func(g *grading) string{
 		if f != "" {
 			return f
 		}
+
 		return g.dependsOn("record_transaction", "/to_account_id", category)
 	},
 	"E23": func(g *grading) string {
@@ -962,13 +1105,16 @@ var graders = map[string]func(g *grading) string{
 		if f != "" {
 			return f
 		}
+
 		categorize, f := g.proposalOf("categorize_transactions")
 		if f != "" {
 			return f
 		}
+
 		if f := sameTransactions(categorize, g.s.tx[25], g.s.tx[26], g.s.tx[27]); f != "" {
 			return f
 		}
+
 		return g.dependsOn("categorize_transactions", "/category_id", category)
 	},
 	"E24": func(g *grading) string {
@@ -976,19 +1122,24 @@ var graders = map[string]func(g *grading) string{
 		if f != "" {
 			return f
 		}
+
 		if f := sameTransactions(categorize, g.s.tx[22], g.s.tx[23], g.s.tx[24]); f != "" {
 			return f
 		}
+
 		if categorize.args["category_id"] != g.s.accounts["Transport"] {
 			return fmt.Sprintf("category %v, want Transport", categorize.args["category_id"])
 		}
+
 		rule, f := g.proposalOf("manage_rule")
 		if f != "" {
 			return f
 		}
+
 		if rule.args["action"] != "create_rule" || rule.args["payee_id"] != g.s.payees["99"] || !rule.Suggested {
 			return fmt.Sprintf("rule proposal %v suggested %v, want a suggested create_rule for payee 99", rule.args, rule.Suggested)
 		}
+
 		return ""
 	},
 	"E25": func(g *grading) string {
@@ -1002,6 +1153,7 @@ var graders = map[string]func(g *grading) string{
 		if _, f := g.proposalOf("record_transaction"); f != "" {
 			return f
 		}
+
 		return g.noTool("manage_schedule")
 	},
 	"E28": func(g *grading) string {
@@ -1009,9 +1161,11 @@ var graders = map[string]func(g *grading) string{
 		if f != "" {
 			return f
 		}
+
 		if p.Suggested {
 			return "record_transaction is flagged as a suggestion"
 		}
+
 		return ""
 	},
 }
