@@ -1934,6 +1934,10 @@
       --slotted-tag-inset-inline: calc(var(--slotted-space-5) + var(--slotted-space-1));
     }
 
+    [data-ui="dialog"] [data-part="footer"] {
+      gap: var(--slotted-control-gap-md);
+    }
+
     &[data-slotted-scheme="dark"] [data-ui="card"],
     &[data-slotted-scheme="dark"] [data-ui="stat-card"],
     &[data-slotted-scheme="dark"] [data-ui="section"],

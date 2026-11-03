@@ -142,6 +142,13 @@ test("a tag keeps its height and stands its text 2 px further from each side", (
   );
 });
 
+test("the actions of a dialog's footer stand as far apart as those of a page header", () => {
+  assert.match(
+    css,
+    /\[data-ui="dialog"\] \[data-part="footer"\] \{\s*gap: var\(--slotted-control-gap-md\);/,
+  );
+});
+
 test("the choices of a question stand clear of the message above them", () => {
   // The description and the error of a group are inline messages, not parts of their own.
   assert.match(

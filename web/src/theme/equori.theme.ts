@@ -118,6 +118,15 @@ const tagInsetRule = `
 }
 `;
 
+// Workaround for Slotted issue #62: the footer of a dialog spaces its actions at a fixed 0.75rem,
+// while a page header spaces them at the control gap, which follows the density. The footer takes
+// the control gap. The header's close button keeps its own margin.
+const dialogFooterGapRule = `
+[data-ui="dialog"] [data-part="footer"] {
+  gap: var(--slotted-control-gap-md);
+}
+`;
+
 // Workaround for Slotted issue #39: only the tooltip's content fades, so its arrow stays opaque
 // and reads as a separate piece on open and close. The arrow takes the content's three fade rules.
 // Half of the arrow's square lies over the content: while both fade, that half composites twice
@@ -345,6 +354,7 @@ export default extendTheme(
       sheetSlideRule,
       tooltipArrowFadeRule,
       tagInsetRule,
+      dialogFooterGapRule,
     ],
   },
   { name: "equori" },
