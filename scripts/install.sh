@@ -177,7 +177,20 @@ docker compose version >/dev/null 2>&1 ||
 		"O Docker Compose v2 está ausente: docker compose version falha. Instale o plugin Compose."
 ok "$(docker version --format '{{.Server.Version}}' 2>/dev/null || true)"
 
-begin "Files of version $version" "Arquivos da versão $version"
+# A196: the tag of the running image names the version an upgrade replaces.
+current=
+if [ -f "$dir/.env" ]; then
+	current=$(cd "$dir" && docker compose ps --format '{{.Image}}' app 2>/dev/null |
+		sed -n 's/.*:\(.*\)-standalone$/\1/p' | head -n 1)
+fi
+
+if [ -z "$current" ]; then
+	begin "Files of version $version" "Arquivos da versão $version"
+elif [ "$current" = "$version" ]; then
+	begin "Version $version, already installed" "Versão $version, já instalada"
+else
+	begin "Version $current → $version" "Versão $current → $version"
+fi
 
 if [ -f "$dir/compose.yaml" ] && [ ! -f "$dir/.env" ]; then
 	stop i5-composeyaml-without-env i5-composeyaml-sem-env \

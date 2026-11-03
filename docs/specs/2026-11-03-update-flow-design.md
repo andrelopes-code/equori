@@ -33,11 +33,12 @@ The README states that a release carries `equori_<version>_windows_amd64_setup.e
 
 ## A195 Upgrade notice
 
-1. The notice reads "Version {latest} of equori is available. This instance runs {version}." Its actions: "How to upgrade" (main), "What changed" (the release page), "Dismiss".
+1. The notice reads "Version {latest} of equori is available. This instance runs {version}.", followed by the link "See what changed" to the release page. Its actions: "How to upgrade" (main) and "Dismiss".
 2. "How to upgrade" opens a dialog by `distribution`:
-   - `compose`: "Run on the computer where equori is installed:", then two commands, each with its label and a copy button: Windows (PowerShell) `irm https://github.com/andrelopes-code/equori/releases/latest/download/install.ps1 | iex`; macOS and Linux (Terminal) `curl -fsSL https://github.com/andrelopes-code/equori/releases/latest/download/install.sh | sh`. Below: "The data stays. Before it changes the database, equori writes a backup." and a link to the section "Going back" of the guide.
+   - `compose`: "Run one of these commands on the computer where equori is installed.", then two commands, each with its label and a copy button: Windows (PowerShell) `irm https://github.com/andrelopes-code/equori/releases/latest/download/install.ps1 | iex`; macOS and Linux (Terminal) `curl -fsSL https://github.com/andrelopes-code/equori/releases/latest/download/install.sh | sh`. Below: "The data stays. Before it changes the database, equori writes a backup."
    - `managed`: "Install the new version the way this one was installed: `brew upgrade equori` with Homebrew, or the Windows installer of the release page." and the release page link.
-   - `other`: the release page link.
+   - `other`: "Install the new version the way this one was installed. The release page holds its files."
+   - Every form: the link "Upgrade and going back" to the help page `installation`, which gains the section of A197.
 3. Texts in both catalogs. Reason: the admin who reads the notice is the person who must act, and the command is the whole action.
 
 ## A196 Version in the script output
@@ -46,13 +47,11 @@ On an upgrade, the second step of A190.2 is "Version {current} → {new}", where
 
 ## A197 Going back
 
-Each guide (`docs/install/<system>.md` and its pt-BR twin) gains the section "Going back", after "Upgrade":
+Each guide (`docs/install/<system>.md` and its pt-BR twin) and the help page `installation` gain the section "Going back", after "Upgrade":
 
-1. Copy the newest `pre-migration-*.dump` out of the volume: `docker compose cp app:/backups/<file> .`, after `docker compose run --rm --no-deps --entrypoint ls app /backups` lists it.
-2. `docker compose stop app`, then the restore of `docs/operations/backup.md` (Compose) with that file.
-3. The installation command with `releases/latest/download` replaced by `releases/download/v<previous version>`.
-
-Without a pre-migration file, the upgrade applied no migration, and step 3 alone goes back. Reason: `serve` refuses the newer database (V4), so the old version needs the database of before the upgrade.
+1. The installation command of the earlier version: `releases/latest/download` replaced by `releases/download/v<version>`. An upgrade that applied no migration is undone here.
+2. When that command stops with I8 and the log lines name "database schema is newer than this binary" (ADR 022, V4), the line also names "this binary knows up to <N>". `docker compose run --rm --no-deps --entrypoint ls app /backups` lists the backups; the file to restore is the newest `pre-migration-<date>-s<N>.dump` with that `<N>`. Reason: the newest pre-migration file of any schema can predate the last upgrade, and its restore would lose what was recorded since.
+3. `docker compose stop app`, `docker compose cp` of the file out of `app` and into `db`, the drop, create and `pg_restore` of `docs/operations/backup.md` (Compose) reading `/tmp/restore.dump` inside `db`, then `docker compose start app`. Reason: PowerShell refuses the `<` redirection of `backup.md`, so the file enters the container instead.
 
 ## Scenarios
 

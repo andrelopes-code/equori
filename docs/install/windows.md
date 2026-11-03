@@ -29,6 +29,34 @@ The browser opens the address with the token. The form asks for email, password,
 
 Run the installation command again. `serve` backs up the data before it migrates (ADR 022, B3).
 
+## Going back
+
+In the installation directory:
+
+1. Run the installation command of the earlier version, with `<version>` replaced by its number, such as `1.0.0`. When it ends with the address, equori is back on that version.
+
+```powershell
+irm https://github.com/andrelopes-code/equori/releases/download/v<version>/install.ps1 | iex
+```
+
+2. When it stops with "equori did not answer", and the log lines above name "database schema is newer than this binary", the upgrade migrated the database: the earlier version refuses it (ADR 022, V4). The line also says "this binary knows up to <N>". List the backups and take the newest `pre-migration-<date>-s<N>.dump` with that `<N>`:
+
+```powershell
+docker compose run --rm --no-deps --entrypoint ls app /backups
+```
+
+3. Restore it, with `<file>` replaced by its name. The data returns to the moment before the upgrade.
+
+```powershell
+docker compose stop app
+docker compose cp app:/backups/<file> .
+docker compose cp <file> db:/tmp/restore.dump
+docker compose exec -T db dropdb -U equori --force equori
+docker compose exec -T db createdb --template=template0 --locale-provider=builtin --builtin-locale=C.UTF-8 -U equori equori
+docker compose exec -T db pg_restore -U equori --no-owner --exit-on-error -d equori /tmp/restore.dump
+docker compose start app
+```
+
 ## Start and stop
 
 In the installation directory:

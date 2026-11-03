@@ -163,7 +163,26 @@ function Invoke-EquoriInstall {
 
     Complete-Step (docker version --format '{{.Server.Version}}' 2> $null)
 
-    Start-Step "Files of version $version" "Arquivos da vers${at}o $version"
+    # A196: the tag of the running image names the version an upgrade replaces.
+    $current = $null
+    if (Test-Path $envFile) {
+        Push-Location $dir
+        try {
+            $image = docker compose ps --format '{{.Image}}' app 2> $null | Select-Object -First 1
+        } finally {
+            Pop-Location
+        }
+        if ("$image" -match ':(.+)-standalone$') { $current = $Matches[1] }
+    }
+
+    $arrow = [char]0x2192
+    if (-not $current) {
+        Start-Step "Files of version $version" "Arquivos da vers${at}o $version"
+    } elseif ($current -eq $version) {
+        Start-Step "Version $version, already installed" "Vers${at}o $version, j${aa} instalada"
+    } else {
+        Start-Step "Version $current $arrow $version" "Vers${at}o $current $arrow $version"
+    }
     if ((Test-Path (Join-Path $dir 'compose.yaml')) -and -not (Test-Path $envFile)) {
         return (Stop-Install 'i5-composeyaml-without-env' 'i5-composeyaml-sem-env' `
             "$dir holds compose.yaml without .env: an installation made without this script. Write .env with the database password of that installation; the guide shows how." `

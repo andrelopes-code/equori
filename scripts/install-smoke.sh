@@ -88,6 +88,8 @@ if grep -q '#token=' <<<"$out"; then
 fi
 grep -q "Address: http://127.0.0.1:$port/" <<<"$out"
 grep -qx "Upgrading $work/home/equori" <<<"$out"
+# S271 (A196)
+grep -q "^  \[ok\] Version $version, already installed" <<<"$out"
 grep -q 'docker compose stop' <<<"$out"
 quiet "$out" S228
 curl -fsS -o /dev/null "http://127.0.0.1:$port/healthz"
