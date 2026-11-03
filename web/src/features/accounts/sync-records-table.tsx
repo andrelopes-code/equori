@@ -58,7 +58,7 @@ export function SyncRecordsTable({ records, label }: SyncRecordsTableProps) {
           </AlertContent>
         </Alert>
       )}
-      <Table columns={5} variant="framed">
+      <Table columns={5} variant="ruled">
         <TableContent>
           <TableCaption>{label}</TableCaption>
           <TableHead>

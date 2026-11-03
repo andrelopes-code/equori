@@ -373,8 +373,15 @@ describe("Account links", () => {
     });
 
     expect(
-      await screen.findByText("Nubank: 1 created, 1 withdrawn"),
-    ).toBeVisible();
+      screen.queryByRole("table", { name: /Lines of the sync of/ }),
+    ).toBeNull();
+    await userEvent.click(
+      await screen.findByRole("button", { name: /Recent syncs/ }),
+    );
+    const syncs = await screen.findByRole("table", { name: "Recent syncs" });
+    const row = within(syncs).getByRole("row", { name: /Nubank/ });
+    expect(within(row).getByText("Created: 1")).toBeVisible();
+    expect(within(row).getByText("Withdrawn: 1")).toBeVisible();
     expect(screen.queryByRole("button", { name: "Undo Padaria" })).toBeNull();
     const table = await screen.findByRole("table", {
       name: /Lines of the sync of/,
@@ -401,6 +408,9 @@ describe("Account links", () => {
       }),
     });
 
+    await userEvent.click(
+      await screen.findByRole("button", { name: /Recent syncs/ }),
+    );
     await userEvent.click(
       await screen.findByRole("button", { name: "Undo Uber" }),
     );

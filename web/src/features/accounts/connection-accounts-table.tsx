@@ -41,13 +41,12 @@ export function ConnectionAccountsTable({
   const [locale] = useAppLocale();
 
   return (
-    <Table columns={6} variant="framed">
+    <Table columns={5} variant="framed">
       <TableContent>
         <TableCaption>{connection.name}</TableCaption>
         <TableHead>
           <TableRow>
             <TableColumnHeader>{t("sync.external")}</TableColumnHeader>
-            <TableColumnHeader>{t("accountForm.currency")}</TableColumnHeader>
             <TableColumnHeader>{t("sync.from")}</TableColumnHeader>
             <TableColumnHeader>{t("sync.lastSynced")}</TableColumnHeader>
             <TableColumnHeader>{t("links.state")}</TableColumnHeader>
@@ -78,13 +77,13 @@ export function ConnectionAccountsTable({
                           : t("account.lastFour", {
                               digits: external.number_last4,
                             }),
+                        external.currency,
                       ]
                         .filter((p) => p !== undefined)
                         .join(" · ")}
                     </Text>
                   </Stack>
                 </TableRowHeader>
-                <TableCell>{external.currency}</TableCell>
                 <TableCell>
                   {external.sync_from === undefined
                     ? t("sync.never")

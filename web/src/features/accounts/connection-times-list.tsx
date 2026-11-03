@@ -1,14 +1,9 @@
-import {
-  DescriptionList,
-  DescriptionListDescription,
-  DescriptionListItem,
-  DescriptionListTerm,
-} from "@slotted/react/description-list";
+import { Inline } from "@slotted/react/inline";
+import { Text } from "@slotted/react/typography";
 
 import type { components } from "@/api/schema.gen";
 import { formatInstant } from "@/features/accounts/instant";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { Card, CardBody } from "@slotted/react";
 
 type Connection = components["schemas"]["Connection"];
 
@@ -17,36 +12,31 @@ interface ConnectionTimesListProps {
 }
 
 // When the aggregator fetched the bank, when the app read the aggregator, and when the
-// aggregator fetches the bank next, side by side under the connection's name.
+// aggregator fetches the bank next: facts to glance at, so they sit in one quiet line.
 export function ConnectionTimesList({ connection }: ConnectionTimesListProps) {
   const t = useT();
   const [locale] = useAppLocale();
 
-  const rows = [
+  const facts = [
     { term: t("sync.bankData"), at: connection.last_item_update_at },
     { term: t("sync.appRead"), at: connection.last_synced_at },
     { term: t("sync.nextFetch"), at: connection.next_item_update_at },
   ];
 
   return (
-    <Card fill="elevated">
-      <CardBody>
-        <DescriptionList layout="stack" columns={3} minColumnWidth="sm">
-          {rows.map((row) => (
-            <DescriptionListItem key={row.term}>
-              <DescriptionListTerm>{row.term}</DescriptionListTerm>
-              <DescriptionListDescription
-                empty={row.at === undefined}
-                placeholder={t("sync.notReported")}
-              >
-                {row.at === undefined
-                  ? undefined
-                  : formatInstant(row.at, locale)}
-              </DescriptionListDescription>
-            </DescriptionListItem>
-          ))}
-        </DescriptionList>
-      </CardBody>
-    </Card>
+    <Inline gap={8} wrap="wrap">
+      {facts.map(({ term, at }) => (
+        <Inline key={term} gap={2} align="baseline">
+          <Text size="sm" tone="muted">
+            {term}
+          </Text>
+          <Text size="sm" tone={at === undefined ? "muted" : undefined}>
+            {at === undefined
+              ? t("sync.notReported")
+              : formatInstant(at, locale)}
+          </Text>
+        </Inline>
+      ))}
+    </Inline>
   );
 }
