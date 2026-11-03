@@ -1,0 +1,38 @@
+@layer app {
+  /* No token holds an avatar measure: the small mark is the 28 px of the account row and the large
+     one the 64 px of the account card. */
+  .orb {
+    --orb-size: 28px;
+
+    display: inline-block;
+    flex: none;
+    box-sizing: border-box;
+    inline-size: var(--orb-size);
+    block-size: var(--orb-size);
+    border-radius: var(--slotted-radius-full);
+
+    /* A lit sphere: a sheen at the upper left over the two slots' flow, shaded toward the foot. The
+       literal white and black are light and shade on a material, which no token holds. */
+    background:
+      radial-gradient(
+        circle at 30% 20%,
+        rgb(255 255 255 / 0.4),
+        transparent 52%
+      ),
+      linear-gradient(var(--angle), var(--c1), var(--c2));
+    box-shadow:
+      inset 0 0 0 var(--slotted-border-width-thin) rgb(255 255 255 / 0.2),
+      inset 0 calc(var(--orb-size) * -0.12) calc(var(--orb-size) * 0.28)
+        rgb(0 0 0 / 0.16);
+  }
+
+  .orb[data-size="xl"] {
+    --orb-size: 64px;
+  }
+
+  @media (forced-colors: active) {
+    .orb {
+      border: var(--slotted-border-width-thin) solid CanvasText;
+    }
+  }
+}

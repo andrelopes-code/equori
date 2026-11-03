@@ -1,4 +1,3 @@
-import { Avatar } from "@slotted/react/avatar";
 import { Button } from "@slotted/react/button";
 import { InlineMessage } from "@slotted/react/inline-message";
 import { Tag } from "@slotted/react/tag";
@@ -12,6 +11,7 @@ import { SettingsRow } from "@/features/setup/settings-row";
 import { SettingsSection } from "@/features/setup/settings-section";
 import { meQuery, useLogout } from "@/features/session";
 import { useT } from "@/i18n/i18n-provider";
+import { UserAvatar } from "@/ui/user-avatar";
 
 export function SettingsAccount() {
   const t = useT();
@@ -25,10 +25,7 @@ export function SettingsAccount() {
       description={t("settings.summary.account")}
     >
       <div className={styles.identity}>
-        <Avatar
-          size="xl"
-          name={me?.display_name ?? me?.email ?? t("nav.user")}
-        />
+        <UserAvatar size="xl" seed={me?.email ?? t("nav.user")} />
         <div className={styles.who}>
           <p className={styles.email} title={me?.email}>
             {me?.display_name ?? me?.email}

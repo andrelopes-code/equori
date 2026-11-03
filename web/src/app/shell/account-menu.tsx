@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { Avatar } from "@slotted/react/avatar";
 import { Icon } from "@slotted/react/icon";
 import {
   Menu,
@@ -29,6 +28,7 @@ import { densities, useDensity } from "@/theme/density";
 import type { Density } from "@/theme/density";
 import { schemes, useScheme } from "@/theme/scheme";
 import type { Scheme } from "@/theme/scheme";
+import { UserAvatar } from "@/ui/user-avatar";
 
 function isScheme(value: string): value is Scheme {
   return (schemes as readonly string[]).includes(value);
@@ -68,7 +68,7 @@ export function AccountMenu({ compact }: { compact: boolean }) {
               data-compact={compact || undefined}
               className={styles.trigger}
             >
-              <Avatar size="sm" name={name} />
+              <UserAvatar seed={me?.email ?? name} />
               {!compact && (
                 <>
                   <AccountIdentity name={name} />
