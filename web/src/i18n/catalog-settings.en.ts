@@ -52,7 +52,6 @@ export const settingsEn = {
   "settings.account.session": "Session",
   "settings.account.logoutDescription":
     "Ends the session in this browser. Other devices stay signed in.",
-  "settings.language.help": "Words of the interface.",
   "settings.region.help":
     "Date and number formats, and the regional catalogues.",
   "settings.books.title": "Book",
@@ -208,6 +207,7 @@ export const settingsEn = {
   "theme.glass.description":
     "Translucent surfaces over a moving light. Experimental.",
   "settings.appearance.open": "Open the appearance studio",
+  "settings.appearance.active": "Active theme",
   "settings.appearance.openHint":
     "Themes, colours, surfaces, shape and text, with the app drawn beside them.",
   "studio.current": "Theme: {name}.",

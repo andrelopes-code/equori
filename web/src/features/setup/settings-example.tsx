@@ -16,11 +16,7 @@ export function SettingsExample() {
     maximumFractionDigits: 2,
   }).format(sampleNumber);
   return (
-    <div
-      role="group"
-      aria-label={t("settings.language.example")}
-      className={styles.example}
-    >
+    <div className={styles.example}>
       <div className={styles.sample}>
         <span className={styles.sampleLabel}>
           {t("settings.language.date")}

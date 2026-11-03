@@ -55,7 +55,6 @@ export const settingsPtBR: Record<keyof typeof settingsEn, string> = {
   "settings.account.session": "Sessão",
   "settings.account.logoutDescription":
     "Encerra a sessão neste dispositivo. Outros dispositivos continuam conectados.",
-  "settings.language.help": "Palavras da interface.",
   "settings.region.help":
     "Formatos de data e número, e os catálogos regionais.",
   "settings.books.title": "Livro",
@@ -212,6 +211,7 @@ export const settingsPtBR: Record<keyof typeof settingsEn, string> = {
   "theme.glass.description":
     "Superfícies translúcidas sobre luz em movimento. Experimental.",
   "settings.appearance.open": "Abrir o estúdio de aparência",
+  "settings.appearance.active": "Tema ativo",
   "settings.appearance.openHint":
     "Temas, cores, superfícies, forma e texto, com o app desenhado ao lado.",
   "studio.current": "Tema: {name}.",

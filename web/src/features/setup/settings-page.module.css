@@ -134,16 +134,42 @@
     display: flex;
     min-inline-size: 0;
     flex-direction: column;
-    gap: var(--slotted-space-2);
+    gap: var(--slotted-space-3);
     padding: var(--slotted-space-6);
+    border: var(--slotted-border-width-thin) solid var(--slotted-border-subtle);
     border-radius: var(--slotted-radius-md);
     background: var(--slotted-surface-sunken);
   }
 
   .sampleLabel {
     color: var(--slotted-text-muted);
-    font-size: var(--slotted-font-size-xs);
-    line-height: var(--slotted-line-height-xs);
+    font-size: var(--slotted-font-size-sm);
+    line-height: var(--slotted-line-height-sm);
+  }
+
+  /* The theme in use: its miniature, its name and the way to the studio on one line that wraps.
+     The miniature's measure has no token; it keeps the drawing legible at a tenth of the app. */
+  .theme {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--slotted-space-6) var(--slotted-space-8);
+  }
+
+  .themeMiniature {
+    flex: none;
+    inline-size: 11rem;
+    overflow: hidden;
+    border: var(--slotted-border-width-thin) solid var(--slotted-border-subtle);
+    border-radius: var(--slotted-radius-lg);
+  }
+
+  .themeText {
+    display: flex;
+    min-inline-size: 14rem;
+    flex: 1 1 14rem;
+    flex-direction: column;
+    gap: var(--slotted-space-2);
   }
 
   .sampleValue {

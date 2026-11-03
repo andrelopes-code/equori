@@ -18,33 +18,29 @@ export function SettingsLanguage() {
   const chooseLanguage = useChooseLanguage();
 
   return (
-    <>
-      <SettingsGroup
-        title={t("settings.language.title")}
-        description={t("settings.language.description")}
-      >
-        <SettingsRow
+    <SettingsGroup
+      title={t("settings.language.title")}
+      description={t("settings.language.description")}
+    >
+      <SettingsRow label={t("settings.language")}>
+        <ChoiceSelect
           label={t("settings.language")}
-          description={t("settings.language.help")}
-        >
-          <ChoiceSelect
-            label={t("settings.language")}
-            choices={languageChoices}
-            value={language}
-            multiple={false}
-            onChange={(next) => {
-              const chosen = languages.find((l) => l.language === next);
-              if (chosen !== undefined) chooseLanguage(chosen.language);
-            }}
-          />
-        </SettingsRow>
-      </SettingsGroup>
-      <SettingsGroup
-        title={t("settings.language.example")}
+          choices={languageChoices}
+          value={language}
+          multiple={false}
+          onChange={(next) => {
+            const chosen = languages.find((l) => l.language === next);
+            if (chosen !== undefined) chooseLanguage(chosen.language);
+          }}
+        />
+      </SettingsRow>
+      <SettingsRow
+        label={t("settings.language.example")}
         description={t("settings.language.exampleDescription")}
+        stacked
       >
         <SettingsExample />
-      </SettingsGroup>
-    </>
+      </SettingsRow>
+    </SettingsGroup>
   );
 }

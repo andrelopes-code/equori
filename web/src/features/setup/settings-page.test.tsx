@@ -320,6 +320,35 @@ describe("settings page", () => {
     });
   });
 
+  describe("appearance pane", () => {
+    it("holds the format example in the card of the language", async () => {
+      await renderApp("/settings?section=appearance", { fetch: api([]) });
+      const title = await screen.findByRole("heading", {
+        name: catalogPtBR["settings.language.title"],
+      });
+      const card = title.closest<HTMLElement>('[data-ui="card"]');
+      if (card === null) throw new Error("no card around the title");
+      const example = within(card).getByRole("group", {
+        name: catalogPtBR["settings.language.example"],
+      });
+      expect(within(example).getByText("1.234,56")).toBeVisible();
+    });
+
+    it("labels the theme in use beside the way to the studio", async () => {
+      await renderApp("/settings?section=appearance", { fetch: api([]) });
+      const label = await screen.findByText(
+        catalogPtBR["settings.appearance.active"],
+      );
+      const card = label.closest<HTMLElement>('[data-ui="card"]');
+      if (card === null) throw new Error("no card around the label");
+      expect(
+        within(card).getByRole("link", {
+          name: catalogPtBR["settings.appearance.open"],
+        }),
+      ).toBeVisible();
+    });
+  });
+
   describe("base currency lock", () => {
     it("states why the currency cannot change once a transaction exists", async () => {
       const sent: Sent[] = [];
