@@ -9,6 +9,7 @@ import {
   DialogTitle,
 } from "@slotted/react/dialog";
 import { InlineMessage } from "@slotted/react/inline-message";
+import { Inline } from "@slotted/react/inline";
 import { Stack } from "@slotted/react/stack";
 import {
   Table,
@@ -39,6 +40,7 @@ import {
   scheduleQuery,
   useRealizeOccurrence,
 } from "@/features/planning/api";
+import styles from "@/features/planning/realize-dialog.module.css";
 import { useScale } from "@/features/setup";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
@@ -94,7 +96,7 @@ export function RealizeDialog({
     (a) => a.id === schedule.data?.account_id,
   );
   return (
-    <Dialog open={overlayOpen} size="lg" onOpenChange={openChange}>
+    <Dialog open={overlayOpen} size="xl" onOpenChange={openChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t("occurrence.realizeTitle", { name })}</DialogTitle>
@@ -116,6 +118,7 @@ export function RealizeDialog({
             <Table
               columns={4}
               variant="framed"
+              layout="fixed"
               selectionMode="single"
               value={chosen === null ? [] : [chosen]}
               onValueChange={(value) => {
@@ -126,11 +129,17 @@ export function RealizeDialog({
                 <TableCaption>{t("occurrence.candidates")}</TableCaption>
                 <TableHead>
                   <TableRow>
-                    <TableColumnHeader>{t("scheduled.date")}</TableColumnHeader>
+                    <TableColumnHeader
+                      className={styles.select}
+                      aria-label={t("occurrence.realize")}
+                    />
+                    <TableColumnHeader className={styles.date}>
+                      {t("scheduled.date")}
+                    </TableColumnHeader>
                     <TableColumnHeader>
                       {t("agenda.description")}
                     </TableColumnHeader>
-                    <TableColumnHeader numeric>
+                    <TableColumnHeader numeric className={styles.amount}>
                       {t("ledger.amount")}
                     </TableColumnHeader>
                   </TableRow>
@@ -149,20 +158,26 @@ export function RealizeDialog({
                           {formatDate(c.transaction.date, locale)}
                         </TableRowHeader>
                         <TableCell>
-                          <Stack gap={1}>
-                            <Text size="sm">
+                          <Inline gap={4} align="center" wrap="nowrap">
+                            <Text
+                              size="md"
+                              className={styles.description}
+                              title={c.transaction.description}
+                            >
                               {c.transaction.description === ""
                                 ? t("ledger.untitled")
                                 : c.transaction.description}
                             </Text>
                             {!c.withinTolerance && (
-                              <span>
-                                <Tag size="sm" tone="warning">
-                                  {t("occurrence.outsideTolerance")}
-                                </Tag>
-                              </span>
+                              <Tag
+                                size="sm"
+                                tone="warning"
+                                className={styles.flag}
+                              >
+                                {t("occurrence.outsideTolerance")}
+                              </Tag>
                             )}
-                          </Stack>
+                          </Inline>
                         </TableCell>
                         <TableCell numeric>
                           {fmt.signed(c.amount, scale(c.amount.currency))}

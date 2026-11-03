@@ -1,0 +1,29 @@
+@layer app {
+  /* The table is fixed so a long description stays in its column instead of widening the table and
+     scrolling it sideways. The three narrow columns state their width; no token holds a column
+     measure. */
+  .select {
+    inline-size: 3rem;
+  }
+
+  .date {
+    inline-size: 7.5rem;
+  }
+
+  .amount {
+    inline-size: 9rem;
+  }
+
+  /* A row is one line: the description gives way with an ellipsis and the flag keeps its words. */
+  .description {
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .flag {
+    flex: none;
+    white-space: nowrap;
+  }
+}
