@@ -1,12 +1,3 @@
-import {
-  AlertDialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@slotted/react/dialog";
-import { Button } from "@slotted/react/button";
 import { Inline } from "@slotted/react/inline";
 import { Page, PageBody } from "@slotted/react/page";
 import { Segment, SegmentedControl } from "@slotted/react/segmented-control";
@@ -18,6 +9,7 @@ import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 
+import { ConfirmDialog } from "@/ui/confirm-dialog";
 import { RefreshButton } from "@/ui/refresh-button";
 import { useRefresh } from "@/ui/use-refresh";
 import { useApi } from "@/api/api-context";
@@ -59,7 +51,6 @@ import { useT } from "@/i18n/i18n-provider";
 import { MonthControl } from "@/ui/month-control";
 import { CategoryViewControl } from "@/features/categories/category-view-control";
 import { CategoryViewNote } from "@/features/categories/category-view-note";
-import { useStableCallback } from "@/ui/use-stable-callback";
 import { useToday } from "@/i18n/today";
 
 type Dialog =
@@ -107,10 +98,6 @@ export function CategoriesPage() {
   const archive = useArchiveCategory();
   const reopen = useReopenCategory();
   const [dialog, setDialog] = useState<Dialog | null>(null);
-  const closeArchive = useStableCallback((open: boolean) => {
-    if (!open) setDialog(null);
-  });
-
   // The same queries as the month and the month before: the cache answers those that match.
   const months = useMemo(() => lastMonths(month, 6), [month]);
   const history = useQueries({
@@ -370,47 +357,29 @@ export function CategoriesPage() {
         />
       )}
       {dialog?.kind === "archive" && (
-        <AlertDialog open onOpenChange={closeArchive}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>
-                {t("archive.title", { name: dialog.entry.path })}
-              </DialogTitle>
-              <DialogDescription>{t("archive.description")}</DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <Button
-                variant="ghost"
-                tone="secondary"
-                onClick={() => {
-                  setDialog(null);
-                }}
-              >
-                {t("detail.cancel")}
-              </Button>
-              <Button
-                tone="danger"
-                loading={archive.isPending}
-                onClick={() => {
-                  archive
-                    .mutateAsync({ id: dialog.entry.id, on: today })
-                    .then(() => {
-                      setDialog(null);
-                    })
-                    .catch((error: unknown) => {
-                      setDialog(null);
-                      toast.show({
-                        tone: "danger",
-                        title: errorText(error, t),
-                      });
-                    });
-                }}
-              >
-                {t("category.archive")}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </AlertDialog>
+        <ConfirmDialog
+          title={t("archive.title", { name: dialog.entry.path })}
+          description={t("archive.description")}
+          confirmLabel={t("category.archive")}
+          pending={archive.isPending}
+          onConfirm={() => {
+            archive
+              .mutateAsync({ id: dialog.entry.id, on: today })
+              .then(() => {
+                setDialog(null);
+              })
+              .catch((error: unknown) => {
+                setDialog(null);
+                toast.show({
+                  tone: "danger",
+                  title: errorText(error, t),
+                });
+              });
+          }}
+          onCancel={() => {
+            setDialog(null);
+          }}
+        />
       )}
     </Page>
   );

@@ -1,12 +1,3 @@
-import { Button } from "@slotted/react/button";
-import {
-  AlertDialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@slotted/react/dialog";
 import { Inline } from "@slotted/react/inline";
 import { Page, PageBody } from "@slotted/react/page";
 import {
@@ -39,6 +30,7 @@ import {
 } from "@/features/categories/api";
 import { CategoriesHeader } from "@/features/categories/categories-header";
 import { Coverage } from "@/features/categories/coverage";
+import { ConfirmDialog } from "@/ui/confirm-dialog";
 import { HeaderAction } from "@/ui/header-action";
 import { RuleList } from "@/features/categories/rule-list";
 import type { RuleAction } from "@/features/categories/rule-list";
@@ -47,7 +39,6 @@ import { SourceCategories } from "@/features/categories/source-categories";
 import { SuggestionCard } from "@/features/categories/suggestion-card";
 import { useRuleWords } from "@/features/categories/use-rule-words";
 import { useT } from "@/i18n/i18n-provider";
-import { useStableCallback } from "@/ui/use-stable-callback";
 import { useToday } from "@/i18n/today";
 
 type Rule = components["schemas"]["Rule"];
@@ -82,10 +73,6 @@ export function RulesPage() {
   const map = useMapSourceCategory();
   const [order, setOrder] = useState<string[] | null>(null);
   const [deleting, setDeleting] = useState<Rule | null>(null);
-  const closeDeleting = useStableCallback((open: boolean) => {
-    if (!open) setDeleting(null);
-  });
-
   const fail = (error: unknown) => {
     toast.show({ tone: "danger", title: errorText(error, t) });
   };
@@ -267,43 +254,23 @@ export function RulesPage() {
         </Stack>
       </PageBody>
       {deleting !== null && (
-        <AlertDialog open onOpenChange={closeDeleting}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>
-                {t("rules.deleteTitle", { name: deleting.name })}
-              </DialogTitle>
-              <DialogDescription>
-                {t("rules.deleteDescription")}
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <Button
-                variant="ghost"
-                tone="secondary"
-                onClick={() => {
-                  setDeleting(null);
-                }}
-              >
-                {t("detail.cancel")}
-              </Button>
-              <Button
-                tone="danger"
-                loading={remove.isPending}
-                onClick={() => {
-                  remove
-                    .mutateAsync(deleting.id)
-                    .catch(fail)
-                    .finally(() => {
-                      setDeleting(null);
-                    });
-                }}
-              >
-                {t("rules.delete")}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </AlertDialog>
+        <ConfirmDialog
+          title={t("rules.deleteTitle", { name: deleting.name })}
+          description={t("rules.deleteDescription")}
+          confirmLabel={t("rules.delete")}
+          pending={remove.isPending}
+          onConfirm={() => {
+            remove
+              .mutateAsync(deleting.id)
+              .catch(fail)
+              .finally(() => {
+                setDeleting(null);
+              });
+          }}
+          onCancel={() => {
+            setDeleting(null);
+          }}
+        />
       )}
     </Page>
   );
