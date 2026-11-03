@@ -90,7 +90,7 @@ describe("Calendars section", () => {
     );
   });
 
-  it("lists the holidays of the chosen calendar by month with their source", async () => {
+  it("lists the holidays of the chosen calendar by month and marks the ones set on the instance", async () => {
     const { fetch, years } = api();
     const { router } = await renderApp("/settings?section=calendars", {
       fetch,
@@ -104,8 +104,8 @@ describe("Calendars section", () => {
     expect(within(march).getByText("Local Day")).toBeInTheDocument();
     expect(within(march).getByText("Spring Day")).toBeInTheDocument();
     expect(
-      within(march).getAllByText(catalogEn["calendar.source.rule"]),
-    ).toHaveLength(1);
+      within(march).queryByText(catalogEn["calendar.source.rule"]),
+    ).toBeNull();
     expect(
       within(march).getByText(catalogEn["calendar.source.instance"]),
     ).toBeInTheDocument();

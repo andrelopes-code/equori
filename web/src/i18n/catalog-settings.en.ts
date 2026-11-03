@@ -49,6 +49,10 @@ export const settingsEn = {
   "settings.external_access.done": "Done",
   "settings.summary.data": "Export and import of your records.",
   "settings.browserOnly.tag": "This browser",
+  "settings.account.profile": "Profile",
+  "settings.account.displayName": "Display name",
+  "settings.account.displayName.help":
+    "Shown to the other members of the book. The email shows while this is empty.",
   "settings.account.session": "Session",
   "settings.account.logoutDescription":
     "Ends the session in this browser. Other devices stay signed in.",
@@ -123,8 +127,9 @@ export const settingsEn = {
   "calendar.list.title": "Available calendars",
   "calendar.list.description":
     "Choose a calendar to see the days it treats as off.",
+  "calendar.holidays.title": "Holidays in {year}",
   "calendar.holidays.count":
-    "Holidays in {year}: {count}. Weekends are off as well.",
+    "Total for the year: {count}. Weekends are off as well.",
   "settings.tone.custom": "Custom tone",
   "settings.typeface.custom": "Installed face",
   "settings.typeface.customPlaceholder": "Family name, such as Fira Sans",

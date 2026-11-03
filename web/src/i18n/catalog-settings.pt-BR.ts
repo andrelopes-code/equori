@@ -52,6 +52,10 @@ export const settingsPtBR: Record<keyof typeof settingsEn, string> = {
   "settings.external_access.done": "Concluir",
   "settings.summary.data": "Exportação e importação dos seus registros.",
   "settings.browserOnly.tag": "Este dispositivo",
+  "settings.account.profile": "Perfil",
+  "settings.account.displayName": "Nome de exibição",
+  "settings.account.displayName.help":
+    "Exibido aos outros membros do book. Enquanto estiver vazio, aparece o email.",
   "settings.account.session": "Sessão",
   "settings.account.logoutDescription":
     "Encerra a sessão neste dispositivo. Outros dispositivos continuam conectados.",
@@ -127,8 +131,9 @@ export const settingsPtBR: Record<keyof typeof settingsEn, string> = {
   "calendar.list.title": "Calendários disponíveis",
   "calendar.list.description":
     "Escolha um calendário para ver os dias que ele considera não úteis.",
+  "calendar.holidays.title": "Feriados em {year}",
   "calendar.holidays.count":
-    "Feriados em {year}: {count}. Os fins de semana também não são dias úteis.",
+    "Total no ano: {count}. Os fins de semana também não são dias úteis.",
   "settings.tone.custom": "Tom personalizado",
   "settings.typeface.custom": "Fonte instalada",
   "settings.typeface.customPlaceholder": "Nome da família, como Fira Sans",

@@ -1694,7 +1694,7 @@ export const catalogEn = {
   "calendar.br_banking": "Brazilian banking days",
   "calendar.weekend": "Weekends only",
   "calendar.title": "Calendars",
-  "calendar.regionMark": "Your region's calendar",
+  "calendar.regionMark": "Your region",
   "calendar.weekendDays": "Weekend: {days}",
   "calendar.holidaysOf": "Holidays of {name} in {year}",
   "calendar.year.previous": "Previous year",

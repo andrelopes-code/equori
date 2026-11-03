@@ -84,7 +84,10 @@ export function SettingsCalendars() {
             day.format(new Date(sunday + weekdayOrder.indexOf(d) * dayMs)),
           ),
         ),
-      month: (iso: string) => month.format(new Date(`${iso.slice(0, 7)}-01`)),
+      month: (iso: string) => {
+        const name = month.format(new Date(`${iso.slice(0, 7)}-01`));
+        return name.charAt(0).toLocaleUpperCase(tag) + name.slice(1);
+      },
       date: (iso: string) => date.format(new Date(iso)),
       tile: (iso: string) => ({
         weekday: short.format(new Date(iso)),
@@ -133,17 +136,6 @@ export function SettingsCalendars() {
       description={t("calendar.purpose")}
     >
       <SettingsGroup
-        title={t("calendar.how.title")}
-        description={t("calendar.how.description")}
-      >
-        <CalendarShiftExample
-          weekday={(iso) => fmt.tile(iso).weekday}
-          day={(iso) => fmt.tile(iso).day}
-          date={fmt.date}
-        />
-      </SettingsGroup>
-
-      <SettingsGroup
         title={t("calendar.list.title")}
         description={t("calendar.list.description")}
       >
@@ -157,12 +149,7 @@ export function SettingsCalendars() {
         ) : (
           <List variant="separated" aria-label={t("calendar.title")}>
             {ordered.map((c) => (
-              <ListItem
-                key={c.id}
-                current={c.id === chosen?.id}
-                selected={c.id === chosen?.id}
-                tone="accent"
-              >
+              <ListItem key={c.id} current={c.id === chosen?.id}>
                 <ListItemLink
                   render={routeTo({
                     to: "/settings",
@@ -194,7 +181,8 @@ export function SettingsCalendars() {
 
       {chosen !== undefined && (
         <SettingsGroup
-          title={holidaysLabel}
+          title={t("calendar.holidays.title", { year: String(year) })}
+          description={calendarLabel(t, chosen.id)}
           actions={
             // CP-04: the year steps like the month and the period of the other screens.
             <ButtonGroup
@@ -249,7 +237,6 @@ export function SettingsCalendars() {
                     ? t("calendar.holidays.empty", { year: String(year) })
                     : t("calendar.holidays.count", {
                         count: String(holidays.data.length),
-                        year: String(year),
                       })}
                 </output>
               </Text>
@@ -269,15 +256,13 @@ export function SettingsCalendars() {
                                 {fmt.date(h.date)}
                               </ListItemDescription>
                             </ListItemBody>
-                            <ListItemEnd>
-                              <Tag size="sm">
-                                {t(
-                                  h.source === "rule"
-                                    ? "calendar.source.rule"
-                                    : "calendar.source.instance",
-                                )}
-                              </Tag>
-                            </ListItemEnd>
+                            {h.source === "instance" && (
+                              <ListItemEnd>
+                                <Tag size="sm">
+                                  {t("calendar.source.instance")}
+                                </Tag>
+                              </ListItemEnd>
+                            )}
                           </ListItemContent>
                         </ListItem>
                       ))}
@@ -289,6 +274,17 @@ export function SettingsCalendars() {
           )}
         </SettingsGroup>
       )}
+
+      <SettingsGroup
+        title={t("calendar.how.title")}
+        description={t("calendar.how.description")}
+      >
+        <CalendarShiftExample
+          weekday={(iso) => fmt.tile(iso).weekday}
+          day={(iso) => fmt.tile(iso).day}
+          date={fmt.date}
+        />
+      </SettingsGroup>
     </SettingsSection>
   );
 }

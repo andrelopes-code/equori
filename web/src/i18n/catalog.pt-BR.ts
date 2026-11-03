@@ -1714,7 +1714,7 @@ export const catalogPtBR: Catalog = {
   "calendar.br_banking": "Dias úteis bancários do Brasil",
   "calendar.weekend": "Somente fins de semana",
   "calendar.title": "Calendários",
-  "calendar.regionMark": "Calendário da sua região",
+  "calendar.regionMark": "Sua região",
   "calendar.weekendDays": "Fim de semana: {days}",
   "calendar.holidaysOf": "Feriados de {name} em {year}",
   "calendar.year.previous": "Ano anterior",
