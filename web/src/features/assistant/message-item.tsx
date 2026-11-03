@@ -2,44 +2,29 @@ import {
   Bubble,
   BubbleContent,
   Message,
-  MessageActions,
   MessageBody,
-  MessageFooter,
 } from "@slotted/react/message";
-import { Glyph, Icon } from "@slotted/react/icon";
 import { InlineMessage } from "@slotted/react/inline-message";
-import { Button, IconButton } from "@slotted/react/button";
-import { Markdown } from "@slotted/react/markdown";
 import { Stack } from "@slotted/react/stack";
-import { Text } from "@slotted/react/typography";
 import { useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 
+import { AnswerCopy } from "@/features/assistant/answer-copy";
+import { parseAnswer } from "@/features/assistant/answer-markdown";
 import { assistantKeys } from "@/features/assistant/api";
 import styles from "@/features/assistant/assistant-panel.module.css";
-import type { AssistantMessage } from "@/features/assistant/sse";
-import { parseAnswer } from "@/features/assistant/answer-markdown";
-import {
-  maskAmountText,
-  maskAmounts,
-  maskMatch,
-} from "@/features/assistant/mask-amounts";
 import { ConfirmAll } from "@/features/assistant/confirm-all";
 import type { Decision } from "@/features/assistant/confirm-all";
+import { maskAmounts, maskMatch } from "@/features/assistant/mask-amounts";
+import { MessageAnswer } from "@/features/assistant/message-answer";
+import { MessageUnanswered } from "@/features/assistant/message-unanswered";
 import { ProposalCard } from "@/features/assistant/proposal-card";
+import type { AssistantMessage } from "@/features/assistant/sse";
 import { TurnActivity } from "@/features/assistant/turn-activity";
 import { useT } from "@/i18n/i18n-provider";
-import { screenLinks } from "@/navigation/screen-links";
 import { usePrivacy } from "@/privacy/privacy-provider";
 
-export function MessageItem({
-  message,
-  conversationId,
-  onRetry,
-  steps,
-  reveal = false,
-  streaming = false,
-}: {
+interface MessageItemProps {
   message: AssistantMessage;
   // The stored conversation, refetched after a decision so a promoted card shows its preview.
   conversationId?: string | undefined;
@@ -50,78 +35,58 @@ export function MessageItem({
   reveal?: boolean;
   // The answer is still arriving; it has nothing to copy yet.
   streaming?: boolean;
-}) {
+}
+
+export function MessageItem({
+  message,
+  conversationId,
+  onRetry,
+  steps,
+  reveal = false,
+  streaming = false,
+}: MessageItemProps) {
   const t = useT();
   const queryClient = useQueryClient();
   const { hidden } = usePrivacy();
-  const own = message.role === "user";
+
   const [decisions, setDecisions] = useState<Record<string, Decision>>({});
-  const [copied, setCopied] = useState(false);
   const [running, setRunning] = useState(false);
-  const decide = (id: string, decision: Decision) => {
-    setDecisions((d) => ({ ...d, [id]: decision }));
-    if (conversationId !== undefined)
-      void queryClient.invalidateQueries({
-        queryKey: assistantKeys.conversation(conversationId),
-      });
-  };
+
+  const own = message.role === "user";
   const open = message.proposals.filter(
     (p) =>
       (p.status === "pending" || p.status === "waiting") &&
       decisions[p.id] === undefined,
   );
   const lastOpen = open.at(-1)?.id;
-  const unanswered =
-    message.outcome === "failed" || message.outcome === "canceled";
   const tree = useMemo(() => {
     if (own || message.content === "") return null;
     const parsed = parseAnswer(message.content);
     return hidden ? maskAmounts(parsed, maskMatch) : parsed;
   }, [own, message.content, hidden]);
 
-  if (unanswered) {
-    return (
-      <Message align="start">
-        <MessageBody>
-          <Stack gap={2} align="start">
-            <Text size="sm" tone="muted">
-              {t(
-                message.outcome === "failed"
-                  ? "assistant.no_answer"
-                  : "assistant.canceled",
-              )}
-            </Text>
-            {onRetry !== undefined && (
-              <Button variant="outline" size="sm" onClick={onRetry}>
-                {t("assistant.retry")}
-              </Button>
-            )}
-          </Stack>
-        </MessageBody>
-      </Message>
-    );
+  function handleDecided(id: string, decision: Decision) {
+    setDecisions((d) => ({ ...d, [id]: decision }));
+    if (conversationId !== undefined)
+      void queryClient.invalidateQueries({
+        queryKey: assistantKeys.conversation(conversationId),
+      });
+  }
+
+  if (message.outcome === "failed" || message.outcome === "canceled") {
+    return <MessageUnanswered outcome={message.outcome} onRetry={onRetry} />;
   }
 
   return (
     <Message align={own ? "end" : "start"}>
       <MessageBody>
         {steps !== undefined && <TurnActivity steps={steps} running={false} />}
-        {own ? (
+        {own && (
           <Bubble>
             <BubbleContent>{message.content}</BubbleContent>
           </Bubble>
-        ) : (
-          // P10: an answer spans the thread without a bubble.
-          <div className={styles.answer}>
-            {tree === null ? (
-              <Text size="md" tone="muted">
-                {t("assistant.empty_answer")}
-              </Text>
-            ) : (
-              <Markdown tree={tree} size="md" renderers={screenLinks} />
-            )}
-          </div>
         )}
+        {!own && <MessageAnswer tree={tree} />}
         {(message.outcome === "step_limit" || message.proposals.length > 0) && (
           <Stack gap={3} className={styles.attached}>
             {message.outcome === "step_limit" && (
@@ -137,47 +102,18 @@ export function MessageItem({
                 reveal={reveal && proposal.id === lastOpen}
                 decision={decisions[proposal.id]}
                 locked={running}
-                onDecided={decide}
+                onDecided={handleDecided}
               />
             ))}
             <ConfirmAll
               proposals={open}
-              onDecided={decide}
+              onDecided={handleDecided}
               onRunning={setRunning}
             />
           </Stack>
         )}
-        {!own && tree !== null && !streaming && "clipboard" in navigator && (
-          <MessageFooter>
-            <MessageActions>
-              <IconButton
-                aria-label={t(copied ? "assistant.copied" : "assistant.copy")}
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  // P21: the answer's Markdown, masked like the screen while privacy is on.
-                  const text = hidden
-                    ? maskAmountText(message.content)
-                    : message.content;
-                  navigator.clipboard.writeText(text).then(
-                    () => {
-                      setCopied(true);
-                      setTimeout(() => {
-                        setCopied(false);
-                      }, 2000);
-                    },
-                    () => {
-                      // A refused write leaves the label as it was.
-                    },
-                  );
-                }}
-              >
-                <Icon>
-                  <Glyph name={copied ? "check" : "copy"} />
-                </Icon>
-              </IconButton>
-            </MessageActions>
-          </MessageFooter>
+        {!own && tree !== null && !streaming && (
+          <AnswerCopy content={message.content} />
         )}
       </MessageBody>
     </Message>
