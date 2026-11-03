@@ -243,6 +243,16 @@ export default extendTheme(
       },
     },
     base: {
+      // The default scale reads loose at the 12 to 18 px of an interface: a description that wraps
+      // showed a gap between its lines. Text keeps the pair of its size, closer to 1.3.
+      "--slotted-line-height-xs": "1.25",
+      "--slotted-line-height-sm": "1.3",
+      "--slotted-line-height-md": "1.3",
+      "--slotted-line-height-lg": "1.3",
+      "--slotted-line-height-xl": "1.3",
+      "--slotted-line-height-2xl": "1.25",
+      "--slotted-line-height-3xl": "1.2",
+      "--slotted-line-height-4xl": "1.15",
       "--slotted-control-shadow-focus-geometry": "0 0 0 0",
       // A focused field draws its ring over its own edge; a button keeps the gap that separates
       // its ring from a solid fill of the same hue.

@@ -91,7 +91,7 @@ New section `Patterns`, shared by both audiences (`{{define "patterns"}}`):
 > Patterns
 > - Subscription: a proposal result with a signal "recurring", a series from find_recurring, or a payee that is a subscription service you recognize, such as streaming, software, a gym or a phone plan. When no schedule covers it, propose manage_schedule action create, kind subscription, with the series amount and frequency, start on the transaction's date, and paid_by_transaction_id set to the transaction.
 > - Category: before choosing a category, compare the purchase with the category names of the book. When no category names this kind of expense or income, propose creating one under the closest parent, named in the answer's language, and use it. Never choose a category whose name contradicts the purchase.
-> - Rule: a signal "rule_suggestion" leads to manage_rule action accept_rule_suggestion. When the user categorizes two or more transactions of one payee, or a signal "rule_candidate" appears, and list_rules shows no rule for that payee, propose manage_rule action create_rule.
+> - Rule: a signal "rule_suggestion" leads to manage_rule action accept_suggestion. When the user categorizes two or more transactions of one payee, or a signal "rule_candidate" appears, and list_rules shows no rule for that payee, propose manage_rule action create_rule.
 > - One-off: a purchase without a signal and without a service you recognize gets no subscription suggestion.
 
 For the `mcp` audience, the Subscription bullet omits "a proposal result with a signal "recurring", ": MCP calls create no proposal and carry no signal. Section `Writes` gains: "For a change the request implies, describe it in the answer with its evidence and make it only after the user agrees."
