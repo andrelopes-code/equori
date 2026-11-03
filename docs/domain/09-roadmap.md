@@ -89,6 +89,7 @@ flowchart LR
   P13 --> P14
   P14 --> P15[P15 First use and help]
   P15 --> P16[P16 Test and release]
+  P15 --> P17[P17 Assistant inference]
 ```
 
 P11, P12 and P13 depend only on P10; the owner runs them one after the other, in table order. Each phase is specified, planned and executed under section 9.4.3.
@@ -102,6 +103,7 @@ P11, P12 and P13 depend only on P10; the owner runs them one after the other, in
 | P14 Installation | review | A configuration map in code that generates the installation guide and the example `.env`; start-up validation that names the variable, the expected value and an example; a one-command script (Docker check, WSL2 on Windows, free port, secret key, database password); first access by region and book; guides for Linux, macOS and Windows | A clean machine of each system reaches first access with one pasted command, checked in the release job or by a documented owner check |
 | P15 First use and help | delivered | First-use walkthrough; help pages for installation, bank connection and troubleshooting in both languages; in-app notices for due statements and budgets | P16 testers record their first transactions without outside help |
 | P16 Test and release | review | Security review; the owner and close people use real accounts of several banks; fixes; check of every exit criterion of P10 to P15; tag `v1.0.0` (ADR 022, V1) | Every exit criterion passes; no open defect of data loss, duplication or exposure |
+| P17 Assistant inference | spec | Suggestions with evidence beside the requested changes; proposals that use the entity of an earlier proposal; recurrence detector and `find_recurring`; signals on write proposals; accounts and schedules in the turn's context; step limit 12; Flash first in the default chain (`2026-11-03-assistant-inference-design.md`) | Every edge case of the spec's section 13 has a deterministic test; an owner run of E21 to E28 on `gemini-3.5-flash` meets the thresholds of the spec's section 10 |
 
 ### 9.4.3 Plans
 
