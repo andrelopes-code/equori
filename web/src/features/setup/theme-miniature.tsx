@@ -43,10 +43,12 @@ export function ThemeMiniature({ values }: ThemeMiniatureProps) {
       </span>
 
       <span className={styles.main}>
-        <span className={styles.sample}>{t("settings.typeface.sample")}</span>
-        <span className={styles.flows}>
-          <span className={styles.income} />
-          <span className={styles.expense} />
+        <span className={styles.panel}>
+          <span className={styles.sample}>{t("settings.typeface.sample")}</span>
+          <span className={styles.flows}>
+            <span className={styles.income} />
+            <span className={styles.expense} />
+          </span>
         </span>
         <span className={styles.actions}>
           <span className={styles.primary} />

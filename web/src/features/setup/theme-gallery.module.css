@@ -31,6 +31,8 @@
     cursor: pointer;
   }
 
+  /* The inset hairline is the card's edge catching light; the outline is the ring of the choice,
+     drawn with a gap so the miniature keeps its own edge. */
   .frame {
     position: relative;
     display: block;
@@ -38,22 +40,39 @@
     border: var(--slotted-border-width-thin) solid var(--slotted-border-subtle);
     border-radius: var(--slotted-radius-lg);
     outline: var(--slotted-border-width-medium) solid transparent;
-    box-shadow: var(--slotted-shadow-sm);
+    outline-offset: var(--slotted-space-1);
+    box-shadow:
+      inset 0 0 0 var(--slotted-border-width-thin)
+        color-mix(in oklch, var(--slotted-text) 8%, transparent),
+      var(--slotted-shadow-sm);
     transition:
       border-color var(--slotted-duration-short) var(--slotted-easing-standard),
       outline-color var(--slotted-duration-short) var(--slotted-easing-standard),
-      translate var(--slotted-duration-short) var(--slotted-easing-standard);
+      box-shadow var(--slotted-duration-medium) var(--slotted-easing-standard),
+      translate var(--slotted-duration-medium) var(--slotted-easing-standard);
   }
 
   .option:hover .frame {
     border-color: var(--slotted-border-strong);
-    translate: 0 -0.125rem;
+    box-shadow:
+      inset 0 0 0 var(--slotted-border-width-thin)
+        color-mix(in oklch, var(--slotted-text) 12%, transparent),
+      var(--slotted-shadow-lg);
+    translate: 0 -0.1875rem;
+  }
+
+  .option:active .frame {
+    translate: 0 -0.0625rem;
   }
 
   /* The accent ring and the check carry the choice, by shape as well as by colour. */
   .radio:checked + .frame {
     border-color: var(--slotted-tone-accent-text);
     outline-color: var(--slotted-tone-accent-text);
+    box-shadow:
+      0 0.5rem 1.5rem -0.5rem
+        color-mix(in oklch, var(--slotted-tone-accent-solid) 55%, transparent),
+      var(--slotted-shadow-md);
   }
 
   .radio:focus-visible + .frame {
@@ -70,9 +89,21 @@
     place-items: center;
     border-radius: var(--slotted-radius-full);
     background: var(--slotted-tone-accent-solid);
+    box-shadow:
+      0 0 0 var(--slotted-border-width-medium) var(--slotted-surface),
+      var(--slotted-shadow-sm);
     color: var(--slotted-tone-accent-on-solid);
     inset-block-start: var(--slotted-space-3);
     inset-inline-end: var(--slotted-space-3);
+    animation: mark-in var(--slotted-duration-medium)
+      var(--slotted-easing-emphasized);
+  }
+
+  @keyframes mark-in {
+    from {
+      opacity: 0;
+      scale: 0.5;
+    }
   }
 
   .caption {
@@ -83,13 +114,26 @@
     padding-inline: var(--slotted-space-1);
   }
 
+  /* Two lines at most, so a long description never makes one card taller than its row. */
+  .caption > :nth-child(2) {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .frame {
       transition: none;
     }
 
-    .option:hover .frame {
+    .option:hover .frame,
+    .option:active .frame {
       translate: none;
+    }
+
+    .mark {
+      animation: none;
     }
   }
 
