@@ -14,6 +14,7 @@ const parseBudget = 5 * time.Second
 // element must not rescan the file from its start.
 func TestParseLargeFileIsLinear(t *testing.T) {
 	t.Parallel()
+
 	data := []byte(largeStatement(80_000))
 	done := make(chan error, 1)
 
@@ -39,6 +40,7 @@ func TestParseLargeFileIsLinear(t *testing.T) {
 // Closing tags that match no open element parse in linear time: each one must not scan a deep stack.
 func TestParseUnmatchedClosingTagsAreLinear(t *testing.T) {
 	t.Parallel()
+
 	data := []byte("<OFX><STMTRS>" + strings.Repeat("<A>", 300_000) + strings.Repeat("</B>", 300_000))
 	done := make(chan error, 1)
 

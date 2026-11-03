@@ -15,6 +15,7 @@ import (
 // cannot confirm it. The transaction stays unvoided.
 func TestReaderCannotConfirmProposal(t *testing.T) {
 	t.Parallel()
+
 	late := &lateProvider{}
 	h := apitest.New(t, apitest.LLM(late), apitest.Today("2026-10-23"))
 	txID := h.Record("2026-10-20",
