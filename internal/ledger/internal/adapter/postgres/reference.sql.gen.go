@@ -12,10 +12,20 @@ import (
 )
 
 const deleteInstitution = `-- name: DeleteInstitution :execrows
-DELETE FROM ledger_institution
+WITH
+    detached AS (
+        UPDATE ledger_account a
+        SET
+            institution_id = NULL
+        WHERE
+            a.books_id = $1
+            AND a.institution_id = $2
+            AND a.closed_on IS NOT NULL
+    )
+DELETE FROM ledger_institution i
 WHERE
-    books_id = $1
-    AND id = $2
+    i.books_id = $1
+    AND i.id = $2
 `
 
 type DeleteInstitutionParams struct {
@@ -23,6 +33,7 @@ type DeleteInstitutionParams struct {
 	ID      uuid.UUID
 }
 
+// A closed account drops its institution; an open account keeps it and the foreign key refuses the delete.
 func (q *Queries) DeleteInstitution(ctx context.Context, arg DeleteInstitutionParams) (int64, error) {
 	result, err := q.db.Exec(ctx, deleteInstitution, arg.BooksID, arg.ID)
 	if err != nil {

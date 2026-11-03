@@ -61,7 +61,7 @@ export const accountsEn = {
   "institutions.delete": "Delete",
   "institutions.deleteTitle": "Delete {name}",
   "institutions.deleteBody":
-    "Only an institution that no account uses can be deleted.",
+    "Only an institution that no open account uses can be deleted. Closed accounts lose it.",
   "institutions.deleted": "{name} deleted",
   "links.subtitle":
     "Accounts your bank connections bring, and your accounts that receive their transactions.",

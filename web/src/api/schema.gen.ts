@@ -602,7 +602,7 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Delete an institution that no account uses. */
+        /** Delete an institution that no open account uses; closed accounts lose it. */
         delete: operations["deleteInstitution"];
         options?: never;
         head?: never;

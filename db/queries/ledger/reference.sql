@@ -35,10 +35,21 @@ RETURNING
     *;
 
 -- name: DeleteInstitution :execrows
-DELETE FROM ledger_institution
+-- A closed account drops its institution; an open account keeps it and the foreign key refuses the delete.
+WITH
+    detached AS (
+        UPDATE ledger_account a
+        SET
+            institution_id = NULL
+        WHERE
+            a.books_id = @books_id
+            AND a.institution_id = @id
+            AND a.closed_on IS NOT NULL
+    )
+DELETE FROM ledger_institution i
 WHERE
-    books_id = @books_id
-    AND id = @id;
+    i.books_id = @books_id
+    AND i.id = @id;
 
 -- name: ListInstitutions :many
 SELECT

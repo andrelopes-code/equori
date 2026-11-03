@@ -2553,7 +2553,7 @@ type ServerInterface interface {
 	// CreateInstitution Create an institution.
 	// (POST /institutions)
 	CreateInstitution(w http.ResponseWriter, r *http.Request)
-	// DeleteInstitution Delete an institution that no account uses.
+	// DeleteInstitution Delete an institution that no open account uses; closed accounts lose it.
 	// (DELETE /institutions/{id})
 	DeleteInstitution(w http.ResponseWriter, r *http.Request, id ID)
 	// SetInstitutionIdentifier Set or clear the identifier of an institution; the br_ispb identifier keys its logo (ADR 013).
@@ -10425,7 +10425,7 @@ type StrictServerInterface interface {
 	// CreateInstitution Create an institution.
 	// (POST /institutions)
 	CreateInstitution(ctx context.Context, request CreateInstitutionRequestObject) (CreateInstitutionResponseObject, error)
-	// DeleteInstitution Delete an institution that no account uses.
+	// DeleteInstitution Delete an institution that no open account uses; closed accounts lose it.
 	// (DELETE /institutions/{id})
 	DeleteInstitution(ctx context.Context, request DeleteInstitutionRequestObject) (DeleteInstitutionResponseObject, error)
 	// SetInstitutionIdentifier Set or clear the identifier of an institution; the br_ispb identifier keys its logo (ADR 013).

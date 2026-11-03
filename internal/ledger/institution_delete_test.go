@@ -33,6 +33,28 @@ func TestDeleteInstitution(t *testing.T) {
 	}
 }
 
+func TestDeleteInstitutionOfClosedAccount(t *testing.T) {
+	t.Parallel()
+	h := apitest.New(t)
+	bank := createInstitution(t, h, "Old bank")
+	closed := h.Account("Old account", "asset", "cash", map[string]any{"institution_id": bank})
+	h.MustDo(http.MethodPost, "/api/v1/accounts/"+closed+"/close", map[string]string{"closed_on": "2026-10-31"}, http.StatusOK, nil)
+
+	if r := h.Do(http.MethodDelete, "/api/v1/institutions/"+bank, nil); r.Status != http.StatusNoContent {
+		t.Fatalf("delete = %d: %s", r.Status, r.Body)
+	}
+
+	var account struct {
+		ID            string  `json:"id"`
+		InstitutionID *string `json:"institution_id"`
+	}
+	h.MustDo(http.MethodGet, "/api/v1/accounts/"+closed, nil, http.StatusOK, &account)
+
+	if account.ID != closed || account.InstitutionID != nil {
+		t.Fatalf("closed account after delete = %+v", account)
+	}
+}
+
 func TestDeleteInstitutionOfOtherBook(t *testing.T) {
 	t.Parallel()
 	h := apitest.New(t)

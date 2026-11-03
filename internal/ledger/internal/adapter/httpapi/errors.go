@@ -84,7 +84,7 @@ func ToProblem(err error) (problem.Details, bool) {
 	case errors.Is(err, app.ErrDisputeOpen):
 		return problem.New(http.StatusConflict, "dispute_open", err.Error()), true
 	case errors.Is(err, app.ErrInstitutionInUse):
-		return problem.New(http.StatusConflict, "institution_in_use", "an account uses the institution; move or delete the account first"), true
+		return problem.New(http.StatusConflict, "institution_in_use", "an open account uses the institution; move or close the account first"), true
 	case errors.Is(err, app.ErrDisputeResolved):
 		return problem.New(http.StatusConflict, "dispute_resolved", err.Error()), true
 	case errors.Is(err, app.ErrNotInlineable):

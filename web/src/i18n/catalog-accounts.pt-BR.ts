@@ -62,7 +62,7 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "institutions.delete": "Excluir",
   "institutions.deleteTitle": "Excluir {name}",
   "institutions.deleteBody":
-    "Só é possível excluir uma instituição que nenhuma conta usa.",
+    "Só é possível excluir uma instituição que nenhuma conta aberta usa. Contas encerradas perdem o vínculo.",
   "institutions.deleted": "{name} excluída",
   "links.subtitle":
     "Contas que suas conexões bancárias trazem e as suas contas que recebem as transações delas.",

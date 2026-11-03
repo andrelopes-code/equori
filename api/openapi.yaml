@@ -991,7 +991,7 @@ paths:
       tags: [ledger]
       operationId: deleteInstitution
       x-book-role: write
-      summary: Delete an institution that no account uses.
+      summary: Delete an institution that no open account uses; closed accounts lose it.
       parameters:
         - $ref: "#/components/parameters/ID"
       responses:

@@ -26,7 +26,7 @@ var (
 	ErrStatementFinanced  = errors.New("statement is already financed")
 	ErrDisputeOpen        = errors.New("the transaction already has an open dispute")
 	ErrDisputeResolved    = errors.New("the dispute is already resolved")
-	ErrInstitutionInUse   = errors.New("an account uses the institution")
+	ErrInstitutionInUse   = errors.New("an open account uses the institution")
 	ErrNotInlineable      = errors.New("only a PDF or an image is shown inline")
 	ErrDifferenceRemains  = errors.New("the settled balance still differs from the assertion")
 	ErrUnknownInstrument  = errors.New("unknown instrument")
@@ -318,7 +318,7 @@ type Repository interface {
 	InsertInstitution(ctx context.Context, i Institution) (Institution, error)
 	SetInstitutionIdentifier(ctx context.Context, booksID int64, id uuid.UUID, ident InstitutionIdentifier) (Institution, error)
 	// DeleteInstitution returns ErrNotFound for a missing institution and ErrInstitutionInUse
-	// while an account refers to it.
+	// while an open account refers to it; a closed account loses its institution.
 	DeleteInstitution(ctx context.Context, booksID int64, id uuid.UUID) error
 	// List methods return the page and the key of its last row when more rows follow.
 	ListInstitutions(ctx context.Context, booksID int64, p page.Request[InstitutionKey]) ([]Institution, *InstitutionKey, error)

@@ -449,7 +449,7 @@ export const catalogPtBR: Catalog = {
   "problem.dispute_open": "Esta compra já tem uma contestação aberta.",
   "problem.dispute_resolved": "Esta contestação já está resolvida.",
   "problem.institution_in_use":
-    "Uma conta usa esta instituição. Mova ou exclua a conta antes.",
+    "Uma conta aberta usa esta instituição. Mova ou encerre a conta antes.",
   "problem.invalid_request": "A requisição não é válida.",
   "category.label": "Categoria",
   "category.group.expense": "Despesas",
