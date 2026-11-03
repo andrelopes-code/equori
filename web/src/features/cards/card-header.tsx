@@ -104,7 +104,9 @@ export function CardHeader({
               )}
             </PageHeaderMarks>
             {where.length > 0 && (
-              <PageHeaderSubheading>{where.join(" · ")}</PageHeaderSubheading>
+              <PageHeaderSubheading className="ml-3">
+                {where.join(" · ")}
+              </PageHeaderSubheading>
             )}
           </PageHeaderTitle>
           <PageHeaderActions>
