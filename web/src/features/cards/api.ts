@@ -215,13 +215,22 @@ export function useCreateCard() {
 
 export function useUpdateCard() {
   return useApiMutation(
-    async (api, { id, active }: { id: string; active: boolean }) =>
+    async (
+      api,
+      { id, ...body }: { id: string } & components["schemas"]["CardUpdate"],
+    ) =>
       unwrap(
         await api.PATCH("/cards/{id}", {
           params: { path: { id } },
-          body: { active },
+          body,
         }),
       ),
+  );
+}
+
+export function useDeleteCard() {
+  return useApiMutation(async (api, id: string) =>
+    unwrap(await api.DELETE("/cards/{id}", { params: { path: { id } } })),
   );
 }
 

@@ -46,6 +46,10 @@ function api(sent: Sent[] = [], overrides: Record<string, Route> = {}) {
         }),
       ),
       "PATCH /api/v1/cards/pc2": record("patch pc2", json(200, {})),
+      "DELETE /api/v1/cards/pc2": () => {
+        sent.push({ route: "delete pc2" });
+        return new Response(null, { status: 204 });
+      },
       [`POST /api/v1/accounts/${cardID}/billing-cycle-rules`]: record(
         "rule",
         json(201, {}),
@@ -279,6 +283,57 @@ describe("CardPage", () => {
           body: { holder: "Bia", last_four: "5555", virtual: true },
         },
       ]);
+    });
+  });
+
+  it("edits and removes a card", async () => {
+    const sent: Sent[] = [];
+    await renderApp(`/cards/${cardID}?tab=cards`, { fetch: api(sent) });
+    const table = await screen.findByRole("table", {
+      name: catalogEn["card.plastics"],
+    });
+    const openMenu = async () => {
+      const row = await within(table).findByRole("row", { name: /9876/ });
+      await userEvent.click(
+        within(row).getByRole("button", {
+          name: catalogEn["card.actionsOf"].replace("{digits}", "9876"),
+        }),
+      );
+    };
+
+    await openMenu();
+    await userEvent.click(
+      await screen.findByRole("menuitem", { name: catalogEn["card.edit"] }),
+    );
+    const dialog = await screen.findByRole("dialog");
+    const holder = within(dialog).getByRole("textbox", {
+      name: catalogEn["accountForm.holder"],
+    });
+    expect(holder).toHaveValue("Ana");
+    await userEvent.clear(holder);
+    await userEvent.type(holder, "Bia");
+    await userEvent.click(
+      within(dialog).getByRole("button", { name: catalogEn["detail.save"] }),
+    );
+    await waitFor(() => {
+      expect(sent).toEqual([
+        { route: "patch pc2", body: { holder: "Bia", last_four: "9876" } },
+      ]);
+    });
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+
+    await openMenu();
+    await userEvent.click(
+      await screen.findByRole("menuitem", { name: catalogEn["card.remove"] }),
+    );
+    const confirm = await screen.findByRole("alertdialog");
+    await userEvent.click(
+      within(confirm).getByRole("button", { name: catalogEn["card.remove"] }),
+    );
+    await waitFor(() => {
+      expect(sent.at(-1)).toEqual({ route: "delete pc2" });
     });
   });
 

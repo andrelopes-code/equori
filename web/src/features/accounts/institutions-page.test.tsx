@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
 import { accountRoutes, itauID, nubankID } from "@/testing/account-api";
-import { fakeApi, json } from "@/testing/fake-api";
+import { fakeApi, json, problem } from "@/testing/fake-api";
 import { renderApp } from "@/testing/render-app";
 
 interface Sent {
@@ -23,6 +23,12 @@ function api(sent: Sent[]) {
       [`PUT /api/v1/institutions/${itauID}/identifier`]: record("PUT itau"),
       [`PUT /api/v1/institutions/${nubankID}/identifier`]: record("PUT nubank"),
       "POST /api/v1/institutions": record("POST"),
+      [`DELETE /api/v1/institutions/${itauID}`]: () => {
+        sent.push({ route: "DELETE itau", body: null });
+        return new Response(null, { status: 204 });
+      },
+      [`DELETE /api/v1/institutions/${nubankID}`]: () =>
+        problem(409, "institution_in_use"),
     }),
   );
 }
@@ -270,5 +276,47 @@ describe("InstitutionsPage", () => {
         },
       ]);
     });
+  });
+
+  it("deletes an institution after confirmation", async () => {
+    const sent: Sent[] = [];
+    await renderApp("/accounts/institutions", { fetch: api(sent) });
+    await rowMenu("Itaú");
+    await userEvent.click(
+      await screen.findByRole("menuitem", {
+        name: catalogEn["institutions.delete"],
+      }),
+    );
+    const confirm = await screen.findByRole("alertdialog");
+    await userEvent.click(
+      within(confirm).getByRole("button", {
+        name: catalogEn["institutions.delete"],
+      }),
+    );
+    await waitFor(() => {
+      expect(sent).toEqual([{ route: "DELETE itau", body: null }]);
+    });
+    await waitFor(() => {
+      expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    });
+  });
+
+  it("keeps an institution that an account uses and says why", async () => {
+    await renderApp("/accounts/institutions", { fetch: api([]) });
+    await rowMenu("Nubank");
+    await userEvent.click(
+      await screen.findByRole("menuitem", {
+        name: catalogEn["institutions.delete"],
+      }),
+    );
+    const confirm = await screen.findByRole("alertdialog");
+    await userEvent.click(
+      within(confirm).getByRole("button", {
+        name: catalogEn["institutions.delete"],
+      }),
+    );
+    expect(
+      await within(confirm).findByText(catalogEn["problem.institution_in_use"]),
+    ).toBeInTheDocument();
   });
 });

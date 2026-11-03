@@ -58,6 +58,11 @@ export const accountsEn = {
   "institutions.logoSet": "Logo of {name} set",
   "institutions.logoRemoved": "Logo of {name} removed",
   "institutions.created": "{name} created",
+  "institutions.delete": "Delete",
+  "institutions.deleteTitle": "Delete {name}",
+  "institutions.deleteBody":
+    "Only an institution that no account uses can be deleted.",
+  "institutions.deleted": "{name} deleted",
   "links.subtitle":
     "Accounts your bank connections bring, and your accounts that receive their transactions.",
   "accountForm.problem.kind": "Choose what kind of account this is.",
@@ -679,6 +684,16 @@ export const accountsEn = {
   "card.activeOf": "Card •••• {digits} active",
   "card.addCard": "Add card",
   "card.cardAdded": "Card added",
+  "card.actionsColumn": "Actions",
+  "card.actionsOf": "Actions for card •••• {digits}",
+  "card.edit": "Edit",
+  "card.editCard": "Edit card",
+  "card.cardEdited": "Card updated",
+  "card.remove": "Remove",
+  "card.removeTitle": "Remove card •••• {digits}",
+  "card.removeBody":
+    "The card stops being recognised in imported text. Purchases and statements stay as they are.",
+  "card.cardRemoved": "Card removed",
   "card.newRule": "New billing cycle version",
   "card.newLimit": "New limit version",
   "card.effectiveFrom": "From the statement of",

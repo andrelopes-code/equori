@@ -439,6 +439,8 @@ export const catalogEn = {
   "problem.statement_financed": "This statement is already financed.",
   "problem.dispute_open": "This purchase already has an open dispute.",
   "problem.dispute_resolved": "This dispute is already resolved.",
+  "problem.institution_in_use":
+    "An account uses this institution. Move or delete the account first.",
   "problem.invalid_request": "The request is not valid.",
   "category.label": "Category",
   "category.group.expense": "Expenses",

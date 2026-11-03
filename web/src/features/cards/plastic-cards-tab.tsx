@@ -16,15 +16,21 @@ import {
 } from "@slotted/react/table";
 import { Tag } from "@slotted/react/tag";
 import { toast } from "@slotted/react/toast";
+import { VisuallyHidden } from "@slotted/react/visually-hidden";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { useApi } from "@/api/api-context";
 import { errorText } from "@/api/problem";
+import type { components } from "@/api/schema.gen";
 import { cardsQuery, useUpdateCard } from "@/features/cards/api";
 import { AddCardDialog } from "@/features/cards/add-card-dialog";
+import { DeleteCardDialog } from "@/features/cards/delete-card-dialog";
+import { PlasticCardActions } from "@/features/cards/plastic-card-actions";
 import { useT } from "@/i18n/i18n-provider";
 import { Presence } from "@/ui/presence";
+
+type Card = components["schemas"]["Card"];
 
 // The physical and virtual cards of the account, each switched on or off.
 export function PlasticCardsTab({ accountId }: { accountId: string }) {
@@ -32,6 +38,8 @@ export function PlasticCardsTab({ accountId }: { accountId: string }) {
   const cards = useQuery(cardsQuery(useApi(), accountId));
   const update = useUpdateCard();
   const [adding, setAdding] = useState(false);
+  const [editing, setEditing] = useState<Card | null>(null);
+  const [removing, setRemoving] = useState<Card | null>(null);
   const toggle = (card: NonNullable<typeof cards.data>[number]) => (
     <Switch
       aria-label={t("card.activeOf", { digits: card.last_four })}
@@ -55,7 +63,7 @@ export function PlasticCardsTab({ accountId }: { accountId: string }) {
           {t("card.addCard")}
         </Button>
       </div>
-      <Table columns={4} variant="framed">
+      <Table columns={5} variant="framed">
         <TableContent>
           <TableCaption>{t("card.plastics")}</TableCaption>
           <TableHead>
@@ -64,6 +72,9 @@ export function PlasticCardsTab({ accountId }: { accountId: string }) {
               <TableColumnHeader>{t("accountForm.holder")}</TableColumnHeader>
               <TableColumnHeader>{t("card.type")}</TableColumnHeader>
               <TableColumnHeader>{t("card.active")}</TableColumnHeader>
+              <TableColumnHeader align="end">
+                <VisuallyHidden>{t("card.actionsColumn")}</VisuallyHidden>
+              </TableColumnHeader>
             </TableRow>
           </TableHead>
           {cards.isPending ? (
@@ -87,6 +98,17 @@ export function PlasticCardsTab({ accountId }: { accountId: string }) {
                     </Tag>
                   </TableCell>
                   <TableCell>{toggle(card)}</TableCell>
+                  <TableCell align="end">
+                    <PlasticCardActions
+                      card={card}
+                      onEdit={() => {
+                        setEditing(card);
+                      }}
+                      onRemove={() => {
+                        setRemoving(card);
+                      }}
+                    />
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -104,6 +126,37 @@ export function PlasticCardsTab({ accountId }: { accountId: string }) {
             onDone={() => {
               setAdding(false);
               toast.show({ tone: "success", title: t("card.cardAdded") });
+            }}
+          />
+        )}
+      </Presence>
+
+      <Presence value={editing ?? undefined}>
+        {(card) => (
+          <AddCardDialog
+            accountId={accountId}
+            card={card}
+            onCancel={() => {
+              setEditing(null);
+            }}
+            onDone={() => {
+              setEditing(null);
+              toast.show({ tone: "success", title: t("card.cardEdited") });
+            }}
+          />
+        )}
+      </Presence>
+
+      <Presence value={removing ?? undefined}>
+        {(card) => (
+          <DeleteCardDialog
+            card={card}
+            onCancel={() => {
+              setRemoving(null);
+            }}
+            onDone={() => {
+              setRemoving(null);
+              toast.show({ tone: "success", title: t("card.cardRemoved") });
             }}
           />
         )}

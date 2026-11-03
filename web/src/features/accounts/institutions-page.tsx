@@ -1,7 +1,4 @@
-import { IconButton } from "@slotted/react/button";
-import { Glyph, Icon } from "@slotted/react/icon";
 import { Inline } from "@slotted/react/inline";
-import { Menu, MenuContent, MenuItem, MenuTrigger } from "@slotted/react/menu";
 import { PageBody } from "@slotted/react/page";
 import {
   Table,
@@ -23,14 +20,12 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { useApi } from "@/api/api-context";
-import { errorText } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
 import { AccountMark } from "@/features/accounts/account-mark";
 import { HeaderSlot } from "@/features/accounts/header-slot";
-import {
-  accountsQuery,
-  useSetInstitutionIdentifier,
-} from "@/features/accounts/api";
+import { accountsQuery } from "@/features/accounts/api";
+import { DeleteInstitutionDialog } from "@/features/accounts/delete-institution-dialog";
+import { InstitutionActions } from "@/features/accounts/institution-actions";
 import {
   ispbOf,
   logoIndexQuery,
@@ -54,77 +49,13 @@ export function InstitutionsPage() {
   const institutions = useQuery(institutionsQuery(api));
   const accounts = useQuery(accountsQuery(api));
   const index = useQuery(logoIndexQuery);
-  const setIdentifier = useSetInstitutionIdentifier();
   const [creating, setCreating] = useState(false);
   const [logoTarget, setLogoTarget] = useState<Institution | null>(null);
   const [identifierTarget, setIdentifierTarget] = useState<Institution | null>(
     null,
   );
+  const [deleteTarget, setDeleteTarget] = useState<Institution | null>(null);
 
-  const actions = (institution: Institution) => (
-    <Menu>
-      <MenuTrigger
-        render={(props) => (
-          <IconButton
-            {...props}
-            size="sm"
-            variant="ghost"
-            tone="secondary"
-            aria-label={t("institutions.actions", {
-              name: institution.name,
-            })}
-          >
-            <Icon>
-              <Glyph name="ellipsis" />
-            </Icon>
-          </IconButton>
-        )}
-      />
-      <MenuContent>
-        <MenuItem
-          onSelect={() => {
-            setLogoTarget(institution);
-          }}
-        >
-          {t("institutions.setLogo")}
-        </MenuItem>
-        <MenuItem
-          onSelect={() => {
-            setIdentifierTarget(institution);
-          }}
-        >
-          {t("institutions.editIdentifier")}
-        </MenuItem>
-        {institution.identifier !== undefined && (
-          <MenuItem
-            onSelect={() => {
-              setIdentifier
-                .mutateAsync({
-                  id: institution.id,
-                  identifier: null,
-                })
-                .then(() => {
-                  toast.show({
-                    tone: "success",
-                    title: t("institutions.logoRemoved", {
-                      name: institution.name,
-                    }),
-                  });
-                })
-                .catch((error: unknown) => {
-                  toast.show({
-                    tone: "danger",
-                    title: errorText(error, t),
-                  });
-                });
-            }}
-          >
-            {t("institutions.removeLogo")}
-          </MenuItem>
-        )}
-      </MenuContent>
-    </Menu>
-  );
   const counts = new Map<string, number>();
   for (const account of accounts.data ?? []) {
     if (account.institution_id === undefined) continue;
@@ -218,7 +149,18 @@ export function InstitutionsPage() {
                           {String(counts.get(institution.id) ?? 0)}
                         </TableCell>
                         <TableCell align="end">
-                          {actions(institution)}
+                          <InstitutionActions
+                            institution={institution}
+                            onSetLogo={() => {
+                              setLogoTarget(institution);
+                            }}
+                            onEditIdentifier={() => {
+                              setIdentifierTarget(institution);
+                            }}
+                            onDelete={() => {
+                              setDeleteTarget(institution);
+                            }}
+                          />
                         </TableCell>
                       </TableRow>
                     );
@@ -279,6 +221,23 @@ export function InstitutionsPage() {
                     : "institutions.identifierSet",
                   { name: institution.name },
                 ),
+              });
+            }}
+          />
+        )}
+      </Presence>
+      <Presence value={deleteTarget ?? undefined}>
+        {(institution) => (
+          <DeleteInstitutionDialog
+            institution={institution}
+            onCancel={() => {
+              setDeleteTarget(null);
+            }}
+            onDone={() => {
+              setDeleteTarget(null);
+              toast.show({
+                tone: "success",
+                title: t("institutions.deleted", { name: institution.name }),
               });
             }}
           />

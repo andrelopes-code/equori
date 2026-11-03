@@ -59,6 +59,11 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "institutions.logoSet": "Logo de {name} definido",
   "institutions.logoRemoved": "Logo de {name} removido",
   "institutions.created": "{name} criada",
+  "institutions.delete": "Excluir",
+  "institutions.deleteTitle": "Excluir {name}",
+  "institutions.deleteBody":
+    "Só é possível excluir uma instituição que nenhuma conta usa.",
+  "institutions.deleted": "{name} excluída",
   "links.subtitle":
     "Contas que suas conexões bancárias trazem e as suas contas que recebem as transações delas.",
   "accountForm.problem.kind": "Escolha que tipo de conta é esta.",
@@ -679,6 +684,16 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "card.activeOf": "Cartão •••• {digits} ativo",
   "card.addCard": "Adicionar cartão",
   "card.cardAdded": "Cartão adicionado",
+  "card.actionsColumn": "Ações",
+  "card.actionsOf": "Ações do cartão •••• {digits}",
+  "card.edit": "Editar",
+  "card.editCard": "Editar cartão",
+  "card.cardEdited": "Cartão atualizado",
+  "card.remove": "Remover",
+  "card.removeTitle": "Remover o cartão •••• {digits}",
+  "card.removeBody":
+    "O cartão deixa de ser reconhecido em textos importados. Compras e faturas não mudam.",
+  "card.cardRemoved": "Cartão removido",
   "card.newRule": "Nova versão do ciclo da fatura",
   "card.newLimit": "Nova versão do limite",
   "card.effectiveFrom": "A partir da fatura de",

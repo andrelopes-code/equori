@@ -439,6 +439,14 @@ export function useSetInstitutionIdentifier() {
   );
 }
 
+export function useDeleteInstitution() {
+  return useApiMutation(async (api, id: string) =>
+    unwrap(
+      await api.DELETE("/institutions/{id}", { params: { path: { id } } }),
+    ),
+  );
+}
+
 export function useCreateAssertion() {
   return useApiMutation(
     async (
