@@ -5878,6 +5878,10 @@
           "type": "string",
           "description": "for pause: last paused date",
           "format": "date"
+        },
+        "paid_by_transaction_id": {
+          "type": "string",
+          "description": "for create: the transaction that paid the occurrence on start"
         }
       },
       "required": [

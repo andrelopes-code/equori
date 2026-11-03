@@ -29,6 +29,14 @@ type Ledger interface {
 	BaseCurrency(ctx context.Context, booksID int64) (money.Currency, error)
 	// PayeeNames returns the names of the book's live payees by ID.
 	PayeeNames(ctx context.Context, booksID int64) (map[uuid.UUID]string, error)
+	// Transaction returns a transaction of the book in force; ok is false for an unknown or voided one.
+	Transaction(ctx context.Context, booksID int64, id uuid.UUID) (tx Transaction, ok bool, err error)
+}
+
+// Transaction is what a preview shows of a transaction.
+type Transaction struct {
+	Description string
+	Date        time.Time
 }
 
 func Tools(svc *app.Service, l Ledger, clk clock.Clock) []tool.Tool {

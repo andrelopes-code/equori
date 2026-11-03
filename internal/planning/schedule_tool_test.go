@@ -435,3 +435,58 @@ func TestListSchedulesCommitted(t *testing.T) {
 		t.Errorf("committed = %+v", got.Committed)
 	}
 }
+
+// ID6: a new schedule links the occurrence on its start to the transaction that paid it.
+func TestManageScheduleCreateLinksPayingTransaction(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t, "2026-11-10")
+	// The amount is outside the tolerance, so automatic matching leaves the occurrence expected.
+	tx := f.pay("2026-11-06", 100000, f.rent, f.landlord)
+	args := map[string]any{
+		"action": "create", "kind": "bill", "description": "Rent", "account_id": f.checking, "counterpart_id": f.rent,
+		"payee_id": f.landlord, "amount": "2100.00", "frequency": "monthly", "day_of_month": 5, "start": "2026-11-05",
+		"paid_by_transaction_id": tx,
+	}
+
+	p, r := preview(t, f.h, "manage_schedule", args)
+	if r.IsError {
+		t.Fatalf("preview = error %s", r.Content)
+	}
+
+	wantChange := tool.Change{Field: "transaction", After: tool.TextValue("payment 2026-11-06")}
+	if got := p.Changes[len(p.Changes)-1]; !reflect.DeepEqual(got, wantChange) {
+		t.Errorf("last change = %+v, want %+v", got, wantChange)
+	}
+
+	var out toolSchedule
+	toolOutput(t, f.h, "manage_schedule", args, &out)
+
+	got := f.occurrences("transaction_id=" + tx)
+	if len(got) != 1 || got[0].ScheduleID != out.ScheduleID || got[0].State != "realized" || got[0].TransactionID != tx {
+		t.Fatalf("occurrences of the transaction = %+v", got)
+	}
+}
+
+func TestManageScheduleCreateInvalidPayingTransaction(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t, "2026-11-10")
+	tx := f.pay("2026-11-06", 210000, f.rent, f.landlord)
+	create := func(start, paidBy string) map[string]any {
+		return map[string]any{
+			"action": "create", "kind": "bill", "description": "Rent", "account_id": f.checking, "counterpart_id": f.rent,
+			"amount": "2100.00", "frequency": "monthly", "day_of_month": 5, "start": start, "paid_by_transaction_id": paidBy,
+		}
+	}
+
+	// 2026-11-06 is not a day 5: the schedule has no occurrence on start.
+	f.h.ExpectToolError(f.h.Tool("manage_schedule", create("2026-11-06", tx)), "invalid_arguments", "paid_by_transaction_id")
+	f.h.ExpectToolError(f.h.Tool("manage_schedule", create("2026-11-05", "00000000-0000-4000-8000-000000000001")), "invalid_arguments", "paid_by_transaction_id")
+	f.h.ExpectToolError(f.h.Tool("manage_schedule", create("2026-11-05", "x")), "invalid_arguments", "paid_by_transaction_id")
+
+	var none toolSchedules
+	toolOutput(t, f.h, "list_schedules", map[string]any{}, &none)
+
+	if len(none.Schedules) != 0 {
+		t.Fatalf("schedules after the errors = %+v", none.Schedules)
+	}
+}

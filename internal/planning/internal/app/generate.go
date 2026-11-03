@@ -49,13 +49,13 @@ func (s *Service) days(ctx context.Context, calendar string, from, to time.Time)
 
 // generate adds the occurrences of sch after its GeneratedUntil up to the horizon and
 // advances GeneratedUntil; existing sequences are kept (A49).
-func (s *Service) generate(ctx context.Context, repo Repository, booksID int64, sch domain.Schedule) error {
+func (s *Service) generate(ctx context.Context, repo Repository, booksID int64, sch domain.Schedule, paidBy uuid.UUID) error {
 	horizon := s.horizon(ctx)
 	if !sch.GeneratedUntil.Before(horizon) {
 		return nil
 	}
 
-	if err := s.fill(ctx, repo, booksID, sch, sch.GeneratedUntil.AddDate(0, 0, 1), horizon); err != nil {
+	if err := s.fill(ctx, repo, booksID, sch, sch.GeneratedUntil.AddDate(0, 0, 1), horizon, paidBy); err != nil {
 		return err
 	}
 
@@ -66,7 +66,7 @@ func (s *Service) generate(ctx context.Context, repo Repository, booksID int64, 
 // transactions already recorded realize the ones dated by today (A51), and skips the ones dated
 // before the schedule's creation that none realizes, so the past is neither overdue nor
 // projected (A127).
-func (s *Service) fill(ctx context.Context, repo Repository, booksID int64, sch domain.Schedule, from, to time.Time) error {
+func (s *Service) fill(ctx context.Context, repo Repository, booksID int64, sch domain.Schedule, from, to time.Time, paidBy uuid.UUID) error {
 	days, err := s.days(ctx, sch.Calendar, sch.Terms[0].Rule.Start, to)
 	if err != nil {
 		return err
@@ -75,6 +75,12 @@ func (s *Service) fill(ctx context.Context, repo Repository, booksID int64, sch 
 	planned := sch.Planned(from, to, days)
 	if err := repo.InsertOccurrences(ctx, booksID, sch.ID, planned); err != nil {
 		return err
+	}
+
+	if paidBy != uuid.Nil && len(planned) > 0 {
+		if err := s.realizeFirst(ctx, repo, booksID, sch.ID, planned[0].Date, paidBy); err != nil {
+			return err
+		}
 	}
 
 	today := s.clk.Today(ctx)
@@ -113,6 +119,19 @@ func (s *Service) fill(ctx context.Context, repo Repository, booksID int64, sch 
 	return nil
 }
 
+// realizeFirst links the occurrence on date to txID as a manual Realize does, before the
+// matching pass, so that pass neither matches nor skips it.
+func (s *Service) realizeFirst(ctx context.Context, repo Repository, booksID int64, scheduleID uuid.UUID, date time.Time, txID uuid.UUID) error {
+	os, err := repo.Occurrences(ctx, booksID, date, date, scheduleID)
+	if err != nil || len(os) == 0 {
+		return err
+	}
+
+	_, err = repo.Realize(ctx, booksID, os[0].ID, txID, realizedManual)
+
+	return err
+}
+
 // Backfill fills every schedule from its rule's first date to the date it is generated
 // through: what creation does since A127, for schedules created before it.
 func (s *Service) Backfill(ctx context.Context) error {
@@ -133,7 +152,7 @@ func (s *Service) Backfill(ctx context.Context) error {
 				return err
 			}
 
-			return s.fill(bctx, repo, ref.BooksID, sch, time.Time{}, sch.GeneratedUntil)
+			return s.fill(bctx, repo, ref.BooksID, sch, time.Time{}, sch.GeneratedUntil, uuid.Nil)
 		})
 		if err != nil {
 			return fmt.Errorf("backfill schedule %s: %w", ref.ID, err)
@@ -171,7 +190,7 @@ func (s *Service) Tick(ctx context.Context) ([]Failure, error) {
 				return err
 			}
 
-			return s.generate(bctx, repo, ref.BooksID, sch)
+			return s.generate(bctx, repo, ref.BooksID, sch, uuid.Nil)
 		})
 		if err != nil {
 			failures = append(failures, Failure{Ref: ref, Err: err})

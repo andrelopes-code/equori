@@ -48,6 +48,8 @@ type manageScheduleIn struct {
 	Until         tool.Date               `json:"until,omitzero" jsonschema:"for create: last possible date; absent for no end"`
 	From          tool.Date               `json:"from,omitzero" jsonschema:"for change_terms: first date the new terms apply; for pause: first paused date; for end: first date without occurrences"`
 	To            tool.Date               `json:"to,omitzero" jsonschema:"for pause: last paused date"`
+
+	PaidByTransactionID string `json:"paid_by_transaction_id,omitzero" jsonschema:"for create: the transaction that paid the occurrence on start"`
 }
 
 // schedulePlan holds what a manage_schedule call reads and validates before it previews or writes.
@@ -58,6 +60,8 @@ type schedulePlan struct {
 	payeeID              uuid.UUID
 	amount               *money.Money
 	rule                 *domain.Rule
+	paidBy               uuid.UUID
+	paidByFact           Transaction
 }
 
 var unitWords = map[domain.Frequency][2]string{
@@ -90,7 +94,7 @@ func prepareSchedule(ctx context.Context, svc *app.Service, l Ledger, booksID in
 		{"account_id", given(in.AccountID)}, {"counterpart_id", given(in.CounterpartID)}, {"payee_id", given(in.PayeeID)},
 		{"amount", given(in.Amount)}, {"frequency", given(string(in.Frequency))}, {"interval", in.Interval != 0},
 		{"day_of_month", in.DayOfMonth != 0}, {"start", !in.Start.IsZero()}, {"until", !in.Until.IsZero()},
-		{"from", !in.From.IsZero()}, {"to", !in.To.IsZero()},
+		{"from", !in.From.IsZero()}, {"to", !in.To.IsZero()}, {"paid_by_transaction_id", given(in.PaidByTransactionID)},
 	}
 	name := string(in.Action)
 
@@ -98,7 +102,7 @@ func prepareSchedule(ctx context.Context, svc *app.Service, l Ledger, booksID in
 	switch in.Action {
 	case "create":
 		err = required(name, fields, []string{"kind", "description", "account_id", "counterpart_id", "amount", "frequency", "start"},
-			"payee_id", "interval", "day_of_month", "until")
+			"payee_id", "interval", "day_of_month", "until", "paid_by_transaction_id")
 	case "change_terms":
 		err = required(name, fields, []string{"schedule_id", "from"}, "amount", "frequency", "interval", "day_of_month")
 		switch {
@@ -129,6 +133,7 @@ func prepareSchedule(ctx context.Context, svc *app.Service, l Ledger, booksID in
 	}{
 		{in.ScheduleID, "schedule_id", &scheduleID}, {in.AccountID, "account_id", &p.accountID},
 		{in.CounterpartID, "counterpart_id", &p.counterID}, {in.PayeeID, "payee_id", &p.payeeID},
+		{in.PaidByTransactionID, "paid_by_transaction_id", &p.paidBy},
 	} {
 		if *id.into, err = optionalID(id.s, id.field); err != nil {
 			return schedulePlan{}, err
@@ -172,6 +177,12 @@ func prepareSchedule(ctx context.Context, svc *app.Service, l Ledger, booksID in
 		}
 
 		p.rule = &rule
+
+		if p.paidBy != uuid.Nil {
+			if err := checkPaidBy(ctx, l, booksID, &p); err != nil {
+				return schedulePlan{}, err
+			}
+		}
 	case "change_terms":
 		if unit, err = unitOf(p.schedule.Currency); err != nil {
 			return schedulePlan{}, err
@@ -218,6 +229,26 @@ func prepareSchedule(ctx context.Context, svc *app.Service, l Ledger, booksID in
 	return p, nil
 }
 
+// checkPaidBy reads the paying transaction and requires an occurrence on the rule's start.
+func checkPaidBy(ctx context.Context, l Ledger, booksID int64, p *schedulePlan) error {
+	tx, ok, err := l.Transaction(ctx, booksID, p.paidBy)
+	if err != nil {
+		return err
+	}
+
+	if !ok {
+		return tool.InvalidArgument("paid_by_transaction_id", "must name a transaction of the book")
+	}
+
+	if len(p.rule.Dates(p.rule.Start, p.rule.Start, nil)) == 0 {
+		return tool.InvalidArgument("paid_by_transaction_id", "the schedule has no occurrence on start")
+	}
+
+	p.paidByFact = tx
+
+	return nil
+}
+
 func manageSchedule(svc *app.Service, l Ledger, clk clock.Clock) tool.Tool {
 	return tool.NewWrite(tool.Spec{
 		Name: "manage_schedule",
@@ -249,6 +280,10 @@ func manageSchedule(svc *app.Service, l Ledger, clk clock.Clock) tool.Tool {
 				{Field: "account", After: tool.TextValue(p.account.Name)},
 				{Field: counterpart, After: tool.TextValue(p.counterpart.Name)},
 				{Field: "date", After: tool.DateValue(in.Start.Time)},
+			}
+			if p.paidBy != uuid.Nil {
+				pv.Changes = append(pv.Changes, tool.Change{Field: "transaction",
+					After: tool.TextValue(p.paidByFact.Description + " " + p.paidByFact.Date.Format(time.DateOnly))})
 			}
 
 			return pv, nil
@@ -299,6 +334,7 @@ func manageSchedule(svc *app.Service, l Ledger, clk clock.Clock) tool.Tool {
 			s, err = svc.CreateSchedule(ctx, booksID, app.ScheduleInput{
 				Kind: domain.Kind(in.Kind), AccountID: p.accountID, CounterpartID: p.counterID, PayeeID: p.payeeID,
 				Description: in.Description, Amount: *p.amount, Rule: *p.rule,
+				PaidBy: p.paidBy,
 			})
 		case "change_terms":
 			s, err = svc.ChangeTerms(ctx, booksID, p.schedule.ID, in.From.Time, p.amount, p.rule)

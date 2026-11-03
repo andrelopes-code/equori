@@ -47,6 +47,7 @@ type ScheduleInput struct {
 	Calendar string
 	// ToleranceBP and GraceDays take their defaults when nil.
 	ToleranceBP, GraceDays *int
+	PaidBy                 uuid.UUID // uuid.Nil: none; realizes the occurrence on the rule's first date (plan B T3)
 }
 
 func (s *Service) CreateSchedule(ctx context.Context, booksID int64, in ScheduleInput) (domain.Schedule, error) {
@@ -104,7 +105,7 @@ func (s *Service) CreateSchedule(ctx context.Context, booksID int64, in Schedule
 			return err
 		}
 
-		return s.generate(ctx, repo, booksID, created)
+		return s.generate(ctx, repo, booksID, created, in.PaidBy)
 	})
 	if err != nil {
 		return domain.Schedule{}, err

@@ -122,6 +122,15 @@ func (t toolLedger) PayeeNames(ctx context.Context, booksID int64) (map[uuid.UUI
 	return out, nil
 }
 
+func (t toolLedger) Transaction(ctx context.Context, booksID int64, id uuid.UUID) (toolapi.Transaction, bool, error) {
+	facts, err := t.l.TransactionFacts(ctx, booksID, []uuid.UUID{id})
+	if err != nil || len(facts) == 0 || facts[0].Voided {
+		return toolapi.Transaction{}, false, err
+	}
+
+	return toolapi.Transaction{Description: facts[0].Description, Date: facts[0].Date}, true, nil
+}
+
 func (t toolLedger) BaseCurrency(ctx context.Context, booksID int64) (money.Currency, error) {
 	return t.l.BaseCurrency(ctx, booksID)
 }
