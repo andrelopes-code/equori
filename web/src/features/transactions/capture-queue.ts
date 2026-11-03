@@ -1,4 +1,5 @@
 import { bookKey, bookKeyNames } from "@/features/session";
+import { newId } from "@/ui/new-id";
 
 // P4 of ADR 022: texts written without the server, kept until recorded or discarded.
 
@@ -63,7 +64,7 @@ export function enqueueCapture(
   const all = readAll();
   const queued: QueuedCapture = {
     ...entry,
-    id: crypto.randomUUID(),
+    id: newId(),
     createdAt: (now ?? new Date()).toISOString(),
   };
   try {

@@ -7,6 +7,7 @@ import {
   useThemeValues,
 } from "@/theme/themes";
 import type { SavedTheme, ThemeValues } from "@/theme/themes";
+import { newId } from "@/ui/new-id";
 
 const MAX_SAVED = 50;
 
@@ -45,7 +46,7 @@ export function useThemeLibrary(): ThemeLibrary {
     full: saved.length >= MAX_SAVED,
     choose: applyThemeValues,
     save: (name, next) => {
-      setSaved([...saved, { id: crypto.randomUUID(), name, values: next }]);
+      setSaved([...saved, { id: newId(), name, values: next }]);
       applyThemeValues(next);
     },
     rename: (id, name) => {
