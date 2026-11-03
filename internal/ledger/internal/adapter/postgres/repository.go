@@ -114,6 +114,23 @@ func (r *Repository) SetInstitutionIdentifier(ctx context.Context, booksID int64
 	return toInstitution(row), nil
 }
 
+func (r *Repository) DeleteInstitution(ctx context.Context, booksID int64, id uuid.UUID) error {
+	n, err := r.q.DeleteInstitution(ctx, DeleteInstitutionParams{BooksID: booksID, ID: id})
+	if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == foreignKeyViolation {
+		return app.ErrInstitutionInUse
+	}
+
+	if err != nil {
+		return err
+	}
+
+	if n == 0 {
+		return app.ErrNotFound
+	}
+
+	return nil
+}
+
 // duplicateInstitution names the field of the unique index an institution violated.
 func duplicateInstitution(err error) error {
 	if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.ConstraintName == "ledger_institution_identifier_key" {
@@ -1009,13 +1026,26 @@ func (r *Repository) InsertCard(ctx context.Context, c domain.Card) (domain.Card
 	return toCard(row), nil
 }
 
-func (r *Repository) SetCardActive(ctx context.Context, booksID int64, id uuid.UUID, active bool) (domain.Card, error) {
-	row, err := r.q.SetCardActive(ctx, SetCardActiveParams{BooksID: booksID, ID: id, Active: active})
+func (r *Repository) UpdateCard(ctx context.Context, booksID int64, id uuid.UUID, e domain.CardEdit) (domain.Card, error) {
+	row, err := r.q.UpdateCard(ctx, UpdateCardParams{BooksID: booksID, ID: id, Holder: e.Holder, LastFour: e.LastFour, Active: e.Active})
 	if err != nil {
 		return domain.Card{}, notFound(err)
 	}
 
 	return toCard(row), nil
+}
+
+func (r *Repository) DeleteCard(ctx context.Context, booksID int64, id uuid.UUID) error {
+	n, err := r.q.DeleteCard(ctx, DeleteCardParams{BooksID: booksID, ID: id})
+	if err != nil {
+		return err
+	}
+
+	if n == 0 {
+		return app.ErrNotFound
+	}
+
+	return nil
 }
 
 func (r *Repository) Cards(ctx context.Context, booksID int64, accountID uuid.UUID) ([]domain.Card, error) {

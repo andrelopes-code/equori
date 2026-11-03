@@ -26,6 +26,7 @@ var (
 	ErrStatementFinanced  = errors.New("statement is already financed")
 	ErrDisputeOpen        = errors.New("the transaction already has an open dispute")
 	ErrDisputeResolved    = errors.New("the dispute is already resolved")
+	ErrInstitutionInUse   = errors.New("an account uses the institution")
 	ErrNotInlineable      = errors.New("only a PDF or an image is shown inline")
 	ErrDifferenceRemains  = errors.New("the settled balance still differs from the assertion")
 	ErrUnknownInstrument  = errors.New("unknown instrument")
@@ -316,6 +317,9 @@ type Repository interface {
 
 	InsertInstitution(ctx context.Context, i Institution) (Institution, error)
 	SetInstitutionIdentifier(ctx context.Context, booksID int64, id uuid.UUID, ident InstitutionIdentifier) (Institution, error)
+	// DeleteInstitution returns ErrNotFound for a missing institution and ErrInstitutionInUse
+	// while an account refers to it.
+	DeleteInstitution(ctx context.Context, booksID int64, id uuid.UUID) error
 	// List methods return the page and the key of its last row when more rows follow.
 	ListInstitutions(ctx context.Context, booksID int64, p page.Request[InstitutionKey]) ([]Institution, *InstitutionKey, error)
 	InsertPayee(ctx context.Context, p Payee) (Payee, error)
@@ -383,7 +387,8 @@ type Repository interface {
 	CreditLimits(ctx context.Context, booksID int64, accountID uuid.UUID) ([]CreditLimit, error)
 	InsertCard(ctx context.Context, c domain.Card) (domain.Card, error)
 	Cards(ctx context.Context, booksID int64, accountID uuid.UUID) ([]domain.Card, error)
-	SetCardActive(ctx context.Context, booksID int64, id uuid.UUID, active bool) (domain.Card, error)
+	UpdateCard(ctx context.Context, booksID int64, id uuid.UUID, e domain.CardEdit) (domain.Card, error)
+	DeleteCard(ctx context.Context, booksID int64, id uuid.UUID) error
 
 	EnsureStatement(ctx context.Context, booksID int64, accountID uuid.UUID, d domain.StatementDates, due time.Time) (uuid.UUID, error)
 	Statements(ctx context.Context, booksID int64, accountID uuid.UUID) ([]Statement, error)

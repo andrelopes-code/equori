@@ -301,7 +301,7 @@ type Problem struct {
 	// setup_token_invalid, setup_complete, book_role_required, books_not_found, member_not_found,
 	// last_owner, already_member, invitation_not_found, invitation_email_mismatch,
 	// confirmation_mismatch, books_has_members, last_books,
-	// backup_off, backup_failed, password_too_short.
+	// backup_off, backup_failed, password_too_short, institution_in_use.
 	Code   string        `json:"code"`
 	Detail *string       `json:"detail,omitempty"`
 	Errors *[]FieldError `json:"errors,omitempty"`

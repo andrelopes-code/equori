@@ -85,15 +85,23 @@ ORDER BY
     created_at,
     id;
 
--- name: SetCardActive :one
+-- name: UpdateCard :one
 UPDATE ledger_card
 SET
-    active = @active
+    holder = coalesce(sqlc.narg (holder), holder),
+    last_four = coalesce(sqlc.narg (last_four), last_four),
+    active = coalesce(sqlc.narg (active), active)
 WHERE
     books_id = @books_id
     AND id = @id
 RETURNING
     *;
+
+-- name: DeleteCard :execrows
+DELETE FROM ledger_card
+WHERE
+    books_id = @books_id
+    AND id = @id;
 
 -- name: EnsureStatement :one
 WITH

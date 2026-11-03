@@ -5,6 +5,8 @@ import (
 	"regexp"
 	"strconv"
 
+	"github.com/google/uuid"
+
 	"github.com/andrelopes-code/equori/internal/ledger/internal/app"
 	"github.com/andrelopes-code/equori/internal/ledger/internal/domain"
 	"github.com/andrelopes-code/equori/internal/platform/tool"
@@ -13,7 +15,7 @@ import (
 type manageCardAction string
 
 func (manageCardAction) Values() []string {
-	return []string{"add_card", "set_card_active", "set_credit_limit", "set_billing_cycle"}
+	return []string{"add_card", "edit_card", "remove_card", "set_card_active", "set_credit_limit", "set_billing_cycle"}
 }
 
 type manageCardIn struct {
@@ -41,7 +43,7 @@ var lastFourPattern = regexp.MustCompile(`^[0-9]{4}$`)
 func manageCard(svc *app.Service) tool.Tool {
 	return tool.NewWrite(tool.Spec{
 		Name: "manage_card",
-		Description: "Proposes a change to a credit card account's setup: add a plastic or virtual card, activate or deactivate one, set a new credit limit or a new billing cycle. " +
+		Description: "Proposes a change to a credit card account's setup: add a plastic or virtual card, correct the holder or last four digits of one, remove one, activate or deactivate one, set a new credit limit or a new billing cycle. " +
 			"Use it when the user changes card details. " +
 			"Do not use it for purchases or statements: handle_card_purchase and settle_statement do. " +
 			"The user confirms every change.",
@@ -84,6 +86,10 @@ func planCard(ctx context.Context, svc *app.Service, booksID int64, in manageCar
 	switch in.Action {
 	case "add_card":
 		required, optional = []string{"holder", "last_four"}, []string{"virtual"}
+	case "edit_card":
+		required, optional = []string{"card_id"}, []string{"holder", "last_four"}
+	case "remove_card":
+		required = []string{"card_id"}
 	case "set_card_active":
 		required, optional = []string{"card_id"}, []string{"active"}
 	case "set_credit_limit":
@@ -123,38 +129,46 @@ func planCard(ctx context.Context, svc *app.Service, booksID int64, in manageCar
 
 			return out, err
 		}, nil
-	case "set_card_active":
-		cards, err := svc.Cards(ctx, booksID, a.ID)
+	case "edit_card":
+		return planEditCard(ctx, svc, booksID, a, cardID, in, pv, out)
+	case "remove_card":
+		c, err := cardOf(ctx, svc, booksID, a.ID, cardID)
 		if err != nil {
 			return pv, nil, err
 		}
 
-		for _, c := range cards {
-			if c.ID != cardID {
-				continue
-			}
+		pv.Changes = []tool.Change{{Field: "card", Before: tool.TextValue(cardText(c))}}
+		pv.Destructive = true
 
-			status := func(active bool) tool.Value {
-				if active {
-					return tool.TextValue("active")
-				}
+		return pv, func() (manageCardOut, error) {
+			out.ID = c.ID.String()
 
-				return tool.TextValue("inactive")
-			}
-			pv.Changes = []tool.Change{
-				{Field: "card", After: tool.TextValue(cardText(c))},
-				{Field: "status", Before: status(c.Active), After: status(in.Active)},
-			}
-
-			return pv, func() (manageCardOut, error) {
-				_, err := svc.SetCardActive(ctx, booksID, c.ID, in.Active)
-				out.ID = c.ID.String()
-
-				return out, err
-			}, nil
+			return out, svc.DeleteCard(ctx, booksID, c.ID)
+		}, nil
+	case "set_card_active":
+		c, err := cardOf(ctx, svc, booksID, a.ID, cardID)
+		if err != nil {
+			return pv, nil, err
 		}
 
-		return pv, nil, app.ErrNotFound
+		status := func(active bool) tool.Value {
+			if active {
+				return tool.TextValue("active")
+			}
+
+			return tool.TextValue("inactive")
+		}
+		pv.Changes = []tool.Change{
+			{Field: "card", After: tool.TextValue(cardText(c))},
+			{Field: "status", Before: status(c.Active), After: status(in.Active)},
+		}
+
+		return pv, func() (manageCardOut, error) {
+			_, err := svc.EditCard(ctx, booksID, c.ID, domain.CardEdit{Active: &in.Active})
+			out.ID = c.ID.String()
+
+			return out, err
+		}, nil
 	case "set_credit_limit":
 		unit, err := svc.AmountOf(ctx, 0, a.Instrument)
 		if err != nil {
@@ -192,4 +206,62 @@ func planCard(ctx context.Context, svc *app.Service, booksID int64, in manageCar
 			return out, err
 		}, nil
 	}
+}
+
+func planEditCard(ctx context.Context, svc *app.Service, booksID int64, a domain.Account, cardID uuid.UUID, in manageCardIn, pv tool.Preview, out manageCardOut) (tool.Preview, func() (manageCardOut, error), error) {
+	if in.Holder == "" && in.LastFour == "" {
+		return pv, nil, tool.InvalidArgument("holder", "give the holder, the last_four or both")
+	}
+
+	c, err := cardOf(ctx, svc, booksID, a.ID, cardID)
+	if err != nil {
+		return pv, nil, err
+	}
+
+	edit := domain.CardEdit{}
+	if in.Holder != "" {
+		edit.Holder = &in.Holder
+	}
+
+	if in.LastFour != "" {
+		if !lastFourPattern.MatchString(in.LastFour) {
+			return pv, nil, tool.InvalidArgument("last_four", "must be four digits")
+		}
+
+		edit.LastFour = &in.LastFour
+	}
+
+	after := c
+	if edit.Holder != nil {
+		after.Holder = *edit.Holder
+	}
+
+	if edit.LastFour != nil {
+		after.LastFour = *edit.LastFour
+	}
+
+	pv.Changes = []tool.Change{{Field: "card", Before: tool.TextValue(cardText(c)), After: tool.TextValue(cardText(after))}}
+
+	return pv, func() (manageCardOut, error) {
+		_, err := svc.EditCard(ctx, booksID, c.ID, edit)
+		out.ID = c.ID.String()
+
+		return out, err
+	}, nil
+}
+
+// cardOf returns the card of the account, or app.ErrNotFound.
+func cardOf(ctx context.Context, svc *app.Service, booksID int64, accountID, cardID uuid.UUID) (domain.Card, error) {
+	cards, err := svc.Cards(ctx, booksID, accountID)
+	if err != nil {
+		return domain.Card{}, err
+	}
+
+	for _, c := range cards {
+		if c.ID == cardID {
+			return c, nil
+		}
+	}
+
+	return domain.Card{}, app.ErrNotFound
 }

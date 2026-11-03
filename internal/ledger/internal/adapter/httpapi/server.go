@@ -109,6 +109,14 @@ func (s *Server) SetInstitutionIdentifier(ctx context.Context, req SetInstitutio
 	return SetInstitutionIdentifier200JSONResponse(toInstitutionAPI(i)), nil
 }
 
+func (s *Server) DeleteInstitution(ctx context.Context, req DeleteInstitutionRequestObject) (DeleteInstitutionResponseObject, error) {
+	if err := s.svc.DeleteInstitution(ctx, auth.MustBooksID(ctx), req.Id); err != nil {
+		return nil, err
+	}
+
+	return DeleteInstitution204Response{}, nil
+}
+
 func (s *Server) ListInstitutionIdentifierSchemes(context.Context, ListInstitutionIdentifierSchemesRequestObject) (ListInstitutionIdentifierSchemesResponseObject, error) {
 	schemes := s.svc.InstitutionIdentifierSchemes()
 

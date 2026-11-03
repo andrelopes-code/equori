@@ -4759,7 +4759,7 @@
   },
   {
     "name": "manage_accounts_and_payees",
-    "description": "Proposes a change to accounts, categories, payees or institutions: create, rename or move an account or category, close or reopen it, merge a category or payee into another, create or rename a payee, create an institution, rename, merge or delete a tag. Use it when the user asks to organize accounts, categories, payees or tags. Do not use it for card settings: manage_card does. Merging cannot be undone; the user confirms every change.",
+    "description": "Proposes a change to accounts, categories, payees or institutions: create, rename or move an account or category, close or reopen it, merge a category or payee into another, create or rename a payee, create an institution, delete an institution no account uses, rename, merge or delete a tag. Use it when the user asks to organize accounts, categories, payees or tags. Do not use it for card settings: manage_card does. Merging cannot be undone; the user confirms every change.",
     "effect": "destructive",
     "idempotent": false,
     "input_schema": {
@@ -4778,6 +4778,7 @@
             "rename_payee",
             "merge_payee",
             "create_institution",
+            "delete_institution",
             "rename_tag",
             "merge_tag",
             "delete_tag"
@@ -4829,7 +4830,7 @@
         },
         "institution_id": {
           "type": "string",
-          "description": "for create_account and update_account: institution from list_payees_and_tags"
+          "description": "for create_account, update_account and delete_institution: institution from list_payees_and_tags"
         },
         "date": {
           "type": "string",
@@ -4995,7 +4996,7 @@
   },
   {
     "name": "manage_card",
-    "description": "Proposes a change to a credit card account's setup: add a plastic or virtual card, activate or deactivate one, set a new credit limit or a new billing cycle. Use it when the user changes card details. Do not use it for purchases or statements: handle_card_purchase and settle_statement do. The user confirms every change.",
+    "description": "Proposes a change to a credit card account's setup: add a plastic or virtual card, correct the holder or last four digits of one, remove one, activate or deactivate one, set a new credit limit or a new billing cycle. Use it when the user changes card details. Do not use it for purchases or statements: handle_card_purchase and settle_statement do. The user confirms every change.",
     "effect": "write",
     "idempotent": false,
     "input_schema": {
@@ -5010,6 +5011,8 @@
           "description": "operation to propose",
           "enum": [
             "add_card",
+            "edit_card",
+            "remove_card",
             "set_card_active",
             "set_credit_limit",
             "set_billing_cycle"

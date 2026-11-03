@@ -129,6 +129,11 @@ func (s *Service) SetInstitutionIdentifier(ctx context.Context, booksID int64, i
 	return s.repo.SetInstitutionIdentifier(ctx, booksID, id, ident)
 }
 
+// DeleteInstitution removes an institution no account uses.
+func (s *Service) DeleteInstitution(ctx context.Context, booksID int64, id uuid.UUID) error {
+	return s.repo.DeleteInstitution(ctx, booksID, id)
+}
+
 // InstitutionIdentifierSchemes lists the schemes an institution identifier may use.
 func (s *Service) InstitutionIdentifierSchemes() []domain.IdentifierScheme {
 	return domain.IdentifierSchemes()

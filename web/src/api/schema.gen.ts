@@ -592,6 +592,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/institutions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete an institution that no account uses. */
+        delete: operations["deleteInstitution"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/institution-identifier-schemes": {
         parameters: {
             query?: never;
@@ -1860,10 +1877,11 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete?: never;
+        /** Delete a card. */
+        delete: operations["deleteCard"];
         options?: never;
         head?: never;
-        /** Activate or deactivate a card. */
+        /** Edit the holder or last four digits of a card, or activate or deactivate it. */
         patch: operations["updateCard"];
         trace?: never;
     };
@@ -5113,7 +5131,9 @@ export interface components {
             active: boolean;
         };
         CardUpdate: {
-            active: boolean;
+            holder?: string;
+            last_four?: string;
+            active?: boolean;
         };
         CardList: {
             items: components["schemas"]["Card"][];
@@ -6542,7 +6562,7 @@ export interface components {
              *     setup_token_invalid, setup_complete, book_role_required, books_not_found, member_not_found,
              *     last_owner, already_member, invitation_not_found, invitation_email_mismatch,
              *     confirmation_mismatch, books_has_members, last_books,
-             *     backup_off, backup_failed, password_too_short.
+             *     backup_off, backup_failed, password_too_short, institution_in_use.
              */
             code: string;
             request_id?: string;
@@ -7621,6 +7641,29 @@ export interface operations {
             };
             401: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
+        };
+    };
+    deleteInstitution: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
         };
     };
     listInstitutionIdentifierSchemes: {
@@ -9791,6 +9834,28 @@ export interface operations {
             422: components["responses"]["Problem"];
         };
     };
+    deleteCard: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+        };
+    };
     updateCard: {
         parameters: {
             query?: never;
@@ -9818,6 +9883,7 @@ export interface operations {
             400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
         };
     };
     listStatements: {

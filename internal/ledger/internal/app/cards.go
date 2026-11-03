@@ -160,8 +160,18 @@ func (s *Service) Cards(ctx context.Context, booksID int64, accountID uuid.UUID)
 	return s.repo.Cards(ctx, booksID, accountID)
 }
 
-func (s *Service) SetCardActive(ctx context.Context, booksID int64, id uuid.UUID, active bool) (domain.Card, error) {
-	return s.repo.SetCardActive(ctx, booksID, id, active)
+// EditCard changes the holder, the last four digits or the active flag of a card.
+func (s *Service) EditCard(ctx context.Context, booksID int64, id uuid.UUID, e domain.CardEdit) (domain.Card, error) {
+	e, err := domain.NewCardEdit(e)
+	if err != nil {
+		return domain.Card{}, err
+	}
+
+	return s.repo.UpdateCard(ctx, booksID, id, e)
+}
+
+func (s *Service) DeleteCard(ctx context.Context, booksID int64, id uuid.UUID) error {
+	return s.repo.DeleteCard(ctx, booksID, id)
 }
 
 // CardSummary returns nil when the card has no credit limit in force today. The available

@@ -125,6 +125,26 @@ func (q *Queries) CommittedInstallments(ctx context.Context, arg CommittedInstal
 	return column_1, err
 }
 
+const deleteCard = `-- name: DeleteCard :execrows
+DELETE FROM ledger_card
+WHERE
+    books_id = $1
+    AND id = $2
+`
+
+type DeleteCardParams struct {
+	BooksID int64
+	ID      uuid.UUID
+}
+
+func (q *Queries) DeleteCard(ctx context.Context, arg DeleteCardParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteCard, arg.BooksID, arg.ID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const ensureStatement = `-- name: EnsureStatement :one
 WITH
     inserted AS (
@@ -1330,40 +1350,6 @@ func (q *Queries) ResolveDispute(ctx context.Context, arg ResolveDisputeParams) 
 	return i, err
 }
 
-const setCardActive = `-- name: SetCardActive :one
-UPDATE ledger_card
-SET
-    active = $1
-WHERE
-    books_id = $2
-    AND id = $3
-RETURNING
-    id, books_id, account_id, holder, last_four, virtual, active, created_at, foreign_charge_bp
-`
-
-type SetCardActiveParams struct {
-	Active  bool
-	BooksID int64
-	ID      uuid.UUID
-}
-
-func (q *Queries) SetCardActive(ctx context.Context, arg SetCardActiveParams) (LedgerCard, error) {
-	row := q.db.QueryRow(ctx, setCardActive, arg.Active, arg.BooksID, arg.ID)
-	var i LedgerCard
-	err := row.Scan(
-		&i.ID,
-		&i.BooksID,
-		&i.AccountID,
-		&i.Holder,
-		&i.LastFour,
-		&i.Virtual,
-		&i.Active,
-		&i.CreatedAt,
-		&i.ForeignChargeBp,
-	)
-	return i, err
-}
-
 const setStatementFinanced = `-- name: SetStatementFinanced :exec
 UPDATE ledger_statement
 SET
@@ -1380,6 +1366,50 @@ type SetStatementFinancedParams struct {
 func (q *Queries) SetStatementFinanced(ctx context.Context, arg SetStatementFinancedParams) error {
 	_, err := q.db.Exec(ctx, setStatementFinanced, arg.PlanID, arg.ID)
 	return err
+}
+
+const updateCard = `-- name: UpdateCard :one
+UPDATE ledger_card
+SET
+    holder = coalesce($1, holder),
+    last_four = coalesce($2, last_four),
+    active = coalesce($3, active)
+WHERE
+    books_id = $4
+    AND id = $5
+RETURNING
+    id, books_id, account_id, holder, last_four, virtual, active, created_at, foreign_charge_bp
+`
+
+type UpdateCardParams struct {
+	Holder   *string
+	LastFour *string
+	Active   *bool
+	BooksID  int64
+	ID       uuid.UUID
+}
+
+func (q *Queries) UpdateCard(ctx context.Context, arg UpdateCardParams) (LedgerCard, error) {
+	row := q.db.QueryRow(ctx, updateCard,
+		arg.Holder,
+		arg.LastFour,
+		arg.Active,
+		arg.BooksID,
+		arg.ID,
+	)
+	var i LedgerCard
+	err := row.Scan(
+		&i.ID,
+		&i.BooksID,
+		&i.AccountID,
+		&i.Holder,
+		&i.LastFour,
+		&i.Virtual,
+		&i.Active,
+		&i.CreatedAt,
+		&i.ForeignChargeBp,
+	)
+	return i, err
 }
 
 const updateStatementDates = `-- name: UpdateStatementDates :exec

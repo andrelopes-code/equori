@@ -145,10 +145,20 @@ func (s *Server) CreateCard(ctx context.Context, req CreateCardRequestObject) (C
 }
 
 func (s *Server) UpdateCard(ctx context.Context, req UpdateCardRequestObject) (UpdateCardResponseObject, error) {
-	c, err := s.svc.SetCardActive(ctx, auth.MustBooksID(ctx), req.Id, req.Body.Active)
+	b := req.Body
+
+	c, err := s.svc.EditCard(ctx, auth.MustBooksID(ctx), req.Id, domain.CardEdit{Holder: b.Holder, LastFour: b.LastFour, Active: b.Active})
 	if err != nil {
 		return nil, err
 	}
 
 	return UpdateCard200JSONResponse(toCardAPI(c)), nil
+}
+
+func (s *Server) DeleteCard(ctx context.Context, req DeleteCardRequestObject) (DeleteCardResponseObject, error) {
+	if err := s.svc.DeleteCard(ctx, auth.MustBooksID(ctx), req.Id); err != nil {
+		return nil, err
+	}
+
+	return DeleteCard204Response{}, nil
 }

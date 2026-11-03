@@ -1351,7 +1351,9 @@ type CardSummary struct {
 
 // CardUpdate defines model for CardUpdate.
 type CardUpdate struct {
-	Active bool `json:"active"`
+	Active   *bool   `json:"active,omitempty"`
+	Holder   *string `json:"holder,omitempty"`
+	LastFour *string `json:"last_four,omitempty"`
 }
 
 // CategorizeInput defines model for CategorizeInput.
@@ -1773,7 +1775,7 @@ type Problem struct {
 	// setup_token_invalid, setup_complete, book_role_required, books_not_found, member_not_found,
 	// last_owner, already_member, invitation_not_found, invitation_email_mismatch,
 	// confirmation_mismatch, books_has_members, last_books,
-	// backup_off, backup_failed, password_too_short.
+	// backup_off, backup_failed, password_too_short, institution_in_use.
 	Code   string        `json:"code"`
 	Detail *string       `json:"detail,omitempty"`
 	Errors *[]FieldError `json:"errors,omitempty"`
@@ -2515,7 +2517,10 @@ type ServerInterface interface {
 	// ListBalances Balance of every balance-sheet account at the end of a date, ordered by account name then id.
 	// (GET /balances)
 	ListBalances(w http.ResponseWriter, r *http.Request, params ListBalancesParams)
-	// UpdateCard Activate or deactivate a card.
+	// DeleteCard Delete a card.
+	// (DELETE /cards/{id})
+	DeleteCard(w http.ResponseWriter, r *http.Request, id ID)
+	// UpdateCard Edit the holder or last four digits of a card, or activate or deactivate it.
 	// (PATCH /cards/{id})
 	UpdateCard(w http.ResponseWriter, r *http.Request, id ID)
 	// ResolveDispute Resolve a dispute; a won dispute refunds the remaining charged amount.
@@ -2548,6 +2553,9 @@ type ServerInterface interface {
 	// CreateInstitution Create an institution.
 	// (POST /institutions)
 	CreateInstitution(w http.ResponseWriter, r *http.Request)
+	// DeleteInstitution Delete an institution that no account uses.
+	// (DELETE /institutions/{id})
+	DeleteInstitution(w http.ResponseWriter, r *http.Request, id ID)
 	// SetInstitutionIdentifier Set or clear the identifier of an institution; the br_ispb identifier keys its logo (ADR 013).
 	// (PUT /institutions/{id}/identifier)
 	SetInstitutionIdentifier(w http.ResponseWriter, r *http.Request, id ID)
@@ -3580,6 +3588,32 @@ func (siw *ServerInterfaceWrapper) ListBalances(w http.ResponseWriter, r *http.R
 	handler.ServeHTTP(w, r)
 }
 
+// DeleteCard operation middleware
+func (siw *ServerInterfaceWrapper) DeleteCard(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteCard(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // UpdateCard operation middleware
 func (siw *ServerInterfaceWrapper) UpdateCard(w http.ResponseWriter, r *http.Request) {
 
@@ -3817,6 +3851,32 @@ func (siw *ServerInterfaceWrapper) CreateInstitution(w http.ResponseWriter, r *h
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.CreateInstitution(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteInstitution operation middleware
+func (siw *ServerInterfaceWrapper) DeleteInstitution(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteInstitution(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -5048,6 +5108,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/settings", wrapper.UpdateSettings)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/institutions", wrapper.ListInstitutions)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/institutions", wrapper.CreateInstitution)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/institutions/{id}", wrapper.DeleteInstitution)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/institution-identifier-schemes", wrapper.ListInstitutionIdentifierSchemes)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/institutions/{id}/identifier", wrapper.SetInstitutionIdentifier)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/payees", wrapper.ListPayees)
@@ -5093,6 +5154,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/credit-limits", wrapper.CreateCreditLimit)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/cards", wrapper.ListCards)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/cards", wrapper.CreateCard)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/cards/{id}", wrapper.DeleteCard)
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/cards/{id}", wrapper.UpdateCard)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/statements", wrapper.ListStatements)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/statements/{id}", wrapper.GetStatement)
@@ -6879,6 +6941,52 @@ func (response ListBalances401ApplicationProblemPlusJSONResponse) VisitListBalan
 	return err
 }
 
+type DeleteCardRequestObject struct {
+	Id ID `json:"id"`
+}
+
+type DeleteCardResponseObject interface {
+	VisitDeleteCardResponse(w http.ResponseWriter) error
+}
+
+type DeleteCard204Response struct {
+}
+
+func (response DeleteCard204Response) VisitDeleteCardResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteCard401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response DeleteCard401ApplicationProblemPlusJSONResponse) VisitDeleteCardResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteCard404ApplicationProblemPlusJSONResponse Problem
+
+func (response DeleteCard404ApplicationProblemPlusJSONResponse) VisitDeleteCardResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type UpdateCardRequestObject struct {
 	Id   ID `json:"id"`
 	Body *UpdateCardJSONRequestBody
@@ -6942,6 +7050,20 @@ func (response UpdateCard404ApplicationProblemPlusJSONResponse) VisitUpdateCardR
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateCard422ApplicationProblemPlusJSONResponse Problem
+
+func (response UpdateCard422ApplicationProblemPlusJSONResponse) VisitUpdateCardResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -7560,6 +7682,66 @@ func (response CreateInstitution422ApplicationProblemPlusJSONResponse) VisitCrea
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteInstitutionRequestObject struct {
+	Id ID `json:"id"`
+}
+
+type DeleteInstitutionResponseObject interface {
+	VisitDeleteInstitutionResponse(w http.ResponseWriter) error
+}
+
+type DeleteInstitution204Response struct {
+}
+
+func (response DeleteInstitution204Response) VisitDeleteInstitutionResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteInstitution401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response DeleteInstitution401ApplicationProblemPlusJSONResponse) VisitDeleteInstitutionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteInstitution404ApplicationProblemPlusJSONResponse Problem
+
+func (response DeleteInstitution404ApplicationProblemPlusJSONResponse) VisitDeleteInstitutionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteInstitution409ApplicationProblemPlusJSONResponse Problem
+
+func (response DeleteInstitution409ApplicationProblemPlusJSONResponse) VisitDeleteInstitutionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -10207,7 +10389,10 @@ type StrictServerInterface interface {
 	// ListBalances Balance of every balance-sheet account at the end of a date, ordered by account name then id.
 	// (GET /balances)
 	ListBalances(ctx context.Context, request ListBalancesRequestObject) (ListBalancesResponseObject, error)
-	// UpdateCard Activate or deactivate a card.
+	// DeleteCard Delete a card.
+	// (DELETE /cards/{id})
+	DeleteCard(ctx context.Context, request DeleteCardRequestObject) (DeleteCardResponseObject, error)
+	// UpdateCard Edit the holder or last four digits of a card, or activate or deactivate it.
 	// (PATCH /cards/{id})
 	UpdateCard(ctx context.Context, request UpdateCardRequestObject) (UpdateCardResponseObject, error)
 	// ResolveDispute Resolve a dispute; a won dispute refunds the remaining charged amount.
@@ -10240,6 +10425,9 @@ type StrictServerInterface interface {
 	// CreateInstitution Create an institution.
 	// (POST /institutions)
 	CreateInstitution(ctx context.Context, request CreateInstitutionRequestObject) (CreateInstitutionResponseObject, error)
+	// DeleteInstitution Delete an institution that no account uses.
+	// (DELETE /institutions/{id})
+	DeleteInstitution(ctx context.Context, request DeleteInstitutionRequestObject) (DeleteInstitutionResponseObject, error)
 	// SetInstitutionIdentifier Set or clear the identifier of an institution; the br_ispb identifier keys its logo (ADR 013).
 	// (PUT /institutions/{id}/identifier)
 	SetInstitutionIdentifier(ctx context.Context, request SetInstitutionIdentifierRequestObject) (SetInstitutionIdentifierResponseObject, error)
@@ -11188,6 +11376,32 @@ func (sh *strictHandler) ListBalances(w http.ResponseWriter, r *http.Request, pa
 	}
 }
 
+// DeleteCard operation middleware
+func (sh *strictHandler) DeleteCard(w http.ResponseWriter, r *http.Request, id ID) {
+	var request DeleteCardRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteCard(ctx, request.(DeleteCardRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteCard")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteCardResponseObject); ok {
+		if err := validResponse.VisitDeleteCardResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // UpdateCard operation middleware
 func (sh *strictHandler) UpdateCard(w http.ResponseWriter, r *http.Request, id ID) {
 	var request UpdateCardRequestObject
@@ -11513,6 +11727,32 @@ func (sh *strictHandler) CreateInstitution(w http.ResponseWriter, r *http.Reques
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(CreateInstitutionResponseObject); ok {
 		if err := validResponse.VisitCreateInstitutionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteInstitution operation middleware
+func (sh *strictHandler) DeleteInstitution(w http.ResponseWriter, r *http.Request, id ID) {
+	var request DeleteInstitutionRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteInstitution(ctx, request.(DeleteInstitutionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteInstitution")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteInstitutionResponseObject); ok {
+		if err := validResponse.VisitDeleteInstitutionResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

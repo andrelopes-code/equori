@@ -34,6 +34,12 @@ WHERE
 RETURNING
     *;
 
+-- name: DeleteInstitution :execrows
+DELETE FROM ledger_institution
+WHERE
+    books_id = @books_id
+    AND id = @id;
+
 -- name: ListInstitutions :many
 SELECT
     *,

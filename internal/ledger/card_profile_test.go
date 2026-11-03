@@ -210,7 +210,7 @@ func TestCardActivation(t *testing.T) {
 		t.Fatalf("reactivated card = %+v", card)
 	}
 
-	h.ExpectProblem(h.Do(http.MethodPatch, path, map[string]any{}), http.StatusBadRequest, "invalid_request", "active")
+	h.ExpectProblem(h.Do(http.MethodPatch, path, map[string]any{}), http.StatusBadRequest, "invalid_request", "body")
 
 	other := h.Login("other@example.com")
 	h.ExpectProblem(h.Call(other, http.MethodPatch, path, map[string]any{"active": false}), http.StatusNotFound, "not_found", "")

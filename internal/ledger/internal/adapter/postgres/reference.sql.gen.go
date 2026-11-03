@@ -11,6 +11,26 @@ import (
 	"github.com/google/uuid"
 )
 
+const deleteInstitution = `-- name: DeleteInstitution :execrows
+DELETE FROM ledger_institution
+WHERE
+    books_id = $1
+    AND id = $2
+`
+
+type DeleteInstitutionParams struct {
+	BooksID int64
+	ID      uuid.UUID
+}
+
+func (q *Queries) DeleteInstitution(ctx context.Context, arg DeleteInstitutionParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteInstitution, arg.BooksID, arg.ID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const deleteTag = `-- name: DeleteTag :exec
 DELETE FROM ledger_tag
 WHERE

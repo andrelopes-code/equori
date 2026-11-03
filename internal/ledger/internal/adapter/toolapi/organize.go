@@ -15,7 +15,7 @@ import (
 type manageAccountsAndPayeesAction string
 
 func (manageAccountsAndPayeesAction) Values() []string {
-	return []string{"create_account", "update_account", "close_account", "reopen_account", "merge_category", "create_payee", "rename_payee", "merge_payee", "create_institution", "rename_tag", "merge_tag", "delete_tag"}
+	return []string{"create_account", "update_account", "close_account", "reopen_account", "merge_category", "create_payee", "rename_payee", "merge_payee", "create_institution", "delete_institution", "rename_tag", "merge_tag", "delete_tag"}
 }
 
 type manageAccountsAndPayeesClass string
@@ -38,7 +38,7 @@ type manageAccountsAndPayeesIn struct {
 	Kind          manageAccountsAndPayeesKind   `json:"kind,omitzero" jsonschema:"for create_account of an asset or liability: kind of account"`
 	Currency      string                        `json:"currency,omitzero" jsonschema:"for create_account: currency or instrument code; the base currency when absent"`
 	ParentID      string                        `json:"parent_id,omitzero" jsonschema:"for create_account and update_account: parent account or category"`
-	InstitutionID string                        `json:"institution_id,omitzero" jsonschema:"for create_account and update_account: institution from list_payees_and_tags"`
+	InstitutionID string                        `json:"institution_id,omitzero" jsonschema:"for create_account, update_account and delete_institution: institution from list_payees_and_tags"`
 	Date          tool.Date                     `json:"date,omitzero" jsonschema:"for close_account: closing date; today when absent"`
 	IntoID        string                        `json:"into_id,omitzero" jsonschema:"for merge_category and merge_payee: category or payee that remains"`
 	PayeeID       string                        `json:"payee_id,omitzero" jsonschema:"for rename_payee and merge_payee: payee to change, from list_payees_and_tags"`
@@ -82,7 +82,7 @@ func checkFields(action string, given map[string]bool, required []string, option
 func manageAccountsAndPayees(svc *app.Service) tool.Tool {
 	return tool.NewWrite(tool.Spec{
 		Name: "manage_accounts_and_payees",
-		Description: "Proposes a change to accounts, categories, payees or institutions: create, rename or move an account or category, close or reopen it, merge a category or payee into another, create or rename a payee, create an institution, rename, merge or delete a tag. " +
+		Description: "Proposes a change to accounts, categories, payees or institutions: create, rename or move an account or category, close or reopen it, merge a category or payee into another, create or rename a payee, create an institution, delete an institution no account uses, rename, merge or delete a tag. " +
 			"Use it when the user asks to organize accounts, categories, payees or tags. " +
 			"Do not use it for card settings: manage_card does. " +
 			"Merging cannot be undone; the user confirms every change.",
@@ -229,6 +229,8 @@ func (c organizeCall) plan(ctx context.Context, pv *tool.Preview) (organizeRun, 
 		return c.planCreatePayeeOrInstitution(ctx, pv)
 	case "rename_payee":
 		return c.planRenamePayee(ctx, pv)
+	case "delete_institution":
+		return c.planDeleteInstitution(ctx, pv)
 	case "rename_tag":
 		return c.planRenameTag(ctx, pv)
 	case "merge_tag":
@@ -570,6 +572,23 @@ func (c organizeCall) planMergeTag(ctx context.Context, pv *tool.Preview) (organ
 	return func() (manageAccountsAndPayeesOut, error) {
 		merged, err := c.svc.MergeTag(ctx, c.booksID, from.Name, c.in.IntoTag)
 		return manageAccountsAndPayeesOut{Action: c.action, Name: merged.Name}, err
+	}, nil
+}
+
+func (c organizeCall) planDeleteInstitution(ctx context.Context, pv *tool.Preview) (organizeRun, error) {
+	if err := c.check([]string{"institution_id"}); err != nil {
+		return nil, err
+	}
+
+	name, err := institutionName(ctx, c.svc, c.booksID, c.institutionID)
+	if err != nil {
+		return nil, err
+	}
+
+	pv.Target, pv.Destructive = name, true
+
+	return func() (manageAccountsAndPayeesOut, error) {
+		return manageAccountsAndPayeesOut{Action: c.action, Name: name}, c.svc.DeleteInstitution(ctx, c.booksID, c.institutionID)
 	}, nil
 }
 
