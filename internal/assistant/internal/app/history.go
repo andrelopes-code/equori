@@ -1,6 +1,8 @@
 package app
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -46,7 +48,7 @@ func History(messages []domain.Message, proposals []domain.Proposal, now time.Ti
 				status = "expired"
 			}
 
-			text += fmt.Sprintf("\n[proposal %s %s: %s]", p.ID, p.Tool, status)
+			text += "\n" + historyLine(p, status)
 		}
 
 		if strings.TrimSpace(text) == "" {
@@ -73,4 +75,45 @@ func History(messages []domain.Message, proposals []domain.Proposal, now time.Ti
 	}
 
 	return out
+}
+
+// historyLine is `[proposal <id> <tool>[ suggested]: <status>[; id <value>]]`; the id is the one at /id of the
+// result of an executed proposal.
+func historyLine(p domain.Proposal, status string) string {
+	line := fmt.Sprintf("[proposal %s %s", p.ID, p.Tool)
+	if p.Suggested {
+		line += " suggested"
+	}
+
+	line += ": " + status
+	if p.Status == domain.ProposalExecuted {
+		if id := resultID(p.Result); id != "" {
+			line += "; id " + id
+		}
+	}
+
+	return line + "]"
+}
+
+// resultID returns the string, or the number in its JSON text, at /id of result; otherwise "".
+func resultID(result []byte) string {
+	var r struct {
+		ID any `json:"id"`
+	}
+
+	dec := json.NewDecoder(bytes.NewReader(result))
+	dec.UseNumber()
+
+	if dec.Decode(&r) != nil {
+		return ""
+	}
+
+	switch v := r.ID.(type) {
+	case string:
+		return v
+	case json.Number:
+		return v.String()
+	}
+
+	return ""
 }

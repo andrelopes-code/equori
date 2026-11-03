@@ -57,6 +57,24 @@ func TestHistory(t *testing.T) {
 			t.Fatalf("history = %+v, want assistant text %q", got, want)
 		}
 	})
+	t.Run("suggested proposal lines with the id of the result", func(t *testing.T) {
+		t.Parallel()
+
+		msgs := turns(1, 5, 5)
+		answer := msgs[1].ID
+		a, b, c := uuid.New(), uuid.New(), uuid.New()
+		future := now.Add(time.Hour)
+		got := app.History(msgs, []domain.Proposal{
+			{ID: a, MessageID: answer, Tool: "note_for_test", Status: domain.ProposalExecuted, Suggested: true, Result: []byte(`{"id":"42"}`), ExpiresAt: future},
+			{ID: b, MessageID: answer, Tool: "note_for_test", Status: domain.ProposalExecuted, Result: []byte(`{"id": 7}`), ExpiresAt: future},
+			{ID: c, MessageID: answer, Tool: "note_for_test", Status: domain.ProposalRejected, Result: []byte(`{"id":"9"}`), ExpiresAt: future},
+		}, now)
+
+		want := "aaaaa" + fmt.Sprintf("\n[proposal %s note_for_test suggested: executed; id 42]\n[proposal %s note_for_test: executed; id 7]\n[proposal %s note_for_test: rejected]", a, b, c)
+		if len(got) != 2 || got[1].Text != want {
+			t.Fatalf("history = %+v, want assistant text %q", got, want)
+		}
+	})
 	t.Run("failed and canceled exchanges", func(t *testing.T) {
 		t.Parallel()
 

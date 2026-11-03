@@ -43,11 +43,13 @@ func NewChatSet(set tool.Set) (app.Tools, error) {
 // store a proposal in the conversation that conversationID reads from the context.
 func ChatHandlers(svc *app.Service, tools app.Tools, set tool.Set, conversationID func(context.Context) uuid.UUID) ([]llm.Tool, map[string]llm.ToolHandler) {
 	decls, handlers := set.LLM()
-	for _, d := range decls {
+	for i, d := range decls {
 		name := d.Name
 		if e, _ := tools.Effect(name); e == tool.ReadOnly {
 			continue
 		}
+
+		decls[i].Parameters = withProposal(d.Parameters)
 
 		handlers[name] = func(ctx context.Context, args json.RawMessage) (json.RawMessage, error) {
 			args, meta, err := splitProposal(args)
@@ -65,6 +67,37 @@ func ChatHandlers(svc *app.Service, tools app.Tools, set tool.Set, conversationI
 	}
 
 	return decls, handlers
+}
+
+// proposalProperty is the schema of the chat property proposal (spec 2026-11-03 §4.1).
+const proposalProperty = `{"type":"object","additionalProperties":false,` +
+	`"description":"Chat metadata of this proposal; see the system prompt, section Changes.",` +
+	`"properties":{"suggested":{"type":"boolean"},` +
+	`"reason":{"type":"string","maxLength":200},` +
+	`"refs":{"type":"object","additionalProperties":{"type":"string","pattern":"^[0-9a-f-]{36}(#/[a-z0-9_/]+)?$"}},` +
+	`"summary":{"type":"string","maxLength":200}}}`
+
+// withProposal returns schema with the property proposal added; a schema that is not an object is returned as is.
+func withProposal(schema json.RawMessage) json.RawMessage {
+	var s map[string]json.RawMessage
+	if json.Unmarshal(schema, &s) != nil {
+		return schema
+	}
+
+	props := map[string]json.RawMessage{}
+	if raw, ok := s["properties"]; ok && json.Unmarshal(raw, &props) != nil {
+		return schema
+	}
+
+	props["proposal"] = json.RawMessage(proposalProperty)
+	s["properties"], _ = json.Marshal(props)
+
+	out, err := json.Marshal(s)
+	if err != nil {
+		return schema
+	}
+
+	return out
 }
 
 // splitProposal removes the chat property proposal from args and decodes it.

@@ -21,6 +21,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/assistant/internal/adapter/postgres"
 	"github.com/andrelopes-code/equori/internal/assistant/internal/app"
 	"github.com/andrelopes-code/equori/internal/assistant/internal/domain"
+	"github.com/andrelopes-code/equori/internal/platform/auth"
 	"github.com/andrelopes-code/equori/internal/platform/llm"
 	"github.com/andrelopes-code/equori/internal/platform/llm/llmtest"
 	"github.com/andrelopes-code/equori/internal/platform/tool"
@@ -704,4 +705,92 @@ func TestRestartDiscardsWaiting(t *testing.T) {
 	if fmt.Sprint(got) != "[pending discarded]" {
 		t.Fatalf("statuses = %v", got)
 	}
+}
+
+// Spec 2026-11-03 §4.1: every write declaration of the chat has the property proposal, no read one has.
+func TestChatDeclarationsCarryProposal(t *testing.T) {
+	t.Parallel()
+	e := newProposalEnv(t)
+
+	decls, _ := assistant.ChatHandlersForTest(e.h.App.Assistant, func(context.Context) uuid.UUID { return uuid.Nil })
+	effects := map[string]tool.Effect{}
+	for _, tl := range e.h.App.Tools.Tools() {
+		effects[tl.Spec().Name] = tl.Spec().Effect
+	}
+
+	writes, reads := 0, 0
+
+	for _, d := range decls {
+		var schema struct {
+			Properties map[string]struct {
+				Type       string                     `json:"type"`
+				Properties map[string]json.RawMessage `json:"properties"`
+			} `json:"properties"`
+		}
+		if err := json.Unmarshal(d.Parameters, &schema); err != nil {
+			t.Fatalf("%s: %v", d.Name, err)
+		}
+
+		p, has := schema.Properties["proposal"]
+		if effects[d.Name] == tool.ReadOnly {
+			reads++
+
+			if has {
+				t.Errorf("%s: a read declaration has the property proposal", d.Name)
+			}
+
+			continue
+		}
+
+		writes++
+
+		if !has || p.Type != "object" || len(p.Properties) != 4 {
+			t.Errorf("%s: proposal = %+v, want an object with 4 properties", d.Name, p)
+		}
+	}
+
+	if writes < 2 || reads < 1 {
+		t.Fatalf("writes = %d, reads = %d", writes, reads)
+	}
+}
+
+func TestChatHandlerStoresSuggestion(t *testing.T) {
+	t.Parallel()
+	e := newProposalEnv(t)
+	conv := e.conversation(t)
+
+	_, handlers := assistant.ChatHandlersForTest(e.h.App.Assistant, func(context.Context) uuid.UUID { return conv })
+	ctx := auth.WithIdentity(t.Context(), e.h.MemberIDOf("owner@example.com"), e.h.OwnerID(), auth.RoleOwner)
+
+	t.Run("object", func(t *testing.T) {
+		out, err := handlers["note_for_test"](ctx, json.RawMessage(`{"text":"x","proposal":{"suggested":true,"reason":"seen twice"}}`))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		var got struct {
+			ProposalID string `json:"proposal_id"`
+		}
+		if err := json.Unmarshal(out, &got); err != nil {
+			t.Fatal(err)
+		}
+
+		var suggested bool
+		var reason string
+		if err := e.h.Pool.QueryRow(t.Context(), `SELECT suggested, reason FROM assistant_proposal WHERE id = $1`, got.ProposalID).Scan(&suggested, &reason); err != nil {
+			t.Fatal(err)
+		}
+
+		if !suggested || reason != "seen twice" {
+			t.Fatalf("suggested = %v, reason = %q", suggested, reason)
+		}
+	})
+	t.Run("string", func(t *testing.T) {
+		_, err := handlers["note_for_test"](ctx, json.RawMessage(`{"text":"x","proposal":"yes"}`))
+
+		var te *llm.ToolError
+		if !errors.As(err, &te) || !strings.Contains(string(te.Content), `"proposal"`) {
+			t.Fatalf("err = %v", err)
+		}
+	})
 }
