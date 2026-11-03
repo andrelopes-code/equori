@@ -94,7 +94,7 @@ New section `Patterns`, shared by both audiences (`{{define "patterns"}}`):
 > - Rule: a signal "rule_suggestion" leads to manage_rule action accept_rule_suggestion. When the user categorizes two or more transactions of one payee, or a signal "rule_candidate" appears, and list_rules shows no rule for that payee, propose manage_rule action create_rule.
 > - One-off: a purchase without a signal and without a service you recognize gets no subscription suggestion.
 
-For the `mcp` audience, section `Writes` gains: "For a change the request implies, describe it in the answer with its evidence and make it only after the user agrees."
+For the `mcp` audience, the Subscription bullet omits "a proposal result with a signal "recurring", ": MCP calls create no proposal and carry no signal. Section `Writes` gains: "For a change the request implies, describe it in the answer with its evidence and make it only after the user agrees."
 
 ## 5. Dependent proposals
 
@@ -156,6 +156,10 @@ type Signal struct {
 - `recurring`: the detector over the proposal's key, with the proposed transaction added on its date. Data: the series of section 6.
 - `rule_suggestion`: a pending classification suggestion whose payee is the proposal's payee. Data: suggestion ID, pattern, category.
 - `rule_candidate`: the payee has 3 or more transactions in the proposal's category in the last 180 days, categorized by hand, and no rule matched them. Data: payee, category, count.
+
+Amendment A1 (2026-11-03). Plan B delivers the signal `recurring`. The signals `rule_suggestion` and `rule_candidate` are deferred: a classification suggestion holds conditions, not a payee, and a payee match needs its own study.
+
+Amendment A2 (2026-11-03). The schedule that covers a series (section 6) is an active schedule (`EndsOn` nil or on or after today) on the same balance account whose `PayeeID` equals the series payee, or, for a series without payee, whose folded `Description` equals the series key. `domain.Schedule` holds both fields, a closer match than amount.
 
 ## 8. Turn-start context
 

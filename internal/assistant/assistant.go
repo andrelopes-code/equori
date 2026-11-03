@@ -165,6 +165,14 @@ func (m *Module) UseNotices(n func(context.Context, int64) ([]AccountNotice, err
 	m.svc.UseNotices(n)
 }
 
+// Signal is evidence the model receives with a proposal.
+type Signal = app.Signal
+
+// UseSignals sets the lookup of the signals of a preview; nil attaches none.
+func (m *Module) UseSignals(f func(ctx context.Context, booksID int64, p tool.Preview) ([]Signal, error)) {
+	m.svc.UseSignals(f)
+}
+
 // UseRouter sets the router the chat calls models through.
 func (m *Module) UseRouter(r *llm.Router) {
 	m.router = r

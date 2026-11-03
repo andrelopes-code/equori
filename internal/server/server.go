@@ -202,6 +202,7 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 	reportingModule.OnImport(portfolioModule.RebuildBooks)
 	planningModule := planning.New(pool, dispatcher, ledgerModule, marketdataModule, identityModule, portfolioModule, clk, log)
 	reportingModule.UseIndicatorSources(planningModule, portfolioModule)
+	assistantModule.UseSignals(recurringSignals(planningModule))
 
 	tools, err := tool.NewRegistry(log, append([]tool.Group{ledgerModule.Tools(), reportingModule.Tools(), ingestionModule.Tools(), planningModule.Tools(), portfolioModule.Tools(), marketdataModule.Tools(), classificationModule.Tools(), identityModule.Tools(), assistantModule.Tools()}, cfg.ExtraTools...)...)
 	if err != nil {

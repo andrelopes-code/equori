@@ -85,11 +85,7 @@ func (s *Service) Propose(ctx context.Context, booksID int64, conversationID uui
 		t.add(p.ID)
 	}
 
-	if p.Status == domain.ProposalWaiting {
-		return json.Marshal(map[string]any{"proposal_id": p.ID, "status": "waiting_for_confirmation_of", "waiting_for": p.WaitingFor()})
-	}
-
-	return json.Marshal(map[string]any{"proposal_id": p.ID, "status": "awaiting_confirmation", "preview": json.RawMessage(p.Preview)})
+	return s.proposalResult(ctx, booksID, p)
 }
 
 // resolveProposal sets the arguments of p from its executed parents, or marks p waiting after it

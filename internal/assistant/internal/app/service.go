@@ -11,6 +11,7 @@ import (
 
 	"github.com/andrelopes-code/equori/internal/assistant/internal/domain"
 	"github.com/andrelopes-code/equori/internal/platform/locale"
+	"github.com/andrelopes-code/equori/internal/platform/tool"
 )
 
 type Service struct {
@@ -26,6 +27,7 @@ type Service struct {
 	agent    Agent
 	profile  func(context.Context, int64) (locale.Locale, error)
 	notices  func(context.Context, int64) ([]AccountNotice, error)
+	signals  func(context.Context, int64, tool.Preview) ([]Signal, error)
 }
 
 // NewService takes the clock as now (an instant) and today (the UTC date of usage days).

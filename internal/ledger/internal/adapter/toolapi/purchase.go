@@ -158,6 +158,11 @@ func planPurchase(ctx context.Context, svc *app.Service, booksID int64, in handl
 		return pv, nil, err
 	}
 
+	pv.Changes, err = purchaseIdentity(ctx, svc, booksID, t, cardPosting.AccountID)
+	if err != nil {
+		return pv, nil, err
+	}
+
 	text := tool.TextValue
 	dateChange := tool.Change{Field: "date", After: tool.DateValue(date)}
 	statementChange := func() {
@@ -176,7 +181,7 @@ func planPurchase(ctx context.Context, svc *app.Service, booksID int64, in handl
 			return pv, nil, err
 		}
 
-		pv.Changes = []tool.Change{{Field: "amount", After: tool.MoneyValue(amount)}, dateChange}
+		pv.Changes = append(pv.Changes, tool.Change{Field: "amount", After: tool.MoneyValue(amount)}, dateChange)
 
 		statementChange()
 
@@ -184,7 +189,7 @@ func planPurchase(ctx context.Context, svc *app.Service, booksID int64, in handl
 			return created(svc.RefundPurchase(ctx, booksID, t.ID, date, amount, statement))
 		}, nil
 	case "open_dispute":
-		pv.Changes = []tool.Change{{Field: "status", After: text("disputed")}, dateChange}
+		pv.Changes = append(pv.Changes, tool.Change{Field: "status", After: text("disputed")}, dateChange)
 
 		return pv, func() (handleCardPurchaseOut, error) {
 			_, err := svc.OpenDispute(ctx, booksID, t.ID, date)
@@ -207,7 +212,7 @@ func planPurchase(ctx context.Context, svc *app.Service, booksID int64, in handl
 			return pv, nil, tool.InvalidArgument("transaction_id", "has no open dispute")
 		}
 
-		pv.Changes = []tool.Change{{Field: "status", Before: text("disputed"), After: text(string(in.Outcome))}, dateChange}
+		pv.Changes = append(pv.Changes, tool.Change{Field: "status", Before: text("disputed"), After: text(string(in.Outcome))}, dateChange)
 
 		statementChange()
 
@@ -226,7 +231,7 @@ func planPurchase(ctx context.Context, svc *app.Service, booksID int64, in handl
 	}
 
 	if in.Action == "cancel_installments" {
-		pv.Changes = []tool.Change{{Field: "status", After: text("cancelled")}, dateChange}
+		pv.Changes = append(pv.Changes, tool.Change{Field: "status", After: text("cancelled")}, dateChange)
 
 		statementChange()
 
@@ -245,12 +250,12 @@ func planPurchase(ctx context.Context, svc *app.Service, booksID int64, in handl
 		return pv, nil, err
 	}
 
-	pv.Changes = []tool.Change{
-		{Field: "installments", After: text(strconv.Itoa(in.FromInstallment) + "-" + strconv.Itoa(in.ToInstallment))},
-		{Field: "amount", After: tool.MoneyValue(amount)},
-		{Field: "statement", After: text(target.String())},
+	pv.Changes = append(pv.Changes,
+		tool.Change{Field: "installments", After: text(strconv.Itoa(in.FromInstallment) + "-" + strconv.Itoa(in.ToInstallment))},
+		tool.Change{Field: "amount", After: tool.MoneyValue(amount)},
+		tool.Change{Field: "statement", After: text(target.String())},
 		dateChange,
-	}
+	)
 
 	return pv, func() (handleCardPurchaseOut, error) {
 		return created(svc.AnticipatePlan(ctx, booksID, planID, date, in.FromInstallment, in.ToInstallment, target, amount))
@@ -263,4 +268,25 @@ func anticipationTarget(ctx context.Context, svc *app.Service, booksID int64, ca
 	}
 
 	return nextOpenStatement(ctx, svc, booksID, card, date)
+}
+
+// purchaseIdentity names the purchase a card event acts on, as record_transaction names a purchase.
+func purchaseIdentity(ctx context.Context, svc *app.Service, booksID int64, t domain.Transaction, card uuid.UUID) ([]tool.Change, error) {
+	account, err := svc.Account(ctx, booksID, card)
+	if err != nil {
+		return nil, err
+	}
+
+	changes := []tool.Change{{Field: "description", After: tool.TextValue(t.Description)}}
+
+	if t.PayeeID != uuid.Nil {
+		names, err := svc.PayeeNames(ctx, booksID, []uuid.UUID{t.PayeeID})
+		if err != nil {
+			return nil, err
+		}
+
+		changes = append(changes, tool.Change{Field: "payee", After: tool.TextValue(names[t.PayeeID])})
+	}
+
+	return append(changes, tool.Change{Field: "account", After: tool.TextValue(account.Name)}), nil
 }

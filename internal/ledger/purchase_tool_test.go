@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
+	"github.com/andrelopes-code/equori/internal/platform/tool"
 )
 
 type purchaseOut struct {
@@ -18,7 +19,7 @@ func TestHandleCardPurchaseRefundS08(t *testing.T) {
 	args := map[string]any{"transaction_id": id, "action": "refund", "date": "2026-10-25", "amount": "230.00"}
 
 	p := previewTool(t, c.h, "handle_card_purchase", args)
-	if p.Target != "Purchase test of 2026-10-20" || p.Basis != "v1" || p.Changes[0].Field != "amount" || p.Changes[0].After.Amount != "230.00" {
+	if p.Target != "Purchase test of 2026-10-20" || p.Basis != "v1" || changeAfter(p, "amount").Amount != "230.00" || changeAfter(p, "description").Text != "test" || changeAfter(p, "account").Text != "Itaú Visa" {
 		t.Fatalf("preview = %+v", p)
 	}
 
@@ -89,7 +90,7 @@ func TestHandleCardPurchaseAnticipateS15(t *testing.T) {
 	args := map[string]any{"transaction_id": id, "action": "anticipate_installments", "date": "2027-01-15", "from_installment": 5, "to_installment": 10, "amount": "1260.00", "statement": "2027-02"}
 
 	p := previewTool(t, c.h, "handle_card_purchase", args)
-	if p.Changes[0].Field != "installments" || p.Changes[0].After.Text != "5-10" {
+	if changeAfter(p, "installments").Text != "5-10" || changeAfter(p, "description").Text != "Laptop" || changeAfter(p, "account").Text != "Itaú Visa" {
 		t.Fatalf("preview = %+v", p)
 	}
 
@@ -125,4 +126,15 @@ func TestHandleCardPurchaseOtherUser(t *testing.T) {
 	} {
 		c.h.ExpectToolError(c.h.Tool("handle_card_purchase", args), "not_found", "")
 	}
+}
+
+// changeAfter returns the after value of the change on field; zero when the preview has none.
+func changeAfter(p tool.Preview, field string) tool.Value {
+	for _, c := range p.Changes {
+		if c.Field == field {
+			return c.After
+		}
+	}
+
+	return tool.Value{}
 }

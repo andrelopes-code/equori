@@ -2,6 +2,7 @@ package toolapi
 
 import (
 	"context"
+	"encoding/json"
 	"strings"
 	"unicode/utf8"
 
@@ -136,4 +137,14 @@ func toSeriesView(s app.Series, payee string, accounts map[uuid.UUID]Account) (s
 	}
 
 	return v, nil
+}
+
+// EncodeSeries encodes s as find_recurring encodes one element of its series.
+func EncodeSeries(s app.Series, payee string, accounts map[uuid.UUID]Account) (json.RawMessage, error) {
+	v, err := toSeriesView(s, payee, accounts)
+	if err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(v)
 }
