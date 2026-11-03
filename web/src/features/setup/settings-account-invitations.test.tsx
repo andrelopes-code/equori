@@ -58,7 +58,7 @@ describe("account invitations in the members settings", () => {
     );
 
     expect(
-      await dialog.findByText(
+      await dialog.findByDisplayValue(
         `${window.location.origin}/invite#token=tok_irma`,
       ),
     ).toBeVisible();

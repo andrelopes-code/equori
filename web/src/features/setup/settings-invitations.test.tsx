@@ -63,7 +63,9 @@ describe("invitations settings", () => {
     );
 
     expect(
-      await screen.findByText(`${window.location.origin}/invite#token=tok_abc`),
+      await screen.findByDisplayValue(
+        `${window.location.origin}/invite#token=tok_abc`,
+      ),
     ).toBeVisible();
     expect(sent).toEqual([
       {

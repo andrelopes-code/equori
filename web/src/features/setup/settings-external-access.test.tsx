@@ -101,10 +101,17 @@ describe("external access settings", () => {
       ]);
     });
     const endpoint = `${window.location.origin}/mcp`;
-    // The token is masked on screen; the copy control copies it whole.
+    // The token sits in a read-only password field and is masked in the client setups; the copy
+    // control copies it whole.
+    const tokenField = await dialog.findByLabelText(
+      pt["settings.external_access.token"],
+    );
+    expect(tokenField).toHaveAttribute("type", "password");
+    expect(tokenField).toHaveAttribute("readonly");
+    expect(tokenField).toHaveValue(tokenText);
     expect(
       await dialog.findAllByText(new RegExp(`${tokenText.slice(0, 8)}•{16}`)),
-    ).toHaveLength(3);
+    ).toHaveLength(2);
     expect(dialog.queryByText(new RegExp(tokenText))).toBeNull();
     const clipboard = userEvent.setup();
     const [copyToken] = dialog.getAllByRole("button", { name: /copi/i });

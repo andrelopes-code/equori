@@ -1,5 +1,4 @@
 import { Button } from "@slotted/react/button";
-import { CodeBlock } from "@slotted/react/code-block";
 import {
   Dialog,
   DialogBody,
@@ -34,7 +33,7 @@ interface InvitationDialogProps {
 
 const roles = ["read", "write", "owner"] as const;
 
-// Families read: dialog, field, field-group, radio-group, text-field, code-block. Creates an
+// Families read: dialog, field, field-group, radio-group, text-field. Creates an
 // invitation; after the creation the dialog shows its link once (HA25).
 export function InvitationDialog({ onClose }: InvitationDialogProps) {
   const t = useT();
@@ -86,10 +85,13 @@ export function InvitationDialog({ onClose }: InvitationDialogProps) {
         </DialogHeader>
         <DialogBody>
           {created !== null ? (
-            <CodeBlock
-              code={`${window.location.origin}/invite#token=${created.token ?? ""}`}
-              title={t("invitations.linkTitle")}
-              defaultWrap
+            <TextField
+              aria-label={t("invitations.linkTitle")}
+              value={`${window.location.origin}/invite#token=${created.token ?? ""}`}
+              readOnly
+              copyable
+              mono
+              messages={{ copy: t("accounts.invite.copy") }}
             />
           ) : (
             // Workaround for Slotted issue #8.

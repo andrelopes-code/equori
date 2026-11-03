@@ -1,8 +1,6 @@
-import { Text } from "@slotted/react/typography";
+import { TextField } from "@slotted/react/text-field";
 
 import type { AccountInvitation } from "@/features/setup/api";
-import styles from "@/features/setup/account-invitation-dialog.module.css";
-import { CopyButton } from "@/features/setup/copy-button";
 import { useT } from "@/i18n/i18n-provider";
 
 interface AccountInvitationLinkProps {
@@ -17,14 +15,13 @@ export function AccountInvitationLink({
   const link = `${window.location.origin}/invite#token=${invitation.token}`;
 
   return (
-    <div>
-      <Text size="sm" className={styles.link}>
-        {link}
-      </Text>
-
-      <div className={styles.actions}>
-        <CopyButton text={link} label={t("accounts.invite.copy")} />
-      </div>
-    </div>
+    <TextField
+      aria-label={t("accounts.invite.linkTitle", { email: invitation.email })}
+      value={link}
+      readOnly
+      copyable
+      mono
+      messages={{ copy: t("accounts.invite.copy") }}
+    />
   );
 }

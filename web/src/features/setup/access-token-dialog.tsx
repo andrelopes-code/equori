@@ -97,11 +97,17 @@ export function AccessTokenDialog({ onClose }: { onClose: () => void }) {
         <DialogBody>
           {token !== null && snippets !== null ? (
             <FormLayout>
-              <CodeBlock
-                code={token}
-                title={t("settings.external_access.token")}
-                renderToken={masked}
-              />
+              <Field readOnly necessity="none">
+                <FieldLabel>{t("settings.external_access.token")}</FieldLabel>
+                <TextField
+                  type="password"
+                  value={token}
+                  revealable
+                  copyable
+                  mono
+                  messages={{ copy: t("security.copy") }}
+                />
+              </Field>
               <CodeBlock
                 code={snippets.claudeCode}
                 language="shell"
