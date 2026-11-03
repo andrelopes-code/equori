@@ -212,8 +212,7 @@ export const settingsPtBR: Record<keyof typeof settingsEn, string> = {
     "Superfícies translúcidas sobre luz em movimento. Experimental.",
   "settings.appearance.open": "Abrir o estúdio de aparência",
   "settings.appearance.active": "Tema ativo",
-  "settings.appearance.openHint":
-    "Temas, cores, superfícies, forma e texto, com o app desenhado ao lado.",
+  "settings.appearance.openHint": "Temas, cores, superfícies, forma e texto.",
   "studio.current": "Tema: {name}.",
   "studio.back": "Configurações",
   "studio.tabs": "Ajustes de aparência",

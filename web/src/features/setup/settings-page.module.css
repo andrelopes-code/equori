@@ -124,9 +124,13 @@
     white-space: nowrap;
   }
 
+  /* One strip for the two samples: the labels over the values, a hairline between them. */
   .example {
     display: grid;
-    gap: var(--slotted-space-4);
+    overflow: hidden;
+    border: var(--slotted-border-width-thin) solid var(--slotted-border-subtle);
+    border-radius: var(--slotted-radius-md);
+    background: var(--slotted-surface-sunken);
     grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
   }
 
@@ -134,11 +138,13 @@
     display: flex;
     min-inline-size: 0;
     flex-direction: column;
-    gap: var(--slotted-space-3);
-    padding: var(--slotted-space-6);
-    border: var(--slotted-border-width-thin) solid var(--slotted-border-subtle);
-    border-radius: var(--slotted-radius-md);
-    background: var(--slotted-surface-sunken);
+    gap: var(--slotted-space-2);
+    padding: var(--slotted-space-5) var(--slotted-space-7);
+  }
+
+  .sample + .sample {
+    border-inline-start: var(--slotted-border-width-thin) solid
+      var(--slotted-border-subtle);
   }
 
   .sampleLabel {
@@ -175,10 +181,10 @@
   .sampleValue {
     overflow: hidden;
     color: var(--slotted-text);
-    font-size: var(--slotted-font-size-2xl);
+    font-size: var(--slotted-font-size-xl);
     font-variant-numeric: tabular-nums;
-    font-weight: var(--slotted-font-weight-semibold);
-    line-height: var(--slotted-line-height-2xl);
+    font-weight: var(--slotted-font-weight-medium);
+    line-height: var(--slotted-line-height-xl);
     text-overflow: ellipsis;
     white-space: nowrap;
   }

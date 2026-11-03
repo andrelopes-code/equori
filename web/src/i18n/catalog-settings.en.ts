@@ -208,8 +208,7 @@ export const settingsEn = {
     "Translucent surfaces over a moving light. Experimental.",
   "settings.appearance.open": "Open the appearance studio",
   "settings.appearance.active": "Active theme",
-  "settings.appearance.openHint":
-    "Themes, colours, surfaces, shape and text, with the app drawn beside them.",
+  "settings.appearance.openHint": "Themes, colours, surfaces, shape and text.",
   "studio.current": "Theme: {name}.",
   "studio.back": "Settings",
   "studio.tabs": "Appearance settings",
