@@ -190,7 +190,7 @@ func (p ledgerPort) TransactionFacts(ctx context.Context, booksID int64, ids []u
 
 	out := make([]domain.Transaction, len(facts))
 	for i, f := range facts {
-		t := domain.Transaction{ID: f.ID, Date: f.Date, PayeeID: f.PayeeID, Voided: f.Voided}
+		t := domain.Transaction{ID: f.ID, Date: f.Date, PayeeID: f.PayeeID, Description: f.Description, Voided: f.Voided}
 		for _, fp := range f.Postings {
 			t.Postings = append(t.Postings, domain.Posting{AccountID: fp.AccountID, Amount: fp.Amount.Amount()})
 		}

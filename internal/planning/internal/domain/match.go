@@ -13,11 +13,12 @@ const MatchWindowDays = 7
 
 // Transaction is the part of a ledger transaction realization reads.
 type Transaction struct {
-	ID       uuid.UUID
-	Date     time.Time
-	PayeeID  uuid.UUID
-	Voided   bool
-	Postings []Posting
+	ID          uuid.UUID
+	Date        time.Time
+	PayeeID     uuid.UUID
+	Description string
+	Voided      bool
+	Postings    []Posting
 }
 
 type Posting struct {
