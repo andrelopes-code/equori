@@ -17,7 +17,9 @@ import { StartArriveStep } from "@/features/start/start-arrive-step";
 import { StartDetailsStep } from "@/features/start/start-details-step";
 import { canContinue, startDrafts } from "@/features/start/start-drafts";
 import type { StartRow } from "@/features/start/start-drafts";
+import type { StartState } from "@/features/start/start-memory";
 import { StartWhereStep } from "@/features/start/start-where-step";
+import { useStartMemory } from "@/features/start/use-start-memory";
 import { useStartRun } from "@/features/start/use-start-run";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
@@ -25,20 +27,24 @@ import { useToday } from "@/i18n/today";
 interface StartScreenProps {
   base: string;
   scale: (code: string) => number;
+  stored: StartState | null;
 }
 
 const steps = ["where", "details", "arrive"] as const;
 
-export function StartScreen({ base, scale }: StartScreenProps) {
+export function StartScreen({ base, scale, stored }: StartScreenProps) {
   const t = useT();
   const today = useToday();
   const navigate = useNavigate();
-  const nextKey = useRef(1);
-  const [step, setStep] = useState(0);
-  const [rows, setRows] = useState<StartRow[]>([newRow("0")]);
-  const [cash, setCash] = useState(false);
-  const [drafts, setDrafts] = useState<AccountDraft[]>([]);
-  const start = useStartRun(drafts);
+  const [step, setStep] = useState<number>(stored?.step ?? 0);
+  const [rows, setRows] = useState<StartRow[]>(stored?.rows ?? [newRow("0")]);
+  const [cash, setCash] = useState(stored?.cash ?? false);
+  const [drafts, setDrafts] = useState<AccountDraft[]>(stored?.drafts ?? []);
+  const nextKey = useRef(
+    Math.max(0, ...rows.map((row) => Number(row.key))) + 1,
+  );
+  const start = useStartRun(drafts, stored?.runs ?? []);
+  useStartMemory({ step, rows, cash, drafts, runs: start.runs });
 
   const names = drafts.map((draft) => draft.name);
   const importAccountId = drafts

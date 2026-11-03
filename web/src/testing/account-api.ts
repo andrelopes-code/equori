@@ -205,6 +205,7 @@ export function accountRoutes(
       json(200, {
         id: 1,
         email: "a@b.c",
+        books_id: 1,
         role: "admin",
         language: "en",
         region: "BR",

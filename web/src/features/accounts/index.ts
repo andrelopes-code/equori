@@ -62,5 +62,8 @@ export {
   createAccountSteps,
 } from "@/features/accounts/create-account-steps";
 export { writePendingSetup } from "@/features/accounts/pending-setup";
-export { draftProblems } from "@/features/accounts/account-draft";
+export {
+  draftProblems,
+  isDraft as isAccountDraft,
+} from "@/features/accounts/account-draft";
 export { useCreateAccount } from "@/features/accounts/api";

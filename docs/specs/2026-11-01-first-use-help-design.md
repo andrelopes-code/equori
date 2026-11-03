@@ -35,9 +35,17 @@ Read on 2026-11-01 at `4371e1a1`.
 3. Step 2 holds one group per account to create, in row order, then `cash`. Each group holds the name, prefilled with the institution's name followed by the kind's label (`kind.<kind>` of the catalog), and the opening amount. A `credit_card` group adds the closing day, the due day and the limit. The fields, their validation and their texts are those of the account form for the same kind. The currency is the base currency of the book; `opened_on` is today of the book. Reason: one validation for an account, whether the form or the walkthrough creates it.
 4. The main action of step 2, "Create accounts", creates the accounts one at a time, in group order, through `createAccount` and then `createAccountSteps`. A group whose account was created shows "Created" and leaves its fields read-only. A failed `createAccount` stops the run; its group shows the problem text and its field errors; the main action then retries from that group. A failed later step behaves as in the account form: `writePendingSetup`, and the group shows "Created" with the line of the pending setup. Reason: a retry never creates an account twice.
 5. Step 3 lists the created accounts and three actions: "Connect a bank" (`/accounts/links`), "Import a file" (`/accounts/$id/import` of the first account created whose kind imports a file), "Record a transaction" (`/transactions/new`). The last is the main action. A link to the help page `connect-bank` follows the list.
-6. The walkthrough keeps its state in memory only. A reload starts it again at step 1; the accounts already created stay and show in the institution field. Reason: the state lasts minutes, and the account form's draft storage serves one account.
+6. Replaced by A191: the walkthrough resumes where it was left.
 7. `/start` opens for every member and every book. A member with role `read` gets the 403 problem of `createAccount` in the group, as on the account form. Reason: the web does not gate screens by role today; a gate for one screen would differ from every other screen.
 8. Texts in both catalogs, `catalog.en.ts` and `catalog.pt-BR.ts`. `/start` is desktop-only (ADR 027, S2): on the phone it shows the notice of ADR 027, S4. Reason: the installation script opens setup on the computer (A163.11), and the account sections the walkthrough reuses belong to `/accounts/new`, a desktop-only route.
+
+## A191 Walkthrough resumption
+
+Amendment of 2026-11-03, replacing A173.6. Reason: in the owner's test, leaving `/start` and coming back opened step 1 again, with the institutions to choose again; a person who sets up the accounts over more than one visit lost what the earlier visit chose.
+
+1. Every change of the walkthrough writes its state to `localStorage` under the book key `equori.start` (`equori.start.<booksId>`, HA29): the step, the rows, the `cash` check box, the drafts of step 2, and per group the id of the created account and whether its setup is pending. Reason: the rows hold institution ids and the groups account ids of one book; a closed browser keeps them.
+2. Opening `/start` reads the state and resumes at its step with its values. A group whose account id is absent from the account list returns to pending, so a deleted account is created again. A group that failed returns to pending, without its error. A value that does not parse, or a storage that refuses access, opens step 1 empty.
+3. Reaching step 3 deletes the state; the next visit opens step 1 empty. "Not now" keeps it.
 
 ## A174 Entry points
 
@@ -105,6 +113,9 @@ Documents: `docs/specs/2026-10-29-ui-clarity-design.md`, Camada 3 (A174.5); `doc
 | S250 | `connect-bank` with region `BR`, then with region `US` | The BR passage follows the page; then the page alone, with no name of a regional system |
 | S251 | Exit criterion: the unaided walk of A177.1 | A `createTransaction` request is sent, with no `navigate` call in the test |
 | S252 | Exit criterion: the browser walk of A177.2 | At 1280: a transaction recorded (`createTransaction` 201). At 390: setup completes and `/start` shows the notice of ADR 027, S4. Outcome in the plan's Review |
+| S265 | Step 1 with one institution and `checking`; "Not now"; `/start` again | Step 1 shows the row with its institution and `checking` |
+| S266 | S245 up to the failure; leaving for `/` and opening `/start` again, with the first account in the account list | Step 2: the first group shows "Created"; a retry sends two `createAccount` requests, for `credit_card` and `cash` |
+| S267 | Step 3 reached; `/start` again | Step 1 with one empty row |
 
 ## Out of scope
 

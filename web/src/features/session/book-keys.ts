@@ -7,6 +7,7 @@ export const bookKeyNames = {
   captureQueue: "equori.capture.queue",
   recentCategories: "equori.recent-categories",
   planCollapsed: "equori.plan.collapsed",
+  start: "equori.start",
 } as const;
 
 export type BookKeyName = (typeof bookKeyNames)[keyof typeof bookKeyNames];

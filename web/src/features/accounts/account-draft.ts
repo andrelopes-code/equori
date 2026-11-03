@@ -76,7 +76,7 @@ export function emptyAccountDraft(
 
 const prefix = "equori.accountDraft.";
 
-function isDraft(value: unknown): value is AccountDraft {
+export function isDraft(value: unknown): value is AccountDraft {
   if (typeof value !== "object" || value === null) return false;
   const draft = value as Record<string, unknown>;
   return (

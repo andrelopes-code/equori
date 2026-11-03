@@ -31,15 +31,18 @@ export const pending: GroupRun = {
 
 // Creates the accounts of the drafts one after the other. A run starts at the first draft not
 // created, so a retry never creates an account twice.
-export function useStartRun(drafts: readonly AccountDraft[]) {
+export function useStartRun(
+  drafts: readonly AccountDraft[],
+  initial: readonly GroupRun[],
+) {
   const t = useT();
   const api = useApi();
   const create = useCreateAccount();
   const accounts = useQuery(accountsQuery(api));
-  const [groups, setGroups] = useState<GroupRun[]>([]);
+  const [groups, setGroups] = useState<GroupRun[]>([...initial]);
   const [running, setRunning] = useState(false);
   // The loop reads the groups it has just written, before the next render.
-  const latest = useRef<GroupRun[]>([]);
+  const latest = useRef<GroupRun[]>([...initial]);
 
   const runs = drafts.map((_, index) => groups[index] ?? pending);
 

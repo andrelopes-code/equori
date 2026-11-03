@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useApi } from "@/api/api-context";
 import { accountsQuery } from "@/features/accounts";
 import { instrumentsQuery, settingsQuery, useScale } from "@/features/setup";
+import { readStart } from "@/features/start/start-memory";
 import { StartScreen } from "@/features/start/start-screen";
 
 // The walkthrough starts from the base currency and the account list, so it waits for both.
@@ -41,5 +42,11 @@ export function StartPage() {
     );
   }
 
-  return <StartScreen base={base} scale={scale} />;
+  return (
+    <StartScreen
+      base={base}
+      scale={scale}
+      stored={readStart(accounts.data.map((account) => account.id))}
+    />
+  );
 }

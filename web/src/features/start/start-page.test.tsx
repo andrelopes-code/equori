@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
-import { accountRoutes } from "@/testing/account-api";
+import { accountFixtures, accountRoutes } from "@/testing/account-api";
 import { fakeApi, json, problem } from "@/testing/fake-api";
 import { renderApp } from "@/testing/render-app";
 
@@ -58,6 +58,7 @@ function api(sent: Sent[], overrides: Record<string, Handler> = {}) {
 
 beforeEach(() => {
   sessionStorage.clear();
+  localStorage.clear();
 });
 
 async function chooseInstitution() {
@@ -282,4 +283,137 @@ describe("First-use walkthrough", () => {
       catalogEn["start.where.institution"],
     );
   });
+  // S265 (A191)
+  it("resumes step 1 with its rows after Not now", async () => {
+    const { router } = await renderApp("/start", { fetch: api([]) });
+    await chooseInstitution();
+    await chooseKinds([catalogEn["kind.title.checking"]]);
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["start.notNow"] }),
+    );
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/");
+    });
+
+    await router.navigate({ to: "/start" });
+
+    expect(
+      await screen.findByRole("checkbox", {
+        name: catalogEn["kind.title.checking"],
+      }),
+    ).toBeChecked();
+    expect(
+      screen.getByRole("button", { name: catalogEn["start.continue"] }),
+    ).toBeEnabled();
+  }, 30_000);
+
+  // S266 (A191)
+  it("resumes step 2 with the created group and retries only the rest", async () => {
+    const sent: Sent[] = [];
+    let posts = 0;
+    const { router } = await renderApp("/start", {
+      fetch: api(sent, {
+        "GET /api/v1/accounts": () =>
+          json(200, {
+            items: [
+              ...accountFixtures,
+              {
+                ...accountFixtures[0],
+                id: checkingID,
+                name: "Nubank checking",
+              },
+            ],
+          }),
+        "POST /api/v1/accounts": async (req) => {
+          const body = (await req.json()) as { kind: string };
+          sent.push({ route: "POST /accounts", body });
+          posts += 1;
+          if (posts === 2) {
+            return problem(422, "validation_failed", {
+              errors: [{ field: "name", message: "The name is taken." }],
+            });
+          }
+          return json(201, {
+            ...body,
+            id: createdIDs[body.kind],
+            yield_mode: "none",
+          });
+        },
+      }),
+    });
+    await toDetails(
+      [catalogEn["kind.title.checking"], catalogEn["kind.title.credit_card"]],
+      true,
+    );
+    const card = await screen.findByRole("group", {
+      name: "Nubank credit card",
+    });
+    await pickDay(card, catalogEn["accountForm.closingDay"], "3");
+    await pickDay(card, catalogEn["accountForm.dueDay"], "10");
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["start.details.create"] }),
+    );
+    expect(await screen.findByText("The name is taken.")).toBeInTheDocument();
+    await router.navigate({ to: "/" });
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/");
+    });
+
+    await router.navigate({ to: "/start" });
+    const checking = await screen.findByRole("group", {
+      name: "Nubank checking",
+    });
+    expect(
+      within(checking).getByText(catalogEn["start.details.created"]),
+    ).toBeInTheDocument();
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["start.details.create"] }),
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: catalogEn["start.continue"] }),
+      ).toBeInTheDocument();
+    });
+    expect(
+      sent
+        .filter((s) => s.route === "POST /accounts")
+        .map((s) => (s.body as { kind: string }).kind),
+    ).toEqual(["checking", "credit_card", "credit_card", "cash"]);
+  }, 30_000);
+
+  // S267 (A191)
+  it("opens step 1 empty after the last step was reached", async () => {
+    const { router } = await renderApp("/start", { fetch: api([]) });
+    await userEvent.click(
+      await screen.findByRole("checkbox", {
+        name: catalogEn["start.where.cash"],
+      }),
+    );
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["start.continue"] }),
+    );
+    await userEvent.click(
+      await screen.findByRole("button", {
+        name: catalogEn["start.details.create"],
+      }),
+    );
+    await userEvent.click(
+      await screen.findByRole("button", { name: catalogEn["start.continue"] }),
+    );
+    await screen.findByText(catalogEn["start.step.arrive"]);
+    expect(localStorage.getItem("equori.start.1")).toBeNull();
+
+    await router.navigate({ to: "/" });
+    await router.navigate({ to: "/start" });
+
+    expect(
+      await screen.findByRole("checkbox", {
+        name: catalogEn["start.where.cash"],
+      }),
+    ).not.toBeChecked();
+    expect(
+      screen.getByRole("button", { name: catalogEn["start.continue"] }),
+    ).toBeDisabled();
+  }, 30_000);
 });
