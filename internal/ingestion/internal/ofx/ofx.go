@@ -61,7 +61,7 @@ func Parse(data []byte, scale int) (domain.Statement, error) {
 		return domain.Statement{}, errors.New("not an OFX file: no <OFX> element")
 	}
 
-	p := parser{text: text, scale: scale}
+	p := parser{text: text, scale: scale, depth: map[string]int{}}
 	if err := p.run(start); err != nil {
 		return domain.Statement{}, err
 	}
@@ -79,8 +79,9 @@ type parser struct {
 	out        domain.Statement
 	statements bool
 	stack      []string
+	depth      map[string]int    // open elements by name, so an unmatched end tag skips the stack scan
 	txn        map[string]string // leaves of the open STMTTRN
-	txnLine    int
+	txnOffset  int
 	balance    map[string]string // leaves of the open LEDGERBAL
 }
 
@@ -108,7 +109,7 @@ func (p *parser) run(start int) error {
 	}
 
 	if p.txn != nil {
-		return fmt.Errorf("unexpected end of file inside STMTTRN opened on line %d", p.txnLine)
+		return fmt.Errorf("unexpected end of file inside STMTTRN opened on line %d", p.line(p.txnOffset))
 	}
 
 	return nil
@@ -116,11 +117,13 @@ func (p *parser) run(start int) error {
 
 func (p *parser) open(name string, offset int) {
 	p.stack = append(p.stack, name)
+	p.depth[name]++
+
 	switch name {
 	case "STMTRS", "CCSTMTRS":
 		p.statements = true
 	case "STMTTRN":
-		p.txn, p.txnLine = map[string]string{}, p.line(offset)
+		p.txn, p.txnOffset = map[string]string{}, offset
 	case "LEDGERBAL":
 		p.balance = map[string]string{}
 	}
@@ -128,13 +131,17 @@ func (p *parser) open(name string, offset int) {
 
 // close pops the aggregate; an end tag of a leaf (XML) or of an unopened element is ignored.
 func (p *parser) close(name string) error {
+	if p.depth[name] == 0 {
+		return nil
+	}
+
 	i := len(p.stack) - 1
-	for i >= 0 && p.stack[i] != name {
+	for p.stack[i] != name {
 		i--
 	}
 
-	if i < 0 {
-		return nil
+	for _, popped := range p.stack[i:] {
+		p.depth[popped]--
 	}
 
 	p.stack = p.stack[:i]
@@ -142,7 +149,7 @@ func (p *parser) close(name string) error {
 	case "STMTTRN":
 		r, err := p.record(p.txn)
 		if err != nil {
-			return fmt.Errorf("STMTTRN on line %d: %w", p.txnLine, err)
+			return fmt.Errorf("STMTTRN on line %d: %w", p.line(p.txnOffset), err)
 		}
 
 		p.out.Records = append(p.out.Records, r)
