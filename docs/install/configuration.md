@@ -22,6 +22,7 @@ compose.yaml reads the variables of .env in its directory. equori reads its proc
 
 | Variable | Read by | Expected | Default | Example | Description |
 |---|---|---|---|---|---|
+| `EQUORI_DISTRIBUTION` | `equori` | compose or empty | — | `compose` | compose.yaml sets compose, so the notice of a newer release names the upgrade command of that form (A194). |
 | `EQUORI_VERSION` | `compose.yaml` | a release version | — | `1.0.0` | Image version of compose.yaml. A release sets its own version as the default; in a clone the default is dev, which compose builds. |
 | `EQUORI_DATABASE_URL` | `equori` | a postgres:// or postgresql:// URL | — | `postgres://equori:password@db:5432/equori?sslmode=disable` | URL of a PostgreSQL 18 database (external mode); compose.yaml sets it. Unset, equori runs its own PostgreSQL server over EQUORI_DATA_DIR (managed mode). |
 | `EQUORI_HTTP_ADDR` | `equori` | host:port with a port from 1 to 65535 | `:8080` | `127.0.0.1:8081` | Address on which equori listens. compose.yaml keeps the container on :8080 and publishes it through EQUORI_HOST_IP and EQUORI_PORT. |

@@ -1,6 +1,7 @@
 package postgres_test
 
 import (
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -114,5 +115,76 @@ func TestProposal(t *testing.T) {
 	var n int
 	if err := pool.QueryRow(ctx, `SELECT count(*) FROM assistant_proposal`).Scan(&n); err != nil || n != 0 {
 		t.Fatalf("%d proposals kept after the conversation was deleted (%v)", n, err)
+	}
+}
+
+func TestProposalRefs(t *testing.T) {
+	t.Parallel()
+	pool := pgtest.New(t)
+	repo := postgres.NewRepository(pool)
+	ctx := t.Context()
+	ma, a := pgtest.CreateMember(t, pool)
+	c := conversation(t, repo, a, ma, t0)
+
+	parent := newProposal(t, repo, a, c.ID)
+	waiting := func(t *testing.T) domain.Proposal {
+		t.Helper()
+
+		p := domain.Proposal{
+			ID: uuid.New(), ConversationID: c.ID, Tool: "create_transaction", Arguments: []byte(`{"a":1}`),
+			Preview: []byte(`{}`), Status: domain.ProposalWaiting, Suggested: true, Reason: "r", Summary: "s",
+			Refs: map[string]string{"/a": parent.ID.String()}, CreatedAt: t0, ExpiresAt: t0.Add(domain.ProposalTTL),
+		}
+		if err := repo.InsertProposal(ctx, a, p); err != nil {
+			t.Fatal(err)
+		}
+
+		return p
+	}
+
+	w := waiting(t)
+
+	got, err := repo.Proposal(ctx, a, ma, w.ID)
+	if err != nil || !got.Suggested || got.Reason != "r" || got.Summary != "s" || !reflect.DeepEqual(got.Refs, w.Refs) ||
+		got.Basis != "" || got.Status != domain.ProposalWaiting {
+		t.Fatalf("Proposal = %+v, %v", got, err)
+	}
+
+	if got, _ := repo.Proposal(ctx, a, ma, parent.ID); got.Suggested || got.Reason != "" || got.Summary != "" || got.Refs != nil {
+		t.Fatalf("plain proposal = %+v", got)
+	}
+
+	promoted := w
+	promoted.Arguments, promoted.Preview, promoted.Basis = []byte(`{"a":2}`), []byte(`{"p":1}`), strings.Repeat("b", 64)
+	promoted.ExpiresAt = t0.Add(time.Hour)
+
+	if ok, err := repo.PromoteProposal(ctx, a, promoted); err != nil || !ok {
+		t.Fatalf("promote of waiting = %v, %v", ok, err)
+	}
+
+	got, _ = repo.Proposal(ctx, a, ma, w.ID)
+	if got.Status != domain.ProposalPending || string(got.Arguments) != `{"a": 2}` || string(got.Preview) != `{"p": 1}` ||
+		got.Basis != promoted.Basis || !got.ExpiresAt.Equal(promoted.ExpiresAt) {
+		t.Fatalf("promoted = %+v", got)
+	}
+
+	if ok, err := repo.PromoteProposal(ctx, a, promoted); err != nil || ok {
+		t.Fatalf("promote of pending = %v, %v", ok, err)
+	}
+
+	discardable, rejectable := waiting(t), waiting(t)
+	if err := repo.DiscardProposals(ctx, a, []uuid.UUID{discardable.ID}, t0.Add(time.Minute)); err != nil {
+		t.Fatal(err)
+	}
+
+	if ok, err := repo.RejectProposal(ctx, a, ma, rejectable.ID, t0.Add(time.Minute)); err != nil || !ok {
+		t.Fatalf("reject of waiting = %v, %v", ok, err)
+	}
+
+	want := map[uuid.UUID]domain.ProposalStatus{discardable.ID: domain.ProposalDiscarded, rejectable.ID: domain.ProposalRejected}
+	for id, status := range want {
+		if got, _ := repo.Proposal(ctx, a, ma, id); got.Status != status {
+			t.Errorf("proposal %s status = %s, want %s", id, got.Status, status)
+		}
 	}
 }

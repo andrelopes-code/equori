@@ -63,16 +63,37 @@ func (e CopyStatusState) Valid() bool {
 
 // Defines values for DiagnosticMode.
 const (
-	External DiagnosticMode = "external"
-	Managed  DiagnosticMode = "managed"
+	DiagnosticModeExternal DiagnosticMode = "external"
+	DiagnosticModeManaged  DiagnosticMode = "managed"
 )
 
 // Valid indicates whether the value is a known member of the DiagnosticMode enum.
 func (e DiagnosticMode) Valid() bool {
 	switch e {
-	case External:
+	case DiagnosticModeExternal:
 		return true
-	case Managed:
+	case DiagnosticModeManaged:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for VersionStatusDistribution.
+const (
+	VersionStatusDistributionCompose VersionStatusDistribution = "compose"
+	VersionStatusDistributionManaged VersionStatusDistribution = "managed"
+	VersionStatusDistributionOther   VersionStatusDistribution = "other"
+)
+
+// Valid indicates whether the value is a known member of the VersionStatusDistribution enum.
+func (e VersionStatusDistribution) Valid() bool {
+	switch e {
+	case VersionStatusDistributionCompose:
+		return true
+	case VersionStatusDistributionManaged:
+		return true
+	case VersionStatusDistributionOther:
 		return true
 	default:
 		return false
@@ -219,11 +240,16 @@ type UpdateCheckInput struct {
 
 // VersionStatus defines model for VersionStatus.
 type VersionStatus struct {
-	Latest      *Release `json:"latest"`
-	Newer       bool     `json:"newer"`
-	UpdateCheck *bool    `json:"update_check"`
-	Version     string   `json:"version"`
+	// Distribution The form of the instance, whose upgrade differs: compose for compose.yaml, managed for managed mode, other otherwise (A194).
+	Distribution VersionStatusDistribution `json:"distribution"`
+	Latest       *Release                  `json:"latest"`
+	Newer        bool                      `json:"newer"`
+	UpdateCheck  *bool                     `json:"update_check"`
+	Version      string                    `json:"version"`
 }
+
+// VersionStatusDistribution The form of the instance, whose upgrade differs: compose for compose.yaml, managed for managed mode, other otherwise (A194).
+type VersionStatusDistribution string
 
 // TagName defines model for TagName.
 type TagName = string

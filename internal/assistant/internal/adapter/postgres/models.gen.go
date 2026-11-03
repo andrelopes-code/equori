@@ -53,6 +53,10 @@ type AssistantProposal struct {
 	CreatedAt      time.Time
 	ExpiresAt      time.Time
 	DecidedAt      *time.Time
+	Suggested      bool
+	Reason         *string
+	Summary        *string
+	Refs           []byte
 }
 
 type AssistantProvider struct {

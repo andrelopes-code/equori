@@ -13,7 +13,11 @@ INSERT INTO
         result,
         created_at,
         expires_at,
-        decided_at
+        decided_at,
+        suggested,
+        reason,
+        summary,
+        refs
     )
 VALUES
     (
@@ -29,7 +33,11 @@ VALUES
         sqlc.narg (result),
         @created_at,
         @expires_at,
-        sqlc.narg (decided_at)
+        sqlc.narg (decided_at),
+        @suggested,
+        sqlc.narg (reason),
+        sqlc.narg (summary),
+        sqlc.narg (refs)
     );
 
 -- name: ProposalByID :one
@@ -94,7 +102,7 @@ FROM
 WHERE
     p.books_id = @books_id
     AND p.id = @id
-    AND p.status = 'pending'
+    AND p.status IN ('pending', 'waiting')
     AND p.expires_at > @now
     AND c.id = p.conversation_id
     AND c.books_id = p.books_id
@@ -116,4 +124,17 @@ SET
 WHERE
     books_id = @books_id
     AND id = ANY (@ids::UUID[])
-    AND status = 'pending';
+    AND status IN ('pending', 'waiting');
+
+-- name: PromoteProposal :execrows
+UPDATE assistant_proposal
+SET
+    status = 'pending',
+    arguments = @arguments,
+    preview = @preview,
+    basis = @basis,
+    expires_at = @expires_at
+WHERE
+    books_id = @books_id
+    AND id = @id
+    AND status = 'waiting';

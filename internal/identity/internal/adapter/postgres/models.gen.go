@@ -41,6 +41,7 @@ type IdentityMember struct {
 	CreatedAt    time.Time
 	Language     string
 	Appearance   []byte
+	DisplayName  *string
 }
 
 type IdentityPasskey struct {

@@ -111,7 +111,7 @@ INSERT INTO
 VALUES
     ($1, $2, $3, $4)
 RETURNING
-    id, email, password_hash, role, disabled_at, created_at, language, appearance
+    id, email, password_hash, role, disabled_at, created_at, language, appearance, display_name
 `
 
 type CreateMemberParams struct {
@@ -138,6 +138,7 @@ func (q *Queries) CreateMember(ctx context.Context, arg CreateMemberParams) (Ide
 		&i.CreatedAt,
 		&i.Language,
 		&i.Appearance,
+		&i.DisplayName,
 	)
 	return i, err
 }
@@ -351,7 +352,7 @@ func (q *Queries) GetLoginBooks(ctx context.Context, memberID int64) (int64, err
 
 const getMemberByEmail = `-- name: GetMemberByEmail :one
 SELECT
-    id, email, password_hash, role, disabled_at, created_at, language, appearance
+    id, email, password_hash, role, disabled_at, created_at, language, appearance, display_name
 FROM
     identity_member
 WHERE
@@ -370,13 +371,14 @@ func (q *Queries) GetMemberByEmail(ctx context.Context, email string) (IdentityM
 		&i.CreatedAt,
 		&i.Language,
 		&i.Appearance,
+		&i.DisplayName,
 	)
 	return i, err
 }
 
 const getMemberByID = `-- name: GetMemberByID :one
 SELECT
-    id, email, password_hash, role, disabled_at, created_at, language, appearance
+    id, email, password_hash, role, disabled_at, created_at, language, appearance, display_name
 FROM
     identity_member
 WHERE
@@ -395,6 +397,7 @@ func (q *Queries) GetMemberByID(ctx context.Context, id int64) (IdentityMember, 
 		&i.CreatedAt,
 		&i.Language,
 		&i.Appearance,
+		&i.DisplayName,
 	)
 	return i, err
 }
@@ -408,6 +411,7 @@ SELECT
     m.disabled_at,
     m.created_at,
     m.language,
+    m.display_name,
     s.books_id,
     ms.role AS book_role
 FROM
@@ -433,6 +437,7 @@ type GetMemberBySessionRow struct {
 	DisabledAt   *time.Time
 	CreatedAt    time.Time
 	Language     string
+	DisplayName  *string
 	BooksID      int64
 	BookRole     string
 }
@@ -448,6 +453,7 @@ func (q *Queries) GetMemberBySession(ctx context.Context, arg GetMemberBySession
 		&i.DisabledAt,
 		&i.CreatedAt,
 		&i.Language,
+		&i.DisplayName,
 		&i.BooksID,
 		&i.BookRole,
 	)
@@ -520,6 +526,7 @@ const listMembers = `-- name: ListMembers :many
 SELECT
     ms.member_id,
     m.email,
+    m.display_name,
     ms.role,
     ms.created_at
 FROM
@@ -533,10 +540,11 @@ ORDER BY
 `
 
 type ListMembersRow struct {
-	MemberID  int64
-	Email     string
-	Role      string
-	CreatedAt time.Time
+	MemberID    int64
+	Email       string
+	DisplayName *string
+	Role        string
+	CreatedAt   time.Time
 }
 
 func (q *Queries) ListMembers(ctx context.Context, booksID int64) ([]ListMembersRow, error) {
@@ -551,6 +559,7 @@ func (q *Queries) ListMembers(ctx context.Context, booksID int64) ([]ListMembers
 		if err := rows.Scan(
 			&i.MemberID,
 			&i.Email,
+			&i.DisplayName,
 			&i.Role,
 			&i.CreatedAt,
 		); err != nil {
@@ -683,6 +692,24 @@ func (q *Queries) UpdateBooksSettings(ctx context.Context, arg UpdateBooksSettin
 	var name string
 	err := row.Scan(&name)
 	return name, err
+}
+
+const updateDisplayName = `-- name: UpdateDisplayName :exec
+UPDATE identity_member
+SET
+    display_name = $2
+WHERE
+    id = $1
+`
+
+type UpdateDisplayNameParams struct {
+	ID          int64
+	DisplayName *string
+}
+
+func (q *Queries) UpdateDisplayName(ctx context.Context, arg UpdateDisplayNameParams) error {
+	_, err := q.db.Exec(ctx, updateDisplayName, arg.ID, arg.DisplayName)
+	return err
 }
 
 const updateLanguage = `-- name: UpdateLanguage :exec

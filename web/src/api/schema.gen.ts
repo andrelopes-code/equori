@@ -62,7 +62,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** Change the language of the authenticated member. */
+        /** Change the language or the display name of the authenticated member. */
         patch: operations["updateCurrentUser"];
         trace?: never;
     };
@@ -4605,6 +4605,11 @@ export interface components {
             update_check: boolean | null;
             latest: components["schemas"]["Release"];
             newer: boolean;
+            /**
+             * @description The form of the instance, whose upgrade differs: compose for compose.yaml, managed for managed mode, other otherwise (A194).
+             * @enum {string}
+             */
+            distribution: "compose" | "managed" | "other";
         };
         Release: {
             version: string;
@@ -6304,6 +6309,8 @@ export interface components {
             /** Format: int64 */
             id: number;
             email: string;
+            /** @description Absent while the member has not chosen one. */
+            display_name?: string;
             /** @enum {string} */
             role: "admin" | "member";
             /** Format: int64 */
@@ -6314,6 +6321,11 @@ export interface components {
         };
         UpdateUserInput: {
             language?: string;
+            /**
+             * @description Trimmed; at most 60 characters, no control characters (422 validation_failed on
+             *     display_name). An empty value clears it.
+             */
+            display_name?: string;
         };
         /** @description Appearance choices by name (scheme, accent, themes, ...); the web defines names and values. */
         Appearance: {
@@ -6353,6 +6365,8 @@ export interface components {
             /** Format: int64 */
             member_id: number;
             email: string;
+            /** @description Absent while the member has not chosen one. */
+            display_name?: string;
             role: components["schemas"]["BookRole"];
             /** Format: date-time */
             created_at: string;

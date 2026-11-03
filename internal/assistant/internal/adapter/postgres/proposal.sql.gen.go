@@ -47,7 +47,7 @@ WHERE
     AND c.books_id = p.books_id
     AND c.member_id = $4
 RETURNING
-    p.id, p.books_id, p.conversation_id, p.message_id, p.tool, p.arguments, p.preview, p.basis, p.status, p.result, p.created_at, p.expires_at, p.decided_at
+    p.id, p.books_id, p.conversation_id, p.message_id, p.tool, p.arguments, p.preview, p.basis, p.status, p.result, p.created_at, p.expires_at, p.decided_at, p.suggested, p.reason, p.summary, p.refs
 `
 
 type ClaimProposalParams struct {
@@ -79,6 +79,10 @@ func (q *Queries) ClaimProposal(ctx context.Context, arg ClaimProposalParams) (A
 		&i.CreatedAt,
 		&i.ExpiresAt,
 		&i.DecidedAt,
+		&i.Suggested,
+		&i.Reason,
+		&i.Summary,
+		&i.Refs,
 	)
 	return i, err
 }
@@ -121,7 +125,7 @@ SET
 WHERE
     books_id = $2
     AND id = ANY ($3::UUID[])
-    AND status = 'pending'
+    AND status IN ('pending', 'waiting')
 `
 
 type DiscardProposalsParams struct {
@@ -150,7 +154,11 @@ INSERT INTO
         result,
         created_at,
         expires_at,
-        decided_at
+        decided_at,
+        suggested,
+        reason,
+        summary,
+        refs
     )
 VALUES
     (
@@ -166,7 +174,11 @@ VALUES
         $10,
         $11,
         $12,
-        $13
+        $13,
+        $14,
+        $15,
+        $16,
+        $17
     )
 `
 
@@ -184,6 +196,10 @@ type InsertProposalParams struct {
 	CreatedAt      time.Time
 	ExpiresAt      time.Time
 	DecidedAt      *time.Time
+	Suggested      bool
+	Reason         *string
+	Summary        *string
+	Refs           []byte
 }
 
 func (q *Queries) InsertProposal(ctx context.Context, arg InsertProposalParams) error {
@@ -201,13 +217,17 @@ func (q *Queries) InsertProposal(ctx context.Context, arg InsertProposalParams) 
 		arg.CreatedAt,
 		arg.ExpiresAt,
 		arg.DecidedAt,
+		arg.Suggested,
+		arg.Reason,
+		arg.Summary,
+		arg.Refs,
 	)
 	return err
 }
 
 const listProposals = `-- name: ListProposals :many
 SELECT
-    id, books_id, conversation_id, message_id, tool, arguments, preview, basis, status, result, created_at, expires_at, decided_at
+    id, books_id, conversation_id, message_id, tool, arguments, preview, basis, status, result, created_at, expires_at, decided_at, suggested, reason, summary, refs
 FROM
     assistant_proposal
 WHERE
@@ -246,6 +266,10 @@ func (q *Queries) ListProposals(ctx context.Context, arg ListProposalsParams) ([
 			&i.CreatedAt,
 			&i.ExpiresAt,
 			&i.DecidedAt,
+			&i.Suggested,
+			&i.Reason,
+			&i.Summary,
+			&i.Refs,
 		); err != nil {
 			return nil, err
 		}
@@ -257,9 +281,47 @@ func (q *Queries) ListProposals(ctx context.Context, arg ListProposalsParams) ([
 	return items, nil
 }
 
+const promoteProposal = `-- name: PromoteProposal :execrows
+UPDATE assistant_proposal
+SET
+    status = 'pending',
+    arguments = $1,
+    preview = $2,
+    basis = $3,
+    expires_at = $4
+WHERE
+    books_id = $5
+    AND id = $6
+    AND status = 'waiting'
+`
+
+type PromoteProposalParams struct {
+	Arguments []byte
+	Preview   []byte
+	Basis     string
+	ExpiresAt time.Time
+	BooksID   int64
+	ID        uuid.UUID
+}
+
+func (q *Queries) PromoteProposal(ctx context.Context, arg PromoteProposalParams) (int64, error) {
+	result, err := q.db.Exec(ctx, promoteProposal,
+		arg.Arguments,
+		arg.Preview,
+		arg.Basis,
+		arg.ExpiresAt,
+		arg.BooksID,
+		arg.ID,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const proposalByID = `-- name: ProposalByID :one
 SELECT
-    p.id, p.books_id, p.conversation_id, p.message_id, p.tool, p.arguments, p.preview, p.basis, p.status, p.result, p.created_at, p.expires_at, p.decided_at
+    p.id, p.books_id, p.conversation_id, p.message_id, p.tool, p.arguments, p.preview, p.basis, p.status, p.result, p.created_at, p.expires_at, p.decided_at, p.suggested, p.reason, p.summary, p.refs
 FROM
     assistant_proposal p
     JOIN assistant_conversation c ON c.id = p.conversation_id
@@ -294,6 +356,10 @@ func (q *Queries) ProposalByID(ctx context.Context, arg ProposalByIDParams) (Ass
 		&i.CreatedAt,
 		&i.ExpiresAt,
 		&i.DecidedAt,
+		&i.Suggested,
+		&i.Reason,
+		&i.Summary,
+		&i.Refs,
 	)
 	return i, err
 }
@@ -308,7 +374,7 @@ FROM
 WHERE
     p.books_id = $2
     AND p.id = $3
-    AND p.status = 'pending'
+    AND p.status IN ('pending', 'waiting')
     AND p.expires_at > $1
     AND c.id = p.conversation_id
     AND c.books_id = p.books_id

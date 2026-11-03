@@ -70,6 +70,8 @@ type ConversationRepository interface {
 	RejectProposal(ctx context.Context, booksID, memberID int64, id uuid.UUID, now time.Time) (bool, error)
 	AttachProposals(ctx context.Context, booksID int64, messageID uuid.UUID, ids []uuid.UUID) error
 	DiscardProposals(ctx context.Context, booksID int64, ids []uuid.UUID, at time.Time) error
+	// PromoteProposal moves a waiting proposal to pending with the arguments, preview, basis and expiry of p.
+	PromoteProposal(ctx context.Context, booksID int64, p domain.Proposal) (bool, error)
 }
 
 // Tools is the chat's tool set: what a proposal previews, executes and classifies.

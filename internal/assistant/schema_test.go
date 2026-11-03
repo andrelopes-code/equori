@@ -41,6 +41,12 @@ func TestSchema(t *testing.T) {
 		return `INSERT INTO assistant_proposal VALUES (gen_random_uuid(), $1, $2, NULL, 'create_transaction', '{}', '{}', $3, $4, NULL,
 			'2026-10-23T10:00:00Z', $5::timestamptz, $6::timestamptz)`, []any{a, conv, basis, status, expires, nilIfEmpty(decided)}
 	}
+	refProposal := func(status, basis, decided, refs string) (string, []any) {
+		return `INSERT INTO assistant_proposal (id, books_id, conversation_id, tool, arguments, preview, basis, status, refs,
+			created_at, expires_at, decided_at)
+			VALUES (gen_random_uuid(), $1, $2, 'create_transaction', '{}', '{}', $3, $4, $5::jsonb,
+			'2026-10-23T10:00:00Z', '2026-10-23T10:15:00Z', $6::timestamptz)`, []any{a, conv, basis, status, nilIfEmpty(refs), nilIfEmpty(decided)}
+	}
 	hash := strings.Repeat("a", 64)
 	other := func() (string, []any) { return msg(b, "user", "x", nil) }
 	tests := []struct {
@@ -76,6 +82,10 @@ func TestSchema(t *testing.T) {
 	add("executed without decided_at", func() (string, []any) { return proposal("executed", hash, "", "2026-10-23T10:15:00Z") }, checkViolation)
 	add("basis", func() (string, []any) { return proposal("pending", "abc", "", "2026-10-23T10:15:00Z") }, checkViolation)
 	add("expires_at equals created_at", func() (string, []any) { return proposal("pending", hash, "", "2026-10-23T10:00:00Z") }, checkViolation)
+	add("empty basis without refs", func() (string, []any) { return refProposal("pending", "", "", "") }, checkViolation)
+	add("waiting with decided_at", func() (string, []any) {
+		return refProposal("waiting", "", "2026-10-23T10:05:00Z", "{}")
+	}, checkViolation)
 
 	for _, tt := range tests {
 		_, err := pool.Exec(ctx, tt.sql, tt.args...)
@@ -83,6 +93,18 @@ func TestSchema(t *testing.T) {
 		pgErr, ok := errors.AsType[*pgconn.PgError](err)
 		if !ok || pgErr.Code != tt.code {
 			t.Errorf("%s: error = %v, want SQLSTATE %s", tt.name, err, tt.code)
+		}
+	}
+
+	for name, f := range map[string]func() (string, []any){
+		"waiting with empty basis and refs": func() (string, []any) { return refProposal("waiting", "", "", "{}") },
+		"blocked with decided_at": func() (string, []any) {
+			return refProposal("blocked", "", "2026-10-23T10:05:00Z", "{}")
+		},
+	} {
+		sql, args := f()
+		if _, err := pool.Exec(ctx, sql, args...); err != nil {
+			t.Errorf("%s rejected: %v", name, err)
 		}
 	}
 

@@ -157,9 +157,12 @@ type BookRole string
 // BooksMember defines model for BooksMember.
 type BooksMember struct {
 	CreatedAt time.Time `json:"created_at"`
-	Email     string    `json:"email"`
-	MemberId  int64     `json:"member_id"`
-	Role      BookRole  `json:"role"`
+
+	// DisplayName Absent while the member has not chosen one.
+	DisplayName *string  `json:"display_name,omitempty"`
+	Email       string   `json:"email"`
+	MemberId    int64    `json:"member_id"`
+	Role        BookRole `json:"role"`
 }
 
 // BooksMemberList defines model for BooksMemberList.
@@ -425,18 +428,24 @@ type TotpSetup struct {
 
 // UpdateUserInput defines model for UpdateUserInput.
 type UpdateUserInput struct {
-	Language *string `json:"language,omitempty"`
+	// DisplayName Trimmed; at most 60 characters, no control characters (422 validation_failed on
+	// display_name). An empty value clears it.
+	DisplayName *string `json:"display_name,omitempty"`
+	Language    *string `json:"language,omitempty"`
 }
 
 // User defines model for User.
 type User struct {
 	BookRole BookRole `json:"book_role"`
 	BooksId  int64    `json:"books_id"`
-	Email    string   `json:"email"`
-	Id       int64    `json:"id"`
-	Language string   `json:"language"`
-	Region   string   `json:"region"`
-	Role     UserRole `json:"role"`
+
+	// DisplayName Absent while the member has not chosen one.
+	DisplayName *string  `json:"display_name,omitempty"`
+	Email       string   `json:"email"`
+	Id          int64    `json:"id"`
+	Language    string   `json:"language"`
+	Region      string   `json:"region"`
+	Role        UserRole `json:"role"`
 }
 
 // UserRole defines model for User.Role.
@@ -619,7 +628,7 @@ type ServerInterface interface {
 	// GetCurrentUser Return the authenticated member.
 	// (GET /me)
 	GetCurrentUser(w http.ResponseWriter, r *http.Request)
-	// UpdateCurrentUser Change the language of the authenticated member.
+	// UpdateCurrentUser Change the language or the display name of the authenticated member.
 	// (PATCH /me)
 	UpdateCurrentUser(w http.ResponseWriter, r *http.Request)
 	// GetMemberAppearance Return the appearance choices of the authenticated member (ADR 029 BK21).
@@ -4063,7 +4072,7 @@ type StrictServerInterface interface {
 	// GetCurrentUser Return the authenticated member.
 	// (GET /me)
 	GetCurrentUser(ctx context.Context, request GetCurrentUserRequestObject) (GetCurrentUserResponseObject, error)
-	// UpdateCurrentUser Change the language of the authenticated member.
+	// UpdateCurrentUser Change the language or the display name of the authenticated member.
 	// (PATCH /me)
 	UpdateCurrentUser(ctx context.Context, request UpdateCurrentUserRequestObject) (UpdateCurrentUserResponseObject, error)
 	// GetMemberAppearance Return the appearance choices of the authenticated member (ADR 029 BK21).

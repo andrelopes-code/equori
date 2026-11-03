@@ -1839,10 +1839,15 @@
       margin-block-start: var(--slotted-space-6);
     }
 
-    [data-ui="field-group"][data-kind="section"] > [data-part="legend"] {
-      inline-size: 100%;
-      padding-block-end: var(--slotted-space-4);
-      border-block-end: var(--slotted-border-width-thin) solid var(--slotted-border-strong);
+    [data-ui="field-group"][data-kind="section"] {
+      margin-inline-start: calc(var(--slotted-space-6) * -1);
+      padding-inline-start: calc(var(--slotted-space-6) - var(--slotted-border-width-thick) * 1.5);
+      border-inline-start: calc(var(--slotted-border-width-thick) * 1.5) solid transparent;
+      transition: border-color var(--slotted-duration-short) var(--slotted-easing-standard);
+    }
+
+    [data-ui="field-group"][data-kind="section"]:is(:hover, :focus-within) {
+      border-inline-start-color: var(--slotted-tone-accent-solid);
     }
 
     &[data-slotted-scheme="light"] [data-ui="dialog"]:has([data-ui="command-palette"]) {
