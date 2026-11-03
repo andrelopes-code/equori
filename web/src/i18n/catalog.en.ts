@@ -1870,9 +1870,24 @@ export const catalogEn = {
   "overview.attention.empty": "Nothing needs a decision",
   "overview.block.edit": "Edit layout",
   "overview.block.label": "Overview blocks",
-  "overview.release": "Version {version} of equori is available.",
+  "overview.release":
+    "Version {version} of equori is available. This instance runs {current}.",
   "overview.release.notes": "See what changed",
   "overview.release.dismiss": "Dismiss",
+  "overview.release.upgrade": "How to upgrade",
+  "upgrade.title": "Upgrade to {version}",
+  "upgrade.compose.lead":
+    "Run one of these commands on the computer where equori is installed.",
+  "upgrade.compose.windows": "Windows (PowerShell)",
+  "upgrade.compose.unix": "macOS and Linux (Terminal)",
+  "upgrade.compose.backup":
+    "The data stays. Before it changes the database, equori writes a backup.",
+  "upgrade.managed":
+    "Install the new version the way this one was installed: brew upgrade equori with Homebrew, or the Windows installer of the release page.",
+  "upgrade.other":
+    "Install the new version the way this one was installed. The release page holds its files.",
+  "upgrade.help": "Upgrade and going back",
+  "upgrade.close": "Close",
   "overview.netWorth.title": "Net worth",
   "overview.netWorth.open": "Open net worth",
   "overview.netWorth.assets": "You own",

@@ -128,6 +128,12 @@ func Variables() []Variable {
 			DescriptionPT: "true remove o atributo Secure do cookie de sessão, o que um login em HTTP sem TLS a partir de outro computador exige (ADR 003).",
 		},
 		{
+			Name: "EQUORI_DISTRIBUTION", Reader: Binary, Kind: KindText,
+			Expected: "compose or empty", Example: "compose", Audience: Advanced,
+			Description:   "compose.yaml sets compose, so the notice of a newer release names the upgrade command of that form (A194).",
+			DescriptionPT: "O compose.yaml define compose, para que o aviso de nova versão mostre o comando de atualização dessa forma (A194).",
+		},
+		{
 			Name: "EQUORI_API_DOCS", Reader: Binary, Kind: KindBool, Default: "false",
 			Expected: "true or false", Example: "true", Audience: Install,
 			Description:   "true serves the API reference at /docs and the contract at /openapi.yaml, both without a session.",

@@ -26,7 +26,12 @@ func (s *Server) SetUpdateCheck(ctx context.Context, request SetUpdateCheckReque
 }
 
 func toVersionStatus(v app.VersionStatus) VersionStatus {
-	out := VersionStatus{Version: v.Version, UpdateCheck: v.UpdateCheck, Newer: v.Newer}
+	out := VersionStatus{
+		Version:      v.Version,
+		UpdateCheck:  v.UpdateCheck,
+		Newer:        v.Newer,
+		Distribution: VersionStatusDistribution(v.Distribution),
+	}
 
 	if v.Latest != nil {
 		out.Latest = &Release{Version: v.Latest.Version, Url: v.Latest.URL, CheckedAt: v.Latest.CheckedAt}

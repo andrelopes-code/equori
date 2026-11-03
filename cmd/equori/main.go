@@ -345,7 +345,12 @@ func serverConfig(cfg config.Config, clk *clock.Clock) server.Config {
 		SecureCookies: !cfg.InsecureCookies, Clock: clk, APIDocs: cfg.APIDocs,
 		SecretKey: cfg.SecretKey, PreviousSecretKey: cfg.PreviousSecretKey, AggregatorURLs: cfg.AggregatorURLs,
 		FeedURLs: cfg.FeedURLs,
-		Instance: instance.Config{Mode: mode, BackupDir: cfg.BackupDir, CopyDir: cfg.CopyDir},
+		Instance: instance.Config{
+			Mode:         mode,
+			BackupDir:    cfg.BackupDir,
+			CopyDir:      cfg.CopyDir,
+			Distribution: cfg.Distribution,
+		},
 	}
 }
 

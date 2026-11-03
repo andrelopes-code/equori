@@ -14,6 +14,8 @@ services:
       EQUORI_BACKUP_DIR: /backups
       EQUORI_POSTGRES_BIN: /usr/lib/postgresql/18/bin
       EQUORI_COPY_DIR: /copies
+      # A194: the notice of a newer release names the upgrade of this form.
+      EQUORI_DISTRIBUTION: compose
       # P14 A162.2: the install variables of .env; an empty value reads as unset.
       EQUORI_SECRET_KEY: ${EQUORI_SECRET_KEY:-}
       EQUORI_SECRET_KEY_PREVIOUS: ${EQUORI_SECRET_KEY_PREVIOUS:-}

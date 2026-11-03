@@ -28,7 +28,8 @@ type versionStatus struct {
 		URL       string    `json:"url"`
 		CheckedAt time.Time `json:"checked_at"`
 	} `json:"latest"`
-	Newer bool `json:"newer"`
+	Newer        bool   `json:"newer"`
+	Distribution string `json:"distribution"`
 }
 
 // releaseStub answers like the GitHub latest-release endpoint and records what it receives.
@@ -87,6 +88,31 @@ func TestS220VersionCheck(t *testing.T) {
 	h.Restart(apitest.Version("dev"), apitest.ReleaseURL(stub.URL))
 	checkVersion(t, h)
 	stub.wantRequests(t, 1)
+}
+
+// S272 (A194.2): managed mode wins over the variable compose.yaml sets.
+func TestS272Distribution(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		variable, mode, want string
+	}{
+		{variable: "compose", want: "compose"},
+		{want: "other"},
+		{mode: "managed", want: "managed"},
+		{variable: "compose", mode: "managed", want: "managed"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.want+"/"+tt.variable, func(t *testing.T) {
+			t.Parallel()
+
+			h := apitest.New(t, apitest.Distribution(tt.variable, tt.mode))
+
+			if got := getVersion(t, h).Distribution; got != tt.want {
+				t.Fatalf("distribution = %q, want %q", got, tt.want)
+			}
+		})
+	}
 }
 
 func TestA159FailedCheckKeepsAnswer(t *testing.T) {

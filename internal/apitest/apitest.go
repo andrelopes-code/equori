@@ -158,6 +158,11 @@ func ReleaseURL(url string) Option {
 	return func(c *server.Config) { c.Instance.ReleaseURL = url }
 }
 
+// Distribution sets EQUORI_DISTRIBUTION and the mode of the instance (A194).
+func Distribution(variable, mode string) Option {
+	return func(c *server.Config) { c.Instance.Distribution, c.Instance.Mode = variable, mode }
+}
+
 // SecretKey is the integration key Pluggy sets (32 bytes).
 const SecretKey = "equori-test-secret-key-32-bytes!" //nolint:gosec // G101: a fixed key for test databases only
 

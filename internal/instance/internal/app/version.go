@@ -13,6 +13,8 @@ type VersionStatus struct {
 	UpdateCheck *bool
 	Latest      *domain.Release
 	Newer       bool
+	// Distribution is compose, managed or other: the upgrade differs per form (A194.2).
+	Distribution string
 }
 
 // VersionStatus returns the binary version, the consent and the newest release found.
@@ -106,8 +108,25 @@ func (s *Service) versionStatus(ctx context.Context) (VersionStatus, error) {
 	s.versions.Lock()
 	defer s.versions.Unlock()
 
-	status := VersionStatus{Version: s.cfg.Version, UpdateCheck: settings.UpdateCheck, Latest: s.latest}
+	status := VersionStatus{
+		Version:      s.cfg.Version,
+		UpdateCheck:  settings.UpdateCheck,
+		Latest:       s.latest,
+		Distribution: s.distribution(),
+	}
 	status.Newer = s.latest != nil && domain.Newer(s.cfg.Version, s.latest.Version)
 
 	return status, nil
+}
+
+// distribution names the form of the instance; managed mode wins over the variable (A194.2).
+func (s *Service) distribution() string {
+	switch {
+	case s.cfg.Mode == "managed":
+		return "managed"
+	case s.cfg.Distribution == "compose":
+		return "compose"
+	default:
+		return "other"
+	}
 }

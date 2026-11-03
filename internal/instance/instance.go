@@ -54,6 +54,8 @@ type Config struct {
 	Environment []string
 	Log         func() []logring.Record
 	ReleaseURL  string // "" is LatestReleaseURL
+	// Distribution is EQUORI_DISTRIBUTION: "compose" names the form of compose.yaml (A194.1).
+	Distribution string
 	// Set by internal/server.
 	Version                      string
 	SecretKey, PreviousSecretKey string
@@ -80,16 +82,17 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*Module, error) {
 	}
 
 	svc := app.NewService(postgres.NewRepository(pool), postgres.NewCatalog(pool), releases.NewClient(cmp.Or(cfg.ReleaseURL, LatestReleaseURL)), cfg.Admins, box, cfg.Clock, app.Config{
-		BackupDir:   cfg.BackupDir,
-		CopyDir:     cfg.CopyDir,
-		Dump:        cfg.Dump,
-		Schema:      schema,
-		Mode:        cfg.Mode,
-		Version:     cfg.Version,
-		Environment: cfg.Environment,
-		Log:         cfg.Log,
-		Outbox:      cfg.Outbox,
-		Connections: connections(cfg.Connections),
+		BackupDir:    cfg.BackupDir,
+		CopyDir:      cfg.CopyDir,
+		Dump:         cfg.Dump,
+		Schema:       schema,
+		Mode:         cfg.Mode,
+		Distribution: cfg.Distribution,
+		Version:      cfg.Version,
+		Environment:  cfg.Environment,
+		Log:          cfg.Log,
+		Outbox:       cfg.Outbox,
+		Connections:  connections(cfg.Connections),
 	}, log)
 
 	return &Module{svc: svc, http: httpapi.NewServer(svc, log)}, nil

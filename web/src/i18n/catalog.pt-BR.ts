@@ -1889,9 +1889,24 @@ export const catalogPtBR: Catalog = {
   "overview.attention.empty": "Nada pede decisão agora",
   "overview.block.edit": "Editar layout",
   "overview.block.label": "Blocos da visão geral",
-  "overview.release": "A versão {version} do equori está disponível.",
+  "overview.release":
+    "A versão {version} do equori está disponível. Esta instância está na {current}.",
   "overview.release.notes": "Ver o que mudou",
   "overview.release.dismiss": "Dispensar",
+  "overview.release.upgrade": "Como atualizar",
+  "upgrade.title": "Atualizar para a {version}",
+  "upgrade.compose.lead":
+    "Execute um destes comandos no computador em que o equori está instalado.",
+  "upgrade.compose.windows": "Windows (PowerShell)",
+  "upgrade.compose.unix": "macOS e Linux (Terminal)",
+  "upgrade.compose.backup":
+    "Os dados ficam. Antes de alterar o banco, o equori grava um backup.",
+  "upgrade.managed":
+    "Instale a nova versão pelo mesmo meio desta: brew upgrade equori no Homebrew, ou o instalador do Windows da página da versão.",
+  "upgrade.other":
+    "Instale a nova versão pelo mesmo meio desta. A página da versão traz os arquivos.",
+  "upgrade.help": "Atualizar e voltar à versão anterior",
+  "upgrade.close": "Fechar",
   "overview.netWorth.title": "Patrimônio líquido",
   "overview.netWorth.open": "Abrir patrimônio líquido",
   "overview.netWorth.assets": "Você tem",

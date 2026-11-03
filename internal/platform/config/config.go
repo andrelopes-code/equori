@@ -30,6 +30,8 @@ type Config struct {
 	LogLevel slog.Level
 	// InsecureCookies drops the Secure cookie attribute for plain-HTTP LAN deployments (ADR 003).
 	InsecureCookies bool
+	// Distribution is EQUORI_DISTRIBUTION, which compose.yaml sets to compose (A194.1).
+	Distribution string
 	// APIDocs serves the API reference at /docs and the contract at /openapi.yaml without a session.
 	APIDocs bool
 	// SecretKey and PreviousSecretKey seal integration credentials (ADR 008): 32 raw bytes,
@@ -231,6 +233,8 @@ func (c *Config) store(v Variable, n named, value string) {
 		_ = c.LogLevel.UnmarshalText([]byte(value))
 	case "EQUORI_INSECURE_COOKIES":
 		c.InsecureCookies, _ = strconv.ParseBool(value)
+	case "EQUORI_DISTRIBUTION":
+		c.Distribution = value
 	case "EQUORI_API_DOCS":
 		c.APIDocs, _ = strconv.ParseBool(value)
 	case "EQUORI_SECRET_KEY":
