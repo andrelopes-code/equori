@@ -40,6 +40,23 @@ const questionChoicesRule = `
 }
 `;
 
+// Owner review of 2026-11-03: an empty or failed region spoke louder than the page around it. Its
+// title reads at the body size, and the page-wide one a step above; the inline one keeps its own
+// small size.
+const resultStateRule = `
+[data-ui="result-state"] {
+  --slotted-result-state-title-font-size: var(--slotted-font-size-md);
+}
+
+[data-ui="result-state"][data-reach="page"] {
+  --slotted-result-state-title-font-size: var(--slotted-font-size-lg);
+}
+
+[data-ui="result-state"][data-reach="inline"] {
+  --slotted-result-state-title-font-size: var(--slotted-font-size-sm);
+}
+`;
+
 // Owner review of 2026-11-02 (trial): a section title spaced further from the fields read as a
 // label, and a change of background does not show where the page has the same background. The
 // section reserves a bar in the gutter, transparent at rest, so the content stays aligned with
@@ -243,6 +260,14 @@ export default extendTheme(
       },
     },
     base: {
+      // The steps above the body text read large for what they head: an empty region, a dialog,
+      // a section and the figure of a card spoke louder than the page around them. Each step from
+      // lg up moves one size down; the order of the scale stays.
+      "--slotted-font-size-lg": "0.9375rem",
+      "--slotted-font-size-xl": "1rem",
+      "--slotted-font-size-2xl": "1.125rem",
+      "--slotted-font-size-3xl": "1.25rem",
+      "--slotted-font-size-4xl": "1.75rem",
       // The default scale reads loose at the 12 to 18 px of an interface: a description that wraps
       // showed a gap between its lines. Text keeps the pair of its size, closer to 1.3.
       "--slotted-line-height-xs": "1.25",
@@ -315,6 +340,7 @@ export default extendTheme(
       questionLegendRule,
       questionChoicesRule,
       sectionRule,
+      resultStateRule,
       paletteScrimRule,
       sheetSlideRule,
       tooltipArrowFadeRule,

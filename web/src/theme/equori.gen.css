@@ -73,11 +73,11 @@
     --slotted-font-size-xs: 0.75rem;
     --slotted-font-size-sm: 0.8125rem;
     --slotted-font-size-md: 0.875rem;
-    --slotted-font-size-lg: 1rem;
-    --slotted-font-size-xl: 1.125rem;
-    --slotted-font-size-2xl: 1.25rem;
-    --slotted-font-size-3xl: 1.5rem;
-    --slotted-font-size-4xl: 2rem;
+    --slotted-font-size-lg: 0.9375rem;
+    --slotted-font-size-xl: 1rem;
+    --slotted-font-size-2xl: 1.125rem;
+    --slotted-font-size-3xl: 1.25rem;
+    --slotted-font-size-4xl: 1.75rem;
     --slotted-line-height-xs: 1.25;
     --slotted-line-height-sm: 1.3;
     --slotted-line-height-md: 1.3;
@@ -1848,6 +1848,18 @@
 
     [data-ui="field-group"][data-kind="section"]:is(:hover, :focus-within) {
       border-inline-start-color: var(--slotted-tone-accent-solid);
+    }
+
+    [data-ui="result-state"] {
+      --slotted-result-state-title-font-size: var(--slotted-font-size-md);
+    }
+
+    [data-ui="result-state"][data-reach="page"] {
+      --slotted-result-state-title-font-size: var(--slotted-font-size-lg);
+    }
+
+    [data-ui="result-state"][data-reach="inline"] {
+      --slotted-result-state-title-font-size: var(--slotted-font-size-sm);
     }
 
     &[data-slotted-scheme="light"] [data-ui="dialog"]:has([data-ui="command-palette"]) {
