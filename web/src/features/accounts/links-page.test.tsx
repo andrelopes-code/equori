@@ -444,7 +444,7 @@ describe("Account links", () => {
         name: words("links.deleteOf", { name: connectionFixture.name }),
       }),
     );
-    const dialog = await screen.findByRole("dialog");
+    const dialog = await screen.findByRole("alertdialog");
     expect(
       within(dialog).getByText(catalogEn["links.deleteHint"]),
     ).toBeVisible();
@@ -457,7 +457,7 @@ describe("Account links", () => {
       expect(log).toEqual([{ route: "delete" }]);
     });
     await waitFor(() => {
-      expect(screen.queryByRole("dialog")).toBeNull();
+      expect(screen.queryByRole("alertdialog")).toBeNull();
     });
   });
 });

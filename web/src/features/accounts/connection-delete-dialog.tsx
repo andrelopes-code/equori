@@ -1,22 +1,10 @@
-import { Button } from "@slotted/react/button";
-import {
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@slotted/react/dialog";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { useState } from "react";
 
 import { errorText } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
 import { useDeleteConnection } from "@/features/accounts/api";
 import { useT } from "@/i18n/i18n-provider";
-import { useOverlayOpen } from "@/ui/use-overlay-open";
-import { useStableCallback } from "@/ui/use-stable-callback";
+import { ConfirmDialog } from "@/ui/confirm-dialog";
 
 type Connection = components["schemas"]["Connection"];
 
@@ -29,47 +17,28 @@ export function ConnectionDeleteDialog({
   onClose: () => void;
 }) {
   const t = useT();
-  const overlayOpen = useOverlayOpen();
   const remove = useDeleteConnection();
   const [error, setError] = useState<string | null>(null);
-  const change = useStableCallback((open: boolean) => {
-    if (!open) onClose();
-  });
+
+  function handleConfirm() {
+    setError(null);
+    remove
+      .mutateAsync(connection.id)
+      .then(onClose)
+      .catch((caught: unknown) => {
+        setError(errorText(caught, t));
+      });
+  }
+
   return (
-    <Dialog open={overlayOpen} size="sm" onOpenChange={change}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>
-            {t("links.deleteTitle", { name: connection.name })}
-          </DialogTitle>
-          <DialogDescription>{t("links.deleteHint")}</DialogDescription>
-        </DialogHeader>
-        <DialogBody>
-          {error !== null && (
-            <InlineMessage tone="danger">{error}</InlineMessage>
-          )}
-        </DialogBody>
-        <DialogFooter>
-          <Button variant="ghost" tone="secondary" onClick={onClose}>
-            {t("detail.cancel")}
-          </Button>
-          <Button
-            tone="danger"
-            loading={remove.isPending}
-            onClick={() => {
-              setError(null);
-              remove
-                .mutateAsync(connection.id)
-                .then(onClose)
-                .catch((caught: unknown) => {
-                  setError(errorText(caught, t));
-                });
-            }}
-          >
-            {t("links.deleteConfirm")}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <ConfirmDialog
+      title={t("links.deleteTitle", { name: connection.name })}
+      description={t("links.deleteHint")}
+      confirmLabel={t("links.deleteConfirm")}
+      pending={remove.isPending}
+      error={error}
+      onConfirm={handleConfirm}
+      onCancel={onClose}
+    />
   );
 }
