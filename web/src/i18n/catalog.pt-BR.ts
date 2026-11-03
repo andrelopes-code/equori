@@ -1439,6 +1439,10 @@ export const catalogPtBR: Catalog = {
   "assistant.proposal.status.discarded": "Descartada",
   "assistant.proposal.status.waiting": "Aguardando",
   "assistant.proposal.status.blocked": "Bloqueada",
+  "assistant.proposal.suggested": "Sugestão",
+  "assistant.proposal.waiting": "Aguarda a confirmação de: {actions}",
+  "assistant.proposal.blocked":
+    "Não executada: a proposta de que depende não foi confirmada.",
   "assistant.step.list_accounts": "Lendo contas",
   "assistant.step.get_balances": "Lendo saldos",
   "assistant.step.search_transactions": "Buscando transações",

@@ -40,6 +40,7 @@ export function ConversationFeed({
             >
               <MessageItem
                 message={m}
+                conversationId={turn.conversationId}
                 onRetry={m === last && !orphan ? onRetry : undefined}
                 steps={turn.activity[m.id]}
                 reveal={

@@ -327,6 +327,72 @@ describe("ProposalCard", () => {
     ).toBeNull();
   });
 
+  it("labels a suggested card and gives its reason", () => {
+    renderWithProviders(
+      <ProposalCard
+        proposal={{ ...pending, suggested: true, reason: "Repeats monthly" }}
+      />,
+      { fetch: fakeApi({}) },
+    );
+    expect(
+      screen.getByText(catalogEn["assistant.proposal.suggested"]),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Repeats monthly")).toBeInTheDocument();
+  });
+
+  it("shows no suggestion label on a requested card", () => {
+    renderWithProviders(<ProposalCard proposal={pending} />, {
+      fetch: fakeApi({}),
+    });
+    expect(
+      screen.queryByText(catalogEn["assistant.proposal.suggested"]),
+    ).toBeNull();
+  });
+
+  it("shows a waiting card with its summary, its parents and no buttons", () => {
+    const parent = { ...pending, id: "p0" };
+    const waiting: Proposal = {
+      ...pending,
+      id: "p2",
+      status: "waiting",
+      summary: "Create the subscription",
+      waiting_for: ["p0", "p3"],
+    };
+    const other = {
+      ...pending,
+      id: "p3",
+      preview: { ...pending.preview, action: "manage_schedule.create" },
+    };
+    renderWithProviders(
+      <ProposalCard proposal={waiting} siblings={[parent, waiting, other]} />,
+      { fetch: fakeApi({}) },
+    );
+    expect(screen.getByText("Create the subscription")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Waits for the confirmation of: Record transaction, Create schedule",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(catalogEn["assistant.proposal.status.waiting"]),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("button")).toBeNull();
+  });
+
+  it("shows a blocked card with its text and no buttons", () => {
+    renderWithProviders(
+      <ProposalCard proposal={{ ...pending, status: "blocked" }} />,
+      { fetch: fakeApi({}) },
+    );
+    expect(
+      screen.getByText(catalogEn["assistant.proposal.blocked"]),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(catalogEn["assistant.proposal.status.blocked"]),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("button")).toBeNull();
+  });
+
   it("offers no confirm all for one pending proposal", () => {
     renderWithProviders(
       <MessageItem

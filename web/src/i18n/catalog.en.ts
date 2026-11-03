@@ -1432,6 +1432,10 @@ export const catalogEn = {
   "assistant.proposal.status.discarded": "Discarded",
   "assistant.proposal.status.waiting": "Waiting",
   "assistant.proposal.status.blocked": "Blocked",
+  "assistant.proposal.suggested": "Suggestion",
+  "assistant.proposal.waiting": "Waits for the confirmation of: {actions}",
+  "assistant.proposal.blocked":
+    "Not executed: the proposal it depends on was not confirmed.",
   "assistant.step.list_accounts": "Reading accounts",
   "assistant.step.get_balances": "Reading balances",
   "assistant.step.search_transactions": "Searching transactions",

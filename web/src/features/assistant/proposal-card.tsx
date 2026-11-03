@@ -10,18 +10,21 @@ import { Link } from "@slotted/react/link";
 import { Text } from "@slotted/react/typography";
 import { useEffect, useRef } from "react";
 
-import { errorText } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
 import styles from "@/features/assistant/assistant-panel.module.css";
 import {
   useConfirmProposal,
   useRejectProposal,
 } from "@/features/assistant/api";
-import { catalogKey } from "@/features/assistant/catalog-key";
 import type { Decision } from "@/features/assistant/confirm-all";
 import { ProposalActions } from "@/features/assistant/proposal-actions";
+import {
+  actionTitle,
+  proposalCardState,
+} from "@/features/assistant/proposal-card-state";
 import { ProposalChanges } from "@/features/assistant/proposal-changes";
-import { proposalScreen } from "@/features/assistant/proposal-screen";
+import { ProposalSuggestion } from "@/features/assistant/proposal-suggestion";
+import { ProposalWaiting } from "@/features/assistant/proposal-waiting";
 import { useExpired } from "@/features/assistant/use-expired";
 import { useValueText } from "@/features/assistant/use-value-text";
 import { useT } from "@/i18n/i18n-provider";
@@ -45,6 +48,8 @@ const tones = {
 
 interface ProposalCardProps {
   proposal: Proposal;
+  // The proposals of the answer, for a card that waits for others.
+  siblings?: readonly Proposal[];
   // The last card of a new answer brings its actions into view (P13).
   reveal?: boolean;
   // The outcome of this proposal in a "confirm all" of its answer (P17).
@@ -60,6 +65,7 @@ interface ProposalCardProps {
 // keeps its changes and says its outcome in the header.
 export function ProposalCard({
   proposal,
+  siblings = [],
   reveal = false,
   decision,
   locked = false,
@@ -82,25 +88,16 @@ export function ProposalCard({
   const error = confirm.error ?? reject.error ?? decision?.error ?? null;
   // The server's answer to a confirm in flight wins over the timer (P15).
   const passed = useExpired(shown.expires_at, shown.status === "pending");
-  const status =
-    shown.status === "pending" && passed && !busy ? "expired" : shown.status;
+  const { status, hint, failure, outcome, screen } = proposalCardState({
+    shown,
+    passed,
+    busy,
+    error,
+    t,
+  });
   const pending = status === "pending";
   const destructive = preview.destructive === true;
-  const actionKey = catalogKey(`assistant.action.${preview.action}`);
-  const detail =
-    shown.status === "failed" ? failureDetail(shown.result) : undefined;
-  const screen =
-    shown.status === "executed"
-      ? proposalScreen(shown.tool, shown.result)
-      : undefined;
   const opens = screen !== undefined && served({ href: screen });
-  const hint = status === "stale" || status === "expired";
-  const failure = error === null ? undefined : errorText(error, t);
-  // What a decided card says under its changes: why it failed, or why to ask again.
-  const outcome =
-    detail ??
-    failure ??
-    (hint ? t(`assistant.proposal.hint.${status}`) : undefined);
 
   function handleConfirm() {
     if (busy) return;
@@ -121,7 +118,7 @@ export function ProposalCard({
       <CardHeader>
         <span className={styles.proposalTitle}>
           <Text size="sm" weight="semibold">
-            {actionKey === undefined ? preview.action : t(actionKey)}
+            {actionTitle(preview.action, t)}
           </Text>
           {preview.target !== undefined && (
             <Text size="sm" tone="muted">
@@ -139,7 +136,12 @@ export function ProposalCard({
       </CardHeader>
 
       <CardBody>
-        <ProposalChanges changes={preview.changes} />
+        {status === "waiting" ? (
+          <ProposalWaiting proposal={shown} siblings={siblings} />
+        ) : (
+          <ProposalChanges changes={preview.changes} />
+        )}
+        {shown.suggested && <ProposalSuggestion reason={shown.reason} />}
       </CardBody>
 
       {pending && (
@@ -168,6 +170,14 @@ export function ProposalCard({
         </CardFooter>
       )}
 
+      {status === "blocked" && (
+        <CardFooter>
+          <Text size="sm" tone="muted">
+            {t("assistant.proposal.blocked")}
+          </Text>
+        </CardFooter>
+      )}
+
       {!pending && outcome !== undefined && (
         <CardFooter>
           <Text
@@ -181,12 +191,4 @@ export function ProposalCard({
       )}
     </Card>
   );
-}
-
-function failureDetail(result: unknown): string | undefined {
-  if (typeof result !== "object" || result === null) return undefined;
-
-  const detail = (result as { detail?: unknown }).detail;
-
-  return typeof detail === "string" ? detail : undefined;
 }

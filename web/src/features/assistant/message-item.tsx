@@ -12,8 +12,10 @@ import { Button, IconButton } from "@slotted/react/button";
 import { Markdown } from "@slotted/react/markdown";
 import { Stack } from "@slotted/react/stack";
 import { Text } from "@slotted/react/typography";
+import { useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 
+import { assistantKeys } from "@/features/assistant/api";
 import styles from "@/features/assistant/assistant-panel.module.css";
 import type { AssistantMessage } from "@/features/assistant/sse";
 import { parseAnswer } from "@/features/assistant/answer-markdown";
@@ -32,12 +34,15 @@ import { usePrivacy } from "@/privacy/privacy-provider";
 
 export function MessageItem({
   message,
+  conversationId,
   onRetry,
   steps,
   reveal = false,
   streaming = false,
 }: {
   message: AssistantMessage;
+  // The stored conversation, refetched after a decision so a promoted card shows its preview.
+  conversationId?: string | undefined;
   onRetry?: (() => void) | undefined;
   // The steps of the turn that produced this answer, when this session saw it.
   steps?: string[] | undefined;
@@ -47,6 +52,7 @@ export function MessageItem({
   streaming?: boolean;
 }) {
   const t = useT();
+  const queryClient = useQueryClient();
   const { hidden } = usePrivacy();
   const own = message.role === "user";
   const [decisions, setDecisions] = useState<Record<string, Decision>>({});
@@ -54,9 +60,15 @@ export function MessageItem({
   const [running, setRunning] = useState(false);
   const decide = (id: string, decision: Decision) => {
     setDecisions((d) => ({ ...d, [id]: decision }));
+    if (conversationId !== undefined)
+      void queryClient.invalidateQueries({
+        queryKey: assistantKeys.conversation(conversationId),
+      });
   };
   const open = message.proposals.filter(
-    (p) => p.status === "pending" && decisions[p.id] === undefined,
+    (p) =>
+      (p.status === "pending" || p.status === "waiting") &&
+      decisions[p.id] === undefined,
   );
   const lastOpen = open.at(-1)?.id;
   const unanswered =
@@ -121,6 +133,7 @@ export function MessageItem({
               <ProposalCard
                 key={proposal.id}
                 proposal={proposal}
+                siblings={message.proposals}
                 reveal={reveal && proposal.id === lastOpen}
                 decision={decisions[proposal.id]}
                 locked={running}
