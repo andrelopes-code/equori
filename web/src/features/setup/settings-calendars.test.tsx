@@ -19,7 +19,7 @@ const holidays2026 = [
 ];
 
 // A neutral region: the default calendar is weekend, and one calendar rests on Friday and Saturday.
-function api(region = "DE") {
+function api(region = "DE", language = "en", extra: object[] = []) {
   const years: string[] = [];
   const fetch = fakeApi(
     accountRoutes({
@@ -28,7 +28,7 @@ function api(region = "DE") {
           id: 1,
           email: "a@b.c",
           role: "admin",
-          language: "en",
+          language,
           region,
         }),
       "GET /api/v1/calendars": () =>
@@ -43,7 +43,9 @@ function api(region = "DE") {
       "GET /api/v1/calendars/gulf/holidays": (req) => {
         const year = new URL(req.url).searchParams.get("year") ?? "";
         years.push(year);
-        return json(200, { items: year === "2026" ? holidays2026 : [] });
+        return json(200, {
+          items: year === "2026" ? [...holidays2026, ...extra] : [],
+        });
       },
     }),
   );
@@ -111,6 +113,23 @@ describe("Calendars section", () => {
     ).toBeInTheDocument();
     expect(screen.getByRole("list", { name: "December" })).toBeInTheDocument();
     expect(router.state.location.search).toMatchObject({ calendar: "gulf" });
+  });
+
+  it("names a rule holiday in the language of the user and keeps the name the server sent otherwise", async () => {
+    const { fetch } = api("DE", "pt", [
+      {
+        date: "2026-05-01",
+        name: "Labour Day",
+        code: "labour_day",
+        source: "rule",
+      },
+    ]);
+    await renderApp("/settings?section=calendars&calendar=gulf", { fetch });
+    // The code has a text in the catalog; the other rule holiday has none and reads as sent.
+    expect(await screen.findByText("Dia do Trabalho")).toBeInTheDocument();
+    expect(screen.queryByText("Labour Day")).toBeNull();
+    expect(screen.getByText("Spring Day")).toBeInTheDocument();
+    expect(screen.getByText("Local Day")).toBeInTheDocument();
   });
 
   it("steps the year and says so when only weekends are not business days", async () => {

@@ -13,15 +13,21 @@ func TestHolidaysAPI(t *testing.T) {
 	h := apitest.New(t)
 	var out struct {
 		Items []struct {
-			Date   string `json:"date"`
-			Name   string `json:"name"`
-			Source string `json:"source"`
+			Date   string  `json:"date"`
+			Name   string  `json:"name"`
+			Code   *string `json:"code"`
+			Source string  `json:"source"`
 		} `json:"items"`
 	}
 	h.MustDo(http.MethodGet, "/api/v1/calendars/br_banking/holidays?year=2026", nil, http.StatusOK, &out)
 
 	if len(out.Items) != 13 || out.Items[1].Date != "2026-02-16" || out.Items[1].Source != "rule" {
 		t.Fatalf("holidays = %+v", out.Items)
+	}
+
+	// The code is the stable key a client translates; the name stays the English fallback.
+	if c := out.Items[0].Code; c == nil || *c != "new_years_day" || out.Items[0].Name != "New Year's Day" {
+		t.Fatalf("first holiday = %+v", out.Items[0])
 	}
 
 	h.ExpectProblem(h.Do(http.MethodGet, "/api/v1/calendars/mars/holidays?year=2026", nil), http.StatusNotFound, "not_found", "")

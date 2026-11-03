@@ -24,6 +24,7 @@ import type { components } from "@/api/schema.gen";
 import {
   calendarLabel,
   calendarsQuery,
+  holidayName,
   holidaysQuery,
 } from "@/features/planning";
 import { CalendarDay } from "@/features/setup/calendar-day";
@@ -251,7 +252,7 @@ export function SettingsCalendars() {
                               <CalendarDay {...fmt.tile(h.date)} />
                             </ListItemStart>
                             <ListItemBody>
-                              <ListItemLabel>{h.name}</ListItemLabel>
+                              <ListItemLabel>{holidayName(t, h)}</ListItemLabel>
                               <ListItemDescription>
                                 {fmt.date(h.date)}
                               </ListItemDescription>

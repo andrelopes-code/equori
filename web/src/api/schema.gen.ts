@@ -5326,7 +5326,10 @@ export interface components {
         Holiday: {
             /** Format: date */
             date: string;
+            /** @description English text of a rule holiday, or the text typed for an instance holiday. */
             name: string;
+            /** @description Stable key of a rule holiday, which a client translates; absent for an instance holiday. */
+            code?: string;
             /** @enum {string} */
             source: "rule" | "instance";
         };

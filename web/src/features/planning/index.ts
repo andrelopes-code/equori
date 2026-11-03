@@ -21,6 +21,7 @@ export {
 } from "@/features/planning/budget-month";
 export type { BudgetState, Figures } from "@/features/planning/budget-month";
 export { calendarLabel } from "@/features/planning/calendar-label";
+export { holidayName } from "@/features/planning/holiday-name";
 export { kindLabel } from "@/features/planning/schedule-words";
 export { OccurrenceActions } from "@/features/planning/occurrence-actions";
 export { RealizedOccurrences } from "@/features/planning/realized-occurrences";

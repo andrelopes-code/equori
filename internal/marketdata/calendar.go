@@ -26,7 +26,9 @@ const (
 )
 
 type Holiday struct {
-	Date   time.Time
+	Date time.Time
+	// Code is the stable key of a rule holiday; an instance holiday has none.
+	Code   string
 	Name   string
 	Source string // "rule" or "instance"
 }
@@ -63,7 +65,7 @@ func (m *Module) Holidays(ctx context.Context, name string, year int) ([]Holiday
 
 	var hs []Holiday
 	for _, h := range cal.Holidays(year) {
-		hs = append(hs, Holiday{Date: h.Date, Name: h.Name, Source: "rule"})
+		hs = append(hs, Holiday{Date: h.Date, Code: h.Code, Name: h.Name, Source: "rule"})
 	}
 
 	rows, err := m.q.ListInstanceHolidays(ctx, postgres.ListInstanceHolidaysParams{

@@ -12,8 +12,11 @@ type Calendar struct {
 	Rules   []Rule
 }
 
-// Rule is one holiday. From and To bound the years it applies to; zero means unbounded.
+// Rule is one holiday. Code is its stable key, `^[a-z0-9_]{2,40}$`, which a client translates;
+// Name is the English text it falls back to. From and To bound the years it applies to; zero
+// means unbounded.
 type Rule struct {
+	Code     string
 	Name     string
 	Date     DateRule
 	Observed Observed
@@ -22,6 +25,7 @@ type Rule struct {
 
 type Holiday struct {
 	Date time.Time
+	Code string
 	Name string
 }
 
@@ -33,7 +37,7 @@ func (c Calendar) Holidays(year int) []Holiday {
 			continue
 		}
 
-		out = append(out, Holiday{Date: r.Observed.apply(r.Date.dateIn(year)), Name: r.Name})
+		out = append(out, Holiday{Date: r.Observed.apply(r.Date.dateIn(year)), Code: r.Code, Name: r.Name})
 	}
 
 	slices.SortStableFunc(out, func(a, b Holiday) int { return a.Date.Compare(b.Date) })

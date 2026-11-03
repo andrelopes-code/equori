@@ -1,6 +1,7 @@
 package calendar_test
 
 import (
+	"regexp"
 	"slices"
 	"testing"
 	"time"
@@ -41,6 +42,23 @@ func TestBRBankingMatchesThePreviousRules(t *testing.T) {
 
 	if len(calendar.BRBanking().Holidays(2023)) != 12 {
 		t.Fatal("Black Consciousness Day must start in 2024")
+	}
+}
+
+func TestBRBankingRuleCodes(t *testing.T) {
+	pattern := regexp.MustCompile(`^[a-z0-9_]{2,40}$`)
+	seen := map[string]bool{}
+
+	for _, r := range calendar.BRBanking().Rules {
+		if !pattern.MatchString(r.Code) {
+			t.Errorf("%q has code %q, want %s", r.Name, r.Code, pattern)
+		}
+
+		if seen[r.Code] {
+			t.Errorf("code %q is used twice", r.Code)
+		}
+
+		seen[r.Code] = true
 	}
 }
 

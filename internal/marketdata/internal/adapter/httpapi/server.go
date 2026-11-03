@@ -86,8 +86,13 @@ func (s *Server) ListCalendars(ctx context.Context, _ ListCalendarsRequestObject
 }
 
 // NewHoliday builds the API representation; the module root uses it in its HolidayLister.
-func NewHoliday(date openapi_types.Date, name, source string) Holiday {
-	return Holiday{Date: date, Name: name, Source: HolidaySource(source)}
+func NewHoliday(date openapi_types.Date, code, name, source string) Holiday {
+	h := Holiday{Date: date, Name: name, Source: HolidaySource(source)}
+	if code != "" {
+		h.Code = &code
+	}
+
+	return h
 }
 
 // ToProblem maps the module's errors to the codes declared in api/openapi.yaml (ADR 004).

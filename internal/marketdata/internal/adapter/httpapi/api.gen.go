@@ -217,9 +217,13 @@ type FixedIncomeTermsInput struct {
 
 // Holiday defines model for Holiday.
 type Holiday struct {
-	Date   openapi_types.Date `json:"date"`
-	Name   string             `json:"name"`
-	Source HolidaySource      `json:"source"`
+	// Code Stable key of a rule holiday, which a client translates; absent for an instance holiday.
+	Code *string            `json:"code,omitempty"`
+	Date openapi_types.Date `json:"date"`
+
+	// Name English text of a rule holiday, or the text typed for an instance holiday.
+	Name   string        `json:"name"`
+	Source HolidaySource `json:"source"`
 }
 
 // HolidaySource defines model for Holiday.Source.

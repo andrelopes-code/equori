@@ -135,7 +135,7 @@ func (m *Module) listHolidays(ctx context.Context, calendar string, year int) ([
 
 	out := make([]httpapi.Holiday, len(hs))
 	for i, h := range hs {
-		out[i] = httpapi.NewHoliday(openapi_types.Date{Time: h.Date}, h.Name, h.Source)
+		out[i] = httpapi.NewHoliday(openapi_types.Date{Time: h.Date}, h.Code, h.Name, h.Source)
 	}
 
 	return out, nil

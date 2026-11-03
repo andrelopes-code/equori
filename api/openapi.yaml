@@ -9374,6 +9374,11 @@ components:
           format: date
         name:
           type: string
+          description: English text of a rule holiday, or the text typed for an instance holiday.
+        code:
+          type: string
+          pattern: "^[a-z0-9_]{2,40}$"
+          description: Stable key of a rule holiday, which a client translates; absent for an instance holiday.
         source:
           type: string
           enum: [rule, instance]
