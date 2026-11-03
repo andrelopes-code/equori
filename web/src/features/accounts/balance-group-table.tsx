@@ -99,7 +99,13 @@ export function BalanceGroupTable({
                             )}
                           </Inline>
                           {institution !== undefined && (
-                            <Text size="xs" tone="muted">
+                            <Text
+                              className={
+                                row.account.kind === "credit_card" ? "ml-3" : ""
+                              }
+                              size="xs"
+                              tone="muted"
+                            >
                               {institution.name}
                             </Text>
                           )}
