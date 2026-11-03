@@ -35,7 +35,8 @@ var exclusions = map[string]bool{
 
 // withoutOperation are the tools that map to no operation, with the reason.
 var withoutOperation = map[string]string{
-	"get_help": "answers from the guide and the navigation map, not from an operation",
+	"get_help":       "answers from the guide and the navigation map, not from an operation",
+	"find_recurring": "derived view for agents over transactions; no screen lists it",
 }
 
 func operationIDs(t *testing.T) []string {

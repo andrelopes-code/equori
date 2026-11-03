@@ -27,12 +27,15 @@ type Ledger interface {
 	// Accounts returns the book's accounts and categories by ID.
 	Accounts(ctx context.Context, booksID int64) (map[uuid.UUID]Account, error)
 	BaseCurrency(ctx context.Context, booksID int64) (money.Currency, error)
+	// PayeeNames returns the names of the book's live payees by ID.
+	PayeeNames(ctx context.Context, booksID int64) (map[uuid.UUID]string, error)
 }
 
 func Tools(svc *app.Service, l Ledger, clk clock.Clock) []tool.Tool {
 	return []tool.Tool{
 		listSchedules(svc, l, clk), getBudgetsAndGoals(svc, l, clk), projectBalance(svc, l),
 		manageSchedule(svc, l, clk), manageOccurrence(svc), manageBudgetOrGoal(svc, l, clk),
+		findRecurring(svc, l),
 	}
 }
 

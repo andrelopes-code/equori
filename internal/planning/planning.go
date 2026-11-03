@@ -108,6 +108,20 @@ func (t toolLedger) Accounts(ctx context.Context, booksID int64) (map[uuid.UUID]
 	return out, nil
 }
 
+func (t toolLedger) PayeeNames(ctx context.Context, booksID int64) (map[uuid.UUID]string, error) {
+	_, payees, err := t.l.CaptureVocabulary(ctx, booksID)
+	if err != nil {
+		return nil, err
+	}
+
+	out := make(map[uuid.UUID]string, len(payees))
+	for _, p := range payees {
+		out[p.ID] = p.Name
+	}
+
+	return out, nil
+}
+
 func (t toolLedger) BaseCurrency(ctx context.Context, booksID int64) (money.Currency, error) {
 	return t.l.BaseCurrency(ctx, booksID)
 }

@@ -305,6 +305,122 @@
     }
   },
   {
+    "name": "find_recurring",
+    "description": "Finds expenses that repeat on one account: the same payee or description at a weekly, monthly, quarterly or yearly interval, with the amount varying at most 25 percent. Use it to answer which subscriptions or recurring bills the user has, and before proposing a subscription schedule. Do not use it to list schedules the user created; use list_schedules. schedule_id names the schedule that already covers a series.",
+    "effect": "read_only",
+    "idempotent": true,
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "payee_id": {
+          "type": "string",
+          "description": "keep the series of this payee"
+        },
+        "account_id": {
+          "type": "string",
+          "description": "keep the series of this account"
+        },
+        "text": {
+          "type": "string",
+          "description": "keep series whose payee name or description contains this text; at most 100 characters"
+        }
+      },
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "series": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string"
+              },
+              "payee_id": {
+                "type": "string"
+              },
+              "payee": {
+                "type": "string"
+              },
+              "account_id": {
+                "type": "string"
+              },
+              "account": {
+                "type": "string"
+              },
+              "category_id": {
+                "type": "string"
+              },
+              "category": {
+                "type": "string"
+              },
+              "frequency": {
+                "type": "string"
+              },
+              "count": {
+                "type": "integer"
+              },
+              "last_date": {
+                "type": "string",
+                "format": "date"
+              },
+              "last_amount": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              },
+              "next_date": {
+                "type": "string",
+                "format": "date"
+              },
+              "transaction_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "schedule_id": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "key",
+              "account_id",
+              "account",
+              "frequency",
+              "count",
+              "last_date",
+              "last_amount",
+              "next_date",
+              "transaction_ids",
+              "schedule_id"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "series"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
     "name": "get_account_details",
     "description": "Returns one account in depth: reconciliation state and recorded institution balances; for a credit card account, its plastic cards, current credit limit and available limit, billing cycle, statements, the statement a purchase date falls on and the installments already committed to a month. Use it for questions about one account or card. Do not use it for a statement's lines: get_statement returns them.",
     "effect": "read_only",
