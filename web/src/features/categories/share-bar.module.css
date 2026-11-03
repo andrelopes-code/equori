@@ -18,28 +18,28 @@
   }
 
   .fill[data-color="1"] {
-    --fill: var(--slotted-data-1);
+    --fill: var(--equori-slot-1);
   }
   .fill[data-color="2"] {
-    --fill: var(--slotted-data-2);
+    --fill: var(--equori-slot-2);
   }
   .fill[data-color="3"] {
-    --fill: var(--slotted-data-3);
+    --fill: var(--equori-slot-3);
   }
   .fill[data-color="4"] {
-    --fill: var(--slotted-data-4);
+    --fill: var(--equori-slot-4);
   }
   .fill[data-color="5"] {
-    --fill: var(--slotted-data-5);
+    --fill: var(--equori-slot-5);
   }
   .fill[data-color="6"] {
-    --fill: var(--slotted-data-6);
+    --fill: var(--equori-slot-6);
   }
   .fill[data-color="7"] {
-    --fill: var(--slotted-data-7);
+    --fill: var(--equori-slot-7);
   }
   .fill[data-color="8"] {
-    --fill: var(--slotted-data-8);
+    --fill: var(--equori-slot-8);
   }
 
   @media (forced-colors: active) {

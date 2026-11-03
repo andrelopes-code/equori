@@ -130,7 +130,7 @@ export function InstitutionField({
       entities={created}
       value={value}
       openOn="focus"
-      width="anchor"
+      width="content"
       media="none"
       renderOption={(entity, state) => (
         <InstitutionOption entity={entity} query={state.query} />

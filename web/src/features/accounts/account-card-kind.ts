@@ -6,7 +6,8 @@ export function accountCardKind(kind: string | undefined): AccountCardKind {
   return "checking";
 }
 
-// The account's data slot as the card's colour; without a slot the card keeps its neutral ground.
+// The account's colour slot as the card's colour; without a slot the card keeps its neutral ground.
+// The slot is a fixed palette of the app (--equori-slot-N, app.css), not a chart colour.
 export function accountCardColor(slot: number | undefined): string | undefined {
-  return slot === undefined ? undefined : `var(--slotted-data-${String(slot)})`;
+  return slot === undefined ? undefined : `var(--equori-slot-${String(slot)})`;
 }

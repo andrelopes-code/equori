@@ -150,7 +150,7 @@ export function RulesPage() {
             : t("categories.tab.rulesCount", { count: pending.length })
         }
         actions={
-          <Inline gap={2} wrap="nowrap">
+          <Inline gap={3} wrap="nowrap">
             <HeaderAction
               label={t("rules.run")}
               glyph="play"

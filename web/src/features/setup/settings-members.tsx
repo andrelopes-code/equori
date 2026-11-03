@@ -20,6 +20,7 @@ import { SettingsInvitations } from "@/features/setup/settings-invitations";
 import { SettingsSection } from "@/features/setup/settings-section";
 import { meQuery } from "@/features/session";
 import { useT } from "@/i18n/i18n-provider";
+import { Inline } from "@slotted/react";
 
 type Open =
   | { kind: "remove"; member: BooksMember }
@@ -77,7 +78,7 @@ export function SettingsMembers() {
               ))}
             </List>
           )}
-          <div>
+          <Inline gap={3}>
             <Button
               size="sm"
               variant="outline"
@@ -88,9 +89,7 @@ export function SettingsMembers() {
             >
               {t("members.leave")}
             </Button>
-          </div>
-          {me?.book_role === "owner" && (
-            <div>
+            {me?.book_role === "owner" && (
               <Button
                 size="sm"
                 variant="outline"
@@ -101,8 +100,8 @@ export function SettingsMembers() {
               >
                 {t("books.delete")}
               </Button>
-            </div>
-          )}
+            )}
+          </Inline>
         </Stack>
       </SettingsGroup>
       {me?.book_role === "owner" && <SettingsInvitations />}

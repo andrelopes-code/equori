@@ -66,3 +66,31 @@
     block-size: 100dvh;
   }
 }
+
+/* The colour an account or a category takes from the owner's choice of one of eight slots. The slots
+   are a fixed palette, the spectrum of theme/surface-recipe.ts, and not the chart colours: the chart
+   colour mode rewrites --slotted-data-1..8, and a chosen colour must not follow it. */
+@layer app {
+  :root,
+  [data-slotted-scheme="light"] {
+    --equori-slot-1: #7368d4;
+    --equori-slot-2: #b46400;
+    --equori-slot-3: #009597;
+    --equori-slot-4: #c6495b;
+    --equori-slot-5: #0083ce;
+    --equori-slot-6: #4d8e16;
+    --equori-slot-7: #ad51a7;
+    --equori-slot-8: #c4530f;
+  }
+
+  [data-slotted-scheme="dark"] {
+    --equori-slot-1: #8a82e9;
+    --equori-slot-2: #cb7f00;
+    --equori-slot-3: #00a8a8;
+    --equori-slot-4: #de6674;
+    --equori-slot-5: #069ce4;
+    --equori-slot-6: #68a63f;
+    --equori-slot-7: #c46dbd;
+    --equori-slot-8: #db703b;
+  }
+}

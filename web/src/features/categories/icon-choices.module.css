@@ -14,28 +14,28 @@
     --tile-ink: var(--slotted-text);
   }
   .icons[data-color="1"] {
-    --tile-ink: var(--slotted-data-1);
+    --tile-ink: var(--equori-slot-1);
   }
   .icons[data-color="2"] {
-    --tile-ink: var(--slotted-data-2);
+    --tile-ink: var(--equori-slot-2);
   }
   .icons[data-color="3"] {
-    --tile-ink: var(--slotted-data-3);
+    --tile-ink: var(--equori-slot-3);
   }
   .icons[data-color="4"] {
-    --tile-ink: var(--slotted-data-4);
+    --tile-ink: var(--equori-slot-4);
   }
   .icons[data-color="5"] {
-    --tile-ink: var(--slotted-data-5);
+    --tile-ink: var(--equori-slot-5);
   }
   .icons[data-color="6"] {
-    --tile-ink: var(--slotted-data-6);
+    --tile-ink: var(--equori-slot-6);
   }
   .icons[data-color="7"] {
-    --tile-ink: var(--slotted-data-7);
+    --tile-ink: var(--equori-slot-7);
   }
   .icons[data-color="8"] {
-    --tile-ink: var(--slotted-data-8);
+    --tile-ink: var(--equori-slot-8);
   }
 
   .option {

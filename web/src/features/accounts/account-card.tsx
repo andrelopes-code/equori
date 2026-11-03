@@ -3,7 +3,6 @@ import type { LinkOptions } from "@tanstack/react-router";
 import { useId } from "react";
 import type { ComponentPropsWithRef, CSSProperties, ReactNode } from "react";
 
-import { AccountCardArt } from "@/features/accounts/account-card-art";
 import { AccountCardChip } from "@/features/accounts/account-card-chip";
 import type { AccountCardKind } from "@/features/accounts/account-card-kind";
 import { accountCardMeter } from "@/features/accounts/account-card-meter";
@@ -157,7 +156,6 @@ export function AccountCard({
   const signalName = t("accountCard.signalName", { legend, amount: sum });
   const content = (
     <>
-      <AccountCardArt kind={kind} />
       <div className={styles.header}>
         <span
           className={styles.tile}

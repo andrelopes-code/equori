@@ -88,13 +88,42 @@
     outline-offset: var(--slotted-focus-ring-offset);
   }
 
-  /* The art covers the card; its own mask keeps it on the right, away from the text. */
-  .art {
+  /* The finish of the material, under the text: a soft light from the top left, a
+     band of sheen across the middle, engraved hairlines at 135 degrees, and a fine keyline
+     inset from the edge as on printed cards. White at 10% or less keeps white text above 4.5:1. */
+  .card::before {
+    content: "";
     position: absolute;
     inset: 0;
-    inline-size: 100%;
-    block-size: 100%;
-    opacity: 0.3;
+    border-radius: inherit;
+    background:
+      radial-gradient(
+        120% 90% at 0% 0%,
+        rgb(255 255 255 / 10%) 0%,
+        transparent 55%
+      ),
+      linear-gradient(
+        115deg,
+        transparent 38%,
+        rgb(255 255 255 / 6%) 48%,
+        rgb(255 255 255 / 2%) 56%,
+        transparent 64%
+      ),
+      repeating-linear-gradient(
+        135deg,
+        rgb(255 255 255 / 3%) 0 1px,
+        transparent 1px 4px
+      ),
+      linear-gradient(to bottom, transparent 55%, rgb(0 0 0 / 14%) 100%);
+    pointer-events: none;
+  }
+
+  .card::after {
+    content: "";
+    position: absolute;
+    inset: 5px;
+    border: var(--slotted-border-width-thin) solid rgb(255 255 255 / 7%);
+    border-radius: 10px;
     pointer-events: none;
   }
 
@@ -311,6 +340,11 @@
 
     a.card:hover {
       outline: var(--slotted-border-width-thin) solid LinkText;
+    }
+
+    .card::before,
+    .card::after {
+      display: none;
     }
   }
 }
