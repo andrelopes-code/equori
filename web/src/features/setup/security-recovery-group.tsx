@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useRegenerateRecoveryCodes } from "@/features/setup/api";
 import { PasswordDialog } from "@/features/setup/password-dialog";
 import { SettingsGroup } from "@/features/setup/settings-group";
-import styles from "@/features/setup/settings-page.module.css";
+import { SettingsRow } from "@/features/setup/settings-row";
 import { useT } from "@/i18n/i18n-provider";
 
 interface SecurityRecoveryGroupProps {
@@ -41,19 +41,11 @@ export function SecurityRecoveryGroup({
       description={t("security.recovery.description")}
     >
       {factor ? (
-        <div className={styles.row}>
-          <div className={styles.rowText}>
-            <Text size="sm" weight="medium">
-              {t("security.recovery.left", { count: left })}
-            </Text>
-          </div>
-
-          <div className={styles.rowControl}>
-            <Button variant="outline" onClick={handleOpen}>
-              {t("security.recovery.regenerate")}
-            </Button>
-          </div>
-        </div>
+        <SettingsRow label={t("security.recovery.left", { count: left })}>
+          <Button variant="outline" onClick={handleOpen}>
+            {t("security.recovery.regenerate")}
+          </Button>
+        </SettingsRow>
       ) : (
         <Text size="sm" tone="muted">
           {t("security.recovery.none")}

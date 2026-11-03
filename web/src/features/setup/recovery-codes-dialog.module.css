@@ -1,18 +1,33 @@
 @layer app {
+  /* The codes share one bordered panel, split by hairlines, so no code sits on a ground of its own. */
   .codes {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--slotted-space-3);
+    overflow: hidden;
     margin: 0;
     padding: 0;
+    border: var(--slotted-border-width-thin) solid var(--slotted-border-subtle);
+    border-radius: var(--slotted-radius-md);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     list-style: none;
+  }
+
+  .codes > li {
+    padding: var(--slotted-space-4) var(--slotted-space-5);
+    border-block-start: var(--slotted-border-width-thin) solid
+      var(--slotted-border-subtle);
+  }
+
+  .codes > li:nth-child(-n + 2) {
+    border-block-start: 0;
+  }
+
+  .codes > li:nth-child(even) {
+    border-inline-start: var(--slotted-border-width-thin) solid
+      var(--slotted-border-subtle);
   }
 
   .code {
     display: block;
-    padding: var(--slotted-space-3) var(--slotted-space-4);
-    border-radius: var(--slotted-radius-md);
-    background: var(--slotted-surface-sunken);
     font-family: var(--slotted-font-family-mono);
     letter-spacing: 0.04em;
     text-align: center;

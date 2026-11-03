@@ -45,6 +45,13 @@ export function SecurityPasskeysGroup({
     <SettingsGroup
       title={t("security.passkeys.title")}
       description={t("security.passkeys.description")}
+      actions={
+        available && (
+          <Button variant="outline" size="sm" onClick={handleOpenAdd}>
+            {t("security.passkeys.add")}
+          </Button>
+        )
+      }
     >
       <Stack gap={4}>
         {passkeys.length === 0 ? (
@@ -52,7 +59,7 @@ export function SecurityPasskeysGroup({
             {t("security.passkeys.empty")}
           </Text>
         ) : (
-          <List variant="ruled" aria-label={t("security.passkeys.title")}>
+          <List variant="ruled" inset aria-label={t("security.passkeys.title")}>
             {passkeys.map((passkey) => (
               <PasskeyRow
                 key={passkey.id}
@@ -64,11 +71,7 @@ export function SecurityPasskeysGroup({
             ))}
           </List>
         )}
-        {available ? (
-          <Button variant="outline" onClick={handleOpenAdd}>
-            {t("security.passkeys.add")}
-          </Button>
-        ) : (
+        {!available && (
           <Text size="sm" tone="muted">
             {t("security.passkeys.unavailable")}
           </Text>

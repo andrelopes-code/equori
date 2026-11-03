@@ -1,7 +1,5 @@
 import { Button } from "@slotted/react/button";
 import { InlineMessage } from "@slotted/react/inline-message";
-import { Stack } from "@slotted/react/stack";
-import { Tag } from "@slotted/react/tag";
 import { useState } from "react";
 
 import { errorText } from "@/api/problem";
@@ -9,6 +7,7 @@ import { useDisableTotp, useStartTotp } from "@/features/setup/api";
 import type { TotpSetup } from "@/features/setup/api";
 import { PasswordDialog } from "@/features/setup/password-dialog";
 import { SettingsGroup } from "@/features/setup/settings-group";
+import { SettingsRow } from "@/features/setup/settings-row";
 import { TotpDialog } from "@/features/setup/totp-dialog";
 import { useT } from "@/i18n/i18n-provider";
 
@@ -47,13 +46,8 @@ export function SecurityTotpGroup({
     <SettingsGroup
       title={t("security.totp.title")}
       description={t("security.totp.description")}
-      actions={
-        <Tag size="sm" tone={enabled ? "accent" : "secondary"}>
-          {t(enabled ? "security.on" : "security.off")}
-        </Tag>
-      }
     >
-      <Stack gap={4}>
+      <SettingsRow label={t(enabled ? "security.on" : "security.off")}>
         {enabled ? (
           <Button tone="danger" variant="outline" onClick={handleOpenDisable}>
             {t("security.totp.disable")}
@@ -68,7 +62,7 @@ export function SecurityTotpGroup({
             {errorText(start.error, t)}
           </InlineMessage>
         )}
-      </Stack>
+      </SettingsRow>
       {setup !== null && (
         <TotpDialog
           setup={setup}
