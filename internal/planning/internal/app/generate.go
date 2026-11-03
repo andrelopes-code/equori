@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -78,7 +79,7 @@ func (s *Service) fill(ctx context.Context, repo Repository, booksID int64, sch 
 	}
 
 	if paidBy != uuid.Nil && len(planned) > 0 {
-		if err := s.realizeFirst(ctx, repo, booksID, sch.ID, planned[0].Date, paidBy); err != nil {
+		if err := s.realizeFirst(ctx, repo, booksID, sch, planned[0].Date, paidBy); err != nil {
 			return err
 		}
 	}
@@ -119,11 +120,38 @@ func (s *Service) fill(ctx context.Context, repo Repository, booksID int64, sch 
 	return nil
 }
 
-// realizeFirst links the occurrence on date to txID as a manual Realize does, before the
-// matching pass, so that pass neither matches nor skips it.
-func (s *Service) realizeFirst(ctx context.Context, repo Repository, booksID int64, scheduleID uuid.UUID, date time.Time, txID uuid.UUID) error {
-	os, err := repo.Occurrences(ctx, booksID, date, date, scheduleID)
-	if err != nil || len(os) == 0 {
+// realizeFirst links the occurrence on date to txID with the checks of a manual Realize, before
+// the matching pass, so that pass neither matches nor skips it.
+func (s *Service) realizeFirst(ctx context.Context, repo Repository, booksID int64, sch domain.Schedule, date time.Time, txID uuid.UUID) error {
+	invalid := func(message string) error {
+		return &domain.FieldError{Field: "paid_by_transaction_id", Message: message, Err: domain.ErrValidation}
+	}
+
+	os, err := repo.Occurrences(ctx, booksID, date, date, sch.ID)
+	if err != nil {
+		return err
+	}
+
+	if len(os) == 0 {
+		return invalid("the schedule has no occurrence on start")
+	}
+
+	facts, err := s.ledger.TransactionFacts(ctx, booksID, []uuid.UUID{txID})
+	if err != nil {
+		return err
+	}
+
+	if len(facts) == 0 || facts[0].Voided {
+		return invalid("is not a transaction of the book in force")
+	}
+
+	if _, ok := facts[0].On(sch.AccountID); !ok {
+		return invalid("has no posting on the schedule's account")
+	}
+
+	if _, err := repo.OccurrenceByTransaction(ctx, booksID, txID); err == nil {
+		return ErrTransactionInUse
+	} else if !errors.Is(err, ErrNotFound) {
 		return err
 	}
 
