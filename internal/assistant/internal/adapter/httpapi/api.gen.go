@@ -63,6 +63,7 @@ func (e AssistantMessageRole) Valid() bool {
 
 // Defines values for AssistantProposalStatus.
 const (
+	AssistantProposalStatusBlocked   AssistantProposalStatus = "blocked"
 	AssistantProposalStatusDiscarded AssistantProposalStatus = "discarded"
 	AssistantProposalStatusExecuted  AssistantProposalStatus = "executed"
 	AssistantProposalStatusExecuting AssistantProposalStatus = "executing"
@@ -71,11 +72,14 @@ const (
 	AssistantProposalStatusPending   AssistantProposalStatus = "pending"
 	AssistantProposalStatusRejected  AssistantProposalStatus = "rejected"
 	AssistantProposalStatusStale     AssistantProposalStatus = "stale"
+	AssistantProposalStatusWaiting   AssistantProposalStatus = "waiting"
 )
 
 // Valid indicates whether the value is a known member of the AssistantProposalStatus enum.
 func (e AssistantProposalStatus) Valid() bool {
 	switch e {
+	case AssistantProposalStatusBlocked:
+		return true
 	case AssistantProposalStatusDiscarded:
 		return true
 	case AssistantProposalStatusExecuted:
@@ -91,6 +95,8 @@ func (e AssistantProposalStatus) Valid() bool {
 	case AssistantProposalStatusRejected:
 		return true
 	case AssistantProposalStatusStale:
+		return true
+	case AssistantProposalStatusWaiting:
 		return true
 	default:
 		return false
@@ -208,11 +214,15 @@ type AssistantProposal struct {
 	ExpiresAt time.Time          `json:"expires_at"`
 	Id        openapi_types.UUID `json:"id"`
 	Preview   AssistantPreview   `json:"preview"`
+	Reason    *string            `json:"reason,omitempty"`
 
 	// Result Tool output when executed, tool error when failed.
-	Result interface{}             `json:"result,omitempty"`
-	Status AssistantProposalStatus `json:"status"`
-	Tool   string                  `json:"tool"`
+	Result     interface{}             `json:"result,omitempty"`
+	Status     AssistantProposalStatus `json:"status"`
+	Suggested  bool                    `json:"suggested"`
+	Summary    *string                 `json:"summary,omitempty"`
+	Tool       string                  `json:"tool"`
+	WaitingFor []openapi_types.UUID    `json:"waiting_for"`
 }
 
 // AssistantProposalStatus defines model for AssistantProposal.Status.

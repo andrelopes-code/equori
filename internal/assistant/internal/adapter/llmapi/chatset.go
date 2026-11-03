@@ -50,7 +50,12 @@ func ChatHandlers(svc *app.Service, tools app.Tools, set tool.Set, conversationI
 		}
 
 		handlers[name] = func(ctx context.Context, args json.RawMessage) (json.RawMessage, error) {
-			out, err := svc.Propose(ctx, auth.MustBooksID(ctx), conversationID(ctx), name, args)
+			args, meta, err := splitProposal(args)
+			if err != nil {
+				return nil, err
+			}
+
+			out, err := svc.Propose(ctx, auth.MustBooksID(ctx), conversationID(ctx), name, args, meta)
 			if tf, ok := errors.AsType[*app.ToolFailure](err); ok {
 				return nil, &llm.ToolError{Content: tf.Content}
 			}
@@ -60,4 +65,24 @@ func ChatHandlers(svc *app.Service, tools app.Tools, set tool.Set, conversationI
 	}
 
 	return decls, handlers
+}
+
+// splitProposal removes the chat property proposal from args and decodes it.
+func splitProposal(args json.RawMessage) (json.RawMessage, app.ProposalMeta, error) {
+	var fields map[string]json.RawMessage
+	if json.Unmarshal(args, &fields) != nil || fields["proposal"] == nil {
+		return args, app.ProposalMeta{}, nil
+	}
+
+	var meta app.ProposalMeta
+	if err := json.Unmarshal(fields["proposal"], &meta); err != nil {
+		content, _ := json.Marshal(tool.InvalidArgument("proposal", "must be an object with suggested, reason, refs and summary"))
+		return nil, app.ProposalMeta{}, &llm.ToolError{Content: content}
+	}
+
+	delete(fields, "proposal")
+
+	rest, err := json.Marshal(fields)
+
+	return rest, meta, err
 }

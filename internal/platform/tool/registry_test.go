@@ -306,3 +306,45 @@ func TestFromProblem(t *testing.T) {
 		t.Error("unmapped error reported as mapped")
 	}
 }
+
+func TestSetValidate(t *testing.T) {
+	t.Parallel()
+
+	r, _ := newTestRegistry(t)
+
+	s, err := r.Select("echo")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		name, tool, args string
+		wantErr          error
+		wantCode         string
+	}{
+		{name: "valid", tool: "echo", args: `{"text":"a"}`},
+		{name: "wrong type", tool: "echo", args: `{"text":1}`, wantCode: "invalid_arguments"},
+		{name: "not an object", tool: "echo", args: `[]`, wantCode: "invalid_arguments"},
+		{name: "outside the set", tool: "fail", args: `{"kind":"tool"}`, wantErr: ErrUnknownTool},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			got, err := s.Validate(tt.tool, json.RawMessage(tt.args))
+			if !errors.Is(err, tt.wantErr) {
+				t.Fatalf("err = %v, want %v", err, tt.wantErr)
+			}
+
+			if tt.wantCode == "" {
+				if got.IsError {
+					t.Fatalf("result = %s", got.Content)
+				}
+
+				return
+			}
+
+			assertError(t, got, tt.wantCode, "")
+		})
+	}
+}

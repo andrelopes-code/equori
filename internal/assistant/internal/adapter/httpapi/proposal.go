@@ -5,13 +5,30 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/google/uuid"
+
 	"github.com/andrelopes-code/equori/internal/assistant/internal/domain"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
 )
 
-// toProposal converts a stored proposal; a pending proposal past its expiry reads as expired.
+// toProposal converts a stored proposal; a pending or waiting proposal past its expiry reads as expired.
 func (s *Server) toProposal(p domain.Proposal) (AssistantProposal, error) {
-	out := AssistantProposal{Id: p.ID, Tool: p.Tool, Status: AssistantProposalStatus(p.Status), CreatedAt: p.CreatedAt, ExpiresAt: p.ExpiresAt}
+	out := AssistantProposal{
+		Id: p.ID, Tool: p.Tool, Status: AssistantProposalStatus(p.Status), CreatedAt: p.CreatedAt, ExpiresAt: p.ExpiresAt,
+		Suggested: p.Suggested, WaitingFor: p.WaitingFor(),
+	}
+	if p.Reason != "" {
+		out.Reason = &p.Reason
+	}
+
+	if p.Summary != "" {
+		out.Summary = &p.Summary
+	}
+
+	if out.WaitingFor == nil {
+		out.WaitingFor = []uuid.UUID{}
+	}
+
 	if p.Expired(s.svc.Now()) {
 		out.Status = AssistantProposalStatusExpired
 	}

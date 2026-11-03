@@ -78,5 +78,6 @@ type ConversationRepository interface {
 type Tools interface {
 	Preview(ctx context.Context, name string, args json.RawMessage) (tool.Preview, tool.Result, error)
 	Call(ctx context.Context, name string, args json.RawMessage) (tool.Result, error)
+	Validate(name string, args json.RawMessage) (tool.Result, error)
 	Effect(name string) (tool.Effect, bool)
 }

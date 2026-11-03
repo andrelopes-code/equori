@@ -10,6 +10,7 @@ import (
 
 	"github.com/andrelopes-code/equori/internal/assistant"
 	"github.com/andrelopes-code/equori/internal/assistant/internal/adapter/postgres"
+	"github.com/andrelopes-code/equori/internal/assistant/internal/app"
 	"github.com/andrelopes-code/equori/internal/assistant/internal/domain"
 )
 
@@ -21,7 +22,7 @@ func TestConversationOfOneMember(t *testing.T) {
 	writer := h.JoinAs("writer@example.com", h.OwnerID(), "write")
 	conv := storeConversation(t, e, h.OwnerID(), h.MemberIDOf("owner@example.com"))
 
-	content, err := assistant.ProposeForTest(h.App.Assistant, t.Context(), h.OwnerID(), conv.ID, "note_for_test", json.RawMessage(`{"text":"x"}`))
+	content, err := assistant.ProposeForTest(h.App.Assistant, t.Context(), h.OwnerID(), conv.ID, "note_for_test", json.RawMessage(`{"text":"x"}`), app.ProposalMeta{})
 	if err != nil {
 		t.Fatal(err)
 	}

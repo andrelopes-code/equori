@@ -3734,6 +3734,7 @@ paths:
       operationId: confirmAssistantProposal
       x-book-role: write
       summary: Execute a pending proposal once, after checking that its data did not change.
+      description: "Answers 409 with Problem code proposal_closed, proposal_expired, proposal_stale or proposal_waiting (the proposal waits for the confirmation of another)."
       parameters:
         - $ref: "#/components/parameters/ID"
       responses:
@@ -6829,11 +6830,15 @@ components:
     AssistantProposal:
       type: object
       additionalProperties: false
-      required: [id, tool, status, preview, created_at, expires_at]
+      required: [id, tool, status, preview, created_at, expires_at, suggested, waiting_for]
       properties:
         id: {type: string, format: uuid}
         tool: {type: string, pattern: "^[a-z][a-z0-9_]{0,63}$"}
-        status: {type: string, enum: [pending, executing, executed, failed, rejected, stale, discarded, expired]}
+        status: {type: string, enum: [pending, executing, executed, failed, rejected, stale, discarded, expired, waiting, blocked]}
+        suggested: {type: boolean}
+        reason: {type: string, maxLength: 200}
+        summary: {type: string, maxLength: 200}
+        waiting_for: {type: array, items: {type: string, format: uuid}}
         preview: {$ref: "#/components/schemas/AssistantPreview"}
         result: {description: "Tool output when executed, tool error when failed."}
         created_at: {type: string, format: date-time}

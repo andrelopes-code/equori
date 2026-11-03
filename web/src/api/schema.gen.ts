@@ -2217,7 +2217,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Execute a pending proposal once, after checking that its data did not change. */
+        /**
+         * Execute a pending proposal once, after checking that its data did not change.
+         * @description Answers 409 with Problem code proposal_closed, proposal_expired, proposal_stale or proposal_waiting (the proposal waits for the confirmation of another).
+         */
         post: operations["confirmAssistantProposal"];
         delete?: never;
         options?: never;
@@ -3971,7 +3974,11 @@ export interface components {
             id: string;
             tool: string;
             /** @enum {string} */
-            status: "pending" | "executing" | "executed" | "failed" | "rejected" | "stale" | "discarded" | "expired";
+            status: "pending" | "executing" | "executed" | "failed" | "rejected" | "stale" | "discarded" | "expired" | "waiting" | "blocked";
+            suggested: boolean;
+            reason?: string;
+            summary?: string;
+            waiting_for: string[];
             preview: components["schemas"]["AssistantPreview"];
             /** @description Tool output when executed, tool error when failed. */
             result?: unknown;

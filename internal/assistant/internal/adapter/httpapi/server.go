@@ -87,6 +87,8 @@ func toProblem(err error) (problem.Details, bool) {
 		return problem.New(http.StatusConflict, "proposal_closed", "the proposal was already decided"), true
 	case errors.Is(err, app.ErrProposalExpired):
 		return problem.New(http.StatusConflict, "proposal_expired", "the proposal expired; ask the assistant again"), true
+	case errors.Is(err, app.ErrProposalWaiting):
+		return problem.New(http.StatusConflict, "proposal_waiting", "the proposal waits for the confirmation of another proposal"), true
 	case errors.Is(err, app.ErrProposalStale):
 		return problem.New(http.StatusConflict, "proposal_stale", "the data changed after the proposal; ask the assistant again"), true
 	case errors.Is(err, domain.ErrUseNotFound):

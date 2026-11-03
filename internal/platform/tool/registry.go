@@ -195,3 +195,17 @@ func (s Set) Call(ctx context.Context, name string, args json.RawMessage) (Resul
 
 	return s.r.Call(ctx, name, args)
 }
+
+// Validate checks args against the input schema of a tool of the set, like Call, without running it.
+func (s Set) Validate(name string, args json.RawMessage) (Result, error) {
+	if !slices.Contains(s.names, name) {
+		return Result{}, fmt.Errorf("validate tool %s: %w", name, ErrUnknownTool)
+	}
+
+	if _, bad := s.r.entries[name].tool.validate(args); bad != nil {
+		res, _, err := failure(*bad)
+		return res, err
+	}
+
+	return Result{}, nil
+}
