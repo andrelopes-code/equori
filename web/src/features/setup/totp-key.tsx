@@ -1,6 +1,6 @@
+import { TextField } from "@slotted/react/text-field";
 import { Text } from "@slotted/react/typography";
 
-import { CopyButton } from "@/features/setup/copy-button";
 import { groupsOfFour } from "@/features/setup/groups-of-four";
 import styles from "@/features/setup/totp-dialog.module.css";
 import { useT } from "@/i18n/i18n-provider";
@@ -9,7 +9,8 @@ interface TotpKeyProps {
   secret: string;
 }
 
-// The key the app takes by hand when the camera cannot read the QR code.
+// The key the app takes by hand when the camera cannot read the QR code. It is shown, and copied,
+// in groups of four: an authenticator app ignores the spaces and a person types it by group.
 export function TotpKey({ secret }: TotpKeyProps) {
   const t = useT();
 
@@ -19,16 +20,15 @@ export function TotpKey({ secret }: TotpKeyProps) {
         {t("security.totp.keyHint")}
       </Text>
 
-      <div className={styles.keyRow}>
-        <Text
-          size="md"
-          className={styles.secret}
-          aria-label={t("security.totp.secret")}
-        >
-          {groupsOfFour(secret)}
-        </Text>
-        <CopyButton text={secret} label={t("security.copy")} />
-      </div>
+      <TextField
+        className={styles.secret}
+        aria-label={t("security.totp.secret")}
+        value={groupsOfFour(secret)}
+        readOnly
+        copyable
+        mono
+        messages={{ copy: t("security.copy") }}
+      />
     </div>
   );
 }

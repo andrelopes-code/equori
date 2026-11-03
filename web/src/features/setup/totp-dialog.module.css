@@ -26,25 +26,14 @@
 
   .key {
     display: flex;
+    align-self: stretch;
     flex-direction: column;
     align-items: center;
     gap: var(--slotted-space-3);
   }
 
-  .keyRow {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: center;
-    gap: var(--slotted-space-4);
-  }
-
+  /* The key is 39 characters in groups; 26 rem keeps it on one line in the dialog's measure. */
   .secret {
-    padding: var(--slotted-space-2) var(--slotted-space-4);
-    border-radius: var(--slotted-radius-md);
-    background: var(--slotted-surface-sunken);
-    font-family: var(--slotted-font-family-mono);
-    letter-spacing: 0.04em;
-    user-select: all;
+    inline-size: min(100%, 26rem);
   }
 }

@@ -101,9 +101,9 @@ describe("security settings", () => {
     await renderApp("/settings?section=security", { fetch: api(off, []) });
     const dialog = await openTotpDialog(await section());
 
-    expect(
-      await dialog.findByText("GEZD GNBV GY3T QOJQ GEZD GNBV GY3T QOJQ"),
-    ).toBeVisible();
+    const key = await dialog.findByLabelText(pt["security.totp.secret"]);
+    expect(key).toHaveValue("GEZD GNBV GY3T QOJQ GEZD GNBV GY3T QOJQ");
+    expect(key).toHaveAttribute("readonly");
     expect(
       dialog.getByRole("img", { name: pt["security.totp.qr"] }),
     ).toBeVisible();
