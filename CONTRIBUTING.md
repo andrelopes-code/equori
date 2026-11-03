@@ -80,6 +80,7 @@ Everything is in English: identifiers, files, packages, comments, log messages, 
 - Standard library first. A new dependency needs an ADR.
 - Cross-cutting conventions (transactions, money, dates, pagination) are in ADR 005: `platform/money`, `platform/clock`, `platform/page`. Never `float64` for amounts.
 - `context.Context` is the first parameter of any function doing I/O.
+- A change to what a user can do on a screen updates, in the same commit, the guide article of that screen's topic in `internal/assistant/internal/guide/articles/` (topics per screen in the navigation map).
 - No global mutable state. Dependencies are passed through constructors.
 - HTTP errors are RFC 9457 problems written with `internal/platform/problem` (ADR 004).
 - Language model calls go through `internal/platform/llm` (ADR 009); each module declares its chain in code.
