@@ -5,6 +5,7 @@ import { Tag } from "@slotted/react/tag";
 import { useQuery } from "@tanstack/react-query";
 
 import { useApi } from "@/api/api-context";
+import { SettingsDisplayName } from "@/features/setup/settings-display-name";
 import { SettingsGroup } from "@/features/setup/settings-group";
 import styles from "@/features/setup/settings-page.module.css";
 import { SettingsRow } from "@/features/setup/settings-row";
@@ -24,10 +25,13 @@ export function SettingsAccount() {
       description={t("settings.summary.account")}
     >
       <div className={styles.identity}>
-        <Avatar size="xl" name={me?.email ?? t("nav.user")} />
+        <Avatar
+          size="xl"
+          name={me?.display_name ?? me?.email ?? t("nav.user")}
+        />
         <div className={styles.who}>
           <p className={styles.email} title={me?.email}>
-            {me?.email}
+            {me?.display_name ?? me?.email}
           </p>
           {me !== undefined && (
             <Tag size="sm" tone={me.role === "admin" ? "accent" : "secondary"}>
@@ -36,6 +40,7 @@ export function SettingsAccount() {
           )}
         </div>
       </div>
+      <SettingsDisplayName />
       <SettingsGroup title={t("settings.account.session")}>
         <SettingsRow
           label={t("more.logout")}

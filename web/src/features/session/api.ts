@@ -153,6 +153,19 @@ export function useChooseLanguage(): (language: Language) => void {
   };
 }
 
+// Stores the display name; an empty name clears it. The answer replaces the cached profile.
+export function useSetDisplayName() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (displayName: string) =>
+      unwrap(await api.PATCH("/me", { body: { display_name: displayName } })),
+    onSuccess: (me) => {
+      queryClient.setQueryData(meQuery(api).queryKey, me);
+    },
+  });
+}
+
 export const appearanceSaveKey = ["me", "appearance", "save"] as const;
 
 export type AppearanceInput =

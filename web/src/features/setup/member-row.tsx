@@ -45,12 +45,13 @@ export function MemberRow({
         <ListItemBody>
           <ListItemLabel>
             <Inline gap={4}>
-              {member.email}
+              {member.display_name ?? member.email}
               {own && <Tag size="sm">{t("members.you")}</Tag>}
             </Inline>
           </ListItemLabel>
           <ListItemDescription>
             {[
+              ...(member.display_name === undefined ? [] : [member.email]),
               t(`members.role.${member.role}`),
               t("members.since", {
                 date: formatDate(member.created_at.slice(0, 10), locale),

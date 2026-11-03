@@ -5,6 +5,7 @@ export {
   setupQuery,
   useChooseLanguage,
   useSaveAppearance,
+  useSetDisplayName,
   useSwitchBooks,
 } from "@/features/session/api";
 export { AppearanceSync } from "@/features/session/appearance-sync";

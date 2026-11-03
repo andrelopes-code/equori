@@ -53,8 +53,8 @@ export function AccountMenu({ compact }: { compact: boolean }) {
   const [creating, setCreating] = useState(false);
   // The session guard has loaded /me; the menu reads that answer without asking again.
   const { data: me } = useQuery({ ...meQuery(useApi()), staleTime: Infinity });
-  // The part before the @ names the account; the domain adds width and no recognition.
-  const name = me?.email.split("@")[0] ?? t("nav.user");
+  // Without a display name, the part before the @ names the account; the domain adds width and no recognition.
+  const name = me?.display_name ?? me?.email.split("@")[0] ?? t("nav.user");
   return (
     <>
       <Menu width={compact ? "content" : "anchor"}>
@@ -68,7 +68,7 @@ export function AccountMenu({ compact }: { compact: boolean }) {
               data-compact={compact || undefined}
               className={styles.trigger}
             >
-              <Avatar size="sm" name={me?.email ?? name} />
+              <Avatar size="sm" name={name} />
               {!compact && (
                 <>
                   <AccountIdentity name={name} />
