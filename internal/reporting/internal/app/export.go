@@ -12,6 +12,9 @@ import (
 // MaxArchiveBytes is the largest archive an export builds (export design E5).
 const MaxArchiveBytes = 256 << 20
 
+// MaxExpandedBytes bounds the uncompressed size of all entries of an archive an import reads.
+const MaxExpandedBytes = 4 * MaxArchiveBytes
+
 var (
 	ErrExportNotFound = errors.New("no export was requested")
 	ErrExportPending  = errors.New("an export is pending")

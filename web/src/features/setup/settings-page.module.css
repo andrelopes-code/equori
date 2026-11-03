@@ -124,27 +124,20 @@
     white-space: nowrap;
   }
 
-  /* One strip for the two samples: the labels over the values, a hairline between them. */
+  /* The samples sit in the control column of their row: the label at the start of a line, the
+     value at its end, with no ground of their own. */
   .example {
-    display: grid;
-    overflow: hidden;
-    border: var(--slotted-border-width-thin) solid var(--slotted-border-subtle);
-    border-radius: var(--slotted-radius-md);
-    background: var(--slotted-surface-sunken);
-    grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+    display: flex;
+    flex-direction: column;
+    gap: var(--slotted-space-3);
   }
 
   .sample {
     display: flex;
     min-inline-size: 0;
-    flex-direction: column;
-    gap: var(--slotted-space-2);
-    padding: var(--slotted-space-5) var(--slotted-space-7);
-  }
-
-  .sample + .sample {
-    border-inline-start: var(--slotted-border-width-thin) solid
-      var(--slotted-border-subtle);
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--slotted-space-5);
   }
 
   .sampleLabel {
@@ -181,10 +174,10 @@
   .sampleValue {
     overflow: hidden;
     color: var(--slotted-text);
-    font-size: var(--slotted-font-size-xl);
+    font-size: var(--slotted-font-size-md);
     font-variant-numeric: tabular-nums;
     font-weight: var(--slotted-font-weight-medium);
-    line-height: var(--slotted-line-height-xl);
+    line-height: var(--slotted-line-height-md);
     text-overflow: ellipsis;
     white-space: nowrap;
   }

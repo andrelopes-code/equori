@@ -75,7 +75,7 @@ type archiveManifest struct {
 // Import migrates an archive of an earlier version, restores it into the books of a book
 // without facts, then rebuilds the derived tables (export design E4, ADR 021).
 func (s *Exports) Import(ctx context.Context, booksID int64, archive []byte) (ImportResult, error) {
-	files, err := unzip(archive)
+	files, err := unzip(archive, MaxExpandedBytes)
 	if err != nil {
 		return ImportResult{}, err
 	}
@@ -167,27 +167,31 @@ func matches(b []byte, sum string) bool {
 	return hex.EncodeToString(got[:]) == sum
 }
 
-func unzip(archive []byte) (map[string][]byte, error) {
+func unzip(archive []byte, total int64) (map[string][]byte, error) {
 	r, err := zip.NewReader(bytes.NewReader(archive), int64(len(archive)))
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrArchiveInvalid, err)
 	}
 
 	files := map[string][]byte{}
+	remaining := total
+
 	for _, f := range r.File {
 		rc, err := f.Open()
 		if err != nil {
 			return nil, fmt.Errorf("%w: %w", ErrArchiveInvalid, err)
 		}
 
-		// The uncompressed size is capped like the archive, so a small archive cannot expand without bound.
-		b, err := io.ReadAll(io.LimitReader(rc, MaxArchiveBytes+1))
+		// Each entry is capped like the archive and all entries share total, so a small archive
+		// cannot expand without bound.
+		b, err := io.ReadAll(io.LimitReader(rc, min(MaxArchiveBytes, remaining)+1))
 
 		err = errors.Join(err, rc.Close())
-		if err != nil || len(b) > MaxArchiveBytes {
+		if err != nil || int64(len(b)) > min(MaxArchiveBytes, remaining) {
 			return nil, fmt.Errorf("%w: %s", ErrArchiveInvalid, f.Name)
 		}
 
+		remaining -= int64(len(b))
 		files[f.Name] = b
 	}
 

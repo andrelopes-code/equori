@@ -37,7 +37,6 @@ export function SettingsLanguage() {
       <SettingsRow
         label={t("settings.language.example")}
         description={t("settings.language.exampleDescription")}
-        stacked
       >
         <SettingsExample />
       </SettingsRow>
