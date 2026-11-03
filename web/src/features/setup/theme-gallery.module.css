@@ -31,8 +31,8 @@
     cursor: pointer;
   }
 
-  /* The inset hairline is the card's edge catching light; the outline is the ring of the choice,
-     drawn with a gap so the miniature keeps its own edge. */
+  /* One line carries every state: the border is the card's edge, and the outline lies over it, so
+     hover, choice and focus each change the colour of the same line and never add a second one. */
   .frame {
     position: relative;
     display: block;
@@ -40,11 +40,8 @@
     border: var(--slotted-border-width-thin) solid var(--slotted-border-subtle);
     border-radius: var(--slotted-radius-lg);
     outline: var(--slotted-border-width-medium) solid transparent;
-    outline-offset: var(--slotted-space-1);
-    box-shadow:
-      inset 0 0 0 var(--slotted-border-width-thin)
-        color-mix(in oklch, var(--slotted-text) 8%, transparent),
-      var(--slotted-shadow-sm);
+    outline-offset: calc(var(--slotted-border-width-medium) * -1);
+    box-shadow: var(--slotted-shadow-sm);
     transition:
       border-color var(--slotted-duration-short) var(--slotted-easing-standard),
       outline-color var(--slotted-duration-short) var(--slotted-easing-standard),
@@ -54,10 +51,7 @@
 
   .option:hover .frame {
     border-color: var(--slotted-border-strong);
-    box-shadow:
-      inset 0 0 0 var(--slotted-border-width-thin)
-        color-mix(in oklch, var(--slotted-text) 12%, transparent),
-      var(--slotted-shadow-lg);
+    box-shadow: var(--slotted-shadow-lg);
     translate: 0 -0.1875rem;
   }
 
@@ -65,36 +59,26 @@
     translate: 0 -0.0625rem;
   }
 
-  /* The accent ring and the check carry the choice, by shape as well as by colour. */
+  /* The accent line and the check beside the name carry the choice, by shape as well as colour. */
   .radio:checked + .frame {
     border-color: var(--slotted-tone-accent-text);
     outline-color: var(--slotted-tone-accent-text);
-    box-shadow:
-      0 0.5rem 1.5rem -0.5rem
-        color-mix(in oklch, var(--slotted-tone-accent-solid) 55%, transparent),
-      var(--slotted-shadow-md);
   }
 
   .radio:focus-visible + .frame {
-    outline: var(--slotted-focus-ring-width) solid
-      var(--slotted-focus-ring-color);
-    outline-offset: var(--slotted-focus-ring-offset);
+    border-color: var(--slotted-focus-ring-color);
+    outline-color: var(--slotted-focus-ring-color);
   }
 
   .mark {
-    position: absolute;
     display: grid;
-    inline-size: 1.375rem;
-    block-size: 1.375rem;
+    flex: none;
+    inline-size: 1.125rem;
+    block-size: 1.125rem;
     place-items: center;
     border-radius: var(--slotted-radius-full);
     background: var(--slotted-tone-accent-solid);
-    box-shadow:
-      0 0 0 var(--slotted-border-width-medium) var(--slotted-surface),
-      var(--slotted-shadow-sm);
     color: var(--slotted-tone-accent-on-solid);
-    inset-block-start: var(--slotted-space-3);
-    inset-inline-end: var(--slotted-space-3);
     animation: mark-in var(--slotted-duration-medium)
       var(--slotted-easing-emphasized);
   }
@@ -111,13 +95,22 @@
     min-inline-size: 0;
     flex-direction: column;
     gap: var(--slotted-space-1);
-    padding-inline: var(--slotted-space-1);
   }
 
-  /* Two lines at most, so a long description never makes one card taller than its row. */
-  .caption > :nth-child(2) {
+  .title {
+    display: flex;
+    min-inline-size: 0;
+    min-block-size: 1.125rem;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--slotted-space-2);
+  }
+
+  /* Two lines are always reserved, so the cards of a row end on the same line. */
+  .description {
     display: -webkit-box;
     overflow: hidden;
+    min-block-size: calc(2 * 1.4em);
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
   }
@@ -138,7 +131,8 @@
   }
 
   @media (forced-colors: active) {
-    .radio:checked + .frame {
+    .radio:checked + .frame,
+    .radio:focus-visible + .frame {
       border-color: Highlight;
       outline-color: Highlight;
     }

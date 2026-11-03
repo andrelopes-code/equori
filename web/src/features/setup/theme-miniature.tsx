@@ -14,9 +14,12 @@ export interface ThemeMiniatureProps {
   values: ThemeValues;
 }
 
+const palette = ["accent", "success", "danger", "warning", "info"] as const;
+
 // Families read: none draws a miniature of the application. The scope derives every token again
 // from the theme's seeds, corners and surface values, so the drawing is the theme and not a copy
-// of its colours.
+// of its colours. The canvas shows its tone, the specimen its face, the dots its palette, and the
+// panel its corners, edge, shadow and the two weights of action.
 export function ThemeMiniature({ values }: ThemeMiniatureProps) {
   const t = useT();
 
@@ -35,20 +38,20 @@ export function ThemeMiniature({ values }: ThemeMiniatureProps) {
       data-visual={values.visual}
       {...surfaces}
     >
-      <span className={styles.rail}>
-        <span className={styles.brand} />
-        <span className={styles.navCurrent} />
-        <span className={styles.nav} />
-        <span className={styles.nav} />
+      <span className={styles.head}>
+        <span className={styles.specimen}>{t("settings.typeface.sample")}</span>
+        <span className={styles.palette}>
+          {palette.map((tone) => (
+            <span key={tone} className={styles.dot} data-tone={tone} />
+          ))}
+        </span>
       </span>
 
-      <span className={styles.main}>
-        <span className={styles.panel}>
-          <span className={styles.sample}>{t("settings.typeface.sample")}</span>
-          <span className={styles.flows}>
-            <span className={styles.income} />
-            <span className={styles.expense} />
-          </span>
+      <span className={styles.panel}>
+        <span className={styles.label} />
+        <span className={styles.flows}>
+          <span className={styles.income} />
+          <span className={styles.expense} />
         </span>
         <span className={styles.actions}>
           <span className={styles.primary} />

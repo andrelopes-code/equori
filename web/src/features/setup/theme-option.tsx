@@ -36,23 +36,27 @@ export function ThemeOption({
       />
       <span className={styles.frame} aria-hidden="true">
         <ThemeMiniature values={values} />
-        {checked && (
-          <span className={styles.mark}>
-            <Icon size="sm">
-              <Glyph name="check" />
-            </Icon>
-          </span>
-        )}
       </span>
       <span className={styles.caption}>
-        <Text size="sm" weight="medium">
-          {name}
-        </Text>
-        {description !== undefined && (
-          <Text size="xs" tone="muted">
-            {description}
+        <span className={styles.title}>
+          <Text size="sm" weight="medium">
+            {name}
           </Text>
-        )}
+          {checked && (
+            <span className={styles.mark} aria-hidden="true">
+              <Icon size="sm">
+                <Glyph name="check" />
+              </Icon>
+            </span>
+          )}
+        </span>
+        <span className={styles.description}>
+          {description !== undefined && (
+            <Text size="xs" tone="muted">
+              {description}
+            </Text>
+          )}
+        </span>
       </span>
     </label>
   );
