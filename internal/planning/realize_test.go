@@ -298,3 +298,40 @@ func TestOccurrencesOfATransaction(t *testing.T) {
 	f.h.ExpectProblem(f.h.Do(http.MethodGet, "/api/v1/occurrences?to=2026-12-31", nil), http.StatusBadRequest, "invalid_request", "from")
 	f.h.ExpectProblem(f.h.Do(http.MethodGet, "/api/v1/occurrences?from=2026-11-01", nil), http.StatusBadRequest, "invalid_request", "to")
 }
+
+// The actual amount is read from the transaction, so a correction changes it with no stored copy.
+func TestRealizedOccurrenceReturnsTheActualAmount(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t, "2026-11-01")
+	id := f.schedule("income", f.checking, f.salary, 275200, monthly("2026-11-05", 5, ""), nil)
+
+	if o := f.occurrence(id, 1); o.ActualAmount != nil {
+		t.Fatalf("expected occurrence = %+v, want no actual amount", o)
+	}
+
+	var tx struct {
+		ID string `json:"id"`
+	}
+	f.h.MustDo(http.MethodPost, "/api/v1/transactions", map[string]any{
+		"date": "2026-11-05", "description": "salary",
+		"postings": []any{apitest.Posting(f.checking, 275142), apitest.Posting(f.salary, -275142)},
+	}, http.StatusCreated, &tx)
+	f.h.Dispatch()
+
+	o := f.occurrence(id, 1)
+	if o.State != "realized" || o.TransactionID != tx.ID || o.ExpectedAmount.Amount != 275200 ||
+		o.ActualAmount == nil || o.ActualAmount.Amount != 275142 {
+		t.Fatalf("realized occurrence = %+v", o)
+	}
+
+	f.h.MustDo(http.MethodPut, "/api/v1/transactions/"+tx.ID, map[string]any{
+		"date": "2026-11-05", "description": "salary", "expected_version": 1, "reason": "amount",
+		"postings": []any{apitest.Posting(f.checking, 275000), apitest.Posting(f.salary, -275000)},
+	}, http.StatusOK, nil)
+	f.h.Dispatch()
+
+	o = f.occurrence(id, 1)
+	if o.State != "realized" || o.ActualAmount == nil || o.ActualAmount.Amount != 275000 {
+		t.Fatalf("after correction = %+v", o)
+	}
+}

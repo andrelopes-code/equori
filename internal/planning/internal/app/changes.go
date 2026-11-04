@@ -30,7 +30,11 @@ func (s *Service) changeOccurrence(ctx context.Context, booksID int64, id uuid.U
 		}
 
 		changed, err := change(repo, o, sch)
-		out = s.view(ctx, changed, sch)
+		if err != nil {
+			return err
+		}
+
+		out, err = s.view(ctx, booksID, changed, sch)
 
 		return err
 	})

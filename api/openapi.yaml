@@ -7138,6 +7138,8 @@ components:
           format: date
         expected_amount:
           $ref: "#/components/schemas/Money"
+        actual_amount:
+          $ref: "#/components/schemas/Money"
         state:
           $ref: "#/components/schemas/OccurrenceState"
         transaction_id:

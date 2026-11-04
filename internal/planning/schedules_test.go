@@ -17,6 +17,9 @@ type occurrenceView struct {
 	ExpectedAmount struct {
 		Amount int64 `json:"amount"`
 	} `json:"expected_amount"`
+	ActualAmount *struct {
+		Amount int64 `json:"amount"`
+	} `json:"actual_amount"`
 	State         string `json:"state"`
 	TransactionID string `json:"transaction_id"`
 	MovedFrom     string `json:"moved_from"`

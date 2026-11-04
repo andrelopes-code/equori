@@ -384,6 +384,7 @@ type MoveInput struct {
 
 // Occurrence defines model for Occurrence.
 type Occurrence struct {
+	ActualAmount   *Money             `json:"actual_amount,omitempty"`
 	ExpectedAmount Money              `json:"expected_amount"`
 	ExpectedOn     openapi_types.Date `json:"expected_on"`
 	Id             openapi_types.UUID `json:"id"`

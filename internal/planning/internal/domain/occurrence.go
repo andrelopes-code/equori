@@ -40,3 +40,14 @@ func (o Occurrence) Shown(today time.Time, graceDays int) State {
 
 	return o.State
 }
+
+// ActualAmount returns the amount a transaction moved on the schedule account, positive, and
+// false when the transaction has no posting on it.
+func ActualAmount(t Transaction, s Schedule) (int64, bool) {
+	sum, ok := t.On(s.AccountID)
+	if s.Kind.Outflow() {
+		sum = -sum
+	}
+
+	return sum, ok
+}

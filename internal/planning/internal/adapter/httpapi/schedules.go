@@ -137,11 +137,17 @@ func (s *Server) ListSchedules(ctx context.Context, req ListSchedulesRequestObje
 }
 
 func toOccurrenceAPI(o app.OccurrenceView) Occurrence {
-	return Occurrence{
+	out := Occurrence{
 		Id: o.ID, ScheduleId: o.ScheduleID, Sequence: o.Sequence, ExpectedOn: apiDate(o.ExpectedOn),
 		ExpectedAmount: toMoneyAPI(o.Amount, o.Currency), State: OccurrenceState(o.Shown),
 		TransactionId: apiOptUUID(o.TransactionID), MovedFrom: apiOptDate(o.MovedFrom),
 	}
+	if o.Actual != nil {
+		actual := toMoneyAPI(*o.Actual, o.Currency)
+		out.ActualAmount = &actual
+	}
+
+	return out
 }
 
 func (s *Server) ListOccurrences(ctx context.Context, req ListOccurrencesRequestObject) (ListOccurrencesResponseObject, error) {

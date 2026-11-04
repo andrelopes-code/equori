@@ -4131,6 +4131,7 @@ export interface components {
             /** Format: date */
             expected_on: string;
             expected_amount: components["schemas"]["Money"];
+            actual_amount?: components["schemas"]["Money"];
             state: components["schemas"]["OccurrenceState"];
             /**
              * Format: uuid

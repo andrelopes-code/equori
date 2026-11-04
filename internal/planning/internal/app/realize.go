@@ -147,7 +147,11 @@ func (s *Service) Realize(ctx context.Context, booksID int64, id, txID uuid.UUID
 		}
 
 		realized, err := repo.Realize(ctx, booksID, id, txID, realizedManual)
-		out = s.view(ctx, realized, sch)
+		if err != nil {
+			return err
+		}
+
+		out, err = s.view(ctx, booksID, realized, sch)
 
 		return err
 	})
@@ -175,7 +179,11 @@ func (s *Service) Unrealize(ctx context.Context, booksID int64, id uuid.UUID) (O
 		}
 
 		released, err := repo.Release(ctx, booksID, id, true)
-		out = s.view(ctx, released, sch)
+		if err != nil {
+			return err
+		}
+
+		out, err = s.view(ctx, booksID, released, sch)
 
 		return err
 	})
@@ -183,8 +191,13 @@ func (s *Service) Unrealize(ctx context.Context, booksID int64, id uuid.UUID) (O
 	return out, err
 }
 
-func (s *Service) view(ctx context.Context, o domain.Occurrence, sch domain.Schedule) OccurrenceView {
-	return OccurrenceView{Occurrence: o, Shown: o.Shown(s.clk.Today(ctx), sch.GraceDays), Currency: sch.Currency}
+func (s *Service) view(ctx context.Context, booksID int64, o domain.Occurrence, sch domain.Schedule) (OccurrenceView, error) {
+	views := []OccurrenceView{{Occurrence: o, Shown: o.Shown(s.clk.Today(ctx), sch.GraceDays), Currency: sch.Currency}}
+	if err := s.fillActuals(ctx, booksID, views, map[uuid.UUID]domain.Schedule{sch.ID: sch}); err != nil {
+		return OccurrenceView{}, err
+	}
+
+	return views[0], nil
 }
 
 // Occurrence reads one occurrence of the book.
@@ -199,5 +212,5 @@ func (s *Service) Occurrence(ctx context.Context, booksID int64, id uuid.UUID) (
 		return OccurrenceView{}, err
 	}
 
-	return s.view(ctx, o, sch), nil
+	return s.view(ctx, booksID, o, sch)
 }
