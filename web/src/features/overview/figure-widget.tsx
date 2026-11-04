@@ -22,6 +22,7 @@ import type { MoneyAmount } from "@/ui/money-value";
 export function FigureWidget({
   placement,
   link,
+  help,
   error,
   onRetry,
   loading,
@@ -34,6 +35,7 @@ export function FigureWidget({
 }: {
   placement: Placement;
   link?: { label: string; options: NavigateOptions } | undefined;
+  help?: ReactNode;
   error: Error | null;
   onRetry: () => void;
   loading: boolean;
@@ -51,6 +53,7 @@ export function FigureWidget({
     <OverviewBlock
       placement={placement}
       link={link}
+      help={help}
       loading={false}
       error={error}
       onRetry={onRetry}

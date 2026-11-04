@@ -1,5 +1,6 @@
 import { DashboardGrid } from "@slotted/react/dashboard-grid";
-import { screen } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { indicatorFigures } from "@/features/overview/indicator-figures";
@@ -62,6 +63,32 @@ describe("indicator figures", () => {
       "Debt to income",
     ]) {
       expect(screen.getByRole("article", { name })).toBeInTheDocument();
+    }
+  });
+
+  it("explains each indicator behind an About control and keeps the note to its inputs", async () => {
+    const user = userEvent.setup();
+    renderBlock();
+
+    await screen.findByText("43.00%");
+
+    for (const [name, help] of [
+      ["Savings rate", catalogEn["overview.indicators.savingsHelp"]],
+      ["Liquidity", catalogEn["overview.indicators.reserveHelp"]],
+      ["Committed income", catalogEn["overview.indicators.committedHelp"]],
+      ["Debt to income", catalogEn["overview.indicators.debtHelp"]],
+    ] as const) {
+      const widget = screen.getByRole("article", { name });
+
+      expect(widget).not.toHaveTextContent(help);
+
+      await user.click(
+        within(widget).getByRole("button", { name: `About ${name}` }),
+      );
+
+      expect(await screen.findByText(help)).toBeVisible();
+
+      await user.keyboard("{Escape}");
     }
   });
 

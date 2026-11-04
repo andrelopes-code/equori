@@ -19,6 +19,15 @@ import { useMoneyFormat } from "@/privacy/use-money-format";
 export type IndicatorKind =
   "savings_rate" | "liquidity" | "committed_share" | "debt_service_share";
 
+// The definition of each figure, read once behind the control beside its title; the note under
+// the value names only its inputs (analytics design 5.1, V10).
+const helpKey = {
+  savings_rate: "overview.indicators.savingsHelp",
+  liquidity: "overview.indicators.reserveHelp",
+  committed_share: "overview.indicators.committedHelp",
+  debt_service_share: "overview.indicators.debtHelp",
+} as const;
+
 // One indicator of the month in the cash view, with no judgment of good or bad. Its 12-month series
 // is the indicators tab of reports (analytics design 5.1).
 export function IndicatorFigure({
@@ -45,7 +54,7 @@ export function IndicatorFigure({
     switch (kind) {
       case "savings_rate":
         return m.trailing_savings_rate.bp === undefined
-          ? t("overview.indicators.savingsNoteShort")
+          ? t("overview.indicators.savingsNoMean")
           : t("overview.indicators.savingsNote", {
               mean: percent(m.trailing_savings_rate.bp),
             });
@@ -85,6 +94,7 @@ export function IndicatorFigure({
   return (
     <FigureWidget
       placement={placement}
+      help={t(helpKey[kind])}
       link={{
         label: t("overview.indicators.open"),
         options: { to: "/reports", search: { tab: "indicators" } },

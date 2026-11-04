@@ -1936,16 +1936,22 @@ export const catalogEn = {
   "overview.indicators.debt": "Debt to income",
   "overview.indicators.noDebt": "No loan or financing in your records",
   "overview.indicators.months": "{months} months",
-  "overview.indicators.savingsNote":
-    "Income left after expenses this month, by the money that actually came in and went out. 12-month mean: {mean}.",
-  "overview.indicators.savingsNoteShort":
-    "Income left after expenses this month, by the money that actually came in and went out.",
+  "overview.indicators.savingsNote": "12-month mean: {mean}",
+  "overview.indicators.savingsNoMean": "No 12-month mean yet",
   "overview.indicators.reserveNote":
-    "{liquid} in checking, savings, cash, wallets and reserves against a mean monthly expense of {expense}.",
+    "{liquid} against a mean monthly expense of {expense}",
   "overview.indicators.committedNote":
-    "{committed} of bills, subscriptions and installments this month against a mean monthly income of {income}.",
+    "{committed} against a mean monthly income of {income}",
   "overview.indicators.debtNote":
-    "{debt} of loan principal and interest this month against a mean monthly income of {income}.",
+    "{debt} against a mean monthly income of {income}",
+  "overview.indicators.savingsHelp":
+    "The share of this month's income left after its expenses, by the money that actually came in and went out.",
+  "overview.indicators.reserveHelp":
+    "How many months of the mean monthly expense the balance of checking, savings, cash, wallets and reserves covers.",
+  "overview.indicators.committedHelp":
+    "The share of the mean monthly income that this month's bills, subscriptions and installments take.",
+  "overview.indicators.debtHelp":
+    "The share of the mean monthly income that this month's loan principal and interest take.",
   "overview.indicators.reason.no_income":
     "No income was recorded in this period.",
   "overview.indicators.reason.no_expense":

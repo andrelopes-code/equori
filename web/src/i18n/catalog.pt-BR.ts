@@ -1956,16 +1956,22 @@ export const catalogPtBR: Catalog = {
   "overview.indicators.noDebt":
     "Nenhum empréstimo ou financiamento nos seus registros",
   "overview.indicators.months": "{months} meses",
-  "overview.indicators.savingsNote":
-    "Renda que sobrou depois das despesas neste mês, pelo dinheiro que de fato entrou e saiu. Média de 12 meses: {mean}.",
-  "overview.indicators.savingsNoteShort":
-    "Renda que sobrou depois das despesas neste mês, pelo dinheiro que de fato entrou e saiu.",
+  "overview.indicators.savingsNote": "Média de 12 meses: {mean}",
+  "overview.indicators.savingsNoMean": "Ainda sem média de 12 meses",
   "overview.indicators.reserveNote":
-    "{liquid} em contas correntes, poupanças, dinheiro, carteiras e reservas contra uma despesa média mensal de {expense}.",
+    "{liquid} contra uma despesa média mensal de {expense}",
   "overview.indicators.committedNote":
-    "{committed} em contas, assinaturas e parcelas deste mês contra uma renda média mensal de {income}.",
+    "{committed} contra uma renda média mensal de {income}",
   "overview.indicators.debtNote":
-    "{debt} de principal e juros de empréstimos neste mês contra uma renda média mensal de {income}.",
+    "{debt} contra uma renda média mensal de {income}",
+  "overview.indicators.savingsHelp":
+    "A parte da renda deste mês que sobrou depois das despesas, pelo dinheiro que de fato entrou e saiu.",
+  "overview.indicators.reserveHelp":
+    "Quantos meses da despesa média mensal o saldo de contas correntes, poupanças, dinheiro, carteiras e reservas cobre.",
+  "overview.indicators.committedHelp":
+    "A parte da renda média mensal que as contas, assinaturas e parcelas deste mês ocupam.",
+  "overview.indicators.debtHelp":
+    "A parte da renda média mensal que o principal e os juros de empréstimos deste mês ocupam.",
   "overview.indicators.reason.no_income":
     "Nenhuma receita registrada no período.",
   "overview.indicators.reason.no_expense":

@@ -41,6 +41,7 @@ export function placement(
 export function OverviewBlock({
   placement,
   link,
+  help,
   loading,
   error,
   onRetry,
@@ -50,6 +51,8 @@ export function OverviewBlock({
 }: {
   placement: Placement;
   link?: { label: string; options: NavigateOptions } | undefined;
+  // What the block's figure is, in plain words, behind a control beside its title.
+  help?: ReactNode;
   loading: boolean;
   error: Error | null;
   onRetry: () => void;
@@ -65,6 +68,7 @@ export function OverviewBlock({
   return (
     <DashboardWidget
       {...placement}
+      help={help}
       loading={loading && error === null}
       status={status}
       emptyTitle={empty}

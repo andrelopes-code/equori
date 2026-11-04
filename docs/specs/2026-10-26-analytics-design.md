@@ -88,7 +88,7 @@ A ledger account attribute `excluded_from_liquidity` (boolean, default false) re
 Placed after net worth in the default order, one widget per figure (5.2): I1 with I2 in its line, I3, I4 and I5. I5 reads a value only when I6 is above zero or debt service of `m` is above zero; otherwise its widget keeps its cell and says in one sentence that the books hold no loan or financing. Each figure shows:
 
 - the value: percent for I1, I2, I4, I5; months with one decimal for I3;
-- one line that defines the figure in plain words and names its inputs (V10);
+- one line that names its inputs, and a definition in plain words behind the information control beside the widget's title (V10, amended on 2026-11-04: Slotted's `DashboardWidget` draws the control, so the definition no longer takes a line of the widget);
 - the reason in words when the value is null.
 
 Each indicator figure draws a sparkline of its ratio beside the value, from the first month with a value; a later month without one is a gap, and fewer than 3 values draw no line. The full 12-month series, with axes and a table view, is the indicators tab of `/reports` (section 6), which each widget header links to. Amended on 2026-11-04 by the owner: the trend of the indicator stays in the widget, and the amendment of 2026-10-27 that removed it no longer holds. No figure carries a judgment color, a delta tone or a threshold.
