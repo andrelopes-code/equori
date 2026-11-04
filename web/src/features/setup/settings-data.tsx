@@ -1,5 +1,4 @@
 import { Button, ButtonLink } from "@slotted/react/button";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { List } from "@slotted/react/list";
 import {
   ListItem,
@@ -29,6 +28,7 @@ import { SettingsSection } from "@/features/setup/settings-section";
 import { formatFileSize } from "@/features/transactions";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { QueryError } from "@/ui/query-error";
+import { FormNotice } from "@/ui/form-notice";
 
 // Export and import of the books (docs/specs/2026-10-26-export-design.md).
 export function SettingsData() {
@@ -196,7 +196,7 @@ export function SettingsData() {
             </List>
           )}
           {message !== null && (
-            <InlineMessage tone={message.tone}>{message.text}</InlineMessage>
+            <FormNotice tone={message.tone}>{message.text}</FormNotice>
           )}
         </Stack>
       </SettingsGroup>

@@ -1,5 +1,4 @@
 import { Button } from "@slotted/react/button";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { List } from "@slotted/react/list";
 import { SkeletonText } from "@slotted/react/skeleton";
 import { Stack } from "@slotted/react/stack";
@@ -20,6 +19,7 @@ import { SettingsInvitations } from "@/features/setup/settings-invitations";
 import { SettingsSection } from "@/features/setup/settings-section";
 import { meQuery } from "@/features/session";
 import { useT } from "@/i18n/i18n-provider";
+import { FormNotice } from "@/ui/form-notice";
 import { Inline } from "@slotted/react";
 
 type Open =
@@ -50,14 +50,10 @@ export function SettingsMembers() {
       <SettingsGroup>
         <Stack gap={5}>
           {members.error !== null && (
-            <InlineMessage tone="danger">
-              {errorText(members.error, t)}
-            </InlineMessage>
+            <FormNotice>{errorText(members.error, t)}</FormNotice>
           )}
           {update.error !== null && (
-            <InlineMessage tone="danger">
-              {errorText(update.error, t)}
-            </InlineMessage>
+            <FormNotice>{errorText(update.error, t)}</FormNotice>
           )}
           {members.isPending && <SkeletonText lines={2} />}
           {members.data !== undefined && me !== undefined && (

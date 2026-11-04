@@ -1,6 +1,5 @@
 import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
 import { Button } from "@slotted/react/button";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { List, ListEmpty } from "@slotted/react/list";
 import {
   ListItem,
@@ -27,6 +26,7 @@ import { SettingsGroup } from "@/features/setup/settings-group";
 import { SettingsSection } from "@/features/setup/settings-section";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { FormNotice } from "@/ui/form-notice";
 
 type Open = { kind: "create" } | { kind: "delete"; token: AccessToken };
 
@@ -64,9 +64,7 @@ export function SettingsExternalAccess() {
             </Alert>
           )}
           {tokens.error !== null && (
-            <InlineMessage tone="danger">
-              {errorText(tokens.error, t)}
-            </InlineMessage>
+            <FormNotice>{errorText(tokens.error, t)}</FormNotice>
           )}
           {tokens.isPending ? (
             <SkeletonText lines={2} />

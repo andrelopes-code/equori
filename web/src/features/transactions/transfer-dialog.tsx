@@ -9,7 +9,6 @@ import {
   DialogTitle,
 } from "@slotted/react/dialog";
 import { Field, FieldLabel } from "@slotted/react/field";
-import { InlineMessage } from "@slotted/react/inline-message";
 import {
   Select,
   SelectContent,
@@ -24,6 +23,7 @@ import { errorText } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
 import { useTransferTransaction } from "@/features/transactions/api";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { FormNotice } from "@/ui/form-notice";
 import { useStableCallback } from "@/ui/use-stable-callback";
 
 type Account = components["schemas"]["Account"];
@@ -94,9 +94,7 @@ export function TransferDialog({
               </SelectContent>
             </Select>
           </Field>
-          {error !== null && (
-            <InlineMessage tone="danger">{error}</InlineMessage>
-          )}
+          {error !== null && <FormNotice>{error}</FormNotice>}
         </DialogBody>
         <DialogFooter>
           <Button

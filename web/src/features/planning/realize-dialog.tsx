@@ -8,7 +8,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@slotted/react/dialog";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { Inline } from "@slotted/react/inline";
 import { Stack } from "@slotted/react/stack";
 import {
@@ -45,6 +44,7 @@ import { useScale } from "@/features/setup";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
+import { FormNotice } from "@/ui/form-notice";
 import { useOverlayOpen } from "@/ui/use-overlay-open";
 import { useStableCallback } from "@/ui/use-stable-callback";
 
@@ -112,9 +112,7 @@ export function RealizeDialog({
         </DialogHeader>
         <DialogBody>
           <Stack gap={4}>
-            {error !== null && (
-              <InlineMessage tone="danger">{error}</InlineMessage>
-            )}
+            {error !== null && <FormNotice>{error}</FormNotice>}
             <Table
               columns={4}
               variant="framed"

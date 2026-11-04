@@ -1,3 +1,4 @@
+import { Text } from "@slotted/react/typography";
 import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
 import { Button } from "@slotted/react/button";
 import {
@@ -6,7 +7,6 @@ import {
   CollapsiblePanel,
   CollapsibleTrigger,
 } from "@slotted/react/collapsible";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { List, ListEmpty, ListSection } from "@slotted/react/list";
 import {
   ListItem,
@@ -52,6 +52,7 @@ import { UsageList } from "@/features/setup/usage-list";
 import { mergeUsageRows } from "@/features/setup/usage-rows";
 import { numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { FormNotice } from "@/ui/form-notice";
 
 type Open =
   | { kind: "create"; preset?: StartPreset }
@@ -111,9 +112,7 @@ export function SettingsAssistant() {
     >
       <SettingsGroup>
         <Stack gap={5}>
-          {failure !== null && (
-            <InlineMessage tone="danger">{errorText(failure, t)}</InlineMessage>
-          )}
+          {failure !== null && <FormNotice>{errorText(failure, t)}</FormNotice>}
           {starting && (
             <AssistantStart
               onPreset={(preset) => {
@@ -338,7 +337,9 @@ export function SettingsAssistant() {
               </Collapsible>
             </>
           )}
-          <InlineMessage>{t("assistant.usage.note")}</InlineMessage>
+          <Text size="sm" tone="muted">
+            {t("assistant.usage.note")}
+          </Text>
         </Stack>
       </SettingsGroup>
       {(open?.kind === "create" || open?.kind === "edit") && (

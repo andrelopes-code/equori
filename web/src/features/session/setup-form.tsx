@@ -2,7 +2,6 @@ import { Button } from "@slotted/react/button";
 import { Field, FieldError, FieldLabel } from "@slotted/react/field";
 import { Form, FormActions } from "@slotted/react/form";
 import type { FormErrors } from "@slotted/react/form";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { useMemo, useState } from "react";
 
 import { UpdateCheckChoice } from "@/features/instance";
@@ -16,6 +15,7 @@ import { languages, matchLanguage } from "@/i18n/languages";
 import type { Language } from "@/i18n/languages";
 import { regionChoicesFor } from "@/i18n/regions";
 import { ChoiceSelect } from "@/ui/choice-select";
+import { FormNotice } from "@/ui/form-notice";
 import { FormLayout } from "@/ui/form-layout";
 import { FormSection } from "@/ui/form-section";
 
@@ -149,14 +149,7 @@ export function SetupForm({ token }: SetupFormProps) {
       </FormLayout>
 
       {failure !== null && (
-        <InlineMessage
-          tone="danger"
-          live="assertive"
-          size="md"
-          className={styles.failure}
-        >
-          {failure}
-        </InlineMessage>
+        <FormNotice className={styles.failure}>{failure}</FormNotice>
       )}
 
       <FormActions align="stretch">

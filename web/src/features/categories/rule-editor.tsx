@@ -7,7 +7,6 @@ import { Button } from "@slotted/react/button";
 import { Checkbox } from "@slotted/react/checkbox";
 import { Field, FieldError, FieldLabel } from "@slotted/react/field";
 import { Glyph, Icon } from "@slotted/react/icon";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { Page, PageBody, PageFooter } from "@slotted/react/page";
 import {
   PageHeader,
@@ -52,6 +51,7 @@ import { RuleReading } from "@/features/categories/rule-reading";
 import { useRuleWords } from "@/features/categories/use-rule-words";
 import { payeesQuery, settingsQuery, useScale } from "@/features/setup";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { FormNotice } from "@/ui/form-notice";
 import { useMediaQuery, wideQuery } from "@/ui/use-media-query";
 import { PageBack } from "@/ui/page-back";
 import { FormChecks } from "@/ui/form-checks";
@@ -262,9 +262,7 @@ export function RuleEditor({ rule }: { rule: Rule | null }) {
               </Stack>
             }
           >
-            {summary !== null && (
-              <InlineMessage tone="danger">{summary}</InlineMessage>
-            )}
+            {summary !== null && <FormNotice>{summary}</FormNotice>}
             <Field invalid={shown.name !== undefined} required>
               <FieldLabel>{t("ruleEditor.name")}</FieldLabel>
               <TextField
@@ -351,7 +349,7 @@ export function RuleEditor({ rule }: { rule: Rule | null }) {
             >
               <Stack gap={3} className={styles.builder}>
                 {shown.actions !== undefined && (
-                  <InlineMessage tone="danger">{shown.actions}</InlineMessage>
+                  <FormNotice>{shown.actions}</FormNotice>
                 )}
                 {draft.actions.map((action, index) => (
                   <ActionRow

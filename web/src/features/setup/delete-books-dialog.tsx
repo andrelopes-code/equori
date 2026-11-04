@@ -9,7 +9,6 @@ import {
   DialogTitle,
 } from "@slotted/react/dialog";
 import { Field, FieldLabel } from "@slotted/react/field";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { TextField } from "@slotted/react/text-field";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
@@ -18,6 +17,7 @@ import { useApi } from "@/api/api-context";
 import { errorText } from "@/api/problem";
 import { booksQuery, useDeleteBooks } from "@/features/setup/api";
 import { useT } from "@/i18n/i18n-provider";
+import { FormNotice } from "@/ui/form-notice";
 import { useStableCallback } from "@/ui/use-stable-callback";
 
 interface DeleteBooksDialogProps {
@@ -61,11 +61,7 @@ export function DeleteBooksDialog({ onClose }: DeleteBooksDialogProps) {
             <FieldLabel>{t("books.delete.confirm")}</FieldLabel>
             <TextField value={typed} onValueChange={setTyped} />
           </Field>
-          {failure !== null && (
-            <InlineMessage tone="danger" role="alert">
-              {errorText(failure, t)}
-            </InlineMessage>
-          )}
+          {failure !== null && <FormNotice>{errorText(failure, t)}</FormNotice>}
         </DialogBody>
         <DialogFooter>
           <Button variant="ghost" tone="secondary" onClick={onClose}>

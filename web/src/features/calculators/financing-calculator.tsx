@@ -1,5 +1,4 @@
 import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { Stack } from "@slotted/react/stack";
 import { Heading, Text } from "@slotted/react/typography";
 
@@ -43,6 +42,7 @@ import { ResultList } from "@/features/calculators/result-list";
 import type { CalculatorMoney } from "@/features/calculators/use-calculator-money";
 import { useCalculatorMoney } from "@/features/calculators/use-calculator-money";
 import { useAppLocale, useAppLocaleState, useT } from "@/i18n/i18n-provider";
+import { FormNotice } from "@/ui/form-notice";
 
 type Solve = "installment" | "amount" | "rate" | "months";
 const solves: readonly Solve[] = ["installment", "amount", "rate", "months"];
@@ -235,9 +235,9 @@ export function FinancingCalculator() {
           ]}
         />
         {change === null && (
-          <InlineMessage tone="warning">
+          <FormNotice tone="warning">
             {t("calc.financing.prepay.invalid")}
-          </InlineMessage>
+          </FormNotice>
         )}
         {change !== null && change !== undefined && (
           <Stack gap={2}>

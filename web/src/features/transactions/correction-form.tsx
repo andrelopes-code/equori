@@ -10,7 +10,6 @@ import {
   FieldError,
   FieldLabel,
 } from "@slotted/react/field";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { Page, PageBody, PageFooter } from "@slotted/react/page";
 import {
   PageHeader,
@@ -47,6 +46,7 @@ import { fieldOf } from "@/features/transactions/field-of";
 import { TransactionForm } from "@/features/transactions/transaction-form";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { FormNotice } from "@/ui/form-notice";
 import { useMediaQuery, wideQuery } from "@/ui/use-media-query";
 import { PageBack } from "@/ui/page-back";
 
@@ -242,9 +242,7 @@ export function CorrectionForm({
               }}
             />
           )}
-          {summary !== null && (
-            <InlineMessage tone="danger">{summary}</InlineMessage>
-          )}
+          {summary !== null && <FormNotice>{summary}</FormNotice>}
           <TransactionForm
             draft={draft}
             onChange={setDraft}

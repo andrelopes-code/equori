@@ -8,7 +8,6 @@ import {
   DialogTitle,
 } from "@slotted/react/dialog";
 import { Field, FieldLabel } from "@slotted/react/field";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { useId, useState } from "react";
 
 import { errorText } from "@/api/problem";
@@ -21,6 +20,7 @@ import { formatMonthTitle } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { ChoiceSelect } from "@/ui/choice-select";
+import { FormNotice } from "@/ui/form-notice";
 import { FormLayout } from "@/ui/form-layout";
 import { useOverlayOpen } from "@/ui/use-overlay-open";
 import { useStableCallback } from "@/ui/use-stable-callback";
@@ -97,9 +97,7 @@ export function BillingRuleDialog({
             }}
           >
             <FormLayout>
-              {error !== null && (
-                <InlineMessage tone="danger">{error}</InlineMessage>
-              )}
+              {error !== null && <FormNotice>{error}</FormNotice>}
 
               <Field required>
                 <FieldLabel>{t("card.effectiveFrom")}</FieldLabel>

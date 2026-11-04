@@ -14,7 +14,6 @@ import {
   FieldError,
   FieldLabel,
 } from "@slotted/react/field";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { TextField } from "@slotted/react/text-field";
 import { useQuery } from "@tanstack/react-query";
 import { useId, useMemo, useState } from "react";
@@ -26,6 +25,7 @@ import { subtypesQuery, useEditInstrument } from "@/features/instruments/api";
 import { subtypeLabel } from "@/features/instruments/instrument-labels";
 import { useT } from "@/i18n/i18n-provider";
 import { ChoiceSelect } from "@/ui/choice-select";
+import { FormNotice } from "@/ui/form-notice";
 import { FormLayout } from "@/ui/form-layout";
 import { FormRow } from "@/ui/form-row";
 import { useOverlayOpen } from "@/ui/use-overlay-open";
@@ -117,9 +117,7 @@ export function EditInstrumentDialog({
             }}
           >
             <FormLayout>
-              {summary !== null && (
-                <InlineMessage tone="danger">{summary}</InlineMessage>
-              )}
+              {summary !== null && <FormNotice>{summary}</FormNotice>}
 
               <Field invalid={errors.name !== undefined} required>
                 <FieldLabel>{t("instruments.field.name")}</FieldLabel>

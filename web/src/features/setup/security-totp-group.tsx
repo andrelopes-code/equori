@@ -1,5 +1,4 @@
 import { Button } from "@slotted/react/button";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { useState } from "react";
 
 import { errorText } from "@/api/problem";
@@ -10,6 +9,7 @@ import { SettingsGroup } from "@/features/setup/settings-group";
 import { SettingsRow } from "@/features/setup/settings-row";
 import { TotpDialog } from "@/features/setup/totp-dialog";
 import { useT } from "@/i18n/i18n-provider";
+import { FormNotice } from "@/ui/form-notice";
 
 interface SecurityTotpGroupProps {
   enabled: boolean;
@@ -57,11 +57,7 @@ export function SecurityTotpGroup({
             {t("security.totp.enable")}
           </Button>
         )}
-        {start.isError && (
-          <InlineMessage tone="danger" role="alert">
-            {errorText(start.error, t)}
-          </InlineMessage>
-        )}
+        {start.isError && <FormNotice>{errorText(start.error, t)}</FormNotice>}
       </SettingsRow>
       {setup !== null && (
         <TotpDialog

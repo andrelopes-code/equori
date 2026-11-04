@@ -1,4 +1,3 @@
-import { InlineMessage } from "@slotted/react/inline-message";
 import { Inline } from "@slotted/react/inline";
 import { Stack } from "@slotted/react/stack";
 import { Tag } from "@slotted/react/tag";
@@ -6,6 +5,7 @@ import { Tag } from "@slotted/react/tag";
 import type { ModelUse } from "@/features/setup/api";
 import { NoticeTag } from "@/features/setup/notice-tag";
 import { useT } from "@/i18n/i18n-provider";
+import { FormNotice } from "@/ui/form-notice";
 
 // What a use sends and where: financial data, the capabilities it needs, one tag per notice of its
 // targets, and the capabilities a target lacks. The warning that a target trains on financial data
@@ -52,12 +52,12 @@ export function UsePrivacy({ use }: { use: ModelUse }) {
         ))}
       </Inline>
       {lacking.map((x) => (
-        <InlineMessage key={x.name} tone="danger">
+        <FormNotice key={x.name}>
           {t("assistant.use.lacks", {
             provider: x.name,
             list: x.missing.map(capability).join(", "),
           })}
-        </InlineMessage>
+        </FormNotice>
       ))}
     </Stack>
   );

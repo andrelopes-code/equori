@@ -6,7 +6,6 @@ import {
 import { Button } from "@slotted/react/button";
 import { Checkbox } from "@slotted/react/checkbox";
 import { Field, FieldError, FieldLabel } from "@slotted/react/field";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { Page, PageBody, PageFooter } from "@slotted/react/page";
 import {
   PageHeader,
@@ -28,6 +27,7 @@ import { settingsQuery, useScale } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import widths from "@/ui/field-width.module.css";
+import { FormNotice } from "@/ui/form-notice";
 import { FormLayout } from "@/ui/form-layout";
 import { MoneyInput } from "@/ui/money-input";
 import { MonthControl } from "@/ui/month-control";
@@ -142,9 +142,7 @@ export function BudgetFormPage() {
       </PageHeader>
       <PageBody>
         <FormLayout>
-          {summary !== null && (
-            <InlineMessage tone="danger">{summary}</InlineMessage>
-          )}
+          {summary !== null && <FormNotice>{summary}</FormNotice>}
 
           <Field invalid={errors.category_id !== undefined} required>
             <FieldLabel>{t("budget.category")}</FieldLabel>

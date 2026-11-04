@@ -11,12 +11,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@slotted/react/dialog";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { Stack } from "@slotted/react/stack";
 import { Children } from "react";
 import type { ReactNode } from "react";
 
 import { useT } from "@/i18n/i18n-provider";
+import { FormNotice } from "@/ui/form-notice";
 import { useOverlayOpen } from "@/ui/use-overlay-open";
 import { useStableCallback } from "@/ui/use-stable-callback";
 
@@ -84,9 +84,7 @@ export function ConfirmDialog({
           <DialogBody>
             <Stack gap={4}>
               {children}
-              {error !== null && (
-                <InlineMessage tone="danger">{error}</InlineMessage>
-              )}
+              {error !== null && <FormNotice>{error}</FormNotice>}
             </Stack>
           </DialogBody>
         )}

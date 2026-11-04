@@ -1,3 +1,4 @@
+import { Text } from "@slotted/react/typography";
 import { Button } from "@slotted/react/button";
 import {
   Dialog,
@@ -9,7 +10,6 @@ import {
   DialogTitle,
 } from "@slotted/react/dialog";
 import { Field, FieldDescription, FieldLabel } from "@slotted/react/field";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { toast } from "@slotted/react/toast";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
@@ -29,6 +29,7 @@ import {
 import { reimbursementErrorText } from "@/features/transactions/reimbursement-error";
 import { ReimbursementRow } from "@/features/transactions/reimbursement-row";
 import { useT } from "@/i18n/i18n-provider";
+import { FormNotice } from "@/ui/form-notice";
 import { useStableCallback } from "@/ui/use-stable-callback";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
@@ -136,7 +137,9 @@ export function ReimbursementDialog({
         </DialogHeader>
         <DialogBody>
           {candidates.isSuccess && items.length === 0 && (
-            <InlineMessage>{t("reimbursement.empty")}</InlineMessage>
+            <Text size="sm" tone="muted">
+              {t("reimbursement.empty")}
+            </Text>
           )}
           {items.length > 0 && (
             <Field required>
@@ -175,13 +178,13 @@ export function ReimbursementDialog({
             </Field>
           )}
           {items.length > 0 && (
-            <InlineMessage tone={totals.leftover < 0 ? "danger" : "secondary"}>
+            <Text size="sm" tone={totals.leftover < 0 ? "danger" : "muted"}>
               {t("reimbursement.totals", {
                 allocated: fmt(totals.allocated),
                 total: fmt(inflow),
                 leftover: fmt(totals.leftover),
               })}
-            </InlineMessage>
+            </Text>
           )}
           {items.length > 0 && (
             <Field>
@@ -198,9 +201,7 @@ export function ReimbursementDialog({
               </FieldDescription>
             </Field>
           )}
-          {error !== null && (
-            <InlineMessage tone="danger">{error}</InlineMessage>
-          )}
+          {error !== null && <FormNotice>{error}</FormNotice>}
         </DialogBody>
         <DialogFooter>
           {hadLinks && (

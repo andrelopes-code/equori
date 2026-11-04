@@ -1,3 +1,4 @@
+import { Text } from "@slotted/react/typography";
 import { Button } from "@slotted/react/button";
 import {
   Dialog,
@@ -7,7 +8,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@slotted/react/dialog";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { List } from "@slotted/react/list";
 import {
   ListItem,
@@ -22,6 +22,7 @@ import { errorText } from "@/api/problem";
 import { providerModelsQuery } from "@/features/setup/api";
 import type { ModelProvider } from "@/features/setup/api";
 import { useT } from "@/i18n/i18n-provider";
+import { FormNotice } from "@/ui/form-notice";
 import { useStableCallback } from "@/ui/use-stable-callback";
 
 // The listing calls the provider, which also tells whether its key works.
@@ -48,13 +49,13 @@ export function ProviderModelsDialog({
         <DialogBody>
           {models.isPending && <SkeletonText lines={4} />}
           {models.isError && (
-            <InlineMessage tone="danger">
-              {errorText(models.error, t)}
-            </InlineMessage>
+            <FormNotice>{errorText(models.error, t)}</FormNotice>
           )}
           {models.data !== undefined &&
             (models.data.items.length === 0 ? (
-              <InlineMessage>{t("assistant.models.empty")}</InlineMessage>
+              <Text size="sm" tone="muted">
+                {t("assistant.models.empty")}
+              </Text>
             ) : (
               <List
                 size="sm"

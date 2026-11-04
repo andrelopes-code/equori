@@ -9,7 +9,6 @@ import {
   DialogTitle,
 } from "@slotted/react/dialog";
 import { Field, FieldDescription, FieldLabel } from "@slotted/react/field";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { useId, useState } from "react";
 
 import { errorText } from "@/api/problem";
@@ -20,6 +19,7 @@ import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { ChoiceSelect } from "@/ui/choice-select";
 import { DateInput } from "@/ui/date-input";
+import { FormNotice } from "@/ui/form-notice";
 import { FormLayout } from "@/ui/form-layout";
 import { FormRow } from "@/ui/form-row";
 import { MoneyInput } from "@/ui/money-input";
@@ -94,9 +94,7 @@ export function FinanceDialog({
             }}
           >
             <FormLayout>
-              {error !== null && (
-                <InlineMessage tone="danger">{error}</InlineMessage>
-              )}
+              {error !== null && <FormNotice>{error}</FormNotice>}
 
               <FormRow>
                 <Field required>

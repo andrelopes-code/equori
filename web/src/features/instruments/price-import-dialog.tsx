@@ -11,7 +11,6 @@ import {
   DialogTitle,
 } from "@slotted/react/dialog";
 import { Field, FieldError, FieldLabel } from "@slotted/react/field";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { Stack } from "@slotted/react/stack";
 import { Upload } from "@slotted/react/upload";
 import { useState } from "react";
@@ -21,6 +20,7 @@ import { useImportPrices } from "@/features/instruments/api";
 import { useT } from "@/i18n/i18n-provider";
 import { useOverlayOpen } from "@/ui/use-overlay-open";
 import { useStableCallback } from "@/ui/use-stable-callback";
+import { FormNotice } from "@/ui/form-notice";
 
 // The contract allows 10,000 lines of about 50 bytes; the server answers 413 above its own limit.
 const maxBytes = 2 * 1024 * 1024;
@@ -76,9 +76,9 @@ export function PriceImportDialog({ onClose }: { onClose: () => void }) {
               </AlertContent>
             </Alert>
             {recorded !== null ? (
-              <InlineMessage tone="success">
+              <FormNotice tone="success">
                 {t("prices.import.recorded", { count: recorded })}
-              </InlineMessage>
+              </FormNotice>
             ) : (
               <Field required invalid={refusal !== null || problems.length > 0}>
                 <FieldLabel>{t("prices.import.file")}</FieldLabel>

@@ -1,4 +1,3 @@
-import { InlineMessage } from "@slotted/react/inline-message";
 import { Stack } from "@slotted/react/stack";
 import {
   Section,
@@ -17,6 +16,7 @@ import type { components } from "@/api/schema.gen";
 import { rulePreview } from "@/features/categories/api";
 import { PreviewList } from "@/features/categories/preview-list";
 import { useT } from "@/i18n/i18n-provider";
+import { FormNotice } from "@/ui/form-notice";
 import { useDebounced } from "@/ui/use-debounced";
 
 type RuleInput = components["schemas"]["RuleInput"];
@@ -51,12 +51,12 @@ export function RulePreview({ rule }: { rule: RuleInput | null }) {
         <Stack gap={4}>
           {rule === null && <Text tone="muted">{t("preview.waiting")}</Text>}
           {rule !== null && preview.isError && (
-            <InlineMessage tone="danger">
+            <FormNotice>
               {preview.error instanceof ProblemError
                 ? (preview.error.problem.errors?.[0]?.message ??
                   t("preview.failed"))
                 : t("preview.failed")}
-            </InlineMessage>
+            </FormNotice>
           )}
           {rule !== null && preview.data != null && (
             <>

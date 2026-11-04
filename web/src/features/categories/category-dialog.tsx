@@ -15,7 +15,6 @@ import {
   FieldGroupLegend,
 } from "@slotted/react/field-group";
 import { Inline } from "@slotted/react/inline";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { Segment, SegmentedControl } from "@slotted/react/segmented-control";
 import { TextField } from "@slotted/react/text-field";
 import { useId, useState } from "react";
@@ -30,6 +29,7 @@ import type {
 } from "@/features/categories/category-paths";
 import { useSaveCategory } from "@/features/categories/use-save-category";
 import { useT } from "@/i18n/i18n-provider";
+import { FormNotice } from "@/ui/form-notice";
 import { FormLayout } from "@/ui/form-layout";
 import { useStableCallback } from "@/ui/use-stable-callback";
 
@@ -95,9 +95,7 @@ export function CategoryDialog({
             }}
           >
             <FormLayout>
-              {summary !== null && (
-                <InlineMessage tone="danger">{summary}</InlineMessage>
-              )}
+              {summary !== null && <FormNotice>{summary}</FormNotice>}
 
               <Field invalid={errors.name !== undefined} required>
                 <FieldLabel>{t("category.name")}</FieldLabel>

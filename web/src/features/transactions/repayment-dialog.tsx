@@ -1,3 +1,4 @@
+import { Text } from "@slotted/react/typography";
 import { Button } from "@slotted/react/button";
 import {
   Dialog,
@@ -9,7 +10,6 @@ import {
   DialogTitle,
 } from "@slotted/react/dialog";
 import { Field, FieldLabel } from "@slotted/react/field";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { Radio, RadioGroup } from "@slotted/react/radio-group";
 import { toast } from "@slotted/react/toast";
 import { useQuery } from "@tanstack/react-query";
@@ -28,6 +28,7 @@ import {
 import { reimbursementErrorText } from "@/features/transactions/reimbursement-error";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { FormNotice } from "@/ui/form-notice";
 import { MoneyInput } from "@/ui/money-input";
 import { useStableCallback } from "@/ui/use-stable-callback";
 import { useMoneyFormat } from "@/privacy/use-money-format";
@@ -93,7 +94,9 @@ export function RepaymentDialog({
         </DialogHeader>
         <DialogBody>
           {sources.isSuccess && items.length === 0 && (
-            <InlineMessage>{t("repayment.empty")}</InlineMessage>
+            <Text size="sm" tone="muted">
+              {t("repayment.empty")}
+            </Text>
           )}
           {items.length > 0 && (
             <Field required>
@@ -132,9 +135,7 @@ export function RepaymentDialog({
               />
             </Field>
           )}
-          {error !== null && (
-            <InlineMessage tone="danger">{error}</InlineMessage>
-          )}
+          {error !== null && <FormNotice>{error}</FormNotice>}
         </DialogBody>
         <DialogFooter>
           <Button

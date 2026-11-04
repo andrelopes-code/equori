@@ -9,7 +9,6 @@ import {
   DialogTitle,
 } from "@slotted/react/dialog";
 import { Field, FieldLabel } from "@slotted/react/field";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { Textarea } from "@slotted/react/textarea";
 import { useId, useState } from "react";
 
@@ -22,6 +21,7 @@ import {
 } from "@/features/planning/api";
 import { useT } from "@/i18n/i18n-provider";
 import { DateInput } from "@/ui/date-input";
+import { FormNotice } from "@/ui/form-notice";
 import { FormLayout } from "@/ui/form-layout";
 import { useOverlayOpen } from "@/ui/use-overlay-open";
 import { useStableCallback } from "@/ui/use-stable-callback";
@@ -87,9 +87,7 @@ export function OccurrenceDialog({
             }}
           >
             <FormLayout>
-              {error !== null && (
-                <InlineMessage tone="danger">{error}</InlineMessage>
-              )}
+              {error !== null && <FormNotice>{error}</FormNotice>}
 
               {change === "skip" && (
                 <Field>

@@ -16,7 +16,6 @@ import {
   FieldGroupContent,
   FieldGroupLegend,
 } from "@slotted/react/field-group";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { Radio, RadioGroup } from "@slotted/react/radio-group";
 import { Stack } from "@slotted/react/stack";
 import { TextField } from "@slotted/react/text-field";
@@ -26,6 +25,7 @@ import { ProblemError, errorText, fieldErrors } from "@/api/problem";
 import { useCreateAccessToken } from "@/features/setup/api";
 import { clientSnippets } from "@/features/setup/client-snippets";
 import { useT } from "@/i18n/i18n-provider";
+import { FormNotice } from "@/ui/form-notice";
 import { FormLayout } from "@/ui/form-layout";
 import { useStableCallback } from "@/ui/use-stable-callback";
 
@@ -137,9 +137,7 @@ export function AccessTokenDialog({ onClose }: { onClose: () => void }) {
               }}
             >
               <Stack gap={4}>
-                {summary !== null && (
-                  <InlineMessage tone="danger">{summary}</InlineMessage>
-                )}
+                {summary !== null && <FormNotice>{summary}</FormNotice>}
                 <Field invalid={errors.name !== undefined} required>
                   <FieldLabel>{t("settings.external_access.name")}</FieldLabel>
                   <TextField

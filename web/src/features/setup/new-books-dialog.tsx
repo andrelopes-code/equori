@@ -13,7 +13,6 @@ import {
   FieldError,
   FieldLabel,
 } from "@slotted/react/field";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { Stack } from "@slotted/react/stack";
 import { TextField } from "@slotted/react/text-field";
 import { useQuery } from "@tanstack/react-query";
@@ -26,6 +25,7 @@ import { useCreateBooks } from "@/features/setup/api";
 import { useAppLocaleState, useT } from "@/i18n/i18n-provider";
 import { regionChoicesFor } from "@/i18n/regions";
 import { ChoiceSelect } from "@/ui/choice-select";
+import { FormNotice } from "@/ui/form-notice";
 import { useStableCallback } from "@/ui/use-stable-callback";
 
 interface NewBooksDialogProps {
@@ -87,9 +87,7 @@ export function NewBooksDialog({ onClose }: NewBooksDialogProps) {
             }}
           >
             <Stack gap={4}>
-              {summary !== null && (
-                <InlineMessage tone="danger">{summary}</InlineMessage>
-              )}
+              {summary !== null && <FormNotice>{summary}</FormNotice>}
 
               <Field invalid={errors.name !== undefined} required>
                 <FieldLabel>{t("books.name")}</FieldLabel>

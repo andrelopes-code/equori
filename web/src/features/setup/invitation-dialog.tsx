@@ -14,7 +14,6 @@ import {
   FieldGroupContent,
   FieldGroupLegend,
 } from "@slotted/react/field-group";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { Radio, RadioGroup } from "@slotted/react/radio-group";
 import { Stack } from "@slotted/react/stack";
 import { TextField } from "@slotted/react/text-field";
@@ -25,6 +24,7 @@ import { useCreateInvitation } from "@/features/setup/api";
 import type { BookRole, Invitation } from "@/features/setup/api";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { FormNotice } from "@/ui/form-notice";
 import { useStableCallback } from "@/ui/use-stable-callback";
 
 interface InvitationDialogProps {
@@ -103,9 +103,7 @@ export function InvitationDialog({ onClose }: InvitationDialogProps) {
               }}
             >
               <Stack gap={4}>
-                {summary !== null && (
-                  <InlineMessage tone="danger">{summary}</InlineMessage>
-                )}
+                {summary !== null && <FormNotice>{summary}</FormNotice>}
                 <Field invalid={errors.email !== undefined} required>
                   <FieldLabel>{t("invitations.email")}</FieldLabel>
                   <TextField

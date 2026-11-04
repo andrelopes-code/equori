@@ -9,7 +9,6 @@ import {
   DialogTitle,
 } from "@slotted/react/dialog";
 import { Field, FieldDescription, FieldLabel } from "@slotted/react/field";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { Textarea } from "@slotted/react/textarea";
 import { useId, useState } from "react";
 
@@ -17,6 +16,7 @@ import { errorText } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
 import { useVoidTransaction } from "@/features/transactions/api";
 import { useT } from "@/i18n/i18n-provider";
+import { FormNotice } from "@/ui/form-notice";
 import { useStableCallback } from "@/ui/use-stable-callback";
 
 type Transaction = components["schemas"]["Transaction"];
@@ -79,9 +79,7 @@ export function VoidDialog({
               />
               <FieldDescription>{t("void.reasonHint")}</FieldDescription>
             </Field>
-            {error !== null && (
-              <InlineMessage tone="danger">{error}</InlineMessage>
-            )}
+            {error !== null && <FormNotice>{error}</FormNotice>}
           </form>
         </DialogBody>
         <DialogFooter>

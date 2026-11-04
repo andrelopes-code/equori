@@ -1,6 +1,5 @@
 import type { ChartSeries } from "@slotted/core/chart";
 import { Chart } from "@slotted/react/chart";
-import { InlineMessage } from "@slotted/react/inline-message";
 import {
   ResultState,
   ResultStateContent,
@@ -50,6 +49,7 @@ import {
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 import { ChoiceSelect } from "@/ui/choice-select";
+import { FormNotice } from "@/ui/form-notice";
 import { QueryError } from "@/ui/query-error";
 
 const groups = {
@@ -217,11 +217,7 @@ export function FlowsTab({
   );
   let body;
   if (problem !== undefined)
-    body = (
-      <InlineMessage tone="danger">
-        {t(`report.period.${problem}`)}
-      </InlineMessage>
-    );
+    body = <FormNotice>{t(`report.period.${problem}`)}</FormNotice>;
   else if (error !== null)
     body = (
       <QueryError

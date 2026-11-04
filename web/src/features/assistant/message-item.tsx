@@ -4,7 +4,6 @@ import {
   Message,
   MessageBody,
 } from "@slotted/react/message";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { Stack } from "@slotted/react/stack";
 import { useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
@@ -23,6 +22,7 @@ import type { AssistantMessage } from "@/features/assistant/sse";
 import { TurnActivity } from "@/features/assistant/turn-activity";
 import { useT } from "@/i18n/i18n-provider";
 import { usePrivacy } from "@/privacy/privacy-provider";
+import { FormNotice } from "@/ui/form-notice";
 
 interface MessageItemProps {
   message: AssistantMessage;
@@ -90,9 +90,9 @@ export function MessageItem({
         {(message.outcome === "step_limit" || message.proposals.length > 0) && (
           <Stack gap={3} className={styles.attached}>
             {message.outcome === "step_limit" && (
-              <InlineMessage tone="warning">
+              <FormNotice tone="warning">
                 {t("assistant.step_limit")}
-              </InlineMessage>
+              </FormNotice>
             )}
             {message.proposals.map((proposal) => (
               <ProposalCard

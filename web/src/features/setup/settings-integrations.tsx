@@ -1,5 +1,4 @@
 import { Button } from "@slotted/react/button";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { List, ListEmpty } from "@slotted/react/list";
 import {
   ListItem,
@@ -29,6 +28,7 @@ import { SettingsSection } from "@/features/setup/settings-section";
 import { SettingsSyncSchedule } from "@/features/setup/settings-sync-schedule";
 import { formatDate, numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { FormNotice } from "@/ui/form-notice";
 
 type Open =
   | { kind: "create" }
@@ -62,9 +62,7 @@ export function SettingsIntegrations() {
     >
       <SettingsGroup>
         <Stack gap={5}>
-          {failure !== null && (
-            <InlineMessage tone="danger">{errorText(failure, t)}</InlineMessage>
-          )}
+          {failure !== null && <FormNotice>{errorText(failure, t)}</FormNotice>}
           {integrations.isPending ? (
             <SkeletonText lines={3} />
           ) : (

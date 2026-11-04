@@ -9,7 +9,6 @@ import {
   DialogTitle,
 } from "@slotted/react/dialog";
 import { Field, FieldLabel } from "@slotted/react/field";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { useId, useState } from "react";
 
 import { ProblemError, errorText } from "@/api/problem";
@@ -21,6 +20,7 @@ import { MoneyInput } from "@/ui/money-input";
 import { useStableCallback } from "@/ui/use-stable-callback";
 import { useOverlayOpen } from "@/ui/use-overlay-open";
 import { useMoneyFormat } from "@/privacy/use-money-format";
+import { FormNotice } from "@/ui/form-notice";
 
 type Statement = components["schemas"]["StatementSummary"];
 
@@ -104,7 +104,7 @@ export function ReconcileDialog({
           >
             <FormLayout>
               {error !== null && (
-                <InlineMessage tone="warning">{error}</InlineMessage>
+                <FormNotice tone="warning">{error}</FormNotice>
               )}
 
               <Field required>

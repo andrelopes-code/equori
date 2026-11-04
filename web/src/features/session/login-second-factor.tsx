@@ -1,5 +1,4 @@
 import { Button } from "@slotted/react/button";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { Stack } from "@slotted/react/stack";
 import { Heading, Text } from "@slotted/react/typography";
 import { useState } from "react";
@@ -18,6 +17,7 @@ import {
   passkeysAvailable,
 } from "@/features/session/passkey-ceremony";
 import { useT } from "@/i18n/i18n-provider";
+import { FormNotice } from "@/ui/form-notice";
 
 interface LoginSecondFactorProps {
   challenge: SecondFactorChallenge;
@@ -105,11 +105,7 @@ export function LoginSecondFactor({
           pending={pending}
           onSubmit={(input) => void submit(input)}
         />
-        {failure !== null && (
-          <InlineMessage tone="danger" live="assertive" size="md">
-            {failure}
-          </InlineMessage>
-        )}
+        {failure !== null && <FormNotice>{failure}</FormNotice>}
         <Button type="button" variant="ghost" onClick={handleBack}>
           {t("login.secondFactor.back")}
         </Button>

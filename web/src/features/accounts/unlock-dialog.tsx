@@ -9,7 +9,6 @@ import {
   DialogTitle,
 } from "@slotted/react/dialog";
 import { Field, FieldLabel } from "@slotted/react/field";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { Text } from "@slotted/react/typography";
 import { useState } from "react";
 
@@ -19,6 +18,7 @@ import { useUnlockAccount } from "@/features/accounts/api";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { DateInput } from "@/ui/date-input";
+import { FormNotice } from "@/ui/form-notice";
 import { FormLayout } from "@/ui/form-layout";
 import { useStableCallback } from "@/ui/use-stable-callback";
 import { useOverlayOpen } from "@/ui/use-overlay-open";
@@ -72,9 +72,7 @@ export function UnlockDialog({
               </Text>
             )}
 
-            {error !== null && (
-              <InlineMessage tone="danger">{error}</InlineMessage>
-            )}
+            {error !== null && <FormNotice>{error}</FormNotice>}
           </FormLayout>
         </DialogBody>
         <DialogFooter>

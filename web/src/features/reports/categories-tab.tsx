@@ -7,7 +7,6 @@ import {
   BreadcrumbPage,
 } from "@slotted/react/breadcrumb";
 import { Chart } from "@slotted/react/chart";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { Inline } from "@slotted/react/inline";
 import { Link } from "@slotted/react/link";
 import {
@@ -55,6 +54,7 @@ import { settingsQuery, useScale } from "@/features/setup";
 import { formatSignedBasisPoints } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
+import { FormNotice } from "@/ui/form-notice";
 import { QueryError } from "@/ui/query-error";
 import { routeTo } from "@/ui/route-to";
 
@@ -233,11 +233,7 @@ export function CategoriesTab({
     previous: r.previous ?? 0,
   }));
   if (problem !== undefined)
-    return (
-      <InlineMessage tone="danger">
-        {t(`report.period.${problem}`)}
-      </InlineMessage>
-    );
+    return <FormNotice>{t(`report.period.${problem}`)}</FormNotice>;
   if (error !== null)
     return (
       <QueryError

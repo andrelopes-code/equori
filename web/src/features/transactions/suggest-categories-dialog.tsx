@@ -11,7 +11,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@slotted/react/dialog";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { SkeletonText } from "@slotted/react/skeleton";
 import { Stack } from "@slotted/react/stack";
 import { Text } from "@slotted/react/typography";
@@ -24,6 +23,7 @@ import type { components } from "@/api/schema.gen";
 import type { CategoryEntry } from "@/features/categories";
 import { transactionSuggestionsQuery } from "@/features/transactions/api";
 import { useT } from "@/i18n/i18n-provider";
+import { FormNotice } from "@/ui/form-notice";
 
 type Transaction = components["schemas"]["Transaction"];
 
@@ -71,9 +71,7 @@ export function SuggestCategoriesDialog({
             {suggestions.isPending ? (
               <SkeletonText lines={transactions.length} />
             ) : suggestions.isError ? (
-              <InlineMessage tone="danger">
-                {errorText(suggestions.error, t)}
-              </InlineMessage>
+              <FormNotice>{errorText(suggestions.error, t)}</FormNotice>
             ) : (
               <>
                 {!suggestions.data.available && (

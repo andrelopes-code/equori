@@ -53,6 +53,14 @@ const pageHeaderBack = {
   message: "Draw a page's way back with PageBack (@/ui/page-back).",
 };
 
+// O15: InlineMessage is the root of FieldError and FieldDescription. A message about a command, a
+// form or a region is a FormNotice (@/ui/form-notice); one about a control is a FieldError.
+const bareInlineMessage = {
+  selector: 'JSXOpeningElement[name.name="InlineMessage"]',
+  message:
+    "Draw a field's error with FieldError and any other message with FormNotice (@/ui/form-notice) (O15).",
+};
+
 // Flat-config rule options replace instead of merging: every block below
 // restates the full option list for its files.
 const restrict = ({ patterns, paths = [] }) => ["error", { patterns, paths }];
@@ -194,13 +202,18 @@ export default defineConfig(
         { noStrings: true, ignoreProps: true },
       ],
       "react/no-multi-comp": ["error", { ignoreStateless: false }],
-      "no-restricted-syntax": ["error", bareRouterLink, pageHeaderBack],
+      "no-restricted-syntax": [
+        "error",
+        bareRouterLink,
+        pageHeaderBack,
+        bareInlineMessage,
+      ],
     },
   },
   {
     files: ["src/ui/page-back.tsx"],
     rules: {
-      "no-restricted-syntax": ["error", bareRouterLink],
+      "no-restricted-syntax": ["error", bareRouterLink, bareInlineMessage],
     },
   },
   { files: ["**/*.js"], extends: [tseslint.configs.disableTypeChecked] },

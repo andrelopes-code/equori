@@ -14,7 +14,6 @@ import {
   FieldError,
   FieldLabel,
 } from "@slotted/react/field";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { TextField } from "@slotted/react/text-field";
 import { useId, useState } from "react";
 
@@ -27,6 +26,7 @@ import type { Aggregator, Integration } from "@/features/setup/api";
 import { catalogLabel } from "@/features/setup/catalog-label";
 import { useT } from "@/i18n/i18n-provider";
 import { ChoiceSelect } from "@/ui/choice-select";
+import { FormNotice } from "@/ui/form-notice";
 import { FormLayout } from "@/ui/form-layout";
 import { useStableCallback } from "@/ui/use-stable-callback";
 
@@ -112,9 +112,7 @@ export function IntegrationDialog({
             }}
           >
             <FormLayout>
-              {summary !== null && (
-                <InlineMessage tone="danger">{summary}</InlineMessage>
-              )}
+              {summary !== null && <FormNotice>{summary}</FormNotice>}
 
               {integration === null && (
                 <>

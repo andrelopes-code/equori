@@ -1,5 +1,4 @@
 import { Button } from "@slotted/react/button";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { Stack } from "@slotted/react/stack";
 import { Text } from "@slotted/react/typography";
 
@@ -7,6 +6,7 @@ import type { InvitationPreview } from "@/features/session/api";
 import { InviteNewMemberForm } from "@/features/session/invite-new-member-form";
 import { useInviteAcceptance } from "@/features/session/use-invite-acceptance";
 import { useT } from "@/i18n/i18n-provider";
+import { FormNotice } from "@/ui/form-notice";
 
 interface InvitePreviewProps {
   token: string;
@@ -54,11 +54,7 @@ export function InvitePreview({ token, preview }: InvitePreviewProps) {
         </Stack>
       )}
 
-      {failure !== null && (
-        <InlineMessage tone="danger" live="assertive" size="md">
-          {failure}
-        </InlineMessage>
-      )}
+      {failure !== null && <FormNotice>{failure}</FormNotice>}
     </Stack>
   );
 }

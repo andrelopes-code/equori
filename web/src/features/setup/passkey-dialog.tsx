@@ -8,7 +8,6 @@ import {
   DialogTitle,
 } from "@slotted/react/dialog";
 import { Field, FieldDescription, FieldLabel } from "@slotted/react/field";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { Stack } from "@slotted/react/stack";
 import { TextField } from "@slotted/react/text-field";
 import { useState } from "react";
@@ -17,6 +16,7 @@ import { errorText } from "@/api/problem";
 import { PasskeyCeremonyError } from "@/features/session";
 import { useAddPasskey } from "@/features/setup/api";
 import { useT } from "@/i18n/i18n-provider";
+import { FormNotice } from "@/ui/form-notice";
 
 interface PasskeyDialogProps {
   onClose: () => void;
@@ -68,11 +68,7 @@ export function PasskeyDialog({ onClose, onCodes }: PasskeyDialogProps) {
                 {t("security.passkeys.name.help")}
               </FieldDescription>
             </Field>
-            {failureText !== null && (
-              <InlineMessage tone="danger" role="alert">
-                {failureText}
-              </InlineMessage>
-            )}
+            {failureText !== null && <FormNotice>{failureText}</FormNotice>}
           </Stack>
         </DialogBody>
         <DialogFooter>

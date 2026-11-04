@@ -1,3 +1,4 @@
+import { Text } from "@slotted/react/typography";
 import { Button } from "@slotted/react/button";
 import {
   Dialog,
@@ -9,7 +10,6 @@ import {
 } from "@slotted/react/dialog";
 import { Field, FieldLabel } from "@slotted/react/field";
 import { Inline } from "@slotted/react/inline";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { List, ListEmpty } from "@slotted/react/list";
 import {
   ListItem,
@@ -34,6 +34,7 @@ import type {
 import { catalogLabel } from "@/features/setup/catalog-label";
 import { useT } from "@/i18n/i18n-provider";
 import { ChoiceSelect } from "@/ui/choice-select";
+import { FormNotice } from "@/ui/form-notice";
 import { useStableCallback } from "@/ui/use-stable-callback";
 
 type Capability = ModelUse["needs"][number];
@@ -112,14 +113,12 @@ export function ChainDialog({
         </DialogHeader>
         <DialogBody>
           <Stack gap={4}>
-            {error !== null && (
-              <InlineMessage tone="danger">{error}</InlineMessage>
-            )}
-            <InlineMessage>
+            {error !== null && <FormNotice>{error}</FormNotice>}
+            <Text size="sm" tone="muted">
               {t("assistant.chain.needs", {
                 list: use.needs.map(capabilityLabel).join(", "),
               })}
-            </InlineMessage>
+            </Text>
             <List
               variant="framed"
               size="sm"

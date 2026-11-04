@@ -7,7 +7,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@slotted/react/dialog";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { Stack } from "@slotted/react/stack";
 import { Text } from "@slotted/react/typography";
 import { useState } from "react";
@@ -16,6 +15,7 @@ import { errorText } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
 import { useReopenAccount } from "@/features/accounts/api";
 import { useT } from "@/i18n/i18n-provider";
+import { FormNotice } from "@/ui/form-notice";
 import { useStableCallback } from "@/ui/use-stable-callback";
 import { useOverlayOpen } from "@/ui/use-overlay-open";
 
@@ -58,9 +58,7 @@ export function ReopenAccountDialog({
                     names: closed.map((a) => a.name).join(", "),
                   })}
             </Text>
-            {error !== null && (
-              <InlineMessage tone="danger">{error}</InlineMessage>
-            )}
+            {error !== null && <FormNotice>{error}</FormNotice>}
           </Stack>
         </DialogBody>
         <DialogFooter>

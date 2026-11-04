@@ -16,7 +16,6 @@ import {
   FieldError,
   FieldLabel,
 } from "@slotted/react/field";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { NumberField } from "@slotted/react/number-field";
 import { Page, PageBody, PageFooter } from "@slotted/react/page";
 import {
@@ -49,6 +48,7 @@ import { useToday } from "@/i18n/today";
 import { AppLink } from "@/ui/app-link";
 import { ChoiceSelect } from "@/ui/choice-select";
 import widths from "@/ui/field-width.module.css";
+import { FormNotice } from "@/ui/form-notice";
 import { FormLayout } from "@/ui/form-layout";
 import { FormSection } from "@/ui/form-section";
 import { MoneyInput } from "@/ui/money-input";
@@ -197,9 +197,7 @@ export function ScheduleFormPage() {
       </PageHeader>
       <PageBody>
         <FormLayout>
-          {summary !== null && (
-            <InlineMessage tone="danger">{summary}</InlineMessage>
-          )}
+          {summary !== null && <FormNotice>{summary}</FormNotice>}
 
           <Field required>
             <FieldLabel>{t("schedule.kind")}</FieldLabel>

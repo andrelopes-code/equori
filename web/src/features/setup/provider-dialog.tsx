@@ -1,3 +1,4 @@
+import { Text } from "@slotted/react/typography";
 import { Button } from "@slotted/react/button";
 import {
   Dialog,
@@ -13,7 +14,6 @@ import {
   FieldError,
   FieldLabel,
 } from "@slotted/react/field";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { TextField } from "@slotted/react/text-field";
 import { useId, useState } from "react";
 
@@ -23,6 +23,7 @@ import type { ModelPreset, ModelProvider } from "@/features/setup/api";
 import { catalogLabel } from "@/features/setup/catalog-label";
 import { useT } from "@/i18n/i18n-provider";
 import { ChoiceSelect } from "@/ui/choice-select";
+import { FormNotice } from "@/ui/form-notice";
 import { FormLayout } from "@/ui/form-layout";
 import { useStableCallback } from "@/ui/use-stable-callback";
 
@@ -120,9 +121,7 @@ export function ProviderDialog({
             }}
           >
             <FormLayout>
-              {summary !== null && (
-                <InlineMessage tone="danger">{summary}</InlineMessage>
-              )}
+              {summary !== null && <FormNotice>{summary}</FormNotice>}
 
               {provider === null && (
                 <Field invalid={errors.preset !== undefined} required>
@@ -145,13 +144,16 @@ export function ProviderDialog({
                 </Field>
               )}
 
-              {preset !== undefined && (
-                <InlineMessage
-                  tone={preset.notice === "trains" ? "warning" : "secondary"}
-                >
-                  {t(`assistant.notice.${preset.notice}.detail`)}
-                </InlineMessage>
-              )}
+              {preset !== undefined &&
+                (preset.notice === "trains" ? (
+                  <FormNotice tone="warning">
+                    {t(`assistant.notice.${preset.notice}.detail`)}
+                  </FormNotice>
+                ) : (
+                  <Text size="sm" tone="muted">
+                    {t(`assistant.notice.${preset.notice}.detail`)}
+                  </Text>
+                ))}
 
               <Field invalid={errors.name !== undefined} required>
                 <FieldLabel>{t("assistant.field.name")}</FieldLabel>

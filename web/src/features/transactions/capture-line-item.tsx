@@ -1,6 +1,5 @@
 import { Button } from "@slotted/react/button";
 import { Inline } from "@slotted/react/inline";
-import { InlineMessage } from "@slotted/react/inline-message";
 import {
   ListItem,
   ListItemActions,
@@ -21,6 +20,7 @@ import { EntryKindGlyph } from "@/features/transactions/entry-kind-glyph";
 import type { MessageKey } from "@/i18n/catalog.en";
 import { formatDayMonth } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { FormNotice } from "@/ui/form-notice";
 import { MoneyFigure } from "@/ui/money-figure";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
@@ -130,9 +130,9 @@ export function CaptureLineItem({
               </Text>
               {issues.map((issue) => (
                 <Stack key={issue.code} gap={1}>
-                  <InlineMessage tone="warning">
+                  <FormNotice tone="warning">
                     {t(`capture.issue.${issue.code}`)}
-                  </InlineMessage>
+                  </FormNotice>
                   {issue.choices.length > 0 && (
                     <Inline gap={2} aria-label={t("capture.choose")}>
                       {issue.choices.map((choice) => (
@@ -153,13 +153,11 @@ export function CaptureLineItem({
                 </Stack>
               ))}
               {problems.map((key) => (
-                <InlineMessage key={key} tone="warning">
+                <FormNotice key={key} tone="warning">
                   {t(key)}
-                </InlineMessage>
+                </FormNotice>
               ))}
-              {refusal !== null && (
-                <InlineMessage tone="danger">{refusal}</InlineMessage>
-              )}
+              {refusal !== null && <FormNotice>{refusal}</FormNotice>}
             </Stack>
           </ListItemDescription>
         </ListItemBody>

@@ -1,5 +1,4 @@
 import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { Page, PageBody } from "@slotted/react/page";
 import { Stack } from "@slotted/react/stack";
 import { Heading } from "@slotted/react/typography";
@@ -14,6 +13,7 @@ import { forgetInviteToken } from "@/features/session/invite-token";
 import styles from "@/features/session/login-page.module.css";
 import { useInviteToken } from "@/features/session/use-invite-token";
 import { useT } from "@/i18n/i18n-provider";
+import { FormNotice } from "@/ui/form-notice";
 
 // The invitation screen stands before a session, as the setup: it shares the login's measure.
 export function InvitePage() {
@@ -50,9 +50,7 @@ export function InvitePage() {
             )}
 
             {preview.isError && (
-              <InlineMessage tone="danger" live="assertive" size="md">
-                {errorText(preview.error, t)}
-              </InlineMessage>
+              <FormNotice>{errorText(preview.error, t)}</FormNotice>
             )}
 
             {preview.data !== undefined && (

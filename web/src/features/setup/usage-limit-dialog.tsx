@@ -8,7 +8,6 @@ import {
   DialogTitle,
 } from "@slotted/react/dialog";
 import { Field, FieldDescription, FieldLabel } from "@slotted/react/field";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { NumberField } from "@slotted/react/number-field";
 import { useId, useState } from "react";
 
@@ -16,6 +15,7 @@ import { errorText } from "@/api/problem";
 import { useSetUsageLimit } from "@/features/setup/api";
 import type { UsageRow } from "@/features/setup/api";
 import { useT } from "@/i18n/i18n-provider";
+import { FormNotice } from "@/ui/form-notice";
 import { FormLayout } from "@/ui/form-layout";
 import { FormRow } from "@/ui/form-row";
 import { useStableCallback } from "@/ui/use-stable-callback";
@@ -71,9 +71,7 @@ export function UsageLimitDialog({
             }}
           >
             <FormLayout>
-              {error !== null && (
-                <InlineMessage tone="danger">{error}</InlineMessage>
-              )}
+              {error !== null && <FormNotice>{error}</FormNotice>}
 
               <FormRow>
                 <Field>

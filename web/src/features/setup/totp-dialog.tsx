@@ -9,8 +9,7 @@ import {
   DialogTitle,
 } from "@slotted/react/dialog";
 import { Divider } from "@slotted/react/divider";
-import { Field } from "@slotted/react/field";
-import { InlineMessage } from "@slotted/react/inline-message";
+import { Field, FieldError } from "@slotted/react/field";
 import { OtpInput } from "@slotted/react/otp-input";
 import { Heading } from "@slotted/react/typography";
 import { useState } from "react";
@@ -88,12 +87,12 @@ export function TotpDialog({ setup, onClose, onCodes }: TotpDialogProps) {
                   value={code}
                   onValueChange={setCode}
                 />
+                {failure !== null && (
+                  <FieldError live="assertive">
+                    {errorText(failure, t)}
+                  </FieldError>
+                )}
               </Field>
-              {failure !== null && (
-                <InlineMessage tone="danger" role="alert">
-                  {errorText(failure, t)}
-                </InlineMessage>
-              )}
             </section>
           </div>
         </DialogBody>

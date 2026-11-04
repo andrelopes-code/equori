@@ -5,7 +5,6 @@ import {
   ActionBarOverflow,
 } from "@slotted/react/action-bar";
 import { Button, ButtonLink } from "@slotted/react/button";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { MenuItem } from "@slotted/react/menu";
 import { Page, PageBody, PageFooter } from "@slotted/react/page";
 import {
@@ -55,6 +54,7 @@ import { fieldOf } from "@/features/transactions/field-of";
 import { TransactionForm } from "@/features/transactions/transaction-form";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
+import { FormNotice } from "@/ui/form-notice";
 import { compactQuery, useMediaQuery, wideQuery } from "@/ui/use-media-query";
 import { PageBack } from "@/ui/page-back";
 
@@ -327,9 +327,7 @@ export function NewTransactionPage() {
           }}
         >
           {(entry?.summary ?? summary) !== null && (
-            <InlineMessage tone="danger">
-              {entry?.summary ?? summary}
-            </InlineMessage>
+            <FormNotice>{entry?.summary ?? summary}</FormNotice>
           )}
           {ready && investment === "investment_income" && scale !== null && (
             <IncomeForm

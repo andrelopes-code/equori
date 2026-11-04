@@ -5,7 +5,6 @@ import {
   FieldDescription,
   FieldLabel,
 } from "@slotted/react/field";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { Stack } from "@slotted/react/stack";
 import { TextField } from "@slotted/react/text-field";
 import { useState } from "react";
@@ -15,6 +14,7 @@ import { errorText } from "@/api/problem";
 import { useSetCopyPassword } from "@/features/instance";
 import { SettingsGroup } from "@/features/setup/settings-group";
 import { useT } from "@/i18n/i18n-provider";
+import { FormNotice } from "@/ui/form-notice";
 
 // A15.5: the password of the encrypted copies; two equal entries, 12 characters or more.
 export function SettingsCopyPassword() {
@@ -68,15 +68,9 @@ export function SettingsCopyPassword() {
             )}
           </Field>
 
-          {save.isError && (
-            <InlineMessage tone="danger" role="alert">
-              {errorText(save.error, t)}
-            </InlineMessage>
-          )}
+          {save.isError && <FormNotice>{errorText(save.error, t)}</FormNotice>}
           {save.isSuccess && (
-            <InlineMessage tone="success" role="status">
-              {t("backup.password.saved")}
-            </InlineMessage>
+            <FormNotice tone="success">{t("backup.password.saved")}</FormNotice>
           )}
 
           <div>

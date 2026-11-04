@@ -1,7 +1,6 @@
 import { AttachmentGroup } from "@slotted/react/attachment";
 import { Button } from "@slotted/react/button";
 import { Glyph, Icon } from "@slotted/react/icon";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { MediaViewer } from "@slotted/react/media-viewer";
 import { Stack } from "@slotted/react/stack";
 import { Text } from "@slotted/react/typography";
@@ -20,6 +19,7 @@ import { AttachmentCard } from "@/features/transactions/attachment-card";
 import { mediaItem } from "@/features/transactions/attachment-meta";
 import styles from "@/features/transactions/attachments-section.module.css";
 import { useT } from "@/i18n/i18n-provider";
+import { FormNotice } from "@/ui/form-notice";
 
 // The media types the server detects and keeps (N26).
 const accepted = "application/pdf,image/jpeg,image/png,image/webp,text/plain";
@@ -48,9 +48,7 @@ export function AttachmentsSection({
   );
   return (
     <Stack gap={3}>
-      {files.isError && (
-        <InlineMessage tone="danger">{errorText(files.error, t)}</InlineMessage>
-      )}
+      {files.isError && <FormNotice>{errorText(files.error, t)}</FormNotice>}
       {files.isSuccess && items.length === 0 && (
         <Text tone="muted">{t("attachments.none")}</Text>
       )}
@@ -96,7 +94,7 @@ export function AttachmentsSection({
         value={viewing}
         onValueChange={setViewing}
       />
-      {error !== null && <InlineMessage tone="danger">{error}</InlineMessage>}
+      {error !== null && <FormNotice>{error}</FormNotice>}
       {!readOnly && (
         <div>
           <VisuallyHidden>

@@ -10,7 +10,6 @@ import {
   DialogTitle,
 } from "@slotted/react/dialog";
 import { Field, FieldError, FieldLabel } from "@slotted/react/field";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { TextField } from "@slotted/react/text-field";
 import { useId, useState } from "react";
 
@@ -20,6 +19,7 @@ import { parseRate } from "@/features/instruments/rate";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { DateInput } from "@/ui/date-input";
+import { FormNotice } from "@/ui/form-notice";
 import { FormLayout } from "@/ui/form-layout";
 import { FormRow } from "@/ui/form-row";
 import { useOverlayOpen } from "@/ui/use-overlay-open";
@@ -89,9 +89,7 @@ export function RecordPriceDialog({
             }}
           >
             <FormLayout>
-              {summary !== null && (
-                <InlineMessage tone="danger">{summary}</InlineMessage>
-              )}
+              {summary !== null && <FormNotice>{summary}</FormNotice>}
               <Alert tone="info">
                 <AlertContent>
                   <AlertDescription>

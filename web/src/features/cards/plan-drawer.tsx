@@ -12,7 +12,6 @@ import {
 } from "@slotted/react/drawer";
 import { Field, FieldDescription, FieldLabel } from "@slotted/react/field";
 import { Inline } from "@slotted/react/inline";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { Stack } from "@slotted/react/stack";
 import {
   Table,
@@ -43,6 +42,7 @@ import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { DateInput } from "@/ui/date-input";
 import widths from "@/ui/field-width.module.css";
+import { FormNotice } from "@/ui/form-notice";
 import { FormLayout } from "@/ui/form-layout";
 import { MoneyInput } from "@/ui/money-input";
 import { QueryError } from "@/ui/query-error";
@@ -241,12 +241,8 @@ export function PlanDrawer({
                   }}
                 >
                   <FormLayout>
-                    {error !== null && (
-                      <InlineMessage tone="danger">{error}</InlineMessage>
-                    )}
-                    <InlineMessage
-                      tone={mode === "cancel" ? "warning" : "accent"}
-                    >
+                    {error !== null && <FormNotice>{error}</FormNotice>}
+                    <FormNotice tone={mode === "cancel" ? "warning" : "accent"}>
                       {mode === "cancel"
                         ? t("plan.cancelHint", {
                             remaining:
@@ -258,7 +254,7 @@ export function PlanDrawer({
                             count: ahead.length,
                             month: formatMonthTitle(reference, locale),
                           })}
-                    </InlineMessage>
+                    </FormNotice>
                     {mode === "anticipate" && currency !== undefined && (
                       <Field required>
                         <FieldLabel>{t("plan.paid")}</FieldLabel>

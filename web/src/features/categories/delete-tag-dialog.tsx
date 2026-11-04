@@ -1,4 +1,3 @@
-import { InlineMessage } from "@slotted/react/inline-message";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
@@ -8,6 +7,7 @@ import { tagUsageQuery, useDeleteTag } from "@/features/categories/api";
 import { numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { ConfirmDialog } from "@/ui/confirm-dialog";
+import { FormNotice } from "@/ui/form-notice";
 
 // The reader confirms a delete knowing how many transactions lose the tag.
 export function DeleteTagDialog({
@@ -58,9 +58,7 @@ export function DeleteTagDialog({
       onConfirm={handleConfirm}
       onCancel={onCancel}
     >
-      {usage.isError && (
-        <InlineMessage tone="danger">{errorText(usage.error, t)}</InlineMessage>
-      )}
+      {usage.isError && <FormNotice>{errorText(usage.error, t)}</FormNotice>}
     </ConfirmDialog>
   );
 }

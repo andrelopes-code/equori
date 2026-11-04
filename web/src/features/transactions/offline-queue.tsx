@@ -1,5 +1,4 @@
 import { Button } from "@slotted/react/button";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { List, ListEmpty, ListSection } from "@slotted/react/list";
 import {
   ListItem,
@@ -25,6 +24,7 @@ import { readDefaultAccount } from "@/features/transactions/capture-store";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
+import { FormNotice } from "@/ui/form-notice";
 
 // The queue of the offline screen: a text queued for the device's last user with the day it was
 // written (P4), the waiting texts and their discard (P7).
@@ -72,11 +72,7 @@ export function OfflineQueue({ user }: { user: DeviceUser }) {
         }}
         onRecord={queue}
       />
-      {failed && (
-        <InlineMessage tone="danger" size="md" live="polite">
-          {t("offline.writeFailed")}
-        </InlineMessage>
-      )}
+      {failed && <FormNotice>{t("offline.writeFailed")}</FormNotice>}
       <Button disabled={text.trim() === ""} onClick={queue}>
         {t("offline.queue")}
       </Button>

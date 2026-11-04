@@ -1,5 +1,4 @@
 import { Button } from "@slotted/react/button";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { Tag } from "@slotted/react/tag";
 import { useQuery } from "@tanstack/react-query";
 
@@ -11,6 +10,7 @@ import { SettingsRow } from "@/features/setup/settings-row";
 import { SettingsSection } from "@/features/setup/settings-section";
 import { meQuery, useLogout } from "@/features/session";
 import { useT } from "@/i18n/i18n-provider";
+import { FormNotice } from "@/ui/form-notice";
 import { UserAvatar } from "@/ui/user-avatar";
 
 export function SettingsAccount() {
@@ -48,11 +48,7 @@ export function SettingsAccount() {
           </Button>
         </SettingsRow>
       </SettingsGroup>
-      {failed && (
-        <InlineMessage tone="danger" role="alert">
-          {t("more.logoutFailed")}
-        </InlineMessage>
-      )}
+      {failed && <FormNotice>{t("more.logoutFailed")}</FormNotice>}
     </SettingsSection>
   );
 }

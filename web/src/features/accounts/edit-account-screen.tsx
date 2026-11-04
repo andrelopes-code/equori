@@ -4,7 +4,6 @@ import {
   ActionBarActions,
 } from "@slotted/react/action-bar";
 import { Button } from "@slotted/react/button";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { Page, PageBody, PageFooter } from "@slotted/react/page";
 import { Stack } from "@slotted/react/stack";
 import { toast } from "@slotted/react/toast";
@@ -30,6 +29,7 @@ import { yieldCapable } from "@/features/accounts/account-kinds";
 import { useEnsureInstitution } from "@/features/accounts/use-ensure-institution";
 import { useT } from "@/i18n/i18n-provider";
 import { FormLayout } from "@/ui/form-layout";
+import { FormNotice } from "@/ui/form-notice";
 
 type Account = components["schemas"]["Account"];
 type AccountPatch = components["schemas"]["AccountPatch"];
@@ -167,9 +167,7 @@ export function EditAccountScreen({
           }}
         >
           <Stack gap={6}>
-            {summary !== null && (
-              <InlineMessage tone="danger">{summary}</InlineMessage>
-            )}
+            {summary !== null && <FormNotice>{summary}</FormNotice>}
             <FormLayout aside={<AccountPreview draft={draft} scale={scale} />}>
               <AccountForm
                 mode="edit"

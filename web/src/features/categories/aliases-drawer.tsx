@@ -10,7 +10,6 @@ import {
 } from "@slotted/react/drawer";
 import { Field, FieldLabel } from "@slotted/react/field";
 import { Glyph, Icon } from "@slotted/react/icon";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { Stack } from "@slotted/react/stack";
 import {
   Table,
@@ -34,6 +33,7 @@ import { ChoiceSelect } from "@/ui/choice-select";
 import widths from "@/ui/field-width.module.css";
 import type { MessageKey } from "@/i18n/catalog.en";
 import { useT } from "@/i18n/i18n-provider";
+import { FormNotice } from "@/ui/form-notice";
 
 type Payee = components["schemas"]["Payee"];
 type PayeeAlias = components["schemas"]["PayeeAlias"];
@@ -134,9 +134,7 @@ export function AliasesDrawer({
                 {t("alias.add")}
               </Button>
             </form>
-            {error !== null && (
-              <InlineMessage tone="danger">{error}</InlineMessage>
-            )}
+            {error !== null && <FormNotice>{error}</FormNotice>}
             <Table columns={3} variant="framed">
               <TableContent>
                 <TableCaption>{t("alias.caption")}</TableCaption>

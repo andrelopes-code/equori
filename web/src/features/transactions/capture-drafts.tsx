@@ -1,4 +1,3 @@
-import { InlineMessage } from "@slotted/react/inline-message";
 import { List, ListEmpty, ListSection } from "@slotted/react/list";
 import { Stack } from "@slotted/react/stack";
 
@@ -10,6 +9,7 @@ import { CaptureLineItem } from "@/features/transactions/capture-line-item";
 import type { CaptureRow } from "@/features/transactions/capture-rows";
 import type { CaptureSetup } from "@/features/transactions/capture-setup";
 import { useT } from "@/i18n/i18n-provider";
+import { FormNotice } from "@/ui/form-notice";
 
 type Account = components["schemas"]["Account"];
 
@@ -51,17 +51,9 @@ export function CaptureDrafts({
 
   return (
     <Stack gap={4}>
-      {summary !== null && (
-        <InlineMessage tone="danger" size="md" live="polite">
-          {summary}
-        </InlineMessage>
-      )}
+      {summary !== null && <FormNotice>{summary}</FormNotice>}
 
-      {error !== null && (
-        <InlineMessage tone="danger" size="md">
-          {errorText(error, t)}
-        </InlineMessage>
-      )}
+      {error !== null && <FormNotice>{errorText(error, t)}</FormNotice>}
 
       <List
         variant="separated"

@@ -4,7 +4,6 @@ import {
   FieldGroupContent,
   FieldGroupLegend,
 } from "@slotted/react/field-group";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { Tag } from "@slotted/react/tag";
 import { TextField } from "@slotted/react/text-field";
 
@@ -12,6 +11,7 @@ import { AccountOpeningSection, CardSetupSection } from "@/features/accounts";
 import type { AccountDraft } from "@/features/accounts";
 import type { GroupRun } from "@/features/start/use-start-run";
 import { useT } from "@/i18n/i18n-provider";
+import { FormNotice } from "@/ui/form-notice";
 
 interface StartAccountGroupProps {
   draft: AccountDraft;
@@ -38,9 +38,7 @@ export function StartAccountGroup({
         {run.state === "created" && (
           <Tag tone="success">{t("start.details.created")}</Tag>
         )}
-        {run.summary !== null && (
-          <InlineMessage tone="danger">{run.summary}</InlineMessage>
-        )}
+        {run.summary !== null && <FormNotice>{run.summary}</FormNotice>}
 
         <Field invalid={run.errors.name !== undefined} required>
           <FieldLabel>{t("accountForm.name")}</FieldLabel>

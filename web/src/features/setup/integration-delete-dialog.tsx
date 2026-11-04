@@ -1,4 +1,3 @@
-import { InlineMessage } from "@slotted/react/inline-message";
 import { List } from "@slotted/react/list";
 import {
   ListItem,
@@ -14,6 +13,7 @@ import { useDeleteIntegration } from "@/features/setup/api";
 import type { Connection, Integration } from "@/features/setup/api";
 import { useT } from "@/i18n/i18n-provider";
 import { ConfirmDialog } from "@/ui/confirm-dialog";
+import { FormNotice } from "@/ui/form-notice";
 
 // Only an integration without connections is deleted; on `integration_in_use` the dialog lists
 // the connections that use it, which the owner removes first.
@@ -56,9 +56,7 @@ export function IntegrationDeleteDialog({
       onConfirm={handleConfirm}
       onCancel={onClose}
     >
-      {failure !== null && (
-        <InlineMessage tone="danger">{errorText(failure, t)}</InlineMessage>
-      )}
+      {failure !== null && <FormNotice>{errorText(failure, t)}</FormNotice>}
       {inUse && (
         <Stack gap={1}>
           <Text size="sm" tone="muted">

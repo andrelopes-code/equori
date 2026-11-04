@@ -1,7 +1,6 @@
 import { Button, IconButton } from "@slotted/react/button";
 import { CurrencyField } from "@slotted/react/currency-field";
 import { Glyph, Icon } from "@slotted/react/icon";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { Inline } from "@slotted/react/inline";
 import { Stack } from "@slotted/react/stack";
 import { Text } from "@slotted/react/typography";
@@ -18,6 +17,7 @@ import { splitState } from "@/features/transactions/split";
 import type { SplitPart } from "@/features/transactions/split";
 import { useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
+import { FormNotice } from "@/ui/form-notice";
 
 type Account = components["schemas"]["Account"];
 type Transaction = components["schemas"]["Transaction"];
@@ -209,7 +209,7 @@ export function CategorySection({
           </Text>
         )}
       </Inline>
-      {error !== null && <InlineMessage tone="danger">{error}</InlineMessage>}
+      {error !== null && <FormNotice>{error}</FormNotice>}
       <Inline gap={2} justify="end">
         <Button
           size="sm"

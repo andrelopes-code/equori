@@ -4,7 +4,6 @@ import {
   ActionBarActions,
 } from "@slotted/react/action-bar";
 import { Button } from "@slotted/react/button";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { Page, PageBody, PageFooter } from "@slotted/react/page";
 import { Stack } from "@slotted/react/stack";
 import { toast } from "@slotted/react/toast";
@@ -36,6 +35,7 @@ import { writePendingSetup } from "@/features/accounts/pending-setup";
 import { useEnsureInstitution } from "@/features/accounts/use-ensure-institution";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
+import { FormNotice } from "@/ui/form-notice";
 import { FormLayout } from "@/ui/form-layout";
 
 type Account = components["schemas"]["Account"];
@@ -205,9 +205,7 @@ export function NewAccountScreen({
             }}
           >
             <Stack gap={6}>
-              {summary !== null && (
-                <InlineMessage tone="danger">{summary}</InlineMessage>
-              )}
+              {summary !== null && <FormNotice>{summary}</FormNotice>}
               <FormLayout
                 aside={<AccountPreview draft={draft} scale={scale} />}
               >

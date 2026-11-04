@@ -1,7 +1,6 @@
 import { Button } from "@slotted/react/button";
 import { Field, FieldLabel } from "@slotted/react/field";
 import { Form, FormActions } from "@slotted/react/form";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { Stack } from "@slotted/react/stack";
 import { TextField } from "@slotted/react/text-field";
 import { Heading, Text } from "@slotted/react/typography";
@@ -12,6 +11,7 @@ import { useLogin } from "@/features/session/api";
 import type { SecondFactorChallenge } from "@/features/session/api";
 import styles from "@/features/session/login-page.module.css";
 import { useT } from "@/i18n/i18n-provider";
+import { FormNotice } from "@/ui/form-notice";
 
 interface LoginPasswordFormProps {
   initialFailure: string | null;
@@ -84,14 +84,7 @@ export function LoginPasswordForm({
           />
         </Field>
         {failure !== null && (
-          <InlineMessage
-            tone="danger"
-            live="assertive"
-            size="md"
-            className={styles.failure}
-          >
-            {failure}
-          </InlineMessage>
+          <FormNotice className={styles.failure}>{failure}</FormNotice>
         )}
         <FormActions align="stretch">
           <Button type="submit" size="lg" fullWidth loading={login.isPending}>

@@ -1,4 +1,3 @@
-import { InlineMessage } from "@slotted/react/inline-message";
 import { Timeline, TimelineItem } from "@slotted/react/timeline";
 import { useQuery } from "@tanstack/react-query";
 
@@ -7,6 +6,7 @@ import { errorText } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
 import { versionsQuery } from "@/features/transactions/api";
 import { useT } from "@/i18n/i18n-provider";
+import { FormNotice } from "@/ui/form-notice";
 
 type Transaction = components["schemas"]["Transaction"];
 
@@ -16,11 +16,7 @@ export function HistorySection({ transaction }: { transaction: Transaction }) {
   const api = useApi();
   const versions = useQuery(versionsQuery(api, transaction.id));
   if (versions.isError) {
-    return (
-      <InlineMessage tone="danger">
-        {errorText(versions.error, t)}
-      </InlineMessage>
-    );
+    return <FormNotice>{errorText(versions.error, t)}</FormNotice>;
   }
   const items = [...(versions.data ?? [])].sort(
     (a, b) => b.version - a.version,

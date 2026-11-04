@@ -8,8 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@slotted/react/dialog";
-import { Field, FieldLabel } from "@slotted/react/field";
-import { InlineMessage } from "@slotted/react/inline-message";
+import { Field, FieldError, FieldLabel } from "@slotted/react/field";
 import { Stack } from "@slotted/react/stack";
 import { TextField } from "@slotted/react/text-field";
 import { useState } from "react";
@@ -61,7 +60,7 @@ export function PasswordDialog({
         </DialogHeader>
         <DialogBody>
           <Stack gap={4}>
-            <Field required>
+            <Field required invalid={failure !== null}>
               <FieldLabel>{t("login.password")}</FieldLabel>
               <TextField
                 type="password"
@@ -69,12 +68,12 @@ export function PasswordDialog({
                 value={password}
                 onValueChange={setPassword}
               />
+              {failure !== null && (
+                <FieldError live="assertive">
+                  {errorText(failure, t)}
+                </FieldError>
+              )}
             </Field>
-            {failure !== null && (
-              <InlineMessage tone="danger" role="alert">
-                {errorText(failure, t)}
-              </InlineMessage>
-            )}
           </Stack>
         </DialogBody>
         <DialogFooter>
