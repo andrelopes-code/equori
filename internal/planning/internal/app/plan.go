@@ -236,6 +236,11 @@ func (s *Service) planOccurrences(ctx context.Context, booksID int64, out *Plan)
 		return err
 	}
 
+	received, err := s.receivedIncome(ctx, booksID, os, byID)
+	if err != nil {
+		return err
+	}
+
 	today := s.clk.Today(ctx)
 
 	items := make(map[uuid.UUID]int)
@@ -245,9 +250,14 @@ func (s *Service) planOccurrences(ctx context.Context, booksID int64, out *Plan)
 			continue
 		}
 
-		amount := o.Amount
+		base := o.Amount
+		if actual, ok := received[o.ID]; ok {
+			base = actual
+		}
+
+		amount := base
 		if sch.Currency != out.Currency {
-			m, err := money.New(o.Amount, sch.Currency)
+			m, err := money.New(base, sch.Currency)
 			if err != nil {
 				return err
 			}
@@ -278,6 +288,52 @@ func (s *Service) planOccurrences(ctx context.Context, booksID int64, out *Plan)
 	}
 
 	return nil
+}
+
+// receivedIncome returns, by occurrence id, the amount each realized income occurrence moved,
+// read with one TransactionFacts call; an occurrence whose transaction is missing from the
+// facts has no entry.
+func (s *Service) receivedIncome(
+	ctx context.Context,
+	booksID int64,
+	occurrences []domain.Occurrence,
+	schedules map[uuid.UUID]domain.Schedule,
+) (map[uuid.UUID]int64, error) {
+	var ids []uuid.UUID
+	for _, o := range occurrences {
+		if o.State == domain.Realized && schedules[o.ScheduleID].Kind == domain.Income {
+			ids = append(ids, o.TransactionID)
+		}
+	}
+
+	if len(ids) == 0 {
+		return nil, nil
+	}
+
+	facts, err := s.ledger.TransactionFacts(ctx, booksID, ids)
+	if err != nil {
+		return nil, err
+	}
+
+	byID := make(map[uuid.UUID]domain.Transaction, len(facts))
+	for _, t := range facts {
+		byID[t.ID] = t
+	}
+
+	out := make(map[uuid.UUID]int64, len(ids))
+
+	for _, o := range occurrences {
+		t, ok := byID[o.TransactionID]
+		if o.State != domain.Realized || !ok {
+			continue
+		}
+
+		if amount, found := domain.ActualAmount(t, schedules[o.ScheduleID]); found {
+			out[o.ID] = amount
+		}
+	}
+
+	return out, nil
 }
 
 // PlanAmount is the amount a plan save sets on a category from its month on.

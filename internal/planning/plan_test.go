@@ -436,3 +436,51 @@ func TestSavePlanListsOnlyItsCategories(t *testing.T) {
 		t.Fatalf("health amounts = %+v", b.Amounts)
 	}
 }
+
+// A realized income counts the amount it received; an expected income and savings keep the
+// expected amount.
+func TestPlanCountsTheReceivedIncome(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t, "2026-11-01")
+	salary := f.schedule("income", f.checking, f.salary, 275200, monthly("2026-11-01", 5, ""), map[string]any{"description": "Salary"})
+	f.schedule("income", f.checking, f.salary, 130000, monthly("2026-11-01", 20, ""), map[string]any{"description": "Freelance"})
+	f.schedule("savings", f.checking, f.savings, 50000, monthly("2026-11-01", 10, ""), nil)
+
+	f.h.Record("2026-11-05", apitest.Posting(f.checking, 275142), apitest.Posting(f.salary, -275142))
+	f.pay("2026-11-10", 49900, f.savings, "")
+
+	if o := f.occurrence(salary, 1); o.State != "realized" {
+		t.Fatalf("salary occurrence = %+v, want realized", o)
+	}
+
+	got := f.plan("2026-11")
+	if amountOf(got.ExpectedIncome) != 275142+130000 || got.Savings.Amount != 50000 {
+		t.Fatalf("expected income = %d savings = %d, want 405142 50000", amountOf(got.ExpectedIncome), got.Savings.Amount)
+	}
+
+	if len(got.ExpectedItems) != 2 || got.ExpectedItems[0].Amount.Amount+got.ExpectedItems[1].Amount.Amount != 405142 {
+		t.Errorf("expected items = %+v, want 275142 and 130000", got.ExpectedItems)
+	}
+}
+
+// A foreign-currency income converts the received amount, not the expected one (P8 amendment A72).
+func TestPlanConvertsTheReceivedForeignIncome(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t, "2026-11-01")
+	wise := f.h.Account("Wise USD", "asset", "checking", map[string]any{"currency": "USD"})
+	f.h.MustDo(http.MethodPost, "/api/v1/schedules", map[string]any{
+		"kind": "income", "account_id": wise, "counterpart_id": f.salary, "description": "Contract", "amount": usd(50000),
+		"recurrence": monthly("2026-11-05", 5, ""),
+	}, http.StatusCreated, nil)
+	f.price(t, "2026-10-30", "5.5")
+
+	f.h.Record("2026-11-05",
+		map[string]any{"account_id": wise, "amount": usd(49900), "weight": apitest.BRL(274450)},
+		apitest.Posting(f.salary, -274450),
+	)
+	f.h.Dispatch()
+
+	if got := f.plan("2026-11"); amountOf(got.ExpectedIncome) != 274450 {
+		t.Fatalf("expected income = %d, want 49900 USD at 5.5 = 274450", amountOf(got.ExpectedIncome))
+	}
+}
