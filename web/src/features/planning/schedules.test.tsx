@@ -11,7 +11,9 @@ import {
   rent,
   rentID,
   salaryID,
+  schedules,
   streamingID,
+  streamingSchedule,
 } from "@/testing/planning-api";
 import { chooseAccount } from "@/testing/account-choice";
 import { optionalName } from "@/testing/optional-name";
@@ -103,6 +105,105 @@ describe("Schedules tab", () => {
       "Salary",
       expect.stringContaining(catalogEn["scheduled.kind.subscription"]),
       "Streaming",
+    ]);
+  });
+});
+
+describe("Schedules tab with ended schedules", () => {
+  const gym = {
+    ...streamingSchedule,
+    id: "e1000000-0000-4000-8000-000000000009",
+    description: "Gym",
+    ends_on: "2026-09-01",
+  };
+
+  it("lists the schedules that ended apart from the active ones", async () => {
+    await renderApp("/planning?tab=schedules", {
+      fetch: api({
+        "GET /api/v1/schedules": () =>
+          json(200, { items: [gym, ...schedules] }),
+      }),
+    });
+    const table = await screen.findByRole("table", {
+      name: catalogEn["schedules.caption"],
+    });
+    await within(table).findByRole("row", { name: /^Rent/ });
+
+    expect(
+      within(table)
+        .getAllByRole("rowheader")
+        .map((cell) => cell.textContent),
+    ).toEqual([
+      expect.stringContaining(catalogEn["scheduled.kind.bill"]),
+      "Rent",
+      expect.stringContaining(catalogEn["scheduled.kind.income"]),
+      "Salary",
+      expect.stringContaining(catalogEn["scheduled.kind.subscription"]),
+      "Streaming",
+      expect.stringContaining(catalogEn["schedules.ended"]),
+      expect.stringContaining("Gym"),
+    ]);
+  });
+
+  it("names the kind of an ended schedule, which its group no longer says", async () => {
+    await renderApp("/planning?tab=schedules", {
+      fetch: api({
+        "GET /api/v1/schedules": () => json(200, { items: [gym] }),
+      }),
+    });
+    const row = await screen.findByRole("row", { name: /^Gym/ });
+
+    expect(
+      within(row).getByText(catalogEn["scheduled.kind.subscription"]),
+    ).toBeInTheDocument();
+  });
+
+  it("draws an ended schedule muted and an active one in the table ink", async () => {
+    await renderApp("/planning?tab=schedules", {
+      fetch: api({
+        "GET /api/v1/schedules": () =>
+          json(200, { items: [gym, ...schedules] }),
+      }),
+    });
+    const ended = await screen.findByRole("row", { name: /^Gym/ });
+    const active = screen.getByRole("row", { name: /^Rent/ });
+    const mutedIn = (row: HTMLElement) =>
+      row.querySelectorAll('[data-ui="typography"][data-tone="muted"]').length;
+
+    const mutedInk = '[data-ui="typography"][data-tone="muted"]';
+
+    expect(
+      within(ended).getByRole("link", { name: "Gym" }).closest(mutedInk),
+    ).not.toBeNull();
+    expect(mutedIn(ended)).toBeGreaterThan(1);
+    expect(mutedIn(active)).toBe(0);
+  });
+
+  it("orders the ended schedules by the latest end first", async () => {
+    const older = {
+      ...gym,
+      id: `${gym.id.slice(0, -1)}8`,
+      description: "Old",
+      ends_on: "2026-03-01",
+    };
+    await renderApp("/planning?tab=schedules", {
+      fetch: api({
+        "GET /api/v1/schedules": () => json(200, { items: [older, gym] }),
+      }),
+    });
+    const table = await screen.findByRole("table", {
+      name: catalogEn["schedules.caption"],
+    });
+    await within(table).findByRole("row", { name: /^Gym/ });
+
+    expect(
+      within(table)
+        .getAllByRole("rowheader")
+        .map((cell) => cell.textContent),
+    ).toEqual([
+      expect.stringContaining(catalogEn["schedules.ended"]),
+      expect.stringContaining("Gym"),
+      expect.stringContaining("Old"),
     ]);
   });
 });

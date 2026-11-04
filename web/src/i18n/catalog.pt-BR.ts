@@ -1702,6 +1702,7 @@ export const catalogPtBR: Catalog = {
   "schedules.recurrence": "Recorrência",
   "schedules.next": "Próxima ocorrência",
   "schedules.ends": "Termina em",
+  "schedules.ended": "Encerrados",
   "schedules.yearly": "Por ano",
   "schedules.none": "Nenhuma",
   "schedules.recurringShare":

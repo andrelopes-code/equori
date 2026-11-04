@@ -1682,6 +1682,7 @@ export const catalogEn = {
   "schedules.recurrence": "Recurrence",
   "schedules.next": "Next occurrence",
   "schedules.ends": "Ends on",
+  "schedules.ended": "Ended",
   "schedules.yearly": "Per year",
   "schedules.none": "None",
   "schedules.recurringShare":

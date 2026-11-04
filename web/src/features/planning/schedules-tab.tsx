@@ -10,14 +10,12 @@ import {
   Table,
   TableBody,
   TableCaption,
-  TableCell,
   TableColumnHeader,
   TableContent,
   TableGroupRow,
   TableHead,
   TableLoader,
   TableRow,
-  TableRowHeader,
 } from "@slotted/react/table";
 import { useQuery } from "@tanstack/react-query";
 import { Fragment } from "react";
@@ -26,18 +24,12 @@ import { useApi } from "@/api/api-context";
 import type { components } from "@/api/schema.gen";
 import { accountsQuery } from "@/features/accounts";
 import { occurrencesQuery, schedulesQuery } from "@/features/planning/api";
-import {
-  currentTerms,
-  kindLabel,
-  recurrenceWords,
-  subscriptionCost,
-} from "@/features/planning/schedule-words";
+import { ScheduleRow } from "@/features/planning/schedule-row";
+import { hasEnded, kindLabel } from "@/features/planning/schedule-words";
 import { useScale } from "@/features/setup";
-import { formatDate, shiftDate } from "@/i18n/format";
-import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { shiftDate } from "@/i18n/format";
+import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
-import { useMoneyFormat } from "@/privacy/use-money-format";
-import { AppLink } from "@/ui/app-link";
 import { QueryError } from "@/ui/query-error";
 
 type ScheduleKind = components["schemas"]["ScheduleKind"];
@@ -47,10 +39,8 @@ const kinds = Object.keys(kindLabel) as ScheduleKind[];
 // The schedules by kind, each with its terms in force today and its next expected occurrence.
 export function SchedulesTab({ onCreate }: { onCreate: () => void }) {
   const t = useT();
-  const [locale] = useAppLocale();
   const api = useApi();
   const today = useToday();
-  const fmt = useMoneyFormat();
   const scale = useScale();
   const schedules = useQuery(schedulesQuery(api));
   const accounts = useQuery(accountsQuery(api));
@@ -64,6 +54,10 @@ export function SchedulesTab({ onCreate }: { onCreate: () => void }) {
     if (o.state === "expected" && !next.has(o.schedule_id))
       next.set(o.schedule_id, o.expected_on);
   const items = schedules.data ?? [];
+  const active = items.filter((s) => !hasEnded(s.ends_on, today));
+  const ended = items
+    .filter((s) => hasEnded(s.ends_on, today))
+    .sort((x, y) => (y.ends_on ?? "").localeCompare(x.ends_on ?? ""));
   if (schedules.isError)
     return (
       <QueryError
@@ -112,77 +106,38 @@ export function SchedulesTab({ onCreate }: { onCreate: () => void }) {
         ) : (
           <TableBody>
             {kinds.map((kind) => {
-              const rows = items.filter((s) => s.kind === kind);
+              const rows = active.filter((s) => s.kind === kind);
               if (rows.length === 0) return null;
               return (
                 <Fragment key={kind}>
                   <TableGroupRow>{t(kindLabel[kind])}</TableGroupRow>
-                  {rows.map((s) => {
-                    const terms = currentTerms(s.terms, today);
-                    const upcomingOn = next.get(s.id);
-                    return (
-                      <TableRow key={s.id} value={s.id}>
-                        <TableRowHeader text="truncate">
-                          <AppLink
-                            variant="neutral"
-                            underline="hover"
-                            to={{
-                              to: "/planning/schedules/$id",
-                              params: { id: s.id },
-                            }}
-                          >
-                            {s.description === ""
-                              ? t("ledger.untitled")
-                              : s.description}
-                          </AppLink>
-                        </TableRowHeader>
-                        <TableCell text="truncate">
-                          {names.get(s.account_id)}
-                        </TableCell>
-                        <TableCell text="truncate">
-                          {names.get(s.counterpart_id)}
-                        </TableCell>
-                        <TableCell numeric>
-                          {terms !== undefined &&
-                            fmt.money(
-                              terms.amount,
-                              scale(terms.amount.currency),
-                            )}
-                        </TableCell>
-                        <TableCell numeric>
-                          {terms !== undefined &&
-                            kind !== "transfer" &&
-                            fmt.money(
-                              {
-                                amount: subscriptionCost(
-                                  terms.recurrence,
-                                  terms.amount.amount,
-                                ).yearly,
-                                currency: terms.amount.currency,
-                              },
-                              scale(terms.amount.currency),
-                            )}
-                        </TableCell>
-                        <TableCell>
-                          {terms !== undefined &&
-                            recurrenceWords(terms.recurrence, t, locale)}
-                        </TableCell>
-                        <TableCell>
-                          {upcomingOn === undefined
-                            ? t("schedules.none")
-                            : formatDate(upcomingOn, locale)}
-                        </TableCell>
-                        <TableCell>
-                          {s.ends_on === undefined
-                            ? t("schedule.noEnd")
-                            : formatDate(s.ends_on, locale)}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
+                  {rows.map((s) => (
+                    <ScheduleRow
+                      key={s.id}
+                      schedule={s}
+                      accountNames={names}
+                      nextOn={next.get(s.id)}
+                      scale={scale}
+                    />
+                  ))}
                 </Fragment>
               );
             })}
+            {ended.length > 0 && (
+              <>
+                <TableGroupRow>{t("schedules.ended")}</TableGroupRow>
+                {ended.map((s) => (
+                  <ScheduleRow
+                    key={s.id}
+                    schedule={s}
+                    accountNames={names}
+                    nextOn={next.get(s.id)}
+                    scale={scale}
+                    ended
+                  />
+                ))}
+              </>
+            )}
           </TableBody>
         )}
       </TableContent>
