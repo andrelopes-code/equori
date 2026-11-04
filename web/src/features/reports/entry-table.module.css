@@ -1,6 +1,7 @@
 @layer app {
+  /* A fixed height keeps the card still when a day picked lists fewer entries than the month. */
   .scroll {
-    max-block-size: 24rem;
+    block-size: 24rem;
     overflow: auto;
   }
 }
