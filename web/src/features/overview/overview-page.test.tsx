@@ -277,6 +277,9 @@ describe("overview page", () => {
     });
     expect(block("Outflow")).toHaveTextContent("25.00");
     expect(block("Month result")).toHaveTextContent("975.00");
+    expect(block("Month result")).toHaveTextContent(
+      "Income minus outflow of the Available group",
+    );
   });
 
   it("lists the five largest categories of the month", async () => {
@@ -714,6 +717,9 @@ describe("overview page", () => {
       });
       expect(block("Net worth")).toHaveTextContent("1,005.00");
       expect(block("Month result")).toHaveTextContent("975.00");
+      expect(block("Month result")).toHaveTextContent(
+        "Available group: income R$1,000.00, outflow R$25.00",
+      );
       expect(block("Committed")).toHaveTextContent("3,000.00");
     });
 

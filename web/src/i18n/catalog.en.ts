@@ -1943,7 +1943,7 @@ export const catalogEn = {
   "overview.flows.outflow": "Outflow",
   "overview.flows.result": "Result",
   "overview.flows.in": "Recorded in {month}",
-  "overview.flows.resultNote": "Income minus outflow",
+  "overview.flows.resultNote": "Income minus outflow of the Available group",
   "overview.flows.forecast": "Forecast balance on {date}: {amount}",
   "overview.spending.title": "Spending by category",
   "overview.spending.open": "Open categories",
@@ -2005,7 +2005,8 @@ export const catalogEn = {
   "overview.attention.atLeast": "{count}+",
   "overview.figures.net": "Net worth",
   "overview.figures.result": "Month result",
-  "overview.figures.resultNote": "Income {income}, outflow {outflow}",
+  "overview.figures.resultNote":
+    "Available group: income {income}, outflow {outflow}",
   "overview.figures.balance": "Month-end balance",
   "overview.figures.lowest": "Lowest {amount} on {date}",
   "overview.figures.booked": "Recorded balance",

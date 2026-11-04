@@ -1963,7 +1963,7 @@ export const catalogPtBR: Catalog = {
   "overview.flows.outflow": "Saídas",
   "overview.flows.result": "Resultado",
   "overview.flows.in": "Registradas em {month}",
-  "overview.flows.resultNote": "Entradas menos saídas",
+  "overview.flows.resultNote": "Entradas menos saídas do grupo Disponível",
   "overview.flows.forecast": "Saldo previsto em {date}: {amount}",
   "overview.spending.title": "Gastos por categoria",
   "overview.spending.open": "Abrir categorias",
@@ -2026,7 +2026,8 @@ export const catalogPtBR: Catalog = {
   "overview.attention.atLeast": "{count}+",
   "overview.figures.net": "Patrimônio líquido",
   "overview.figures.result": "Resultado do mês",
-  "overview.figures.resultNote": "Entradas {income}, saídas {outflow}",
+  "overview.figures.resultNote":
+    "Grupo Disponível: entradas {income}, saídas {outflow}",
   "overview.figures.balance": "Saldo no fim do mês",
   "overview.figures.lowest": "Menor {amount} em {date}",
   "overview.figures.booked": "Saldo registrado",
