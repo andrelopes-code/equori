@@ -58,13 +58,14 @@ func (s *Server) ChangeScheduleTerms(ctx context.Context, req ChangeScheduleTerm
 }
 
 func (s *Server) UpdateScheduleMatching(ctx context.Context, req UpdateScheduleMatchingRequestObject) (UpdateScheduleMatchingResponseObject, error) {
-	in := app.MatchingChange{
+	in := app.ScheduleChange{
+		Description: req.Body.Description,
 		ToleranceBP: req.Body.MatchToleranceBp,
 		GraceDays:   req.Body.GraceDays,
 		WindowDays:  req.Body.MatchWindowDays,
 	}
 
-	sch, err := s.svc.UpdateMatching(ctx, auth.MustBooksID(ctx), req.Id, in)
+	sch, err := s.svc.Update(ctx, auth.MustBooksID(ctx), req.Id, in)
 	if err != nil {
 		return nil, err
 	}

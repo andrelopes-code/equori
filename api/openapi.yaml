@@ -5697,9 +5697,10 @@ paths:
       tags: [planning]
       operationId: updateScheduleMatching
       x-book-role: write
-      summary: Change how transactions are matched to the occurrences of a schedule.
+      summary: Rename a schedule or change how transactions are matched to its occurrences (P7 amendment A198).
       description: |
-        Each field is optional; absent fields keep their value. The change applies to transactions recorded,
+        Each field is optional; absent fields keep their value. The description applies to every occurrence of
+        the schedule, an ended schedule included. The matching change applies to transactions recorded,
         corrected or voided afterwards; occurrences already realized stay.
       parameters:
         - $ref: "#/components/parameters/ID"
@@ -5710,6 +5711,8 @@ paths:
             schema:
               type: object
               properties:
+                description:
+                  type: string
                 match_tolerance_bp:
                   type: integer
                 grace_days:

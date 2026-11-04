@@ -104,6 +104,14 @@ const darkNeutral = (l: number) => ({
 
 // A tag's text stands 2 px further from its border than the family's default at each size; the
 // height stays.
+// A table is lines on the page, so its header surface is transparent. A header pinned to the top
+// has rows passing under it, and takes the ground the table stands on.
+const stickyHeaderRule = `
+[data-ui="table"][data-sticky-header] {
+  --slotted-table-header-surface: var(--slotted-ground, var(--slotted-surface));
+}
+`;
+
 const tagInsetRule = `
 [data-ui="tag"] {
   --slotted-tag-inset-inline: calc(var(--slotted-space-4) + var(--slotted-space-1));
@@ -345,6 +353,7 @@ export default extendTheme(
       tooltipArrowClipRule,
       tagInsetRule,
       listHeightRule,
+      stickyHeaderRule,
     ],
   },
   { name: "equori" },

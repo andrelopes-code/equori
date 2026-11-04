@@ -3368,8 +3368,9 @@ export interface paths {
         options?: never;
         head?: never;
         /**
-         * Change how transactions are matched to the occurrences of a schedule.
-         * @description Each field is optional; absent fields keep their value. The change applies to transactions recorded,
+         * Rename a schedule or change how transactions are matched to its occurrences (P7 amendment A198).
+         * @description Each field is optional; absent fields keep their value. The description applies to every occurrence of
+         *     the schedule, an ended schedule included. The matching change applies to transactions recorded,
          *     corrected or voided afterwards; occurrences already realized stay.
          */
         patch: operations["updateScheduleMatching"];
@@ -12502,6 +12503,7 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": {
+                    description?: string;
                     match_tolerance_bp?: number;
                     grace_days?: number;
                     match_window_days?: number;

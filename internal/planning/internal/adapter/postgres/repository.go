@@ -195,6 +195,14 @@ func (r *Repository) LockSchedule(ctx context.Context, booksID int64, id uuid.UU
 	return r.one(ctx, row, err)
 }
 
+func (r *Repository) UpdateScheduleDescription(ctx context.Context, booksID int64, id uuid.UUID, description string) (domain.Schedule, error) {
+	row, err := r.q.UpdateScheduleDescription(ctx, UpdateScheduleDescriptionParams{
+		BooksID: booksID, ID: id, Description: description,
+	})
+
+	return r.one(ctx, row, err)
+}
+
 func (r *Repository) UpdateScheduleMatching(ctx context.Context, booksID int64, id uuid.UUID, tolerance, grace, window int) (domain.Schedule, error) {
 	row, err := r.q.UpdateScheduleMatching(ctx, UpdateScheduleMatchingParams{
 		BooksID: booksID, ID: id,

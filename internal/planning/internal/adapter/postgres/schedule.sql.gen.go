@@ -773,6 +773,47 @@ func (q *Queries) SetGeneratedUntil(ctx context.Context, arg SetGeneratedUntilPa
 	return err
 }
 
+const updateScheduleDescription = `-- name: UpdateScheduleDescription :one
+UPDATE planning_schedule
+SET
+    description = $1
+WHERE
+    books_id = $2
+    AND id = $3
+RETURNING
+    id, books_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar, match_window_days
+`
+
+type UpdateScheduleDescriptionParams struct {
+	Description string
+	BooksID     int64
+	ID          uuid.UUID
+}
+
+func (q *Queries) UpdateScheduleDescription(ctx context.Context, arg UpdateScheduleDescriptionParams) (PlanningSchedule, error) {
+	row := q.db.QueryRow(ctx, updateScheduleDescription, arg.Description, arg.BooksID, arg.ID)
+	var i PlanningSchedule
+	err := row.Scan(
+		&i.ID,
+		&i.BooksID,
+		&i.Kind,
+		&i.AccountID,
+		&i.CounterpartID,
+		&i.PayeeID,
+		&i.Description,
+		&i.Currency,
+		&i.MatchToleranceBp,
+		&i.GraceDays,
+		&i.EndsOn,
+		&i.GeneratedUntil,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Calendar,
+		&i.MatchWindowDays,
+	)
+	return i, err
+}
+
 const updateScheduleMatching = `-- name: UpdateScheduleMatching :one
 UPDATE planning_schedule
 SET

@@ -50,8 +50,9 @@ type ScheduleInput struct {
 	PaidBy                             uuid.UUID // uuid.Nil: none; realizes the occurrence on the rule's first date (plan B T3)
 }
 
-// MatchingChange holds the matching settings to change; a nil field keeps its value.
-type MatchingChange struct {
+// ScheduleChange holds the description and the matching settings to change; a nil field keeps its value.
+type ScheduleChange struct {
+	Description                        *string
 	ToleranceBP, GraceDays, WindowDays *int
 }
 
@@ -124,10 +125,14 @@ func (s *Service) CreateSchedule(ctx context.Context, booksID int64, in Schedule
 	return s.repo.Schedule(ctx, booksID, created.ID)
 }
 
-// UpdateMatching changes the matching settings of a schedule. It applies to transactions
-// recorded, corrected or voided afterwards; realized occurrences stay.
-func (s *Service) UpdateMatching(ctx context.Context, booksID int64, id uuid.UUID, in MatchingChange) (domain.Schedule, error) {
+// Update renames a schedule, ended or not, and changes its matching settings. The matching
+// applies to transactions recorded, corrected or voided afterwards; realized occurrences stay.
+func (s *Service) Update(ctx context.Context, booksID int64, id uuid.UUID, in ScheduleChange) (domain.Schedule, error) {
 	return s.changeSchedule(ctx, booksID, id, func(repo Repository, sch *domain.Schedule) error {
+		if in.Description != nil {
+			sch.Description = *in.Description
+		}
+
 		if in.ToleranceBP != nil {
 			sch.ToleranceBP = *in.ToleranceBP
 		}
@@ -141,6 +146,10 @@ func (s *Service) UpdateMatching(ctx context.Context, booksID int64, id uuid.UUI
 		}
 
 		if err := sch.Validate(); err != nil {
+			return err
+		}
+
+		if _, err := repo.UpdateScheduleDescription(ctx, booksID, id, sch.Description); err != nil {
 			return err
 		}
 

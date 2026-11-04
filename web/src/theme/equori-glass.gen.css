@@ -1933,6 +1933,10 @@
       --slotted-overlay-max-block-size: 20rem;
     }
 
+    [data-ui="table"][data-sticky-header] {
+      --slotted-table-header-surface: var(--slotted-ground, var(--slotted-surface));
+    }
+
     &[data-slotted-scheme="dark"] [data-ui="card"],
     &[data-slotted-scheme="dark"] [data-ui="stat-card"],
     &[data-slotted-scheme="dark"] [data-ui="section"],

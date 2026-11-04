@@ -113,6 +113,16 @@ WHERE
 RETURNING
     *;
 
+-- name: UpdateScheduleDescription :one
+UPDATE planning_schedule
+SET
+    description = @description
+WHERE
+    books_id = @books_id
+    AND id = @id
+RETURNING
+    *;
+
 -- name: ListSchedules :many
 SELECT
     *

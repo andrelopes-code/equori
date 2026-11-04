@@ -355,6 +355,10 @@ Streaming 39.90 monthly on day 12 on the card; price 44.90 effective 2027-01-01;
 
 Amendment A127: a schedule's occurrences start at its rule's first date, also when it is created later. On creation, the transactions already recorded on the schedule's account realize the occurrences dated up to today (A51), and an occurrence dated before the creation day that none realizes is skipped, so the past is neither overdue nor projected. On 2026-10-20, with payments of 23.90 recorded on 2026-07-30, 2026-08-30 and 2026-09-29, a subscription of 23.90 monthly on day 30 from 2026-07-30 has 2026-07-30, 2026-08-30 and 2026-09-30 realized by them and 2026-10-30 expected; a salary monthly on day 5 from 2026-09-05 without payments has 2026-09-05 and 2026-10-05 skipped and 2026-11-05 expected. `equori planning backfill` applies the rule to the schedules created before it; a second run changes nothing.
 
+### S283 Schedule renamed in place
+
+Amendment A198: the description of a schedule changes without a new schedule, also after the schedule ended. The new description applies to every occurrence of the schedule, realized, expected and skipped; no occurrence, terms version, pause, end date or matching setting changes. An empty description, or one above 200 characters, is rejected with `validation_failed`. A subscription "Uber One" ended from 2026-12-03 with 2026-11-03 expected is renamed "Uber Moto Flex": 2026-11-03 stays expected under the new name and a transaction recorded afterwards realizes it.
+
 ## 6.9 Views
 
 ### S30 Accrual and cash views of a card statement (G1)

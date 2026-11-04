@@ -3,6 +3,7 @@ package planning_test
 import (
 	"net/http"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -394,5 +395,56 @@ func TestUpdateMatchingWithAnEmptyBodyChangesNothing(t *testing.T) {
 
 	if got.MatchToleranceBP != 1000 || got.GraceDays != 3 || got.MatchWindowDays != 7 {
 		t.Fatalf("patched = %+v, want tolerance 1000, grace 3, window 7", got)
+	}
+}
+
+// S283: the description of a schedule is renamed in place, also after it ended.
+func TestRenameScheduleKeepsItsOccurrencesAndTerms(t *testing.T) {
+	t.Parallel()
+
+	f := newFixture(t, "2026-11-01")
+	id := f.rentSchedule()
+	f.pay("2026-11-05", 210000, f.rent, f.landlord)
+	f.h.MustDo(http.MethodPost, "/api/v1/schedules/"+id+"/end", map[string]string{"from": "2027-06-01"}, http.StatusOK, nil)
+
+	var got struct {
+		Description string `json:"description"`
+		EndsOn      string `json:"ends_on"`
+		GraceDays   int    `json:"grace_days"`
+	}
+	f.h.MustDo(http.MethodPatch, "/api/v1/schedules/"+id, map[string]any{"description": "Flat rent"}, http.StatusOK, &got)
+
+	if got.Description != "Flat rent" || got.EndsOn != "2027-06-01" || got.GraceDays != 3 {
+		t.Fatalf("patched = %+v, want description Flat rent, ends 2027-06-01, grace 3", got)
+	}
+
+	f.h.MustDo(http.MethodGet, "/api/v1/schedules/"+id, nil, http.StatusOK, &got)
+
+	if got.Description != "Flat rent" {
+		t.Fatalf("read back description = %q, want Flat rent", got.Description)
+	}
+
+	if o := f.occurrence(id, 1); o.State != "realized" {
+		t.Fatalf("occurrence 1 = %+v, want realized", o)
+	}
+}
+
+func TestRenameScheduleRejectsAnInvalidDescription(t *testing.T) {
+	t.Parallel()
+
+	f := newFixture(t, "2026-11-01")
+	id := f.rentSchedule()
+
+	tests := map[string]string{
+		"empty":          "",
+		"201 characters": strings.Repeat("a", 201),
+	}
+	for name, description := range tests {
+		t.Run(name, func(t *testing.T) {
+			f.h.ExpectProblem(
+				f.h.Do(http.MethodPatch, "/api/v1/schedules/"+id, map[string]any{"description": description}),
+				http.StatusUnprocessableEntity, "validation_failed", "description",
+			)
+		})
 	}
 }

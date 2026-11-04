@@ -1932,5 +1932,9 @@
     [data-ui="menu"] {
       --slotted-overlay-max-block-size: 20rem;
     }
+
+    [data-ui="table"][data-sticky-header] {
+      --slotted-table-header-surface: var(--slotted-ground, var(--slotted-surface));
+    }
   }
 }

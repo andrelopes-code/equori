@@ -113,6 +113,16 @@ test("the header and total rules of a table take the softened rule colour", () =
   assert.match(summary, /solid var\(--slotted-table-border-color-strong\)/);
 });
 
+// A table has no surface of its own, so a sticky header would show the rows that pass under it.
+// Only a table with a sticky header takes the ground it stands on.
+test("the sticky header of a table is opaque and an unpinned header stays transparent", () => {
+  assert.match(css, /--slotted-table-header-surface: transparent;/);
+  assert.match(
+    css,
+    /\[data-ui="table"\]\[data-sticky-header\] \{\s*--slotted-table-header-surface: var\(--slotted-ground, var\(--slotted-surface\)\);/,
+  );
+});
+
 test("a raised toast and the palette are materials over the page", () => {
   assert.match(
     css,
