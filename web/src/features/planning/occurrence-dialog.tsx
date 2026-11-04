@@ -17,6 +17,7 @@ import type { OccurrenceRef } from "@/features/planning/agenda";
 import {
   useMoveOccurrence,
   useSkipOccurrence,
+  useReopenOccurrence,
   useUnrealizeOccurrence,
 } from "@/features/planning/api";
 import { useT } from "@/i18n/i18n-provider";
@@ -26,9 +27,9 @@ import { FormLayout } from "@/ui/form-layout";
 import { useOverlayOpen } from "@/ui/use-overlay-open";
 import { useStableCallback } from "@/ui/use-stable-callback";
 
-export type OccurrenceChange = "skip" | "move" | "unrealize";
+export type OccurrenceChange = "skip" | "move" | "unrealize" | "reopen";
 
-// Skip, move and unrealize: one confirmation each, with the Problem of a refusal in place.
+// Skip, move, unrealize and reopen: one confirmation each, with the Problem of a refusal in place.
 export function OccurrenceDialog({
   change,
   occurrence,
@@ -47,6 +48,7 @@ export function OccurrenceDialog({
   const skip = useSkipOccurrence();
   const move = useMoveOccurrence();
   const unrealize = useUnrealizeOccurrence();
+  const reopen = useReopenOccurrence();
   const [reason, setReason] = useState("");
   const [date, setDate] = useState(occurrence.expected_on);
   const [error, setError] = useState<string | null>(null);
@@ -61,6 +63,8 @@ export function OccurrenceDialog({
         return move.mutateAsync({ id: occurrence.id, date });
       case "unrealize":
         return unrealize.mutateAsync(occurrence.id);
+      case "reopen":
+        return reopen.mutateAsync(occurrence.id);
     }
   };
   return (
@@ -118,8 +122,15 @@ export function OccurrenceDialog({
             </Button>
             <Button
               type="submit"
-              {...(change === "move" ? {} : { tone: "danger" as const })}
-              loading={skip.isPending || move.isPending || unrealize.isPending}
+              {...(change === "move" || change === "reopen"
+                ? {}
+                : { tone: "danger" as const })}
+              loading={
+                skip.isPending ||
+                move.isPending ||
+                unrealize.isPending ||
+                reopen.isPending
+              }
             >
               {t(`occurrence.${change}`)}
             </Button>

@@ -364,6 +364,12 @@ func TestManageOccurrence(t *testing.T) {
 	if len(list.Occurrences) != 1 {
 		t.Errorf("skipped occurrences = %+v", list.Occurrences)
 	}
+
+	toolOutput(t, f.h, "manage_occurrence", map[string]any{"action": "reopen", "occurrence_id": first}, &out)
+
+	if out.State != "expected" {
+		t.Errorf("reopen = %+v", out)
+	}
 }
 
 func TestManageOccurrenceInvalidArguments(t *testing.T) {

@@ -773,6 +773,9 @@ type ServerInterface interface {
 	// RealizeOccurrence Link a transaction to an expected occurrence; ledger changes never release it (P7 amendment A51).
 	// (POST /occurrences/{id}/realize)
 	RealizeOccurrence(w http.ResponseWriter, r *http.Request, id ID)
+	// ReopenOccurrence Make a skipped occurrence expected again; a recorded transaction that fits it realizes it (P7 amendment A200).
+	// (POST /occurrences/{id}/reopen)
+	ReopenOccurrence(w http.ResponseWriter, r *http.Request, id ID)
 	// SkipOccurrence Skip an expected occurrence (T03; 409 occurrence_closed otherwise).
 	// (POST /occurrences/{id}/skip)
 	SkipOccurrence(w http.ResponseWriter, r *http.Request, id ID)
@@ -1407,6 +1410,32 @@ func (siw *ServerInterfaceWrapper) RealizeOccurrence(w http.ResponseWriter, r *h
 	handler.ServeHTTP(w, r)
 }
 
+// ReopenOccurrence operation middleware
+func (siw *ServerInterfaceWrapper) ReopenOccurrence(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ReopenOccurrence(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // SkipOccurrence operation middleware
 func (siw *ServerInterfaceWrapper) SkipOccurrence(w http.ResponseWriter, r *http.Request) {
 
@@ -1795,6 +1824,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/commitments", wrapper.GetCommitted)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/budget-plan", wrapper.GetBudgetPlan)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/budget-plan", wrapper.SaveBudgetPlan)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/occurrences/{id}/reopen", wrapper.ReopenOccurrence)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/occurrences/{id}/unrealize", wrapper.UnrealizeOccurrence)
 
 	return m
@@ -3019,6 +3049,86 @@ func (response RealizeOccurrence422ApplicationProblemPlusJSONResponse) VisitReal
 	return err
 }
 
+type ReopenOccurrenceRequestObject struct {
+	Id ID `json:"id"`
+}
+
+type ReopenOccurrenceResponseObject interface {
+	VisitReopenOccurrenceResponse(w http.ResponseWriter) error
+}
+
+type ReopenOccurrence200JSONResponse Occurrence
+
+func (response ReopenOccurrence200JSONResponse) VisitReopenOccurrenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReopenOccurrence401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ReopenOccurrence401ApplicationProblemPlusJSONResponse) VisitReopenOccurrenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReopenOccurrence404ApplicationProblemPlusJSONResponse Problem
+
+func (response ReopenOccurrence404ApplicationProblemPlusJSONResponse) VisitReopenOccurrenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReopenOccurrence409ApplicationProblemPlusJSONResponse Problem
+
+func (response ReopenOccurrence409ApplicationProblemPlusJSONResponse) VisitReopenOccurrenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReopenOccurrence422ApplicationProblemPlusJSONResponse Problem
+
+func (response ReopenOccurrence422ApplicationProblemPlusJSONResponse) VisitReopenOccurrenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type SkipOccurrenceRequestObject struct {
 	Id   ID `json:"id"`
 	Body *SkipOccurrenceJSONRequestBody
@@ -3754,6 +3864,9 @@ type StrictServerInterface interface {
 	// RealizeOccurrence Link a transaction to an expected occurrence; ledger changes never release it (P7 amendment A51).
 	// (POST /occurrences/{id}/realize)
 	RealizeOccurrence(ctx context.Context, request RealizeOccurrenceRequestObject) (RealizeOccurrenceResponseObject, error)
+	// ReopenOccurrence Make a skipped occurrence expected again; a recorded transaction that fits it realizes it (P7 amendment A200).
+	// (POST /occurrences/{id}/reopen)
+	ReopenOccurrence(ctx context.Context, request ReopenOccurrenceRequestObject) (ReopenOccurrenceResponseObject, error)
 	// SkipOccurrence Skip an expected occurrence (T03; 409 occurrence_closed otherwise).
 	// (POST /occurrences/{id}/skip)
 	SkipOccurrence(ctx context.Context, request SkipOccurrenceRequestObject) (SkipOccurrenceResponseObject, error)
@@ -4330,6 +4443,32 @@ func (sh *strictHandler) RealizeOccurrence(w http.ResponseWriter, r *http.Reques
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(RealizeOccurrenceResponseObject); ok {
 		if err := validResponse.VisitRealizeOccurrenceResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ReopenOccurrence operation middleware
+func (sh *strictHandler) ReopenOccurrence(w http.ResponseWriter, r *http.Request, id ID) {
+	var request ReopenOccurrenceRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ReopenOccurrence(ctx, request.(ReopenOccurrenceRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ReopenOccurrence")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ReopenOccurrenceResponseObject); ok {
+		if err := validResponse.VisitReopenOccurrenceResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

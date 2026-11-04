@@ -49,6 +49,40 @@ func (s *Service) Skip(ctx context.Context, booksID int64, id uuid.UUID, reason 
 	})
 }
 
+// Reopen makes a skipped occurrence expected again, on a date the schedule still produces
+// dates on, and lets a transaction already recorded realize it (A200).
+func (s *Service) Reopen(ctx context.Context, booksID int64, id uuid.UUID) (OccurrenceView, error) {
+	return s.changeOccurrence(ctx, booksID, id, func(repo Repository, o domain.Occurrence, sch domain.Schedule) (domain.Occurrence, error) {
+		switch {
+		case o.State != domain.Skipped:
+			return domain.Occurrence{}, ErrOccurrenceClosed
+		case endsBefore(sch, o.ExpectedOn):
+			return domain.Occurrence{}, ErrScheduleEnded
+		case sch.Paused(o.ExpectedOn):
+			return domain.Occurrence{}, &domain.FieldError{Field: "date", Message: "falls inside a pause of the schedule", Err: domain.ErrValidation}
+		}
+
+		if _, err := repo.Reopen(ctx, booksID, id); err != nil {
+			return domain.Occurrence{}, err
+		}
+
+		ids, err := s.ledger.AccountTransactionsBetween(ctx, booksID, sch.AccountID,
+			o.ExpectedOn.AddDate(0, 0, -sch.WindowDays), o.ExpectedOn.AddDate(0, 0, sch.WindowDays))
+		if err != nil {
+			return domain.Occurrence{}, err
+		}
+
+		for _, txID := range ids {
+			e := TransactionChanged{BooksID: booksID, TransactionID: txID, AccountIDs: []uuid.UUID{sch.AccountID}}
+			if err := s.reevaluate(ctx, repo, e); err != nil {
+				return domain.Occurrence{}, err
+			}
+		}
+
+		return repo.LockOccurrence(ctx, booksID, id)
+	})
+}
+
 // Move moves an expected occurrence; it keeps its sequence and is never regenerated (A52).
 // The new date is one the schedule produces dates on: outside its pauses and before its end.
 func (s *Service) Move(ctx context.Context, booksID int64, id uuid.UUID, date time.Time) (OccurrenceView, error) {

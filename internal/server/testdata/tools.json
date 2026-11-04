@@ -5612,7 +5612,7 @@
   },
   {
     "name": "manage_occurrence",
-    "description": "Proposes an action on one occurrence of a schedule: link it to the transaction that paid it, skip it, move it to another date, or release a linked transaction. Use it when the user says a bill was paid, will be skipped or moved. Do not use it to change every future occurrence: manage_schedule does. The user confirms first.",
+    "description": "Proposes an action on one occurrence of a schedule: link it to the transaction that paid it, skip it, move it to another date, reopen a skipped one, or release a linked transaction. Use it when the user says a bill was paid, will be skipped or moved. Do not use it to change every future occurrence: manage_schedule does. The user confirms first.",
     "effect": "write",
     "idempotent": false,
     "input_schema": {
@@ -5629,7 +5629,8 @@
             "realize",
             "skip",
             "move",
-            "unrealize"
+            "unrealize",
+            "reopen"
           ]
         },
         "transaction_id": {

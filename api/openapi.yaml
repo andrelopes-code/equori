@@ -6380,6 +6380,32 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /occurrences/{id}/reopen:
+    post:
+      tags: [planning]
+      operationId: reopenOccurrence
+      x-book-role: write
+      summary: Make a skipped occurrence expected again; a recorded transaction that fits it realizes it (P7 amendment A200).
+      description: |
+        409 occurrence_closed when the occurrence is not skipped; 409 schedule_ended when its date is on or after
+        ends_on; 422 when its date falls inside a pause.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Occurrence"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
   /occurrences/{id}/unrealize:
     post:
       tags: [planning]

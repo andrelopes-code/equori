@@ -3708,6 +3708,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/occurrences/{id}/reopen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Make a skipped occurrence expected again; a recorded transaction that fits it realizes it (P7 amendment A200).
+         * @description 409 occurrence_closed when the occurrence is not skipped; 409 schedule_ended when its date is on or after
+         *     ends_on; 422 when its date falls inside a pause.
+         */
+        post: operations["reopenOccurrence"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/occurrences/{id}/unrealize": {
         parameters: {
             query?: never;
@@ -13193,6 +13214,32 @@ export interface operations {
             };
             400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    reopenOccurrence: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Occurrence"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
         };
     };

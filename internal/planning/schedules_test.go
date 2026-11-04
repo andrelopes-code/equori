@@ -562,3 +562,75 @@ func TestStartsOnKeepsTheSequencesAcrossATermsChange(t *testing.T) {
 		}
 	}
 }
+
+// S285 (A200): a skipped occurrence is reopened.
+func TestReopenASkippedOccurrence(t *testing.T) {
+	t.Parallel()
+
+	f := newFixture(t, "2026-11-04")
+	id := f.schedule("subscription", f.checking, f.rent, 600, monthly("2026-12-03", 3, ""), nil)
+	occ := f.occurrence(id, 1)
+	f.h.MustDo(http.MethodPost, "/api/v1/occurrences/"+occ.ID+"/skip", map[string]any{"reason": "mistake"}, http.StatusOK, nil)
+
+	var got occurrenceView
+	f.h.MustDo(http.MethodPost, "/api/v1/occurrences/"+occ.ID+"/reopen", nil, http.StatusOK, &got)
+
+	if got.ID != occ.ID || got.State != "expected" || got.ExpectedOn != "2026-12-03" {
+		t.Fatalf("reopened = %+v, want the same occurrence, expected on 2026-12-03", got)
+	}
+
+	if o := f.occurrence(id, 1); o.State != "expected" {
+		t.Fatalf("read back = %+v, want expected", o)
+	}
+
+	f.pay("2026-12-03", 600, f.rent, "")
+
+	if o := f.occurrence(id, 1); o.State != "realized" {
+		t.Fatalf("occurrence = %+v, want realized by the charge recorded after the reopen", o)
+	}
+}
+
+func TestReopenRealizesWithAChargeAlreadyRecorded(t *testing.T) {
+	t.Parallel()
+
+	f := newFixture(t, "2026-11-04")
+	id := f.schedule("subscription", f.checking, f.rent, 600, monthly("2026-12-03", 3, ""), nil)
+	occ := f.occurrence(id, 1)
+	f.h.MustDo(http.MethodPost, "/api/v1/occurrences/"+occ.ID+"/skip", map[string]any{}, http.StatusOK, nil)
+	tx := f.pay("2026-12-03", 600, f.rent, "")
+
+	var got occurrenceView
+	f.h.MustDo(http.MethodPost, "/api/v1/occurrences/"+occ.ID+"/reopen", nil, http.StatusOK, &got)
+
+	if got.State != "realized" || got.TransactionID != tx {
+		t.Fatalf("reopened = %+v, want realized by %s", got, tx)
+	}
+}
+
+func TestReopenRejectsAnOccurrenceThatIsNotSkipped(t *testing.T) {
+	t.Parallel()
+
+	f := newFixture(t, "2026-11-04")
+	id := f.schedule("subscription", f.checking, f.rent, 600, monthly("2026-12-03", 3, ""), nil)
+	occ := f.occurrence(id, 1)
+
+	f.h.ExpectProblem(
+		f.h.Do(http.MethodPost, "/api/v1/occurrences/"+occ.ID+"/reopen", nil),
+		http.StatusConflict, "occurrence_closed", "",
+	)
+}
+
+func TestReopenRejectsAnOccurrenceOnOrAfterTheEnd(t *testing.T) {
+	t.Parallel()
+
+	f := newFixture(t, "2026-11-04")
+	id := f.schedule("subscription", f.checking, f.rent, 600, monthly("2026-12-03", 3, ""), nil)
+	occ := f.occurrence(id, 1)
+	f.h.MustDo(http.MethodPost, "/api/v1/occurrences/"+occ.ID+"/skip", map[string]any{}, http.StatusOK, nil)
+	f.h.MustDo(http.MethodPost, "/api/v1/schedules/"+id+"/end", map[string]string{"from": "2026-12-03"}, http.StatusOK, nil)
+
+	f.h.ExpectProblem(
+		f.h.Do(http.MethodPost, "/api/v1/occurrences/"+occ.ID+"/reopen", nil),
+		http.StatusConflict, "schedule_ended", "",
+	)
+}

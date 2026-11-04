@@ -91,6 +91,18 @@ WHERE
 RETURNING
     *;
 
+-- name: ReopenOccurrence :one
+UPDATE planning_occurrence
+SET
+    state = 'expected',
+    skip_reason = NULL
+WHERE
+    books_id = @books_id
+    AND id = @id
+    AND state = 'skipped'
+RETURNING
+    *;
+
 -- name: MoveOccurrence :one
 -- moved_from keeps the generated date across several moves (P7 amendment A52).
 UPDATE planning_occurrence

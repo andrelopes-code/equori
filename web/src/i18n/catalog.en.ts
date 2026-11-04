@@ -1522,6 +1522,7 @@ export const catalogEn = {
   "assistant.action.manage_occurrence.skip": "Skip occurrence",
   "assistant.action.manage_occurrence.move": "Move occurrence",
   "assistant.action.manage_occurrence.unrealize": "Unlink payment",
+  "assistant.action.manage_occurrence.reopen": "Reopen occurrence",
   "assistant.action.manage_budget_or_goal.create_budget": "Create budget",
   "assistant.action.manage_budget_or_goal.set_budget_amount":
     "Change budget amount",
@@ -1622,6 +1623,7 @@ export const catalogEn = {
   "occurrence.actions": "Actions for {name}",
   "occurrence.realize": "Link",
   "occurrence.unrealize": "Unrealize",
+  "occurrence.reopen": "Reopen",
   "occurrence.skip": "Skip",
   "occurrence.move": "Move",
   "occurrence.realizeTitle": "Link a transaction to {name}",
@@ -1633,6 +1635,9 @@ export const catalogEn = {
   "occurrence.unrealizeTitle": "Unrealize {name}?",
   "occurrence.unrealizeHint":
     "The occurrence returns to expected; the transaction stays as it is.",
+  "occurrence.reopenTitle": "Reopen {name}?",
+  "occurrence.reopenHint":
+    "The occurrence returns to expected, and a recorded transaction that fits it is linked.",
   "occurrence.skipTitle": "Skip {name}?",
   "occurrence.skipHint":
     "A skipped occurrence leaves the projection and the month totals.",

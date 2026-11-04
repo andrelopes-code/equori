@@ -256,4 +256,5 @@ var exposure = map[string]string{
 	"getProjection":                    "project_balance",
 	"getCommitted":                     "list_schedules",
 	"unrealizeOccurrence":              "manage_occurrence",
+	"reopenOccurrence":                 "manage_occurrence",
 }

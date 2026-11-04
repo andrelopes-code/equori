@@ -965,6 +965,44 @@ describe("Schedule page", () => {
     });
   });
 
+  it("reopens a skipped occurrence from its row", async () => {
+    const skipped = occurrence("9", rentID, "2026-09-05", 210000, "skipped");
+    const reopened: string[] = [];
+    await renderApp(`/planning/schedules/${rentID}`, {
+      fetch: api({
+        "GET /api/v1/occurrences": () => json(200, { items: [skipped] }),
+        [`POST /api/v1/occurrences/${skipped.id}/reopen`]: () => {
+          reopened.push(skipped.id);
+          return json(200, { ...skipped, state: "expected" });
+        },
+      }),
+    });
+    await userEvent.click(
+      await screen.findByRole("button", {
+        name: words("occurrence.actions", { name: rent.description }),
+      }),
+    );
+    await userEvent.click(
+      await screen.findByRole("menuitem", {
+        name: catalogEn["occurrence.reopen"],
+      }),
+    );
+    const dialog = await screen.findByRole("dialog");
+    expect(
+      within(dialog).getByText(catalogEn["occurrence.reopenHint"]),
+    ).toBeInTheDocument();
+
+    await userEvent.click(
+      within(dialog).getByRole("button", {
+        name: catalogEn["occurrence.reopen"],
+      }),
+    );
+
+    await waitFor(() => {
+      expect(reopened).toEqual([skipped.id]);
+    });
+  });
+
   it("adds a pause", async () => {
     const sent: unknown[] = [];
     await renderApp(`/planning/schedules/${rentID}`, {

@@ -355,6 +355,18 @@ export function useUnrealizeOccurrence() {
   });
 }
 
+export function useReopenOccurrence() {
+  const api = useApi();
+  return useMutation({
+    mutationFn: async (id: string) =>
+      unwrap(
+        await api.POST("/occurrences/{id}/reopen", {
+          params: { path: { id } },
+        }),
+      ),
+  });
+}
+
 export function useSkipOccurrence() {
   const api = useApi();
   return useMutation({

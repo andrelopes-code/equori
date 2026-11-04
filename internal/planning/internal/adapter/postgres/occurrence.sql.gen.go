@@ -384,6 +384,44 @@ func (q *Queries) ReleaseOccurrence(ctx context.Context, arg ReleaseOccurrencePa
 	return i, err
 }
 
+const reopenOccurrence = `-- name: ReopenOccurrence :one
+UPDATE planning_occurrence
+SET
+    state = 'expected',
+    skip_reason = NULL
+WHERE
+    books_id = $1
+    AND id = $2
+    AND state = 'skipped'
+RETURNING
+    id, books_id, schedule_id, sequence, expected_on, expected_amount, state, transaction_id, realized_by, moved_from, skip_reason, declined_transaction_id
+`
+
+type ReopenOccurrenceParams struct {
+	BooksID int64
+	ID      uuid.UUID
+}
+
+func (q *Queries) ReopenOccurrence(ctx context.Context, arg ReopenOccurrenceParams) (PlanningOccurrence, error) {
+	row := q.db.QueryRow(ctx, reopenOccurrence, arg.BooksID, arg.ID)
+	var i PlanningOccurrence
+	err := row.Scan(
+		&i.ID,
+		&i.BooksID,
+		&i.ScheduleID,
+		&i.Sequence,
+		&i.ExpectedOn,
+		&i.ExpectedAmount,
+		&i.State,
+		&i.TransactionID,
+		&i.RealizedBy,
+		&i.MovedFrom,
+		&i.SkipReason,
+		&i.DeclinedTransactionID,
+	)
+	return i, err
+}
+
 const schedulesTouching = `-- name: SchedulesTouching :many
 SELECT
     id, books_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar, match_window_days

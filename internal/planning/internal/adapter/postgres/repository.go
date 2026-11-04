@@ -442,6 +442,15 @@ func (r *Repository) Skip(ctx context.Context, booksID int64, id uuid.UUID, reas
 	return toOccurrence(row), nil
 }
 
+func (r *Repository) Reopen(ctx context.Context, booksID int64, id uuid.UUID) (domain.Occurrence, error) {
+	row, err := r.q.ReopenOccurrence(ctx, ReopenOccurrenceParams{BooksID: booksID, ID: id})
+	if err != nil {
+		return domain.Occurrence{}, closed(err)
+	}
+
+	return toOccurrence(row), nil
+}
+
 func (r *Repository) Move(ctx context.Context, booksID int64, id uuid.UUID, date time.Time) (domain.Occurrence, error) {
 	row, err := r.q.MoveOccurrence(ctx, MoveOccurrenceParams{BooksID: booksID, ID: id, ExpectedOn: date})
 	if err != nil {

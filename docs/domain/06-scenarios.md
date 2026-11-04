@@ -363,6 +363,10 @@ Amendment A198: the description of a schedule changes without a new schedule, al
 
 Amendment A199: the first date of a schedule moves before the current one, on the rhythm of its recurrence, with `starts_on`. The occurrences that exist stay with their identity and take the next sequences; each later terms version keeps its place. A date gained before the first one is inserted: a recorded transaction that fits it realizes it (A51); one dated before today minus the grace days that none realizes is skipped; the others are expected and take a transaction recorded afterwards. A date that is not before the current start, one off the rhythm of the recurrence, and a recurrence with a count are rejected with `validation_failed` on `starts_on`. On 2026-11-04, a subscription of 6.00 monthly on day 3 from 2026-12-03 with 3 grace days is started on 2026-11-03: 2026-11-03 is expected, 2026-12-03 keeps its occurrence as the second, and the charge of 6.00 on 2026-11-03 that the bank synchronizes later realizes the first. Started on 2026-09-03, 2026-09-03 and 2026-10-03 are skipped unless a recorded transaction realizes them.
 
+### S285 Skipped occurrence reopened
+
+Amendment A200: a skipped occurrence becomes expected again, with its identity, its sequence and its date, and its skip reason is cleared. A transaction already recorded on the schedule's account that fits it (A51) realizes it at once. An occurrence that is not skipped is rejected with `occurrence_closed`, one dated on or after the end of the schedule with `schedule_ended`, and one inside a pause with `validation_failed` on `date`. On 2026-11-04, the occurrence of 2026-12-03 of a subscription of 6.00 was skipped by mistake: after the reopen it is expected, and a charge of 6.00 recorded on 2026-12-03 realizes it.
+
 ## 6.9 Views
 
 ### S30 Accrual and cash views of a card statement (G1)

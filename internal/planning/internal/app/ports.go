@@ -187,6 +187,8 @@ type Repository interface {
 	Release(ctx context.Context, booksID int64, id uuid.UUID, decline bool) (domain.Occurrence, error)
 	// Skip and Move change an expected occurrence; ErrOccurrenceClosed otherwise.
 	Skip(ctx context.Context, booksID int64, id uuid.UUID, reason string) (domain.Occurrence, error)
+	// Reopen makes a skipped occurrence expected again; ErrOccurrenceClosed otherwise.
+	Reopen(ctx context.Context, booksID int64, id uuid.UUID) (domain.Occurrence, error)
 	Move(ctx context.Context, booksID int64, id uuid.UUID, date time.Time) (domain.Occurrence, error)
 	// DeleteExpected removes expected occurrences with expected date in [from, to]; moved ones
 	// only with includeMoved. It returns the dates removed.

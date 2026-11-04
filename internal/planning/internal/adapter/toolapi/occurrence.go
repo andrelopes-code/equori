@@ -14,7 +14,7 @@ import (
 type manageOccurrenceAction string
 
 func (manageOccurrenceAction) Values() []string {
-	return []string{"realize", "skip", "move", "unrealize"}
+	return []string{"realize", "skip", "move", "unrealize", "reopen"}
 }
 
 type manageOccurrenceIn struct {
@@ -48,7 +48,7 @@ func prepareOccurrence(in manageOccurrenceIn) (occurrencePlan, error) {
 		err = required(string(in.Action), fields, nil, "reason")
 	case "move":
 		err = required(string(in.Action), fields, []string{"date"})
-	case "unrealize":
+	case "unrealize", "reopen":
 		err = required(string(in.Action), fields, nil)
 	}
 
@@ -69,7 +69,7 @@ func prepareOccurrence(in manageOccurrenceIn) (occurrencePlan, error) {
 func manageOccurrence(svc *app.Service) tool.Tool {
 	return tool.NewWrite(tool.Spec{
 		Name: "manage_occurrence",
-		Description: "Proposes an action on one occurrence of a schedule: link it to the transaction that paid it, skip it, move it to another date, or release a linked transaction. " +
+		Description: "Proposes an action on one occurrence of a schedule: link it to the transaction that paid it, skip it, move it to another date, reopen a skipped one, or release a linked transaction. " +
 			"Use it when the user says a bill was paid, will be skipped or moved. " +
 			"Do not use it to change every future occurrence: manage_schedule does. " +
 			"The user confirms first.",
@@ -91,8 +91,12 @@ func manageOccurrence(svc *app.Service) tool.Tool {
 		}
 
 		wantState := domain.Expected
-		if in.Action == "unrealize" {
+
+		switch in.Action {
+		case "unrealize":
 			wantState = domain.Realized
+		case "reopen":
+			wantState = domain.Skipped
 		}
 
 		if o.State != wantState {
@@ -126,6 +130,8 @@ func manageOccurrence(svc *app.Service) tool.Tool {
 			pv.Changes = append(pv.Changes, tool.Change{Field: "date", Before: tool.DateValue(o.ExpectedOn), After: tool.DateValue(in.Date.Time)})
 		case "unrealize":
 			pv.Changes = append(pv.Changes, status("expected"), tool.Change{Field: "transaction", Before: tool.TextValue(o.TransactionID.String())})
+		case "reopen":
+			pv.Changes = append(pv.Changes, status("expected"))
 		}
 
 		return pv, nil
@@ -143,6 +149,8 @@ func manageOccurrence(svc *app.Service) tool.Tool {
 			o, err = svc.Skip(ctx, booksID, p.occurrence, in.Reason)
 		case "move":
 			o, err = svc.Move(ctx, booksID, p.occurrence, in.Date.Time)
+		case "reopen":
+			o, err = svc.Reopen(ctx, booksID, p.occurrence)
 		default:
 			o, err = svc.Unrealize(ctx, booksID, p.occurrence)
 		}

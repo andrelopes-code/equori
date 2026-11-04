@@ -1540,6 +1540,7 @@ export const catalogPtBR: Catalog = {
   "assistant.action.manage_occurrence.skip": "Pular ocorrência",
   "assistant.action.manage_occurrence.move": "Mover ocorrência",
   "assistant.action.manage_occurrence.unrealize": "Desvincular pagamento",
+  "assistant.action.manage_occurrence.reopen": "Reabrir ocorrência",
   "assistant.action.manage_budget_or_goal.create_budget": "Criar orçamento",
   "assistant.action.manage_budget_or_goal.set_budget_amount":
     "Alterar valor do orçamento",
@@ -1643,6 +1644,7 @@ export const catalogPtBR: Catalog = {
   "occurrence.actions": "Ações de {name}",
   "occurrence.realize": "Associar",
   "occurrence.unrealize": "Desfazer realização",
+  "occurrence.reopen": "Reabrir",
   "occurrence.skip": "Pular",
   "occurrence.move": "Mover",
   "occurrence.realizeTitle": "Associar uma transação a {name}",
@@ -1651,6 +1653,9 @@ export const catalogPtBR: Catalog = {
   "occurrence.candidates": "Transações que podem corresponder à ocorrência",
   "occurrence.noCandidates": "Nenhuma transação da conta nesses dias.",
   "occurrence.outsideTolerance": "Fora da diferença aceita",
+  "occurrence.reopenTitle": "Reabrir {name}?",
+  "occurrence.reopenHint":
+    "A ocorrência volta a ser esperada, e uma transação já registrada que combinar com ela é ligada.",
   "occurrence.unrealizeTitle": "Desfazer a realização de {name}?",
   "occurrence.unrealizeHint":
     "A ocorrência volta a prevista; a transação permanece como está.",

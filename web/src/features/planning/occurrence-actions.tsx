@@ -14,7 +14,7 @@ import { RealizeDialog } from "@/features/planning/realize-dialog";
 import { useT } from "@/i18n/i18n-provider";
 
 // The row actions of an occurrence wherever it is listed: an open one is realized, skipped or
-// moved; a realized one is released; a skipped one takes none.
+// moved; a realized one is released; a skipped one is reopened.
 export function OccurrenceActions({
   occurrence,
   name,
@@ -42,7 +42,7 @@ export function OccurrenceActions({
     occurrence.state === "realized"
       ? ["unrealize"]
       : occurrence.state === "skipped"
-        ? []
+        ? ["reopen"]
         : ["realize", "skip", "move"];
   if (actions.length === 0) return null;
   return (
