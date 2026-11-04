@@ -44,12 +44,12 @@ export function MemberRow({
       <ListItemContent>
         <ListItemBody>
           <ListItemLabel>
-            <Inline gap={4}>
+            <Inline gap={3}>
               {member.display_name ?? member.email}
               {own && <Tag size="sm">{t("members.you")}</Tag>}
             </Inline>
           </ListItemLabel>
-          <ListItemDescription>
+          <ListItemDescription className="mt-2">
             {[
               ...(member.display_name === undefined ? [] : [member.email]),
               t(`members.role.${member.role}`),
