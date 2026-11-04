@@ -1,6 +1,7 @@
 import type { components } from "@/api/schema.gen";
 import {
   currentTerms,
+  hasEnded,
   subscriptionCost,
 } from "@/features/planning/schedule-words";
 
@@ -22,7 +23,7 @@ export function recurringShares(
   const expense = new Map<string, number>();
 
   for (const s of schedules) {
-    if (s.ends_on !== undefined && s.ends_on < today) continue;
+    if (hasEnded(s.ends_on, today)) continue;
 
     const terms = currentTerms(s.terms, today);
     if (terms === undefined) continue;

@@ -60,4 +60,17 @@ describe("recurringShares", () => {
 
     expect(shares).toEqual([{ currency: "BRL", basisPoints: 1000 }]);
   });
+
+  it("leaves out a schedule that ends today, which produces no occurrence from today", () => {
+    const shares = recurringShares(
+      [
+        schedule("income", 100000, "BRL"),
+        schedule("income", 100000, "BRL", { ends_on: today }),
+        schedule("bill", 10000, "BRL"),
+      ],
+      today,
+    );
+
+    expect(shares).toEqual([{ currency: "BRL", basisPoints: 1000 }]);
+  });
 });
