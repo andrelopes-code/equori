@@ -226,7 +226,41 @@ func TestAddSavingsTarget(t *testing.T) {
 		t.Fatalf("planning_budget_reference = %v", got)
 	}
 
-	if ArchiveVersion != 7 {
-		t.Fatalf("ArchiveVersion = %d, want 7", ArchiveVersion)
+	if ArchiveVersion < 7 {
+		t.Fatalf("ArchiveVersion = %d, want at least 7", ArchiveVersion)
+	}
+}
+
+// Version 7 rows of planning_schedule hold no match window; the step gives each the 7 days every
+// schedule matched with before the column existed (A51).
+func TestAddMatchWindow(t *testing.T) {
+	t.Parallel()
+
+	v7 := []ArchiveTable{
+		{Name: "planning_schedule", Rows: [][]byte{[]byte(`{"id":"a"}`), []byte(`{"id":"b"}`)}},
+		{Name: "planning_occurrence", Rows: [][]byte{[]byte(`{"id":"o"}`)}},
+	}
+
+	got, err := addMatchWindow(v7)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := []string{`{"id":"a","match_window_days":7}`, `{"id":"b","match_window_days":7}`}
+	if len(got) != 2 || len(got[0].Rows) != 2 ||
+		string(got[0].Rows[0]) != want[0] || string(got[0].Rows[1]) != want[1] {
+		t.Fatalf("planning_schedule = %q, want %q", got[0].Rows, want)
+	}
+
+	if string(got[1].Rows[0]) != `{"id":"o"}` {
+		t.Fatalf("planning_occurrence = %q, want it unchanged", got[1].Rows)
+	}
+
+	if string(v7[0].Rows[0]) != `{"id":"a"}` {
+		t.Fatalf("the input changed: %q", v7[0].Rows)
+	}
+
+	if ArchiveVersion != 8 {
+		t.Fatalf("ArchiveVersion = %d, want 8", ArchiveVersion)
 	}
 }

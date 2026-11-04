@@ -9,7 +9,7 @@ import (
 
 // ArchiveVersion is the archive_version this instance writes and the highest it reads
 // (ADR 021). It is the number of steps in archiveSteps plus 1.
-const ArchiveVersion = 7
+const ArchiveVersion = 8
 
 // ArchiveStep migrates the tables of an archive from one version to the next; it is pure and
 // leaves its input unchanged (ADR 021, V3).
@@ -19,7 +19,7 @@ type ArchiveStep func([]ArchiveTable) ([]ArchiveTable, error)
 // table appends its step here and increments ArchiveVersion in the same commit (ADR 021, V2).
 var archiveSteps = []ArchiveStep{
 	addExcludedFromLiquidity, addBudgetReference, addStatementBasis, dropConversations,
-	addReliableSync, addSavingsTarget,
+	addReliableSync, addSavingsTarget, addMatchWindow,
 }
 
 // migrateArchive applies the steps from version from to the last one, in order.
@@ -100,6 +100,13 @@ func addReliableSync(tables []ArchiveTable) ([]ArchiveTable, error) {
 // no target and the step leaves every row unchanged.
 func addSavingsTarget(tables []ArchiveTable) ([]ArchiveTable, error) {
 	return tables, nil
+}
+
+// addMatchWindow moves a version 7 archive to version 8, which adds match_window_days to
+// planning_schedule (migration 00087). Every earlier schedule matched within 7 days (A51), so the
+// step gives each row that value.
+func addMatchWindow(tables []ArchiveTable) ([]ArchiveTable, error) {
+	return withField(tables, "planning_schedule", "match_window_days", jsontext.Value("7"))
 }
 
 // withField returns tables with field set to value in every row of table; the input is left
