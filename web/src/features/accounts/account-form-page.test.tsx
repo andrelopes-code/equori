@@ -9,6 +9,7 @@ import {
   cardID,
   cardRoutes,
   checkingID,
+  itauID,
   parentID,
 } from "@/testing/account-api";
 import { fakeApi, json, problem } from "@/testing/fake-api";
@@ -351,6 +352,37 @@ describe("Edit account", () => {
     });
     expect(sent.map((s) => s.route)).toEqual(["POST /institutions", "PATCH"]);
     expect(sent[1]?.body).toEqual({ institution_id: newInstitutionID });
+  });
+
+  it("reuses the owned institution that has the name of the chosen catalogue entry", async () => {
+    const sent: Sent[] = [];
+    const { router } = await renderApp(`/accounts/${checkingID}/edit`, {
+      fetch: api(sent),
+    });
+    const name = await screen.findByRole("textbox", {
+      name: catalogEn["accountForm.name"],
+    });
+    await waitFor(() => {
+      expect(name).toHaveValue("Nubank");
+    });
+    const institution = screen.getByRole("combobox", {
+      name: new RegExp(catalogEn["accountForm.institution"]),
+    });
+    await userEvent.click(institution);
+    await userEvent.clear(institution);
+    await userEvent.type(institution, "Itaú Unibanco");
+    await userEvent.click(
+      await screen.findByRole("option", { name: /ITAÚ UNIBANCO/ }),
+    );
+
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["detail.save"] }),
+    );
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe(`/accounts/${checkingID}`);
+    });
+    expect(sent.map((s) => s.route)).toEqual(["PATCH"]);
+    expect(sent[0]?.body).toEqual({ institution_id: itauID });
   });
 
   it("sends only the field that moved", async () => {
