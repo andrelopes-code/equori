@@ -2,6 +2,7 @@
 package password
 
 import (
+	"cmp"
 	"crypto/rand"
 	"crypto/subtle"
 	"encoding/base64"
@@ -25,13 +26,21 @@ var ErrMalformedHash = errors.New("malformed password hash")
 
 var b64 = base64.RawStdEncoding
 
-func Hash(password string) string {
+// Cost is the memory and the iterations of a new hash; a zero field is the OWASP minimum.
+type Cost struct {
+	MemoryKiB, Iterations uint32
+}
+
+func Hash(password string, c Cost) string {
+	memory := cmp.Or(c.MemoryKiB, memoryKiB)
+	passes := cmp.Or(c.Iterations, iterations)
+
 	salt := make([]byte, saltLength)
 	_, _ = rand.Read(salt) // crypto/rand.Read never returns an error since Go 1.24.
-	key := argon2.IDKey([]byte(password), salt, iterations, memoryKiB, parallelism, keyLength)
+	key := argon2.IDKey([]byte(password), salt, passes, memory, parallelism, keyLength)
 
 	return fmt.Sprintf("$argon2id$v=%d$m=%d,t=%d,p=%d$%s$%s",
-		argon2.Version, memoryKiB, iterations, parallelism, b64.EncodeToString(salt), b64.EncodeToString(key))
+		argon2.Version, memory, passes, parallelism, b64.EncodeToString(salt), b64.EncodeToString(key))
 }
 
 // Verify reads the parameters from the encoded hash, so hashes created with older parameters stay valid.

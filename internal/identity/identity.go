@@ -16,6 +16,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/identity/internal/adapter/toolapi"
 	"github.com/andrelopes-code/equori/internal/identity/internal/app"
 	"github.com/andrelopes-code/equori/internal/identity/internal/domain"
+	"github.com/andrelopes-code/equori/internal/identity/internal/password"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
 	"github.com/andrelopes-code/equori/internal/platform/clock"
 	"github.com/andrelopes-code/equori/internal/platform/locale"
@@ -63,6 +64,14 @@ type Config struct {
 	SecretKey, PreviousSecretKey string
 	// Now is the clock of sessions and second factors; nil is time.Now.
 	Now func() time.Time
+	// PasswordCost lowers the argon2id cost of new hashes; production leaves it zero, the OWASP
+	// minimum, and the test harness sets it.
+	PasswordCost PasswordCost
+}
+
+// PasswordCost is the memory and the iterations of argon2id; a zero field keeps the default.
+type PasswordCost struct {
+	MemoryKiB, Iterations uint32
 }
 
 type Module struct {
@@ -76,7 +85,12 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*Module, error) {
 		now = time.Now
 	}
 
-	svc := app.NewService(postgres.NewRepository(pool), now, DefaultTimeZone)
+	svc := app.NewService(
+		postgres.NewRepository(pool),
+		now,
+		DefaultTimeZone,
+		password.Cost(cfg.PasswordCost),
+	)
 	svc.UseSetupHooks(app.SetupHooks{DefaultCurrency: cfg.DefaultCurrency, Done: cfg.SetupDone})
 
 	if cfg.SecretKey != "" {

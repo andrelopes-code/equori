@@ -114,18 +114,25 @@ type Service struct {
 	hashSlots chan struct{}
 	// dummyHash is verified when the email is unknown, so both failure paths cost one argon2id run.
 	dummyHash string
+	cost      password.Cost
 	setup     setup
 	box       Sealer
 }
 
-func NewService(repo Repository, now func() time.Time, defaultTimeZone func(region string) string) *Service {
+func NewService(
+	repo Repository,
+	now func() time.Time,
+	defaultTimeZone func(region string) string,
+	cost password.Cost,
+) *Service {
 	return &Service{
 		repo:            repo,
 		now:             now,
 		defaultTimeZone: defaultTimeZone,
 		throttle:        newThrottle(loginAttemptLimit, loginAttemptWindow),
 		hashSlots:       make(chan struct{}, runtime.NumCPU()),
-		dummyHash:       password.Hash("dummy password for timing equalization"),
+		dummyHash:       password.Hash("dummy password for timing equalization", cost),
+		cost:            cost,
 	}
 }
 
@@ -168,7 +175,7 @@ func (s *Service) newMember(ctx context.Context, email, plain string, role domai
 		return domain.Member{}, err
 	}
 
-	hash := password.Hash(plain)
+	hash := password.Hash(plain, s.cost)
 
 	release()
 

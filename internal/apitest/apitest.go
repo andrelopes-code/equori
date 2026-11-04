@@ -239,6 +239,8 @@ func (h *Harness) start(opts []Option) {
 
 	cfg := server.Config{}
 	cfg.Instance.Log = h.ring.Records
+	// argon2id at its production cost took a third of the ledger tests' time under -race.
+	cfg.PasswordCost = identity.PasswordCost{MemoryKiB: 64, Iterations: 1}
 
 	for _, o := range opts {
 		o(&cfg)

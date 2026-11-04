@@ -9,13 +9,13 @@ import (
 func TestHashAndVerify(t *testing.T) {
 	t.Parallel()
 
-	encoded := Hash("correct horse battery")
+	encoded := Hash("correct horse battery", Cost{})
 
 	if !strings.HasPrefix(encoded, "$argon2id$v=19$m=19456,t=2,p=1$") {
 		t.Fatalf("unexpected encoding %q", encoded)
 	}
 
-	if encoded == Hash("correct horse battery") {
+	if encoded == Hash("correct horse battery", Cost{}) {
 		t.Fatal("two hashes of the same password are equal; salt is not random")
 	}
 
@@ -27,6 +27,22 @@ func TestHashAndVerify(t *testing.T) {
 	ok, err = Verify("wrong horse battery", encoded)
 	if err != nil || ok {
 		t.Fatalf("Verify(wrong) = %v, %v; want false, nil", ok, err)
+	}
+}
+
+// The test harness lowers the cost; Verify reads it back from the encoding.
+func TestHashWithCost(t *testing.T) {
+	t.Parallel()
+
+	encoded := Hash("correct horse battery", Cost{MemoryKiB: 64, Iterations: 1})
+
+	if !strings.HasPrefix(encoded, "$argon2id$v=19$m=64,t=1,p=1$") {
+		t.Fatalf("unexpected encoding %q", encoded)
+	}
+
+	ok, err := Verify("correct horse battery", encoded)
+	if err != nil || !ok {
+		t.Fatalf("Verify(correct) = %v, %v; want true, nil", ok, err)
 	}
 }
 

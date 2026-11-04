@@ -65,6 +65,8 @@ type Config struct {
 	APIDocs bool
 	// IdentityNow replaces the clock of identity; tests set it, production passes none.
 	IdentityNow func() time.Time
+	// PasswordCost lowers the argon2id cost of new hashes; tests set it, production passes none.
+	PasswordCost identity.PasswordCost
 	// SecretKey and PreviousSecretKey seal integration credentials (ADR 008): 32 raw bytes,
 	// empty when unset.
 	SecretKey, PreviousSecretKey string
@@ -128,6 +130,7 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 		SecretKey:         cfg.SecretKey,
 		PreviousSecretKey: cfg.PreviousSecretKey,
 		Now:               cfg.IdentityNow,
+		PasswordCost:      cfg.PasswordCost,
 	}, log)
 	if err != nil {
 		return nil, err
