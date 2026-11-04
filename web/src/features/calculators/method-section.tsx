@@ -78,7 +78,8 @@ export function MethodSection({
         </CollapsibleTrigger>
       </CollapsibleHeader>
       <CollapsiblePanel>
-        <div className={styles.pair}>
+        {/* Workaround for Slotted issue #68: the panel content has no space above it. */}
+        <div className={[styles.pair, "pt-4"].join(" ")}>
           <Stack gap={6}>
             {part(
               "calc.method.steps",
