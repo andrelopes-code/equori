@@ -39,6 +39,7 @@ import {
 import { placement } from "@/features/overview/overview-block";
 import { SpendingBlock } from "@/features/overview/spending-block";
 import { SpendingChart } from "@/features/overview/spending-chart";
+import { SpendingPaceFigure } from "@/features/overview/spending-pace-figure";
 import { UpcomingBlock } from "@/features/overview/upcoming-block";
 import type { MessageKey } from "@/i18n/catalog.en";
 import { useT } from "@/i18n/i18n-provider";
@@ -91,6 +92,7 @@ export function OverviewPage() {
     budgets: placement("budgets", t("overview.budgets.title"), 4, 5),
     cards: placement("cards", t("overview.cards.title"), 6, 4),
     goals: placement("goals", t("overview.goals.title"), 6, 4),
+    pace: placement("pace", t("overview.pace.title"), 4, 2),
   };
   const indicators = indicatorFigures(month, t);
   return (
@@ -143,6 +145,7 @@ export function OverviewPage() {
                     />
                   )),
                   ...indicators,
+                  <SpendingPaceFigure key="pace" {...at.pace} />,
                   <BalanceChartBlock
                     key="balance"
                     month={month}
@@ -188,6 +191,7 @@ export function OverviewPage() {
                       {...placement(`flow-${kind}`, t(key), 4, 2)}
                     />
                   )),
+                  <SpendingPaceFigure key="pace" {...at.pace} />,
                   <SpendingBlock
                     key="spending"
                     month={month}

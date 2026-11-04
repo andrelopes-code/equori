@@ -232,6 +232,25 @@ describe("overview page", () => {
     ).toBeInTheDocument();
   });
 
+  it.each([800, 1280])(
+    "places the spending pace at %i px as a widget that hides",
+    async (width) => {
+      await renderApp("/", { width, fetch: api() });
+
+      await screen.findByRole("article", { name: "Spending pace" });
+      await userEvent.click(
+        screen.getByRole("button", { name: catalogEn["overview.block.edit"] }),
+      );
+      await userEvent.click(
+        await screen.findByRole("button", { name: "Rearrange Spending pace" }),
+      );
+
+      expect(
+        await screen.findByRole("menuitem", { name: "Hide" }),
+      ).toBeInTheDocument();
+    },
+  );
+
   it("keeps the attention list without a hide entry", async () => {
     await renderApp("/", { width: 800, fetch: api() });
     await userEvent.click(
