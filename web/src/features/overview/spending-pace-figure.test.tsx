@@ -13,7 +13,7 @@ describe("spending pace figure", () => {
     localStorage.clear();
   });
 
-  it("S273: compares the month to today with the same days of the month before", async () => {
+  it("S280: compares the month to today with the same days of the month before", async () => {
     renderPace("2026-10-17", {
       "2026-10-01/2026-10-17": [
         total(50000),
@@ -34,7 +34,7 @@ describe("spending pace figure", () => {
     expect(widget).toHaveTextContent("Same days of september: R$1,400.00");
   });
 
-  it("S274: ends the range before on the last day of a shorter month", async () => {
+  it("S281: ends the range before on the last day of a shorter month", async () => {
     renderPace("2026-03-31", {
       "2026-03-01/2026-03-31": [total(100000)],
       "2026-02-01/2026-02-28": [total(80000)],
@@ -51,7 +51,7 @@ describe("spending pace figure", () => {
     expect(widget).toHaveTextContent("Same days of february: R$800.00");
   });
 
-  it("S275: draws no change when the days before hold no spending", async () => {
+  it("S282: draws no change when the days before hold no spending", async () => {
     renderPace("2026-10-17", {
       "2026-10-01/2026-10-17": [total(50000)],
       "2026-09-01/2026-09-17": [],

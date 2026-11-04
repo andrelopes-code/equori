@@ -2,7 +2,7 @@
 
 - Status: delivered
 - Date: 2026-11-04
-- Scenarios: S273 to S275 of `docs/domain/06-scenarios.md`
+- Scenarios: S280 to S282 of `docs/domain/06-scenarios.md`
 - Amends: `docs/specs/2026-10-26-analytics-design.md`, section 5.2 (the set of hideable blocks)
 
 ## 1. Intent
@@ -68,7 +68,7 @@ No regional value enters: dates and month names come from `src/i18n/format.ts` t
 
 ## 6. Acceptance
 
-- S273 to S275 each have a web test whose name carries the scenario ID, through `renderApp` and the fake API, as S154 does in `indicator-figure.test.tsx`.
+- S280 to S282 each have a web test whose name carries the scenario ID, through `renderApp` and the fake API, as S154 does in `indicator-figure.test.tsx`.
 - `spending-pace.test.ts` covers the ranges of a 31-day month after a 30-day one, of 31 March after February in a common and a leap year, the base currency filter, a negative previous sum and a refund.
 - The privacy test of the overview (`masks every amount in privacy mode`) covers the widget.
 - The edit-mode test hides and restores the widget.
