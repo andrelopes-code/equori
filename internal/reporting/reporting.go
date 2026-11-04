@@ -68,6 +68,19 @@ func (m *Module) OnImport(rebuild func(ctx context.Context, booksID int64) error
 	m.exports.OnImport(rebuild)
 }
 
+// Credentials is lent by ingestion: the integration credentials of a book for an export archive.
+type Credentials = app.Credentials
+
+// Errors a Credentials source returns for the export and the import of credentials.
+var (
+	ErrPassphraseInvalid      = app.ErrPassphraseInvalid
+	ErrCredentialsUnavailable = app.ErrCredentialsUnavailable
+)
+
+// UseCredentials lends the credentials of the integrations; internal/server binds them late
+// because ingestion is built after reporting.
+func (m *Module) UseCredentials(c Credentials) { m.exports.UseCredentials(c) }
+
 // BodyLimits raises the request body limit of an archive import: the largest archive plus
 // the multipart framing (export design E5).
 func (m *Module) BodyLimits() []httpserver.BodyLimit {

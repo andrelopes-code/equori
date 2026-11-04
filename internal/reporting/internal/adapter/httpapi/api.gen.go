@@ -125,7 +125,13 @@ type AccountFlows struct {
 type ArchiveImport struct {
 	// ArchiveVersion The archive_version the archive was written with (ADR 021).
 	ArchiveVersion int `json:"archive_version"`
-	Tables         []struct {
+
+	// CredentialsInArchive The archive carries integration credentials.
+	CredentialsInArchive bool `json:"credentials_in_archive"`
+
+	// CredentialsRestored Integrations whose credential the import wrote; 0 without the passphrase.
+	CredentialsRestored int `json:"credentials_restored"`
+	Tables              []struct {
 		Name string `json:"name"`
 		Rows int    `json:"rows"`
 	} `json:"tables"`
@@ -201,6 +207,12 @@ type Export struct {
 
 // ExportStatus defines model for Export.Status.
 type ExportStatus string
+
+// ExportRequest defines model for ExportRequest.
+type ExportRequest struct {
+	// CredentialsPassphrase Adds the credentials of the book's integrations to the archive, sealed by this passphrase; 8 to 256 characters.
+	CredentialsPassphrase *string `json:"credentials_passphrase,omitempty"`
+}
 
 // FieldError defines model for FieldError.
 type FieldError struct {
@@ -286,7 +298,7 @@ type Problem struct {
 	// integration_unavailable, aggregator_unauthorized, aggregator_unavailable, integration_in_use,
 	// currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended,
 	// budget_exists, instrument_exists, mixed_instruments, price_missing, later_sale_exists,
-	// investment_transaction, system_account, attachment_not_inlineable, archive_too_new,
+	// investment_transaction, system_account, attachment_not_inlineable, archive_too_new, passphrase_invalid,
 	// setup_token_invalid, setup_complete, book_role_required, books_not_found, member_not_found,
 	// last_owner, already_member, invitation_not_found, invitation_email_mismatch,
 	// confirmation_mismatch, books_has_members, last_books,
@@ -357,6 +369,9 @@ type TagName = string
 // ImportArchiveMultipartBody defines parameters for ImportArchive.
 type ImportArchiveMultipartBody struct {
 	File openapi_types.File `json:"file"`
+
+	// Passphrase The credentials_passphrase of the export; optional.
+	Passphrase *string `json:"passphrase,omitempty"`
 }
 
 // GetBalanceSeriesParams defines parameters for GetBalanceSeries.
@@ -405,6 +420,9 @@ type GetAccountFlowsParams struct {
 type GetIndicatorsParams struct {
 	Month string `form:"month" json:"month"`
 }
+
+// RequestExportJSONRequestBody defines body for RequestExport for application/json ContentType.
+type RequestExportJSONRequestBody = ExportRequest
 
 // ImportArchiveMultipartRequestBody defines body for ImportArchive for multipart/form-data ContentType.
 type ImportArchiveMultipartRequestBody ImportArchiveMultipartBody
@@ -1044,6 +1062,7 @@ func (response GetCardStatementAnalytics404ApplicationProblemPlusJSONResponse) V
 }
 
 type RequestExportRequestObject struct {
+	Body *RequestExportJSONRequestBody
 }
 
 type RequestExportResponseObject interface {
@@ -1064,9 +1083,23 @@ func (response RequestExport202JSONResponse) VisitRequestExportResponse(w http.R
 	return err
 }
 
-type RequestExport401ApplicationProblemPlusJSONResponse struct {
+type RequestExport400ApplicationProblemPlusJSONResponse struct {
 	ProblemApplicationProblemPlusJSONResponse
 }
+
+func (response RequestExport400ApplicationProblemPlusJSONResponse) VisitRequestExportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RequestExport401ApplicationProblemPlusJSONResponse Problem
 
 func (response RequestExport401ApplicationProblemPlusJSONResponse) VisitRequestExportResponse(w http.ResponseWriter) error {
 
@@ -1076,6 +1109,20 @@ func (response RequestExport401ApplicationProblemPlusJSONResponse) VisitRequestE
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RequestExport403ApplicationProblemPlusJSONResponse Problem
+
+func (response RequestExport403ApplicationProblemPlusJSONResponse) VisitRequestExportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -1792,6 +1839,16 @@ func (sh *strictHandler) GetCardStatementAnalytics(w http.ResponseWriter, r *htt
 // RequestExport operation middleware
 func (sh *strictHandler) RequestExport(w http.ResponseWriter, r *http.Request) {
 	var request RequestExportRequestObject
+
+	var body RequestExportJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		if !errors.Is(err, io.EOF) {
+			sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+			return
+		}
+	} else {
+		request.Body = &body
+	}
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.RequestExport(ctx, request.(RequestExportRequestObject))

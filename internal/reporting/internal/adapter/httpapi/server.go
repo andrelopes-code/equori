@@ -150,6 +150,20 @@ func ToProblem(err error) (problem.Details, bool) {
 		d.ArchiveVersion, d.InstanceVersion = &tooNew.Archive, &tooNew.Instance
 
 		return d, true
+	case errors.Is(err, app.ErrPassphraseLength):
+		d := problem.New(http.StatusBadRequest, "invalid_request", err.Error())
+		d.Errors = []problem.FieldError{{Field: "credentials_passphrase", Message: err.Error()}}
+
+		return d, true
+	case errors.Is(err, app.ErrPassphraseInvalid):
+		d := problem.New(http.StatusUnprocessableEntity, "passphrase_invalid", err.Error())
+		d.Errors = []problem.FieldError{{Field: "passphrase", Message: err.Error()}}
+
+		return d, true
+	case errors.Is(err, app.ErrCredentialsUnavailable):
+		return problem.New(http.StatusConflict, "integration_unavailable", err.Error()), true
+	case errors.Is(err, app.ErrCredentialsRole):
+		return problem.New(http.StatusForbidden, "book_role_required", err.Error()), true
 	case errors.Is(err, app.ErrImportNotEmpty):
 		return problem.New(http.StatusConflict, "import_not_empty", err.Error()), true
 	case errors.Is(err, app.ErrImportConflict):

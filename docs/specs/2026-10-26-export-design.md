@@ -92,7 +92,7 @@ Intent: an owner who moves to a clean instance keeps the integrations working wi
 
 | ID | Rule |
 |---|---|
-| C1 | `requestExport` accepts an optional JSON body `{credentials_passphrase}`. Absent or empty: the archive is built as in E1 to E4. Present: 8 to 256 characters, otherwise 422 `validation` naming the field. Without `EQUORI_SECRET_KEY` the request is refused with 409 `integration_unavailable` (ADR 008, K2). |
+| C1 | `requestExport` accepts an optional JSON body `{credentials_passphrase}`. Absent or empty: the archive is built as in E1 to E4. Present: the role `owner` is required, otherwise 403 `book_role_required`; the passphrase has 8 to 256 characters, otherwise 400 `invalid_request` naming `credentials_passphrase`. Without `EQUORI_SECRET_KEY` the request is refused with 409 `integration_unavailable` (ADR 008, K2). |
 | C2 | The passphrase lives only in the memory of the request. The handler seals the credentials of the book's integrations into a bundle and stores the bundle in `reporting_export.credentials`; the build copies it into the archive and `FinishExport` clears the column. A book with no stored credential produces no bundle. |
 | C3 | The bundle is the archive entry `credentials.enc`: format byte 1, 4-byte big-endian iteration count (600000), 16-byte salt, 12-byte nonce, AES-256-GCM ciphertext with tag. The key is PBKDF2-HMAC-SHA256 of the passphrase (`crypto/pbkdf2`). The associated data is the ASCII text `equori-credentials-v1`. The plaintext is the JSON `{"credentials": {"<integration id>": <credentials>}}` as ADR 008 seals it. |
 | C4 | The manifest gains the optional member `credentials` (`file`, `sha256`). No exported table changes, so `archive_version` stays; an importer that predates this amendment ignores the entry. |

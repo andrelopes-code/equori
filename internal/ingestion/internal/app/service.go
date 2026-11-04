@@ -71,6 +71,8 @@ type Repository interface {
 	UpdateCredentials(ctx context.Context, booksID int64, id uuid.UUID, sealed []byte) (domain.Integration, error)
 	// DeleteIntegration returns ErrIntegrationInUse while a connection uses the integration.
 	DeleteIntegration(ctx context.Context, booksID int64, id uuid.UUID) error
+	// StoredCredentials lists the book's integrations that hold a credential, by id.
+	StoredCredentials(ctx context.Context, booksID int64) ([]domain.Integration, error)
 	// ResealCredentials replaces, in one database transaction, every book's sealed
 	// credentials for which reseal returns a value, and returns how many it replaced.
 	ResealCredentials(ctx context.Context, reseal func(booksID int64, id uuid.UUID, sealed []byte) ([]byte, error)) (int, error)

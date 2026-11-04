@@ -154,6 +154,46 @@ func (q *Queries) ListIntegrations(ctx context.Context, arg ListIntegrationsPara
 	return items, nil
 }
 
+const listStoredCredentials = `-- name: ListStoredCredentials :many
+SELECT
+    id, books_id, aggregator, name, credential_ciphertext, updated_at
+FROM
+    ingestion_integration
+WHERE
+    books_id = $1
+    AND credential_ciphertext <> ''::bytea
+ORDER BY
+    id
+`
+
+// Export design C2: the integrations of one book that hold a credential.
+func (q *Queries) ListStoredCredentials(ctx context.Context, booksID int64) ([]IngestionIntegration, error) {
+	rows, err := q.db.Query(ctx, listStoredCredentials, booksID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []IngestionIntegration
+	for rows.Next() {
+		var i IngestionIntegration
+		if err := rows.Scan(
+			&i.ID,
+			&i.BooksID,
+			&i.Aggregator,
+			&i.Name,
+			&i.CredentialCiphertext,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const lockAllCredentials = `-- name: LockAllCredentials :many
 SELECT
     id,

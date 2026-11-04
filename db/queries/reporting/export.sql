@@ -1,8 +1,8 @@
 -- name: RequestExport :one
 INSERT INTO
-    reporting_export (books_id, status, requested_at)
+    reporting_export (books_id, status, requested_at, credentials)
 VALUES
-    (@books_id, 'pending', @requested_at)
+    (@books_id, 'pending', @requested_at, @credentials)
 ON CONFLICT (books_id) DO UPDATE
 SET
     id = uuidv7(),
@@ -12,7 +12,8 @@ SET
     content = NULL,
     sha256 = NULL,
     problem = NULL,
-    archive_version = NULL
+    archive_version = NULL,
+    credentials = excluded.credentials
 WHERE
     reporting_export.status <> 'pending'
 RETURNING
@@ -53,7 +54,8 @@ SET
     content = @content,
     sha256 = @sha256,
     problem = @problem,
-    archive_version = @archive_version
+    archive_version = @archive_version,
+    credentials = NULL
 WHERE
     books_id = @books_id
     AND id = @id

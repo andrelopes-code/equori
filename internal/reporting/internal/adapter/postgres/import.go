@@ -10,6 +10,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 
@@ -95,8 +96,10 @@ func columns(ctx context.Context, q DBTX, table string) ([]string, error) {
 	return pgx.CollectRows(rows, pgx.RowTo[string])
 }
 
-func (r *Exports) Import(ctx context.Context, booksID int64, tables []app.ArchiveTable, attachments map[string][]byte) ([]app.TableCount, error) {
+func (r *Exports) Import(ctx context.Context, booksID int64, tables []app.ArchiveTable, attachments map[string][]byte, credentials map[uuid.UUID][]byte) ([]app.TableCount, int, error) {
 	var counts []app.TableCount
+
+	restored := 0
 	err := pgx.BeginFunc(ctx, r.pool, func(tx pgx.Tx) error {
 		var holds bool
 		if err := tx.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM ledger_transaction WHERE books_id = $1)
@@ -185,19 +188,29 @@ func (r *Exports) Import(ctx context.Context, booksID int64, tables []app.Archiv
 			}
 		}
 
+		// Export design C6: a credential of an id with no imported integration matches no row.
+		for id, sealed := range credentials {
+			tag, err := tx.Exec(ctx, `UPDATE ingestion_integration SET credential_ciphertext = $1 WHERE books_id = $2 AND id = $3`, sealed, booksID, id)
+			if err != nil {
+				return fmt.Errorf("restore credential: %w", err)
+			}
+
+			restored += int(tag.RowsAffected())
+		}
+
 		return nil
 	})
 
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-		return nil, fmt.Errorf("%w: %s", app.ErrImportConflict, pgErr.ConstraintName)
+		return nil, 0, fmt.Errorf("%w: %s", app.ErrImportConflict, pgErr.ConstraintName)
 	}
 
 	if errors.As(err, &pgErr) && pgErr.Code == "23503" {
-		return nil, fmt.Errorf("%w: %s", app.ErrArchiveInvalid, pgErr.ConstraintName)
+		return nil, 0, fmt.Errorf("%w: %s", app.ErrArchiveInvalid, pgErr.ConstraintName)
 	}
 
-	return counts, err
+	return counts, restored, err
 }
 
 // insert writes rows in one statement; a shared row already present is kept.

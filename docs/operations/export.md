@@ -21,4 +21,6 @@ The release notes of each version name its `archive_version`.
 
 - The import requires books without facts: no transaction and no account other than the system accounts created at sign-up. Merging an archive into books that hold facts is not supported.
 - An archive is at most 256 MiB.
-- Integration credentials are not exported; after an import, each integration needs its credentials again.
+- Integration credentials are exported only when the owner types a passphrase of 8 to 256 characters at the export. The archive then carries them sealed by that passphrase, and the server does not keep it. The import restores them when the owner types the same passphrase, sealing each one again under the key of the receiving instance, which therefore needs `EQUORI_SECRET_KEY` (or `secret.key`). A wrong passphrase refuses the import before any write (422 `passphrase_invalid`). Without the passphrase, each integration needs its credentials again.
+- Only an owner of the book exports or imports credentials.
+- The passphrase is not recoverable: an archive whose passphrase is lost keeps every fact and loses only the credentials.

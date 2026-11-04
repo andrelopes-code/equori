@@ -59,6 +59,20 @@ func (r *Repository) ListIntegrations(ctx context.Context, booksID int64, p page
 	return out, next, nil
 }
 
+func (r *Repository) StoredCredentials(ctx context.Context, booksID int64) ([]domain.Integration, error) {
+	rows, err := r.q.ListStoredCredentials(ctx, booksID)
+	if err != nil {
+		return nil, err
+	}
+
+	out := make([]domain.Integration, len(rows))
+	for i, row := range rows {
+		out[i] = toIntegration(row)
+	}
+
+	return out, nil
+}
+
 // namePage returns the row limit, with one extra row, and the cursor of a list by name.
 func namePage(p page.Request[app.NameKey]) (int32, *string, uuid.NullUUID) {
 	limit := int32(p.Limit + 1) //nolint:gosec // limit is at most page.MaxLimit

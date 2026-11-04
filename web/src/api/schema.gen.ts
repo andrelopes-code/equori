@@ -1379,7 +1379,10 @@ export interface paths {
         /**
          * Request an archive of every fact of the books (SC6, docs/specs/2026-10-26-export-design.md).
          * @description The archive is built after the response and replaces the previous export. 409 export_pending while one is
-         *     pending.
+         *     pending. With credentials_passphrase the archive also carries the credentials of the book's integrations,
+         *     sealed by that passphrase, which the server never stores (export design C1 to C4); this needs the owner
+         *     role (403 book_role_required otherwise), 400 invalid_request for a passphrase outside 8 to 256 characters
+         *     and 409 integration_unavailable without EQUORI_SECRET_KEY.
          */
         post: operations["requestExport"];
         delete?: never;
@@ -1438,7 +1441,9 @@ export interface paths {
          *     archive_too_new, with archive_version and instance_version, for an archive of a later version (ADR 021);
          *     an archive of an earlier version is migrated before any write; 409 import_not_empty when the book holds a transaction or an account without a system
          *     role; 409 import_conflict when an identifier belongs to another book of the instance. A refused import
-         *     writes nothing.
+         *     writes nothing. With the passphrase of an archive that carries credentials, the credentials are restored
+         *     under the key of the instance (export design C5 to C7): 422 passphrase_invalid for a wrong passphrase and
+         *     409 integration_unavailable without EQUORI_SECRET_KEY.
          */
         post: operations["importArchive"];
         delete?: never;
@@ -6047,9 +6052,17 @@ export interface components {
             /** @description The archive_version of the archive (ADR 021); present when ready. */
             archive_version?: number;
         };
+        ExportRequest: {
+            /** @description Adds the credentials of the book's integrations to the archive, sealed by this passphrase; 8 to 256 characters. */
+            credentials_passphrase?: string;
+        };
         ArchiveImport: {
             /** @description The archive_version the archive was written with (ADR 021). */
             archive_version: number;
+            /** @description The archive carries integration credentials. */
+            credentials_in_archive: boolean;
+            /** @description Integrations whose credential the import wrote; 0 without the passphrase. */
+            credentials_restored: number;
             tables: {
                 name: string;
                 rows: number;
@@ -6633,7 +6646,7 @@ export interface components {
              *     integration_unavailable, aggregator_unauthorized, aggregator_unavailable, integration_in_use,
              *     currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended,
              *     budget_exists, instrument_exists, mixed_instruments, price_missing, later_sale_exists,
-             *     investment_transaction, system_account, attachment_not_inlineable, archive_too_new,
+             *     investment_transaction, system_account, attachment_not_inlineable, archive_too_new, passphrase_invalid,
              *     setup_token_invalid, setup_complete, book_role_required, books_not_found, member_not_found,
              *     last_owner, already_member, invitation_not_found, invitation_email_mismatch,
              *     confirmation_mismatch, books_has_members, last_books,
@@ -9023,7 +9036,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ExportRequest"];
+            };
+        };
         responses: {
             /** @description Accepted; the export is pending. */
             202: {
@@ -9034,7 +9051,9 @@ export interface operations {
                     "application/json": components["schemas"]["Export"];
                 };
             };
+            400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
             409: components["responses"]["Problem"];
         };
     };
@@ -9096,6 +9115,8 @@ export interface operations {
                 "multipart/form-data": {
                     /** Format: binary */
                     file: string;
+                    /** @description The credentials_passphrase of the export; optional. */
+                    passphrase?: string;
                 };
             };
         };

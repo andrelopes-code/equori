@@ -13,6 +13,9 @@ import (
 	"github.com/andrelopes-code/equori/internal/reporting/internal/app"
 )
 
+// maxPassphraseBytes bounds the passphrase part: 256 characters of up to 4 bytes.
+const maxPassphraseBytes = 1024
+
 // errFileRequired: the multipart body holds no part named file.
 var errFileRequired = errors.New("file is required")
 
@@ -30,8 +33,18 @@ func toExport(e app.Export) Export {
 	return out
 }
 
-func (s *Server) RequestExport(ctx context.Context, _ RequestExportRequestObject) (RequestExportResponseObject, error) {
-	e, err := s.exports.Request(ctx, auth.MustBooksID(ctx))
+func (s *Server) RequestExport(ctx context.Context, req RequestExportRequestObject) (RequestExportResponseObject, error) {
+	passphrase := ""
+	if req.Body != nil && req.Body.CredentialsPassphrase != nil {
+		passphrase = *req.Body.CredentialsPassphrase
+	}
+
+	// Credentials leave the book only through its owner (export design C1).
+	if passphrase != "" && !auth.MustBookRole(ctx).Allows(auth.RoleOwner) {
+		return nil, app.ErrCredentialsRole
+	}
+
+	e, err := s.exports.Request(ctx, auth.MustBooksID(ctx), passphrase)
 	if err != nil {
 		return nil, err
 	}
@@ -63,39 +76,65 @@ func (s *Server) GetExportContent(ctx context.Context, _ GetExportContentRequest
 }
 
 func (s *Server) ImportArchive(ctx context.Context, req ImportArchiveRequestObject) (ImportArchiveResponseObject, error) {
-	var archive []byte
+	var (
+		archive    []byte
+		passphrase string
+		found      bool
+	)
+
 	for {
 		part, err := req.Body.NextPart()
 		if errors.Is(err, io.EOF) {
-			return nil, errFileRequired
+			break
 		}
 
 		if err != nil {
 			return nil, fmt.Errorf("%w: %w", app.ErrArchiveInvalid, err)
 		}
 
-		if part.FormName() != "file" {
-			continue
-		}
+		switch part.FormName() {
+		case "file":
+			if found {
+				continue
+			}
 
-		if archive, err = io.ReadAll(io.LimitReader(part, app.MaxArchiveBytes+1)); err != nil {
-			return nil, fmt.Errorf("%w: %w", app.ErrArchiveInvalid, err)
-		}
+			if archive, err = io.ReadAll(io.LimitReader(part, app.MaxArchiveBytes+1)); err != nil {
+				return nil, fmt.Errorf("%w: %w", app.ErrArchiveInvalid, err)
+			}
 
-		break
+			found = true
+		case "passphrase":
+			b, err := io.ReadAll(io.LimitReader(part, maxPassphraseBytes))
+			if err != nil {
+				return nil, fmt.Errorf("%w: %w", app.ErrArchiveInvalid, err)
+			}
+
+			passphrase = string(b)
+		}
 	}
 
-	res, err := s.exports.Import(ctx, auth.MustBooksID(ctx), archive)
+	if !found {
+		return nil, errFileRequired
+	}
+
+	res, err := s.exports.Import(ctx, auth.MustBooksID(ctx), archive, passphrase)
 	if err != nil {
 		return nil, err
 	}
 
 	counts := res.Tables
 
-	out := ImportArchive200JSONResponse{ArchiveVersion: res.ArchiveVersion, Tables: make([]struct {
+	out := ImportArchive200JSONResponse{
+		ArchiveVersion:       res.ArchiveVersion,
+		CredentialsInArchive: res.CredentialsInArchive,
+		CredentialsRestored:  res.CredentialsRestored,
+	}
+
+	out.Tables = make([]struct {
 		Name string `json:"name"`
 		Rows int    `json:"rows"`
-	}, len(counts))}
+	}, len(counts))
+
 	for i, c := range counts {
 		out.Tables[i].Name, out.Tables[i].Rows = c.Name, c.Rows
 	}

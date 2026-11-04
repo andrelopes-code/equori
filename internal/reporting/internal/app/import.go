@@ -13,6 +13,8 @@ import (
 	"io"
 	"slices"
 	"strings"
+
+	"github.com/google/uuid"
 )
 
 var (
@@ -43,17 +45,23 @@ func (e *ArchiveTooNewError) Error() string {
 func (e *ArchiveTooNewError) Unwrap() error { return ErrArchiveTooNew }
 
 // ImportResult is the archive_version read and the rows written per table, in import order.
+// CredentialsInArchive tells that the archive carries credentials; CredentialsRestored counts
+// the integrations whose credential was written (export design C7).
 type ImportResult struct {
-	ArchiveVersion int
-	Tables         []TableCount
+	ArchiveVersion       int
+	Tables               []TableCount
+	CredentialsInArchive bool
+	CredentialsRestored  int
 }
 
 type ImportRepository interface {
 	// ImportableTables are the tables an archive may carry on this instance.
 	ImportableTables(ctx context.Context) ([]string, error)
 	// Import writes the tables in one transaction (export design E4, steps 2 to 4);
-	// attachments are keyed by the hexadecimal SHA-256 of their bytes.
-	Import(ctx context.Context, booksID int64, tables []ArchiveTable, attachments map[string][]byte) ([]TableCount, error)
+	// attachments are keyed by the hexadecimal SHA-256 of their bytes. credentials holds the
+	// sealed credential of each integration by id; the transaction writes those of the imported
+	// integrations and returns their count (export design C6).
+	Import(ctx context.Context, booksID int64, tables []ArchiveTable, attachments map[string][]byte, credentials map[uuid.UUID][]byte) ([]TableCount, int, error)
 }
 
 type archiveManifest struct {
@@ -70,11 +78,16 @@ type archiveManifest struct {
 		File   string `json:"file"`
 		SHA256 string `json:"sha256"`
 	} `json:"attachments"`
+	Credentials *struct {
+		File   string `json:"file"`
+		SHA256 string `json:"sha256"`
+	} `json:"credentials"`
 }
 
 // Import migrates an archive of an earlier version, restores it into the books of a book
-// without facts, then rebuilds the derived tables (export design E4, ADR 021).
-func (s *Exports) Import(ctx context.Context, booksID int64, archive []byte) (ImportResult, error) {
+// without facts, then rebuilds the derived tables (export design E4, ADR 021). A passphrase
+// restores the credentials of the archive too, and opens them before any write (export design C5).
+func (s *Exports) Import(ctx context.Context, booksID int64, archive []byte, passphrase string) (ImportResult, error) {
 	files, err := unzip(archive, MaxExpandedBytes)
 	if err != nil {
 		return ImportResult{}, err
@@ -148,7 +161,23 @@ func (s *Exports) Import(ctx context.Context, booksID int64, archive []byte) (Im
 		attachments[a.SHA256] = b
 	}
 
-	counts, err := s.imports.Import(ctx, booksID, tables, attachments)
+	var bundle []byte
+
+	if m.Credentials != nil {
+		b, ok := files[m.Credentials.File]
+		if m.Credentials.File != CredentialsFile || !ok || !matches(b, m.Credentials.SHA256) {
+			return ImportResult{}, fmt.Errorf("%w: %s", ErrArchiveInvalid, CredentialsFile)
+		}
+
+		bundle = b
+	}
+
+	sealed, err := s.resealCredentials(booksID, bundle, passphrase)
+	if err != nil {
+		return ImportResult{}, err
+	}
+
+	counts, restored, err := s.imports.Import(ctx, booksID, tables, attachments, sealed)
 	if err != nil {
 		return ImportResult{}, err
 	}
@@ -159,7 +188,21 @@ func (s *Exports) Import(ctx context.Context, booksID int64, archive []byte) (Im
 		}
 	}
 
-	return ImportResult{ArchiveVersion: version, Tables: counts}, nil
+	return ImportResult{ArchiveVersion: version, Tables: counts, CredentialsInArchive: m.Credentials != nil, CredentialsRestored: restored}, nil
+}
+
+// resealCredentials opens the credentials entry of the archive with the passphrase and seals each
+// credential for this instance; nil when the archive has none or no passphrase came.
+func (s *Exports) resealCredentials(booksID int64, bundle []byte, passphrase string) (map[uuid.UUID][]byte, error) {
+	if bundle == nil || passphrase == "" {
+		return nil, nil
+	}
+
+	if s.creds == nil {
+		return nil, ErrCredentialsUnavailable
+	}
+
+	return s.creds.Reseal(booksID, passphrase, bundle)
 }
 
 func matches(b []byte, sum string) bool {

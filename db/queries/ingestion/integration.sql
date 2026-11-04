@@ -68,3 +68,15 @@ SET
 WHERE
     books_id = @books_id
     AND id = @id;
+
+-- name: ListStoredCredentials :many
+-- Export design C2: the integrations of one book that hold a credential.
+SELECT
+    *
+FROM
+    ingestion_integration
+WHERE
+    books_id = @books_id
+    AND credential_ciphertext <> ''::bytea
+ORDER BY
+    id;

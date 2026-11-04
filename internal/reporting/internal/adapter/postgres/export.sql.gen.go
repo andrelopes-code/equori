@@ -44,7 +44,8 @@ SET
     content = $3,
     sha256 = $4,
     problem = $5,
-    archive_version = $6
+    archive_version = $6,
+    credentials = NULL
 WHERE
     books_id = $7
     AND id = $8
@@ -121,9 +122,9 @@ func (q *Queries) GetExport(ctx context.Context, booksID int64) (GetExportRow, e
 
 const requestExport = `-- name: RequestExport :one
 INSERT INTO
-    reporting_export (books_id, status, requested_at)
+    reporting_export (books_id, status, requested_at, credentials)
 VALUES
-    ($1, 'pending', $2)
+    ($1, 'pending', $2, $3)
 ON CONFLICT (books_id) DO UPDATE
 SET
     id = uuidv7(),
@@ -133,7 +134,8 @@ SET
     content = NULL,
     sha256 = NULL,
     problem = NULL,
-    archive_version = NULL
+    archive_version = NULL,
+    credentials = excluded.credentials
 WHERE
     reporting_export.status <> 'pending'
 RETURNING
@@ -145,6 +147,7 @@ RETURNING
 type RequestExportParams struct {
 	BooksID     int64
 	RequestedAt time.Time
+	Credentials []byte
 }
 
 type RequestExportRow struct {
@@ -154,7 +157,7 @@ type RequestExportRow struct {
 }
 
 func (q *Queries) RequestExport(ctx context.Context, arg RequestExportParams) (RequestExportRow, error) {
-	row := q.db.QueryRow(ctx, requestExport, arg.BooksID, arg.RequestedAt)
+	row := q.db.QueryRow(ctx, requestExport, arg.BooksID, arg.RequestedAt, arg.Credentials)
 	var i RequestExportRow
 	err := row.Scan(&i.ID, &i.Status, &i.RequestedAt)
 	return i, err

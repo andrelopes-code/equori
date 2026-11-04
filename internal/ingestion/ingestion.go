@@ -161,6 +161,24 @@ func (m *Module) RunScheduler(ctx context.Context) {
 // returns how many changed.
 func (m *Module) RotateSecrets(ctx context.Context) (int, error) { return m.svc.RotateSecrets(ctx) }
 
+// ErrIntegrationUnavailable: the instance has no EQUORI_SECRET_KEY (ADR 008, K2).
+var ErrIntegrationUnavailable = app.ErrIntegrationUnavailable
+
+// ErrPassphraseInvalid: a credentials bundle does not open with the passphrase.
+var ErrPassphraseInvalid = app.ErrPassphraseInvalid
+
+// CredentialBundle seals the credentials of a book under a passphrase for an export archive;
+// nil when it stores none (export design C2).
+func (m *Module) CredentialBundle(ctx context.Context, booksID int64, passphrase string) ([]byte, error) {
+	return m.svc.CredentialBundle(ctx, booksID, passphrase)
+}
+
+// ResealBundle opens a bundle and seals each credential for booksID under this instance's key,
+// by integration id (export design C6).
+func (m *Module) ResealBundle(booksID int64, passphrase string, bundle []byte) (map[uuid.UUID][]byte, error) {
+	return m.svc.ResealBundle(booksID, passphrase, bundle)
+}
+
 // followPairing runs in the dispatcher's transaction, so the records move with the delivery.
 func followPairing(ctx context.Context, tx pgx.Tx, e outbox.Delivered) error {
 	var p ledger.PairedEvent

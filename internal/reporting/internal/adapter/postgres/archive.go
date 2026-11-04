@@ -69,6 +69,8 @@ type archiveManifest struct {
 	ExportedAt     time.Time      `json:"exported_at"`
 	Tables         []archiveTable `json:"tables"`
 	Attachments    []archiveFile  `json:"attachments"`
+	// Credentials is the sealed bundle of export design C3; absent when the export holds none.
+	Credentials *archiveFile `json:"credentials,omitempty"`
 }
 
 var _ app.ExportRepository = (*Exports)(nil)
@@ -242,6 +244,10 @@ func buildArchive(ctx context.Context, tx pgx.Tx, booksID int64, at time.Time, a
 		return nil, err
 	}
 
+	if err := writeCredentials(ctx, tx, booksID, &m, write); err != nil {
+		return nil, err
+	}
+
 	manifest, err := json.Marshal(m)
 	if err != nil {
 		return nil, err
@@ -262,12 +268,33 @@ func buildArchive(ctx context.Context, tx pgx.Tx, booksID int64, at time.Time, a
 	return buf.Bytes(), nil
 }
 
+// writeCredentials adds the bundle that the request stored (export design C2) as an archive entry.
+func writeCredentials(ctx context.Context, tx pgx.Tx, booksID int64, m *archiveManifest, write func(string, []byte) error) error {
+	var bundle []byte
+	if err := tx.QueryRow(ctx, `SELECT credentials FROM reporting_export WHERE books_id = $1`, booksID).Scan(&bundle); err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		return fmt.Errorf("read credentials: %w", err)
+	}
+
+	if len(bundle) == 0 {
+		return nil
+	}
+
+	if err := write(app.CredentialsFile, bundle); err != nil {
+		return err
+	}
+
+	sum := sha256.Sum256(bundle)
+	m.Credentials = &archiveFile{File: app.CredentialsFile, SHA256: hex.EncodeToString(sum[:])}
+
+	return nil
+}
+
 // RequestExport writes the pending export and its event in one transaction (ADR 006).
-func (r *Exports) RequestExport(ctx context.Context, booksID int64, at time.Time) (app.Export, bool, error) {
+func (r *Exports) RequestExport(ctx context.Context, booksID int64, at time.Time, credentials []byte) (app.Export, bool, error) {
 	var e app.Export
 	ok := true
 	err := pgx.BeginFunc(ctx, r.pool, func(tx pgx.Tx) error {
-		row, err := r.q.WithTx(tx).RequestExport(ctx, RequestExportParams{BooksID: booksID, RequestedAt: at})
+		row, err := r.q.WithTx(tx).RequestExport(ctx, RequestExportParams{BooksID: booksID, RequestedAt: at, Credentials: credentials})
 		if errors.Is(err, pgx.ErrNoRows) {
 			ok = false
 			return nil
