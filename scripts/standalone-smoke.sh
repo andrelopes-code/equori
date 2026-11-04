@@ -42,3 +42,5 @@ docker kill -s KILL "$name" >/dev/null
 docker start "$name" >/dev/null
 healthy
 echo "8 restart after SIGKILL"
+docker exec "$name" test -s /etc/ssl/certs/ca-certificates.crt
+echo "9 TLS roots present for the HTTPS feeds and aggregators"

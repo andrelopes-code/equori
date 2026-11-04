@@ -28,6 +28,9 @@ RUN --mount=type=cache,target=/go/pkg/mod \
 # image as its child. Built with --target standalone; the default target stays the application alone.
 FROM postgres:18 AS standalone
 COPY --from=build /out/equori /usr/local/bin/equori
+# The postgres base ships no TLS roots: without them every HTTPS call (feeds, aggregators, model providers) fails with "unknown authority".
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 ENV EQUORI_DATA_DIR=/data EQUORI_POSTGRES_BIN=/usr/lib/postgresql/18/bin
 RUN mkdir -p /data /backups /copies && chown postgres:postgres /data /backups /copies
 USER postgres
