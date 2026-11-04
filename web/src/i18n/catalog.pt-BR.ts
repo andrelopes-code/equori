@@ -1976,14 +1976,32 @@ export const catalogPtBR: Catalog = {
     "{committed} contra uma renda média mensal de {income}",
   "overview.indicators.debtNote":
     "{debt} contra uma renda média mensal de {income}",
+  "overview.indicators.formula": "Conta:",
+  "overview.indicators.example": "Exemplo:",
   "overview.indicators.savingsHelp":
-    "A parte da renda deste mês que sobrou depois das despesas, pelo dinheiro que de fato entrou e saiu.",
+    "Quanto da renda do mês sobrou depois de pagar as despesas.",
+  "overview.indicators.savingsFormula":
+    "(receitas − despesas) ÷ receitas, pelo dinheiro que entrou e saiu das contas, então uma compra no cartão conta no mês em que a fatura é paga.",
+  "overview.indicators.savingsExample":
+    "receitas de 5.000 e despesas de 4.000 dão 20%.",
   "overview.indicators.reserveHelp":
-    "Quantos meses da despesa média mensal o saldo de contas correntes, poupanças, dinheiro, carteiras e reservas cobre.",
+    "Por quantos meses o dinheiro guardado paga as despesas se nenhuma renda entrar.",
+  "overview.indicators.reserveFormula":
+    "saldo de contas correntes, poupanças, dinheiro, carteiras e reservas ÷ despesa média mensal dos meses completos anteriores, até 12. Saldo de vale-refeição e vale-alimentação fica de fora.",
+  "overview.indicators.reserveExample":
+    "30.000 guardados e despesa média de 10.000 dão 3 meses.",
   "overview.indicators.committedHelp":
-    "A parte da renda média mensal que as contas, assinaturas e parcelas deste mês ocupam.",
+    "Quanto da renda já está reservado para gastos fixos neste mês.",
+  "overview.indicators.committedFormula":
+    "contas, assinaturas, parcelas e aportes programados do mês ÷ renda média mensal dos meses completos anteriores, até 12.",
+  "overview.indicators.committedExample":
+    "3.000 em gastos fixos e renda média de 10.000 dão 30%.",
   "overview.indicators.debtHelp":
-    "A parte da renda média mensal que o principal e os juros de empréstimos deste mês ocupam.",
+    "Quanto da renda vai para pagar empréstimos e financiamentos neste mês.",
+  "overview.indicators.debtFormula":
+    "o que foi pago das parcelas no mês, o valor devolvido mais os juros, ÷ renda média mensal dos meses completos anteriores, até 12.",
+  "overview.indicators.debtExample":
+    "parcela de 1.250 e renda média de 10.000 dão 12,5%.",
   "overview.indicators.reason.no_income":
     "Nenhuma receita registrada no período.",
   "overview.indicators.reason.no_expense":

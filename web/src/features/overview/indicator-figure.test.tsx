@@ -66,18 +66,19 @@ describe("indicator figures", () => {
     }
   });
 
-  it("explains each indicator behind an About control and keeps the note to its inputs", async () => {
+  it("explains each indicator with its formula and an example behind an About control, and keeps the note to its inputs", async () => {
     const user = userEvent.setup();
     renderBlock();
 
     await screen.findByText("43.00%");
 
-    for (const [name, help] of [
-      ["Savings rate", catalogEn["overview.indicators.savingsHelp"]],
-      ["Liquidity", catalogEn["overview.indicators.reserveHelp"]],
-      ["Committed income", catalogEn["overview.indicators.committedHelp"]],
-      ["Debt to income", catalogEn["overview.indicators.debtHelp"]],
+    for (const [name, key] of [
+      ["Savings rate", "savings"],
+      ["Liquidity", "reserve"],
+      ["Committed income", "committed"],
+      ["Debt to income", "debt"],
     ] as const) {
+      const help = catalogEn[`overview.indicators.${key}Help`];
       const widget = screen.getByRole("article", { name });
 
       expect(widget).not.toHaveTextContent(help);
@@ -87,6 +88,12 @@ describe("indicator figures", () => {
       );
 
       expect(await screen.findByText(help)).toBeVisible();
+      expect(
+        screen.getByText(catalogEn[`overview.indicators.${key}Formula`]),
+      ).toBeVisible();
+      expect(
+        screen.getByText(catalogEn[`overview.indicators.${key}Example`]),
+      ).toBeVisible();
 
       await user.keyboard("{Escape}");
     }

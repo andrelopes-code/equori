@@ -1956,14 +1956,32 @@ export const catalogEn = {
     "{committed} against a mean monthly income of {income}",
   "overview.indicators.debtNote":
     "{debt} against a mean monthly income of {income}",
+  "overview.indicators.formula": "Formula:",
+  "overview.indicators.example": "Example:",
   "overview.indicators.savingsHelp":
-    "The share of this month's income left after its expenses, by the money that actually came in and went out.",
+    "How much of the month's income is left after paying its expenses.",
+  "overview.indicators.savingsFormula":
+    "(income − expenses) ÷ income, by the money that came into and left the accounts, so a card purchase counts in the month its statement is paid.",
+  "overview.indicators.savingsExample":
+    "income of 5,000 and expenses of 4,000 give 20%.",
   "overview.indicators.reserveHelp":
-    "How many months of the mean monthly expense the balance of checking, savings, cash, wallets and reserves covers.",
+    "For how many months the money set aside pays the expenses if no income comes in.",
+  "overview.indicators.reserveFormula":
+    "balance of checking, savings, cash, wallets and reserves ÷ mean monthly expense of the previous complete months, up to 12. Meal and food benefit balances are left out.",
+  "overview.indicators.reserveExample":
+    "30,000 set aside and a mean expense of 10,000 give 3 months.",
   "overview.indicators.committedHelp":
-    "The share of the mean monthly income that this month's bills, subscriptions and installments take.",
+    "How much of the income is already set for fixed costs this month.",
+  "overview.indicators.committedFormula":
+    "bills, subscriptions, installments and scheduled savings of the month ÷ mean monthly income of the previous complete months, up to 12.",
+  "overview.indicators.committedExample":
+    "3,000 of fixed costs and a mean income of 10,000 give 30%.",
   "overview.indicators.debtHelp":
-    "The share of the mean monthly income that this month's loan principal and interest take.",
+    "How much of the income goes to loans and financing this month.",
+  "overview.indicators.debtFormula":
+    "what the month paid of their installments, the amount repaid plus the interest, ÷ mean monthly income of the previous complete months, up to 12.",
+  "overview.indicators.debtExample":
+    "an installment of 1,250 and a mean income of 10,000 give 12.5%.",
   "overview.indicators.reason.no_income":
     "No income was recorded in this period.",
   "overview.indicators.reason.no_expense":
