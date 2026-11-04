@@ -668,6 +668,13 @@ type ListSchedulesParams struct {
 	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
 }
 
+// UpdateScheduleMatchingJSONBody defines parameters for UpdateScheduleMatching.
+type UpdateScheduleMatchingJSONBody struct {
+	GraceDays        *int `json:"grace_days,omitempty"`
+	MatchToleranceBp *int `json:"match_tolerance_bp,omitempty"`
+	MatchWindowDays  *int `json:"match_window_days,omitempty"`
+}
+
 // SaveBudgetPlanJSONRequestBody defines body for SaveBudgetPlan for application/json ContentType.
 type SaveBudgetPlanJSONRequestBody = BudgetPlanInput
 
@@ -694,6 +701,9 @@ type SkipOccurrenceJSONRequestBody = SkipInput
 
 // CreateScheduleJSONRequestBody defines body for CreateSchedule for application/json ContentType.
 type CreateScheduleJSONRequestBody = ScheduleInput
+
+// UpdateScheduleMatchingJSONRequestBody defines body for UpdateScheduleMatching for application/json ContentType.
+type UpdateScheduleMatchingJSONRequestBody UpdateScheduleMatchingJSONBody
 
 // EndScheduleJSONRequestBody defines body for EndSchedule for application/json ContentType.
 type EndScheduleJSONRequestBody = EndInput
@@ -775,6 +785,9 @@ type ServerInterface interface {
 	// GetSchedule A schedule with its terms versions and pauses.
 	// (GET /schedules/{id})
 	GetSchedule(w http.ResponseWriter, r *http.Request, id ID)
+	// UpdateScheduleMatching Change how transactions are matched to the occurrences of a schedule.
+	// (PATCH /schedules/{id})
+	UpdateScheduleMatching(w http.ResponseWriter, r *http.Request, id ID)
 	// EndSchedule Produce no occurrence on or after a date; expected ones are removed, realized ones stay (P7 amendment A52).
 	// (POST /schedules/{id}/end)
 	EndSchedule(w http.ResponseWriter, r *http.Request, id ID)
@@ -1529,6 +1542,32 @@ func (siw *ServerInterfaceWrapper) GetSchedule(w http.ResponseWriter, r *http.Re
 	handler.ServeHTTP(w, r)
 }
 
+// UpdateScheduleMatching operation middleware
+func (siw *ServerInterfaceWrapper) UpdateScheduleMatching(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateScheduleMatching(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // EndSchedule operation middleware
 func (siw *ServerInterfaceWrapper) EndSchedule(w http.ResponseWriter, r *http.Request) {
 
@@ -1730,6 +1769,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/schedules", wrapper.ListSchedules)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/schedules", wrapper.CreateSchedule)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/schedules/{id}", wrapper.GetSchedule)
+	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/schedules/{id}", wrapper.UpdateScheduleMatching)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/occurrences", wrapper.ListOccurrences)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/occurrences/{id}/realize", wrapper.RealizeOccurrence)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/occurrences/{id}/skip", wrapper.SkipOccurrence)
@@ -3303,6 +3343,87 @@ func (response GetSchedule404ApplicationProblemPlusJSONResponse) VisitGetSchedul
 	return err
 }
 
+type UpdateScheduleMatchingRequestObject struct {
+	Id   ID `json:"id"`
+	Body *UpdateScheduleMatchingJSONRequestBody
+}
+
+type UpdateScheduleMatchingResponseObject interface {
+	VisitUpdateScheduleMatchingResponse(w http.ResponseWriter) error
+}
+
+type UpdateScheduleMatching200JSONResponse Schedule
+
+func (response UpdateScheduleMatching200JSONResponse) VisitUpdateScheduleMatchingResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateScheduleMatching400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response UpdateScheduleMatching400ApplicationProblemPlusJSONResponse) VisitUpdateScheduleMatchingResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateScheduleMatching401ApplicationProblemPlusJSONResponse Problem
+
+func (response UpdateScheduleMatching401ApplicationProblemPlusJSONResponse) VisitUpdateScheduleMatchingResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateScheduleMatching404ApplicationProblemPlusJSONResponse Problem
+
+func (response UpdateScheduleMatching404ApplicationProblemPlusJSONResponse) VisitUpdateScheduleMatchingResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateScheduleMatching422ApplicationProblemPlusJSONResponse Problem
+
+func (response UpdateScheduleMatching422ApplicationProblemPlusJSONResponse) VisitUpdateScheduleMatchingResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type EndScheduleRequestObject struct {
 	Id   ID `json:"id"`
 	Body *EndScheduleJSONRequestBody
@@ -3645,6 +3766,9 @@ type StrictServerInterface interface {
 	// GetSchedule A schedule with its terms versions and pauses.
 	// (GET /schedules/{id})
 	GetSchedule(ctx context.Context, request GetScheduleRequestObject) (GetScheduleResponseObject, error)
+	// UpdateScheduleMatching Change how transactions are matched to the occurrences of a schedule.
+	// (PATCH /schedules/{id})
+	UpdateScheduleMatching(ctx context.Context, request UpdateScheduleMatchingRequestObject) (UpdateScheduleMatchingResponseObject, error)
 	// EndSchedule Produce no occurrence on or after a date; expected ones are removed, realized ones stay (P7 amendment A52).
 	// (POST /schedules/{id}/end)
 	EndSchedule(ctx context.Context, request EndScheduleRequestObject) (EndScheduleResponseObject, error)
@@ -4345,6 +4469,39 @@ func (sh *strictHandler) GetSchedule(w http.ResponseWriter, r *http.Request, id 
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetScheduleResponseObject); ok {
 		if err := validResponse.VisitGetScheduleResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateScheduleMatching operation middleware
+func (sh *strictHandler) UpdateScheduleMatching(w http.ResponseWriter, r *http.Request, id ID) {
+	var request UpdateScheduleMatchingRequestObject
+
+	request.Id = id
+
+	var body UpdateScheduleMatchingJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateScheduleMatching(ctx, request.(UpdateScheduleMatchingRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateScheduleMatching")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateScheduleMatchingResponseObject); ok {
+		if err := validResponse.VisitUpdateScheduleMatchingResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

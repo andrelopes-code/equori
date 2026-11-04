@@ -153,6 +153,8 @@ type Repository interface {
 	// InsertSchedule stores s with its terms and returns it with its id.
 	InsertSchedule(ctx context.Context, booksID int64, s domain.Schedule) (domain.Schedule, error)
 	Schedule(ctx context.Context, booksID int64, id uuid.UUID) (domain.Schedule, error)
+	// UpdateScheduleMatching sets the matching settings of a schedule and returns it.
+	UpdateScheduleMatching(ctx context.Context, booksID int64, id uuid.UUID, tolerance, grace, window int) (domain.Schedule, error)
 	// LockSchedule reads the schedule for update.
 	LockSchedule(ctx context.Context, booksID int64, id uuid.UUID) (domain.Schedule, error)
 	ListSchedules(ctx context.Context, booksID int64, p page.Request[IDKey]) ([]domain.Schedule, *IDKey, error)

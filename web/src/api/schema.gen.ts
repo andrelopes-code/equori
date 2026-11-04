@@ -3367,7 +3367,12 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        /**
+         * Change how transactions are matched to the occurrences of a schedule.
+         * @description Each field is optional; absent fields keep their value. The change applies to transactions recorded,
+         *     corrected or voided afterwards; occurrences already realized stay.
+         */
+        patch: operations["updateScheduleMatching"];
         trace?: never;
     };
     "/occurrences": {
@@ -4067,8 +4072,7 @@ export interface components {
             match_tolerance_bp: number;
             /** @default 3 */
             grace_days: number;
-            /** @default 7 */
-            match_window_days: number;
+            match_window_days?: number;
         };
         ScheduleTerms: {
             /** Format: date */
@@ -12483,6 +12487,40 @@ export interface operations {
             };
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
+        };
+    };
+    updateScheduleMatching: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    match_tolerance_bp?: number;
+                    grace_days?: number;
+                    match_window_days?: number;
+                };
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Schedule"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
         };
     };
     listOccurrences: {

@@ -3,6 +3,7 @@ package httpapi
 import (
 	"context"
 
+	"github.com/andrelopes-code/equori/internal/planning/internal/app"
 	"github.com/andrelopes-code/equori/internal/planning/internal/domain"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
 	"github.com/andrelopes-code/equori/internal/platform/money"
@@ -54,6 +55,21 @@ func (s *Server) ChangeScheduleTerms(ctx context.Context, req ChangeScheduleTerm
 	}
 
 	return ChangeScheduleTerms201JSONResponse(toScheduleAPI(sch)), nil
+}
+
+func (s *Server) UpdateScheduleMatching(ctx context.Context, req UpdateScheduleMatchingRequestObject) (UpdateScheduleMatchingResponseObject, error) {
+	in := app.MatchingChange{
+		ToleranceBP: req.Body.MatchToleranceBp,
+		GraceDays:   req.Body.GraceDays,
+		WindowDays:  req.Body.MatchWindowDays,
+	}
+
+	sch, err := s.svc.UpdateMatching(ctx, auth.MustBooksID(ctx), req.Id, in)
+	if err != nil {
+		return nil, err
+	}
+
+	return UpdateScheduleMatching200JSONResponse(toScheduleAPI(sch)), nil
 }
 
 func (s *Server) PauseSchedule(ctx context.Context, req PauseScheduleRequestObject) (PauseScheduleResponseObject, error) {

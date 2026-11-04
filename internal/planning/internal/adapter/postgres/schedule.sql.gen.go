@@ -772,3 +772,54 @@ func (q *Queries) SetGeneratedUntil(ctx context.Context, arg SetGeneratedUntilPa
 	_, err := q.db.Exec(ctx, setGeneratedUntil, arg.GeneratedUntil, arg.BooksID, arg.ID)
 	return err
 }
+
+const updateScheduleMatching = `-- name: UpdateScheduleMatching :one
+UPDATE planning_schedule
+SET
+    match_tolerance_bp = $1,
+    grace_days = $2,
+    match_window_days = $3
+WHERE
+    books_id = $4
+    AND id = $5
+RETURNING
+    id, books_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar, match_window_days
+`
+
+type UpdateScheduleMatchingParams struct {
+	MatchToleranceBp int32
+	GraceDays        int32
+	MatchWindowDays  int32
+	BooksID          int64
+	ID               uuid.UUID
+}
+
+func (q *Queries) UpdateScheduleMatching(ctx context.Context, arg UpdateScheduleMatchingParams) (PlanningSchedule, error) {
+	row := q.db.QueryRow(ctx, updateScheduleMatching,
+		arg.MatchToleranceBp,
+		arg.GraceDays,
+		arg.MatchWindowDays,
+		arg.BooksID,
+		arg.ID,
+	)
+	var i PlanningSchedule
+	err := row.Scan(
+		&i.ID,
+		&i.BooksID,
+		&i.Kind,
+		&i.AccountID,
+		&i.CounterpartID,
+		&i.PayeeID,
+		&i.Description,
+		&i.Currency,
+		&i.MatchToleranceBp,
+		&i.GraceDays,
+		&i.EndsOn,
+		&i.GeneratedUntil,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Calendar,
+		&i.MatchWindowDays,
+	)
+	return i, err
+}

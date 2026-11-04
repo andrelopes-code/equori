@@ -50,6 +50,11 @@ type ScheduleInput struct {
 	PaidBy                             uuid.UUID // uuid.Nil: none; realizes the occurrence on the rule's first date (plan B T3)
 }
 
+// MatchingChange holds the matching settings to change; a nil field keeps its value.
+type MatchingChange struct {
+	ToleranceBP, GraceDays, WindowDays *int
+}
+
 func (s *Service) CreateSchedule(ctx context.Context, booksID int64, in ScheduleInput) (domain.Schedule, error) {
 	if in.Rule.Adjustment == "" {
 		in.Rule.Adjustment = "none"
@@ -117,6 +122,32 @@ func (s *Service) CreateSchedule(ctx context.Context, booksID int64, in Schedule
 	}
 
 	return s.repo.Schedule(ctx, booksID, created.ID)
+}
+
+// UpdateMatching changes the matching settings of a schedule. It applies to transactions
+// recorded, corrected or voided afterwards; realized occurrences stay.
+func (s *Service) UpdateMatching(ctx context.Context, booksID int64, id uuid.UUID, in MatchingChange) (domain.Schedule, error) {
+	return s.changeSchedule(ctx, booksID, id, func(repo Repository, sch *domain.Schedule) error {
+		if in.ToleranceBP != nil {
+			sch.ToleranceBP = *in.ToleranceBP
+		}
+
+		if in.GraceDays != nil {
+			sch.GraceDays = *in.GraceDays
+		}
+
+		if in.WindowDays != nil {
+			sch.WindowDays = *in.WindowDays
+		}
+
+		if err := sch.Validate(); err != nil {
+			return err
+		}
+
+		_, err := repo.UpdateScheduleMatching(ctx, booksID, id, sch.ToleranceBP, sch.GraceDays, sch.WindowDays)
+
+		return err
+	})
 }
 
 // checkAccounts applies the counterpart rule of P7 amendment A46 and the currency rule of

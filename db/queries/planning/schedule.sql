@@ -101,6 +101,18 @@ WHERE
     AND id = @id
 FOR UPDATE;
 
+-- name: UpdateScheduleMatching :one
+UPDATE planning_schedule
+SET
+    match_tolerance_bp = @match_tolerance_bp,
+    grace_days = @grace_days,
+    match_window_days = @match_window_days
+WHERE
+    books_id = @books_id
+    AND id = @id
+RETURNING
+    *;
+
 -- name: ListSchedules :many
 SELECT
     *

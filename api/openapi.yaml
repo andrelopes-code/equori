@@ -5693,6 +5693,44 @@ paths:
           $ref: "#/components/responses/Problem"
         "404":
           $ref: "#/components/responses/Problem"
+    patch:
+      tags: [planning]
+      operationId: updateScheduleMatching
+      x-book-role: write
+      summary: Change how transactions are matched to the occurrences of a schedule.
+      description: |
+        Each field is optional; absent fields keep their value. The change applies to transactions recorded,
+        corrected or voided afterwards; occurrences already realized stay.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                match_tolerance_bp:
+                  type: integer
+                grace_days:
+                  type: integer
+                match_window_days:
+                  type: integer
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Schedule"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
   /occurrences:
     get:
       tags: [planning]
@@ -7001,9 +7039,6 @@ components:
           default: 3
         match_window_days:
           type: integer
-          minimum: 0
-          maximum: 31
-          default: 7
     ScheduleTerms:
       type: object
       required: [effective_from, amount, recurrence]

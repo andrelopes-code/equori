@@ -195,6 +195,15 @@ func (r *Repository) LockSchedule(ctx context.Context, booksID int64, id uuid.UU
 	return r.one(ctx, row, err)
 }
 
+func (r *Repository) UpdateScheduleMatching(ctx context.Context, booksID int64, id uuid.UUID, tolerance, grace, window int) (domain.Schedule, error) {
+	row, err := r.q.UpdateScheduleMatching(ctx, UpdateScheduleMatchingParams{
+		BooksID: booksID, ID: id,
+		MatchToleranceBp: int32(tolerance), GraceDays: int32(grace), MatchWindowDays: int32(window), //nolint:gosec // validated to 0-10000 and 0-31
+	})
+
+	return r.one(ctx, row, err)
+}
+
 // keyset returns the cursor and the row limit of a page, one row more than asked so the
 // page knows whether another follows.
 func keyset(p page.Request[app.IDKey]) (uuid.NullUUID, int32) {

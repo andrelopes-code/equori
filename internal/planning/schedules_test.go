@@ -305,3 +305,91 @@ func TestTickInBooksTimeZone(t *testing.T) {
 		t.Fatalf("generated_until after tick = %s, want 2027-11-02", got)
 	}
 }
+
+func TestUpdateMatchingChangesOnlyTheGivenFields(t *testing.T) {
+	t.Parallel()
+
+	f := newFixture(t, "2026-11-01")
+	id := f.rentSchedule()
+
+	var got struct {
+		MatchToleranceBP int `json:"match_tolerance_bp"`
+		GraceDays        int `json:"grace_days"`
+		MatchWindowDays  int `json:"match_window_days"`
+	}
+	f.h.MustDo(http.MethodPatch, "/api/v1/schedules/"+id, map[string]any{"match_tolerance_bp": 50}, http.StatusOK, &got)
+
+	if got.MatchToleranceBP != 50 || got.GraceDays != 3 || got.MatchWindowDays != 7 {
+		t.Fatalf("patched = %+v, want tolerance 50, grace 3, window 7", got)
+	}
+
+	f.h.MustDo(http.MethodGet, "/api/v1/schedules/"+id, nil, http.StatusOK, &got)
+
+	if got.MatchToleranceBP != 50 || got.GraceDays != 3 || got.MatchWindowDays != 7 {
+		t.Fatalf("read back = %+v, want tolerance 50, grace 3, window 7", got)
+	}
+}
+
+func TestUpdateMatchingNarrowsTheAmountTolerance(t *testing.T) {
+	t.Parallel()
+
+	wide := newFixture(t, "2026-11-01")
+	wideID := wide.rentSchedule()
+	wide.pay("2026-11-05", 214200, wide.rent, wide.landlord)
+
+	if o := wide.occurrence(wideID, 1); o.State != "realized" {
+		t.Fatalf("default tolerance: occurrence = %+v, want realized", o)
+	}
+
+	narrow := newFixture(t, "2026-11-01")
+	narrowID := narrow.rentSchedule()
+	narrow.h.MustDo(http.MethodPatch, "/api/v1/schedules/"+narrowID, map[string]any{"match_tolerance_bp": 50}, http.StatusOK, nil)
+	narrow.pay("2026-11-05", 214200, narrow.rent, narrow.landlord)
+
+	if o := narrow.occurrence(narrowID, 1); o.State != "expected" || o.TransactionID != "" {
+		t.Fatalf("tolerance 50: occurrence = %+v, want expected", o)
+	}
+}
+
+func TestUpdateMatchingRejectsAWindowAbove31(t *testing.T) {
+	t.Parallel()
+
+	f := newFixture(t, "2026-11-01")
+	id := f.rentSchedule()
+
+	f.h.ExpectProblem(
+		f.h.Do(http.MethodPatch, "/api/v1/schedules/"+id, map[string]any{"match_window_days": 32}),
+		http.StatusUnprocessableEntity, "validation_failed", "match_window_days",
+	)
+}
+
+func TestUpdateMatchingOfAnotherBookIs404(t *testing.T) {
+	t.Parallel()
+
+	f := newFixture(t, "2026-11-01")
+	id := f.rentSchedule()
+	other := f.h.Login("other@example.com")
+
+	r := f.h.Call(other, http.MethodPatch, "/api/v1/schedules/"+id, map[string]any{"match_tolerance_bp": 50})
+	if r.Status != http.StatusNotFound {
+		t.Fatalf("status = %d, want 404", r.Status)
+	}
+}
+
+func TestUpdateMatchingWithAnEmptyBodyChangesNothing(t *testing.T) {
+	t.Parallel()
+
+	f := newFixture(t, "2026-11-01")
+	id := f.rentSchedule()
+
+	var got struct {
+		MatchToleranceBP int `json:"match_tolerance_bp"`
+		GraceDays        int `json:"grace_days"`
+		MatchWindowDays  int `json:"match_window_days"`
+	}
+	f.h.MustDo(http.MethodPatch, "/api/v1/schedules/"+id, map[string]any{}, http.StatusOK, &got)
+
+	if got.MatchToleranceBP != 1000 || got.GraceDays != 3 || got.MatchWindowDays != 7 {
+		t.Fatalf("patched = %+v, want tolerance 1000, grace 3, window 7", got)
+	}
+}
