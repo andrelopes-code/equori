@@ -4,21 +4,12 @@ import {
   CollapsiblePanel,
   CollapsibleTrigger,
 } from "@slotted/react/collapsible";
-import { Glyph, Icon } from "@slotted/react/icon";
-import { List } from "@slotted/react/list";
-import {
-  ListItem,
-  ListItemBody,
-  ListItemContent,
-  ListItemLabel,
-  ListItemStart,
-} from "@slotted/react/list-item";
 import { MessageActivity, MessageActivityStep } from "@slotted/react/message";
 
 import { catalogKey } from "@/features/assistant/catalog-key";
 import { useT } from "@/i18n/i18n-provider";
 
-// Families read: message (activity), collapsible, list. The steps of a turn in order: while it runs
+// Families read: message (activity), collapsible. The steps of a turn in order: while it runs
 // the last one is current; after the answer they fold into one line that opens them (P5).
 export function TurnActivity({
   steps,
@@ -57,24 +48,13 @@ export function TurnActivity({
         <CollapsibleTrigger>{summary}</CollapsibleTrigger>
       </CollapsibleHeader>
       <CollapsiblePanel>
-        {/* Workaround for Slotted issue #61: MessageActivity draws unstyled inside a Collapsible,
-            so the folded steps are a List of ticks. */}
-        <List size="sm" inset aria-label={summary}>
+        <MessageActivity>
           {labels.map((label, i) => (
-            <ListItem key={i}>
-              <ListItemContent>
-                <ListItemStart>
-                  <Icon size="sm" tone="success">
-                    <Glyph name="check" />
-                  </Icon>
-                </ListItemStart>
-                <ListItemBody>
-                  <ListItemLabel>{label}</ListItemLabel>
-                </ListItemBody>
-              </ListItemContent>
-            </ListItem>
+            <MessageActivityStep key={i} status="complete">
+              {label}
+            </MessageActivityStep>
           ))}
-        </List>
+        </MessageActivity>
       </CollapsiblePanel>
     </Collapsible>
   );

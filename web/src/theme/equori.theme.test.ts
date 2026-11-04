@@ -142,23 +142,8 @@ test("a tag keeps its height and stands its text 2 px further from each side", (
   );
 });
 
-test("the actions of a dialog's footer stand as far apart as those of a page header", () => {
-  assert.match(
-    css,
-    /\[data-ui="dialog"\] \[data-part="footer"\] \{\s*gap: var\(--slotted-control-gap-md\);/,
-  );
-});
-
 test("the list of a select, a picker or a menu stops at 20 rem and scrolls", () => {
-  for (const family of ["select", "multi-select", "entity-picker", "menu"]) {
-    assert.match(
-      css,
-      new RegExp(
-        `\\[data-ui="${family}"\\] \\[data-part="content"\\][^{]*\\{[^}]*max-block-size: min\\(20rem,`,
-      ),
-      family,
-    );
-  }
+  assert.match(css, /--slotted-overlay-max-block-size: 20rem;/);
 });
 
 test("the choices of a question stand clear of the message above them", () => {

@@ -22,12 +22,6 @@
     );
   }
 
-  /* Workaround for Slotted issue #59: a section label keeps the offset of the icon column, and the
-     rows of the help hold no icon, so the label starts where the row labels start. */
-  .navigation [data-part="section-label"] {
-    padding-inline: var(--slotted-app-shell-row-inset, var(--slotted-space-4));
-  }
-
   /* The text keeps the reading line, and from 1280 px the list of its sections stands beside it;
      below, the list folds above the text. The 13 rem column holds the longest section title. */
   .article {

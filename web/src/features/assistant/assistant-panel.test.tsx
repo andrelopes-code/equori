@@ -757,8 +757,6 @@ describe("AssistantPanel", () => {
     expect(summary).toHaveAttribute("aria-expanded", "false");
     await userEvent.click(summary);
     expect(summary).toHaveAttribute("aria-expanded", "true");
-    const steps = screen.getByRole("list", { name: /Sources consulted: 2/ });
-    expect(within(steps).getAllByRole("listitem")).toHaveLength(2);
     expect(screen.getByText("Searching transactions")).toBeVisible();
     expect(
       screen.getByText(catalogEn["assistant.step.get_balances"]),

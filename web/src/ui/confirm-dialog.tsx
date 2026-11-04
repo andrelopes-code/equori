@@ -89,14 +89,10 @@ export function ConfirmDialog({
           </DialogBody>
         )}
 
-        {/* Workaround for Slotted issue #60: render props type children as optional, so each Button
-            repeats them. */}
         <DialogFooter>
           <AlertDialogCancel
             render={(props) => (
-              <Button {...props} variant="outline" tone="secondary">
-                {props.children}
-              </Button>
+              <Button {...props} variant="outline" tone="secondary" />
             )}
           >
             {cancelLabel ?? t("detail.cancel")}
@@ -109,9 +105,7 @@ export function ConfirmDialog({
                 loading={pending}
                 disabled={confirmDisabled}
                 onClick={onConfirm}
-              >
-                {props.children}
-              </Button>
+              />
             )}
           >
             {confirmLabel}

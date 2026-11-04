@@ -118,29 +118,6 @@ const tagInsetRule = `
 }
 `;
 
-// Workaround for Slotted issue #62: the footer of a dialog spaces its actions at a fixed 0.75rem,
-// while a page header spaces them at the control gap, which follows the density. The footer takes
-// the control gap. The header's close button keeps its own margin.
-const dialogFooterGapRule = `
-[data-ui="dialog"] [data-part="footer"] {
-  gap: var(--slotted-control-gap-md);
-}
-`;
-
-// Workaround for Slotted issue #66: the list of a select, a picker or a menu is bounded only by the
-// space the positioner has left, so a long list (150 currencies) stands at nearly the viewport's
-// height. It stops at 20 rem, 8 to 9 rows, and scrolls inside. The rule replaces the family's
-// clamp to the positioner's free space with one to the viewport, which a theme rule cannot read.
-// shortcut: a list opened low in a short viewport can pass the edge, until the issue's token lands.
-const overlayListRule = `
-[data-ui="select"] [data-part="content"],
-[data-ui="multi-select"] [data-part="content"],
-[data-ui="entity-picker"] [data-part="content"],
-[data-ui="menu"] [data-part="content"] {
-  max-block-size: min(20rem, calc(100dvh - var(--slotted-space-8)));
-}
-`;
-
 // Workaround for Slotted issue #39: only the tooltip's content fades, so its arrow stays opaque
 // and reads as a separate piece on open and close. The arrow takes the content's three fade rules.
 // Half of the arrow's square lies over the content: while both fade, that half composites twice
@@ -310,6 +287,9 @@ export default extendTheme(
     // Destinations read muted, the current one in the full text colour over the bar's own
     // ground, underlined.
     components: {
+      // A long list (150 currencies) in a select, a picker or a menu stops at 20 rem, 8 to 9 rows,
+      // and scrolls inside.
+      "--slotted-overlay-max-block-size": "20rem",
       // Workaround for Slotted issue #38: at 0.25rem a description or an error touched the
       // control above it.
       "--slotted-field-group-message-gap": "var(--slotted-space-4)",
@@ -368,8 +348,6 @@ export default extendTheme(
       sheetSlideRule,
       tooltipArrowFadeRule,
       tagInsetRule,
-      dialogFooterGapRule,
-      overlayListRule,
     ],
   },
   { name: "equori" },

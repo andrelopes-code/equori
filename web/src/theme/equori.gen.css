@@ -196,6 +196,7 @@
     --slotted-icon-pencil: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cg transform='translate(0 0.001)'%3E%3Cpath d='M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z'/%3E%3Cpath d='m15 5 4 4'/%3E%3C/g%3E%3C/svg%3E");
     --slotted-icon-download: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 15V3'/%3E%3Cpath d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'/%3E%3Cpath d='m7 10 5 5 5-5'/%3E%3C/svg%3E");
     --slotted-icon-rotate-cw: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8'/%3E%3Cpath d='M21 3v5h-5'/%3E%3C/svg%3E");
+    --slotted-overlay-max-block-size: 20rem;
     --slotted-field-group-message-gap: var(--slotted-space-4);
     --slotted-top-navigation-color: var(--slotted-text-muted);
     --slotted-top-navigation-current-color: var(--slotted-text);
@@ -943,6 +944,7 @@
     --slotted-control-icon-size-lg: 18px;
     --slotted-control-gap-sm: 6px;
     --slotted-control-gap-md: 8px;
+    --slotted-action-gap: 8px;
     --slotted-control-gap-lg: 8px;
     --slotted-control-label-gap-sm: 8px;
     --slotted-control-label-gap-md: 12px;
@@ -973,6 +975,7 @@
     --slotted-control-icon-size-lg: 16px;
     --slotted-control-gap-sm: 4px;
     --slotted-control-gap-md: 6px;
+    --slotted-action-gap: 6px;
     --slotted-control-gap-lg: 6px;
     --slotted-control-label-gap-sm: 6px;
     --slotted-control-label-gap-md: 8px;
@@ -1003,6 +1006,7 @@
     --slotted-control-icon-size-lg: 14px;
     --slotted-control-gap-sm: 4px;
     --slotted-control-gap-md: 4px;
+    --slotted-action-gap: 4px;
     --slotted-control-gap-lg: 6px;
     --slotted-control-label-gap-sm: 6px;
     --slotted-control-label-gap-md: 6px;
@@ -1932,17 +1936,6 @@
 
     [data-ui="tag"][data-size="lg"] {
       --slotted-tag-inset-inline: calc(var(--slotted-space-5) + var(--slotted-space-1));
-    }
-
-    [data-ui="dialog"] [data-part="footer"] {
-      gap: var(--slotted-control-gap-md);
-    }
-
-    [data-ui="select"] [data-part="content"],
-    [data-ui="multi-select"] [data-part="content"],
-    [data-ui="entity-picker"] [data-part="content"],
-    [data-ui="menu"] [data-part="content"] {
-      max-block-size: min(20rem, calc(100dvh - var(--slotted-space-8)));
     }
   }
 }
