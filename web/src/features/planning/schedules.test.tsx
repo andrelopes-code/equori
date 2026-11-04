@@ -172,6 +172,120 @@ describe("New schedule", () => {
       );
     });
   });
+
+  async function openForm(sent: unknown[]) {
+    await renderApp("/planning/schedules/new", {
+      fetch: api({
+        "POST /api/v1/schedules": async (req) => {
+          sent.push(await req.json());
+          return json(201, rent);
+        },
+      }),
+    });
+    await userEvent.type(
+      await screen.findByRole("textbox", {
+        name: catalogEn["schedule.description"],
+      }),
+      "Move",
+    );
+    await userEvent.type(
+      screen.getByRole("textbox", { name: catalogEn["schedule.amount"] }),
+      "1000",
+    );
+  }
+
+  async function chooseKind(label: string) {
+    await userEvent.click(
+      screen.getByRole("combobox", { name: catalogEn["schedule.kind"] }),
+    );
+    await userEvent.click(await screen.findByRole("option", { name: label }));
+  }
+
+  it("clears the category when the kind turns into a transfer", async () => {
+    const sent: unknown[] = [];
+    await openForm(sent);
+    await chooseAccount(catalogEn["schedule.account"], "Nubank");
+    await pick(catalogEn["schedule.category"], "Mercado");
+    await chooseKind(catalogEn["scheduled.kind.transfer"]);
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["schedule.create"] }),
+    );
+
+    expect(
+      await screen.findByText(catalogEn["schedule.required.counterpart"]),
+    ).toBeInTheDocument();
+    expect(sent).toEqual([]);
+  });
+
+  it("keeps the category when the kind changes between category kinds", async () => {
+    const sent: unknown[] = [];
+    await openForm(sent);
+    await chooseAccount(catalogEn["schedule.account"], "Nubank");
+    await pick(catalogEn["schedule.category"], "Mercado");
+    await chooseKind(catalogEn["scheduled.kind.subscription"]);
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["schedule.create"] }),
+    );
+
+    await waitFor(() => {
+      expect(sent).toHaveLength(1);
+    });
+    expect(sent[0]).toMatchObject({
+      kind: "subscription",
+      account_id: checkingID,
+      counterpart_id: rent.counterpart_id,
+    });
+  });
+
+  it("leaves the destination of a transfer out of the source accounts", async () => {
+    await openForm([]);
+    await chooseKind(catalogEn["scheduled.kind.transfer"]);
+    await chooseAccount(catalogEn["schedule.to"], "Reserva");
+    await userEvent.click(
+      await screen.findByRole("button", {
+        name: new RegExp(`^${catalogEn["schedule.account"]}`),
+      }),
+    );
+    const sheet = await screen.findByRole("dialog", {
+      name: catalogEn["schedule.account"],
+    });
+
+    expect(
+      await within(sheet).findByRole("radio", { name: /^Nubank/ }),
+    ).toBeInTheDocument();
+    expect(
+      within(sheet).queryByRole("radio", { name: /^Reserva/ }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("sends the tolerance and the grace days typed in the advanced section", async () => {
+    const sent: unknown[] = [];
+    await openForm(sent);
+    await chooseAccount(catalogEn["schedule.account"], "Nubank");
+    await pick(catalogEn["schedule.category"], "Mercado");
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["schedule.advanced"] }),
+    );
+    const tolerance = screen.getByRole("spinbutton", {
+      name: catalogEn["schedule.tolerance"],
+    });
+    await userEvent.clear(tolerance);
+    await userEvent.type(tolerance, "5");
+    const grace = screen.getByRole("spinbutton", {
+      name: catalogEn["schedule.grace"],
+    });
+    await userEvent.clear(grace);
+    await userEvent.type(grace, "7");
+    await userEvent.tab();
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["schedule.create"] }),
+    );
+
+    await waitFor(() => {
+      expect(sent).toHaveLength(1);
+    });
+    expect(sent[0]).toMatchObject({ match_tolerance_bp: 500, grace_days: 7 });
+  });
 });
 
 describe("Schedule form calendar", () => {

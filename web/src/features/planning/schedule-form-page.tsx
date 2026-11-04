@@ -4,19 +4,6 @@ import {
   ActionBarActions,
 } from "@slotted/react/action-bar";
 import { Button } from "@slotted/react/button";
-import {
-  Collapsible,
-  CollapsibleHeader,
-  CollapsiblePanel,
-  CollapsibleTrigger,
-} from "@slotted/react/collapsible";
-import {
-  Field,
-  FieldDescription,
-  FieldError,
-  FieldLabel,
-} from "@slotted/react/field";
-import { NumberField } from "@slotted/react/number-field";
 import { Page, PageBody, PageFooter } from "@slotted/react/page";
 import {
   PageHeader,
@@ -26,46 +13,29 @@ import {
   PageHeaderTitleArea,
   PageHeaderTitleRow,
 } from "@slotted/react/page-header";
-import { Stack } from "@slotted/react/stack";
-import { TextField } from "@slotted/react/text-field";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 
 import { useApi } from "@/api/api-context";
 import { ProblemError, errorText, fieldErrors } from "@/api/problem";
-import type { components } from "@/api/schema.gen";
-import { accountsQuery } from "@/features/accounts";
-import { CategoryPicker } from "@/features/categories";
-import { calendarLabel } from "@/features/planning/calendar-label";
 import { calendarsQuery, useCreateSchedule } from "@/features/planning/api";
 import { RecurrenceFields } from "@/features/planning/recurrence-fields";
-import { kindLabel } from "@/features/planning/schedule-words";
-import { payeesQuery, settingsQuery, useScale } from "@/features/setup";
-import { AccountField, PayeeField } from "@/features/transactions";
+import { ScheduleAccountsSection } from "@/features/planning/schedule-accounts-section";
+import { ScheduleAdvancedSection } from "@/features/planning/schedule-advanced-section";
+import { ScheduleBasicsSection } from "@/features/planning/schedule-basics-section";
+import {
+  draftProblems,
+  emptyDraft,
+  scheduleInput,
+} from "@/features/planning/schedule-draft";
+import { useScheduleDraft } from "@/features/planning/use-schedule-draft";
+import { settingsQuery, useScale } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
-import { AppLink } from "@/ui/app-link";
-import { ChoiceSelect } from "@/ui/choice-select";
-import widths from "@/ui/field-width.module.css";
 import { FormNotice } from "@/ui/form-notice";
 import { FormLayout } from "@/ui/form-layout";
 import { FormSection } from "@/ui/form-section";
-import { MoneyInput } from "@/ui/money-input";
-
-type ScheduleKind = components["schemas"]["ScheduleKind"];
-type Recurrence = components["schemas"]["Recurrence"];
-
-const kinds = Object.keys(kindLabel) as ScheduleKind[];
-// The server's defaults (ScheduleInput), shown so the reader sees what is sent.
-const defaultToleranceBP = 1000;
-const defaultGraceDays = 3;
-
-// A schedule's counterpart: a category for a bill, a subscription or an income, another balance
-// account for a transfer or a saving.
-function takesCategory(kind: ScheduleKind): boolean {
-  return kind === "bill" || kind === "subscription" || kind === "income";
-}
 
 export function ScheduleFormPage() {
   const t = useT();
@@ -73,68 +43,32 @@ export function ScheduleFormPage() {
   const today = useToday();
   const navigate = useNavigate();
   const scale = useScale();
-  const accounts = useQuery(accountsQuery(api));
-  const payees = useQuery(payeesQuery(api));
   const settings = useQuery(settingsQuery(api));
   const calendars = useQuery(calendarsQuery(api));
   const create = useCreateSchedule();
-  const [kind, setKind] = useState<ScheduleKind>("bill");
-  const [accountID, setAccountID] = useState<string | null>(null);
-  const [counterpartID, setCounterpartID] = useState<string | null>(null);
-  const [payeeID, setPayeeID] = useState<string | null>(null);
-  const [description, setDescription] = useState("");
-  const [amount, setAmount] = useState(0);
-  const [recurrence, setRecurrence] = useState<Recurrence>(() => ({
-    frequency: "monthly",
-    interval: 1,
-    day_of_month: Number(today.slice(8, 10)),
-    adjustment: "none",
-    start: today,
-  }));
-  // Null until the reader picks one; the select then shows the server's default for the region.
-  const [picked, setPicked] = useState<string | null>(null);
-  const defaultCalendar = calendars.data?.default;
-  const calendar = picked ?? defaultCalendar ?? "";
-  const [toleranceBP, setToleranceBP] = useState(defaultToleranceBP);
-  const [graceDays, setGraceDays] = useState(defaultGraceDays);
+  const { draft, patch } = useScheduleDraft(emptyDraft(today));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [summary, setSummary] = useState<string | null>(null);
   const currency = settings.data?.base_currency;
-  const income = kind === "income";
-  const category = takesCategory(kind);
 
   const submit = () => {
-    const next: Record<string, string> = {};
-    if (description.trim() === "")
-      next.description = t("schedule.required.description");
-    if (amount <= 0) next.amount = t("schedule.required.amount");
-    if (accountID === null) next.account_id = t("schedule.required.account");
-    if (counterpartID === null)
-      next.counterpart_id = t("schedule.required.counterpart");
-    setErrors(next);
+    const problems = draftProblems(draft);
+    setErrors(
+      Object.fromEntries(
+        Object.entries(problems).map(([field, key]) => [field, t(key)]),
+      ),
+    );
     setSummary(null);
-    if (
-      Object.keys(next).length > 0 ||
-      accountID === null ||
-      counterpartID === null ||
+    const input =
       currency === undefined
-    )
-      return;
+        ? null
+        : scheduleInput(draft, {
+            currency,
+            defaultCalendar: calendars.data?.default,
+          });
+    if (Object.keys(problems).length > 0 || input === null) return;
     create
-      .mutateAsync({
-        kind,
-        account_id: accountID,
-        counterpart_id: counterpartID,
-        ...(payeeID === null || !category ? {} : { payee_id: payeeID }),
-        description: description.trim(),
-        amount: { amount, currency },
-        recurrence,
-        ...(calendar === "" || calendar === defaultCalendar
-          ? {}
-          : { calendar }),
-        match_tolerance_bp: toleranceBP,
-        grace_days: graceDays,
-      })
+      .mutateAsync(input)
       .then((schedule) =>
         navigate({
           to: "/planning/schedules/$id",
@@ -199,213 +133,24 @@ export function ScheduleFormPage() {
         <FormLayout>
           {summary !== null && <FormNotice>{summary}</FormNotice>}
 
-          <Field required>
-            <FieldLabel>{t("schedule.kind")}</FieldLabel>
-            <ChoiceSelect
-              className={widths.medium}
-              label={t("schedule.kind")}
-              multiple={false}
-              value={kind}
-              choices={kinds.map((k) => ({
-                value: k,
-                label: t(kindLabel[k]),
-              }))}
-              onChange={(next) => {
-                const chosen = kinds.find((k) => k === next);
-                if (chosen === undefined) return;
-                if (takesCategory(chosen) !== category) setCounterpartID(null);
-                setKind(chosen);
-              }}
-            />
-          </Field>
+          <ScheduleBasicsSection draft={draft} patch={patch} errors={errors} />
 
-          <Field invalid={errors.description !== undefined} required>
-            <FieldLabel>{t("schedule.description")}</FieldLabel>
-            <TextField
-              name="description"
-              maxLength={200}
-              value={description}
-              onChange={(event) => {
-                setDescription(event.target.value);
-              }}
-            />
-            {errors.description !== undefined && (
-              <FieldError>{errors.description}</FieldError>
-            )}
-          </Field>
-
-          <Field invalid={errors.amount !== undefined} required>
-            <FieldLabel>{t("schedule.amount")}</FieldLabel>
-            {currency !== undefined && scale !== null && (
-              <MoneyInput
-                size="field"
-                className={widths.medium}
-                value={amount}
-                onChange={setAmount}
-                currency={currency}
-                scale={scale(currency)}
-                sign={income ? "income" : "expense"}
-              />
-            )}
-
-            {errors.amount !== undefined && (
-              <FieldError>{errors.amount}</FieldError>
-            )}
-          </Field>
-
-          {category && (
-            <Field>
-              <FieldLabel>{t("schedule.payee")}</FieldLabel>
-              <PayeeField
-                payees={payees.data ?? []}
-                value={payeeID}
-                onChange={setPayeeID}
-              />
-            </Field>
-          )}
-
-          {currency !== undefined && scale !== null && (
-            <Field invalid={errors.account_id !== undefined} required>
-              <FieldLabel>{t("schedule.account")}</FieldLabel>
-              <AccountField
-                name="account"
-                title={t("schedule.account")}
-                accounts={accounts.data ?? []}
-                value={accountID}
-                exclude={category ? null : counterpartID}
-                amount={amount}
-                direction={income ? "in" : "out"}
-                date={recurrence.start}
-                categoryId={category ? counterpartID : null}
-                payeeId={category ? payeeID : null}
-                kind={income ? "income" : category ? "expense" : "transfer"}
-                currency={currency}
-                scale={scale}
-                onChange={setAccountID}
-              />
-              {errors.account_id !== undefined && (
-                <FieldError>{errors.account_id}</FieldError>
-              )}
-            </Field>
-          )}
-
-          <Field invalid={errors.counterpart_id !== undefined} required>
-            <FieldLabel>
-              {t(category ? "schedule.category" : "schedule.to")}
-            </FieldLabel>
-            {category ? (
-              <CategoryPicker
-                aria-label={t("schedule.category")}
-                value={counterpartID}
-                amount={income ? 1 : -1}
-                invalid={errors.counterpart_id !== undefined}
-                onChange={setCounterpartID}
-              />
-            ) : (
-              currency !== undefined &&
-              scale !== null && (
-                <AccountField
-                  name="to"
-                  title={t("schedule.to")}
-                  accounts={accounts.data ?? []}
-                  value={counterpartID}
-                  exclude={accountID}
-                  amount={amount}
-                  direction="in"
-                  date={recurrence.start}
-                  categoryId={null}
-                  payeeId={null}
-                  kind="transfer"
-                  currency={currency}
-                  scale={scale}
-                  onChange={setCounterpartID}
-                />
-              )
-            )}
-
-            {errors.counterpart_id !== undefined && (
-              <FieldError>{errors.counterpart_id}</FieldError>
-            )}
-          </Field>
+          <ScheduleAccountsSection
+            draft={draft}
+            patch={patch}
+            errors={errors}
+          />
 
           <FormSection legend={t("schedule.recurrence")}>
-            <RecurrenceFields value={recurrence} onChange={setRecurrence} />
+            <RecurrenceFields
+              value={draft.recurrence}
+              onChange={(recurrence) => {
+                patch({ recurrence });
+              }}
+            />
           </FormSection>
 
-          <Collapsible>
-            <CollapsibleHeader>
-              <CollapsibleTrigger>{t("schedule.advanced")}</CollapsibleTrigger>
-            </CollapsibleHeader>
-            <CollapsiblePanel>
-              <Stack gap={8}>
-                <Field>
-                  <FieldLabel>{t("schedule.calendar")}</FieldLabel>
-                  <ChoiceSelect
-                    label={t("schedule.calendar")}
-                    multiple={false}
-                    value={calendar}
-                    choices={(calendars.data?.items ?? []).map((c) => ({
-                      value: c.id,
-                      label:
-                        c.id === defaultCalendar
-                          ? t("calendar.regionDefault", {
-                              name: calendarLabel(t, c.id),
-                            })
-                          : calendarLabel(t, c.id),
-                    }))}
-                    onChange={(next) => {
-                      if (typeof next === "string") setPicked(next);
-                    }}
-                  />
-                  {calendar !== "" && (
-                    <FieldDescription>
-                      <AppLink
-                        to={{
-                          to: "/settings",
-                          search: { section: "calendars", calendar },
-                        }}
-                      >
-                        {t("calendar.open")}
-                      </AppLink>
-                    </FieldDescription>
-                  )}
-                </Field>
-
-                <Field required>
-                  <FieldLabel>{t("schedule.tolerance")}</FieldLabel>
-                  <NumberField
-                    className={widths.short}
-                    name="match_tolerance"
-                    value={toleranceBP / 100}
-                    min={0}
-                    max={100}
-                    step={0.01}
-                    onValueChange={(next) => {
-                      if (next !== null) setToleranceBP(Math.round(next * 100));
-                    }}
-                  />
-                  <FieldDescription>
-                    {t("schedule.toleranceHint")}
-                  </FieldDescription>
-                </Field>
-
-                <Field required>
-                  <FieldLabel>{t("schedule.grace")}</FieldLabel>
-                  <NumberField
-                    className={widths.short}
-                    name="grace_days"
-                    value={graceDays}
-                    min={0}
-                    max={31}
-                    onValueChange={(next) => {
-                      if (next !== null) setGraceDays(next);
-                    }}
-                  />
-                  <FieldDescription>{t("schedule.graceHint")}</FieldDescription>
-                </Field>
-              </Stack>
-            </CollapsiblePanel>
-          </Collapsible>
+          <ScheduleAdvancedSection draft={draft} patch={patch} />
         </FormLayout>
       </PageBody>
     </Page>
