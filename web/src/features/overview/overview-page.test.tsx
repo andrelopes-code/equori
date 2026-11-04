@@ -722,6 +722,18 @@ describe("overview page", () => {
       expect(await screen.findByText("Balance of the month")).toBeVisible();
     });
 
+    it("opens planning from the balance chart", async () => {
+      await renderApp("/", { fetch: api(projection) });
+
+      const widget = await screen.findByRole("article", {
+        name: "Balance of the month",
+      });
+
+      expect(
+        within(widget).getByRole("link", { name: "Open planning" }),
+      ).toHaveAttribute("href", "/planning");
+    });
+
     it("names each chart by its widget and draws no caption under the widget's title", async () => {
       await renderApp("/", { fetch: api(projection) });
       for (const name of ["Balance of the month", "Spending by category"]) {

@@ -2,6 +2,7 @@ import { Chart } from "@slotted/react/chart";
 import type { ChartSeries } from "@slotted/core/chart";
 import { useMemo } from "react";
 
+import { eventLines } from "@/features/overview/balance-annotations";
 import { balanceRows } from "@/features/overview/balance-rows";
 import {
   OverviewBlock,
@@ -13,7 +14,8 @@ import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
-// The Available accounts day by day: the balance up to today, then the forecast, dashed.
+// The Available accounts day by day: the balance up to today, then the forecast, dashed, with
+// the largest occurrences ahead marked on their day.
 export function BalanceChartBlock({
   month,
   ...placement
@@ -55,9 +57,24 @@ export function BalanceChartBlock({
       format: money,
     },
   ];
+  const day = (date: string) => formatDayMonth(date, locale);
+  const todayLine = {
+    kind: "line" as const,
+    axis: "x" as const,
+    value: day(today),
+    label: t("overview.balance.today"),
+  };
+  const annotations =
+    overview?.current === true
+      ? [todayLine, ...eventLines(overview.days, today, day)]
+      : [];
   return (
     <OverviewBlock
       placement={placement}
+      link={{
+        label: t("overview.upcoming.open"),
+        options: { to: "/planning" },
+      }}
       loading={overview === undefined}
       error={failed}
       onRetry={retry}
@@ -68,18 +85,7 @@ export function BalanceChartBlock({
         series={series}
         x={{ field: "label" }}
         y={{ format: money }}
-        annotations={
-          overview?.current === true
-            ? [
-                {
-                  kind: "line",
-                  axis: "x",
-                  value: formatDayMonth(today, locale),
-                  label: t("overview.balance.today"),
-                },
-              ]
-            : []
-        }
+        annotations={annotations}
       />
     </OverviewBlock>
   );
