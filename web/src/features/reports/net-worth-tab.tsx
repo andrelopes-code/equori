@@ -1,31 +1,21 @@
-import type { ChartSeries } from "@slotted/core/chart";
+import type { ChartPoint, ChartSeries } from "@slotted/core/chart";
 import { Chart } from "@slotted/react/chart";
 import { Segment, SegmentedControl } from "@slotted/react/segmented-control";
 import { Stack } from "@slotted/react/stack";
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableColumnHeader,
-  TableContent,
-  TableHead,
-  TableLoader,
-  TableRow,
-  TableRowHeader,
-} from "@slotted/react/table";
 import { useQueries } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 import { useApi } from "@/api/api-context";
 import { netWorthQuery } from "@/features/overview";
 import { monthEnds, netWorthRows } from "@/features/reports/net-worth-months";
+import { NetWorthMonthCard } from "@/features/reports/net-worth-month-card";
+import { NetWorthTable } from "@/features/reports/net-worth-table";
 import { ReportControls } from "@/features/reports/report-controls";
 import { netWorthSpans } from "@/features/reports/reports-search";
 import type { NetWorthMonths } from "@/features/reports/reports-search";
 import { ValuationCurrency } from "@/features/reports/valuation-currency";
 import { useScale } from "@/features/setup";
-import { formatReferenceMonth, formatSignedBasisPoints } from "@/i18n/format";
+import { formatReferenceMonth } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { useMoneyFormat } from "@/privacy/use-money-format";
@@ -50,6 +40,8 @@ export function NetWorthTab({
   const [tag] = useAppLocale();
   const fmt = useMoneyFormat();
   const scale = useScale();
+  const [selected, setSelected] = useState<string>();
+  const current = today.slice(0, 7);
   const months = useMemo(() => monthEnds(today, count), [today, count]);
   const results = useQueries({
     queries: months.map((m) => ({
@@ -67,7 +59,6 @@ export function NetWorthTab({
   const currency = valueIn ?? "";
   const money = (amount: number) => fmt.money({ amount, currency }, digits);
   const label = (month: string) => formatReferenceMonth(month, tag);
-  const none = t("report.none");
   const title = t("report.netWorth.title");
   const series: ChartSeries<"label" | "assets" | "liabilities" | "net">[] = [
     {
@@ -98,6 +89,17 @@ export function NetWorthTab({
     assets: r.assets ?? null,
     liabilities: r.liabilities ?? null,
   }));
+
+  // A point names its month by the x value; clearing the selection returns to the current month.
+  // A month after the current one holds no net worth yet.
+  function handleMonth(next: string) {
+    setSelected(next > current ? current : next);
+  }
+
+  function handleSelect(point: ChartPoint | null) {
+    setSelected(rows.find((r) => label(r.month) === point?.key)?.month);
+  }
+
   return (
     <Stack gap={4}>
       <ReportControls
@@ -128,68 +130,26 @@ export function NetWorthTab({
           series={series}
           x={{ field: "label" }}
           y={{ format: money }}
+          selectable
+          onSelectionChange={handleSelect}
         />
       )}
-      <Table columns={6} variant="framed">
-        <TableContent>
-          <TableCaption>{title}</TableCaption>
-          <TableHead>
-            <TableRow>
-              <TableColumnHeader>{t("report.month")}</TableColumnHeader>
-              <TableColumnHeader numeric>
-                {t("report.netWorth.assets")}
-              </TableColumnHeader>
-              <TableColumnHeader numeric>
-                {t("report.netWorth.liabilities")}
-              </TableColumnHeader>
-              <TableColumnHeader numeric>
-                {t("report.netWorth.net")}
-              </TableColumnHeader>
-              <TableColumnHeader numeric>
-                {t("report.change")}
-              </TableColumnHeader>
-              <TableColumnHeader numeric>
-                {t("report.changePercent")}
-              </TableColumnHeader>
-            </TableRow>
-          </TableHead>
-          {pending ? (
-            <TableLoader skeletonRows={6} />
-          ) : (
-            <TableBody>
-              {rows
-                .slice()
-                .reverse()
-                .map((r) => (
-                  <TableRow key={r.month} value={r.month}>
-                    <TableRowHeader>{label(r.month)}</TableRowHeader>
-                    <TableCell numeric>
-                      {r.assets === undefined ? none : money(r.assets)}
-                    </TableCell>
-                    <TableCell numeric>
-                      {r.liabilities === undefined
-                        ? none
-                        : money(r.liabilities)}
-                    </TableCell>
-                    <TableCell numeric>
-                      {r.net === undefined ? none : money(r.net)}
-                    </TableCell>
-                    <TableCell numeric>
-                      {r.change === undefined
-                        ? none
-                        : fmt.signed({ amount: r.change, currency }, digits)}
-                    </TableCell>
-                    <TableCell numeric>
-                      {r.changeBP === undefined
-                        ? none
-                        : formatSignedBasisPoints(r.changeBP, tag)}
-                    </TableCell>
-                  </TableRow>
-                ))}
-            </TableBody>
-          )}
-        </TableContent>
-      </Table>
+
+      {valueIn !== undefined && (
+        <NetWorthMonthCard
+          month={selected ?? current}
+          valueIn={valueIn}
+          onMonth={handleMonth}
+        />
+      )}
+
+      <NetWorthTable
+        rows={rows}
+        pending={pending}
+        title={title}
+        currency={currency}
+        digits={digits}
+      />
     </Stack>
   );
 }

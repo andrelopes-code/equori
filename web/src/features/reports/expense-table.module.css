@@ -1,0 +1,6 @@
+@layer app {
+  .scroll {
+    max-block-size: 24rem;
+    overflow: auto;
+  }
+}

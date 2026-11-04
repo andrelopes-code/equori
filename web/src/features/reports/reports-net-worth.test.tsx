@@ -52,6 +52,79 @@ describe("Reports net worth", () => {
     expect(dates).toContain("2026-09-30");
   });
 
+  it("draws the net worth of each day of the current month", async () => {
+    const days: URLSearchParams[] = [];
+    const routes = reportApiRoutes();
+    const { fetch } = api({
+      "GET /api/v1/reports/net-worth/days": (req) => {
+        days.push(new URL(req.url).searchParams);
+        return routes["GET /api/v1/reports/net-worth/days"](req);
+      },
+    });
+
+    await renderApp("/reports", { fetch });
+
+    expect(
+      await screen.findByRole("group", {
+        name: "Net worth by day · October 2026",
+      }),
+    ).toBeVisible();
+    expect(days.at(-1)?.get("from")).toBe("2026-10-01");
+    expect(days.at(-1)?.get("to")).toBe("2026-10-17");
+  });
+
+  it("picks a past month with the month control and lists its expenses, the largest first", async () => {
+    const user = userEvent.setup();
+    const days: URLSearchParams[] = [];
+    const routes = reportApiRoutes();
+    const { fetch } = api({
+      "GET /api/v1/reports/net-worth/days": (req) => {
+        days.push(new URL(req.url).searchParams);
+        return routes["GET /api/v1/reports/net-worth/days"](req);
+      },
+      "GET /api/v1/accounts": () =>
+        json(200, {
+          items: [
+            {
+              id: "food",
+              name: "Food",
+              class: "expense",
+              currency: "BRL",
+              opened_on: "2026-01-01",
+              yield_mode: "none",
+            },
+          ],
+        }),
+      "GET /api/v1/transactions": (req) =>
+        json(200, {
+          items:
+            new URL(req.url).searchParams.get("from") === "2026-09-01"
+              ? [expense("t1", "2026-09-12", "Market", 4500)]
+              : [],
+        }),
+    });
+
+    await renderApp("/reports", { fetch });
+
+    const card = await screen.findByRole("group", {
+      name: "Net worth by day · October 2026",
+    });
+    await user.click(
+      within(card.closest("[data-ui='card']") ?? document.body).getByRole(
+        "button",
+        { name: "Previous month" },
+      ),
+    );
+
+    const table = await screen.findByRole("table", {
+      name: "Expenses of the month",
+    });
+    await within(table).findByText("Market");
+    expect(rowTexts(table)).toContain("Sep 12|MarketFood|R$45.00");
+    expect(days.at(-1)?.get("from")).toBe("2026-09-01");
+    expect(days.at(-1)?.get("to")).toBe("2026-09-30");
+  });
+
   it("reads 24 months at most", async () => {
     const { fetch, queries } = api();
     await renderApp("/reports?months=24", { fetch });
@@ -219,3 +292,25 @@ describe("Reports net worth", () => {
     expect(text).not.toMatch(/Patrimônio|Ativos/);
   });
 });
+
+function expense(
+  id: string,
+  date: string,
+  description: string,
+  amount: number,
+) {
+  return {
+    id,
+    date,
+    description,
+    balancing_currency: "BRL",
+    origin: "manual",
+    version: 1,
+    tags: [],
+    links: [],
+    postings: [
+      { account_id: "food", amount: { amount, currency: "BRL" } },
+      { account_id: "card", amount: { amount: -amount, currency: "BRL" } },
+    ],
+  };
+}

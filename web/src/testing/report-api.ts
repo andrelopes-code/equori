@@ -31,6 +31,8 @@ export function reportApiRoutes() {
       }),
     "GET /api/v1/reports/net-worth": (req: Request) =>
       json(200, netWorthAt(new URL(req.url).searchParams.get("date") ?? "")),
+    "GET /api/v1/reports/net-worth/days": (req: Request) =>
+      json(200, { items: netWorthDays(new URL(req.url).searchParams) }),
   };
 }
 
@@ -241,4 +243,19 @@ export function indicatorsFixture(
     currency: "BRL",
     months: months.map((m, i) => (i === 11 ? { ...m, ...lastEntry } : m)),
   };
+}
+
+// Each day of [from, to], valued as netWorthAt values a date.
+function netWorthDays(query: URLSearchParams) {
+  const days = [];
+  for (
+    let day = new Date(`${query.get("from") ?? ""}T00:00:00Z`);
+    day.toISOString().slice(0, 10) <= (query.get("to") ?? "");
+    day.setUTCDate(day.getUTCDate() + 1)
+  ) {
+    const date = day.toISOString().slice(0, 10);
+    days.push({ date, ...netWorthAt(date) });
+  }
+
+  return days;
 }

@@ -23,3 +23,23 @@ export function cashPaymentsQuery(
       ).items,
   });
 }
+
+// Net worth at the end of each day of [from, to] (net worth days design, D1).
+export function netWorthDaysQuery(
+  api: Client<paths>,
+  from: string,
+  to: string,
+  valueIn: string,
+) {
+  return queryOptions({
+    queryKey: ["reports", "net-worth", "days", from, to, valueIn] as const,
+    queryFn: async () =>
+      (
+        await unwrap(
+          await api.GET("/reports/net-worth/days", {
+            params: { query: { from, to, value_in: valueIn } },
+          }),
+        )
+      ).items,
+  });
+}
