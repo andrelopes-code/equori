@@ -76,6 +76,7 @@ type PlanningSchedule struct {
 	CreatedAt        time.Time
 	UpdatedAt        time.Time
 	Calendar         string
+	MatchWindowDays  int32
 }
 
 type PlanningScheduleTerm struct {

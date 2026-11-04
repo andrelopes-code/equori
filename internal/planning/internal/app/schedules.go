@@ -45,9 +45,9 @@ type ScheduleInput struct {
 	Rule                     domain.Rule
 	// Calendar defaults to the calendar of the owner's region when empty.
 	Calendar string
-	// ToleranceBP and GraceDays take their defaults when nil.
-	ToleranceBP, GraceDays *int
-	PaidBy                 uuid.UUID // uuid.Nil: none; realizes the occurrence on the rule's first date (plan B T3)
+	// ToleranceBP, GraceDays and WindowDays take their defaults when nil.
+	ToleranceBP, GraceDays, WindowDays *int
+	PaidBy                             uuid.UUID // uuid.Nil: none; realizes the occurrence on the rule's first date (plan B T3)
 }
 
 func (s *Service) CreateSchedule(ctx context.Context, booksID int64, in ScheduleInput) (domain.Schedule, error) {
@@ -74,7 +74,8 @@ func (s *Service) CreateSchedule(ctx context.Context, booksID int64, in Schedule
 		Kind: in.Kind, AccountID: in.AccountID, CounterpartID: in.CounterpartID, PayeeID: in.PayeeID,
 		Description: in.Description, Currency: in.Amount.Currency(),
 		ToleranceBP: domain.DefaultToleranceBP, GraceDays: domain.DefaultGraceDays,
-		Terms: []domain.Terms{{EffectiveFrom: in.Rule.Start, Rule: in.Rule, Amount: in.Amount.Amount()}},
+		WindowDays: domain.DefaultWindowDays,
+		Terms:      []domain.Terms{{EffectiveFrom: in.Rule.Start, Rule: in.Rule, Amount: in.Amount.Amount()}},
 	}
 	if in.ToleranceBP != nil {
 		sch.ToleranceBP = *in.ToleranceBP
@@ -82,6 +83,10 @@ func (s *Service) CreateSchedule(ctx context.Context, booksID int64, in Schedule
 
 	if in.GraceDays != nil {
 		sch.GraceDays = *in.GraceDays
+	}
+
+	if in.WindowDays != nil {
+		sch.WindowDays = *in.WindowDays
 	}
 
 	if err := sch.Validate(); err != nil {

@@ -4067,6 +4067,8 @@ export interface components {
             match_tolerance_bp: number;
             /** @default 3 */
             grace_days: number;
+            /** @default 7 */
+            match_window_days: number;
         };
         ScheduleTerms: {
             /** Format: date */
@@ -4098,6 +4100,8 @@ export interface components {
             description: string;
             match_tolerance_bp: number;
             grace_days: number;
+            /** @default 7 */
+            match_window_days: number;
             /**
              * Format: date
              * @description No occurrence on or after this date; absent while the schedule has no end.

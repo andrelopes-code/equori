@@ -86,6 +86,12 @@ func TestSchemaInvariants(t *testing.T) {
 			return exec(`INSERT INTO planning_schedule (books_id, kind, account_id, counterpart_id, description, match_tolerance_bp, grace_days, generated_until)
 				VALUES ($1, 'bill', $2, $3, 'x', 1000, 3, '2026-11-01')`, uid, foreign.ID, f.rent)
 		}},
+		{"match window above 31", func() error {
+			return exec(`UPDATE planning_schedule SET match_window_days = 32 WHERE id = $1`, id)
+		}},
+		{"match window below 0", func() error {
+			return exec(`UPDATE planning_schedule SET match_window_days = -1 WHERE id = $1`, id)
+		}},
 		{"same account on both sides", func() error {
 			return exec(`INSERT INTO planning_schedule (books_id, kind, account_id, counterpart_id, description, match_tolerance_bp, grace_days, generated_until)
 				VALUES ($1, 'transfer', $2, $2, 'x', 1000, 3, '2026-11-01')`, uid, f.checking)

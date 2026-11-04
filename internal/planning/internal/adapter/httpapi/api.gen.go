@@ -521,6 +521,7 @@ type Schedule struct {
 	Id               openapi_types.UUID  `json:"id"`
 	Kind             ScheduleKind        `json:"kind"`
 	MatchToleranceBp int                 `json:"match_tolerance_bp"`
+	MatchWindowDays  int                 `json:"match_window_days"`
 	Pauses           []SchedulePause     `json:"pauses"`
 	PayeeId          *openapi_types.UUID `json:"payee_id,omitempty"`
 
@@ -540,6 +541,7 @@ type ScheduleInput struct {
 	GraceDays        *int                `json:"grace_days,omitempty"`
 	Kind             ScheduleKind        `json:"kind"`
 	MatchToleranceBp *int                `json:"match_tolerance_bp,omitempty"`
+	MatchWindowDays  *int                `json:"match_window_days,omitempty"`
 	PayeeId          *openapi_types.UUID `json:"payee_id,omitempty"`
 
 	// Recurrence A monthly rule takes exactly one of day_of_month, weekday with ordinal, business_day_ordinal; -1 means

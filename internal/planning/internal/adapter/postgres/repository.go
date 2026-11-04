@@ -70,7 +70,7 @@ func (r *Repository) InsertSchedule(ctx context.Context, booksID int64, s domain
 	row, err := r.q.InsertSchedule(ctx, InsertScheduleParams{
 		BooksID: booksID, Kind: string(s.Kind), AccountID: s.AccountID, CounterpartID: s.CounterpartID,
 		PayeeID: nullUUID(s.PayeeID), Description: s.Description, Currency: string(s.Currency),
-		MatchToleranceBp: int32(s.ToleranceBP), GraceDays: int32(s.GraceDays), GeneratedUntil: s.GeneratedUntil, Calendar: s.Calendar, //nolint:gosec // validated to 0-10000 and 0-31
+		MatchToleranceBp: int32(s.ToleranceBP), GraceDays: int32(s.GraceDays), MatchWindowDays: int32(s.WindowDays), GeneratedUntil: s.GeneratedUntil, Calendar: s.Calendar, //nolint:gosec // validated to 0-10000 and 0-31
 		CreatedAt: s.CreatedAt,
 	})
 	if err != nil {
@@ -114,7 +114,7 @@ func toSchedule(row PlanningSchedule) domain.Schedule {
 	return domain.Schedule{
 		ID: row.ID, Kind: domain.Kind(row.Kind), AccountID: row.AccountID, CounterpartID: row.CounterpartID,
 		PayeeID: row.PayeeID.UUID, Description: row.Description, Currency: money.Currency(row.Currency),
-		ToleranceBP: int(row.MatchToleranceBp), GraceDays: int(row.GraceDays), Calendar: row.Calendar, EndsOn: row.EndsOn, GeneratedUntil: row.GeneratedUntil,
+		ToleranceBP: int(row.MatchToleranceBp), GraceDays: int(row.GraceDays), WindowDays: int(row.MatchWindowDays), Calendar: row.Calendar, EndsOn: row.EndsOn, GeneratedUntil: row.GeneratedUntil,
 		CreatedAt: row.CreatedAt,
 	}
 }

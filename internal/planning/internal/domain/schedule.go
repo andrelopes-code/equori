@@ -42,6 +42,8 @@ type Schedule struct {
 	Description              string
 	Currency                 money.Currency
 	ToleranceBP, GraceDays   int
+	// WindowDays bounds the distance between a transaction and the occurrence it realizes.
+	WindowDays int
 	// Calendar is the business-day calendar id, fixed at creation.
 	Calendar string
 	EndsOn   *time.Time
@@ -63,6 +65,9 @@ type Planned struct {
 const (
 	DefaultToleranceBP = 1000
 	DefaultGraceDays   = 3
+	DefaultWindowDays  = 7
+	// MaxWindowDays is the upper bound of Schedule.WindowDays.
+	MaxWindowDays = 31
 )
 
 // Validate checks the fields the schedule carries itself; accounts are checked by the app.
@@ -83,6 +88,10 @@ func (s Schedule) Validate() error {
 
 	if s.GraceDays < 0 || s.GraceDays > 31 {
 		return invalid("grace_days", "must be between 0 and 31")
+	}
+
+	if s.WindowDays < 0 || s.WindowDays > MaxWindowDays {
+		return invalid("match_window_days", "must be between 0 and 31")
 	}
 
 	for _, t := range s.Terms {

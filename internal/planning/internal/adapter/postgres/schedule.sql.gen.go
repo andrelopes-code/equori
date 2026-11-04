@@ -14,7 +14,7 @@ import (
 
 const getSchedule = `-- name: GetSchedule :one
 SELECT
-    id, books_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar
+    id, books_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar, match_window_days
 FROM
     planning_schedule
 WHERE
@@ -46,6 +46,7 @@ func (q *Queries) GetSchedule(ctx context.Context, arg GetScheduleParams) (Plann
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Calendar,
+		&i.MatchWindowDays,
 	)
 	return i, err
 }
@@ -119,6 +120,7 @@ INSERT INTO
         currency,
         match_tolerance_bp,
         grace_days,
+        match_window_days,
         generated_until,
         calendar,
         created_at
@@ -136,10 +138,11 @@ VALUES
         $9,
         $10,
         $11,
-        $12
+        $12,
+        $13
     )
 RETURNING
-    id, books_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar
+    id, books_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar, match_window_days
 `
 
 type InsertScheduleParams struct {
@@ -152,6 +155,7 @@ type InsertScheduleParams struct {
 	Currency         string
 	MatchToleranceBp int32
 	GraceDays        int32
+	MatchWindowDays  int32
 	GeneratedUntil   time.Time
 	Calendar         string
 	CreatedAt        time.Time
@@ -168,6 +172,7 @@ func (q *Queries) InsertSchedule(ctx context.Context, arg InsertScheduleParams) 
 		arg.Currency,
 		arg.MatchToleranceBp,
 		arg.GraceDays,
+		arg.MatchWindowDays,
 		arg.GeneratedUntil,
 		arg.Calendar,
 		arg.CreatedAt,
@@ -189,6 +194,7 @@ func (q *Queries) InsertSchedule(ctx context.Context, arg InsertScheduleParams) 
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Calendar,
+		&i.MatchWindowDays,
 	)
 	return i, err
 }
@@ -444,7 +450,7 @@ func (q *Queries) ListPauses(ctx context.Context, arg ListPausesParams) ([]ListP
 
 const listSchedules = `-- name: ListSchedules :many
 SELECT
-    id, books_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar
+    id, books_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar, match_window_days
 FROM
     planning_schedule
 WHERE
@@ -490,6 +496,7 @@ func (q *Queries) ListSchedules(ctx context.Context, arg ListSchedulesParams) ([
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.Calendar,
+			&i.MatchWindowDays,
 		); err != nil {
 			return nil, err
 		}
@@ -558,7 +565,7 @@ func (q *Queries) ListTerms(ctx context.Context, arg ListTermsParams) ([]Plannin
 
 const lockSchedule = `-- name: LockSchedule :one
 SELECT
-    id, books_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar
+    id, books_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar, match_window_days
 FROM
     planning_schedule
 WHERE
@@ -591,6 +598,7 @@ func (q *Queries) LockSchedule(ctx context.Context, arg LockScheduleParams) (Pla
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Calendar,
+		&i.MatchWindowDays,
 	)
 	return i, err
 }
@@ -677,7 +685,7 @@ func (q *Queries) SchedulesBehind(ctx context.Context, horizon time.Time) ([]Sch
 
 const schedulesOfBooks = `-- name: SchedulesOfBooks :many
 SELECT
-    id, books_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar
+    id, books_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar, match_window_days
 FROM
     planning_schedule
 WHERE
@@ -711,6 +719,7 @@ func (q *Queries) SchedulesOfBooks(ctx context.Context, booksID int64) ([]Planni
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.Calendar,
+			&i.MatchWindowDays,
 		); err != nil {
 			return nil, err
 		}

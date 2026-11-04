@@ -85,14 +85,14 @@ func (s *Service) fill(ctx context.Context, repo Repository, booksID int64, sch 
 	}
 
 	today := s.clk.Today(ctx)
-	if len(planned) == 0 || planned[0].Date.After(today.AddDate(0, 0, domain.MatchWindowDays)) {
+	if len(planned) == 0 || planned[0].Date.After(today.AddDate(0, 0, sch.WindowDays)) {
 		return nil
 	}
 
 	first := planned[0].Date
 
 	ids, err := s.ledger.AccountTransactionsBetween(ctx, booksID, sch.AccountID,
-		first.AddDate(0, 0, -domain.MatchWindowDays), today.AddDate(0, 0, domain.MatchWindowDays))
+		first.AddDate(0, 0, -sch.WindowDays), today.AddDate(0, 0, sch.WindowDays))
 	if err != nil {
 		return err
 	}

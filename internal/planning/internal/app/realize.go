@@ -72,7 +72,7 @@ func (s *Service) reevaluate(ctx context.Context, repo Repository, e Transaction
 		}
 
 		os, err := repo.ExpectedOccurrences(ctx, e.BooksID, ids,
-			t.Date.AddDate(0, 0, -domain.MatchWindowDays), t.Date.AddDate(0, 0, domain.MatchWindowDays))
+			t.Date.AddDate(0, 0, -domain.MaxWindowDays), t.Date.AddDate(0, 0, domain.MaxWindowDays))
 		if err != nil {
 			return err
 		}

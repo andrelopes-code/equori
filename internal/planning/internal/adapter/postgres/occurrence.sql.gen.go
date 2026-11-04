@@ -386,7 +386,7 @@ func (q *Queries) ReleaseOccurrence(ctx context.Context, arg ReleaseOccurrencePa
 
 const schedulesTouching = `-- name: SchedulesTouching :many
 SELECT
-    id, books_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar
+    id, books_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar, match_window_days
 FROM
     planning_schedule
 WHERE
@@ -430,6 +430,7 @@ func (q *Queries) SchedulesTouching(ctx context.Context, arg SchedulesTouchingPa
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.Calendar,
+			&i.MatchWindowDays,
 		); err != nil {
 			return nil, err
 		}

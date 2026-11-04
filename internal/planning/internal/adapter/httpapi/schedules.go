@@ -72,7 +72,7 @@ func toScheduleAPI(s domain.Schedule) Schedule {
 	out := Schedule{
 		Id: s.ID, Kind: ScheduleKind(s.Kind), AccountId: s.AccountID, CounterpartId: s.CounterpartID,
 		PayeeId: apiOptUUID(s.PayeeID), Description: s.Description, MatchToleranceBp: s.ToleranceBP,
-		GraceDays: s.GraceDays, Calendar: s.Calendar, EndsOn: apiOptDate(s.EndsOn),
+		GraceDays: s.GraceDays, MatchWindowDays: s.WindowDays, Calendar: s.Calendar, EndsOn: apiOptDate(s.EndsOn),
 		Terms: make([]ScheduleTerms, len(s.Terms)), Pauses: make([]SchedulePause, len(s.Pauses)),
 	}
 	for i, t := range s.Terms {
@@ -97,7 +97,7 @@ func (s *Server) CreateSchedule(ctx context.Context, req CreateScheduleRequestOb
 	created, err := s.svc.CreateSchedule(ctx, auth.MustBooksID(ctx), app.ScheduleInput{
 		Kind: domain.Kind(b.Kind), AccountID: b.AccountId, CounterpartID: b.CounterpartId, PayeeID: optUUID(b.PayeeId),
 		Description: b.Description, Amount: amount, Rule: fromRecurrenceAPI(b.Recurrence), Calendar: stringOf(b.Calendar),
-		ToleranceBP: b.MatchToleranceBp, GraceDays: b.GraceDays,
+		ToleranceBP: b.MatchToleranceBp, GraceDays: b.GraceDays, WindowDays: b.MatchWindowDays,
 	})
 	if err != nil {
 		return nil, err

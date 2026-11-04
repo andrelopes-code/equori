@@ -10,6 +10,7 @@ INSERT INTO
         currency,
         match_tolerance_bp,
         grace_days,
+        match_window_days,
         generated_until,
         calendar,
         created_at
@@ -25,6 +26,7 @@ VALUES
         @currency,
         @match_tolerance_bp,
         @grace_days,
+        @match_window_days,
         @generated_until,
         @calendar,
         @created_at

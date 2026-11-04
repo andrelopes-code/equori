@@ -69,6 +69,27 @@ func TestPaymentOutsideWindowStaysUnmatched(t *testing.T) {
 	}
 }
 
+// A51: the date window is a setting of each schedule; the default is 7 days.
+func TestScheduleWindowSetsTheMatchDistance(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t, "2026-11-01")
+	wide := f.schedule("bill", f.checking, f.rent, 210000, monthly("2026-11-01", 5, "following"),
+		map[string]any{"payee_id": f.landlord, "match_window_days": 10})
+	f.pay("2026-11-14", 210000, f.rent, f.landlord)
+
+	if o := f.occurrence(wide, 1); o.State != "realized" {
+		t.Fatalf("window 10: occurrence = %+v, want realized", o)
+	}
+
+	g := newFixture(t, "2026-11-01")
+	narrow := g.rentSchedule()
+	g.pay("2026-11-14", 210000, g.rent, g.landlord)
+
+	if o := g.occurrence(narrow, 1); o.State != "expected" {
+		t.Fatalf("default window: occurrence = %+v, want expected", o)
+	}
+}
+
 func TestPaymentWithAnotherPayeeStaysUnmatched(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t, "2026-11-01")

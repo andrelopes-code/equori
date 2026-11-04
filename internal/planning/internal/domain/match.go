@@ -7,10 +7,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// MatchWindowDays bounds the distance between a transaction and the occurrence it realizes
-// (P7 amendment A51).
-const MatchWindowDays = 7
-
 // Transaction is the part of a ledger transaction realization reads.
 type Transaction struct {
 	ID          uuid.UUID
@@ -46,10 +42,11 @@ type Candidate struct {
 	Schedule   Schedule
 }
 
-// Fits applies the criteria of A51 except the state of the occurrence.
+// Fits applies the criteria of A51 except the state of the occurrence. The date window is
+// Schedule.WindowDays.
 func Fits(t Transaction, c Candidate) bool {
 	s, o := c.Schedule, c.Occurrence
-	if t.Voided || t.ID == o.DeclinedTransactionID || absDays(t.Date, o.ExpectedOn) > MatchWindowDays {
+	if t.Voided || t.ID == o.DeclinedTransactionID || absDays(t.Date, o.ExpectedOn) > s.WindowDays {
 		return false
 	}
 
