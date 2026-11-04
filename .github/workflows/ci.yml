@@ -8,8 +8,9 @@ on:
 permissions:
   contents: read
 
+# make check runs as three parallel jobs: static, go-test and web. Together they run its targets.
 jobs:
-  check:
+  static:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -24,8 +25,29 @@ jobs:
           node-version-file: web/.node-version
       # pnpm comes from Corepack, pinned by packageManager in web/package.json.
       - run: corepack enable
-      - run: make check
+      - run: make static
       - run: make vuln
+
+  go-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - run: make test-race
+      - run: make test-cluster
+
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: web/.node-version
+      - run: corepack enable
+      - run: make web-build
+      - run: make --no-print-directory -j2 web-static web-test
 
   # Managed mode on Windows (docs/specs/2026-10-27-distribution-windows-design.md, W-R1).
   # B4 across operating systems (W-R2): a Linux dump for the windows job, which returns one.
