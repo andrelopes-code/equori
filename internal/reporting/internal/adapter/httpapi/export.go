@@ -16,6 +16,9 @@ import (
 // maxPassphraseBytes bounds the passphrase part: 256 characters of up to 4 bytes.
 const maxPassphraseBytes = 1024
 
+// maxFlagBytes bounds a boolean multipart part.
+const maxFlagBytes = 16
+
 // errFileRequired: the multipart body holds no part named file.
 var errFileRequired = errors.New("file is required")
 
@@ -77,9 +80,9 @@ func (s *Server) GetExportContent(ctx context.Context, _ GetExportContentRequest
 
 func (s *Server) ImportArchive(ctx context.Context, req ImportArchiveRequestObject) (ImportArchiveResponseObject, error) {
 	var (
-		archive    []byte
-		passphrase string
-		found      bool
+		archive []byte
+		creds   app.ImportCredentials
+		found   bool
 	)
 
 	for {
@@ -109,7 +112,14 @@ func (s *Server) ImportArchive(ctx context.Context, req ImportArchiveRequestObje
 				return nil, fmt.Errorf("%w: %w", app.ErrArchiveInvalid, err)
 			}
 
-			passphrase = string(b)
+			creds.Passphrase = string(b)
+		case "skip_credentials":
+			b, err := io.ReadAll(io.LimitReader(part, maxFlagBytes))
+			if err != nil {
+				return nil, fmt.Errorf("%w: %w", app.ErrArchiveInvalid, err)
+			}
+
+			creds.Skip = string(b) == "true"
 		}
 	}
 
@@ -117,7 +127,7 @@ func (s *Server) ImportArchive(ctx context.Context, req ImportArchiveRequestObje
 		return nil, errFileRequired
 	}
 
-	res, err := s.exports.Import(ctx, auth.MustBooksID(ctx), archive, passphrase)
+	res, err := s.exports.Import(ctx, auth.MustBooksID(ctx), archive, creds)
 	if err != nil {
 		return nil, err
 	}

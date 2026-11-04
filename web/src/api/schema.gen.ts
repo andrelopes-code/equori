@@ -1442,8 +1442,9 @@ export interface paths {
          *     an archive of an earlier version is migrated before any write; 409 import_not_empty when the book holds a transaction or an account without a system
          *     role; 409 import_conflict when an identifier belongs to another book of the instance. A refused import
          *     writes nothing. With the passphrase of an archive that carries credentials, the credentials are restored
-         *     under the key of the instance (export design C5 to C7): 422 passphrase_invalid for a wrong passphrase and
-         *     409 integration_unavailable without EQUORI_SECRET_KEY.
+         *     under the key of the instance (export design C5 to C7): 422 passphrase_required when the archive carries
+         *     credentials and the request has neither passphrase nor skip_credentials, 422 passphrase_invalid for a wrong
+         *     passphrase and 409 integration_unavailable without EQUORI_SECRET_KEY.
          */
         post: operations["importArchive"];
         delete?: never;
@@ -6646,7 +6647,7 @@ export interface components {
              *     integration_unavailable, aggregator_unauthorized, aggregator_unavailable, integration_in_use,
              *     currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended,
              *     budget_exists, instrument_exists, mixed_instruments, price_missing, later_sale_exists,
-             *     investment_transaction, system_account, attachment_not_inlineable, archive_too_new, passphrase_invalid,
+             *     investment_transaction, system_account, attachment_not_inlineable, archive_too_new, passphrase_invalid, passphrase_required,
              *     setup_token_invalid, setup_complete, book_role_required, books_not_found, member_not_found,
              *     last_owner, already_member, invitation_not_found, invitation_email_mismatch,
              *     confirmation_mismatch, books_has_members, last_books,
@@ -9115,8 +9116,13 @@ export interface operations {
                 "multipart/form-data": {
                     /** Format: binary */
                     file: string;
-                    /** @description The credentials_passphrase of the export; optional. */
+                    /** @description The credentials_passphrase of the export; needed when the archive carries credentials. */
                     passphrase?: string;
+                    /**
+                     * @description true imports an archive that carries credentials without them; ignored when passphrase is set.
+                     * @enum {string}
+                     */
+                    skip_credentials?: "true" | "false";
                 };
             };
         };

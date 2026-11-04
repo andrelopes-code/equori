@@ -62,6 +62,24 @@ func (e IndicatorRatioReason) Valid() bool {
 	}
 }
 
+// Defines values for ImportArchiveMultipartBodySkipCredentials.
+const (
+	False ImportArchiveMultipartBodySkipCredentials = "false"
+	True  ImportArchiveMultipartBodySkipCredentials = "true"
+)
+
+// Valid indicates whether the value is a known member of the ImportArchiveMultipartBodySkipCredentials enum.
+func (e ImportArchiveMultipartBodySkipCredentials) Valid() bool {
+	switch e {
+	case False:
+		return true
+	case True:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for GetBalanceSeriesParamsBasis.
 const (
 	Booked  GetBalanceSeriesParamsBasis = "booked"
@@ -298,7 +316,7 @@ type Problem struct {
 	// integration_unavailable, aggregator_unauthorized, aggregator_unavailable, integration_in_use,
 	// currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended,
 	// budget_exists, instrument_exists, mixed_instruments, price_missing, later_sale_exists,
-	// investment_transaction, system_account, attachment_not_inlineable, archive_too_new, passphrase_invalid,
+	// investment_transaction, system_account, attachment_not_inlineable, archive_too_new, passphrase_invalid, passphrase_required,
 	// setup_token_invalid, setup_complete, book_role_required, books_not_found, member_not_found,
 	// last_owner, already_member, invitation_not_found, invitation_email_mismatch,
 	// confirmation_mismatch, books_has_members, last_books,
@@ -370,9 +388,15 @@ type TagName = string
 type ImportArchiveMultipartBody struct {
 	File openapi_types.File `json:"file"`
 
-	// Passphrase The credentials_passphrase of the export; optional.
+	// Passphrase The credentials_passphrase of the export; needed when the archive carries credentials.
 	Passphrase *string `json:"passphrase,omitempty"`
+
+	// SkipCredentials true imports an archive that carries credentials without them; ignored when passphrase is set.
+	SkipCredentials *ImportArchiveMultipartBodySkipCredentials `json:"skip_credentials,omitempty"`
 }
+
+// ImportArchiveMultipartBodySkipCredentials defines parameters for ImportArchive.
+type ImportArchiveMultipartBodySkipCredentials string
 
 // GetBalanceSeriesParams defines parameters for GetBalanceSeries.
 type GetBalanceSeriesParams struct {

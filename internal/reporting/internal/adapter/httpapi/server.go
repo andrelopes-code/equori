@@ -155,6 +155,11 @@ func ToProblem(err error) (problem.Details, bool) {
 		d.Errors = []problem.FieldError{{Field: "credentials_passphrase", Message: err.Error()}}
 
 		return d, true
+	case errors.Is(err, app.ErrPassphraseRequired):
+		d := problem.New(http.StatusUnprocessableEntity, "passphrase_required", err.Error())
+		d.Errors = []problem.FieldError{{Field: "passphrase", Message: err.Error()}}
+
+		return d, true
 	case errors.Is(err, app.ErrPassphraseInvalid):
 		d := problem.New(http.StatusUnprocessableEntity, "passphrase_invalid", err.Error())
 		d.Errors = []problem.FieldError{{Field: "passphrase", Message: err.Error()}}

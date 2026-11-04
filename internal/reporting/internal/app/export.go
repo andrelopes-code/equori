@@ -28,6 +28,8 @@ var (
 	ErrCredentialsUnavailable = errors.New("credentials need EQUORI_SECRET_KEY")
 	// ErrCredentialsRole: only an owner of the book takes its credentials out or in.
 	ErrCredentialsRole = errors.New("only an owner of the book exports credentials")
+	// ErrPassphraseRequired: the archive carries credentials and the import gave neither the passphrase nor the choice to skip them (export design C5).
+	ErrPassphraseRequired = errors.New("the archive carries credentials: give their passphrase or choose to import without them")
 	// ErrPassphraseInvalid: the passphrase does not open the credentials of the archive (export design C5).
 	ErrPassphraseInvalid = errors.New("the passphrase does not open the credentials of the archive")
 )

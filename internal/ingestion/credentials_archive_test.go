@@ -64,7 +64,7 @@ func TestCredentialsTravelInTheArchive(t *testing.T) {
 	target.mustConnect(target.h.Client, in.ID, nubankItem)
 }
 
-func TestImportWithoutThePassphraseLeavesTheCredentialsOut(t *testing.T) {
+func TestImportOfCredentialsAsksForThePassphrase(t *testing.T) {
 	t.Parallel()
 	source := newAggregator(t)
 	source.serveItem(pluggyClient, nubankItem, "Nubank")
@@ -74,7 +74,16 @@ func TestImportWithoutThePassphraseLeavesTheCredentialsOut(t *testing.T) {
 	target := newAggregator(t)
 	target.serveItem(pluggyClient, nubankItem, "Nubank")
 
-	r := target.h.Upload("/api/v1/imports/archive", "export.zip", archive)
+	// Export design C5: neither the passphrase nor the choice to skip, so nothing is written.
+	target.h.ExpectProblem(target.h.Upload("/api/v1/imports/archive", "export.zip", archive),
+		http.StatusUnprocessableEntity, "passphrase_required", "passphrase")
+
+	var integrations int
+	if err := target.h.Pool.QueryRow(t.Context(), `SELECT count(*) FROM ingestion_integration`).Scan(&integrations); err != nil || integrations != 0 {
+		t.Fatalf("integrations after a refused import = %d, %v; want 0", integrations, err)
+	}
+
+	r := target.h.UploadWith("/api/v1/imports/archive", map[string]string{"skip_credentials": "true"}, "export.zip", archive)
 	if r.Status != http.StatusOK {
 		t.Fatalf("import = %d: %s", r.Status, r.Body)
 	}

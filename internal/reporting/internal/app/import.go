@@ -44,6 +44,13 @@ func (e *ArchiveTooNewError) Error() string {
 
 func (e *ArchiveTooNewError) Unwrap() error { return ErrArchiveTooNew }
 
+// ImportCredentials is what the owner says about the credentials of an archive: the passphrase
+// that restores them, or Skip to import without them.
+type ImportCredentials struct {
+	Passphrase string
+	Skip       bool
+}
+
 // ImportResult is the archive_version read and the rows written per table, in import order.
 // CredentialsInArchive tells that the archive carries credentials; CredentialsRestored counts
 // the integrations whose credential was written (export design C7).
@@ -85,9 +92,10 @@ type archiveManifest struct {
 }
 
 // Import migrates an archive of an earlier version, restores it into the books of a book
-// without facts, then rebuilds the derived tables (export design E4, ADR 021). A passphrase
-// restores the credentials of the archive too, and opens them before any write (export design C5).
-func (s *Exports) Import(ctx context.Context, booksID int64, archive []byte, passphrase string) (ImportResult, error) {
+// without facts, then rebuilds the derived tables (export design E4, ADR 021). An archive that
+// carries credentials needs their passphrase, opened before any write, or the choice to skip them
+// (export design C5).
+func (s *Exports) Import(ctx context.Context, booksID int64, archive []byte, creds ImportCredentials) (ImportResult, error) {
 	files, err := unzip(archive, MaxExpandedBytes)
 	if err != nil {
 		return ImportResult{}, err
@@ -172,7 +180,7 @@ func (s *Exports) Import(ctx context.Context, booksID int64, archive []byte, pas
 		bundle = b
 	}
 
-	sealed, err := s.resealCredentials(booksID, bundle, passphrase)
+	sealed, err := s.resealCredentials(booksID, bundle, creds)
 	if err != nil {
 		return ImportResult{}, err
 	}
@@ -192,17 +200,20 @@ func (s *Exports) Import(ctx context.Context, booksID int64, archive []byte, pas
 }
 
 // resealCredentials opens the credentials entry of the archive with the passphrase and seals each
-// credential for this instance; nil when the archive has none or no passphrase came.
-func (s *Exports) resealCredentials(booksID int64, bundle []byte, passphrase string) (map[uuid.UUID][]byte, error) {
-	if bundle == nil || passphrase == "" {
+// credential for this instance; nil when the archive has none or the owner skips them.
+func (s *Exports) resealCredentials(booksID int64, bundle []byte, c ImportCredentials) (map[uuid.UUID][]byte, error) {
+	switch {
+	case bundle == nil:
 		return nil, nil
-	}
-
-	if s.creds == nil {
+	case c.Passphrase == "" && c.Skip:
+		return nil, nil
+	case c.Passphrase == "":
+		return nil, ErrPassphraseRequired
+	case s.creds == nil:
 		return nil, ErrCredentialsUnavailable
 	}
 
-	return s.creds.Reseal(booksID, passphrase, bundle)
+	return s.creds.Reseal(booksID, c.Passphrase, bundle)
 }
 
 func matches(b []byte, sum string) bool {
