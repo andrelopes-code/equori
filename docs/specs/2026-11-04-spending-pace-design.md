@@ -1,6 +1,6 @@
 # Spending pace: the month's spending against the same days of the month before
 
-- Status: draft
+- Status: delivered
 - Date: 2026-11-04
 - Scenarios: S273 to S275 of `docs/domain/06-scenarios.md`
 - Amends: `docs/specs/2026-10-26-analytics-design.md`, section 5.2 (the set of hideable blocks)
