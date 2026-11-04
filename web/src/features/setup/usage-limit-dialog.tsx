@@ -9,7 +9,7 @@ import {
 } from "@slotted/react/dialog";
 import { Field, FieldDescription, FieldLabel } from "@slotted/react/field";
 import { NumberField } from "@slotted/react/number-field";
-import { useId, useState } from "react";
+import { useState } from "react";
 
 import { errorText } from "@/api/problem";
 import { useSetUsageLimit } from "@/features/setup/api";
@@ -30,7 +30,6 @@ export function UsageLimitDialog({
   onClose: () => void;
 }) {
   const t = useT();
-  const formId = useId();
   const save = useSetUsageLimit();
   const [requests, setRequests] = useState<number | null>(
     row.requests_per_day ?? null,
@@ -45,31 +44,29 @@ export function UsageLimitDialog({
   return (
     <Dialog open size="sm" onOpenChange={change}>
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>
-            {t("assistant.limits.title", { model: row.model })}
-          </DialogTitle>
-        </DialogHeader>
-        <DialogBody>
-          {/* Workaround for Slotted issue #8. */}
-          <form
-            id={formId}
-            onSubmit={(event) => {
-              event.preventDefault();
-              setError(null);
-              save
-                .mutateAsync({
-                  provider_id: row.provider_id,
-                  model: row.model,
-                  ...(requests === null ? {} : { requests_per_day: requests }),
-                  ...(tokens === null ? {} : { tokens_per_day: tokens }),
-                })
-                .then(onClose)
-                .catch((caught: unknown) => {
-                  setError(errorText(caught, t));
-                });
-            }}
-          >
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            setError(null);
+            save
+              .mutateAsync({
+                provider_id: row.provider_id,
+                model: row.model,
+                ...(requests === null ? {} : { requests_per_day: requests }),
+                ...(tokens === null ? {} : { tokens_per_day: tokens }),
+              })
+              .then(onClose)
+              .catch((caught: unknown) => {
+                setError(errorText(caught, t));
+              });
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>
+              {t("assistant.limits.title", { model: row.model })}
+            </DialogTitle>
+          </DialogHeader>
+          <DialogBody>
             <FormLayout>
               {error !== null && <FormNotice>{error}</FormNotice>}
 
@@ -99,16 +96,16 @@ export function UsageLimitDialog({
                 </Field>
               </FormRow>
             </FormLayout>
-          </form>
-        </DialogBody>
-        <DialogFooter>
-          <Button variant="ghost" tone="secondary" onClick={onClose}>
-            {t("detail.cancel")}
-          </Button>
-          <Button type="submit" form={formId} loading={save.isPending}>
-            {t("assistant.save")}
-          </Button>
-        </DialogFooter>
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="ghost" tone="secondary" onClick={onClose}>
+              {t("detail.cancel")}
+            </Button>
+            <Button type="submit" loading={save.isPending}>
+              {t("assistant.save")}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

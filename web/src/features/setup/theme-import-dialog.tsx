@@ -11,7 +11,7 @@ import {
 import { Field, FieldError, FieldLabel } from "@slotted/react/field";
 import { Stack } from "@slotted/react/stack";
 import { Textarea } from "@slotted/react/textarea";
-import { useId, useRef, useState } from "react";
+import { useRef, useState } from "react";
 
 import { useT } from "@/i18n/i18n-provider";
 import { parseTheme } from "@/theme/theme-file";
@@ -30,7 +30,6 @@ export function ThemeImportDialog({
   onClose,
 }: ThemeImportDialogProps) {
   const t = useT();
-  const formId = useId();
 
   const [text, setText] = useState("");
   const [invalid, setInvalid] = useState(false);
@@ -68,22 +67,20 @@ export function ThemeImportDialog({
   return (
     <Dialog open size="md" onOpenChange={change}>
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t("settings.theme.importTitle")}</DialogTitle>
-          <DialogDescription>
-            {t("settings.theme.importHint")}
-          </DialogDescription>
-        </DialogHeader>
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            handleSubmit();
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>{t("settings.theme.importTitle")}</DialogTitle>
+            <DialogDescription>
+              {t("settings.theme.importHint")}
+            </DialogDescription>
+          </DialogHeader>
 
-        <DialogBody>
-          {/* Workaround for Slotted issue #8. */}
-          <form
-            id={formId}
-            onSubmit={(event) => {
-              event.preventDefault();
-              handleSubmit();
-            }}
-          >
+          <DialogBody>
             <Stack gap={4}>
               <Field invalid={invalid} required>
                 <FieldLabel>{t("settings.theme.importText")}</FieldLabel>
@@ -120,17 +117,17 @@ export function ThemeImportDialog({
                 </Button>
               </div>
             </Stack>
-          </form>
-        </DialogBody>
+          </DialogBody>
 
-        <DialogFooter>
-          <Button variant="ghost" tone="secondary" onClick={onClose}>
-            {t("detail.cancel")}
-          </Button>
-          <Button type="submit" form={formId} disabled={text.trim() === ""}>
-            {t("settings.theme.import")}
-          </Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button variant="ghost" tone="secondary" onClick={onClose}>
+              {t("detail.cancel")}
+            </Button>
+            <Button type="submit" disabled={text.trim() === ""}>
+              {t("settings.theme.import")}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

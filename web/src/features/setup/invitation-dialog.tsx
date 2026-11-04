@@ -17,7 +17,7 @@ import {
 import { Radio, RadioGroup } from "@slotted/react/radio-group";
 import { Stack } from "@slotted/react/stack";
 import { TextField } from "@slotted/react/text-field";
-import { useId, useState } from "react";
+import { useState } from "react";
 
 import { ProblemError, errorText, fieldErrors } from "@/api/problem";
 import { useCreateInvitation } from "@/features/setup/api";
@@ -38,7 +38,6 @@ const roles = ["read", "write", "owner"] as const;
 export function InvitationDialog({ onClose }: InvitationDialogProps) {
   const t = useT();
   const [locale] = useAppLocale();
-  const formId = useId();
   const create = useCreateInvitation();
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<BookRole>("read");
@@ -68,40 +67,40 @@ export function InvitationDialog({ onClose }: InvitationDialogProps) {
   return (
     <Dialog open size="md" onOpenChange={change}>
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>
-            {t(
-              created === null ? "invitations.create" : "invitations.linkTitle",
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            submit();
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>
+              {t(
+                created === null
+                  ? "invitations.create"
+                  : "invitations.linkTitle",
+              )}
+            </DialogTitle>
+            {created !== null && (
+              <DialogDescription>
+                {t("invitations.linkHint", {
+                  email: created.email,
+                  date: formatDate(created.expires_at.slice(0, 10), locale),
+                })}
+              </DialogDescription>
             )}
-          </DialogTitle>
-          {created !== null && (
-            <DialogDescription>
-              {t("invitations.linkHint", {
-                email: created.email,
-                date: formatDate(created.expires_at.slice(0, 10), locale),
-              })}
-            </DialogDescription>
-          )}
-        </DialogHeader>
-        <DialogBody>
-          {created !== null ? (
-            <TextField
-              aria-label={t("invitations.linkTitle")}
-              value={`${window.location.origin}/invite#token=${created.token ?? ""}`}
-              readOnly
-              copyable
-              mono
-              messages={{ copy: t("accounts.invite.copy") }}
-            />
-          ) : (
-            // Workaround for Slotted issue #8.
-            <form
-              id={formId}
-              onSubmit={(event) => {
-                event.preventDefault();
-                submit();
-              }}
-            >
+          </DialogHeader>
+          <DialogBody>
+            {created !== null ? (
+              <TextField
+                aria-label={t("invitations.linkTitle")}
+                value={`${window.location.origin}/invite#token=${created.token ?? ""}`}
+                readOnly
+                copyable
+                mono
+                messages={{ copy: t("accounts.invite.copy") }}
+              />
+            ) : (
               <Stack gap={4}>
                 {summary !== null && <FormNotice>{summary}</FormNotice>}
                 <Field invalid={errors.email !== undefined} required>
@@ -142,33 +141,32 @@ export function InvitationDialog({ onClose }: InvitationDialogProps) {
                   </FieldGroupContent>
                 </FieldGroup>
               </Stack>
-            </form>
-          )}
-        </DialogBody>
-        <DialogFooter>
-          {created === null ? (
-            <>
-              <Button
-                variant="ghost"
-                tone="secondary"
-                disabled={create.isPending}
-                onClick={onClose}
-              >
-                {t("detail.cancel")}
-              </Button>
-              <Button
-                type="submit"
-                form={formId}
-                loading={create.isPending}
-                disabled={email.trim() === ""}
-              >
-                {t("invitations.create")}
-              </Button>
-            </>
-          ) : (
-            <Button onClick={onClose}>{t("invitations.done")}</Button>
-          )}
-        </DialogFooter>
+            )}
+          </DialogBody>
+          <DialogFooter>
+            {created === null ? (
+              <>
+                <Button
+                  variant="ghost"
+                  tone="secondary"
+                  disabled={create.isPending}
+                  onClick={onClose}
+                >
+                  {t("detail.cancel")}
+                </Button>
+                <Button
+                  type="submit"
+                  loading={create.isPending}
+                  disabled={email.trim() === ""}
+                >
+                  {t("invitations.create")}
+                </Button>
+              </>
+            ) : (
+              <Button onClick={onClose}>{t("invitations.done")}</Button>
+            )}
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

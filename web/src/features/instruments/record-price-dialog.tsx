@@ -11,7 +11,7 @@ import {
 } from "@slotted/react/dialog";
 import { Field, FieldError, FieldLabel } from "@slotted/react/field";
 import { TextField } from "@slotted/react/text-field";
-import { useId, useState } from "react";
+import { useState } from "react";
 
 import { ProblemError, errorText, fieldErrors } from "@/api/problem";
 import { useRecordPrice } from "@/features/instruments/api";
@@ -40,7 +40,6 @@ export function RecordPriceDialog({
 }) {
   const t = useT();
   const today = useToday();
-  const formId = useId();
   const overlayOpen = useOverlayOpen();
   const record = useRecordPrice();
   const subject = `${instrument} · ${quote}`;
@@ -74,20 +73,18 @@ export function RecordPriceDialog({
   return (
     <Dialog open={overlayOpen} size="sm" onOpenChange={openChange}>
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t("instrument.price.title")}</DialogTitle>
-          <DialogDescription>{subject}</DialogDescription>
-        </DialogHeader>
-        <DialogBody>
-          {/* Workaround for Slotted issue #8. */}
-          <form
-            id={formId}
-            noValidate
-            onSubmit={(event) => {
-              event.preventDefault();
-              submit();
-            }}
-          >
+        <form
+          noValidate
+          onSubmit={(event) => {
+            event.preventDefault();
+            submit();
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>{t("instrument.price.title")}</DialogTitle>
+            <DialogDescription>{subject}</DialogDescription>
+          </DialogHeader>
+          <DialogBody>
             <FormLayout>
               {summary !== null && <FormNotice>{summary}</FormNotice>}
               <Alert tone="info">
@@ -122,16 +119,16 @@ export function RecordPriceDialog({
                 </Field>
               </FormRow>
             </FormLayout>
-          </form>
-        </DialogBody>
-        <DialogFooter>
-          <Button variant="ghost" tone="secondary" onClick={onCancel}>
-            {t("detail.cancel")}
-          </Button>
-          <Button type="submit" form={formId} loading={record.isPending}>
-            {t("instrument.price.save")}
-          </Button>
-        </DialogFooter>
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="ghost" tone="secondary" onClick={onCancel}>
+              {t("detail.cancel")}
+            </Button>
+            <Button type="submit" loading={record.isPending}>
+              {t("instrument.price.save")}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

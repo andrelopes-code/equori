@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from "@slotted/react/dialog";
 import { Field, FieldDescription, FieldLabel } from "@slotted/react/field";
-import { useId, useState } from "react";
+import { useState } from "react";
 
 import { errorText } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
@@ -48,7 +48,6 @@ export function FinanceDialog({
   const overlayOpen = useOverlayOpen();
   const fmt = useMoneyFormat();
   const today = useToday();
-  const formId = useId();
   const finance = useFinanceStatement();
   const currency = statement.unpaid.currency;
   const [date, setDate] = useState(today);
@@ -63,36 +62,34 @@ export function FinanceDialog({
   return (
     <Dialog open={overlayOpen} size="sm" onOpenChange={change}>
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t("finance.title")}</DialogTitle>
-          <DialogDescription>
-            {t("finance.hint", { amount: money(statement.unpaid.amount) })}
-          </DialogDescription>
-        </DialogHeader>
-        <DialogBody>
-          {/* Workaround for Slotted issue #8. */}
-          <form
-            id={formId}
-            noValidate
-            onSubmit={(event) => {
-              event.preventDefault();
-              if (each === 0) return;
-              setError(null);
-              finance
-                .mutateAsync({
-                  id: statement.id,
-                  body: {
-                    date,
-                    installment_count: count,
-                    installment_amount: { amount: each, currency },
-                  },
-                })
-                .then(onDone)
-                .catch((caught: unknown) => {
-                  setError(errorText(caught, t));
-                });
-            }}
-          >
+        <form
+          noValidate
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (each === 0) return;
+            setError(null);
+            finance
+              .mutateAsync({
+                id: statement.id,
+                body: {
+                  date,
+                  installment_count: count,
+                  installment_amount: { amount: each, currency },
+                },
+              })
+              .then(onDone)
+              .catch((caught: unknown) => {
+                setError(errorText(caught, t));
+              });
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>{t("finance.title")}</DialogTitle>
+            <DialogDescription>
+              {t("finance.hint", { amount: money(statement.unpaid.amount) })}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogBody>
             <FormLayout>
               {error !== null && <FormNotice>{error}</FormNotice>}
 
@@ -145,21 +142,20 @@ export function FinanceDialog({
                 <DateInput name="date" value={date} onChange={setDate} />
               </Field>
             </FormLayout>
-          </form>
-        </DialogBody>
-        <DialogFooter>
-          <Button variant="ghost" tone="secondary" onClick={onCancel}>
-            {t("detail.cancel")}
-          </Button>
-          <Button
-            type="submit"
-            form={formId}
-            disabled={each === 0}
-            loading={finance.isPending}
-          >
-            {t("finance.submit")}
-          </Button>
-        </DialogFooter>
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="ghost" tone="secondary" onClick={onCancel}>
+              {t("detail.cancel")}
+            </Button>
+            <Button
+              type="submit"
+              disabled={each === 0}
+              loading={finance.isPending}
+            >
+              {t("finance.submit")}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

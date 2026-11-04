@@ -12,7 +12,7 @@ import { EntityPicker } from "@slotted/react/entity-picker";
 import type { Entity } from "@slotted/core/entity-picker";
 import { Field, FieldError, FieldLabel } from "@slotted/react/field";
 import { useQuery } from "@tanstack/react-query";
-import { useId, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 import { errorText } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
@@ -47,7 +47,6 @@ export function SetLogoDialog({
   const t = useT();
   const [locale] = useAppLocale();
   const overlayOpen = useOverlayOpen();
-  const formId = useId();
   const index = useQuery(logoIndexQuery);
   const brands = useQuery(brandNamesQuery);
   const save = useSetInstitutionIdentifier();
@@ -78,31 +77,31 @@ export function SetLogoDialog({
   return (
     <Dialog open={overlayOpen} size="sm" onOpenChange={change}>
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>
-            {t("institutions.setLogoOf", { name: institution.name })}
-          </DialogTitle>
-          <DialogDescription>{t("institutions.setLogoHint")}</DialogDescription>
-        </DialogHeader>
-        <DialogBody>
-          {/* Workaround for Slotted issue #8. */}
-          <form
-            id={formId}
-            onSubmit={(event) => {
-              event.preventDefault();
-              if (ispb === null) return;
-              setError(null);
-              save
-                .mutateAsync({
-                  id: institution.id,
-                  identifier: { scheme: "br_ispb", identifier: ispb },
-                })
-                .then(onDone)
-                .catch((caught: unknown) => {
-                  setError(errorText(caught, t));
-                });
-            }}
-          >
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (ispb === null) return;
+            setError(null);
+            save
+              .mutateAsync({
+                id: institution.id,
+                identifier: { scheme: "br_ispb", identifier: ispb },
+              })
+              .then(onDone)
+              .catch((caught: unknown) => {
+                setError(errorText(caught, t));
+              });
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>
+              {t("institutions.setLogoOf", { name: institution.name })}
+            </DialogTitle>
+            <DialogDescription>
+              {t("institutions.setLogoHint")}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogBody>
             <Field invalid={error !== null} required>
               <FieldLabel>{t("institutions.catalogueEntry")}</FieldLabel>
               <EntityPicker
@@ -121,21 +120,20 @@ export function SetLogoDialog({
               />
               {error !== null && <FieldError>{error}</FieldError>}
             </Field>
-          </form>
-        </DialogBody>
-        <DialogFooter>
-          <Button variant="ghost" tone="secondary" onClick={onCancel}>
-            {t("detail.cancel")}
-          </Button>
-          <Button
-            type="submit"
-            form={formId}
-            loading={save.isPending}
-            disabled={ispb === null}
-          >
-            {t("detail.save")}
-          </Button>
-        </DialogFooter>
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="ghost" tone="secondary" onClick={onCancel}>
+              {t("detail.cancel")}
+            </Button>
+            <Button
+              type="submit"
+              loading={save.isPending}
+              disabled={ispb === null}
+            >
+              {t("detail.save")}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

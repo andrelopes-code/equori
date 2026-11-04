@@ -17,7 +17,7 @@ import {
 import { Stack } from "@slotted/react/stack";
 import { TextField } from "@slotted/react/text-field";
 import { useQuery } from "@tanstack/react-query";
-import { useId, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 import { useApi } from "@/api/api-context";
 import { ProblemError, errorText, fieldErrors } from "@/api/problem";
@@ -44,7 +44,6 @@ export function AccountInvitationDialog({
   const t = useT();
   const [locale] = useAppLocale();
   const { tag } = useAppLocaleState();
-  const formId = useId();
   const me = useQuery({ ...meQuery(useApi()), staleTime: Infinity });
   const create = useCreateAccountInvitation();
   const [email, setEmail] = useState("");
@@ -79,33 +78,31 @@ export function AccountInvitationDialog({
   return (
     <Dialog open size="md" onOpenChange={change}>
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>
-            {created === null
-              ? t("accounts.invite.dialogTitle")
-              : t("accounts.invite.linkTitle", { email: created.email })}
-          </DialogTitle>
-          <DialogDescription>
-            {created === null
-              ? t("accounts.invite.hint")
-              : t("accounts.invite.linkHint", {
-                  email: created.email,
-                  date: formatDate(created.expires_at.slice(0, 10), locale),
-                })}
-          </DialogDescription>
-        </DialogHeader>
-        <DialogBody>
-          {created !== null ? (
-            <AccountInvitationLink invitation={created} />
-          ) : (
-            // Workaround for Slotted issue #8.
-            <form
-              id={formId}
-              onSubmit={(event) => {
-                event.preventDefault();
-                handleSubmit();
-              }}
-            >
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            handleSubmit();
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>
+              {created === null
+                ? t("accounts.invite.dialogTitle")
+                : t("accounts.invite.linkTitle", { email: created.email })}
+            </DialogTitle>
+            <DialogDescription>
+              {created === null
+                ? t("accounts.invite.hint")
+                : t("accounts.invite.linkHint", {
+                    email: created.email,
+                    date: formatDate(created.expires_at.slice(0, 10), locale),
+                  })}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogBody>
+            {created !== null ? (
+              <AccountInvitationLink invitation={created} />
+            ) : (
               <Stack gap={4}>
                 {summary !== null && <FormNotice>{summary}</FormNotice>}
 
@@ -143,33 +140,32 @@ export function AccountInvitationDialog({
                   )}
                 </Field>
               </Stack>
-            </form>
-          )}
-        </DialogBody>
-        <DialogFooter>
-          {created === null ? (
-            <>
-              <Button
-                variant="ghost"
-                tone="secondary"
-                disabled={create.isPending}
-                onClick={onClose}
-              >
-                {t("detail.cancel")}
-              </Button>
-              <Button
-                type="submit"
-                form={formId}
-                loading={create.isPending}
-                disabled={email.trim() === "" || region === null}
-              >
-                {t("accounts.invite.create")}
-              </Button>
-            </>
-          ) : (
-            <Button onClick={onClose}>{t("invitations.done")}</Button>
-          )}
-        </DialogFooter>
+            )}
+          </DialogBody>
+          <DialogFooter>
+            {created === null ? (
+              <>
+                <Button
+                  variant="ghost"
+                  tone="secondary"
+                  disabled={create.isPending}
+                  onClick={onClose}
+                >
+                  {t("detail.cancel")}
+                </Button>
+                <Button
+                  type="submit"
+                  loading={create.isPending}
+                  disabled={email.trim() === "" || region === null}
+                >
+                  {t("accounts.invite.create")}
+                </Button>
+              </>
+            ) : (
+              <Button onClick={onClose}>{t("invitations.done")}</Button>
+            )}
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

@@ -8,7 +8,7 @@ import {
   DialogTitle,
 } from "@slotted/react/dialog";
 import { Field, FieldLabel } from "@slotted/react/field";
-import { useId, useState } from "react";
+import { useState } from "react";
 
 import { errorText } from "@/api/problem";
 import { useCreateCreditLimit } from "@/features/cards/api";
@@ -41,7 +41,6 @@ export function CreditLimitDialog({
   const t = useT();
   const today = useToday();
   const overlayOpen = useOverlayOpen();
-  const formId = useId();
   const create = useCreateCreditLimit();
 
   const [amount, setAmount] = useState(0);
@@ -55,29 +54,27 @@ export function CreditLimitDialog({
   return (
     <Dialog open={overlayOpen} size="sm" onOpenChange={change}>
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t("card.newLimit")}</DialogTitle>
-        </DialogHeader>
+        <form
+          noValidate
+          onSubmit={(event) => {
+            event.preventDefault();
+            setError(null);
+            create
+              .mutateAsync({
+                accountId,
+                limit: { effective_from: from, amount: { amount, currency } },
+              })
+              .then(onDone)
+              .catch((caught: unknown) => {
+                setError(errorText(caught, t));
+              });
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>{t("card.newLimit")}</DialogTitle>
+          </DialogHeader>
 
-        <DialogBody>
-          {/* Workaround for Slotted issue #8. */}
-          <form
-            id={formId}
-            noValidate
-            onSubmit={(event) => {
-              event.preventDefault();
-              setError(null);
-              create
-                .mutateAsync({
-                  accountId,
-                  limit: { effective_from: from, amount: { amount, currency } },
-                })
-                .then(onDone)
-                .catch((caught: unknown) => {
-                  setError(errorText(caught, t));
-                });
-            }}
-          >
+          <DialogBody>
             <FormLayout>
               {error !== null && <FormNotice>{error}</FormNotice>}
 
@@ -104,22 +101,21 @@ export function CreditLimitDialog({
                 </Field>
               </FormRow>
             </FormLayout>
-          </form>
-        </DialogBody>
+          </DialogBody>
 
-        <DialogFooter>
-          <Button variant="ghost" tone="secondary" onClick={onCancel}>
-            {t("detail.cancel")}
-          </Button>
-          <Button
-            type="submit"
-            form={formId}
-            disabled={amount === 0}
-            loading={create.isPending}
-          >
-            {t("detail.save")}
-          </Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button variant="ghost" tone="secondary" onClick={onCancel}>
+              {t("detail.cancel")}
+            </Button>
+            <Button
+              type="submit"
+              disabled={amount === 0}
+              loading={create.isPending}
+            >
+              {t("detail.save")}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

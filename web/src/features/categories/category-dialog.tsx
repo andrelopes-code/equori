@@ -17,7 +17,7 @@ import {
 import { Inline } from "@slotted/react/inline";
 import { Segment, SegmentedControl } from "@slotted/react/segmented-control";
 import { TextField } from "@slotted/react/text-field";
-import { useId, useState } from "react";
+import { useState } from "react";
 
 import { AppearancePicker } from "@/features/categories/appearance-picker";
 import { subtreeOf } from "@/features/categories/category-paths";
@@ -53,7 +53,6 @@ export function CategoryDialog({
 }: CategoryDialogProps) {
   const t = useT();
   const change = useStableCallback(onOpenChange);
-  const formId = useId();
   const { save, busy, errors, summary } = useSaveCategory(editing, () => {
     onOpenChange(false);
   });
@@ -73,27 +72,24 @@ export function CategoryDialog({
   return (
     <Dialog open={open} onOpenChange={change} size="md">
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>
-            {editing === null ? t("category.new") : t("category.edit")}
-          </DialogTitle>
-          {editing === null && (
-            <DialogDescription>
-              {t("category.new.description")}
-            </DialogDescription>
-          )}
-        </DialogHeader>
-        <DialogBody>
-          {/* Workaround for Slotted issue #8:
-                the form wraps the body and the footer's submit names it. */}
-          <form
-            id={formId}
-            noValidate
-            onSubmit={(event) => {
-              event.preventDefault();
-              void save({ name, cls, parent, color, icon });
-            }}
-          >
+        <form
+          noValidate
+          onSubmit={(event) => {
+            event.preventDefault();
+            void save({ name, cls, parent, color, icon });
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>
+              {editing === null ? t("category.new") : t("category.edit")}
+            </DialogTitle>
+            {editing === null && (
+              <DialogDescription>
+                {t("category.new.description")}
+              </DialogDescription>
+            )}
+          </DialogHeader>
+          <DialogBody>
             <FormLayout>
               {summary !== null && <FormNotice>{summary}</FormNotice>}
 
@@ -164,22 +160,24 @@ export function CategoryDialog({
                 )}
               </Field>
             </FormLayout>
-          </form>
-        </DialogBody>
-        <DialogFooter>
-          <Button
-            variant="ghost"
-            tone="secondary"
-            onClick={() => {
-              onOpenChange(false);
-            }}
-          >
-            {t("detail.cancel")}
-          </Button>
-          <Button type="submit" form={formId} loading={busy}>
-            {editing === null ? t("category.create.confirm") : t("detail.save")}
-          </Button>
-        </DialogFooter>
+          </DialogBody>
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              tone="secondary"
+              onClick={() => {
+                onOpenChange(false);
+              }}
+            >
+              {t("detail.cancel")}
+            </Button>
+            <Button type="submit" loading={busy}>
+              {editing === null
+                ? t("category.create.confirm")
+                : t("detail.save")}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

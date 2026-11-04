@@ -12,7 +12,7 @@ import { Field, FieldError, FieldLabel } from "@slotted/react/field";
 import { Inline } from "@slotted/react/inline";
 import { TextField } from "@slotted/react/text-field";
 import { useQuery } from "@tanstack/react-query";
-import { useId, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 import { useApi } from "@/api/api-context";
 import { errorText } from "@/api/problem";
@@ -46,7 +46,6 @@ export function InstitutionIdentifierDialog({
   const t = useT();
   const api = useApi();
   const overlayOpen = useOverlayOpen();
-  const formId = useId();
   const schemes = useQuery(identifierSchemesQuery(api));
   const index = useQuery(logoIndexQuery);
   const save = useSetInstitutionIdentifier();
@@ -90,28 +89,26 @@ export function InstitutionIdentifierDialog({
   return (
     <Dialog open={overlayOpen} size="sm" onOpenChange={change}>
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>
-            {t("institutions.identifierOf", { name: institution.name })}
-          </DialogTitle>
-          <DialogDescription>
-            {t("institutions.identifierHint")}
-          </DialogDescription>
-        </DialogHeader>
-        <DialogBody>
-          {/* Workaround for Slotted issue #8. */}
-          <form
-            id={formId}
-            onSubmit={(event) => {
-              event.preventDefault();
-              if (scheme === null || identifier.trim() === "") return;
-              if (!matches) {
-                setError(t("institutions.identifierPattern"));
-                return;
-              }
-              run({ scheme, identifier: identifier.trim() });
-            }}
-          >
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (scheme === null || identifier.trim() === "") return;
+            if (!matches) {
+              setError(t("institutions.identifierPattern"));
+              return;
+            }
+            run({ scheme, identifier: identifier.trim() });
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>
+              {t("institutions.identifierOf", { name: institution.name })}
+            </DialogTitle>
+            <DialogDescription>
+              {t("institutions.identifierHint")}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogBody>
             <FormLayout>
               <Field required>
                 <FieldLabel>{t("institutions.scheme")}</FieldLabel>
@@ -154,33 +151,32 @@ export function InstitutionIdentifierDialog({
                 {error !== null && <FieldError>{error}</FieldError>}
               </Field>
             </FormLayout>
-          </form>
-        </DialogBody>
-        <DialogFooter>
-          {institution.identifier !== undefined && (
-            <Button
-              variant="ghost"
-              tone="danger"
-              disabled={save.isPending}
-              onClick={() => {
-                run(null);
-              }}
-            >
-              {t("institutions.clearIdentifier")}
+          </DialogBody>
+          <DialogFooter>
+            {institution.identifier !== undefined && (
+              <Button
+                variant="ghost"
+                tone="danger"
+                disabled={save.isPending}
+                onClick={() => {
+                  run(null);
+                }}
+              >
+                {t("institutions.clearIdentifier")}
+              </Button>
+            )}
+            <Button variant="ghost" tone="secondary" onClick={onCancel}>
+              {t("detail.cancel")}
             </Button>
-          )}
-          <Button variant="ghost" tone="secondary" onClick={onCancel}>
-            {t("detail.cancel")}
-          </Button>
-          <Button
-            type="submit"
-            form={formId}
-            loading={save.isPending}
-            disabled={scheme === null || identifier.trim() === ""}
-          >
-            {t("detail.save")}
-          </Button>
-        </DialogFooter>
+            <Button
+              type="submit"
+              loading={save.isPending}
+              disabled={scheme === null || identifier.trim() === ""}
+            >
+              {t("detail.save")}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

@@ -14,7 +14,7 @@ import {
   FieldError,
   FieldLabel,
 } from "@slotted/react/field";
-import { useId, useState } from "react";
+import { useState } from "react";
 
 import { ProblemError, errorText, fieldErrors } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
@@ -47,7 +47,6 @@ export function AssertionDialog({
 }) {
   const t = useT();
   const overlayOpen = useOverlayOpen();
-  const formId = useId();
   const today = useToday();
   const create = useCreateAssertion();
   const [date, setDate] = useState(today);
@@ -62,36 +61,36 @@ export function AssertionDialog({
   return (
     <Dialog open={overlayOpen} size="sm" onOpenChange={change}>
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t("reconciliation.formTitle")}</DialogTitle>
-          <DialogDescription>{t("reconciliation.formHint")}</DialogDescription>
-        </DialogHeader>
-        <DialogBody>
-          {/* Workaround for Slotted issue #8. */}
-          <form
-            id={formId}
-            noValidate
-            onSubmit={(event) => {
-              event.preventDefault();
-              setErrors({});
-              setSummary(null);
-              create
-                .mutateAsync({
-                  id: account.id,
-                  date,
-                  amount: {
-                    amount: owed ? -amount : amount,
-                    currency: account.currency,
-                  },
-                })
-                .then(onDone)
-                .catch((caught: unknown) => {
-                  if (caught instanceof ProblemError)
-                    setErrors(fieldErrors(caught.problem));
-                  setSummary(errorText(caught, t));
-                });
-            }}
-          >
+        <form
+          noValidate
+          onSubmit={(event) => {
+            event.preventDefault();
+            setErrors({});
+            setSummary(null);
+            create
+              .mutateAsync({
+                id: account.id,
+                date,
+                amount: {
+                  amount: owed ? -amount : amount,
+                  currency: account.currency,
+                },
+              })
+              .then(onDone)
+              .catch((caught: unknown) => {
+                if (caught instanceof ProblemError)
+                  setErrors(fieldErrors(caught.problem));
+                setSummary(errorText(caught, t));
+              });
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>{t("reconciliation.formTitle")}</DialogTitle>
+            <DialogDescription>
+              {t("reconciliation.formHint")}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogBody>
             <FormLayout>
               <FormRow>
                 <Field required invalid={errors.date !== undefined}>
@@ -135,16 +134,16 @@ export function AssertionDialog({
                 </Field>
               </FormRow>
             </FormLayout>
-          </form>
-        </DialogBody>
-        <DialogFooter>
-          <Button variant="ghost" tone="secondary" onClick={onCancel}>
-            {t("detail.cancel")}
-          </Button>
-          <Button type="submit" form={formId} loading={create.isPending}>
-            {t("reconciliation.submit")}
-          </Button>
-        </DialogFooter>
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="ghost" tone="secondary" onClick={onCancel}>
+              {t("detail.cancel")}
+            </Button>
+            <Button type="submit" loading={create.isPending}>
+              {t("reconciliation.submit")}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

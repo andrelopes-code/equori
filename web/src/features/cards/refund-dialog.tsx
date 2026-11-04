@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from "@slotted/react/dialog";
 import { Field, FieldDescription, FieldLabel } from "@slotted/react/field";
-import { useId, useState } from "react";
+import { useState } from "react";
 
 import { errorText } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
@@ -44,7 +44,6 @@ export function RefundDialog({
   const overlayOpen = useOverlayOpen();
   const fmt = useMoneyFormat();
   const today = useToday();
-  const formId = useId();
   const refund = useRefund();
   const currency = line.amount.currency;
   const charged = Math.abs(line.amount.amount);
@@ -58,36 +57,37 @@ export function RefundDialog({
   return (
     <Dialog open={overlayOpen} size="sm" onOpenChange={change}>
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>
-            {t("refund.title", { name: line.description })}
-          </DialogTitle>
-          <DialogDescription>
-            {t("refund.hint", {
-              amount: fmt.money({ amount: charged, currency }, scale(currency)),
-            })}
-          </DialogDescription>
-        </DialogHeader>
-        <DialogBody>
-          {/* Workaround for Slotted issue #8. */}
-          <form
-            id={formId}
-            noValidate
-            onSubmit={(event) => {
-              event.preventDefault();
-              if (amount === 0 || tooMuch) return;
-              setError(null);
-              refund
-                .mutateAsync({
-                  transactionId: line.transaction_id,
-                  body: { date, amount: { amount, currency } },
-                })
-                .then(onDone)
-                .catch((caught: unknown) => {
-                  setError(errorText(caught, t));
-                });
-            }}
-          >
+        <form
+          noValidate
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (amount === 0 || tooMuch) return;
+            setError(null);
+            refund
+              .mutateAsync({
+                transactionId: line.transaction_id,
+                body: { date, amount: { amount, currency } },
+              })
+              .then(onDone)
+              .catch((caught: unknown) => {
+                setError(errorText(caught, t));
+              });
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>
+              {t("refund.title", { name: line.description })}
+            </DialogTitle>
+            <DialogDescription>
+              {t("refund.hint", {
+                amount: fmt.money(
+                  { amount: charged, currency },
+                  scale(currency),
+                ),
+              })}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogBody>
             <FormLayout>
               {error !== null && <FormNotice>{error}</FormNotice>}
 
@@ -113,21 +113,20 @@ export function RefundDialog({
                 </Field>
               </FormRow>
             </FormLayout>
-          </form>
-        </DialogBody>
-        <DialogFooter>
-          <Button variant="ghost" tone="secondary" onClick={onCancel}>
-            {t("detail.cancel")}
-          </Button>
-          <Button
-            type="submit"
-            form={formId}
-            disabled={amount === 0 || tooMuch}
-            loading={refund.isPending}
-          >
-            {t("refund.submit")}
-          </Button>
-        </DialogFooter>
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="ghost" tone="secondary" onClick={onCancel}>
+              {t("detail.cancel")}
+            </Button>
+            <Button
+              type="submit"
+              disabled={amount === 0 || tooMuch}
+              loading={refund.isPending}
+            >
+              {t("refund.submit")}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

@@ -10,7 +10,7 @@ import {
 } from "@slotted/react/dialog";
 import { Field, FieldError, FieldLabel } from "@slotted/react/field";
 import { TextField } from "@slotted/react/text-field";
-import { useId, useState } from "react";
+import { useState } from "react";
 
 import { ProblemError, errorText, fieldErrors } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
@@ -38,7 +38,6 @@ export function AddCardDialog({
 }) {
   const t = useT();
   const overlayOpen = useOverlayOpen();
-  const formId = useId();
   const create = useCreateCard();
   const update = useUpdateCard();
   const [holder, setHolder] = useState(card?.holder ?? "");
@@ -53,46 +52,44 @@ export function AddCardDialog({
   return (
     <Dialog open={overlayOpen} size="sm" onOpenChange={change}>
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{label}</DialogTitle>
-        </DialogHeader>
-        <DialogBody>
-          {/* Workaround for Slotted issue #8. */}
-          <form
-            id={formId}
-            noValidate
-            onSubmit={(event) => {
-              event.preventDefault();
-              const next: Record<string, string> = {};
-              if (holder.trim() === "")
-                next.holder = t("accountForm.problem.holder");
-              if (!/^\d{4}$/u.test(lastFour))
-                next.last_four = t("accountForm.problem.lastFour");
-              setErrors(next);
-              setSummary(null);
-              if (Object.keys(next).length > 0) return;
-              const request: Promise<unknown> =
-                card === undefined
-                  ? create.mutateAsync({
-                      accountId,
-                      card: {
-                        holder: holder.trim(),
-                        last_four: lastFour,
-                        virtual,
-                      },
-                    })
-                  : update.mutateAsync({
-                      id: card.id,
+        <form
+          noValidate
+          onSubmit={(event) => {
+            event.preventDefault();
+            const next: Record<string, string> = {};
+            if (holder.trim() === "")
+              next.holder = t("accountForm.problem.holder");
+            if (!/^\d{4}$/u.test(lastFour))
+              next.last_four = t("accountForm.problem.lastFour");
+            setErrors(next);
+            setSummary(null);
+            if (Object.keys(next).length > 0) return;
+            const request: Promise<unknown> =
+              card === undefined
+                ? create.mutateAsync({
+                    accountId,
+                    card: {
                       holder: holder.trim(),
                       last_four: lastFour,
-                    });
-              request.then(onDone).catch((caught: unknown) => {
-                if (caught instanceof ProblemError)
-                  setErrors(fieldErrors(caught.problem));
-                setSummary(errorText(caught, t));
-              });
-            }}
-          >
+                      virtual,
+                    },
+                  })
+                : update.mutateAsync({
+                    id: card.id,
+                    holder: holder.trim(),
+                    last_four: lastFour,
+                  });
+            request.then(onDone).catch((caught: unknown) => {
+              if (caught instanceof ProblemError)
+                setErrors(fieldErrors(caught.problem));
+              setSummary(errorText(caught, t));
+            });
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>{label}</DialogTitle>
+          </DialogHeader>
+          <DialogBody>
             <FormLayout>
               {summary !== null && <FormNotice>{summary}</FormNotice>}
 
@@ -133,20 +130,19 @@ export function AddCardDialog({
                 </Checkbox>
               )}
             </FormLayout>
-          </form>
-        </DialogBody>
-        <DialogFooter>
-          <Button variant="ghost" tone="secondary" onClick={onCancel}>
-            {t("detail.cancel")}
-          </Button>
-          <Button
-            type="submit"
-            form={formId}
-            loading={create.isPending || update.isPending}
-          >
-            {card === undefined ? label : t("detail.save")}
-          </Button>
-        </DialogFooter>
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="ghost" tone="secondary" onClick={onCancel}>
+              {t("detail.cancel")}
+            </Button>
+            <Button
+              type="submit"
+              loading={create.isPending || update.isPending}
+            >
+              {card === undefined ? label : t("detail.save")}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

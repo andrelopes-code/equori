@@ -16,7 +16,7 @@ import {
 import { Stack } from "@slotted/react/stack";
 import { TextField } from "@slotted/react/text-field";
 import { useQuery } from "@tanstack/react-query";
-import { useId, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 import { useApi } from "@/api/api-context";
 import { ProblemError, errorText, fieldErrors } from "@/api/problem";
@@ -37,7 +37,6 @@ interface NewBooksDialogProps {
 export function NewBooksDialog({ onClose }: NewBooksDialogProps) {
   const t = useT();
   const { tag } = useAppLocaleState();
-  const formId = useId();
   const me = useQuery({ ...meQuery(useApi()), staleTime: Infinity });
   const create = useCreateBooks();
   const switchBooks = useSwitchBooks();
@@ -74,18 +73,16 @@ export function NewBooksDialog({ onClose }: NewBooksDialogProps) {
   return (
     <Dialog open size="md" onOpenChange={change}>
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t("books.new")}</DialogTitle>
-        </DialogHeader>
-        <DialogBody>
-          {/* Workaround for Slotted issue #8. */}
-          <form
-            id={formId}
-            onSubmit={(event) => {
-              event.preventDefault();
-              handleSubmit();
-            }}
-          >
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            handleSubmit();
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>{t("books.new")}</DialogTitle>
+          </DialogHeader>
+          <DialogBody>
             <Stack gap={4}>
               {summary !== null && <FormNotice>{summary}</FormNotice>}
 
@@ -123,26 +120,25 @@ export function NewBooksDialog({ onClose }: NewBooksDialogProps) {
                 )}
               </Field>
             </Stack>
-          </form>
-        </DialogBody>
-        <DialogFooter>
-          <Button
-            variant="ghost"
-            tone="secondary"
-            disabled={pending}
-            onClick={onClose}
-          >
-            {t("detail.cancel")}
-          </Button>
-          <Button
-            type="submit"
-            form={formId}
-            loading={pending}
-            disabled={name.trim() === "" || region === null}
-          >
-            {t("books.create")}
-          </Button>
-        </DialogFooter>
+          </DialogBody>
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              tone="secondary"
+              disabled={pending}
+              onClick={onClose}
+            >
+              {t("detail.cancel")}
+            </Button>
+            <Button
+              type="submit"
+              loading={pending}
+              disabled={name.trim() === "" || region === null}
+            >
+              {t("books.create")}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

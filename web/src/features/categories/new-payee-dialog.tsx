@@ -9,7 +9,7 @@ import {
 } from "@slotted/react/dialog";
 import { Field, FieldError, FieldLabel } from "@slotted/react/field";
 import { TextField } from "@slotted/react/text-field";
-import { useId, useState } from "react";
+import { useState } from "react";
 
 import { errorText } from "@/api/problem";
 import { useCreatePayeeRecord } from "@/features/categories/api";
@@ -24,7 +24,6 @@ export function NewPayeeDialog({
   onCancel: () => void;
 }) {
   const t = useT();
-  const formId = useId();
   const create = useCreatePayeeRecord();
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -34,28 +33,26 @@ export function NewPayeeDialog({
   return (
     <Dialog open size="sm" onOpenChange={change}>
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t("payees.new")}</DialogTitle>
-        </DialogHeader>
-        <DialogBody>
-          {/* Workaround for Slotted issue #8. */}
-          <form
-            id={formId}
-            onSubmit={(event) => {
-              event.preventDefault();
-              const trimmed = name.trim();
-              if (trimmed === "") return;
-              setError(null);
-              create
-                .mutateAsync(trimmed)
-                .then(() => {
-                  onDone(trimmed);
-                })
-                .catch((caught: unknown) => {
-                  setError(errorText(caught, t));
-                });
-            }}
-          >
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            const trimmed = name.trim();
+            if (trimmed === "") return;
+            setError(null);
+            create
+              .mutateAsync(trimmed)
+              .then(() => {
+                onDone(trimmed);
+              })
+              .catch((caught: unknown) => {
+                setError(errorText(caught, t));
+              });
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>{t("payees.new")}</DialogTitle>
+          </DialogHeader>
+          <DialogBody>
             <Field invalid={error !== null} required>
               <FieldLabel>{t("payees.name")}</FieldLabel>
               <TextField
@@ -67,21 +64,20 @@ export function NewPayeeDialog({
               />
               {error !== null && <FieldError>{error}</FieldError>}
             </Field>
-          </form>
-        </DialogBody>
-        <DialogFooter>
-          <Button variant="ghost" tone="secondary" onClick={onCancel}>
-            {t("detail.cancel")}
-          </Button>
-          <Button
-            type="submit"
-            form={formId}
-            loading={create.isPending}
-            disabled={name.trim() === ""}
-          >
-            {t("payees.create")}
-          </Button>
-        </DialogFooter>
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="ghost" tone="secondary" onClick={onCancel}>
+              {t("detail.cancel")}
+            </Button>
+            <Button
+              type="submit"
+              loading={create.isPending}
+              disabled={name.trim() === ""}
+            >
+              {t("payees.create")}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

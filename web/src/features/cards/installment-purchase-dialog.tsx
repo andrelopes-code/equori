@@ -10,7 +10,7 @@ import {
 } from "@slotted/react/dialog";
 import { Field, FieldDescription, FieldLabel } from "@slotted/react/field";
 import { TextField } from "@slotted/react/text-field";
-import { useId, useState } from "react";
+import { useState } from "react";
 
 import { errorText } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
@@ -49,7 +49,6 @@ export function InstallmentPurchaseDialog({
   const overlayOpen = useOverlayOpen();
   const fmt = useMoneyFormat();
   const today = useToday();
-  const formId = useId();
   const create = useCreateInstallmentPurchase();
   const [date, setDate] = useState(today);
   const [description, setDescription] = useState("");
@@ -69,50 +68,48 @@ export function InstallmentPurchaseDialog({
   return (
     <Dialog open={overlayOpen} size="md" onOpenChange={change}>
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t("card.installmentPurchase")}</DialogTitle>
-          <DialogDescription>
-            {t("installments.hint", { name: account.name })}
-          </DialogDescription>
-        </DialogHeader>
-        <DialogBody>
-          {/* Workaround for Slotted issue #8. */}
-          <form
-            id={formId}
-            noValidate
-            onSubmit={(event) => {
-              event.preventDefault();
-              if (!ready) return;
-              setError(null);
-              create
-                .mutateAsync({
-                  card_account_id: account.id,
-                  date,
-                  ...(description.trim() === ""
-                    ? {}
-                    : { description: description.trim() }),
-                  splits: [
-                    {
-                      account_id: category,
-                      amount: { amount: total, currency: account.currency },
-                    },
-                  ],
-                  installment_count: count,
-                  ...(interest > 0
-                    ? {
-                        interest: {
-                          amount: interest,
-                          currency: account.currency,
-                        },
-                      }
-                    : {}),
-                })
-                .then(onDone)
-                .catch((caught: unknown) => {
-                  setError(errorText(caught, t));
-                });
-            }}
-          >
+        <form
+          noValidate
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (!ready) return;
+            setError(null);
+            create
+              .mutateAsync({
+                card_account_id: account.id,
+                date,
+                ...(description.trim() === ""
+                  ? {}
+                  : { description: description.trim() }),
+                splits: [
+                  {
+                    account_id: category,
+                    amount: { amount: total, currency: account.currency },
+                  },
+                ],
+                installment_count: count,
+                ...(interest > 0
+                  ? {
+                      interest: {
+                        amount: interest,
+                        currency: account.currency,
+                      },
+                    }
+                  : {}),
+              })
+              .then(onDone)
+              .catch((caught: unknown) => {
+                setError(errorText(caught, t));
+              });
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>{t("card.installmentPurchase")}</DialogTitle>
+            <DialogDescription>
+              {t("installments.hint", { name: account.name })}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogBody>
             <FormLayout>
               {error !== null && <FormNotice>{error}</FormNotice>}
 
@@ -199,21 +196,16 @@ export function InstallmentPurchaseDialog({
                 </Field>
               </FormRow>
             </FormLayout>
-          </form>
-        </DialogBody>
-        <DialogFooter>
-          <Button variant="ghost" tone="secondary" onClick={onCancel}>
-            {t("detail.cancel")}
-          </Button>
-          <Button
-            type="submit"
-            form={formId}
-            disabled={!ready}
-            loading={create.isPending}
-          >
-            {t("installments.submit")}
-          </Button>
-        </DialogFooter>
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="ghost" tone="secondary" onClick={onCancel}>
+              {t("detail.cancel")}
+            </Button>
+            <Button type="submit" disabled={!ready} loading={create.isPending}>
+              {t("installments.submit")}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

@@ -10,7 +10,7 @@ import {
 } from "@slotted/react/dialog";
 import { Field, FieldLabel } from "@slotted/react/field";
 import { Radio, RadioGroup } from "@slotted/react/radio-group";
-import { useId, useState } from "react";
+import { useState } from "react";
 
 import { errorText } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
@@ -43,7 +43,6 @@ export function DisputeDialog({
   const t = useT();
   const overlayOpen = useOverlayOpen();
   const today = useToday();
-  const formId = useId();
   const start = useOpenDispute();
   const resolve = useResolveDispute();
   const [date, setDate] = useState(today);
@@ -56,40 +55,38 @@ export function DisputeDialog({
   return (
     <Dialog open={overlayOpen} size="sm" onOpenChange={change}>
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>
-            {t(resolving ? "dispute.resolveTitle" : "dispute.openTitle", {
-              name: line.description,
-            })}
-          </DialogTitle>
-          <DialogDescription>
-            {t(resolving ? "dispute.resolveHint" : "dispute.openHint")}
-          </DialogDescription>
-        </DialogHeader>
-        <DialogBody>
-          {/* Workaround for Slotted issue #8. */}
-          <form
-            id={formId}
-            noValidate
-            onSubmit={(event) => {
-              event.preventDefault();
-              setError(null);
-              const request = resolving
-                ? outcome === null
-                  ? null
-                  : resolve.mutateAsync({
-                      id: open.id,
-                      body: { resolved_on: date, outcome },
-                    })
-                : start.mutateAsync({
-                    transactionId: line.transaction_id,
-                    openedOn: date,
-                  });
-              request?.then(onDone).catch((caught: unknown) => {
-                setError(errorText(caught, t));
-              });
-            }}
-          >
+        <form
+          noValidate
+          onSubmit={(event) => {
+            event.preventDefault();
+            setError(null);
+            const request = resolving
+              ? outcome === null
+                ? null
+                : resolve.mutateAsync({
+                    id: open.id,
+                    body: { resolved_on: date, outcome },
+                  })
+              : start.mutateAsync({
+                  transactionId: line.transaction_id,
+                  openedOn: date,
+                });
+            request?.then(onDone).catch((caught: unknown) => {
+              setError(errorText(caught, t));
+            });
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>
+              {t(resolving ? "dispute.resolveTitle" : "dispute.openTitle", {
+                name: line.description,
+              })}
+            </DialogTitle>
+            <DialogDescription>
+              {t(resolving ? "dispute.resolveHint" : "dispute.openHint")}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogBody>
             <FormLayout>
               {error !== null && <FormNotice>{error}</FormNotice>}
 
@@ -121,21 +118,20 @@ export function DisputeDialog({
                 <DateInput name="date" value={date} onChange={setDate} />
               </Field>
             </FormLayout>
-          </form>
-        </DialogBody>
-        <DialogFooter>
-          <Button variant="ghost" tone="secondary" onClick={onCancel}>
-            {t("detail.cancel")}
-          </Button>
-          <Button
-            type="submit"
-            form={formId}
-            disabled={resolving && outcome === null}
-            loading={start.isPending || resolve.isPending}
-          >
-            {t(resolving ? "dispute.resolveSubmit" : "dispute.openSubmit")}
-          </Button>
-        </DialogFooter>
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="ghost" tone="secondary" onClick={onCancel}>
+              {t("detail.cancel")}
+            </Button>
+            <Button
+              type="submit"
+              disabled={resolving && outcome === null}
+              loading={start.isPending || resolve.isPending}
+            >
+              {t(resolving ? "dispute.resolveSubmit" : "dispute.openSubmit")}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

@@ -8,7 +8,7 @@ import {
   DialogTitle,
 } from "@slotted/react/dialog";
 import { Field, FieldLabel } from "@slotted/react/field";
-import { useId, useState } from "react";
+import { useState } from "react";
 
 import { errorText } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
@@ -46,7 +46,6 @@ export function BillingRuleDialog({
   const [locale] = useAppLocale();
   const today = useToday();
   const overlayOpen = useOverlayOpen();
-  const formId = useId();
   const create = useCreateBillingRule();
 
   const [fields, setFields] = useState<BillingFields>(() => fieldsOf(latest));
@@ -69,33 +68,28 @@ export function BillingRuleDialog({
   return (
     <Dialog open={overlayOpen} size="md" onOpenChange={change}>
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t("card.newRule")}</DialogTitle>
-        </DialogHeader>
+        <form
+          noValidate
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (!ready) return;
+            setError(null);
+            create
+              .mutateAsync({
+                accountId,
+                rule: billingRuleBody({ ...fields, limit: 0, cards: [] }, from),
+              })
+              .then(onDone)
+              .catch((caught: unknown) => {
+                setError(errorText(caught, t));
+              });
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>{t("card.newRule")}</DialogTitle>
+          </DialogHeader>
 
-        <DialogBody>
-          {/* Workaround for Slotted issue #8. */}
-          <form
-            id={formId}
-            noValidate
-            onSubmit={(event) => {
-              event.preventDefault();
-              if (!ready) return;
-              setError(null);
-              create
-                .mutateAsync({
-                  accountId,
-                  rule: billingRuleBody(
-                    { ...fields, limit: 0, cards: [] },
-                    from,
-                  ),
-                })
-                .then(onDone)
-                .catch((caught: unknown) => {
-                  setError(errorText(caught, t));
-                });
-            }}
-          >
+          <DialogBody>
             <FormLayout>
               {error !== null && <FormNotice>{error}</FormNotice>}
 
@@ -122,22 +116,17 @@ export function BillingRuleDialog({
                 fill
               />
             </FormLayout>
-          </form>
-        </DialogBody>
+          </DialogBody>
 
-        <DialogFooter>
-          <Button variant="ghost" tone="secondary" onClick={onCancel}>
-            {t("detail.cancel")}
-          </Button>
-          <Button
-            type="submit"
-            form={formId}
-            disabled={!ready}
-            loading={create.isPending}
-          >
-            {t("detail.save")}
-          </Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button variant="ghost" tone="secondary" onClick={onCancel}>
+              {t("detail.cancel")}
+            </Button>
+            <Button type="submit" disabled={!ready} loading={create.isPending}>
+              {t("detail.save")}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

@@ -16,7 +16,7 @@ import {
 } from "@slotted/react/field";
 import { TextField } from "@slotted/react/text-field";
 import { useQuery } from "@tanstack/react-query";
-import { useId, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 import { useApi } from "@/api/api-context";
 import { ProblemError, errorText, fieldErrors } from "@/api/problem";
@@ -53,7 +53,6 @@ export function DefineInstrumentDialog({
 }) {
   const t = useT();
   const api = useApi();
-  const formId = useId();
   const overlayOpen = useOverlayOpen();
   const define = useDefineInstrument();
   const base = useQuery(settingsQuery(api)).data?.base_currency;
@@ -131,22 +130,20 @@ export function DefineInstrumentDialog({
   return (
     <Dialog open={overlayOpen} size="md" onOpenChange={openChange}>
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t("instruments.define")}</DialogTitle>
-          <DialogDescription>
-            {t("instruments.define.description")}
-          </DialogDescription>
-        </DialogHeader>
-        <DialogBody>
-          {/* Workaround for Slotted issue #8. */}
-          <form
-            id={formId}
-            noValidate
-            onSubmit={(event) => {
-              event.preventDefault();
-              submit();
-            }}
-          >
+        <form
+          noValidate
+          onSubmit={(event) => {
+            event.preventDefault();
+            submit();
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>{t("instruments.define")}</DialogTitle>
+            <DialogDescription>
+              {t("instruments.define.description")}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogBody>
             <FormLayout>
               {summary !== null && <FormNotice>{summary}</FormNotice>}
 
@@ -281,16 +278,16 @@ export function DefineInstrumentDialog({
                 </Field>
               </FormRow>
             </FormLayout>
-          </form>
-        </DialogBody>
-        <DialogFooter>
-          <Button variant="ghost" tone="secondary" onClick={onCancel}>
-            {t("detail.cancel")}
-          </Button>
-          <Button type="submit" form={formId} loading={define.isPending}>
-            {t("instruments.save")}
-          </Button>
-        </DialogFooter>
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="ghost" tone="secondary" onClick={onCancel}>
+              {t("detail.cancel")}
+            </Button>
+            <Button type="submit" loading={define.isPending}>
+              {t("instruments.save")}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

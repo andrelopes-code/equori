@@ -16,7 +16,7 @@ import {
 } from "@slotted/react/multi-select";
 import { TextField } from "@slotted/react/text-field";
 import { useQuery } from "@tanstack/react-query";
-import { useId, useState } from "react";
+import { useState } from "react";
 
 import { useApi } from "@/api/api-context";
 import { ProblemError, errorText, fieldErrors } from "@/api/problem";
@@ -51,7 +51,6 @@ export function GoalDialog({
   const api = useApi();
   const today = useToday();
   const overlayOpen = useOverlayOpen();
-  const formId = useId();
   const create = useCreateGoal();
   const update = useUpdateGoal();
   const write = goal === undefined ? create : update;
@@ -85,45 +84,42 @@ export function GoalDialog({
   return (
     <Dialog open={overlayOpen} size="md" onOpenChange={change}>
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>
-            {t(goal === undefined ? "goals.new" : "goals.editTitle")}
-          </DialogTitle>
-        </DialogHeader>
-        <DialogBody>
-          {/* Workaround for Slotted issue #8. */}
-          <form
-            id={formId}
-            noValidate
-            onSubmit={(event) => {
-              event.preventDefault();
-              const next: Record<string, string> = {};
-              if (name.trim() === "") next.name = t("goals.problem.name");
-              if (target <= 0) next.target = t("goals.problem.target");
-              if (accountIDs.length === 0)
-                next.account_ids = t("goals.problem.accounts");
-              setErrors(next);
-              setSummary(null);
-              if (Object.keys(next).length > 0 || currency === undefined)
-                return;
-              const body = {
-                name: name.trim(),
-                target: { amount: target, currency },
-                due_on: dueOn,
-                account_ids: [...accountIDs],
-              };
-              (goal === undefined
-                ? create.mutateAsync(body)
-                : update.mutateAsync({ id: goal.id, goal: body })
-              )
-                .then(onDone)
-                .catch((caught: unknown) => {
-                  if (caught instanceof ProblemError)
-                    setErrors(fieldErrors(caught.problem));
-                  setSummary(errorText(caught, t));
-                });
-            }}
-          >
+        <form
+          noValidate
+          onSubmit={(event) => {
+            event.preventDefault();
+            const next: Record<string, string> = {};
+            if (name.trim() === "") next.name = t("goals.problem.name");
+            if (target <= 0) next.target = t("goals.problem.target");
+            if (accountIDs.length === 0)
+              next.account_ids = t("goals.problem.accounts");
+            setErrors(next);
+            setSummary(null);
+            if (Object.keys(next).length > 0 || currency === undefined) return;
+            const body = {
+              name: name.trim(),
+              target: { amount: target, currency },
+              due_on: dueOn,
+              account_ids: [...accountIDs],
+            };
+            (goal === undefined
+              ? create.mutateAsync(body)
+              : update.mutateAsync({ id: goal.id, goal: body })
+            )
+              .then(onDone)
+              .catch((caught: unknown) => {
+                if (caught instanceof ProblemError)
+                  setErrors(fieldErrors(caught.problem));
+                setSummary(errorText(caught, t));
+              });
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>
+              {t(goal === undefined ? "goals.new" : "goals.editTitle")}
+            </DialogTitle>
+          </DialogHeader>
+          <DialogBody>
             <FormLayout>
               {summary !== null && <FormNotice>{summary}</FormNotice>}
 
@@ -196,21 +192,20 @@ export function GoalDialog({
                 )}
               </Field>
             </FormLayout>
-          </form>
-        </DialogBody>
-        <DialogFooter>
-          <Button variant="ghost" tone="secondary" onClick={onCancel}>
-            {t("detail.cancel")}
-          </Button>
-          <Button
-            type="submit"
-            form={formId}
-            loading={write.isPending}
-            disabled={currency === undefined}
-          >
-            {t(goal === undefined ? "goals.create" : "goals.save")}
-          </Button>
-        </DialogFooter>
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="ghost" tone="secondary" onClick={onCancel}>
+              {t("detail.cancel")}
+            </Button>
+            <Button
+              type="submit"
+              loading={write.isPending}
+              disabled={currency === undefined}
+            >
+              {t(goal === undefined ? "goals.create" : "goals.save")}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

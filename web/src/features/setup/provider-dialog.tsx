@@ -15,7 +15,7 @@ import {
   FieldLabel,
 } from "@slotted/react/field";
 import { TextField } from "@slotted/react/text-field";
-import { useId, useState } from "react";
+import { useState } from "react";
 
 import { ProblemError, errorText, fieldErrors } from "@/api/problem";
 import { useCreateProvider, useUpdateProvider } from "@/features/setup/api";
@@ -42,7 +42,6 @@ export function ProviderDialog({
   initialPreset?: string | undefined;
 }) {
   const t = useT();
-  const formId = useId();
   const create = useCreateProvider();
   const update = useUpdateProvider();
   const [presetId, setPresetId] = useState(
@@ -102,24 +101,22 @@ export function ProviderDialog({
   return (
     <Dialog open size="sm" onOpenChange={change}>
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>
-            {t(
-              provider === null
-                ? "assistant.provider.add"
-                : "assistant.provider.edit",
-            )}
-          </DialogTitle>
-        </DialogHeader>
-        <DialogBody>
-          {/* Workaround for Slotted issue #8. */}
-          <form
-            id={formId}
-            onSubmit={(event) => {
-              event.preventDefault();
-              submit();
-            }}
-          >
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            submit();
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>
+              {t(
+                provider === null
+                  ? "assistant.provider.add"
+                  : "assistant.provider.edit",
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          <DialogBody>
             <FormLayout>
               {summary !== null && <FormNotice>{summary}</FormNotice>}
 
@@ -228,21 +225,20 @@ export function ProviderDialog({
                 )}
               </Field>
             </FormLayout>
-          </form>
-        </DialogBody>
-        <DialogFooter>
-          <Button variant="ghost" tone="secondary" onClick={onClose}>
-            {t("detail.cancel")}
-          </Button>
-          <Button
-            type="submit"
-            form={formId}
-            loading={pending}
-            disabled={name.trim() === ""}
-          >
-            {t(provider === null ? "assistant.create" : "assistant.save")}
-          </Button>
-        </DialogFooter>
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="ghost" tone="secondary" onClick={onClose}>
+              {t("detail.cancel")}
+            </Button>
+            <Button
+              type="submit"
+              loading={pending}
+              disabled={name.trim() === ""}
+            >
+              {t(provider === null ? "assistant.create" : "assistant.save")}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

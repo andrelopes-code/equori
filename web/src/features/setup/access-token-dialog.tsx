@@ -19,7 +19,7 @@ import {
 import { Radio, RadioGroup } from "@slotted/react/radio-group";
 import { Stack } from "@slotted/react/stack";
 import { TextField } from "@slotted/react/text-field";
-import { useId, useState } from "react";
+import { useState } from "react";
 
 import { ProblemError, errorText, fieldErrors } from "@/api/problem";
 import { useCreateAccessToken } from "@/features/setup/api";
@@ -35,7 +35,6 @@ const expiryDays = [30, 90, 365] as const;
 // after the creation the dialog shows its text once, with the setups of three clients (design 3.6).
 export function AccessTokenDialog({ onClose }: { onClose: () => void }) {
   const t = useT();
-  const formId = useId();
   const create = useCreateAccessToken();
   const [name, setName] = useState("");
   const [scope, setScope] = useState("read");
@@ -80,62 +79,60 @@ export function AccessTokenDialog({ onClose }: { onClose: () => void }) {
   return (
     <Dialog open size={token === null ? "md" : "lg"} onOpenChange={change}>
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>
-            {t(
-              snippets === null
-                ? "settings.external_access.create"
-                : "settings.external_access.tokenTitle",
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            submit();
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>
+              {t(
+                snippets === null
+                  ? "settings.external_access.create"
+                  : "settings.external_access.tokenTitle",
+              )}
+            </DialogTitle>
+            {snippets !== null && (
+              <DialogDescription>
+                {t("settings.external_access.tokenHint")}
+              </DialogDescription>
             )}
-          </DialogTitle>
-          {snippets !== null && (
-            <DialogDescription>
-              {t("settings.external_access.tokenHint")}
-            </DialogDescription>
-          )}
-        </DialogHeader>
-        <DialogBody>
-          {token !== null && snippets !== null ? (
-            <FormLayout>
-              <Field readOnly necessity="none">
-                <FieldLabel>{t("settings.external_access.token")}</FieldLabel>
-                <TextField
-                  type="password"
-                  value={token}
-                  revealable
-                  copyable
-                  mono
-                  messages={{ copy: t("security.copy") }}
+          </DialogHeader>
+          <DialogBody>
+            {token !== null && snippets !== null ? (
+              <FormLayout>
+                <Field readOnly necessity="none">
+                  <FieldLabel>{t("settings.external_access.token")}</FieldLabel>
+                  <TextField
+                    type="password"
+                    value={token}
+                    revealable
+                    copyable
+                    mono
+                    messages={{ copy: t("security.copy") }}
+                  />
+                </Field>
+                <CodeBlock
+                  code={snippets.claudeCode}
+                  language="shell"
+                  title={t("settings.external_access.claudeCode")}
+                  renderToken={masked}
+                  defaultWrap
                 />
-              </Field>
-              <CodeBlock
-                code={snippets.claudeCode}
-                language="shell"
-                title={t("settings.external_access.claudeCode")}
-                renderToken={masked}
-                defaultWrap
-              />
-              <CodeBlock
-                code={snippets.codex}
-                language="toml"
-                title={t("settings.external_access.codex")}
-              />
-              <CodeBlock
-                code={snippets.json}
-                language="json"
-                title={t("settings.external_access.json")}
-                renderToken={masked}
-              />
-            </FormLayout>
-          ) : (
-            // Workaround for Slotted issue #8.
-            <form
-              id={formId}
-              onSubmit={(event) => {
-                event.preventDefault();
-                submit();
-              }}
-            >
+                <CodeBlock
+                  code={snippets.codex}
+                  language="toml"
+                  title={t("settings.external_access.codex")}
+                />
+                <CodeBlock
+                  code={snippets.json}
+                  language="json"
+                  title={t("settings.external_access.json")}
+                  renderToken={masked}
+                />
+              </FormLayout>
+            ) : (
               <Stack gap={4}>
                 {summary !== null && <FormNotice>{summary}</FormNotice>}
                 <Field invalid={errors.name !== undefined} required>
@@ -198,35 +195,34 @@ export function AccessTokenDialog({ onClose }: { onClose: () => void }) {
                   </FieldGroupContent>
                 </FieldGroup>
               </Stack>
-            </form>
-          )}
-        </DialogBody>
-        <DialogFooter>
-          {token === null ? (
-            <>
-              <Button
-                variant="ghost"
-                tone="secondary"
-                disabled={create.isPending}
-                onClick={onClose}
-              >
-                {t("detail.cancel")}
+            )}
+          </DialogBody>
+          <DialogFooter>
+            {token === null ? (
+              <>
+                <Button
+                  variant="ghost"
+                  tone="secondary"
+                  disabled={create.isPending}
+                  onClick={onClose}
+                >
+                  {t("detail.cancel")}
+                </Button>
+                <Button
+                  type="submit"
+                  loading={create.isPending}
+                  disabled={name.trim() === ""}
+                >
+                  {t("settings.external_access.create")}
+                </Button>
+              </>
+            ) : (
+              <Button onClick={onClose}>
+                {t("settings.external_access.done")}
               </Button>
-              <Button
-                type="submit"
-                form={formId}
-                loading={create.isPending}
-                disabled={name.trim() === ""}
-              >
-                {t("settings.external_access.create")}
-              </Button>
-            </>
-          ) : (
-            <Button onClick={onClose}>
-              {t("settings.external_access.done")}
-            </Button>
-          )}
-        </DialogFooter>
+            )}
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

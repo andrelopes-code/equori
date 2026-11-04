@@ -10,7 +10,7 @@ import {
 } from "@slotted/react/dialog";
 import { Field, FieldLabel } from "@slotted/react/field";
 import { Textarea } from "@slotted/react/textarea";
-import { useId, useState } from "react";
+import { useState } from "react";
 
 import { errorText } from "@/api/problem";
 import type { OccurrenceRef } from "@/features/planning/agenda";
@@ -43,7 +43,6 @@ export function OccurrenceDialog({
   onCancel: () => void;
 }) {
   const t = useT();
-  const formId = useId();
   const overlayOpen = useOverlayOpen();
   const skip = useSkipOccurrence();
   const move = useMoveOccurrence();
@@ -67,25 +66,27 @@ export function OccurrenceDialog({
   return (
     <Dialog open={overlayOpen} size="sm" onOpenChange={openChange}>
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t(`occurrence.${change}Title`, { name })}</DialogTitle>
-          <DialogDescription>{t(`occurrence.${change}Hint`)}</DialogDescription>
-        </DialogHeader>
-        <DialogBody>
-          {/* Workaround for Slotted issue #8. */}
-          <form
-            id={formId}
-            noValidate
-            onSubmit={(event) => {
-              event.preventDefault();
-              setError(null);
-              write()
-                .then(onDone)
-                .catch((caught: unknown) => {
-                  setError(errorText(caught, t));
-                });
-            }}
-          >
+        <form
+          noValidate
+          onSubmit={(event) => {
+            event.preventDefault();
+            setError(null);
+            write()
+              .then(onDone)
+              .catch((caught: unknown) => {
+                setError(errorText(caught, t));
+              });
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>
+              {t(`occurrence.${change}Title`, { name })}
+            </DialogTitle>
+            <DialogDescription>
+              {t(`occurrence.${change}Hint`)}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogBody>
             <FormLayout>
               {error !== null && <FormNotice>{error}</FormNotice>}
 
@@ -110,21 +111,20 @@ export function OccurrenceDialog({
                 </Field>
               )}
             </FormLayout>
-          </form>
-        </DialogBody>
-        <DialogFooter>
-          <Button variant="ghost" tone="secondary" onClick={onCancel}>
-            {t("detail.cancel")}
-          </Button>
-          <Button
-            type="submit"
-            form={formId}
-            {...(change === "move" ? {} : { tone: "danger" as const })}
-            loading={skip.isPending || move.isPending || unrealize.isPending}
-          >
-            {t(`occurrence.${change}`)}
-          </Button>
-        </DialogFooter>
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="ghost" tone="secondary" onClick={onCancel}>
+              {t("detail.cancel")}
+            </Button>
+            <Button
+              type="submit"
+              {...(change === "move" ? {} : { tone: "danger" as const })}
+              loading={skip.isPending || move.isPending || unrealize.isPending}
+            >
+              {t(`occurrence.${change}`)}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

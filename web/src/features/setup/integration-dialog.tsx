@@ -15,7 +15,7 @@ import {
   FieldLabel,
 } from "@slotted/react/field";
 import { TextField } from "@slotted/react/text-field";
-import { useId, useState } from "react";
+import { useState } from "react";
 
 import { ProblemError, errorText, fieldErrors } from "@/api/problem";
 import {
@@ -43,7 +43,6 @@ export function IntegrationDialog({
   onClose: () => void;
 }) {
   const t = useT();
-  const formId = useId();
   const create = useCreateIntegration();
   const rotate = useUpdateIntegrationCredentials();
   const [aggregatorId, setAggregatorId] = useState<string | null>(
@@ -90,27 +89,25 @@ export function IntegrationDialog({
   return (
     <Dialog open size="sm" onOpenChange={change}>
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>
-            {integration === null
-              ? t("settings.integrations.add")
-              : t("settings.integrations.rotateTitle", {
-                  name: integration.name,
-                })}
-          </DialogTitle>
-          <DialogDescription>
-            {t("settings.integrations.secretHint")}
-          </DialogDescription>
-        </DialogHeader>
-        <DialogBody>
-          {/* Workaround for Slotted issue #8. */}
-          <form
-            id={formId}
-            onSubmit={(event) => {
-              event.preventDefault();
-              submit();
-            }}
-          >
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            submit();
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>
+              {integration === null
+                ? t("settings.integrations.add")
+                : t("settings.integrations.rotateTitle", {
+                    name: integration.name,
+                  })}
+            </DialogTitle>
+            <DialogDescription>
+              {t("settings.integrations.secretHint")}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogBody>
             <FormLayout>
               {summary !== null && <FormNotice>{summary}</FormNotice>}
 
@@ -191,25 +188,20 @@ export function IntegrationDialog({
                 );
               })}
             </FormLayout>
-          </form>
-        </DialogBody>
-        <DialogFooter>
-          <Button variant="ghost" tone="secondary" onClick={onClose}>
-            {t("detail.cancel")}
-          </Button>
-          <Button
-            type="submit"
-            form={formId}
-            loading={pending}
-            disabled={!ready}
-          >
-            {t(
-              integration === null
-                ? "settings.integrations.create"
-                : "detail.save",
-            )}
-          </Button>
-        </DialogFooter>
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="ghost" tone="secondary" onClick={onClose}>
+              {t("detail.cancel")}
+            </Button>
+            <Button type="submit" loading={pending} disabled={!ready}>
+              {t(
+                integration === null
+                  ? "settings.integrations.create"
+                  : "detail.save",
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

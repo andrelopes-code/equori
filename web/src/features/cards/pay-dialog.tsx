@@ -11,7 +11,7 @@ import {
 import { Field, FieldDescription, FieldLabel } from "@slotted/react/field";
 import { TextFieldAction } from "@slotted/react/text-field";
 import { useQuery } from "@tanstack/react-query";
-import { useId, useState } from "react";
+import { useState } from "react";
 
 import { useApi } from "@/api/api-context";
 import { errorText } from "@/api/problem";
@@ -50,7 +50,6 @@ export function PayDialog({
   const [locale] = useAppLocale();
   const fmt = useMoneyFormat();
   const today = useToday();
-  const formId = useId();
   const accounts = useQuery(accountsQuery(useApi()));
   const pay = usePayStatement();
   const currency = statement.unpaid.currency;
@@ -84,38 +83,36 @@ export function PayDialog({
   return (
     <Dialog open={overlayOpen} size="md" onOpenChange={change}>
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>
-            {t("pay.title", {
-              month: formatMonthTitle(statement.reference, locale),
-            })}
-          </DialogTitle>
-          <DialogDescription>{t("pay.hint")}</DialogDescription>
-        </DialogHeader>
-        <DialogBody>
-          {/* Workaround for Slotted issue #8. */}
-          <form
-            id={formId}
-            noValidate
-            onSubmit={(event) => {
-              event.preventDefault();
-              if (from === null || amount === 0) return;
-              setError(null);
-              pay
-                .mutateAsync({
-                  id: statement.id,
-                  body: {
-                    date,
-                    from_account_id: from,
-                    amount: { amount, currency },
-                  },
-                })
-                .then(onDone)
-                .catch((caught: unknown) => {
-                  setError(errorText(caught, t));
-                });
-            }}
-          >
+        <form
+          noValidate
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (from === null || amount === 0) return;
+            setError(null);
+            pay
+              .mutateAsync({
+                id: statement.id,
+                body: {
+                  date,
+                  from_account_id: from,
+                  amount: { amount, currency },
+                },
+              })
+              .then(onDone)
+              .catch((caught: unknown) => {
+                setError(errorText(caught, t));
+              });
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>
+              {t("pay.title", {
+                month: formatMonthTitle(statement.reference, locale),
+              })}
+            </DialogTitle>
+            <DialogDescription>{t("pay.hint")}</DialogDescription>
+          </DialogHeader>
+          <DialogBody>
             <FormLayout>
               {error !== null && <FormNotice>{error}</FormNotice>}
 
@@ -174,21 +171,20 @@ export function PayDialog({
                 <DateInput name="date" value={date} onChange={setDate} />
               </Field>
             </FormLayout>
-          </form>
-        </DialogBody>
-        <DialogFooter>
-          <Button variant="ghost" tone="secondary" onClick={onCancel}>
-            {t("detail.cancel")}
-          </Button>
-          <Button
-            type="submit"
-            form={formId}
-            disabled={from === null || amount === 0}
-            loading={pay.isPending}
-          >
-            {t("pay.submit")}
-          </Button>
-        </DialogFooter>
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="ghost" tone="secondary" onClick={onCancel}>
+              {t("detail.cancel")}
+            </Button>
+            <Button
+              type="submit"
+              disabled={from === null || amount === 0}
+              loading={pay.isPending}
+            >
+              {t("pay.submit")}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

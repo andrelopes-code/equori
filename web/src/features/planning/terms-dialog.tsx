@@ -10,7 +10,7 @@ import {
   DialogTitle,
 } from "@slotted/react/dialog";
 import { Field, FieldError, FieldLabel } from "@slotted/react/field";
-import { useId, useState } from "react";
+import { useState } from "react";
 
 import { errorText } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
@@ -47,7 +47,6 @@ export function TermsDialog({
   const t = useT();
   const [locale] = useAppLocale();
   const today = useToday();
-  const formId = useId();
   const scale = useScale();
   const overlayOpen = useOverlayOpen();
   const change = useChangeTerms();
@@ -69,47 +68,46 @@ export function TermsDialog({
   return (
     <Dialog open={overlayOpen} size="lg" onOpenChange={openChange}>
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t("schedule.changeTerms")}</DialogTitle>
-          <DialogDescription>
-            {t("schedule.changeTermsHint", { date: formatDate(after, locale) })}
-          </DialogDescription>
-        </DialogHeader>
-        <DialogBody>
-          {/* Workaround for Slotted issue #8. */}
-          <form
-            id={formId}
-            noValidate
-            onSubmit={(event) => {
-              event.preventDefault();
-              const next: Record<string, string> = {};
-              if (from <= after)
-                next.effective_from = t("schedule.required.after", {
-                  date: formatDate(after, locale),
-                });
-              if (amount === 0 && !withRecurrence)
-                next.amount = t("schedule.required.change");
-              setErrors(next);
-              setSummary(null);
-              if (Object.keys(next).length > 0 || currency === undefined)
-                return;
-              change
-                .mutateAsync({
-                  id: schedule.id,
-                  terms: {
-                    effective_from: from,
-                    ...(amount === 0 ? {} : { amount: { amount, currency } }),
-                    ...(withRecurrence && recurrence !== undefined
-                      ? { recurrence }
-                      : {}),
-                  },
-                })
-                .then(onDone)
-                .catch((caught: unknown) => {
-                  setSummary(errorText(caught, t));
-                });
-            }}
-          >
+        <form
+          noValidate
+          onSubmit={(event) => {
+            event.preventDefault();
+            const next: Record<string, string> = {};
+            if (from <= after)
+              next.effective_from = t("schedule.required.after", {
+                date: formatDate(after, locale),
+              });
+            if (amount === 0 && !withRecurrence)
+              next.amount = t("schedule.required.change");
+            setErrors(next);
+            setSummary(null);
+            if (Object.keys(next).length > 0 || currency === undefined) return;
+            change
+              .mutateAsync({
+                id: schedule.id,
+                terms: {
+                  effective_from: from,
+                  ...(amount === 0 ? {} : { amount: { amount, currency } }),
+                  ...(withRecurrence && recurrence !== undefined
+                    ? { recurrence }
+                    : {}),
+                },
+              })
+              .then(onDone)
+              .catch((caught: unknown) => {
+                setSummary(errorText(caught, t));
+              });
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>{t("schedule.changeTerms")}</DialogTitle>
+            <DialogDescription>
+              {t("schedule.changeTermsHint", {
+                date: formatDate(after, locale),
+              })}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogBody>
             <FormLayout fill>
               {summary !== null && <FormNotice>{summary}</FormNotice>}
 
@@ -162,16 +160,16 @@ export function TermsDialog({
                 />
               )}
             </FormLayout>
-          </form>
-        </DialogBody>
-        <DialogFooter>
-          <Button variant="ghost" tone="secondary" onClick={onCancel}>
-            {t("detail.cancel")}
-          </Button>
-          <Button type="submit" form={formId} loading={change.isPending}>
-            {t("schedule.save")}
-          </Button>
-        </DialogFooter>
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="ghost" tone="secondary" onClick={onCancel}>
+              {t("detail.cancel")}
+            </Button>
+            <Button type="submit" loading={change.isPending}>
+              {t("schedule.save")}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

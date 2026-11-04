@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from "@slotted/react/dialog";
 import { Field, FieldLabel } from "@slotted/react/field";
-import { useId, useState } from "react";
+import { useState } from "react";
 
 import { errorText } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
@@ -40,7 +40,6 @@ export function FactsDialog({
 }) {
   const t = useT();
   const overlayOpen = useOverlayOpen();
-  const formId = useId();
   const save = useSetStatementFacts();
   const currency = statement.amount_due.currency;
   const known = statement.institution;
@@ -57,37 +56,35 @@ export function FactsDialog({
   return (
     <Dialog open={overlayOpen} size="sm" onOpenChange={change}>
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t("facts.title")}</DialogTitle>
-          <DialogDescription>{t("facts.moveHint")}</DialogDescription>
-        </DialogHeader>
-        <DialogBody>
-          {/* Workaround for Slotted issue #8. */}
-          <form
-            id={formId}
-            noValidate
-            onSubmit={(event) => {
-              event.preventDefault();
-              if (total === 0) return;
-              setError(null);
-              save
-                .mutateAsync({
-                  id: statement.id,
-                  body: {
-                    closing_date: closing,
-                    due_date: due,
-                    total: { amount: total, currency },
-                    ...(minimum > 0
-                      ? { minimum: { amount: minimum, currency } }
-                      : {}),
-                  },
-                })
-                .then(onDone)
-                .catch((caught: unknown) => {
-                  setError(errorText(caught, t));
-                });
-            }}
-          >
+        <form
+          noValidate
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (total === 0) return;
+            setError(null);
+            save
+              .mutateAsync({
+                id: statement.id,
+                body: {
+                  closing_date: closing,
+                  due_date: due,
+                  total: { amount: total, currency },
+                  ...(minimum > 0
+                    ? { minimum: { amount: minimum, currency } }
+                    : {}),
+                },
+              })
+              .then(onDone)
+              .catch((caught: unknown) => {
+                setError(errorText(caught, t));
+              });
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>{t("facts.title")}</DialogTitle>
+            <DialogDescription>{t("facts.moveHint")}</DialogDescription>
+          </DialogHeader>
+          <DialogBody>
             <FormLayout>
               {error !== null && <FormNotice>{error}</FormNotice>}
 
@@ -139,21 +136,20 @@ export function FactsDialog({
                 </Field>
               </FormRow>
             </FormLayout>
-          </form>
-        </DialogBody>
-        <DialogFooter>
-          <Button variant="ghost" tone="secondary" onClick={onCancel}>
-            {t("detail.cancel")}
-          </Button>
-          <Button
-            type="submit"
-            form={formId}
-            disabled={total === 0}
-            loading={save.isPending}
-          >
-            {t("detail.save")}
-          </Button>
-        </DialogFooter>
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="ghost" tone="secondary" onClick={onCancel}>
+              {t("detail.cancel")}
+            </Button>
+            <Button
+              type="submit"
+              disabled={total === 0}
+              loading={save.isPending}
+            >
+              {t("detail.save")}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

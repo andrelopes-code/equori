@@ -16,7 +16,7 @@ import {
 } from "@slotted/react/field";
 import { TextField } from "@slotted/react/text-field";
 import { useQuery } from "@tanstack/react-query";
-import { useId, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 import { useApi } from "@/api/api-context";
 import { ProblemError, errorText, fieldErrors } from "@/api/problem";
@@ -47,7 +47,6 @@ export function EditInstrumentDialog({
 }) {
   const t = useT();
   const api = useApi();
-  const formId = useId();
   const overlayOpen = useOverlayOpen();
   const edit = useEditInstrument();
   const [name, setName] = useState(instrument.name);
@@ -100,22 +99,20 @@ export function EditInstrumentDialog({
   return (
     <Dialog open={overlayOpen} size="md" onOpenChange={openChange}>
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t("instrument.edit")}</DialogTitle>
-          <DialogDescription>
-            {t("instrument.edit.description")}
-          </DialogDescription>
-        </DialogHeader>
-        <DialogBody>
-          {/* Workaround for Slotted issue #8. */}
-          <form
-            id={formId}
-            noValidate
-            onSubmit={(event) => {
-              event.preventDefault();
-              submit();
-            }}
-          >
+        <form
+          noValidate
+          onSubmit={(event) => {
+            event.preventDefault();
+            submit();
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>{t("instrument.edit")}</DialogTitle>
+            <DialogDescription>
+              {t("instrument.edit.description")}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogBody>
             <FormLayout>
               {summary !== null && <FormNotice>{summary}</FormNotice>}
 
@@ -174,16 +171,16 @@ export function EditInstrumentDialog({
                 </Field>
               </FormRow>
             </FormLayout>
-          </form>
-        </DialogBody>
-        <DialogFooter>
-          <Button variant="ghost" tone="secondary" onClick={onCancel}>
-            {t("detail.cancel")}
-          </Button>
-          <Button type="submit" form={formId} loading={edit.isPending}>
-            {t("instrument.edit.save")}
-          </Button>
-        </DialogFooter>
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="ghost" tone="secondary" onClick={onCancel}>
+              {t("detail.cancel")}
+            </Button>
+            <Button type="submit" loading={edit.isPending}>
+              {t("instrument.edit.save")}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

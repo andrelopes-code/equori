@@ -10,7 +10,7 @@ import {
 } from "@slotted/react/dialog";
 import { Field, FieldError, FieldLabel } from "@slotted/react/field";
 import { TextField } from "@slotted/react/text-field";
-import { useId, useState } from "react";
+import { useState } from "react";
 
 import { useT } from "@/i18n/i18n-provider";
 import { themeName } from "@/theme/theme-file";
@@ -33,7 +33,6 @@ export function ThemeNameDialog({
   onClose,
 }: ThemeNameDialogProps) {
   const t = useT();
-  const formId = useId();
 
   const [name, setName] = useState(initialName);
   const [invalid, setInvalid] = useState(false);
@@ -56,22 +55,20 @@ export function ThemeNameDialog({
   return (
     <Dialog open size="sm" onOpenChange={change}>
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          {description !== undefined && (
-            <DialogDescription>{description}</DialogDescription>
-          )}
-        </DialogHeader>
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            handleSubmit();
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>{title}</DialogTitle>
+            {description !== undefined && (
+              <DialogDescription>{description}</DialogDescription>
+            )}
+          </DialogHeader>
 
-        <DialogBody>
-          {/* Workaround for Slotted issue #8. */}
-          <form
-            id={formId}
-            onSubmit={(event) => {
-              event.preventDefault();
-              handleSubmit();
-            }}
-          >
+          <DialogBody>
             <Field invalid={invalid} required>
               <FieldLabel>{t("settings.theme.name")}</FieldLabel>
               <TextField
@@ -87,17 +84,17 @@ export function ThemeNameDialog({
                 <FieldError>{t("settings.theme.nameInvalid")}</FieldError>
               )}
             </Field>
-          </form>
-        </DialogBody>
+          </DialogBody>
 
-        <DialogFooter>
-          <Button variant="ghost" tone="secondary" onClick={onClose}>
-            {t("detail.cancel")}
-          </Button>
-          <Button type="submit" form={formId} disabled={name.trim() === ""}>
-            {t("settings.theme.save")}
-          </Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button variant="ghost" tone="secondary" onClick={onClose}>
+              {t("detail.cancel")}
+            </Button>
+            <Button type="submit" disabled={name.trim() === ""}>
+              {t("settings.theme.save")}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

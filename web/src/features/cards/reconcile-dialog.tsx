@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from "@slotted/react/dialog";
 import { Field, FieldLabel } from "@slotted/react/field";
-import { useId, useState } from "react";
+import { useState } from "react";
 
 import { ProblemError, errorText } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
@@ -42,7 +42,6 @@ export function ReconcileDialog({
   const t = useT();
   const overlayOpen = useOverlayOpen();
   const fmt = useMoneyFormat();
-  const formId = useId();
   const reconcile = useReconcileStatement();
   const currency = statement.amount_due.currency;
   const [amount, setAmount] = useState(
@@ -56,52 +55,50 @@ export function ReconcileDialog({
   return (
     <Dialog open={overlayOpen} size="sm" onOpenChange={change}>
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t("reconcileStatement.title")}</DialogTitle>
-          <DialogDescription>
-            {t("reconcileStatement.hint", {
-              amount: fmt.money(statement.amount_due, scale(currency)),
-            })}
-          </DialogDescription>
-        </DialogHeader>
-        <DialogBody>
-          {/* Workaround for Slotted issue #8. */}
-          <form
-            id={formId}
-            noValidate
-            onSubmit={(event) => {
-              event.preventDefault();
-              setError(null);
-              setDiffers(false);
-              reconcile
-                .mutateAsync({
-                  id: statement.id,
-                  amountDue: { amount, currency },
-                })
-                .then(onDone)
-                .catch((caught: unknown) => {
-                  if (
-                    caught instanceof ProblemError &&
-                    caught.problem.code === "difference_remains"
-                  ) {
-                    setDiffers(true);
-                    setError(
-                      t("reconcileStatement.differs", {
-                        amount: fmt.money(
-                          {
-                            amount: amount - statement.amount_due.amount,
-                            currency,
-                          },
-                          scale(currency),
-                        ),
-                      }),
-                    );
-                    return;
-                  }
-                  setError(errorText(caught, t));
-                });
-            }}
-          >
+        <form
+          noValidate
+          onSubmit={(event) => {
+            event.preventDefault();
+            setError(null);
+            setDiffers(false);
+            reconcile
+              .mutateAsync({
+                id: statement.id,
+                amountDue: { amount, currency },
+              })
+              .then(onDone)
+              .catch((caught: unknown) => {
+                if (
+                  caught instanceof ProblemError &&
+                  caught.problem.code === "difference_remains"
+                ) {
+                  setDiffers(true);
+                  setError(
+                    t("reconcileStatement.differs", {
+                      amount: fmt.money(
+                        {
+                          amount: amount - statement.amount_due.amount,
+                          currency,
+                        },
+                        scale(currency),
+                      ),
+                    }),
+                  );
+                  return;
+                }
+                setError(errorText(caught, t));
+              });
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>{t("reconcileStatement.title")}</DialogTitle>
+            <DialogDescription>
+              {t("reconcileStatement.hint", {
+                amount: fmt.money(statement.amount_due, scale(currency)),
+              })}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogBody>
             <FormLayout>
               {error !== null && (
                 <FormNotice tone="warning">{error}</FormNotice>
@@ -119,21 +116,21 @@ export function ReconcileDialog({
                 />
               </Field>
             </FormLayout>
-          </form>
-        </DialogBody>
-        <DialogFooter>
-          <Button variant="ghost" tone="secondary" onClick={onCancel}>
-            {t("detail.cancel")}
-          </Button>
-          {differs && (
-            <Button variant="outline" onClick={onFacts}>
-              {t("statement.facts")}
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="ghost" tone="secondary" onClick={onCancel}>
+              {t("detail.cancel")}
             </Button>
-          )}
-          <Button type="submit" form={formId} loading={reconcile.isPending}>
-            {t("reconcileStatement.submit")}
-          </Button>
-        </DialogFooter>
+            {differs && (
+              <Button variant="outline" onClick={onFacts}>
+                {t("statement.facts")}
+              </Button>
+            )}
+            <Button type="submit" loading={reconcile.isPending}>
+              {t("reconcileStatement.submit")}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

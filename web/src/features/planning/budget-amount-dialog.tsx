@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from "@slotted/react/dialog";
 import { Field, FieldError, FieldLabel } from "@slotted/react/field";
-import { useId, useState } from "react";
+import { useState } from "react";
 
 import { errorText } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
@@ -42,7 +42,6 @@ export function BudgetAmountDialog({
   const t = useT();
   const [locale] = useAppLocale();
   const today = useToday();
-  const formId = useId();
   const scale = useScale();
   const overlayOpen = useOverlayOpen();
   const add = useAddBudgetAmount();
@@ -62,45 +61,42 @@ export function BudgetAmountDialog({
   return (
     <Dialog open={overlayOpen} size="md" onOpenChange={openChange}>
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t("budget.addAmount")}</DialogTitle>
-          <DialogDescription>
-            {t("budget.addAmountHint", {
-              month: formatMonthTitle(after, locale),
-            })}
-          </DialogDescription>
-        </DialogHeader>
-        <DialogBody>
-          {/* Workaround for Slotted issue #8. */}
-          <form
-            id={formId}
-            noValidate
-            onSubmit={(event) => {
-              event.preventDefault();
-              const next: Record<string, string> = {};
-              if (from <= after)
-                next.effective_from = t("budget.required.after", {
-                  month: formatMonthTitle(after, locale),
-                });
-              if (amount <= 0) next.amount = t("budget.required.amount");
-              setErrors(next);
-              setSummary(null);
-              if (Object.keys(next).length > 0 || currency === undefined)
-                return;
-              add
-                .mutateAsync({
-                  id: budget.id,
-                  amount: {
-                    effective_from: from,
-                    amount: { amount, currency },
-                  },
-                })
-                .then(onDone)
-                .catch((caught: unknown) => {
-                  setSummary(errorText(caught, t));
-                });
-            }}
-          >
+        <form
+          noValidate
+          onSubmit={(event) => {
+            event.preventDefault();
+            const next: Record<string, string> = {};
+            if (from <= after)
+              next.effective_from = t("budget.required.after", {
+                month: formatMonthTitle(after, locale),
+              });
+            if (amount <= 0) next.amount = t("budget.required.amount");
+            setErrors(next);
+            setSummary(null);
+            if (Object.keys(next).length > 0 || currency === undefined) return;
+            add
+              .mutateAsync({
+                id: budget.id,
+                amount: {
+                  effective_from: from,
+                  amount: { amount, currency },
+                },
+              })
+              .then(onDone)
+              .catch((caught: unknown) => {
+                setSummary(errorText(caught, t));
+              });
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>{t("budget.addAmount")}</DialogTitle>
+            <DialogDescription>
+              {t("budget.addAmountHint", {
+                month: formatMonthTitle(after, locale),
+              })}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogBody>
             <FormLayout>
               {summary !== null && <FormNotice>{summary}</FormNotice>}
               <FormRow>
@@ -134,16 +130,16 @@ export function BudgetAmountDialog({
                 </Field>
               </FormRow>
             </FormLayout>
-          </form>
-        </DialogBody>
-        <DialogFooter>
-          <Button variant="ghost" tone="secondary" onClick={onCancel}>
-            {t("detail.cancel")}
-          </Button>
-          <Button type="submit" form={formId} loading={add.isPending}>
-            {t("budget.save")}
-          </Button>
-        </DialogFooter>
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="ghost" tone="secondary" onClick={onCancel}>
+              {t("detail.cancel")}
+            </Button>
+            <Button type="submit" loading={add.isPending}>
+              {t("budget.save")}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

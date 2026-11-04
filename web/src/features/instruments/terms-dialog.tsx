@@ -16,7 +16,7 @@ import {
   FieldLabel,
 } from "@slotted/react/field";
 import { TextField } from "@slotted/react/text-field";
-import { useId, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 import { ProblemError, errorText, fieldErrors } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
@@ -64,7 +64,6 @@ export function TermsDialog({
   const t = useT();
   const [locale] = useAppLocale();
   const today = useToday();
-  const formId = useId();
   const overlayOpen = useOverlayOpen();
   const put = usePutTerms();
   const [issued, setIssued] = useState(terms?.issued_on ?? today);
@@ -136,20 +135,20 @@ export function TermsDialog({
   return (
     <Dialog open={overlayOpen} size="md" onOpenChange={openChange}>
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t("terms.title")}</DialogTitle>
-          <DialogDescription>{t("terms.dialog.description")}</DialogDescription>
-        </DialogHeader>
-        <DialogBody>
-          {/* Workaround for Slotted issue #8. */}
-          <form
-            id={formId}
-            noValidate
-            onSubmit={(event) => {
-              event.preventDefault();
-              submit();
-            }}
-          >
+        <form
+          noValidate
+          onSubmit={(event) => {
+            event.preventDefault();
+            submit();
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>{t("terms.title")}</DialogTitle>
+            <DialogDescription>
+              {t("terms.dialog.description")}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogBody>
             <FormLayout>
               {summary !== null && <FormNotice>{summary}</FormNotice>}
               <Alert tone="warning">
@@ -272,16 +271,16 @@ export function TermsDialog({
                 </Field>
               </FormRow>
             </FormLayout>
-          </form>
-        </DialogBody>
-        <DialogFooter>
-          <Button variant="ghost" tone="secondary" onClick={onCancel}>
-            {t("detail.cancel")}
-          </Button>
-          <Button type="submit" form={formId} loading={put.isPending}>
-            {t("terms.save")}
-          </Button>
-        </DialogFooter>
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="ghost" tone="secondary" onClick={onCancel}>
+              {t("detail.cancel")}
+            </Button>
+            <Button type="submit" loading={put.isPending}>
+              {t("terms.save")}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );
