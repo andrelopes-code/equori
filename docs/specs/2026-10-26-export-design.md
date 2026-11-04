@@ -85,3 +85,20 @@ A section of `/settings` requests the export, shows its status and size, downloa
 ## Amendment of 2026-10-26
 
 ADR 021 versions the archive. The manifest of E1 gains `archive_version` and `app_version`; step 1 of E4 refuses an archive above the instance's `archive_version` with `archive_too_new` and migrates an older one before any write, in place of `archive_version_mismatch`. The import of an archive of another schema version leaves the out-of-scope list. Reason: the app is distributed in versions, and an archive of any earlier version must import into any later one.
+
+## Amendment of 2026-11-04: credentials in the archive
+
+Intent: an owner who moves to a clean instance keeps the integrations working without entering each credential again. Reason: E2 left every integration without its credential, which forced a new entry on each import.
+
+| ID | Rule |
+|---|---|
+| C1 | `requestExport` accepts an optional JSON body `{credentials_passphrase}`. Absent or empty: the archive is built as in E1 to E4. Present: 8 to 256 characters, otherwise 422 `validation` naming the field. Without `EQUORI_SECRET_KEY` the request is refused with 409 `integration_unavailable` (ADR 008, K2). |
+| C2 | The passphrase lives only in the memory of the request. The handler seals the credentials of the book's integrations into a bundle and stores the bundle in `reporting_export.credentials`; the build copies it into the archive and `FinishExport` clears the column. A book with no stored credential produces no bundle. |
+| C3 | The bundle is the archive entry `credentials.enc`: format byte 1, 4-byte big-endian iteration count (600000), 16-byte salt, 12-byte nonce, AES-256-GCM ciphertext with tag. The key is PBKDF2-HMAC-SHA256 of the passphrase (`crypto/pbkdf2`). The associated data is the ASCII text `equori-credentials-v1`. The plaintext is the JSON `{"credentials": {"<integration id>": <credentials>}}` as ADR 008 seals it. |
+| C4 | The manifest gains the optional member `credentials` (`file`, `sha256`). No exported table changes, so `archive_version` stays; an importer that predates this amendment ignores the entry. |
+| C5 | `importArchive` accepts an optional multipart field `passphrase`. With the entry and the passphrase, the bundle opens before any write: a wrong passphrase or a tampered bundle is 422 `passphrase_invalid`; no instance key is 409 `integration_unavailable`; in both cases nothing is written. |
+| C6 | Each credential is sealed again under the key of the instance for the importing book and the integration id, and written to `ingestion_integration.credential_ciphertext` inside the import transaction, after the table inserts. An id with no imported integration is ignored. |
+| C7 | The response of `importArchive` gains `credentials_in_archive` (boolean) and `credentials_restored` (integer). An archive with the entry and no passphrase imports as in E4 and answers `credentials_in_archive` true, `credentials_restored` 0. |
+| C8 | Region-dependent values: none. |
+
+Out of scope: the keys of language model providers (`assistant_provider` is outside the archive, E2) and the second factor.
