@@ -41,6 +41,7 @@ import { AgendaTable } from "@/features/planning/agenda-table";
 import { occurrencesQuery, scheduleQuery } from "@/features/planning/api";
 import { calendarLabel } from "@/features/planning/calendar-label";
 import { EndDialog } from "@/features/planning/end-dialog";
+import { MatchingDialog } from "@/features/planning/matching-dialog";
 import { PauseDialog } from "@/features/planning/pause-dialog";
 import {
   currentTerms,
@@ -58,7 +59,7 @@ import { HeaderAction } from "@/ui/header-action";
 import { QueryError } from "@/ui/query-error";
 import { PageBack } from "@/ui/page-back";
 
-type Dialog = "terms" | "pause" | "end";
+type Dialog = "terms" | "matching" | "pause" | "end";
 
 // One schedule: its facts, its terms versions, its pauses and its occurrences half a year either
 // side of today (listOccurrences reads at most 366 days).
@@ -127,6 +128,14 @@ export function SchedulePage() {
               </PageHeaderSubheading>
             </PageHeaderTitle>
             <PageHeaderActions>
+              <HeaderAction
+                label={t("schedule.matching.edit")}
+                glyph="pencil"
+                wordsOnly
+                onClick={() => {
+                  setDialog("matching");
+                }}
+              />
               <HeaderAction
                 label={t("schedule.pause")}
                 glyph="pause"
@@ -294,6 +303,9 @@ export function SchedulePage() {
       </PageBody>
       {dialog === "terms" && (
         <TermsDialog schedule={s} onDone={close} onCancel={close} />
+      )}
+      {dialog === "matching" && (
+        <MatchingDialog schedule={s} onDone={close} onCancel={close} />
       )}
       {dialog === "pause" && (
         <PauseDialog schedule={s} name={name} onDone={close} onCancel={close} />

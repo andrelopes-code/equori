@@ -1731,6 +1731,12 @@ export const catalogEn = {
   "schedule.grace": "Grace days",
   "schedule.graceHint":
     "Days after the expected date before an occurrence is overdue.",
+  "schedule.window": "Days around the expected date",
+  "schedule.windowHint":
+    "How many days before or after the expected date a transaction can be linked to the occurrence.",
+  "schedule.matching.edit": "Matching settings",
+  "schedule.matching.appliesLater":
+    "Applies to transactions recorded from now on. Link an earlier transaction from the occurrence.",
   "schedule.create": "Create schedule",
   "schedule.rule": "Rule",
   "schedule.required.description": "Enter a description.",

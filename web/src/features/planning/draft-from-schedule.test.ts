@@ -39,6 +39,7 @@ function salary(patch: Partial<Schedule> = {}): Schedule {
     calendar: "br_banking",
     match_tolerance_bp: 500,
     grace_days: 2,
+    match_window_days: 14,
     terms: [terms("2026-01-01", 500000)],
     pauses: [],
     ...patch,
@@ -57,6 +58,7 @@ describe("draftFromSchedule", () => {
       calendar: "br_banking",
       toleranceBP: 500,
       graceDays: 2,
+      windowDays: 14,
     });
   });
 

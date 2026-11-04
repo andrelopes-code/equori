@@ -37,6 +37,7 @@ export function schedule(
     description,
     match_tolerance_bp: 1000,
     grace_days: 3,
+    match_window_days: 7,
     terms: versions,
     pauses: [],
     ...extra,

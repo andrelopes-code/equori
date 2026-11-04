@@ -26,6 +26,7 @@ function schedule(id: string, kind: Schedule["kind"], account = "acc-1") {
     description: id,
     match_tolerance_bp: 1000,
     grace_days: 3,
+    match_window_days: 7,
     terms: [],
     pauses: [],
   } satisfies Schedule;

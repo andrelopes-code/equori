@@ -164,6 +164,7 @@ describe("New schedule", () => {
           },
           match_tolerance_bp: 1000,
           grace_days: 3,
+          match_window_days: 7,
         },
       ]);
     });
@@ -347,6 +348,7 @@ describe("New schedule from another", () => {
           },
           match_tolerance_bp: 1000,
           grace_days: 3,
+          match_window_days: 7,
         },
       ]);
     });
@@ -548,6 +550,54 @@ describe("Schedule page", () => {
     await waitFor(() => {
       expect(sent).toEqual([
         { effective_from: "2026-10-17", amount: money(230000) },
+      ]);
+    });
+  });
+
+  it("changes the matching settings and states that they apply from now on", async () => {
+    const sent: unknown[] = [];
+    await renderApp(`/planning/schedules/${rentID}`, {
+      fetch: api({
+        [`PATCH /api/v1/schedules/${rentID}`]: async (req) => {
+          sent.push(await req.json());
+          return json(200, rent);
+        },
+      }),
+    });
+    await userEvent.click(
+      await screen.findByRole("button", {
+        name: catalogEn["schedule.matching.edit"],
+      }),
+    );
+    const dialog = await screen.findByRole("dialog");
+    const tolerance = within(dialog).getByRole("spinbutton", {
+      name: catalogEn["schedule.tolerance"],
+    });
+    expect(tolerance).toHaveValue("10");
+    expect(
+      within(dialog).getByRole("spinbutton", {
+        name: catalogEn["schedule.window"],
+      }),
+    ).toHaveValue("7");
+    expect(
+      within(dialog).getByRole("spinbutton", {
+        name: catalogEn["schedule.grace"],
+      }),
+    ).toHaveValue("3");
+    expect(
+      within(dialog).getByText(catalogEn["schedule.matching.appliesLater"]),
+    ).toBeInTheDocument();
+
+    await userEvent.clear(tolerance);
+    await userEvent.type(tolerance, "0.5");
+    await userEvent.tab();
+    await userEvent.click(
+      within(dialog).getByRole("button", { name: catalogEn["schedule.save"] }),
+    );
+
+    await waitFor(() => {
+      expect(sent).toEqual([
+        { match_tolerance_bp: 50, grace_days: 3, match_window_days: 7 },
       ]);
     });
   });

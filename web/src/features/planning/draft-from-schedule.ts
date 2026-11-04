@@ -31,6 +31,7 @@ export function draftFromSchedule(
     calendar: source.calendar,
     toleranceBP: source.match_tolerance_bp,
     graceDays: source.grace_days,
+    windowDays: source.match_window_days,
   };
 }
 

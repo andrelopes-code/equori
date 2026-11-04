@@ -5,18 +5,17 @@ import {
   CollapsibleTrigger,
 } from "@slotted/react/collapsible";
 import { Field, FieldDescription, FieldLabel } from "@slotted/react/field";
-import { NumberField } from "@slotted/react/number-field";
 import { Stack } from "@slotted/react/stack";
 import { useQuery } from "@tanstack/react-query";
 
 import { useApi } from "@/api/api-context";
 import { calendarLabel } from "@/features/planning/calendar-label";
 import { calendarsQuery } from "@/features/planning/api";
+import { MatchingFields } from "@/features/planning/matching-fields";
 import type { ScheduleDraft } from "@/features/planning/schedule-draft";
 import { useT } from "@/i18n/i18n-provider";
 import { AppLink } from "@/ui/app-link";
 import { ChoiceSelect } from "@/ui/choice-select";
-import widths from "@/ui/field-width.module.css";
 
 interface ScheduleAdvancedSectionProps {
   draft: ScheduleDraft;
@@ -74,37 +73,7 @@ export function ScheduleAdvancedSection({
             )}
           </Field>
 
-          <Field required>
-            <FieldLabel>{t("schedule.tolerance")}</FieldLabel>
-            <NumberField
-              className={widths.short}
-              name="match_tolerance"
-              value={draft.toleranceBP / 100}
-              min={0}
-              max={100}
-              step={0.01}
-              onValueChange={(next) => {
-                if (next !== null)
-                  patch({ toleranceBP: Math.round(next * 100) });
-              }}
-            />
-            <FieldDescription>{t("schedule.toleranceHint")}</FieldDescription>
-          </Field>
-
-          <Field required>
-            <FieldLabel>{t("schedule.grace")}</FieldLabel>
-            <NumberField
-              className={widths.short}
-              name="grace_days"
-              value={draft.graceDays}
-              min={0}
-              max={31}
-              onValueChange={(next) => {
-                if (next !== null) patch({ graceDays: next });
-              }}
-            />
-            <FieldDescription>{t("schedule.graceHint")}</FieldDescription>
-          </Field>
+          <MatchingFields values={draft} patch={patch} />
         </Stack>
       </CollapsiblePanel>
     </Collapsible>

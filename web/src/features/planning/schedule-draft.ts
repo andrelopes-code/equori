@@ -8,6 +8,7 @@ type ScheduleInput = components["schemas"]["ScheduleInput"];
 // The server's defaults (ScheduleInput), shown so the reader sees what is sent.
 const defaultToleranceBP = 1000;
 const defaultGraceDays = 3;
+const defaultWindowDays = 7;
 
 export interface ScheduleDraft {
   kind: ScheduleKind;
@@ -21,6 +22,7 @@ export interface ScheduleDraft {
   calendar: string | null;
   toleranceBP: number;
   graceDays: number;
+  windowDays: number;
 }
 
 export interface ScheduleInputContext {
@@ -46,6 +48,7 @@ export function emptyDraft(today: string): ScheduleDraft {
     calendar: null,
     toleranceBP: defaultToleranceBP,
     graceDays: defaultGraceDays,
+    windowDays: defaultWindowDays,
   };
 }
 
@@ -98,5 +101,6 @@ export function scheduleInput(
     ...(sendsCalendar ? { calendar } : {}),
     match_tolerance_bp: draft.toleranceBP,
     grace_days: draft.graceDays,
+    match_window_days: draft.windowDays,
   };
 }

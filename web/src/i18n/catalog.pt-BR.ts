@@ -1751,6 +1751,12 @@ export const catalogPtBR: Catalog = {
   "schedule.grace": "Dias de carência",
   "schedule.graceHint":
     "Dias após a data prevista até a ocorrência ficar atrasada.",
+  "schedule.window": "Dias em torno da data prevista",
+  "schedule.windowHint":
+    "Quantos dias antes ou depois da data prevista uma transação pode ser associada à ocorrência.",
+  "schedule.matching.edit": "Ajustes de associação",
+  "schedule.matching.appliesLater":
+    "Vale para transações registradas daqui em diante. Associe uma transação anterior pela ocorrência.",
   "schedule.create": "Criar agendamento",
   "schedule.rule": "Regra",
   "schedule.required.description": "Informe uma descrição.",

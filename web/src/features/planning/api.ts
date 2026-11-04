@@ -450,6 +450,25 @@ export function usePauseSchedule() {
   });
 }
 
+export function useUpdateScheduleMatching() {
+  const api = useApi();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      matching,
+    }: {
+      id: string;
+      matching: paths["/schedules/{id}"]["patch"]["requestBody"]["content"]["application/json"];
+    }) =>
+      unwrap(
+        await api.PATCH("/schedules/{id}", {
+          params: { path: { id } },
+          body: matching,
+        }),
+      ),
+  });
+}
+
 export function useEndSchedule() {
   const api = useApi();
   return useMutation({

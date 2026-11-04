@@ -34,6 +34,7 @@ describe("emptyDraft", () => {
       calendar: null,
       toleranceBP: 1000,
       graceDays: 3,
+      windowDays: 7,
       recurrence: {
         frequency: "monthly",
         interval: 1,
@@ -75,6 +76,7 @@ describe("scheduleInput", () => {
       amount: { amount: 500000, currency: "BRL" },
       match_tolerance_bp: 1000,
       grace_days: 3,
+      match_window_days: 7,
     });
   });
 
