@@ -50,6 +50,7 @@ func TestCredentialsTravelInTheArchive(t *testing.T) {
 	target.serveItem(pluggyClient, nubankItem, "Nubank")
 
 	var res importResult
+
 	r := target.h.UploadWith("/api/v1/imports/archive", map[string]string{"passphrase": archivePassphrase}, "export.zip", archive)
 	if r.Status != http.StatusOK {
 		t.Fatalf("import = %d: %s", r.Status, r.Body)
