@@ -118,16 +118,12 @@ const tagInsetRule = `
 }
 `;
 
-// Workaround for Slotted issue #39: only the tooltip's content fades, so its arrow stays opaque
-// and reads as a separate piece on open and close. The arrow takes the content's three fade rules.
-// Half of the arrow's square lies over the content: while both fade, that half composites twice
-// and the whole diamond shows through. The clip keeps the half outside the content, plus an
-// overlap that covers the content's border under the arrow's base.
-const tooltipArrowFadeRule = `
+// Workaround for Slotted issue #39: half of the arrow's square lies over the content, so while both
+// fade that half composites twice and the whole diamond shows through. The clip keeps the half
+// outside the content, plus an overlap that covers the content's border under the arrow's base.
+const tooltipArrowClipRule = `
 [data-ui="tooltip"] > [data-part="arrow"] {
   --equori-tooltip-arrow-overlap: 0.5px;
-  opacity: 0;
-  transition: opacity var(--slotted-duration-short) var(--slotted-easing-exit);
 }
 
 [data-ui="tooltip"][data-variant="surface"] > [data-part="arrow"] {
@@ -164,15 +160,6 @@ const tooltipArrowFadeRule = `
     0 calc(0% - var(--equori-tooltip-arrow-overlap)),
     calc(100% + var(--equori-tooltip-arrow-overlap)) 100%
   );
-}
-
-[data-ui="tooltip"][data-open] > [data-part="arrow"] {
-  opacity: 1;
-  transition: none;
-}
-
-[data-ui="tooltip"][data-open][data-positioned] > [data-part="arrow"] {
-  animation: slotted-tooltip-fade var(--slotted-duration-medium) var(--slotted-easing-enter);
 }
 `;
 
@@ -346,7 +333,7 @@ export default extendTheme(
       resultStateRule,
       paletteScrimRule,
       sheetSlideRule,
-      tooltipArrowFadeRule,
+      tooltipArrowClipRule,
       tagInsetRule,
     ],
   },

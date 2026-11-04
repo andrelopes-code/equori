@@ -2,7 +2,7 @@
 
 A form screen is a page, drawer or dialog whose job is to write one record. Every form of `web/` answers this guide. Mandatory reading before writing or changing a form.
 
-Rules marked with a Slotted ID (FM-06, LA-05) are in `web/node_modules/@slotted/react/dist/docs/guidelines/`. The sources behind the other rules are listed at the end. Rules marked equori are decisions of this application. Slotted issue #19 proposes these rules for the library's `forms.md`, and issues #20, #21 and #22 the primitives that `ui/field-width`, `ui/form-layout` and `ui/form-section` stand in for. Until a release carries them, this file is the rule.
+Rules marked with a Slotted ID (FM-06, LA-05) are in `web/node_modules/@slotted/react/dist/docs/guidelines/`. The sources behind the other rules are listed at the end. Rules marked equori are decisions of this application. F1, F2, F3, F5, F6, F7, F8 and F15 restate FM-18 to FM-25 (issues #19 and #54) for this application, in that order. Issues #20, #21 and #22 are carried by the library's `Field` `width`, `FormAside` and `--slotted-form-section-gap`; `ui/field-width`, `ui/form-layout` and `ui/form-section` have not moved to them yet.
 
 ## F1 · One column at a bounded measure
 
@@ -145,7 +145,7 @@ A control of the application's own keeps every state of the family it stands bes
 
 ## F15 · A dialog form is laid out for its own fields
 
-A dialog's body is already a bounded measure (F10), so the column of F1, the pairing of F2 and the width steps of F3 do not apply inside it. Each dialog is laid out from its own fields and checked on screen at its size; no fixed grid answers every dialog (owner review, 2026-10-30; Slotted issue #54).
+A dialog's body is already a bounded measure (F10), so the column of F1, the pairing of F2 and the width steps of F3 do not apply inside it. Each dialog is laid out from its own fields and checked on screen at its size; no fixed grid answers every dialog (owner review, 2026-10-30; FM-25).
 
 - Every control fills the space it stands in: no width step inside a dialog.
 - An `lg` dialog is wider than the 40rem column, so its `FormLayout` sets `fill` and the column takes the body. A component that renders several fields (`RecurrenceFields`) takes `fill` to drop its width steps.

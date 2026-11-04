@@ -83,13 +83,7 @@ export function AssistantDrawer({
 
         <DrawerBody>{body}</DrawerBody>
 
-        {/* Workaround for Slotted issue #34: a close by the X or the scrim jumps the sheet's scroll
-            to 0 and slides the panel, and a sticky footer then rides at the panel's top. */}
-        {footer !== null && (
-          <DrawerFooter className={open ? undefined : styles.leaving}>
-            {footer}
-          </DrawerFooter>
-        )}
+        {footer !== null && <DrawerFooter>{footer}</DrawerFooter>}
       </DrawerPanel>
     </Drawer>
   );
