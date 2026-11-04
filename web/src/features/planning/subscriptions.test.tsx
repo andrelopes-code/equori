@@ -89,3 +89,69 @@ describe("Subscriptions tab", () => {
     expect(router.state.location.search).toEqual({ from: streamingID });
   });
 });
+
+describe("Subscriptions tab with an ended subscription", () => {
+  const gym = {
+    ...streamingSchedule,
+    id: "e1000000-0000-4000-8000-000000000009",
+    description: "Gym",
+    ends_on: "2026-09-01",
+    terms: streamingSchedule.terms.map((v) => ({
+      ...v,
+      amount: { ...v.amount, amount: 10000 },
+    })),
+  };
+
+  async function renderTable() {
+    await renderApp("/planning?tab=subscriptions", {
+      fetch: api({
+        "GET /api/v1/schedules": () =>
+          json(200, { items: [gym, streamingSchedule] }),
+      }),
+    });
+    const table = await screen.findByRole("table", {
+      name: catalogEn["subscriptions.caption"],
+    });
+    await within(table).findByRole("row", { name: /^Streaming/ });
+    return table;
+  }
+
+  it("lists the ended subscription after the active ones, under its own heading", async () => {
+    const table = await renderTable();
+
+    expect(
+      within(table)
+        .getAllByRole("rowheader")
+        .map((cell) => cell.textContent),
+    ).toEqual([
+      "Streaming",
+      catalogEn["schedules.ended"],
+      "Gym",
+      catalogEn["subscriptions.total"],
+    ]);
+  });
+
+  it("leaves the ended subscription out of the totals", async () => {
+    const table = await renderTable();
+    const summary = within(table).getAllByRole("row").at(-1);
+    if (summary === undefined) throw new Error("no summary row");
+
+    expect(within(summary).getByText("R$39.90")).toBeInTheDocument();
+    expect(within(summary).getByText("R$478.80")).toBeInTheDocument();
+    expect(within(summary).queryByText("R$139.90")).not.toBeInTheDocument();
+  });
+
+  it("draws the ended subscription muted and offers it no move", async () => {
+    const table = await renderTable();
+    const ended = within(table).getByRole("row", { name: /^Gym/ });
+    const active = within(table).getByRole("row", { name: /^Streaming/ });
+    const mutedInk = '[data-ui="typography"][data-tone="muted"]';
+
+    expect(
+      within(ended).getByRole("link", { name: "Gym" }).closest(mutedInk),
+    ).not.toBeNull();
+    expect(
+      within(active).getByRole("link", { name: "Streaming" }).closest(mutedInk),
+    ).toBeNull();
+  });
+});

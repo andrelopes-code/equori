@@ -6,38 +6,34 @@ import {
   TableColumnHeader,
   TableContent,
   TableEmpty,
+  TableGroupRow,
   TableHead,
   TableLoader,
   TableRow,
   TableRowHeader,
   TableSummary,
 } from "@slotted/react/table";
-import { Text } from "@slotted/react/typography";
 import { useQuery } from "@tanstack/react-query";
-import { Fragment } from "react";
 
 import { useApi } from "@/api/api-context";
 import { accountsQuery } from "@/features/accounts";
-import styles from "@/features/planning/subscriptions-tab.module.css";
 import { schedulesQuery } from "@/features/planning/api";
-import { ScheduleActions } from "@/features/planning/schedule-actions";
+import { SubscriptionRow } from "@/features/planning/subscription-row";
 import {
   currentTerms,
+  hasEnded,
   subscriptionCost,
 } from "@/features/planning/schedule-words";
 import { settingsQuery, useScale } from "@/features/setup";
-import { formatDate } from "@/i18n/format";
-import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { useMoneyFormat } from "@/privacy/use-money-format";
-import { AppLink } from "@/ui/app-link";
 import { QueryError } from "@/ui/query-error";
 
 // The subscriptions: what each costs a month and a year at the price in force, and how its price
 // moved from one terms version to the next.
 export function SubscriptionsTab() {
   const t = useT();
-  const [locale] = useAppLocale();
   const api = useApi();
   const today = useToday();
   const fmt = useMoneyFormat();
@@ -61,8 +57,15 @@ export function SubscriptionsTab() {
           ];
     });
   const currency = settings.data?.base_currency;
+  // The totals count what is still running: an ended subscription costs nothing from now on.
+  const active = rows.filter((r) => !hasEnded(r.schedule.ends_on, today));
+  const ended = rows
+    .filter((r) => hasEnded(r.schedule.ends_on, today))
+    .sort((x, y) =>
+      (y.schedule.ends_on ?? "").localeCompare(x.schedule.ends_on ?? ""),
+    );
   const total = (key: "monthly" | "yearly") =>
-    rows.reduce((sum, r) => sum + r.cost[key], 0);
+    active.reduce((sum, r) => sum + r.cost[key], 0);
   if (schedules.isError)
     return (
       <QueryError
@@ -106,63 +109,34 @@ export function SubscriptionsTab() {
               {rows.length === 0 && (
                 <TableEmpty>{t("subscriptions.empty")}</TableEmpty>
               )}
-              {rows.map(({ schedule, terms, cost }) => {
-                const name =
-                  schedule.description === ""
-                    ? t("ledger.untitled")
-                    : schedule.description;
-                const money = (amount: number) =>
-                  fmt.money(
-                    { amount, currency: terms.amount.currency },
-                    scale(terms.amount.currency),
-                  );
-                return (
-                  <TableRow key={schedule.id} value={schedule.id}>
-                    <TableRowHeader text="truncate">
-                      <AppLink
-                        variant="neutral"
-                        underline="hover"
-                        to={{
-                          to: "/planning/schedules/$id",
-                          params: { id: schedule.id },
-                        }}
-                      >
-                        {name}
-                      </AppLink>
-                    </TableRowHeader>
-                    <TableCell text="truncate">
-                      {names.get(schedule.account_id)}
-                    </TableCell>
-                    <TableCell numeric>{money(terms.amount.amount)}</TableCell>
-                    <TableCell numeric>{money(cost.monthly)}</TableCell>
-                    <TableCell numeric>{money(cost.yearly)}</TableCell>
-                    <TableCell>
-                      <div className={styles.history}>
-                        {schedule.terms.map((v) => (
-                          <Fragment key={v.effective_from}>
-                            <Text size="sm" tone="muted" numeric="tabular">
-                              {formatDate(v.effective_from, locale)}
-                            </Text>
-                            <Text size="sm" numeric="tabular">
-                              {fmt.money(v.amount, scale(v.amount.currency))}
-                            </Text>
-                          </Fragment>
-                        ))}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {schedule.ends_on === undefined
-                        ? t("schedule.noEnd")
-                        : formatDate(schedule.ends_on, locale)}
-                    </TableCell>
-                    <TableCell sticky="end">
-                      <ScheduleActions schedule={schedule} name={name} />
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
+              {active.map(({ schedule, terms, cost }) => (
+                <SubscriptionRow
+                  key={schedule.id}
+                  schedule={schedule}
+                  terms={terms}
+                  cost={cost}
+                  accountNames={names}
+                  scale={scale}
+                />
+              ))}
+              {ended.length > 0 && (
+                <>
+                  <TableGroupRow>{t("schedules.ended")}</TableGroupRow>
+                  {ended.map(({ schedule, terms, cost }) => (
+                    <SubscriptionRow
+                      key={schedule.id}
+                      schedule={schedule}
+                      terms={terms}
+                      cost={cost}
+                      accountNames={names}
+                      scale={scale}
+                      ended
+                    />
+                  ))}
+                </>
+              )}
             </TableBody>
-            {currency !== undefined && rows.length > 0 && (
+            {currency !== undefined && active.length > 0 && (
               <TableSummary>
                 <TableRow>
                   <TableRowHeader colSpan={3}>
