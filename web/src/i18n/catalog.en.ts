@@ -1642,6 +1642,9 @@ export const catalogEn = {
   "occurrence.moveHint":
     "A later change of the schedule's terms keeps the new date.",
   "occurrence.date": "New date",
+  "occurrence.received": "Received {amount}",
+  "occurrence.paid": "Paid {amount}",
+  "occurrence.variance": "{percent} vs expected",
   "problem.occurrence_closed":
     "The occurrence is no longer open to this change.",
   "recurrence.daily": "Every day",

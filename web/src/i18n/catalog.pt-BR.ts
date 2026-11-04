@@ -1663,6 +1663,9 @@ export const catalogPtBR: Catalog = {
   "occurrence.moveHint":
     "Uma mudança posterior nos termos do agendamento mantém a nova data.",
   "occurrence.date": "Nova data",
+  "occurrence.received": "Recebido {amount}",
+  "occurrence.paid": "Pago {amount}",
+  "occurrence.variance": "{percent} sobre o previsto",
   "problem.occurrence_closed": "A ocorrência não aceita mais esta mudança.",
   "recurrence.daily": "Todo dia",
   "recurrence.dailyMany": "A cada {count} dias",

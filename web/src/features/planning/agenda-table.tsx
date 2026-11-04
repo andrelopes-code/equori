@@ -22,6 +22,7 @@ import type { RefObject } from "react";
 import { netOf } from "@/features/planning/agenda";
 import type { Agenda, AgendaRow } from "@/features/planning/agenda";
 import { OccurrenceActions } from "@/features/planning/occurrence-actions";
+import { OccurrenceReceived } from "@/features/planning/occurrence-received";
 import { kindLabel, stateTone } from "@/features/planning/schedule-words";
 import { formatDate, formatDayHeader } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
@@ -103,6 +104,10 @@ export function AgendaTable({
         </TableCell>
         <TableCell numeric>
           {fmt.signed(r.money, scale(r.money.currency))}
+          <OccurrenceReceived
+            occurrence={r.occurrence}
+            income={r.schedule?.kind === "income"}
+          />
         </TableCell>
         <TableCell sticky="end">
           <OccurrenceActions occurrence={r.occurrence} name={name} />
