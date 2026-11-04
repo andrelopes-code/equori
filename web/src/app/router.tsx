@@ -82,6 +82,7 @@ import {
   validateBudgetFormSearch,
   validateBudgetSearch,
   validatePlanningSearch,
+  validateScheduleFormSearch,
 } from "@/features/planning";
 import {
   InvitePage,
@@ -392,6 +393,7 @@ const planningRoute = createRoute({
 const newScheduleRoute = createRoute({
   getParentRoute: () => authedRoute,
   path: "planning/schedules/new",
+  validateSearch: validateScheduleFormSearch,
   component: ScheduleFormPage,
 });
 

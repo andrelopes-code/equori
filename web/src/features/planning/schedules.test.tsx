@@ -6,6 +6,7 @@ import { catalogEn } from "@/i18n/catalog.en";
 import { checkingID, money } from "@/testing/account-api";
 import { json, problem } from "@/testing/fake-api";
 import {
+  occurrence,
   planningApi as api,
   rent,
   rentID,
@@ -285,6 +286,115 @@ describe("New schedule", () => {
       expect(sent).toHaveLength(1);
     });
     expect(sent[0]).toMatchObject({ match_tolerance_bp: 500, grace_days: 7 });
+  });
+});
+
+describe("New schedule from another", () => {
+  function expectedRent(req: Request) {
+    const query = new URL(req.url).searchParams;
+    const items =
+      query.get("schedule_id") === rentID && query.get("state") === "expected"
+        ? [occurrence("4", rentID, "2026-11-05", 210000, "expected")]
+        : [];
+    return json(200, { items });
+  }
+
+  it("fills every field but the account and starts on the next expected date", async () => {
+    const sent: unknown[] = [];
+    await renderApp(`/planning/schedules/new?from=${rentID}`, {
+      fetch: api({
+        "GET /api/v1/occurrences": expectedRent,
+        "POST /api/v1/schedules": async (req) => {
+          sent.push(await req.json());
+          return json(201, rent);
+        },
+      }),
+    });
+    const description = await screen.findByRole("textbox", {
+      name: catalogEn["schedule.description"],
+    });
+    await waitFor(() => {
+      expect(description).toHaveValue("Rent");
+    });
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["schedule.create"] }),
+    );
+
+    expect(
+      await screen.findByText(catalogEn["schedule.required.account"]),
+    ).toBeInTheDocument();
+    expect(sent).toEqual([]);
+
+    await chooseAccount(catalogEn["schedule.account"], "Nubank");
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["schedule.create"] }),
+    );
+
+    await waitFor(() => {
+      expect(sent).toEqual([
+        {
+          kind: "bill",
+          account_id: checkingID,
+          counterpart_id: rent.counterpart_id,
+          description: "Rent",
+          amount: money(210000),
+          recurrence: {
+            frequency: "monthly",
+            interval: 1,
+            adjustment: "following",
+            day_of_month: 5,
+            start: "2026-11-05",
+          },
+          match_tolerance_bp: 1000,
+          grace_days: 3,
+        },
+      ]);
+    });
+  });
+});
+
+describe("New schedule from a schedule without a next occurrence", () => {
+  it("starts on today when the source has no expected occurrence", async () => {
+    const sent: { recurrence: { start: string } }[] = [];
+    await renderApp(`/planning/schedules/new?from=${rentID}`, {
+      fetch: api({
+        "GET /api/v1/occurrences": () => json(200, { items: [] }),
+        "POST /api/v1/schedules": async (req) => {
+          sent.push((await req.json()) as (typeof sent)[number]);
+          return json(201, rent);
+        },
+      }),
+    });
+    await waitFor(() => {
+      expect(
+        screen.getByRole("textbox", {
+          name: catalogEn["schedule.description"],
+        }),
+      ).toHaveValue("Rent");
+    });
+    await chooseAccount(catalogEn["schedule.account"], "Nubank");
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["schedule.create"] }),
+    );
+
+    await waitFor(() => {
+      expect(sent).toHaveLength(1);
+    });
+    expect(sent[0]?.recurrence.start).toBe("2026-10-17");
+  });
+
+  it("opens the empty form when the source does not exist", async () => {
+    await renderApp(`/planning/schedules/new?from=${rentID}`, {
+      fetch: api({
+        [`GET /api/v1/schedules/${rentID}`]: () => problem(404, "not_found"),
+      }),
+    });
+
+    expect(
+      await screen.findByRole("textbox", {
+        name: catalogEn["schedule.description"],
+      }),
+    ).toHaveValue("");
   });
 });
 

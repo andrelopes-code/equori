@@ -30,6 +30,7 @@ export {
   validateBudgetFormSearch,
   validateBudgetSearch,
   validatePlanningSearch,
+  validateScheduleFormSearch,
 } from "@/features/planning/planning-search";
 export { BudgetPage } from "@/features/planning/budget-page";
 export { BudgetFormPage } from "@/features/planning/budget-form-page";

@@ -62,3 +62,16 @@ export function validateBudgetFormSearch(
     ? { category: raw.category }
     : {};
 }
+
+export interface ScheduleFormSearch {
+  // The schedule the form continues: its fields fill the form.
+  from?: string;
+}
+
+export function validateScheduleFormSearch(
+  raw: Record<string, unknown>,
+): ScheduleFormSearch {
+  return typeof raw.from === "string" && uuidPattern.test(raw.from)
+    ? { from: raw.from }
+    : {};
+}
