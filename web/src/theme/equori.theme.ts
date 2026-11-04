@@ -163,6 +163,18 @@ const tooltipArrowClipRule = `
 }
 `;
 
+// A long list (150 currencies) in a select, a picker or a menu stops at 20 rem, 8 to 9 rows, and
+// scrolls inside. The overlay token is not set on the root: a popover, such as the calendar of a
+// date field, would read it too and clip its content.
+const listHeightRule = `
+[data-ui="select"],
+[data-ui="multi-select"],
+[data-ui="entity-picker"],
+[data-ui="menu"] {
+  --slotted-overlay-max-block-size: 20rem;
+}
+`;
+
 // A bottom sheet slides in 480 ms and out in 260 ms; 240 ms and 280 ms read abrupt on the way in.
 const sheetSlideRule = `
 [data-ui="drawer"][data-mode="overlay"][data-side="bottom"][data-drag] {
@@ -274,9 +286,6 @@ export default extendTheme(
     // Destinations read muted, the current one in the full text colour over the bar's own
     // ground, underlined.
     components: {
-      // A long list (150 currencies) in a select, a picker or a menu stops at 20 rem, 8 to 9 rows,
-      // and scrolls inside.
-      "--slotted-overlay-max-block-size": "20rem",
       // Workaround for Slotted issue #38: at 0.25rem a description or an error touched the
       // control above it.
       "--slotted-field-group-message-gap": "var(--slotted-space-4)",
@@ -335,6 +344,7 @@ export default extendTheme(
       sheetSlideRule,
       tooltipArrowClipRule,
       tagInsetRule,
+      listHeightRule,
     ],
   },
   { name: "equori" },
