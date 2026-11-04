@@ -24,8 +24,9 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/secret"
 )
 
-// LatestReleaseURL is the only address the version check requests (A159.2).
-const LatestReleaseURL = "https://api.github.com/repos/andrelopes-code/equori/releases/latest"
+// ReleasesURL is the only endpoint the version check requests, with /latest or ?per_page=1
+// (A159.2).
+const ReleasesURL = "https://api.github.com/repos/andrelopes-code/equori/releases"
 
 // LogRecordsKept is how many warn and error records the diagnostic file holds (A158).
 const LogRecordsKept = 200
@@ -53,7 +54,7 @@ type Config struct {
 	Dump        func(ctx context.Context, path string) error
 	Environment []string
 	Log         func() []logring.Record
-	ReleaseURL  string // "" is LatestReleaseURL
+	ReleaseURL  string // "" is ReleasesURL
 	// Distribution is EQUORI_DISTRIBUTION: "compose" names the form of compose.yaml (A194.1).
 	Distribution string
 	// Set by internal/server.
@@ -81,7 +82,7 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*Module, error) {
 		return nil, err
 	}
 
-	svc := app.NewService(postgres.NewRepository(pool), postgres.NewCatalog(pool), releases.NewClient(cmp.Or(cfg.ReleaseURL, LatestReleaseURL)), cfg.Admins, box, cfg.Clock, app.Config{
+	svc := app.NewService(postgres.NewRepository(pool), postgres.NewCatalog(pool), releases.NewClient(cmp.Or(cfg.ReleaseURL, ReleasesURL)), cfg.Admins, box, cfg.Clock, app.Config{
 		BackupDir:    cfg.BackupDir,
 		CopyDir:      cfg.CopyDir,
 		Dump:         cfg.Dump,
@@ -104,8 +105,8 @@ func (m *Module) RegisterRoutes(mux *http.ServeMux) { m.http.Register(mux) }
 // BackupDir is empty.
 func (m *Module) RunBackups(ctx context.Context) { m.svc.RunBackups(ctx) }
 
-// RunVersionChecks checks for a newer release at start and every 24 hours until ctx ends; it
-// requests nothing without the admin's consent.
+// RunVersionChecks checks for a newer release at start and every 24 hours until ctx ends, and
+// every hour after a failed check; it requests nothing without the admin's consent.
 func (m *Module) RunVersionChecks(ctx context.Context) { m.svc.RunVersionChecks(ctx) }
 
 // CheckVersion runs one check now, under the rules of A159.2.

@@ -18,6 +18,7 @@ const (
 	versionPath     = "/api/v1/instance/version"
 	updateCheckPath = "/api/v1/instance/version/update-check"
 	releaseNotes    = "https://github.com/andrelopes-code/equori/releases/tag/v1.0.1"
+	prereleaseNotes = "https://github.com/andrelopes-code/equori/releases/tag/v1.0.0-rc.2"
 )
 
 type versionStatus struct {
@@ -32,12 +33,14 @@ type versionStatus struct {
 	Distribution string `json:"distribution"`
 }
 
-// releaseStub answers like the GitHub latest-release endpoint and records what it receives.
+// releaseStub answers like the GitHub releases endpoints and records what it receives: /latest
+// holds v1.0.1, the list holds v1.0.0-rc.2 first.
 type releaseStub struct {
 	*httptest.Server
 
 	mu       sync.Mutex
 	requests int
+	uri      string
 	headers  http.Header
 	status   int
 }
@@ -61,6 +64,7 @@ func TestS220VersionCheck(t *testing.T) {
 	putUpdateCheck(t, h, true)
 	checkVersion(t, h)
 	stub.wantRequests(t, 1)
+	stub.wantURI(t, "/latest")
 
 	if got := stub.header("User-Agent"); got != "equori" {
 		t.Fatalf("User-Agent = %q, want equori", got)
@@ -138,6 +142,29 @@ func TestA159FailedCheckKeepsAnswer(t *testing.T) {
 	}
 }
 
+// A159.2: a pre-release binary reads the newest release of the list, pre-releases included.
+func TestA159PrereleaseChannel(t *testing.T) {
+	t.Parallel()
+
+	stub := newReleaseStub(t)
+	h := apitest.New(t, apitest.Version("v1.0.0-rc.1"), apitest.ReleaseURL(stub.URL))
+	putUpdateCheck(t, h, true)
+
+	checkVersion(t, h)
+
+	stub.wantRequests(t, 1)
+	stub.wantURI(t, "/?per_page=1")
+
+	got := getVersion(t, h)
+	if got.Latest == nil || got.Latest.Version != "v1.0.0-rc.2" || got.Latest.URL != prereleaseNotes {
+		t.Fatalf("latest = %+v, want v1.0.0-rc.2 at %s", got.Latest, prereleaseNotes)
+	}
+
+	if !got.Newer {
+		t.Fatal("newer = false, want true")
+	}
+}
+
 func TestA159SetupStoresConsent(t *testing.T) {
 	t.Parallel()
 
@@ -186,6 +213,7 @@ func newReleaseStub(t *testing.T) *releaseStub {
 		defer s.mu.Unlock()
 
 		s.requests++
+		s.uri = r.URL.RequestURI()
 		s.headers = r.Header.Clone()
 
 		if s.status != http.StatusOK {
@@ -193,7 +221,12 @@ func newReleaseStub(t *testing.T) *releaseStub {
 			return
 		}
 
-		_, _ = w.Write([]byte(`{"tag_name": "v1.0.1", "html_url": "` + releaseNotes + `"}`))
+		if r.URL.Path == "/latest" {
+			_, _ = w.Write([]byte(`{"tag_name": "v1.0.1", "html_url": "` + releaseNotes + `"}`))
+			return
+		}
+
+		_, _ = w.Write([]byte(`[{"tag_name": "v1.0.0-rc.2", "html_url": "` + prereleaseNotes + `"}]`))
 	}))
 	t.Cleanup(s.Close)
 
@@ -208,6 +241,17 @@ func (s *releaseStub) wantRequests(t *testing.T, want int) {
 
 	if s.requests != want {
 		t.Fatalf("release requests = %d, want %d", s.requests, want)
+	}
+}
+
+func (s *releaseStub) wantURI(t *testing.T, want string) {
+	t.Helper()
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.uri != want {
+		t.Fatalf("release request URI = %q, want %q", s.uri, want)
 	}
 }
 

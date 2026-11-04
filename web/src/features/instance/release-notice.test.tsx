@@ -42,10 +42,11 @@ const notice = catalogEn["overview.release"]
   .replace("{version}", "v1.0.1")
   .replace("{current}", "v1.0.0");
 
+// A195.2: the commands install the release the notice names.
 const windowsCommand =
-  "irm https://github.com/andrelopes-code/equori/releases/latest/download/install.ps1 | iex";
+  "irm https://github.com/andrelopes-code/equori/releases/download/v1.0.1/install.ps1 | iex";
 const unixCommand =
-  "curl -fsSL https://github.com/andrelopes-code/equori/releases/latest/download/install.sh | sh";
+  "curl -fsSL https://github.com/andrelopes-code/equori/releases/download/v1.0.1/install.sh | sh";
 
 describe("Release notice on the overview (P13 A159)", () => {
   beforeEach(() => {

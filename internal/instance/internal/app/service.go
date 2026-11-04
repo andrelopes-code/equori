@@ -38,7 +38,8 @@ type Catalog interface {
 
 // Releases reads the newest release of the project.
 type Releases interface {
-	Latest(ctx context.Context) (tag, url string, err error)
+	// Latest skips pre-releases unless prerelease is set (A159.2).
+	Latest(ctx context.Context, prerelease bool) (tag, url string, err error)
 }
 
 type Admins interface {
@@ -80,10 +81,9 @@ type Service struct {
 	log      *slog.Logger
 	// backups serializes Backup, so "Back up now" and the periodic backup never write together.
 	backups sync.Mutex
-	// versions guards latest and lastCheck.
-	versions  sync.Mutex
-	latest    *domain.Release
-	lastCheck time.Time
+	// versions guards latest.
+	versions sync.Mutex
+	latest   *domain.Release
 }
 
 func NewService(repo Repository, catalog Catalog, releases Releases, admins Admins, box Sealer, clk clock.Clock, cfg Config, log *slog.Logger) *Service {

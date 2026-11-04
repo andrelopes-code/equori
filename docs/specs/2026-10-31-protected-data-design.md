@@ -84,13 +84,13 @@ A log message built from data, rather than a fixed text, breaks the guarantee; S
 ## A159 New-version notice
 
 1. The instance stores `update_check`: null before the admin answers, then true or false. `POST /setup` takes a required `update_check` boolean, asked on the setup page with no preselected answer. An instance set up before P13 keeps null until an admin answers on the `about` topic.
-2. With `update_check` true and a binary version that parses as `vMAJOR.MINOR.PATCH` with an optional pre-release suffix (ADR 022, V1), `serve` sends `GET https://api.github.com/repos/andrelopes-code/equori/releases/latest` at start and every 24 hours. The request carries the headers `User-Agent: equori` and `Accept: application/vnd.github+json`, and nothing else that identifies the instance or its version. A binary without such a version (`dev`) sends no request.
-3. The answer's `tag_name` and `html_url` are kept in memory with the instant of the check. A failed check is logged at level warn and keeps the previous answer.
-4. A release is newer when its MAJOR.MINOR.PATCH is greater, compared field by field as integers, or equal while the binary carries a pre-release suffix.
+2. With `update_check` true and a binary version that parses as `vMAJOR.MINOR.PATCH` with an optional pre-release suffix (ADR 022, V1), `serve` sends `GET https://api.github.com/repos/andrelopes-code/equori/releases/latest` at start and every 24 hours. A binary with a pre-release suffix sends `GET https://api.github.com/repos/andrelopes-code/equori/releases?per_page=1` instead and reads the first entry, since `/latest` skips pre-releases. The request carries the headers `User-Agent: equori` and `Accept: application/vnd.github+json`, and nothing else that identifies the instance or its version. A binary without such a version (`dev`) sends no request.
+3. The answer's `tag_name` and `html_url` are kept in memory with the instant of the check. A failed check is logged at level warn, keeps the previous answer and is retried at the next hourly tick; the 24 hours count from the last check that answered.
+4. A release is newer when its version has higher precedence under SemVer 2.0.0, item 11: MAJOR.MINOR.PATCH compared field by field as integers; with those equal, a release without a suffix ranks above a pre-release, and two suffixes compare identifier by identifier (numeric ones as integers, below alphanumeric ones).
 5. The settings topic `about`, in the group `system`, admins only, shows the version, the consent choice, the newest release with a link to its notes when it is newer, and the diagnostic file button.
 6. The overview shows admins one notice line for a newer release, with the link. Dismissing it hides that version in the browser (local storage); a later version shows again.
 
-N17 becomes: "No telemetry. The application contacts only configured integrations, price feeds and, with an admin's consent, the latest-release endpoint of the GitHub repository (P13 A159)."
+N17 becomes: "No telemetry. The application contacts only configured integrations, price feeds and, with an admin's consent, the releases endpoint of the GitHub repository (P13 A159)."
 
 ## Regions
 

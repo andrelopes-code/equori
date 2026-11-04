@@ -45,7 +45,7 @@ export function UpgradeDialog({
 
         <DialogBody>
           <Stack gap={4}>
-            {distribution === "compose" && <UpgradeCompose />}
+            {distribution === "compose" && <UpgradeCompose version={version} />}
             {distribution === "managed" && <Text>{t("upgrade.managed")}</Text>}
             {distribution === "other" && <Text>{t("upgrade.other")}</Text>}
             <Text size="sm">

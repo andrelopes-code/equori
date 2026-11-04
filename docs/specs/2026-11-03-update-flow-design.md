@@ -35,7 +35,7 @@ The README states that a release carries `equori_<version>_windows_amd64_setup.e
 
 1. The notice reads "Version {latest} of equori is available. This instance runs {version}.", followed by the link "See what changed" to the release page. Its actions: "How to upgrade" (main) and "Dismiss".
 2. "How to upgrade" opens a dialog by `distribution`:
-   - `compose`: "Run one of these commands on the computer where equori is installed.", then two commands, each with its label and a copy button: Windows (PowerShell) `irm https://github.com/andrelopes-code/equori/releases/latest/download/install.ps1 | iex`; macOS and Linux (Terminal) `curl -fsSL https://github.com/andrelopes-code/equori/releases/latest/download/install.sh | sh`. Below: "The data stays. Before it changes the database, equori writes a backup."
+   - `compose`: "Run one of these commands on the computer where equori is installed.", then two commands, each with its label and a copy button: Windows (PowerShell) `irm https://github.com/andrelopes-code/equori/releases/download/{latest}/install.ps1 | iex`; macOS and Linux (Terminal) `curl -fsSL https://github.com/andrelopes-code/equori/releases/download/{latest}/install.sh | sh`. `{latest}` is the tag the notice names, so a pre-release notice installs that pre-release. Below: "The data stays. Before it changes the database, equori writes a backup."
    - `managed`: "Install the new version the way this one was installed: `brew upgrade equori` with Homebrew, or the Windows installer of the release page." and the release page link.
    - `other`: "Install the new version the way this one was installed. The release page holds its files."
    - Every form: the link "Upgrade and going back" to the help page `installation`, which gains the section of A197.

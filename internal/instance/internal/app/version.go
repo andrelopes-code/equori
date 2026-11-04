@@ -45,7 +45,8 @@ func (s *Service) StoreUpdateCheck(ctx context.Context, consent bool) error {
 }
 
 // CheckVersion requests the latest release when the admin consented and the binary has a
-// version (A159.2). A failed check is logged and keeps the previous answer (A159.3).
+// version (A159.2). A failed check is logged, keeps the previous answer and leaves the check
+// due (A159.3).
 func (s *Service) CheckVersion(ctx context.Context) error {
 	settings, err := s.repo.Settings(ctx)
 	if err != nil {
@@ -57,24 +58,23 @@ func (s *Service) CheckVersion(ctx context.Context) error {
 	}
 
 	now := s.clock.Now()
-	tag, url, err := s.releases.Latest(ctx)
 
-	s.versions.Lock()
-	defer s.versions.Unlock()
-
-	s.lastCheck = now
-
+	tag, url, err := s.releases.Latest(ctx, domain.Prerelease(s.cfg.Version))
 	if err != nil {
 		s.log.WarnContext(ctx, "check for a newer release", "code", "version_check_failed", "error", err)
 		return err
 	}
+
+	s.versions.Lock()
+	defer s.versions.Unlock()
 
 	s.latest = &domain.Release{Version: tag, URL: url, CheckedAt: now}
 
 	return nil
 }
 
-// RunVersionChecks checks every hour whether the last attempt is 24 hours old or absent.
+// RunVersionChecks checks every hour whether the last check that answered is 24 hours old or
+// absent.
 func (s *Service) RunVersionChecks(ctx context.Context) {
 	tick := time.NewTicker(time.Hour)
 	defer tick.Stop()
@@ -96,7 +96,7 @@ func (s *Service) checkDue() bool {
 	s.versions.Lock()
 	defer s.versions.Unlock()
 
-	return s.lastCheck.IsZero() || s.clock.Now().Sub(s.lastCheck) >= 24*time.Hour
+	return s.latest == nil || s.clock.Now().Sub(s.latest.CheckedAt) >= 24*time.Hour
 }
 
 func (s *Service) versionStatus(ctx context.Context) (VersionStatus, error) {
