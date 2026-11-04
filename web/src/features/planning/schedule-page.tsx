@@ -30,7 +30,7 @@ import {
   TableRowHeader,
 } from "@slotted/react/table";
 import { useQuery } from "@tanstack/react-query";
-import { Link, useParams } from "@tanstack/react-router";
+import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 
 import { useApi } from "@/api/api-context";
@@ -45,6 +45,7 @@ import { MatchingDialog } from "@/features/planning/matching-dialog";
 import { PauseDialog } from "@/features/planning/pause-dialog";
 import {
   currentTerms,
+  hasEnded,
   kindLabel,
   recurrenceWords,
 } from "@/features/planning/schedule-words";
@@ -70,6 +71,7 @@ export function SchedulePage() {
   const today = useToday();
   const fmt = useMoneyFormat();
   const scale = useScale();
+  const navigate = useNavigate();
   const { id } = useParams({ from: "/_authed/planning/schedules/$id" });
   const schedule = useQuery(scheduleQuery(api, id));
   const occurrences = useQuery(
@@ -144,6 +146,19 @@ export function SchedulePage() {
                   setDialog("pause");
                 }}
               />
+              {!hasEnded(s.ends_on, today) && (
+                <HeaderAction
+                  label={t("schedule.moveToAccount")}
+                  glyph="arrow-right"
+                  wordsOnly
+                  onClick={() => {
+                    void navigate({
+                      to: "/planning/schedules/new",
+                      search: { from: s.id },
+                    });
+                  }}
+                />
+              )}
               <HeaderAction
                 label={t("schedule.end")}
                 glyph="stop"

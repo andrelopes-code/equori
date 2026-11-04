@@ -66,4 +66,26 @@ describe("Subscriptions tab", () => {
       expect(sent).toEqual([{ from: "2026-10-17", to: "2026-11-16" }]);
     });
   });
+
+  it("moves a subscription to another account from its row", async () => {
+    const { router } = await renderApp("/planning?tab=subscriptions", {
+      fetch: api(),
+    });
+    const user = userEvent.setup();
+    await user.click(
+      await screen.findByRole("button", {
+        name: catalogEn["subscriptions.actions"].replace("{name}", "Streaming"),
+      }),
+    );
+    await user.click(
+      await screen.findByRole("menuitem", {
+        name: catalogEn["schedule.moveToAccount"],
+      }),
+    );
+
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/planning/schedules/new");
+    });
+    expect(router.state.location.search).toEqual({ from: streamingID });
+  });
 });

@@ -19,7 +19,7 @@ import { useState } from "react";
 
 import { useApi } from "@/api/api-context";
 import { ProblemError, errorText, fieldErrors } from "@/api/problem";
-import { calendarsQuery, useCreateSchedule } from "@/features/planning/api";
+import { calendarsQuery } from "@/features/planning/api";
 import { RecurrenceFields } from "@/features/planning/recurrence-fields";
 import { ScheduleAccountsSection } from "@/features/planning/schedule-accounts-section";
 import { ScheduleAdvancedSection } from "@/features/planning/schedule-advanced-section";
@@ -30,6 +30,10 @@ import {
   type ScheduleDraft,
 } from "@/features/planning/schedule-draft";
 import { useScheduleDraft } from "@/features/planning/use-schedule-draft";
+import {
+  EndFailedError,
+  useScheduleFlow,
+} from "@/features/planning/use-schedule-flow";
 import { settingsQuery, useScale } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
 import { FormNotice } from "@/ui/form-notice";
@@ -38,16 +42,18 @@ import { FormSection } from "@/ui/form-section";
 
 interface ScheduleFormProps {
   initial: ScheduleDraft;
+  // The schedule this one continues; it ends on the start date of the new rule.
+  from?: string | undefined;
 }
 
-export function ScheduleForm({ initial }: ScheduleFormProps) {
+export function ScheduleForm({ initial, from }: ScheduleFormProps) {
   const t = useT();
   const api = useApi();
   const navigate = useNavigate();
   const scale = useScale();
   const settings = useQuery(settingsQuery(api));
   const calendars = useQuery(calendarsQuery(api));
-  const create = useCreateSchedule();
+  const flow = useScheduleFlow(from);
   const { draft, patch } = useScheduleDraft(initial);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [summary, setSummary] = useState<string | null>(null);
@@ -69,15 +75,21 @@ export function ScheduleForm({ initial }: ScheduleFormProps) {
             defaultCalendar: calendars.data?.default,
           });
     if (Object.keys(problems).length > 0 || input === null) return;
-    create
-      .mutateAsync(input)
-      .then((schedule) =>
+    flow
+      .run(input)
+      .then((id) =>
         navigate({
           to: "/planning/schedules/$id",
-          params: { id: schedule.id },
+          params: { id },
         }),
       )
       .catch((caught: unknown) => {
+        if (caught instanceof EndFailedError) {
+          setSummary(
+            `${t("schedule.moveEndFailed")} ${errorText(caught.reason, t)}`,
+          );
+          return;
+        }
         if (caught instanceof ProblemError)
           setErrors(fieldErrors(caught.problem));
         setSummary(errorText(caught, t));
@@ -107,7 +119,7 @@ export function ScheduleForm({ initial }: ScheduleFormProps) {
               </ActionBarAction>
               <ActionBarAction>
                 <Button
-                  loading={create.isPending}
+                  loading={flow.isPending}
                   disabled={currency === undefined || scale === null}
                   onClick={submit}
                 >

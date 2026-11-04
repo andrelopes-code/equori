@@ -1772,6 +1772,9 @@ export const catalogEn = {
   "schedule.endHint":
     "Expected occurrences from {date} on are removed; realized ones stay.",
   "schedule.endFrom": "From",
+  "schedule.moveToAccount": "Move to another account",
+  "schedule.moveEndFailed":
+    "The new schedule was created, but the previous one could not be ended. Save again to end it.",
   "recurrence.frequency": "Frequency",
   "recurrence.frequency.daily": "Daily",
   "recurrence.frequency.weekly": "Weekly",

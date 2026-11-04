@@ -10,6 +10,7 @@ import {
   planningApi as api,
   rent,
   rentID,
+  salaryID,
   streamingID,
 } from "@/testing/planning-api";
 import { chooseAccount } from "@/testing/account-choice";
@@ -397,6 +398,135 @@ describe("New schedule from a schedule without a next occurrence", () => {
         name: catalogEn["schedule.description"],
       }),
     ).toHaveValue("");
+  });
+});
+
+describe("Move a schedule to another account", () => {
+  const movedID = salaryID;
+  const nextRent = occurrence("4", rentID, "2026-11-05", 210000, "expected");
+
+  function moveApi(calls: string[], endAnswer: () => Response) {
+    return api({
+      "GET /api/v1/occurrences": () => json(200, { items: [nextRent] }),
+      "POST /api/v1/schedules": () => {
+        calls.push("create");
+        return json(201, { ...rent, id: movedID });
+      },
+      [`POST /api/v1/schedules/${rentID}/end`]: async (req) => {
+        calls.push(`end ${JSON.stringify(await req.json())}`);
+        return endAnswer();
+      },
+    });
+  }
+
+  async function saveWithAccount() {
+    await waitFor(() => {
+      expect(
+        screen.getByRole("textbox", {
+          name: catalogEn["schedule.description"],
+        }),
+      ).toHaveValue("Rent");
+    });
+    await chooseAccount(catalogEn["schedule.account"], "Nubank");
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["schedule.create"] }),
+    );
+  }
+
+  it("opens the filled form from the schedule page", async () => {
+    const { router } = await renderApp(`/planning/schedules/${rentID}`, {
+      fetch: api(),
+    });
+    await userEvent.click(
+      await screen.findByRole("button", {
+        name: catalogEn["schedule.moveToAccount"],
+      }),
+    );
+
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/planning/schedules/new");
+    });
+    expect(router.state.location.search).toEqual({ from: rentID });
+  });
+
+  it("offers no move for a schedule that has ended", async () => {
+    await renderApp(`/planning/schedules/${rentID}`, {
+      fetch: api({
+        [`GET /api/v1/schedules/${rentID}`]: () =>
+          json(200, { ...rent, ends_on: "2026-10-01" }),
+      }),
+    });
+    await screen.findByRole("button", { name: catalogEn["schedule.end"] });
+
+    expect(
+      screen.queryByRole("button", {
+        name: catalogEn["schedule.moveToAccount"],
+      }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("offers the move to a schedule that ends later", async () => {
+    await renderApp(`/planning/schedules/${streamingID}`, { fetch: api() });
+
+    expect(
+      await screen.findByRole("button", {
+        name: catalogEn["schedule.moveToAccount"],
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it("creates the new schedule, then ends the source on its start date", async () => {
+    const calls: string[] = [];
+    const { router } = await renderApp(
+      `/planning/schedules/new?from=${rentID}`,
+      { fetch: moveApi(calls, () => json(200, rent)) },
+    );
+    await saveWithAccount();
+
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe(
+        `/planning/schedules/${movedID}`,
+      );
+    });
+    expect(calls).toEqual(["create", 'end {"from":"2026-11-05"}']);
+  });
+
+  it("keeps the form and retries only the end when the end fails", async () => {
+    const calls: string[] = [];
+    let refuse = true;
+    const { router } = await renderApp(
+      `/planning/schedules/new?from=${rentID}`,
+      {
+        fetch: moveApi(calls, () => {
+          if (!refuse) return json(200, rent);
+          refuse = false;
+          return problem(409, "schedule_ended");
+        }),
+      },
+    );
+    await saveWithAccount();
+
+    expect(
+      await screen.findByText((text) =>
+        text.startsWith(catalogEn["schedule.moveEndFailed"]),
+      ),
+    ).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe("/planning/schedules/new");
+
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["schedule.create"] }),
+    );
+
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe(
+        `/planning/schedules/${movedID}`,
+      );
+    });
+    expect(calls).toEqual([
+      "create",
+      'end {"from":"2026-11-05"}',
+      'end {"from":"2026-11-05"}',
+    ]);
   });
 });
 

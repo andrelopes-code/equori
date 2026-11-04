@@ -18,5 +18,5 @@ export function ScheduleFormPage() {
       </Page>
     );
 
-  return <ScheduleForm initial={start} />;
+  return <ScheduleForm initial={start} from={from} />;
 }

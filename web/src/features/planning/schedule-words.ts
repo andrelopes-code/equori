@@ -124,6 +124,11 @@ export function currentTerms(
   return terms.filter((v) => v.effective_from <= date).at(-1) ?? terms[0];
 }
 
+// A schedule that ends on or before today produces no occurrence from now on.
+export function hasEnded(endsOn: string | undefined, today: string): boolean {
+  return endsOn !== undefined && endsOn <= today;
+}
+
 // Occurrences in a year of each frequency at interval 1; a week counts 52 times.
 const perYear: Record<Recurrence["frequency"], number> = {
   daily: 365,

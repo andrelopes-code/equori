@@ -1792,6 +1792,9 @@ export const catalogPtBR: Catalog = {
   "schedule.endHint":
     "As ocorrências previstas a partir de {date} são removidas; as já realizadas permanecem.",
   "schedule.endFrom": "A partir de",
+  "schedule.moveToAccount": "Mover para outra conta",
+  "schedule.moveEndFailed":
+    "O novo agendamento foi criado, mas o anterior não pôde ser encerrado. Salve de novo para encerrá-lo.",
   "recurrence.frequency": "Frequência",
   "recurrence.frequency.daily": "Diária",
   "recurrence.frequency.weekly": "Semanal",
