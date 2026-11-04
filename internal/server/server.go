@@ -10,6 +10,7 @@ import (
 	"log/slog"
 	"net/http"
 	"slices"
+	"sync"
 	"time"
 
 	"github.com/andrelopes-code/equori/api"
@@ -39,6 +40,13 @@ import (
 	"github.com/andrelopes-code/equori/internal/reporting"
 	"github.com/andrelopes-code/equori/web"
 )
+
+// contractValidator parses the embedded contract once per process. The Validator is read-only;
+// the test harness builds one App per test, and the parse took 62% of the CPU of
+// internal/classification's tests under -race.
+var contractValidator = sync.OnceValues(func() (*contract.Validator, error) {
+	return contract.New(api.Contract, "/api/v1")
+})
 
 type Config struct {
 	// Version is the version of the running app; "dev" when empty (ADR 021).
@@ -101,7 +109,7 @@ type App struct {
 
 // New registers every module's routes and outbox subscriptions; the caller runs Dispatcher.
 func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
-	validator, err := contract.New(api.Contract, "/api/v1")
+	validator, err := contractValidator()
 	if err != nil {
 		return nil, err
 	}
