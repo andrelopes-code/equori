@@ -29,6 +29,8 @@ The browser opens the address with the token. The form asks for email, password,
 
 Run the installation command again. `serve` backs up the data before it migrates (ADR 022, B3).
 
+The command replaces `compose.yaml` and keeps `.env`. A change to the services goes in `compose.override.yaml` in the installation directory: Docker Compose merges that file over `compose.yaml`, and the command does not write it.
+
 ## Going back
 
 In the installation directory:

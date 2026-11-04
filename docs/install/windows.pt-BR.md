@@ -29,6 +29,8 @@ O navegador abre o endereço com o token. O formulário pede email, senha, idiom
 
 Execute o comando de instalação de novo. O `serve` faz backup dos dados antes de migrar (ADR 022, B3).
 
+O comando substitui o `compose.yaml` e mantém o `.env`. Uma alteração nos serviços vai em `compose.override.yaml`, na pasta da instalação: o Docker Compose aplica esse arquivo sobre o `compose.yaml`, e o comando não o grava.
+
 ## Voltar à versão anterior
 
 No diretório de instalação:
