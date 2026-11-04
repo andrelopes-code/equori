@@ -50,6 +50,7 @@ import {
   recurrenceWords,
 } from "@/features/planning/schedule-words";
 import { TermsDialog } from "@/features/planning/terms-dialog";
+import { TermsSuggestionBanner } from "@/features/planning/terms-suggestion-banner";
 import { useScale } from "@/features/setup";
 import { formatDate, numberFormatter, shiftDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
@@ -61,6 +62,11 @@ import { QueryError } from "@/ui/query-error";
 import { PageBack } from "@/ui/page-back";
 
 type Dialog = "terms" | "matching" | "pause" | "end";
+
+interface Suggested {
+  amount: number;
+  effectiveFrom: string | undefined;
+}
 
 // One schedule: its facts, its terms versions, its pauses and its occurrences half a year either
 // side of today (listOccurrences reads at most 366 days).
@@ -81,9 +87,11 @@ export function SchedulePage() {
   );
   const accounts = useQuery(accountsQuery(api));
   const [dialog, setDialog] = useState<Dialog | null>(null);
+  const [suggested, setSuggested] = useState<Suggested | null>(null);
   const table = useRef<TableHandle>(null);
   const close = () => {
     setDialog(null);
+    setSuggested(null);
   };
   if (schedule.isError)
     return (
@@ -182,6 +190,17 @@ export function SchedulePage() {
       </PageHeader>
       <PageBody>
         <Stack gap={6}>
+          {terms !== undefined && (
+            <TermsSuggestionBanner
+              terms={terms}
+              occurrences={occurrences.data ?? []}
+              onUpdate={(amount, effectiveFrom) => {
+                setSuggested({ amount, effectiveFrom });
+                setDialog("terms");
+              }}
+            />
+          )}
+
           <DescriptionList
             layout="stack"
             variant="framed"
@@ -317,7 +336,13 @@ export function SchedulePage() {
         </Stack>
       </PageBody>
       {dialog === "terms" && (
-        <TermsDialog schedule={s} onDone={close} onCancel={close} />
+        <TermsDialog
+          schedule={s}
+          initialAmount={suggested?.amount}
+          initialEffectiveFrom={suggested?.effectiveFrom}
+          onDone={close}
+          onCancel={close}
+        />
       )}
       {dialog === "matching" && (
         <MatchingDialog schedule={s} onDone={close} onCancel={close} />

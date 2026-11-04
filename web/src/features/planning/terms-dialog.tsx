@@ -33,10 +33,14 @@ type Schedule = components["schemas"]["Schedule"];
 // A new terms version from a date after the latest one: the amount, the recurrence or both.
 export function TermsDialog({
   schedule,
+  initialAmount = 0,
+  initialEffectiveFrom,
   onDone,
   onCancel,
 }: {
   schedule: Schedule;
+  initialAmount?: number | undefined;
+  initialEffectiveFrom?: string | undefined;
   onDone: () => void;
   onCancel: () => void;
 }) {
@@ -50,9 +54,10 @@ export function TermsDialog({
   const latest = schedule.terms.at(-1);
   const after = latest?.effective_from ?? today;
   const [from, setFrom] = useState(
-    shiftDate(after, 1) > today ? shiftDate(after, 1) : today,
+    initialEffectiveFrom ??
+      (shiftDate(after, 1) > today ? shiftDate(after, 1) : today),
   );
-  const [amount, setAmount] = useState(0);
+  const [amount, setAmount] = useState(initialAmount);
   const [withRecurrence, setWithRecurrence] = useState(false);
   const [recurrence, setRecurrence] = useState(latest?.recurrence);
   const [errors, setErrors] = useState<Record<string, string>>({});

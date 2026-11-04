@@ -1775,6 +1775,8 @@ export const catalogEn = {
   "schedule.moveToAccount": "Move to another account",
   "schedule.moveEndFailed":
     "The new schedule was created, but the previous one could not be ended. Save again to end it.",
+  "schedule.drift.title": "The last 3 amounts were close to {amount}.",
+  "schedule.drift.action": "Update expected amount",
   "recurrence.frequency": "Frequency",
   "recurrence.frequency.daily": "Daily",
   "recurrence.frequency.weekly": "Weekly",

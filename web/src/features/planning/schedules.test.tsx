@@ -684,6 +684,66 @@ describe("Schedule page", () => {
     });
   });
 
+  describe("amount drift", () => {
+    const nextRent = occurrence("5", rentID, "2026-11-05", 210000, "expected");
+    const received = [
+      ["6", "2026-09-05", 190000],
+      ["7", "2026-08-05", 191000],
+      ["8", "2026-07-05", 189000],
+    ].map(([id, date, amount]) => ({
+      ...occurrence(String(id), rentID, String(date), 210000, "realized"),
+      actual_amount: money(Number(amount)),
+    }));
+
+    it("suggests the median of the last 3 amounts and prefills the terms dialog", async () => {
+      const sent: unknown[] = [];
+      await renderApp(`/planning/schedules/${rentID}`, {
+        fetch: api({
+          "GET /api/v1/occurrences": () =>
+            json(200, { items: [...received, nextRent] }),
+          [`POST /api/v1/schedules/${rentID}/terms`]: async (req) => {
+            sent.push(await req.json());
+            return json(201, rent);
+          },
+        }),
+      });
+      expect(
+        await screen.findByText(
+          words("schedule.drift.title", { amount: "R$1,900.00" }),
+        ),
+      ).toBeInTheDocument();
+
+      await userEvent.click(
+        screen.getByRole("button", {
+          name: catalogEn["schedule.drift.action"],
+        }),
+      );
+      const dialog = await screen.findByRole("dialog");
+      await userEvent.click(
+        within(dialog).getByRole("button", {
+          name: catalogEn["schedule.save"],
+        }),
+      );
+
+      await waitFor(() => {
+        expect(sent).toEqual([
+          { effective_from: "2026-11-05", amount: money(190000) },
+        ]);
+      });
+    });
+
+    it("stays silent when the received amounts match the expected one", async () => {
+      await renderApp(`/planning/schedules/${rentID}`, { fetch: api() });
+      await screen.findByRole("table", { name: catalogEn["schedule.terms"] });
+
+      expect(
+        screen.queryByRole("button", {
+          name: catalogEn["schedule.drift.action"],
+        }),
+      ).toBeNull();
+    });
+  });
+
   it("changes the matching settings and states that they apply from now on", async () => {
     const sent: unknown[] = [];
     await renderApp(`/planning/schedules/${rentID}`, {

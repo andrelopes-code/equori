@@ -1795,6 +1795,8 @@ export const catalogPtBR: Catalog = {
   "schedule.moveToAccount": "Mover para outra conta",
   "schedule.moveEndFailed":
     "O novo agendamento foi criado, mas o anterior não pôde ser encerrado. Salve de novo para encerrá-lo.",
+  "schedule.drift.title": "Os últimos 3 valores ficaram próximos de {amount}.",
+  "schedule.drift.action": "Atualizar valor previsto",
   "recurrence.frequency": "Frequência",
   "recurrence.frequency.daily": "Diária",
   "recurrence.frequency.weekly": "Semanal",
