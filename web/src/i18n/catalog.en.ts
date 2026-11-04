@@ -1069,7 +1069,6 @@ export const catalogEn = {
   "rules.new": "New rule",
   "rules.ran":
     "{categorized} of {examined} uncategorized transactions categorized",
-  "rules.section": "Rules, in the order they run",
   "rules.deleteTitle": "Delete rule {name}",
   "rules.deleteDescription":
     "The transactions it already categorized keep their category.",

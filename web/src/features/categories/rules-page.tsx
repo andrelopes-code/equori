@@ -215,9 +215,6 @@ export function RulesPage() {
             </Section>
           )}
           <Section>
-            <SectionHeader>
-              <SectionTitle>{t("rules.section")}</SectionTitle>
-            </SectionHeader>
             <SectionBody>
               <RuleList
                 rules={shown}
