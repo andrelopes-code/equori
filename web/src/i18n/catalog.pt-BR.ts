@@ -1072,7 +1072,6 @@ export const catalogPtBR: Catalog = {
   "rules.new": "Nova regra",
   "rules.ran":
     "{categorized} de {examined} transações sem categoria foram categorizadas",
-  "rules.section": "Regras, na ordem em que rodam",
   "rules.deleteTitle": "Excluir a regra {name}",
   "rules.deleteDescription":
     "As transações que ela já categorizou mantêm a categoria.",
