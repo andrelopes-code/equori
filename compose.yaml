@@ -24,6 +24,8 @@ services:
       EQUORI_API_DOCS: ${EQUORI_API_DOCS:-}
     volumes:
       - backups:/backups
+      # ADR 008, K6: without EQUORI_SECRET_KEY the first start writes secret.key here, apart from the backups.
+      - appdata:/data
       - ${EQUORI_COPY_FOLDER:-./copies}:/copies
     depends_on:
       db:
@@ -50,3 +52,4 @@ services:
 volumes:
   pgdata:
   backups:
+  appdata:

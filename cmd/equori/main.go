@@ -382,16 +382,35 @@ func setup() (config.Config, *slog.Logger, error) {
 		}
 	}
 
-	if cfg.Managed() && cfg.SecretKey == "" {
-		if cfg.SecretKey, err = secret.LoadOrCreateKey(filepath.Join(cfg.DataDir, "secret.key")); err != nil {
+	log := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: cfg.LogLevel}))
+
+	if keyDir := keyDirectory(cfg, getenv); cfg.SecretKey == "" && keyDir != "" {
+		key, err := secret.LoadOrCreateKey(filepath.Join(keyDir, "secret.key"))
+
+		switch {
+		case err == nil:
+			cfg.SecretKey = key
+		case cfg.Managed():
 			return config.Config{}, nil, err
+		default:
+			// External mode ran before without a key file: an unusable directory costs the key, not the start.
+			log.Warn("secret.key is unavailable", "dir", keyDir, "error", err)
 		}
 	}
 
-	log := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: cfg.LogLevel}))
 	startWarnings(log, cfg, getenv, envNames(os.Environ(), file))
 
 	return cfg, log, nil
+}
+
+// keyDirectory is where secret.key lives: the data directory in managed mode, else EQUORI_DATA_DIR
+// when set (ADR 008, K6). Empty means no key file.
+func keyDirectory(cfg config.Config, getenv func(string) string) string {
+	if cfg.Managed() {
+		return cfg.DataDir
+	}
+
+	return getenv("EQUORI_DATA_DIR")
 }
 
 // healthcheck backs the container HEALTHCHECK: the distroless image has no curl.

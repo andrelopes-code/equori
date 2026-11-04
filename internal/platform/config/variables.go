@@ -106,8 +106,8 @@ func Variables() []Variable {
 			Name: "EQUORI_SECRET_KEY", Reader: Binary, Kind: KindKey32,
 			Expected: "32 bytes in standard base64", Example: secretKeyExample,
 			Secret: true, Generated: true, Audience: Install,
-			Description:   "Key that seals the bank credentials, the second factor and the copy password (ADR 008); openssl rand -base64 32 writes one. Unset in external mode, those features are unavailable; managed mode writes secret.key. A new key makes the stored credentials unreadable, so a copy of .env stays apart from the backups.",
-			DescriptionPT: "Chave que sela as credenciais bancárias, o segundo fator e a senha das cópias (ADR 008); openssl rand -base64 32 gera uma. Sem ela, no modo externo, esses recursos ficam indisponíveis; o modo gerenciado grava secret.key. Uma chave nova torna ilegíveis as credenciais gravadas, então uma cópia do .env fica longe dos backups.",
+			Description:   "Key that seals the bank credentials, the second factor and the copy password (ADR 008); openssl rand -base64 32 writes one. Unset, the first start writes secret.key in EQUORI_DATA_DIR (compose.yaml mounts the appdata volume there); with no data directory, those features are unavailable. A new key makes the stored credentials unreadable, so a copy of .env stays apart from the backups.",
+			DescriptionPT: "Chave que sela as credenciais bancárias, o segundo fator e a senha das cópias (ADR 008); openssl rand -base64 32 gera uma. Sem ela, o primeiro início grava secret.key em EQUORI_DATA_DIR (o compose.yaml monta o volume appdata ali); sem diretório de dados, esses recursos ficam indisponíveis. Uma chave nova torna ilegíveis as credenciais gravadas, então uma cópia do .env fica longe dos backups.",
 		},
 		{
 			Name: "EQUORI_SECRET_KEY_PREVIOUS", Reader: Binary, Kind: KindKey32,
