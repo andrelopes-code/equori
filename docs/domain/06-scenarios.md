@@ -924,6 +924,18 @@ Today 2026-10-20. The owner has no posting; another user records a salary of 5,0
 
 Today 2026-10-20. Salary 5,000.00 on the 5th of 2026-07 to 2026-10, nothing else. Month 2026-10: savings rate 10000; trailing savings rate 10000; liquidity `no_expense`; committed share 0; debt service share 0.
 
+### S273 Spending pace of the month
+
+Overview widget of `docs/specs/2026-11-04-spending-pace-design.md`. Today 2026-10-17, base BRL. Expenses: Food 400.00 on 2026-09-05, Rent 1,000.00 on 2026-09-12, Leisure 300.00 on 2026-09-20, Food 500.00 on 2026-10-05, Rent 1,000.00 on 2026-10-12, and Travel, a USD category, 50.00 USD on 2026-10-10. Current range 2026-10-01 to 2026-10-17: 1,500.00, Travel left out. Previous range 2026-09-01 to 2026-09-17: 1,400.00. The widget shows 1,500.00, a delta of +7.1% and the previous 1,400.00.
+
+### S274 Previous month shorter than today's day
+
+Today 2026-03-31, base BRL. Food 800.00 on 2026-02-27 and Food 1,000.00 on 2026-03-30. Previous range 2026-02-01 to 2026-02-28: 800.00. The widget shows 1,000.00, a delta of +25% and the previous 800.00.
+
+### S275 No spending in the previous range
+
+Today 2026-10-17, base BRL. No expense in 2026-09; Food 500.00 on 2026-10-05. The widget shows 500.00, no delta, and states that the same days of the previous month hold no spending.
+
 ### S176–S181, S184 Card billing certainty (A136–A139, A141)
 
 The scenarios of `docs/specs/2026-10-29-card-billing-certainty-design.md`: a reviewed match moves a manual charge to the bill its line states (S176); a closed statement that differs from the institution's total proposes the provisional postings that explain it (S177); a statement the owner chose stays (S178); a difference no posting explains shows as a possible rounding difference of the source (S179); an open statement leaves out the previous statement's unpaid amount until it is overdue (S180); a statement is reconciled as soon as a later entry closes its difference with the institution's total (S181); a pending line stays on its statement whatever the reported total, and moves only by its bill (S184).

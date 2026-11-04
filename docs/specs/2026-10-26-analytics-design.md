@@ -102,7 +102,7 @@ Amended on 2026-10-27 by the owner review: the overview is one Slotted `dashboar
 | Controls | The page header has "Edit layout". While editing, the grid's own bar and each widget's handle move, resize and hide a block, add a hidden block back, reset the layout, cancel or finish. |
 | Frame | The widget is the block's only frame: a figure inside it is a plain stat card and a chart a plain chart (Slotted OV-05). |
 | Figures | Each figure is a widget of its own: its title is the figure's label, and a link in its header opens the screen that owns the figure. Only the indicator figures draw a sparkline (5.1). |
-| Hideable | Each indicator, each net worth and month flow figure of the phone, spending, upcoming, cards, budgets and goals. |
+| Hideable | Each indicator, each net worth and month flow figure of the phone, spending, spending pace (`docs/specs/2026-11-04-spending-pace-design.md`), upcoming, cards, budgets and goals. |
 | Fixed | The attention list, the desk figures and the balance chart cannot be hidden. The attention list holds exceptions, and hiding a block that holds exceptions degrades the outcome (C3). They still move and resize. With nothing to show, the attention list says so in one sentence and keeps its cell. |
 | Storage | Per browser in `localStorage`, as ADR 018 P1 stores the privacy preference, under key `equori.overview.layout`, through `usePersistedDashboardLayout`. A value that cannot be read yields the default layout. |
 | Phone | Below 1024 px the page draws the phone set of blocks in the order of `docs/web-roadmap.md` (removed; last version at commit `0327214c`) §7, and the grid flows them in halves from 600 px and in one column below. The same stored layout hides the same blocks. |
