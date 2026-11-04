@@ -731,8 +731,10 @@ describe("overview page", () => {
       const balance = await screen.findByRole("article", {
         name: "Month-end balance",
       });
+      // The closed statement of 1,800.00 due on 25 October leaves the forecast (balance forecast
+      // design, B1).
       await waitFor(() => {
-        expect(balance).toHaveTextContent("3,140.55");
+        expect(balance).toHaveTextContent("1,340.55");
       });
       expect(block("Net worth")).toHaveTextContent("1,005.00");
       expect(block("Month result")).toHaveTextContent("975.00");
@@ -740,6 +742,24 @@ describe("overview page", () => {
         "Available group: income R$1,000.00, outflow R$25.00",
       );
       expect(block("Committed")).toHaveTextContent("3,000.00");
+    });
+
+    it("S278: takes the card statement due this month out of the forecast on its due date", async () => {
+      await renderApp("/", {
+        fetch: api({
+          [`GET /api/v1/accounts/${checkingID}/projection`]: () =>
+            json(200, { opening: money(524055), points: [] }),
+        }),
+      });
+
+      const balance = await screen.findByRole("article", {
+        name: "Month-end balance",
+      });
+
+      await waitFor(() => {
+        expect(balance).toHaveTextContent("3,440.55");
+      });
+      expect(balance).toHaveTextContent("Lowest R$3,440.55 on Oct 25");
     });
 
     it("draws the balance of the month as a chart", async () => {
@@ -780,7 +800,7 @@ describe("overview page", () => {
         for (const name of ["Net worth", "Month result", "Month-end balance"])
           expect(block(name)).toHaveTextContent("•");
       });
-      expectNoAmounts(container, ["3,140.55", "1,005.00", "975.00"]);
+      expectNoAmounts(container, ["1,340.55", "1,005.00", "975.00"]);
     });
 
     it("keeps the attention list to four rows and counts the rest", async () => {

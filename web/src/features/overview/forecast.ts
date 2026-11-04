@@ -19,13 +19,6 @@ export interface ForecastDay {
   events: ForecastEvent[];
 }
 
-const dayMs = 86_400_000;
-
-function utc(iso: string): number {
-  const [year = 0, month = 1, day = 1] = iso.split("-").map(Number);
-  return Date.UTC(year, month - 1, day);
-}
-
 export function monthDays(month: string): string[] {
   const [year = 0, m = 1] = month.split("-").map(Number);
   const days = new Date(Date.UTC(year, m, 0)).getUTCDate();
@@ -43,10 +36,6 @@ export function shiftMonth(month: string, by: number): string {
   const [year = 0, m = 1] = month.split("-").map(Number);
   const date = new Date(Date.UTC(year, m - 1 + by, 1));
   return date.toISOString().slice(0, 7);
-}
-
-export function daysBetween(from: string, to: string): number {
-  return Math.round((utc(to) - utc(from)) / dayMs);
 }
 
 export function sumByDate(
@@ -112,18 +101,29 @@ export function buildForecast({
   events: readonly ForecastEvent[];
 }): ForecastDay[] {
   let last: number | undefined;
-  let running = todayBalance;
-  return monthDays(month).map((date) => {
+  const days = monthDays(month);
+  // An occurrence dated today is still to happen: the forecast drops by it from the next day, so
+  // the two lines meet on today, and on today itself when today ends the month.
+  let running =
+    todayBalance +
+    events
+      .filter((event) => event.date === today)
+      .reduce((sum, event) => sum + event.amount, 0);
+
+  return days.map((date) => {
     const dayEvents = events.filter((event) => event.date === date);
+
     if (date <= today) {
       last = realized.get(date) ?? last;
+
       return {
         date,
         realized: last,
-        forecast: date === today ? todayBalance : undefined,
+        forecast: forecastOn(date, today, days.at(-1), todayBalance, running),
         events: date === today ? dayEvents : [],
       };
     }
+
     running += dayEvents.reduce((sum, event) => sum + event.amount, 0);
     return { date, realized: undefined, forecast: running, events: dayEvents };
   });
@@ -147,29 +147,75 @@ export function lowestAhead(
   return low;
 }
 
-const annotated = 3;
-// An annotation's label ends on its line; at the chart's half width a day is about 13 px, so
-// eight days hold the longest description the chart labels.
-const minGapDays = 8;
-
-// The largest occurrences first, each kept only when it stands apart
-// from today and from the occurrences already kept.
-export function annotatedEvents(
-  events: readonly ForecastEvent[],
-  today: string | undefined,
-): ForecastEvent[] {
-  const kept: ForecastEvent[] = [];
-  const taken = today === undefined ? [] : [today];
-  for (const event of [...events].sort(
-    (a, b) => Math.abs(b.amount) - Math.abs(a.amount),
-  )) {
-    if (kept.length === annotated) break;
-    if (
-      taken.some((date) => Math.abs(daysBetween(date, event.date)) < minGapDays)
+// A card statement leaves the Available accounts on its due date; one past due leaves today,
+// and one due after the month stays out (balance forecast design, B1 and B2).
+export function statementEvents({
+  owed,
+  base,
+  today,
+  end,
+  paid,
+  describe,
+}: {
+  owed: readonly {
+    account: { id: string; name: string };
+    statement: { id: string; due_date: string };
+    amount: { amount: number; currency: string };
+  }[];
+  base: string;
+  today: string;
+  end: string;
+  paid: ReadonlySet<string>;
+  describe: (card: string) => string;
+}): ForecastEvent[] {
+  return owed
+    .filter(
+      ({ account, statement, amount }) =>
+        amount.currency === base &&
+        amount.amount > 0 &&
+        statement.due_date <= end &&
+        !paid.has(account.id),
     )
-      continue;
-    kept.push(event);
-    taken.push(event.date);
-  }
-  return kept;
+    .map(({ account, statement, amount }) => ({
+      date: statement.due_date < today ? today : statement.due_date,
+      occurrenceID: `statement-${statement.id}`,
+      description: describe(account.name),
+      kind: undefined,
+      amount: -amount.amount,
+    }));
+}
+
+// The accounts that the schedules expected by month end move: a schedule that pays a card
+// already carries its statement in the forecast.
+export function cardsPaidBySchedule(
+  points: readonly { date: string; schedule_id: string }[],
+  schedules: ReadonlyMap<
+    string,
+    { account_id: string; counterpart_id: string }
+  >,
+  end: string,
+): Set<string> {
+  return new Set(
+    points
+      .filter((point) => point.date <= end)
+      .flatMap((point) => {
+        const schedule = schedules.get(point.schedule_id);
+
+        return schedule === undefined
+          ? []
+          : [schedule.account_id, schedule.counterpart_id];
+      }),
+  );
+}
+
+function forecastOn(
+  date: string,
+  today: string,
+  end: string | undefined,
+  todayBalance: number,
+  settled: number,
+): number | undefined {
+  if (date !== today) return undefined;
+
+  return date === end ? settled : todayBalance;
 }

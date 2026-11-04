@@ -3,7 +3,7 @@ import type { ChartSeries } from "@slotted/core/chart";
 import { useMemo } from "react";
 
 import { eventLines } from "@/features/overview/balance-annotations";
-import { balanceRows } from "@/features/overview/balance-rows";
+import { balanceFloor, balanceRows } from "@/features/overview/balance-rows";
 import {
   OverviewBlock,
   type Placement,
@@ -15,7 +15,7 @@ import { useToday } from "@/i18n/today";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
 // The Available accounts day by day: the balance up to today, then the forecast, dashed, with
-// the largest occurrences ahead marked on their day.
+// every occurrence ahead marked on its day.
 export function BalanceChartBlock({
   month,
   ...placement
@@ -63,10 +63,11 @@ export function BalanceChartBlock({
     axis: "x" as const,
     value: day(today),
     label: t("overview.balance.today"),
+    priority: Number.MAX_SAFE_INTEGER,
   };
   const annotations =
     overview?.current === true
-      ? [todayLine, ...eventLines(overview.days, today, day)]
+      ? [todayLine, ...eventLines(overview.days, day)]
       : [];
   return (
     <OverviewBlock
@@ -84,7 +85,7 @@ export function BalanceChartBlock({
         data={data}
         series={series}
         x={{ field: "label" }}
-        y={{ format: money }}
+        y={{ format: money, min: balanceFloor(data) }}
         annotations={annotations}
       />
     </OverviewBlock>

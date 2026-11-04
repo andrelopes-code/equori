@@ -2034,6 +2034,7 @@ export const catalogEn = {
   "overview.balance.balance": "Balance",
   "overview.balance.projection": "Forecast",
   "overview.balance.today": "Today",
+  "overview.balance.statement": "{card} statement",
   "overview.spending.amount": "Spent",
   "overview.attention.more": "{count} more",
   "overview.open": "Open",

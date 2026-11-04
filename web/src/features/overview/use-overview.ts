@@ -7,19 +7,25 @@ import {
   seriesQuery,
   useBalanceGroups,
 } from "@/features/accounts";
+import { currentAndUnpaid, statementsQuery } from "@/features/cards";
 import {
   buildForecast,
+  cardsPaidBySchedule,
   lowestAhead,
   mergeEvents,
   monthEnd,
+  shiftMonth,
+  statementEvents,
   sumByDate,
 } from "@/features/overview/forecast";
 import type { ForecastDay } from "@/features/overview/forecast";
 import { monthFlows } from "@/features/overview/month-flows";
 import type { MonthFlows } from "@/features/overview/month-flows";
+import { owedStatements } from "@/features/overview/open-statements";
 import { projectionQuery, schedulesQuery } from "@/features/planning";
 import { settingsQuery } from "@/features/setup";
 import { periodTransactionsQuery } from "@/features/transactions";
+import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 
 export interface Overview {
@@ -34,13 +40,18 @@ export interface Overview {
   flows: MonthFlows;
 }
 
-// The forecast covers the Available accounts in the base currency.
+// Statements of the last year, as the cards block reads them, so both share one query.
+const statementMonths = 12;
+
+// The forecast covers the Available accounts in the base currency, and the card statements they
+// pay (balance forecast design, B1).
 export function useOverview(month: string): {
   overview: Overview | undefined;
   scale: ((currency: string) => number) | null;
   failed: Error | null;
   retry: () => void;
 } {
+  const t = useT();
   const api = useApi();
   const todayISO = useToday();
   const { groups, scale, failed: groupsFailed, retry } = useBalanceGroups();
@@ -70,6 +81,17 @@ export function useOverview(month: string): {
       ? scope.map((account) => projectionQuery(api, account.id, end))
       : [],
   });
+  const cards = current
+    ? (accounts.data ?? []).filter(
+        (account) =>
+          account.kind === "credit_card" && account.closed_on === undefined,
+      )
+    : [];
+  const statements = useQueries({
+    queries: cards.map((card) =>
+      statementsQuery(api, card.id, shiftMonth(month, -statementMonths)),
+    ),
+  });
   const schedules = useQuery(schedulesQuery(api));
   const transactions = useQuery(
     periodTransactionsQuery(api, start, realizedTo),
@@ -82,6 +104,7 @@ export function useOverview(month: string): {
     transactions,
     ...series,
     ...projections,
+    ...statements,
   ];
   const failed =
     groupsFailed ?? all.find((query) => query.error !== null)?.error ?? null;
@@ -105,7 +128,8 @@ export function useOverview(month: string): {
           0,
         )
       : (realized.get(end) ?? 0);
-    const events = mergeEvents(
+    const points = projections.flatMap((query) => query.data?.points ?? []);
+    const scheduled = mergeEvents(
       projections.map((query) =>
         (query.data?.points ?? []).map((point) => ({
           date: point.date,
@@ -116,6 +140,24 @@ export function useOverview(month: string): {
       ),
       scheduleInfo,
     ).filter((event) => event.date <= end);
+    const owed = statementEvents({
+      owed: owedStatements(
+        cards.map((account, i) => ({
+          account,
+          ...currentAndUnpaid(statements[i]?.data ?? []),
+        })),
+      ),
+      base,
+      today: todayISO,
+      end,
+      paid: cardsPaidBySchedule(
+        points,
+        new Map((schedules.data ?? []).map((s) => [s.id, s])),
+        end,
+      ),
+      describe: (card) => t("overview.balance.statement", { card }),
+    });
+    const events = [...scheduled, ...owed];
     const days = buildForecast({
       month,
       today: current ? todayISO : end,

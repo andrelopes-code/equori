@@ -1,12 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  annotatedEvents,
   buildForecast,
+  cardsPaidBySchedule,
   lowestAhead,
   mergeEvents,
   monthDays,
   monthEnd,
+  statementEvents,
   sumByDate,
 } from "@/features/overview/forecast";
 
@@ -118,6 +119,32 @@ describe("buildForecast", () => {
     expect(days[30]).toMatchObject({ forecast: 4000 });
   });
 
+  it("counts the occurrences dated today from the next day, and on today at month end", () => {
+    const due = {
+      date: "2026-10-18",
+      occurrenceID: "late",
+      description: "Statement",
+      kind: undefined,
+      amount: -500,
+    };
+    const forecast = (today: string) =>
+      buildForecast({
+        month: "2026-10",
+        today,
+        realized: new Map([[today, 8000]]),
+        todayBalance: 8000,
+        events: [{ ...due, date: today }],
+      });
+
+    const mid = forecast("2026-10-18");
+    const last = forecast("2026-10-31");
+
+    expect(mid[17]).toMatchObject({ realized: 8000, forecast: 8000 });
+    expect(mid[18]).toMatchObject({ forecast: 7500 });
+    expect(mid[30]).toMatchObject({ forecast: 7500 });
+    expect(last[30]).toMatchObject({ realized: 8000, forecast: 7500 });
+  });
+
   it("reads a past month as realized only", () => {
     const days = buildForecast({
       month: "2026-09",
@@ -147,35 +174,64 @@ describe("buildForecast", () => {
   });
 });
 
-// An annotation's label ends on its line, so two lines need room for the
-// later label between them.
-describe("annotatedEvents", () => {
-  const event = (date: string, amount: number) => ({
-    date,
-    amount,
-    description: date,
-    occurrenceID: date,
-    kind: "bill" as const,
+describe("statementEvents", () => {
+  const owed = (id: string, due: string, amount: number, currency = "BRL") => ({
+    account: { id: `card-${id}`, name: `Card ${id}` },
+    statement: { id, due_date: due },
+    amount: { amount, currency },
   });
 
-  it("keeps the largest occurrences at least eight days from today and from each other", () => {
-    const events = [
-      event("2026-10-20", -11990),
-      event("2026-10-25", -222620),
-      event("2026-10-26", -100000),
-      event("2026-10-30", -50000),
-      event("2026-11-05", -360000),
-    ];
-    expect(annotatedEvents(events, "2026-10-18").map((e) => e.date)).toEqual([
-      "2026-11-05",
-      "2026-10-26",
+  it("S278: draws each owed statement due by month end as an outflow on its due date", () => {
+    const events = statementEvents({
+      owed: [
+        owed("s1", "2026-11-05", 120000),
+        owed("s2", "2026-10-20", 5000),
+        owed("s3", "2026-12-07", 9000),
+        owed("s4", "2026-11-10", 7000, "USD"),
+        owed("s5", "2026-11-12", 3000),
+      ],
+      base: "BRL",
+      today: "2026-11-04",
+      end: "2026-11-30",
+      paid: new Set(["card-s5"]),
+      describe: (card) => `${card} statement`,
+    });
+
+    expect(events).toEqual([
+      {
+        date: "2026-11-05",
+        occurrenceID: "statement-s1",
+        description: "Card s1 statement",
+        kind: undefined,
+        amount: -120000,
+      },
+      {
+        date: "2026-11-04",
+        occurrenceID: "statement-s2",
+        description: "Card s2 statement",
+        kind: undefined,
+        amount: -5000,
+      },
     ]);
   });
+});
 
-  it("annotates at most three occurrences", () => {
-    const events = ["01", "09", "17", "25"].map((day, n) =>
-      event(`2026-11-${day}`, -1000 * (n + 1)),
+describe("cardsPaidBySchedule", () => {
+  it("names the accounts of the schedules expected by month end", () => {
+    const schedules = new Map([
+      ["pay", { account_id: "checking", counterpart_id: "card" }],
+      ["late", { account_id: "checking", counterpart_id: "other-card" }],
+    ]);
+
+    const paid = cardsPaidBySchedule(
+      [
+        { date: "2026-11-10", schedule_id: "pay" },
+        { date: "2026-12-10", schedule_id: "late" },
+      ],
+      schedules,
+      "2026-11-30",
     );
-    expect(annotatedEvents(events, undefined)).toHaveLength(3);
+
+    expect([...paid].sort()).toEqual(["card", "checking"]);
   });
 });

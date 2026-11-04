@@ -2055,6 +2055,7 @@ export const catalogPtBR: Catalog = {
   "overview.balance.balance": "Saldo",
   "overview.balance.projection": "Previsão",
   "overview.balance.today": "Hoje",
+  "overview.balance.statement": "Fatura {card}",
   "overview.spending.amount": "Gasto",
   "overview.attention.more": "mais {count}",
   "overview.open": "Abrir",
