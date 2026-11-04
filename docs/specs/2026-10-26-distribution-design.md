@@ -234,7 +234,7 @@ Managed mode is the mode in which `equori` runs its own PostgreSQL server as a c
 
 | ID | Rule |
 |---|---|
-| R1 | A `v*.*.*` tag starts the release. The workflow's first job runs `make check` on the tagged commit; today `release.yml` has no such step. Every publishing job depends on it. |
+| R1 | A `v*.*.*` tag starts the release. The workflow's first job waits for the `ci` run of the tagged commit on `main`, which runs the targets of `make check`, and fails unless that run succeeded. Every publishing job depends on it. |
 | R2 | `make dist` builds `equori_X.Y.Z_<os>_<arch>.tar.gz` for linux/amd64, linux/arm64, darwin/amd64 and darwin/arm64, each holding the binary, `LICENSE` and `README.md`, plus `SHA256SUMS`. The build uses `-trimpath`, the tag as version and the commit time as file time, so two builds of one commit produce the same archives. |
 | R3 | Archives and images carry GitHub build provenance attestations (`actions/attest-build-provenance`), which `gh attestation verify` checks. |
 | R4 | Before publishing, the job starts the standalone image, waits for a healthy state and compares `equori version` with the tag. It also runs the linux/amd64 archive's `equori version`. |

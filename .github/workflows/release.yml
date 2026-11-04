@@ -4,27 +4,35 @@ on:
   push:
     tags: ["v*.*.*"]
 
-# Write scopes go only to the jobs that publish; make check runs every development dependency.
+# Write scopes go only to the jobs that publish.
 permissions:
   contents: read
 
 jobs:
-  # R1: nothing is published from a commit that fails make check.
+  # R1: nothing is published from a commit that fails make check. The ci workflow runs it on
+  # every push to main, so this job waits for that run of the tagged commit instead of
+  # repeating it.
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      actions: read
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-go@v6
-        with:
-          go-version-file: go.mod
-          cache-dependency-path: |
-            go.sum
-            tools/go.sum
-      - uses: actions/setup-node@v7
-        with:
-          node-version-file: web/.node-version
-      - run: corepack enable
-      - run: make check
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          runs="repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs"
+          query="head_sha=$GITHUB_SHA&event=push&branch=main"
+          while :; do
+            states=$(gh api "$runs?$query" --jq '.workflow_runs[] | .conclusion // "pending"')
+            if grep -qx success <<<"$states"; then exit 0; fi
+            if ! grep -qx pending <<<"$states"; then
+              echo "::error::ci has no successful push run on main for $GITHUB_SHA: ${states:-no run}"
+              exit 1
+            fi
+
+            sleep 30
+          done
 
   dist:
     needs: check
