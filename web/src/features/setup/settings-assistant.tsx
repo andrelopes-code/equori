@@ -174,6 +174,18 @@ export function SettingsAssistant() {
                                     : "assistant.provider.noKey",
                                 )}`}
                           </ListItemDescription>
+                          {check.variables === provider.id && (
+                            <ListItemDescription>
+                              {check.isPending && t("assistant.key.checking")}
+                              {check.isSuccess &&
+                                t("assistant.key.ok", {
+                                  count: numberFormatter(locale).format(
+                                    check.data,
+                                  ),
+                                })}
+                              {check.isError && errorText(check.error, t)}
+                            </ListItemDescription>
+                          )}
                           {!provider.instance && (
                             <Inline gap={2} wrap="wrap">
                               <Button
@@ -231,16 +243,6 @@ export function SettingsAssistant() {
                           <NoticeTag notice={provider.notice} />
                         </ListItemEnd>
                       </ListItemContent>
-                      {check.variables === provider.id && (
-                        <ListItemDescription>
-                          {check.isPending && t("assistant.key.checking")}
-                          {check.isSuccess &&
-                            t("assistant.key.ok", {
-                              count: numberFormatter(locale).format(check.data),
-                            })}
-                          {check.isError && errorText(check.error, t)}
-                        </ListItemDescription>
-                      )}
                     </ListItem>
                   ))}
                 </ListSection>

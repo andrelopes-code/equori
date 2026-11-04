@@ -426,7 +426,13 @@ describe("assistant settings", () => {
       await userEvent.click(
         within(row).getByRole("button", { name: pt["assistant.key.check"] }),
       );
-      expect(await within(row).findByText(text)).toBeVisible();
+      const result = await within(row).findByText(text);
+      expect(result).toBeVisible();
+      // The result sits in the body slot beside the name; a bare child of the
+      // item draws at the root font size.
+      expect(result.parentElement).toBe(
+        within(row).getByText("Groq").parentElement,
+      );
       expect(screen.queryByRole("dialog")).toBeNull();
     },
   );
