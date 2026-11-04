@@ -1,6 +1,6 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
 import { budgetPlan, budgetPlanApi, energy } from "@/testing/budget-plan-api";
@@ -21,7 +21,7 @@ function words(key: keyof typeof catalogEn, values: Record<string, string>) {
 
 const panel = () =>
   screen.findByRole("region", { name: catalogEn["plan.panel"] });
-// The unassigned figure tweens to a new amount; a loaded runner can hold animation frames.
+// A loaded runner can delay the render of a new amount.
 const figure = async (text: string) =>
   within(await panel()).findByText(text, undefined, { timeout: 5000 });
 const input = (name: string) =>
@@ -39,8 +39,28 @@ async function renderPlan(fetch = budgetPlanApi(), path = november) {
   return view;
 }
 
+// Reduced motion makes the unassigned figure jump to its amount instead of tweening on animation
+// frames, which a loaded runner delays past any fixed timeout.
+function preferReducedMotion() {
+  const matchMedia = window.matchMedia.bind(window);
+  vi.spyOn(window, "matchMedia").mockImplementation((query) =>
+    query.includes("prefers-reduced-motion")
+      ? Object.assign(new EventTarget(), {
+          matches: true,
+          media: query,
+          onchange: null,
+          addListener: () => undefined,
+          removeListener: () => undefined,
+        })
+      : matchMedia(query),
+  );
+}
+
 describe("Budget plan", () => {
+  beforeEach(preferReducedMotion);
+
   afterEach(() => {
+    vi.restoreAllMocks();
     localStorage.removeItem("equori.privacy");
   });
 
