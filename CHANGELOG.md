@@ -4,6 +4,8 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 ## [Unreleased]
 
+## [0.1.0-beta.1] - 2026-11-04
+
 ### Added
 
 - Ledger with accounts, transactions, postings and reconciliation.
@@ -17,4 +19,5 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 - Distribution as a container image, archives for Linux and macOS, a Homebrew formula and a Windows installer.
 - Web interface embedded in the binary.
 
-[Unreleased]: https://github.com/andrelopes-code/equori/commits/main
+[Unreleased]: https://github.com/andrelopes-code/equori/compare/v0.1.0-beta.1...HEAD
+[0.1.0-beta.1]: https://github.com/andrelopes-code/equori/releases/tag/v0.1.0-beta.1

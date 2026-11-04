@@ -2,6 +2,10 @@
 
 A release is a pushed tag `vX.Y.Z`; `.github/workflows/release.yml` builds the image and creates the GitHub release with generated notes.
 
+## Beta
+
+Versions stay `0.x` until the owner declares 1.0 (ADR 022, V1). A beta is the tag `v0.MINOR.0-beta.N`, pushed after step 1 of the checklist. A tag in `0.x` moves the Homebrew formula (job `homebrew`) and is published as a pre-release. The steps 4 to 6 apply to the release that declares 1.0, not to a beta. `v1.0.0-rc.1` stays published and is not a stable release.
+
 ## Checklist
 
 1. `make check` passes on the commit to tag. It covers the archive fixtures: `TestImportArchiveFixtures` fails without `internal/reporting/testdata/archive-v<N>.zip` for each version up to `ArchiveVersion`, and the fingerprint test without `archive-v<N>.txt` (ADR 021, V6, V7).
