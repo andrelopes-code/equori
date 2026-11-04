@@ -141,7 +141,7 @@ describe("Subscriptions tab with an ended subscription", () => {
     expect(within(summary).queryByText("R$139.90")).not.toBeInTheDocument();
   });
 
-  it("draws the ended subscription muted and offers it no move", async () => {
+  it("draws the ended subscription muted and offers it no actions", async () => {
     const table = await renderTable();
     const ended = within(table).getByRole("row", { name: /^Gym/ });
     const active = within(table).getByRole("row", { name: /^Streaming/ });
@@ -153,5 +153,15 @@ describe("Subscriptions tab with an ended subscription", () => {
     expect(
       within(active).getByRole("link", { name: "Streaming" }).closest(mutedInk),
     ).toBeNull();
+    expect(
+      within(ended).queryByRole("button", {
+        name: catalogEn["subscriptions.actions"].replace("{name}", "Gym"),
+      }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(active).getByRole("button", {
+        name: catalogEn["subscriptions.actions"].replace("{name}", "Streaming"),
+      }),
+    ).toBeInTheDocument();
   });
 });

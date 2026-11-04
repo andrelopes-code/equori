@@ -115,6 +115,7 @@ export function SchedulePage() {
   const s = schedule.data;
   const name = s.description === "" ? t("ledger.untitled") : s.description;
   const terms = currentTerms(s.terms, today);
+  const ended = hasEnded(s.ends_on, today);
   const names = new Map((accounts.data ?? []).map((a) => [a.id, a.name]));
   const view = agenda(occurrences.data ?? [], [], [s], {});
   return (
@@ -146,15 +147,17 @@ export function SchedulePage() {
                   setDialog("matching");
                 }}
               />
-              <HeaderAction
-                label={t("schedule.pause")}
-                glyph="pause"
-                wordsOnly
-                onClick={() => {
-                  setDialog("pause");
-                }}
-              />
-              {!hasEnded(s.ends_on, today) && (
+              {!ended && (
+                <HeaderAction
+                  label={t("schedule.pause")}
+                  glyph="pause"
+                  wordsOnly
+                  onClick={() => {
+                    setDialog("pause");
+                  }}
+                />
+              )}
+              {!ended && (
                 <HeaderAction
                   label={t("schedule.moveToAccount")}
                   glyph="arrow-right"
@@ -167,23 +170,27 @@ export function SchedulePage() {
                   }}
                 />
               )}
-              <HeaderAction
-                label={t("schedule.end")}
-                glyph="stop"
-                wordsOnly
-                onClick={() => {
-                  setDialog("end");
-                }}
-              />
-              <HeaderAction
-                primary
-                label={t("schedule.changeTerms")}
-                glyph="calendar"
-                wordsOnly
-                onClick={() => {
-                  setDialog("terms");
-                }}
-              />
+              {!ended && (
+                <HeaderAction
+                  label={t("schedule.end")}
+                  glyph="stop"
+                  wordsOnly
+                  onClick={() => {
+                    setDialog("end");
+                  }}
+                />
+              )}
+              {!ended && (
+                <HeaderAction
+                  primary
+                  label={t("schedule.changeTerms")}
+                  glyph="calendar"
+                  wordsOnly
+                  onClick={() => {
+                    setDialog("terms");
+                  }}
+                />
+              )}
             </PageHeaderActions>
           </PageHeaderTitleRow>
         </PageHeaderTitleArea>

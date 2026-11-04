@@ -13,7 +13,7 @@ import { useToday } from "@/i18n/today";
 
 type Schedule = components["schemas"]["Schedule"];
 
-// Pause, move and end from a schedule's row, with the dialogs of the schedule's page.
+// Pause, move and end from the row of a schedule that has not ended; an ended one has no actions, with the dialogs of the schedule's page.
 export function ScheduleActions({
   schedule,
   name,
@@ -28,6 +28,8 @@ export function ScheduleActions({
   const close = () => {
     setOpen(null);
   };
+  if (hasEnded(schedule.ends_on, today)) return null;
+
   return (
     <>
       <Menu>
@@ -54,18 +56,16 @@ export function ScheduleActions({
           >
             {t("schedule.pause")}
           </MenuItem>
-          {!hasEnded(schedule.ends_on, today) && (
-            <MenuItem
-              onSelect={() => {
-                void navigate({
-                  to: "/planning/schedules/new",
-                  search: { from: schedule.id },
-                });
-              }}
-            >
-              {t("schedule.moveToAccount")}
-            </MenuItem>
-          )}
+          <MenuItem
+            onSelect={() => {
+              void navigate({
+                to: "/planning/schedules/new",
+                search: { from: schedule.id },
+              });
+            }}
+          >
+            {t("schedule.moveToAccount")}
+          </MenuItem>
           <MenuItem
             tone="danger"
             onSelect={() => {

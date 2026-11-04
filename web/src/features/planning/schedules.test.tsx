@@ -550,20 +550,31 @@ describe("Move a schedule to another account", () => {
     expect(router.state.location.search).toEqual({ from: rentID });
   });
 
-  it("offers no move for a schedule that has ended", async () => {
+  it("offers no move, pause, end or change of terms for a schedule that has ended", async () => {
     await renderApp(`/planning/schedules/${rentID}`, {
       fetch: api({
         [`GET /api/v1/schedules/${rentID}`]: () =>
           json(200, { ...rent, ends_on: "2026-10-01" }),
       }),
     });
-    await screen.findByRole("button", { name: catalogEn["schedule.end"] });
+    await screen.findByRole("button", {
+      name: catalogEn["schedule.matching.edit"],
+    });
 
     expect(
       screen.queryByRole("button", {
         name: catalogEn["schedule.moveToAccount"],
       }),
     ).not.toBeInTheDocument();
+    for (const key of [
+      "schedule.pause",
+      "schedule.end",
+      "schedule.changeTerms",
+    ] as const) {
+      expect(
+        screen.queryByRole("button", { name: catalogEn[key] }),
+      ).not.toBeInTheDocument();
+    }
   });
 
   it("offers the move to a schedule that ends later", async () => {
