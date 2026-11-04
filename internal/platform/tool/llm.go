@@ -13,14 +13,8 @@ func (s Set) LLM() ([]llm.Tool, map[string]llm.ToolHandler) {
 
 	handlers := make(map[string]llm.ToolHandler, len(s.names))
 	for _, t := range s.Tools() {
-		params, err := json.Marshal(t.input)
-		if err != nil {
-			// New marshalled the same schema when it checked the keywords.
-			panic(err)
-		}
-
 		name := t.spec.Name
-		tools = append(tools, llm.Tool{Name: name, Description: t.spec.Description, Parameters: params})
+		tools = append(tools, llm.Tool{Name: name, Description: t.spec.Description, Parameters: t.input.json})
 		handlers[name] = func(ctx context.Context, args json.RawMessage) (json.RawMessage, error) {
 			res, err := s.Call(ctx, name, args)
 			if err != nil {

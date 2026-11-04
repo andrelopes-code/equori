@@ -43,8 +43,7 @@ type Spec struct {
 // Tool is a Spec with its schemas and its handler, with the argument and result types erased.
 type Tool struct {
 	spec          Spec
-	input, output *jsonschema.Schema
-	in, out       *jsonschema.Resolved
+	input, output inferred
 	call          func(ctx context.Context, booksID int64, args []byte) (any, error)
 	preview       func(ctx context.Context, booksID int64, args []byte) (Preview, error)
 }
@@ -63,18 +62,18 @@ func New[In, Out any](s Spec, h func(ctx context.Context, booksID int64, in In) 
 		panic(fmt.Sprintf("tool %s: invalid effect %d", s.Name, s.Effect))
 	}
 
-	input, in, err := schemaFor[In]()
-	if err != nil {
-		panic(fmt.Sprintf("tool %s: input: %v", s.Name, err))
+	input := schemaFor[In]()
+	if input.err != nil {
+		panic(fmt.Sprintf("tool %s: input: %v", s.Name, input.err))
 	}
 
-	output, out, err := schemaFor[Out]()
-	if err != nil {
-		panic(fmt.Sprintf("tool %s: output: %v", s.Name, err))
+	output := schemaFor[Out]()
+	if output.err != nil {
+		panic(fmt.Sprintf("tool %s: output: %v", s.Name, output.err))
 	}
 
 	return Tool{
-		spec: s, input: input, output: output, in: in, out: out,
+		spec: s, input: input, output: output,
 		call: func(ctx context.Context, booksID int64, args []byte) (any, error) {
 			var v In
 			// The schema has accepted args; what fails here is a value, such as a malformed date.
@@ -102,7 +101,7 @@ func (t Tool) validate(args json.RawMessage) (json.RawMessage, *Error) {
 		return nil, invalidArguments("arguments must be a JSON object")
 	}
 
-	if err := t.in.Validate(v); err != nil {
+	if err := t.input.resolved.Validate(v); err != nil {
 		return nil, invalidArguments(err.Error())
 	}
 
@@ -110,8 +109,10 @@ func (t Tool) validate(args json.RawMessage) (json.RawMessage, *Error) {
 }
 
 func (t Tool) Spec() Spec                       { return t.spec }
-func (t Tool) InputSchema() *jsonschema.Schema  { return t.input }
-func (t Tool) OutputSchema() *jsonschema.Schema { return t.output }
+func (t Tool) InputSchema() *jsonschema.Schema  { return t.input.schema }
+func (t Tool) OutputSchema() *jsonschema.Schema { return t.output.schema }
+func (t Tool) InputJSON() json.RawMessage       { return t.input.json }
+func (t Tool) OutputJSON() json.RawMessage      { return t.output.json }
 
 // ValidateOutput checks a result against the output schema; tests run it on every result.
 func (t Tool) ValidateOutput(content json.RawMessage) error {
@@ -120,5 +121,5 @@ func (t Tool) ValidateOutput(content json.RawMessage) error {
 		return err
 	}
 
-	return t.out.Validate(v)
+	return t.output.resolved.Validate(v)
 }

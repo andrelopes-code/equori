@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"sync"
 
 	"github.com/google/jsonschema-go/jsonschema"
 )
@@ -23,43 +24,66 @@ var (
 	enumeratedType = reflect.TypeFor[Enumerated]()
 )
 
+// schemas holds one inferred schema per type for the process: inference depends on the type
+// alone, the schemas are read-only, and the test harness registers every tool once per test.
+var schemas sync.Map // reflect.Type -> inferred
+
+type inferred struct {
+	schema   *jsonschema.Schema
+	resolved *jsonschema.Resolved
+	// json is schema encoded, for the LLM declarations and the MCP listing.
+	json json.RawMessage
+	err  error
+}
+
 // schemaFor infers the schema of T, a struct, and checks it against the keyword list.
-func schemaFor[T any]() (*jsonschema.Schema, *jsonschema.Resolved, error) {
+func schemaFor[T any]() inferred {
 	t := reflect.TypeFor[T]()
+	if v, ok := schemas.Load(t); ok {
+		return v.(inferred) //nolint:forcetypeassert // schemas holds inferred values only.
+	}
+
+	i := inferSchema[T](t)
+	schemas.Store(t, i)
+
+	return i
+}
+
+func inferSchema[T any](t reflect.Type) inferred {
 	if t.Kind() != reflect.Struct {
-		return nil, nil, fmt.Errorf("%s is not a struct, and the schema must be an object", t)
+		return inferred{err: fmt.Errorf("%s is not a struct, and the schema must be an object", t)}
 	}
 
 	types := map[reflect.Type]*jsonschema.Schema{}
 	if err := collectTypes(t, types, map[reflect.Type]bool{}); err != nil {
-		return nil, nil, err
+		return inferred{err: err}
 	}
 
 	s, err := jsonschema.For[T](&jsonschema.ForOptions{TypeSchemas: types})
 	if err != nil {
-		return nil, nil, err
+		return inferred{err: err}
 	}
 
 	b, err := json.Marshal(s)
 	if err != nil {
-		return nil, nil, err
+		return inferred{err: err}
 	}
 
 	var node any
 	if err := json.Unmarshal(b, &node); err != nil {
-		return nil, nil, err
+		return inferred{err: err}
 	}
 
 	if err := checkKeywords(node, "#"); err != nil {
-		return nil, nil, err
+		return inferred{err: err}
 	}
 
 	r, err := s.Resolve(nil)
 	if err != nil {
-		return nil, nil, err
+		return inferred{err: err}
 	}
 
-	return s, r, nil
+	return inferred{schema: s, resolved: r, json: b}
 }
 
 // collectTypes registers the schemas inference cannot derive: Date, Enumerated types, and

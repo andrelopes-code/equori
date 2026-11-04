@@ -92,7 +92,7 @@ func newServer(cfg Config, write bool) *sdk.Server {
 		listed = append(listed, name)
 		destructive := spec.Effect == tool.Destructive
 		s.AddTool(&sdk.Tool{
-			Name: spec.Name, Description: spec.Description, InputSchema: t.InputSchema(), OutputSchema: t.OutputSchema(),
+			Name: spec.Name, Description: spec.Description, InputSchema: t.InputJSON(), OutputSchema: t.OutputJSON(),
 			Annotations: &sdk.ToolAnnotations{ReadOnlyHint: spec.Effect == tool.ReadOnly, DestructiveHint: &destructive, IdempotentHint: spec.Idempotent},
 		}, callTool(cfg, spec))
 	}
