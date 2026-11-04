@@ -153,11 +153,26 @@ export const catalogPtBR: Catalog = {
   "export.failed": "A última exportação falhou: o arquivo passa de 256 MB.",
   "export.request": "Pedir exportação",
   "export.download": "Baixar",
+  "export.withCredentials": "Exportar com credenciais",
+  "export.credentials.description":
+    "O arquivo leva as credenciais das suas integrações, seladas por uma frase-senha. O equori não guarda a frase-senha: sem ela, as credenciais não podem ser restauradas.",
+  "export.credentials.passphrase": "Frase-senha",
+  "export.credentials.confirm": "Confirme a frase-senha",
+  "export.credentials.hint": "De 8 a 256 caracteres.",
+  "export.credentials.tooShort": "Use de 8 a 256 caracteres.",
+  "export.credentials.mismatch": "As frases-senha são diferentes.",
   "import.label": "Importação",
   "import.description":
     "Restaura um arquivo num equori sem transações; os dados do arquivo substituem as contas iniciais. Um arquivo desta versão do equori ou de uma anterior é importado; um arquivo de uma versão posterior, não.",
   "import.blocked": "A importação exige um equori sem transações.",
   "import.choose": "Escolher arquivo",
+  "import.passphrase": "Frase-senha das credenciais",
+  "import.passphraseHint": "Só para um arquivo exportado com credenciais.",
+  "import.skipCredentials": "Importar sem as credenciais",
+  "import.credentialsRestored":
+    "Credenciais de integração restauradas: {count}.",
+  "import.credentialsSkipped":
+    "O arquivo levava credenciais que não foram restauradas: informe-as de novo em Integrações.",
   "import.done":
     "Arquivo importado: {rows} linhas, versão de arquivo {version}.",
   "import.tooNew":
@@ -182,6 +197,10 @@ export const catalogPtBR: Catalog = {
   "settings.integrations.blockedBy": "Conexões que a usam:",
   "problem.aggregator_unauthorized": "O agregador recusou as credenciais.",
   "problem.aggregator_unavailable": "O agregador não respondeu.",
+  "problem.passphrase_required":
+    "Este arquivo leva credenciais. Informe a frase-senha delas, ou escolha importar sem elas, e escolha o arquivo de novo.",
+  "problem.passphrase_invalid":
+    "A frase-senha não abre as credenciais deste arquivo.",
   "problem.integration_unavailable":
     "O servidor não tem EQUORI_SECRET_KEY e não consegue guardar credenciais.",
   "problem.integration_in_use": "Ainda há conexões que usam esta integração.",

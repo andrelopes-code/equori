@@ -150,11 +150,25 @@ export const catalogEn = {
   "export.failed": "The last export failed: the archive exceeds 256 MB.",
   "export.request": "Request export",
   "export.download": "Download",
+  "export.withCredentials": "Export with credentials",
+  "export.credentials.description":
+    "The archive carries the credentials of your integrations, sealed by a passphrase. equori does not store the passphrase: without it the credentials cannot be restored.",
+  "export.credentials.passphrase": "Passphrase",
+  "export.credentials.confirm": "Confirm the passphrase",
+  "export.credentials.hint": "8 to 256 characters.",
+  "export.credentials.tooShort": "Use 8 to 256 characters.",
+  "export.credentials.mismatch": "The passphrases differ.",
   "import.label": "Import",
   "import.description":
     "Restores an archive into an equori without transactions; the archive's data replace the starting accounts. An archive of this version of equori or an earlier one imports; an archive of a later version does not.",
   "import.blocked": "Import needs an equori without transactions.",
   "import.choose": "Choose archive",
+  "import.passphrase": "Passphrase of the credentials",
+  "import.passphraseHint": "Only for an archive exported with credentials.",
+  "import.skipCredentials": "Import without credentials",
+  "import.credentialsRestored": "Integration credentials restored: {count}.",
+  "import.credentialsSkipped":
+    "The archive carried credentials that were not restored: enter them again in Integrations.",
   "import.done": "Archive imported: {rows} rows, archive version {version}.",
   "import.tooNew":
     "This archive has archive version {archive}; this version of equori imports up to archive version {instance}. Update equori to a version that imports archive version {archive}, then import again.",
@@ -178,6 +192,10 @@ export const catalogEn = {
   "settings.integrations.blockedBy": "Connections that use it:",
   "problem.aggregator_unauthorized": "The aggregator rejected the credentials.",
   "problem.aggregator_unavailable": "The aggregator did not answer.",
+  "problem.passphrase_required":
+    "This archive carries credentials. Type their passphrase, or choose to import without them, then choose the archive again.",
+  "problem.passphrase_invalid":
+    "The passphrase does not open the credentials of this archive.",
   "problem.integration_unavailable":
     "The server has no EQUORI_SECRET_KEY, so it cannot store credentials.",
   "problem.integration_in_use": "Connections still use this integration.",

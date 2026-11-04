@@ -572,21 +572,45 @@ export function exportQuery(api: Client<paths>) {
 
 export const exportContentURL = "/api/v1/exports/current/content";
 
+// A passphrase adds the integration credentials to the archive, sealed by it (export design C1).
 export function useRequestExport() {
   const api = useApi();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async () => unwrap(await api.POST("/exports")),
+    mutationFn: async (passphrase?: string) =>
+      unwrap(
+        await api.POST(
+          "/exports",
+          passphrase === undefined
+            ? {}
+            : { body: { credentials_passphrase: passphrase } },
+        ),
+      ),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: exportKeys.current }),
   });
 }
 
+export interface ImportArchiveInput {
+  file: File;
+  // Opens the credentials of an archive exported with them (export design C5).
+  passphrase: string;
+  // Imports an archive that carries credentials without them.
+  skipCredentials: boolean;
+}
+
 export function useImportArchive() {
   const api = useApi();
   return useMutation({
-    mutationFn: async (file: File) => {
+    mutationFn: async ({
+      file,
+      passphrase,
+      skipCredentials,
+    }: ImportArchiveInput) => {
       const body = new FormData();
+      // The server reads a part named passphrase before or after the file.
+      if (passphrase !== "") body.append("passphrase", passphrase);
+      if (skipCredentials) body.append("skip_credentials", "true");
       body.append("file", file);
       return unwrap(
         await api.POST("/imports/archive", {
