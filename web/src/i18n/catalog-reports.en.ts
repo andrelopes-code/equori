@@ -11,9 +11,9 @@ export const reportsEn = {
   "report.indicators.month": "Month of the indicators",
   "report.indicators.savings": "Savings rate",
   "report.indicators.trailing": "12-month mean",
-  "report.indicators.reserve": "Reserve in months of expense",
+  "report.indicators.reserve": "Liquidity in months of expense",
   "report.indicators.committed": "Committed income",
-  "report.indicators.debt": "Debt payments",
+  "report.indicators.debt": "Debt to income",
   "report.indicators.liabilities": "You owe",
   "report.indicators.savingsNote":
     "Share of income left after expenses each month, by the money that actually came in and went out.",

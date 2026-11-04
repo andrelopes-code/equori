@@ -50,6 +50,21 @@ describe("indicator figures", () => {
     ).toBeGreaterThan(0);
   });
 
+  it("names each indicator widget by the ratio it shows", async () => {
+    renderBlock();
+
+    await screen.findByText("43.00%");
+
+    for (const name of [
+      "Savings rate",
+      "Liquidity",
+      "Committed income",
+      "Debt to income",
+    ]) {
+      expect(screen.getByRole("article", { name })).toBeInTheDocument();
+    }
+  });
+
   it("draws the 12 months of an indicator that holds two values or more", async () => {
     renderBlock();
 
@@ -60,7 +75,7 @@ describe("indicator figures", () => {
         name: /^Savings rate by month: 43\.00%/,
       }),
     ).toBeInTheDocument();
-    expect(screen.queryByRole("img", { name: /^Reserve/ })).toBeNull();
+    expect(screen.queryByRole("img", { name: /^Liquidity/ })).toBeNull();
   });
 
   it("states why an indicator has no value", async () => {

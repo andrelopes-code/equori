@@ -1934,10 +1934,10 @@ export const catalogPtBR: Catalog = {
   "overview.netWorth.liabilities": "Você deve",
   "overview.indicators.open": "Abrir indicadores",
   "overview.indicators.savings": "Taxa de poupança",
-  "overview.indicators.reserve": "Reserva",
+  "overview.indicators.reserve": "Liquidez",
   "overview.indicators.trend": "{name} por mês",
   "overview.indicators.committed": "Renda comprometida",
-  "overview.indicators.debt": "Prestações de dívida",
+  "overview.indicators.debt": "Dívida sobre a renda",
   "overview.indicators.noDebt":
     "Nenhum empréstimo ou financiamento nos seus registros",
   "overview.indicators.months": "{months} meses",

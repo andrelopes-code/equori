@@ -127,6 +127,20 @@ const dialogFooterGapRule = `
 }
 `;
 
+// Workaround for Slotted issue #66: the list of a select, a picker or a menu is bounded only by the
+// space the positioner has left, so a long list (150 currencies) stands at nearly the viewport's
+// height. It stops at 20 rem, 8 to 9 rows, and scrolls inside. The rule replaces the family's
+// clamp to the positioner's free space with one to the viewport, which a theme rule cannot read.
+// shortcut: a list opened low in a short viewport can pass the edge, until the issue's token lands.
+const overlayListRule = `
+[data-ui="select"] [data-part="content"],
+[data-ui="multi-select"] [data-part="content"],
+[data-ui="entity-picker"] [data-part="content"],
+[data-ui="menu"] [data-part="content"] {
+  max-block-size: min(20rem, calc(100dvh - var(--slotted-space-8)));
+}
+`;
+
 // Workaround for Slotted issue #39: only the tooltip's content fades, so its arrow stays opaque
 // and reads as a separate piece on open and close. The arrow takes the content's three fade rules.
 // Half of the arrow's square lies over the content: while both fade, that half composites twice
@@ -355,6 +369,7 @@ export default extendTheme(
       tooltipArrowFadeRule,
       tagInsetRule,
       dialogFooterGapRule,
+      overlayListRule,
     ],
   },
   { name: "equori" },

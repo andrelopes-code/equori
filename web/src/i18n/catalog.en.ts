@@ -1915,10 +1915,10 @@ export const catalogEn = {
   "overview.netWorth.liabilities": "You owe",
   "overview.indicators.open": "Open indicators",
   "overview.indicators.savings": "Savings rate",
-  "overview.indicators.reserve": "Reserve",
+  "overview.indicators.reserve": "Liquidity",
   "overview.indicators.trend": "{name} by month",
   "overview.indicators.committed": "Committed income",
-  "overview.indicators.debt": "Debt payments",
+  "overview.indicators.debt": "Debt to income",
   "overview.indicators.noDebt": "No loan or financing in your records",
   "overview.indicators.months": "{months} months",
   "overview.indicators.savingsNote":

@@ -12,9 +12,9 @@ export const reportsPtBR: Record<keyof typeof reportsEn, string> = {
   "report.indicators.month": "Mês dos indicadores",
   "report.indicators.savings": "Taxa de poupança",
   "report.indicators.trailing": "Média de 12 meses",
-  "report.indicators.reserve": "Reserva em meses de despesa",
+  "report.indicators.reserve": "Liquidez em meses de despesa",
   "report.indicators.committed": "Renda comprometida",
-  "report.indicators.debt": "Prestações de dívida",
+  "report.indicators.debt": "Dívida sobre a renda",
   "report.indicators.liabilities": "Você deve",
   "report.indicators.savingsNote":
     "Parte da receita que sobra após as despesas em cada mês, pelo dinheiro que de fato entrou e saiu.",

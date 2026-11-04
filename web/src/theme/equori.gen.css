@@ -1937,5 +1937,12 @@
     [data-ui="dialog"] [data-part="footer"] {
       gap: var(--slotted-control-gap-md);
     }
+
+    [data-ui="select"] [data-part="content"],
+    [data-ui="multi-select"] [data-part="content"],
+    [data-ui="entity-picker"] [data-part="content"],
+    [data-ui="menu"] [data-part="content"] {
+      max-block-size: min(20rem, calc(100dvh - var(--slotted-space-8)));
+    }
   }
 }

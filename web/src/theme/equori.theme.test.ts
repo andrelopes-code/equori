@@ -149,6 +149,18 @@ test("the actions of a dialog's footer stand as far apart as those of a page hea
   );
 });
 
+test("the list of a select, a picker or a menu stops at 20 rem and scrolls", () => {
+  for (const family of ["select", "multi-select", "entity-picker", "menu"]) {
+    assert.match(
+      css,
+      new RegExp(
+        `\\[data-ui="${family}"\\] \\[data-part="content"\\][^{]*\\{[^}]*max-block-size: min\\(20rem,`,
+      ),
+      family,
+    );
+  }
+});
+
 test("the choices of a question stand clear of the message above them", () => {
   // The description and the error of a group are inline messages, not parts of their own.
   assert.match(
