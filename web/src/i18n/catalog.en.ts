@@ -185,6 +185,9 @@ export const catalogEn = {
   "settings.assistant.description":
     "Language model providers and the models each feature uses.",
   "assistant.providers": "Providers",
+  "assistant.providers.description":
+    "Services that run the assistant. The key of each one stays on the server.",
+  "assistant.provider.actions": "Actions of {name}",
   "assistant.providers.empty": "No provider. Language model features need one.",
   "assistant.provider.add": "Add provider",
   "assistant.provider.edit": "Edit provider",
@@ -234,6 +237,8 @@ export const catalogEn = {
   "assistant.models.title": "Models of {name}",
   "assistant.models.empty": "The provider lists no model.",
   "assistant.uses": "Features",
+  "assistant.uses.description":
+    "The providers each feature tries, in order, until one answers.",
   "assistant.use.capture.suggest": "Category suggestions",
   "assistant.use.assistant.chat": "Assistant chat",
   "assistant.use.default": "Default",
@@ -272,6 +277,8 @@ export const catalogEn = {
   "assistant.capability.structured_output": "Structured output",
   "assistant.capability.image_input": "Images",
   "assistant.usage": "Usage",
+  "assistant.usage.description":
+    "Calls and tokens per provider and model, against the limits declared for each.",
   "assistant.usage.empty": "No call in the last {days} days.",
   "assistant.usage.requests": "{count} requests",
   "assistant.usage.requestsOf": "{count} of {limit} requests",

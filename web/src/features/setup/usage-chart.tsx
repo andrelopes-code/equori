@@ -1,6 +1,5 @@
 import type { ChartSeries } from "@slotted/core/chart";
 import { Chart } from "@slotted/react/chart";
-import { ListEmpty, ListSection } from "@slotted/react/list";
 import { SkeletonText } from "@slotted/react/skeleton";
 import { Stack } from "@slotted/react/stack";
 import {
@@ -14,11 +13,13 @@ import {
   TableRow,
   TableRowHeader,
 } from "@slotted/react/table";
+import { Text } from "@slotted/react/typography";
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useMemo } from "react";
 
 import { useApi } from "@/api/api-context";
 import { usageDaysQuery } from "@/features/setup/api";
+import { SettingsGroup } from "@/features/setup/settings-group";
 import { usageDayRows } from "@/features/setup/usage-days";
 import {
   formatDate,
@@ -73,7 +74,7 @@ export function UsageChart() {
   );
 
   return (
-    <ListSection label={t("assistant.usage.chart", { days: String(days) })}>
+    <SettingsGroup title={t("assistant.usage.chart", { days: String(days) })}>
       {query.error !== null && (
         <QueryError
           error={query.error}
@@ -84,9 +85,9 @@ export function UsageChart() {
       )}
       {query.isPending && <SkeletonText lines={4} />}
       {query.data !== undefined && used.length === 0 && (
-        <ListEmpty>
+        <Text size="sm" tone="muted">
           {t("assistant.usage.chart.empty", { days: String(days) })}
-        </ListEmpty>
+        </Text>
       )}
       {query.data !== undefined && used.length > 0 && (
         <Stack gap={3}>
@@ -137,6 +138,6 @@ export function UsageChart() {
           </Table>
         </Stack>
       )}
-    </ListSection>
+    </SettingsGroup>
   );
 }

@@ -189,6 +189,9 @@ export const catalogPtBR: Catalog = {
   "settings.assistant.description":
     "Provedores de modelos de linguagem e os modelos que cada função usa.",
   "assistant.providers": "Provedores",
+  "assistant.providers.description":
+    "Serviços que executam o assistente. A chave de cada um fica no servidor.",
+  "assistant.provider.actions": "Ações de {name}",
   "assistant.providers.empty":
     "Nenhum provedor. As funções de modelo de linguagem precisam de um.",
   "assistant.provider.add": "Adicionar provedor",
@@ -240,6 +243,8 @@ export const catalogPtBR: Catalog = {
   "assistant.models.title": "Modelos de {name}",
   "assistant.models.empty": "O provedor não lista nenhum modelo.",
   "assistant.uses": "Funções",
+  "assistant.uses.description":
+    "Os provedores que cada função tenta, em ordem, até um responder.",
   "assistant.use.capture.suggest": "Sugestão de categorias",
   "assistant.use.assistant.chat": "Conversa com o assistente",
   "assistant.use.default": "Padrão",
@@ -278,6 +283,8 @@ export const catalogPtBR: Catalog = {
   "assistant.capability.structured_output": "Saída estruturada",
   "assistant.capability.image_input": "Imagens",
   "assistant.usage": "Uso",
+  "assistant.usage.description":
+    "Chamadas e tokens por provedor e modelo, frente aos limites declarados de cada um.",
   "assistant.usage.empty": "Nenhuma chamada nos últimos {days} dias.",
   "assistant.usage.requests": "{count} requisições",
   "assistant.usage.requestsOf": "{count} de {limit} requisições",

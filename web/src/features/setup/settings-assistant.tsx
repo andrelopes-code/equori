@@ -1,25 +1,13 @@
 import { Text } from "@slotted/react/typography";
 import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
-import { Button } from "@slotted/react/button";
 import {
   Collapsible,
   CollapsibleHeader,
   CollapsiblePanel,
   CollapsibleTrigger,
 } from "@slotted/react/collapsible";
-import { List, ListEmpty, ListSection } from "@slotted/react/list";
-import {
-  ListItem,
-  ListItemBody,
-  ListItemContent,
-  ListItemDescription,
-  ListItemEnd,
-  ListItemLabel,
-} from "@slotted/react/list-item";
 import { SkeletonText } from "@slotted/react/skeleton";
-import { Inline } from "@slotted/react/inline";
 import { Stack } from "@slotted/react/stack";
-import { Tag } from "@slotted/react/tag";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
@@ -31,27 +19,23 @@ import {
   presetsQuery,
   providersQuery,
   usageQuery,
-  useCheckProviderKey,
-  useDeleteProvider,
   usesQuery,
 } from "@/features/setup/api";
 import type { ModelProvider, ModelUse, UsageRow } from "@/features/setup/api";
-import { catalogLabel } from "@/features/setup/catalog-label";
 import { AssistantStart } from "@/features/setup/assistant-start";
 import type { StartPreset } from "@/features/setup/assistant-start";
 import { ChainDialog } from "@/features/setup/chain-dialog";
-import { NoticeTag } from "@/features/setup/notice-tag";
 import { ProviderDialog } from "@/features/setup/provider-dialog";
 import { ProviderModelsDialog } from "@/features/setup/provider-models-dialog";
+import { ProvidersGroup } from "@/features/setup/providers-group";
 import { SettingsGroup } from "@/features/setup/settings-group";
 import { SettingsSection } from "@/features/setup/settings-section";
 import { UsageLimitDialog } from "@/features/setup/usage-limit-dialog";
 import { UsageChart } from "@/features/setup/usage-chart";
-import { UsePrivacy } from "@/features/setup/use-privacy";
 import { UsageList } from "@/features/setup/usage-list";
+import { UsesGroup } from "@/features/setup/uses-group";
 import { mergeUsageRows } from "@/features/setup/usage-rows";
-import { numberFormatter } from "@/i18n/format";
-import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { useT } from "@/i18n/i18n-provider";
 import { FormNotice } from "@/ui/form-notice";
 
 type Open =
@@ -71,15 +55,11 @@ export function SettingsAssistant() {
   const usage = useQuery(usageQuery(api));
   const chat = useQuery(chatStateQuery(api));
   const navigate = useNavigate();
-  const remove = useDeleteProvider();
-  const check = useCheckProviderKey();
-  const [locale] = useAppLocale();
   const [open, setOpen] = useState<Open | null>(null);
   const close = () => {
     setOpen(null);
   };
-  const failure =
-    providers.error ?? uses.error ?? usage.error ?? remove.error ?? chat.error;
+  const failure = providers.error ?? uses.error ?? usage.error ?? chat.error;
   const presetItems = presets.data?.items ?? [];
   const providerItems = providers.data?.items ?? [];
   // S1: no provider of the reader's own and none of the instance serving the chat.
@@ -110,238 +90,87 @@ export function SettingsAssistant() {
       title={t("settings.assistant.title")}
       description={t("settings.assistant.description")}
     >
-      <SettingsGroup>
-        <Stack gap={5}>
-          {failure !== null && <FormNotice>{errorText(failure, t)}</FormNotice>}
-          {starting && (
-            <AssistantStart
-              onPreset={(preset) => {
-                setOpen({ kind: "create", preset });
-              }}
-              onExternal={() => {
-                void navigate({
-                  to: "/settings",
-                  search: { section: "external_access" },
-                });
-              }}
-            />
-          )}
-          {training.length > 0 && (
-            <Alert tone="warning">
-              <AlertContent>
-                <AlertDescription>
-                  {t("assistant.use.trains", { provider: training.join(", ") })}
-                </AlertDescription>
-              </AlertContent>
-            </Alert>
-          )}
-          {providers.isPending || uses.isPending ? (
-            <SkeletonText lines={6} />
-          ) : (
-            <>
-              <List variant="ruled" aria-label={t("settings.assistant.title")}>
-                <ListSection
-                  label={t("assistant.providers")}
-                  end={
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      tone="secondary"
-                      disabled={presetItems.length === 0}
-                      onClick={() => {
-                        setOpen({ kind: "create" });
-                      }}
-                    >
-                      {t("assistant.provider.add")}
-                    </Button>
-                  }
-                >
-                  {providerItems.length === 0 && (
-                    <ListEmpty>{t("assistant.providers.empty")}</ListEmpty>
+      {failure !== null && <FormNotice>{errorText(failure, t)}</FormNotice>}
+      {starting && (
+        <AssistantStart
+          onPreset={(preset) => {
+            setOpen({ kind: "create", preset });
+          }}
+          onExternal={() => {
+            void navigate({
+              to: "/settings",
+              search: { section: "external_access" },
+            });
+          }}
+        />
+      )}
+      {training.length > 0 && (
+        <Alert tone="warning">
+          <AlertContent>
+            <AlertDescription>
+              {t("assistant.use.trains", { provider: training.join(", ") })}
+            </AlertDescription>
+          </AlertContent>
+        </Alert>
+      )}
+      {providers.isPending || uses.isPending ? (
+        <SettingsGroup>
+          <SkeletonText lines={6} />
+        </SettingsGroup>
+      ) : (
+        <>
+          <ProvidersGroup
+            providers={providerItems}
+            canAdd={presetItems.length > 0}
+            onAdd={() => {
+              setOpen({ kind: "create" });
+            }}
+            onEdit={(provider) => {
+              setOpen({ kind: "edit", provider });
+            }}
+            onModels={(provider) => {
+              setOpen({ kind: "models", provider });
+            }}
+          />
+          {/* S2: closed while the reader keeps one provider and the default chains. */}
+          <Collapsible
+            mount="active"
+            key={String(advancedOpen)}
+            defaultOpen={advancedOpen}
+          >
+            <CollapsibleHeader>
+              <CollapsibleTrigger>{t("assistant.advanced")}</CollapsibleTrigger>
+            </CollapsibleHeader>
+            <CollapsiblePanel>
+              <Stack gap={7}>
+                <UsesGroup
+                  uses={uses.data?.items ?? []}
+                  onEdit={(use) => {
+                    setOpen({ kind: "chain", use });
+                  }}
+                />
+                <UsageList
+                  rows={mergeUsageRows(
+                    usage.data?.items ?? [],
+                    uses.data?.items ?? [],
+                    new Set(
+                      providerItems.filter((p) => p.instance).map((p) => p.id),
+                    ),
                   )}
-                  {providerItems.map((provider) => (
-                    <ListItem key={provider.id}>
-                      <ListItemContent>
-                        <ListItemBody>
-                          <ListItemLabel>{provider.name}</ListItemLabel>
-                          <ListItemDescription>
-                            {provider.instance
-                              ? t("assistant.provider.instance")
-                              : `${catalogLabel(t, `assistant.preset.${provider.preset}`, provider.preset)} · ${t(
-                                  provider.has_key
-                                    ? "assistant.provider.keyStored"
-                                    : "assistant.provider.noKey",
-                                )}`}
-                          </ListItemDescription>
-                          {check.variables === provider.id && (
-                            <ListItemDescription>
-                              {check.isPending && t("assistant.key.checking")}
-                              {check.isSuccess &&
-                                t("assistant.key.ok", {
-                                  count: numberFormatter(locale).format(
-                                    check.data,
-                                  ),
-                                })}
-                              {check.isError && errorText(check.error, t)}
-                            </ListItemDescription>
-                          )}
-                          {!provider.instance && (
-                            <Inline gap={2} wrap="wrap">
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                tone="secondary"
-                                loading={
-                                  check.isPending &&
-                                  check.variables === provider.id
-                                }
-                                onClick={() => {
-                                  check.mutate(provider.id);
-                                }}
-                              >
-                                {t("assistant.key.check")}
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                tone="secondary"
-                                onClick={() => {
-                                  setOpen({ kind: "models", provider });
-                                }}
-                              >
-                                {t("assistant.provider.models")}
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                tone="secondary"
-                                onClick={() => {
-                                  setOpen({ kind: "edit", provider });
-                                }}
-                              >
-                                {t("assistant.provider.edit")}
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                tone="danger"
-                                loading={
-                                  remove.isPending &&
-                                  remove.variables === provider.id
-                                }
-                                onClick={() => {
-                                  remove.mutate(provider.id);
-                                }}
-                              >
-                                {t("assistant.provider.delete")}
-                              </Button>
-                            </Inline>
-                          )}
-                        </ListItemBody>
-                        <ListItemEnd>
-                          <NoticeTag notice={provider.notice} />
-                        </ListItemEnd>
-                      </ListItemContent>
-                    </ListItem>
-                  ))}
-                </ListSection>
-              </List>
-              {/* S2: closed while the reader keeps one provider and the default chains. */}
-              <Collapsible
-                mount="active"
-                key={String(advancedOpen)}
-                defaultOpen={advancedOpen}
-              >
-                <CollapsibleHeader>
-                  <CollapsibleTrigger>
-                    {t("assistant.advanced")}
-                  </CollapsibleTrigger>
-                </CollapsibleHeader>
-                <CollapsiblePanel>
-                  <List variant="ruled" aria-label={t("assistant.advanced")}>
-                    <ListSection label={t("assistant.uses")}>
-                      {(uses.data?.items ?? []).map((use) => (
-                        <ListItem key={use.id}>
-                          <ListItemContent>
-                            <ListItemBody>
-                              <ListItemLabel>
-                                {catalogLabel(
-                                  t,
-                                  `assistant.use.${use.id}`,
-                                  use.id,
-                                )}
-                              </ListItemLabel>
-                              <ListItemDescription>
-                                {use.targets.length === 0
-                                  ? t("assistant.use.none")
-                                  : use.targets
-                                      .map(
-                                        (x) =>
-                                          `${x.provider_name} · ${x.model}`,
-                                      )
-                                      .join(" → ")}
-                              </ListItemDescription>
-                              <UsePrivacy use={use} />
-                              <Inline gap={2} wrap="wrap">
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  tone="secondary"
-                                  onClick={() => {
-                                    setOpen({ kind: "chain", use });
-                                  }}
-                                >
-                                  {t("assistant.use.edit")}
-                                </Button>
-                              </Inline>
-                            </ListItemBody>
-                            <ListItemEnd>
-                              <Tag
-                                size="sm"
-                                tone={use.default ? "secondary" : "accent"}
-                                title={t(
-                                  use.default
-                                    ? "assistant.use.default.hint"
-                                    : "assistant.use.custom.hint",
-                                )}
-                              >
-                                {t(
-                                  use.default
-                                    ? "assistant.use.default"
-                                    : "assistant.use.custom",
-                                )}
-                              </Tag>
-                            </ListItemEnd>
-                          </ListItemContent>
-                        </ListItem>
-                      ))}
-                    </ListSection>
-                    <UsageList
-                      rows={mergeUsageRows(
-                        usage.data?.items ?? [],
-                        uses.data?.items ?? [],
-                        new Set(
-                          providerItems
-                            .filter((p) => p.instance)
-                            .map((p) => p.id),
-                        ),
-                      )}
-                      now={new Date(usage.dataUpdatedAt)}
-                      onLimits={(row) => {
-                        setOpen({ kind: "limits", row });
-                      }}
-                    />
-                    <UsageChart />
-                  </List>
-                </CollapsiblePanel>
-              </Collapsible>
-            </>
-          )}
-          <Text size="sm" tone="muted">
-            {t("assistant.usage.note")}
-          </Text>
-        </Stack>
-      </SettingsGroup>
+                  now={new Date(usage.dataUpdatedAt)}
+                  onLimits={(row) => {
+                    setOpen({ kind: "limits", row });
+                  }}
+                />
+                <UsageChart />
+              </Stack>
+            </CollapsiblePanel>
+          </Collapsible>
+        </>
+      )}
+      <Text size="sm" tone="muted">
+        {t("assistant.usage.note")}
+      </Text>
       {(open?.kind === "create" || open?.kind === "edit") && (
         <ProviderDialog
           presets={presetItems}

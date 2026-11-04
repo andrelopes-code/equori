@@ -233,6 +233,23 @@ async function usageRow(
   return row;
 }
 
+// An action of a provider row sits in the row's menu.
+async function rowAction(
+  view: Awaited<ReturnType<typeof section>>,
+  provider: string,
+  action: string,
+) {
+  const row = (await view.findByText(provider)).closest("li");
+  if (row === null) throw new Error("no provider row");
+  await userEvent.click(
+    within(row).getByRole("button", {
+      name: new RegExp(provider),
+    }),
+  );
+  await userEvent.click(await screen.findByRole("menuitem", { name: action }));
+  return row;
+}
+
 describe("assistant settings", () => {
   it("lists providers with their notice, never a key, and warns on a training provider", async () => {
     await renderApp("/settings?section=assistant", { fetch: api([]) });
@@ -373,11 +390,7 @@ describe("assistant settings", () => {
   it("lists a provider's models", async () => {
     await renderApp("/settings?section=assistant", { fetch: api([]) });
     const view = await section();
-    await userEvent.click(
-      await view.findByRole("button", {
-        name: pt["assistant.provider.models"],
-      }),
-    );
+    await rowAction(view, "Groq", pt["assistant.provider.models"]);
     const dialog = await screen.findByRole("dialog");
     expect(await within(dialog).findByText("qwen")).toBeVisible();
   });
@@ -387,11 +400,7 @@ describe("assistant settings", () => {
       fetch: api([], { models: () => problem(502, "provider_unauthorized") }),
     });
     const view = await section();
-    await userEvent.click(
-      await view.findByRole("button", {
-        name: pt["assistant.provider.models"],
-      }),
-    );
+    await rowAction(view, "Groq", pt["assistant.provider.models"]);
     const dialog = await screen.findByRole("dialog");
     expect(
       await within(dialog).findByText(pt["problem.provider_unauthorized"]),
@@ -421,11 +430,7 @@ describe("assistant settings", () => {
         fetch: api([], { models }),
       });
       const view = await section();
-      const row = (await view.findByText("Groq")).closest("li");
-      if (row === null) throw new Error("no provider row");
-      await userEvent.click(
-        within(row).getByRole("button", { name: pt["assistant.key.check"] }),
-      );
+      const row = await rowAction(view, "Groq", pt["assistant.key.check"]);
       const result = await within(row).findByText(text);
       expect(result).toBeVisible();
       // The result sits in the body slot beside the name; a bare child of the
@@ -448,11 +453,7 @@ describe("assistant settings", () => {
       }),
     });
     const view = await section(en["settings.assistant.title"]);
-    const row = (await view.findByText("Groq")).closest("li");
-    if (row === null) throw new Error("no provider row");
-    await userEvent.click(
-      within(row).getByRole("button", { name: en["assistant.key.check"] }),
-    );
+    const row = await rowAction(view, "Groq", en["assistant.key.check"]);
     expect(
       await within(row).findByText(
         en["assistant.key.ok"].replace("{count}", "1.234"),
@@ -487,8 +488,11 @@ describe("assistant settings", () => {
     const view = await section();
     expect(
       await view.findByText(
-        "Hoje: 80 de 100 requisições, 1.200 tokens · 2 com erro · 30 dias: 300 requisições, 9.000 tokens",
+        "Hoje: 80 de 100 requisições, 1.200 tokens · 2 com erro",
       ),
+    ).toBeVisible();
+    expect(
+      view.getByText("30 dias: 300 requisições, 9.000 tokens"),
     ).toBeVisible();
     expect(view.getByText(pt["assistant.usage.near"])).toBeVisible();
     expect(await usageRow(view, "Groq · openai/gpt-oss-120b")).toBeVisible();

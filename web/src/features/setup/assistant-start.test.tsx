@@ -174,8 +174,11 @@ describe("assistant start (S1)", () => {
     expect(
       screen.queryByRole("button", { name: pt["assistant.start.local"] }),
     ).toBeNull();
+    await userEvent.click(view.getByRole("button", { name: /Meu Ollama/ }));
     await userEvent.click(
-      view.getByRole("button", { name: pt["assistant.provider.delete"] }),
+      await screen.findByRole("menuitem", {
+        name: pt["assistant.provider.delete"],
+      }),
     );
     expect(await choice(pt["assistant.start.local"])).toBeVisible();
   });
