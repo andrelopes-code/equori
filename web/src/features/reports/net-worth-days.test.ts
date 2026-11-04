@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { monthExpenses, monthRange } from "@/features/reports/net-worth-days";
+import {
+  entryTotals,
+  monthEntries,
+  monthRange,
+} from "@/features/reports/net-worth-days";
 
 describe("monthRange", () => {
   it.each([
@@ -12,13 +16,23 @@ describe("monthRange", () => {
   });
 });
 
-describe("monthExpenses", () => {
+describe("monthEntries", () => {
   const brl = (amount: number) => ({ amount, currency: "BRL" });
   const categories = new Map([
-    ["food", "Food"],
-    ["travel", "Travel"],
+    ["food", { name: "Food", kind: "expense" as const }],
+    ["travel", { name: "Travel", kind: "expense" as const }],
+    ["salary", { name: "Salary", kind: "income" as const }],
   ]);
   const transactions = [
+    {
+      id: "t0",
+      date: "2026-11-01",
+      description: "Payroll",
+      postings: [
+        { account_id: "salary", amount: brl(-20000) },
+        { account_id: "checking", amount: brl(20000) },
+      ],
+    },
     {
       id: "t1",
       date: "2026-11-02",
@@ -76,8 +90,8 @@ describe("monthExpenses", () => {
     },
   ];
 
-  it("lists the expense postings of the month, the largest first, a card purchase and a refund included", () => {
-    const rows = monthExpenses(transactions, categories, "BRL", undefined);
+  it("lists the income and expenses of the month by their effect on net worth, the largest first", () => {
+    const rows = monthEntries(transactions, categories, "BRL", undefined);
 
     expect(rows).toEqual([
       {
@@ -85,28 +99,61 @@ describe("monthExpenses", () => {
         date: "2026-11-03",
         description: "Flight",
         category: "Travel",
-        amount: 30000,
+        kind: "expense",
+        amount: -30000,
+      },
+      {
+        key: "t0-0",
+        date: "2026-11-01",
+        description: "Payroll",
+        category: "Salary",
+        kind: "income",
+        amount: 20000,
       },
       {
         key: "t1-0",
         date: "2026-11-02",
         description: "Market",
         category: "Food",
-        amount: 5000,
+        kind: "expense",
+        amount: -5000,
       },
       {
         key: "t2-0",
         date: "2026-11-02",
         description: "Market refund",
         category: "Food",
-        amount: -1000,
+        kind: "expense",
+        amount: 1000,
       },
     ]);
   });
 
-  it("keeps the expenses of the day picked", () => {
-    const rows = monthExpenses(transactions, categories, "BRL", "2026-11-02");
+  it("keeps the entries of the day picked", () => {
+    const rows = monthEntries(transactions, categories, "BRL", "2026-11-02");
 
     expect(rows.map((row) => row.key)).toEqual(["t1-0", "t2-0"]);
+  });
+});
+
+describe("entryTotals", () => {
+  it("adds the income, the expenses and their result, a refund lowering the expenses", () => {
+    const row = (amount: number, kind: "income" | "expense") => ({
+      key: String(amount),
+      date: "2026-11-02",
+      description: "",
+      category: "",
+      kind,
+      amount,
+    });
+
+    const totals = entryTotals([
+      row(20000, "income"),
+      row(-5000, "expense"),
+      row(1000, "expense"),
+      row(-30000, "expense"),
+    ]);
+
+    expect(totals).toEqual({ income: 20000, expense: 34000, net: -14000 });
   });
 });

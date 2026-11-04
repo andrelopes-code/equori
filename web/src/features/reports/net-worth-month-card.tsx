@@ -1,5 +1,6 @@
 import { Card, CardActions, CardBody, CardHeader } from "@slotted/react/card";
 import { Grid } from "@slotted/react/grid";
+import { Stack } from "@slotted/react/stack";
 import { Heading, Text } from "@slotted/react/typography";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
@@ -7,9 +8,10 @@ import { useState } from "react";
 import { useApi } from "@/api/api-context";
 import { accountsQuery } from "@/features/accounts";
 import { netWorthDaysQuery } from "@/features/reports/api";
-import { ExpenseTable } from "@/features/reports/expense-table";
+import { EntryTable } from "@/features/reports/entry-table";
+import { EntryTotals } from "@/features/reports/entry-totals";
 import { NetWorthDayChart } from "@/features/reports/net-worth-day-chart";
-import { monthExpenses, monthRange } from "@/features/reports/net-worth-days";
+import { monthEntries, monthRange } from "@/features/reports/net-worth-days";
 import { settingsQuery, useScale } from "@/features/setup";
 import { periodTransactionsQuery } from "@/features/transactions";
 import { formatMonthTitle } from "@/i18n/format";
@@ -46,12 +48,14 @@ export function NetWorthMonthCard({
     month: formatMonthTitle(month, tag),
   });
   const categories = new Map(
-    (accounts.data ?? [])
-      .filter((account) => account.class === "expense")
-      .map((account) => [account.id, account.name]),
+    (accounts.data ?? []).flatMap((account) =>
+      account.class === "income" || account.class === "expense"
+        ? [[account.id, { name: account.name, kind: account.class }] as const]
+        : [],
+    ),
   );
   const shownDay = day?.startsWith(month) === true ? day : undefined;
-  const rows = monthExpenses(
+  const rows = monthEntries(
     transactions.data ?? [],
     categories,
     base,
@@ -88,12 +92,16 @@ export function NetWorthMonthCard({
             loading={days.data === undefined || scale === null}
             onDay={setDay}
           />
-          <ExpenseTable
-            rows={rows}
-            day={shownDay}
-            currency={base}
-            digits={digits(base)}
-          />
+          <Stack gap={4}>
+            <EntryTotals rows={rows} currency={base} digits={digits(base)} />
+
+            <EntryTable
+              rows={rows}
+              day={shownDay}
+              currency={base}
+              digits={digits(base)}
+            />
+          </Stack>
         </Grid>
       </CardBody>
     </Card>

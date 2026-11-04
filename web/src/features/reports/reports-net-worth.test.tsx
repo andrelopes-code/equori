@@ -73,7 +73,7 @@ describe("Reports net worth", () => {
     expect(days.at(-1)?.get("to")).toBe("2026-10-17");
   });
 
-  it("picks a past month with the month control and lists its expenses, the largest first", async () => {
+  it("picks a past month with the month control and lists its income and expenses, the largest first", async () => {
     const user = userEvent.setup();
     const days: URLSearchParams[] = [];
     const routes = reportApiRoutes();
@@ -117,10 +117,12 @@ describe("Reports net worth", () => {
     );
 
     const table = await screen.findByRole("table", {
-      name: "Expenses of the month",
+      name: "Income and expenses of the month",
     });
     await within(table).findByText("Market");
-    expect(rowTexts(table)).toContain("Sep 12|MarketFood|R$45.00");
+    expect(rowTexts(table)).toContain("Sep 12|MarketFood|\u2212R$45.00");
+    // The expense row, the expenses total and the result of the month.
+    expect(screen.getAllByText("\u2212R$45.00")).toHaveLength(3);
     expect(days.at(-1)?.get("from")).toBe("2026-09-01");
     expect(days.at(-1)?.get("to")).toBe("2026-09-30");
   });
