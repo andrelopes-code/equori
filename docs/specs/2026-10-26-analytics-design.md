@@ -91,7 +91,7 @@ Placed after net worth in the default order, one widget per figure (5.2): I1 wit
 - one line that defines the figure in plain words and names its inputs (V10);
 - the reason in words when the value is null.
 
-A figure draws no sparkline: the 12-month series is the indicators tab of `/reports` (section 6), which each widget header links to. Amended on 2026-10-27 by the owner review: a sparkline inside a figure widget reads as an ornament beside the value. No figure carries a judgment color, a delta tone or a threshold.
+Each indicator figure draws a sparkline of its ratio beside the value, from the first month with a value; a later month without one is a gap, and fewer than 3 values draw no line. The full 12-month series, with axes and a table view, is the indicators tab of `/reports` (section 6), which each widget header links to. Amended on 2026-11-04 by the owner: the trend of the indicator stays in the widget, and the amendment of 2026-10-27 that removed it no longer holds. No figure carries a judgment color, a delta tone or a threshold.
 
 ### 5.2 Layout
 
@@ -101,7 +101,7 @@ Amended on 2026-10-27 by the owner review: the overview is one Slotted `dashboar
 |---|---|
 | Controls | The page header has "Edit layout". While editing, the grid's own bar and each widget's handle move, resize and hide a block, add a hidden block back, reset the layout, cancel or finish. |
 | Frame | The widget is the block's only frame: a figure inside it is a plain stat card and a chart a plain chart (Slotted OV-05). |
-| Figures | Each figure is a widget of its own, with no sparkline (5.1): its title is the figure's label, and a link in its header opens the screen that owns the figure. |
+| Figures | Each figure is a widget of its own: its title is the figure's label, and a link in its header opens the screen that owns the figure. Only the indicator figures draw a sparkline (5.1). |
 | Hideable | Each indicator, each net worth and month flow figure of the phone, spending, upcoming, cards, budgets and goals. |
 | Fixed | The attention list, the desk figures and the balance chart cannot be hidden. The attention list holds exceptions, and hiding a block that holds exceptions degrades the outcome (C3). They still move and resize. With nothing to show, the attention list says so in one sentence and keeps its cell. |
 | Storage | Per browser in `localStorage`, as ADR 018 P1 stores the privacy preference, under key `equori.overview.layout`, through `usePersistedDashboardLayout`. A value that cannot be read yields the default layout. |
