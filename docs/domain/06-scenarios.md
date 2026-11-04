@@ -948,6 +948,14 @@ Today 2026-11-04, base BRL. A card statement due on 2026-11-05 owes 1,200.00, an
 
 Four occurrences ahead fall within eight days of each other. The balance chart draws four lines, with priorities that follow their absolute amounts (B5).
 
+### S283 Net worth at the end of each day
+
+Checking holds 1,000.00 on 2026-10-19. A loan pays an expense of 300.00 on 2026-10-20. `getNetWorthDays` from 2026-10-19 to 2026-10-21 answers three days with net worth 1,000.00, 700.00 and 700.00 (`docs/specs/2026-11-04-net-worth-days-design.md`, D1).
+
+### S284 Range of the daily net worth
+
+`getNetWorthDays` with `from` after `to`, or with a range of more than 62 days, answers 400 `invalid_request` on `to` (D2).
+
 ### S176–S181, S184 Card billing certainty (A136–A139, A141)
 
 The scenarios of `docs/specs/2026-10-29-card-billing-certainty-design.md`: a reviewed match moves a manual charge to the bill its line states (S176); a closed statement that differs from the institution's total proposes the provisional postings that explain it (S177); a statement the owner chose stays (S178); a difference no posting explains shows as a possible rounding difference of the source (S179); an open statement leaves out the previous statement's unpaid amount until it is overdue (S180); a statement is reconciled as soon as a later entry closes its difference with the institution's total (S181); a pending line stays on its statement whatever the reported total, and moves only by its bill (S184).

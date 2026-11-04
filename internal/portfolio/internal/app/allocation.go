@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -16,6 +17,12 @@ const (
 	classLiability = "liability"
 	typeCurrency   = "currency"
 )
+
+// MaxNetWorthDays is the longest range of NetWorthDays, two months (net worth days design, D2).
+const MaxNetWorthDays = 62
+
+// ErrInvalidDayRange: from is after to, or the range holds more than MaxNetWorthDays days.
+var ErrInvalidDayRange = errors.New("invalid day range")
 
 // AccountBalance is the balance of one balance-sheet account in its own instrument.
 type AccountBalance struct {
@@ -230,4 +237,30 @@ func (s *Service) NetWorth(ctx context.Context, booksID int64, date time.Time, i
 	}
 
 	return report, nil
+}
+
+// NetWorthDay is the net worth at the end of one day.
+type NetWorthDay struct {
+	Date time.Time
+	NetWorthReport
+}
+
+// NetWorthDays is the net worth at the end of each day of [from, to], each valued as NetWorth
+// values its date.
+func (s *Service) NetWorthDays(ctx context.Context, booksID int64, from, to time.Time, in money.Currency) ([]NetWorthDay, error) {
+	if to.Before(from) || to.Sub(from) >= MaxNetWorthDays*24*time.Hour {
+		return nil, ErrInvalidDayRange
+	}
+
+	var days []NetWorthDay
+	for day := from; !day.After(to); day = day.AddDate(0, 0, 1) {
+		report, err := s.NetWorth(ctx, booksID, day, in)
+		if err != nil {
+			return nil, err
+		}
+
+		days = append(days, NetWorthDay{Date: day, NetWorthReport: report})
+	}
+
+	return days, nil
 }

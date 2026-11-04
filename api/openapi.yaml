@@ -1968,6 +1968,45 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /reports/net-worth/days:
+    get:
+      tags: [portfolio]
+      operationId: getNetWorthDays
+      x-book-role: read
+      summary: Assets, liabilities and their difference at the end of each day of [from, to], at most 62 days (net worth days design, D1).
+      description: Each day is valued as getNetWorth values a date. 400 invalid_request when from is after to or the range exceeds 62 days.
+      parameters:
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: value_in
+          in: query
+          required: false
+          schema:
+            type: string
+            pattern: "^[A-Z]{3}$"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NetWorthDays"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
   /instrument-subtypes:
     get:
       tags: [portfolio]
@@ -10102,6 +10141,27 @@ components:
           $ref: "#/components/schemas/Money"
         net:
           $ref: "#/components/schemas/Money"
+    NetWorthDay:
+      type: object
+      required: [date, assets, liabilities, net]
+      properties:
+        date:
+          type: string
+          format: date
+        assets:
+          $ref: "#/components/schemas/Money"
+        liabilities:
+          $ref: "#/components/schemas/Money"
+        net:
+          $ref: "#/components/schemas/Money"
+    NetWorthDays:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/NetWorthDay"
     ReturnFlow:
       type: object
       required: [date, amount]

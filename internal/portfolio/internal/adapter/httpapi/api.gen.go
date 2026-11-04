@@ -145,6 +145,19 @@ type NetWorth struct {
 	Net         Money `json:"net"`
 }
 
+// NetWorthDay defines model for NetWorthDay.
+type NetWorthDay struct {
+	Assets      Money              `json:"assets"`
+	Date        openapi_types.Date `json:"date"`
+	Liabilities Money              `json:"liabilities"`
+	Net         Money              `json:"net"`
+}
+
+// NetWorthDays defines model for NetWorthDays.
+type NetWorthDays struct {
+	Items []NetWorthDay `json:"items"`
+}
+
 // Position defines model for Position.
 type Position struct {
 	AccountId openapi_types.UUID `json:"account_id"`
@@ -307,6 +320,13 @@ type GetNetWorthParams struct {
 	ValueIn *string            `form:"value_in,omitempty" json:"value_in,omitempty"`
 }
 
+// GetNetWorthDaysParams defines parameters for GetNetWorthDays.
+type GetNetWorthDaysParams struct {
+	From    openapi_types.Date `form:"from" json:"from"`
+	To      openapi_types.Date `form:"to" json:"to"`
+	ValueIn *string            `form:"value_in,omitempty" json:"value_in,omitempty"`
+}
+
 // GetReturnParams defines parameters for GetReturn.
 type GetReturnParams struct {
 	AccountId *openapi_types.UUID `form:"account_id,omitempty" json:"account_id,omitempty"`
@@ -338,6 +358,9 @@ type ServerInterface interface {
 	// GetNetWorth Assets, liabilities and their difference at a date (investments design 4.3).
 	// (GET /reports/net-worth)
 	GetNetWorth(w http.ResponseWriter, r *http.Request, params GetNetWorthParams)
+	// GetNetWorthDays Assets, liabilities and their difference at the end of each day of [from, to], at most 62 days (net worth days design, D1).
+	// (GET /reports/net-worth/days)
+	GetNetWorthDays(w http.ResponseWriter, r *http.Request, params GetNetWorthDaysParams)
 	// GetReturn Money-weighted annual return of an account and its sub-accounts over a period of at most 366 days (investments design 4.3).
 	// (GET /reports/return)
 	GetReturn(w http.ResponseWriter, r *http.Request, params GetReturnParams)
@@ -616,6 +639,65 @@ func (siw *ServerInterfaceWrapper) GetNetWorth(w http.ResponseWriter, r *http.Re
 	handler.ServeHTTP(w, r)
 }
 
+// GetNetWorthDays operation middleware
+func (siw *ServerInterfaceWrapper) GetNetWorthDays(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetNetWorthDaysParams
+
+	// ------------- Required query parameter "from" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "from", r.URL.Query(), &params.From, runtime.BindQueryParameterOptions{Type: "string", Format: "date"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "from"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "from", Err: err})
+		}
+		return
+	}
+
+	// ------------- Required query parameter "to" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "to", r.URL.Query(), &params.To, runtime.BindQueryParameterOptions{Type: "string", Format: "date"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "to"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "to", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "value_in" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "value_in", r.URL.Query(), &params.ValueIn, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "value_in"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "value_in", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetNetWorthDays(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetReturn operation middleware
 func (siw *ServerInterfaceWrapper) GetReturn(w http.ResponseWriter, r *http.Request) {
 
@@ -815,6 +897,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/reports/return", wrapper.GetReturn)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/reports/allocation", wrapper.GetAllocation)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/reports/net-worth", wrapper.GetNetWorth)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/reports/net-worth/days", wrapper.GetNetWorthDays)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/instrument-subtypes", wrapper.ListInstrumentSubtypes)
 
 	return m
@@ -1213,6 +1296,72 @@ func (response GetNetWorth422ApplicationProblemPlusJSONResponse) VisitGetNetWort
 	return err
 }
 
+type GetNetWorthDaysRequestObject struct {
+	Params GetNetWorthDaysParams
+}
+
+type GetNetWorthDaysResponseObject interface {
+	VisitGetNetWorthDaysResponse(w http.ResponseWriter) error
+}
+
+type GetNetWorthDays200JSONResponse NetWorthDays
+
+func (response GetNetWorthDays200JSONResponse) VisitGetNetWorthDaysResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetNetWorthDays400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetNetWorthDays400ApplicationProblemPlusJSONResponse) VisitGetNetWorthDaysResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetNetWorthDays401ApplicationProblemPlusJSONResponse Problem
+
+func (response GetNetWorthDays401ApplicationProblemPlusJSONResponse) VisitGetNetWorthDaysResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetNetWorthDays422ApplicationProblemPlusJSONResponse Problem
+
+func (response GetNetWorthDays422ApplicationProblemPlusJSONResponse) VisitGetNetWorthDaysResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type GetReturnRequestObject struct {
 	Params GetReturnParams
 }
@@ -1316,6 +1465,9 @@ type StrictServerInterface interface {
 	// GetNetWorth Assets, liabilities and their difference at a date (investments design 4.3).
 	// (GET /reports/net-worth)
 	GetNetWorth(ctx context.Context, request GetNetWorthRequestObject) (GetNetWorthResponseObject, error)
+	// GetNetWorthDays Assets, liabilities and their difference at the end of each day of [from, to], at most 62 days (net worth days design, D1).
+	// (GET /reports/net-worth/days)
+	GetNetWorthDays(ctx context.Context, request GetNetWorthDaysRequestObject) (GetNetWorthDaysResponseObject, error)
 	// GetReturn Money-weighted annual return of an account and its sub-accounts over a period of at most 366 days (investments design 4.3).
 	// (GET /reports/return)
 	GetReturn(ctx context.Context, request GetReturnRequestObject) (GetReturnResponseObject, error)
@@ -1533,6 +1685,32 @@ func (sh *strictHandler) GetNetWorth(w http.ResponseWriter, r *http.Request, par
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetNetWorthResponseObject); ok {
 		if err := validResponse.VisitGetNetWorthResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetNetWorthDays operation middleware
+func (sh *strictHandler) GetNetWorthDays(w http.ResponseWriter, r *http.Request, params GetNetWorthDaysParams) {
+	var request GetNetWorthDaysRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetNetWorthDays(ctx, request.(GetNetWorthDaysRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetNetWorthDays")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetNetWorthDaysResponseObject); ok {
+		if err := validResponse.VisitGetNetWorthDaysResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

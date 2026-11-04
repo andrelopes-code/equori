@@ -1150,6 +1150,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/reports/net-worth/days": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Assets, liabilities and their difference at the end of each day of [from, to], at most 62 days (net worth days design, D1).
+         * @description Each day is valued as getNetWorth values a date. 400 invalid_request when from is after to or the range exceeds 62 days.
+         */
+        get: operations["getNetWorthDays"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/instrument-subtypes": {
         parameters: {
             query?: never;
@@ -5644,6 +5664,16 @@ export interface components {
             liabilities: components["schemas"]["Money"];
             net: components["schemas"]["Money"];
         };
+        NetWorthDay: {
+            /** Format: date */
+            date: string;
+            assets: components["schemas"]["Money"];
+            liabilities: components["schemas"]["Money"];
+            net: components["schemas"]["Money"];
+        };
+        NetWorthDays: {
+            items: components["schemas"]["NetWorthDay"][];
+        };
         ReturnFlow: {
             /** Format: date */
             date: string;
@@ -8628,6 +8658,33 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["NetWorth"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    getNetWorthDays: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+                value_in?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NetWorthDays"];
                 };
             };
             400: components["responses"]["Problem"];

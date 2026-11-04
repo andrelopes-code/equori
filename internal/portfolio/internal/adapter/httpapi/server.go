@@ -189,6 +189,25 @@ func (s *Server) GetNetWorth(ctx context.Context, req GetNetWorthRequestObject) 
 	return GetNetWorth200JSONResponse{Assets: toMoney(r.Assets), Liabilities: toMoney(r.Liabilities), Net: toMoney(r.Net)}, nil
 }
 
+func (s *Server) GetNetWorthDays(ctx context.Context, req GetNetWorthDaysRequestObject) (GetNetWorthDaysResponseObject, error) {
+	days, err := s.svc.NetWorthDays(ctx, auth.MustBooksID(ctx), req.Params.From.Time, req.Params.To.Time, valueIn(req.Params.ValueIn))
+	if err != nil {
+		return nil, err
+	}
+
+	out := GetNetWorthDays200JSONResponse{Items: make([]NetWorthDay, 0, len(days))}
+	for _, d := range days {
+		out.Items = append(out.Items, NetWorthDay{
+			Date:        date(d.Date),
+			Assets:      toMoney(d.Assets),
+			Liabilities: toMoney(d.Liabilities),
+			Net:         toMoney(d.Net),
+		})
+	}
+
+	return out, nil
+}
+
 // valueIn reads the optional value_in parameter; empty selects the base currency.
 func valueIn(p *string) money.Currency {
 	if p == nil {
@@ -218,6 +237,11 @@ func ToProblem(err error) (problem.Details, bool) {
 	case errors.Is(err, app.ErrInvalidReturnRange):
 		d := problem.New(http.StatusBadRequest, "invalid_request", "from must not be after to, and the period must not exceed 366 days")
 		d.Errors = []problem.FieldError{{Field: "to", Message: "must be on or after from and at most 365 days after it"}}
+
+		return d, true
+	case errors.Is(err, app.ErrInvalidDayRange):
+		d := problem.New(http.StatusBadRequest, "invalid_request", "from must not be after to, and the range must not exceed 62 days")
+		d.Errors = []problem.FieldError{{Field: "to", Message: "must be on or after from and at most 61 days after it"}}
 
 		return d, true
 	case errors.Is(err, app.ErrNotFound):
