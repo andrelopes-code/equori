@@ -1,8 +1,7 @@
-import { Text } from "@slotted/react/typography";
 import { Stack } from "@slotted/react/stack";
 
 import type { components } from "@/api/schema.gen";
-import { AwaitingNote } from "@/features/cards/awaiting-note";
+import { AwaitingFigure } from "@/features/cards/awaiting-figure";
 import { DifferenceProposal } from "@/features/cards/difference-proposal";
 import { UnconfirmedNotice } from "@/features/cards/unconfirmed-notice";
 import { formatDate } from "@/i18n/format";
@@ -14,8 +13,8 @@ import type { MoneyAmount } from "@/ui/money-value";
 
 type Statement = components["schemas"]["StatementDetail"];
 
-// The statement's terms and the sentence that adds them up (A89): what was owed before, what was
-// charged, credited and paid on it, the total and what is still open.
+// The statement's terms (A89): what was owed before, what was charged, credited and paid on it,
+// the total, what is still open and what still waits for the bank.
 export function StatementFigures({
   statement,
   scale,
@@ -89,17 +88,8 @@ export function StatementFigures({
           note={unpaidNote}
           attention={overdue ? "danger" : undefined}
         />
+        <AwaitingFigure statement={statement} scale={scale} />
       </FigureGrid>
-      <Text size="sm" tone="muted">
-        {t("statement.breakdown", {
-          opening: money(statement.opening),
-          charges: money(statement.charges),
-          credits: money(statement.credits),
-          payments: money(statement.payments),
-          total: money(statement.amount_due),
-        })}
-      </Text>
-      <AwaitingNote statement={statement} scale={scale} />
       <DifferenceProposal statement={statement} scale={scale} />
       <UnconfirmedNotice statement={statement} />
     </Stack>

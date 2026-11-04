@@ -1,18 +1,17 @@
-import { Text } from "@slotted/react/typography";
-
 import type { components } from "@/api/schema.gen";
 import { useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
+import { FigureCard } from "@/ui/figure-card";
 
 type Statement = components["schemas"]["StatementDetail"];
 
-interface AwaitingNoteProps {
+interface AwaitingFigureProps {
   statement: Statement;
   scale: (code: string) => number;
 }
 
-// A170: what of the statement's activity the bank confirmed and what still waits for it.
-export function AwaitingNote({ statement, scale }: AwaitingNoteProps) {
+// A170: what of the statement's activity still waits for the bank, beside what it confirmed.
+export function AwaitingFigure({ statement, scale }: AwaitingFigureProps) {
   const t = useT();
   const fmt = useMoneyFormat();
   const { confirmed_amount: confirmed, awaiting_amount: awaiting } = statement;
@@ -20,11 +19,12 @@ export function AwaitingNote({ statement, scale }: AwaitingNoteProps) {
   if (awaiting.amount === 0) return null;
 
   return (
-    <Text size="sm" tone="muted">
-      {t("statement.awaiting", {
+    <FigureCard
+      label={t("statement.awaiting")}
+      value={{ money: awaiting, scale: scale(awaiting.currency) }}
+      note={t("statement.confirmedNote", {
         confirmed: fmt.money(confirmed, scale(confirmed.currency)),
-        awaiting: fmt.money(awaiting, scale(awaiting.currency)),
       })}
-    </Text>
+    />
   );
 }

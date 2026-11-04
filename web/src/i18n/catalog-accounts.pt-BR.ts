@@ -751,8 +751,6 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "statement.unpaid": "Em aberto",
   "statement.unpaidNote": "O que os pagamentos após o fechamento não cobriram",
   "statement.minimum": "Pagamento mínimo {amount}",
-  "statement.breakdown":
-    "Total {total} = anterior {opening} + compras {charges} − créditos {credits} − pagamentos {payments}",
   "statement.lines": "Transações da fatura",
   "statement.role": "Tipo",
   "statement.noLines": "Nenhuma transação nesta fatura.",
@@ -764,8 +762,8 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "statement.unconfirmedTitle": "O banco não informou: {names}",
   "statement.unconfirmedMatches":
     "O total desta fatura bate com o do banco, o que confirma estas transações. Use Conferir para registrar isso; o aviso sai da visão geral.",
-  "statement.awaiting":
-    "Confirmado pelo banco: {confirmed}. Aguardando o banco: {awaiting}.",
+  "statement.awaiting": "Aguardando o banco",
+  "statement.confirmedNote": "Confirmado pelo banco: {confirmed}",
   "statement.unconfirmedHelp":
     "Uma transação duplicada ou digitada errada se resolve anulando ou corrigindo. Uma transação correta se confirma quando o banco envia a linha dela, ou quando você confere a fatura com o total do banco.",
   "statement.provisional": "Fatura provisória",

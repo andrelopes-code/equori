@@ -188,11 +188,18 @@ describe("CardPage", () => {
           }),
       }),
     });
+    const figures = await screen.findByRole("region", {
+      name: catalogEn["statement.figures"],
+    });
     expect(
-      await screen.findByText(
-        catalogEn["statement.awaiting"]
-          .replace("{confirmed}", "R$539.07")
-          .replace("{awaiting}", "R$118.40"),
+      await within(figures).findByText(catalogEn["statement.awaiting"]),
+    ).toBeInTheDocument();
+    expect(
+      within(figures).getByText(moneyValue("R$118.40")),
+    ).toBeInTheDocument();
+    expect(
+      within(figures).getByText(
+        catalogEn["statement.confirmedNote"].replace("{confirmed}", "R$539.07"),
       ),
     ).toBeInTheDocument();
   });

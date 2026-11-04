@@ -751,8 +751,6 @@ export const accountsEn = {
   "statement.unpaid": "Open",
   "statement.unpaidNote": "What the payments after closing have not covered",
   "statement.minimum": "Minimum payment {amount}",
-  "statement.breakdown":
-    "Total {total} = previous {opening} + purchases {charges} − credits {credits} − payments {payments}",
   "statement.lines": "Statement lines",
   "statement.role": "Kind",
   "statement.noLines": "No line on this statement.",
@@ -764,8 +762,8 @@ export const accountsEn = {
   "statement.unconfirmedTitle": "The bank has not reported: {names}",
   "statement.unconfirmedMatches":
     "This statement's total matches the bank's, which confirms these transactions. Use Reconcile to record it; the notice leaves the overview.",
-  "statement.awaiting":
-    "Confirmed by the bank: {confirmed}. Awaiting the bank: {awaiting}.",
+  "statement.awaiting": "Awaiting the bank",
+  "statement.confirmedNote": "Confirmed by the bank: {confirmed}",
   "statement.unconfirmedHelp":
     "A duplicated or mistyped transaction is resolved by voiding or correcting it. A correct transaction is confirmed when the bank sends its line, or when you reconcile the statement with the bank's total.",
   "statement.provisional": "Provisional statement",

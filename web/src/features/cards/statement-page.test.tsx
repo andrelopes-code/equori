@@ -136,16 +136,8 @@ describe("StatementPage", () => {
       await within(figures).findAllByText(moneyValue("R$900.00")),
     ).toHaveLength(2);
     expect(
-      screen.getByText(
-        words("statement.breakdown", {
-          opening: "R$900.00",
-          charges: "R$1,800.00",
-          credits: "R$0.00",
-          payments: "R$900.00",
-          total: "R$1,800.00",
-        }),
-      ),
-    ).toBeInTheDocument();
+      screen.queryByText(/previous .* purchases .* credits .* payments/),
+    ).not.toBeInTheDocument();
   });
 
   it("flags what an overdue statement still owes", async () => {
