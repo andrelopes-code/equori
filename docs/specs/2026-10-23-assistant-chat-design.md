@@ -37,6 +37,7 @@ Anti-goals:
 - D2. Retention: conversations stay until the user deletes one or all of them; no automatic expiry. Deleting a conversation deletes its messages and proposals; a pending proposal of a deleted conversation can no longer be confirmed.
 - D3. Response form: the turn operation streams progress events (Server-Sent Events) for each step and sends the complete answer at the end.
 - D4. Language: the assistant answers in the language of the user's profile (`identity.Module.Profile`) and formats dates and numbers by the profile's region. A message written in another language does not change it.
+  Amendment of 2026-11-04: the answer follows the language of the user's latest message; the profile language applies only when that language is unclear. Reason: a member whose profile language is `en` wrote in Portuguese and received English answers. Dates and numbers still follow the profile's region.
 
 ## 4. Architecture
 
@@ -241,13 +242,14 @@ The system prompt is a Go template in `internal/assistant/internal/app/prompt.go
 
 1. Role: the assistant of equori, a personal finance application; it answers from the user's data through tools and from the guide.
 2. Context: today's date (instance day), the user's language and region (`locale.Locale`), and the current page path when given.
-3. Language: answer in the language named; format dates and amounts for the region; amounts keep their currency code.
+3. Language: answer in the language of the user's latest message, else in the language named (amendment of 2026-11-04); format dates and amounts for the region; amounts keep their currency code.
 4. Data rules: never state a figure, name or ID that no tool returned in this turn; when data is missing, say so.
 5. Tool use: find IDs with the read tools; prefer one call with filters over many.
 6. Writes: write tools create proposals; tell the user to confirm on the card; never say that a change happened before a confirmation result exists in the history.
 7. Untrusted text (section 11).
 8. Format: short paragraphs and lists, Markdown links to screens from `get_help`, no tables, no headings, no code blocks.
    Amendment of 2026-10-26: when an answer compares three or more rows on two or more columns, the model writes one GFM table with a header row; any other table, headings, code blocks and charts stay out. Reason: a comparison of several accounts, months or categories written as a list repeats every column name on every item.
+   Amendment of 2026-11-04: the web renderer (`answer-markdown.ts`) draws a heading the model writes anyway as a bold paragraph and drops a horizontal rule, in place of showing `###` and `---` as text. Reason: the format rule is an instruction to the model and not a guarantee.
 
 The template takes no text from the user other than the locale codes and the page path, which the API validates (`^[a-z]{2,3}$`, `^[A-Z]{2}$`, `^/[A-Za-z0-9/_$.-]{0,199}$`).
 

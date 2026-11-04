@@ -46,10 +46,21 @@ describe("parseAnswer", () => {
     expect(find(parseAnswer("[x](//evil.test)"), "link")).toHaveLength(0);
   });
 
-  it("keeps a heading marker as literal text", () => {
-    const tree = parseAnswer("# Title");
+  it("reads a heading as a bold paragraph", () => {
+    const tree = parseAnswer("### Option 1\n\nBody");
     expect(find(tree, "heading")).toHaveLength(0);
-    expect(text(tree)).toBe("# Title");
+    expect((tree.children ?? []).map((n) => n.type)).toEqual([
+      "paragraph",
+      "paragraph",
+    ]);
+    expect(find(tree, "strong").map(text)).toEqual(["Option 1"]);
+    expect(text(tree)).toBe("Option 1Body");
+  });
+
+  it("drops a horizontal rule", () => {
+    const tree = parseAnswer("One\n\n---\n\nTwo");
+    expect(find(tree, "thematicBreak")).toHaveLength(0);
+    expect(text(tree)).toBe("OneTwo");
   });
 
   it("reads a GFM table with its alignment", () => {

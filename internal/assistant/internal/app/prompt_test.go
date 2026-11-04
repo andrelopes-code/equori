@@ -39,6 +39,26 @@ func TestPrompt(t *testing.T) {
 	}
 }
 
+// Spec amendment of 2026-11-04: the answer follows the language of the user's message; the
+// language of the profile is the fallback.
+func TestPromptAnswersInTheLanguageOfTheMessage(t *testing.T) {
+	t.Parallel()
+
+	got := app.Prompt(app.PromptInput{
+		Today:  time.Date(2026, 11, 4, 12, 0, 0, 0, time.UTC),
+		Locale: locale.Locale{Language: "en", Region: "BR"},
+	})
+
+	for _, want := range []string{
+		"Answer in the language of the user's latest message.",
+		`When that language is unclear, answer in the language with ISO 639 code "en".`,
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("prompt lacks %q", want)
+		}
+	}
+}
+
 // Spec amendment of 2026-10-26: a comparison of three or more rows on two or more columns is
 // one GFM table; any other table, headings, code blocks and charts stay out.
 func TestPromptAllowsOneTableForAComparison(t *testing.T) {
