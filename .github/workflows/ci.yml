@@ -8,7 +8,8 @@ on:
 permissions:
   contents: read
 
-# make check runs as three parallel jobs: static, go-test and web. Together they run its targets.
+# make check runs as parallel jobs: static, go-test in two shards, and web. Together they run
+# its targets.
 jobs:
   static:
     runs-on: ubuntu-latest
@@ -28,15 +29,27 @@ jobs:
       - run: make static
       - run: make vuln
 
+  # The two slowest packages, one long sequential seed and the largest suite, run beside the
+  # rest. Both shards read the same pattern, so every package runs in exactly one.
   go-test:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [slow, rest]
+    env:
+      SLOW: '/cmd/demoseed$|/internal/ledger($|/)'
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
-      - run: make test-race
-      - run: make test-cluster
+      - if: matrix.shard == 'slow'
+        run: make test-race GO_PACKAGES="$(go list ./... | grep -E "$SLOW" | tr '\n' ' ')"
+      - if: matrix.shard == 'slow'
+        run: make test-cluster
+      - if: matrix.shard == 'rest'
+        run: make test-race GO_PACKAGES="$(go list ./... | grep -vE "$SLOW" | tr '\n' ' ')"
 
   web:
     runs-on: ubuntu-latest

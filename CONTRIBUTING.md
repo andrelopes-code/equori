@@ -19,7 +19,7 @@ Tools are pinned in `tools/go.mod` and built into `bin/`; `web/` tools are pinne
 
 | Command | Purpose |
 |---|---|
-| `make check` | Everything: format, tidy and generated-code checks, lint, `make web-check`, Go tests with `-race`. CI runs its targets in three parallel jobs on every pull request. |
+| `make check` | Everything: format, tidy and generated-code checks, lint, `make web-check`, Go tests with `-race`. CI runs its targets in parallel jobs on every pull request. |
 | `make test` / `make test-race` | Go tests, without or with `-race`, on the test server `db-test` (`127.0.0.1:54339`, data in memory) |
 | `make db-up` / `make dev` | Start local PostgreSQL on `127.0.0.1:54329`, run the app on `:8080`; reads `dev.env`, then `~/.config/equori/local.env` (`LOCAL_ENV`) when present, then `.env` |
 | `make web-dev` | Vite dev server for `web/`, proxying `/api` to `make dev` |

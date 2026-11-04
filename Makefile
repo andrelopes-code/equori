@@ -67,11 +67,14 @@ tidy-check:
 	go mod tidy -diff
 	go -C tools mod tidy -diff
 
+# GO_PACKAGES narrows test and test-race to a list of packages; CI splits the list in two jobs.
+GO_PACKAGES ?= ./...
+
 test: db-test-up
-	go test -timeout 30m ./...
+	go test -timeout 30m $(GO_PACKAGES)
 
 test-race: db-test-up
-	go test -race -timeout 30m ./...
+	go test -race -timeout 30m $(GO_PACKAGES)
 
 # Managed mode needs the PostgreSQL programs; the postgres:18 image holds them, so the compiled
 # cluster tests run there, on the host network to reach db-test (ADR 022). Each entry is
