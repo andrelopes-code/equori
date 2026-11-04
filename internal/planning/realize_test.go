@@ -153,8 +153,8 @@ func TestVoidReleasesTheOccurrence(t *testing.T) {
 	f.h.Dispatch()
 	f.h.Restart(apitest.Today("2026-11-09"))
 
-	if o := f.occurrence(id, 1); o.State != "overdue" || o.TransactionID != "" {
-		t.Fatalf("after void = %+v, want overdue", o)
+	if o := f.occurrence(id, 1); o.State != "overdue" || o.TransactionID != "" || o.ActualAmount != nil {
+		t.Fatalf("after void = %+v, want overdue without a transaction or an actual amount", o)
 	}
 
 	second := f.pay("2026-11-09", 210000, f.rent, f.landlord)

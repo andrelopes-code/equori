@@ -1,7 +1,10 @@
 package app
 
 import (
+	"context"
 	"testing"
+
+	"github.com/google/uuid"
 
 	"github.com/andrelopes-code/equori/internal/planning/internal/domain"
 )
@@ -57,4 +60,48 @@ func TestPlanSavingsFigures(t *testing.T) {
 			}
 		})
 	}
+}
+
+// A realized income whose transaction is missing from the facts has no entry, so the plan keeps
+// its expected amount; expected occurrences and savings never get one.
+func TestReceivedIncomeSkipsWhatTheFactsOmit(t *testing.T) {
+	t.Parallel()
+
+	account, other := uuid.New(), uuid.New()
+	income := domain.Schedule{ID: uuid.New(), Kind: domain.Income, AccountID: account, CounterpartID: other}
+	savings := domain.Schedule{ID: uuid.New(), Kind: domain.Savings, AccountID: account, CounterpartID: other}
+	known, missing := uuid.New(), uuid.New()
+
+	realized := domain.Occurrence{ID: uuid.New(), ScheduleID: income.ID, State: domain.Realized, TransactionID: known}
+	omitted := domain.Occurrence{ID: uuid.New(), ScheduleID: income.ID, State: domain.Realized, TransactionID: missing}
+	expected := domain.Occurrence{ID: uuid.New(), ScheduleID: income.ID, State: domain.Expected}
+	saved := domain.Occurrence{ID: uuid.New(), ScheduleID: savings.ID, State: domain.Realized, TransactionID: known}
+
+	svc := &Service{ledger: factsLedger{facts: []domain.Transaction{{
+		ID:       known,
+		Postings: []domain.Posting{{AccountID: account, Amount: 275142}, {AccountID: other, Amount: -275142}},
+	}}}}
+
+	got, err := svc.receivedIncome(
+		context.Background(),
+		1,
+		[]domain.Occurrence{realized, omitted, expected, saved},
+		map[uuid.UUID]domain.Schedule{income.ID: income, savings.ID: savings},
+	)
+	if err != nil {
+		t.Fatalf("receivedIncome: %v", err)
+	}
+
+	if len(got) != 1 || got[realized.ID] != 275142 {
+		t.Fatalf("receivedIncome = %v, want only the realized occurrence at 275142", got)
+	}
+}
+
+type factsLedger struct {
+	Ledger
+	facts []domain.Transaction
+}
+
+func (l factsLedger) TransactionFacts(context.Context, int64, []uuid.UUID) ([]domain.Transaction, error) {
+	return l.facts, nil
 }

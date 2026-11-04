@@ -324,7 +324,7 @@ func (s *Service) receivedIncome(
 
 	for _, o := range occurrences {
 		t, ok := byID[o.TransactionID]
-		if o.State != domain.Realized || !ok {
+		if o.State != domain.Realized || !ok || schedules[o.ScheduleID].Kind != domain.Income {
 			continue
 		}
 
