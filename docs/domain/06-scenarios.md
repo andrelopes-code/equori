@@ -936,6 +936,14 @@ Today 2026-03-31, base BRL. Food 800.00 on 2026-02-27 and Food 1,000.00 on 2026-
 
 Today 2026-10-17, base BRL. No expense in 2026-09; Food 500.00 on 2026-10-05. The widget shows 500.00, no delta, and states that the same days of the previous month hold no spending.
 
+### S278 Card statement in the forecast of the month
+
+Today 2026-11-04, base BRL. A card statement due on 2026-11-05 owes 1,200.00, and a subscription on the card is expected on 2026-11-30. The forecast of the Available accounts on 2026-11-05 is 1,200.00 below the forecast on 2026-11-04; the balance chart marks the statement on 5 November and draws no line on 30 November (`docs/specs/2026-11-04-balance-forecast-design.md`, B1).
+
+### S279 Every occurrence ahead marked on the balance chart
+
+Four occurrences ahead fall within eight days of each other. The balance chart draws four lines, with priorities that follow their absolute amounts (B5).
+
 ### S176–S181, S184 Card billing certainty (A136–A139, A141)
 
 The scenarios of `docs/specs/2026-10-29-card-billing-certainty-design.md`: a reviewed match moves a manual charge to the bill its line states (S176); a closed statement that differs from the institution's total proposes the provisional postings that explain it (S177); a statement the owner chose stays (S178); a difference no posting explains shows as a possible rounding difference of the source (S179); an open statement leaves out the previous statement's unpaid amount until it is overdue (S180); a statement is reconciled as soon as a later entry closes its difference with the institution's total (S181); a pending line stays on its statement whatever the reported total, and moves only by its bill (S184).
