@@ -1737,6 +1737,9 @@ export const catalogEn = {
   "schedule.window": "Days around the expected date",
   "schedule.windowHint":
     "How many days before or after the expected date a transaction can be linked to the occurrence.",
+  "schedule.rename": "Rename",
+  "schedule.rename.hint":
+    "The new name applies to every occurrence of the schedule, past and future.",
   "schedule.matching.edit": "Matching settings",
   "schedule.matching.appliesLater":
     "Applies to transactions recorded from now on. Link an earlier transaction from the occurrence.",

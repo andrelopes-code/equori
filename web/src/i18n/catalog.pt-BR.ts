@@ -1757,6 +1757,9 @@ export const catalogPtBR: Catalog = {
   "schedule.window": "Dias em torno da data prevista",
   "schedule.windowHint":
     "Quantos dias antes ou depois da data prevista uma transação pode ser associada à ocorrência.",
+  "schedule.rename": "Renomear",
+  "schedule.rename.hint":
+    "O novo nome vale para todas as ocorrências do agendamento, passadas e futuras.",
   "schedule.matching.edit": "Ajustes de associação",
   "schedule.matching.appliesLater":
     "Vale para transações registradas daqui em diante. Associe uma transação anterior pela ocorrência.",

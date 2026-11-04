@@ -904,6 +904,38 @@ describe("Schedule page", () => {
     });
   });
 
+  it("renames a schedule that has ended and sends only the description", async () => {
+    const sent: unknown[] = [];
+    await renderApp(`/planning/schedules/${rentID}`, {
+      fetch: api({
+        [`GET /api/v1/schedules/${rentID}`]: () =>
+          json(200, { ...rent, ends_on: "2026-10-01" }),
+        [`PATCH /api/v1/schedules/${rentID}`]: async (req) => {
+          sent.push(await req.json());
+          return json(200, rent);
+        },
+      }),
+    });
+    await userEvent.click(
+      await screen.findByRole("button", { name: catalogEn["schedule.rename"] }),
+    );
+    const dialog = await screen.findByRole("dialog");
+    const description = within(dialog).getByRole("textbox", {
+      name: catalogEn["schedule.description"],
+    });
+    expect(description).toHaveValue(rent.description);
+
+    await userEvent.clear(description);
+    await userEvent.type(description, "Uber Moto Flex");
+    await userEvent.click(
+      within(dialog).getByRole("button", { name: catalogEn["schedule.save"] }),
+    );
+
+    await waitFor(() => {
+      expect(sent).toEqual([{ description: "Uber Moto Flex" }]);
+    });
+  });
+
   it("adds a pause", async () => {
     const sent: unknown[] = [];
     await renderApp(`/planning/schedules/${rentID}`, {

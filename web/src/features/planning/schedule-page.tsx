@@ -43,6 +43,7 @@ import { calendarLabel } from "@/features/planning/calendar-label";
 import { EndDialog } from "@/features/planning/end-dialog";
 import { MatchingDialog } from "@/features/planning/matching-dialog";
 import { PauseDialog } from "@/features/planning/pause-dialog";
+import { RenameDialog } from "@/features/planning/rename-dialog";
 import {
   currentTerms,
   hasEnded,
@@ -61,7 +62,7 @@ import { HeaderAction } from "@/ui/header-action";
 import { QueryError } from "@/ui/query-error";
 import { PageBack } from "@/ui/page-back";
 
-type Dialog = "terms" | "matching" | "pause" | "end";
+type Dialog = "terms" | "rename" | "matching" | "pause" | "end";
 
 interface Suggested {
   amount: number;
@@ -139,6 +140,14 @@ export function SchedulePage() {
               </PageHeaderSubheading>
             </PageHeaderTitle>
             <PageHeaderActions>
+              <HeaderAction
+                label={t("schedule.rename")}
+                glyph="pencil"
+                wordsOnly
+                onClick={() => {
+                  setDialog("rename");
+                }}
+              />
               <HeaderAction
                 label={t("schedule.matching.edit")}
                 glyph="pencil"
@@ -350,6 +359,9 @@ export function SchedulePage() {
           onDone={close}
           onCancel={close}
         />
+      )}
+      {dialog === "rename" && (
+        <RenameDialog schedule={s} onDone={close} onCancel={close} />
       )}
       {dialog === "matching" && (
         <MatchingDialog schedule={s} onDone={close} onCancel={close} />
