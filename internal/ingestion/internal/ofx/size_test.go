@@ -8,7 +8,7 @@ import (
 )
 
 // parseBudget bounds the parse of a file near the upload limit; a linear parse takes well under it.
-const parseBudget = 5 * time.Second
+const parseBudget = slowdown * 5 * time.Second
 
 // A file of tens of thousands of transactions parses in linear time: locating the line of an
 // element must not rescan the file from its start.
