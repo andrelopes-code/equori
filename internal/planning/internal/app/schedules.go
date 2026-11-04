@@ -52,7 +52,9 @@ type ScheduleInput struct {
 
 // ScheduleChange holds the description and the matching settings to change; a nil field keeps its value.
 type ScheduleChange struct {
-	Description                        *string
+	Description *string
+	// StartsOn moves the first date of the schedule earlier (A198).
+	StartsOn                           *time.Time
 	ToleranceBP, GraceDays, WindowDays *int
 }
 
@@ -125,8 +127,9 @@ func (s *Service) CreateSchedule(ctx context.Context, booksID int64, in Schedule
 	return s.repo.Schedule(ctx, booksID, created.ID)
 }
 
-// Update renames a schedule, ended or not, and changes its matching settings. The matching
-// applies to transactions recorded, corrected or voided afterwards; realized occurrences stay.
+// Update renames a schedule, ended or not, moves its start earlier and changes its matching
+// settings. The matching applies to transactions recorded, corrected or voided afterwards;
+// realized occurrences stay.
 func (s *Service) Update(ctx context.Context, booksID int64, id uuid.UUID, in ScheduleChange) (domain.Schedule, error) {
 	return s.changeSchedule(ctx, booksID, id, func(repo Repository, sch *domain.Schedule) error {
 		if in.Description != nil {
@@ -153,9 +156,15 @@ func (s *Service) Update(ctx context.Context, booksID int64, id uuid.UUID, in Sc
 			return err
 		}
 
-		_, err := repo.UpdateScheduleMatching(ctx, booksID, id, sch.ToleranceBP, sch.GraceDays, sch.WindowDays)
+		if _, err := repo.UpdateScheduleMatching(ctx, booksID, id, sch.ToleranceBP, sch.GraceDays, sch.WindowDays); err != nil {
+			return err
+		}
 
-		return err
+		if in.StartsOn == nil {
+			return nil
+		}
+
+		return s.moveStart(ctx, repo, booksID, *sch, *in.StartsOn)
 	})
 }
 

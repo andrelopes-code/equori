@@ -359,6 +359,10 @@ Amendment A127: a schedule's occurrences start at its rule's first date, also wh
 
 Amendment A198: the description of a schedule changes without a new schedule, also after the schedule ended. The new description applies to every occurrence of the schedule, realized, expected and skipped; no occurrence, terms version, pause, end date or matching setting changes. An empty description, or one above 200 characters, is rejected with `validation_failed`. A subscription "Uber One" ended from 2026-12-03 with 2026-11-03 expected is renamed "Uber Moto Flex": 2026-11-03 stays expected under the new name and a transaction recorded afterwards realizes it.
 
+### S284 Schedule started earlier
+
+Amendment A199: the first date of a schedule moves before the current one, on the rhythm of its recurrence, with `starts_on`. The occurrences that exist stay with their identity and take the next sequences; each later terms version keeps its place. A date gained before the first one is inserted: a recorded transaction that fits it realizes it (A51); one dated before today minus the grace days that none realizes is skipped; the others are expected and take a transaction recorded afterwards. A date that is not before the current start, one off the rhythm of the recurrence, and a recurrence with a count are rejected with `validation_failed` on `starts_on`. On 2026-11-04, a subscription of 6.00 monthly on day 3 from 2026-12-03 with 3 grace days is started on 2026-11-03: 2026-11-03 is expected, 2026-12-03 keeps its occurrence as the second, and the charge of 6.00 on 2026-11-03 that the bank synchronizes later realizes the first. Started on 2026-09-03, 2026-09-03 and 2026-10-03 are skipped unless a recorded transaction realizes them.
+
 ## 6.9 Views
 
 ### S30 Accrual and cash views of a card statement (G1)

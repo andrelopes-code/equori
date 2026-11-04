@@ -936,6 +936,35 @@ describe("Schedule page", () => {
     });
   });
 
+  it("starts the schedule earlier from the day before its current start", async () => {
+    const sent: unknown[] = [];
+    await renderApp(`/planning/schedules/${rentID}`, {
+      fetch: api({
+        [`PATCH /api/v1/schedules/${rentID}`]: async (req) => {
+          sent.push(await req.json());
+          return json(200, rent);
+        },
+      }),
+    });
+    await userEvent.click(
+      await screen.findByRole("button", {
+        name: catalogEn["schedule.startEarlier"],
+      }),
+    );
+    const dialog = await screen.findByRole("dialog");
+    expect(
+      within(dialog).getByText(catalogEn["schedule.startEarlier.hint"]),
+    ).toBeInTheDocument();
+
+    await userEvent.click(
+      within(dialog).getByRole("button", { name: catalogEn["schedule.save"] }),
+    );
+
+    await waitFor(() => {
+      expect(sent).toEqual([{ starts_on: "2026-01-04" }]);
+    });
+  });
+
   it("adds a pause", async () => {
     const sent: unknown[] = [];
     await renderApp(`/planning/schedules/${rentID}`, {

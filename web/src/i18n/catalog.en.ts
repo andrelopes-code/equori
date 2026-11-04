@@ -1737,6 +1737,10 @@ export const catalogEn = {
   "schedule.window": "Days around the expected date",
   "schedule.windowHint":
     "How many days before or after the expected date a transaction can be linked to the occurrence.",
+  "schedule.startEarlier": "Start earlier",
+  "schedule.startEarlier.hint":
+    "The schedule gains a date for each period from the chosen day up to its current start. A new date that is not overdue takes a charge recorded later; a new date that is overdue is skipped, unless a recorded charge fits it.",
+  "schedule.startEarlier.from": "Start on",
   "schedule.rename": "Rename",
   "schedule.rename.hint":
     "The new name applies to every occurrence of the schedule, past and future.",

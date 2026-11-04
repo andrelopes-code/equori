@@ -123,6 +123,45 @@ WHERE
 RETURNING
     *;
 
+-- name: MoveFirstTermsStart :exec
+-- The first terms version starts where its rule starts (P7 amendment A198).
+UPDATE planning_schedule_terms
+SET
+    effective_from = @new_start,
+    start = @new_start
+WHERE
+    books_id = @books_id
+    AND schedule_id = @schedule_id
+    AND effective_from = @old_start;
+
+-- name: ShiftTermsFirstSequence :exec
+UPDATE planning_schedule_terms
+SET
+    first_sequence = first_sequence + @shift::int
+WHERE
+    books_id = @books_id
+    AND schedule_id = @schedule_id
+    AND first_sequence IS NOT NULL;
+
+-- name: LiftOccurrenceSequences :exec
+-- First half of a renumbering: (schedule_id, sequence) is unique, so the sequences leave the
+-- range they will take before they move by shift.
+UPDATE planning_occurrence
+SET
+    sequence = sequence + 1000000
+WHERE
+    books_id = @books_id
+    AND schedule_id = @schedule_id;
+
+-- name: LowerOccurrenceSequences :exec
+UPDATE planning_occurrence
+SET
+    sequence = sequence - 1000000 + @shift::int
+WHERE
+    books_id = @books_id
+    AND schedule_id = @schedule_id
+    AND sequence >= 1000000;
+
 -- name: ListSchedules :many
 SELECT
     *

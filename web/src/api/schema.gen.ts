@@ -3388,9 +3388,13 @@ export interface paths {
         options?: never;
         head?: never;
         /**
-         * Rename a schedule or change how transactions are matched to its occurrences (P7 amendment A198).
+         * Rename a schedule, start it earlier or change how transactions are matched to its occurrences (P7 amendments A198, A199).
          * @description Each field is optional; absent fields keep their value. The description applies to every occurrence of
-         *     the schedule, an ended schedule included. The matching change applies to transactions recorded,
+         *     the schedule, an ended schedule included. starts_on moves the first date of the schedule before the
+         *     current one, on the rhythm of its recurrence: the occurrences that exist stay, the dates gained before
+         *     them are inserted, a recorded transaction realizes one it fits, and one that is overdue is skipped.
+         *     422 validation_failed on starts_on when it is not before the current start, is off the rhythm, or the
+         *     recurrence has a count. The matching change applies to transactions recorded,
          *     corrected or voided afterwards; occurrences already realized stay.
          */
         patch: operations["updateScheduleMatching"];
@@ -12561,6 +12565,8 @@ export interface operations {
             content: {
                 "application/json": {
                     description?: string;
+                    /** Format: date */
+                    starts_on?: string;
                     match_tolerance_bp?: number;
                     grace_days?: number;
                     match_window_days?: number;

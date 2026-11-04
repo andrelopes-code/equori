@@ -65,6 +65,10 @@ func (s *Server) UpdateScheduleMatching(ctx context.Context, req UpdateScheduleM
 		WindowDays:  req.Body.MatchWindowDays,
 	}
 
+	if req.Body.StartsOn != nil {
+		in.StartsOn = &req.Body.StartsOn.Time
+	}
+
 	sch, err := s.svc.Update(ctx, auth.MustBooksID(ctx), req.Id, in)
 	if err != nil {
 		return nil, err

@@ -56,7 +56,7 @@ func (s *Service) generate(ctx context.Context, repo Repository, booksID int64, 
 		return nil
 	}
 
-	if err := s.fill(ctx, repo, booksID, sch, sch.GeneratedUntil.AddDate(0, 0, 1), horizon, paidBy); err != nil {
+	if err := s.fill(ctx, repo, booksID, sch, sch.GeneratedUntil.AddDate(0, 0, 1), horizon, createdDay(ctx, sch), paidBy); err != nil {
 		return err
 	}
 
@@ -65,9 +65,9 @@ func (s *Service) generate(ctx context.Context, repo Repository, booksID int64, 
 
 // fill inserts the occurrences of sch dated in [from, to] that are missing, lets the
 // transactions already recorded realize the ones dated by today (A51), and skips the ones dated
-// before the schedule's creation that none realizes, so the past is neither overdue nor
-// projected (A127).
-func (s *Service) fill(ctx context.Context, repo Repository, booksID int64, sch domain.Schedule, from, to time.Time, paidBy uuid.UUID) error {
+// before keepFrom that none realizes, so the past is neither overdue nor projected (A127).
+// Generation passes the creation day of the schedule as keepFrom.
+func (s *Service) fill(ctx context.Context, repo Repository, booksID int64, sch domain.Schedule, from, to, keepFrom time.Time, paidBy uuid.UUID) error {
 	days, err := s.days(ctx, sch.Calendar, sch.Terms[0].Rule.Start, to)
 	if err != nil {
 		return err
@@ -104,9 +104,7 @@ func (s *Service) fill(ctx context.Context, repo Repository, booksID int64, sch 
 		}
 	}
 
-	created := clock.DateOf(sch.CreatedAt, clock.Location(ctx))
-
-	open, err := repo.ExpectedOccurrences(ctx, booksID, []uuid.UUID{sch.ID}, first, created.AddDate(0, 0, -1))
+	open, err := repo.ExpectedOccurrences(ctx, booksID, []uuid.UUID{sch.ID}, first, keepFrom.AddDate(0, 0, -1))
 	if err != nil {
 		return err
 	}
@@ -118,6 +116,10 @@ func (s *Service) fill(ctx context.Context, repo Repository, booksID int64, sch 
 	}
 
 	return nil
+}
+
+func createdDay(ctx context.Context, sch domain.Schedule) time.Time {
+	return clock.DateOf(sch.CreatedAt, clock.Location(ctx))
 }
 
 // realizeFirst links the occurrence on date to txID with the checks of a manual Realize, before
@@ -180,7 +182,7 @@ func (s *Service) Backfill(ctx context.Context) error {
 				return err
 			}
 
-			return s.fill(bctx, repo, ref.BooksID, sch, time.Time{}, sch.GeneratedUntil, uuid.Nil)
+			return s.fill(bctx, repo, ref.BooksID, sch, time.Time{}, sch.GeneratedUntil, createdDay(bctx, sch), uuid.Nil)
 		})
 		if err != nil {
 			return fmt.Errorf("backfill schedule %s: %w", ref.ID, err)

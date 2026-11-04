@@ -671,10 +671,11 @@ type ListSchedulesParams struct {
 
 // UpdateScheduleMatchingJSONBody defines parameters for UpdateScheduleMatching.
 type UpdateScheduleMatchingJSONBody struct {
-	Description      *string `json:"description,omitempty"`
-	GraceDays        *int    `json:"grace_days,omitempty"`
-	MatchToleranceBp *int    `json:"match_tolerance_bp,omitempty"`
-	MatchWindowDays  *int    `json:"match_window_days,omitempty"`
+	Description      *string             `json:"description,omitempty"`
+	GraceDays        *int                `json:"grace_days,omitempty"`
+	MatchToleranceBp *int                `json:"match_tolerance_bp,omitempty"`
+	MatchWindowDays  *int                `json:"match_window_days,omitempty"`
+	StartsOn         *openapi_types.Date `json:"starts_on,omitempty"`
 }
 
 // SaveBudgetPlanJSONRequestBody defines body for SaveBudgetPlan for application/json ContentType.
@@ -787,7 +788,7 @@ type ServerInterface interface {
 	// GetSchedule A schedule with its terms versions and pauses.
 	// (GET /schedules/{id})
 	GetSchedule(w http.ResponseWriter, r *http.Request, id ID)
-	// UpdateScheduleMatching Rename a schedule or change how transactions are matched to its occurrences (P7 amendment A198).
+	// UpdateScheduleMatching Rename a schedule, start it earlier or change how transactions are matched to its occurrences (P7 amendments A198, A199).
 	// (PATCH /schedules/{id})
 	UpdateScheduleMatching(w http.ResponseWriter, r *http.Request, id ID)
 	// EndSchedule Produce no occurrence on or after a date; expected ones are removed, realized ones stay (P7 amendment A52).
@@ -3768,7 +3769,7 @@ type StrictServerInterface interface {
 	// GetSchedule A schedule with its terms versions and pauses.
 	// (GET /schedules/{id})
 	GetSchedule(ctx context.Context, request GetScheduleRequestObject) (GetScheduleResponseObject, error)
-	// UpdateScheduleMatching Rename a schedule or change how transactions are matched to its occurrences (P7 amendment A198).
+	// UpdateScheduleMatching Rename a schedule, start it earlier or change how transactions are matched to its occurrences (P7 amendments A198, A199).
 	// (PATCH /schedules/{id})
 	UpdateScheduleMatching(ctx context.Context, request UpdateScheduleMatchingRequestObject) (UpdateScheduleMatchingResponseObject, error)
 	// EndSchedule Produce no occurrence on or after a date; expected ones are removed, realized ones stay (P7 amendment A52).

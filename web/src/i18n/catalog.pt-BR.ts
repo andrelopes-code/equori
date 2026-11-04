@@ -1757,6 +1757,10 @@ export const catalogPtBR: Catalog = {
   "schedule.window": "Dias em torno da data prevista",
   "schedule.windowHint":
     "Quantos dias antes ou depois da data prevista uma transação pode ser associada à ocorrência.",
+  "schedule.startEarlier": "Começar antes",
+  "schedule.startEarlier.hint":
+    "O agendamento ganha uma data por período, do dia escolhido até o início atual. Uma data nova que não está atrasada recebe uma cobrança registrada depois; uma data nova atrasada é ignorada, salvo se uma cobrança já registrada combinar com ela.",
+  "schedule.startEarlier.from": "Começar em",
   "schedule.rename": "Renomear",
   "schedule.rename.hint":
     "O novo nome vale para todas as ocorrências do agendamento, passadas e futuras.",

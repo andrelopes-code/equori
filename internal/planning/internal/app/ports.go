@@ -165,6 +165,9 @@ type Repository interface {
 	// ScheduleRefs returns every schedule across books.
 	ScheduleRefs(ctx context.Context) ([]ScheduleRef, error)
 	SetGeneratedUntil(ctx context.Context, booksID int64, id uuid.UUID, d time.Time) error
+	// MoveScheduleStart moves the first terms version from oldStart to newStart and renumbers the
+	// occurrences and the later terms versions by shift.
+	MoveScheduleStart(ctx context.Context, booksID int64, id uuid.UUID, oldStart, newStart time.Time, shift int) error
 	InsertOccurrences(ctx context.Context, booksID int64, scheduleID uuid.UUID, ps []domain.Planned) error
 	// Occurrences returns the occurrences with expected date in [from, to]; scheduleID uuid.Nil
 	// means every schedule.

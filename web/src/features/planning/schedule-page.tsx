@@ -44,6 +44,7 @@ import { EndDialog } from "@/features/planning/end-dialog";
 import { MatchingDialog } from "@/features/planning/matching-dialog";
 import { PauseDialog } from "@/features/planning/pause-dialog";
 import { RenameDialog } from "@/features/planning/rename-dialog";
+import { StartDialog } from "@/features/planning/start-dialog";
 import {
   currentTerms,
   hasEnded,
@@ -62,7 +63,7 @@ import { HeaderAction } from "@/ui/header-action";
 import { QueryError } from "@/ui/query-error";
 import { PageBack } from "@/ui/page-back";
 
-type Dialog = "terms" | "rename" | "matching" | "pause" | "end";
+type Dialog = "terms" | "rename" | "start" | "matching" | "pause" | "end";
 
 interface Suggested {
   amount: number;
@@ -146,6 +147,14 @@ export function SchedulePage() {
                 wordsOnly
                 onClick={() => {
                   setDialog("rename");
+                }}
+              />
+              <HeaderAction
+                label={t("schedule.startEarlier")}
+                glyph="calendar"
+                wordsOnly
+                onClick={() => {
+                  setDialog("start");
                 }}
               />
               <HeaderAction
@@ -362,6 +371,9 @@ export function SchedulePage() {
       )}
       {dialog === "rename" && (
         <RenameDialog schedule={s} onDone={close} onCancel={close} />
+      )}
+      {dialog === "start" && (
+        <StartDialog schedule={s} onDone={close} onCancel={close} />
       )}
       {dialog === "matching" && (
         <MatchingDialog schedule={s} onDone={close} onCancel={close} />

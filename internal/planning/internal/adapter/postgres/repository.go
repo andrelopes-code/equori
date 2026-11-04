@@ -478,6 +478,32 @@ func (r *Repository) InsertTerms(ctx context.Context, booksID int64, scheduleID 
 	return r.insertTerms(ctx, booksID, scheduleID, t)
 }
 
+// MoveScheduleStart moves the first terms version from oldStart to newStart and renumbers the
+// occurrences and the later terms versions by shift, the dates the rule gained before them.
+func (r *Repository) MoveScheduleStart(ctx context.Context, booksID int64, id uuid.UUID, oldStart, newStart time.Time, shift int) error {
+	steps := []func() error{
+		func() error {
+			return r.q.MoveFirstTermsStart(ctx, MoveFirstTermsStartParams{BooksID: booksID, ScheduleID: id, OldStart: oldStart, NewStart: newStart})
+		},
+		func() error {
+			return r.q.ShiftTermsFirstSequence(ctx, ShiftTermsFirstSequenceParams{BooksID: booksID, ScheduleID: id, Shift: int32(shift)}) //nolint:gosec // a count of dates of one rule
+		},
+		func() error {
+			return r.q.LiftOccurrenceSequences(ctx, LiftOccurrenceSequencesParams{BooksID: booksID, ScheduleID: id})
+		},
+		func() error {
+			return r.q.LowerOccurrenceSequences(ctx, LowerOccurrenceSequencesParams{BooksID: booksID, ScheduleID: id, Shift: int32(shift)}) //nolint:gosec // a count of dates of one rule
+		},
+	}
+	for _, step := range steps {
+		if err := step(); err != nil {
+			return fmt.Errorf("move schedule start: %w", err)
+		}
+	}
+
+	return nil
+}
+
 func (r *Repository) InsertPause(ctx context.Context, booksID int64, scheduleID uuid.UUID, p domain.Pause) error {
 	err := r.q.InsertPause(ctx, InsertPauseParams{BooksID: booksID, ScheduleID: scheduleID, FromDate: p.From, ToDate: p.To})
 	if pe, ok := errors.AsType[*pgconn.PgError](err); ok && pe.Code == exclusionViolation {

@@ -287,6 +287,27 @@ func (q *Queries) InsertTerms(ctx context.Context, arg InsertTermsParams) error 
 	return err
 }
 
+const liftOccurrenceSequences = `-- name: LiftOccurrenceSequences :exec
+UPDATE planning_occurrence
+SET
+    sequence = sequence + 1000000
+WHERE
+    books_id = $1
+    AND schedule_id = $2
+`
+
+type LiftOccurrenceSequencesParams struct {
+	BooksID    int64
+	ScheduleID uuid.UUID
+}
+
+// First half of a renumbering: (schedule_id, sequence) is unique, so the sequences leave the
+// range they will take before they move by shift.
+func (q *Queries) LiftOccurrenceSequences(ctx context.Context, arg LiftOccurrenceSequencesParams) error {
+	_, err := q.db.Exec(ctx, liftOccurrenceSequences, arg.BooksID, arg.ScheduleID)
+	return err
+}
+
 const listOccurrences = `-- name: ListOccurrences :many
 SELECT
     id, books_id, schedule_id, sequence, expected_on, expected_amount, state, transaction_id, realized_by, moved_from, skip_reason, declined_transaction_id
@@ -603,6 +624,56 @@ func (q *Queries) LockSchedule(ctx context.Context, arg LockScheduleParams) (Pla
 	return i, err
 }
 
+const lowerOccurrenceSequences = `-- name: LowerOccurrenceSequences :exec
+UPDATE planning_occurrence
+SET
+    sequence = sequence - 1000000 + $1::int
+WHERE
+    books_id = $2
+    AND schedule_id = $3
+    AND sequence >= 1000000
+`
+
+type LowerOccurrenceSequencesParams struct {
+	Shift      int32
+	BooksID    int64
+	ScheduleID uuid.UUID
+}
+
+func (q *Queries) LowerOccurrenceSequences(ctx context.Context, arg LowerOccurrenceSequencesParams) error {
+	_, err := q.db.Exec(ctx, lowerOccurrenceSequences, arg.Shift, arg.BooksID, arg.ScheduleID)
+	return err
+}
+
+const moveFirstTermsStart = `-- name: MoveFirstTermsStart :exec
+UPDATE planning_schedule_terms
+SET
+    effective_from = $1,
+    start = $1
+WHERE
+    books_id = $2
+    AND schedule_id = $3
+    AND effective_from = $4
+`
+
+type MoveFirstTermsStartParams struct {
+	NewStart   time.Time
+	BooksID    int64
+	ScheduleID uuid.UUID
+	OldStart   time.Time
+}
+
+// The first terms version starts where its rule starts (P7 amendment A198).
+func (q *Queries) MoveFirstTermsStart(ctx context.Context, arg MoveFirstTermsStartParams) error {
+	_, err := q.db.Exec(ctx, moveFirstTermsStart,
+		arg.NewStart,
+		arg.BooksID,
+		arg.ScheduleID,
+		arg.OldStart,
+	)
+	return err
+}
+
 const scheduleRefs = `-- name: ScheduleRefs :many
 SELECT
     books_id,
@@ -770,6 +841,27 @@ type SetGeneratedUntilParams struct {
 
 func (q *Queries) SetGeneratedUntil(ctx context.Context, arg SetGeneratedUntilParams) error {
 	_, err := q.db.Exec(ctx, setGeneratedUntil, arg.GeneratedUntil, arg.BooksID, arg.ID)
+	return err
+}
+
+const shiftTermsFirstSequence = `-- name: ShiftTermsFirstSequence :exec
+UPDATE planning_schedule_terms
+SET
+    first_sequence = first_sequence + $1::int
+WHERE
+    books_id = $2
+    AND schedule_id = $3
+    AND first_sequence IS NOT NULL
+`
+
+type ShiftTermsFirstSequenceParams struct {
+	Shift      int32
+	BooksID    int64
+	ScheduleID uuid.UUID
+}
+
+func (q *Queries) ShiftTermsFirstSequence(ctx context.Context, arg ShiftTermsFirstSequenceParams) error {
+	_, err := q.db.Exec(ctx, shiftTermsFirstSequence, arg.Shift, arg.BooksID, arg.ScheduleID)
 	return err
 }
 
