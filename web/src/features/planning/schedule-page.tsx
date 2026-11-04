@@ -44,6 +44,10 @@ import { EndDialog } from "@/features/planning/end-dialog";
 import { MatchingDialog } from "@/features/planning/matching-dialog";
 import { PauseDialog } from "@/features/planning/pause-dialog";
 import { RenameDialog } from "@/features/planning/rename-dialog";
+import {
+  ScheduleMenu,
+  type ScheduleMenuChoice,
+} from "@/features/planning/schedule-menu";
 import { StartDialog } from "@/features/planning/start-dialog";
 import {
   currentTerms,
@@ -63,7 +67,7 @@ import { HeaderAction } from "@/ui/header-action";
 import { QueryError } from "@/ui/query-error";
 import { PageBack } from "@/ui/page-back";
 
-type Dialog = "terms" | "rename" | "start" | "matching" | "pause" | "end";
+type Dialog = "terms" | Exclude<ScheduleMenuChoice, "move">;
 
 interface Suggested {
   amount: number;
@@ -94,6 +98,13 @@ export function SchedulePage() {
   const close = () => {
     setDialog(null);
     setSuggested(null);
+  };
+  const handleMenu = (choice: ScheduleMenuChoice) => {
+    if (choice === "move") {
+      void navigate({ to: "/planning/schedules/new", search: { from: id } });
+      return;
+    }
+    setDialog(choice);
   };
   if (schedule.isError)
     return (
@@ -141,63 +152,7 @@ export function SchedulePage() {
               </PageHeaderSubheading>
             </PageHeaderTitle>
             <PageHeaderActions>
-              <HeaderAction
-                label={t("schedule.rename")}
-                glyph="pencil"
-                wordsOnly
-                onClick={() => {
-                  setDialog("rename");
-                }}
-              />
-              <HeaderAction
-                label={t("schedule.startEarlier")}
-                glyph="calendar"
-                wordsOnly
-                onClick={() => {
-                  setDialog("start");
-                }}
-              />
-              <HeaderAction
-                label={t("schedule.matching.edit")}
-                glyph="pencil"
-                wordsOnly
-                onClick={() => {
-                  setDialog("matching");
-                }}
-              />
-              {!ended && (
-                <HeaderAction
-                  label={t("schedule.pause")}
-                  glyph="pause"
-                  wordsOnly
-                  onClick={() => {
-                    setDialog("pause");
-                  }}
-                />
-              )}
-              {!ended && (
-                <HeaderAction
-                  label={t("schedule.moveToAccount")}
-                  glyph="arrow-right"
-                  wordsOnly
-                  onClick={() => {
-                    void navigate({
-                      to: "/planning/schedules/new",
-                      search: { from: s.id },
-                    });
-                  }}
-                />
-              )}
-              {!ended && (
-                <HeaderAction
-                  label={t("schedule.end")}
-                  glyph="stop"
-                  wordsOnly
-                  onClick={() => {
-                    setDialog("end");
-                  }}
-                />
-              )}
+              <ScheduleMenu ended={ended} onChoose={handleMenu} />
               {!ended && (
                 <HeaderAction
                   primary

@@ -24,6 +24,16 @@ beforeEach(() => {
   sessionStorage.clear();
 });
 
+// The actions of the schedule page sit in one menu beside the primary action.
+async function openScheduleAction(name: string) {
+  await userEvent.click(
+    await screen.findByRole("button", {
+      name: catalogEn["schedule.moreActions"],
+    }),
+  );
+  await userEvent.click(await screen.findByRole("menuitem", { name }));
+}
+
 function words(key: keyof typeof catalogEn, values: Record<string, string>) {
   return Object.entries(values).reduce<string>(
     (text, [k, v]) => text.replace(`{${k}}`, v),
@@ -538,11 +548,7 @@ describe("Move a schedule to another account", () => {
     const { router } = await renderApp(`/planning/schedules/${rentID}`, {
       fetch: api(),
     });
-    await userEvent.click(
-      await screen.findByRole("button", {
-        name: catalogEn["schedule.moveToAccount"],
-      }),
-    );
+    await openScheduleAction(catalogEn["schedule.moveToAccount"]);
 
     await waitFor(() => {
       expect(router.state.location.pathname).toBe("/planning/schedules/new");
@@ -550,38 +556,53 @@ describe("Move a schedule to another account", () => {
     expect(router.state.location.search).toEqual({ from: rentID });
   });
 
-  it("offers no move, pause, end or change of terms for a schedule that has ended", async () => {
+  it("offers rename, an earlier start and matching, but no move, pause, end or change of terms, for a schedule that has ended", async () => {
     await renderApp(`/planning/schedules/${rentID}`, {
       fetch: api({
         [`GET /api/v1/schedules/${rentID}`]: () =>
           json(200, { ...rent, ends_on: "2026-10-01" }),
       }),
     });
-    await screen.findByRole("button", {
-      name: catalogEn["schedule.matching.edit"],
-    });
-
-    expect(
-      screen.queryByRole("button", {
-        name: catalogEn["schedule.moveToAccount"],
+    await userEvent.click(
+      await screen.findByRole("button", {
+        name: catalogEn["schedule.moreActions"],
       }),
-    ).not.toBeInTheDocument();
+    );
+
     for (const key of [
-      "schedule.pause",
-      "schedule.end",
-      "schedule.changeTerms",
+      "schedule.rename",
+      "schedule.startEarlier",
+      "schedule.matching.edit",
     ] as const) {
       expect(
-        screen.queryByRole("button", { name: catalogEn[key] }),
+        await screen.findByRole("menuitem", { name: catalogEn[key] }),
+      ).toBeInTheDocument();
+    }
+    for (const key of [
+      "schedule.moveToAccount",
+      "schedule.pause",
+      "schedule.end",
+    ] as const) {
+      expect(
+        screen.queryByRole("menuitem", { name: catalogEn[key] }),
       ).not.toBeInTheDocument();
     }
+    expect(
+      screen.queryByRole("button", { name: catalogEn["schedule.changeTerms"] }),
+    ).not.toBeInTheDocument();
   });
 
   it("offers the move to a schedule that ends later", async () => {
     await renderApp(`/planning/schedules/${streamingID}`, { fetch: api() });
 
-    expect(
+    await userEvent.click(
       await screen.findByRole("button", {
+        name: catalogEn["schedule.moreActions"],
+      }),
+    );
+
+    expect(
+      await screen.findByRole("menuitem", {
         name: catalogEn["schedule.moveToAccount"],
       }),
     ).toBeInTheDocument();
@@ -866,11 +887,7 @@ describe("Schedule page", () => {
         },
       }),
     });
-    await userEvent.click(
-      await screen.findByRole("button", {
-        name: catalogEn["schedule.matching.edit"],
-      }),
-    );
+    await openScheduleAction(catalogEn["schedule.matching.edit"]);
     const dialog = await screen.findByRole("dialog");
     const tolerance = within(dialog).getByRole("spinbutton", {
       name: catalogEn["schedule.tolerance"],
@@ -916,9 +933,7 @@ describe("Schedule page", () => {
         },
       }),
     });
-    await userEvent.click(
-      await screen.findByRole("button", { name: catalogEn["schedule.rename"] }),
-    );
+    await openScheduleAction(catalogEn["schedule.rename"]);
     const dialog = await screen.findByRole("dialog");
     const description = within(dialog).getByRole("textbox", {
       name: catalogEn["schedule.description"],
@@ -946,11 +961,7 @@ describe("Schedule page", () => {
         },
       }),
     });
-    await userEvent.click(
-      await screen.findByRole("button", {
-        name: catalogEn["schedule.startEarlier"],
-      }),
-    );
+    await openScheduleAction(catalogEn["schedule.startEarlier"]);
     const dialog = await screen.findByRole("dialog");
     expect(
       within(dialog).getByText(catalogEn["schedule.startEarlier.hint"]),
@@ -1013,9 +1024,7 @@ describe("Schedule page", () => {
         },
       }),
     });
-    await userEvent.click(
-      await screen.findByRole("button", { name: catalogEn["schedule.pause"] }),
-    );
+    await openScheduleAction(catalogEn["schedule.pause"]);
     const dialog = await screen.findByRole("dialog");
     await userEvent.click(
       within(dialog).getByRole("button", { name: catalogEn["schedule.pause"] }),
@@ -1035,9 +1044,7 @@ describe("Schedule page", () => {
         },
       }),
     });
-    await userEvent.click(
-      await screen.findByRole("button", { name: catalogEn["schedule.end"] }),
-    );
+    await openScheduleAction(catalogEn["schedule.end"]);
     const dialog = await screen.findByRole("dialog");
     expect(
       within(dialog).getByText(
@@ -1059,9 +1066,7 @@ describe("Schedule page", () => {
           problem(409, "schedule_ended"),
       }),
     });
-    await userEvent.click(
-      await screen.findByRole("button", { name: catalogEn["schedule.end"] }),
-    );
+    await openScheduleAction(catalogEn["schedule.end"]);
     const dialog = await screen.findByRole("dialog");
     await userEvent.click(
       within(dialog).getByRole("button", { name: catalogEn["schedule.end"] }),
