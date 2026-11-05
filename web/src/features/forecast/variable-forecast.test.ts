@@ -6,168 +6,161 @@ import { variableForecast } from "@/features/forecast/variable-forecast";
 describe("variable forecast", () => {
   it("forecasts nothing without a history month", () => {
     const got = variableForecast({
-      entries: [expense("2026-10-05", 5000)],
-      month: "2026-10",
-      today: "2026-10-20",
+      entries: [entry("2026-11-02", -5000)],
+      month: "2026-11",
+      today: "2026-11-05",
     });
 
     expect(got.history).toBe(0);
-    expect(got.days).toHaveLength(11);
-    expect(got.days.every((day) => day.amount === 0)).toBe(true);
+    expect(got.routine).toHaveLength(25);
+    expect(got.routine.every((day) => day.amount === 0)).toBe(true);
+    expect(got.recurring).toEqual([]);
     expect(got.range).toBeNull();
   });
 
-  it("carries a uniform history into each remaining day", () => {
+  it("leaves the first month of the data out of the history", () => {
     const got = variableForecast({
-      entries: [
-        ...daily("2026-07", 1000),
-        ...daily("2026-08", 1000),
-        ...daily("2026-09", 1000),
-        ...daily("2026-10", 1000, 20),
-      ],
-      month: "2026-10",
-      today: "2026-10-20",
-    });
-
-    expect(got.history).toBe(3);
-    expect(got.days.map((day) => day.date)).toEqual(
-      Array.from({ length: 11 }, (_, i) => `2026-10-${String(21 + i)}`),
-    );
-    for (const day of got.days) expect(day.amount).toBeCloseTo(-1000);
-    expect(got.range).toEqual({ lower: 0, upper: 0 });
-  });
-
-  it.each([
-    { name: "twice", perDay: 2000 },
-    { name: "five times, held to twice", perDay: 5000 },
-  ])(
-    "weighs a month spending $name its history by the share gone",
-    ({ perDay }) => {
-      const got = variableForecast({
-        entries: [
-          ...daily("2026-07", 1000),
-          ...daily("2026-08", 1000),
-          ...daily("2026-09", 1000),
-          ...daily("2026-10", perDay, 20),
-        ],
-        month: "2026-10",
-        today: "2026-10-20",
-      });
-
-      // E × (1 + (2 − 1) × 20 ÷ 31) over 11 days, spread evenly.
-      const want = -(11000 * (1 + 20 / 31)) / 11;
-      for (const day of got.days) expect(day.amount).toBeCloseTo(want);
-    },
-  );
-
-  it("puts an income on its day of the month while that day is ahead", () => {
-    const salaries = ["2026-07-25", "2026-08-25", "2026-09-25"].map((date) =>
-      income(date, 500000),
-    );
-
-    const ahead = variableForecast({
-      entries: salaries,
-      month: "2026-10",
-      today: "2026-10-20",
-    });
-    const past = variableForecast({
-      entries: salaries,
-      month: "2026-10",
-      today: "2026-10-26",
-    });
-
-    expect(
-      ahead.days.find((day) => day.date === "2026-10-25")?.amount,
-    ).toBeCloseTo(500000);
-    expect(
-      ahead.days
-        .filter((day) => day.date !== "2026-10-25")
-        .every((day) => day.amount === 0),
-    ).toBe(true);
-    expect(past.days.every((day) => day.amount === 0)).toBe(true);
-  });
-
-  it("reads the whole month when today is past a history month's last day", () => {
-    const got = variableForecast({
-      entries: [expense("2026-09-10", 30000), expense("2026-10-10", 30000)],
-      month: "2026-10",
-      today: "2026-10-30",
-    });
-
-    expect(got.days).toEqual([{ date: "2026-10-31", amount: -1000 }]);
-  });
-
-  it("leaves a one-off purchase of one month out by the median", () => {
-    const got = variableForecast({
-      entries: [
-        ...daily("2026-07", 1000),
-        ...daily("2026-08", 1000),
-        expense("2026-08-28", 400000),
-        ...daily("2026-09", 1000),
-        ...daily("2026-10", 1000, 20),
-      ],
-      month: "2026-10",
-      today: "2026-10-20",
-    });
-
-    expect(got.days[0]?.amount).toBeCloseTo(-1000);
-    expect(got.range?.upper).toBe(0);
-    expect(got.range?.lower).toBeLessThan(0);
-  });
-
-  it("spreads the expenses by weekday", () => {
-    // Every Saturday of the history holds 7,000.00; no other day spends.
-    const saturdays = ["2026-07", "2026-08", "2026-09"].flatMap((month) =>
-      daysOf(month)
-        .filter((date) => new Date(`${date}T00:00:00Z`).getUTCDay() === 6)
-        .map((date) => expense(date, 700000)),
-    );
-
-    const got = variableForecast({
-      entries: saturdays,
-      month: "2026-10",
-      today: "2026-10-20",
-    });
-
-    const spent = got.days.filter((day) => day.amount !== 0);
-    expect(spent.map((day) => day.date)).toEqual(["2026-10-24", "2026-10-31"]);
-    expect(spent[0]?.amount).toBeCloseTo(spent[1]?.amount ?? 0);
-  });
-
-  it("states the likely range from the quartiles of three months", () => {
-    // Tail rates of 1,000, 2,000 and 3,000 a day; the median is 2,000.
-    const got = variableForecast({
-      entries: [
-        ...daily("2026-07", 1000),
-        ...daily("2026-08", 2000),
-        ...daily("2026-09", 3000),
-      ],
-      month: "2026-10",
-      today: "2026-10-20",
-    });
-
-    // Net rates −3,000, −2,000, −1,000: q25 −2,500 and q75 −1,500 a day, against the median's
-    // −2,000, over 11 days.
-    expect(got.range?.lower).toBeCloseTo(-5500);
-    expect(got.range?.upper).toBeCloseTo(5500);
-  });
-
-  it("counts history only from the month of the earliest entry", () => {
-    const got = variableForecast({
-      entries: [...daily("2026-09", 1000)],
-      month: "2026-10",
-      today: "2026-10-20",
+      entries: [entry("2026-06-25", -5000), ...daily("2026-07", [1000])],
+      month: "2026-08",
+      today: "2026-08-05",
     });
 
     expect(got.history).toBe(1);
-    expect(got.range).toBeNull();
+  });
+
+  it("carries the routine of the history into each remaining day", () => {
+    const got = variableForecast({
+      entries: uniform(),
+      month: "2026-11",
+      today: "2026-11-05",
+    });
+
+    expect(got.history).toBe(4);
+    expect(got.routine.map((day) => day.date)).toEqual(
+      Array.from(
+        { length: 25 },
+        (_, i) => `2026-11-${String(6 + i).padStart(2, "0")}`,
+      ),
+    );
+    for (const day of got.routine) expect(day.amount).toBeCloseTo(-1000);
+    expect(got.range).toEqual({ lower: 0, upper: 0 });
+  });
+
+  it("leaves atypical purchases out, in the history and in the month", () => {
+    const got = variableForecast({
+      entries: [
+        ...uniform(),
+        entry("2026-09-16", -156300, "wheel"),
+        entry("2026-10-08", -319000, "piano"),
+        entry("2026-11-02", -250000, "desk"),
+      ],
+      month: "2026-11",
+      today: "2026-11-05",
+    });
+
+    for (const day of got.routine) expect(day.amount).toBeCloseTo(-1000);
+  });
+
+  it("lowers the routine by a small refund and leaves out the refund of an atypical purchase", () => {
+    const base = [entry("2026-09-30", -1000), ...daily("2026-10", [1000])];
+    const forecast = (entries: ForecastEntry[]) =>
+      variableForecast({ entries, month: "2026-11", today: "2026-11-05" })
+        .routine[0]?.amount ?? 0;
+
+    const without = forecast(base);
+    const small = forecast([...base, entry("2026-10-10", 1000, "refund")]);
+    const large = forecast([...base, entry("2026-10-10", 31000, "refund")]);
+
+    expect(small).toBeCloseTo((without * 30) / 31);
+    expect(large).toBeCloseTo(without);
+  });
+
+  it("forecasts a recurring payment apart from the routine", () => {
+    const got = variableForecast({
+      entries: [
+        ...uniform(),
+        ...["2026-07-05", "2026-08-04", "2026-09-08", "2026-10-08"].map(
+          (date) => entry(date, -40000, "family", "Family"),
+        ),
+      ],
+      month: "2026-11",
+      today: "2026-11-05",
+    });
+
+    expect(got.recurring).toEqual([
+      { date: "2026-11-07", amount: -40000, label: "Family" },
+    ]);
+    for (const day of got.routine) expect(day.amount).toBeCloseTo(-1000);
+  });
+
+  it.each([
+    { name: "twice", perDay: 2000, pace: 2 },
+    { name: "five times, held to twice", perDay: 5000, pace: 2 },
+    { name: "nothing, held to half", perDay: 0, pace: 0.5 },
+  ])(
+    "weighs a month spending $name its routine by the share gone",
+    ({ perDay, pace }) => {
+      // Two entries a day, 500.00 and 1,500.00: a routine of 2,000.00 a day with a fence above
+      // either amount.
+      const got = variableForecast({
+        entries: [
+          entry("2026-06-30", -1000),
+          ...["2026-07", "2026-08", "2026-09", "2026-10"].flatMap((month) =>
+            daily(month, [500, 1500]),
+          ),
+          ...daily("2026-11", [perDay, perDay], 5),
+        ],
+        month: "2026-11",
+        today: "2026-11-05",
+      });
+
+      const want = -2000 * (1 + (pace - 1) * (5 / 30));
+      for (const day of got.routine) expect(day.amount).toBeCloseTo(want);
+    },
+  );
+
+  it("states the likely range from the quartiles of three months", () => {
+    // Routine rates of 1,000, 2,000 and 3,000 a day; the median is 2,000.
+    const got = variableForecast({
+      entries: [
+        entry("2026-06-30", -1000),
+        ...daily("2026-07", [1000]),
+        ...daily("2026-08", [2000]),
+        ...daily("2026-09", [3000]),
+      ],
+      month: "2026-10",
+      today: "2026-10-20",
+    });
+
+    expect(got.range?.lower).toBeCloseTo(-5500);
+    expect(got.range?.upper).toBeCloseTo(5500);
   });
 });
 
-function daily(month: string, amount: number, upTo = 31): ForecastEntry[] {
+// Four complete months of 10.00 a day, and the first five days of November at the same pace.
+function uniform(): ForecastEntry[] {
+  return [
+    entry("2026-06-30", -1000),
+    ...["2026-07", "2026-08", "2026-09", "2026-10"].flatMap((month) =>
+      daily(month, [1000]),
+    ),
+    ...daily("2026-11", [1000], 5),
+  ];
+}
+
+// One entry a day for each amount, each amount its own series.
+function daily(
+  month: string,
+  amounts: readonly number[],
+  upTo = 31,
+): ForecastEntry[] {
   return daysOf(month)
     .filter((date) => Number(date.slice(8)) <= upTo)
-    .map((date) => expense(date, amount));
+    .flatMap((date) =>
+      amounts
+        .filter((amount) => amount !== 0)
+        .map((amount, i) => entry(date, -amount, `daily-${String(i)}`)),
+    );
 }
 
 function daysOf(month: string): string[] {
@@ -180,10 +173,17 @@ function daysOf(month: string): string[] {
   );
 }
 
-function expense(date: string, amount: number): ForecastEntry {
-  return { date, kind: "expense", amount: -amount };
-}
-
-function income(date: string, amount: number): ForecastEntry {
-  return { date, kind: "income", amount };
+function entry(
+  date: string,
+  amount: number,
+  series = "daily-0",
+  label = series,
+): ForecastEntry {
+  return {
+    date,
+    kind: amount > 0 && series !== "refund" ? "income" : "expense",
+    amount,
+    series,
+    label,
+  };
 }
