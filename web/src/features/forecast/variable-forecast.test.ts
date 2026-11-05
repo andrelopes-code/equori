@@ -107,6 +107,37 @@ describe("variable forecast", () => {
     for (const day of got.routine) expect(day.amount).toBeCloseTo(-2000);
   });
 
+  it("leaves out a category absent from the last two history months", () => {
+    const got = variableForecast({
+      entries: [
+        ...varied(),
+        entry("2026-07-12", -5000, "fuel"),
+        entry("2026-08-22", -5000, "fuel"),
+      ],
+      month: "2026-11",
+      today: "2026-11-05",
+    });
+
+    for (const day of got.routine) expect(day.amount).toBeCloseTo(-2000);
+  });
+
+  it("keeps a category of every other month", () => {
+    const got = variableForecast({
+      entries: [
+        ...varied(),
+        entry("2026-07-12", -3000, "gym"),
+        entry("2026-09-12", -3000, "gym"),
+      ],
+      month: "2026-11",
+      today: "2026-11-05",
+    });
+
+    const usual = 2000 + 3000 / 31 / 2;
+    const pace = 10000 / (usual * 5);
+    const want = -usual * (1 + (pace - 1) * (5 / 30));
+    for (const day of got.routine) expect(day.amount).toBeCloseTo(want);
+  });
+
   it("counts a category by its median over the months, the months without it as zero", () => {
     const got = variableForecast({
       entries: [

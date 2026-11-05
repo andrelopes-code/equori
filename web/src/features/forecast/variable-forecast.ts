@@ -33,6 +33,7 @@ export interface VariableForecast {
 const historyMonths = 6;
 const minRangeMonths = 3;
 const minCategoryMonths = 2;
+const recentMonths = 2;
 const paceBounds = { low: 0.5, high: 2 } as const;
 
 // What the entries no schedule produced say about the rest of the month: the series that recur,
@@ -130,8 +131,9 @@ function routineOf(
 }
 
 // The routine rate of a category is its median rate over the history months, a month without it
-// counting as zero. A category in fewer than two history months (one, with one month) is left
-// out: a purchase that did not repeat says nothing of this month.
+// counting as zero. A category in fewer than two history months (one, with one month), or absent
+// from the last two, is left out: a purchase that did not repeat, or stopped, says nothing of
+// this month.
 function usualRates(
   routine: readonly ForecastEntry[],
   history: readonly string[],
@@ -158,10 +160,16 @@ function usualRates(
   }
 
   const needed = Math.min(minCategoryMonths, history.length);
+  const recent = history.slice(-recentMonths);
   const usual = { income: 0, expense: 0, counted: new Set<string>() };
 
   for (const [id, category] of sums) {
-    if (category.months.size < needed) continue;
+    if (
+      category.months.size < needed ||
+      !recent.some((m) => category.months.has(m))
+    ) {
+      continue;
+    }
 
     const rate = quantile(
       history.map((m) => (category.months.get(m) ?? 0) / monthDays(m).length),
