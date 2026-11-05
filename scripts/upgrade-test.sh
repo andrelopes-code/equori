@@ -14,6 +14,11 @@ work=$(mktemp -d)
 url="postgres://equori:equori@$name-db:5432/equori?sslmode=disable"
 
 cleanup() {
+	# A failed run keeps the logs of both containers: they are gone once the containers are removed.
+	if [[ $? -ne 0 ]]; then
+		docker logs --tail 200 "$name-app" >&2 || true
+		docker logs --tail 50 "$name-db" >&2 || true
+	fi
 	docker rm -f "$name-db" "$name-app" >/dev/null 2>&1 || true
 	docker network rm "$name" >/dev/null 2>&1 || true
 	git worktree remove --force "$work/src" >/dev/null 2>&1 || true
