@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -28,7 +29,8 @@ func TestSetupExternalModeWritesTheKeyFile(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if got := info.Mode().Perm(); got != 0o600 {
+	// W-C1: on Windows the key file has no mode; the DACL of the data directory protects it.
+	if got := info.Mode().Perm(); runtime.GOOS != "windows" && got != 0o600 {
 		t.Fatalf("secret.key mode = %o, want 600", got)
 	}
 
