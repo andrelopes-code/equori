@@ -220,6 +220,7 @@ func (s *seeder) trades() {
 	fiis := []string{"HGLG11", "KNRI11", "MXRF11"}
 
 	equities := []string{"ITUB4", "WEGE3", "BBAS3", "PETR4"}
+
 	sweeps := []string{"HGLG11", "KNRI11", "IVVB11", "TSELIC29", "ITUB4"}
 	for i, m := range months(s.start, s.today) {
 		s.sweep(businessDay(m, 9), sweeps[i%len(sweeps)], brokerageFloor)
