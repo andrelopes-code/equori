@@ -7,6 +7,7 @@ import { fakeApi, json, problem } from "@/testing/fake-api";
 import { hideAmounts } from "@/testing/privacy";
 import { renderApp } from "@/testing/render-app";
 import { reportApiRoutes } from "@/testing/report-api";
+import { checkingID, foodID, savingsID } from "@/testing/transaction-api";
 
 const rowTexts = (table: HTMLElement) =>
   within(table)
@@ -125,6 +126,61 @@ describe("Reports net worth", () => {
     expect(screen.getAllByText("\u2212R$45.00")).toHaveLength(3);
     expect(days.at(-1)?.get("from")).toBe("2026-09-01");
     expect(days.at(-1)?.get("to")).toBe("2026-09-30");
+  });
+
+  it("S286: forecasts the rest of the current month from the schedules and the months before", async () => {
+    const user = userEvent.setup();
+    const { fetch } = api(forecastRoutes());
+
+    await renderApp("/reports", { fetch });
+
+    expect(
+      await screen.findByText(
+        "Dashed: forecast from the schedules and the last 3 months",
+      ),
+    ).toBeVisible();
+
+    const chart = await screen.findByRole("group", {
+      name: "Net worth by day · October 2026",
+    });
+    const figure = chart.closest("[data-ui='chart']");
+    await user.click(
+      within(figure as HTMLElement).getByRole("button", { name: /table/i }),
+    );
+
+    // Today's 1,005.00, the rent of 2,000.00 on the 25th and 10.00 a day for 14 days.
+    const table = await within(figure as HTMLElement).findByRole("table");
+    expect(rowTexts(table).find((row) => row.startsWith("Oct 31"))).toContain(
+      "\u2212R$1,135.00",
+    );
+    expect(rowTexts(table).find((row) => row.startsWith("Oct 24"))).toContain(
+      "R$935.00",
+    );
+  });
+
+  it("S287: draws no forecast for a past month", async () => {
+    const user = userEvent.setup();
+    const { fetch } = api(forecastRoutes());
+
+    await renderApp("/reports", { fetch });
+
+    await screen.findByText(
+      "Dashed: forecast from the schedules and the last 3 months",
+    );
+    const card = await screen.findByRole("group", {
+      name: "Net worth by day · October 2026",
+    });
+    await user.click(
+      within(card.closest("[data-ui='card']") ?? document.body).getByRole(
+        "button",
+        { name: "Previous month" },
+      ),
+    );
+
+    await screen.findByRole("group", {
+      name: "Net worth by day · September 2026",
+    });
+    expect(screen.queryByText(/Dashed: forecast/)).not.toBeInTheDocument();
   });
 
   it("reads 24 months at most", async () => {
@@ -294,6 +350,99 @@ describe("Reports net worth", () => {
     expect(text).not.toMatch(/Patrimônio|Ativos/);
   });
 });
+
+// History of 10.00 a day on Food from June to October, and a rent of 2,000.00 expected on 25
+// October from checking.
+function forecastRoutes(): Record<string, (req: Request) => Response> {
+  const rentID = "5c000000-0000-4000-8000-000000000001";
+  const days = ["2026-06", "2026-07", "2026-08", "2026-09", "2026-10"].flatMap(
+    (month) =>
+      Array.from(
+        { length: 31 },
+        (_, i) => `${month}-${String(i + 1).padStart(2, "0")}`,
+      )
+        .filter(
+          (date) => !Number.isNaN(Date.parse(date)) && date <= "2026-10-17",
+        )
+        .filter((date) => new Date(date).toISOString().startsWith(date)),
+  );
+
+  return {
+    "GET /api/v1/transactions": (req) => {
+      const q = new URL(req.url).searchParams;
+      const from = q.get("from") ?? "";
+      const to = q.get("to") ?? "";
+
+      return json(200, {
+        items: days
+          .filter((date) => date >= from && date <= to)
+          .map((date) => spend(date, foodID, 1000)),
+      });
+    },
+    "GET /api/v1/occurrences": () => json(200, { items: [] }),
+    "GET /api/v1/schedules": () =>
+      json(200, {
+        items: [
+          {
+            id: rentID,
+            kind: "bill",
+            calendar: "none",
+            account_id: checkingID,
+            counterpart_id: foodID,
+            description: "Rent",
+            match_tolerance_bp: 0,
+            grace_days: 0,
+            match_window_days: 7,
+            terms: [],
+            pauses: [],
+          },
+        ],
+      }),
+    [`GET /api/v1/accounts/${checkingID}/projection`]: () =>
+      json(200, {
+        account_id: checkingID,
+        from: "2026-10-17",
+        to: "2026-10-31",
+        opening: { amount: 0, currency: "BRL" },
+        closing: { amount: -200000, currency: "BRL" },
+        points: [
+          {
+            date: "2026-10-25",
+            occurrence_id: "0c000000-0000-4000-8000-000000000001",
+            schedule_id: rentID,
+            amount: { amount: -200000, currency: "BRL" },
+            balance: { amount: -200000, currency: "BRL" },
+          },
+        ],
+      }),
+    [`GET /api/v1/accounts/${savingsID}/projection`]: () =>
+      json(200, {
+        account_id: savingsID,
+        from: "2026-10-17",
+        to: "2026-10-31",
+        opening: { amount: 0, currency: "BRL" },
+        closing: { amount: 0, currency: "BRL" },
+        points: [],
+      }),
+  };
+}
+
+function spend(date: string, category: string, amount: number) {
+  return {
+    id: `t-${date}`,
+    date,
+    description: "Market",
+    balancing_currency: "BRL",
+    origin: "manual",
+    version: 1,
+    tags: [],
+    links: [],
+    postings: [
+      { account_id: category, amount: { amount, currency: "BRL" } },
+      { account_id: checkingID, amount: { amount: -amount, currency: "BRL" } },
+    ],
+  };
+}
 
 function expense(
   id: string,

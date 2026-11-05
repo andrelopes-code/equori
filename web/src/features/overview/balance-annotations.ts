@@ -7,7 +7,7 @@ import type { ForecastDay } from "@/features/overview/forecast";
 // names the hidden ones in its tooltip (balance forecast design, B5). A past month carries no
 // events, so it draws none.
 export function eventLines(
-  days: readonly ForecastDay[],
+  days: readonly Pick<ForecastDay, "events">[],
   dayLabel: (date: string) => string,
 ): ChartAnnotation[] {
   return days

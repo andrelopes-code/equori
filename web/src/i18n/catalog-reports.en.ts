@@ -40,6 +40,17 @@ export const reportsEn = {
   "report.netWorth.monthNote":
     "Net worth at the end of each day, beside the month's income and expenses; a card purchase counts on its date. Pick a day on the line to see its entries.",
   "report.netWorth.monthPick": "Month of the daily net worth",
+  "report.netWorth.forecast": "Forecast",
+  "report.netWorth.forecastScheduled": "Scheduled: {amount}",
+  "report.netWorth.forecastRecurring": "Estimated recurring: {amount}",
+  "report.netWorth.forecastRecurringLabel": "{label} (estimated)",
+  "report.netWorth.forecastVariable": "Estimated day-to-day: {amount}",
+  "report.netWorth.forecastRange": "Likely range: {low} to {high}",
+  "report.netWorth.forecastNoteNone": "Dashed: forecast from the schedules",
+  "report.netWorth.forecastNoteOne":
+    "Dashed: forecast from the schedules and the last month",
+  "report.netWorth.forecastNote":
+    "Dashed: forecast from the schedules and the last {count} months",
   "report.netWorth.entries": "Income and expenses of the month",
   "report.netWorth.entriesOfDay": "Income and expenses of {date}",
   "report.netWorth.noEntries": "No income or expense in this period",

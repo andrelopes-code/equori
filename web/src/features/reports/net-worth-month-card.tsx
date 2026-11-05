@@ -12,6 +12,7 @@ import { EntryTable } from "@/features/reports/entry-table";
 import { EntryTotals } from "@/features/reports/entry-totals";
 import { NetWorthDayChart } from "@/features/reports/net-worth-day-chart";
 import { monthEntries, monthRange } from "@/features/reports/net-worth-days";
+import { useNetWorthForecast } from "@/features/reports/use-net-worth-forecast";
 import { settingsQuery, useScale } from "@/features/setup";
 import { periodTransactionsQuery } from "@/features/transactions";
 import { formatMonthTitle } from "@/i18n/format";
@@ -36,11 +37,18 @@ export function NetWorthMonthCard({
   const api = useApi();
   const [tag] = useAppLocale();
   const scale = useScale();
-  const { from, to } = monthRange(month, useToday());
+  const today = useToday();
+  const { from, to } = monthRange(month, today);
   const days = useQuery(netWorthDaysQuery(api, from, to, valueIn));
   const transactions = useQuery(periodTransactionsQuery(api, from, to));
   const accounts = useQuery(accountsQuery(api));
   const base = useQuery(settingsQuery(api)).data?.base_currency ?? "";
+
+  const forecast = useNetWorthForecast(
+    month,
+    valueIn,
+    days.data?.find((d) => d.date === today)?.net.amount,
+  );
 
   const [day, setDay] = useState<string>();
 
@@ -73,6 +81,11 @@ export function NetWorthMonthCard({
         <Text size="sm" tone="muted">
           {t("report.netWorth.monthNote")}
         </Text>
+        {forecast !== undefined && (
+          <Text size="sm" tone="muted">
+            {t(noteKey(forecast.history), { count: forecast.history })}
+          </Text>
+        )}
         <CardActions>
           <MonthControl
             value={month}
@@ -87,6 +100,7 @@ export function NetWorthMonthCard({
           <NetWorthDayChart
             title={title}
             days={days.data ?? []}
+            forecast={forecast}
             currency={valueIn}
             digits={digits(valueIn)}
             loading={days.data === undefined || scale === null}
@@ -106,4 +120,13 @@ export function NetWorthMonthCard({
       </CardBody>
     </Card>
   );
+}
+
+// The sources of the forecast in words, by the count of history months (F10).
+function noteKey(count: number) {
+  if (count === 0) return "report.netWorth.forecastNoteNone";
+
+  if (count === 1) return "report.netWorth.forecastNoteOne";
+
+  return "report.netWorth.forecastNote";
 }

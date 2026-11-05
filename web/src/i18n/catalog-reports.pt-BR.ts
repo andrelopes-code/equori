@@ -41,6 +41,17 @@ export const reportsPtBR: Record<keyof typeof reportsEn, string> = {
   "report.netWorth.monthNote":
     "Patrimônio líquido no fim de cada dia, ao lado das receitas e despesas do mês; a compra no cartão conta na data dela. Escolha um dia na linha para ver os lançamentos dele.",
   "report.netWorth.monthPick": "Mês do patrimônio por dia",
+  "report.netWorth.forecast": "Previsão",
+  "report.netWorth.forecastScheduled": "Agendado: {amount}",
+  "report.netWorth.forecastRecurring": "Recorrente estimado: {amount}",
+  "report.netWorth.forecastRecurringLabel": "{label} (estimado)",
+  "report.netWorth.forecastVariable": "Dia a dia estimado: {amount}",
+  "report.netWorth.forecastRange": "Faixa provável: {low} a {high}",
+  "report.netWorth.forecastNoteNone": "Tracejado: previsão pelos agendamentos",
+  "report.netWorth.forecastNoteOne":
+    "Tracejado: previsão pelos agendamentos e pelo último mês",
+  "report.netWorth.forecastNote":
+    "Tracejado: previsão pelos agendamentos e pelos últimos {count} meses",
   "report.netWorth.entries": "Receitas e despesas do mês",
   "report.netWorth.entriesOfDay": "Receitas e despesas de {date}",
   "report.netWorth.noEntries": "Nenhuma receita ou despesa neste período",

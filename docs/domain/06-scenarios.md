@@ -964,6 +964,18 @@ Checking holds 1,000.00 on 2026-10-19. A loan pays an expense of 300.00 on 2026-
 
 `getNetWorthDays` with `from` after `to`, or with a range of more than 62 days, answers 400 `invalid_request` on `to` (D2).
 
+### S286 Net worth forecast to the month's end
+
+Today 2026-10-17, base BRL, net worth 1,005.00. Food spends 10.00 a day from 2026-06-01, no occurrence realized, so July to September are the history months; a rent of 2,000.00 from checking is expected on 2026-10-25. The card "Net worth by day · October 2026" draws the forecast 935.00 on 24 October and −1,135.00 on 31 October, and states that it reads the schedules and the last 3 months (`docs/specs/2026-11-05-net-worth-forecast-design.md`, F2 to F7, F10).
+
+### S287 No forecast for a past month
+
+The same book with September 2026 picked: the card draws no forecast and no forecast sentence (F1).
+
+### S288 Tooltip of a forecast day
+
+A forecast day with a scheduled amount of −2,000.00, an estimated recurring amount of −400.00, an estimated day-to-day amount of −10.00 and a likely range of 400.00 to 525.00 states "Scheduled: −R$2,000.00", "Estimated recurring: −R$400.00", "Estimated day-to-day: −R$10.00" and "Likely range: R$400.00 to R$525.00"; a day with no scheduled or recurring amount and no range states none of those. Privacy mode masks the amounts (F9, F12).
+
 ### S176–S181, S184 Card billing certainty (A136–A139, A141)
 
 The scenarios of `docs/specs/2026-10-29-card-billing-certainty-design.md`: a reviewed match moves a manual charge to the bill its line states (S176); a closed statement that differs from the institution's total proposes the provisional postings that explain it (S177); a statement the owner chose stays (S178); a difference no posting explains shows as a possible rounding difference of the source (S179); an open statement leaves out the previous statement's unpaid amount until it is overdue (S180); a statement is reconciled as soon as a later entry closes its difference with the institution's total (S181); a pending line stays on its statement whatever the reported total, and moves only by its bill (S184).
