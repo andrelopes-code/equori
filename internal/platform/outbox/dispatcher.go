@@ -199,31 +199,27 @@ func (d *Dispatcher) pending(ctx context.Context, s subscription) ([]Delivered, 
 
 // deliver reports false when the handler failed and the failure was recorded for retry.
 func (d *Dispatcher) deliver(ctx context.Context, s subscription, e Delivered) (bool, error) {
-	handlerErr := pgx.BeginFunc(ctx, d.pool, func(tx pgx.Tx) error {
-		hctx := ctx
-
-		if d.inBooks != nil {
-			var err error
-
-			if hctx, err = d.inBooks(ctx, e.BooksID); err != nil {
-				return fmt.Errorf("context of books %d: %w", e.BooksID, err)
+	// The context is built before the transaction: inBooks reads from the pool, and a pool whose
+	// every connection holds a transaction that waits for inBooks waits for itself.
+	hctx, handlerErr := d.deliveryContext(ctx, e)
+	if handlerErr == nil {
+		handlerErr = pgx.BeginFunc(ctx, d.pool, func(tx pgx.Tx) error {
+			if err := callHandler(hctx, s.handler, tx, e); err != nil {
+				return err
 			}
-		}
 
-		if err := callHandler(hctx, s.handler, tx, e); err != nil {
+			_, err := tx.Exec(ctx, `
+				INSERT INTO outbox_delivery (event_id, consumer, status, attempts, delivered_at)
+				VALUES ($1, $2, 'delivered', 1, $3)
+				ON CONFLICT (event_id, consumer) DO UPDATE
+				SET status = 'delivered', attempts = outbox_delivery.attempts + 1,
+				    delivered_at = $3, next_attempt_at = NULL, last_error = NULL`,
+				e.ID, s.consumer, d.now())
+
 			return err
-		}
+		})
+	}
 
-		_, err := tx.Exec(ctx, `
-			INSERT INTO outbox_delivery (event_id, consumer, status, attempts, delivered_at)
-			VALUES ($1, $2, 'delivered', 1, $3)
-			ON CONFLICT (event_id, consumer) DO UPDATE
-			SET status = 'delivered', attempts = outbox_delivery.attempts + 1,
-			    delivered_at = $3, next_attempt_at = NULL, last_error = NULL`,
-			e.ID, s.consumer, d.now())
-
-		return err
-	})
 	if handlerErr == nil {
 		return true, nil
 	}
@@ -249,6 +245,20 @@ func (d *Dispatcher) deliver(ctx context.Context, s subscription, e Delivered) (
 	d.log.WarnContext(ctx, "outbox handler failed", "consumer", s.consumer, "event_id", e.ID, "error", handlerErr)
 
 	return false, nil
+}
+
+// deliveryContext is the context of a delivery: the dispatcher's, or the books' through inBooks.
+func (d *Dispatcher) deliveryContext(ctx context.Context, e Delivered) (context.Context, error) {
+	if d.inBooks == nil {
+		return ctx, nil
+	}
+
+	hctx, err := d.inBooks(ctx, e.BooksID)
+	if err != nil {
+		return nil, fmt.Errorf("context of books %d: %w", e.BooksID, err)
+	}
+
+	return hctx, nil
 }
 
 // callHandler turns a handler panic into an error: a poison event then retries and

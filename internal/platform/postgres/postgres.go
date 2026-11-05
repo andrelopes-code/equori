@@ -48,8 +48,19 @@ func LatestVersion() (int64, error) {
 	return latest, nil
 }
 
+// defaultMaxConns is the size of the pool when the URL sets no pool_max_conns. pgx sizes a pool by
+// the CPUs of the host, at least 4; a request that holds a transaction and asks the pool for a
+// second connection then waits for itself once every connection holds one (a host of 4 CPUs
+// stalled a seeding run). The size does not depend on the host.
+const defaultMaxConns = 20
+
 func Open(ctx context.Context, url string) (*pgxpool.Pool, error) {
-	pool, err := pgxpool.New(ctx, url)
+	cfg, err := poolConfig(url)
+	if err != nil {
+		return nil, fmt.Errorf("parse database url: %w", err)
+	}
+
+	pool, err := pgxpool.NewWithConfig(ctx, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("create pool: %w", err)
 	}
@@ -60,6 +71,20 @@ func Open(ctx context.Context, url string) (*pgxpool.Pool, error) {
 	}
 
 	return pool, nil
+}
+
+// poolConfig reads url and fixes the size of the pool unless pool_max_conns sets it.
+func poolConfig(url string) (*pgxpool.Config, error) {
+	cfg, err := pgxpool.ParseConfig(url)
+	if err != nil {
+		return nil, err
+	}
+
+	if !strings.Contains(url, "pool_max_conns") {
+		cfg.MaxConns = defaultMaxConns
+	}
+
+	return cfg, nil
 }
 
 func Migrate(ctx context.Context, pool *pgxpool.Pool, log *slog.Logger) error {

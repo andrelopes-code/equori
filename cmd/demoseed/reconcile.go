@@ -92,6 +92,8 @@ func (s *seeder) reconcileStatements() {
 
 			s.do(http.MethodPost, "/statements/"+st.ID+"/reconcile", map[string]any{"amount_due": amount}, nil)
 			s.tolerate("difference_remains")
+			// The settlement of the card runs from the outbox and may confirm the statement first.
+			s.tolerate("already_reconciled")
 		}
 	}
 }
