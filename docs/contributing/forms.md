@@ -42,8 +42,8 @@ A field with no step is `full`.
 ## F5 · Sections group a topic
 
 - A form with more than six fields, or with fields about two or more topics, splits them into `FormSection`s (`ui/form-section`) whose legend names the topic ("Value", "When", "Repetition").
-- Two fields stand 1.5rem apart (`--slotted-space-8`), inside a section or not; a label stands 0.25rem above its control (the family's own). The ratio of 6 to 1 makes each label read with the control under it.
-- A description or an error stands 0.5rem under its control (`--slotted-space-4`, set in the theme).
+- Two fields stand 1.5rem apart (`--slotted-space-8`), inside a section or not; a label stands 0.375rem above its control (`--slotted-field-row-gap`, the family's own). The ratio of 4 to 1 makes each label read with the control under it.
+- A field's description or error stands 0.375rem under its control, the same `--slotted-field-row-gap`: the family sets one gap for the label, the control and the message so a message never reads as part of the field below (Slotted issue #38, closed without a change). A question's description or error stands 0.5rem under its legend (`--slotted-field-group-message-gap`, set in the theme).
 - Two sections stand 2.5rem apart (`--slotted-space-10`) and a section's legend 1.25rem above its first field. A section's legend closes over a rule in `--slotted-border-strong`, 0.5rem under the text, so each section reads as a block with a heading (owner review, 2026-11-02): spacing alone made a legend read as a label set further apart. The theme draws the rule for every `FieldGroup kind="section"` (`sectionRule` in `web/src/theme/equori.theme.ts`).
 - A question's choices stand 1rem below its description or error, so a radio or checkbox never touches the sentence above it (`questionChoicesRule`, same file; owner review, 2026-11-02).
 - Checkboxes in sequence that carry no label or description of their own stand 0.75rem apart in `FormChecks` (`ui/form-checks`), one block between two fields. A checkbox with a description is a field and keeps 1.5rem.
