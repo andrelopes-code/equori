@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"net/url"
 	"testing"
 	"time"
 
@@ -11,14 +12,14 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/locale"
 )
 
-const testToday = "2026-10-24"
+const testToday = "2026-11-05"
 
-func seedHarness(t *testing.T) (*seeder, config, *apitest.Harness) {
+func seedHarness(t *testing.T, date string) (*seeder, config, *apitest.Harness) {
 	t.Helper()
-	h := apitest.New(t, apitest.Today(testToday))
+	h := apitest.New(t, apitest.Today(date))
 	c := h.LoginAs("demo@equori.local", locale.Locale{Language: "pt", Region: "BR"}, "BRL")
 
-	today, err := time.Parse(time.DateOnly, testToday)
+	today, err := time.Parse(time.DateOnly, date)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -27,7 +28,7 @@ func seedHarness(t *testing.T) (*seeder, config, *apitest.Harness) {
 }
 
 func TestSeed(t *testing.T) {
-	s, cfg, h := seedHarness(t)
+	s, cfg, h := seedHarness(t, testToday)
 	if err := seed(s, cfg); err != nil {
 		t.Fatal(err)
 	}
@@ -41,7 +42,7 @@ func TestSeed(t *testing.T) {
 				continue
 			}
 
-			if got := s.balanceOn(a.key, "2024-10-01"); got != a.opening {
+			if got := s.balanceOn(a.key, iso(s.start)); got != a.opening {
 				t.Errorf("opening balance of %s = %d, want %d", a.key, got, a.opening)
 			}
 		}
@@ -84,7 +85,7 @@ func TestSeed(t *testing.T) {
 			}
 
 			for _, st := range out.Items {
-				if st.DueDate < "2026-10-23" && st.Unpaid.Amount != 0 {
+				if st.DueDate < "2026-11-04" && st.Unpaid.Amount != 0 {
 					t.Errorf("%s statement due %s is unpaid by %d", card, st.DueDate, st.Unpaid.Amount)
 				}
 			}
@@ -97,7 +98,7 @@ func TestSeed(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		for path, want := range map[string]int{"/positions?date=2026-10-24": 12, "/realized-results?year=2026": 2, "/realized-results?year=2025": 1, "/goals": 3} {
+		for path, want := range map[string]int{"/positions?date=" + testToday: 12, "/realized-results?year=2026": 2, "/realized-results?year=2025": 1, "/goals": 3} {
 			var out struct {
 				Items []json.RawMessage `json:"items"`
 			}
@@ -146,7 +147,7 @@ func TestSeed(t *testing.T) {
 				State string `json:"state"`
 			} `json:"items"`
 		}
-		s.do(http.MethodGet, "/occurrences?from=2026-10-25&to=2026-12-31", nil, &next)
+		s.do(http.MethodGet, "/occurrences?from=2026-11-06&to=2026-12-31", nil, &next)
 
 		if len(next.Items) < 30 {
 			t.Errorf("upcoming occurrences = %d, want at least 30", len(next.Items))
@@ -184,6 +185,60 @@ func TestSeed(t *testing.T) {
 			t.Fatal("second seed succeeded, want a refusal")
 		}
 	})
+}
+
+// TestSeedFollowsToday seeds a date other than the default: the lines of the imported statements fall in the three weeks before it.
+func TestSeedFollowsToday(t *testing.T) {
+	const date = "2026-12-19"
+
+	s, cfg, _ := seedHarness(t, date)
+	if err := seed(s, cfg); err != nil {
+		t.Fatal(err)
+	}
+
+	var imported []string
+
+	cursor := ""
+	for {
+		var page struct {
+			Items []struct {
+				Date   string `json:"date"`
+				Origin string `json:"origin"`
+			} `json:"items"`
+			NextCursor string `json:"next_cursor"`
+		}
+
+		path := "/transactions?limit=200"
+		if cursor != "" {
+			path += "&cursor=" + url.QueryEscape(cursor)
+		}
+
+		s.do(http.MethodGet, path, nil, &page)
+
+		if s.err != nil {
+			t.Fatal(s.err)
+		}
+
+		for _, it := range page.Items {
+			if it.Origin == "import" {
+				imported = append(imported, it.Date)
+			}
+		}
+
+		if cursor = page.NextCursor; cursor == "" {
+			break
+		}
+	}
+
+	if len(imported) == 0 {
+		t.Fatal("no imported transaction")
+	}
+
+	for _, d := range imported {
+		if d < "2026-11-28" || d > date {
+			t.Errorf("imported transaction dated %s, want a date from 2026-11-28 to %s", d, date)
+		}
+	}
 }
 
 func (s *seeder) balanceOn(key, date string) int64 {

@@ -199,7 +199,7 @@ func (s *seeder) recent(key string, days int) []entry {
 
 func compact(date string) string { return strings.ReplaceAll(date, "-", "") }
 
-// importStatements uploads the October statements of the Nubank account and of the Itaú card. Lines equal to recorded ones match; the others become uncategorized and the rules decide them.
+// importStatements uploads the statements of the last three weeks of the Nubank account and of the Itaú card. Lines equal to recorded ones match; the others become uncategorized and the rules decide them.
 func (s *seeder) importStatements() {
 	from, to := compact(iso(s.today.AddDate(0, 0, -21))), compact(iso(s.today))
 	var lines []ofxLine
@@ -212,24 +212,26 @@ func (s *seeder) importStatements() {
 	}
 
 	for _, l := range []struct {
-		date, name string
-		cents      int64
+		daysAgo int
+		name    string
+		cents   int64
 	}{
-		{"2026-10-15", "Pix enviado Padaria Bella Paulista", -2490},
-		{"2026-10-16", "Compra no debito PAO DE ACUCAR-0731 SAO PAULO", -21430},
-		{"2026-10-17", "Compra no debito DROGASIL 0442 SAO PAULO", -6790},
-		{"2026-10-17", "Compra no debito CARREFOUR HIPER 0217 OSASCO", -38640},
-		{"2026-10-18", "Pix enviado MERCADO*LOJA 22", -7800},
-		{"2026-10-20", "Pix recebido Rafael Mendes", 18000},
-		{"2026-10-22", "Pix enviado Joana S", -15000},
+		{9, "Pix enviado Padaria Bella Paulista", -2490},
+		{8, "Compra no debito PAO DE ACUCAR-0731 SAO PAULO", -21430},
+		{7, "Compra no debito DROGASIL 0442 SAO PAULO", -6790},
+		{7, "Compra no debito CARREFOUR HIPER 0217 OSASCO", -38640},
+		{6, "Pix enviado MERCADO*LOJA 22", -7800},
+		{4, "Pix recebido Rafael Mendes", 18000},
+		{2, "Pix enviado Joana S", -15000},
 	} {
 		n++
-		lines = append(lines, ofxLine{compact(l.date), reais(l.cents), fmt.Sprintf("NU%s%02d", compact(l.date), n), l.name})
+		date := compact(iso(s.today.AddDate(0, 0, -l.daysAgo)))
+		lines = append(lines, ofxLine{date, reais(l.cents), fmt.Sprintf("NU%s%02d", date, n), l.name})
 		added += l.cents
 	}
 
 	s.ensure(s.today, "nubank.checking", -added+30000)
-	s.upload("/accounts/"+s.id("nubank.checking")+"/imports", map[string]string{"format": "ofx"}, "nubank-outubro.ofx", bankOFX(from, to, s.bal[s.id("nubank.checking")]+added, lines))
+	s.upload("/accounts/"+s.id("nubank.checking")+"/imports", map[string]string{"format": "ofx"}, "nubank-"+ym(s.today)+".ofx", bankOFX(from, to, s.bal[s.id("nubank.checking")]+added, lines))
 
 	var cards []ofxLine
 
@@ -240,19 +242,21 @@ func (s *seeder) importStatements() {
 	}
 
 	for _, l := range []struct {
-		date, name string
-		cents      int64
+		daysAgo int
+		name    string
+		cents   int64
 	}{
-		{"2026-10-16", "AMAZON MARKETPLACE", -12990},
-		{"2026-10-21", "STARBUCKS PINHEIROS", -2490},
-		{"2026-10-22", "KABUM*PEDIDO 9918", -28900},
-		{"2026-10-23", "UBER *EATS", -4790},
+		{8, "AMAZON MARKETPLACE", -12990},
+		{3, "STARBUCKS PINHEIROS", -2490},
+		{2, "KABUM*PEDIDO 9918", -28900},
+		{1, "UBER *EATS", -4790},
 	} {
 		n++
-		cards = append(cards, ofxLine{compact(l.date), reais(l.cents), fmt.Sprintf("IT%s%02d", compact(l.date), n), l.name})
+		date := compact(iso(s.today.AddDate(0, 0, -l.daysAgo)))
+		cards = append(cards, ofxLine{date, reais(l.cents), fmt.Sprintf("IT%s%02d", date, n), l.name})
 	}
 
-	s.upload("/accounts/"+s.id("card.itau")+"/imports", map[string]string{"format": "ofx"}, "fatura-itau-outubro.ofx", cardOFX(from, to, cards))
+	s.upload("/accounts/"+s.id("card.itau")+"/imports", map[string]string{"format": "ofx"}, "fatura-itau-"+ym(s.today)+".ofx", cardOFX(from, to, cards))
 }
 
 // importCSV saves the CSV profiles of two accounts and imports an Itaú checking export of the last three weeks: recorded lines match, two new lines wait for a category.
