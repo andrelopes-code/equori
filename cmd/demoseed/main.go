@@ -89,6 +89,7 @@ func seed(s *seeder, cfg config) error {
 	s.today = cfg.today
 	start := iso(s.start)
 	s.loadSystemAccounts()
+	s.loadHolidays()
 	s.requireEmpty()
 	s.localizeSystemAccounts()
 	s.buildChart(start)

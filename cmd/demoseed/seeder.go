@@ -34,6 +34,8 @@ type seeder struct {
 	events  []event
 	pending map[string][]ofxLine // statement lines held back until their file is imported, by account key
 	feedSeq int
+
+	holidays map[time.Time]bool
 }
 
 // event is one action of the history at a date; events run in date order, ties in insertion order.

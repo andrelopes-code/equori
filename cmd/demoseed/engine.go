@@ -1,7 +1,9 @@
 package main
 
 import (
+	"net/http"
 	"slices"
+	"strconv"
 	"time"
 )
 
@@ -25,15 +27,38 @@ func onDay(month time.Time, day int) time.Time {
 	return time.Date(month.Year(), month.Month(), min(day, last), 0, 0, 0, 0, time.UTC)
 }
 
-// businessDay returns the nth weekday of the month. Holidays are ignored.
-func businessDay(month time.Time, n int) time.Time {
+// businessDay returns the nth business day of the month, by the calendar of the book: weekends and holidays do not count.
+func (s *seeder) businessDay(month time.Time, n int) time.Time {
 	d := month
 	for count := 0; ; d = d.AddDate(0, 0, 1) {
-		if d.Weekday() != time.Saturday && d.Weekday() != time.Sunday {
+		if d.Weekday() != time.Saturday && d.Weekday() != time.Sunday && !s.holidays[d] {
 			count++
 			if count == n {
 				return d
 			}
+		}
+	}
+}
+
+// loadHolidays reads the holidays of the default calendar for every year of the history and the next, the years the schedules reach.
+func (s *seeder) loadHolidays() {
+	var calendars struct {
+		Default string `json:"default"`
+	}
+	s.do(http.MethodGet, "/calendars", nil, &calendars)
+
+	s.holidays = map[time.Time]bool{}
+
+	for year := s.start.Year(); year <= s.today.Year()+1 && s.err == nil; year++ {
+		var out struct {
+			Items []struct {
+				Date string `json:"date"`
+			} `json:"items"`
+		}
+		s.do(http.MethodGet, "/calendars/"+calendars.Default+"/holidays?year="+strconv.Itoa(year), nil, &out)
+
+		for _, h := range out.Items {
+			s.holidays[day(h.Date)] = true
 		}
 	}
 }

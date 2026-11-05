@@ -283,6 +283,50 @@ func TestSeed(t *testing.T) {
 		}
 	})
 
+	t.Run("pay days skip the holidays", func(t *testing.T) {
+		// Good Friday 2026-04-03 is not a business day: the fifth business day of April 2026 is the 8th, as the schedule expects.
+		found := false
+
+		for _, tx := range s.transactions(t) {
+			if tx.Description == "Salário 2026-04" {
+				found = true
+
+				if tx.Date != "2026-04-08" {
+					t.Errorf("salary of 2026-04 on %s, want 2026-04-08", tx.Date)
+				}
+			}
+		}
+
+		if !found {
+			t.Error("no salary of 2026-04")
+		}
+	})
+
+	t.Run("goals are under way", func(t *testing.T) {
+		var out struct {
+			Items []struct {
+				Name    string `json:"name"`
+				Target  money  `json:"target"`
+				Current money  `json:"current"`
+			} `json:"items"`
+		}
+		s.do(http.MethodGet, "/goals", nil, &out)
+
+		if s.err != nil {
+			t.Fatal(s.err)
+		}
+
+		// A goal that is met long before its due date, or hardly started, does not read as followed.
+		for _, g := range out.Items {
+			share := float64(g.Current.Amount) / float64(g.Target.Amount) * 100
+			t.Logf("goal %q: %.0f %% of the target", g.Name, share)
+
+			if share < 30 || share > 90 {
+				t.Errorf("goal %q holds %.0f %% of its target, want 30 to 90 %%", g.Name, share)
+			}
+		}
+	})
+
 	t.Run("bank feed", func(t *testing.T) {
 		// Part of the last year comes from the statement files of the institutions, with the descriptor the institution prints.
 		months := map[string]bool{}

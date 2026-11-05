@@ -77,14 +77,14 @@ func (s *seeder) payroll(month time.Time) {
 	inss := inssOf(month)
 	irrf := irrfOf(g-inss, month)
 	net := g - inss - irrf - healthPlanDiscount
-	s.at(businessDay(month, 5), func() {
-		s.record(iso(businessDay(month, 5)), "Salário "+ym(month), map[string]any{"payee_id": s.id("payee.Tarsus Tecnologia Ltda")},
+	s.at(s.businessDay(month, 5), func() {
+		s.record(iso(s.businessDay(month, 5)), "Salário "+ym(month), map[string]any{"payee_id": s.id("payee.Tarsus Tecnologia Ltda")},
 			post(s.id("income.salary"), -g), post(s.id("tax.inss"), inss), post(s.id("tax.irrf"), irrf),
 			post(s.id("health.plan"), healthPlanDiscount), post(s.id("itau.checking"), net))
 	})
 	meal := step(month, 132000, map[string]int64{"2026-01": 143000})
-	s.at(businessDay(month, 1), func() {
-		s.record(iso(businessDay(month, 1)), "Crédito Alelo Refeição "+ym(month), map[string]any{"payee_id": s.id("payee.Alelo")},
+	s.at(s.businessDay(month, 1), func() {
+		s.record(iso(s.businessDay(month, 1)), "Crédito Alelo Refeição "+ym(month), map[string]any{"payee_id": s.id("payee.Alelo")},
 			post(s.id("alelo.meal"), meal), post(s.id("income.meal"), -meal))
 	})
 }

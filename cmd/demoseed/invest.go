@@ -206,7 +206,7 @@ func (s *seeder) trade(d time.Time, code, side string, qty int64, price float64)
 
 // trades are the initial portfolio, the monthly purchases and a few sales.
 func (s *seeder) trades() {
-	first := businessDay(s.start, 2)
+	first := s.businessDay(s.start, 2)
 	for _, in := range []struct {
 		code  string
 		reais float64
@@ -223,9 +223,9 @@ func (s *seeder) trades() {
 
 	sweeps := []string{"HGLG11", "KNRI11", "IVVB11", "TSELIC29", "ITUB4"}
 	for i, m := range months(s.start, s.today) {
-		s.sweep(businessDay(m, 9), sweeps[i%len(sweeps)], brokerageFloor)
+		s.sweep(s.businessDay(m, 9), sweeps[i%len(sweeps)], brokerageFloor)
 
-		d := businessDay(m, 7)
+		d := s.businessDay(m, 7)
 		switch i % 4 {
 		case 0:
 			s.buy(d, fiis[(i/4)%3], 1350)
@@ -344,7 +344,7 @@ func nubankTop(balance int64) int64 {
 // transfers are the monthly contributions to investments, the lump sums from the 13th salary and PLR, and the income tax refund.
 func (s *seeder) transfers() {
 	for _, m := range months(s.start, s.today) {
-		d := businessDay(m, 6)
+		d := s.businessDay(m, 6)
 		s.at(d, func() {
 			if top := nubankTop(s.bal[s.id("nubank.checking")]); top > 0 {
 				s.ensure(d, "itau.checking", 140000+top)
@@ -381,15 +381,15 @@ func (s *seeder) transfers() {
 	}
 }
 
-// goals ties targets to the accounts that hold the savings for them.
+// goals ties targets to the accounts that hold the savings for them. The emergency fund targets six months of spending; the CDB that matures in 2027-08 pays for the trip.
 func (s *seeder) goals() {
 	s.create("/goals", map[string]any{
-		"name": "Reserva de emergência", "target": brl(6000000), "due_on": "2027-06-30",
+		"name": "Reserva de emergência", "target": brl(11000000), "due_on": "2027-06-30",
 		"account_ids": []string{s.id("nubank.reserve"), s.id("itau.savings"), s.id("sec.TSELIC29")},
 	})
 	s.create("/goals", map[string]any{
-		"name": "Viagem ao Japão", "target": brl(2800000), "due_on": "2027-09-01",
-		"account_ids": []string{s.id("sec.CDBXP27"), s.id("sec.IVVB11")},
+		"name": "Viagem ao Japão", "target": brl(5200000), "due_on": "2027-09-01",
+		"account_ids": []string{s.id("sec.CDBXP27")},
 	})
 	s.create("/goals", map[string]any{
 		"name": "Entrada do apartamento", "target": brl(12000000), "due_on": "2030-01-01",
