@@ -222,17 +222,17 @@ describe("Export with credentials", () => {
 });
 
 describe("Import with credentials", () => {
-  it("keeps the passphrase field out of the row of the list", async () => {
+  it("draws the passphrase field in the import group, under its words", async () => {
     const { fetch } = api({ imports: [] });
     await renderApp("/settings?section=data", { fetch });
-    const list = await within(section()).findByRole("list", {
-      name: catalogEn["settings.data.title"],
+    const group = await within(section()).findByRole("group", {
+      name: catalogEn["import.label"],
     });
 
+    expect(within(group).getByLabelText(importPassphrase)).toBeInTheDocument();
     expect(
-      within(section()).getByLabelText(importPassphrase),
+      within(group).getByRole("button", { name: catalogEn["import.choose"] }),
     ).toBeInTheDocument();
-    expect(within(list).queryByLabelText(importPassphrase)).toBeNull();
   });
 
   it("sends the passphrase and reports the restored integrations", async () => {

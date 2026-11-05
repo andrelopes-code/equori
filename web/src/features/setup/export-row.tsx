@@ -1,12 +1,5 @@
 import { Button, ButtonLink } from "@slotted/react/button";
-import {
-  ListItem,
-  ListItemActions,
-  ListItemBody,
-  ListItemContent,
-  ListItemDescription,
-  ListItemLabel,
-} from "@slotted/react/list-item";
+import { Inline } from "@slotted/react/inline";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
@@ -15,6 +8,7 @@ import { errorText } from "@/api/problem";
 import type { DataMessage } from "@/features/setup/data-message";
 import { ExportCredentialsDialog } from "@/features/setup/export-credentials-dialog";
 import { exportStatus } from "@/features/setup/export-status";
+import { SettingsRow } from "@/features/setup/settings-row";
 import {
   exportContentURL,
   exportQuery,
@@ -45,16 +39,12 @@ export function ExportRow({ onMessage }: ExportRowProps) {
 
   return (
     <>
-      <ListItem>
-        <ListItemContent>
-          <ListItemBody>
-            <ListItemLabel>{t("export.label")}</ListItemLabel>
-            <ListItemDescription>
-              {exportStatus(current.data, t, tag)}
-            </ListItemDescription>
-          </ListItemBody>
-        </ListItemContent>
-        <ListItemActions>
+      <SettingsRow
+        stacked
+        label={t("export.label")}
+        description={exportStatus(current.data, t, tag)}
+      >
+        <Inline gap={3} wrap="wrap">
           {current.data?.status === "ready" && (
             <ButtonLink
               size="sm"
@@ -87,8 +77,8 @@ export function ExportRow({ onMessage }: ExportRowProps) {
           >
             {t("export.request")}
           </Button>
-        </ListItemActions>
-      </ListItem>
+        </Inline>
+      </SettingsRow>
 
       {withCredentials && (
         <ExportCredentialsDialog
