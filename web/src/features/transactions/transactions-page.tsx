@@ -18,10 +18,13 @@ import styles from "@/features/transactions/transactions-page.module.css";
 import { useCategorizeActions } from "@/features/transactions/use-categorize-actions";
 import { useSelectionCommands } from "@/features/transactions/use-selection-commands";
 import { useTransactionList } from "@/features/transactions/use-transaction-list";
+import { useT } from "@/i18n/i18n-provider";
+import { BulkOutcomeNotice } from "@/ui/bulk-outcome-notice";
 
 const listID = "transactions-list";
 
 export function TransactionsPage() {
+  const t = useT();
   const api = useApi();
   const navigate = useNavigate({ from: "/transactions" });
   const pageSearch = useSearch({ from: "/_authed/transactions" });
@@ -48,6 +51,11 @@ export function TransactionsPage() {
   );
   const actions = useCategorizeActions(accountsById);
   const commands = useSelectionCommands(list.rows, categoriesById, actions);
+
+  const labelOf = (id: string) => {
+    const title = list.rows.find((row) => row.id === id)?.title ?? "";
+    return title === "" ? t("ledger.untitled") : title;
+  };
 
   const setSearch = (next: TransactionSearchDraft) => {
     commands.setSelection([]);
@@ -81,6 +89,14 @@ export function TransactionsPage() {
 
       <PageBody id={listID}>
         <div className={styles.region} aria-busy={shown !== search}>
+          {commands.outcome !== null && (
+            <BulkOutcomeNotice
+              outcome={commands.outcome}
+              summary="bulk.voided"
+              labelOf={labelOf}
+            />
+          )}
+
           <TransactionFilters
             search={search}
             onSearchChange={setSearch}

@@ -83,9 +83,11 @@ function api(
     query.get("cursor") === "page-2"
       ? json(200, { items: [older] })
       : json(200, { items: [groceries, uncategorized], next_cursor: "page-2" }),
+  extra: Parameters<typeof fakeApi>[0] = {},
 ) {
   return fakeApi({
     ...sharedRoutes,
+    ...extra,
     "GET /api/v1/accounts": () => json(200, { items: allAccounts }),
     "GET /api/v1/payees": () =>
       json(200, { items: [{ id: payeeID, name: "Padaria" }] }),
@@ -466,5 +468,62 @@ describe("TransactionsPage on a phone", () => {
         name: catalogEn["transactions.column.amount"],
       }),
     ).toBeNull();
+  });
+});
+
+describe("TransactionsPage void selection", () => {
+  // A202, A203, S294.
+  it("voids the selected rows with one reason and names each refusal", async () => {
+    const padaria = transactionFixture({
+      postings: [posting("p1", checkingID, -4500), posting("p2", foodID, 4500)],
+    });
+    const mercado = transactionFixture({
+      id: secondID,
+      description: "Mercado",
+      payee_id: undefined,
+      tags: [],
+    });
+    const bodies: unknown[] = [];
+    const fetch = api(
+      { queries: [] },
+      () => json(200, { items: [padaria, mercado] }),
+      {
+        "POST /api/v1/transactions/void": async (req) => {
+          bodies.push(await req.json());
+          return json(200, {
+            results: [
+              { id: padaria.id, status: "voided" },
+              { id: secondID, status: "posting_reconciled" },
+            ],
+          });
+        },
+      },
+    );
+    await renderApp("/transactions", { fetch, today: "2026-10-17" });
+    await screen.findByText("Padaria");
+
+    await userEvent.click(
+      screen.getByRole("checkbox", { name: "Select Padaria" }),
+    );
+    await userEvent.click(
+      screen.getByRole("checkbox", { name: "Select Mercado" }),
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Void" }));
+    await userEvent.type(screen.getByRole("textbox"), "duplicate");
+    await userEvent.click(
+      within(screen.getByRole("dialog")).getByRole("button", { name: "Void" }),
+    );
+
+    expect(
+      await screen.findByText(
+        `1 voided, 1 refused. Mercado: ${catalogEn["problem.posting_reconciled"]}`,
+      ),
+    ).toBeInTheDocument();
+    expect(bodies).toEqual([
+      {
+        reason: "duplicate",
+        items: [{ id: padaria.id }, { id: secondID }],
+      },
+    ]);
   });
 });

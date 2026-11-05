@@ -7,6 +7,7 @@ import type { CategoryEntry } from "@/features/categories";
 import type { CategorizeActions } from "@/features/transactions/use-categorize-actions";
 import type { ListRow } from "@/features/transactions/use-transaction-list";
 import { useT } from "@/i18n/i18n-provider";
+import type { BulkOutcome } from "@/ui/bulk-outcome";
 
 type Transaction = components["schemas"]["Transaction"];
 
@@ -23,12 +24,26 @@ export function useSelectionCommands(
   const [picking, setPicking] = useState(false);
   const [bulkBusy, setBulkBusy] = useState(false);
   const [suggesting, setSuggesting] = useState(false);
+  const [voiding, setVoiding] = useState(false);
+  const [outcome, setOutcome] = useState<BulkOutcome | null>(null);
 
   const selectedRows = rows.filter((row) => selection.includes(row.id));
   const selectedAmount = selectedRows.reduce(
     (sum, row) => sum + row.money.amount,
     0,
   );
+
+  const selectedIds = selectedRows.map((row) => row.id);
+  const currencies = new Set(selectedRows.map((row) => row.money.currency));
+  const selectedMoney =
+    selectedRows[0] !== undefined && currencies.size === 1
+      ? { amount: selectedAmount, currency: selectedRows[0].money.currency }
+      : undefined;
+
+  const finishVoid = (done: BulkOutcome) => {
+    setOutcome(done);
+    setSelection([]);
+  };
 
   const categorizeSelection = async (categoryId: string) => {
     const category = categoriesById.get(categoryId);
@@ -83,6 +98,12 @@ export function useSelectionCommands(
     setSuggesting,
     selectedRows,
     selectedAmount,
+    selectedIds,
+    selectedMoney,
+    voiding,
+    setVoiding,
+    outcome,
+    finishVoid,
     categorizeSelection,
     recordSuggestions,
   };

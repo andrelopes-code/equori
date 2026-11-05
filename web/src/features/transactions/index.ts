@@ -33,3 +33,4 @@ export { OfflinePage } from "@/features/transactions/offline-page";
 export { CaptureQueuePage } from "@/features/transactions/capture-queue-page";
 export { useCaptureQueueNotice } from "@/features/transactions/use-capture-queue-notice";
 export { validateCaptureSearch } from "@/features/transactions/search";
+export { BulkVoidDialog } from "@/features/transactions/bulk-void-dialog";

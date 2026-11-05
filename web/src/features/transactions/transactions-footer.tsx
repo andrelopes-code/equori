@@ -1,6 +1,7 @@
 import { PageFooter } from "@slotted/react/page";
 
 import type { CategoryEntry } from "@/features/categories";
+import { BulkVoidDialog } from "@/features/transactions/bulk-void-dialog";
 import { SelectionBar } from "@/features/transactions/selection-bar";
 import { SuggestCategoriesDialog } from "@/features/transactions/suggest-categories-dialog";
 import type { SelectionCommands } from "@/features/transactions/use-selection-commands";
@@ -27,6 +28,9 @@ export function TransactionsFooter({
         onClear={() => {
           commands.setSelection([]);
         }}
+        onVoid={() => {
+          commands.setVoiding(true);
+        }}
         onCategorize={(id) => {
           void commands.categorizeSelection(id);
         }}
@@ -35,6 +39,16 @@ export function TransactionsFooter({
             commands.setSuggesting(true);
           },
         })}
+      />
+
+      <BulkVoidDialog
+        ids={commands.selectedIds}
+        {...(commands.selectedMoney !== undefined && {
+          amount: commands.selectedMoney,
+        })}
+        open={commands.voiding}
+        onOpenChange={commands.setVoiding}
+        onDone={commands.finishVoid}
       />
 
       {commands.suggesting && (

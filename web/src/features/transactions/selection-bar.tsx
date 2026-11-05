@@ -27,6 +27,7 @@ interface SelectionBarProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onClear: () => void;
+  onVoid: () => void;
   onCategorize: (categoryId: string) => void;
   // Present in the uncategorized queue only (ADR 014 L1a).
   onSuggest?: () => void;
@@ -39,6 +40,7 @@ export function SelectionBar({
   open,
   onOpenChange,
   onClear,
+  onVoid,
   onCategorize,
   onSuggest,
 }: SelectionBarProps) {
@@ -51,6 +53,11 @@ export function SelectionBar({
         <ActionBarAction>
           <Button variant="ghost" tone="secondary" onClick={onClear}>
             {t("selection.clear")}
+          </Button>
+        </ActionBarAction>
+        <ActionBarAction>
+          <Button variant="ghost" tone="danger" onClick={onVoid}>
+            {t("selection.void")}
           </Button>
         </ActionBarAction>
         {onSuggest !== undefined && (
