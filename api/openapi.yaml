@@ -10843,7 +10843,7 @@ components:
           description: Adds the credentials of the book's integrations to the archive, sealed by this passphrase; 8 to 256 characters.
     ArchiveImport:
       type: object
-      required: [archive_version, tables, credentials_in_archive, credentials_restored]
+      required: [archive_version, tables, credentials_in_archive, credentials_restored, provider_keys_restored]
       properties:
         archive_version:
           type: integer
@@ -10854,6 +10854,9 @@ components:
         credentials_restored:
           type: integer
           description: Integrations whose credential the import wrote; 0 without the passphrase.
+        provider_keys_restored:
+          type: integer
+          description: Language model providers whose key the import wrote; 0 without the passphrase.
         tables:
           type: array
           items:

@@ -149,7 +149,10 @@ type ArchiveImport struct {
 
 	// CredentialsRestored Integrations whose credential the import wrote; 0 without the passphrase.
 	CredentialsRestored int `json:"credentials_restored"`
-	Tables              []struct {
+
+	// ProviderKeysRestored Language model providers whose key the import wrote; 0 without the passphrase.
+	ProviderKeysRestored int `json:"provider_keys_restored"`
+	Tables               []struct {
 		Name string `json:"name"`
 		Rows int    `json:"rows"`
 	} `json:"tables"`

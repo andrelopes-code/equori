@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/andrelopes-code/equori/internal/assistant/internal/adapter/httpapi"
@@ -197,6 +198,21 @@ func (m *Module) RegisterRoutes(mux *http.ServeMux) { m.http.Register(mux) }
 
 // RotateSecrets reseals every stored provider key under the current key (ADR 008 K4).
 func (m *Module) RotateSecrets(ctx context.Context) (int, error) { return m.svc.RotateSecrets(ctx) }
+
+// ErrSecretKeyMissing: the instance has no EQUORI_SECRET_KEY, so no provider key opens or seals (ADR 008, K2).
+var ErrSecretKeyMissing = app.ErrSecretKeyMissing
+
+// ExportProviderKeys returns the keys of a book's providers in the clear, by provider id, for the
+// credentials bundle of an export archive (export design T3). The caller seals them under a passphrase.
+func (m *Module) ExportProviderKeys(ctx context.Context, booksID int64) (map[uuid.UUID]string, error) {
+	return m.svc.ExportProviderKeys(ctx, booksID)
+}
+
+// SealProviderKeys seals each key for booksID under the key of this instance, by provider id
+// (export design T5).
+func (m *Module) SealProviderKeys(booksID int64, keys map[uuid.UUID]string) (map[uuid.UUID][]byte, error) {
+	return m.svc.SealProviderKeys(booksID, keys)
+}
 
 // Instructions returns the guide an MCP client receives as its instructions (design 2026-10-26 E10).
 func Instructions() string { return app.Instructions() }

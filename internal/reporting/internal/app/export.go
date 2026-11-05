@@ -77,16 +77,28 @@ type ExportRepository interface {
 
 type Clock interface{ Now() time.Time }
 
-// Credentials is lent by ingestion: the integration credentials of a book, sealed by a passphrase
-// for the archive and sealed again for the instance that imports it (export design C2, C6).
+// SealedCredentials are the secrets of an archive sealed again for this instance and the importing
+// book, by integration id and by provider id (export design C6, T5).
+type SealedCredentials struct {
+	Integrations, Providers map[uuid.UUID][]byte
+}
+
+// RestoredCredentials counts the integrations and the providers whose secret an import wrote.
+type RestoredCredentials struct {
+	Integrations, Providers int
+}
+
+// Credentials is lent by internal/server: the integration credentials and the provider keys of a
+// book, sealed by a passphrase for the archive and sealed again for the instance that imports it
+// (export design C2, C6, T3, T5).
 type Credentials interface {
-	// Bundle seals the credentials of the book under passphrase; nil when it stores none.
+	// Bundle seals the secrets of the book under passphrase; nil when it stores none.
 	// ErrCredentialsUnavailable without the instance key.
 	Bundle(ctx context.Context, booksID int64, passphrase string) ([]byte, error)
-	// Reseal opens bundle with passphrase and returns each credential sealed for booksID under
-	// the key of this instance, by integration id. ErrPassphraseInvalid for a wrong passphrase or
-	// a tampered bundle; ErrCredentialsUnavailable without the instance key.
-	Reseal(booksID int64, passphrase string, bundle []byte) (map[uuid.UUID][]byte, error)
+	// Reseal opens bundle with passphrase and returns each secret sealed for booksID under the
+	// key of this instance. ErrPassphraseInvalid for a wrong passphrase or a tampered bundle;
+	// ErrCredentialsUnavailable without the instance key.
+	Reseal(booksID int64, passphrase string, bundle []byte) (SealedCredentials, error)
 }
 
 type Exports struct {

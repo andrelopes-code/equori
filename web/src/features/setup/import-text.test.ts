@@ -16,13 +16,14 @@ const t: TFunction = (key, params) =>
   );
 
 const archive = {
-  archive_version: 8,
+  archive_version: 9,
   tables: [
     { name: "a", rows: 3 },
     { name: "b", rows: 4 },
   ],
   credentials_in_archive: false,
   credentials_restored: 0,
+  provider_keys_restored: 0,
 };
 
 function problem(code: string, extra: object = {}) {

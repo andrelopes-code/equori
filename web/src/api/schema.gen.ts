@@ -6064,6 +6064,8 @@ export interface components {
             credentials_in_archive: boolean;
             /** @description Integrations whose credential the import wrote; 0 without the passphrase. */
             credentials_restored: number;
+            /** @description Language model providers whose key the import wrote; 0 without the passphrase. */
+            provider_keys_restored: number;
             tables: {
                 name: string;
                 rows: number;

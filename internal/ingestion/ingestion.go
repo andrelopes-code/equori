@@ -164,19 +164,16 @@ func (m *Module) RotateSecrets(ctx context.Context) (int, error) { return m.svc.
 // ErrIntegrationUnavailable: the instance has no EQUORI_SECRET_KEY (ADR 008, K2).
 var ErrIntegrationUnavailable = app.ErrIntegrationUnavailable
 
-// ErrPassphraseInvalid: a credentials bundle does not open with the passphrase.
-var ErrPassphraseInvalid = app.ErrPassphraseInvalid
-
-// CredentialBundle seals the credentials of a book under a passphrase for an export archive;
-// nil when it stores none (export design C2).
-func (m *Module) CredentialBundle(ctx context.Context, booksID int64, passphrase string) ([]byte, error) {
-	return m.svc.CredentialBundle(ctx, booksID, passphrase)
+// ExportCredentials returns the credentials of a book in the clear, by integration id, for the
+// credentials bundle of an export archive (export design C2, T3). The caller seals them under a passphrase.
+func (m *Module) ExportCredentials(ctx context.Context, booksID int64) (map[uuid.UUID]map[string]string, error) {
+	return m.svc.ExportCredentials(ctx, booksID)
 }
 
-// ResealBundle opens a bundle and seals each credential for booksID under this instance's key,
-// by integration id (export design C6).
-func (m *Module) ResealBundle(booksID int64, passphrase string, bundle []byte) (map[uuid.UUID][]byte, error) {
-	return m.svc.ResealBundle(booksID, passphrase, bundle)
+// SealCredentials seals each credential for booksID under this instance's key, by integration id
+// (export design C6).
+func (m *Module) SealCredentials(booksID int64, plain map[uuid.UUID]map[string]string) (map[uuid.UUID][]byte, error) {
+	return m.svc.SealCredentials(booksID, plain)
 }
 
 // followPairing runs in the dispatcher's transaction, so the records move with the delivery.

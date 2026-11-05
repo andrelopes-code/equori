@@ -13,7 +13,7 @@ ADR 009 reads one Gemini key from the environment, and every use names its chain
 
 | ID | Rule |
 |---|---|
-| P1 | Module `assistant` owns `assistant_provider` and `assistant_chain_target`. Every row carries `books_id`. A provider's key is sealed under ADR 008 with associated data `assistant_provider|<books id>|<row id>`, and no response, log or problem detail carries it. |
+| P1 | Module `assistant` owns `assistant_provider` and `assistant_chain_target`. Every row carries `books_id`. A provider's key is sealed under ADR 008 with associated data `assistant_provider|<books id>|<row id>`, and no response, log or problem detail carries it. Amendment of 2026-11-05: an export archive carries the key sealed by the owner's passphrase in `credentials.enc` (ADR 008 K8, export design T3); the import seals it again for the importing book. |
 | P2 | A provider is a preset with a name, a base URL and an optional key. Presets are fixed in code (`assistant/internal/domain/preset.go`): `gemini`, `groq`, `openrouter`, `mistral`, `ollama`, `lmstudio`, `custom`. Each states its API (`gemini` or `openai`), its default base URL, whether a key is required, its notice and its suggested models with their capabilities. Preset IDs follow `^[a-z0-9_]{2,40}$`. |
 | P3 | A notice states what happens to submitted data: `trains` (the free tier uses it), `local` (it stays on the configured host) or `provider_terms`. The settings screen shows it on each provider and on each use that sends financial data to a `trains` provider. |
 | P4 | Capabilities are `tools`, `structured_output` and `image_input`. A model a preset names takes the preset's capabilities; any other model takes those the owner asserts on its chain target. |

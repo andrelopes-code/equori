@@ -138,6 +138,7 @@ func (s *Server) ImportArchive(ctx context.Context, req ImportArchiveRequestObje
 		ArchiveVersion:       res.ArchiveVersion,
 		CredentialsInArchive: res.CredentialsInArchive,
 		CredentialsRestored:  res.CredentialsRestored,
+		ProviderKeysRestored: res.ProviderKeysRestored,
 	}
 
 	out.Tables = make([]struct {

@@ -13,8 +13,6 @@ import (
 	"io"
 	"slices"
 	"strings"
-
-	"github.com/google/uuid"
 )
 
 var (
@@ -53,22 +51,24 @@ type ImportCredentials struct {
 
 // ImportResult is the archive_version read and the rows written per table, in import order.
 // CredentialsInArchive tells that the archive carries credentials; CredentialsRestored counts
-// the integrations whose credential was written (export design C7).
+// the integrations whose credential was written and ProviderKeysRestored the providers whose key
+// was (export design C7, T7).
 type ImportResult struct {
 	ArchiveVersion       int
 	Tables               []TableCount
 	CredentialsInArchive bool
 	CredentialsRestored  int
+	ProviderKeysRestored int
 }
 
 type ImportRepository interface {
 	// ImportableTables are the tables an archive may carry on this instance.
 	ImportableTables(ctx context.Context) ([]string, error)
 	// Import writes the tables in one transaction (export design E4, steps 2 to 4);
-	// attachments are keyed by the hexadecimal SHA-256 of their bytes. credentials holds the
-	// sealed credential of each integration by id; the transaction writes those of the imported
-	// integrations and returns their count (export design C6).
-	Import(ctx context.Context, booksID int64, tables []ArchiveTable, attachments map[string][]byte, credentials map[uuid.UUID][]byte) ([]TableCount, int, error)
+	// attachments are keyed by the hexadecimal SHA-256 of their bytes. sealed holds the secret of
+	// each integration and of each provider by id; the transaction writes those of the imported
+	// rows and returns their counts (export design C6, T5).
+	Import(ctx context.Context, booksID int64, tables []ArchiveTable, attachments map[string][]byte, sealed SealedCredentials) ([]TableCount, RestoredCredentials, error)
 }
 
 type archiveManifest struct {
@@ -196,21 +196,24 @@ func (s *Exports) Import(ctx context.Context, booksID int64, archive []byte, cre
 		}
 	}
 
-	return ImportResult{ArchiveVersion: version, Tables: counts, CredentialsInArchive: m.Credentials != nil, CredentialsRestored: restored}, nil
+	return ImportResult{
+		ArchiveVersion: version, Tables: counts, CredentialsInArchive: m.Credentials != nil,
+		CredentialsRestored: restored.Integrations, ProviderKeysRestored: restored.Providers,
+	}, nil
 }
 
 // resealCredentials opens the credentials entry of the archive with the passphrase and seals each
-// credential for this instance; nil when the archive has none or the owner skips them.
-func (s *Exports) resealCredentials(booksID int64, bundle []byte, c ImportCredentials) (map[uuid.UUID][]byte, error) {
+// secret for this instance; empty when the archive has none or the owner skips them.
+func (s *Exports) resealCredentials(booksID int64, bundle []byte, c ImportCredentials) (SealedCredentials, error) {
 	switch {
 	case bundle == nil:
-		return nil, nil
+		return SealedCredentials{}, nil
 	case c.Passphrase == "" && c.Skip:
-		return nil, nil
+		return SealedCredentials{}, nil
 	case c.Passphrase == "":
-		return nil, ErrPassphraseRequired
+		return SealedCredentials{}, ErrPassphraseRequired
 	case s.creds == nil:
-		return nil, ErrCredentialsUnavailable
+		return SealedCredentials{}, ErrCredentialsUnavailable
 	}
 
 	return s.creds.Reseal(booksID, c.Passphrase, bundle)

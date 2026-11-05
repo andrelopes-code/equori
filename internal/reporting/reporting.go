@@ -68,8 +68,12 @@ func (m *Module) OnImport(rebuild func(ctx context.Context, booksID int64) error
 	m.exports.OnImport(rebuild)
 }
 
-// Credentials is lent by ingestion: the integration credentials of a book for an export archive.
+// Credentials is lent by internal/server: the integration credentials and the provider keys of a
+// book for an export archive.
 type Credentials = app.Credentials
+
+// SealedCredentials are the secrets of an archive sealed again for this instance (export design C6, T5).
+type SealedCredentials = app.SealedCredentials
 
 // Errors a Credentials source returns for the export and the import of credentials.
 var (
