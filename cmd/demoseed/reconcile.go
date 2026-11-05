@@ -227,7 +227,8 @@ func (s *seeder) importStatements() {
 		added += l.cents
 	}
 
-	s.ensure(s.today, "nubank.checking", -added+30000)
+	// The lines that the ledger lacks start nine days back, so the account is funded before the first of them.
+	s.ensure(s.today.AddDate(0, 0, -10), "nubank.checking", -added+30000)
 	s.upload("/accounts/"+s.id("nubank.checking")+"/imports", map[string]string{"format": "ofx"}, "nubank-"+ym(s.today)+".ofx", bankOFX(from, to, s.bal[s.id("nubank.checking")]+added, lines))
 
 	var cards []ofxLine
@@ -286,7 +287,7 @@ func (s *seeder) importCSV() {
 
 	line(iso(s.today.AddDate(0, 0, -2)), "PIX TRANSF MARIA L", -8000)
 	line(iso(s.today.AddDate(0, 0, -1)), "TARIFA SAQUE OUTRA REDE", -690)
-	s.ensure(s.today, "itau.checking", 8690+10000)
+	s.ensure(s.today.AddDate(0, 0, -3), "itau.checking", 8690+10000)
 	s.upload("/accounts/"+s.id("itau.checking")+"/imports", map[string]string{"format": "csv"}, "extrato-itau.csv", []byte(b.String()))
 }
 

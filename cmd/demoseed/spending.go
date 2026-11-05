@@ -33,7 +33,7 @@ var (
 )
 
 // lifestyle scales every variable purchase, in percent, so that the spending leaves the savings rate of the persona.
-const lifestyle = 85
+const lifestyle = 78
 
 var habits = []habit{
 	{category: "food.groceries", payees: []string{"Pão de Açúcar", "Carrefour", "Mercado Dia", "Empório Santa Luzia"}, desc: "Compras no %s", count: [2]int{7, 10}, lo: 4200, hi: 38000, skew: 2,
@@ -108,8 +108,8 @@ var discretionary = map[string]bool{
 
 // intensities draws how much a month weighs on the discretionary and on the essential habits: a lean month and a loose month alternate around 1.
 func (s *seeder) intensities() (loose, essential float64) {
-	loose = min(max(math.Exp(.3*s.rng.NormFloat64()), .5), 1.9)
-	essential = min(max(math.Exp(.08*s.rng.NormFloat64()), .8), 1.25)
+	loose = min(max(math.Exp(.3*s.rng.NormFloat64()-.045), .5), 1.9)
+	essential = min(max(math.Exp(.08*s.rng.NormFloat64()-.003), .8), 1.25)
 
 	return loose, essential
 }
@@ -259,16 +259,16 @@ var surprises = []surprise{
 	{"leisure.events", "Sympla", "Ingresso de show", "card.itau"},
 }
 
-// surprises books, in four months out of ten, one unplanned expense on a random day.
+// surprises books, in three months out of ten, one unplanned expense on a random day.
 func (s *seeder) surprises(month time.Time) {
-	if s.rng.Float64() >= .4 {
+	if s.rng.Float64() >= .3 {
 		return
 	}
 
 	x := surprises[s.rng.IntN(len(surprises))]
 	d := s.dayOf(habit{}, month)
 
-	cents := s.between(25000, 180000, 2)
+	cents := s.between(20000, 150000, 2)
 	cents -= cents % 10
 	s.at(d, func() { s.expense(d, x.via, x.category, x.payee, x.desc, cents) })
 }

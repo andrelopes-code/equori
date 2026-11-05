@@ -100,6 +100,66 @@ func TestSeed(t *testing.T) {
 		}
 	})
 
+	t.Run("checking accounts never close a day overdrawn", func(t *testing.T) {
+		daily := map[string]map[string]int64{"itau.checking": {}, "nubank.checking": {}}
+
+		for _, tx := range s.transactions(t) {
+			for _, p := range tx.Postings {
+				for key, byDay := range daily {
+					if p.AccountID == s.id(key) {
+						byDay[tx.Date] += p.Amount.Amount
+					}
+				}
+			}
+		}
+
+		for key, byDay := range daily {
+			days := make([]string, 0, len(byDay))
+			for d := range byDay {
+				days = append(days, d)
+			}
+
+			slices.Sort(days)
+
+			var balance int64
+
+			for _, d := range days {
+				balance += byDay[d]
+				if balance < 0 {
+					t.Errorf("%s closes %s with %d cents", key, d, balance)
+				}
+			}
+		}
+	})
+
+	t.Run("savings rate", func(t *testing.T) {
+		var out struct {
+			Months []struct {
+				Income  money `json:"income"`
+				Expense money `json:"expense"`
+			} `json:"months"`
+		}
+		s.do(http.MethodGet, "/reports/indicators?month=2026-10", nil, &out)
+
+		if s.err != nil {
+			t.Fatal(s.err)
+		}
+
+		var income, expense int64
+		for _, m := range out.Months {
+			income += m.Income.Amount
+			expense += m.Expense.Amount
+		}
+
+		// The persona saves 15 to 20 % of the income (docs/plans/2026-10-24-demo-account.md).
+		rate := float64(income-expense) / float64(income) * 100
+		t.Logf("savings rate of the last 12 months: %.1f %%", rate)
+
+		if rate < 14 || rate > 22 {
+			t.Errorf("savings rate of the last 12 months = %.1f %%, want 14 to 22 %%", rate)
+		}
+	})
+
 	t.Run("monthly spending varies", func(t *testing.T) {
 		var expenses []float64
 
@@ -453,6 +513,10 @@ type transactionRow struct {
 	Date        string `json:"date"`
 	Origin      string `json:"origin"`
 	Description string `json:"description"`
+	Postings    []struct {
+		AccountID string `json:"account_id"`
+		Amount    money  `json:"amount"`
+	} `json:"postings"`
 }
 
 // transactions lists every transaction of the book.
