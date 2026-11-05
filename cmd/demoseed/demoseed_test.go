@@ -3,8 +3,11 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"math"
 	"net/http"
 	"net/url"
+	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -42,7 +45,15 @@ func TestSeed(t *testing.T) {
 				continue
 			}
 
-			if got := s.balanceOn(a.key, iso(s.start)); got != a.opening {
+			// Spending on the first day of the history moves the balance of that day.
+			got := s.balanceOn(a.key, iso(s.start))
+			for _, e := range s.entries {
+				if e.account == s.id(a.key) && e.date == iso(s.start) && !strings.HasPrefix(e.desc, "Saldo inicial") {
+					got -= e.cents
+				}
+			}
+
+			if got != a.opening {
 				t.Errorf("opening balance of %s = %d, want %d", a.key, got, a.opening)
 			}
 		}
@@ -87,6 +98,49 @@ func TestSeed(t *testing.T) {
 			if got < c.min || got > c.max {
 				t.Errorf("%s balance on %s = %d, want %d to %d", c.key, testToday, got, c.min, c.max)
 			}
+		}
+	})
+
+	t.Run("monthly spending varies", func(t *testing.T) {
+		var expenses []float64
+
+		for _, month := range []string{"2025-10", "2026-10"} {
+			var out struct {
+				Months []struct {
+					Month   string `json:"month"`
+					Expense struct {
+						Amount int64 `json:"amount"`
+					} `json:"expense"`
+				} `json:"months"`
+			}
+			s.do(http.MethodGet, "/reports/indicators?month="+month, nil, &out)
+
+			for _, m := range out.Months {
+				expenses = append(expenses, float64(m.Expense.Amount))
+			}
+		}
+
+		if s.err != nil {
+			t.Fatal(s.err)
+		}
+
+		slices.Sort(expenses)
+
+		// A household does not spend the same amount twice: at most a quarter of the months fall within 3 % of the median.
+		median := expenses[len(expenses)/2]
+
+		close := 0
+
+		for _, e := range expenses {
+			if math.Abs(e-median) <= median*.03 {
+				close++
+			}
+		}
+
+		t.Logf("monthly expense: median %.0f, %d of %d months within 3 %% of it", median/100, close, len(expenses))
+
+		if close*4 > len(expenses) {
+			t.Errorf("%d of %d months spend within 3 %% of the median, want at most a quarter", close, len(expenses))
 		}
 	})
 

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"time"
 )
 
@@ -82,8 +83,8 @@ var habits = []habit{
 		vias: []string{"card.nubank"}, weights: []int{1}, tags: []string{"gato"}},
 }
 
-// count draws how many purchases of h happen in month.
-func (s *seeder) count(h habit, month time.Time) int {
+// count draws how many purchases of h happen in month; the intensity of the month scales the count.
+func (s *seeder) count(h habit, month time.Time, intensity float64) int {
 	n := h.count[0] + s.rng.IntN(h.count[1]-h.count[0]+1)
 	if h.chance > 0 && s.rng.Float64() > h.chance {
 		n = 0
@@ -94,7 +95,22 @@ func (s *seeder) count(h habit, month time.Time) int {
 		n = int(float64(n)*f + s.rng.Float64())
 	}
 
-	return n
+	return int(float64(n)*intensity + s.rng.Float64())
+}
+
+// discretionary lists the categories an owner cuts or indulges in from one month to the next; the others follow the household.
+var discretionary = map[string]bool{
+	"food.restaurants": true, "food.delivery": true, "food.coffee": true, "food.bars": true,
+	"leisure.events": true, "leisure.games": true, "leisure.books": true, "leisure.hobbies": true,
+	"shopping.clothes": true, "shopping.care": true, "shopping.gifts": true, "housing.decor": true,
+}
+
+// intensities draws how much a month weighs on the discretionary and on the essential habits: a lean month and a loose month alternate around 1.
+func (s *seeder) intensities() (loose, essential float64) {
+	loose = min(max(math.Exp(.2*s.rng.NormFloat64()), .6), 1.6)
+	essential = min(max(math.Exp(.06*s.rng.NormFloat64()), .85), 1.2)
+
+	return loose, essential
 }
 
 // dayOf draws the day of a purchase; weekend habits favor Friday to Sunday.
@@ -111,12 +127,18 @@ func (s *seeder) dayOf(h habit, month time.Time) time.Time {
 }
 
 func (s *seeder) spending(month time.Time) {
+	loose, essential := s.intensities()
 	for _, h := range habits {
 		if h.from != "" && ym(month) < h.from {
 			continue
 		}
 
-		for range s.count(h, month) {
+		intensity := essential
+		if discretionary[h.category] {
+			intensity = loose
+		}
+
+		for range s.count(h, month, intensity) {
 			d := s.dayOf(h, month)
 			payee := h.payees[s.rng.IntN(len(h.payees))]
 
@@ -133,6 +155,7 @@ func (s *seeder) spending(month time.Time) {
 
 	s.therapy(month)
 	s.sharedDinners(month)
+	s.occasions(month)
 }
 
 // therapy is one session every Thursday, with a few cancelled weeks.
@@ -167,5 +190,49 @@ func (s *seeder) sharedDinners(month time.Time) {
 			s.record(iso(back), "Rafael devolveu a parte do jantar", map[string]any{"payee_id": s.id("payee.Rafael Mendes")},
 				post(s.id("itau.checking"), half), post(s.id("receivable.rafael"), -half))
 		})
+	}
+}
+
+// occasion is a dated expense of the calendar: a holiday gift, a birthday dinner, a check-up.
+type occasion struct {
+	month           time.Month
+	day             int // zero: the second Sunday of the month.
+	category, payee string
+	desc            string
+	lo, hi          int64
+	vias            []string
+	weights         []int
+}
+
+var occasions = []occasion{
+	{month: 3, day: 14, category: "food.restaurants", payee: "Outback Steakhouse", desc: "Jantar de aniversário", lo: 42000, hi: 68000, vias: []string{"card.itau"}, weights: []int{1}},
+	{month: 3, day: 18, category: "health.dental", payee: "Odonto Excellence", desc: "Revisão e limpeza", lo: 28000, hi: 36000, vias: []string{"nubank.checking"}, weights: []int{1}},
+	{month: 9, day: 16, category: "health.dental", payee: "Odonto Excellence", desc: "Revisão e limpeza", lo: 28000, hi: 38000, vias: []string{"nubank.checking"}, weights: []int{1}},
+	{month: 4, day: 4, category: "shopping.gifts", payee: "Cacau Show", desc: "Ovos de Páscoa", lo: 9000, hi: 21000, vias: []string{"card.nubank"}, weights: []int{1}},
+	{month: 5, category: "shopping.gifts", payee: "Boticário", desc: "Presente do Dia das Mães", lo: 15000, hi: 30000, vias: []string{"card.itau", "card.nubank"}, weights: []int{60, 40}},
+	{month: 5, category: "food.restaurants", payee: "Madero", desc: "Almoço do Dia das Mães", lo: 22000, hi: 38000, vias: []string{"card.itau"}, weights: []int{1}},
+	{month: 6, day: 12, category: "food.restaurants", payee: "Coco Bambu", desc: "Jantar do Dia dos Namorados", lo: 28000, hi: 44000, vias: []string{"card.nubank"}, weights: []int{1}},
+	{month: 8, category: "shopping.gifts", payee: "Amazon", desc: "Presente do Dia dos Pais", lo: 12000, hi: 26000, vias: []string{"card.itau"}, weights: []int{1}},
+	{month: 8, category: "food.restaurants", payee: "Outback Steakhouse", desc: "Almoço do Dia dos Pais", lo: 20000, hi: 34000, vias: []string{"card.nubank"}, weights: []int{1}},
+	{month: 12, day: 24, category: "food.groceries", payee: "Pão de Açúcar", desc: "Compras da ceia de Natal", lo: 42000, hi: 68000, vias: []string{"card.itau"}, weights: []int{1}},
+	{month: 12, day: 31, category: "food.restaurants", payee: "Coco Bambu", desc: "Jantar de réveillon", lo: 30000, hi: 52000, vias: []string{"card.nubank"}, weights: []int{1}},
+}
+
+// occasions schedules the dated expenses of month.
+func (s *seeder) occasions(month time.Time) {
+	for _, o := range occasions {
+		if o.month != month.Month() {
+			continue
+		}
+
+		d := onDay(month, o.day)
+		if o.day == 0 {
+			d = weekdaysOf(month, time.Sunday)[1]
+		}
+
+		cents := s.between(o.lo, o.hi, 1)
+		cents -= cents % 10
+		via := s.pick(o.vias, o.weights)
+		s.at(d, func() { s.expense(d, via, o.category, o.payee, o.desc, cents) })
 	}
 }

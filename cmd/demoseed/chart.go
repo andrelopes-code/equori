@@ -119,6 +119,7 @@ var expenseCategories = []category{
 		leaf("health.exams", "Exames", "hospital"),
 		leaf("health.therapy", "Terapia", "heart"),
 		leaf("health.gym", "Academia", "dumbbell"),
+		leaf("health.dental", "Dentista", "smile"),
 	}},
 	{key: "leisure", name: "Lazer", icon: "gamepad-2", color: 5, children: []category{
 		leaf("leisure.events", "Cinema, shows e eventos", "ticket"),
@@ -189,7 +190,7 @@ var payees = []string{
 	"Smart Fit", "Drogasil", "Droga Raia", "Pague Menos", "Laboratório Fleury", "Dra. Helena Prado", "Clínica Mente Aberta", "Bradesco Saúde",
 	"Netflix", "Spotify", "Amazon Prime", "Disney+", "HBO Max", "Cinemark", "Ingresso.com", "Sympla", "Steam", "Livraria da Vila", "Kindle", "Decathlon",
 	"Zara", "Renner", "C&A", "Centauro", "Magazine Luiza", "Amazon", "Mercado Livre", "Apple", "KaBuM!", "Leroy Merlin", "Tok&Stok", "Boticário", "Barbearia & Salão Vila",
-	"Petz", "Cobasi", "Clínica Veterinária Patas", "Alura", "Associação Brasileira de Product Management", "Latam Airlines", "Booking.com", "Airbnb", "Decolar", "Azul Linhas Aéreas",
+	"Cacau Show", "Odonto Excellence", "Petz", "Cobasi", "Clínica Veterinária Patas", "Alura", "Associação Brasileira de Product Management", "Latam Airlines", "Booking.com", "Airbnb", "Decolar", "Azul Linhas Aéreas",
 	"Receita Federal", "Itaú Unibanco", "Nubank", "XP Investimentos", "Rafael Mendes", "Mãe", "Instituto Pequeno Cidadão", "99Food", "Shell Select", "Alelo",
 }
 
