@@ -1,7 +1,7 @@
 @layer app {
-  /* Workaround for Slotted issue #78: the library's Form (FormAside, #21) spaces and bounds only a
-     Field or a FieldGroup, not a FormRow, a notice or a list of checks, and a dialog's form
-     wraps its parts instead of its fields. */
+  /* The application's own layout (docs/contributing/forms.md, F1 and F8). The library's Form draws
+     the aside beside the column from 75rem, with a fixed track; the application draws it from
+     62rem and lets it take up to 36rem. A dialog's form wraps its parts, not its fields. */
   .frame {
     container-type: inline-size;
   }
