@@ -21,6 +21,7 @@ import { TextField } from "@slotted/react/text-field";
 import { useState } from "react";
 
 import { errorText } from "@/api/problem";
+import { CopyButton } from "@/features/setup/copy-button";
 import { useExportPassphrase } from "@/features/setup/use-export-passphrase";
 import { useT } from "@/i18n/i18n-provider";
 import { FormNotice } from "@/ui/form-notice";
@@ -41,12 +42,6 @@ export function ExportCredentialsDialog({
   const draft = useExportPassphrase();
   const [pending, setPending] = useState(false);
   const [failure, setFailure] = useState<unknown>(null);
-
-  const handleCopy = () => {
-    // The passphrase stays on screen to copy by hand: a page served over plain HTTP has no clipboard.
-    if (!("clipboard" in navigator)) return;
-    navigator.clipboard.writeText(draft.passphrase).catch(() => undefined);
-  };
 
   const handleOpenChange = (open: boolean) => {
     if (!open && !pending) onClose();
@@ -96,14 +91,10 @@ export function ExportCredentialsDialog({
 
             {draft.proposed && (
               <Inline>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  tone="secondary"
-                  onClick={handleCopy}
-                >
-                  {t("export.credentials.copy")}
-                </Button>
+                <CopyButton
+                  text={draft.passphrase}
+                  label={t("export.credentials.copy")}
+                />
               </Inline>
             )}
 

@@ -193,6 +193,41 @@ describe("Export with credentials", () => {
     expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 
+  it("copies the proposed passphrase without a clipboard and confirms it", async () => {
+    let copied = "";
+    Object.defineProperty(document, "execCommand", {
+      configurable: true,
+      value: () => {
+        copied = document.querySelector("textarea")?.value ?? "";
+        return true;
+      },
+    });
+    const { fetch } = api({ imports: [] });
+    await renderApp("/settings?section=data", { fetch });
+    await userEvent.click(
+      await within(section()).findByRole("button", {
+        name: catalogEn["export.withCredentials"],
+      }),
+    );
+    const dialog = await screen.findByRole("dialog");
+    const field = within(dialog).getByLabelText<HTMLInputElement>(
+      catalogEn["export.credentials.passphrase"],
+    );
+
+    await userEvent.click(
+      within(dialog).getByRole("button", {
+        name: catalogEn["export.credentials.copy"],
+      }),
+    );
+
+    expect(copied).toBe(field.value);
+    expect(
+      within(dialog).getByRole("button", {
+        name: catalogEn["security.copied"],
+      }),
+    ).toBeInTheDocument();
+  });
+
   it("refuses a passphrase of fewer than 8 characters before the request", async () => {
     const { fetch, exports } = api({ imports: [] });
     await renderApp("/settings?section=data", { fetch });
