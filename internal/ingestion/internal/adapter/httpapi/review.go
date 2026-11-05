@@ -94,6 +94,46 @@ func (s *Server) ResolveExternalRecord(ctx context.Context, req ResolveExternalR
 	return ResolveExternalRecord200JSONResponse(toRecordAPI(rec, b.Currency)), nil
 }
 
+func (s *Server) ResolveExternalRecords(ctx context.Context, req ResolveExternalRecordsRequestObject) (ResolveExternalRecordsResponseObject, error) {
+	items := make([]app.Resolution, len(req.Body.Items))
+	for i, it := range req.Body.Items {
+		items[i] = app.Resolution{RecordID: it.RecordId, Action: string(it.Resolution.Action)}
+		if it.Resolution.TransactionId != nil {
+			items[i].TransactionID = *it.Resolution.TransactionId
+		}
+	}
+
+	errs, err := s.svc.ResolveMany(ctx, auth.MustBooksID(ctx), items)
+	if err != nil {
+		return nil, err
+	}
+
+	out := ResolveExternalRecords200JSONResponse{Results: make([]BulkResolveItemResult, len(items))}
+	for i, it := range items {
+		status, ok := resolveStatus(errs[i])
+		if !ok {
+			return nil, errs[i]
+		}
+
+		out.Results[i] = BulkResolveItemResult{RecordId: it.RecordID, Status: status}
+	}
+
+	return out, nil
+}
+
+// resolveStatus names an item error by the problem code of the same failure (A201); ok is
+// false for an error outside the status list.
+func resolveStatus(err error) (BulkResolveItemResultStatus, bool) {
+	if err == nil {
+		return Resolved, true
+	}
+
+	d, known := ToProblem(err)
+	status := BulkResolveItemResultStatus(d.Code)
+
+	return status, known && status.Valid()
+}
+
 func (s *Server) ReopenExternalRecord(ctx context.Context, req ReopenExternalRecordRequestObject) (ReopenExternalRecordResponseObject, error) {
 	rec, b, err := s.svc.Reopen(ctx, auth.MustBooksID(ctx), req.Id)
 	if err != nil {

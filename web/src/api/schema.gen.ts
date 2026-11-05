@@ -3147,6 +3147,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/external-records/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resolve several records that need review, each item decided on its own (A201).
+         * @description Each item runs as resolveExternalRecord. An item that fails reports its status and leaves the others
+         *     applied.
+         */
+        post: operations["resolveExternalRecords"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/external-records/{id}/undo": {
         parameters: {
             query?: never;
@@ -4586,6 +4607,23 @@ export interface components {
              * @description Required for match; one of the record's candidates.
              */
             transaction_id?: string;
+        };
+        BulkResolveInput: {
+            items: {
+                /** Format: uuid */
+                record_id: string;
+                resolution: components["schemas"]["RecordResolution"];
+            }[];
+        };
+        BulkResolveResult: {
+            /** @description One result per item, in request order. */
+            results: components["schemas"]["BulkResolveItemResult"][];
+        };
+        BulkResolveItemResult: {
+            /** Format: uuid */
+            record_id: string;
+            /** @enum {string} */
+            status: "resolved" | "validation_failed" | "not_found" | "record_resolved" | "group_changed" | "already_matched" | "transaction_voided" | "posting_reconciled";
         };
         ExternalRecord: {
             /** Format: uuid */
@@ -12160,6 +12198,32 @@ export interface operations {
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
             409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    resolveExternalRecords: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkResolveInput"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkResolveResult"];
+                };
+            };
+            401: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
         };
     };

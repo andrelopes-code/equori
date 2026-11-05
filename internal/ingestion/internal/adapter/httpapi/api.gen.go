@@ -19,6 +19,42 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
+// Defines values for BulkResolveItemResultStatus.
+const (
+	AlreadyMatched    BulkResolveItemResultStatus = "already_matched"
+	GroupChanged      BulkResolveItemResultStatus = "group_changed"
+	NotFound          BulkResolveItemResultStatus = "not_found"
+	PostingReconciled BulkResolveItemResultStatus = "posting_reconciled"
+	RecordResolved    BulkResolveItemResultStatus = "record_resolved"
+	Resolved          BulkResolveItemResultStatus = "resolved"
+	TransactionVoided BulkResolveItemResultStatus = "transaction_voided"
+	ValidationFailed  BulkResolveItemResultStatus = "validation_failed"
+)
+
+// Valid indicates whether the value is a known member of the BulkResolveItemResultStatus enum.
+func (e BulkResolveItemResultStatus) Valid() bool {
+	switch e {
+	case AlreadyMatched:
+		return true
+	case GroupChanged:
+		return true
+	case NotFound:
+		return true
+	case PostingReconciled:
+		return true
+	case RecordResolved:
+		return true
+	case Resolved:
+		return true
+	case TransactionVoided:
+		return true
+	case ValidationFailed:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ConnectionState.
 const (
 	ConsentExpiring ConnectionState = "consent_expiring"
@@ -407,6 +443,29 @@ type Aggregator struct {
 // AggregatorList defines model for AggregatorList.
 type AggregatorList struct {
 	Items []Aggregator `json:"items"`
+}
+
+// BulkResolveInput defines model for BulkResolveInput.
+type BulkResolveInput struct {
+	Items []struct {
+		RecordId   openapi_types.UUID `json:"record_id"`
+		Resolution RecordResolution   `json:"resolution"`
+	} `json:"items"`
+}
+
+// BulkResolveItemResult defines model for BulkResolveItemResult.
+type BulkResolveItemResult struct {
+	RecordId openapi_types.UUID          `json:"record_id"`
+	Status   BulkResolveItemResultStatus `json:"status"`
+}
+
+// BulkResolveItemResultStatus defines model for BulkResolveItemResult.Status.
+type BulkResolveItemResultStatus string
+
+// BulkResolveResult defines model for BulkResolveResult.
+type BulkResolveResult struct {
+	// Results One result per item, in request order.
+	Results []BulkResolveItemResult `json:"results"`
 }
 
 // Connection defines model for Connection.
@@ -856,6 +915,9 @@ type CreateConnectionJSONRequestBody = ConnectionInput
 // MapExternalAccountJSONRequestBody defines body for MapExternalAccount for application/json ContentType.
 type MapExternalAccountJSONRequestBody = AccountMappingInput
 
+// ResolveExternalRecordsJSONRequestBody defines body for ResolveExternalRecords for application/json ContentType.
+type ResolveExternalRecordsJSONRequestBody = BulkResolveInput
+
 // ResolveExternalRecordJSONRequestBody defines body for ResolveExternalRecord for application/json ContentType.
 type ResolveExternalRecordJSONRequestBody = RecordResolution
 
@@ -906,6 +968,9 @@ type ServerInterface interface {
 	// ListConnectionSyncs The last 10 sync runs of the connection that decided, created or placed a line in review (A149).
 	// (GET /connections/{id}/syncs)
 	ListConnectionSyncs(w http.ResponseWriter, r *http.Request, id ID)
+	// ResolveExternalRecords Resolve several records that need review, each item decided on its own (A201).
+	// (POST /external-records/resolve)
+	ResolveExternalRecords(w http.ResponseWriter, r *http.Request)
 	// ReopenExternalRecord Return a discarded record to review (A140).
 	// (POST /external-records/{id}/reopen)
 	ReopenExternalRecord(w http.ResponseWriter, r *http.Request, id ID)
@@ -1264,6 +1329,20 @@ func (siw *ServerInterfaceWrapper) ListConnectionSyncs(w http.ResponseWriter, r 
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ListConnectionSyncs(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ResolveExternalRecords operation middleware
+func (siw *ServerInterfaceWrapper) ResolveExternalRecords(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ResolveExternalRecords(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1788,6 +1867,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/unconfirmed", wrapper.ListUnconfirmed)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/external-records/{id}/reopen", wrapper.ReopenExternalRecord)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/external-records/{id}/resolve", wrapper.ResolveExternalRecord)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/external-records/resolve", wrapper.ResolveExternalRecords)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/external-records/{id}/undo", wrapper.UndoExternalRecordDecision)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/aggregators", wrapper.ListAggregators)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/integrations", wrapper.ListIntegrations)
@@ -2613,6 +2693,58 @@ func (response ListConnectionSyncs404ApplicationProblemPlusJSONResponse) VisitLi
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ResolveExternalRecordsRequestObject struct {
+	Body *ResolveExternalRecordsJSONRequestBody
+}
+
+type ResolveExternalRecordsResponseObject interface {
+	VisitResolveExternalRecordsResponse(w http.ResponseWriter) error
+}
+
+type ResolveExternalRecords200JSONResponse BulkResolveResult
+
+func (response ResolveExternalRecords200JSONResponse) VisitResolveExternalRecordsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ResolveExternalRecords401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ResolveExternalRecords401ApplicationProblemPlusJSONResponse) VisitResolveExternalRecordsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ResolveExternalRecords422ApplicationProblemPlusJSONResponse Problem
+
+func (response ResolveExternalRecords422ApplicationProblemPlusJSONResponse) VisitResolveExternalRecordsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -3477,6 +3609,9 @@ type StrictServerInterface interface {
 	// ListConnectionSyncs The last 10 sync runs of the connection that decided, created or placed a line in review (A149).
 	// (GET /connections/{id}/syncs)
 	ListConnectionSyncs(ctx context.Context, request ListConnectionSyncsRequestObject) (ListConnectionSyncsResponseObject, error)
+	// ResolveExternalRecords Resolve several records that need review, each item decided on its own (A201).
+	// (POST /external-records/resolve)
+	ResolveExternalRecords(ctx context.Context, request ResolveExternalRecordsRequestObject) (ResolveExternalRecordsResponseObject, error)
 	// ReopenExternalRecord Return a discarded record to review (A140).
 	// (POST /external-records/{id}/reopen)
 	ReopenExternalRecord(ctx context.Context, request ReopenExternalRecordRequestObject) (ReopenExternalRecordResponseObject, error)
@@ -3887,6 +4022,37 @@ func (sh *strictHandler) ListConnectionSyncs(w http.ResponseWriter, r *http.Requ
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListConnectionSyncsResponseObject); ok {
 		if err := validResponse.VisitListConnectionSyncsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ResolveExternalRecords operation middleware
+func (sh *strictHandler) ResolveExternalRecords(w http.ResponseWriter, r *http.Request) {
+	var request ResolveExternalRecordsRequestObject
+
+	var body ResolveExternalRecordsJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ResolveExternalRecords(ctx, request.(ResolveExternalRecordsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ResolveExternalRecords")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ResolveExternalRecordsResponseObject); ok {
+		if err := validResponse.VisitResolveExternalRecordsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

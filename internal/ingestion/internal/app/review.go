@@ -166,6 +166,33 @@ func (s *Service) Resolve(ctx context.Context, booksID int64, recordID uuid.UUID
 	return rec, b, nil
 }
 
+// Resolution is one item of ResolveMany.
+type Resolution struct {
+	RecordID      uuid.UUID
+	Action        string
+	TransactionID uuid.UUID
+}
+
+// ResolveMany settles each record as Resolve does, in request order (A201). errs[i] is the
+// error of item i; the error return refuses the request before any item runs.
+func (s *Service) ResolveMany(ctx context.Context, booksID int64, items []Resolution) ([]error, error) {
+	seen := make(map[uuid.UUID]bool, len(items))
+	for _, it := range items {
+		if seen[it.RecordID] {
+			return nil, &domain.FieldError{Field: "items", Message: "repeats a record"}
+		}
+
+		seen[it.RecordID] = true
+	}
+
+	errs := make([]error, len(items))
+	for i, it := range items {
+		_, _, errs[i] = s.Resolve(ctx, booksID, it.RecordID, it.Action, it.TransactionID)
+	}
+
+	return errs, nil
+}
+
 // Unconfirmed lists the account's entries that neither an institution line nor an institution
 // balance confirmed, expected within its feed and more than MatchHardLimit days before the
 // feed's end, oldest first (A103, A133).
