@@ -171,14 +171,14 @@ const tooltipArrowClipRule = `
 }
 `;
 
-// A long list (150 currencies) in a select, a picker or a menu stops at 20 rem, 8 to 9 rows, and
-// scrolls inside. The overlay token is not set on the root: a popover, such as the calendar of a
-// date field, would read it too and clip its content.
+// A long list (150 currencies) in a select or a picker stops at 20 rem, 8 to 9 rows, and scrolls
+// inside. The overlay token is not set on the root or on a menu: a popover, such as the calendar of
+// a date field, and a menu of actions, such as the account menu, would read it too and clip
+// their content.
 const listHeightRule = `
 [data-ui="select"],
 [data-ui="multi-select"],
-[data-ui="entity-picker"],
-[data-ui="menu"] {
+[data-ui="entity-picker"] {
   --slotted-overlay-max-block-size: 20rem;
 }
 `;

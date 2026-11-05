@@ -1930,8 +1930,7 @@
 
     [data-ui="select"],
     [data-ui="multi-select"],
-    [data-ui="entity-picker"],
-    [data-ui="menu"] {
+    [data-ui="entity-picker"] {
       --slotted-overlay-max-block-size: 20rem;
     }
 

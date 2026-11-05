@@ -152,8 +152,8 @@ test("a tag keeps its height and stands its text 2 px further from each side", (
   );
 });
 
-test("the list of a select, a picker or a menu stops at 20 rem and scrolls", () => {
-  for (const family of ["select", "multi-select", "entity-picker", "menu"]) {
+test("the list of a select or a picker stops at 20 rem and scrolls", () => {
+  for (const family of ["select", "multi-select", "entity-picker"]) {
     assert.match(
       css,
       new RegExp(
@@ -162,6 +162,13 @@ test("the list of a select, a picker or a menu stops at 20 rem and scrolls", () 
       family,
     );
   }
+});
+
+test("a menu keeps the height its items need", () => {
+  assert.doesNotMatch(
+    css,
+    /\[data-ui="menu"\][^{]*\{[^}]*--slotted-overlay-max-block-size/,
+  );
 });
 
 test("a popover, such as the calendar of a date field, keeps the height its content needs", () => {
