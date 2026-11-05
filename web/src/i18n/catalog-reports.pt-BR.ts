@@ -46,7 +46,7 @@ export const reportsPtBR: Record<keyof typeof reportsEn, string> = {
   "report.netWorth.forecastRecurring": "Recorrente estimado: {amount}",
   "report.netWorth.forecastRecurringLabel": "{label} (estimado)",
   "report.netWorth.forecastVariable": "Dia a dia estimado: {amount}",
-  "report.netWorth.forecastRange": "Faixa provável: {low} a {high}",
+  "report.netWorth.range": "Faixa provável",
   "report.netWorth.forecastNoteNone": "Tracejado: previsão pelos agendamentos",
   "report.netWorth.forecastNoteOne":
     "Tracejado: previsão pelos agendamentos e pelo último mês",

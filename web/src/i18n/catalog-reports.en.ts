@@ -45,7 +45,7 @@ export const reportsEn = {
   "report.netWorth.forecastRecurring": "Estimated recurring: {amount}",
   "report.netWorth.forecastRecurringLabel": "{label} (estimated)",
   "report.netWorth.forecastVariable": "Estimated day-to-day: {amount}",
-  "report.netWorth.forecastRange": "Likely range: {low} to {high}",
+  "report.netWorth.range": "Likely range",
   "report.netWorth.forecastNoteNone": "Dashed: forecast from the schedules",
   "report.netWorth.forecastNoteOne":
     "Dashed: forecast from the schedules and the last month",

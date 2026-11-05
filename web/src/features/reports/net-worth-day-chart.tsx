@@ -46,7 +46,9 @@ export function NetWorthDayChart({
   // An axis tick can fall between two minor units; the money format takes whole ones.
   const money = (amount: number) =>
     fmt.money({ amount: Math.round(amount), currency }, digits);
-  const series: ChartSeries<"date" | "label" | "net" | "forecast">[] = [
+  const series: ChartSeries<
+    "date" | "label" | "net" | "forecast" | "low" | "high"
+  >[] = [
     {
       id: "net",
       kind: "line",
@@ -60,6 +62,15 @@ export function NetWorthDayChart({
       field: "forecast",
       label: t("report.netWorth.forecast"),
       stroke: "dashed",
+      format: money,
+    },
+    {
+      id: "likely",
+      kind: "range",
+      lower: "low",
+      upper: "high",
+      of: "forecast",
+      label: t("report.netWorth.range"),
       format: money,
     },
   ];

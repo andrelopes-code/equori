@@ -12,12 +12,10 @@ describe("net worth forecast lines", () => {
     localStorage.removeItem("equori.privacy");
   });
 
-  it("S288: states what moves a forecast day and its likely range", async () => {
+  it("S288: states what moves a forecast day", async () => {
     renderLines({
       date: "2026-10-25",
       value: 50000,
-      low: 40000,
-      high: 52500,
       scheduled: -200000,
       recurring: -40000,
       variable: -1000,
@@ -26,12 +24,9 @@ describe("net worth forecast lines", () => {
     expect(await screen.findByText("Scheduled: −R$2,000.00")).toBeVisible();
     expect(screen.getByText("Estimated recurring: −R$400.00")).toBeVisible();
     expect(screen.getByText("Estimated day-to-day: −R$10.00")).toBeVisible();
-    expect(
-      screen.getByText("Likely range: R$400.00 to R$525.00"),
-    ).toBeVisible();
   });
 
-  it("leaves out an amount the day does not move and a range it does not state", async () => {
+  it("leaves out an amount the day does not move", async () => {
     renderLines({
       date: "2026-10-26",
       value: 50000,
@@ -45,7 +40,6 @@ describe("net worth forecast lines", () => {
     ).toBeVisible();
     expect(screen.queryByText(/Scheduled/)).not.toBeInTheDocument();
     expect(screen.queryByText(/recurring/)).not.toBeInTheDocument();
-    expect(screen.queryByText(/Likely range/)).not.toBeInTheDocument();
   });
 
   it("masks every amount in privacy mode", async () => {
@@ -53,8 +47,6 @@ describe("net worth forecast lines", () => {
     renderLines({
       date: "2026-10-25",
       value: 50000,
-      low: 40000,
-      high: 52500,
       scheduled: -200000,
       recurring: -40000,
       variable: -1000,
@@ -65,7 +57,6 @@ describe("net worth forecast lines", () => {
     expect(screen.getByText(/^Estimated recurring:/)).not.toHaveTextContent(
       "400",
     );
-    expect(screen.getByText(/^Likely range:/)).not.toHaveTextContent("400");
   });
 });
 

@@ -974,7 +974,7 @@ The same book with September 2026 picked: the card draws no forecast and no fore
 
 ### S288 Tooltip of a forecast day
 
-A forecast day with a scheduled amount of −2,000.00, an estimated recurring amount of −400.00, an estimated day-to-day amount of −10.00 and a likely range of 400.00 to 525.00 states "Scheduled: −R$2,000.00", "Estimated recurring: −R$400.00", "Estimated day-to-day: −R$10.00" and "Likely range: R$400.00 to R$525.00"; a day with no scheduled or recurring amount and no range states none of those. Privacy mode masks the amounts (F9, F12).
+A forecast day with a scheduled amount of −2,000.00, an estimated recurring amount of −400.00 and an estimated day-to-day amount of −10.00 states "Scheduled: −R$2,000.00", "Estimated recurring: −R$400.00" and "Estimated day-to-day: −R$10.00"; a day with no scheduled or recurring amount states none of those. Privacy mode masks the amounts (F9, F12).
 
 ### S176–S181, S184 Card billing certainty (A136–A139, A141)
 
