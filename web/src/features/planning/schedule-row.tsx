@@ -13,7 +13,6 @@ import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { useMoneyFormat } from "@/privacy/use-money-format";
-import { ScheduleCellText } from "@/features/planning/schedule-cell-text";
 import { AppLink } from "@/ui/app-link";
 
 type Schedule = components["schemas"]["Schedule"];
@@ -53,11 +52,11 @@ export function ScheduleRow({
   );
 
   return (
-    <TableRow value={s.id}>
+    <TableRow value={s.id} muted={ended}>
       <TableRowHeader text="truncate">
         {ended ? (
           <Inline align="center" wrap="wrap" gap={4}>
-            <ScheduleCellText muted>{link}</ScheduleCellText>
+            {link}
             <Tag size="sm" tone="secondary">
               {t(kindLabel[s.kind])}
             </Tag>
@@ -66,54 +65,38 @@ export function ScheduleRow({
           link
         )}
       </TableRowHeader>
+      <TableCell text="truncate">{accountNames.get(s.account_id)}</TableCell>
       <TableCell text="truncate">
-        <ScheduleCellText muted={ended}>
-          {accountNames.get(s.account_id)}
-        </ScheduleCellText>
-      </TableCell>
-      <TableCell text="truncate">
-        <ScheduleCellText muted={ended}>
-          {accountNames.get(s.counterpart_id)}
-        </ScheduleCellText>
+        {accountNames.get(s.counterpart_id)}
       </TableCell>
       <TableCell numeric>
-        <ScheduleCellText muted={ended}>
-          {terms !== undefined &&
-            fmt.money(terms.amount, scale(terms.amount.currency))}
-        </ScheduleCellText>
+        {terms !== undefined &&
+          fmt.money(terms.amount, scale(terms.amount.currency))}
       </TableCell>
       <TableCell numeric>
-        <ScheduleCellText muted={ended}>
-          {terms !== undefined &&
-            s.kind !== "transfer" &&
-            fmt.money(
-              {
-                amount: subscriptionCost(terms.recurrence, terms.amount.amount)
-                  .yearly,
-                currency: terms.amount.currency,
-              },
-              scale(terms.amount.currency),
-            )}
-        </ScheduleCellText>
+        {terms !== undefined &&
+          s.kind !== "transfer" &&
+          fmt.money(
+            {
+              amount: subscriptionCost(terms.recurrence, terms.amount.amount)
+                .yearly,
+              currency: terms.amount.currency,
+            },
+            scale(terms.amount.currency),
+          )}
       </TableCell>
       <TableCell>
-        <ScheduleCellText muted={ended}>
-          {terms !== undefined && recurrenceWords(terms.recurrence, t, locale)}
-        </ScheduleCellText>
+        {terms !== undefined && recurrenceWords(terms.recurrence, t, locale)}
       </TableCell>
       <TableCell>
-        <ScheduleCellText muted={ended}>
-          {nextOn === undefined
-            ? t("schedules.none")
-            : formatDate(nextOn, locale)}
-        </ScheduleCellText>
+        {nextOn === undefined
+          ? t("schedules.none")
+          : formatDate(nextOn, locale)}
       </TableCell>
       <TableCell>
-        <ScheduleCellText muted={ended}>
-          {s.ends_on === undefined
-            ? t("schedule.noEnd")
-            : formatDate(s.ends_on, locale)}
-        </ScheduleCellText>
+        {s.ends_on === undefined
+          ? t("schedule.noEnd")
+          : formatDate(s.ends_on, locale)}
       </TableCell>
     </TableRow>
   );

@@ -4,7 +4,6 @@ import { Fragment } from "react";
 
 import type { components } from "@/api/schema.gen";
 import { ScheduleActions } from "@/features/planning/schedule-actions";
-import { ScheduleCellText } from "@/features/planning/schedule-cell-text";
 import type { subscriptionCost } from "@/features/planning/schedule-words";
 import styles from "@/features/planning/subscriptions-tab.module.css";
 import { formatDate } from "@/i18n/format";
@@ -48,37 +47,25 @@ export function SubscriptionRow({
     );
 
   return (
-    <TableRow value={schedule.id}>
+    <TableRow value={schedule.id} muted={ended}>
       <TableRowHeader text="truncate">
-        <ScheduleCellText muted={ended}>
-          <AppLink
-            variant="neutral"
-            underline="hover"
-            to={{
-              to: "/planning/schedules/$id",
-              params: { id: schedule.id },
-            }}
-          >
-            {name}
-          </AppLink>
-        </ScheduleCellText>
+        <AppLink
+          variant="neutral"
+          underline="hover"
+          to={{
+            to: "/planning/schedules/$id",
+            params: { id: schedule.id },
+          }}
+        >
+          {name}
+        </AppLink>
       </TableRowHeader>
       <TableCell text="truncate">
-        <ScheduleCellText muted={ended}>
-          {accountNames.get(schedule.account_id)}
-        </ScheduleCellText>
+        {accountNames.get(schedule.account_id)}
       </TableCell>
-      <TableCell numeric>
-        <ScheduleCellText muted={ended}>
-          {money(terms.amount.amount)}
-        </ScheduleCellText>
-      </TableCell>
-      <TableCell numeric>
-        <ScheduleCellText muted={ended}>{money(cost.monthly)}</ScheduleCellText>
-      </TableCell>
-      <TableCell numeric>
-        <ScheduleCellText muted={ended}>{money(cost.yearly)}</ScheduleCellText>
-      </TableCell>
+      <TableCell numeric>{money(terms.amount.amount)}</TableCell>
+      <TableCell numeric>{money(cost.monthly)}</TableCell>
+      <TableCell numeric>{money(cost.yearly)}</TableCell>
       <TableCell>
         <div className={styles.history}>
           {schedule.terms.map((v) => (
@@ -98,11 +85,9 @@ export function SubscriptionRow({
         </div>
       </TableCell>
       <TableCell>
-        <ScheduleCellText muted={ended}>
-          {schedule.ends_on === undefined
-            ? t("schedule.noEnd")
-            : formatDate(schedule.ends_on, locale)}
-        </ScheduleCellText>
+        {schedule.ends_on === undefined
+          ? t("schedule.noEnd")
+          : formatDate(schedule.ends_on, locale)}
       </TableCell>
       <TableCell sticky="end">
         <ScheduleActions schedule={schedule} name={name} />

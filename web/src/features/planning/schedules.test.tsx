@@ -177,16 +177,9 @@ describe("Schedules tab with ended schedules", () => {
     });
     const ended = await screen.findByRole("row", { name: /^Gym/ });
     const active = screen.getByRole("row", { name: /^Rent/ });
-    const mutedIn = (row: HTMLElement) =>
-      row.querySelectorAll('[data-ui="typography"][data-tone="muted"]').length;
 
-    const mutedInk = '[data-ui="typography"][data-tone="muted"]';
-
-    expect(
-      within(ended).getByRole("link", { name: "Gym" }).closest(mutedInk),
-    ).not.toBeNull();
-    expect(mutedIn(ended)).toBeGreaterThan(1);
-    expect(mutedIn(active)).toBe(0);
+    expect(ended).toHaveAttribute("data-muted");
+    expect(active).not.toHaveAttribute("data-muted");
   });
 
   it("orders the ended schedules by the latest end first", async () => {

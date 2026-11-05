@@ -145,14 +145,9 @@ describe("Subscriptions tab with an ended subscription", () => {
     const table = await renderTable();
     const ended = within(table).getByRole("row", { name: /^Gym/ });
     const active = within(table).getByRole("row", { name: /^Streaming/ });
-    const mutedInk = '[data-ui="typography"][data-tone="muted"]';
 
-    expect(
-      within(ended).getByRole("link", { name: "Gym" }).closest(mutedInk),
-    ).not.toBeNull();
-    expect(
-      within(active).getByRole("link", { name: "Streaming" }).closest(mutedInk),
-    ).toBeNull();
+    expect(ended).toHaveAttribute("data-muted");
+    expect(active).not.toHaveAttribute("data-muted");
     expect(
       within(ended).queryByRole("button", {
         name: catalogEn["subscriptions.actions"].replace("{name}", "Gym"),
