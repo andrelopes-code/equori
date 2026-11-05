@@ -158,6 +158,22 @@ describe("Reports net worth", () => {
     );
   });
 
+  it("forecasts without the schedules of an account the projection refuses", async () => {
+    const { fetch } = api({
+      ...forecastRoutes(),
+      [`GET /api/v1/accounts/${savingsID}/projection`]: () =>
+        problem(422, "currency_unsupported"),
+    });
+
+    await renderApp("/reports", { fetch });
+
+    expect(
+      await screen.findByText(
+        "Dashed: forecast from the schedules and the last 3 months",
+      ),
+    ).toBeVisible();
+  });
+
   it("S287: draws no forecast for a past month", async () => {
     const user = userEvent.setup();
     const { fetch } = api(forecastRoutes());

@@ -2,6 +2,7 @@ import { useQueries, useQuery } from "@tanstack/react-query";
 
 import type { components } from "@/api/schema.gen";
 import { useApi } from "@/api/api-context";
+import { ProblemError } from "@/api/problem";
 import { accountsQuery } from "@/features/accounts";
 import { forecastDays, variableForecast } from "@/features/forecast";
 import type { ForecastPoint, RecurringEstimate } from "@/features/forecast";
@@ -79,7 +80,9 @@ export function useNetWorthForecast(
     history.data !== undefined &&
     realized.data !== undefined &&
     schedules.data !== undefined &&
-    projections.every((query) => query.data !== undefined);
+    projections.every(
+      (query) => query.data !== undefined || refused(query.error),
+    );
 
   if (!ready) return undefined;
 
@@ -88,7 +91,7 @@ export function useNetWorthForecast(
     transactions: history.data,
     realized: realized.data,
     schedules: schedules.data,
-    projections: projections.map((query) => query.data),
+    projections: projections.flatMap((query) => query.data ?? []),
     month,
     today,
     start,
@@ -104,6 +107,15 @@ function balanceAccounts(accounts: readonly Account[], currency: string) {
       (account.class === "asset" || account.class === "liability") &&
       account.currency === currency &&
       account.closed_on === undefined,
+  );
+}
+
+// An account that holds instruments other than its currency (a brokerage account) has no
+// projection; its schedules leave the forecast, the rest still counts.
+function refused(error: Error | null): boolean {
+  return (
+    error instanceof ProblemError &&
+    error.problem.code === "currency_unsupported"
   );
 }
 
