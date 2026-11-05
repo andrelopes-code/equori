@@ -173,6 +173,26 @@ describe("Export with credentials", () => {
     });
   });
 
+  it("keeps the dialog usable where the browser has no clipboard", async () => {
+    // A self-hosted instance served over plain HTTP has no navigator.clipboard, as jsdom has none.
+    expect("clipboard" in window.navigator).toBe(false);
+    const { fetch } = api({ imports: [] });
+    await renderApp("/settings?section=data", { fetch });
+    await userEvent.click(
+      await within(section()).findByRole("button", {
+        name: catalogEn["export.withCredentials"],
+      }),
+    );
+    const dialog = await screen.findByRole("dialog");
+    await userEvent.click(
+      within(dialog).getByRole("button", {
+        name: catalogEn["export.credentials.copy"],
+      }),
+    );
+
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+  });
+
   it("refuses a passphrase of fewer than 8 characters before the request", async () => {
     const { fetch, exports } = api({ imports: [] });
     await renderApp("/settings?section=data", { fetch });

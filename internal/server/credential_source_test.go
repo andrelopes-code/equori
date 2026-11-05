@@ -82,6 +82,7 @@ func TestBundleWithoutProviderKeysStillOpens(t *testing.T) {
 	t.Parallel()
 
 	id := uuid.New()
+
 	old, err := secret.SealWithPassphrase([]byte(`{"credentials":{"`+id.String()+`":{"client_id":"c"}}}`), bundlePassphrase)
 	if err != nil {
 		t.Fatal(err)

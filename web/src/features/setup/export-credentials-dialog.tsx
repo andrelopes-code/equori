@@ -42,7 +42,9 @@ export function ExportCredentialsDialog({
   const [failure, setFailure] = useState<unknown>(null);
 
   const handleCopy = () => {
-    void navigator.clipboard.writeText(draft.passphrase);
+    // The passphrase stays on screen to copy by hand: a page served over plain HTTP has no clipboard.
+    if (!("clipboard" in navigator)) return;
+    navigator.clipboard.writeText(draft.passphrase).catch(() => undefined);
   };
 
   const handleOpenChange = (open: boolean) => {
