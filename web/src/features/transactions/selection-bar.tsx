@@ -19,16 +19,7 @@ import { useState } from "react";
 import { CategoryPicker } from "@/features/categories";
 import { useT } from "@/i18n/i18n-provider";
 
-export function SelectionBar({
-  count,
-  amount,
-  busy,
-  open,
-  onOpenChange,
-  onClear,
-  onCategorize,
-  onSuggest,
-}: {
+interface SelectionBarProps {
   count: number;
   // The sum of the selected rows; its sign puts expense or income first.
   amount: number;
@@ -39,7 +30,18 @@ export function SelectionBar({
   onCategorize: (categoryId: string) => void;
   // Present in the uncategorized queue only (ADR 014 L1a).
   onSuggest?: () => void;
-}) {
+}
+
+export function SelectionBar({
+  count,
+  amount,
+  busy,
+  open,
+  onOpenChange,
+  onClear,
+  onCategorize,
+  onSuggest,
+}: SelectionBarProps) {
   const t = useT();
   const [value, setValue] = useState<string | null>(null);
   return (
