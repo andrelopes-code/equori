@@ -3,7 +3,8 @@ import { Chart, ChartTooltipContent } from "@slotted/react/chart";
 
 import { eventLines } from "@/features/overview";
 import type { ForecastEvent } from "@/features/overview";
-import { NetWorthForecastLines } from "@/features/reports/net-worth-forecast-lines";
+import { forecastDayMoves } from "@/features/reports/forecast-day-moves";
+import { NetWorthForecastTooltip } from "@/features/reports/net-worth-forecast-tooltip";
 import { netWorthRows } from "@/features/reports/net-worth-rows";
 import type { NetWorthForecast } from "@/features/reports/use-net-worth-forecast";
 import { formatDayMonth } from "@/i18n/format";
@@ -76,13 +77,11 @@ export function NetWorthDayChart({
   ];
   const points = new Map(
     (forecast?.points ?? [])
-      .filter((point) => point.date > today)
+      .filter((point) => point.date >= today)
       .map((point) => [label(point.date), point]),
   );
-  const annotations =
-    forecast === undefined
-      ? []
-      : eventLines([{ events: forecastEvents(forecast, t) }], label);
+  const events = forecast === undefined ? [] : forecastEvents(forecast, t);
+  const annotations = eventLines([{ events }], label);
 
   function handleSelect(point: ChartPoint | null) {
     const date = data.find((row) => row.label === point?.key)?.date;
@@ -101,16 +100,22 @@ export function NetWorthDayChart({
       annotations={annotations}
       selectable
       onSelectionChange={handleSelect}
-      renderTooltip={(context, model) => (
-        <>
+      // Workaround for Slotted issue #76: a wide range value hides every row label of the
+      // chart's tooltip, so today and the remaining days draw their own rows.
+      renderTooltip={(context, model) => {
+        const point = points.get(context.point.key);
+
+        return point === undefined ? (
           <ChartTooltipContent context={context} model={model} />
-          <NetWorthForecastLines
-            point={points.get(context.point.key)}
+        ) : (
+          <NetWorthForecastTooltip
+            point={point}
+            moves={forecastDayMoves(events, point.date, today)}
             currency={currency}
             digits={digits}
           />
-        </>
-      )}
+        );
+      }}
     />
   );
 }

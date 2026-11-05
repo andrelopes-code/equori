@@ -1,0 +1,9 @@
+@layer app {
+  /* Workaround for Slotted issue #75: content drawn by renderTooltip is one item of the tooltip's
+     three-column grid and lands in its narrow first column; it spans the row instead. */
+  .tooltip {
+    grid-column: 1 / -1;
+    min-inline-size: 15rem;
+    overflow-wrap: normal;
+  }
+}

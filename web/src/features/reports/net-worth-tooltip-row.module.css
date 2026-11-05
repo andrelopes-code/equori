@@ -1,0 +1,12 @@
+@layer app {
+  .label {
+    flex: 1 1 auto;
+    overflow-wrap: normal;
+  }
+
+  .value {
+    flex: none;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+}
