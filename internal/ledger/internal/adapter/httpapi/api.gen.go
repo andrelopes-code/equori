@@ -2284,7 +2284,7 @@ type ListTransactionsParams struct {
 	// Uncategorized When true, only transactions whose category postings are all uncategorized (P5 amendment A17).
 	Uncategorized *bool `form:"uncategorized,omitempty" json:"uncategorized,omitempty"`
 
-	// Q Case-insensitive substring of description, payee name or posting memo.
+	// Q Blank-separated words; each must appear, ignoring case and accents, in the description, payee name or a posting memo.
 	Q *string `form:"q,omitempty" json:"q,omitempty"`
 }
 

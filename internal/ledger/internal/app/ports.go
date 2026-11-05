@@ -296,7 +296,7 @@ type TransactionQuery struct {
 	AccountID uuid.UUID
 	PayeeID   uuid.UUID
 	Tag       string
-	// Q is a case-insensitive substring of description, payee name or posting memo; empty disables the filter.
+	// Q is a list of blank-separated words, each found without regard to case or accents in the description, payee name or a posting memo; empty disables the filter.
 	Q        string
 	From, To *time.Time
 	// Uncategorized keeps only transactions in category state uncategorized.

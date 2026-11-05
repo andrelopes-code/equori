@@ -8359,7 +8359,7 @@ export interface operations {
                 to?: string;
                 /** @description When true, only transactions whose category postings are all uncategorized (P5 amendment A17). */
                 uncategorized?: boolean;
-                /** @description Case-insensitive substring of description, payee name or posting memo. */
+                /** @description Blank-separated words; each must appear, ignoring case and accents, in the description, payee name or a posting memo. */
                 q?: string;
             };
             header?: never;

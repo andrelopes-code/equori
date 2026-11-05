@@ -317,27 +317,38 @@ WHERE
             )
         )
     )
+    -- Every blank-separated word of q must appear, ignoring case and accents, in the description,
+    -- the payee name or a posting memo.
     AND (
         sqlc.narg (q)::text IS NULL
-        OR strpos(lower(t.description), lower(sqlc.narg (q)::text)) > 0
-        OR EXISTS (
+        OR NOT EXISTS (
             SELECT
                 1
             FROM
-                ledger_payee y
+                regexp_split_to_table(btrim(sqlc.narg (q)::text), '\s+') AS word
             WHERE
-                y.books_id = @books_id
-                AND y.id = t.payee_id
-                AND strpos(lower(y.name), lower(sqlc.narg (q)::text)) > 0
-        )
-        OR EXISTS (
-            SELECT
-                1
-            FROM
-                ledger_posting p
-            WHERE
-                p.transaction_id = t.id
-                AND strpos(lower(coalesce(p.memo, '')), lower(sqlc.narg (q)::text)) > 0
+                NOT (
+                    strpos(unaccent (lower(t.description))::text, unaccent (lower(word))::text) > 0
+                    OR EXISTS (
+                        SELECT
+                            1
+                        FROM
+                            ledger_payee y
+                        WHERE
+                            y.books_id = @books_id
+                            AND y.id = t.payee_id
+                            AND strpos(unaccent (lower(y.name))::text, unaccent (lower(word))::text) > 0
+                    )
+                    OR EXISTS (
+                        SELECT
+                            1
+                        FROM
+                            ledger_posting p
+                        WHERE
+                            p.transaction_id = t.id
+                            AND strpos(unaccent (lower(coalesce(p.memo, '')))::text, unaccent (lower(word))::text) > 0
+                    )
+                )
         )
     )
     AND (

@@ -1587,7 +1587,7 @@ paths:
             type: boolean
         - name: q
           in: query
-          description: Case-insensitive substring of description, payee name or posting memo.
+          description: Blank-separated words; each must appear, ignoring case and accents, in the description, payee name or a posting memo.
           schema:
             type: string
             minLength: 1
