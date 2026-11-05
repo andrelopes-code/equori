@@ -1580,6 +1580,20 @@ paths:
           schema:
             type: string
             format: date
+        - name: amount_min
+          in: query
+          description: Smallest amount moved, in minor units of the book's balancing currency. A transaction moves the sum of its positive weights, so a split and a transfer count once.
+          schema:
+            type: integer
+            format: int64
+            minimum: 0
+        - name: amount_max
+          in: query
+          description: Largest amount moved, on the same basis as amount_min.
+          schema:
+            type: integer
+            format: int64
+            minimum: 0
         - name: uncategorized
           in: query
           description: When true, only transactions whose category postings are all uncategorized (P5 amendment A17).

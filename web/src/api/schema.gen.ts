@@ -8357,6 +8357,10 @@ export interface operations {
                 tag?: string;
                 from?: string;
                 to?: string;
+                /** @description Smallest amount moved, in minor units of the book's balancing currency. A transaction moves the sum of its positive weights, so a split and a transfer count once. */
+                amount_min?: number;
+                /** @description Largest amount moved, on the same basis as amount_min. */
+                amount_max?: number;
                 /** @description When true, only transactions whose category postings are all uncategorized (P5 amendment A17). */
                 uncategorized?: boolean;
                 /** @description Blank-separated words; each must appear, ignoring case and accents, in the description, payee name or a posting memo. */

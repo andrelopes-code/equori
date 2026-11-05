@@ -287,6 +287,27 @@ WHERE
         sqlc.narg (to_date)::date IS NULL
         OR t.date <= sqlc.narg (to_date)::date
     )
+    -- The amount moved is the sum of the positive weights, in the balancing currency.
+    AND (
+        (
+            sqlc.narg (amount_min)::bigint IS NULL
+            AND sqlc.narg (amount_max)::bigint IS NULL
+        )
+        OR (
+            SELECT
+                coalesce(
+                    sum(p.weight) FILTER (
+                        WHERE
+                            p.weight > 0
+                    ),
+                    0
+                )
+            FROM
+                ledger_posting p
+            WHERE
+                p.transaction_id = t.id
+        ) BETWEEN coalesce(sqlc.narg (amount_min)::bigint, 0) AND coalesce(sqlc.narg (amount_max)::bigint, 9223372036854775807)
+    )
     -- P5 amendment A17: every category posting is on an uncategorized system account.
     -- A voided transaction cannot be categorized, so the queue leaves it out.
     AND (

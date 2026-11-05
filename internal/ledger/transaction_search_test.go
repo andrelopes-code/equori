@@ -170,6 +170,46 @@ func TestListTransactionsSearch(t *testing.T) {
 	})
 }
 
+// The amount of a transaction is the value it moves: the sum of its positive weights, so a split
+// and a transfer count once.
+func TestListTransactionsAmountRange(t *testing.T) {
+	t.Parallel()
+	h := apitest.New(t)
+	checking := h.Account("Checking", "asset", "checking", nil)
+	savings := h.Account("Savings", "asset", "savings", nil)
+	food := h.Account("Food", "expense", "", nil)
+	fuel := h.Account("Fuel", "expense", "", nil)
+	small := h.Record("2026-10-01", apitest.Posting(checking, -100), apitest.Posting(food, 100))
+	middle := h.Record("2026-10-02", apitest.Posting(checking, -250), apitest.Posting(food, 250))
+	split := h.Record("2026-10-03", apitest.Posting(checking, -1000), apitest.Posting(food, 600), apitest.Posting(fuel, 400))
+	transfer := h.Record("2026-10-04", apitest.Posting(checking, -500), apitest.Posting(savings, 500))
+
+	tests := []struct {
+		name  string
+		query string
+		want  []string
+	}{
+		{"minimum is inclusive", "amount_min=250", []string{transfer, split, middle}},
+		{"maximum is inclusive", "amount_max=250", []string{middle, small}},
+		{"range keeps both bounds", "amount_min=250&amount_max=500", []string{transfer, middle}},
+		{"a split counts once", "amount_min=1000", []string{split}},
+		{"a transfer counts once", "amount_min=500&amount_max=500", []string{transfer}},
+		{"inverted range matches nothing", "amount_min=500&amount_max=100", nil},
+		{"combined with the account filter", "amount_min=250&account_id=" + fuel, []string{split}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := transactionIDs(t, h, tt.query); !slices.Equal(got, tt.want) {
+				t.Fatalf("ids = %v, want %v", got, tt.want)
+			}
+		})
+	}
+
+	t.Run("a negative bound is rejected", func(t *testing.T) {
+		h.ExpectProblem(h.Do(http.MethodGet, "/api/v1/transactions?amount_min=-1", nil), http.StatusBadRequest, "invalid_request", "amount_min")
+	})
+}
+
 type transactionPage struct {
 	Items []struct {
 		ID string `json:"id"`

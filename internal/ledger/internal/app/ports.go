@@ -299,6 +299,8 @@ type TransactionQuery struct {
 	// Q is a list of blank-separated words, each found without regard to case or accents in the description, payee name or a posting memo; empty disables the filter.
 	Q        string
 	From, To *time.Time
+	// AmountMin and AmountMax bound the amount moved, in minor units of the balancing currency; nil leaves a side open.
+	AmountMin, AmountMax *int64
 	// Uncategorized keeps only transactions in category state uncategorized.
 	Uncategorized bool
 	After         *TransactionCursor

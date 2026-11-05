@@ -837,10 +837,31 @@ WHERE
         $6::date IS NULL
         OR t.date <= $6::date
     )
+    -- The amount moved is the sum of the positive weights, in the balancing currency.
+    AND (
+        (
+            $7::bigint IS NULL
+            AND $8::bigint IS NULL
+        )
+        OR (
+            SELECT
+                coalesce(
+                    sum(p.weight) FILTER (
+                        WHERE
+                            p.weight > 0
+                    ),
+                    0
+                )
+            FROM
+                ledger_posting p
+            WHERE
+                p.transaction_id = t.id
+        ) BETWEEN coalesce($7::bigint, 0) AND coalesce($8::bigint, 9223372036854775807)
+    )
     -- P5 amendment A17: every category posting is on an uncategorized system account.
     -- A voided transaction cannot be categorized, so the queue leaves it out.
     AND (
-        NOT $7::boolean
+        NOT $9::boolean
         OR (
             t.voided_at IS NULL
             AND EXISTS (
@@ -870,12 +891,12 @@ WHERE
     -- Every blank-separated word of q must appear, ignoring case and accents, in the description,
     -- the payee name or a posting memo.
     AND (
-        $8::text IS NULL
+        $10::text IS NULL
         OR NOT EXISTS (
             SELECT
                 1
             FROM
-                regexp_split_to_table(btrim($8::text), '\s+') AS word
+                regexp_split_to_table(btrim($10::text), '\s+') AS word
             WHERE
                 NOT (
                     strpos(unaccent (lower(t.description))::text, unaccent (lower(word))::text) > 0
@@ -902,14 +923,14 @@ WHERE
         )
     )
     AND (
-        $9::date IS NULL
-        OR (t.date, t.id) < ($9::date, $10::uuid)
+        $11::date IS NULL
+        OR (t.date, t.id) < ($11::date, $12::uuid)
     )
 ORDER BY
     t.date DESC,
     t.id DESC
 LIMIT
-    $11
+    $13
 `
 
 type ListTransactionsParams struct {
@@ -919,6 +940,8 @@ type ListTransactionsParams struct {
 	Tag           *string
 	FromDate      *time.Time
 	ToDate        *time.Time
+	AmountMin     *int64
+	AmountMax     *int64
 	Uncategorized bool
 	Q             *string
 	AfterDate     *time.Time
@@ -935,6 +958,8 @@ func (q *Queries) ListTransactions(ctx context.Context, arg ListTransactionsPara
 		arg.Tag,
 		arg.FromDate,
 		arg.ToDate,
+		arg.AmountMin,
+		arg.AmountMax,
 		arg.Uncategorized,
 		arg.Q,
 		arg.AfterDate,

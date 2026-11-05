@@ -2281,6 +2281,12 @@ type ListTransactionsParams struct {
 	From      *openapi_types.Date `form:"from,omitempty" json:"from,omitempty"`
 	To        *openapi_types.Date `form:"to,omitempty" json:"to,omitempty"`
 
+	// AmountMin Smallest amount moved, in minor units of the book's balancing currency. A transaction moves the sum of its positive weights, so a split and a transfer count once.
+	AmountMin *int64 `form:"amount_min,omitempty" json:"amount_min,omitempty"`
+
+	// AmountMax Largest amount moved, on the same basis as amount_min.
+	AmountMax *int64 `form:"amount_max,omitempty" json:"amount_max,omitempty"`
+
 	// Uncategorized When true, only transactions whose category postings are all uncategorized (P5 amendment A17).
 	Uncategorized *bool `form:"uncategorized,omitempty" json:"uncategorized,omitempty"`
 
@@ -4522,6 +4528,32 @@ func (siw *ServerInterfaceWrapper) ListTransactions(w http.ResponseWriter, r *ht
 			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "to"})
 		} else {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "to", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "amount_min" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "amount_min", r.URL.Query(), &params.AmountMin, runtime.BindQueryParameterOptions{Type: "integer", Format: "int64"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "amount_min"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "amount_min", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "amount_max" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "amount_max", r.URL.Query(), &params.AmountMax, runtime.BindQueryParameterOptions{Type: "integer", Format: "int64"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "amount_max"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "amount_max", Err: err})
 		}
 		return
 	}
