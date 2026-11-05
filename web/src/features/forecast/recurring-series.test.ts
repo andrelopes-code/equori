@@ -149,5 +149,12 @@ function entry(
   series: string,
   label = series,
 ): ForecastEntry {
-  return { date, kind: "expense", amount, series, label };
+  return {
+    date,
+    kind: "expense",
+    amount,
+    category: series,
+    series,
+    label,
+  };
 }

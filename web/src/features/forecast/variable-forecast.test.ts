@@ -75,6 +75,65 @@ describe("variable forecast", () => {
     expect(large).toBeCloseTo(without);
   });
 
+  it("leaves out purchases in categories that do not repeat across the months", () => {
+    // Below the fence of 77.94, each in one month only.
+    const got = variableForecast({
+      entries: [
+        ...varied(),
+        entry("2026-08-12", -6000, "lamp"),
+        entry("2026-09-12", -7000, "chair"),
+        entry("2026-10-12", -5000, "gift"),
+      ],
+      month: "2026-11",
+      today: "2026-11-05",
+    });
+
+    for (const day of got.routine) expect(day.amount).toBeCloseTo(-2000);
+  });
+
+  it("leaves out a purchase of the last month alone with two history months", () => {
+    const got = variableForecast({
+      entries: [
+        entry("2026-08-31", -1000),
+        ...["2026-09", "2026-10"].flatMap((month) => daily(month, [500, 1500])),
+        ...daily("2026-11", [500, 1500], 5),
+        entry("2026-10-12", -6000, "gift"),
+      ],
+      month: "2026-11",
+      today: "2026-11-05",
+    });
+
+    expect(got.history).toBe(2);
+    for (const day of got.routine) expect(day.amount).toBeCloseTo(-2000);
+  });
+
+  it("counts a category by its median over the months, the months without it as zero", () => {
+    const got = variableForecast({
+      entries: [
+        ...varied(),
+        entry("2026-09-12", -3000, "gym"),
+        entry("2026-10-12", -3100, "gym"),
+      ],
+      month: "2026-11",
+      today: "2026-11-05",
+    });
+
+    const usual = 2000 + (3000 / 30 + 3100 / 31) / 4;
+    const pace = 10000 / (usual * 5);
+    const want = -usual * (1 + (pace - 1) * (5 / 30));
+    for (const day of got.routine) expect(day.amount).toBeCloseTo(want);
+  });
+
+  it("keeps the pace of the month to the categories the history repeats", () => {
+    const got = variableForecast({
+      entries: [...varied(), entry("2026-11-03", -6000, "lamp")],
+      month: "2026-11",
+      today: "2026-11-05",
+    });
+
+    for (const day of got.routine) expect(day.amount).toBeCloseTo(-2000);
+  });
+
   it("forecasts a recurring payment apart from the routine", () => {
     const got = variableForecast({
       entries: [
@@ -148,6 +207,18 @@ function uniform(): ForecastEntry[] {
   ];
 }
 
+// Four complete months of two entries a day, 5.00 and 15.00: a routine of 20.00 a day with a fence
+// of 77.94; and the first five days of November at the same pace.
+function varied(): ForecastEntry[] {
+  return [
+    entry("2026-06-30", -1000),
+    ...["2026-07", "2026-08", "2026-09", "2026-10"].flatMap((month) =>
+      daily(month, [500, 1500]),
+    ),
+    ...daily("2026-11", [500, 1500], 5),
+  ];
+}
+
 // One entry a day for each amount, each amount its own series.
 function daily(
   month: string,
@@ -183,6 +254,7 @@ function entry(
     date,
     kind: amount > 0 && series !== "refund" ? "income" : "expense",
     amount,
+    category: series,
     series,
     label,
   };

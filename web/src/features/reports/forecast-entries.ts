@@ -40,6 +40,7 @@ export function forecastEntries(
             date: tx.date,
             kind: category.kind,
             amount: -posting.amount.amount,
+            category: posting.account_id,
             series: seriesKey(posting.account_id, tx.payee_id, tx.description),
             label: category.name,
           },
