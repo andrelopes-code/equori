@@ -15,6 +15,7 @@ import {
   FieldError,
   FieldLabel,
 } from "@slotted/react/field";
+import { Inline } from "@slotted/react/inline";
 import { Stack } from "@slotted/react/stack";
 import { TextField } from "@slotted/react/text-field";
 import { useState } from "react";
@@ -94,9 +95,16 @@ export function ExportCredentialsDialog({
             </Field>
 
             {draft.proposed && (
-              <Button variant="outline" tone="secondary" onClick={handleCopy}>
-                {t("export.credentials.copy")}
-              </Button>
+              <Inline>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  tone="secondary"
+                  onClick={handleCopy}
+                >
+                  {t("export.credentials.copy")}
+                </Button>
+              </Inline>
             )}
 
             {draft.proposed && (
