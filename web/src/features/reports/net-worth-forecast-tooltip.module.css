@@ -1,6 +1,7 @@
 @layer app {
   /* Workaround for Slotted issue #75: content drawn by renderTooltip is one item of the tooltip's
-     three-column grid and lands in its narrow first column; it spans the row instead. */
+     three-column grid and lands in its narrow first column; it spans the row instead. The
+     library's rule since 0.1.0-beta.33 skips a family root such as Stack (comment on the issue). */
   .tooltip {
     grid-column: 1 / -1;
     min-inline-size: 15rem;

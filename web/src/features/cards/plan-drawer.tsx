@@ -230,7 +230,8 @@ export function PlanDrawer({
                 </TableContent>
               </Table>
               {mode !== null && (
-                // Workaround for Slotted issue #8.
+                // Workaround for Slotted issue #77: a drawer has no place for a form around its parts, so the
+                // form stands in the body and the footer's submit names it.
                 <form
                   id={formId}
                   noValidate

@@ -100,8 +100,8 @@ export function NetWorthDayChart({
       annotations={annotations}
       selectable
       onSelectionChange={handleSelect}
-      // Workaround for Slotted issue #76: a wide range value hides every row label of the
-      // chart's tooltip, so today and the remaining days draw their own rows.
+      // Today and the remaining days draw the forecast with the amounts that move the day
+      // (net worth forecast design, F9).
       renderTooltip={(context, model) => {
         const point = points.get(context.point.key);
 
