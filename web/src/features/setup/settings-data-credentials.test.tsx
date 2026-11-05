@@ -222,6 +222,19 @@ describe("Export with credentials", () => {
 });
 
 describe("Import with credentials", () => {
+  it("keeps the passphrase field out of the row of the list", async () => {
+    const { fetch } = api({ imports: [] });
+    await renderApp("/settings?section=data", { fetch });
+    const list = await within(section()).findByRole("list", {
+      name: catalogEn["settings.data.title"],
+    });
+
+    expect(
+      within(section()).getByLabelText(importPassphrase),
+    ).toBeInTheDocument();
+    expect(within(list).queryByLabelText(importPassphrase)).toBeNull();
+  });
+
   it("sends the passphrase and reports the restored integrations", async () => {
     const { fetch, uploads } = api({
       imports: [

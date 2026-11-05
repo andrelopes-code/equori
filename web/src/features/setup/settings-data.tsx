@@ -8,9 +8,11 @@ import { useApi } from "@/api/api-context";
 import type { DataMessage } from "@/features/setup/data-message";
 import { exportQuery, hasTransactionsQuery } from "@/features/setup/api";
 import { ExportRow } from "@/features/setup/export-row";
+import { ImportCredentialsFields } from "@/features/setup/import-credentials-fields";
 import { ImportRow } from "@/features/setup/import-row";
 import { SettingsGroup } from "@/features/setup/settings-group";
 import { SettingsSection } from "@/features/setup/settings-section";
+import { useImportCredentials } from "@/features/setup/use-import-credentials";
 import { useT } from "@/i18n/i18n-provider";
 import { FormNotice } from "@/ui/form-notice";
 import { QueryError } from "@/ui/query-error";
@@ -22,6 +24,7 @@ export function SettingsData() {
   const current = useQuery(exportQuery(api));
   const hasTransactions = useQuery(hasTransactionsQuery(api));
   const [message, setMessage] = useState<DataMessage | null>(null);
+  const credentials = useImportCredentials();
 
   const loading = current.isPending || hasTransactions.isPending;
 
@@ -43,13 +46,18 @@ export function SettingsData() {
           {!current.isError && loading && <SkeletonText lines={4} />}
 
           {!current.isError && !loading && (
-            <List variant="ruled" aria-label={t("settings.data.title")}>
+            <List variant="ruled" inset aria-label={t("settings.data.title")}>
               <ExportRow onMessage={setMessage} />
               <ImportRow
                 blocked={hasTransactions.data === true}
+                credentials={credentials}
                 onMessage={setMessage}
               />
             </List>
+          )}
+
+          {!current.isError && !loading && hasTransactions.data !== true && (
+            <ImportCredentialsFields credentials={credentials} />
           )}
 
           {message !== null && (
