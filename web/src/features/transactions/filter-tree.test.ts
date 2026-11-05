@@ -180,3 +180,76 @@ describe("category filter", () => {
     });
   });
 });
+
+function amount(
+  operator: "equals" | "greaterThanOrEqual" | "lessThanOrEqual" | "between",
+  value: number | null,
+  end: number | null = null,
+): FilterGroup {
+  return {
+    join: "and",
+    rules: [
+      {
+        field: "amount",
+        filter: {
+          kind: "number",
+          join: "and",
+          conditions: [{ operator, value, end }],
+        },
+      },
+    ],
+  };
+}
+
+describe("amount filter", () => {
+  it("shows the minor units of the URL as the decimal value of the currency", () => {
+    expect(treeFromSearch({ amount_min: 1250 }, () => false, 2)?.rules).toEqual(
+      amount("greaterThanOrEqual", 12.5).rules,
+    );
+    expect(treeFromSearch({ amount_max: 5 }, () => false, 2)?.rules).toEqual(
+      amount("lessThanOrEqual", 0.05).rules,
+    );
+    expect(
+      treeFromSearch({ amount_min: 100, amount_max: 900 }, () => false, 2)
+        ?.rules,
+    ).toEqual(amount("between", 1, 9).rules);
+    expect(
+      treeFromSearch({ amount_min: 700, amount_max: 700 }, () => false, 2)
+        ?.rules,
+    ).toEqual(amount("equals", 7).rules);
+  });
+
+  it("writes the decimal value back as minor units", () => {
+    const of = (tree: FilterGroup) => searchFromTree(tree, {}, 2);
+    expect(of(amount("greaterThanOrEqual", 12.5))).toEqual({
+      amount_min: 1250,
+    });
+    expect(of(amount("lessThanOrEqual", 0.05))).toEqual({ amount_max: 5 });
+    expect(of(amount("between", 1, 9))).toEqual({
+      amount_min: 100,
+      amount_max: 900,
+    });
+    expect(of(amount("equals", 7))).toEqual({
+      amount_min: 700,
+      amount_max: 700,
+    });
+  });
+
+  it("writes a value of a scale without decimals as it is", () => {
+    expect(searchFromTree(amount("equals", 7), {}, 0)).toEqual({
+      amount_min: 7,
+      amount_max: 7,
+    });
+  });
+
+  it("drops a rule with no value or a negative one", () => {
+    expect(searchFromTree(amount("equals", null), {}, 2)).toEqual({});
+    expect(searchFromTree(amount("greaterThanOrEqual", -3), {}, 2)).toEqual({});
+  });
+
+  it("keeps the URL amount while the scale is unknown", () => {
+    const search = { amount_min: 100, amount_max: 900 };
+    expect(searchFromTree(null, search, undefined)).toEqual(search);
+    expect(treeFromSearch(search, () => false, undefined)).toBeNull();
+  });
+});

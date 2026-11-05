@@ -2,4 +2,4 @@ A **Transaction** has a date, a description, an optional **Payee**, optional tag
 
 A **Split** gives one transaction several categories. A **Correction** creates a new version of the transaction and keeps the earlier one in its history with the reason. Voiding removes a transaction from balances and reports and keeps it in history.
 
-Record transactions on New transaction or Text capture; open one on Transaction detail; change it on Correct transaction. A transaction waiting for a category shows in Transactions with the uncategorized filter.
+Record transactions on New transaction or Text capture; open one on Transaction detail; change it on Correct transaction. A transaction waiting for a category shows in Transactions with the uncategorized filter. The search box of Transactions matches every word typed, in any order and ignoring case and accents, against the description, the payee and the posting memos. The Amount filter keeps the transactions that move an exact value, at least a value, at most a value or a range of values in the base currency.

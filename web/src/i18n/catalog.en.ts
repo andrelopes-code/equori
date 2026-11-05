@@ -494,6 +494,7 @@ export const catalogEn = {
   "transactions.filter.account": "Account",
   "transactions.filter.category": "Category",
   "transactions.filter.period": "Period",
+  "transactions.filter.amount": "Amount",
   "transactions.filter.payee": "Payee",
   "transactions.filter.tag": "Tag",
   "transactions.period.thisMonth": "This month",

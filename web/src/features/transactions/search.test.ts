@@ -30,6 +30,18 @@ describe("validateTransactionSearch", () => {
     expect(validateTransactionSearch(valid)).toEqual(valid);
   });
 
+  it("keeps a non-negative whole amount and drops any other", () => {
+    expect(
+      validateTransactionSearch({ amount_min: 0, amount_max: "1250" }),
+    ).toEqual({ amount_min: 0, amount_max: 1250 });
+    expect(
+      validateTransactionSearch({ amount_min: -1, amount_max: 1.5 }),
+    ).toEqual({});
+    expect(
+      validateTransactionSearch({ amount_min: "abc", amount_max: "" }),
+    ).toEqual({});
+  });
+
   it("trims q and rejects one over 100 characters", () => {
     expect(validateTransactionSearch({ q: "  mercado " })).toEqual({
       q: "mercado",

@@ -4,6 +4,9 @@ export interface TransactionSearch {
   tag?: string;
   from?: string;
   to?: string;
+  // Minor units of the base currency, as the API takes them.
+  amount_min?: number;
+  amount_max?: number;
   uncategorized?: true;
   q?: string;
 }
@@ -46,6 +49,15 @@ function text(value: unknown, max: number): string | undefined {
   return trimmed.length >= 1 && trimmed.length <= max ? trimmed : undefined;
 }
 
+// The router parses a numeric-looking value from the URL into a number, so a string of digits is read too.
+function minorUnits(value: unknown): number | undefined {
+  const n =
+    typeof value === "string" && value.trim() !== "" ? Number(value) : value;
+  return typeof n === "number" && Number.isSafeInteger(n) && n >= 0
+    ? n
+    : undefined;
+}
+
 // The capture screen opens a text of the offline queue by its id (P5 of ADR 022).
 export function validateCaptureSearch(raw: Record<string, unknown>): {
   queued?: string;
@@ -63,12 +75,16 @@ export function validateTransactionSearch(
   const from = isoDate(raw.from);
   const to = isoDate(raw.to);
   const q = text(raw.q, maxQueryLength);
+  const amount_min = minorUnits(raw.amount_min);
+  const amount_max = minorUnits(raw.amount_max);
   return {
     ...(account_id === undefined ? {} : { account_id }),
     ...(payee_id === undefined ? {} : { payee_id }),
     ...(tag === undefined ? {} : { tag }),
     ...(from === undefined ? {} : { from }),
     ...(to === undefined ? {} : { to }),
+    ...(amount_min === undefined ? {} : { amount_min }),
+    ...(amount_max === undefined ? {} : { amount_max }),
     ...(raw.uncategorized === true ? { uncategorized: true as const } : {}),
     ...(q === undefined ? {} : { q }),
   };

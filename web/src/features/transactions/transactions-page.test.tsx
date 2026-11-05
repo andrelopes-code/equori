@@ -281,6 +281,20 @@ describe("TransactionsPage", () => {
     });
   });
 
+  it("sends the amount range of the URL and shows it under the amount field", async () => {
+    const seen: Seen = { queries: [] };
+    await renderApp("/transactions?amount_min=1250&amount_max=5000", {
+      fetch: api(seen),
+    });
+    await screen.findByText("Weekly shop · Itau");
+    expect(seen.queries.at(-1)?.get("amount_min")).toBe("1250");
+    expect(seen.queries.at(-1)?.get("amount_max")).toBe("5000");
+    // The column header and the chip of the filter.
+    expect(
+      await screen.findAllByText(catalogEn["transactions.filter.amount"]),
+    ).toHaveLength(2);
+  });
+
   it("shows a category from the URL under the category field", async () => {
     const seen: Seen = { queries: [] };
     await renderApp(`/transactions?account_id=${foodID}`, {

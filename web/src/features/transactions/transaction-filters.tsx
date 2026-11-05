@@ -1,9 +1,12 @@
 import { FilterBar } from "@slotted/react/filter-bar";
 import type { FilterBarField } from "@slotted/react/filter-bar";
+import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 
+import { useApi } from "@/api/api-context";
 import type { components } from "@/api/schema.gen";
 import type { CategoryEntry } from "@/features/categories";
+import { settingsQuery, useScale } from "@/features/setup";
 import {
   filterFields,
   searchFromTree,
@@ -41,6 +44,12 @@ export function TransactionFilters({
 }) {
   const t = useT();
   const [locale] = useAppLocale();
+  const settings = useQuery(settingsQuery(useApi()));
+  const scaleOf = useScale();
+  // The amount is the base currency's: the API compares the weights of a transaction.
+  const base = settings.data?.base_currency;
+  const scale =
+    base === undefined || scaleOf === null ? undefined : scaleOf(base);
   const categoryIds = useMemo(
     () => new Set(categories.map((c) => c.id)),
     [categories],
@@ -87,8 +96,23 @@ export function TransactionFilters({
         kind: "set",
         options: tags.map((tag) => ({ value: tag, label: tag })),
       },
+      ...(scale === undefined
+        ? []
+        : [
+            {
+              key: filterFields.amount,
+              label: t("transactions.filter.amount"),
+              kind: "number" as const,
+              operators: [
+                "equals",
+                "greaterThanOrEqual",
+                "lessThanOrEqual",
+                "between",
+              ] as const,
+            },
+          ]),
     ];
-  }, [accounts, categories, payees, tags, t, locale]);
+  }, [accounts, categories, payees, tags, scale, t, locale]);
 
   // The period is the header's control (PeriodControl); the bar holds the other filters.
   const { uncategorized, q, from, to, ...filtered } = search;
@@ -104,10 +128,11 @@ export function TransactionFilters({
       value={treeFromSearch(
         { ...filtered, ...(q === undefined ? {} : { q }) },
         (id) => categoryIds.has(id),
+        scale,
       )}
       onValueChange={(tree) => {
         onSearchChange({
-          ...searchFromTree(tree, search),
+          ...searchFromTree(tree, search, scale),
           ...period,
           ...(uncategorized === undefined ? {} : { uncategorized }),
         });

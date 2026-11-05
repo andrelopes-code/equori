@@ -504,6 +504,7 @@ export const catalogPtBR: Catalog = {
   "transactions.filter.account": "Conta",
   "transactions.filter.category": "Categoria",
   "transactions.filter.period": "Período",
+  "transactions.filter.amount": "Valor",
   "transactions.filter.payee": "Favorecido",
   "transactions.filter.tag": "Tag",
   "transactions.period.thisMonth": "Este mês",
