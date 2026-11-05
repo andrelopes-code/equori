@@ -15,19 +15,15 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  /* Two fields stand 1.5rem apart, so a label reads with the control under it and not with
-     the control above it (docs/contributing/forms.md, F5). */
+  /* The gaps are the library's form tokens, set in the theme (docs/contributing/forms.md, F5). */
   .fields {
     display: flex;
     flex-direction: column;
-    gap: var(--slotted-space-8);
+    gap: var(--slotted-form-field-gap);
   }
 
-  /* Workaround for Slotted issue #22: no token separates two sections of a form. Two sections
-     stand 2.5rem apart; the rule under each legend, drawn by the theme, marks the topic (owner
-     review, 2026-11-02). */
   .fields:has(> .section) {
-    gap: var(--slotted-space-10);
+    gap: var(--slotted-form-section-gap);
   }
 
   .section {

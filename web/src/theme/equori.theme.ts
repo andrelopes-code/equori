@@ -294,9 +294,14 @@ export default extendTheme(
     // Destinations read muted, the current one in the full text colour over the bar's own
     // ground, underlined.
     components: {
-      // Workaround for Slotted issue #38: at 0.25rem a description or an error touched the
-      // control above it.
+      // A question's description or error stands 0.5rem under its legend. A field's own message
+      // follows --slotted-field-row-gap.
       "--slotted-field-group-message-gap": "var(--slotted-space-4)",
+      // Two fields stand 1.5rem apart, so a label reads with the control under it; two sections
+      // stand 2.5rem apart, the rule under each legend marking the topic (owner review,
+      // 2026-11-02).
+      "--slotted-form-field-gap": "var(--slotted-space-8)",
+      "--slotted-form-section-gap": "var(--slotted-space-10)",
       "--slotted-top-navigation-color": "var(--slotted-text-muted)",
       "--slotted-top-navigation-current-color": "var(--slotted-text)",
       "--slotted-top-navigation-current-background": "transparent",
