@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"math"
 	"mime/multipart"
 	"net/http"
 	"net/textproto"
@@ -85,6 +86,9 @@ func (s *seeder) reconcileStatements() {
 	}
 }
 
+// noBalance leaves the closing balance out of a statement file; a reported balance reconciles the account up to its date.
+const noBalance = int64(math.MinInt64)
+
 // bankOFX writes an OFX 1.x checking statement. The balance is the closing balance reported by the institution.
 func bankOFX(from, to string, balance int64, lines []ofxLine) []byte {
 	var b strings.Builder
@@ -95,7 +99,13 @@ func bankOFX(from, to string, balance int64, lines []ofxLine) []byte {
 		fmt.Fprintf(&b, "<STMTTRN><TRNTYPE>OTHER<DTPOSTED>%s<TRNAMT>%s<FITID>%s<NAME>%s</STMTTRN>\n", l.date, l.amount, l.fitid, l.name)
 	}
 
-	fmt.Fprintf(&b, "</BANKTRANLIST><LEDGERBAL><BALAMT>%s<DTASOF>%s</LEDGERBAL></STMTRS></STMTTRNRS></BANKMSGSRSV1></OFX>\n", reais(balance), to)
+	b.WriteString("</BANKTRANLIST>")
+
+	if balance != noBalance {
+		fmt.Fprintf(&b, "<LEDGERBAL><BALAMT>%s<DTASOF>%s</LEDGERBAL>", reais(balance), to)
+	}
+
+	b.WriteString("</STMTRS></STMTTRNRS></BANKMSGSRSV1></OFX>\n")
 
 	return []byte(b.String())
 }

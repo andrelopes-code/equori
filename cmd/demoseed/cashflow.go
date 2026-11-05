@@ -20,6 +20,10 @@ func (s *seeder) expense(d time.Time, via, category, payee, desc string, cents i
 		s.ensure(d, via, cents)
 	}
 
+	if s.feed(d, via, payee, cents, tags) {
+		return
+	}
+
 	extra := map[string]any{}
 	if payee != "" {
 		extra["payee_id"] = s.id("payee." + payee)
@@ -196,6 +200,7 @@ func (s *seeder) fixedBills(month time.Time) {
 
 func (s *seeder) cashflow() {
 	for _, m := range months(s.start, s.today) {
+		s.at(onDay(m, 27), func() { s.flushFeed("nubank.checking") })
 		s.payroll(m)
 		s.fixedBills(m)
 		s.spending(m)

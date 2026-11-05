@@ -41,6 +41,10 @@ var rules = []rule{
 		actions: func(s *seeder) []map[string]any {
 			return []map[string]any{{"type": "set_category", "category_id": s.id("transport.rideshare")}, {"type": "set_payee", "payee_id": s.id("payee.99")}}
 		}},
+	{name: "Pedidos do Rappi e do 99Food", conditions: []map[string]any{inList("description", "rappi", "99food")},
+		actions: func(s *seeder) []map[string]any {
+			return []map[string]any{{"type": "set_category", "category_id": s.id("food.delivery")}}
+		}},
 	{name: "Pedidos do iFood", conditions: []map[string]any{contains("description", "ifood")},
 		actions: func(s *seeder) []map[string]any {
 			return []map[string]any{{"type": "set_category", "category_id": s.id("food.delivery")}, {"type": "set_payee", "payee_id": s.id("payee.iFood")}}
@@ -89,6 +93,12 @@ var aliases = []struct{ pattern, match, payee string }{
 	{"kabum", "contains", "KaBuM!"},
 	{"starbucks", "contains", "Starbucks"},
 	{"padaria bella", "contains", "Padaria Bella Paulista"},
+	{"mercado dia", "contains", "Mercado Dia"},
+	{"emporio santa luzia", "contains", "Empório Santa Luzia"},
+	{"rappi", "contains", "Rappi"},
+	{"99food", "starts_with", "99Food"},
+	{"santo grao", "contains", "Cafeteria Santo Grão"},
+	{"pague menos", "contains", "Pague Menos"},
 }
 
 func (s *seeder) buildRules() {

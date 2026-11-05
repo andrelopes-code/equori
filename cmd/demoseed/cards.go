@@ -15,6 +15,8 @@ type statementRow struct {
 
 // payStatements pays, from payer, every closed statement of the card whose due date is within five days; a nominal due day on a weekend or holiday moves to the next business day.
 func (s *seeder) payStatements(date time.Time, card, payer string) {
+	s.flushFeed(card)
+
 	var out struct {
 		Items []statementRow `json:"items"`
 	}

@@ -135,6 +135,39 @@ func TestSeed(t *testing.T) {
 		}
 	})
 
+	t.Run("bank feed", func(t *testing.T) {
+		// Part of the last year comes from the statement files of the institutions, with the descriptor the institution prints.
+		months := map[string]bool{}
+		raw, imported := 0, 0
+
+		for _, tx := range s.transactions(t) {
+			if tx.Origin != "import" || tx.Date >= "2026-10-15" {
+				continue
+			}
+
+			imported++
+			months[tx.Date[:7]] = true
+
+			if tx.Description == strings.ToUpper(tx.Description) || strings.HasPrefix(tx.Description, "Compra no debito ") {
+				raw++
+			}
+		}
+
+		t.Logf("imported before 2026-10-15: %d in %d months, %d with a raw descriptor", imported, len(months), raw)
+
+		if imported < 150 {
+			t.Errorf("imported transactions before 2026-10-15 = %d, want at least 150", imported)
+		}
+
+		if len(months) < 10 {
+			t.Errorf("imported transactions cover %d months, want at least 10", len(months))
+		}
+
+		if raw*100 < imported*95 {
+			t.Errorf("%d of %d imported descriptions are institution descriptors, want at least 95 %%", raw, imported)
+		}
+	})
+
 	t.Run("habits follow the week", func(t *testing.T) {
 		// Rides go to work and the groceries go home on the weekend; a day drawn at random would give 71 % and 29 %.
 		var rides, weekdayRides, groceries, weekendGroceries int
@@ -347,7 +380,7 @@ func TestSeed(t *testing.T) {
 	})
 }
 
-// TestSeedFollowsToday seeds a date other than the default: the lines of the imported statements fall in the three weeks before it.
+// TestSeedFollowsToday seeds a date other than the default: the lines of the statements of the last three weeks fall in the three weeks before it.
 func TestSeedFollowsToday(t *testing.T) {
 	const date = "2026-12-19"
 
@@ -356,22 +389,22 @@ func TestSeedFollowsToday(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var imported []string
+	found := 0
 
 	for _, tx := range s.transactions(t) {
-		if tx.Origin == "import" {
-			imported = append(imported, tx.Date)
+		if tx.Description != "KABUM*PEDIDO 9918" && tx.Description != "Pix enviado Joana S" {
+			continue
+		}
+
+		found++
+
+		if tx.Date < "2026-11-28" || tx.Date > date {
+			t.Errorf("%s dated %s, want a date from 2026-11-28 to %s", tx.Description, tx.Date, date)
 		}
 	}
 
-	if len(imported) == 0 {
-		t.Fatal("no imported transaction")
-	}
-
-	for _, d := range imported {
-		if d < "2026-11-28" || d > date {
-			t.Errorf("imported transaction dated %s, want a date from 2026-11-28 to %s", d, date)
-		}
+	if found != 2 {
+		t.Errorf("lines of the last statements found = %d, want 2", found)
 	}
 }
 

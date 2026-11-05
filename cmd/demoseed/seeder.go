@@ -32,6 +32,8 @@ type seeder struct {
 	snap    map[string]map[string]int64
 	entries []entry
 	events  []event
+	pending map[string][]ofxLine // statement lines held back until their file is imported, by account key
+	feedSeq int
 }
 
 // event is one action of the history at a date; events run in date order, ties in insertion order.
@@ -44,7 +46,7 @@ func newSeeder(ctx context.Context, base string, c *http.Client) *seeder {
 	return &seeder{
 		ctx: ctx, base: strings.TrimRight(base, "/"), http: c, ids: map[string]string{},
 		rng: rand.New(rand.NewPCG(20241001, 7)), //nolint:gosec // a fixed seed makes the generated history reproducible.
-		bal: map[string]int64{}, px: map[string][]float64{}, hold: map[string]int64{}, snap: map[string]map[string]int64{},
+		bal: map[string]int64{}, px: map[string][]float64{}, pending: map[string][]ofxLine{}, hold: map[string]int64{}, snap: map[string]map[string]int64{},
 	}
 }
 

@@ -100,6 +100,7 @@ func seed(s *seeder, cfg config) error {
 	s.buildRules()
 	s.cashflow()
 	s.runEvents()
+	s.flushFeeds()
 	s.reopenHistory()
 	s.bookYield()
 	s.assertBalances()
