@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"regexp"
+	"strings"
 )
 
 type rule struct {
@@ -17,8 +19,14 @@ func contains(field, value string) map[string]any {
 	return map[string]any{"field": field, "operator": "contains", "value": value}
 }
 
-func inList(field string, values ...string) map[string]any {
-	return map[string]any{"field": field, "operator": "in_list", "value": values}
+// anyOf matches a description that contains one of the words; in_list would compare the whole description with each of them.
+func anyOf(field string, words ...string) map[string]any {
+	quoted := make([]string, len(words))
+	for i, w := range words {
+		quoted[i] = regexp.QuoteMeta(w)
+	}
+
+	return map[string]any{"field": field, "operator": "regex", "value": "(" + strings.Join(quoted, "|") + ")"}
 }
 
 func setCategory(key string) func(s *seeder) []map[string]any {
@@ -41,7 +49,7 @@ var rules = []rule{
 		actions: func(s *seeder) []map[string]any {
 			return []map[string]any{{"type": "set_category", "category_id": s.id("transport.rideshare")}, {"type": "set_payee", "payee_id": s.id("payee.99")}}
 		}},
-	{name: "Pedidos do Rappi e do 99Food", conditions: []map[string]any{inList("description", "rappi", "99food")},
+	{name: "Pedidos do Rappi e do 99Food", conditions: []map[string]any{anyOf("description", "rappi", "99food")},
 		actions: func(s *seeder) []map[string]any {
 			return []map[string]any{{"type": "set_category", "category_id": s.id("food.delivery")}}
 		}},
@@ -49,7 +57,7 @@ var rules = []rule{
 		actions: func(s *seeder) []map[string]any {
 			return []map[string]any{{"type": "set_category", "category_id": s.id("food.delivery")}, {"type": "set_payee", "payee_id": s.id("payee.iFood")}}
 		}},
-	{name: "Farmácias", conditions: []map[string]any{inList("description", "drogasil", "droga raia", "pague menos")},
+	{name: "Farmácias", conditions: []map[string]any{anyOf("description", "drogasil", "droga raia", "pague menos")},
 		actions: func(s *seeder) []map[string]any {
 			return []map[string]any{{"type": "set_category", "category_id": s.id("health.pharmacy")}, {"type": "add_tags", "tags": []string{"saude"}}}
 		}},
@@ -62,14 +70,14 @@ var rules = []rule{
 				{"category_id": s.id("housing.decor"), "remainder": true},
 			}}}
 		}},
-	{name: "Supermercados", conditions: []map[string]any{inList("description", "pao de acucar", "carrefour", "mercado dia", "emporio santa luzia")}, actions: setCategory("food.groceries")},
-	{name: "Cafeterias", conditions: []map[string]any{inList("description", "starbucks", "santo grao")}, actions: setCategory("food.coffee")},
+	{name: "Supermercados", conditions: []map[string]any{anyOf("description", "pao de acucar", "carrefour", "mercado dia", "emporio santa luzia")}, actions: setCategory("food.groceries")},
+	{name: "Cafeterias", conditions: []map[string]any{anyOf("description", "starbucks", "santo grao")}, actions: setCategory("food.coffee")},
 	{name: "Padarias", conditions: []map[string]any{contains("description", "padaria")}, actions: setCategory("food.bakery")},
-	{name: "Streaming e música", conditions: []map[string]any{inList("description", "netflix", "spotify", "disney", "hbo")},
+	{name: "Streaming e música", conditions: []map[string]any{anyOf("description", "netflix", "spotify", "disney", "hbo")},
 		actions: func(s *seeder) []map[string]any {
 			return []map[string]any{{"type": "set_category", "category_id": s.id("leisure.streaming")}, {"type": "add_tags", "tags": []string{"assinatura"}}}
 		}},
-	{name: "Academia", conditions: []map[string]any{inList("description", "smartfit", "smart fit")}, actions: setCategory("health.gym")},
+	{name: "Academia", conditions: []map[string]any{anyOf("description", "smartfit", "smart fit")}, actions: setCategory("health.gym")},
 	{name: "Aluguel", conditions: []map[string]any{contains("description", "quintoandar")}, actions: setCategory("housing.rent")},
 	{name: "Aportes na corretora são transferências", conditions: []map[string]any{contains("description", "xp investimentos")},
 		actions: func(s *seeder) []map[string]any {

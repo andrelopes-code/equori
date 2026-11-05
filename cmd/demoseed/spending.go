@@ -20,6 +20,7 @@ type habit struct {
 	weights  []int
 	weekend  bool // favors Friday to Sunday.
 	weekday  bool // favors Monday to Friday.
+	saturday bool // only on Saturdays.
 	round    bool
 	from     string
 	season   *[12]float64
@@ -40,7 +41,7 @@ var habits = []habit{
 	{category: "food.groceries", payees: []string{"Pão de Açúcar", "Carrefour", "Mercado Dia", "Empório Santa Luzia"}, desc: "Compras no %s", count: [2]int{7, 10}, lo: 4200, hi: 38000, skew: 2,
 		vias: []string{"alelo.meal", "card.itau", "card.nubank", "nubank.checking"}, weights: []int{70, 12, 12, 6}, weekend: true},
 	{category: "food.produce", payees: []string{"Hortifruti Natural da Terra"}, desc: "Feira de sábado, %s", count: [2]int{3, 5}, lo: 3500, hi: 9500, skew: 1,
-		vias: []string{"wallet", "nubank.checking"}, weights: []int{40, 60}, round: true},
+		vias: []string{"wallet", "nubank.checking"}, weights: []int{40, 60}, round: true, saturday: true},
 	{category: "food.bakery", payees: []string{"Padaria Bella Paulista"}, desc: "%s", count: [2]int{5, 9}, lo: 1400, hi: 5200, skew: 2,
 		vias: []string{"alelo.meal", "wallet", "card.nubank"}, weights: []int{65, 15, 20}},
 	{category: "food.restaurants", payees: []string{"Outback Steakhouse", "Coco Bambu", "Madero", "Burger King"}, desc: "Almoço ou jantar, %s", count: [2]int{5, 8}, lo: 6800, hi: 21000, skew: 2,
@@ -117,6 +118,12 @@ func (s *seeder) intensities() (loose, essential float64) {
 
 // dayOf draws the day of a purchase; weekend habits favor Friday to Sunday.
 func (s *seeder) dayOf(h habit, month time.Time) time.Time {
+	if h.saturday {
+		saturdays := weekdaysOf(month, time.Saturday)
+
+		return saturdays[s.rng.IntN(len(saturdays))]
+	}
+
 	last := month.AddDate(0, 1, -1).Day()
 	for {
 		d := onDay(month, 1+s.rng.IntN(last))

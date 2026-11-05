@@ -317,7 +317,7 @@ func TestSeed(t *testing.T) {
 
 	t.Run("habits follow the week", func(t *testing.T) {
 		// Rides go to work and the groceries go home on the weekend; a day drawn at random would give 71 % and 29 %.
-		var rides, weekdayRides, groceries, weekendGroceries int
+		var rides, weekdayRides, groceries, weekendGroceries, fairs int
 
 		for _, tx := range s.transactions(t) {
 			day, err := time.Parse(time.DateOnly, tx.Date)
@@ -328,6 +328,12 @@ func TestSeed(t *testing.T) {
 			weekend := day.Weekday() == time.Saturday || day.Weekday() == time.Sunday
 
 			switch {
+			case strings.HasPrefix(tx.Description, "Feira de sábado"):
+				fairs++
+
+				if day.Weekday() != time.Saturday {
+					t.Errorf("%q on %s, a %s", tx.Description, tx.Date, day.Weekday())
+				}
 			case strings.HasPrefix(tx.Description, "Corrida "):
 				rides++
 
@@ -341,6 +347,10 @@ func TestSeed(t *testing.T) {
 					weekendGroceries++
 				}
 			}
+		}
+
+		if fairs == 0 {
+			t.Error("no street fair purchase")
 		}
 
 		if weekdayRides*100 < rides*85 {
@@ -461,6 +471,32 @@ func TestSeed(t *testing.T) {
 		}
 	})
 
+	t.Run("the last month of occurrences expects the current price", func(t *testing.T) {
+		// The occurrences of the last 31 days are generated with the terms in force, so a received bill equals its expected amount.
+		var out struct {
+			Items []struct {
+				ExpectedAmount money  `json:"expected_amount"`
+				ActualAmount   *money `json:"actual_amount"`
+				ExpectedOn     string `json:"expected_on"`
+			} `json:"items"`
+		}
+		s.do(http.MethodGet, "/occurrences?state=realized&schedule_id="+s.id("schedule.pet")+"&from=2026-10-06&to="+testToday, nil, &out)
+
+		if s.err != nil {
+			t.Fatal(s.err)
+		}
+
+		if len(out.Items) == 0 {
+			t.Fatal("no realized occurrence of the pet subscription in the last month")
+		}
+
+		for _, o := range out.Items {
+			if o.ActualAmount == nil || o.ActualAmount.Amount != o.ExpectedAmount.Amount {
+				t.Errorf("pet subscription on %s: expected %d, received %v", o.ExpectedOn, o.ExpectedAmount.Amount, o.ActualAmount)
+			}
+		}
+	})
+
 	t.Run("a schedule that lags its bill", func(t *testing.T) {
 		// The gym raised its fee in 2025-09 and the schedule still expects the old one: the schedule page suggests the new amount.
 		var sch struct {
@@ -525,6 +561,17 @@ func TestSeed(t *testing.T) {
 			t.Fatal("second seed succeeded, want a refusal")
 		}
 	})
+}
+
+// TestRulesMatchDescriptorsByWord checks the rule table: in_list compares the whole description with each value, so a rule that must match a word inside a descriptor uses a regular expression.
+func TestRulesMatchDescriptorsByWord(t *testing.T) {
+	for _, r := range rules {
+		for _, c := range r.conditions {
+			if c["field"] == "description" && c["operator"] == "in_list" {
+				t.Errorf("rule %q compares the whole description with a list; use a regex over the words", r.name)
+			}
+		}
+	}
 }
 
 // TestSeedFollowsToday seeds a date other than the default: the lines of the statements of the last three weeks fall in the three weeks before it.

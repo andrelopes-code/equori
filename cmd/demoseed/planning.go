@@ -25,7 +25,7 @@ func netSalary(month time.Time) int64 {
 	return g - inss - irrfOf(g-inss, month) - healthPlanDiscount
 }
 
-// A past occurrence keeps the amount of the first term, so a bill that rose since the start fits only within a tolerance wider than the default 10 %.
+// A past occurrence keeps the amount the schedule was created with, so a bill that differs from it by more than the default 10 % since the start fits only within a wider tolerance. Terms dated after the seeding day are announced changes.
 func schedules(start time.Time) []scheduleSpec {
 	s0 := iso(start)
 	jan26 := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
@@ -36,7 +36,7 @@ func schedules(start time.Time) []scheduleSpec {
 		{key: "meal", kind: "income", account: "alelo.meal", counterpart: "income.meal", payee: "Alelo", desc: "Crédito Alelo Refeição", cents: 132000, businessDay: 1, start: s0,
 			terms: map[string]int64{"2026-01-01": 143000}},
 		{key: "rent", kind: "bill", account: "itau.checking", counterpart: "housing.rent", payee: "QuintoAndar", desc: "Aluguel", cents: 345000, day: 5, start: s0,
-			terms: map[string]int64{"2025-08-01": 364000, "2026-08-01": 383000}, toleranceBP: 1500},
+			terms: map[string]int64{"2025-08-01": 364000, "2026-08-01": 383000, "2027-08-01": 402000}, toleranceBP: 1500},
 		{key: "condo", kind: "bill", account: "itau.checking", counterpart: "housing.condo", payee: "Condomínio Edifício Aurora", desc: "Condomínio", cents: 78000, day: 10, start: s0,
 			terms: map[string]int64{"2025-05-01": 83500, "2026-05-01": 89000}, toleranceBP: 1500},
 		{key: "electricity", kind: "bill", account: "itau.checking", counterpart: "housing.electricity", payee: "Enel SP", desc: "Conta de luz", cents: 22000, day: 18, start: s0, toleranceBP: 6500},
@@ -48,7 +48,7 @@ func schedules(start time.Time) []scheduleSpec {
 			terms: map[string]int64{"2025-09-01": 9990}, toleranceBP: 1500},
 		{key: "gym", kind: "subscription", account: "card.nubank", counterpart: "health.gym", payee: "Smart Fit", desc: "Mensalidade da academia", cents: 11990, day: 8, start: s0}, // the fee rose to 12990 in 2025-09 and the schedule was never updated.
 		{key: "netflix", kind: "subscription", account: "card.nubank", counterpart: "leisure.streaming", payee: "Netflix", desc: "Netflix", cents: 5590, day: 14, start: s0,
-			terms: map[string]int64{"2025-11-01": 5990}},
+			terms: map[string]int64{"2025-11-01": 5990, "2026-12-01": 6490}},
 		{key: "spotify", kind: "subscription", account: "card.itau", counterpart: "leisure.music", payee: "Spotify", desc: "Spotify Premium", cents: 2390, day: 6, start: s0,
 			terms: map[string]int64{"2025-10-01": 2690}, toleranceBP: 1500},
 		{key: "hbo", kind: "subscription", account: "card.nubank", counterpart: "leisure.streaming", payee: "HBO Max", desc: "HBO Max", cents: 3490, day: 17, start: s0, until: "2025-10-01"},
@@ -59,6 +59,19 @@ func schedules(start time.Time) []scheduleSpec {
 		{key: "xp", kind: "savings", account: "itau.checking", counterpart: "xp.cash", desc: "Aporte mensal na XP", cents: 110000, businessDay: 6, start: s0},
 		{key: "reserve", kind: "savings", account: "itau.checking", counterpart: "nubank.reserve", desc: "Aporte na caixinha de reserva", cents: 30000, businessDay: 6, start: s0},
 	}
+}
+
+// priceInForce is the amount of the latest term of the schedule that has begun. A schedule is created today, so its occurrences of the past keep the amount it was created with: the one in force, which the recent months match exactly.
+func (s *seeder) priceInForce(sp scheduleSpec) int64 {
+	cents := sp.cents
+
+	for _, from := range slices.Sorted(maps.Keys(sp.terms)) {
+		if from <= iso(s.today) {
+			cents = sp.terms[from]
+		}
+	}
+
+	return cents
 }
 
 func (s *seeder) buildSchedules() {
@@ -72,7 +85,7 @@ func (s *seeder) buildSchedules() {
 
 		body := map[string]any{
 			"kind": sp.kind, "account_id": s.id(sp.account), "counterpart_id": s.id(sp.counterpart), "description": sp.desc,
-			"amount": brl(sp.cents), "recurrence": rec,
+			"amount": brl(s.priceInForce(sp)), "recurrence": rec,
 		}
 		if sp.payee != "" {
 			body["payee_id"] = s.id("payee." + sp.payee)
@@ -86,7 +99,9 @@ func (s *seeder) buildSchedules() {
 
 		s.ids["schedule."+sp.key] = id
 		for _, from := range slices.Sorted(maps.Keys(sp.terms)) {
-			s.do(http.MethodPost, "/schedules/"+id+"/terms", map[string]any{"effective_from": from, "amount": brl(sp.terms[from])}, nil)
+			if from > iso(s.today) {
+				s.do(http.MethodPost, "/schedules/"+id+"/terms", map[string]any{"effective_from": from, "amount": brl(sp.terms[from])}, nil)
+			}
 		}
 
 		if sp.until != "" {
