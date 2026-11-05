@@ -382,25 +382,52 @@ func (e BillingCycleRuleDueDateAdjustment) Valid() bool {
 
 // Defines values for BulkCategorizeItemResultStatus.
 const (
-	Categorized       BulkCategorizeItemResultStatus = "categorized"
-	NotCategorizable  BulkCategorizeItemResultStatus = "not_categorizable"
-	NotFound          BulkCategorizeItemResultStatus = "not_found"
-	TransactionVoided BulkCategorizeItemResultStatus = "transaction_voided"
-	VersionConflict   BulkCategorizeItemResultStatus = "version_conflict"
+	BulkCategorizeItemResultStatusCategorized       BulkCategorizeItemResultStatus = "categorized"
+	BulkCategorizeItemResultStatusNotCategorizable  BulkCategorizeItemResultStatus = "not_categorizable"
+	BulkCategorizeItemResultStatusNotFound          BulkCategorizeItemResultStatus = "not_found"
+	BulkCategorizeItemResultStatusTransactionVoided BulkCategorizeItemResultStatus = "transaction_voided"
+	BulkCategorizeItemResultStatusVersionConflict   BulkCategorizeItemResultStatus = "version_conflict"
 )
 
 // Valid indicates whether the value is a known member of the BulkCategorizeItemResultStatus enum.
 func (e BulkCategorizeItemResultStatus) Valid() bool {
 	switch e {
-	case Categorized:
+	case BulkCategorizeItemResultStatusCategorized:
 		return true
-	case NotCategorizable:
+	case BulkCategorizeItemResultStatusNotCategorizable:
 		return true
-	case NotFound:
+	case BulkCategorizeItemResultStatusNotFound:
 		return true
-	case TransactionVoided:
+	case BulkCategorizeItemResultStatusTransactionVoided:
 		return true
-	case VersionConflict:
+	case BulkCategorizeItemResultStatusVersionConflict:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for BulkVoidItemResultStatus.
+const (
+	BulkVoidItemResultStatusLaterSaleExists   BulkVoidItemResultStatus = "later_sale_exists"
+	BulkVoidItemResultStatusNotFound          BulkVoidItemResultStatus = "not_found"
+	BulkVoidItemResultStatusPostingReconciled BulkVoidItemResultStatus = "posting_reconciled"
+	BulkVoidItemResultStatusTransactionVoided BulkVoidItemResultStatus = "transaction_voided"
+	BulkVoidItemResultStatusVoided            BulkVoidItemResultStatus = "voided"
+)
+
+// Valid indicates whether the value is a known member of the BulkVoidItemResultStatus enum.
+func (e BulkVoidItemResultStatus) Valid() bool {
+	switch e {
+	case BulkVoidItemResultStatusLaterSaleExists:
+		return true
+	case BulkVoidItemResultStatusNotFound:
+		return true
+	case BulkVoidItemResultStatusPostingReconciled:
+		return true
+	case BulkVoidItemResultStatusTransactionVoided:
+		return true
+	case BulkVoidItemResultStatusVoided:
 		return true
 	default:
 		return false
@@ -1311,6 +1338,29 @@ type BulkCategorizeItemResultStatus string
 type BulkCategorizeResult struct {
 	// Results One result per item, in request order.
 	Results []BulkCategorizeItemResult `json:"results"`
+}
+
+// BulkVoidInput defines model for BulkVoidInput.
+type BulkVoidInput struct {
+	Items []struct {
+		Id openapi_types.UUID `json:"id"`
+	} `json:"items"`
+	Reason string `json:"reason"`
+}
+
+// BulkVoidItemResult defines model for BulkVoidItemResult.
+type BulkVoidItemResult struct {
+	Id     openapi_types.UUID       `json:"id"`
+	Status BulkVoidItemResultStatus `json:"status"`
+}
+
+// BulkVoidItemResultStatus defines model for BulkVoidItemResult.Status.
+type BulkVoidItemResultStatus string
+
+// BulkVoidResult defines model for BulkVoidResult.
+type BulkVoidResult struct {
+	// Results One result per item, in request order.
+	Results []BulkVoidItemResult `json:"results"`
 }
 
 // CancellationInput defines model for CancellationInput.
@@ -2416,6 +2466,9 @@ type CreateTransactionJSONRequestBody = TransactionInput
 // CategorizeTransactionsJSONRequestBody defines body for CategorizeTransactions for application/json ContentType.
 type CategorizeTransactionsJSONRequestBody = BulkCategorizeInput
 
+// VoidTransactionsJSONRequestBody defines body for VoidTransactions for application/json ContentType.
+type VoidTransactionsJSONRequestBody = BulkVoidInput
+
 // CorrectTransactionJSONRequestBody defines body for CorrectTransaction for application/json ContentType.
 type CorrectTransactionJSONRequestBody = CorrectionInput
 
@@ -2637,6 +2690,9 @@ type ServerInterface interface {
 	// CategorizeTransactions Give several transactions one category, each item decided on its own (A78).
 	// (POST /transactions/categorize)
 	CategorizeTransactions(w http.ResponseWriter, r *http.Request)
+	// VoidTransactions Void several transactions with one reason, each item decided on its own (A202).
+	// (POST /transactions/void)
+	VoidTransactions(w http.ResponseWriter, r *http.Request)
 	// GetTransaction Return a transaction.
 	// (GET /transactions/{id})
 	GetTransaction(w http.ResponseWriter, r *http.Request, id ID)
@@ -4623,6 +4679,20 @@ func (siw *ServerInterfaceWrapper) CategorizeTransactions(w http.ResponseWriter,
 	handler.ServeHTTP(w, r)
 }
 
+// VoidTransactions operation middleware
+func (siw *ServerInterfaceWrapper) VoidTransactions(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.VoidTransactions(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetTransaction operation middleware
 func (siw *ServerInterfaceWrapper) GetTransaction(w http.ResponseWriter, r *http.Request) {
 
@@ -5173,6 +5243,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/transactions/{id}", wrapper.CorrectTransaction)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/transactions/{id}/void", wrapper.VoidTransaction)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/transactions/categorize", wrapper.CategorizeTransactions)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/transactions/void", wrapper.VoidTransactions)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/transactions/{id}/categorize", wrapper.CategorizeTransaction)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/transactions/{id}/transfer", wrapper.TransferTransaction)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/transactions/{id}/reimbursement", wrapper.ReimburseTransaction)
@@ -9339,6 +9410,58 @@ func (response CategorizeTransactions422ApplicationProblemPlusJSONResponse) Visi
 	return err
 }
 
+type VoidTransactionsRequestObject struct {
+	Body *VoidTransactionsJSONRequestBody
+}
+
+type VoidTransactionsResponseObject interface {
+	VisitVoidTransactionsResponse(w http.ResponseWriter) error
+}
+
+type VoidTransactions200JSONResponse BulkVoidResult
+
+func (response VoidTransactions200JSONResponse) VisitVoidTransactionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type VoidTransactions401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response VoidTransactions401ApplicationProblemPlusJSONResponse) VisitVoidTransactionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type VoidTransactions422ApplicationProblemPlusJSONResponse Problem
+
+func (response VoidTransactions422ApplicationProblemPlusJSONResponse) VisitVoidTransactionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type GetTransactionRequestObject struct {
 	Id ID `json:"id"`
 }
@@ -10535,6 +10658,9 @@ type StrictServerInterface interface {
 	// CategorizeTransactions Give several transactions one category, each item decided on its own (A78).
 	// (POST /transactions/categorize)
 	CategorizeTransactions(ctx context.Context, request CategorizeTransactionsRequestObject) (CategorizeTransactionsResponseObject, error)
+	// VoidTransactions Void several transactions with one reason, each item decided on its own (A202).
+	// (POST /transactions/void)
+	VoidTransactions(ctx context.Context, request VoidTransactionsRequestObject) (VoidTransactionsResponseObject, error)
 	// GetTransaction Return a transaction.
 	// (GET /transactions/{id})
 	GetTransaction(ctx context.Context, request GetTransactionRequestObject) (GetTransactionResponseObject, error)
@@ -12538,6 +12664,37 @@ func (sh *strictHandler) CategorizeTransactions(w http.ResponseWriter, r *http.R
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(CategorizeTransactionsResponseObject); ok {
 		if err := validResponse.VisitCategorizeTransactionsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// VoidTransactions operation middleware
+func (sh *strictHandler) VoidTransactions(w http.ResponseWriter, r *http.Request) {
+	var request VoidTransactionsRequestObject
+
+	var body VoidTransactionsJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.VoidTransactions(ctx, request.(VoidTransactionsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "VoidTransactions")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(VoidTransactionsResponseObject); ok {
+		if err := validResponse.VisitVoidTransactionsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

@@ -642,6 +642,27 @@ func (s *Service) VoidTransaction(ctx context.Context, booksID int64, id uuid.UU
 	})
 }
 
+// VoidMany voids each transaction with reason, each in its own database transaction, in
+// request order (A202). errs[i] is the error of item i; the error return refuses the request
+// before any item runs.
+func (s *Service) VoidMany(ctx context.Context, booksID int64, ids []uuid.UUID, reason string) ([]error, error) {
+	seen := make(map[uuid.UUID]bool, len(ids))
+	for _, id := range ids {
+		if seen[id] {
+			return nil, &domain.FieldError{Field: "items", Message: "repeats a transaction", Err: domain.ErrValidation}
+		}
+
+		seen[id] = true
+	}
+
+	errs := make([]error, len(ids))
+	for i, id := range ids {
+		errs[i] = s.VoidTransaction(ctx, booksID, id, reason)
+	}
+
+	return errs, nil
+}
+
 // voidIn is VoidTransaction inside the database transaction of r.
 func (s *Service) voidIn(ctx context.Context, r Repository, booksID int64, id uuid.UUID, reason string) error {
 	prev, err := r.LockTransaction(ctx, booksID, id)

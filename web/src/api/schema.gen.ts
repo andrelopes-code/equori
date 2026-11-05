@@ -1243,6 +1243,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/transactions/void": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Void several transactions with one reason, each item decided on its own (A202).
+         * @description Each item runs as voidTransaction. An item that fails reports its status and leaves the others applied.
+         */
+        post: operations["voidTransactions"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/transactions/{id}/categorize": {
         parameters: {
             query?: never;
@@ -6402,6 +6422,23 @@ export interface components {
             /** @description The new version when status is categorized. */
             version?: number;
         };
+        BulkVoidInput: {
+            reason: string;
+            items: {
+                /** Format: uuid */
+                id: string;
+            }[];
+        };
+        BulkVoidResult: {
+            /** @description One result per item, in request order. */
+            results: components["schemas"]["BulkVoidItemResult"][];
+        };
+        BulkVoidItemResult: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            status: "voided" | "not_found" | "transaction_voided" | "posting_reconciled" | "later_sale_exists";
+        };
         CategorizeInput: {
             expected_version: number;
             parts: components["schemas"]["CategoryPart"][];
@@ -8903,6 +8940,32 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BulkCategorizeResult"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    voidTransactions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkVoidInput"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkVoidResult"];
                 };
             };
             401: components["responses"]["Problem"];

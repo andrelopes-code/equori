@@ -613,16 +613,59 @@ func (s *Server) CategorizeTransactions(ctx context.Context, req CategorizeTrans
 func bulkStatus(err error) BulkCategorizeItemResultStatus {
 	switch {
 	case err == nil:
-		return Categorized
+		return BulkCategorizeItemResultStatusCategorized
 	case errors.Is(err, app.ErrNotFound):
-		return NotFound
+		return BulkCategorizeItemResultStatusNotFound
 	case errors.Is(err, domain.ErrVersionConflict):
-		return VersionConflict
+		return BulkCategorizeItemResultStatusVersionConflict
 	case errors.Is(err, domain.ErrVoided):
-		return TransactionVoided
+		return BulkCategorizeItemResultStatusTransactionVoided
 	}
 
-	return NotCategorizable
+	return BulkCategorizeItemResultStatusNotCategorizable
+}
+
+func (s *Server) VoidTransactions(ctx context.Context, req VoidTransactionsRequestObject) (VoidTransactionsResponseObject, error) {
+	ids := make([]uuid.UUID, len(req.Body.Items))
+	for i, it := range req.Body.Items {
+		ids[i] = it.Id
+	}
+
+	errs, err := s.svc.VoidMany(ctx, auth.MustBooksID(ctx), ids, req.Body.Reason)
+	if err != nil {
+		return nil, err
+	}
+
+	out := VoidTransactions200JSONResponse{Results: make([]BulkVoidItemResult, len(ids))}
+	for i, id := range ids {
+		status, ok := voidStatus(errs[i])
+		if !ok {
+			return nil, errs[i]
+		}
+
+		out.Results[i] = BulkVoidItemResult{Id: id, Status: status}
+	}
+
+	return out, nil
+}
+
+// voidStatus names an item error by the problem code of the same failure (A202); ok is
+// false for an error outside the status list.
+func voidStatus(err error) (BulkVoidItemResultStatus, bool) {
+	switch {
+	case err == nil:
+		return BulkVoidItemResultStatusVoided, true
+	case errors.Is(err, app.ErrNotFound):
+		return BulkVoidItemResultStatusNotFound, true
+	case errors.Is(err, domain.ErrVoided):
+		return BulkVoidItemResultStatusTransactionVoided, true
+	case errors.Is(err, domain.ErrReconciled):
+		return BulkVoidItemResultStatusPostingReconciled, true
+	case errors.Is(err, app.ErrLaterSaleExists):
+		return BulkVoidItemResultStatusLaterSaleExists, true
+	}
+
+	return "", false
 }
 
 func (s *Server) TransferTransaction(ctx context.Context, req TransferTransactionRequestObject) (TransferTransactionResponseObject, error) {

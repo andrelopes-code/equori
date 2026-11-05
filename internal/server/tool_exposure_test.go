@@ -124,6 +124,7 @@ var exposure = map[string]string{
 	"getTransaction":                   "search_transactions,get_transaction",
 	"correctTransaction":               "change_transaction",
 	"voidTransaction":                  "void_transaction",
+	"voidTransactions":                 "void_transaction",
 	"categorizeTransactions":           "categorize_transactions",
 	"categorizeTransaction":            "categorize_transactions",
 	"transferTransaction":              "change_transaction",
