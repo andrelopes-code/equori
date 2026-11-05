@@ -14,7 +14,6 @@ import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 import { DateInput } from "@/ui/date-input";
 import { FieldTitle } from "@/ui/field-title";
-import widths from "@/ui/field-width.module.css";
 import { FormLayout } from "@/ui/form-layout";
 import { FormRow } from "@/ui/form-row";
 import { MoneyInput } from "@/ui/money-input";
@@ -174,7 +173,7 @@ export function ExchangeForm({
       <FormRow>
         <Field
           required
-          className={widths.medium}
+          width="medium"
           invalid={errors.from_amount !== undefined}
         >
           <FieldLabel>{t("exchange.fromAmount")}</FieldLabel>
@@ -192,11 +191,7 @@ export function ExchangeForm({
             <FieldError>{errors.from_amount}</FieldError>
           )}
         </Field>
-        <Field
-          required
-          className={widths.medium}
-          invalid={errors.to_amount !== undefined}
-        >
+        <Field required width="medium" invalid={errors.to_amount !== undefined}>
           <FieldLabel>{t("exchange.toAmount")}</FieldLabel>
           <MoneyInput
             size="field"

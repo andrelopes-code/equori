@@ -15,7 +15,6 @@ import type {
 import type { MessageKey } from "@/i18n/catalog.en";
 import { useT } from "@/i18n/i18n-provider";
 import { ChoiceSelect } from "@/ui/choice-select";
-import widths from "@/ui/field-width.module.css";
 import { FormRow } from "@/ui/form-row";
 
 export type BillingFields = Pick<
@@ -64,7 +63,7 @@ export function BillingRuleFields({
   fill?: boolean;
 }) {
   const t = useT();
-  const medium = fill ? undefined : widths.medium;
+  const medium = fill ? "full" : "medium";
   const set = (patch: Partial<BillingFields>) => {
     onChange({ ...value, ...patch });
   };
@@ -94,7 +93,7 @@ export function BillingRuleFields({
       <FormRow>
         {value.closingMode === "day" ? (
           <Field
-            className={medium}
+            width={medium}
             invalid={errors.closing_day !== undefined}
             required
           >
@@ -119,7 +118,7 @@ export function BillingRuleFields({
           </Field>
         ) : (
           <Field
-            className={medium}
+            width={medium}
             invalid={errors.closing_days_before_due !== undefined}
             required
           >
@@ -146,11 +145,7 @@ export function BillingRuleFields({
             )}
           </Field>
         )}
-        <Field
-          className={medium}
-          invalid={errors.due_day !== undefined}
-          required
-        >
+        <Field width={medium} invalid={errors.due_day !== undefined} required>
           <FieldLabel>{t("accountForm.dueDay")}</FieldLabel>
           <ChoiceSelect
             label={t("accountForm.dueDay")}
@@ -168,7 +163,7 @@ export function BillingRuleFields({
         </Field>
       </FormRow>
       <FormRow>
-        <Field required className={medium}>
+        <Field required width={medium}>
           <FieldLabel>{t("accountForm.closingAdjustment")}</FieldLabel>
           <ChoiceSelect
             label={t("accountForm.closingAdjustment")}
@@ -182,7 +177,7 @@ export function BillingRuleFields({
             }}
           />
         </Field>
-        <Field required className={medium}>
+        <Field required width={medium}>
           <FieldLabel>{t("accountForm.dueAdjustment")}</FieldLabel>
           <ChoiceSelect
             label={t("accountForm.dueAdjustment")}

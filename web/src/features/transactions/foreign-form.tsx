@@ -23,7 +23,6 @@ import { useMoneyFormat } from "@/privacy/use-money-format";
 import { ChoiceSelect } from "@/ui/choice-select";
 import { DateInput } from "@/ui/date-input";
 import { FieldTitle } from "@/ui/field-title";
-import widths from "@/ui/field-width.module.css";
 import { FormLayout } from "@/ui/form-layout";
 import { FormRow } from "@/ui/form-row";
 import { MoneyInput } from "@/ui/money-input";
@@ -131,11 +130,7 @@ export function ForeignForm({
       </Field>
 
       <FormRow>
-        <Field
-          required
-          className={widths.medium}
-          invalid={errors.original !== undefined}
-        >
+        <Field required width="medium" invalid={errors.original !== undefined}>
           <FieldTitle
             label={t("foreignPurchase.original")}
             help={t("foreignPurchase.originalHelp")}
@@ -173,10 +168,9 @@ export function ForeignForm({
         </Field>
       </FormRow>
 
-      <Field required invalid={view.otherInvalid}>
+      <Field width="short" required invalid={view.otherInvalid}>
         <FieldLabel>{t("foreignPurchase.otherCurrency")}</FieldLabel>
         <TextField
-          className={widths.short}
           name="other-currency"
           value={draft.otherCurrency}
           maxLength={3}
@@ -192,13 +186,12 @@ export function ForeignForm({
         )}
       </Field>
 
-      <Field required invalid={errors.rate !== undefined}>
+      <Field width="medium" required invalid={errors.rate !== undefined}>
         <FieldTitle
           label={t("foreignPurchase.rate")}
           help={t("foreignPurchase.rateHelp")}
         />
         <TextField
-          className={widths.medium}
           name="rate"
           inputMode="decimal"
           value={view.rateText}
@@ -240,13 +233,15 @@ export function ForeignForm({
         )}
       </Field>
 
-      <Field invalid={errors.foreign_charge_rate_bp !== undefined}>
+      <Field
+        width="short"
+        invalid={errors.foreign_charge_rate_bp !== undefined}
+      >
         <FieldTitle
           label={t("foreignPurchase.chargeRate")}
           help={t("foreignPurchase.chargeRateHelp")}
         />
         <TextField
-          className={widths.short}
           name="charge-rate"
           inputMode="numeric"
           value={view.chargeText}

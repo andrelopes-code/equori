@@ -12,7 +12,6 @@ import { kindLabel } from "@/features/planning/schedule-words";
 import { settingsQuery, useScale } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
 import { ChoiceSelect } from "@/ui/choice-select";
-import widths from "@/ui/field-width.module.css";
 import { MoneyInput } from "@/ui/money-input";
 
 const kinds = Object.keys(kindLabel) as ScheduleKind[];
@@ -37,10 +36,9 @@ export function ScheduleBasicsSection({
 
   return (
     <>
-      <Field required>
+      <Field width="medium" required>
         <FieldLabel>{t("schedule.kind")}</FieldLabel>
         <ChoiceSelect
-          className={widths.medium}
           label={t("schedule.kind")}
           multiple={false}
           value={draft.kind}
@@ -75,12 +73,11 @@ export function ScheduleBasicsSection({
         )}
       </Field>
 
-      <Field invalid={errors.amount !== undefined} required>
+      <Field width="medium" invalid={errors.amount !== undefined} required>
         <FieldLabel>{t("schedule.amount")}</FieldLabel>
         {currency !== undefined && scale !== null && (
           <MoneyInput
             size="field"
-            className={widths.medium}
             value={draft.amount}
             onChange={(amount) => {
               patch({ amount });

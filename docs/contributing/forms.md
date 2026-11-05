@@ -2,7 +2,7 @@
 
 A form screen is a page, drawer or dialog whose job is to write one record. Every form of `web/` answers this guide. Mandatory reading before writing or changing a form.
 
-Rules marked with a Slotted ID (FM-06, LA-05) are in `web/node_modules/@slotted/react/dist/docs/guidelines/`. The sources behind the other rules are listed at the end. Rules marked equori are decisions of this application. F1, F2, F3, F5, F6, F7, F8 and F15 restate FM-18 to FM-25 (issues #19 and #54) for this application, in that order. Issues #20, #21 and #22 are carried by the library's `Field` `width`, `FormAside` and `--slotted-form-section-gap`; `ui/field-width`, `ui/form-layout` and `ui/form-section` have not moved to them yet.
+Rules marked with a Slotted ID (FM-06, LA-05) are in `web/node_modules/@slotted/react/dist/docs/guidelines/`. The sources behind the other rules are listed at the end. Rules marked equori are decisions of this application. F1, F2, F3, F5, F6, F7, F8 and F15 restate FM-18 to FM-25 (issues #19 and #54) for this application, in that order. Issues #21 and #22 are carried by the library's `FormAside` and `--slotted-form-section-gap`; `ui/form-layout` and `ui/form-section` have not moved to them yet.
 
 ## F1 · One column at a bounded measure
 
@@ -30,7 +30,7 @@ The width of a control follows the length of its expected answer (Baymard, Queen
 
 A field with no step is `full`.
 
-- In a column the class goes on the control; in a `FormRow` it goes on the `Field` (F2). A `ChoiceSelect` takes it through its `className`, which reaches the select's frame.
+- The step is the `width` prop of the `Field`: `short`, `medium` or `full`. The library bounds the control and the label keeps the column's width. In a `FormRow` the `Field` stops at the step too (`ui/form-layout.module.css`, F2).
 - A `SegmentedControl` takes the width of its labels: it stands inside an `Inline`, never stretched across the column.
 - A currency is chosen by its name and code, never typed as a code (F14.1); a `Select` of codes is a step on the way.
 

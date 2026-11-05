@@ -11,7 +11,6 @@ import { Segment, SegmentedControl } from "@slotted/react/segmented-control";
 import type { ProfileDraft } from "@/features/accounts/csv-guess";
 import { useT } from "@/i18n/i18n-provider";
 import { ChoiceSelect } from "@/ui/choice-select";
-import widths from "@/ui/field-width.module.css";
 import { FormRow } from "@/ui/form-row";
 import { FormSection } from "@/ui/form-section";
 
@@ -68,10 +67,9 @@ export function CsvProfileSection({
   );
   return (
     <FormSection legend={t("importFile.profile")}>
-      <Field required>
+      <Field width="medium" required>
         <FieldLabel>{t("importFile.delimiter")}</FieldLabel>
         <ChoiceSelect
-          className={widths.medium}
           label={t("importFile.delimiter")}
           choices={[
             {
@@ -97,10 +95,9 @@ export function CsvProfileSection({
         />
       </Field>
 
-      <Field required>
+      <Field width="short" required>
         <FieldLabel>{t("importFile.headerRows")}</FieldLabel>
         <ChoiceSelect
-          className={widths.short}
           label={t("importFile.headerRows")}
           choices={[0, 1, 2, 3].map((n) => ({
             value: String(n),
@@ -116,7 +113,7 @@ export function CsvProfileSection({
 
       <FormRow>
         {column(t("importFile.dateColumn"), "date_column")}
-        <Field required className={widths.medium}>
+        <Field required width="medium">
           <FieldLabel>{t("importFile.dateLayout")}</FieldLabel>
           <ChoiceSelect
             label={t("importFile.dateLayout")}

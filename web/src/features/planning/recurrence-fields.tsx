@@ -20,7 +20,6 @@ import {
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { ChoiceSelect } from "@/ui/choice-select";
 import { DateInput } from "@/ui/date-input";
-import widths from "@/ui/field-width.module.css";
 import { FormRow } from "@/ui/form-row";
 
 type Recurrence = components["schemas"]["Recurrence"];
@@ -87,13 +86,13 @@ export function RecurrenceFields({
   fill?: boolean;
 }) {
   const t = useT();
-  const medium = fill ? undefined : widths.medium;
-  const short = fill ? undefined : widths.short;
+  const medium = fill ? "full" : "medium";
+  const short = fill ? "full" : "short";
   const [locale] = useAppLocale();
   const mode = modeOf(value);
   const end = endOf(value);
   const field = (label: string, control: ReactNode) => (
-    <Field required className={medium}>
+    <Field required width={medium}>
       <FieldLabel>{label}</FieldLabel>
       {control}
     </Field>
@@ -145,7 +144,7 @@ export function RecurrenceFields({
   return (
     <Stack gap={8}>
       <FormRow>
-        <Field required className={medium}>
+        <Field required width={medium}>
           <FieldLabel>{t("recurrence.frequency")}</FieldLabel>
           <ChoiceSelect
             label={t("recurrence.frequency")}
@@ -171,7 +170,7 @@ export function RecurrenceFields({
           />
         </Field>
 
-        <Field required className={short}>
+        <Field required width={short}>
           <FieldLabel>{t("recurrence.interval")}</FieldLabel>
           <NumberField
             name="interval"
@@ -318,7 +317,7 @@ export function RecurrenceFields({
       )}
 
       {value.count !== undefined && (
-        <Field required className={short}>
+        <Field required width={short}>
           <FieldLabel>{t("recurrence.countField")}</FieldLabel>
           <NumberField
             name="count"

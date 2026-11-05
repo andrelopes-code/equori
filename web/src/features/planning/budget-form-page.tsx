@@ -26,7 +26,6 @@ import { budgetsQuery, useCreateBudget } from "@/features/planning/api";
 import { settingsQuery, useScale } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
-import widths from "@/ui/field-width.module.css";
 import { FormNotice } from "@/ui/form-notice";
 import { FormLayout } from "@/ui/form-layout";
 import { MoneyInput } from "@/ui/money-input";
@@ -158,12 +157,11 @@ export function BudgetFormPage() {
             )}
           </Field>
 
-          <Field invalid={errors.amount !== undefined} required>
+          <Field width="medium" invalid={errors.amount !== undefined} required>
             <FieldLabel>{t("budget.amount")}</FieldLabel>
             {currency !== undefined && scale !== null && (
               <MoneyInput
                 size="field"
-                className={widths.medium}
                 value={amount}
                 onChange={setAmount}
                 currency={currency}

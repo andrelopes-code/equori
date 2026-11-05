@@ -7,7 +7,6 @@ import { TextField } from "@slotted/react/text-field";
 
 import type { CardSetupDraft } from "@/features/accounts/account-draft";
 import { useT } from "@/i18n/i18n-provider";
-import widths from "@/ui/field-width.module.css";
 import { FormRow } from "@/ui/form-row";
 
 type PlasticCard = CardSetupDraft["cards"][number];
@@ -48,11 +47,7 @@ export function PlasticCardFields({
           {holderError !== undefined && <FieldError>{holderError}</FieldError>}
         </Field>
 
-        <Field
-          className={widths.medium}
-          invalid={lastFourError !== undefined}
-          required
-        >
+        <Field width="medium" invalid={lastFourError !== undefined} required>
           <FieldLabel>{t("accountForm.lastFour")}</FieldLabel>
           <TextField
             value={value.lastFour}

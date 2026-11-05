@@ -41,7 +41,6 @@ import { formatMonthTitle } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { DateInput } from "@/ui/date-input";
-import widths from "@/ui/field-width.module.css";
 import { FormNotice } from "@/ui/form-notice";
 import { FormLayout } from "@/ui/form-layout";
 import { MoneyInput } from "@/ui/money-input";
@@ -256,11 +255,10 @@ export function PlanDrawer({
                           })}
                     </FormNotice>
                     {mode === "anticipate" && currency !== undefined && (
-                      <Field required>
+                      <Field width="medium" required>
                         <FieldLabel>{t("plan.paid")}</FieldLabel>
                         <MoneyInput
                           size="field"
-                          className={widths.medium}
                           value={quote.sum - quote.discount}
                           onChange={setPaid}
                           currency={currency}

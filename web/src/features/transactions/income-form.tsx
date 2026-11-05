@@ -12,7 +12,6 @@ import { useT } from "@/i18n/i18n-provider";
 import { ChoiceSelect } from "@/ui/choice-select";
 import { DateInput } from "@/ui/date-input";
 import { FieldTitle } from "@/ui/field-title";
-import widths from "@/ui/field-width.module.css";
 import { FigureCard } from "@/ui/figure-card";
 import { FigureGrid } from "@/ui/figure-grid";
 import { FormLayout } from "@/ui/form-layout";
@@ -87,10 +86,9 @@ export function IncomeForm({
         }}
       />
 
-      <Field required invalid={errors.income_type !== undefined}>
+      <Field width="medium" required invalid={errors.income_type !== undefined}>
         <FieldTitle label={t("income.type")} help={t("income.typeHelp")} />
         <ChoiceSelect
-          className={widths.medium}
           label={t("income.type")}
           placeholder={t("income.typePlaceholder")}
           multiple={false}
@@ -122,11 +120,7 @@ export function IncomeForm({
       </Field>
 
       <FormRow>
-        <Field
-          required
-          className={widths.medium}
-          invalid={errors.gross !== undefined}
-        >
+        <Field required width="medium" invalid={errors.gross !== undefined}>
           <FieldTitle label={t("income.gross")} help={t("income.grossHelp")} />
           <MoneyInput
             size="field"
@@ -142,10 +136,7 @@ export function IncomeForm({
             <FieldError>{errors.gross}</FieldError>
           )}
         </Field>
-        <Field
-          className={widths.medium}
-          invalid={errors.withheld !== undefined}
-        >
+        <Field width="medium" invalid={errors.withheld !== undefined}>
           <FieldTitle
             label={t("income.withheld")}
             help={t("income.withheldHelp")}

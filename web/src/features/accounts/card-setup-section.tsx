@@ -6,7 +6,6 @@ import type { CardSetupDraft } from "@/features/accounts/account-draft";
 import { BillingRuleFields } from "@/features/accounts/billing-rule-fields";
 import { PlasticCardFields } from "@/features/accounts/plastic-card-fields";
 import { useT } from "@/i18n/i18n-provider";
-import widths from "@/ui/field-width.module.css";
 import { FormSection } from "@/ui/form-section";
 import { MoneyInput } from "@/ui/money-input";
 
@@ -48,11 +47,10 @@ export function CardSetupSection({
       </FormSection>
 
       <FormSection legend={t("accountForm.limitGroup")}>
-        <Field>
+        <Field width="medium">
           <FieldLabel>{t("accountForm.limit")}</FieldLabel>
           <MoneyInput
             size="field"
-            className={widths.medium}
             value={value.limit}
             onChange={(limit) => {
               onChange({ ...value, limit });

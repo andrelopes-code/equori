@@ -11,7 +11,6 @@ import { currencyChoices } from "@/features/session/currency-choices";
 import { timeZoneChoices } from "@/features/setup";
 import { useAppLocaleState, useT } from "@/i18n/i18n-provider";
 import { ChoiceSelect } from "@/ui/choice-select";
-import widths from "@/ui/field-width.module.css";
 
 interface SetupBooksFieldsProps {
   currency: string;
@@ -61,7 +60,10 @@ export function SetupBooksFields({
         <FieldDescription>{t("setup.booksName.help")}</FieldDescription>
       </Field>
 
-      <Field {...(currencyError === undefined ? {} : { invalid: true })}>
+      <Field
+        width="medium"
+        {...(currencyError === undefined ? {} : { invalid: true })}
+      >
         <FieldLabel>{t("setup.currency")}</FieldLabel>
         <ChoiceSelect
           label={t("setup.currency")}
@@ -69,7 +71,6 @@ export function SetupBooksFields({
           value={currency}
           multiple={false}
           invalid={currencyError !== undefined}
-          className={widths.medium}
           onChange={handleCurrencyChange}
         />
         {currencyError !== undefined && (

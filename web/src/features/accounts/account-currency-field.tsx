@@ -8,7 +8,6 @@ import { TextField } from "@slotted/react/text-field";
 
 import { useT } from "@/i18n/i18n-provider";
 import { ChoiceSelect } from "@/ui/choice-select";
-import widths from "@/ui/field-width.module.css";
 
 interface AccountCurrencyFieldProps {
   mode: "create" | "edit";
@@ -29,7 +28,7 @@ export function AccountCurrencyField({
   const t = useT();
 
   return (
-    <Field required invalid={error !== undefined}>
+    <Field width="medium" required invalid={error !== undefined}>
       <FieldLabel>{t("accountForm.currency")}</FieldLabel>
       {mode === "create" && (
         <ChoiceSelect
@@ -37,15 +36,12 @@ export function AccountCurrencyField({
           choices={currencies.map((c) => ({ value: c, label: c }))}
           value={value}
           multiple={false}
-          className={widths.medium}
           onChange={(next) => {
             if (typeof next === "string") onChange(next);
           }}
         />
       )}
-      {mode === "edit" && (
-        <TextField value={value} readOnly className={widths.medium} />
-      )}
+      {mode === "edit" && <TextField value={value} readOnly />}
       {error !== undefined && <FieldError>{error}</FieldError>}
       {mode === "edit" && (
         <FieldDescription>{t("accountForm.currencyFixed")}</FieldDescription>

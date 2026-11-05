@@ -59,6 +59,14 @@
     min-inline-size: 0;
   }
 
+  .row > [data-ui="field"][data-width="short"] {
+    max-inline-size: var(--slotted-field-width-short, 6rem);
+  }
+
+  .row > [data-ui="field"][data-width="medium"] {
+    max-inline-size: var(--slotted-field-width-medium, 15rem);
+  }
+
   /* The aside stands beside the column once both fit: 40rem, the gap and 20rem. It takes the
      room the page leaves, up to 36rem, so its lines wrap less. */
   @container (min-width: 62rem) {

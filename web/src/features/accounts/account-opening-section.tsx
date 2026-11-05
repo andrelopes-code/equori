@@ -5,7 +5,6 @@ import { classOf } from "@/features/accounts/account-kinds";
 import { openingLabel } from "@/features/accounts/opening-label";
 import { useT } from "@/i18n/i18n-provider";
 import { FieldTitle } from "@/ui/field-title";
-import widths from "@/ui/field-width.module.css";
 import { FormSection } from "@/ui/form-section";
 import { MoneyInput } from "@/ui/money-input";
 
@@ -29,14 +28,13 @@ export function AccountOpeningSection({
 
   return (
     <FormSection legend={t("accountForm.openingGroup")}>
-      <Field>
+      <Field width="medium">
         <FieldTitle
           label={t(openingLabel(kind, classOf(kind)))}
           help={t("accountForm.openingHelp")}
         />
         <MoneyInput
           size="field"
-          className={widths.medium}
           value={value}
           onChange={onChange}
           currency={currency}

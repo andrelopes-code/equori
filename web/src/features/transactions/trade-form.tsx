@@ -20,7 +20,6 @@ import { MASK } from "@/privacy/mask";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 import { DateInput } from "@/ui/date-input";
 import { FieldTitle } from "@/ui/field-title";
-import widths from "@/ui/field-width.module.css";
 import { FigureCard } from "@/ui/figure-card";
 import { FigureGrid } from "@/ui/figure-grid";
 import { FormLayout } from "@/ui/form-layout";
@@ -165,11 +164,7 @@ export function TradeForm({
       </Field>
 
       <FormRow>
-        <Field
-          required
-          className={widths.medium}
-          invalid={errors.quantity !== undefined}
-        >
+        <Field required width="medium" invalid={errors.quantity !== undefined}>
           <FieldLabel>{t("trade.quantity")}</FieldLabel>
           <MoneyInput
             size="field"
@@ -187,7 +182,7 @@ export function TradeForm({
         </Field>
         <Field
           required
-          className={widths.medium}
+          width="medium"
           invalid={errors.unit_price !== undefined}
         >
           <FieldLabel>{t("trade.unitPrice")}</FieldLabel>
@@ -225,7 +220,7 @@ export function TradeForm({
       </FormRow>
 
       <FormRow>
-        <Field className={widths.medium} invalid={errors.fees !== undefined}>
+        <Field width="medium" invalid={errors.fees !== undefined}>
           <FieldTitle label={t("trade.fees")} help={t("trade.feesHelp")} />
           <MoneyInput
             size="field"
@@ -240,7 +235,7 @@ export function TradeForm({
           {errors.fees !== undefined && <FieldError>{errors.fees}</FieldError>}
         </Field>
         {sell && (
-          <Field className={widths.medium} invalid={errors.taxes !== undefined}>
+          <Field width="medium" invalid={errors.taxes !== undefined}>
             <FieldTitle label={t("trade.taxes")} help={t("trade.taxesHelp")} />
             <MoneyInput
               size="field"
