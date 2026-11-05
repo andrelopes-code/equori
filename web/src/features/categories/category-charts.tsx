@@ -30,7 +30,7 @@ export function CategoryCharts({
   const [locale] = useAppLocale();
   const fmt = useMoneyFormat();
 
-  const { months, composition, series } = useMemo(() => {
+  const { months, composition, series, fields } = useMemo(() => {
     const money = (value: number) =>
       fmt.money({ amount: value, currency }, scale);
     const short = new Intl.DateTimeFormat(locale, {
@@ -47,7 +47,9 @@ export function CategoryCharts({
       format: money,
       ...(isSlot(g.color) ? { slot: g.color } : {}),
     }));
+    const fields = trend.groups.map((g) => ({ field: g.id, label: g.name }));
     if (trend.records.some((r) => Number(r.pending) !== 0)) {
+      fields.push({ field: "pending", label: t("category.pending") });
       all.push({
         id: "pending",
         kind: "bar",
@@ -68,18 +70,13 @@ export function CategoryCharts({
     return {
       months: records,
       composition:
-        last === undefined
-          ? []
-          : compositionRows(
-              all.map((g) => ({ field: g.field, label: g.label ?? g.field })),
-              last,
-              locale,
-            ),
+        last === undefined ? [] : compositionRows(fields, last, locale),
       series: all,
+      fields,
     };
   }, [trend, currency, scale, locale, t, fmt]);
 
-  const empty = !months.some((r) => series.some((s) => Number(r[s.field]) > 0));
+  const empty = !months.some((r) => fields.some((s) => Number(r[s.field]) > 0));
   return (
     <Grid gap={4} minItemWidth="lg">
       <Chart
