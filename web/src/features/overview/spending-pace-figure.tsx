@@ -10,6 +10,7 @@ import {
   paceRanges,
   spendingOf,
 } from "@/features/overview/spending-pace";
+import { SpendingPaceHelp } from "@/features/overview/spending-pace-help";
 import { useBase } from "@/features/overview/use-base";
 import { formatMonthName } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
@@ -75,6 +76,7 @@ export function SpendingPaceFigure(placement: SpendingPaceFigureProps) {
         label: t("overview.spending.open"),
         options: { to: "/categories" },
       }}
+      help={<SpendingPaceHelp />}
       error={baseError ?? now.error ?? before.error}
       onRetry={handleRetry}
       loading={!ready}

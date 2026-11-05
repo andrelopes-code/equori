@@ -2048,6 +2048,12 @@ export const catalogPtBR: Catalog = {
   "overview.pace.title": "Ritmo de gasto",
   "overview.pace.note": "Mesmos dias de {month}: {amount}",
   "overview.pace.noPrevious": "Nenhum gasto nos mesmos dias de {month}",
+  "overview.pace.help":
+    "Quanto o mês gastou até hoje, comparado com os mesmos dias do mês anterior.",
+  "overview.pace.formula":
+    "(gasto do mês até hoje − gasto dos mesmos dias do mês anterior) ÷ gasto dos mesmos dias do mês anterior. O gasto soma as categorias de despesa na moeda base, menos os estornos, e uma compra no cartão conta na data da compra.",
+  "overview.pace.example":
+    "1.500 gastos até o dia 17 contra 1.400 até o dia 17 do mês anterior dão +7,1%.",
   "overview.upcoming.title": "Próximos",
   "overview.upcoming.open": "Abrir planejamento",
   "overview.upcoming.overdue": "Atrasado desde {date}",

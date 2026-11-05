@@ -2027,6 +2027,12 @@ export const catalogEn = {
   "overview.pace.title": "Spending pace",
   "overview.pace.note": "Same days of {month}: {amount}",
   "overview.pace.noPrevious": "No spending in the same days of {month}",
+  "overview.pace.help":
+    "How much the month spent up to today, against the same days of the month before.",
+  "overview.pace.formula":
+    "(spending of the month up to today − spending of the same days of the month before) ÷ spending of the same days of the month before. Spending is the sum of the expense categories in the base currency, minus refunds, and a card purchase counts on its date.",
+  "overview.pace.example":
+    "1,500 spent up to the 17th against 1,400 up to the 17th of the month before give +7.1%.",
   "overview.upcoming.title": "Upcoming",
   "overview.upcoming.open": "Open planning",
   "overview.upcoming.overdue": "Overdue since {date}",

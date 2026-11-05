@@ -1,9 +1,11 @@
 import { DashboardGrid } from "@slotted/react/dashboard-grid";
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { placement } from "@/features/overview/overview-block";
 import { SpendingPaceFigure } from "@/features/overview/spending-pace-figure";
+import { catalogEn } from "@/i18n/catalog.en";
 import { fakeApi, json, problem } from "@/testing/fake-api";
 import { renderWithRouter } from "@/testing/render-app";
 import { reportApiRoutes } from "@/testing/report-api";
@@ -68,6 +70,27 @@ describe("spending pace figure", () => {
       "No spending in the same days of september",
     );
     expect(widget).not.toHaveTextContent("%");
+  });
+
+  it("explains the pace with its formula and an example behind an About control", async () => {
+    const user = userEvent.setup();
+    renderPace("2026-10-17", {
+      "2026-10-01/2026-10-17": [total(150000)],
+      "2026-09-01/2026-09-17": [total(140000)],
+    });
+
+    const widget = await screen.findByRole("article", {
+      name: "Spending pace",
+    });
+    await user.click(
+      within(widget).getByRole("button", { name: "About Spending pace" }),
+    );
+
+    expect(
+      await screen.findByText(catalogEn["overview.pace.help"]),
+    ).toBeVisible();
+    expect(screen.getByText(catalogEn["overview.pace.formula"])).toBeVisible();
+    expect(screen.getByText(catalogEn["overview.pace.example"])).toBeVisible();
   });
 });
 
