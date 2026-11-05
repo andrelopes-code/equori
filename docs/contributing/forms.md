@@ -2,7 +2,7 @@
 
 A form screen is a page, drawer or dialog whose job is to write one record. Every form of `web/` answers this guide. Mandatory reading before writing or changing a form.
 
-Rules marked with a Slotted ID (FM-06, LA-05) are in `web/node_modules/@slotted/react/dist/docs/guidelines/`. The sources behind the other rules are listed at the end. Rules marked equori are decisions of this application. F1, F2, F3, F5, F6, F7, F8 and F15 restate FM-18 to FM-25 (issues #19 and #54) for this application, in that order. Issue #21 is carried by the library's `FormAside`; `ui/form-layout` has not moved to it yet. Issue #22 is carried by `--slotted-form-field-gap` and `--slotted-form-section-gap`, set in the theme and read by `FormLayout`.
+Rules marked with a Slotted ID (FM-06, LA-05) are in `web/node_modules/@slotted/react/dist/docs/guidelines/`. The sources behind the other rules are listed at the end. Rules marked equori are decisions of this application. F1, F2, F3, F5, F6, F7, F8 and F15 restate FM-18 to FM-25 (issues #19 and #54) for this application, in that order. Issue #21 is carried by the library's `Form` and `FormAside`; `ui/form-layout` has not moved to them because of issue #78. Issue #22 is carried by `--slotted-form-field-gap` and `--slotted-form-section-gap`, set in the theme and read by `FormLayout`.
 
 ## F1 · One column at a bounded measure
 
