@@ -25,6 +25,7 @@ func netSalary(month time.Time) int64 {
 	return g - inss - irrfOf(g-inss, month) - healthPlanDiscount
 }
 
+// A past occurrence keeps the amount of the first term, so a bill that rose since the start fits only within a tolerance wider than the default 10 %.
 func schedules(start time.Time) []scheduleSpec {
 	s0 := iso(start)
 	jan26 := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
@@ -35,26 +36,26 @@ func schedules(start time.Time) []scheduleSpec {
 		{key: "meal", kind: "income", account: "alelo.meal", counterpart: "income.meal", payee: "Alelo", desc: "Crédito Alelo Refeição", cents: 132000, businessDay: 1, start: s0,
 			terms: map[string]int64{"2026-01-01": 143000}},
 		{key: "rent", kind: "bill", account: "itau.checking", counterpart: "housing.rent", payee: "QuintoAndar", desc: "Aluguel", cents: 345000, day: 5, start: s0,
-			terms: map[string]int64{"2025-08-01": 364000, "2026-08-01": 383000}},
+			terms: map[string]int64{"2025-08-01": 364000, "2026-08-01": 383000}, toleranceBP: 1500},
 		{key: "condo", kind: "bill", account: "itau.checking", counterpart: "housing.condo", payee: "Condomínio Edifício Aurora", desc: "Condomínio", cents: 78000, day: 10, start: s0,
-			terms: map[string]int64{"2025-05-01": 83500, "2026-05-01": 89000}},
-		{key: "electricity", kind: "bill", account: "itau.checking", counterpart: "housing.electricity", payee: "Enel SP", desc: "Conta de luz", cents: 22000, day: 18, start: s0, toleranceBP: 4000},
-		{key: "water", kind: "bill", account: "itau.checking", counterpart: "housing.water", payee: "Sabesp", desc: "Conta de água", cents: 9800, day: 22, start: s0, toleranceBP: 2500},
-		{key: "gas", kind: "bill", account: "nubank.checking", counterpart: "housing.gas", payee: "Comgás", desc: "Conta de gás", cents: 7200, day: 25, start: s0, toleranceBP: 4000},
+			terms: map[string]int64{"2025-05-01": 83500, "2026-05-01": 89000}, toleranceBP: 1500},
+		{key: "electricity", kind: "bill", account: "itau.checking", counterpart: "housing.electricity", payee: "Enel SP", desc: "Conta de luz", cents: 22000, day: 18, start: s0, toleranceBP: 6500},
+		{key: "water", kind: "bill", account: "itau.checking", counterpart: "housing.water", payee: "Sabesp", desc: "Conta de água", cents: 9800, day: 22, start: s0, toleranceBP: 3500},
+		{key: "gas", kind: "bill", account: "nubank.checking", counterpart: "housing.gas", payee: "Comgás", desc: "Conta de gás", cents: 7200, day: 25, start: s0, toleranceBP: 5500},
 		{key: "internet", kind: "subscription", account: "card.itau", counterpart: "housing.internet", payee: "Vivo Fibra", desc: "Internet fibra 500 mega", cents: 12990, day: 12, start: s0,
 			terms: map[string]int64{"2025-06-01": 13990}},
 		{key: "mobile", kind: "subscription", account: "card.nubank", counterpart: "housing.mobile", payee: "Vivo Móvel", desc: "Plano de celular", cents: 8990, day: 20, start: s0,
-			terms: map[string]int64{"2025-09-01": 9990}},
+			terms: map[string]int64{"2025-09-01": 9990}, toleranceBP: 1500},
 		{key: "gym", kind: "subscription", account: "card.nubank", counterpart: "health.gym", payee: "Smart Fit", desc: "Mensalidade da academia", cents: 11990, day: 8, start: s0,
 			terms: map[string]int64{"2025-09-01": 12990}},
 		{key: "netflix", kind: "subscription", account: "card.nubank", counterpart: "leisure.streaming", payee: "Netflix", desc: "Netflix", cents: 5590, day: 14, start: s0,
 			terms: map[string]int64{"2025-11-01": 5990}},
 		{key: "spotify", kind: "subscription", account: "card.itau", counterpart: "leisure.music", payee: "Spotify", desc: "Spotify Premium", cents: 2390, day: 6, start: s0,
-			terms: map[string]int64{"2025-10-01": 2690}},
+			terms: map[string]int64{"2025-10-01": 2690}, toleranceBP: 1500},
 		{key: "hbo", kind: "subscription", account: "card.nubank", counterpart: "leisure.streaming", payee: "HBO Max", desc: "HBO Max", cents: 3490, day: 17, start: s0, until: "2025-10-01"},
 		{key: "disney", kind: "subscription", account: "card.itau", counterpart: "leisure.streaming", payee: "Disney+", desc: "Disney+", cents: 3390, day: 9, start: "2025-03-01"},
 		{key: "pet", kind: "subscription", account: "card.nubank", counterpart: "pets.supplies", payee: "Petz", desc: "Assinatura de ração Petz", cents: 18990, day: 3, start: s0,
-			terms: map[string]int64{"2025-08-01": 20990}},
+			terms: map[string]int64{"2025-08-01": 20990}, toleranceBP: 1500},
 		{key: "donation", kind: "subscription", account: "card.itau", counterpart: "giving", payee: "Instituto Pequeno Cidadão", desc: "Doação mensal", cents: 5000, day: 28, start: s0},
 		{key: "xp", kind: "savings", account: "itau.checking", counterpart: "xp.cash", desc: "Aporte mensal na XP", cents: 110000, businessDay: 6, start: s0},
 		{key: "reserve", kind: "savings", account: "itau.checking", counterpart: "nubank.reserve", desc: "Aporte na caixinha de reserva", cents: 30000, businessDay: 6, start: s0},
@@ -96,6 +97,30 @@ func (s *seeder) buildSchedules() {
 
 	// The gym is paused while the owner travels in Portugal.
 	s.do(http.MethodPost, "/schedules/"+s.id("schedule.gym")+"/pauses", map[string]any{"from": "2025-07-01", "to": "2025-07-31"}, nil)
+}
+
+// reopenHistory makes every skipped occurrence of the past expected again. A recorded transaction that fits an occurrence realizes it on reopening, so the schedules read as kept since the first month.
+func (s *seeder) reopenHistory() {
+	end := s.today.AddDate(0, 0, -1)
+	for from := s.start; !from.After(end); from = from.AddDate(0, 0, 360) {
+		to := from.AddDate(0, 0, 359)
+		if to.After(end) {
+			to = end
+		}
+
+		var out struct {
+			Items []struct {
+				ID string `json:"id"`
+			} `json:"items"`
+		}
+		s.do(http.MethodGet, "/occurrences?state=skipped&from="+iso(from)+"&to="+iso(to), nil, &out)
+
+		for _, o := range out.Items {
+			s.do(http.MethodPost, "/occurrences/"+o.ID+"/reopen", nil, nil)
+			s.tolerate("validation_failed") // the date falls inside a pause of the schedule.
+			s.tolerate("schedule_ended")    // the schedule ended before the date.
+		}
+	}
 }
 
 type budgetSpec struct {

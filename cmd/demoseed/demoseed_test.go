@@ -137,6 +137,30 @@ func TestSeed(t *testing.T) {
 
 		t.Logf("occurrences 2026-H1 by state: %v", states)
 
+		// A schedule with a month of history shows that month paid, not skipped.
+		if states["realized"] < 100 {
+			t.Errorf("realized occurrences in 2026-H1 = %d, want at least 100", states["realized"])
+		}
+
+		// No bill of the past stays unpaid: every recorded charge fits its occurrence.
+		for _, w := range [][2]string{{"2024-11-01", "2025-10-31"}, {"2025-11-01", "2026-10-31"}, {"2026-11-01", "2026-11-04"}} {
+			var past struct {
+				Items []struct {
+					ScheduleID string `json:"schedule_id"`
+					ExpectedOn string `json:"expected_on"`
+				} `json:"items"`
+			}
+			s.do(http.MethodGet, "/occurrences?state=overdue&from="+w[0]+"&to="+w[1], nil, &past)
+
+			for _, o := range past.Items {
+				t.Errorf("occurrence of %s on %s is overdue, want realized", s.keyOf(o.ScheduleID), o.ExpectedOn)
+			}
+		}
+
+		if s.err != nil {
+			t.Fatal(s.err)
+		}
+
 		if len(budgets.Items) != len(budgetSpecs) {
 			t.Errorf("budgets = %d, want %d", len(budgets.Items), len(budgetSpecs))
 		}
@@ -239,6 +263,16 @@ func TestSeedFollowsToday(t *testing.T) {
 			t.Errorf("imported transaction dated %s, want a date from 2026-11-28 to %s", d, date)
 		}
 	}
+}
+
+func (s *seeder) keyOf(id string) string {
+	for k, v := range s.ids {
+		if v == id {
+			return k
+		}
+	}
+
+	return id
 }
 
 func (s *seeder) balanceOn(key, date string) int64 {
