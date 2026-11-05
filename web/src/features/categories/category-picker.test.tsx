@@ -113,6 +113,27 @@ describe("CategoryPicker", () => {
     expect(readRecentCategories()).toEqual(["groceries"]);
   });
 
+  it("places each option in the media and label cells of the list grid", async () => {
+    renderWithProviders(<Harness onChange={vi.fn()} />, { fetch: api() });
+    await userEvent.click(screen.getByRole("combobox", { name: "Category" }));
+    await waitFor(() => {
+      expect(screen.getAllByRole("option")).toHaveLength(3);
+    });
+
+    // A bare child lands in the media column and pushes the offer to create
+    // ("Create category") to the right by the width of the widest path.
+    for (const option of screen.getAllByRole("option")) {
+      expect(
+        option.querySelector(':scope > [data-part="media"]'),
+      ).not.toBeNull();
+      expect(
+        option.querySelector(
+          ':scope > [data-part="label"] [data-ui="highlight"]',
+        ),
+      ).not.toBeNull();
+    }
+  });
+
   it("puts income first for a positive amount", async () => {
     renderWithProviders(<Harness onChange={vi.fn()} amount={500} />, {
       fetch: api(),

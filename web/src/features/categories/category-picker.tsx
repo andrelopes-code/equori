@@ -1,7 +1,10 @@
 import type { Entity } from "@slotted/core/entity-picker";
-import { EntityPicker } from "@slotted/react/entity-picker";
+import {
+  EntityPicker,
+  EntityPickerOptionLabel,
+  EntityPickerOptionMedia,
+} from "@slotted/react/entity-picker";
 import { Highlight } from "@slotted/react/highlight";
-import { Inline } from "@slotted/react/inline";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 
@@ -125,18 +128,22 @@ export function CategoryPicker({
       renderOption={(entity, state) => {
         const entry = byId.get(entity.id);
         return (
-          <Inline gap={3} align="center" wrap="nowrap">
-            <CategoryMark
-              name={entry?.name ?? entity.label}
-              color={entry?.color}
-              icon={entry?.icon}
-            />
-            <Highlight
-              text={entity.label}
-              query={state.query}
-              locale={locale}
-            />
-          </Inline>
+          <>
+            <EntityPickerOptionMedia>
+              <CategoryMark
+                name={entry?.name ?? entity.label}
+                color={entry?.color}
+                icon={entry?.icon}
+              />
+            </EntityPickerOptionMedia>
+            <EntityPickerOptionLabel>
+              <Highlight
+                text={entity.label}
+                query={state.query}
+                locale={locale}
+              />
+            </EntityPickerOptionLabel>
+          </>
         );
       }}
     />
