@@ -26,7 +26,8 @@ A `bytea` value is written as `to_jsonb` writes it (`\x` and hexadecimal). Ident
 | Shared | `marketdata_instrument`, `marketdata_price`, `marketdata_fixed_income_terms`, `marketdata_index_rate`, `marketdata_holiday` | every row |
 | Derived | `reporting_account_day`, `portfolio_position_day`, `portfolio_realized_result`, `portfolio_income_event`, `capture_category_hint` | no |
 | Identity and delivery | `identity_user`, `identity_session`, `identity_invitation`, `outbox_event`, `outbox_delivery`, `goose_db_version` | no |
-| Secrets and usage | `assistant_provider` (sealed key), `assistant_chain_target`, `assistant_usage`, `assistant_usage_limit`, `reporting_export` | no |
+| Assistant configuration | `assistant_provider` (without its key), `assistant_chain_target`, `assistant_usage_limit`, from archive version 9 (amendment of 2026-11-05) | rows of the book |
+| Usage and exports | `assistant_usage`, `reporting_export` | no |
 | Conversations | `assistant_conversation`, `assistant_message`, `assistant_proposal`, from archive version 5 (households design HA55) | no |
 
 `ingestion_integration` is a fact without its credential: `credential_ciphertext` is written as an empty value. The ciphertext is sealed under the source instance key and bound to the source user (ADR 008), so no other instance or user opens it. After an import the integration answers 409 `integration_unavailable` until the owner enters the credentials again; key rotation skips an empty value.
@@ -101,4 +102,36 @@ Intent: an owner who moves to a clean instance keeps the integrations working wi
 | C7 | The response of `importArchive` gains `credentials_in_archive` (boolean) and `credentials_restored` (integer, 0 when the credentials were skipped). |
 | C8 | Region-dependent values: none. |
 
-Out of scope: the keys of language model providers (`assistant_provider` is outside the archive, E2) and the second factor.
+Out of scope: the second factor.
+
+## Amendment of 2026-11-05: the assistant configuration in the archive
+
+Intent: an owner who moves to a clean instance finds the assistant working: providers with their keys, the model chains and the daily limits. Reason: E2 left every provider, chain and limit outside the archive, which forced a new setup after each import.
+
+| ID | Rule |
+|---|---|
+| T1 | `assistant_provider`, `assistant_chain_target` and `assistant_usage_limit` become fact tables: one file each in `tables/`, rows of the book, `books_id` dropped (E1). `assistant_provider.sealed_key` is written as null (a row expression, as `ingestion_integration` in E2); the key travels only as T3 states. `assistant_usage`, `assistant_conversation`, `assistant_message` and `assistant_proposal` stay outside (E2, households design HA55). |
+| T2 | `archive_version` goes from 8 to 9 (ADR 021, V2). The step `addAssistantConfiguration` returns its input unchanged: an archive of version 8 or below has no file for the three tables and imports them with zero rows. The fingerprint of V6 and a fixture of V7 for version 9 are added in the same commit. |
+| T3 | The plaintext of `credentials.enc` gains the member `provider_keys`: `{"credentials": {...}, "provider_keys": {"<provider id>": "<key>"}}`. The entry name, the format byte, the key derivation, the cipher and the associated data of C3 do not change. The bundle exists when the book stores at least one integration credential or one provider key. A provider key that no longer opens under the instance key is left out. An importer that predates this amendment ignores `provider_keys`. |
+| T4 | One passphrase seals one bundle: the request of C1 is unchanged. The plaintext of both members lives only in the memory of the request and is never logged. |
+| T5 | After the table inserts and inside the import transaction, each provider key is sealed again under the key of the instance, with the associated data of ADR 019 P1 for the importing book and the provider id, and written to `assistant_provider.sealed_key`. A provider id with no imported provider is ignored. A provider without a key in the bundle keeps `sealed_key` null and answers `has_key: false`; the owner enters the key again in the settings. |
+| T6 | C5 applies to the whole entry: an archive whose entry holds only provider keys is 422 `passphrase_required` without the passphrase or `skip_credentials`. `skip_credentials` skips both members. A wrong passphrase or a tampered bundle is 422 `passphrase_invalid` before any write. |
+| T7 | The response of `importArchive` gains `provider_keys_restored` (integer, 0 when the keys were skipped or the bundle has none). `credentials_restored` keeps counting integrations only. |
+| T8 | `assistant_usage_limit.provider_id` is text with no foreign key (migration 00057); the import checks nothing about it. A limit travels as written. |
+| T9 | The export dialog of the credentials section fills the passphrase field with a generated value: 25 characters of the alphabet `ABCDEFGHJKLMNPQRSTUVWXYZ23456789` in five groups of five joined by hyphens, drawn with `crypto.getRandomValues` (125 bits; 32 symbols divide 256, so a masked byte is unbiased). The value is shown in clear, with a copy action. For the generated value a checkbox "I saved the passphrase" replaces the second entry. An owner who edits the field types the passphrase twice as in the amendment of 2026-11-04. The server bounds of C1 (8 to 256 characters) do not change. The dialog states that the passphrase is case-sensitive and cannot be recovered. |
+| T10 | Region-dependent values: none. The alphabet of T9 is ASCII. |
+
+Out of scope: the second factor (a TOTP secret in a portable file weakens it; the owner enrols it again on the new instance), `assistant_usage` history, sessions, access tokens and conversations.
+
+### Tests
+
+- `TestProviderKeysTravelInTheArchive`: two harnesses with different instance keys; a provider with a key and a chain target on the first; the archive holds no file with the key in the clear and `assistant_provider.jsonl` has `sealed_key` null; the import with the passphrase gives `provider_keys_restored` 1 and the second instance opens the key and runs a use on the chain.
+- `TestProviderKeysSkippedOrRefused`: without the passphrase 422 `passphrase_required`; wrong passphrase 422 `passphrase_invalid` with zero rows written; `skip_credentials` imports the provider with `has_key: false` and the chain and limit rows intact.
+- `TestArchiveVersion8ImportsWithoutTheAssistantTables`: the fixture of version 8 imports with the three tables empty.
+- `TestEveryTableIsClassified` (E2) names the three tables as facts.
+- A unit test of the generator of T9 checks the length, the alphabet and the grouping.
+- The existing round trip test of E6 gains a provider, a chain target and a limit in step 1 and compares their files in step 3.
+
+### Documents changed in the same commits
+
+ADR 019 P1 (the key travels sealed by a passphrase in the archive); ADR 008 K8 (the bundle carries provider keys); `docs/operations/export.md`; the guide article of the data section in `internal/assistant/internal/guide/articles/` (`settings_language_and_region.md`).
