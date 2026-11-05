@@ -135,6 +135,46 @@ func TestSeed(t *testing.T) {
 		}
 	})
 
+	t.Run("savings target and receipts", func(t *testing.T) {
+		var plan struct {
+			SavingsTargetBP int `json:"savings_target_bp"`
+		}
+		s.do(http.MethodGet, "/budget-plan?month=2026-11", nil, &plan)
+
+		if plan.SavingsTargetBP != 2000 {
+			t.Errorf("savings target of 2026-11 = %d bp, want 2000", plan.SavingsTargetBP)
+		}
+
+		// The invoices and tickets of the large purchases are attached to them.
+		want := map[string]bool{
+			"MacBook Air 13 polegadas": false, "Sofá de três lugares": false,
+			"Passagens São Paulo para Lisboa (ida e volta)": false, "Compra não reconhecida, Mercado Livre": false,
+		}
+
+		for _, tx := range s.transactions(t) {
+			if _, ok := want[tx.Description]; !ok {
+				continue
+			}
+
+			var files struct {
+				Items []json.RawMessage `json:"items"`
+			}
+			s.do(http.MethodGet, "/transactions/"+tx.ID+"/attachments", nil, &files)
+
+			want[tx.Description] = len(files.Items) > 0
+		}
+
+		if s.err != nil {
+			t.Fatal(s.err)
+		}
+
+		for description, attached := range want {
+			if !attached {
+				t.Errorf("%q has no attachment", description)
+			}
+		}
+	})
+
 	t.Run("bank feed", func(t *testing.T) {
 		// Part of the last year comes from the statement files of the institutions, with the descriptor the institution prints.
 		months := map[string]bool{}
@@ -409,6 +449,7 @@ func TestSeedFollowsToday(t *testing.T) {
 }
 
 type transactionRow struct {
+	ID          string `json:"id"`
 	Date        string `json:"date"`
 	Origin      string `json:"origin"`
 	Description string `json:"description"`

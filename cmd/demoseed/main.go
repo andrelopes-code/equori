@@ -97,6 +97,7 @@ func seed(s *seeder, cfg config) error {
 	s.postPrices()
 	s.buildSchedules()
 	s.buildBudgets()
+	s.saveSavingsTarget()
 	s.buildRules()
 	s.cashflow()
 	s.runEvents()

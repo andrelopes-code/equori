@@ -98,6 +98,13 @@ func (s *seeder) buildSchedules() {
 	s.do(http.MethodPost, "/schedules/"+s.id("schedule.gym")+"/pauses", map[string]any{"from": "2025-07-01", "to": "2025-07-31"}, nil)
 }
 
+// saveSavingsTarget sets the share of the average income that the owner sets aside, 20 %, on the plan of the current month.
+func (s *seeder) saveSavingsTarget() {
+	s.do(http.MethodPut, "/budget-plan?month="+ym(s.today), map[string]any{
+		"source": "average_income", "savings_target_bp": 2000, "amounts": []any{},
+	}, nil)
+}
+
 // reopenHistory makes every skipped occurrence of the past expected again. A recorded transaction that fits an occurrence realizes it on reopening, so the schedules read as kept since the first month.
 func (s *seeder) reopenHistory() {
 	end := s.today.AddDate(0, 0, -1)

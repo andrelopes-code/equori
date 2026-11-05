@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -13,6 +14,32 @@ func day(s string) time.Time {
 	}
 
 	return d
+}
+
+// attach stores a PDF of the document under the transaction, the way an owner keeps the invoice of a purchase.
+func (s *seeder) attach(txID, name string, lines ...string) {
+	s.upload("/transactions/"+txID+"/attachments", nil, name, miniPDF(lines))
+}
+
+// miniPDF writes a one-page PDF that prints the lines.
+func miniPDF(lines []string) []byte {
+	var text strings.Builder
+
+	text.WriteString("BT /F1 12 Tf 56 780 Td 16 TL\n")
+
+	for _, l := range lines {
+		fmt.Fprintf(&text, "(%s) Tj T*\n", strings.NewReplacer(`\`, `\\`, "(", `\(`, ")", `\)`).Replace(l))
+	}
+
+	text.WriteString("ET")
+
+	return fmt.Appendf(nil, "%%PDF-1.4\n"+
+		"1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n"+
+		"2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n"+
+		"3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 595 842]/Contents 4 0 R/Resources<</Font<</F1 5 0 R>>>>>>endobj\n"+
+		"4 0 obj<</Length %d>>stream\n%s\nendstream endobj\n"+
+		"5 0 obj<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>endobj\n"+
+		"trailer<</Root 1 0 R/Size 6>>\n%%%%EOF\n", text.Len(), text.String())
 }
 
 // installments records a card purchase in n installments and returns the id of its transaction and of its plan.
@@ -61,7 +88,8 @@ func (s *seeder) trip(tag, from, to string, top int64, via string, places []plac
 
 func (s *seeder) lisbon() {
 	s.at(day("2025-03-20"), func() {
-		s.installments(day("2025-03-20"), "card.itau", "travel.flights", "Latam Airlines", "Passagens São Paulo para Lisboa (ida e volta)", 560000, 10, "viagem-lisboa")
+		tx, _ := s.installments(day("2025-03-20"), "card.itau", "travel.flights", "Latam Airlines", "Passagens São Paulo para Lisboa (ida e volta)", 560000, 10, "viagem-lisboa")
+		s.attach(tx, "bilhete-latam-lisboa.pdf", "LATAM Airlines - bilhete eletrônico", "Passageira: MARIANA C RIBEIRO", "GRU - LIS - GRU", "Valor: R$ 5.600,00 em 10x")
 	})
 	s.at(day("2025-04-02"), func() {
 		s.foreign(day("2025-04-02"), "card.nubank", "travel.lodging", "Booking.com", "Hotel em Alfama, 9 noites", 124000, "6.2140")
@@ -121,7 +149,9 @@ func (s *seeder) purchases() {
 	// Black Friday 2025: the notebook is anticipated in 2026-09.
 	var macbook string
 	s.at(day("2025-11-28"), func() {
-		_, macbook = s.installments(day("2025-11-28"), "card.itau", "shopping.electronics", "Apple", "MacBook Air 13 polegadas", 949900, 12, "black-friday")
+		var tx string
+		tx, macbook = s.installments(day("2025-11-28"), "card.itau", "shopping.electronics", "Apple", "MacBook Air 13 polegadas", 949900, 12, "black-friday")
+		s.attach(tx, "nota-fiscal-macbook.pdf", "Apple Brasil - nota fiscal eletrônica", "MacBook Air 13 polegadas", "Valor: R$ 9.499,00 em 12x no cartão Itaú")
 	})
 	s.at(day("2025-11-28"), func() {
 		s.installments(day("2025-11-28"), "card.itau", "shopping.electronics", "KaBuM!", "Fone de ouvido com cancelamento de ruído", 129000, 3, "black-friday")
@@ -133,7 +163,8 @@ func (s *seeder) purchases() {
 	})
 
 	s.at(day("2026-08-09"), func() {
-		s.installments(day("2026-08-09"), "card.nubank", "housing.decor", "Tok&Stok", "Sofá de três lugares", 329000, 6)
+		tx, _ := s.installments(day("2026-08-09"), "card.nubank", "housing.decor", "Tok&Stok", "Sofá de três lugares", 329000, 6)
+		s.attach(tx, "pedido-tokstok-sofa.pdf", "Tok&Stok - confirmação do pedido", "Sofá de três lugares", "Valor: R$ 3.290,00 em 6x", "Entrega agendada para a semana seguinte")
 	})
 
 	// A return: the purchase is refunded in full.
@@ -157,6 +188,7 @@ func (s *seeder) purchases() {
 	}
 	s.at(day("2025-09-19"), func() {
 		s.do(http.MethodPost, "/transactions/"+charge+"/disputes", map[string]any{"opened_on": "2025-09-19"}, &dispute)
+		s.attach(charge, "contestacao-mercado-livre.pdf", "Contestação de compra não reconhecida", "Mercado Livre - R$ 612,00 em 17/09/2025", "Protocolo aberto no aplicativo do banco")
 	})
 	s.at(day("2025-10-20"), func() {
 		s.do(http.MethodPost, "/disputes/"+dispute.ID+"/resolve", map[string]any{"resolved_on": "2025-10-20", "outcome": "won", "statement": "2025-11"}, nil)
