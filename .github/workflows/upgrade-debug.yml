@@ -24,4 +24,18 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - run: docker build -t equori:smoke .
-      - run: scripts/upgrade-test.sh ghcr.io/${{ github.repository }}:0.1.0-beta.1 equori:smoke v0.1.0-beta.1
+      - name: upgrade test with a database activity sampler
+        run: |
+          (
+            while true; do
+              for c in $(docker ps --format '{{.Names}}' | grep -- '-db$'); do
+                echo "== $(date +%T) $c"
+                docker exec "$c" psql -U equori -d equori -At -F ' | ' -c "SELECT pid, state, wait_event_type, wait_event, age(clock_timestamp(), xact_start), left(regexp_replace(query, '\s+', ' ', 'g'), 200) FROM pg_stat_activity WHERE datname = 'equori' AND pid <> pg_backend_pid() AND state <> 'idle'" || true
+              done
+              sleep 3
+            done
+          ) > "$RUNNER_TEMP/activity.log" 2>&1 &
+          status=0
+          scripts/upgrade-test.sh ghcr.io/${{ github.repository }}:0.1.0-beta.1 equori:smoke v0.1.0-beta.1 || status=$?
+          echo "::group::activity"; grep -v '^$' "$RUNNER_TEMP/activity.log" | tail -150; echo "::endgroup::"
+          exit $status
