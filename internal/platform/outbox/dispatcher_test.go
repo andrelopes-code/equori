@@ -521,3 +521,55 @@ func TestCounts(t *testing.T) {
 		t.Fatalf("counts = %+v, want %+v", got, want)
 	}
 }
+
+// The context of a delivery is built before its transaction: inBooks reads from the pool, and a
+// pool whose every connection holds a transaction that waits for inBooks waits for itself.
+func TestDeliveryBuildsTheContextBeforeTheTransaction(t *testing.T) {
+	t.Parallel()
+	pool := pgtest.New(t)
+	booksID := pgtest.CreateBooks(t, pool)
+
+	cfg := pool.Config().Copy()
+	cfg.MaxConns = 1
+
+	one, err := pgxpool.NewWithConfig(t.Context(), cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(one.Close)
+
+	d := newDispatcher(one)
+	d.UseBooks(func(ctx context.Context, _ int64) (context.Context, error) {
+		var n int
+		if err := one.QueryRow(ctx, `SELECT 1`).Scan(&n); err != nil {
+			return nil, err
+		}
+
+		return ctx, nil
+	})
+
+	var runs atomic.Int32
+
+	d.Subscribe("c", eventType, func(context.Context, pgx.Tx, outbox.Delivered) error {
+		runs.Add(1)
+
+		return nil
+	})
+	insertEvent(t, pool, outbox.Event{Type: eventType, BooksID: booksID, AggregateID: "x", Payload: 1})
+
+	ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
+	defer cancel()
+
+	if _, err := d.DispatchPending(ctx); err != nil {
+		t.Fatalf("dispatch on a pool of one connection: %v", err)
+	}
+
+	if runs.Load() != 1 {
+		t.Fatalf("handler runs = %d, want 1", runs.Load())
+	}
+
+	if status, _ := delivery(t, pool, "c"); status != "delivered" {
+		t.Fatalf("status = %s, want delivered", status)
+	}
+}

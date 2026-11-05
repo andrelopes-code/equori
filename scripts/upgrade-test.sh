@@ -11,7 +11,9 @@ prev_image=$1 new_image=$2 prev_ref=$3
 name=equori-upgrade-$$
 port=18080
 work=$(mktemp -d)
-url="postgres://equori:equori@$name-db:5432/equori?sslmode=disable"
+# pool_max_conns: a release before the fixed pool size sizes it by the CPUs of the host, and a host of
+# 4 CPUs stalled the seeding of that release; the setting is read by every release.
+url="postgres://equori:equori@$name-db:5432/equori?sslmode=disable&pool_max_conns=20"
 
 cleanup() {
 	# A failed run keeps the logs of both containers: they are gone once the containers are removed.
@@ -86,6 +88,10 @@ start_app "$prev_image"
 printf '%s\n' equori-upgrade-test | docker exec -i "$name-app" /equori user create \
 	--email upgrade@equori.test --language pt --region BR
 git worktree add --detach "$work/src" "$prev_ref" >/dev/null
+# The seeder of this tree confirms a statement whose settlement already ran; the one of v0.1.0-beta.1
+# fails on that race. It drives the API of the release it seeds: when it needs an endpoint newer
+# than the previous release, drop this overlay and seed with the seeder of the previous ref.
+cp -R "$(git rev-parse --show-toplevel)/cmd/demoseed/." "$work/src/cmd/demoseed/"
 (cd "$work/src" && go run ./cmd/demoseed -url "http://127.0.0.1:$port" -email upgrade@equori.test \
 	-password equori-upgrade-test -today 2026-10-26)
 settled >"$work/before"

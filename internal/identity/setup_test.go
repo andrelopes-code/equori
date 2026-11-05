@@ -186,18 +186,25 @@ func TestSetupConcurrentRequests(t *testing.T) {
 
 	wg.Wait()
 
-	created, conflicts := 0, 0
+	// The request that loses either meets the member of the winner (409 setup_complete) or finds
+	// the setup token already spent (403 setup_token_invalid), by when it reads the token.
+	created, refused := 0, 0
 	for _, s := range statuses {
 		switch s {
 		case http.StatusCreated:
 			created++
-		case http.StatusConflict:
-			conflicts++
+		case http.StatusConflict, http.StatusForbidden:
+			refused++
 		}
 	}
 
-	if created != 1 || conflicts != 1 {
-		t.Fatalf("statuses = %v, want one 201 and one 409", statuses)
+	if created != 1 || refused != 1 {
+		t.Fatalf("statuses = %v, want one 201 and one 409 or 403", statuses)
+	}
+
+	var members int
+	if err := h.Pool.QueryRow(t.Context(), `SELECT count(*) FROM identity_member`).Scan(&members); err != nil || members != 1 {
+		t.Fatalf("members = %d, %v; want 1", members, err)
 	}
 }
 
