@@ -11,6 +11,11 @@ func (s *seeder) expense(d time.Time, via, category, payee, desc string, cents i
 		via = "card.nubank"
 	}
 
+	// The meal card is spent first on food it is accepted for, so that the credit of the month does not pile up.
+	if strings.HasPrefix(category, "food.") && category != "food.bars" && via != "wallet" && s.bal[s.id("alelo.meal")] >= cents+mealReserve {
+		via = "alelo.meal"
+	}
+
 	if !strings.HasPrefix(via, "card.") {
 		s.ensure(d, via, cents)
 	}
@@ -26,6 +31,9 @@ func (s *seeder) expense(d time.Time, via, category, payee, desc string, cents i
 
 	s.record(iso(d), desc, extra, post(s.id(via), -cents), post(s.id(category), cents))
 }
+
+// mealReserve is the balance of the meal card that a purchase leaves for the next one, in cents.
+const mealReserve = 30000
 
 // Payroll of Tarsus Tecnologia. Amounts are in cents.
 const (

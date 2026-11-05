@@ -145,6 +145,29 @@ func (s *seeder) sell(d time.Time, code string, qty int64) {
 	s.at(d, func() { s.trade(d, code, "sell", qty, price) })
 }
 
+// brokerageFloor is the cash the owner keeps in the brokerage after reinvesting the month, in cents.
+const brokerageFloor = 250000
+
+// sweep invests on d the cash of the brokerage above floor in code, the way an owner reinvests the income and the contributions the month left.
+func (s *seeder) sweep(d time.Time, code string, floor int64) {
+	s.at(d, func() {
+		spare := s.bal[s.id("xp.cash")] - floor
+		if spare < 50000 {
+			return
+		}
+
+		sec := s.security(code)
+		price := s.priceOn(code, d) * (1 + (s.rng.Float64()*2-1)*.006)
+
+		qty := int64(math.Floor(float64(spare) / 100 / price * math.Pow(10, float64(sec.scale))))
+		if qty < 1 {
+			return
+		}
+
+		s.trade(d, code, "buy", qty, price)
+	})
+}
+
 func (s *seeder) security(code string) security {
 	for _, sec := range securities {
 		if sec.code == code {
@@ -197,15 +220,18 @@ func (s *seeder) trades() {
 	fiis := []string{"HGLG11", "KNRI11", "MXRF11"}
 
 	equities := []string{"ITUB4", "WEGE3", "BBAS3", "PETR4"}
+	sweeps := []string{"HGLG11", "KNRI11", "IVVB11", "TSELIC29", "ITUB4"}
 	for i, m := range months(s.start, s.today) {
+		s.sweep(businessDay(m, 9), sweeps[i%len(sweeps)], brokerageFloor)
+
 		d := businessDay(m, 7)
 		switch i % 4 {
 		case 0:
-			s.buy(d, fiis[(i/4)%3], 900)
+			s.buy(d, fiis[(i/4)%3], 1350)
 		case 1:
-			s.buy(d, equities[(i/4)%4], 900)
+			s.buy(d, equities[(i/4)%4], 1350)
 		case 2:
-			s.buy(d, "IVVB11", 500)
+			s.buy(d, "IVVB11", 750)
 			s.buy(d.AddDate(0, 0, 1), "BTCBRL", 100)
 		case 3:
 			code := "TSELIC29"
@@ -213,7 +239,7 @@ func (s *seeder) trades() {
 				code = "TIPCA35"
 			}
 
-			s.buy(d, code, 900)
+			s.buy(d, code, 1350)
 		}
 	}
 
@@ -301,11 +327,29 @@ func containsMonth(list []time.Month, m time.Month) bool {
 	return false
 }
 
+// nubankTarget is the balance the owner brings the Nubank account to on payday, in cents.
+const nubankTarget = 450000
+
+// nubankTop returns the Pix, in whole hundreds of reais, that brings the Nubank account to its target; zero when it already holds more.
+func nubankTop(balance int64) int64 {
+	need := nubankTarget - balance
+	if need < 50000 {
+		return 0
+	}
+
+	return (need + 9999) / 10000 * 10000
+}
+
 // transfers are the monthly contributions to investments, the lump sums from the 13th salary and PLR, and the income tax refund.
 func (s *seeder) transfers() {
 	for _, m := range months(s.start, s.today) {
 		d := businessDay(m, 6)
 		s.at(d, func() {
+			if top := nubankTop(s.bal[s.id("nubank.checking")]); top > 0 {
+				s.ensure(d, "itau.checking", 140000+top)
+				s.record(iso(d), "Pix para Nubank", nil, post(s.id("nubank.checking"), top), post(s.id("itau.checking"), -top))
+			}
+
 			s.ensure(d, "itau.checking", 140000)
 			s.record(iso(d), "TED para XP Investimentos", nil, post(s.id("xp.cash"), 110000), post(s.id("itau.checking"), -110000))
 			s.record(iso(d), "Aporte na caixinha de reserva", nil, post(s.id("nubank.reserve"), 30000), post(s.id("itau.checking"), -30000))

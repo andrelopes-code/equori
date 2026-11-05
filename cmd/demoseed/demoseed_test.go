@@ -69,6 +69,27 @@ func TestSeed(t *testing.T) {
 		}
 	})
 
+	t.Run("cash accounts", func(t *testing.T) {
+		// Each account is checked against the range its use gives it on the last day of the history.
+		for _, c := range []struct {
+			key      string
+			min, max int64
+		}{
+			{"itau.savings", 1237500, 1400000},   // the savings book yields about 0.65 % a month on R$ 11.250,00.
+			{"nubank.reserve", 3300000, 4000000}, // R$ 21.300,00 at the start, R$ 300,00 a month and about 1 % a month.
+			{"nubank.checking", 0, 600000},       // the Pix of payday brings it to R$ 4.500,00 and the month spends it.
+			{"alelo.meal", 0, 250000},            // the meal card is spent in the month it is credited.
+			{"xp.cash", 0, 600000},               // the monthly contribution is invested.
+		} {
+			got := s.balanceOn(c.key, testToday)
+			t.Logf("%s balance on %s = %d", c.key, testToday, got)
+
+			if got < c.min || got > c.max {
+				t.Errorf("%s balance on %s = %d, want %d to %d", c.key, testToday, got, c.min, c.max)
+			}
+		}
+	})
+
 	t.Run("every due statement is paid", func(t *testing.T) {
 		for _, card := range []string{"card.itau", "card.nubank"} {
 			var out struct {
@@ -273,15 +294,4 @@ func (s *seeder) keyOf(id string) string {
 	}
 
 	return id
-}
-
-func (s *seeder) balanceOn(key, date string) int64 {
-	var out struct {
-		Balance struct {
-			Amount int64 `json:"amount"`
-		} `json:"balance"`
-	}
-	s.do(http.MethodGet, "/accounts/"+s.id(key)+"/balance?date="+date+"&basis=booked", nil, &out)
-
-	return out.Balance.Amount
 }

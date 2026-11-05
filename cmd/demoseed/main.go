@@ -101,6 +101,7 @@ func seed(s *seeder, cfg config) error {
 	s.cashflow()
 	s.runEvents()
 	s.reopenHistory()
+	s.bookYield()
 	s.assertBalances()
 	s.reconcileStatements()
 	s.importStatements()

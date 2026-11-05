@@ -44,21 +44,8 @@ func (s *seeder) assertBalances() {
 		}
 	}
 
-	// The reserve yields on its own; the institution balance is higher than the ledger and the difference resolves as yield.
-	var res struct {
-		Assertion struct {
-			ID string `json:"id"`
-		} `json:"assertion"`
-		Resolution string `json:"resolution"`
-	}
-	d := s.today.AddDate(0, 0, -1)
-	s.do(http.MethodPost, "/accounts/"+s.id("nubank.reserve")+"/balance-assertions", map[string]any{"date": iso(d), "amount": brl(s.bal[s.id("nubank.reserve")] + 187342), "source": "manual"}, &res)
-
-	if s.err == nil && res.Resolution == "" {
-		s.do(http.MethodPost, "/balance-assertions/"+res.Assertion.ID+"/resolve", map[string]any{"resolution": "yield"}, nil)
-	}
-
 	// An unexplained difference stays open on the salary account: the institution shows a Pix the ledger lacks.
+	d := s.today.AddDate(0, 0, -1)
 	s.do(http.MethodPost, "/accounts/"+s.id("itau.checking")+"/balance-assertions", map[string]any{"date": iso(d), "amount": brl(s.bal[s.id("itau.checking")] + 3840), "source": "manual"}, nil)
 }
 
