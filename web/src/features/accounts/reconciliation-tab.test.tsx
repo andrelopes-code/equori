@@ -339,6 +339,54 @@ describe("Reconciliation", () => {
     ).toBeInTheDocument();
   });
 
+  // A203.
+  it("voids a selected entry no institution line confirmed", async () => {
+    const bodies: unknown[] = [];
+    await renderApp(`/accounts/${checkingID}?tab=reconciliation`, {
+      fetch: api(checkingID, {
+        [`GET /api/v1/accounts/${checkingID}/unconfirmed`]: () =>
+          json(200, {
+            items: [
+              {
+                transaction_id: "t1",
+                date: "2026-09-01",
+                amount: money(-5000),
+                description: "Padaria",
+              },
+              {
+                transaction_id: "t2",
+                date: "2026-09-20",
+                amount: money(-7000),
+                description: "Farmácia",
+              },
+            ],
+          }),
+        "POST /api/v1/transactions/void": async (req) => {
+          bodies.push(await req.json());
+          return json(200, { results: [{ id: "t1", status: "voided" }] });
+        },
+      }),
+    });
+    const table = await screen.findByRole("table", {
+      name: catalogEn["reconciliation.unconfirmed"],
+    });
+    await within(table).findByText("Padaria");
+
+    await userEvent.click(
+      within(within(table).getByRole("row", { name: /Padaria/ })).getByRole(
+        "checkbox",
+      ),
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Void" }));
+    await userEvent.type(screen.getByRole("textbox"), "duplicate");
+    await userEvent.click(
+      within(screen.getByRole("dialog")).getByRole("button", { name: "Void" }),
+    );
+
+    expect(await screen.findByText("1 voided, 0 refused.")).toBeInTheDocument();
+    expect(bodies).toEqual([{ reason: "duplicate", items: [{ id: "t1" }] }]);
+  });
+
   it("unlocks the reconciliation from a date", async () => {
     const bodies: unknown[] = [];
     await renderApp(`/accounts/${checkingID}?tab=reconciliation`, {
