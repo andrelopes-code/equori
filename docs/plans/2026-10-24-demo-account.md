@@ -59,6 +59,17 @@ Mariana Costa Ribeiro, 34, product analyst in São Paulo, CLT employee, renting,
 13. Run against the dev database; read reports (net worth, flows, categories, allocation, return) and fix incoherent data.
 14. Document `make demo` in `README.md` or `docs/`; `make check`.
 
+## Realism rules
+
+`cmd/demoseed/demoseed_test.go` enforces these on the generated book; a change to the seeder keeps them:
+
+- Dates follow the seeding day: the statement lines of the last three weeks, the pay days (holidays of the calendar of the book) and the schedules.
+- Every schedule starts with the price in force and has its past occurrences realized by the recorded charges; only announced changes are terms.
+- Yielding accounts are asserted at every month-end; the meal card, the brokerage cash and the Nubank account stay in the range their use gives them; no checking account closes a day overdrawn.
+- A year of card and account lines arrives through statement files with institution descriptors; the rules match them by word and every rule can fire.
+- The savings rate of the last twelve months is 14 to 22 %; goals hold 30 to 90 % of their targets; rollover budgets carry at most four months.
+- Every payee and every leaf category has a transaction.
+
 ## Risks
 
 - Business rules reject realistic sequences (settlement dates, locked statements): each rejection is fixed in the data, never by changing product code.
