@@ -28,7 +28,7 @@ const EventExportRequested = "reporting.export_requested.v1"
 // notExported are the tables with books_id that stay out of the archive (export design E2).
 var notExported = []string{
 	"assistant_conversation", "assistant_message", "assistant_proposal",
-	"assistant_chain_target", "assistant_provider", "assistant_usage", "assistant_usage_limit",
+	"assistant_usage",
 	"capture_category_hint", "identity_access_token", "identity_invitation", "identity_membership",
 	"identity_session", "outbox_event",
 	"portfolio_income_event", "portfolio_position_day", "portfolio_realized_result",
@@ -46,6 +46,9 @@ var rowExpressions = map[string]string{
 	"ledger_attachment_blob": `to_jsonb(t) - 'books_id' - 'content'`,
 	// The credential is sealed for the source instance and book (ADR 008); it never travels.
 	"ingestion_integration": `(to_jsonb(t) - 'books_id') || jsonb_build_object('credential_ciphertext', ''::bytea)`,
+	// The key is sealed for the source instance and book (ADR 019 P1); it travels only in the
+	// credentials bundle (export design T1, T3).
+	"assistant_provider": `(to_jsonb(t) - 'books_id') || jsonb_build_object('sealed_key', null)`,
 }
 
 type archiveTable struct {

@@ -72,9 +72,28 @@ func populate(t *testing.T, h *apitest.Harness) books {
 		"quantity": map[string]any{"amount": 10, "currency": "MXRF11"}, "unit_price": "10.00",
 	}, http.StatusCreated, nil)
 	h.MustDo(http.MethodPost, "/api/v1/prices", map[string]any{"instrument": "MXRF11", "quote_instrument": "BRL", "date": "2026-10-23", "value": "10.40"}, http.StatusCreated, nil)
+	addAssistantConfiguration(t, h)
 	h.Dispatch()
 
 	return b
+}
+
+// addAssistantConfiguration gives the book a provider, a chain target on it and a daily limit
+// (export design T1). The provider has no key, so the harness needs no instance key.
+func addAssistantConfiguration(t *testing.T, h *apitest.Harness) {
+	t.Helper()
+
+	var provider struct {
+		ID string `json:"id"`
+	}
+
+	h.MustDo(http.MethodPost, "/api/v1/assistant/providers", map[string]any{"preset": "ollama", "name": "Local"}, http.StatusCreated, &provider)
+	h.MustDo(http.MethodPut, "/api/v1/assistant/uses/assistant.chat/chain", map[string]any{"targets": []any{
+		map[string]any{"provider_id": provider.ID, "model": "qwen3:32b", "capabilities": []string{"tools"}},
+	}}, http.StatusOK, nil)
+	h.MustDo(http.MethodPut, "/api/v1/assistant/usage/limits", map[string]any{
+		"provider_id": provider.ID, "model": "qwen3:32b", "requests_per_day": 50,
+	}, http.StatusNoContent, nil)
 }
 
 func zipOf(t *testing.T, files map[string][]byte) []byte {

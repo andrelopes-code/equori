@@ -31,6 +31,15 @@ func TestEveryTableIsClassified(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// Export design T1: the assistant configuration is carried, its usage history is not.
+	for table, want := range map[string]bool{
+		"assistant_provider": true, "assistant_chain_target": true, "assistant_usage_limit": true, "assistant_usage": false,
+	} {
+		if slices.Contains(facts, table) != want {
+			t.Errorf("%s in the fact tables = %t, want %t", table, !want, want)
+		}
+	}
+
 	// marketdata_feed holds the instance's feed settings (ADR 025 F1) and marketdata_index_expectation
 	// the latest survey a feed fetches again (ADR 026 E3); neither holds a book's rows.
 	// ingestion_instance_settings holds the instance's sync interval (ADR 029 BK23).

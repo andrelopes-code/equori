@@ -9,7 +9,7 @@ import (
 
 // ArchiveVersion is the archive_version this instance writes and the highest it reads
 // (ADR 021). It is the number of steps in archiveSteps plus 1.
-const ArchiveVersion = 8
+const ArchiveVersion = 9
 
 // ArchiveStep migrates the tables of an archive from one version to the next; it is pure and
 // leaves its input unchanged (ADR 021, V3).
@@ -19,7 +19,7 @@ type ArchiveStep func([]ArchiveTable) ([]ArchiveTable, error)
 // table appends its step here and increments ArchiveVersion in the same commit (ADR 021, V2).
 var archiveSteps = []ArchiveStep{
 	addExcludedFromLiquidity, addBudgetReference, addStatementBasis, dropConversations,
-	addReliableSync, addSavingsTarget, addMatchWindow,
+	addReliableSync, addSavingsTarget, addMatchWindow, addAssistantConfiguration,
 }
 
 // migrateArchive applies the steps from version from to the last one, in order.
@@ -143,4 +143,11 @@ func editRows(tables []ArchiveTable, table string, edit func(map[string]jsontext
 	}
 
 	return out, nil
+}
+
+// addAssistantConfiguration moves a version 8 archive to version 9, which carries the assistant's
+// providers, chains and limits (export design T1, T2). An older archive has no file for the three
+// tables, so the step changes nothing and they import empty.
+func addAssistantConfiguration(tables []ArchiveTable) ([]ArchiveTable, error) {
+	return tables, nil
 }

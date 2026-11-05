@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"net/http"
 	"os"
+	"slices"
 	"testing"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
@@ -46,6 +47,7 @@ func TestImportArchiveFixtures(t *testing.T) {
 			}
 
 			expectFixture(t, h)
+			expectProviders(t, h, v)
 		})
 	}
 }
@@ -82,4 +84,35 @@ func expectFixture(t *testing.T, h *apitest.Harness) {
 
 	// Food: 230.00 at the market and the 900.00 installment purchase; Rent: 1,500.00.
 	expectTotals(t, totals(t, h, "expense", "", "2026-10-01", "2026-10-31"), map[string]int64{ids["Food"]: 113000, ids["Rent"]: 150000})
+}
+
+// expectProviders checks the providers of the book: the fixtures before version 9 carry none
+// (export design T2) and later ones carry the one populate adds.
+func expectProviders(t *testing.T, h *apitest.Harness, version int) {
+	t.Helper()
+
+	var list struct {
+		Items []struct {
+			Name     string `json:"name"`
+			Instance bool   `json:"instance"`
+		} `json:"items"`
+	}
+	h.MustDo(http.MethodGet, "/api/v1/assistant/providers", nil, http.StatusOK, &list)
+
+	var own []string
+
+	for _, p := range list.Items {
+		if !p.Instance {
+			own = append(own, p.Name)
+		}
+	}
+
+	want := []string{}
+	if version >= 9 {
+		want = []string{"Local"}
+	}
+
+	if !slices.Equal(own, want) {
+		t.Fatalf("v%d providers = %v, want %v", version, own, want)
+	}
 }

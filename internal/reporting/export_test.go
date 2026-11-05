@@ -156,7 +156,7 @@ func TestExport(t *testing.T) {
 		}
 	}
 
-	for _, name := range []string{"identity_member", "identity_session", "identity_access_token", "assistant_provider", "assistant_conversation", "assistant_message", "assistant_proposal", "outbox_event", "reporting_account_day", "reporting_export", "capture_category_hint"} {
+	for _, name := range []string{"identity_member", "identity_session", "identity_access_token", "assistant_usage", "assistant_conversation", "assistant_message", "assistant_proposal", "outbox_event", "reporting_account_day", "reporting_export", "capture_category_hint"} {
 		if _, ok := rows[name]; ok {
 			t.Errorf("%s is exported", name)
 		}
@@ -183,6 +183,35 @@ func TestExport(t *testing.T) {
 	if len(m.Attachments) != 1 || m.Attachments[0].File != "attachments/"+hex.EncodeToString(sum[:]) ||
 		!bytes.Equal(files[m.Attachments[0].File], receipt) {
 		t.Errorf("attachments = %+v", m.Attachments)
+	}
+}
+
+// Export design T1: providers, chains and limits travel; the key of a provider does not.
+func TestExportCarriesTheAssistantConfiguration(t *testing.T) {
+	t.Parallel()
+	h := apitest.New(t, apitest.Today("2026-10-26"), apitest.SecretKeys(apitest.SecretKey, ""))
+	addAssistantConfiguration(t, h)
+	h.MustDo(http.MethodPost, "/api/v1/assistant/providers", map[string]any{"preset": "groq", "name": "Groq", "key": "gsk-secret"}, http.StatusCreated, nil)
+
+	files := archive(t, export(t, h))
+
+	var m manifest
+	if err := json.Unmarshal(files["manifest.json"], &m); err != nil {
+		t.Fatalf("manifest: %v", err)
+	}
+
+	rows := map[string]int{}
+	for _, table := range m.Tables {
+		rows[table.Name] = table.Rows
+	}
+
+	if rows["assistant_provider"] != 2 || rows["assistant_chain_target"] != 1 || rows["assistant_usage_limit"] != 1 {
+		t.Errorf("rows = %v", rows)
+	}
+
+	provider := string(files["tables/assistant_provider.jsonl"])
+	if strings.Count(provider, `"sealed_key": null`) != 2 || strings.Contains(provider, "gsk-secret") || strings.Contains(provider, "books_id") {
+		t.Errorf("assistant_provider.jsonl = %s", provider)
 	}
 }
 

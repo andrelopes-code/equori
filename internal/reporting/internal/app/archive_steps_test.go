@@ -260,7 +260,27 @@ func TestAddMatchWindow(t *testing.T) {
 		t.Fatalf("the input changed: %q", v7[0].Rows)
 	}
 
-	if ArchiveVersion != 8 {
-		t.Fatalf("ArchiveVersion = %d, want 8", ArchiveVersion)
+	if ArchiveVersion < 8 {
+		t.Fatalf("ArchiveVersion = %d, want at least 8", ArchiveVersion)
+	}
+}
+
+// Export design T2: version 9 adds files for the assistant tables and changes no row.
+func TestAddAssistantConfiguration(t *testing.T) {
+	t.Parallel()
+
+	v8 := []ArchiveTable{{Name: "planning_schedule", Rows: [][]byte{[]byte(`{"id":"a"}`)}}}
+
+	got, err := addAssistantConfiguration(v8)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(got) != 1 || got[0].Name != "planning_schedule" || string(got[0].Rows[0]) != `{"id":"a"}` {
+		t.Fatalf("tables = %+v, want them unchanged", got)
+	}
+
+	if ArchiveVersion < 9 {
+		t.Fatalf("ArchiveVersion = %d, want at least 9", ArchiveVersion)
 	}
 }
