@@ -28,7 +28,7 @@ import {
 import { Tag } from "@slotted/react/tag";
 import { Text } from "@slotted/react/typography";
 import { useQuery } from "@tanstack/react-query";
-import { Fragment, useId, useState } from "react";
+import { Fragment, useState } from "react";
 
 import { useApi } from "@/api/api-context";
 import { errorText } from "@/api/problem";
@@ -75,7 +75,6 @@ export function PlanDrawer({
   const [locale] = useAppLocale();
   const fmt = useMoneyFormat();
   const today = useToday();
-  const formId = useId();
   const plan = useQuery(planQuery(useApi(), planId));
   const cancel = useCancelPlan();
   const anticipate = useAnticipate();
@@ -141,7 +140,18 @@ export function PlanDrawer({
         if (!open) onClose();
       }}
     >
-      <DrawerPanel>
+      <DrawerPanel
+        render={(props) => (
+          <form
+            {...props}
+            noValidate
+            onSubmit={(event) => {
+              event.preventDefault();
+              submit();
+            }}
+          />
+        )}
+      >
         {phone && <DrawerResizer />}
         <DrawerHeader>
           <DrawerTitle>{t("plan.title", { name })}</DrawerTitle>
@@ -230,59 +240,48 @@ export function PlanDrawer({
                 </TableContent>
               </Table>
               {mode !== null && (
-                // Workaround for Slotted issue #77: a drawer has no place for a form around its parts, so the
-                // form stands in the body and the footer's submit names it.
-                <form
-                  id={formId}
-                  noValidate
-                  onSubmit={(event) => {
-                    event.preventDefault();
-                    submit();
-                  }}
-                >
-                  <FormLayout>
-                    {error !== null && <FormNotice>{error}</FormNotice>}
-                    <FormNotice tone={mode === "cancel" ? "warning" : "accent"}>
-                      {mode === "cancel"
-                        ? t("plan.cancelHint", {
-                            remaining:
-                              progress?.remaining === undefined
-                                ? ""
-                                : money(progress.remaining),
-                          })
-                        : t("plan.anticipateHint", {
-                            count: ahead.length,
-                            month: formatMonthTitle(reference, locale),
-                          })}
-                    </FormNotice>
-                    {mode === "anticipate" && currency !== undefined && (
-                      <Field width="medium" required>
-                        <FieldLabel>{t("plan.paid")}</FieldLabel>
-                        <MoneyInput
-                          size="field"
-                          value={quote.sum - quote.discount}
-                          onChange={setPaid}
-                          currency={currency}
-                          scale={scale(currency)}
-                          sign="neutral"
-                        />
-                        <FieldDescription>
-                          {t("plan.discount", {
-                            sum: money({ amount: quote.sum, currency }),
-                            discount: money({
-                              amount: quote.discount,
-                              currency,
-                            }),
-                          })}
-                        </FieldDescription>
-                      </Field>
-                    )}
-                    <Field required>
-                      <FieldLabel>{t("plan.date")}</FieldLabel>
-                      <DateInput name="date" value={date} onChange={setDate} />
+                <FormLayout>
+                  {error !== null && <FormNotice>{error}</FormNotice>}
+                  <FormNotice tone={mode === "cancel" ? "warning" : "accent"}>
+                    {mode === "cancel"
+                      ? t("plan.cancelHint", {
+                          remaining:
+                            progress?.remaining === undefined
+                              ? ""
+                              : money(progress.remaining),
+                        })
+                      : t("plan.anticipateHint", {
+                          count: ahead.length,
+                          month: formatMonthTitle(reference, locale),
+                        })}
+                  </FormNotice>
+                  {mode === "anticipate" && currency !== undefined && (
+                    <Field width="medium" required>
+                      <FieldLabel>{t("plan.paid")}</FieldLabel>
+                      <MoneyInput
+                        size="field"
+                        value={quote.sum - quote.discount}
+                        onChange={setPaid}
+                        currency={currency}
+                        scale={scale(currency)}
+                        sign="neutral"
+                      />
+                      <FieldDescription>
+                        {t("plan.discount", {
+                          sum: money({ amount: quote.sum, currency }),
+                          discount: money({
+                            amount: quote.discount,
+                            currency,
+                          }),
+                        })}
+                      </FieldDescription>
                     </Field>
-                  </FormLayout>
-                </form>
+                  )}
+                  <Field required>
+                    <FieldLabel>{t("plan.date")}</FieldLabel>
+                    <DateInput name="date" value={date} onChange={setDate} />
+                  </Field>
+                </FormLayout>
               )}
             </Stack>
           )}
@@ -327,7 +326,6 @@ export function PlanDrawer({
                 </Button>
                 <Button
                   type="submit"
-                  form={formId}
                   tone={mode === "cancel" ? "danger" : "accent"}
                   disabled={mode === "anticipate" && quote.discount < 0}
                   loading={cancel.isPending || anticipate.isPending}
