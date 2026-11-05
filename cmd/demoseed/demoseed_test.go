@@ -235,6 +235,53 @@ func TestSeed(t *testing.T) {
 		}
 	})
 
+	t.Run("fixed income terms use a published index", func(t *testing.T) {
+		// The instance stores the rates of cdi and ipca only (S157); a term on another index cannot accrue.
+		for _, sec := range securities {
+			if sec.typ != "fixed_income" {
+				continue
+			}
+
+			if index := sec.terms["index_id"]; index != "cdi" && index != "ipca" {
+				t.Errorf("%s accrues on %v, want cdi or ipca", sec.code, index)
+			}
+		}
+	})
+
+	t.Run("reimbursements and rule suggestions", func(t *testing.T) {
+		// Rafael repays half of some dinners as a reimbursement of the expense, and two corrections of one payee suggest a rule.
+		var out struct {
+			Items []struct {
+				Examples []string `json:"examples"`
+			} `json:"items"`
+		}
+		s.do(http.MethodGet, "/rule-suggestions?state=pending", nil, &out)
+
+		if s.err != nil {
+			t.Fatal(s.err)
+		}
+
+		if len(out.Items) < 2 {
+			t.Errorf("pending rule suggestions = %d, want at least 2", len(out.Items))
+		}
+
+		repaid := 0
+
+		for _, tx := range s.transactions(t) {
+			if tx.Description != "Rafael devolveu a parte do jantar" {
+				continue
+			}
+
+			if len(tx.Links) > 0 {
+				repaid++
+			}
+		}
+
+		if repaid < 8 {
+			t.Errorf("dinners repaid as a reimbursement = %d, want at least 8", repaid)
+		}
+	})
+
 	t.Run("bank feed", func(t *testing.T) {
 		// Part of the last year comes from the statement files of the institutions, with the descriptor the institution prints.
 		months := map[string]bool{}
@@ -509,10 +556,11 @@ func TestSeedFollowsToday(t *testing.T) {
 }
 
 type transactionRow struct {
-	ID          string `json:"id"`
-	Date        string `json:"date"`
-	Origin      string `json:"origin"`
-	Description string `json:"description"`
+	ID          string            `json:"id"`
+	Date        string            `json:"date"`
+	Origin      string            `json:"origin"`
+	Description string            `json:"description"`
+	Links       []json.RawMessage `json:"links"`
 	Postings    []struct {
 		AccountID string `json:"account_id"`
 		Amount    money  `json:"amount"`

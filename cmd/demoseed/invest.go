@@ -27,7 +27,7 @@ var securities = []security{
 	{code: "MXRF11", name: "Maxi Renda FII", typ: "reit", exchange: "BVMF", holder: "xp", start: 10.1, drift: 0, vol: .08},
 	{code: "IVVB11", name: "iShares S&P 500 Fundo de Índice", typ: "etf", exchange: "BVMF", holder: "xp", start: 331.5, drift: .12, vol: .18},
 	{code: "TSELIC29", name: "Tesouro Selic 2029", typ: "fixed_income", subtype: "tesouro", scale: 2, holder: "xp", start: 14520, accrual: .142,
-		terms: map[string]any{"issued_on": "2023-03-01", "matures_on": "2029-03-01", "index_id": "selic", "day_count": "act365", "face_value": 1200000}},
+		terms: map[string]any{"issued_on": "2023-03-01", "matures_on": "2029-03-01", "index_id": "cdi", "percent_of_index_bp": 10000, "day_count": "bus252", "face_value": 1200000}},
 	{code: "CDBXP27", name: "CDB XP 112% do CDI", typ: "fixed_income", subtype: "cdb", scale: 2, holder: "xp", start: 1019.4, accrual: .152,
 		terms: map[string]any{"issued_on": "2024-08-12", "matures_on": "2027-08-12", "index_id": "cdi", "percent_of_index_bp": 11200, "day_count": "bus252", "face_value": 100000}},
 	{code: "TIPCA35", name: "Tesouro IPCA+ 2035", typ: "fixed_income", subtype: "tesouro", scale: 2, holder: "xp", start: 1480, drift: .12, vol: .05,

@@ -209,6 +209,7 @@ func (s *seeder) cashflow() {
 
 	s.extras()
 	s.purchases()
+	s.teachRules()
 	s.transfers()
 	s.trades()
 	s.income()

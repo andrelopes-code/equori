@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"math"
+	"net/http"
 	"time"
 )
 
@@ -186,6 +187,13 @@ func (s *seeder) sharedDinners(month time.Time) {
 		payee := []string{"Coco Bambu", "Madero", "Outback Steakhouse", "Bar do Zé Pinheiros"}[s.rng.IntN(4)]
 		via := s.pick([]string{"card.itau", "card.nubank"}, []int{60, 40})
 		back := d.AddDate(0, 0, 2+s.rng.IntN(8))
+
+		// Half of the dinners are recorded for the whole bill and repaid by a reimbursement; the others keep Rafael's half as a receivable.
+		if s.rng.Float64() < .5 {
+			s.reimbursedDinner(d, back, payee, via, total, half)
+			continue
+		}
+
 		s.at(d, func() {
 			s.record(iso(d), "Jantar com o Rafael, "+payee, map[string]any{"payee_id": s.id("payee." + payee), "tags": []string{"compartilhado"}},
 				post(s.id(via), -total), post(s.id("food.restaurants"), half), post(s.id("receivable.rafael"), half))
@@ -195,6 +203,23 @@ func (s *seeder) sharedDinners(month time.Time) {
 				post(s.id("itau.checking"), half), post(s.id("receivable.rafael"), -half))
 		})
 	}
+}
+
+// reimbursedDinner records the whole bill as a restaurant expense and, on back, Rafael's Pix as an inflow that reimburses half of it.
+func (s *seeder) reimbursedDinner(d, back time.Time, payee, via string, total, half int64) {
+	var dinner string
+
+	s.at(d, func() {
+		dinner = s.record(iso(d), "Jantar com o Rafael, "+payee, map[string]any{"payee_id": s.id("payee." + payee), "tags": []string{"compartilhado"}},
+			post(s.id(via), -total), post(s.id("food.restaurants"), total))
+	})
+	s.at(back, func() {
+		pix := s.record(iso(back), "Rafael devolveu a parte do jantar", map[string]any{"payee_id": s.id("payee.Rafael Mendes")},
+			post(s.id("itau.checking"), half), post(s.id("system.uncategorized_income"), -half))
+		s.do(http.MethodPost, "/transactions/"+pix+"/reimbursement", map[string]any{
+			"expected_version": 1, "allocations": []map[string]any{{"original_id": dinner, "amount": brl(half)}},
+		}, nil)
+	})
 }
 
 // occasion is a dated expense of the calendar: a holiday gift, a birthday dinner, a check-up.

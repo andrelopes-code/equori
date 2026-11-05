@@ -122,3 +122,31 @@ func (s *seeder) runRules() error {
 
 	return s.err
 }
+
+// lesson is a payee that the owner categorizes by hand each time, which teaches the book a rule.
+type lesson struct {
+	payee, category, desc string
+	lo, hi                int64
+}
+
+var lessons = []lesson{
+	{"Livraria da Vila", "leisure.books", "Livro, Livraria da Vila", 3500, 9500},
+	{"Cinemark", "leisure.events", "Ingressos, Cinemark", 3600, 9800},
+}
+
+// teachRules records three recent purchases of each lesson payee without a category and categorizes them by hand; two corrections of one payee make the book suggest a rule.
+func (s *seeder) teachRules() {
+	for _, l := range lessons {
+		for _, ago := range []int{95, 60, 24} {
+			d := s.today.AddDate(0, 0, -ago)
+			cents := s.between(l.lo, l.hi, 1)
+			s.at(d, func() {
+				id := s.record(iso(d), l.desc, map[string]any{"payee_id": s.id("payee." + l.payee)},
+					post(s.id("card.nubank"), -cents), post(s.id("system.uncategorized_expense"), cents))
+				s.do(http.MethodPost, "/transactions/"+id+"/categorize", map[string]any{
+					"expected_version": 1, "parts": []posting{post(s.id(l.category), cents)},
+				}, nil)
+			})
+		}
+	}
+}
