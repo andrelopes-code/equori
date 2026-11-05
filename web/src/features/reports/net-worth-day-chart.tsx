@@ -96,13 +96,7 @@ export function NetWorthDayChart({
       onSelectionChange={handleSelect}
       renderTooltip={(context, model) => (
         <>
-          <ChartTooltipContent
-            context={context}
-            model={model}
-            // Workaround for Slotted issue #71: the wrapped default tooltip needs the total word
-            // the chart already holds; a line chart never draws it.
-            totalLabel={t("report.total")}
-          />
+          <ChartTooltipContent context={context} model={model} />
           <NetWorthForecastLines
             point={points.get(context.point.key)}
             currency={currency}
