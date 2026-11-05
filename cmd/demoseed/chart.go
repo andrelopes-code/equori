@@ -128,6 +128,7 @@ var expenseCategories = []category{
 		leaf("leisure.games", "Jogos", "gamepad-2"),
 		leaf("leisure.books", "Livros", "book-open"),
 		leaf("leisure.hobbies", "Hobbies", "palette"),
+		leaf("leisure.apps", "Aplicativos e armazenamento", "smartphone"),
 	}},
 	{key: "travel", name: "Viagens", icon: "luggage", color: 6, children: []category{
 		leaf("travel.flights", "Passagens", "plane"),
@@ -190,7 +191,7 @@ var payees = []string{
 	"Smart Fit", "Drogasil", "Droga Raia", "Pague Menos", "Laboratório Fleury", "Dra. Helena Prado", "Clínica Mente Aberta", "Bradesco Saúde",
 	"Netflix", "Spotify", "Amazon Prime", "Disney+", "HBO Max", "Cinemark", "Ingresso.com", "Sympla", "Steam", "Livraria da Vila", "Kindle", "Decathlon",
 	"Zara", "Renner", "C&A", "Centauro", "Magazine Luiza", "Amazon", "Mercado Livre", "Apple", "KaBuM!", "Leroy Merlin", "Tok&Stok", "Boticário", "Barbearia & Salão Vila",
-	"Cacau Show", "Odonto Excellence", "Petz", "Cobasi", "Clínica Veterinária Patas", "Alura", "Associação Brasileira de Product Management", "Latam Airlines", "Booking.com", "Airbnb", "Decolar", "Azul Linhas Aéreas",
+	"Cacau Show", "Duolingo", "Odonto Excellence", "Petz", "Cobasi", "Clínica Veterinária Patas", "Alura", "Associação Brasileira de Product Management", "Latam Airlines", "Booking.com", "Airbnb", "Decolar", "Azul Linhas Aéreas",
 	"Receita Federal", "Itaú Unibanco", "Nubank", "XP Investimentos", "Rafael Mendes", "Mãe", "Instituto Pequeno Cidadão", "99Food", "Shell Select", "Alelo",
 }
 

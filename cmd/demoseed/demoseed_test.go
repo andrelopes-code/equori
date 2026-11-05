@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"math"
 	"net/http"
 	"net/url"
 	"slices"
@@ -126,21 +125,50 @@ func TestSeed(t *testing.T) {
 
 		slices.Sort(expenses)
 
-		// A household does not spend the same amount twice: at most a quarter of the months fall within 3 % of the median.
-		median := expenses[len(expenses)/2]
+		// The cheapest months, without the first month of the history, are the ordinary ones: they do not repeat the same total.
+		ordinary := expenses[1:11]
+		spread := (ordinary[len(ordinary)-1] - ordinary[0]) / ordinary[0]
+		t.Logf("monthly expenses: %.0f; the ten cheapest after the first span %.1f %%", expenses, spread*100)
 
-		close := 0
+		if spread < .08 {
+			t.Errorf("the ordinary months span %.1f %% of the cheapest, want at least 8 %%", spread*100)
+		}
+	})
 
-		for _, e := range expenses {
-			if math.Abs(e-median) <= median*.03 {
-				close++
+	t.Run("habits follow the week", func(t *testing.T) {
+		// Rides go to work and the groceries go home on the weekend; a day drawn at random would give 71 % and 29 %.
+		var rides, weekdayRides, groceries, weekendGroceries int
+
+		for _, tx := range s.transactions(t) {
+			day, err := time.Parse(time.DateOnly, tx.Date)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			weekend := day.Weekday() == time.Saturday || day.Weekday() == time.Sunday
+
+			switch {
+			case strings.HasPrefix(tx.Description, "Corrida "):
+				rides++
+
+				if !weekend {
+					weekdayRides++
+				}
+			case strings.HasPrefix(tx.Description, "Compras no "):
+				groceries++
+
+				if weekend {
+					weekendGroceries++
+				}
 			}
 		}
 
-		t.Logf("monthly expense: median %.0f, %d of %d months within 3 %% of it", median/100, close, len(expenses))
+		if weekdayRides*100 < rides*85 {
+			t.Errorf("%d of %d rides on a weekday, want at least 85 %%", weekdayRides, rides)
+		}
 
-		if close*4 > len(expenses) {
-			t.Errorf("%d of %d months spend within 3 %% of the median, want at most a quarter", close, len(expenses))
+		if weekendGroceries*100 < groceries*40 {
+			t.Errorf("%d of %d grocery purchases on a weekend, want at least 40 %%", weekendGroceries, groceries)
 		}
 	})
 
@@ -253,6 +281,39 @@ func TestSeed(t *testing.T) {
 		}
 	})
 
+	t.Run("a schedule that lags its bill", func(t *testing.T) {
+		// The gym raised its fee in 2025-09 and the schedule still expects the old one: the schedule page suggests the new amount.
+		var sch struct {
+			Terms []struct {
+				EffectiveFrom string `json:"effective_from"`
+				Amount        money  `json:"amount"`
+			} `json:"terms"`
+		}
+		s.do(http.MethodGet, "/schedules/"+s.id("schedule.gym"), nil, &sch)
+
+		var out struct {
+			Items []struct {
+				ActualAmount *money `json:"actual_amount"`
+			} `json:"items"`
+		}
+		s.do(http.MethodGet, "/occurrences?state=realized&schedule_id="+s.id("schedule.gym")+"&from=2026-08-01&to=2026-11-05", nil, &out)
+
+		if s.err != nil {
+			t.Fatal(s.err)
+		}
+
+		if len(out.Items) < 3 {
+			t.Fatalf("realized gym occurrences from 2026-08 = %d, want at least 3", len(out.Items))
+		}
+
+		current := sch.Terms[len(sch.Terms)-1].Amount.Amount
+		for _, o := range out.Items {
+			if o.ActualAmount == nil || o.ActualAmount.Amount*100 < current*101 {
+				t.Errorf("gym occurrence: actual %v, current term %d, want an actual at least 1 %% above", o.ActualAmount, current)
+			}
+		}
+	})
+
 	t.Run("classification", func(t *testing.T) {
 		if err := s.runRules(); err != nil {
 			t.Fatal(err)
@@ -297,14 +358,40 @@ func TestSeedFollowsToday(t *testing.T) {
 
 	var imported []string
 
+	for _, tx := range s.transactions(t) {
+		if tx.Origin == "import" {
+			imported = append(imported, tx.Date)
+		}
+	}
+
+	if len(imported) == 0 {
+		t.Fatal("no imported transaction")
+	}
+
+	for _, d := range imported {
+		if d < "2026-11-28" || d > date {
+			t.Errorf("imported transaction dated %s, want a date from 2026-11-28 to %s", d, date)
+		}
+	}
+}
+
+type transactionRow struct {
+	Date        string `json:"date"`
+	Origin      string `json:"origin"`
+	Description string `json:"description"`
+}
+
+// transactions lists every transaction of the book.
+func (s *seeder) transactions(t *testing.T) []transactionRow {
+	t.Helper()
+
+	var all []transactionRow
+
 	cursor := ""
 	for {
 		var page struct {
-			Items []struct {
-				Date   string `json:"date"`
-				Origin string `json:"origin"`
-			} `json:"items"`
-			NextCursor string `json:"next_cursor"`
+			Items      []transactionRow `json:"items"`
+			NextCursor string           `json:"next_cursor"`
 		}
 
 		path := "/transactions?limit=200"
@@ -318,24 +405,10 @@ func TestSeedFollowsToday(t *testing.T) {
 			t.Fatal(s.err)
 		}
 
-		for _, it := range page.Items {
-			if it.Origin == "import" {
-				imported = append(imported, it.Date)
-			}
-		}
+		all = append(all, page.Items...)
 
 		if cursor = page.NextCursor; cursor == "" {
-			break
-		}
-	}
-
-	if len(imported) == 0 {
-		t.Fatal("no imported transaction")
-	}
-
-	for _, d := range imported {
-		if d < "2026-11-28" || d > date {
-			t.Errorf("imported transaction dated %s, want a date from 2026-11-28 to %s", d, date)
+			return all
 		}
 	}
 }

@@ -167,6 +167,8 @@ var bills = []bill{
 	{category: "leisure.streaming", payee: "HBO Max", via: "card.nubank", desc: "HBO Max", day: 17, base: 3490, until: "2025-09"},
 	{category: "leisure.streaming", payee: "Disney+", via: "card.itau", desc: "Disney+", day: 9, base: 3390, from: "2025-03"},
 	{category: "pets.supplies", payee: "Petz", via: "card.nubank", desc: "Assinatura de ração Petz", day: 3, base: 18990, steps: map[string]int64{"2025-08": 20990}, tags: []string{"gato"}},
+	{category: "leisure.apps", payee: "Apple", via: "card.itau", desc: "iCloud+ 200 GB", day: 15, base: 1490, steps: map[string]int64{"2026-03": 1690}},
+	{category: "education.courses", payee: "Duolingo", via: "card.nubank", desc: "Duolingo Super", day: 23, base: 4990, from: "2025-06"},
 	{category: "giving", payee: "Instituto Pequeno Cidadão", via: "card.itau", desc: "Doação mensal", day: 28, base: 5000},
 	{category: "fee.card", payee: "Itaú Unibanco", via: "card.itau", desc: "Anuidade do cartão Platinum", day: 21, base: 6240},
 	{category: "fee.bank", payee: "Itaú Unibanco", via: "itau.checking", desc: "Pacote de serviços da conta", day: 2, base: 3860},

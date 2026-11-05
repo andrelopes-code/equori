@@ -46,8 +46,7 @@ func schedules(start time.Time) []scheduleSpec {
 			terms: map[string]int64{"2025-06-01": 13990}},
 		{key: "mobile", kind: "subscription", account: "card.nubank", counterpart: "housing.mobile", payee: "Vivo Móvel", desc: "Plano de celular", cents: 8990, day: 20, start: s0,
 			terms: map[string]int64{"2025-09-01": 9990}, toleranceBP: 1500},
-		{key: "gym", kind: "subscription", account: "card.nubank", counterpart: "health.gym", payee: "Smart Fit", desc: "Mensalidade da academia", cents: 11990, day: 8, start: s0,
-			terms: map[string]int64{"2025-09-01": 12990}},
+		{key: "gym", kind: "subscription", account: "card.nubank", counterpart: "health.gym", payee: "Smart Fit", desc: "Mensalidade da academia", cents: 11990, day: 8, start: s0}, // the fee rose to 12990 in 2025-09 and the schedule was never updated.
 		{key: "netflix", kind: "subscription", account: "card.nubank", counterpart: "leisure.streaming", payee: "Netflix", desc: "Netflix", cents: 5590, day: 14, start: s0,
 			terms: map[string]int64{"2025-11-01": 5990}},
 		{key: "spotify", kind: "subscription", account: "card.itau", counterpart: "leisure.music", payee: "Spotify", desc: "Spotify Premium", cents: 2390, day: 6, start: s0,

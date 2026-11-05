@@ -17,7 +17,8 @@ type habit struct {
 	skew     float64
 	vias     []string
 	weights  []int
-	weekend  bool
+	weekend  bool // favors Friday to Sunday.
+	weekday  bool // favors Monday to Friday.
 	round    bool
 	from     string
 	season   *[12]float64
@@ -36,7 +37,7 @@ const lifestyle = 85
 
 var habits = []habit{
 	{category: "food.groceries", payees: []string{"Pão de Açúcar", "Carrefour", "Mercado Dia", "Empório Santa Luzia"}, desc: "Compras no %s", count: [2]int{7, 10}, lo: 4200, hi: 38000, skew: 2,
-		vias: []string{"alelo.meal", "card.itau", "card.nubank", "nubank.checking"}, weights: []int{70, 12, 12, 6}},
+		vias: []string{"alelo.meal", "card.itau", "card.nubank", "nubank.checking"}, weights: []int{70, 12, 12, 6}, weekend: true},
 	{category: "food.produce", payees: []string{"Hortifruti Natural da Terra"}, desc: "Feira de sábado, %s", count: [2]int{3, 5}, lo: 3500, hi: 9500, skew: 1,
 		vias: []string{"wallet", "nubank.checking"}, weights: []int{40, 60}, round: true},
 	{category: "food.bakery", payees: []string{"Padaria Bella Paulista"}, desc: "%s", count: [2]int{5, 9}, lo: 1400, hi: 5200, skew: 2,
@@ -46,11 +47,11 @@ var habits = []habit{
 	{category: "food.delivery", payees: []string{"iFood", "Rappi", "99Food"}, desc: "Pedido no %s", count: [2]int{6, 10}, lo: 3800, hi: 9500, skew: 1,
 		vias: []string{"card.nubank", "card.itau"}, weights: []int{65, 35}, round: true},
 	{category: "food.coffee", payees: []string{"Starbucks", "Cafeteria Santo Grão"}, desc: "Café, %s", count: [2]int{4, 8}, lo: 1400, hi: 3600, skew: 1,
-		vias: []string{"alelo.meal", "card.nubank"}, weights: []int{70, 30}, round: true},
+		vias: []string{"alelo.meal", "card.nubank"}, weights: []int{70, 30}, round: true, weekday: true},
 	{category: "food.bars", payees: []string{"Bar do Zé Pinheiros"}, desc: "Happy hour, %s", count: [2]int{2, 4}, lo: 8000, hi: 26000, skew: 1,
 		vias: []string{"card.itau", "nubank.checking", "wallet"}, weights: []int{50, 30, 20}, weekend: true, round: true},
 	{category: "transport.rideshare", payees: []string{"Uber", "99"}, desc: "Corrida %s", count: [2]int{8, 14}, lo: 1400, hi: 5800, skew: 2,
-		vias: []string{"card.nubank", "card.itau"}, weights: []int{70, 30}},
+		vias: []string{"card.nubank", "card.itau"}, weights: []int{70, 30}, weekday: true},
 	{category: "transport.coach", payees: []string{"Buser"}, desc: "Passagem de ônibus, %s", count: [2]int{0, 1}, chance: .3, lo: 8900, hi: 15900, skew: 1,
 		vias: []string{"card.itau"}, weights: []int{1}},
 	{category: "health.pharmacy", payees: []string{"Drogasil", "Droga Raia", "Pague Menos"}, desc: "Farmácia, %s", count: [2]int{2, 4}, lo: 2500, hi: 14000, skew: 2,
@@ -107,8 +108,8 @@ var discretionary = map[string]bool{
 
 // intensities draws how much a month weighs on the discretionary and on the essential habits: a lean month and a loose month alternate around 1.
 func (s *seeder) intensities() (loose, essential float64) {
-	loose = min(max(math.Exp(.2*s.rng.NormFloat64()), .6), 1.6)
-	essential = min(max(math.Exp(.06*s.rng.NormFloat64()), .85), 1.2)
+	loose = min(max(math.Exp(.3*s.rng.NormFloat64()), .5), 1.9)
+	essential = min(max(math.Exp(.08*s.rng.NormFloat64()), .8), 1.25)
 
 	return loose, essential
 }
@@ -120,7 +121,9 @@ func (s *seeder) dayOf(h habit, month time.Time) time.Time {
 		d := onDay(month, 1+s.rng.IntN(last))
 
 		wd := d.Weekday()
-		if !h.weekend || wd == time.Friday || wd == time.Saturday || wd == time.Sunday || s.rng.Float64() < .25 {
+		onWeekend := wd == time.Friday || wd == time.Saturday || wd == time.Sunday
+
+		if (!h.weekend && !h.weekday) || (h.weekend && onWeekend) || (h.weekday && wd != time.Saturday && wd != time.Sunday) || s.rng.Float64() < .25 {
 			return d
 		}
 	}
@@ -156,6 +159,7 @@ func (s *seeder) spending(month time.Time) {
 	s.therapy(month)
 	s.sharedDinners(month)
 	s.occasions(month)
+	s.surprises(month)
 }
 
 // therapy is one session every Thursday, with a few cancelled weeks.
@@ -235,4 +239,36 @@ func (s *seeder) occasions(month time.Time) {
 		via := s.pick(o.vias, o.weights)
 		s.at(d, func() { s.expense(d, via, o.category, o.payee, o.desc, cents) })
 	}
+}
+
+// surprise is an unplanned expense that a month may bring.
+type surprise struct {
+	category, payee, desc string
+	via                   string
+}
+
+var surprises = []surprise{
+	{"housing.repairs", "Leroy Merlin", "Conserto do chuveiro e da torneira", "card.itau"},
+	{"housing.repairs", "Leroy Merlin", "Troca da fechadura", "card.nubank"},
+	{"pets.vet", "Clínica Veterinária Patas", "Consulta de urgência", "card.nubank"},
+	{"health.appointments", "Dra. Helena Prado", "Consulta com especialista", "nubank.checking"},
+	{"health.exams", "Laboratório Fleury", "Exames de rotina", "card.itau"},
+	{"shopping.electronics", "KaBuM!", "Carregador e cabos", "card.nubank"},
+	{"shopping.clothes", "Renner", "Casaco para o frio", "card.itau"},
+	{"travel.lodging", "Airbnb", "Fim de semana em Campos do Jordão", "card.nubank"},
+	{"leisure.events", "Sympla", "Ingresso de show", "card.itau"},
+}
+
+// surprises books, in four months out of ten, one unplanned expense on a random day.
+func (s *seeder) surprises(month time.Time) {
+	if s.rng.Float64() >= .4 {
+		return
+	}
+
+	x := surprises[s.rng.IntN(len(surprises))]
+	d := s.dayOf(habit{}, month)
+
+	cents := s.between(25000, 180000, 2)
+	cents -= cents % 10
+	s.at(d, func() { s.expense(d, x.via, x.category, x.payee, x.desc, cents) })
 }
