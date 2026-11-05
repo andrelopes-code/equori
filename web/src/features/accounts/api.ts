@@ -10,6 +10,7 @@ import type { Client } from "openapi-fetch";
 import { useApi } from "@/api/api-context";
 import { unwrap } from "@/api/problem";
 import type { components, paths } from "@/api/schema.gen";
+import { bulkLimit, chunks } from "@/features/transactions";
 
 export type Basis = "booked" | "settled";
 
@@ -550,6 +551,24 @@ export function useResolveRecord() {
           body: resolution,
         }),
       ),
+  );
+}
+
+// A resolve request takes at most bulkLimit items; a larger selection is sent in runs.
+export function useResolveRecords() {
+  return useApiMutation(
+    async (api, items: components["schemas"]["BulkResolveInput"]["items"]) => {
+      const results: components["schemas"]["BulkResolveItemResult"][] = [];
+      for (const run of chunks(items, bulkLimit)) {
+        const answer = await unwrap(
+          await api.POST("/external-records/resolve", {
+            body: { items: run },
+          }),
+        );
+        results.push(...answer.results);
+      }
+      return results;
+    },
   );
 }
 

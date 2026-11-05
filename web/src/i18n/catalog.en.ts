@@ -2123,6 +2123,16 @@ export const catalogEn = {
   "overview.spending.amount": "Spent",
   "overview.attention.more": "{count} more",
   "overview.open": "Open",
+  "bulk.resolved": "{done} resolved, {refused} refused.",
+  "bulk.voided": "{done} voided, {refused} refused.",
+  "bulk.refusedLine": "{label}: {reason}",
+  "bulk.total": "Total: {amount}",
+  "selection.void": "Void",
+  "bulkVoid.title": "Void {count} transactions",
+  "bulkVoid.description":
+    "Voided transactions leave every balance and stay in history. A transaction with reconciled postings is refused.",
+  "problem.later_sale_exists":
+    "A later sale of this security depends on this transaction.",
 } as const;
 
 export type Catalog = { [K in keyof typeof catalogEn]: string };

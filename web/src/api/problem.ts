@@ -41,9 +41,14 @@ function isProblemKey(key: string): key is MessageKey {
   return key in catalogEn;
 }
 
+// The words of a problem code, or fallback when the catalog holds none.
+export function codeText(code: string, fallback: string, t: TFunction): string {
+  const key = `problem.${code}`;
+  return isProblemKey(key) ? t(key) : fallback;
+}
+
 export function problemMessage(problem: Problem, t: TFunction): string {
-  const key = `problem.${problem.code}`;
-  return isProblemKey(key) ? t(key) : problem.title;
+  return codeText(problem.code, problem.title, t);
 }
 
 export function fieldErrors(problem: Problem): Record<string, string> {

@@ -955,4 +955,15 @@ export const accountsEn = {
   "accountCard.meter.savings.goal": "Goal of {amount}",
   "accountCard.meter.savings.pct": "{pct}% of the goal",
   "accountCard.meter.savings.reached": "Goal reached",
+  "reviewSelection.label": "Selected lines",
+  "reviewSelection.count": "{count} selected",
+  "reviewSelection.select": "Select {line}",
+  "reviewSelection.selectAll": "Select the {count} lines",
+  "reviewSelection.confirm": "Confirm suggestions ({count})",
+  "reviewSelection.create": "Create transactions",
+  "reviewSelection.discard": "Discard",
+  "reviewSelection.discardTitle": "Discard {count} lines",
+  "reviewSelection.discardDescription":
+    'The lines stay out of the ledger. A discarded line returns to review with "Reopen for review".',
+  "problem.group_changed": "The lines of this group changed since the review.",
 } as const;

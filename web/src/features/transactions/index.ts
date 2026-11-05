@@ -5,6 +5,7 @@ export {
   transactionMutated,
   uncategorizedCountQuery,
 } from "@/features/transactions/api";
+export { bulkLimit, chunks } from "@/features/transactions/categorize";
 export {
   validateTransactionSearch,
   validateTransactionsPageSearch,

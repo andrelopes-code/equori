@@ -279,6 +279,33 @@ export function useBulkCategorize() {
   });
 }
 
+// A void request takes at most bulkLimit items; a larger selection is sent in runs.
+export function useVoidTransactions() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      ids,
+      reason,
+    }: {
+      ids: readonly string[];
+      reason: string;
+    }) => {
+      const results: components["schemas"]["BulkVoidItemResult"][] = [];
+      for (const run of chunks(ids, bulkLimit)) {
+        const answer = await unwrap(
+          await api.POST("/transactions/void", {
+            body: { reason, items: run.map((id) => ({ id })) },
+          }),
+        );
+        results.push(...answer.results);
+      }
+      return results;
+    },
+    onSuccess: () => transactionMutated(queryClient, []),
+  });
+}
+
 // One page of up to 200 uncategorized transactions like the given one.
 export async function similarTransactions(
   api: Client<paths>,

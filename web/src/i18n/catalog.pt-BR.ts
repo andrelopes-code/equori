@@ -2145,4 +2145,14 @@ export const catalogPtBR: Catalog = {
   "overview.spending.amount": "Gasto",
   "overview.attention.more": "mais {count}",
   "overview.open": "Abrir",
+  "bulk.resolved": "{done} resolvidas, {refused} recusadas.",
+  "bulk.voided": "{done} anuladas, {refused} recusadas.",
+  "bulk.refusedLine": "{label}: {reason}",
+  "bulk.total": "Total: {amount}",
+  "selection.void": "Anular",
+  "bulkVoid.title": "Anular {count} transações",
+  "bulkVoid.description":
+    "As transações anuladas saem de todos os saldos e ficam no histórico. Uma transação com partidas conciliadas é recusada.",
+  "problem.later_sale_exists":
+    "Uma venda posterior deste ativo depende desta transação.",
 };

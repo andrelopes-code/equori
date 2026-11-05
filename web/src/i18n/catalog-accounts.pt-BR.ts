@@ -953,4 +953,15 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "accountCard.meter.savings.goal": "Meta de {amount}",
   "accountCard.meter.savings.pct": "{pct}% da meta",
   "accountCard.meter.savings.reached": "Meta atingida",
+  "reviewSelection.label": "Linhas selecionadas",
+  "reviewSelection.count": "{count} selecionadas",
+  "reviewSelection.select": "Selecionar {line}",
+  "reviewSelection.selectAll": "Selecionar as {count} linhas",
+  "reviewSelection.confirm": "Confirmar sugestões ({count})",
+  "reviewSelection.create": "Criar transações",
+  "reviewSelection.discard": "Descartar",
+  "reviewSelection.discardTitle": "Descartar {count} linhas",
+  "reviewSelection.discardDescription":
+    'As linhas ficam fora do livro. Uma linha descartada volta à revisão por "Reabrir para revisão".',
+  "problem.group_changed": "As linhas deste grupo mudaram desde a revisão.",
 };
