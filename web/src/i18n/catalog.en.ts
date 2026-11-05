@@ -2090,11 +2090,22 @@ export const catalogEn = {
   "overview.attention.atLeast": "{count}+",
   "overview.figures.net": "Net worth",
   "overview.figures.result": "Month result",
-  "overview.figures.resultNote":
-    "Available group: income {income}, outflow {outflow}",
+  "overview.figures.resultNote": "{income} came in and {outflow} went out",
+  "overview.figures.resultHelp":
+    "How much the money in the Available accounts grew or shrank in the month.",
+  "overview.figures.resultFormula":
+    "income − outflow of the Available accounts in the month. Outflow is the expenses paid from those accounts; a card statement payment and a transfer between own accounts are not outflow.",
+  "overview.figures.resultExample":
+    "income of 5,000 and outflow of 3,500 give 1,500.",
   "overview.figures.balance": "Month-end balance",
-  "overview.figures.lowest": "Lowest {amount} on {date}",
-  "overview.figures.booked": "Recorded balance",
+  "overview.figures.lowest": "Lowest forecast balance: {amount} on {date}",
+  "overview.figures.booked": "Recorded balance on {date}",
+  "overview.figures.balanceHelp":
+    "How much the Available accounts hold on the last day of the month.",
+  "overview.figures.balanceFormula":
+    "today's balance + the income and outflow expected up to the month's end, card statements due in the month included. For a past month, the balance recorded on its last day.",
+  "overview.figures.balanceExample":
+    "a balance of 3,000 today, an expected salary of 5,000 and a statement of 4,200 give 3,800.",
   "overview.figures.committed": "Committed",
   "overview.figures.committedNote": "Installments {installments}",
   "overview.balance.title": "Balance of the month",

@@ -299,6 +299,16 @@ describe("overview page", () => {
     expect(block("Month result")).toHaveTextContent(
       "Income minus outflow of the Available group",
     );
+
+    await userEvent.setup().click(
+      within(block("Month result")).getByRole("button", {
+        name: "About Month result",
+      }),
+    );
+
+    expect(
+      await screen.findByText(catalogEn["overview.figures.resultHelp"]),
+    ).toBeVisible();
   });
 
   it("lists the five largest categories of the month", async () => {
@@ -739,9 +749,36 @@ describe("overview page", () => {
       expect(block("Net worth")).toHaveTextContent("1,005.00");
       expect(block("Month result")).toHaveTextContent("975.00");
       expect(block("Month result")).toHaveTextContent(
-        "Available group: income R$1,000.00, outflow R$25.00",
+        "R$1,000.00 came in and R$25.00 went out",
       );
       expect(block("Committed")).toHaveTextContent("3,000.00");
+    });
+
+    it("explains the month result and the month-end balance behind an About control", async () => {
+      const user = userEvent.setup();
+      await renderApp("/", { fetch: api(projection) });
+      await screen.findByRole("article", { name: "Month-end balance" });
+
+      for (const [name, key] of [
+        ["Month result", "result"],
+        ["Month-end balance", "balance"],
+      ] as const) {
+        await user.click(
+          within(block(name)).getByRole("button", { name: `About ${name}` }),
+        );
+
+        expect(
+          await screen.findByText(catalogEn[`overview.figures.${key}Help`]),
+        ).toBeVisible();
+        expect(
+          screen.getByText(catalogEn[`overview.figures.${key}Formula`]),
+        ).toBeVisible();
+        expect(
+          screen.getByText(catalogEn[`overview.figures.${key}Example`]),
+        ).toBeVisible();
+
+        await user.keyboard("{Escape}");
+      }
     });
 
     it("S278: takes the card statement due this month out of the forecast on its due date", async () => {
@@ -759,7 +796,9 @@ describe("overview page", () => {
       await waitFor(() => {
         expect(balance).toHaveTextContent("3,440.55");
       });
-      expect(balance).toHaveTextContent("Lowest R$3,440.55 on Oct 25");
+      expect(balance).toHaveTextContent(
+        "Lowest forecast balance: R$3,440.55 on Oct 25",
+      );
     });
 
     it("draws the balance of the month as a chart", async () => {

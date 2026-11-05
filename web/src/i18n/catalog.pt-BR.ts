@@ -2112,11 +2112,22 @@ export const catalogPtBR: Catalog = {
   "overview.attention.atLeast": "{count}+",
   "overview.figures.net": "Patrimônio líquido",
   "overview.figures.result": "Resultado do mês",
-  "overview.figures.resultNote":
-    "Grupo Disponível: entradas {income}, saídas {outflow}",
+  "overview.figures.resultNote": "Entraram {income} e saíram {outflow}",
+  "overview.figures.resultHelp":
+    "Quanto o dinheiro das contas do grupo Disponível aumentou ou diminuiu no mês.",
+  "overview.figures.resultFormula":
+    "entradas − saídas das contas do grupo Disponível no mês. Saídas são as despesas pagas por essas contas; o pagamento de uma fatura de cartão e uma transferência entre contas próprias não entram.",
+  "overview.figures.resultExample":
+    "entradas de 5.000 e saídas de 3.500 dão 1.500.",
   "overview.figures.balance": "Saldo no fim do mês",
-  "overview.figures.lowest": "Menor {amount} em {date}",
-  "overview.figures.booked": "Saldo registrado",
+  "overview.figures.lowest": "Saldo mais baixo previsto: {amount} em {date}",
+  "overview.figures.booked": "Saldo registrado em {date}",
+  "overview.figures.balanceHelp":
+    "Quanto as contas do grupo Disponível terão no último dia do mês.",
+  "overview.figures.balanceFormula":
+    "saldo de hoje + entradas e saídas previstas até o fim do mês, incluindo as faturas de cartão que vencem no mês. Num mês passado, o saldo registrado no último dia.",
+  "overview.figures.balanceExample":
+    "saldo de 3.000 hoje, salário previsto de 5.000 e fatura de 4.200 dão 3.800.",
   "overview.figures.committed": "Comprometido",
   "overview.figures.committedNote": "Parcelas {installments}",
   "overview.balance.title": "Saldo do mês",

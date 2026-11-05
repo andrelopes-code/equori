@@ -1,5 +1,6 @@
 import { Text } from "@slotted/react/typography";
 
+import { FigureHelp } from "@/features/overview/figure-help";
 import { FigureWidget } from "@/features/overview/figure-widget";
 import { monthEnd } from "@/features/overview/forecast";
 import type { Placement } from "@/features/overview/overview-block";
@@ -51,6 +52,15 @@ export function MonthFlowFigure({
           search: { from: `${month}-01`, to: end },
         },
       }}
+      help={
+        kind === "result" && (
+          <FigureHelp
+            help={t("overview.figures.resultHelp")}
+            formula={t("overview.figures.resultFormula")}
+            example={t("overview.figures.resultExample")}
+          />
+        )
+      }
       error={failed}
       onRetry={retry}
       loading={overview === undefined && failed === null}

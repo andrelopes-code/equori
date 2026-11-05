@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { useApi } from "@/api/api-context";
 import { netWorthQuery } from "@/features/overview/api";
+import { FigureHelp } from "@/features/overview/figure-help";
 import { FigureWidget } from "@/features/overview/figure-widget";
 import { monthEnd, shiftMonth } from "@/features/overview/forecast";
 import { changeOf } from "@/features/overview/net-worth";
@@ -104,6 +105,13 @@ export function DesktopFigure({
             search: { from: `${month}-01`, to: monthEnd(month) },
           },
         }}
+        help={
+          <FigureHelp
+            help={t("overview.figures.resultHelp")}
+            formula={t("overview.figures.resultFormula")}
+            example={t("overview.figures.resultExample")}
+          />
+        }
         loading={overview === undefined}
         value={figure(
           flows === undefined ? undefined : flows.income - flows.spending,
@@ -128,11 +136,20 @@ export function DesktopFigure({
           label: t("overview.upcoming.open"),
           options: { to: "/planning" },
         }}
+        help={
+          <FigureHelp
+            help={t("overview.figures.balanceHelp")}
+            formula={t("overview.figures.balanceFormula")}
+            example={t("overview.figures.balanceExample")}
+          />
+        }
         loading={overview === undefined}
         value={figure(overview?.closing)}
         note={
           lowest === null || lowest === undefined
-            ? t("overview.figures.booked")
+            ? t("overview.figures.booked", {
+                date: formatDayMonth(monthEnd(month), locale),
+              })
             : t("overview.figures.lowest", {
                 amount: money(lowest.balance) ?? "",
                 date: formatDayMonth(lowest.date, locale),
