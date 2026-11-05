@@ -594,6 +594,49 @@ func TestRulesMatchDescriptorsByWord(t *testing.T) {
 	}
 }
 
+// TestEveryRuleCanFire checks that each rule matches a line that arrives through a statement file: a rule for a bill that the book records by hand would never categorize anything.
+func TestEveryRuleCanFire(t *testing.T) {
+	lines := []string{"Pix enviado Padaria Bella Paulista", "UBER *EATS"}
+	for _, l := range itauExtraLines {
+		lines = append(lines, l.name)
+	}
+
+	for _, d := range descriptors {
+		lines = append(lines, d, "Compra no debito "+d)
+	}
+
+	for _, r := range rules {
+		fires := false
+
+		for _, line := range lines {
+			holds := true
+
+			for _, c := range r.conditions {
+				if c["field"] != "description" {
+					continue
+				}
+
+				value, _ := c["value"].(string)
+
+				switch c["operator"] {
+				case "contains":
+					holds = holds && strings.Contains(strings.ToLower(line), value)
+				case "regex":
+					holds = holds && regexp.MustCompile(value).MatchString(line)
+				default:
+					holds = false
+				}
+			}
+
+			fires = fires || holds
+		}
+
+		if !fires {
+			t.Errorf("rule %q matches no statement line of the seed", r.name)
+		}
+	}
+}
+
 // TestSeedFollowsToday seeds a date other than the default: the lines of the statements of the last three weeks fall in the three weeks before it.
 func TestSeedFollowsToday(t *testing.T) {
 	const date = "2026-12-19"

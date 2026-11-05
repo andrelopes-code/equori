@@ -257,6 +257,17 @@ func (s *seeder) importStatements() {
 	s.upload("/accounts/"+s.id("card.itau")+"/imports", map[string]string{"format": "ofx"}, "fatura-itau-"+ym(s.today)+".ofx", cardOFX(from, to, cards))
 }
 
+// itauExtraLines are the lines of the Itaú export that the book does not hold yet: a Pix to a person, a fee and the extra contribution to the brokerage, which a rule turns into a transfer.
+var itauExtraLines = []struct {
+	daysAgo int
+	name    string
+	cents   int64
+}{
+	{6, "TED XP INVESTIMENTOS", -80000},
+	{2, "PIX TRANSF MARIA L", -8000},
+	{1, "TARIFA SAQUE OUTRA REDE", -690},
+}
+
 // importCSV saves the CSV profiles of two accounts and imports an Itaú checking export of the last three weeks: recorded lines match, two new lines wait for a category.
 func (s *seeder) importCSV() {
 	s.do(http.MethodPut, "/accounts/"+s.id("itau.checking")+"/csv-profile", map[string]any{
@@ -285,9 +296,14 @@ func (s *seeder) importCSV() {
 		line(e.date, strings.ToUpper(e.desc), e.cents)
 	}
 
-	line(iso(s.today.AddDate(0, 0, -2)), "PIX TRANSF MARIA L", -8000)
-	line(iso(s.today.AddDate(0, 0, -1)), "TARIFA SAQUE OUTRA REDE", -690)
-	s.ensure(s.today.AddDate(0, 0, -3), "itau.checking", 8690+10000)
+	var added int64
+
+	for _, l := range itauExtraLines {
+		line(iso(s.today.AddDate(0, 0, -l.daysAgo)), l.name, l.cents)
+		added -= l.cents
+	}
+
+	s.ensure(s.today.AddDate(0, 0, -7), "itau.checking", added+10000)
 	s.upload("/accounts/"+s.id("itau.checking")+"/imports", map[string]string{"format": "csv"}, "extrato-itau.csv", []byte(b.String()))
 }
 

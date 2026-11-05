@@ -35,7 +35,7 @@ func setCategory(key string) func(s *seeder) []map[string]any {
 	}
 }
 
-// rules run by creation order: the more specific rules come first.
+// rules run by creation order: the more specific rules come first. Each one matches lines that arrive through a statement file; a bill recorded by hand needs no rule.
 var rules = []rule{
 	{name: "Uber Eats é delivery", conditions: []map[string]any{contains("description", "uber *eats")}, stop: true,
 		actions: func(s *seeder) []map[string]any {
@@ -73,12 +73,6 @@ var rules = []rule{
 	{name: "Supermercados", conditions: []map[string]any{anyOf("description", "pao de acucar", "carrefour", "mercado dia", "emporio santa luzia")}, actions: setCategory("food.groceries")},
 	{name: "Cafeterias", conditions: []map[string]any{anyOf("description", "starbucks", "santo grao")}, actions: setCategory("food.coffee")},
 	{name: "Padarias", conditions: []map[string]any{contains("description", "padaria")}, actions: setCategory("food.bakery")},
-	{name: "Streaming e música", conditions: []map[string]any{anyOf("description", "netflix", "spotify", "disney", "hbo")},
-		actions: func(s *seeder) []map[string]any {
-			return []map[string]any{{"type": "set_category", "category_id": s.id("leisure.streaming")}, {"type": "add_tags", "tags": []string{"assinatura"}}}
-		}},
-	{name: "Academia", conditions: []map[string]any{anyOf("description", "smartfit", "smart fit")}, actions: setCategory("health.gym")},
-	{name: "Aluguel", conditions: []map[string]any{contains("description", "quintoandar")}, actions: setCategory("housing.rent")},
 	{name: "Aportes na corretora são transferências", conditions: []map[string]any{contains("description", "xp investimentos")},
 		actions: func(s *seeder) []map[string]any {
 			return []map[string]any{{"type": "transfer", "account_id": s.id("xp.cash")}}
