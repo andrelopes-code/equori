@@ -10,7 +10,6 @@ import { formatDayMonth } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { useMoneyFormat } from "@/privacy/use-money-format";
-import { axisFloor } from "@/ui/axis-floor";
 
 interface NetWorthDayChartProps {
   title: string;
@@ -73,9 +72,6 @@ export function NetWorthDayChart({
     forecast === undefined
       ? []
       : eventLines([{ events: forecastEvents(forecast, t) }], label);
-  const values = data.flatMap((row) =>
-    [row.net, row.forecast].filter((value) => value !== null),
-  );
 
   function handleSelect(point: ChartPoint | null) {
     const date = data.find((row) => row.label === point?.key)?.date;
@@ -90,7 +86,7 @@ export function NetWorthDayChart({
       data={data}
       series={forecast === undefined ? series.slice(0, 1) : series}
       x={{ field: "label" }}
-      y={{ format: money, min: axisFloor(values) }}
+      y={{ format: money }}
       annotations={annotations}
       selectable
       onSelectionChange={handleSelect}

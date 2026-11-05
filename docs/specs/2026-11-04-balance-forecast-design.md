@@ -22,7 +22,7 @@ The overview's "Balance of the month" chart draws the balance of the Available a
 | B5 | A line's `priority` is the absolute amount of its event in minor units. The today line has the highest priority. The chart hides the labels that collide past the second row and names them in the tooltip. |
 | B6 | A past month draws no forecast, so B1 and B4 add nothing to it. |
 | B7 | An occurrence dated today, an overdue one or a statement past due, lowers the forecast from the next day, so the realized and the forecast lines meet on today. On the last day of the month it lowers the forecast of today. |
-| B8 | The value axis starts a quarter of the balance's span below the lowest balance, rounded down to the span's order of magnitude, never below zero. A negative or zero balance keeps the chart's own axis. Workaround for Slotted issue #70. |
+| B8 | The value axis fits the balance and the forecast: the chart's `extent` defaults to `data` for a line series. |
 
 B1 changes every figure read from the forecast: the forecast balance at month end and the lowest balance ahead.
 
@@ -36,7 +36,6 @@ No regional value enters: the currency comes from settings, and the dates of a s
 | Statement queries and B2 | `web/src/features/overview/use-overview.ts`, reusing `statementsQuery`, `currentAndUnpaid` and `owedStatements` |
 | `eventLines` | `web/src/features/overview/balance-annotations.ts`: one line per event, with `priority` (B5) |
 | `annotatedEvents` | removed with its tests, replaced by B5 |
-| `balanceFloor(rows)` | `web/src/features/overview/balance-rows.ts`, B8, tested in `balance-rows.test.ts` |
 | Message | `overview.balance.statement` in `catalog.en.ts` and `catalog.pt-BR.ts` |
 
 ## 4. Acceptance

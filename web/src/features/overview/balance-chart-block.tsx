@@ -3,7 +3,7 @@ import type { ChartSeries } from "@slotted/core/chart";
 import { useMemo } from "react";
 
 import { eventLines } from "@/features/overview/balance-annotations";
-import { balanceFloor, balanceRows } from "@/features/overview/balance-rows";
+import { balanceRows } from "@/features/overview/balance-rows";
 import {
   OverviewBlock,
   type Placement,
@@ -85,7 +85,7 @@ export function BalanceChartBlock({
         data={data}
         series={series}
         x={{ field: "label" }}
-        y={{ format: money, min: balanceFloor(data) }}
+        y={{ format: money }}
         annotations={annotations}
       />
     </OverviewBlock>

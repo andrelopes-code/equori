@@ -1,5 +1,4 @@
 import type { ForecastDay } from "@/features/overview/forecast";
-import { axisFloor } from "@/ui/axis-floor";
 
 export interface BalanceRow {
   date: string;
@@ -14,13 +13,4 @@ export function balanceRows(days: readonly ForecastDay[]): BalanceRow[] {
     balance: day.realized ?? null,
     projection: day.forecast ?? null,
   }));
-}
-
-// The axis of the balance chart fits the balance and the forecast (Slotted issue #70, axisFloor).
-export function balanceFloor(rows: readonly BalanceRow[]): number | undefined {
-  return axisFloor(
-    rows.flatMap((row) =>
-      [row.balance, row.projection].filter((value) => value !== null),
-    ),
-  );
 }
