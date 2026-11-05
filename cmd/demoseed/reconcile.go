@@ -44,10 +44,14 @@ func (s *seeder) assertBalances() {
 			s.do(http.MethodPost, "/accounts/"+s.id(key)+"/balance-assertions", map[string]any{"date": iso(m.AddDate(0, 1, -1)), "amount": brl(cents), "source": "manual"}, nil)
 		}
 	}
+}
 
-	// An unexplained difference stays open on the salary account: the institution shows a Pix the ledger lacks.
-	d := s.today.AddDate(0, 0, -1)
-	s.do(http.MethodPost, "/accounts/"+s.id("itau.checking")+"/balance-assertions", map[string]any{"date": iso(d), "amount": brl(s.bal[s.id("itau.checking")] + 3840), "source": "manual"}, nil)
+// openDifference leaves an unexplained difference on the salary account: the institution shows a Pix of R$ 38,40 that the ledger lacks. It runs after the imports and the fundings, which move the balance of the day it reads.
+func (s *seeder) openDifference() {
+	d := iso(s.today.AddDate(0, 0, -1))
+	s.do(http.MethodPost, "/accounts/"+s.id("itau.checking")+"/balance-assertions", map[string]any{
+		"date": d, "amount": brl(s.balanceOn("itau.checking", d) + 3840), "source": "manual",
+	}, nil)
 }
 
 // reconcileStatements confirms the amount due of the closed statements of the last three months, except the latest of the Nubank card, which the institution reports with a difference.

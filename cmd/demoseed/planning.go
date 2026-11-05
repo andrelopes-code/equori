@@ -151,24 +151,24 @@ type budgetSpec struct {
 	steps    map[string]int64 // amount from a month, "YYYY-MM"
 }
 
-// The budgets cover every category the persona spends in, the fixed ones as groups, so that no month leaves a large part of the spending unbudgeted.
+// The amounts follow what the persona spends in a month, a tenth above: a rollover budget far above the spending would carry years of savings. The budgets cover every category the persona spends in, the fixed ones as groups, so that no month leaves a large part of the spending unbudgeted.
 var budgetSpecs = []budgetSpec{
 	{"housing", 520000, false, map[string]int64{"2025-08": 545000, "2026-08": 575000}},
 	{"health", 160000, false, map[string]int64{"2025-07": 175000}},
 	{"system.taxes", 420000, false, map[string]int64{"2026-01": 440000}},
 	{"system.fees", 10000, false, nil},
-	{"food.groceries", 190000, true, map[string]int64{"2026-01": 200000}},
-	{"food.produce", 35000, false, nil},
-	{"food.bakery", 20000, false, nil},
+	{"food.groceries", 105000, true, map[string]int64{"2026-01": 110000}},
+	{"food.produce", 24000, false, nil},
+	{"food.bakery", 14000, false, nil},
 	{"food.restaurants", 90000, false, map[string]int64{"2026-01": 95000}},
-	{"food.delivery", 60000, false, nil},
-	{"food.coffee", 25000, false, nil},
-	{"food.bars", 40000, false, nil},
-	{"transport.rideshare", 45000, false, map[string]int64{"2026-01": 50000}},
+	{"food.delivery", 48000, false, nil},
+	{"food.coffee", 17000, false, nil},
+	{"food.bars", 50000, false, nil},
+	{"transport.rideshare", 25000, false, map[string]int64{"2026-01": 28000}},
 	{"shopping", 90000, true, map[string]int64{"2026-01": 95000}},
-	{"leisure", 65000, false, nil},
+	{"leisure", 45000, false, nil},
 	{"travel", 105000, true, map[string]int64{"2026-01": 115000}},
-	{"pets", 45000, false, map[string]int64{"2026-01": 50000}},
+	{"pets", 33000, false, map[string]int64{"2026-01": 36000}},
 	{"education", 25000, false, nil},
 	{"giving", 5000, false, nil},
 }

@@ -109,6 +109,7 @@ func seed(s *seeder, cfg config) error {
 	s.reconcileStatements()
 	s.importStatements()
 	s.importCSV()
+	s.openDifference()
 	s.touchOccurrences()
 	s.goals()
 

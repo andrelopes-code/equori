@@ -302,6 +302,51 @@ func TestSeed(t *testing.T) {
 		}
 	})
 
+	t.Run("budgets carry over a few months at most", func(t *testing.T) {
+		var list struct {
+			Items []struct {
+				ID       string `json:"id"`
+				Rollover bool   `json:"rollover"`
+			} `json:"items"`
+		}
+		s.do(http.MethodGet, "/budgets", nil, &list)
+
+		// A rollover budget that spends half of its amount for two years would show a carry of many months.
+		for _, b := range list.Items {
+			var progress struct {
+				Planned money `json:"planned"`
+				Carried money `json:"carried"`
+			}
+			s.do(http.MethodGet, "/budgets/"+b.ID+"/progress?month=2026-10", nil, &progress)
+
+			if b.Rollover && progress.Carried.Amount > progress.Planned.Amount*4 {
+				t.Errorf("budget %s carries %d over %d planned, want at most four months", b.ID, progress.Carried.Amount, progress.Planned.Amount)
+			}
+		}
+
+		if s.err != nil {
+			t.Fatal(s.err)
+		}
+	})
+
+	t.Run("the open difference is the one set on purpose", func(t *testing.T) {
+		// The institution shows a Pix of R$ 38,40 that the ledger lacks; imports and fundings made after the assertion must not move it.
+		var out struct {
+			OpenDifference struct {
+				Difference money `json:"difference"`
+			} `json:"open_difference"`
+		}
+		s.do(http.MethodGet, "/accounts/"+s.id("itau.checking")+"/reconciliation", nil, &out)
+
+		if s.err != nil {
+			t.Fatal(s.err)
+		}
+
+		if got := out.OpenDifference.Difference.Amount; got != 3840 {
+			t.Errorf("open difference of the salary account = %d, want 3840", got)
+		}
+	})
+
 	t.Run("goals are under way", func(t *testing.T) {
 		var out struct {
 			Items []struct {
