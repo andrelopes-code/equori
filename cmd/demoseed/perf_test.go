@@ -61,7 +61,7 @@ func rss(t *testing.T) int64 {
 
 // N05, N06, N09 on the demo dataset (docs/operations/performance.md).
 func TestPerformanceOnDemoDataset(t *testing.T) {
-	s, cfg, h := seedHarness(t)
+	s, cfg, h := seedHarness(t, testToday)
 	if err := seed(s, cfg); err != nil {
 		t.Fatal(err)
 	}
