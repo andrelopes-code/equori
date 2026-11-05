@@ -1,4 +1,4 @@
-import { Page, PageBody } from "@slotted/react/page";
+import { Page, PageBody, PageFooter } from "@slotted/react/page";
 import {
   ResultState,
   ResultStateContent,
@@ -22,8 +22,11 @@ import { BatchRecordsTable } from "@/features/accounts/batch-records-table";
 import type { RecordFilter } from "@/features/accounts/batch-search";
 import { batchSubtitle } from "@/features/accounts/batch-subtitle";
 import { sourceLabel } from "@/features/accounts/imports-tab";
+import { DiscardLinesDialog } from "@/features/accounts/discard-lines-dialog";
 import { RecordFilterControl } from "@/features/accounts/record-filter-control";
+import { ReviewSelectionBar } from "@/features/accounts/review-selection-bar";
 import { ReviewWorkspace } from "@/features/accounts/review-workspace";
+import { useReviewSelection } from "@/features/accounts/use-review-selection";
 import { useScale } from "@/features/setup";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { QueryError } from "@/ui/query-error";
@@ -53,6 +56,10 @@ export function BatchPage() {
   const rows = (records.data?.pages ?? []).flatMap((page) => page.items);
   const current = rows.find((r) => r.id === search.record);
   const sc = scale ?? (() => 2);
+  const selection = useReviewSelection(rows, shown, () => {
+    void records.refetch();
+    void batch.refetch();
+  });
 
   const setFilter = (state: RecordFilter) => {
     void navigate({
@@ -89,7 +96,17 @@ export function BatchPage() {
   ];
 
   return (
-    <Page width="full">
+    <Page
+      width="full"
+      footer={
+        selection.selected.length > 0 ? (
+          <PageFooter>
+            <ReviewSelectionBar selection={selection} />
+            <DiscardLinesDialog selection={selection} />
+          </PageFooter>
+        ) : undefined
+      }
+    >
       <AccountFormHeader
         title={title}
         subtitle={
@@ -142,6 +159,7 @@ export function BatchPage() {
                 current={current}
                 scale={sc}
                 busy={records.isFetching}
+                selection={selection}
                 onStale={() => void records.refetch()}
                 onResolved={() => {
                   const index = rows.findIndex((r) => r.id === current?.id);

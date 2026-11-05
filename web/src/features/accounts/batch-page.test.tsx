@@ -321,4 +321,162 @@ describe("Import batch", () => {
       expect(log.filter((l) => l.route === "reopen r5")).toHaveLength(1);
     });
   });
+  describe("selection", () => {
+    const group = {
+      review_reason: "group",
+      group_record_ids: ["r4"],
+      candidates: ["t3"],
+      scored_candidates: [],
+    };
+
+    function selectionApi(
+      log: { route: string; body?: unknown }[],
+      results: { record_id: string; status: string }[],
+    ) {
+      return api(log, {
+        "GET /api/v1/import-batches/b1/records": () =>
+          json(200, {
+            items: [
+              record("r1", "Padaria", { review_reason: "probable" }),
+              record("r2", "Mercado"),
+              record("r3", "Grupo", group),
+            ],
+          }),
+        "POST /api/v1/external-records/resolve": async (req) => {
+          log.push({ route: "resolve", body: await req.json() });
+          return json(200, { results });
+        },
+      });
+    }
+
+    async function check(...names: string[]) {
+      for (const line of names) {
+        await userEvent.click(
+          await screen.findByRole("checkbox", {
+            name: words("reviewSelection.select", { line }),
+          }),
+        );
+      }
+    }
+
+    it("confirms the suggestions of the selected lines (S293)", async () => {
+      const log: { route: string; body?: unknown }[] = [];
+      await renderApp(path, {
+        fetch: selectionApi(log, [{ record_id: "r1", status: "resolved" }]),
+      });
+      await check("Padaria", "Mercado");
+      expect(
+        screen.queryByRole("checkbox", {
+          name: words("reviewSelection.select", { line: "Grupo" }),
+        }),
+      ).not.toBeInTheDocument();
+      await userEvent.click(
+        screen.getByRole("button", {
+          name: words("reviewSelection.confirm", { count: "1" }),
+        }),
+      );
+      await waitFor(() => {
+        expect(log.filter((l) => l.route === "resolve")).toEqual([
+          {
+            route: "resolve",
+            body: {
+              items: [
+                {
+                  record_id: "r1",
+                  resolution: { action: "match", transaction_id: "t1" },
+                },
+              ],
+            },
+          },
+        ]);
+      });
+      expect(await screen.findByText("1 resolved, 0 refused.")).toBeVisible();
+    });
+
+    it("names each refused line (S294)", async () => {
+      const log: { route: string; body?: unknown }[] = [];
+      await renderApp(path, {
+        fetch: selectionApi(log, [
+          { record_id: "r1", status: "resolved" },
+          { record_id: "r2", status: "record_resolved" },
+        ]),
+      });
+      await check("Padaria", "Mercado");
+      await userEvent.click(
+        screen.getByRole("button", {
+          name: catalogEn["reviewSelection.create"],
+        }),
+      );
+      await waitFor(() => {
+        expect(log.filter((l) => l.route === "resolve")).toEqual([
+          {
+            route: "resolve",
+            body: {
+              items: [
+                { record_id: "r1", resolution: { action: "create" } },
+                { record_id: "r2", resolution: { action: "create" } },
+              ],
+            },
+          },
+        ]);
+      });
+      expect(
+        await screen.findByText(
+          "1 resolved, 1 refused. Mercado: This line was already resolved.",
+        ),
+      ).toBeVisible();
+    });
+
+    it("asks before discarding the selected lines", async () => {
+      const log: { route: string; body?: unknown }[] = [];
+      await renderApp(path, {
+        fetch: selectionApi(log, [{ record_id: "r2", status: "resolved" }]),
+      });
+      await check("Mercado");
+      await userEvent.click(
+        screen.getByRole("button", {
+          name: catalogEn["reviewSelection.discard"],
+        }),
+      );
+      const dialog = await screen.findByRole("dialog");
+      expect(
+        within(dialog).getByText(
+          words("reviewSelection.discardTitle", { count: "1" }),
+        ),
+      ).toBeVisible();
+      expect(within(dialog).getByText("Total: −R$45.00")).toBeVisible();
+      await userEvent.click(
+        within(dialog).getByRole("button", {
+          name: catalogEn["reviewSelection.discard"],
+        }),
+      );
+      await waitFor(() => {
+        expect(log.filter((l) => l.route === "resolve")).toEqual([
+          {
+            route: "resolve",
+            body: {
+              items: [{ record_id: "r2", resolution: { action: "discard" } }],
+            },
+          },
+        ]);
+      });
+    });
+
+    it("selects every selectable line at once", async () => {
+      await renderApp(path, { fetch: selectionApi([], []) });
+      await userEvent.click(
+        await screen.findByRole("checkbox", {
+          name: words("reviewSelection.selectAll", { count: "2" }),
+        }),
+      );
+      for (const line of ["Padaria", "Mercado"]) {
+        expect(
+          screen.getByRole("checkbox", {
+            name: words("reviewSelection.select", { line }),
+          }),
+        ).toBeChecked();
+      }
+      expect(screen.getByText("2 selected")).toBeVisible();
+    });
+  });
 });
