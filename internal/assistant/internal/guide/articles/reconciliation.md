@@ -2,4 +2,4 @@ A **Balance assertion** records the balance your bank reports for an account at 
 
 **Reconciliation** of a card statement confirms the amount due the bank charges. Unlocking returns reconciled postings from a date to cleared so you can correct them.
 
-Reconcile on the Account screen; statements on Statement.
+Reconcile on the Account screen; statements on Statement. On the Account screen, a selection of transactions without confirmation is voided in one step with one reason.

@@ -1020,6 +1020,10 @@ The scenarios of `docs/specs/2026-11-01-test-release-design.md`, section "Scenar
 
 The scenarios of `docs/specs/2026-11-03-update-flow-design.md`, section "Scenarios": `equori version` names the archive version (S268); the notice shows the upgrade command of a compose instance and none of a managed one (S269, S270); the script names the version it replaces (S271); the API reports the distribution (S272).
 
+### S289–S294 Bulk actions (A201–A203)
+
+The scenarios of `docs/specs/2026-11-05-bulk-actions-design.md`, section 4: several lines in review are resolved in one request, each with its own status (S289), and a request that names a line twice is refused (S290); several transactions are voided in one request, each with its own status (S291), and a request that names a transaction twice is refused (S292); the review queue leaves group lines out of a selection and confirms the suggestion of probable lines only (S293); a bulk command states what it wrote and names each refused record with its reason (S294).
+
 ### S262 Rate, target and gap
 
 A fixed reference of 8,000.00 and savings occurrences of 1,200.00 in the month: `GET /budget-plan` returns `savings_rate_bp` 1500. After `PUT` with `savings_target_bp` 2500, the plan returns `savings_target` 2,000.00 and `savings_gap` 800.00. With savings of 2,000.00 or more the gap is 0.00.
