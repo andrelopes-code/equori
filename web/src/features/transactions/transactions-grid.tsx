@@ -83,6 +83,7 @@ export function TransactionsGrid({
       {
         // Hidden: the rows are grouped by it, and each day's group row names it.
         id: "date",
+        sortable: false,
         label: t("transactions.column.date"),
         accessor: "date",
         width: 104,
@@ -98,6 +99,7 @@ export function TransactionsGrid({
       },
       {
         id: "title",
+        sortable: false,
         label: t("transactions.column.description"),
         accessor: "title",
         rowHeader: true,
@@ -108,6 +110,7 @@ export function TransactionsGrid({
       },
       {
         id: "category",
+        sortable: false,
         label: t("transactions.column.category"),
         accessor: "category",
         editable: (row) => !row.voided && !row.transfer,
@@ -118,6 +121,7 @@ export function TransactionsGrid({
       },
       {
         id: "tags",
+        sortable: false,
         label: t("transactions.column.tags"),
         accessor: (row) => row.tags.join(", "),
         width: 160,
@@ -131,6 +135,7 @@ export function TransactionsGrid({
         : [
             {
               id: "amount",
+              sortable: false,
               label: t("transactions.column.amount"),
               accessor: (row: ListRow) => row.money.amount,
               numeric: true,

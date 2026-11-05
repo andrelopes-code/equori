@@ -139,6 +139,22 @@ describe("TransactionsPage", () => {
     expect(seen.queries.map((q) => q.get("cursor"))).toEqual([null, "page-2"]);
   });
 
+  // The server returns rows by date, so a header that sorts would only reorder the loaded pages.
+  it("leaves a column header that is clicked unsorted", async () => {
+    await renderApp("/transactions", {
+      fetch: api({ queries: [] }),
+      today: "2026-10-17",
+    });
+    await screen.findByText("Padaria");
+    const header = screen.getByRole("columnheader", {
+      name: new RegExp(catalogEn["transactions.column.description"]),
+    });
+
+    await userEvent.click(header);
+
+    expect(header).not.toHaveAttribute("aria-sort");
+  });
+
   // Owner review 2026-10-22: selecting a row rendered every row again, which took seconds on a
   // phone holding a few hundred. A selection renders the row it changed and no other.
   it("renders only the selected row when the selection changes", async () => {
