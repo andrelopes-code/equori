@@ -5,9 +5,7 @@ import {
   ResultStateDescription,
   ResultStateTitle,
 } from "@slotted/react/result-state";
-import { Segment, SegmentedControl } from "@slotted/react/segmented-control";
 import { Stack } from "@slotted/react/stack";
-import { Text } from "@slotted/react/typography";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { useDeferredValue } from "react";
@@ -19,36 +17,22 @@ import {
   batchRecordsQuery,
   importBatchQuery,
 } from "@/features/accounts/api";
-import styles from "@/features/accounts/batch-page.module.css";
+import { BatchFigures } from "@/features/accounts/batch-figures";
 import { BatchRecordsTable } from "@/features/accounts/batch-records-table";
 import type { RecordFilter } from "@/features/accounts/batch-search";
+import { batchSubtitle } from "@/features/accounts/batch-subtitle";
 import { sourceLabel } from "@/features/accounts/imports-tab";
-import { ReviewQueue } from "@/features/accounts/review-queue";
-import { ReviewRecord } from "@/features/accounts/review-record";
+import { RecordFilterControl } from "@/features/accounts/record-filter-control";
+import { ReviewWorkspace } from "@/features/accounts/review-workspace";
 import { useScale } from "@/features/setup";
-import type { MessageKey } from "@/i18n/catalog.en";
-import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { FigureCard } from "@/ui/figure-card";
-import { FigureGrid } from "@/ui/figure-grid";
 import { QueryError } from "@/ui/query-error";
-import { useMoneyFormat } from "@/privacy/use-money-format";
-
-const filterWords: Record<RecordFilter, MessageKey> = {
-  needs_review: "batch.filter.needs_review",
-  all: "batch.filter.all",
-  matched: "batch.filter.matched",
-  created: "batch.filter.created",
-  discarded: "batch.filter.discarded",
-  withdrawn: "batch.filter.withdrawn",
-};
 
 // One import: what became of its lines and of its balance, and the review of the lines matching
 // could not settle alone (WS-01, WS-02).
 export function BatchPage() {
   const t = useT();
   const [locale] = useAppLocale();
-  const fmt = useMoneyFormat();
   const api = useApi();
   const navigate = useNavigate();
   const scale = useScale();
@@ -95,7 +79,6 @@ export function BatchPage() {
     batch.data === undefined
       ? t("batch.title")
       : (batch.data.file_name ?? t(sourceLabel[batch.data.source]));
-  const balance = batch.data?.balance;
   const filters: RecordFilter[] = [
     "needs_review",
     "all",
@@ -112,21 +95,7 @@ export function BatchPage() {
         subtitle={
           batch.data === undefined
             ? t("batch.subtitle")
-            : [
-                account.data?.name,
-                batch.data.period_from === undefined ||
-                batch.data.period_to === undefined
-                  ? undefined
-                  : t("imports.range", {
-                      from: formatDate(batch.data.period_from, locale),
-                      to: formatDate(batch.data.period_to, locale),
-                    }),
-                t("batch.importedOn", {
-                  date: formatDate(batch.data.started_at.slice(0, 10), locale),
-                }),
-              ]
-                .filter((part) => part !== undefined)
-                .join(" · ")
+            : batchSubtitle(batch.data, account.data?.name, locale, t)
         }
         back={{ to: "/accounts/$id", params: { id } }}
         backLabel={account.data?.name ?? t("nav.accounts")}
@@ -139,72 +108,17 @@ export function BatchPage() {
           />
         ) : (
           <Stack gap={6}>
-            <FigureGrid label={t("batch.figures")}>
-              {(
-                [
-                  ["received", "batch.figure.received"],
-                  ["matched", "batch.figure.matched"],
-                  ["created", "batch.figure.created"],
-                  ["needs_review", "batch.figure.needs_review"],
-                  ["discarded", "batch.figure.discarded"],
-                  ["ignored", "batch.figure.ignored"],
-                  ...(batch.data?.source === "aggregator"
-                    ? ([
-                        ["updated", "batch.figure.updated"],
-                        ["withdrawn", "batch.figure.withdrawn"],
-                      ] as const)
-                    : []),
-                ] as const
-              ).map(([key, label]) => (
-                <FigureCard
-                  key={key}
-                  label={t(label)}
-                  value={counts === undefined ? undefined : String(counts[key])}
-                  note={t(`batch.note.${key}`)}
-                  loading={batch.isPending}
-                />
-              ))}
-            </FigureGrid>
-            {balance !== undefined && (
-              <Text size="sm">
-                {balance.status === "recorded" &&
-                balance.amount !== undefined &&
-                balance.date !== undefined
-                  ? t("batch.balance.recorded", {
-                      amount: fmt.money(
-                        balance.amount,
-                        sc(balance.amount.currency),
-                      ),
-                      date: formatDate(balance.date, locale),
-                    })
-                  : balance.status === "skipped"
-                    ? t("batch.balance.skipped", {
-                        reason: balance.reason ?? "",
-                      })
-                    : t("batch.balance.none")}
-              </Text>
-            )}
-            <div>
-              <SegmentedControl
-                size="sm"
-                aria-label={t("batch.filter")}
-                value={filter}
-                onValueChange={(value) => {
-                  const next = filters.find((f) => f === value);
-                  if (next !== undefined) setFilter(next);
-                }}
-              >
-                {filters.map((f) => (
-                  <Segment key={f} value={f}>
-                    {f === "needs_review" && counts !== undefined
-                      ? t("batch.filter.needs_reviewCount", {
-                          count: counts.needs_review,
-                        })
-                      : t(filterWords[f])}
-                  </Segment>
-                ))}
-              </SegmentedControl>
-            </div>
+            <BatchFigures
+              batch={batch.data}
+              pending={batch.isPending}
+              scale={sc}
+            />
+            <RecordFilterControl
+              filter={filter}
+              filters={filters}
+              needsReview={counts?.needs_review}
+              onChange={setFilter}
+            />
             {shown !== "needs_review" ? (
               <BatchRecordsTable
                 records={rows}
@@ -221,37 +135,21 @@ export function BatchPage() {
                 </ResultStateContent>
               </ResultState>
             ) : (
-              <div
-                className={styles.workspace}
-                aria-busy={records.isFetching || undefined}
-              >
-                <ReviewQueue
-                  accountId={id}
-                  batchId={batchId}
-                  records={rows}
-                  current={current?.id}
-                  scale={sc}
-                />
-
-                {current === undefined ? (
-                  <Text size="sm" tone="muted">
-                    {t("batch.choose")}
-                  </Text>
-                ) : (
-                  <ReviewRecord
-                    key={current.id}
-                    record={current}
-                    scale={sc}
-                    onStale={() => void records.refetch()}
-                    onResolved={() => {
-                      const index = rows.findIndex((r) => r.id === current.id);
-                      const next = rows[index + 1] ?? rows[index - 1];
-                      setRecord(next?.id, true);
-                      void batch.refetch();
-                    }}
-                  />
-                )}
-              </div>
+              <ReviewWorkspace
+                accountId={id}
+                batchId={batchId}
+                records={rows}
+                current={current}
+                scale={sc}
+                busy={records.isFetching}
+                onStale={() => void records.refetch()}
+                onResolved={() => {
+                  const index = rows.findIndex((r) => r.id === current?.id);
+                  const next = rows[index + 1] ?? rows[index - 1];
+                  setRecord(next?.id, true);
+                  void batch.refetch();
+                }}
+              />
             )}
           </Stack>
         )}
