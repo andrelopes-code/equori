@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/url"
+	"regexp"
 	"slices"
 	"strings"
 	"testing"
@@ -569,6 +570,25 @@ func TestRulesMatchDescriptorsByWord(t *testing.T) {
 		for _, c := range r.conditions {
 			if c["field"] == "description" && c["operator"] == "in_list" {
 				t.Errorf("rule %q compares the whole description with a list; use a regex over the words", r.name)
+			}
+
+			// The engine runs a regex on the description as the institution prints it, in capitals.
+			if c["operator"] != "regex" {
+				continue
+			}
+
+			pattern, _ := c["value"].(string)
+
+			re, err := regexp.Compile(pattern)
+			if err != nil {
+				t.Errorf("rule %q: %v", r.name, err)
+				continue
+			}
+
+			for _, word := range strings.Split(strings.TrimSuffix(strings.TrimPrefix(pattern, "(?i)("), ")"), "|") {
+				if !re.MatchString(strings.ToUpper(word) + " 0442 SAO PAULO") {
+					t.Errorf("rule %q does not match %q in capitals", r.name, word)
+				}
 			}
 		}
 	}

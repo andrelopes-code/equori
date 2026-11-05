@@ -19,14 +19,14 @@ func contains(field, value string) map[string]any {
 	return map[string]any{"field": field, "operator": "contains", "value": value}
 }
 
-// anyOf matches a description that contains one of the words; in_list would compare the whole description with each of them.
+// anyOf matches a description that contains one of the words, in any case; in_list would compare the whole description with each of them.
 func anyOf(field string, words ...string) map[string]any {
 	quoted := make([]string, len(words))
 	for i, w := range words {
 		quoted[i] = regexp.QuoteMeta(w)
 	}
 
-	return map[string]any{"field": field, "operator": "regex", "value": "(" + strings.Join(quoted, "|") + ")"}
+	return map[string]any{"field": field, "operator": "regex", "value": "(?i)(" + strings.Join(quoted, "|") + ")"}
 }
 
 func setCategory(key string) func(s *seeder) []map[string]any {
