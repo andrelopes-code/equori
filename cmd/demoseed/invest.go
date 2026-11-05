@@ -348,11 +348,11 @@ func (s *seeder) transfers() {
 		s.at(d, func() {
 			if top := nubankTop(s.bal[s.id("nubank.checking")]); top > 0 {
 				s.ensure(d, "itau.checking", 140000+top)
-				s.record(iso(d), "Pix para Nubank", nil, post(s.id("nubank.checking"), top), post(s.id("itau.checking"), -top))
+				s.record(iso(d), "Pix para Nubank", map[string]any{"payee_id": s.id("payee.Nubank")}, post(s.id("nubank.checking"), top), post(s.id("itau.checking"), -top))
 			}
 
 			s.ensure(d, "itau.checking", 140000)
-			s.record(iso(d), "TED para XP Investimentos", nil, post(s.id("xp.cash"), 110000), post(s.id("itau.checking"), -110000))
+			s.record(iso(d), "TED para XP Investimentos", map[string]any{"payee_id": s.id("payee.XP Investimentos")}, post(s.id("xp.cash"), 110000), post(s.id("itau.checking"), -110000))
 			s.record(iso(d), "Aporte na caixinha de reserva", nil, post(s.id("nubank.reserve"), 30000), post(s.id("itau.checking"), -30000))
 		})
 	}
@@ -361,7 +361,7 @@ func (s *seeder) transfers() {
 		d := day(date)
 		s.at(d, func() {
 			s.ensure(d, "itau.checking", cents)
-			s.record(date, desc, nil, post(s.id("xp.cash"), cents), post(s.id("itau.checking"), -cents))
+			s.record(date, desc, map[string]any{"payee_id": s.id("payee.XP Investimentos")}, post(s.id("xp.cash"), cents), post(s.id("itau.checking"), -cents))
 		})
 	}
 	lump("2024-12-23", "TED para XP Investimentos, parte do 13º", 150000)

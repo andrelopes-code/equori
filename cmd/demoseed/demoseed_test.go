@@ -347,6 +347,57 @@ func TestSeed(t *testing.T) {
 		}
 	})
 
+	t.Run("every payee and category is used", func(t *testing.T) {
+		var payees struct {
+			Items []struct {
+				ID   string `json:"id"`
+				Name string `json:"name"`
+			} `json:"items"`
+		}
+		s.do(http.MethodGet, "/payees?limit=200", nil, &payees)
+
+		var accs struct {
+			Items []struct {
+				ID         string `json:"id"`
+				Name       string `json:"name"`
+				Class      string `json:"class"`
+				ParentID   string `json:"parent_id"`
+				SystemRole string `json:"system_role"`
+			} `json:"items"`
+		}
+		s.do(http.MethodGet, "/accounts?limit=200", nil, &accs)
+
+		if s.err != nil {
+			t.Fatal(s.err)
+		}
+
+		usedPayee, usedAccount, parents := map[string]bool{}, map[string]bool{}, map[string]bool{}
+
+		for _, tx := range s.transactions(t) {
+			for _, p := range tx.Postings {
+				usedAccount[p.AccountID] = true
+			}
+
+			usedPayee[tx.PayeeID] = true
+		}
+
+		for _, a := range accs.Items {
+			parents[a.ParentID] = true
+		}
+
+		for _, p := range payees.Items {
+			if !usedPayee[p.ID] {
+				t.Errorf("payee %q has no transaction", p.Name)
+			}
+		}
+
+		for _, a := range accs.Items {
+			if (a.Class == "expense" || a.Class == "income") && a.SystemRole == "" && !parents[a.ID] && !usedAccount[a.ID] {
+				t.Errorf("category %q has no transaction", a.Name)
+			}
+		}
+	})
+
 	t.Run("goals are under way", func(t *testing.T) {
 		var out struct {
 			Items []struct {
@@ -759,6 +810,7 @@ type transactionRow struct {
 	Date        string            `json:"date"`
 	Origin      string            `json:"origin"`
 	Description string            `json:"description"`
+	PayeeID     string            `json:"payee_id"`
 	Links       []json.RawMessage `json:"links"`
 	Postings    []struct {
 		AccountID string `json:"account_id"`

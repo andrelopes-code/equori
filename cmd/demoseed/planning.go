@@ -157,7 +157,7 @@ var budgetSpecs = []budgetSpec{
 	{"health", 160000, false, map[string]int64{"2025-07": 175000}},
 	{"system.taxes", 420000, false, map[string]int64{"2026-01": 440000}},
 	{"system.fees", 10000, false, nil},
-	{"food.groceries", 105000, true, map[string]int64{"2026-01": 110000}},
+	{"food.groceries", 95000, false, map[string]int64{"2026-01": 100000}},
 	{"food.produce", 24000, false, nil},
 	{"food.bakery", 14000, false, nil},
 	{"food.restaurants", 90000, false, map[string]int64{"2026-01": 95000}},

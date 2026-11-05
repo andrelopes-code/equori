@@ -166,7 +166,6 @@ var incomeCategories = []category{
 		leaf("income.dividends", "Dividendos", "landmark"),
 		leaf("income.fii", "Rendimentos de fundos imobiliários", "building-2"),
 		leaf("income.jcp", "Juros sobre capital próprio", "hand-coins"),
-		leaf("income.fixed", "Juros de renda fixa", "piggy-bank"),
 	}},
 }
 
@@ -175,7 +174,6 @@ var taxCategories = []category{
 	leaf("tax.inss", "INSS", "landmark"),
 	leaf("tax.irrf", "IRRF", "landmark"),
 	leaf("tax.iof", "IOF", "receipt"),
-	leaf("tax.invest", "Imposto de renda sobre investimentos", "percent"),
 }
 
 var feeCategories = []category{
@@ -192,7 +190,7 @@ var payees = []string{
 	"Netflix", "Spotify", "Amazon Prime", "Disney+", "HBO Max", "Cinemark", "Ingresso.com", "Sympla", "Steam", "Livraria da Vila", "Kindle", "Decathlon",
 	"Zara", "Renner", "C&A", "Centauro", "Magazine Luiza", "Amazon", "Mercado Livre", "Apple", "KaBuM!", "Leroy Merlin", "Tok&Stok", "Boticário", "Barbearia & Salão Vila",
 	"Cacau Show", "Duolingo", "Odonto Excellence", "Petz", "Cobasi", "Clínica Veterinária Patas", "Alura", "Associação Brasileira de Product Management", "Latam Airlines", "Booking.com", "Airbnb", "Decolar", "Azul Linhas Aéreas",
-	"Receita Federal", "Itaú Unibanco", "Nubank", "XP Investimentos", "Rafael Mendes", "Mãe", "Instituto Pequeno Cidadão", "99Food", "Shell Select", "Alelo",
+	"Receita Federal", "Itaú Unibanco", "Nubank", "XP Investimentos", "Rafael Mendes", "Mãe", "Instituto Pequeno Cidadão", "99Food", "Alelo",
 }
 
 // systemNames renames the system accounts, which the ledger creates in English, and gives each a color.

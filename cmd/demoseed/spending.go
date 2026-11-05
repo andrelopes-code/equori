@@ -35,10 +35,10 @@ var (
 )
 
 // lifestyle scales every variable purchase, in percent, so that the spending leaves the savings rate of the persona.
-const lifestyle = 78
+const lifestyle = 70
 
 var habits = []habit{
-	{category: "food.groceries", payees: []string{"Pão de Açúcar", "Carrefour", "Mercado Dia", "Empório Santa Luzia"}, desc: "Compras no %s", count: [2]int{7, 10}, lo: 4200, hi: 38000, skew: 2,
+	{category: "food.groceries", payees: []string{"Pão de Açúcar", "Carrefour", "Mercado Dia", "Empório Santa Luzia", "Açougue Boi Gordo"}, desc: "Compras no %s", count: [2]int{7, 10}, lo: 4200, hi: 38000, skew: 2,
 		vias: []string{"alelo.meal", "card.itau", "card.nubank", "nubank.checking"}, weights: []int{70, 12, 12, 6}, weekend: true},
 	{category: "food.produce", payees: []string{"Hortifruti Natural da Terra"}, desc: "Feira de sábado, %s", count: [2]int{3, 5}, lo: 3500, hi: 9500, skew: 1,
 		vias: []string{"wallet", "nubank.checking"}, weights: []int{40, 60}, round: true, saturday: true},
@@ -54,6 +54,10 @@ var habits = []habit{
 		vias: []string{"card.itau", "nubank.checking", "wallet"}, weights: []int{50, 30, 20}, weekend: true, round: true},
 	{category: "transport.rideshare", payees: []string{"Uber", "99"}, desc: "Corrida %s", count: [2]int{8, 14}, lo: 1400, hi: 5800, skew: 2,
 		vias: []string{"card.nubank", "card.itau"}, weights: []int{70, 30}, weekday: true},
+	{category: "transport.transit", payees: []string{"Bilhete Único SPTrans"}, desc: "Recarga do %s", count: [2]int{1, 2}, lo: 5000, hi: 10000, skew: 1,
+		vias: []string{"nubank.checking", "wallet"}, weights: []int{70, 30}, round: true, weekday: true},
+	{category: "transport.bike", payees: []string{"Tembici"}, desc: "Passe da bicicleta, %s", count: [2]int{0, 2}, chance: .5, lo: 1990, hi: 3490, skew: 1,
+		vias: []string{"card.nubank"}, weights: []int{1}, weekend: true},
 	{category: "transport.coach", payees: []string{"Buser"}, desc: "Passagem de ônibus, %s", count: [2]int{0, 1}, chance: .3, lo: 8900, hi: 15900, skew: 1,
 		vias: []string{"card.itau"}, weights: []int{1}},
 	{category: "health.pharmacy", payees: []string{"Drogasil", "Droga Raia", "Pague Menos"}, desc: "Farmácia, %s", count: [2]int{2, 4}, lo: 2500, hi: 14000, skew: 2,
@@ -244,6 +248,10 @@ var occasions = []occasion{
 	{month: 3, day: 14, category: "food.restaurants", payee: "Outback Steakhouse", desc: "Jantar de aniversário", lo: 42000, hi: 68000, vias: []string{"card.itau"}, weights: []int{1}},
 	{month: 3, day: 18, category: "health.dental", payee: "Odonto Excellence", desc: "Revisão e limpeza", lo: 28000, hi: 36000, vias: []string{"nubank.checking"}, weights: []int{1}},
 	{month: 9, day: 16, category: "health.dental", payee: "Odonto Excellence", desc: "Revisão e limpeza", lo: 28000, hi: 38000, vias: []string{"nubank.checking"}, weights: []int{1}},
+	{month: 9, day: 5, category: "shopping.gifts", payee: "Mãe", desc: "Pix para a mãe, aniversário", lo: 30000, hi: 50000, vias: []string{"nubank.checking"}, weights: []int{1}},
+	{month: 4, day: 9, category: "health.exams", payee: "Laboratório Fleury", desc: "Exames de rotina", lo: 14000, hi: 26000, vias: []string{"card.itau"}, weights: []int{1}},
+	{month: 10, day: 8, category: "health.exams", payee: "Laboratório Fleury", desc: "Exames de rotina", lo: 14000, hi: 28000, vias: []string{"card.itau"}, weights: []int{1}},
+	{month: 11, day: 28, category: "housing.decor", payee: "Magazine Luiza", desc: "Air fryer na Black Friday", lo: 25000, hi: 45000, vias: []string{"card.itau"}, weights: []int{1}},
 	{month: 4, day: 4, category: "shopping.gifts", payee: "Cacau Show", desc: "Ovos de Páscoa", lo: 9000, hi: 21000, vias: []string{"card.nubank"}, weights: []int{1}},
 	{month: 5, category: "shopping.gifts", payee: "Boticário", desc: "Presente do Dia das Mães", lo: 15000, hi: 30000, vias: []string{"card.itau", "card.nubank"}, weights: []int{60, 40}},
 	{month: 5, category: "food.restaurants", payee: "Madero", desc: "Almoço do Dia das Mães", lo: 22000, hi: 38000, vias: []string{"card.itau"}, weights: []int{1}},

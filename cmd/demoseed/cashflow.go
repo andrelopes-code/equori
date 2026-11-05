@@ -129,16 +129,22 @@ func (s *seeder) extras() {
 	free("2026-05-15", "Mentoria e revisão de roadmap", 410000)
 	free("2026-08-21", "Palestra em meetup de produto", 180000)
 
-	refund := func(d, desc string, cents int64) {
+	refund := func(d, desc, payee string, cents int64, tags ...string) {
 		day, _ := time.Parse(time.DateOnly, d)
 		s.at(day, func() {
-			s.record(d, desc, map[string]any{"payee_id": s.id("payee.Tarsus Tecnologia Ltda"), "tags": []string{"trabalho"}},
-				post(s.id("itau.checking"), cents), post(s.id("income.refunds"), -cents))
+			extra := map[string]any{"payee_id": s.id("payee." + payee)}
+			if len(tags) > 0 {
+				extra["tags"] = tags
+			}
+
+			s.record(d, desc, extra, post(s.id("itau.checking"), cents), post(s.id("income.refunds"), -cents))
 		})
 	}
-	refund("2025-05-23", "Reembolso de viagem a trabalho, São Paulo para Recife", 148620)
-	refund("2025-11-14", "Reembolso de transporte do evento de produto", 48630)
-	refund("2026-06-20", "Reembolso de curso aprovado pela empresa", 129000)
+	refund("2025-05-23", "Reembolso de viagem a trabalho, São Paulo para Recife", "Tarsus Tecnologia Ltda", 148620, "trabalho")
+	refund("2025-11-14", "Reembolso de transporte do evento de produto", "Tarsus Tecnologia Ltda", 48630, "trabalho")
+	refund("2026-06-20", "Reembolso de curso aprovado pela empresa", "Tarsus Tecnologia Ltda", 129000, "trabalho")
+	refund("2025-06-12", "Reembolso de consulta, plano de saúde", "Bradesco Saúde", 28000)
+	refund("2026-04-15", "Reembolso de consulta, plano de saúde", "Bradesco Saúde", 31500)
 }
 
 type bill struct {
@@ -201,6 +207,7 @@ func (s *seeder) fixedBills(month time.Time) {
 func (s *seeder) cashflow() {
 	for _, m := range months(s.start, s.today) {
 		s.at(onDay(m, 27), func() { s.flushFeed("nubank.checking") })
+		s.cashback(m)
 		s.payroll(m)
 		s.fixedBills(m)
 		s.spending(m)
@@ -214,4 +221,15 @@ func (s *seeder) cashflow() {
 	s.trades()
 	s.income()
 	s.snapshots()
+}
+
+// cashback is the credit of the Nubank card, a little under 1 % of its month, paid into the account on the 12th.
+func (s *seeder) cashback(month time.Time) {
+	d := onDay(month, 12)
+	cents := s.between(500, 2500, 1)
+
+	s.at(d, func() {
+		s.record(iso(d), "Cashback do cartão Nubank", map[string]any{"payee_id": s.id("payee.Nubank")},
+			post(s.id("nubank.checking"), cents), post(s.id("income.cashback"), -cents))
+	})
 }

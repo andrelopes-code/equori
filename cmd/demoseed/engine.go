@@ -144,6 +144,9 @@ func (s *seeder) pick(keys []string, weights []int) string {
 	return keys[len(keys)-1]
 }
 
+// transferPayees names the institution that receives a transfer, by the account it fills.
+var transferPayees = map[string]string{"nubank.checking": "Nubank", "xp.cash": "XP Investimentos", "itau.checking": "Itaú Unibanco"}
+
 // funders names the account that refills an account that cannot pay.
 var funders = map[string]string{
 	"nubank.checking": "itau.checking",
@@ -180,5 +183,11 @@ func (s *seeder) ensure(date time.Time, key string, need int64) {
 	}
 
 	s.ensure(date, from, top)
-	s.record(iso(date), desc, nil, post(s.id(key), top), post(s.id(from), -top))
+
+	var extra map[string]any
+	if payee, ok := transferPayees[key]; ok {
+		extra = map[string]any{"payee_id": s.id("payee." + payee)}
+	}
+
+	s.record(iso(date), desc, extra, post(s.id(key), top), post(s.id(from), -top))
 }

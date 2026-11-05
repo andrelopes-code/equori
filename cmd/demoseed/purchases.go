@@ -137,7 +137,7 @@ func (s *seeder) purchases() {
 
 	// Rio de Janeiro, April 2026.
 	s.at(day("2026-02-24"), func() {
-		s.installments(day("2026-02-24"), "card.itau", "travel.flights", "Latam Airlines", "Passagens para o Rio de Janeiro", 204000, 3, "viagem-rio")
+		s.installments(day("2026-02-24"), "card.itau", "travel.flights", "Decolar", "Passagens para o Rio de Janeiro", 204000, 3, "viagem-rio")
 	})
 	s.at(day("2026-03-05"), func() {
 		s.installments(day("2026-03-05"), "card.nubank", "travel.lodging", "Booking.com", "Hotel em Ipanema, 4 noites", 318000, 4, "viagem-rio")
