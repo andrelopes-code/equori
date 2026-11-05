@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { copyText } from "@/features/setup/copy-text";
+import { copyText } from "@/ui/copy-text";
 
 describe("copyText", () => {
   afterEach(() => {

@@ -856,6 +856,7 @@ describe("AssistantPanel", () => {
     "copies the answer's Markdown (privacy %s)",
     async (masked) => {
       const written: string[] = [];
+      vi.stubGlobal("isSecureContext", true);
       Object.defineProperty(navigator, "clipboard", {
         configurable: true,
         value: {
@@ -880,6 +881,31 @@ describe("AssistantPanel", () => {
       );
     },
   );
+
+  it("copies the answer without a clipboard, as on a page served over plain http", async () => {
+    Reflect.deleteProperty(navigator, "clipboard");
+    let copied = "";
+    Object.defineProperty(document, "execCommand", {
+      configurable: true,
+      value: () => {
+        copied = document.querySelector("textarea")?.value ?? "";
+        return true;
+      },
+    });
+    await answer("Gastou em **outubro**", false);
+    await screen.findByText("outubro");
+
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["assistant.copy"] }),
+    );
+
+    expect(copied).toBe("Gastou em **outubro**");
+    expect(
+      await screen.findByRole("button", {
+        name: catalogEn["assistant.copied"],
+      }),
+    ).toBeInTheDocument();
+  });
 
   it("says when the quota returns after an exhausted error event", async () => {
     let refused = false;

@@ -6,10 +6,12 @@ import {
   MenuItem,
   MenuSeparator,
   MenuTrigger,
+  type MenuSelectEvent,
 } from "@slotted/react/menu";
 import { toast } from "@slotted/react/toast";
 import { useState } from "react";
 
+import { copyText } from "@/ui/copy-text";
 import { ThemeDeleteDialog } from "@/features/setup/theme-delete-dialog";
 import { ThemeImportDialog } from "@/features/setup/theme-import-dialog";
 import { ThemeNameDialog } from "@/features/setup/theme-name-dialog";
@@ -35,10 +37,12 @@ export function AppearanceToolbar({ library }: AppearanceToolbarProps) {
   const exportName = library.activeName ?? t("settings.theme.custom");
   const saved = library.activeSaved;
 
-  function handleCopy() {
+  function handleCopy(event: MenuSelectEvent) {
     const text = exportTheme(exportName, library.values);
-    navigator.clipboard
-      .writeText(text)
+    const target = event.source?.target;
+    const host = target instanceof HTMLElement ? target : document.body;
+
+    copyText(text, host)
       .then(() => {
         toast.show({ tone: "success", title: t("settings.theme.copied") });
       })

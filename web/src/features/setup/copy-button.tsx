@@ -1,7 +1,7 @@
 import { Button } from "@slotted/react/button";
 import { useEffect, useRef, useState } from "react";
 
-import { copyText } from "@/features/setup/copy-text";
+import { copyText } from "@/ui/copy-text";
 import { useT } from "@/i18n/i18n-provider";
 
 interface CopyButtonProps {

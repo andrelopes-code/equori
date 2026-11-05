@@ -176,6 +176,32 @@ describe("appearance studio", () => {
     expect(screen.getByRole("radio", { name: "Mine" })).toBeChecked();
   });
 
+  it("copies the theme file without a clipboard, as on a page served over plain http", async () => {
+    Reflect.deleteProperty(navigator, "clipboard");
+    let copied = "";
+    Object.defineProperty(document, "execCommand", {
+      configurable: true,
+      value: () => {
+        copied = document.querySelector("textarea")?.value ?? "";
+        return true;
+      },
+    });
+    await renderApp("/settings/appearance", { fetch: api() });
+
+    await userEvent.click(
+      await screen.findByRole("button", {
+        name: catalogPtBR["settings.theme.more"],
+      }),
+    );
+    await userEvent.click(
+      await screen.findByRole("menuitem", {
+        name: catalogPtBR["settings.theme.copy"],
+      }),
+    );
+
+    expect(JSON.parse(copied) as object).toHaveProperty("format");
+  });
+
   it("refuses a file that is not a theme", async () => {
     await renderApp("/settings/appearance", { fetch: api() });
 

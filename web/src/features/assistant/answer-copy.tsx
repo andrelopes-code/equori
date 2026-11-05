@@ -1,8 +1,9 @@
 import { MessageActions, MessageFooter } from "@slotted/react/message";
 import { Glyph, Icon } from "@slotted/react/icon";
 import { IconButton } from "@slotted/react/button";
-import { useState } from "react";
+import { useState, type MouseEvent } from "react";
 
+import { copyText } from "@/ui/copy-text";
 import { maskAmountText } from "@/features/assistant/mask-amounts";
 import { useT } from "@/i18n/i18n-provider";
 import { usePrivacy } from "@/privacy/privacy-provider";
@@ -17,13 +18,13 @@ export function AnswerCopy({ content }: AnswerCopyProps) {
   const { hidden } = usePrivacy();
   const [copied, setCopied] = useState(false);
 
-  if (!("clipboard" in navigator)) return null;
-
-  function handleCopy() {
+  function handleCopy(event: MouseEvent<HTMLButtonElement>) {
     // P21: the answer's Markdown, masked like the screen while privacy is on.
     const text = hidden ? maskAmountText(content) : content;
 
-    navigator.clipboard.writeText(text).then(
+    const button = event.currentTarget;
+
+    copyText(text, button.parentElement ?? button).then(
       () => {
         setCopied(true);
         setTimeout(() => {
