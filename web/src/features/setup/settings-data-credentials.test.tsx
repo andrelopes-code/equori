@@ -65,6 +65,7 @@ function archiveImported(extra: Record<string, unknown>) {
     tables: [{ name: "ledger_account", rows: 4 }],
     credentials_in_archive: false,
     credentials_restored: 0,
+    provider_keys_restored: 0,
     ...extra,
   });
 }
@@ -95,10 +96,11 @@ describe("Export with credentials", () => {
       }),
     );
     const dialog = await screen.findByRole("dialog");
-    await userEvent.type(
-      within(dialog).getByLabelText(catalogEn["export.credentials.passphrase"]),
-      passphrase,
+    const field = within(dialog).getByLabelText(
+      catalogEn["export.credentials.passphrase"],
     );
+    await userEvent.clear(field);
+    await userEvent.type(field, passphrase);
     await userEvent.type(
       within(dialog).getByLabelText(catalogEn["export.credentials.confirm"]),
       "correct hors",
@@ -129,6 +131,48 @@ describe("Export with credentials", () => {
     });
   });
 
+  it("proposes a generated passphrase that needs the saved checkbox", async () => {
+    const { fetch, exports } = api({ imports: [] });
+    await renderApp("/settings?section=data", { fetch });
+    await userEvent.click(
+      await within(section()).findByRole("button", {
+        name: catalogEn["export.withCredentials"],
+      }),
+    );
+    const dialog = await screen.findByRole("dialog");
+    const field = within(dialog).getByLabelText<HTMLInputElement>(
+      catalogEn["export.credentials.passphrase"],
+    );
+    expect(field.type).toBe("text");
+    expect(field.value).toMatch(/^([A-HJ-NP-Z2-9]{5}-){4}[A-HJ-NP-Z2-9]{5}$/u);
+    expect(
+      within(dialog).queryByLabelText(catalogEn["export.credentials.confirm"]),
+    ).toBeNull();
+
+    await userEvent.click(
+      within(dialog).getByRole("button", { name: catalogEn["export.request"] }),
+    );
+    expect(
+      await within(dialog).findByText(catalogEn["export.credentials.unsaved"]),
+    ).toBeInTheDocument();
+    expect(exports).toEqual([]);
+
+    await userEvent.click(
+      within(dialog).getByRole("checkbox", {
+        name: catalogEn["export.credentials.saved"],
+      }),
+    );
+    await userEvent.click(
+      within(dialog).getByRole("button", { name: catalogEn["export.request"] }),
+    );
+    await waitFor(() => {
+      expect(exports).toHaveLength(1);
+    });
+    expect(JSON.parse(exports[0] ?? "")).toEqual({
+      credentials_passphrase: field.value,
+    });
+  });
+
   it("refuses a passphrase of fewer than 8 characters before the request", async () => {
     const { fetch, exports } = api({ imports: [] });
     await renderApp("/settings?section=data", { fetch });
@@ -138,10 +182,11 @@ describe("Export with credentials", () => {
       }),
     );
     const dialog = await screen.findByRole("dialog");
-    await userEvent.type(
-      within(dialog).getByLabelText(catalogEn["export.credentials.passphrase"]),
-      "short",
+    const field = within(dialog).getByLabelText(
+      catalogEn["export.credentials.passphrase"],
     );
+    await userEvent.clear(field);
+    await userEvent.type(field, "short");
     await userEvent.type(
       within(dialog).getByLabelText(catalogEn["export.credentials.confirm"]),
       "short",

@@ -17,18 +17,34 @@ export function importError(caught: unknown, t: TFunction): string {
     : errorText(caught, t);
 }
 
-// The rows written, then what became of the credentials of the archive (export design C7).
+// The rows written, then what became of the credentials and the provider keys of the archive
+// (export design C7, T7).
 export function importDone(result: ArchiveImport, t: TFunction): string {
-  const done = t("import.done", {
-    rows: result.tables.reduce((sum, table) => sum + table.rows, 0),
-    version: result.archive_version,
-  });
+  const sentences = [
+    t("import.done", {
+      rows: result.tables.reduce((sum, table) => sum + table.rows, 0),
+      version: result.archive_version,
+    }),
+  ];
   if (result.credentials_restored > 0) {
-    return `${done} ${t("import.credentialsRestored", { count: result.credentials_restored })}`;
+    sentences.push(
+      t("import.credentialsRestored", { count: result.credentials_restored }),
+    );
   }
-  return result.credentials_in_archive
-    ? `${done} ${t("import.credentialsSkipped")}`
-    : done;
+  if (result.provider_keys_restored > 0) {
+    sentences.push(
+      t("import.providerKeysRestored", {
+        count: result.provider_keys_restored,
+      }),
+    );
+  }
+  if (
+    result.credentials_in_archive &&
+    result.credentials_restored + result.provider_keys_restored === 0
+  ) {
+    sentences.push(t("import.credentialsSkipped"));
+  }
+  return sentences.join(" ");
 }
 
 // The import asks for the passphrase of an archive that carries credentials (export design C5).

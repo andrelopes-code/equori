@@ -155,10 +155,14 @@ export const catalogPtBR: Catalog = {
   "export.download": "Baixar",
   "export.withCredentials": "Exportar com credenciais",
   "export.credentials.description":
-    "O arquivo leva as credenciais das suas integrações, seladas por uma frase-senha. O equori não guarda a frase-senha: sem ela, as credenciais não podem ser restauradas.",
+    "O arquivo leva as credenciais das suas integrações e as chaves dos seus provedores de modelo de linguagem, seladas por uma frase-senha. O equori não guarda a frase-senha: sem ela, não podem ser restauradas.",
   "export.credentials.passphrase": "Frase-senha",
   "export.credentials.confirm": "Confirme a frase-senha",
-  "export.credentials.hint": "De 8 a 256 caracteres.",
+  "export.credentials.hint":
+    "De 8 a 256 caracteres. Maiúsculas e minúsculas diferem.",
+  "export.credentials.copy": "Copiar",
+  "export.credentials.saved": "Guardei a frase-senha",
+  "export.credentials.unsaved": "Confirme que a frase-senha foi guardada.",
   "export.credentials.tooShort": "Use de 8 a 256 caracteres.",
   "export.credentials.mismatch": "As frases-senha são diferentes.",
   "import.label": "Importação",
@@ -171,6 +175,8 @@ export const catalogPtBR: Catalog = {
   "import.skipCredentials": "Importar sem as credenciais",
   "import.credentialsRestored":
     "Credenciais de integração restauradas: {count}.",
+  "import.providerKeysRestored":
+    "Chaves de provedores de modelo restauradas: {count}.",
   "import.credentialsSkipped":
     "O arquivo levava credenciais que não foram restauradas: informe-as de novo em Integrações.",
   "import.done":

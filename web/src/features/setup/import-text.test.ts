@@ -16,7 +16,7 @@ const t: TFunction = (key, params) =>
   );
 
 const archive = {
-  archive_version: 9,
+  archive_version: 8,
   tables: [
     { name: "a", rows: 3 },
     { name: "b", rows: 4 },
@@ -51,6 +51,30 @@ describe("importDone", () => {
       ),
     ).toBe(
       "Archive imported: 7 rows, archive version 8. Integration credentials restored: 2.",
+    );
+  });
+
+  it("counts the restored provider keys beside the integrations", () => {
+    expect(
+      importDone(
+        {
+          ...archive,
+          credentials_in_archive: true,
+          credentials_restored: 2,
+          provider_keys_restored: 1,
+        },
+        t,
+      ),
+    ).toBe(
+      "Archive imported: 7 rows, archive version 8. Integration credentials restored: 2. Language model provider keys restored: 1.",
+    );
+    expect(
+      importDone(
+        { ...archive, credentials_in_archive: true, provider_keys_restored: 3 },
+        t,
+      ),
+    ).toBe(
+      "Archive imported: 7 rows, archive version 8. Language model provider keys restored: 3.",
     );
   });
 

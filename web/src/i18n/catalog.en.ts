@@ -152,10 +152,14 @@ export const catalogEn = {
   "export.download": "Download",
   "export.withCredentials": "Export with credentials",
   "export.credentials.description":
-    "The archive carries the credentials of your integrations, sealed by a passphrase. equori does not store the passphrase: without it the credentials cannot be restored.",
+    "The archive carries the credentials of your integrations and the keys of your language model providers, sealed by a passphrase. equori does not store the passphrase: without it they cannot be restored.",
   "export.credentials.passphrase": "Passphrase",
   "export.credentials.confirm": "Confirm the passphrase",
-  "export.credentials.hint": "8 to 256 characters.",
+  "export.credentials.hint":
+    "8 to 256 characters. Uppercase and lowercase letters differ.",
+  "export.credentials.copy": "Copy",
+  "export.credentials.saved": "I saved the passphrase",
+  "export.credentials.unsaved": "Confirm that the passphrase is saved.",
   "export.credentials.tooShort": "Use 8 to 256 characters.",
   "export.credentials.mismatch": "The passphrases differ.",
   "import.label": "Import",
@@ -167,6 +171,8 @@ export const catalogEn = {
   "import.passphraseHint": "Only for an archive exported with credentials.",
   "import.skipCredentials": "Import without credentials",
   "import.credentialsRestored": "Integration credentials restored: {count}.",
+  "import.providerKeysRestored":
+    "Language model provider keys restored: {count}.",
   "import.credentialsSkipped":
     "The archive carried credentials that were not restored: enter them again in Integrations.",
   "import.done": "Archive imported: {rows} rows, archive version {version}.",
