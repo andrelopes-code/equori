@@ -226,6 +226,16 @@ describe("dateLayoutChoices", () => {
 });
 
 describe("csvSample", () => {
+  it("counts a line of delimiters as the server does, so a data row is never sent as the header", () => {
+    const text = ";;\nData;Hist;Valor\n16/10/2026;JOAO SILVA;1,00\n";
+    expect(csvSample(text, { delimiter: "semicolon", header_rows: 2 })).toEqual(
+      {
+        header: ["Data", "Hist", "Valor"],
+        rows: [["16/10/2026", "JOAO SILVA", "1,00"]],
+      },
+    );
+  });
+
   const rows = Array.from(
     { length: 20 },
     (_, i) =>
@@ -273,6 +283,27 @@ describe("csvSample", () => {
 });
 
 describe("applySuggestion", () => {
+  it("clears a sign column that debit and credit columns replace", () => {
+    const next = applySuggestion(
+      "Data;Hist;Deb;Cred;Tipo\n16/10/2026;x;1,00;;D\n",
+      {
+        delimiter: "semicolon",
+        header_rows: 1,
+        amount_column: "Deb",
+        sign_column: "Tipo",
+        debit_marker: "D",
+      },
+      {
+        date_column: "Data",
+        description_column: "Hist",
+        debit_column: "Deb",
+        credit_column: "Cred",
+      },
+    );
+    expect(next.sign_column).toBeUndefined();
+    expect(next.debit_marker).toBeUndefined();
+  });
+
   const text = "Datum;Text;Betrag;Saldo\n16.10.2026;Miete;-500,00;1,00\n";
   const start: ProfileDraft = { delimiter: "semicolon" };
   const named = {

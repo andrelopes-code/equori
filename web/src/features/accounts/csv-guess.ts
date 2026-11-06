@@ -78,7 +78,7 @@ export function guessProfile(text: string): ProfileDraft {
     headerRows > 0
       ? (rows[headerRows - 1] ?? []).map((cell) => cell.trim())
       : Array.from(
-          { length: Math.max(0, ...body.map((r) => r.length)) },
+          { length: body.reduce((w, r) => Math.max(w, r.length), 0) },
           (_, i) => String(i + 1),
         );
   const columns = names.map((_, i) => body.map((row) => row[i] ?? ""));
@@ -190,6 +190,8 @@ export function applySuggestion(
     next.debit_column = suggestion.debit_column;
     next.credit_column = suggestion.credit_column;
     delete next.amount_column;
+    delete next.sign_column;
+    delete next.debit_marker;
   }
   if ((suggestion.id_column ?? "") !== "")
     next.id_column = suggestion.id_column;
@@ -250,11 +252,14 @@ function tableOf(
 ): { header: string[] | undefined; body: string[][] } {
   const char =
     delimiterChars.find(([name]) => name === draft.delimiter)?.[1] ?? ",";
-  const all = splitCsv(text.replace(/^\uFEFF/u, ""), char).filter((row) =>
-    row.some((cell) => cell.trim() !== ""),
+  // encoding/csv skips an empty line and reads a line of delimiters as a row.
+  const all = splitCsv(text.replace(/^\uFEFF/u, ""), char).filter(
+    (row) => row.length > 1 || row[0] !== "",
   );
   const headerRows = draft.header_rows ?? 1;
-  const data = all.slice(headerRows);
+  const data = all
+    .slice(headerRows)
+    .filter((row) => row.some((cell) => cell.trim() !== ""));
 
   return {
     header: headerRows > 0 ? all[headerRows - 1] : undefined,
@@ -305,18 +310,21 @@ function assignByShape(
       names[i] !== "" && !taken.includes(names[i]) ? [i] : [],
     );
   };
-  const filled = (i: number) =>
-    (columns[i] ?? []).filter((cell) => cell.trim() !== "");
-  const isDate = (i: number) => dateLayouts(columns[i] ?? []).length > 0;
-  const isNumeric = (i: number) =>
-    filled(i).length > 0 && filled(i).every(isAmountShaped) && !isDate(i);
+  const cells = columns.map((c) => c.filter((cell) => cell.trim() !== ""));
+  const dates = columns.map((c) => dateLayouts(c));
+  const numeric = cells.map(
+    (c, i) => c.length > 0 && c.every(isAmountShaped) && dates[i]?.length === 0,
+  );
+  const filled = (i: number) => cells[i] ?? [];
+  const isDate = (i: number) => (dates[i]?.length ?? 0) > 0;
+  const isNumeric = (i: number) => numeric[i] === true;
 
   if (draft.date_column === undefined) {
     const date = free().find(isDate);
     if (date !== undefined) draft.date_column = names[date];
   }
   const dateIndex = names.indexOf(draft.date_column ?? "");
-  const layouts = dateLayouts(columns[dateIndex] ?? []);
+  const layouts = dates[dateIndex] ?? [];
   if (layouts.length === 1) draft.date_layout = layouts[0];
 
   if (draft.description_column === undefined) {
@@ -338,8 +346,8 @@ function assignByShape(
     draft.credit_column,
   ];
   if (hasAmount.every((column) => column === undefined)) {
-    const numeric = free().filter(isNumeric);
-    if (numeric.length === 1) draft.amount_column = names[numeric[0] ?? 0];
+    const amounts = free().filter(isNumeric);
+    if (amounts.length === 1) draft.amount_column = names[amounts[0] ?? 0];
   }
 }
 

@@ -1,4 +1,5 @@
 import { Field, FieldDescription, FieldLabel } from "@slotted/react/field";
+import { useMemo } from "react";
 
 import { CsvColumnField } from "@/features/accounts/csv-column-field";
 import { draftNeedsMarker, markerChoices } from "@/features/accounts/csv-guess";
@@ -22,9 +23,11 @@ export function CsvSignFields({
 }: CsvSignFieldsProps) {
   const t = useT();
   const marker = value.debit_marker ?? "";
-  const asked =
-    (value.sign_column ?? "") !== "" || draftNeedsMarker(text, value);
-  const found = markerChoices(text, value);
+  const asked = useMemo(
+    () => (value.sign_column ?? "") !== "" || draftNeedsMarker(text, value),
+    [text, value],
+  );
+  const found = useMemo(() => markerChoices(text, value), [text, value]);
   const choices = (
     found.includes(marker) || marker === "" ? found : [marker, ...found]
   ).map((v) => ({ value: v, label: v }));

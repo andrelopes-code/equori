@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 
 import { useApi } from "@/api/api-context";
 import { errorText } from "@/api/problem";
@@ -32,7 +33,13 @@ export function useColumnSuggestion({
 }: ColumnSuggestionInput) {
   const t = useT();
   const api = useApi();
-  const needed = troubled || readyProfile(text, draft) === null;
+  // With unknown header rows, the row sent as the header could hold a name.
+  const needed = useMemo(
+    () =>
+      draft.header_rows !== undefined &&
+      (troubled || readyProfile(text, draft) === null),
+    [text, draft, troubled],
+  );
   const uses = useQuery({ ...usesQuery(api), enabled: needed });
   const mutation = useSuggestCsvColumns();
   const target = uses.data?.items.find(

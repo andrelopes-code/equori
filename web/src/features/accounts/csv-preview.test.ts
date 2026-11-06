@@ -186,6 +186,11 @@ describe("previewCsv reading", () => {
     expect(rows[0]?.description).toBe("Padaria");
   });
 
+  it("reads a file of 200 000 lines", () => {
+    const text = `Data;Descrição;Valor\n${"05/10/2026;x;1,00\n".repeat(200_000)}`;
+    expect(previewCsv(text, base, 2).rows).toHaveLength(10);
+  });
+
   it("leaves out the footer rows", () => {
     const text = sheet("05/10/2026;Padaria;-1,00", "06/10/2026;Total;9,00");
     const rows = previewCsv(text, { ...base, footer_rows: 1 }, 2).rows;

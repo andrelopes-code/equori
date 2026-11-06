@@ -1,4 +1,5 @@
 import { Field, FieldLabel } from "@slotted/react/field";
+import { useMemo } from "react";
 
 import { CsvColumnField } from "@/features/accounts/csv-column-field";
 import { dateLayoutChoices } from "@/features/accounts/csv-guess";
@@ -22,7 +23,7 @@ export function CsvDateFields({
 }: CsvDateFieldsProps) {
   const t = useT();
 
-  const layouts = dateLayoutChoices(text, value);
+  const layouts = useMemo(() => dateLayoutChoices(text, value), [text, value]);
 
   return (
     <FormRow>

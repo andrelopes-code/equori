@@ -61,8 +61,10 @@ export function useImportDraft(id: string) {
     });
   };
 
-  const profile =
-    text === null || draft === null ? null : readyProfile(text, draft);
+  const profile = useMemo(
+    () => (text === null || draft === null ? null : readyProfile(text, draft)),
+    [text, draft],
+  );
   const currency = account.data?.currency;
   const preview = useMemo(
     () =>

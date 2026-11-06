@@ -15,6 +15,7 @@ const candidates = [
 ] as const;
 
 const surveyed = 50;
+const surveyedChars = 256 * 1024;
 const maxFooterRows = 10;
 
 const datePattern = /^\d{1,4}[/. -]\d{1,2}[/. -]\d{1,4}\b/u;
@@ -61,24 +62,29 @@ function pickDelimiter(text: string): {
   rows: string[][];
   width: number;
 } {
+  const head = text.slice(0, surveyedChars);
   let best = {
     delimiter: "comma" as CsvStructure["delimiter"],
-    rows: splitRows(text, ","),
+    char: ",",
     width: 0,
     count: 0,
   };
   for (const [name, char] of candidates) {
-    const rows = splitRows(text, char);
+    const rows = splitRows(head, char);
     const tally = new Map<number, number>();
     for (const row of rows.filter((r) => !isBlank(r)).slice(0, surveyed)) {
       if (row.length > 1)
         tally.set(row.length, (tally.get(row.length) ?? 0) + 1);
     }
     for (const [width, count] of tally) {
-      if (count > best.count) best = { delimiter: name, rows, width, count };
+      if (count > best.count) best = { delimiter: name, char, width, count };
     }
   }
-  return best;
+  return {
+    delimiter: best.delimiter,
+    rows: splitRows(text, best.char),
+    width: best.width,
+  };
 }
 
 function splitRows(text: string, char: string): string[][] {

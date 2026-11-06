@@ -40,8 +40,16 @@ export function numberForm(
 
 // The letters of at most two characters after the number, such as D and C.
 export function markerTokens(cells: readonly string[]): string[] {
-  const tokens = filled(cells).flatMap((c) => markerPattern.exec(c)?.[1] ?? []);
-  return [...new Set(tokens)].slice(0, maxDistinct);
+  const lines = filled(cells);
+  const tokens = lines.flatMap((c) => markerPattern.exec(c)?.[1] ?? []);
+  const distinct = [...new Set(tokens)];
+  // Two letters after every amount are a currency (kr, zł); one letter can still be a mark.
+  const currency =
+    distinct.length === 1 &&
+    tokens.length === lines.length &&
+    (distinct[0]?.length ?? 0) === 2;
+
+  return currency ? [] : distinct.slice(0, maxDistinct);
 }
 
 export function distinctValues(cells: readonly string[]): string[] {

@@ -359,6 +359,19 @@ describe("Import statement", () => {
     expect(screen.queryByText(catalogEn["importFile.suggestHint"])).toBeNull();
   });
 
+  it("hides the action until the header rows are known", async () => {
+    await renderApp(`/accounts/${checkingID}/import`, { fetch: api([]) });
+    await choose(
+      new File(["Banco\n16/10/2026;x;1,00\n17/10/2026;y;2,00\n"], "x.csv", {
+        type: "text/csv",
+      }),
+    );
+    await screen.findByRole("group", { name: catalogEn["importFile.profile"] });
+    expect(
+      screen.queryByRole("button", { name: catalogEn["importFile.suggest"] }),
+    ).toBeNull();
+  });
+
   it("hides the action with no target", async () => {
     await renderApp(`/accounts/${checkingID}/import`, {
       fetch: api([], {

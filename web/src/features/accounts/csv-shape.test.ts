@@ -41,6 +41,10 @@ describe("numberForm", () => {
 
 describe("markerTokens", () => {
   it.each([
+    // A currency written after every amount is not a mark; one letter on every line still asks.
+    [["10,00 kr", "5,00 kr"], []],
+    [["10,00 D", "5,00 D"], ["D"]],
+    [["10,00 kr", "5,00"], ["kr"]],
     [
       ["100,00 D", "50,00 C", "20,00"],
       ["D", "C"],

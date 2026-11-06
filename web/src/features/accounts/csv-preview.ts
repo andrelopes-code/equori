@@ -192,7 +192,11 @@ function readRows(
     0,
     Math.max(0, lines.length - (profile.footer_rows ?? 0)),
   );
-  const width = Math.max(header?.length ?? 0, ...body.map((r) => r.length));
+  // A reduce: a spread of every row passes the engine's argument limit in a large file.
+  const width = body.reduce(
+    (w, r) => Math.max(w, r.length),
+    header?.length ?? 0,
+  );
   const headers =
     header?.map((h) => h.trim()) ??
     Array.from({ length: width }, (_, i) => String(i + 1));
