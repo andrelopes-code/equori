@@ -955,6 +955,9 @@ export const catalogEn = {
   "category.chart.composition": "Composition of the month",
   "category.chart.trend": "Last six months",
   "category.chart.amount": "Amount",
+  "category.chart.own": "Booked on the group itself",
+  "category.chart.back": "Back to the groups",
+  "category.chart.compositionHint": "Click a group to see its subcategories.",
   "category.chart.trendDescription":
     "Select a group in the legend with Shift to show it alone on the baseline.",
   "category.refresh": "Refresh",

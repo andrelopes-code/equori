@@ -960,6 +960,10 @@ export const catalogPtBR: Catalog = {
   "category.chart.composition": "Composição do mês",
   "category.chart.trend": "Últimos seis meses",
   "category.chart.amount": "Valor",
+  "category.chart.own": "Direto no grupo",
+  "category.chart.back": "Voltar aos grupos",
+  "category.chart.compositionHint":
+    "Clique em um grupo para ver as subcategorias.",
   "category.chart.trendDescription":
     "Selecione um grupo na legenda com Shift para vê-lo sozinho sobre a linha de base.",
   "category.refresh": "Atualizar",

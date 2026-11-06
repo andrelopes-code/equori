@@ -309,6 +309,8 @@ export function CategoriesPage() {
             {scale !== null && currency !== undefined && (
               <CategoryCharts
                 trend={trend}
+                entries={entries}
+                items={totals.data}
                 currency={currency}
                 scale={scale(currency)}
                 loading={history.pending}

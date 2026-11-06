@@ -3,9 +3,9 @@ import { formatBasisPoints } from "@/i18n/format";
 // The positive amounts, largest first and then by name, each labelled with its share of the
 // total in basis points truncated toward zero (analytics design 7).
 export function rankedShares(
-  items: readonly { name: string; amount: number }[],
+  items: readonly { name: string; amount: number; id?: string }[],
   locale: string,
-): { label: string; amount: number }[] {
+): { label: string; amount: number; id?: string }[] {
   const shown = items
     .filter((i) => i.amount > 0)
     .sort((a, b) => b.amount - a.amount || a.name.localeCompare(b.name));
@@ -13,5 +13,6 @@ export function rankedShares(
   return shown.map((i) => ({
     label: `${i.name} · ${formatBasisPoints(Math.trunc((i.amount * 10000) / total), locale)}`,
     amount: i.amount,
+    ...(i.id === undefined ? {} : { id: i.id }),
   }));
 }

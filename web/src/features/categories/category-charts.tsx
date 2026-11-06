@@ -3,10 +3,15 @@ import { Chart } from "@slotted/react/chart";
 import { Grid } from "@slotted/react/grid";
 import { useMemo } from "react";
 
+import type { components } from "@/api/schema.gen";
 import type { Trend } from "@/features/categories/category-figures";
+import type { CategoryEntry } from "@/features/categories/category-paths";
+import { CompositionChart } from "@/features/categories/composition-chart";
 import { compositionRows } from "@/features/categories/composition-rows";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
+
+type CategoryTotal = components["schemas"]["CategoryTotal"];
 
 function isSlot(color: number | undefined): color is ChartSlot {
   return color !== undefined && color >= 1 && color <= 8;
@@ -17,11 +22,15 @@ function isSlot(color: number | undefined): color is ChartSlot {
 // in the group's own colour, so a colour means the same group there, in the tree and on the rows.
 export function CategoryCharts({
   trend,
+  entries,
+  items,
   currency,
   scale,
   loading,
 }: {
   trend: Trend;
+  entries: readonly CategoryEntry[];
+  items: readonly CategoryTotal[] | undefined;
   currency: string;
   scale: number;
   loading: boolean;
@@ -79,26 +88,13 @@ export function CategoryCharts({
   const empty = !months.some((r) => fields.some((s) => Number(r[s.field]) > 0));
   return (
     <Grid gap={4} minItemWidth="lg">
-      <Chart
-        variant="card"
-        size="sm"
-        orientation="horizontal"
+      <CompositionChart
+        rows={empty ? [] : composition}
+        entries={entries}
+        items={items}
+        currency={currency}
+        scale={scale}
         loading={loading}
-        data={empty ? [] : composition}
-        series={[
-          {
-            id: "amount",
-            kind: "bar",
-            field: "amount",
-            label: t("category.chart.amount"),
-            format: (value) => fmt.money({ amount: value, currency }, scale),
-          },
-        ]}
-        title={t("category.chart.composition")}
-        x={{ field: "label" }}
-        y={{
-          format: (value) => fmt.money({ amount: value, currency }, scale),
-        }}
       />
       <Chart
         variant="card"
