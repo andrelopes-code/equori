@@ -6,8 +6,6 @@ import (
 	"strconv"
 	"strings"
 	"unicode"
-
-	"golang.org/x/text/unicode/norm"
 )
 
 // ErrColumnSuggestionUnusable: the model's answer fails the rules of a column suggestion (A206).
@@ -50,14 +48,15 @@ func MaskSample(s ColumnSample) ColumnSample {
 }
 
 // MaskCell writes a digit as 9 and a letter as A and removes combining marks. A run of at most two
-// letters stays as written, so D and C still say what a sign column is.
+// ASCII letters stays as written, so D and C still say what a sign column is; in other scripts two
+// letters can be a whole name.
 func MaskCell(s string) string {
 	var b strings.Builder
 
 	var run []rune
 
 	flush := func() {
-		if len(run) <= 2 {
+		if len(run) <= 2 && !slices.ContainsFunc(run, func(r rune) bool { return r > unicode.MaxASCII }) {
 			b.WriteString(string(run))
 		} else {
 			b.WriteString(strings.Repeat("A", len(run)))
@@ -66,7 +65,7 @@ func MaskCell(s string) string {
 		run = run[:0]
 	}
 
-	for _, r := range norm.NFD.String(s) {
+	for _, r := range s {
 		switch {
 		case unicode.Is(unicode.Mn, r):
 		case unicode.IsLetter(r):
@@ -130,6 +129,7 @@ func nameColumns(p ColumnPositions, header []string) (ColumnSuggestion, error) {
 		Date: name(p.Date), Description: name(p.Description), Amount: name(p.Amount), Debit: name(p.Debit),
 		Credit: name(p.Credit), ID: name(p.ID), Sign: name(p.Sign),
 	}
+
 	if failed {
 		return ColumnSuggestion{}, ErrColumnSuggestionUnusable
 	}

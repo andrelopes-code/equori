@@ -17,6 +17,11 @@ func TestMaskCell(t *testing.T) {
 		{"CR", "CR"},
 		{"CPF 123.456.789-00", "AAA 999.999.999-99"},
 		{"R$ 10,00", "R$ 99,99"},
+		{"张三", "AA"},
+		{"Д", "A"},
+		{"É", "A"},
+		{"Jose\u0301", "AAAA"},
+		{"E\u0301", "E"},
 		{"", ""},
 	}
 	for _, tt := range tests {
@@ -44,6 +49,7 @@ func TestNewColumnSuggestion(t *testing.T) {
 	t.Parallel()
 
 	header := []string{"Data", "Hist", "Valor", "Saldo", "Tipo"}
+
 	tests := []struct {
 		name   string
 		header []string
