@@ -10454,11 +10454,15 @@ components:
           $ref: "#/components/schemas/ReturnBenchmark"
     ReturnBenchmark:
       type: object
-      required: [index, until, index_bp]
+      required: [index, from, until, index_bp]
       properties:
         index:
           type: string
           pattern: "^[a-z0-9_]{2,40}$"
+        from:
+          type: string
+          format: date
+          description: The first day of the comparison, from, or the day after the first flow when the tree held nothing before from.
         until:
           type: string
           format: date
@@ -10468,6 +10472,12 @@ components:
           type: integer
         percent_bp:
           type: integer
+        annual_bp:
+          type: integer
+          description: return_bp as a rate a year on the year basis of the index (252 rate days for cdi); absent when the basis is unknown.
+        index_annual_bp:
+          type: integer
+          description: index_bp as a rate a year on the same basis.
     SubtypeList:
       type: object
       required: [items]

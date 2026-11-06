@@ -97,6 +97,7 @@ export const comparedReturn = {
   period_bp: 33,
   benchmark: {
     index: "cdi",
+    from: "2026-01-02",
     until: "2026-01-09",
     return_bp: 33,
     index_bp: 33,

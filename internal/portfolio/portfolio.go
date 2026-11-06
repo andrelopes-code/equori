@@ -310,3 +310,7 @@ func (p marketPort) BenchmarkIndex(ctx context.Context, booksID int64) (string, 
 
 	return defaultBenchmark(l.Region), nil
 }
+
+func (p marketPort) YearBasis(index string) int {
+	return indexYearBasis(index)
+}

@@ -3203,6 +3203,9 @@
             "index": {
               "type": "string"
             },
+            "from": {
+              "type": "string"
+            },
             "until": {
               "type": "string"
             },
@@ -3216,10 +3219,19 @@
             "percent_bp": {
               "type": "integer",
               "description": "percent of the index that grows as much, 10000 is 100%; absent when undefined or zero"
+            },
+            "annual_bp": {
+              "type": "integer",
+              "description": "return_bp as a rate a year on the index's year basis; absent when undefined or zero"
+            },
+            "index_annual_bp": {
+              "type": "integer",
+              "description": "index_bp as a rate a year on the same basis; absent when undefined or zero"
             }
           },
           "required": [
             "index",
+            "from",
             "until",
             "index_bp"
           ],

@@ -75,6 +75,17 @@ func IndexPercentBP(factor float64, rates []float64) (bp int, ok bool) {
 }
 
 // percentFactor is the product of 1 + p × rate; a factor at or below zero is minus infinity, so
+// AnnualBP is the rate a year equivalent to growing by factor over days rate days, on a year of
+// basis rate days: (factor^(basis/days) − 1) × 10000, rounded half to even (amendment A208 R9).
+// ok is false without a day, without a basis, or when factor is not positive.
+func AnnualBP(factor float64, days, basis int) (bp int, ok bool) {
+	if days <= 0 || basis <= 0 || factor <= 0 {
+		return 0, false
+	}
+
+	return FactorBP(math.Pow(factor, float64(basis)/float64(days))), true
+}
+
 // the product keeps growing with p.
 func percentFactor(p float64, rates []float64) float64 {
 	f := 1.0

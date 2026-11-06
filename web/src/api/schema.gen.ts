@@ -5831,11 +5831,20 @@ export interface components {
         };
         ReturnBenchmark: {
             index: string;
+            /**
+             * Format: date
+             * @description The first day of the comparison, from, or the day after the first flow when the tree held nothing before from.
+             */
+            from: string;
             /** Format: date */
             until: string;
             return_bp?: number;
             index_bp: number;
             percent_bp?: number;
+            /** @description return_bp as a rate a year on the year basis of the index (252 rate days for cdi); absent when the basis is unknown. */
+            annual_bp?: number;
+            /** @description index_bp as a rate a year on the same basis. */
+            index_annual_bp?: number;
         };
         SubtypeList: {
             items: string[];

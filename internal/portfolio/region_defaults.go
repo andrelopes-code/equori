@@ -20,3 +20,14 @@ func defaultBenchmark(region string) string {
 
 	return ""
 }
+
+// indexYearBasis returns the rate days of a year on which a daily index is quoted, or 0 when
+// unknown (amendment A208 R9): the cdi is quoted on 252 business days.
+func indexYearBasis(index string) int {
+	switch index {
+	case "cdi":
+		return 252
+	}
+
+	return 0
+}

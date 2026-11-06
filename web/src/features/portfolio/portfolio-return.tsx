@@ -107,7 +107,7 @@ export function PortfolioReturn({
       />
     );
   } else if (report.data === undefined || scale === null) body = <Skeleton />;
-  else body = <ReturnFigures report={report.data} from={from} />;
+  else body = <ReturnFigures report={report.data} />;
   return (
     <Stack gap={3}>
       <ChoiceSelect

@@ -40,7 +40,7 @@ describe("Portfolio return", () => {
       "Time-weighted return of the period: 0.33%",
     );
     expect(
-      within(figures).getByText(/^100\.00% of CDI from \S+ to 01\/09\/2026$/),
+      within(figures).getByText("100.00% of CDI from 01/02/2026 to 01/09/2026"),
     ).toBeInTheDocument();
     expect(
       within(figures).getByText("CDI over the same days: 0.33%"),

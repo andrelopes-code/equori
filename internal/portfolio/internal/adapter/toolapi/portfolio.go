@@ -55,10 +55,14 @@ type groupView struct {
 // (amendment A208).
 type benchmarkView struct {
 	Index     string `json:"index"`
+	From      string `json:"from"`
 	Until     string `json:"until"`
 	ReturnBP  int    `json:"return_bp,omitzero" jsonschema:"time-weighted return up to until in basis points; absent when undefined or zero"`
 	IndexBP   int    `json:"index_bp"`
 	PercentBP int    `json:"percent_bp,omitzero" jsonschema:"percent of the index that grows as much, 10000 is 100%; absent when undefined or zero"`
+
+	AnnualBP      int `json:"annual_bp,omitzero" jsonschema:"return_bp as a rate a year on the index's year basis; absent when undefined or zero"`
+	IndexAnnualBP int `json:"index_annual_bp,omitzero" jsonschema:"index_bp as a rate a year on the same basis; absent when undefined or zero"`
 }
 
 type getPortfolioOut struct {
@@ -177,10 +181,14 @@ func benchmarkOf(b *app.Benchmark) benchmarkView {
 
 	return benchmarkView{
 		Index:     b.Index,
+		From:      b.From.Format(time.DateOnly),
 		Until:     b.Until.Format(time.DateOnly),
 		ReturnBP:  valueOf(b.ReturnBP),
 		IndexBP:   b.IndexBP,
 		PercentBP: valueOf(b.PercentBP),
+
+		AnnualBP:      valueOf(b.AnnualBP),
+		IndexAnnualBP: valueOf(b.IndexAnnualBP),
 	}
 }
 

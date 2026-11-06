@@ -23,12 +23,11 @@ type ReturnReport = components["schemas"]["ReturnReport"];
 
 interface ReturnFiguresProps {
   report: ReturnReport;
-  from: string;
 }
 
 // The figures of a return: the annual rate, the values at both ends, the time-weighted return and
 // its comparison with an index (amendment A208), then the external flows.
-export function ReturnFigures({ report, from }: ReturnFiguresProps) {
+export function ReturnFigures({ report }: ReturnFiguresProps) {
   const t = useT();
   const [tag] = useAppLocale();
   const fmt = useMoneyFormat();
@@ -69,7 +68,7 @@ export function ReturnFigures({ report, from }: ReturnFiguresProps) {
               {t("portfolio.return.percentOfIndex", {
                 percent: formatBasisPoints(benchmark.percent_bp, tag),
                 index: indexName(benchmark.index),
-                from: formatDate(from, tag),
+                from: formatDate(benchmark.from, tag),
                 until: formatDate(benchmark.until, tag),
               })}
             </Text>

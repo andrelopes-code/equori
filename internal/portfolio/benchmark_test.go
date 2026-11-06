@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -18,10 +19,14 @@ type comparedReturn struct {
 	PeriodBP  *int `json:"period_bp"`
 	Benchmark *struct {
 		Index     string `json:"index"`
+		From      string `json:"from"`
 		Until     string `json:"until"`
 		ReturnBP  *int   `json:"return_bp"`
 		IndexBP   int    `json:"index_bp"`
 		PercentBP *int   `json:"percent_bp"`
+
+		AnnualBP      *int `json:"annual_bp"`
+		IndexAnnualBP *int `json:"index_annual_bp"`
 	} `json:"benchmark"`
 }
 
@@ -36,8 +41,14 @@ func TestS302SavingsAtTheCDI(t *testing.T) {
 	}
 
 	got := *r.Benchmark
-	if got.Index != "cdi" || got.Until != "2026-01-09" || got.IndexBP != 33 || got.ReturnBP == nil || *got.ReturnBP != 33 || got.PercentBP == nil || *got.PercentBP != 10000 {
+	if got.Index != "cdi" || got.From != "2026-01-02" || got.Until != "2026-01-09" || got.IndexBP != 33 || got.ReturnBP == nil || *got.ReturnBP != 33 || got.PercentBP == nil || *got.PercentBP != 10000 {
 		t.Fatalf("benchmark = %+v", got)
+	}
+
+	// 1.00055131^252 − 1 = 14.90%: the account's rate a year, on the 252 business days of the CDI,
+	// equals the CDI's own.
+	if got.AnnualBP == nil || *got.AnnualBP != 1490 || got.IndexAnnualBP == nil || *got.IndexAnnualBP != 1490 {
+		t.Fatalf("annual = %v, %v", got.AnnualBP, got.IndexAnnualBP)
 	}
 }
 
@@ -54,6 +65,22 @@ func TestS303DepositInsideThePeriod(t *testing.T) {
 
 	got := *r.Benchmark
 	if got.Until != "2026-01-09" || got.PercentBP == nil || *got.PercentBP != 10000 {
+		t.Fatalf("benchmark = %+v", got)
+	}
+}
+
+// S305: an account opened inside the period is compared from the day after its first deposit.
+func TestS305AccountOpenedInsideThePeriod(t *testing.T) {
+	t.Parallel()
+	b := newBenchmarkBookOn(t, "2026-01-05")
+
+	r := b.compared(t, "2026-01-02", "2026-01-09", "")
+	if r.Benchmark == nil {
+		t.Fatalf("report = %+v", r)
+	}
+
+	got := *r.Benchmark
+	if got.From != "2026-01-06" || got.Until != "2026-01-09" || got.IndexBP != 22 || got.PercentBP == nil || *got.PercentBP != 10000 {
 		t.Fatalf("benchmark = %+v", got)
 	}
 }
@@ -80,6 +107,13 @@ type benchmarkBook struct {
 // CDI day the rate of the day on the balance of the day before; each date in deposits adds
 // 10,000,000.00 from checking after that day's credit.
 func newBenchmarkBook(t *testing.T, deposits ...string) benchmarkBook {
+	t.Helper()
+
+	return newBenchmarkBookOn(t, "2026-01-01", deposits...)
+}
+
+// newBenchmarkBookOn is newBenchmarkBook with the first deposit on opened.
+func newBenchmarkBookOn(t *testing.T, opened string, deposits ...string) benchmarkBook {
 	t.Helper()
 
 	rows := make([]string, len(cdiDays))
@@ -109,14 +143,22 @@ func newBenchmarkBook(t *testing.T, deposits ...string) benchmarkBook {
 	interest := h.Account("Interest", "income", "", nil)
 
 	const deposit = 1_000_000_000
-	h.Record("2026-01-01", apitest.Posting(checking, -deposit), apitest.Posting(savings, deposit))
 
-	balance := int64(deposit)
+	balance := int64(0)
+	if slices.Contains(cdiDays, opened) {
+		deposits = append([]string{opened}, deposits...)
+	} else {
+		h.Record(opened, apitest.Posting(checking, -deposit), apitest.Posting(savings, deposit))
+		balance = deposit
+	}
+
 	for _, d := range cdiDays {
-		// 0.055131% of the balance, rounded half up to the cent.
-		credit := (balance*55131 + 50_000_000) / 100_000_000
-		h.Record(d, apitest.Posting(interest, -credit), apitest.Posting(savings, credit))
-		balance += credit
+		if balance > 0 {
+			// 0.055131% of the balance, rounded half up to the cent.
+			credit := (balance*55131 + 50_000_000) / 100_000_000
+			h.Record(d, apitest.Posting(interest, -credit), apitest.Posting(savings, credit))
+			balance += credit
+		}
 
 		for _, dep := range deposits {
 			if dep == d {

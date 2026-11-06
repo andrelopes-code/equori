@@ -67,6 +67,9 @@ type MarketData interface {
 	IndexRates(ctx context.Context, id string, from, to time.Time) ([]IndexRate, error)
 	// BenchmarkIndex returns the default index of the book's region, or "" (amendment A208 R2).
 	BenchmarkIndex(ctx context.Context, booksID int64) (string, error)
+	// YearBasis returns the rate days of a year on which an index is quoted, or 0 when unknown
+	// (amendment A208 R9).
+	YearBasis(index string) int
 }
 
 type Repository interface {

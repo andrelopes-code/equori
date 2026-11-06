@@ -99,3 +99,31 @@ func TestIndexPercentBP(t *testing.T) {
 		})
 	}
 }
+
+func TestAnnualBP(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name   string
+		factor float64
+		days   int
+		basis  int
+		want   int
+		wantOK bool
+	}{
+		{"six cdi days at 0.055131%", math.Pow(1.00055131, 6), 6, 252, 1490, true},
+		{"a whole year", 1.1, 252, 252, 1000, true},
+		{"a loss", 0.99, 126, 252, -199, true},
+		{"no day", 1.01, 0, 252, 0, false},
+		{"no basis", 1.01, 6, 0, 0, false},
+		{"total loss", 0, 6, 252, 0, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, ok := AnnualBP(tt.factor, tt.days, tt.basis)
+			if ok != tt.wantOK || (ok && got != tt.want) {
+				t.Fatalf("AnnualBP = %d, %v; want %d, %v", got, ok, tt.want, tt.wantOK)
+			}
+		})
+	}
+}

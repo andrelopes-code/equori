@@ -24,14 +24,20 @@ type IndexRate struct {
 	Rate float64
 }
 
-// Benchmark compares the time-weighted return of [from, Until] with an index over the same days
+// Benchmark compares the time-weighted return of [From, Until] with an index over the same days
 // (amendment A208 R3–R5). ReturnBP and PercentBP are nil when undefined.
 type Benchmark struct {
 	Index     string
+	From      time.Time
 	Until     time.Time
 	ReturnBP  *int
 	IndexBP   int
 	PercentBP *int
+
+	// AnnualBP and IndexAnnualBP are the return and the index growth as a rate a year on the
+	// index's year basis (R9), nil when the basis is unknown or the return undefined.
+	AnnualBP      *int
+	IndexAnnualBP *int
 }
 
 // compare sets the time-weighted return of the period and its comparison with the index on
@@ -56,7 +62,10 @@ func (s *Service) compare(ctx context.Context, booksID int64, ids []uuid.UUID, f
 		report.PeriodBP = new(domain.FactorBP(f))
 	}
 
-	if len(rates) == 0 {
+	start, held := windowStart(from, report)
+	rates = slices.DeleteFunc(rates, func(r IndexRate) bool { return r.Date.Before(start) })
+
+	if !held || len(rates) == 0 {
 		return nil
 	}
 
@@ -65,7 +74,17 @@ func (s *Service) compare(ctx context.Context, booksID int64, ids []uuid.UUID, f
 		fractions[i] = r.Rate
 	}
 
-	b := Benchmark{Index: index, Until: rates[len(rates)-1].Date, IndexBP: domain.FactorBP(domain.IndexFactor(fractions))}
+	b := Benchmark{
+		Index:   index,
+		From:    start,
+		Until:   rates[len(rates)-1].Date,
+		IndexBP: domain.FactorBP(domain.IndexFactor(fractions)),
+	}
+
+	basis := s.md.YearBasis(index)
+	if a, ok := domain.AnnualBP(domain.IndexFactor(fractions), len(fractions), basis); ok {
+		b.IndexAnnualBP = &a
+	}
 
 	if ends, err = pieces(b.Until); err != nil {
 		return err
@@ -76,11 +95,39 @@ func (s *Service) compare(ctx context.Context, booksID int64, ids []uuid.UUID, f
 		if p, ok := domain.IndexPercentBP(f, fractions); ok {
 			b.PercentBP = &p
 		}
+
+		if a, ok := domain.AnnualBP(f, len(fractions), basis); ok {
+			b.AnnualBP = &a
+		}
 	}
 
 	report.Benchmark = &b
 
 	return nil
+}
+
+// windowStart is the first day of the comparison (amendment A208 R3): from, or the day after the
+// first flow when the tree holds nothing at the end of from − 1, since a flow earns from the next
+// day. held is false when the tree holds nothing and has no flow.
+// shortcut: a tree emptied inside the period still counts its empty days; trim them when a
+// withdrawal of the whole balance becomes common.
+func windowStart(from time.Time, report *ReturnReport) (time.Time, bool) {
+	if report.Opening.Amount() != 0 {
+		return from, true
+	}
+
+	if len(report.Flows) == 0 {
+		return time.Time{}, false
+	}
+
+	first := report.Flows[0].Date
+	for _, f := range report.Flows[1:] {
+		if f.Date.Before(first) {
+			first = f.Date
+		}
+	}
+
+	return first.AddDate(0, 0, 1), true
 }
 
 // benchmarkRates returns the index of the comparison and its rates in [from, to]. Without a

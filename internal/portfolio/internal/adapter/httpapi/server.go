@@ -177,10 +177,14 @@ func (s *Server) GetReturn(ctx context.Context, req GetReturnRequestObject) (Get
 	if b := r.Benchmark; b != nil {
 		out.Benchmark = &ReturnBenchmark{
 			Index:     b.Index,
+			From:      date(b.From),
 			Until:     date(b.Until),
 			ReturnBp:  b.ReturnBP,
 			IndexBp:   b.IndexBP,
 			PercentBp: b.PercentBP,
+
+			AnnualBp:      b.AnnualBP,
+			IndexAnnualBp: b.IndexAnnualBP,
 		}
 	}
 

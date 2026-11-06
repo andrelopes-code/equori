@@ -256,11 +256,19 @@ type RealizedResultList struct {
 
 // ReturnBenchmark defines model for ReturnBenchmark.
 type ReturnBenchmark struct {
-	Index     string             `json:"index"`
-	IndexBp   int                `json:"index_bp"`
-	PercentBp *int               `json:"percent_bp,omitempty"`
-	ReturnBp  *int               `json:"return_bp,omitempty"`
-	Until     openapi_types.Date `json:"until"`
+	// AnnualBp return_bp as a rate a year on the year basis of the index (252 rate days for cdi); absent when the basis is unknown.
+	AnnualBp *int `json:"annual_bp,omitempty"`
+
+	// From The first day of the comparison, from, or the day after the first flow when the tree held nothing before from.
+	From  openapi_types.Date `json:"from"`
+	Index string             `json:"index"`
+
+	// IndexAnnualBp index_bp as a rate a year on the same basis.
+	IndexAnnualBp *int               `json:"index_annual_bp,omitempty"`
+	IndexBp       int                `json:"index_bp"`
+	PercentBp     *int               `json:"percent_bp,omitempty"`
+	ReturnBp      *int               `json:"return_bp,omitempty"`
+	Until         openapi_types.Date `json:"until"`
 }
 
 // ReturnFlow defines model for ReturnFlow.
