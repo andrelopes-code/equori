@@ -3,21 +3,58 @@
 [![ci](https://github.com/andrelopes-code/equori/actions/workflows/ci.yml/badge.svg)](https://github.com/andrelopes-code/equori/actions/workflows/ci.yml)
 [![license](https://img.shields.io/github/license/andrelopes-code/equori)](LICENSE)
 
-Self-hosted personal finance manager: one Go binary on PostgreSQL, with the web interface embedded.
+Self-hosted personal finance manager. One Go binary on PostgreSQL, with the web interface embedded. The data stays on the machine that runs it.
 
-Status: early development. The HTTP API and the web interface cover the ledger, credit cards, reconciliation, file import, classification, Pluggy synchronization, planning (schedules, budgets, goals, projections), currencies and investments (prices, trades, income, positions), reports and an assistant over the same tools, also served to external clients through MCP (`docs/operations/mcp.md`).
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/transactions-dark.webp">
+  <img alt="The transactions screen: entries grouped by day, each with category, origin and amount." src="docs/assets/transactions-light.webp">
+</picture>
 
-| Topic | Location |
-|---|---|
-| API contract | [api/openapi.yaml](api/openapi.yaml) |
-| Architecture decisions | [docs/adr/](docs/adr/) |
-| Domain: vision, language, scenarios, roadmap | [docs/domain/](docs/domain/) |
-| Operations: backup, export, remote access, integrations | [docs/operations/](docs/operations/) |
-| Contributing | [CONTRIBUTING.md](CONTRIBUTING.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) |
-| Changes | [CHANGELOG.md](CHANGELOG.md) |
-| Security reports | [SECURITY.md](SECURITY.md) |
+Status: early development.
 
-## Run
+## What it does
+
+- **Ledger.** Accounts, transactions with corrections, voids and version history, transfers, payees and tags.
+- **Credit cards.** Billing cycles, statements, installment purchases, statement payments, refunds and disputes.
+- **Import and reconciliation.** OFX and CSV import with review of external records, balance assertions and statement reconciliation. Bank sync through Pluggy ([docs/operations/pluggy.md](docs/operations/pluggy.md)).
+- **Classification.** Categorization rules with an explicit order, payee aliases and rule suggestions.
+- **Planning.** Schedules, subscriptions, budgets, goals and a balance projection built from the schedules.
+- **Investments.** Instruments, prices, trades, income and positions with cost, market value and profit or loss.
+- **Reports.** Net worth by month and by day, categories, flows and indicators.
+- **Assistant.** A chat over the same tools as the HTTP API. External clients reach those tools through MCP ([docs/operations/mcp.md](docs/operations/mcp.md)).
+
+## Screens
+
+The screens below show the demo account in Brazilian Portuguese ([Demo account](#demo-account)).
+
+### Planning
+
+The month schedule lists realized and expected occurrences, with the totals of expected income and expenses.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/planning-dark.webp">
+  <img alt="The planning screen: occurrences of the month grouped by day, with a calendar beside the list." src="docs/assets/planning-light.webp">
+</picture>
+
+### Net worth and forecast
+
+Net worth by month and by day. The dashed line projects the balance from the schedules and from the last five months.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/reports-dark.webp">
+  <img alt="The reports screen: net worth by month, and net worth by day with a forecast band." src="docs/assets/reports-light.webp">
+</picture>
+
+### Portfolio
+
+Positions with quantity, average cost, market value, profit or loss and share of the portfolio.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/portfolio-dark.webp">
+  <img alt="The portfolio screen: positions by account with cost, market value and profit or loss." src="docs/assets/portfolio-light.webp">
+</picture>
+
+## Install
 
 Linux and macOS:
 
@@ -54,9 +91,7 @@ The line holds the URL of the screen that creates the first user (`/setup#token=
 
 The app listens on `http://localhost:8080`. `GET /healthz` returns `200` when the database is reachable.
 
-API groups under `/api/v1` (contract: [api/openapi.yaml](api/openapi.yaml)): session and current user; settings; institutions, payees and tags; accounts and categories with balances; transactions with corrections, voids and version history; credit cards (billing cycle rules, credit limits, cards, statements, installment purchases, statement payments and financing, refunds, cancellations, anticipations, disputes, commitments); reconciliation (balance assertions with automatic yield, difference resolution, statement reconciliation, unlock); transaction attachments; file import (CSV profiles, OFX and CSV imports, import batches, review of external records); classification (categorization rules and their order, payee aliases, rule suggestions, running rules on uncategorized transactions, categorization method per transaction and statistics, `POST /transactions/{id}/categorize`); transfers (`POST /transactions/{id}/transfer`, which pairs the imported sides of one transfer, and the rule actions `transfer` and `mark_reimbursable`); the Brazilian banking calendar (`/calendars/br_banking/holidays`); daily balance series (`/reports/balances`). Derived series can be recomputed with `docker compose exec app /equori reporting rebuild`. Schedules created before P7 amendment A127 get their earlier occurrences with `docker compose exec app /equori planning backfill`.
-
-API conventions ([ADR 007](docs/adr/007-api-conventions.md)): every request is validated against `api/openapi.yaml`, and a request outside the contract returns 400 `invalid_request` listing each invalid field; domain rule failures return 422. Errors are RFC 9457 problems with a stable `code` ([ADR 004](docs/adr/004-api-errors.md)). Amounts are `{"amount": <minor units>, "currency": "BRL"}`. Lists that grow take `limit` and `cursor` and return `next_cursor`. Creating a record returns 201 with `Location`; a state change (`void`, `close`, `unlock`, `resolve`, `reconcile`) returns 200 with the updated resource.
+### Operation
 
 Create the first user: while no user exists, every start logs a line `first user setup` whose URL opens the screen that creates it, an admin, with a one-time token (`docker compose logs app | grep 'first user setup'`). The command line does the same (the password is prompted without echo):
 
@@ -77,6 +112,19 @@ Commands: `serve` (the default), `user create`, `backup`, `restore`, `secrets ke
 Backup and restore: [docs/operations/backup.md](docs/operations/backup.md). Export, import and archive compatibility between versions: [docs/operations/export.md](docs/operations/export.md). Bank sync through Pluggy and Meu Pluggy: [docs/operations/pluggy.md](docs/operations/pluggy.md).
 
 The Postgres major version is pinned to 18. To upgrade the major version, dump the database, recreate the volume with the new image and restore the dump.
+
+## Documentation
+
+| Topic | Location |
+|---|---|
+| API contract | [api/openapi.yaml](api/openapi.yaml) |
+| HTTP API groups and conventions | [docs/operations/api.md](docs/operations/api.md) |
+| Architecture decisions | [docs/adr/](docs/adr/) |
+| Domain: vision, language, scenarios, roadmap | [docs/domain/](docs/domain/) |
+| Operations: backup, export, remote access, integrations | [docs/operations/](docs/operations/) |
+| Contributing | [CONTRIBUTING.md](CONTRIBUTING.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) |
+| Changes | [CHANGELOG.md](CHANGELOG.md) |
+| Security reports | [SECURITY.md](SECURITY.md) |
 
 ## Outside the supported set of 1.0
 
