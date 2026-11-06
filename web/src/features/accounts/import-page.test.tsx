@@ -140,6 +140,30 @@ describe("Import statement", () => {
     });
   });
 
+  it("keeps a saved profile whatever the key order", async () => {
+    const log: string[] = [];
+    const reversed = Object.fromEntries(
+      Object.entries({
+        ...saved,
+        encoding: "windows-1252",
+        group_separator: "",
+        footer_rows: 0,
+      }).reverse(),
+    );
+    await renderApp(`/accounts/${checkingID}/import`, {
+      fetch: api(log, {
+        [`GET /api/v1/accounts/${checkingID}/csv-profile`]: () =>
+          json(200, reversed),
+      }),
+    });
+    await choose(new File([csv], "extrato.csv", { type: "text/csv" }));
+    await screen.findByRole("table", { name: catalogEn["importFile.preview"] });
+    await userEvent.click(importButton());
+    await waitFor(() => {
+      expect(log).toEqual(["POST csv"]);
+    });
+  });
+
   it("sends an OFX file without a profile", async () => {
     const log: string[] = [];
     await renderApp(`/accounts/${checkingID}/import`, { fetch: api(log) });

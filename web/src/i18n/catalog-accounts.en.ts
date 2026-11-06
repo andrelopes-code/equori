@@ -444,6 +444,8 @@ export const accountsEn = {
   "importFile.noLines": "The file holds no line under its header.",
   "importFile.unreadable": "Unreadable",
   "importFile.missingColumn": "The file has no column named “{column}”.",
+  "importFile.counts": "{in} lines in, {out} lines out",
+  "importFile.unreadableCount": "{count} lines cannot be read",
   "problem.request_too_large": "The file is larger than the server takes.",
   "problem.difference_remains": "The balance still differs.",
   "problem.record_resolved": "This line was already resolved.",

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  countCsv,
   minorUnits,
   previewCsv,
   splitCsv,
@@ -131,6 +132,13 @@ describe("minorUnits", () => {
     ["1,234.56", ",", ".", 2, undefined],
     ["1.234", ",", "", 2, undefined],
     ["1234,56", ",", "", 2, 123456],
+    ["R$ 1.234,56", ",", ".", 2, 123456],
+    ["1.234,56 BRL", ",", ".", 2, 123456],
+    ["€1,50", ",", ".", 2, 150],
+    ["(100,00)", ",", ".", 2, -10000],
+    ["100,00-", ",", ".", 2, -10000],
+    ["-(100,00)", ",", ".", 2, undefined],
+    ["100,00 D", ",", ".", 2, 10000],
   ] as const)(
     "reads %j (decimal %j, group %j)",
     (text, decimal, group, scale, want) => {
@@ -160,5 +168,56 @@ describe("previewCsv group separator", () => {
   it("defaults to the separator that is not decimal", () => {
     const rows = previewCsv(sheet("1.234,56"), base, 2).rows;
     expect(rows[0]).toMatchObject({ amount: 123456, problems: [] });
+  });
+});
+
+describe("previewCsv reading", () => {
+  const sheet = (...lines: string[]) =>
+    `Data;Descrição;Valor\n${lines.join("\n")}\n`;
+
+  it("leaves out the footer rows", () => {
+    const text = sheet("05/10/2026;Padaria;-1,00", "06/10/2026;Total;9,00");
+    const rows = previewCsv(text, { ...base, footer_rows: 1 }, 2).rows;
+    expect(rows.map((r) => r.description)).toEqual(["Padaria"]);
+  });
+
+  it("reads a date written without leading zeros", () => {
+    const rows = previewCsv(sheet("3/1/2026;x;1,00"), base, 2).rows;
+    expect(rows[0]?.date).toBe("2026-01-03");
+  });
+
+  it("drops the time after a date", () => {
+    const rows = previewCsv(sheet("05/10/2026 14:22;x;1,00"), base, 2).rows;
+    expect(rows[0]?.date).toBe("2026-10-05");
+  });
+
+  it("makes a line with the debit marker after the amount negative", () => {
+    const text = sheet("05/10/2026;a;100,00 D", "05/10/2026;b;50,00 C");
+    const rows = previewCsv(text, { ...base, debit_marker: "D" }, 2).rows;
+    expect(rows.map((r) => r.amount)).toEqual([-10000, 5000]);
+  });
+
+  it("makes a line with the debit marker in the sign column negative", () => {
+    const text =
+      "Data;Descrição;Valor;Tipo\n05/10/2026;a;10,00;Débito\n05/10/2026;b;20,00;Crédito\n";
+    const profile = { ...base, sign_column: "Tipo", debit_marker: "débito" };
+    expect(previewCsv(text, profile, 2).rows.map((r) => r.amount)).toEqual([
+      -1000, 2000,
+    ]);
+  });
+});
+
+describe("countCsv", () => {
+  it("counts the lines it cannot read and the lines in and out", () => {
+    const lines: string[] = Array.from({ length: 11 }, (_, i) =>
+      i < 3 ? `05/10/2026;x;1,00` : `05/10/2026;x;-1,00`,
+    );
+    lines.push("2026-10-05;x;1,00");
+    const text = `Data;Descrição;Valor\n${lines.join("\n")}\n`;
+    expect(countCsv(text, base, 2)).toEqual({
+      unreadable: 1,
+      moneyIn: 3,
+      moneyOut: 8,
+    });
   });
 });

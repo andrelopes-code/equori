@@ -443,6 +443,8 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "importFile.noLines": "O arquivo não tem linhas abaixo do cabeçalho.",
   "importFile.unreadable": "Ilegível",
   "importFile.missingColumn": "O arquivo não tem coluna chamada “{column}”.",
+  "importFile.counts": "{in} linhas de entrada, {out} linhas de saída",
+  "importFile.unreadableCount": "{count} linhas não podem ser lidas",
   "problem.request_too_large": "O arquivo é maior do que o servidor aceita.",
   "problem.difference_remains": "O saldo ainda difere.",
   "problem.record_resolved": "Esta linha já foi resolvida.",

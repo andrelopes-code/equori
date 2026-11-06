@@ -1,6 +1,7 @@
 import { FieldError } from "@slotted/react/field";
 import { Page, PageBody } from "@slotted/react/page";
 import { Stack } from "@slotted/react/stack";
+import { Text } from "@slotted/react/typography";
 import { useParams } from "@tanstack/react-router";
 
 import { AccountFormHeader } from "@/features/accounts/account-form-header";
@@ -78,6 +79,19 @@ export function ImportPage() {
                 currency={csv.currency}
                 scale={scale === null ? 2 : scale(csv.currency)}
               />
+              <Text size="sm" tone="muted">
+                {t("importFile.counts", {
+                  in: csv.counts.moneyIn,
+                  out: csv.counts.moneyOut,
+                })}
+              </Text>
+              {csv.counts.unreadable > 0 && (
+                <FieldError>
+                  {t("importFile.unreadableCount", {
+                    count: csv.counts.unreadable,
+                  })}
+                </FieldError>
+              )}
               {csv.preview.problem !== null && (
                 <FieldError>
                   {t("importFile.missingColumn", {

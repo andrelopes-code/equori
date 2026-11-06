@@ -11,9 +11,13 @@ import {
   useImportFile,
   useSaveCsvProfile,
 } from "@/features/accounts/api";
-import { completeProfile, guessProfile } from "@/features/accounts/csv-guess";
+import {
+  completeProfile,
+  guessProfile,
+  sameProfile,
+} from "@/features/accounts/csv-guess";
 import type { ProfileDraft } from "@/features/accounts/csv-guess";
-import { previewCsv } from "@/features/accounts/csv-preview";
+import { countCsv, previewCsv } from "@/features/accounts/csv-preview";
 import { readText } from "@/features/accounts/read-file";
 import { useScale } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
@@ -51,7 +55,7 @@ export function useImportDraft(id: string) {
     setText(null);
     if (chosen === undefined || as !== "csv") return;
     reading.current = chosen;
-    void readText(chosen).then((content) => {
+    void readText(chosen, saved.data?.encoding).then((content) => {
       // A later choice wins over a read still on its way.
       if (reading.current === chosen) setText(content);
     });
@@ -69,12 +73,23 @@ export function useImportDraft(id: string) {
         : previewCsv(text, draft, scale(currency)),
     [text, draft, scale, currency],
   );
+  const counts = useMemo(
+    () =>
+      text === null ||
+      draft === null ||
+      scale === null ||
+      currency === undefined
+        ? null
+        : countCsv(text, draft, scale(currency)),
+    [text, draft, scale, currency],
+  );
   const csv =
     format === "csv" &&
     draft !== null &&
     preview !== null &&
+    counts !== null &&
     currency !== undefined
-      ? { draft, preview, currency }
+      ? { draft, preview, counts, currency }
       : null;
   const ready = file !== undefined && (format === "ofx" || profile !== null);
   const busy = save.isPending || send.isPending;
@@ -85,7 +100,7 @@ export function useImportDraft(id: string) {
     try {
       if (format === "csv") {
         if (profile === null) return;
-        if (JSON.stringify(saved.data) !== JSON.stringify(profile)) {
+        if (!sameProfile(saved.data, profile)) {
           await save.mutateAsync({ id, profile });
         }
       }

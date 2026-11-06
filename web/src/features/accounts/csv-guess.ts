@@ -105,5 +105,29 @@ export function completeProfile(draft: ProfileDraft): CsvProfile | null {
     description_column: draft.description_column,
     ...((draft.id_column ?? "") === "" ? {} : { id_column: draft.id_column }),
     amount_sign: draft.amount_sign ?? "as_is",
+    ...(draft.encoding === undefined ? {} : { encoding: draft.encoding }),
+    ...(draft.group_separator === undefined
+      ? {}
+      : { group_separator: draft.group_separator }),
+    ...(draft.footer_rows === undefined
+      ? {}
+      : { footer_rows: draft.footer_rows }),
+    ...((draft.sign_column ?? "") === ""
+      ? {}
+      : { sign_column: draft.sign_column }),
+    ...((draft.debit_marker ?? "") === ""
+      ? {}
+      : { debit_marker: draft.debit_marker }),
   } as CsvProfile;
+}
+
+// Whether two profiles hold the same values, whatever the order of their keys.
+export function sameProfile(
+  a: CsvProfile | null | undefined,
+  b: CsvProfile | null,
+): boolean {
+  if (a === null || a === undefined || b === null) return false;
+  const entries = (p: CsvProfile) =>
+    JSON.stringify(Object.entries(p).sort(([x], [y]) => x.localeCompare(y)));
+  return entries(a) === entries(b);
 }
