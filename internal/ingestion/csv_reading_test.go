@@ -63,6 +63,29 @@ func TestCSVDatesS297(t *testing.T) {
 	}
 }
 
+// S301.
+func TestOFXDeclaredEncodingS301(t *testing.T) {
+	t.Parallel()
+	h := apitest.New(t, apitest.Today("2026-11-05"))
+	checking := h.Account("Nubank checking", "asset", "checking", nil)
+
+	file := "OFXHEADER:100\nCHARSET:1252\n\n<OFX><BANKMSGSRSV1><STMTTRNRS><STMTRS><BANKTRANLIST>\n<STMTTRN>\n" +
+		"<DTPOSTED>20261005\n<TRNAMT>-1.00\n<FITID>x\n<MEMO>Café\n</STMTTRN>\n" +
+		"</BANKTRANLIST></STMTRS></STMTTRNRS></BANKMSGSRSV1></OFX>"
+	b := mustImport(t, h, checking, "ofx", "x.ofx", []byte(file))
+
+	var out struct {
+		Items []struct {
+			Description string `json:"description"`
+		} `json:"items"`
+	}
+	h.MustDo(http.MethodGet, "/api/v1/import-batches/"+b.ID+"/records", nil, http.StatusOK, &out)
+
+	if len(out.Items) != 1 || out.Items[0].Description != "Café" {
+		t.Fatalf("records = %+v", out.Items)
+	}
+}
+
 func putSemicolonProfile(h *apitest.Harness, account string, extra map[string]any) {
 	body := map[string]any{
 		"date_column": "Data", "date_layout": "DD/MM/YYYY", "amount_column": "Valor",

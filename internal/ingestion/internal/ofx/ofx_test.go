@@ -136,6 +136,24 @@ func TestParseDeclaredEncoding(t *testing.T) {
 	}
 }
 
+// A207.
+func TestParseKeepsUTF8WhateverItDeclares(t *testing.T) {
+	t.Parallel()
+
+	in := "OFXHEADER:100\nCHARSET:1252\n\n<OFX><BANKMSGSRSV1><STMTTRNRS><STMTRS><BANKTRANLIST>\n<STMTTRN>\n" +
+		"<DTPOSTED>20261005\n<TRNAMT>-1.00\n<FITID>x\n<MEMO>Café\n</STMTTRN>\n" +
+		"</BANKTRANLIST></STMTRS></STMTTRNRS></BANKMSGSRSV1></OFX>"
+
+	st, err := Parse([]byte(in), 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(st.Records) != 1 || st.Records[0].Description != "Café" {
+		t.Fatalf("records = %+v", st.Records)
+	}
+}
+
 func want(name string) string {
 	if name == "xml windows-1251" {
 		return "Магазин"

@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/andrelopes-code/equori/internal/ingestion/internal/charset"
 	"github.com/andrelopes-code/equori/internal/ingestion/internal/domain"
@@ -51,7 +52,12 @@ func declaredEncoding(data []byte) string {
 
 // Parse reads a statement whose amounts have scale decimal places (the account currency's).
 func Parse(data []byte, scale int) (domain.Statement, error) {
-	text, err := charset.Decode(data, declaredEncoding(data))
+	name := declaredEncoding(data)
+	if utf8.Valid(data) {
+		name = "utf-8" // A207: a declaration that contradicts valid UTF-8 is wrong.
+	}
+
+	text, err := charset.Decode(data, name)
 	if err != nil {
 		return domain.Statement{}, err
 	}
