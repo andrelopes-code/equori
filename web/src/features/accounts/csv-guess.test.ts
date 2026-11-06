@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  applySuggestion,
   completeProfile,
+  csvSample,
   dateLayoutChoices,
   draftNeedsMarker,
   guessProfile,
@@ -220,5 +222,111 @@ describe("dateLayoutChoices", () => {
         date_layout: "DD-MM-YYYY",
       }),
     ).toEqual(["DD/MM/YYYY", "MM/DD/YYYY", "YYYY-MM-DD", "DD-MM-YYYY"]);
+  });
+});
+
+describe("csvSample", () => {
+  const rows = Array.from(
+    { length: 20 },
+    (_, i) =>
+      `2026-10-${String(i + 1).padStart(2, "0")};row ${String(i)};${String(i)}`,
+  );
+  const text = [
+    "Statement of october",
+    "Date;Text;Amount",
+    ...rows,
+    "Total;;1",
+  ].join("\n");
+  const base: ProfileDraft = {
+    delimiter: "semicolon",
+    header_rows: 2,
+    footer_rows: 1,
+  };
+
+  it("returns the header and the first 12 data rows", () => {
+    const sample = csvSample(text, base);
+
+    expect(sample.header).toEqual(["Date", "Text", "Amount"]);
+    expect(sample.rows).toHaveLength(12);
+    expect(sample.rows[0]).toEqual(["2026-10-01", "row 0", "0"]);
+    expect(JSON.stringify(sample)).not.toContain("Statement");
+    expect(JSON.stringify(sample)).not.toContain("Total");
+  });
+
+  it("has no header with header_rows 0", () => {
+    const sample = csvSample(rows.join("\n"), {
+      delimiter: "semicolon",
+      header_rows: 0,
+    });
+
+    expect(sample.header).toBeUndefined();
+    expect(sample.rows[0]).toEqual(["2026-10-01", "row 0", "0"]);
+  });
+
+  it("cuts a cell to 200 characters and a row to 40 cells", () => {
+    const wide = `h\n${"x".repeat(300)}${";c".repeat(49)}`;
+    const sample = csvSample(wide, { delimiter: "semicolon", header_rows: 1 });
+
+    expect(sample.rows[0]).toHaveLength(40);
+    expect(sample.rows[0]?.[0]).toHaveLength(200);
+  });
+});
+
+describe("applySuggestion", () => {
+  const text = "Datum;Text;Betrag;Saldo\n16.10.2026;Miete;-500,00;1,00\n";
+  const start: ProfileDraft = { delimiter: "semicolon" };
+  const named = {
+    date_column: "Datum",
+    description_column: "Text",
+    amount_column: "Betrag",
+  };
+
+  it("writes the columns and derives the layout and the separator", () => {
+    expect(applySuggestion(text, start, named)).toEqual({
+      delimiter: "semicolon",
+      ...named,
+      date_layout: "DD.MM.YYYY",
+      decimal_separator: ",",
+    });
+  });
+
+  it("clears the amount column for a debit and credit pair, and the reverse", () => {
+    const pair = applySuggestion(
+      text,
+      { ...start, amount_column: "Betrag" },
+      {
+        date_column: "Datum",
+        description_column: "Text",
+        debit_column: "Betrag",
+        credit_column: "Saldo",
+      },
+    );
+    expect(pair.amount_column).toBeUndefined();
+    expect(pair.debit_column).toBe("Betrag");
+
+    const single = applySuggestion(
+      text,
+      { ...start, debit_column: "Betrag", credit_column: "Saldo" },
+      named,
+    );
+    expect(single.debit_column).toBeUndefined();
+    expect(single.credit_column).toBeUndefined();
+  });
+
+  it("leaves the date layout unset when the dates settle none", () => {
+    const loose = "Datum;Text;Betrag\n05.10.2026;a;1,00\n06.10.2026;b;2,00\n";
+
+    expect(applySuggestion(loose, start, named).date_layout).toBeUndefined();
+  });
+
+  it("clears the debit marker when the sign column changes", () => {
+    const next = applySuggestion(
+      text,
+      { ...start, sign_column: "Saldo", debit_marker: "D" },
+      { ...named, sign_column: "Text" },
+    );
+
+    expect(next.sign_column).toBe("Text");
+    expect(next.debit_marker).toBeUndefined();
   });
 });

@@ -443,6 +443,13 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "importFile.noLines": "O arquivo não tem linhas abaixo do cabeçalho.",
   "importFile.unreadable": "Ilegível",
   "importFile.missingColumn": "O arquivo não tem coluna chamada “{column}”.",
+  "importFile.suggest": "Identificar colunas com IA",
+  "importFile.suggestHint":
+    "Envia o cabeçalho e 12 linhas ao modelo configurado, com números e nomes mascarados.",
+  "problem.csv_suggestion_unavailable":
+    "Nenhum modelo de linguagem responde agora. Preencha as colunas.",
+  "problem.csv_suggestion_unusable":
+    "O modelo não identificou as colunas. Preencha-as.",
   "importFile.footerRows": "Linhas abaixo dos dados",
   "importFile.signColumn": "Coluna com a marca de débito ou crédito",
   "importFile.debitMarker": "Marca de débito",

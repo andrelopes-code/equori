@@ -444,6 +444,13 @@ export const accountsEn = {
   "importFile.noLines": "The file holds no line under its header.",
   "importFile.unreadable": "Unreadable",
   "importFile.missingColumn": "The file has no column named “{column}”.",
+  "importFile.suggest": "Identify columns with AI",
+  "importFile.suggestHint":
+    "Sends the header and 12 lines to the configured model, with digits and names masked.",
+  "problem.csv_suggestion_unavailable":
+    "No language model can answer now. Fill in the columns.",
+  "problem.csv_suggestion_unusable":
+    "The model could not identify the columns. Fill them in.",
   "importFile.footerRows": "Rows under the data",
   "importFile.signColumn": "Column with the debit or credit mark",
   "importFile.debitMarker": "Mark of a debit",

@@ -43,6 +43,24 @@ function batch(id: string) {
   };
 }
 
+const csvUse = {
+  id: "ingestion.csv_columns",
+  needs: ["structured_output"],
+  sends_financial_data: true,
+  default: true,
+  targets: [
+    {
+      provider_id: "aistudio",
+      provider_name: "aistudio",
+      preset: "gemini",
+      notice: "trains",
+      model: "gemini-3.5-flash-lite",
+      capabilities: ["structured_output"],
+    },
+  ],
+};
+const german = "Datum;Text;Betrag;Saldo\n16.10.2026;Miete;-500,00;1,00\n";
+
 const profiles: unknown[] = [];
 
 function api(log: string[], overrides: Record<string, Route> = {}) {
@@ -64,6 +82,7 @@ function api(log: string[], overrides: Record<string, Route> = {}) {
         );
         return json(201, batch("b9"));
       },
+      "GET /api/v1/assistant/uses": () => json(200, { items: [csvUse] }),
       [`GET /api/v1/import-batches/b9`]: () => json(200, batch("b9")),
       [`GET /api/v1/import-batches/b9/records`]: () => json(200, { items: [] }),
       ...overrides,
@@ -315,5 +334,98 @@ describe("Import statement", () => {
     expect(
       await screen.findByText(catalogEn["problem.request_too_large"]),
     ).toBeInTheDocument();
+  });
+
+  it("offers the action only when the draft is incomplete", async () => {
+    await renderApp(`/accounts/${checkingID}/import`, { fetch: api([]) });
+    await choose(new File([german], "de.csv", { type: "text/csv" }));
+    expect(
+      await screen.findByRole("button", {
+        name: catalogEn["importFile.suggest"],
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(catalogEn["importFile.suggestHint"]),
+    ).toBeInTheDocument();
+  });
+
+  it("does not offer the action for a file that reads", async () => {
+    await renderApp(`/accounts/${checkingID}/import`, { fetch: api([]) });
+    await choose(new File([csv], "extrato.csv", { type: "text/csv" }));
+    await screen.findByRole("table", { name: catalogEn["importFile.preview"] });
+    expect(
+      screen.queryByRole("button", { name: catalogEn["importFile.suggest"] }),
+    ).toBeNull();
+    expect(screen.queryByText(catalogEn["importFile.suggestHint"])).toBeNull();
+  });
+
+  it("hides the action with no target", async () => {
+    await renderApp(`/accounts/${checkingID}/import`, {
+      fetch: api([], {
+        "GET /api/v1/assistant/uses": () =>
+          json(200, { items: [{ ...csvUse, targets: [] }] }),
+      }),
+    });
+    await choose(new File([german], "de.csv", { type: "text/csv" }));
+    await screen.findByRole("group", { name: catalogEn["importFile.profile"] });
+    expect(
+      screen.queryByRole("button", { name: catalogEn["importFile.suggest"] }),
+    ).toBeNull();
+  });
+
+  it("fills the columns the model names", async () => {
+    const bodies: unknown[] = [];
+    await renderApp(`/accounts/${checkingID}/import`, {
+      fetch: api([], {
+        [`POST /api/v1/accounts/${checkingID}/csv-profile/suggestion`]: async (
+          req,
+        ) => {
+          bodies.push(await req.json());
+          return json(200, {
+            date_column: "Datum",
+            description_column: "Text",
+            amount_column: "Betrag",
+          });
+        },
+      }),
+    });
+    await choose(new File([german], "de.csv", { type: "text/csv" }));
+    const action = await screen.findByRole("button", {
+      name: catalogEn["importFile.suggest"],
+    });
+    expect(bodies).toEqual([]);
+    await userEvent.click(action);
+    const preview = await screen.findByRole("table", {
+      name: catalogEn["importFile.preview"],
+    });
+    expect(preview).toHaveTextContent("Miete");
+    await waitFor(() => {
+      expect(importButton()).toBeEnabled();
+    });
+    expect(bodies).toEqual([
+      {
+        header: ["Datum", "Text", "Betrag", "Saldo"],
+        rows: [["16.10.2026", "Miete", "-500,00", "1,00"]],
+      },
+    ]);
+  });
+
+  it("states the failure and keeps the fields", async () => {
+    await renderApp(`/accounts/${checkingID}/import`, {
+      fetch: api([], {
+        [`POST /api/v1/accounts/${checkingID}/csv-profile/suggestion`]: () =>
+          problem(503, "csv_suggestion_unavailable"),
+      }),
+    });
+    await choose(new File([german], "de.csv", { type: "text/csv" }));
+    await userEvent.click(
+      await screen.findByRole("button", {
+        name: catalogEn["importFile.suggest"],
+      }),
+    );
+    expect(
+      await screen.findByText(catalogEn["problem.csv_suggestion_unavailable"]),
+    ).toBeInTheDocument();
+    expect(importButton()).toBeDisabled();
   });
 });

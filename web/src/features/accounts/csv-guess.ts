@@ -12,6 +12,11 @@ import {
 } from "@/features/accounts/csv-structure";
 
 type CsvProfile = components["schemas"]["CsvProfile"];
+type CsvColumnSuggestion = components["schemas"]["CsvColumnSuggestion"];
+
+const sampleRows = 12;
+const sampleCells = 40;
+const sampleChars = 200;
 
 // Every part of a profile may still be missing while the reader sets it up.
 export type ProfileDraft = {
@@ -152,6 +157,68 @@ export function sameProfile(
   return entries(a) === entries(b);
 }
 
+// What the column suggestion sends: the header and the first data rows, cut to a bounded size.
+export function csvSample(
+  text: string,
+  draft: ProfileDraft,
+): { header?: string[]; rows: string[][] } {
+  const { header, body } = tableOf(text, draft);
+  const cut = (row: string[]) =>
+    row.slice(0, sampleCells).map((cell) => cell.slice(0, sampleChars));
+  const rows = body.slice(0, sampleRows).map(cut);
+
+  return header === undefined ? { rows } : { header: cut(header), rows };
+}
+
+// The draft with the columns the model named. Only column fields change, then the date layout and
+// the number form are derived again from the file.
+export function applySuggestion(
+  text: string,
+  draft: ProfileDraft,
+  suggestion: CsvColumnSuggestion,
+): ProfileDraft {
+  const next: ProfileDraft = {
+    ...draft,
+    date_column: suggestion.date_column,
+    description_column: suggestion.description_column,
+  };
+  if ((suggestion.amount_column ?? "") !== "") {
+    next.amount_column = suggestion.amount_column;
+    delete next.debit_column;
+    delete next.credit_column;
+  } else {
+    next.debit_column = suggestion.debit_column;
+    next.credit_column = suggestion.credit_column;
+    delete next.amount_column;
+  }
+  if ((suggestion.id_column ?? "") !== "")
+    next.id_column = suggestion.id_column;
+  if ((suggestion.sign_column ?? "") !== "") {
+    if (suggestion.sign_column !== draft.sign_column) delete next.debit_marker;
+    next.sign_column = suggestion.sign_column;
+  }
+
+  const layouts = dateLayouts(columnCells(text, next, next.date_column));
+  if (layouts.length === 1) next.date_layout = layouts[0];
+  else delete next.date_layout;
+
+  const cells = [
+    next.amount_column,
+    next.debit_column,
+    next.credit_column,
+  ].flatMap((column) => columnCells(text, next, column));
+  const form = numberForm(cells);
+  if (form !== undefined) {
+    next.decimal_separator = form.decimal;
+    const defaultGroup = form.decimal === "," ? "." : ",";
+    if (form.group !== "" && form.group !== defaultGroup) {
+      next.group_separator = form.group;
+    }
+  }
+
+  return next;
+}
+
 // Whether the amount column carries a letter mark the profile has not named as the debit mark.
 export function draftNeedsMarker(text: string, draft: ProfileDraft): boolean {
   return (
@@ -177,19 +244,31 @@ export function dateLayoutChoices(text: string, draft: ProfileDraft): string[] {
   return [...new Set([...found, ...standardLayouts, ...current])] as string[];
 }
 
-function columnCells(
+function tableOf(
   text: string,
   draft: ProfileDraft,
-  column: string | undefined,
-): string[] {
-  if (column === undefined || column === "") return [];
+): { header: string[] | undefined; body: string[][] } {
   const char =
     delimiterChars.find(([name]) => name === draft.delimiter)?.[1] ?? ",";
   const all = splitCsv(text.replace(/^\uFEFF/u, ""), char).filter((row) =>
     row.some((cell) => cell.trim() !== ""),
   );
   const headerRows = draft.header_rows ?? 1;
-  const header = headerRows > 0 ? all[headerRows - 1] : undefined;
+  const data = all.slice(headerRows);
+
+  return {
+    header: headerRows > 0 ? all[headerRows - 1] : undefined,
+    body: data.slice(0, Math.max(0, data.length - (draft.footer_rows ?? 0))),
+  };
+}
+
+function columnCells(
+  text: string,
+  draft: ProfileDraft,
+  column: string | undefined,
+): string[] {
+  if (column === undefined || column === "") return [];
+  const { header, body } = tableOf(text, draft);
   const index =
     header === undefined
       ? Number(column) - 1
@@ -197,11 +276,8 @@ function columnCells(
           (h) => h.trim().toLowerCase() === column.trim().toLowerCase(),
         );
   if (index < 0) return [];
-  const body = all.slice(headerRows);
 
-  return body
-    .slice(0, Math.max(0, body.length - (draft.footer_rows ?? 0)))
-    .map((row) => row[index] ?? "");
+  return body.map((row) => row[index] ?? "");
 }
 
 function assignByWords(draft: ProfileDraft, names: string[]): void {

@@ -271,6 +271,7 @@ export const catalogPtBR: Catalog = {
   "assistant.uses.description":
     "Os provedores que cada função tenta, em ordem, até um responder.",
   "assistant.use.capture.suggest": "Sugestão de categorias",
+  "assistant.use.ingestion.csv_columns": "Identificação de colunas de CSV",
   "assistant.use.assistant.chat": "Conversa com o assistente",
   "assistant.use.default": "Padrão",
   "assistant.use.custom": "Personalizada",

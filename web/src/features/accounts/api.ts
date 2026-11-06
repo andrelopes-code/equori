@@ -508,6 +508,24 @@ export function useSaveCsvProfile() {
   );
 }
 
+export function useSuggestCsvColumns() {
+  return useApiMutation(
+    async (
+      api,
+      {
+        id,
+        sample,
+      }: { id: string; sample: components["schemas"]["CsvColumnSample"] },
+    ) =>
+      unwrap(
+        await api.POST("/accounts/{id}/csv-profile/suggestion", {
+          params: { path: { id } },
+          body: sample,
+        }),
+      ),
+  );
+}
+
 export async function importFile(
   api: Client<paths>,
   {

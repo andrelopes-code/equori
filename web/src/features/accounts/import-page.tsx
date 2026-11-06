@@ -65,6 +65,10 @@ export function ImportPage() {
             )}
             {csv !== null && (
               <CsvProfileSection
+                id={id}
+                troubled={
+                  csv.preview.problem !== null || csv.counts.unreadable > 0
+                }
                 text={csv.text}
                 value={csv.draft}
                 onChange={state.setEdited}

@@ -264,6 +264,7 @@ export const catalogEn = {
   "assistant.uses.description":
     "The providers each feature tries, in order, until one answers.",
   "assistant.use.capture.suggest": "Category suggestions",
+  "assistant.use.ingestion.csv_columns": "CSV column identification",
   "assistant.use.assistant.chat": "Assistant chat",
   "assistant.use.default": "Default",
   "assistant.use.custom": "Custom",

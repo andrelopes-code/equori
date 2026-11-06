@@ -4,6 +4,7 @@ export {
   instrumentsQuery,
   payeesQuery,
   settingsQuery,
+  usesQuery,
   setupKeys,
   useCreateInstitution,
   useUpdateBooks,
