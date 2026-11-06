@@ -30,7 +30,12 @@ export function CsvProfileSection({
     <FormSection legend={t("importFile.profile")}>
       <CsvReadingFields value={value} onChange={set} />
 
-      <CsvDateFields headers={headers} value={value} onChange={set} />
+      <CsvDateFields
+        text={text}
+        headers={headers}
+        value={value}
+        onChange={set}
+      />
 
       <CsvColumnField
         label={t("importFile.descriptionColumn")}

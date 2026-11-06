@@ -12,8 +12,8 @@ import {
   useSaveCsvProfile,
 } from "@/features/accounts/api";
 import {
-  completeProfile,
   guessProfile,
+  readyProfile,
   sameProfile,
 } from "@/features/accounts/csv-guess";
 import type { ProfileDraft } from "@/features/accounts/csv-guess";
@@ -61,7 +61,8 @@ export function useImportDraft(id: string) {
     });
   };
 
-  const profile = draft === null ? null : completeProfile(draft);
+  const profile =
+    text === null || draft === null ? null : readyProfile(text, draft);
   const currency = account.data?.currency;
   const preview = useMemo(
     () =>

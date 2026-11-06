@@ -10,7 +10,7 @@ import { renderApp } from "@/testing/render-app";
 type Route = (req: Request) => Response | Promise<Response>;
 
 const csv =
-  "Data;Descrição;Valor\n05/10/2026;Padaria;-12,50\n06/10/2026;Salário;5.000,00\n";
+  "Data;Descrição;Valor\n05/10/2026;Padaria;-12,50\n16/10/2026;Salário;5.000,00\n";
 const saved = {
   delimiter: "semicolon",
   header_rows: 1,
@@ -114,6 +114,26 @@ describe("Import statement", () => {
     expect(profiles).toEqual([saved]);
   });
 
+  it("asks for the date order when the file does not settle it", async () => {
+    const log: string[] = [];
+    await renderApp(`/accounts/${checkingID}/import`, { fetch: api(log) });
+    await choose(
+      new File(
+        [
+          "Data;Descrição;Valor\n05/10/2026;Padaria;-12,50\n06/10/2026;Salário;5.000,00\n",
+        ],
+        "extrato.csv",
+        { type: "text/csv" },
+      ),
+    );
+    await screen.findByRole("table", { name: catalogEn["importFile.preview"] });
+    expect(importButton()).toBeDisabled();
+    await pick(catalogEn["importFile.dateLayout"], "DD/MM/YYYY");
+    await waitFor(() => {
+      expect(importButton()).toBeEnabled();
+    });
+  });
+
   it("asks for the columns it cannot guess and sends nothing until then", async () => {
     const log: string[] = [];
     await renderApp(`/accounts/${checkingID}/import`, { fetch: api(log) });
@@ -169,7 +189,7 @@ describe("Import statement", () => {
     });
   });
 
-  it("reads a footer row the person sets", async () => {
+  it("suggests a footer row and lets the person change it", async () => {
     const log: string[] = [];
     await renderApp(`/accounts/${checkingID}/import`, { fetch: api(log) });
     await choose(
@@ -180,6 +200,12 @@ describe("Import statement", () => {
       "{count}",
       "1",
     );
+    const footer = screen.getByRole("combobox", {
+      name: catalogEn["importFile.footerRows"],
+    });
+    expect(screen.queryByText(unreadable)).not.toBeInTheDocument();
+    expect(footer).toHaveTextContent("1");
+    await pick(catalogEn["importFile.footerRows"], "0");
     expect(await screen.findByText(unreadable)).toBeInTheDocument();
     await pick(catalogEn["importFile.footerRows"], "1");
     await waitFor(() => {
@@ -212,7 +238,7 @@ describe("Import statement", () => {
     await choose(
       new File(
         [
-          "Data;Descrição;Valor;Tipo\n05/10/2026;Padaria;12,50;Débito\n06/10/2026;Salário;5.000,00;Crédito\n",
+          "Data;Descrição;Valor;Tipo\n16/10/2026;Padaria;12,50;Débito\n17/10/2026;Salário;5.000,00;Crédito\n",
         ],
         "extrato.csv",
         { type: "text/csv" },

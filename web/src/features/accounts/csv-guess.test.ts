@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import {
   completeProfile,
+  dateLayoutChoices,
   draftNeedsMarker,
+  guessProfile,
+  readyProfile,
   sameProfile,
 } from "@/features/accounts/csv-guess";
 import type { ProfileDraft } from "@/features/accounts/csv-guess";
@@ -95,5 +98,127 @@ describe("sameProfile", () => {
 
   it("tells a missing profile", () => {
     expect(sameProfile(undefined, profile)).toBe(false);
+  });
+});
+
+describe("guessProfile", () => {
+  const cases: {
+    name: string;
+    file: string;
+    has: ProfileDraft;
+    lacks: string[];
+  }[] = [
+    {
+      name: "reads a header file from the words and the shape",
+      file: "Data;Descrição;Valor\n05/10/2026;Padaria;-12,50\n16/10/2026;Salário;5.000,00\n",
+      has: {
+        delimiter: "semicolon",
+        header_rows: 1,
+        date_column: "Data",
+        date_layout: "DD/MM/YYYY",
+        description_column: "Descrição",
+        amount_column: "Valor",
+        decimal_separator: ",",
+      },
+      lacks: ["group_separator", "footer_rows"],
+    },
+    {
+      name: "leaves the date layout empty when two orders read every row",
+      file: "Data;Descrição;Valor\n05/10/2026;Padaria;-12,50\n06/10/2026;Salário;5,00\n",
+      has: {
+        delimiter: "semicolon",
+        header_rows: 1,
+        date_column: "Data",
+        description_column: "Descrição",
+        amount_column: "Valor",
+        decimal_separator: ",",
+      },
+      lacks: ["date_layout", "group_separator", "footer_rows"],
+    },
+    {
+      name: "counts the lines above the header and the footer",
+      file: "Banco X\n\nData;Histórico;Valor\n16/10/2026;x;1,00\nTotal;;1,00\n",
+      has: { header_rows: 2, footer_rows: 1, date_column: "Data" },
+      lacks: [],
+    },
+    {
+      name: "takes the roles of a foreign header from the shape alone",
+      file: "Datum;Text;Betrag\n16.10.2026;Miete;-500,00\n17.10.2026;Gehalt;1.000,00\n",
+      has: {
+        date_column: "Datum",
+        date_layout: "DD.MM.YYYY",
+        description_column: "Text",
+        amount_column: "Betrag",
+        decimal_separator: ",",
+      },
+      lacks: ["group_separator"],
+    },
+    {
+      name: "leaves the amount empty when two columns are numeric",
+      file: "Datum;Text;Betrag;Saldo\n16.10.2026;Miete;-500,00;1,00\n",
+      has: { date_column: "Datum", description_column: "Text" },
+      lacks: ["amount_column"],
+    },
+    {
+      name: "takes debit and credit from the words",
+      file: "Data;Histórico;Débito;Crédito\n16/10/2026;x;1,00;\n",
+      has: { debit_column: "Débito", credit_column: "Crédito" },
+      lacks: ["amount_column"],
+    },
+    {
+      name: "sets the group separator that is not the default",
+      file: "Data;Histórico;Valor\n16/10/2026;x;1 234,56\n",
+      has: { decimal_separator: ",", group_separator: " " },
+      lacks: [],
+    },
+  ];
+
+  it.each(cases)("$name", ({ file, has, lacks }) => {
+    const guess = guessProfile(file);
+
+    expect(guess).toMatchObject(has);
+    for (const key of lacks) expect(guess).not.toHaveProperty(key);
+  });
+});
+
+describe("readyProfile", () => {
+  const marked = "Data;Descrição;Valor\n05/10/2026;x;100,00 D\n";
+
+  it("returns the profile of a complete draft", () => {
+    expect(readyProfile(marked, { ...draft, debit_marker: "D" })).toEqual({
+      ...draft,
+      debit_marker: "D",
+    });
+  });
+
+  it("returns null while the draft needs a marker", () => {
+    expect(readyProfile(marked, draft)).toBeNull();
+  });
+
+  it("returns null for an incomplete draft", () => {
+    expect(readyProfile(marked, { ...draft, date_column: "" })).toBeNull();
+  });
+});
+
+describe("dateLayoutChoices", () => {
+  const text = (...dates: string[]) =>
+    `Data;Descrição;Valor\n${dates.map((d) => `${d};x;1,00`).join("\n")}\n`;
+
+  it("puts the layouts of the column before the standard ones", () => {
+    expect(dateLayoutChoices(text("5.10.26", "16.10.26"), draft)).toEqual([
+      "DD.MM.YY",
+      "DD/MM/YYYY",
+      "YYYY-MM-DD",
+      "MM/DD/YYYY",
+    ]);
+  });
+
+  it("repeats no layout and keeps the current value", () => {
+    expect(
+      dateLayoutChoices(text("05/10/2026", "06/10/2026"), {
+        ...draft,
+        date_layout: "DD-MM-YYYY",
+      }),
+    ).toEqual(["DD/MM/YYYY", "MM/DD/YYYY", "YYYY-MM-DD", "DD-MM-YYYY"]);
   });
 });
