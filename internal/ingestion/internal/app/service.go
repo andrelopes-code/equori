@@ -142,6 +142,7 @@ type Service struct {
 	// inBooks gives each scheduled sync the context of its book (BK20).
 	inBooks func(ctx context.Context, booksID int64) (context.Context, error)
 	admins  Admins
+	columns ColumnSuggester
 }
 
 // Integrations are what aggregator integrations need; the zero value leaves them unavailable.
@@ -154,10 +155,12 @@ type Integrations struct {
 	// InBooks gives each scheduled sync the context of its book (BK20).
 	InBooks func(ctx context.Context, booksID int64) (context.Context, error)
 	Admins  Admins
+	// Columns is nil when no language model is wired: a column suggestion is unavailable.
+	Columns ColumnSuggester
 }
 
 func NewService(repo Repository, ledger Ledger, in Integrations) *Service {
-	return &Service{repo: repo, ledger: ledger, box: in.Box, aggs: in.Aggregators, now: in.Now, today: in.Today, inBooks: in.InBooks, admins: in.Admins}
+	return &Service{repo: repo, ledger: ledger, box: in.Box, aggs: in.Aggregators, now: in.Now, today: in.Today, inBooks: in.InBooks, admins: in.Admins, columns: in.Columns}
 }
 
 // FollowPairing points the records that a ledger pairing moved to the kept transaction

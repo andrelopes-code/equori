@@ -171,7 +171,7 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 
 	assistantModule, err := assistant.New(pool, assistant.Config{
 		SecretKey: cfg.SecretKey, PreviousSecretKey: cfg.PreviousSecretKey, Instance: cfg.LLMProviders,
-		Uses: []llm.Use{capture.SuggestUse, assistant.ChatUse}, Navigation: web.NavigationMap(), Locale: identityModule.Profile, Clock: clk, NewProvider: cfg.LLMFactory,
+		Uses: []llm.Use{capture.SuggestUse, ingestion.SuggestColumnsUse, assistant.ChatUse}, Navigation: web.NavigationMap(), Locale: identityModule.Profile, Clock: clk, NewProvider: cfg.LLMFactory,
 		Wait: cfg.LLMWait,
 	}, log)
 	if err != nil {
@@ -184,7 +184,7 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 
 	ingestionModule, err := ingestion.New(pool, dispatcher, ledgerModule, classificationModule, ingestion.Config{
 		SecretKey: cfg.SecretKey, PreviousSecretKey: cfg.PreviousSecretKey, URLs: cfg.AggregatorURLs, Clock: clk,
-		InBooks: identityModule.InBooks, Admins: identityModule,
+		InBooks: identityModule.InBooks, Admins: identityModule, Router: router,
 	}, log)
 	if err != nil {
 		return nil, err

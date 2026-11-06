@@ -5194,6 +5194,39 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /accounts/{id}/csv-profile/suggestion:
+    post:
+      tags: [ingestion]
+      operationId: suggestCsvColumns
+      x-book-role: write
+      summary: Ask the language model which columns of a CSV file hold what.
+      description: |
+        Stores nothing. Each sample cell is masked before it leaves the instance; a header cell with
+        a digit is masked too. 503 csv_suggestion_unavailable when no target answers, 422
+        csv_suggestion_unusable when the answer fails validation.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CsvColumnSample"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CsvColumnSuggestion"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        "503":
+          $ref: "#/components/responses/Problem"
   /accounts/{id}/imports:
     post:
       tags: [ingestion]
@@ -8493,6 +8526,47 @@ components:
           description: |
             The text that marks a debit, compared without case, in sign_column or, without one, in the
             letters after the number of the amount. A matching line is negative; any other keeps its sign.
+    CsvColumnSample:
+      type: object
+      additionalProperties: false
+      required: [rows]
+      properties:
+        header:
+          type: array
+          maxItems: 40
+          items:
+            type: string
+            maxLength: 200
+          description: The header row; absent for a file without one.
+        rows:
+          type: array
+          minItems: 1
+          maxItems: 12
+          items:
+            type: array
+            maxItems: 40
+            items:
+              type: string
+              maxLength: 200
+    CsvColumnSuggestion:
+      type: object
+      required: [date_column, description_column]
+      description: Header names, or 1-based positions as text for a file without a header.
+      properties:
+        date_column:
+          type: string
+        description_column:
+          type: string
+        amount_column:
+          type: string
+        debit_column:
+          type: string
+        credit_column:
+          type: string
+        id_column:
+          type: string
+        sign_column:
+          type: string
     ImportBatch:
       type: object
       description: One file import, or one sync of a mapped account (source aggregator).
@@ -12245,7 +12319,7 @@ components:
             already_reconciled, difference_remains, method_not_allowed, unsupported_media_type,
             record_resolved, already_matched, group_changed, not_categorizable, suggestion_closed, pairing_ambiguous,
             integration_unavailable, aggregator_unauthorized, aggregator_unavailable, integration_in_use,
-            currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended,
+            csv_suggestion_unavailable, csv_suggestion_unusable, currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended,
             budget_exists, instrument_exists, mixed_instruments, price_missing, later_sale_exists,
             investment_transaction, system_account, attachment_not_inlineable, archive_too_new, passphrase_invalid, passphrase_required,
             setup_token_invalid, setup_complete, book_role_required, books_not_found, member_not_found,

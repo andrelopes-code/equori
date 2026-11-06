@@ -3042,6 +3042,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/accounts/{id}/csv-profile/suggestion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ask the language model which columns of a CSV file hold what.
+         * @description Stores nothing. Each sample cell is masked before it leaves the instance; a header cell with
+         *     a digit is masked too. 503 csv_suggestion_unavailable when no target answers, 422
+         *     csv_suggestion_unusable when the answer fails validation.
+         */
+        post: operations["suggestCsvColumns"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/accounts/{id}/imports": {
         parameters: {
             query?: never;
@@ -4861,6 +4883,21 @@ export interface components {
              *     letters after the number of the amount. A matching line is negative; any other keeps its sign.
              */
             debit_marker?: string;
+        };
+        CsvColumnSample: {
+            /** @description The header row; absent for a file without one. */
+            header?: string[];
+            rows: string[][];
+        };
+        /** @description Header names, or 1-based positions as text for a file without a header. */
+        CsvColumnSuggestion: {
+            date_column: string;
+            description_column: string;
+            amount_column?: string;
+            debit_column?: string;
+            credit_column?: string;
+            id_column?: string;
+            sign_column?: string;
         };
         /** @description One file import, or one sync of a mapped account (source aggregator). */
         ImportBatch: {
@@ -6731,7 +6768,7 @@ export interface components {
              *     already_reconciled, difference_remains, method_not_allowed, unsupported_media_type,
              *     record_resolved, already_matched, group_changed, not_categorizable, suggestion_closed, pairing_ambiguous,
              *     integration_unavailable, aggregator_unauthorized, aggregator_unavailable, integration_in_use,
-             *     currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended,
+             *     csv_suggestion_unavailable, csv_suggestion_unusable, currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended,
              *     budget_exists, instrument_exists, mixed_instruments, price_missing, later_sale_exists,
              *     investment_transaction, system_account, attachment_not_inlineable, archive_too_new, passphrase_invalid, passphrase_required,
              *     setup_token_invalid, setup_complete, book_role_required, books_not_found, member_not_found,
@@ -12102,6 +12139,36 @@ export interface operations {
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
+        };
+    };
+    suggestCsvColumns: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CsvColumnSample"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CsvColumnSuggestion"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            503: components["responses"]["Problem"];
         };
     };
     importFile: {

@@ -89,6 +89,11 @@ func ToProblem(err error) (problem.Details, bool) {
 		return problem.New(http.StatusConflict, "integration_unavailable", err.Error()), true
 	case errors.Is(err, app.ErrIntegrationInUse):
 		return problem.New(http.StatusConflict, "integration_in_use", "delete the integration's connections first"), true
+	case errors.Is(err, app.ErrColumnSuggesterUnavailable):
+		// The cause stays out of the response: it may name a provider.
+		return problem.New(http.StatusServiceUnavailable, "csv_suggestion_unavailable", app.ErrColumnSuggesterUnavailable.Error()), true
+	case errors.Is(err, domain.ErrColumnSuggestionUnusable):
+		return problem.New(http.StatusUnprocessableEntity, "csv_suggestion_unusable", err.Error()), true
 	case errors.Is(err, app.ErrAggregatorUnavailable):
 		// The cause stays out of the response: it may name the aggregator's address.
 		return problem.New(http.StatusBadGateway, "aggregator_unavailable", app.ErrAggregatorUnavailable.Error()), true

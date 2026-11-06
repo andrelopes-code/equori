@@ -17,6 +17,7 @@ import (
 
 	"github.com/andrelopes-code/equori/internal/classification"
 	"github.com/andrelopes-code/equori/internal/ingestion/internal/adapter/httpapi"
+	"github.com/andrelopes-code/equori/internal/ingestion/internal/adapter/llmapi"
 	"github.com/andrelopes-code/equori/internal/ingestion/internal/adapter/postgres"
 	"github.com/andrelopes-code/equori/internal/ingestion/internal/adapter/toolapi"
 	"github.com/andrelopes-code/equori/internal/ingestion/internal/aggregator/pluggy"
@@ -25,12 +26,16 @@ import (
 	"github.com/andrelopes-code/equori/internal/ledger"
 	"github.com/andrelopes-code/equori/internal/platform/clock"
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
+	"github.com/andrelopes-code/equori/internal/platform/llm"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/outbox"
 	"github.com/andrelopes-code/equori/internal/platform/registry"
 	"github.com/andrelopes-code/equori/internal/platform/secret"
 	"github.com/andrelopes-code/equori/internal/platform/tool"
 )
+
+// SuggestColumnsUse is the language model use that identifies the columns of a CSV file (A206).
+var SuggestColumnsUse = llmapi.Use
 
 type Module struct {
 	http   *httpapi.Server
@@ -50,6 +55,8 @@ type Config struct {
 	// InBooks gives each scheduled sync the context of its book (BK20).
 	InBooks func(ctx context.Context, booksID int64) (context.Context, error)
 	Admins  Admins
+	// Router answers the column suggestion; nil leaves it unavailable.
+	Router *llm.Router
 }
 
 // Admins tells whether a member holds the admin instance role; identity implements it.
@@ -87,6 +94,10 @@ func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, l *ledger.Module, c 
 		if err != nil {
 			return nil, err
 		}
+	}
+
+	if cfg.Router != nil {
+		in.Columns = llmapi.New(cfg.Router)
 	}
 
 	svc := app.NewService(postgres.NewRepository(pool), ledgerPort{l, c}, in)

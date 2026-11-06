@@ -390,7 +390,7 @@ type Problem struct {
 	// already_reconciled, difference_remains, method_not_allowed, unsupported_media_type,
 	// record_resolved, already_matched, group_changed, not_categorizable, suggestion_closed, pairing_ambiguous,
 	// integration_unavailable, aggregator_unauthorized, aggregator_unavailable, integration_in_use,
-	// currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended,
+	// csv_suggestion_unavailable, csv_suggestion_unusable, currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended,
 	// budget_exists, instrument_exists, mixed_instruments, price_missing, later_sale_exists,
 	// investment_transaction, system_account, attachment_not_inlineable, archive_too_new, passphrase_invalid, passphrase_required,
 	// setup_token_invalid, setup_complete, book_role_required, books_not_found, member_not_found,

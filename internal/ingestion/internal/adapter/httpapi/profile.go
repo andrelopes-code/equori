@@ -103,3 +103,20 @@ func (s *Server) SaveCsvProfile(ctx context.Context, req SaveCsvProfileRequestOb
 
 	return SaveCsvProfile200JSONResponse(toProfileAPI(saved)), nil
 }
+
+func (s *Server) SuggestCsvColumns(ctx context.Context, req SuggestCsvColumnsRequestObject) (SuggestCsvColumnsResponseObject, error) {
+	sample := domain.ColumnSample{Rows: req.Body.Rows}
+	if req.Body.Header != nil {
+		sample.Header = *req.Body.Header
+	}
+
+	got, err := s.svc.SuggestColumns(ctx, auth.MustBooksID(ctx), req.Id, sample)
+	if err != nil {
+		return nil, err
+	}
+
+	return SuggestCsvColumns200JSONResponse{
+		DateColumn: got.Date, DescriptionColumn: got.Description, AmountColumn: ref(got.Amount),
+		DebitColumn: ref(got.Debit), CreditColumn: ref(got.Credit), IdColumn: ref(got.ID), SignColumn: ref(got.Sign),
+	}, nil
+}
