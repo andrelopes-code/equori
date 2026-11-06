@@ -75,6 +75,10 @@ export const portfolioEn = {
   "portfolio.return.to": "To",
   "portfolio.return.opening": "Opening value",
   "portfolio.return.closing": "Closing value",
+  "portfolio.return.period": "Time-weighted return of the period: {rate}",
+  "portfolio.return.percentOfIndex":
+    "{percent} of {index} from {from} to {until}",
+  "portfolio.return.indexGrowth": "{index} over the same days: {rate}",
   "portfolio.return.flows": "External flows",
   "portfolio.return.date": "Date",
   "portfolio.return.amount": "Amount",

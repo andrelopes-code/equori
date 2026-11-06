@@ -91,6 +91,19 @@ export const contributionReturn = {
   closing: brl(205000),
 };
 
+// S302: a savings account paid 100% of CDI over six CDI days.
+export const comparedReturn = {
+  ...plainReturn,
+  period_bp: 33,
+  benchmark: {
+    index: "cdi",
+    until: "2026-01-09",
+    return_bp: 33,
+    index_bp: 33,
+    percent_bp: 10000,
+  },
+};
+
 type Route = Parameters<typeof fakeApi>[0][string];
 
 export function portfolioApi(routes: Record<string, Route> = {}) {

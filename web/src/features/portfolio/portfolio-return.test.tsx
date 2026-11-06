@@ -3,8 +3,12 @@ import { describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
 import { json, problem } from "@/testing/fake-api";
-import { brokerID } from "@/testing/investment-api";
-import { contributionReturn, portfolioApi } from "@/testing/portfolio-api";
+import { accounts, brokerID } from "@/testing/investment-api";
+import {
+  comparedReturn,
+  contributionReturn,
+  portfolioApi,
+} from "@/testing/portfolio-api";
 import { renderApp } from "@/testing/render-app";
 
 const flows = () =>
@@ -21,6 +25,25 @@ describe("Portfolio return", () => {
     expect(within(figures).getByText(/R\$1,050\.00/)).toBeInTheDocument();
     expect(
       screen.getByText(catalogEn["portfolio.return.noFlows"]),
+    ).toBeInTheDocument();
+  });
+
+  it("compares the period with the CDI (S302)", async () => {
+    const fetch = portfolioApi({
+      "GET /api/v1/reports/return": () => json(200, comparedReturn),
+    });
+    await renderApp("/portfolio", { fetch });
+    const figures = await screen.findByRole("group", {
+      name: catalogEn["portfolio.return.title"],
+    });
+    await within(figures).findByText(
+      "Time-weighted return of the period: 0.33%",
+    );
+    expect(
+      within(figures).getByText(/^100\.00% of CDI from \S+ to 01\/09\/2026$/),
+    ).toBeInTheDocument();
+    expect(
+      within(figures).getByText("CDI over the same days: 0.33%"),
     ).toBeInTheDocument();
   });
 
@@ -87,7 +110,7 @@ describe("Portfolio return", () => {
     });
   });
 
-  it("offers the investment accounts and the parents of one", async () => {
+  it("offers the parents of an investment account, the investment accounts and the reserves (A208 R7)", async () => {
     await renderApp("/portfolio", { fetch: portfolioApi() });
     const user = (await import("@testing-library/user-event")).default.setup();
     await user.click(
@@ -102,7 +125,25 @@ describe("Portfolio return", () => {
       "XP",
       "XP / XP MXRF11",
       "XP / XP PETR4",
+      "Reserva",
     ]);
+  });
+
+  it("offers no whole portfolio to a book without a brokerage", async () => {
+    const fetch = portfolioApi({
+      "GET /api/v1/accounts": () =>
+        json(200, { items: accounts.filter((a) => a.name === "Reserva") }),
+    });
+    await renderApp("/portfolio", { fetch });
+    const user = (await import("@testing-library/user-event")).default.setup();
+    await user.click(
+      await screen.findByRole("combobox", {
+        name: catalogEn["portfolio.return.account"],
+      }),
+    );
+    expect(
+      (await screen.findAllByRole("option")).map((o) => o.textContent),
+    ).toEqual(["Reserva"]);
   });
 
   it("states that the return is undefined, with the reason (S127)", async () => {
