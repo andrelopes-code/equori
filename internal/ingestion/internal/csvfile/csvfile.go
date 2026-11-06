@@ -9,6 +9,7 @@ import (
 	"io"
 	"strconv"
 	"strings"
+	"unicode"
 	"unicode/utf8"
 
 	"github.com/andrelopes-code/equori/internal/ingestion/internal/charset"
@@ -42,28 +43,58 @@ func Parse(data []byte, p domain.Profile, scale int) (domain.Statement, error) {
 		return domain.Statement{}, err
 	}
 
-	var out domain.Statement
+	return readRecords(r, cols, header, p, scale)
+}
+
+// line is a non-blank row with its line number.
+type line struct {
+	row []string
+	n   int
+}
+
+// readRecords reads the data rows; the last p.FooterRows non-blank rows are left out.
+func readRecords(r *csv.Reader, cols columns, header []string, p domain.Profile, scale int) (domain.Statement, error) {
+	var (
+		out     domain.Statement
+		pending []line
+	)
+
+	add := func(l line) error {
+		rec, err := cols.record(l.row, header, p, scale)
+		if err != nil {
+			return fmt.Errorf("line %d: %w", l.n, err)
+		}
+
+		out.Records = append(out.Records, rec)
+
+		return nil
+	}
+
 	for {
 		row, err := r.Read()
 		if errors.Is(err, io.EOF) {
 			break
 		}
 
-		line, _ := r.FieldPos(0)
+		n, _ := r.FieldPos(0)
 		if err != nil {
-			return domain.Statement{}, fmt.Errorf("line %d: %w", line, err)
+			return domain.Statement{}, fmt.Errorf("line %d: %w", n, err)
 		}
 
 		if blank(row) {
 			continue
 		}
 
-		rec, err := cols.record(row, header, p, scale)
-		if err != nil {
-			return domain.Statement{}, fmt.Errorf("line %d: %w", line, err)
+		pending = append(pending, line{row, n})
+		if len(pending) <= p.FooterRows {
+			continue
 		}
 
-		out.Records = append(out.Records, rec)
+		if err := add(pending[0]); err != nil {
+			return domain.Statement{}, err
+		}
+
+		pending = pending[1:]
 	}
 
 	return out, nil
@@ -88,7 +119,7 @@ func blank(row []string) bool {
 }
 
 // columns holds the 0-based index of each profile column; -1 when the profile has none.
-type columns struct{ date, amount, debit, credit, description, id int }
+type columns struct{ date, amount, debit, credit, description, id, sign int }
 
 func resolve(p domain.Profile, header []string) (columns, error) {
 	index := func(field, name string) (int, error) {
@@ -119,6 +150,7 @@ func resolve(p domain.Profile, header []string) (columns, error) {
 		{&c.date, "date_column", p.DateColumn}, {&c.amount, "amount_column", p.AmountColumn},
 		{&c.debit, "debit_column", p.DebitColumn}, {&c.credit, "credit_column", p.CreditColumn},
 		{&c.description, "description_column", p.DescriptionColumn}, {&c.id, "id_column", p.IDColumn},
+		{&c.sign, "sign_column", p.SignColumn},
 	} {
 		if *f.dst, err = index(f.field, f.col); err != nil {
 			return columns{}, err
@@ -142,38 +174,9 @@ func (c columns) record(row, header []string, p domain.Profile, scale int) (doma
 		return domain.NormalizedRecord{}, fmt.Errorf("date %q is not %s", cell(row, c.date), p.DateLayout)
 	}
 
-	decimal, _ := utf8.DecodeRuneInString(p.DecimalSeparator)
-
-	group, _ := utf8.DecodeRuneInString(p.GroupSeparator)
-	if p.GroupSeparator == "" {
-		group = 0
-	}
-
-	var amount int64
-	if c.amount >= 0 {
-		if amount, err = domain.MinorUnits(cell(row, c.amount), decimal, group, scale); err != nil {
-			return domain.NormalizedRecord{}, fmt.Errorf("amount: %w", err)
-		}
-	} else {
-		debit, credit := cell(row, c.debit), cell(row, c.credit)
-		switch {
-		case debit != "":
-			v, err := domain.MinorUnits(debit, decimal, group, scale)
-			if err != nil {
-				return domain.NormalizedRecord{}, fmt.Errorf("debit: %w", err)
-			}
-
-			amount = -abs(v)
-		case credit != "":
-			v, err := domain.MinorUnits(credit, decimal, group, scale)
-			if err != nil {
-				return domain.NormalizedRecord{}, fmt.Errorf("credit: %w", err)
-			}
-
-			amount = abs(v)
-		default:
-			return domain.NormalizedRecord{}, errors.New("both debit and credit are empty")
-		}
+	amount, err := c.signedAmount(row, p, scale)
+	if err != nil {
+		return domain.NormalizedRecord{}, err
 	}
 
 	if p.AmountSign == domain.SignInverted {
@@ -193,6 +196,59 @@ func (c columns) record(row, header []string, p domain.Profile, scale int) (doma
 	return domain.NormalizedRecord{
 		ExternalID: cell(row, c.id), Date: d, Amount: amount, Description: cell(row, c.description), Raw: raw,
 	}, nil
+}
+
+func (c columns) signedAmount(row []string, p domain.Profile, scale int) (int64, error) {
+	decimal, _ := utf8.DecodeRuneInString(p.DecimalSeparator)
+
+	group, _ := utf8.DecodeRuneInString(p.GroupSeparator)
+	if p.GroupSeparator == "" {
+		group = 0
+	}
+
+	if c.amount >= 0 {
+		amount, err := domain.MinorUnits(cell(row, c.amount), decimal, group, scale)
+		if err != nil {
+			return 0, fmt.Errorf("amount: %w", err)
+		}
+
+		if p.DebitMarker != "" && strings.EqualFold(c.marker(row), p.DebitMarker) {
+			amount = -abs(amount)
+		}
+
+		return amount, nil
+	}
+
+	debit, credit := cell(row, c.debit), cell(row, c.credit)
+	switch {
+	case debit != "":
+		v, err := domain.MinorUnits(debit, decimal, group, scale)
+		if err != nil {
+			return 0, fmt.Errorf("debit: %w", err)
+		}
+
+		return -abs(v), nil
+	case credit != "":
+		v, err := domain.MinorUnits(credit, decimal, group, scale)
+		if err != nil {
+			return 0, fmt.Errorf("credit: %w", err)
+		}
+
+		return abs(v), nil
+	default:
+		return 0, errors.New("both debit and credit are empty")
+	}
+}
+
+// marker reads the debit mark of a line: its sign column or the letters after the amount.
+func (c columns) marker(row []string) string {
+	if c.sign >= 0 {
+		return cell(row, c.sign)
+	}
+
+	text := cell(row, c.amount)
+
+	return text[len(strings.TrimRightFunc(text, unicode.IsLetter)):]
 }
 
 func abs(v int64) int64 {

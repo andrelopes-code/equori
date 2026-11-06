@@ -18,6 +18,15 @@ func profile(edit func(*domain.Profile)) domain.Profile {
 	return p
 }
 
+func semicolons(edit func(*domain.Profile)) domain.Profile {
+	return profile(func(p *domain.Profile) {
+		p.Delimiter, p.DecimalSeparator, p.GroupSeparator = ";", ",", "."
+		if edit != nil {
+			edit(p)
+		}
+	})
+}
+
 func TestParse(t *testing.T) {
 	t.Parallel()
 
@@ -47,6 +56,24 @@ func TestParse(t *testing.T) {
 			}), []int64{-23000, 23000}, domain.NormalizedRecord{Date: day("2026-10-14"), Description: "SUPERMERCADO"}},
 		{"windows-1252", []byte("Data,Valor,Identificador,Descri\xe7\xe3o\n05/10/2026,-1.00,x,Caf\xe9\n"),
 			profile(nil), []int64{-100}, domain.NormalizedRecord{ExternalID: "x", Date: day("2026-10-05"), Description: "Café"}},
+		{"footer rows", []byte("Data;Valor;Identificador;Descrição\n05/10/2026;-1,00;a;x\nTOTAL;;;\n\nSaldo;-1,00;;\n"),
+			semicolons(func(p *domain.Profile) { p.FooterRows = 2 }), []int64{-100},
+			domain.NormalizedRecord{ExternalID: "a", Date: day("2026-10-05"), Description: "x"}},
+		{"rows above the header", []byte("Banco X\nConta;123\nData;Valor;Identificador;Descrição\n05/10/2026;-1,00;a;x\n"),
+			semicolons(func(p *domain.Profile) { p.HeaderRows = 3 }), []int64{-100},
+			domain.NormalizedRecord{ExternalID: "a", Date: day("2026-10-05"), Description: "x"}},
+		{"marker after the amount", []byte("Data;Valor;Identificador;Descrição\n05/10/2026;100,00 D;a;x\n06/10/2026;50,00 C;b;y\n07/10/2026;20,00;c;z\n"),
+			semicolons(func(p *domain.Profile) { p.DebitMarker = "d" }), []int64{-10000, 5000, 2000},
+			domain.NormalizedRecord{ExternalID: "a", Date: day("2026-10-05"), Description: "x"}},
+		{"marker column", []byte("Data;Valor;Tipo;Identificador;Descrição\n05/10/2026;100,00;Débito;a;x\n06/10/2026;50,00;CRÉDITO;b;y\n"),
+			semicolons(func(p *domain.Profile) { p.SignColumn, p.DebitMarker = "Tipo", "débito" }), []int64{-10000, 5000},
+			domain.NormalizedRecord{ExternalID: "a", Date: day("2026-10-05"), Description: "x"}},
+		{"marker keeps a written minus", []byte("Data;Valor;Identificador;Descrição\n05/10/2026;-30,00;a;x\n"),
+			semicolons(func(p *domain.Profile) { p.DebitMarker = "D" }), []int64{-3000},
+			domain.NormalizedRecord{ExternalID: "a", Date: day("2026-10-05"), Description: "x"}},
+		{"date with time", []byte("Data;Valor;Identificador;Descrição\n05/10/2026 14:22;1,00;a;x\n"),
+			semicolons(nil), []int64{100},
+			domain.NormalizedRecord{ExternalID: "a", Date: day("2026-10-05"), Description: "x"}},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -84,6 +111,8 @@ func TestParseRejects(t *testing.T) {
 		{"bad date", "Data,Valor,Identificador,Descrição\n2026-10-05,1.00,a,x\n", "line 2", profile(nil)},
 		{"bad amount", "Data,Valor,Identificador,Descrição\n05/10/2026,abc,a,x\n", "amount", profile(nil)},
 		{"no header", "", "header row 1", profile(nil)},
+		{"footer rows do not hide a bad line", "Data,Valor,Identificador,Descrição\nTOTAL,1.00,a,x\n05/10/2026,1.00,b,y\n", "line 2",
+			profile(func(p *domain.Profile) { p.FooterRows = 1 })},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
