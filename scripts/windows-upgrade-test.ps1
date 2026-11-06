@@ -52,7 +52,7 @@ $src = Join-Path $env:RUNNER_TEMP 'upgrade-src'
 git worktree add --detach $src $PreviousRef | Out-Null
 Push-Location $src
 try {
-    go run ./cmd/demoseed -url $base -email upgrade@equori.test -password equori-upgrade-test -today 2026-10-26
+    go run ./cmd/demoseed -url $base -email upgrade@equori.test -password equori-upgrade-test
     if ($LASTEXITCODE -ne 0) { throw 'demoseed failed' }
 } finally { Pop-Location }
 $before = Settled

@@ -93,7 +93,7 @@ git worktree add --detach "$work/src" "$prev_ref" >/dev/null
 # than the previous release, drop this overlay and seed with the seeder of the previous ref.
 cp -R "$(git rev-parse --show-toplevel)/cmd/demoseed/." "$work/src/cmd/demoseed/"
 (cd "$work/src" && go run ./cmd/demoseed -url "http://127.0.0.1:$port" -email upgrade@equori.test \
-	-password equori-upgrade-test -today 2026-10-26)
+	-password equori-upgrade-test)
 settled >"$work/before"
 docker rm -f "$name-app" >/dev/null
 
