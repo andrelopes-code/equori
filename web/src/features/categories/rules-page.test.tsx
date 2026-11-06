@@ -225,6 +225,30 @@ describe("RulesPage", () => {
     });
   });
 
+  it("headlines the suggestion with its outcome and keeps its conditions while it is named", async () => {
+    await renderApp("/categories/rules", { fetch: api([]) });
+    const accept = await screen.findByRole("button", {
+      name: catalogEn["suggestion.accept"],
+    });
+    const card = accept.closest('[data-ui="card"]');
+    if (!(card instanceof HTMLElement)) throw new Error("no suggestion card");
+    expect(
+      within(card).getByRole("heading", { name: "Categorize as Food" }),
+    ).toBeInTheDocument();
+    expect(
+      within(card).getByText("description contains “padaria”"),
+    ).toBeInTheDocument();
+
+    await userEvent.click(accept);
+
+    expect(
+      within(card).getByText("description contains “padaria”"),
+    ).toBeInTheDocument();
+    expect(
+      within(card).getByRole("textbox", { name: catalogEn["rules.name"] }),
+    ).toBeInTheDocument();
+  });
+
   it("maps a bank category to one of the owner's", async () => {
     const sent: Sent[] = [];
     await renderApp("/categories/rules", { fetch: api(sent) });

@@ -2,14 +2,19 @@ import { Button } from "@slotted/react/button";
 import { Card, CardBody, CardFooter, CardHeader } from "@slotted/react/card";
 import { Field, FieldLabel } from "@slotted/react/field";
 import { Inline } from "@slotted/react/inline";
+import { Stack } from "@slotted/react/stack";
 import { TextField } from "@slotted/react/text-field";
 import { Heading, Text } from "@slotted/react/typography";
 import { useState } from "react";
 
 import type { components } from "@/api/schema.gen";
+import {
+  actionSentence,
+  conditionSentence,
+} from "@/features/categories/rule-sentence";
 import type { RuleWords } from "@/features/categories/rule-sentence";
-import { ruleSummary } from "@/features/categories/rule-summary";
-import { useT } from "@/i18n/i18n-provider";
+import styles from "@/features/categories/suggestion-card.module.css";
+import { useAppLocale, useT } from "@/i18n/i18n-provider";
 
 type Suggestion = components["schemas"]["RuleSuggestion"];
 
@@ -30,6 +35,7 @@ export function SuggestionCard({
   onDismiss: () => void;
 }) {
   const t = useT();
+  const [locale] = useAppLocale();
   const first = suggestion.actions[0];
   const proposed =
     first === undefined
@@ -39,11 +45,14 @@ export function SuggestionCard({
           : undefined) ?? t("suggestion.defaultName"));
   const [naming, setNaming] = useState(false);
   const [name, setName] = useState(proposed);
+  const outcome = suggestion.actions
+    .map((a) => actionSentence(a, words))
+    .join("; ");
   return (
     <Card size="sm">
       <CardHeader>
         <Heading level={3} size="sm">
-          {t("suggestion.title")}
+          {outcome.charAt(0).toLocaleUpperCase(locale) + outcome.slice(1)}
         </Heading>
         <Text size="sm" tone="muted">
           {t("suggestion.basis", {
@@ -52,20 +61,35 @@ export function SuggestionCard({
         </Text>
       </CardHeader>
       <CardBody>
-        {naming ? (
-          <Field required>
-            <FieldLabel>{t("rules.name")}</FieldLabel>
-            <TextField
-              value={name}
-              maxLength={120}
-              onChange={(event) => {
-                setName(event.target.value);
-              }}
-            />
-          </Field>
-        ) : (
-          <Text>{ruleSummary(suggestion, words)}</Text>
-        )}
+        <Stack gap={4}>
+          <Stack gap={2}>
+            <Text size="sm" weight="semibold">
+              {t("ruleEditor.when")}
+            </Text>
+            <ul className={styles.lines}>
+              {suggestion.conditions.map((condition, i) => (
+                <li key={i} className={styles.line}>
+                  <Text size="sm" tone="muted" className={styles.join}>
+                    {i === 0 ? "" : t("ruleEditor.and")}
+                  </Text>
+                  <Text size="sm">{conditionSentence(condition, words)}</Text>
+                </li>
+              ))}
+            </ul>
+          </Stack>
+          {naming && (
+            <Field required>
+              <FieldLabel>{t("rules.name")}</FieldLabel>
+              <TextField
+                value={name}
+                maxLength={120}
+                onChange={(event) => {
+                  setName(event.target.value);
+                }}
+              />
+            </Field>
+          )}
+        </Stack>
       </CardBody>
       <CardFooter>
         <Inline gap={2} justify="end">
