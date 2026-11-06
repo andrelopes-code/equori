@@ -1024,6 +1024,10 @@ The scenarios of `docs/specs/2026-11-03-update-flow-design.md`, section "Scenari
 
 The scenarios of `docs/specs/2026-11-05-bulk-actions-design.md`, section 4: several lines in review are resolved in one request, each with its own status (S289), and a request that names a line twice is refused (S290); several transactions are voided in one request, each with its own status (S291), and a request that names a transaction twice is refused (S292); the review queue leaves group lines out of a selection and confirms the suggestion of probable lines only (S293); a bulk command states what it wrote and names each refused record with its reason (S294).
 
+### S295–S301 CSV reading and column suggestion (A204–A207)
+
+The scenarios of `docs/specs/2026-11-06-csv-reading-and-column-suggestion-design.md`: a file with rows above the header and a total row under the data imports its lines only (S295); a debit marker in a sign column or after the amount makes a matching line negative and keeps any other line as written (S296); a date with one-digit day and month and a date followed by a time import under their layout (S297); a column suggestion returns header names and sends the model no digit and no name of the sample (S298); an answer that fails validation returns 422 `csv_suggestion_unusable` (S299); no target that answers returns 503 `csv_suggestion_unavailable` (S300); a UTF-8 OFX file that declares Windows-1252 keeps its text (S301).
+
 ### S262 Rate, target and gap
 
 A fixed reference of 8,000.00 and savings occurrences of 1,200.00 in the month: `GET /budget-plan` returns `savings_rate_bp` 1500. After `PUT` with `savings_target_bp` 2500, the plan returns `savings_target` 2,000.00 and `savings_gap` 800.00. With savings of 2,000.00 or more the gap is 0.00.
