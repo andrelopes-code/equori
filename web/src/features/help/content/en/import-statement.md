@@ -6,7 +6,7 @@ A statement file is the file your bank or card offers for download. equori reads
 
 1. Open the account in [Accounts](/accounts).
 2. Choose **Import statement** and select the file.
-3. For a CSV, say how it is read: the separator, how many header rows it has, the date format, and which columns hold the date, the description and the amount. The first lines show as they will be read, so you can check before importing.
+3. For a CSV, say how it is read: the separator, how many header rows it has, the date format, and how many rows under the data to skip, and which columns hold the date, the description and the amount. When a column holds a mark for debits and credits, choose it as **Column with the debit or credit mark** and enter the **Mark of a debit**; lines with that mark become money out. **Identify columns with AI** sends the header and 12 lines to the configured model, with digits and names masked, and fills the columns. The first lines show as they will be read, so you can check before importing.
 4. Choose **Import**.
 
 Lines that came in an earlier import are recognised and skipped. Importing the same file twice duplicates nothing.

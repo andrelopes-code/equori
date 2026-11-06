@@ -6,7 +6,7 @@ O extrato é o arquivo que o banco ou o cartão oferece para baixar. O equori l�
 
 1. Abra a conta em [Contas](/accounts).
 2. Escolha **Importar extrato** e selecione o arquivo.
-3. Para um CSV, diga como ele é lido: o separador, quantas linhas de cabeçalho ele tem, o formato da data e quais colunas trazem a data, a descrição e o valor. As primeiras linhas aparecem como serão lidas, para conferir antes de importar.
+3. Para um CSV, diga como ele é lido: o separador, quantas linhas de cabeçalho ele tem, o formato da data quantas linhas abaixo dos dados ignorar e quais colunas trazem a data, a descrição e o valor. Quando uma coluna traz a marca de débito ou crédito, escolha-a em **Coluna com a marca de débito ou crédito** e informe a **Marca de débito**; as linhas com essa marca viram saídas. **Identificar colunas com IA** envia o cabeçalho e 12 linhas ao modelo configurado, com números e nomes mascarados, e preenche as colunas. As primeiras linhas aparecem como serão lidas, para conferir antes de importar.
 4. Escolha **Importar**.
 
 Linhas que já vieram numa importação anterior são reconhecidas e ignoradas. Importar o mesmo arquivo duas vezes não duplica nada.
