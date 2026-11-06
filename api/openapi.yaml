@@ -1865,6 +1865,13 @@ paths:
         return, days over 365, rounded half to even to basis points. Without account_id the tree is every brokerage account
         of the book with its sub-accounts, and a transfer between two of them is not a flow. 422 return_undefined when
         no money was invested.
+
+        period_bp is the time-weighted return of the period: the period splits at each flow date, a flow earns from the
+        next day, and the growth of each piece is chained (amendment A208). benchmark compares it with a daily index:
+        index names an enabled index; without it, the default index of the book's region applies, and benchmark is absent
+        when that index has no rate. until is the last rate date in [from, to]; return_bp is the time-weighted return up
+        to until, index_bp the growth of the index over the same days, and percent_bp the percent of the index (10000 is
+        100%) that grows as much. 400 on index when the named index is not enabled, has no rate or is not daily.
       parameters:
         - name: account_id
           in: query
@@ -1890,6 +1897,12 @@ paths:
           schema:
             type: string
             pattern: "^[A-Z]{3}$"
+        - name: index
+          in: query
+          required: false
+          schema:
+            type: string
+            pattern: "^[a-z0-9_]{2,40}$"
       responses:
         "200":
           description: OK.
@@ -10435,6 +10448,26 @@ components:
           $ref: "#/components/schemas/Money"
         closing:
           $ref: "#/components/schemas/Money"
+        period_bp:
+          type: integer
+        benchmark:
+          $ref: "#/components/schemas/ReturnBenchmark"
+    ReturnBenchmark:
+      type: object
+      required: [index, until, index_bp]
+      properties:
+        index:
+          type: string
+          pattern: "^[a-z0-9_]{2,40}$"
+        until:
+          type: string
+          format: date
+        return_bp:
+          type: integer
+        index_bp:
+          type: integer
+        percent_bp:
+          type: integer
     SubtypeList:
       type: object
       required: [items]

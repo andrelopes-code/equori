@@ -153,14 +153,35 @@ func (s *Server) GetReturn(ctx context.Context, req GetReturnRequestObject) (Get
 		account = *req.Params.AccountId
 	}
 
-	r, err := s.svc.Return(ctx, auth.MustBooksID(ctx), account, req.Params.From.Time, req.Params.To.Time, in)
+	var index string
+	if req.Params.Index != nil {
+		index = *req.Params.Index
+	}
+
+	r, err := s.svc.Return(ctx, auth.MustBooksID(ctx), account, req.Params.From.Time, req.Params.To.Time, in, index)
 	if err != nil {
 		return nil, err
 	}
 
-	out := GetReturn200JSONResponse{AnnualBp: r.AnnualBP, Opening: toMoney(r.Opening), Closing: toMoney(r.Closing), Flows: make([]ReturnFlow, len(r.Flows))}
+	out := GetReturn200JSONResponse{
+		AnnualBp: r.AnnualBP,
+		Opening:  toMoney(r.Opening),
+		Closing:  toMoney(r.Closing),
+		Flows:    make([]ReturnFlow, len(r.Flows)),
+		PeriodBp: r.PeriodBP,
+	}
 	for i, f := range r.Flows {
 		out.Flows[i] = ReturnFlow{Date: date(f.Date), Amount: toMoney(f.Amount)}
+	}
+
+	if b := r.Benchmark; b != nil {
+		out.Benchmark = &ReturnBenchmark{
+			Index:     b.Index,
+			Until:     date(b.Until),
+			ReturnBp:  b.ReturnBP,
+			IndexBp:   b.IndexBP,
+			PercentBp: b.PercentBP,
+		}
 	}
 
 	return out, nil
@@ -248,6 +269,11 @@ func ToProblem(err error) (problem.Details, bool) {
 		return problem.New(http.StatusNotFound, "not_found", "account not found"), true
 	case errors.Is(err, app.ErrPriceMissing):
 		return problem.New(http.StatusUnprocessableEntity, "price_missing", err.Error()), true
+	case errors.Is(err, app.ErrUnknownIndex), errors.Is(err, app.ErrIndexNotDaily):
+		d := problem.New(http.StatusBadRequest, "invalid_request", "the index must be an enabled daily index with stored rates")
+		d.Errors = []problem.FieldError{{Field: "index", Message: "must be an enabled daily index with stored rates"}}
+
+		return d, true
 	case errors.Is(err, app.ErrReturnUndefined):
 		return problem.New(http.StatusUnprocessableEntity, "return_undefined", "no money was invested in the period, or the return has no solution"), true
 	}

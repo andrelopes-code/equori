@@ -62,6 +62,11 @@ type MarketData interface {
 	// has no quotation currency.
 	InstrumentOf(ctx context.Context, code money.Currency) (InstrumentInfo, error)
 	Convert(ctx context.Context, q money.Money, to money.Currency, date time.Time) (money.Money, []Price, error)
+	// IndexRates returns the rates of a daily index in [from, to], oldest first: ErrUnknownIndex
+	// when the index is not enabled or has no rate, ErrIndexNotDaily when its period is not a day.
+	IndexRates(ctx context.Context, id string, from, to time.Time) ([]IndexRate, error)
+	// BenchmarkIndex returns the default index of the book's region, or "" (amendment A208 R2).
+	BenchmarkIndex(ctx context.Context, booksID int64) (string, error)
 }
 
 type Repository interface {

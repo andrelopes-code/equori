@@ -51,6 +51,16 @@ type groupView struct {
 	ShareBP int        `json:"share_bp"`
 }
 
+// benchmarkView compares the time-weighted return with the default index of the book's region
+// (amendment A208).
+type benchmarkView struct {
+	Index     string `json:"index"`
+	Until     string `json:"until"`
+	ReturnBP  int    `json:"return_bp,omitzero" jsonschema:"time-weighted return up to until in basis points; absent when undefined or zero"`
+	IndexBP   int    `json:"index_bp"`
+	PercentBP int    `json:"percent_bp,omitzero" jsonschema:"percent of the index that grows as much, 10000 is 100%; absent when undefined or zero"`
+}
+
 type getPortfolioOut struct {
 	Positions   []positionView `json:"positions,omitzero"`
 	Total       tool.Money     `json:"total,omitzero"`
@@ -61,6 +71,8 @@ type getPortfolioOut struct {
 	AnnualBP    int            `json:"annual_bp,omitzero"`
 	Opening     tool.Money     `json:"opening,omitzero"`
 	Closing     tool.Money     `json:"closing,omitzero"`
+	PeriodBP    int            `json:"period_bp,omitzero" jsonschema:"for return: time-weighted return of the period in basis points; absent when undefined or zero"`
+	Benchmark   benchmarkView  `json:"benchmark,omitzero"`
 	IncomeTypes []string       `json:"income_types,omitzero"`
 	Subtypes    []string       `json:"subtypes,omitzero"`
 }
@@ -68,7 +80,7 @@ type getPortfolioOut struct {
 func getPortfolio(svc *app.Service, names AccountNames, today func(context.Context) time.Time) tool.Tool {
 	return tool.New(tool.Spec{
 		Name: "get_portfolio",
-		Description: "Returns investment views at a date: positions with quantity, cost and market value; allocation by instrument type, currency or institution; net worth; or the annual return of an account over a period. " +
+		Description: "Returns investment views at a date: positions with quantity, cost and market value; allocation by instrument type, currency or institution; net worth; or the annual return of an account over a period, with its time-weighted return and the percent of the default index of the region (CDI in Brazil) that grows as much. " +
 			"Also lists the income types and instrument subtypes the book's tax jurisdiction accepts. " +
 			"Use it for questions about investments and net worth. " +
 			"Do not use it for cash balances only: get_balances does; nor for a tax year: get_tax_year does.",
@@ -135,12 +147,18 @@ func getPortfolio(svc *app.Service, names AccountNames, today func(context.Conte
 				return getPortfolioOut{}, err
 			}
 
-			r, err := svc.Return(ctx, booksID, id, in.From.Time, in.To.Time, "")
+			r, err := svc.Return(ctx, booksID, id, in.From.Time, in.To.Time, "", "")
 			if err != nil {
 				return getPortfolioOut{}, err
 			}
 
-			return getPortfolioOut{AnnualBP: r.AnnualBP, Opening: tool.MoneyOf(r.Opening), Closing: tool.MoneyOf(r.Closing)}, nil
+			return getPortfolioOut{
+				AnnualBP:  r.AnnualBP,
+				Opening:   tool.MoneyOf(r.Opening),
+				Closing:   tool.MoneyOf(r.Closing),
+				PeriodBP:  valueOf(r.PeriodBP),
+				Benchmark: benchmarkOf(r.Benchmark),
+			}, nil
 		case "income_types":
 			types, err := svc.IncomeTypes(ctx, booksID)
 			return getPortfolioOut{IncomeTypes: nonNil(types)}, err
@@ -150,6 +168,29 @@ func getPortfolio(svc *app.Service, names AccountNames, today func(context.Conte
 
 		return getPortfolioOut{Subtypes: nonNil(subtypes)}, err
 	})
+}
+
+func benchmarkOf(b *app.Benchmark) benchmarkView {
+	if b == nil {
+		return benchmarkView{}
+	}
+
+	return benchmarkView{
+		Index:     b.Index,
+		Until:     b.Until.Format(time.DateOnly),
+		ReturnBP:  valueOf(b.ReturnBP),
+		IndexBP:   b.IndexBP,
+		PercentBP: valueOf(b.PercentBP),
+	}
+}
+
+// valueOf is the integer p points to, or 0; a tool schema has no null (ADR 012 T4).
+func valueOf(p *int) int {
+	if p == nil {
+		return 0
+	}
+
+	return *p
 }
 
 func nonNil(s []string) []string {

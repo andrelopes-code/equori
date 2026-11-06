@@ -37,27 +37,42 @@ type ReturnFlow struct {
 	Amount money.Money
 }
 
-// ReturnReport is the money-weighted return of an account tree over a period.
+// ReturnReport is the money-weighted return of an account tree over a period, its time-weighted
+// return and the comparison with an index (amendment A208). PeriodBP and Benchmark are nil when
+// undefined.
 type ReturnReport struct {
 	AnnualBP         int
 	Flows            []ReturnFlow
 	Opening, Closing money.Money
+	PeriodBP         *int
+	Benchmark        *Benchmark
 }
 
 // Return values the account tree the day before from and on to, values each external flow at the
 // price of its date, and solves the annual rate of the result. in defaults to the base currency.
-// The nil accountID is every brokerage tree of the book.
-func (s *Service) Return(ctx context.Context, booksID int64, accountID uuid.UUID, from, to time.Time, in money.Currency) (ReturnReport, error) {
-	if accountID != uuid.Nil {
-		return s.returnOf(ctx, booksID, []uuid.UUID{accountID}, from, to, in)
+// The nil accountID is every brokerage tree of the book. index names the daily index of the
+// comparison; "" takes the default of the book's region.
+func (s *Service) Return(ctx context.Context, booksID int64, accountID uuid.UUID, from, to time.Time, in money.Currency, index string) (ReturnReport, error) {
+	ids := []uuid.UUID{accountID}
+	if accountID == uuid.Nil {
+		roots, err := s.brokerageRoots(ctx, booksID)
+		if err != nil {
+			return ReturnReport{}, err
+		}
+
+		ids = roots
 	}
 
-	roots, err := s.brokerageRoots(ctx, booksID)
+	report, err := s.returnOf(ctx, booksID, ids, from, to, in)
 	if err != nil {
 		return ReturnReport{}, err
 	}
 
-	return s.returnOf(ctx, booksID, roots, from, to, in)
+	if err := s.compare(ctx, booksID, ids, from, to, index, &report); err != nil {
+		return ReturnReport{}, err
+	}
+
+	return report, nil
 }
 
 // brokerageRoots lists the brokerage accounts that have no brokerage parent.

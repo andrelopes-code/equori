@@ -254,6 +254,15 @@ type RealizedResultList struct {
 	To openapi_types.Date `json:"to"`
 }
 
+// ReturnBenchmark defines model for ReturnBenchmark.
+type ReturnBenchmark struct {
+	Index     string             `json:"index"`
+	IndexBp   int                `json:"index_bp"`
+	PercentBp *int               `json:"percent_bp,omitempty"`
+	ReturnBp  *int               `json:"return_bp,omitempty"`
+	Until     openapi_types.Date `json:"until"`
+}
+
 // ReturnFlow defines model for ReturnFlow.
 type ReturnFlow struct {
 	Amount Money              `json:"amount"`
@@ -262,10 +271,12 @@ type ReturnFlow struct {
 
 // ReturnReport defines model for ReturnReport.
 type ReturnReport struct {
-	AnnualBp int          `json:"annual_bp"`
-	Closing  Money        `json:"closing"`
-	Flows    []ReturnFlow `json:"flows"`
-	Opening  Money        `json:"opening"`
+	AnnualBp  int              `json:"annual_bp"`
+	Benchmark *ReturnBenchmark `json:"benchmark,omitempty"`
+	Closing   Money            `json:"closing"`
+	Flows     []ReturnFlow     `json:"flows"`
+	Opening   Money            `json:"opening"`
+	PeriodBp  *int             `json:"period_bp,omitempty"`
 }
 
 // SubtypeList defines model for SubtypeList.
@@ -333,6 +344,7 @@ type GetReturnParams struct {
 	From      openapi_types.Date  `form:"from" json:"from"`
 	To        openapi_types.Date  `form:"to" json:"to"`
 	ValueIn   *string             `form:"value_in,omitempty" json:"value_in,omitempty"`
+	Index     *string             `form:"index,omitempty" json:"index,omitempty"`
 }
 
 // ServerInterface represents all server handlers.
@@ -755,6 +767,19 @@ func (siw *ServerInterfaceWrapper) GetReturn(w http.ResponseWriter, r *http.Requ
 			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "value_in"})
 		} else {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "value_in", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "index" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "index", r.URL.Query(), &params.Index, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "index"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "index", Err: err})
 		}
 		return
 	}

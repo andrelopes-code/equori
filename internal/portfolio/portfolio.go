@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"slices"
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -69,7 +71,7 @@ func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, l *ledger.Module, md
 		return nil, err
 	}
 
-	svc := app.NewService(postgres.NewRepository(pool), ledgerPort{l, md}, marketPort{md}, jurisdictions{profiles, byID})
+	svc := app.NewService(postgres.NewRepository(pool), ledgerPort{l, md}, marketPort{md, profiles}, jurisdictions{profiles, byID})
 	m := &Module{http: httpapi.NewServer(svc, log), svc: svc, ledger: l}
 	// P8 amendment A71: categorization never changes a security account.
 	for _, t := range []string{ledger.EventTransactionRecorded, ledger.EventTransactionCorrected, ledger.EventTransactionVoided} {
@@ -231,7 +233,10 @@ func (p ledgerPort) ExternalFlows(ctx context.Context, booksID int64, accountIDs
 	return out, err
 }
 
-type marketPort struct{ md *marketdata.Module }
+type marketPort struct {
+	md       *marketdata.Module
+	profiles Profiles
+}
 
 func (p marketPort) Scale(ctx context.Context, code money.Currency) (int, error) {
 	in, err := p.md.Instrument(ctx, string(code))
@@ -259,4 +264,49 @@ func (p marketPort) Convert(ctx context.Context, q money.Money, to money.Currenc
 	}
 
 	return c.Value, prices, nil
+}
+
+// dailyPeriod is the period of an index with one rate per business day (marketdata IndexSummary).
+const dailyPeriod = "day"
+
+func (p marketPort) IndexRates(ctx context.Context, id string, from, to time.Time) ([]app.IndexRate, error) {
+	indexes, err := p.md.Indexes(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	i := slices.IndexFunc(indexes, func(x marketdata.IndexSummary) bool { return x.ID == id })
+	if i < 0 {
+		return nil, app.ErrUnknownIndex
+	}
+
+	if indexes[i].Period != dailyPeriod {
+		return nil, app.ErrIndexNotDaily
+	}
+
+	rates, err := p.md.IndexRates(ctx, id, from, to)
+	if err != nil {
+		return nil, err
+	}
+
+	out := make([]app.IndexRate, len(rates))
+	for i, r := range rates {
+		v, err := strconv.ParseFloat(r.Rate, 64)
+		if err != nil {
+			return nil, fmt.Errorf("parse the rate of %s on %s: %w", id, r.Date.Format(time.DateOnly), err)
+		}
+
+		out[i] = app.IndexRate{Date: r.Date, Rate: v}
+	}
+
+	return out, nil
+}
+
+func (p marketPort) BenchmarkIndex(ctx context.Context, booksID int64) (string, error) {
+	l, err := p.profiles.Profile(ctx, booksID)
+	if err != nil {
+		return "", err
+	}
+
+	return defaultBenchmark(l.Region), nil
 }

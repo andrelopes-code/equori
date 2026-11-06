@@ -2893,7 +2893,7 @@
   },
   {
     "name": "get_portfolio",
-    "description": "Returns investment views at a date: positions with quantity, cost and market value; allocation by instrument type, currency or institution; net worth; or the annual return of an account over a period. Also lists the income types and instrument subtypes the book's tax jurisdiction accepts. Use it for questions about investments and net worth. Do not use it for cash balances only: get_balances does; nor for a tax year: get_tax_year does.",
+    "description": "Returns investment views at a date: positions with quantity, cost and market value; allocation by instrument type, currency or institution; net worth; or the annual return of an account over a period, with its time-weighted return and the percent of the default index of the region (CDI in Brazil) that grows as much. Also lists the income types and instrument subtypes the book's tax jurisdiction accepts. Use it for questions about investments and net worth. Do not use it for cash balances only: get_balances does; nor for a tax year: get_tax_year does.",
     "effect": "read_only",
     "idempotent": true,
     "input_schema": {
@@ -3190,6 +3190,38 @@
           "required": [
             "amount",
             "currency"
+          ],
+          "additionalProperties": false
+        },
+        "period_bp": {
+          "type": "integer",
+          "description": "for return: time-weighted return of the period in basis points; absent when undefined or zero"
+        },
+        "benchmark": {
+          "type": "object",
+          "properties": {
+            "index": {
+              "type": "string"
+            },
+            "until": {
+              "type": "string"
+            },
+            "return_bp": {
+              "type": "integer",
+              "description": "time-weighted return up to until in basis points; absent when undefined or zero"
+            },
+            "index_bp": {
+              "type": "integer"
+            },
+            "percent_bp": {
+              "type": "integer",
+              "description": "percent of the index that grows as much, 10000 is 100%; absent when undefined or zero"
+            }
+          },
+          "required": [
+            "index",
+            "until",
+            "index_bp"
           ],
           "additionalProperties": false
         },

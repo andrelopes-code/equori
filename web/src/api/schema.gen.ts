@@ -1096,6 +1096,13 @@ export interface paths {
          *     return, days over 365, rounded half to even to basis points. Without account_id the tree is every brokerage account
          *     of the book with its sub-accounts, and a transfer between two of them is not a flow. 422 return_undefined when
          *     no money was invested.
+         *
+         *     period_bp is the time-weighted return of the period: the period splits at each flow date, a flow earns from the
+         *     next day, and the growth of each piece is chained (amendment A208). benchmark compares it with a daily index:
+         *     index names an enabled index; without it, the default index of the book's region applies, and benchmark is absent
+         *     when that index has no rate. until is the last rate date in [from, to]; return_bp is the time-weighted return up
+         *     to until, index_bp the growth of the index over the same days, and percent_bp the percent of the index (10000 is
+         *     100%) that grows as much. 400 on index when the named index is not enabled, has no rate or is not daily.
          */
         get: operations["getReturn"];
         put?: never;
@@ -5819,6 +5826,16 @@ export interface components {
             flows: components["schemas"]["ReturnFlow"][];
             opening: components["schemas"]["Money"];
             closing: components["schemas"]["Money"];
+            period_bp?: number;
+            benchmark?: components["schemas"]["ReturnBenchmark"];
+        };
+        ReturnBenchmark: {
+            index: string;
+            /** Format: date */
+            until: string;
+            return_bp?: number;
+            index_bp: number;
+            percent_bp?: number;
         };
         SubtypeList: {
             items: string[];
@@ -8756,6 +8773,7 @@ export interface operations {
                 from: string;
                 to: string;
                 value_in?: string;
+                index?: string;
             };
             header?: never;
             path?: never;

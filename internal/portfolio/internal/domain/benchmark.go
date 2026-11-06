@@ -1,0 +1,91 @@
+package domain
+
+import (
+	"math"
+	"slices"
+)
+
+const (
+	minPercent = -10.0
+	maxPercent = 10.0
+)
+
+// Subperiod is the end of one piece of a time-weighted period: the value of the tree at the end
+// of a day, that day's flows included, and the sum of that day's flows.
+type Subperiod struct {
+	Value, Flow int64
+}
+
+// PeriodFactor is 1 plus the time-weighted return from the start value through ends, oldest
+// first (amendment A208 R1). A flow earns from the day after it. ok is false when a gain has no
+// invested base or when a piece loses everything.
+func PeriodFactor(start int64, ends []Subperiod) (factor float64, ok bool) {
+	factor = 1
+
+	for _, e := range ends {
+		gain := e.Value - e.Flow - start
+		if start <= 0 && gain != 0 {
+			return 0, false
+		}
+
+		if start > 0 {
+			factor *= 1 + float64(gain)/float64(start)
+		}
+
+		if factor <= 0 {
+			return 0, false
+		}
+
+		start = e.Value
+	}
+
+	return factor, true
+}
+
+// FactorBP is factor − 1 in basis points, rounded half to even.
+func FactorBP(factor float64) int { return int(math.RoundToEven((factor - 1) * 10000)) }
+
+// IndexFactor is the growth of one unit at the rates: the product of 1 + rate.
+func IndexFactor(rates []float64) float64 { return percentFactor(1, rates) }
+
+// IndexPercentBP is the percent p of the index, in basis points of 100%, for which the product of
+// 1 + p × rate equals factor (amendment A208 R5). ok is false when a rate is not positive or no p
+// in [-1000%, 1000%] solves it. The solver runs in floating point; the result leaves as an
+// integer (investments design AG2).
+func IndexPercentBP(factor float64, rates []float64) (bp int, ok bool) {
+	if len(rates) == 0 || slices.ContainsFunc(rates, func(r float64) bool { return r <= 0 }) {
+		return 0, false
+	}
+
+	lo, hi := minPercent, maxPercent
+	if percentFactor(lo, rates) > factor || percentFactor(hi, rates) < factor {
+		return 0, false
+	}
+
+	for range solverMax {
+		mid := (lo + hi) / 2
+		if percentFactor(mid, rates) < factor {
+			lo = mid
+		} else {
+			hi = mid
+		}
+	}
+
+	return int(math.RoundToEven((lo + hi) / 2 * 10000)), true
+}
+
+// percentFactor is the product of 1 + p × rate; a factor at or below zero is minus infinity, so
+// the product keeps growing with p.
+func percentFactor(p float64, rates []float64) float64 {
+	f := 1.0
+	for _, r := range rates {
+		step := 1 + p*r
+		if step <= 0 {
+			return math.Inf(-1)
+		}
+
+		f *= step
+	}
+
+	return f
+}

@@ -32,7 +32,7 @@ Work is delivered in the order of section 4. Each part is a vertical slice with 
 | NG2 | Tax reports and the monthly exemption rules for realized gains (later feature of D1). |
 | NG3 | A net-of-tax value of a fixed income position. Accrual produces a gross value. |
 | NG4 | Intraday prices, order books, or any order entry (vision, 1.10). |
-| NG5 | Benchmarks (comparing a portfolio with CDI or an index fund). |
+| NG5 | Benchmarks against an index fund. Comparison with a daily index is amendment A208 (`docs/specs/2026-11-06-return-index-comparison-design.md`). |
 | NG6 | A second jurisdiction beyond the test implementation that X10 requires. |
 | NG7 | Private pension (PGBL, VGBL) as a distinct type. It is a `fund` with a subtype until a rule needs more. |
 
