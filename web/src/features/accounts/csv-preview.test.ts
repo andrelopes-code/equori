@@ -175,6 +175,17 @@ describe("previewCsv reading", () => {
   const sheet = (...lines: string[]) =>
     `Data;Descrição;Valor\n${lines.join("\n")}\n`;
 
+  it("counts header rows as the server's reader does, without empty lines", () => {
+    const text = "Banco\n\nData;Descrição;Valor\n2026-10-05;Padaria;-10,00\n";
+    const { headers, rows } = previewCsv(
+      text,
+      { ...base, header_rows: 2, date_layout: "YYYY-MM-DD" },
+      2,
+    );
+    expect(headers).toEqual(["Data", "Descrição", "Valor"]);
+    expect(rows[0]?.description).toBe("Padaria");
+  });
+
   it("leaves out the footer rows", () => {
     const text = sheet("05/10/2026;Padaria;-1,00", "06/10/2026;Total;9,00");
     const rows = previewCsv(text, { ...base, footer_rows: 1 }, 2).rows;

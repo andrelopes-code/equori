@@ -22,6 +22,14 @@ describe("detectStructure", () => {
       1,
     ],
     ["05/10/2026\tx\t1.00\n06/10/2026\ty\t2.00\n", "tab", 0, 0],
+    // encoding/csv reads ";;" as a row and skips an empty line; only the first counts as a header row.
+    [";;\nData;Hist;Valor\n05/10/2026;x;1,00\n", "semicolon", 2, 0],
+    [
+      "Data;Hist;Valor\n05/10/2026;x;1,00\n;;\nTotal;;1,00\n",
+      "semicolon",
+      1,
+      1,
+    ],
     [
       "Banco\n05/10/2026;x;1,00\n06/10/2026;y;2,00\n",
       "semicolon",

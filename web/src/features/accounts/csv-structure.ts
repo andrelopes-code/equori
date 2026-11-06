@@ -4,7 +4,7 @@ export interface CsvStructure {
   delimiter: "comma" | "semicolon" | "tab" | "pipe";
   headerRows: number | undefined;
   footerRows: number;
-  rows: string[][]; // non-blank rows of the file, split by the delimiter
+  rows: string[][]; // rows as the server's reader sees them: empty lines are gone
 }
 
 const candidates = [
@@ -23,7 +23,7 @@ const amountPattern =
 
 export function detectStructure(text: string): CsvStructure {
   const { delimiter, rows, width } = pickDelimiter(text);
-  const start = rows.findIndex((row) => row.length === width);
+  const start = rows.findIndex((row) => row.length === width && !isBlank(row));
   if (start < 0) {
     return { delimiter, headerRows: undefined, footerRows: 0, rows };
   }
@@ -37,7 +37,12 @@ export function detectStructure(text: string): CsvStructure {
   return {
     delimiter,
     headerRows,
-    footerRows: footerRows(rows, width, isHeader ? start + 1 : start),
+    footerRows: footerRows(
+      rows.filter((row) => !isBlank(row)),
+      width,
+      rows.slice(0, isHeader ? start + 1 : start).filter((row) => !isBlank(row))
+        .length,
+    ),
     rows,
   };
 }
@@ -58,14 +63,14 @@ function pickDelimiter(text: string): {
 } {
   let best = {
     delimiter: "comma" as CsvStructure["delimiter"],
-    rows: splitNonBlank(text, ","),
+    rows: splitRows(text, ","),
     width: 0,
     count: 0,
   };
   for (const [name, char] of candidates) {
-    const rows = splitNonBlank(text, char);
+    const rows = splitRows(text, char);
     const tally = new Map<number, number>();
-    for (const row of rows.slice(0, surveyed)) {
+    for (const row of rows.filter((r) => !isBlank(r)).slice(0, surveyed)) {
       if (row.length > 1)
         tally.set(row.length, (tally.get(row.length) ?? 0) + 1);
     }
@@ -76,11 +81,15 @@ function pickDelimiter(text: string): {
   return best;
 }
 
-function splitNonBlank(text: string, char: string): string[][] {
+function splitRows(text: string, char: string): string[][] {
   return splitCsv(
     text.startsWith("\uFEFF") ? text.slice(1) : text,
     char,
-  ).filter((row) => row.some((cell) => cell.trim() !== ""));
+  ).filter((row) => row.length > 1 || row[0] !== "");
+}
+
+function isBlank(row: string[]): boolean {
+  return row.every((cell) => cell.trim() === "");
 }
 
 // Rows from the end that are not data: another field count, or no date-shaped cell. Counted only

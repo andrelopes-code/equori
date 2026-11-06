@@ -177,10 +177,12 @@ function readRows(
 ): CsvPreview {
   const decimal = profile.decimal_separator ?? ",";
   const group = profile.group_separator ?? (decimal === "," ? "." : ",");
+  // encoding/csv skips an empty line, so a line holding only delimiters is the only blank row a
+  // header row count sees.
   const all = splitCsv(
     text.replace(/^\uFEFF/u, ""),
     delimiters[profile.delimiter ?? "comma"],
-  );
+  ).filter((row) => row.length > 1 || row[0] !== "");
   const headerRows = profile.header_rows ?? 1;
   const header = headerRows > 0 ? all[headerRows - 1] : undefined;
   const lines = all
