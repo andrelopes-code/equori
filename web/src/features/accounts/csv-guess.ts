@@ -1,5 +1,6 @@
 import type { components } from "@/api/schema.gen";
 import { splitCsv } from "@/features/accounts/csv-preview";
+import { distinctValues, markerTokens } from "@/features/accounts/csv-shape";
 
 type CsvProfile = components["schemas"]["CsvProfile"];
 
@@ -86,7 +87,8 @@ export function completeProfile(draft: ProfileDraft): CsvProfile | null {
     draft.description_column === "" ||
     draft.date_layout === undefined ||
     draft.decimal_separator === undefined ||
-    !amountReady
+    !amountReady ||
+    ((draft.sign_column ?? "") !== "" && (draft.debit_marker ?? "") === "")
   ) {
     return null;
   }
@@ -130,4 +132,48 @@ export function sameProfile(
   const entries = (p: CsvProfile) =>
     JSON.stringify(Object.entries(p).sort(([x], [y]) => x.localeCompare(y)));
   return entries(a) === entries(b);
+}
+
+// Whether the amount column carries a letter mark the profile has not named as the debit mark.
+export function draftNeedsMarker(text: string, draft: ProfileDraft): boolean {
+  return (
+    (draft.debit_marker ?? "") === "" &&
+    (draft.sign_column ?? "") === "" &&
+    markerTokens(columnCells(text, draft, draft.amount_column)).length > 0
+  );
+}
+
+// The values the person picks the debit mark from: those of the sign column, else the letters
+// after the number in the amount column.
+export function markerChoices(text: string, draft: ProfileDraft): string[] {
+  return (draft.sign_column ?? "") === ""
+    ? markerTokens(columnCells(text, draft, draft.amount_column))
+    : distinctValues(columnCells(text, draft, draft.sign_column));
+}
+
+function columnCells(
+  text: string,
+  draft: ProfileDraft,
+  column: string | undefined,
+): string[] {
+  if (column === undefined || column === "") return [];
+  const char =
+    delimiterChars.find(([name]) => name === draft.delimiter)?.[1] ?? ",";
+  const all = splitCsv(text.replace(/^\uFEFF/u, ""), char).filter((row) =>
+    row.some((cell) => cell.trim() !== ""),
+  );
+  const headerRows = draft.header_rows ?? 1;
+  const header = headerRows > 0 ? all[headerRows - 1] : undefined;
+  const index =
+    header === undefined
+      ? Number(column) - 1
+      : header.findIndex(
+          (h) => h.trim().toLowerCase() === column.trim().toLowerCase(),
+        );
+  if (index < 0) return [];
+  const body = all.slice(headerRows);
+
+  return body
+    .slice(0, Math.max(0, body.length - (draft.footer_rows ?? 0)))
+    .map((row) => row[index] ?? "");
 }

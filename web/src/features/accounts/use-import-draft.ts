@@ -85,11 +85,12 @@ export function useImportDraft(id: string) {
   );
   const csv =
     format === "csv" &&
+    text !== null &&
     draft !== null &&
     preview !== null &&
     counts !== null &&
     currency !== undefined
-      ? { draft, preview, counts, currency }
+      ? { text, draft, preview, counts, currency }
       : null;
   const ready = file !== undefined && (format === "ofx" || profile !== null);
   const busy = save.isPending || send.isPending;

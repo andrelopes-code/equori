@@ -14,7 +14,8 @@ interface CsvColumnFieldProps {
     | "amount_column"
     | "debit_column"
     | "credit_column"
-    | "id_column";
+    | "id_column"
+    | "sign_column";
   optional?: boolean;
   headers: string[];
   value: ProfileDraft;

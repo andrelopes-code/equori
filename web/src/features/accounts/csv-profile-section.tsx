@@ -7,6 +7,7 @@ import { useT } from "@/i18n/i18n-provider";
 import { FormSection } from "@/ui/form-section";
 
 interface CsvProfileSectionProps {
+  text: string;
   value: ProfileDraft;
   onChange: (next: ProfileDraft) => void;
   headers: string[];
@@ -15,6 +16,7 @@ interface CsvProfileSectionProps {
 // How the server reads this account's CSV files (A13): the columns are the file's own header
 // names, or 1-based positions when the file has no header.
 export function CsvProfileSection({
+  text,
   value,
   onChange,
   headers,
@@ -46,7 +48,12 @@ export function CsvProfileSection({
         onChange={set}
       />
 
-      <CsvAmountFields headers={headers} value={value} onChange={set} />
+      <CsvAmountFields
+        text={text}
+        headers={headers}
+        value={value}
+        onChange={set}
+      />
     </FormSection>
   );
 }

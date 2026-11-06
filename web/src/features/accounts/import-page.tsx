@@ -65,6 +65,7 @@ export function ImportPage() {
             )}
             {csv !== null && (
               <CsvProfileSection
+                text={csv.text}
                 value={csv.draft}
                 onChange={state.setEdited}
                 headers={csv.preview.headers}

@@ -10,15 +10,18 @@ import { Segment, SegmentedControl } from "@slotted/react/segmented-control";
 import { CsvColumnField } from "@/features/accounts/csv-column-field";
 import type { ProfileDraft } from "@/features/accounts/csv-guess";
 import { useT } from "@/i18n/i18n-provider";
+import { CsvSignFields } from "@/features/accounts/csv-sign-fields";
 import { FormRow } from "@/ui/form-row";
 
 interface CsvAmountFieldsProps {
+  text: string;
   headers: string[];
   value: ProfileDraft;
   onChange: (patch: ProfileDraft) => void;
 }
 
 export function CsvAmountFields({
+  text,
   headers,
   value,
   onChange,
@@ -80,6 +83,14 @@ export function CsvAmountFields({
         <CsvColumnField
           label={t("importFile.amountColumn")}
           field="amount_column"
+          headers={headers}
+          value={value}
+          onChange={onChange}
+        />
+      )}
+      {!split && (
+        <CsvSignFields
+          text={text}
           headers={headers}
           value={value}
           onChange={onChange}

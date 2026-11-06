@@ -4,6 +4,11 @@ import type { ProfileDraft } from "@/features/accounts/csv-guess";
 import { useT } from "@/i18n/i18n-provider";
 import { ChoiceSelect } from "@/ui/choice-select";
 
+const rowCounts = Array.from({ length: 11 }, (_, n) => ({
+  value: String(n),
+  label: String(n),
+}));
+
 interface CsvReadingFieldsProps {
   value: ProfileDraft;
   onChange: (patch: ProfileDraft) => void;
@@ -46,15 +51,27 @@ export function CsvReadingFields({ value, onChange }: CsvReadingFieldsProps) {
         <FieldLabel>{t("importFile.headerRows")}</FieldLabel>
         <ChoiceSelect
           label={t("importFile.headerRows")}
-          choices={[0, 1, 2, 3].map((n) => ({
-            value: String(n),
-            label: String(n),
-          }))}
+          choices={rowCounts}
           value={String(value.header_rows ?? 1)}
           multiple={false}
           onChange={(next) => {
             if (typeof next === "string") {
               onChange({ header_rows: Number(next) });
+            }
+          }}
+        />
+      </Field>
+
+      <Field width="short" necessity="none">
+        <FieldLabel>{t("importFile.footerRows")}</FieldLabel>
+        <ChoiceSelect
+          label={t("importFile.footerRows")}
+          choices={rowCounts}
+          value={String(value.footer_rows ?? 0)}
+          multiple={false}
+          onChange={(next) => {
+            if (typeof next === "string") {
+              onChange({ footer_rows: Number(next) });
             }
           }}
         />

@@ -86,6 +86,11 @@ function importButton() {
   return screen.getByRole("button", { name: catalogEn["importFile.submit"] });
 }
 
+async function pick(label: string, option: string) {
+  await userEvent.click(screen.getByRole("combobox", { name: label }));
+  await userEvent.click(await screen.findByRole("option", { name: option }));
+}
+
 describe("Import statement", () => {
   it("reads a CSV's columns into a profile and previews the lines before sending", async () => {
     const log: string[] = [];
@@ -162,6 +167,76 @@ describe("Import statement", () => {
     await waitFor(() => {
       expect(log).toEqual(["POST csv"]);
     });
+  });
+
+  it("reads a footer row the person sets", async () => {
+    const log: string[] = [];
+    await renderApp(`/accounts/${checkingID}/import`, { fetch: api(log) });
+    await choose(
+      new File([`${csv}TOTAL;;\n`], "extrato.csv", { type: "text/csv" }),
+    );
+    await screen.findByRole("table", { name: catalogEn["importFile.preview"] });
+    const unreadable = catalogEn["importFile.unreadableCount"].replace(
+      "{count}",
+      "1",
+    );
+    expect(await screen.findByText(unreadable)).toBeInTheDocument();
+    await pick(catalogEn["importFile.footerRows"], "1");
+    await waitFor(() => {
+      expect(screen.queryByText(unreadable)).not.toBeInTheDocument();
+    });
+    await userEvent.click(importButton());
+    await waitFor(() => {
+      expect(log).toEqual(["PUT", "POST csv"]);
+    });
+    expect(profiles).toEqual([{ ...saved, footer_rows: 1 }]);
+  });
+
+  it("offers header rows up to ten", async () => {
+    await renderApp(`/accounts/${checkingID}/import`, { fetch: api([]) });
+    await choose(new File([csv], "extrato.csv", { type: "text/csv" }));
+    await screen.findByRole("table", { name: catalogEn["importFile.preview"] });
+    await userEvent.click(
+      screen.getByRole("combobox", {
+        name: catalogEn["importFile.headerRows"],
+      }),
+    );
+    expect(
+      await screen.findByRole("option", { name: "10" }),
+    ).toBeInTheDocument();
+  });
+
+  it("asks for the debit mark of a sign column", async () => {
+    const log: string[] = [];
+    await renderApp(`/accounts/${checkingID}/import`, { fetch: api(log) });
+    await choose(
+      new File(
+        [
+          "Data;Descrição;Valor;Tipo\n05/10/2026;Padaria;12,50;Débito\n06/10/2026;Salário;5.000,00;Crédito\n",
+        ],
+        "extrato.csv",
+        { type: "text/csv" },
+      ),
+    );
+    await screen.findByRole("table", { name: catalogEn["importFile.preview"] });
+    await waitFor(() => {
+      expect(importButton()).toBeEnabled();
+    });
+    await pick(catalogEn["importFile.signColumn"], "Tipo");
+    await waitFor(() => {
+      expect(importButton()).toBeDisabled();
+    });
+    await pick(catalogEn["importFile.debitMarker"], "Débito");
+    await waitFor(() => {
+      expect(importButton()).toBeEnabled();
+    });
+    await userEvent.click(importButton());
+    await waitFor(() => {
+      expect(log).toEqual(["PUT", "POST csv"]);
+    });
+    expect(profiles).toEqual([
+      { ...saved, sign_column: "Tipo", debit_marker: "Débito" },
+    ]);
   });
 
   it("sends an OFX file without a profile", async () => {
