@@ -8476,6 +8476,23 @@ components:
           type: string
           pattern: "^[,. \u00a0']?$"
           description: Digit group separator of amounts; empty for none. Defaults to the one that is not decimal_separator.
+        footer_rows:
+          type: integer
+          minimum: 0
+          maximum: 10
+          description: Rows under the data that are not lines of the statement.
+        sign_column:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Column that says whether a line is a debit. Needs debit_marker and amount_column.
+        debit_marker:
+          type: string
+          minLength: 1
+          maxLength: 40
+          description: |
+            The text that marks a debit, compared without case, in sign_column or, without one, in the
+            letters after the number of the amount. A matching line is negative; any other keeps its sign.
     ImportBatch:
       type: object
       description: One file import, or one sync of a mapped account (source aggregator).

@@ -25,7 +25,10 @@ INSERT INTO
         id_column,
         amount_sign,
         encoding,
-        group_separator
+        group_separator,
+        footer_rows,
+        sign_column,
+        debit_marker
     )
 VALUES
     (
@@ -43,7 +46,10 @@ VALUES
         sqlc.narg (id_column),
         @amount_sign,
         @encoding,
-        @group_separator
+        @group_separator,
+        @footer_rows,
+        sqlc.narg (sign_column),
+        sqlc.narg (debit_marker)
     )
 ON CONFLICT (account_id) DO UPDATE
 SET
@@ -60,6 +66,9 @@ SET
     amount_sign = EXCLUDED.amount_sign,
     encoding = EXCLUDED.encoding,
     group_separator = EXCLUDED.group_separator,
+    footer_rows = EXCLUDED.footer_rows,
+    sign_column = EXCLUDED.sign_column,
+    debit_marker = EXCLUDED.debit_marker,
     updated_at = now()
 WHERE
     ingestion_csv_profile.books_id = EXCLUDED.books_id

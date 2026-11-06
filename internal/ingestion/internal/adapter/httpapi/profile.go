@@ -42,6 +42,9 @@ func toProfileAPI(p domain.Profile) CsvProfile {
 	out.AmountSign = &sign
 	out.Encoding = &p.Encoding
 	out.GroupSeparator = &p.GroupSeparator
+	out.FooterRows = &p.FooterRows
+	out.SignColumn = ref(p.SignColumn)
+	out.DebitMarker = ref(p.DebitMarker)
 
 	return out
 }
@@ -82,6 +85,12 @@ func (s *Server) SaveCsvProfile(ctx context.Context, req SaveCsvProfileRequestOb
 	} else {
 		p.GroupSeparator = ","
 	}
+
+	if b.FooterRows != nil {
+		p.FooterRows = *b.FooterRows
+	}
+
+	p.SignColumn, p.DebitMarker = opt(b.SignColumn), opt(b.DebitMarker)
 
 	if b.AmountSign != nil {
 		p.AmountSign = domain.AmountSign(*b.AmountSign)

@@ -49,6 +49,7 @@ func toProfile(row IngestionCsvProfile) domain.Profile {
 		DateColumn: row.DateColumn, DateLayout: domain.DateLayout(row.DateLayout), AmountColumn: value(row.AmountColumn),
 		DebitColumn: value(row.DebitColumn), CreditColumn: value(row.CreditColumn), DecimalSeparator: row.DecimalSeparator,
 		DescriptionColumn: row.DescriptionColumn, IDColumn: value(row.IDColumn), AmountSign: domain.AmountSign(row.AmountSign), Encoding: row.Encoding, GroupSeparator: row.GroupSeparator,
+		FooterRows: int(row.FooterRows), SignColumn: value(row.SignColumn), DebitMarker: value(row.DebitMarker),
 	}
 }
 
@@ -67,6 +68,8 @@ func (r *Repository) SaveProfile(ctx context.Context, p domain.Profile) (domain.
 		DateColumn: p.DateColumn, DateLayout: string(p.DateLayout), AmountColumn: optional(p.AmountColumn),
 		DebitColumn: optional(p.DebitColumn), CreditColumn: optional(p.CreditColumn), DecimalSeparator: p.DecimalSeparator,
 		DescriptionColumn: p.DescriptionColumn, IDColumn: optional(p.IDColumn), AmountSign: string(p.AmountSign), Encoding: p.Encoding, GroupSeparator: p.GroupSeparator,
+		FooterRows: int32(p.FooterRows), //nolint:gosec // at most 10
+		SignColumn: optional(p.SignColumn), DebitMarker: optional(p.DebitMarker),
 	})
 	if err != nil {
 		return domain.Profile{}, notFound(err)

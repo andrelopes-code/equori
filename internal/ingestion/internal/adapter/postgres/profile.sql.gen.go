@@ -13,7 +13,7 @@ import (
 
 const getProfile = `-- name: GetProfile :one
 SELECT
-    books_id, account_id, delimiter, header_rows, date_column, date_layout, amount_column, debit_column, credit_column, decimal_separator, description_column, id_column, amount_sign, updated_at, encoding, group_separator
+    books_id, account_id, delimiter, header_rows, date_column, date_layout, amount_column, debit_column, credit_column, decimal_separator, description_column, id_column, amount_sign, updated_at, encoding, group_separator, footer_rows, sign_column, debit_marker
 FROM
     ingestion_csv_profile
 WHERE
@@ -46,6 +46,9 @@ func (q *Queries) GetProfile(ctx context.Context, arg GetProfileParams) (Ingesti
 		&i.UpdatedAt,
 		&i.Encoding,
 		&i.GroupSeparator,
+		&i.FooterRows,
+		&i.SignColumn,
+		&i.DebitMarker,
 	)
 	return i, err
 }
@@ -67,7 +70,10 @@ INSERT INTO
         id_column,
         amount_sign,
         encoding,
-        group_separator
+        group_separator,
+        footer_rows,
+        sign_column,
+        debit_marker
     )
 VALUES
     (
@@ -85,7 +91,10 @@ VALUES
         $12,
         $13,
         $14,
-        $15
+        $15,
+        $16,
+        $17,
+        $18
     )
 ON CONFLICT (account_id) DO UPDATE
 SET
@@ -102,11 +111,14 @@ SET
     amount_sign = EXCLUDED.amount_sign,
     encoding = EXCLUDED.encoding,
     group_separator = EXCLUDED.group_separator,
+    footer_rows = EXCLUDED.footer_rows,
+    sign_column = EXCLUDED.sign_column,
+    debit_marker = EXCLUDED.debit_marker,
     updated_at = now()
 WHERE
     ingestion_csv_profile.books_id = EXCLUDED.books_id
 RETURNING
-    books_id, account_id, delimiter, header_rows, date_column, date_layout, amount_column, debit_column, credit_column, decimal_separator, description_column, id_column, amount_sign, updated_at, encoding, group_separator
+    books_id, account_id, delimiter, header_rows, date_column, date_layout, amount_column, debit_column, credit_column, decimal_separator, description_column, id_column, amount_sign, updated_at, encoding, group_separator, footer_rows, sign_column, debit_marker
 `
 
 type UpsertProfileParams struct {
@@ -125,6 +137,9 @@ type UpsertProfileParams struct {
 	AmountSign        string
 	Encoding          string
 	GroupSeparator    string
+	FooterRows        int32
+	SignColumn        *string
+	DebitMarker       *string
 }
 
 // The WHERE keeps another book's profile out of reach: no row comes back for it.
@@ -145,6 +160,9 @@ func (q *Queries) UpsertProfile(ctx context.Context, arg UpsertProfileParams) (I
 		arg.AmountSign,
 		arg.Encoding,
 		arg.GroupSeparator,
+		arg.FooterRows,
+		arg.SignColumn,
+		arg.DebitMarker,
 	)
 	var i IngestionCsvProfile
 	err := row.Scan(
@@ -164,6 +182,9 @@ func (q *Queries) UpsertProfile(ctx context.Context, arg UpsertProfileParams) (I
 		&i.UpdatedAt,
 		&i.Encoding,
 		&i.GroupSeparator,
+		&i.FooterRows,
+		&i.SignColumn,
+		&i.DebitMarker,
 	)
 	return i, err
 }

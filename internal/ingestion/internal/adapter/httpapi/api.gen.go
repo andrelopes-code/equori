@@ -532,8 +532,12 @@ type CsvProfile struct {
 	DateColumn   string                `json:"date_column"`
 
 	// DateLayout Order and separator of the date; day, month and year appear once each.
-	DateLayout        string                     `json:"date_layout"`
-	DebitColumn       *string                    `json:"debit_column,omitempty"`
+	DateLayout  string  `json:"date_layout"`
+	DebitColumn *string `json:"debit_column,omitempty"`
+
+	// DebitMarker The text that marks a debit, compared without case, in sign_column or, without one, in the
+	// letters after the number of the amount. A matching line is negative; any other keeps its sign.
+	DebitMarker       *string                    `json:"debit_marker,omitempty"`
 	DecimalSeparator  CsvProfileDecimalSeparator `json:"decimal_separator"`
 	Delimiter         *CsvProfileDelimiter       `json:"delimiter,omitempty"`
 	DescriptionColumn string                     `json:"description_column"`
@@ -541,10 +545,16 @@ type CsvProfile struct {
 	// Encoding Text encoding of the file. auto keeps valid UTF-8 and decodes anything else as windows-1252.
 	Encoding *string `json:"encoding,omitempty"`
 
+	// FooterRows Rows under the data that are not lines of the statement.
+	FooterRows *int `json:"footer_rows,omitempty"`
+
 	// GroupSeparator Digit group separator of amounts; empty for none. Defaults to the one that is not decimal_separator.
 	GroupSeparator *string `json:"group_separator,omitempty"`
 	HeaderRows     *int    `json:"header_rows,omitempty"`
 	IdColumn       *string `json:"id_column,omitempty"`
+
+	// SignColumn Column that says whether a line is a debit. Needs debit_marker and amount_column.
+	SignColumn *string `json:"sign_column,omitempty"`
 }
 
 // CsvProfileAmountSign inverted flips the sign of every amount, for exports that list card charges as positive.

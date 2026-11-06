@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/google/uuid"
 )
@@ -25,7 +26,7 @@ const (
 	LayoutMonthDayYear DateLayout = "MM/DD/YYYY"
 )
 
-var goTokens = map[string]string{"DD": "02", "MM": "01", "YYYY": "2006", "YY": "06"}
+var goTokens = map[string]string{"DD": "2", "MM": "1", "YYYY": "2006", "YY": "06"}
 
 // GoLayout is the time.Parse layout of the date layout, or "" when the layout is invalid.
 func (l DateLayout) GoLayout() string {
@@ -81,7 +82,20 @@ func (l DateLayout) Parse(s string) (time.Time, error) {
 		return time.Time{}, fmt.Errorf("invalid date layout %q", string(l))
 	}
 
-	return time.Parse(g, s)
+	return time.Parse(g, dateOnly(s, g))
+}
+
+// dateOnly drops a time after the date (A205); a layout separated by spaces has no way to tell it apart.
+func dateOnly(s, goLayout string) string {
+	if strings.Contains(goLayout, " ") {
+		return s
+	}
+
+	if i := strings.IndexAny(s, " T"); i >= 0 {
+		return s[:i]
+	}
+
+	return s
 }
 
 type AmountSign string
@@ -109,6 +123,9 @@ type Profile struct {
 	AmountSign        AmountSign
 	Encoding          string
 	GroupSeparator    string
+	FooterRows        int
+	SignColumn        string
+	DebitMarker       string
 }
 
 // NewProfile applies defaults (comma delimiter, one header row, amounts as they are) and
@@ -145,13 +162,21 @@ func NewProfile(p Profile) (Profile, error) {
 		return Profile{}, invalid("credit_column", "debit_column and credit_column go together")
 	case (p.AmountColumn == "") == (p.DebitColumn == ""):
 		return Profile{}, invalid("amount_column", "set amount_column, or debit_column and credit_column")
+	case p.FooterRows < 0 || p.FooterRows > 10:
+		return Profile{}, invalid("footer_rows", "must be between 0 and 10")
+	case p.SignColumn != "" && p.DebitMarker == "":
+		return Profile{}, invalid("debit_marker", "is required with sign_column")
+	case p.DebitMarker != "" && p.AmountColumn == "":
+		return Profile{}, invalid("debit_marker", "needs amount_column")
+	case utf8.RuneCountInString(p.DebitMarker) > 40:
+		return Profile{}, invalid("debit_marker", "must be at most 40 characters")
 	}
 
 	columns := map[string]string{
 		"date_column": p.DateColumn, "description_column": p.DescriptionColumn, "amount_column": p.AmountColumn,
-		"debit_column": p.DebitColumn, "credit_column": p.CreditColumn, "id_column": p.IDColumn,
+		"debit_column": p.DebitColumn, "credit_column": p.CreditColumn, "id_column": p.IDColumn, "sign_column": p.SignColumn,
 	}
-	for _, field := range []string{"date_column", "description_column", "amount_column", "debit_column", "credit_column", "id_column"} {
+	for _, field := range []string{"date_column", "description_column", "amount_column", "debit_column", "credit_column", "id_column", "sign_column"} {
 		c := columns[field]
 
 		required := field == "date_column" || field == "description_column"

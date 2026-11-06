@@ -71,6 +71,9 @@ type IngestionCsvProfile struct {
 	UpdatedAt         time.Time
 	Encoding          string
 	GroupSeparator    string
+	FooterRows        int32
+	SignColumn        *string
+	DebitMarker       *string
 }
 
 type IngestionExternalAccount struct {

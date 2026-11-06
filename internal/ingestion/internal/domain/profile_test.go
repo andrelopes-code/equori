@@ -2,6 +2,7 @@ package domain
 
 import (
 	"errors"
+	"strings"
 	"testing"
 )
 
@@ -32,6 +33,17 @@ func TestNewProfile(t *testing.T) {
 		{"group separator equals the decimal separator", func(p *Profile) { p.GroupSeparator = "," }, "group_separator"},
 		{"position without header", func(p *Profile) { p.HeaderRows = 0 }, "date_column"},
 		{"description required", func(p *Profile) { p.DescriptionColumn = "" }, "description_column"},
+		{"footer rows above ten", func(p *Profile) { p.FooterRows = 11 }, "footer_rows"},
+		{"footer rows below zero", func(p *Profile) { p.FooterRows = -1 }, "footer_rows"},
+		{"sign column without a marker", func(p *Profile) { p.SignColumn = "Tipo" }, "debit_marker"},
+		{"marker without an amount column", func(p *Profile) {
+			p.AmountColumn, p.DebitColumn, p.CreditColumn, p.DebitMarker = "", "D", "C", "D"
+		}, "debit_marker"},
+		{"marker above forty characters", func(p *Profile) { p.DebitMarker = strings.Repeat("é", 41) }, "debit_marker"},
+		{"sign column position without header", func(p *Profile) {
+			p.HeaderRows, p.DateColumn, p.DescriptionColumn, p.AmountColumn = 0, "1", "2", "3"
+			p.SignColumn, p.DebitMarker = "Tipo", "D"
+		}, "sign_column"},
 	}
 	for _, tc := range tests {
 		p := base
@@ -42,6 +54,13 @@ func TestNewProfile(t *testing.T) {
 		if !errors.As(err, &fe) || fe.Field != tc.field || !errors.Is(err, ErrValidation) {
 			t.Errorf("%s: err = %v, want field %s", tc.name, err, tc.field)
 		}
+	}
+
+	withFooter := base
+	withFooter.FooterRows, withFooter.DebitMarker = 2, "D"
+
+	if _, err := NewProfile(withFooter); err != nil {
+		t.Fatalf("footer rows with a marker: %v", err)
 	}
 
 	positional := Profile{DateColumn: "1", DateLayout: LayoutISO, DebitColumn: "3", CreditColumn: "4", DecimalSeparator: ".", DescriptionColumn: "2"}
@@ -62,6 +81,12 @@ func TestDateLayoutParse(t *testing.T) {
 		{"YYYY/MM/DD", "2026/11/05", "2026-11-05"},
 		{"MM-DD-YY", "11-05-26", "2026-11-05"},
 		{LayoutDayMonthYear, "05/11/2026", "2026-11-05"},
+		{LayoutDayMonthYear, "3/1/2026", "2026-01-03"},
+		{LayoutDayMonthYear, "03/11/2026 14:22", "2026-11-03"},
+		{LayoutISO, "2026-11-03T14:22:11Z", "2026-11-03"},
+		{LayoutISO, "2026-11-03 14:22:11", "2026-11-03"},
+		{"MM/DD/YY", "1/3/26", "2026-01-03"},
+		{"DD MM YYYY", "03 11 2026", "2026-11-03"},
 	} {
 		got, err := c.layout.Parse(c.in)
 		if err != nil || got.Format("2006-01-02") != c.want {

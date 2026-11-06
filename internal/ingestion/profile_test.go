@@ -18,6 +18,9 @@ type csvProfile struct {
 	AmountSign        string `json:"amount_sign"`
 	Encoding          string `json:"encoding"`
 	GroupSeparator    string `json:"group_separator"`
+	FooterRows        int    `json:"footer_rows"`
+	SignColumn        string `json:"sign_column"`
+	DebitMarker       string `json:"debit_marker"`
 }
 
 func TestCSVProfile(t *testing.T) {
@@ -70,6 +73,22 @@ func TestCSVProfile(t *testing.T) {
 	if saved.DateLayout != "DD.MM.YYYY" || saved.GroupSeparator != "'" {
 		t.Fatalf("formats = %q, %q", saved.DateLayout, saved.GroupSeparator)
 	}
+
+	body["footer_rows"], body["sign_column"], body["debit_marker"] = 2, "Tipo", "Débito"
+	h.MustDo(http.MethodPut, path, body, http.StatusOK, &saved)
+
+	if saved.FooterRows != 2 || saved.SignColumn != "Tipo" || saved.DebitMarker != "Débito" {
+		t.Fatalf("reading = %+v", saved)
+	}
+
+	h.MustDo(http.MethodGet, path, nil, http.StatusOK, &got)
+
+	if got != saved {
+		t.Fatalf("got %+v, saved %+v", got, saved)
+	}
+
+	delete(body, "debit_marker")
+	h.ExpectProblem(h.Do(http.MethodPut, path, body), http.StatusUnprocessableEntity, "validation_failed", "debit_marker")
 
 	other := h.Login("other@example.com")
 	h.ExpectProblem(h.Call(other, http.MethodPut, path, map[string]any{"date_column": "Data", "date_layout": "DD/MM/YYYY", "amount_column": "Valor", "decimal_separator": ".", "description_column": "D"}),

@@ -4852,6 +4852,15 @@ export interface components {
             encoding: string;
             /** @description Digit group separator of amounts; empty for none. Defaults to the one that is not decimal_separator. */
             group_separator?: string;
+            /** @description Rows under the data that are not lines of the statement. */
+            footer_rows?: number;
+            /** @description Column that says whether a line is a debit. Needs debit_marker and amount_column. */
+            sign_column?: string;
+            /**
+             * @description The text that marks a debit, compared without case, in sign_column or, without one, in the
+             *     letters after the number of the amount. A matching line is negative; any other keeps its sign.
+             */
+            debit_marker?: string;
         };
         /** @description One file import, or one sync of a mapped account (source aggregator). */
         ImportBatch: {

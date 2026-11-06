@@ -9,7 +9,7 @@ import (
 
 // ArchiveVersion is the archive_version this instance writes and the highest it reads
 // (ADR 021). It is the number of steps in archiveSteps plus 1.
-const ArchiveVersion = 9
+const ArchiveVersion = 10
 
 // ArchiveStep migrates the tables of an archive from one version to the next; it is pure and
 // leaves its input unchanged (ADR 021, V3).
@@ -20,6 +20,7 @@ type ArchiveStep func([]ArchiveTable) ([]ArchiveTable, error)
 var archiveSteps = []ArchiveStep{
 	addExcludedFromLiquidity, addBudgetReference, addStatementBasis, dropConversations,
 	addReliableSync, addSavingsTarget, addMatchWindow, addAssistantConfiguration,
+	addCsvReading,
 }
 
 // migrateArchive applies the steps from version from to the last one, in order.
@@ -107,6 +108,24 @@ func addSavingsTarget(tables []ArchiveTable) ([]ArchiveTable, error) {
 // step gives each row that value.
 func addMatchWindow(tables []ArchiveTable) ([]ArchiveTable, error) {
 	return withField(tables, "planning_schedule", "match_window_days", jsontext.Value("7"))
+}
+
+// addCsvReading moves a version 9 archive to version 10, which adds footer_rows, sign_column and
+// debit_marker to ingestion_csv_profile (migration 00090). No earlier profile set them.
+func addCsvReading(tables []ArchiveTable) ([]ArchiveTable, error) {
+	for _, f := range []struct {
+		field string
+		value string
+	}{{"footer_rows", "0"}, {"sign_column", "null"}, {"debit_marker", "null"}} {
+		var err error
+
+		tables, err = withField(tables, "ingestion_csv_profile", f.field, jsontext.Value(f.value))
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return tables, nil
 }
 
 // withField returns tables with field set to value in every row of table; the input is left

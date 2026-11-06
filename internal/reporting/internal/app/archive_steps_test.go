@@ -284,3 +284,36 @@ func TestAddAssistantConfiguration(t *testing.T) {
 		t.Fatalf("ArchiveVersion = %d, want at least 9", ArchiveVersion)
 	}
 }
+
+// Version 9 rows of ingestion_csv_profile hold no footer rows, sign column or debit marker; the
+// step gives the values no earlier profile could set (A204).
+func TestAddCsvReading(t *testing.T) {
+	t.Parallel()
+
+	v9 := []ArchiveTable{
+		{Name: "ingestion_csv_profile", Rows: [][]byte{[]byte(`{"account_id":"a"}`)}},
+		{Name: "planning_schedule", Rows: [][]byte{[]byte(`{"id":"s"}`)}},
+	}
+
+	got, err := addCsvReading(v9)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := `{"account_id":"a","debit_marker":null,"footer_rows":0,"sign_column":null}`
+	if len(got) != 2 || string(got[0].Rows[0]) != want {
+		t.Fatalf("ingestion_csv_profile = %q, want %q", got[0].Rows, want)
+	}
+
+	if string(got[1].Rows[0]) != `{"id":"s"}` {
+		t.Fatalf("planning_schedule = %q, want it unchanged", got[1].Rows)
+	}
+
+	if string(v9[0].Rows[0]) != `{"account_id":"a"}` {
+		t.Fatalf("the input changed: %q", v9[0].Rows)
+	}
+
+	if ArchiveVersion != 10 {
+		t.Fatalf("ArchiveVersion = %d, want 10", ArchiveVersion)
+	}
+}

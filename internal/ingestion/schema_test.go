@@ -72,6 +72,18 @@ func TestSchemaInvariants(t *testing.T) {
 		{"profile without amount columns", exec(`INSERT INTO ingestion_csv_profile
 			(books_id, account_id, date_column, date_layout, decimal_separator, description_column)
 			VALUES ($1, $2, 'Data', 'DD/MM/YYYY', ',', 'Descrição')`, uid, checking)},
+		{"profile footer rows above ten", exec(`INSERT INTO ingestion_csv_profile
+			(books_id, account_id, date_column, date_layout, amount_column, decimal_separator, description_column, footer_rows)
+			VALUES ($1, $2, 'Data', 'DD/MM/YYYY', 'Valor', ',', 'Descrição', 11)`, uid, checking)},
+		{"profile sign column without a debit marker", exec(`INSERT INTO ingestion_csv_profile
+			(books_id, account_id, date_column, date_layout, amount_column, decimal_separator, description_column, sign_column)
+			VALUES ($1, $2, 'Data', 'DD/MM/YYYY', 'Valor', ',', 'Descrição', 'Tipo')`, uid, checking)},
+		{"profile debit marker with debit and credit columns", exec(`INSERT INTO ingestion_csv_profile
+			(books_id, account_id, date_column, date_layout, debit_column, credit_column, decimal_separator, description_column, debit_marker)
+			VALUES ($1, $2, 'Data', 'DD/MM/YYYY', 'Débito', 'Crédito', ',', 'Descrição', 'D')`, uid, checking)},
+		{"profile debit marker empty", exec(`INSERT INTO ingestion_csv_profile
+			(books_id, account_id, date_column, date_layout, amount_column, decimal_separator, description_column, debit_marker)
+			VALUES ($1, $2, 'Data', 'DD/MM/YYYY', 'Valor', ',', 'Descrição', '')`, uid, checking)},
 	}
 	for _, tc := range tests {
 		if tc.err == nil {
