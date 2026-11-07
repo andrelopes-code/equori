@@ -97,6 +97,10 @@ const REASONS = [
   ["no_yield_recorded", "No yield recorded in the period"],
   ["single_credit", "Only one yield credit recorded"],
   ["too_small", "Balance too small: credits are rounded to the cent"],
+  [
+    "too_few_days",
+    "Fewer than 5 days with a CDI rate: one credit would distort the percent",
+  ],
   ["no_rate_in_window", "CDI has no rate yet for the days compared"],
   ["percent_undefined", "The percent of CDI is not defined for this return"],
 ] as const;
@@ -203,12 +207,14 @@ describe("yieldLine", () => {
       } as ReturnBenchmark,
     };
 
-    expect(yieldLine(late, t, "en", WINDOW_FROM)?.primary).toBe(
-      "−13.80% since 10/19",
-    );
-    expect(yieldLine(late, tPtBR, "pt-BR", WINDOW_FROM)?.primary).toBe(
-      "−13,80% desde 19/10",
-    );
+    expect(yieldLine(late, t, "en", WINDOW_FROM)).toMatchObject({
+      primary: "−13.80%",
+      since: "since 10/19",
+    });
+    expect(yieldLine(late, tPtBR, "pt-BR", WINDOW_FROM)).toMatchObject({
+      primary: "−13,80%",
+      since: "desde 19/10",
+    });
   });
 
   it.each([
@@ -254,6 +260,31 @@ describe("yieldLine", () => {
     ).toEqual({
       primary: "14.80%",
       secondary: "Balance too small: credits are rounded to the cent",
+      reason: true,
+      negative: false,
+    });
+  });
+
+  it("states the return and why the percent is absent below five compared days (R22)", () => {
+    const benchmark = without(withBenchmark({}), "percent_bp", "annual_bp");
+    const report: ReturnReport = {
+      ...rate,
+      benchmark,
+      unavailable_reason: "too_few_days",
+    };
+
+    expect(yieldLine(report, t, "en", WINDOW_FROM)).toEqual({
+      primary: "14.80%",
+      secondary:
+        "Fewer than 5 days with a CDI rate: one credit would distort the percent",
+      reason: true,
+      negative: false,
+    });
+    expect(yieldLine(report, tPtBR, "pt-BR", WINDOW_FROM)).toEqual({
+      primary: "14,80%",
+      secondary:
+        "Menos de 5 dias com taxa CDI: um crédito distorceria o percentual",
+      reason: true,
       negative: false,
     });
   });
@@ -268,7 +299,7 @@ describe("yieldLine", () => {
           "en",
           WINDOW_FROM,
         ),
-      ).toEqual({ secondary: text, negative: false });
+      ).toEqual({ secondary: text, reason: true, negative: false });
     },
   );
 
@@ -293,7 +324,9 @@ describe("yieldLine", () => {
           WINDOW_FROM,
         ),
       ).toEqual({
-        primary: "1.20% since 07/19",
+        primary: "1.20%",
+        since: "since 07/19",
+        reason: true,
         secondary: yieldLine(
           { ...base, profile: "rate", unavailable_reason: reason },
           t,
@@ -334,7 +367,9 @@ describe("yieldLine", () => {
         WINDOW_FROM,
       ),
     ).toEqual({
-      primary: "1,20% desde 19/07",
+      primary: "1,20%",
+      since: "desde 19/07",
+      reason: true,
       secondary: "Valores em BRL: o índice CDI se aplica a outra moeda",
       negative: false,
     });
@@ -349,11 +384,11 @@ describe("yieldLine", () => {
     );
 
     expect(
-      yieldLine({ ...rate, benchmark }, t, "en", WINDOW_FROM)?.primary,
-    ).toBe("14.90% since 07/19");
+      yieldLine({ ...rate, benchmark }, t, "en", WINDOW_FROM),
+    ).toMatchObject({ primary: "14.90%", since: "since 07/19" });
     expect(
-      yieldLine({ ...rate, benchmark }, tPtBR, "pt-BR", WINDOW_FROM)?.primary,
-    ).toBe("14,90% desde 19/07");
+      yieldLine({ ...rate, benchmark }, tPtBR, "pt-BR", WINDOW_FROM),
+    ).toMatchObject({ primary: "14,90%", since: "desde 19/07" });
   });
 
   it("names the index of the report in the text of a reason (W1, W5)", () => {
@@ -406,7 +441,8 @@ describe("yieldLine", () => {
         WINDOW_FROM,
       ),
     ).toEqual({
-      primary: "−14.00% since 07/19",
+      primary: "−14.00%",
+      since: "since 07/19",
       negative: true,
     });
   });
@@ -418,8 +454,8 @@ describe("yieldLine", () => {
         tPtBR,
         "pt-BR",
         WINDOW_FROM,
-      )?.primary,
-    ).toBe("−14,00% desde 19/07");
+      ),
+    ).toMatchObject({ primary: "−14,00%", since: "desde 19/07" });
   });
 
   it("states nothing without a return or a reason", () => {

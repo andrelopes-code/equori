@@ -18,6 +18,7 @@ const (
 	ReasonNoYieldRecorded  = "no_yield_recorded"
 	ReasonSingleCredit     = "single_credit"
 	ReasonTooSmall         = "too_small"
+	ReasonTooFewDays       = "too_few_days"
 	ReasonNoRateInWindow   = "no_rate_in_window"
 	ReasonPercentUndefined = "percent_undefined"
 )

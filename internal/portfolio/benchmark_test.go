@@ -71,6 +71,7 @@ type figures struct {
 	Days, Skipped, IndexBP, ReturnBP, ExcessBP           int
 	PercentBP, AnnualBP, IndexAnnualBP, Credits, ErrorBP int
 	Restarted                                            bool
+	Reason                                               string
 }
 
 // atTheCDI are the figures of a savings account paid the CDI of each day, from 2026-01-02 to
@@ -78,7 +79,7 @@ type figures struct {
 // compared are those dated in [A, B).
 var atTheCDI = figures{
 	From: "2026-01-05", Until: "2026-01-08", Days: 4, Skipped: 2, IndexBP: 22, ReturnBP: 22, ExcessBP: 0,
-	PercentBP: 10000, AnnualBP: 1490, IndexAnnualBP: 1490, Credits: 4, ErrorBP: 1,
+	PercentBP: -1, AnnualBP: -1, IndexAnnualBP: 1490, Credits: 4, ErrorBP: 1, Reason: "too_few_days",
 }
 
 // S302: a savings account paid the CDI of each day on its balance earns 100% of CDI. A credit
@@ -155,7 +156,7 @@ func TestS305AccountOpenedInsideThePeriod(t *testing.T) {
 	r := b.compared(t, "2026-01-02", "2026-01-09", "")
 	want := figures{
 		From: "2026-01-06", Until: "2026-01-08", Days: 3, Skipped: 3, IndexBP: 17, ReturnBP: 17, ExcessBP: 0,
-		PercentBP: 10000, AnnualBP: 1490, IndexAnnualBP: 1490, Credits: 3, ErrorBP: 1,
+		PercentBP: -1, AnnualBP: -1, IndexAnnualBP: 1490, Credits: 3, ErrorBP: 1, Reason: "too_few_days",
 	}
 
 	if got := figuresOf(t, r); got != want || *r.PeriodBP != 22 {
@@ -189,7 +190,7 @@ func TestS307AccountEmptiedInsideThePeriod(t *testing.T) {
 
 	want := figures{
 		From: "2026-01-05", Until: "2026-01-08", Days: 3, Skipped: 3, IndexBP: 17, ReturnBP: 17, ExcessBP: 0,
-		PercentBP: 10000, AnnualBP: 1490, IndexAnnualBP: 1490, Credits: 3, ErrorBP: 1,
+		PercentBP: -1, AnnualBP: -1, IndexAnnualBP: 1490, Credits: 3, ErrorBP: 1, Reason: "too_few_days",
 	}
 
 	requireFigures(t, b.compared(t, "2026-01-02", "2026-01-09", ""), want, 22)
@@ -251,7 +252,7 @@ func TestS310YieldRecordedLate(t *testing.T) {
 
 	want := figures{
 		From: "2026-01-07", Until: "2026-01-08", Days: 2, Skipped: 4, IndexBP: 11, ReturnBP: 11, ExcessBP: 0,
-		PercentBP: 10000, AnnualBP: 1490, IndexAnnualBP: 1490, Credits: 2, ErrorBP: 1,
+		PercentBP: -1, AnnualBP: -1, IndexAnnualBP: 1490, Credits: 2, ErrorBP: 1, Reason: "too_few_days",
 	}
 
 	requireFigures(t, b.compared(t, "2026-01-02", "2026-01-09", ""), want, 17)
@@ -278,7 +279,7 @@ func TestS311YieldOfAHeldAccountRecordedLate(t *testing.T) {
 
 	want := figures{
 		From: "2026-01-05", Until: "2026-01-08", Days: 4, Skipped: 2, IndexBP: 22, ReturnBP: 16, ExcessBP: -6,
-		PercentBP: 7072, AnnualBP: 1032, IndexAnnualBP: 1490, Credits: 3, ErrorBP: 12,
+		PercentBP: -1, AnnualBP: -1, IndexAnnualBP: 1490, Credits: 3, ErrorBP: 12, Reason: "too_few_days",
 	}
 
 	r := b.compared(t, "2025-12-01", "2026-01-09", "")
@@ -346,7 +347,7 @@ func TestS313CreditOnTheDayBeforeThePeriod(t *testing.T) {
 
 	want := figures{
 		From: "2026-01-05", Until: "2026-01-08", Days: 4, Skipped: 1, IndexBP: 22, ReturnBP: 22, ExcessBP: 0,
-		PercentBP: 10000, AnnualBP: 1490, IndexAnnualBP: 1490, Credits: 4, ErrorBP: 1,
+		PercentBP: -1, AnnualBP: -1, IndexAnnualBP: 1490, Credits: 4, ErrorBP: 1, Reason: "too_few_days",
 	}
 
 	requireFigures(t, b.compared(t, "2026-01-06", "2026-01-09", ""), want, 22)
@@ -521,7 +522,7 @@ func TestS322DepositAndFirstCreditOnTheSameDay(t *testing.T) {
 
 	want := figures{
 		From: "2026-01-05", Until: "2026-01-06", Days: 2, Skipped: 2, IndexBP: 11, ReturnBP: 20, ExcessBP: 9,
-		PercentBP: 18111, AnnualBP: 2859, IndexAnnualBP: 1490, Credits: 2, ErrorBP: 1,
+		PercentBP: -1, AnnualBP: -1, IndexAnnualBP: 1490, Credits: 2, ErrorBP: 1, Reason: "too_few_days",
 	}
 
 	requireFigures(t, b.compared(t, "2026-01-02", "2026-01-07", ""), want, 20)
@@ -565,6 +566,49 @@ func TestS324MonthlyCreditsWithAMidGapDeposit(t *testing.T) {
 	requireFigures(t, b.compared(t, "2026-01-02", "2026-03-31", ""), want, 348)
 }
 
+// A monthly credit after a deposit leaves one compared day: the timing of one credit moves
+// the percent by a day in the days, so percent_bp and annual_bp are absent, reason too_few_days,
+// and the return, the index and the window stay (R22, R23).
+func TestMonthlyCreditLeavesOneComparedDay(t *testing.T) {
+	t.Parallel()
+
+	r := monthlyCreditsBook(t, "2026-03-03").compared(t, "2026-01-02", "2026-03-03", "")
+	if r.Benchmark == nil || r.UnavailableReason != "too_few_days" {
+		t.Fatalf("report = %+v", r)
+	}
+
+	got := figuresOf(t, r)
+	want := figures{
+		From: "2026-03-02", Until: "2026-03-02", Days: 1, Skipped: 42, IndexBP: 6, ReturnBP: 6, ExcessBP: 0,
+		PercentBP: -1, AnnualBP: -1, IndexAnnualBP: 1490, Credits: 1, ErrorBP: 1, Restarted: true,
+		Reason: "too_few_days",
+	}
+
+	if got != want {
+		t.Fatalf("figures = %+v, want %+v", got, want)
+	}
+}
+
+// Five compared days are the least that show the percent (R22).
+func TestFiveComparedDaysShowThePercent(t *testing.T) {
+	t.Parallel()
+
+	r := monthlyCreditsBook(t, "2026-03-09").compared(t, "2026-01-02", "2026-03-09", "")
+	if r.Benchmark == nil || r.UnavailableReason != "" {
+		t.Fatalf("report = %+v", r)
+	}
+
+	got := figuresOf(t, r)
+	want := figures{
+		From: "2026-03-02", Until: "2026-03-06", Days: 5, Skipped: 42, IndexBP: 28, ReturnBP: 28, ExcessBP: 0,
+		PercentBP: 10000, AnnualBP: 1490, IndexAnnualBP: 1490, Credits: 1, ErrorBP: 1, Restarted: true,
+	}
+
+	if got != want {
+		t.Fatalf("figures = %+v, want %+v", got, want)
+	}
+}
+
 // S325: a rate change inside the window: the rates compared are those dated in [A, B), so the
 // rate of the day of B stays out.
 func TestS325RateChangeInsideTheWindow(t *testing.T) {
@@ -575,7 +619,7 @@ func TestS325RateChangeInsideTheWindow(t *testing.T) {
 
 	want := figures{
 		From: "2026-01-05", Until: "2026-01-08", Days: 4, Skipped: 2, IndexBP: 20, ReturnBP: 20, ExcessBP: 0,
-		PercentBP: 10000, AnnualBP: 1343, IndexAnnualBP: 1343, Credits: 4, ErrorBP: 1,
+		PercentBP: -1, AnnualBP: -1, IndexAnnualBP: 1343, Credits: 4, ErrorBP: 1, Reason: "too_few_days",
 	}
 
 	requireFigures(t, b.compared(t, "2026-01-02", "2026-01-09", ""), want, 26)
@@ -588,13 +632,13 @@ func TestS326SmallBalance(t *testing.T) {
 
 	mid := figures{
 		From: "2026-01-05", Until: "2026-01-08", Days: 4, Skipped: 2, IndexBP: 22, ReturnBP: 22, ExcessBP: 0,
-		PercentBP: 9963, AnnualBP: 1484, IndexAnnualBP: 1490, Credits: 4, ErrorBP: 228,
+		PercentBP: -1, AnnualBP: -1, IndexAnnualBP: 1490, Credits: 4, ErrorBP: 228, Reason: "too_few_days",
 	}
 	requireFigures(t, buildBook(t, bookSpec{deposit: 40_000}).compared(t, "2026-01-02", "2026-01-09", ""), mid, 28)
 
 	small := figures{
 		From: "2026-01-05", Until: "2026-01-08", Days: 4, Skipped: 2, IndexBP: 22, ReturnBP: 24, ExcessBP: 2,
-		PercentBP: -1, AnnualBP: -1, IndexAnnualBP: 1490, Credits: 4, ErrorBP: 834,
+		PercentBP: -1, AnnualBP: -1, IndexAnnualBP: 1490, Credits: 4, ErrorBP: 834, Reason: "too_small",
 	}
 
 	r := buildBook(t, bookSpec{deposit: 10_000}).compared(t, "2026-01-02", "2026-01-09", "")
@@ -669,7 +713,7 @@ func TestS330SplitYieldTransaction(t *testing.T) {
 
 	want := figures{
 		From: "2026-01-05", Until: "2026-01-08", Days: 4, Skipped: 2, IndexBP: 22, ReturnBP: 22, ExcessBP: 0,
-		PercentBP: 9986, AnnualBP: 1488, IndexAnnualBP: 1490, Credits: 4, ErrorBP: 1,
+		PercentBP: -1, AnnualBP: -1, IndexAnnualBP: 1490, Credits: 4, ErrorBP: 1, Reason: "too_few_days",
 	}
 
 	requireFigures(t, b.compared(t, "2026-01-02", "2026-01-09", ""), want, 28)
@@ -689,7 +733,7 @@ func TestS331YieldReversal(t *testing.T) {
 
 	want := figures{
 		From: "2026-01-05", Until: "2026-01-07", Days: 3, Skipped: 3, IndexBP: 17, ReturnBP: 17, ExcessBP: 0,
-		PercentBP: 9989, AnnualBP: 1488, IndexAnnualBP: 1490, Credits: 3, ErrorBP: 1,
+		PercentBP: -1, AnnualBP: -1, IndexAnnualBP: 1490, Credits: 3, ErrorBP: 1, Reason: "too_few_days",
 	}
 
 	requireFigures(t, b.compared(t, "2026-01-02", "2026-01-09", ""), want, 21)
@@ -710,7 +754,7 @@ func TestS332YieldWithSalary(t *testing.T) {
 
 	want := figures{
 		From: "2026-01-05", Until: "2026-01-08", Days: 4, Skipped: 2, IndexBP: 22, ReturnBP: 21, ExcessBP: -1,
-		PercentBP: 9533, AnnualBP: 1416, IndexAnnualBP: 1490, Credits: 4, ErrorBP: 1,
+		PercentBP: -1, AnnualBP: -1, IndexAnnualBP: 1490, Credits: 4, ErrorBP: 1, Reason: "too_few_days",
 	}
 
 	r := b.compared(t, "2026-01-02", "2026-01-09", "")
@@ -736,7 +780,7 @@ func TestS333CreditOnTwoAccountsOfTheTree(t *testing.T) {
 
 	want := figures{
 		From: "2026-01-05", Until: "2026-01-08", Days: 4, Skipped: 2, IndexBP: 22, ReturnBP: 22, ExcessBP: 0,
-		PercentBP: 9981, AnnualBP: 1487, IndexAnnualBP: 1490, Credits: 4, ErrorBP: 19,
+		PercentBP: -1, AnnualBP: -1, IndexAnnualBP: 1490, Credits: 4, ErrorBP: 19, Reason: "too_few_days",
 	}
 
 	requireFigures(t, b.compared(t, "2026-01-02", "2026-01-09", ""), want, 28)
@@ -770,7 +814,7 @@ func TestS335IndexPublicationLag(t *testing.T) {
 
 	want := figures{
 		From: "2026-01-05", Until: "2026-01-06", Days: 2, Skipped: 1, IndexBP: 11, ReturnBP: 11, ExcessBP: 0,
-		PercentBP: 10000, AnnualBP: 1490, IndexAnnualBP: 1490, Credits: 2, ErrorBP: 1,
+		PercentBP: -1, AnnualBP: -1, IndexAnnualBP: 1490, Credits: 2, ErrorBP: 1, Reason: "too_few_days",
 	}
 
 	requireFigures(t, b.compared(t, "2026-01-02", "2026-01-09", ""), want, 28)
@@ -818,23 +862,23 @@ func TestS338YieldShareOfATransaction(t *testing.T) {
 	}{
 		{
 			name: "tax paid from the yield", record: recordTaxOnTheYield,
-			want: dayFigures(23, 1, 10207, 1523), period: 28, expense: "90000 BRL Taxes",
+			want: dayFigures(23, 1), period: 28, expense: "90000 BRL Taxes",
 		},
 		{
 			name: "yield split with another account", record: recordYieldSplitInThirds,
-			want: dayFigures(18, -4, 8323, 1226), period: 24,
+			want: dayFigures(18, -4), period: 24,
 		},
 		{
 			name: "yield larger than the amounts received", record: recordYieldAboveWhatIsReceived,
-			want: dayFigures(17, -5, 7831, 1149), period: 23,
+			want: dayFigures(17, -5), period: 23,
 		},
 		{
 			name: "yield with a withdrawal from checking", record: recordYieldWithADeposit,
-			want: dayFigures(21, -1, 9533, 1416), period: 27,
+			want: dayFigures(21, -1), period: 27,
 		},
 		{
 			name: "expense paid by another account", record: recordUnrelatedExpense,
-			want: dayFigures(22, 0, 9986, 1488), period: 28,
+			want: dayFigures(22, 0), period: 28,
 		},
 	}
 
@@ -910,7 +954,7 @@ func TestS339PercentUndefined(t *testing.T) {
 
 	want := figures{
 		From: "2026-01-05", Until: "2026-01-08", Days: 4, Skipped: 2, IndexBP: 17, ReturnBP: 17, ExcessBP: 0,
-		PercentBP: -1, AnnualBP: -1, IndexAnnualBP: 1098, Credits: 3, ErrorBP: 1,
+		PercentBP: -1, AnnualBP: -1, IndexAnnualBP: 1098, Credits: 3, ErrorBP: 1, Reason: "percent_undefined",
 	}
 
 	r := b.compared(t, "2026-01-02", "2026-01-09", "")
@@ -921,12 +965,13 @@ func TestS339PercentUndefined(t *testing.T) {
 	}
 }
 
-// dayFigures are the figures of S330 to S332 with the given return, excess, percent and annual
-// rate: the window of atTheCDI.
-func dayFigures(returnBP, excessBP, percentBP, annualBP int) figures {
+// dayFigures are the figures of S330 to S332 with the given return and excess: the window of
+// atTheCDI, whose four days leave no percent.
+func dayFigures(returnBP, excessBP int) figures {
 	return figures{
 		From: "2026-01-05", Until: "2026-01-08", Days: 4, Skipped: 2, IndexBP: 22, ReturnBP: returnBP,
-		ExcessBP: excessBP, PercentBP: percentBP, AnnualBP: annualBP, IndexAnnualBP: 1490, Credits: 4, ErrorBP: 1,
+		ExcessBP: excessBP, PercentBP: -1, AnnualBP: -1, IndexAnnualBP: 1490, Credits: 4, ErrorBP: 1,
+		Reason: "too_few_days",
 	}
 }
 
@@ -1058,6 +1103,20 @@ type bookSpec struct {
 	// bankPaid makes a move on a day outside cdi join the balance a credit pays on the next CDI
 	// day, after that day's credit: a bank pays a deposit from its first business day.
 	bankPaid bool
+}
+
+// monthlyCreditsBook credits on 2026-01-30, 2026-03-02 and last, with a deposit on 2026-02-12 between
+// the first two: the comparison restarts at 2026-03-02.
+func monthlyCreditsBook(t *testing.T, last string) benchmarkBook {
+	t.Helper()
+
+	return buildBook(t, bookSpec{
+		cdi:     weekdays("2026-01-02", "2026-03-31"),
+		credits: []string{"2026-01-30", "2026-03-02", last},
+		opened:  "2026-01-02",
+		moves:   map[string]int64{"2026-02-12": 1_000_000_000},
+		today:   "2026-03-10",
+	})
 }
 
 // newBenchmarkBook holds 10,000,000.00 in a savings account from 2026-01-01 and credits on each
@@ -1384,7 +1443,7 @@ func figuresOf(t *testing.T, r comparedReturn) figures {
 	return figures{
 		From: b.From, Until: b.Until, Days: b.Days, Skipped: b.Skipped, IndexBP: b.IndexBP, ReturnBP: or(b.ReturnBP),
 		ExcessBP: or(b.ExcessBP), PercentBP: or(b.PercentBP), AnnualBP: or(b.AnnualBP), IndexAnnualBP: or(b.IndexAnnualBP),
-		Credits: b.Credits, ErrorBP: or(b.PercentErrorBP), Restarted: b.Restarted,
+		Credits: b.Credits, ErrorBP: or(b.PercentErrorBP), Restarted: b.Restarted, Reason: r.UnavailableReason,
 	}
 }
 

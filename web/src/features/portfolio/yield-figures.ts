@@ -23,6 +23,7 @@ const REASONS = [
   "no_yield_recorded",
   "single_credit",
   "too_small",
+  "too_few_days",
   "no_rate_in_window",
   "percent_undefined",
 ] as const;
@@ -42,9 +43,11 @@ export interface YieldLine {
   // Absent when the line states only why there is no figure.
   primary?: string;
   secondary?: string;
-  // "since {date}" of a rate profile whose comparison starts after the first rate day of the
-  // window (`started_late`); a market profile states the date in its primary.
+  // "since {date}": the day a comparison that starts after the first rate day of the window
+  // begins from (`started_late`), or the first day of the window of a return without comparison.
   since?: string;
+  // True when `secondary` is the text of an `unavailable_reason`, which may wrap.
+  reason?: true;
   negative: boolean;
 }
 
@@ -75,10 +78,10 @@ export interface YieldWindow {
 }
 
 // yieldLine is the yield column of the balance sheet (amendment A208 R8, R21, R22, R23): a rate
-// profile reads its rate a year and its percent of the index; a market profile, or a rate profile
-// without a rate a year, the return and the index. "since {date}" follows when the comparison
-// starts after the first rate day of the window (`started_late`); a period return that spans the
-// window starts at `windowFrom`. Without a comparison the reason, muted.
+// profile reads its rate a year and, muted, its percent of the index; a market profile, or a rate
+// profile without a rate a year, the return and, muted, the index. "since {date}" follows when the
+// comparison starts after the first rate day of the window (`started_late`); a period return that
+// spans the window starts at `windowFrom`. Without a comparison the reason, muted.
 export function yieldLine(
   report: ReturnReport,
   t: TFunction,
@@ -88,20 +91,25 @@ export function yieldLine(
   const b = report.benchmark;
   const reason = reasonText(report, t);
   const rate = (bp: number) => formatBasisPoints(bp, tag);
-  const note = (text: string | undefined) =>
-    text === undefined ? {} : { secondary: text };
+  const since = (from: string) =>
+    t("portfolio.yield.since", { date: formatDayMonthNumeric(from, tag) });
+  const note = (text: string | undefined, isReason: boolean) => ({
+    ...(text === undefined ? {} : { secondary: text }),
+    ...(isReason && text !== undefined ? { reason: true as const } : {}),
+  });
 
   if (b === undefined) {
     const ret = periodReturn(report);
     if (ret === undefined) {
       return reason === undefined
         ? undefined
-        : { ...note(reason), negative: false };
+        : { ...note(reason, true), negative: false };
     }
 
     return {
-      primary: returnSince(rate(ret), windowFrom, t, tag),
-      ...note(reason),
+      primary: rate(ret),
+      ...note(reason, true),
+      since: since(windowFrom),
       negative: ret < 0,
     };
   }
@@ -111,14 +119,8 @@ export function yieldLine(
   if (b.annual_bp !== undefined) {
     return {
       primary: t("portfolio.yield.annual", { rate: rate(b.annual_bp) }),
-      ...note(percent),
-      ...(b.started_late
-        ? {
-            since: t("portfolio.yield.since", {
-              date: formatDayMonthNumeric(b.from, tag),
-            }),
-          }
-        : {}),
+      ...note(percent, false),
+      ...(b.started_late ? { since: since(b.from) } : {}),
       negative: b.annual_bp < 0,
     };
   }
@@ -127,7 +129,7 @@ export function yieldLine(
   if (ret === undefined) {
     return reason === undefined
       ? undefined
-      : { ...note(reason), negative: false };
+      : { ...note(reason, true), negative: false };
   }
 
   const indexOver =
@@ -138,29 +140,18 @@ export function yieldLine(
           rate: rate(b.index_bp),
         });
 
-  let since: string | undefined;
-  if (b.return_bp === undefined) since = windowFrom;
-  else if (b.started_late) since = b.from;
+  let from: string | undefined;
+  if (b.return_bp === undefined) from = windowFrom;
+  else if (b.started_late) from = b.from;
+
+  const isReason = percent === undefined && reason !== undefined;
 
   return {
-    primary:
-      since === undefined ? rate(ret) : returnSince(rate(ret), since, t, tag),
-    ...note(percent ?? reason ?? indexOver),
+    primary: rate(ret),
+    ...note(percent ?? reason ?? indexOver, isReason),
+    ...(from === undefined ? {} : { since: since(from) }),
     negative: ret < 0,
   };
-}
-
-// returnSince is a return and the day it starts from, "3.40% since 10/19".
-function returnSince(
-  rate: string,
-  from: string,
-  t: TFunction,
-  tag: string,
-): string {
-  return t("portfolio.yield.returnSince", {
-    rate,
-    date: formatDayMonthNumeric(from, tag),
-  });
 }
 
 // yieldNotes are the lines under the groups of the yield section: why a figure is absent (R23),

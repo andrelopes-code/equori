@@ -263,12 +263,15 @@ describe("AccountsPage", () => {
     });
     const broker = within(reserves).getByRole("row", { name: /Corretora/ });
 
-    expect(await within(reserve).findByText("since 10/19")).toBeInTheDocument();
-    expect(reserve).toHaveTextContent(
-      /15\.17% a year\s*·\s*101\.80% of CDI\s*·\s*since 10\/19/,
-    );
     expect(
-      await within(broker).findByText("−13.80% since 10/19"),
+      await within(reserve).findByText("101.80% of CDI · since 10/19"),
+    ).toBeInTheDocument();
+    expect(reserve).toHaveTextContent(
+      /15\.17% a year\s*101\.80% of CDI · since 10\/19/,
+    );
+    expect(await within(broker).findByText("−13.80%")).toBeInTheDocument();
+    expect(
+      within(broker).getByText("CDI 3.52% · since 10/19"),
     ).toBeInTheDocument();
     expect(reserves).not.toHaveTextContent(/\d d\b/);
   });
@@ -298,9 +301,11 @@ describe("AccountsPage", () => {
       name: /Reserva de emergência/,
     });
 
-    expect(await within(reserve).findByText("desde 19/10")).toBeInTheDocument();
+    expect(
+      await within(reserve).findByText("101,80% do índice CDI · desde 19/10"),
+    ).toBeInTheDocument();
     expect(reserve).toHaveTextContent(
-      /15,17% a\.a\.\s*·\s*101,80% do índice CDI\s*·\s*desde 19\/10/,
+      /15,17% a\.a\.\s*101,80% do índice CDI · desde 19\/10/,
     );
   });
 
@@ -388,10 +393,96 @@ describe("AccountsPage", () => {
         name: /Reserva de emergência/,
       });
 
+      expect(await within(reserve).findByText("3.40%")).toBeInTheDocument();
       expect(
-        await within(reserve).findByText("3.40% since 07/20"),
+        within(reserve).getByText(`${text} · since 07/20`),
       ).toBeInTheDocument();
-      expect(within(reserve).getByText(text)).toBeInTheDocument();
+    },
+  );
+
+  it("draws the yield cell as two lines that never end on the separator (R8, R21)", async () => {
+    await renderApp("/accounts", {
+      fetch: api([], {
+        "GET /api/v1/reports/return": comparedIn90Days([], 63, {
+          started_late: true,
+        }),
+      }),
+    });
+    const reserves = await screen.findByRole("table", {
+      name: catalogEn["home.group.reserves"],
+    });
+    const reserve = await within(reserves).findByRole("row", {
+      name: /Reserva de emergência/,
+    });
+
+    const first = await within(reserve).findByText("15.17% a year");
+    const lines = Array.from(first.parentElement?.children ?? []);
+
+    expect(lines).toHaveLength(2);
+    expect(lines.map((line) => line.textContent)).toEqual([
+      "15.17% a year",
+      expect.stringMatching(/^101\.80% of CDI · since \d\d\/\d\d$/u),
+    ]);
+    expect(lines.map((line) => line.getAttribute("data-wrap"))).toEqual([
+      "nowrap",
+      "nowrap",
+    ]);
+  });
+
+  it.each([
+    [
+      "en",
+      "Fewer than 5 days with a CDI rate: one credit would distort the percent",
+    ],
+    ["pt", "Menos de 5 dias com taxa CDI: um crédito distorceria o percentual"],
+  ])(
+    "states the return and why the percent is absent below five days: %s (R22, R23)",
+    async (language, text) => {
+      await renderApp("/accounts", {
+        fetch: api([], {
+          "GET /api/v1/me": () =>
+            json(200, {
+              id: 1,
+              email: "a@b.c",
+              books_id: 1,
+              role: "admin",
+              language,
+              region: "BR",
+            }),
+          "GET /api/v1/reports/return": () =>
+            json(200, {
+              flows: [],
+              opening: { amount: 1000000, currency: "BRL" },
+              closing: { amount: 1034000, currency: "BRL" },
+              profile: "rate",
+              period_bp: 340,
+              index: "cdi",
+              unavailable_reason: "too_few_days",
+              benchmark: {
+                index: "cdi",
+                from: "2026-07-20",
+                until: "2026-07-20",
+                days: 1,
+                return_bp: 6,
+                index_bp: 6,
+                index_annual_bp: 1490,
+              },
+            }),
+        }),
+      });
+      const reserves = await screen.findByRole("table", {
+        name: (language === "en" ? catalogEn : catalogPtBR)[
+          "home.group.reserves"
+        ],
+      });
+      const reserve = await within(reserves).findByRole("row", {
+        name: /Reserva de emergência/,
+      });
+
+      expect(await within(reserve).findByText(text)).toBeInTheDocument();
+      expect(
+        within(reserve).getByText(language === "en" ? "0.06%" : "0,06%"),
+      ).toBeInTheDocument();
     },
   );
 
@@ -418,9 +509,9 @@ describe("AccountsPage", () => {
       name: /Reserva de emergência/,
     });
 
-    const figure = await within(reserve).findByText("3.40% since 07/20");
+    const figure = await within(reserve).findByText("3.40%");
     const reason = within(reserve).getByText(
-      "CDI has no rate yet for the days compared",
+      "CDI has no rate yet for the days compared · since 07/20",
     );
 
     expect(figure).toHaveAttribute("data-wrap", "nowrap");

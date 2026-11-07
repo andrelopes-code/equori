@@ -61,7 +61,6 @@ export const portfolioEn = {
   "portfolio.yield.profile.rate":
     "Fixed income: compared day by day with {index}. A balance reported net of taxes reads below the contracted rate.",
   "portfolio.yield.since": "since {date}",
-  "portfolio.yield.returnSince": "{rate} since {date}",
   "portfolio.yield.margin": "{value} ±{margin} pp",
   "portfolio.yield.reason.no_index_for_region":
     "No reference index for the region",
@@ -72,6 +71,8 @@ export const portfolioEn = {
   "portfolio.yield.reason.single_credit": "Only one yield credit recorded",
   "portfolio.yield.reason.too_small":
     "Balance too small: credits are rounded to the cent",
+  "portfolio.yield.reason.too_few_days":
+    "Fewer than 5 days with a {index} rate: one credit would distort the percent",
   "portfolio.yield.reason.no_rate_in_window":
     "{index} has no rate yet for the days compared",
   "portfolio.yield.reason.percent_undefined":

@@ -63,7 +63,6 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
   "portfolio.yield.profile.rate":
     "Renda fixa: comparada dia a dia com o índice {index}. Saldo informado já sem os impostos fica abaixo da taxa contratada.",
   "portfolio.yield.since": "desde {date}",
-  "portfolio.yield.returnSince": "{rate} desde {date}",
   "portfolio.yield.margin": "{value} ±{margin} p.p.",
   "portfolio.yield.reason.no_index_for_region":
     "Sem índice de referência para a região",
@@ -76,6 +75,8 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
     "Só um crédito de rendimento registrado",
   "portfolio.yield.reason.too_small":
     "Saldo pequeno demais: os créditos são arredondados ao centavo",
+  "portfolio.yield.reason.too_few_days":
+    "Menos de 5 dias com taxa {index}: um crédito distorceria o percentual",
   "portfolio.yield.reason.no_rate_in_window":
     "O índice {index} ainda não tem taxa para os dias comparados",
   "portfolio.yield.reason.percent_undefined":

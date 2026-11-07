@@ -328,6 +328,12 @@ func (s *Service) benchmark(ctx context.Context, p period, index string, rates [
 		if b.PercentBP != nil {
 			b.AnnualBP = ifOK(domain.AnnualBP(f, len(fractions), basis))
 		}
+
+		if b.PercentBP != nil && b.Days < domain.MinPercentDays {
+			b.PercentBP, b.AnnualBP = nil, nil
+
+			p.unavailable(ReasonTooFewDays)
+		}
 	}
 
 	p.report.Benchmark = &b

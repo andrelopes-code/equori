@@ -1,4 +1,5 @@
 import { Inline } from "@slotted/react/inline";
+import { Stack } from "@slotted/react/stack";
 import { Text } from "@slotted/react/typography";
 
 import { useAccountYield } from "@/features/portfolio/use-account-yield";
@@ -9,8 +10,11 @@ import { useAppLocale, useT } from "@/i18n/i18n-provider";
 // The days of the window, the 90 that end at the date of the balance sheet.
 const WINDOW_DAYS = 90;
 
-// Between the figure, the percent of the index and the day a late start begins from.
+// Between the parts of the second line, and between the figure and the day on a phone row.
 const SEPARATOR = "·";
+
+// Around the separator of a reason, which wraps: no break opportunity beside the separator.
+const GLUED_SEPARATOR = "\u00A0·\u00A0";
 
 interface AccountYieldProps {
   accountId: string;
@@ -20,10 +24,11 @@ interface AccountYieldProps {
   compact?: boolean;
 }
 
-// The yield of an account over the 90 days of its balance trend, on one line (amendment A208
-// R17, R21, R23): the figure, in the danger tone when negative, the index it is read against,
-// the day the comparison starts when it starts late, or why there is no figure. The figures keep
-// one line; a long reason wraps inside the cell. A phone row keeps the figure and the day.
+// The yield of an account over the 90 days of its balance trend (amendment A208 R8, R17, R21,
+// R23): two lines, right-aligned. The first is the figure, in the danger tone when negative. The
+// second, muted, joins with a separator the index it is read against and the day a late start
+// begins from, or states why there is no figure; only a reason wraps. A phone row keeps the figure
+// and the day on one line.
 export function AccountYield({
   accountId,
   date,
@@ -39,47 +44,47 @@ export function AccountYield({
   if (line === undefined) return null;
 
   const size = compact ? "xs" : "sm";
-  const secondary =
-    compact && line.primary !== undefined ? undefined : line.secondary;
-  const hasPrimary = line.primary !== undefined;
-  const hasBefore = hasPrimary || secondary !== undefined;
+  const tone = line.negative ? "danger" : "default";
+
+  if (compact && line.primary !== undefined) {
+    return (
+      <Inline gap={2} justify="end">
+        <Text size={size} tone={tone} numeric="tabular" wrap="nowrap">
+          {line.primary}
+        </Text>
+
+        {line.since !== undefined && (
+          <Text size={size} tone="muted" numeric="tabular" wrap="nowrap">
+            {[SEPARATOR, line.since].join(" ")}
+          </Text>
+        )}
+      </Inline>
+    );
+  }
+
+  const separator = line.reason === true ? GLUED_SEPARATOR : ` ${SEPARATOR} `;
+  const second = [line.secondary, line.since]
+    .filter((part) => part !== undefined)
+    .join(separator);
 
   return (
-    <Inline gap={2} justify="end">
+    <Stack gap={0} align="end">
       {line.primary !== undefined && (
-        <Text
-          size={size}
-          tone={line.negative ? "danger" : "default"}
-          numeric="tabular"
-          wrap="nowrap"
-        >
+        <Text size={size} tone={tone} numeric="tabular" wrap="nowrap">
           {line.primary}
         </Text>
       )}
 
-      {hasPrimary && secondary !== undefined && (
-        <Text size={size} tone="muted" aria-hidden>
-          {SEPARATOR}
+      {second !== "" && (
+        <Text
+          size={size}
+          tone="muted"
+          numeric="tabular"
+          wrap={line.reason === true ? undefined : "nowrap"}
+        >
+          {second}
         </Text>
       )}
-
-      {secondary !== undefined && (
-        <Text size={size} tone="muted" numeric="tabular">
-          {secondary}
-        </Text>
-      )}
-
-      {hasBefore && line.since !== undefined && (
-        <Text size={size} tone="muted" aria-hidden>
-          {SEPARATOR}
-        </Text>
-      )}
-
-      {line.since !== undefined && (
-        <Text size={size} tone="muted" numeric="tabular" wrap="nowrap">
-          {line.since}
-        </Text>
-      )}
-    </Inline>
+    </Stack>
   );
 }

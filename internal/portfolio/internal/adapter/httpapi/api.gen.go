@@ -361,7 +361,7 @@ type ReturnReport struct {
 	// Profile rate when every holding is the value_in currency or a fixed income instrument quoted in it; market otherwise (amendment A208 R11).
 	Profile ReturnReportProfile `json:"profile"`
 
-	// UnavailableReason Why benchmark, or its percent_bp and annual_bp, is absent - no_index_for_region, currency_mismatch, nothing_held, no_yield_recorded, single_credit, too_small, no_rate_in_window or percent_undefined (amendment A208 R21).
+	// UnavailableReason Why benchmark, or its percent_bp and annual_bp, is absent - no_index_for_region, currency_mismatch, nothing_held, no_yield_recorded, single_credit, too_small, too_few_days, no_rate_in_window or percent_undefined (amendment A208 R21).
 	UnavailableReason *string `json:"unavailable_reason,omitempty"`
 }
 

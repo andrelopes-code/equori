@@ -13,6 +13,10 @@ const (
 	// MaxPercentErrorBP is the largest PercentErrorBP at which a percent of an index is shown.
 	MaxPercentErrorBP = 500
 
+	// MinPercentDays is the fewest compared index days at which a rate profile shows a percent:
+	// with fewer, the timing of one credit moves the percent by 1/days (R22).
+	MinPercentDays = 5
+
 	// maxCreditGap is the longest gap between two credits that a flow inside does not restart.
 	maxCreditGap = 7 * 24 * time.Hour
 

@@ -5846,7 +5846,7 @@ export interface components {
             index?: string;
             benchmark?: components["schemas"]["ReturnBenchmark"];
             inflation?: components["schemas"]["ReturnInflation"];
-            /** @description Why benchmark, or its percent_bp and annual_bp, is absent - no_index_for_region, currency_mismatch, nothing_held, no_yield_recorded, single_credit, too_small, no_rate_in_window or percent_undefined (amendment A208 R21). */
+            /** @description Why benchmark, or its percent_bp and annual_bp, is absent - no_index_for_region, currency_mismatch, nothing_held, no_yield_recorded, single_credit, too_small, too_few_days, no_rate_in_window or percent_undefined (amendment A208 R21). */
             unavailable_reason?: string;
             excluded?: components["schemas"]["ReturnExcluded"];
         };
