@@ -1,7 +1,9 @@
 import { Grid } from "@slotted/react/grid";
 import { Stack } from "@slotted/react/stack";
+import { Text } from "@slotted/react/typography";
 
 import type { components } from "@/api/schema.gen";
+import { indexName } from "@/features/calculators";
 import { ReturnMethod } from "@/features/portfolio/return-method";
 import { yieldGroups } from "@/features/portfolio/yield-figures";
 import { YieldGroupList } from "@/features/portfolio/yield-group-list";
@@ -16,13 +18,14 @@ interface ReturnFiguresProps {
   report: ReturnReport;
 }
 
-// PC11, PC12: the figures read as on an account's page, one group per period, and the method under
-// them. A report no index compares states one figure instead.
+// PC11, PC12: the figures read as on an account's page, one group per period, then what the profile
+// means and the method. A report no index compares states one figure instead.
 export function ReturnFigures({ report }: ReturnFiguresProps) {
   const t = useT();
   const [tag] = useAppLocale();
 
   const groups = yieldGroups(report, t, tag);
+  const index = report.benchmark && indexName(report.benchmark.index);
   const period = report.period_bp;
   const lone = period ?? report.annual_bp;
   const loneLabel = t(
@@ -51,6 +54,12 @@ export function ReturnFigures({ report }: ReturnFiguresProps) {
             attention={lone < 0 ? "danger" : undefined}
           />
         </FigureGrid>
+      )}
+
+      {index !== undefined && (
+        <Text size="sm" tone="muted">
+          {t(`portfolio.yield.profile.${report.profile}`, { index })}
+        </Text>
       )}
 
       <ReturnMethod report={report} />

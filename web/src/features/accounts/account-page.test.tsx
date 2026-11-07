@@ -139,6 +139,54 @@ describe("AccountPage", () => {
     expect(within(ipca).getByText("8.10%")).toBeInTheDocument();
   });
 
+  it("states what the profile means and what was left out under the groups (A208 R17)", async () => {
+    await renderApp(`/accounts/${reserveID}`, {
+      fetch: api({
+        "GET /api/v1/reports/return": () =>
+          json(200, {
+            annual_bp: 1500,
+            flows: [],
+            opening: money(1000000),
+            closing: money(1151700),
+            profile: "rate",
+            benchmark: {
+              index: "cdi",
+              from: "2025-10-18",
+              until: "2026-10-16",
+              days: 250,
+              skipped: 0,
+              return_bp: 1480,
+              index_bp: 1455,
+            },
+            excluded: {
+              income: { amount: money(150000), categories: ["Salary"] },
+            },
+          }),
+      }),
+    });
+    const section = await screen.findByRole("region", {
+      name: catalogEn["portfolio.yield.figure"],
+    });
+    const group = await within(section).findByRole("group", {
+      name: "Compared with CDI",
+    });
+
+    const profile = within(section).getByText(
+      /^Fixed income: compared day by day with CDI\./,
+    );
+    const excluded = within(section).getByText(
+      catalogEn["portfolio.yield.excludedHint"],
+    );
+
+    expect(
+      group.compareDocumentPosition(profile) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      group.compareDocumentPosition(excluded) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
   it("states why the comparison is absent and what was left out of the yield (A208 R19, R23)", async () => {
     await renderApp(`/accounts/${reserveID}`, {
       fetch: api({

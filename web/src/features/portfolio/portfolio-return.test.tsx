@@ -105,6 +105,25 @@ describe("Portfolio return", () => {
     expect(within(group).getByText("100.00%")).toBeInTheDocument();
   });
 
+  it("PC11: states what the profile means under the groups, not under the heading (A208 R17)", async () => {
+    const fetch = portfolioApi({
+      "GET /api/v1/reports/return": () => json(200, marketReturn),
+    });
+    await renderApp("/portfolio", { fetch });
+    const section = await performance();
+    const group = await within(section).findByRole("group", {
+      name: catalogEn["portfolio.yield.group.index"].replace("{index}", "CDI"),
+    });
+
+    const profile = within(section).getByText(
+      catalogEn["portfolio.yield.profile.market"].replaceAll("{index}", "CDI"),
+    );
+
+    expect(
+      group.compareDocumentPosition(profile) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
   it("PC11: states what a market profile means, its difference from the CDI and its real return (S306, S308)", async () => {
     const fetch = portfolioApi({
       "GET /api/v1/reports/return": () => json(200, marketReturn),

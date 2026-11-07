@@ -2,7 +2,6 @@ import { Grid } from "@slotted/react/grid";
 import {
   Section,
   SectionBody,
-  SectionDescription,
   SectionHeader,
   SectionHeading,
   SectionTitle,
@@ -28,8 +27,8 @@ interface AccountYieldSectionProps {
 }
 
 // The yield of an account over the last 12 months, as a titled section of its page (amendment
-// A208 R17): what the profile means, then one group per period, the comparison with the index
-// and the return net of inflation, side by side where the page is wide enough.
+// A208 R17): one group per period, the comparison with the index and the return net of inflation,
+// side by side where the page is wide enough, then what the profile means and the notes.
 export function AccountYieldSection({ accountId }: AccountYieldSectionProps) {
   const t = useT();
   const [tag] = useAppLocale();
@@ -59,26 +58,29 @@ export function AccountYieldSection({ accountId }: AccountYieldSectionProps) {
       <SectionHeader>
         <SectionTitle>
           <SectionHeading>{t("portfolio.yield.figure")}</SectionHeading>
-          {index !== undefined && (
-            <SectionDescription>
-              {t(`portfolio.yield.profile.${report.profile}`, { index })}
-            </SectionDescription>
-          )}
         </SectionTitle>
       </SectionHeader>
       <SectionBody>
         <Stack gap={4}>
+          {groups.length > 0 && (
+            <Grid minItemWidth="md" gap={8}>
+              {groups.map((group) => (
+                <YieldGroupList key={group.key} group={group} />
+              ))}
+            </Grid>
+          )}
+
+          {index !== undefined && (
+            <Text size="sm" tone="muted">
+              {t(`portfolio.yield.profile.${report.profile}`, { index })}
+            </Text>
+          )}
+
           {notes.map((note) => (
             <Text key={note} size="sm" tone="muted">
               {note}
             </Text>
           ))}
-
-          <Grid minItemWidth="md" gap={8}>
-            {groups.map((group) => (
-              <YieldGroupList key={group.key} group={group} />
-            ))}
-          </Grid>
         </Stack>
       </SectionBody>
     </Section>

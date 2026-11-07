@@ -4,7 +4,6 @@ import {
   Section,
   SectionActions,
   SectionBody,
-  SectionDescription,
   SectionHeader,
   SectionHeading,
   SectionTitle,
@@ -16,7 +15,6 @@ import { useQuery } from "@tanstack/react-query";
 
 import { useApi } from "@/api/api-context";
 import { ProblemError } from "@/api/problem";
-import { indexName } from "@/features/calculators";
 import { returnQuery } from "@/features/portfolio/api";
 import {
   defaultFrom,
@@ -76,10 +74,6 @@ export function PortfolioReturn({
   const undefinedReturn =
     report.error instanceof ProblemError &&
     report.error.problem.code === "return_undefined";
-  const index =
-    report.data?.benchmark === undefined
-      ? undefined
-      : indexName(report.data.benchmark.index);
   const ready = report.data !== undefined && scale !== null;
   const noAccount = loaded && selected === undefined;
   const reading = !accounts.isError && !noAccount && problem === undefined;
@@ -99,11 +93,6 @@ export function PortfolioReturn({
       <SectionHeader>
         <SectionTitle>
           <SectionHeading>{t("holdings.return")}</SectionHeading>
-          {index !== undefined && report.data !== undefined && (
-            <SectionDescription>
-              {t(`portfolio.yield.profile.${report.data.profile}`, { index })}
-            </SectionDescription>
-          )}
         </SectionTitle>
         <SectionActions>
           <Inline gap={3} align="center" wrap="nowrap">
