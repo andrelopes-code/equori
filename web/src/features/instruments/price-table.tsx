@@ -1,7 +1,6 @@
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableColumnHeader,
   TableContent,
@@ -14,7 +13,7 @@ import {
 
 import type { components } from "@/api/schema.gen";
 import { sourceLabel } from "@/features/instruments/instrument-labels";
-import { formatRate } from "@/features/instruments/rate";
+import { formatPrice } from "@/features/instruments/rate";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { MASK } from "@/privacy/mask";
@@ -34,11 +33,11 @@ export function PriceTable({
   const [locale] = useAppLocale();
   const fmt = useMoneyFormat();
   const rows = [...prices].sort((a, b) => b.date.localeCompare(a.date));
-  const value = (p: Price) => (fmt.hidden ? MASK : formatRate(p.value, locale));
+  const value = (p: Price) =>
+    fmt.hidden ? MASK : formatPrice(p.value, locale);
   return (
     <Table columns={3} variant="framed">
-      <TableContent>
-        <TableCaption>{t("instrument.prices.caption")}</TableCaption>
+      <TableContent aria-label={t("instrument.prices.caption")}>
         <TableHead>
           <TableRow>
             <TableColumnHeader>{t("instrument.col.date")}</TableColumnHeader>

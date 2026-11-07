@@ -19,9 +19,10 @@ import { useApi } from "@/api/api-context";
 import type { components } from "@/api/schema.gen";
 import { positionsQuery } from "@/features/accounts/api";
 import { averageCostText } from "@/features/accounts/position-figures";
-import { settingsQuery } from "@/features/setup";
+import { instrumentsQuery, settingsQuery } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
+import { InstrumentName } from "@/ui/instrument-name";
 import { PricedValue } from "@/ui/priced-value";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
@@ -42,7 +43,11 @@ export function PositionsTab({
   const today = useToday();
   const positions = useQuery(positionsQuery(api, today));
   const settings = useQuery(settingsQuery(api));
+  const instruments = useQuery(instrumentsQuery(api));
   const base = settings.data?.base_currency;
+  const names = new Map(
+    (instruments.data?.items ?? []).map((i) => [i.code, i.name]),
+  );
   const ids = new Set(descendants.map((d) => d.id));
   const rows = (positions.data ?? []).filter((p) => ids.has(p.account_id));
   const money = (m: components["schemas"]["Money"]) =>
@@ -98,7 +103,12 @@ export function PositionsTab({
                     key={`${p.account_id}-${p.instrument}`}
                     value={p.account_id}
                   >
-                    <TableRowHeader>{p.instrument}</TableRowHeader>
+                    <TableRowHeader>
+                      <InstrumentName
+                        code={p.instrument}
+                        name={names.get(p.instrument) ?? p.instrument}
+                      />
+                    </TableRowHeader>
                     <TableCell numeric>
                       {fmt.number(p.quantity, scale(p.quantity.currency))}
                     </TableCell>

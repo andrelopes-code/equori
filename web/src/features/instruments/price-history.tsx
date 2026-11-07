@@ -1,3 +1,9 @@
+import {
+  Collapsible,
+  CollapsibleHeader,
+  CollapsiblePanel,
+  CollapsibleTrigger,
+} from "@slotted/react/collapsible";
 import { Segment, SegmentedControl } from "@slotted/react/segmented-control";
 import { Stack } from "@slotted/react/stack";
 import { useQuery } from "@tanstack/react-query";
@@ -57,7 +63,22 @@ export function PriceHistory({
           {(prices.isPending || prices.data.length > 0) && (
             <PriceChart prices={prices.data ?? []} loading={prices.isPending} />
           )}
-          <PriceTable prices={prices.data ?? []} loading={prices.isPending} />
+          {prices.data?.length === 0 && (
+            <PriceTable prices={[]} loading={false} />
+          )}
+
+          {prices.data !== undefined && prices.data.length > 0 && (
+            <Collapsible mount="lazy">
+              <CollapsibleHeader>
+                <CollapsibleTrigger>
+                  {t("instrument.prices.caption")}
+                </CollapsibleTrigger>
+              </CollapsibleHeader>
+              <CollapsiblePanel>
+                <PriceTable prices={prices.data} loading={false} />
+              </CollapsiblePanel>
+            </Collapsible>
+          )}
         </>
       )}
     </Stack>

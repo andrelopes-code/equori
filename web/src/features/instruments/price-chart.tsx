@@ -49,6 +49,7 @@ export function PriceChart({
       size="sm"
       loading={loading}
       aria-label={t("instrument.prices.title")}
+      legend={false}
       data={data}
       series={series}
       x={{

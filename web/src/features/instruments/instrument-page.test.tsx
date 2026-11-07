@@ -46,6 +46,11 @@ describe("Instrument page", () => {
     expect(
       await screen.findByRole("heading", { name: "Petrobras PN" }),
     ).toBeInTheDocument();
+    await userEvent.setup().click(
+      await screen.findByRole("button", {
+        name: catalogEn["instrument.prices.caption"],
+      }),
+    );
     const table = await screen.findByRole("table", {
       name: catalogEn["instrument.prices.caption"],
     });
@@ -225,6 +230,37 @@ describe("Instrument page", () => {
       "href",
       "/accounts/a1000000-0000-4000-8000-000000000005",
     );
+  });
+
+  it("PC19: states the position before the prices and nothing for an instrument not held", async () => {
+    const { unmount } = await renderApp("/instruments/PETR4", { fetch: api() });
+    const table = await screen.findByRole("table", {
+      name: catalogEn["instrument.positions.caption"],
+    });
+    const prices = screen.getByRole("group", {
+      name: catalogEn["instrument.prices.title"],
+    });
+
+    expect(
+      table.compareDocumentPosition(prices) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    unmount();
+
+    await renderApp("/instruments/PETR4", {
+      fetch: api({
+        "GET /api/v1/positions": () => json(200, { items: [] }),
+      }),
+    });
+    await screen.findByRole("group", {
+      name: catalogEn["instrument.prices.title"],
+    });
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("heading", {
+          name: catalogEn["instrument.positions.title"],
+        }),
+      ).toBeNull();
+    });
   });
 
   it("shows the problem of an instrument that does not exist", async () => {

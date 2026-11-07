@@ -40,8 +40,8 @@ import { HeaderAction } from "@/ui/header-action";
 import { QueryError } from "@/ui/query-error";
 import { PageBack } from "@/ui/page-back";
 
-// One instrument: its data, its price history, the positions that hold it, the manual price form
-// and the edit form of a security.
+// PC19: one instrument: what the book holds of it, its price history, its terms and its data, with
+// the manual price form and the edit form of a security.
 export function InstrumentPage() {
   const t = useT();
   const api = useApi();
@@ -124,26 +124,8 @@ export function InstrumentPage() {
       </PageHeader>
       <PageBody>
         <Stack gap={6}>
-          <DescriptionList layout="stack" aria-label={t("instrument.facts")}>
-            {[
-              [
-                t("instruments.col.subtype"),
-                i.subtype === undefined ? "" : subtypeLabel(t, i.subtype),
-              ],
-              [t("instruments.col.quote"), i.quote_currency ?? ""],
-              [t("instruments.col.exchange"), i.exchange ?? ""],
-              [t("instruments.field.scale"), String(i.scale)],
-            ]
-              .filter(([, value]) => value !== "")
-              .map(([term, value]) => (
-                <DescriptionListItem key={term}>
-                  <DescriptionListTerm>{term}</DescriptionListTerm>
-                  <DescriptionListDescription>
-                    {value}
-                  </DescriptionListDescription>
-                </DescriptionListItem>
-              ))}
-          </DescriptionList>
+          <InstrumentPositions code={i.code} />
+
           <Stack gap={3}>
             <Heading level={2} size="md">
               {t("instrument.prices.title")}
@@ -165,9 +147,28 @@ export function InstrumentPage() {
           )}
           <Stack gap={3}>
             <Heading level={2} size="md">
-              {t("instrument.positions.title")}
+              {t("instrument.facts")}
             </Heading>
-            <InstrumentPositions code={i.code} />
+            <DescriptionList variant="ruled" aria-label={t("instrument.facts")}>
+              {[
+                [
+                  t("instruments.col.subtype"),
+                  i.subtype === undefined ? "" : subtypeLabel(t, i.subtype),
+                ],
+                [t("instruments.col.quote"), i.quote_currency ?? ""],
+                [t("instruments.col.exchange"), i.exchange ?? ""],
+                [t("instruments.field.scale"), String(i.scale)],
+              ]
+                .filter(([, value]) => value !== "")
+                .map(([term, value]) => (
+                  <DescriptionListItem key={term}>
+                    <DescriptionListTerm>{term}</DescriptionListTerm>
+                    <DescriptionListDescription>
+                      {value}
+                    </DescriptionListDescription>
+                  </DescriptionListItem>
+                ))}
+            </DescriptionList>
           </Stack>
         </Stack>
       </PageBody>

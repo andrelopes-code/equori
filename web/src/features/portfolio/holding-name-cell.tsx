@@ -2,7 +2,7 @@ import { Text } from "@slotted/react/typography";
 
 import type { components } from "@/api/schema.gen";
 import { AccountLink } from "@/features/accounts";
-import { InstrumentName } from "@/features/portfolio/instrument-name";
+import { InstrumentName } from "@/ui/instrument-name";
 import type { Holding } from "@/features/portfolio/portfolio-holdings";
 
 type Account = components["schemas"]["Account"];

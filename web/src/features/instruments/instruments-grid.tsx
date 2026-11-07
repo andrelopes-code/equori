@@ -20,7 +20,6 @@ import { AppLink } from "@/ui/app-link";
 const initialQuery: GridQuery = {
   ...emptyQuery(),
   group: ["type"],
-  sort: [{ column: "code", direction: "ascending" }],
 };
 
 const distinct = (rows: readonly CatalogRow[], key: keyof CatalogRow) =>
@@ -38,6 +37,7 @@ export function InstrumentsGrid({
   const t = useT();
   const navigate = useNavigate();
   const [query, setQuery] = useState<GridQuery>(initialQuery);
+  const [opened, setOpened] = useState<readonly string[] | undefined>();
   const types = useMemo(() => distinct(rows, "type"), [rows]);
   const subtypes = useMemo(() => distinct(rows, "subtype"), [rows]);
   const quotes = useMemo(() => distinct(rows, "quoteCurrency"), [rows]);
@@ -169,6 +169,15 @@ export function InstrumentsGrid({
     }),
     [],
   );
+  // PC20: every group opens except the currencies, which only a reader who wants them opens.
+  const expandedGroups = useMemo(
+    () =>
+      opened ??
+      types
+        .filter((type) => type !== "currency")
+        .map((type) => `type=${typeLabel(t, type)}`),
+    [opened, types, t],
+  );
   const renderGroup = useCallback(
     ({ node }: { node: { rows: readonly CatalogRow[] } }) => {
       const label = `${typeLabel(t, node.rows[0]?.type ?? "")} · ${String(node.rows.length)}`;
@@ -206,6 +215,14 @@ export function InstrumentsGrid({
           loading={loading}
           query={query}
           onQueryChange={setQuery}
+          expandedGroups={[...expandedGroups]}
+          onExpandedGroupsChange={(keys) => {
+            setOpened(
+              keys === "all"
+                ? types.map((type) => `type=${typeLabel(t, type)}`)
+                : keys,
+            );
+          }}
           height="100%"
           activatable
           onActivate={(event) => {

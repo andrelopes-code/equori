@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useApi } from "@/api/api-context";
 import { latestPriceQuery } from "@/features/instruments/api";
 import type { CatalogRow } from "@/features/instruments/catalog-rows";
-import { formatRate } from "@/features/instruments/rate";
+import { formatPrice } from "@/features/instruments/rate";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
@@ -46,5 +46,5 @@ export function LatestPriceCell({
       </Text>
     ) : null;
   if (part === "date") return formatDate(price.date, locale);
-  return fmt.hidden ? MASK : formatRate(price.value, locale);
+  return fmt.hidden ? MASK : formatPrice(price.value, locale);
 }

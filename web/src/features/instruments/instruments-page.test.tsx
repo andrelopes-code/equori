@@ -30,18 +30,30 @@ describe("Instrument catalog", () => {
     await within(grid).findByText("38.45");
     expect(gridRows(grid)).toEqual([
       "Code|Name|Subtype|Quote currency|Exchange|Latest price|Price date",
-      "Currencies · 2",
-      "BRL|Real|||||",
-      "USD|Dollar||||5.4830|10/16/2026",
       "Fixed income · 1",
       `CDB1|CDB Bank One|cdb|BRL||${catalogEn["instruments.noPrice"]}|`,
       "Stocks · 2",
       "PETR4|Petrobras PN||BRL|B3SA|38.45|10/16/2026",
       "VALE3|Vale ON||BRL|B3SA|61.20|10/10/2026",
+      "Currencies · 2",
     ]);
   });
 
-  it("asks for the price of each instrument but not of the base currency", async () => {
+  it("PC20: opens the currencies on request and reads their prices then", async () => {
+    await renderApp("/instruments", { fetch: api() });
+    const grid = await screen.findByRole("grid", {
+      name: catalogEn["instruments.caption"],
+    });
+    await within(grid).findByText("38.45");
+
+    await userEvent
+      .setup()
+      .click(within(grid).getByRole("button", { name: /Currencies/ }));
+
+    expect(await within(grid).findByText("5.4830")).toBeInTheDocument();
+  });
+
+  it("asks for the price of each security on screen, and of no closed currency", async () => {
     const asked: string[] = [];
     const fetch = api({
       "GET /api/v1/prices": (req) => {
@@ -52,9 +64,7 @@ describe("Instrument catalog", () => {
     await renderApp("/instruments", { fetch });
     await screen.findByRole("grid", { name: catalogEn["instruments.caption"] });
     await waitFor(() => {
-      expect(new Set(asked)).toEqual(
-        new Set(["USD", "PETR4", "VALE3", "CDB1"]),
-      );
+      expect(new Set(asked)).toEqual(new Set(["PETR4", "VALE3", "CDB1"]));
     });
   });
 

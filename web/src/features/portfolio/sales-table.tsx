@@ -13,7 +13,7 @@ import { Text } from "@slotted/react/typography";
 
 import type { components } from "@/api/schema.gen";
 import { AccountLink } from "@/features/accounts";
-import { InstrumentName } from "@/features/portfolio/instrument-name";
+import { InstrumentName } from "@/ui/instrument-name";
 import { useYearNames } from "@/features/portfolio/use-year-names";
 import { catalogLabel, useScale } from "@/features/setup";
 import { formatDate } from "@/i18n/format";

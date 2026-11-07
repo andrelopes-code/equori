@@ -70,7 +70,7 @@ A reader opens the portfolio to answer three questions: how much do I have, how 
 
 **PC13 Words.** The page is "Income and sales in {year}". "Income" is money received; "Return" is a rate. The tab "Rendimentos" reads "Proventos" in pt-BR; the term "Rendimento" stays for a rate of the account page. "Fluxos externos" reads "Aportes e retiradas".
 
-**PC14 Income tab.** Three figures (net received, withheld, gross). Two charts side by side: net by month, every month of the period, and net by investment, top ten. Then "For your tax return": one table by type and treatment, replacing the two tables. Then every event, where Account gives way to the institution as a column a reader adds.
+**PC14 Income tab.** Three figures (net received, withheld, gross). Two charts side by side: net by month, every month of the period, and net by investment, top ten, each in the currency most events pay in. Then "For your tax return": one table by type and treatment, replacing the two tables. Then every event, where a row names the investment and the account at the top of its tree.
 
 **PC15 Sales tab.** Three figures (result of the year, amount sold, number of sales). "By month" and "By tax class" stand side by side, so a label stays near its figure; "By month" adds the amount sold, a figure a jurisdiction's monthly limit is read against. No limit or exemption is computed (investments design NG2). Then every sale. "Receita" reads "Valor da venda".
 
@@ -84,7 +84,7 @@ A reader opens the portfolio to answer three questions: how much do I have, how 
 
 ### Instrument pages
 
-**PC19 Instrument page.** The positions come first when the book holds the instrument. The facts follow as one row. The price table stays under a closed `Collapsible`; the chart stays open. The sources `b3_cotahist`, `b3_consolidated`, `bcb_ptax` and `ecb` have labels.
+**PC19 Instrument page.** The position comes first when the book holds the instrument, and states nothing when it does not. Then the chart of prices, the terms, and the facts last. The price table stays under a closed `Collapsible`. The sources `b3_cotahist`, `b3_consolidated`, `bcb_ptax` and `ecb` have labels. A price on the catalog and in the price table reads grouped with at most four decimals (`formatPrice`); the exact decimal stays in every calculation and form.
 
 **PC20 Catalog.** The instruments grid lists securities first; the currency group starts closed.
 
