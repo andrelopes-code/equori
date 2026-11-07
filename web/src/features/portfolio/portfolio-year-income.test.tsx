@@ -44,9 +44,9 @@ describe("Tax year income events", () => {
         "Withheld",
         "Net",
       ].join("|"),
-      "10/15/2026|MXRF11|XP / XP MXRF11|Dividend|Exempt|R$10.00|R$0.00|R$10.00",
-      "10/20/2026|PETR4|XP / XP PETR4|Interest on equity|Exclusive|R$45.00|R$6.75|R$38.25",
-      `11/02/2026|PETR4|XP / XP PETR4|royalty|${catalogEn["taxYear.unclassified"]}|$20.00|$3.00|$17.00`,
+      "10/15/2026|MXRF11|XP|Dividend|Exempt|R$10.00|R$0.00|R$10.00",
+      "10/20/2026|PETR4|XP|Interest on equity|Exclusive|R$45.00|R$6.75|R$38.25",
+      `11/02/2026|PETR4|XP|royalty|${catalogEn["taxYear.unclassified"]}|$20.00|$3.00|$17.00`,
     ]);
   });
 
@@ -57,25 +57,56 @@ describe("Tax year income events", () => {
     expect(link).toHaveAttribute("href", `/transactions/${dividendTxID}`);
   });
 
-  it("totals by treatment and by type, one total per currency", async () => {
+  it("PC14: totals by type and treatment in one table, one total per currency", async () => {
     await open();
-    const byTreatment = await screen.findByRole("table", {
-      name: catalogEn["taxYear.income.totals.treatment"],
+    const tax = await screen.findByRole("table", {
+      name: catalogEn["holdings.tax"],
     });
-    expect(rowTexts(byTreatment)).toEqual([
-      "Tax treatment|Gross|Withheld|Net",
-      "Exclusive|R$45.00|R$6.75|R$38.25",
-      "Exempt|R$10.00|R$0.00|R$10.00",
-      `${catalogEn["taxYear.unclassified"]}|$20.00|$3.00|$17.00`,
+    expect(rowTexts(tax)).toEqual([
+      `${catalogEn["holdings.tax.group"]}|Gross|Withheld|Net`,
+      "Dividend · Exempt|R$10.00|R$0.00|R$10.00",
+      "Interest on equity · Exclusive|R$45.00|R$6.75|R$38.25",
+      `royalty · ${catalogEn["taxYear.unclassified"]}|$20.00|$3.00|$17.00`,
     ]);
-    const byType = screen.getByRole("table", {
-      name: catalogEn["taxYear.income.totals.type"],
+  });
+
+  it("PC14: states received, withheld and gross per currency", async () => {
+    await open();
+
+    const figures = await screen.findByRole("region", {
+      name: catalogEn["taxYear.tab.income"],
     });
-    expect(rowTexts(byType).slice(1)).toEqual([
-      "Dividend|R$10.00|R$0.00|R$10.00",
-      "Interest on equity|R$45.00|R$6.75|R$38.25",
-      "royalty|$20.00|$3.00|$17.00",
-    ]);
+    const card = async (label: string) =>
+      (await within(figures).findByText(label)).closest<HTMLElement>(
+        "[data-ui='stat-card']",
+      ) ?? document.body;
+
+    expect(
+      await within(await card(catalogEn["holdings.income.net"])).findByText(
+        "R$48.25 · $17.00",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(await card(catalogEn["holdings.income.withheld"])).getByText(
+        "R$6.75 · $3.00",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(await card(catalogEn["holdings.income.gross"])).getByText(
+        "R$55.00 · $20.00",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("PC14: reads the account by the brokerage that holds it", async () => {
+    await open();
+    const table = await income();
+    const link = await within(table).findAllByRole("link", { name: "XP" });
+
+    expect(link[0]).toHaveAttribute(
+      "href",
+      expect.stringContaining("/accounts/"),
+    );
   });
 
   it("reads the year of the address and says an empty year", async () => {

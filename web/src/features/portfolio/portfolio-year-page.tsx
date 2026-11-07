@@ -14,7 +14,7 @@ import {
 import { Stack } from "@slotted/react/stack";
 import { Tab, TabList, Tabs } from "@slotted/react/tabs";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate, useSearch } from "@tanstack/react-router";
+import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 
 import { useApi } from "@/api/api-context";
 
@@ -29,6 +29,7 @@ import type { YearSearch, YearTab } from "@/features/portfolio/year-search";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
+import { PageBack } from "@/ui/page-back";
 
 // CP-04: a year is stepped one at a time and typed when far away, so the control is a number
 // field with steppers, limited to the range the contract accepts before any request. The year is
@@ -67,6 +68,9 @@ export function PortfolioYearPage() {
     <Page width="full">
       <PageHeader size="lg">
         <PageHeaderTitleArea>
+          <PageBack render={(props) => <Link {...props} to="/portfolio" />}>
+            {t("nav.portfolio")}
+          </PageBack>
           <PageHeaderTitleRow>
             <PageHeaderTitle>
               <PageHeaderHeading>

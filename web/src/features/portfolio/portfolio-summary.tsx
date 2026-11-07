@@ -39,7 +39,7 @@ export function PortfolioSummary({
   const totals = incomeTotals(income.data?.items ?? [], date);
   const write = (m: Money) => fmt.money(m, scale?.(m.currency) ?? 0);
   const inBase = (amount: number) => write({ amount, currency: valueIn ?? "" });
-  const list = (amounts: readonly Money[]) => amounts.map(write).join(" + ");
+  const list = (amounts: readonly Money[]) => amounts.map(write).join(" · ");
   const valueNote = [
     t("holdings.value.note", {
       positions: inBase(summary.positions),

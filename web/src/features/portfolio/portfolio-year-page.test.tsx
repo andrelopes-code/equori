@@ -95,8 +95,8 @@ describe("Tax year of investments", () => {
       name: catalogEn["taxYear.totals.month"],
     });
     expect(rowTexts(byMonth).slice(1)).toEqual([
-      "April|+R$1.00",
-      "March|+R$2.00",
+      "April|R$1,042.04|+R$1.00",
+      "March|R$1,042.04|+R$2.00",
     ]);
   });
 
@@ -118,9 +118,9 @@ describe("Tax year of investments", () => {
         "Result",
         "Tax class",
       ].join("|"),
-      "10/29/2026|MXRF11|XP / XP MXRF11|100|R$1,008.27|R$1,042.04|+R$33.77|Real estate funds",
-      `10/30/2026|PETR4|XP / XP PETR4|5|R$20.00|R$15.00|−R$5.00|${catalogEn["taxYear.unclassified"]}`,
-      `11/03/2026|PETR4|XP / XP PETR4|2|$40.00|$50.00|+$10.00|${catalogEn["taxYear.unclassified"]}`,
+      "10/29/2026|MXRF11|XP|100|R$1,008.27|R$1,042.04|+R$33.77|Real estate funds",
+      `10/30/2026|PETR4|XP|5|R$20.00|R$15.00|−R$5.00|${catalogEn["taxYear.unclassified"]}`,
+      `11/03/2026|PETR4|XP|2|$40.00|$50.00|+$10.00|${catalogEn["taxYear.unclassified"]}`,
     ]);
   });
 
@@ -143,8 +143,8 @@ describe("Tax year of investments", () => {
       name: catalogEn["taxYear.totals.month"],
     });
     expect(rowTexts(byMonth).slice(1)).toEqual([
-      "October|+R$28.77",
-      "November|+$10.00",
+      "October|R$1,057.04|+R$28.77",
+      "November|$50.00|+$10.00",
     ]);
     const byClass = screen.getByRole("table", {
       name: catalogEn["taxYear.totals.class"],
@@ -154,6 +154,55 @@ describe("Tax year of investments", () => {
       `${catalogEn["taxYear.unclassified"]}|−R$5.00`,
       `${catalogEn["taxYear.unclassified"]}|+$10.00`,
     ]);
+  });
+
+  it("PC15: states the result of the year, the amount sold and the sales", async () => {
+    await renderApp("/portfolio/year", {
+      fetch: taxYearApi([]),
+      today: "2026-10-24",
+    });
+    const card = async (label: string) =>
+      (await screen.findByText(label)).closest<HTMLElement>(
+        "[data-ui='stat-card']",
+      ) ?? document.body;
+
+    expect(
+      await within(await card(catalogEn["holdings.sales.result"])).findByText(
+        "+R$28.77 · +$10.00",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(await card(catalogEn["holdings.sales.sold"])).getByText(
+        "R$1,057.04 · $50.00",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(await card(catalogEn["holdings.sales.count"])).getByText("3"),
+    ).toBeInTheDocument();
+  });
+
+  it("PC13: names the page and draws its way back", async () => {
+    await renderApp("/portfolio/year?year=2025", {
+      fetch: taxYearApi([]),
+      today: "2026-10-24",
+    });
+
+    expect(
+      await screen.findByRole("heading", {
+        name: catalogEn["taxYear.title"].replace("{year}", "2025"),
+      }),
+    ).toBeInTheDocument();
+    const header = screen
+      .getByRole("heading", {
+        name: catalogEn["taxYear.title"].replace("{year}", "2025"),
+      })
+      .closest<HTMLElement>('[data-ui="page-header"]');
+
+    expect(
+      within(header ?? document.body).getByRole("link", {
+        name: catalogEn["nav.portfolio"],
+      }),
+    ).toHaveAttribute("href", "/portfolio");
   });
 
   it("opens the year of the address and steps it with the selector", async () => {

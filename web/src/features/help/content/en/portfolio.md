@@ -28,4 +28,4 @@ Record buys, sales and income with the buttons above the list.
 
 ## The year
 
-In [Income and sales](/portfolio/year), the **Gain or loss on sales** tab lists each sale of the year with its cost and result. The **Income** tab lists dividends, interest and other payments, with the gross amount, what was withheld and the net.
+In [Income and sales](/portfolio/year), the **Gain or loss on sales** tab opens with the result of the year, the amount sold and the number of sales. The amount sold per month helps you check a monthly tax limit, which equori does not compute. The **Income** tab opens with what you received, the tax withheld and the gross amount, shows what came in by month and by investment, and splits the totals by type and tax treatment for your tax return. Every sale and payment is in the lists below.

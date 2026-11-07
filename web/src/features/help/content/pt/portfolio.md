@@ -28,4 +28,4 @@ Registre compras, vendas e proventos pelos botões acima da lista.
 
 ## O ano
 
-Em [Proventos e vendas](/portfolio/year), a aba **Lucro ou prejuízo nas vendas** lista cada venda do ano com o custo e o resultado. A aba **Rendimentos** lista dividendos, juros e outros pagamentos, com o valor bruto, o retido e o líquido.
+Em [Proventos e vendas](/portfolio/year), a aba **Lucro ou prejuízo nas vendas** abre com o resultado do ano, o total vendido e o número de vendas. O total vendido por mês serve para conferir um limite mensal de isenção, que o equori não calcula. A aba **Proventos** abre com o que você recebeu, o imposto retido e o valor bruto, mostra quanto entrou por mês e por investimento, e separa os totais por tipo e tratamento fiscal para o imposto de renda. Cada venda e cada pagamento aparecem nas listas abaixo.
