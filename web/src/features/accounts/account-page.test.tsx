@@ -139,6 +139,27 @@ describe("AccountPage", () => {
     expect(within(ipca).getByText("8.10%")).toBeInTheDocument();
   });
 
+  it("draws the figures of the yield on the page's ground, not a card inside a card (A208 R17)", async () => {
+    await renderApp(`/accounts/${reserveID}`, {
+      fetch: api({
+        "GET /api/v1/reports/return": () =>
+          json(200, {
+            annual_bp: 1500,
+            flows: [],
+            opening: money(1000000),
+            closing: money(1151700),
+            profile: "rate",
+            period_bp: 1490,
+          }),
+      }),
+    });
+    const section = await screen.findByRole("region", {
+      name: catalogEn["portfolio.yield.figure"],
+    });
+
+    expect(section).not.toHaveAttribute("data-ground", "surface");
+  });
+
   it("states what the profile means and what was left out under the groups (A208 R17)", async () => {
     await renderApp(`/accounts/${reserveID}`, {
       fetch: api({

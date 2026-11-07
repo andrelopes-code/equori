@@ -54,7 +54,7 @@ export function AccountYieldSection({ accountId }: AccountYieldSectionProps) {
   const index = report.benchmark && indexName(report.benchmark.index);
 
   return (
-    <Section ground="surface" size="sm">
+    <Section size="sm">
       <SectionHeader>
         <SectionTitle>
           <SectionHeading>{t("portfolio.yield.figure")}</SectionHeading>
