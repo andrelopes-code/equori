@@ -50,7 +50,7 @@ describe("theme file", () => {
       step: "standard",
       borders: "subtle",
       shadows: "soft",
-      chart: "spectrum",
+      chart: "accent",
     });
   });
 

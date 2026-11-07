@@ -41,7 +41,7 @@ describe("surface values", () => {
       step: "standard",
       borders: "subtle",
       shadows: "soft",
-      chart: "spectrum",
+      chart: "accent",
       contrast: "standard",
     });
   });
