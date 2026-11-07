@@ -30,6 +30,7 @@ interface AssetsAllocationProps {
   valueIn: string | undefined;
   by: AllocationBy;
   onBy: (by: AllocationBy) => void;
+  onBase: (base: string) => void;
 }
 
 // PC21: every asset account at a date, grouped by type, currency or institution. The portfolio
@@ -39,6 +40,7 @@ export function AssetsAllocation({
   valueIn,
   by,
   onBy,
+  onBase,
 }: AssetsAllocationProps) {
   const t = useT();
   const api = useApi();
@@ -92,6 +94,8 @@ export function AssetsAllocation({
           <PortfolioProblem
             error={allocation.error}
             currency={valueIn}
+            date={date}
+            onBase={onBase}
             onRetry={() => void allocation.refetch()}
           />
         )}

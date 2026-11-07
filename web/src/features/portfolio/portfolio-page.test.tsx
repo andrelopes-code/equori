@@ -253,7 +253,7 @@ describe("Portfolio page", () => {
     const fetch = portfolioApi({
       "GET /api/v1/positions": () => json(200, { items: [] }),
       [`GET /api/v1/accounts/${cashID}/balance`]: () =>
-        json(200, { balance: brl(0) }),
+        json(200, { balance: brl(0), value: brl(0) }),
     });
     await renderApp("/portfolio", { fetch });
 
@@ -279,6 +279,113 @@ describe("Portfolio page", () => {
     );
   });
 
+  it("PC4: reads the cash in the valuation currency, not in the account's", async () => {
+    const usd = (amount: number) => ({ amount, currency: "USD" });
+    const fetch = portfolioApi({
+      "GET /api/v1/positions": () =>
+        json(200, {
+          items: [
+            {
+              account_id: cashID,
+              instrument: "PETR4",
+              quantity: { amount: 5, currency: "PETR4" },
+              cost_basis: brl(1500),
+              market_value: usd(300),
+            },
+          ],
+        }),
+      [`GET /api/v1/accounts/${cashID}/balance`]: () =>
+        json(200, { balance: brl(40000), value: usd(7000) }),
+    });
+    await renderApp("/portfolio?value_in=USD", { fetch });
+    const card = await figure(catalogEn["holdings.value"]);
+
+    await within(card).findByText("$73.00");
+    expect(card.textContent).toContain(
+      catalogEn["holdings.value.note"]
+        .replace("{positions}", "$3.00")
+        .replace("{cash}", "$70.00"),
+    );
+  });
+
+  it("PC23: says the gain reads in the currency of the cost, with a way there", async () => {
+    const fetch = portfolioApi({
+      "GET /api/v1/positions": () =>
+        json(200, {
+          items: [
+            {
+              account_id: cashID,
+              instrument: "PETR4",
+              quantity: { amount: 5, currency: "PETR4" },
+              cost_basis: brl(1500),
+              market_value: { amount: 300, currency: "USD" },
+            },
+          ],
+        }),
+    });
+    await renderApp("/portfolio?value_in=USD", { fetch });
+    const card = await figure(catalogEn["holdings.gain"]);
+
+    expect(
+      await within(card).findByText(
+        catalogEn["holdings.gain.elsewhere"].replace("{currency}", "BRL"),
+      ),
+    ).toBeInTheDocument();
+    expect(card.textContent).not.toContain("$0.00");
+    expect(
+      within(card).getByRole("link", {
+        name: catalogEn["holdings.missing.inBase"].replace("{base}", "BRL"),
+      }),
+    ).toHaveAttribute("href", "/portfolio");
+  });
+
+  it("PC24: reads the income of the tax year that holds the valuation date", async () => {
+    const asked: (string | null)[] = [];
+    const fetch = portfolioApi({
+      "GET /api/v1/income-events": (req) => {
+        const year = new URL(req.url).searchParams.get("year");
+        asked.push(year);
+        return json(200, {
+          from: `${year ?? ""}-04-06`,
+          to: `${String(Number(year) + 1)}-04-05`,
+          items:
+            year === "2025"
+              ? [{ date: "2025-12-01", gross: brl(1000), withheld: brl(0) }]
+              : [],
+        });
+      },
+    });
+    await renderApp("/portfolio?date=2026-02-10", { fetch });
+    const card = await figure(
+      catalogEn["holdings.income"].replace("{year}", "2025"),
+    );
+
+    await within(card).findByText("R$10.00");
+    expect(asked).toEqual(["2026", "2025"]);
+  });
+
+  it("PC22: offers the way out when the positions cannot be valued at the date", async () => {
+    const fetch = portfolioApi({
+      "GET /api/v1/positions": () => problem(422, "price_missing"),
+    });
+    const { router } = await renderApp(
+      "/portfolio?value_in=USD&date=2025-11-07",
+      {
+        fetch,
+      },
+    );
+
+    await userEvent.setup().click(
+      await screen.findByRole("button", {
+        name: catalogEn["holdings.missing.inBase"].replace("{base}", "BRL"),
+      }),
+    );
+
+    await waitFor(() => {
+      expect(router.state.location.search).not.toHaveProperty("value_in");
+    });
+  });
+
   it("asks at the date of the address and in the chosen currency", async () => {
     const positions: URLSearchParams[] = [];
     const balances: URLSearchParams[] = [];
@@ -289,7 +396,10 @@ describe("Portfolio page", () => {
       },
       [`GET /api/v1/accounts/${cashID}/balance`]: (req) => {
         balances.push(new URL(req.url).searchParams);
-        return json(200, { balance: { amount: 0, currency: "USD" } });
+        return json(200, {
+          balance: brl(0),
+          value: { amount: 0, currency: "USD" },
+        });
       },
     });
     await renderApp("/portfolio?date=2026-09-30&value_in=USD", { fetch });
@@ -327,7 +437,7 @@ describe("Portfolio page", () => {
           closing: eur(0),
         }),
       [`GET /api/v1/accounts/${cashID}/balance`]: () =>
-        json(200, { balance: eur(0) }),
+        json(200, { balance: eur(0), value: eur(0) }),
       "GET /api/v1/positions": () =>
         json(200, {
           items: [

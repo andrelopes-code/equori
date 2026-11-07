@@ -25,6 +25,11 @@ export function ReturnFigures({ report }: ReturnFiguresProps) {
   const groups = yieldGroups(report, t, tag);
   const period = report.period_bp;
   const lone = period ?? report.annual_bp;
+  const loneLabel = t(
+    period === undefined
+      ? "holdings.return.personal"
+      : "holdings.return.period",
+  );
 
   return (
     <Stack gap={4}>
@@ -37,13 +42,9 @@ export function ReturnFigures({ report }: ReturnFiguresProps) {
       )}
 
       {groups.length === 0 && (
-        <FigureGrid label={t("holdings.return")}>
+        <FigureGrid label={loneLabel}>
           <FigureCard
-            label={t(
-              period === undefined
-                ? "holdings.return.personal"
-                : "holdings.return.period",
-            )}
+            label={loneLabel}
             value={formatBasisPoints(lone, tag)}
             note=""
             goodWhen="none"

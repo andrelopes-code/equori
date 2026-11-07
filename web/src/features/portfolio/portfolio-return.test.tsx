@@ -317,16 +317,132 @@ describe("Portfolio return", () => {
     ).toBeInTheDocument();
   });
 
-  it("states a missing price in the valuation currency", async () => {
+  const usdPrice = (date: string) => ({
+    instrument: "USD",
+    quote_instrument: "BRL",
+    date,
+    value: "5.50",
+    source: "manual",
+  });
+
+  it("PC22: says which rate is missing, from when it exists, and starts the period there", async () => {
+    const fetch = portfolioApi({
+      "GET /api/v1/reports/return": (req) =>
+        new URL(req.url).searchParams.get("from") === "2026-09-25"
+          ? json(200, plainReturn)
+          : problem(422, "price_missing"),
+      "GET /api/v1/prices": () =>
+        json(200, {
+          items: [usdPrice("2026-10-01"), usdPrice("2026-09-24")],
+        }),
+    });
+    const { router } = await renderApp("/portfolio?value_in=USD", {
+      fetch,
+      today: "2026-10-24",
+    });
+
+    expect(
+      await screen.findByText(
+        catalogEn["holdings.missing.starts"]
+          .replaceAll("{currency}", "USD")
+          .replaceAll("{base}", "BRL")
+          .replace("{first}", "09/24/2026")
+          .replace("{from}", "10/25/2025"),
+      ),
+    ).toBeInTheDocument();
+
+    await userEvent.setup().click(
+      screen.getByRole("button", {
+        name: catalogEn["holdings.missing.fromFirst"].replace(
+          "{date}",
+          "09/25/2026",
+        ),
+      }),
+    );
+
+    await waitFor(() => {
+      expect(router.state.location.search).toMatchObject({
+        from: "2026-09-25",
+      });
+    });
+    expect(
+      await within(await performance()).findByText("5.00%"),
+    ).toBeInTheDocument();
+  });
+
+  it("PC22: goes back to the base currency and links to the rates to record", async () => {
+    const fetch = portfolioApi({
+      "GET /api/v1/reports/return": () => problem(422, "price_missing"),
+      "GET /api/v1/prices": () => json(200, { items: [] }),
+    });
+    const { router } = await renderApp("/portfolio?value_in=USD", {
+      fetch,
+      today: "2026-10-24",
+    });
+
+    expect(
+      await screen.findByText(
+        catalogEn["holdings.missing.none"]
+          .replace("{currency}", "USD")
+          .replaceAll("{base}", "BRL")
+          .replace("{from}", "10/25/2025")
+          .replace("{to}", "10/24/2026"),
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: catalogEn["holdings.missing.record"] }),
+    ).toHaveAttribute("href", "/instruments/USD");
+
+    await userEvent.setup().click(
+      screen.getByRole("button", {
+        name: catalogEn["holdings.missing.inBase"].replace("{base}", "BRL"),
+      }),
+    );
+
+    await waitFor(() => {
+      expect(router.state.location.search).not.toHaveProperty("value_in");
+    });
+  });
+
+  it("PC22: in the base currency, says a price of an investment is missing", async () => {
     const fetch = portfolioApi({
       "GET /api/v1/reports/return": () => problem(422, "price_missing"),
     });
-    await renderApp("/portfolio?value_in=USD", { fetch });
-    const message = catalogEn["portfolio.priceMissing"].replace(
-      "{currency}",
-      "USD",
+    await renderApp("/portfolio", { fetch });
+
+    expect(
+      await screen.findByText(catalogEn["holdings.missing.own"]),
+    ).toBeInTheDocument();
+  });
+
+  it("names the index the report compares with, whichever the region has", async () => {
+    const fetch = portfolioApi({
+      "GET /api/v1/reports/return": () =>
+        json(200, {
+          ...marketReturn,
+          benchmark: { ...marketReturn.benchmark, index: "sofr" },
+          inflation: undefined,
+        }),
+    });
+    const { container } = await renderApp("/portfolio", { fetch });
+    const section = await performance();
+
+    await within(section).findByText(
+      catalogEn["portfolio.yield.group.index"].replace("{index}", "SOFR"),
     );
-    expect(await screen.findAllByText(message)).toHaveLength(1);
+    expect(container.textContent).not.toMatch(/CDI|IPCA/);
+  });
+
+  it("names no index for a region without one", async () => {
+    const fetch = portfolioApi({
+      "GET /api/v1/reports/return": () =>
+        json(200, { ...plainReturn, period_bp: 480 }),
+    });
+    const { container } = await renderApp("/portfolio", { fetch });
+    const section = await performance();
+
+    await within(section).findByText("4.80%");
+    expect(container.textContent).not.toMatch(/CDI|IPCA|SOFR/);
   });
 
   it("blocks a period above 366 days without asking for it", async () => {

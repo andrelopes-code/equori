@@ -1,11 +1,8 @@
 import { Link } from "@slotted/react/link";
-import { useQuery } from "@tanstack/react-query";
 
-import { useApi } from "@/api/api-context";
 import type { components } from "@/api/schema.gen";
-import { incomeEventsQuery } from "@/features/portfolio/api";
 import type { HoldingsSummary } from "@/features/portfolio/portfolio-holdings";
-import { incomeTotals } from "@/features/portfolio/year-income";
+import { usePortfolioIncome } from "@/features/portfolio/use-portfolio-income";
 import { useScale } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
@@ -19,6 +16,7 @@ interface PortfolioSummaryProps {
   summary: HoldingsSummary;
   date: string;
   valueIn: string | undefined;
+  base: string | undefined;
   pending: boolean;
 }
 
@@ -27,16 +25,15 @@ export function PortfolioSummary({
   summary,
   date,
   valueIn,
+  base,
   pending,
 }: PortfolioSummaryProps) {
   const t = useT();
-  const api = useApi();
   const fmt = useMoneyFormat();
   const scale = useScale();
-  const year = Number(date.slice(0, 4));
-  const income = useQuery(incomeEventsQuery(api, year));
+  const income = usePortfolioIncome(date);
 
-  const totals = incomeTotals(income.data?.items ?? [], date);
+  const { totals, year } = income;
   const write = (m: Money) => fmt.money(m, scale?.(m.currency) ?? 0);
   const inBase = (amount: number) => write({ amount, currency: valueIn ?? "" });
   const list = (amounts: readonly Money[]) => amounts.map(write).join(" · ");
@@ -55,10 +52,16 @@ export function PortfolioSummary({
       ? [t("holdings.gain.mixed", { count: summary.mixed })]
       : []),
   ].join(" · ");
+  // PC23: with no position whose cost and value share a currency, no gain can be stated here.
+  const gainElsewhere = summary.cost === 0 && summary.mixed > 0;
+  const paidElsewhere = totals.net.some((m) => m.currency !== valueIn);
   const incomeNote =
     totals.net.length === 0
       ? t("holdings.income.none")
-      : t("holdings.income.note", { withheld: list(totals.withheld) });
+      : [
+          t("holdings.income.note", { withheld: list(totals.withheld) }),
+          ...(paidElsewhere ? [t("holdings.income.original")] : []),
+        ].join(" · ");
 
   return (
     <FigureGrid label={t("holdings.summary")}>
@@ -71,12 +74,37 @@ export function PortfolioSummary({
       />
       <FigureCard
         label={t("holdings.gain")}
-        value={fmt.signed(
-          { amount: summary.gain, currency: valueIn ?? "" },
-          scale?.(valueIn ?? "") ?? 0,
-        )}
-        note={gainNote}
+        value={
+          gainElsewhere
+            ? undefined
+            : fmt.signed(
+                { amount: summary.gain, currency: valueIn ?? "" },
+                scale?.(valueIn ?? "") ?? 0,
+              )
+        }
+        note={
+          gainElsewhere
+            ? t("holdings.gain.elsewhere", { currency: base ?? "" })
+            : gainNote
+        }
         loading={pending}
+        {...(gainElsewhere
+          ? {
+              action: (
+                <Link
+                  render={routeTo({
+                    to: "/portfolio",
+                    search: (previous) => ({
+                      ...previous,
+                      value_in: undefined,
+                    }),
+                  })}
+                >
+                  {t("holdings.missing.inBase", { base: base ?? "" })}
+                </Link>
+              ),
+            }
+          : {})}
         {...(summary.gainFraction === undefined
           ? {}
           : { delta: summary.gainFraction })}
@@ -86,7 +114,7 @@ export function PortfolioSummary({
         value={totals.net.length === 0 ? inBase(0) : list(totals.net)}
         note={incomeNote}
         goodWhen="none"
-        loading={pending || income.isPending}
+        loading={pending || income.pending}
         action={
           <Link
             render={routeTo({

@@ -43,7 +43,6 @@ export const portfolioEn = {
   "portfolio.emptyHint":
     "Record a trade in a brokerage account to see it here.",
   "portfolio.valueIn": "Valuation currency",
-  "portfolio.priceMissing": "A price is missing to value in {currency}.",
   "portfolio.by.type": "Type",
   "portfolio.by.currency": "Currency",
   "portfolio.by.institution": "Institution",

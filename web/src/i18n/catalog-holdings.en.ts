@@ -43,6 +43,21 @@ export const holdingsEn = {
   "holdings.sales.count": "Sales",
   "holdings.sales.count.note": "In {months} months",
   "holdings.sales.monthSold": "Sold",
+  "holdings.gain.elsewhere":
+    "The cost is in {currency}, so the gain only reads in that currency.",
+  "holdings.income.original": "In the currency it was paid in",
+  "holdings.missing.title": "This cannot be valued in {currency}",
+  "holdings.missing.starts":
+    "The recorded {currency} rates in {base} start on {first}, after the start of the period, {from}. Start the period later, read it in {base}, or record the rates that are missing.",
+  "holdings.missing.none":
+    "No {currency} rate in {base} is recorded from {from} to {to}. Read it in {base} or record the rates that are missing.",
+  "holdings.missing.until":
+    "No {currency} rate in {base} is recorded up to {date}. Read it in {base} or record the rates that are missing.",
+  "holdings.missing.own":
+    "An investment has no price on a date this reading needs. Record it on the investment's page, or import a file of prices.",
+  "holdings.missing.fromFirst": "Start on {date}",
+  "holdings.missing.inBase": "Read in {base}",
+  "holdings.missing.record": "Record rates",
   "holdings.where": "Where the money is",
   "holdings.where.note":
     "Investments and brokerage cash. Savings and reserves are on Accounts.",

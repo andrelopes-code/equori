@@ -176,6 +176,7 @@ export function NetWorthTab({
         valueIn={valueIn}
         by={assetsBy}
         onBy={onAssetsBy}
+        onBase={onValueIn}
       />
 
       <NetWorthTable

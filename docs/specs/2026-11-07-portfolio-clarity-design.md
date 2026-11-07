@@ -40,7 +40,7 @@ A reader opens the portfolio to answer three questions: how much do I have, how 
 
 **PC3 Holdings.** The rows of the page are a pure function of positions, accounts, instruments and cash balances (`portfolio-holdings.ts`). Each row has a kind (`position`, `cash`), the type, currency and institution it groups under, and its share of the valued total by `sharesBP`. Every share on the page comes from it, so the shares of a group add up to the group's bar.
 
-**PC4 Cash.** A cash row is an asset account of kind `brokerage` whose currency is a currency instrument and which has no child account, with a nonzero balance read through `/accounts/{id}/balance` at the valuation date in the valuation currency. A failed read leaves that row without a value and counted as unpriced. Its type is the group `cash`, "Brokerage cash".
+**PC4 Cash.** A cash row is an asset account of kind `brokerage` whose currency is a currency instrument and which has no child account, with a nonzero `value` read through `/accounts/{id}/balance` at the valuation date in the valuation currency (`balance` stays in the account's own currency). A failed read leaves that row without a value and counted as unpriced. Its type is the group `cash`, "Brokerage cash".
 
 **PC5 Grouping.** One control, "Group by" (type, currency, institution), held in `by` in the address, drives the bars and the list. Grouping by account and by investment is removed: each security is an account of its own, so both drew one row per group.
 
@@ -92,6 +92,14 @@ A reader opens the portfolio to answer three questions: how much do I have, how 
 
 **PC21 Allocation.** The net worth tab of Reports adds "Where your assets are": the table of PC6 over `/reports/allocation` at the last day of the period, by type, currency or institution (`assets_by` in the address), under a heading that states it covers every asset account.
 
+### Valuation and regions
+
+**PC22 A missing price.** `price_missing` says which rate is missing and offers the way out. With a valuation currency other than the base: the rate of that currency in the base, the date its recorded rates start, an action that starts the period the day after that date (the opening value reads the day before), an action back to the base currency, and a link to the currency's page to record rates. In the base currency: an investment lacks a price, with a link to the catalog. The server's detail names the first conversion it could not make, which is the investment and not the rate to record, so the screen does not show it.
+
+**PC23 A gain in another currency.** A cost keeps the currency it was paid in. When no position has cost and value in one currency, the gain figure holds no number: it says the gain reads in the cost's currency and links there. A zero is never drawn for it. Income stays in the currency it was paid in and says so when that is not the valuation currency.
+
+**PC24 Tax year.** The income figure reads the tax year that holds the valuation date. The response states the range of the year asked, so a date before that range reads the year before.
+
 ## Non-goals
 
 - A chart of the portfolio's value over time. No read returns the valued series of the brokerage trees (`/reports/balances` is per account, unvalued). It needs a server read and its own design.
@@ -101,7 +109,7 @@ A reader opens the portfolio to answer three questions: how much do I have, how 
 
 ## Region-dependent values
 
-No new one. The tax class labels are catalog keys with a neutral fallback; the index comes from `benchmark.index`. The 7-day stale price rule is not regional.
+No new extension point. The index and the inflation index come from the report (`benchmark.index`, `inflation.index`, chosen by region on the server), and a region without one states the return alone. The tax year comes from the response of the income read (PC24). Tax class and price source labels are catalog keys with a fallback to the code (`docs/contributing/regions.md`, checklist 5 and 6). The 7-day stale price rule is not regional.
 
 ## Slices
 

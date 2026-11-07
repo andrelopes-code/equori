@@ -176,6 +176,13 @@ export function PortfolioReturn({
           <PortfolioProblem
             error={report.error}
             currency={valueIn}
+            period={{ from, to: asked }}
+            onFrom={(next) => {
+              onChange({ from: next, to: to === date ? undefined : to });
+            }}
+            onBase={() => {
+              onChange({ value_in: undefined });
+            }}
             onRetry={() => void report.refetch()}
           />
         )}

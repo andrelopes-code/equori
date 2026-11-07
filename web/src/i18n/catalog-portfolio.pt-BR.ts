@@ -45,7 +45,6 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
   "portfolio.emptyHint":
     "Registre uma negociação em uma conta de corretora para vê-la aqui.",
   "portfolio.valueIn": "Moeda de avaliação",
-  "portfolio.priceMissing": "Falta um preço para avaliar em {currency}.",
   "portfolio.by.type": "Tipo",
   "portfolio.by.currency": "Moeda",
   "portfolio.by.institution": "Instituição",

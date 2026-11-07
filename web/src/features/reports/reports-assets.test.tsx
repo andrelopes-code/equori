@@ -121,16 +121,33 @@ describe("Reports assets allocation", () => {
     });
   });
 
-  it("states a missing price in the valuation currency", async () => {
+  it("PC22: says which rate is missing at the date and goes back to the base currency", async () => {
     const fetch = api({
       "GET /api/v1/reports/allocation": () => problem(422, "price_missing"),
     });
-    await renderApp("/reports?value_in=USD", { fetch });
+    const { router } = await renderApp("/reports?value_in=USD", {
+      fetch,
+      today: "2026-10-24",
+    });
+
     expect(
       await screen.findByText(
-        catalogEn["portfolio.priceMissing"].replace("{currency}", "USD"),
+        catalogEn["holdings.missing.until"]
+          .replace("{currency}", "USD")
+          .replaceAll("{base}", "BRL")
+          .replace("{date}", "10/24/2026"),
       ),
     ).toBeInTheDocument();
+
+    await userEvent.setup().click(
+      screen.getByRole("button", {
+        name: catalogEn["holdings.missing.inBase"].replace("{base}", "BRL"),
+      }),
+    );
+
+    await waitFor(() => {
+      expect(router.state.location.search).not.toHaveProperty("value_in");
+    });
   });
 
   it("shows the empty state of a date before any posting", async () => {

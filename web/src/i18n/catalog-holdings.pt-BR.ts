@@ -36,7 +36,7 @@ export const holdingsPtBR: Record<keyof typeof holdingsEn, string> = {
   "holdings.income.byMonth": "Recebido por mês",
   "holdings.income.byInvestment": "Recebido por investimento",
   "holdings.income.top": "Os {count} que mais pagaram",
-  "holdings.tax": "Para o imposto de renda",
+  "holdings.tax": "Para a declaração de imposto",
   "holdings.tax.group": "Tipo e tratamento",
   "holdings.sales.result": "Resultado do ano",
   "holdings.sales.result.note": "Valor da venda menos custo médio",
@@ -45,6 +45,21 @@ export const holdingsPtBR: Record<keyof typeof holdingsEn, string> = {
   "holdings.sales.count": "Vendas",
   "holdings.sales.count.note": "Em {months} meses",
   "holdings.sales.monthSold": "Vendido",
+  "holdings.gain.elsewhere":
+    "O custo está em {currency}, então o lucro só é medido nessa moeda.",
+  "holdings.income.original": "Na moeda em que foi pago",
+  "holdings.missing.title": "Não dá para avaliar em {currency}",
+  "holdings.missing.starts":
+    "As cotações de {currency} em {base} registradas começam em {first}, depois do início do período, {from}. Comece o período mais tarde, veja em {base} ou registre as cotações que faltam.",
+  "holdings.missing.none":
+    "Não há cotação de {currency} em {base} registrada de {from} a {to}. Veja em {base} ou registre as cotações que faltam.",
+  "holdings.missing.until":
+    "Não há cotação de {currency} em {base} registrada até {date}. Veja em {base} ou registre as cotações que faltam.",
+  "holdings.missing.own":
+    "Um investimento não tem preço em uma data que esta leitura precisa. Registre o preço na página do investimento ou importe um arquivo de preços.",
+  "holdings.missing.fromFirst": "Começar em {date}",
+  "holdings.missing.inBase": "Ver em {base}",
+  "holdings.missing.record": "Registrar cotações",
   "holdings.where": "Onde está o dinheiro",
   "holdings.where.note":
     "Investimentos e saldo de corretora. Poupança e reservas ficam em Contas.",

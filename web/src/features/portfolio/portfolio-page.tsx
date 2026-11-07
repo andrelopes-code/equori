@@ -13,6 +13,7 @@ import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useApi } from "@/api/api-context";
 import { HoldingsSection } from "@/features/portfolio/holdings-section";
 import { PortfolioHeader } from "@/features/portfolio/portfolio-header";
+import { PortfolioProblem } from "@/features/portfolio/portfolio-problem";
 import { PortfolioReturn } from "@/features/portfolio/portfolio-return";
 import type { SearchPatch } from "@/features/portfolio/portfolio-search";
 import { PortfolioSummary } from "@/features/portfolio/portfolio-summary";
@@ -21,7 +22,6 @@ import { WhereMoneySection } from "@/features/portfolio/where-money-section";
 import { institutionsQuery, settingsQuery } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
-import { QueryError } from "@/ui/query-error";
 
 // PC1: how much there is and what it made, how it performed, where it is, then every row.
 export function PortfolioPage() {
@@ -65,8 +65,13 @@ export function PortfolioPage() {
       <PageBody>
         <Stack gap={6}>
           {positions.isError && (
-            <QueryError
+            <PortfolioProblem
               error={positions.error}
+              currency={valueIn}
+              date={date}
+              onBase={() => {
+                change({ value_in: undefined });
+              }}
               onRetry={() => void positions.refetch()}
             />
           )}
@@ -98,6 +103,7 @@ export function PortfolioPage() {
               summary={summary}
               date={date}
               valueIn={valueIn}
+              base={base}
               pending={pending}
             />
           )}

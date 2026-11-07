@@ -39,7 +39,7 @@ export function useHoldings(date: string, valueIn: string | undefined) {
       pending: results.some((r) => r.isPending),
       balances: results.map((r, i) => ({
         accountID: cashAccounts[i]?.id ?? "",
-        ...(r.data === undefined ? {} : { balance: r.data.balance }),
+        ...(r.data?.value === undefined ? {} : { balance: r.data.value }),
       })),
     }),
   });
