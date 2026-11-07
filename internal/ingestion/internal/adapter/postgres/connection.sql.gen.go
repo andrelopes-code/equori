@@ -582,22 +582,28 @@ UPDATE ingestion_external_account
 SET
     account_id = $1,
     sync_from = $2,
-    ignored = $3
+    ignored = $3,
+    last_synced_on = $4,
+    last_read_at = $5,
+    last_deep_read_on = $6
 WHERE
-    books_id = $4
-    AND connection_id = $5
-    AND id = $6
+    books_id = $7
+    AND connection_id = $8
+    AND id = $9
 RETURNING
     id, books_id, connection_id, external_account_id, type, subtype, name, number_last4, currency, account_id, sync_from, ignored, last_synced_on, balance_on, balance_amount, former_names, last_read_at, last_deep_read_on
 `
 
 type SaveMappingParams struct {
-	AccountID    uuid.NullUUID
-	SyncFrom     *time.Time
-	Ignored      bool
-	BooksID      int64
-	ConnectionID uuid.UUID
-	ID           uuid.UUID
+	AccountID      uuid.NullUUID
+	SyncFrom       *time.Time
+	Ignored        bool
+	LastSyncedOn   *time.Time
+	LastReadAt     *time.Time
+	LastDeepReadOn *time.Time
+	BooksID        int64
+	ConnectionID   uuid.UUID
+	ID             uuid.UUID
 }
 
 func (q *Queries) SaveMapping(ctx context.Context, arg SaveMappingParams) (IngestionExternalAccount, error) {
@@ -605,6 +611,9 @@ func (q *Queries) SaveMapping(ctx context.Context, arg SaveMappingParams) (Inges
 		arg.AccountID,
 		arg.SyncFrom,
 		arg.Ignored,
+		arg.LastSyncedOn,
+		arg.LastReadAt,
+		arg.LastDeepReadOn,
 		arg.BooksID,
 		arg.ConnectionID,
 		arg.ID,

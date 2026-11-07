@@ -231,6 +231,11 @@ func (a ExternalAccount) Apply(m Mapping, target ImportTarget) (ExternalAccount,
 		return a, invalid("account_id", "kind "+target.Kind+" cannot receive a "+a.Subtype+" account")
 	}
 
+	// A209: an earlier start on the same account makes the next sync a first sync from it.
+	if a.AccountID != nil && *a.AccountID == *m.AccountID && a.SyncFrom != nil && m.SyncFrom.Before(*a.SyncFrom) {
+		a.LastSyncedOn, a.LastReadAt, a.LastDeepReadOn = nil, nil, nil
+	}
+
 	a.AccountID, a.SyncFrom, a.Ignored = m.AccountID, m.SyncFrom, false
 
 	return a, nil

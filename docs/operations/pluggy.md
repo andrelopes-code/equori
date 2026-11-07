@@ -78,6 +78,9 @@ one import batch with source `open_finance` (`GET /api/v1/import-batches`):
 
 - The first sync reads from the start date; later syncs read from 30 days before the last
   synced date, through today.
+- Moving the start date of a synced account earlier, on the same ledger account, makes the
+  next sync a first sync from the new date (A209). Lines already imported are ignored. The
+  opening balance stays where it is; the owner moves it to the day before the new date.
 - A line already imported is ignored, or updated when Pluggy changed its status or bill.
 - A line Pluggy stops returning becomes `withdrawn`; its transaction stays.
 - A bank account's balance becomes a balance assertion on the date of the item's last

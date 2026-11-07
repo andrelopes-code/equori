@@ -149,7 +149,16 @@ func (r *Repository) DeleteConnection(ctx context.Context, booksID int64, id uui
 }
 
 func (r *Repository) SaveMapping(ctx context.Context, a domain.ExternalAccount) (domain.ExternalAccount, error) {
-	params := SaveMappingParams{BooksID: a.BooksID, ConnectionID: a.ConnectionID, ID: a.ID, SyncFrom: a.SyncFrom, Ignored: a.Ignored}
+	params := SaveMappingParams{
+		BooksID:        a.BooksID,
+		ConnectionID:   a.ConnectionID,
+		ID:             a.ID,
+		SyncFrom:       a.SyncFrom,
+		Ignored:        a.Ignored,
+		LastSyncedOn:   a.LastSyncedOn,
+		LastReadAt:     a.LastReadAt,
+		LastDeepReadOn: a.LastDeepReadOn,
+	}
 	if a.AccountID != nil {
 		params.AccountID = uuid.NullUUID{UUID: *a.AccountID, Valid: true}
 	}

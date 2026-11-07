@@ -201,6 +201,47 @@ func TestSyncBankAccount(t *testing.T) {
 	}
 }
 
+// A209: moving the start date of a synced account earlier makes the next sync a first sync
+// from the new date; lines already stored are ignored, and the same date again changes nothing.
+func TestSyncReadsHistoryWhenStartMovesEarlier(t *testing.T) {
+	t.Parallel()
+	f := newSyncFixture(t)
+	f.line(pluggy.SubtypeChecking, bankLine("tx-old", "2026-08-15", "-50.00"))
+	f.line(pluggy.SubtypeChecking, bankLine("tx-1", "2026-10-05", "-45.90"))
+	f.mapTo(pluggy.SubtypeChecking, f.checking)
+	f.sync()
+
+	remap := func(syncFrom string) {
+		t.Helper()
+
+		body := map[string]any{"account_id": f.checking, "sync_from": syncFrom}
+
+		r := f.mapAccount(f.h.Client, f.conn.ID, externalAccount(f.conn, pluggy.SubtypeChecking).ID, body)
+		if r.Status != http.StatusOK {
+			t.Fatalf("remap status %d: %s", r.Status, r.Body)
+		}
+	}
+
+	remap("2026-08-01")
+	f.sync()
+
+	b := f.batches(f.checking)[0]
+	if b.PeriodFrom != "2026-08-01" || b.Counts.Received != 2 || b.Counts.Created != 1 || b.Counts.Ignored != 1 {
+		t.Fatalf("history batch = %+v", b)
+	}
+
+	if state, _ := f.recordOf("tx-old"); state != "created" {
+		t.Fatalf("tx-old = %s, want created", state)
+	}
+
+	remap("2026-08-01")
+	f.sync()
+
+	if b := f.batches(f.checking)[0]; b.PeriodFrom != "2026-10-13" {
+		t.Fatalf("batch after the same start date = %+v", b)
+	}
+}
+
 // S55: a line returned with a new id after its old id disappeared matches the existing
 // transaction, although the assertion of the first sync reconciled it (A38).
 func TestSyncWithdrawnLine(t *testing.T) {

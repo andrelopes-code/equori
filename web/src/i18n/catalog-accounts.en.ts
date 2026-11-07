@@ -192,7 +192,7 @@ export const accountsEn = {
   "balanceSheet.status": "Reconciliation",
   "balanceSheet.trend": "Last 90 days",
   "balanceSheet.balance": "Balance",
-  "balanceSheet.yield": "Yield (90 days)",
+  "balanceSheet.yield": "Yield",
   "balanceSheet.closed": "Closed",
   "balanceSheet.groupTotal": "Total",
   "balanceSheet.excluded":
@@ -386,7 +386,8 @@ export const accountsEn = {
   "sync.notSynced":
     "The connection waits for you in {portal}; nothing was synced.",
   "sync.changeStart": "Change start date",
-  "sync.changeStartHint": "Lines dated before this day are not imported.",
+  "sync.changeStartHint":
+    "Lines dated before this day are not imported. An earlier day imports the history from it on the next sync.",
   "sync.stop": "Stop syncing",
   "sync.stopTitle": "Stop syncing {name}",
   "sync.stopHint":

@@ -131,7 +131,10 @@ UPDATE ingestion_external_account
 SET
     account_id = sqlc.narg (account_id),
     sync_from = sqlc.narg (sync_from),
-    ignored = @ignored
+    ignored = @ignored,
+    last_synced_on = sqlc.narg (last_synced_on),
+    last_read_at = sqlc.narg (last_read_at),
+    last_deep_read_on = sqlc.narg (last_deep_read_on)
 WHERE
     books_id = @books_id
     AND connection_id = @connection_id

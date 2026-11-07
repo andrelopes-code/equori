@@ -190,7 +190,7 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "balanceSheet.status": "Conferência",
   "balanceSheet.trend": "Últimos 90 dias",
   "balanceSheet.balance": "Saldo",
-  "balanceSheet.yield": "Rendimento (90 dias)",
+  "balanceSheet.yield": "Rendimento",
   "balanceSheet.closed": "Encerrada",
   "balanceSheet.groupTotal": "Total",
   "balanceSheet.excluded": "{count} contas em outra moeda ficam fora do total",
@@ -385,7 +385,8 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "sync.notSynced":
     "A conexão aguarda você no {portal}; nada foi sincronizado.",
   "sync.changeStart": "Trocar data inicial",
-  "sync.changeStartHint": "Linhas datadas antes deste dia não são importadas.",
+  "sync.changeStartHint":
+    "Linhas datadas antes deste dia não são importadas. Um dia anterior importa o histórico a partir dele na próxima sincronização.",
   "sync.stop": "Parar de sincronizar",
   "sync.stopTitle": "Parar de sincronizar {name}",
   "sync.stopHint":

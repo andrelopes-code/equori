@@ -3,6 +3,8 @@ package domain
 import (
 	"testing"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 func TestSyncWindow(t *testing.T) {
@@ -55,6 +57,64 @@ func TestSyncWindow(t *testing.T) {
 
 			if deep != tt.wantDeep {
 				t.Errorf("deep = %v, want %v", deep, tt.wantDeep)
+			}
+		})
+	}
+}
+
+// A209: an earlier start date on the same ledger account clears the sync state.
+func TestApplyStartDate(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name      string
+		syncFrom  string
+		other     bool
+		wantReset bool
+	}{
+		{"earlier start", "2026-08-01", false, true},
+		{"same start", "2026-10-01", false, false},
+		{"later start", "2026-10-15", false, false},
+		{"earlier start on another account", "2026-08-01", true, false},
+	}
+
+	account := uuid.New()
+	target := ImportTarget{Currency: "BRL", Kind: "checking"}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			start := mustDate(t, "2026-10-01")
+			synced := mustDate(t, "2026-11-18")
+			readAt := synced.Add(10 * time.Hour)
+			a := ExternalAccount{
+				Subtype:        "CHECKING_ACCOUNT",
+				Currency:       "BRL",
+				AccountID:      &account,
+				SyncFrom:       &start,
+				LastSyncedOn:   &synced,
+				LastReadAt:     &readAt,
+				LastDeepReadOn: &synced,
+			}
+
+			mapped := account
+			if tt.other {
+				mapped = uuid.New()
+			}
+
+			from := mustDate(t, tt.syncFrom)
+
+			got, err := a.Apply(Mapping{AccountID: &mapped, SyncFrom: &from}, target)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			reset := got.LastSyncedOn == nil && got.LastReadAt == nil && got.LastDeepReadOn == nil
+			kept := got.LastSyncedOn != nil && got.LastReadAt != nil && got.LastDeepReadOn != nil
+
+			if tt.wantReset && !reset || !tt.wantReset && !kept {
+				t.Fatalf("synced %v, read %v, deep %v", got.LastSyncedOn, got.LastReadAt, got.LastDeepReadOn)
 			}
 		})
 	}
