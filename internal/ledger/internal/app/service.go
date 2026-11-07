@@ -214,6 +214,7 @@ type AccountPatch struct {
 	InstitutionID         *uuid.UUID
 	YieldMode             *domain.YieldMode
 	ExcludedFromLiquidity *bool
+	OpenedOn              *time.Time
 }
 
 func (s *Service) UpdateAccount(ctx context.Context, booksID int64, id uuid.UUID, p AccountPatch) (domain.Account, error) {
@@ -242,6 +243,15 @@ func (s *Service) UpdateAccount(ctx context.Context, booksID int64, id uuid.UUID
 
 		if p.ExcludedFromLiquidity != nil {
 			a.ExcludedFromLiquidity = *p.ExcludedFromLiquidity
+		}
+
+		// A210: a later opening date could strand postings before it.
+		if p.OpenedOn != nil && p.OpenedOn.After(a.OpenedOn) {
+			return validationError("opened_on", "can only move earlier")
+		}
+
+		if p.OpenedOn != nil {
+			a.OpenedOn = *p.OpenedOn
 		}
 
 		if err := s.describeInstrument(ctx, &a); err != nil {

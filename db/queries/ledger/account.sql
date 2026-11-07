@@ -42,6 +42,7 @@ SET
     name = @name,
     parent_id = sqlc.narg (parent_id),
     institution_id = sqlc.narg (institution_id),
+    opened_on = @opened_on,
     closed_on = sqlc.narg (closed_on),
     yield_mode = @yield_mode,
     color = sqlc.narg (color),

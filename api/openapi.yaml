@@ -10001,6 +10001,10 @@ components:
         excluded_from_liquidity:
           type: boolean
           description: Leaves the account out of the liquidity indicator (analytics design 4.3).
+        opened_on:
+          type: string
+          format: date
+          description: Moves the opening date earlier, so history before it can be recorded; a later date is refused (A210).
     Indicators:
       type: object
       required: [currency, months]

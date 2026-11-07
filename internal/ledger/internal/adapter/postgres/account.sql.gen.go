@@ -524,15 +524,16 @@ SET
     name = $1,
     parent_id = $2,
     institution_id = $3,
-    closed_on = $4,
-    yield_mode = $5,
-    color = $6,
-    icon = $7,
-    excluded_from_liquidity = $8,
+    opened_on = $4,
+    closed_on = $5,
+    yield_mode = $6,
+    color = $7,
+    icon = $8,
+    excluded_from_liquidity = $9,
     updated_at = now()
 WHERE
-    books_id = $9
-    AND id = $10
+    books_id = $10
+    AND id = $11
 RETURNING
     id, books_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, color, icon, excluded_from_liquidity
 `
@@ -541,6 +542,7 @@ type UpdateAccountParams struct {
 	Name                  string
 	ParentID              uuid.NullUUID
 	InstitutionID         uuid.NullUUID
+	OpenedOn              time.Time
 	ClosedOn              *time.Time
 	YieldMode             string
 	Color                 *int16
@@ -555,6 +557,7 @@ func (q *Queries) UpdateAccount(ctx context.Context, arg UpdateAccountParams) (L
 		arg.Name,
 		arg.ParentID,
 		arg.InstitutionID,
+		arg.OpenedOn,
 		arg.ClosedOn,
 		arg.YieldMode,
 		arg.Color,

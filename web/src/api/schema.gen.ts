@@ -5632,6 +5632,11 @@ export interface components {
             yield_mode?: "none" | "auto";
             /** @description Leaves the account out of the liquidity indicator (analytics design 4.3). */
             excluded_from_liquidity?: boolean;
+            /**
+             * Format: date
+             * @description Moves the opening date earlier, so history before it can be recorded; a later date is refused (A210).
+             */
+            opened_on?: string;
         };
         Indicators: {
             /** @description The base currency of every amount. */

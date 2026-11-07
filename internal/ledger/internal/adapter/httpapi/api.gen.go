@@ -1163,11 +1163,14 @@ type AccountParent struct {
 // AccountPatch defines model for AccountPatch.
 type AccountPatch struct {
 	// ExcludedFromLiquidity Leaves the account out of the liquidity indicator (analytics design 4.3).
-	ExcludedFromLiquidity *bool                  `json:"excluded_from_liquidity,omitempty"`
-	InstitutionId         *openapi_types.UUID    `json:"institution_id,omitempty"`
-	Name                  *string                `json:"name,omitempty"`
-	ParentId              *openapi_types.UUID    `json:"parent_id,omitempty"`
-	YieldMode             *AccountPatchYieldMode `json:"yield_mode,omitempty"`
+	ExcludedFromLiquidity *bool               `json:"excluded_from_liquidity,omitempty"`
+	InstitutionId         *openapi_types.UUID `json:"institution_id,omitempty"`
+	Name                  *string             `json:"name,omitempty"`
+
+	// OpenedOn Moves the opening date earlier, so history before it can be recorded; a later date is refused (A210).
+	OpenedOn  *openapi_types.Date    `json:"opened_on,omitempty"`
+	ParentId  *openapi_types.UUID    `json:"parent_id,omitempty"`
+	YieldMode *AccountPatchYieldMode `json:"yield_mode,omitempty"`
 }
 
 // AccountPatchYieldMode defines model for AccountPatch.YieldMode.

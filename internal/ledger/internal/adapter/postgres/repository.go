@@ -350,7 +350,7 @@ func (r *Repository) InsertAccount(ctx context.Context, a domain.Account) (domai
 
 func (r *Repository) UpdateAccount(ctx context.Context, a domain.Account) (domain.Account, error) {
 	row, err := r.q.UpdateAccount(ctx, UpdateAccountParams{
-		BooksID: a.BooksID, ID: a.ID, Name: a.Name, ParentID: nullUUID(a.ParentID),
+		BooksID: a.BooksID, ID: a.ID, Name: a.Name, ParentID: nullUUID(a.ParentID), OpenedOn: a.OpenedOn,
 		InstitutionID: nullUUID(a.InstitutionID), ClosedOn: a.ClosedOn, YieldMode: string(a.YieldMode),
 		Color: nullColor(a.Color), Icon: nullString(a.Icon), ExcludedFromLiquidity: a.ExcludedFromLiquidity,
 	})

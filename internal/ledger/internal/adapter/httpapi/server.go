@@ -255,6 +255,10 @@ func (s *Server) UpdateAccount(ctx context.Context, req UpdateAccountRequestObje
 		Name: req.Body.Name, ParentID: req.Body.ParentId, InstitutionID: req.Body.InstitutionId,
 		ExcludedFromLiquidity: req.Body.ExcludedFromLiquidity,
 	}
+	if req.Body.OpenedOn != nil {
+		patch.OpenedOn = &req.Body.OpenedOn.Time
+	}
+
 	if req.Body.YieldMode != nil {
 		mode := domain.YieldMode(*req.Body.YieldMode)
 		patch.YieldMode = &mode
