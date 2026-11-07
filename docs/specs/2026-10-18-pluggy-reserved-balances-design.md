@@ -118,7 +118,9 @@ Recognition is reliable from the observed data under these conditions, all requi
    "Dinheiro retirado <name>" with a positive amount.
 4. `<name>` equals the `name` of exactly one mapped `RESERVED_BALANCE` external account of the
    connection, or, when no mapped reserve holds it as its `name`, one of the `former_names` of
-   exactly one (amendment A94).
+   exactly one (amendment A94). Amendment A212 of `2026-11-07-external-identity-design.md`
+   replaces this condition: names compare by a folded key over every reserve of the connection,
+   within the window of a reused name.
 5. The line date is on or after that external account's `sync_from`.
 
 A recognized line that creates a transaction is recorded as a transfer between the bank account
@@ -247,5 +249,5 @@ reports the new name. Each sync stores the name the item reports for a stored ex
 and appends the previous one to `former_names`; the mapping does not change. A line that names
 the reserve by its new name, or by a former name no mapped reserve holds as its current name,
 is recognized (D4 condition 4). A name the app never stored, such as one changed before the
-connection, stays unrecognized; the owner turns those lines into transfers
-(`POST /transactions/{id}/transfer`, S47). Scenario S90.
+connection, stays unrecognized; that line waits for review (A213), and the owner turns it into a
+transfer (`POST /transactions/{id}/transfer`, S47). Scenario S90.

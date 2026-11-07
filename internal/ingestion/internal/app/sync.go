@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/andrelopes-code/equori/internal/ingestion/internal/domain"
+	"github.com/andrelopes-code/equori/internal/platform/clock"
 )
 
 // SyncConnection syncs every mapped account of a connection now, one batch per account (P6
@@ -134,6 +135,15 @@ func (s *Service) addMissingAccounts(ctx context.Context, agg Aggregator, c *dom
 		known[ext.ExternalID] = ext
 	}
 
+	// A212: a name first listed now began after the previous listing.
+	today := s.today(ctx)
+
+	var previous *time.Time
+	if c.LastSyncedAt != nil {
+		d := dateIn(*c.LastSyncedAt, clock.Location(ctx))
+		previous = &d
+	}
+
 	changed := false
 	for _, a := range listed {
 		if stored, ok := known[a.ExternalID]; ok {
@@ -141,7 +151,7 @@ func (s *Service) addMissingAccounts(ctx context.Context, agg Aggregator, c *dom
 				continue
 			}
 
-			if err := s.repo.RenameExternalAccount(ctx, c.BooksID, stored.ID, a.Name); err != nil {
+			if err := s.repo.RenameExternalAccount(ctx, c.BooksID, stored.ID, a.Name, previous, today); err != nil {
 				return err
 			}
 
@@ -150,7 +160,7 @@ func (s *Service) addMissingAccounts(ctx context.Context, agg Aggregator, c *dom
 			continue
 		}
 
-		a.BooksID, a.ConnectionID = c.BooksID, c.ID
+		a.BooksID, a.ConnectionID, a.NameFrom, a.NameOn = c.BooksID, c.ID, previous, &today
 		if err := s.repo.InsertMissingExternalAccount(ctx, a); err != nil {
 			return err
 		}
@@ -177,6 +187,12 @@ func (s *Service) addMissingAccounts(ctx context.Context, agg Aggregator, c *dom
 // first, unless the read is empty (A146), so that a line returned with a new
 // id finds its released posting (A38); then the lines go through the P4 pipeline, and a
 // bank balance becomes a balance assertion (A42).
+func dateIn(t time.Time, loc *time.Location) time.Time {
+	l := t.In(loc)
+
+	return time.Date(l.Year(), l.Month(), l.Day(), 0, 0, 0, 0, time.UTC)
+}
+
 func (s *Service) syncAccount(ctx context.Context, agg Aggregator, c domain.Connection, ext domain.ExternalAccount, creds domain.Credentials, syncID uuid.UUID) (domain.Batch, error) {
 	accountID := *ext.AccountID
 
@@ -293,7 +309,15 @@ func (s *Service) syncAccount(ctx context.Context, agg Aggregator, c domain.Conn
 
 		assert := s.ledger.AssertSyncedBalance
 		if ext.Subtype == domain.SubtypeReservedBalance {
-			assert = s.ledger.AssertSyncedReserve
+			open, err := s.repo.OpenReserveReviews(ctx, c.BooksID, c.ID)
+			if err != nil {
+				return domain.Batch{}, err
+			}
+
+			// A213: while a line may be this reserve's movement, its difference is not yield.
+			if open == 0 {
+				assert = s.ledger.AssertSyncedReserve
+			}
 		}
 
 		err := assert(ctx, c.BooksID, accountID, *b, target.Currency)
@@ -427,57 +451,23 @@ func fromSyncStart(read domain.AccountRead, syncFrom time.Time) domain.AccountRe
 	return read
 }
 
-// reserveTransfers resolves the reserve a bank line moves money into or out of from the
-// reserve's name (A76), or from a former name that no mapped reserve holds as its current one
-// (A94). A name held by two mapped reserves at the same rank is ambiguous and resolves to
-// none, and so does a line dated before the reserve's start date.
-func (s *Service) reserveTransfers(c domain.Connection, ext domain.ExternalAccount) func(domain.NormalizedRecord) *uuid.UUID {
+// reserveTransfers resolves the reserve a bank line moves money into or out of against every
+// reserved balance of the connection (A212).
+func (s *Service) reserveTransfers(c domain.Connection, ext domain.ExternalAccount) func(domain.NormalizedRecord) domain.ReserveOutcome {
 	if ext.Subtype == domain.SubtypeReservedBalance {
 		return nil
 	}
 
 	var reserves []domain.ExternalAccount
 	for _, x := range c.Accounts {
-		if x.Subtype == domain.SubtypeReservedBalance && x.State() == domain.MappingMapped {
+		if x.Subtype == domain.SubtypeReservedBalance {
 			reserves = append(reserves, x)
 		}
 	}
 
-	byName := reserveNames(reserves, func(x domain.ExternalAccount) []string { return []string{x.Name} })
-
-	former := reserveNames(reserves, func(x domain.ExternalAccount) []string { return x.FormerNames })
-	for name, x := range former {
-		if _, current := byName[name]; !current {
-			byName[name] = x
-		}
+	return func(r domain.NormalizedRecord) domain.ReserveOutcome {
+		return domain.ResolveReserve(r, reserves)
 	}
-
-	return func(r domain.NormalizedRecord) *uuid.UUID {
-		reserve, ok := byName[r.ReserveName]
-		if r.ReserveName == "" || !ok || reserve.AccountID == nil || r.Date.Before(*reserve.SyncFrom) {
-			return nil
-		}
-
-		return reserve.AccountID
-	}
-}
-
-// reserveNames indexes the reserves by the names names returns; a name two reserves hold
-// maps to the zero account, which resolves to none.
-func reserveNames(reserves []domain.ExternalAccount, names func(domain.ExternalAccount) []string) map[string]domain.ExternalAccount {
-	out := map[string]domain.ExternalAccount{}
-	for _, x := range reserves {
-		for _, name := range names(x) {
-			if held, dup := out[name]; dup && held.ID != x.ID {
-				out[name] = domain.ExternalAccount{}
-				continue
-			}
-
-			out[name] = x
-		}
-	}
-
-	return out
 }
 
 // reidentify gives the stored record of a line the line's new external id when the aggregator

@@ -26,3 +26,22 @@ func TestOtherScripts(t *testing.T) {
 		}
 	}
 }
+
+func TestKey(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct{ in, want string }{
+		{"Coração", "coracao"},
+		{"Corac\u0327a\u0303o", "coracao"},
+		{"  CORAÇÃO \u00a0 da   Casa ", "coracao da casa"},
+		{"Сбережения", "сбережения"},
+		{"貯金", "貯金"},
+		{"", ""},
+	}
+
+	for _, tc := range tests {
+		if got := textfold.Key(tc.in); got != tc.want {
+			t.Errorf("Key(%q) = %q, want %q", tc.in, got, tc.want)
+		}
+	}
+}

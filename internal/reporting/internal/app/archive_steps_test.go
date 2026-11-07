@@ -312,8 +312,35 @@ func TestAddCsvReading(t *testing.T) {
 	if string(v9[0].Rows[0]) != `{"account_id":"a"}` {
 		t.Fatalf("the input changed: %q", v9[0].Rows)
 	}
+}
 
-	if ArchiveVersion != 10 {
-		t.Fatalf("ArchiveVersion = %d, want 10", ArchiveVersion)
+func TestAddExternalIdentity(t *testing.T) {
+	t.Parallel()
+
+	v10 := []ArchiveTable{
+		{Name: "ingestion_external_account", Rows: [][]byte{[]byte(`{"id":"e"}`)}},
+		{Name: "planning_schedule", Rows: [][]byte{[]byte(`{"id":"s"}`)}},
+	}
+
+	got, err := addExternalIdentity(v10)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := `{"gone_since":null,"id":"e","name_from":null,"name_on":null}`
+	if len(got) != 2 || string(got[0].Rows[0]) != want {
+		t.Fatalf("ingestion_external_account = %q, want %q", got[0].Rows, want)
+	}
+
+	if string(got[1].Rows[0]) != `{"id":"s"}` {
+		t.Fatalf("planning_schedule = %q, want it unchanged", got[1].Rows)
+	}
+
+	if string(v10[0].Rows[0]) != `{"id":"e"}` {
+		t.Fatalf("the input changed: %q", v10[0].Rows)
+	}
+
+	if ArchiveVersion != 11 {
+		t.Fatalf("ArchiveVersion = %d, want 11", ArchiveVersion)
 	}
 }

@@ -56,7 +56,9 @@ INSERT INTO
         subtype,
         name,
         number_last4,
-        currency
+        currency,
+        name_from,
+        name_on
     )
 VALUES
     (
@@ -67,7 +69,9 @@ VALUES
         @subtype,
         @name,
         sqlc.narg (number_last4),
-        @currency
+        @currency,
+        sqlc.narg (name_from),
+        sqlc.narg (name_on)
     )
 ON CONFLICT (connection_id, external_account_id) DO NOTHING;
 
@@ -76,11 +80,36 @@ ON CONFLICT (connection_id, external_account_id) DO NOTHING;
 UPDATE ingestion_external_account
 SET
     former_names = array_remove(array_append(array_remove(former_names, name), name), @name::text),
-    name = @name
+    name = @name,
+    name_from = sqlc.narg (name_from),
+    name_on = sqlc.narg (name_on)
 WHERE
     books_id = @books_id
     AND id = @id
     AND name <> @name;
+
+-- name: SetExternalAccountGone :exec
+-- A214: the date a listing first lacked the account; null when a listing holds it again.
+UPDATE ingestion_external_account
+SET
+    gone_since = sqlc.narg (gone_since)
+WHERE
+    books_id = @books_id
+    AND id = @id;
+
+-- name: OpenReserveReviews :one
+-- A213: lines of the connection waiting because no reserve resolves them.
+SELECT
+    count(*)
+FROM
+    ingestion_external_record r
+    JOIN ingestion_batch b ON b.id = r.batch_id
+    JOIN ingestion_external_account a ON a.id = b.external_account_id
+WHERE
+    r.books_id = @books_id
+    AND a.connection_id = @connection_id
+    AND r.state = 'needs_review'
+    AND r.review_reason = 'reserve';
 
 -- name: GetConnection :one
 SELECT

@@ -88,8 +88,11 @@ type Repository interface {
 	// AccountFeed reports where the account's institution lines start and end (A103).
 	AccountFeed(ctx context.Context, booksID int64, accountID uuid.UUID) (domain.Feed, error)
 	// RenameExternalAccount stores the name the institution now reports for the external
-	// account and keeps the previous one among its former names (A94).
-	RenameExternalAccount(ctx context.Context, booksID int64, id uuid.UUID, name string) error
+	// account, keeps the previous one among its former names (A94) and dates the new one (A212).
+	RenameExternalAccount(ctx context.Context, booksID int64, id uuid.UUID, name string, from *time.Time, on time.Time) error
+	// OpenReserveReviews counts the connection's lines waiting because no reserve resolves them
+	// (A213).
+	OpenReserveReviews(ctx context.Context, booksID int64, connectionID uuid.UUID) (int64, error)
 	// SaveMapping returns a *domain.FieldError on account_id when another external account
 	// feeds the ledger account.
 	SaveMapping(ctx context.Context, a domain.ExternalAccount) (domain.ExternalAccount, error)

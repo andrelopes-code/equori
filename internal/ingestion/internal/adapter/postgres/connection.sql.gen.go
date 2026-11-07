@@ -106,7 +106,7 @@ func (q *Queries) DeleteConnection(ctx context.Context, arg DeleteConnectionPara
 
 const externalAccountsOf = `-- name: ExternalAccountsOf :many
 SELECT
-    id, books_id, connection_id, external_account_id, type, subtype, name, number_last4, currency, account_id, sync_from, ignored, last_synced_on, balance_on, balance_amount, former_names, last_read_at, last_deep_read_on
+    id, books_id, connection_id, external_account_id, type, subtype, name, number_last4, currency, account_id, sync_from, ignored, last_synced_on, balance_on, balance_amount, former_names, last_read_at, last_deep_read_on, name_from, name_on, gone_since
 FROM
     ingestion_external_account
 WHERE
@@ -150,6 +150,9 @@ func (q *Queries) ExternalAccountsOf(ctx context.Context, arg ExternalAccountsOf
 			&i.FormerNames,
 			&i.LastReadAt,
 			&i.LastDeepReadOn,
+			&i.NameFrom,
+			&i.NameOn,
+			&i.GoneSince,
 		); err != nil {
 			return nil, err
 		}
@@ -279,7 +282,7 @@ VALUES
         $8
     )
 RETURNING
-    id, books_id, connection_id, external_account_id, type, subtype, name, number_last4, currency, account_id, sync_from, ignored, last_synced_on, balance_on, balance_amount, former_names, last_read_at, last_deep_read_on
+    id, books_id, connection_id, external_account_id, type, subtype, name, number_last4, currency, account_id, sync_from, ignored, last_synced_on, balance_on, balance_amount, former_names, last_read_at, last_deep_read_on, name_from, name_on, gone_since
 `
 
 type InsertExternalAccountParams struct {
@@ -324,6 +327,9 @@ func (q *Queries) InsertExternalAccount(ctx context.Context, arg InsertExternalA
 		&i.FormerNames,
 		&i.LastReadAt,
 		&i.LastDeepReadOn,
+		&i.NameFrom,
+		&i.NameOn,
+		&i.GoneSince,
 	)
 	return i, err
 }
@@ -338,7 +344,9 @@ INSERT INTO
         subtype,
         name,
         number_last4,
-        currency
+        currency,
+        name_from,
+        name_on
     )
 VALUES
     (
@@ -349,7 +357,9 @@ VALUES
         $5,
         $6,
         $7,
-        $8
+        $8,
+        $9,
+        $10
     )
 ON CONFLICT (connection_id, external_account_id) DO NOTHING
 `
@@ -363,6 +373,8 @@ type InsertMissingExternalAccountParams struct {
 	Name              string
 	NumberLast4       *string
 	Currency          string
+	NameFrom          *time.Time
+	NameOn            *time.Time
 }
 
 func (q *Queries) InsertMissingExternalAccount(ctx context.Context, arg InsertMissingExternalAccountParams) error {
@@ -375,6 +387,8 @@ func (q *Queries) InsertMissingExternalAccount(ctx context.Context, arg InsertMi
 		arg.Name,
 		arg.NumberLast4,
 		arg.Currency,
+		arg.NameFrom,
+		arg.NameOn,
 	)
 	return err
 }
@@ -515,26 +529,63 @@ func (q *Queries) MarkAccountSynced(ctx context.Context, arg MarkAccountSyncedPa
 	return err
 }
 
+const openReserveReviews = `-- name: OpenReserveReviews :one
+SELECT
+    count(*)
+FROM
+    ingestion_external_record r
+    JOIN ingestion_batch b ON b.id = r.batch_id
+    JOIN ingestion_external_account a ON a.id = b.external_account_id
+WHERE
+    r.books_id = $1
+    AND a.connection_id = $2
+    AND r.state = 'needs_review'
+    AND r.review_reason = 'reserve'
+`
+
+type OpenReserveReviewsParams struct {
+	BooksID      int64
+	ConnectionID uuid.UUID
+}
+
+// A213: lines of the connection waiting because no reserve resolves them.
+func (q *Queries) OpenReserveReviews(ctx context.Context, arg OpenReserveReviewsParams) (int64, error) {
+	row := q.db.QueryRow(ctx, openReserveReviews, arg.BooksID, arg.ConnectionID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const renameExternalAccount = `-- name: RenameExternalAccount :exec
 UPDATE ingestion_external_account
 SET
     former_names = array_remove(array_append(array_remove(former_names, name), name), $1::text),
-    name = $1
+    name = $1,
+    name_from = $2,
+    name_on = $3
 WHERE
-    books_id = $2
-    AND id = $3
+    books_id = $4
+    AND id = $5
     AND name <> $1
 `
 
 type RenameExternalAccountParams struct {
-	Name    string
-	BooksID int64
-	ID      uuid.UUID
+	Name     string
+	NameFrom *time.Time
+	NameOn   *time.Time
+	BooksID  int64
+	ID       uuid.UUID
 }
 
 // A94: the previous name joins the former names; the new name leaves them.
 func (q *Queries) RenameExternalAccount(ctx context.Context, arg RenameExternalAccountParams) error {
-	_, err := q.db.Exec(ctx, renameExternalAccount, arg.Name, arg.BooksID, arg.ID)
+	_, err := q.db.Exec(ctx, renameExternalAccount,
+		arg.Name,
+		arg.NameFrom,
+		arg.NameOn,
+		arg.BooksID,
+		arg.ID,
+	)
 	return err
 }
 
@@ -591,7 +642,7 @@ WHERE
     AND connection_id = $8
     AND id = $9
 RETURNING
-    id, books_id, connection_id, external_account_id, type, subtype, name, number_last4, currency, account_id, sync_from, ignored, last_synced_on, balance_on, balance_amount, former_names, last_read_at, last_deep_read_on
+    id, books_id, connection_id, external_account_id, type, subtype, name, number_last4, currency, account_id, sync_from, ignored, last_synced_on, balance_on, balance_amount, former_names, last_read_at, last_deep_read_on, name_from, name_on, gone_since
 `
 
 type SaveMappingParams struct {
@@ -638,6 +689,30 @@ func (q *Queries) SaveMapping(ctx context.Context, arg SaveMappingParams) (Inges
 		&i.FormerNames,
 		&i.LastReadAt,
 		&i.LastDeepReadOn,
+		&i.NameFrom,
+		&i.NameOn,
+		&i.GoneSince,
 	)
 	return i, err
+}
+
+const setExternalAccountGone = `-- name: SetExternalAccountGone :exec
+UPDATE ingestion_external_account
+SET
+    gone_since = $1
+WHERE
+    books_id = $2
+    AND id = $3
+`
+
+type SetExternalAccountGoneParams struct {
+	GoneSince *time.Time
+	BooksID   int64
+	ID        uuid.UUID
+}
+
+// A214: the date a listing first lacked the account; null when a listing holds it again.
+func (q *Queries) SetExternalAccountGone(ctx context.Context, arg SetExternalAccountGoneParams) error {
+	_, err := q.db.Exec(ctx, setExternalAccountGone, arg.GoneSince, arg.BooksID, arg.ID)
+	return err
 }

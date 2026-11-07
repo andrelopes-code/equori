@@ -19,8 +19,12 @@ type NormalizedRecord struct {
 	Installment  *Installment
 	Category     *SourceCategory
 	BalanceAfter *int64
-	// ReserveName is the reserved balance a bank line moves money into or out of (A76).
-	ReserveName string
+	// ReserveMove says the source states the line moves money between a bank account and a
+	// reserved balance (A211). ReserveExternalID is that balance's external id when the source
+	// relays it; ReserveName is its name otherwise (A76).
+	ReserveMove       bool
+	ReserveExternalID string
+	ReserveName       string
 	// Kind is the type the source states for a card line: KindPayment, KindRefund or empty (A88).
 	Kind string
 }

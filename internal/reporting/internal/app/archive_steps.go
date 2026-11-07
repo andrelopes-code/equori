@@ -9,7 +9,7 @@ import (
 
 // ArchiveVersion is the archive_version this instance writes and the highest it reads
 // (ADR 021). It is the number of steps in archiveSteps plus 1.
-const ArchiveVersion = 10
+const ArchiveVersion = 11
 
 // ArchiveStep migrates the tables of an archive from one version to the next; it is pure and
 // leaves its input unchanged (ADR 021, V3).
@@ -20,7 +20,7 @@ type ArchiveStep func([]ArchiveTable) ([]ArchiveTable, error)
 var archiveSteps = []ArchiveStep{
 	addExcludedFromLiquidity, addBudgetReference, addStatementBasis, dropConversations,
 	addReliableSync, addSavingsTarget, addMatchWindow, addAssistantConfiguration,
-	addCsvReading,
+	addCsvReading, addExternalIdentity,
 }
 
 // migrateArchive applies the steps from version from to the last one, in order.
@@ -120,6 +120,21 @@ func addCsvReading(tables []ArchiveTable) ([]ArchiveTable, error) {
 		var err error
 
 		tables, err = withField(tables, "ingestion_csv_profile", f.field, jsontext.Value(f.value))
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return tables, nil
+}
+
+// addExternalIdentity moves a version 10 archive to version 11, which adds name_from, name_on and
+// gone_since to ingestion_external_account (migration 00091). No earlier row holds a bound.
+func addExternalIdentity(tables []ArchiveTable) ([]ArchiveTable, error) {
+	for _, field := range []string{"name_from", "name_on", "gone_since"} {
+		var err error
+
+		tables, err = withField(tables, "ingestion_external_account", field, jsontext.Value("null"))
 		if err != nil {
 			return nil, err
 		}

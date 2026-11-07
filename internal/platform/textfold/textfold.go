@@ -52,3 +52,9 @@ func Rune(r rune) rune {
 
 // String returns s with every rune folded by Rune.
 func String(s string) string { return strings.Map(Rune, s) }
+
+// Key makes two spellings of one name equal in any region: the Unicode form, the case, the
+// diacritics of a Latin letter and the spacing do not change it.
+func Key(s string) string {
+	return strings.Join(strings.Fields(String(norm.NFC.String(s))), " ")
+}

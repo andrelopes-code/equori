@@ -79,6 +79,8 @@ const (
 	ReviewChanged   = "changed"
 	ReviewRepeated  = "repeated"
 	ReviewGroup     = "group"
+	ReviewReserve   = "reserve"
+	ReviewDuplicate = "duplicate"
 )
 
 // ExternalStatusOf is the aggregator status of a normalized line.

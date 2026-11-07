@@ -29,6 +29,7 @@ func toExternalAccount(row IngestionExternalAccount) domain.ExternalAccount {
 		Currency: row.Currency,
 		Ignored:  row.Ignored, LastSyncedOn: row.LastSyncedOn,
 		LastReadAt: row.LastReadAt, LastDeepReadOn: row.LastDeepReadOn,
+		NameFrom: row.NameFrom, NameOn: row.NameOn, GoneSince: row.GoneSince,
 	}
 	if row.AccountID.Valid {
 		a.AccountID, a.SyncFrom = &row.AccountID.UUID, row.SyncFrom
@@ -84,11 +85,25 @@ func (r *Repository) InsertMissingExternalAccount(ctx context.Context, a domain.
 	return notFound(r.q.InsertMissingExternalAccount(ctx, InsertMissingExternalAccountParams{
 		BooksID: a.BooksID, ConnectionID: a.ConnectionID, ExternalAccountID: a.ExternalID, Type: a.Type, Subtype: a.Subtype,
 		Name: a.Name, NumberLast4: optional(a.NumberLast4), Currency: a.Currency,
+		NameFrom: a.NameFrom, NameOn: a.NameOn,
 	}))
 }
 
-func (r *Repository) RenameExternalAccount(ctx context.Context, booksID int64, id uuid.UUID, name string) error {
-	return r.q.RenameExternalAccount(ctx, RenameExternalAccountParams{BooksID: booksID, ID: id, Name: name})
+func (r *Repository) RenameExternalAccount(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+	name string,
+	from *time.Time,
+	on time.Time,
+) error {
+	return r.q.RenameExternalAccount(ctx, RenameExternalAccountParams{
+		BooksID: booksID, ID: id, Name: name, NameFrom: from, NameOn: &on,
+	})
+}
+
+func (r *Repository) OpenReserveReviews(ctx context.Context, booksID int64, connectionID uuid.UUID) (int64, error) {
+	return r.q.OpenReserveReviews(ctx, OpenReserveReviewsParams{BooksID: booksID, ConnectionID: connectionID})
 }
 
 // withAccounts loads the external accounts of the connections in one query.

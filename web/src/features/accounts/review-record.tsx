@@ -27,6 +27,8 @@ const reasonWords: Record<
   changed: "batch.reason.changed",
   repeated: "batch.reason.repeated",
   group: "batch.reason.group",
+  reserve: "batch.reason.reserve",
+  duplicate: "batch.reason.duplicate",
 };
 
 // The line waiting for review, the transactions it may confirm best first, and the three ways

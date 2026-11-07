@@ -26,6 +26,10 @@ func toExternalAccountAPI(a domain.ExternalAccount) ExternalAccount {
 		out.LastSyncedOn = &openapi_types.Date{Time: *a.LastSyncedOn}
 	}
 
+	if a.GoneSince != nil {
+		out.GoneSince = &openapi_types.Date{Time: *a.GoneSince}
+	}
+
 	return out
 }
 

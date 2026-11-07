@@ -84,7 +84,12 @@ type ExternalAccount struct {
 	Subtype      string
 	Name         string
 	// FormerNames are the names the institution reported before renaming the account (A94).
-	FormerNames  []string
+	FormerNames []string
+	// NameFrom and NameOn bound when the current name began: the last date it was known not to
+	// apply and the date it was first listed; nil when no bound exists (A212).
+	NameFrom, NameOn *time.Time
+	// GoneSince is the date a listing of the item first lacked the account (A214).
+	GoneSince    *time.Time
 	NumberLast4  string
 	Currency     string
 	AccountID    *uuid.UUID

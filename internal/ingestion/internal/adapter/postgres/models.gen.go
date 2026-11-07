@@ -95,6 +95,9 @@ type IngestionExternalAccount struct {
 	FormerNames       []string
 	LastReadAt        *time.Time
 	LastDeepReadOn    *time.Time
+	NameFrom          *time.Time
+	NameOn            *time.Time
+	GoneSince         *time.Time
 }
 
 type IngestionExternalRecord struct {

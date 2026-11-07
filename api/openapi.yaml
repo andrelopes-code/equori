@@ -8056,6 +8056,10 @@ components:
         last_synced_on:
           type: string
           format: date
+        gone_since:
+          type: string
+          format: date
+          description: The date a listing of the item first lacked this account (A214).
     AccountMappingInput:
       type: object
       additionalProperties: false
@@ -8162,8 +8166,8 @@ components:
           description: The last automatic decision of a sync, present while POST /external-records/{id}/undo can revert it (A148).
         review_reason:
           type: string
-          enum: [ambiguous, probable, changed, repeated, group]
-          description: Why the record waits for review (A100, A102, A142, A168).
+          enum: [ambiguous, probable, changed, repeated, group, reserve, duplicate]
+          description: Why the record waits for review (A100, A102, A142, A168, A213, A215).
         group_record_ids:
           type: array
           description: The other lines of the group, while review_reason is group (A168).

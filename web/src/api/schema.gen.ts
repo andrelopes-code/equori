@@ -4639,6 +4639,11 @@ export interface components {
             sync_from?: string;
             /** Format: date */
             last_synced_on?: string;
+            /**
+             * Format: date
+             * @description The date a listing of the item first lacked this account (A214).
+             */
+            gone_since?: string;
         };
         /** @description account_id with sync_from maps the account; ignored true leaves it out of syncs. */
         AccountMappingInput: {
@@ -4700,10 +4705,10 @@ export interface components {
              */
             decision?: "linked" | "followed" | "withdrawn" | "re_identified";
             /**
-             * @description Why the record waits for review (A100, A102, A142, A168).
+             * @description Why the record waits for review (A100, A102, A142, A168, A213, A215).
              * @enum {string}
              */
-            review_reason?: "ambiguous" | "probable" | "changed" | "repeated" | "group";
+            review_reason?: "ambiguous" | "probable" | "changed" | "repeated" | "group" | "reserve" | "duplicate";
             /** @description The other lines of the group, while review_reason is group (A168). */
             group_record_ids?: string[];
             /** @description The candidates as matching scored them, best first (A99, A100). */

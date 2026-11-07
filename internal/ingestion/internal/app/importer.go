@@ -264,12 +264,12 @@ func (s *Service) read(ctx context.Context, f ImportFile, currency money.Currenc
 // importPlan is the state of one importRecords call: the lines, their claimed records and the
 // groups the lines fall into.
 type importPlan struct {
-	batch      *domain.Batch
-	currency   money.Currency
-	sync       bool
-	lines      []domain.NormalizedRecord
-	transferTo func(domain.NormalizedRecord) *uuid.UUID
-	claimed    []Claim
+	batch    *domain.Batch
+	currency money.Currency
+	sync     bool
+	lines    []domain.NormalizedRecord
+	reserve  func(domain.NormalizedRecord) domain.ReserveOutcome
+	claimed  []Claim
 
 	pending []*domain.ExternalRecord
 	updated []domain.ExternalRecord
@@ -288,20 +288,20 @@ type importPlan struct {
 // previous import left received is processed again (P4 amendment A12). In a sync, a stored
 // line the aggregator changed is updated (P6 A36), a withdrawn line returned again is
 // processed again (A38), and a line the ledger refuses waits for review instead of failing
-// the batch. transferTo, when set, names the account a new line is a transfer to (A76).
+// the batch. reserve, when set, resolves the reserved balance a new line moves money to (A212).
 func (s *Service) importRecords(
 	ctx context.Context,
 	batch *domain.Batch,
 	currency money.Currency,
 	lines []domain.NormalizedRecord,
-	transferTo func(domain.NormalizedRecord) *uuid.UUID,
+	reserve func(domain.NormalizedRecord) domain.ReserveOutcome,
 ) error {
 	p := &importPlan{
-		batch:      batch,
-		currency:   currency,
-		sync:       batch.Source == domain.SourceAggregator,
-		lines:      lines,
-		transferTo: transferTo,
+		batch:    batch,
+		currency: currency,
+		sync:     batch.Source == domain.SourceAggregator,
+		lines:    lines,
+		reserve:  reserve,
 	}
 
 	if err := s.claimLines(ctx, p); err != nil {
@@ -417,8 +417,11 @@ func (s *Service) classifyLine(ctx context.Context, p *importPlan, i int) error 
 	p.pending = append(p.pending, rec)
 
 	line := p.lineOf(rec, r)
-	if p.transferTo != nil {
-		line.TransferTo = p.transferTo(r)
+
+	var reserve domain.ReserveOutcome
+	if p.reserve != nil {
+		reserve = p.reserve(r)
+		line.TransferTo = reserve.TransferTo
 	}
 
 	if p.sync && r.Installment != nil && r.Amount < 0 {
@@ -439,7 +442,7 @@ func (s *Service) classifyLine(ctx context.Context, p *importPlan, i int) error 
 		}
 	}
 
-	p.scoring = append(p.scoring, scoredLine{rec: rec, line: line})
+	p.scoring = append(p.scoring, scoredLine{rec: rec, line: line, reserveReview: reserve.Review})
 
 	return nil
 }
@@ -575,10 +578,13 @@ func (p *importPlan) route(assigned []domain.Assignment, repeated map[int]bool, 
 			continue
 		}
 
-		switch a.Zone {
-		case domain.ZoneNew:
+		switch {
+		case a.Zone == domain.ZoneNew && p.scoring[i].reserveReview:
+			// A213: a line no reserve resolves books nothing a balance could turn into yield.
+			rec.State, rec.ReviewReason = domain.StateNeedsReview, domain.ReviewReserve
+		case a.Zone == domain.ZoneNew:
 			p.creates, p.created = append(p.creates, NewLine{RecordID: rec.ID, Line: line}), append(p.created, rec)
-		case domain.ZoneLink:
+		case a.Zone == domain.ZoneLink:
 			p.matches = append(p.matches, Match{RecordID: rec.ID, TransactionID: a.TransactionID, AccountID: rec.AccountID, Pending: line.Pending})
 			p.matched = append(p.matched, rec)
 		default:
@@ -916,8 +922,9 @@ func (s *Service) repeats(
 
 // scoredLine is a line that matching decides: link, review or create.
 type scoredLine struct {
-	rec  *domain.ExternalRecord
-	line Line
+	rec           *domain.ExternalRecord
+	line          Line
+	reserveReview bool
 }
 
 // assign decides the lines by score (A98–A100); the payees of the lines are asked of

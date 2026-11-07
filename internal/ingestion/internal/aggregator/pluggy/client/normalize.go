@@ -56,6 +56,7 @@ func Normalize(t Transaction, a Account, bills map[string]Bill, scale int, loc *
 	}
 
 	if !card {
+		r.ReserveMove = t.OperationType != nil && *t.OperationType == operationReservedTransfer
 		r.ReserveName = reserveName(t, r.Amount)
 	}
 
@@ -121,21 +122,32 @@ const (
 )
 
 // reserveName returns the reserved balance a bank line moves money into (negative amount) or
-// out of (positive amount); the line carries only the reserve's name (A76).
+// out of (positive amount); the line carries only the reserve's name (A76). Case and spacing of
+// the wording do not change its meaning (A212).
 func reserveName(t Transaction, amount int64) string {
 	if t.OperationType == nil || *t.OperationType != operationReservedTransfer {
 		return ""
 	}
 
-	if name, ok := strings.CutPrefix(t.Description, reservedPrefix); ok && amount < 0 {
+	text := strings.Join(strings.Fields(t.Description), " ")
+
+	if name, ok := cutWording(text, reservedPrefix); ok && amount < 0 {
 		return name
 	}
 
-	if name, ok := strings.CutPrefix(t.Description, withdrawnPrefix); ok && amount > 0 {
+	if name, ok := cutWording(text, withdrawnPrefix); ok && amount > 0 {
 		return name
 	}
 
 	return ""
+}
+
+func cutWording(text, wording string) (string, bool) {
+	if len(text) < len(wording) || !strings.EqualFold(text[:len(wording)], wording) {
+		return "", false
+	}
+
+	return text[len(wording):], true
 }
 
 // Date reads a Pluggy date: midnight UTC is that calendar date; any other instant is the

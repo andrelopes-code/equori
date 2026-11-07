@@ -3,6 +3,7 @@ package ingestion_test
 import (
 	"maps"
 	"net/http"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -585,8 +586,8 @@ func reserveTransfers(t *testing.T) (f syncFixture, checking, cofrinho, algum st
 }
 
 // S70: a checking line that names exactly one mapped reserve and is dated on or after its
-// start date is booked as a transfer to the reserve; any other line follows the normal
-// pipeline (D4, A76).
+// start date is booked as a transfer to the reserve; a line dated before it follows the normal
+// pipeline (D4, A76); a line naming no reserve waits for the owner (A213).
 func TestS70ReserveTransfers(t *testing.T) {
 	t.Parallel()
 	f, checking, cofrinho, algum := reserveTransfers(t)
@@ -631,15 +632,17 @@ func TestS70ReserveTransfers(t *testing.T) {
 		}
 	}
 
-	for _, id := range []string{"t-unknown", "t-before"} {
-		got := postings(id)
-		if _, ok := got[cofrinho]; ok {
-			t.Fatalf("postings of %s = %v, want none on a reserve", id, got)
-		}
+	got := postings("t-before")
+	if _, ok := got[cofrinho]; ok {
+		t.Fatalf("postings of t-before = %v, want none on a reserve", got)
+	}
 
-		if _, ok := got[algum]; ok {
-			t.Fatalf("postings of %s = %v, want none on a reserve", id, got)
-		}
+	if _, ok := got[algum]; ok {
+		t.Fatalf("postings of t-before = %v, want none on a reserve", got)
+	}
+
+	if state, tx := f.recordOf("t-unknown"); state != "needs_review" || tx != "" {
+		t.Fatalf("t-unknown is %s with transaction %q, want needs_review", state, tx)
 	}
 
 	f.sync()
@@ -649,8 +652,8 @@ func TestS70ReserveTransfers(t *testing.T) {
 	}
 }
 
-// S70: a name held by two mapped reserves is ambiguous, so a line naming it books no
-// transfer (D4 condition 4, A76).
+// S70: a name held by two mapped reserves is ambiguous, so a line naming it waits for the owner
+// (D4 condition 4, A76, A213).
 func TestS70AmbiguousReserveName(t *testing.T) {
 	t.Parallel()
 	a := newAggregator(t)
@@ -695,15 +698,8 @@ func TestS70AmbiguousReserveName(t *testing.T) {
 
 	f.sync()
 
-	state, tx := f.recordOf("t-ambiguous")
-	if tx == "" {
-		t.Fatalf("record is %s without a transaction", state)
-	}
-
-	for _, p := range f.h.Transaction(tx).Postings {
-		if p.AccountID == first || p.AccountID == second {
-			t.Fatalf("posting %+v on a reserve, want none", p)
-		}
+	if state, tx := f.recordOf("t-ambiguous"); state != "needs_review" || tx != "" {
+		t.Fatalf("record is %s with transaction %q, want needs_review", state, tx)
 	}
 }
 
@@ -808,11 +804,15 @@ func TestS90RenamedReserve(t *testing.T) {
 	}
 }
 
-// A94: a former name that another mapped reserve holds as its current name resolves to that
-// reserve; the renamed reserve keeps its current name.
+// A94, A212: after the window of its current name, a former name that another mapped reserve
+// holds resolves to that reserve; the renamed reserve keeps its current name.
 func TestReserveCurrentNameWinsOverFormerName(t *testing.T) {
 	t.Parallel()
-	a := newAggregator(t)
+
+	var today atomic.Int64
+	today.Store(time.Date(2026, 11, 12, 18, 0, 0, 0, time.UTC).Unix())
+
+	a := newAggregator(t, apitest.Clock(func() time.Time { return time.Unix(today.Load(), 0).UTC() }))
 	it := pluggy.Item{ID: mercadoPagoItem, Status: pluggy.StatusUpdated, LastUpdatedAt: new("2026-11-11T15:00:00.000Z")}
 	it.Connector.Name = "Mercado Pago"
 	a.p.AddItemTo(pluggyClient, it)
@@ -846,8 +846,9 @@ func TestReserveCurrentNameWinsOverFormerName(t *testing.T) {
 	conn := a.connection(a.h.Client, f.conn.ID)
 	mapTo(reservedByName(conn, "Viagem").ID, trip, "2026-11-12")
 
-	a.p.AddTransaction(checkingID, reserveLine("t-trip", "2026-11-12", "Dinheiro reservado Viagem", "-40.00"))
-	a.p.SetItemUpdatedAt(mercadoPagoItem, "2026-11-12T16:00:00.000Z")
+	today.Store(time.Date(2026, 11, 13, 18, 0, 0, 0, time.UTC).Unix())
+	a.p.AddTransaction(checkingID, reserveLine("t-trip", "2026-11-13", "Dinheiro reservado Viagem", "-40.00"))
+	a.p.SetItemUpdatedAt(mercadoPagoItem, "2026-11-13T15:00:00.000Z")
 	f.sync()
 
 	state, tx := f.recordOf("t-trip")
