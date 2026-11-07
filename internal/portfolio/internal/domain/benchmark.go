@@ -10,6 +10,12 @@ const (
 	minPercent = -10.0
 	maxPercent = 10.0
 
+	// MaxPercentErrorBP is the largest PercentErrorBP at which a percent of an index is shown.
+	MaxPercentErrorBP = 500
+
+	// maxCreditGap is the longest gap between two credits that a flow inside does not restart.
+	maxCreditGap = 7 * 24 * time.Hour
+
 	// maxAnnualBP bounds the rate a year AnnualBP returns: 10^7 basis points, 1,000,000%.
 	maxAnnualBP = 1e7
 )
@@ -24,11 +30,52 @@ type Subperiod struct {
 // first (amendment A208 R1). A flow earns from the day after it. ok is false when a gain has no
 // invested base or when a piece loses everything.
 func PeriodFactor(start int64, ends []Subperiod) (factor float64, ok bool) {
+	return periodFactor(start, ends, false)
+}
+
+// RecordedPeriodFactor is PeriodFactor for a tree whose only gain is recorded yield: a piece that
+// starts at 0 holds no money, so its gain contributes a factor of 1 (amendment A208 R20).
+func RecordedPeriodFactor(start int64, ends []Subperiod) (factor float64, ok bool) {
+	return periodFactor(start, ends, true)
+}
+
+// ComparisonStart is A of amendment A208 R20: the first of the credits, moved to the credit that
+// ends the last gap of more than 7 days between two credits that holds a flow. credits are sorted,
+// distinct and not empty.
+func ComparisonStart(credits, flows []time.Time) (start time.Time, restarted bool) {
+	start = credits[0]
+
+	for i := 0; i+1 < len(credits); i++ {
+		before, after := credits[i], credits[i+1]
+		if after.Sub(before) <= maxCreditGap {
+			continue
+		}
+
+		if slices.ContainsFunc(flows, func(f time.Time) bool { return f.After(before) && f.Before(after) }) {
+			start, restarted = after, true
+		}
+	}
+
+	return start, restarted
+}
+
+// PercentErrorBP is the relative bound of the percent of an index, in basis points: each of the
+// credits is rounded to half a minor unit, so the credited yield is off by at most credits / 2 of
+// yield minor units (amendment A208 R22). ok is false without a positive yield.
+func PercentErrorBP(credits int, yield int64) (bp int, ok bool) {
+	if yield <= 0 {
+		return 0, false
+	}
+
+	return int((5000*int64(credits) + yield - 1) / yield), true
+}
+
+func periodFactor(start int64, ends []Subperiod, zeroBase bool) (factor float64, ok bool) {
 	factor = 1
 
 	for _, e := range ends {
 		gain := e.Value - e.Flow - start
-		if start <= 0 && gain != 0 {
+		if start <= 0 && gain != 0 && (!zeroBase || start != 0) {
 			return 0, false
 		}
 

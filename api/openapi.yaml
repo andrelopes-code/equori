@@ -10458,10 +10458,45 @@ components:
           $ref: "#/components/schemas/ReturnBenchmark"
         inflation:
           $ref: "#/components/schemas/ReturnInflation"
+        unavailable_reason:
+          type: string
+          pattern: "^[a-z_]{2,40}$"
+          description: Why benchmark, or its percent_bp and annual_bp, is absent - no_index_for_region, currency_mismatch, nothing_held, no_yield_recorded, single_credit or too_small (amendment A208 R23).
+        excluded:
+          $ref: "#/components/schemas/ReturnExcluded"
+    ReturnExcluded:
+      type: object
+      description: For a tree of cash whose yield is what the ledger records against the Yield account, the income and expense of the period that the comparison treated as flows, not as yield (amendment A208 R19).
+      properties:
+        income:
+          $ref: "#/components/schemas/ReturnExcludedPart"
+        expense:
+          $ref: "#/components/schemas/ReturnExcludedPart"
+    ReturnExcludedPart:
+      type: object
+      required: [amount, categories]
+      properties:
+        amount:
+          $ref: "#/components/schemas/Money"
+        categories:
+          type: array
+          maxItems: 3
+          items:
+            type: string
+          description: The names of the categories that hold most of the amount.
     ReturnBenchmark:
       type: object
-      required: [index, from, until, days, skipped, index_bp]
+      required: [index, from, until, days, skipped, credits, restarted, index_bp]
       properties:
+        credits:
+          type: integer
+          description: For a tree whose yield is recorded, the yield credits the return covers, those after the first credit compared (amendment A208 R20); 0 otherwise.
+        restarted:
+          type: boolean
+          description: True when a flow between two credits more than 7 days apart moved the start of the comparison to the credit after it (amendment A208 R20).
+        percent_error_bp:
+          type: integer
+          description: The relative bound of percent_bp and annual_bp in basis points of themselves, from rounding each credit to the minor unit; percent_bp and annual_bp are absent above 500 (amendment A208 R22).
         index:
           type: string
           pattern: "^[a-z0-9_]{2,40}$"

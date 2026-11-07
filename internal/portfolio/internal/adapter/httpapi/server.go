@@ -182,6 +182,8 @@ func (s *Server) GetReturn(ctx context.Context, req GetReturnRequestObject) (Get
 			Until:     date(b.Until),
 			Days:      b.Days,
 			Skipped:   b.Skipped,
+			Credits:   b.Credits,
+			Restarted: b.Restarted,
 			ReturnBp:  b.ReturnBP,
 			ExcessBp:  b.ExcessBP,
 			IndexBp:   b.IndexBP,
@@ -189,7 +191,17 @@ func (s *Server) GetReturn(ctx context.Context, req GetReturnRequestObject) (Get
 
 			AnnualBp:      b.AnnualBP,
 			IndexAnnualBp: b.IndexAnnualBP,
+
+			PercentErrorBp: b.PercentErrorBP,
 		}
+	}
+
+	if r.UnavailableReason != "" {
+		out.UnavailableReason = &r.UnavailableReason
+	}
+
+	if e := r.Excluded; e != nil {
+		out.Excluded = &ReturnExcluded{Income: excludedOf(e.Income), Expense: excludedOf(e.Expense)}
 	}
 
 	if i := r.Inflation; i != nil {
@@ -204,6 +216,14 @@ func (s *Server) GetReturn(ctx context.Context, req GetReturnRequestObject) (Get
 	}
 
 	return out, nil
+}
+
+func excludedOf(t *app.ExcludedTotal) *ReturnExcludedPart {
+	if t == nil {
+		return nil
+	}
+
+	return &ReturnExcludedPart{Amount: toMoney(t.Amount), Categories: t.Categories}
 }
 
 func (s *Server) GetAllocation(ctx context.Context, req GetAllocationRequestObject) (GetAllocationResponseObject, error) {

@@ -900,13 +900,35 @@ func (r *Repository) TreeFirstPosting(ctx context.Context, booksID int64, accoun
 	return row.FirstOn, row.Found, nil
 }
 
-func (r *Repository) TreeIncomeSpan(ctx context.Context, booksID int64, accountIDs []uuid.UUID, from, to time.Time) (app.IncomeSpan, error) {
-	row, err := r.q.TreeIncomeSpan(ctx, TreeIncomeSpanParams{BooksID: booksID, AccountIds: accountIDs, FromDate: from, ToDate: to})
+func (r *Repository) TreeRecordedYield(ctx context.Context, booksID int64, accountIDs []uuid.UUID, from, to time.Time) (app.RecordedYield, error) {
+	rows, err := r.q.TreeRecordedYield(ctx, TreeRecordedYieldParams{BooksID: booksID, AccountIds: accountIDs, FromDate: from, ToDate: to})
 	if err != nil {
-		return app.IncomeSpan{}, fmt.Errorf("tree income span: %w", err)
+		return app.RecordedYield{}, fmt.Errorf("tree recorded yield: %w", err)
 	}
 
-	return app.IncomeSpan{First: row.FirstOn, Last: row.LastOn, Found: row.Found}, nil
+	var out app.RecordedYield
+
+	for _, row := range rows {
+		value, err := money.New(row.Amount, money.Currency(row.BalancingCurrency))
+		if err != nil {
+			return app.RecordedYield{}, fmt.Errorf("recorded yield of %s: %w", row.Date.Format(time.DateOnly), err)
+		}
+
+		item := app.RecordedItem{Date: row.Date, Value: value, Label: row.Label}
+
+		switch row.Kind {
+		case "flow":
+			out.Flows = append(out.Flows, item)
+		case "credit":
+			out.Credits = append(out.Credits, item)
+		case "income":
+			out.Income = append(out.Income, item)
+		case "expense":
+			out.Expense = append(out.Expense, item)
+		}
+	}
+
+	return out, nil
 }
 
 func (r *Repository) BalanceAt(ctx context.Context, booksID int64, accountID uuid.UUID, date time.Time, basis app.Basis) (int64, error) {

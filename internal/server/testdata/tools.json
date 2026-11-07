@@ -3242,6 +3242,18 @@
             "skipped": {
               "type": "integer",
               "description": "rates of the period left out: days without money, or before a savings account recorded its first yield"
+            },
+            "credits": {
+              "type": "integer",
+              "description": "yield credits the return covers; absent when none"
+            },
+            "restarted": {
+              "type": "boolean",
+              "description": "a deposit or withdrawal between two credits more than 7 days apart moved the start of the comparison to the credit after it"
+            },
+            "percent_error_bp": {
+              "type": "integer",
+              "description": "relative error bound of percent_bp and annual_bp in basis points of themselves, from rounding each credit to the cent"
             }
           },
           "required": [
@@ -3251,6 +3263,85 @@
             "index_bp",
             "days"
           ],
+          "additionalProperties": false
+        },
+        "unavailable_reason": {
+          "type": "string",
+          "description": "for return: why benchmark or its percent is absent - no_index_for_region, currency_mismatch, nothing_held, no_yield_recorded, single_credit or too_small"
+        },
+        "excluded": {
+          "type": "object",
+          "properties": {
+            "income": {
+              "type": "object",
+              "properties": {
+                "amount": {
+                  "type": "object",
+                  "properties": {
+                    "amount": {
+                      "type": "string",
+                      "description": "decimal amount in the instrument's scale, such as -1234.56"
+                    },
+                    "currency": {
+                      "type": "string",
+                      "description": "currency or instrument code"
+                    }
+                  },
+                  "required": [
+                    "amount",
+                    "currency"
+                  ],
+                  "additionalProperties": false
+                },
+                "categories": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": [
+                "amount",
+                "categories"
+              ],
+              "additionalProperties": false
+            },
+            "expense": {
+              "type": "object",
+              "properties": {
+                "amount": {
+                  "type": "object",
+                  "properties": {
+                    "amount": {
+                      "type": "string",
+                      "description": "decimal amount in the instrument's scale, such as -1234.56"
+                    },
+                    "currency": {
+                      "type": "string",
+                      "description": "currency or instrument code"
+                    }
+                  },
+                  "required": [
+                    "amount",
+                    "currency"
+                  ],
+                  "additionalProperties": false
+                },
+                "categories": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": [
+                "amount",
+                "categories"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "description": "for return: income and expense of the period treated as money in or out, not as yield",
           "additionalProperties": false
         },
         "inflation": {

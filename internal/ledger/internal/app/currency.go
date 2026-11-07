@@ -307,21 +307,28 @@ func (s *Service) FirstPosting(ctx context.Context, booksID int64, accountIDs []
 	return s.repo.TreeFirstPosting(ctx, booksID, accountIDs)
 }
 
-// IncomeSpan is the first and the last booked date of the income a tree received from an income
-// account in a range, when Found.
-type IncomeSpan struct {
-	First, Last time.Time
-	Found       bool
+// RecordedItem is an amount of a tree on a date, in the balancing currency of its transaction;
+// Label is the account name of an income or an expense.
+type RecordedItem struct {
+	Date  time.Time
+	Value money.Money
+	Label string
 }
 
-// IncomeSpan reports the first and the last date of the income the accounts and their sub-accounts
-// received in [from, to] (return comparison amendment A208 R18).
-func (s *Service) IncomeSpan(ctx context.Context, booksID int64, accountIDs []uuid.UUID, from, to time.Time) (IncomeSpan, error) {
+// RecordedYield is what the ledger records of a tree over a range (return comparison amendment
+// A208 R19): Flows are the changes of the balance of the tree that are not yield, Credits the yield
+// credited to it, Income and Expense the other income and expense postings of those transactions.
+type RecordedYield struct {
+	Flows, Credits, Income, Expense []RecordedItem
+}
+
+// RecordedYield reads the recorded yield of the accounts and their sub-accounts in [from, to].
+func (s *Service) RecordedYield(ctx context.Context, booksID int64, accountIDs []uuid.UUID, from, to time.Time) (RecordedYield, error) {
 	if err := s.ownAccounts(ctx, booksID, accountIDs); err != nil {
-		return IncomeSpan{}, err
+		return RecordedYield{}, err
 	}
 
-	return s.repo.TreeIncomeSpan(ctx, booksID, accountIDs, from, to)
+	return s.repo.TreeRecordedYield(ctx, booksID, accountIDs, from, to)
 }
 
 func (s *Service) ownAccounts(ctx context.Context, booksID int64, accountIDs []uuid.UUID) error {

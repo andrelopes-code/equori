@@ -345,10 +345,14 @@ WHERE
             tree
     );
 
--- name: TreeIncomeSpan :one
--- The dates of the first and the last income the accounts and their sub-accounts received from an
--- income account in [from_date, to_date] (return comparison amendment A208 R18); found is false,
--- and the dates meaningless, when none did.
+-- name: TreeRecordedYield :many
+-- Return comparison amendment A208 R19: per transaction of [from_date, to_date] that touches the
+-- accounts and their sub-accounts (the tree), by kind. flow is the sum of the weights of the
+-- postings against the tree and against the system Yield account and its sub-accounts, in the
+-- balancing currency of the transaction; a transaction internal to the tree and a pure yield
+-- credit sum to 0 and leave. credit is the yield credited to the tree, the negated weights against
+-- Yield. income and expense are the weights of the other income and expense postings, by account
+-- name.
 WITH RECURSIVE
     tree AS (
         SELECT
@@ -367,34 +371,133 @@ WITH RECURSIVE
         WHERE
             c.books_id = @books_id
     ),
-    income AS (
+    yield AS (
         SELECT
-            p.booked_on AS income_on
+            y.id
         FROM
-            ledger_posting p
-            JOIN ledger_posting o ON o.transaction_id = p.transaction_id
-            AND o.books_id = p.books_id
-            AND NOT o.voided
-            JOIN ledger_account oa ON oa.id = o.account_id
-            AND oa.books_id = o.books_id
-            AND oa.account_class = 'income'
+            ledger_account y
         WHERE
-            p.books_id = @books_id
-            AND NOT p.voided
-            AND p.booked_on BETWEEN @from_date::date AND @to_date::date
-            AND p.account_id IN (
+            y.books_id = @books_id
+            AND y.system_role = 'yield'
+        UNION
+        SELECT
+            c.id
+        FROM
+            ledger_account c
+            JOIN yield ON c.parent_id = yield.id
+        WHERE
+            c.books_id = @books_id
+    ),
+    touched AS (
+        SELECT
+            t.id,
+            t.date,
+            t.balancing_currency
+        FROM
+            ledger_transaction t
+        WHERE
+            t.books_id = @books_id
+            AND t.voided_at IS NULL
+            AND t.date BETWEEN @from_date AND @to_date
+            AND EXISTS (
                 SELECT
-                    id
+                    1
                 FROM
-                    tree
+                    ledger_posting p
+                WHERE
+                    p.transaction_id = t.id
+                    AND NOT p.voided
+                    AND p.account_id IN (
+                        SELECT
+                            id
+                        FROM
+                            tree
+                    )
             )
     )
 SELECT
-    coalesce(min(i.income_on), DATE '0001-01-01')::date AS first_on,
-    coalesce(max(i.income_on), DATE '0001-01-01')::date AS last_on,
-    (count(*) > 0)::boolean AS found
+    'flow'::text AS kind,
+    x.date,
+    x.balancing_currency,
+    ''::text AS label,
+    sum(p.weight)::bigint AS amount
 FROM
-    income i;
+    touched x
+    JOIN ledger_posting p ON p.transaction_id = x.id
+    AND NOT p.voided
+    AND (
+        p.account_id IN (
+            SELECT
+                id
+            FROM
+                tree
+        )
+        OR p.account_id IN (
+            SELECT
+                id
+            FROM
+                yield
+        )
+    )
+GROUP BY
+    x.id,
+    x.date,
+    x.balancing_currency
+HAVING
+    sum(p.weight) <> 0
+UNION ALL
+SELECT
+    'credit'::text,
+    x.date,
+    x.balancing_currency,
+    ''::text,
+    (- sum(p.weight))::bigint
+FROM
+    touched x
+    JOIN ledger_posting p ON p.transaction_id = x.id
+    AND NOT p.voided
+    AND p.account_id IN (
+        SELECT
+            id
+        FROM
+            yield
+    )
+GROUP BY
+    x.id,
+    x.date,
+    x.balancing_currency
+HAVING
+    sum(p.weight) <> 0
+UNION ALL
+SELECT
+    a.account_class::text,
+    x.date,
+    x.balancing_currency,
+    a.name,
+    sum(p.weight)::bigint
+FROM
+    touched x
+    JOIN ledger_posting p ON p.transaction_id = x.id
+    AND NOT p.voided
+    JOIN ledger_account a ON a.id = p.account_id
+    AND a.books_id = @books_id
+    AND a.account_class IN ('income', 'expense')
+    AND a.id NOT IN (
+        SELECT
+            id
+        FROM
+            yield
+    )
+GROUP BY
+    x.id,
+    x.date,
+    x.balancing_currency,
+    a.account_class,
+    a.name
+ORDER BY
+    date,
+    kind,
+    label;
 
 -- name: OwnCategoryMonthlyTotals :many
 -- Budget plan amendment A129: own postings of every category of a class, by month.

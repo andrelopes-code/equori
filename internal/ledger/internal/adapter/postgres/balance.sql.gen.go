@@ -635,83 +635,6 @@ func (q *Queries) TreeFirstPosting(ctx context.Context, arg TreeFirstPostingPara
 	return i, err
 }
 
-const treeIncomeSpan = `-- name: TreeIncomeSpan :one
-WITH RECURSIVE
-    tree AS (
-        SELECT
-            a.id
-        FROM
-            ledger_account a
-        WHERE
-            a.books_id = $1
-            AND a.id = ANY ($2::UUID[])
-        UNION
-        SELECT
-            c.id
-        FROM
-            ledger_account c
-            JOIN tree ON c.parent_id = tree.id
-        WHERE
-            c.books_id = $1
-    ),
-    income AS (
-        SELECT
-            p.booked_on AS income_on
-        FROM
-            ledger_posting p
-            JOIN ledger_posting o ON o.transaction_id = p.transaction_id
-            AND o.books_id = p.books_id
-            AND NOT o.voided
-            JOIN ledger_account oa ON oa.id = o.account_id
-            AND oa.books_id = o.books_id
-            AND oa.account_class = 'income'
-        WHERE
-            p.books_id = $1
-            AND NOT p.voided
-            AND p.booked_on BETWEEN $3::date AND $4::date
-            AND p.account_id IN (
-                SELECT
-                    id
-                FROM
-                    tree
-            )
-    )
-SELECT
-    coalesce(min(i.income_on), DATE '0001-01-01')::date AS first_on,
-    coalesce(max(i.income_on), DATE '0001-01-01')::date AS last_on,
-    (count(*) > 0)::boolean AS found
-FROM
-    income i
-`
-
-type TreeIncomeSpanParams struct {
-	BooksID    int64
-	AccountIds []uuid.UUID
-	FromDate   time.Time
-	ToDate     time.Time
-}
-
-type TreeIncomeSpanRow struct {
-	FirstOn time.Time
-	LastOn  time.Time
-	Found   bool
-}
-
-// The dates of the first and the last income the accounts and their sub-accounts received from an
-// income account in [from_date, to_date] (return comparison amendment A208 R18); found is false,
-// and the dates meaningless, when none did.
-func (q *Queries) TreeIncomeSpan(ctx context.Context, arg TreeIncomeSpanParams) (TreeIncomeSpanRow, error) {
-	row := q.db.QueryRow(ctx, treeIncomeSpan,
-		arg.BooksID,
-		arg.AccountIds,
-		arg.FromDate,
-		arg.ToDate,
-	)
-	var i TreeIncomeSpanRow
-	err := row.Scan(&i.FirstOn, &i.LastOn, &i.Found)
-	return i, err
-}
-
 const treeInstruments = `-- name: TreeInstruments :many
 WITH RECURSIVE
     tree AS (
@@ -759,6 +682,207 @@ func (q *Queries) TreeInstruments(ctx context.Context, arg TreeInstrumentsParams
 			return nil, err
 		}
 		items = append(items, instrument)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const treeRecordedYield = `-- name: TreeRecordedYield :many
+WITH RECURSIVE
+    tree AS (
+        SELECT
+            a.id
+        FROM
+            ledger_account a
+        WHERE
+            a.books_id = $1
+            AND a.id = ANY ($2::UUID[])
+        UNION
+        SELECT
+            c.id
+        FROM
+            ledger_account c
+            JOIN tree ON c.parent_id = tree.id
+        WHERE
+            c.books_id = $1
+    ),
+    yield AS (
+        SELECT
+            y.id
+        FROM
+            ledger_account y
+        WHERE
+            y.books_id = $1
+            AND y.system_role = 'yield'
+        UNION
+        SELECT
+            c.id
+        FROM
+            ledger_account c
+            JOIN yield ON c.parent_id = yield.id
+        WHERE
+            c.books_id = $1
+    ),
+    touched AS (
+        SELECT
+            t.id,
+            t.date,
+            t.balancing_currency
+        FROM
+            ledger_transaction t
+        WHERE
+            t.books_id = $1
+            AND t.voided_at IS NULL
+            AND t.date BETWEEN $3 AND $4
+            AND EXISTS (
+                SELECT
+                    1
+                FROM
+                    ledger_posting p
+                WHERE
+                    p.transaction_id = t.id
+                    AND NOT p.voided
+                    AND p.account_id IN (
+                        SELECT
+                            id
+                        FROM
+                            tree
+                    )
+            )
+    )
+SELECT
+    'flow'::text AS kind,
+    x.date,
+    x.balancing_currency,
+    ''::text AS label,
+    sum(p.weight)::bigint AS amount
+FROM
+    touched x
+    JOIN ledger_posting p ON p.transaction_id = x.id
+    AND NOT p.voided
+    AND (
+        p.account_id IN (
+            SELECT
+                id
+            FROM
+                tree
+        )
+        OR p.account_id IN (
+            SELECT
+                id
+            FROM
+                yield
+        )
+    )
+GROUP BY
+    x.id,
+    x.date,
+    x.balancing_currency
+HAVING
+    sum(p.weight) <> 0
+UNION ALL
+SELECT
+    'credit'::text,
+    x.date,
+    x.balancing_currency,
+    ''::text,
+    (- sum(p.weight))::bigint
+FROM
+    touched x
+    JOIN ledger_posting p ON p.transaction_id = x.id
+    AND NOT p.voided
+    AND p.account_id IN (
+        SELECT
+            id
+        FROM
+            yield
+    )
+GROUP BY
+    x.id,
+    x.date,
+    x.balancing_currency
+HAVING
+    sum(p.weight) <> 0
+UNION ALL
+SELECT
+    a.account_class::text,
+    x.date,
+    x.balancing_currency,
+    a.name,
+    sum(p.weight)::bigint
+FROM
+    touched x
+    JOIN ledger_posting p ON p.transaction_id = x.id
+    AND NOT p.voided
+    JOIN ledger_account a ON a.id = p.account_id
+    AND a.books_id = $1
+    AND a.account_class IN ('income', 'expense')
+    AND a.id NOT IN (
+        SELECT
+            id
+        FROM
+            yield
+    )
+GROUP BY
+    x.id,
+    x.date,
+    x.balancing_currency,
+    a.account_class,
+    a.name
+ORDER BY
+    date,
+    kind,
+    label
+`
+
+type TreeRecordedYieldParams struct {
+	BooksID    int64
+	AccountIds []uuid.UUID
+	FromDate   time.Time
+	ToDate     time.Time
+}
+
+type TreeRecordedYieldRow struct {
+	Kind              string
+	Date              time.Time
+	BalancingCurrency string
+	Label             string
+	Amount            int64
+}
+
+// Return comparison amendment A208 R19: per transaction of [from_date, to_date] that touches the
+// accounts and their sub-accounts (the tree), by kind. flow is the sum of the weights of the
+// postings against the tree and against the system Yield account and its sub-accounts, in the
+// balancing currency of the transaction; a transaction internal to the tree and a pure yield
+// credit sum to 0 and leave. credit is the yield credited to the tree, the negated weights against
+// Yield. income and expense are the weights of the other income and expense postings, by account
+// name.
+func (q *Queries) TreeRecordedYield(ctx context.Context, arg TreeRecordedYieldParams) ([]TreeRecordedYieldRow, error) {
+	rows, err := q.db.Query(ctx, treeRecordedYield,
+		arg.BooksID,
+		arg.AccountIds,
+		arg.FromDate,
+		arg.ToDate,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []TreeRecordedYieldRow
+	for rows.Next() {
+		var i TreeRecordedYieldRow
+		if err := rows.Scan(
+			&i.Kind,
+			&i.Date,
+			&i.BalancingCurrency,
+			&i.Label,
+			&i.Amount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

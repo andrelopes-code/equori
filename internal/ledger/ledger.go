@@ -100,7 +100,8 @@ type (
 	TransactionFacts = app.TransactionFacts
 	FactPosting      = app.FactPosting
 	AccountFact      = app.AccountFact
-	IncomeSpan       = app.IncomeSpan
+	RecordedItem     = app.RecordedItem
+	RecordedYield    = app.RecordedYield
 	AccountCheck     = app.AccountCheck
 	PayeeClass       = app.PayeeClass
 )
@@ -375,10 +376,10 @@ func (m *Module) ExternalFlows(ctx context.Context, booksID int64, accountIDs []
 	return m.svc.ExternalFlows(ctx, booksID, accountIDs, from, to)
 }
 
-// IncomeSpan reports the first and the last date of the income the accounts and their
-// sub-accounts received in [from, to].
-func (m *Module) IncomeSpan(ctx context.Context, booksID int64, accountIDs []uuid.UUID, from, to time.Time) (IncomeSpan, error) {
-	return m.svc.IncomeSpan(ctx, booksID, accountIDs, from, to)
+// RecordedYield reads what the ledger records of the accounts and their sub-accounts in [from, to]:
+// the flows that are not yield, the yield credits and the other income and expense amounts.
+func (m *Module) RecordedYield(ctx context.Context, booksID int64, accountIDs []uuid.UUID, from, to time.Time) (RecordedYield, error) {
+	return m.svc.RecordedYield(ctx, booksID, accountIDs, from, to)
 }
 
 // FirstPosting is the booked date of the earliest posting of the accounts and their sub-accounts;

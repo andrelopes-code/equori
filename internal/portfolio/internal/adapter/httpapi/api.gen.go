@@ -277,6 +277,9 @@ type ReturnBenchmark struct {
 	// AnnualBp return_bp as a rate a year on the year basis of the index (252 rate days for cdi); absent when the basis is unknown or the profile is market.
 	AnnualBp *int `json:"annual_bp,omitempty"`
 
+	// Credits For a tree whose yield is recorded, the yield credits the return covers, those after the first credit compared (amendment A208 R20); 0 otherwise.
+	Credits int `json:"credits"`
+
 	// Days The number of rates compared.
 	Days int `json:"days"`
 
@@ -291,11 +294,31 @@ type ReturnBenchmark struct {
 	IndexAnnualBp *int `json:"index_annual_bp,omitempty"`
 	IndexBp       int  `json:"index_bp"`
 	PercentBp     *int `json:"percent_bp,omitempty"`
-	ReturnBp      *int `json:"return_bp,omitempty"`
+
+	// PercentErrorBp The relative bound of percent_bp and annual_bp in basis points of themselves, from rounding each credit to the minor unit; percent_bp and annual_bp are absent above 500 (amendment A208 R22).
+	PercentErrorBp *int `json:"percent_error_bp,omitempty"`
+
+	// Restarted True when a flow between two credits more than 7 days apart moved the start of the comparison to the credit after it (amendment A208 R20).
+	Restarted bool `json:"restarted"`
+	ReturnBp  *int `json:"return_bp,omitempty"`
 
 	// Skipped The rates of the period left out, on days the tree held nothing or, for a rate profile, before its first recorded yield (amendment A208 R14, R18).
 	Skipped int                `json:"skipped"`
 	Until   openapi_types.Date `json:"until"`
+}
+
+// ReturnExcluded For a tree of cash whose yield is what the ledger records against the Yield account, the income and expense of the period that the comparison treated as flows, not as yield (amendment A208 R19).
+type ReturnExcluded struct {
+	Expense *ReturnExcludedPart `json:"expense,omitempty"`
+	Income  *ReturnExcludedPart `json:"income,omitempty"`
+}
+
+// ReturnExcludedPart defines model for ReturnExcludedPart.
+type ReturnExcludedPart struct {
+	Amount Money `json:"amount"`
+
+	// Categories The names of the categories that hold most of the amount.
+	Categories []string `json:"categories"`
 }
 
 // ReturnFlow defines model for ReturnFlow.
@@ -319,7 +342,10 @@ type ReturnReport struct {
 	AnnualBp  int              `json:"annual_bp"`
 	Benchmark *ReturnBenchmark `json:"benchmark,omitempty"`
 	Closing   Money            `json:"closing"`
-	Flows     []ReturnFlow     `json:"flows"`
+
+	// Excluded For a tree of cash whose yield is what the ledger records against the Yield account, the income and expense of the period that the comparison treated as flows, not as yield (amendment A208 R19).
+	Excluded *ReturnExcluded `json:"excluded,omitempty"`
+	Flows    []ReturnFlow    `json:"flows"`
 
 	// Inflation The return net of inflation over the whole months of the period with a stored rate (amendment A208 R16).
 	Inflation *ReturnInflation `json:"inflation,omitempty"`
@@ -328,6 +354,9 @@ type ReturnReport struct {
 
 	// Profile rate when every holding is the value_in currency or a fixed income instrument quoted in it; market otherwise (amendment A208 R11).
 	Profile ReturnReportProfile `json:"profile"`
+
+	// UnavailableReason Why benchmark, or its percent_bp and annual_bp, is absent - no_index_for_region, currency_mismatch, nothing_held, no_yield_recorded, single_credit or too_small (amendment A208 R23).
+	UnavailableReason *string `json:"unavailable_reason,omitempty"`
 }
 
 // ReturnReportProfile rate when every holding is the value_in currency or a fixed income instrument quoted in it; market otherwise (amendment A208 R11).

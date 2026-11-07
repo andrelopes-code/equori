@@ -199,10 +199,31 @@ func (p ledgerPort) ValuedBalance(ctx context.Context, booksID int64, accountID 
 	return c.Value, err
 }
 
-func (p ledgerPort) IncomeSpan(ctx context.Context, booksID int64, accountIDs []uuid.UUID, from, to time.Time) (time.Time, time.Time, bool, error) {
-	i, err := p.l.IncomeSpan(ctx, booksID, accountIDs, from, to)
+func (p ledgerPort) RecordedYield(ctx context.Context, booksID int64, accountIDs []uuid.UUID, from, to time.Time) (app.Recorded, error) {
+	r, err := p.l.RecordedYield(ctx, booksID, accountIDs, from, to)
+	if errors.Is(err, ledger.ErrNotFound) {
+		return app.Recorded{}, fmt.Errorf("%w: %w", app.ErrNotFound, err)
+	}
 
-	return i.First, i.Last, i.Found, err
+	flows := func(items []ledger.RecordedItem) []app.Flow {
+		out := make([]app.Flow, len(items))
+		for i, it := range items {
+			out[i] = app.Flow{Date: it.Date, Value: it.Value}
+		}
+
+		return out
+	}
+
+	categorized := func(items []ledger.RecordedItem) []app.Categorized {
+		out := make([]app.Categorized, len(items))
+		for i, it := range items {
+			out[i] = app.Categorized{Date: it.Date, Category: it.Label, Value: it.Value}
+		}
+
+		return out
+	}
+
+	return app.Recorded{Flows: flows(r.Flows), Credits: flows(r.Credits), Income: categorized(r.Income), Expense: categorized(r.Expense)}, err
 }
 
 func (p ledgerPort) FirstPosting(ctx context.Context, booksID int64, accountIDs []uuid.UUID) (time.Time, bool, error) {

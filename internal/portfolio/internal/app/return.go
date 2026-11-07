@@ -48,6 +48,11 @@ type ReturnReport struct {
 	PeriodBP         *int
 	Benchmark        *Benchmark
 	Inflation        *Inflation
+
+	// UnavailableReason says why Benchmark or its percent is absent (amendment A208 R23); Excluded
+	// lists the income and expense of a cash tree treated as flows (R19).
+	UnavailableReason string
+	Excluded          *Excluded
 }
 
 // Return values the account tree the day before from and on to, values each external flow at the
@@ -135,11 +140,9 @@ func (s *Service) returnOf(ctx context.Context, booksID int64, accountIDs []uuid
 
 	cash := []domain.CashFlow{{Date: start, Amount: -opening.Amount()}, {Date: to, Amount: closing.Amount()}}
 	for _, f := range flows {
-		value := f.Value
-		if value.Currency() != in {
-			if value, _, err = s.md.Convert(ctx, value, in, f.Date); err != nil {
-				return ReturnReport{}, fmt.Errorf("value the flow of %s: %w", f.Date.Format(time.DateOnly), err)
-			}
+		value, err := s.valueIn(ctx, f.Value, in, f.Date)
+		if err != nil {
+			return ReturnReport{}, err
 		}
 
 		report.Flows = append(report.Flows, ReturnFlow{Date: f.Date, Amount: value})

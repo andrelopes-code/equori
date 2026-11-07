@@ -38,9 +38,10 @@ type Ledger interface {
 	// ExternalFlows takes the accounts as one tree; FirstPosting is the earliest booked date of it.
 	ExternalFlows(ctx context.Context, booksID int64, accountIDs []uuid.UUID, from, to time.Time) ([]Flow, error)
 	FirstPosting(ctx context.Context, booksID int64, accountIDs []uuid.UUID) (time.Time, bool, error)
-	// IncomeSpan is the date of the first and of the last income the tree received from an income
-	// account in [from, to], when found (amendment A208 R18).
-	IncomeSpan(ctx context.Context, booksID int64, accountIDs []uuid.UUID, from, to time.Time) (first, last time.Time, found bool, err error)
+	// RecordedYield is what the ledger records of the tree of the accounts in [from, to]: the flows
+	// that are not yield, the yield credits and the other income and expense amounts (amendment A208
+	// R19).
+	RecordedYield(ctx context.Context, booksID int64, accountIDs []uuid.UUID, from, to time.Time) (Recorded, error)
 	// Balances is the balance of every asset and liability account at the end of date, each in
 	// its own instrument and counting its own postings only.
 	Balances(ctx context.Context, booksID int64, date time.Time) ([]AccountBalance, error)

@@ -193,3 +193,72 @@ func TestWholeMonths(t *testing.T) {
 		})
 	}
 }
+
+func TestRecordedPeriodFactor(t *testing.T) {
+	t.Parallel()
+
+	// A piece that starts at 0 and gains 200 holds no money: factor 1, not undefined.
+	if f, ok := RecordedPeriodFactor(0, []Subperiod{{Value: 1_000_200, Flow: 1_000_000}, {Value: 1_000_350}}); !ok || f != 1+150.0/1_000_200 {
+		t.Fatalf("factor = %v, %v", f, ok)
+	}
+
+	if _, ok := PeriodFactor(0, []Subperiod{{Value: 1_000_200, Flow: 1_000_000}}); ok {
+		t.Fatal("PeriodFactor defined for a gain with no base")
+	}
+
+	if _, ok := RecordedPeriodFactor(-1, []Subperiod{{Value: 5, Flow: 0}}); ok {
+		t.Fatal("negative base defined")
+	}
+}
+
+func TestComparisonStart(t *testing.T) {
+	t.Parallel()
+
+	day := func(s string) time.Time { d, _ := time.Parse(time.DateOnly, s); return d }
+	days := func(ss ...string) []time.Time {
+		out := make([]time.Time, len(ss))
+		for i, s := range ss {
+			out[i] = day(s)
+		}
+
+		return out
+	}
+
+	tests := []struct {
+		name      string
+		credits   []time.Time
+		flows     []time.Time
+		want      time.Time
+		restarted bool
+	}{
+		{"no flow", days("2026-01-02", "2026-02-02"), nil, day("2026-01-02"), false},
+		{"flow in a 7 day gap", days("2026-01-02", "2026-01-09"), days("2026-01-05"), day("2026-01-02"), false},
+		{"flow in an 8 day gap", days("2026-01-02", "2026-01-10"), days("2026-01-05"), day("2026-01-10"), true},
+		{"flow on a credit day", days("2026-01-02", "2026-02-02"), days("2026-01-02", "2026-02-02"), day("2026-01-02"), false},
+		{"last restart wins", days("2026-01-02", "2026-02-02", "2026-03-02"), days("2026-01-15", "2026-02-15"), day("2026-03-02"), true},
+	}
+
+	for _, tt := range tests {
+		got, restarted := ComparisonStart(tt.credits, tt.flows)
+		if !got.Equal(tt.want) || restarted != tt.restarted {
+			t.Errorf("%s: got %s, %v", tt.name, got.Format(time.DateOnly), restarted)
+		}
+	}
+}
+
+func TestPercentErrorBP(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		credits int
+		yield   int64
+		want    int
+		ok      bool
+	}{{4, 2204, 10, true}, {4, 88, 228, true}, {4, 24, 834, true}, {4, 0, 0, false}, {1, 1, 5000, true}}
+
+	for _, tt := range tests {
+		if got, ok := PercentErrorBP(tt.credits, tt.yield); got != tt.want || ok != tt.ok {
+			t.Errorf("PercentErrorBP(%d, %d) = %d, %v", tt.credits, tt.yield, got, ok)
+		}
+	}
+}

@@ -66,6 +66,22 @@ type benchmarkView struct {
 	ExcessBP      int `json:"excess_bp,omitzero" jsonschema:"return_bp minus index_bp; absent when undefined or zero"`
 	Days          int `json:"days"`
 	Skipped       int `json:"skipped,omitzero" jsonschema:"rates of the period left out: days without money, or before a savings account recorded its first yield"`
+
+	Credits        int  `json:"credits,omitzero" jsonschema:"yield credits the return covers; absent when none"`
+	Restarted      bool `json:"restarted,omitzero" jsonschema:"a deposit or withdrawal between two credits more than 7 days apart moved the start of the comparison to the credit after it"`
+	PercentErrorBP int  `json:"percent_error_bp,omitzero" jsonschema:"relative error bound of percent_bp and annual_bp in basis points of themselves, from rounding each credit to the cent"`
+}
+
+// excludedView is the income and the expense of a period that the comparison treated as money in
+// or out, not as yield (amendment A208 R19).
+type excludedView struct {
+	Income  excludedPartView `json:"income,omitzero"`
+	Expense excludedPartView `json:"expense,omitzero"`
+}
+
+type excludedPartView struct {
+	Amount     tool.Money `json:"amount"`
+	Categories []string   `json:"categories"`
 }
 
 // inflationView is the return net of inflation over whole months (amendment A208 R16).
@@ -91,6 +107,8 @@ type getPortfolioOut struct {
 	PeriodBP    int            `json:"period_bp,omitzero" jsonschema:"for return: time-weighted return of the period in basis points; absent when undefined or zero"`
 	Profile     string         `json:"profile,omitzero" jsonschema:"for return: rate when every holding is cash or fixed income in the report's currency, market otherwise"`
 	Benchmark   benchmarkView  `json:"benchmark,omitzero"`
+	Reason      string         `json:"unavailable_reason,omitzero" jsonschema:"for return: why benchmark or its percent is absent - no_index_for_region, currency_mismatch, nothing_held, no_yield_recorded, single_credit or too_small"`
+	Excluded    excludedView   `json:"excluded,omitzero" jsonschema:"for return: income and expense of the period treated as money in or out, not as yield"`
 	Inflation   inflationView  `json:"inflation,omitzero"`
 	IncomeTypes []string       `json:"income_types,omitzero"`
 	Subtypes    []string       `json:"subtypes,omitzero"`
@@ -179,6 +197,8 @@ func getPortfolio(svc *app.Service, names AccountNames, today func(context.Conte
 				Benchmark: benchmarkOf(r.Benchmark),
 				Inflation: inflationOf(r.Inflation),
 				Profile:   r.Profile,
+				Reason:    r.UnavailableReason,
+				Excluded:  excludedViewOf(r.Excluded),
 			}, nil
 		case "income_types":
 			types, err := svc.IncomeTypes(ctx, booksID)
@@ -189,6 +209,22 @@ func getPortfolio(svc *app.Service, names AccountNames, today func(context.Conte
 
 		return getPortfolioOut{Subtypes: nonNil(subtypes)}, err
 	})
+}
+
+func excludedViewOf(e *app.Excluded) excludedView {
+	if e == nil {
+		return excludedView{}
+	}
+
+	part := func(t *app.ExcludedTotal) excludedPartView {
+		if t == nil {
+			return excludedPartView{}
+		}
+
+		return excludedPartView{Amount: tool.MoneyOf(t.Amount), Categories: t.Categories}
+	}
+
+	return excludedView{Income: part(e.Income), Expense: part(e.Expense)}
 }
 
 func inflationOf(i *app.Inflation) inflationView {
@@ -224,6 +260,10 @@ func benchmarkOf(b *app.Benchmark) benchmarkView {
 		ExcessBP:      valueOf(b.ExcessBP),
 		Days:          b.Days,
 		Skipped:       b.Skipped,
+
+		Credits:        b.Credits,
+		Restarted:      b.Restarted,
+		PercentErrorBP: valueOf(b.PercentErrorBP),
 	}
 }
 
