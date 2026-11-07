@@ -128,7 +128,7 @@ describe("foreign purchase entry", () => {
     await waitFor(() => {
       expect(rate).toHaveValue("5.4000");
     });
-    expect(screen.getByText(/ecb/i)).toBeInTheDocument();
+    expect(screen.getByText(/European Central Bank/)).toBeInTheDocument();
     await userEvent.clear(rate);
     await userEvent.type(rate, "5.4830");
     expect(rate).toHaveValue("5.4830");
