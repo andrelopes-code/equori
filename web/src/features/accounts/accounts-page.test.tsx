@@ -6,9 +6,11 @@ import { catalogEn } from "@/i18n/catalog.en";
 import {
   accountRoutes,
   balancesAt,
+  brokerageID,
   cardID,
   checkingID,
   connectionFixture,
+  reserveID,
 } from "@/testing/account-api";
 import { fakeApi, json, problem } from "@/testing/fake-api";
 import { moneyValue } from "@/testing/money-value";
@@ -34,6 +36,32 @@ function words(key: keyof typeof catalogEn, values: Record<string, string>) {
     (text, [k, v]) => text.replace(`{${k}}`, v),
     catalogEn[key],
   );
+}
+
+// A return route whose comparison covers the requested days; asked collects the account of
+// each request.
+function comparedIn90Days(asked: string[]) {
+  return (req: Request) => {
+    const query = new URL(req.url).searchParams;
+    asked.push(query.get("account_id") ?? "");
+    return json(200, {
+      annual_bp: 1500,
+      flows: [],
+      opening: { amount: 1000000, currency: "BRL" },
+      closing: { amount: 1034000, currency: "BRL" },
+      period_bp: 340,
+      benchmark: {
+        index: "cdi",
+        from: query.get("from"),
+        until: query.get("to"),
+        return_bp: 340,
+        index_bp: 334,
+        percent_bp: 10180,
+        annual_bp: 1517,
+        index_annual_bp: 1490,
+      },
+    });
+  };
 }
 
 describe("AccountsPage", () => {
@@ -123,6 +151,54 @@ describe("AccountsPage", () => {
     });
     const nubank = await within(table).findByRole("row", { name: /Nubank/ });
     expect(await within(nubank).findByText(/Reconciled/)).toBeInTheDocument();
+  });
+
+  it("adds a yield column to the group of a reserve and a brokerage (A208 R8)", async () => {
+    const asked: string[] = [];
+    await renderApp("/accounts", {
+      fetch: api([], { "GET /api/v1/reports/return": comparedIn90Days(asked) }),
+    });
+    const reserves = await screen.findByRole("table", {
+      name: catalogEn["home.group.reserves"],
+    });
+    expect(
+      within(reserves).getByRole("columnheader", {
+        name: catalogEn["balanceSheet.yield"],
+      }),
+    ).toBeInTheDocument();
+    const reserve = await within(reserves).findByRole("row", {
+      name: /Reserva de emergência/,
+    });
+    expect(
+      await within(reserve).findByText("15.17% a year"),
+    ).toBeInTheDocument();
+    expect(within(reserve).getByText("101.80% of CDI")).toBeInTheDocument();
+    const available = screen.getByRole("table", {
+      name: catalogEn["home.group.available"],
+    });
+    expect(
+      within(available).queryByRole("columnheader", {
+        name: catalogEn["balanceSheet.yield"],
+      }),
+    ).not.toBeInTheDocument();
+    expect(asked.sort()).toEqual([reserveID, brokerageID].sort());
+  });
+
+  it("states only the rate a year on a phone (A208 R8)", async () => {
+    await renderApp("/accounts", {
+      fetch: api([], { "GET /api/v1/reports/return": comparedIn90Days([]) }),
+      width: 390,
+    });
+    const list = await screen.findByRole("list", {
+      name: catalogEn["home.group.reserves"],
+    });
+    const reserve = await within(list).findByRole("link", {
+      name: /Reserva de emergência/,
+    });
+    expect(
+      await within(reserve).findByText("15.17% a year"),
+    ).toBeInTheDocument();
+    expect(within(reserve).queryByText(/of CDI/)).not.toBeInTheDocument();
   });
 
   it("opens a card on the cards destination", async () => {

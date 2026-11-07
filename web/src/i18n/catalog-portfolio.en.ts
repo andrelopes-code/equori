@@ -79,6 +79,12 @@ export const portfolioEn = {
   "portfolio.return.percentOfIndex":
     "{percent} of {index} from {from} to {until}",
   "portfolio.return.indexGrowth": "{index} over the same days: {rate}",
+  "portfolio.yield.annual": "{rate} a year",
+  "portfolio.yield.period": "{rate} in the period",
+  "portfolio.yield.ofIndex": "{percent} of {index}",
+  "portfolio.yield.indexAnnual": "{index} {rate} a year",
+  "portfolio.yield.window": "{from} to {until}",
+  "portfolio.yield.figure": "Yield over 12 months",
   "portfolio.return.flows": "External flows",
   "portfolio.return.date": "Date",
   "portfolio.return.amount": "Amount",

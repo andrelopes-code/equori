@@ -190,6 +190,7 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "balanceSheet.status": "Conferência",
   "balanceSheet.trend": "Últimos 90 dias",
   "balanceSheet.balance": "Saldo",
+  "balanceSheet.yield": "Rendimento (90 dias)",
   "balanceSheet.closed": "Encerrada",
   "balanceSheet.groupTotal": "Total",
   "balanceSheet.excluded": "{count} contas em outra moeda ficam fora do total",

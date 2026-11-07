@@ -192,6 +192,7 @@ export const accountsEn = {
   "balanceSheet.status": "Reconciliation",
   "balanceSheet.trend": "Last 90 days",
   "balanceSheet.balance": "Balance",
+  "balanceSheet.yield": "Yield (90 days)",
   "balanceSheet.closed": "Closed",
   "balanceSheet.groupTotal": "Total",
   "balanceSheet.excluded":

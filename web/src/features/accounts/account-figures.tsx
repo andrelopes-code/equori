@@ -9,6 +9,7 @@ import {
   projectionQuery,
   reconciliationQuery,
 } from "@/features/accounts/api";
+import { AccountYieldFigure } from "@/features/portfolio";
 import { formatDate, shiftDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
@@ -21,8 +22,9 @@ type Account = components["schemas"]["Account"];
 
 export const projectionDays = 30;
 
-// RP-02: what the account holds now, where its schedules take it in 30 days, when the ledger last
-// agreed with the institution, and the goal it serves.
+// RP-02: what the account holds now, its yield over 12 months (amendment A208 R10), where its
+// schedules take it in 30 days, when the ledger last agreed with the institution, and the goal
+// it serves.
 // Memoised: a tab switch changes the address, and the figures and the chart above the tabs
 // do not depend on it, so they skip that render.
 export const AccountFigures = memo(function AccountFigures({
@@ -76,6 +78,7 @@ export const AccountFigures = memo(function AccountFigures({
         }
         loading={booked.isPending}
       />
+      <AccountYieldFigure accountId={account.id} today={today} />
       {account.closed_on === undefined && (
         <FigureCard
           label={t("account.figure.projection", { days: projectionDays })}

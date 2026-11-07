@@ -17,6 +17,7 @@ import { accountRoute } from "@/features/accounts/account-route";
 import { AccountRowStatus } from "@/features/accounts/account-row-status";
 import type { SheetRow } from "@/features/accounts/balance-sheet";
 import styles from "@/features/accounts/balance-group-list.module.css";
+import { AccountYield } from "@/features/portfolio";
 import { useT } from "@/i18n/i18n-provider";
 import { MoneyFigure } from "@/ui/money-figure";
 import { routeTo } from "@/ui/route-to";
@@ -25,10 +26,12 @@ type Institution = components["schemas"]["Institution"];
 type Money = components["schemas"]["Money"];
 
 // Below 600 px a group is a list of rows that open the account (LP-01): mark, name and
-// institution, balance and status at the end. An institution that repeats the name is left out.
+// institution, balance and status at the end, the yield a year under the balance, on the line
+// of the institution. An institution that repeats the name is left out.
 export function BalanceGroupList({
   label,
   rows,
+  date,
   total,
   excluded,
   institutions,
@@ -36,6 +39,7 @@ export function BalanceGroupList({
 }: {
   label: string;
   rows: SheetRow[];
+  date: string;
   total: Money;
   excluded: number;
   institutions: Map<string, Institution>;
@@ -89,11 +93,18 @@ export function BalanceGroupList({
                   </ListItemDescription>
                 </ListItemBody>
                 <ListItemEnd>
-                  <MoneyFigure
-                    amount={amount.amount}
-                    currency={amount.currency}
-                    scale={scale(amount.currency)}
-                  />
+                  <Stack gap={0} align="end">
+                    <MoneyFigure
+                      amount={amount.amount}
+                      currency={amount.currency}
+                      scale={scale(amount.currency)}
+                    />
+                    <AccountYield
+                      accountId={row.account.id}
+                      date={date}
+                      compact
+                    />
+                  </Stack>
                 </ListItemEnd>
               </ListItemLink>
             </ListItem>

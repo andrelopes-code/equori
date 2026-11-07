@@ -280,15 +280,12 @@ export function AccountsPage() {
                     excluded: group.excluded,
                     institutions: byInstitution,
                     scale,
+                    date: shown.date,
                   };
                   return compact ? (
                     <BalanceGroupList key={group.group} {...props} />
                   ) : (
-                    <BalanceGroupTable
-                      key={group.group}
-                      {...props}
-                      date={shown.date}
-                    />
+                    <BalanceGroupTable key={group.group} {...props} />
                   );
                 })}
               </div>
