@@ -38,14 +38,16 @@ type ReturnFlow struct {
 }
 
 // ReturnReport is the money-weighted return of an account tree over a period, its time-weighted
-// return and the comparison with an index (amendment A208). PeriodBP and Benchmark are nil when
-// undefined.
+// return, its comparison with an index and its return net of inflation (amendment A208).
+// PeriodBP, Benchmark and Inflation are nil when undefined.
 type ReturnReport struct {
 	AnnualBP         int
 	Flows            []ReturnFlow
 	Opening, Closing money.Money
+	Profile          string
 	PeriodBP         *int
 	Benchmark        *Benchmark
+	Inflation        *Inflation
 }
 
 // Return values the account tree the day before from and on to, values each external flow at the

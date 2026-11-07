@@ -63,6 +63,18 @@ type benchmarkView struct {
 
 	AnnualBP      int `json:"annual_bp,omitzero" jsonschema:"return_bp as a rate a year on the index's year basis; absent when undefined or zero"`
 	IndexAnnualBP int `json:"index_annual_bp,omitzero" jsonschema:"index_bp as a rate a year on the same basis; absent when undefined or zero"`
+	ExcessBP      int `json:"excess_bp,omitzero" jsonschema:"return_bp minus index_bp; absent when undefined or zero"`
+	Days          int `json:"days"`
+}
+
+// inflationView is the return net of inflation over whole months (amendment A208 R16).
+type inflationView struct {
+	Index    string `json:"index"`
+	From     string `json:"from"`
+	Until    string `json:"until"`
+	IndexBP  int    `json:"index_bp"`
+	ReturnBP int    `json:"return_bp"`
+	RealBP   int    `json:"real_bp"`
 }
 
 type getPortfolioOut struct {
@@ -76,7 +88,9 @@ type getPortfolioOut struct {
 	Opening     tool.Money     `json:"opening,omitzero"`
 	Closing     tool.Money     `json:"closing,omitzero"`
 	PeriodBP    int            `json:"period_bp,omitzero" jsonschema:"for return: time-weighted return of the period in basis points; absent when undefined or zero"`
+	Profile     string         `json:"profile,omitzero" jsonschema:"for return: rate when every holding is cash or fixed income in the report's currency, market otherwise"`
 	Benchmark   benchmarkView  `json:"benchmark,omitzero"`
+	Inflation   inflationView  `json:"inflation,omitzero"`
 	IncomeTypes []string       `json:"income_types,omitzero"`
 	Subtypes    []string       `json:"subtypes,omitzero"`
 }
@@ -162,6 +176,8 @@ func getPortfolio(svc *app.Service, names AccountNames, today func(context.Conte
 				Closing:   tool.MoneyOf(r.Closing),
 				PeriodBP:  valueOf(r.PeriodBP),
 				Benchmark: benchmarkOf(r.Benchmark),
+				Inflation: inflationOf(r.Inflation),
+				Profile:   r.Profile,
 			}, nil
 		case "income_types":
 			types, err := svc.IncomeTypes(ctx, booksID)
@@ -172,6 +188,21 @@ func getPortfolio(svc *app.Service, names AccountNames, today func(context.Conte
 
 		return getPortfolioOut{Subtypes: nonNil(subtypes)}, err
 	})
+}
+
+func inflationOf(i *app.Inflation) inflationView {
+	if i == nil {
+		return inflationView{}
+	}
+
+	return inflationView{
+		Index:    i.Index,
+		From:     i.From.Format(time.DateOnly),
+		Until:    i.Until.Format(time.DateOnly),
+		IndexBP:  i.IndexBP,
+		ReturnBP: i.ReturnBP,
+		RealBP:   i.RealBP,
+	}
 }
 
 func benchmarkOf(b *app.Benchmark) benchmarkView {
@@ -189,6 +220,8 @@ func benchmarkOf(b *app.Benchmark) benchmarkView {
 
 		AnnualBP:      valueOf(b.AnnualBP),
 		IndexAnnualBP: valueOf(b.IndexAnnualBP),
+		ExcessBP:      valueOf(b.ExcessBP),
+		Days:          b.Days,
 	}
 }
 

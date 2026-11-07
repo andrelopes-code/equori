@@ -5826,25 +5826,46 @@ export interface components {
             flows: components["schemas"]["ReturnFlow"][];
             opening: components["schemas"]["Money"];
             closing: components["schemas"]["Money"];
+            /**
+             * @description rate when every holding is the value_in currency or a fixed income instrument quoted in it; market otherwise (amendment A208 R11).
+             * @enum {string}
+             */
+            profile: "rate" | "market";
             period_bp?: number;
             benchmark?: components["schemas"]["ReturnBenchmark"];
+            inflation?: components["schemas"]["ReturnInflation"];
         };
         ReturnBenchmark: {
             index: string;
             /**
              * Format: date
-             * @description The first day of the comparison, from, or the day after the first flow when the tree held nothing before from.
+             * @description The date of the first rate compared; the rates of the days the tree held nothing leave the comparison (amendment A208 R14).
              */
             from: string;
+            /** @description The number of rates compared. */
+            days: number;
             /** Format: date */
             until: string;
             return_bp?: number;
             index_bp: number;
             percent_bp?: number;
-            /** @description return_bp as a rate a year on the year basis of the index (252 rate days for cdi); absent when the basis is unknown. */
+            /** @description return_bp as a rate a year on the year basis of the index (252 rate days for cdi); absent when the basis is unknown or the profile is market. */
             annual_bp?: number;
             /** @description index_bp as a rate a year on the same basis. */
             index_annual_bp?: number;
+            /** @description return_bp minus index_bp, in basis points of percentage points. */
+            excess_bp?: number;
+        };
+        /** @description The return net of inflation over the whole months of the period with a stored rate (amendment A208 R16). */
+        ReturnInflation: {
+            index: string;
+            /** Format: date */
+            from: string;
+            /** Format: date */
+            until: string;
+            index_bp: number;
+            return_bp: number;
+            real_bp: number;
         };
         SubtypeList: {
             items: string[];

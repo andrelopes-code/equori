@@ -15,6 +15,7 @@ const benchmark = {
   from: "2025-10-17",
   until: "2026-10-16",
   index_bp: 1490,
+  days: 245,
 };
 
 describe("yieldNote", () => {

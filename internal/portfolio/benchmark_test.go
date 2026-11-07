@@ -2,6 +2,7 @@ package portfolio_test
 
 import (
 	"fmt"
+	"math"
 	"net/http"
 	"net/http/httptest"
 	"slices"
@@ -16,7 +17,16 @@ import (
 var cdiDays = []string{"2026-01-02", "2026-01-05", "2026-01-06", "2026-01-07", "2026-01-08", "2026-01-09"}
 
 type comparedReturn struct {
-	PeriodBP  *int `json:"period_bp"`
+	Profile   string `json:"profile"`
+	PeriodBP  *int   `json:"period_bp"`
+	Inflation *struct {
+		Index    string `json:"index"`
+		From     string `json:"from"`
+		Until    string `json:"until"`
+		IndexBP  int    `json:"index_bp"`
+		ReturnBP int    `json:"return_bp"`
+		RealBP   int    `json:"real_bp"`
+	} `json:"inflation"`
 	Benchmark *struct {
 		Index     string `json:"index"`
 		From      string `json:"from"`
@@ -27,6 +37,8 @@ type comparedReturn struct {
 
 		AnnualBP      *int `json:"annual_bp"`
 		IndexAnnualBP *int `json:"index_annual_bp"`
+		ExcessBP      *int `json:"excess_bp"`
+		Days          int  `json:"days"`
 	} `json:"benchmark"`
 }
 
@@ -36,11 +48,15 @@ func TestS302SavingsAtTheCDI(t *testing.T) {
 	b := newBenchmarkBook(t)
 
 	r := b.compared(t, "2026-01-02", "2026-01-09", "")
-	if r.PeriodBP == nil || *r.PeriodBP != 33 || r.Benchmark == nil {
+	if r.Profile != "rate" || r.PeriodBP == nil || *r.PeriodBP != 33 || r.Benchmark == nil || r.Inflation != nil {
 		t.Fatalf("report = %+v", r)
 	}
 
 	got := *r.Benchmark
+	if got.Days != 6 || got.ExcessBP == nil || *got.ExcessBP != 0 {
+		t.Fatalf("days and excess = %+v", got)
+	}
+
 	if got.Index != "cdi" || got.From != "2026-01-02" || got.Until != "2026-01-09" || got.IndexBP != 33 || got.ReturnBP == nil || *got.ReturnBP != 33 || got.PercentBP == nil || *got.PercentBP != 10000 {
 		t.Fatalf("benchmark = %+v", got)
 	}
@@ -85,6 +101,91 @@ func TestS305AccountOpenedInsideThePeriod(t *testing.T) {
 	}
 }
 
+// S306: a brokerage that holds a stock is a market profile: no rate a year and no percent of the
+// CDI, the period return beside the CDI.
+func TestS306StockAgainstTheCDI(t *testing.T) {
+	t.Parallel()
+	b := newBenchmarkBook(t)
+	h := b.h
+	h.MustDo(http.MethodPost, "/api/v1/instruments", map[string]any{"code": "PETR4", "type": "stock", "scale": 0, "name": "PETR4", "quote_currency": "BRL", "exchange": "BVMF"}, http.StatusCreated, nil)
+	broker := h.Account("Broker", "asset", "brokerage", nil)
+	cash := h.Account("Broker cash", "asset", "brokerage", map[string]any{"parent_id": broker, "currency": "BRL"})
+	petr4 := h.Account("Broker PETR4", "asset", "brokerage", map[string]any{"parent_id": broker, "currency": "PETR4"})
+	h.Record("2026-01-01", apitest.Posting(b.checking, -30000), apitest.Posting(cash, 30000))
+	h.MustDo(http.MethodPost, "/api/v1/trades", map[string]any{"account_id": petr4, "cash_account_id": cash, "side": "buy", "date": "2026-01-01", "quantity": map[string]any{"amount": 10, "currency": "PETR4"}, "unit_price": "30"}, http.StatusCreated, nil)
+
+	for date, price := range map[string]string{"2026-01-01": "30", "2026-01-09": "27"} {
+		h.MustDo(http.MethodPost, "/api/v1/prices", map[string]any{"instrument": "PETR4", "quote_instrument": "BRL", "date": date, "value": price}, http.StatusCreated, nil)
+	}
+
+	b.savings = broker
+
+	r := b.compared(t, "2026-01-02", "2026-01-09", "")
+	if r.Profile != "market" || r.Benchmark == nil {
+		t.Fatalf("report = %+v", r)
+	}
+
+	got := *r.Benchmark
+	if got.ReturnBP == nil || *got.ReturnBP != -1000 || got.ExcessBP == nil || *got.ExcessBP != -1033 || got.AnnualBP != nil || got.PercentBP != nil || got.IndexAnnualBP == nil {
+		t.Fatalf("benchmark = %+v", got)
+	}
+}
+
+// S307: the days an account held nothing leave the comparison.
+func TestS307AccountEmptiedInsideThePeriod(t *testing.T) {
+	t.Parallel()
+	b := newBenchmarkBookWith(t, "2026-01-01", map[string]int64{"2026-01-06": emptyAll, "2026-01-07": 1_000_000_000})
+
+	r := b.compared(t, "2026-01-02", "2026-01-09", "")
+	if r.Benchmark == nil {
+		t.Fatalf("report = %+v", r)
+	}
+
+	got := *r.Benchmark
+	if got.Days != 5 || got.From != "2026-01-02" || got.PercentBP == nil || *got.PercentBP != 10000 {
+		t.Fatalf("benchmark = %+v", got)
+	}
+}
+
+// S308: the real return covers the whole months with a stored IPCA.
+func TestS308RealReturn(t *testing.T) {
+	t.Parallel()
+	b := newBenchmarkBookOn(t, "2025-11-01")
+
+	r := b.compared(t, "2025-11-01", "2026-01-09", "")
+	if r.Inflation == nil {
+		t.Fatalf("report = %+v", r)
+	}
+
+	got := *r.Inflation
+	if got.Index != "ipca" || got.From != "2025-11-01" || got.Until != "2025-12-31" || got.IndexBP != 90 || got.ReturnBP != 0 || got.RealBP != -89 {
+		t.Fatalf("inflation = %+v", got)
+	}
+}
+
+// S309: a region without a default index, and a report valued in another currency than the
+// index's, carry no comparison and no real return.
+func TestS309NoIndexForTheRegionOrCurrency(t *testing.T) {
+	t.Parallel()
+	b := newBenchmarkBookOn(t, "2025-11-01")
+	b.h.Do(http.MethodPost, "/api/v1/instruments", map[string]any{"code": "USD", "type": "currency", "scale": 2, "name": "Dollar"})
+	b.h.MustDo(http.MethodPost, "/api/v1/prices", map[string]any{"instrument": "USD", "quote_instrument": "BRL", "date": "2025-10-01", "value": "5"}, http.StatusCreated, nil)
+
+	r := b.comparedIn(t, "2025-11-01", "2026-01-09", "USD")
+	if r.Benchmark != nil || r.Inflation != nil || r.PeriodBP == nil {
+		t.Fatalf("report in USD = %+v", r)
+	}
+
+	if _, err := b.h.Pool.Exec(t.Context(), `UPDATE identity_books SET region = 'US'`); err != nil {
+		t.Fatal(err)
+	}
+
+	r = b.compared(t, "2025-11-01", "2026-01-09", "")
+	if r.Benchmark != nil || r.Inflation != nil || r.PeriodBP == nil {
+		t.Fatalf("report in region US = %+v", r)
+	}
+}
+
 // S304: a monthly index and an index without an enabled source are refused on index.
 func TestS304IndexRefused(t *testing.T) {
 	t.Parallel()
@@ -98,9 +199,13 @@ func TestS304IndexRefused(t *testing.T) {
 	}
 }
 
+// emptyAll in the moves of newBenchmarkBookWith withdraws the whole balance.
+const emptyAll = math.MinInt64
+
 type benchmarkBook struct {
-	h       *apitest.Harness
-	savings string
+	h        *apitest.Harness
+	savings  string
+	checking string
 }
 
 // newBenchmarkBook holds 10,000,000.00 in a savings account from 2026-01-01 and credits on each
@@ -116,6 +221,19 @@ func newBenchmarkBook(t *testing.T, deposits ...string) benchmarkBook {
 func newBenchmarkBookOn(t *testing.T, opened string, deposits ...string) benchmarkBook {
 	t.Helper()
 
+	moves := map[string]int64{}
+	for _, d := range deposits {
+		moves[d] = 1_000_000_000
+	}
+
+	return newBenchmarkBookWith(t, opened, moves)
+}
+
+// newBenchmarkBookWith is newBenchmarkBook with the first deposit on opened and, after the credit
+// of each date in moves, a transfer of that amount from checking (negative: to checking).
+func newBenchmarkBookWith(t *testing.T, opened string, moves map[string]int64) benchmarkBook {
+	t.Helper()
+
 	rows := make([]string, len(cdiDays))
 	for i, d := range cdiDays {
 		day, _ := time.Parse(time.DateOnly, d)
@@ -127,7 +245,7 @@ func newBenchmarkBookOn(t *testing.T, opened string, deposits ...string) benchma
 		case "/dados/serie/bcdata.sgs.12/dados":
 			fmt.Fprint(w, "["+strings.Join(rows, ",")+"]")
 		case "/dados/serie/bcdata.sgs.433/dados":
-			fmt.Fprint(w, `[{"data":"01/12/2025","valor":"0.33"}]`)
+			fmt.Fprint(w, `[{"data":"01/11/2025","valor":"0.50"},{"data":"01/12/2025","valor":"0.40"}]`)
 		default:
 			http.NotFound(w, r)
 		}
@@ -146,7 +264,7 @@ func newBenchmarkBookOn(t *testing.T, opened string, deposits ...string) benchma
 
 	balance := int64(0)
 	if slices.Contains(cdiDays, opened) {
-		deposits = append([]string{opened}, deposits...)
+		moves[opened] += deposit
 	} else {
 		h.Record(opened, apitest.Posting(checking, -deposit), apitest.Posting(savings, deposit))
 		balance = deposit
@@ -160,15 +278,17 @@ func newBenchmarkBookOn(t *testing.T, opened string, deposits ...string) benchma
 			balance += credit
 		}
 
-		for _, dep := range deposits {
-			if dep == d {
-				h.Record(d, apitest.Posting(checking, -deposit), apitest.Posting(savings, deposit))
-				balance += deposit
+		if move, ok := moves[d]; ok {
+			if move == emptyAll {
+				move = -balance
 			}
+
+			h.Record(d, apitest.Posting(checking, -move), apitest.Posting(savings, move))
+			balance += move
 		}
 	}
 
-	return benchmarkBook{h: h, savings: savings}
+	return benchmarkBook{h: h, savings: savings, checking: checking}
 }
 
 func (b benchmarkBook) query(from, to, index string) string {
@@ -182,9 +302,21 @@ func (b benchmarkBook) query(from, to, index string) string {
 
 func (b benchmarkBook) compared(t *testing.T, from, to, index string) comparedReturn {
 	t.Helper()
+
+	return b.get(t, b.query(from, to, index))
+}
+
+func (b benchmarkBook) comparedIn(t *testing.T, from, to, valueIn string) comparedReturn {
+	t.Helper()
+
+	return b.get(t, b.query(from, to, "")+"&value_in="+valueIn)
+}
+
+func (b benchmarkBook) get(t *testing.T, query string) comparedReturn {
+	t.Helper()
 	b.h.Dispatch()
 
-	r := b.h.Do(http.MethodGet, b.query(from, to, index), nil)
+	r := b.h.Do(http.MethodGet, query, nil)
 	if r.Status != http.StatusOK {
 		t.Fatalf("status %d: %s", r.Status, r.Body)
 	}

@@ -10436,7 +10436,7 @@ components:
           $ref: "#/components/schemas/Money"
     ReturnReport:
       type: object
-      required: [annual_bp, flows, opening, closing]
+      required: [annual_bp, flows, opening, closing, profile]
       properties:
         annual_bp:
           type: integer
@@ -10448,13 +10448,19 @@ components:
           $ref: "#/components/schemas/Money"
         closing:
           $ref: "#/components/schemas/Money"
+        profile:
+          type: string
+          enum: [rate, market]
+          description: rate when every holding is the value_in currency or a fixed income instrument quoted in it; market otherwise (amendment A208 R11).
         period_bp:
           type: integer
         benchmark:
           $ref: "#/components/schemas/ReturnBenchmark"
+        inflation:
+          $ref: "#/components/schemas/ReturnInflation"
     ReturnBenchmark:
       type: object
-      required: [index, from, until, index_bp]
+      required: [index, from, until, days, index_bp]
       properties:
         index:
           type: string
@@ -10462,7 +10468,10 @@ components:
         from:
           type: string
           format: date
-          description: The first day of the comparison, from, or the day after the first flow when the tree held nothing before from.
+          description: The date of the first rate compared; the rates of the days the tree held nothing leave the comparison (amendment A208 R14).
+        days:
+          type: integer
+          description: The number of rates compared.
         until:
           type: string
           format: date
@@ -10474,10 +10483,33 @@ components:
           type: integer
         annual_bp:
           type: integer
-          description: return_bp as a rate a year on the year basis of the index (252 rate days for cdi); absent when the basis is unknown.
+          description: return_bp as a rate a year on the year basis of the index (252 rate days for cdi); absent when the basis is unknown or the profile is market.
         index_annual_bp:
           type: integer
           description: index_bp as a rate a year on the same basis.
+        excess_bp:
+          type: integer
+          description: return_bp minus index_bp, in basis points of percentage points.
+    ReturnInflation:
+      type: object
+      required: [index, from, until, index_bp, return_bp, real_bp]
+      description: The return net of inflation over the whole months of the period with a stored rate (amendment A208 R16).
+      properties:
+        index:
+          type: string
+          pattern: "^[a-z0-9_]{2,40}$"
+        from:
+          type: string
+          format: date
+        until:
+          type: string
+          format: date
+        index_bp:
+          type: integer
+        return_bp:
+          type: integer
+        real_bp:
+          type: integer
     SubtypeList:
       type: object
       required: [items]

@@ -234,13 +234,13 @@ describe("RulesPage", () => {
     if (!(card instanceof HTMLElement)) throw new Error("no suggestion card");
     expect(within(card).getByText("Categorize as Food")).toBeInTheDocument();
     expect(
-      within(card).getByText("description contains “padaria”"),
+      within(card).getByText("When description contains “padaria”"),
     ).toBeInTheDocument();
 
     await userEvent.click(accept);
 
     expect(
-      within(card).getByText("description contains “padaria”"),
+      within(card).getByText("When description contains “padaria”"),
     ).toBeInTheDocument();
     expect(
       within(card).getByRole("textbox", { name: catalogEn["rules.name"] }),

@@ -16,13 +16,15 @@ The return report (`GET /reports/return`) gives the money-weighted annual return
 | G1 | The report returns the time-weighted return of the period. |
 | G2 | The report compares that return with a daily index: the index's own growth and the equivalent percent of the index. |
 | G3 | The return screen lists savings and reserve accounts, so a savings account can be measured on its own. |
+| G4 | Each figure means what its name says for the product measured: a rate a year and a percent of the index for a product that pays a rate, the period return beside the index for a product with a market price (R11–R13). |
+| G5 | The report states the return net of inflation over whole months (R16). |
 
 ## Non-goals
 
 | ID | Non-goal |
 |---|---|
 | N1 | A return net of taxes (income tax, IOF). Yield is gross (investments design NG3). |
-| N2 | A return adjusted for inflation. |
+| N2 | Inflation over part of a month. A real return covers whole months (R16). |
 | N3 | Comparison with a monthly index. A monthly rate covers days outside a period that starts or ends inside the month. |
 | N4 | Annualizing a return on a calendar basis, or without a daily index. A rate a year exists only on the year basis on which the index is quoted (R9). |
 | N5 | A comparison on the trailing return of a goal (S130). |
@@ -49,11 +51,36 @@ The return report (`GET /reports/return`) gives the money-weighted annual return
 
 **R10 Account page.** The figures of an account that R8 measures add "Yield over 12 months": `annual_bp` over the 365 days that end today, and a note with `percent_bp` of the index, `index_annual_bp` and the window `benchmark.from`–`until`. Without `annual_bp`, the figure is absent.
 
+
+**R11 Profile.** `profile` is `rate` when each asset account of the tree holds the `value_in` currency or a `fixed_income` instrument quoted in `value_in`, and `market` otherwise: a stock, an ETF, a REIT, a fund, a crypto asset, a depositary receipt or a foreign currency. A `market` return carries the price of an asset or an exchange rate; a `rate` return carries a rate.
+
+**R12 Figures of a profile.** `annual_bp` (R9) and `percent_bp` (R5) exist only for `rate`. A `market` return is not annualized below a year, the rule of the GIPS standards (CFA Institute, 2020) for returns of periods shorter than a year, and a percent of an index states how much of a rate a product paid, which a market price does not. Both are absent for `market`; the screens state the period return beside the index.
+
+**R13 Excess.** `benchmark.excess_bp` is `return_bp − index_bp`, the difference in percentage points between the return and the index over the same days, for both profiles. It is absent when `return_bp` is.
+
+**R14 Days held.** A subperiod of R1 whose start value is 0 holds no money: the rates dated on its days, `(start, end]`, leave the comparison, so an account emptied and filled again is compared only over the days it held money. `benchmark.days` is the number of rates compared; `benchmark.from` is the date of the first one. With no rate left, `benchmark` is absent. This replaces the first sentence of R3: an account opened inside the period is the case of a first subperiod that starts at 0.
+
+**R15 Currency of the index.** An index belongs to a currency: `cdi` to `BRL` (`indexCurrency` in `internal/portfolio/region_defaults.go`). When `value_in` is another currency, the comparison is absent: a return in dollars does not compare with a rate paid in reais. An index without a known currency compares in any currency.
+
+**R16 Inflation.** `inflation` states the return net of inflation. Its index is the region's default (`defaultInflation`: `ipca` for `BR`, none otherwise), a monthly index whose rate is dated on the first day of its month. Its months are the calendar months that lie whole inside `[from, to]`, from the first such month up to the month before the first one without a stored rate. `inflation.from` is the first day of the first month and `inflation.until` the last day of the last one. `inflation.index_bp` is `(Π(1 + rate_m) − 1) × 10000`; `inflation.return_bp` is R1 over `(inflation.from − 1, inflation.until]`; `inflation.real_bp` is `((1 + return) / (1 + inflation) − 1) × 10000` (Fisher). Each is rounded half to even. `inflation` is absent without a month, without an index for the region, or when the return of its months is undefined. It applies to both profiles; it is absent when `value_in` is not the currency of the index (R15: `ipca` belongs to `BRL`).
+
+**R17 Screens.** Every figure the report holds is shown, named for what it is, with the days it covers. A negative return is written in the danger tone.
+
+| Place | `rate` | `market` |
+|---|---|---|
+| Accounts, column "Yield (90 days)" | `annual_bp` a year · `percent_bp` of the index | the period return · the index over the same days |
+| Accounts, phone row | `annual_bp` a year | the period return |
+| Account page, section "Yield over 12 months" | card "Rate a year" (`annual_bp`; note: the period return, `days` and the window); card "Percent of the index" (`percent_bp`; note: the index a year, `index_annual_bp`); card "Real return" (`real_bp`; note: the inflation and its months) | card "Return" (`return_bp`; note: `days` and the window); card "Against the index" (`excess_bp` in percentage points; note: the index over the same days); card "Real return" |
+| Portfolio, return section | the lines of R7 and the real return with its months | the same, without the rate a year and the percent of the index, with the excess |
+
+R8 and R10 hold where R17 does not replace them.
 ## Region-dependent values
 
 | Value | Extension point |
 |---|---|
 | The default benchmark index | `defaultBenchmark` in `internal/portfolio/region_defaults.go`, row "Benchmark index" of `docs/contributing/regions.md` |
+| The currency of an index | `indexCurrency` in `internal/portfolio/region_defaults.go`, row "Benchmark currency" of `docs/contributing/regions.md` |
+| The default inflation index | `defaultInflation` in `internal/portfolio/region_defaults.go`, row "Inflation index" of `docs/contributing/regions.md` |
 | The year basis of a benchmark index | `indexYearBasis` in `internal/portfolio/region_defaults.go`, row "Benchmark year basis" of `docs/contributing/regions.md` |
 
 ## Scenarios
@@ -62,3 +89,7 @@ The return report (`GET /reports/return`) gives the money-weighted annual return
 - **S303** The same account receives a deposit of 10,000,000.00 from checking on 2026-01-06 and keeps receiving the CDI of the day on its balance: `percent_bp` stays 10000; `period_bp` 33. With `to` 2026-01-12, after the last stored rate, `until` is 2026-01-09.
 - **S305** A savings account that receives its first deposit of 10,000,000.00 on 2026-01-05 and then the CDI of each day, measured from 2026-01-02 to 2026-01-09: `benchmark.from` is 2026-01-06, `index_bp` 22 and `percent_bp` 10000.
 - **S304** `index=ipca` (a monthly index) is 400 `invalid_request` on `index`; `index=sofr` with no enabled source is 400 `invalid_request` on `index`.
+- **S306** A brokerage that holds 10 PETR4 bought at 30.00 and priced at 27.00 at the end of the period: `profile` `market`; `benchmark` has `return_bp` −1000, `excess_bp` −1000 − `index_bp`, and no `annual_bp` or `percent_bp`.
+- **S307** The savings account of S302, emptied by a withdrawal to checking on 2026-01-06 and filled again on 2026-01-07: the rate of 2026-01-07 leaves the comparison; `days` 5 and `percent_bp` 10000.
+- **S308** The savings account of S302 held from 2025-11-01, credited the CDI of each day, with IPCA 0.50% for 2025-11 and 0.40% for 2025-12, measured from 2025-11-01 to 2026-01-09: `inflation` has `index` `ipca`, `from` 2025-11-01, `until` 2025-12-31 and `index_bp` 90, `return_bp` 0 (the CDI is credited only in January) and `real_bp` −89.
+- **S309** A book of region `US` gets no `benchmark` and no `inflation`; `period_bp` is present. A book of region `BR` that values the report in `USD` gets neither.

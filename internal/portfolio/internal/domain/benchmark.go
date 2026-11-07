@@ -3,6 +3,7 @@ package domain
 import (
 	"math"
 	"slices"
+	"time"
 )
 
 const (
@@ -84,6 +85,38 @@ func AnnualBP(factor float64, days, basis int) (bp int, ok bool) {
 	}
 
 	return FactorBP(math.Pow(factor, float64(basis)/float64(days))), true
+}
+
+// RealBP is the return net of inflation, ((returnFactor / inflationFactor) − 1) × 10000 rounded
+// half to even (Fisher, amendment A208 R16). ok is false when a factor is not positive.
+func RealBP(returnFactor, inflationFactor float64) (bp int, ok bool) {
+	if returnFactor <= 0 || inflationFactor <= 0 {
+		return 0, false
+	}
+
+	return FactorBP(returnFactor / inflationFactor), true
+}
+
+// WholeMonths returns the calendar months that lie whole inside [from, to], from the first one up
+// to the month before the first without a rate in rates (keyed by the first day of the month),
+// and the rates of those months (amendment A208 R16). ok is false without such a month.
+func WholeMonths(from, to time.Time, rates map[time.Time]float64) (first, until time.Time, monthly []float64, ok bool) {
+	first = time.Date(from.Year(), from.Month(), 1, 0, 0, 0, 0, time.UTC)
+	if !first.Equal(from) {
+		first = first.AddDate(0, 1, 0)
+	}
+
+	for m := first; !m.AddDate(0, 1, -1).After(to); m = m.AddDate(0, 1, 0) {
+		r, rated := rates[m]
+		if !rated {
+			break
+		}
+
+		monthly = append(monthly, r)
+		until = m.AddDate(0, 1, -1)
+	}
+
+	return first, until, monthly, len(monthly) > 0
 }
 
 // the product keeps growing with p.

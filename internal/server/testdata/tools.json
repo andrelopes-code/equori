@@ -3197,6 +3197,10 @@
           "type": "integer",
           "description": "for return: time-weighted return of the period in basis points; absent when undefined or zero"
         },
+        "profile": {
+          "type": "string",
+          "description": "for return: rate when every holding is cash or fixed income in the report's currency, market otherwise"
+        },
         "benchmark": {
           "type": "object",
           "properties": {
@@ -3227,13 +3231,53 @@
             "index_annual_bp": {
               "type": "integer",
               "description": "index_bp as a rate a year on the same basis; absent when undefined or zero"
+            },
+            "excess_bp": {
+              "type": "integer",
+              "description": "return_bp minus index_bp; absent when undefined or zero"
+            },
+            "days": {
+              "type": "integer"
             }
           },
           "required": [
             "index",
             "from",
             "until",
-            "index_bp"
+            "index_bp",
+            "days"
+          ],
+          "additionalProperties": false
+        },
+        "inflation": {
+          "type": "object",
+          "properties": {
+            "index": {
+              "type": "string"
+            },
+            "from": {
+              "type": "string"
+            },
+            "until": {
+              "type": "string"
+            },
+            "index_bp": {
+              "type": "integer"
+            },
+            "return_bp": {
+              "type": "integer"
+            },
+            "real_bp": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "index",
+            "from",
+            "until",
+            "index_bp",
+            "return_bp",
+            "real_bp"
           ],
           "additionalProperties": false
         },

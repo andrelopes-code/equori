@@ -1,4 +1,12 @@
 @layer app {
+  .conditions {
+    display: grid;
+    gap: var(--slotted-space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
   /* A name stands at the length of a rule name, not the width of the row; no token holds a
      text measure. */
   .name {

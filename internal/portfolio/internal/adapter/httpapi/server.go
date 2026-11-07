@@ -168,6 +168,7 @@ func (s *Server) GetReturn(ctx context.Context, req GetReturnRequestObject) (Get
 		Opening:  toMoney(r.Opening),
 		Closing:  toMoney(r.Closing),
 		Flows:    make([]ReturnFlow, len(r.Flows)),
+		Profile:  ReturnReportProfile(r.Profile),
 		PeriodBp: r.PeriodBP,
 	}
 	for i, f := range r.Flows {
@@ -179,12 +180,25 @@ func (s *Server) GetReturn(ctx context.Context, req GetReturnRequestObject) (Get
 			Index:     b.Index,
 			From:      date(b.From),
 			Until:     date(b.Until),
+			Days:      b.Days,
 			ReturnBp:  b.ReturnBP,
+			ExcessBp:  b.ExcessBP,
 			IndexBp:   b.IndexBP,
 			PercentBp: b.PercentBP,
 
 			AnnualBp:      b.AnnualBP,
 			IndexAnnualBp: b.IndexAnnualBP,
+		}
+	}
+
+	if i := r.Inflation; i != nil {
+		out.Inflation = &ReturnInflation{
+			Index:    i.Index,
+			From:     date(i.From),
+			Until:    date(i.Until),
+			IndexBp:  i.IndexBP,
+			ReturnBp: i.ReturnBP,
+			RealBp:   i.RealBP,
 		}
 	}
 

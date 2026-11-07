@@ -1117,6 +1117,8 @@ export const catalogPtBR: Catalog = {
   "suggestion.section": "Sugeridas a partir das suas correções",
   "suggestion.title": "Regra sugerida",
   "suggestion.basis": "Correções: {count}",
+  "suggestion.condition.first": "Quando {condition}",
+  "suggestion.condition.next": "e {condition}",
   "suggestion.defaultName": "Nova regra",
   "suggestion.dismiss": "Descartar",
   "suggestion.accept": "Criar regra",

@@ -1112,6 +1112,8 @@ export const catalogEn = {
   "suggestion.section": "Suggested from your corrections",
   "suggestion.title": "Suggested rule",
   "suggestion.basis": "Corrections: {count}",
+  "suggestion.condition.first": "When {condition}",
+  "suggestion.condition.next": "and {condition}",
   "suggestion.defaultName": "New rule",
   "suggestion.dismiss": "Dismiss",
   "suggestion.accept": "Create rule",

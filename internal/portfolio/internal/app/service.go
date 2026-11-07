@@ -24,6 +24,7 @@ var ErrPriceMissing = errors.New("price missing")
 type Account struct {
 	ID, ParentID, InstitutionID uuid.UUID
 	Class, Kind                 string
+	Instrument                  money.Currency
 }
 
 // Ledger is read through ledger.Module (ADR 002).
@@ -70,6 +71,14 @@ type MarketData interface {
 	// YearBasis returns the rate days of a year on which an index is quoted, or 0 when unknown
 	// (amendment A208 R9).
 	YearBasis(index string) int
+	// IndexCurrency returns the currency an index belongs to, or "" when unknown (R15).
+	IndexCurrency(index string) money.Currency
+	// InflationIndex returns the default inflation index of the book's region, or "" (R16).
+	InflationIndex(ctx context.Context, booksID int64) (string, error)
+	// MonthlyRates returns the rates of a monthly index in [from, to], oldest first, each dated
+	// on the first day of its month: ErrUnknownIndex when the index is not enabled or has no
+	// rate, ErrIndexNotMonthly when its period is not a month.
+	MonthlyRates(ctx context.Context, id string, from, to time.Time) ([]IndexRate, error)
 }
 
 type Repository interface {

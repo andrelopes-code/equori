@@ -54,6 +54,24 @@ func (e InstrumentType) Valid() bool {
 	}
 }
 
+// Defines values for ReturnReportProfile.
+const (
+	ReturnReportProfileMarket ReturnReportProfile = "market"
+	ReturnReportProfileRate   ReturnReportProfile = "rate"
+)
+
+// Valid indicates whether the value is a known member of the ReturnReportProfile enum.
+func (e ReturnReportProfile) Valid() bool {
+	switch e {
+	case ReturnReportProfileMarket:
+		return true
+	case ReturnReportProfileRate:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for GetAllocationParamsBy.
 const (
 	GetAllocationParamsByCurrency    GetAllocationParamsBy = "currency"
@@ -256,10 +274,16 @@ type RealizedResultList struct {
 
 // ReturnBenchmark defines model for ReturnBenchmark.
 type ReturnBenchmark struct {
-	// AnnualBp return_bp as a rate a year on the year basis of the index (252 rate days for cdi); absent when the basis is unknown.
+	// AnnualBp return_bp as a rate a year on the year basis of the index (252 rate days for cdi); absent when the basis is unknown or the profile is market.
 	AnnualBp *int `json:"annual_bp,omitempty"`
 
-	// From The first day of the comparison, from, or the day after the first flow when the tree held nothing before from.
+	// Days The number of rates compared.
+	Days int `json:"days"`
+
+	// ExcessBp return_bp minus index_bp, in basis points of percentage points.
+	ExcessBp *int `json:"excess_bp,omitempty"`
+
+	// From The date of the first rate compared; the rates of the days the tree held nothing leave the comparison (amendment A208 R14).
 	From  openapi_types.Date `json:"from"`
 	Index string             `json:"index"`
 
@@ -277,15 +301,34 @@ type ReturnFlow struct {
 	Date   openapi_types.Date `json:"date"`
 }
 
+// ReturnInflation The return net of inflation over the whole months of the period with a stored rate (amendment A208 R16).
+type ReturnInflation struct {
+	From     openapi_types.Date `json:"from"`
+	Index    string             `json:"index"`
+	IndexBp  int                `json:"index_bp"`
+	RealBp   int                `json:"real_bp"`
+	ReturnBp int                `json:"return_bp"`
+	Until    openapi_types.Date `json:"until"`
+}
+
 // ReturnReport defines model for ReturnReport.
 type ReturnReport struct {
 	AnnualBp  int              `json:"annual_bp"`
 	Benchmark *ReturnBenchmark `json:"benchmark,omitempty"`
 	Closing   Money            `json:"closing"`
 	Flows     []ReturnFlow     `json:"flows"`
+
+	// Inflation The return net of inflation over the whole months of the period with a stored rate (amendment A208 R16).
+	Inflation *ReturnInflation `json:"inflation,omitempty"`
 	Opening   Money            `json:"opening"`
 	PeriodBp  *int             `json:"period_bp,omitempty"`
+
+	// Profile rate when every holding is the value_in currency or a fixed income instrument quoted in it; market otherwise (amendment A208 R11).
+	Profile ReturnReportProfile `json:"profile"`
 }
+
+// ReturnReportProfile rate when every holding is the value_in currency or a fixed income instrument quoted in it; market otherwise (amendment A208 R11).
+type ReturnReportProfile string
 
 // SubtypeList defines model for SubtypeList.
 type SubtypeList struct {

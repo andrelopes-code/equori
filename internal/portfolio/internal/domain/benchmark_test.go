@@ -3,6 +3,7 @@ package domain
 import (
 	"math"
 	"testing"
+	"time"
 )
 
 func TestPeriodFactor(t *testing.T) {
@@ -123,6 +124,67 @@ func TestAnnualBP(t *testing.T) {
 			got, ok := AnnualBP(tt.factor, tt.days, tt.basis)
 			if ok != tt.wantOK || (ok && got != tt.want) {
 				t.Fatalf("AnnualBP = %d, %v; want %d, %v", got, ok, tt.want, tt.wantOK)
+			}
+		})
+	}
+}
+
+func TestRealBP(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name           string
+		ret, inflation float64
+		want           int
+		wantOK         bool
+	}{
+		{"a return above inflation", 1.10, 1.05, 476, true},
+		{"no return under inflation", 1, 1.00902, -89, true},
+		{"no inflation", 1.10, 1, 1000, true},
+		{"deflation", 1, 0.99, 101, true},
+		{"total loss", 0, 1.05, 0, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, ok := RealBP(tt.ret, tt.inflation)
+			if ok != tt.wantOK || (ok && got != tt.want) {
+				t.Fatalf("RealBP = %d, %v; want %d, %v", got, ok, tt.want, tt.wantOK)
+			}
+		})
+	}
+}
+
+func TestWholeMonths(t *testing.T) {
+	t.Parallel()
+
+	day := func(s string) time.Time {
+		d, _ := time.Parse(time.DateOnly, s)
+		return d
+	}
+	rates := map[time.Time]float64{day("2025-11-01"): 0.005, day("2025-12-01"): 0.004, day("2026-02-01"): 0.003}
+
+	tests := []struct {
+		name         string
+		from, to     string
+		first, until string
+		months       int
+		wantOK       bool
+	}{
+		{"two whole months", "2025-11-01", "2026-01-09", "2025-11-01", "2025-12-31", 2, true},
+		{"a start inside a month skips it", "2025-11-02", "2025-12-31", "2025-12-01", "2025-12-31", 1, true},
+		{"the first month without a rate ends the run", "2025-11-01", "2026-02-28", "2025-11-01", "2025-12-31", 2, true},
+		{"no whole month", "2026-01-02", "2026-01-09", "", "", 0, false},
+		{"a first month without a rate", "2026-01-01", "2026-02-28", "", "", 0, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			first, until, monthly, ok := WholeMonths(day(tt.from), day(tt.to), rates)
+			if ok != tt.wantOK || len(monthly) != tt.months {
+				t.Fatalf("WholeMonths = %v, %v, %v, %v", first, until, monthly, ok)
+			}
+
+			if ok && (!first.Equal(day(tt.first)) || !until.Equal(day(tt.until))) {
+				t.Fatalf("WholeMonths = %v to %v; want %s to %s", first, until, tt.first, tt.until)
 			}
 		})
 	}

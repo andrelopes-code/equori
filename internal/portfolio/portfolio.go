@@ -143,7 +143,7 @@ func (p ledgerPort) AccountFacts(ctx context.Context, booksID int64) ([]app.Acco
 
 	out := make([]app.Account, len(facts))
 	for i, a := range facts {
-		out[i] = app.Account{ID: a.ID, ParentID: a.ParentID, InstitutionID: a.InstitutionID, Class: a.Class, Kind: a.Kind}
+		out[i] = app.Account{ID: a.ID, ParentID: a.ParentID, InstitutionID: a.InstitutionID, Class: a.Class, Kind: a.Kind, Instrument: a.Instrument}
 	}
 
 	return out, err
@@ -267,9 +267,48 @@ func (p marketPort) Convert(ctx context.Context, q money.Money, to money.Currenc
 }
 
 // dailyPeriod is the period of an index with one rate per business day (marketdata IndexSummary).
-const dailyPeriod = "day"
+const (
+	dailyPeriod   = "day"
+	monthlyPeriod = "month"
+)
 
 func (p marketPort) IndexRates(ctx context.Context, id string, from, to time.Time) ([]app.IndexRate, error) {
+	return p.rates(ctx, id, dailyPeriod, app.ErrIndexNotDaily, from, to)
+}
+
+func (p marketPort) MonthlyRates(ctx context.Context, id string, from, to time.Time) ([]app.IndexRate, error) {
+	return p.rates(ctx, id, monthlyPeriod, app.ErrIndexNotMonthly, from, to)
+}
+
+func (p marketPort) BenchmarkIndex(ctx context.Context, booksID int64) (string, error) {
+	l, err := p.profiles.Profile(ctx, booksID)
+	if err != nil {
+		return "", err
+	}
+
+	return defaultBenchmark(l.Region), nil
+}
+
+func (p marketPort) YearBasis(index string) int {
+	return indexYearBasis(index)
+}
+
+func (p marketPort) IndexCurrency(index string) money.Currency {
+	return indexCurrency(index)
+}
+
+func (p marketPort) InflationIndex(ctx context.Context, booksID int64) (string, error) {
+	l, err := p.profiles.Profile(ctx, booksID)
+	if err != nil {
+		return "", err
+	}
+
+	return defaultInflation(l.Region), nil
+}
+
+// rates returns the rates of an enabled index of the given period in [from, to], parsed to
+// fractions; wrongPeriod is the error for an index of another period.
+func (p marketPort) rates(ctx context.Context, id, period string, wrongPeriod error, from, to time.Time) ([]app.IndexRate, error) {
 	indexes, err := p.md.Indexes(ctx)
 	if err != nil {
 		return nil, err
@@ -280,8 +319,8 @@ func (p marketPort) IndexRates(ctx context.Context, id string, from, to time.Tim
 		return nil, app.ErrUnknownIndex
 	}
 
-	if indexes[i].Period != dailyPeriod {
-		return nil, app.ErrIndexNotDaily
+	if indexes[i].Period != period {
+		return nil, wrongPeriod
 	}
 
 	rates, err := p.md.IndexRates(ctx, id, from, to)
@@ -300,17 +339,4 @@ func (p marketPort) IndexRates(ctx context.Context, id string, from, to time.Tim
 	}
 
 	return out, nil
-}
-
-func (p marketPort) BenchmarkIndex(ctx context.Context, booksID int64) (string, error) {
-	l, err := p.profiles.Profile(ctx, booksID)
-	if err != nil {
-		return "", err
-	}
-
-	return defaultBenchmark(l.Region), nil
-}
-
-func (p marketPort) YearBasis(index string) int {
-	return indexYearBasis(index)
 }

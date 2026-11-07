@@ -1,6 +1,5 @@
 import { Button } from "@slotted/react/button";
 import { Field, FieldLabel } from "@slotted/react/field";
-import { Inline } from "@slotted/react/inline";
 import {
   ListItem,
   ListItemActions,
@@ -10,7 +9,6 @@ import {
   ListItemEnd,
   ListItemLabel,
 } from "@slotted/react/list-item";
-import { Tag } from "@slotted/react/tag";
 import { TextField } from "@slotted/react/text-field";
 import { Text } from "@slotted/react/typography";
 import { useState } from "react";
@@ -71,21 +69,20 @@ export function SuggestionItem({
             </Text>
           </ListItemLabel>
           <ListItemDescription>
-            <Inline gap={2} align="center" wrap="wrap">
-              <Text size="sm" tone="muted">
-                {t("ruleEditor.when")}
-              </Text>
+            <ul className={styles.conditions}>
               {suggestion.conditions.map((condition, i) => (
-                <Inline key={i} gap={2} align="center">
-                  {i > 0 && (
-                    <Text size="sm" tone="muted">
-                      {t("ruleEditor.and")}
-                    </Text>
-                  )}
-                  <Tag size="sm">{conditionSentence(condition, words)}</Tag>
-                </Inline>
+                <li key={i}>
+                  <Text size="sm" tone="muted">
+                    {t(
+                      i === 0
+                        ? "suggestion.condition.first"
+                        : "suggestion.condition.next",
+                      { condition: conditionSentence(condition, words) },
+                    )}
+                  </Text>
+                </li>
               ))}
-            </Inline>
+            </ul>
           </ListItemDescription>
           {naming && (
             <Field required className={styles.name}>
