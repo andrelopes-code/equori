@@ -9,6 +9,9 @@ import (
 const (
 	minPercent = -10.0
 	maxPercent = 10.0
+
+	// maxAnnualBP bounds the rate a year AnnualBP returns: 10^7 basis points, 1,000,000%.
+	maxAnnualBP = 1e7
 )
 
 // Subperiod is the end of one piece of a time-weighted period: the value of the tree at the end
@@ -75,16 +78,21 @@ func IndexPercentBP(factor float64, rates []float64) (bp int, ok bool) {
 	return int(math.RoundToEven((lo + hi) / 2 * 10000)), true
 }
 
-// percentFactor is the product of 1 + p × rate; a factor at or below zero is minus infinity, so
 // AnnualBP is the rate a year equivalent to growing by factor over days rate days, on a year of
 // basis rate days: (factor^(basis/days) − 1) × 10000, rounded half to even (amendment A208 R9).
-// ok is false without a day, without a basis, or when factor is not positive.
+// ok is false without a day, without a basis, when factor is not positive, or when the result is
+// not finite or lies outside ±10^7 basis points.
 func AnnualBP(factor float64, days, basis int) (bp int, ok bool) {
 	if days <= 0 || basis <= 0 || factor <= 0 {
 		return 0, false
 	}
 
-	return FactorBP(math.Pow(factor, float64(basis)/float64(days))), true
+	annual := (math.Pow(factor, float64(basis)/float64(days)) - 1) * 10000
+	if math.IsNaN(annual) || math.IsInf(annual, 0) || math.Abs(annual) > maxAnnualBP {
+		return 0, false
+	}
+
+	return int(math.RoundToEven(annual)), true
 }
 
 // RealBP is the return net of inflation, ((returnFactor / inflationFactor) − 1) × 10000 rounded
@@ -119,6 +127,7 @@ func WholeMonths(from, to time.Time, rates map[time.Time]float64) (first, until 
 	return first, until, monthly, len(monthly) > 0
 }
 
+// percentFactor is the product of 1 + p × rate; a factor at or below zero is minus infinity, so
 // the product keeps growing with p.
 func percentFactor(p float64, rates []float64) float64 {
 	f := 1.0

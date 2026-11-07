@@ -581,99 +581,6 @@ func (q *Queries) TreeExternalFlows(ctx context.Context, arg TreeExternalFlowsPa
 	return items, nil
 }
 
-const treeFirstIncome = `-- name: TreeFirstIncome :one
-WITH RECURSIVE
-    tree AS (
-        SELECT
-            a.id
-        FROM
-            ledger_account a
-        WHERE
-            a.books_id = $2
-            AND a.id = ANY ($3::UUID[])
-        UNION
-        SELECT
-            c.id
-        FROM
-            ledger_account c
-            JOIN tree ON c.parent_id = tree.id
-        WHERE
-            c.books_id = $2
-    ),
-    income AS (
-        SELECT
-            p.booked_on AS income_on
-        FROM
-            ledger_posting p
-            JOIN ledger_posting o ON o.transaction_id = p.transaction_id
-            AND o.books_id = p.books_id
-            AND NOT o.voided
-            JOIN ledger_account oa ON oa.id = o.account_id
-            AND oa.books_id = o.books_id
-            AND oa.account_class = 'income'
-        WHERE
-            p.books_id = $2
-            AND NOT p.voided
-            AND p.booked_on <= $4::date
-            AND p.account_id IN (
-                SELECT
-                    id
-                FROM
-                    tree
-            )
-    )
-SELECT
-    coalesce(
-        min(i.income_on) FILTER (
-            WHERE
-                i.income_on >= $1::date
-        ),
-        DATE '0001-01-01'
-    )::date AS first_on,
-    (
-        count(*) FILTER (
-            WHERE
-                i.income_on >= $1::date
-        ) > 0
-    )::boolean AS found,
-    (
-        count(*) FILTER (
-            WHERE
-                i.income_on < $1::date
-        ) > 0
-    )::boolean AS before
-FROM
-    income i
-`
-
-type TreeFirstIncomeParams struct {
-	FromDate   time.Time
-	BooksID    int64
-	AccountIds []uuid.UUID
-	ToDate     time.Time
-}
-
-type TreeFirstIncomeRow struct {
-	FirstOn time.Time
-	Found   bool
-	Before  bool
-}
-
-// The income the accounts and their sub-accounts received from an income account (return
-// comparison amendment A208 R18): whether any came before from_date, and the booked date of the
-// earliest in [from_date, to_date]; found is false, and first_on meaningless, when none did.
-func (q *Queries) TreeFirstIncome(ctx context.Context, arg TreeFirstIncomeParams) (TreeFirstIncomeRow, error) {
-	row := q.db.QueryRow(ctx, treeFirstIncome,
-		arg.FromDate,
-		arg.BooksID,
-		arg.AccountIds,
-		arg.ToDate,
-	)
-	var i TreeFirstIncomeRow
-	err := row.Scan(&i.FirstOn, &i.Found, &i.Before)
-	return i, err
-}
-
 const treeFirstPosting = `-- name: TreeFirstPosting :one
 WITH RECURSIVE
     tree AS (
@@ -725,6 +632,83 @@ func (q *Queries) TreeFirstPosting(ctx context.Context, arg TreeFirstPostingPara
 	row := q.db.QueryRow(ctx, treeFirstPosting, arg.BooksID, arg.AccountIds)
 	var i TreeFirstPostingRow
 	err := row.Scan(&i.FirstOn, &i.Found)
+	return i, err
+}
+
+const treeIncomeSpan = `-- name: TreeIncomeSpan :one
+WITH RECURSIVE
+    tree AS (
+        SELECT
+            a.id
+        FROM
+            ledger_account a
+        WHERE
+            a.books_id = $1
+            AND a.id = ANY ($2::UUID[])
+        UNION
+        SELECT
+            c.id
+        FROM
+            ledger_account c
+            JOIN tree ON c.parent_id = tree.id
+        WHERE
+            c.books_id = $1
+    ),
+    income AS (
+        SELECT
+            p.booked_on AS income_on
+        FROM
+            ledger_posting p
+            JOIN ledger_posting o ON o.transaction_id = p.transaction_id
+            AND o.books_id = p.books_id
+            AND NOT o.voided
+            JOIN ledger_account oa ON oa.id = o.account_id
+            AND oa.books_id = o.books_id
+            AND oa.account_class = 'income'
+        WHERE
+            p.books_id = $1
+            AND NOT p.voided
+            AND p.booked_on BETWEEN $3::date AND $4::date
+            AND p.account_id IN (
+                SELECT
+                    id
+                FROM
+                    tree
+            )
+    )
+SELECT
+    coalesce(min(i.income_on), DATE '0001-01-01')::date AS first_on,
+    coalesce(max(i.income_on), DATE '0001-01-01')::date AS last_on,
+    (count(*) > 0)::boolean AS found
+FROM
+    income i
+`
+
+type TreeIncomeSpanParams struct {
+	BooksID    int64
+	AccountIds []uuid.UUID
+	FromDate   time.Time
+	ToDate     time.Time
+}
+
+type TreeIncomeSpanRow struct {
+	FirstOn time.Time
+	LastOn  time.Time
+	Found   bool
+}
+
+// The dates of the first and the last income the accounts and their sub-accounts received from an
+// income account in [from_date, to_date] (return comparison amendment A208 R18); found is false,
+// and the dates meaningless, when none did.
+func (q *Queries) TreeIncomeSpan(ctx context.Context, arg TreeIncomeSpanParams) (TreeIncomeSpanRow, error) {
+	row := q.db.QueryRow(ctx, treeIncomeSpan,
+		arg.BooksID,
+		arg.AccountIds,
+		arg.FromDate,
+		arg.ToDate,
+	)
+	var i TreeIncomeSpanRow
+	err := row.Scan(&i.FirstOn, &i.LastOn, &i.Found)
 	return i, err
 }
 

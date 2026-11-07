@@ -76,19 +76,36 @@ type period struct {
 	from, to time.Time
 	report   *ReturnReport
 	values   map[time.Time]int64
+
+	// recorded is true when the yield of the tree is what the ledger records as income (R18).
+	recorded bool
+}
+
+// window is the days a comparison covers, both ends included: the rates dated in it on days the
+// tree held money are compared (R14, R18). Its return starts on the day returnFrom.
+type window struct {
+	since, until time.Time
+	returnFrom   time.Time
 }
 
 // compare sets on report its profile, its time-weighted return, its comparison with the index
-// and its real return; the flows of report are in the currency of its opening value.
+// and its real return; the flows of report are in the currency of its opening value. A named index
+// is validated before any figure is left out (R2).
 func (s *Service) compare(ctx context.Context, booksID int64, ids []uuid.UUID, from, to time.Time, index string, report *ReturnReport) error {
 	p := period{booksID: booksID, ids: ids, from: from, to: to, report: report, values: map[time.Time]int64{}}
 
-	profile, err := s.profileOf(ctx, booksID, ids, report.Opening.Currency())
+	profile, recorded, err := s.profileOf(ctx, booksID, ids, report.Opening.Currency())
 	if err != nil {
 		return err
 	}
 
 	report.Profile = profile
+	p.recorded = recorded
+
+	index, rates, err := s.benchmarkRates(ctx, p, index)
+	if err != nil {
+		return err
+	}
 
 	start, ends, dates, err := s.pieces(ctx, p, from, to)
 	if err != nil {
@@ -99,47 +116,60 @@ func (s *Service) compare(ctx context.Context, booksID int64, ids []uuid.UUID, f
 		report.PeriodBP = new(domain.FactorBP(f))
 	}
 
-	since, ok, err := s.comparedFrom(ctx, p, start, ends, dates)
+	w, ok, err := s.comparedWindow(ctx, p, start, ends, dates)
 	if err != nil || !ok {
 		return err
 	}
 
-	if err := s.benchmark(ctx, p, index, heldDays(from, start, ends, dates), since); err != nil {
+	held := heldDays(from, start, ends, dates)
+	if err := s.benchmark(ctx, p, index, rates, held, w); err != nil {
 		return err
 	}
 
-	return s.inflation(ctx, p, since)
+	return s.inflation(ctx, p, held, w)
 }
 
-// comparedFrom is the first day the index and inflation compare with (R14, R18): the first day the
-// tree held money and, for a rate tree that received no income before the period, not before its
-// first income in it. ok is false when the tree held no money in the period, or when a rate tree
-// recorded no income in it.
-func (s *Service) comparedFrom(ctx context.Context, p period, start int64, ends []domain.Subperiod, dates []time.Time) (time.Time, bool, error) {
+// comparedWindow is the window of the index and inflation comparisons (R14, R18): from the first
+// day the tree held money to the end of the period. A tree whose yield is recorded is compared
+// over (A, B] of R18, A and B being the first and the last income in [from − 1, to]. ok is false
+// when the tree held no money in the period, or when a recorded yield spans no day.
+func (s *Service) comparedWindow(ctx context.Context, p period, start int64, ends []domain.Subperiod, dates []time.Time) (window, bool, error) {
 	since, ok := firstHeldDay(p.from, start, ends, dates)
-	if !ok || p.report.Profile != ProfileRate {
-		return since, ok, nil
+	if !ok {
+		return window{}, false, nil
 	}
 
-	before, first, found, err := s.ledger.FirstIncome(ctx, p.booksID, p.ids, p.from, p.to)
-	if err != nil || !found {
-		return time.Time{}, false, err
+	w := window{since: since, until: p.to, returnFrom: p.from}
+	if !p.recorded {
+		return w, true, nil
 	}
 
-	if !before && first.After(since) {
-		since = first
+	first, last, found, err := s.ledger.IncomeSpan(ctx, p.booksID, p.ids, p.from.AddDate(0, 0, -1), p.to)
+	if err != nil || !found || first.Equal(last) {
+		return window{}, false, err
 	}
 
-	return since, true, nil
+	w.returnFrom = first.AddDate(0, 0, 1)
+	w.until = last
+
+	if w.returnFrom.After(since) {
+		w.since = w.returnFrom
+	}
+
+	return w, true, nil
 }
 
 // profileOf is ProfileRate when each asset account of the trees of ids holds currency in or a
 // fixed income instrument quoted in it, and ProfileMarket otherwise (amendment A208 R11).
-func (s *Service) profileOf(ctx context.Context, booksID int64, ids []uuid.UUID, in money.Currency) (string, error) {
+// recorded is true for a rate tree that holds no fixed income instrument: its yield is the income
+// the ledger records (R18), while the yield of a fixed income instrument is in its price.
+func (s *Service) profileOf(ctx context.Context, booksID int64, ids []uuid.UUID, in money.Currency) (profile string, recorded bool, err error) {
 	accounts, err := s.ledger.AccountFacts(ctx, booksID)
 	if err != nil {
-		return "", err
+		return "", false, err
 	}
+
+	recorded = true
 
 	for _, a := range treeAccounts(accounts, ids) {
 		if a.Class != classAsset || a.Instrument == in {
@@ -148,27 +178,26 @@ func (s *Service) profileOf(ctx context.Context, booksID int64, ids []uuid.UUID,
 
 		info, err := s.md.InstrumentOf(ctx, a.Instrument)
 		if err != nil {
-			return "", err
+			return "", false, err
 		}
 
 		if info.Type != typeFixedIncome || info.QuoteCurrency != in {
-			return ProfileMarket, nil
+			return ProfileMarket, false, nil
 		}
+
+		recorded = false
 	}
 
-	return ProfileRate, nil
+	return ProfileRate, recorded, nil
 }
 
-// benchmark sets the comparison with the index on p.report, over the rates dated on or after since
-// on days the tree held money (R14, R18).
-func (s *Service) benchmark(ctx context.Context, p period, index string, held func(time.Time) bool, since time.Time) error {
-	index, rates, err := s.benchmarkRates(ctx, p, index)
-	if err != nil {
-		return err
-	}
-
+// benchmark sets the comparison with the index on p.report, over the rates of the index dated in
+// w on days the tree held money (R14, R18).
+func (s *Service) benchmark(ctx context.Context, p period, index string, rates []IndexRate, held func(time.Time) bool, w window) error {
 	all := len(rates)
-	rates = slices.DeleteFunc(rates, func(r IndexRate) bool { return r.Date.Before(since) || !held(r.Date) })
+	rates = slices.DeleteFunc(rates, func(r IndexRate) bool {
+		return r.Date.Before(w.since) || r.Date.After(w.until) || !held(r.Date)
+	})
 
 	if len(rates) == 0 {
 		return nil
@@ -193,7 +222,12 @@ func (s *Service) benchmark(ctx context.Context, p period, index string, held fu
 		b.IndexAnnualBP = &a
 	}
 
-	start, ends, _, err := s.pieces(ctx, p, p.from, b.Until)
+	end := b.Until
+	if p.recorded {
+		end = w.until
+	}
+
+	start, ends, _, err := s.pieces(ctx, p, w.returnFrom, end)
 	if err != nil {
 		return err
 	}
@@ -239,9 +273,9 @@ func (s *Service) benchmarkRates(ctx context.Context, p period, index string) (s
 	return index, rates, nil
 }
 
-// inflation sets the real return on p.report over the whole months from since to the end of the
-// period (R16, R18).
-func (s *Service) inflation(ctx context.Context, p period, since time.Time) error {
+// inflation sets the real return on p.report over the whole months of w on every day of which the
+// tree held money (R16).
+func (s *Service) inflation(ctx context.Context, p period, held func(time.Time) bool, w window) error {
 	index, err := s.md.InflationIndex(ctx, p.booksID)
 	if err != nil || index == "" || !s.inIndexCurrency(index, p.report) {
 		return err
@@ -258,10 +292,12 @@ func (s *Service) inflation(ctx context.Context, p period, since time.Time) erro
 
 	byMonth := make(map[time.Time]float64, len(rates))
 	for _, r := range rates {
-		byMonth[r.Date] = r.Rate
+		if heldMonth(r.Date, held) {
+			byMonth[r.Date] = r.Rate
+		}
 	}
 
-	first, until, monthly, ok := domain.WholeMonths(since, p.to, byMonth)
+	first, until, monthly, ok := domain.WholeMonths(w.since, w.until, byMonth)
 	if !ok {
 		return nil
 	}
@@ -380,6 +416,17 @@ func heldDays(from time.Time, start int64, ends []domain.Subperiod, dates []time
 
 		return false
 	}
+}
+
+// heldMonth reports whether the tree held money on every day of the month that starts on first.
+func heldMonth(first time.Time, held func(time.Time) bool) bool {
+	for day := first; day.Before(first.AddDate(0, 1, 0)); day = day.AddDate(0, 0, 1) {
+		if !held(day) {
+			return false
+		}
+	}
+
+	return true
 }
 
 // firstHeldDay is the first day of the period the tree held money: from when it held money at the

@@ -511,8 +511,9 @@ type Repository interface {
 	TreeExternalFlows(ctx context.Context, booksID int64, accountIDs []uuid.UUID, from, to time.Time) ([]ExternalFlow, error)
 	// TreeFirstPosting returns the booked date of the earliest posting of the tree of the accounts.
 	TreeFirstPosting(ctx context.Context, booksID int64, accountIDs []uuid.UUID) (time.Time, bool, error)
-	// TreeFirstIncome returns the income the tree of the accounts received up to to.
-	TreeFirstIncome(ctx context.Context, booksID int64, accountIDs []uuid.UUID, from, to time.Time) (FirstIncome, error)
+	// TreeIncomeSpan returns the first and the last date of the income the tree of the accounts
+	// received in [from, to].
+	TreeIncomeSpan(ctx context.Context, booksID int64, accountIDs []uuid.UUID, from, to time.Time) (IncomeSpan, error)
 	// CategoryTotal sums the weights of the non-voided postings of the account and its
 	// descendants booked in [from, to).
 	CategoryTotal(ctx context.Context, booksID int64, accountID uuid.UUID, from, to time.Time) (int64, error)

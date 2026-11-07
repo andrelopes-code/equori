@@ -43,7 +43,8 @@ type comparedReturn struct {
 	} `json:"benchmark"`
 }
 
-// S302: a savings account paid the CDI of each day on its balance earns 100% of CDI.
+// S302: a savings account paid the CDI of each day on its balance earns 100% of CDI; the credit of
+// 2026-01-02 is the first one recorded, so the rates compared are those after it (R18).
 func TestS302SavingsAtTheCDI(t *testing.T) {
 	t.Parallel()
 	b := newBenchmarkBook(t)
@@ -54,11 +55,11 @@ func TestS302SavingsAtTheCDI(t *testing.T) {
 	}
 
 	got := *r.Benchmark
-	if got.Days != 6 || got.ExcessBP == nil || *got.ExcessBP != 0 {
+	if got.Days != 5 || got.Skipped != 1 || got.ExcessBP == nil || *got.ExcessBP != 0 {
 		t.Fatalf("days and excess = %+v", got)
 	}
 
-	if got.Index != "cdi" || got.From != "2026-01-02" || got.Until != "2026-01-09" || got.IndexBP != 33 || got.ReturnBP == nil || *got.ReturnBP != 33 || got.PercentBP == nil || *got.PercentBP != 10000 {
+	if got.Index != "cdi" || got.From != "2026-01-05" || got.Until != "2026-01-09" || got.IndexBP != 28 || got.ReturnBP == nil || *got.ReturnBP != 28 || got.PercentBP == nil || *got.PercentBP != 10000 {
 		t.Fatalf("benchmark = %+v", got)
 	}
 
@@ -86,7 +87,8 @@ func TestS303DepositInsideThePeriod(t *testing.T) {
 	}
 }
 
-// S305: an account opened inside the period is compared from the day after its first deposit.
+// S305: an account opened inside the period is compared after its first recorded credit, the day
+// after its first deposit (R14, R18).
 func TestS305AccountOpenedInsideThePeriod(t *testing.T) {
 	t.Parallel()
 	b := newBenchmarkBookOn(t, "2026-01-05")
@@ -97,7 +99,7 @@ func TestS305AccountOpenedInsideThePeriod(t *testing.T) {
 	}
 
 	got := *r.Benchmark
-	if got.From != "2026-01-06" || got.Until != "2026-01-09" || got.IndexBP != 22 || got.PercentBP == nil || *got.PercentBP != 10000 {
+	if got.From != "2026-01-07" || got.Until != "2026-01-09" || got.Days != 3 || got.Skipped != 3 || got.IndexBP != 17 || got.PercentBP == nil || *got.PercentBP != 10000 {
 		t.Fatalf("benchmark = %+v", got)
 	}
 }
@@ -143,7 +145,7 @@ func TestS307AccountEmptiedInsideThePeriod(t *testing.T) {
 	}
 
 	got := *r.Benchmark
-	if got.Days != 5 || got.From != "2026-01-02" || got.PercentBP == nil || *got.PercentBP != 10000 {
+	if got.Days != 4 || got.Skipped != 2 || got.From != "2026-01-05" || got.IndexBP != 22 || got.PercentBP == nil || *got.PercentBP != 10000 {
 		t.Fatalf("benchmark = %+v", got)
 	}
 }
@@ -188,8 +190,8 @@ func TestS309NoIndexForTheRegionOrCurrency(t *testing.T) {
 	}
 }
 
-// S310: a savings account compares from its first recorded yield when none came before the
-// period, and not at all when none was recorded.
+// S310: a savings account compares the rates after its first recorded yield, and not at all when
+// fewer than two days of yield were recorded (R18).
 func TestS310YieldRecordedLate(t *testing.T) {
 	t.Parallel()
 	b := newBenchmarkBookWith(t, "2026-01-01", map[string]int64{"2026-01-02": unrecorded, "2026-01-05": unrecorded})
@@ -200,8 +202,18 @@ func TestS310YieldRecordedLate(t *testing.T) {
 	}
 
 	got := *r.Benchmark
-	if got.From != "2026-01-06" || got.Days != 4 || got.Skipped != 2 || got.IndexBP != 22 || got.PercentBP == nil || *got.PercentBP != 10000 {
+	if got.From != "2026-01-07" || got.Days != 3 || got.Skipped != 3 || got.IndexBP != 17 || got.PercentBP == nil || *got.PercentBP != 10000 {
 		t.Fatalf("benchmark = %+v", got)
+	}
+
+	single := map[string]int64{}
+	for _, d := range cdiDays[:len(cdiDays)-1] {
+		single[d] = unrecorded
+	}
+
+	r = newBenchmarkBookWith(t, "2026-01-01", single).compared(t, "2026-01-02", "2026-01-09", "")
+	if r.Benchmark != nil || r.PeriodBP == nil || *r.PeriodBP != 6 {
+		t.Fatalf("report with one recorded yield = %+v", r)
 	}
 
 	silent := map[string]int64{}
@@ -216,7 +228,8 @@ func TestS310YieldRecordedLate(t *testing.T) {
 }
 
 // S311: an account that held money before the period, credited the CDI from its first yield, and
-// that receives a deposit, compares from the first recorded yield and not at the first rate.
+// that receives a deposit, compares the rates after the first recorded yield, over the return of
+// those days only.
 func TestS311YieldOfAHeldAccountRecordedLate(t *testing.T) {
 	t.Parallel()
 	b := newBenchmarkBookPaying(t, "2025-12-01", 813_594,
@@ -230,11 +243,11 @@ func TestS311YieldOfAHeldAccountRecordedLate(t *testing.T) {
 	}
 
 	got := *r.Benchmark
-	if got.From != "2026-01-05" || got.Days != 5 || got.Skipped != 1 || got.IndexBP != 28 || got.ReturnBP == nil || *got.ReturnBP != 21 || got.PercentBP == nil || *got.PercentBP != 7637 {
+	if got.From != "2026-01-06" || got.Days != 4 || got.Skipped != 2 || got.IndexBP != 22 || got.ReturnBP == nil || *got.ReturnBP != 16 || got.PercentBP == nil || *got.PercentBP != 7072 {
 		t.Fatalf("benchmark = %+v", got)
 	}
 
-	if got.AnnualBP == nil || *got.AnnualBP != 1119 || got.IndexAnnualBP == nil || *got.IndexAnnualBP != 1490 {
+	if got.AnnualBP == nil || *got.AnnualBP != 1032 || got.IndexAnnualBP == nil || *got.IndexAnnualBP != 1490 {
 		t.Fatalf("annual = %v, %v", got.AnnualBP, got.IndexAnnualBP)
 	}
 }
@@ -272,12 +285,96 @@ func TestS312RealReturnFromTheFirstHeldDay(t *testing.T) {
 func TestS304IndexRefused(t *testing.T) {
 	t.Parallel()
 	b := newBenchmarkBook(t)
+	late := newBenchmarkBookOn(t, "2026-01-09")
 
 	for _, index := range []string{"ipca", "sofr"} {
 		r := b.h.Do(http.MethodGet, b.query("2026-01-02", "2026-01-09", index), nil)
 		if r.Status != http.StatusBadRequest || !strings.Contains(string(r.Body), `"field":"index"`) {
 			t.Fatalf("index %s: status %d: %s", index, r.Status, r.Body)
 		}
+
+		// A tree funded on the last day of the period held no money in it: the refusal does not
+		// depend on a comparison.
+		r = late.h.Do(http.MethodGet, late.query("2026-01-02", "2026-01-09", index), nil)
+		if r.Status != http.StatusBadRequest || !strings.Contains(string(r.Body), `"field":"index"`) {
+			t.Fatalf("index %s over a tree funded on the last day: status %d: %s", index, r.Status, r.Body)
+		}
+	}
+}
+
+// S313: the credit of from − 1 keeps its rate day: the rates compared are those after it.
+func TestS313CreditOnTheDayBeforeThePeriod(t *testing.T) {
+	t.Parallel()
+	b := newBenchmarkBook(t)
+
+	r := b.compared(t, "2026-01-03", "2026-01-09", "")
+	if r.Benchmark == nil {
+		t.Fatalf("report = %+v", r)
+	}
+
+	got := *r.Benchmark
+	if got.From != "2026-01-05" || got.Days != 5 || got.Skipped != 0 || got.IndexBP != 28 || got.ReturnBP == nil || *got.ReturnBP != 28 || got.PercentBP == nil || *got.PercentBP != 10000 {
+		t.Fatalf("benchmark = %+v", got)
+	}
+}
+
+// S314: a fixed income instrument carries its yield in its price, with no income posting: its tree
+// is compared over every day it held money (R18).
+func TestS314FixedIncomeInstrument(t *testing.T) {
+	t.Parallel()
+	b := newBenchmarkBook(t)
+	h := b.h
+	h.MustDo(http.MethodPost, "/api/v1/instruments", map[string]any{"code": "CDBX", "type": "fixed_income", "scale": 0, "name": "CDBX", "quote_currency": "BRL"}, http.StatusCreated, nil)
+	broker := h.Account("Broker", "asset", "brokerage", nil)
+	cash := h.Account("Broker cash", "asset", "brokerage", map[string]any{"parent_id": broker, "currency": "BRL"})
+	cdb := h.Account("Broker CDBX", "asset", "brokerage", map[string]any{"parent_id": broker, "currency": "CDBX"})
+	h.Record("2026-01-01", apitest.Posting(b.checking, -100000), apitest.Posting(cash, 100000))
+	h.MustDo(http.MethodPost, "/api/v1/trades", map[string]any{"account_id": cdb, "cash_account_id": cash, "side": "buy", "date": "2026-01-01", "quantity": map[string]any{"amount": 100, "currency": "CDBX"}, "unit_price": "10"}, http.StatusCreated, nil)
+
+	for date, price := range map[string]string{"2026-01-01": "10", "2026-01-09": "10.10"} {
+		h.MustDo(http.MethodPost, "/api/v1/prices", map[string]any{"instrument": "CDBX", "quote_instrument": "BRL", "date": date, "value": price}, http.StatusCreated, nil)
+	}
+
+	b.savings = broker
+
+	r := b.compared(t, "2026-01-02", "2026-01-09", "")
+	if r.Profile != "rate" || r.PeriodBP == nil || *r.PeriodBP != 100 || r.Benchmark == nil {
+		t.Fatalf("report = %+v", r)
+	}
+
+	got := *r.Benchmark
+	if got.From != "2026-01-02" || got.Days != 6 || got.Skipped != 0 || got.IndexBP != 33 || got.ReturnBP == nil || *got.ReturnBP != 100 {
+		t.Fatalf("benchmark = %+v", got)
+	}
+
+	if got.PercentBP == nil || *got.PercentBP != 30106 || got.AnnualBP == nil || *got.AnnualBP != 5188 {
+		t.Fatalf("percent and annual = %v, %v", got.PercentBP, got.AnnualBP)
+	}
+}
+
+// S315: the real return stops at the first month with a day the tree held no money.
+func TestS315RealReturnStopsAtAnEmptiedMonth(t *testing.T) {
+	t.Parallel()
+	b := newBenchmarkBook(t)
+	h := b.h
+	savings := h.Account("Savings 2", "asset", "savings", nil)
+	h.Record("2025-10-01", apitest.Posting(b.checking, -1_000_000), apitest.Posting(savings, 1_000_000))
+	h.Record("2025-10-31", apitest.Posting(b.interest, -100), apitest.Posting(savings, 100))
+	h.Record("2025-11-30", apitest.Posting(b.interest, -300), apitest.Posting(savings, 300))
+	h.Record("2025-11-30", apitest.Posting(b.checking, 1_000_400), apitest.Posting(savings, -1_000_400))
+	h.Record("2026-01-05", apitest.Posting(b.checking, -1_000_000), apitest.Posting(savings, 1_000_000))
+	h.Record("2026-01-09", apitest.Posting(b.interest, -200), apitest.Posting(savings, 200))
+
+	b.savings = savings
+
+	r := b.compared(t, "2025-11-01", "2026-01-09", "")
+	if r.Inflation == nil {
+		t.Fatalf("report = %+v", r)
+	}
+
+	got := *r.Inflation
+	if got.From != "2025-11-01" || got.Until != "2025-11-30" || got.IndexBP != 50 || got.ReturnBP != 3 || got.RealBP != -47 {
+		t.Fatalf("inflation = %+v", got)
 	}
 }
 

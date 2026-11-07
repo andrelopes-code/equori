@@ -345,10 +345,10 @@ WHERE
             tree
     );
 
--- name: TreeFirstIncome :one
--- The income the accounts and their sub-accounts received from an income account (return
--- comparison amendment A208 R18): whether any came before from_date, and the booked date of the
--- earliest in [from_date, to_date]; found is false, and first_on meaningless, when none did.
+-- name: TreeIncomeSpan :one
+-- The dates of the first and the last income the accounts and their sub-accounts received from an
+-- income account in [from_date, to_date] (return comparison amendment A208 R18); found is false,
+-- and the dates meaningless, when none did.
 WITH RECURSIVE
     tree AS (
         SELECT
@@ -381,7 +381,7 @@ WITH RECURSIVE
         WHERE
             p.books_id = @books_id
             AND NOT p.voided
-            AND p.booked_on <= @to_date::date
+            AND p.booked_on BETWEEN @from_date::date AND @to_date::date
             AND p.account_id IN (
                 SELECT
                     id
@@ -390,25 +390,9 @@ WITH RECURSIVE
             )
     )
 SELECT
-    coalesce(
-        min(i.income_on) FILTER (
-            WHERE
-                i.income_on >= @from_date::date
-        ),
-        DATE '0001-01-01'
-    )::date AS first_on,
-    (
-        count(*) FILTER (
-            WHERE
-                i.income_on >= @from_date::date
-        ) > 0
-    )::boolean AS found,
-    (
-        count(*) FILTER (
-            WHERE
-                i.income_on < @from_date::date
-        ) > 0
-    )::boolean AS before
+    coalesce(min(i.income_on), DATE '0001-01-01')::date AS first_on,
+    coalesce(max(i.income_on), DATE '0001-01-01')::date AS last_on,
+    (count(*) > 0)::boolean AS found
 FROM
     income i;
 

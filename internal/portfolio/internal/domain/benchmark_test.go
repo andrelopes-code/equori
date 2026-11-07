@@ -118,6 +118,10 @@ func TestAnnualBP(t *testing.T) {
 		{"no day", 1.01, 0, 252, 0, false},
 		{"no basis", 1.01, 6, 0, 0, false},
 		{"total loss", 0, 6, 252, 0, false},
+		{"overflow to infinity", 1.5, 1, 1_000_000, 0, false},
+		{"above 10^7 bp", 1.1, 1, 252, 0, false},
+		{"at the 10^7 bp limit", 1001, 252, 252, 10_000_000, true},
+		{"inside the limit", 1.01, 1, 252, 112_740, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

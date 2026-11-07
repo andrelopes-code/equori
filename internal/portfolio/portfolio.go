@@ -199,10 +199,10 @@ func (p ledgerPort) ValuedBalance(ctx context.Context, booksID int64, accountID 
 	return c.Value, err
 }
 
-func (p ledgerPort) FirstIncome(ctx context.Context, booksID int64, accountIDs []uuid.UUID, from, to time.Time) (bool, time.Time, bool, error) {
-	i, err := p.l.FirstIncome(ctx, booksID, accountIDs, from, to)
+func (p ledgerPort) IncomeSpan(ctx context.Context, booksID int64, accountIDs []uuid.UUID, from, to time.Time) (time.Time, time.Time, bool, error) {
+	i, err := p.l.IncomeSpan(ctx, booksID, accountIDs, from, to)
 
-	return i.Before, i.On, i.Found, err
+	return i.First, i.Last, i.Found, err
 }
 
 func (p ledgerPort) FirstPosting(ctx context.Context, booksID int64, accountIDs []uuid.UUID) (time.Time, bool, error) {

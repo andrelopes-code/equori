@@ -307,22 +307,21 @@ func (s *Service) FirstPosting(ctx context.Context, booksID int64, accountIDs []
 	return s.repo.TreeFirstPosting(ctx, booksID, accountIDs)
 }
 
-// FirstIncome is the income a tree received from an income account: whether any came before a
-// date, and the booked date of the earliest on or after it, when Found.
-type FirstIncome struct {
-	Before bool
-	Found  bool
-	On     time.Time
+// IncomeSpan is the first and the last booked date of the income a tree received from an income
+// account in a range, when Found.
+type IncomeSpan struct {
+	First, Last time.Time
+	Found       bool
 }
 
-// FirstIncome reports the income the accounts and their sub-accounts received up to to: whether
-// any came before from, and the earliest in [from, to] (return comparison amendment A208 R18).
-func (s *Service) FirstIncome(ctx context.Context, booksID int64, accountIDs []uuid.UUID, from, to time.Time) (FirstIncome, error) {
+// IncomeSpan reports the first and the last date of the income the accounts and their sub-accounts
+// received in [from, to] (return comparison amendment A208 R18).
+func (s *Service) IncomeSpan(ctx context.Context, booksID int64, accountIDs []uuid.UUID, from, to time.Time) (IncomeSpan, error) {
 	if err := s.ownAccounts(ctx, booksID, accountIDs); err != nil {
-		return FirstIncome{}, err
+		return IncomeSpan{}, err
 	}
 
-	return s.repo.TreeFirstIncome(ctx, booksID, accountIDs, from, to)
+	return s.repo.TreeIncomeSpan(ctx, booksID, accountIDs, from, to)
 }
 
 func (s *Service) ownAccounts(ctx context.Context, booksID int64, accountIDs []uuid.UUID) error {
