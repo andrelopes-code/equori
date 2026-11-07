@@ -40,7 +40,10 @@ type Sealer interface {
 
 // Aggregator reads an aggregator application with an integration's credentials and may
 // cache one API key per integration. Errors: ErrAggregatorUnauthorized, ErrItemNotFound, or
-// one wrapping ErrAggregatorUnavailable; none names an identifier (A44).
+// one wrapping ErrAggregatorUnavailable; none names an identifier (A44). An external account's
+// ExternalID stays the same while the institution keeps the account, and a rename keeps it; a
+// line of a reserved balance sets ReserveMove, with ReserveExternalID or ReserveName when the
+// source gives them (A211). aggregatortest.Run checks this contract.
 type Aggregator interface {
 	ID() string
 	Name() string
