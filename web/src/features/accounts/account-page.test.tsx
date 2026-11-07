@@ -66,7 +66,7 @@ function findTab(name: keyof typeof catalogEn) {
 }
 
 describe("AccountPage", () => {
-  it("states the yield over 12 months of a reserve (A208 R10)", async () => {
+  it("states the yield over 12 months of a reserve (A208 R17)", async () => {
     await renderApp(`/accounts/${reserveID}`, {
       fetch: api({
         "GET /api/v1/reports/return": (req) => {
@@ -76,35 +76,56 @@ describe("AccountPage", () => {
             flows: [],
             opening: money(1000000),
             closing: money(1151700),
-            period_bp: 1517,
+            profile: "rate",
+            period_bp: 1490,
             benchmark: {
               index: "cdi",
               from: query.get("from"),
               until: "2026-10-16",
-              return_bp: 1517,
-              index_bp: 1490,
+              days: 250,
+              return_bp: 1480,
+              index_bp: 1455,
               percent_bp: 10180,
               annual_bp: 1517,
               index_annual_bp: 1490,
+              excess_bp: 25,
+            },
+            inflation: {
+              index: "ipca",
+              from: "2025-11-01",
+              until: "2026-09-30",
+              index_bp: 500,
+              return_bp: 1350,
+              real_bp: 810,
             },
           });
         },
       }),
     });
-    const figures = await screen.findByRole("region", {
-      name: catalogEn["account.figures"],
+    const section = await screen.findByRole("region", {
+      name: catalogEn["portfolio.yield.figure"],
     });
     expect(
-      await within(figures).findByText("15.17% a year"),
+      await within(section).findByText("15.17% a year"),
     ).toBeInTheDocument();
     expect(
-      within(figures).getByText(
-        "101.80% of CDI · CDI 14.90% a year · 10/18/2025 to 10/16/2026",
+      within(section).getByText(
+        "14.80% in 250 business days, 10/18/2025 to 10/16/2026",
+      ),
+    ).toBeInTheDocument();
+    expect(within(section).getByText("101.80%")).toBeInTheDocument();
+    expect(
+      within(section).getByText("CDI 14.90% a year over the same days"),
+    ).toBeInTheDocument();
+    expect(within(section).getByText("8.10%")).toBeInTheDocument();
+    expect(
+      within(section).getByText(
+        "13.50% less IPCA 5.00%, 11/01/2025 to 09/30/2026",
       ),
     ).toBeInTheDocument();
   });
 
-  it("asks no yield for a checking account (A208 R8)", async () => {
+  it("asks no yield for a checking account (A208 R17)", async () => {
     const asked: string[] = [];
     await renderApp(`/accounts/${checkingID}`, {
       fetch: api({

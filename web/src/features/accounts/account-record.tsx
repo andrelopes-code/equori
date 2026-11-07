@@ -24,6 +24,7 @@ import {
 } from "@/features/accounts/api";
 import { BalanceChart } from "@/features/accounts/balance-chart";
 import { useAccountTabs } from "@/features/accounts/use-account-tabs";
+import { AccountYieldSection } from "@/features/portfolio";
 import { institutionsQuery } from "@/features/setup";
 import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
 import { useStableCallback } from "@/ui/use-stable-callback";
@@ -101,6 +102,7 @@ export function AccountRecord({ account, search, scale }: AccountRecordProps) {
   const overview = accountTabs.shownTab === "activity" && (
     <>
       <AccountFigures account={account} scale={scale} />
+      <AccountYieldSection accountId={account.id} />
       <BalanceChart
         account={account}
         range={range}

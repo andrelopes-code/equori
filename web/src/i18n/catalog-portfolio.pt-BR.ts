@@ -81,11 +81,31 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
   "portfolio.return.percentOfIndex": "{percent} do {index} de {from} a {until}",
   "portfolio.return.indexGrowth": "{index} nos mesmos dias: {rate}",
   "portfolio.yield.annual": "{rate} a.a.",
-  "portfolio.yield.period": "{rate} no período",
   "portfolio.yield.ofIndex": "{percent} do {index}",
-  "portfolio.yield.indexAnnual": "{index} {rate} a.a.",
   "portfolio.yield.window": "{from} a {until}",
   "portfolio.yield.figure": "Rendimento em 12 meses",
+  "portfolio.yield.indexOver": "{index} {rate}",
+  "portfolio.yield.points": "{value} p.p.",
+  "portfolio.yield.card.annual": "Taxa ao ano",
+  "portfolio.yield.card.annualNote":
+    "{rate} em {days} dias úteis, de {from} a {until}",
+  "portfolio.yield.card.return": "Retorno",
+  "portfolio.yield.card.returnNote":
+    "{days} dias úteis, de {from} a {until}; sem anualizar",
+  "portfolio.yield.card.percent": "Percentual do {index}",
+  "portfolio.yield.card.percentNote": "{index} {rate} a.a. nos mesmos dias",
+  "portfolio.yield.card.excess": "Contra o {index}",
+  "portfolio.yield.card.excessNote": "{index} rendeu {rate} nos mesmos dias",
+  "portfolio.yield.card.real": "Retorno real",
+  "portfolio.yield.card.realNote":
+    "{nominal} descontado o {index} de {inflation}, de {from} a {until}",
+  "portfolio.return.annualEquivalent":
+    "Taxa ao ano em {days} dias úteis: {rate}",
+  "portfolio.return.excess": "Contra o {index} nos mesmos dias: {value} p.p.",
+  "portfolio.return.marketProfile":
+    "Preço de mercado: o retorno não é anualizado nem expresso em percentual do {index}.",
+  "portfolio.return.real":
+    "Retorno real, descontado o {index} de {inflation} de {from} a {until}: {rate}",
   "portfolio.return.flows": "Fluxos externos",
   "portfolio.return.date": "Data",
   "portfolio.return.amount": "Valor",

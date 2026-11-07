@@ -94,14 +94,40 @@ export const contributionReturn = {
 // S302: a savings account paid 100% of CDI over six CDI days.
 export const comparedReturn = {
   ...plainReturn,
+  profile: "rate",
   period_bp: 33,
   benchmark: {
     index: "cdi",
     from: "2026-01-02",
     until: "2026-01-09",
+    days: 6,
     return_bp: 33,
     index_bp: 33,
     percent_bp: 10000,
+  },
+};
+
+// S306 and S308: a brokerage that lost 10% while the CDI grew 0.33%, with its real return.
+export const marketReturn = {
+  ...plainReturn,
+  profile: "market",
+  period_bp: -1000,
+  benchmark: {
+    index: "cdi",
+    from: "2026-01-02",
+    until: "2026-01-09",
+    days: 6,
+    return_bp: -1000,
+    index_bp: 33,
+    excess_bp: -1033,
+  },
+  inflation: {
+    index: "ipca",
+    from: "2025-11-01",
+    until: "2025-12-31",
+    index_bp: 90,
+    return_bp: 0,
+    real_bp: -89,
   },
 };
 

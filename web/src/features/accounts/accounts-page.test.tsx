@@ -38,28 +38,48 @@ function words(key: keyof typeof catalogEn, values: Record<string, string>) {
   );
 }
 
-// A return route whose comparison covers the requested days; asked collects the account of
-// each request.
+// A return route: the reserve paid 101.80% of the CDI (a rate profile) and the brokerage lost
+// 13.80% while the CDI grew 3.52% (a market profile). asked collects the account of each request.
 function comparedIn90Days(asked: string[]) {
   return (req: Request) => {
     const query = new URL(req.url).searchParams;
-    asked.push(query.get("account_id") ?? "");
-    return json(200, {
-      annual_bp: 1500,
-      flows: [],
-      opening: { amount: 1000000, currency: "BRL" },
-      closing: { amount: 1034000, currency: "BRL" },
+    const account = query.get("account_id") ?? "";
+    asked.push(account);
+    const window = {
+      index: "cdi",
+      from: query.get("from"),
+      until: query.get("to"),
+      days: 63,
+      index_annual_bp: 1490,
+    };
+    const rate = {
+      profile: "rate",
       period_bp: 340,
       benchmark: {
-        index: "cdi",
-        from: query.get("from"),
-        until: query.get("to"),
+        ...window,
         return_bp: 340,
         index_bp: 334,
         percent_bp: 10180,
         annual_bp: 1517,
-        index_annual_bp: 1490,
+        excess_bp: 6,
       },
+    };
+    const market = {
+      profile: "market",
+      period_bp: -1380,
+      benchmark: {
+        ...window,
+        return_bp: -1380,
+        index_bp: 352,
+        excess_bp: -1732,
+      },
+    };
+    return json(200, {
+      annual_bp: 0,
+      flows: [],
+      opening: { amount: 1000000, currency: "BRL" },
+      closing: { amount: 1034000, currency: "BRL" },
+      ...(account === brokerageID ? market : rate),
     });
   };
 }
@@ -153,7 +173,7 @@ describe("AccountsPage", () => {
     expect(await within(nubank).findByText(/Reconciled/)).toBeInTheDocument();
   });
 
-  it("adds a yield column to the group of a reserve and a brokerage (A208 R8)", async () => {
+  it("adds a yield column to the group of a reserve and a brokerage (A208 R17)", async () => {
     const asked: string[] = [];
     await renderApp("/accounts", {
       fetch: api([], { "GET /api/v1/reports/return": comparedIn90Days(asked) }),
@@ -173,6 +193,18 @@ describe("AccountsPage", () => {
       await within(reserve).findByText("15.17% a year"),
     ).toBeInTheDocument();
     expect(within(reserve).getByText("101.80% of CDI")).toBeInTheDocument();
+    const broker = within(reserves).getByRole("row", { name: /Corretora/ });
+    // A loss reads in the danger tone; a gain in the default one.
+    expect(await within(broker).findByText("−13.80%")).toHaveAttribute(
+      "data-tone",
+      "danger",
+    );
+    expect(within(reserve).getByText("15.17% a year")).toHaveAttribute(
+      "data-tone",
+      "default",
+    );
+    expect(within(broker).getByText("CDI 3.52%")).toBeInTheDocument();
+    expect(within(broker).queryByText(/a year|of CDI/)).not.toBeInTheDocument();
     const available = screen.getByRole("table", {
       name: catalogEn["home.group.available"],
     });
@@ -184,7 +216,7 @@ describe("AccountsPage", () => {
     expect(asked.sort()).toEqual([reserveID, brokerageID].sort());
   });
 
-  it("states only the rate a year on a phone (A208 R8)", async () => {
+  it("states only the figure on a phone (A208 R17)", async () => {
     await renderApp("/accounts", {
       fetch: api([], { "GET /api/v1/reports/return": comparedIn90Days([]) }),
       width: 390,

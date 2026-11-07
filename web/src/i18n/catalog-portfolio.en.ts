@@ -80,11 +80,32 @@ export const portfolioEn = {
     "{percent} of {index} from {from} to {until}",
   "portfolio.return.indexGrowth": "{index} over the same days: {rate}",
   "portfolio.yield.annual": "{rate} a year",
-  "portfolio.yield.period": "{rate} in the period",
   "portfolio.yield.ofIndex": "{percent} of {index}",
-  "portfolio.yield.indexAnnual": "{index} {rate} a year",
   "portfolio.yield.window": "{from} to {until}",
   "portfolio.yield.figure": "Yield over 12 months",
+  "portfolio.yield.indexOver": "{index} {rate}",
+  "portfolio.yield.points": "{value} pp",
+  "portfolio.yield.card.annual": "Rate a year",
+  "portfolio.yield.card.annualNote":
+    "{rate} in {days} business days, {from} to {until}",
+  "portfolio.yield.card.return": "Return",
+  "portfolio.yield.card.returnNote":
+    "{days} business days, {from} to {until}; not annualized",
+  "portfolio.yield.card.percent": "Percent of {index}",
+  "portfolio.yield.card.percentNote":
+    "{index} {rate} a year over the same days",
+  "portfolio.yield.card.excess": "Against {index}",
+  "portfolio.yield.card.excessNote": "{index} {rate} over the same days",
+  "portfolio.yield.card.real": "Real return",
+  "portfolio.yield.card.realNote":
+    "{nominal} less {index} {inflation}, {from} to {until}",
+  "portfolio.return.annualEquivalent":
+    "Rate a year over {days} business days: {rate}",
+  "portfolio.return.excess": "Against {index} over the same days: {value} pp",
+  "portfolio.return.marketProfile":
+    "Market prices: the return is not annualized or stated as a percent of {index}.",
+  "portfolio.return.real":
+    "Real return, less {index} {inflation} from {from} to {until}: {rate}",
   "portfolio.return.flows": "External flows",
   "portfolio.return.date": "Date",
   "portfolio.return.amount": "Amount",

@@ -6,6 +6,7 @@ import { json, problem } from "@/testing/fake-api";
 import { accounts, brokerID } from "@/testing/investment-api";
 import {
   comparedReturn,
+  marketReturn,
   contributionReturn,
   portfolioApi,
 } from "@/testing/portfolio-api";
@@ -45,6 +46,32 @@ describe("Portfolio return", () => {
     expect(
       within(figures).getByText("CDI over the same days: 0.33%"),
     ).toBeInTheDocument();
+  });
+
+  it("states the difference from the CDI and the real return of a market profile (S306, S308)", async () => {
+    const fetch = portfolioApi({
+      "GET /api/v1/reports/return": () => json(200, marketReturn),
+    });
+    await renderApp("/portfolio", { fetch });
+    const figures = await screen.findByRole("group", {
+      name: catalogEn["portfolio.return.title"],
+    });
+    expect(
+      await within(figures).findByText(
+        "Against CDI over the same days: −10.33 pp",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(figures).getByText(
+        "Market prices: the return is not annualized or stated as a percent of CDI.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(figures).getByText(
+        "Real return, less IPCA 0.90% from 11/01/2025 to 12/31/2025: −0.89%",
+      ),
+    ).toBeInTheDocument();
+    expect(within(figures).queryByText(/of CDI from/)).not.toBeInTheDocument();
   });
 
   it("lists the external flows of a contribution (S126)", async () => {
