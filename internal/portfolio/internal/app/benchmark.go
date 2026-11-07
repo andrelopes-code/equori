@@ -88,7 +88,7 @@ type period struct {
 	// account (R18, R19); flows are then the flows of R19 and credits the yield credited.
 	recorded bool
 	flows    []ReturnFlow
-	credits  []ReturnFlow
+	credits  []valuedCredit
 }
 
 // window is the days a comparison covers: the return of [returnFrom, until] and the whole months
@@ -115,15 +115,15 @@ func (s *Service) compare(ctx context.Context, booksID int64, ids []uuid.UUID, f
 	report.Profile = profile
 	p.recorded = recorded
 
-	if recorded {
-		if err := s.recordFlows(ctx, &p); err != nil {
-			return err
-		}
-	}
-
 	index, rates, err := s.benchmarkRates(ctx, p, index)
 	if err != nil {
 		return err
+	}
+
+	if recorded {
+		if err := s.recordFlows(ctx, &p, rates); err != nil {
+			return err
+		}
 	}
 
 	start, ends, dates, err := s.pieces(ctx, p, from, to)
@@ -247,6 +247,8 @@ func (s *Service) benchmark(ctx context.Context, p period, index string, rates [
 	})
 
 	if len(rates) == 0 {
+		p.unavailable(ReasonNoRateInWindow)
+
 		return nil
 	}
 
@@ -288,6 +290,9 @@ func (s *Service) benchmark(ctx context.Context, p period, index string, rates [
 
 		if p.report.Profile == ProfileRate && precise {
 			b.PercentBP = ifOK(domain.IndexPercentBP(f, fractions))
+		}
+
+		if b.PercentBP != nil {
 			b.AnnualBP = ifOK(domain.AnnualBP(f, len(fractions), basis))
 		}
 	}
@@ -304,10 +309,10 @@ func (p period) countCredits(b *Benchmark, w window) bool {
 		return true
 	}
 
-	n, yield := p.creditsIn(w.returnFrom.AddDate(0, 0, -1), w.until)
+	n, postings, yield := p.creditsIn(w.returnFrom.AddDate(0, 0, -1), w.until)
 	b.Credits = n
 
-	bound, ok := domain.PercentErrorBP(n, yield)
+	bound, ok := domain.PercentErrorBP(postings, yield)
 	if ok {
 		b.PercentErrorBP = &bound
 	}

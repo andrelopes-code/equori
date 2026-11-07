@@ -214,6 +214,15 @@ func (p ledgerPort) RecordedYield(ctx context.Context, booksID int64, accountIDs
 		return out
 	}
 
+	credits := func(items []ledger.RecordedItem) []app.Credit {
+		out := make([]app.Credit, len(items))
+		for i, it := range items {
+			out[i] = app.Credit{Date: it.Date, Value: it.Value, Postings: it.Postings}
+		}
+
+		return out
+	}
+
 	categorized := func(items []ledger.RecordedItem) []app.Categorized {
 		out := make([]app.Categorized, len(items))
 		for i, it := range items {
@@ -223,7 +232,7 @@ func (p ledgerPort) RecordedYield(ctx context.Context, booksID int64, accountIDs
 		return out
 	}
 
-	return app.Recorded{Flows: flows(r.Flows), Credits: flows(r.Credits), Income: categorized(r.Income), Expense: categorized(r.Expense)}, err
+	return app.Recorded{Flows: flows(r.Flows), Credits: credits(r.Credits), Income: categorized(r.Income), Expense: categorized(r.Expense)}, err
 }
 
 func (p ledgerPort) FirstPosting(ctx context.Context, booksID int64, accountIDs []uuid.UUID) (time.Time, bool, error) {

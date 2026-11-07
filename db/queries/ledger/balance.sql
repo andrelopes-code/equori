@@ -346,13 +346,16 @@ WHERE
     );
 
 -- name: TreeRecordedYield :many
--- Return comparison amendment A208 R19: per transaction of [from_date, to_date] that touches the
--- accounts and their sub-accounts (the tree), by kind. flow is the sum of the weights of the
--- postings against the tree and against the system Yield account and its sub-accounts, in the
--- balancing currency of the transaction; a transaction internal to the tree and a pure yield
--- credit sum to 0 and leave. credit is the yield credited to the tree, the negated weights against
--- Yield. income and expense are the weights of the other income and expense postings, by account
--- name.
+-- Return comparison amendment A208 R19, per transaction of [from_date, to_date] that touches the
+-- accounts and their sub-accounts (the tree), by kind. In the balancing currency of the
+-- transaction, T is the sum of the weights of the tree postings and Y the negated sum of the
+-- weights of the postings against the system Yield account and its sub-accounts. When T and Y
+-- have the same sign, the credit is that sign times the smaller of |T| and |Y|, as the share
+-- credit / T of the native amount of the tree; the flow is the native amount of the tree less
+-- the credit. Otherwise the credit is 0 and the whole native amount of the tree is a flow. Both
+-- are in the instrument of the tree accounts; postings counts the tree postings of the
+-- transaction, each rounded on its own. income and expense are the weights of the other income
+-- and expense postings, by account name, in the balancing currency.
 WITH RECURSIVE
     tree AS (
         SELECT
@@ -414,67 +417,129 @@ WITH RECURSIVE
                             tree
                     )
             )
+    ),
+    sums AS (
+        SELECT
+            x.id,
+            x.date,
+            coalesce(
+                sum(p.weight) FILTER (
+                    WHERE
+                        p.account_id IN (
+                            SELECT
+                                id
+                            FROM
+                                tree
+                        )
+                ),
+                0
+            )::numeric AS tree_weight,
+            coalesce(
+                - sum(p.weight) FILTER (
+                    WHERE
+                        p.account_id IN (
+                            SELECT
+                                id
+                            FROM
+                                yield
+                        )
+                ),
+                0
+            )::numeric AS yield_weight
+        FROM
+            touched x
+            JOIN ledger_posting p ON p.transaction_id = x.id
+            AND NOT p.voided
+        GROUP BY
+            x.id,
+            x.date
+    ),
+    shares AS (
+        SELECT
+            s.id,
+            s.date,
+            s.tree_weight,
+            CASE
+                WHEN s.tree_weight <> 0
+                AND sign(s.tree_weight) = sign(s.yield_weight) THEN sign(s.tree_weight) * least(abs(s.tree_weight), abs(s.yield_weight))
+                ELSE 0
+            END AS credit_weight
+        FROM
+            sums s
+    ),
+    native AS (
+        SELECT
+            h.id,
+            h.date,
+            a.instrument,
+            sum(p.amount)::numeric AS amount,
+            count(*) AS postings,
+            h.tree_weight,
+            h.credit_weight
+        FROM
+            shares h
+            JOIN ledger_posting p ON p.transaction_id = h.id
+            AND NOT p.voided
+            JOIN ledger_account a ON a.id = p.account_id
+            AND a.books_id = @books_id
+        WHERE
+            p.account_id IN (
+                SELECT
+                    id
+                FROM
+                    tree
+            )
+        GROUP BY
+            h.id,
+            h.date,
+            a.instrument,
+            h.tree_weight,
+            h.credit_weight
+    ),
+    split AS (
+        SELECT
+            n.date,
+            n.instrument,
+            n.postings,
+            n.amount,
+            CASE
+                WHEN n.tree_weight = 0 THEN 0
+                ELSE round(n.amount * n.credit_weight / n.tree_weight)
+            END AS credit
+        FROM
+            native n
     )
 SELECT
     'flow'::text AS kind,
-    x.date,
-    x.balancing_currency,
+    s.date,
+    s.instrument AS currency,
     ''::text AS label,
-    sum(p.weight)::bigint AS amount
+    (s.amount - s.credit)::bigint AS amount,
+    0::bigint AS postings
 FROM
-    touched x
-    JOIN ledger_posting p ON p.transaction_id = x.id
-    AND NOT p.voided
-    AND (
-        p.account_id IN (
-            SELECT
-                id
-            FROM
-                tree
-        )
-        OR p.account_id IN (
-            SELECT
-                id
-            FROM
-                yield
-        )
-    )
-GROUP BY
-    x.id,
-    x.date,
-    x.balancing_currency
-HAVING
-    sum(p.weight) <> 0
+    split s
+WHERE
+    s.amount <> s.credit
 UNION ALL
 SELECT
     'credit'::text,
-    x.date,
-    x.balancing_currency,
+    s.date,
+    s.instrument,
     ''::text,
-    (- sum(p.weight))::bigint
+    s.credit::bigint,
+    s.postings
 FROM
-    touched x
-    JOIN ledger_posting p ON p.transaction_id = x.id
-    AND NOT p.voided
-    AND p.account_id IN (
-        SELECT
-            id
-        FROM
-            yield
-    )
-GROUP BY
-    x.id,
-    x.date,
-    x.balancing_currency
-HAVING
-    sum(p.weight) <> 0
+    split s
+WHERE
+    s.credit <> 0
 UNION ALL
 SELECT
     a.account_class::text,
     x.date,
     x.balancing_currency,
     a.name,
-    sum(p.weight)::bigint
+    sum(p.weight)::bigint,
+    0::bigint
 FROM
     touched x
     JOIN ledger_posting p ON p.transaction_id = x.id

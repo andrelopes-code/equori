@@ -18,6 +18,7 @@ const (
 	ReasonNoYieldRecorded  = "no_yield_recorded"
 	ReasonSingleCredit     = "single_credit"
 	ReasonTooSmall         = "too_small"
+	ReasonNoRateInWindow   = "no_rate_in_window"
 )
 
 // maxExcludedCategories is the number of category names an Excluded total lists.
@@ -26,8 +27,24 @@ const maxExcludedCategories = 3
 // Recorded is what the ledger records of a tree of cash in a range (amendment A208 R19): the
 // flows that are not yield, the yield credits and the other income and expense postings.
 type Recorded struct {
-	Flows, Credits  []Flow
+	Flows           []Flow
+	Credits         []Credit
 	Income, Expense []Categorized
+}
+
+// Credit is a yield credited to a tree on a date, in the instrument of the tree; Value is negative
+// for a reversal and Postings is the number of tree postings of its transaction.
+type Credit struct {
+	Date     time.Time
+	Value    money.Money
+	Postings int
+}
+
+// valuedCredit is a Credit valued in the currency of the report.
+type valuedCredit struct {
+	Date     time.Time
+	Amount   int64
+	Postings int
 }
 
 // Categorized is an income or expense posting of a tree's transaction, in the balancing currency
@@ -52,8 +69,9 @@ type ExcludedTotal struct {
 }
 
 // recordFlows sets on p the flows of R19 in place of the flows of section 4.3, the yield credits,
-// and the excluded income and expense of the report.
-func (s *Service) recordFlows(ctx context.Context, p *period) error {
+// and the excluded income and expense of the report. A flow dated on a day without a rate of rates
+// moves to the next day with one (R19).
+func (s *Service) recordFlows(ctx context.Context, p *period, rates []IndexRate) error {
 	rec, err := s.ledger.RecordedYield(ctx, p.booksID, p.ids, p.from.AddDate(0, 0, -1), p.to)
 	if err != nil {
 		return err
@@ -65,7 +83,9 @@ func (s *Service) recordFlows(ctx context.Context, p *period) error {
 		return err
 	}
 
-	if p.credits, err = s.valuedFlows(ctx, rec.Credits, in, p.from.AddDate(0, 0, -1)); err != nil {
+	moveToRateDays(p.flows, rates)
+
+	if p.credits, err = s.valuedCredits(ctx, rec.Credits, in, p.from.AddDate(0, 0, -1)); err != nil {
 		return err
 	}
 
@@ -101,6 +121,26 @@ func (s *Service) valuedFlows(ctx context.Context, flows []Flow, in money.Curren
 		}
 
 		out = append(out, ReturnFlow{Date: f.Date, Amount: v})
+	}
+
+	return out, nil
+}
+
+// valuedCredits values the credits dated on or after from in currency in.
+func (s *Service) valuedCredits(ctx context.Context, credits []Credit, in money.Currency, from time.Time) ([]valuedCredit, error) {
+	var out []valuedCredit
+
+	for _, c := range credits {
+		if c.Date.Before(from) {
+			continue
+		}
+
+		v, err := s.valueIn(ctx, c.Value, in, c.Date)
+		if err != nil {
+			return nil, err
+		}
+
+		out = append(out, valuedCredit{Date: c.Date, Amount: v.Amount(), Postings: c.Postings})
 	}
 
 	return out, nil
@@ -162,11 +202,15 @@ func (s *Service) valueIn(ctx context.Context, value money.Money, in money.Curre
 	return v, nil
 }
 
-// creditDates lists the distinct dates of the yield credits, oldest first.
+// creditDates lists the distinct dates of the positive yield credits, oldest first; a reversal is
+// not a credit date.
 func (p period) creditDates() []time.Time {
-	dates := make([]time.Time, len(p.credits))
-	for i, c := range p.credits {
-		dates[i] = c.Date
+	var dates []time.Time
+
+	for _, c := range p.credits {
+		if c.Amount > 0 {
+			dates = append(dates, c.Date)
+		}
 	}
 
 	slices.SortFunc(dates, time.Time.Compare)
@@ -174,16 +218,23 @@ func (p period) creditDates() []time.Time {
 	return slices.CompactFunc(dates, time.Time.Equal)
 }
 
-// creditsIn counts the credits dated in (after, until] and sums their yield in minor units.
-func (p period) creditsIn(after, until time.Time) (n int, yield int64) {
+// creditsIn counts the positive credits dated in (after, until], the tree postings they hold and
+// sums the yield of every credit of those dates, a reversal included, in minor units.
+func (p period) creditsIn(after, until time.Time) (n, postings int, yield int64) {
 	for _, c := range p.credits {
-		if c.Date.After(after) && !c.Date.After(until) {
+		if !c.Date.After(after) || c.Date.After(until) {
+			continue
+		}
+
+		yield += c.Amount
+
+		if c.Amount > 0 {
 			n++
-			yield += c.Amount.Amount()
+			postings += c.Postings
 		}
 	}
 
-	return n, yield
+	return n, postings, yield
 }
 
 // unavailable records the first reason a benchmark or its percent is absent.
@@ -201,4 +252,23 @@ func (p period) flowDates() []time.Time {
 	}
 
 	return dates
+}
+
+// moveToRateDays moves in place each flow dated on a day without a rate in rates to the next day
+// with one. A flow before the first rate or after the last keeps its date: the index has no
+// history there, and a gap that long is not a weekend or a holiday.
+func moveToRateDays(flows []ReturnFlow, rates []IndexRate) {
+	days := make([]time.Time, len(rates))
+	for i, r := range rates {
+		days[i] = r.Date
+	}
+
+	slices.SortFunc(days, time.Time.Compare)
+
+	for i := range flows {
+		at, found := slices.BinarySearchFunc(days, flows[i].Date, time.Time.Compare)
+		if !found && at > 0 && at < len(days) {
+			flows[i].Date = days[at]
+		}
+	}
 }

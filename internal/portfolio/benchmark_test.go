@@ -467,7 +467,7 @@ func TestS321SingleCredit(t *testing.T) {
 }
 
 // S322: a deposit and the first credit on the same day: the zero-base subperiod contributes 1, so
-// the period return stays defined (R20).
+// the period return stays defined (R20). The yields are 0.1% of the balance a day, 181% of the CDI.
 func TestS322DepositAndFirstCreditOnTheSameDay(t *testing.T) {
 	t.Parallel()
 	b := buildBook(t, bookSpec{credits: []string{}, empty: true})
@@ -583,6 +583,145 @@ func TestS327BrokerageWithADividend(t *testing.T) {
 	}
 }
 
+// S328: a deposit on a Saturday earns from the first business day, as a bank pays it: the flow
+// moves to the next day with an index rate, so the credit of that Monday, paid on the balance of
+// Friday, is 100% of the CDI (R19).
+func TestS328SaturdayDeposit(t *testing.T) {
+	t.Parallel()
+	b := buildBook(t, bookSpec{
+		cdi:      weekdays("2026-01-02", "2026-01-23"),
+		moves:    map[string]int64{"2026-01-10": 1_000_000_000},
+		bankPaid: true,
+		today:    "2026-01-26",
+	})
+
+	requireFigures(t, b.compared(t, "2026-01-02", "2026-01-23", ""), saturdayFigures, 83)
+}
+
+// S329: a withdrawal on a Saturday leaves the balance the credit of the next Monday pays on at the
+// next day with an index rate (R19).
+func TestS329SaturdayWithdrawal(t *testing.T) {
+	t.Parallel()
+	b := buildBook(t, bookSpec{
+		cdi:      weekdays("2026-01-02", "2026-01-23"),
+		moves:    map[string]int64{"2026-01-10": -500_000_000},
+		bankPaid: true,
+		today:    "2026-01-26",
+	})
+
+	requireFigures(t, b.compared(t, "2026-01-02", "2026-01-23", ""), saturdayFigures, 83)
+}
+
+// S330: a transaction that credits a yield to two savings accounts counts, for the tree of one,
+// the share of the yield that matches its own amount: the rest is not a flow of the tree (R19).
+func TestS330SplitYieldTransaction(t *testing.T) {
+	t.Parallel()
+	b := explicitBook(t)
+	other := b.h.Account("Savings B", "asset", "savings", nil)
+
+	for _, d := range []string{"2026-01-05", "2026-01-06", "2026-01-08", "2026-01-09"} {
+		b.credit(d, 551_310)
+	}
+
+	b.h.Record("2026-01-07", apitest.Posting(b.savings, 551_310), apitest.Posting(other, 551_310), apitest.Posting(b.yield, -1_102_620))
+
+	want := figures{
+		From: "2026-01-05", Until: "2026-01-08", Days: 4, Skipped: 2, IndexBP: 22, ReturnBP: 22, ExcessBP: 0,
+		PercentBP: 9986, AnnualBP: 1488, IndexAnnualBP: 1490, Credits: 4, ErrorBP: 1,
+	}
+
+	requireFigures(t, b.compared(t, "2026-01-02", "2026-01-09", ""), want, 28)
+}
+
+// S331: a reversal of yield reduces the yield credited and is not a credit date: B is the last
+// positive credit (R19, R22).
+func TestS331YieldReversal(t *testing.T) {
+	t.Parallel()
+	b := explicitBook(t)
+
+	for _, d := range []string{"2026-01-05", "2026-01-06", "2026-01-07", "2026-01-08"} {
+		b.credit(d, 551_310)
+	}
+
+	b.credit("2026-01-09", -100_000)
+
+	want := figures{
+		From: "2026-01-05", Until: "2026-01-07", Days: 3, Skipped: 3, IndexBP: 17, ReturnBP: 17, ExcessBP: 0,
+		PercentBP: 9989, AnnualBP: 1488, IndexAnnualBP: 1490, Credits: 3, ErrorBP: 1,
+	}
+
+	requireFigures(t, b.compared(t, "2026-01-02", "2026-01-09", ""), want, 21)
+}
+
+// S332: a transaction with a yield and a salary: the yield is the credit and the salary is the
+// flow and the excluded income (R19).
+func TestS332YieldWithSalary(t *testing.T) {
+	t.Parallel()
+	b := explicitBook(t)
+
+	for _, d := range []string{"2026-01-05", "2026-01-06", "2026-01-08", "2026-01-09"} {
+		b.credit(d, 551_310)
+	}
+
+	salary := b.h.Account("Salary", "income", "", nil)
+	b.h.Record("2026-01-07", apitest.Posting(b.savings, 100_551_310), apitest.Posting(b.yield, -551_310), apitest.Posting(salary, -100_000_000))
+
+	want := figures{
+		From: "2026-01-05", Until: "2026-01-08", Days: 4, Skipped: 2, IndexBP: 22, ReturnBP: 21, ExcessBP: -1,
+		PercentBP: 9533, AnnualBP: 1416, IndexAnnualBP: 1490, Credits: 4, ErrorBP: 1,
+	}
+
+	r := b.compared(t, "2026-01-02", "2026-01-09", "")
+	requireFigures(t, r, want, 27)
+
+	if income, expense := r.excludedText(); income != "100000000 BRL Salary" || expense != "" {
+		t.Fatalf("excluded = %q, %q", income, expense)
+	}
+}
+
+// S333: the bound of the percent counts the tree postings of the credits: a credit booked to two
+// accounts of the tree rounds twice (R22).
+func TestS333CreditOnTwoAccountsOfTheTree(t *testing.T) {
+	t.Parallel()
+	b := buildBook(t, bookSpec{credits: []string{}, empty: true})
+	first := b.h.Account("Savings first", "asset", "savings", map[string]any{"parent_id": b.savings})
+	second := b.h.Account("Savings second", "asset", "savings", map[string]any{"parent_id": b.savings})
+	b.h.Record("2026-01-02", apitest.Posting(b.checking, -1_000_000), apitest.Posting(first, 1_000_000))
+
+	for _, d := range []string{"2026-01-05", "2026-01-06", "2026-01-07", "2026-01-08", "2026-01-09"} {
+		b.h.Record(d, apitest.Posting(first, 300), apitest.Posting(second, 251), apitest.Posting(b.yield, -551))
+	}
+
+	want := figures{
+		From: "2026-01-05", Until: "2026-01-08", Days: 4, Skipped: 2, IndexBP: 22, ReturnBP: 22, ExcessBP: 0,
+		PercentBP: 9981, AnnualBP: 1487, IndexAnnualBP: 1490, Credits: 4, ErrorBP: 19,
+	}
+
+	requireFigures(t, b.compared(t, "2026-01-02", "2026-01-09", ""), want, 28)
+}
+
+// S334: an index with no rate in the compared window leaves no benchmark, reason
+// no_rate_in_window (R23).
+func TestS334NoRateInTheWindow(t *testing.T) {
+	t.Parallel()
+	b := buildBook(t, bookSpec{cdi: []string{"2026-01-02", "2026-01-12"}, credits: []string{}, empty: true})
+	b.h.Record("2026-01-02", apitest.Posting(b.checking, -1_000_000_000), apitest.Posting(b.savings, 1_000_000_000))
+	b.credit("2026-01-05", 551_310)
+	b.credit("2026-01-09", 551_310)
+
+	r := b.compared(t, "2026-01-02", "2026-01-09", "")
+	if r.Benchmark != nil || r.PeriodBP == nil || *r.PeriodBP != 11 || r.UnavailableReason != "no_rate_in_window" {
+		t.Fatalf("report = %+v, reason %q", r, r.UnavailableReason)
+	}
+}
+
+// saturdayFigures are the figures of a savings account paid 100% of the CDI over 2026-01-02 to
+// 2026-01-23: the credits of 2026-01-05 to 2026-01-23 bound the rates of 2026-01-05 to 2026-01-22.
+var saturdayFigures = figures{
+	From: "2026-01-05", Until: "2026-01-22", Days: 14, Skipped: 2, IndexBP: 77, ReturnBP: 77, ExcessBP: 0,
+	PercentBP: 10000, AnnualBP: 1490, IndexAnnualBP: 1490, Credits: 14, ErrorBP: 1,
+}
+
 // In the moves of newBenchmarkBookWith, emptyAll withdraws the whole balance and unrecorded
 // leaves the credit of the day out of the ledger.
 const (
@@ -617,6 +756,10 @@ type bookSpec struct {
 	moves        map[string]int64
 	permille     map[string]int64
 	counters     map[string]counter
+
+	// bankPaid makes a move on a day outside cdi join the balance a credit pays on the next CDI
+	// day, after that day's credit: a bank pays a deposit from its first business day.
+	bankPaid bool
 }
 
 // newBenchmarkBook holds 10,000,000.00 in a savings account from 2026-01-01 and credits on each
@@ -738,7 +881,7 @@ func buildBook(t *testing.T, s bookSpec) benchmarkBook {
 	slices.Sort(days)
 	days = slices.Compact(days)
 
-	balance := int64(0)
+	balance, pending := int64(0), int64(0)
 
 	switch {
 	case s.empty:
@@ -771,13 +914,23 @@ func buildBook(t *testing.T, s bookSpec) benchmarkBook {
 			previous = d
 		}
 
+		if slices.Contains(cdi, d) {
+			balance += pending
+			pending = 0
+		}
+
 		if move, ok := moves[d]; ok && move != unrecorded {
 			if move == emptyAll {
 				move = -balance
 			}
 
 			h.Record(d, apitest.Posting(b.checking, -move), apitest.Posting(b.savings, move))
-			balance += move
+
+			if s.bankPaid && !slices.Contains(cdi, d) {
+				pending += move
+			} else {
+				balance += move
+			}
 		}
 
 		if c, ok := s.counters[d]; ok {
@@ -788,6 +941,22 @@ func buildBook(t *testing.T, s bookSpec) benchmarkBook {
 	}
 
 	return b
+}
+
+// explicitBook is a savings account that receives 10,000,000.00 on 2026-01-02 and whose credits
+// the test records one by one.
+func explicitBook(t *testing.T) benchmarkBook {
+	t.Helper()
+
+	b := buildBook(t, bookSpec{credits: []string{}, empty: true})
+	b.h.Record("2026-01-02", apitest.Posting(b.checking, -1_000_000_000), apitest.Posting(b.savings, 1_000_000_000))
+
+	return b
+}
+
+// credit records a yield of cents against Yield in the savings account.
+func (b benchmarkBook) credit(day string, cents int64) {
+	b.h.Record(day, apitest.Posting(b.yield, -cents), apitest.Posting(b.savings, cents))
 }
 
 // creditOf is share thousandths of balance × (Π(1 + rate) − 1) over the days, rounded half up.
@@ -878,8 +1047,8 @@ func (b *benchmarkBook) stockBrokerage(t *testing.T, last string) string {
 func requireFigures(t *testing.T, r comparedReturn, want figures, period int) {
 	t.Helper()
 
-	if r.PeriodBP == nil || *r.PeriodBP != period {
-		t.Fatalf("period_bp = %v, want %d", r.PeriodBP, period)
+	if got := cmpOr(r.PeriodBP, new(-1)); *got != period {
+		t.Fatalf("period_bp = %d, want %d", *got, period)
 	}
 
 	if got := figuresOf(t, r); got != want {

@@ -307,12 +307,15 @@ func (s *Service) FirstPosting(ctx context.Context, booksID int64, accountIDs []
 	return s.repo.TreeFirstPosting(ctx, booksID, accountIDs)
 }
 
-// RecordedItem is an amount of a tree on a date, in the balancing currency of its transaction;
-// Label is the account name of an income or an expense.
+// RecordedItem is an amount of a tree on a date: a flow or a credit is in the instrument of the
+// tree accounts, an income or an expense in the balancing currency of its transaction. Label is
+// the account name of an income or an expense; Postings is the number of tree postings of a
+// credit.
 type RecordedItem struct {
-	Date  time.Time
-	Value money.Money
-	Label string
+	Date     time.Time
+	Value    money.Money
+	Label    string
+	Postings int
 }
 
 // RecordedYield is what the ledger records of a tree over a range (return comparison amendment

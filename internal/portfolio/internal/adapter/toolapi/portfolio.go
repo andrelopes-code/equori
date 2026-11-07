@@ -107,7 +107,7 @@ type getPortfolioOut struct {
 	PeriodBP    int            `json:"period_bp,omitzero" jsonschema:"for return: time-weighted return of the period in basis points; absent when undefined or zero"`
 	Profile     string         `json:"profile,omitzero" jsonschema:"for return: rate when every holding is cash or fixed income in the report's currency, market otherwise"`
 	Benchmark   benchmarkView  `json:"benchmark,omitzero"`
-	Reason      string         `json:"unavailable_reason,omitzero" jsonschema:"for return: why benchmark or its percent is absent - no_index_for_region, currency_mismatch, nothing_held, no_yield_recorded, single_credit or too_small"`
+	Reason      string         `json:"unavailable_reason,omitzero" jsonschema:"for return: why benchmark or its percent is absent - no_index_for_region, currency_mismatch, nothing_held, no_yield_recorded, single_credit, too_small or no_rate_in_window"`
 	Excluded    excludedView   `json:"excluded,omitzero" jsonschema:"for return: income and expense of the period treated as money in or out, not as yield"`
 	Inflation   inflationView  `json:"inflation,omitzero"`
 	IncomeTypes []string       `json:"income_types,omitzero"`

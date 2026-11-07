@@ -3267,7 +3267,7 @@
         },
         "unavailable_reason": {
           "type": "string",
-          "description": "for return: why benchmark or its percent is absent - no_index_for_region, currency_mismatch, nothing_held, no_yield_recorded, single_credit or too_small"
+          "description": "for return: why benchmark or its percent is absent - no_index_for_region, currency_mismatch, nothing_held, no_yield_recorded, single_credit, too_small or no_rate_in_window"
         },
         "excluded": {
           "type": "object",

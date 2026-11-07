@@ -5834,7 +5834,7 @@ export interface components {
             period_bp?: number;
             benchmark?: components["schemas"]["ReturnBenchmark"];
             inflation?: components["schemas"]["ReturnInflation"];
-            /** @description Why benchmark, or its percent_bp and annual_bp, is absent - no_index_for_region, currency_mismatch, nothing_held, no_yield_recorded, single_credit or too_small (amendment A208 R23). */
+            /** @description Why benchmark, or its percent_bp and annual_bp, is absent - no_index_for_region, currency_mismatch, nothing_held, no_yield_recorded, single_credit, too_small or no_rate_in_window (amendment A208 R23). */
             unavailable_reason?: string;
             excluded?: components["schemas"]["ReturnExcluded"];
         };
@@ -5849,11 +5849,11 @@ export interface components {
             categories: string[];
         };
         ReturnBenchmark: {
-            /** @description For a tree whose yield is recorded, the yield credits the return covers, those after the first credit compared (amendment A208 R20); 0 otherwise. */
+            /** @description For a tree whose yield is recorded, the yield credits the return covers, the positive credits after the first credit compared (amendment A208 R20); 0 otherwise. */
             credits: number;
             /** @description True when a flow between two credits more than 7 days apart moved the start of the comparison to the credit after it (amendment A208 R20). */
             restarted: boolean;
-            /** @description The relative bound of percent_bp and annual_bp in basis points of themselves, from rounding each credit to the minor unit; percent_bp and annual_bp are absent above 500 (amendment A208 R22). */
+            /** @description The relative bound of percent_bp and annual_bp in basis points of themselves, from rounding each tree posting of a credit to the minor unit; percent_bp and annual_bp are absent above 500 (amendment A208 R22). */
             percent_error_bp?: number;
             index: string;
             /**

@@ -909,12 +909,12 @@ func (r *Repository) TreeRecordedYield(ctx context.Context, booksID int64, accou
 	var out app.RecordedYield
 
 	for _, row := range rows {
-		value, err := money.New(row.Amount, money.Currency(row.BalancingCurrency))
+		value, err := money.New(row.Amount, money.Currency(row.Currency))
 		if err != nil {
 			return app.RecordedYield{}, fmt.Errorf("recorded yield of %s: %w", row.Date.Format(time.DateOnly), err)
 		}
 
-		item := app.RecordedItem{Date: row.Date, Value: value, Label: row.Label}
+		item := app.RecordedItem{Date: row.Date, Value: value, Label: row.Label, Postings: int(row.Postings)}
 
 		switch row.Kind {
 		case "flow":
