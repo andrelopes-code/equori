@@ -10460,7 +10460,7 @@ components:
           $ref: "#/components/schemas/ReturnInflation"
     ReturnBenchmark:
       type: object
-      required: [index, from, until, days, index_bp]
+      required: [index, from, until, days, skipped, index_bp]
       properties:
         index:
           type: string
@@ -10472,6 +10472,9 @@ components:
         days:
           type: integer
           description: The number of rates compared.
+        skipped:
+          type: integer
+          description: The rates of the period left out, on days the tree held nothing or, for a rate profile, before its first recorded yield (amendment A208 R14, R18).
         until:
           type: string
           format: date

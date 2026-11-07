@@ -3238,6 +3238,10 @@
             },
             "days": {
               "type": "integer"
+            },
+            "skipped": {
+              "type": "integer",
+              "description": "rates of the period left out: days without money, or before a savings account recorded its first yield"
             }
           },
           "required": [

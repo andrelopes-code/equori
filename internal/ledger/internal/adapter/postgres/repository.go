@@ -900,6 +900,15 @@ func (r *Repository) TreeFirstPosting(ctx context.Context, booksID int64, accoun
 	return row.FirstOn, row.Found, nil
 }
 
+func (r *Repository) TreeFirstIncome(ctx context.Context, booksID int64, accountIDs []uuid.UUID, from, to time.Time) (app.FirstIncome, error) {
+	row, err := r.q.TreeFirstIncome(ctx, TreeFirstIncomeParams{BooksID: booksID, AccountIds: accountIDs, FromDate: from, ToDate: to})
+	if err != nil {
+		return app.FirstIncome{}, fmt.Errorf("tree first income: %w", err)
+	}
+
+	return app.FirstIncome{Before: row.Before, Found: row.Found, On: row.FirstOn}, nil
+}
+
 func (r *Repository) BalanceAt(ctx context.Context, booksID int64, accountID uuid.UUID, date time.Time, basis app.Basis) (int64, error) {
 	if basis == app.BasisSettled {
 		return r.q.BalanceSettledAt(ctx, BalanceSettledAtParams{BooksID: booksID, AccountID: accountID, OnDate: &date})

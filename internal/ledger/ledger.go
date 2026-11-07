@@ -100,6 +100,7 @@ type (
 	TransactionFacts = app.TransactionFacts
 	FactPosting      = app.FactPosting
 	AccountFact      = app.AccountFact
+	FirstIncome      = app.FirstIncome
 	AccountCheck     = app.AccountCheck
 	PayeeClass       = app.PayeeClass
 )
@@ -372,6 +373,11 @@ func (m *Module) Balances(ctx context.Context, booksID int64, date time.Time) ([
 // balancing currency.
 func (m *Module) ExternalFlows(ctx context.Context, booksID int64, accountIDs []uuid.UUID, from, to time.Time) ([]ExternalFlow, error) {
 	return m.svc.ExternalFlows(ctx, booksID, accountIDs, from, to)
+}
+
+// FirstIncome reports the income the accounts and their sub-accounts received up to to.
+func (m *Module) FirstIncome(ctx context.Context, booksID int64, accountIDs []uuid.UUID, from, to time.Time) (FirstIncome, error) {
+	return m.svc.FirstIncome(ctx, booksID, accountIDs, from, to)
 }
 
 // FirstPosting is the booked date of the earliest posting of the accounts and their sub-accounts;

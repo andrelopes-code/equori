@@ -181,6 +181,7 @@ func (s *Server) GetReturn(ctx context.Context, req GetReturnRequestObject) (Get
 			From:      date(b.From),
 			Until:     date(b.Until),
 			Days:      b.Days,
+			Skipped:   b.Skipped,
 			ReturnBp:  b.ReturnBP,
 			ExcessBp:  b.ExcessBP,
 			IndexBp:   b.IndexBP,

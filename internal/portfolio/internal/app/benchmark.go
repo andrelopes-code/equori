@@ -37,13 +37,15 @@ type IndexRate struct {
 }
 
 // Benchmark compares the time-weighted return of [From, Until] with an index over the Days rates
-// of the days the tree held money (amendment A208 R3–R5, R9, R12–R14). The pointers are nil when
-// undefined.
+// of the days the tree held money and, for a rate profile, recorded its yield; Skipped counts the
+// rates of the period left out (amendment A208 R3–R5, R9, R12–R14, R18). The pointers are nil
+// when undefined.
 type Benchmark struct {
 	Index     string
 	From      time.Time
 	Until     time.Time
 	Days      int
+	Skipped   int
 	ReturnBP  *int
 	IndexBP   int
 	PercentBP *int
@@ -138,7 +140,15 @@ func (s *Service) benchmark(ctx context.Context, p period, index string, held fu
 		return err
 	}
 
+	all := len(rates)
 	rates = slices.DeleteFunc(rates, func(r IndexRate) bool { return !held(r.Date) })
+
+	if p.report.Profile == ProfileRate {
+		if rates, err = s.recordedYield(ctx, p, rates); err != nil {
+			return err
+		}
+	}
+
 	if len(rates) == 0 {
 		return nil
 	}
@@ -153,6 +163,7 @@ func (s *Service) benchmark(ctx context.Context, p period, index string, held fu
 		From:    rates[0].Date,
 		Until:   rates[len(rates)-1].Date,
 		Days:    len(rates),
+		Skipped: all - len(rates),
 		IndexBP: domain.FactorBP(domain.IndexFactor(fractions)),
 	}
 
@@ -179,6 +190,22 @@ func (s *Service) benchmark(ctx context.Context, p period, index string, held fu
 	p.report.Benchmark = &b
 
 	return nil
+}
+
+// recordedYield keeps the rates of the days a rate tree recorded its yield (R18): a tree that
+// received no income before the period compares from its first income in it, and a tree that
+// received none in the period does not compare.
+func (s *Service) recordedYield(ctx context.Context, p period, rates []IndexRate) ([]IndexRate, error) {
+	before, first, found, err := s.ledger.FirstIncome(ctx, p.booksID, p.ids, p.from, p.to)
+	if err != nil || !found {
+		return nil, err
+	}
+
+	if before {
+		return rates, nil
+	}
+
+	return slices.DeleteFunc(rates, func(r IndexRate) bool { return r.Date.Before(first) }), nil
 }
 
 // benchmarkRates returns the index of the comparison and its rates in [from, to]. Without a

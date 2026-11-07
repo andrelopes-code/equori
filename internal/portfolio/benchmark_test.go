@@ -39,6 +39,7 @@ type comparedReturn struct {
 		IndexAnnualBP *int `json:"index_annual_bp"`
 		ExcessBP      *int `json:"excess_bp"`
 		Days          int  `json:"days"`
+		Skipped       int  `json:"skipped"`
 	} `json:"benchmark"`
 }
 
@@ -186,6 +187,33 @@ func TestS309NoIndexForTheRegionOrCurrency(t *testing.T) {
 	}
 }
 
+// S310: a savings account compares from its first recorded yield when none came before the
+// period, and not at all when none was recorded.
+func TestS310YieldRecordedLate(t *testing.T) {
+	t.Parallel()
+	b := newBenchmarkBookWith(t, "2026-01-01", map[string]int64{"2026-01-02": unrecorded, "2026-01-05": unrecorded})
+
+	r := b.compared(t, "2026-01-02", "2026-01-09", "")
+	if r.Benchmark == nil {
+		t.Fatalf("report = %+v", r)
+	}
+
+	got := *r.Benchmark
+	if got.From != "2026-01-06" || got.Days != 4 || got.Skipped != 2 || got.IndexBP != 22 || got.PercentBP == nil || *got.PercentBP != 10000 {
+		t.Fatalf("benchmark = %+v", got)
+	}
+
+	silent := map[string]int64{}
+	for _, d := range cdiDays {
+		silent[d] = unrecorded
+	}
+
+	r = newBenchmarkBookWith(t, "2026-01-01", silent).compared(t, "2026-01-02", "2026-01-09", "")
+	if r.Benchmark != nil || r.PeriodBP == nil || *r.PeriodBP != 0 {
+		t.Fatalf("report without a recorded yield = %+v", r)
+	}
+}
+
 // S304: a monthly index and an index without an enabled source are refused on index.
 func TestS304IndexRefused(t *testing.T) {
 	t.Parallel()
@@ -199,8 +227,12 @@ func TestS304IndexRefused(t *testing.T) {
 	}
 }
 
-// emptyAll in the moves of newBenchmarkBookWith withdraws the whole balance.
-const emptyAll = math.MinInt64
+// In the moves of newBenchmarkBookWith, emptyAll withdraws the whole balance and unrecorded
+// leaves the credit of the day out of the ledger.
+const (
+	emptyAll   = math.MinInt64
+	unrecorded = math.MinInt64 + 1
+)
 
 type benchmarkBook struct {
 	h        *apitest.Harness
@@ -271,14 +303,14 @@ func newBenchmarkBookWith(t *testing.T, opened string, moves map[string]int64) b
 	}
 
 	for _, d := range cdiDays {
-		if balance > 0 {
+		if balance > 0 && moves[d] != unrecorded {
 			// 0.055131% of the balance, rounded half up to the cent.
 			credit := (balance*55131 + 50_000_000) / 100_000_000
 			h.Record(d, apitest.Posting(interest, -credit), apitest.Posting(savings, credit))
 			balance += credit
 		}
 
-		if move, ok := moves[d]; ok {
+		if move, ok := moves[d]; ok && move != unrecorded {
 			if move == emptyAll {
 				move = -balance
 			}

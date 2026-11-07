@@ -307,6 +307,24 @@ func (s *Service) FirstPosting(ctx context.Context, booksID int64, accountIDs []
 	return s.repo.TreeFirstPosting(ctx, booksID, accountIDs)
 }
 
+// FirstIncome is the income a tree received from an income account: whether any came before a
+// date, and the booked date of the earliest on or after it, when Found.
+type FirstIncome struct {
+	Before bool
+	Found  bool
+	On     time.Time
+}
+
+// FirstIncome reports the income the accounts and their sub-accounts received up to to: whether
+// any came before from, and the earliest in [from, to] (return comparison amendment A208 R18).
+func (s *Service) FirstIncome(ctx context.Context, booksID int64, accountIDs []uuid.UUID, from, to time.Time) (FirstIncome, error) {
+	if err := s.ownAccounts(ctx, booksID, accountIDs); err != nil {
+		return FirstIncome{}, err
+	}
+
+	return s.repo.TreeFirstIncome(ctx, booksID, accountIDs, from, to)
+}
+
 func (s *Service) ownAccounts(ctx context.Context, booksID int64, accountIDs []uuid.UUID) error {
 	for _, id := range accountIDs {
 		if _, err := s.repo.Account(ctx, booksID, id); err != nil {

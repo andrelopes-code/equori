@@ -5844,6 +5844,8 @@ export interface components {
             from: string;
             /** @description The number of rates compared. */
             days: number;
+            /** @description The rates of the period left out, on days the tree held nothing or, for a rate profile, before its first recorded yield (amendment A208 R14, R18). */
+            skipped: number;
             /** Format: date */
             until: string;
             return_bp?: number;

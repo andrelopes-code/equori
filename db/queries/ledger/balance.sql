@@ -345,6 +345,73 @@ WHERE
             tree
     );
 
+-- name: TreeFirstIncome :one
+-- The income the accounts and their sub-accounts received from an income account (return
+-- comparison amendment A208 R18): whether any came before from_date, and the booked date of the
+-- earliest in [from_date, to_date]; found is false, and first_on meaningless, when none did.
+WITH RECURSIVE
+    tree AS (
+        SELECT
+            a.id
+        FROM
+            ledger_account a
+        WHERE
+            a.books_id = @books_id
+            AND a.id = ANY (@account_ids::UUID[])
+        UNION
+        SELECT
+            c.id
+        FROM
+            ledger_account c
+            JOIN tree ON c.parent_id = tree.id
+        WHERE
+            c.books_id = @books_id
+    ),
+    income AS (
+        SELECT
+            p.booked_on AS income_on
+        FROM
+            ledger_posting p
+            JOIN ledger_posting o ON o.transaction_id = p.transaction_id
+            AND o.books_id = p.books_id
+            AND NOT o.voided
+            JOIN ledger_account oa ON oa.id = o.account_id
+            AND oa.books_id = o.books_id
+            AND oa.account_class = 'income'
+        WHERE
+            p.books_id = @books_id
+            AND NOT p.voided
+            AND p.booked_on <= @to_date::date
+            AND p.account_id IN (
+                SELECT
+                    id
+                FROM
+                    tree
+            )
+    )
+SELECT
+    coalesce(
+        min(i.income_on) FILTER (
+            WHERE
+                i.income_on >= @from_date::date
+        ),
+        DATE '0001-01-01'
+    )::date AS first_on,
+    (
+        count(*) FILTER (
+            WHERE
+                i.income_on >= @from_date::date
+        ) > 0
+    )::boolean AS found,
+    (
+        count(*) FILTER (
+            WHERE
+                i.income_on < @from_date::date
+        ) > 0
+    )::boolean AS before
+FROM
+    income i;
+
 -- name: OwnCategoryMonthlyTotals :many
 -- Budget plan amendment A129: own postings of every category of a class, by month.
 SELECT

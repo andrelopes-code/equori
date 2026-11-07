@@ -288,11 +288,14 @@ type ReturnBenchmark struct {
 	Index string             `json:"index"`
 
 	// IndexAnnualBp index_bp as a rate a year on the same basis.
-	IndexAnnualBp *int               `json:"index_annual_bp,omitempty"`
-	IndexBp       int                `json:"index_bp"`
-	PercentBp     *int               `json:"percent_bp,omitempty"`
-	ReturnBp      *int               `json:"return_bp,omitempty"`
-	Until         openapi_types.Date `json:"until"`
+	IndexAnnualBp *int `json:"index_annual_bp,omitempty"`
+	IndexBp       int  `json:"index_bp"`
+	PercentBp     *int `json:"percent_bp,omitempty"`
+	ReturnBp      *int `json:"return_bp,omitempty"`
+
+	// Skipped The rates of the period left out, on days the tree held nothing or, for a rate profile, before its first recorded yield (amendment A208 R14, R18).
+	Skipped int                `json:"skipped"`
+	Until   openapi_types.Date `json:"until"`
 }
 
 // ReturnFlow defines model for ReturnFlow.

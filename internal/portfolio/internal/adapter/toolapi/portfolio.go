@@ -65,6 +65,7 @@ type benchmarkView struct {
 	IndexAnnualBP int `json:"index_annual_bp,omitzero" jsonschema:"index_bp as a rate a year on the same basis; absent when undefined or zero"`
 	ExcessBP      int `json:"excess_bp,omitzero" jsonschema:"return_bp minus index_bp; absent when undefined or zero"`
 	Days          int `json:"days"`
+	Skipped       int `json:"skipped,omitzero" jsonschema:"rates of the period left out: days without money, or before a savings account recorded its first yield"`
 }
 
 // inflationView is the return net of inflation over whole months (amendment A208 R16).
@@ -222,6 +223,7 @@ func benchmarkOf(b *app.Benchmark) benchmarkView {
 		IndexAnnualBP: valueOf(b.IndexAnnualBP),
 		ExcessBP:      valueOf(b.ExcessBP),
 		Days:          b.Days,
+		Skipped:       b.Skipped,
 	}
 }
 
