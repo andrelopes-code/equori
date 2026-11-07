@@ -94,38 +94,6 @@ export function yieldGroups(
   );
 }
 
-// returnLines are the lines the return section of the Portfolio states under the annual rate
-// (amendment A208 R7, R17), in order.
-export function returnLines(
-  report: ReturnReport,
-  t: TFunction,
-  tag: string,
-): string[] {
-  const rate = (bp: number) => formatBasisPoints(bp, tag);
-  const lines: string[] = [];
-
-  if (report.period_bp !== undefined) {
-    lines.push(t("portfolio.return.period", { rate: rate(report.period_bp) }));
-  }
-
-  lines.push(...benchmarkLines(report, t, tag));
-
-  const i = report.inflation;
-  if (i !== undefined) {
-    lines.push(
-      t("portfolio.return.real", {
-        index: indexName(i.index),
-        inflation: rate(i.index_bp),
-        from: formatDate(i.from, tag),
-        until: formatDate(i.until, tag),
-        rate: rate(i.real_bp),
-      }),
-    );
-  }
-
-  return lines;
-}
-
 // indexGroup compares the return with the index over the same days: a rate profile by its rate a
 // year and percent of the index, a market profile by the difference in percentage points.
 function indexGroup(
@@ -299,58 +267,6 @@ function inflationGroup(
       },
     ],
   };
-}
-
-// benchmarkLines are the lines of the comparison with the index: the rate a year, the percent of
-// the index, the index's growth, the difference from it and, for a market profile, why the first
-// two are absent.
-function benchmarkLines(
-  report: ReturnReport,
-  t: TFunction,
-  tag: string,
-): string[] {
-  const b = report.benchmark;
-  if (b === undefined) return [];
-
-  const rate = (bp: number) => formatBasisPoints(bp, tag);
-  const index = indexName(b.index);
-  const lines: string[] = [];
-
-  if (b.annual_bp !== undefined) {
-    lines.push(
-      t("portfolio.return.annualEquivalent", {
-        days: String(b.days),
-        rate: rate(b.annual_bp),
-      }),
-    );
-  }
-
-  if (b.percent_bp !== undefined) {
-    lines.push(
-      t("portfolio.return.percentOfIndex", {
-        percent: rate(b.percent_bp),
-        index,
-        from: formatDate(b.from, tag),
-        until: formatDate(b.until, tag),
-      }),
-    );
-  }
-
-  lines.push(
-    t("portfolio.return.indexGrowth", { index, rate: rate(b.index_bp) }),
-  );
-
-  if (b.excess_bp !== undefined) {
-    lines.push(
-      t("portfolio.return.excess", { index, value: points(b.excess_bp, tag) }),
-    );
-  }
-
-  if (report.profile === "market") {
-    lines.push(t("portfolio.return.marketProfile", { index }));
-  }
-
-  return lines;
 }
 
 // secondary is the muted part of a yield line, followed by the first day compared when the

@@ -18,6 +18,15 @@ export const holdingsPtBR: Record<keyof typeof holdingsEn, string> = {
   "holdings.income.none": "Nenhum recebido neste ano",
   "holdings.income.open": "Ver",
   "holdings.income.record": "Registrar provento",
+  "holdings.return": "Como rendeu",
+  "holdings.return.period": "Retorno do período",
+  "holdings.return.personal": "Sua taxa pessoal ao ano",
+  "holdings.period.year": "Últimos 12 meses",
+  "holdings.method": "Como é calculado",
+  "holdings.method.period": "Retorno do período",
+  "holdings.method.personal": "Sua taxa pessoal ao ano",
+  "holdings.method.difference":
+    "O retorno do período ignora quando você aportou ou retirou, por isso pode ser comparado a um índice. A sua taxa pessoal considera essas datas e mostra quanto o seu próprio dinheiro rendeu.",
   "holdings.where": "Onde está o dinheiro",
   "holdings.where.note":
     "Investimentos e saldo de corretora. Poupança e reservas ficam em Contas.",

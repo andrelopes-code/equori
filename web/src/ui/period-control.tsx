@@ -19,6 +19,7 @@ import { Text } from "@slotted/react/typography";
 import { useState } from "react";
 
 import { periodLabel, periodPresets, stepPeriod } from "@/ui/period-presets";
+import type { PeriodPreset } from "@/ui/period-presets";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { StepGlyph } from "@/ui/step-glyph";
@@ -37,6 +38,7 @@ export function PeriodControl({
   onChange,
   quarters = false,
   allowAll = true,
+  extraPresets = [],
 }: {
   value: Period | undefined;
   onChange: (next: Period | undefined) => void;
@@ -44,14 +46,17 @@ export function PeriodControl({
   quarters?: boolean;
   // False for a screen that always reads a period: no "all" choice.
   allowAll?: boolean;
+  // Periods of the screen's own, offered before the common ones.
+  extraPresets?: readonly PeriodPreset[];
 }) {
   const t = useT();
   const [locale] = useAppLocale();
   const today = useToday();
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<CalendarValue>(null);
-  const presets = periodPresets(today, quarters);
-  const [thisMonth] = presets;
+  const common = periodPresets(today, quarters);
+  const presets = [...extraPresets, ...common];
+  const [thisMonth] = common;
 
   const step = (direction: -1 | 1) => {
     if (value === undefined) {

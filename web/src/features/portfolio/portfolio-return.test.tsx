@@ -1,4 +1,5 @@
 import { screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
@@ -8,6 +9,7 @@ import {
   comparedReturn,
   marketReturn,
   contributionReturn,
+  plainReturn,
   portfolioApi,
 } from "@/testing/portfolio-api";
 import { renderApp } from "@/testing/render-app";
@@ -15,75 +17,127 @@ import { renderApp } from "@/testing/render-app";
 const flows = () =>
   screen.findByRole("table", { name: catalogEn["portfolio.return.flows"] });
 
+const performance = () =>
+  screen.findByRole("region", { name: catalogEn["holdings.return"] });
+
+const openMethod = async () => {
+  await userEvent
+    .setup()
+    .click(
+      await screen.findByRole("button", { name: catalogEn["holdings.method"] }),
+    );
+};
+
 describe("Portfolio return", () => {
-  it("shows the annual return, the opening and the closing (S126)", async () => {
-    await renderApp("/portfolio", { fetch: portfolioApi() });
-    const figures = await screen.findByRole("group", {
-      name: catalogEn["portfolio.return.title"],
+  it("PC11: leads with the return of the period when no index compares it (S126)", async () => {
+    const fetch = portfolioApi({
+      "GET /api/v1/reports/return": () =>
+        json(200, { ...plainReturn, period_bp: 480 }),
     });
-    await within(figures).findByText("5.00%");
-    expect(within(figures).getByText(/R\$1,000\.00/)).toBeInTheDocument();
-    expect(within(figures).getByText(/R\$1,050\.00/)).toBeInTheDocument();
+    await renderApp("/portfolio", { fetch });
+    const section = await performance();
+
+    expect(await within(section).findByText("4.80%")).toBeInTheDocument();
+    expect(
+      within(section).getByText(catalogEn["holdings.return.period"]),
+    ).toBeInTheDocument();
+  });
+
+  it("PC11: falls back to the personal rate of a report without a period return", async () => {
+    await renderApp("/portfolio", { fetch: portfolioApi() });
+    const section = await performance();
+
+    expect(await within(section).findByText("5.00%")).toBeInTheDocument();
+    expect(
+      within(section).getByText(catalogEn["holdings.return.personal"]),
+    ).toBeInTheDocument();
+  });
+
+  it("PC12: keeps the method closed and states its figures on request (S126)", async () => {
+    await renderApp("/portfolio", { fetch: portfolioApi() });
+    await performance();
+
+    expect(await screen.findByText(catalogEn["holdings.method"])).toBeVisible();
+    expect(screen.queryByText(/R\$1,050\.00/)).toBeNull();
+
+    await openMethod();
+
+    expect(await screen.findByText(/R\$1,000\.00/)).toBeInTheDocument();
+    expect(screen.getByText(/R\$1,050\.00/)).toBeInTheDocument();
     expect(
       screen.getByText(catalogEn["portfolio.return.noFlows"]),
     ).toBeInTheDocument();
   });
 
-  it("compares the period with the CDI (S302)", async () => {
-    const fetch = portfolioApi({
-      "GET /api/v1/reports/return": () => json(200, comparedReturn),
-    });
-    await renderApp("/portfolio", { fetch });
-    const figures = await screen.findByRole("group", {
-      name: catalogEn["portfolio.return.title"],
-    });
-    await within(figures).findByText(
-      "Time-weighted return of the period: 0.33%",
-    );
-    expect(
-      within(figures).getByText("100.00% of CDI from 01/02/2026 to 01/09/2026"),
-    ).toBeInTheDocument();
-    expect(
-      within(figures).getByText("CDI over the same days: 0.33%"),
-    ).toBeInTheDocument();
-  });
-
-  it("states the difference from the CDI and the real return of a market profile (S306, S308)", async () => {
+  it("PC12: names both rates and says how they differ", async () => {
     const fetch = portfolioApi({
       "GET /api/v1/reports/return": () => json(200, marketReturn),
     });
     await renderApp("/portfolio", { fetch });
-    const figures = await screen.findByRole("group", {
-      name: catalogEn["portfolio.return.title"],
-    });
+    await performance();
+    await openMethod();
+
     expect(
-      await within(figures).findByText(
-        "Against CDI over the same days: −10.33 pp",
-      ),
+      await screen.findByText(catalogEn["holdings.method.personal"]),
     ).toBeInTheDocument();
     expect(
-      within(figures).getByText(
-        "Market prices: the return is not annualized or stated as a percent of CDI.",
-      ),
+      screen.getByText(catalogEn["holdings.method.period"]),
     ).toBeInTheDocument();
     expect(
-      within(figures).getByText(
-        "Real return, less IPCA 0.90% from 11/01/2025 to 12/31/2025: −0.89%",
-      ),
+      screen.getByText(catalogEn["holdings.method.difference"]),
     ).toBeInTheDocument();
-    expect(within(figures).queryByText(/of CDI from/)).not.toBeInTheDocument();
   });
 
-  it("lists the external flows of a contribution (S126)", async () => {
+  it("PC11: compares a rate with the CDI by the figures of the account page (S302)", async () => {
+    const fetch = portfolioApi({
+      "GET /api/v1/reports/return": () => json(200, comparedReturn),
+    });
+    await renderApp("/portfolio", { fetch });
+    const group = await screen.findByRole("group", {
+      name: catalogEn["portfolio.yield.group.index"].replace("{index}", "CDI"),
+    });
+
+    expect(
+      within(group).getByText(
+        catalogEn["portfolio.yield.row.percent"].replace("{index}", "CDI"),
+      ),
+    ).toBeInTheDocument();
+    expect(within(group).getByText("100.00%")).toBeInTheDocument();
+  });
+
+  it("PC11: states what a market profile means, its difference from the CDI and its real return (S306, S308)", async () => {
+    const fetch = portfolioApi({
+      "GET /api/v1/reports/return": () => json(200, marketReturn),
+    });
+    await renderApp("/portfolio", { fetch });
+    const section = await performance();
+
+    expect(
+      await within(section).findByText(
+        catalogEn["portfolio.yield.profile.market"].replaceAll(
+          "{index}",
+          "CDI",
+        ),
+      ),
+    ).toBeInTheDocument();
+    expect(within(section).getByText("−10.33 pp")).toBeInTheDocument();
+    expect(within(section).getByText("−0.89%")).toBeInTheDocument();
+    expect(
+      within(section).queryByText(
+        catalogEn["portfolio.yield.row.percent"].replace("{index}", "CDI"),
+      ),
+    ).not.toBeInTheDocument();
+  });
+
+  it("PC13: lists the deposits and withdrawals of a contribution (S126)", async () => {
     const fetch = portfolioApi({
       "GET /api/v1/reports/return": () => json(200, contributionReturn),
     });
     await renderApp("/portfolio", { fetch });
-    const figures = await screen.findByRole("group", {
-      name: catalogEn["portfolio.return.title"],
-    });
-    await within(figures).findByText("3.33%");
-    expect(within(figures).getByText(/R\$2,050\.00/)).toBeInTheDocument();
+    await performance();
+    await openMethod();
+
+    expect(await screen.findByText(/R\$2,050\.00/)).toBeInTheDocument();
     const table = await flows();
     expect(
       within(table)
@@ -94,6 +148,83 @@ describe("Portfolio return", () => {
             .join("|"),
         ),
     ).toEqual(["Date|Amount", "04/30/2026|R$1,000.00"]);
+  });
+
+  it("PC10: chooses the period with one control and writes it to the address", async () => {
+    const asked: string[] = [];
+    const fetch = portfolioApi({
+      "GET /api/v1/reports/return": (req) => {
+        const q = new URL(req.url).searchParams;
+        asked.push(`${q.get("from") ?? ""} ${q.get("to") ?? ""}`);
+        return json(200, plainReturn);
+      },
+    });
+    const { router } = await renderApp("/portfolio", {
+      fetch,
+      today: "2026-10-24",
+    });
+    const user = userEvent.setup();
+    const section = await performance();
+
+    await user.click(
+      await within(section).findByRole("button", {
+        name: /25\/10\/2025|10\/25\/2025|Oct 25|25 Oct/,
+      }),
+    );
+    await user.click(
+      await screen.findByRole("button", {
+        name: catalogEn["transactions.period.last90Days"],
+      }),
+    );
+
+    await waitFor(() => {
+      expect(asked.at(-1)).toBe("2026-07-27 2026-10-24");
+    });
+    expect(router.state.location.search).toMatchObject({
+      from: "2026-07-27",
+      to: "2026-10-24",
+    });
+  });
+
+  it("PC10: offers the 12 months back and clears them from the address", async () => {
+    const { router } = await renderApp(
+      "/portfolio?from=2026-07-27&to=2026-10-24",
+      { fetch: portfolioApi(), today: "2026-10-24" },
+    );
+    const user = userEvent.setup();
+    const section = await performance();
+
+    await user.click(
+      await within(section).findByRole("button", { name: /Jul|07\/27|27\/07/ }),
+    );
+    await user.click(
+      await screen.findByRole("button", {
+        name: catalogEn["holdings.period.year"],
+      }),
+    );
+
+    await waitFor(() => {
+      expect(router.state.location.search).not.toHaveProperty("from");
+    });
+    expect(router.state.location.search).not.toHaveProperty("to");
+  });
+
+  it("PC10: reads a period that ends after today up to today", async () => {
+    const asked: (string | null)[] = [];
+    const fetch = portfolioApi({
+      "GET /api/v1/reports/return": (req) => {
+        asked.push(new URL(req.url).searchParams.get("to"));
+        return json(200, plainReturn);
+      },
+    });
+    await renderApp("/portfolio?from=2026-01-01&to=2026-12-31", {
+      fetch,
+      today: "2026-10-24",
+    });
+
+    await waitFor(() => {
+      expect(asked).toEqual(["2026-10-24"]);
+    });
   });
 
   it("asks for the whole portfolio over the 12 months ending at the valuation date, in EUR", async () => {
@@ -139,7 +270,7 @@ describe("Portfolio return", () => {
 
   it("offers the parents of an investment account, the investment accounts and the reserves (A208 R7)", async () => {
     await renderApp("/portfolio", { fetch: portfolioApi() });
-    const user = (await import("@testing-library/user-event")).default.setup();
+    const user = userEvent.setup();
     await user.click(
       await screen.findByRole("combobox", {
         name: catalogEn["portfolio.return.account"],
@@ -162,7 +293,7 @@ describe("Portfolio return", () => {
         json(200, { items: accounts.filter((a) => a.name === "Reserva") }),
     });
     await renderApp("/portfolio", { fetch });
-    const user = (await import("@testing-library/user-event")).default.setup();
+    const user = userEvent.setup();
     await user.click(
       await screen.findByRole("combobox", {
         name: catalogEn["portfolio.return.account"],
@@ -230,6 +361,8 @@ describe("Portfolio return", () => {
     try {
       const { container } = await renderApp("/portfolio", { fetch });
       await screen.findByText("3.33%");
+      await openMethod();
+      await screen.findAllByText(catalogEn["holdings.method.personal"]);
       expect(container.textContent).not.toContain("2,050.00");
       expect(container.textContent).not.toContain("1,000.00");
     } finally {

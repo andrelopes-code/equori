@@ -16,6 +16,15 @@ export const holdingsEn = {
   "holdings.income.none": "None received this year",
   "holdings.income.open": "View",
   "holdings.income.record": "Record income",
+  "holdings.return": "How it performed",
+  "holdings.return.period": "Return of the period",
+  "holdings.return.personal": "Your personal rate a year",
+  "holdings.period.year": "Last 12 months",
+  "holdings.method": "How it is calculated",
+  "holdings.method.period": "Return of the period",
+  "holdings.method.personal": "Your personal rate a year",
+  "holdings.method.difference":
+    "The return of the period ignores when you put money in or took it out, so it compares with an index. Your personal rate counts those dates, so it states what your own money earned.",
   "holdings.where": "Where the money is",
   "holdings.where.note":
     "Investments and brokerage cash. Savings and reserves are on Accounts.",

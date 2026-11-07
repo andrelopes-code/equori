@@ -4,11 +4,7 @@ import type { components } from "@/api/schema.gen";
 import { catalogEn } from "@/i18n/catalog.en";
 import type { TFunction } from "@/i18n/i18n-provider";
 
-import {
-  returnLines,
-  yieldGroups,
-  yieldLine,
-} from "@/features/portfolio/yield-figures";
+import { yieldGroups, yieldLine } from "@/features/portfolio/yield-figures";
 
 type ReturnReport = components["schemas"]["ReturnReport"];
 
@@ -164,28 +160,6 @@ describe("yieldGroups", () => {
           ["Difference from CDI", "−17.32 pp", true, true],
         ],
       },
-    ]);
-  });
-});
-
-describe("returnLines", () => {
-  it("states every figure of a rate profile", () => {
-    expect(returnLines(rate, t, "en")).toEqual([
-      "Time-weighted return of the period: 14.90%",
-      "Rate a year over 245 business days: 15.17%",
-      "101.80% of CDI from 11/03/2025 to 10/16/2026",
-      "CDI over the same days: 14.55%",
-      "Against CDI over the same days: +0.25 pp",
-      "Real return, less IPCA 5.00% from 11/01/2025 to 09/30/2026: 8.10%",
-    ]);
-  });
-
-  it("says why a market profile has no rate a year or percent of the index", () => {
-    expect(returnLines(market, t, "en")).toEqual([
-      "Time-weighted return of the period: −14.00%",
-      "CDI over the same days: 3.52%",
-      "Against CDI over the same days: −17.32 pp",
-      "Market prices: the return is not annualized or stated as a percent of CDI.",
     ]);
   });
 });

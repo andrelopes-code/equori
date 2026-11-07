@@ -7,7 +7,6 @@ import {
   ResultStateTitle,
 } from "@slotted/react/result-state";
 import { Stack } from "@slotted/react/stack";
-import { Heading } from "@slotted/react/typography";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 
@@ -103,17 +102,12 @@ export function PortfolioPage() {
             />
           )}
 
-          <Stack gap={3}>
-            <Heading level={2} size="md">
-              {t("portfolio.return.title")}
-            </Heading>
-            <PortfolioReturn
-              date={date}
-              valueIn={valueIn}
-              search={search}
-              onChange={change}
-            />
-          </Stack>
+          <PortfolioReturn
+            date={date}
+            valueIn={valueIn}
+            search={search}
+            onChange={change}
+          />
 
           {!empty && !positions.isError && (
             <WhereMoneySection
