@@ -20,7 +20,7 @@ interface AccountYieldProps {
   accountId: string;
   // The last day of the window: the date of the balance sheet.
   date: string;
-  // A phone row: the figure alone, in the smaller size of its description line.
+  // A phone row: one line, in the smaller size of its description line.
   compact?: boolean;
 }
 
@@ -28,7 +28,8 @@ interface AccountYieldProps {
 // R23): two lines, right-aligned. The first is the figure, in the danger tone when negative. The
 // second, muted, joins with a separator the index it is read against and the day a late start
 // begins from, or states why there is no figure; only a reason wraps. A phone row keeps the figure
-// and the day on one line.
+// and the day on one line that never wraps; a reason alone is truncated to one line, whole in the
+// document.
 export function AccountYield({
   accountId,
   date,
@@ -46,9 +47,17 @@ export function AccountYield({
   const size = compact ? "xs" : "sm";
   const tone = line.negative ? "danger" : "default";
 
-  if (compact && line.primary !== undefined) {
+  if (compact && line.primary === undefined) {
     return (
-      <Inline gap={2} justify="end">
+      <Text size={size} tone="muted" truncate>
+        {line.secondary}
+      </Text>
+    );
+  }
+
+  if (compact) {
+    return (
+      <Inline gap={2} justify="end" wrap="nowrap">
         <Text size={size} tone={tone} numeric="tabular" wrap="nowrap">
           {line.primary}
         </Text>

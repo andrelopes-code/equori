@@ -585,10 +585,10 @@ func TestS324MonthlyCreditsWithAMidGapDeposit(t *testing.T) {
 	requireFigures(t, b.compared(t, "2026-01-02", "2026-03-31", ""), want, 348)
 }
 
-// A monthly credit after a deposit leaves one compared day: the timing of one credit moves
+// S349: a monthly credit after a deposit leaves one compared day: the timing of one credit moves
 // the percent by a day in the days, so percent_bp and annual_bp are absent, reason too_few_days,
 // and the return, the index and the window stay (R22, R23).
-func TestMonthlyCreditLeavesOneComparedDay(t *testing.T) {
+func TestS349MonthlyCreditLeavesOneComparedDay(t *testing.T) {
 	t.Parallel()
 
 	r := monthlyCreditsBook(t, "2026-03-03").compared(t, "2026-01-02", "2026-03-03", "")
@@ -608,8 +608,30 @@ func TestMonthlyCreditLeavesOneComparedDay(t *testing.T) {
 	}
 }
 
-// Five compared days are the least that show the percent (R22).
-func TestFiveComparedDaysShowThePercent(t *testing.T) {
+// S350: four compared days, one fewer than the least that show the percent, leave percent_bp and
+// annual_bp absent on a book that pays 100% of the CDI, reason too_few_days (R22, R23).
+func TestS350FourComparedDaysHideThePercent(t *testing.T) {
+	t.Parallel()
+
+	r := monthlyCreditsBook(t, "2026-03-06").compared(t, "2026-01-02", "2026-03-06", "")
+	if r.Benchmark == nil || r.UnavailableReason != "too_few_days" {
+		t.Fatalf("report = %+v", r)
+	}
+
+	got := figuresOf(t, r)
+	want := figures{
+		From: "2026-03-02", Until: "2026-03-05", Days: 4, Skipped: 42, IndexBP: 22, ReturnBP: 22, ExcessBP: 0,
+		PercentBP: -1, AnnualBP: -1, IndexAnnualBP: 1490, Credits: 1, ErrorBP: 1, Restarted: true,
+		Reason: "too_few_days",
+	}
+
+	if got != want {
+		t.Fatalf("figures = %+v, want %+v", got, want)
+	}
+}
+
+// S351: five compared days are the least that show the percent (R22).
+func TestS351FiveComparedDaysShowThePercent(t *testing.T) {
 	t.Parallel()
 
 	r := monthlyCreditsBook(t, "2026-03-09").compared(t, "2026-01-02", "2026-03-09", "")
@@ -954,12 +976,17 @@ func TestS338YieldReceivedOutsideTheTree(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			b := explicitBook(t)
 
-			for _, d := range []string{"2026-01-05", "2026-01-06", "2026-01-08", "2026-01-09"} {
-				b.credit(d, 551_310)
+			creditedBook := func() benchmarkBook {
+				b := explicitBook(t)
+
+				for _, d := range []string{"2026-01-05", "2026-01-06", "2026-01-08", "2026-01-09"} {
+					b.credit(d, 551_310)
+				}
+
+				return b
 			}
-
+			b := creditedBook()
 			tt.record(t, b)
 
 			r := b.compared(t, "2026-01-02", "2026-01-09", "")
@@ -969,6 +996,11 @@ func TestS338YieldReceivedOutsideTheTree(t *testing.T) {
 
 			if income, expense := r.excludedText(); income != tt.income || expense != tt.expense {
 				t.Fatalf("excluded = %q, %q, want %q, %q", income, expense, tt.income, tt.expense)
+			}
+
+			without := creditedBook().compared(t, "2026-01-02", "2026-01-09", "")
+			if got, want := figuresOf(t, r), figuresOf(t, without); got != want {
+				t.Fatalf("figures = %+v, want those of the book without the transaction %+v", got, want)
 			}
 		})
 	}

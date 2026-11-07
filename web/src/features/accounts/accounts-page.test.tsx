@@ -514,6 +514,9 @@ describe("AccountsPage", () => {
       "CDI has no rate yet for the days compared · since 07/20",
     );
 
+    expect(reason.textContent).toBe(
+      "CDI has no rate yet for the days compared\u00A0·\u00A0since 07/20",
+    );
     expect(figure).toHaveAttribute("data-wrap", "nowrap");
     expect(reason).not.toHaveAttribute("data-wrap", "nowrap");
     expect(figure.parentElement).not.toHaveAttribute("data-wrap", "nowrap");
@@ -535,6 +538,65 @@ describe("AccountsPage", () => {
     ).toBeInTheDocument();
     expect(within(reserve).queryByText(/of CDI/)).not.toBeInTheDocument();
     expect(reserve).not.toHaveTextContent(/\d d\b|since/);
+  });
+
+  it("keeps the figure and the late start day on one line on a phone (R21)", async () => {
+    await renderApp("/accounts", {
+      fetch: api([], {
+        "GET /api/v1/reports/return": comparedIn90Days([], 14, {
+          from: "2026-10-19",
+          started_late: true,
+        }),
+      }),
+      width: 390,
+    });
+    const list = await screen.findByRole("list", {
+      name: catalogEn["home.group.reserves"],
+    });
+    const reserve = await within(list).findByRole("link", {
+      name: /Reserva de emergência/,
+    });
+
+    const figure = await within(reserve).findByText("15.17% a year");
+    const since = within(reserve).getByText("· since 10/19");
+
+    expect(figure).toHaveAttribute("data-wrap", "nowrap");
+    expect(since).toHaveAttribute("data-wrap", "nowrap");
+    expect(figure.parentElement).toHaveAttribute("data-wrap", "nowrap");
+    expect(figure.parentElement).toContainElement(since);
+    expect(reserve).not.toHaveTextContent(/of CDI|\d d\b/);
+  });
+
+  it("truncates a reason alone to one line on a phone (R21, R23)", async () => {
+    await renderApp("/accounts", {
+      fetch: api([], {
+        "GET /api/v1/reports/return": () =>
+          json(200, {
+            flows: [],
+            opening: { amount: 1000000, currency: "BRL" },
+            closing: { amount: 1034000, currency: "BRL" },
+            profile: "rate",
+            period_bp: 0,
+            index: "cdi",
+            unavailable_reason: "no_yield_recorded",
+          }),
+      }),
+      width: 390,
+    });
+    const list = await screen.findByRole("list", {
+      name: catalogEn["home.group.reserves"],
+    });
+    const reserve = await within(list).findByRole("link", {
+      name: /Reserva de emergência/,
+    });
+
+    const reason = await within(reserve).findByText(
+      "No yield recorded in the period",
+    );
+
+    expect(reason).toHaveAttribute("data-truncate", "1");
+    expect(reason.textContent).toBe("No yield recorded in the period");
+    expect(reserve).not.toHaveTextContent(/since|\d d\b/);
   });
 
   it("opens a card on the cards destination", async () => {
