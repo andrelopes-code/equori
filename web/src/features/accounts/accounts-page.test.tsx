@@ -78,6 +78,7 @@ function comparedIn90Days(
         return_bp: -1380,
         index_bp: 352,
         excess_bp: -1732,
+        ...extra,
       },
     };
     return json(200, {
@@ -199,10 +200,9 @@ describe("AccountsPage", () => {
       await within(reserve).findByText("15.17% a year"),
     ).toBeInTheDocument();
     expect(within(reserve).getByText("101.80% of CDI")).toBeInTheDocument();
-    expect(within(reserve).getByText("63 d")).toBeInTheDocument();
     const broker = within(reserves).getByRole("row", { name: /Corretora/ });
     // A loss reads in the danger tone; a gain in the default one.
-    expect(await within(broker).findByText("−13.80% in 63 d")).toHaveAttribute(
+    expect(await within(broker).findByText("−13.80%")).toHaveAttribute(
       "data-tone",
       "danger",
     );
@@ -212,6 +212,7 @@ describe("AccountsPage", () => {
     );
     expect(within(broker).getByText("CDI 3.52%")).toBeInTheDocument();
     expect(within(broker).queryByText(/a year|of CDI/)).not.toBeInTheDocument();
+    expect(reserves).not.toHaveTextContent(/\d d\b|since/);
     expect(catalogEn["balanceSheet.yield"]).toBe("Yield");
     expect(catalogPtBR["balanceSheet.yield"]).toBe("Rendimento");
     const available = screen.getByRole("table", {
@@ -225,7 +226,7 @@ describe("AccountsPage", () => {
     expect(asked.sort()).toEqual([reserveID, brokerageID].sort());
   });
 
-  it("reads the period return and the percent of the index under 21 days, with no start day (R21)", async () => {
+  it("reads the rate a year and the percent of the index from 13 days, with no start day (R21)", async () => {
     await renderApp("/accounts", {
       fetch: api([], {
         "GET /api/v1/reports/return": comparedIn90Days([], 13),
@@ -239,10 +240,68 @@ describe("AccountsPage", () => {
     });
 
     expect(
-      await within(reserve).findByText("3.40% in 13 d"),
+      await within(reserve).findByText("15.17% a year"),
     ).toBeInTheDocument();
     expect(within(reserve).getByText("101.80% of CDI")).toBeInTheDocument();
-    expect(within(reserve).queryByText(/since|a year/)).not.toBeInTheDocument();
+    expect(reserve).not.toHaveTextContent(/since|\d d\b/);
+  });
+
+  it("states the day a late start begins from after the percent of the index (R21)", async () => {
+    await renderApp("/accounts", {
+      fetch: api([], {
+        "GET /api/v1/reports/return": comparedIn90Days([], 14, {
+          from: "2026-10-19",
+          started_late: true,
+        }),
+      }),
+    });
+    const reserves = await screen.findByRole("table", {
+      name: catalogEn["home.group.reserves"],
+    });
+    const reserve = await within(reserves).findByRole("row", {
+      name: /Reserva de emergência/,
+    });
+    const broker = within(reserves).getByRole("row", { name: /Corretora/ });
+
+    expect(await within(reserve).findByText("since 10/19")).toBeInTheDocument();
+    expect(reserve).toHaveTextContent(
+      /15\.17% a year\s*·\s*101\.80% of CDI\s*·\s*since 10\/19/,
+    );
+    expect(
+      await within(broker).findByText("−13.80% since 10/19"),
+    ).toBeInTheDocument();
+    expect(reserves).not.toHaveTextContent(/\d d\b/);
+  });
+
+  it("writes the late start in Portuguese with the day first (R21)", async () => {
+    await renderApp("/accounts", {
+      fetch: api([], {
+        "GET /api/v1/me": () =>
+          json(200, {
+            id: 1,
+            email: "a@b.c",
+            books_id: 1,
+            role: "admin",
+            language: "pt",
+            region: "BR",
+          }),
+        "GET /api/v1/reports/return": comparedIn90Days([], 14, {
+          from: "2026-10-19",
+          started_late: true,
+        }),
+      }),
+    });
+    const reserves = await screen.findByRole("table", {
+      name: catalogPtBR["home.group.reserves"],
+    });
+    const reserve = await within(reserves).findByRole("row", {
+      name: /Reserva de emergência/,
+    });
+
+    expect(await within(reserve).findByText("desde 19/10")).toBeInTheDocument();
+    expect(reserve).toHaveTextContent(
+      /15,17% a\.a\.\s*·\s*101,80% do índice CDI\s*·\s*desde 19\/10/,
+    );
   });
 
   it("appends the error of the percent to the cell (R22)", async () => {
@@ -305,7 +364,7 @@ describe("AccountsPage", () => {
     ["no_rate_in_window", "CDI has no rate yet for the days compared"],
     ["percent_undefined", "The percent of CDI is not defined for this return"],
   ])(
-    "reads the period return in 90 d beside the reason: %s (R8, W2)",
+    "reads the period return since the window start beside the reason: %s (R8, W2)",
     async (reason, text) => {
       await renderApp("/accounts", {
         fetch: api([], {
@@ -330,7 +389,7 @@ describe("AccountsPage", () => {
       });
 
       expect(
-        await within(reserve).findByText("3.40% in 90 d"),
+        await within(reserve).findByText("3.40% since 07/20"),
       ).toBeInTheDocument();
       expect(within(reserve).getByText(text)).toBeInTheDocument();
     },
@@ -359,7 +418,7 @@ describe("AccountsPage", () => {
       name: /Reserva de emergência/,
     });
 
-    const figure = await within(reserve).findByText("3.40% in 90 d");
+    const figure = await within(reserve).findByText("3.40% since 07/20");
     const reason = within(reserve).getByText(
       "CDI has no rate yet for the days compared",
     );
@@ -369,7 +428,7 @@ describe("AccountsPage", () => {
     expect(figure.parentElement).not.toHaveAttribute("data-wrap", "nowrap");
   });
 
-  it("states only the figure on a phone (A208 R17)", async () => {
+  it("states only the rate on a phone, with no days (A208 R17)", async () => {
     await renderApp("/accounts", {
       fetch: api([], { "GET /api/v1/reports/return": comparedIn90Days([]) }),
       width: 390,
@@ -383,8 +442,8 @@ describe("AccountsPage", () => {
     expect(
       await within(reserve).findByText("15.17% a year"),
     ).toBeInTheDocument();
-    expect(within(reserve).getByText("63 d")).toBeInTheDocument();
     expect(within(reserve).queryByText(/of CDI/)).not.toBeInTheDocument();
+    expect(reserve).not.toHaveTextContent(/\d d\b|since/);
   });
 
   it("opens a card on the cards destination", async () => {

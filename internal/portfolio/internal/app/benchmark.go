@@ -49,10 +49,14 @@ type Benchmark struct {
 	Skipped   int
 	Credits   int
 	Restarted bool
-	ReturnBP  *int
-	IndexBP   int
-	PercentBP *int
-	ExcessBP  *int
+
+	// StartedLate tells that a rate of the period dated before From was left out: the comparison
+	// starts after the first rate day of the window (R21).
+	StartedLate bool
+	ReturnBP    *int
+	IndexBP     int
+	PercentBP   *int
+	ExcessBP    *int
 
 	// AnnualBP and IndexAnnualBP are the return and the index growth as a rate a year on the
 	// index's year basis (R9); AnnualBP and PercentBP exist only for the rate profile (R12).
@@ -257,6 +261,11 @@ func (s *Service) benchmark(ctx context.Context, p period, index string, rates [
 	inPeriod := func(r IndexRate) bool { return !r.Date.Before(p.from) && !r.Date.After(p.to) }
 	all := countFunc(rates, inPeriod)
 
+	var firstDay time.Time
+	if i := slices.IndexFunc(rates, inPeriod); i >= 0 {
+		firstDay = rates[i].Date
+	}
+
 	rates = slices.DeleteFunc(rates, func(r IndexRate) bool {
 		return r.Date.Before(w.ratesFrom) || r.Date.After(w.ratesTo) || !held(r.Date)
 	})
@@ -279,7 +288,10 @@ func (s *Service) benchmark(ctx context.Context, p period, index string, rates [
 		Days:      len(rates),
 		Skipped:   all - countFunc(rates, inPeriod),
 		Restarted: w.restarted,
-		IndexBP:   domain.FactorBP(domain.IndexFactor(fractions)),
+
+		StartedLate: !firstDay.IsZero() && rates[0].Date.After(firstDay),
+
+		IndexBP: domain.FactorBP(domain.IndexFactor(fractions)),
 	}
 
 	basis := s.md.YearBasis(index)

@@ -303,8 +303,11 @@ type ReturnBenchmark struct {
 	ReturnBp  *int `json:"return_bp,omitempty"`
 
 	// Skipped The rates of the period left out, on days the tree held nothing or, for a rate profile, before its first recorded yield (amendment A208 R14, R18).
-	Skipped int                `json:"skipped"`
-	Until   openapi_types.Date `json:"until"`
+	Skipped int `json:"skipped"`
+
+	// StartedLate True when at least one rate of the period dated before from was left out, so the comparison starts after the first rate day of the window (amendment A208 R21).
+	StartedLate bool               `json:"started_late"`
+	Until       openapi_types.Date `json:"until"`
 }
 
 // ReturnExcluded For a tree of cash whose yield is what the ledger records against the Yield account, the income and expense of the period that the comparison treated as flows, not as yield (amendment A208 R19).
@@ -347,7 +350,7 @@ type ReturnReport struct {
 	Excluded *ReturnExcluded `json:"excluded,omitempty"`
 	Flows    []ReturnFlow    `json:"flows"`
 
-	// Index The daily index the report compares with, the named one or the region's default; absent only when the region has none and none is named (amendment A208 R23).
+	// Index The daily index the report compares with, the named one or the region's default; absent only when the region has none and none is named (amendment A208 R21).
 	Index *string `json:"index,omitempty"`
 
 	// Inflation The return net of inflation over the whole months of the period with a stored rate (amendment A208 R16).
@@ -358,7 +361,7 @@ type ReturnReport struct {
 	// Profile rate when every holding is the value_in currency or a fixed income instrument quoted in it; market otherwise (amendment A208 R11).
 	Profile ReturnReportProfile `json:"profile"`
 
-	// UnavailableReason Why benchmark, or its percent_bp and annual_bp, is absent - no_index_for_region, currency_mismatch, nothing_held, no_yield_recorded, single_credit, too_small, no_rate_in_window or percent_undefined (amendment A208 R23).
+	// UnavailableReason Why benchmark, or its percent_bp and annual_bp, is absent - no_index_for_region, currency_mismatch, nothing_held, no_yield_recorded, single_credit, too_small, no_rate_in_window or percent_undefined (amendment A208 R21).
 	UnavailableReason *string `json:"unavailable_reason,omitempty"`
 }
 

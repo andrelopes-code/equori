@@ -184,6 +184,9 @@ func (s *Server) GetReturn(ctx context.Context, req GetReturnRequestObject) (Get
 			Skipped:   b.Skipped,
 			Credits:   b.Credits,
 			Restarted: b.Restarted,
+
+			StartedLate: b.StartedLate,
+
 			ReturnBp:  b.ReturnBP,
 			ExcessBp:  b.ExcessBP,
 			IndexBp:   b.IndexBP,

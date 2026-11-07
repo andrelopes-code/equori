@@ -62,8 +62,8 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
   "portfolio.yield.figure": "Rendimento nos últimos 12 meses",
   "portfolio.yield.profile.rate":
     "Renda fixa: comparada dia a dia com o índice {index}. Saldo informado já sem os impostos fica abaixo da taxa contratada.",
-  "portfolio.yield.days": "{days} d",
-  "portfolio.yield.inDays": "{rate} em {days} d",
+  "portfolio.yield.since": "desde {date}",
+  "portfolio.yield.returnSince": "{rate} desde {date}",
   "portfolio.yield.margin": "{value} ±{margin} p.p.",
   "portfolio.yield.reason.no_index_for_region":
     "Sem índice de referência para a região",

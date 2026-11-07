@@ -3255,6 +3255,10 @@
               "type": "boolean",
               "description": "a deposit or withdrawal between two credits more than 7 days apart moved the start of the comparison to the credit after it"
             },
+            "started_late": {
+              "type": "boolean",
+              "description": "a rate of the period dated before from was left out: the comparison starts after the first rate day of the window"
+            },
             "percent_error_bp": {
               "type": "integer",
               "description": "relative error bound of percent_bp and annual_bp in basis points of themselves, from rounding each credit to the cent"

@@ -61,6 +61,7 @@ type comparedReturn struct {
 		Skipped        int  `json:"skipped"`
 		Credits        int  `json:"credits"`
 		Restarted      bool `json:"restarted"`
+		StartedLate    bool `json:"started_late"`
 	} `json:"benchmark"`
 }
 
@@ -94,6 +95,38 @@ func TestS302SavingsAtTheCDI(t *testing.T) {
 
 	if got := figuresOf(t, r); got != atTheCDI {
 		t.Fatalf("figures = %+v, want %+v", got, atTheCDI)
+	}
+}
+
+// The comparison starts late when a rate of the period dated before benchmark.from was left
+// out, here the rates before the first credit (R21).
+func TestStartedLate(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		from     string
+		wantFrom string
+		want     bool
+	}{
+		{name: "yield recorded after the window opens", from: "2026-01-02", wantFrom: "2026-01-05", want: true},
+		{name: "window opens on the first credit", from: "2026-01-05", wantFrom: "2026-01-05", want: false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			b := newBenchmarkBook(t)
+
+			r := b.compared(t, tt.from, "2026-01-09", "")
+			if r.Benchmark == nil || r.Benchmark.From != tt.wantFrom {
+				t.Fatalf("report = %+v", r)
+			}
+
+			if r.Benchmark.StartedLate != tt.want {
+				t.Fatalf("started_late = %v, want %v", r.Benchmark.StartedLate, tt.want)
+			}
+		})
 	}
 }
 

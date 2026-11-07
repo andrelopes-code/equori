@@ -5842,11 +5842,11 @@ export interface components {
              */
             profile: "rate" | "market";
             period_bp?: number;
-            /** @description The daily index the report compares with, the named one or the region's default; absent only when the region has none and none is named (amendment A208 R23). */
+            /** @description The daily index the report compares with, the named one or the region's default; absent only when the region has none and none is named (amendment A208 R21). */
             index?: string;
             benchmark?: components["schemas"]["ReturnBenchmark"];
             inflation?: components["schemas"]["ReturnInflation"];
-            /** @description Why benchmark, or its percent_bp and annual_bp, is absent - no_index_for_region, currency_mismatch, nothing_held, no_yield_recorded, single_credit, too_small, no_rate_in_window or percent_undefined (amendment A208 R23). */
+            /** @description Why benchmark, or its percent_bp and annual_bp, is absent - no_index_for_region, currency_mismatch, nothing_held, no_yield_recorded, single_credit, too_small, no_rate_in_window or percent_undefined (amendment A208 R21). */
             unavailable_reason?: string;
             excluded?: components["schemas"]["ReturnExcluded"];
         };
@@ -5861,6 +5861,8 @@ export interface components {
             categories: string[];
         };
         ReturnBenchmark: {
+            /** @description True when at least one rate of the period dated before from was left out, so the comparison starts after the first rate day of the window (amendment A208 R21). */
+            started_late: boolean;
             /** @description For a tree whose yield is recorded, the yield credits the return covers, the positive credits after the first credit compared (amendment A208 R20); 0 otherwise. */
             credits: number;
             /** @description True when a flow between two credits more than 7 days apart moved the start of the comparison to the credit after it (amendment A208 R20). */

@@ -10465,7 +10465,7 @@ components:
         index:
           type: string
           pattern: "^[a-z0-9_]{2,40}$"
-          description: The daily index the report compares with, the named one or the region's default; absent only when the region has none and none is named (amendment A208 R23).
+          description: The daily index the report compares with, the named one or the region's default; absent only when the region has none and none is named (amendment A208 R21).
         benchmark:
           $ref: "#/components/schemas/ReturnBenchmark"
         inflation:
@@ -10473,7 +10473,7 @@ components:
         unavailable_reason:
           type: string
           pattern: "^[a-z_]{2,40}$"
-          description: Why benchmark, or its percent_bp and annual_bp, is absent - no_index_for_region, currency_mismatch, nothing_held, no_yield_recorded, single_credit, too_small, no_rate_in_window or percent_undefined (amendment A208 R23).
+          description: Why benchmark, or its percent_bp and annual_bp, is absent - no_index_for_region, currency_mismatch, nothing_held, no_yield_recorded, single_credit, too_small, no_rate_in_window or percent_undefined (amendment A208 R21).
         excluded:
           $ref: "#/components/schemas/ReturnExcluded"
     ReturnExcluded:
@@ -10498,8 +10498,11 @@ components:
           description: The names of the categories that hold most of the amount.
     ReturnBenchmark:
       type: object
-      required: [index, from, until, days, skipped, credits, restarted, index_bp]
+      required: [index, from, until, days, skipped, credits, restarted, started_late, index_bp]
       properties:
+        started_late:
+          type: boolean
+          description: True when at least one rate of the period dated before from was left out, so the comparison starts after the first rate day of the window (amendment A208 R21).
         credits:
           type: integer
           description: For a tree whose yield is recorded, the yield credits the return covers, the positive credits after the first credit compared (amendment A208 R20); 0 otherwise.

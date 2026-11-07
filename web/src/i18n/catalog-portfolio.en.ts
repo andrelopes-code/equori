@@ -60,8 +60,8 @@ export const portfolioEn = {
   "portfolio.yield.figure": "Yield over the last 12 months",
   "portfolio.yield.profile.rate":
     "Fixed income: compared day by day with {index}. A balance reported net of taxes reads below the contracted rate.",
-  "portfolio.yield.days": "{days} d",
-  "portfolio.yield.inDays": "{rate} in {days} d",
+  "portfolio.yield.since": "since {date}",
+  "portfolio.yield.returnSince": "{rate} since {date}",
   "portfolio.yield.margin": "{value} ±{margin} pp",
   "portfolio.yield.reason.no_index_for_region":
     "No reference index for the region",

@@ -69,6 +69,7 @@ type benchmarkView struct {
 
 	Credits        int  `json:"credits,omitzero" jsonschema:"yield credits the return covers; absent when none"`
 	Restarted      bool `json:"restarted,omitzero" jsonschema:"a deposit or withdrawal between two credits more than 7 days apart moved the start of the comparison to the credit after it"`
+	StartedLate    bool `json:"started_late,omitzero" jsonschema:"a rate of the period dated before from was left out: the comparison starts after the first rate day of the window"`
 	PercentErrorBP int  `json:"percent_error_bp,omitzero" jsonschema:"relative error bound of percent_bp and annual_bp in basis points of themselves, from rounding each credit to the cent"`
 }
 
@@ -265,6 +266,7 @@ func benchmarkOf(b *app.Benchmark) benchmarkView {
 
 		Credits:        b.Credits,
 		Restarted:      b.Restarted,
+		StartedLate:    b.StartedLate,
 		PercentErrorBP: valueOf(b.PercentErrorBP),
 	}
 }

@@ -1,14 +1,16 @@
 import type { components } from "@/api/schema.gen";
 import { indexName } from "@/features/calculators";
-import { formatBasisPoints, formatDate, numberFormatter } from "@/i18n/format";
+import {
+  formatBasisPoints,
+  formatDate,
+  formatDayMonthNumeric,
+  numberFormatter,
+} from "@/i18n/format";
 import type { TFunction } from "@/i18n/i18n-provider";
 
 type ReturnBenchmark = components["schemas"]["ReturnBenchmark"];
 type Money = components["schemas"]["Money"];
 type ReturnReport = components["schemas"]["ReturnReport"];
-
-// A rate a year reads as such from this many days compared (amendment A208 R21).
-const MIN_ANNUAL_DAYS = 21;
 
 // The relative error of the percent, in basis points of itself, from which it is shown (R22).
 const MIN_MARGIN_BP = 100;
@@ -40,8 +42,9 @@ export interface YieldLine {
   // Absent when the line states only why there is no figure.
   primary?: string;
   secondary?: string;
-  // The days compared, "N d", when the primary does not state them.
-  days?: string;
+  // "since {date}" of a rate profile whose comparison starts after the first rate day of the
+  // window (`started_late`); a market profile states the date in its primary.
+  since?: string;
   negative: boolean;
 }
 
@@ -72,15 +75,15 @@ export interface YieldWindow {
 }
 
 // yieldLine is the yield column of the balance sheet (amendment A208 R8, R21, R22, R23): a rate
-// profile with 21 days or more reads its rate a year, its percent of the index and its days; with
-// fewer days, or a market profile, the return "in N d" and the index; without a comparison the
-// reason, muted. A period return, which spans the `windowDays` of the window, says "in N d" with
-// those days unless the comparison states its own.
+// profile reads its rate a year and its percent of the index; a market profile, or a rate profile
+// without a rate a year, the return and the index. "since {date}" follows when the comparison
+// starts after the first rate day of the window (`started_late`); a period return that spans the
+// window starts at `windowFrom`. Without a comparison the reason, muted.
 export function yieldLine(
   report: ReturnReport,
   t: TFunction,
   tag: string,
-  windowDays: number,
+  windowFrom: string,
 ): YieldLine | undefined {
   const b = report.benchmark;
   const reason = reasonText(report, t);
@@ -97,23 +100,25 @@ export function yieldLine(
     }
 
     return {
-      primary: t("portfolio.yield.inDays", {
-        rate: rate(ret),
-        days: String(windowDays),
-      }),
+      primary: returnSince(rate(ret), windowFrom, t, tag),
       ...note(reason),
       negative: ret < 0,
     };
   }
 
   const percent = percentOfIndex(b, t, tag);
-  const days = String(b.days);
 
-  if (b.annual_bp !== undefined && b.days >= MIN_ANNUAL_DAYS) {
+  if (b.annual_bp !== undefined) {
     return {
       primary: t("portfolio.yield.annual", { rate: rate(b.annual_bp) }),
       ...note(percent),
-      days: t("portfolio.yield.days", { days }),
+      ...(b.started_late
+        ? {
+            since: t("portfolio.yield.since", {
+              date: formatDayMonthNumeric(b.from, tag),
+            }),
+          }
+        : {}),
       negative: b.annual_bp < 0,
     };
   }
@@ -133,14 +138,29 @@ export function yieldLine(
           rate: rate(b.index_bp),
         });
 
+  let since: string | undefined;
+  if (b.return_bp === undefined) since = windowFrom;
+  else if (b.started_late) since = b.from;
+
   return {
-    primary: t("portfolio.yield.inDays", {
-      rate: rate(ret),
-      days: b.return_bp === undefined ? String(windowDays) : days,
-    }),
+    primary:
+      since === undefined ? rate(ret) : returnSince(rate(ret), since, t, tag),
     ...note(percent ?? reason ?? indexOver),
     negative: ret < 0,
   };
+}
+
+// returnSince is a return and the day it starts from, "3.40% since 10/19".
+function returnSince(
+  rate: string,
+  from: string,
+  t: TFunction,
+  tag: string,
+): string {
+  return t("portfolio.yield.returnSince", {
+    rate,
+    date: formatDayMonthNumeric(from, tag),
+  });
 }
 
 // yieldNotes are the lines under the groups of the yield section: why a figure is absent (R23),
