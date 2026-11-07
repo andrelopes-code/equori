@@ -1111,7 +1111,7 @@ export const catalogEn = {
   "categories.tab.rulesCount": "Rules ({count})",
   "suggestion.section": "Suggested from your corrections",
   "suggestion.title": "Suggested rule",
-  "suggestion.basis": "Corrections that suggested it: {count}",
+  "suggestion.basis": "Corrections: {count}",
   "suggestion.defaultName": "New rule",
   "suggestion.dismiss": "Dismiss",
   "suggestion.accept": "Create rule",

@@ -1,4 +1,5 @@
 import { Inline } from "@slotted/react/inline";
+import { List } from "@slotted/react/list";
 import { Page, PageBody } from "@slotted/react/page";
 import {
   Section,
@@ -34,9 +35,8 @@ import { ConfirmDialog } from "@/ui/confirm-dialog";
 import { HeaderAction } from "@/ui/header-action";
 import { RuleList } from "@/features/categories/rule-list";
 import type { RuleAction } from "@/features/categories/rule-list";
-import styles from "@/features/categories/rules-page.module.css";
 import { SourceCategories } from "@/features/categories/source-categories";
-import { SuggestionCard } from "@/features/categories/suggestion-card";
+import { SuggestionItem } from "@/features/categories/suggestion-item";
 import { useRuleWords } from "@/features/categories/use-rule-words";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
@@ -181,9 +181,9 @@ export function RulesPage() {
                 <SectionTitle>{t("suggestion.section")}</SectionTitle>
               </SectionHeader>
               <SectionBody>
-                <div className={styles.cards}>
+                <List variant="framed" aria-label={t("suggestion.section")}>
                   {pending.map((suggestion) => (
-                    <SuggestionCard
+                    <SuggestionItem
                       key={suggestion.id}
                       suggestion={suggestion}
                       words={words}
@@ -210,7 +210,7 @@ export function RulesPage() {
                       }}
                     />
                   ))}
-                </div>
+                </List>
               </SectionBody>
             </Section>
           )}

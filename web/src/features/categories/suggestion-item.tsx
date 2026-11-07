@@ -1,10 +1,18 @@
 import { Button } from "@slotted/react/button";
-import { Card, CardBody, CardFooter, CardHeader } from "@slotted/react/card";
 import { Field, FieldLabel } from "@slotted/react/field";
 import { Inline } from "@slotted/react/inline";
-import { Stack } from "@slotted/react/stack";
+import {
+  ListItem,
+  ListItemActions,
+  ListItemBody,
+  ListItemContent,
+  ListItemDescription,
+  ListItemEnd,
+  ListItemLabel,
+} from "@slotted/react/list-item";
+import { Tag } from "@slotted/react/tag";
 import { TextField } from "@slotted/react/text-field";
-import { Heading, Text } from "@slotted/react/typography";
+import { Text } from "@slotted/react/typography";
 import { useState } from "react";
 
 import type { components } from "@/api/schema.gen";
@@ -13,72 +21,74 @@ import {
   conditionSentence,
 } from "@/features/categories/rule-sentence";
 import type { RuleWords } from "@/features/categories/rule-sentence";
-import styles from "@/features/categories/suggestion-card.module.css";
+import styles from "@/features/categories/suggestion-item.module.css";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 
 type Suggestion = components["schemas"]["RuleSuggestion"];
 
-// A24: a rule the server proposes from repeated manual corrections, accepted under a name.
-export function SuggestionCard({
-  suggestion,
-  words,
-  busy,
-  dismissing,
-  onAccept,
-  onDismiss,
-}: {
+interface SuggestionItemProps {
   suggestion: Suggestion;
   words: RuleWords;
   busy: boolean;
   dismissing: boolean;
   onAccept: (name: string) => void;
   onDismiss: () => void;
-}) {
+}
+
+// A24: a rule the server proposes from repeated manual corrections, accepted under a name.
+export function SuggestionItem({
+  suggestion,
+  words,
+  busy,
+  dismissing,
+  onAccept,
+  onDismiss,
+}: SuggestionItemProps) {
   const t = useT();
   const [locale] = useAppLocale();
-  const first = suggestion.actions[0];
-  const proposed =
-    first === undefined
-      ? t("suggestion.defaultName")
-      : ((first.category_id !== undefined
-          ? words.name(first.category_id).split(" › ").at(-1)
-          : undefined) ?? t("suggestion.defaultName"));
+
   const [naming, setNaming] = useState(false);
-  const [name, setName] = useState(proposed);
+  const [name, setName] = useState(
+    proposedName(suggestion, words, t("suggestion.defaultName")),
+  );
+
   const outcome = suggestion.actions
     .map((a) => actionSentence(a, words))
     .join("; ");
+
+  function handlePrimary() {
+    if (naming) onAccept(name.trim());
+    else setNaming(true);
+  }
+
   return (
-    <Card size="sm">
-      <CardHeader>
-        <Heading level={3} size="sm">
-          {outcome.charAt(0).toLocaleUpperCase(locale) + outcome.slice(1)}
-        </Heading>
-        <Text size="sm" tone="muted">
-          {t("suggestion.basis", {
-            count: suggestion.example_transaction_ids.length,
-          })}
-        </Text>
-      </CardHeader>
-      <CardBody>
-        <Stack gap={4}>
-          <Stack gap={2}>
-            <Text size="sm" weight="semibold">
-              {t("ruleEditor.when")}
+    <ListItem size="lg">
+      <ListItemContent>
+        <ListItemBody>
+          <ListItemLabel>
+            <Text weight="semibold">
+              {outcome.charAt(0).toLocaleUpperCase(locale) + outcome.slice(1)}
             </Text>
-            <ul className={styles.lines}>
+          </ListItemLabel>
+          <ListItemDescription>
+            <Inline gap={2} align="center" wrap="wrap">
+              <Text size="sm" tone="muted">
+                {t("ruleEditor.when")}
+              </Text>
               {suggestion.conditions.map((condition, i) => (
-                <li key={i} className={styles.line}>
-                  <Text size="sm" tone="muted" className={styles.join}>
-                    {i === 0 ? "" : t("ruleEditor.and")}
-                  </Text>
-                  <Text size="sm">{conditionSentence(condition, words)}</Text>
-                </li>
+                <Inline key={i} gap={2} align="center">
+                  {i > 0 && (
+                    <Text size="sm" tone="muted">
+                      {t("ruleEditor.and")}
+                    </Text>
+                  )}
+                  <Tag size="sm">{conditionSentence(condition, words)}</Tag>
+                </Inline>
               ))}
-            </ul>
-          </Stack>
+            </Inline>
+          </ListItemDescription>
           {naming && (
-            <Field required>
+            <Field required className={styles.name}>
               <FieldLabel>{t("rules.name")}</FieldLabel>
               <TextField
                 value={name}
@@ -89,38 +99,54 @@ export function SuggestionCard({
               />
             </Field>
           )}
-        </Stack>
-      </CardBody>
-      <CardFooter>
-        <Inline gap={2} justify="end">
-          <Button
-            size="sm"
-            variant="ghost"
-            tone="secondary"
-            loading={!naming && dismissing}
-            onClick={
-              naming
-                ? () => {
-                    setNaming(false);
-                  }
-                : onDismiss
-            }
-          >
-            {naming ? t("detail.cancel") : t("suggestion.dismiss")}
-          </Button>
-          <Button
-            size="sm"
-            loading={busy}
-            disabled={naming && name.trim() === ""}
-            onClick={() => {
-              if (naming) onAccept(name.trim());
-              else setNaming(true);
-            }}
-          >
-            {naming ? t("suggestion.create") : t("suggestion.accept")}
-          </Button>
-        </Inline>
-      </CardFooter>
-    </Card>
+        </ListItemBody>
+        <ListItemEnd>
+          <Text size="sm" tone="muted" numeric="tabular">
+            {t("suggestion.basis", {
+              count: suggestion.example_transaction_ids.length,
+            })}
+          </Text>
+        </ListItemEnd>
+      </ListItemContent>
+      <ListItemActions>
+        <Button
+          size="sm"
+          variant="ghost"
+          tone="secondary"
+          loading={!naming && dismissing}
+          onClick={
+            naming
+              ? () => {
+                  setNaming(false);
+                }
+              : onDismiss
+          }
+        >
+          {naming ? t("detail.cancel") : t("suggestion.dismiss")}
+        </Button>
+        <Button
+          size="sm"
+          loading={busy}
+          disabled={naming && name.trim() === ""}
+          onClick={handlePrimary}
+        >
+          {naming ? t("suggestion.create") : t("suggestion.accept")}
+        </Button>
+      </ListItemActions>
+    </ListItem>
+  );
+}
+
+// The category the rule files under, as the leaf of its path.
+function proposedName(
+  suggestion: Suggestion,
+  words: RuleWords,
+  fallback: string,
+): string {
+  const id = suggestion.actions[0]?.category_id;
+
+  return (
+    (id === undefined ? undefined : words.name(id).split(" › ").at(-1)) ??
+    fallback
   );
 }

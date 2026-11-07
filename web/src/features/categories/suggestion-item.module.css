@@ -1,0 +1,8 @@
+@layer app {
+  /* A name stands at the length of a rule name, not the width of the row; no token holds a
+     text measure. */
+  .name {
+    max-inline-size: 28rem;
+    margin-block-start: var(--slotted-space-2);
+  }
+}

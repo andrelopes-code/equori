@@ -230,11 +230,9 @@ describe("RulesPage", () => {
     const accept = await screen.findByRole("button", {
       name: catalogEn["suggestion.accept"],
     });
-    const card = accept.closest('[data-ui="card"]');
+    const card = accept.closest("li");
     if (!(card instanceof HTMLElement)) throw new Error("no suggestion card");
-    expect(
-      within(card).getByRole("heading", { name: "Categorize as Food" }),
-    ).toBeInTheDocument();
+    expect(within(card).getByText("Categorize as Food")).toBeInTheDocument();
     expect(
       within(card).getByText("description contains “padaria”"),
     ).toBeInTheDocument();
