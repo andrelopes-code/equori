@@ -15,6 +15,8 @@ export const netWorthSpans: readonly NetWorthMonths[] = [6, 12, 24];
 export interface ReportsSearch {
   // The net worth tab when absent.
   tab?: Exclude<ReportsTab, "net-worth"> | undefined;
+  // The grouping of the assets on the net worth tab; the instrument type when absent.
+  assets_by?: "currency" | "institution" | undefined;
   // The months of the net worth series; 12 when absent.
   months?: Exclude<NetWorthMonths, 12> | undefined;
   // The valuation currency; the base currency when absent.
@@ -65,6 +67,10 @@ export function validateReportsSearch(
   return {
     tab,
     months,
+    assets_by:
+      raw.assets_by === "currency" || raw.assets_by === "institution"
+        ? raw.assets_by
+        : undefined,
     value_in: matching(raw.value_in, /^[A-Z]{3}$/),
     from: period ? from : undefined,
     to: period ? to : undefined,

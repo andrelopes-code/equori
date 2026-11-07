@@ -147,6 +147,10 @@ export function ReportsPage() {
               count={custom ? undefined : count}
               period={netWorthPeriod}
               valueIn={valueIn}
+              assetsBy={search.assets_by ?? "type"}
+              onAssetsBy={(by) => {
+                onChange({ assets_by: by === "type" ? undefined : by });
+              }}
               onCount={(next) => {
                 onChange({
                   months: next === 12 ? undefined : next,

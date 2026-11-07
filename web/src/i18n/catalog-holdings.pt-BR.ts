@@ -1,6 +1,12 @@
 import type { holdingsEn } from "@/i18n/catalog-holdings.en";
 
 export const holdingsPtBR: Record<keyof typeof holdingsEn, string> = {
+  "holdings.bar": "Proporção",
+  "report.assets.title": "Onde está o seu patrimônio",
+  "report.assets.note":
+    "Todas as contas que você tem: bancos, poupança, corretoras e dinheiro.",
+  "report.assets.by": "Agrupar o patrimônio por",
+  "report.assets.share": "% do patrimônio",
   "taxYear.class.stock": "Ações",
   "taxYear.class.etf": "ETFs",
   "taxYear.class.reit": "Fundos imobiliários",

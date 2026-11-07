@@ -1,3 +1,6 @@
+export { AssetsAllocation } from "@/features/portfolio/assets-allocation";
+export { allocationBys } from "@/features/portfolio/portfolio-search";
+export type { AllocationBy } from "@/features/portfolio/portfolio-search";
 export { PortfolioPage } from "@/features/portfolio/portfolio-page";
 export { validatePortfolioSearch } from "@/features/portfolio/portfolio-search";
 export { periodProblem } from "@/features/portfolio/portfolio-period";

@@ -19,7 +19,7 @@ A reader opens the portfolio to answer three questions: how much do I have, how 
 |---|---|---|
 | D1 | The figure compared with an index is the time-weighted return. The money-weighted rate is the investor's own result and stays in the method. | RBC Wealth Management, PWL Capital, Co-operators on TWR and MWR: TWR removes the timing of flows, MWR measures the individual's result. |
 | D2 | A holding shows its gain in money and in percent, and the page states income beside it, since a price gain alone understates a holding that pays income. | Sharesight, "How your broker's performance numbers mislead you"; holding page: capital gains and dividends. |
-| D3 | Allocation is a sorted bar chart. Above five categories a pie is unreadable, and lengths read more precisely than angles. | UK Government Analysis Function, module 9; Cleveland and McGill, as cited by practitioner guides. |
+| D3 | Allocation is drawn as sorted bars. Above five categories a pie is unreadable, and lengths read more precisely than angles. | UK Government Analysis Function, module 9; Cleveland and McGill, as cited by practitioner guides. |
 | D4 | The default list shows what every reader needs; technical columns are one action away. | Progressive disclosure, Nielsen; Carroll's training-wheels studies, with the caveat that the split follows frequency of use. |
 | D5 | "Portfolio" means the brokerage trees: priced positions and brokerage cash. This is the base `getReturn` already measures, so the three totals become one. Savings and reserves stay on Accounts. | `useReturnOptions`, `wholePortfolio`. |
 | D6 | The allocation of every asset account moves to the net worth tab of Reports, whose subject it is. No capability is lost. | Spec G4. |
@@ -44,7 +44,7 @@ A reader opens the portfolio to answer three questions: how much do I have, how 
 
 **PC5 Grouping.** One control, "Group by" (type, currency, institution), held in `by` in the address, drives the bars and the list. Grouping by account and by investment is removed: each security is an account of its own, so both drew one row per group.
 
-**PC6 Bars.** "Where the money is" is a horizontal `Chart` of at most ten groups, largest first, each label ending in its share (`rankedShares`). A plain variant under its section heading, with no caption. The chart's own table view holds the amounts.
+**PC6 Bars.** "Where the money is" is one framed table, largest first: the group, its share drawn as a `ProgressBar`, its value and its percent, with a total. One table replaces the pie and the table that repeated its figures, so a reader gets the length and the exact number on one line.
 
 **PC7 List.** "Investments" is a framed `DataGrid` grouped by `by`, with `aggregate` totals on each group row and on a summary row:
 
@@ -90,7 +90,7 @@ A reader opens the portfolio to answer three questions: how much do I have, how 
 
 ### Net worth
 
-**PC21 Allocation.** The net worth tab of Reports adds "Where your assets are": the bars of PC6 over `/reports/allocation`, by type, currency or institution, with the total, under a heading that states it covers every asset account.
+**PC21 Allocation.** The net worth tab of Reports adds "Where your assets are": the table of PC6 over `/reports/allocation` at the last day of the period, by type, currency or institution (`assets_by` in the address), under a heading that states it covers every asset account.
 
 ## Non-goals
 

@@ -7,6 +7,8 @@ import { useMemo, useState } from "react";
 
 import { useApi } from "@/api/api-context";
 import { netWorthQuery } from "@/features/overview";
+import { AssetsAllocation } from "@/features/portfolio";
+import type { AllocationBy } from "@/features/portfolio";
 import { NetWorthGrowthCards } from "@/features/reports/net-worth-growth-cards";
 import {
   netWorthRows,
@@ -34,15 +36,19 @@ export function NetWorthTab({
   count,
   period,
   valueIn,
+  assetsBy,
   onCount,
   onValueIn,
+  onAssetsBy,
 }: {
   // The span checked, or undefined when the header's period is set (NP1).
   count: NetWorthMonths | undefined;
   period: ReportPeriod;
   valueIn: string | undefined;
+  assetsBy: AllocationBy;
   onCount: (count: NetWorthMonths) => void;
   onValueIn: (code: string) => void;
+  onAssetsBy: (by: AllocationBy) => void;
 }) {
   const t = useT();
   const api = useApi();
@@ -164,6 +170,13 @@ export function NetWorthTab({
           onMonth={handleMonth}
         />
       )}
+
+      <AssetsAllocation
+        date={months.at(-1)?.date ?? today}
+        valueIn={valueIn}
+        by={assetsBy}
+        onBy={onAssetsBy}
+      />
 
       <NetWorthTable
         rows={rows}

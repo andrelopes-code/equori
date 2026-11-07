@@ -1,4 +1,10 @@
 export const holdingsEn = {
+  "holdings.bar": "Proportion",
+  "report.assets.title": "Where your assets are",
+  "report.assets.note":
+    "Every account you own: banks, savings, brokerages and cash.",
+  "report.assets.by": "Group the assets by",
+  "report.assets.share": "% of assets",
   "taxYear.class.stock": "Stocks",
   "taxYear.class.etf": "ETFs",
   "taxYear.class.reit": "REITs",
