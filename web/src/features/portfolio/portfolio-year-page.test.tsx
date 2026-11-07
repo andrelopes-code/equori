@@ -118,7 +118,7 @@ describe("Tax year of investments", () => {
         "Result",
         "Tax class",
       ].join("|"),
-      "10/29/2026|MXRF11|XP / XP MXRF11|100|R$1,008.27|R$1,042.04|+R$33.77|fii",
+      "10/29/2026|MXRF11|XP / XP MXRF11|100|R$1,008.27|R$1,042.04|+R$33.77|Real estate funds",
       `10/30/2026|PETR4|XP / XP PETR4|5|R$20.00|R$15.00|−R$5.00|${catalogEn["taxYear.unclassified"]}`,
       `11/03/2026|PETR4|XP / XP PETR4|2|$40.00|$50.00|+$10.00|${catalogEn["taxYear.unclassified"]}`,
     ]);
@@ -150,7 +150,7 @@ describe("Tax year of investments", () => {
       name: catalogEn["taxYear.totals.class"],
     });
     expect(rowTexts(byClass).slice(1)).toEqual([
-      "fii|+R$33.77",
+      "Real estate funds|+R$33.77",
       `${catalogEn["taxYear.unclassified"]}|−R$5.00`,
       `${catalogEn["taxYear.unclassified"]}|+$10.00`,
     ]);

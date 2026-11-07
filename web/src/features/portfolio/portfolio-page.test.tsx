@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
+import { catalogPtBR } from "@/i18n/catalog.pt-BR";
 import { json } from "@/testing/fake-api";
 import { petrID, portfolioApi } from "@/testing/portfolio-api";
 import { hideAmounts, expectNoAmounts } from "@/testing/privacy";
@@ -46,13 +47,13 @@ describe("Portfolio positions", () => {
         "% of portfolio",
       ].join("|"),
       "XP",
-      "PETR4|XP|1|3.0000|$3.00|R$16.00||11.36%",
+      "PETR4|XP|1|$3.00|$3.00|R$16.00||11.36%",
       "XP / XP cash",
-      `MXRF11|XP / XP cash|2|5.0000|R$10.00|${catalogEn["positions.noPrice"]}||`,
+      `MXRF11|XP / XP cash|2|R$5.00|R$10.00|${catalogEn["positions.noPrice"]}||`,
       "XP / XP MXRF11",
-      "MXRF11|XP / XP MXRF11|10|10.0000|R$100.00|R$105.00|+R$5.00|74.46%",
+      "MXRF11|XP / XP MXRF11|10|R$10.00|R$100.00|R$105.00|+R$5.00|74.46%",
       "XP / XP PETR4",
-      "PETR4|XP / XP PETR4|5|3.0000|R$15.00|R$20.00|+R$5.00|14.18%",
+      "PETR4|XP / XP PETR4|5|R$3.00|R$15.00|R$20.00|+R$5.00|14.18%",
       `${catalogEn["portfolio.total"]}|R$141.00||100.00%`,
     ]);
   });
@@ -217,6 +218,43 @@ describe("Portfolio positions", () => {
     expect(text).toContain(euro.format(1500));
     expect(text).toContain(percent.format(1));
     expect(container.textContent).not.toMatch(/R\$|BRL|\bB3\b|Carteira/);
+  });
+
+  it("writes a quantity and an average cost in the reader's format", async () => {
+    localStorage.setItem(
+      "equori.locale",
+      JSON.stringify({ language: "pt", region: "BR" }),
+    );
+    const fetch = portfolioApi({
+      "GET /api/v1/instruments": () =>
+        json(200, {
+          items: [
+            { code: "BRL", type: "currency", scale: 2, name: "Real" },
+            { code: "CDB", type: "fixed_income", scale: 2, name: "CDB" },
+          ],
+        }),
+      "GET /api/v1/positions": () =>
+        json(200, {
+          items: [
+            {
+              account_id: petrID,
+              instrument: "CDB",
+              quantity: { amount: 123456, currency: "CDB" },
+              cost_basis: { amount: 2730007, currency: "BRL" },
+              average_cost: "1076.0769",
+              market_value: { amount: 3437608, currency: "BRL" },
+            },
+          ],
+        }),
+    });
+    await renderApp("/portfolio", { fetch });
+    const table = await screen.findByRole("table", {
+      name: catalogPtBR["portfolio.positions.title"],
+    });
+    await within(table).findByText("CDB", { selector: "a" });
+    const text = rowTexts(table).join("\n").replaceAll("\u00a0", " ");
+    expect(text).toContain("|1.234,56|");
+    expect(text).toContain("|R$ 1.076,0769|");
   });
 
   it("masks the amounts and keeps the shares while privacy mode is on", async () => {

@@ -18,10 +18,10 @@ import { useQuery } from "@tanstack/react-query";
 import { useApi } from "@/api/api-context";
 import type { components } from "@/api/schema.gen";
 import { positionsQuery } from "@/features/accounts/api";
+import { averageCostText } from "@/features/accounts/position-figures";
 import { settingsQuery } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
-import { MASK } from "@/privacy/mask";
 import { PricedValue } from "@/ui/priced-value";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
@@ -100,10 +100,15 @@ export function PositionsTab({
                   >
                     <TableRowHeader>{p.instrument}</TableRowHeader>
                     <TableCell numeric>
-                      {fmt.plain(p.quantity, scale(p.quantity.currency))}
+                      {fmt.number(p.quantity, scale(p.quantity.currency))}
                     </TableCell>
                     <TableCell numeric>
-                      {fmt.hidden ? MASK : (p.average_cost ?? "")}
+                      {averageCostText(
+                        fmt,
+                        p.average_cost,
+                        p.cost_basis.currency,
+                        scale(p.cost_basis.currency),
+                      )}
                     </TableCell>
                     <TableCell numeric>{money(p.cost_basis)}</TableCell>
                     <TableCell numeric>

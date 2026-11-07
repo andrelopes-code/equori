@@ -85,7 +85,7 @@ export function RealizedResultsTab({ year }: { year: number }) {
     </AppLink>
   );
   const quantity = (r: Result) =>
-    fmt.plain(r.quantity, scale?.(r.quantity.currency) ?? 0);
+    fmt.number(r.quantity, scale?.(r.quantity.currency) ?? 0);
   const resultTone = (r: Result) =>
     r.result.amount > 0
       ? "success"

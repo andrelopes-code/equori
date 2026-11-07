@@ -19,12 +19,12 @@ import type { components } from "@/api/schema.gen";
 import {
   AccountLink,
   accountsQuery,
+  averageCostText,
   positionsQuery,
 } from "@/features/accounts";
 import { useScale } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
-import { MASK } from "@/privacy/mask";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 import { PricedValue } from "@/ui/priced-value";
 import { QueryError } from "@/ui/query-error";
@@ -106,10 +106,15 @@ export function InstrumentPositions({ code }: { code: string }) {
               <TableRow key={p.account_id} value={p.account_id}>
                 <TableRowHeader text="truncate">{account(p)}</TableRowHeader>
                 <TableCell numeric>
-                  {fmt.plain(p.quantity, scale(p.quantity.currency))}
+                  {fmt.number(p.quantity, scale(p.quantity.currency))}
                 </TableCell>
                 <TableCell numeric>
-                  {fmt.hidden ? MASK : (p.average_cost ?? "")}
+                  {averageCostText(
+                    fmt,
+                    p.average_cost,
+                    p.cost_basis.currency,
+                    scale(p.cost_basis.currency),
+                  )}
                 </TableCell>
                 <TableCell numeric>{money(p.cost_basis)}</TableCell>
                 <TableCell numeric>{marketValue(p)}</TableCell>

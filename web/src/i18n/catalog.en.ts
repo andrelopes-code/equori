@@ -2,6 +2,7 @@ import { budgetPlanEn } from "@/i18n/catalog-budget-plan.en";
 import { calculatorsEn } from "@/i18n/catalog-calculators.en";
 import { marketDataEn } from "@/i18n/catalog-market-data.en";
 import { accountsEn } from "@/i18n/catalog-accounts.en";
+import { holdingsEn } from "@/i18n/catalog-holdings.en";
 import { householdsEn } from "@/i18n/catalog-households.en";
 import { instrumentsEn } from "@/i18n/catalog-instruments.en";
 import { portfolioEn } from "@/i18n/catalog-portfolio.en";
@@ -14,6 +15,7 @@ export const catalogEn = {
   ...calculatorsEn,
   ...marketDataEn,
   ...accountsEn,
+  ...holdingsEn,
   ...householdsEn,
   ...instrumentsEn,
   ...portfolioEn,

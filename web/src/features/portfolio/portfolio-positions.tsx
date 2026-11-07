@@ -29,6 +29,7 @@ import type { components } from "@/api/schema.gen";
 import {
   AccountLink,
   accountsQuery,
+  averageCostText,
   positionsQuery,
 } from "@/features/accounts";
 import { accountLabel } from "@/features/portfolio/account-label";
@@ -41,7 +42,6 @@ import type {
 import { useScale } from "@/features/setup";
 import { formatBasisPoints } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { MASK } from "@/privacy/mask";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 import { AppLink } from "@/ui/app-link";
 import { PricedValue } from "@/ui/priced-value";
@@ -227,15 +227,18 @@ export function PortfolioPositions({
                         <TableCell>{instrumentCell(row.position)}</TableCell>
                         <TableCell>{accountCell(row.position)}</TableCell>
                         <TableCell numeric>
-                          {fmt.plain(
+                          {fmt.number(
                             row.position.quantity,
                             digits(row.position.quantity.currency),
                           )}
                         </TableCell>
                         <TableCell numeric>
-                          {fmt.hidden
-                            ? MASK
-                            : (row.position.average_cost ?? "")}
+                          {averageCostText(
+                            fmt,
+                            row.position.average_cost,
+                            row.position.cost_basis.currency,
+                            digits(row.position.cost_basis.currency),
+                          )}
                         </TableCell>
                         <TableCell numeric>
                           {money(row.position.cost_basis)}

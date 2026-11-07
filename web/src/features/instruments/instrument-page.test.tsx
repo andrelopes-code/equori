@@ -54,7 +54,7 @@ describe("Instrument page", () => {
     });
     expect(rowTexts(table).slice(1)).toEqual([
       "10/16/2026|38.45|Manual",
-      "10/14/2026|38.10|b3_cotahist",
+      "10/14/2026|38.10|B3, daily quotes",
     ]);
     expect(
       screen.getByRole("group", { name: catalogEn["instrument.prices.title"] }),
@@ -219,7 +219,7 @@ describe("Instrument page", () => {
     });
     await within(table).findByRole("link", { name: /PETR4/ });
     expect(rowTexts(table).slice(1)).toEqual([
-      "Corretora / PETR4|100|35.00|R$3,500.00|R$3,845.00",
+      "Corretora / PETR4|100|R$35.00|R$3,500.00|R$3,845.00",
     ]);
     expect(within(table).getByRole("link", { name: /PETR4/ })).toHaveAttribute(
       "href",

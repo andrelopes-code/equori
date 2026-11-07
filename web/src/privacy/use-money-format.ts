@@ -24,8 +24,10 @@ export interface MoneyFormat {
   parts: (m: Money, scale: number) => MoneyParts;
   // The amount in the order of the locale's pattern, for drawing the symbol or the fraction apart.
   segments: (m: Money, scale: number) => MoneySegment[];
-  // The bare decimal ("-1234.56") of a table cell, a quantity or a price, with no symbol or grouping.
+  // The bare decimal ("-1234.56") a field reads back, with no symbol or grouping.
   plain: (m: Money, scale: number) => string;
+  // A quantity on screen: the locale's separators, no symbol, masked with the amounts (O10).
+  number: (m: Money, scale: number) => string;
   // The figure inside a field the person types into. It is never masked: a field that hid its own
   // value could not be edited. Only a field the person is filling in or correcting uses it.
   entry: (m: Money, scale: number) => MoneyParts;
@@ -46,6 +48,7 @@ export function useMoneyFormat(): MoneyFormat {
         hidden,
         entry,
         plain: () => MASK,
+        number: () => MASK,
         money: masked,
         signed: masked,
         parts: (m, scale) => maskParts(formatMoneyParts(m, scale, locale)),
@@ -57,6 +60,7 @@ export function useMoneyFormat(): MoneyFormat {
       hidden,
       entry,
       plain: (m, scale) => formatPlain(m.amount, scale),
+      number: (m, scale) => formatMoney(m, scale, locale, { symbol: false }),
       money: (m, scale, options) => formatMoney(m, scale, locale, options),
       signed: (m, scale, options) => formatSigned(m, scale, locale, options),
       parts: (m, scale) => formatMoneyParts(m, scale, locale),

@@ -86,7 +86,7 @@ export function TradeForm({
                 value={
                   view.held === undefined || instrument === undefined
                     ? undefined
-                    : `${fmt.plain(view.held.quantity, scale(instrument))} ${instrument}`
+                    : `${fmt.number(view.held.quantity, scale(instrument))} ${instrument}`
                 }
                 note={view.held === undefined ? t("trade.noPosition") : null}
               />
