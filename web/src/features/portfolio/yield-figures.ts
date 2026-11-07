@@ -21,7 +21,21 @@ const REASONS = [
   "no_yield_recorded",
   "single_credit",
   "too_small",
+  "no_rate_in_window",
+  "percent_undefined",
 ] as const;
+
+// The reasons whose text names the index. The report carries the index only with a benchmark, so
+// without one the text reads of "the index" (the `Any` key of the reason).
+const INDEXED_REASONS = [
+  "currency_mismatch",
+  "no_rate_in_window",
+  "percent_undefined",
+] as const;
+
+// The reasons that keep the period return beside them. Any other reason without a benchmark
+// states itself alone: the return of a period with no recorded yield reads as zero and misleads.
+const PERIOD_REASONS = ["no_index_for_region", "currency_mismatch"];
 
 // One line of the yield column: the figure and, muted beside it, the index it is read against.
 export interface YieldLine {
@@ -52,14 +66,23 @@ export interface YieldGroup {
   rows: YieldRow[];
 }
 
+// The window of the account page: the days it covers and its first and last day.
+export interface YieldWindow {
+  from: string;
+  to: string;
+  days: number;
+}
+
 // yieldLine is the yield column of the balance sheet (amendment A208 R8, R21, R22, R23): a rate
 // profile with 21 days or more reads its rate a year, its percent of the index and its days; with
 // fewer days, or a market profile, the return "in N d" and the index; without a comparison the
-// reason, muted. A bare period return says "in the period".
+// reason, muted. A period return, which spans the `windowDays` of the window, says "in N d" with
+// those days unless the comparison states its own.
 export function yieldLine(
   report: ReturnReport,
   t: TFunction,
   tag: string,
+  windowDays: number,
 ): YieldLine | undefined {
   const b = report.benchmark;
   const reason = reasonText(report, t);
@@ -68,7 +91,7 @@ export function yieldLine(
     text === undefined ? {} : { secondary: text };
 
   if (b === undefined) {
-    const ret = report.period_bp;
+    const ret = periodReturn(report);
     if (ret === undefined) {
       return reason === undefined
         ? undefined
@@ -76,7 +99,10 @@ export function yieldLine(
     }
 
     return {
-      primary: t("portfolio.yield.inPeriod", { rate: rate(ret) }),
+      primary: t("portfolio.yield.inDays", {
+        rate: rate(ret),
+        days: String(windowDays),
+      }),
       ...note(reason),
       negative: ret < 0,
     };
@@ -94,7 +120,7 @@ export function yieldLine(
     };
   }
 
-  const ret = b.return_bp ?? report.period_bp;
+  const ret = b.return_bp ?? periodReturn(report);
   if (ret === undefined) {
     return reason === undefined
       ? undefined
@@ -110,7 +136,10 @@ export function yieldLine(
         });
 
   return {
-    primary: t("portfolio.yield.inDays", { rate: rate(ret), days }),
+    primary: t("portfolio.yield.inDays", {
+      rate: rate(ret),
+      days: b.return_bp === undefined ? String(windowDays) : days,
+    }),
     ...note(percent ?? reason ?? indexOver),
     negative: ret < 0,
   };
@@ -133,16 +162,51 @@ export function yieldNotes(
 }
 
 // yieldGroups are the groups of the yield section of an account page (amendment A208 R17): the
-// comparison with the index over the days compared, and the return net of inflation over its
-// whole months, each present when the report defines it.
+// return of the period when the comparison is absent (given a window), the comparison with the
+// index over the days compared, and the return net of inflation over its whole months, each
+// present when the report defines it.
 export function yieldGroups(
   report: ReturnReport,
   t: TFunction,
   tag: string,
+  window?: YieldWindow,
 ): YieldGroup[] {
-  return [indexGroup(report, t, tag), inflationGroup(report, t, tag)].filter(
-    (group) => group !== undefined,
-  );
+  return [
+    periodGroup(report, t, tag, window),
+    indexGroup(report, t, tag),
+    inflationGroup(report, t, tag),
+  ].filter((group) => group !== undefined);
+}
+
+// periodGroup is the return of the window as one card, for a report with no comparison to draw.
+function periodGroup(
+  report: ReturnReport,
+  t: TFunction,
+  tag: string,
+  window: YieldWindow | undefined,
+): YieldGroup | undefined {
+  const ret = periodReturn(report);
+  if (window === undefined || ret === undefined) return undefined;
+  if (report.benchmark?.return_bp !== undefined) return undefined;
+
+  return {
+    key: "period",
+    title: t("portfolio.yield.group.period"),
+    period: t("portfolio.yield.group.periodWindow", {
+      from: formatDate(window.from, tag),
+      until: formatDate(window.to, tag),
+      days: String(window.days),
+    }),
+    rows: [
+      {
+        key: "period",
+        term: t("portfolio.yield.row.periodReturn"),
+        value: formatBasisPoints(ret, tag),
+        negative: ret < 0,
+        emphasis: true,
+      },
+    ],
+  };
 }
 
 // indexGroup compares the return with the index over the same days: a rate profile by its rate a
@@ -389,17 +453,39 @@ function percentWithMargin(
   return t("portfolio.yield.margin", { value, margin });
 }
 
+// periodReturn is `period_bp` when it reads true: with a benchmark, or without one for a reason
+// of PERIOD_REASONS or none (amendment A208 R8).
+function periodReturn(report: ReturnReport): number | undefined {
+  const reason = report.unavailable_reason ?? "";
+  const keeps = reason === "" || PERIOD_REASONS.includes(reason);
+
+  return report.benchmark === undefined && !keeps
+    ? undefined
+    : report.period_bp;
+}
+
 // reasonText is the text of `unavailable_reason`; a reason without its own text reads as a
-// generic one, and a report that holds every figure has none (amendment A208 R23).
+// generic one, and a report that holds every figure has none (amendment A208 R23). A reason that
+// names the index reads of "the index" when the report has no benchmark to name it.
 function reasonText(report: ReturnReport, t: TFunction): string | undefined {
   const value = report.unavailable_reason;
   if (value === undefined || value === "") return undefined;
 
   const reason = REASONS.find((r) => r === value);
+  if (reason === undefined) return t("portfolio.yield.reason.other");
 
-  return reason === undefined
-    ? t("portfolio.yield.reason.other")
-    : t(`portfolio.yield.reason.${reason}`);
+  const index = report.benchmark && indexName(report.benchmark.index);
+  const indexed = INDEXED_REASONS.find((r) => r === reason);
+  if (index === undefined && indexed !== undefined) {
+    return t(`portfolio.yield.reason.${indexed}Any`, {
+      currency: report.opening.currency,
+    });
+  }
+
+  return t(`portfolio.yield.reason.${reason}`, {
+    index: index ?? "",
+    currency: report.opening.currency,
+  });
 }
 
 // excludedText is the income and expense of the period treated as money in or out, with the

@@ -20,6 +20,9 @@ import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
+// The days of the window, the 365 that end today.
+const WINDOW_DAYS = 365;
+
 interface AccountYieldSectionProps {
   accountId: string;
 }
@@ -31,12 +34,16 @@ export function AccountYieldSection({ accountId }: AccountYieldSectionProps) {
   const t = useT();
   const [tag] = useAppLocale();
   const today = useToday();
-  const report = useAccountYield(accountId, shiftDate(today, -364), today);
+  const from = shiftDate(today, 1 - WINDOW_DAYS);
+  const report = useAccountYield(accountId, from, today);
 
   const scale = useScale();
   const format = useMoneyFormat();
 
-  const groups = report === undefined ? [] : yieldGroups(report, t, tag);
+  const groups =
+    report === undefined
+      ? []
+      : yieldGroups(report, t, tag, { from, to: today, days: WINDOW_DAYS });
   const notes =
     report === undefined
       ? []

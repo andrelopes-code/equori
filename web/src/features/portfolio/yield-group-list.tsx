@@ -45,22 +45,24 @@ export function YieldGroupList({ group }: YieldGroupListProps) {
         ))}
       </FigureGrid>
 
-      <DescriptionList variant="ruled">
-        {support.map((row) => (
-          <DescriptionListItem key={row.key}>
-            <DescriptionListTerm>{row.term}</DescriptionListTerm>
-            <DescriptionListDescription>
-              <Text
-                size="sm"
-                numeric="tabular"
-                tone={row.negative ? "danger" : "default"}
-              >
-                {row.value}
-              </Text>
-            </DescriptionListDescription>
-          </DescriptionListItem>
-        ))}
-      </DescriptionList>
+      {support.length > 0 && (
+        <DescriptionList variant="ruled">
+          {support.map((row) => (
+            <DescriptionListItem key={row.key}>
+              <DescriptionListTerm>{row.term}</DescriptionListTerm>
+              <DescriptionListDescription>
+                <Text
+                  size="sm"
+                  numeric="tabular"
+                  tone={row.negative ? "danger" : "default"}
+                >
+                  {row.value}
+                </Text>
+              </DescriptionListDescription>
+            </DescriptionListItem>
+          ))}
+        </DescriptionList>
+      )}
     </Stack>
   );
 }

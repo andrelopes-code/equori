@@ -291,6 +291,68 @@ describe("AccountsPage", () => {
     ).toBeInTheDocument();
   });
 
+  it("reads the period return in 90 d beside a currency mismatch (R8, W2)", async () => {
+    await renderApp("/accounts", {
+      fetch: api([], {
+        "GET /api/v1/reports/return": () =>
+          json(200, {
+            annual_bp: 0,
+            flows: [],
+            opening: { amount: 1000000, currency: "BRL" },
+            closing: { amount: 1034000, currency: "BRL" },
+            profile: "rate",
+            period_bp: 340,
+            unavailable_reason: "currency_mismatch",
+          }),
+      }),
+    });
+    const reserves = await screen.findByRole("table", {
+      name: catalogEn["home.group.reserves"],
+    });
+    const reserve = await within(reserves).findByRole("row", {
+      name: /Reserva de emergência/,
+    });
+
+    expect(
+      await within(reserve).findByText("3.40% in 90 d"),
+    ).toBeInTheDocument();
+    expect(
+      within(reserve).getByText(
+        "Values in BRL: the index applies to another currency",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("states a reason alone, never a 0.00% return, without a rate in the window (R8, W2)", async () => {
+    await renderApp("/accounts", {
+      fetch: api([], {
+        "GET /api/v1/reports/return": () =>
+          json(200, {
+            annual_bp: 0,
+            flows: [],
+            opening: { amount: 1000000, currency: "BRL" },
+            closing: { amount: 1000000, currency: "BRL" },
+            profile: "rate",
+            period_bp: 0,
+            unavailable_reason: "no_rate_in_window",
+          }),
+      }),
+    });
+    const reserves = await screen.findByRole("table", {
+      name: catalogEn["home.group.reserves"],
+    });
+    const reserve = await within(reserves).findByRole("row", {
+      name: /Reserva de emergência/,
+    });
+
+    expect(
+      await within(reserve).findByText(
+        "The index has no rate yet for the days compared",
+      ),
+    ).toBeInTheDocument();
+    expect(within(reserve).queryByText(/0\.00%/)).not.toBeInTheDocument();
+  });
+
   it("states only the figure on a phone (A208 R17)", async () => {
     await renderApp("/accounts", {
       fetch: api([], { "GET /api/v1/reports/return": comparedIn90Days([]) }),

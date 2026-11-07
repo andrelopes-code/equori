@@ -6,6 +6,9 @@ import { yieldLine } from "@/features/portfolio/yield-figures";
 import { shiftDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 
+// The days of the window, the 90 that end at the date of the balance sheet.
+const WINDOW_DAYS = 90;
+
 interface AccountYieldProps {
   accountId: string;
   // The last day of the window: the date of the balance sheet.
@@ -24,10 +27,11 @@ export function AccountYield({
 }: AccountYieldProps) {
   const t = useT();
   const [tag] = useAppLocale();
-  const windowStart = shiftDate(date, -89);
+  const windowStart = shiftDate(date, 1 - WINDOW_DAYS);
   const report = useAccountYield(accountId, windowStart, date);
 
-  const line = report === undefined ? undefined : yieldLine(report, t, tag);
+  const line =
+    report === undefined ? undefined : yieldLine(report, t, tag, WINDOW_DAYS);
   if (line === undefined) return null;
 
   const size = compact ? "xs" : "sm";

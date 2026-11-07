@@ -58,18 +58,19 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
   "portfolio.return.opening": "Valor inicial",
   "portfolio.return.closing": "Valor final",
   "portfolio.yield.annual": "{rate} a.a.",
-  "portfolio.yield.inPeriod": "{rate} no período",
   "portfolio.yield.ofIndex": "{percent} do índice {index}",
   "portfolio.yield.figure": "Rendimento nos últimos 12 meses",
   "portfolio.yield.profile.rate":
-    "Renda fixa: rendimento registrado na conta, comparado ao índice {index} de cada dia. Saldo informado já sem os impostos fica abaixo da taxa contratada.",
+    "Renda fixa: comparada dia a dia com o índice {index}. Saldo informado já sem os impostos fica abaixo da taxa contratada.",
   "portfolio.yield.days": "{days} d",
   "portfolio.yield.inDays": "{rate} em {days} d",
   "portfolio.yield.margin": "{value} ±{margin} p.p.",
   "portfolio.yield.reason.no_index_for_region":
     "Sem índice de referência para a região",
   "portfolio.yield.reason.currency_mismatch":
-    "Moeda da conta diferente da do índice",
+    "Valores em {currency}: o índice {index} se aplica a outra moeda",
+  "portfolio.yield.reason.currency_mismatchAny":
+    "Valores em {currency}: o índice se aplica a outra moeda",
   "portfolio.yield.reason.nothing_held": "Nada mantido no período",
   "portfolio.yield.reason.no_yield_recorded":
     "Nenhum rendimento registrado no período",
@@ -77,6 +78,14 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
     "Só um crédito de rendimento registrado",
   "portfolio.yield.reason.too_small":
     "Saldo pequeno demais: os créditos são arredondados ao centavo",
+  "portfolio.yield.reason.no_rate_in_window":
+    "O índice {index} ainda não tem taxa para os dias comparados",
+  "portfolio.yield.reason.no_rate_in_windowAny":
+    "O índice ainda não tem taxa para os dias comparados",
+  "portfolio.yield.reason.percent_undefined":
+    "O percentual do índice {index} não é definido para este retorno",
+  "portfolio.yield.reason.percent_undefinedAny":
+    "O percentual do índice não é definido para este retorno",
   "portfolio.yield.reason.other": "Sem comparação disponível no período",
   "portfolio.yield.excluded":
     "{parts} nesta conta foram tratados como dinheiro que entra ou sai, não como rendimento.",
@@ -95,6 +104,9 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
     "O retorno menos o índice {index}, em pontos percentuais",
   "portfolio.yield.profile.market":
     "Preço de mercado: o retorno não é anualizado nem expresso em percentual do índice {index}; compare-o com o índice {index} dos mesmos dias.",
+  "portfolio.yield.group.period": "No período",
+  "portfolio.yield.group.periodWindow": "{from} a {until} · {days} dias",
+  "portfolio.yield.row.periodReturn": "Retorno no período",
   "portfolio.yield.group.index": "Comparado ao índice {index}",
   "portfolio.yield.group.indexPeriod":
     "{from} a {until} · {days} dias com taxa do índice {index}",

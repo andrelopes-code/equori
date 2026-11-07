@@ -56,23 +56,32 @@ export const portfolioEn = {
   "portfolio.return.opening": "Opening value",
   "portfolio.return.closing": "Closing value",
   "portfolio.yield.annual": "{rate} a year",
-  "portfolio.yield.inPeriod": "{rate} in the period",
   "portfolio.yield.ofIndex": "{percent} of {index}",
   "portfolio.yield.figure": "Yield over the last 12 months",
   "portfolio.yield.profile.rate":
-    "Fixed income: the yield recorded in the account, against {index} day by day. A balance reported net of taxes reads below the contracted rate.",
+    "Fixed income: compared day by day with {index}. A balance reported net of taxes reads below the contracted rate.",
   "portfolio.yield.days": "{days} d",
   "portfolio.yield.inDays": "{rate} in {days} d",
   "portfolio.yield.margin": "{value} ±{margin} pp",
   "portfolio.yield.reason.no_index_for_region":
     "No reference index for the region",
   "portfolio.yield.reason.currency_mismatch":
-    "Account currency differs from the index",
+    "Values in {currency}: {index} applies to another currency",
+  "portfolio.yield.reason.currency_mismatchAny":
+    "Values in {currency}: the index applies to another currency",
   "portfolio.yield.reason.nothing_held": "Nothing held in the period",
   "portfolio.yield.reason.no_yield_recorded": "No yield recorded in the period",
   "portfolio.yield.reason.single_credit": "Only one yield credit recorded",
   "portfolio.yield.reason.too_small":
     "Balance too small: credits are rounded to the cent",
+  "portfolio.yield.reason.no_rate_in_window":
+    "{index} has no rate yet for the days compared",
+  "portfolio.yield.reason.no_rate_in_windowAny":
+    "The index has no rate yet for the days compared",
+  "portfolio.yield.reason.percent_undefined":
+    "The percent of {index} is not defined for this return",
+  "portfolio.yield.reason.percent_undefinedAny":
+    "The percent of the index is not defined for this return",
   "portfolio.yield.reason.other": "No comparison available for the period",
   "portfolio.yield.excluded":
     "{parts} in this account were treated as money in or out, not yield.",
@@ -91,6 +100,9 @@ export const portfolioEn = {
     "The return minus {index}, in percentage points",
   "portfolio.yield.profile.market":
     "Market price: the return is not annualized or stated as a percent of {index}; read it against {index} over the same days.",
+  "portfolio.yield.group.period": "In the period",
+  "portfolio.yield.group.periodWindow": "{from} to {until} · {days} days",
+  "portfolio.yield.row.periodReturn": "Return in the period",
   "portfolio.yield.group.index": "Compared with {index}",
   "portfolio.yield.group.indexPeriod":
     "{from} to {until} · {days} days with a {index} rate",

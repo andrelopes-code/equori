@@ -111,7 +111,7 @@ describe("AccountPage", () => {
     });
     expect(
       within(section).getByText(
-        /^Fixed income: the yield recorded in the account/,
+        /^Fixed income: compared day by day with CDI\./,
       ),
     ).toBeInTheDocument();
     const cdi = await within(section).findByRole("group", {
@@ -188,6 +188,66 @@ describe("AccountPage", () => {
     expect(
       within(section).queryByRole("group", { name: "Compared with CDI" }),
     ).not.toBeInTheDocument();
+  });
+
+  it("draws the period return of the window when the index does not apply (R17, W2)", async () => {
+    await renderApp(`/accounts/${reserveID}`, {
+      fetch: api({
+        "GET /api/v1/reports/return": () =>
+          json(200, {
+            annual_bp: 0,
+            flows: [],
+            opening: money(1000000),
+            closing: money(1149000),
+            profile: "rate",
+            period_bp: 1490,
+            unavailable_reason: "currency_mismatch",
+          }),
+      }),
+    });
+    const section = await screen.findByRole("region", {
+      name: catalogEn["portfolio.yield.figure"],
+    });
+    const period = await within(section).findByRole("group", {
+      name: "In the period",
+    });
+
+    expect(
+      within(period).getByText("Return in the period"),
+    ).toBeInTheDocument();
+    expect(within(period).getByText("14.90%")).toBeInTheDocument();
+    expect(within(period).getByText(/ to .* · 365 days$/)).toBeInTheDocument();
+    expect(
+      within(section).getByText(
+        "Values in BRL: the index applies to another currency",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("states a reason alone, without a period return of 0.00%, when no yield was recorded (R17, W2)", async () => {
+    await renderApp(`/accounts/${reserveID}`, {
+      fetch: api({
+        "GET /api/v1/reports/return": () =>
+          json(200, {
+            annual_bp: 0,
+            flows: [],
+            opening: money(1000000),
+            closing: money(1000000),
+            profile: "rate",
+            period_bp: 0,
+            unavailable_reason: "no_yield_recorded",
+          }),
+      }),
+    });
+    const section = await screen.findByRole("region", {
+      name: catalogEn["portfolio.yield.figure"],
+    });
+
+    expect(
+      await within(section).findByText("No yield recorded in the period"),
+    ).toBeInTheDocument();
+    expect(within(section).queryByText("0.00%")).not.toBeInTheDocument();
+    expect(within(section).queryByRole("group")).not.toBeInTheDocument();
   });
 
   it("asks no yield for a checking account (A208 R17)", async () => {
