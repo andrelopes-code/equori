@@ -15,7 +15,8 @@ interface AccountYieldProps {
 }
 
 // The yield of an account over the 90 days of its balance trend, on one line (amendment A208
-// R17): the figure, in the danger tone when negative, then the index it is read against.
+// R17, R21, R23): the figure, in the danger tone when negative, the index it is read against,
+// the days compared, or why there is no figure.
 export function AccountYield({
   accountId,
   date,
@@ -26,22 +27,33 @@ export function AccountYield({
   const windowStart = shiftDate(date, -89);
   const report = useAccountYield(accountId, windowStart, date);
 
-  const line =
-    report === undefined ? undefined : yieldLine(report, t, tag, windowStart);
+  const line = report === undefined ? undefined : yieldLine(report, t, tag);
   if (line === undefined) return null;
+
+  const size = compact ? "xs" : "sm";
 
   return (
     <Inline gap={2} justify="end" wrap="nowrap">
-      <Text
-        size={compact ? "xs" : "sm"}
-        tone={line.negative ? "danger" : "default"}
-        numeric="tabular"
-      >
-        {line.primary}
-      </Text>
-      {!compact && line.secondary !== undefined && (
-        <Text size="sm" tone="muted" numeric="tabular">
-          {line.secondary}
+      {line.primary !== undefined && (
+        <Text
+          size={size}
+          tone={line.negative ? "danger" : "default"}
+          numeric="tabular"
+        >
+          {line.primary}
+        </Text>
+      )}
+
+      {(!compact || line.primary === undefined) &&
+        line.secondary !== undefined && (
+          <Text size={size} tone="muted" numeric="tabular">
+            {line.secondary}
+          </Text>
+        )}
+
+      {line.days !== undefined && (
+        <Text size={size} tone="muted" numeric="tabular">
+          {line.days}
         </Text>
       )}
     </Inline>

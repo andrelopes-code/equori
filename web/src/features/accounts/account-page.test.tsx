@@ -90,6 +90,9 @@ describe("AccountPage", () => {
               annual_bp: 1517,
               index_annual_bp: 1490,
               excess_bp: 25,
+              credits: 30,
+              restarted: true,
+              percent_error_bp: 250,
             },
             inflation: {
               index: "ipca",
@@ -120,7 +123,12 @@ describe("AccountPage", () => {
       ),
     ).toBeInTheDocument();
     expect(within(cdi).getByText("15.17% a year")).toBeInTheDocument();
-    expect(within(cdi).getByText("101.80%")).toBeInTheDocument();
+    expect(within(cdi).getByText("101.80% ±2.55 pp")).toBeInTheDocument();
+    expect(within(cdi).getByText("Yield credits")).toBeInTheDocument();
+    expect(within(cdi).getByText("30")).toBeInTheDocument();
+    expect(
+      within(cdi).getByText("Restarted after a flow between credits"),
+    ).toBeInTheDocument();
     expect(within(cdi).getByText("14.55% (14.90% a year)")).toBeInTheDocument();
     const ipca = within(section).getByRole("group", { name: "Net of IPCA" });
     expect(
@@ -129,6 +137,57 @@ describe("AccountPage", () => {
       ),
     ).toBeInTheDocument();
     expect(within(ipca).getByText("8.10%")).toBeInTheDocument();
+  });
+
+  it("states why the comparison is absent and what was left out of the yield (A208 R19, R23)", async () => {
+    await renderApp(`/accounts/${reserveID}`, {
+      fetch: api({
+        "GET /api/v1/reports/return": () =>
+          json(200, {
+            annual_bp: 0,
+            flows: [],
+            opening: money(1000000),
+            closing: money(1000000),
+            profile: "rate",
+            unavailable_reason: "single_credit",
+            excluded: {
+              income: { amount: money(150000), categories: ["Salary"] },
+              expense: { amount: money(32050), categories: ["Taxes"] },
+            },
+            inflation: {
+              index: "ipca",
+              from: "2025-11-01",
+              until: "2026-09-30",
+              index_bp: 500,
+              return_bp: 1350,
+              real_bp: 810,
+            },
+          }),
+      }),
+    });
+    const section = await screen.findByRole("region", {
+      name: catalogEn["portfolio.yield.figure"],
+    });
+
+    expect(
+      await within(section).findByText("Only one yield credit recorded"),
+    ).toBeInTheDocument();
+    expect(
+      within(section).getByText(
+        "R$1,500.00 in other income / R$320.50 in other expenses in this account were treated as money in or out, not yield (Salary, Taxes).",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(section).getByText(
+        "To count a credit as yield, categorize it under Yield.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(section).getByRole("group", { name: "Net of IPCA" }),
+    ).toBeInTheDocument();
+    expect(
+      within(section).queryByRole("group", { name: "Compared with CDI" }),
+    ).not.toBeInTheDocument();
   });
 
   it("asks no yield for a checking account (A208 R17)", async () => {

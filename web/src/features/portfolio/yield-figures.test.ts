@@ -5,7 +5,11 @@ import { catalogEn } from "@/i18n/catalog.en";
 import { catalogPtBR } from "@/i18n/catalog.pt-BR";
 import type { TFunction } from "@/i18n/i18n-provider";
 
-import { yieldGroups, yieldLine } from "@/features/portfolio/yield-figures";
+import {
+  yieldGroups,
+  yieldLine,
+  yieldNotes,
+} from "@/features/portfolio/yield-figures";
 
 type ReturnBenchmark = components["schemas"]["ReturnBenchmark"];
 type ReturnReport = components["schemas"]["ReturnReport"];
@@ -14,9 +18,6 @@ const t: TFunction = (key, params) =>
   catalogEn[key].replace(/\{(\w+)\}/gu, (_, name: string) =>
     String(params?.[name]),
   );
-
-// The first day of the 90-day window of the balance sheet dated 2026-11-06.
-const WINDOW_START = "2026-08-09";
 
 const tPtBR: TFunction = (key, params) =>
   catalogPtBR[key].replace(/\{(\w+)\}/gu, (_, name: string) =>
@@ -41,6 +42,8 @@ const rate: ReturnReport = {
     until: "2026-10-16",
     days: 245,
     skipped: 0,
+    credits: 0,
+    restarted: false,
     return_bp: 1480,
     index_bp: 1455,
     percent_bp: 10180,
@@ -69,6 +72,8 @@ const market: ReturnReport = {
     until: "2026-10-16",
     days: 63,
     skipped: 0,
+    credits: 0,
+    restarted: false,
     return_bp: -1380,
     index_bp: 352,
     excess_bp: -1732,
@@ -76,31 +81,174 @@ const market: ReturnReport = {
   },
 };
 
+const money = (m: { amount: number; currency: string }) =>
+  `${m.currency} ${(m.amount / 100).toFixed(2)}`;
+
+const REASONS = [
+  ["no_index_for_region", "No reference index for the region"],
+  ["currency_mismatch", "Account currency differs from the index"],
+  ["nothing_held", "Nothing held in the period"],
+  ["no_yield_recorded", "No yield recorded in the period"],
+  ["single_credit", "Only one yield credit recorded"],
+  ["too_small", "Balance too small: credits are rounded to the cent"],
+] as const;
+
+function without(
+  report: ReturnReport,
+  ...keys: (keyof ReturnBenchmark)[]
+): ReturnBenchmark {
+  return Object.fromEntries(
+    Object.entries(report.benchmark ?? {}).filter(
+      ([key]) => !keys.includes(key as keyof ReturnBenchmark),
+    ),
+  ) as ReturnBenchmark;
+}
+
+function withBenchmark(overrides: Partial<ReturnBenchmark>): ReturnReport {
+  return {
+    ...rate,
+    benchmark: { ...rate.benchmark, ...overrides } as ReturnBenchmark,
+  };
+}
+
 describe("yieldLine", () => {
-  it("reads a rate profile as a rate a year and a percent of the index", () => {
-    expect(yieldLine(rate, t, "en", WINDOW_START)).toEqual({
+  it("reads a rate profile as a rate a year, a percent of the index and its days (R21)", () => {
+    expect(yieldLine(rate, t, "en")).toEqual({
       primary: "15.17% a year",
       secondary: "101.80% of CDI",
+      days: "245 d",
       negative: false,
     });
   });
 
-  it("reads a market profile as the return beside the index, never annualized", () => {
-    expect(yieldLine(market, t, "en", WINDOW_START)).toEqual({
-      primary: "−13.80%",
+  it("states the days compared in Portuguese without an article before the index (R21, R23)", () => {
+    expect(yieldLine(rate, tPtBR, "pt-BR")).toEqual({
+      primary: "15,17% a.a.",
+      secondary: "101,80% do índice CDI",
+      days: "245 d",
+      negative: false,
+    });
+  });
+
+  it.each([
+    [21, "15.17% a year", "21 d"],
+    [20, "14.80% in 20 d", undefined],
+  ])("reads %s days compared as %s (R21)", (days, primary, daysText) => {
+    const line = yieldLine(withBenchmark({ days }), t, "en");
+
+    expect(line).toEqual({
+      primary,
+      secondary: "101.80% of CDI",
+      ...(daysText === undefined ? {} : { days: daysText }),
+      negative: false,
+    });
+  });
+
+  it("reads the period return in N d when there is no rate a year (R8)", () => {
+    const benchmark = without(withBenchmark({}), "annual_bp");
+
+    expect(yieldLine({ ...rate, benchmark }, t, "en")?.primary).toBe(
+      "14.80% in 245 d",
+    );
+  });
+
+  it("reads a market profile as the return in N d beside the index, never annualized", () => {
+    expect(yieldLine(market, t, "en")).toEqual({
+      primary: "−13.80% in 63 d",
       secondary: "CDI 3.52%",
       negative: true,
     });
   });
 
-  it("reads the period return alone without an index", () => {
+  it("states no start day, whatever the first day compared (R21)", () => {
+    expect(
+      yieldLine(withBenchmark({ from: "2026-10-19" }), t, "en")?.secondary,
+    ).toBe("101.80% of CDI");
+  });
+
+  it.each([
+    [100, "101.80% ±1.02 pp of CDI"],
+    [99, "101.80% of CDI"],
+    [500, "101.80% ±5.09 pp of CDI"],
+    [0, "101.80% of CDI"],
+  ])(
+    "appends the error of the percent only from 100: %s (R22)",
+    (error, text) => {
+      expect(
+        yieldLine(withBenchmark({ percent_error_bp: error }), t, "en")
+          ?.secondary,
+      ).toBe(text);
+    },
+  );
+
+  it("appends the error of the percent in Portuguese (R22)", () => {
+    expect(
+      yieldLine(withBenchmark({ percent_error_bp: 100 }), tPtBR, "pt-BR")
+        ?.secondary,
+    ).toBe("101,80% ±1,02 p.p. do índice CDI");
+  });
+
+  it("states why the percent is absent when the balance is too small (R22)", () => {
+    const benchmark = without(withBenchmark({}), "percent_bp", "annual_bp");
+
     expect(
       yieldLine(
-        { ...base, profile: "market", period_bp: -1400 },
+        { ...rate, benchmark, unavailable_reason: "too_small" },
         t,
         "en",
-        WINDOW_START,
       ),
+    ).toEqual({
+      primary: "14.80% in 245 d",
+      secondary: "Balance too small: credits are rounded to the cent",
+      negative: false,
+    });
+  });
+
+  it.each(REASONS)(
+    "states why there is no comparison: %s (R23)",
+    (reason, text) => {
+      expect(
+        yieldLine(
+          { ...base, profile: "rate", unavailable_reason: reason },
+          t,
+          "en",
+        ),
+      ).toEqual({ secondary: text, negative: false });
+    },
+  );
+
+  it("states the reason beside the period return (R23)", () => {
+    expect(
+      yieldLine(
+        {
+          ...base,
+          profile: "rate",
+          period_bp: 120,
+          unavailable_reason: "single_credit",
+        },
+        t,
+        "en",
+      ),
+    ).toEqual({
+      primary: "1.20% in the period",
+      secondary: "Only one yield credit recorded",
+      negative: false,
+    });
+  });
+
+  it("states the reason in Portuguese (R23)", () => {
+    expect(
+      yieldLine(
+        { ...base, profile: "rate", unavailable_reason: "too_small" },
+        tPtBR,
+        "pt-BR",
+      )?.secondary,
+    ).toBe("Saldo pequeno demais: os créditos são arredondados ao centavo");
+  });
+
+  it("reads the period return alone without an index", () => {
+    expect(
+      yieldLine({ ...base, profile: "market", period_bp: -1400 }, t, "en"),
     ).toEqual({
       primary: "−14.00% in the period",
       negative: true,
@@ -113,50 +261,27 @@ describe("yieldLine", () => {
         { ...base, profile: "market", period_bp: -1400 },
         tPtBR,
         "pt-BR",
-        WINDOW_START,
       )?.primary,
     ).toBe("−14,00% no período");
   });
 
-  it("says from when the comparison runs when it starts late (A208 R8)", () => {
-    const late: ReturnReport = {
-      ...rate,
-      benchmark: {
-        index: "cdi",
-        from: "2026-10-19",
-        until: "2026-11-06",
-        days: 13,
-        skipped: 50,
-        return_bp: 63,
-        index_bp: 62,
-        percent_bp: 10180,
-        annual_bp: 1517,
-      },
+  it("states nothing without a return or a reason", () => {
+    expect(yieldLine({ ...base, profile: "rate" }, t, "en")).toBeUndefined();
+  });
+
+  it("states a generic text for a reason the catalog does not hold (R23)", () => {
+    const report: ReturnReport = {
+      ...base,
+      profile: "rate",
+      unavailable_reason: "no_rate_in_window",
     };
-    expect(yieldLine(late, t, "en", WINDOW_START)?.secondary).toBe(
-      "101.80% of CDI · since 10/19/2026",
+
+    expect(yieldLine(report, t, "en")?.secondary).toBe(
+      "No comparison available for the period",
     );
-  });
-
-  it.each([
-    ["8 days after the window start", "2026-08-17", true],
-    ["7 days after the window start", "2026-08-16", false],
-    ["3 days after the window start", "2026-08-12", false],
-  ])("notes the start of the comparison %s: %s", (_, from, noted) => {
-    const starts: ReturnReport = {
-      ...rate,
-      benchmark: { ...rate.benchmark, from } as ReturnBenchmark,
-    };
-
-    expect(
-      yieldLine(starts, t, "en", WINDOW_START)?.secondary?.includes("since"),
-    ).toBe(noted);
-  });
-
-  it("states nothing without a return", () => {
-    expect(
-      yieldLine({ ...base, profile: "rate" }, t, "en", WINDOW_START),
-    ).toBeUndefined();
+    expect(yieldLine(report, tPtBR, "pt-BR")?.secondary).toBe(
+      "Sem comparação disponível no período",
+    );
   });
 });
 
@@ -204,5 +329,100 @@ describe("yieldGroups", () => {
         ],
       },
     ]);
+  });
+
+  it("states the credits and the restart in the comparison group (R20)", () => {
+    const groups = read(withBenchmark({ credits: 30, restarted: true }));
+
+    expect(groups[0]?.rows.slice(-2)).toEqual([
+      ["Yield credits", "30", false, false],
+      ["Restarted after a flow between credits", "Yes", false, false],
+    ]);
+  });
+
+  it("appends the error to the percent card (R22)", () => {
+    const groups = read(withBenchmark({ percent_error_bp: 250 }));
+
+    expect(groups[0]?.rows[1]).toEqual([
+      "Percent of CDI",
+      "101.80% ±2.55 pp",
+      true,
+      false,
+    ]);
+  });
+
+  it("shows the inflation group alone when the comparison is absent (R23)", () => {
+    const rest: ReturnReport = { ...base, profile: "rate" };
+    if (rate.inflation !== undefined) rest.inflation = rate.inflation;
+
+    expect(
+      yieldGroups(
+        { ...rest, unavailable_reason: "single_credit" },
+        t,
+        "en",
+      ).map((g) => g.key),
+    ).toEqual(["inflation"]);
+  });
+
+  it("names the groups of a rate profile without an article before the index (R23)", () => {
+    expect(yieldGroups(rate, tPtBR, "pt-BR").map((g) => g.title)).toEqual([
+      "Comparado ao índice CDI",
+      "Descontado o índice IPCA",
+    ]);
+  });
+});
+
+describe("yieldNotes", () => {
+  const excluded: ReturnReport["excluded"] = {
+    income: {
+      amount: { amount: 150000, currency: "BRL" },
+      categories: ["Salary", "Gifts"],
+    },
+    expense: {
+      amount: { amount: 32050, currency: "BRL" },
+      categories: ["Salary", "Taxes"],
+    },
+  };
+
+  it("states each reason where a figure is absent (R23)", () => {
+    expect(
+      yieldNotes(
+        { ...base, profile: "rate", unavailable_reason: "nothing_held" },
+        t,
+        money,
+      ),
+    ).toEqual(["Nothing held in the period"]);
+  });
+
+  it("states the income and expense treated as money in or out, with a hint (R19)", () => {
+    expect(yieldNotes({ ...rate, excluded }, t, money)).toEqual([
+      "BRL 1500.00 in other income / BRL 320.50 in other expenses in this account were treated as money in or out, not yield (Salary, Gifts, Taxes).",
+      "To count a credit as yield, categorize it under Yield.",
+    ]);
+  });
+
+  it("states the expense alone, without categories, in Portuguese (R19)", () => {
+    expect(
+      yieldNotes(
+        {
+          ...rate,
+          excluded: {
+            expense: {
+              amount: { amount: 32050, currency: "BRL" },
+              categories: [],
+            },
+          },
+        },
+        tPtBR,
+        money,
+      ),
+    ).toEqual([
+      "BRL 320.50 em outras despesas nesta conta foram tratados como dinheiro que entra ou sai, não como rendimento.",
+      "Para contar um crédito como rendimento, categorize-o em Rendimento.",
+    ]);
+  });
+
+  it("states nothing when the report holds every figure", () => {
+    expect(yieldNotes(rate, t, money)).toEqual([]);
   });
 });

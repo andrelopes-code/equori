@@ -61,7 +61,30 @@ export const portfolioEn = {
   "portfolio.yield.figure": "Yield over the last 12 months",
   "portfolio.yield.profile.rate":
     "Fixed income: the yield recorded in the account, against {index} day by day. A balance reported net of taxes reads below the contracted rate.",
-  "portfolio.yield.since": "since {from}",
+  "portfolio.yield.days": "{days} d",
+  "portfolio.yield.inDays": "{rate} in {days} d",
+  "portfolio.yield.margin": "{value} ±{margin} pp",
+  "portfolio.yield.reason.no_index_for_region":
+    "No reference index for the region",
+  "portfolio.yield.reason.currency_mismatch":
+    "Account currency differs from the index",
+  "portfolio.yield.reason.nothing_held": "Nothing held in the period",
+  "portfolio.yield.reason.no_yield_recorded": "No yield recorded in the period",
+  "portfolio.yield.reason.single_credit": "Only one yield credit recorded",
+  "portfolio.yield.reason.too_small":
+    "Balance too small: credits are rounded to the cent",
+  "portfolio.yield.reason.other": "No comparison available for the period",
+  "portfolio.yield.excluded":
+    "{parts} in this account were treated as money in or out, not yield.",
+  "portfolio.yield.excludedIn":
+    "{parts} in this account were treated as money in or out, not yield ({categories}).",
+  "portfolio.yield.excludedIncome": "{amount} in other income",
+  "portfolio.yield.excludedExpense": "{amount} in other expenses",
+  "portfolio.yield.excludedHint":
+    "To count a credit as yield, categorize it under Yield.",
+  "portfolio.yield.row.credits": "Yield credits",
+  "portfolio.yield.row.restarted": "Restarted after a flow between credits",
+  "portfolio.yield.row.restartedValue": "Yes",
   "portfolio.yield.row.percentHint":
     "How much of {index} the account paid, day by day",
   "portfolio.yield.row.excessHint":

@@ -59,31 +59,56 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
   "portfolio.return.closing": "Valor final",
   "portfolio.yield.annual": "{rate} a.a.",
   "portfolio.yield.inPeriod": "{rate} no período",
-  "portfolio.yield.ofIndex": "{percent} do {index}",
+  "portfolio.yield.ofIndex": "{percent} do índice {index}",
   "portfolio.yield.figure": "Rendimento nos últimos 12 meses",
   "portfolio.yield.profile.rate":
-    "Renda fixa: rendimento registrado na conta, comparado ao {index} de cada dia. Saldo informado já sem os impostos fica abaixo da taxa contratada.",
-  "portfolio.yield.since": "desde {from}",
+    "Renda fixa: rendimento registrado na conta, comparado ao índice {index} de cada dia. Saldo informado já sem os impostos fica abaixo da taxa contratada.",
+  "portfolio.yield.days": "{days} d",
+  "portfolio.yield.inDays": "{rate} em {days} d",
+  "portfolio.yield.margin": "{value} ±{margin} p.p.",
+  "portfolio.yield.reason.no_index_for_region":
+    "Sem índice de referência para a região",
+  "portfolio.yield.reason.currency_mismatch":
+    "Moeda da conta diferente da do índice",
+  "portfolio.yield.reason.nothing_held": "Nada mantido no período",
+  "portfolio.yield.reason.no_yield_recorded":
+    "Nenhum rendimento registrado no período",
+  "portfolio.yield.reason.single_credit":
+    "Só um crédito de rendimento registrado",
+  "portfolio.yield.reason.too_small":
+    "Saldo pequeno demais: os créditos são arredondados ao centavo",
+  "portfolio.yield.reason.other": "Sem comparação disponível no período",
+  "portfolio.yield.excluded":
+    "{parts} nesta conta foram tratados como dinheiro que entra ou sai, não como rendimento.",
+  "portfolio.yield.excludedIn":
+    "{parts} nesta conta foram tratados como dinheiro que entra ou sai, não como rendimento ({categories}).",
+  "portfolio.yield.excludedIncome": "{amount} em outras receitas",
+  "portfolio.yield.excludedExpense": "{amount} em outras despesas",
+  "portfolio.yield.excludedHint":
+    "Para contar um crédito como rendimento, categorize-o em Rendimento.",
+  "portfolio.yield.row.credits": "Créditos de rendimento",
+  "portfolio.yield.row.restarted": "Reiniciada após um fluxo entre créditos",
+  "portfolio.yield.row.restartedValue": "Sim",
   "portfolio.yield.row.percentHint":
-    "Quanto do {index} a conta pagou, dia a dia",
+    "Quanto do índice {index} a conta pagou, dia a dia",
   "portfolio.yield.row.excessHint":
-    "O retorno menos o {index}, em pontos percentuais",
+    "O retorno menos o índice {index}, em pontos percentuais",
   "portfolio.yield.profile.market":
-    "Preço de mercado: o retorno não é anualizado nem expresso em percentual do {index}; compare-o com o {index} dos mesmos dias.",
-  "portfolio.yield.group.index": "Comparado ao {index}",
+    "Preço de mercado: o retorno não é anualizado nem expresso em percentual do índice {index}; compare-o com o índice {index} dos mesmos dias.",
+  "portfolio.yield.group.index": "Comparado ao índice {index}",
   "portfolio.yield.group.indexPeriod":
-    "{from} a {until} · {days} dias com taxa do {index}",
-  "portfolio.yield.group.inflation": "Descontado o {index}",
+    "{from} a {until} · {days} dias com taxa do índice {index}",
+  "portfolio.yield.group.inflation": "Descontado o índice {index}",
   "portfolio.yield.group.inflationPeriod":
     "{from} a {until} · meses com {index} publicado",
   "portfolio.yield.row.annual": "Taxa ao ano",
-  "portfolio.yield.row.annualHint": "Na mesma base anual do {index}",
-  "portfolio.yield.row.percent": "Percentual do {index}",
+  "portfolio.yield.row.annualHint": "Na mesma base anual do índice {index}",
+  "portfolio.yield.row.percent": "Percentual do índice {index}",
   "portfolio.yield.row.return": "Retorno",
   "portfolio.yield.row.returnHint": "Sem anualizar",
   "portfolio.yield.row.index": "{index} no período",
   "portfolio.yield.row.indexValue": "{rate} ({annual} a.a.)",
-  "portfolio.yield.row.excess": "Diferença para o {index}",
+  "portfolio.yield.row.excess": "Diferença para o índice {index}",
   "portfolio.yield.row.real": "Retorno real",
   "portfolio.yield.row.realHint": "(1 + retorno) ÷ (1 + {index}) − 1",
   "portfolio.yield.indexOver": "{index} {rate}",

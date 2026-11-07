@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
-import { shiftDate } from "@/i18n/format";
+import { catalogPtBR } from "@/i18n/catalog.pt-BR";
 import {
   accountRoutes,
   balancesAt,
@@ -41,16 +41,20 @@ function words(key: keyof typeof catalogEn, values: Record<string, string>) {
 
 // A return route: the reserve paid 101.80% of the CDI (a rate profile) and the brokerage lost
 // 13.80% while the CDI grew 3.52% (a market profile). asked collects the account of each request.
-function comparedIn90Days(asked: string[], startsAfter = 0) {
+function comparedIn90Days(
+  asked: string[],
+  days = 63,
+  extra: Record<string, unknown> = {},
+) {
   return (req: Request) => {
     const query = new URL(req.url).searchParams;
     const account = query.get("account_id") ?? "";
     asked.push(account);
     const window = {
       index: "cdi",
-      from: shiftDate(query.get("from") ?? "", startsAfter),
+      from: query.get("from"),
       until: query.get("to"),
-      days: 63,
+      days,
       index_annual_bp: 1490,
     };
     const rate = {
@@ -63,6 +67,7 @@ function comparedIn90Days(asked: string[], startsAfter = 0) {
         percent_bp: 10180,
         annual_bp: 1517,
         excess_bp: 6,
+        ...extra,
       },
     };
     const market = {
@@ -194,9 +199,10 @@ describe("AccountsPage", () => {
       await within(reserve).findByText("15.17% a year"),
     ).toBeInTheDocument();
     expect(within(reserve).getByText("101.80% of CDI")).toBeInTheDocument();
+    expect(within(reserve).getByText("63 d")).toBeInTheDocument();
     const broker = within(reserves).getByRole("row", { name: /Corretora/ });
     // A loss reads in the danger tone; a gain in the default one.
-    expect(await within(broker).findByText("−13.80%")).toHaveAttribute(
+    expect(await within(broker).findByText("−13.80% in 63 d")).toHaveAttribute(
       "data-tone",
       "danger",
     );
@@ -206,6 +212,8 @@ describe("AccountsPage", () => {
     );
     expect(within(broker).getByText("CDI 3.52%")).toBeInTheDocument();
     expect(within(broker).queryByText(/a year|of CDI/)).not.toBeInTheDocument();
+    expect(catalogEn["balanceSheet.yield"]).toBe("Yield");
+    expect(catalogPtBR["balanceSheet.yield"]).toBe("Rendimento");
     const available = screen.getByRole("table", {
       name: catalogEn["home.group.available"],
     });
@@ -217,10 +225,10 @@ describe("AccountsPage", () => {
     expect(asked.sort()).toEqual([reserveID, brokerageID].sort());
   });
 
-  it("says from when the comparison runs when it starts late (A208 R8)", async () => {
+  it("reads the period return and the percent of the index under 21 days, with no start day (R21)", async () => {
     await renderApp("/accounts", {
       fetch: api([], {
-        "GET /api/v1/reports/return": comparedIn90Days([], 20),
+        "GET /api/v1/reports/return": comparedIn90Days([], 13),
       }),
     });
     const reserves = await screen.findByRole("table", {
@@ -231,7 +239,55 @@ describe("AccountsPage", () => {
     });
 
     expect(
-      await within(reserve).findByText(/^101.80% of CDI · since /),
+      await within(reserve).findByText("3.40% in 13 d"),
+    ).toBeInTheDocument();
+    expect(within(reserve).getByText("101.80% of CDI")).toBeInTheDocument();
+    expect(within(reserve).queryByText(/since|a year/)).not.toBeInTheDocument();
+  });
+
+  it("appends the error of the percent to the cell (R22)", async () => {
+    await renderApp("/accounts", {
+      fetch: api([], {
+        "GET /api/v1/reports/return": comparedIn90Days([], 63, {
+          percent_error_bp: 250,
+        }),
+      }),
+    });
+    const reserves = await screen.findByRole("table", {
+      name: catalogEn["home.group.reserves"],
+    });
+    const reserve = await within(reserves).findByRole("row", {
+      name: /Reserva de emergência/,
+    });
+
+    expect(
+      await within(reserve).findByText("101.80% ±2.55 pp of CDI"),
+    ).toBeInTheDocument();
+  });
+
+  it("states why a yield is absent in the cell (R23)", async () => {
+    await renderApp("/accounts", {
+      fetch: api([], {
+        "GET /api/v1/reports/return": () =>
+          json(200, {
+            annual_bp: 0,
+            flows: [],
+            opening: { amount: 1000000, currency: "BRL" },
+            closing: { amount: 1000000, currency: "BRL" },
+            profile: "rate",
+            unavailable_reason: "no_yield_recorded",
+          }),
+      }),
+    });
+    const reserves = await screen.findByRole("table", {
+      name: catalogEn["home.group.reserves"],
+    });
+    const reserve = await within(reserves).findByRole("row", {
+      name: /Reserva de emergência/,
+    });
+
+    expect(
+      await within(reserve).findByText("No yield recorded in the period"),
     ).toBeInTheDocument();
   });
 
@@ -249,6 +305,7 @@ describe("AccountsPage", () => {
     expect(
       await within(reserve).findByText("15.17% a year"),
     ).toBeInTheDocument();
+    expect(within(reserve).getByText("63 d")).toBeInTheDocument();
     expect(within(reserve).queryByText(/of CDI/)).not.toBeInTheDocument();
   });
 
