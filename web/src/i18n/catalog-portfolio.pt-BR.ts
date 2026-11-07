@@ -69,8 +69,6 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
     "Sem índice de referência para a região",
   "portfolio.yield.reason.currency_mismatch":
     "Valores em {currency}: o índice {index} se aplica a outra moeda",
-  "portfolio.yield.reason.currency_mismatchAny":
-    "Valores em {currency}: o índice se aplica a outra moeda",
   "portfolio.yield.reason.nothing_held": "Nada mantido no período",
   "portfolio.yield.reason.no_yield_recorded":
     "Nenhum rendimento registrado no período",
@@ -80,12 +78,8 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
     "Saldo pequeno demais: os créditos são arredondados ao centavo",
   "portfolio.yield.reason.no_rate_in_window":
     "O índice {index} ainda não tem taxa para os dias comparados",
-  "portfolio.yield.reason.no_rate_in_windowAny":
-    "O índice ainda não tem taxa para os dias comparados",
   "portfolio.yield.reason.percent_undefined":
     "O percentual do índice {index} não é definido para este retorno",
-  "portfolio.yield.reason.percent_undefinedAny":
-    "O percentual do índice não é definido para este retorno",
   "portfolio.yield.reason.other": "Sem comparação disponível no período",
   "portfolio.yield.excluded":
     "{parts} nesta conta foram tratados como dinheiro que entra ou sai, não como rendimento.",

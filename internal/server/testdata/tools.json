@@ -3201,6 +3201,10 @@
           "type": "string",
           "description": "for return: rate when every holding is cash or fixed income in the report's currency, market otherwise"
         },
+        "index": {
+          "type": "string",
+          "description": "for return: the daily index the report compares with, the named one or the region's default; absent when the region has none"
+        },
         "benchmark": {
           "type": "object",
           "properties": {

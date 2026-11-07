@@ -196,6 +196,10 @@ func (s *Server) GetReturn(ctx context.Context, req GetReturnRequestObject) (Get
 		}
 	}
 
+	if r.Index != "" {
+		out.Index = &r.Index
+	}
+
 	if r.UnavailableReason != "" {
 		out.UnavailableReason = &r.UnavailableReason
 	}

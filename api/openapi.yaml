@@ -10458,6 +10458,10 @@ components:
           description: rate when every holding is the value_in currency or a fixed income instrument quoted in it; market otherwise (amendment A208 R11).
         period_bp:
           type: integer
+        index:
+          type: string
+          pattern: "^[a-z0-9_]{2,40}$"
+          description: The daily index the report compares with, the named one or the region's default; absent only when the region has none and none is named (amendment A208 R23).
         benchmark:
           $ref: "#/components/schemas/ReturnBenchmark"
         inflation:

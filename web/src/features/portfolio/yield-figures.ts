@@ -25,14 +25,6 @@ const REASONS = [
   "percent_undefined",
 ] as const;
 
-// The reasons whose text names the index. The report carries the index only with a benchmark, so
-// without one the text reads of "the index" (the `Any` key of the reason).
-const INDEXED_REASONS = [
-  "currency_mismatch",
-  "no_rate_in_window",
-  "percent_undefined",
-] as const;
-
 // The reasons that keep the period return beside them. Any other reason without a benchmark
 // states itself alone: the return of a period with no recorded yield reads as zero and misleads.
 const PERIOD_REASONS = ["no_index_for_region", "currency_mismatch"];
@@ -466,7 +458,7 @@ function periodReturn(report: ReturnReport): number | undefined {
 
 // reasonText is the text of `unavailable_reason`; a reason without its own text reads as a
 // generic one, and a report that holds every figure has none (amendment A208 R23). A reason that
-// names the index reads of "the index" when the report has no benchmark to name it.
+// names the index reads the one the report carries.
 function reasonText(report: ReturnReport, t: TFunction): string | undefined {
   const value = report.unavailable_reason;
   if (value === undefined || value === "") return undefined;
@@ -474,16 +466,8 @@ function reasonText(report: ReturnReport, t: TFunction): string | undefined {
   const reason = REASONS.find((r) => r === value);
   if (reason === undefined) return t("portfolio.yield.reason.other");
 
-  const index = report.benchmark && indexName(report.benchmark.index);
-  const indexed = INDEXED_REASONS.find((r) => r === reason);
-  if (index === undefined && indexed !== undefined) {
-    return t(`portfolio.yield.reason.${indexed}Any`, {
-      currency: report.opening.currency,
-    });
-  }
-
   return t(`portfolio.yield.reason.${reason}`, {
-    index: index ?? "",
+    index: report.index === undefined ? "" : indexName(report.index),
     currency: report.opening.currency,
   });
 }

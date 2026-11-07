@@ -67,8 +67,6 @@ export const portfolioEn = {
     "No reference index for the region",
   "portfolio.yield.reason.currency_mismatch":
     "Values in {currency}: {index} applies to another currency",
-  "portfolio.yield.reason.currency_mismatchAny":
-    "Values in {currency}: the index applies to another currency",
   "portfolio.yield.reason.nothing_held": "Nothing held in the period",
   "portfolio.yield.reason.no_yield_recorded": "No yield recorded in the period",
   "portfolio.yield.reason.single_credit": "Only one yield credit recorded",
@@ -76,12 +74,8 @@ export const portfolioEn = {
     "Balance too small: credits are rounded to the cent",
   "portfolio.yield.reason.no_rate_in_window":
     "{index} has no rate yet for the days compared",
-  "portfolio.yield.reason.no_rate_in_windowAny":
-    "The index has no rate yet for the days compared",
   "portfolio.yield.reason.percent_undefined":
     "The percent of {index} is not defined for this return",
-  "portfolio.yield.reason.percent_undefinedAny":
-    "The percent of the index is not defined for this return",
   "portfolio.yield.reason.other": "No comparison available for the period",
   "portfolio.yield.excluded":
     "{parts} in this account were treated as money in or out, not yield.",

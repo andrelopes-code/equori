@@ -363,8 +363,11 @@ func (s *Service) benchmarkRates(ctx context.Context, p period, index string) (s
 		index = id
 	}
 
+	p.report.Index = index
+
 	rates, err := s.md.IndexRates(ctx, index, p.from.AddDate(0, 0, -1), p.to)
 	if !named && (errors.Is(err, ErrUnknownIndex) || errors.Is(err, ErrIndexNotDaily)) {
+		p.report.Index = ""
 		p.unavailable(ReasonNoIndexForRegion)
 
 		return "", nil, nil

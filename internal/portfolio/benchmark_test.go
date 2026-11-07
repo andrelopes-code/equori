@@ -29,9 +29,10 @@ type excludedPart struct {
 }
 
 type comparedReturn struct {
-	Profile           string `json:"profile"`
-	PeriodBP          *int   `json:"period_bp"`
-	UnavailableReason string `json:"unavailable_reason"`
+	Profile           string  `json:"profile"`
+	PeriodBP          *int    `json:"period_bp"`
+	Index             *string `json:"index"`
+	UnavailableReason string  `json:"unavailable_reason"`
 	Excluded          *struct {
 		Income  *excludedPart `json:"income"`
 		Expense *excludedPart `json:"expense"`
@@ -191,6 +192,10 @@ func TestS309NoIndexForTheRegionOrCurrency(t *testing.T) {
 		t.Fatalf("report in USD = %+v", r)
 	}
 
+	if r.Index == nil || *r.Index != "cdi" {
+		t.Fatalf("index in USD = %v, want cdi", r.Index)
+	}
+
 	if _, err := b.h.Pool.Exec(t.Context(), `UPDATE identity_books SET region = 'US'`); err != nil {
 		t.Fatal(err)
 	}
@@ -198,6 +203,10 @@ func TestS309NoIndexForTheRegionOrCurrency(t *testing.T) {
 	r = b.compared(t, "2025-11-01", "2026-01-09", "")
 	if r.Benchmark != nil || r.Inflation != nil || r.PeriodBP == nil || r.UnavailableReason != "no_index_for_region" {
 		t.Fatalf("report in region US = %+v", r)
+	}
+
+	if r.Index != nil {
+		t.Fatalf("index in region US = %q, want none", *r.Index)
 	}
 }
 
@@ -712,6 +721,10 @@ func TestS334NoRateInTheWindow(t *testing.T) {
 	r := b.compared(t, "2026-01-02", "2026-01-09", "")
 	if r.Benchmark != nil || r.PeriodBP == nil || *r.PeriodBP != 11 || r.UnavailableReason != "no_rate_in_window" {
 		t.Fatalf("report = %+v, reason %q", r, r.UnavailableReason)
+	}
+
+	if r.Index == nil || *r.Index != "cdi" {
+		t.Fatalf("index = %v, want cdi", r.Index)
 	}
 }
 

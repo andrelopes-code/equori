@@ -5837,6 +5837,8 @@ export interface components {
              */
             profile: "rate" | "market";
             period_bp?: number;
+            /** @description The daily index the report compares with, the named one or the region's default; absent only when the region has none and none is named (amendment A208 R23). */
+            index?: string;
             benchmark?: components["schemas"]["ReturnBenchmark"];
             inflation?: components["schemas"]["ReturnInflation"];
             /** @description Why benchmark, or its percent_bp and annual_bp, is absent - no_index_for_region, currency_mismatch, nothing_held, no_yield_recorded, single_credit, too_small, no_rate_in_window or percent_undefined (amendment A208 R23). */

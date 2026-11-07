@@ -302,6 +302,7 @@ describe("AccountsPage", () => {
             closing: { amount: 1034000, currency: "BRL" },
             profile: "rate",
             period_bp: 340,
+            index: "cdi",
             unavailable_reason: "currency_mismatch",
           }),
       }),
@@ -318,7 +319,7 @@ describe("AccountsPage", () => {
     ).toBeInTheDocument();
     expect(
       within(reserve).getByText(
-        "Values in BRL: the index applies to another currency",
+        "Values in BRL: CDI applies to another currency",
       ),
     ).toBeInTheDocument();
   });
@@ -334,6 +335,7 @@ describe("AccountsPage", () => {
             closing: { amount: 1000000, currency: "BRL" },
             profile: "rate",
             period_bp: 0,
+            index: "cdi",
             unavailable_reason: "no_rate_in_window",
           }),
       }),
@@ -347,7 +349,7 @@ describe("AccountsPage", () => {
 
     expect(
       await within(reserve).findByText(
-        "The index has no rate yet for the days compared",
+        "CDI has no rate yet for the days compared",
       ),
     ).toBeInTheDocument();
     expect(within(reserve).queryByText(/0\.00%/)).not.toBeInTheDocument();

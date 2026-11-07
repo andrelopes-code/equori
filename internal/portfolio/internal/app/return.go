@@ -49,8 +49,12 @@ type ReturnReport struct {
 	Benchmark        *Benchmark
 	Inflation        *Inflation
 
-	// UnavailableReason says why Benchmark or its percent is absent (amendment A208 R23); Excluded
-	// lists the income and expense of a cash tree treated as flows (R19).
+	// Index names the daily index the report compares with, the named one or the region's default;
+	// it is empty only when the region has none and none is named (amendment A208 R23).
+	Index string
+
+	// UnavailableReason says why Benchmark or its percent is absent (R23); Excluded lists the
+	// income and expense of a cash tree treated as flows (R19).
 	UnavailableReason string
 	Excluded          *Excluded
 }

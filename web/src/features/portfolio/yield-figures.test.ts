@@ -26,6 +26,7 @@ const tPtBR: TFunction = (key, params) =>
 
 const base = {
   annual_bp: 1500,
+  index: "cdi",
   flows: [],
   opening: { amount: 1000000, currency: "BRL" },
   closing: { amount: 1151700, currency: "BRL" },
@@ -86,16 +87,13 @@ const money = (m: { amount: number; currency: string }) =>
 
 const REASONS = [
   ["no_index_for_region", "No reference index for the region"],
-  ["currency_mismatch", "Values in BRL: the index applies to another currency"],
+  ["currency_mismatch", "Values in BRL: CDI applies to another currency"],
   ["nothing_held", "Nothing held in the period"],
   ["no_yield_recorded", "No yield recorded in the period"],
   ["single_credit", "Only one yield credit recorded"],
   ["too_small", "Balance too small: credits are rounded to the cent"],
-  ["no_rate_in_window", "The index has no rate yet for the days compared"],
-  [
-    "percent_undefined",
-    "The percent of the index is not defined for this return",
-  ],
+  ["no_rate_in_window", "CDI has no rate yet for the days compared"],
+  ["percent_undefined", "The percent of CDI is not defined for this return"],
 ] as const;
 
 function without(
@@ -287,7 +285,7 @@ describe("yieldLine", () => {
       ),
     ).toEqual({
       primary: "1,20% em 90 d",
-      secondary: "Valores em BRL: o índice se aplica a outra moeda",
+      secondary: "Valores em BRL: o índice CDI se aplica a outra moeda",
       negative: false,
     });
   });
@@ -308,7 +306,7 @@ describe("yieldLine", () => {
     );
   });
 
-  it("names the index in the text of a reason when the benchmark holds it (W1, W5)", () => {
+  it("names the index of the report in the text of a reason (W1, W5)", () => {
     const benchmark = without(rate, "annual_bp", "percent_bp");
     const line = (reason: string, translate: TFunction, tag: string) =>
       yieldLine(
@@ -561,7 +559,7 @@ describe("yieldNotes", () => {
         tPtBR,
         money,
       ),
-    ).toEqual(["O índice ainda não tem taxa para os dias comparados"]);
+    ).toEqual(["O índice CDI ainda não tem taxa para os dias comparados"]);
   });
 
   it("states the income and expense treated as money in or out, with a hint (R19)", () => {

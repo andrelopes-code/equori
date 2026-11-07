@@ -106,6 +106,7 @@ type getPortfolioOut struct {
 	Closing     tool.Money     `json:"closing,omitzero"`
 	PeriodBP    int            `json:"period_bp,omitzero" jsonschema:"for return: time-weighted return of the period in basis points; absent when undefined or zero"`
 	Profile     string         `json:"profile,omitzero" jsonschema:"for return: rate when every holding is cash or fixed income in the report's currency, market otherwise"`
+	Index       string         `json:"index,omitzero" jsonschema:"for return: the daily index the report compares with, the named one or the region's default; absent when the region has none"`
 	Benchmark   benchmarkView  `json:"benchmark,omitzero"`
 	Reason      string         `json:"unavailable_reason,omitzero" jsonschema:"for return: why benchmark or its percent is absent - no_index_for_region, currency_mismatch, nothing_held, no_yield_recorded, single_credit, too_small, no_rate_in_window or percent_undefined"`
 	Excluded    excludedView   `json:"excluded,omitzero" jsonschema:"for return: income and expense of the period treated as money in or out, not as yield"`
@@ -197,6 +198,7 @@ func getPortfolio(svc *app.Service, names AccountNames, today func(context.Conte
 				Benchmark: benchmarkOf(r.Benchmark),
 				Inflation: inflationOf(r.Inflation),
 				Profile:   r.Profile,
+				Index:     r.Index,
 				Reason:    r.UnavailableReason,
 				Excluded:  excludedViewOf(r.Excluded),
 			}, nil

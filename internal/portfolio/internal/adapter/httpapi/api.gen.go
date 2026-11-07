@@ -347,6 +347,9 @@ type ReturnReport struct {
 	Excluded *ReturnExcluded `json:"excluded,omitempty"`
 	Flows    []ReturnFlow    `json:"flows"`
 
+	// Index The daily index the report compares with, the named one or the region's default; absent only when the region has none and none is named (amendment A208 R23).
+	Index *string `json:"index,omitempty"`
+
 	// Inflation The return net of inflation over the whole months of the period with a stored rate (amendment A208 R16).
 	Inflation *ReturnInflation `json:"inflation,omitempty"`
 	Opening   Money            `json:"opening"`

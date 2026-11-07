@@ -201,6 +201,7 @@ describe("AccountPage", () => {
             closing: money(1149000),
             profile: "rate",
             period_bp: 1490,
+            index: "cdi",
             unavailable_reason: "currency_mismatch",
           }),
       }),
@@ -219,7 +220,7 @@ describe("AccountPage", () => {
     expect(within(period).getByText(/ to .* · 365 days$/)).toBeInTheDocument();
     expect(
       within(section).getByText(
-        "Values in BRL: the index applies to another currency",
+        "Values in BRL: CDI applies to another currency",
       ),
     ).toBeInTheDocument();
   });
