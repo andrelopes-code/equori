@@ -99,11 +99,38 @@ func (s *Service) compare(ctx context.Context, booksID int64, ids []uuid.UUID, f
 		report.PeriodBP = new(domain.FactorBP(f))
 	}
 
-	if err := s.benchmark(ctx, p, index, heldDays(from, start, ends, dates)); err != nil {
+	since, ok, err := s.comparedFrom(ctx, p, start, ends, dates)
+	if err != nil || !ok {
 		return err
 	}
 
-	return s.inflation(ctx, p)
+	if err := s.benchmark(ctx, p, index, heldDays(from, start, ends, dates), since); err != nil {
+		return err
+	}
+
+	return s.inflation(ctx, p, since)
+}
+
+// comparedFrom is the first day the index and inflation compare with (R14, R18): the first day the
+// tree held money and, for a rate tree that received no income before the period, not before its
+// first income in it. ok is false when the tree held no money in the period, or when a rate tree
+// recorded no income in it.
+func (s *Service) comparedFrom(ctx context.Context, p period, start int64, ends []domain.Subperiod, dates []time.Time) (time.Time, bool, error) {
+	since, ok := firstHeldDay(p.from, start, ends, dates)
+	if !ok || p.report.Profile != ProfileRate {
+		return since, ok, nil
+	}
+
+	before, first, found, err := s.ledger.FirstIncome(ctx, p.booksID, p.ids, p.from, p.to)
+	if err != nil || !found {
+		return time.Time{}, false, err
+	}
+
+	if !before && first.After(since) {
+		since = first
+	}
+
+	return since, true, nil
 }
 
 // profileOf is ProfileRate when each asset account of the trees of ids holds currency in or a
@@ -132,22 +159,16 @@ func (s *Service) profileOf(ctx context.Context, booksID int64, ids []uuid.UUID,
 	return ProfileRate, nil
 }
 
-// benchmark sets the comparison with the index on p.report. held reports whether the tree held
-// money on a day (R14).
-func (s *Service) benchmark(ctx context.Context, p period, index string, held func(time.Time) bool) error {
+// benchmark sets the comparison with the index on p.report, over the rates dated on or after since
+// on days the tree held money (R14, R18).
+func (s *Service) benchmark(ctx context.Context, p period, index string, held func(time.Time) bool, since time.Time) error {
 	index, rates, err := s.benchmarkRates(ctx, p, index)
 	if err != nil {
 		return err
 	}
 
 	all := len(rates)
-	rates = slices.DeleteFunc(rates, func(r IndexRate) bool { return !held(r.Date) })
-
-	if p.report.Profile == ProfileRate {
-		if rates, err = s.recordedYield(ctx, p, rates); err != nil {
-			return err
-		}
-	}
+	rates = slices.DeleteFunc(rates, func(r IndexRate) bool { return r.Date.Before(since) || !held(r.Date) })
 
 	if len(rates) == 0 {
 		return nil
@@ -192,22 +213,6 @@ func (s *Service) benchmark(ctx context.Context, p period, index string, held fu
 	return nil
 }
 
-// recordedYield keeps the rates of the days a rate tree recorded its yield (R18): a tree that
-// received no income before the period compares from its first income in it, and a tree that
-// received none in the period does not compare.
-func (s *Service) recordedYield(ctx context.Context, p period, rates []IndexRate) ([]IndexRate, error) {
-	before, first, found, err := s.ledger.FirstIncome(ctx, p.booksID, p.ids, p.from, p.to)
-	if err != nil || !found {
-		return nil, err
-	}
-
-	if before {
-		return rates, nil
-	}
-
-	return slices.DeleteFunc(rates, func(r IndexRate) bool { return r.Date.Before(first) }), nil
-}
-
 // benchmarkRates returns the index of the comparison and its rates in [from, to]. Without a
 // named index, the region's default applies, and a default with no rate gives none. An index of
 // another currency than the report's gives none (R15).
@@ -234,8 +239,9 @@ func (s *Service) benchmarkRates(ctx context.Context, p period, index string) (s
 	return index, rates, nil
 }
 
-// inflation sets the real return on p.report over the whole months of the period (R16).
-func (s *Service) inflation(ctx context.Context, p period) error {
+// inflation sets the real return on p.report over the whole months from since to the end of the
+// period (R16, R18).
+func (s *Service) inflation(ctx context.Context, p period, since time.Time) error {
 	index, err := s.md.InflationIndex(ctx, p.booksID)
 	if err != nil || index == "" || !s.inIndexCurrency(index, p.report) {
 		return err
@@ -255,7 +261,7 @@ func (s *Service) inflation(ctx context.Context, p period) error {
 		byMonth[r.Date] = r.Rate
 	}
 
-	first, until, monthly, ok := domain.WholeMonths(p.from, p.to, byMonth)
+	first, until, monthly, ok := domain.WholeMonths(since, p.to, byMonth)
 	if !ok {
 		return nil
 	}
@@ -374,6 +380,23 @@ func heldDays(from time.Time, start int64, ends []domain.Subperiod, dates []time
 
 		return false
 	}
+}
+
+// firstHeldDay is the first day of the period the tree held money: from when it held money at the
+// end of from − 1, else the day after the first subperiod that ends with money. ok is false when
+// no subperiod before the last one ends with money.
+func firstHeldDay(from time.Time, start int64, ends []domain.Subperiod, dates []time.Time) (time.Time, bool) {
+	if start != 0 {
+		return from, true
+	}
+
+	for i := 0; i < len(ends)-1; i++ {
+		if ends[i].Value != 0 {
+			return dates[i].AddDate(0, 0, 1), true
+		}
+	}
+
+	return time.Time{}, false
 }
 
 // treeAccounts returns the accounts of ids and their descendants.
