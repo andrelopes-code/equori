@@ -81,29 +81,9 @@ const shadowLevels = {
   },
 } as const;
 
-// Eight hues at one OKLCH lightness per scheme, as equori.theme.ts sets them.
-const spectrum = {
-  dark: [
-    "#8a82e9",
-    "#cb7f00",
-    "#00a8a8",
-    "#de6674",
-    "#069ce4",
-    "#68a63f",
-    "#c46dbd",
-    "#db703b",
-  ],
-  light: [
-    "#7368d4",
-    "#b46400",
-    "#009597",
-    "#c6495b",
-    "#0083ce",
-    "#4d8e16",
-    "#ad51a7",
-    "#c4530f",
-  ],
-} as const;
+// Hue turns of the spectrum series from the accent hue. The order keeps neighbouring series
+// apart; the set matches the eight hues the series had before they followed the accent.
+const spectrumTurns = [0, 135, 270, 90, 315, 210, 45, 120] as const;
 
 const seriesSlots = [0, 1, 2, 3, 4, 5, 6, 7] as const;
 
@@ -139,8 +119,8 @@ export const surfaceRecipe: {
   },
   chart: {
     spectrum: {
-      dark: seriesTokens((slot) => spectrum.dark[slot]),
-      light: seriesTokens((slot) => spectrum.light[slot]),
+      dark: seriesTokens((slot) => accentSeries(0.66, spectrumTurns[slot])),
+      light: seriesTokens((slot) => accentSeries(0.58, spectrumTurns[slot])),
     },
     accent: {
       dark: seriesTokens((slot) => accentSeries(0.66, slot * 45)),

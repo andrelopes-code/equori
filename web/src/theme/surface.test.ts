@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { applySurfaces, surfaceDefaults, surfaces } from "@/theme/surface";
+import { surfaceRecipe } from "@/theme/surface-recipe";
 
 describe("surface values", () => {
   beforeEach(() => {
@@ -41,8 +42,26 @@ describe("surface values", () => {
       step: "standard",
       borders: "subtle",
       shadows: "soft",
-      chart: "accent",
+      chart: "spectrum",
       contrast: "standard",
     });
   });
+
+  it.each(["dark", "light"] as const)(
+    "starts the spectrum series from the accent seed in %s",
+    (scheme) => {
+      const series = Object.values(
+        surfaceRecipe.chart.spectrum[scheme] ?? {},
+      ).map((slot) =>
+        typeof slot === "string" || !("seed" in slot) ? null : slot,
+      );
+
+      expect(series.map((slot) => slot?.seed)).toEqual(
+        Array<string>(8).fill("accent"),
+      );
+      expect(series.map((slot) => slot?.h)).toEqual([
+        0, 135, 270, 90, 315, 210, 45, 120,
+      ]);
+    },
+  );
 });

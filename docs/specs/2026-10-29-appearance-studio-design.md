@@ -43,7 +43,7 @@ The appearance studio makes the theme the primary decision and the individual co
 | A8  | The gallery is a radio group named "Theme". The header's actions act on the active theme: save as a new theme, import, export; rename and delete when the active theme is a saved one. Delete asks for confirmation. |
 | A9  | Every control keeps its storage key. The tests of `settings-page.test.tsx` that drive appearance controls move to the studio's test with the same assertions on stored values and root attributes. |
 | A10 | Every amount in the preview goes through `useMoneyFormat()` with the profile's base currency (O9, O10). |
-| A11 | Surface values: `depth` (`soft`, `standard`, `deep`, `oled`), `step` (`standard`, `wide`), `borders` (`none`, `subtle`, `strong`), `shadows` (`flat`, `soft`, `deep`), `chart` (`accent`, `spectrum`, `mono`; default `accent`: series 1 is the accent seed and each next series turns the hue 45 degrees, so the series follow the colour the reader picked; `spectrum` keeps eight fixed hues). Each is a preference under `equori.<name>`, always written on the root as `data-equori-<name>`, the default included. |
+| A11 | Surface values: `depth` (`soft`, `standard`, `deep`, `oled`), `step` (`standard`, `wide`), `borders` (`none`, `subtle`, `strong`), `shadows` (`flat`, `soft`, `deep`), `chart` (`spectrum`, `accent`, `mono`; the series of `spectrum` and `accent` derive from the accent seed, series 1 is the accent itself, and `spectrum` turns the hue by 0, 135, 270, 90, 315, 210, 45 and 120 degrees, `accent` by steps of 45 degrees). Each is a preference under `equori.<name>`, always written on the root as `data-equori-<name>`, the default included. |
 | A12 | The reading preference `contrast` (`standard`, `high`) lifts secondary text. It is stored under `equori.contrast` and written as `data-equori-contrast`. |
 | A13 | `web/src/theme/surface-recipe.ts` holds each value of A11 and A12 as Slotted derivations per scheme, `dark` and `light`. `high-contrast` keeps the compiled theme. `make gen` writes one stylesheet from them with `derivationCss` to `surface.gen.css`, which the application loads beside the compiled theme; only the root attributes change. |
 | A14 | An element that carries `data-equori-<name>` takes that value for itself and for the scheme scopes under it that carry none, so a theme card or the canvas draws its own surfaces. |
@@ -67,7 +67,7 @@ Hex seeds; `—` keeps the compiled theme's seed.
 | `terminal` | `#f59e0b` | zinc      | `#22c55e` | `#ef4444` | square   | mono      | standard | oled     | strong  | flat |
 | `glass`    | violet    | graphite  | —         | —         | round    | geist     | glass    | standard | subtle  | soft |
 
-`warning` and `info` stay `theme`, `step` stays `standard` and `chart` stays `accent` in every curated theme.
+`warning` and `info` stay `theme`, `step` stays `standard` and `chart` stays `spectrum` in every curated theme.
 
 ## Region
 

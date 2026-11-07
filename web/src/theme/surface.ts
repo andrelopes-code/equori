@@ -17,7 +17,7 @@ export const surfaceDefaults: SurfaceValues = {
   step: "standard",
   borders: "subtle",
   shadows: "soft",
-  chart: "accent",
+  chart: "spectrum",
   contrast: "standard",
 };
 

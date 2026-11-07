@@ -242,28 +242,28 @@
 [data-slotted-scheme="dark"] [data-equori-chart="spectrum"]:not([data-slotted-scheme]),
 [data-equori-chart="spectrum"] [data-slotted-scheme="dark"]:not([data-equori-chart]),
 [data-equori-chart="spectrum"][data-slotted-scheme="dark"] [data-slotted-seeds]:not([data-slotted-scheme], [data-equori-chart]) {
-  --slotted-data-1: #8a82e9;
-  --slotted-data-2: #cb7f00;
-  --slotted-data-3: #00a8a8;
-  --slotted-data-4: #de6674;
-  --slotted-data-5: #069ce4;
-  --slotted-data-6: #68a63f;
-  --slotted-data-7: #c46dbd;
-  --slotted-data-8: #db703b;
+  --slotted-data-1: oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1), 0.16) h);
+  --slotted-data-2: oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1), 0.16) calc(h + 135));
+  --slotted-data-3: oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1), 0.16) calc(h + 270));
+  --slotted-data-4: oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1), 0.16) calc(h + 90));
+  --slotted-data-5: oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1), 0.16) calc(h + 315));
+  --slotted-data-6: oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1), 0.16) calc(h + 210));
+  --slotted-data-7: oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1), 0.16) calc(h + 45));
+  --slotted-data-8: oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1), 0.16) calc(h + 120));
 }
 
 [data-equori-chart="spectrum"][data-slotted-scheme="light"],
 [data-slotted-scheme="light"] [data-equori-chart="spectrum"]:not([data-slotted-scheme]),
 [data-equori-chart="spectrum"] [data-slotted-scheme="light"]:not([data-equori-chart]),
 [data-equori-chart="spectrum"][data-slotted-scheme="light"] [data-slotted-seeds]:not([data-slotted-scheme], [data-equori-chart]) {
-  --slotted-data-1: #7368d4;
-  --slotted-data-2: #b46400;
-  --slotted-data-3: #009597;
-  --slotted-data-4: #c6495b;
-  --slotted-data-5: #0083ce;
-  --slotted-data-6: #4d8e16;
-  --slotted-data-7: #ad51a7;
-  --slotted-data-8: #c4530f;
+  --slotted-data-1: oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1), 0.16) h);
+  --slotted-data-2: oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1), 0.16) calc(h + 135));
+  --slotted-data-3: oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1), 0.16) calc(h + 270));
+  --slotted-data-4: oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1), 0.16) calc(h + 90));
+  --slotted-data-5: oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1), 0.16) calc(h + 315));
+  --slotted-data-6: oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1), 0.16) calc(h + 210));
+  --slotted-data-7: oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1), 0.16) calc(h + 45));
+  --slotted-data-8: oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1), 0.16) calc(h + 120));
 }
 
 [data-equori-chart="accent"][data-slotted-scheme="dark"],
