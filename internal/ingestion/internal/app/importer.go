@@ -332,7 +332,12 @@ func (s *Service) importRecords(
 		return err
 	}
 
-	p.route(assigned, repeated, grouped)
+	held, err := s.heldBackLines(ctx, p, assigned, repeated, grouped)
+	if err != nil {
+		return err
+	}
+
+	p.route(assigned, repeated, grouped, held)
 
 	if err := s.linkMatches(ctx, p); err != nil {
 		return err
@@ -483,6 +488,51 @@ func (s *Service) repeatedLines(
 	return s.repeats(ctx, p.batch, p.scoring, assigned)
 }
 
+// heldBackLines names the new lines that may repeat a stored line under another name or id
+// (A215).
+func (s *Service) heldBackLines(
+	ctx context.Context,
+	p *importPlan,
+	assigned []domain.Assignment,
+	repeated map[int]bool,
+	grouped map[int]uuid.UUID,
+) (map[int]bool, error) {
+	var (
+		fresh   []domain.ExternalRecord
+		indexes []int
+	)
+
+	for i, a := range assigned {
+		_, inGroup := grouped[i]
+		if a.Zone == domain.ZoneNew && !repeated[i] && !inGroup && !p.scoring[i].reserveReview {
+			fresh, indexes = append(fresh, *p.scoring[i].rec), append(indexes, i)
+		}
+	}
+
+	if len(fresh) == 0 {
+		return nil, nil
+	}
+
+	from, to := span(p.scoring)
+
+	stored, err := s.repo.RepeatableRecords(ctx, p.batch.BooksID, p.batch.AccountID, from, to, p.sync)
+	if err != nil {
+		return nil, err
+	}
+
+	claimed := make([]uuid.UUID, len(p.claimed))
+	for i := range p.claimed {
+		claimed[i] = p.claimed[i].Record.ID
+	}
+
+	held := map[int]bool{}
+	for i := range domain.HeldBackLines(fresh, stored, claimed) {
+		held[indexes[i]] = true
+	}
+
+	return held, nil
+}
+
 func (s *Service) linkMatches(ctx context.Context, p *importPlan) error {
 	conflicts, err := s.ledger.ClearMatched(ctx, p.batch.BooksID, p.matches)
 	if err != nil {
@@ -562,7 +612,7 @@ func (p *importPlan) offerAgain(rec *domain.ExternalRecord, r domain.NormalizedR
 	p.retried, p.again = append(p.retried, rec), append(p.again, InstallmentLine{RecordID: rec.ID, Line: line, Installment: *r.Installment})
 }
 
-func (p *importPlan) route(assigned []domain.Assignment, repeated map[int]bool, grouped map[int]uuid.UUID) {
+func (p *importPlan) route(assigned []domain.Assignment, repeated map[int]bool, grouped map[int]uuid.UUID, held map[int]bool) {
 	for i, a := range assigned {
 		rec, line := p.scoring[i].rec, p.scoring[i].line
 		if repeated[i] {
@@ -575,6 +625,12 @@ func (p *importPlan) route(assigned []domain.Assignment, repeated map[int]bool, 
 			// A168: the lines of a group wait for the owner with the entry as their candidate.
 			rec.State, rec.ReviewReason, rec.Candidates = domain.StateNeedsReview, domain.ReviewGroup, []uuid.UUID{entry}
 
+			continue
+		}
+
+		if held[i] {
+			// A215: the stored line did not return, so this one may be it under another name or id.
+			rec.State, rec.ReviewReason = domain.StateNeedsReview, domain.ReviewDuplicate
 			continue
 		}
 

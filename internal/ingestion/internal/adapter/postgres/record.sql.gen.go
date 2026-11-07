@@ -450,6 +450,92 @@ func (q *Queries) ListRecordsByLineIDs(ctx context.Context, arg ListRecordsByLin
 	return items, nil
 }
 
+const listRepeatableRecords = `-- name: ListRepeatableRecords :many
+SELECT
+    id, books_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change, line_kind, review_reason, candidate_scores, institution_id, reported_amount, reported_on, decision, decision_undo, summary_batch_id, kept
+FROM
+    ingestion_external_record
+WHERE
+    books_id = $1
+    AND account_id = $2
+    AND state IN ('created', 'matched')
+    AND booked_on BETWEEN $3::date AND $4::date
+    AND (
+        NOT $5::boolean
+        OR external_status IS NULL
+    )
+ORDER BY
+    booked_on,
+    id
+`
+
+type ListRepeatableRecordsParams struct {
+	BooksID   int64
+	AccountID uuid.UUID
+	FromDate  time.Time
+	ToDate    time.Time
+	FilesOnly bool
+}
+
+// A215: the stored lines a new line may repeat; files_only leaves out aggregator lines, which a
+// sync withdraws when the aggregator stops returning them (A38).
+func (q *Queries) ListRepeatableRecords(ctx context.Context, arg ListRepeatableRecordsParams) ([]IngestionExternalRecord, error) {
+	rows, err := q.db.Query(ctx, listRepeatableRecords,
+		arg.BooksID,
+		arg.AccountID,
+		arg.FromDate,
+		arg.ToDate,
+		arg.FilesOnly,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []IngestionExternalRecord
+	for rows.Next() {
+		var i IngestionExternalRecord
+		if err := rows.Scan(
+			&i.ID,
+			&i.BooksID,
+			&i.BatchID,
+			&i.AccountID,
+			&i.ExternalID,
+			&i.DedupKey,
+			&i.Raw,
+			&i.BookedOn,
+			&i.Amount,
+			&i.Description,
+			&i.State,
+			&i.TransactionID,
+			&i.Candidates,
+			&i.ExternalStatus,
+			&i.DueDate,
+			&i.InstallmentNumber,
+			&i.InstallmentCount,
+			&i.CategoryID,
+			&i.BalanceAfter,
+			&i.UnappliedChange,
+			&i.LineKind,
+			&i.ReviewReason,
+			&i.CandidateScores,
+			&i.InstitutionID,
+			&i.ReportedAmount,
+			&i.ReportedOn,
+			&i.Decision,
+			&i.DecisionUndo,
+			&i.SummaryBatchID,
+			&i.Kept,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listSummaryRecords = `-- name: ListSummaryRecords :many
 SELECT
     id, books_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change, line_kind, review_reason, candidate_scores, institution_id, reported_amount, reported_on, decision, decision_undo, summary_batch_id, kept

@@ -105,6 +105,9 @@ type Repository interface {
 
 	// UpdateRecordFacts stores what an aggregator now reports about stored records.
 	UpdateRecordFacts(ctx context.Context, recs []domain.ExternalRecord) error
+	// RepeatableRecords lists the account's created or matched records booked in [from, to];
+	// with filesOnly, only those of file batches (A215).
+	RepeatableRecords(ctx context.Context, booksID int64, accountID uuid.UUID, from, to time.Time, filesOnly bool) ([]domain.ExternalRecord, error)
 	// SyncedRecords lists the account's aggregator records booked in [from, to] that are
 	// neither withdrawn nor discarded.
 	SyncedRecords(ctx context.Context, booksID int64, accountID uuid.UUID, from, to time.Time) ([]domain.ExternalRecord, error)

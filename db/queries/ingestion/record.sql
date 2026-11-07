@@ -258,6 +258,26 @@ ORDER BY
     booked_on,
     id;
 
+-- name: ListRepeatableRecords :many
+-- A215: the stored lines a new line may repeat; files_only leaves out aggregator lines, which a
+-- sync withdraws when the aggregator stops returning them (A38).
+SELECT
+    *
+FROM
+    ingestion_external_record
+WHERE
+    books_id = @books_id
+    AND account_id = @account_id
+    AND state IN ('created', 'matched')
+    AND booked_on BETWEEN @from_date::date AND @to_date::date
+    AND (
+        NOT @files_only::boolean
+        OR external_status IS NULL
+    )
+ORDER BY
+    booked_on,
+    id;
+
 -- name: ListGroupRecords :many
 -- A168: the lines in review that wait with the entry as their candidate.
 SELECT

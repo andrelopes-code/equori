@@ -7,3 +7,5 @@ Import a file on Import statement of the account (for a CSV, the profile sets th
 A bank connection follows an account by the institution's identifier, so a rename at the institution keeps its mapping and history. A line that moves money to a set-aside balance becomes a transfer when one balance answers to its name on its date; otherwise it waits for review with no effect on the balance's yield. To settle it, create the transaction and turn it into a transfer to the right balance, or discard it.
 
 An account the institution stopped listing is marked on Links and the connection's other accounts keep syncing. Linking its new entry to the same account replaces it, and a line read again creates no second transaction.
+
+A file line with the date and amount of a recorded line that the file no longer holds, under another name or id, waits for review instead of creating a second transaction: discard it if it is the same, create it if there were two. A bank connection line that repeats a line of an imported file waits the same way.

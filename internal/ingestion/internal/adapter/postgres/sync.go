@@ -89,6 +89,23 @@ func (r *Repository) CreatedRecords(ctx context.Context, booksID int64, accountI
 	return toRecords(rows)
 }
 
+func (r *Repository) RepeatableRecords(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+	from, to time.Time,
+	filesOnly bool,
+) ([]domain.ExternalRecord, error) {
+	rows, err := r.q.ListRepeatableRecords(ctx, ListRepeatableRecordsParams{
+		BooksID: booksID, AccountID: accountID, FromDate: from, ToDate: to, FilesOnly: filesOnly,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return toRecords(rows)
+}
+
 func (r *Repository) GroupRecords(ctx context.Context, booksID int64, accountID, entry uuid.UUID) ([]domain.ExternalRecord, error) {
 	rows, err := r.q.ListGroupRecords(ctx, ListGroupRecordsParams{BooksID: booksID, AccountID: accountID, Entry: entry})
 	if err != nil {
