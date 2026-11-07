@@ -34,6 +34,15 @@ export const reportsPtBR: Record<keyof typeof reportsEn, string> = {
   "report.netWorth.title": "Patrimônio líquido por mês",
   "report.netWorth.span": "Meses exibidos",
   "report.netWorth.months": "{count} meses",
+  "report.netWorth.change": "Variação do patrimônio",
+  "report.netWorth.changeNote": "De {start} a {end}, no fim de cada dia",
+  "report.netWorth.resultOfPeriod": "Receitas menos despesas",
+  "report.netWorth.resultNote":
+    "O que o período poupou, a compra no cartão na data da compra",
+  "report.netWorth.other": "Valorização, câmbio e ajustes",
+  "report.netWorth.otherNote":
+    "A parte da variação que receitas e despesas não explicam",
+  "report.netWorth.partsBase": "Lido só em {currency}, a moeda dos livros",
   "report.netWorth.assets": "Você tem",
   "report.netWorth.liabilities": "Você deve",
   "report.netWorth.net": "Líquido",

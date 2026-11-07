@@ -16,6 +16,13 @@ const rowTexts = (table: HTMLElement) =>
       [...row.querySelectorAll("th, td")].map((c) => c.textContent).join("|"),
     );
 
+const figure = async (label: string) =>
+  (await screen.findByText(label)).closest<HTMLElement>(
+    "[data-ui='stat-card']",
+  ) ?? document.body;
+
+const brl = (amount: number) => ({ amount, currency: "BRL" });
+
 const netWorthTable = () =>
   screen.findByRole("table", { name: catalogEn["report.netWorth.title"] });
 
@@ -40,17 +47,84 @@ describe("Reports net worth", () => {
     localStorage.removeItem("equori.locale");
   });
 
-  it("reads one month end per month, today for the current month", async () => {
+  it("reads one month end per month, today for the current month, and the opening day", async () => {
     const { fetch, queries } = api();
     await renderApp("/reports", { fetch });
     await netWorthTable();
+    // NP3: the twelve month ends and the day before the period.
     await waitFor(() => {
-      expect(queries).toHaveLength(12);
+      expect(queries).toHaveLength(13);
     });
     const dates = queries.map((q) => q.get("date")).sort();
-    expect(dates[0]).toBe("2025-11-30");
-    expect(dates[11]).toBe("2026-10-17");
+    expect(dates[0]).toBe("2025-10-31");
+    expect(dates[1]).toBe("2025-11-30");
+    expect(dates[12]).toBe("2026-10-17");
     expect(dates).toContain("2026-09-30");
+  });
+
+  it("NP2: reads the months of a period in the address and checks no span", async () => {
+    const { fetch, queries } = api();
+
+    await renderApp("/reports?from=2026-01-01&to=2026-03-31", { fetch });
+
+    await netWorthTable();
+    await waitFor(() => {
+      expect(queries).toHaveLength(4);
+    });
+    expect(queries.map((q) => q.get("date")).sort()).toEqual([
+      "2025-12-31",
+      "2026-01-31",
+      "2026-02-28",
+      "2026-03-31",
+    ]);
+    expect(screen.getByRole("radio", { name: "12 months" })).not.toBeChecked();
+  });
+
+  it("NP3, NP4: states the change of the period and splits it into result and the rest", async () => {
+    const { fetch } = api({
+      "GET /api/v1/reports/categories": (req) => {
+        const q = new URL(req.url).searchParams;
+        expect(q.get("from")).toBe("2025-11-01");
+        expect(q.get("to")).toBe("2026-10-17");
+        const total = q.get("class") === "income" ? 300000 : 150000;
+        return json(200, {
+          items: [
+            {
+              account_id: foodID,
+              total: brl(total),
+              subtree_total: brl(total),
+            },
+          ],
+        });
+      },
+    });
+
+    await renderApp("/reports", { fetch });
+
+    // Opening 800.00 on 2025-10-31, closing 1,005.00 today.
+    const change = await figure("Change in net worth");
+    await waitFor(() => {
+      expect(change).toHaveTextContent("R$+205.00");
+    });
+    expect(change).toHaveTextContent("+25.6%");
+    await waitFor(async () => {
+      expect(await figure("Income minus expenses")).toHaveTextContent(
+        "R$+1,500.00",
+      );
+    });
+    expect(
+      await figure("Valuation, exchange and adjustments"),
+    ).toHaveTextContent("R$−1,295.00");
+  });
+
+  it("NP4: draws no result in a valuation currency other than the base", async () => {
+    const { fetch } = api();
+
+    await renderApp("/reports?value_in=USD", { fetch });
+
+    expect(await figure("Income minus expenses")).toHaveTextContent(
+      "Read only in BRL, the currency of the books",
+    );
   });
 
   it("draws the net worth of each day of the current month", async () => {
@@ -203,18 +277,21 @@ describe("Reports net worth", () => {
     const { fetch, queries } = api();
     await renderApp("/reports?months=24", { fetch });
     await netWorthTable();
+    // NP3: the 24 month ends and the opening day.
     await waitFor(() => {
-      expect(queries).toHaveLength(24);
+      expect(queries).toHaveLength(25);
     });
-    expect(queries.map((q) => q.get("date")).sort()[0]).toBe("2024-11-30");
+    const dates = queries.map((q) => q.get("date")).sort();
+    expect(dates.slice(0, 2)).toEqual(["2024-10-31", "2024-11-30"]);
   });
 
   it("falls back to 12 months for a value outside 6, 12 and 24", async () => {
     const { fetch, queries } = api();
     await renderApp("/reports?months=60", { fetch });
     await netWorthTable();
+    // NP3: the 12 month ends and the opening day.
     await waitFor(() => {
-      expect(queries).toHaveLength(12);
+      expect(queries).toHaveLength(13);
     });
   });
 
@@ -259,8 +336,9 @@ describe("Reports net worth", () => {
     const first = api();
     const { unmount } = await renderApp("/reports", { fetch: first.fetch });
     await netWorthTable();
+    // NP3: the 12 month ends and the opening day.
     await waitFor(() => {
-      expect(first.queries).toHaveLength(12);
+      expect(first.queries).toHaveLength(13);
     });
     expect(new Set(first.queries.map((q) => q.get("value_in")))).toEqual(
       new Set(["BRL"]),
@@ -270,7 +348,7 @@ describe("Reports net worth", () => {
     await renderApp("/reports?value_in=USD", { fetch: second.fetch });
     await netWorthTable();
     await waitFor(() => {
-      expect(second.queries).toHaveLength(12);
+      expect(second.queries).toHaveLength(13);
     });
     expect(new Set(second.queries.map((q) => q.get("value_in")))).toEqual(
       new Set(["USD"]),
@@ -290,8 +368,9 @@ describe("Reports net worth", () => {
     await waitFor(() => {
       expect(router.state.location.search).toMatchObject({ months: 24 });
     });
+    // NP3: the 24 month ends and the opening day of the 24 months.
     await waitFor(() => {
-      expect(new Set(queries.map((q) => q.get("date"))).size).toBe(24);
+      expect(new Set(queries.map((q) => q.get("date"))).size).toBe(25);
     });
   });
 

@@ -7,10 +7,15 @@ import { useMemo, useState } from "react";
 
 import { useApi } from "@/api/api-context";
 import { netWorthQuery } from "@/features/overview";
-import { monthEnds, netWorthRows } from "@/features/reports/net-worth-months";
+import { NetWorthGrowthCards } from "@/features/reports/net-worth-growth-cards";
+import {
+  netWorthRows,
+  periodMonthEnds,
+} from "@/features/reports/net-worth-months";
 import { NetWorthMonthCard } from "@/features/reports/net-worth-month-card";
 import { NetWorthTable } from "@/features/reports/net-worth-table";
 import { ReportControls } from "@/features/reports/report-controls";
+import type { ReportPeriod } from "@/features/reports/report-period";
 import { netWorthSpans } from "@/features/reports/reports-search";
 import type { NetWorthMonths } from "@/features/reports/reports-search";
 import { ValuationCurrency } from "@/features/reports/valuation-currency";
@@ -20,16 +25,21 @@ import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
-// Assets, liabilities and net at the end of each month, one request per month; the current
-// month ends on today. A month that cannot be valued stays out of the chart and the other
-// months stay.
+// Assets, liabilities and net at the end of each month of the period, one request per month; the
+// current month ends on today (NP2). A month that cannot be valued stays out of the chart and the
+// other months stay.
+// shortcut: a period of years costs one request per month; a series endpoint replaces it when
+// periods of several years become common.
 export function NetWorthTab({
   count,
+  period,
   valueIn,
   onCount,
   onValueIn,
 }: {
-  count: NetWorthMonths;
+  // The span checked, or undefined when the header's period is set (NP1).
+  count: NetWorthMonths | undefined;
+  period: ReportPeriod;
   valueIn: string | undefined;
   onCount: (count: NetWorthMonths) => void;
   onValueIn: (code: string) => void;
@@ -42,7 +52,10 @@ export function NetWorthTab({
   const scale = useScale();
   const [selected, setSelected] = useState<string>();
   const current = today.slice(0, 7);
-  const months = useMemo(() => monthEnds(today, count), [today, count]);
+  const months = useMemo(
+    () => periodMonthEnds({ from: period.from, to: period.to }, today),
+    [period.from, period.to, today],
+  );
   const results = useQueries({
     queries: months.map((m) => ({
       ...netWorthQuery(api, m.date, valueIn ?? ""),
@@ -106,7 +119,7 @@ export function NetWorthTab({
         start={
           <SegmentedControl
             aria-label={t("report.netWorth.span")}
-            value={String(count)}
+            value={count === undefined ? "" : String(count)}
             onValueChange={(value) => {
               const next = netWorthSpans.find((n) => String(n) === value);
               if (next !== undefined) onCount(next);
@@ -121,6 +134,15 @@ export function NetWorthTab({
         }
         end={<ValuationCurrency value={valueIn} onChange={onValueIn} />}
       />
+      {valueIn !== undefined && (
+        <NetWorthGrowthCards
+          period={period}
+          closing={months.at(-1)?.date}
+          valueIn={valueIn}
+          digits={digits}
+        />
+      )}
+
       {!pending && (
         <Chart
           variant="card"
@@ -137,7 +159,7 @@ export function NetWorthTab({
 
       {valueIn !== undefined && (
         <NetWorthMonthCard
-          month={selected ?? current}
+          month={selected ?? months.at(-1)?.month ?? current}
           valueIn={valueIn}
           onMonth={handleMonth}
         />

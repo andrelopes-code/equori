@@ -33,6 +33,16 @@ export const reportsEn = {
   "report.netWorth.title": "Net worth by month",
   "report.netWorth.span": "Months shown",
   "report.netWorth.months": "{count} months",
+  "report.netWorth.change": "Change in net worth",
+  "report.netWorth.changeNote": "From {start} to {end}, at the end of each day",
+  "report.netWorth.resultOfPeriod": "Income minus expenses",
+  "report.netWorth.resultNote":
+    "What the period saved, a card purchase on its date",
+  "report.netWorth.other": "Valuation, exchange and adjustments",
+  "report.netWorth.otherNote":
+    "The part of the change that income and expenses do not explain",
+  "report.netWorth.partsBase":
+    "Read only in {currency}, the currency of the books",
   "report.netWorth.assets": "You own",
   "report.netWorth.liabilities": "You owe",
   "report.netWorth.net": "Net",

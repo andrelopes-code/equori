@@ -1,5 +1,6 @@
 import type { components } from "@/api/schema.gen";
 import { changeBP } from "@/features/reports/report-change";
+import type { ReportPeriod } from "@/features/reports/report-period";
 
 type NetWorth = components["schemas"]["NetWorth"];
 
@@ -12,18 +13,41 @@ export interface MonthEnd {
 
 // The `count` months that end with the month of today, oldest first.
 export function monthEnds(today: string, count: number): MonthEnd[] {
-  const year = Number(today.slice(0, 4));
-  const current = year * 12 + Number(today.slice(5, 7)) - 1;
-  return Array.from({ length: count }, (_, i) => {
-    const index = current - (count - 1 - i);
+  return periodMonthEnds(spanPeriod(today, count), today);
+}
+
+// NP1: the `count` months that end with the month of today, from the first day to today.
+export function spanPeriod(today: string, count: number): ReportPeriod {
+  return { from: `${monthOf(indexOf(today) - count + 1)}-01`, to: today };
+}
+
+// NP2: each month that starts in [from, min(to, today)], ended on its last day, on to or on today.
+export function periodMonthEnds(
+  period: ReportPeriod,
+  today: string,
+): MonthEnd[] {
+  const last = period.to < today ? period.to : today;
+  const ends: MonthEnd[] = [];
+  for (let index = indexOf(period.from); index <= indexOf(last); index++) {
+    const month = monthOf(index);
     const y = Math.floor(index / 12);
-    const m = (index % 12) + 1;
-    const month = `${String(y)}-${String(m).padStart(2, "0")}`;
-    if (month === today.slice(0, 7)) return { month, date: today };
     // Day 0 of the next month is the last day of this one.
-    const last = new Date(Date.UTC(y, m, 0)).getUTCDate();
-    return { month, date: `${month}-${String(last).padStart(2, "0")}` };
-  });
+    const day = new Date(Date.UTC(y, (index % 12) + 1, 0)).getUTCDate();
+    const end = `${month}-${String(day).padStart(2, "0")}`;
+    ends.push({ month, date: end < last ? end : last });
+  }
+
+  return ends;
+}
+
+// A month as year * 12 + month − 1.
+function indexOf(iso: string): number {
+  return Number(iso.slice(0, 4)) * 12 + Number(iso.slice(5, 7)) - 1;
+}
+
+function monthOf(index: number): string {
+  const y = Math.floor(index / 12);
+  return `${String(y)}-${String((index % 12) + 1).padStart(2, "0")}`;
 }
 
 export interface NetWorthRow {

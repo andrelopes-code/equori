@@ -19,6 +19,7 @@ import { CategoriesTab } from "@/features/reports/categories-tab";
 import { FlowsTab } from "@/features/reports/flows-tab";
 import { IndicatorsTab } from "@/features/reports/indicators-tab";
 import { NetWorthTab } from "@/features/reports/net-worth-tab";
+import { spanPeriod } from "@/features/reports/net-worth-months";
 import { periodLabel } from "@/features/reports/period-label";
 import { defaultPeriod } from "@/features/reports/report-period";
 import { reportsTabs } from "@/features/reports/reports-search";
@@ -55,7 +56,10 @@ export function ReportsPage() {
   const current: ReportsTab = search.tab ?? "net-worth";
   const valueIn = search.value_in ?? base;
   const count: NetWorthMonths = search.months ?? 12;
-  const fallback = defaultPeriod(today);
+  const custom = search.from !== undefined && search.to !== undefined;
+  const netWorth = current === "net-worth";
+  // NP1: without a period in the address, the net worth tab reads its span of months.
+  const fallback = netWorth ? spanPeriod(today, count) : defaultPeriod(today);
   const period = {
     from: search.from ?? fallback.from,
     to: search.to ?? fallback.to,
@@ -85,7 +89,7 @@ export function ReportsPage() {
                 {t("report.subtitle")}
               </PageHeaderSubheading>
             </PageHeaderTitle>
-            {(current === "categories" || current === "flows") && (
+            {current !== "indicators" && (
               <PageHeaderActions>
                 <PeriodControl
                   quarters
@@ -93,8 +97,11 @@ export function ReportsPage() {
                   value={period}
                   onChange={(next) => {
                     if (next === undefined) return;
+                    // NP1: on the net worth tab a chosen period stays in the address.
                     const isDefault =
-                      next.from === fallback.from && next.to === fallback.to;
+                      !netWorth &&
+                      next.from === fallback.from &&
+                      next.to === fallback.to;
                     onChange({
                       from: isDefault ? undefined : next.from,
                       to: isDefault ? undefined : next.to,
@@ -135,10 +142,15 @@ export function ReportsPage() {
         <div aria-busy={shownTab !== (chosen ?? current) || undefined}>
           {shownTab === "net-worth" && (
             <NetWorthTab
-              count={count}
+              count={custom ? undefined : count}
+              period={period}
               valueIn={valueIn}
               onCount={(next) => {
-                onChange({ months: next === 12 ? undefined : next });
+                onChange({
+                  months: next === 12 ? undefined : next,
+                  from: undefined,
+                  to: undefined,
+                });
               }}
               onValueIn={(code) => {
                 onChange({ value_in: code === base ? undefined : code });
