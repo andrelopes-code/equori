@@ -715,6 +715,183 @@ func TestS334NoRateInTheWindow(t *testing.T) {
 	}
 }
 
+// S335: the index is published a business day after its date. Credits dated after the day that
+// follows the last stored rate leave the window, so the return does not run past the rates
+// (R20, R23).
+func TestS335IndexPublicationLag(t *testing.T) {
+	t.Parallel()
+	b := buildBook(t, bookSpec{stored: cdiDays[:3]})
+
+	want := figures{
+		From: "2026-01-05", Until: "2026-01-06", Days: 2, Skipped: 1, IndexBP: 11, ReturnBP: 11, ExcessBP: 0,
+		PercentBP: 10000, AnnualBP: 1490, IndexAnnualBP: 1490, Credits: 2, ErrorBP: 1,
+	}
+
+	requireFigures(t, b.compared(t, "2026-01-02", "2026-01-09", ""), want, 28)
+}
+
+// S336: a weekend inside the lag: the last stored rate is the Friday 2026-01-09 and the credits run
+// to the Tuesday 2026-01-13, so B is the credit of the Friday.
+func TestS336IndexPublicationLagOverAWeekend(t *testing.T) {
+	t.Parallel()
+
+	b := buildBook(t, bookSpec{
+		cdi:     weekdays("2026-01-02", "2026-01-13"),
+		stored:  cdiDays,
+		credits: weekdays("2026-01-05", "2026-01-13"),
+		today:   "2026-01-14",
+	})
+
+	requireFigures(t, b.compared(t, "2026-01-02", "2026-01-13", ""), atTheCDI, 39)
+}
+
+// S337: when no credit after A is dated on or before the day after the last stored rate, the
+// benchmark is absent, reason no_rate_in_window: the CDI is stored to 2026-01-05 and the credits
+// are those of 2026-01-05, 2026-01-08 and 2026-01-09.
+func TestS337NoCreditAfterAWithinTheRates(t *testing.T) {
+	t.Parallel()
+	b := buildBook(t, bookSpec{stored: cdiDays[:2], credits: []string{"2026-01-05", "2026-01-08", "2026-01-09"}})
+
+	r := b.compared(t, "2026-01-02", "2026-01-09", "")
+	if r.Benchmark != nil || r.PeriodBP == nil || *r.PeriodBP != 28 || r.UnavailableReason != "no_rate_in_window" {
+		t.Fatalf("report = %+v, reason %q", r, r.UnavailableReason)
+	}
+}
+
+// S338: the yield of a transaction is allocated to the balance accounts that receive it, in
+// proportion to what each receives; the rest of the tree's amount is a flow (R19).
+func TestS338YieldShareOfATransaction(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name            string
+		record          func(t *testing.T, b benchmarkBook)
+		want            figures
+		period          int
+		income, expense string
+	}{
+		{
+			name: "tax paid from the yield", record: recordTaxOnTheYield,
+			want: dayFigures(23, 1, 10207, 1523), period: 28, expense: "90000 BRL Taxes",
+		},
+		{
+			name: "yield split with another account", record: recordYieldSplitInThirds,
+			want: dayFigures(18, -4, 8323, 1226), period: 24,
+		},
+		{
+			name: "yield larger than the amounts received", record: recordYieldAboveWhatIsReceived,
+			want: dayFigures(17, -5, 7831, 1149), period: 23,
+		},
+		{
+			name: "yield with a withdrawal from checking", record: recordYieldWithADeposit,
+			want: dayFigures(21, -1, 9533, 1416), period: 27,
+		},
+		{
+			name: "expense paid by another account", record: recordUnrelatedExpense,
+			want: dayFigures(22, 0, 9986, 1488), period: 28,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			b := explicitBook(t)
+
+			for _, d := range []string{"2026-01-05", "2026-01-06", "2026-01-08", "2026-01-09"} {
+				b.credit(d, 551_310)
+			}
+
+			tt.record(t, b)
+
+			r := b.compared(t, "2026-01-02", "2026-01-09", "")
+			requireFigures(t, r, tt.want, tt.period)
+
+			if income, expense := r.excludedText(); income != tt.income || expense != tt.expense {
+				t.Fatalf("excluded = %q, %q, want %q, %q", income, expense, tt.income, tt.expense)
+			}
+		})
+	}
+}
+
+// S339: a percent that cannot be computed leaves a reason: a rate of 0 inside the window.
+func TestS339PercentUndefined(t *testing.T) {
+	t.Parallel()
+	b := buildBook(t, bookSpec{rates: map[string]int64{"2026-01-06": 0}})
+
+	want := figures{
+		From: "2026-01-05", Until: "2026-01-08", Days: 4, Skipped: 2, IndexBP: 17, ReturnBP: 17, ExcessBP: 0,
+		PercentBP: -1, AnnualBP: -1, IndexAnnualBP: 1098, Credits: 3, ErrorBP: 1,
+	}
+
+	r := b.compared(t, "2026-01-02", "2026-01-09", "")
+	requireFigures(t, r, want, 22)
+
+	if r.UnavailableReason != "percent_undefined" {
+		t.Fatalf("reason = %q", r.UnavailableReason)
+	}
+}
+
+// dayFigures are the figures of S330 to S332 with the given return, excess, percent and annual
+// rate: the window of atTheCDI.
+func dayFigures(returnBP, excessBP, percentBP, annualBP int) figures {
+	return figures{
+		From: "2026-01-05", Until: "2026-01-08", Days: 4, Skipped: 2, IndexBP: 22, ReturnBP: returnBP,
+		ExcessBP: excessBP, PercentBP: percentBP, AnnualBP: annualBP, IndexAnnualBP: 1490, Credits: 4, ErrorBP: 1,
+	}
+}
+
+// recordTaxOnTheYield records +510,000 to the tree, +90,000 against Taxes and -600,000 against
+// Yield on 2026-01-07: the credit is the gross 600,000 and the flow is -90,000.
+func recordTaxOnTheYield(t *testing.T, b benchmarkBook) {
+	t.Helper()
+
+	id, _ := b.system(t, "taxes")
+	b.h.Record("2026-01-07", apitest.Posting(b.savings, 510_000), apitest.Posting(id, 90_000), apitest.Posting(b.yield, -600_000))
+}
+
+// recordYieldSplitInThirds records +183,770 to the tree, +367,540 to another savings account and
+// -551,310 against Yield: the credit is 183,770 and there is no flow.
+func recordYieldSplitInThirds(t *testing.T, b benchmarkBook) {
+	t.Helper()
+
+	other := b.h.Account("Savings B", "asset", "savings", nil)
+	b.h.Record("2026-01-07", apitest.Posting(b.savings, 183_770), apitest.Posting(other, 367_540), apitest.Posting(b.yield, -551_310))
+}
+
+// recordYieldAboveWhatIsReceived records +100,000 to the tree, +100,000 to another savings account,
+// -50,000 against checking and -150,000 against Yield: the credit is 75,000 and the flow 25,000.
+func recordYieldAboveWhatIsReceived(t *testing.T, b benchmarkBook) {
+	t.Helper()
+
+	other := b.h.Account("Savings B", "asset", "savings", nil)
+	b.h.Record(
+		"2026-01-07",
+		apitest.Posting(b.savings, 100_000), apitest.Posting(other, 100_000),
+		apitest.Posting(b.checking, -50_000), apitest.Posting(b.yield, -150_000),
+	)
+}
+
+// recordYieldWithADeposit records +100,551,310 to the tree, -100,000,000 against checking and
+// -551,310 against Yield: the credit is 551,310 and the flow 100,000,000.
+func recordYieldWithADeposit(t *testing.T, b benchmarkBook) {
+	t.Helper()
+
+	b.h.Record("2026-01-07", apitest.Posting(b.savings, 100_551_310), apitest.Posting(b.checking, -100_000_000), apitest.Posting(b.yield, -551_310))
+}
+
+// recordUnrelatedExpense records a yield of 551,310 and, in the same transaction, a purchase of
+// 30,000 paid from checking: the purchase is not an amount of the tree, so it is not excluded.
+func recordUnrelatedExpense(t *testing.T, b benchmarkBook) {
+	t.Helper()
+
+	shop := b.h.Account("Groceries", "expense", "", nil)
+	b.h.Record(
+		"2026-01-07",
+		apitest.Posting(b.savings, 551_310), apitest.Posting(b.yield, -551_310),
+		apitest.Posting(b.checking, -30_000), apitest.Posting(shop, 30_000),
+	)
+}
+
 // saturdayFigures are the figures of a savings account paid 100% of the CDI over 2026-01-02 to
 // 2026-01-23: the credits of 2026-01-05 to 2026-01-23 bound the rates of 2026-01-05 to 2026-01-22.
 var saturdayFigures = figures{
@@ -747,6 +924,7 @@ type counter struct {
 // credits, and the moves of its money.
 type bookSpec struct {
 	cdi, credits []string
+	stored       []string // the CDI days the feed publishes; all of cdi when nil
 	opened       string
 	today        string
 	creditTo     string // "custom": an income root; "sub": a sub-account of Yield; "": Yield
@@ -827,8 +1005,10 @@ func buildBook(t *testing.T, s bookSpec) benchmarkBook {
 		return defaultRate
 	}
 
-	rows := make([]string, len(cdi))
-	for i, d := range cdi {
+	published := cmpSlice(s.stored, cdi)
+	rows := make([]string, len(published))
+
+	for i, d := range published {
 		day, _ := time.Parse(time.DateOnly, d)
 		r := rateOf(d)
 		rows[i] = fmt.Sprintf(`{"data":%q,"valor":"%d.%06d"}`, day.Format("02/01/2006"), r/1_000_000, r%1_000_000)
@@ -985,6 +1165,15 @@ func weekdays(first, last string) []string {
 	}
 
 	return out
+}
+
+// cmpSlice is v, or fallback when v is nil.
+func cmpSlice(v, fallback []string) []string {
+	if v == nil {
+		return fallback
+	}
+
+	return v
 }
 
 // cmpOr is v, or fallback when v is the zero value.

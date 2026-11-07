@@ -19,6 +19,7 @@ const (
 	ReasonSingleCredit     = "single_credit"
 	ReasonTooSmall         = "too_small"
 	ReasonNoRateInWindow   = "no_rate_in_window"
+	ReasonPercentUndefined = "percent_undefined"
 )
 
 // maxExcludedCategories is the number of category names an Excluded total lists.
@@ -216,6 +217,22 @@ func (p period) creditDates() []time.Time {
 	slices.SortFunc(dates, time.Time.Compare)
 
 	return slices.CompactFunc(dates, time.Time.Equal)
+}
+
+// withinRates keeps the credits dated on or before the day after the last of rates: a credit
+// observed on day C pays the rates before C (R20), and the rate of a day is published after it.
+func withinRates(credits []time.Time, rates []IndexRate) []time.Time {
+	var last time.Time
+
+	for _, r := range rates {
+		if r.Date.After(last) {
+			last = r.Date
+		}
+	}
+
+	limit := last.AddDate(0, 0, 1)
+
+	return slices.DeleteFunc(slices.Clone(credits), func(c time.Time) bool { return c.After(limit) })
 }
 
 // creditsIn counts the positive credits dated in (after, until], the tree postings they hold and

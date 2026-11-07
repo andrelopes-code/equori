@@ -135,7 +135,7 @@ func (s *Service) compare(ctx context.Context, booksID int64, ids []uuid.UUID, f
 		report.PeriodBP = new(domain.FactorBP(f))
 	}
 
-	w, ok := p.comparedWindow(start, ends, dates)
+	w, ok := p.comparedWindow(start, ends, dates, rates)
 	if !ok {
 		return nil
 	}
@@ -160,9 +160,11 @@ func (p period) factor(start int64, ends []domain.Subperiod) (float64, bool) {
 // comparedWindow is the window of the index and inflation comparisons (R14, R18, R20): from the
 // first day the tree held money to the end of the period. A tree whose yield is recorded is
 // compared over (A, B], A being the first yield credit in [from − 1, to], moved by a flow between
-// two distant credits, and B the last; its rates are those dated in [A, B). ok is false, with the
-// reason on the report, when the tree held no money, recorded no yield or one credit only.
-func (p period) comparedWindow(start int64, ends []domain.Subperiod, dates []time.Time) (window, bool) {
+// two distant credits, and B the last credit dated on or before the day after the last stored rate
+// of the index (R20); its rates are those dated in [A, B). ok is false, with the reason on the
+// report, when the tree held no money, recorded no yield, one credit only, or no credit after A
+// within the rates.
+func (p period) comparedWindow(start int64, ends []domain.Subperiod, dates []time.Time, rates []IndexRate) (window, bool) {
 	since, ok := firstHeldDay(p.from, start, ends, dates)
 	if !ok {
 		p.unavailable(ReasonNothingHeld)
@@ -182,11 +184,24 @@ func (p period) comparedWindow(start int64, ends []domain.Subperiod, dates []tim
 		return window{}, false
 	}
 
+	if a, _ := domain.ComparisonStart(credits, p.flowDates()); a.Equal(credits[len(credits)-1]) {
+		p.unavailable(ReasonSingleCredit)
+
+		return window{}, false
+	}
+
+	credits = withinRates(credits, rates)
+	if len(credits) == 0 {
+		p.unavailable(ReasonNoRateInWindow)
+
+		return window{}, false
+	}
+
 	a, restarted := domain.ComparisonStart(credits, p.flowDates())
 
 	b := credits[len(credits)-1]
-	if a.Equal(b) {
-		p.unavailable(ReasonSingleCredit)
+	if !b.After(a) {
+		p.unavailable(ReasonNoRateInWindow)
 
 		return window{}, false
 	}
@@ -284,12 +299,18 @@ func (s *Service) benchmark(ctx context.Context, p period, index string, rates [
 
 	precise := p.countCredits(&b, w)
 
-	if f, ok := p.factor(start, ends); ok {
+	if f, ok := p.factor(start, ends); !ok {
+		p.unavailable(ReasonPercentUndefined)
+	} else {
 		b.ReturnBP = new(domain.FactorBP(f))
 		b.ExcessBP = new(*b.ReturnBP - b.IndexBP)
 
 		if p.report.Profile == ProfileRate && precise {
 			b.PercentBP = ifOK(domain.IndexPercentBP(f, fractions))
+		}
+
+		if p.report.Profile == ProfileRate && precise && b.PercentBP == nil {
+			p.unavailable(ReasonPercentUndefined)
 		}
 
 		if b.PercentBP != nil {

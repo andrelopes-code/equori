@@ -779,11 +779,45 @@ WITH RECURSIVE
                         )
                 ),
                 0
-            )::numeric AS yield_weight
+            )::numeric AS yield_weight,
+            coalesce(
+                sum(p.weight) FILTER (
+                    WHERE
+                        p.weight > 0
+                        AND (
+                            p.account_id IN (
+                                SELECT
+                                    id
+                                FROM
+                                    tree
+                            )
+                            OR a.account_class IN ('asset', 'liability')
+                        )
+                ),
+                0
+            )::numeric AS received_in,
+            coalesce(
+                - sum(p.weight) FILTER (
+                    WHERE
+                        p.weight < 0
+                        AND (
+                            p.account_id IN (
+                                SELECT
+                                    id
+                                FROM
+                                    tree
+                            )
+                            OR a.account_class IN ('asset', 'liability')
+                        )
+                ),
+                0
+            )::numeric AS received_out
         FROM
             touched x
             JOIN ledger_posting p ON p.transaction_id = x.id
             AND NOT p.voided
+            JOIN ledger_account a ON a.id = p.account_id
+            AND a.books_id = $1
         GROUP BY
             x.id,
             x.date
@@ -792,12 +826,12 @@ WITH RECURSIVE
         SELECT
             s.id,
             s.date,
-            s.tree_weight,
+            s.yield_weight,
             CASE
-                WHEN s.tree_weight <> 0
-                AND sign(s.tree_weight) = sign(s.yield_weight) THEN sign(s.tree_weight) * least(abs(s.tree_weight), abs(s.yield_weight))
+                WHEN s.yield_weight > 0 THEN s.received_in
+                WHEN s.yield_weight < 0 THEN s.received_out
                 ELSE 0
-            END AS credit_weight
+            END AS received
         FROM
             sums s
     ),
@@ -808,8 +842,19 @@ WITH RECURSIVE
             a.instrument,
             sum(p.amount)::numeric AS amount,
             count(*) AS postings,
-            h.tree_weight,
-            h.credit_weight
+            CASE
+                WHEN h.yield_weight > 0 THEN sum(p.amount) FILTER (
+                    WHERE
+                        p.weight > 0
+                )
+                WHEN h.yield_weight < 0 THEN sum(p.amount) FILTER (
+                    WHERE
+                        p.weight < 0
+                )
+                ELSE 0
+            END::numeric AS received_amount,
+            h.yield_weight,
+            h.received
         FROM
             shares h
             JOIN ledger_posting p ON p.transaction_id = h.id
@@ -827,18 +872,19 @@ WITH RECURSIVE
             h.id,
             h.date,
             a.instrument,
-            h.tree_weight,
-            h.credit_weight
+            h.yield_weight,
+            h.received
     ),
     split AS (
         SELECT
+            n.id,
             n.date,
             n.instrument,
             n.postings,
             n.amount,
             CASE
-                WHEN n.tree_weight = 0 THEN 0
-                ELSE round(n.amount * n.credit_weight / n.tree_weight)
+                WHEN n.received = 0 THEN 0
+                ELSE round(n.received_amount * abs(n.yield_weight) / n.received)
             END AS credit
         FROM
             native n
@@ -887,6 +933,16 @@ FROM
         FROM
             yield
     )
+WHERE
+    EXISTS (
+        SELECT
+            1
+        FROM
+            split s
+        WHERE
+            s.id = x.id
+            AND s.amount <> s.credit
+    )
 GROUP BY
     x.id,
     x.date,
@@ -917,14 +973,16 @@ type TreeRecordedYieldRow struct {
 
 // Return comparison amendment A208 R19, per transaction of [from_date, to_date] that touches the
 // accounts and their sub-accounts (the tree), by kind. In the balancing currency of the
-// transaction, T is the sum of the weights of the tree postings and Y the negated sum of the
-// weights of the postings against the system Yield account and its sub-accounts. When T and Y
-// have the same sign, the credit is that sign times the smaller of |T| and |Y|, as the share
-// credit / T of the native amount of the tree; the flow is the native amount of the tree less
-// the credit. Otherwise the credit is 0 and the whole native amount of the tree is a flow. Both
-// are in the instrument of the tree accounts; postings counts the tree postings of the
-// transaction, each rounded on its own. income and expense are the weights of the other income
-// and expense postings, by account name, in the balancing currency.
+// transaction, Y is the negated sum of the weights of the postings against the system Yield
+// account and its sub-accounts. Y is allocated to the balance accounts that receive it, in
+// proportion to what each receives: for Y > 0 the receivers are the positive postings of asset
+// and liability accounts, the tree's and the other accounts', and the credit of the tree is Y
+// times its positive weight over that of every receiver; for Y < 0 the same with the negative
+// postings. The credit is the same share of the native amount the tree receives; the flow is the
+// native amount of the tree less the credit. Both are in the instrument of the tree accounts;
+// postings counts the tree postings of the transaction, each rounded on its own. income and
+// expense are the weights of the income and expense postings, by account name, in the balancing
+// currency, of the transactions that leave a flow.
 func (q *Queries) TreeRecordedYield(ctx context.Context, arg TreeRecordedYieldParams) ([]TreeRecordedYieldRow, error) {
 	rows, err := q.db.Query(ctx, treeRecordedYield,
 		arg.BooksID,

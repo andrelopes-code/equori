@@ -107,7 +107,7 @@ type getPortfolioOut struct {
 	PeriodBP    int            `json:"period_bp,omitzero" jsonschema:"for return: time-weighted return of the period in basis points; absent when undefined or zero"`
 	Profile     string         `json:"profile,omitzero" jsonschema:"for return: rate when every holding is cash or fixed income in the report's currency, market otherwise"`
 	Benchmark   benchmarkView  `json:"benchmark,omitzero"`
-	Reason      string         `json:"unavailable_reason,omitzero" jsonschema:"for return: why benchmark or its percent is absent - no_index_for_region, currency_mismatch, nothing_held, no_yield_recorded, single_credit, too_small or no_rate_in_window"`
+	Reason      string         `json:"unavailable_reason,omitzero" jsonschema:"for return: why benchmark or its percent is absent - no_index_for_region, currency_mismatch, nothing_held, no_yield_recorded, single_credit, too_small, no_rate_in_window or percent_undefined"`
 	Excluded    excludedView   `json:"excluded,omitzero" jsonschema:"for return: income and expense of the period treated as money in or out, not as yield"`
 	Inflation   inflationView  `json:"inflation,omitzero"`
 	IncomeTypes []string       `json:"income_types,omitzero"`
@@ -117,7 +117,7 @@ type getPortfolioOut struct {
 func getPortfolio(svc *app.Service, names AccountNames, today func(context.Context) time.Time) tool.Tool {
 	return tool.New(tool.Spec{
 		Name: "get_portfolio",
-		Description: "Returns investment views at a date: positions with quantity, cost and market value; allocation by instrument type, currency or institution; net worth; or the annual return of an account over a period, with its time-weighted return and the percent of the default index of the region (CDI in Brazil) that grows as much. " +
+		Description: "Returns investment views at a date: positions with quantity, cost and market value; allocation by instrument type, currency or institution; net worth; or the annual return of an account over a period, with its time-weighted return and the percent of the default index of the region (the region's daily reference rate) that grows as much. " +
 			"Also lists the income types and instrument subtypes the book's tax jurisdiction accepts. " +
 			"Use it for questions about investments and net worth. " +
 			"Do not use it for cash balances only: get_balances does; nor for a tax year: get_tax_year does.",
