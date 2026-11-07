@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
+import { shiftDate } from "@/i18n/format";
 import {
   accountRoutes,
   balancesAt,
@@ -40,14 +41,14 @@ function words(key: keyof typeof catalogEn, values: Record<string, string>) {
 
 // A return route: the reserve paid 101.80% of the CDI (a rate profile) and the brokerage lost
 // 13.80% while the CDI grew 3.52% (a market profile). asked collects the account of each request.
-function comparedIn90Days(asked: string[]) {
+function comparedIn90Days(asked: string[], startsAfter = 0) {
   return (req: Request) => {
     const query = new URL(req.url).searchParams;
     const account = query.get("account_id") ?? "";
     asked.push(account);
     const window = {
       index: "cdi",
-      from: query.get("from"),
+      from: shiftDate(query.get("from") ?? "", startsAfter),
       until: query.get("to"),
       days: 63,
       index_annual_bp: 1490,
@@ -214,6 +215,24 @@ describe("AccountsPage", () => {
       }),
     ).not.toBeInTheDocument();
     expect(asked.sort()).toEqual([reserveID, brokerageID].sort());
+  });
+
+  it("says from when the comparison runs when it starts late (A208 R8)", async () => {
+    await renderApp("/accounts", {
+      fetch: api([], {
+        "GET /api/v1/reports/return": comparedIn90Days([], 20),
+      }),
+    });
+    const reserves = await screen.findByRole("table", {
+      name: catalogEn["home.group.reserves"],
+    });
+    const reserve = await within(reserves).findByRole("row", {
+      name: /Reserva de emergência/,
+    });
+
+    expect(
+      await within(reserve).findByText(/^101.80% of CDI · since /),
+    ).toBeInTheDocument();
   });
 
   it("states only the figure on a phone (A208 R17)", async () => {

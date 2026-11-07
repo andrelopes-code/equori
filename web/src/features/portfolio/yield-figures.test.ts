@@ -2,14 +2,24 @@ import { describe, expect, it } from "vitest";
 
 import type { components } from "@/api/schema.gen";
 import { catalogEn } from "@/i18n/catalog.en";
+import { catalogPtBR } from "@/i18n/catalog.pt-BR";
 import type { TFunction } from "@/i18n/i18n-provider";
 
 import { yieldGroups, yieldLine } from "@/features/portfolio/yield-figures";
 
+type ReturnBenchmark = components["schemas"]["ReturnBenchmark"];
 type ReturnReport = components["schemas"]["ReturnReport"];
 
 const t: TFunction = (key, params) =>
   catalogEn[key].replace(/\{(\w+)\}/gu, (_, name: string) =>
+    String(params?.[name]),
+  );
+
+// The first day of the 90-day window of the balance sheet dated 2026-11-06.
+const WINDOW_START = "2026-08-09";
+
+const tPtBR: TFunction = (key, params) =>
+  catalogPtBR[key].replace(/\{(\w+)\}/gu, (_, name: string) =>
     String(params?.[name]),
   );
 
@@ -68,7 +78,7 @@ const market: ReturnReport = {
 
 describe("yieldLine", () => {
   it("reads a rate profile as a rate a year and a percent of the index", () => {
-    expect(yieldLine(rate, t, "en")).toEqual({
+    expect(yieldLine(rate, t, "en", WINDOW_START)).toEqual({
       primary: "15.17% a year",
       secondary: "101.80% of CDI",
       negative: false,
@@ -76,7 +86,7 @@ describe("yieldLine", () => {
   });
 
   it("reads a market profile as the return beside the index, never annualized", () => {
-    expect(yieldLine(market, t, "en")).toEqual({
+    expect(yieldLine(market, t, "en", WINDOW_START)).toEqual({
       primary: "−13.80%",
       secondary: "CDI 3.52%",
       negative: true,
@@ -85,14 +95,30 @@ describe("yieldLine", () => {
 
   it("reads the period return alone without an index", () => {
     expect(
-      yieldLine({ ...base, profile: "market", period_bp: -1400 }, t, "en"),
+      yieldLine(
+        { ...base, profile: "market", period_bp: -1400 },
+        t,
+        "en",
+        WINDOW_START,
+      ),
     ).toEqual({
-      primary: "−14.00%",
+      primary: "−14.00% in the period",
       negative: true,
     });
   });
 
-  it("says from when the comparison runs when it left out days (A208 R18)", () => {
+  it("reads the period return alone in Portuguese", () => {
+    expect(
+      yieldLine(
+        { ...base, profile: "market", period_bp: -1400 },
+        tPtBR,
+        "pt-BR",
+        WINDOW_START,
+      )?.primary,
+    ).toBe("−14,00% no período");
+  });
+
+  it("says from when the comparison runs when it starts late (A208 R8)", () => {
     const late: ReturnReport = {
       ...rate,
       benchmark: {
@@ -107,13 +133,30 @@ describe("yieldLine", () => {
         annual_bp: 1517,
       },
     };
-    expect(yieldLine(late, t, "en")?.secondary).toBe(
+    expect(yieldLine(late, t, "en", WINDOW_START)?.secondary).toBe(
       "101.80% of CDI · since 10/19/2026",
     );
   });
 
+  it.each([
+    ["8 days after the window start", "2026-08-17", true],
+    ["7 days after the window start", "2026-08-16", false],
+    ["3 days after the window start", "2026-08-12", false],
+  ])("notes the start of the comparison %s: %s", (_, from, noted) => {
+    const starts: ReturnReport = {
+      ...rate,
+      benchmark: { ...rate.benchmark, from } as ReturnBenchmark,
+    };
+
+    expect(
+      yieldLine(starts, t, "en", WINDOW_START)?.secondary?.includes("since"),
+    ).toBe(noted);
+  });
+
   it("states nothing without a return", () => {
-    expect(yieldLine({ ...base, profile: "rate" }, t, "en")).toBeUndefined();
+    expect(
+      yieldLine({ ...base, profile: "rate" }, t, "en", WINDOW_START),
+    ).toBeUndefined();
   });
 });
 
@@ -129,7 +172,7 @@ describe("yieldGroups", () => {
     expect(read(rate)).toEqual([
       {
         title: "Compared with CDI",
-        period: "11/03/2025 to 10/16/2026 · 245 business days",
+        period: "11/03/2025 to 10/16/2026 · 245 days with a CDI rate",
         rows: [
           ["Rate a year", "15.17% a year", true, false],
           ["Percent of CDI", "101.80%", true, false],
@@ -153,10 +196,10 @@ describe("yieldGroups", () => {
     expect(read(market)).toEqual([
       {
         title: "Compared with CDI",
-        period: "07/20/2026 to 10/16/2026 · 63 business days",
+        period: "07/20/2026 to 10/16/2026 · 63 days with a CDI rate",
         rows: [
           ["Return", "−13.80%", true, true],
-          ["CDI in the period", "3.52% (14.90% a year)", false, false],
+          ["CDI in the period", "3.52%", false, false],
           ["Difference from CDI", "−17.32 pp", true, true],
         ],
       },

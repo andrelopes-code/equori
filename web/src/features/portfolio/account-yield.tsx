@@ -23,9 +23,11 @@ export function AccountYield({
 }: AccountYieldProps) {
   const t = useT();
   const [tag] = useAppLocale();
-  const report = useAccountYield(accountId, shiftDate(date, -89), date);
+  const windowStart = shiftDate(date, -89);
+  const report = useAccountYield(accountId, windowStart, date);
 
-  const line = report === undefined ? undefined : yieldLine(report, t, tag);
+  const line =
+    report === undefined ? undefined : yieldLine(report, t, tag, windowStart);
   if (line === undefined) return null;
 
   return (

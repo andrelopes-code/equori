@@ -1,6 +1,11 @@
 import type { components } from "@/api/schema.gen";
 import { indexName } from "@/features/calculators";
-import { formatBasisPoints, formatDate, numberFormatter } from "@/i18n/format";
+import {
+  formatBasisPoints,
+  formatDate,
+  numberFormatter,
+  shiftDate,
+} from "@/i18n/format";
 import type { TFunction } from "@/i18n/i18n-provider";
 
 type ReturnBenchmark = components["schemas"]["ReturnBenchmark"];
@@ -34,11 +39,13 @@ export interface YieldGroup {
 
 // yieldLine is the yield column of the balance sheet (amendment A208 R17): a rate profile reads
 // its rate a year and its percent of the index; a market profile, or a report without a rate a
-// year, reads the return of the days compared and the index over the same days.
+// year, reads the return of the days compared and the index over the same days. A bare period
+// return says "in the period". windowStart is the first day of the 90-day window.
 export function yieldLine(
   report: ReturnReport,
   t: TFunction,
   tag: string,
+  windowStart: string,
 ): YieldLine | undefined {
   const b = report.benchmark;
   const rate = (bp: number) => formatBasisPoints(bp, tag);
@@ -56,6 +63,7 @@ export function yieldLine(
             }),
         t,
         tag,
+        windowStart,
       ),
       negative: b.annual_bp < 0,
     };
@@ -65,7 +73,10 @@ export function yieldLine(
   if (ret === undefined) return undefined;
 
   return {
-    primary: rate(ret),
+    primary:
+      b?.return_bp === undefined
+        ? t("portfolio.yield.inPeriod", { rate: rate(ret) })
+        : rate(ret),
     ...(b?.return_bp === undefined
       ? {}
       : secondary(
@@ -76,6 +87,7 @@ export function yieldLine(
           }),
           t,
           tag,
+          windowStart,
         )),
     negative: ret < 0,
   };
@@ -117,6 +129,7 @@ function indexGroup(
       from: formatDate(b.from, tag),
       until: formatDate(b.until, tag),
       days: String(b.days),
+      index,
     }),
     rows,
   };
@@ -155,7 +168,7 @@ function rateRows(
     });
   }
 
-  rows.push(returnRow(ret, false, t, tag), indexRow(b, t, tag));
+  rows.push(returnRow(ret, false, t, tag), indexRow(b, false, t, tag));
 
   return rows;
 }
@@ -168,7 +181,7 @@ function marketRows(
   t: TFunction,
   tag: string,
 ): YieldRow[] {
-  const rows = [returnRow(ret, true, t, tag), indexRow(b, t, tag)];
+  const rows = [returnRow(ret, true, t, tag), indexRow(b, true, t, tag)];
 
   if (b.excess_bp !== undefined) {
     rows.push({
@@ -202,15 +215,21 @@ function returnRow(
   };
 }
 
-// indexRow is the index's growth over the same days, with its rate a year when the index has one.
-function indexRow(b: ReturnBenchmark, t: TFunction, tag: string): YieldRow {
+// indexRow is the index's growth over the same days, with its rate a year when the index has one
+// and the profile is rate: a market return is not annualized (amendment A208 R12).
+function indexRow(
+  b: ReturnBenchmark,
+  market: boolean,
+  t: TFunction,
+  tag: string,
+): YieldRow {
   const rate = (bp: number) => formatBasisPoints(bp, tag);
 
   return {
     key: "index",
     term: t("portfolio.yield.row.index", { index: indexName(b.index) }),
     value:
-      b.index_annual_bp === undefined
+      market || b.index_annual_bp === undefined
         ? rate(b.index_bp)
         : t("portfolio.yield.row.indexValue", {
             rate: rate(b.index_bp),
@@ -269,16 +288,18 @@ function inflationGroup(
   };
 }
 
-// secondary is the muted part of a yield line, followed by the first day compared when the
-// comparison left out days of the period (amendment A208 R14, R18).
+// secondary is the muted part of a yield line, followed by the first day compared when it falls
+// more than 7 calendar days after the first day of the window, so a weekend or a holiday at the
+// start does not trigger the note (amendment A208 R8, R14, R18).
 function secondary(
   b: ReturnBenchmark,
   text: string | undefined,
   t: TFunction,
   tag: string,
+  windowStart: string,
 ): { secondary?: string } {
   const since =
-    b.skipped > 0
+    b.from > shiftDate(windowStart, 7)
       ? t("portfolio.yield.since", { from: formatDate(b.from, tag) })
       : undefined;
   const parts = [text, since].filter((p) => p !== undefined);

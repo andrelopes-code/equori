@@ -59,10 +59,11 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
   "portfolio.return.opening": "Valor inicial",
   "portfolio.return.closing": "Valor final",
   "portfolio.yield.annual": "{rate} a.a.",
+  "portfolio.yield.inPeriod": "{rate} no período",
   "portfolio.yield.ofIndex": "{percent} do {index}",
   "portfolio.yield.figure": "Rendimento nos últimos 12 meses",
   "portfolio.yield.profile.rate":
-    "Renda fixa: rendimento registrado na conta, comparado ao {index} de cada dia. Saldo informado já sem o imposto de renda fica abaixo da taxa contratada.",
+    "Renda fixa: rendimento registrado na conta, comparado ao {index} de cada dia. Saldo informado já sem os impostos fica abaixo da taxa contratada.",
   "portfolio.yield.since": "desde {from}",
   "portfolio.yield.row.percentHint":
     "Quanto do {index} a conta pagou, dia a dia",
@@ -71,7 +72,8 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
   "portfolio.yield.profile.market":
     "Preço de mercado: o retorno não é anualizado nem expresso em percentual do {index}; compare-o com o {index} dos mesmos dias.",
   "portfolio.yield.group.index": "Comparado ao {index}",
-  "portfolio.yield.group.indexPeriod": "{from} a {until} · {days} dias úteis",
+  "portfolio.yield.group.indexPeriod":
+    "{from} a {until} · {days} dias com taxa do {index}",
   "portfolio.yield.group.inflation": "Descontado o {index}",
   "portfolio.yield.group.inflationPeriod":
     "{from} a {until} · meses com {index} publicado",

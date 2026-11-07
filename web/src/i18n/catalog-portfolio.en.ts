@@ -57,10 +57,11 @@ export const portfolioEn = {
   "portfolio.return.opening": "Opening value",
   "portfolio.return.closing": "Closing value",
   "portfolio.yield.annual": "{rate} a year",
+  "portfolio.yield.inPeriod": "{rate} in the period",
   "portfolio.yield.ofIndex": "{percent} of {index}",
   "portfolio.yield.figure": "Yield over the last 12 months",
   "portfolio.yield.profile.rate":
-    "Fixed income: the yield recorded in the account, against {index} day by day. A balance reported net of income tax reads below the contracted rate.",
+    "Fixed income: the yield recorded in the account, against {index} day by day. A balance reported net of taxes reads below the contracted rate.",
   "portfolio.yield.since": "since {from}",
   "portfolio.yield.row.percentHint":
     "How much of {index} the account paid, day by day",
@@ -70,7 +71,7 @@ export const portfolioEn = {
     "Market price: the return is not annualized or stated as a percent of {index}; read it against {index} over the same days.",
   "portfolio.yield.group.index": "Compared with {index}",
   "portfolio.yield.group.indexPeriod":
-    "{from} to {until} · {days} business days",
+    "{from} to {until} · {days} days with a {index} rate",
   "portfolio.yield.group.inflation": "Net of {index}",
   "portfolio.yield.group.inflationPeriod":
     "{from} to {until} · months with a published {index}",

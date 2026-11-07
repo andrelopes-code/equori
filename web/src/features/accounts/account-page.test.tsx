@@ -115,7 +115,9 @@ describe("AccountPage", () => {
       name: "Compared with CDI",
     });
     expect(
-      within(cdi).getByText("10/18/2025 to 10/16/2026 · 250 business days"),
+      within(cdi).getByText(
+        "10/18/2025 to 10/16/2026 · 250 days with a CDI rate",
+      ),
     ).toBeInTheDocument();
     expect(within(cdi).getByText("15.17% a year")).toBeInTheDocument();
     expect(within(cdi).getByText("101.80%")).toBeInTheDocument();
