@@ -6,7 +6,7 @@ import type { TFunction } from "@/i18n/i18n-provider";
 
 import {
   returnLines,
-  yieldCards,
+  yieldGroups,
   yieldLine,
 } from "@/features/portfolio/yield-figures";
 
@@ -34,6 +34,7 @@ const rate: ReturnReport = {
     from: "2025-11-03",
     until: "2026-10-16",
     days: 245,
+    skipped: 0,
     return_bp: 1480,
     index_bp: 1455,
     percent_bp: 10180,
@@ -61,6 +62,7 @@ const market: ReturnReport = {
     from: "2026-07-20",
     until: "2026-10-16",
     days: 63,
+    skipped: 0,
     return_bp: -1380,
     index_bp: 352,
     excess_bp: -1732,
@@ -94,58 +96,74 @@ describe("yieldLine", () => {
     });
   });
 
+  it("says from when the comparison runs when it left out days (A208 R18)", () => {
+    const late: ReturnReport = {
+      ...rate,
+      benchmark: {
+        index: "cdi",
+        from: "2026-10-19",
+        until: "2026-11-06",
+        days: 13,
+        skipped: 50,
+        return_bp: 63,
+        index_bp: 62,
+        percent_bp: 10180,
+        annual_bp: 1517,
+      },
+    };
+    expect(yieldLine(late, t, "en")?.secondary).toBe(
+      "101.80% of CDI · since 10/19/2026",
+    );
+  });
+
   it("states nothing without a return", () => {
     expect(yieldLine({ ...base, profile: "rate" }, t, "en")).toBeUndefined();
   });
 });
 
-describe("yieldCards", () => {
-  it("gives a rate profile its rate a year, percent of the index and real return", () => {
-    expect(
-      yieldCards(rate, t, "en").map((c) => [
-        c.label,
-        c.value,
-        c.note,
-        c.negative,
-      ]),
-    ).toEqual([
-      [
-        "Rate a year",
-        "15.17% a year",
-        "14.80% in 245 business days, 11/03/2025 to 10/16/2026",
-        false,
-      ],
-      [
-        "Percent of CDI",
-        "101.80%",
-        "CDI 14.90% a year over the same days",
-        false,
-      ],
-      [
-        "Real return",
-        "8.10%",
-        "13.50% less IPCA 5.00%, 11/01/2025 to 09/30/2026",
-        false,
-      ],
+describe("yieldGroups", () => {
+  const read = (report: ReturnReport) =>
+    yieldGroups(report, t, "en").map((g) => ({
+      title: g.title,
+      period: g.period,
+      rows: g.rows.map((r) => [r.term, r.value, r.emphasis, r.negative]),
+    }));
+
+  it("groups a rate profile by the days compared and the months of inflation", () => {
+    expect(read(rate)).toEqual([
+      {
+        title: "Compared with CDI",
+        period: "11/03/2025 to 10/16/2026 · 245 business days",
+        rows: [
+          ["Rate a year", "15.17% a year", true, false],
+          ["Percent of CDI", "101.80%", true, false],
+          ["Return", "14.80%", false, false],
+          ["CDI in the period", "14.55% (14.90% a year)", false, false],
+        ],
+      },
+      {
+        title: "Net of IPCA",
+        period: "11/01/2025 to 09/30/2026 · months with a published IPCA",
+        rows: [
+          ["Return", "13.50%", false, false],
+          ["IPCA in the period", "5.00%", false, false],
+          ["Real return", "8.10%", true, false],
+        ],
+      },
     ]);
   });
 
-  it("gives a market profile its return and its difference from the index", () => {
-    expect(
-      yieldCards(market, t, "en").map((c) => [
-        c.label,
-        c.value,
-        c.note,
-        c.negative,
-      ]),
-    ).toEqual([
-      [
-        "Return",
-        "−13.80%",
-        "63 business days, 07/20/2026 to 10/16/2026; not annualized",
-        true,
-      ],
-      ["Against CDI", "−17.32 pp", "CDI 3.52% over the same days", true],
+  it("leads a market profile with its return and its difference from the index", () => {
+    expect(read(market)).toEqual([
+      {
+        title: "Compared with CDI",
+        period: "07/20/2026 to 10/16/2026 · 63 business days",
+        rows: [
+          ["Return", "−13.80%", true, true],
+          ["CDI in the period", "3.52% (14.90% a year)", false, false],
+          ["Difference from CDI", "−17.32 pp", true, true],
+        ],
+      },
     ]);
   });
 });

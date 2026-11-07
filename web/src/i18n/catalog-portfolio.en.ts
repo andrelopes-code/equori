@@ -82,23 +82,34 @@ export const portfolioEn = {
   "portfolio.yield.annual": "{rate} a year",
   "portfolio.yield.ofIndex": "{percent} of {index}",
   "portfolio.yield.window": "{from} to {until}",
-  "portfolio.yield.figure": "Yield over 12 months",
+  "portfolio.yield.figure": "Yield over the last 12 months",
+  "portfolio.yield.profile.rate":
+    "Fixed income: the yield recorded in the account, against {index} day by day. A balance reported net of income tax reads below the contracted rate.",
+  "portfolio.yield.since": "since {from}",
+  "portfolio.yield.row.percentHint":
+    "How much of {index} the account paid, day by day",
+  "portfolio.yield.row.excessHint":
+    "The return minus {index}, in percentage points",
+  "portfolio.yield.profile.market":
+    "Market price: the return is not annualized or stated as a percent of {index}; read it against {index} over the same days.",
+  "portfolio.yield.group.index": "Compared with {index}",
+  "portfolio.yield.group.indexPeriod":
+    "{from} to {until} · {days} business days",
+  "portfolio.yield.group.inflation": "Net of {index}",
+  "portfolio.yield.group.inflationPeriod":
+    "{from} to {until} · months with a published {index}",
+  "portfolio.yield.row.annual": "Rate a year",
+  "portfolio.yield.row.annualHint": "On the year basis {index} is quoted on",
+  "portfolio.yield.row.percent": "Percent of {index}",
+  "portfolio.yield.row.return": "Return",
+  "portfolio.yield.row.returnHint": "Not annualized",
+  "portfolio.yield.row.index": "{index} in the period",
+  "portfolio.yield.row.indexValue": "{rate} ({annual} a year)",
+  "portfolio.yield.row.excess": "Difference from {index}",
+  "portfolio.yield.row.real": "Real return",
+  "portfolio.yield.row.realHint": "(1 + return) ÷ (1 + {index}) − 1",
   "portfolio.yield.indexOver": "{index} {rate}",
   "portfolio.yield.points": "{value} pp",
-  "portfolio.yield.card.annual": "Rate a year",
-  "portfolio.yield.card.annualNote":
-    "{rate} in {days} business days, {from} to {until}",
-  "portfolio.yield.card.return": "Return",
-  "portfolio.yield.card.returnNote":
-    "{days} business days, {from} to {until}; not annualized",
-  "portfolio.yield.card.percent": "Percent of {index}",
-  "portfolio.yield.card.percentNote":
-    "{index} {rate} a year over the same days",
-  "portfolio.yield.card.excess": "Against {index}",
-  "portfolio.yield.card.excessNote": "{index} {rate} over the same days",
-  "portfolio.yield.card.real": "Real return",
-  "portfolio.yield.card.realNote":
-    "{nominal} less {index} {inflation}, {from} to {until}",
   "portfolio.return.annualEquivalent":
     "Rate a year over {days} business days: {rate}",
   "portfolio.return.excess": "Against {index} over the same days: {value} pp",
