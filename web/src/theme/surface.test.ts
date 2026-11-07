@@ -64,4 +64,34 @@ describe("surface values", () => {
       ]);
     },
   );
+
+  it.each(["spectrum", "accent"] as const)(
+    "gives the %s series one chroma whatever the accent's chroma",
+    (mode) => {
+      for (const slot of Object.values(surfaceRecipe.chart[mode].dark ?? {})) {
+        expect(slot).toMatchObject({ c: { scale: 1000, max: 0.16 } });
+      }
+    },
+  );
+
+  it("keeps the mono series on the accent's own chroma", () => {
+    for (const slot of Object.values(surfaceRecipe.chart.mono.dark ?? {})) {
+      expect(slot).toMatchObject({ c: { scale: 1, max: 0.16 } });
+    }
+  });
+
+  it("keeps every pair of neighbouring spectrum series 75 degrees apart", () => {
+    const turns = Object.values(surfaceRecipe.chart.spectrum.dark ?? {}).map(
+      (slot) =>
+        typeof slot === "string" || !("h" in slot) ? 0 : (slot.h ?? 0),
+    );
+    const gaps = turns.slice(1).map((turn, i) => {
+      const gap = Math.abs(turn - (turns[i] ?? 0)) % 360;
+
+      return Math.min(gap, 360 - gap);
+    });
+
+    expect(Math.min(...gaps)).toBe(75);
+    expect(new Set(turns).size).toBe(8);
+  });
 });

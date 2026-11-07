@@ -242,56 +242,56 @@
 [data-slotted-scheme="dark"] [data-equori-chart="spectrum"]:not([data-slotted-scheme]),
 [data-equori-chart="spectrum"] [data-slotted-scheme="dark"]:not([data-equori-chart]),
 [data-equori-chart="spectrum"][data-slotted-scheme="dark"] [data-slotted-seeds]:not([data-slotted-scheme], [data-equori-chart]) {
-  --slotted-data-1: oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1), 0.16) h);
-  --slotted-data-2: oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1), 0.16) calc(h + 135));
-  --slotted-data-3: oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1), 0.16) calc(h + 270));
-  --slotted-data-4: oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1), 0.16) calc(h + 90));
-  --slotted-data-5: oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1), 0.16) calc(h + 315));
-  --slotted-data-6: oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1), 0.16) calc(h + 210));
-  --slotted-data-7: oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1), 0.16) calc(h + 45));
-  --slotted-data-8: oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1), 0.16) calc(h + 120));
+  --slotted-data-1: oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1000), 0.16) h);
+  --slotted-data-2: oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1000), 0.16) calc(h + 135));
+  --slotted-data-3: oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1000), 0.16) calc(h + 270));
+  --slotted-data-4: oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1000), 0.16) calc(h + 90));
+  --slotted-data-5: oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1000), 0.16) calc(h + 315));
+  --slotted-data-6: oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1000), 0.16) calc(h + 210));
+  --slotted-data-7: oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1000), 0.16) calc(h + 45));
+  --slotted-data-8: oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1000), 0.16) calc(h + 120));
 }
 
 [data-equori-chart="spectrum"][data-slotted-scheme="light"],
 [data-slotted-scheme="light"] [data-equori-chart="spectrum"]:not([data-slotted-scheme]),
 [data-equori-chart="spectrum"] [data-slotted-scheme="light"]:not([data-equori-chart]),
 [data-equori-chart="spectrum"][data-slotted-scheme="light"] [data-slotted-seeds]:not([data-slotted-scheme], [data-equori-chart]) {
-  --slotted-data-1: oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1), 0.16) h);
-  --slotted-data-2: oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1), 0.16) calc(h + 135));
-  --slotted-data-3: oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1), 0.16) calc(h + 270));
-  --slotted-data-4: oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1), 0.16) calc(h + 90));
-  --slotted-data-5: oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1), 0.16) calc(h + 315));
-  --slotted-data-6: oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1), 0.16) calc(h + 210));
-  --slotted-data-7: oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1), 0.16) calc(h + 45));
-  --slotted-data-8: oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1), 0.16) calc(h + 120));
+  --slotted-data-1: oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1000), 0.16) h);
+  --slotted-data-2: oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1000), 0.16) calc(h + 135));
+  --slotted-data-3: oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1000), 0.16) calc(h + 270));
+  --slotted-data-4: oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1000), 0.16) calc(h + 90));
+  --slotted-data-5: oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1000), 0.16) calc(h + 315));
+  --slotted-data-6: oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1000), 0.16) calc(h + 210));
+  --slotted-data-7: oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1000), 0.16) calc(h + 45));
+  --slotted-data-8: oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1000), 0.16) calc(h + 120));
 }
 
 [data-equori-chart="accent"][data-slotted-scheme="dark"],
 [data-slotted-scheme="dark"] [data-equori-chart="accent"]:not([data-slotted-scheme]),
 [data-equori-chart="accent"] [data-slotted-scheme="dark"]:not([data-equori-chart]),
 [data-equori-chart="accent"][data-slotted-scheme="dark"] [data-slotted-seeds]:not([data-slotted-scheme], [data-equori-chart]) {
-  --slotted-data-1: oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1), 0.16) h);
-  --slotted-data-2: oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1), 0.16) calc(h + 45));
-  --slotted-data-3: oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1), 0.16) calc(h + 90));
-  --slotted-data-4: oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1), 0.16) calc(h + 135));
-  --slotted-data-5: oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1), 0.16) calc(h + 180));
-  --slotted-data-6: oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1), 0.16) calc(h + 225));
-  --slotted-data-7: oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1), 0.16) calc(h + 270));
-  --slotted-data-8: oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1), 0.16) calc(h + 315));
+  --slotted-data-1: oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1000), 0.16) h);
+  --slotted-data-2: oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1000), 0.16) calc(h + 45));
+  --slotted-data-3: oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1000), 0.16) calc(h + 90));
+  --slotted-data-4: oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1000), 0.16) calc(h + 135));
+  --slotted-data-5: oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1000), 0.16) calc(h + 180));
+  --slotted-data-6: oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1000), 0.16) calc(h + 225));
+  --slotted-data-7: oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1000), 0.16) calc(h + 270));
+  --slotted-data-8: oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1000), 0.16) calc(h + 315));
 }
 
 [data-equori-chart="accent"][data-slotted-scheme="light"],
 [data-slotted-scheme="light"] [data-equori-chart="accent"]:not([data-slotted-scheme]),
 [data-equori-chart="accent"] [data-slotted-scheme="light"]:not([data-equori-chart]),
 [data-equori-chart="accent"][data-slotted-scheme="light"] [data-slotted-seeds]:not([data-slotted-scheme], [data-equori-chart]) {
-  --slotted-data-1: oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1), 0.16) h);
-  --slotted-data-2: oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1), 0.16) calc(h + 45));
-  --slotted-data-3: oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1), 0.16) calc(h + 90));
-  --slotted-data-4: oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1), 0.16) calc(h + 135));
-  --slotted-data-5: oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1), 0.16) calc(h + 180));
-  --slotted-data-6: oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1), 0.16) calc(h + 225));
-  --slotted-data-7: oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1), 0.16) calc(h + 270));
-  --slotted-data-8: oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1), 0.16) calc(h + 315));
+  --slotted-data-1: oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1000), 0.16) h);
+  --slotted-data-2: oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1000), 0.16) calc(h + 45));
+  --slotted-data-3: oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1000), 0.16) calc(h + 90));
+  --slotted-data-4: oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1000), 0.16) calc(h + 135));
+  --slotted-data-5: oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1000), 0.16) calc(h + 180));
+  --slotted-data-6: oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1000), 0.16) calc(h + 225));
+  --slotted-data-7: oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1000), 0.16) calc(h + 270));
+  --slotted-data-8: oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1000), 0.16) calc(h + 315));
 }
 
 [data-equori-chart="mono"][data-slotted-scheme="dark"],

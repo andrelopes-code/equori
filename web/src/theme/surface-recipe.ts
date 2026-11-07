@@ -85,6 +85,8 @@ const shadowLevels = {
 // apart; the set matches the eight hues the series had before they followed the accent.
 const spectrumTurns = [0, 135, 270, 90, 315, 210, 45, 120] as const;
 
+const vividScale = 1000;
+
 const seriesSlots = [0, 1, 2, 3, 4, 5, 6, 7] as const;
 
 export const surfaceRecipe: {
@@ -119,12 +121,16 @@ export const surfaceRecipe: {
   },
   chart: {
     spectrum: {
-      dark: seriesTokens((slot) => accentSeries(0.66, spectrumTurns[slot])),
-      light: seriesTokens((slot) => accentSeries(0.58, spectrumTurns[slot])),
+      dark: seriesTokens((slot) =>
+        accentSeries(0.66, spectrumTurns[slot], vividScale),
+      ),
+      light: seriesTokens((slot) =>
+        accentSeries(0.58, spectrumTurns[slot], vividScale),
+      ),
     },
     accent: {
-      dark: seriesTokens((slot) => accentSeries(0.66, slot * 45)),
-      light: seriesTokens((slot) => accentSeries(0.58, slot * 45)),
+      dark: seriesTokens((slot) => accentSeries(0.66, slot * 45, vividScale)),
+      light: seriesTokens((slot) => accentSeries(0.58, slot * 45, vividScale)),
     },
     mono: {
       dark: seriesTokens((slot) => accentSeries(0.86 - slot * 0.055, 0)),
@@ -196,8 +202,15 @@ function seriesTokens(
   );
 }
 
-function accentSeries(l: number, h: number): Derivation {
-  return { seed: "accent", l: round(l), c: { scale: 1, max: 0.16 }, h };
+// A chromaScale of 1 keeps the accent's own chroma; a large one reaches the ceiling for any accent
+// with chroma, so a muted accent does not flatten the series into one grey.
+function accentSeries(l: number, h: number, chromaScale = 1): Derivation {
+  return {
+    seed: "accent",
+    l: round(l),
+    c: { scale: chromaScale, max: 0.16 },
+    h,
+  };
 }
 
 function round(value: number): number {
