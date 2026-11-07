@@ -523,6 +523,7 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
     "Parece repetir um pagamento da fatura já registrado. Crie se foram dois pagamentos; descarte se for o mesmo.",
   "batch.reason.group":
     "Este lançamento parece ser a soma destas linhas do banco. Confirme para dividi-lo nas linhas do banco.",
+  "sync.gone": "A instituição não lista mais esta conta",
   "batch.reason.reserve":
     "Esta linha movimenta um saldo separado que não foi identificado com certeza. Crie e transforme em transferência para o saldo certo, ou descarte.",
   "batch.reason.duplicate":

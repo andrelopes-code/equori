@@ -34,6 +34,12 @@ func TestResolveReserve(t *testing.T) {
 
 		return x
 	}
+	gone := func(x ExternalAccount, since string) ExternalAccount {
+		d := onDate(since)
+		x.GoneSince = &d
+
+		return x
+	}
 
 	tests := []struct {
 		name     string
@@ -133,6 +139,24 @@ func TestResolveReserve(t *testing.T) {
 			line:     NormalizedRecord{ReserveMove: true, Date: onDate("2026-11-12")},
 			reserves: []ExternalAccount{mapped("Ccc", house)},
 			review:   true,
+		},
+		{
+			name:     "a replaced reserve answers to nothing",
+			line:     move("Aaa", "2026-11-12"),
+			reserves: []ExternalAccount{gone(ignored("Aaa"), "2026-11-12"), mapped("Aaa", house)},
+			transfer: &house,
+		},
+		{
+			name:     "a gone reserve holds its name up to the date it left",
+			line:     move("Aaa", "2026-11-12"),
+			reserves: []ExternalAccount{gone(mapped("Aaa", trip), "2026-11-12"), mapped("Aaa", house)},
+			review:   true,
+		},
+		{
+			name:     "a gone reserve answers to nothing after that date",
+			line:     move("Aaa", "2026-11-13"),
+			reserves: []ExternalAccount{gone(mapped("Aaa", trip), "2026-11-12"), mapped("Aaa", house)},
+			transfer: &house,
 		},
 		{
 			name:     "an identifier decides over a name",

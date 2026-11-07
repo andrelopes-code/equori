@@ -24,7 +24,7 @@ func ResolveReserve(r NormalizedRecord, reserves []ExternalAccount) ReserveOutco
 		return ReserveOutcome{}
 	}
 
-	candidates := reserveCandidates(r, reserves)
+	candidates := reserveCandidates(r, answering(r, reserves))
 
 	switch len(candidates) {
 	case 0:
@@ -43,6 +43,14 @@ func ResolveReserve(r NormalizedRecord, reserves []ExternalAccount) ReserveOutco
 	return ReserveOutcome{Review: slices.ContainsFunc(candidates, func(x ExternalAccount) bool {
 		return x.State() == MappingMapped
 	})}
+}
+
+// answering leaves out a reserve that cannot own the line: one the owner replaced, or one the
+// item stopped listing before the line's date (A214).
+func answering(r NormalizedRecord, reserves []ExternalAccount) []ExternalAccount {
+	return slices.DeleteFunc(slices.Clone(reserves), func(x ExternalAccount) bool {
+		return x.GoneSince != nil && (x.Ignored || r.Date.After(*x.GoneSince))
+	})
 }
 
 func reserveCandidates(r NormalizedRecord, reserves []ExternalAccount) []ExternalAccount {

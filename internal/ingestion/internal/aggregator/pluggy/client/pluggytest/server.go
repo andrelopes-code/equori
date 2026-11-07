@@ -83,6 +83,39 @@ func (s *Server) AddAccount(itemID string, a client.Account) {
 	s.accounts[itemID] = append(s.accounts[itemID], a)
 }
 
+// RenameAccount changes the name an item reports for an account.
+func (s *Server) RenameAccount(accountID, name string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.eachAccount(accountID, func(a *client.Account) { a.Name = name })
+}
+
+// ChangeAccountID makes the item report an account under another id, with its lines.
+func (s *Server) ChangeAccountID(accountID, id string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.eachAccount(accountID, func(a *client.Account) { a.ID = id })
+	s.transactions[id] = s.transactions[accountID]
+	delete(s.transactions, accountID)
+}
+
+// ChangeReservedIdentification makes the item report a reserved balance under another
+// identification.
+func (s *Server) ChangeReservedIdentification(accountID, identification, id string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.eachAccount(accountID, func(a *client.Account) {
+		for i := range a.BankData.ReservedBalances {
+			if r := &a.BankData.ReservedBalances[i]; r.Identification == identification {
+				r.Identification = id
+			}
+		}
+	})
+}
+
 // SetAccountBalance changes an account's balance.
 func (s *Server) SetAccountBalance(accountID string, balance client.Decimal) {
 	s.mu.Lock()

@@ -82,6 +82,11 @@ export function ConnectionAccountsTable({
                         .filter((p) => p !== undefined)
                         .join(" · ")}
                     </Text>
+                    {external.gone_since !== undefined && (
+                      <Text size="xs" tone="warning">
+                        {t("sync.gone")}
+                      </Text>
+                    )}
                   </Stack>
                 </TableRowHeader>
                 <TableCell>

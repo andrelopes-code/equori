@@ -170,5 +170,21 @@ func (s *Service) MapAccount(ctx context.Context, booksID int64, connectionID, e
 		return domain.ExternalAccount{}, err
 	}
 
+	if !m.Ignored {
+		// A214: a ledger account fed by an account the item stopped listing passes to this one.
+		for _, held := range c.Accounts {
+			if held.ID == ext.ID || held.GoneSince == nil || held.AccountID == nil || *held.AccountID != *m.AccountID {
+				continue
+			}
+
+			released, err := held.Apply(domain.Mapping{Ignored: true}, domain.ImportTarget{})
+			if err != nil {
+				return domain.ExternalAccount{}, err
+			}
+
+			return s.repo.ReplaceMapping(ctx, released, mapped)
+		}
+	}
+
 	return s.repo.SaveMapping(ctx, mapped)
 }

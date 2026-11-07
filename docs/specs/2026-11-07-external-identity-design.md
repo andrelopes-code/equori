@@ -67,6 +67,8 @@ Outcome:
 
 A row older than this migration has null dates, so a current holder excludes a former holder as under A94.
 
+A reserve the owner replaced, or one the item stopped listing before the line's date, is no candidate (A214).
+
 ## 5. A213: a line that waits
 
 A line with outcome review that the matching pipeline would create waits with `review_reason` `reserve`. A line the pipeline links to an entry links as before: the owner's entry already holds the movement.

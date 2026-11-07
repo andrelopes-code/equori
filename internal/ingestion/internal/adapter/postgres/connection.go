@@ -102,6 +102,29 @@ func (r *Repository) RenameExternalAccount(
 	})
 }
 
+func (r *Repository) SetExternalAccountGone(ctx context.Context, booksID int64, id uuid.UUID, since *time.Time) error {
+	return r.q.SetExternalAccountGone(ctx, SetExternalAccountGoneParams{BooksID: booksID, ID: id, GoneSince: since})
+}
+
+func (r *Repository) ReplaceMapping(ctx context.Context, released, mapped domain.ExternalAccount) (domain.ExternalAccount, error) {
+	var out domain.ExternalAccount
+
+	err := pgx.BeginFunc(ctx, r.pool, func(tx pgx.Tx) error {
+		repo := Repository{pool: r.pool, q: r.q.WithTx(tx)}
+
+		if _, err := repo.SaveMapping(ctx, released); err != nil {
+			return err
+		}
+
+		var err error
+		out, err = repo.SaveMapping(ctx, mapped)
+
+		return err
+	})
+
+	return out, err
+}
+
 func (r *Repository) OpenReserveReviews(ctx context.Context, booksID int64, connectionID uuid.UUID) (int64, error) {
 	return r.q.OpenReserveReviews(ctx, OpenReserveReviewsParams{BooksID: booksID, ConnectionID: connectionID})
 }

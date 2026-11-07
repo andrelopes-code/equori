@@ -99,7 +99,21 @@ func (s *Service) syncItem(ctx context.Context, c *domain.Connection, force bool
 			continue
 		}
 
+		// A214: an account the item stopped listing does not stop the others; a reserved balance
+		// syncs without a balance (D2).
+		if ext.GoneSince != nil && ext.Subtype != domain.SubtypeReservedBalance {
+			continue
+		}
+
 		b, err := s.syncAccount(ctx, agg, *c, ext, creds, syncID)
+		if errors.Is(err, ErrAccountGone) {
+			if err := s.repo.SetExternalAccountGone(ctx, c.BooksID, ext.ID, new(s.today(ctx))); err != nil {
+				return batches, err
+			}
+
+			continue
+		}
+
 		if err != nil {
 			return batches, err
 		}
@@ -135,8 +149,14 @@ func (s *Service) addMissingAccounts(ctx context.Context, agg Aggregator, c *dom
 		known[ext.ExternalID] = ext
 	}
 
-	// A212: a name first listed now began after the previous listing.
 	today := s.today(ctx)
+
+	changed, err := s.markGone(ctx, c, listed, today)
+	if err != nil {
+		return err
+	}
+
+	// A212: a name first listed now began after the previous listing.
 
 	var previous *time.Time
 	if c.LastSyncedAt != nil {
@@ -144,7 +164,6 @@ func (s *Service) addMissingAccounts(ctx context.Context, agg Aggregator, c *dom
 		previous = &d
 	}
 
-	changed := false
 	for _, a := range listed {
 		if stored, ok := known[a.ExternalID]; ok {
 			if a.Name == stored.Name || a.Name == "" {
@@ -187,6 +206,31 @@ func (s *Service) addMissingAccounts(ctx context.Context, agg Aggregator, c *dom
 // first, unless the read is empty (A146), so that a line returned with a new
 // id finds its released posting (A38); then the lines go through the P4 pipeline, and a
 // bank balance becomes a balance assertion (A42).
+// markGone dates the stored accounts this listing lacks and clears those it holds again (A214).
+func (s *Service) markGone(ctx context.Context, c *domain.Connection, listed []domain.ExternalAccount, today time.Time) (bool, error) {
+	changed := false
+
+	for _, stored := range c.Accounts {
+		held := slices.ContainsFunc(listed, func(a domain.ExternalAccount) bool { return a.ExternalID == stored.ExternalID })
+		if held == (stored.GoneSince == nil) {
+			continue
+		}
+
+		var since *time.Time
+		if !held {
+			since = &today
+		}
+
+		if err := s.repo.SetExternalAccountGone(ctx, c.BooksID, stored.ID, since); err != nil {
+			return false, err
+		}
+
+		changed = true
+	}
+
+	return changed, nil
+}
+
 func dateIn(t time.Time, loc *time.Location) time.Time {
 	l := t.In(loc)
 

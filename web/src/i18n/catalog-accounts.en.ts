@@ -524,6 +524,7 @@ export const accountsEn = {
     "Looks like a card payment already recorded. Create it if there were two payments; discard it if it is the same one.",
   "batch.reason.group":
     "This entry looks like the sum of these bank lines. Confirm to split it into the bank's lines.",
+  "sync.gone": "No longer listed by the institution",
   "batch.reason.reserve":
     "This line moves money to a set-aside balance that could not be identified with certainty. Create it and turn it into a transfer to the right balance, or discard it.",
   "batch.reason.duplicate":

@@ -109,6 +109,25 @@ describe("Account links", () => {
     ).toBeInTheDocument();
   });
 
+  it("marks an account the institution no longer lists", async () => {
+    const gone = {
+      ...connectionFixture,
+      accounts: connectionFixture.accounts.map((account, index) =>
+        index === 0 ? { ...account, gone_since: "2026-11-12" } : account,
+      ),
+    };
+    await renderApp("/accounts/links", {
+      fetch: api([], {
+        "GET /api/v1/connections": () => json(200, { items: [gone] }),
+      }),
+    });
+    const first = connectionFixture.accounts[0]?.name ?? "";
+    expect(
+      within(await row(first)).getByText(catalogEn["sync.gone"]),
+    ).toBeInTheDocument();
+    expect(screen.getAllByText(catalogEn["sync.gone"])).toHaveLength(1);
+  });
+
   it("links an external account to a compatible account from a start date", async () => {
     const log: { route: string; body?: unknown }[] = [];
     await renderApp("/accounts/links", { fetch: api(log) });

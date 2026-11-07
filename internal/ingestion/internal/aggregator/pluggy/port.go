@@ -70,6 +70,8 @@ func (p Port) translate(err error) error {
 	switch {
 	case err == nil:
 		return nil
+	case errors.Is(err, app.ErrAccountGone):
+		return err
 	case errors.Is(err, client.ErrUnauthorized):
 		return app.ErrAggregatorUnauthorized
 	case errors.Is(err, client.ErrNotFound):

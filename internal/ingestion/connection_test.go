@@ -39,6 +39,7 @@ type externalAccountView struct {
 	State       string `json:"state"`
 	AccountID   string `json:"account_id"`
 	SyncFrom    string `json:"sync_from"`
+	GoneSince   string `json:"gone_since"`
 }
 
 type connectionView struct {

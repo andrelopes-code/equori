@@ -90,6 +90,12 @@ type Repository interface {
 	// RenameExternalAccount stores the name the institution now reports for the external
 	// account, keeps the previous one among its former names (A94) and dates the new one (A212).
 	RenameExternalAccount(ctx context.Context, booksID int64, id uuid.UUID, name string, from *time.Time, on time.Time) error
+	// SetExternalAccountGone stores the date a listing first lacked the account, or clears it
+	// with nil (A214).
+	SetExternalAccountGone(ctx context.Context, booksID int64, id uuid.UUID, since *time.Time) error
+	// ReplaceMapping saves both mappings in one database transaction: released gives up the
+	// ledger account that mapped takes (A214).
+	ReplaceMapping(ctx context.Context, released, mapped domain.ExternalAccount) (domain.ExternalAccount, error)
 	// OpenReserveReviews counts the connection's lines waiting because no reserve resolves them
 	// (A213).
 	OpenReserveReviews(ctx context.Context, booksID int64, connectionID uuid.UUID) (int64, error)
