@@ -1,8 +1,6 @@
-import { ProgressBar } from "@slotted/react/progress-indicator";
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableColumnHeader,
   TableContent,
@@ -14,6 +12,7 @@ import {
 } from "@slotted/react/table";
 
 import type { components } from "@/api/schema.gen";
+import { ShareBar } from "@/features/portfolio/share-bar";
 import { useScale } from "@/features/setup";
 import { formatBasisPoints } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
@@ -58,8 +57,7 @@ export function AllocationTable({
 
   return (
     <Table columns={columns} variant="framed">
-      <TableContent>
-        <TableCaption>{caption}</TableCaption>
+      <TableContent aria-label={caption}>
         <TableHead>
           <TableRow>
             <TableColumnHeader>
@@ -81,10 +79,7 @@ export function AllocationTable({
                 <TableRow key={row.key} value={row.key}>
                   <TableRowHeader>{row.name}</TableRowHeader>
                   <TableCell>
-                    <ProgressBar
-                      aria-label={`${row.name}: ${percent(row.share)}`}
-                      value={row.share / 100}
-                    />
+                    <ShareBar share={row.share} />
                   </TableCell>
                   <TableCell numeric>{money(row.value)}</TableCell>
                   <TableCell numeric>{percent(row.share)}</TableCell>

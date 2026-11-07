@@ -1,0 +1,22 @@
+@layer app {
+  .track {
+    /* A bar's least measure: no token holds it, and shorter bars stop telling shares apart. */
+    min-inline-size: 16rem;
+    block-size: var(--slotted-space-2);
+    border-radius: var(--slotted-radius-sm);
+    background: var(--slotted-border-subtle);
+    overflow: hidden;
+  }
+
+  .fill {
+    block-size: 100%;
+    border-radius: var(--slotted-radius-sm);
+    background: var(--slotted-tone-accent-text);
+  }
+
+  @media (forced-colors: active) {
+    .fill {
+      background: CanvasText;
+    }
+  }
+}

@@ -1,5 +1,33 @@
 export const holdingsEn = {
   "holdings.bar": "Proportion",
+  "holdings.subtitle":
+    "How much you have invested, how much you made and how it performed.",
+  "holdings.year": "Income and sales",
+  "holdings.summary": "Portfolio summary",
+  "holdings.value": "Portfolio value",
+  "holdings.value.note":
+    "{positions} in investments and {cash} in brokerage cash",
+  "holdings.value.unpriced": "{count} without a price, out of the total",
+  "holdings.gain": "Gain or loss",
+  "holdings.gain.note": "On {cost} invested, without income",
+  "holdings.gain.mixed": "{count} in another currency left out",
+  "holdings.income": "Income in {year}",
+  "holdings.income.note": "Net of {withheld} withheld",
+  "holdings.income.none": "None received this year",
+  "holdings.income.open": "View",
+  "holdings.income.record": "Record income",
+  "holdings.where": "Where the money is",
+  "holdings.where.note":
+    "Investments and brokerage cash. Savings and reserves are on Accounts.",
+  "holdings.by": "Group by",
+  "holdings.list": "Investments",
+  "holdings.list.note":
+    "Largest first. Quantity, average cost and other details are under Columns.",
+  "holdings.columns": "Columns",
+  "holdings.col.price": "Price",
+  "holdings.trade": "Record a buy or sale",
+  "holdings.prices": "Record prices",
+  "instruments.type.cash": "Brokerage cash",
   "report.assets.title": "Where your assets are",
   "report.assets.note":
     "Every account you own: banks, savings, brokerages and cash.",

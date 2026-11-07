@@ -2,6 +2,34 @@ import type { holdingsEn } from "@/i18n/catalog-holdings.en";
 
 export const holdingsPtBR: Record<keyof typeof holdingsEn, string> = {
   "holdings.bar": "Proporção",
+  "holdings.subtitle":
+    "Quanto você tem investido, quanto ganhou e como rendeu.",
+  "holdings.year": "Proventos e vendas",
+  "holdings.summary": "Resumo da carteira",
+  "holdings.value": "Valor da carteira",
+  "holdings.value.note":
+    "{positions} em investimentos e {cash} em saldo de corretora",
+  "holdings.value.unpriced": "{count} sem preço, fora do total",
+  "holdings.gain": "Lucro ou prejuízo",
+  "holdings.gain.note": "Sobre {cost} investidos, sem contar proventos",
+  "holdings.gain.mixed": "{count} em outra moeda fora da conta",
+  "holdings.income": "Proventos em {year}",
+  "holdings.income.note": "Líquido de {withheld} retidos",
+  "holdings.income.none": "Nenhum recebido neste ano",
+  "holdings.income.open": "Ver",
+  "holdings.income.record": "Registrar provento",
+  "holdings.where": "Onde está o dinheiro",
+  "holdings.where.note":
+    "Investimentos e saldo de corretora. Poupança e reservas ficam em Contas.",
+  "holdings.by": "Agrupar por",
+  "holdings.list": "Investimentos",
+  "holdings.list.note":
+    "Do maior para o menor. Quantidade, custo médio e outros dados ficam em Colunas.",
+  "holdings.columns": "Colunas",
+  "holdings.col.price": "Preço",
+  "holdings.trade": "Registrar compra ou venda",
+  "holdings.prices": "Registrar preços",
+  "instruments.type.cash": "Saldo de corretora",
   "report.assets.title": "Onde está o seu patrimônio",
   "report.assets.note":
     "Todas as contas que você tem: bancos, poupança, corretoras e dinheiro.",

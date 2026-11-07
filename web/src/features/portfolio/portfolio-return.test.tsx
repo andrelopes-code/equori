@@ -189,14 +189,13 @@ describe("Portfolio return", () => {
   it("states a missing price in the valuation currency", async () => {
     const fetch = portfolioApi({
       "GET /api/v1/reports/return": () => problem(422, "price_missing"),
-      "GET /api/v1/reports/allocation": () => problem(422, "price_missing"),
     });
     await renderApp("/portfolio?value_in=USD", { fetch });
     const message = catalogEn["portfolio.priceMissing"].replace(
       "{currency}",
       "USD",
     );
-    expect(await screen.findAllByText(message)).toHaveLength(2);
+    expect(await screen.findAllByText(message)).toHaveLength(1);
   });
 
   it("blocks a period above 366 days without asking for it", async () => {

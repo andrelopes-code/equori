@@ -63,7 +63,7 @@ export function AssetsAllocation({
   }));
 
   return (
-    <Section>
+    <Section size="lg">
       <SectionHeader>
         <SectionTitle>
           <SectionHeading>{t("report.assets.title")}</SectionHeading>

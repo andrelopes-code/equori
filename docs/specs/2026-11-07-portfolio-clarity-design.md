@@ -46,7 +46,7 @@ A reader opens the portfolio to answer three questions: how much do I have, how 
 
 **PC6 Bars.** "Where the money is" is one framed table, largest first: the group, its share drawn as a `ProgressBar`, its value and its percent, with a total. One table replaces the pie and the table that repeated its figures, so a reader gets the length and the exact number on one line.
 
-**PC7 List.** "Investments" is a framed `DataGrid` grouped by `by`, with `aggregate` totals on each group row and on a summary row:
+**PC7 List.** "Investments" is a framed `DataGrid` grouped by `by`, with sums on each group row and on a summary row. The summary row holds no label while Slotted issue #80 stands: the summary figures state the same total.
 
 - Default columns: Investment (name, then the code in the muted tone, linked to its page), Market value, Gain or loss (amount and percent of cost, signed, in the tone of its sign), % of portfolio.
 - Columns a reader adds through `ColumnManager`: Quantity, Average cost, Cost, Price, Price date, Account. The arrangement is kept in `localStorage`.

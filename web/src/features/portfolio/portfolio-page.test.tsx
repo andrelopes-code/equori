@@ -4,191 +4,330 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
 import { catalogPtBR } from "@/i18n/catalog.pt-BR";
-import { json } from "@/testing/fake-api";
-import { petrID, portfolioApi } from "@/testing/portfolio-api";
-import { hideAmounts, expectNoAmounts } from "@/testing/privacy";
+import { json, problem } from "@/testing/fake-api";
+import { accounts, brl, brokerID, cashID } from "@/testing/investment-api";
+import { portfolioApi, xpInstitutionID } from "@/testing/portfolio-api";
+import { hideAmounts } from "@/testing/privacy";
 import { renderApp } from "@/testing/render-app";
 
-const rowTexts = (table: HTMLElement) =>
-  within(table)
+const gridRows = (grid: HTMLElement) =>
+  within(grid)
     .getAllByRole("row")
     .map((row) =>
       [
         ...row.querySelectorAll(
-          '[role="rowheader"], [role="cell"], [role="columnheader"], th, td',
+          '[role="rowheader"], [role="gridcell"], [role="columnheader"]',
         ),
       ]
         .map((cell) => cell.textContent)
         .join("|"),
     );
 
-const positionsTable = () =>
-  screen.findByRole("table", { name: catalogEn["portfolio.positions.title"] });
+const tableRows = (table: HTMLElement) =>
+  within(table)
+    .getAllByRole("row")
+    .map((row) =>
+      [...row.querySelectorAll("th, td")].map((c) => c.textContent).join("|"),
+    );
 
-describe("Portfolio positions", () => {
+const list = () =>
+  screen.findByRole("grid", { name: catalogEn["holdings.list"] });
+
+const where = () =>
+  screen.findByRole("table", { name: catalogEn["holdings.where"] });
+
+const figure = async (label: string) =>
+  (await screen.findByText(label)).closest<HTMLElement>(
+    "[data-ui='stat-card']",
+  ) ?? document.body;
+
+describe("Portfolio page", () => {
   afterEach(() => {
     localStorage.removeItem("equori.locale");
     localStorage.removeItem("equori.privacy");
+    localStorage.removeItem("equori.portfolio.columns");
   });
 
-  it("groups the positions by account with cost, value, result and share", async () => {
+  it("PC2: states one value, its parts and the unpriced rows", async () => {
     await renderApp("/portfolio", { fetch: portfolioApi() });
-    const table = await positionsTable();
-    await within(table).findAllByText("XP / XP MXRF11");
-    expect(rowTexts(table)).toEqual([
-      [
-        "Investment",
-        "Account",
-        "Quantity",
-        "Average cost",
-        "Cost",
-        "Market value",
-        "Gain or loss now",
-        "% of portfolio",
-      ].join("|"),
-      "XP",
-      "PETR4|XP|1|$3.00|$3.00|R$16.00||11.36%",
-      "XP / XP cash",
-      `MXRF11|XP / XP cash|2|R$5.00|R$10.00|${catalogEn["positions.noPrice"]}||`,
-      "XP / XP MXRF11",
-      "MXRF11|XP / XP MXRF11|10|R$10.00|R$100.00|R$105.00|+R$5.00|74.46%",
-      "XP / XP PETR4",
-      "PETR4|XP / XP PETR4|5|R$3.00|R$15.00|R$20.00|+R$5.00|14.18%",
-      `${catalogEn["portfolio.total"]}|R$141.00||100.00%`,
+    const card = await figure(catalogEn["holdings.value"]);
+
+    await within(card).findByText("R$541.00");
+    expect(card.textContent).toContain(
+      catalogEn["holdings.value.note"]
+        .replace("{positions}", "R$141.00")
+        .replace("{cash}", "R$400.00"),
+    );
+    expect(card.textContent).toContain(
+      catalogEn["holdings.value.unpriced"].replace("{count}", "1"),
+    );
+  });
+
+  it("PC2: measures the gain on the positions with one currency and says what it leaves out", async () => {
+    await renderApp("/portfolio", { fetch: portfolioApi() });
+    const card = await figure(catalogEn["holdings.gain"]);
+
+    await within(card).findByText("+R$10.00");
+    expect(card.textContent).toContain(
+      catalogEn["holdings.gain.note"].replace("{cost}", "R$115.00"),
+    );
+    expect(card.textContent).toContain(
+      catalogEn["holdings.gain.mixed"].replace("{count}", "1"),
+    );
+  });
+
+  it("PC2: states the net income of the year up to the valuation date, with a door", async () => {
+    const asked: (string | null)[] = [];
+    const fetch = portfolioApi({
+      "GET /api/v1/income-events": (req) => {
+        asked.push(new URL(req.url).searchParams.get("year"));
+        return json(200, {
+          from: "2025-01-01",
+          to: "2025-12-31",
+          items: [
+            { date: "2025-02-01", gross: brl(1000), withheld: brl(150) },
+            { date: "2025-11-01", gross: brl(9000), withheld: brl(0) },
+          ],
+        });
+      },
+    });
+    await renderApp("/portfolio?date=2025-06-30", { fetch });
+    const card = await figure(
+      catalogEn["holdings.income"].replace("{year}", "2025"),
+    );
+
+    await within(card).findByText("R$8.50");
+    expect(card.textContent).toContain(
+      catalogEn["holdings.income.note"].replace("{withheld}", "R$1.50"),
+    );
+    expect(asked).toEqual(["2025"]);
+    expect(
+      within(card).getByRole("link", {
+        name: catalogEn["holdings.income.open"],
+      }),
+    ).toHaveAttribute("href", "/portfolio/year?year=2025&tab=income");
+  });
+
+  it("PC6: draws the groups of every row, with shares of the same total", async () => {
+    await renderApp("/portfolio", { fetch: portfolioApi() });
+    const table = await where();
+
+    await within(table).findByText(catalogEn["instruments.type.cash"]);
+    expect(tableRows(table).slice(1)).toEqual([
+      `${catalogEn["instruments.type.cash"]}||R$400.00|73.93%`,
+      "REITs||R$105.00|19.40%",
+      "Stocks||R$36.00|6.67%",
+      "Total|R$541.00|100.00%",
     ]);
   });
 
-  it("leaves the result empty and says why when cost and value differ in currency", async () => {
+  it("PC5: one control groups the bars and the list, from the address", async () => {
+    const fetch = portfolioApi({
+      "GET /api/v1/accounts": () =>
+        json(200, {
+          items: accounts.map((a) =>
+            a.id === brokerID ? { ...a, institution_id: xpInstitutionID } : a,
+          ),
+        }),
+    });
+    await renderApp("/portfolio?by=institution", { fetch });
+    const table = await where();
+
+    await within(table).findByText("XP");
+    expect(document.body.textContent).not.toContain(xpInstitutionID);
+
+    await userEvent
+      .setup()
+      .click(
+        screen.getByRole("radio", { name: catalogEn["portfolio.by.currency"] }),
+      );
+    await within(await where()).findByText("BRL");
+    await within(await list()).findByText(/^BRL · /);
+  });
+
+  it("PC7: lists name, value, gain and share under groups, with a total", async () => {
     await renderApp("/portfolio", { fetch: portfolioApi() });
-    await positionsTable();
+    const grid = await list();
+
+    await within(grid).findAllByRole("link", { name: "MXRF11" });
+    expect(gridRows(grid)).toEqual([
+      [
+        catalogEn["positions.instrument"],
+        catalogEn["positions.marketValue"],
+        catalogEn["positions.result"],
+        catalogEn["portfolio.share"],
+      ].join("|"),
+      `${catalogEn["instruments.type.cash"]} · 1|R$400.00||73.93%`,
+      "XP cash|R$400.00||73.93%",
+      "REITs · 2|R$105.00|+R$5.00|19.40%",
+      "MXRF11|R$105.00|+R$5.00+5.00%|19.40%",
+      `MXRF11|${catalogEn["positions.noPrice"]}||`,
+      "Stocks · 2|R$36.00|+R$5.00|6.67%",
+      "PETR4|R$20.00|+R$5.00+33.33%|3.69%",
+      "PETR4|R$16.00||2.98%",
+      "|R$541.00|+R$10.00|100.00%",
+    ]);
+  });
+
+  it("PC7: says the reason of an empty gain when cost and value differ in currency", async () => {
+    await renderApp("/portfolio", { fetch: portfolioApi() });
+    await list();
     expect(
       await screen.findAllByLabelText(catalogEn["portfolio.resultMixed"]),
     ).toHaveLength(1);
   });
 
-  it("counts the positions without a price above the table", async () => {
-    await renderApp("/portfolio", { fetch: portfolioApi() });
+  it("PC7: names a price only when it is old, and always in the price date column", async () => {
+    const fetch = portfolioApi({
+      "GET /api/v1/positions": () =>
+        json(200, {
+          items: [
+            {
+              account_id: cashID,
+              instrument: "PETR4",
+              quantity: { amount: 5, currency: "PETR4" },
+              cost_basis: brl(1500),
+              average_cost: "3.0000",
+              market_value: brl(2000),
+              prices: [{ date: "2026-08-01", value: "4" }],
+            },
+          ],
+        }),
+    });
+    await renderApp("/portfolio?date=2026-09-30", { fetch });
+    const grid = await list();
+
     expect(
-      await screen.findByText(
-        "Positions without a price, left out of the total and of the shares: 1",
-      ),
+      await within(grid).findByText(/^Price of 08\/01\/2026$/),
     ).toBeInTheDocument();
   });
 
-  it("groups by security on request", async () => {
+  it("PC7: adds the technical columns from the column manager and keeps the choice", async () => {
     await renderApp("/portfolio", { fetch: portfolioApi() });
     const user = userEvent.setup();
-    const table = await positionsTable();
-    await within(table).findAllByText("XP / XP MXRF11");
+    const grid = await list();
+
+    expect(
+      within(grid).queryByRole("columnheader", {
+        name: catalogEn["positions.quantity"],
+      }),
+    ).toBeNull();
+
     await user.click(
-      screen.getByRole("radio", {
-        name: catalogEn["portfolio.group.instrument"],
+      screen.getByRole("button", { name: catalogEn["holdings.columns"] }),
+    );
+    await user.click(
+      await screen.findByRole("checkbox", {
+        name: new RegExp(catalogEn["positions.quantity"]),
       }),
     );
-    await waitFor(() => {
-      expect(rowTexts(table).filter((row) => !row.includes("|"))).toEqual([
-        "MXRF11",
-        "PETR4",
-      ]);
-    });
-  });
 
-  it("links each security to its page and each account to its record", async () => {
-    await renderApp("/portfolio", { fetch: portfolioApi() });
-    const table = await positionsTable();
-    const links = await within(table).findAllByRole("link", {
-      name: "MXRF11",
-    });
-    expect(links[0]).toHaveAttribute("href", "/instruments/MXRF11");
     expect(
-      within(table).getAllByRole("link", { name: "XP / XP PETR4" })[0],
-    ).toHaveAttribute("href", expect.stringContaining("/accounts/"));
-  });
-
-  it("asks for the positions at the date of the address, valued in the base currency", async () => {
-    const asked: URLSearchParams[] = [];
-    const fetch = portfolioApi({
-      "GET /api/v1/positions": (req) => {
-        asked.push(new URL(req.url).searchParams);
-        return json(200, { items: [] });
-      },
-    });
-    await renderApp("/portfolio?date=2026-09-30", { fetch });
+      await within(await list()).findByRole("columnheader", {
+        name: catalogEn["positions.quantity"],
+      }),
+    ).toBeInTheDocument();
     await waitFor(() => {
-      expect(asked.map((q) => [q.get("date"), q.get("value_in")])).toEqual([
-        ["2026-09-30", "BRL"],
-      ]);
+      expect(localStorage.getItem("equori.portfolio.columns")).toContain(
+        "averageCost",
+      );
     });
   });
 
-  it("values the positions in the currency chosen in the address, with a base currency of EUR", async () => {
-    localStorage.setItem(
-      "equori.locale",
-      JSON.stringify({ language: "en", region: "DE" }),
-    );
-    const asked: (string | null)[] = [];
-    const fetch = portfolioApi({
-      "GET /api/v1/settings": () => json(200, { base_currency: "EUR" }),
-      "GET /api/v1/positions": (req) => {
-        asked.push(new URL(req.url).searchParams.get("value_in"));
-        return json(200, {
-          items: [
-            {
-              account_id: "b0000000-0000-4000-8000-000000000003",
-              instrument: "PETR4",
-              quantity: { amount: 3, currency: "PETR4" },
-              cost_basis: { amount: 1000, currency: "EUR" },
-              average_cost: "3.3333",
-              market_value: { amount: 2100, currency: "USD" },
-            },
-          ],
-        });
-      },
-    });
-    await renderApp("/portfolio?value_in=USD", { fetch });
-    const table = await positionsTable();
-    const usd = new Intl.NumberFormat("en-DE", {
-      style: "currency",
-      currency: "USD",
-    });
-    await within(table).findAllByText(usd.format(21));
-    expect(asked).toEqual(["USD"]);
-    expect(rowTexts(table).at(-1)).toContain(usd.format(21));
+  it("PC8: offers to record a trade and an income, and links the unpriced note", async () => {
+    await renderApp("/portfolio", { fetch: portfolioApi() });
+    await list();
+
+    expect(
+      screen.getByRole("link", { name: catalogEn["holdings.trade"] }),
+    ).toHaveAttribute("href", "/transactions/new?kind=trade");
+    expect(
+      screen.getByRole("link", { name: catalogEn["holdings.income.record"] }),
+    ).toHaveAttribute("href", "/transactions/new?kind=investment_income");
+    expect(
+      screen.getByRole("link", { name: catalogEn["holdings.prices"] }),
+    ).toHaveAttribute("href", "/instruments");
   });
 
-  it("shows the empty state when no account holds a position", async () => {
+  it("PC8: shows the empty state with the first action", async () => {
     const fetch = portfolioApi({
       "GET /api/v1/positions": () => json(200, { items: [] }),
+      [`GET /api/v1/accounts/${cashID}/balance`]: () =>
+        json(200, { balance: brl(0) }),
     });
     await renderApp("/portfolio", { fetch });
+
     expect(
       await screen.findByText(catalogEn["portfolio.empty"]),
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: catalogEn["holdings.trade"] }),
+    ).toBeInTheDocument();
   });
 
-  it("formats numbers and the share by the active region, with no Brazilian value", async () => {
+  it("PC4: counts brokerage cash it cannot value as unpriced and keeps the rest", async () => {
+    const fetch = portfolioApi({
+      [`GET /api/v1/accounts/${cashID}/balance`]: () =>
+        problem(422, "price_missing"),
+    });
+    await renderApp("/portfolio", { fetch });
+    const card = await figure(catalogEn["holdings.value"]);
+
+    await within(card).findByText("R$141.00");
+    expect(card.textContent).toContain(
+      catalogEn["holdings.value.unpriced"].replace("{count}", "2"),
+    );
+  });
+
+  it("asks at the date of the address and in the chosen currency", async () => {
+    const positions: URLSearchParams[] = [];
+    const balances: URLSearchParams[] = [];
+    const fetch = portfolioApi({
+      "GET /api/v1/positions": (req) => {
+        positions.push(new URL(req.url).searchParams);
+        return json(200, { items: [] });
+      },
+      [`GET /api/v1/accounts/${cashID}/balance`]: (req) => {
+        balances.push(new URL(req.url).searchParams);
+        return json(200, { balance: { amount: 0, currency: "USD" } });
+      },
+    });
+    await renderApp("/portfolio?date=2026-09-30&value_in=USD", { fetch });
+
+    await waitFor(() => {
+      expect(positions.map((q) => [q.get("date"), q.get("value_in")])).toEqual([
+        ["2026-09-30", "USD"],
+      ]);
+      expect(balances.map((q) => [q.get("date"), q.get("value_in")])).toEqual([
+        ["2026-09-30", "USD"],
+      ]);
+    });
+  });
+
+  it("formats by the active region, with no Brazilian value", async () => {
     localStorage.setItem(
       "equori.locale",
       JSON.stringify({ language: "en", region: "DE" }),
     );
+    const eur = (amount: number) => ({ amount, currency: "EUR" });
     const fetch = portfolioApi({
       "GET /api/v1/settings": () => json(200, { base_currency: "EUR" }),
-      "GET /api/v1/reports/allocation": () =>
-        json(200, { total: { amount: 0, currency: "EUR" }, groups: [] }),
-      "GET /api/v1/reports/return": () =>
-        json(200, {
-          annual_bp: 0,
-          flows: [],
-          opening: { amount: 0, currency: "EUR" },
-          closing: { amount: 0, currency: "EUR" },
-        }),
       "GET /api/v1/instruments": () =>
         json(200, {
           items: [
             { code: "EUR", type: "currency", scale: 2, name: "Euro" },
-            { code: "SAP", type: "stock", scale: 0, name: "SAP" },
+            { code: "SAP", type: "stock", scale: 0, name: "SAP SE" },
           ],
         }),
+      "GET /api/v1/reports/return": () =>
+        json(200, {
+          annual_bp: 0,
+          flows: [],
+          opening: eur(0),
+          closing: eur(0),
+        }),
+      [`GET /api/v1/accounts/${cashID}/balance`]: () =>
+        json(200, { balance: eur(0) }),
       "GET /api/v1/positions": () =>
         json(200, {
           items: [
@@ -196,27 +335,22 @@ describe("Portfolio positions", () => {
               account_id: "b0000000-0000-4000-8000-000000000003",
               instrument: "SAP",
               quantity: { amount: 3, currency: "SAP" },
-              cost_basis: { amount: 123456, currency: "EUR" },
+              cost_basis: eur(123456),
               average_cost: "411.52",
-              market_value: { amount: 150000, currency: "EUR" },
+              market_value: eur(150000),
             },
           ],
         }),
     });
     const { container } = await renderApp("/portfolio", { fetch });
-    const table = await positionsTable();
-    await within(table).findByText("SAP", { selector: "a" });
-    const text = rowTexts(table).join("\n");
-    const percent = new Intl.NumberFormat("en-DE", {
-      style: "percent",
-      minimumFractionDigits: 2,
-    });
+    const grid = await list();
+
+    await within(grid).findByRole("link", { name: "SAP SE" });
     const euro = new Intl.NumberFormat("en-DE", {
       style: "currency",
       currency: "EUR",
     });
-    expect(text).toContain(euro.format(1500));
-    expect(text).toContain(percent.format(1));
+    expect(gridRows(grid).join("\n")).toContain(euro.format(1500));
     expect(container.textContent).not.toMatch(/R\$|BRL|\bB3\b|Carteira/);
   });
 
@@ -225,19 +359,25 @@ describe("Portfolio positions", () => {
       "equori.locale",
       JSON.stringify({ language: "pt", region: "BR" }),
     );
+    localStorage.setItem(
+      "equori.portfolio.columns",
+      JSON.stringify({
+        hidden: ["group", "account", "price", "priceDate", "cost"],
+      }),
+    );
     const fetch = portfolioApi({
       "GET /api/v1/instruments": () =>
         json(200, {
           items: [
             { code: "BRL", type: "currency", scale: 2, name: "Real" },
-            { code: "CDB", type: "fixed_income", scale: 2, name: "CDB" },
+            { code: "CDB", type: "fixed_income", scale: 2, name: "CDB XP" },
           ],
         }),
       "GET /api/v1/positions": () =>
         json(200, {
           items: [
             {
-              account_id: petrID,
+              account_id: cashID,
               instrument: "CDB",
               quantity: { amount: 123456, currency: "CDB" },
               cost_basis: { amount: 2730007, currency: "BRL" },
@@ -248,68 +388,25 @@ describe("Portfolio positions", () => {
         }),
     });
     await renderApp("/portfolio", { fetch });
-    const table = await screen.findByRole("table", {
-      name: catalogPtBR["portfolio.positions.title"],
+    const grid = await screen.findByRole("grid", {
+      name: catalogPtBR["holdings.list"],
     });
-    await within(table).findByText("CDB", { selector: "a" });
-    const text = rowTexts(table).join("\n").replaceAll("\u00a0", " ");
-    expect(text).toContain("|1.234,56|");
-    expect(text).toContain("|R$ 1.076,0769|");
+    await within(grid).findByRole("link", { name: "CDB XP" });
+    const text = gridRows(grid).join("\n").replaceAll(" ", " ");
+
+    expect(text).toContain("1.234,56");
+    expect(text).toContain("R$ 1.076,0769");
   });
 
   it("masks the amounts and keeps the shares while privacy mode is on", async () => {
     hideAmounts();
-    const { container } = await renderApp("/portfolio", {
-      fetch: portfolioApi(),
-    });
-    const table = await positionsTable();
-    await within(table).findAllByText("XP / XP MXRF11");
-    await waitFor(() => {
-      expect(rowTexts(table).some((row) => row.includes("74.46%"))).toBe(true);
-    });
-    // A share is a percentage, not an amount: the check reads the page without them.
-    const amounts = document.createElement("div");
-    amounts.innerHTML = container.innerHTML.replace(/[\d.,]+\s?%/g, "");
-    expectNoAmounts(amounts, ["R$105.00", "R$141.00", "10.0000"]);
-  });
+    await renderApp("/portfolio", { fetch: portfolioApi() });
+    const grid = await list();
 
-  // The value is as recent as the oldest price it used: PETR4 in USD on 10-23, USD in BRL on 10-22.
-  const priced = {
-    account_id: petrID,
-    instrument: "PETR4",
-    quantity: { amount: 5, currency: "PETR4" },
-    cost_basis: { amount: 1500, currency: "BRL" },
-    market_value: { amount: 2000, currency: "BRL" },
-    prices: [
-      {
-        instrument: "PETR4",
-        quote_instrument: "USD",
-        date: "2026-10-23",
-        value: "0.8",
-        source: "manual",
-      },
-      {
-        instrument: "USD",
-        quote_instrument: "BRL",
-        date: "2026-10-22",
-        value: "5",
-        source: "bcb_ptax",
-      },
-    ],
-  };
-  const pricedApi = () =>
-    portfolioApi({
-      "GET /api/v1/positions": () => json(200, { items: [priced] }),
-    });
-
-  it("dates the market value by the oldest price it used", async () => {
-    await renderApp("/portfolio", { fetch: pricedApi() });
-    const table = await positionsTable();
-    expect(
-      await within(table).findByText(
-        catalogEn["positions.priceOf"].replace("{date}", "10/22/2026"),
-      ),
-    ).toBeInTheDocument();
+    await within(grid).findAllByRole("link", { name: "MXRF11" });
+    expect(document.body.textContent).not.toContain("R$541.00");
+    expect(gridRows(grid).join("\n")).toContain("19.40%");
+    expect(gridRows(grid).join("\n")).not.toContain("R$105.00");
   });
 
   it("names the header's currency and date without a visible label", async () => {
@@ -326,5 +423,13 @@ describe("Portfolio positions", () => {
     ).toBeVisible();
     expect(header).not.toHaveTextContent(catalogEn["portfolio.valueIn"]);
     expect(header).not.toHaveTextContent(catalogEn["portfolio.date"]);
+  });
+
+  it("PC9: links the year with a short word", async () => {
+    await renderApp("/portfolio", { fetch: portfolioApi() });
+
+    expect(
+      await screen.findByRole("link", { name: catalogEn["holdings.year"] }),
+    ).toHaveAttribute("href", "/portfolio/year");
   });
 });

@@ -29,6 +29,32 @@ export function allocationQuery(
   });
 }
 
+// The balance of an account valued in a currency; an account it cannot value answers a problem.
+export function valuedBalanceQuery(
+  api: Client<paths>,
+  id: string,
+  date: string,
+  valueIn: string | undefined,
+) {
+  return queryOptions({
+    queryKey: ["valued-balance", id, date, valueIn] as const,
+    queryFn: async () =>
+      unwrap(
+        await api.GET("/accounts/{id}/balance", {
+          params: {
+            path: { id },
+            query: {
+              date,
+              ...(valueIn === undefined ? {} : { value_in: valueIn }),
+            },
+          },
+        }),
+      ),
+    enabled: valueIn !== undefined,
+    retry: false,
+  });
+}
+
 export function returnQuery(
   api: Client<paths>,
   accountID: string | null | undefined,

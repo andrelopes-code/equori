@@ -53,8 +53,11 @@ describe("Reports assets allocation", () => {
       "Total|R$1,005.00|100.00%",
     ]);
     expect(
-      within(table).getByRole("progressbar", { name: "Currencies: 89.55%" }),
-    ).toBeInTheDocument();
+      within(table)
+        .getByText("Currencies")
+        .closest("tr")
+        ?.querySelector("[style]"),
+    ).toHaveStyle({ inlineSize: "89.55%" });
   });
 
   it("falls back to the raw key of a type without a catalog entry", async () => {

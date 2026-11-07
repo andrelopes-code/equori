@@ -1,24 +1,31 @@
 # The portfolio
 
-The [portfolio](/portfolio) shows the investments of your brokerage accounts on a date. Change the valuation date to see the portfolio of a past day.
+The [portfolio](/portfolio) answers three questions: how much you have invested, how much you made and how it performed. It adds the investments and the cash of your brokerage accounts on a date. Savings and reserves are on [Accounts](/accounts). Change the valuation date to see the portfolio of a past day.
 
-## The columns
+## The summary
 
-- **Investment**: the stock, fund, bond or currency.
-- **Account**: the brokerage account that holds the investment.
+- **Portfolio value**: the priced investments plus the brokerage cash.
+- **Gain or loss**: market value minus cost, without income. It only becomes a real gain or loss when you sell.
+- **Income of the year**: dividends, interest and other payments received, net of the tax withheld.
+
+## Where the money is
+
+Splits the portfolio by type, currency or institution. The same choice groups the list of investments. Your whole net worth, with banks and savings, is on [Reports](/reports).
+
+## The investments
+
+The list shows the name, the market value, the gain or loss in money and in percent of cost, and the share of the portfolio. Under **Columns**, add what you need:
+
 - **Quantity**: how many units the account holds on the date.
 - **Average cost**: the average price paid per unit, across all purchases.
 - **Cost**: quantity times average cost: what the position cost.
-- **Market value**: quantity times the latest price recorded up to the date.
-- **Gain or loss now**: market value minus cost. It becomes an actual gain or loss only when you sell.
-- **% of portfolio**: the part of the portfolio's total value the investment represents.
+- **Price** and **Price date**: the latest price recorded up to the date.
+- **Account**: the brokerage account that holds the investment.
 
-An investment without a recorded price stays out of the total and of the percentages. Record a price on the investment's page, in [Prices](/instruments), or import a price file.
+A price older than 7 days shows beside the value. An investment without a price stays out of the total and the percentage: record a price on the investment's page, under [Quotes](/instruments), or import a file of prices.
 
-## Grouping
-
-Group the rows by account or by investment. The allocation tab adds up the value by kind of investment or by institution.
+Record buys, sales and income with the buttons above the list.
 
 ## The year
 
-On the [year's page](/portfolio/year), the **Gain or loss on sales** tab lists each sale of the year with its cost and result. The **Income** tab lists dividends, interest and other payments, with the gross, withheld and net amounts.
+In [Income and sales](/portfolio/year), the **Gain or loss on sales** tab lists each sale of the year with its cost and result. The **Income** tab lists dividends, interest and other payments, with the gross amount, what was withheld and the net.
