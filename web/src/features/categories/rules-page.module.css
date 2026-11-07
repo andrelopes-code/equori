@@ -1,8 +1,0 @@
-@layer app {
-  /* A suggestion card reads its sentence at no less than 20 rem; no token holds a card measure. */
-  .cards {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
-    gap: var(--slotted-space-4);
-  }
-}
