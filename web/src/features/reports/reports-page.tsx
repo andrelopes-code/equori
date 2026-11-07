@@ -58,12 +58,14 @@ export function ReportsPage() {
   const count: NetWorthMonths = search.months ?? 12;
   const custom = search.from !== undefined && search.to !== undefined;
   const netWorth = current === "net-worth";
-  // NP1: without a period in the address, the net worth tab reads its span of months.
-  const fallback = netWorth ? spanPeriod(today, count) : defaultPeriod(today);
+  const fallback = defaultPeriod(today);
   const period = {
     from: search.from ?? fallback.from,
     to: search.to ?? fallback.to,
   };
+  // NP1: without a period in the address, the net worth tab reads its span of months. Each tab
+  // keeps its own period: the tab drawn during a switch lags the address.
+  const netWorthPeriod = custom ? period : spanPeriod(today, count);
   // CP-09: the strip moves at once; the tab's region renders from the deferred value.
   const [chosen, setChosen] = useState<ReportsTab | null>(null);
   const shownTab = useDeferredValue(chosen ?? current);
@@ -94,7 +96,7 @@ export function ReportsPage() {
                 <PeriodControl
                   quarters
                   allowAll={false}
-                  value={period}
+                  value={netWorth ? netWorthPeriod : period}
                   onChange={(next) => {
                     if (next === undefined) return;
                     // NP1: on the net worth tab a chosen period stays in the address.
@@ -143,7 +145,7 @@ export function ReportsPage() {
           {shownTab === "net-worth" && (
             <NetWorthTab
               count={custom ? undefined : count}
-              period={period}
+              period={netWorthPeriod}
               valueIn={valueIn}
               onCount={(next) => {
                 onChange({

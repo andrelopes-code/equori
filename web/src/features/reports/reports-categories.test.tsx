@@ -122,6 +122,27 @@ describe("Reports categories", () => {
     );
   });
 
+  it("NP1: opens on the current month from the net worth tab, never on its span", async () => {
+    const user = userEvent.setup();
+    const { fetch } = api();
+    await renderApp("/reports?months=24", { fetch });
+    let flashed = false;
+    const observer = new MutationObserver(() => {
+      flashed ||= document.body.textContent.includes(
+        catalogEn["report.period.tooLong"],
+      );
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    await user.click(
+      screen.getByRole("tab", { name: catalogEn["report.tab.categories"] }),
+    );
+    await categoriesTable();
+    observer.disconnect();
+
+    expect(flashed).toBe(false);
+  });
+
   it("blocks a period of more than 366 days and one that ends before it starts", async () => {
     const long = api();
     const { unmount } = await renderApp(
