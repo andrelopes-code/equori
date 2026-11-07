@@ -4,6 +4,16 @@
   .orb {
     --orb-size: 28px;
 
+    /* The accent at the lightness of the chart series, and its neighbour 45 degrees on. The chroma
+       reaches its ceiling for any accent that has chroma, as the chart series do. */
+    --c1: oklch(
+      from var(--slotted-seed-accent) 0.62 min(calc(c * 1000), 0.16) h
+    );
+    --c2: oklch(
+      from var(--slotted-seed-accent) 0.62 min(calc(c * 1000), 0.16)
+        calc(h + 45)
+    );
+
     display: inline-block;
     flex: none;
     box-sizing: border-box;

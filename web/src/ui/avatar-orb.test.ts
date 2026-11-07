@@ -22,27 +22,13 @@ describe("avatarOrb", () => {
     expect(orbs.size).toBe(seeds.length);
   });
 
-  it("pairs two neighbouring data slots and keeps the angle in a turn", () => {
-    const wheel = [1, 5, 3, 6, 2, 8, 4, 7];
-
+  it("keeps the angle in a turn and draws no colour of its own", () => {
     for (const seed of ["a", "ana@equori.local", "Conta Demonstrativa", ""]) {
-      const { slots, angle } = avatarOrb(seed);
-      const at = wheel.indexOf(slots[0]);
+      const orb = avatarOrb(seed);
 
-      expect(slots[1]).toBe(wheel[(at + 1) % wheel.length]);
-      expect(angle).toBeGreaterThanOrEqual(0);
-      expect(angle).toBeLessThan(360);
+      expect(Object.keys(orb)).toEqual(["angle"]);
+      expect(orb.angle).toBeGreaterThanOrEqual(0);
+      expect(orb.angle).toBeLessThan(360);
     }
-  });
-
-  it("uses every slot as a first colour across many seeds", () => {
-    const firsts = new Set(
-      Array.from(
-        { length: 200 },
-        (_, i) => avatarOrb(`person-${String(i)}`).slots[0],
-      ),
-    );
-
-    expect(firsts.size).toBe(8);
   });
 });

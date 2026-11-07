@@ -1,24 +1,15 @@
 export interface AvatarOrb {
-  // Two neighbours on the wheel of the data slots, so the pair always sits close in hue.
-  slots: [number, number];
-  // The direction the first slot flows into the second, in degrees.
+  // The direction the first colour flows into the second, in degrees.
   angle: number;
 }
 
-// The eight slots in the order of their hue: indigo, blue, teal, green, amber, orange, rose,
-// magenta. A person takes one and the one after it; the last one wraps to the first.
-const wheel = [1, 5, 3, 6, 2, 8, 4, 7] as const;
-
-// A person's mark, drawn from what names them: the same seed always gives the same orb, and a
-// different seed gives another. The hash is FNV-1a; the stream after it is mulberry32.
+// A person's mark, drawn from what names them: the same seed always gives the same angle. The
+// colours come from the accent in user-avatar.module.css. The hash is FNV-1a; the stream after it
+// is mulberry32.
 export function avatarOrb(seed: string): AvatarOrb {
   const next = stream(hash(seed));
 
-  const at = Math.floor(next() * wheel.length);
-  const first = wheel[at] ?? 1;
-  const second = wheel[(at + 1) % wheel.length] ?? 5;
-
-  return { slots: [first, second], angle: Math.floor(next() * 360) };
+  return { angle: Math.floor(next() * 360) };
 }
 
 function hash(text: string): number {
