@@ -265,33 +265,78 @@ describe("AccountsPage", () => {
     ).toBeInTheDocument();
   });
 
-  it("states why a yield is absent in the cell (R23)", async () => {
-    await renderApp("/accounts", {
-      fetch: api([], {
-        "GET /api/v1/reports/return": () =>
-          json(200, {
-            annual_bp: 0,
-            flows: [],
-            opening: { amount: 1000000, currency: "BRL" },
-            closing: { amount: 1000000, currency: "BRL" },
-            profile: "rate",
-            unavailable_reason: "no_yield_recorded",
-          }),
-      }),
-    });
-    const reserves = await screen.findByRole("table", {
-      name: catalogEn["home.group.reserves"],
-    });
-    const reserve = await within(reserves).findByRole("row", {
-      name: /Reserva de emergência/,
-    });
+  it.each([
+    ["no_yield_recorded", "No yield recorded in the period"],
+    ["single_credit", "Only one yield credit recorded"],
+    ["nothing_held", "Nothing held in the period"],
+  ])(
+    "states the reason alone, never a 0.00% return: %s (R8, R23, W2)",
+    async (reason, text) => {
+      await renderApp("/accounts", {
+        fetch: api([], {
+          "GET /api/v1/reports/return": () =>
+            json(200, {
+              annual_bp: 0,
+              flows: [],
+              opening: { amount: 1000000, currency: "BRL" },
+              closing: { amount: 1000000, currency: "BRL" },
+              profile: "rate",
+              period_bp: 0,
+              index: "cdi",
+              unavailable_reason: reason,
+            }),
+        }),
+      });
+      const reserves = await screen.findByRole("table", {
+        name: catalogEn["home.group.reserves"],
+      });
+      const reserve = await within(reserves).findByRole("row", {
+        name: /Reserva de emergência/,
+      });
 
-    expect(
-      await within(reserve).findByText("No yield recorded in the period"),
-    ).toBeInTheDocument();
-  });
+      expect(await within(reserve).findByText(text)).toBeInTheDocument();
+      expect(within(reserve).queryByText(/0\.00%/)).not.toBeInTheDocument();
+    },
+  );
 
-  it("reads the period return in 90 d beside a currency mismatch (R8, W2)", async () => {
+  it.each([
+    ["no_index_for_region", "No reference index for the region"],
+    ["currency_mismatch", "Values in BRL: CDI applies to another currency"],
+    ["no_rate_in_window", "CDI has no rate yet for the days compared"],
+    ["percent_undefined", "The percent of CDI is not defined for this return"],
+  ])(
+    "reads the period return in 90 d beside the reason: %s (R8, W2)",
+    async (reason, text) => {
+      await renderApp("/accounts", {
+        fetch: api([], {
+          "GET /api/v1/reports/return": () =>
+            json(200, {
+              annual_bp: 0,
+              flows: [],
+              opening: { amount: 1000000, currency: "BRL" },
+              closing: { amount: 1034000, currency: "BRL" },
+              profile: "rate",
+              period_bp: 340,
+              index: "cdi",
+              unavailable_reason: reason,
+            }),
+        }),
+      });
+      const reserves = await screen.findByRole("table", {
+        name: catalogEn["home.group.reserves"],
+      });
+      const reserve = await within(reserves).findByRole("row", {
+        name: /Reserva de emergência/,
+      });
+
+      expect(
+        await within(reserve).findByText("3.40% in 90 d"),
+      ).toBeInTheDocument();
+      expect(within(reserve).getByText(text)).toBeInTheDocument();
+    },
+  );
+
+  it("keeps the figure on one line and lets a long reason wrap in the cell (R8)", async () => {
     await renderApp("/accounts", {
       fetch: api([], {
         "GET /api/v1/reports/return": () =>
@@ -302,39 +347,6 @@ describe("AccountsPage", () => {
             closing: { amount: 1034000, currency: "BRL" },
             profile: "rate",
             period_bp: 340,
-            index: "cdi",
-            unavailable_reason: "currency_mismatch",
-          }),
-      }),
-    });
-    const reserves = await screen.findByRole("table", {
-      name: catalogEn["home.group.reserves"],
-    });
-    const reserve = await within(reserves).findByRole("row", {
-      name: /Reserva de emergência/,
-    });
-
-    expect(
-      await within(reserve).findByText("3.40% in 90 d"),
-    ).toBeInTheDocument();
-    expect(
-      within(reserve).getByText(
-        "Values in BRL: CDI applies to another currency",
-      ),
-    ).toBeInTheDocument();
-  });
-
-  it("states a reason alone, never a 0.00% return, without a rate in the window (R8, W2)", async () => {
-    await renderApp("/accounts", {
-      fetch: api([], {
-        "GET /api/v1/reports/return": () =>
-          json(200, {
-            annual_bp: 0,
-            flows: [],
-            opening: { amount: 1000000, currency: "BRL" },
-            closing: { amount: 1000000, currency: "BRL" },
-            profile: "rate",
-            period_bp: 0,
             index: "cdi",
             unavailable_reason: "no_rate_in_window",
           }),
@@ -347,12 +359,14 @@ describe("AccountsPage", () => {
       name: /Reserva de emergência/,
     });
 
-    expect(
-      await within(reserve).findByText(
-        "CDI has no rate yet for the days compared",
-      ),
-    ).toBeInTheDocument();
-    expect(within(reserve).queryByText(/0\.00%/)).not.toBeInTheDocument();
+    const figure = await within(reserve).findByText("3.40% in 90 d");
+    const reason = within(reserve).getByText(
+      "CDI has no rate yet for the days compared",
+    );
+
+    expect(figure).toHaveAttribute("data-wrap", "nowrap");
+    expect(reason).not.toHaveAttribute("data-wrap", "nowrap");
+    expect(figure.parentElement).not.toHaveAttribute("data-wrap", "nowrap");
   });
 
   it("states only the figure on a phone (A208 R17)", async () => {

@@ -25,9 +25,15 @@ const REASONS = [
   "percent_undefined",
 ] as const;
 
-// The reasons that keep the period return beside them. Any other reason without a benchmark
-// states itself alone: the return of a period with no recorded yield reads as zero and misleads.
-const PERIOD_REASONS = ["no_index_for_region", "currency_mismatch"];
+// The reasons that keep the period return beside them (R8, R17). Any other reason without a
+// benchmark states itself alone: the return of a period with no recorded yield reads as zero and
+// misleads.
+const PERIOD_REASONS = [
+  "no_index_for_region",
+  "currency_mismatch",
+  "no_rate_in_window",
+  "percent_undefined",
+];
 
 // One line of the yield column: the figure and, muted beside it, the index it is read against.
 export interface YieldLine {

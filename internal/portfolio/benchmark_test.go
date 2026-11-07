@@ -826,6 +826,50 @@ func TestS338YieldShareOfATransaction(t *testing.T) {
 	}
 }
 
+// S338: a transaction whose yield is received only outside the tree credits the tree nothing (R19).
+// The tree's amount is a flow and the income and expense postings of the transaction are excluded.
+// Hand figures, in the units of the postings:
+//   - Y > 0: Yield -100,000, Savings B +105,000, tree -10,000, Taxes +5,000. T+ = 0 and O+ = 105,000,
+//     so the credit is 100,000 x 0 / 105,000 = 0 and the flow is -10,000 - 0 = -10,000; the credits
+//     of 2026-01-06, 01-08 and 01-09 in (A, B] stay, 3 in all, and Taxes 5,000 is excluded.
+//   - Y < 0: Yield +100,000, Savings B -105,000, tree +10,000, Bonus -5,000. The negative postings
+//     against the tree sum to 0 and those against Savings B to 105,000, so the credit is 0 and the
+//     flow is +10,000; Bonus 5,000 is excluded.
+func TestS338YieldReceivedOutsideTheTree(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name            string
+		record          func(t *testing.T, b benchmarkBook)
+		income, expense string
+	}{
+		{name: "yield", record: recordYieldReceivedOutsideTheTree, expense: "5000 BRL Taxes"},
+		{name: "reversal", record: recordReversalPaidOutsideTheTree, income: "5000 BRL Bonus"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			b := explicitBook(t)
+
+			for _, d := range []string{"2026-01-05", "2026-01-06", "2026-01-08", "2026-01-09"} {
+				b.credit(d, 551_310)
+			}
+
+			tt.record(t, b)
+
+			r := b.compared(t, "2026-01-02", "2026-01-09", "")
+			if r.Benchmark == nil || r.Benchmark.Credits != 3 {
+				t.Fatalf("benchmark = %+v, want 3 credits", r.Benchmark)
+			}
+
+			if income, expense := r.excludedText(); income != tt.income || expense != tt.expense {
+				t.Fatalf("excluded = %q, %q, want %q, %q", income, expense, tt.income, tt.expense)
+			}
+		})
+	}
+}
+
 // S339: a percent that cannot be computed leaves a reason: a rate of 0 inside the window.
 func TestS339PercentUndefined(t *testing.T) {
 	t.Parallel()
@@ -902,6 +946,36 @@ func recordUnrelatedExpense(t *testing.T, b benchmarkBook) {
 		"2026-01-07",
 		apitest.Posting(b.savings, 551_310), apitest.Posting(b.yield, -551_310),
 		apitest.Posting(b.checking, -30_000), apitest.Posting(shop, 30_000),
+	)
+}
+
+// recordYieldReceivedOutsideTheTree records -10,000 against the tree, +105,000 against another
+// savings account, +5,000 against Taxes and -100,000 against Yield: the credit is 0 and the flow
+// is -10,000.
+func recordYieldReceivedOutsideTheTree(t *testing.T, b benchmarkBook) {
+	t.Helper()
+
+	other := b.h.Account("Savings B", "asset", "savings", nil)
+	taxes, _ := b.system(t, "taxes")
+	b.h.Record(
+		"2026-01-07",
+		apitest.Posting(b.savings, -10_000), apitest.Posting(other, 105_000),
+		apitest.Posting(taxes, 5_000), apitest.Posting(b.yield, -100_000),
+	)
+}
+
+// recordReversalPaidOutsideTheTree records +10,000 against the tree, -105,000 against another
+// savings account, -5,000 against Bonus and +100,000 against Yield: the credit is 0 and the flow
+// is +10,000.
+func recordReversalPaidOutsideTheTree(t *testing.T, b benchmarkBook) {
+	t.Helper()
+
+	other := b.h.Account("Savings B", "asset", "savings", nil)
+	bonus := b.h.Account("Bonus", "income", "", nil)
+	b.h.Record(
+		"2026-01-07",
+		apitest.Posting(b.savings, 10_000), apitest.Posting(other, -105_000),
+		apitest.Posting(bonus, -5_000), apitest.Posting(b.yield, 100_000),
 	)
 }
 

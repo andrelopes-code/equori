@@ -842,17 +842,20 @@ WITH RECURSIVE
             a.instrument,
             sum(p.amount)::numeric AS amount,
             count(*) AS postings,
-            CASE
-                WHEN h.yield_weight > 0 THEN sum(p.amount) FILTER (
-                    WHERE
-                        p.weight > 0
-                )
-                WHEN h.yield_weight < 0 THEN sum(p.amount) FILTER (
-                    WHERE
-                        p.weight < 0
-                )
-                ELSE 0
-            END::numeric AS received_amount,
+            coalesce(
+                CASE
+                    WHEN h.yield_weight > 0 THEN sum(p.amount) FILTER (
+                        WHERE
+                            p.weight > 0
+                    )
+                    WHEN h.yield_weight < 0 THEN sum(p.amount) FILTER (
+                        WHERE
+                            p.weight < 0
+                    )
+                    ELSE 0
+                END,
+                0
+            )::numeric AS received_amount,
             h.yield_weight,
             h.received
         FROM

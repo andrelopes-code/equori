@@ -19,7 +19,8 @@ interface AccountYieldProps {
 
 // The yield of an account over the 90 days of its balance trend, on one line (amendment A208
 // R17, R21, R23): the figure, in the danger tone when negative, the index it is read against,
-// the days compared, or why there is no figure.
+// the days compared, or why there is no figure. The figures keep one line; a long reason wraps
+// inside the cell.
 export function AccountYield({
   accountId,
   date,
@@ -37,12 +38,13 @@ export function AccountYield({
   const size = compact ? "xs" : "sm";
 
   return (
-    <Inline gap={2} justify="end" wrap="nowrap">
+    <Inline gap={2} justify="end">
       {line.primary !== undefined && (
         <Text
           size={size}
           tone={line.negative ? "danger" : "default"}
           numeric="tabular"
+          wrap="nowrap"
         >
           {line.primary}
         </Text>
@@ -56,7 +58,7 @@ export function AccountYield({
         )}
 
       {line.days !== undefined && (
-        <Text size={size} tone="muted" numeric="tabular">
+        <Text size={size} tone="muted" numeric="tabular" wrap="nowrap">
           {line.days}
         </Text>
       )}

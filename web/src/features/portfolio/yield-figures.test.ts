@@ -222,7 +222,12 @@ describe("yieldLine", () => {
     },
   );
 
-  it.each(["no_index_for_region", "currency_mismatch"])(
+  it.each([
+    "no_index_for_region",
+    "currency_mismatch",
+    "no_rate_in_window",
+    "percent_undefined",
+  ])(
     "states the period return over the window beside the reason: %s (R8, W2)",
     (reason) => {
       expect(
@@ -250,12 +255,7 @@ describe("yieldLine", () => {
     },
   );
 
-  it.each([
-    "nothing_held",
-    "no_yield_recorded",
-    "single_credit",
-    "no_rate_in_window",
-  ])(
+  it.each(["nothing_held", "no_yield_recorded", "single_credit"])(
     "states the reason alone, never a period return of 0.00%: %s (R8, W2)",
     (reason) => {
       const line = yieldLine(
@@ -468,7 +468,12 @@ describe("yieldGroups", () => {
     ).toEqual(["inflation"]);
   });
 
-  it.each(["no_index_for_region", "currency_mismatch"])(
+  it.each([
+    "no_index_for_region",
+    "currency_mismatch",
+    "no_rate_in_window",
+    "percent_undefined",
+  ])(
     "draws the period return of the window when the comparison is absent: %s (R17, W2)",
     (reason) => {
       const window = { from: "2025-11-08", to: "2026-11-07", days: 365 };
@@ -503,23 +508,30 @@ describe("yieldGroups", () => {
     },
   );
 
-  it("draws no period return for a reason that leaves it misleading, or without a window (W2)", () => {
+  it.each(["nothing_held", "no_yield_recorded", "single_credit"])(
+    "draws no period return for a reason that leaves it misleading: %s (R17, W2)",
+    (reason) => {
+      const report: ReturnReport = {
+        ...base,
+        profile: "rate",
+        period_bp: 0,
+        unavailable_reason: reason,
+      };
+      const window = { from: "2025-11-08", to: "2026-11-07", days: 365 };
+
+      expect(yieldGroups(report, t, "en", window)).toEqual([]);
+    },
+  );
+
+  it("draws no period return without a window (W2)", () => {
     const report: ReturnReport = {
       ...base,
       profile: "rate",
-      period_bp: 0,
-      unavailable_reason: "no_yield_recorded",
+      period_bp: 120,
+      unavailable_reason: "currency_mismatch",
     };
-    const window = { from: "2025-11-08", to: "2026-11-07", days: 365 };
 
-    expect(yieldGroups(report, t, "en", window)).toEqual([]);
-    expect(
-      yieldGroups(
-        { ...report, unavailable_reason: "currency_mismatch" },
-        t,
-        "en",
-      ),
-    ).toEqual([]);
+    expect(yieldGroups(report, t, "en")).toEqual([]);
   });
 
   it("names the groups of a rate profile without an article before the index (R23)", () => {
