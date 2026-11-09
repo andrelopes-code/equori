@@ -31,6 +31,7 @@ export function AppearanceAmounts() {
         value={summary}
         text={(v) => t(`studio.summaryAmounts.${v}`)}
         onChange={setSummary}
+        orientation="vertical"
       />
     </StudioSection>
   );

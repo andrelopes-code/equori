@@ -76,6 +76,29 @@ describe("appearance studio", () => {
     expect(localStorage.getItem("equori.depth")).toBe("oled");
   });
 
+  it.each([
+    ["studio.tab.surfaces", catalogPtBR["studio.chart"], "vertical"],
+    ["studio.tab.surfaces", catalogPtBR["studio.borders"], "horizontal"],
+    ["studio.tab.shape", catalogPtBR["settings.corners"], "vertical"],
+    ["studio.tab.shape", catalogPtBR["more.density"], "vertical"],
+    ["studio.tab.text", catalogPtBR["studio.summaryAmounts"], "vertical"],
+    ["studio.tab.text", catalogPtBR["studio.amountTone"], "horizontal"],
+  ] as const)(
+    "draws the choice of %s named %s %s",
+    async (tab, name, orientation) => {
+      await renderApp("/settings/appearance", { fetch: api() });
+
+      await userEvent.click(
+        await screen.findByRole("tab", { name: catalogPtBR[tab] }),
+      );
+
+      expect(await screen.findByRole("radiogroup", { name })).toHaveAttribute(
+        "data-orientation",
+        orientation,
+      );
+    },
+  );
+
   it("applies a curated theme and marks it as the current one", async () => {
     await renderApp("/settings/appearance", { fetch: api() });
     const gallery = await screen.findByRole("radiogroup", {

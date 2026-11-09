@@ -18,6 +18,7 @@ export function AppearanceShape() {
         value={corners}
         text={(c) => t(`corners.${c}`)}
         onChange={setCorners}
+        orientation="vertical"
       />
       <StudioChoice
         label={t("more.density")}
@@ -26,6 +27,7 @@ export function AppearanceShape() {
         value={density}
         text={(d) => t(`density.${d}`)}
         onChange={setDensity}
+        orientation="vertical"
       />
     </StudioSection>
   );

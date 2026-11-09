@@ -55,6 +55,7 @@ export function AppearanceSurfaces() {
           value={chart}
           text={(v) => t(`studio.chart.${v}`)}
           onChange={setChart}
+          orientation="vertical"
         />
       </StudioSection>
 
