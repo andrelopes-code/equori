@@ -1,5 +1,6 @@
 import { Tab, TabList, TabPanel, Tabs } from "@slotted/react/tabs";
 
+import { AppearanceAmounts } from "@/features/setup/appearance-amounts";
 import { AppearanceColour } from "@/features/setup/appearance-colour";
 import { AppearanceEffects } from "@/features/setup/appearance-effects";
 import { AppearanceShape } from "@/features/setup/appearance-shape";
@@ -55,6 +56,7 @@ export function StudioPanel({ library }: StudioPanelProps) {
       </TabPanel>
       <TabPanel value="text" className={styles.tabPanel}>
         <AppearanceText />
+        <AppearanceAmounts />
       </TabPanel>
       <TabPanel value="effects" className={styles.tabPanel}>
         <AppearanceEffects />

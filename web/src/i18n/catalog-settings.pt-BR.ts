@@ -236,6 +236,12 @@ export const settingsPtBR: Record<keyof typeof settingsEn, string> = {
   "studio.depth.hint": "OLED pinta o fundo escuro de preto puro.",
   "studio.depth.soft": "Suave",
   "studio.depth.standard": "Padrão",
+  "studio.amounts": "Valores",
+  "studio.amountTone": "Cor dos valores",
+  "studio.amountTone.hint":
+    "Entradas em verde e perdas em vermelho. O sinal aparece sempre.",
+  "studio.amountTone.colour": "Por tipo",
+  "studio.amountTone.sign": "Só o sinal",
   "studio.depth.deep": "Profundo",
   "studio.depth.oled": "OLED",
   "studio.step": "Destaque das camadas",

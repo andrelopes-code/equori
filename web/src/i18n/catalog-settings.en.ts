@@ -232,6 +232,12 @@ export const settingsEn = {
   "studio.depth.hint": "OLED paints the dark ground pure black.",
   "studio.depth.soft": "Soft",
   "studio.depth.standard": "Standard",
+  "studio.amounts": "Amounts",
+  "studio.amountTone": "Amount colour",
+  "studio.amountTone.hint":
+    "Money in reads green and a loss reads red. The sign is always written.",
+  "studio.amountTone.colour": "By kind",
+  "studio.amountTone.sign": "Sign only",
   "studio.depth.deep": "Deep",
   "studio.depth.oled": "OLED",
   "studio.step": "Layer lift",
