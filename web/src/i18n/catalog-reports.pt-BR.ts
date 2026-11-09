@@ -71,6 +71,9 @@ export const reportsPtBR: Record<keyof typeof reportsEn, string> = {
   "report.indicators.rate.description":
     "A linha tracejada é a média de 12 meses.",
   "report.indicators.audit.title": "Mês a mês e definições",
+  "report.indicators.audit.reason.no_income": "Sem receita",
+  "report.indicators.audit.reason.no_expense": "Sem despesa",
+  "report.indicators.audit.reason.insufficient_history": "Histórico curto",
   "report.indicators.audit.basis": "Base de caixa.",
   "report.valueIn": "Avaliar em",
   "report.none": "—",
