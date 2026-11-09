@@ -1,7 +1,8 @@
 # Market quotes: history, coverage and import
 
+- Issue: #45
 - Date: 2026-11-09
-- Status: awaiting owner approval. The owner delegated every choice ("considere tudo de melhor", 2026-11-09).
+- Status: approved by the owner on 2026-11-09 ("ok"). The owner delegated every choice ("considere tudo de melhor", 2026-11-09).
 - Amendment: A222. Scenarios: S355 to S374.
 - Amends: ADR 025 F3, F5, F9, F10 and "Not covered"; P8 amendments A60 (range, priorities) and A62 (window).
 - Keeps: N17. The application contacts only the sources an admin enabled.
