@@ -2,6 +2,7 @@ import { seedStyle } from "@slotted/theme/seeds";
 import { useSyncExternalStore } from "react";
 
 import { effectiveAccent } from "@/theme/book-accent";
+import { tintTabIcon } from "@/theme/tab-icon";
 
 export type AccentPreset =
   | "indigo"
@@ -93,6 +94,7 @@ export function applyAccent(accent: Accent): void {
 // standard and the glass theme derive from it.
 export function repaintAccent(): void {
   const accent = effectiveAccent();
+  void tintTabIcon(accentSeed(accent));
   const root = document.documentElement.style;
   for (const [property, value] of Object.entries(
     seedStyle({ accent: accentSeed(accent) }),
