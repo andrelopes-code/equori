@@ -1,6 +1,8 @@
 package domain
 
 import (
+	"slices"
+
 	"github.com/google/uuid"
 
 	"github.com/andrelopes-code/equori/internal/platform/money"
@@ -75,6 +77,47 @@ func (t Transaction) Transfer(expectedVersion int, a Account, link uuid.UUID, ac
 	next := t
 
 	next.Postings = append(kept, Posting{AccountID: a.ID, Amount: amount, ExternalRecordID: link})
+	next.Version++
+
+	return NewTransaction(next, accounts)
+}
+
+// Unpair returns the next version of t without the posting that link confirms and with the
+// category and transit postings of before in its place (A220 rule 2). ErrVoided, then
+// ErrVersionConflict when t is not at expectedVersion, ErrReconciled when that posting is
+// reconciled, ErrValidation when no posting carries link or before holds a card credit.
+func (t Transaction) Unpair(expectedVersion int, link uuid.UUID, before Transaction, accounts map[uuid.UUID]Account) (Transaction, error) {
+	if t.VoidedAt != nil {
+		return Transaction{}, ErrVoided
+	}
+
+	if expectedVersion != t.Version {
+		return Transaction{}, ErrVersionConflict
+	}
+
+	at := slices.IndexFunc(t.Postings, func(p Posting) bool { return link != uuid.Nil && p.ExternalRecordID == link })
+	if at < 0 {
+		return Transaction{}, invalid("record_id", "confirms no posting")
+	}
+
+	if t.Postings[at].Status == StatusReconciled {
+		return Transaction{}, ErrReconciled
+	}
+
+	if slices.ContainsFunc(before.Postings, func(p Posting) bool { return p.CardRole == RoleCredit }) {
+		return Transaction{}, invalid("record_id", "a card credit paired as a payment does not return")
+	}
+
+	postings := slices.Delete(slices.Clone(t.Postings), at, at+1)
+	for _, p := range before.Postings {
+		if accounts[p.AccountID].IsReplaceable() {
+			p.ID, p.ExternalRecordID = uuid.Nil, uuid.Nil
+			postings = append(postings, p)
+		}
+	}
+
+	next := t
+	next.Postings = postings
 	next.Version++
 
 	return NewTransaction(next, accounts)

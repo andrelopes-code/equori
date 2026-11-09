@@ -2,6 +2,7 @@ package ledger_test
 
 import (
 	"errors"
+	"net/http"
 	"testing"
 
 	"github.com/google/uuid"
@@ -111,6 +112,69 @@ func TestPairImported(t *testing.T) {
 	_, err = s.h.App.Ledger.PairImported(t.Context(), booksID, tx, uuid.MustParse(s.b), uuid.New())
 	if !errors.Is(err, ledger.ErrNotPairable) {
 		t.Fatalf("second pairing error = %v, want ErrNotPairable", err)
+	}
+}
+
+// S356: undo returns the paired transaction to the postings of the version before the pairing.
+func TestUnpairImported(t *testing.T) {
+	t.Parallel()
+	s := newCounterpartSetup(t)
+	tx, _ := s.candidate(t, counterpartCase{date: "2026-11-07", amount: -25000})
+	record := uuid.New()
+	booksID := s.h.OwnerID()
+
+	version, err := s.h.App.Ledger.PairImported(t.Context(), booksID, tx, uuid.MustParse(s.b), record)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := s.h.App.Ledger.UnpairImported(t.Context(), booksID, tx, record, version); err != nil {
+		t.Fatal(err)
+	}
+
+	uncategorized := systemAccounts(s.h)["uncategorized_expense"]
+	view := s.h.Transaction(tx.String())
+	if got := amountsByAccount(view); view.Version != 3 || len(view.Postings) != 2 || got[s.a] != -25000 || got[uncategorized] != 25000 {
+		t.Fatalf("transaction = %+v", view)
+	}
+
+	var linked int
+	if err := s.h.Pool.QueryRow(t.Context(), `SELECT count(*) FROM ledger_posting WHERE external_record_id = $1`, record).Scan(&linked); err != nil {
+		t.Fatal(err)
+	}
+
+	if linked != 0 {
+		t.Fatalf("postings linked to the record = %d, want 0", linked)
+	}
+
+	err = s.h.App.Ledger.UnpairImported(t.Context(), booksID, tx, record, version)
+	if !errors.Is(err, ledger.ErrNotUnpairable) {
+		t.Fatalf("second undo error = %v, want ErrNotUnpairable", err)
+	}
+}
+
+// S356: a correction after the pairing leaves the transaction as the owner wrote it.
+func TestUnpairImportedAfterCorrection(t *testing.T) {
+	t.Parallel()
+	s := newCounterpartSetup(t)
+	tx, _ := s.candidate(t, counterpartCase{date: "2026-11-07", amount: -25000})
+	record := uuid.New()
+	booksID := s.h.OwnerID()
+
+	version, err := s.h.App.Ledger.PairImported(t.Context(), booksID, tx, uuid.MustParse(s.b), record)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	correction := map[string]any{
+		"date": "2026-11-07", "description": "Renamed", "expected_version": version, "reason": "typo",
+		"postings": []any{apitest.Posting(s.a, -25000), apitest.Posting(s.b, 25000)},
+	}
+	s.h.MustDo(http.MethodPut, "/api/v1/transactions/"+tx.String(), correction, http.StatusOK, nil)
+
+	err = s.h.App.Ledger.UnpairImported(t.Context(), booksID, tx, record, version)
+	if !errors.Is(err, ledger.ErrNotUnpairable) {
+		t.Fatalf("undo after correction error = %v, want ErrNotUnpairable", err)
 	}
 }
 

@@ -158,6 +158,7 @@ var (
 	ErrNotCategorizable       = domain.ErrNotCategorizable
 	ErrPairingAmbiguous       = app.ErrPairingAmbiguous
 	ErrNotPairable            = app.ErrNotPairable
+	ErrNotUnpairable          = app.ErrNotUnpairable
 	ErrReconciled             = domain.ErrReconciled
 	ErrNotRetypable           = domain.ErrNotRetypable
 	ErrMixedInstruments       = app.ErrMixedInstruments
@@ -502,6 +503,12 @@ func (m *Module) Counterparts(ctx context.Context, booksID int64, q CounterpartQ
 // its new version; ErrNotPairable when the ledger refuses (A218 rule 1).
 func (m *Module) PairImported(ctx context.Context, booksID int64, txID, accountID, recordID uuid.UUID) (int, error) {
 	return m.svc.PairImported(ctx, booksID, txID, accountID, recordID)
+}
+
+// UnpairImported returns a transaction that a pairing left at version to its postings
+// before the pairing; ErrNotUnpairable when it changed since or the ledger refuses (A220 rule 2).
+func (m *Module) UnpairImported(ctx context.Context, booksID int64, txID, recordID uuid.UUID, version int) error {
+	return m.svc.UnpairImported(ctx, booksID, txID, recordID, version)
 }
 
 // AssertSyncedBalance records an aggregator's balance, or decides the open assertion of the

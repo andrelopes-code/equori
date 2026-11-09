@@ -10,9 +10,15 @@ import (
 
 	"github.com/andrelopes-code/equori/internal/ledger/internal/domain"
 	"github.com/andrelopes-code/equori/internal/platform/money"
+	"github.com/andrelopes-code/equori/internal/platform/outbox"
 )
 
-var ErrNotPairable = errors.New("the transaction cannot become the transfer of the line")
+const reasonUnpaired = "unpaired"
+
+var (
+	ErrNotPairable   = errors.New("the transaction cannot become the transfer of the line")
+	ErrNotUnpairable = errors.New("the paired transaction changed since the pairing")
+)
 
 // Counterpart is a transaction a sync line may pair with (A216 rule 2).
 type Counterpart struct {
@@ -93,4 +99,61 @@ func (s *Service) PairImported(ctx context.Context, booksID int64, txID, account
 	})
 
 	return version, err
+}
+
+// UnpairImported returns txID, which a pairing left at version, to the postings of version-1
+// as version+1 (A220 rule 2); ErrNotUnpairable when txID is not at version, the posting of
+// recordID is reconciled, or the previous postings are refused.
+func (s *Service) UnpairImported(ctx context.Context, booksID int64, txID, recordID uuid.UUID, version int) error {
+	return s.repo.InTx(ctx, func(r Repository) error {
+		t, err := r.LockTransaction(ctx, booksID, txID)
+		if err != nil {
+			return err
+		}
+
+		versions, err := r.Versions(ctx, booksID, txID)
+		if err != nil {
+			return err
+		}
+
+		at := slices.IndexFunc(versions, func(v Version) bool { return v.Version == version-1 })
+		if at < 0 {
+			return ErrNotUnpairable
+		}
+
+		before := versions[at].Transaction
+
+		accounts, err := r.Accounts(ctx, booksID, append(postingAccounts(t), postingAccounts(before)...))
+		if err != nil {
+			return err
+		}
+
+		next, err := t.Unpair(version, recordID, before, accounts)
+		if err != nil {
+			if slices.ContainsFunc(
+				[]error{domain.ErrReconciled, domain.ErrValidation, domain.ErrVoided, domain.ErrVersionConflict},
+				func(refusal error) bool { return errors.Is(err, refusal) },
+			) {
+				return ErrNotUnpairable
+			}
+
+			return err
+		}
+
+		if err := s.bill(ctx, r, &next); err != nil {
+			return err
+		}
+
+		if err := r.ReplaceCategoryPostings(ctx, t, next, reasonUnpaired); err != nil {
+			return err
+		}
+
+		event := newTransactionEvent(next, accounts, t)
+		event.PreviousDate = t.Date.Format(time.DateOnly)
+		event.CategoriesChanged = true
+
+		return r.Publish(ctx, outbox.Event{
+			Type: EventTransactionCorrected, BooksID: next.BooksID, AggregateID: next.ID.String(), Payload: event,
+		})
+	})
 }
