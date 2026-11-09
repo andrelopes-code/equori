@@ -382,7 +382,7 @@ func setup() (config.Config, *slog.Logger, error) {
 		}
 	}
 
-	log := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: cfg.LogLevel}))
+	log := slog.New(logHandler(cfg))
 
 	if keyDir := keyDirectory(cfg, getenv); cfg.SecretKey == "" && keyDir != "" {
 		key, err := secret.LoadOrCreateKey(filepath.Join(keyDir, "secret.key"))
@@ -401,6 +401,15 @@ func setup() (config.Config, *slog.Logger, error) {
 	startWarnings(log, cfg, getenv, envNames(os.Environ(), file))
 
 	return cfg, log, nil
+}
+
+func logHandler(cfg config.Config) slog.Handler {
+	opts := &slog.HandlerOptions{Level: cfg.LogLevel}
+	if cfg.LogFormat == "text" {
+		return slog.NewTextHandler(os.Stdout, opts)
+	}
+
+	return slog.NewJSONHandler(os.Stdout, opts)
 }
 
 // keyDirectory is where secret.key lives: the data directory in managed mode, else EQUORI_DATA_DIR

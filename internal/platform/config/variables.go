@@ -32,6 +32,7 @@ const (
 	KindIP            Kind = "ip"
 	KindBool          Kind = "bool"
 	KindLogLevel      Kind = "log_level"
+	KindLogFormat     Kind = "log_format"
 	KindKey32         Kind = "key32"
 	KindPassword      Kind = "password"
 	KindText          Kind = "text"
@@ -120,6 +121,12 @@ func Variables() []Variable {
 			Expected: "debug, info, warn or error", Example: "debug", Audience: Install,
 			Description:   "Lowest level of the records equori writes.",
 			DescriptionPT: "Nível mínimo dos registros que o equori grava.",
+		},
+		{
+			Name: "EQUORI_LOG_FORMAT", Reader: Binary, Kind: KindLogFormat, Default: "json",
+			Expected: "json or text", Example: "text", Audience: Advanced,
+			Description:   "Format of the records equori writes: json for log collectors, text for a terminal.",
+			DescriptionPT: "Formato dos registros que o equori grava: json para coletores de log, text para um terminal.",
 		},
 		{
 			Name: "EQUORI_INSECURE_COOKIES", Reader: Binary, Kind: KindBool, Default: "false",
@@ -268,6 +275,8 @@ func (v Variable) valid(value string) bool {
 		var level slog.Level
 
 		return level.UnmarshalText([]byte(value)) == nil
+	case KindLogFormat:
+		return value == "json" || value == "text"
 	case KindKey32:
 		key, err := base64.StdEncoding.DecodeString(value)
 

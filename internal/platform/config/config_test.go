@@ -25,6 +25,18 @@ func TestLoad(t *testing.T) {
 			},
 		},
 		{
+			name: "text log format",
+			env:  map[string]string{"EQUORI_DATABASE_URL": "postgres://x", "EQUORI_LOG_FORMAT": "text"},
+			want: Config{
+				DatabaseURL: "postgres://x", HTTPAddr: ":8080", LogLevel: slog.LevelInfo, LogFormat: "text",
+			},
+		},
+		{
+			name:    "invalid log format",
+			env:     map[string]string{"EQUORI_DATABASE_URL": "postgres://x", "EQUORI_LOG_FORMAT": "xml"},
+			wantErr: true,
+		},
+		{
 			name: "explicit values",
 			env: map[string]string{
 				"EQUORI_DATABASE_URL":     "postgres://x",

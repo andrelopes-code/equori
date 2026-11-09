@@ -1,8 +1,10 @@
 package httpserver
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
+	"encoding/json/v2"
 	"log/slog"
 	"net/http"
 	"runtime/debug"
@@ -108,14 +110,23 @@ func accessLog(next http.Handler, log *slog.Logger) http.Handler {
 			level = slog.LevelDebug
 		}
 
-		log.LogAttrs(r.Context(), level, "http request",
+		attrs := []slog.Attr{
 			slog.String("method", r.Method),
 			slog.String("path", r.URL.Path),
 			slog.Int("status", rw.status),
 			slog.Int64("bytes", rw.bytes),
 			slog.Duration("duration", time.Since(start)),
 			slog.String("request_id", RequestID(r.Context())),
-		)
+		}
+		if d, ok := rw.problem(); ok {
+			attrs = append(attrs, slog.Group("problem",
+				slog.String("code", d.Code),
+				slog.String("detail", d.Detail),
+				slog.Any("errors", d.Errors),
+			))
+		}
+
+		log.LogAttrs(r.Context(), level, "http request", attrs...)
 	})
 }
 
@@ -150,6 +161,21 @@ type statusRecorder struct {
 	status      int
 	bytes       int64
 	wroteHeader bool
+	// body keeps the first maxLoggedBody bytes of an error response, which the access log decodes.
+	body bytes.Buffer
+}
+
+// maxLoggedBody bounds the memory a failing response costs the access log; a larger body is not logged.
+const maxLoggedBody = 8 << 10
+
+// problem decodes the problem of an error response.
+func (s *statusRecorder) problem() (problem.Details, bool) {
+	var d problem.Details
+	if s.status < http.StatusBadRequest || s.Header().Get("Content-Type") != problem.ContentType {
+		return d, false
+	}
+
+	return d, json.Unmarshal(s.body.Bytes(), &d) == nil
 }
 
 func (s *statusRecorder) WriteHeader(code int) {
@@ -165,6 +191,10 @@ func (s *statusRecorder) Write(b []byte) (int, error) {
 	s.wroteHeader = true
 	n, err := s.ResponseWriter.Write(b)
 	s.bytes += int64(n)
+
+	if s.status >= http.StatusBadRequest && s.body.Len()+n <= maxLoggedBody {
+		s.body.Write(b[:n])
+	}
 
 	return n, err
 }

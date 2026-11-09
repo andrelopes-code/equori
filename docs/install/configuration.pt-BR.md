@@ -22,6 +22,7 @@ O compose.yaml lê as variáveis do .env do seu diretório. O equori lê o ambie
 
 | Variável | Lida por | Esperado | Padrão | Exemplo | Descrição |
 |---|---|---|---|---|---|
+| `EQUORI_LOG_FORMAT` | `equori` | json or text | `json` | `text` | Formato dos registros que o equori grava: json para coletores de log, text para um terminal. |
 | `EQUORI_DISTRIBUTION` | `equori` | compose or empty | — | `compose` | O compose.yaml define compose, para que o aviso de nova versão mostre o comando de atualização dessa forma (A194). |
 | `EQUORI_VERSION` | `compose.yaml` | a release version | — | `1.0.0` | Versão da imagem do compose.yaml. Uma versão publicada define a própria versão como padrão; num clone o padrão é dev, que o compose constrói. |
 | `EQUORI_DATABASE_URL` | `equori` | a postgres:// or postgresql:// URL | — | `postgres://equori:password@db:5432/equori?sslmode=disable` | URL de um banco PostgreSQL 18 (modo externo); o compose.yaml a define. Sem ela, o equori executa o próprio servidor PostgreSQL sobre EQUORI_DATA_DIR (modo gerenciado). |

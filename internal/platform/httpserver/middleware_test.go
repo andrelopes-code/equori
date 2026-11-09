@@ -2,6 +2,7 @@ package httpserver
 
 import (
 	"bytes"
+	"encoding/json/v2"
 	"io"
 	"log/slog"
 	"net/http"
@@ -57,6 +58,45 @@ func TestMiddlewareAccessLogStatus(t *testing.T) {
 		if !strings.Contains(logs, want) {
 			t.Errorf("access log lacks %s: %s", want, logs)
 		}
+	}
+}
+
+func TestMiddlewareAccessLogProblem(t *testing.T) {
+	t.Parallel()
+
+	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		d := problem.New(http.StatusUnprocessableEntity, "invalid_plan", "plan rows overlap")
+		d.Errors = []problem.FieldError{{Field: "rows[0].amount", Message: "must be positive"}}
+		problem.Write(w, d)
+	})
+	_, logs := serve(t, h, httptest.NewRequestWithContext(t.Context(), http.MethodPut, "/p", nil))
+
+	var line struct {
+		Problem struct {
+			Code   string               `json:"code"`
+			Detail string               `json:"detail"`
+			Errors []problem.FieldError `json:"errors"`
+		} `json:"problem"`
+	}
+	if err := json.Unmarshal([]byte(logs), &line); err != nil {
+		t.Fatalf("decode access log %q: %v", logs, err)
+	}
+
+	want := problem.FieldError{Field: "rows[0].amount", Message: "must be positive"}
+	if line.Problem.Code != "invalid_plan" || line.Problem.Detail != "plan rows overlap" ||
+		len(line.Problem.Errors) != 1 || line.Problem.Errors[0] != want {
+		t.Fatalf("problem = %+v, access log: %s", line.Problem, logs)
+	}
+}
+
+func TestMiddlewareAccessLogSuccessHasNoProblem(t *testing.T) {
+	t.Parallel()
+
+	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { _, _ = io.WriteString(w, "ok") })
+	_, logs := serve(t, h, httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/x", nil))
+
+	if strings.Contains(logs, `"problem"`) {
+		t.Fatalf("access log of a 200 carries a problem: %s", logs)
 	}
 }
 

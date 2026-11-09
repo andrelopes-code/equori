@@ -28,6 +28,8 @@ type Config struct {
 	CopyDir  string
 	HTTPAddr string
 	LogLevel slog.Level
+	// LogFormat is "json" or "text".
+	LogFormat string
 	// InsecureCookies drops the Secure cookie attribute for plain-HTTP LAN deployments (ADR 003).
 	InsecureCookies bool
 	// Distribution is EQUORI_DISTRIBUTION, which compose.yaml sets to compose (A194.1).
@@ -231,6 +233,8 @@ func (c *Config) store(v Variable, n named, value string) {
 		c.HTTPAddr = value
 	case "EQUORI_LOG_LEVEL":
 		_ = c.LogLevel.UnmarshalText([]byte(value))
+	case "EQUORI_LOG_FORMAT":
+		c.LogFormat = value
 	case "EQUORI_INSECURE_COOKIES":
 		c.InsecureCookies, _ = strconv.ParseBool(value)
 	case "EQUORI_DISTRIBUTION":
