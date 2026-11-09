@@ -10,9 +10,6 @@ export interface StudioChoiceProps<T extends string> {
   value: T;
   text: (value: T) => string;
   onChange: (value: T) => void;
-  // Workaround for Slotted issue #87: a set whose labels clip across the panel in any language
-  // is stacked by its caller, since no condense mode stacks the segments when they do not fit.
-  orientation?: "horizontal" | "vertical";
 }
 
 // One value of a short closed set, as segments across the panel.
@@ -23,7 +20,6 @@ export function StudioChoice<T extends string>({
   value,
   text,
   onChange,
-  orientation = "horizontal",
 }: StudioChoiceProps<T>) {
   return (
     <StudioField label={label} description={hint}>
@@ -31,7 +27,6 @@ export function StudioChoice<T extends string>({
         aria-label={label}
         size="sm"
         fullWidth
-        orientation={orientation}
         value={value}
         onValueChange={(next) => {
           if (oneOf(values, next)) onChange(next);
