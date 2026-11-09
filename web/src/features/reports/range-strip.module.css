@@ -1,0 +1,149 @@
+@layer app {
+  /* The end labels share one measure so the planes of the rows line up; no token holds a measure. */
+  .strip {
+    display: grid;
+    grid-template-columns: 5.5rem 1fr 5.5rem;
+    column-gap: var(--slotted-space-5);
+    align-items: center;
+    inline-size: 100%;
+  }
+
+  .start,
+  .finish,
+  .note,
+  .zeroLabel,
+  .meanLabel {
+    font-size: var(--slotted-font-size-xs);
+    font-variant-numeric: tabular-nums;
+    color: var(--slotted-text-muted);
+    white-space: nowrap;
+  }
+
+  .start {
+    text-align: end;
+  }
+
+  .finish {
+    text-align: start;
+  }
+
+  .note {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  /* The inset keeps the dots at the ends whole. */
+  .plane {
+    position: relative;
+    grid-column: 2;
+    block-size: var(--slotted-space-8);
+    margin-inline: var(--slotted-space-4);
+  }
+
+  .rail {
+    position: absolute;
+    inset-inline: 0;
+    inset-block-start: 50%;
+    border-block-start: var(--slotted-border-width-thin) solid
+      var(--slotted-border-subtle);
+  }
+
+  .band {
+    position: absolute;
+    inset-inline-start: var(--from);
+    inset-inline-end: calc(100% - var(--to));
+    inset-block-start: calc(50% - var(--slotted-space-4) / 2);
+    block-size: var(--slotted-space-4);
+    min-inline-size: var(--slotted-space-4);
+    box-sizing: border-box;
+    border: var(--slotted-border-width-thin) solid var(--slotted-border-strong);
+    border-radius: var(--slotted-radius-full);
+    background: var(--slotted-surface-sunken);
+  }
+
+  .dot,
+  .asked {
+    position: absolute;
+    inset-inline-start: var(--at);
+    inset-block-start: 50%;
+    border-radius: var(--slotted-radius-full);
+  }
+
+  .dot {
+    inline-size: var(--slotted-space-4);
+    block-size: var(--slotted-space-4);
+    margin-inline-start: calc(var(--slotted-space-4) / -2);
+    margin-block-start: calc(var(--slotted-space-4) / -2);
+    background: var(--slotted-border-strong);
+  }
+
+  .asked {
+    inline-size: var(--slotted-space-6);
+    block-size: var(--slotted-space-6);
+    margin-inline-start: calc(var(--slotted-space-6) / -2);
+    margin-block-start: calc(var(--slotted-space-6) / -2);
+    background: var(--slotted-data-1);
+    box-shadow: 0 0 0 var(--slotted-border-width-thick)
+      var(--slotted-surface-raised);
+  }
+
+  .zero,
+  .mean {
+    position: absolute;
+    inset-inline-start: var(--at);
+    inset-block-start: 50%;
+  }
+
+  .zero {
+    inline-size: var(--slotted-border-width-thin);
+    block-size: var(--slotted-space-6);
+    margin-block-start: calc(var(--slotted-space-6) / -2);
+    background: var(--slotted-border-strong);
+  }
+
+  .mean {
+    inline-size: var(--slotted-border-width-thick);
+    block-size: var(--slotted-space-7);
+    margin-inline-start: calc(var(--slotted-border-width-thick) / -2);
+    margin-block-start: calc(var(--slotted-space-7) / -2);
+    background: var(--slotted-text);
+  }
+
+  .zeroLabel,
+  .meanLabel {
+    position: absolute;
+    inline-size: 8rem;
+    margin-inline-start: -4rem;
+    text-align: center;
+  }
+
+  .zeroLabel {
+    inset-block-end: 100%;
+  }
+
+  .meanLabel {
+    inset-block-start: 100%;
+  }
+
+  /* Forced colors removes grounds and shadows: each mark keeps an edge or a system color. */
+  @media (forced-colors: active) {
+    .band {
+      border-color: CanvasText;
+    }
+
+    .dot {
+      border: var(--slotted-border-width-thin) solid CanvasText;
+      background: Canvas;
+    }
+
+    .asked {
+      border: var(--slotted-border-width-thick) solid CanvasText;
+      background: Highlight;
+    }
+
+    .mean,
+    .zero {
+      background: CanvasText;
+    }
+  }
+}

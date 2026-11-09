@@ -25,6 +25,52 @@ export const reportsEn = {
     "Share of mean monthly income taken by loan principal and interest.",
   "report.indicators.liabilitiesNote":
     "What you owed on cards, loans and other debts at the end of each month.",
+  "report.indicators.verdict.above":
+    "In {month}, the savings rate was {rate}, {delta} pp above the 12-month mean ({mean}).",
+  "report.indicators.verdict.below":
+    "In {month}, the savings rate was {rate}, {delta} pp below the 12-month mean ({mean}).",
+  "report.indicators.verdict.inline":
+    "In {month}, the savings rate was {rate}, in line with the 12-month mean ({mean}).",
+  "report.indicators.verdict.noMean":
+    "In {month}, the savings rate was {rate}. The 12-month mean needs 3 complete months of records.",
+  "report.indicators.verdict.noIncome":
+    "In {month}, no income was recorded, so there is no savings rate.",
+  "report.indicators.verdict.partial":
+    "So far in {month}, {income} came in and {expense} went out. The savings rate only compares with a closed month.",
+  "report.indicators.progress": "In progress until {date}",
+  "report.indicators.income": "Income",
+  "report.indicators.expense": "Expense",
+  "report.indicators.result": "Result",
+  "report.indicators.board.title":
+    "Where the month stands in the last 12 months",
+  "report.indicators.unit.savings": "of the month's income",
+  "report.indicators.unit.reserve": "months of average expense",
+  "report.indicators.unit.committed":
+    "of average income, in bills and installments",
+  "report.indicators.unit.debt": "of average income, in loans",
+  "report.indicators.board.mean": "12-month mean {value}",
+  "report.indicators.board.partial": "partial, no comparison",
+  "report.indicators.board.short": "Not enough history for the 12-month range.",
+  "report.indicators.board.flat": "{value} in every other month",
+  "report.indicators.strip.name":
+    "{name}: {value}. Other months from {min} to {max}.",
+  "report.indicators.strip.nameMean":
+    "{name}: {value}. Other months from {min} to {max}, 12-month mean {mean}.",
+  "report.indicators.strip.nameHidden":
+    "{name}: {value}, partial. Other months from {min} to {max}, 12-month mean {mean}.",
+  "report.indicators.reserve.title": "Reserve and debts",
+  "report.indicators.reserve.description":
+    "Balance at the end of each month. Liquid accounts against what is owed.",
+  "report.indicators.reserve.liquid": "Liquid accounts",
+  "report.indicators.reserve.debts": "Debts",
+  "report.indicators.flows.title": "Income and expense by month",
+  "report.indicators.flows.description":
+    "Cash basis. The savings rate of each month is in the chart below.",
+  "report.indicators.flows.progress": "In progress",
+  "report.indicators.rate.title": "Savings rate by month",
+  "report.indicators.rate.description": "The dashed line is the 12-month mean.",
+  "report.indicators.audit.title": "Month by month and definitions",
+  "report.indicators.audit.basis": "Cash basis.",
   "report.valueIn": "Value in",
   "report.none": "—",
   "report.month": "Month",

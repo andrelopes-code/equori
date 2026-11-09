@@ -26,6 +26,52 @@ export const reportsPtBR: Record<keyof typeof reportsEn, string> = {
     "Parte da receita mensal média tomada por principal e juros de empréstimos.",
   "report.indicators.liabilitiesNote":
     "O que você devia em cartões, empréstimos e outras dívidas ao fim de cada mês.",
+  "report.indicators.verdict.above":
+    "Em {month}, a taxa de poupança foi {rate}, {delta} p.p. acima da média de 12 meses ({mean}).",
+  "report.indicators.verdict.below":
+    "Em {month}, a taxa de poupança foi {rate}, {delta} p.p. abaixo da média de 12 meses ({mean}).",
+  "report.indicators.verdict.inline":
+    "Em {month}, a taxa de poupança foi {rate}, em linha com a média de 12 meses ({mean}).",
+  "report.indicators.verdict.noMean":
+    "Em {month}, a taxa de poupança foi {rate}. A média de 12 meses exige 3 meses completos de registros.",
+  "report.indicators.verdict.noIncome":
+    "Em {month}, nenhuma receita foi registrada, então não há taxa de poupança.",
+  "report.indicators.verdict.partial":
+    "Até agora em {month}, entraram {income} e saíram {expense}. A taxa de poupança só se compara com um mês fechado.",
+  "report.indicators.progress": "Em andamento até {date}",
+  "report.indicators.income": "Receita",
+  "report.indicators.expense": "Despesa",
+  "report.indicators.result": "Resultado",
+  "report.indicators.board.title": "Onde o mês está nos últimos 12 meses",
+  "report.indicators.unit.savings": "da receita do mês",
+  "report.indicators.unit.reserve": "meses de despesa média",
+  "report.indicators.unit.committed": "da receita média, em contas e parcelas",
+  "report.indicators.unit.debt": "da receita média, em empréstimos",
+  "report.indicators.board.mean": "média de 12 meses {value}",
+  "report.indicators.board.partial": "parcial, sem comparação",
+  "report.indicators.board.short":
+    "Histórico curto demais para a faixa de 12 meses.",
+  "report.indicators.board.flat": "{value} em todos os outros meses",
+  "report.indicators.strip.name":
+    "{name}: {value}. Outros meses de {min} a {max}.",
+  "report.indicators.strip.nameMean":
+    "{name}: {value}. Outros meses de {min} a {max}, média de 12 meses {mean}.",
+  "report.indicators.strip.nameHidden":
+    "{name}: {value}, parcial. Outros meses de {min} a {max}, média de 12 meses {mean}.",
+  "report.indicators.reserve.title": "Reserva e dívidas",
+  "report.indicators.reserve.description":
+    "Saldo no fim de cada mês. Contas líquidas contra o que se deve.",
+  "report.indicators.reserve.liquid": "Contas líquidas",
+  "report.indicators.reserve.debts": "Dívidas",
+  "report.indicators.flows.title": "Receita e despesa por mês",
+  "report.indicators.flows.description":
+    "Base de caixa. A taxa de poupança de cada mês está no gráfico abaixo.",
+  "report.indicators.flows.progress": "Em andamento",
+  "report.indicators.rate.title": "Taxa de poupança por mês",
+  "report.indicators.rate.description":
+    "A linha tracejada é a média de 12 meses.",
+  "report.indicators.audit.title": "Mês a mês e definições",
+  "report.indicators.audit.basis": "Base de caixa.",
   "report.valueIn": "Avaliar em",
   "report.none": "—",
   "report.month": "Mês",
