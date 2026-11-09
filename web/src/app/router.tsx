@@ -17,6 +17,7 @@ import { useEffect } from "react";
 import { useApi } from "@/api/api-context";
 import type { paths } from "@/api/schema.gen";
 import { ProblemError } from "@/api/problem";
+import { pageTransitionTypes } from "@/app/page-transition";
 import { useSessionExpiry } from "@/app/providers";
 import { RouteError } from "@/app/route-error";
 import { RouteNotFound } from "@/app/route-not-found";
@@ -620,6 +621,7 @@ export function newRouter(history?: RouterHistory) {
     context: {} as RouterContext,
     ...(history === undefined ? {} : { history }),
     defaultPreload: "intent",
+    defaultViewTransition: { types: pageTransitionTypes },
     defaultErrorComponent: RouteError,
     defaultNotFoundComponent: RouteNotFound,
   });

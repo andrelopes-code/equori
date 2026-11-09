@@ -8,6 +8,7 @@ import {
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import styles from "@/app/shell/app-frame.module.css";
 import { catalogEn } from "@/i18n/catalog.en";
 import { catalogPtBR } from "@/i18n/catalog.pt-BR";
 import { fakeApi, json } from "@/testing/fake-api";
@@ -78,6 +79,21 @@ describe("AppFrame layout", () => {
     });
     expect(page?.isConnected).toBe(true);
   });
+
+  it.each([
+    { width: 1280, phone: false },
+    { width: 390, phone: true },
+  ])(
+    "names the main region for the page transition at $width px",
+    async ({ width, phone }) => {
+      await renderApp("/", { width, fetch: newFetch() });
+      const main = document.querySelector(
+        '[data-ui="app-shell"] > [data-part="main"]',
+      );
+      expect(main).toHaveClass(styles.transition ?? "missing");
+      expect(main?.classList.contains(styles.main ?? "missing")).toBe(phone);
+    },
+  );
 
   it("sets the comfortable density when none is stored", async () => {
     await renderApp("/", { width: 390, fetch: newFetch() });
