@@ -104,9 +104,13 @@ func TestScenarios(t *testing.T) {
 	p := apitest.Posting
 
 	t.Run("S01", func(t *testing.T) {
-		f := newFixture(t)
-		f.h.Record("2026-10-05", p(f.checking, 500000), p(f.salary, -500000))
-		f.expectBalances(t, "2026-10-05", map[string]int64{f.checking: 500000, f.salary: -500000})
+		for _, pr := range apitest.Profiles() {
+			t.Run(pr.Name, func(t *testing.T) {
+				f := newFixture(t, apitest.As(pr))
+				f.h.Record("2026-10-05", f.h.Posting(f.checking, 500000), f.h.Posting(f.salary, -500000))
+				f.expectBalances(t, "2026-10-05", map[string]int64{f.checking: 500000, f.salary: -500000})
+			})
+		}
 	})
 
 	t.Run("S02", func(t *testing.T) {

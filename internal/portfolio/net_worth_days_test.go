@@ -10,38 +10,44 @@ import (
 // S283: net worth at the end of each day of a range (net worth days design, D1).
 func TestS283NetWorthDays(t *testing.T) {
 	t.Parallel()
-	f := newFixture(t)
-	checking := f.h.Account("Nubank", "asset", "checking", nil)
-	loan := f.h.Account("Loan", "liability", "loan", nil)
-	food := f.h.Account("Food", "expense", "", nil)
-	f.h.Record("2026-10-01", apitest.Posting(checking, 100000), apitest.Posting(f.dividends, -100000))
-	f.h.Record("2026-10-20", apitest.Posting(food, 30000), apitest.Posting(loan, -30000))
-	f.h.Dispatch()
 
-	var out struct {
-		Items []struct {
-			Date        string         `json:"date"`
-			Assets      map[string]any `json:"assets"`
-			Liabilities map[string]any `json:"liabilities"`
-			Net         map[string]any `json:"net"`
-		} `json:"items"`
-	}
-	f.h.MustDo(http.MethodGet, "/api/v1/reports/net-worth/days?from=2026-10-19&to=2026-10-21", nil, http.StatusOK, &out)
+	for _, pr := range apitest.Profiles() {
+		t.Run(pr.Name, func(t *testing.T) {
+			t.Parallel()
+			f := newFixture(t, apitest.As(pr))
+			checking := f.h.Account("Nubank", "asset", "checking", nil)
+			loan := f.h.Account("Loan", "liability", "loan", nil)
+			food := f.h.Account("Food", "expense", "", nil)
+			f.h.Record("2026-10-01", f.h.Posting(checking, 100000), f.h.Posting(f.dividends, -100000))
+			f.h.Record("2026-10-20", f.h.Posting(food, 30000), f.h.Posting(loan, -30000))
+			f.h.Dispatch()
 
-	want := []struct {
-		date             string
-		liabilities, net float64
-	}{{"2026-10-19", 0, 100000}, {"2026-10-20", 30000, 70000}, {"2026-10-21", 30000, 70000}}
-	if len(out.Items) != len(want) {
-		t.Fatalf("items = %+v", out.Items)
-	}
+			var out struct {
+				Items []struct {
+					Date        string         `json:"date"`
+					Assets      map[string]any `json:"assets"`
+					Liabilities map[string]any `json:"liabilities"`
+					Net         map[string]any `json:"net"`
+				} `json:"items"`
+			}
+			f.h.MustDo(http.MethodGet, "/api/v1/reports/net-worth/days?from=2026-10-19&to=2026-10-21", nil, http.StatusOK, &out)
 
-	for i, w := range want {
-		got := out.Items[i]
-		if got.Date != w.date || got.Assets["amount"] != float64(100000) || got.Liabilities["amount"] != w.liabilities ||
-			got.Net["amount"] != w.net || got.Net["currency"] != "BRL" {
-			t.Fatalf("day %d = %+v, want %+v", i, got, w)
-		}
+			want := []struct {
+				date             string
+				liabilities, net float64
+			}{{"2026-10-19", 0, 100000}, {"2026-10-20", 30000, 70000}, {"2026-10-21", 30000, 70000}}
+			if len(out.Items) != len(want) {
+				t.Fatalf("items = %+v", out.Items)
+			}
+
+			for i, w := range want {
+				got := out.Items[i]
+				if got.Date != w.date || got.Assets["amount"] != float64(100000) || got.Liabilities["amount"] != w.liabilities ||
+					got.Net["amount"] != w.net || got.Net["currency"] != string(pr.Base) {
+					t.Fatalf("day %d = %+v, want %+v", i, got, w)
+				}
+			}
+		})
 	}
 }
 

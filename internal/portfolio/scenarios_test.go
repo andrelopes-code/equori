@@ -20,8 +20,8 @@ func security(code, typ string) map[string]any {
 	return map[string]any{"code": code, "type": typ, "scale": 0, "name": code, "quote_currency": "BRL", "exchange": "BVMF"}
 }
 
-func newFixture(t *testing.T) fixture {
-	h := apitest.New(t, apitest.Today("2026-11-01"))
+func newFixture(t *testing.T, opts ...apitest.Option) fixture {
+	h := apitest.New(t, append([]apitest.Option{apitest.Today("2026-11-01")}, opts...)...)
 	h.MustDo(http.MethodPost, "/api/v1/instruments", security("MXRF11", "reit"), http.StatusCreated, nil)
 	h.MustDo(http.MethodPost, "/api/v1/instruments", security("PETR4", "stock"), http.StatusCreated, nil)
 	var inst struct {
@@ -29,7 +29,7 @@ func newFixture(t *testing.T) fixture {
 	}
 	h.MustDo(http.MethodPost, "/api/v1/institutions", map[string]string{"name": "XP"}, http.StatusCreated, &inst)
 	f := fixture{h: h, institution: inst.ID}
-	f.xp = h.Account("XP", "asset", "brokerage", map[string]any{"institution_id": inst.ID})
+	f.xp = h.Account("XP", "asset", "brokerage", map[string]any{"institution_id": inst.ID, "currency": "BRL"})
 	child := func(name, currency string) string {
 		return h.Account(name, "asset", "brokerage", map[string]any{"institution_id": inst.ID, "parent_id": f.xp, "currency": currency})
 	}

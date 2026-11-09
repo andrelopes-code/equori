@@ -32,42 +32,48 @@ func categoryTotals(t *testing.T, h *apitest.Harness, query string) []categoryTo
 // S76, Review Focus 1: totals of a month by category and by subtree (A77).
 func TestS76CategoryTotals(t *testing.T) {
 	t.Parallel()
-	h := apitest.New(t)
-	checking := h.Account("Checking", "asset", "checking", nil)
-	food := h.Account("Food", "expense", "", nil)
-	delivery := h.Account("Delivery", "expense", "", map[string]any{"parent_id": food})
-	groceries := h.Account("Groceries", "expense", "", map[string]any{"parent_id": food})
-	travel := h.Account("Travel", "expense", "", nil)
-	h.Record("2026-10-01", apitest.Posting(checking, -4500), apitest.Posting(delivery, 4500))
-	h.Record("2026-10-20", apitest.Posting(checking, -1000), apitest.Posting(delivery, 1000))
-	h.Record("2026-10-05", apitest.Posting(checking, -2000), apitest.Posting(groceries, 2000))
-	h.Record("2026-10-14", apitest.Posting(checking, -2390), apitest.Posting(travel, 2390))
-	h.Record("2026-11-01", apitest.Posting(checking, -999), apitest.Posting(travel, 999))
-	h.Dispatch()
 
-	items := categoryTotals(t, h, "from=2026-10-01&to=2026-10-31&class=expense")
-	got := map[string][2]int64{}
+	for _, pr := range apitest.Profiles() {
+		t.Run(pr.Name, func(t *testing.T) {
+			t.Parallel()
+			h := apitest.New(t, apitest.As(pr))
+			checking := h.Account("Checking", "asset", "checking", nil)
+			food := h.Account("Food", "expense", "", nil)
+			delivery := h.Account("Delivery", "expense", "", map[string]any{"parent_id": food})
+			groceries := h.Account("Groceries", "expense", "", map[string]any{"parent_id": food})
+			travel := h.Account("Travel", "expense", "", nil)
+			h.Record("2026-10-01", h.Posting(checking, -4500), h.Posting(delivery, 4500))
+			h.Record("2026-10-20", h.Posting(checking, -1000), h.Posting(delivery, 1000))
+			h.Record("2026-10-05", h.Posting(checking, -2000), h.Posting(groceries, 2000))
+			h.Record("2026-10-14", h.Posting(checking, -2390), h.Posting(travel, 2390))
+			h.Record("2026-11-01", h.Posting(checking, -999), h.Posting(travel, 999))
+			h.Dispatch()
 
-	var order []string
-	for _, it := range items {
-		got[it.AccountID] = [2]int64{it.Total.Amount, it.SubtreeTotal.Amount}
+			items := categoryTotals(t, h, "from=2026-10-01&to=2026-10-31&class=expense")
+			got := map[string][2]int64{}
 
-		order = append(order, it.AccountID)
-		if it.Total.Currency != "BRL" {
-			t.Fatalf("currency of %s = %q", it.AccountID, it.Total.Currency)
-		}
-	}
+			var order []string
+			for _, it := range items {
+				got[it.AccountID] = [2]int64{it.Total.Amount, it.SubtreeTotal.Amount}
 
-	for id, want := range map[string][2]int64{food: {0, 7500}, delivery: {5500, 5500}, groceries: {2000, 2000}, travel: {2390, 2390}} {
-		if got[id] != want {
-			t.Errorf("account %s = %v, want %v", id, got[id], want)
-		}
-	}
+				order = append(order, it.AccountID)
+				if it.Total.Currency != string(pr.Base) {
+					t.Fatalf("currency of %s = %q", it.AccountID, it.Total.Currency)
+				}
+			}
 
-	// Name order; the system expense categories of the book sit among them.
-	pos := func(id string) int { return slices.Index(order, id) }
-	if pos(delivery) > pos(food) || pos(food) > pos(groceries) || pos(groceries) > pos(travel) {
-		t.Fatalf("order = %v", order)
+			for id, want := range map[string][2]int64{food: {0, 7500}, delivery: {5500, 5500}, groceries: {2000, 2000}, travel: {2390, 2390}} {
+				if got[id] != want {
+					t.Errorf("account %s = %v, want %v", id, got[id], want)
+				}
+			}
+
+			// Name order; the system expense categories of the book sit among them.
+			pos := func(id string) int { return slices.Index(order, id) }
+			if pos(delivery) > pos(food) || pos(food) > pos(groceries) || pos(groceries) > pos(travel) {
+				t.Fatalf("order = %v", order)
+			}
+		})
 	}
 }
 
