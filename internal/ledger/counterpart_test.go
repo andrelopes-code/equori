@@ -133,6 +133,7 @@ func TestUnpairImported(t *testing.T) {
 	}
 
 	uncategorized := systemAccounts(s.h)["uncategorized_expense"]
+
 	view := s.h.Transaction(tx.String())
 	if got := amountsByAccount(view); view.Version != 3 || len(view.Postings) != 2 || got[s.a] != -25000 || got[uncategorized] != 25000 {
 		t.Fatalf("transaction = %+v", view)
