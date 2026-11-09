@@ -238,6 +238,12 @@ export const settingsEn = {
     "Money in reads green and a loss reads red. The sign is always written.",
   "studio.amountTone.colour": "By kind",
   "studio.amountTone.sign": "Sign only",
+  "studio.summaryAmounts": "Summary figures",
+  "studio.summaryAmounts.hint":
+    "How summary cards write an amount. Tables keep every digit.",
+  "studio.summaryAmounts.full": "Full",
+  "studio.summaryAmounts.whole": "No decimals",
+  "studio.summaryAmounts.compact": "Compact",
   "studio.depth.deep": "Deep",
   "studio.depth.oled": "OLED",
   "studio.step": "Layer lift",

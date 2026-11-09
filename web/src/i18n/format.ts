@@ -74,17 +74,18 @@ function dateFormat(
   return format;
 }
 
+// How a summary card writes an amount: every digit, no decimals, or in the locale's compact form.
+export type SummaryMode = "full" | "whole" | "compact";
+
 function currencyPartList(
   m: Money,
   scale: number,
   locale: string,
+  mode: SummaryMode = "full",
 ): { parts: Intl.NumberFormatPart[]; iso: boolean } {
   // O7: Intl reads the decimal string, never a float divided by the scale.
   const plain = formatPlain(m.amount, scale) as `${number}`;
-  const fraction = {
-    minimumFractionDigits: scale,
-    maximumFractionDigits: scale,
-  };
+  const fraction = fractionOptions(scale, mode);
   try {
     return {
       parts: numberFormat(locale, {
@@ -105,6 +106,16 @@ function currencyPartList(
       iso: false,
     };
   }
+}
+
+function fractionOptions(
+  scale: number,
+  mode: SummaryMode,
+): Intl.NumberFormatOptions {
+  if (mode === "compact") return { notation: "compact" };
+  if (mode === "whole")
+    return { minimumFractionDigits: 0, maximumFractionDigits: 0 };
+  return { minimumFractionDigits: scale, maximumFractionDigits: scale };
 }
 
 export function formatMoneyParts(
@@ -131,7 +142,7 @@ export function formatMoneyParts(
 }
 
 export interface MoneySegment {
-  kind: "sign" | "symbol" | "integer" | "fraction" | "literal";
+  kind: "sign" | "symbol" | "integer" | "fraction" | "literal" | "compact";
   text: string;
 }
 
@@ -141,8 +152,9 @@ export function formatMoneySegments(
   m: Money,
   scale: number,
   locale: string,
+  mode: SummaryMode = "full",
 ): MoneySegment[] {
-  const { parts, iso } = currencyPartList(m, scale, locale);
+  const { parts, iso } = currencyPartList(m, scale, locale, mode);
   const out: MoneySegment[] = [];
   const push = (kind: MoneySegment["kind"], text: string) => {
     const last = out.at(-1);
@@ -157,7 +169,9 @@ export function formatMoneySegments(
     else if (part.type === "integer" || part.type === "group")
       push("integer", part.value);
     else if (part.type === "decimal" || part.type === "fraction")
-      push("fraction", part.value);
+      // The digits of a compact figure ("1,2") are the figure; only the suffix is a unit.
+      push(mode === "compact" ? "integer" : "fraction", part.value);
+    else if (part.type === "compact") push("compact", part.value);
     else if (part.type === "literal") push("literal", part.value);
   }
   if (!iso) {

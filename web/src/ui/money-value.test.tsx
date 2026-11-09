@@ -87,4 +87,27 @@ describe("MoneyValue", () => {
     );
     expect(valueText(container)).toBe("R$\u00a0" + MASK);
   });
+
+  it("draws no fraction unit under the whole mode", () => {
+    localStorage.setItem("equori.summaryAmounts", "whole");
+    const { container } = renderValue({ amount: 123456789, currency: "BRL" });
+    expect(valueText(container)).toBe("R$\u00a01.234.568");
+    expect(units(container)).toEqual(["R$"]);
+  });
+
+  it("draws the compact suffix as a unit under the compact mode", () => {
+    localStorage.setItem("equori.summaryAmounts", "compact");
+    const { container } = renderValue({ amount: 123456789, currency: "BRL" });
+    expect(valueText(container)).toBe("R$\u00a01,2\u00a0mi");
+    expect(units(container)).toEqual(["R$", "mi"]);
+  });
+
+  it("writes the same unit on both sides of a compact boundary", () => {
+    localStorage.setItem("equori.summaryAmounts", "compact");
+    const below = renderValue({ amount: 99999999, currency: "BRL" });
+    expect(valueText(below.container)).toBe("R$\u00a01\u00a0mi");
+    below.unmount();
+    const at = renderValue({ amount: 100000000, currency: "BRL" });
+    expect(valueText(at.container)).toBe("R$\u00a01\u00a0mi");
+  });
 });

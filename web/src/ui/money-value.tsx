@@ -17,7 +17,7 @@ export interface MoneyAmount {
 // with its scale, written by useMoneyFormat, so its parts are drawn as children.
 export function MoneyValue({ money, scale, signed = false }: MoneyAmount) {
   const fmt = useMoneyFormat();
-  const segments = fmt.segments(money, scale);
+  const segments = fmt.summary(money, scale);
   const sign =
     segments.find((segment) => segment.kind === "sign")?.text ??
     (signed && money.amount > 0 && !fmt.hidden ? "+" : "");
@@ -26,7 +26,11 @@ export function MoneyValue({ money, scale, signed = false }: MoneyAmount) {
       {segments.map((segment) => {
         if (segment.kind === "sign") return null;
         if (segment.kind === "integer") return sign + segment.text;
-        if (segment.kind === "symbol" || segment.kind === "fraction")
+        if (
+          segment.kind === "symbol" ||
+          segment.kind === "fraction" ||
+          segment.kind === "compact"
+        )
           return <StatCardUnit key={segment.kind}>{segment.text}</StatCardUnit>;
         return segment.text;
       })}

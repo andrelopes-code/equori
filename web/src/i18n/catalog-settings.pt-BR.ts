@@ -242,6 +242,12 @@ export const settingsPtBR: Record<keyof typeof settingsEn, string> = {
     "Entradas em verde e perdas em vermelho. O sinal aparece sempre.",
   "studio.amountTone.colour": "Por tipo",
   "studio.amountTone.sign": "Só o sinal",
+  "studio.summaryAmounts": "Valores nos resumos",
+  "studio.summaryAmounts.hint":
+    "Como os cartões de resumo escrevem um valor. Tabelas mantêm todos os dígitos.",
+  "studio.summaryAmounts.full": "Completo",
+  "studio.summaryAmounts.whole": "Sem casas decimais",
+  "studio.summaryAmounts.compact": "Compacto",
   "studio.depth.deep": "Profundo",
   "studio.depth.oled": "OLED",
   "studio.step": "Destaque das camadas",

@@ -48,6 +48,21 @@ describe("useMoneyFormat", () => {
     expect(hidden.result.current.plain(brl(-123456), 2)).toBe(MASK);
   });
 
+  it("writes the summary in the chosen mode while visible and masked while hidden", () => {
+    localStorage.setItem("equori.summaryAmounts", "compact");
+    const text = (segments: { text: string }[]) =>
+      segments.map((segment) => segment.text).join("");
+    const visible = renderHook(() => useMoneyFormat(), { wrapper });
+    expect(text(visible.result.current.summary(brl(123456789), 2))).toBe(
+      "R$\u00a01,2\u00a0mi",
+    );
+    localStorage.setItem("equori.privacy", "hidden");
+    const hidden = renderHook(() => useMoneyFormat(), { wrapper });
+    expect(text(hidden.result.current.summary(brl(123456789), 2))).toBe(
+      `R$\u00a0${MASK}`,
+    );
+  });
+
   it("keeps the amount in an entry field readable while hidden", () => {
     localStorage.setItem("equori.privacy", "hidden");
     const { result } = renderHook(() => useMoneyFormat(), { wrapper });

@@ -11,6 +11,7 @@ import type { MoneyParts, MoneySegment } from "@/i18n/format";
 import { useAppLocale } from "@/i18n/i18n-provider";
 import { MASK, maskParts, maskSegments, maskText } from "@/privacy/mask";
 import { usePrivacy } from "@/privacy/privacy-provider";
+import { useSummaryAmounts } from "@/theme/amounts";
 
 interface Money {
   amount: number;
@@ -24,6 +25,8 @@ export interface MoneyFormat {
   parts: (m: Money, scale: number) => MoneyParts;
   // The amount in the order of the locale's pattern, for drawing the symbol or the fraction apart.
   segments: (m: Money, scale: number) => MoneySegment[];
+  // The amount of a summary card, in the form the summary preference chooses.
+  summary: (m: Money, scale: number) => MoneySegment[];
   // The bare decimal ("-1234.56") a field reads back, with no symbol or grouping.
   plain: (m: Money, scale: number) => string;
   // A quantity on screen: the locale's separators, no symbol, masked with the amounts (O10).
@@ -38,6 +41,7 @@ export interface MoneyFormat {
 export function useMoneyFormat(): MoneyFormat {
   const [locale] = useAppLocale();
   const { hidden } = usePrivacy();
+  const [summaryMode] = useSummaryAmounts();
   return useMemo(() => {
     const masked = (m: Money, scale: number) =>
       maskText(formatMoneyParts(m, scale, locale));
@@ -54,6 +58,9 @@ export function useMoneyFormat(): MoneyFormat {
         parts: (m, scale) => maskParts(formatMoneyParts(m, scale, locale)),
         segments: (m, scale) =>
           maskSegments(formatMoneySegments(m, scale, locale)),
+        // The mode is not read: a unit or a digit count of the summary is information too.
+        summary: (m, scale) =>
+          maskSegments(formatMoneySegments(m, scale, locale)),
       };
     }
     return {
@@ -65,6 +72,7 @@ export function useMoneyFormat(): MoneyFormat {
       signed: (m, scale, options) => formatSigned(m, scale, locale, options),
       parts: (m, scale) => formatMoneyParts(m, scale, locale),
       segments: (m, scale) => formatMoneySegments(m, scale, locale),
+      summary: (m, scale) => formatMoneySegments(m, scale, locale, summaryMode),
     };
-  }, [locale, hidden]);
+  }, [locale, hidden, summaryMode]);
 }

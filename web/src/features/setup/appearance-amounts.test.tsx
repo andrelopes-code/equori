@@ -28,4 +28,20 @@ describe("AppearanceAmounts", () => {
     expect(localStorage.getItem("equori.amountTone")).toBe("sign");
     expect(storedAppearance().amountTone).toBe("sign");
   });
+
+  it("stores the summary figure format chosen", async () => {
+    renderWithProviders(<AppearanceAmounts />, { fetch: fakeApi({}) });
+    const group = screen.getByRole("radiogroup", {
+      name: settingsEn["studio.summaryAmounts"],
+    });
+    const compact = within(group).getByRole("radio", {
+      name: settingsEn["studio.summaryAmounts.compact"],
+    });
+
+    await userEvent.click(compact);
+
+    expect(compact).toBeChecked();
+    expect(localStorage.getItem("equori.summaryAmounts")).toBe("compact");
+    expect(storedAppearance().summaryAmounts).toBe("compact");
+  });
 });

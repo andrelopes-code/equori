@@ -339,3 +339,48 @@ describe("formatMoneySegments", () => {
     ).toBe(formatMoney(money, 2, "pt-BR"));
   });
 });
+
+describe("formatMoneySegments summary modes", () => {
+  const joined = (
+    money: { amount: number; currency: string },
+    locale: string,
+    mode: "full" | "whole" | "compact",
+  ) =>
+    formatMoneySegments(money, 2, locale, mode)
+      .map((segment) => segment.text)
+      .join("");
+
+  it.each([
+    [123456789, "BRL", "pt-BR", "full", "R$\u00a01.234.567,89"],
+    [123456789, "BRL", "pt-BR", "whole", "R$\u00a01.234.568"],
+    [123456789, "BRL", "pt-BR", "compact", "R$\u00a01,2\u00a0mi"],
+    [-4821050, "BRL", "pt-BR", "compact", "\u2212R$\u00a048\u00a0mil"],
+    [1234567, "USD", "en", "compact", "$12K"],
+    [1234567, "EUR", "en", "whole", "\u20ac12,346"],
+    [49, "USD", "en", "compact", "$0.49"],
+    [1234567, "PETR4", "en", "whole", "12,346 PETR4"],
+  ] as const)(
+    "writes %d %s in %s in mode %s as the text",
+    (amount, currency, locale, mode, want) => {
+      expect(joined({ amount, currency }, locale, mode)).toBe(want);
+    },
+  );
+
+  it("splits a compact amount into symbol, literal, integer, literal and compact", () => {
+    const segments = formatMoneySegments(
+      { amount: 123456789, currency: "BRL" },
+      2,
+      "pt-BR",
+      "compact",
+    );
+
+    expect(segments.map((segment) => segment.kind)).toEqual([
+      "symbol",
+      "literal",
+      "integer",
+      "literal",
+      "compact",
+    ]);
+    expect(segments[2]?.text).toBe("1,2");
+  });
+});

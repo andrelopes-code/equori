@@ -1,4 +1,4 @@
-import { amountToneMode } from "@/theme/amounts";
+import { amountToneMode, summaryAmounts } from "@/theme/amounts";
 import { applyAccent, defaultAccent, readAccent } from "@/theme/accent";
 import { applyCorners, defaultCorners, readCorners } from "@/theme/corners";
 import { applyDensity, defaultDensity, readDensity } from "@/theme/density";
@@ -23,6 +23,7 @@ export const appearanceNames: readonly string[] = [
   "typeface",
   "motion",
   "amountTone",
+  "summaryAmounts",
   "visual",
   "themes",
   ...statusNames,
@@ -41,6 +42,7 @@ export function resetAppearance(): void {
   typeface.apply(typeface.fallback);
   motion.apply(motion.fallback);
   amountToneMode.apply(amountToneMode.fallback);
+  summaryAmounts.apply(summaryAmounts.fallback);
   applyVisual(defaultVisual);
   applySurfaces(surfaceDefaults);
 }
@@ -81,6 +83,7 @@ export function restoreAppearance(values: Record<string, unknown>): void {
   typeface.apply(typeface.read());
   motion.apply(motion.read());
   amountToneMode.apply(amountToneMode.read());
+  summaryAmounts.apply(summaryAmounts.read());
   applyVisual(readVisual());
   applySurfaces();
   refreshSavedThemes();
