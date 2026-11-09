@@ -117,9 +117,11 @@ const darkNeutral = (l: number) => ({
 // height stays.
 // A table is lines on the page, so its header surface is transparent. A header pinned to the top
 // has rows passing under it, and takes the ground the table stands on.
+// Workaround for Slotted issue #85: the page does not publish its ground, so the sunken one stands
+// in where no section sets it.
 const stickyHeaderRule = `
 [data-ui="table"][data-sticky-header] {
-  --slotted-table-header-surface: var(--slotted-ground, var(--slotted-surface));
+  --slotted-table-header-surface: var(--slotted-ground, var(--slotted-surface-sunken));
 }
 `;
 

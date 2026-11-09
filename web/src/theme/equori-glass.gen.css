@@ -1940,7 +1940,7 @@
     }
 
     [data-ui="table"][data-sticky-header] {
-      --slotted-table-header-surface: var(--slotted-ground, var(--slotted-surface));
+      --slotted-table-header-surface: var(--slotted-ground, var(--slotted-surface-sunken));
     }
 
     [data-ui="table"] {

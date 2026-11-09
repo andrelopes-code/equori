@@ -119,7 +119,7 @@ test("the sticky header of a table is opaque and an unpinned header stays transp
   assert.match(css, /--slotted-table-header-surface: transparent;/);
   assert.match(
     css,
-    /\[data-ui="table"\]\[data-sticky-header\] \{\s*--slotted-table-header-surface: var\(--slotted-ground, var\(--slotted-surface\)\);/,
+    /\[data-ui="table"\]\[data-sticky-header\] \{\s*--slotted-table-header-surface: var\(--slotted-ground, var\(--slotted-surface-sunken\)\);/,
   );
 });
 
