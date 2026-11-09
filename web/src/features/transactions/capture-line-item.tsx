@@ -20,7 +20,6 @@ import { EntryKindGlyph } from "@/features/transactions/entry-kind-glyph";
 import type { MessageKey } from "@/i18n/catalog.en";
 import { formatDayMonth } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { FormNotice } from "@/ui/form-notice";
 import { MoneyFigure } from "@/ui/money-figure";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
@@ -30,7 +29,8 @@ type CaptureIssue = components["schemas"]["CaptureIssue"];
 type CaptureChoice = components["schemas"]["CaptureChoice"];
 
 // One draft of the capture: the line as written, what will be recorded, and what keeps it
-// from being recorded, with the readings to choose from (A115).
+// from being recorded, with the readings to choose from (A115). A message about the draft is a
+// line of text under it, not an Alert: the row's warning tone already marks it (O14).
 export function CaptureLineItem({
   line,
   draft,
@@ -130,9 +130,9 @@ export function CaptureLineItem({
               </Text>
               {issues.map((issue) => (
                 <Stack key={issue.code} gap={1}>
-                  <FormNotice tone="warning">
+                  <Text size="sm" tone="warning" weight="medium">
                     {t(`capture.issue.${issue.code}`)}
-                  </FormNotice>
+                  </Text>
                   {issue.choices.length > 0 && (
                     <Inline gap={2} aria-label={t("capture.choose")}>
                       {issue.choices.map((choice) => (
@@ -153,11 +153,15 @@ export function CaptureLineItem({
                 </Stack>
               ))}
               {problems.map((key) => (
-                <FormNotice key={key} tone="warning">
+                <Text key={key} size="sm" tone="warning" weight="medium">
                   {t(key)}
-                </FormNotice>
+                </Text>
               ))}
-              {refusal !== null && <FormNotice>{refusal}</FormNotice>}
+              {refusal !== null && (
+                <Text size="sm" tone="danger" weight="medium">
+                  {refusal}
+                </Text>
+              )}
             </Stack>
           </ListItemDescription>
         </ListItemBody>
