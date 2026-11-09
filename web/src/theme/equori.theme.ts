@@ -82,6 +82,14 @@ const paletteScrimRule = `
 }
 `;
 
+// Workaround for Slotted issue #83: the group label paints the panel's surface a second time, and
+// over the translucent material the two layers read as a lighter band.
+const paletteGroupLabelRule = `
+[data-ui="command-palette"] [data-part="group-label"] {
+  background: transparent;
+}
+`;
+
 const defaultDark = defaultTheme.recipe.dark;
 
 // The default turns the dark accent edge and text 10 to 13 degrees toward blue and lifts them to
@@ -354,6 +362,7 @@ export default extendTheme(
       sectionRule,
       resultStateRule,
       paletteScrimRule,
+      paletteGroupLabelRule,
       sheetSlideRule,
       tooltipArrowClipRule,
       tagInsetRule,

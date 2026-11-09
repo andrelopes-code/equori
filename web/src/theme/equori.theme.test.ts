@@ -138,6 +138,13 @@ test("a raised toast and the palette are materials over the page", () => {
   );
 });
 
+test("a group label of the palette adds no second layer over the material", () => {
+  assert.match(
+    css,
+    /\[data-ui="command-palette"\] \[data-part="group-label"\] \{\s*background: transparent;/,
+  );
+});
+
 test("a question's legend is a field label's size", () => {
   assert.match(
     css,

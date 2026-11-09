@@ -1871,6 +1871,10 @@
       --slotted-dialog-scrim: color-mix(in srgb, var(--slotted-scrim) 30%, transparent);
     }
 
+    [data-ui="command-palette"] [data-part="group-label"] {
+      background: transparent;
+    }
+
     [data-ui="drawer"][data-mode="overlay"][data-side="bottom"][data-drag] {
       --slotted-drawer-slide-duration: 480ms;
       --slotted-drawer-slide-exit-duration: 260ms;
