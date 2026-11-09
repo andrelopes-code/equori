@@ -81,7 +81,8 @@ export function CategoriesHeader({
               setChosen(value);
               requestAnimationFrame(() => {
                 setTimeout(() => {
-                  void navigate({ to: routes[value] });
+                  // A tab keeps the page in place: only a change of destination cross-fades.
+                  void navigate({ to: routes[value], viewTransition: false });
                 }, 0);
               });
             }
