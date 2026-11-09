@@ -54,6 +54,10 @@ export const instrumentsEn = {
   "instruments.source.cvm_funds": "CVM",
   "instruments.source.coinbase": "Coinbase",
   "instruments.source.yahoo_chart": "Yahoo Finance",
+  "instruments.symbol.label": "Symbol at {source}",
+  "instruments.symbol.hint":
+    "Empty uses the symbol derived from the code and the exchange.",
+  "instruments.symbol.invalid": "Use only letters, digits and . = ^ _ -",
   "instrument.facts": "Details",
   "instrument.edit": "Edit details",
   "instrument.edit.description":

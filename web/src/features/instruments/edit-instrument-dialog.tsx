@@ -16,13 +16,17 @@ import {
 } from "@slotted/react/field";
 import { TextField } from "@slotted/react/text-field";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 
 import { useApi } from "@/api/api-context";
-import { ProblemError, errorText, fieldErrors } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
-import { subtypesQuery, useEditInstrument } from "@/features/instruments/api";
+import { subtypesQuery } from "@/features/instruments/api";
+import { InstrumentSymbolFields } from "@/features/instruments/instrument-symbol-fields";
 import { subtypeLabel } from "@/features/instruments/instrument-labels";
+import {
+  none,
+  useInstrumentEdit,
+} from "@/features/instruments/use-instrument-edit";
 import { useT } from "@/i18n/i18n-provider";
 import { ChoiceSelect } from "@/ui/choice-select";
 import { FormNotice } from "@/ui/form-notice";
@@ -31,8 +35,11 @@ import { FormRow } from "@/ui/form-row";
 import { useOverlayOpen } from "@/ui/use-overlay-open";
 import { useStableCallback } from "@/ui/use-stable-callback";
 
-// Stands for "no subtype" in the select; a subtype matches ^[a-z0-9_]{2,40}$, so it never collides.
-const none = "-";
+interface EditInstrumentDialogProps {
+  instrument: components["schemas"]["Instrument"];
+  onDone: () => void;
+  onCancel: () => void;
+}
 
 // Edits the name, exchange and subtype of a security (A134); a cleared exchange or subtype is
 // sent as absent, which clears it.
@@ -40,20 +47,24 @@ export function EditInstrumentDialog({
   instrument,
   onDone,
   onCancel,
-}: {
-  instrument: components["schemas"]["Instrument"];
-  onDone: () => void;
-  onCancel: () => void;
-}) {
+}: EditInstrumentDialogProps) {
   const t = useT();
   const api = useApi();
   const overlayOpen = useOverlayOpen();
-  const edit = useEditInstrument();
-  const [name, setName] = useState(instrument.name);
-  const [exchange, setExchange] = useState(instrument.exchange ?? "");
-  const [subtype, setSubtype] = useState(instrument.subtype ?? none);
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [summary, setSummary] = useState<string | null>(null);
+  const {
+    name,
+    setName,
+    exchange,
+    setExchange,
+    subtype,
+    setSubtype,
+    symbols,
+    setSymbols,
+    errors,
+    summary,
+    isPending,
+    submit,
+  } = useInstrumentEdit(instrument, onDone);
   const subtypes = useQuery(subtypesQuery(api, instrument.type));
   const subtypeChoices = useMemo(() => {
     const codes = subtypes.data ?? [];
@@ -70,32 +81,6 @@ export function EditInstrumentDialog({
   const openChange = useStableCallback((open: boolean) => {
     if (!open) onCancel();
   });
-  const submit = () => {
-    setSummary(null);
-    if (name.trim() === "") {
-      setErrors({ name: t("instruments.required") });
-      return;
-    }
-    setErrors({});
-    edit
-      .mutateAsync({
-        code: instrument.code,
-        edit: {
-          name: name.trim(),
-          ...(exchange.trim() === "" ? {} : { exchange: exchange.trim() }),
-          ...(subtype === none ? {} : { subtype }),
-        },
-      })
-      .then(onDone)
-      .catch((caught: unknown) => {
-        const fields =
-          caught instanceof ProblemError ? fieldErrors(caught.problem) : {};
-        setErrors(fields);
-        setSummary(
-          Object.keys(fields).length > 0 ? null : errorText(caught, t),
-        );
-      });
-  };
   return (
     <Dialog open={overlayOpen} size="md" onOpenChange={openChange}>
       <DialogContent>
@@ -170,13 +155,21 @@ export function EditInstrumentDialog({
                   )}
                 </Field>
               </FormRow>
+
+              <InstrumentSymbolFields
+                values={symbols}
+                errors={errors}
+                onChange={(source, value) => {
+                  setSymbols({ ...symbols, [source]: value });
+                }}
+              />
             </FormLayout>
           </DialogBody>
           <DialogFooter>
             <Button variant="ghost" tone="secondary" onClick={onCancel}>
               {t("detail.cancel")}
             </Button>
-            <Button type="submit" loading={edit.isPending}>
+            <Button type="submit" loading={isPending}>
               {t("instrument.edit.save")}
             </Button>
           </DialogFooter>

@@ -393,6 +393,67 @@ describe("Instrument page", () => {
     });
   });
 
+  it("sets the symbol a source requests", async () => {
+    const sent: unknown[] = [];
+    const fetch = api({
+      "GET /api/v1/market-data/feeds": () =>
+        json(200, {
+          items: [
+            {
+              id: "yahoo_chart",
+              kind: "price",
+              enabled: false,
+              suggested: false,
+              last: null,
+              stale: false,
+              last_run: null,
+              error: null,
+              official: false,
+              covers: 0,
+              history_pending: 0,
+              symbol_override: true,
+            },
+          ],
+        }),
+      "PATCH /api/v1/instruments/PETR4": async (req) => {
+        sent.push(await req.json());
+        return json(200, {
+          code: "PETR4",
+          type: "stock",
+          scale: 0,
+          name: "Petrobras PN",
+          quote_currency: "BRL",
+        });
+      },
+    });
+    await renderApp("/instruments/PETR4", { fetch });
+    const user = userEvent.setup();
+    await user.click(
+      await screen.findByRole("button", { name: catalogEn["instrument.edit"] }),
+    );
+    const dialog = await screen.findByRole("dialog");
+    await user.type(
+      await within(dialog).findByRole("textbox", {
+        name: /^Symbol at Yahoo Finance/,
+      }),
+      "PETR4.SA",
+    );
+    await user.click(
+      within(dialog).getByRole("button", {
+        name: catalogEn["instrument.edit.save"],
+      }),
+    );
+    await waitFor(() => {
+      expect(sent).toEqual([
+        {
+          name: "Petrobras PN",
+          exchange: "B3SA",
+          symbols: { yahoo_chart: "PETR4.SA" },
+        },
+      ]);
+    });
+  });
+
   it("offers no edit on a currency", async () => {
     await renderApp("/instruments/USD", { fetch: api() });
     expect(

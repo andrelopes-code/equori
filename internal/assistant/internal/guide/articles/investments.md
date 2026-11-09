@@ -1,6 +1,6 @@
 A brokerage account holds a cash account and one account per **Security**. A trade buys or sells a security for cash of the same brokerage; the **Position** keeps the quantity and the **Cost basis** at **Average cost**. **Investment income**, such as dividends, is paid into the brokerage's cash and may have tax withheld.
 
-The **Market value** of a position uses the latest stored **Price** of its **Instrument**. Instruments and prices are shared by every book of the instance. Fixed income securities can carry terms from which equori accrues a daily price. An instrument's page shows its stored quotes and loads older ones.
+The **Market value** of a position uses the latest stored **Price** of its **Instrument**. Every book of the instance shares instruments and prices. A fixed income security can carry terms that accrue a daily price. An instrument's page shows and loads its quotes and sets its symbol at a source.
 
 The Portfolio screen adds the positions and the brokerage cash into one value, with the gain over cost, the income of the year and the split by type, currency or institution. Every asset account and **Net worth** are on the Reports screen.
 

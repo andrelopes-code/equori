@@ -2,6 +2,7 @@ export {
   booksQuery,
   institutionsQuery,
   instrumentsQuery,
+  marketDataFeedsQuery,
   payeesQuery,
   settingsQuery,
   usesQuery,
