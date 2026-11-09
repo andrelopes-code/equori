@@ -32,17 +32,17 @@ A reader asks, in this order: is this month inside my usual range; how much rese
 
 ## Rules
 
-**IT1 Verdict.** One card holds a sentence at the start and the month ledger at the end. The sentence is `Text size="xl" weight="semibold"`. The ledger is three rows with end-aligned amounts: income, expense, result (`result` signed). Below 760 px of the card's width the ledger goes under the sentence.
+**IT1 Verdict.** One card holds, at the start, a block of three fixed slots and, at the end, the month ledger. A sentence of free length stretched the card and repeated the month's amounts when the month was incomplete (owner review of 2026-11-09), so every case fills the same slots: a label "Savings rate in {month}", the savings rate as the figure (`--slotted-font-size-4xl`), and one line of at most 36 characters per row that compares it or says why it cannot. The ledger is three figures side by side (income, expense, result, `result` signed), each a label over an amount. From 60 rem of the card's width the ledger stands beside the block; below it, under it.
 
-| Case | Sentence |
-|---|---|
-| complete month, savings rate and its 12-month mean present, delta not zero | "In {month}, the savings rate was {rate}, {delta} pp {above or below} the 12-month mean ({mean})." |
-| same, delta zero | "In {month}, the savings rate was {rate}, in line with the 12-month mean ({mean})." |
-| complete month, mean has a reason | "In {month}, the savings rate was {rate}. The 12-month mean needs 3 complete months of records." |
-| savings rate has `no_income` | "In {month}, no income was recorded, so there is no savings rate." |
-| incomplete month | "So far in {month}, {income} came in and {expense} went out. The savings rate only compares with a closed month." |
+| Case | Figure | Line |
+|---|---|---|
+| complete month, rate and 12-month mean present, delta not zero | rate | "{delta} pp above or below the 12-month mean ({mean})" |
+| same, delta zero | rate | "In line with the 12-month mean ({mean})" |
+| complete month, mean has a reason | rate | "The 12-month mean needs 3 complete months of records." |
+| rate has `no_income` | "—" | "No income was recorded in {month}." |
+| incomplete month | the written rate, muted | "In progress: it only compares with a closed month." |
 
-`{delta}` is the absolute difference of `bp` values in percentage points with two decimals. An incomplete month carries a `Tag` "In progress until {date}" under the sentence, with an icon. Numbers go through `formatBasisPoints`, `numberFormatter` or `useMoneyFormat()`.
+`{delta}` is the absolute difference of `bp` values in percentage points with two decimals, bound to "pp" by a no-break space. An incomplete month carries a `Tag` "In progress until {date}" beside the label. Numbers go through `formatBasisPoints`, `numberFormatter` or `useMoneyFormat()`. The tag holds words and no icon: the application has no generic icon set and the tag uses no state color.
 
 **IT2 Position.** A card titled "Where the month stands in the last 12 months" holds one row per ratio: savings rate, liquidity, committed income, debt to income. A row is the name with its unit line, the position strip, and the value end-aligned. The savings row adds its 12-month mean as a tick on the strip and as a line under the value.
 
@@ -53,11 +53,11 @@ A reader asks, in this order: is this month inside my usual range; how much rese
 - `debt_service_share` equal to 0 in all 12 months shows "No loan or financing in your records" (`overview.indicators.noDebt`) in place of the strip, and keeps the value.
 - The strip's accessible name carries the value, the extremes and the mean. The dots are hidden from assistive technology.
 
-**IT3 Reserve and debts.** One `Chart variant="card"` with the area of `liquid_balance` and the dashed line of `liabilities`, one axis in the report currency from zero, `legendValues` so the legend writes each last value. The description reads "Balance at the end of each month. Liquid accounts against what is owed." The ratio `liquidity` is not repeated here (IT2).
+**IT3 Reserve and debts.** One `Chart variant="card"` with the area of `liquid_balance` and, over it, the area of `liabilities` (a thin line over the large area was lost, owner review of 2026-11-09), the axis ticks in whole amounts, one axis in the report currency from zero, `legendValues` so the legend writes each last value. The description reads "Balance at the end of each month. Liquid accounts against what is owed." The ratio `liquidity` is not repeated here (IT2).
 
-**IT4 Flows.** Two charts of one column. The first is `Chart variant="card"`, bars of `income` and `expense` per month, `texture` on, and a band annotation over the incomplete month labelled "In progress". The second is a line chart of `savings_rate` with `trailing_savings_rate` dashed, both in percent, axis holding zero, the incomplete month a gap (D3).
+**IT4 Flows.** Two charts side by side in a grid from two columns. The first is `Chart variant="card"`, bars of `income` and `expense` per month, `texture` on, and a line annotation labelled "In progress" on the incomplete month (a band annotation was a pale block that clipped its label). The second is a line chart of `savings_rate` with `trailing_savings_rate` dashed, both in percent, axis holding zero, the incomplete month a gap (D3).
 
-**IT5 Details.** A collapsed `Collapsible` titled "Month by month and definitions" holds a `Table`: month, income, expense, savings rate, 12-month mean, liquidity, committed income, debt to income, liquid balance, liabilities. A ratio with a reason writes the reason in words. Under the table stand the five definitions that the five chart notes held, and the sentence "Cash basis." The table writes every month, gaps of D4 included as "—".
+**IT5 Details.** A collapsed `Collapsible` titled "Month by month and definitions" holds a `Table`: month, income, expense, savings rate, 12-month mean, liquidity, committed income, debt to income, liquid balance, liabilities. A ratio with a reason writes the reason in a word: "No income", "No expense", "Short history". Under the table stand the five definitions that the five chart notes held, and the sentence "Cash basis." The table writes every month, gaps of D4 included as "—".
 
 **IT6 States.** Loading: a skeleton card for the verdict, four skeleton rows for the position card, the charts with `loading`. Error: the existing `QueryError` with retry. Empty: the sentence of the case "no income" and the strips with their reasons.
 
