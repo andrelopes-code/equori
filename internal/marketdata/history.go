@@ -8,15 +8,47 @@ import (
 	"time"
 
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/adapter/postgres"
+	"github.com/andrelopes-code/equori/internal/marketdata/internal/domain"
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )
+
+var earliestHistoryStart = time.Date(1900, time.January, 1, 0, 0, 0, 0, time.UTC)
 
 // historyJob is a pending row of marketdata_history that needs a fetch up to end.
 type historyJob struct {
 	row  postgres.MarketdataHistory
 	code money.Currency
 	end  time.Time
+}
+
+// RequestHistory queues the prices of code since from from each enabled price source that
+// quotes it and asks for a tick (A222 MQ8, MQ10).
+func (m *Module) RequestHistory(ctx context.Context, code string, from time.Time) error {
+	in, err := m.Instrument(ctx, code)
+	if err != nil {
+		return err
+	}
+
+	if from.Before(earliestHistoryStart) || from.After(m.feeds.Clock.Today(ctx)) {
+		return &domain.FieldError{Field: "from", Message: "must be between 1900-01-01 and today"}
+	}
+
+	sources, err := m.enabledSources(ctx)
+	if err != nil {
+		return err
+	}
+
+	n, err := m.requestHistory(ctx, sources, feedInstruments([]Instrument{in}), func(string) time.Time { return from })
+	if err != nil {
+		return err
+	}
+
+	if n == 0 {
+		return ErrNoSource
+	}
+
+	return nil
 }
 
 // requestHistory queues, for each source of sources, the codes it quotes among ins from the

@@ -20,6 +20,7 @@ export const marketDataPtBR: Record<keyof typeof marketDataEn, string> = {
     "Uma fonte está atrasada ou falhou. Os dados dela param na data mostrada.",
   "problem.admin_required":
     "Só um administrador altera esta configuração da instância.",
+  "problem.no_source": "Nenhuma fonte ativada cota este ativo.",
   "problem.refresh_running":
     "Uma atualização já está em andamento. As datas mudam quando ela termina.",
   "marketData.feed.b3_cotahist": "Cotações diárias da B3",

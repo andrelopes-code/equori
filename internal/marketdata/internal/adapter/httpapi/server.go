@@ -44,6 +44,8 @@ type Service interface {
 	Feeds(ctx context.Context) ([]domain.Feed, error)
 	SetFeed(ctx context.Context, id string, enabled bool) (domain.Feed, error)
 	Refresh(ctx context.Context) error
+	RequestHistory(ctx context.Context, code string, from time.Time) error
+	Coverage(ctx context.Context, in domain.Instrument) (domain.Coverage, error)
 }
 
 var _ StrictServerInterface = (*Server)(nil)
@@ -119,6 +121,8 @@ func ToProblem(err error) (problem.Details, bool) {
 		return problem.New(http.StatusForbidden, "admin_required", "only an admin changes the instance's market data feeds"), true
 	case errors.Is(err, domain.ErrRefreshRunning):
 		return problem.New(http.StatusConflict, "refresh_running", "a tick of the market data feeds is running"), true
+	case errors.Is(err, domain.ErrNoSource):
+		return problem.New(http.StatusUnprocessableEntity, "no_source", "no enabled source quotes the instrument"), true
 	case errors.Is(err, domain.ErrInstrumentExists):
 		return problem.New(http.StatusConflict, "instrument_exists", err.Error()), true
 	}

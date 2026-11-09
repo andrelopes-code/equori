@@ -45,6 +45,21 @@ type instrumentView struct {
 	QuoteCurrency string    `json:"quote_currency,omitzero"`
 	Scale         int       `json:"scale"`
 	Terms         termsView `json:"terms,omitzero"`
+	// Coverage is filled by the view instrument only.
+	Coverage coverageView `json:"coverage,omitzero"`
+}
+
+type coverageView struct {
+	Last    tool.Date    `json:"last,omitzero"`
+	Stale   bool         `json:"stale"`
+	Sources []sourceView `json:"sources"`
+}
+
+type sourceView struct {
+	ID       string    `json:"id"`
+	Enabled  bool      `json:"enabled"`
+	Official bool      `json:"official"`
+	Last     tool.Date `json:"last,omitzero"`
 }
 
 type priceView struct {
@@ -95,6 +110,22 @@ type getMarketDataOut struct {
 
 func toInstrumentView(in domain.Instrument) instrumentView {
 	return instrumentView{Code: string(in.Code), Name: in.Name, Type: in.Type, Subtype: in.Subtype, QuoteCurrency: string(in.QuoteCurrency), Scale: in.Scale}
+}
+
+func toCoverageView(c domain.Coverage) coverageView {
+	out := coverageView{Stale: c.Stale, Sources: make([]sourceView, len(c.Sources))}
+	if c.Last != nil {
+		out.Last = tool.DateOf(*c.Last)
+	}
+
+	for i, s := range c.Sources {
+		out.Sources[i] = sourceView{ID: s.ID, Enabled: s.Enabled, Official: s.Official}
+		if s.Last != nil {
+			out.Sources[i].Last = tool.DateOf(*s.Last)
+		}
+	}
+
+	return out
 }
 
 func getMarketData(svc Service, cals Calendars) tool.Tool {
@@ -158,6 +189,13 @@ func getMarketData(svc Service, cals Calendars) tool.Tool {
 			} else if !errors.Is(err, domain.ErrNoTerms) {
 				return getMarketDataOut{}, err
 			}
+
+			cov, err := svc.Coverage(ctx, r)
+			if err != nil {
+				return getMarketDataOut{}, err
+			}
+
+			v.Coverage = toCoverageView(cov)
 
 			return getMarketDataOut{Instrument: v}, nil
 		case "prices":

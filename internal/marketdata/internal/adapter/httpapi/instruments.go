@@ -2,6 +2,9 @@ package httpapi
 
 import (
 	"context"
+	"time"
+
+	openapi_types "github.com/oapi-codegen/runtime/types"
 
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/domain"
 	"github.com/andrelopes-code/equori/internal/platform/money"
@@ -54,7 +57,23 @@ func (s *Server) GetInstrument(ctx context.Context, req GetInstrumentRequestObje
 		return nil, err
 	}
 
-	return GetInstrument200JSONResponse(toInstrumentAPI(in)), nil
+	cov, err := s.svc.Coverage(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+
+	out := toInstrumentAPI(in)
+	out.Coverage = coverageOf(cov)
+
+	return GetInstrument200JSONResponse(out), nil
+}
+
+func (s *Server) RequestInstrumentHistory(ctx context.Context, req RequestInstrumentHistoryRequestObject) (RequestInstrumentHistoryResponseObject, error) {
+	if err := s.svc.RequestHistory(ctx, req.Code, req.Body.From.Time); err != nil {
+		return nil, err
+	}
+
+	return RequestInstrumentHistory202Response{}, nil
 }
 
 func (s *Server) EditInstrument(ctx context.Context, req EditInstrumentRequestObject) (EditInstrumentResponseObject, error) {
@@ -95,4 +114,34 @@ func toInstrumentAPI(in domain.Instrument) Instrument {
 	}
 
 	return out
+}
+
+func coverageOf(c domain.Coverage) *InstrumentCoverage {
+	out := &InstrumentCoverage{
+		First: optionalDate(c.First), Last: optionalDate(c.Last), Count: c.Count, Stale: c.Stale,
+		Sources: make([]InstrumentSourceCoverage, len(c.Sources)),
+	}
+
+	for i, sc := range c.Sources {
+		out.Sources[i] = InstrumentSourceCoverage{
+			Id: sc.ID, Enabled: sc.Enabled, Official: sc.Official, First: optionalDate(sc.First), Last: optionalDate(sc.Last),
+		}
+
+		if h := sc.History; h != nil {
+			out.Sources[i].History = &InstrumentHistory{From: openapi_types.Date{Time: h.From}, Done: h.Done}
+			if h.Error != "" {
+				out.Sources[i].History.Error = &h.Error
+			}
+		}
+	}
+
+	return out
+}
+
+func optionalDate(t *time.Time) *openapi_types.Date {
+	if t == nil {
+		return nil
+	}
+
+	return &openapi_types.Date{Time: *t}
 }

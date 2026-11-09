@@ -309,3 +309,62 @@ func TestGetMarketDataToolInvalidArguments(t *testing.T) {
 		h.ExpectToolError(h.Tool("get_market_data", tc.args), "invalid_arguments", tc.field)
 	}
 }
+
+// A222 MQ8 through the tool: the action previews its start and queues the history.
+func TestManageInstrumentToolRequestHistory(t *testing.T) {
+	t.Parallel()
+
+	h, _ := seededPTAXHarness(t, "2026-11-09")
+	args := map[string]any{"action": "request_history", "code": "USD", "from": "2010-01-01"}
+
+	p, r := preview(t, h, "manage_instrument", args)
+	if r.IsError || p.Action != "manage_instrument.request_history" || len(p.Changes) != 1 || p.Changes[0].Field != "from" || p.Changes[0].After.Date != "2010-01-01" {
+		t.Fatalf("preview = %+v %s", p, r.Content)
+	}
+
+	toolOutput(t, h, "manage_instrument", args, &struct{}{})
+
+	assertRows(t, historyRow(h, "bcb_ptax", "USD"), "2010-01-01 false ")
+
+	bare := apitest.New(t, apitest.Today("2026-11-09"))
+	bare.MustDo("POST", "/api/v1/instruments", mxrf11(), 201, nil)
+	bare.ExpectToolError(bare.Tool("manage_instrument", map[string]any{"action": "request_history", "code": "MXRF11", "from": "2010-01-01"}), "no_source", "")
+	bare.ExpectToolError(bare.Tool("manage_instrument", map[string]any{"action": "rename", "code": "MXRF11", "name": "X", "from": "2010-01-01"}), "invalid_arguments", "from")
+}
+
+// A222 MQ23, MQ24 through the tool: the instrument view reports the coverage.
+func TestGetMarketDataInstrumentCoverage(t *testing.T) {
+	t.Parallel()
+
+	h, _ := seededPTAXHarness(t, "2026-11-13")
+	h.App.Marketdata.TickFeeds(t.Context())
+
+	var out struct {
+		Instrument struct {
+			Coverage struct {
+				Last    string `json:"last"`
+				Stale   bool   `json:"stale"`
+				Sources []struct {
+					ID       string `json:"id"`
+					Enabled  bool   `json:"enabled"`
+					Official bool   `json:"official"`
+					Last     string `json:"last"`
+				} `json:"sources"`
+			} `json:"coverage"`
+		} `json:"instrument"`
+	}
+	toolOutput(t, h, "get_market_data", map[string]any{"view": "instrument", "code": "USD"}, &out)
+
+	c := out.Instrument.Coverage
+	if c.Last != "2026-11-06" || c.Stale || len(c.Sources) != 2 {
+		t.Fatalf("coverage = %+v", c)
+	}
+
+	if s := c.Sources[0]; s.ID != "bcb_ptax" || !s.Enabled || !s.Official || s.Last != "2026-11-06" {
+		t.Errorf("source 0 = %+v", s)
+	}
+
+	if s := c.Sources[1]; s.ID != "ecb" || s.Enabled || !s.Official || s.Last != "" {
+		t.Errorf("source 1 = %+v", s)
+	}
+}

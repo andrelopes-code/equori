@@ -175,6 +175,60 @@ func TestHistoryRequestStartsTick(t *testing.T) {
 	<-done
 }
 
+// A222 MQ5, MQ8, S361: a later start changes nothing, an earlier one queues the history again.
+func TestS361LowerFromOnly(t *testing.T) {
+	t.Parallel()
+
+	h, _ := ptaxHarness(t)
+	h.MustDo(http.MethodPut, "/api/v1/market-data/feeds/bcb_ptax", map[string]bool{"enabled": true}, http.StatusOK, nil)
+	h.App.Marketdata.TickFeeds(t.Context())
+
+	h.MustDo(http.MethodPost, "/api/v1/instruments/USD/history", map[string]string{"from": "2010-01-01"}, http.StatusAccepted, nil)
+
+	assertRows(t, historyRow(h, "bcb_ptax", "USD"), "2006-11-09 true ")
+
+	h.MustDo(http.MethodPost, "/api/v1/instruments/USD/history", map[string]string{"from": "2000-01-01"}, http.StatusAccepted, nil)
+
+	assertRows(t, historyRow(h, "bcb_ptax", "USD"), "2000-01-01 false ")
+}
+
+// A222 MQ8, S362: a request needs an enabled source and a valid start.
+func TestS362NoSource(t *testing.T) {
+	t.Parallel()
+
+	h := apitest.New(t, apitest.Today("2026-11-09"))
+	h.MustDo(http.MethodPost, "/api/v1/instruments", mxrf11(), http.StatusCreated, nil)
+
+	r := h.Do(http.MethodPost, "/api/v1/instruments/MXRF11/history", map[string]string{"from": "2020-01-01"})
+	h.ExpectProblem(r, http.StatusUnprocessableEntity, "no_source", "")
+
+	h, _ = seededPTAXHarness(t, "2026-11-09")
+	path := "/api/v1/instruments/USD/history"
+
+	h.ExpectProblem(h.Do(http.MethodPost, path, map[string]string{"from": "1899-12-31"}), http.StatusUnprocessableEntity, "validation_failed", "from")
+	h.ExpectProblem(h.Do(http.MethodPost, path, map[string]string{"from": "2026-11-10"}), http.StatusUnprocessableEntity, "validation_failed", "from")
+	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/instruments/NOPE/history", map[string]string{"from": "2020-01-01"}), http.StatusNotFound, "not_found", "")
+}
+
+// A222 MQ8: requesting history writes to the instance's market data, a writer role.
+func TestRequestHistoryRoles(t *testing.T) {
+	t.Parallel()
+
+	h, _ := seededPTAXHarness(t, "2026-11-09")
+	path := "/api/v1/instruments/USD/history"
+	body := map[string]string{"from": "2020-01-01"}
+
+	reader := h.JoinAs("reader@example.com", h.OwnerID(), "read")
+	h.ExpectProblem(h.Call(reader, http.MethodPost, path, body), http.StatusForbidden, "book_role_required", "")
+
+	writer := h.JoinAs("writer@example.com", h.OwnerID(), "write")
+	if r := h.Call(writer, http.MethodPost, path, body); r.Status != http.StatusAccepted {
+		t.Fatalf("writer status = %d: %s", r.Status, r.Body)
+	}
+
+	h.ExpectProblem(h.Call(&http.Client{}, http.MethodPost, path, body), http.StatusUnauthorized, "unauthenticated", "")
+}
+
 // ptaxHarness runs an instance whose PTAX source answers the fixture of S357.
 func ptaxHarness(t *testing.T) (*apitest.Harness, *ptaxFixture) {
 	t.Helper()
@@ -184,6 +238,19 @@ func ptaxHarness(t *testing.T) (*apitest.Harness, *ptaxFixture) {
 	t.Cleanup(srv.Close)
 
 	h := apitest.New(t, apitest.Today("2026-11-09"), apitest.PriceFeeds(nil, map[string]string{"bcb_ptax": srv.URL + "/ptax"}))
+
+	return h, p
+}
+
+// seededPTAXHarness runs an instance whose seed enables bcb_ptax, so nothing requests history.
+func seededPTAXHarness(t *testing.T, today string) (*apitest.Harness, *ptaxFixture) {
+	t.Helper()
+
+	p := newPTAXFixture(t)
+	srv := httptest.NewServer(p)
+	t.Cleanup(srv.Close)
+
+	h := apitest.New(t, apitest.Today(today), apitest.PriceFeeds([]string{"bcb_ptax"}, map[string]string{"bcb_ptax": srv.URL + "/ptax"}))
 
 	return h, p
 }

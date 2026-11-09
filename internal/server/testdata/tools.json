@@ -2647,6 +2647,50 @@
                   "face_value"
                 ],
                 "additionalProperties": false
+              },
+              "coverage": {
+                "type": "object",
+                "properties": {
+                  "last": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "stale": {
+                    "type": "boolean"
+                  },
+                  "sources": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "enabled": {
+                          "type": "boolean"
+                        },
+                        "official": {
+                          "type": "boolean"
+                        },
+                        "last": {
+                          "type": "string",
+                          "format": "date"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "enabled",
+                        "official"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "stale",
+                  "sources"
+                ],
+                "additionalProperties": false
               }
             },
             "required": [
@@ -2728,6 +2772,50 @@
                 "spread_bp",
                 "day_count",
                 "face_value"
+              ],
+              "additionalProperties": false
+            },
+            "coverage": {
+              "type": "object",
+              "properties": {
+                "last": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "stale": {
+                  "type": "boolean"
+                },
+                "sources": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "enabled": {
+                        "type": "boolean"
+                      },
+                      "official": {
+                        "type": "boolean"
+                      },
+                      "last": {
+                        "type": "string",
+                        "format": "date"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "enabled",
+                      "official"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": [
+                "stale",
+                "sources"
               ],
               "additionalProperties": false
             }
@@ -5564,7 +5652,7 @@
   },
   {
     "name": "manage_instrument",
-    "description": "Proposes defining or renaming a security for the whole instance, recording a manual price, or setting the terms of a fixed income instrument. Use it when the user needs a security that does not exist yet or a price that is missing. Do not use it to buy or sell: record_investment does. Instruments and prices are shared by every book of the instance; the user confirms first.",
+    "description": "Proposes defining or renaming a security for the whole instance, recording a manual price, setting the terms of a fixed income instrument, or loading the price history of an instrument since a date from the enabled sources. Use it when the user needs a security that does not exist yet or a price that is missing. Do not use it to buy or sell: record_investment does. Instruments and prices are shared by every book of the instance; the user confirms first.",
     "effect": "write",
     "idempotent": false,
     "input_schema": {
@@ -5577,7 +5665,8 @@
             "define",
             "rename",
             "record_price",
-            "set_terms"
+            "set_terms",
+            "request_history"
           ]
         },
         "code": {
@@ -5644,6 +5733,11 @@
         "spread_bp": {
           "type": "integer",
           "description": "for set_terms: annual spread in basis points"
+        },
+        "from": {
+          "type": "string",
+          "description": "for request_history: first date of the prices to load",
+          "format": "date"
         }
       },
       "required": [
@@ -5725,6 +5819,50 @@
                 "spread_bp",
                 "day_count",
                 "face_value"
+              ],
+              "additionalProperties": false
+            },
+            "coverage": {
+              "type": "object",
+              "properties": {
+                "last": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "stale": {
+                  "type": "boolean"
+                },
+                "sources": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "enabled": {
+                        "type": "boolean"
+                      },
+                      "official": {
+                        "type": "boolean"
+                      },
+                      "last": {
+                        "type": "string",
+                        "format": "date"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "enabled",
+                      "official"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": [
+                "stale",
+                "sources"
               ],
               "additionalProperties": false
             }

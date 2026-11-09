@@ -1604,6 +1604,8 @@ export const catalogPtBR: Catalog = {
   "assistant.action.manage_instrument.record_price": "Registrar preço",
   "assistant.action.manage_instrument.set_terms":
     "Definir condições de renda fixa",
+  "assistant.action.manage_instrument.request_history":
+    "Carregar histórico de cotações",
   "assistant.action.manage_rule.create_rule": "Criar regra",
   "assistant.action.manage_rule.change_rule": "Alterar regra",
   "assistant.action.manage_rule.delete_rule": "Apagar regra",
@@ -1627,6 +1629,7 @@ export const catalogPtBR: Catalog = {
   "assistant.field.amount": "Valor",
   "assistant.field.category": "Categoria",
   "assistant.field.date": "Data",
+  "assistant.field.from": "Desde",
   "assistant.field.description": "Descrição",
   "assistant.field.payee": "Beneficiário",
   "assistant.field.tags": "Etiquetas",

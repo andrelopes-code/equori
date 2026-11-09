@@ -1812,6 +1812,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/instruments/{code}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Request the prices of an instrument since a date from each enabled source that quotes it (A222 MQ8). */
+        post: operations["requestInstrumentHistory"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/prices": {
         parameters: {
             query?: never;
@@ -5427,6 +5444,43 @@ export interface components {
             quote_currency?: string;
             exchange?: string;
             subtype?: string;
+            coverage?: components["schemas"]["InstrumentCoverage"];
+        };
+        InstrumentCoverage: {
+            /**
+             * Format: date
+             * @description The first date with a price against the quote currency; any quote for a currency.
+             */
+            first: string | null;
+            /** Format: date */
+            last: string | null;
+            /** @description The number of dates with a price. */
+            count: number;
+            /** @description An enabled source quotes the instrument and its next price is overdue (A222 MQ24). */
+            stale: boolean;
+            /** @description Every registered source that quotes the instrument, enabled or not. */
+            sources: components["schemas"]["InstrumentSourceCoverage"][];
+        };
+        InstrumentSourceCoverage: {
+            id: string;
+            enabled: boolean;
+            official: boolean;
+            /** Format: date */
+            first: string | null;
+            /** Format: date */
+            last: string | null;
+            history: components["schemas"]["InstrumentHistory"] | null;
+        };
+        InstrumentHistory: {
+            /** Format: date */
+            from: string;
+            done: boolean;
+            /** @description The failure of the last attempt; the next tick tries again. */
+            error: string | null;
+        };
+        InstrumentHistoryInput: {
+            /** Format: date */
+            from: string;
         };
         InstrumentInput: {
             code: string;
@@ -6855,7 +6909,7 @@ export interface components {
              *     record_resolved, already_matched, group_changed, not_categorizable, suggestion_closed, pairing_ambiguous,
              *     integration_unavailable, aggregator_unauthorized, aggregator_unavailable, integration_in_use,
              *     csv_suggestion_unavailable, csv_suggestion_unusable, currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended,
-             *     budget_exists, instrument_exists, mixed_instruments, price_missing, later_sale_exists,
+             *     budget_exists, instrument_exists, mixed_instruments, price_missing, no_source, later_sale_exists,
              *     investment_transaction, system_account, attachment_not_inlineable, archive_too_new, passphrase_invalid, passphrase_required,
              *     setup_token_invalid, setup_complete, book_role_required, books_not_found, member_not_found,
              *     last_owner, already_member, invitation_not_found, invitation_email_mismatch,
@@ -9925,6 +9979,34 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["FixedIncomeTerms"];
                 };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    requestInstrumentHistory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InstrumentHistoryInput"];
+            };
+        };
+        responses: {
+            /** @description Accepted; a tick fetches the prices. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];

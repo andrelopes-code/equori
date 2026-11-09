@@ -33,6 +33,7 @@ var (
 	ErrPriceMissing      = domain.ErrPriceMissing
 	ErrNoTerms           = domain.ErrNoTerms
 	ErrUnknownIndex      = domain.ErrUnknownIndex
+	ErrNoSource          = domain.ErrNoSource
 )
 
 // sourceAccrual is the source of the prices computed from the terms of a fixed income security.

@@ -3080,6 +3080,35 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /instruments/{code}/history:
+    post:
+      tags: [marketdata]
+      operationId: requestInstrumentHistory
+      x-book-role: write
+      summary: Request the prices of an instrument since a date from each enabled source that quotes it (A222 MQ8).
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InstrumentHistoryInput"
+      responses:
+        "202":
+          description: Accepted; a tick fetches the prices.
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
   /prices:
     get:
       tags: [marketdata]
@@ -9578,6 +9607,79 @@ components:
         subtype:
           type: string
           pattern: "^[a-z0-9_]{2,40}$"
+        coverage:
+          $ref: "#/components/schemas/InstrumentCoverage"
+    InstrumentCoverage:
+      type: object
+      additionalProperties: false
+      required: [first, last, count, stale, sources]
+      properties:
+        first:
+          type: string
+          format: date
+          nullable: true
+          description: The first date with a price against the quote currency; any quote for a currency.
+        last:
+          type: string
+          format: date
+          nullable: true
+        count:
+          type: integer
+          description: The number of dates with a price.
+        stale:
+          type: boolean
+          description: An enabled source quotes the instrument and its next price is overdue (A222 MQ24).
+        sources:
+          type: array
+          description: Every registered source that quotes the instrument, enabled or not.
+          items:
+            $ref: "#/components/schemas/InstrumentSourceCoverage"
+    InstrumentSourceCoverage:
+      type: object
+      additionalProperties: false
+      required: [id, enabled, official, first, last, history]
+      properties:
+        id:
+          type: string
+          pattern: "^[a-z0-9_]{2,40}$"
+        enabled:
+          type: boolean
+        official:
+          type: boolean
+        first:
+          type: string
+          format: date
+          nullable: true
+        last:
+          type: string
+          format: date
+          nullable: true
+        history:
+          allOf:
+            - $ref: "#/components/schemas/InstrumentHistory"
+          nullable: true
+    InstrumentHistory:
+      type: object
+      additionalProperties: false
+      required: [from, done, error]
+      properties:
+        from:
+          type: string
+          format: date
+        done:
+          type: boolean
+        error:
+          type: string
+          nullable: true
+          description: The failure of the last attempt; the next tick tries again.
+    InstrumentHistoryInput:
+      type: object
+      additionalProperties: false
+      required: [from]
+      properties:
+        from:
+          type: string
+          format: date
     InstrumentInput:
       type: object
       additionalProperties: false
@@ -12459,7 +12561,7 @@ components:
             record_resolved, already_matched, group_changed, not_categorizable, suggestion_closed, pairing_ambiguous,
             integration_unavailable, aggregator_unauthorized, aggregator_unavailable, integration_in_use,
             csv_suggestion_unavailable, csv_suggestion_unusable, currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended,
-            budget_exists, instrument_exists, mixed_instruments, price_missing, later_sale_exists,
+            budget_exists, instrument_exists, mixed_instruments, price_missing, no_source, later_sale_exists,
             investment_transaction, system_account, attachment_not_inlineable, archive_too_new, passphrase_invalid, passphrase_required,
             setup_token_invalid, setup_complete, book_role_required, books_not_found, member_not_found,
             last_owner, already_member, invitation_not_found, invitation_email_mismatch,

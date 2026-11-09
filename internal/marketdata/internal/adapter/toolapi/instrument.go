@@ -15,7 +15,7 @@ import (
 type manageInstrumentAction string
 
 func (manageInstrumentAction) Values() []string {
-	return []string{"define", "rename", "record_price", "set_terms"}
+	return []string{"define", "rename", "record_price", "set_terms", "request_history"}
 }
 
 type manageInstrumentType string
@@ -39,6 +39,7 @@ type manageInstrumentIn struct {
 	IndexID          string                 `json:"index_id,omitzero" jsonschema:"for set_terms: index identifier; absent for a fixed rate"`
 	PercentOfIndexBP int                    `json:"percent_of_index_bp,omitzero" jsonschema:"for set_terms: percentage of the index in basis points, 11000 for 110%"`
 	SpreadBP         int                    `json:"spread_bp,omitzero" jsonschema:"for set_terms: annual spread in basis points"`
+	From             tool.Date              `json:"from,omitzero" jsonschema:"for request_history: first date of the prices to load"`
 }
 
 type manageInstrumentOut struct {
@@ -60,6 +61,7 @@ func checkInstrumentArgs(in manageInstrumentIn) error {
 		{"date", !in.Date.IsZero()}, {"price", in.Price != ""},
 		{"issued_on", !in.IssuedOn.IsZero()}, {"matures_on", !in.MaturesOn.IsZero()}, {"face_value", in.FaceValue != ""},
 		{"index_id", in.IndexID != ""}, {"percent_of_index_bp", in.PercentOfIndexBP != 0}, {"spread_bp", in.SpreadBP != 0},
+		{"from", !in.From.IsZero()},
 	}
 
 	name := string(in.Action)
@@ -71,6 +73,8 @@ func checkInstrumentArgs(in manageInstrumentIn) error {
 		return required(name, fields, "name")
 	case "record_price":
 		return required(name, fields, "date", "price")
+	case "request_history":
+		return required(name, fields, "from")
 	}
 
 	return required(name, slices.DeleteFunc(slices.Clone(fields), func(f field) bool { return slices.Contains(optionalTermFields, f.name) }),
@@ -128,7 +132,7 @@ func termsText(t domain.Terms) string {
 func manageInstrument(svc Service) tool.Tool {
 	return tool.NewWrite(tool.Spec{
 		Name: "manage_instrument",
-		Description: "Proposes defining or renaming a security for the whole instance, recording a manual price, or setting the terms of a fixed income instrument. " +
+		Description: "Proposes defining or renaming a security for the whole instance, recording a manual price, setting the terms of a fixed income instrument, or loading the price history of an instrument since a date from the enabled sources. " +
 			"Use it when the user needs a security that does not exist yet or a price that is missing. " +
 			"Do not use it to buy or sell: record_investment does. " +
 			"Instruments and prices are shared by every book of the instance; the user confirms first.",
@@ -195,6 +199,12 @@ func manageInstrument(svc Service) tool.Tool {
 			p.Changes = []tool.Change{
 				{Field: "price", After: tool.TextValue(in.Price + " " + string(inst.QuoteCurrency))}, {Field: "date", After: tool.DateValue(in.Date.Time)},
 			}
+		case "request_history":
+			if _, err := svc.Instrument(ctx, in.Code); err != nil {
+				return tool.Preview{}, err
+			}
+
+			p.Changes = []tool.Change{{Field: "from", After: tool.DateValue(in.From.Time)}}
 		case "set_terms":
 			inst, err := svc.Instrument(ctx, in.Code)
 			if err != nil {
@@ -259,6 +269,14 @@ func manageInstrument(svc Service) tool.Tool {
 			err = svc.RecordPrices(ctx, []domain.Price{{Instrument: inst.Code, Quote: inst.QuoteCurrency, Date: in.Date.Time, Value: v, Source: domain.SourceManual}})
 
 			return manageInstrumentOut{Price: priceView{Date: in.Date, Value: v.Reduced().String()}}, err
+		case "request_history":
+			if err := svc.RequestHistory(ctx, in.Code, in.From.Time); err != nil {
+				return manageInstrumentOut{}, err
+			}
+
+			inst, err := svc.Instrument(ctx, in.Code)
+
+			return manageInstrumentOut{Instrument: toInstrumentView(inst)}, err
 		}
 
 		inst, err := svc.Instrument(ctx, in.Code)

@@ -13,6 +13,7 @@ var (
 	ErrUnknownFeed       = errors.New("unknown feed")
 	ErrAdminRequired     = errors.New("admin required")
 	ErrRefreshRunning    = errors.New("refresh running")
+	ErrNoSource          = errors.New("no source")
 )
 
 // FieldError names the request field that failed validation, as in the API.

@@ -288,9 +288,10 @@ type IndexRateList struct {
 
 // Instrument defines model for Instrument.
 type Instrument struct {
-	Code     string  `json:"code"`
-	Exchange *string `json:"exchange,omitempty"`
-	Name     string  `json:"name"`
+	Code     string              `json:"code"`
+	Coverage *InstrumentCoverage `json:"coverage,omitempty"`
+	Exchange *string             `json:"exchange,omitempty"`
+	Name     string              `json:"name"`
 
 	// QuoteCurrency Absent for currencies.
 	QuoteCurrency *string        `json:"quote_currency,omitempty"`
@@ -299,11 +300,41 @@ type Instrument struct {
 	Type          InstrumentType `json:"type"`
 }
 
+// InstrumentCoverage defines model for InstrumentCoverage.
+type InstrumentCoverage struct {
+	// Count The number of dates with a price.
+	Count int `json:"count"`
+
+	// First The first date with a price against the quote currency; any quote for a currency.
+	First *openapi_types.Date `json:"first"`
+	Last  *openapi_types.Date `json:"last"`
+
+	// Sources Every registered source that quotes the instrument, enabled or not.
+	Sources []InstrumentSourceCoverage `json:"sources"`
+
+	// Stale An enabled source quotes the instrument and its next price is overdue (A222 MQ24).
+	Stale bool `json:"stale"`
+}
+
 // InstrumentEdit defines model for InstrumentEdit.
 type InstrumentEdit struct {
 	Exchange *string `json:"exchange,omitempty"`
 	Name     string  `json:"name"`
 	Subtype  *string `json:"subtype,omitempty"`
+}
+
+// InstrumentHistory defines model for InstrumentHistory.
+type InstrumentHistory struct {
+	Done bool `json:"done"`
+
+	// Error The failure of the last attempt; the next tick tries again.
+	Error *string            `json:"error"`
+	From  openapi_types.Date `json:"from"`
+}
+
+// InstrumentHistoryInput defines model for InstrumentHistoryInput.
+type InstrumentHistoryInput struct {
+	From openapi_types.Date `json:"from"`
 }
 
 // InstrumentInput defines model for InstrumentInput.
@@ -322,6 +353,16 @@ type InstrumentInput struct {
 // InstrumentList defines model for InstrumentList.
 type InstrumentList struct {
 	Items []Instrument `json:"items"`
+}
+
+// InstrumentSourceCoverage defines model for InstrumentSourceCoverage.
+type InstrumentSourceCoverage struct {
+	Enabled  bool                `json:"enabled"`
+	First    *openapi_types.Date `json:"first"`
+	History  *InstrumentHistory  `json:"history"`
+	Id       string              `json:"id"`
+	Last     *openapi_types.Date `json:"last"`
+	Official bool                `json:"official"`
 }
 
 // InstrumentType defines model for InstrumentType.
@@ -410,7 +451,7 @@ type Problem struct {
 	// record_resolved, already_matched, group_changed, not_categorizable, suggestion_closed, pairing_ambiguous,
 	// integration_unavailable, aggregator_unauthorized, aggregator_unavailable, integration_in_use,
 	// csv_suggestion_unavailable, csv_suggestion_unusable, currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended,
-	// budget_exists, instrument_exists, mixed_instruments, price_missing, later_sale_exists,
+	// budget_exists, instrument_exists, mixed_instruments, price_missing, no_source, later_sale_exists,
 	// investment_transaction, system_account, attachment_not_inlineable, archive_too_new, passphrase_invalid, passphrase_required,
 	// setup_token_invalid, setup_complete, book_role_required, books_not_found, member_not_found,
 	// last_owner, already_member, invitation_not_found, invitation_email_mismatch,
@@ -477,6 +518,9 @@ type DefineInstrumentJSONRequestBody = InstrumentInput
 // EditInstrumentJSONRequestBody defines body for EditInstrument for application/json ContentType.
 type EditInstrumentJSONRequestBody = InstrumentEdit
 
+// RequestInstrumentHistoryJSONRequestBody defines body for RequestInstrumentHistory for application/json ContentType.
+type RequestInstrumentHistoryJSONRequestBody = InstrumentHistoryInput
+
 // PutInstrumentTermsJSONRequestBody defines body for PutInstrumentTerms for application/json ContentType.
 type PutInstrumentTermsJSONRequestBody = FixedIncomeTermsInput
 
@@ -518,6 +562,9 @@ type ServerInterface interface {
 	// EditInstrument Replace the name, exchange and subtype of a security; an absent exchange or subtype is cleared (A134).
 	// (PATCH /instruments/{code})
 	EditInstrument(w http.ResponseWriter, r *http.Request, code string)
+	// RequestInstrumentHistory Request the prices of an instrument since a date from each enabled source that quotes it (A222 MQ8).
+	// (POST /instruments/{code}/history)
+	RequestInstrumentHistory(w http.ResponseWriter, r *http.Request, code string)
 	// GetInstrumentTerms The terms of a fixed income instrument (investments design 4.2).
 	// (GET /instruments/{code}/terms)
 	GetInstrumentTerms(w http.ResponseWriter, r *http.Request, code string)
@@ -794,6 +841,32 @@ func (siw *ServerInterfaceWrapper) EditInstrument(w http.ResponseWriter, r *http
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.EditInstrument(w, r, code)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RequestInstrumentHistory operation middleware
+func (siw *ServerInterfaceWrapper) RequestInstrumentHistory(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "code" -------------
+	var code string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "code", r.PathValue("code"), &code, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "code", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RequestInstrumentHistory(w, r, code)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1143,6 +1216,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/instruments/{code}", wrapper.EditInstrument)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/instruments/{code}/terms", wrapper.GetInstrumentTerms)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/instruments/{code}/terms", wrapper.PutInstrumentTerms)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/instruments/{code}/history", wrapper.RequestInstrumentHistory)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/prices", wrapper.ListPrices)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/prices", wrapper.RecordPrice)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/prices/import", wrapper.ImportPrices)
@@ -1729,6 +1803,81 @@ func (response EditInstrument422ApplicationProblemPlusJSONResponse) VisitEditIns
 	return err
 }
 
+type RequestInstrumentHistoryRequestObject struct {
+	Code string `json:"code"`
+	Body *RequestInstrumentHistoryJSONRequestBody
+}
+
+type RequestInstrumentHistoryResponseObject interface {
+	VisitRequestInstrumentHistoryResponse(w http.ResponseWriter) error
+}
+
+type RequestInstrumentHistory202Response struct {
+}
+
+func (response RequestInstrumentHistory202Response) VisitRequestInstrumentHistoryResponse(w http.ResponseWriter) error {
+	w.WriteHeader(202)
+	return nil
+}
+
+type RequestInstrumentHistory400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response RequestInstrumentHistory400ApplicationProblemPlusJSONResponse) VisitRequestInstrumentHistoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RequestInstrumentHistory401ApplicationProblemPlusJSONResponse Problem
+
+func (response RequestInstrumentHistory401ApplicationProblemPlusJSONResponse) VisitRequestInstrumentHistoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RequestInstrumentHistory404ApplicationProblemPlusJSONResponse Problem
+
+func (response RequestInstrumentHistory404ApplicationProblemPlusJSONResponse) VisitRequestInstrumentHistoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RequestInstrumentHistory422ApplicationProblemPlusJSONResponse Problem
+
+func (response RequestInstrumentHistory422ApplicationProblemPlusJSONResponse) VisitRequestInstrumentHistoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type GetInstrumentTermsRequestObject struct {
 	Code string `json:"code"`
 }
@@ -2294,6 +2443,9 @@ type StrictServerInterface interface {
 	// EditInstrument Replace the name, exchange and subtype of a security; an absent exchange or subtype is cleared (A134).
 	// (PATCH /instruments/{code})
 	EditInstrument(ctx context.Context, request EditInstrumentRequestObject) (EditInstrumentResponseObject, error)
+	// RequestInstrumentHistory Request the prices of an instrument since a date from each enabled source that quotes it (A222 MQ8).
+	// (POST /instruments/{code}/history)
+	RequestInstrumentHistory(ctx context.Context, request RequestInstrumentHistoryRequestObject) (RequestInstrumentHistoryResponseObject, error)
 	// GetInstrumentTerms The terms of a fixed income instrument (investments design 4.2).
 	// (GET /instruments/{code}/terms)
 	GetInstrumentTerms(ctx context.Context, request GetInstrumentTermsRequestObject) (GetInstrumentTermsResponseObject, error)
@@ -2596,6 +2748,39 @@ func (sh *strictHandler) EditInstrument(w http.ResponseWriter, r *http.Request, 
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(EditInstrumentResponseObject); ok {
 		if err := validResponse.VisitEditInstrumentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RequestInstrumentHistory operation middleware
+func (sh *strictHandler) RequestInstrumentHistory(w http.ResponseWriter, r *http.Request, code string) {
+	var request RequestInstrumentHistoryRequestObject
+
+	request.Code = code
+
+	var body RequestInstrumentHistoryJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RequestInstrumentHistory(ctx, request.(RequestInstrumentHistoryRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RequestInstrumentHistory")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RequestInstrumentHistoryResponseObject); ok {
+		if err := validResponse.VisitRequestInstrumentHistoryResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
