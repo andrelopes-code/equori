@@ -121,6 +121,18 @@ func (s *Service) Resolve(ctx context.Context, booksID int64, recordID uuid.UUID
 			return domain.ExternalRecord{}, domain.Batch{}, &domain.FieldError{Field: "transaction_id", Message: "must be one of the record's candidates"}
 		}
 
+		if rec.ReviewReason == domain.ReviewTransfer {
+			if _, err := s.ledger.PairLine(ctx, booksID, txID, rec.AccountID, rec.ID); errors.Is(err, ErrNotPairable) {
+				return domain.ExternalRecord{}, domain.Batch{}, &domain.FieldError{Field: "transaction_id", Message: "cannot become the transfer of the line"}
+			} else if err != nil {
+				return domain.ExternalRecord{}, domain.Batch{}, err
+			}
+
+			rec.State, rec.TransactionID = domain.StateMatched, txID
+
+			break
+		}
+
 		// A101: the institution's amount and date win; the owner's classification stays.
 		if err := s.ledger.ConfirmLine(ctx, booksID, txID, rec.AccountID, rec.Amount, rec.Date); err != nil {
 			return domain.ExternalRecord{}, domain.Batch{}, err
@@ -287,13 +299,17 @@ func (s *Service) refreshCandidates(ctx context.Context, rec *domain.ExternalRec
 		return nil
 	}
 
+	line := Line{AccountID: rec.AccountID, Currency: currency, Date: rec.Date, Amount: rec.Amount, Description: truncate(rec.Description)}
+
+	if rec.ReviewReason == domain.ReviewTransfer {
+		return s.refreshTransferCandidates(ctx, rec, line)
+	}
+
 	postings, err := s.ledger.UnlinkedPostings(ctx, rec.BooksID, rec.AccountID,
 		rec.Date.AddDate(0, 0, -domain.MatchHardLimit), rec.Date.AddDate(0, 0, domain.MatchHardLimit))
 	if err != nil {
 		return err
 	}
-
-	line := Line{AccountID: rec.AccountID, Currency: currency, Date: rec.Date, Amount: rec.Amount, Description: truncate(rec.Description)}
 
 	assigned, err := s.assign(ctx, rec.BooksID, []scoredLine{{rec: rec, line: line}}, postings)
 	if err != nil {
@@ -305,6 +321,22 @@ func (s *Service) refreshCandidates(ctx context.Context, rec *domain.ExternalRec
 	rec.Candidates = make([]uuid.UUID, len(rec.Scores))
 	for i, c := range rec.Scores {
 		rec.Candidates[i] = c.TransactionID
+	}
+
+	return nil
+}
+
+// refreshTransferCandidates lists the transactions the line may pair with (A219); rule 2 does not
+// score them.
+func (s *Service) refreshTransferCandidates(ctx context.Context, rec *domain.ExternalRecord, line Line) error {
+	cps, _, err := s.counterparts(ctx, rec.BooksID, rec, line)
+	if err != nil {
+		return err
+	}
+
+	rec.Scores, rec.Candidates = nil, nil
+	for _, cp := range cps {
+		rec.Candidates = append(rec.Candidates, cp.TransactionID)
 	}
 
 	return nil

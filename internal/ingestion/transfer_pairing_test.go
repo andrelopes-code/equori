@@ -234,6 +234,154 @@ func TestS362SeveralCounterparts(t *testing.T) {
 	if b := f.batchOf(f.mpLedger); b.Counts.NeedsReview != 1 || b.Counts.Paired != 0 {
 		t.Errorf("Mercado Pago counts = %+v, want needs_review 1 paired 0", b.Counts)
 	}
+
+	f.resolve("mp-in-100", map[string]any{"action": "match", "transaction_id": f.record("nu-b").Tx})
+
+	if got, want := f.record("mp-in-100"), (recordRow{State: "matched", Reason: "transfer", Tx: f.record("nu-b").Tx}); !got.equal(want) {
+		t.Fatalf("mp-in-100 = %+v, want %+v", got, want)
+	}
+
+	wantPaired := map[string]int64{"Nubank": -10000, "Mercado Pago": 10000}
+	if got := f.legs(f.record("nu-b").Tx); !maps.Equal(got, wantPaired) {
+		t.Errorf("nu-b postings = %v, want %v", got, wantPaired)
+	}
+
+	wantFirst := map[string]int64{"Nubank": -10000, "uncategorized_expense": 10000}
+	if got := f.legs(f.record("nu-a").Tx); !maps.Equal(got, wantFirst) {
+		t.Errorf("nu-a postings = %v, want %v", got, wantFirst)
+	}
+}
+
+// S357: a line that looks like the payment of a card bill lists the card transaction and
+// match makes it the payment from the account; the issuer's CNPJ as receiver gives the same.
+func TestS357CardPayment(t *testing.T) {
+	t.Parallel()
+
+	issuer := &pluggy.DocumentNumber{Type: "CNPJ", Value: "18.236.120/0001-58"}
+	variants := map[string]struct {
+		line    func(f pairingFixture)
+		account string
+	}{
+		"nubank": {
+			line: func(f pairingFixture) {
+				f.nubankLine(bankLine("out-784", "2026-11-05", "-784.65"))
+				f.syncLater(f.nubank, nubankItem, "2026-11-09T11:00:00.000Z")
+			},
+			account: "Nubank",
+		},
+		"mercado pago": {
+			line: func(f pairingFixture) {
+				f.mpLine(pixLine("out-784", "2026-11-05", "-784.65", issuer))
+				f.sync(f.mercadoPago)
+			},
+			account: "Mercado Pago",
+		},
+	}
+
+	for name, v := range variants {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			f := newPairingFixture(t)
+			f.p.AddTransaction(nubankItem+"-card", withBase(f, typedCardLine("pay-784", "2026-11-05", "-784.65", "PAGAMENTO_FATURA")))
+			f.p.SetItemUpdatedAt(nubankItem, "2026-11-09T10:00:00.000Z")
+			f.sync(f.nubank)
+
+			payment := f.record("pay-784").Tx
+			if payment == "" {
+				t.Fatal("the card payment has no transaction")
+			}
+
+			v.line(f)
+
+			want := recordRow{State: "needs_review", Reason: "transfer", Candidates: []string{payment}}
+			if got := f.record("out-784"); !got.equal(want) {
+				t.Fatalf("out-784 = %+v, want %+v", got, want)
+			}
+
+			if got := f.read("out-784").Candidates; !slices.Equal(got, []string{payment}) {
+				t.Fatalf("candidates read = %v, want [%s]", got, payment)
+			}
+
+			f.resolve("out-784", map[string]any{"action": "match", "transaction_id": payment})
+
+			if got, want := f.record("out-784"), (recordRow{State: "matched", Reason: "transfer", Tx: payment}); !got.equal(want) {
+				t.Fatalf("out-784 = %+v, want %+v", got, want)
+			}
+
+			wantLegs := map[string]int64{"Nubank Gold": 78465, v.account: -78465}
+			if got := f.legs(payment); !maps.Equal(got, wantLegs) {
+				t.Errorf("postings = %v, want %v", got, wantLegs)
+			}
+
+			role := f.scalarText(`SELECT card_role FROM ledger_posting WHERE transaction_id = $1 AND account_id = $2`, payment, f.cardLedger)
+			if role != "payment" {
+				t.Errorf("card posting role = %q, want payment", role)
+			}
+		})
+	}
+}
+
+// S360: a masked document is no holder, so the line waits in review; the owner pairs it with the
+// transaction of the other line, which the review lists.
+func TestS360MaskedCounterparty(t *testing.T) {
+	t.Parallel()
+
+	f := newPairingFixture(t)
+	f.mpLine(pixLine("mp-out", "2026-11-10", "-250.00", cpf(holderCPF)))
+	f.sync(f.mercadoPago)
+
+	f.nubankLine(pixLine("nu-in", "2026-11-10", "250.00", cpf(maskedCPF)))
+	f.sync(f.nubank)
+
+	booked := f.record("nu-in").Tx
+	if got := f.record("nu-in"); got.State != "created" || booked == "" {
+		t.Fatalf("nu-in = %+v, want created", got)
+	}
+
+	if got := f.read("mp-out").Candidates; !slices.Equal(got, []string{booked}) {
+		t.Fatalf("candidates read = %v, want [%s]", got, booked)
+	}
+
+	f.resolve("mp-out", map[string]any{"action": "match", "transaction_id": booked})
+
+	if got, want := f.record("mp-out"), (recordRow{State: "matched", Reason: "transfer", Tx: booked}); !got.equal(want) {
+		t.Fatalf("mp-out = %+v, want %+v", got, want)
+	}
+
+	want := map[string]int64{"Mercado Pago": -25000, "Nubank": 25000}
+	if got := f.legs(booked); !maps.Equal(got, want) {
+		t.Errorf("postings = %v, want %v", got, want)
+	}
+}
+
+// A candidate stored at import stays accepted, so one the ledger no longer lets pair (here a
+// voided one) is refused on transaction_id.
+func TestMatchRefusedCandidate(t *testing.T) {
+	t.Parallel()
+
+	f := newPairingFixture(t)
+	f.nubankLine(bankLine("nu-out", "2026-11-09", "-100.00"))
+	f.sync(f.nubank)
+
+	f.mpLine(pixLine("mp-in", "2026-11-10", "100.00", cpf(holderCPF)))
+	f.sync(f.mercadoPago)
+
+	booked := f.record("nu-out").Tx
+	if got := f.record("mp-in").Candidates; !slices.Equal(got, []string{booked}) {
+		t.Fatalf("candidates = %v, want [%s]", got, booked)
+	}
+
+	f.h.MustDo(http.MethodPost, "/api/v1/transactions/"+booked+"/void", map[string]string{"reason": "typo"}, http.StatusOK, nil)
+
+	id := f.scalarText(`SELECT id::text FROM ingestion_external_record WHERE external_id = 'mp-in'`)
+	r := f.h.Do(http.MethodPost, "/api/v1/external-records/"+id+"/resolve",
+		map[string]any{"action": "match", "transaction_id": booked})
+	f.h.ExpectProblem(r, http.StatusUnprocessableEntity, "validation_failed", "transaction_id")
+
+	if got := f.record("mp-in"); got.State != "needs_review" {
+		t.Errorf("mp-in = %+v, want needs_review", got)
+	}
 }
 
 // S363: a rule of the owner and a posting that takes the line by zone link come before pairing.
@@ -917,4 +1065,28 @@ func withBase(f pairingFixture, l pluggy.Transaction) pluggy.Transaction {
 	l.CurrencyCode = string(f.h.Profile.Base)
 
 	return l
+}
+
+// read returns the record as the review lists it, with its candidates refreshed.
+func (f pairingFixture) read(externalID string) recordView {
+	f.h.T().Helper()
+
+	batch := f.scalarText(`SELECT batch_id::text FROM ingestion_external_record WHERE external_id = $1`, externalID)
+	id := f.scalarText(`SELECT id::text FROM ingestion_external_record WHERE external_id = $1`, externalID)
+
+	var out struct {
+		Items []recordView `json:"items"`
+	}
+
+	f.h.MustDo(http.MethodGet, "/api/v1/import-batches/"+batch+"/records?state=needs_review", nil, http.StatusOK, &out)
+
+	for _, r := range out.Items {
+		if r.ID == id {
+			return r
+		}
+	}
+
+	f.h.T().Fatalf("record %s is not in review", externalID)
+
+	return recordView{}
 }
