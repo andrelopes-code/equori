@@ -1,0 +1,120 @@
+@layer app {
+  .bars {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    column-gap: var(--slotted-space-4);
+    row-gap: var(--slotted-space-5);
+    /* Room for half of the last tick label. */
+    padding-inline-end: var(--slotted-space-5);
+  }
+
+  .block,
+  .pair,
+  .row {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+  }
+
+  .block {
+    row-gap: var(--slotted-space-2);
+  }
+
+  .head {
+    display: flex;
+    grid-column: 1 / -1;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--slotted-space-4);
+  }
+
+  .pair {
+    row-gap: var(--slotted-space-1);
+  }
+
+  .row {
+    align-items: center;
+  }
+
+  .track {
+    position: relative;
+    block-size: var(--slotted-space-6);
+  }
+
+  .zero {
+    position: absolute;
+    inset-block: 0;
+    inline-size: var(--slotted-border-width-thin);
+    background: var(--slotted-text-muted);
+  }
+
+  .bar {
+    position: absolute;
+    inset-block: var(--slotted-space-1);
+    border-radius: var(--slotted-radius-xs);
+  }
+
+  .subject {
+    background: var(--slotted-tone-accent-solid);
+  }
+
+  .index {
+    background: var(--slotted-text-muted);
+  }
+
+  .inflation {
+    border: var(--slotted-border-width-thin) solid var(--slotted-text-muted);
+    background: repeating-linear-gradient(
+      135deg,
+      var(--slotted-text-muted) 0 var(--slotted-space-1),
+      transparent var(--slotted-space-1) var(--slotted-space-2)
+    );
+  }
+
+  .value {
+    position: absolute;
+    inset-block-start: 50%;
+    transform: translateY(-50%);
+    white-space: nowrap;
+  }
+
+  .after {
+    margin-inline-start: var(--slotted-space-2);
+  }
+
+  .before {
+    margin-inline-end: var(--slotted-space-2);
+  }
+
+  .ticks {
+    position: relative;
+    grid-column: 2;
+    block-size: var(--slotted-space-5);
+  }
+
+  .tick {
+    position: absolute;
+    transform: translateX(-50%);
+    white-space: nowrap;
+  }
+
+  @media (forced-colors: active) {
+    .zero,
+    .subject {
+      background: CanvasText;
+    }
+
+    .index {
+      background: GrayText;
+    }
+
+    .inflation {
+      border-color: GrayText;
+      background: repeating-linear-gradient(
+        135deg,
+        GrayText 0 var(--slotted-space-1),
+        Canvas var(--slotted-space-1) var(--slotted-space-2)
+      );
+    }
+  }
+}
