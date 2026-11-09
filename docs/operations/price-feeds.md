@@ -68,5 +68,5 @@ fixed income security), an unofficial feed 5. A feed run never replaces a manual
 
 ## 5. Not covered by a feed
 
-Fund shares (CVM daily report), Tesouro Direto bonds and crypto assets enter through
-`POST /prices` or `POST /prices/import`.
+An instrument that no enabled feed quotes enters through `POST /prices` or
+`POST /prices/import`.
