@@ -1,0 +1,12 @@
+@layer app {
+  .amount {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* The result is the line under the two flows. */
+  .total {
+    padding-block-start: var(--slotted-space-5);
+    border-block-start: var(--slotted-border-width-thin) solid
+      var(--slotted-border-subtle);
+  }
+}

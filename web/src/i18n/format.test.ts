@@ -9,6 +9,7 @@ import {
   formatMoney,
   formatMoneyParts,
   formatMoneySegments,
+  formatMonthInSentence,
   formatMonthName,
   formatMonthTitle,
   formatSigned,
@@ -213,6 +214,13 @@ describe("month and signed formats", () => {
   ] as const)("names the month in %s", (locale, title, name) => {
     expect(formatMonthTitle("2026-10", locale)).toBe(title);
     expect(formatMonthName("2026-10", locale)).toBe(name);
+  });
+
+  it.each([
+    ["pt-BR", "outubro"],
+    ["en", "October"],
+  ] as const)("names the month inside a sentence in %s", (locale, name) => {
+    expect(formatMonthInSentence("2026-10", locale)).toBe(name);
   });
 
   it("writes the sign of a change", () => {

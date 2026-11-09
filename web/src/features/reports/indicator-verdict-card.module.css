@@ -1,0 +1,18 @@
+@layer app {
+  /* The card reflows by its own width, not the page's: the ledger goes beside the sentence from 46rem. */
+  .frame {
+    container-type: inline-size;
+  }
+
+  .layout {
+    display: grid;
+    gap: var(--slotted-space-8);
+  }
+
+  @container (min-width: 46rem) {
+    .layout {
+      grid-template-columns: minmax(0, 1fr) minmax(16rem, 22rem);
+      align-items: center;
+    }
+  }
+}

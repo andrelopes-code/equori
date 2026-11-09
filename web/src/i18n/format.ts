@@ -348,6 +348,11 @@ export function formatMonthName(month: string, locale: string): string {
   );
 }
 
+// The month inside a sentence, as the language writes it: "outubro", "October".
+export function formatMonthInSentence(month: string, locale: string): string {
+  return dateFormat(locale, { month: "long" }).format(utcDate(`${month}-01`));
+}
+
 // A change reads its sign either way: "+R$ 10,00", "−R$ 10,00".
 export function formatSigned(
   m: { amount: number; currency: string },

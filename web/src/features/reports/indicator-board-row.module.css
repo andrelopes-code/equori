@@ -1,0 +1,45 @@
+@layer app {
+  /* The card reflows by its own width: below 40rem the strip takes a line under the name and value.
+     The measures of the name and value columns are the app's own; no token holds a measure. */
+  .row {
+    display: grid;
+    grid-template-columns: 15rem minmax(0, 1fr) 9rem;
+    column-gap: var(--slotted-space-8);
+    align-items: center;
+    padding-block: var(--slotted-space-7);
+    border-block-start: var(--slotted-border-width-thin) solid
+      var(--slotted-border-subtle);
+  }
+
+  .row:first-child {
+    border-block-start: 0;
+  }
+
+  .name {
+    display: grid;
+    gap: var(--slotted-space-2);
+  }
+
+  .value {
+    display: grid;
+    justify-items: end;
+    gap: var(--slotted-space-2);
+    text-align: end;
+  }
+
+  .figure {
+    font-variant-numeric: tabular-nums;
+  }
+
+  @container (max-width: 40rem) {
+    .row {
+      grid-template-columns: minmax(0, 1fr) auto;
+      row-gap: var(--slotted-space-5);
+    }
+
+    .position {
+      grid-row: 2;
+      grid-column: 1 / -1;
+    }
+  }
+}
