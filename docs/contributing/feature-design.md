@@ -19,10 +19,10 @@ The plan check (`docs/contributing/agents.md`, step 3) rejects a spec or plan wi
 
 | ID | Question | Source |
 |---|---|---|
-| C1 | Which amounts does the feature store or compute? Each one is an integer of minor units with its currency, never a `float64`. | ADR 005 |
-| C2 | Does the feature add or compare amounts? A sum holds one currency. A figure across currencies names the conversion: the date of the rate, the rate source and the state shown when a rate is missing. A missing rate is stated on screen, never read as zero and never dropped in silence. | ADR 005; owner, 2026-11-09 |
-| C3 | What does the feature show when the book's base currency is not the currency of the account, the instrument or the index it reads? | ADR 005 |
-| C4 | Where does a displayed currency come from? From the record or from settings, never from a literal fallback. An amount on screen goes through `useMoneyFormat()`, so privacy mode hides it. | `docs/contributing/web.md`, O9 and O10; ADR 018 |
+| C1 | Which amounts does the feature store or compute? Each one is an integer of minor units with its currency, never a `float64`. | ADR 005; `docs/contributing/currencies.md`, M1 |
+| C2 | Does the feature add or compare amounts? A sum holds one currency. A figure across currencies names the conversion: the date of the rate, the rate source and the state shown when a rate is missing. A missing rate is stated on screen, never read as zero and never dropped in silence. | ADR 005; owner, 2026-11-09; `docs/contributing/currencies.md`, M2 to M8, M10 |
+| C3 | What does the feature show when the book's base currency is not the currency of the account, the instrument or the index it reads? | ADR 005; `docs/contributing/currencies.md`, M9 |
+| C4 | Where does a displayed currency come from? From the record or from settings, never from a literal fallback. An amount on screen goes through `useMoneyFormat()`, so privacy mode hides it. | `docs/contributing/web.md`, O9 and O10; ADR 018; `docs/contributing/currencies.md`, M11, M12 |
 
 ## Time
 

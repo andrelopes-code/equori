@@ -57,7 +57,7 @@ docs/domain/           vision, language, flows, model, scenarios
 docs/specs/            design specifications cited by ADRs and code
 docs/plans/            implementation plans whose rule IDs other documents cite
 docs/operations/       runbooks for operators
-docs/contributing/     contributor guides: feature design, regions, forms, phone screens, web rules, agents
+docs/contributing/     contributor guides: feature design, regions, currencies, forms, phone screens, web rules, agents
 ```
 
 Module internals: `<module>.go` (public API) → `internal/domain` → `internal/app` → `internal/adapter/{postgres,httpapi,toolapi}`. ADR 002 sets the dependency rules; `depguard` and the compiler enforce them.
