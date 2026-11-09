@@ -46,7 +46,7 @@ func values(prices []DatedPrice) map[string]string {
 
 func cdb(percent, spread int) Terms {
 	return Terms{
-		IssuedOn: date("2026-01-02"), MaturesOn: date("2028-01-02"), IndexID: IndexCDI, PercentOfIndexBP: percent,
+		IssuedOn: date("2026-01-02"), MaturesOn: date("2028-01-02"), IndexID: "cdi", PercentOfIndexBP: percent,
 		SpreadBP: spread, DayCount: DayCountBus252, FaceValue: 100000,
 	}
 }
@@ -81,7 +81,7 @@ func TestAccrueCDI(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			prices, err := Accrue(tt.terms, 2, tt.rates, date("2026-01-01"), date("2026-01-09"))
+			prices, err := Accrue(tt.terms, BusinessDayIndexes{"cdi"}, 2, tt.rates, date("2026-01-01"), date("2026-01-09"))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -105,7 +105,7 @@ func TestAccruePreFixed(t *testing.T) {
 
 	terms := Terms{IssuedOn: date("2026-01-01"), MaturesOn: date("2030-01-01"), SpreadBP: 600, DayCount: DayCountAct365, FaceValue: 100000}
 
-	prices, err := Accrue(terms, 2, nil, date("2026-01-01"), date("2026-02-27"))
+	prices, err := Accrue(terms, BusinessDayIndexes{"cdi"}, 2, nil, date("2026-01-01"), date("2026-02-27"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -127,7 +127,7 @@ func TestAccrueIPCAStep(t *testing.T) {
 	terms := Terms{IssuedOn: date("2026-01-01"), MaturesOn: date("2035-05-15"), IndexID: "ipca", PercentOfIndexBP: 10000, SpreadBP: 600, DayCount: DayCountAct365, FaceValue: 100000}
 	rates := []IndexRate{{Date: date("2026-01-01"), Rate: "0.004200000000"}, {Date: date("2026-02-01"), Rate: "-0.003000000000"}}
 
-	prices, err := Accrue(terms, 2, rates, date("2026-01-30"), date("2026-03-02"))
+	prices, err := Accrue(terms, BusinessDayIndexes{"cdi"}, 2, rates, date("2026-01-30"), date("2026-03-02"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -150,7 +150,7 @@ func TestAccrueIPCAWithoutPublishedMonth(t *testing.T) {
 	terms := Terms{IssuedOn: date("2026-01-01"), MaturesOn: date("2035-05-15"), IndexID: "ipca", PercentOfIndexBP: 10000, SpreadBP: 600, DayCount: DayCountAct365, FaceValue: 100000}
 	rates := []IndexRate{{Date: date("2026-01-01"), Rate: "0.004200000000"}, {Date: date("2026-02-01"), Rate: "-0.003000000000"}}
 
-	prices, err := Accrue(terms, 2, rates, date("2026-04-01"), date("2026-04-02"))
+	prices, err := Accrue(terms, BusinessDayIndexes{"cdi"}, 2, rates, date("2026-04-01"), date("2026-04-02"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -171,7 +171,7 @@ func TestAccruePeriod(t *testing.T) {
 	terms := cdb(10000, 0)
 	terms.MaturesOn = date("2026-01-07")
 
-	prices, err := Accrue(terms, 2, cdiWeek(), date("2026-01-01"), date("2026-01-09"))
+	prices, err := Accrue(terms, BusinessDayIndexes{"cdi"}, 2, cdiWeek(), date("2026-01-01"), date("2026-01-09"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -180,7 +180,7 @@ func TestAccruePeriod(t *testing.T) {
 		t.Fatalf("prices after maturity: %v", got)
 	}
 
-	prices, err = Accrue(cdb(10000, 0), 2, cdiWeek(), date("2026-01-07"), date("2026-01-09"))
+	prices, err = Accrue(cdb(10000, 0), BusinessDayIndexes{"cdi"}, 2, cdiWeek(), date("2026-01-07"), date("2026-01-09"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -190,7 +190,7 @@ func TestAccruePeriod(t *testing.T) {
 		t.Fatalf("prices from the 7th: %v", got)
 	}
 
-	prices, err = Accrue(cdb(10000, 0), 2, nil, date("2026-01-01"), date("2026-01-09"))
+	prices, err = Accrue(cdb(10000, 0), BusinessDayIndexes{"cdi"}, 2, nil, date("2026-01-01"), date("2026-01-09"))
 	if err != nil || len(prices) != 1 || prices[0].Value != "1000.000000000000" {
 		t.Fatalf("prices without rates = %+v, %v", prices, err)
 	}

@@ -31,11 +31,17 @@ type Source struct {
 	index  string
 	series int
 	period string
+
+	businessDay bool
 }
 
-// CDI is the daily CDI rate (identifier br_cdi, index cdi).
+// CDI is the daily CDI rate (identifier br_cdi, index cdi). It compounds by business day
+// (index.BusinessDayCompounding).
 func CDI(hc *http.Client, base string) Source {
-	return Source{hc: hc, base: base, id: "br_cdi", index: "cdi", series: seriesCDI, period: index.PeriodDay}
+	return Source{
+		hc: hc, base: base, id: "br_cdi", index: "cdi", series: seriesCDI, period: index.PeriodDay,
+		businessDay: true,
+	}
 }
 
 // IPCA is the monthly IPCA variation (identifier br_ipca, index ipca).
@@ -46,6 +52,8 @@ func IPCA(hc *http.Client, base string) Source {
 func (s Source) ID() string     { return s.id }
 func (s Source) Index() string  { return s.index }
 func (s Source) Period() string { return s.period }
+
+func (s Source) CompoundsByBusinessDay() bool { return s.businessDay }
 
 type item struct {
 	Date  string `json:"data"`

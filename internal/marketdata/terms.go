@@ -18,7 +18,7 @@ const typeFixedIncome = "fixed_income"
 
 // PutTerms stores the terms of a fixed income instrument, replacing any earlier ones.
 func (m *Module) PutTerms(ctx context.Context, code string, t Terms) (Terms, error) {
-	if err := t.Validate(); err != nil {
+	if err := t.Validate(m.businessDays); err != nil {
 		return Terms{}, err
 	}
 
@@ -60,6 +60,9 @@ func (m *Module) Terms(ctx context.Context, code string) (Terms, error) {
 
 	return toTerms(row), nil
 }
+
+// BusinessDayIndexes are the indexes that compound by business day.
+func (m *Module) BusinessDayIndexes() domain.BusinessDayIndexes { return m.businessDays }
 
 func toTerms(r postgres.MarketdataFixedIncomeTerm) Terms {
 	t := Terms{

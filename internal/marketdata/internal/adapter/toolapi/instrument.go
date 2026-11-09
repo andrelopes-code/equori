@@ -91,7 +91,10 @@ func parsePrice(s string) (money.Rate, error) {
 }
 
 // terms builds the contract of a fixed income instrument; the day count follows the index.
-func (in manageInstrumentIn) terms(quote money.Currency) (domain.Terms, error) {
+func (in manageInstrumentIn) terms(
+	quote money.Currency,
+	daily domain.BusinessDayIndexes,
+) (domain.Terms, error) {
 	unit, err := money.New(0, quote)
 	if err != nil {
 		return domain.Terms{}, &domain.FieldError{Field: "code", Message: "terms belong to a fixed_income instrument"}
@@ -110,7 +113,7 @@ func (in manageInstrumentIn) terms(quote money.Currency) (domain.Terms, error) {
 		t.PercentOfIndexBP = 10000
 	}
 
-	if t.IndexID == domain.IndexCDI {
+	if daily.Has(t.IndexID) {
 		t.DayCount = domain.DayCountBus252
 	}
 
@@ -198,12 +201,12 @@ func manageInstrument(svc Service) tool.Tool {
 				return tool.Preview{}, err
 			}
 
-			t, err := in.terms(inst.QuoteCurrency)
+			t, err := in.terms(inst.QuoteCurrency, svc.BusinessDayIndexes())
 			if err != nil {
 				return tool.Preview{}, err
 			}
 
-			if err := t.Validate(); err != nil {
+			if err := t.Validate(svc.BusinessDayIndexes()); err != nil {
 				return tool.Preview{}, err
 			}
 
@@ -263,7 +266,7 @@ func manageInstrument(svc Service) tool.Tool {
 			return manageInstrumentOut{}, err
 		}
 
-		t, err := in.terms(inst.QuoteCurrency)
+		t, err := in.terms(inst.QuoteCurrency, svc.BusinessDayIndexes())
 		if err != nil {
 			return manageInstrumentOut{}, err
 		}

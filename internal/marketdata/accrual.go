@@ -77,7 +77,7 @@ func (m *Module) accrue(ctx context.Context, row postgres.MarketdataFixedIncomeT
 
 	terms := toTerms(row)
 
-	accrued, err := domain.Accrue(terms, quote.Scale, rates, from, today)
+	accrued, err := domain.Accrue(terms, m.businessDays, quote.Scale, rates, from, today)
 	if err != nil {
 		return err
 	}

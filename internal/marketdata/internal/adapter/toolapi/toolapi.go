@@ -21,6 +21,7 @@ type Service interface {
 	ListPrices(ctx context.Context, instrument, quote money.Currency, from, to time.Time) ([]domain.Price, error)
 	Terms(ctx context.Context, code string) (domain.Terms, error)
 	PutTerms(ctx context.Context, code string, t domain.Terms) (domain.Terms, error)
+	BusinessDayIndexes() domain.BusinessDayIndexes
 	Indexes(ctx context.Context) ([]domain.IndexSummary, error)
 	IndexRates(ctx context.Context, id string, from, to time.Time) ([]domain.IndexRate, error)
 	Expectations(ctx context.Context, id string) (domain.IndexExpectations, error)

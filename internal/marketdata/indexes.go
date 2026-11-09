@@ -48,6 +48,23 @@ func indexEntries() []indexEntry {
 	}
 }
 
+// businessDayIndexes lists the index of every registered source that compounds by business day,
+// enabled or not, so that enabling a source never changes how stored terms accrue.
+func businessDayIndexes() domain.BusinessDayIndexes {
+	var out domain.BusinessDayIndexes
+
+	for _, e := range indexEntries() {
+		s := e.build(nil, e.defaultURL)
+		if c, ok := s.(index.BusinessDayCompounding); ok && c.CompoundsByBusinessDay() {
+			out = append(out, s.Index())
+		}
+	}
+
+	slices.Sort(out)
+
+	return out
+}
+
 // IndexSourceIDs lists the identifiers of the index sources.
 func IndexSourceIDs() []string {
 	entries := indexEntries()

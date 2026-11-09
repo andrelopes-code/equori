@@ -55,6 +55,9 @@ type Module struct {
 
 	calendars registry.Registry[calendar.Calendar]
 
+	// businessDays are the indexes that compound by business day, computed once in New.
+	businessDays domain.BusinessDayIndexes
+
 	// running is set while a tick runs, scheduled or requested (ADR 025 F7); a requested tick
 	// joins refreshes and stops with life.
 	running   atomic.Bool
@@ -85,7 +88,9 @@ func New(pool *pgxpool.Pool) *Module {
 		panic(fmt.Sprintf("marketdata: %v", err)) // the entries are literals; a failure is a programming error
 	}
 
-	return &Module{pool: pool, q: postgres.New(pool), calendars: calendars}
+	return &Module{
+		pool: pool, q: postgres.New(pool), calendars: calendars, businessDays: businessDayIndexes(),
+	}
 }
 
 // Tools returns the marketdata module's tools for language models (ADR 012).

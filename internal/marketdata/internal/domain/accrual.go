@@ -18,8 +18,8 @@ const (
 	priceDecimals       = 12
 )
 
-// IndexRate is the rate of an index for a period, an exact decimal fraction. A daily index
-// (cdi) is dated on the business day it applies to; any other index on the first day of its month.
+// IndexRate is the rate of an index for a period, an exact decimal fraction. An index that
+// compounds by business day is dated on the business day it applies to; any other index on the first day of its month.
 type IndexRate struct {
 	Date time.Time
 	Rate string
@@ -50,20 +50,29 @@ type DatedPrice struct {
 // Accrue computes the price of one unit of a fixed income security on each day from `from` to
 // min(`to`, maturity), counting the growth from the issue date:
 //
-//   - cdi: the product of 1 + rate × percent over the published business days after the issue;
-//     there is a price on each of those days and on the issue date;
+//   - an index that compounds by business day: the product of 1 + rate × percent over the
+//     published business days after the issue; there is a price on each of those days and on the
+//     issue date;
 //   - another index: the product of 1 + rate over the months that begin on or after the issue
 //     date and have ended, applied from the day after the month's last day (no pro rata);
 //     there is a price on each weekday;
 //   - no index: weekdays only;
 //
-// times the spread: the 252nd (bus252, counted in the business days of the cdi) or 365th
+// times the spread: the 252nd (bus252, counted in the business days of such an index) or 365th
 // (act365, calendar days) root of 1 + spread, raised to the number of days. A day with no
 // published rate has no price. quoteScale is the decimals of the quote currency of FaceValue.
-func Accrue(t Terms, quoteScale int, rates []IndexRate, from, to time.Time) ([]DatedPrice, error) {
-	if err := t.Validate(); err != nil {
+func Accrue(
+	t Terms,
+	daily BusinessDayIndexes,
+	quoteScale int,
+	rates []IndexRate,
+	from, to time.Time,
+) ([]DatedPrice, error) {
+	if err := t.Validate(daily); err != nil {
 		return nil, err
 	}
+
+	byDay := daily.Has(t.IndexID)
 
 	end := to
 	if t.MaturesOn.Before(end) {
@@ -86,8 +95,8 @@ func Accrue(t Terms, quoteScale int, rates []IndexRate, from, to time.Time) ([]D
 	businessDays := 0
 
 	next := 0
-	for _, d := range pricedDays(t, parsed, end) {
-		if t.IndexID == IndexCDI {
+	for _, d := range pricedDays(t, byDay, parsed, end) {
+		if byDay {
 			for next < len(parsed) && !parsed[next].date.After(d) {
 				if parsed[next].date.After(t.IssuedOn) {
 					index.Mul(index, newFloat().Add(newFloat().SetInt64(1), newFloat().Mul(parsed[next].rate, percent)))
@@ -146,14 +155,14 @@ func parseRates(rates []IndexRate) ([]parsedRate, error) {
 }
 
 // pricedDays lists the days up to end that have a price, oldest first, from the issue date.
-func pricedDays(t Terms, rates []parsedRate, end time.Time) []time.Time {
+func pricedDays(t Terms, byDay bool, rates []parsedRate, end time.Time) []time.Time {
 	var days []time.Time
 
 	if t.IssuedOn.After(end) {
 		return nil
 	}
 
-	if t.IndexID == IndexCDI {
+	if byDay {
 		days = append(days, t.IssuedOn)
 		for _, r := range rates {
 			if r.date.After(t.IssuedOn) && !r.date.After(end) {

@@ -20,6 +20,13 @@ const (
 	PeriodMonth = "month"
 )
 
+// BusinessDayCompounding is implemented by a Source whose index compounds by business day: a fixed
+// income security on it compounds the rate of each published business day times its percent and
+// may count bus252 days. A Source without it compounds by ended month.
+type BusinessDayCompounding interface {
+	CompoundsByBusinessDay() bool
+}
+
 // Source reads the rates of one index from one public source.
 type Source interface {
 	// ID identifies the source; it is the id of its marketdata_feed row.
