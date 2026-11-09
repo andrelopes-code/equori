@@ -36,6 +36,8 @@ var (
 	ErrNotRetypable = errors.New("the transaction changed since its import")
 	// ErrNotPairable: the ledger refuses to make the transaction the transfer of the line (A218).
 	ErrNotPairable = errors.New("the transaction cannot become the transfer of the line")
+	// ErrNotUnpairable: the paired transaction changed since the pairing (A220 rule 3).
+	ErrNotUnpairable = errors.New("the paired transaction changed since the pairing")
 	// ErrTransactionVoided: the transaction a record would confirm is voided.
 	ErrTransactionVoided = errors.New("the transaction is voided")
 	// ErrInstallmentRefused: the ledger cannot place the line in its installment purchase.
@@ -162,6 +164,9 @@ type Ledger interface {
 	// PairLine makes txID the transfer of the record's line on accountID and returns the version
 	// it gave the transaction (A218 rule 1); ErrNotPairable when the ledger refuses.
 	PairLine(ctx context.Context, booksID int64, txID, accountID, recordID uuid.UUID) (int, error)
+	// UnpairLine returns txID, paired at version, to its previous postings as a new version
+	// (A220 rule 2); ErrNotUnpairable when it changed since or the ledger refuses.
+	UnpairLine(ctx context.Context, booksID int64, txID, recordID uuid.UUID, version int) error
 }
 
 // Counterpart is a transaction a sync line may pair with (A216 rule 2): the posting of

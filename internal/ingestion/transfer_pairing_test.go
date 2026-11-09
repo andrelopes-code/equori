@@ -628,6 +628,105 @@ func TestS355HolderOnBothLines(t *testing.T) {
 	}
 }
 
+// S356 (A220): undo returns the transaction to its version before the pairing, as a new version;
+// the record waits in review with the transaction as its candidate. A correction after the
+// pairing leaves the transaction as the owner wrote it.
+func TestS356Undo(t *testing.T) {
+	t.Parallel()
+
+	t.Run("undo and match again", func(t *testing.T) {
+		t.Parallel()
+
+		f, booked := pairedFixture(t)
+
+		r := f.undo("nu-in")
+		if r.Status != http.StatusOK {
+			t.Fatalf("undo status = %d, body %s", r.Status, r.Body)
+		}
+
+		if tx := f.h.Transaction(booked); tx.Version != 3 {
+			t.Errorf("version after undo = %d, want 3", tx.Version)
+		}
+
+		if got, want := f.legs(booked), map[string]int64{"Mercado Pago": -25000, "uncategorized_expense": 25000}; !maps.Equal(got, want) {
+			t.Errorf("postings after undo = %v, want %v", got, want)
+		}
+
+		if got, want := f.record("nu-in"), (recordRow{State: "needs_review", Reason: "transfer", Candidates: []string{booked}}); !got.equal(want) {
+			t.Errorf("nu-in after undo = %+v, want %+v", got, want)
+		}
+
+		if c := f.batchOf(f.nubankLedger).Counts; c.Paired != 0 || c.NeedsReview != 1 {
+			t.Errorf("nubank batch counts = %+v, want paired 0 needs_review 1", c)
+		}
+
+		f.resolve("nu-in", map[string]any{"action": "match", "transaction_id": booked})
+
+		if tx := f.h.Transaction(booked); tx.Version != 4 {
+			t.Errorf("version after match = %d, want 4", tx.Version)
+		}
+
+		if got, want := f.legs(booked), map[string]int64{"Mercado Pago": -25000, "Nubank": 25000}; !maps.Equal(got, want) {
+			t.Errorf("postings after match = %v, want %v", got, want)
+		}
+
+		if got, want := f.record("nu-in"), (recordRow{State: "matched", Reason: "transfer", Tx: booked}); !got.equal(want) {
+			t.Errorf("nu-in after match = %+v, want %+v", got, want)
+		}
+
+		f.h.ExpectProblem(f.undo("nu-in"), http.StatusConflict, "no_decision", "")
+	})
+
+	t.Run("undo after a correction", func(t *testing.T) {
+		t.Parallel()
+
+		f, booked := pairedFixture(t)
+
+		correction := map[string]any{
+			"date": "2026-11-10", "description": "Renamed", "expected_version": 2, "reason": "typo",
+			"postings": []any{apitest.Posting(f.nubankLedger, 25000), apitest.Posting(f.mpLedger, -25000)},
+		}
+		f.h.MustDo(http.MethodPut, "/api/v1/transactions/"+booked, correction, http.StatusOK, nil)
+
+		f.h.ExpectProblem(f.undo("nu-in"), http.StatusConflict, "no_decision", "")
+
+		if got := f.record("nu-in"); got.State != "matched" || got.Decision != "paired" || got.Tx != booked {
+			t.Errorf("nu-in after the refused undo = %+v, want matched paired", got)
+		}
+	})
+}
+
+// A38: the next sync withdraws a paired line the aggregator stopped returning; the transaction
+// keeps its version.
+func TestWithdrawnPairedLine(t *testing.T) {
+	t.Parallel()
+
+	f, booked := pairedFixture(t)
+
+	// A read that returns no line withdraws nothing (A146): another line stays in the read.
+	f.nubankLine(bankLine("nu-keep", "2026-11-09", "-5.00"))
+	f.syncLater(f.nubank, nubankItem, "2026-11-12T14:00:00.000Z")
+
+	f.p.RemoveTransaction(nubankItem+"-checking", "nu-in")
+	f.syncLater(f.nubank, nubankItem, "2026-11-12T15:00:00.000Z")
+
+	if got, want := f.record("nu-in"), (recordRow{State: "withdrawn", Decision: "withdrawn"}); !got.equal(want) {
+		t.Fatalf("nu-in = %+v, want %+v", got, want)
+	}
+
+	if tx := f.h.Transaction(booked); tx.Version != 2 {
+		t.Errorf("version = %d, want 2", tx.Version)
+	}
+
+	if got, want := f.legs(booked), map[string]int64{"Mercado Pago": -25000, "Nubank": 25000}; !maps.Equal(got, want) {
+		t.Errorf("postings = %v, want %v", got, want)
+	}
+
+	if got, want := f.legRecords(booked), map[string]string{"Mercado Pago": "mp-out"}; !maps.Equal(got, want) {
+		t.Errorf("posting records = %v, want %v", got, want)
+	}
+}
+
 // S359: a line that names the holder and finds no counterpart stays in review; the owner books it
 // and turns it into a transfer to a manual account (S50).
 func TestS359AccountNotConnected(t *testing.T) {
@@ -979,6 +1078,34 @@ func (f pairingFixture) legs(tx string) map[string]int64 {
 	}
 
 	return out
+}
+
+// pairedFixture runs S355 with the Mercado Pago line first: the Nubank record nu-in is paired
+// with the transaction of mp-out, which the pairing leaves at version 2.
+func pairedFixture(t *testing.T) (pairingFixture, string) {
+	t.Helper()
+
+	f := newPairingFixture(t)
+	f.mpLine(pixLine("mp-out", "2026-11-10", "-250.00", cpf(holderCPF)))
+	f.sync(f.mercadoPago)
+	f.nubankLine(pixLine("nu-in", "2026-11-10", "250.00", cpf(holderCPF)))
+	f.sync(f.nubank)
+
+	booked := f.record("mp-out").Tx
+	if got := f.record("nu-in"); got.State != "matched" || got.Decision != "paired" || got.Tx != booked {
+		t.Fatalf("nu-in = %+v, want matched paired on %s", got, booked)
+	}
+
+	return f, booked
+}
+
+// undo posts the undo of a line's record decision.
+func (f pairingFixture) undo(externalID string) apitest.Response {
+	f.h.T().Helper()
+
+	id := f.scalarText(`SELECT id::text FROM ingestion_external_record WHERE external_id = $1`, externalID)
+
+	return f.h.Do(http.MethodPost, "/api/v1/external-records/"+id+"/undo", nil)
 }
 
 func (f pairingFixture) scalar(sql string, args ...any) int {

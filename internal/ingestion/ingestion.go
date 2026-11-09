@@ -230,6 +230,8 @@ func (p ledgerPort) translate(err error) error {
 		return app.ErrGroupChanged
 	case errors.Is(err, ledger.ErrNotPairable):
 		return app.ErrNotPairable
+	case errors.Is(err, ledger.ErrNotUnpairable):
+		return app.ErrNotUnpairable
 	}
 
 	return err
@@ -376,6 +378,10 @@ func (p ledgerPort) PairLine(ctx context.Context, booksID int64, txID, accountID
 	version, err := p.l.PairImported(ctx, booksID, txID, accountID, recordID)
 
 	return version, p.translate(err)
+}
+
+func (p ledgerPort) UnpairLine(ctx context.Context, booksID int64, txID, recordID uuid.UUID, version int) error {
+	return p.translate(p.l.UnpairImported(ctx, booksID, txID, recordID, version))
 }
 
 func (p ledgerPort) GroupableTransactions(ctx context.Context, booksID int64, txIDs []uuid.UUID) ([]uuid.UUID, error) {

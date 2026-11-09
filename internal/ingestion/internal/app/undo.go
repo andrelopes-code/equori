@@ -53,6 +53,8 @@ func (s *Service) UndoDecision(ctx context.Context, booksID int64, recordID uuid
 		err = s.undoFollowed(ctx, &rec)
 	case domain.DecisionReidentified:
 		line, err = s.undoReidentified(ctx, &rec)
+	case domain.DecisionPaired:
+		err = s.undoPaired(ctx, &rec, b)
 	default:
 		err = ErrNoDecision
 	}
@@ -79,6 +81,23 @@ func (s *Service) undoLinked(ctx context.Context, rec *domain.ExternalRecord, b 
 	}
 
 	rec.State, rec.TransactionID, rec.ReviewReason = domain.StateNeedsReview, uuid.Nil, domain.ReviewProbable
+
+	return s.refreshCandidates(ctx, rec, currencyOf(b))
+}
+
+// undoPaired returns the transaction to its postings before the pairing and the record to review
+// as a transfer (A220 rule 2). A transaction that changed since the pairing has no undo (rule 3).
+func (s *Service) undoPaired(ctx context.Context, rec *domain.ExternalRecord, b domain.Batch) error {
+	err := s.ledger.UnpairLine(ctx, rec.BooksID, rec.TransactionID, rec.ID, rec.Undo.Version)
+	if errors.Is(err, ErrNotUnpairable) {
+		return ErrNoDecision
+	}
+
+	if err != nil {
+		return err
+	}
+
+	rec.State, rec.TransactionID, rec.ReviewReason = domain.StateNeedsReview, uuid.Nil, domain.ReviewTransfer
 
 	return s.refreshCandidates(ctx, rec, currencyOf(b))
 }
