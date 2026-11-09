@@ -246,6 +246,25 @@ func TestS161SaveReplacesVersion(t *testing.T) {
 	}
 }
 
+// A closed category keeps its budget row in the plan, so the row saves like any other.
+func TestSaveChangesTheBudgetOfAClosedCategory(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t, "2026-11-10")
+	life := f.h.Account("Lifestyle", "expense", "", nil)
+	id := f.budget(life, 40000, "2026-11", false)
+	f.h.MustDo(http.MethodPost, "/api/v1/accounts/"+life+"/close", map[string]string{"closed_on": "2026-11-01"}, http.StatusOK, nil)
+
+	got := f.savePlan("2026-11", map[string]any{"source": "average_income", "amounts": amounts(life, apitest.BRL(20000))})
+
+	if len(got.Rows) != 1 || got.Rows[0].Planned.Amount != 20000 {
+		t.Fatalf("plan = %+v", got)
+	}
+
+	if b := f.budgetAmounts(id); len(b.Amounts) != 1 || b.Amounts[0].Amount.Amount != 20000 {
+		t.Fatalf("amounts = %+v", b.Amounts)
+	}
+}
+
 type budgetList struct {
 	Items []struct {
 		ID         string `json:"id"`

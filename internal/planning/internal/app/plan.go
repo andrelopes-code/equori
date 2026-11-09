@@ -401,11 +401,22 @@ func (s *Service) SaveBudgetPlan(
 		byID[a.ID] = a
 	}
 
+	stored, err := s.repo.Budgets(ctx, booksID)
+	if err != nil {
+		return Plan{}, err
+	}
+
+	budgeted := make(map[uuid.UUID]bool, len(stored))
+	for _, b := range stored {
+		budgeted[b.CategoryID] = true
+	}
+
 	seen := make(map[uuid.UUID]bool, len(amounts))
 	for i, a := range amounts {
 		prefix := fmt.Sprintf("amounts[%d].", i)
-		if c, ok := byID[a.CategoryID]; !ok || c.Class != "expense" || c.Closed {
-			return Plan{}, &domain.FieldError{Field: prefix + "category_id", Message: "must be an open expense category of the book", Err: domain.ErrValidation}
+		// A closed category keeps its row in the plan while it has a budget.
+		if c, ok := byID[a.CategoryID]; !ok || c.Class != "expense" || (c.Closed && !budgeted[a.CategoryID]) {
+			return Plan{}, &domain.FieldError{Field: prefix + "category_id", Message: "must be an expense category of the book, open or with a budget", Err: domain.ErrValidation}
 		}
 
 		if seen[a.CategoryID] {
