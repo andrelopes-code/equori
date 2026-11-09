@@ -363,6 +363,192 @@ func TestPairWithTransaction(t *testing.T) {
 	}
 }
 
+// S355: the line that waits in review is created and the later line pairs with its transaction, in
+// both orders; a third sync of both items changes nothing (D4).
+func TestS355HolderOnBothLines(t *testing.T) {
+	t.Parallel()
+
+	orders := map[string]bool{"mercado pago first": true, "nubank first": false}
+
+	for name, mpFirst := range orders {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			f := newPairingFixture(t)
+			mp := pixLine("mp-out", "2026-11-10", "-250.00", cpf(holderCPF))
+			nu := pixLine("nu-in", "2026-11-10", "250.00", cpf(holderCPF))
+
+			first, second, secondConn, secondLedger, firstLedger := "nu-in", "mp-out", f.mercadoPago, f.mpLedger, f.nubankLedger
+			if mpFirst {
+				first, second, secondConn, secondLedger, firstLedger = "mp-out", "nu-in", f.nubank, f.nubankLedger, f.mpLedger
+				f.mpLine(mp)
+				f.sync(f.mercadoPago)
+				f.nubankLine(nu)
+				f.sync(f.nubank)
+			} else {
+				f.nubankLine(nu)
+				f.sync(f.nubank)
+				f.mpLine(mp)
+				f.sync(f.mercadoPago)
+			}
+
+			booked := f.record(first).Tx
+			if got := f.record(first); got.State != "created" || got.Decision != "" || booked == "" {
+				t.Fatalf("%s = %+v, want created", first, got)
+			}
+
+			if got, want := f.record(second), (recordRow{State: "matched", Decision: "paired", Tx: booked}); !got.equal(want) {
+				t.Fatalf("%s = %+v, want %+v", second, got, want)
+			}
+
+			if tx := f.h.Transaction(booked); tx.Version != 2 {
+				t.Errorf("version = %d, want 2", tx.Version)
+			}
+
+			if got, want := f.legs(booked), map[string]int64{"Mercado Pago": -25000, "Nubank": 25000}; !maps.Equal(got, want) {
+				t.Errorf("postings = %v, want %v", got, want)
+			}
+
+			if got := f.legRecords(booked); !maps.Equal(got, map[string]string{"Mercado Pago": "mp-out", "Nubank": "nu-in"}) {
+				t.Errorf("posting records = %v", got)
+			}
+
+			if b := f.batchOf(secondLedger); b.Counts.Paired != 1 || b.Counts.Created != 0 || b.Counts.NeedsReview != 0 {
+				t.Errorf("second batch counts = %+v, want paired 1 created 0 needs_review 0", b.Counts)
+			}
+
+			if b := f.batchOf(firstLedger); b.Counts.Created != 1 || b.Counts.NeedsReview != 0 {
+				t.Errorf("first batch counts = %+v, want created 1 needs_review 0", b.Counts)
+			}
+
+			runs := f.syncs(secondConn)
+			if len(runs) == 0 {
+				t.Fatal("no sync run")
+			}
+
+			summary := map[string]string{}
+			for _, r := range runs[0].Records {
+				summary[r.ExternalID] = r.Decision
+			}
+
+			if want := map[string]string{first: "", second: "paired"}; !maps.Equal(summary, want) {
+				t.Errorf("last run records = %v, want %v", summary, want)
+			}
+
+			before := f.scalar(`SELECT count(*) FROM ledger_transaction`)
+
+			f.syncLater(f.nubank, nubankItem, "2026-11-12T15:00:00.000Z")
+			f.syncLater(f.mercadoPago, mercadoPagoItem, "2026-11-12T15:00:00.000Z")
+
+			if n := f.scalar(`SELECT count(*) FROM ledger_transaction`); n != before {
+				t.Errorf("transactions after the third sync = %d, want %d", n, before)
+			}
+
+			for _, account := range []string{f.nubankLedger, f.mpLedger} {
+				if c := f.batchOf(account).Counts; c.Created != 0 || c.Paired != 0 || c.NeedsReview != 0 {
+					t.Errorf("third sync counts of %s = %+v, want none", account, c)
+				}
+			}
+
+			if got := f.record(second); got.State != "matched" || got.Decision != "paired" || got.Tx != booked {
+				t.Errorf("%s after the third sync = %+v", second, got)
+			}
+		})
+	}
+}
+
+// S359: a line that names the holder and finds no counterpart stays in review; the owner books it
+// and turns it into a transfer to a manual account (S50).
+func TestS359AccountNotConnected(t *testing.T) {
+	t.Parallel()
+
+	f := newPairingFixture(t)
+	f.mpLine(pixLine("mp-in-1200", "2026-11-04", "1200.00", cpf(holderCPF)))
+	f.sync(f.mercadoPago)
+
+	want := recordRow{State: "needs_review", Reason: "transfer"}
+	if got := f.record("mp-in-1200"); !got.equal(want) {
+		t.Fatalf("mp-in-1200 = %+v, want %+v", got, want)
+	}
+
+	f.syncLater(f.mercadoPago, mercadoPagoItem, "2026-11-12T15:00:00.000Z")
+
+	if got := f.record("mp-in-1200"); !got.equal(want) {
+		t.Fatalf("mp-in-1200 after the next sync = %+v, want %+v", got, want)
+	}
+
+	f.resolve("mp-in-1200", map[string]any{"action": "create"})
+	tx := f.record("mp-in-1200").Tx
+
+	if got, want := f.legs(tx), map[string]int64{"Mercado Pago": 120000, "uncategorized_income": -120000}; !maps.Equal(got, want) {
+		t.Fatalf("postings = %v, want %v", got, want)
+	}
+
+	itau := f.h.Account("Itaú", "asset", "checking", nil)
+	f.h.MustDo(http.MethodPost, "/api/v1/transactions/"+tx+"/transfer", map[string]any{"expected_version": 1, "account_id": itau}, http.StatusOK, nil)
+
+	if got, want := f.legs(tx), map[string]int64{"Mercado Pago": 120000, "Itaú": -120000}; !maps.Equal(got, want) {
+		t.Errorf("postings after the transfer = %v, want %v", got, want)
+	}
+}
+
+// Edge case: two accounts of one connection read in one sync run pair with each other.
+func TestBothLinesInOneRun(t *testing.T) {
+	t.Parallel()
+
+	f := newPairingFixture(t)
+	savings := f.h.Account("Nubank Caixinha", "asset", "savings", nil)
+	f.p.SetAccountTaxNumber(nubankItem+"-savings", holderCPF)
+	f.mapTo(f.nubank, pluggy.SubtypeSavings, savings)
+
+	f.p.AddTransaction(nubankItem+"-checking", withBase(f, pixLine("nu-out-50", "2026-11-09", "-50.00", cpf(holderCPF))))
+	f.p.AddTransaction(nubankItem+"-savings", withBase(f, pixLine("nu-sv-in-50", "2026-11-09", "50.00", cpf(holderCPF))))
+	f.sync(f.nubank)
+
+	if n := f.scalar(`SELECT count(*) FROM ledger_transaction`); n != 1 {
+		t.Fatalf("transactions = %d, want 1", n)
+	}
+
+	booked := f.record("nu-out-50").Tx
+	if got := f.record("nu-out-50"); got.State != "created" || got.Decision != "" || got.Tx != booked {
+		t.Errorf("nu-out-50 = %+v, want created", got)
+	}
+
+	if got, want := f.record("nu-sv-in-50"), (recordRow{State: "matched", Decision: "paired", Tx: booked}); !got.equal(want) {
+		t.Errorf("nu-sv-in-50 = %+v, want %+v", got, want)
+	}
+
+	if got, want := f.legs(booked), map[string]int64{"Nubank": -5000, "Nubank Caixinha": 5000}; !maps.Equal(got, want) {
+		t.Errorf("postings = %v, want %v", got, want)
+	}
+}
+
+// Edge case: a record in review for another reason is no counterpart, whatever its counterparty.
+func TestReviewForAnotherReasonIsNoCounterpart(t *testing.T) {
+	t.Parallel()
+
+	f := newPairingFixture(t)
+	f.mpLine(pixLine("mp-out", "2026-11-10", "-250.00", cpf(holderCPF)))
+	f.sync(f.mercadoPago)
+
+	_, err := f.h.Pool.Exec(f.h.T().Context(),
+		`UPDATE ingestion_external_record SET review_reason = 'duplicate', counterparty = 'holder' WHERE external_id = 'mp-out'`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	f.nubankLine(pixLine("nu-in", "2026-11-10", "250.00", cpf(holderCPF)))
+	f.sync(f.nubank)
+
+	if got, want := f.record("nu-in"), (recordRow{State: "needs_review", Reason: "transfer"}); !got.equal(want) {
+		t.Errorf("nu-in = %+v, want %+v", got, want)
+	}
+
+	if got := f.record("mp-out"); got.State != "needs_review" || got.Reason != "duplicate" {
+		t.Errorf("mp-out = %+v, want needs_review duplicate", got)
+	}
+}
+
 // A218 rule 3: a sync of the book waits while another holds the book's pairing lock.
 func TestBookPairingLock(t *testing.T) {
 	t.Parallel()
@@ -672,4 +858,63 @@ func (f pairingFixture) scalarText(sql string, args ...any) string {
 	}
 
 	return s
+}
+
+// syncLater runs a sync of one item after the aggregator reports a later update.
+func (f pairingFixture) syncLater(c connectionView, item, updatedAt string) {
+	f.h.T().Helper()
+
+	f.p.SetItemUpdatedAt(item, updatedAt)
+	f.sync(c)
+}
+
+// syncs returns the sync runs of a connection, newest first.
+func (f pairingFixture) syncs(c connectionView) []syncRunView {
+	f.h.T().Helper()
+
+	var out struct {
+		Items []syncRunView `json:"items"`
+	}
+
+	f.h.MustDo(http.MethodGet, "/api/v1/connections/"+c.ID+"/syncs", nil, http.StatusOK, &out)
+
+	return out.Items
+}
+
+// legRecords returns, by account name, the external id of the record that confirms its posting.
+func (f pairingFixture) legRecords(tx string) map[string]string {
+	f.h.T().Helper()
+
+	rows, err := f.h.Pool.Query(f.h.T().Context(),
+		`SELECT a.name, r.external_id FROM ledger_posting p
+			JOIN ledger_account a ON a.id = p.account_id
+			JOIN ingestion_external_record r ON r.id = p.external_record_id
+			WHERE p.transaction_id = $1`, tx)
+	if err != nil {
+		f.h.T().Fatal(err)
+	}
+	defer rows.Close()
+
+	out := map[string]string{}
+
+	for rows.Next() {
+		var name, id string
+		if err := rows.Scan(&name, &id); err != nil {
+			f.h.T().Fatal(err)
+		}
+
+		out[name] = id
+	}
+
+	if err := rows.Err(); err != nil {
+		f.h.T().Fatal(err)
+	}
+
+	return out
+}
+
+func withBase(f pairingFixture, l pluggy.Transaction) pluggy.Transaction {
+	l.CurrencyCode = string(f.h.Profile.Base)
+
+	return l
 }

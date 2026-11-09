@@ -44,16 +44,17 @@ var (
 
 // Line is a statement line as the ledger receives it.
 type Line struct {
-	AccountID   uuid.UUID
-	Currency    money.Currency
-	Date        time.Time
-	Amount      int64
-	Description string
-	Pending     bool                   // the aggregator has not settled it (P6 A36)
-	DueDate     *time.Time             // due date of the card bill it belongs to (A39)
-	Category    *domain.SourceCategory // the aggregator's category (A41)
-	TransferTo  *uuid.UUID             // the reserve the line moves money into or out of (A76)
-	Kind        string                 // the card line type the source states (A88)
+	AccountID    uuid.UUID
+	Currency     money.Currency
+	Date         time.Time
+	Amount       int64
+	Description  string
+	Pending      bool                   // the aggregator has not settled it (P6 A36)
+	DueDate      *time.Time             // due date of the card bill it belongs to (A39)
+	Category     *domain.SourceCategory // the aggregator's category (A41)
+	TransferTo   *uuid.UUID             // the reserve the line moves money into or out of (A76)
+	Kind         string                 // the card line type the source states (A88)
+	Unclassified bool                   // recorded against the uncategorized account without classification (A218 rule 2)
 }
 
 // NewLine is a line to record as a transaction for its external record.

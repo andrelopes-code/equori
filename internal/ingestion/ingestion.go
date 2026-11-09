@@ -285,6 +285,10 @@ func (p ledgerPort) RecordImported(ctx context.Context, booksID int64, lines []a
 
 	for i := range recs {
 		recs[i].Decision = decisions[i]
+		if lines[i].Line.Unclassified {
+			recs[i].Decision = nil
+		}
+
 		if to := lines[i].Line.TransferTo; to != nil {
 			recs[i].Decision = &ledger.ImportDecision{TransferTo: *to, Cause: ledger.Cause{Method: "source"}}
 		}

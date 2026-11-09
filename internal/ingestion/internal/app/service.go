@@ -84,6 +84,9 @@ type Repository interface {
 	DeleteConnection(ctx context.Context, booksID int64, id uuid.UUID) error
 	// LockBookPairing holds the book's pairing lock for one account batch of a sync (A218 rule 3).
 	LockBookPairing(ctx context.Context, booksID int64) (unlock func(), err error)
+	// TransferReviews lists the records of rule 3 of A216: in review transfer on an account other
+	// than accountID, of amount in currency, dated in [from, to].
+	TransferReviews(ctx context.Context, booksID int64, accountID uuid.UUID, amount int64, currency string, from, to time.Time) ([]domain.ExternalRecord, error)
 	// RecordCounterparties returns the counterparty of each record that has one.
 	RecordCounterparties(ctx context.Context, booksID int64, ids []uuid.UUID) (map[uuid.UUID]string, error)
 	// BookHolders lists the holder digests of the book's mapped external accounts (A217).
