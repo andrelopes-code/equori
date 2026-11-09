@@ -19,8 +19,9 @@ func TestFeedUserAgent(t *testing.T) {
 
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mu.Lock()
+		defer mu.Unlock()
+
 		agents = append(agents, r.UserAgent())
-		mu.Unlock()
 
 		_, _ = w.Write([]byte(`{"value":[]}`))
 	}))
