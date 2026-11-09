@@ -14,6 +14,8 @@ import { useMoneyFormat } from "@/privacy/use-money-format";
 // them; ratios are not amounts and stay readable.
 export interface IndicatorFormat {
   money: (amount: number) => string;
+  // An amount without its fraction, for the ticks of a value axis.
+  wholeMoney: (amount: number) => string;
   percent: (bp: number) => string;
   // The ratio of a position row: months of expense for liquidity, a percentage for the others.
   ratio: (kind: PositionKind, bp: number) => string;
@@ -34,12 +36,22 @@ export function useIndicatorFormat(currency: string): IndicatorFormat | null {
 
   if (scale === null) return null;
 
+  const whole = (amount: number) => {
+    const unit = 10 ** scale(currency);
+
+    return fmt
+      .segments({ amount: amount - (amount % unit), currency }, scale(currency))
+      .filter((segment) => segment.kind !== "fraction")
+      .map((segment) => segment.text)
+      .join("");
+  };
   const percent = (bp: number) => formatBasisPoints(bp, locale);
   const months = (bp: number) =>
     t("overview.indicators.months", { months: formatMonths(bp, locale) });
 
   return {
     money: (amount) => fmt.money({ amount, currency }, scale(currency)),
+    wholeMoney: whole,
     percent,
     ratio: (kind, bp) => (kind === "liquidity" ? months(bp) : percent(bp)),
     points: (bp) =>

@@ -17,6 +17,7 @@ export interface ReserveChartProps {
 
 // The third question: how much stands in liquid accounts against what is owed. Both are amounts of
 // the report currency, so they share one axis that starts at zero; the legend writes each last value.
+// Debts are an area too: a thin line over the large liquid area, a fraction of its height, was lost.
 export function ReserveChart({ report, incomplete }: ReserveChartProps) {
   const t = useT();
   const [locale] = useAppLocale();
@@ -38,11 +39,10 @@ export function ReserveChart({ report, incomplete }: ReserveChartProps) {
     },
     {
       id: "debts",
-      kind: "line",
+      kind: "area",
       field: "debts",
       label: t("report.indicators.reserve.debts"),
       format: format.money,
-      stroke: "dashed",
       markers: "last",
     },
   ];
@@ -56,7 +56,7 @@ export function ReserveChart({ report, incomplete }: ReserveChartProps) {
       data={data}
       series={series}
       x={{ field: "label" }}
-      y={{ format: format.money, extent: "zero" }}
+      y={{ format: format.wholeMoney, extent: "zero" }}
       legendValues
     />
   );

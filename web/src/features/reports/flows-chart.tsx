@@ -16,7 +16,8 @@ export interface FlowsChartProps {
 }
 
 // The last question: what came in and what went out each month. A texture tells the two series apart
-// beside their color, and an incomplete last month is banded and named.
+// beside their color, and an incomplete last month is marked by a labelled line: a band was a pale
+// block that clipped its label.
 export function FlowsChart({ report, incomplete }: FlowsChartProps) {
   const t = useT();
   const [locale] = useAppLocale();
@@ -48,11 +49,11 @@ export function FlowsChart({ report, incomplete }: FlowsChartProps) {
     incomplete && last !== undefined
       ? [
           {
-            kind: "band",
+            kind: "line",
             axis: "x",
-            from: last,
-            to: last,
+            value: last,
             label: t("report.indicators.flows.progress"),
+            labelPlacement: "start",
           },
         ]
       : [];
@@ -66,7 +67,7 @@ export function FlowsChart({ report, incomplete }: FlowsChartProps) {
       data={data}
       series={series}
       x={{ field: "label" }}
-      y={{ format: format.money }}
+      y={{ format: format.wholeMoney }}
       annotations={annotations}
       texture
     />
