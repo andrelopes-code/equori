@@ -464,7 +464,7 @@ function percentWithMargin(
 
 // periodReturn is `period_bp` when it reads true: with a benchmark, or without one for a reason
 // of PERIOD_REASONS or none (amendment A208 R8).
-function periodReturn(report: ReturnReport): number | undefined {
+export function periodReturn(report: ReturnReport): number | undefined {
   const reason = report.unavailable_reason ?? "";
   const keeps = reason === "" || PERIOD_REASONS.includes(reason);
 

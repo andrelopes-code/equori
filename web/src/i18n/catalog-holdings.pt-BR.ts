@@ -22,7 +22,7 @@ export const holdingsPtBR: Record<keyof typeof holdingsEn, string> = {
   "holdings.return.period": "Retorno do período",
   "holdings.return.personal": "Sua taxa pessoal ao ano",
   "holdings.period.year": "Últimos 12 meses",
-  "holdings.method": "Como é calculado",
+  "holdings.method": "Detalhes e método",
   "holdings.method.period": "Retorno do período",
   "holdings.method.personal": "Sua taxa pessoal ao ano",
   "holdings.method.difference":
@@ -89,4 +89,33 @@ export const holdingsPtBR: Record<keyof typeof holdingsEn, string> = {
   "taxYear.class.fund_equity": "Fundos de ações",
   "taxYear.class.crypto": "Criptoativos",
   "taxYear.class.currency": "Moedas",
+  "return.subject.portfolio": "a carteira",
+  "return.subject.account": "a conta",
+  "return.verdict.rate":
+    "No período, {subject} rendeu {return}: {percent} do {index} ({annual} ao ano)",
+  "return.verdict.above":
+    "No período, {subject} rendeu {return}: {delta} p.p. acima do {index}",
+  "return.verdict.below":
+    "No período, {subject} rendeu {return}: {delta} p.p. abaixo do {index}",
+  "return.verdict.inline":
+    "No período, {subject} rendeu {return}: em linha com o {index}",
+  "return.verdict.index":
+    "No período, {subject} rendeu {return}, contra {indexReturn} do {index}",
+  "return.verdict.period": "No período, {subject} rendeu {return}",
+  "return.verdict.real": ", com retorno real de {real} sobre o {inflation}",
+  "return.against.index": "Contra o {index}",
+  "return.against.inflation": "Contra a inflação",
+  "return.against.window": "{from} a {until} · {days} dias",
+  "return.against.months": "{from} a {until}",
+  "return.chip.percent": "{percent} do {index}",
+  "return.chip.real": "{real} real",
+  "return.bar.portfolio": "Carteira",
+  "return.bar.account": "Conta",
+  "return.bars.label": "{subject} {value}, {index} {indexValue}",
+  "return.money.title": "Em dinheiro",
+  "return.money.opening": "Saldo inicial",
+  "return.money.deposits": "Aportes líquidos",
+  "return.money.gain": "Rendimento",
+  "return.money.closing": "Saldo final",
+  "return.growth.title": "De onde veio o crescimento",
 };

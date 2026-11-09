@@ -20,7 +20,7 @@ export const holdingsEn = {
   "holdings.return.period": "Return of the period",
   "holdings.return.personal": "Your personal rate a year",
   "holdings.period.year": "Last 12 months",
-  "holdings.method": "How it is calculated",
+  "holdings.method": "Details and method",
   "holdings.method.period": "Return of the period",
   "holdings.method.personal": "Your personal rate a year",
   "holdings.method.difference":
@@ -87,4 +87,33 @@ export const holdingsEn = {
   "taxYear.class.fund_equity": "Equity funds",
   "taxYear.class.crypto": "Crypto assets",
   "taxYear.class.currency": "Currencies",
+  "return.subject.portfolio": "the portfolio",
+  "return.subject.account": "the account",
+  "return.verdict.rate":
+    "In the period, {subject} returned {return}: {percent} of the {index} ({annual} a year)",
+  "return.verdict.above":
+    "In the period, {subject} returned {return}: {delta} pp above the {index}",
+  "return.verdict.below":
+    "In the period, {subject} returned {return}: {delta} pp below the {index}",
+  "return.verdict.inline":
+    "In the period, {subject} returned {return}: in line with the {index}",
+  "return.verdict.index":
+    "In the period, {subject} returned {return}, against {indexReturn} of the {index}",
+  "return.verdict.period": "In the period, {subject} returned {return}",
+  "return.verdict.real": ", with a real return of {real} over the {inflation}",
+  "return.against.index": "Against the {index}",
+  "return.against.inflation": "Against inflation",
+  "return.against.window": "{from} to {until} · {days} days",
+  "return.against.months": "{from} to {until}",
+  "return.chip.percent": "{percent} of the {index}",
+  "return.chip.real": "{real} real",
+  "return.bar.portfolio": "Portfolio",
+  "return.bar.account": "Account",
+  "return.bars.label": "{subject} {value}, {index} {indexValue}",
+  "return.money.title": "In money",
+  "return.money.opening": "Opening balance",
+  "return.money.deposits": "Net deposits",
+  "return.money.gain": "Gain",
+  "return.money.closing": "Closing balance",
+  "return.growth.title": "Where the growth came from",
 };
