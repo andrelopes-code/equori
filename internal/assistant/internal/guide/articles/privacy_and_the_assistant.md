@@ -1,4 +1,4 @@
-Privacy mode hides every amount on screen, including the assistant's answers and its proposal cards. Turn it on in Settings, in the account menu or in the command palette.
+Privacy mode hides every amount on screen, including the assistant's answers and its proposal cards. Turn it on in Settings, in the account menu or in the command palette. It can also turn on by itself when you leave the tab or after 5 minutes idle, in Settings, Privacy; turn it off with the same switch.
 
 The assistant sends your question and the data its tools read to the language model provider chosen in Settings. On a free tier that uses submitted content for training, the panel says so before the first message. Daily limits per provider and model are declared in Settings; when they are reached, or the provider's quota runs out, the assistant shows when it returns.
 

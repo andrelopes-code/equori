@@ -6,6 +6,7 @@ import { catalogEn } from "@/i18n/catalog.en";
 import { catalogPtBR } from "@/i18n/catalog.pt-BR";
 import { fakeApi, json, problem } from "@/testing/fake-api";
 import { renderApp } from "@/testing/render-app";
+import { storedAppearance } from "@/theme/appearance";
 
 interface Sent {
   route: string;
@@ -295,6 +296,23 @@ describe("settings page", () => {
       await userEvent.click(toggle);
       expect(toggle).toBeChecked();
       expect(localStorage.getItem("equori.privacy")).toBe("hidden");
+    });
+  });
+
+  describe("automatic privacy", () => {
+    beforeEach(() => {
+      localStorage.clear();
+    });
+
+    it("stores the idle choice outside the appearance", async () => {
+      await renderApp("/settings?section=appearance", { fetch: api([]) });
+      await userEvent.click(
+        await screen.findByRole("radio", {
+          name: catalogPtBR["settings.privacy.auto.idle"],
+        }),
+      );
+      expect(localStorage.getItem("equori.privacyAuto")).toBe("idle");
+      expect(storedAppearance()).not.toHaveProperty("privacyAuto");
     });
   });
 

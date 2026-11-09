@@ -143,6 +143,10 @@ export const catalogPtBR: Catalog = {
   "settings.privacy.title": "Privacidade",
   "settings.privacy.description":
     "Substitui todos os valores por ••••. Vale só neste dispositivo.",
+  "settings.privacy.auto": "Ocultar valores automaticamente",
+  "settings.privacy.auto.never": "Nunca",
+  "settings.privacy.auto.leave": "Ao sair da aba",
+  "settings.privacy.auto.idle": "Após 5 minutos parado",
   "settings.integrations.title": "Integrações",
   "settings.data.title": "Dados",
   "settings.data.description":

@@ -1,7 +1,11 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { PrivacyProvider, usePrivacy } from "@/privacy/privacy-provider";
+import {
+  IDLE_MS,
+  PrivacyProvider,
+  usePrivacy,
+} from "@/privacy/privacy-provider";
 
 function Probe() {
   const { hidden, toggle } = usePrivacy();
@@ -82,5 +86,71 @@ describe("PrivacyProvider", () => {
   it("is hidden for a consumer outside the provider", () => {
     render(<Probe />);
     expect(screen.getByRole("button")).toHaveTextContent("hidden");
+  });
+});
+
+describe("PrivacyProvider automatic hiding", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  function leaveTab() {
+    act(() => {
+      Object.defineProperty(document, "visibilityState", {
+        configurable: true,
+        value: "hidden",
+      });
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+  }
+
+  function wait(ms: number) {
+    act(() => {
+      vi.advanceTimersByTime(ms);
+    });
+  }
+
+  const rows: [string | null, "leave" | "idle", boolean][] = [
+    ["never", "leave", false],
+    ["never", "idle", false],
+    ["leave", "leave", true],
+    ["leave", "idle", false],
+    ["idle", "idle", true],
+    [null, "idle", false],
+  ];
+
+  it.each(rows)("auto %s, event %s, hidden %s", (auto, event, expected) => {
+    if (auto !== null) localStorage.setItem("equori.privacyAuto", auto);
+    renderProbe();
+    if (event === "leave") leaveTab();
+    else wait(IDLE_MS);
+    expect(screen.getByRole("button")).toHaveTextContent(
+      expected ? "hidden" : "visible",
+    );
+    expect(localStorage.getItem("equori.privacy")).toBe(
+      expected ? "hidden" : null,
+    );
+  });
+
+  it("stays visible one millisecond before the idle limit", () => {
+    localStorage.setItem("equori.privacyAuto", "idle");
+    renderProbe();
+    wait(IDLE_MS - 1);
+    expect(screen.getByRole("button")).toHaveTextContent("visible");
+  });
+
+  it("restarts the idle timer on activity", () => {
+    localStorage.setItem("equori.privacyAuto", "idle");
+    renderProbe();
+    wait(200_000);
+    act(() => {
+      window.dispatchEvent(new Event("keydown"));
+    });
+    wait(IDLE_MS - 1);
+    expect(screen.getByRole("button")).toHaveTextContent("visible");
   });
 });

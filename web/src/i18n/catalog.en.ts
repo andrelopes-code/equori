@@ -140,6 +140,10 @@ export const catalogEn = {
   "settings.privacy.title": "Privacy",
   "settings.privacy.description":
     "Replaces every amount with ••••. Applies to this browser only.",
+  "settings.privacy.auto": "Hide amounts automatically",
+  "settings.privacy.auto.never": "Never",
+  "settings.privacy.auto.leave": "When I leave the tab",
+  "settings.privacy.auto.idle": "After 5 minutes idle",
   "settings.integrations.title": "Integrations",
   "settings.data.title": "Data",
   "settings.data.description":
