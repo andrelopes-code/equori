@@ -10,7 +10,6 @@ import {
 } from "@slotted/react/page-header";
 import { SkeletonText } from "@slotted/react/skeleton";
 import { Stack } from "@slotted/react/stack";
-import { Heading, Text } from "@slotted/react/typography";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "@tanstack/react-router";
 import { useState } from "react";
@@ -20,12 +19,16 @@ import { instrumentQuery, termsQuery } from "@/features/instruments/api";
 import { InstrumentFacts } from "@/features/instruments/instrument-facts";
 import { InstrumentPositions } from "@/features/instruments/instrument-positions";
 import { typeLabel } from "@/features/instruments/instrument-labels";
-import { PriceHistory } from "@/features/instruments/price-history";
+import { InstrumentPrices } from "@/features/instruments/instrument-prices";
 import { EditInstrumentDialog } from "@/features/instruments/edit-instrument-dialog";
 import { RecordPriceDialog } from "@/features/instruments/record-price-dialog";
 import { TermsDialog } from "@/features/instruments/terms-dialog";
 import { TermsSection } from "@/features/instruments/terms-section";
 import { quoteOf } from "@/features/instruments/quote";
+import {
+  historyPending,
+  historyPollMs,
+} from "@/features/instruments/use-history-refresh";
 import { settingsQuery } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
 import { HeaderAction } from "@/ui/header-action";
@@ -38,7 +41,11 @@ export function InstrumentPage() {
   const t = useT();
   const api = useApi();
   const { code } = useParams({ from: "/_authed/instruments/$code" });
-  const instrument = useQuery(instrumentQuery(api, code));
+  const instrument = useQuery({
+    ...instrumentQuery(api, code),
+    refetchInterval: (query) =>
+      historyPending(query.state.data?.coverage) ? historyPollMs : false,
+  });
   const base = useQuery(settingsQuery(api)).data?.base_currency;
   const [recording, setRecording] = useState(false);
   const [editingTerms, setEditingTerms] = useState(false);
@@ -118,20 +125,13 @@ export function InstrumentPage() {
         <Stack gap={6}>
           <InstrumentPositions code={i.code} />
 
-          <Stack gap={3}>
-            <Heading level={2} size="md">
-              {t("instrument.prices.title")}
-            </Heading>
-            {quote === null ? (
-              <Text tone="muted">{t("instrument.prices.noQuote")}</Text>
-            ) : (
-              <PriceHistory
-                instrument={i.code}
-                quote={quote}
-                first={i.coverage?.first ?? null}
-              />
-            )}
-          </Stack>
+          <InstrumentPrices
+            instrument={i}
+            quote={quote}
+            onRecord={() => {
+              setRecording(true);
+            }}
+          />
           {fixedIncome && terms.isError && (
             <QueryError
               error={terms.error}

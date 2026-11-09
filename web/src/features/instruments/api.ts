@@ -1,4 +1,8 @@
-import { queryOptions, useMutation } from "@tanstack/react-query";
+import {
+  queryOptions,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
 import type { Client } from "openapi-fetch";
 
 import { useApi } from "@/api/api-context";
@@ -121,6 +125,22 @@ export function useRecordPrice() {
   return useMutation({
     mutationFn: async (input: components["schemas"]["PriceInput"]) =>
       unwrap(await api.POST("/prices", { body: input })),
+  });
+}
+
+export function useRequestHistory() {
+  const api = useApi();
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ code, from }: { code: string; from: string }) =>
+      unwrap(
+        await api.POST("/instruments/{code}/history", {
+          params: { path: { code } },
+          body: { from },
+        }),
+      ),
+    onSuccess: (_data, { code }) =>
+      client.invalidateQueries({ queryKey: instrumentKeys.instrument(code) }),
   });
 }
 

@@ -149,6 +149,156 @@ describe("Instrument page", () => {
     });
   });
 
+  describe("coverage line", () => {
+    const withCoverage = (coverage: unknown, sent: unknown[] = []) =>
+      api({
+        "GET /api/v1/instruments/PETR4": () =>
+          json(200, {
+            code: "PETR4",
+            type: "stock",
+            scale: 0,
+            name: "Petrobras PN",
+            quote_currency: "BRL",
+            exchange: "B3SA",
+            coverage,
+          }),
+        "POST /api/v1/instruments/PETR4/history": async (req) => {
+          sent.push(await req.json());
+          return new Response(null, { status: 202 });
+        },
+      });
+    const source = (over: object) => ({
+      id: "b3_cotahist",
+      enabled: true,
+      official: true,
+      first: null,
+      last: null,
+      history: null,
+      ...over,
+    });
+    const base = {
+      first: "2026-10-14",
+      last: "2026-10-16",
+      count: 2,
+      stale: false,
+    };
+    const failed = {
+      from: "2006-10-17",
+      done: false,
+      error: "fetch PTAX USD: status 500",
+    };
+
+    it("MQ35: states the dates, the count and the source of the quotes", async () => {
+      const fetch = withCoverage({
+        ...base,
+        sources: [source({ first: "2026-10-14", last: "2026-10-16" })],
+      });
+      await renderApp("/instruments/PETR4", { fetch });
+
+      expect(
+        await screen.findByText(
+          "Quotes from 10/14/2026 to 10/16/2026 · 2 quotes · B3, daily quotes",
+        ),
+      ).toBeInTheDocument();
+    });
+
+    it("MQ35: loads the history since a date from the dialog", async () => {
+      const sent: unknown[] = [];
+      const fetch = withCoverage(
+        {
+          first: null,
+          last: null,
+          count: 0,
+          stale: false,
+          sources: [source({})],
+        },
+        sent,
+      );
+      await renderApp("/instruments/PETR4", { fetch });
+      const user = userEvent.setup();
+
+      expect(await screen.findByText("No quote")).toBeInTheDocument();
+      await user.click(
+        screen.getByRole("button", {
+          name: catalogEn["instruments.history.load"],
+        }),
+      );
+      const dialog = await screen.findByRole("dialog");
+      await user.click(
+        within(dialog).getByRole("button", {
+          name: catalogEn["instruments.history.send"],
+        }),
+      );
+
+      await waitFor(() => {
+        expect(sent).toEqual([{ from: "2006-10-17" }]);
+      });
+    });
+
+    it("MQ35: states a history that is loading", async () => {
+      const fetch = withCoverage({
+        ...base,
+        sources: [source({ history: { ...failed, error: null } })],
+      });
+      await renderApp("/instruments/PETR4", { fetch });
+
+      expect(
+        await screen.findByText("Loading history since 10/17/2006"),
+      ).toBeInTheDocument();
+    });
+
+    it("MQ35: states a failed history and tries again from the same date", async () => {
+      const sent: unknown[] = [];
+      const fetch = withCoverage(
+        { ...base, sources: [source({ history: failed })] },
+        sent,
+      );
+      await renderApp("/instruments/PETR4", { fetch });
+
+      expect(
+        await screen.findByText(
+          "History since 10/17/2006 failed: fetch PTAX USD: status 500",
+        ),
+      ).toBeInTheDocument();
+      await userEvent.setup().click(
+        screen.getByRole("button", {
+          name: catalogEn["instruments.history.retry"],
+        }),
+      );
+
+      await waitFor(() => {
+        expect(sent).toEqual([{ from: "2006-10-17" }]);
+      });
+    });
+
+    it("MQ35: warns that the last quote is late", async () => {
+      const fetch = withCoverage({
+        ...base,
+        last: "2026-10-12",
+        stale: true,
+        sources: [source({ last: "2026-10-12" })],
+      });
+      await renderApp("/instruments/PETR4", { fetch });
+
+      expect(
+        await screen.findByText("The last quote, of 10/12/2026, is late."),
+      ).toBeInTheDocument();
+    });
+
+    it("MQ35: states the age of the last quote when no source is enabled", async () => {
+      const fetch = withCoverage({
+        ...base,
+        last: "2026-10-12",
+        sources: [source({ enabled: false, last: "2026-10-12" })],
+      });
+      await renderApp("/instruments/PETR4", { fetch });
+
+      expect(
+        await screen.findByText("Last quote 5 days ago"),
+      ).toBeInTheDocument();
+    });
+  });
+
   it("records a manual price and says that one of the same date is replaced", async () => {
     const sent: unknown[] = [];
     const fetch = api({
