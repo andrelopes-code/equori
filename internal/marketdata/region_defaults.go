@@ -16,7 +16,7 @@ func (m *Module) DefaultCalendar(region string) string {
 func SuggestedFeeds(region string) []string {
 	switch {
 	case region == "BR":
-		return []string{"b3_consolidated", "bcb_ptax", "tesouro_direto", "br_cdi", "br_ipca", "br_focus"}
+		return []string{"b3_consolidated", "bcb_ptax", "tesouro_direto", "cvm_funds", "br_cdi", "br_ipca", "br_focus"}
 	case region == "US":
 		return []string{"us_sofr", "us_cpi"}
 	case slices.Contains(euroArea, region):

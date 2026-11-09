@@ -10,6 +10,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed/b3consolidated"
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed/b3cotahist"
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed/bcbptax"
+	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed/cvmfunds"
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed/ecb"
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed/tesourodireto"
 )
@@ -78,6 +79,16 @@ func sourceEntries() []sourceEntry {
 			historyYears: indexHistoryYears,
 			build: func(hc *http.Client, urls map[string]string) feed.Source {
 				return tesourodireto.New(hc, urls["tesouro_direto"])
+			},
+		},
+		{
+			id:           "cvm_funds",
+			defaultURL:   "https://dados.cvm.gov.br/dados/FI/DOC/INF_DIARIO/DADOS",
+			lag:          10,
+			official:     true,
+			historyYears: 5,
+			build: func(hc *http.Client, urls map[string]string) feed.Source {
+				return cvmfunds.New(hc, urls["cvm_funds"])
 			},
 		},
 	}

@@ -47,7 +47,7 @@ func TestNewSources(t *testing.T) {
 func TestSourceIDs(t *testing.T) {
 	t.Parallel()
 
-	if got := strings.Join(marketdata.SourceIDs(), ","); got != "b3_cotahist,b3_consolidated,bcb_ptax,ecb,tesouro_direto" {
+	if got := strings.Join(marketdata.SourceIDs(), ","); got != "b3_cotahist,b3_consolidated,bcb_ptax,ecb,tesouro_direto,cvm_funds" {
 		t.Fatalf("ids = %s", got)
 	}
 }

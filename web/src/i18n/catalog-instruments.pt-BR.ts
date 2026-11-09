@@ -51,6 +51,7 @@ export const instrumentsPtBR: Record<keyof typeof instrumentsEn, string> = {
   "instruments.source.bcb_ptax": "Banco Central, PTAX",
   "instruments.source.ecb": "Banco Central Europeu",
   "instruments.source.tesouro_direto": "Tesouro Direto",
+  "instruments.source.cvm_funds": "CVM",
   "instrument.facts": "Cadastro",
   "instrument.edit": "Editar cadastro",
   "instrument.edit.description":
