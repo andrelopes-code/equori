@@ -167,7 +167,13 @@ export const catalogEn = {
   "import.label": "Import",
   "import.description":
     "Restores an archive into an equori without transactions; the archive's data replace the starting accounts. An archive of this version of equori or an earlier one imports; an archive of a later version does not.",
-  "import.blocked": "Import needs an equori without transactions.",
+  "import.blocked":
+    "This equori holds transactions. Replace content deletes them and imports the archive in their place.",
+  "import.replace": "Replace content",
+  "import.replace.title": "Replace the content of this book?",
+  "import.replace.hint":
+    "Every account, transaction, budget, schedule and connection of “{name}”, and the conversations with the assistant, are deleted, then the archive is imported. The book, its members and its access tokens are kept. A refused import keeps the current content.",
+  "import.replace.confirm": "Type the book name to confirm",
   "import.choose": "Choose archive",
   "import.passphrase": "Passphrase of the credentials",
   "import.passphraseHint": "Only for an archive exported with credentials.",

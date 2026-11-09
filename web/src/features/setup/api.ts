@@ -597,6 +597,8 @@ export interface ImportArchiveInput {
   passphrase: string;
   // Imports an archive that carries credentials without them.
   skipCredentials: boolean;
+  // The name of the book whose content the archive replaces (export design R1).
+  replaceBooksName?: string | undefined;
 }
 
 export function useImportArchive() {
@@ -606,11 +608,14 @@ export function useImportArchive() {
       file,
       passphrase,
       skipCredentials,
+      replaceBooksName,
     }: ImportArchiveInput) => {
       const body = new FormData();
       // The server reads a part named passphrase before or after the file.
       if (passphrase !== "") body.append("passphrase", passphrase);
       if (skipCredentials) body.append("skip_credentials", "true");
+      if (replaceBooksName !== undefined)
+        body.append("replace_books_name", replaceBooksName);
       body.append("file", file);
       return unwrap(
         await api.POST("/imports/archive", {

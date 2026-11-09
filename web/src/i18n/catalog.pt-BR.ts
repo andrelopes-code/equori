@@ -170,7 +170,13 @@ export const catalogPtBR: Catalog = {
   "import.label": "Importação",
   "import.description":
     "Restaura um arquivo num equori sem transações; os dados do arquivo substituem as contas iniciais. Um arquivo desta versão do equori ou de uma anterior é importado; um arquivo de uma versão posterior, não.",
-  "import.blocked": "A importação exige um equori sem transações.",
+  "import.blocked":
+    "Este equori tem transações. Substituir conteúdo apaga-as e importa o arquivo no lugar delas.",
+  "import.replace": "Substituir conteúdo",
+  "import.replace.title": "Substituir o conteúdo deste livro?",
+  "import.replace.hint":
+    "Todas as contas, transações, orçamentos, agendamentos e conexões de “{name}”, e as conversas com o assistente, são apagados; depois o arquivo é importado. O livro, os membros e os tokens de acesso são mantidos. Uma importação recusada mantém o conteúdo atual.",
+  "import.replace.confirm": "Digite o nome do livro para confirmar",
   "import.choose": "Escolher arquivo",
   "import.passphrase": "Frase-senha das credenciais",
   "import.passphraseHint": "Só para um arquivo exportado com credenciais.",
