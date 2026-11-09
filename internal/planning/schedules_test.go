@@ -32,9 +32,9 @@ type fixture struct {
 	landlord                        string
 }
 
-func newFixture(t *testing.T, today string) fixture {
+func newFixture(t *testing.T, today string, opts ...apitest.Option) fixture {
 	t.Helper()
-	h := apitest.New(t, apitest.Today(today))
+	h := apitest.New(t, append([]apitest.Option{apitest.Today(today)}, opts...)...)
 	f := fixture{h: h}
 	f.checking = h.Account("Nubank checking", "asset", "checking", nil)
 	f.savings = h.Account("Emergency fund", "asset", "savings", nil)

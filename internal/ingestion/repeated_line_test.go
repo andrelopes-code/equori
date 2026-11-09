@@ -91,42 +91,48 @@ func TestS346RepeatedFileLine(t *testing.T) {
 func TestS346DistinctLinesOfOneFile(t *testing.T) {
 	t.Parallel()
 
-	h := apitest.New(t)
-	account := h.Account("Bank", "asset", "checking", nil)
-	bakery := apitest.OFXLine{Date: "20261005", Amount: "-50.00", Name: "PADARIA"}
-	market := apitest.OFXLine{Date: "20261005", Amount: "-50.00", Name: "MERCADO"}
-	third := apitest.OFXLine{Date: "20261005", Amount: "-50.00", Name: "FARMACIA"}
+	for _, pr := range apitest.Profiles() {
+		t.Run(pr.Name, func(t *testing.T) {
+			t.Parallel()
 
-	b := mustImport(t, h, account, "ofx", "a.ofx", apitest.OFX("", bakery, market))
-	if got, want := counts(b), "received 2 ignored 0 matched 0 created 2 review 0"; got != want {
-		t.Fatalf("first file = %s, want %s", got, want)
-	}
+			h := apitest.New(t, apitest.As(pr))
+			account := h.Account("Bank", "asset", "checking", nil)
+			bakery := apitest.OFXLine{Date: "20261005", Amount: "-50.00", Name: "PADARIA"}
+			market := apitest.OFXLine{Date: "20261005", Amount: "-50.00", Name: "MERCADO"}
+			third := apitest.OFXLine{Date: "20261005", Amount: "-50.00", Name: "FARMACIA"}
 
-	b = mustImport(t, h, account, "ofx", "b.ofx", apitest.OFX("", bakery, market, third))
-	if got, want := counts(b), "received 3 ignored 2 matched 0 created 1 review 0"; got != want {
-		t.Fatalf("second file = %s, want %s", got, want)
-	}
+			b := mustImport(t, h, account, "ofx", "a.ofx", apitest.OFXIn(pr.Base, "", bakery, market))
+			if got, want := counts(b), "received 2 ignored 0 matched 0 created 2 review 0"; got != want {
+				t.Fatalf("first file = %s, want %s", got, want)
+			}
 
-	b = mustImport(t, h, account, "ofx", "c.ofx", apitest.OFX("", apitest.OFXLine{Date: "20261005", Amount: "-50.00", Name: "PADARIA LTDA"}))
-	if got, want := counts(b), "received 1 ignored 0 matched 0 created 0 review 1"; got != want {
-		t.Fatalf("third file = %s, want %s", got, want)
-	}
+			b = mustImport(t, h, account, "ofx", "b.ofx", apitest.OFXIn(pr.Base, "", bakery, market, third))
+			if got, want := counts(b), "received 3 ignored 2 matched 0 created 1 review 0"; got != want {
+				t.Fatalf("second file = %s, want %s", got, want)
+			}
 
-	var record, reason string
-	row := h.Pool.QueryRow(t.Context(), `SELECT id::text, review_reason FROM ingestion_external_record WHERE state = 'needs_review'`)
+			b = mustImport(t, h, account, "ofx", "c.ofx", apitest.OFXIn(pr.Base, "", apitest.OFXLine{Date: "20261005", Amount: "-50.00", Name: "PADARIA LTDA"}))
+			if got, want := counts(b), "received 1 ignored 0 matched 0 created 0 review 1"; got != want {
+				t.Fatalf("third file = %s, want %s", got, want)
+			}
 
-	if err := row.Scan(&record, &reason); err != nil {
-		t.Fatal(err)
-	}
+			var record, reason string
+			row := h.Pool.QueryRow(t.Context(), `SELECT id::text, review_reason FROM ingestion_external_record WHERE state = 'needs_review'`)
 
-	if reason != "duplicate" {
-		t.Fatalf("reason = %s, want duplicate", reason)
-	}
+			if err := row.Scan(&record, &reason); err != nil {
+				t.Fatal(err)
+			}
 
-	h.MustDo(http.MethodPost, "/api/v1/external-records/"+record+"/resolve", map[string]any{"action": "discard"}, http.StatusOK, nil)
+			if reason != "duplicate" {
+				t.Fatalf("reason = %s, want duplicate", reason)
+			}
 
-	if got := transactionCount(t, h); got != 3 {
-		t.Fatalf("transactions = %d, want 3", got)
+			h.MustDo(http.MethodPost, "/api/v1/external-records/"+record+"/resolve", map[string]any{"action": "discard"}, http.StatusOK, nil)
+
+			if got := transactionCount(t, h); got != 3 {
+				t.Fatalf("transactions = %d, want 3", got)
+			}
+		})
 	}
 }
 

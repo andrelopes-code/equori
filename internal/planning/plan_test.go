@@ -269,19 +269,26 @@ func (f fixture) budgetList() budgetList {
 // S162: a plan save creates the budget of a category without one, unless its amount is zero.
 func TestS162SaveCreatesBudget(t *testing.T) {
 	t.Parallel()
-	f := newFixture(t, "2026-11-10")
-	pets := f.h.Account("Pets", "expense", "", nil)
-	gifts := f.h.Account("Gifts", "expense", "", nil)
-	f.savePlan("2026-11", map[string]any{"source": "average_income", "amounts": amounts(pets, apitest.BRL(21000), gifts, apitest.BRL(0))})
 
-	got := f.budgetList()
-	if len(got.Items) != 1 {
-		t.Fatalf("budgets = %+v", got.Items)
-	}
+	for _, pr := range apitest.Profiles() {
+		t.Run(pr.Name, func(t *testing.T) {
+			t.Parallel()
 
-	b := got.Items[0]
-	if b.CategoryID != pets || b.Rollover || len(b.Amounts) != 1 || b.Amounts[0].EffectiveFrom != "2026-11" || b.Amounts[0].Amount.Amount != 21000 {
-		t.Fatalf("budget = %+v", b)
+			f := newFixture(t, "2026-11-10", apitest.As(pr))
+			pets := f.h.Account("Pets", "expense", "", nil)
+			gifts := f.h.Account("Gifts", "expense", "", nil)
+			f.savePlan("2026-11", map[string]any{"source": "average_income", "amounts": amounts(pets, f.h.Money(21000), gifts, f.h.Money(0))})
+
+			got := f.budgetList()
+			if len(got.Items) != 1 {
+				t.Fatalf("budgets = %+v", got.Items)
+			}
+
+			b := got.Items[0]
+			if b.CategoryID != pets || b.Rollover || len(b.Amounts) != 1 || b.Amounts[0].EffectiveFrom != "2026-11" || b.Amounts[0].Amount.Amount != 21000 {
+				t.Fatalf("budget = %+v", b)
+			}
+		})
 	}
 }
 

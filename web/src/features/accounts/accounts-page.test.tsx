@@ -15,6 +15,7 @@ import {
 } from "@/testing/account-api";
 import { fakeApi, json, problem } from "@/testing/fake-api";
 import { moneyValue } from "@/testing/money-value";
+import { profileRoutes, profiles } from "@/testing/profiles";
 import { renderApp } from "@/testing/render-app";
 
 function api(queries: URLSearchParams[] = [], overrides = {}) {
@@ -91,24 +92,37 @@ function comparedIn90Days(
   };
 }
 
+const figuresByProfile: Record<string, string[]> = {
+  brazil: ["R$15,390.55", "R$14,500.00", "R$890.55"],
+  neutral: ["$15,390.55", "$14,500.00", "$890.55"],
+  "foreign base": ["$15,690.55", "$14,500.00", "$1,190.55"],
+};
+
+const cases = profiles.map((profile) => ({
+  profile,
+  figures: figuresByProfile[profile.name] ?? [],
+}));
+
 describe("AccountsPage", () => {
-  it("adds up assets, liabilities and net worth in the base currency", async () => {
-    await renderApp("/accounts", { fetch: api() });
-    const figures = await screen.findByRole("region", {
-      name: catalogEn["balanceSheet.figures"],
-    });
-    await waitFor(() => {
-      expect(
-        within(figures).getByText(moneyValue("R$15,390.55")),
-      ).toBeInTheDocument();
-    });
-    expect(
-      within(figures).getByText(moneyValue("R$14,500.00")),
-    ).toBeInTheDocument();
-    expect(
-      within(figures).getByText(moneyValue("R$890.55")),
-    ).toBeInTheDocument();
-  });
+  it.each(cases)(
+    "adds up assets, liabilities and net worth in the base currency ($profile.name)",
+    async ({ profile, figures }) => {
+      await renderApp("/accounts", {
+        fetch: api([], profileRoutes(profile)),
+      });
+      const region = await screen.findByRole("region", {
+        name: catalogEn["balanceSheet.figures"],
+      });
+      expect(figures).toHaveLength(3);
+      await waitFor(() => {
+        for (const figure of figures) {
+          expect(
+            within(region).getByText(moneyValue(figure)),
+          ).toBeInTheDocument();
+        }
+      });
+    },
+  );
 
   it("compares with the balances of 30 days earlier", async () => {
     const queries: URLSearchParams[] = [];

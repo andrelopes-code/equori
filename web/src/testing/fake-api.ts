@@ -1,4 +1,4 @@
-type Route = (req: Request) => Response | Promise<Response>;
+export type Route = (req: Request) => Response | Promise<Response>;
 
 export type FakeFetch = typeof fetch & { calls: string[] };
 
