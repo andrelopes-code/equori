@@ -136,6 +136,12 @@ type (
 	PairedEvent     = app.PairedEvent
 )
 
+// Counterpart and CounterpartQuery describe Counterparts (A216 rule 2).
+type (
+	Counterpart      = app.Counterpart
+	CounterpartQuery = app.CounterpartQuery
+)
+
 // LineError names the line of a batch that a ledger rule rejected.
 type LineError = app.LineError
 
@@ -151,6 +157,7 @@ var (
 	ErrVersionConflict        = domain.ErrVersionConflict
 	ErrNotCategorizable       = domain.ErrNotCategorizable
 	ErrPairingAmbiguous       = app.ErrPairingAmbiguous
+	ErrNotPairable            = app.ErrNotPairable
 	ErrReconciled             = domain.ErrReconciled
 	ErrNotRetypable           = domain.ErrNotRetypable
 	ErrMixedInstruments       = app.ErrMixedInstruments
@@ -484,6 +491,17 @@ func (m *Module) LatestPayeeCategories(ctx context.Context, booksID int64, payee
 // pairing it with the imported other side when one exists.
 func (m *Module) Transfer(ctx context.Context, booksID int64, r TransferRequest) (TransferResult, error) {
 	return m.svc.Transfer(ctx, booksID, r)
+}
+
+// Counterparts lists the transactions a sync line may pair with (A216 rule 2).
+func (m *Module) Counterparts(ctx context.Context, booksID int64, q CounterpartQuery) ([]Counterpart, error) {
+	return m.svc.Counterparts(ctx, booksID, q)
+}
+
+// PairImported makes a transaction the transfer of an imported line on accountID and returns
+// its new version; ErrNotPairable when the ledger refuses (A218 rule 1).
+func (m *Module) PairImported(ctx context.Context, booksID int64, txID, accountID, recordID uuid.UUID) (int, error) {
+	return m.svc.PairImported(ctx, booksID, txID, accountID, recordID)
 }
 
 // AssertSyncedBalance records an aggregator's balance, or decides the open assertion of the

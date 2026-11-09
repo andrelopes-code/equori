@@ -491,6 +491,8 @@ type Repository interface {
 	StatementByDueDate(ctx context.Context, booksID int64, accountID uuid.UUID, due time.Time) (domain.ReferenceMonth, error)
 	// PairingCandidates returns the ids that pair with a transfer, by date then id (P5b amendment A29).
 	PairingCandidates(ctx context.Context, q PairingQuery) ([]uuid.UUID, error)
+	// ImportCounterparts returns the rows of ImportCounterparts for amount, the opposite of the line.
+	ImportCounterparts(ctx context.Context, booksID int64, accountID uuid.UUID, currency money.Currency, amount int64, from, to time.Time) ([]Counterpart, error)
 	// ClearRecordLinks removes the record links of a transaction's postings.
 	ClearRecordLinks(ctx context.Context, booksID int64, txID uuid.UUID) error
 

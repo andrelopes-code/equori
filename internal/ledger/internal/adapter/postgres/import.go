@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"errors"
+	"slices"
 	"time"
 
 	"github.com/google/uuid"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/andrelopes-code/equori/internal/ledger/internal/app"
 	"github.com/andrelopes-code/equori/internal/ledger/internal/domain"
+	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
 func (r *Repository) TransactionByExternalRecord(ctx context.Context, booksID int64, recordID uuid.UUID) (uuid.UUID, error) {
@@ -136,6 +138,22 @@ func (r *Repository) PairingCandidates(ctx context.Context, q app.PairingQuery) 
 		BooksID: q.BooksID, TransactionID: q.TransactionID, AccountID: q.AccountID, Amount: q.Amount,
 		FromDate: q.From, ToDate: q.To, ExcludedAccounts: q.ExcludedAccounts,
 	})
+}
+
+func (r *Repository) ImportCounterparts(ctx context.Context, booksID int64, accountID uuid.UUID, currency money.Currency, amount int64, from, to time.Time) ([]app.Counterpart, error) {
+	rows, err := r.q.ImportCounterparts(ctx, ImportCounterpartsParams{
+		BooksID: booksID, FromDate: from, ToDate: to, AccountID: accountID, Currency: string(currency), Amount: amount,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	out := mapAll(rows, func(row ImportCounterpartsRow) app.Counterpart {
+		return app.Counterpart{TransactionID: row.TransactionID, AccountID: row.AccountID, RecordID: row.RecordID, CardPayment: row.CardPayment}
+	})
+
+	// A transaction with two qualifying postings is one counterpart; the rows are ordered by transaction.
+	return slices.CompactFunc(out, func(a, b app.Counterpart) bool { return a.TransactionID == b.TransactionID }), nil
 }
 
 func (r *Repository) ClearRecordLinks(ctx context.Context, booksID int64, txID uuid.UUID) error {
