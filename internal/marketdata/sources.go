@@ -10,6 +10,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed/b3consolidated"
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed/b3cotahist"
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed/bcbptax"
+	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed/coinbase"
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed/cvmfunds"
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed/ecb"
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed/tesourodireto"
@@ -89,6 +90,16 @@ func sourceEntries() []sourceEntry {
 			historyYears: 5,
 			build: func(hc *http.Client, urls map[string]string) feed.Source {
 				return cvmfunds.New(hc, urls["cvm_funds"])
+			},
+		},
+		{
+			id:           "coinbase",
+			defaultURL:   "https://api.coinbase.com/api/v3/brokerage/market",
+			lag:          2,
+			official:     true,
+			historyYears: indexHistoryYears,
+			build: func(hc *http.Client, urls map[string]string) feed.Source {
+				return coinbase.New(hc, urls["coinbase"])
 			},
 		},
 	}

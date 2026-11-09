@@ -52,6 +52,7 @@ export const instrumentsEn = {
   "instruments.source.ecb": "European Central Bank",
   "instruments.source.tesouro_direto": "Tesouro Direto",
   "instruments.source.cvm_funds": "CVM",
+  "instruments.source.coinbase": "Coinbase",
   "instrument.facts": "Details",
   "instrument.edit": "Edit details",
   "instrument.edit.description":

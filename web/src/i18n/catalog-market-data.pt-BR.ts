@@ -30,6 +30,7 @@ export const marketDataPtBR: Record<keyof typeof marketDataEn, string> = {
   "marketData.feed.tesouro_direto":
     "Preços do Tesouro Direto (Tesouro Nacional)",
   "marketData.feed.cvm_funds": "Valores de cotas de fundos (CVM)",
+  "marketData.feed.coinbase": "Cotações de criptoativos da Coinbase",
   "marketData.feed.br_cdi": "CDI (Banco Central do Brasil)",
   "marketData.feed.br_ipca": "IPCA (Banco Central do Brasil)",
   "marketData.feed.eu_estr": "€STR (Banco Central Europeu)",
