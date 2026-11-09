@@ -49,6 +49,8 @@ type Harness struct {
 	logs   *logBuffer
 	// handler is what the test server runs; Restart swaps it while server goroutines read it.
 	handler atomic.Pointer[http.Handler]
+	// Profile is the language, region and base currency of the owner of New.
+	Profile Profile
 }
 
 // logBuffer keeps every log line of the test, for assertions on what is never logged.
@@ -71,8 +73,13 @@ func (b *logBuffer) String() string {
 	return b.buf.String()
 }
 
-// Option changes the application the harness starts.
-type Option func(*server.Config)
+// Option configures the harness: the server configuration and the profile of the owner of New.
+type Option func(*options)
+
+type options struct {
+	cfg     server.Config
+	profile Profile
+}
 
 // Today fixes the instance clock at 12:00 UTC of date (YYYY-MM-DD).
 func Today(date string) Option {
@@ -83,53 +90,53 @@ func Today(date string) Option {
 
 	clk := clock.New(func() time.Time { return d.Add(12 * time.Hour) })
 
-	return func(c *server.Config) { c.Clock = &clk }
+	return func(o *options) { o.cfg.Clock = &clk }
 }
 
 // Clock replaces the instance clock with now.
 func Clock(now func() time.Time) Option {
 	clk := clock.New(now)
-	return func(c *server.Config) { c.Clock = &clk }
+	return func(o *options) { o.cfg.Clock = &clk }
 }
 
 // IdentityClock replaces the clock of sessions and second factors with now.
 func IdentityClock(now func() time.Time) Option {
-	return func(c *server.Config) { c.IdentityNow = now }
+	return func(o *options) { o.cfg.IdentityNow = now }
 }
 
 // ExtraTools adds tool groups to the registry and the chat set.
 func ExtraTools(groups ...tool.Group) Option {
-	return func(c *server.Config) { c.ExtraTools = append(c.ExtraTools, groups...) }
+	return func(o *options) { o.cfg.ExtraTools = append(o.cfg.ExtraTools, groups...) }
 }
 
 // LLM configures providers for the whole instance through server.Config.LLMProviders (BK24).
 func LLM(providers ...llm.Provider) Option {
-	return func(c *server.Config) { c.LLMProviders = providers }
+	return func(o *options) { o.cfg.LLMProviders = providers }
 }
 
 // LLMWait replaces the timer the chat waits on for a transient cooldown to end (design 2026-10-26 E6).
 func LLMWait(f func(context.Context, time.Time) error) Option {
-	return func(c *server.Config) { c.LLMWait = f }
+	return func(o *options) { o.cfg.LLMWait = f }
 }
 
 // LLMFactory builds the providers members configure, in place of the real adapters.
 func LLMFactory(f func(api, baseURL, key string) llm.Provider) Option {
-	return func(c *server.Config) { c.LLMFactory = f }
+	return func(o *options) { o.cfg.LLMFactory = f }
 }
 
 // Web serves fsys as the single-page application outside /api/.
 func Web(fsys fs.FS) Option {
-	return func(c *server.Config) { c.Web = fsys }
+	return func(o *options) { o.cfg.Web = fsys }
 }
 
 // WebDevPort redirects pages to a Vite server on port of the request's host.
 func WebDevPort(port int) Option {
-	return func(c *server.Config) { c.WebDevPort = port }
+	return func(o *options) { o.cfg.WebDevPort = port }
 }
 
 // APIDocs serves the API reference at /docs and the contract at /openapi.yaml.
 func APIDocs() Option {
-	return func(c *server.Config) { c.APIDocs = true }
+	return func(o *options) { o.cfg.APIDocs = true }
 }
 
 // FakeDumpContent is what FakeDump writes.
@@ -143,24 +150,24 @@ func FakeDump(_ context.Context, path string) error {
 // Backups turns automatic backups on in dir, with the encrypted copy folder copyDir ("" for none);
 // dump replaces pg_dump.
 func Backups(dir, copyDir string, dump func(ctx context.Context, path string) error) Option {
-	return func(c *server.Config) {
-		c.Instance.BackupDir, c.Instance.CopyDir, c.Instance.Dump = dir, copyDir, dump
+	return func(o *options) {
+		o.cfg.Instance.BackupDir, o.cfg.Instance.CopyDir, o.cfg.Instance.Dump = dir, copyDir, dump
 	}
 }
 
 // Version sets the version of the running app.
 func Version(v string) Option {
-	return func(c *server.Config) { c.Version = v }
+	return func(o *options) { o.cfg.Version = v }
 }
 
 // ReleaseURL replaces the latest-release address of the version check.
 func ReleaseURL(url string) Option {
-	return func(c *server.Config) { c.Instance.ReleaseURL = url }
+	return func(o *options) { o.cfg.Instance.ReleaseURL = url }
 }
 
 // Distribution sets EQUORI_DISTRIBUTION and the mode of the instance (A194).
 func Distribution(variable, mode string) Option {
-	return func(c *server.Config) { c.Instance.Distribution, c.Instance.Mode = variable, mode }
+	return func(o *options) { o.cfg.Instance.Distribution, o.cfg.Instance.Mode = variable, mode }
 }
 
 // SecretKey is the integration key Pluggy sets (32 bytes).
@@ -168,42 +175,42 @@ const SecretKey = "equori-test-secret-key-32-bytes!" //nolint:gosec // G101: a f
 
 // Aggregator sends the requests of aggregator id to url and enables integrations with SecretKey.
 func Aggregator(id, url string) Option {
-	return func(c *server.Config) {
-		if c.AggregatorURLs == nil {
-			c.AggregatorURLs = map[string]string{}
+	return func(o *options) {
+		if o.cfg.AggregatorURLs == nil {
+			o.cfg.AggregatorURLs = map[string]string{}
 		}
 
-		c.AggregatorURLs[id], c.SecretKey = url, SecretKey
+		o.cfg.AggregatorURLs[id], o.cfg.SecretKey = url, SecretKey
 	}
 }
 
 // PriceFeeds enables the price feeds ids against the base URLs of a test server.
 func PriceFeeds(ids []string, urls map[string]string) Option {
-	return func(c *server.Config) { c.PriceFeeds, c.FeedURLs = ids, urls }
+	return func(o *options) { o.cfg.PriceFeeds, o.cfg.FeedURLs = ids, urls }
 }
 
 // IndexFeeds enables the index feeds ids against the base URLs of a test server.
 func IndexFeeds(ids []string, urls map[string]string) Option {
-	return func(c *server.Config) {
-		c.IndexFeeds = ids
-		if c.FeedURLs == nil {
-			c.FeedURLs = map[string]string{}
+	return func(o *options) {
+		o.cfg.IndexFeeds = ids
+		if o.cfg.FeedURLs == nil {
+			o.cfg.FeedURLs = map[string]string{}
 		}
 
-		maps.Copy(c.FeedURLs, urls)
+		maps.Copy(o.cfg.FeedURLs, urls)
 	}
 }
 
 // SecretKeys replaces the integration keys; pass it after Aggregator.
 func SecretKeys(current, previous string) Option {
-	return func(c *server.Config) { c.SecretKey, c.PreviousSecretKey = current, previous }
+	return func(o *options) { o.cfg.SecretKey, o.cfg.PreviousSecretKey = current, previous }
 }
 
 // New starts the application and logs in owner@example.com as Client.
 func New(t testing.TB, opts ...Option) *Harness {
 	t.Helper()
 	h := Empty(t, opts...)
-	h.Client = h.Login("owner@example.com")
+	h.Client = h.LoginAs("owner@example.com", h.Profile.Locale, h.Profile.Base)
 
 	return h
 }
@@ -229,24 +236,25 @@ func Empty(t testing.TB, opts ...Option) *Harness {
 
 	h.server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { (*h.handler.Load()).ServeHTTP(w, r) }))
 	t.Cleanup(h.server.Close)
-	h.start(opts)
+	h.Profile = h.start(opts)
 
 	return h
 }
 
-func (h *Harness) start(opts []Option) {
+// start builds the application and returns the profile the options select.
+func (h *Harness) start(opts []Option) Profile {
 	h.t.Helper()
 
-	cfg := server.Config{}
-	cfg.Instance.Log = h.ring.Records
+	o := options{profile: Brazil()}
+	o.cfg.Instance.Log = h.ring.Records
 	// argon2id at its production cost took a third of the ledger tests' time under -race.
-	cfg.PasswordCost = identity.PasswordCost{MemoryKiB: 64, Iterations: 1}
+	o.cfg.PasswordCost = identity.PasswordCost{MemoryKiB: 64, Iterations: 1}
 
-	for _, o := range opts {
-		o(&cfg)
+	for _, apply := range opts {
+		apply(&o)
 	}
 
-	app, err := server.New(h.Pool, cfg, h.log)
+	app, err := server.New(h.Pool, o.cfg, h.log)
 	if err != nil {
 		h.t.Fatal(err)
 	}
@@ -257,6 +265,8 @@ func (h *Harness) start(opts []Option) {
 
 	h.App = app
 	h.handler.Store(&app.Handler)
+
+	return o.profile
 }
 
 // Restart replaces the application on the same database and address, as a restart with
@@ -542,11 +552,11 @@ func (h *Harness) ExpectProblem(r Response, status int, code, field string) {
 	}
 }
 
-// Account creates an account in BRL and returns its id.
+// Account creates an account in the profile's base currency and returns its id.
 func (h *Harness) Account(name, class, kind string, extra map[string]any) string {
 	h.t.Helper()
 
-	body := map[string]any{"name": name, "class": class, "currency": "BRL"}
+	body := map[string]any{"name": name, "class": class, "currency": string(h.Profile.Base)}
 	if kind != "" {
 		body["kind"] = kind
 	}

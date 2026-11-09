@@ -3,16 +3,23 @@ package apitest
 import (
 	"fmt"
 	"strings"
+
+	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
 // OFXLine is one STMTTRN: Date YYYYMMDD, Amount as written, FITID (empty for none), Name.
 type OFXLine struct{ Date, Amount, FITID, Name string }
 
-// OFX returns an OFX 1.x checking statement for October 2026; balance is an optional
-// LEDGERBAL element.
-func OFX(balance string, lines ...OFXLine) []byte {
+// OFX is OFXIn in BRL.
+func OFX(balance string, lines ...OFXLine) []byte { return OFXIn("BRL", balance, lines...) }
+
+// OFXIn returns an OFX 1.x checking statement for October 2026 in currency; balance is an
+// optional LEDGERBAL element.
+func OFXIn(currency money.Currency, balance string, lines ...OFXLine) []byte {
 	var b strings.Builder
-	b.WriteString("OFXHEADER:100\nDATA:OFXSGML\nVERSION:102\nCHARSET:UTF-8\n\n<OFX><BANKMSGSRSV1><STMTTRNRS><STMTRS><CURDEF>BRL\n<BANKTRANLIST><DTSTART>20261001<DTEND>20261031\n")
+	b.WriteString("OFXHEADER:100\nDATA:OFXSGML\nVERSION:102\nCHARSET:UTF-8\n\n<OFX><BANKMSGSRSV1><STMTTRNRS><STMTRS><CURDEF>")
+	b.WriteString(string(currency))
+	b.WriteString("\n<BANKTRANLIST><DTSTART>20261001<DTEND>20261031\n")
 
 	for _, l := range lines {
 		fmt.Fprintf(&b, "<STMTTRN><TRNTYPE>OTHER<DTPOSTED>%s<TRNAMT>%s", l.Date, l.Amount)
