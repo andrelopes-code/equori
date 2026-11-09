@@ -38,4 +38,14 @@ export const marketDataEn = {
   "marketData.feed.us_sofr": "SOFR (Federal Reserve Bank of New York)",
   "marketData.feed.br_focus": "Focus market survey (Banco Central do Brasil)",
   "marketData.feed.us_cpi": "CPI-U (Bureau of Labor Statistics)",
+  "settings.feeds.covers.none": "Covers no instrument",
+  "settings.feeds.covers.one": "Covers 1 instrument",
+  "settings.feeds.covers.other": "Covers {count} instruments",
+  "settings.feeds.historyPending.one": "Loading history: 1 pending",
+  "settings.feeds.historyPending.other": "Loading history: {count} pending",
+  "settings.feeds.unofficial.tag": "Not official",
+  "settings.feeds.unofficial.title": "Enable an unofficial source",
+  "settings.feeds.unofficial.description":
+    "This source is not official: it publishes no terms for this use and can stop answering without notice. Its quotes fill only the dates that no official source covers.",
+  "settings.feeds.unofficial.confirm": "Enable",
 } as const;

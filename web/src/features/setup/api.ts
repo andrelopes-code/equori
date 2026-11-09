@@ -690,11 +690,22 @@ export function useSetMarketDataFeed() {
   const api = useApi();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, enabled }: { id: string; enabled: boolean }) =>
+    mutationFn: async ({
+      id,
+      enabled,
+      acceptUnofficial,
+    }: {
+      id: string;
+      enabled: boolean;
+      acceptUnofficial?: boolean;
+    }) =>
       unwrap(
         await api.PUT("/market-data/feeds/{id}", {
           params: { path: { id } },
-          body: { enabled },
+          body: {
+            enabled,
+            ...(acceptUnofficial === true ? { accept_unofficial: true } : {}),
+          },
         }),
       ),
     onSuccess: () =>

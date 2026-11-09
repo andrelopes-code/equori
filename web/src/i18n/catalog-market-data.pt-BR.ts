@@ -42,4 +42,15 @@ export const marketDataPtBR: Record<keyof typeof marketDataEn, string> = {
   "marketData.feed.br_focus":
     "Pesquisa Focus de mercado (Banco Central do Brasil)",
   "marketData.feed.us_cpi": "CPI-U (Bureau of Labor Statistics)",
+  "settings.feeds.covers.none": "Não cobre nenhum ativo",
+  "settings.feeds.covers.one": "Cobre 1 ativo",
+  "settings.feeds.covers.other": "Cobre {count} ativos",
+  "settings.feeds.historyPending.one": "Carregando histórico: 1 pendente",
+  "settings.feeds.historyPending.other":
+    "Carregando histórico: {count} pendentes",
+  "settings.feeds.unofficial.tag": "Não oficial",
+  "settings.feeds.unofficial.title": "Ativar uma fonte não oficial",
+  "settings.feeds.unofficial.description":
+    "Esta fonte não é oficial: não publica termos para este uso e pode parar de responder sem aviso. As cotações dela preenchem apenas as datas que nenhuma fonte oficial cobre.",
+  "settings.feeds.unofficial.confirm": "Ativar",
 };

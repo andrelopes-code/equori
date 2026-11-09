@@ -6,7 +6,6 @@ import {
   AlertDescription,
 } from "@slotted/react/alert";
 import { SkeletonText } from "@slotted/react/skeleton";
-import { Switch } from "@slotted/react/switch";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
@@ -19,20 +18,13 @@ import {
   useRefreshMarketData,
   useSetMarketDataFeed,
 } from "@/features/setup/api";
+import { MarketDataFeedRow } from "@/features/setup/market-data-feed-row";
 import { SettingsGroup } from "@/features/setup/settings-group";
 import { SettingsSection } from "@/features/setup/settings-section";
-import type { MessageKey } from "@/i18n/catalog.en";
-import { catalogEn } from "@/i18n/catalog.en";
-import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { QueryError } from "@/ui/query-error";
 
 type Feed = components["schemas"]["MarketDataFeed"];
-
-function feedName(t: ReturnType<typeof useT>, id: string): string {
-  const key = `marketData.feed.${id}`;
-  return key in catalogEn ? t(key as MessageKey) : id;
-}
 
 // ADR 025 F10: one switch per feed, the latest stored date, a warning when a feed is overdue or
 // failed, and one action that runs every enabled feed.
@@ -52,33 +44,19 @@ export function SettingsMarketData() {
   const set = useSetMarketDataFeed();
   const refresh = useRefreshMarketData();
 
-  const describe = (f: Feed): string => {
-    if (f.error !== null) return t("marketData.failed", { error: f.error });
-    if (f.last === null) return t("marketData.never");
-    const date = formatDate(f.last, tag);
-    return f.stale
-      ? t("marketData.stale", { date })
-      : t("marketData.last", { date });
-  };
-
   const rows = (kind: Feed["kind"]) =>
     (feeds.data ?? [])
       .filter((f) => f.kind === kind)
       .map((f) => (
-        <Switch
+        <MarketDataFeedRow
           key={f.id}
-          labelPlacement="start"
-          checked={f.enabled}
-          readOnly={!admin}
+          feed={f}
+          admin={admin}
           loading={set.isPending && set.variables.id === f.id}
-          invalid={f.enabled && (f.stale || f.error !== null)}
-          description={describe(f)}
-          onCheckedChange={(enabled) => {
-            set.mutate({ id: f.id, enabled });
+          onSet={(enabled, acceptUnofficial) => {
+            set.mutate({ id: f.id, enabled, acceptUnofficial });
           }}
-        >
-          {feedName(t, f.id)}
-        </Switch>
+        />
       ));
 
   const items = feeds.data ?? [];

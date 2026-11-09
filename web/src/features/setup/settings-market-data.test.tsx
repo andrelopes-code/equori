@@ -16,6 +16,7 @@ const ids = [
   ["b3_cotahist", "price"],
   ["bcb_ptax", "price"],
   ["ecb", "price"],
+  ["yahoo_chart", "price"],
   ["br_cdi", "index"],
   ["br_ipca", "index"],
   ["eu_estr", "index"],
@@ -33,6 +34,10 @@ interface Feed {
   stale: boolean;
   last_run: string | null;
   error: string | null;
+  official: boolean;
+  covers: number;
+  history_pending: number;
+  symbol_override: boolean;
 }
 
 function feeds(patch: Record<string, Partial<Feed>> = {}): Feed[] {
@@ -45,12 +50,21 @@ function feeds(patch: Record<string, Partial<Feed>> = {}): Feed[] {
     stale: false,
     last_run: null,
     error: null,
+    official: true,
+    covers: 0,
+    history_pending: 0,
+    symbol_override: false,
     ...patch[id],
   }));
 }
 
+interface PutBody {
+  enabled: boolean;
+  accept_unofficial?: boolean;
+}
+
 function api(list: Feed[], role = "admin") {
-  const puts: { id: string; enabled: boolean }[] = [];
+  const puts: ({ id: string } & PutBody)[] = [];
   let refreshes = 0;
   const fetch = fakeApi(
     accountRoutes({
@@ -71,8 +85,8 @@ function api(list: Feed[], role = "admin") {
         ids.map(([id]) => [
           `PUT /api/v1/market-data/feeds/${id}`,
           async (req: Request) => {
-            const body = (await req.json()) as { enabled: boolean };
-            puts.push({ id, enabled: body.enabled });
+            const body = (await req.json()) as PutBody;
+            puts.push({ id, ...body });
             const f = list.find((x) => x.id === id);
             if (f !== undefined) f.enabled = body.enabled;
             return json(200, f);
@@ -122,6 +136,39 @@ describe("Market data section (ADR 025 F10)", () => {
     );
     await waitFor(() => {
       expect(a.puts).toEqual([{ id: "br_ipca", enabled: true }]);
+    });
+  });
+
+  it("asks for a confirmation before enabling an unofficial source", async () => {
+    const a = api(
+      feeds({ yahoo_chart: { official: false, symbol_override: true } }),
+    );
+    await open(a.fetch);
+    const yahoo = () =>
+      within(section()).findByRole("switch", {
+        name: catalogEn["marketData.feed.yahoo_chart"],
+      });
+    await userEvent.click(await yahoo());
+    expect(
+      await screen.findByRole("alertdialog", {
+        name: catalogEn["settings.feeds.unofficial.title"],
+      }),
+    ).toBeInTheDocument();
+    expect(a.puts).toEqual([]);
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["detail.cancel"] }),
+    );
+    expect(a.puts).toEqual([]);
+    await userEvent.click(await yahoo());
+    await userEvent.click(
+      await screen.findByRole("button", {
+        name: catalogEn["settings.feeds.unofficial.confirm"],
+      }),
+    );
+    await waitFor(() => {
+      expect(a.puts).toEqual([
+        { id: "yahoo_chart", enabled: true, accept_unofficial: true },
+      ]);
     });
   });
 
