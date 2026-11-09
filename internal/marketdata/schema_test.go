@@ -45,6 +45,30 @@ func TestSchemaRejectsInvalidPrices(t *testing.T) {
 	}
 }
 
+// A222 MQ4.
+func TestSchemaRejectsInvalidHistory(t *testing.T) {
+	t.Parallel()
+
+	pool := pgtest.New(t)
+	ctx := t.Context()
+
+	if _, err := pool.Exec(ctx, `INSERT INTO marketdata_history VALUES ('bcb_ptax', 'USD', '2006-01-01', now())`); err != nil {
+		t.Fatal(err)
+	}
+
+	for name, sql := range map[string]string{
+		"source outside the pattern": `INSERT INTO marketdata_history VALUES ('BCB', 'USD', '2006-01-01', now())`,
+		"unknown instrument":         `INSERT INTO marketdata_history VALUES ('bcb_ptax', 'ZZZ', '2006-01-01', now())`,
+		"no from date":               `INSERT INTO marketdata_history (source, instrument, requested_at) VALUES ('bcb_ptax', 'EUR', now())`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			if _, err := pool.Exec(ctx, sql); err == nil {
+				t.Fatal("accepted")
+			}
+		})
+	}
+}
+
 // ADR 025 F1.
 func TestSchemaRejectsInvalidFeeds(t *testing.T) {
 	t.Parallel()

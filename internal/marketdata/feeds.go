@@ -43,8 +43,9 @@ func (m *Module) WithFeeds(cfg FeedConfig) *Module {
 	return m
 }
 
-// RunFeeds ticks now and then every interval until ctx ends, skipping a tick while a requested
-// one runs; then it stops a requested tick and waits for it.
+// RunFeeds ticks now, then every interval and at every request for a tick (A222 MQ10), until ctx
+// ends, skipping a tick while a requested one runs; then it stops a requested tick and waits for
+// it.
 func (m *Module) RunFeeds(ctx context.Context, interval time.Duration) {
 	t := time.NewTicker(interval)
 	defer t.Stop()
@@ -53,6 +54,7 @@ func (m *Module) RunFeeds(ctx context.Context, interval time.Duration) {
 
 	for {
 		if m.running.CompareAndSwap(false, true) {
+			m.again.Store(false)
 			m.TickFeeds(ctx)
 			m.running.Store(false)
 		}
@@ -61,6 +63,7 @@ func (m *Module) RunFeeds(ctx context.Context, interval time.Duration) {
 		case <-ctx.Done():
 			return
 		case <-t.C:
+		case <-m.kick:
 		}
 	}
 }
@@ -78,7 +81,7 @@ func (m *Module) TickFeeds(ctx context.Context) {
 
 	for _, src := range m.feeds.Sources {
 		if on[src.ID()] {
-			m.ran(src.ID(), m.tick(ctx, src))
+			m.ran(src.ID(), errors.Join(m.tick(ctx, src), m.tickHistory(ctx, src)))
 		}
 	}
 
@@ -114,12 +117,7 @@ func (m *Module) tick(ctx context.Context, src feed.Source) error {
 		return err
 	}
 
-	ins := make([]feed.Instrument, len(list))
-	for i, in := range list {
-		ins[i] = feed.Instrument{Code: in.Code, Type: in.Type, Exchange: in.Exchange, QuoteCurrency: in.QuoteCurrency}
-	}
-
-	codes := src.Codes(ins)
+	codes := src.Codes(feedInstruments(list))
 	if len(codes) == 0 {
 		return nil
 	}

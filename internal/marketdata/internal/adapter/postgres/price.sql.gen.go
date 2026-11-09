@@ -98,6 +98,64 @@ func (q *Queries) DeletePricesBySource(ctx context.Context, arg DeletePricesBySo
 	return err
 }
 
+const earliestSourceDate = `-- name: EarliestSourceDate :one
+SELECT
+    coalesce(min(date), DATE '9999-12-31')::date AS earliest
+FROM
+    marketdata_price
+WHERE
+    source = $1
+    AND (
+        instrument = $2
+        OR quote_instrument = $2
+    )
+`
+
+type EarliestSourceDateParams struct {
+	Source     string
+	Instrument string
+}
+
+func (q *Queries) EarliestSourceDate(ctx context.Context, arg EarliestSourceDateParams) (time.Time, error) {
+	row := q.db.QueryRow(ctx, earliestSourceDate, arg.Source, arg.Instrument)
+	var earliest time.Time
+	err := row.Scan(&earliest)
+	return earliest, err
+}
+
+const instrumentCoverage = `-- name: InstrumentCoverage :one
+SELECT
+    coalesce(min(date), DATE '1970-01-01')::date AS first,
+    coalesce(max(date), DATE '1970-01-01')::date AS last,
+    count(DISTINCT date)::int AS days
+FROM
+    marketdata_price
+WHERE
+    instrument = $1
+    AND (
+        $2::text IS NULL
+        OR quote_instrument = $2
+    )
+`
+
+type InstrumentCoverageParams struct {
+	Instrument      string
+	QuoteInstrument *string
+}
+
+type InstrumentCoverageRow struct {
+	First time.Time
+	Last  time.Time
+	Days  int32
+}
+
+func (q *Queries) InstrumentCoverage(ctx context.Context, arg InstrumentCoverageParams) (InstrumentCoverageRow, error) {
+	row := q.db.QueryRow(ctx, instrumentCoverage, arg.Instrument, arg.QuoteInstrument)
+	var i InstrumentCoverageRow
+	err := row.Scan(&i.First, &i.Last, &i.Days)
+	return i, err
+}
+
 const latestSourceDate = `-- name: LatestSourceDate :one
 SELECT
     coalesce(max(date), DATE '1970-01-01')::date AS latest
@@ -219,6 +277,48 @@ func (q *Queries) PriceOnOrBefore(ctx context.Context, arg PriceOnOrBeforeParams
 			&i.Priority,
 			&i.RecordedAt,
 		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const sourceCoverage = `-- name: SourceCoverage :many
+SELECT
+    source,
+    min(date)::date AS first,
+    max(date)::date AS last
+FROM
+    marketdata_price
+WHERE
+    instrument = $1
+    OR quote_instrument = $1
+GROUP BY
+    source
+ORDER BY
+    source
+`
+
+type SourceCoverageRow struct {
+	Source string
+	First  time.Time
+	Last   time.Time
+}
+
+func (q *Queries) SourceCoverage(ctx context.Context, instrument string) ([]SourceCoverageRow, error) {
+	rows, err := q.db.Query(ctx, sourceCoverage, instrument)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []SourceCoverageRow
+	for rows.Next() {
+		var i SourceCoverageRow
+		if err := rows.Scan(&i.Source, &i.First, &i.Last); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

@@ -110,3 +110,44 @@ DELETE FROM marketdata_price
 WHERE
     source = @source
     AND instrument = @instrument;
+
+-- name: EarliestSourceDate :one
+SELECT
+    coalesce(min(date), DATE '9999-12-31')::date AS earliest
+FROM
+    marketdata_price
+WHERE
+    source = @source
+    AND (
+        instrument = @instrument
+        OR quote_instrument = @instrument
+    );
+
+-- name: InstrumentCoverage :one
+SELECT
+    coalesce(min(date), DATE '1970-01-01')::date AS first,
+    coalesce(max(date), DATE '1970-01-01')::date AS last,
+    count(DISTINCT date)::int AS days
+FROM
+    marketdata_price
+WHERE
+    instrument = @instrument
+    AND (
+        sqlc.narg (quote_instrument)::text IS NULL
+        OR quote_instrument = sqlc.narg (quote_instrument)
+    );
+
+-- name: SourceCoverage :many
+SELECT
+    source,
+    min(date)::date AS first,
+    max(date)::date AS last
+FROM
+    marketdata_price
+WHERE
+    instrument = @instrument
+    OR quote_instrument = @instrument
+GROUP BY
+    source
+ORDER BY
+    source;

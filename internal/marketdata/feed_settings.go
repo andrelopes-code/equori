@@ -142,12 +142,12 @@ func (m *Module) feed(ctx context.Context, id, kind, period string, last *time.T
 	f := Feed{ID: id, Kind: kind, Enabled: on[id], Suggested: slices.Contains(suggested, id), Last: last}
 	if f.Enabled && last != nil {
 		// The period of last is published; the one due is the next, ending two periods after last.
-		due := last.AddDate(0, 0, 2+lags[id])
-		if period == index.PeriodMonth {
-			due = last.AddDate(0, 2, lags[id])
-		}
+		today := m.feeds.Clock.Today(ctx)
 
-		f.Stale = m.feeds.Clock.Today(ctx).After(due)
+		f.Stale = overdue(*last, lags[id], today)
+		if period == index.PeriodMonth {
+			f.Stale = today.After(last.AddDate(0, 2, lags[id]))
+		}
 	}
 
 	m.runsMu.Lock()
@@ -162,6 +162,11 @@ func (m *Module) feed(ctx context.Context, id, kind, period string, last *time.T
 	}
 
 	return f
+}
+
+// overdue reports whether today is past the day the daily price after last is due (ADR 025 F9).
+func overdue(last time.Time, lag int, today time.Time) bool {
+	return today.After(last.AddDate(0, 0, 2+lag))
 }
 
 func feedLags() map[string]int {
@@ -217,6 +222,10 @@ func (m *Module) SetFeed(ctx context.Context, id string, enabled bool) (Feed, er
 		return Feed{}, err
 	}
 
+	if enabled {
+		m.requestFeedHistory(ctx, id)
+	}
+
 	fs, err := m.Feeds(ctx)
 	if err != nil {
 		return Feed{}, err
@@ -237,10 +246,16 @@ func (m *Module) Refresh(ctx context.Context) error {
 		return ErrRefreshRunning
 	}
 
-	m.refreshes.Go(func() {
-		defer m.running.Store(false)
+	m.again.Store(false)
 
+	m.refreshes.Go(func() {
 		m.TickFeeds(m.life)
+		m.running.Store(false)
+
+		// A request that came during the tick finds RunFeeds skipping it (D10).
+		if m.again.Load() {
+			m.wake()
+		}
 	})
 
 	return nil

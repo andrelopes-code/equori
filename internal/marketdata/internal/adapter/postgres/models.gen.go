@@ -26,6 +26,15 @@ type MarketdataFixedIncomeTerm struct {
 	FaceValue        int64
 }
 
+type MarketdataHistory struct {
+	Source      string
+	Instrument  string
+	FromDate    time.Time
+	RequestedAt time.Time
+	DoneAt      *time.Time
+	Error       *string
+}
+
 type MarketdataHoliday struct {
 	Calendar string
 	Date     time.Time

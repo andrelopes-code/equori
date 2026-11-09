@@ -124,7 +124,11 @@ func TestFeedsFetchPrices(t *testing.T) {
 	first := f.take()
 
 	b3 := filter(first, "/b3/")
-	if len(b3) != 21 || b3[0] != "/b3/COTAHIST_D02102026.ZIP" || b3[20] != "/b3/COTAHIST_D30102026.ZIP" {
+	// MQ7, MQ9: the 21 days of the incremental fetch, then the history of MXRF11: six year files
+	// (404) and the 23 days from 2026-09-28 to the day before its stored price.
+	if len(b3) != 50 || b3[0] != "/b3/COTAHIST_D02102026.ZIP" || b3[20] != "/b3/COTAHIST_D30102026.ZIP" ||
+		b3[21] != "/b3/COTAHIST_A2021.ZIP" || b3[26] != "/b3/COTAHIST_A2026.ZIP" ||
+		b3[27] != "/b3/COTAHIST_D28092026.ZIP" || b3[49] != "/b3/COTAHIST_D28102026.ZIP" {
 		t.Fatalf("first tick B3 requests = %v", b3)
 	}
 

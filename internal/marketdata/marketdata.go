@@ -65,10 +65,14 @@ type Module struct {
 	// joins refreshes and stops with life.
 	running   atomic.Bool
 	refreshes sync.WaitGroup
-	life      context.Context
-	stop      context.CancelFunc
-	runsMu    sync.Mutex
-	runs      map[string]feedRun
+	// kick wakes RunFeeds for a requested tick; again is set by a request while a tick may run
+	// without it (A222 MQ10).
+	kick   chan struct{}
+	again  atomic.Bool
+	life   context.Context
+	stop   context.CancelFunc
+	runsMu sync.Mutex
+	runs   map[string]feedRun
 }
 
 // Profiles gives the language and region of a book (identity).
@@ -93,7 +97,7 @@ func New(pool *pgxpool.Pool) *Module {
 
 	return &Module{
 		pool: pool, q: postgres.New(pool), calendars: calendars, businessDays: businessDayIndexes(),
-		unofficial: unofficialSources(),
+		unofficial: unofficialSources(), kick: make(chan struct{}, 1),
 	}
 }
 
@@ -247,6 +251,8 @@ func (m *Module) DefineInstrument(ctx context.Context, in Instrument) (Instrumen
 		return Instrument{}, ErrInstrumentExists
 	}
 
+	m.requestDefaultHistory(ctx, in)
+
 	return in, nil
 }
 
@@ -262,6 +268,8 @@ func (m *Module) EditInstrument(ctx context.Context, code, name, exchange, subty
 		return Instrument{}, &domain.FieldError{Field: "code", Message: "is a currency"}
 	}
 
+	oldExchange := in.Exchange
+
 	in.Name, in.Exchange, in.Subtype = name, exchange, subtype
 	if in, err = in.Validate(); err != nil {
 		return Instrument{}, err
@@ -276,6 +284,10 @@ func (m *Module) EditInstrument(ctx context.Context, code, name, exchange, subty
 
 	if n == 0 {
 		return Instrument{}, ErrUnknownInstrument
+	}
+
+	if in.Exchange != oldExchange {
+		m.requestDefaultHistory(ctx, in)
 	}
 
 	return in, nil
