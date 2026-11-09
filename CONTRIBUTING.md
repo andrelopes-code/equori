@@ -62,6 +62,22 @@ docs/contributing/     contributor guides: feature design, regions, forms, phone
 
 Module internals: `<module>.go` (public API) → `internal/domain` → `internal/app` → `internal/adapter/{postgres,httpapi,toolapi}`. ADR 002 sets the dependency rules; `depguard` and the compiler enforce them.
 
+The second `internal` makes a module's packages importable only from inside that module. `internal/instance` shows the layout:
+
+```
+internal/instance/
+  instance.go                       public API; New passes each adapter to app.NewService
+  internal/
+    domain/version.go               pure rules: Newer compares two versions
+    app/service.go                  Service and the ports it declares: Repository, Releases
+    app/version.go                  use case: checks the admin, calls Releases and domain.Newer
+    adapter/httpapi/version.go      HTTP handler: calls the Service
+    adapter/postgres/repository.go  implements app.Repository
+    adapter/releases/github.go      implements app.Releases
+```
+
+`app` never imports `adapter`. A topic keeps its file name across layers: read `domain/version.go`, then `app/version.go`, then `adapter/httpapi/version.go`.
+
 ## Language
 
 Everything is in English: identifiers, files, packages, comments, log messages, errors, tests, docs, commit messages.
