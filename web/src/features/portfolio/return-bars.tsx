@@ -1,4 +1,5 @@
 import { Glyph, Icon } from "@slotted/react/icon";
+import { Stack } from "@slotted/react/stack";
 import { Tag } from "@slotted/react/tag";
 import { Text } from "@slotted/react/typography";
 
@@ -52,13 +53,17 @@ export function ReturnBars({ comparisons, axis }: ReturnBarsProps) {
       {comparisons.map((comparison) => (
         <div key={comparison.key} className={styles.block}>
           <div className={styles.head}>
-            <Text weight="semibold">{comparison.heading}</Text>
-            <Text size="sm" tone="muted">
-              {comparison.window}
-            </Text>
+            <Stack gap={0} className={styles.headText}>
+              <Text weight="semibold">{comparison.heading}</Text>
+              <Text size="sm" tone="muted">
+                {comparison.window}
+              </Text>
+            </Stack>
+
             {comparison.chip && (
               <Tag
                 size="sm"
+                className={styles.chip}
                 tone={chipTone[comparison.chip.tone]}
                 start={
                   <Icon size="sm">
