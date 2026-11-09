@@ -1,12 +1,27 @@
 @layer app {
-  .amount {
-    font-variant-numeric: tabular-nums;
+  .ledger {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  /* The result is the line under the two flows. */
-  .total {
-    padding-block-start: var(--slotted-space-5);
-    border-block-start: var(--slotted-border-width-thin) solid
+  /* A hairline between the figures; the first has none. */
+  .figure {
+    display: grid;
+    gap: var(--slotted-space-3);
+    padding-inline: var(--slotted-space-7);
+  }
+
+  .figure:not(:first-child) {
+    border-inline-start: var(--slotted-border-width-thin) solid
       var(--slotted-border-subtle);
+  }
+
+  .figure:first-child {
+    padding-inline-start: 0;
+  }
+
+  .amount {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
   }
 }

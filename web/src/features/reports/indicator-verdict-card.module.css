@@ -1,5 +1,6 @@
 @layer app {
-  /* The card reflows by its own width, not the page's: the ledger goes beside the sentence from 46rem. */
+  /* The card reflows by its own width, not the page's: the ledger goes beside the figure from 60rem
+     and under it below. The measure of the line is the app's own; no token holds a measure. */
   .frame {
     container-type: inline-size;
   }
@@ -7,12 +8,25 @@
   .layout {
     display: grid;
     gap: var(--slotted-space-8);
+    align-items: center;
   }
 
-  @container (min-width: 46rem) {
+  /* The figure is the focal point of the tab: one step above the type scale's largest text size. */
+  .figure {
+    font-size: var(--slotted-font-size-4xl);
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .line {
+    max-inline-size: 36ch;
+    text-wrap: balance;
+  }
+
+  @container (min-width: 60rem) {
     .layout {
-      grid-template-columns: minmax(0, 1fr) minmax(16rem, 22rem);
-      align-items: center;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+      column-gap: var(--slotted-space-10);
     }
   }
 }

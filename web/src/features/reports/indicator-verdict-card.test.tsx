@@ -14,47 +14,56 @@ describe("IndicatorVerdictCard", () => {
       name: "below the mean",
       last: {},
       incomplete: false,
-      want: "In October, the savings rate was 8.00%, 4.00 pp below the 12-month mean (12.00%).",
+      figure: "8.00%",
+      line: "4.00 pp below the 12-month mean (12.00%)",
     },
     {
       name: "above the mean",
       last: { savings_rate: { bp: 1500 } },
       incomplete: false,
-      want: "In October, the savings rate was 15.00%, 3.00 pp above the 12-month mean (12.00%).",
+      figure: "15.00%",
+      line: "3.00 pp above the 12-month mean (12.00%)",
     },
     {
       name: "in line with the mean",
       last: { savings_rate: { bp: 1200 } },
       incomplete: false,
-      want: "In October, the savings rate was 12.00%, in line with the 12-month mean (12.00%).",
+      figure: "12.00%",
+      line: "In line with the 12-month mean (12.00%)",
     },
     {
       name: "without a mean",
       last: { trailing_savings_rate: { reason: "insufficient_history" } },
       incomplete: false,
-      want: "In October, the savings rate was 8.00%. The 12-month mean needs 3 complete months of records.",
+      figure: "8.00%",
+      line: "The 12-month mean needs 3 complete months of records.",
     },
     {
       name: "without income",
       last: { savings_rate: { reason: "no_income" } },
       incomplete: false,
-      want: "In October, no income was recorded, so there is no savings rate.",
+      figure: "—",
+      line: "No income was recorded in October.",
     },
     {
       name: "incomplete",
-      last: { income: brl(167990), expense: brl(457628) },
+      last: { savings_rate: { bp: -17241 } },
       incomplete: true,
-      want: "So far in October, R$1,679.90 came in and R$4,576.28 went out. The savings rate only compares with a closed month.",
+      figure: "−172.41%",
+      line: "In progress: it only compares with a closed month.",
     },
   ] satisfies {
     name: string;
     last: Partial<IndicatorMonth>;
     incomplete: boolean;
-    want: string;
-  }[])("writes the sentence $name", async ({ last, incomplete, want }) => {
-    renderCard(last, incomplete);
+    figure: string;
+    line: string;
+  }[])("fills the figure and the line $name", async (c) => {
+    renderCard(c.last, c.incomplete);
 
-    expect(await screen.findByText(want)).toBeInTheDocument();
+    expect(await screen.findByText(c.figure)).toBeInTheDocument();
+    expect(screen.getByText(c.line)).toBeInTheDocument();
+    expect(screen.getByText("Savings rate in October")).toBeInTheDocument();
   });
 
   it("writes the month ledger", async () => {
@@ -64,6 +73,14 @@ describe("IndicatorVerdictCard", () => {
     expect(screen.getByText("R$1,000.00")).toBeInTheDocument();
     expect(screen.getByText("R$1,300.00")).toBeInTheDocument();
     expect(screen.getByText("−R$300.00")).toBeInTheDocument();
+  });
+
+  it("writes no amount in the line of an incomplete month", async () => {
+    renderCard({ income: brl(167990), expense: brl(457628) }, true);
+
+    await screen.findByText("Income");
+
+    expect(screen.getAllByText(/R\$1,679\.90/)).toHaveLength(1);
   });
 
   it("tags an incomplete month with the day it runs to", async () => {

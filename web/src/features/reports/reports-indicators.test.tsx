@@ -14,9 +14,10 @@ describe("Reports indicators", () => {
     });
 
     expect(
-      await screen.findByText(
-        "In October, the savings rate was 43.00%, 3.50 pp below the 12-month mean (46.50%).",
-      ),
+      await screen.findByText("Savings rate in October"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("3.50 pp below the 12-month mean (46.50%)"),
     ).toBeInTheDocument();
     expect(
       screen.getByText("Where the month stands in the last 12 months"),
@@ -36,7 +37,7 @@ describe("Reports indicators", () => {
 
     expect(
       await screen.findByText(
-        "So far in October, R$5,000.00 came in and R$2,850.00 went out. The savings rate only compares with a closed month.",
+        "In progress: it only compares with a closed month.",
       ),
     ).toBeInTheDocument();
     expect(
@@ -49,11 +50,7 @@ describe("Reports indicators", () => {
       fetch: indicatorsApi({ ...indicatorsFixture(), currency: "USD" }),
     });
 
-    expect(
-      await screen.findByText(
-        "So far in October, $5,000.00 came in and $2,850.00 went out. The savings rate only compares with a closed month.",
-      ),
-    ).toBeInTheDocument();
+    expect(await screen.findAllByText("$5,000.00")).not.toHaveLength(0);
     expect(screen.queryByText(/R\$/)).not.toBeInTheDocument();
   });
 

@@ -26,18 +26,19 @@ export const reportsPtBR: Record<keyof typeof reportsEn, string> = {
     "Parte da receita mensal média tomada por principal e juros de empréstimos.",
   "report.indicators.liabilitiesNote":
     "O que você devia em cartões, empréstimos e outras dívidas ao fim de cada mês.",
+  "report.indicators.verdict.label": "Taxa de poupança em {month}",
   "report.indicators.verdict.above":
-    "Em {month}, a taxa de poupança foi {rate}, {delta} p.p. acima da média de 12 meses ({mean}).",
+    "{delta}\u00a0p.p. acima da média de 12 meses ({mean})",
   "report.indicators.verdict.below":
-    "Em {month}, a taxa de poupança foi {rate}, {delta} p.p. abaixo da média de 12 meses ({mean}).",
+    "{delta}\u00a0p.p. abaixo da média de 12 meses ({mean})",
   "report.indicators.verdict.inline":
-    "Em {month}, a taxa de poupança foi {rate}, em linha com a média de 12 meses ({mean}).",
+    "Em linha com a média de 12 meses ({mean})",
   "report.indicators.verdict.noMean":
-    "Em {month}, a taxa de poupança foi {rate}. A média de 12 meses exige 3 meses completos de registros.",
+    "A média de 12 meses exige 3 meses completos de registros.",
   "report.indicators.verdict.noIncome":
-    "Em {month}, nenhuma receita foi registrada, então não há taxa de poupança.",
+    "Nenhuma receita registrada em {month}.",
   "report.indicators.verdict.partial":
-    "Até agora em {month}, entraram {income} e saíram {expense}. A taxa de poupança só se compara com um mês fechado.",
+    "Em andamento: só se compara com um mês fechado.",
   "report.indicators.progress": "Em andamento até {date}",
   "report.indicators.income": "Receita",
   "report.indicators.expense": "Despesa",

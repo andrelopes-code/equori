@@ -25,18 +25,17 @@ export const reportsEn = {
     "Share of mean monthly income taken by loan principal and interest.",
   "report.indicators.liabilitiesNote":
     "What you owed on cards, loans and other debts at the end of each month.",
+  "report.indicators.verdict.label": "Savings rate in {month}",
   "report.indicators.verdict.above":
-    "In {month}, the savings rate was {rate}, {delta} pp above the 12-month mean ({mean}).",
+    "{delta}\u00a0pp above the 12-month mean ({mean})",
   "report.indicators.verdict.below":
-    "In {month}, the savings rate was {rate}, {delta} pp below the 12-month mean ({mean}).",
-  "report.indicators.verdict.inline":
-    "In {month}, the savings rate was {rate}, in line with the 12-month mean ({mean}).",
+    "{delta}\u00a0pp below the 12-month mean ({mean})",
+  "report.indicators.verdict.inline": "In line with the 12-month mean ({mean})",
   "report.indicators.verdict.noMean":
-    "In {month}, the savings rate was {rate}. The 12-month mean needs 3 complete months of records.",
-  "report.indicators.verdict.noIncome":
-    "In {month}, no income was recorded, so there is no savings rate.",
+    "The 12-month mean needs 3 complete months of records.",
+  "report.indicators.verdict.noIncome": "No income was recorded in {month}.",
   "report.indicators.verdict.partial":
-    "So far in {month}, {income} came in and {expense} went out. The savings rate only compares with a closed month.",
+    "In progress: it only compares with a closed month.",
   "report.indicators.progress": "In progress until {date}",
   "report.indicators.income": "Income",
   "report.indicators.expense": "Expense",

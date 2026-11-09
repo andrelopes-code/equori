@@ -6,7 +6,8 @@ export type Verdict =
   | { kind: "inline"; rate: number; mean: number }
   | { kind: "noMean"; rate: number }
   | { kind: "noIncome" }
-  | { kind: "partial" };
+  // rate is the written value of the incomplete month, never compared.
+  | { kind: "partial"; rate: number | null };
 
 // Minor units of the report currency; result is income minus expense.
 export interface Ledger {
@@ -19,9 +20,11 @@ export interface Ledger {
 // IT1). An incomplete month says nothing to compare: its rate divides a partial flow by a partial
 // flow (spec D3).
 export function verdict(report: Indicators, incomplete: boolean): Verdict {
-  if (incomplete) return { kind: "partial" };
-
   const asked = askedMonth(report);
+
+  if (incomplete)
+    return { kind: "partial", rate: asked.savings_rate.bp ?? null };
+
   const rate = asked.savings_rate.bp;
 
   if (rate === undefined) return { kind: "noIncome" };

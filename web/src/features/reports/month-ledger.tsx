@@ -1,5 +1,3 @@
-import { Inline } from "@slotted/react/inline";
-import { Stack } from "@slotted/react/stack";
 import { Text } from "@slotted/react/typography";
 
 import type { Ledger } from "@/features/reports/indicator-verdict";
@@ -12,54 +10,41 @@ export interface MonthLedgerProps {
   format: IndicatorFormat;
 }
 
-// What came in, what went out and what stayed, with the amounts ending on one line.
+// What came in, what went out and what stayed: three figures side by side, a label over each
+// amount, so the block is as tall as one figure and sits level with the sentence beside it.
 export function MonthLedger({ ledger, format }: MonthLedgerProps) {
   const t = useT();
-  const rows = [
+  const figures = [
     {
       key: "income",
       label: t("report.indicators.income"),
       amount: ledger.income,
-      className: styles.row,
     },
     {
       key: "expense",
       label: t("report.indicators.expense"),
       amount: ledger.expense,
-      className: styles.row,
     },
     {
       key: "result",
       label: t("report.indicators.result"),
       amount: ledger.result,
-      className: styles.total,
     },
   ];
 
   return (
-    <Stack gap={5}>
-      {rows.map((row) => (
-        <Inline
-          key={row.key}
-          className={row.className}
-          gap={5}
-          justify="between"
-          align="baseline"
-          wrap="nowrap"
-        >
+    <div className={styles.ledger}>
+      {figures.map((figure) => (
+        <div key={figure.key} className={styles.figure}>
           <Text size="sm" tone="muted">
-            {row.label}
+            {figure.label}
           </Text>
 
-          <Text
-            className={styles.amount}
-            size={row.key === "result" ? "lg" : "md"}
-            weight="semibold"
-          >
-            {format.money(row.amount)}
+          <Text className={styles.amount} size="xl" weight="semibold">
+            {format.money(figure.amount)}
           </Text>
-        </Inline>
+        </div>
       ))}
-    </Stack>
+    </div>
   );
 }

@@ -48,7 +48,7 @@ describe("verdict", () => {
       name: "incomplete month",
       last: { savings_rate: { bp: -17241 } },
       incomplete: true,
-      want: { kind: "partial" },
+      want: { kind: "partial", rate: -17241 },
     },
   ] satisfies {
     name: string;
