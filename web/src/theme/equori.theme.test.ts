@@ -138,6 +138,13 @@ test("a raised toast and the palette are materials over the page", () => {
   );
 });
 
+test("a sticky column takes the ground the table stands on, not the raised surface", () => {
+  assert.match(
+    css,
+    /\[data-ui="table"\] \{\s*--slotted-table-sticky-surface: var\(--slotted-ground, var\(--slotted-surface-sunken\)\);/,
+  );
+});
+
 test("a group label of the palette adds no second layer over the material", () => {
   assert.match(
     css,

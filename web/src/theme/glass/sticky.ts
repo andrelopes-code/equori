@@ -25,8 +25,17 @@ export const stuckFill = `${sectionHeader}::before`;
 const stuck = `${sectionHeader}[data-stuck]::before`;
 const stuckWithoutDivider = `${family("section")}[data-sticky]:not([data-divider]) > [data-part="header"][data-stuck]::before`;
 
+const stickyEnd = `${family("table")} [data-sticky="end"]`;
+const stickyStart = `${family("table")} [data-sticky="start"]`;
+
 // The elements that carry a blur, which reduced transparency turns off.
-export const blurredBars = [sectionHeader, stuckFill, gridHead];
+export const blurredBars = [
+  sectionHeader,
+  stuckFill,
+  gridHead,
+  stickyEnd,
+  stickyStart,
+];
 
 // The bars that are on screen all the time: a blur there is redrawn each time the aurora moves, so
 // a phone drops it. A stuck header is on screen only while the page scrolls, and keeps its blur.
@@ -39,7 +48,8 @@ const filledBars = [
 ];
 
 // A sticky column takes the sticky fill, and where the engine reports the table's scroll state, only
-// while content passes under the column.
+// while content passes under the column. The fill alone lets those rows show through at 28%, so the
+// column also blurs them. One blur per cell is the cost, paid only while content is under the column.
 const stickyCell = `${family("table")} [data-sticky]`;
 const tableScroll = `${family("table")} [data-part="scroll"]`;
 const stickyColumnFill: Declarations = {
@@ -81,9 +91,9 @@ export const stickyRules: readonly Block[] = [
     rule(stickyCell, { "--slotted-table-sticky-surface": "transparent" }),
   ]),
   container("scroll-state(scrollable: inline-end)", [
-    rule(`${family("table")} [data-sticky="end"]`, stickyColumnFill),
+    rule(stickyEnd, { ...stickyColumnFill, ...strongFrost }),
   ]),
   container("scroll-state(scrollable: inline-start)", [
-    rule(`${family("table")} [data-sticky="start"]`, stickyColumnFill),
+    rule(stickyStart, { ...stickyColumnFill, ...strongFrost }),
   ]),
 ];

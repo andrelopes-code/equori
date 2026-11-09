@@ -247,6 +247,17 @@ test("a chart's table view is glass and its header is opaque", () => {
   );
 });
 
+test("a table's sticky column blurs the rows that pass under it", () => {
+  assert.match(
+    glassOnly,
+    /@container scroll-state\(scrollable: inline-end\) \{[^@]*\[data-sticky="end"\] \{[^}]*backdrop-filter: blur\(var\(--glass-blur-strong\)\)/,
+  );
+  assert.match(
+    glassOnly,
+    /@container scroll-state\(scrollable: inline-start\) \{[^@]*\[data-sticky="start"\] \{[^}]*backdrop-filter: blur\(var\(--glass-blur-strong\)\)/,
+  );
+});
+
 test("a table's sticky column is filled only while content passes under it", () => {
   assert.match(
     glassOnly,

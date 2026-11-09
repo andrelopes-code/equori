@@ -1942,5 +1942,9 @@
     [data-ui="table"][data-sticky-header] {
       --slotted-table-header-surface: var(--slotted-ground, var(--slotted-surface));
     }
+
+    [data-ui="table"] {
+      --slotted-table-sticky-surface: var(--slotted-ground, var(--slotted-surface-sunken));
+    }
   }
 }

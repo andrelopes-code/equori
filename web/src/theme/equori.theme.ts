@@ -123,6 +123,15 @@ const stickyHeaderRule = `
 }
 `;
 
+// Workaround for Slotted issue #86: a column pinned to a side paints the raised surface, a shade off
+// the ground the table stands on. It takes that ground: the section's, or the page's sunken one
+// where no section sets it, because the page does not publish its ground (issue #85).
+const stickyColumnRule = `
+[data-ui="table"] {
+  --slotted-table-sticky-surface: var(--slotted-ground, var(--slotted-surface-sunken));
+}
+`;
+
 const tagInsetRule = `
 [data-ui="tag"] {
   --slotted-tag-inset-inline: calc(var(--slotted-space-4) + var(--slotted-space-1));
@@ -371,6 +380,7 @@ export default extendTheme(
       tagInsetRule,
       listHeightRule,
       stickyHeaderRule,
+      stickyColumnRule,
     ],
   },
   { name: "equori" },
