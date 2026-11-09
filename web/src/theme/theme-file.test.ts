@@ -54,6 +54,13 @@ describe("theme file", () => {
     });
   });
 
+  it("reads a file whose chart palette is distinct", () => {
+    const file = JSON.parse(exportTheme("T", curatedThemes.equori)) as object;
+    const text = JSON.stringify({ ...file, chart: "distinct" });
+
+    expect(parseTheme(text)?.values.chart).toBe("distinct");
+  });
+
   it("writes every surface value and leaves the contrast out", () => {
     const file = JSON.parse(exportTheme("T", curatedThemes.terminal)) as object;
 

@@ -1,3 +1,4 @@
+import defaultTheme from "@slotted/themes/default";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { applySurfaces, surfaceDefaults, surfaces } from "@/theme/surface";
@@ -94,4 +95,17 @@ describe("surface values", () => {
     expect(Math.min(...gaps)).toBe(75);
     expect(new Set(turns).size).toBe(8);
   });
+
+  it.each(["dark", "light"] as const)(
+    "takes the distinct series from the default theme in %s",
+    (scheme) => {
+      for (let slot = 1; slot <= 8; slot++) {
+        const token = `--slotted-data-${String(slot)}`;
+
+        expect(surfaceRecipe.chart.distinct[scheme]?.[token]).toEqual(
+          defaultTheme.recipe[scheme][token],
+        );
+      }
+    },
+  );
 });

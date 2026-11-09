@@ -1,4 +1,5 @@
 import type { Derivation } from "@slotted/theme";
+import defaultTheme from "@slotted/themes/default";
 
 // Spec A13, docs/specs/2026-10-29-appearance-studio-design.md. Each value lists, per scheme, the
 // tokens it sets: a Slotted derivation for a colour, a CSS value for a shadow or a series.
@@ -17,7 +18,7 @@ export const surfaceSets = {
   step: ["standard", "wide"],
   borders: ["none", "subtle", "strong"],
   shadows: ["flat", "soft", "deep"],
-  chart: ["spectrum", "accent", "mono"],
+  chart: ["spectrum", "accent", "mono", "distinct"],
   contrast: ["standard", "high"],
 } as const;
 
@@ -132,6 +133,10 @@ export const surfaceRecipe: {
       dark: seriesTokens((slot) => accentSeries(0.66, slot * 45, vividScale)),
       light: seriesTokens((slot) => accentSeries(0.58, slot * 45, vividScale)),
     },
+    distinct: {
+      dark: dataScale("dark"),
+      light: dataScale("light"),
+    },
     mono: {
       dark: seriesTokens((slot) => accentSeries(0.86 - slot * 0.055, 0)),
       light: seriesTokens((slot) => accentSeries(0.36 + slot * 0.055, 0)),
@@ -215,4 +220,17 @@ function accentSeries(l: number, h: number, chromaScale = 1): Derivation {
 
 function round(value: number): number {
   return Math.round(value * 1000) / 1000;
+}
+
+// The measured data scale of the Slotted default theme, slots 1 to 8.
+function dataScale(scheme: SurfaceScheme): SurfaceTokens {
+  const recipe = defaultTheme.recipe[scheme];
+
+  return Object.fromEntries(
+    Array.from({ length: 8 }, (_, i) => {
+      const token = `--slotted-data-${String(i + 1)}`;
+
+      return [token, recipe[token] ?? ""];
+    }),
+  );
 }

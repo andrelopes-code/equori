@@ -265,6 +265,7 @@ export const settingsEn = {
   "studio.chart.spectrum": "Spectrum",
   "studio.chart.accent": "From the accent",
   "studio.chart.mono": "Mono",
+  "studio.chart.distinct": "Colour-blind safe",
   "studio.section.grounds": "Ground and layers",
   "studio.section.lines": "Lines and relief",
   "studio.section.reading": "Reading",

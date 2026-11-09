@@ -269,6 +269,7 @@ export const settingsPtBR: Record<keyof typeof settingsEn, string> = {
   "studio.chart.spectrum": "Arco-íris",
   "studio.chart.accent": "Do destaque",
   "studio.chart.mono": "Mono",
+  "studio.chart.distinct": "Para daltonismo",
   "studio.section.grounds": "Fundo e camadas",
   "studio.section.lines": "Linhas e relevo",
   "studio.section.reading": "Leitura",
