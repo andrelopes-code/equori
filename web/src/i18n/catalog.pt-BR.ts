@@ -136,7 +136,7 @@ export const catalogPtBR: Catalog = {
   "corners.square": "Retos",
   "corners.soft": "Suaves",
   "corners.standard": "Padrão",
-  "corners.round": "Arredondados",
+  "corners.round": "Redondos",
   "settings.experimental.glass": "Superfícies de vidro",
   "settings.experimental.glassDescription":
     "Painéis translúcidos sobre um fundo de luzes na cor do tom. Só no esquema escuro, inclusive o do sistema.",

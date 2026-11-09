@@ -51,6 +51,7 @@ export function AppearanceSurfaces() {
         />
         <StudioChoice
           label={t("studio.chart")}
+          hint={t("studio.chart.hint")}
           values={surfaceSets.chart}
           value={chart}
           text={(v) => t(`studio.chart.${v}`)}

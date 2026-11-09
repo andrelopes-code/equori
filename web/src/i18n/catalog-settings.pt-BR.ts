@@ -246,7 +246,7 @@ export const settingsPtBR: Record<keyof typeof settingsEn, string> = {
   "studio.summaryAmounts.hint":
     "Como os cartões de resumo escrevem um valor. Tabelas mantêm todos os dígitos.",
   "studio.summaryAmounts.full": "Completo",
-  "studio.summaryAmounts.whole": "Sem casas decimais",
+  "studio.summaryAmounts.whole": "Sem decimais",
   "studio.summaryAmounts.compact": "Compacto",
   "studio.bookColour": "Cor do livro",
   "studio.bookColour.hint":
@@ -270,10 +270,11 @@ export const settingsPtBR: Record<keyof typeof settingsEn, string> = {
   "studio.contrast.standard": "Padrão",
   "studio.contrast.high": "Alto",
   "studio.chart": "Cores dos gráficos",
+  "studio.chart.hint": "Daltônico separa as séries para quem tem daltonismo.",
   "studio.chart.spectrum": "Arco-íris",
-  "studio.chart.accent": "Do destaque",
+  "studio.chart.accent": "Destaque",
   "studio.chart.mono": "Mono",
-  "studio.chart.distinct": "Para daltonismo",
+  "studio.chart.distinct": "Daltônico",
   "studio.section.grounds": "Fundo e camadas",
   "studio.section.lines": "Linhas e relevo",
   "studio.section.reading": "Leitura",
