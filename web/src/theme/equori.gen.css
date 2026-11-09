@@ -218,6 +218,7 @@
     --slotted-detail-panel-footer-backdrop-filter: var(--slotted-material-backdrop);
     --slotted-command-palette-surface: var(--slotted-surface-material);
     --slotted-command-palette-backdrop-filter: var(--slotted-material-backdrop);
+    --slotted-popover-measure-sm: 24rem;
     --slotted-toast-surface: var(--slotted-surface-material);
     --slotted-toast-backdrop-filter: var(--slotted-material-backdrop);
     --slotted-command-palette-footer-surface: color-mix(in oklab, var(--slotted-surface-sunken) 50%, transparent);
@@ -1945,6 +1946,33 @@
 
     [data-ui="table"] {
       --slotted-table-sticky-surface: var(--slotted-ground, var(--slotted-surface-sunken));
+    }
+
+    [data-ui="collapsible"] > [data-part="header"] > [data-part="trigger"] {
+      border-radius: var(--slotted-control-radius);
+    }
+
+    [data-ui="button"][data-tone="danger"][data-variant="outline"]:not(:disabled):not([data-disabled]) {
+      border-color: color-mix(in oklch, var(--slotted-tone-danger-text) 45%, transparent);
+    }
+
+    [data-ui="button"][data-tone="danger"]:is([data-variant="outline"], [data-variant="ghost"]):hover:not(:disabled):not([data-disabled]):not([data-loading]) {
+      background: color-mix(in oklch, var(--slotted-tone-danger-solid) 12%, transparent);
+    }
+
+    [data-ui="button"][data-tone="danger"]:is([data-variant="outline"], [data-variant="ghost"]):active:not(:disabled):not([data-disabled]):not([data-loading]) {
+      background: color-mix(in oklch, var(--slotted-tone-danger-solid) 20%, transparent);
+    }
+
+    [data-ui="dashboard-grid"] [data-part="widget"] [data-part="title-row"] > [data-part="help"] {
+      block-size: 1.5rem;
+      min-block-size: 0;
+      inline-size: 1.5rem;
+      min-inline-size: 0;
+      padding: 0;
+      border-radius: var(--slotted-control-radius);
+      color: var(--slotted-text-muted);
+      margin-block: calc((1.5rem - var(--slotted-font-size-md, 0.8125rem) * var(--slotted-line-height-md, 1.5)) / -2);
     }
   }
 }

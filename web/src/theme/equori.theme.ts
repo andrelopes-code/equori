@@ -117,6 +117,45 @@ const darkNeutral = (l: number) => ({
 // height stays.
 // A table is lines on the page, so its header surface is transparent. A header pinned to the top
 // has rows passing under it, and takes the ground the table stands on.
+// Workaround for Slotted issue #89: the plain trigger paints its hover and active fill with no
+// corner, a square box under any corner style.
+const collapsibleCornerRule = `
+[data-ui="collapsible"] > [data-part="header"] > [data-part="trigger"] {
+  border-radius: var(--slotted-control-radius);
+}
+`;
+
+// Workaround for Slotted issue #90: an outline or ghost Button in the danger tone changes only its
+// text color. The border and the hover and active fills take the danger tone.
+const dangerButtonRule = `
+[data-ui="button"][data-tone="danger"][data-variant="outline"]:not(:disabled):not([data-disabled]) {
+  border-color: color-mix(in oklch, var(--slotted-tone-danger-text) 45%, transparent);
+}
+
+[data-ui="button"][data-tone="danger"]:is([data-variant="outline"], [data-variant="ghost"]):hover:not(:disabled):not([data-disabled]):not([data-loading]) {
+  background: color-mix(in oklch, var(--slotted-tone-danger-solid) 12%, transparent);
+}
+
+[data-ui="button"][data-tone="danger"]:is([data-variant="outline"], [data-variant="ghost"]):active:not(:disabled):not([data-disabled]):not([data-loading]) {
+  background: color-mix(in oklch, var(--slotted-tone-danger-solid) 20%, transparent);
+}
+`;
+
+// Workaround for Slotted issue #91: the help control of a widget is a control-height button. It
+// draws as a 1.5rem muted glyph that fills on hover.
+const widgetHelpRule = `
+[data-ui="dashboard-grid"] [data-part="widget"] [data-part="title-row"] > [data-part="help"] {
+  block-size: 1.5rem;
+  min-block-size: 0;
+  inline-size: 1.5rem;
+  min-inline-size: 0;
+  padding: 0;
+  border-radius: var(--slotted-control-radius);
+  color: var(--slotted-text-muted);
+  margin-block: calc((1.5rem - var(--slotted-font-size-md, 0.8125rem) * var(--slotted-line-height-md, 1.5)) / -2);
+}
+`;
+
 // Workaround for Slotted issue #85: the page does not publish its ground, so the sunken one stands
 // in where no section sets it.
 const stickyHeaderRule = `
@@ -363,6 +402,9 @@ export default extendTheme(
       "--slotted-command-palette-surface": "var(--slotted-surface-material)",
       "--slotted-command-palette-backdrop-filter":
         "var(--slotted-material-backdrop)",
+      // Workaround for Slotted issue #91: a widget's help note is a few sentences; the 16rem popover
+      // of that control wraps it into a tall column.
+      "--slotted-popover-measure-sm": "24rem",
       "--slotted-toast-surface": "var(--slotted-surface-material)",
       "--slotted-toast-backdrop-filter": "var(--slotted-material-backdrop)",
       "--slotted-command-palette-footer-surface":
@@ -383,6 +425,9 @@ export default extendTheme(
       listHeightRule,
       stickyHeaderRule,
       stickyColumnRule,
+      collapsibleCornerRule,
+      dangerButtonRule,
+      widgetHelpRule,
     ],
   },
   { name: "equori" },
