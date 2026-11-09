@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/csv"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"net/http"
 	"slices"
@@ -25,10 +26,13 @@ const histFile = "eurofxref-hist.zip"
 type Source struct {
 	client *http.Client
 	url    string
+	seen   *feed.Conditional
 }
 
 // New returns a Source that reads the XML file at url.
-func New(c *http.Client, url string) Source { return Source{client: c, url: url} }
+func New(c *http.Client, url string) Source {
+	return Source{client: c, url: url, seen: feed.NewConditional()}
+}
 
 func (Source) ID() string { return "ecb" }
 
@@ -60,7 +64,18 @@ type envelope struct {
 // earliest date of the 90-day file, every date of the range comes from the full-series ZIP.
 // A code the file does not list is skipped.
 func (s Source) Fetch(ctx context.Context, codes []money.Currency, from, to time.Time) ([]feed.Quote, error) {
-	body, err := feed.Get(ctx, s.client, s.url)
+	key := s.url + "|" + joinCodes(codes)
+
+	since := ""
+	if feed.Incremental(from, to) {
+		since = s.seen.Since(key)
+	}
+
+	body, lastModified, err := feed.GetSince(ctx, s.client, s.url, since)
+	if errors.Is(err, feed.ErrNoData) && since != "" {
+		return nil, nil
+	}
+
 	if err != nil {
 		return nil, fmt.Errorf("fetch ECB rates: %w", err)
 	}
@@ -105,6 +120,8 @@ func (s Source) Fetch(ctx context.Context, codes []money.Currency, from, to time
 			out = append(out, feed.Quote{Instrument: "EUR", Quote: money.Currency(r.Currency), Date: date, Value: rate})
 		}
 	}
+
+	s.seen.Remember(key, lastModified)
 
 	return out, nil
 }
@@ -171,4 +188,13 @@ func (s Source) fetchHistory(ctx context.Context, codes []money.Currency, from, 
 	}
 
 	return out, nil
+}
+
+func joinCodes(codes []money.Currency) string {
+	parts := make([]string, len(codes))
+	for i, c := range codes {
+		parts[i] = string(c)
+	}
+
+	return strings.Join(parts, ",")
 }

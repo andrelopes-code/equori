@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/andrelopes-code/equori/internal/platform/money"
@@ -66,61 +67,123 @@ type StatusError struct{ Code int }
 
 func (e *StatusError) Error() string { return fmt.Sprintf("status %d", e.Code) }
 
+// Incremental reports whether [from, to] spans at most 31 days, the tick's window (A222 MQ14).
+func Incremental(from, to time.Time) bool { return !from.Before(to.AddDate(0, 0, -31)) }
+
+// Conditional remembers the Last-Modified of the answers of one source by key (A222 MQ14).
+type Conditional struct {
+	mu   sync.Mutex
+	seen map[string]string
+}
+
+func NewConditional() *Conditional { return &Conditional{seen: map[string]string{}} }
+
+// Since returns the Last-Modified remembered for key, or "".
+func (c *Conditional) Since(key string) string {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	return c.seen[key]
+}
+
+// Remember stores lastModified for key; an empty value removes the key.
+func (c *Conditional) Remember(key, lastModified string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if lastModified == "" {
+		delete(c.seen, key)
+
+		return
+	}
+
+	c.seen[key] = lastModified
+}
+
 // Get returns the body of url; a 404 answer returns ErrNoData.
 func Get(ctx context.Context, c *http.Client, url string) ([]byte, error) {
+	body, _, err := GetSince(ctx, c, url, "")
+
+	return body, err
+}
+
+// GetSince is Get with If-Modified-Since: since when since is not empty. A 304 answer returns
+// ErrNoData. It returns the body and the Last-Modified of the answer.
+func GetSince(ctx context.Context, c *http.Client, url, since string) ([]byte, string, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
-		return nil, err
+		return nil, "", err
+	}
+
+	if since != "" {
+		req.Header.Set("If-Modified-Since", since)
 	}
 
 	resp, err := c.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	defer func() { _ = resp.Body.Close() }()
 
-	if resp.StatusCode == http.StatusNotFound {
-		return nil, ErrNoData
+	if resp.StatusCode == http.StatusNotFound || resp.StatusCode == http.StatusNotModified {
+		return nil, "", ErrNoData
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, &StatusError{Code: resp.StatusCode}
+		return nil, "", &StatusError{Code: resp.StatusCode}
 	}
 
-	return io.ReadAll(io.LimitReader(resp.Body, maxResponseBytes))
+	body, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseBytes))
+	if err != nil {
+		return nil, "", err
+	}
+
+	return body, resp.Header.Get("Last-Modified"), nil
 }
 
 // Download streams the body of url to a file under os.TempDir, passes it to read and removes it.
 // A 404 answer returns ErrNoData; an answer over 256 MiB is an error.
 func Download(ctx context.Context, c *http.Client, url string, read func(f *os.File, size int64) error) error {
-	return download(ctx, c, url, maxDownloadBytes, read)
+	_, err := DownloadSince(ctx, c, url, "", read)
+
+	return err
 }
 
-func download(ctx context.Context, c *http.Client, url string, limit int64, read func(f *os.File, size int64) error) error {
+// DownloadSince is Download with If-Modified-Since: since when since is not empty. A 304 answer
+// returns ErrNoData. It returns the Last-Modified of the answer.
+func DownloadSince(ctx context.Context, c *http.Client, url, since string, read func(f *os.File, size int64) error) (string, error) {
+	return download(ctx, c, url, since, maxDownloadBytes, read)
+}
+
+func download(ctx context.Context, c *http.Client, url, since string, limit int64, read func(f *os.File, size int64) error) (string, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
-		return err
+		return "", err
+	}
+
+	if since != "" {
+		req.Header.Set("If-Modified-Since", since)
 	}
 
 	resp, err := c.Do(req)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	defer func() { _ = resp.Body.Close() }()
 
-	if resp.StatusCode == http.StatusNotFound {
-		return ErrNoData
+	if resp.StatusCode == http.StatusNotFound || resp.StatusCode == http.StatusNotModified {
+		return "", ErrNoData
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return &StatusError{Code: resp.StatusCode}
+		return "", &StatusError{Code: resp.StatusCode}
 	}
 
 	f, err := os.CreateTemp("", "equori-download-*")
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	defer func() {
@@ -130,16 +193,16 @@ func download(ctx context.Context, c *http.Client, url string, limit int64, read
 
 	size, err := io.Copy(f, io.LimitReader(resp.Body, limit+1))
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	if size > limit {
-		return fmt.Errorf("answer over %d bytes", limit)
+		return "", fmt.Errorf("answer over %d bytes", limit)
 	}
 
 	if _, err := f.Seek(0, io.SeekStart); err != nil {
-		return err
+		return "", err
 	}
 
-	return read(f, size)
+	return resp.Header.Get("Last-Modified"), read(f, size)
 }

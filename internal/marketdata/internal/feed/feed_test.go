@@ -71,7 +71,7 @@ func TestDownload(t *testing.T) {
 
 		var name string
 
-		err := download(t.Context(), srv.Client(), srv.URL+"/file", 2, func(f *os.File, _ int64) error {
+		_, err := download(t.Context(), srv.Client(), srv.URL+"/file", "", 2, func(f *os.File, _ int64) error {
 			name = f.Name()
 
 			return nil
@@ -84,4 +84,79 @@ func TestDownload(t *testing.T) {
 			t.Fatalf("read called with %s", name)
 		}
 	})
+}
+
+const lastModified = "Mon, 09 Nov 2026 03:54:30 GMT"
+
+func conditionalServer(t *testing.T) (*httptest.Server, *[]string) {
+	t.Helper()
+
+	var seen []string
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		since := r.Header.Get("If-Modified-Since")
+		seen = append(seen, since)
+
+		if since == lastModified {
+			w.WriteHeader(http.StatusNotModified)
+
+			return
+		}
+
+		w.Header().Set("Last-Modified", lastModified)
+		_, _ = w.Write([]byte("abc"))
+	}))
+	t.Cleanup(srv.Close)
+
+	return srv, &seen
+}
+
+func TestGetSince(t *testing.T) {
+	t.Parallel()
+
+	srv, seen := conditionalServer(t)
+
+	body, lm, err := GetSince(t.Context(), srv.Client(), srv.URL, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if string(body) != "abc" || lm != lastModified {
+		t.Fatalf("body %q, Last-Modified %q", body, lm)
+	}
+
+	_, _, err = GetSince(t.Context(), srv.Client(), srv.URL, lastModified)
+	if !errors.Is(err, ErrNoData) {
+		t.Fatalf("err = %v, want ErrNoData", err)
+	}
+
+	if len(*seen) != 2 || (*seen)[0] != "" || (*seen)[1] != lastModified {
+		t.Fatalf("If-Modified-Since seen = %q", *seen)
+	}
+}
+
+func TestDownloadSince(t *testing.T) {
+	t.Parallel()
+
+	srv, seen := conditionalServer(t)
+	calls := 0
+	read := func(*os.File, int64) error { calls++; return nil }
+
+	lm, err := DownloadSince(t.Context(), srv.Client(), srv.URL, "", read)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if lm != lastModified || calls != 1 {
+		t.Fatalf("Last-Modified %q, read calls %d", lm, calls)
+	}
+
+	_, err = DownloadSince(t.Context(), srv.Client(), srv.URL, lastModified, read)
+	if !errors.Is(err, ErrNoData) || calls != 1 {
+		t.Fatalf("err = %v, read calls %d", err, calls)
+	}
+
+	if len(*seen) != 2 || (*seen)[0] != "" || (*seen)[1] != lastModified {
+		t.Fatalf("If-Modified-Since seen = %q", *seen)
+	}
 }

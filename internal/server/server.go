@@ -138,7 +138,8 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 
 	dispatcher.UseBooks(identityModule.InBooks)
 
-	feedClient := &http.Client{Timeout: time.Minute}
+	version := cmp.Or(cfg.Version, "dev")
+	feedClient := marketdata.FeedClient(version)
 	// Config.PriceFeeds and Config.IndexFeeds are validated here and seed the stored feed settings
 	// (ADR 025 F2, F4); production passes none (BK25).
 	if _, err := marketdata.NewSources(cfg.PriceFeeds, nil, feedClient); err != nil {
@@ -165,7 +166,6 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 	})
 	marketdataModule.WithProfiles(identityModule).WithAdmins(identityModule)
 	ledgerModule := ledger.New(pool, dispatcher, marketdataModule, identityModule, clk, log)
-	version := cmp.Or(cfg.Version, "dev")
 	reportingModule := reporting.New(pool, dispatcher, clk, log, version)
 	classificationModule := classification.New(pool, dispatcher, ledgerModule, log)
 

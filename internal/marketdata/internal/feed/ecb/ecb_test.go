@@ -146,3 +146,56 @@ func TestECBHistory(t *testing.T) {
 		t.Fatalf("requests = %v", paths)
 	}
 }
+
+func TestECBConditional(t *testing.T) {
+	t.Parallel()
+
+	const lastModified = "Mon, 09 Nov 2026 14:56:21 GMT"
+
+	body, err := os.ReadFile("testdata/eurofxref-hist-90d.xml")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var sent []string
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		since := r.Header.Get("If-Modified-Since")
+		sent = append(sent, since)
+
+		if since == lastModified {
+			w.WriteHeader(http.StatusNotModified)
+
+			return
+		}
+
+		w.Header().Set("Last-Modified", lastModified)
+		_, _ = w.Write(body)
+	}))
+	t.Cleanup(srv.Close)
+	src := ecb.New(srv.Client(), srv.URL+"/eurofxref-hist-90d.xml")
+
+	calls := []struct {
+		codes      []money.Currency
+		quotes     int
+		wantHeader string
+	}{
+		{[]money.Currency{"USD"}, 2, ""},
+		{[]money.Currency{"USD"}, 0, lastModified},
+		{[]money.Currency{"BRL", "USD"}, 2, ""},
+	}
+	for i, c := range calls {
+		got, err := src.Fetch(t.Context(), c.codes, day("2026-10-19"), day("2026-10-20"))
+		if err != nil {
+			t.Fatalf("call %d: %v", i+1, err)
+		}
+
+		if len(got) != c.quotes {
+			t.Fatalf("call %d: %d quotes, want %d", i+1, len(got), c.quotes)
+		}
+
+		if sent[i] != c.wantHeader {
+			t.Fatalf("call %d: If-Modified-Since %q, want %q", i+1, sent[i], c.wantHeader)
+		}
+	}
+}
