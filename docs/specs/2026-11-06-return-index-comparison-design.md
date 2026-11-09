@@ -82,12 +82,44 @@ The return report (`GET /reports/return`) gives the money-weighted annual return
 |---|---|---|
 | Accounts, column "Yield" (R8, R21) | `annual_bp` a year · `percent_bp` of the index · "since {date}" when `started_late` | the period return, with "since {date}" when `started_late` · the index over the same days |
 | Accounts, phone row | `annual_bp` a year, with "since {date}" when `started_late` | the period return, with "since {date}" when `started_late` |
-| Account page, section "Yield over 12 months" | card "Rate a year" (`annual_bp`; note: the period return, `days` and the window); card "Percent of the index" (`percent_bp`, with "±X pp" from `percent_error_bp` 100; note: the index a year, `index_annual_bp`); card "Real return" (`real_bp`; note: the inflation and its months); when `benchmark` is absent, the inflation group, the text of `unavailable_reason` and, for the reasons that keep the period return (below), the card "Return in the period" (`period_bp`; note: the dates and days of the window) | card "Return" (`return_bp`; note: `days` and the window); card "Against the index" (`excess_bp` in percentage points; note: the index over the same days); card "Real return" |
+| Account page, tab "Yield", section "Yield over 12 months" | card "Rate a year" (`annual_bp`; note: the period return, `days` and the window); card "Percent of the index" (`percent_bp`, with "±X pp" from `percent_error_bp` 100; note: the index a year, `index_annual_bp`); card "Real return" (`real_bp`; note: the inflation and its months); when `benchmark` is absent, the inflation group, the text of `unavailable_reason` and, for the reasons that keep the period return (below), the card "Return in the period" (`period_bp`; note: the dates and days of the window) | card "Return" (`return_bp`; note: `days` and the window); card "Against the index" (`excess_bp` in percentage points; note: the index over the same days); card "Real return" |
 | Portfolio, return section | PC10–PC13 of `docs/specs/2026-11-07-portfolio-clarity-design.md` | the same |
 
 Without `benchmark`, the period return (`period_bp`, labelled with the days or the dates of the window) is shown with the text of `unavailable_reason` for `no_index_for_region`, `currency_mismatch`, `no_rate_in_window` and `percent_undefined`. It is hidden, the text standing alone, for `no_yield_recorded`, `single_credit` and `nothing_held`. This holds in the column, the phone row and the account page.
 
 R8 and R10 hold where R17 does not replace them.
+
+**R17 Placement (amendment of 2026-11-09).** The section of R17 stands in its own tab "Yield" of the account page, beside the tab "Movements"; the tab is in the address as `?tab=yield`. The tab is offered for an account of the tops of R8. Under another tab and under "Movements" on a screen from 600 px, the section is not drawn. A screen below 600 px offers no tab but "Movements" (ADR 027, S5): the section stays there, between the figures and the chart.
+
+### Cross-cutting questions (amendment of 2026-11-09)
+
+- R1: Does not apply: no regional value; the section keeps its figures.
+- R2: Does not apply: no regional behavior changes.
+- R3: Does not apply: no value set.
+- R4: Does not apply: no extension point.
+- R5: `account.tab.yield`, pt-BR "Rendimento", en "Yield".
+- R6: Does not apply: the section keeps its number and date formats.
+- C1: Does not apply: no amount is stored or computed.
+- C2: Does not apply: no amount is added or compared; R15 holds.
+- C3: Does not apply: R15 holds.
+- C4: Does not apply: the section keeps `useMoneyFormat()`.
+- T1: Does not apply: the window stays the 365 days that end today.
+- T2: Does not apply: no business-day count.
+- B1: Does not apply: no table.
+- B2: Does not apply: no operation; the section reads the report under its role.
+- B3: Does not apply: no setting; the open tab lives in the address (FM-12).
+- D1: Does not apply: no table.
+- D2: Does not apply: no schema change.
+- D3: Does not apply: no recorded fact changes.
+- D4: Does not apply: no data from a bank, a file or a model.
+- D5: Does not apply: no diagnostic field.
+- S1: Does not apply: no operation.
+- S2: Below 600 px the section stays under "Movements".
+- S3: The article `investments.md` changes in the same commit.
+- S4: Does not apply: the report is already an assistant tool.
+- X1: Does not apply: no scenario; the web tests of `account-page.test.tsx` carry A208 R17.
+- X2: Does not apply: no regional or currency behavior changes.
+
 ## Region-dependent values
 
 | Value | Extension point |

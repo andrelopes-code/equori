@@ -1,5 +1,6 @@
 export type AccountTab =
   | "activity"
+  | "yield"
   | "reconciliation"
   | "imports"
   | "scheduled"
@@ -20,6 +21,7 @@ export interface AccountSearch {
 }
 
 const tabs: readonly AccountTab[] = [
+  "yield",
   "reconciliation",
   "imports",
   "scheduled",

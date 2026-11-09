@@ -215,6 +215,7 @@ export const accountsEn = {
   "account.close": "Close account",
   "account.tabs": "Account sections",
   "account.tab.activity": "Movements",
+  "account.tab.yield": "Yield",
   "account.tab.reconciliation": "Reconciliation",
   "account.tab.imports": "Imports",
   "account.tab.scheduled": "Scheduled",

@@ -5,6 +5,7 @@ import { PositionsTab } from "@/features/accounts/positions-tab";
 import { ReconciliationTab } from "@/features/accounts/reconciliation-tab";
 import { ScheduledTab } from "@/features/accounts/scheduled-tab";
 import { SyncTab } from "@/features/accounts/sync-tab";
+import { AccountYieldSection } from "@/features/portfolio";
 import type {
   AccountSearch,
   AccountTab,
@@ -46,6 +47,8 @@ export function AccountTabPanel({
           scale={scale}
         />
       );
+    case "yield":
+      return <AccountYieldSection accountId={account.id} />;
     case "reconciliation":
       return (
         <ReconciliationTab account={account} search={search} scale={scale} />

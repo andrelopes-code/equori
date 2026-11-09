@@ -65,9 +65,21 @@ function findTab(name: keyof typeof catalogEn) {
   return screen.findByRole("tab", { name: new RegExp(`^${catalogEn[name]}`) });
 }
 
+const reportRoute: Record<string, Route> = {
+  "GET /api/v1/reports/return": () =>
+    json(200, {
+      annual_bp: 1500,
+      flows: [],
+      opening: money(1000000),
+      closing: money(1151700),
+      profile: "rate",
+      period_bp: 1490,
+    }),
+};
+
 describe("AccountPage", () => {
   it("states the yield over 12 months of a reserve (A208 R17)", async () => {
-    await renderApp(`/accounts/${reserveID}`, {
+    await renderApp(`/accounts/${reserveID}?tab=yield`, {
       fetch: api({
         "GET /api/v1/reports/return": (req) => {
           const query = new URL(req.url).searchParams;
@@ -140,7 +152,7 @@ describe("AccountPage", () => {
   });
 
   it("draws the figures of the yield on the page's ground, not a card inside a card (A208 R17)", async () => {
-    await renderApp(`/accounts/${reserveID}`, {
+    await renderApp(`/accounts/${reserveID}?tab=yield`, {
       fetch: api({
         "GET /api/v1/reports/return": () =>
           json(200, {
@@ -161,7 +173,7 @@ describe("AccountPage", () => {
   });
 
   it("states what the profile means and what was left out under the groups (A208 R17)", async () => {
-    await renderApp(`/accounts/${reserveID}`, {
+    await renderApp(`/accounts/${reserveID}?tab=yield`, {
       fetch: api({
         "GET /api/v1/reports/return": () =>
           json(200, {
@@ -209,7 +221,7 @@ describe("AccountPage", () => {
   });
 
   it("states why the comparison is absent and what was left out of the yield (A208 R19, R23)", async () => {
-    await renderApp(`/accounts/${reserveID}`, {
+    await renderApp(`/accounts/${reserveID}?tab=yield`, {
       fetch: api({
         "GET /api/v1/reports/return": () =>
           json(200, {
@@ -260,7 +272,7 @@ describe("AccountPage", () => {
   });
 
   it("draws the period return of the window when the index does not apply (R17, W2)", async () => {
-    await renderApp(`/accounts/${reserveID}`, {
+    await renderApp(`/accounts/${reserveID}?tab=yield`, {
       fetch: api({
         "GET /api/v1/reports/return": () =>
           json(200, {
@@ -295,7 +307,7 @@ describe("AccountPage", () => {
   });
 
   it("states a reason alone, without a period return of 0.00%, when no yield was recorded (R17, W2)", async () => {
-    await renderApp(`/accounts/${reserveID}`, {
+    await renderApp(`/accounts/${reserveID}?tab=yield`, {
       fetch: api({
         "GET /api/v1/reports/return": () =>
           json(200, {
@@ -335,6 +347,62 @@ describe("AccountPage", () => {
     });
     await within(figures).findByText(catalogEn["account.figure.reconciled"]);
     expect(asked).toEqual([]);
+  });
+
+  it("offers the yield tab on a measured account (A208 R17)", async () => {
+    await renderApp(`/accounts/${reserveID}`, { fetch: api(reportRoute) });
+
+    expect(await findTab("account.tab.yield")).toBeInTheDocument();
+  });
+
+  it("offers no yield tab on an account that is not measured (A208 R17)", async () => {
+    await renderApp(`/accounts/${checkingID}`, { fetch: api() });
+    expect(await findTab("account.tab.sync")).toBeInTheDocument();
+    expect(tab("account.tab.yield")).not.toBeInTheDocument();
+  });
+
+  it("keeps the yield out of the movements tab on a wide screen (A208 R17)", async () => {
+    await renderApp(`/accounts/${reserveID}`, { fetch: api(reportRoute) });
+    await findTab("account.tab.yield");
+    await screen.findByRole("region", { name: catalogEn["account.figures"] });
+
+    expect(
+      screen.queryByRole("region", {
+        name: catalogEn["portfolio.yield.figure"],
+      }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("opens the yield from its tab and writes the tab in the address (A208 R17)", async () => {
+    const user = userEvent.setup();
+    const { router } = await renderApp(`/accounts/${reserveID}`, {
+      fetch: api(reportRoute),
+    });
+
+    await user.click(await findTab("account.tab.yield"));
+
+    expect(
+      await screen.findByRole("region", {
+        name: catalogEn["portfolio.yield.figure"],
+      }),
+    ).toBeInTheDocument();
+    expect(router.state.location.search).toEqual({ tab: "yield" });
+  });
+
+  it("keeps the yield under the movements on a phone, which has no yield tab (A208 R17, ADR 027 S5)", async () => {
+    await renderApp(`/accounts/${reserveID}?tab=yield`, {
+      width: 390,
+      fetch: api(reportRoute),
+    });
+
+    expect(
+      await screen.findByRole("region", {
+        name: catalogEn["portfolio.yield.figure"],
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("tablist", { name: catalogEn["account.tabs"] }),
+    ).toBeNull();
   });
 
   it("names the account with its kind and when it was last reconciled", async () => {

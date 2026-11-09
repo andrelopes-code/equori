@@ -24,7 +24,7 @@ import {
 } from "@/features/accounts/api";
 import { BalanceChart } from "@/features/accounts/balance-chart";
 import { useAccountTabs } from "@/features/accounts/use-account-tabs";
-import { AccountYieldSection } from "@/features/portfolio";
+import { AccountYieldSection, useMeasuredTops } from "@/features/portfolio";
 import { institutionsQuery } from "@/features/setup";
 import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
 import { useStableCallback } from "@/ui/use-stable-callback";
@@ -70,6 +70,7 @@ export function AccountRecord({ account, search, scale }: AccountRecordProps) {
       .map((external) => ({ connection: c, external })),
   )[0];
   const { ancestors, descendants } = lineage(account, accounts.data ?? []);
+  const measured = useMeasuredTops().has(account.id);
   const isBrokerage =
     account.kind === "brokerage" && account.parent_id === undefined;
 
@@ -79,6 +80,7 @@ export function AccountRecord({ account, search, scale }: AccountRecordProps) {
     leaf,
     brokerage: isBrokerage,
     linked: linked !== undefined,
+    measured,
     reconciliationCount:
       reconciliation.data === undefined || unconfirmed.data === undefined
         ? undefined
@@ -98,11 +100,12 @@ export function AccountRecord({ account, search, scale }: AccountRecordProps) {
 
   // A phone reads the records under the tabs first, and the figures after them (mobile.md M2, M4).
   // The figures belong to the activity tab: under another tab they would push its content below the fold.
+  // The yield has its own tab; a phone offers no tab but the activity (ADR 027, S5), so its yield stays here.
   const compact = useMediaQuery(compactQuery);
   const overview = accountTabs.shownTab === "activity" && (
     <>
       <AccountFigures account={account} scale={scale} />
-      <AccountYieldSection accountId={account.id} />
+      {compact && <AccountYieldSection accountId={account.id} />}
       <BalanceChart
         account={account}
         range={range}

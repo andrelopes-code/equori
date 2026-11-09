@@ -16,6 +16,7 @@ interface AccountTabsInput {
   leaf: boolean;
   brokerage: boolean;
   linked: boolean;
+  measured: boolean;
   reconciliationCount: number | undefined;
   importCount: number | undefined;
 }
@@ -27,6 +28,7 @@ export function useAccountTabs({
   leaf,
   brokerage,
   linked,
+  measured,
   reconciliationCount,
   importCount,
 }: AccountTabsInput) {
@@ -44,6 +46,9 @@ export function useAccountTabs({
   const marked = chosen ?? current;
   const every: TabEntry[] = [
     { tab: "activity", label: t("account.tab.activity") },
+    ...(measured
+      ? [{ tab: "yield" as const, label: t("account.tab.yield") }]
+      : []),
     ...(leaf
       ? [
           {

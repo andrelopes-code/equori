@@ -212,6 +212,7 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "account.close": "Encerrar conta",
   "account.tabs": "Seções da conta",
   "account.tab.activity": "Movimentação",
+  "account.tab.yield": "Rendimento",
   "account.tab.reconciliation": "Conferência de saldo",
   "account.tab.imports": "Importações",
   "account.tab.scheduled": "Agendados",
