@@ -89,7 +89,7 @@ export function IndicatorFigure({
       help={<IndicatorHelp kind={kind} />}
       link={{
         label: t("overview.indicators.open"),
-        options: { to: "/reports", search: { tab: "indicators" } },
+        options: { to: "/reports", search: { tab: "indicators", month } },
       }}
       error={query.error}
       onRetry={() => void query.refetch()}

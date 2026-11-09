@@ -7,7 +7,7 @@ import { renderApp } from "@/testing/render-app";
 import { indicatorsFixture, reportApiRoutes } from "@/testing/report-api";
 
 describe("Reports indicators", () => {
-  it("draws one chart per indicator for the current month", async () => {
+  it("draws one chart per indicator for the last complete month", async () => {
     const months: (string | null)[] = [];
     await renderApp("/reports?tab=indicators", {
       fetch: fakeApi({
@@ -35,7 +35,7 @@ describe("Reports indicators", () => {
       ).toBeGreaterThan(0);
     }
     await waitFor(() => {
-      expect(months).toContain("2026-10");
+      expect(months).toContain("2026-09");
     });
   });
 });

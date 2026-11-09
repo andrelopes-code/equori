@@ -51,6 +51,24 @@ describe("indicator figures", () => {
     ).toBeGreaterThan(0);
   });
 
+  it("opens the indicators tab on the month of the figure", async () => {
+    renderBlock();
+
+    await screen.findByText("43.00%");
+
+    const links = screen.getAllByRole("link", {
+      name: catalogEn["overview.indicators.open"],
+    });
+
+    expect(links).toHaveLength(4);
+
+    for (const link of links)
+      expect(link).toHaveAttribute(
+        "href",
+        "/reports?tab=indicators&month=2026-10",
+      );
+  });
+
   it("names each indicator widget by the ratio it shows", async () => {
     renderBlock();
 

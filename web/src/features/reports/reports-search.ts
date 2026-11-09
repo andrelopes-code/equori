@@ -38,7 +38,7 @@ export interface ReportsSearch {
   by?: "month" | undefined;
   // The period before is read beside the period.
   compare?: true | undefined;
-  // YYYY-MM, the last month of the indicators tab; the current month when absent.
+  // YYYY-MM, the last month of the indicators tab; the month before today's when absent.
   month?: string | undefined;
 }
 

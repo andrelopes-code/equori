@@ -17,6 +17,7 @@ import { useDeferredValue, useState } from "react";
 import { useApi } from "@/api/api-context";
 import { CategoriesTab } from "@/features/reports/categories-tab";
 import { FlowsTab } from "@/features/reports/flows-tab";
+import { defaultMonth } from "@/features/reports/indicator-month";
 import { IndicatorsTab } from "@/features/reports/indicators-tab";
 import { NetWorthTab } from "@/features/reports/net-worth-tab";
 import { spanPeriod } from "@/features/reports/net-worth-months";
@@ -176,10 +177,10 @@ export function ReportsPage() {
           )}
           {shownTab === "indicators" && (
             <IndicatorsTab
-              month={search.month ?? today.slice(0, 7)}
+              month={search.month ?? defaultMonth(today)}
               onMonth={(next) => {
                 onChange({
-                  month: next === today.slice(0, 7) ? undefined : next,
+                  month: next === defaultMonth(today) ? undefined : next,
                 });
               }}
             />
