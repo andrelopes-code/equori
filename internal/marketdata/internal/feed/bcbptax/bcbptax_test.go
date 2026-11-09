@@ -1,8 +1,11 @@
 package bcbptax_test
 
 import (
+	"errors"
 	"net/http"
 	"net/http/httptest"
+	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -59,6 +62,64 @@ func TestPTAX(t *testing.T) {
 
 	if _, err := src.Fetch(t.Context(), []money.Currency{"EUR"}, day("2026-10-29"), day("2026-10-30")); err == nil {
 		t.Fatal("a 503 answer returned no error")
+	}
+}
+
+func TestFetchWindows(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		failAt  string
+		want    []string
+		wantErr bool
+	}{
+		{
+			name: "five windows",
+			want: []string{
+				"11-09-2006/11-07-2011", "11-08-2011/11-05-2016", "11-06-2016/11-04-2021",
+				"11-05-2021/11-03-2026", "11-04-2026/11-09-2026",
+			},
+		},
+		{
+			name:    "first failing window ends the code",
+			failAt:  "'11-06-2016'",
+			want:    []string{"11-09-2006/11-07-2011", "11-08-2011/11-05-2016", "11-06-2016/11-04-2021"},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			var got []string
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				q := r.URL.Query()
+
+				got = append(got, strings.Trim(q.Get("@dataInicial"), "'")+"/"+strings.Trim(q.Get("@dataFinalCotacao"), "'"))
+				if q.Get("@dataInicial") == tt.failAt {
+					http.Error(w, "busy", http.StatusInternalServerError)
+					return
+				}
+
+				_, _ = w.Write([]byte(`{"value":[]}`))
+			}))
+			t.Cleanup(srv.Close)
+
+			_, err := bcbptax.New(srv.Client(), srv.URL).Fetch(t.Context(), []money.Currency{"USD"}, day("2006-11-09"), day("2026-11-09"))
+			if !slices.Equal(got, tt.want) {
+				t.Fatalf("requests = %v", got)
+			}
+
+			var scope *feed.ScopeError
+			if tt.wantErr && (!errors.As(err, &scope) || scope.Key != "instrument" || scope.Value != "USD") {
+				t.Fatalf("error = %v", err)
+			}
+
+			if !tt.wantErr && err != nil {
+				t.Fatal(err)
+			}
+		})
 	}
 }
 

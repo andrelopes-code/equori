@@ -14,6 +14,9 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
+// ptaxWindowDays is the longest range one request asks for (plan D12).
+const ptaxWindowDays = 1825
+
 // Source reads closing exchange rates from the Banco Central do Brasil Olinda service.
 type Source struct {
 	client  *http.Client
@@ -74,7 +77,29 @@ func (p Source) Fetch(ctx context.Context, codes []money.Currency, from, to time
 	return out, errors.Join(errs...)
 }
 
+// fetchCode reads [from, to] in windows of ptaxWindowDays; the first failing window ends the code.
 func (p Source) fetchCode(ctx context.Context, code money.Currency, from, to time.Time) ([]feed.Quote, error) {
+	var out []feed.Quote
+
+	for start := from; !start.After(to); {
+		end := start.AddDate(0, 0, ptaxWindowDays-1)
+		if end.After(to) {
+			end = to
+		}
+
+		quotes, err := p.fetchWindow(ctx, code, start, end)
+		if err != nil {
+			return out, err
+		}
+
+		out = append(out, quotes...)
+		start = end.AddDate(0, 0, 1)
+	}
+
+	return out, nil
+}
+
+func (p Source) fetchWindow(ctx context.Context, code money.Currency, from, to time.Time) ([]feed.Quote, error) {
 	url := fmt.Sprintf("%s/ExchangeRatePeriod(moeda=@moeda,dataInicial=@dataInicial,dataFinalCotacao=@dataFinalCotacao)?@moeda='%s'&@dataInicial='%s'&@dataFinalCotacao='%s'&$format=json",
 		p.baseURL, code, from.Format("01-02-2006"), to.Format("01-02-2006"))
 
