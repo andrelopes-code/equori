@@ -72,6 +72,7 @@ export const reportsEn = {
   "report.indicators.audit.reason.no_income": "No income",
   "report.indicators.audit.reason.no_expense": "No expense",
   "report.indicators.audit.reason.insufficient_history": "Short history",
+  "report.indicators.audit.caption": "Figures of each month",
   "report.indicators.audit.basis": "Cash basis.",
   "report.valueIn": "Value in",
   "report.none": "—",

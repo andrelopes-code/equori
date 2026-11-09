@@ -48,7 +48,7 @@ export function IndicatorAudit({ report }: IndicatorAuditProps) {
         <Stack gap={6}>
           <IndicatorAuditTable report={report} />
 
-          <DescriptionList>
+          <DescriptionList layout="stack" columns={2}>
             {definitions.map(([term, note]) => (
               <DescriptionListItem key={term}>
                 <DescriptionListTerm>{t(term)}</DescriptionListTerm>

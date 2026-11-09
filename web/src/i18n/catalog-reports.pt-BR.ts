@@ -75,6 +75,7 @@ export const reportsPtBR: Record<keyof typeof reportsEn, string> = {
   "report.indicators.audit.reason.no_income": "Sem receita",
   "report.indicators.audit.reason.no_expense": "Sem despesa",
   "report.indicators.audit.reason.insufficient_history": "Histórico curto",
+  "report.indicators.audit.caption": "Valores de cada mês",
   "report.indicators.audit.basis": "Base de caixa.",
   "report.valueIn": "Avaliar em",
   "report.none": "—",

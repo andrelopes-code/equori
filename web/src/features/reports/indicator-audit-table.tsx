@@ -73,7 +73,7 @@ export function IndicatorAuditTable({ report }: IndicatorAuditTableProps) {
   return (
     <Table columns={columns.length} variant="framed">
       <TableContent>
-        <TableCaption>{t("report.indicators.audit.title")}</TableCaption>
+        <TableCaption>{t("report.indicators.audit.caption")}</TableCaption>
 
         <TableHead>
           <TableRow>
