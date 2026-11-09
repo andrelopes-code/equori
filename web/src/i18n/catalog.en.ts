@@ -135,6 +135,7 @@ export const catalogEn = {
   "corners.standard": "Standard",
   "corners.round": "Round",
   "settings.experimental.glass": "Glass surfaces",
+  "settings.experimental.tag": "Experimental",
   "settings.experimental.glassDescription":
     "Translucent panels over a ground of lights in the tone's colour. Dark scheme only, the system's included.",
   "settings.privacy.title": "Privacy",

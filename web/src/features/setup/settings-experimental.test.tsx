@@ -9,7 +9,7 @@ import { renderApp } from "@/testing/render-app";
 import { sharedRoutes } from "@/testing/transaction-api";
 
 const html = document.documentElement;
-const label = catalogPtBR["settings.experimental.glass"];
+const label = `${catalogPtBR["settings.experimental.glass"]} ${catalogPtBR["settings.experimental.tag"]}`;
 
 beforeEach(() => {
   localStorage.clear();
