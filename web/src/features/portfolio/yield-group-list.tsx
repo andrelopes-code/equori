@@ -15,7 +15,9 @@ interface YieldGroupListProps {
 }
 
 // One group of the yield (RC6): its title and period, then one ruled list of every figure. A
-// negative figure is in the danger tone.
+// negative figure is in the danger tone. The values end the row: a list sizes its term column to
+// its widest term, so a value written at the start sits against that term and the value columns
+// of two groups stagger.
 export function YieldGroupList({ group }: YieldGroupListProps) {
   const amountTone = useAmountTone();
 
@@ -38,6 +40,7 @@ export function YieldGroupList({ group }: YieldGroupListProps) {
               <Stack gap={0}>
                 <Text
                   size="sm"
+                  align="end"
                   numeric="tabular"
                   tone={amountTone("result", row.negative ? "out" : "in")}
                 >
@@ -45,7 +48,7 @@ export function YieldGroupList({ group }: YieldGroupListProps) {
                 </Text>
 
                 {row.hint !== undefined && (
-                  <Text size="sm" tone="muted">
+                  <Text size="sm" tone="muted" align="end">
                     {row.hint}
                   </Text>
                 )}

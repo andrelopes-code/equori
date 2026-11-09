@@ -79,7 +79,7 @@ export function ReturnMethod({ report, groups }: ReturnMethodProps) {
               <DescriptionListItem key={term}>
                 <DescriptionListTerm>{term}</DescriptionListTerm>
                 <DescriptionListDescription>
-                  <Text size="sm" numeric="tabular">
+                  <Text size="sm" align="end" numeric="tabular">
                     {value}
                   </Text>
                 </DescriptionListDescription>

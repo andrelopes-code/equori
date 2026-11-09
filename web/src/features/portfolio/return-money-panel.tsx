@@ -63,6 +63,7 @@ export function ReturnMoneyPanel({ report, surface }: ReturnMoneyPanelProps) {
             <DescriptionListDescription>
               <Text
                 size="sm"
+                align="end"
                 numeric="tabular"
                 tone={key === "gain" ? gainTone : "inherit"}
               >
