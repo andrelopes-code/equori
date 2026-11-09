@@ -413,6 +413,20 @@ describe("Instrument page", () => {
               history_pending: 0,
               symbol_override: true,
             },
+            {
+              id: "b3_cotahist",
+              kind: "price",
+              enabled: true,
+              suggested: false,
+              last: null,
+              stale: false,
+              last_run: null,
+              error: null,
+              official: true,
+              covers: 1,
+              history_pending: 0,
+              symbol_override: false,
+            },
           ],
         }),
       "PATCH /api/v1/instruments/PETR4": async (req) => {
@@ -438,6 +452,9 @@ describe("Instrument page", () => {
       }),
       "PETR4.SA",
     );
+    expect(
+      within(dialog).getAllByRole("textbox", { name: /^Symbol at/ }),
+    ).toHaveLength(1);
     await user.click(
       within(dialog).getByRole("button", {
         name: catalogEn["instrument.edit.save"],
