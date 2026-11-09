@@ -27,6 +27,8 @@ export const marketDataPtBR: Record<keyof typeof marketDataEn, string> = {
   "marketData.feed.b3_consolidated": "Negócios consolidados da B3",
   "marketData.feed.bcb_ptax": "Câmbio PTAX (Banco Central do Brasil)",
   "marketData.feed.ecb": "Taxas de referência do euro (BCE)",
+  "marketData.feed.tesouro_direto":
+    "Preços do Tesouro Direto (Tesouro Nacional)",
   "marketData.feed.br_cdi": "CDI (Banco Central do Brasil)",
   "marketData.feed.br_ipca": "IPCA (Banco Central do Brasil)",
   "marketData.feed.eu_estr": "€STR (Banco Central Europeu)",

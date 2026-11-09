@@ -8,7 +8,7 @@ need no key. Phase P8 (issue #18) describes the rules (amendments A60–A62 of
 
 An admin enables and disables each feed under Settings, "Market data" (ADR 025). The screen suggests the feeds of the admin's region, shows the latest stored date of each feed, warns when a publication is overdue or the last run failed, and runs every enabled feed on request. Every 6 hours the enabled feeds run without a request.
 
-Price feeds: `bcb_ptax`, `b3_cotahist`, `b3_consolidated`, `ecb`. With no feed enabled, equori sends no feed request (N17).
+Price feeds: `bcb_ptax`, `b3_cotahist`, `b3_consolidated`, `ecb`, `tesouro_direto`. With no feed enabled, equori sends no feed request (N17).
 
 Index feeds: `br_cdi`, `br_ipca`, `eu_estr`, `ea_hicp`, `us_sofr`, `us_cpi`: the index series that accrue the price of a fixed income security that has terms (`PUT /instruments/{code}/terms`). Empty: no index request. An enabled index is fetched from 20 years before today, or from the earliest issue date of a security that follows it when that is earlier. The calculators read the stored rates (`GET /indexes`).
 
@@ -16,6 +16,7 @@ Index feeds: `br_cdi`, `br_ipca`, `eu_estr`, `ea_hicp`, `us_sofr`, `us_cpi`: the
 |---|---|---|
 | `EQUORI_FEED_BCB_PTAX_URL` | `https://olinda.bcb.gov.br/olinda/service/PTAX/version/v1/odata` | Base URL of the BCB PTAX service. |
 | `EQUORI_FEED_ECB_URL` | `https://www.ecb.europa.eu/stats/eurofxref/eurofxref-hist-90d.xml` | URL of the ECB reference rates XML file (last 90 days). |
+| `EQUORI_FEED_TESOURO_DIRETO_URL` | `https://www.tesourotransparente.gov.br/ckan/dataset/df56aa42-484a-4a59-8184-7676580c81e3/resource/796d2059-14e9-44e3-80c9-2d9e30b405c1/download/PrecoTaxaTesouroDireto.csv` | URL of the Tesouro Transparente CSV file with the prices of every Tesouro Direto title. |
 | `EQUORI_FEED_BR_CDI_URL`, `EQUORI_FEED_BR_IPCA_URL` | `https://api.bcb.gov.br` | Base URL of the BCB SGS service: series 12 (CDI, percent a day) and 433 (IPCA, percent a month). |
 | `EQUORI_FEED_EU_ESTR_URL` | `https://data-api.ecb.europa.eu` | Base URL of the ECB Data Portal: series `EST.B.EU000A2X2A25.WT`, the euro short-term rate (€STR), percent a year on an actual/360 basis, one value per TARGET2 business day. Each calendar day is stored as the rate last published on or before it, over 360. |
 | `EQUORI_FEED_EA_HICP_URL` | `https://ec.europa.eu` | Base URL of the Eurostat dissemination API: dataset `prc_hicp_minr`, the euro area's all-items HICP (`geo=EA`, `coicop18=TOTAL`, index 2025 = 100). Each month is stored as its level over the month before, minus 1, on its first day. |
@@ -26,7 +27,7 @@ Index feeds: `br_cdi`, `br_ipca`, `eu_estr`, `ea_hicp`, `us_sofr`, `us_cpi`: the
 | `EQUORI_FEED_B3_CONSOLIDATED_URL` | `https://arquivos.b3.com.br` | Base URL of the B3 file download service that serves the consolidated trades file. |
 
 A network allowlist for the container adds `olinda.bcb.gov.br` and `bvmf.bmfbovespa.com.br`
-for the enabled feeds (`arquivos.b3.com.br` for `b3_consolidated`; `www.ecb.europa.eu` for `ecb`; `api.bcb.gov.br` for `br_cdi` and
+for the enabled feeds (`arquivos.b3.com.br` for `b3_consolidated`; `www.ecb.europa.eu` for `ecb`; `www.tesourotransparente.gov.br` for `tesouro_direto`; `api.bcb.gov.br` for `br_cdi` and
 `br_ipca`; `data-api.ecb.europa.eu` for `eu_estr`; `ec.europa.eu` for `ea_hicp`;
 `markets.newyorkfed.org` for `us_sofr`; `api.bls.gov` for `us_cpi`; `olinda.bcb.gov.br` for `br_focus`).
 
@@ -38,6 +39,7 @@ for the enabled feeds (`arquivos.b3.com.br` for `b3_consolidated`; `www.ecb.euro
 | `b3_cotahist` | Instruments with exchange `BVMF` and quote currency `BRL` | `COTAHIST_D{DDMMYYYY}.ZIP` per weekday | `PREULT` of the spot market (`TPMERC` 010), quoted in `BRL` |
 | `b3_consolidated` | Instruments with exchange `BVMF` and quote currency `BRL` | `TradeInformationConsolidatedFile` per weekday: a request by name returns a token, the token returns the file | `LastPric` of the ticker in any segment, quoted in `BRL`; covers the fixed income ETFs (`AUPO11`, `LFTS11`) that COTAHIST omits |
 | `ecb` | Every currency instrument except `EUR` | One XML file with the last 90 days | Units of the currency per euro, stored as the price of `EUR` quoted in that currency |
+| `tesouro_direto` | Instruments of type `fixed_income`, no exchange, quote currency `BRL`, code `{LFT,LTN,NTNF,NTNB,NTNBP,NTNC,EDUCA,RENDA}.{YYYYMMDD}` | One CSV file with every title and date | `PU Venda Manha` at `Data Base`, quoted in `BRL`; a zero price is skipped |
 
 A currency the BCB does not quote returns an empty answer and stores nothing.
 

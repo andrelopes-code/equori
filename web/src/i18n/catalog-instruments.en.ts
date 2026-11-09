@@ -50,6 +50,7 @@ export const instrumentsEn = {
   "instruments.source.b3_consolidated": "B3, consolidated trades",
   "instruments.source.bcb_ptax": "Central Bank of Brazil, PTAX",
   "instruments.source.ecb": "European Central Bank",
+  "instruments.source.tesouro_direto": "Tesouro Direto",
   "instrument.facts": "Details",
   "instrument.edit": "Edit details",
   "instrument.edit.description":

@@ -11,6 +11,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed/b3cotahist"
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed/bcbptax"
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed/ecb"
+	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed/tesourodireto"
 )
 
 type sourceEntry struct {
@@ -67,6 +68,16 @@ func sourceEntries() []sourceEntry {
 			historyYears: indexHistoryYears,
 			build: func(hc *http.Client, urls map[string]string) feed.Source {
 				return ecb.New(hc, urls["ecb"])
+			},
+		},
+		{
+			id:           "tesouro_direto",
+			defaultURL:   "https://www.tesourotransparente.gov.br/ckan/dataset/df56aa42-484a-4a59-8184-7676580c81e3/resource/796d2059-14e9-44e3-80c9-2d9e30b405c1/download/PrecoTaxaTesouroDireto.csv",
+			lag:          5,
+			official:     true,
+			historyYears: indexHistoryYears,
+			build: func(hc *http.Client, urls map[string]string) feed.Source {
+				return tesourodireto.New(hc, urls["tesouro_direto"])
 			},
 		},
 	}
