@@ -6,11 +6,11 @@ The planning model writes the spec and the plan of each issue: Opus, effort high
 
 Order of work for an issue, every step in one session of the planning model, without a question to the owner:
 
-1. Spec in `docs/specs/`, when the design is open. It records each decision and its reason. The plan cites the spec section and does not repeat the reason.
+1. Spec in `docs/specs/`, when the design is open. It records each decision and its reason, and answers every question of `docs/contributing/feature-design.md`. The plan cites the spec section and does not repeat the reason.
 2. Plan in `docs/superpowers/plans/`, written after the planning model reads the code each task touches.
-3. Plan check by the planning model: every path, symbol and command named in the plan exists; every expected test value is derived; every Contract artifact passes the tool that reads it (a migration passes `make gen` and goose up and down); no question is open. Before execution, the check resolves every precondition a stop condition below would hit (files of another session in the working tree, an environment value, a pending decision) and records the resolution in the plan.
+3. Plan check by the planning model: every question of `docs/contributing/feature-design.md` has its answer in the spec or the plan; every path, symbol and command named in the plan exists; every expected test value is derived; every Contract artifact passes the tool that reads it (a migration passes `make gen` and goose up and down); no question is open. Before execution, the check resolves every precondition a stop condition below would hit (files of another session in the working tree, an environment value, a pending decision) and records the resolution in the plan.
 4. Execution: the planning session dispatches one implementing subagent per task, in plan order, one at a time, with the task's effort. Each slice ends with its commits and its checkpoint, and the session continues with the next slice without waiting for the owner.
-5. Review by the planning model at the end of the plan, in the same session: the diff against the plan's edge cases and the issue's exit criterion.
+5. Review by the planning model at the end of the plan, in the same session: the diff against the plan's edge cases, the test of each answer of the feature design checklist, and the issue's exit criterion.
 
 The issue records the step its work is in. The model that starts a step writes a comment on the issue naming the step (`spec`, `plan`, `check`, `execution` or `review`) and the file or commit of that step. The issue closes once the exit criterion passes.
 
