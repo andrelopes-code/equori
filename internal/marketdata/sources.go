@@ -14,6 +14,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed/cvmfunds"
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed/ecb"
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed/tesourodireto"
+	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed/yahoochart"
 )
 
 type sourceEntry struct {
@@ -100,6 +101,16 @@ func sourceEntries() []sourceEntry {
 			historyYears: indexHistoryYears,
 			build: func(hc *http.Client, urls map[string]string) feed.Source {
 				return coinbase.New(hc, urls["coinbase"])
+			},
+		},
+		{
+			id:           "yahoo_chart",
+			defaultURL:   "https://query1.finance.yahoo.com/v8/finance/chart",
+			lag:          5,
+			official:     false,
+			historyYears: indexHistoryYears,
+			build: func(hc *http.Client, urls map[string]string) feed.Source {
+				return yahoochart.New(hc, urls["yahoo_chart"])
 			},
 		},
 	}

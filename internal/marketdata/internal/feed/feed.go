@@ -41,6 +41,14 @@ type Instrument struct {
 	Type          string
 	Exchange      string
 	QuoteCurrency money.Currency
+	// Symbols maps a source ID to the symbol a member set for it (A222 MQ20).
+	Symbols map[string]string
+}
+
+// SymbolOverride is a source that reads Instrument.Symbols (A222 MQ20).
+type SymbolOverride interface {
+	// Symbol returns the symbol the source requests for in, false when it requests none.
+	Symbol(in Instrument) (string, bool)
 }
 
 // Source reads quotes from one public price source.

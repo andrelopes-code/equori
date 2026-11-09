@@ -1,0 +1,216 @@
+package yahoochart_test
+
+import (
+	"errors"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"slices"
+	"strings"
+	"sync"
+	"testing"
+	"time"
+
+	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed"
+	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed/yahoochart"
+	"github.com/andrelopes-code/equori/internal/platform/money"
+)
+
+const (
+	localDate = `{"chart":{"result":[{"meta":{"currency":"USD","exchangeTimezoneName":"America/New_York"},` +
+		`"timestamp":[1793845800],"indicators":{"quote":[{"close":[1.5]}]}}],"error":null}}`
+	notFound = `{"chart":{"result":null,"error":{"code":"Not Found",` +
+		`"description":"No data found, symbol may be delisted"}}}`
+)
+
+func TestSymbol(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		in      feed.Instrument
+		symbols map[string]string
+		want    string
+	}{
+		{"US stock", feed.Instrument{Code: "AAPL", Type: "stock", Exchange: "XNAS", QuoteCurrency: "USD"}, nil, "AAPL"},
+		{"dot becomes dash", feed.Instrument{Code: "BRK.B", Type: "stock", Exchange: "XNYS", QuoteCurrency: "USD"}, nil, "BRK-B"},
+		{"B3 stock", feed.Instrument{Code: "PETR4", Type: "stock", Exchange: "BVMF", QuoteCurrency: "BRL"}, nil, "PETR4.SA"},
+		{"Xetra ETF", feed.Instrument{Code: "VWCE", Type: "etf", Exchange: "XETR", QuoteCurrency: "EUR"}, nil, "VWCE.DE"},
+		{"currency", feed.Instrument{Code: "EUR", Type: "currency"}, nil, "EURUSD=X"},
+		{"USD", feed.Instrument{Code: "USD", Type: "currency"}, nil, ""},
+		{"crypto", feed.Instrument{Code: "BTC", Type: "crypto", QuoteCurrency: "USD"}, nil, "BTC-USD"},
+		{"MIC outside the table", feed.Instrument{Code: "FPH", Type: "stock", Exchange: "XNZE", QuoteCurrency: "NZD"}, nil, ""},
+		{"override", feed.Instrument{Code: "FPH", Type: "stock", Exchange: "XNZE", QuoteCurrency: "NZD"}, map[string]string{"yahoo_chart": "FPH.NZ"}, "FPH.NZ"},
+		{"override of another source", feed.Instrument{Code: "FPH", Type: "stock", Exchange: "XNZE", QuoteCurrency: "NZD"}, map[string]string{"other": "FPH.NZ"}, ""},
+		{"no exchange", feed.Instrument{Code: "CDB1", Type: "fixed_income", QuoteCurrency: "BRL"}, nil, ""},
+	}
+
+	src := yahoochart.New(http.DefaultClient, "")
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			tc.in.Symbols = tc.symbols
+
+			got, ok := src.Symbol(tc.in)
+			if got != tc.want || ok != (tc.want != "") {
+				t.Fatalf("symbol = %q, %v, want %q", got, ok, tc.want)
+			}
+		})
+	}
+}
+
+func TestCodes(t *testing.T) {
+	t.Parallel()
+
+	src := yahoochart.New(http.DefaultClient, "")
+
+	got := src.Codes([]feed.Instrument{
+		{Code: "AAPL", Type: "stock", Exchange: "XNAS", QuoteCurrency: "USD"},
+		{Code: "EUR", Type: "currency"},
+		{Code: "BRL", Type: "currency"},
+		{Code: "USD", Type: "currency"},
+		{Code: "PETR4", Type: "stock", Exchange: "BVMF", QuoteCurrency: "BRL"},
+	})
+
+	if want := []money.Currency{"AAPL", "BRL", "PETR4"}; !slices.Equal(got, want) {
+		t.Fatalf("codes = %v, want %v", got, want)
+	}
+}
+
+func TestFetch(t *testing.T) {
+	t.Parallel()
+
+	aapl, err := os.ReadFile("testdata/aapl.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	gbp := strings.Replace(string(aapl), `"currency":"USD"`, `"currency":"GBp"`, 1)
+
+	tests := []struct {
+		name   string
+		status int
+		body   string
+		quotes []string
+		scope  string
+	}{
+		{
+			"fixture", http.StatusOK, string(aapl),
+			[]string{"AAPL USD 2026-11-04 349.51", "AAPL USD 2026-11-05 344.17", "AAPL USD 2026-11-06 342.37"}, "",
+		},
+		{"local date", http.StatusOK, localDate, []string{"AAPL USD 2026-11-04 1.5"}, ""},
+		{"pence", http.StatusOK, gbp, nil, "instrument AAPL"},
+		{"unknown symbol", http.StatusNotFound, notFound, nil, ""},
+		{"server error", http.StatusInternalServerError, "", nil, "instrument AAPL"},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			var (
+				mu       sync.Mutex
+				requests []string
+			)
+
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				mu.Lock()
+
+				requests = append(requests, r.URL.RequestURI())
+				mu.Unlock()
+
+				w.WriteHeader(tc.status)
+				_, _ = w.Write([]byte(tc.body))
+			}))
+			t.Cleanup(srv.Close)
+
+			src := yahoochart.New(srv.Client(), srv.URL)
+			src.Codes([]feed.Instrument{{Code: "AAPL", Type: "stock", Exchange: "XNAS", QuoteCurrency: "USD"}})
+
+			got, err := src.Fetch(t.Context(), []money.Currency{"AAPL"}, day("2026-11-01"), day("2026-11-09"))
+
+			var scope *feed.ScopeError
+			if tc.scope == "" && err != nil {
+				t.Fatal(err)
+			}
+
+			if tc.scope != "" && (!errors.As(err, &scope) || scope.Key+" "+scope.Value != tc.scope) {
+				t.Fatalf("err = %v, want scope %s", err, tc.scope)
+			}
+
+			if tc.name == "pence" && !strings.HasSuffix(err.Error(), "quoted in GBp, want USD") {
+				t.Fatalf("err = %v", err)
+			}
+
+			if got := lines(got); !slices.Equal(got, tc.quotes) {
+				t.Fatalf("quotes = %v, want %v", got, tc.quotes)
+			}
+
+			want := []string{"/AAPL?period1=1793491200&period2=1794268800&interval=1d"}
+			if !slices.Equal(requests, want) {
+				t.Fatalf("requests = %v, want %v", requests, want)
+			}
+		})
+	}
+}
+
+func TestFetchRateLimited(t *testing.T) {
+	t.Parallel()
+
+	var (
+		mu       sync.Mutex
+		requests []string
+	)
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+
+		requests = append(requests, r.URL.Path)
+		mu.Unlock()
+
+		w.WriteHeader(http.StatusTooManyRequests)
+	}))
+	t.Cleanup(srv.Close)
+
+	src := yahoochart.New(srv.Client(), srv.URL)
+	src.Codes([]feed.Instrument{
+		{Code: "AAPL", Type: "stock", Exchange: "XNAS", QuoteCurrency: "USD"},
+		{Code: "PETR4", Type: "stock", Exchange: "BVMF", QuoteCurrency: "BRL"},
+	})
+
+	_, err := src.Fetch(t.Context(), []money.Currency{"AAPL", "PETR4"}, day("2026-11-01"), day("2026-11-09"))
+
+	var (
+		status *feed.StatusError
+		scope  *feed.ScopeError
+	)
+
+	if !errors.As(err, &status) || status.Code != http.StatusTooManyRequests || errors.As(err, &scope) {
+		t.Fatalf("err = %v, want a bare status 429", err)
+	}
+
+	if !slices.Equal(requests, []string{"/AAPL"}) {
+		t.Fatalf("requests = %v, want [/AAPL]", requests)
+	}
+}
+
+func lines(quotes []feed.Quote) []string {
+	var out []string
+	for _, q := range quotes {
+		out = append(out, fmt.Sprintf("%s %s %s %s", q.Instrument, q.Quote, q.Date.Format(time.DateOnly), q.Value.String()))
+	}
+
+	return out
+}
+
+func day(s string) time.Time {
+	d, err := time.Parse(time.DateOnly, s)
+	if err != nil {
+		panic(err)
+	}
+
+	return d
+}

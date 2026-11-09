@@ -252,7 +252,9 @@ func (m *Module) enabledSources(ctx context.Context) ([]feed.Source, error) {
 func feedInstruments(list []Instrument) []feed.Instrument {
 	ins := make([]feed.Instrument, len(list))
 	for i, in := range list {
-		ins[i] = feed.Instrument{Code: in.Code, Type: in.Type, Exchange: in.Exchange, QuoteCurrency: in.QuoteCurrency}
+		ins[i] = feed.Instrument{
+			Code: in.Code, Type: in.Type, Exchange: in.Exchange, QuoteCurrency: in.QuoteCurrency, Symbols: in.Symbols,
+		}
 	}
 
 	return ins

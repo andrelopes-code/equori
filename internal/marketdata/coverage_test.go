@@ -31,13 +31,14 @@ type coverageSource struct {
 	First, Last string
 }
 
-// sources flattens the sources of a coverage; every source of these cases has no history row.
+// sources flattens the sources of a coverage; every source of these cases has no history row,
+// and only yahoo_chart is unofficial.
 func (c coverageDoc) sources(t *testing.T) []coverageSource {
 	t.Helper()
 
 	out := make([]coverageSource, len(c.Sources))
 	for i, s := range c.Sources {
-		if s.History != nil || !s.Official {
+		if s.History != nil || s.Official != (s.ID != "yahoo_chart") {
 			t.Fatalf("source %+v", s)
 		}
 
@@ -113,7 +114,7 @@ func TestCoverageOfSecurity(t *testing.T) {
 		t.Fatalf("coverage = %+v", c)
 	}
 
-	want := []coverageSource{{ID: "b3_cotahist"}, {ID: "b3_consolidated"}}
+	want := []coverageSource{{ID: "b3_cotahist"}, {ID: "b3_consolidated"}, {ID: "yahoo_chart"}}
 	if got := c.sources(t); !reflect.DeepEqual(got, want) {
 		t.Fatalf("sources = %+v, want %+v", got, want)
 	}

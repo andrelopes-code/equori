@@ -25,9 +25,10 @@ type Instrument struct {
 	Type          string
 	Scale         int
 	Name          string
-	QuoteCurrency money.Currency // empty for currencies
-	Exchange      string         // ISO 10383 MIC or empty
-	Subtype       string         // refines Type for the owner's jurisdiction; empty when none
+	QuoteCurrency money.Currency    // empty for currencies
+	Exchange      string            // ISO 10383 MIC or empty
+	Subtype       string            // refines Type for the owner's jurisdiction; empty when none
+	Symbols       map[string]string // source ID to symbol; nil when none (A222 MQ20)
 }
 
 // Validate checks a security definition (P8 amendment A59); the quote currency is

@@ -8,7 +8,7 @@ need no key. Phase P8 (issue #18) describes the rules (amendments A60–A62 of
 
 An admin enables and disables each feed under Settings, "Market data" (ADR 025). The screen suggests the feeds of the admin's region, shows the latest stored date of each feed, warns when a publication is overdue or the last run failed, and runs every enabled feed on request. Every 6 hours the enabled feeds run without a request.
 
-Price feeds: `bcb_ptax`, `b3_cotahist`, `b3_consolidated`, `ecb`, `tesouro_direto`, `cvm_funds`, `coinbase`. With no feed enabled, equori sends no feed request (N17).
+Price feeds: `bcb_ptax`, `b3_cotahist`, `b3_consolidated`, `ecb`, `tesouro_direto`, `cvm_funds`, `coinbase`, `yahoo_chart`. With no feed enabled, equori sends no feed request (N17).
 
 Index feeds: `br_cdi`, `br_ipca`, `eu_estr`, `ea_hicp`, `us_sofr`, `us_cpi`: the index series that accrue the price of a fixed income security that has terms (`PUT /instruments/{code}/terms`). Empty: no index request. An enabled index is fetched from 20 years before today, or from the earliest issue date of a security that follows it when that is earlier. The calculators read the stored rates (`GET /indexes`).
 
@@ -19,6 +19,7 @@ Index feeds: `br_cdi`, `br_ipca`, `eu_estr`, `ea_hicp`, `us_sofr`, `us_cpi`: the
 | `EQUORI_FEED_TESOURO_DIRETO_URL` | `https://www.tesourotransparente.gov.br/ckan/dataset/df56aa42-484a-4a59-8184-7676580c81e3/resource/796d2059-14e9-44e3-80c9-2d9e30b405c1/download/PrecoTaxaTesouroDireto.csv` | URL of the Tesouro Transparente CSV file with the prices of every Tesouro Direto title. |
 | `EQUORI_FEED_CVM_FUNDS_URL` | `https://dados.cvm.gov.br/dados/FI/DOC/INF_DIARIO/DADOS` | Base URL of the CVM daily reports of investment funds: `HIST/inf_diario_fi_{YYYY}.zip` up to 2020 and `inf_diario_fi_{YYYYMM}.zip` from 2021. |
 | `EQUORI_FEED_COINBASE_URL` | `https://api.coinbase.com/api/v3/brokerage/market` | Base URL of the Coinbase public market API: `products/{code}-{quote}/candles`. |
+| `EQUORI_FEED_YAHOO_CHART_URL` | `https://query1.finance.yahoo.com/v8/finance/chart` | Base URL of the Yahoo Finance chart API: `{symbol}?period1=…&period2=…&interval=1d`. |
 | `EQUORI_FEED_BR_CDI_URL`, `EQUORI_FEED_BR_IPCA_URL` | `https://api.bcb.gov.br` | Base URL of the BCB SGS service: series 12 (CDI, percent a day) and 433 (IPCA, percent a month). |
 | `EQUORI_FEED_EU_ESTR_URL` | `https://data-api.ecb.europa.eu` | Base URL of the ECB Data Portal: series `EST.B.EU000A2X2A25.WT`, the euro short-term rate (€STR), percent a year on an actual/360 basis, one value per TARGET2 business day. Each calendar day is stored as the rate last published on or before it, over 360. |
 | `EQUORI_FEED_EA_HICP_URL` | `https://ec.europa.eu` | Base URL of the Eurostat dissemination API: dataset `prc_hicp_minr`, the euro area's all-items HICP (`geo=EA`, `coicop18=TOTAL`, index 2025 = 100). Each month is stored as its level over the month before, minus 1, on its first day. |
@@ -29,7 +30,7 @@ Index feeds: `br_cdi`, `br_ipca`, `eu_estr`, `ea_hicp`, `us_sofr`, `us_cpi`: the
 | `EQUORI_FEED_B3_CONSOLIDATED_URL` | `https://arquivos.b3.com.br` | Base URL of the B3 file download service that serves the consolidated trades file. |
 
 A network allowlist for the container adds `olinda.bcb.gov.br` and `bvmf.bmfbovespa.com.br`
-for the enabled feeds (`arquivos.b3.com.br` for `b3_consolidated`; `www.ecb.europa.eu` for `ecb`; `www.tesourotransparente.gov.br` for `tesouro_direto`; `dados.cvm.gov.br` for `cvm_funds`; `api.coinbase.com` for `coinbase`; `api.bcb.gov.br` for `br_cdi` and
+for the enabled feeds (`arquivos.b3.com.br` for `b3_consolidated`; `www.ecb.europa.eu` for `ecb`; `www.tesourotransparente.gov.br` for `tesouro_direto`; `dados.cvm.gov.br` for `cvm_funds`; `api.coinbase.com` for `coinbase`; `query1.finance.yahoo.com` for `yahoo_chart`; `api.bcb.gov.br` for `br_cdi` and
 `br_ipca`; `data-api.ecb.europa.eu` for `eu_estr`; `ec.europa.eu` for `ea_hicp`;
 `markets.newyorkfed.org` for `us_sofr`; `api.bls.gov` for `us_cpi`; `olinda.bcb.gov.br` for `br_focus`).
 
@@ -44,6 +45,7 @@ for the enabled feeds (`arquivos.b3.com.br` for `b3_consolidated`; `www.ecb.euro
 | `tesouro_direto` | Instruments of type `fixed_income`, no exchange, quote currency `BRL`, code `{LFT,LTN,NTNF,NTNB,NTNBP,NTNC,EDUCA,RENDA}.{YYYYMMDD}` | One CSV file with every title and date | `PU Venda Manha` at `Data Base`, quoted in `BRL`; a zero price is skipped |
 | `cvm_funds` | Instruments of type `fund`, no exchange, quote currency `BRL`, code a 14-character CNPJ without punctuation | One ZIP file per year up to 2020 and per month from 2021 | `VL_QUOTA` at `DT_COMPTC`, quoted in `BRL`; a subclass line and a zero value are skipped |
 | `coinbase` | Instruments of type `crypto` with a quote currency | `products/{code}-{quote}/candles` with `granularity=ONE_DAY`, windows of 300 days at most | `close` of the daily candle at its `start` day (UTC), quoted in the quote currency of the instrument; a product the exchange refuses (400 or 404) stores nothing |
+| `yahoo_chart` | Currencies other than `USD` that a security is quoted in (`{code}USD=X`), `crypto` (`{code}-{quote}`), and instruments whose MIC has a suffix in the table of the package (`BVMF` `.SA`, `XETR` `.DE`, …); a symbol set on the instrument replaces the derived one | `{symbol}?period1=…&period2=…&interval=1d`, one request per symbol, one at a time | `indicators.quote[0].close`, not adjusted for splits or dividends, dated in the time zone of the exchange; a null close is skipped; a currency other than the quote currency of the instrument (pence in London) fails that code; a 404 stores nothing; a 429 ends the run |
 
 A currency the BCB does not quote returns an empty answer and stores nothing.
 
@@ -65,6 +67,8 @@ Earlier prices enter through `POST /prices/import`.
 Five priorities order the prices of one date, the lowest winning: `manual` 1 (`POST /prices`),
 `csv` 2 (`POST /prices/import`), an official feed 3, `accrual` 4 (computed from the terms of a
 fixed income security), an unofficial feed 5. A feed run never replaces a manual or CSV price.
+
+`yahoo_chart` is unofficial: enabling it needs a confirmation (A222 MQ22).
 
 ## 5. Not covered by a feed
 

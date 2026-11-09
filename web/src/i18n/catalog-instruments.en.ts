@@ -53,6 +53,7 @@ export const instrumentsEn = {
   "instruments.source.tesouro_direto": "Tesouro Direto",
   "instruments.source.cvm_funds": "CVM",
   "instruments.source.coinbase": "Coinbase",
+  "instruments.source.yahoo_chart": "Yahoo Finance",
   "instrument.facts": "Details",
   "instrument.edit": "Edit details",
   "instrument.edit.description":

@@ -28,6 +28,7 @@ export const marketDataEn = {
   "marketData.feed.tesouro_direto": "Tesouro Direto prices (Tesouro Nacional)",
   "marketData.feed.cvm_funds": "Fund share values (CVM)",
   "marketData.feed.coinbase": "Coinbase crypto prices",
+  "marketData.feed.yahoo_chart": "Yahoo Finance quotes",
   "marketData.feed.br_cdi": "CDI (Banco Central do Brasil)",
   "marketData.feed.br_ipca": "IPCA (Banco Central do Brasil)",
   "marketData.feed.eu_estr": "€STR (European Central Bank)",

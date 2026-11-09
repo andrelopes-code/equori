@@ -35,7 +35,7 @@ func feedsOf(t *testing.T, h *apitest.Harness) map[string]feedAPI {
 		ids[i] = f.ID
 	}
 
-	want := []string{"b3_cotahist", "b3_consolidated", "bcb_ptax", "ecb", "tesouro_direto", "cvm_funds", "coinbase", "br_cdi", "br_ipca", "eu_estr", "ea_hicp", "us_sofr", "us_cpi", "br_focus"}
+	want := []string{"b3_cotahist", "b3_consolidated", "bcb_ptax", "ecb", "tesouro_direto", "cvm_funds", "coinbase", "yahoo_chart", "br_cdi", "br_ipca", "eu_estr", "ea_hicp", "us_sofr", "us_cpi", "br_focus"}
 	if !slices.Equal(ids, want) {
 		t.Fatalf("feeds = %v, want %v", ids, want)
 	}
