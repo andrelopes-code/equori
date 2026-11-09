@@ -13,43 +13,45 @@ import { useApi } from "@/api/api-context";
 import { pricesQuery } from "@/features/instruments/api";
 import { PriceChart } from "@/features/instruments/price-chart";
 import { PriceTable } from "@/features/instruments/price-table";
-import { maxPriceDays, priceWindow } from "@/features/instruments/price-window";
+import {
+  type PriceRange,
+  priceRanges,
+  rangeWindow,
+} from "@/features/instruments/price-window";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { QueryError } from "@/ui/query-error";
 
-const ranges = [30, 90, maxPriceDays] as const;
-
-// The prices of one instrument over a range of at most 366 days, as a chart and a table.
-// CP-09: the segment moves at once; the chart and the table render from the deferred range.
-export function PriceHistory({
-  instrument,
-  quote,
-}: {
+interface PriceHistoryProps {
   instrument: string;
   quote: string;
-}) {
+  first: string | null;
+}
+
+// The prices of one instrument over a range of at most 18,300 days, as a chart and a table.
+// CP-09: the segment moves at once; the chart and the table render from the deferred range.
+export function PriceHistory({ instrument, quote, first }: PriceHistoryProps) {
   const t = useT();
   const api = useApi();
   const today = useToday();
-  const [range, setRange] = useState<number>(90);
+  const [range, setRange] = useState<PriceRange>("m3");
   const shown = useDeferredValue(range);
-  const { from, to } = priceWindow(today, shown);
+  const { from, to } = rangeWindow(today, shown, first);
   const prices = useQuery(pricesQuery(api, instrument, quote, from, to));
   return (
     <Stack gap={3} aria-busy={shown !== range || undefined}>
       <SegmentedControl
         size="sm"
         aria-label={t("instrument.range.label")}
-        value={String(range)}
+        value={range}
         onValueChange={(value) => {
-          const next = Number(value);
-          if ((ranges as readonly number[]).includes(next)) setRange(next);
+          const next = priceRanges.find((r) => r === value);
+          if (next !== undefined) setRange(next);
         }}
       >
-        {ranges.map((days) => (
-          <Segment key={days} value={String(days)}>
-            {t("instrument.range.days", { count: days })}
+        {priceRanges.map((r) => (
+          <Segment key={r} value={r}>
+            {t(`instrument.range.${r}`)}
           </Segment>
         ))}
       </SegmentedControl>

@@ -71,7 +71,7 @@ export function latestPriceQuery(
   quote: string,
   today: string,
 ) {
-  const { from, to } = priceWindow(today, Infinity);
+  const { from, to } = priceWindow(today, 366);
   return queryOptions({
     queryKey: instrumentKeys.latest(instrument, quote, today),
     queryFn: async () =>

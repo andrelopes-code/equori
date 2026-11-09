@@ -21,7 +21,7 @@ import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type Price = components["schemas"]["Price"];
 
-// The chosen price of each date, newest first, with its source. Up to 366 rows of three cells.
+// The chosen price of each date, newest first, with its source. The rows are the points of the answer.
 export function PriceTable({
   prices,
   loading,

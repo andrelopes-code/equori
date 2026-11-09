@@ -1,9 +1,3 @@
-import {
-  DescriptionList,
-  DescriptionListDescription,
-  DescriptionListItem,
-  DescriptionListTerm,
-} from "@slotted/react/description-list";
 import { Page, PageBody } from "@slotted/react/page";
 import {
   PageHeader,
@@ -23,11 +17,9 @@ import { useState } from "react";
 
 import { useApi } from "@/api/api-context";
 import { instrumentQuery, termsQuery } from "@/features/instruments/api";
+import { InstrumentFacts } from "@/features/instruments/instrument-facts";
 import { InstrumentPositions } from "@/features/instruments/instrument-positions";
-import {
-  subtypeLabel,
-  typeLabel,
-} from "@/features/instruments/instrument-labels";
+import { typeLabel } from "@/features/instruments/instrument-labels";
 import { PriceHistory } from "@/features/instruments/price-history";
 import { EditInstrumentDialog } from "@/features/instruments/edit-instrument-dialog";
 import { RecordPriceDialog } from "@/features/instruments/record-price-dialog";
@@ -133,7 +125,11 @@ export function InstrumentPage() {
             {quote === null ? (
               <Text tone="muted">{t("instrument.prices.noQuote")}</Text>
             ) : (
-              <PriceHistory instrument={i.code} quote={quote} />
+              <PriceHistory
+                instrument={i.code}
+                quote={quote}
+                first={i.coverage?.first ?? null}
+              />
             )}
           </Stack>
           {fixedIncome && terms.isError && (
@@ -145,31 +141,7 @@ export function InstrumentPage() {
           {fixedIncome && quote !== null && terms.data !== undefined && (
             <TermsSection terms={terms.data} quote={quote} />
           )}
-          <Stack gap={3}>
-            <Heading level={2} size="md">
-              {t("instrument.facts")}
-            </Heading>
-            <DescriptionList variant="ruled" aria-label={t("instrument.facts")}>
-              {[
-                [
-                  t("instruments.col.subtype"),
-                  i.subtype === undefined ? "" : subtypeLabel(t, i.subtype),
-                ],
-                [t("instruments.col.quote"), i.quote_currency ?? ""],
-                [t("instruments.col.exchange"), i.exchange ?? ""],
-                [t("instruments.field.scale"), String(i.scale)],
-              ]
-                .filter(([, value]) => value !== "")
-                .map(([term, value]) => (
-                  <DescriptionListItem key={term}>
-                    <DescriptionListTerm>{term}</DescriptionListTerm>
-                    <DescriptionListDescription>
-                      {value}
-                    </DescriptionListDescription>
-                  </DescriptionListItem>
-                ))}
-            </DescriptionList>
-          </Stack>
+          <InstrumentFacts instrument={i} />
         </Stack>
       </PageBody>
       {recording && quote !== null && (

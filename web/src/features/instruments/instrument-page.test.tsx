@@ -86,9 +86,36 @@ describe("Instrument page", () => {
     expect(document.querySelector('[data-ui="chart"]')).toBeNull();
   });
 
-  it("never asks for more than 366 days", async () => {
+  it("shows the facts of the instrument", async () => {
+    await renderApp("/instruments/PETR4", { fetch: api({}) });
+    const scale = await screen.findByText(catalogEn["instruments.field.scale"]);
+
+    expect(scale.nextElementSibling?.textContent).toBe("0");
+    expect(
+      screen.queryByText(catalogEn["instruments.col.subtype"]),
+    ).not.toBeInTheDocument();
+  });
+
+  // MQ31
+  it("asks five years and then from the first quote", async () => {
     const queries: URLSearchParams[] = [];
     const fetch = api({
+      "GET /api/v1/instruments/PETR4": () =>
+        json(200, {
+          code: "PETR4",
+          type: "stock",
+          scale: 0,
+          name: "Petrobras PN",
+          quote_currency: "BRL",
+          exchange: "B3SA",
+          coverage: {
+            first: "2010-01-04",
+            last: "2026-10-16",
+            count: 2,
+            stale: false,
+            sources: [],
+          },
+        }),
       "GET /api/v1/prices": (req) => {
         queries.push(new URL(req.url).searchParams);
         return json(200, { items: [] });
@@ -96,13 +123,14 @@ describe("Instrument page", () => {
     });
     await renderApp("/instruments/PETR4", { fetch });
     const user = userEvent.setup();
+    const before = queries.length;
     await user.click(
       await screen.findByRole("radio", {
-        name: catalogEn["instrument.range.days"].replace("{count}", "366"),
+        name: catalogEn["instrument.range.y5"],
       }),
     );
     await waitFor(() => {
-      expect(queries.length).toBeGreaterThan(1);
+      expect(queries.length).toBeGreaterThan(before);
     });
     const last = queries.at(-1);
     const days =
@@ -110,7 +138,15 @@ describe("Instrument page", () => {
         Date.parse(last?.get("from") ?? "")) /
         86_400_000 +
       1;
-    expect(days).toBe(366);
+    expect(days).toBe(1827);
+    await user.click(
+      await screen.findByRole("radio", {
+        name: catalogEn["instrument.range.max"],
+      }),
+    );
+    await waitFor(() => {
+      expect(queries.at(-1)?.get("from")).toBe("2010-01-04");
+    });
   });
 
   it("records a manual price and says that one of the same date is replaced", async () => {
