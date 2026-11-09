@@ -52,6 +52,10 @@ func (s *Service) CreateConnection(ctx context.Context, booksID int64, integrati
 
 	c.BooksID, c.IntegrationID, c.ExternalID = booksID, i.ID, itemID
 
+	for i := range c.Accounts {
+		withHolderDigest(&c.Accounts[i])
+	}
+
 	stored, err := s.repo.InsertConnection(ctx, c)
 	if err != nil {
 		return domain.Connection{}, err

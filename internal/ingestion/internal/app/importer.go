@@ -357,6 +357,14 @@ func (s *Service) importRecords(
 func (s *Service) claimLines(ctx context.Context, p *importPlan) error {
 	ordinals := domain.Ordinals{}
 
+	var holders [][]byte
+	if p.sync {
+		var err error
+		if holders, err = s.repo.BookHolders(ctx, p.batch.BooksID); err != nil {
+			return err
+		}
+	}
+
 	claims := make([]domain.ExternalRecord, len(p.lines))
 	for i, r := range p.lines {
 		claims[i] = domain.ExternalRecord{
@@ -377,6 +385,7 @@ func (s *Service) claimLines(ctx context.Context, p *importPlan) error {
 		}
 		if p.sync {
 			withFacts(&claims[i], r)
+			claims[i].Counterparty = domain.CounterpartyOf(r.Counterparty, holders)
 		}
 	}
 

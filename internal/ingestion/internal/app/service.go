@@ -82,6 +82,10 @@ type Repository interface {
 	Connection(ctx context.Context, booksID int64, id uuid.UUID) (domain.Connection, error)
 	ListConnections(ctx context.Context, booksID int64, p page.Request[NameKey]) ([]domain.Connection, *NameKey, error)
 	DeleteConnection(ctx context.Context, booksID int64, id uuid.UUID) error
+	// BookHolders lists the holder digests of the book's mapped external accounts (A217).
+	BookHolders(ctx context.Context, booksID int64) ([][]byte, error)
+	// SetExternalAccountHolder stores the holder digest the item now reports (A217).
+	SetExternalAccountHolder(ctx context.Context, booksID int64, id uuid.UUID, digest []byte) error
 	// InsertMissingExternalAccount stores the external account, pending, unless the connection
 	// already has one with its external id.
 	InsertMissingExternalAccount(ctx context.Context, a domain.ExternalAccount) error

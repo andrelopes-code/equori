@@ -1,6 +1,7 @@
 package app
 
 import (
+	"bytes"
 	"cmp"
 	"context"
 	"errors"
@@ -166,6 +167,15 @@ func (s *Service) addMissingAccounts(ctx context.Context, agg Aggregator, c *dom
 
 	for _, a := range listed {
 		if stored, ok := known[a.ExternalID]; ok {
+			digest, listed := holderDigest(a)
+			if listed && !bytes.Equal(digest, stored.HolderDigest) {
+				if err := s.repo.SetExternalAccountHolder(ctx, c.BooksID, stored.ID, digest); err != nil {
+					return err
+				}
+
+				changed = true
+			}
+
 			if a.Name == stored.Name || a.Name == "" {
 				continue
 			}
@@ -178,6 +188,8 @@ func (s *Service) addMissingAccounts(ctx context.Context, agg Aggregator, c *dom
 
 			continue
 		}
+
+		withHolderDigest(&a)
 
 		a.BooksID, a.ConnectionID, a.NameFrom, a.NameOn = c.BooksID, c.ID, previous, &today
 		if err := s.repo.InsertMissingExternalAccount(ctx, a); err != nil {
@@ -199,6 +211,20 @@ func (s *Service) addMissingAccounts(ctx context.Context, agg Aggregator, c *dom
 	c.Accounts = reloaded.Accounts
 
 	return nil
+}
+
+// withHolderDigest sets the digest of the holder the aggregator reported (A217).
+func withHolderDigest(a *domain.ExternalAccount) {
+	a.HolderDigest, _ = holderDigest(*a)
+}
+
+// holderDigest returns the digest of the account's reported holder; false without a keyed holder.
+func holderDigest(a domain.ExternalAccount) ([]byte, bool) {
+	if a.Holder == nil {
+		return nil, false
+	}
+
+	return domain.PartyDigest(*a.Holder)
 }
 
 // syncAccount reads one mapped account for its window, widened by one day on each side
