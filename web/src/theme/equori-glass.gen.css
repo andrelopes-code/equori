@@ -1956,6 +1956,10 @@
       background: color-mix(in oklch, var(--slotted-tone-danger-solid) 12%, transparent);
     }
 
+    [data-ui="button"][data-tone="danger"][data-variant="outline"]:is(:hover, :active):not(:disabled):not([data-disabled]):not([data-loading]) {
+      border-color: color-mix(in oklch, var(--slotted-tone-danger-text) 45%, transparent);
+    }
+
     [data-ui="button"][data-tone="danger"]:is([data-variant="outline"], [data-variant="ghost"]):active:not(:disabled):not([data-disabled]):not([data-loading]) {
       background: color-mix(in oklch, var(--slotted-tone-danger-solid) 20%, transparent);
     }
