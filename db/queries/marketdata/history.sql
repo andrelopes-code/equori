@@ -42,3 +42,16 @@ WHERE
     instrument = @instrument
 ORDER BY
     source;
+
+-- name: CountPendingHistory :many
+SELECT
+    source,
+    count(*)::int AS pending
+FROM
+    marketdata_history
+WHERE
+    done_at IS NULL
+GROUP BY
+    source
+ORDER BY
+    source;

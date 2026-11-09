@@ -21,4 +21,13 @@ type Feed struct {
 	// LastRun and Error describe the last tick that ran the feed since the process started.
 	LastRun *time.Time
 	Error   *string
+
+	// Official is false for a source whose prices rank last (A222 MQ1).
+	Official bool
+	// Covers is the number of defined instruments the source quotes (A222 MQ25).
+	Covers int
+	// HistoryPending is the number of history requests of the source not yet done.
+	HistoryPending int
+	// SymbolOverride is true for a source that reads Instrument.Symbols (A222 MQ20).
+	SymbolOverride bool
 }

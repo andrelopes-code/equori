@@ -14,6 +14,7 @@ var (
 	ErrAdminRequired     = errors.New("admin required")
 	ErrRefreshRunning    = errors.New("refresh running")
 	ErrNoSource          = errors.New("no source")
+	ErrUnofficialSource  = errors.New("unofficial source")
 )
 
 // FieldError names the request field that failed validation, as in the API.

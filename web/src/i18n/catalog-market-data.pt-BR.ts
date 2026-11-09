@@ -23,6 +23,8 @@ export const marketDataPtBR: Record<keyof typeof marketDataEn, string> = {
   "problem.no_source": "Nenhuma fonte ativada cota este ativo.",
   "problem.refresh_running":
     "Uma atualização já está em andamento. As datas mudam quando ela termina.",
+  "problem.unofficial_source":
+    "Esta fonte não é oficial; confirme para ativá-la.",
   "marketData.feed.b3_cotahist": "Cotações diárias da B3",
   "marketData.feed.b3_consolidated": "Negócios consolidados da B3",
   "marketData.feed.bcb_ptax": "Câmbio PTAX (Banco Central do Brasil)",

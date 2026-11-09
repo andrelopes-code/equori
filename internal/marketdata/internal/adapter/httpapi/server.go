@@ -44,7 +44,7 @@ type Service interface {
 	IndexRates(ctx context.Context, id string, from, to time.Time) ([]domain.IndexRate, error)
 	Expectations(ctx context.Context, id string) (domain.IndexExpectations, error)
 	Feeds(ctx context.Context) ([]domain.Feed, error)
-	SetFeed(ctx context.Context, id string, enabled bool) (domain.Feed, error)
+	SetFeed(ctx context.Context, id string, enabled, acceptUnofficial bool) (domain.Feed, error)
 	Refresh(ctx context.Context) error
 	RequestHistory(ctx context.Context, code string, from time.Time) error
 	Coverage(ctx context.Context, in domain.Instrument) (domain.Coverage, error)
@@ -123,6 +123,9 @@ func ToProblem(err error) (problem.Details, bool) {
 		return problem.New(http.StatusForbidden, "admin_required", "only an admin changes the instance's market data feeds"), true
 	case errors.Is(err, domain.ErrRefreshRunning):
 		return problem.New(http.StatusConflict, "refresh_running", "a tick of the market data feeds is running"), true
+	case errors.Is(err, domain.ErrUnofficialSource):
+		return problem.New(http.StatusUnprocessableEntity, "unofficial_source",
+			"the source is not official; enabling it needs accept_unofficial"), true
 	case errors.Is(err, domain.ErrNoSource):
 		return problem.New(http.StatusUnprocessableEntity, "no_source", "no enabled source quotes the instrument"), true
 	case errors.Is(err, domain.ErrInstrumentExists):

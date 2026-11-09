@@ -403,12 +403,17 @@ type InstrumentType string
 
 // MarketDataFeed defines model for MarketDataFeed.
 type MarketDataFeed struct {
+	// Covers The number of defined instruments the source quotes; 0 for an index or expectation feed (A222 MQ25).
+	Covers  int  `json:"covers"`
 	Enabled bool `json:"enabled"`
 
 	// Error The failure of that tick, null when it succeeded.
-	Error *string            `json:"error"`
-	Id    string             `json:"id"`
-	Kind  MarketDataFeedKind `json:"kind"`
+	Error *string `json:"error"`
+
+	// HistoryPending The history requests of the source not yet done (A222 MQ25).
+	HistoryPending int                `json:"history_pending"`
+	Id             string             `json:"id"`
+	Kind           MarketDataFeedKind `json:"kind"`
 
 	// Last The latest date the feed stored.
 	Last *openapi_types.Date `json:"last"`
@@ -416,11 +421,17 @@ type MarketDataFeed struct {
 	// LastRun The last tick that ran the feed since the process started.
 	LastRun *time.Time `json:"last_run"`
 
+	// Official False for a source that publishes no terms for this use; its prices rank last (A222 MQ1).
+	Official bool `json:"official"`
+
 	// Stale Enabled, and its next publication is overdue (ADR 025 F9).
 	Stale bool `json:"stale"`
 
 	// Suggested Suggested for the calling book's region (ADR 025 F3); a suggestion enables nothing.
 	Suggested bool `json:"suggested"`
+
+	// SymbolOverride The source reads a symbol set on the instrument (A222 MQ20).
+	SymbolOverride bool `json:"symbol_override"`
 }
 
 // MarketDataFeedKind defines model for MarketDataFeed.Kind.
@@ -428,7 +439,9 @@ type MarketDataFeedKind string
 
 // MarketDataFeedInput defines model for MarketDataFeedInput.
 type MarketDataFeedInput struct {
-	Enabled bool `json:"enabled"`
+	// AcceptUnofficial Required as true to enable a source whose official is false (A222 MQ22).
+	AcceptUnofficial *bool `json:"accept_unofficial,omitempty"`
+	Enabled          bool  `json:"enabled"`
 }
 
 // MarketDataFeedList defines model for MarketDataFeedList.

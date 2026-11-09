@@ -21,6 +21,8 @@ export const marketDataEn = {
   "problem.no_source": "No enabled source quotes this instrument.",
   "problem.refresh_running":
     "An update is already running. The dates change when it ends.",
+  "problem.unofficial_source":
+    "This source is not official; confirm to enable it.",
   "marketData.feed.b3_cotahist": "B3 daily quotes",
   "marketData.feed.b3_consolidated": "B3 consolidated trades",
   "marketData.feed.bcb_ptax": "PTAX exchange rates (Banco Central do Brasil)",

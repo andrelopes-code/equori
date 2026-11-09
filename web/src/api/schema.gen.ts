@@ -5411,12 +5411,22 @@ export interface components {
             last_run: string | null;
             /** @description The failure of that tick, null when it succeeded. */
             error: string | null;
+            /** @description False for a source that publishes no terms for this use; its prices rank last (A222 MQ1). */
+            official: boolean;
+            /** @description The number of defined instruments the source quotes; 0 for an index or expectation feed (A222 MQ25). */
+            covers: number;
+            /** @description The history requests of the source not yet done (A222 MQ25). */
+            history_pending: number;
+            /** @description The source reads a symbol set on the instrument (A222 MQ20). */
+            symbol_override: boolean;
         };
         MarketDataFeedList: {
             items: components["schemas"]["MarketDataFeed"][];
         };
         MarketDataFeedInput: {
             enabled: boolean;
+            /** @description Required as true to enable a source whose official is false (A222 MQ22). */
+            accept_unofficial?: boolean;
         };
         IndexRate: {
             /**

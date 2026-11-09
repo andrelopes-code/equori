@@ -8,6 +8,7 @@ import (
 
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/adapter/postgres"
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/domain"
+	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed"
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/index"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
 )
@@ -16,6 +17,8 @@ var (
 	ErrUnknownFeed    = domain.ErrUnknownFeed
 	ErrAdminRequired  = domain.ErrAdminRequired
 	ErrRefreshRunning = domain.ErrRefreshRunning
+
+	ErrUnofficialSource = domain.ErrUnofficialSource
 )
 
 type Feed = domain.Feed
@@ -89,8 +92,19 @@ func (m *Module) Feeds(ctx context.Context) ([]Feed, error) {
 		return nil, err
 	}
 
+	instruments, err := m.ListInstruments(ctx, "")
+	if err != nil {
+		return nil, err
+	}
+
+	pending, err := m.pendingHistory(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	suggested := SuggestedFeeds(l.Region)
 	lags := feedLags()
+	feedIns := feedInstruments(instruments)
 
 	out := make([]Feed, 0, len(m.feeds.Sources)+len(m.feeds.Indexes))
 	for _, src := range m.feeds.Sources {
@@ -104,7 +118,12 @@ func (m *Module) Feeds(ctx context.Context) ([]Feed, error) {
 			last = &latest
 		}
 
-		out = append(out, m.feed(ctx, src.ID(), domain.FeedPrice, index.PeriodDay, last, on, suggested, lags))
+		f := m.feed(ctx, src.ID(), domain.FeedPrice, index.PeriodDay, last, on, suggested, lags)
+		f.Covers = len(src.Codes(feedIns))
+		f.HistoryPending = pending[src.ID()]
+		_, f.SymbolOverride = src.(feed.SymbolOverride)
+
+		out = append(out, f)
 	}
 
 	for _, src := range m.feeds.Indexes {
@@ -139,7 +158,10 @@ func (m *Module) Feeds(ctx context.Context) ([]Feed, error) {
 }
 
 func (m *Module) feed(ctx context.Context, id, kind, period string, last *time.Time, on map[string]bool, suggested []string, lags map[string]int) Feed {
-	f := Feed{ID: id, Kind: kind, Enabled: on[id], Suggested: slices.Contains(suggested, id), Last: last}
+	f := Feed{
+		ID: id, Kind: kind, Enabled: on[id], Suggested: slices.Contains(suggested, id), Last: last,
+		Official: !slices.Contains(unofficialSources(), id),
+	}
 	if f.Enabled && last != nil {
 		// The period of last is published; the one due is the next, ending two periods after last.
 		today := m.feeds.Clock.Today(ctx)
@@ -162,6 +184,21 @@ func (m *Module) feed(ctx context.Context, id, kind, period string, last *time.T
 	}
 
 	return f
+}
+
+// pendingHistory counts the history requests not yet done, by source ID.
+func (m *Module) pendingHistory(ctx context.Context) (map[string]int, error) {
+	rows, err := m.q.CountPendingHistory(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("count the pending history: %w", err)
+	}
+
+	out := make(map[string]int, len(rows))
+	for _, r := range rows {
+		out[r.Source] = int(r.Pending)
+	}
+
+	return out, nil
 }
 
 // overdue reports whether today is past the day the daily price after last is due (ADR 025 F9).
@@ -187,14 +224,19 @@ func feedLags() map[string]int {
 }
 
 // SetFeed enables or disables a feed for the instance (ADR 025 F6). The first stored setting
-// stores the seed with it, so a write never changes the state of another feed.
-func (m *Module) SetFeed(ctx context.Context, id string, enabled bool) (Feed, error) {
+// stores the seed with it, so a write never changes the state of another feed. Enabling a source
+// whose prices rank last needs acceptUnofficial (A222 MQ22).
+func (m *Module) SetFeed(ctx context.Context, id string, enabled, acceptUnofficial bool) (Feed, error) {
 	if err := m.requireAdmin(ctx); err != nil {
 		return Feed{}, err
 	}
 
 	if _, ok := feedLags()[id]; !ok {
 		return Feed{}, ErrUnknownFeed
+	}
+
+	if enabled && !acceptUnofficial && slices.Contains(unofficialSources(), id) {
+		return Feed{}, ErrUnofficialSource
 	}
 
 	on, err := m.enabledFeeds(ctx)

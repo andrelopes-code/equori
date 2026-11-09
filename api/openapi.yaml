@@ -9516,7 +9516,7 @@ components:
     MarketDataFeed:
       type: object
       additionalProperties: false
-      required: [id, kind, enabled, suggested, last, stale, last_run, error]
+      required: [id, kind, enabled, suggested, last, stale, last_run, error, official, covers, history_pending, symbol_override]
       properties:
         id:
           type: string
@@ -9546,6 +9546,18 @@ components:
           type: string
           nullable: true
           description: The failure of that tick, null when it succeeded.
+        official:
+          type: boolean
+          description: False for a source that publishes no terms for this use; its prices rank last (A222 MQ1).
+        covers:
+          type: integer
+          description: The number of defined instruments the source quotes; 0 for an index or expectation feed (A222 MQ25).
+        history_pending:
+          type: integer
+          description: The history requests of the source not yet done (A222 MQ25).
+        symbol_override:
+          type: boolean
+          description: The source reads a symbol set on the instrument (A222 MQ20).
     MarketDataFeedList:
       type: object
       required: [items]
@@ -9561,6 +9573,9 @@ components:
       properties:
         enabled:
           type: boolean
+        accept_unofficial:
+          type: boolean
+          description: Required as true to enable a source whose official is false (A222 MQ22).
     IndexRate:
       type: object
       additionalProperties: false

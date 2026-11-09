@@ -10,6 +10,45 @@ import (
 	"time"
 )
 
+const countPendingHistory = `-- name: CountPendingHistory :many
+SELECT
+    source,
+    count(*)::int AS pending
+FROM
+    marketdata_history
+WHERE
+    done_at IS NULL
+GROUP BY
+    source
+ORDER BY
+    source
+`
+
+type CountPendingHistoryRow struct {
+	Source  string
+	Pending int32
+}
+
+func (q *Queries) CountPendingHistory(ctx context.Context) ([]CountPendingHistoryRow, error) {
+	rows, err := q.db.Query(ctx, countPendingHistory)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []CountPendingHistoryRow
+	for rows.Next() {
+		var i CountPendingHistoryRow
+		if err := rows.Scan(&i.Source, &i.Pending); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const finishHistory = `-- name: FinishHistory :exec
 UPDATE marketdata_history
 SET

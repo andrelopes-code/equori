@@ -23,7 +23,9 @@ func (s *Server) ListMarketDataFeeds(ctx context.Context, _ ListMarketDataFeedsR
 }
 
 func (s *Server) SetMarketDataFeed(ctx context.Context, req SetMarketDataFeedRequestObject) (SetMarketDataFeedResponseObject, error) {
-	f, err := s.svc.SetFeed(ctx, req.Id, req.Body.Enabled)
+	accept := req.Body.AcceptUnofficial != nil && *req.Body.AcceptUnofficial
+
+	f, err := s.svc.SetFeed(ctx, req.Id, req.Body.Enabled, accept)
 	if err != nil {
 		return nil, err
 	}
@@ -43,6 +45,7 @@ func feedOf(f domain.Feed) MarketDataFeed {
 	out := MarketDataFeed{
 		Id: f.ID, Kind: MarketDataFeedKind(f.Kind), Enabled: f.Enabled, Suggested: f.Suggested, Stale: f.Stale,
 		LastRun: f.LastRun, Error: f.Error,
+		Official: f.Official, Covers: f.Covers, HistoryPending: f.HistoryPending, SymbolOverride: f.SymbolOverride,
 	}
 	if f.Last != nil {
 		out.Last = &openapi_types.Date{Time: *f.Last}

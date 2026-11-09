@@ -68,6 +68,64 @@ func TestS365YahooSymbols(t *testing.T) {
 	}
 }
 
+// S364: an unofficial source needs an explicit acceptance to be enabled (MQ22).
+func TestS364UnofficialConfirmation(t *testing.T) {
+	t.Parallel()
+
+	fake := newYahooFake(t)
+	h := apitest.New(t, apitest.As(usProfile()), apitest.Today("2026-11-09"),
+		apitest.PriceFeeds(nil, map[string]string{"yahoo_chart": fake.srv.URL + "/yahoo"}))
+
+	h.MustDo(http.MethodPost, "/api/v1/instruments", map[string]any{
+		"code": "AAPL", "type": "stock", "scale": 0, "name": "Apple",
+		"quote_currency": "USD", "exchange": "XNAS",
+	}, http.StatusCreated, nil)
+
+	r := h.Do(http.MethodPut, "/api/v1/market-data/feeds/yahoo_chart", map[string]any{"enabled": true})
+	if r.Status != http.StatusUnprocessableEntity || !strings.Contains(string(r.Body), `"code":"unofficial_source"`) {
+		t.Fatalf("enable without acceptance = %d %s, want 422 unofficial_source", r.Status, r.Body)
+	}
+
+	if feedsOf(t, h)["yahoo_chart"].Enabled {
+		t.Fatal("yahoo_chart enabled after the refused request")
+	}
+
+	var got feedAPI
+
+	h.MustDo(http.MethodPut, "/api/v1/market-data/feeds/yahoo_chart",
+		map[string]any{"enabled": true, "accept_unofficial": true}, http.StatusOK, &got)
+
+	if !got.Enabled || got.Official {
+		t.Fatalf("feed = %+v, want enabled and not official", got)
+	}
+
+	h.App.Marketdata.TickFeeds(t.Context())
+
+	var list struct {
+		Items []priceAPI `json:"items"`
+	}
+
+	h.MustDo(http.MethodGet,
+		"/api/v1/prices?instrument=AAPL&quote_instrument=USD&from=2026-11-01&to=2026-11-09",
+		nil, http.StatusOK, &list)
+
+	want := []priceAPI{
+		{Instrument: "AAPL", QuoteInstrument: "USD", Date: "2026-11-04", Value: "349.51", Source: "yahoo_chart"},
+		{Instrument: "AAPL", QuoteInstrument: "USD", Date: "2026-11-05", Value: "344.17", Source: "yahoo_chart"},
+		{Instrument: "AAPL", QuoteInstrument: "USD", Date: "2026-11-06", Value: "342.37", Source: "yahoo_chart"},
+	}
+	if !slices.Equal(list.Items, want) {
+		t.Fatalf("prices = %+v, want %+v", list.Items, want)
+	}
+
+	h.MustDo(http.MethodPut, "/api/v1/market-data/feeds/yahoo_chart",
+		map[string]any{"enabled": false}, http.StatusOK, &got)
+
+	if got.Enabled {
+		t.Fatalf("feed = %+v, want disabled", got)
+	}
+}
+
 type yahooFake struct {
 	srv   *httptest.Server
 	mu    sync.Mutex

@@ -19,6 +19,11 @@ type feedAPI struct {
 	Stale     bool    `json:"stale"`
 	LastRun   *string `json:"last_run"`
 	Error     *string `json:"error"`
+
+	Official       bool `json:"official"`
+	Covers         int  `json:"covers"`
+	HistoryPending int  `json:"history_pending"`
+	SymbolOverride bool `json:"symbol_override"`
 }
 
 func feedsOf(t *testing.T, h *apitest.Harness) map[string]feedAPI {
@@ -218,5 +223,51 @@ func TestFeedSettingsStaleMonthly(t *testing.T) {
 				t.Fatalf("br_ipca = %+v", f)
 			}
 		})
+	}
+}
+
+// MQ25: a feed reports whether it is official, how many instruments it quotes, how many history
+// requests it still owes and whether it reads a symbol.
+func TestFeedFields(t *testing.T) {
+	t.Parallel()
+
+	f := &feedServer{}
+	srv := httptest.NewServer(f)
+	t.Cleanup(srv.Close)
+
+	h := apitest.New(t, apitest.Today("2026-11-01"), apitest.PriceFeeds([]string{"bcb_ptax"}, feedURLs(srv)))
+	h.MustDo(http.MethodPost, "/api/v1/instruments", mxrf11(), http.StatusCreated, nil)
+	h.MustDo(http.MethodPut, "/api/v1/market-data/feeds/b3_cotahist", map[string]any{"enabled": true}, http.StatusOK, nil)
+
+	type fields struct {
+		official       bool
+		covers         int
+		historyPending int
+		symbolOverride bool
+	}
+
+	read := func(fs map[string]feedAPI, id string) fields {
+		f := fs[id]
+		return fields{f.Official, f.Covers, f.HistoryPending, f.SymbolOverride}
+	}
+
+	want := map[string]fields{
+		"b3_cotahist": {true, 1, 1, false},
+		"yahoo_chart": {false, 2, 0, true},
+		"coinbase":    {true, 0, 0, false},
+		"br_cdi":      {true, 0, 0, false},
+	}
+
+	fs := feedsOf(t, h)
+	for id, w := range want {
+		if got := read(fs, id); got != w {
+			t.Fatalf("%s = %+v, want %+v", id, got, w)
+		}
+	}
+
+	h.App.Marketdata.TickFeeds(t.Context())
+
+	if got := read(feedsOf(t, h), "b3_cotahist"); got.historyPending != 0 {
+		t.Fatalf("b3_cotahist after the tick = %+v, want history_pending 0", got)
 	}
 }
