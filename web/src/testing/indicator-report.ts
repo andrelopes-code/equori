@@ -5,8 +5,8 @@ export const savings = [1000, -500, 2000, 0, 1500, 500, 2500, 1000, 800];
 
 export interface ReportOptions {
   // Index of the first month with amounts; the months before it hold zeros.
-  active?: number;
-  last?: Partial<IndicatorMonth>;
+  active?: number | undefined;
+  last?: Partial<IndicatorMonth> | undefined;
 }
 
 export function indicatorReport({
