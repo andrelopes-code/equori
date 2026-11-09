@@ -98,7 +98,7 @@ func (m *Module) upsert(ctx context.Context, ps []Price) error {
 	return pgx.BeginFunc(ctx, m.pool, func(tx pgx.Tx) error {
 		q := m.q.WithTx(tx)
 		for _, p := range ps {
-			priority, err := domain.Priority(p.Source)
+			priority, err := domain.Priority(p.Source, m.unofficial)
 			if err != nil {
 				return err
 			}

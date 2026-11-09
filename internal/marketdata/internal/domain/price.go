@@ -14,8 +14,9 @@ import (
 )
 
 const (
-	SourceManual = "manual"
-	SourceCSV    = "csv"
+	SourceManual  = "manual"
+	SourceCSV     = "csv"
+	SourceAccrual = "accrual"
 
 	MaxImportLines = 10000
 	MaxPriceRange  = 366  // days in a GET /prices range
@@ -30,20 +31,32 @@ type Price struct {
 	Source     string
 }
 
-// Priority orders the sources of one date: the lowest wins (P8 amendment A60).
-func Priority(source string) (int16, error) {
+// UnofficialSources are the price sources that publish no terms for this use (A222 MQ2).
+type UnofficialSources []string
+
+// Has reports whether source is unofficial.
+func (u UnofficialSources) Has(source string) bool { return slices.Contains(u, source) }
+
+// Priority orders the sources of one date: the lowest wins (P8 amendment A60, A222 MQ1).
+func Priority(source string, unofficial UnofficialSources) (int16, error) {
 	switch source {
 	case SourceManual:
 		return 1, nil
 	case SourceCSV:
 		return 2, nil
+	case SourceAccrual:
+		return 4, nil
 	}
 
-	if registry.ValidID(source) {
-		return 3, nil
+	if !registry.ValidID(source) {
+		return 0, fmt.Errorf("unknown price source %q", source)
 	}
 
-	return 0, fmt.Errorf("unknown price source %q", source)
+	if unofficial.Has(source) {
+		return 5, nil
+	}
+
+	return 3, nil
 }
 
 var csvHeader = []string{"instrument", "quote_instrument", "date", "value"}

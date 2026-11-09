@@ -3,7 +3,9 @@ package marketdata
 import (
 	"fmt"
 	"net/http"
+	"slices"
 
+	"github.com/andrelopes-code/equori/internal/marketdata/internal/domain"
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed"
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed/b3consolidated"
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed/b3cotahist"
@@ -15,17 +17,74 @@ type sourceEntry struct {
 	id         string
 	defaultURL string
 	// lag is the number of calendar days after a day by which its prices are due (ADR 025 F9).
-	lag   int
-	build func(hc *http.Client, url string) feed.Source
+	lag int
+	// official is false for a source that publishes no terms for this use (A222 MQ1).
+	official bool
+	// historyYears is how far back enabling the source, or defining an instrument it quotes,
+	// requests prices (A222 MQ6).
+	historyYears int
+	// build receives the URL of every source, the override or the default.
+	build func(hc *http.Client, urls map[string]string) feed.Source
 }
 
 func sourceEntries() []sourceEntry {
 	return []sourceEntry{
-		{"b3_cotahist", "https://bvmf.bmfbovespa.com.br/InstDados/SerHist", 5, func(hc *http.Client, url string) feed.Source { return b3cotahist.New(hc, url) }},
-		{"b3_consolidated", "https://arquivos.b3.com.br", 5, func(hc *http.Client, url string) feed.Source { return b3consolidated.New(hc, url) }},
-		{"bcb_ptax", "https://olinda.bcb.gov.br/olinda/service/PTAX/version/v1/odata", 5, func(hc *http.Client, url string) feed.Source { return bcbptax.New(hc, url) }},
-		{"ecb", "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-hist-90d.xml", 5, func(hc *http.Client, url string) feed.Source { return ecb.New(hc, url) }},
+		{
+			id:           "b3_cotahist",
+			defaultURL:   "https://bvmf.bmfbovespa.com.br/InstDados/SerHist",
+			lag:          5,
+			official:     true,
+			historyYears: 5,
+			build: func(hc *http.Client, urls map[string]string) feed.Source {
+				return b3cotahist.New(hc, urls["b3_cotahist"])
+			},
+		},
+		{
+			id:           "b3_consolidated",
+			defaultURL:   "https://arquivos.b3.com.br",
+			lag:          5,
+			official:     true,
+			historyYears: 5,
+			build: func(hc *http.Client, urls map[string]string) feed.Source {
+				return b3consolidated.New(hc, urls["b3_consolidated"])
+			},
+		},
+		{
+			id:           "bcb_ptax",
+			defaultURL:   "https://olinda.bcb.gov.br/olinda/service/PTAX/version/v1/odata",
+			lag:          5,
+			official:     true,
+			historyYears: indexHistoryYears,
+			build: func(hc *http.Client, urls map[string]string) feed.Source {
+				return bcbptax.New(hc, urls["bcb_ptax"])
+			},
+		},
+		{
+			id:           "ecb",
+			defaultURL:   "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-hist-90d.xml",
+			lag:          5,
+			official:     true,
+			historyYears: indexHistoryYears,
+			build: func(hc *http.Client, urls map[string]string) feed.Source {
+				return ecb.New(hc, urls["ecb"])
+			},
+		},
 	}
+}
+
+// unofficialSources lists, sorted, the sources whose prices rank last (A222 MQ2).
+func unofficialSources() domain.UnofficialSources {
+	var out domain.UnofficialSources
+
+	for _, e := range sourceEntries() {
+		if !e.official {
+			out = append(out, e.id)
+		}
+	}
+
+	slices.Sort(out)
+
+	return out
 }
 
 // SourceIDs lists the identifiers of the price sources.
@@ -47,6 +106,14 @@ func NewSources(ids []string, urls map[string]string, hc *http.Client) ([]feed.S
 		byID[e.id] = e
 	}
 
+	all := make(map[string]string, len(byID))
+	for id, e := range byID {
+		all[id] = e.defaultURL
+		if urls[id] != "" {
+			all[id] = urls[id]
+		}
+	}
+
 	out := make([]feed.Source, 0, len(ids))
 	for _, id := range ids {
 		e, ok := byID[id]
@@ -54,12 +121,7 @@ func NewSources(ids []string, urls map[string]string, hc *http.Client) ([]feed.S
 			return nil, fmt.Errorf("unknown price feed %q", id)
 		}
 
-		url := urls[id]
-		if url == "" {
-			url = e.defaultURL
-		}
-
-		out = append(out, e.build(hc, url))
+		out = append(out, e.build(hc, all))
 	}
 
 	return out, nil

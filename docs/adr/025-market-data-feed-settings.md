@@ -46,6 +46,10 @@ F9 measured `Lag` from the end of the period of `last`, whose publication has al
 
 The price source `b3_consolidated` reads the B3 consolidated trades file, which holds every segment. COTAHIST omits the fixed income ETFs (`AUPO11`, `LFTS11`, `IMAB11`, checked against the files of 2026-01-02 to 2026-10-27). F3 suggests `b3_consolidated` to `BR` in place of `b3_cotahist`, which stays in the registry for the instances that enabled it.
 
+## Amendment of 2026-11-09 (A222)
+
+`docs/specs/2026-11-09-market-quotes-design.md` amends F3, F5, F9, F10 and Not covered: source priorities `manual` 1, `csv` 2, official 3, `accrual` 4, unofficial 5; a history queue per source and instrument; coverage per instrument; new sources and an instrument catalog.
+
 ## Revisit criterion
 
 An instance whose users need different feed sets, or a feed whose publication delay varies beyond its `Lag`.

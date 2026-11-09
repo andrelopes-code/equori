@@ -56,8 +56,9 @@ Earlier prices enter through `POST /prices/import`.
 
 ## 4. Priority
 
-A manual price (`POST /prices`) wins over a CSV price, which wins over a feed price of the
-same date. A feed run never replaces a manual or CSV price.
+Five priorities order the prices of one date, the lowest winning: `manual` 1 (`POST /prices`),
+`csv` 2 (`POST /prices/import`), an official feed 3, `accrual` 4 (computed from the terms of a
+fixed income security), an unofficial feed 5. A feed run never replaces a manual or CSV price.
 
 ## 5. Not covered by a feed
 

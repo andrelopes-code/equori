@@ -1051,3 +1051,7 @@ The scenarios of `docs/specs/2026-11-07-external-identity-design.md`: a reserve 
 ### S352–S354 Import that replaces a book
 
 The scenarios of `docs/specs/2026-10-26-export-design.md`, amendment of 2026-11-09: an archive imported with the name of a populated book replaces its content and deletes its assistant conversations and usage (S352); a name that differs from the book's is refused with 422 `confirmation_mismatch` and writes nothing (S353); an archive refused inside the transaction keeps the previous content (S354).
+
+### S355–S374 Market quotes
+
+The scenarios of `docs/specs/2026-11-09-market-quotes-design.md`, section 7 (A222).

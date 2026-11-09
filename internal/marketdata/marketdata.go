@@ -36,7 +36,7 @@ var (
 )
 
 // sourceAccrual is the source of the prices computed from the terms of a fixed income security.
-const sourceAccrual = "accrual"
+const sourceAccrual = domain.SourceAccrual
 
 type (
 	Instrument   = domain.Instrument
@@ -57,6 +57,9 @@ type Module struct {
 
 	// businessDays are the indexes that compound by business day, computed once in New.
 	businessDays domain.BusinessDayIndexes
+
+	// unofficial are the price sources ranked last (A222 MQ2), computed once in New.
+	unofficial domain.UnofficialSources
 
 	// running is set while a tick runs, scheduled or requested (ADR 025 F7); a requested tick
 	// joins refreshes and stops with life.
@@ -90,6 +93,7 @@ func New(pool *pgxpool.Pool) *Module {
 
 	return &Module{
 		pool: pool, q: postgres.New(pool), calendars: calendars, businessDays: businessDayIndexes(),
+		unofficial: unofficialSources(),
 	}
 }
 
