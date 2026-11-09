@@ -83,10 +83,13 @@ const paletteScrimRule = `
 `;
 
 // Workaround for Slotted issue #83: the group label paints the panel's surface a second time, and
-// over the translucent material the two layers read as a lighter band.
+// over the translucent material the two layers read as a lighter band. A fill that matches the
+// material cannot be set from outside (the page behind varies), and a blur lightens the band
+// again, so the label keeps no fill and scrolls with its rows instead of sticking above them.
 const paletteGroupLabelRule = `
 [data-ui="command-palette"] [data-part="group-label"] {
   background: transparent;
+  position: static;
 }
 `;
 

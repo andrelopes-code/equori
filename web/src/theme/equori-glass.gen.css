@@ -1873,6 +1873,7 @@
 
     [data-ui="command-palette"] [data-part="group-label"] {
       background: transparent;
+      position: static;
     }
 
     [data-ui="drawer"][data-mode="overlay"][data-side="bottom"][data-drag] {
