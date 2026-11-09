@@ -1952,10 +1952,6 @@
       border-radius: var(--slotted-control-radius);
     }
 
-    [data-ui="button"][data-tone="danger"][data-variant="outline"]:not(:disabled):not([data-disabled]) {
-      border-color: color-mix(in oklch, var(--slotted-tone-danger-text) 45%, transparent);
-    }
-
     [data-ui="button"][data-tone="danger"]:is([data-variant="outline"], [data-variant="ghost"]):hover:not(:disabled):not([data-disabled]):not([data-loading]) {
       background: color-mix(in oklch, var(--slotted-tone-danger-solid) 12%, transparent);
     }

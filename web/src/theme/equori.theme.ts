@@ -126,12 +126,8 @@ const collapsibleCornerRule = `
 `;
 
 // Workaround for Slotted issue #90: an outline or ghost Button in the danger tone changes only its
-// text color. The border and the hover and active fills take the danger tone.
+// text color. The hover and active fills take the danger tone.
 const dangerButtonRule = `
-[data-ui="button"][data-tone="danger"][data-variant="outline"]:not(:disabled):not([data-disabled]) {
-  border-color: color-mix(in oklch, var(--slotted-tone-danger-text) 45%, transparent);
-}
-
 [data-ui="button"][data-tone="danger"]:is([data-variant="outline"], [data-variant="ghost"]):hover:not(:disabled):not([data-disabled]):not([data-loading]) {
   background: color-mix(in oklch, var(--slotted-tone-danger-solid) 12%, transparent);
 }
