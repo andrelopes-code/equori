@@ -11,6 +11,7 @@ import type { components, paths } from "@/api/schema.gen";
 import { reloadHome } from "@/features/session/reload-home";
 import { useAppLocale } from "@/i18n/i18n-provider";
 import type { Language } from "@/i18n/languages";
+import { writeActiveBooks } from "@/theme/book-accent";
 
 export const sessionKeys = {
   me: ["session", "me"] as const,
@@ -58,7 +59,10 @@ export function useSwitchBooks() {
         await api.PUT("/session/books", { body: { books_id: booksId } }),
       );
     },
-    onSuccess: reloadHome,
+    onSuccess: (_, booksId) => {
+      writeActiveBooks(booksId);
+      reloadHome();
+    },
   });
 }
 

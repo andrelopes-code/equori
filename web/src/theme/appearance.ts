@@ -16,6 +16,7 @@ import { applyVisual, defaultVisual, readVisual } from "@/theme/visual";
 export const appearanceNames: readonly string[] = [
   "scheme",
   "accent",
+  "bookAccents",
   "tone",
   "corners",
   "density",

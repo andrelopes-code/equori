@@ -1,4 +1,5 @@
 import { Page, PageBody } from "@slotted/react/page";
+import { useEffect } from "react";
 
 import { AppearanceSaveError } from "@/features/setup/appearance-save-error";
 import styles from "@/features/setup/appearance-studio.module.css";
@@ -6,11 +7,19 @@ import { StudioCanvas } from "@/features/setup/studio-canvas";
 import { StudioHeader } from "@/features/setup/studio-header";
 import { StudioPanel } from "@/features/setup/studio-panel";
 import { useThemeLibrary } from "@/features/setup/use-theme-library";
+import { suspendBookAccent } from "@/theme/book-accent";
 
 // The appearance studio: the controls at the start edge, the application drawn beside them
 // (docs/specs/2026-10-29-appearance-studio-design.md, A7).
 export function AppearanceStudio() {
   const library = useThemeLibrary();
+
+  useEffect(() => {
+    suspendBookAccent(true);
+    return () => {
+      suspendBookAccent(false);
+    };
+  }, []);
 
   return (
     <Page width="full">

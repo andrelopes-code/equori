@@ -1,6 +1,8 @@
 import { seedStyle } from "@slotted/theme/seeds";
 import { useSyncExternalStore } from "react";
 
+import { effectiveAccent } from "@/theme/book-accent";
+
 export type AccentPreset =
   | "indigo"
   | "violet"
@@ -67,12 +69,12 @@ function subscribe(listener: () => void): () => void {
   };
 }
 
-function snapshot(): Accent {
+// The theme's accent: the stored choice, or the one held while storage refuses the write.
+export function currentAccent(): Accent {
   return held ?? readAccent();
 }
 
-// The seed is written on the root, the element that carries data-slotted-theme, so both the
-// standard and the glass theme derive from it.
+// Stores the theme's accent, then paints the effective accent: the active book's own, or this one.
 export function applyAccent(accent: Accent): void {
   try {
     localStorage.setItem(STORAGE_KEY, accent);
@@ -81,6 +83,16 @@ export function applyAccent(accent: Accent): void {
     // The accent still applies to this page load when storage is unavailable.
     held = accent;
   }
+  repaintAccent();
+  listeners.forEach((listener) => {
+    listener();
+  });
+}
+
+// The seed is written on the root, the element that carries data-slotted-theme, so both the
+// standard and the glass theme derive from it.
+export function repaintAccent(): void {
+  const accent = effectiveAccent();
   const root = document.documentElement.style;
   for (const [property, value] of Object.entries(
     seedStyle({ accent: accentSeed(accent) }),
@@ -88,12 +100,9 @@ export function applyAccent(accent: Accent): void {
     if (accent === defaultAccent) root.removeProperty(property);
     else root.setProperty(property, value);
   }
-  listeners.forEach((listener) => {
-    listener();
-  });
 }
 
 // Every reader sees the choice at once.
 export function useAccent(): [Accent, (accent: Accent) => void] {
-  return [useSyncExternalStore(subscribe, snapshot), applyAccent];
+  return [useSyncExternalStore(subscribe, currentAccent), applyAccent];
 }

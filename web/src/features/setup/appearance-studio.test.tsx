@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { catalogPtBR } from "@/i18n/catalog.pt-BR";
 import { fakeApi, json } from "@/testing/fake-api";
 import { renderApp } from "@/testing/render-app";
+import { applyAccent } from "@/theme/accent";
 import { resetAppearance } from "@/theme/appearance";
 import { exportTheme } from "@/theme/theme-file";
 import { curatedThemes } from "@/theme/themes";
@@ -29,6 +30,27 @@ describe("appearance studio", () => {
         name: catalogPtBR["studio.tab.surfaces"],
       }),
     ).toBeInTheDocument();
+  });
+
+  it("shows the theme accent while mounted and the book accent after", async () => {
+    localStorage.setItem("equori.bookAccents", '{"7":"emerald"}');
+    localStorage.setItem("equori.activeBooks", "7");
+    applyAccent("indigo");
+    const seed = () =>
+      document.documentElement.style.getPropertyValue("--slotted-seed-accent");
+
+    const { unmount } = await renderApp("/settings/appearance", {
+      fetch: api(),
+    });
+    await screen.findByRole("tab", {
+      name: catalogPtBR["studio.tab.surfaces"],
+    });
+
+    expect(seed()).toBe("");
+
+    unmount();
+
+    expect(seed()).toBe("#10b981");
   });
 
   it("sets the depth of the grounds from the surfaces tab", async () => {

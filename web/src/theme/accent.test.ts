@@ -38,6 +38,19 @@ describe("accent", () => {
     ).toBe(accentSeeds.rose);
   });
 
+  it("paints the seed of the active book's accent", () => {
+    localStorage.setItem("equori.accent", "indigo");
+    localStorage.setItem("equori.bookAccents", '{"7":"emerald"}');
+    localStorage.setItem("equori.activeBooks", "7");
+
+    applyAccent("indigo");
+
+    expect(
+      document.documentElement.style.getPropertyValue("--slotted-seed-accent"),
+    ).toBe("#10b981");
+    expect(localStorage.getItem("equori.accent")).toBe("indigo");
+  });
+
   it("leaves the theme's seed in force for the default accent", () => {
     applyAccent("rose");
     applyAccent("indigo");

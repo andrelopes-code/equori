@@ -1,12 +1,15 @@
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useQuery } from "@tanstack/react-query";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { useApi } from "@/api/api-context";
-import { meQuery, useChooseLanguage } from "@/features/session";
+import { meQuery, useChooseLanguage, useSwitchBooks } from "@/features/session";
+import { reloadHome } from "@/features/session/reload-home";
 import { fakeApi, json } from "@/testing/fake-api";
 import { renderWithProviders } from "@/testing/render-app";
+
+vi.mock("@/features/session/reload-home", () => ({ reloadHome: vi.fn() }));
 
 function Probe() {
   const { data } = useQuery({ ...meQuery(useApi()), staleTime: Infinity });
@@ -38,5 +41,39 @@ describe("useChooseLanguage", () => {
     expect(await screen.findByText("pt")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "choose" }));
     expect(await screen.findByText("en")).toBeInTheDocument();
+  });
+});
+
+describe("useSwitchBooks", () => {
+  it("stores the active book before it reloads the home", async () => {
+    localStorage.clear();
+    let stored: string | null = "unset";
+    vi.mocked(reloadHome).mockImplementation(() => {
+      stored = localStorage.getItem("equori.activeBooks");
+    });
+    function Switch() {
+      const { mutate } = useSwitchBooks();
+      return (
+        <button
+          onClick={() => {
+            mutate(9);
+          }}
+        >
+          switch
+        </button>
+      );
+    }
+    renderWithProviders(<Switch />, {
+      fetch: fakeApi({
+        "PUT /api/v1/session/books": () => new Response(null, { status: 204 }),
+      }),
+    });
+
+    await userEvent.click(screen.getByRole("button", { name: "switch" }));
+
+    await vi.waitFor(() => {
+      expect(reloadHome).toHaveBeenCalledTimes(1);
+    });
+    expect(stored).toBe("9");
   });
 });
