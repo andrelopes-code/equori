@@ -1,53 +1,35 @@
-import type { ChartSeries } from "@slotted/core/chart";
-import { Chart } from "@slotted/react/chart";
 import { Grid } from "@slotted/react/grid";
-import { Skeleton } from "@slotted/react/skeleton";
 import { Stack } from "@slotted/react/stack";
 import { useQuery } from "@tanstack/react-query";
 
 import { useApi } from "@/api/api-context";
 import { indicatorsQuery } from "@/features/overview";
-import { indicatorRows } from "@/features/reports/indicator-rows";
+import { FlowsChart } from "@/features/reports/flows-chart";
+import { IndicatorAudit } from "@/features/reports/indicator-audit";
+import { IndicatorBoard } from "@/features/reports/indicator-board";
+import { IndicatorVerdictCard } from "@/features/reports/indicator-verdict-card";
+import { IndicatorsSkeleton } from "@/features/reports/indicators-skeleton";
+import { RateChart } from "@/features/reports/rate-chart";
 import { ReportControls } from "@/features/reports/report-controls";
-import { useScale } from "@/features/setup";
-import {
-  formatBasisPoints,
-  formatMonths,
-  formatReferenceMonth,
-} from "@/i18n/format";
-import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { useMoneyFormat } from "@/privacy/use-money-format";
+import { ReserveChart } from "@/features/reports/reserve-chart";
+import { useT } from "@/i18n/i18n-provider";
+import { useToday } from "@/i18n/today";
 import { MonthControl } from "@/ui/month-control";
 import { QueryError } from "@/ui/query-error";
 
-// One line chart per indicator over the 12 months ending at month, each on its own value axis
-// (analytics design 6).
-
-// The fields of a row of the indicator charts.
-type IndicatorField =
-  | "label"
-  | "savings"
-  | "committed"
-  | "liabilities"
-  | "liquidity"
-  | "debt"
-  | "trailing";
-export function IndicatorsTab({
-  month,
-  onMonth,
-}: {
+interface IndicatorsTabProps {
   month: string;
   onMonth: (month: string) => void;
-}) {
+}
+
+// The tab answers in the order a reader asks: is the month inside the usual range, how much reserve
+// stands against the debts, where the savings came from (indicators tab design, D1).
+export function IndicatorsTab({ month, onMonth }: IndicatorsTabProps) {
   const t = useT();
-  const [locale] = useAppLocale();
-  const fmt = useMoneyFormat();
-  const scale = useScale();
+  const today = useToday();
   const query = useQuery(indicatorsQuery(useApi(), month));
   const report = query.data;
-  const percent = (bp: number) => formatBasisPoints(bp, locale);
-  const months = (bp: number) =>
-    t("overview.indicators.months", { months: formatMonths(bp, locale) });
+  const incomplete = month === today.slice(0, 7);
   const controls = (
     <ReportControls
       start={
@@ -59,6 +41,7 @@ export function IndicatorsTab({
       }
     />
   );
+
   if (query.error !== null)
     return (
       <Stack gap={4}>
@@ -66,90 +49,35 @@ export function IndicatorsTab({
         <QueryError error={query.error} onRetry={() => void query.refetch()} />
       </Stack>
     );
-  if (report === undefined || scale === null)
+
+  if (report === undefined)
     return (
       <Stack gap={4}>
         {controls}
-        <Skeleton shape="block" blockSize="16rem" />
+        <IndicatorsSkeleton />
       </Stack>
     );
-  const digits = scale(report.currency);
-  const money = (amount: number) =>
-    fmt.money({ amount, currency: report.currency }, digits);
-  const data = indicatorRows(report, (m) => formatReferenceMonth(m, locale));
-  const line = (
-    id: Exclude<IndicatorField, "label">,
-    label: string,
-    format: (value: number) => string,
-    stroke: "solid" | "dashed" = "solid",
-  ): ChartSeries<IndicatorField> => ({
-    id,
-    kind: "line",
-    field: id,
-    label,
-    format,
-    stroke,
-  });
-  const chart = (
-    title: string,
-    description: string,
-    series: ChartSeries<IndicatorField>[],
-    format: (v: number) => string,
-  ) => (
-    <Chart
-      variant="card"
-      size="sm"
-      title={title}
-      description={description}
-      data={data}
-      series={series}
-      x={{ field: "label" }}
-      y={{ format }}
-    />
-  );
+
   return (
     <Stack gap={4}>
       {controls}
+
+      <IndicatorVerdictCard
+        report={report}
+        incomplete={incomplete}
+        today={today}
+      />
+
+      <IndicatorBoard report={report} incomplete={incomplete} />
+
+      <ReserveChart report={report} incomplete={incomplete} />
+
       <Grid columns={2} gap={4} minItemWidth="lg">
-        {chart(
-          t("report.indicators.savings"),
-          t("report.indicators.savingsNote"),
-          [
-            line("savings", t("report.indicators.savings"), percent),
-            line(
-              "trailing",
-              t("report.indicators.trailing"),
-              percent,
-              "dashed",
-            ),
-          ],
-          percent,
-        )}
-        {chart(
-          t("report.indicators.reserve"),
-          t("report.indicators.reserveNote"),
-          [line("liquidity", t("report.indicators.reserve"), months)],
-          months,
-        )}
-        {chart(
-          t("report.indicators.committed"),
-          t("report.indicators.committedNote"),
-          [line("committed", t("report.indicators.committed"), percent)],
-          percent,
-        )}
-        {chart(
-          t("report.indicators.debt"),
-          t("report.indicators.debtNote"),
-          [line("debt", t("report.indicators.debt"), percent)],
-          percent,
-        )}
-        {chart(
-          t("report.indicators.liabilities"),
-          t("report.indicators.liabilitiesNote"),
-          [line("liabilities", t("report.indicators.liabilities"), money)],
-          money,
-        )}
+        <FlowsChart report={report} incomplete={incomplete} />
+        <RateChart report={report} incomplete={incomplete} />
       </Grid>
+
+      <IndicatorAudit report={report} />
     </Stack>
   );
 }
