@@ -215,14 +215,14 @@ describe("AccountsPage", () => {
     ).toBeInTheDocument();
     expect(within(reserve).getByText("101.80% of CDI")).toBeInTheDocument();
     const broker = within(reserves).getByRole("row", { name: /Corretora/ });
-    // A loss reads in the danger tone; a gain in the default one.
+    // A loss reads in the danger tone; a gain in the success one.
     expect(await within(broker).findByText("−13.80%")).toHaveAttribute(
       "data-tone",
       "danger",
     );
     expect(within(reserve).getByText("15.17% a year")).toHaveAttribute(
       "data-tone",
-      "default",
+      "success",
     );
     expect(within(broker).getByText("CDI 3.52%")).toBeInTheDocument();
     expect(within(broker).queryByText(/a year|of CDI/)).not.toBeInTheDocument();
