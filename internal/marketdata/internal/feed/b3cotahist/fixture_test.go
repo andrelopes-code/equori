@@ -52,3 +52,29 @@ func cotahistZIP(t *testing.T, date string, records ...string) []byte {
 
 	return buf.Bytes()
 }
+
+// cotahistYearZIP compresses a year file: header, records, trailer.
+func cotahistYearZIP(t *testing.T, year string, records ...string) []byte {
+	t.Helper()
+
+	header := "00COTAHIST." + year + "BOVESPA " + year + "1231"
+	trailer := "99COTAHIST." + year + "BOVESPA " + year + "1231"
+	lines := append(append([]string{header + strings.Repeat(" ", 245-len(header))}, records...), trailer+strings.Repeat(" ", 245-len(trailer)))
+	var buf bytes.Buffer
+	zw := zip.NewWriter(&buf)
+
+	w, err := zw.Create("COTAHIST_A" + year + ".TXT")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := w.Write([]byte(strings.Join(lines, "\r\n") + "\r\n")); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := zw.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	return buf.Bytes()
+}

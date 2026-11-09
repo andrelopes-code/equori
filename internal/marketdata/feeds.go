@@ -201,7 +201,12 @@ func (m *Module) feedStart(ctx context.Context, source string, instrument money.
 func (m *Module) storeQuotes(ctx context.Context, source string, quotes []feed.Quote) error {
 	ps := make([]Price, len(quotes))
 	for i, q := range quotes {
-		ps[i] = Price{Instrument: q.Instrument, Quote: q.Quote, Date: q.Date, Value: q.Value, Source: source}
+		src := source
+		if q.Source != "" {
+			src = q.Source
+		}
+
+		ps[i] = Price{Instrument: q.Instrument, Quote: q.Quote, Date: q.Date, Value: q.Value, Source: src}
 	}
 
 	return m.upsert(ctx, ps)

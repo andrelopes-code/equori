@@ -13,6 +13,7 @@ import (
 
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed"
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed/b3consolidated"
+	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed/b3cotahist"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
@@ -86,7 +87,7 @@ func serve(t *testing.T, files map[string][]byte) (*b3Server, b3consolidated.Sou
 	srv := httptest.NewServer(s)
 	t.Cleanup(srv.Close)
 
-	return s, b3consolidated.New(srv.Client(), srv.URL)
+	return s, b3consolidated.New(srv.Client(), srv.URL, b3cotahist.New(srv.Client(), srv.URL))
 }
 
 // AUPO11, a fixed income ETF, sits in segment FORWARD; IVVB11 in CASH. An untraded option has no
@@ -198,7 +199,7 @@ func TestFetchKeepsEarlierDays(t *testing.T) {
 		}
 	}))
 	t.Cleanup(srv.Close)
-	got, err := b3consolidated.New(srv.Client(), srv.URL).Fetch(t.Context(), []money.Currency{"AUPO11"}, day("2026-10-27"), day("2026-10-29"))
+	got, err := b3consolidated.New(srv.Client(), srv.URL, b3cotahist.New(srv.Client(), srv.URL)).Fetch(t.Context(), []money.Currency{"AUPO11"}, day("2026-10-27"), day("2026-10-29"))
 
 	var scope *feed.ScopeError
 	if !errors.As(err, &scope) || scope.Value != "2026-10-28" || errors.Is(err, feed.ErrNoData) {
@@ -218,7 +219,7 @@ func TestFetchFailsOnAServerError(t *testing.T) {
 	}))
 	t.Cleanup(srv.Close)
 
-	_, err := b3consolidated.New(srv.Client(), srv.URL).Fetch(t.Context(), []money.Currency{"AUPO11"}, day("2026-10-27"), day("2026-10-27"))
+	_, err := b3consolidated.New(srv.Client(), srv.URL, b3cotahist.New(srv.Client(), srv.URL)).Fetch(t.Context(), []money.Currency{"AUPO11"}, day("2026-10-27"), day("2026-10-27"))
 	if err == nil || errors.Is(err, feed.ErrNoData) {
 		t.Fatalf("err = %v", err)
 	}

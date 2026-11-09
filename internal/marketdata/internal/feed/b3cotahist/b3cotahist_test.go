@@ -157,3 +157,50 @@ func TestCodes(t *testing.T) {
 		t.Fatalf("codes = %v", got)
 	}
 }
+
+func TestFetchYears(t *testing.T) {
+	t.Parallel()
+	y2025 := cotahistYearZIP(t, "2025",
+		cotahistRecord("20250102", "PETR4", "010", 3000),
+		cotahistRecord("20250701", "PETR4", "010", 3150),
+	)
+	y2026 := cotahistYearZIP(t, "2026",
+		cotahistRecord("20261106", "PETR4", "010", 3245),
+		cotahistRecord("20261106", "VALE3", "010", 6100),
+	)
+	var paths []string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		paths = append(paths, r.URL.Path)
+		switch r.URL.Path {
+		case "/COTAHIST_A2025.ZIP":
+			_, _ = w.Write(y2025)
+		case "/COTAHIST_A2026.ZIP":
+			_, _ = w.Write(y2026)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	t.Cleanup(srv.Close)
+	src := b3cotahist.New(srv.Client(), srv.URL)
+
+	got, err := src.Fetch(t.Context(), []money.Currency{"PETR4"}, day("2025-06-01"), day("2026-11-09"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	wantPaths := []string{"/COTAHIST_A2025.ZIP", "/COTAHIST_A2026.ZIP", "/COTAHIST_D09112026.ZIP"}
+	if fmt.Sprint(paths) != fmt.Sprint(wantPaths) {
+		t.Fatalf("paths = %v", paths)
+	}
+
+	if len(got) != 2 {
+		t.Fatalf("quotes = %+v", got)
+	}
+
+	for i, want := range []struct{ date, value string }{{"2025-07-01", "31.50"}, {"2026-11-06", "32.45"}} {
+		q := got[i]
+		if q.Instrument != "PETR4" || !q.Date.Equal(day(want.date)) || q.Value.String() != want.value || q.Source != "b3_cotahist" {
+			t.Fatalf("quote %d = %+v", i, q)
+		}
+	}
+}

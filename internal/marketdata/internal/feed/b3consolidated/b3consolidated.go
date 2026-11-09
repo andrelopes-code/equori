@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed"
+	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed/b3cotahist"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
@@ -24,10 +25,12 @@ var errNotFinal = errors.New("file not final")
 type Source struct {
 	client  *http.Client
 	baseURL string
+	years   b3cotahist.Source
 }
 
-func New(c *http.Client, baseURL string) Source {
-	return Source{client: c, baseURL: strings.TrimSuffix(baseURL, "/")}
+// New returns the source; years reads the COTAHIST year files of a range over 31 days.
+func New(c *http.Client, baseURL string, years b3cotahist.Source) Source {
+	return Source{client: c, baseURL: strings.TrimSuffix(baseURL, "/"), years: years}
 }
 
 func (Source) ID() string { return "b3_consolidated" }
@@ -44,8 +47,9 @@ func (Source) Codes(ins []feed.Instrument) []money.Currency {
 	return out
 }
 
-// Fetch returns the last trade price (in BRL) of each code for each weekday of [from, to]. A day
-// without a file is skipped. A file not yet final ends the run without a failure, so the next
+// Fetch returns the last trade price (in BRL) of each code for each weekday of [from, to]. A range
+// over 31 days reads the COTAHIST year files first, then the daily files from the day after the
+// latest year-file record (D14). A day without a file is skipped. A file not yet final ends the run without a failure, so the next
 // tick fetches its day again. The first failing day ends the run: its failure, a
 // feed.ScopeError, is returned with the quotes of the earlier days.
 func (c Source) Fetch(ctx context.Context, codes []money.Currency, from, to time.Time) ([]feed.Quote, error) {
@@ -55,7 +59,28 @@ func (c Source) Fetch(ctx context.Context, codes []money.Currency, from, to time
 	}
 
 	var out []feed.Quote
-	for d := from; !d.After(to); d = d.AddDate(0, 0, 1) {
+
+	dayFrom := from
+
+	if from.Before(to.AddDate(0, 0, -31)) {
+		years, latest, err := c.years.FetchYears(ctx, codes, from, to)
+		if err != nil {
+			return years, err
+		}
+
+		out = years
+		dayFrom = to.AddDate(0, 0, -30)
+
+		if next := latest.AddDate(0, 0, 1); !latest.IsZero() && next.After(dayFrom) {
+			dayFrom = next
+		}
+
+		if from.After(dayFrom) {
+			dayFrom = from
+		}
+	}
+
+	for d := dayFrom; !d.After(to); d = d.AddDate(0, 0, 1) {
 		if d.Weekday() == time.Saturday || d.Weekday() == time.Sunday {
 			continue
 		}

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/andrelopes-code/equori/internal/platform/money"
@@ -20,11 +21,17 @@ var ErrNoData = errors.New("no data")
 // trades file about 6 MiB.
 const maxResponseBytes = 16 << 20
 
+// maxDownloadBytes bounds an answer read through Download: a COTAHIST year file had 102 MB in
+// 2026 (A222 MQ13).
+const maxDownloadBytes = 256 << 20
+
 type Quote struct {
 	Instrument money.Currency
 	Quote      money.Currency
 	Date       time.Time
 	Value      money.Rate
+	// Source is the source whose file holds the quote; empty means the reading source (A222 MQ12).
+	Source string
 }
 
 // Instrument is a Market data instrument as a source sees it.
@@ -82,4 +89,57 @@ func Get(ctx context.Context, c *http.Client, url string) ([]byte, error) {
 	}
 
 	return io.ReadAll(io.LimitReader(resp.Body, maxResponseBytes))
+}
+
+// Download streams the body of url to a file under os.TempDir, passes it to read and removes it.
+// A 404 answer returns ErrNoData; an answer over 256 MiB is an error.
+func Download(ctx context.Context, c *http.Client, url string, read func(f *os.File, size int64) error) error {
+	return download(ctx, c, url, maxDownloadBytes, read)
+}
+
+func download(ctx context.Context, c *http.Client, url string, limit int64, read func(f *os.File, size int64) error) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return err
+	}
+
+	resp, err := c.Do(req)
+	if err != nil {
+		return err
+	}
+
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode == http.StatusNotFound {
+		return ErrNoData
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return &StatusError{Code: resp.StatusCode}
+	}
+
+	f, err := os.CreateTemp("", "equori-download-*")
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		_ = f.Close()
+		_ = os.Remove(f.Name())
+	}()
+
+	size, err := io.Copy(f, io.LimitReader(resp.Body, limit+1))
+	if err != nil {
+		return err
+	}
+
+	if size > limit {
+		return fmt.Errorf("answer over %d bytes", limit)
+	}
+
+	if _, err := f.Seek(0, io.SeekStart); err != nil {
+		return err
+	}
+
+	return read(f, size)
 }

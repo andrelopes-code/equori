@@ -8,7 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"slices"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -56,10 +56,84 @@ func (Source) Codes(ins []feed.Instrument) []money.Currency {
 	return out
 }
 
-// Fetch returns the spot-market closing price (in BRL) of each code for each weekday of
-// [from, to]. A day with no data is skipped. The first failing day ends the run: its
-// failure, a feed.ScopeError, is returned with the quotes of the earlier days.
+// Fetch returns the spot-market closing price (in BRL) of each code for each date of [from, to].
+// A range over 31 days reads the year files first, then the daily files from the day after the
+// latest year-file record (D14). A day with no data is skipped. The first failing file ends the
+// run: its failure, a feed.ScopeError, is returned with the quotes read before it.
 func (c Source) Fetch(ctx context.Context, codes []money.Currency, from, to time.Time) ([]feed.Quote, error) {
+	var out []feed.Quote
+
+	dayFrom := from
+
+	if from.Before(to.AddDate(0, 0, -31)) {
+		years, latest, err := c.FetchYears(ctx, codes, from, to)
+		if err != nil {
+			return years, err
+		}
+
+		out = years
+		dayFrom = to.AddDate(0, 0, -30)
+
+		if next := latest.AddDate(0, 0, 1); !latest.IsZero() && next.After(dayFrom) {
+			dayFrom = next
+		}
+
+		if from.After(dayFrom) {
+			dayFrom = from
+		}
+	}
+
+	days, err := c.fetchDays(ctx, codes, dayFrom, to)
+
+	return append(out, days...), err
+}
+
+// FetchYears returns the spot-market closing price of each code for each date of [from, to]
+// held by the year files of the years of from to to, and the latest record date read from them
+// (zero when none was read). A missing year is skipped. Each quote carries Source b3_cotahist.
+func (c Source) FetchYears(ctx context.Context, codes []money.Currency, from, to time.Time) ([]feed.Quote, time.Time, error) {
+	tickers := tickerSet(codes)
+
+	var (
+		out    []feed.Quote
+		latest time.Time
+	)
+
+	for year := from.Year(); year <= to.Year(); year++ {
+		name := fmt.Sprintf("COTAHIST_A%d", year)
+
+		err := feed.Download(ctx, c.client, c.baseURL+"/"+name+".ZIP", func(f *os.File, size int64) error {
+			zr, err := zip.NewReader(f, size)
+			if err != nil {
+				return fmt.Errorf("open %s: %w", name, err)
+			}
+
+			quotes, last, err := readZIP(zr, name, tickers, from, to, false)
+			if err != nil {
+				return err
+			}
+
+			out = append(out, quotes...)
+
+			if last.After(latest) {
+				latest = last
+			}
+
+			return nil
+		})
+		if errors.Is(err, feed.ErrNoData) {
+			continue
+		}
+
+		if err != nil {
+			return out, latest, &feed.ScopeError{Key: "year", Value: strconv.Itoa(year), Err: err}
+		}
+	}
+
+	return out, latest, nil
+}
+
+func (c Source) fetchDays(ctx context.Context, codes []money.Currency, from, to time.Time) ([]feed.Quote, error) {
 	tickers := make([]string, len(codes))
 	for i, code := range codes {
 		tickers[i] = string(code)
@@ -101,19 +175,44 @@ func (c Source) FetchDay(ctx context.Context, day time.Time, tickers []string) (
 		return nil, fmt.Errorf("open %s: %w", name, err)
 	}
 
+	set := make(map[string]bool, len(tickers))
+	for _, t := range tickers {
+		set[t] = true
+	}
+
+	quotes, _, err := readZIP(zr, name, set, day, day, true)
+
+	return quotes, err
+}
+
+func tickerSet(codes []money.Currency) map[string]bool {
+	set := make(map[string]bool, len(codes))
+	for _, code := range codes {
+		set[string(code)] = true
+	}
+
+	return set
+}
+
+// readZIP reads the records of the only file of zr. A day file (strict) holds only records of
+// from; a year file keeps the records dated in [from, to]. It returns the latest date of those
+// records.
+func readZIP(zr *zip.Reader, name string, tickers map[string]bool, from, to time.Time, strict bool) ([]feed.Quote, time.Time, error) {
 	if len(zr.File) != 1 {
-		return nil, fmt.Errorf("open %s: %d files in the ZIP", name, len(zr.File))
+		return nil, time.Time{}, fmt.Errorf("open %s: %d files in the ZIP", name, len(zr.File))
 	}
 
 	f, err := zr.File[0].Open()
 	if err != nil {
-		return nil, fmt.Errorf("open %s: %w", name, err)
+		return nil, time.Time{}, fmt.Errorf("open %s: %w", name, err)
 	}
 
 	defer func() { _ = f.Close() }()
 
-	want := day.Format("20060102")
-	var out []feed.Quote
+	var (
+		out    []feed.Quote
+		latest time.Time
+	)
 
 	sc := bufio.NewScanner(f)
 	for line := 1; sc.Scan(); line++ {
@@ -122,33 +221,55 @@ func (c Source) FetchDay(ctx context.Context, day time.Time, tickers []string) (
 			continue
 		}
 
-		if len(rec) != recordLength || rec[dateFrom:dateTo] != want {
-			return nil, fmt.Errorf("read %s line %d: not a record of %s", name, line, want)
+		date, err := time.Parse("20060102", safeSlice(rec, dateFrom, dateTo))
+		if len(rec) != recordLength || (strict && !date.Equal(from)) || err != nil {
+			return nil, time.Time{}, fmt.Errorf("read %s line %d: not a record of %s", name, line, from.Format("20060102"))
+		}
+
+		if date.Before(from) || date.After(to) {
+			continue
+		}
+
+		if date.After(latest) {
+			latest = date
 		}
 
 		ticker := strings.TrimSpace(rec[tickerFrom:tickerTo])
-		if rec[marketFrom:marketTo] != spotMarket || !slices.Contains(tickers, ticker) {
+		if rec[marketFrom:marketTo] != spotMarket || !tickers[ticker] {
 			continue
 		}
 
 		cents, err := strconv.ParseInt(rec[closeFrom:closeTo], 10, 64)
 		if err != nil {
-			return nil, fmt.Errorf("read %s line %d: %w", name, line, err)
+			return nil, time.Time{}, fmt.Errorf("read %s line %d: %w", name, line, err)
 		}
 
 		value, err := money.NewRate(cents, 2)
 		if err != nil {
-			return nil, fmt.Errorf("read %s line %d: %w", name, line, err)
+			return nil, time.Time{}, fmt.Errorf("read %s line %d: %w", name, line, err)
 		}
 
-		out = append(out, feed.Quote{Instrument: money.Currency(ticker), Quote: "BRL", Date: day, Value: value})
+		q := feed.Quote{Instrument: money.Currency(ticker), Quote: "BRL", Date: date, Value: value}
+		if !strict {
+			q.Source = "b3_cotahist"
+		}
+
+		out = append(out, q)
 	}
 
 	if err := sc.Err(); err != nil {
-		return nil, fmt.Errorf("read %s: %w", name, err)
+		return nil, time.Time{}, fmt.Errorf("read %s: %w", name, err)
 	}
 
-	return out, nil
+	return out, latest, nil
+}
+
+func safeSlice(s string, from, to int) string {
+	if len(s) < to {
+		return ""
+	}
+
+	return s[from:to]
 }
 
 // ascii keeps the byte offsets of the layout when a company name holds a character outside

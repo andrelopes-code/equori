@@ -46,7 +46,7 @@ func sourceEntries() []sourceEntry {
 			official:     true,
 			historyYears: 5,
 			build: func(hc *http.Client, urls map[string]string) feed.Source {
-				return b3consolidated.New(hc, urls["b3_consolidated"])
+				return b3consolidated.New(hc, urls["b3_consolidated"], b3cotahist.New(hc, urls["b3_cotahist"]))
 			},
 		},
 		{
