@@ -41,6 +41,13 @@ type Backend interface {
 	// AddUnreadableReserveLine adds a line the source states moves money to a reserve, in a form
 	// the aggregator cannot read a name from.
 	AddUnreadableReserveLine(id string)
+
+	HasParties() bool
+	// SetHolder makes the item report the account's holder as id.
+	SetHolder(id domain.PartyID)
+	// AddCounterpartyLine adds a line dated 2026-11-12 that names id as the party on the other
+	// side.
+	AddCounterpartyLine(id string, party domain.PartyID)
 }
 
 // Run checks the contract of A211 on a new backend per clause.
@@ -83,7 +90,51 @@ func Run(t *testing.T, backend func(t *testing.T) Backend) {
 			t.Fatalf("line = %+v, want no reserve", got)
 		}
 	})
+	t.Run("an ordinary line has no counterparty", func(t *testing.T) {
+		b := backend(t)
+		b.AddLine("ordinary")
+
+		if got := line(t, b, "ordinary"); got.Counterparty != nil {
+			t.Fatalf("Counterparty = %+v, want nil", got.Counterparty)
+		}
+	})
 	runReserves(t, backend)
+	runParties(t, backend)
+}
+
+func runParties(t *testing.T, backend func(t *testing.T) Backend) {
+	t.Helper()
+
+	if !backend(t).HasParties() {
+		return
+	}
+
+	t.Run("a reported holder has a key", func(t *testing.T) {
+		b := backend(t)
+		b.SetHolder(domain.PartyID{Scheme: "br_cpf", Value: "529.982.247-25"})
+
+		got := find(t, accounts(t, b), b.AccountID())
+		if got.Holder == nil {
+			t.Fatal("Holder = nil")
+		}
+
+		if key, ok := domain.PartyKey(*got.Holder); !ok || key != "52998224725" {
+			t.Fatalf("PartyKey(%+v) = %q, %v, want 52998224725", *got.Holder, key, ok)
+		}
+	})
+	t.Run("a line names its counterparty", func(t *testing.T) {
+		b := backend(t)
+		b.AddCounterpartyLine("party-line", domain.PartyID{Scheme: "br_cnpj", Value: "18.236.120/0001-58"})
+
+		got := line(t, b, "party-line")
+		if got.Counterparty == nil {
+			t.Fatal("Counterparty = nil")
+		}
+
+		if key, ok := domain.PartyKey(*got.Counterparty); !ok || key != "18236120000158" {
+			t.Fatalf("PartyKey(%+v) = %q, %v, want 18236120000158", *got.Counterparty, key, ok)
+		}
+	})
 }
 
 func runReserves(t *testing.T, backend func(t *testing.T) Backend) {

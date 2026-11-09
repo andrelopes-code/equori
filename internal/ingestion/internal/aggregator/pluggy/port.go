@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -159,7 +160,7 @@ func externalAccounts(accounts []client.Account) []domain.ExternalAccount {
 	for _, a := range accounts {
 		out = append(out, domain.ExternalAccount{
 			ExternalID: a.ID, Type: a.Type, Subtype: a.Subtype, Name: a.Name,
-			NumberLast4: domain.LastDigits(a.Number), Currency: a.CurrencyCode,
+			NumberLast4: domain.LastDigits(a.Number), Currency: a.CurrencyCode, Holder: holder(a),
 		})
 		if a.BankData == nil {
 			continue
@@ -179,6 +180,19 @@ func externalAccounts(accounts []client.Account) []domain.ExternalAccount {
 	}
 
 	return out
+}
+
+// holder reads the account's tax number as a CPF (11 characters) or a CNPJ (14) once the
+// separators are removed; any other length reports none (A217).
+func holder(a client.Account) *domain.PartyID {
+	switch len(strings.NewReplacer(".", "", "/", "", "-", "").Replace(a.TaxNumber)) {
+	case 11:
+		return &domain.PartyID{Scheme: "br_cpf", Value: a.TaxNumber}
+	case 14:
+		return &domain.PartyID{Scheme: "br_cnpj", Value: a.TaxNumber}
+	}
+
+	return nil
 }
 
 func (p Port) ItemState(ctx context.Context, id uuid.UUID, c domain.Credentials, itemID string) (app.ItemState, error) {

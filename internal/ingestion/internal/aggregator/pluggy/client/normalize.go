@@ -50,6 +50,8 @@ func Normalize(t Transaction, a Account, bills map[string]Bill, scale int, loc *
 		return domain.NormalizedRecord{}, false, fmt.Errorf("transaction %s: %w", t.ID, err)
 	}
 
+	r.Counterparty = counterparty(t.PaymentData, r.Amount)
+
 	if card {
 		// Pluggy card amounts are positive for charges; the ledger's card charges are negative.
 		r.Amount = -r.Amount
@@ -107,6 +109,32 @@ func Normalize(t Transaction, a Account, bills map[string]Bill, scale int, loc *
 
 	return r, true, nil
 }
+
+// counterparty returns the receiver of a debit or the payer of a credit; nil for a document
+// type other than CPF and CNPJ, an empty value or a missing party (A217).
+func counterparty(p *PaymentData, amount int64) *domain.PartyID {
+	if p == nil {
+		return nil
+	}
+
+	party := p.Payer
+	if amount < 0 {
+		party = p.Receiver
+	}
+
+	if party == nil || party.DocumentNumber == nil || party.DocumentNumber.Value == "" {
+		return nil
+	}
+
+	scheme, ok := documentSchemes[party.DocumentNumber.Type]
+	if !ok {
+		return nil
+	}
+
+	return &domain.PartyID{Scheme: scheme, Value: party.DocumentNumber.Value}
+}
+
+var documentSchemes = map[string]string{"CPF": "br_cpf", "CNPJ": "br_cnpj"}
 
 // cardKinds are the card operation types that state a line's type (A88); any other type
 // follows the amount's sign.

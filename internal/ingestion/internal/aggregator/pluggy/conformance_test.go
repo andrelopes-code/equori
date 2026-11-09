@@ -101,6 +101,21 @@ func (b *pluggyBackend) AddUnreadableReserveLine(id string) {
 	b.server.AddTransaction(b.account, b.transaction(id, "Movimentação entre saldos", &operation))
 }
 
+func (b *pluggyBackend) HasParties() bool { return true }
+
+func (b *pluggyBackend) SetHolder(id domain.PartyID) {
+	b.server.SetAccountTaxNumber(b.account, id.Value)
+}
+
+func (b *pluggyBackend) AddCounterpartyLine(id string, party domain.PartyID) {
+	t := b.transaction(id, "Pix", nil)
+	t.Amount = "-250.00"
+	t.PaymentData = &client.PaymentData{Receiver: &client.PaymentParty{
+		DocumentNumber: &client.DocumentNumber{Type: map[string]string{"br_cpf": "CPF", "br_cnpj": "CNPJ"}[party.Scheme], Value: party.Value},
+	}}
+	b.server.AddTransaction(b.account, t)
+}
+
 func (b *pluggyBackend) transaction(id, description string, operation *string) client.Transaction {
 	return client.Transaction{
 		ID: id, Description: description, Amount: "-1.00", CurrencyCode: "BRL",

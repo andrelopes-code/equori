@@ -25,6 +25,9 @@ type NormalizedRecord struct {
 	ReserveMove       bool
 	ReserveExternalID string
 	ReserveName       string
+	// Counterparty is the party on the other side of the line as the source reports it; nil
+	// without one (A217). It never enters Raw (A221).
+	Counterparty *PartyID
 	// Kind is the type the source states for a card line: KindPayment, KindRefund or empty (A88).
 	Kind string
 }

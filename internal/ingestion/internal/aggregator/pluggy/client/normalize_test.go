@@ -1,8 +1,12 @@
 package client
 
 import (
+	"reflect"
+	"strings"
 	"testing"
 	"time"
+
+	"github.com/andrelopes-code/equori/internal/ingestion/internal/domain"
 )
 
 func ptr[T any](v T) *T { return &v }
@@ -147,6 +151,51 @@ func TestNormalizeReserveTransfer(t *testing.T) {
 
 			if r.ReserveName != tc.want {
 				t.Fatalf("ReserveName = %q, want %q", r.ReserveName, tc.want)
+			}
+		})
+	}
+}
+
+func TestNormalizeCounterparty(t *testing.T) {
+	t.Parallel()
+
+	loc := saoPaulo(t)
+	checking := Account{ID: "acc-1", Type: "BANK", Subtype: SubtypeChecking, CurrencyCode: "BRL"}
+	cpf := &DocumentNumber{Type: "CPF", Value: "529.982.247-25"}
+	cnpj := &DocumentNumber{Type: "CNPJ", Value: "18.236.120/0001-58"}
+
+	tests := []struct {
+		name   string
+		amount Decimal
+		data   *PaymentData
+		want   *domain.PartyID
+	}{
+		{"debit with receiver", "-250.00", &PaymentData{Receiver: &PaymentParty{DocumentNumber: cpf}}, &domain.PartyID{Scheme: "br_cpf", Value: "529.982.247-25"}},
+		{"credit with payer", "250.00", &PaymentData{Payer: &PaymentParty{DocumentNumber: cnpj}}, &domain.PartyID{Scheme: "br_cnpj", Value: "18.236.120/0001-58"}},
+		{"debit with only a payer", "-250.00", &PaymentData{Payer: &PaymentParty{DocumentNumber: cpf}}, nil},
+		{"unknown document type", "-250.00", &PaymentData{Receiver: &PaymentParty{DocumentNumber: &DocumentNumber{Type: "PASSPORT", Value: "AB123456"}}}, nil},
+		{"empty document value", "-250.00", &PaymentData{Receiver: &PaymentParty{DocumentNumber: &DocumentNumber{Type: "CPF"}}}, nil},
+		{"no payment data", "-250.00", nil, nil},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r, ok, err := Normalize(Transaction{
+				ID: "t1", Description: "Pix", CurrencyCode: "BRL", Amount: tt.amount,
+				Date: "2026-10-07T00:00:00.000Z", Status: "POSTED", PaymentData: tt.data,
+			}, checking, nil, 2, loc)
+			if err != nil || !ok {
+				t.Fatal(ok, err)
+			}
+
+			if !reflect.DeepEqual(r.Counterparty, tt.want) {
+				t.Fatalf("Counterparty = %+v, want %+v", r.Counterparty, tt.want)
+			}
+
+			for k, v := range r.Raw {
+				if strings.Contains(v, "52998224725") || strings.Contains(v, "529.982.247-25") {
+					t.Fatalf("Raw[%q] = %q holds the document", k, v)
+				}
 			}
 		})
 	}

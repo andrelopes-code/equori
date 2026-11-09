@@ -235,6 +235,14 @@ func (s *Server) eachAccount(accountID string, fn func(*client.Account)) {
 	}
 }
 
+// SetAccountTaxNumber makes the account report n as its holder's document.
+func (s *Server) SetAccountTaxNumber(accountID, n string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.eachAccount(accountID, func(a *client.Account) { a.TaxNumber = n })
+}
+
 func (s *Server) AddBill(accountID string, b client.Bill) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

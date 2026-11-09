@@ -55,6 +55,7 @@ type Account struct {
 	CurrencyCode string      `json:"currencyCode"`
 	CreditData   *CreditData `json:"creditData"`
 	BankData     *BankData   `json:"bankData"`
+	TaxNumber    string      `json:"taxNumber"`
 }
 
 // BankData holds what Pluggy reports only for bank accounts.
@@ -97,6 +98,22 @@ type Transaction struct {
 	CreditCardMetadata      *CardMetadata `json:"creditCardMetadata"`
 	ProviderID              *string       `json:"providerId"`
 	CreatedAt               string        `json:"createdAt"`
+	PaymentData             *PaymentData  `json:"paymentData"`
+}
+
+// PaymentData names the parties of a transfer line.
+type PaymentData struct {
+	Payer    *PaymentParty `json:"payer"`
+	Receiver *PaymentParty `json:"receiver"`
+}
+
+type PaymentParty struct {
+	DocumentNumber *DocumentNumber `json:"documentNumber"`
+}
+
+type DocumentNumber struct {
+	Type  string `json:"type"`
+	Value string `json:"value"`
 }
 
 type CardMetadata struct {
