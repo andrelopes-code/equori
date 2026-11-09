@@ -178,6 +178,69 @@ func TestConnectionSchemaInvariants(t *testing.T) {
 	}
 }
 
+func TestTransferPairingSchema(t *testing.T) {
+	t.Parallel()
+	h := apitest.New(t)
+	checking := h.Account("Nubank", "asset", "checking", nil)
+	uid := h.OwnerID()
+	ctx := t.Context()
+	exec := func(sql string, args ...any) error {
+		_, err := h.Pool.Exec(ctx, sql, args...)
+		return err
+	}
+
+	var integration, connection, batch string
+
+	if err := h.Pool.QueryRow(ctx, `INSERT INTO ingestion_integration (id, books_id, aggregator, name, credential_ciphertext) VALUES (uuidv7(), $1, 'pluggy', 'Meu Pluggy', '\x01') RETURNING id`, uid).Scan(&integration); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := h.Pool.QueryRow(ctx, `INSERT INTO ingestion_connection (books_id, integration_id, external_id, name, provider_status) VALUES ($1, $2, 'item-1', 'Nubank', 'UPDATED') RETURNING id`, uid, integration).Scan(&connection); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := exec(`INSERT INTO ingestion_external_account (books_id, connection_id, external_account_id, type, subtype, name, currency)
+		VALUES ($1, $2, 'acc-1', 'BANK', 'CHECKING_ACCOUNT', 'Conta', 'BRL')`, uid, connection); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := h.Pool.QueryRow(ctx, `INSERT INTO ingestion_batch (books_id, account_id, source, file_name, currency) VALUES ($1, $2, 'ofx', 'a.ofx', 'BRL') RETURNING id`, uid, checking).Scan(&batch); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := exec(`INSERT INTO ingestion_external_record (books_id, batch_id, account_id, dedup_key, raw, booked_on, amount, reported_amount, reported_on, description)
+		VALUES ($1, $2, $3, $4, '{}', '2026-10-01', -100, -100, '2026-10-01', 'x')`, uid, batch, checking, make([]byte, 32)); err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		name    string
+		sql     string
+		wantErr bool
+	}{
+		{"A217: a counterparty outside holder and third_party", `UPDATE ingestion_external_record SET counterparty = 'someone'`, true},
+		{"A221: a holder digest of 32 bytes", `UPDATE ingestion_external_account SET holder_digest = '\x00'::bytea`, true},
+		{"A219: a record in review transfer", `UPDATE ingestion_external_record SET review_reason = 'transfer', state = 'needs_review'`, false},
+		{"A220: a record decided paired", `UPDATE ingestion_external_record SET decision = 'paired'`, false},
+		{"a record decision outside the closed set", `UPDATE ingestion_external_record SET decision = 'unpaired'`, true},
+	}
+	for _, tc := range tests {
+		err := exec(tc.sql)
+		if tc.wantErr {
+			var pgErr *pgconn.PgError
+			if !errors.As(err, &pgErr) || pgErr.Code != "23514" {
+				t.Errorf("%s: err = %v, want a check violation", tc.name, err)
+			}
+
+			continue
+		}
+
+		if err != nil {
+			t.Errorf("%s: %v", tc.name, err)
+		}
+	}
+}
+
 func TestInstanceSettingsSchema(t *testing.T) {
 	t.Parallel()
 	pool := pgtest.New(t)

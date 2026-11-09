@@ -9,7 +9,7 @@ import (
 
 // ArchiveVersion is the archive_version this instance writes and the highest it reads
 // (ADR 021). It is the number of steps in archiveSteps plus 1.
-const ArchiveVersion = 11
+const ArchiveVersion = 12
 
 // ArchiveStep migrates the tables of an archive from one version to the next; it is pure and
 // leaves its input unchanged (ADR 021, V3).
@@ -20,7 +20,7 @@ type ArchiveStep func([]ArchiveTable) ([]ArchiveTable, error)
 var archiveSteps = []ArchiveStep{
 	addExcludedFromLiquidity, addBudgetReference, addStatementBasis, dropConversations,
 	addReliableSync, addSavingsTarget, addMatchWindow, addAssistantConfiguration,
-	addCsvReading, addExternalIdentity,
+	addCsvReading, addExternalIdentity, addTransferPairing,
 }
 
 // migrateArchive applies the steps from version from to the last one, in order.
@@ -135,6 +135,31 @@ func addExternalIdentity(tables []ArchiveTable) ([]ArchiveTable, error) {
 		var err error
 
 		tables, err = withField(tables, "ingestion_external_account", field, jsontext.Value("null"))
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return tables, nil
+}
+
+// addTransferPairing moves a version 11 archive to version 12, which adds holder_digest to
+// ingestion_external_account, counterparty to ingestion_external_record and paired to
+// ingestion_batch (migration 00092). No earlier row holds a holder or a counterparty, and no
+// earlier sync paired a line.
+func addTransferPairing(tables []ArchiveTable) ([]ArchiveTable, error) {
+	for _, f := range []struct {
+		table string
+		field string
+		value string
+	}{
+		{"ingestion_external_account", "holder_digest", "null"},
+		{"ingestion_external_record", "counterparty", "null"},
+		{"ingestion_batch", "paired", "0"},
+	} {
+		var err error
+
+		tables, err = withField(tables, f.table, f.field, jsontext.Value(f.value))
 		if err != nil {
 			return nil, err
 		}

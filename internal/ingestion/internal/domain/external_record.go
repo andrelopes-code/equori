@@ -51,10 +51,12 @@ type ExternalRecord struct {
 	// hold the ledger's values (A147).
 	ReportedAmount int64
 	ReportedOn     time.Time
-	DueDate        *time.Time
-	Installment    *Installment
-	CategoryID     string
-	BalanceAfter   *int64
+	// Counterparty is holder or third_party when the line named a party (A217 rule 4).
+	Counterparty string
+	DueDate      *time.Time
+	Installment  *Installment
+	CategoryID   string
+	BalanceAfter *int64
 	// LineKind is the card line type the ledger was given (A88).
 	LineKind string
 	// UnappliedChange describes an aggregator change the ledger did not take.
@@ -81,6 +83,7 @@ const (
 	ReviewGroup     = "group"
 	ReviewReserve   = "reserve"
 	ReviewDuplicate = "duplicate"
+	ReviewTransfer  = "transfer"
 )
 
 // ExternalStatusOf is the aggregator status of a normalized line.

@@ -340,7 +340,47 @@ func TestAddExternalIdentity(t *testing.T) {
 		t.Fatalf("the input changed: %q", v10[0].Rows)
 	}
 
-	if ArchiveVersion != 11 {
-		t.Fatalf("ArchiveVersion = %d, want 11", ArchiveVersion)
+	if ArchiveVersion < 11 {
+		t.Fatalf("ArchiveVersion = %d, want at least 11", ArchiveVersion)
+	}
+}
+
+func TestAddTransferPairing(t *testing.T) {
+	t.Parallel()
+
+	v11 := []ArchiveTable{
+		{Name: "ingestion_external_account", Rows: [][]byte{[]byte(`{"id":"a"}`)}},
+		{Name: "ingestion_external_record", Rows: [][]byte{[]byte(`{"id":"r"}`)}},
+		{Name: "ingestion_batch", Rows: [][]byte{[]byte(`{"id":"b"}`)}},
+		{Name: "planning_schedule", Rows: [][]byte{[]byte(`{"id":"s"}`)}},
+	}
+
+	got, err := addTransferPairing(v11)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := []string{
+		`{"holder_digest":null,"id":"a"}`,
+		`{"counterparty":null,"id":"r"}`,
+		`{"id":"b","paired":0}`,
+		`{"id":"s"}`,
+	}
+	if len(got) != len(want) {
+		t.Fatalf("tables = %d, want %d", len(got), len(want))
+	}
+
+	for i, w := range want {
+		if string(got[i].Rows[0]) != w {
+			t.Fatalf("%s = %q, want %q", got[i].Name, got[i].Rows, w)
+		}
+	}
+
+	if string(v11[0].Rows[0]) != `{"id":"a"}` {
+		t.Fatalf("the input changed: %q", v11[0].Rows)
+	}
+
+	if ArchiveVersion != 12 {
+		t.Fatalf("ArchiveVersion = %d, want 12", ArchiveVersion)
 	}
 }

@@ -31,6 +31,123 @@ func (q *Queries) ClearRecordLinks(ctx context.Context, arg ClearRecordLinksPara
 	return err
 }
 
+const importCounterparts = `-- name: ImportCounterparts :many
+SELECT
+    t.id AS transaction_id,
+    p.account_id,
+    p.external_record_id::uuid AS record_id,
+    EXISTS (
+        SELECT
+            1
+        FROM
+            ledger_posting c
+        WHERE
+            c.transaction_id = t.id
+            AND c.card_role = 'payment'
+    ) AS card_payment
+FROM
+    ledger_transaction t
+    JOIN ledger_posting p ON p.transaction_id = t.id
+    JOIN ledger_account a ON a.id = p.account_id
+WHERE
+    t.books_id = $1
+    AND t.voided_at IS NULL
+    AND t.origin = 'import'
+    AND t.date BETWEEN $2::date AND $3::date
+    AND p.account_id <> $4
+    AND a.account_class IN ('asset', 'liability')
+    AND a.instrument = $5
+    AND p.amount = $6
+    AND p.status <> 'pending'
+    AND p.external_record_id IS NOT NULL
+    AND NOT EXISTS (
+        SELECT
+            1
+        FROM
+            ledger_posting x
+        WHERE
+            x.transaction_id = t.id
+            AND x.account_id = $4
+    )
+    AND EXISTS (
+        SELECT
+            1
+        FROM
+            ledger_posting x
+            JOIN ledger_account xa ON xa.id = x.account_id
+        WHERE
+            x.transaction_id = t.id
+            AND xa.system_role IN ('uncategorized_expense', 'uncategorized_income', 'transfers_in_transit')
+    )
+    AND NOT EXISTS (
+        SELECT
+            1
+        FROM
+            ledger_posting x
+            JOIN ledger_account xa ON xa.id = x.account_id
+        WHERE
+            x.transaction_id = t.id
+            AND xa.account_class IN ('income', 'expense')
+            AND xa.system_role IS DISTINCT FROM 'uncategorized_expense'
+            AND xa.system_role IS DISTINCT FROM 'uncategorized_income'
+    )
+ORDER BY
+    t.date,
+    t.id,
+    p.id
+`
+
+type ImportCounterpartsParams struct {
+	BooksID   int64
+	FromDate  time.Time
+	ToDate    time.Time
+	AccountID uuid.UUID
+	Currency  string
+	Amount    int64
+}
+
+type ImportCounterpartsRow struct {
+	TransactionID uuid.UUID
+	AccountID     uuid.UUID
+	RecordID      uuid.UUID
+	CardPayment   bool
+}
+
+// A216 rule 2: imported transactions with a posting on another balance account of the book, in
+// the line's currency and of the given amount, posted and confirmed by a record, whose other
+// side is uncategorized or transfers_in_transit (A29, A88).
+func (q *Queries) ImportCounterparts(ctx context.Context, arg ImportCounterpartsParams) ([]ImportCounterpartsRow, error) {
+	rows, err := q.db.Query(ctx, importCounterparts,
+		arg.BooksID,
+		arg.FromDate,
+		arg.ToDate,
+		arg.AccountID,
+		arg.Currency,
+		arg.Amount,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ImportCounterpartsRow
+	for rows.Next() {
+		var i ImportCounterpartsRow
+		if err := rows.Scan(
+			&i.TransactionID,
+			&i.AccountID,
+			&i.RecordID,
+			&i.CardPayment,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const pairingCandidates = `-- name: PairingCandidates :many
 SELECT
     t.id

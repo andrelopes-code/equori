@@ -88,6 +88,8 @@ type ExternalAccount struct {
 	// NameFrom and NameOn bound when the current name began: the last date it was known not to
 	// apply and the date it was first listed; nil when no bound exists (A212).
 	NameFrom, NameOn *time.Time
+	// HolderDigest is the SHA-256 digest of the holder the aggregator reported (A221).
+	HolderDigest []byte
 	// GoneSince is the date a listing of the item first lacked the account (A214).
 	GoneSince    *time.Time
 	NumberLast4  string

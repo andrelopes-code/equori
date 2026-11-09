@@ -20,7 +20,8 @@ INSERT INTO
         line_kind,
         institution_id,
         reported_amount,
-        reported_on
+        reported_on,
+        counterparty
     )
 VALUES
     (
@@ -42,7 +43,8 @@ VALUES
         sqlc.narg (line_kind),
         sqlc.narg (institution_id),
         @reported_amount,
-        @reported_on
+        @reported_on,
+        sqlc.narg (counterparty)
     )
 ON CONFLICT (books_id, dedup_key) DO NOTHING
 RETURNING
@@ -340,12 +342,17 @@ WHERE
     AND decision = @decision::text;
 
 -- name: MoveUndoneCount :exec
--- A148: an undone record enters review in its batch and leaves the count of its state.
+-- A148: an undone record enters review in its batch and leaves the count of its state; an
+-- undone pairing leaves paired (A220).
 UPDATE ingestion_batch
 SET
     needs_review = needs_review + 1,
-    matched = matched - (@left_state::text = 'matched')::int,
-    created = created - (@left_state::text = 'created')::int
+    matched = matched - (
+        @left_state::text = 'matched'
+        AND NOT @paired::boolean
+    )::int,
+    created = created - (@left_state::text = 'created')::int,
+    paired = paired - (@paired::boolean)::int
 WHERE
     books_id = @books_id
     AND id = @id;
@@ -362,3 +369,43 @@ WHERE
 ORDER BY
     booked_on,
     id;
+
+-- name: ListTransferReviews :many
+-- A216 rule 3: the records in review transfer on another account of the book, of the given
+-- amount and currency, dated in the window.
+SELECT
+    *
+FROM
+    ingestion_external_record r
+WHERE
+    r.books_id = @books_id
+    AND r.account_id <> @account_id
+    AND r.state = 'needs_review'
+    AND r.review_reason = 'transfer'
+    AND r.amount = @amount
+    AND r.booked_on BETWEEN @from_date::date AND @to_date::date
+    AND EXISTS (
+        SELECT
+            1
+        FROM
+            ingestion_batch b
+        WHERE
+            b.books_id = r.books_id
+            AND b.id = r.batch_id
+            AND b.currency = @currency
+    )
+ORDER BY
+    r.booked_on,
+    r.id;
+
+-- name: ListRecordCounterparties :many
+-- A216 rule 4: the counterparty of the records that confirm counterpart postings.
+SELECT
+    id,
+    counterparty::text AS counterparty
+FROM
+    ingestion_external_record
+WHERE
+    books_id = @books_id
+    AND id = ANY (@ids::UUID[])
+    AND counterparty IS NOT NULL;

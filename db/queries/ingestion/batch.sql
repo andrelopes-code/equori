@@ -55,6 +55,7 @@ SET
     updated = @updated,
     withdrawn = @withdrawn,
     re_identified = @re_identified,
+    paired = @paired,
     read_empty = @read_empty,
     balance_date = sqlc.narg (balance_date),
     balance_amount = sqlc.narg (balance_amount),

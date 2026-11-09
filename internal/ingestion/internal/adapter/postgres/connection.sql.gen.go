@@ -106,7 +106,7 @@ func (q *Queries) DeleteConnection(ctx context.Context, arg DeleteConnectionPara
 
 const externalAccountsOf = `-- name: ExternalAccountsOf :many
 SELECT
-    id, books_id, connection_id, external_account_id, type, subtype, name, number_last4, currency, account_id, sync_from, ignored, last_synced_on, balance_on, balance_amount, former_names, last_read_at, last_deep_read_on, name_from, name_on, gone_since
+    id, books_id, connection_id, external_account_id, type, subtype, name, number_last4, currency, account_id, sync_from, ignored, last_synced_on, balance_on, balance_amount, former_names, last_read_at, last_deep_read_on, name_from, name_on, gone_since, holder_digest
 FROM
     ingestion_external_account
 WHERE
@@ -153,6 +153,7 @@ func (q *Queries) ExternalAccountsOf(ctx context.Context, arg ExternalAccountsOf
 			&i.NameFrom,
 			&i.NameOn,
 			&i.GoneSince,
+			&i.HolderDigest,
 		); err != nil {
 			return nil, err
 		}
@@ -268,7 +269,8 @@ INSERT INTO
         subtype,
         name,
         number_last4,
-        currency
+        currency,
+        holder_digest
     )
 VALUES
     (
@@ -279,10 +281,11 @@ VALUES
         $5,
         $6,
         $7,
-        $8
+        $8,
+        $9
     )
 RETURNING
-    id, books_id, connection_id, external_account_id, type, subtype, name, number_last4, currency, account_id, sync_from, ignored, last_synced_on, balance_on, balance_amount, former_names, last_read_at, last_deep_read_on, name_from, name_on, gone_since
+    id, books_id, connection_id, external_account_id, type, subtype, name, number_last4, currency, account_id, sync_from, ignored, last_synced_on, balance_on, balance_amount, former_names, last_read_at, last_deep_read_on, name_from, name_on, gone_since, holder_digest
 `
 
 type InsertExternalAccountParams struct {
@@ -294,6 +297,7 @@ type InsertExternalAccountParams struct {
 	Name              string
 	NumberLast4       *string
 	Currency          string
+	HolderDigest      []byte
 }
 
 func (q *Queries) InsertExternalAccount(ctx context.Context, arg InsertExternalAccountParams) (IngestionExternalAccount, error) {
@@ -306,6 +310,7 @@ func (q *Queries) InsertExternalAccount(ctx context.Context, arg InsertExternalA
 		arg.Name,
 		arg.NumberLast4,
 		arg.Currency,
+		arg.HolderDigest,
 	)
 	var i IngestionExternalAccount
 	err := row.Scan(
@@ -330,6 +335,7 @@ func (q *Queries) InsertExternalAccount(ctx context.Context, arg InsertExternalA
 		&i.NameFrom,
 		&i.NameOn,
 		&i.GoneSince,
+		&i.HolderDigest,
 	)
 	return i, err
 }
@@ -345,6 +351,7 @@ INSERT INTO
         name,
         number_last4,
         currency,
+        holder_digest,
         name_from,
         name_on
     )
@@ -359,7 +366,8 @@ VALUES
         $7,
         $8,
         $9,
-        $10
+        $10,
+        $11
     )
 ON CONFLICT (connection_id, external_account_id) DO NOTHING
 `
@@ -373,6 +381,7 @@ type InsertMissingExternalAccountParams struct {
 	Name              string
 	NumberLast4       *string
 	Currency          string
+	HolderDigest      []byte
 	NameFrom          *time.Time
 	NameOn            *time.Time
 }
@@ -387,6 +396,7 @@ func (q *Queries) InsertMissingExternalAccount(ctx context.Context, arg InsertMi
 		arg.Name,
 		arg.NumberLast4,
 		arg.Currency,
+		arg.HolderDigest,
 		arg.NameFrom,
 		arg.NameOn,
 	)
@@ -423,6 +433,38 @@ func (q *Queries) ListAllConnections(ctx context.Context) ([]ListAllConnectionsR
 			return nil, err
 		}
 		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listBookHolders = `-- name: ListBookHolders :many
+SELECT DISTINCT
+    holder_digest::bytea AS holder_digest
+FROM
+    ingestion_external_account
+WHERE
+    books_id = $1
+    AND account_id IS NOT NULL
+    AND holder_digest IS NOT NULL
+`
+
+// A217 rule 4: the holders of the mapped external accounts of a book.
+func (q *Queries) ListBookHolders(ctx context.Context, booksID int64) ([][]byte, error) {
+	rows, err := q.db.Query(ctx, listBookHolders, booksID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items [][]byte
+	for rows.Next() {
+		var holder_digest []byte
+		if err := rows.Scan(&holder_digest); err != nil {
+			return nil, err
+		}
+		items = append(items, holder_digest)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -642,7 +684,7 @@ WHERE
     AND connection_id = $8
     AND id = $9
 RETURNING
-    id, books_id, connection_id, external_account_id, type, subtype, name, number_last4, currency, account_id, sync_from, ignored, last_synced_on, balance_on, balance_amount, former_names, last_read_at, last_deep_read_on, name_from, name_on, gone_since
+    id, books_id, connection_id, external_account_id, type, subtype, name, number_last4, currency, account_id, sync_from, ignored, last_synced_on, balance_on, balance_amount, former_names, last_read_at, last_deep_read_on, name_from, name_on, gone_since, holder_digest
 `
 
 type SaveMappingParams struct {
@@ -692,6 +734,7 @@ func (q *Queries) SaveMapping(ctx context.Context, arg SaveMappingParams) (Inges
 		&i.NameFrom,
 		&i.NameOn,
 		&i.GoneSince,
+		&i.HolderDigest,
 	)
 	return i, err
 }
@@ -714,5 +757,26 @@ type SetExternalAccountGoneParams struct {
 // A214: the date a listing first lacked the account; null when a listing holds it again.
 func (q *Queries) SetExternalAccountGone(ctx context.Context, arg SetExternalAccountGoneParams) error {
 	_, err := q.db.Exec(ctx, setExternalAccountGone, arg.GoneSince, arg.BooksID, arg.ID)
+	return err
+}
+
+const setExternalAccountHolder = `-- name: SetExternalAccountHolder :exec
+UPDATE ingestion_external_account
+SET
+    holder_digest = $1
+WHERE
+    books_id = $2
+    AND id = $3
+`
+
+type SetExternalAccountHolderParams struct {
+	HolderDigest []byte
+	BooksID      int64
+	ID           uuid.UUID
+}
+
+// A217: the holder the item now reports for a stored external account.
+func (q *Queries) SetExternalAccountHolder(ctx context.Context, arg SetExternalAccountHolderParams) error {
+	_, err := q.db.Exec(ctx, setExternalAccountHolder, arg.HolderDigest, arg.BooksID, arg.ID)
 	return err
 }

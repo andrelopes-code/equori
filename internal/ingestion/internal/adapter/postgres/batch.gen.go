@@ -39,7 +39,8 @@ INSERT INTO
         line_kind,
         institution_id,
         reported_amount,
-        reported_on
+        reported_on,
+        counterparty
     )
 VALUES
     (
@@ -61,11 +62,12 @@ VALUES
         $16,
         $17,
         $18,
-        $19
+        $19,
+        $20
     )
 ON CONFLICT (books_id, dedup_key) DO NOTHING
 RETURNING
-    id, books_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change, line_kind, review_reason, candidate_scores, institution_id, reported_amount, reported_on, decision, decision_undo, summary_batch_id, kept
+    id, books_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change, line_kind, review_reason, candidate_scores, institution_id, reported_amount, reported_on, decision, decision_undo, summary_batch_id, kept, counterparty
 `
 
 type InsertRecordsBatchResults struct {
@@ -94,6 +96,7 @@ type InsertRecordsParams struct {
 	InstitutionID     *string
 	ReportedAmount    int64
 	ReportedOn        time.Time
+	Counterparty      *string
 }
 
 // A row comes back only for a new key; a conflict is pgx.ErrNoRows for that item.
@@ -120,6 +123,7 @@ func (q *Queries) InsertRecords(ctx context.Context, arg []InsertRecordsParams) 
 			a.InstitutionID,
 			a.ReportedAmount,
 			a.ReportedOn,
+			a.Counterparty,
 		}
 		batch.Queue(insertRecords, vals...)
 	}
@@ -169,6 +173,7 @@ func (b *InsertRecordsBatchResults) QueryRow(f func(int, IngestionExternalRecord
 			&i.DecisionUndo,
 			&i.SummaryBatchID,
 			&i.Kept,
+			&i.Counterparty,
 		)
 		if f != nil {
 			f(t, i, err)

@@ -30,7 +30,8 @@ INSERT INTO
         subtype,
         name,
         number_last4,
-        currency
+        currency,
+        holder_digest
     )
 VALUES
     (
@@ -41,7 +42,8 @@ VALUES
         @subtype,
         @name,
         sqlc.narg (number_last4),
-        @currency
+        @currency,
+        sqlc.narg (holder_digest)
     )
 RETURNING
     *;
@@ -57,6 +59,7 @@ INSERT INTO
         name,
         number_last4,
         currency,
+        holder_digest,
         name_from,
         name_on
     )
@@ -70,6 +73,7 @@ VALUES
         @name,
         sqlc.narg (number_last4),
         @currency,
+        sqlc.narg (holder_digest),
         sqlc.narg (name_from),
         sqlc.narg (name_on)
     )
@@ -229,3 +233,23 @@ WHERE
     books_id = @books_id
     AND account_id = @account_id
     AND source <> 'aggregator';
+
+-- name: SetExternalAccountHolder :exec
+-- A217: the holder the item now reports for a stored external account.
+UPDATE ingestion_external_account
+SET
+    holder_digest = @holder_digest
+WHERE
+    books_id = @books_id
+    AND id = @id;
+
+-- name: ListBookHolders :many
+-- A217 rule 4: the holders of the mapped external accounts of a book.
+SELECT DISTINCT
+    holder_digest::bytea AS holder_digest
+FROM
+    ingestion_external_account
+WHERE
+    books_id = @books_id
+    AND account_id IS NOT NULL
+    AND holder_digest IS NOT NULL;

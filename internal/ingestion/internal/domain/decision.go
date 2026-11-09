@@ -14,6 +14,7 @@ const (
 	DecisionFollowed     DecisionKind = "followed"
 	DecisionWithdrawn    DecisionKind = "withdrawn"
 	DecisionReidentified DecisionKind = "re_identified"
+	DecisionPaired       DecisionKind = "paired"
 )
 
 // Undo holds what undoing a decision restores; each kind fills its own fields (A148).
@@ -29,4 +30,6 @@ type Undo struct {
 	ExternalID string
 	DedupKey   []byte
 	Raw        map[string]string
+	// Version is the version a pairing gave the transaction (A220).
+	Version int
 }

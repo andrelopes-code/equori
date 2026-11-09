@@ -20,7 +20,7 @@ const (
 // Counts are the records of one batch by outcome; Received is the number of lines read.
 // Updated and Withdrawn count stored records an aggregator changed or stopped returning.
 type Counts struct {
-	Received, Ignored, Matched, Created, NeedsReview, Discarded, Updated, Withdrawn, ReIdentified int
+	Received, Ignored, Matched, Created, NeedsReview, Discarded, Updated, Withdrawn, ReIdentified, Paired int
 }
 
 type BalanceStatus string

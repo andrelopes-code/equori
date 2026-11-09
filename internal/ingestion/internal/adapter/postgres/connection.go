@@ -30,6 +30,7 @@ func toExternalAccount(row IngestionExternalAccount) domain.ExternalAccount {
 		Ignored:  row.Ignored, LastSyncedOn: row.LastSyncedOn,
 		LastReadAt: row.LastReadAt, LastDeepReadOn: row.LastDeepReadOn,
 		NameFrom: row.NameFrom, NameOn: row.NameOn, GoneSince: row.GoneSince,
+		HolderDigest: row.HolderDigest,
 	}
 	if row.AccountID.Valid {
 		a.AccountID, a.SyncFrom = &row.AccountID.UUID, row.SyncFrom
@@ -40,6 +41,14 @@ func toExternalAccount(row IngestionExternalAccount) domain.ExternalAccount {
 	}
 
 	return a
+}
+
+func (r *Repository) BookHolders(ctx context.Context, booksID int64) ([][]byte, error) {
+	return r.q.ListBookHolders(ctx, booksID)
+}
+
+func (r *Repository) SetExternalAccountHolder(ctx context.Context, booksID int64, id uuid.UUID, digest []byte) error {
+	return notFound(r.q.SetExternalAccountHolder(ctx, SetExternalAccountHolderParams{BooksID: booksID, ID: id, HolderDigest: digest}))
 }
 
 func (r *Repository) InsertConnection(ctx context.Context, c domain.Connection) (domain.Connection, error) {
@@ -61,6 +70,7 @@ func (r *Repository) InsertConnection(ctx context.Context, c domain.Connection) 
 			saved, err := q.InsertExternalAccount(ctx, InsertExternalAccountParams{
 				BooksID: c.BooksID, ConnectionID: row.ID, ExternalAccountID: a.ExternalID, Type: a.Type, Subtype: a.Subtype,
 				Name: a.Name, NumberLast4: optional(a.NumberLast4), Currency: a.Currency,
+				HolderDigest: a.HolderDigest,
 			})
 			if err != nil {
 				return err
@@ -85,7 +95,7 @@ func (r *Repository) InsertMissingExternalAccount(ctx context.Context, a domain.
 	return notFound(r.q.InsertMissingExternalAccount(ctx, InsertMissingExternalAccountParams{
 		BooksID: a.BooksID, ConnectionID: a.ConnectionID, ExternalAccountID: a.ExternalID, Type: a.Type, Subtype: a.Subtype,
 		Name: a.Name, NumberLast4: optional(a.NumberLast4), Currency: a.Currency,
-		NameFrom: a.NameFrom, NameOn: a.NameOn,
+		HolderDigest: a.HolderDigest, NameFrom: a.NameFrom, NameOn: a.NameOn,
 	}))
 }
 

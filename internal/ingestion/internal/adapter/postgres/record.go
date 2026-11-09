@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json/v2"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -34,6 +35,7 @@ type undoRow struct {
 	ExternalID    string            `json:"external_id,omitzero"`
 	DedupKey      []byte            `json:"dedup_key,omitzero"`
 	Raw           map[string]string `json:"raw,omitzero"`
+	Version       int               `json:"version,omitzero"`
 }
 
 func toRecord(row IngestionExternalRecord) (domain.ExternalRecord, error) {
@@ -60,7 +62,8 @@ func toRecord(row IngestionExternalRecord) (domain.ExternalRecord, error) {
 		BalanceAfter: row.BalanceAfter, LineKind: value(row.LineKind), UnappliedChange: value(row.UnappliedChange),
 		ReviewReason: value(row.ReviewReason), InstitutionID: value(row.InstitutionID),
 		ReportedAmount: row.ReportedAmount, ReportedOn: row.ReportedOn,
-		Decision: domain.DecisionKind(value(row.Decision)), Undo: undo, SummaryBatchID: row.SummaryBatchID.UUID, Kept: row.Kept,
+		Counterparty: value(row.Counterparty),
+		Decision:     domain.DecisionKind(value(row.Decision)), Undo: undo, SummaryBatchID: row.SummaryBatchID.UUID, Kept: row.Kept,
 	}
 	for _, s := range scores {
 		rec.Scores = append(rec.Scores, domain.Scored{
@@ -169,6 +172,7 @@ func insertParams(rec domain.ExternalRecord) (InsertRecordsParams, error) {
 		ExternalStatus: f.status, DueDate: f.dueDate, InstallmentNumber: f.number, InstallmentCount: f.count,
 		CategoryID: f.category, BalanceAfter: f.balanceAfter, LineKind: f.kind,
 		InstitutionID: f.institution, ReportedAmount: rec.ReportedAmount, ReportedOn: rec.ReportedOn,
+		Counterparty: optional(rec.Counterparty),
 	}, nil
 }
 
@@ -245,7 +249,7 @@ func (r *Repository) CompleteBatch(ctx context.Context, b domain.Batch) (domain.
 		BooksID: b.BooksID, ID: b.ID, Received: int32(c.Received), Ignored: int32(c.Ignored), Matched: int32(c.Matched), //nolint:gosec // line counts of a 10 MiB file
 		Created: int32(c.Created), NeedsReview: int32(c.NeedsReview), Discarded: int32(c.Discarded), //nolint:gosec // line counts of a 10 MiB file
 		Updated: int32(c.Updated), Withdrawn: int32(c.Withdrawn), //nolint:gosec // line counts of one account window
-		ReIdentified: int32(c.ReIdentified), ReadEmpty: b.ReadEmpty, //nolint:gosec // line counts of one account window
+		ReIdentified: int32(c.ReIdentified), Paired: int32(c.Paired), ReadEmpty: b.ReadEmpty, //nolint:gosec // line counts of one account window
 		BalanceStatus: string(b.Balance.Status), BalanceReason: optional(b.Balance.Reason), BalanceDate: b.Balance.Date,
 	}
 	if b.Balance.Date != nil {
@@ -288,6 +292,59 @@ func (r *Repository) LockAccountImports(ctx context.Context, accountID uuid.UUID
 
 		conn.Release()
 	}, nil
+}
+
+func (r *Repository) LockBookPairing(ctx context.Context, booksID int64) (func(), error) {
+	conn, err := r.pool.Acquire(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	key := fmt.Sprintf("books:%d:pairing", booksID)
+
+	q := New(conn)
+	if err := q.LockAccountImports(ctx, key); err != nil {
+		conn.Release()
+		return nil, err
+	}
+
+	return func() {
+		_ = q.UnlockAccountImports(context.WithoutCancel(ctx), key)
+
+		conn.Release()
+	}, nil
+}
+
+func (r *Repository) TransferReviews(ctx context.Context, booksID int64, accountID uuid.UUID, amount int64, currency string, from, to time.Time) ([]domain.ExternalRecord, error) {
+	rows, err := r.q.ListTransferReviews(ctx, ListTransferReviewsParams{
+		BooksID: booksID, AccountID: accountID, Amount: amount, Currency: currency, FromDate: from, ToDate: to,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	out := make([]domain.ExternalRecord, len(rows))
+	for i, row := range rows {
+		if out[i], err = toRecord(row); err != nil {
+			return nil, err
+		}
+	}
+
+	return out, nil
+}
+
+func (r *Repository) RecordCounterparties(ctx context.Context, booksID int64, ids []uuid.UUID) (map[uuid.UUID]string, error) {
+	rows, err := r.q.ListRecordCounterparties(ctx, ListRecordCounterpartiesParams{BooksID: booksID, Ids: ids})
+	if err != nil {
+		return nil, err
+	}
+
+	out := make(map[uuid.UUID]string, len(rows))
+	for _, row := range rows {
+		out[row.ID] = row.Counterparty
+	}
+
+	return out, nil
 }
 
 func (r *Repository) Record(ctx context.Context, booksID int64, id uuid.UUID) (domain.ExternalRecord, error) {
@@ -378,7 +435,7 @@ func (r *Repository) SaveUndo(ctx context.Context, rec domain.ExternalRecord, de
 		}
 
 		if rec.State == domain.StateNeedsReview && left != domain.StateNeedsReview {
-			if err := q.MoveUndoneCount(ctx, MoveUndoneCountParams{BooksID: rec.BooksID, ID: rec.BatchID, LeftState: string(left)}); err != nil {
+			if err := q.MoveUndoneCount(ctx, MoveUndoneCountParams{BooksID: rec.BooksID, ID: rec.BatchID, LeftState: string(left), Paired: decided == domain.DecisionPaired}); err != nil {
 				return err
 			}
 		}
@@ -442,7 +499,7 @@ func insertUndoneLine(ctx context.Context, q *Queries, line *domain.ExternalReco
 func encodeUndo(u domain.Undo) ([]byte, error) {
 	row := undoRow{
 		Amount: u.Amount, State: string(u.State), ReviewReason: u.ReviewReason,
-		ExternalID: u.ExternalID, DedupKey: u.DedupKey, Raw: u.Raw,
+		ExternalID: u.ExternalID, DedupKey: u.DedupKey, Raw: u.Raw, Version: u.Version,
 	}
 	if !u.On.IsZero() {
 		row.On = u.On.Format(time.DateOnly)
@@ -463,7 +520,7 @@ func decodeUndo(stored []byte) (domain.Undo, error) {
 
 	u := domain.Undo{
 		Amount: row.Amount, State: domain.RecordState(row.State), ReviewReason: row.ReviewReason,
-		ExternalID: row.ExternalID, DedupKey: row.DedupKey, Raw: row.Raw,
+		ExternalID: row.ExternalID, DedupKey: row.DedupKey, Raw: row.Raw, Version: row.Version,
 	}
 
 	var err error

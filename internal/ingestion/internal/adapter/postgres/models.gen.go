@@ -37,6 +37,7 @@ type IngestionBatch struct {
 	ReIdentified      int32
 	ReadEmpty         bool
 	SyncID            uuid.NullUUID
+	Paired            int32
 }
 
 type IngestionConnection struct {
@@ -98,6 +99,7 @@ type IngestionExternalAccount struct {
 	NameFrom          *time.Time
 	NameOn            *time.Time
 	GoneSince         *time.Time
+	HolderDigest      []byte
 }
 
 type IngestionExternalRecord struct {
@@ -131,6 +133,7 @@ type IngestionExternalRecord struct {
 	DecisionUndo      []byte
 	SummaryBatchID    uuid.NullUUID
 	Kept              bool
+	Counterparty      *string
 }
 
 type IngestionIntegration struct {
