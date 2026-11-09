@@ -55,6 +55,7 @@ export function EntryTotals({ rows, currency, digits }: EntryTotalsProps) {
             {figure.label}
           </Text>
           <Text
+            numeric="tabular"
             size="md"
             weight="semibold"
             tone={amountTone(figure.kind, directionOf(figure.amount))}

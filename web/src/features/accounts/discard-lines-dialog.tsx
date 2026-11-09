@@ -44,7 +44,7 @@ export function DiscardLinesDialog({ selection }: DiscardLinesDialogProps) {
         </DialogHeader>
         <DialogBody>
           {total !== undefined && scale !== null && (
-            <Text>
+            <Text numeric="tabular">
               {t("bulk.total", {
                 amount: fmt.signed(total, scale(total.currency)),
               })}

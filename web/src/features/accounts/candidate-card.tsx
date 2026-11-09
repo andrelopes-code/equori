@@ -60,7 +60,7 @@ export function CandidateCard({
               )}
             </Stack>
             {tx.data !== undefined && currency !== undefined && (
-              <Text size="sm" weight="semibold">
+              <Text numeric="tabular" size="sm" weight="semibold">
                 {fmt.signed({ amount, currency }, scale(currency))}
               </Text>
             )}

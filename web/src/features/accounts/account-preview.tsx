@@ -85,7 +85,7 @@ export function AccountPreview({
             )}
           </Stack>
           {draft.opening > 0 && (
-            <Text size="sm">
+            <Text numeric="tabular" size="sm">
               {t(
                 kind === "credit_card" || kind === "loan" || kind === "payable"
                   ? "accountPreview.owes"

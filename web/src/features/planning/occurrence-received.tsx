@@ -36,7 +36,7 @@ export function OccurrenceReceived({
 
   return (
     <Stack gap={0}>
-      <Text size="xs" tone="muted">
+      <Text numeric="tabular" size="xs" tone="muted">
         {t(income ? "occurrence.received" : "occurrence.paid", {
           amount: fmt.money(actual, scale(actual.currency)),
         })}

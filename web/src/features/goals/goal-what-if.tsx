@@ -50,7 +50,7 @@ export function GoalWhatIf({
       <Field necessity="none" size="sm">
         <Inline justify="between" align="baseline" gap={3}>
           <FieldLabel>{t("goals.monthly")}</FieldLabel>
-          <Text size="sm" weight="medium">
+          <Text numeric="tabular" size="sm" weight="medium">
             {fmt.money(
               { amount: major * unit, currency: goal.target.currency },
               scale,
@@ -70,7 +70,7 @@ export function GoalWhatIf({
       </Field>
       {scheduled > 0 && (
         <Inline justify="between" gap={3}>
-          <Text size="sm" tone="muted">
+          <Text numeric="tabular" size="sm" tone="muted">
             {t("goals.scheduled", {
               amount: fmt.money(
                 { amount: scheduled, currency: goal.target.currency },

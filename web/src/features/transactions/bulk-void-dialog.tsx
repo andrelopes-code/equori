@@ -85,7 +85,7 @@ export function BulkVoidDialog({
 
           <DialogBody>
             {amount !== undefined && scale !== null && (
-              <Text>
+              <Text numeric="tabular">
                 {t("bulk.total", {
                   amount: fmt.signed(amount, scale(amount.currency)),
                 })}

@@ -31,7 +31,7 @@ export function OriginalAmount({
   );
   return (
     <Stack gap={1}>
-      <Text tone="muted" size="sm">
+      <Text numeric="tabular" tone="muted" size="sm">
         {t("transaction.facts.original", {
           amount: fmt.money(original, scale(original.currency)),
         })}

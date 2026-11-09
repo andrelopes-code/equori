@@ -57,7 +57,7 @@ export function BatchFigures({ batch, pending, scale }: BatchFiguresProps) {
         ))}
       </FigureGrid>
       {balance !== undefined && (
-        <Text size="sm">
+        <Text numeric="tabular" size="sm">
           {recorded &&
             t("batch.balance.recorded", {
               amount: fmt.money(amount, scale(amount.currency)),

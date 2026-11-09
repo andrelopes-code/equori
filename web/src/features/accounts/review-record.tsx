@@ -90,7 +90,7 @@ export function ReviewRecord({
           <Text size="sm" tone="muted">
             {formatDate(record.date, locale)}
           </Text>
-          <Text size="md" weight="semibold">
+          <Text numeric="tabular" size="md" weight="semibold">
             {fmt.signed(record.amount, scale(record.amount.currency))}
           </Text>
         </Inline>

@@ -138,6 +138,7 @@ export function PositionsTab({
                         ""
                       ) : (
                         <Text
+                          numeric="tabular"
                           size="sm"
                           tone={
                             result.amount > 0

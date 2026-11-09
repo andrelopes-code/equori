@@ -51,7 +51,7 @@ export function RealizedOccurrences({
                 <Text size="sm" weight="medium">
                   {name}
                 </Text>
-                <Text size="sm" tone="muted">
+                <Text numeric="tabular" size="sm" tone="muted">
                   {t("detail.occurrenceOf", {
                     date: formatDate(o.expected_on, locale),
                     amount: fmt.money(
