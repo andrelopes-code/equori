@@ -54,7 +54,9 @@ Amendment of 2026-10-26: the import of an archive of another schema version leav
 
 ## 9.4 Version 1.0
 
-Status: approved by the owner on 2026-10-30. Input: the owner's competitive study of 2026-10-30, "O que os usuários reclamam nos apps de finanças" (https://claude.ai/artifact/YMqiwrXg5GJxoW8rVDSfpi#ab301e77-6893.m4ag25fxkb2.34601), and the owner's answers recorded in it. Next step: P10, starting with the design spec of shared books.
+Status: approved by the owner on 2026-10-30. Input: the owner's competitive study of 2026-10-30, "O que os usuários reclamam nos apps de finanças" (https://claude.ai/artifact/YMqiwrXg5GJxoW8rVDSfpi#ab301e77-6893.m4ag25fxkb2.34601), and the owner's answers recorded in it.
+
+Amended by the owner on 2026-11-09: `v1.0.0` is not a current target. The owner releases it when daily use shows equori stable, without a date. The owner tasks of P14 and P16 (S233, S260, S261, the tag) are withdrawn as gates; P14 and P16 stay at `review`. Work continues on the application itself.
 
 ### 9.4.1 Scope decisions
 
@@ -74,8 +76,8 @@ Status: approved by the owner on 2026-10-30. Input: the owner's competitive stud
 | Settings | The environment holds only values needed before the database opens, security boundaries, and host or network values. Every other setting lives in the app at one level: instance, book, member or browser. The time zone moves to the book, with the region's zone as default; the sync interval moves to the instance screen; `EQUORI_GEMINI_API_KEY` is removed; appearance follows the member. |
 | Support | GitHub Issues and Discussions, and the in-app help. |
 | Notices | Inside equori only. |
-| Testing | The owner and close people, with real accounts. |
-| Release | By exit criteria, without a date. |
+| Testing | The owner, in daily use with real accounts. |
+| Release | By the owner's judgment of stability in daily use, without a date. |
 
 ### 9.4.2 Phases
 
@@ -168,7 +170,7 @@ A model that ends its turn by recommending a new session, for the next step of t
 |---|---|
 | Phase 4 of shared books: transfer between books, consolidated report, shared expense with another book as counterparty | 1.x |
 | Import from other applications (Mobills, Organizze, YNAB, Actual) | 1.1 |
-| IRPF report, PDF and receipt reading with a local model, NFC-e items, CDI benchmark | 1.x |
+| IRPF report, PDF and receipt reading with a local model, NFC-e items | 1.x |
 | Windows installer and Homebrew formula as supported forms | 1.x |
 | Notices outside equori (e-mail, push) | 1.x |
 | Regional extensions: aggregators outside Brazil, CAMT.053 and MT940 import, import profiles per bank, further languages | After the Brazilian goal |
