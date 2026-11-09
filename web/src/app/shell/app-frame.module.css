@@ -6,7 +6,9 @@
     grid-row: 1 / -1;
   }
 
-  .transition {
+  /* A named element is a backdrop root (O11): kept named, it ends the blur of the page header
+     that sticks inside it. The name exists only while a page transition runs. */
+  :global(:root:active-view-transition-type(page)) .transition {
     view-transition-name: main;
   }
 
