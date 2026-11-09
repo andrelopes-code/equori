@@ -2,7 +2,7 @@
 
 - Status: accepted
 - Date: 2026-10-30
-- Phase: P10 of `docs/domain/09-roadmap.md`, section 9.4
+- Phase: P10 (issue #22)
 - Decision record: ADR 029
 - Inputs: `tmp/ideas.md` section 07, ADR 003, the schema of the development database at migration 00068
 

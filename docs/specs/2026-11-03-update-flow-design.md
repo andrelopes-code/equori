@@ -1,6 +1,6 @@
 # Update flow
 
-Rules A192 to A197; scenarios S268 to S272 of `docs/domain/06-scenarios.md`. Section 9.4.3 of `docs/domain/09-roadmap.md`.
+Rules A192 to A197; scenarios S268 to S272 of `docs/domain/06-scenarios.md`. `docs/contributing/agents.md`.
 
 ## Goal
 

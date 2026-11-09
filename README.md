@@ -120,7 +120,8 @@ The Postgres major version is pinned to 18. To upgrade the major version, dump t
 | API contract | [api/openapi.yaml](api/openapi.yaml) |
 | HTTP API groups and conventions | [docs/operations/api.md](docs/operations/api.md) |
 | Architecture decisions | [docs/adr/](docs/adr/) |
-| Domain: vision, language, scenarios, roadmap | [docs/domain/](docs/domain/) |
+| Domain: vision, language, scenarios | [docs/domain/](docs/domain/) |
+| Phases, features and defects | [GitHub issues](https://github.com/andrelopes-code/equori/issues), grouped by [milestone](https://github.com/andrelopes-code/equori/milestones) |
 | Operations: backup, export, remote access, integrations | [docs/operations/](docs/operations/) |
 | Contributing | [CONTRIBUTING.md](CONTRIBUTING.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) |
 | Changes | [CHANGELOG.md](CHANGELOG.md) |

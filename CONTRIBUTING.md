@@ -4,6 +4,8 @@ equori is a self-hosted personal finance manager: a Go backend on PostgreSQL, sh
 
 Decisions live in `docs/adr/`. Read the ADR that covers an area before changing it.
 
+Phases, features and defects are GitHub issues. A label `type:` names the kind (`phase`, `feature`, `bug`, `idea`), a label `area:` names the module, and a milestone groups the issues of one release. A commit that serves an issue cites it (`refs #30`, `fixes #30`).
+
 ## Setup
 
 Requirements: Go (version in `go.mod`), Docker with Compose, Node.js (version in `web/.node-version`) with Corepack enabled.
@@ -51,11 +53,11 @@ api/openapi.yaml       HTTP contract, source of truth for server and frontend ty
 web/                   single-page application (Vite, React, TypeScript), embedded by web/embed.go
 packaging/, scripts/   release packaging (Homebrew, Windows) and release scripts
 docs/adr/              decision records
-docs/domain/           vision, language, flows, model, scenarios, roadmap
+docs/domain/           vision, language, flows, model, scenarios
 docs/specs/            design specifications cited by ADRs and code
 docs/plans/            implementation plans whose rule IDs other documents cite
 docs/operations/       runbooks for operators
-docs/contributing/     contributor guides: regions, forms, phone screens, web rules
+docs/contributing/     contributor guides: regions, forms, phone screens, web rules, agents
 ```
 
 Module internals: `<module>.go` (public API) → `internal/domain` → `internal/app` → `internal/adapter/{postgres,httpapi,toolapi}`. ADR 002 sets the dependency rules; `depguard` and the compiler enforce them.

@@ -1,6 +1,6 @@
 # Installation (amendments A160 to A166)
 
-Phase P14 of `docs/domain/09-roadmap.md`, section 9.4.2. Amends B5 and the Configuration and Delivery sections of ADR 022. Scenarios S222 to S233.
+Phase P14 (issue #26). Amends B5 and the Configuration and Delivery sections of ADR 022. Scenarios S222 to S233.
 
 ## Goal
 

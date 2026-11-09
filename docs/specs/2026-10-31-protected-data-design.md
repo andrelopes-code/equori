@@ -1,6 +1,6 @@
 # Protected data (amendments A154 to A159)
 
-Phase P13 of `docs/domain/09-roadmap.md`, section 9.4.2. Amends B3 and B5 of ADR 022 and N17 of `docs/domain/08-non-functional-requirements.md`. Scenarios S214 to S221.
+Phase P13 (issue #25). Amends B3 and B5 of ADR 022 and N17 of `docs/domain/08-non-functional-requirements.md`. Scenarios S214 to S221.
 
 ## Goal
 

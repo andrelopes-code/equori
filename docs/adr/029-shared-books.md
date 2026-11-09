@@ -7,7 +7,7 @@
 
 ## Context
 
-ADR 003 gives every business table a `user_id`, which names both the person who logs in and the owner of the data. Version 1.0 lets several people share one set of data with separate logins (`docs/domain/09-roadmap.md`, section 9.4.1). Systems that added a tenant late paid for a second migration of every table and for moving preferences between person and tenant (`tmp/ideas.md`, section 07). The instance of the owner has one user per set of data, so a backfill is 1:1.
+ADR 003 gives every business table a `user_id`, which names both the person who logs in and the owner of the data. Version 1.0 lets several people share one set of data with separate logins (`docs/domain/01-vision.md`, section 1.11.1). Systems that added a tenant late paid for a second migration of every table and for moving preferences between person and tenant (`tmp/ideas.md`, section 07). The instance of the owner has one user per set of data, so a backfill is 1:1.
 
 ## Decision
 

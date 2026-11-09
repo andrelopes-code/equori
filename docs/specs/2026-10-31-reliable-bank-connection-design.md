@@ -1,6 +1,6 @@
 # Reliable bank connection (amendments A143 to A153)
 
-Phase P12 of `docs/domain/09-roadmap.md`, section 9.4.2. Amends A36, A38 and A91 (P6 sync), A100 to A102 of `2026-10-20-record-matching-design.md` and A142 of `2026-10-30-repeated-card-payment-design.md`. Scenarios S203 to S213.
+Phase P12 (issue #24). Amends A36, A38 and A91 (P6 sync), A100 to A102 of `2026-10-20-record-matching-design.md` and A142 of `2026-10-30-repeated-card-payment-design.md`. Scenarios S203 to S213.
 
 ## Goal
 

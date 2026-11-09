@@ -2,7 +2,7 @@
 
 equori reads bank accounts and credit cards through Pluggy, an Open Finance aggregator. The
 owner connects banks in Meu Pluggy, a free Pluggy service; equori only reads what Meu
-Pluggy collects and never asks a bank for an update. Phase P6 of the roadmap describes the
+Pluggy collects and never asks a bank for an update. Phase P6 (issue #16) describes the
 rules (amendments A33–A45 of `docs/plans/2026-10-16-p6-pluggy.md`; reserved
 balances and balance assertion re-evaluation: amendments A73–A77 of
 `docs/specs/2026-10-18-pluggy-reserved-balances-design.md`).

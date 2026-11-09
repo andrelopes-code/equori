@@ -181,3 +181,26 @@ The model must represent every item below. Each item gets at least one worked ex
 |---|---|
 | D1 | The model stores every datum required for income tax, and derives the tax class and the tax treatment of income from the owner's jurisdiction (`Jurisdiction` in `internal/portfolio/internal/domain/jurisdiction.go`; `br` is the only implementation). The data required for Brazilian income tax (IRPF) is: trade date, quantity, unit price, fees, taxes withheld, income type (exempt dividends, taxable JCP, taxable yield) and average cost by Receita Federal rules. Generating the annual declaration report is a later feature. Stored from P8 on in `ledger_trade`, `ledger_investment_income` and the `portfolio_` tables (chapter 7, 7.4). |
 | D2 | Transactions accept attachments (M29). Files are stored in PostgreSQL, so one database backup contains all data. Limit: 10 MiB per file. |
+
+### 1.11.1 Scope of version 1.0
+
+Approved by the owner on 2026-10-30. Input: the owner's competitive study of 2026-10-30, "O que os usuários reclamam nos apps de finanças" (https://claude.ai/artifact/YMqiwrXg5GJxoW8rVDSfpi#ab301e77-6893.m4ag25fxkb2.34601), and the owner's answers recorded in it. Amended by the owner on 2026-11-09: `v1.0.0` is not a current target; the rows Testing and Release hold the amendment. Phases, features and their state live in the GitHub issues of the repository.
+
+| Topic | Decision |
+|---|---|
+| Audience | People with basic computer knowledge who follow a guide and paste one prepared terminal command. |
+| Region | Complete use in Brazil. Other regions arrive after 1.0 as regional extensions (ADR 016). |
+| Forms | Docker only: compose and the standalone image. Windows runs Docker Desktop with WSL2, with a guide and a one-command script. The Windows installer (ADR 023) and the Homebrew formula leave the supported set of 1.0. |
+| Languages | Portuguese and English, both complete. |
+| Households | Phases 0 to 3 of the shared-books plan: books, a member separate from the book, invitation, switch of the active book, roles `owner`, `write` and `read`. Phase 4 follows 1.0. |
+| Aggregator | Meu Pluggy is the main path in Brazil; personal use is free without a time limit for up to 5 connections of one holder. File import (OFX, CSV) is the fallback. |
+| Changed bank data | equori decides alone only when a rule leaves no doubt. Every automatic decision appears in the sync summary with an undo; every other case waits for review. |
+| New versions | A new-version notice queries GitHub only with consent given at first access (amends N17). A backup runs before every upgrade in every form. |
+| Errors | An on-demand diagnostic file without amounts, names or descriptions, attached by the owner to an issue. |
+| Second factor | Optional TOTP and passkey with recovery codes, offered at first access and when remote access is set up. |
+| Backup | Daily in every form; a copy encrypted with the owner's password to a chosen folder; the screen shows the date of the last backup and warns when the copy is late. |
+| Settings | The environment holds only values needed before the database opens, security boundaries, and host or network values. Every other setting lives in the app at one level: instance, book, member or browser. The time zone moves to the book, with the region's zone as default; the sync interval moves to the instance screen; `EQUORI_GEMINI_API_KEY` is removed; appearance follows the member. |
+| Support | GitHub Issues and Discussions, and the in-app help. |
+| Notices | Inside equori only. |
+| Testing | The owner, in daily use with real accounts. |
+| Release | By the owner's judgment of stability in daily use, without a date. |

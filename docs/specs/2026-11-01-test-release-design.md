@@ -1,6 +1,6 @@
 # Test and release (amendments A178 to A186)
 
-Phase P16 of `docs/domain/09-roadmap.md`, section 9.4.2. Scenarios S253 to S261.
+Phase P16 (issue #28). Scenarios S253 to S261.
 
 ## Goal
 

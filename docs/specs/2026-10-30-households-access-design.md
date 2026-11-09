@@ -2,7 +2,7 @@
 
 - Status: accepted
 - Date: 2026-10-30
-- Phase: P11 of `docs/domain/09-roadmap.md`, section 9.4
+- Phase: P11 (issue #23)
 - Decision records: ADR 029 (amended), ADR 003 (amended), ADR 030 (new, second factor)
 - Inputs: `tmp/ideas.md` section 07 phase 3, `docs/specs/2026-10-30-shared-books-design.md` sections 5 and 10, ADR 003, ADR 024, the code at commit `eef03181`, the owner's answers of 2026-10-30
 

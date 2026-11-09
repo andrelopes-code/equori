@@ -1,6 +1,6 @@
 # Grouped confirmation (amendments A167 to A172)
 
-Phase P12 of `docs/domain/09-roadmap.md`, section 9.4.2. Amends A98 to A101 of `2026-10-20-record-matching-design.md`, the statement amount of A89 and invariant I07 (P5b amendment A27). Scenarios S234 to S240.
+Phase P12 (issue #24). Amends A98 to A101 of `2026-10-20-record-matching-design.md`, the statement amount of A89 and invariant I07 (P5b amendment A27). Scenarios S234 to S240.
 
 ## Goal
 

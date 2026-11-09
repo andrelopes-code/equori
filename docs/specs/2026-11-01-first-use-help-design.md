@@ -1,6 +1,6 @@
 # First use and help (amendments A173 to A177)
 
-Phase P15 of `docs/domain/09-roadmap.md`, section 9.4.2. Amends Camada 3 and Camada 4 of `docs/specs/2026-10-29-ui-clarity-design.md`. Scenarios S241 to S252.
+Phase P15 (issue #27). Amends Camada 3 and Camada 4 of `docs/specs/2026-10-29-ui-clarity-design.md`. Scenarios S241 to S252.
 
 ## Goal
 
@@ -10,7 +10,7 @@ Scope of P15: a first-use walkthrough; help pages for installation, bank connect
 
 Outside help is any instruction not shown by equori itself: a person, a guide outside the app, a typed address. P15 reads `delivered` when S251 and S252 pass. P16 repeats the check with its testers, as its scope states ("check of every exit criterion of P10 to P15"). Reason: the phase closes on checks the agents run; the testers of P16 confirm it on real accounts.
 
-Input: the owner's competitive study of 2026-10-30 (`docs/domain/09-roadmap.md`, section 9.4). Its item "Roteiro de primeiro uso" reads: "Um passo a passo no primeiro acesso que pergunta quais bancos e cartões a pessoa usa e cria tudo sozinho, em vez de deixar uma tela vazia." Its example: three screens, the institutions marked, the closing days of the cards given, the accounts ready for entries.
+Input: the owner's competitive study of 2026-10-30 (`docs/domain/01-vision.md`, section 1.11.1). Its item "Roteiro de primeiro uso" reads: "Um passo a passo no primeiro acesso que pergunta quais bancos e cartões a pessoa usa e cria tudo sozinho, em vez de deixar uma tela vazia." Its example: three screens, the institutions marked, the closing days of the cards given, the accounts ready for entries.
 
 ## Current state
 
