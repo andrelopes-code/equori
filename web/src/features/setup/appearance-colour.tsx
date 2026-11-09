@@ -1,6 +1,7 @@
 import { ColorField } from "@slotted/react/color-picker";
 import { Field, FieldLabel } from "@slotted/react/field";
 
+import { BookColourSection } from "@/features/setup/book-colour-section";
 import { SeedSwatches } from "@/features/setup/seed-swatches";
 import { StudioSection } from "@/features/setup/studio-section";
 import styles from "@/features/setup/settings-page.module.css";
@@ -94,6 +95,7 @@ export function AppearanceColour() {
       >
         <StatusColours />
       </StudioField>
+      <BookColourSection />
     </StudioSection>
   );
 }

@@ -1,4 +1,4 @@
-Your language sets the language of the app and of the assistant's answers. It follows you on every device, as your appearance choices do. In Appearance, Text, amount colour shows money in in green and a loss in red, or only the sign. Summary figures write the amounts of summary cards in full, without decimals or in compact form; tables keep every digit.
+Your language sets the language of the app and of the assistant's answers. It follows you on every device, as your appearance choices do. In Appearance, Text, amount colour shows money in in green and a loss in red, or only the sign. Summary figures write the amounts of summary cards in full, without decimals or in compact form; tables keep every digit. With more than one book, Book colour gives each book its own accent.
 
 The region of your finances sets how numbers and dates are written and which regional rules apply, such as the business-day calendar and tax rules of investments. The time zone sets which day is today and when each month starts; until one is chosen, the region's zone applies.
 

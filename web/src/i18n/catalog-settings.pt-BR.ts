@@ -248,6 +248,10 @@ export const settingsPtBR: Record<keyof typeof settingsEn, string> = {
   "studio.summaryAmounts.full": "Completo",
   "studio.summaryAmounts.whole": "Sem casas decimais",
   "studio.summaryAmounts.compact": "Compacto",
+  "studio.bookColour": "Cor do livro",
+  "studio.bookColour.hint":
+    "A cor de destaque enquanto este livro está aberto. O estúdio mostra a do tema.",
+  "studio.bookColour.theme": "Destaque do tema",
   "studio.depth.deep": "Profundo",
   "studio.depth.oled": "OLED",
   "studio.step": "Destaque das camadas",

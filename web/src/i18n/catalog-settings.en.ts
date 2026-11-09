@@ -244,6 +244,10 @@ export const settingsEn = {
   "studio.summaryAmounts.full": "Full",
   "studio.summaryAmounts.whole": "No decimals",
   "studio.summaryAmounts.compact": "Compact",
+  "studio.bookColour": "Book colour",
+  "studio.bookColour.hint":
+    "The accent while this book is open. The studio shows the theme's own.",
+  "studio.bookColour.theme": "Theme accent",
   "studio.depth.deep": "Deep",
   "studio.depth.oled": "OLED",
   "studio.step": "Layer lift",
