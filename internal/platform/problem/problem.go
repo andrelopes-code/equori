@@ -29,6 +29,8 @@ type FieldError struct {
 	Message string `json:"message"`
 }
 
+func (f FieldError) String() string { return f.Field + ": " + f.Message }
+
 func New(status int, code, detail string) Details {
 	return Details{
 		Type:   "about:blank",

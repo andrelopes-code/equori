@@ -22,7 +22,7 @@ compose.yaml reads the variables of .env in its directory. equori reads its proc
 
 | Variable | Read by | Expected | Default | Example | Description |
 |---|---|---|---|---|---|
-| `EQUORI_LOG_FORMAT` | `equori` | json or text | `json` | `text` | Format of the records equori writes: json for log collectors, text for a terminal. |
+| `EQUORI_LOG_FORMAT` | `equori` | json, text or pretty | `json` | `pretty` | Format of the records equori writes: json for log collectors, text for key=value lines, pretty for a colored terminal. |
 | `EQUORI_DISTRIBUTION` | `equori` | compose or empty | — | `compose` | compose.yaml sets compose, so the notice of a newer release names the upgrade command of that form (A194). |
 | `EQUORI_VERSION` | `compose.yaml` | a release version | — | `1.0.0` | Image version of compose.yaml. A release sets its own version as the default; in a clone the default is dev, which compose builds. |
 | `EQUORI_DATABASE_URL` | `equori` | a postgres:// or postgresql:// URL | — | `postgres://equori:password@db:5432/equori?sslmode=disable` | URL of a PostgreSQL 18 database (external mode); compose.yaml sets it. Unset, equori runs its own PostgreSQL server over EQUORI_DATA_DIR (managed mode). |

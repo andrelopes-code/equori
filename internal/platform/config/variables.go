@@ -124,9 +124,9 @@ func Variables() []Variable {
 		},
 		{
 			Name: "EQUORI_LOG_FORMAT", Reader: Binary, Kind: KindLogFormat, Default: "json",
-			Expected: "json or text", Example: "text", Audience: Advanced,
-			Description:   "Format of the records equori writes: json for log collectors, text for a terminal.",
-			DescriptionPT: "Formato dos registros que o equori grava: json para coletores de log, text para um terminal.",
+			Expected: "json, text or pretty", Example: "pretty", Audience: Advanced,
+			Description:   "Format of the records equori writes: json for log collectors, text for key=value lines, pretty for a colored terminal.",
+			DescriptionPT: "Formato dos registros que o equori grava: json para coletores de log, text para linhas key=value, pretty para um terminal colorido.",
 		},
 		{
 			Name: "EQUORI_INSECURE_COOKIES", Reader: Binary, Kind: KindBool, Default: "false",
@@ -276,7 +276,7 @@ func (v Variable) valid(value string) bool {
 
 		return level.UnmarshalText([]byte(value)) == nil
 	case KindLogFormat:
-		return value == "json" || value == "text"
+		return value == "json" || value == "text" || value == "pretty"
 	case KindKey32:
 		key, err := base64.StdEncoding.DecodeString(value)
 

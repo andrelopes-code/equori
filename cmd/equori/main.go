@@ -26,6 +26,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/logring"
 	"github.com/andrelopes-code/equori/internal/platform/pgcluster"
 	"github.com/andrelopes-code/equori/internal/platform/postgres"
+	"github.com/andrelopes-code/equori/internal/platform/prettylog"
 	"github.com/andrelopes-code/equori/internal/platform/secret"
 	"github.com/andrelopes-code/equori/internal/platform/winsvc"
 	"github.com/andrelopes-code/equori/internal/server"
@@ -405,8 +406,11 @@ func setup() (config.Config, *slog.Logger, error) {
 
 func logHandler(cfg config.Config) slog.Handler {
 	opts := &slog.HandlerOptions{Level: cfg.LogLevel}
-	if cfg.LogFormat == "text" {
+	switch cfg.LogFormat {
+	case "text":
 		return slog.NewTextHandler(os.Stdout, opts)
+	case "pretty":
+		return prettylog.New(os.Stdout, cfg.LogLevel, os.Getenv("NO_COLOR") == "")
 	}
 
 	return slog.NewJSONHandler(os.Stdout, opts)
