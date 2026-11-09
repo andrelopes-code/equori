@@ -34,6 +34,8 @@ var (
 	ErrReconciled = errors.New("the posting is reconciled")
 	// ErrNotRetypable: the transaction of a line changed since its import and keeps it (A88).
 	ErrNotRetypable = errors.New("the transaction changed since its import")
+	// ErrNotPairable: the ledger refuses to make the transaction the transfer of the line (A218).
+	ErrNotPairable = errors.New("the transaction cannot become the transfer of the line")
 	// ErrTransactionVoided: the transaction a record would confirm is voided.
 	ErrTransactionVoided = errors.New("the transaction is voided")
 	// ErrInstallmentRefused: the ledger cannot place the line in its installment purchase.
@@ -151,6 +153,21 @@ type Ledger interface {
 	// transaction; ErrInstallmentRefused when the installment is gone, reversed, of another
 	// amount or confirmed by another line.
 	LinkInstallment(ctx context.Context, booksID int64, recordID, planID uuid.UUID, number int, l Line) (uuid.UUID, error)
+	// RuleDecided reports, per line in input order, whether a rule of the owner decides its
+	// category (A216 rule 1.4).
+	RuleDecided(ctx context.Context, booksID int64, lines []Line) ([]bool, error)
+	// Counterparts lists the transactions of rule 2 of A216 for the line, by date then id.
+	Counterparts(ctx context.Context, booksID int64, l Line) ([]Counterpart, error)
+	// PairLine makes txID the transfer of the record's line on accountID and returns the version
+	// it gave the transaction (A218 rule 1); ErrNotPairable when the ledger refuses.
+	PairLine(ctx context.Context, booksID int64, txID, accountID, recordID uuid.UUID) (int, error)
+}
+
+// Counterpart is a transaction a sync line may pair with (A216 rule 2): the posting of
+// AccountID that RecordID confirms, and whether the transaction is a card payment (A88).
+type Counterpart struct {
+	TransactionID, AccountID, RecordID uuid.UUID
+	CardPayment                        bool
 }
 
 // InstallmentLine is an aggregator card line that belongs to an installment purchase.
@@ -340,6 +357,10 @@ func (s *Service) importRecords(
 	p.route(assigned, repeated, grouped, held)
 
 	if err := s.linkMatches(ctx, p); err != nil {
+		return err
+	}
+
+	if err := s.pairLines(ctx, p); err != nil {
 		return err
 	}
 
@@ -596,7 +617,11 @@ func (s *Service) placeInstallments(ctx context.Context, p *importPlan) error {
 func (s *Service) saveOutcomes(ctx context.Context, p *importPlan) error {
 	outcomes := make([]domain.ExternalRecord, len(p.pending))
 	for i, rec := range p.pending {
-		p.batch.Counts.Count(rec.State)
+		if rec.State == domain.StateMatched && rec.Decision == domain.DecisionPaired {
+			p.batch.Counts.Paired++
+		} else {
+			p.batch.Counts.Count(rec.State)
+		}
 
 		if p.sync && rec.State != domain.StateReceived {
 			rec.SummaryBatchID = p.batch.ID

@@ -121,7 +121,7 @@ func toBatchAPI(b domain.Batch) ImportBatch {
 		Counts: ImportCounts{
 			Received: b.Counts.Received, Ignored: b.Counts.Ignored, Matched: b.Counts.Matched,
 			Created: b.Counts.Created, NeedsReview: b.Counts.NeedsReview, Discarded: b.Counts.Discarded,
-			Updated: b.Counts.Updated, Withdrawn: b.Counts.Withdrawn, ReIdentified: b.Counts.ReIdentified,
+			Updated: b.Counts.Updated, Withdrawn: b.Counts.Withdrawn, ReIdentified: b.Counts.ReIdentified, Paired: b.Counts.Paired,
 		},
 		Balance:   ImportBalance{Status: ImportBalanceStatus(b.Balance.Status)},
 		StartedAt: b.StartedAt, CompletedAt: b.CompletedAt,

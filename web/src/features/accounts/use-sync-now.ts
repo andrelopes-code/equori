@@ -57,6 +57,7 @@ function sumCounts(all: ImportCounts[]): ImportCounts {
     updated: 0,
     withdrawn: 0,
     re_identified: 0,
+    paired: 0,
   };
   for (const counts of all) {
     for (const key of Object.keys(total) as (keyof ImportCounts)[]) {

@@ -530,6 +530,8 @@ export const accountsEn = {
     "This line moves money to a set-aside balance that could not be identified with certainty. Create it and turn it into a transfer to the right balance, or discard it.",
   "batch.reason.duplicate":
     "A transaction with this date and amount is already recorded under another name or id. Discard this line if it is the same; create it if there were two.",
+  "batch.reason.transfer":
+    "This line looks like a transfer between your own accounts. Choose the other account's transaction; without one, create it and turn it into a transfer to the right account, or discard it.",
   "batch.group.confirm": "Confirm the group",
   "batch.group.lines": "Group of {count} bank lines.",
   "batch.unapplied": "Change not applied: {change}",
@@ -602,6 +604,7 @@ export const accountsEn = {
   "links.count.updated": "Changed: {count}",
   "links.count.withdrawn": "Withdrawn: {count}",
   "links.count.re_identified": "Re-identified: {count}",
+  "links.count.paired": "Paired: {count}",
   "links.syncRecords": "Lines of the sync of {time}",
   "links.syncDate": "Date",
   "links.syncDescription": "Description",
@@ -611,6 +614,7 @@ export const accountsEn = {
   "links.decision.followed": "Bank change applied",
   "links.decision.withdrawn": "Withdrawn",
   "links.decision.re_identified": "Joined by the bank's id",
+  "links.decision.paired": "Paired as a transfer automatically",
   "links.outcome.changed": "Bank change to review",
   "links.undo": "Undo",
   "links.undoOf": "Undo {description}",

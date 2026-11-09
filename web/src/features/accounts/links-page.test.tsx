@@ -54,6 +54,7 @@ const syncRuns = {
             updated: 0,
             withdrawn: 1,
             re_identified: 0,
+            paired: 0,
           },
           balance: {},
           started_at: "2026-10-17T07:00:00Z",

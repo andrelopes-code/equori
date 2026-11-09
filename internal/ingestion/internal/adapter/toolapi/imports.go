@@ -43,6 +43,7 @@ type countsView struct {
 	Updated      int `json:"updated,omitzero"`
 	Withdrawn    int `json:"withdrawn,omitzero"`
 	ReIdentified int `json:"re_identified,omitzero"`
+	Paired       int `json:"paired,omitzero"`
 }
 
 type batchView struct {
@@ -62,7 +63,7 @@ type recordView struct {
 	State        string     `json:"state"`
 	ReviewReason string     `json:"review_reason,omitzero"`
 	Candidates   []string   `json:"candidates,omitzero" jsonschema:"transactions the record may match, best first; get_transaction describes them"`
-	Decision     string     `json:"decision,omitzero" jsonschema:"linked, followed, withdrawn or re_identified: the automatic decision undo_decision of manage_imports reverts"`
+	Decision     string     `json:"decision,omitzero" jsonschema:"linked, followed, withdrawn, re_identified or paired: the automatic decision undo_decision of manage_imports reverts"`
 }
 
 type syncView struct {
@@ -191,7 +192,7 @@ func toBatchView(b domain.Batch, named map[uuid.UUID]string) batchView {
 		StartedAt: b.StartedAt.UTC().Format(time.RFC3339),
 		Counts: countsView{
 			Received: c.Received, Ignored: c.Ignored, Matched: c.Matched, Created: c.Created,
-			NeedsReview: c.NeedsReview, Discarded: c.Discarded, Updated: c.Updated, Withdrawn: c.Withdrawn, ReIdentified: c.ReIdentified,
+			NeedsReview: c.NeedsReview, Discarded: c.Discarded, Updated: c.Updated, Withdrawn: c.Withdrawn, ReIdentified: c.ReIdentified, Paired: c.Paired,
 		},
 	}
 }

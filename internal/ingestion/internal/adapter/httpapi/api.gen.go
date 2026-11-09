@@ -167,6 +167,7 @@ func (e ExternalAccountState) Valid() bool {
 const (
 	ExternalRecordDecisionFollowed     ExternalRecordDecision = "followed"
 	ExternalRecordDecisionLinked       ExternalRecordDecision = "linked"
+	ExternalRecordDecisionPaired       ExternalRecordDecision = "paired"
 	ExternalRecordDecisionReIdentified ExternalRecordDecision = "re_identified"
 	ExternalRecordDecisionWithdrawn    ExternalRecordDecision = "withdrawn"
 )
@@ -177,6 +178,8 @@ func (e ExternalRecordDecision) Valid() bool {
 	case ExternalRecordDecisionFollowed:
 		return true
 	case ExternalRecordDecisionLinked:
+		return true
+	case ExternalRecordDecisionPaired:
 		return true
 	case ExternalRecordDecisionReIdentified:
 		return true
@@ -196,6 +199,7 @@ const (
 	Probable  ExternalRecordReviewReason = "probable"
 	Repeated  ExternalRecordReviewReason = "repeated"
 	Reserve   ExternalRecordReviewReason = "reserve"
+	Transfer  ExternalRecordReviewReason = "transfer"
 )
 
 // Valid indicates whether the value is a known member of the ExternalRecordReviewReason enum.
@@ -214,6 +218,8 @@ func (e ExternalRecordReviewReason) Valid() bool {
 	case Repeated:
 		return true
 	case Reserve:
+		return true
+	case Transfer:
 		return true
 	default:
 		return false
@@ -626,7 +632,7 @@ type ExternalRecord struct {
 	Candidates []openapi_types.UUID `json:"candidates"`
 	Date       openapi_types.Date   `json:"date"`
 
-	// Decision The last automatic decision of a sync, present while POST /external-records/{id}/undo can revert it (A148).
+	// Decision The last automatic decision of a sync, present while POST /external-records/{id}/undo can revert it (A148, A220).
 	Decision    *ExternalRecordDecision `json:"decision,omitempty"`
 	Description string                  `json:"description"`
 	ExternalId  *string                 `json:"external_id,omitempty"`
@@ -635,7 +641,7 @@ type ExternalRecord struct {
 	GroupRecordIds *[]openapi_types.UUID `json:"group_record_ids,omitempty"`
 	Id             openapi_types.UUID    `json:"id"`
 
-	// ReviewReason Why the record waits for review (A100, A102, A142, A168, A213, A215).
+	// ReviewReason Why the record waits for review (A100, A102, A142, A168, A213, A215, A219).
 	ReviewReason *ExternalRecordReviewReason `json:"review_reason,omitempty"`
 
 	// ScoredCandidates The candidates as matching scored them, best first (A99, A100).
@@ -647,10 +653,10 @@ type ExternalRecord struct {
 	UnappliedChange *string `json:"unapplied_change,omitempty"`
 }
 
-// ExternalRecordDecision The last automatic decision of a sync, present while POST /external-records/{id}/undo can revert it (A148).
+// ExternalRecordDecision The last automatic decision of a sync, present while POST /external-records/{id}/undo can revert it (A148, A220).
 type ExternalRecordDecision string
 
-// ExternalRecordReviewReason Why the record waits for review (A100, A102, A142, A168, A213, A215).
+// ExternalRecordReviewReason Why the record waits for review (A100, A102, A142, A168, A213, A215, A219).
 type ExternalRecordReviewReason string
 
 // ExternalRecordState defines model for ExternalRecord.State.
@@ -734,6 +740,9 @@ type ImportCounts struct {
 	Ignored     int `json:"ignored"`
 	Matched     int `json:"matched"`
 	NeedsReview int `json:"needs_review"`
+
+	// Paired Lines a sync paired with a transaction of another account of the book as a transfer (A220).
+	Paired int `json:"paired"`
 
 	// ReIdentified Stored lines that took the external id of a line carrying their institution line id (A143).
 	ReIdentified int `json:"re_identified"`

@@ -21,6 +21,7 @@ function batch(id: string, created: number): ImportBatch {
       updated: 0,
       withdrawn: 0,
       re_identified: 0,
+      paired: 0,
     },
     balance: { status: "none" },
     started_at: "2026-11-01T12:53:00Z",

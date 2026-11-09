@@ -8170,12 +8170,12 @@ components:
           description: A change the aggregator reported that the ledger did not take (P6 amendment A36).
         decision:
           type: string
-          enum: [linked, followed, withdrawn, re_identified]
-          description: The last automatic decision of a sync, present while POST /external-records/{id}/undo can revert it (A148).
+          enum: [linked, followed, withdrawn, re_identified, paired]
+          description: The last automatic decision of a sync, present while POST /external-records/{id}/undo can revert it (A148, A220).
         review_reason:
           type: string
-          enum: [ambiguous, probable, changed, repeated, group, reserve, duplicate]
-          description: Why the record waits for review (A100, A102, A142, A168, A213, A215).
+          enum: [ambiguous, probable, changed, repeated, group, reserve, duplicate, transfer]
+          description: Why the record waits for review (A100, A102, A142, A168, A213, A215, A219).
         group_record_ids:
           type: array
           description: The other lines of the group, while review_reason is group (A168).
@@ -8643,7 +8643,7 @@ components:
         stored lines an aggregator changed (status, bill or amount); withdrawn counts stored
         lines it stopped returning (P6 amendments A36, A38). re_identified counts stored lines
         the institution line id joined to a new external id (A143).
-      required: [received, ignored, matched, created, needs_review, discarded, updated, withdrawn, re_identified]
+      required: [received, ignored, matched, created, needs_review, discarded, updated, withdrawn, re_identified, paired]
       properties:
         received:
           type: integer
@@ -8664,6 +8664,9 @@ components:
         re_identified:
           type: integer
           description: Stored lines that took the external id of a line carrying their institution line id (A143).
+        paired:
+          type: integer
+          description: Lines a sync paired with a transaction of another account of the book as a transfer (A220).
     ImportBalance:
       type: object
       description: The balance the file reports and what became of it (chapter 3, F4).

@@ -12,6 +12,7 @@ const zero = {
   updated: 0,
   withdrawn: 0,
   re_identified: 0,
+  paired: 0,
 };
 
 describe("syncCounts", () => {

@@ -82,6 +82,10 @@ type Repository interface {
 	Connection(ctx context.Context, booksID int64, id uuid.UUID) (domain.Connection, error)
 	ListConnections(ctx context.Context, booksID int64, p page.Request[NameKey]) ([]domain.Connection, *NameKey, error)
 	DeleteConnection(ctx context.Context, booksID int64, id uuid.UUID) error
+	// LockBookPairing holds the book's pairing lock for one account batch of a sync (A218 rule 3).
+	LockBookPairing(ctx context.Context, booksID int64) (unlock func(), err error)
+	// RecordCounterparties returns the counterparty of each record that has one.
+	RecordCounterparties(ctx context.Context, booksID int64, ids []uuid.UUID) (map[uuid.UUID]string, error)
 	// BookHolders lists the holder digests of the book's mapped external accounts (A217).
 	BookHolders(ctx context.Context, booksID int64) ([][]byte, error)
 	// SetExternalAccountHolder stores the holder digest the item now reports (A217).

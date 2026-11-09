@@ -4702,15 +4702,15 @@ export interface components {
             /** @description A change the aggregator reported that the ledger did not take (P6 amendment A36). */
             unapplied_change?: string;
             /**
-             * @description The last automatic decision of a sync, present while POST /external-records/{id}/undo can revert it (A148).
+             * @description The last automatic decision of a sync, present while POST /external-records/{id}/undo can revert it (A148, A220).
              * @enum {string}
              */
-            decision?: "linked" | "followed" | "withdrawn" | "re_identified";
+            decision?: "linked" | "followed" | "withdrawn" | "re_identified" | "paired";
             /**
-             * @description Why the record waits for review (A100, A102, A142, A168, A213, A215).
+             * @description Why the record waits for review (A100, A102, A142, A168, A213, A215, A219).
              * @enum {string}
              */
-            review_reason?: "ambiguous" | "probable" | "changed" | "repeated" | "group" | "reserve" | "duplicate";
+            review_reason?: "ambiguous" | "probable" | "changed" | "repeated" | "group" | "reserve" | "duplicate" | "transfer";
             /** @description The other lines of the group, while review_reason is group (A168). */
             group_record_ids?: string[];
             /** @description The candidates as matching scored them, best first (A99, A100). */
@@ -4963,6 +4963,8 @@ export interface components {
             withdrawn: number;
             /** @description Stored lines that took the external id of a line carrying their institution line id (A143). */
             re_identified: number;
+            /** @description Lines a sync paired with a transaction of another account of the book as a transfer (A220). */
+            paired: number;
         };
         /** @description The balance the file reports and what became of it (chapter 3, F4). */
         ImportBalance: {

@@ -529,6 +529,8 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
     "Esta linha movimenta um saldo separado que não foi identificado com certeza. Crie e transforme em transferência para o saldo certo, ou descarte.",
   "batch.reason.duplicate":
     "Já existe um lançamento com esta data e valor, com outro nome ou identificador. Descarte se for o mesmo; crie se foram dois.",
+  "batch.reason.transfer":
+    "Esta linha parece uma transferência entre contas suas. Escolha a transação da outra conta; sem ela, crie e transforme em transferência para a conta certa, ou descarte.",
   "batch.group.confirm": "Confirmar o grupo",
   "batch.group.lines": "Grupo de {count} linhas do banco.",
   "batch.unapplied": "Alteração não aplicada: {change}",
@@ -601,6 +603,7 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "links.count.updated": "Alteradas: {count}",
   "links.count.withdrawn": "Retiradas: {count}",
   "links.count.re_identified": "Reidentificadas: {count}",
+  "links.count.paired": "Pareadas: {count}",
   "links.syncRecords": "Linhas da sincronização de {time}",
   "links.syncDate": "Data",
   "links.syncDescription": "Descrição",
@@ -610,6 +613,7 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "links.decision.followed": "Alteração do banco aplicada",
   "links.decision.withdrawn": "Retirada",
   "links.decision.re_identified": "Unida pelo id do banco",
+  "links.decision.paired": "Pareada como transferência automaticamente",
   "links.outcome.changed": "Alteração do banco para revisar",
   "links.undo": "Desfazer",
   "links.undoOf": "Desfazer {description}",

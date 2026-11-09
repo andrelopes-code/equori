@@ -2138,6 +2138,9 @@
                   },
                   "re_identified": {
                     "type": "integer"
+                  },
+                  "paired": {
+                    "type": "integer"
                   }
                 },
                 "description": "lines by outcome; absent outcomes are zero",
@@ -2210,7 +2213,7 @@
               },
               "decision": {
                 "type": "string",
-                "description": "linked, followed, withdrawn or re_identified: the automatic decision undo_decision of manage_imports reverts"
+                "description": "linked, followed, withdrawn, re_identified or paired: the automatic decision undo_decision of manage_imports reverts"
               }
             },
             "required": [
@@ -2389,6 +2392,9 @@
                         },
                         "re_identified": {
                           "type": "integer"
+                        },
+                        "paired": {
+                          "type": "integer"
                         }
                       },
                       "description": "lines by outcome; absent outcomes are zero",
@@ -2452,7 +2458,7 @@
                     },
                     "decision": {
                       "type": "string",
-                      "description": "linked, followed, withdrawn or re_identified: the automatic decision undo_decision of manage_imports reverts"
+                      "description": "linked, followed, withdrawn, re_identified or paired: the automatic decision undo_decision of manage_imports reverts"
                     }
                   },
                   "required": [
@@ -5518,6 +5524,9 @@
                     "type": "integer"
                   },
                   "re_identified": {
+                    "type": "integer"
+                  },
+                  "paired": {
                     "type": "integer"
                   }
                 },

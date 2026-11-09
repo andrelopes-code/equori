@@ -27,6 +27,7 @@ type syncBatch struct {
 		Updated      int `json:"updated"`
 		Withdrawn    int `json:"withdrawn"`
 		ReIdentified int `json:"re_identified"`
+		Paired       int `json:"paired"`
 	} `json:"counts"`
 	ReadEmpty bool `json:"read_empty"`
 	Balance   struct {

@@ -72,12 +72,17 @@ func newAggregator(t *testing.T, opts ...apitest.Option) aggregator {
 
 // serveItem adds an item with a checking account, a credit card and a savings account.
 func (a aggregator) serveItem(clientID, itemID, connector string) {
+	a.serveItemIn(clientID, itemID, connector, "BRL")
+}
+
+// serveItemIn is serveItem with accounts in currency.
+func (a aggregator) serveItemIn(clientID, itemID, connector, currency string) {
 	it := pluggy.Item{ID: itemID, Status: pluggy.StatusUpdated, LastUpdatedAt: new("2026-11-12T06:00:00.000Z")}
 	it.Connector.Name = connector
 	a.p.AddItemTo(clientID, it)
-	a.p.AddAccount(itemID, pluggy.Account{ID: itemID + "-checking", Type: "BANK", Subtype: pluggy.SubtypeChecking, Name: "Conta Corrente", Number: checkingNumber, Balance: "2834.10", CurrencyCode: "BRL"})
-	a.p.AddAccount(itemID, pluggy.Account{ID: itemID + "-card", Type: pluggy.TypeCredit, Subtype: pluggy.SubtypeCard, Name: "Ultravioleta", Number: "5162********4321", Balance: "0", CurrencyCode: "BRL"})
-	a.p.AddAccount(itemID, pluggy.Account{ID: itemID + "-savings", Type: "BANK", Subtype: pluggy.SubtypeSavings, Name: "Caixinha", Number: "98765432", Balance: "100", CurrencyCode: "BRL"})
+	a.p.AddAccount(itemID, pluggy.Account{ID: itemID + "-checking", Type: "BANK", Subtype: pluggy.SubtypeChecking, Name: "Conta Corrente", Number: checkingNumber, Balance: "2834.10", CurrencyCode: currency})
+	a.p.AddAccount(itemID, pluggy.Account{ID: itemID + "-card", Type: pluggy.TypeCredit, Subtype: pluggy.SubtypeCard, Name: "Ultravioleta", Number: "5162********4321", Balance: "0", CurrencyCode: currency})
+	a.p.AddAccount(itemID, pluggy.Account{ID: itemID + "-savings", Type: "BANK", Subtype: pluggy.SubtypeSavings, Name: "Caixinha", Number: "98765432", Balance: "100", CurrencyCode: currency})
 }
 
 func integrationBody(name, clientID, secret string) map[string]any {

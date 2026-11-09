@@ -274,6 +274,12 @@ func (s *Service) syncAccount(ctx context.Context, agg Aggregator, c domain.Conn
 	today := s.today(ctx)
 	from, to, deep := ext.SyncWindow(today)
 
+	unlockBook, err := s.repo.LockBookPairing(ctx, c.BooksID)
+	if err != nil {
+		return domain.Batch{}, err
+	}
+	defer unlockBook()
+
 	unlock, err := s.repo.LockAccountImports(ctx, accountID)
 	if err != nil {
 		return domain.Batch{}, err

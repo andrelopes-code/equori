@@ -228,6 +228,8 @@ func (p ledgerPort) translate(err error) error {
 		return app.ErrTransactionVoided
 	case errors.Is(err, ledger.ErrNotGroupable):
 		return app.ErrGroupChanged
+	case errors.Is(err, ledger.ErrNotPairable):
+		return app.ErrNotPairable
 	}
 
 	return err
@@ -320,6 +322,56 @@ func (p ledgerPort) LinePayees(ctx context.Context, booksID int64, lines []app.L
 	}
 
 	return out, nil
+}
+
+// RuleDecided leaves SourceCategory nil: no rule reads it, and deciding it would count its usage twice.
+func (p ledgerPort) RuleDecided(ctx context.Context, booksID int64, lines []app.Line) ([]bool, error) {
+	decide := make([]classification.ImportLine, len(lines))
+	for i, l := range lines {
+		posting, err := p.posting(l)
+		if err != nil {
+			return nil, err
+		}
+
+		decide[i] = importLine(posting, app.Line{})
+	}
+
+	decisions, err := p.c.DecideImport(ctx, booksID, decide)
+	if err != nil {
+		return nil, err
+	}
+
+	out := make([]bool, len(lines))
+	for i, d := range decisions {
+		out[i] = d != nil && d.Cause.Method == classification.MethodRule
+	}
+
+	return out, nil
+}
+
+func (p ledgerPort) Counterparts(ctx context.Context, booksID int64, l app.Line) ([]app.Counterpart, error) {
+	amount, err := money.New(l.Amount, l.Currency)
+	if err != nil {
+		return nil, err
+	}
+
+	cps, err := p.l.Counterparts(ctx, booksID, ledger.CounterpartQuery{AccountID: l.AccountID, Amount: amount, Date: l.Date})
+	if err != nil {
+		return nil, p.translate(err)
+	}
+
+	out := make([]app.Counterpart, len(cps))
+	for i, cp := range cps {
+		out[i] = app.Counterpart(cp)
+	}
+
+	return out, nil
+}
+
+func (p ledgerPort) PairLine(ctx context.Context, booksID int64, txID, accountID, recordID uuid.UUID) (int, error) {
+	version, err := p.l.PairImported(ctx, booksID, txID, accountID, recordID)
+
+	return version, p.translate(err)
 }
 
 func (p ledgerPort) GroupableTransactions(ctx context.Context, booksID int64, txIDs []uuid.UUID) ([]uuid.UUID, error) {

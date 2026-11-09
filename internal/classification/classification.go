@@ -136,6 +136,9 @@ func (m *Module) names(ctx context.Context, booksID int64) (categories, payees m
 
 func (m *Module) RegisterRoutes(mux *http.ServeMux) { m.http.Register(mux) }
 
+// MethodRule is the classification method of a rule of the owner.
+const MethodRule = app.MethodRule
+
 // ImportLine is a statement line before the ledger records it.
 type ImportLine = app.ImportLine
 
