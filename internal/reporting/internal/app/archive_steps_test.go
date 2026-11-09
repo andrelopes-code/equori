@@ -384,3 +384,24 @@ func TestAddTransferPairing(t *testing.T) {
 		t.Fatalf("ArchiveVersion = %d, want at least 12", ArchiveVersion)
 	}
 }
+
+// Market quotes plan 2 D22, ADR 021 V2: version 12 holds no marketdata_instrument_symbol; the
+// step carries every table over unchanged.
+func TestAddInstrumentSymbols(t *testing.T) {
+	t.Parallel()
+
+	v12 := []ArchiveTable{{Name: "marketdata_instrument", Rows: [][]byte{[]byte(`{"code":"AAPL"}`)}}}
+
+	got, err := addInstrumentSymbols(v12)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(got) != 1 || got[0].Name != "marketdata_instrument" || string(got[0].Rows[0]) != `{"code":"AAPL"}` {
+		t.Fatalf("tables = %+v", got)
+	}
+
+	if ArchiveVersion < 13 {
+		t.Fatalf("ArchiveVersion = %d, want at least 13", ArchiveVersion)
+	}
+}
