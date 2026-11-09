@@ -93,7 +93,7 @@ func TestRecordPriceValidation(t *testing.T) {
 	h.MustDo(http.MethodPost, "/api/v1/instruments", mxrf11(), http.StatusCreated, nil)
 	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/prices", price("quote_instrument", "MXRF11")), http.StatusUnprocessableEntity, "validation_failed", "quote_instrument")
 
-	h.ExpectProblem(h.Do(http.MethodGet, "/api/v1/prices?instrument=USD&quote_instrument=BRL&from=2025-01-01&to=2026-02-04", nil), http.StatusUnprocessableEntity, "validation_failed", "to")
+	h.ExpectProblem(h.Do(http.MethodGet, "/api/v1/prices?instrument=USD&quote_instrument=BRL&from=2025-01-01&to=2075-02-09", nil), http.StatusUnprocessableEntity, "validation_failed", "to")
 	h.ExpectProblem(h.Do(http.MethodGet, "/api/v1/prices?instrument=USD&quote_instrument=BRL&from=2026-02-04&to=2026-02-03", nil), http.StatusUnprocessableEntity, "validation_failed", "to")
 }
 
@@ -146,5 +146,39 @@ func TestImportPrices(t *testing.T) {
 
 	if len(list.Items) != 2 || list.Items[1] != (priceAPI{Instrument: "MXRF11", QuoteInstrument: "BRL", Date: "2026-10-29", Value: "9.36", Source: "csv"}) {
 		t.Fatalf("prices = %+v", list.Items)
+	}
+}
+
+// S363: a range over 400 days returns one point per ISO week (A222 MQ30).
+func TestS363WeeklyPoints(t *testing.T) {
+	t.Parallel()
+	h := apitest.New(t)
+
+	for _, p := range []struct{ date, value string }{
+		{"2020-01-06", "1"}, {"2020-01-08", "2"}, {"2020-01-13", "3"},
+		{"2025-12-29", "5"}, {"2026-01-01", "4"}, {"2026-01-31", "6"},
+	} {
+		h.MustDo(http.MethodPost, "/api/v1/prices", map[string]any{"instrument": "USD", "quote_instrument": "BRL", "date": p.date, "value": p.value}, http.StatusCreated, nil)
+	}
+
+	var list struct {
+		Interval string     `json:"interval"`
+		Items    []priceAPI `json:"items"`
+	}
+	h.MustDo(http.MethodGet, "/api/v1/prices?instrument=USD&quote_instrument=BRL&from=2020-01-01&to=2026-01-02", nil, http.StatusOK, &list)
+
+	if list.Interval != "week" {
+		t.Fatalf("interval = %q, want week", list.Interval)
+	}
+
+	want := []struct{ date, value string }{{"2020-01-08", "2"}, {"2020-01-13", "3"}, {"2026-01-01", "4"}}
+	if len(list.Items) != len(want) {
+		t.Fatalf("items = %+v", list.Items)
+	}
+
+	for i, w := range want {
+		if list.Items[i].Date != w.date || list.Items[i].Value != w.value {
+			t.Fatalf("items[%d] = %+v, want %v", i, list.Items[i], w)
+		}
 	}
 }

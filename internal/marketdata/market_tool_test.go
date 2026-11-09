@@ -301,7 +301,7 @@ func TestGetMarketDataToolInvalidArguments(t *testing.T) {
 		field string
 	}{
 		{map[string]any{"view": "prices", "code": "MXRF11", "from": "2026-10-01", "to": "2026-10-31"}, "quote"},
-		{map[string]any{"view": "prices", "code": "MXRF11", "quote": "BRL", "from": "2026-01-01", "to": "2027-06-01"}, "to"},
+		{map[string]any{"view": "prices", "code": "MXRF11", "quote": "BRL", "from": "2026-01-01", "to": "2076-02-09"}, "to"},
 		{map[string]any{"view": "instrument"}, "code"},
 		{map[string]any{"view": "holidays", "calendar": "br_banking"}, "year"},
 		{map[string]any{"view": "calendars", "code": "x"}, "code"},

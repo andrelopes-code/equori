@@ -72,16 +72,16 @@ func (e HolidaySource) Valid() bool {
 
 // Defines values for IndexPeriod.
 const (
-	Day   IndexPeriod = "day"
-	Month IndexPeriod = "month"
+	IndexPeriodDay   IndexPeriod = "day"
+	IndexPeriodMonth IndexPeriod = "month"
 )
 
 // Valid indicates whether the value is a known member of the IndexPeriod enum.
 func (e IndexPeriod) Valid() bool {
 	switch e {
-	case Day:
+	case IndexPeriodDay:
 		return true
-	case Month:
+	case IndexPeriodMonth:
 		return true
 	default:
 		return false
@@ -139,6 +139,27 @@ func (e MarketDataFeedKind) Valid() bool {
 	case MarketDataFeedKindIndex:
 		return true
 	case MarketDataFeedKindPrice:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PriceListInterval.
+const (
+	PriceListIntervalDay   PriceListInterval = "day"
+	PriceListIntervalMonth PriceListInterval = "month"
+	PriceListIntervalWeek  PriceListInterval = "week"
+)
+
+// Valid indicates whether the value is a known member of the PriceListInterval enum.
+func (e PriceListInterval) Valid() bool {
+	switch e {
+	case PriceListIntervalDay:
+		return true
+	case PriceListIntervalMonth:
+		return true
+	case PriceListIntervalWeek:
 		return true
 	default:
 		return false
@@ -435,8 +456,13 @@ type PriceInput struct {
 
 // PriceList defines model for PriceList.
 type PriceList struct {
-	Items []Price `json:"items"`
+	// Interval One point per date up to 400 days, per ISO week up to 3,660 days, per month beyond; a point is the chosen price of the latest date with a price in its period (A222 MQ30).
+	Interval PriceListInterval `json:"interval"`
+	Items    []Price           `json:"items"`
 }
+
+// PriceListInterval One point per date up to 400 days, per ISO week up to 3,660 days, per month beyond; a point is the chosen price of the latest date with a price in its period (A222 MQ30).
+type PriceListInterval string
 
 // Problem defines model for Problem.
 type Problem struct {
@@ -580,7 +606,7 @@ type ServerInterface interface {
 	// RefreshMarketData Run the enabled feeds now; admin only (ADR 025 F7, F8).
 	// (POST /market-data/refresh)
 	RefreshMarketData(w http.ResponseWriter, r *http.Request)
-	// ListPrices The chosen price of each date with prices in [from, to], at most 366 days (P8 amendment A60).
+	// ListPrices The chosen price of each date with prices in [from, to], at most 18,300 days, one point per period of interval (P8 amendment A60, A222 MQ30).
 	// (GET /prices)
 	ListPrices(w http.ResponseWriter, r *http.Request, params ListPricesParams)
 	// RecordPrice Record a manual price; a manual price of the same date is replaced.
@@ -2461,7 +2487,7 @@ type StrictServerInterface interface {
 	// RefreshMarketData Run the enabled feeds now; admin only (ADR 025 F7, F8).
 	// (POST /market-data/refresh)
 	RefreshMarketData(ctx context.Context, request RefreshMarketDataRequestObject) (RefreshMarketDataResponseObject, error)
-	// ListPrices The chosen price of each date with prices in [from, to], at most 366 days (P8 amendment A60).
+	// ListPrices The chosen price of each date with prices in [from, to], at most 18,300 days, one point per period of interval (P8 amendment A60, A222 MQ30).
 	// (GET /prices)
 	ListPrices(ctx context.Context, request ListPricesRequestObject) (ListPricesResponseObject, error)
 	// RecordPrice Record a manual price; a manual price of the same date is replaced.

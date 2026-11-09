@@ -3,6 +3,7 @@ package toolapi
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/domain"
@@ -21,7 +22,7 @@ type getMarketDataIn struct {
 	Code     string            `json:"code,omitzero" jsonschema:"for instrument and prices: instrument code, such as a ticker or currency code"`
 	Quote    string            `json:"quote,omitzero" jsonschema:"for prices: code of the currency the price is quoted in"`
 	From     tool.Date         `json:"from,omitzero" jsonschema:"for prices and index_rates: first date"`
-	To       tool.Date         `json:"to,omitzero" jsonschema:"for prices and index_rates: last date; at most 366 days after from for prices, 7320 for index_rates"`
+	To       tool.Date         `json:"to,omitzero" jsonschema:"for prices and index_rates: last date; at most 18300 days after from for prices (one price per ISO week beyond 400 days, per month beyond 3660), 7320 for index_rates"`
 	Index    string            `json:"index,omitzero" jsonschema:"for index_rates and index_expectations: index id from the indexes view"`
 	Calendar string            `json:"calendar,omitzero" jsonschema:"for holidays: calendar identifier from the calendars view"`
 	Year     int               `json:"year,omitzero" jsonschema:"for holidays: calendar year"`
@@ -200,7 +201,7 @@ func getMarketData(svc Service, cals Calendars) tool.Tool {
 			return getMarketDataOut{Instrument: v}, nil
 		case "prices":
 			if in.To.Before(in.From.Time) || in.To.Sub(in.From.Time) > domain.MaxPriceRange*24*time.Hour {
-				return getMarketDataOut{}, tool.InvalidArgument("to", "must be between from and 366 days after from")
+				return getMarketDataOut{}, tool.InvalidArgument("to", fmt.Sprintf("must be between from and %d days after from", domain.MaxPriceRange))
 			}
 
 			rows, err := svc.ListPrices(ctx, money.Currency(in.Code), money.Currency(in.Quote), in.From.Time, in.To.Time)

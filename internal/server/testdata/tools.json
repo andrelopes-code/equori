@@ -2549,7 +2549,7 @@
         },
         "to": {
           "type": "string",
-          "description": "for prices and index_rates: last date; at most 366 days after from for prices, 7320 for index_rates",
+          "description": "for prices and index_rates: last date; at most 18300 days after from for prices (one price per ISO week beyond 400 days, per month beyond 3660), 7320 for index_rates",
           "format": "date"
         },
         "index": {

@@ -19,8 +19,15 @@ const (
 	SourceAccrual = "accrual"
 
 	MaxImportLines = 10000
-	MaxPriceRange  = 366  // days in a GET /prices range
-	MaxIndexRange  = 7320 // days in a GET /indexes/{id}/rates range: 20 years and their leap days
+
+	IntervalDay   = "day"
+	IntervalWeek  = "week"
+	IntervalMonth = "month"
+
+	maxDayInterval  = 400   // days of a range with one point per date
+	maxWeekInterval = 3660  // days of a range with one point per ISO week
+	MaxPriceRange   = 18300 // days in a GET /prices range: 50 years and their leap days
+	MaxIndexRange   = 7320  // days in a GET /indexes/{id}/rates range: 20 years and their leap days
 )
 
 type Price struct {
@@ -126,4 +133,46 @@ func validRange(from, to time.Time, maxDays int) error {
 	}
 
 	return nil
+}
+
+// PriceInterval is the period of one point of a GET /prices range (A222 MQ30).
+func PriceInterval(from, to time.Time) string {
+	days := int(to.Sub(from) / (24 * time.Hour))
+
+	switch {
+	case days <= maxDayInterval:
+		return IntervalDay
+	case days <= maxWeekInterval:
+		return IntervalWeek
+	}
+
+	return IntervalMonth
+}
+
+// Downsample keeps, of prices sorted by date, the latest of each period of interval.
+func Downsample(ps []Price, interval string) []Price {
+	if interval == IntervalDay {
+		return ps
+	}
+
+	var out []Price
+	for i, p := range ps {
+		if i+1 < len(ps) && periodOf(ps[i+1].Date, interval) == periodOf(p.Date, interval) {
+			continue
+		}
+
+		out = append(out, p)
+	}
+
+	return out
+}
+
+func periodOf(d time.Time, interval string) [2]int {
+	if interval == IntervalWeek {
+		y, w := d.ISOWeek()
+
+		return [2]int{y, w}
+	}
+
+	return [2]int{d.Year(), int(d.Month())}
 }

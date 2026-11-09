@@ -1836,7 +1836,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The chosen price of each date with prices in [from, to], at most 366 days (P8 amendment A60). */
+        /** The chosen price of each date with prices in [from, to], at most 18,300 days, one point per period of interval (P8 amendment A60, A222 MQ30). */
         get: operations["listPrices"];
         put?: never;
         /** Record a manual price; a manual price of the same date is replaced. */
@@ -5553,6 +5553,11 @@ export interface components {
             value: components["schemas"]["Rate"];
         };
         PriceList: {
+            /**
+             * @description One point per date up to 400 days, per ISO week up to 3,660 days, per month beyond; a point is the chosen price of the latest date with a price in its period (A222 MQ30).
+             * @enum {string}
+             */
+            interval: "day" | "week" | "month";
             items: components["schemas"]["Price"][];
         };
         PriceImport: {

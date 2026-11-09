@@ -72,7 +72,7 @@ func (s *Server) ListPrices(ctx context.Context, req ListPricesRequestObject) (L
 		items[i] = toPriceAPI(x)
 	}
 
-	return ListPrices200JSONResponse{Items: items}, nil
+	return ListPrices200JSONResponse{Items: items, Interval: PriceListInterval(domain.PriceInterval(p.From.Time, p.To.Time))}, nil
 }
 
 func toPriceAPI(p domain.Price) Price {

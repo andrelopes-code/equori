@@ -145,7 +145,7 @@ func (m *Module) ListPrices(ctx context.Context, instrument, quote money.Currenc
 		}
 	}
 
-	return out, nil
+	return domain.Downsample(out, domain.PriceInterval(from, to)), nil
 }
 
 func toPrice(r postgres.MarketdataPrice) (Price, error) {
