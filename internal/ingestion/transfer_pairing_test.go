@@ -355,32 +355,55 @@ func TestS360MaskedCounterparty(t *testing.T) {
 	}
 }
 
-// A candidate stored at import stays accepted, so one the ledger no longer lets pair (here a
-// voided one) is refused on transaction_id.
+// A219 rule 2: the candidates of a review transfer are the counterparts at read time, so a
+// stored candidate that is no longer one is refused on transaction_id and left unchanged.
 func TestMatchRefusedCandidate(t *testing.T) {
 	t.Parallel()
 
-	f := newPairingFixture(t)
-	f.nubankLine(bankLine("nu-out", "2026-11-09", "-100.00"))
-	f.sync(f.nubank)
-
-	f.mpLine(pixLine("mp-in", "2026-11-10", "100.00", cpf(holderCPF)))
-	f.sync(f.mercadoPago)
-
-	booked := f.record("nu-out").Tx
-	if got := f.record("mp-in").Candidates; !slices.Equal(got, []string{booked}) {
-		t.Fatalf("candidates = %v, want [%s]", got, booked)
+	rows := map[string]func(f pairingFixture, tx string){
+		"categorized after the import": func(f pairingFixture, tx string) {
+			gifts := f.h.Account("Gifts", "income", "", nil)
+			f.h.MustDo(http.MethodPost, "/api/v1/transactions/"+tx+"/categorize", map[string]any{
+				"expected_version": 1, "parts": []map[string]any{{"account_id": gifts, "amount": apitest.BRL(10000)}},
+			}, http.StatusOK, nil)
+		},
+		"voided after the import": func(f pairingFixture, tx string) {
+			f.h.MustDo(http.MethodPost, "/api/v1/transactions/"+tx+"/void", map[string]string{"reason": "typo"}, http.StatusOK, nil)
+		},
 	}
 
-	f.h.MustDo(http.MethodPost, "/api/v1/transactions/"+booked+"/void", map[string]string{"reason": "typo"}, http.StatusOK, nil)
+	for name, change := range rows {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
 
-	id := f.scalarText(`SELECT id::text FROM ingestion_external_record WHERE external_id = 'mp-in'`)
-	r := f.h.Do(http.MethodPost, "/api/v1/external-records/"+id+"/resolve",
-		map[string]any{"action": "match", "transaction_id": booked})
-	f.h.ExpectProblem(r, http.StatusUnprocessableEntity, "validation_failed", "transaction_id")
+			f := newPairingFixture(t)
+			f.nubankLine(bankLine("nu-out", "2026-11-09", "-100.00"))
+			f.sync(f.nubank)
 
-	if got := f.record("mp-in"); got.State != "needs_review" {
-		t.Errorf("mp-in = %+v, want needs_review", got)
+			f.mpLine(pixLine("mp-in", "2026-11-10", "100.00", cpf(holderCPF)))
+			f.sync(f.mercadoPago)
+
+			booked := f.record("nu-out").Tx
+			if got := f.record("mp-in").Candidates; !slices.Equal(got, []string{booked}) {
+				t.Fatalf("candidates = %v, want [%s]", got, booked)
+			}
+
+			change(f, booked)
+			version := f.h.Transaction(booked).Version
+
+			id := f.scalarText(`SELECT id::text FROM ingestion_external_record WHERE external_id = 'mp-in'`)
+			r := f.h.Do(http.MethodPost, "/api/v1/external-records/"+id+"/resolve",
+				map[string]any{"action": "match", "transaction_id": booked})
+			f.h.ExpectProblem(r, http.StatusUnprocessableEntity, "validation_failed", "transaction_id")
+
+			if got := f.record("mp-in"); got.State != "needs_review" {
+				t.Errorf("mp-in = %+v, want needs_review", got)
+			}
+
+			if got := f.h.Transaction(booked).Version; got != version {
+				t.Errorf("version = %d, want %d", got, version)
+			}
+		})
 	}
 }
 

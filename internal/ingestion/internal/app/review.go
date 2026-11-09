@@ -103,15 +103,18 @@ func (s *Service) Resolve(ctx context.Context, booksID int64, recordID uuid.UUID
 	}
 
 	// The candidates stored at import stay accepted, so a choice the ledger now refuses (a voided
-	// or reconciled entry) is refused by its own rule.
+	// or reconciled entry) is refused by its own rule. A review transfer keeps only the
+	// counterparts at read time (A219 rule 2).
 	stored := rec.Candidates
 	if err := s.refreshCandidates(ctx, &rec, currencyOf(b)); err != nil {
 		return domain.ExternalRecord{}, domain.Batch{}, err
 	}
 
-	for _, id := range stored {
-		if !slices.Contains(rec.Candidates, id) {
-			rec.Candidates = append(rec.Candidates, id)
+	if rec.ReviewReason != domain.ReviewTransfer {
+		for _, id := range stored {
+			if !slices.Contains(rec.Candidates, id) {
+				rec.Candidates = append(rec.Candidates, id)
+			}
 		}
 	}
 
