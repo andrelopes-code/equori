@@ -65,6 +65,14 @@ function findTab(name: keyof typeof catalogEn) {
   return screen.findByRole("tab", { name: new RegExp(`^${catalogEn[name]}`) });
 }
 
+async function openDetails(section: HTMLElement) {
+  await userEvent.click(
+    await within(section).findByRole("button", {
+      name: catalogEn["holdings.method"],
+    }),
+  );
+}
+
 const reportRoute: Record<string, Route> = {
   "GET /api/v1/reports/return": () =>
     json(200, {
@@ -126,6 +134,7 @@ describe("AccountPage", () => {
         /^Fixed income: compared day by day with CDI\./,
       ),
     ).toBeInTheDocument();
+    await openDetails(section);
     const cdi = await within(section).findByRole("group", {
       name: "Compared with CDI",
     });
@@ -172,7 +181,7 @@ describe("AccountPage", () => {
     expect(section).not.toHaveAttribute("data-ground", "surface");
   });
 
-  it("states what the profile means and what was left out under the groups (A208 R17)", async () => {
+  it("states what the profile means and what was left out before the details (A208 R17, RC1, RC7)", async () => {
     await renderApp(`/accounts/${reserveID}?tab=yield`, {
       fetch: api({
         "GET /api/v1/reports/return": () =>
@@ -200,6 +209,7 @@ describe("AccountPage", () => {
     const section = await screen.findByRole("region", {
       name: catalogEn["portfolio.yield.figure"],
     });
+    await openDetails(section);
     const group = await within(section).findByRole("group", {
       name: "Compared with CDI",
     });
@@ -212,11 +222,11 @@ describe("AccountPage", () => {
     );
 
     expect(
-      group.compareDocumentPosition(profile) & Node.DOCUMENT_POSITION_FOLLOWING,
+      group.compareDocumentPosition(profile) & Node.DOCUMENT_POSITION_PRECEDING,
     ).toBeTruthy();
     expect(
       group.compareDocumentPosition(excluded) &
-        Node.DOCUMENT_POSITION_FOLLOWING,
+        Node.DOCUMENT_POSITION_PRECEDING,
     ).toBeTruthy();
   });
 
@@ -253,6 +263,7 @@ describe("AccountPage", () => {
     expect(
       await within(section).findByText("Only one yield credit recorded"),
     ).toBeInTheDocument();
+    await openDetails(section);
     expect(
       within(section).getByText(
         "R$1,500.00 in other income / R$320.50 in other expenses in this account were treated as money in or out, not yield (Salary, Taxes).",
@@ -290,6 +301,7 @@ describe("AccountPage", () => {
     const section = await screen.findByRole("region", {
       name: catalogEn["portfolio.yield.figure"],
     });
+    await openDetails(section);
     const period = await within(section).findByRole("group", {
       name: "In the period",
     });

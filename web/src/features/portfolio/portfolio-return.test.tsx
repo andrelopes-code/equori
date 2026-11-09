@@ -20,16 +20,22 @@ const flows = () =>
 const performance = () =>
   screen.findByRole("region", { name: catalogEn["holdings.return"] });
 
-const openMethod = async () => {
-  await userEvent
-    .setup()
-    .click(
-      await screen.findByRole("button", { name: catalogEn["holdings.method"] }),
-    );
+const openMethod = async (): Promise<HTMLElement> => {
+  const trigger = await screen.findByRole("button", {
+    name: catalogEn["holdings.method"],
+  });
+  await userEvent.setup().click(trigger);
+
+  const panel = document.getElementById(
+    trigger.getAttribute("aria-controls") ?? "",
+  );
+  if (panel === null) throw new Error("the details have no panel");
+
+  return panel;
 };
 
 describe("Portfolio return", () => {
-  it("PC11: leads with the return of the period when no index compares it (S126)", async () => {
+  it("PC11, RC2: leads with the return of the period when no index compares it (S126)", async () => {
     const fetch = portfolioApi({
       "GET /api/v1/reports/return": () =>
         json(200, { ...plainReturn, period_bp: 480 }),
@@ -37,10 +43,14 @@ describe("Portfolio return", () => {
     await renderApp("/portfolio", { fetch });
     const section = await performance();
 
-    expect(await within(section).findByText("4.80%")).toBeInTheDocument();
     expect(
-      within(section).getByText(catalogEn["holdings.return.period"]),
+      await within(section).findByText(
+        "In the period, the portfolio returned 4.80%.",
+      ),
     ).toBeInTheDocument();
+    expect(
+      within(section).queryByText(catalogEn["holdings.return.period"]),
+    ).not.toBeInTheDocument();
   });
 
   it("PC11: falls back to the personal rate of a report without a period return", async () => {
@@ -58,14 +68,16 @@ describe("Portfolio return", () => {
     await performance();
 
     expect(await screen.findByText(catalogEn["holdings.method"])).toBeVisible();
-    expect(screen.queryByText(/R\$1,050\.00/)).toBeNull();
-
-    await openMethod();
-
-    expect(await screen.findByText(/R\$1,000\.00/)).toBeInTheDocument();
-    expect(screen.getByText(/R\$1,050\.00/)).toBeInTheDocument();
     expect(
-      screen.getByText(catalogEn["portfolio.return.noFlows"]),
+      screen.queryByText(catalogEn["portfolio.return.closing"]),
+    ).toBeNull();
+
+    const panel = await openMethod();
+
+    expect(await within(panel).findByText(/R\$1,000\.00/)).toBeInTheDocument();
+    expect(within(panel).getByText(/R\$1,050\.00/)).toBeInTheDocument();
+    expect(
+      within(panel).getByText(catalogEn["portfolio.return.noFlows"]),
     ).toBeInTheDocument();
   });
 
@@ -93,6 +105,8 @@ describe("Portfolio return", () => {
       "GET /api/v1/reports/return": () => json(200, comparedReturn),
     });
     await renderApp("/portfolio", { fetch });
+    await performance();
+    await openMethod();
     const group = await screen.findByRole("group", {
       name: catalogEn["portfolio.yield.group.index"].replace("{index}", "CDI"),
     });
@@ -105,12 +119,13 @@ describe("Portfolio return", () => {
     expect(within(group).getByText("100.00%")).toBeInTheDocument();
   });
 
-  it("PC11: states what the profile means under the groups, not under the heading (A208 R17)", async () => {
+  it("PC11: states what the profile means before the details, not under the heading (A208 R17, RC1)", async () => {
     const fetch = portfolioApi({
       "GET /api/v1/reports/return": () => json(200, marketReturn),
     });
     await renderApp("/portfolio", { fetch });
     const section = await performance();
+    await openMethod();
     const group = await within(section).findByRole("group", {
       name: catalogEn["portfolio.yield.group.index"].replace("{index}", "CDI"),
     });
@@ -120,7 +135,7 @@ describe("Portfolio return", () => {
     );
 
     expect(
-      group.compareDocumentPosition(profile) & Node.DOCUMENT_POSITION_FOLLOWING,
+      group.compareDocumentPosition(profile) & Node.DOCUMENT_POSITION_PRECEDING,
     ).toBeTruthy();
   });
 
@@ -140,7 +155,13 @@ describe("Portfolio return", () => {
       ),
     ).toBeInTheDocument();
     expect(within(section).getByText("−10.33 pp")).toBeInTheDocument();
-    expect(within(section).getByText("−0.89%")).toBeInTheDocument();
+
+    await openMethod();
+    const inflation = await within(section).findByRole("group", {
+      name: "Net of IPCA",
+    });
+
+    expect(within(inflation).getByText("−0.89%")).toBeInTheDocument();
     expect(
       within(section).queryByText(
         catalogEn["portfolio.yield.row.percent"].replace("{index}", "CDI"),
@@ -154,9 +175,9 @@ describe("Portfolio return", () => {
     });
     await renderApp("/portfolio", { fetch });
     await performance();
-    await openMethod();
+    const panel = await openMethod();
 
-    expect(await screen.findByText(/R\$2,050\.00/)).toBeInTheDocument();
+    expect(await within(panel).findByText(/R\$2,050\.00/)).toBeInTheDocument();
     const table = await flows();
     expect(
       within(table)
@@ -445,6 +466,7 @@ describe("Portfolio return", () => {
     });
     const { container } = await renderApp("/portfolio", { fetch });
     const section = await performance();
+    await openMethod();
 
     await within(section).findByText(
       catalogEn["portfolio.yield.group.index"].replace("{index}", "SOFR"),
@@ -460,7 +482,9 @@ describe("Portfolio return", () => {
     const { container } = await renderApp("/portfolio", { fetch });
     const section = await performance();
 
-    await within(section).findByText("4.80%");
+    await within(section).findByText(
+      "In the period, the portfolio returned 4.80%.",
+    );
     expect(container.textContent).not.toMatch(/CDI|IPCA|SOFR/);
   });
 

@@ -25,7 +25,7 @@ import type {
   PortfolioSearch,
   SearchPatch,
 } from "@/features/portfolio/portfolio-search";
-import { ReturnFigures } from "@/features/portfolio/return-figures";
+import { ReturnView } from "@/features/portfolio/return-view";
 import {
   useReturnOptions,
   wholePortfolio,
@@ -179,7 +179,7 @@ export function PortfolioReturn({
         {reading && !report.isError && !ready && <Skeleton />}
 
         {reading && !report.isError && ready && (
-          <ReturnFigures report={report.data} />
+          <ReturnView report={report.data} subject="portfolio" />
         )}
       </SectionBody>
     </Section>

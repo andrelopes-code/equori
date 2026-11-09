@@ -24,6 +24,8 @@ import {
 import { Text } from "@slotted/react/typography";
 
 import type { components } from "@/api/schema.gen";
+import type { YieldGroup } from "@/features/portfolio/yield-figures";
+import { YieldGroupList } from "@/features/portfolio/yield-group-list";
 import { useScale } from "@/features/setup";
 import { formatBasisPoints, formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
@@ -34,11 +36,13 @@ type ReturnReport = components["schemas"]["ReturnReport"];
 
 interface ReturnMethodProps {
   report: ReturnReport;
+  groups: YieldGroup[];
 }
 
-// PC12: the two ends, both rates with what sets them apart, and the deposits and withdrawals. An
-// expert opens it; a reader who only asked how it performed never has to.
-export function ReturnMethod({ report }: ReturnMethodProps) {
+// PC12, RC6: the groups of the yield as ruled lists, then the two ends, both rates with what sets
+// them apart, and the deposits and withdrawals. An expert opens it; a reader who only asked how it
+// performed never has to.
+export function ReturnMethod({ report, groups }: ReturnMethodProps) {
   const t = useT();
   const [tag] = useAppLocale();
   const fmt = useMoneyFormat();
@@ -66,6 +70,10 @@ export function ReturnMethod({ report }: ReturnMethodProps) {
       </CollapsibleHeader>
       <CollapsiblePanel>
         <Stack gap={4}>
+          {groups.map((group) => (
+            <YieldGroupList key={group.key} group={group} />
+          ))}
+
           <DescriptionList variant="ruled">
             {facts.map(([term, value]) => (
               <DescriptionListItem key={term}>
