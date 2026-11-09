@@ -152,6 +152,7 @@ const widgetHelpRule = `
   padding: 0;
   border-radius: var(--slotted-control-radius);
   color: var(--slotted-text-muted);
+  margin-inline-start: var(--slotted-space-2);
   margin-block: calc((1.5rem - var(--slotted-font-size-md, 0.8125rem) * var(--slotted-line-height-md, 1.5)) / -2);
 }
 `;
