@@ -19,6 +19,7 @@ import { catalogLabel, useScale } from "@/features/setup";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
+import { directionOf, useAmountTone } from "@/ui/amount-tone";
 import { AppLink } from "@/ui/app-link";
 
 type Money = components["schemas"]["Money"];
@@ -31,12 +32,6 @@ interface SalesTableProps {
 
 const columns = 8;
 
-function toneOf(amount: number) {
-  if (amount > 0) return "success";
-
-  return amount < 0 ? "danger" : "default";
-}
-
 // Every sale of the year at average cost. The class codes come from the user's jurisdiction: a
 // class without a catalog key reads as its code, and no class reads as unclassified.
 export function SalesTable({ items, pending }: SalesTableProps) {
@@ -44,6 +39,7 @@ export function SalesTable({ items, pending }: SalesTableProps) {
   const [tag] = useAppLocale();
   const fmt = useMoneyFormat();
   const scale = useScale();
+  const amountTone = useAmountTone();
   const { holder, instrumentName, pending: naming } = useYearNames();
 
   const digits = (m: Money) => scale?.(m.currency) ?? 0;
@@ -115,7 +111,10 @@ export function SalesTable({ items, pending }: SalesTableProps) {
                     {fmt.money(r.proceeds, digits(r.proceeds))}
                   </TableCell>
                   <TableCell numeric>
-                    <Text size="sm" tone={toneOf(r.result.amount)}>
+                    <Text
+                      size="sm"
+                      tone={amountTone("result", directionOf(r.result.amount))}
+                    >
                       {fmt.signed(r.result, digits(r.result))}
                     </Text>
                   </TableCell>

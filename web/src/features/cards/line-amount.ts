@@ -1,15 +1,16 @@
 import type { components } from "@/api/schema.gen";
 import type { StatementLine } from "@/features/cards/statement-groups";
+import type { AmountDirection } from "@/ui/amount-tone";
 
 type Money = components["schemas"]["Money"];
 
 export function lineAmount(line: StatementLine): {
   money: Money;
-  tone: "neutral" | "positive";
+  direction: AmountDirection;
 } {
   const amount = line.amount.amount === 0 ? 0 : -line.amount.amount;
   return {
     money: { ...line.amount, amount },
-    tone: line.card_role === "charge" ? "neutral" : "positive",
+    direction: line.card_role === "charge" ? "out" : "in",
   };
 }

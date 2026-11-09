@@ -6,6 +6,7 @@ import { useAccountYield } from "@/features/portfolio/use-account-yield";
 import { yieldLine } from "@/features/portfolio/yield-figures";
 import { shiftDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { useAmountTone } from "@/ui/amount-tone";
 
 // The days of the window, the 90 that end at the date of the balance sheet.
 const WINDOW_DAYS = 90;
@@ -36,6 +37,7 @@ export function AccountYield({
   compact = false,
 }: AccountYieldProps) {
   const t = useT();
+  const amountTone = useAmountTone();
   const [tag] = useAppLocale();
   const windowStart = shiftDate(date, 1 - WINDOW_DAYS);
   const report = useAccountYield(accountId, windowStart, date);
@@ -45,7 +47,7 @@ export function AccountYield({
   if (line === undefined) return null;
 
   const size = compact ? "xs" : "sm";
-  const tone = line.negative ? "danger" : "default";
+  const tone = amountTone("result", line.negative ? "out" : "in");
 
   if (compact && line.primary === undefined) {
     return (

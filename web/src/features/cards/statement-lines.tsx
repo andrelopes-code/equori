@@ -30,6 +30,7 @@ import { formatDayHeader } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { useMoneyFormat } from "@/privacy/use-money-format";
+import { useAmountTone } from "@/ui/amount-tone";
 
 type StatementPosting = components["schemas"]["StatementPosting"];
 
@@ -58,6 +59,7 @@ export function StatementLines({
   const t = useT();
   const [locale] = useAppLocale();
   const fmt = useMoneyFormat();
+  const amountTone = useAmountTone();
   const today = useToday();
   const navigate = useNavigate();
   const days = useMemo(() => {
@@ -110,7 +112,7 @@ export function StatementLines({
                   })}
                 </TableGroupRow>
                 {dayLines.map((line, i) => {
-                  const { money, tone } = lineAmount(line);
+                  const { money, direction } = lineAmount(line);
                   return (
                     <TableRow
                       key={`${line.transaction_id}-${String(i)}`}
@@ -162,7 +164,7 @@ export function StatementLines({
                         <Text
                           size="sm"
                           weight="semibold"
-                          tone={tone === "positive" ? "success" : "default"}
+                          tone={amountTone("flow", direction)}
                         >
                           {fmt.money(money, scale(money.currency))}
                         </Text>

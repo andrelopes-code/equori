@@ -8,6 +8,7 @@ import { Stack } from "@slotted/react/stack";
 import { Text } from "@slotted/react/typography";
 
 import type { YieldGroup } from "@/features/portfolio/yield-figures";
+import { useAmountTone } from "@/ui/amount-tone";
 import { FigureCard } from "@/ui/figure-card";
 import { FigureGrid } from "@/ui/figure-grid";
 
@@ -18,6 +19,7 @@ interface YieldGroupListProps {
 // One group of the yield section: its title and period, the figures it exists for as cards, then
 // a ruled list of the figures they come from. A negative figure is in the danger tone.
 export function YieldGroupList({ group }: YieldGroupListProps) {
+  const amountTone = useAmountTone();
   const key = group.rows.filter((row) => row.emphasis);
   const support = group.rows.filter((row) => !row.emphasis);
 
@@ -54,7 +56,7 @@ export function YieldGroupList({ group }: YieldGroupListProps) {
                 <Text
                   size="sm"
                   numeric="tabular"
-                  tone={row.negative ? "danger" : "default"}
+                  tone={amountTone("result", row.negative ? "out" : "in")}
                 >
                   {row.value}
                 </Text>

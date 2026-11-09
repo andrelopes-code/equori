@@ -18,6 +18,7 @@ import type { EntryRow } from "@/features/reports/net-worth-days";
 import { formatDayMonth } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
+import { directionOf, useAmountTone } from "@/ui/amount-tone";
 
 interface EntryTableProps {
   rows: readonly EntryRow[];
@@ -32,6 +33,7 @@ export function EntryTable({ rows, day, currency, digits }: EntryTableProps) {
   const t = useT();
   const [tag] = useAppLocale();
   const fmt = useMoneyFormat();
+  const amountTone = useAmountTone();
 
   const caption =
     day === undefined
@@ -75,7 +77,7 @@ export function EntryTable({ rows, day, currency, digits }: EntryTableProps) {
                 <Text
                   size="sm"
                   weight="medium"
-                  tone={row.amount > 0 ? "success" : "danger"}
+                  tone={amountTone("flow", directionOf(row.amount))}
                 >
                   {fmt.signed({ amount: row.amount, currency }, digits)}
                 </Text>

@@ -6,16 +6,11 @@ import { useScale } from "@/features/setup";
 import { formatSignedBasisPoints } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
+import { directionOf, useAmountTone } from "@/ui/amount-tone";
 
 interface HoldingGainCellProps {
   holding: Holding;
   valueIn: string;
-}
-
-function toneOf(gain: number) {
-  if (gain > 0) return "success";
-
-  return gain < 0 ? "danger" : "default";
 }
 
 // PC7: the gain in money, in the tone of its sign, and in percent of the cost. Empty for cash and
@@ -25,6 +20,7 @@ export function HoldingGainCell({ holding, valueIn }: HoldingGainCellProps) {
   const [tag] = useAppLocale();
   const fmt = useMoneyFormat();
   const scale = useScale();
+  const amountTone = useAmountTone();
 
   if (holding.mixed)
     return <span role="img" aria-label={t("portfolio.resultMixed")} />;
@@ -32,7 +28,7 @@ export function HoldingGainCell({ holding, valueIn }: HoldingGainCellProps) {
 
   return (
     <Inline gap={2} align="center" justify="end" wrap="nowrap">
-      <Text size="sm" tone={toneOf(holding.gain)}>
+      <Text size="sm" tone={amountTone("result", directionOf(holding.gain))}>
         {fmt.signed(
           { amount: holding.gain, currency: valueIn },
           scale?.(valueIn) ?? 0,

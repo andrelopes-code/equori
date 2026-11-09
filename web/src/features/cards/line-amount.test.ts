@@ -16,13 +16,13 @@ function line(role: StatementLine["card_role"], amount: number): StatementLine {
 
 describe("lineAmount", () => {
   it.each([
-    ["S09 annual fee", line("charge", -4000), 4000, "neutral"],
-    ["S12 cashback", line("credit", 1230), -1230, "positive"],
-    ["payment", line("payment", 150000), -150000, "positive"],
-  ] as const)("%s", (_name, input, amount, tone) => {
+    ["S09 annual fee", line("charge", -4000), 4000, "out"],
+    ["S12 cashback", line("credit", 1230), -1230, "in"],
+    ["payment", line("payment", 150000), -150000, "in"],
+  ] as const)("%s", (_name, input, amount, direction) => {
     expect(lineAmount(input)).toEqual({
       money: { amount, currency: "BRL" },
-      tone,
+      direction,
     });
   });
 });

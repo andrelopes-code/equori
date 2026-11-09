@@ -5,6 +5,7 @@ import { Text } from "@slotted/react/typography";
 import { entryTotals, type EntryRow } from "@/features/reports/net-worth-days";
 import { useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
+import { directionOf, useAmountTone, type AmountKind } from "@/ui/amount-tone";
 
 interface EntryTotalsProps {
   rows: readonly EntryRow[];
@@ -17,20 +18,33 @@ interface EntryTotalsProps {
 export function EntryTotals({ rows, currency, digits }: EntryTotalsProps) {
   const t = useT();
   const fmt = useMoneyFormat();
+  const amountTone = useAmountTone();
 
   const totals = entryTotals(rows);
-  const figures = [
+  const figures: {
+    key: string;
+    label: string;
+    amount: number;
+    kind: AmountKind;
+  }[] = [
     {
       key: "income",
       label: t("report.netWorth.income"),
       amount: totals.income,
+      kind: "flow",
     },
     {
       key: "expense",
       label: t("report.netWorth.expense"),
       amount: -totals.expense,
+      kind: "flow",
     },
-    { key: "result", label: t("report.netWorth.result"), amount: totals.net },
+    {
+      key: "result",
+      label: t("report.netWorth.result"),
+      amount: totals.net,
+      kind: "result",
+    },
   ];
 
   return (
@@ -40,17 +54,15 @@ export function EntryTotals({ rows, currency, digits }: EntryTotalsProps) {
           <Text size="xs" tone="muted">
             {figure.label}
           </Text>
-          <Text size="md" weight="semibold" tone={toneOf(figure.amount)}>
+          <Text
+            size="md"
+            weight="semibold"
+            tone={amountTone(figure.kind, directionOf(figure.amount))}
+          >
             {fmt.signed({ amount: figure.amount, currency }, digits)}
           </Text>
         </Stack>
       ))}
     </Inline>
   );
-}
-
-function toneOf(amount: number): "success" | "danger" | "muted" {
-  if (amount > 0) return "success";
-
-  return amount < 0 ? "danger" : "muted";
 }
