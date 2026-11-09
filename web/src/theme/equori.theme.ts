@@ -314,8 +314,10 @@ export default extendTheme(
         "--slotted-data-7": "#c46dbd",
         "--slotted-data-8": "#db703b",
         // Workaround for Slotted issue #92: the derived danger text keeps 48% of the seed's chroma
-        // on a dark ground and reads pink; it takes the danger seed itself.
+        // on a dark ground and reads pink, and its border is a lighter, paler step of it; both take the
+        // danger seed itself.
         "--slotted-tone-danger-text": "#f87171",
+        "--slotted-tone-danger-border": "#f87171",
       },
       light: {
         // Set by owner review (2026-10-21): the material reads white over the light page.
