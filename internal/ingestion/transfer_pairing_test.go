@@ -16,6 +16,8 @@ const (
 	holderDigestHex = "79356df8292712e305b550373e815f99f39284e6fb35d701f636add4e2a71678"
 	thirdPartyCPF   = "111.444.777-35"
 	maskedCPF       = "***.982.247-**"
+
+	thirdPartyDigestHex = "91fe97f78ba094ba595018b806102a0f3656f689d9a414c33889f035d5681409"
 )
 
 // A217: both checking accounts store the digest of their holder; the card account stores none.
@@ -32,6 +34,37 @@ func TestHolderDigestStored(t *testing.T) {
 				t.Errorf("%s %s holder_digest = %q, want %q", c.ID, subtype, got, want)
 			}
 		}
+	}
+}
+
+// A217 rule 1: a listing that reports a holder replaces the stored digest; one without keeps it.
+func TestHolderReportedAgain(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name      string
+		taxNumber string
+		want      string
+	}{
+		{"another holder", thirdPartyCPF, thirdPartyDigestHex},
+		{"no holder", "", holderDigestHex},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			f := newPairingFixture(t)
+			f.sync(f.nubank)
+
+			f.p.SetAccountTaxNumber(nubankItem+"-checking", tt.taxNumber)
+			f.p.SetItemUpdatedAt(nubankItem, "2026-11-12T07:00:00.000Z")
+			f.sync(f.nubank)
+
+			if got := f.holderDigest(f.nubank.ID, pluggy.SubtypeChecking); got != tt.want {
+				t.Fatalf("holder_digest = %q, want %q", got, tt.want)
+			}
+		})
 	}
 }
 
