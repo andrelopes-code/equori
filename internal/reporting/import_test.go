@@ -332,6 +332,71 @@ func TestS253S254ImportNamesAnotherBook(t *testing.T) {
 	}
 }
 
+// S352 to S354 (export design R1 to R4): an import that repeats the book name replaces the
+// content of a populated book in one transaction.
+func TestS352S354ImportReplacesBooks(t *testing.T) {
+	t.Parallel()
+	source := apitest.New(t, apitest.Today("2026-10-26"))
+	b := populate(t, source)
+	good := export(t, source)
+	files := archive(t, good)
+
+	target := apitest.New(t, apitest.Today("2026-10-26"))
+	old := target.Account("Old", "asset", "checking", nil)
+	target.Record("2026-10-03", apitest.Posting(old, -1000), apitest.Posting(target.Account("Old food", "expense", "", nil), 1000))
+	seedReplaced(t, target)
+
+	var current struct {
+		Name string `json:"name"`
+	}
+	target.MustDo(http.MethodGet, "/api/v1/books/current", nil, http.StatusOK, &current)
+
+	replace := map[string]string{"replace_books_name": current.Name}
+	wrong := map[string]string{"replace_books_name": current.Name + " "}
+
+	// S353: a name that differs from the book's writes nothing.
+	r := target.UploadAs(target.Client, importPath, wrong, "a.zip", good)
+	target.ExpectProblem(r, http.StatusUnprocessableEntity, "confirmation_mismatch", "replace_books_name")
+
+	// S354: an archive refused inside the transaction keeps the previous content.
+	broken := edited(t, files, "ledger_posting", func(rows []map[string]any) []map[string]any {
+		i := slices.IndexFunc(rows, func(r map[string]any) bool { return r["statement_id"] == nil })
+		rows[i]["account_id"] = "00000000-0000-7000-8000-000000000000"
+
+		return rows
+	})
+	r = target.UploadAs(target.Client, importPath, replace, "a.zip", broken)
+	target.ExpectProblem(r, http.StatusUnprocessableEntity, "archive_invalid", "file")
+	target.MustDo(http.MethodGet, "/api/v1/accounts/"+old, nil, http.StatusOK, nil)
+
+	if n := replacedRows(t, target); n != 2 {
+		t.Errorf("a refused replacement left %d assistant rows, want 2", n)
+	}
+
+	// S352: the archive replaces the content, and the assistant history goes with it.
+	if r := target.UploadAs(target.Client, importPath, replace, "a.zip", good); r.Status != http.StatusOK {
+		t.Fatalf("import = %d: %s", r.Status, r.Body)
+	}
+
+	target.ExpectProblem(target.Do(http.MethodGet, "/api/v1/accounts/"+old, nil), http.StatusNotFound, "not_found", "")
+
+	if n := replacedRows(t, target); n != 0 {
+		t.Errorf("the replacement kept %d assistant rows", n)
+	}
+
+	for _, path := range []string{
+		"/api/v1/accounts?limit=200",
+		"/api/v1/reports/net-worth?date=2026-10-26",
+		"/api/v1/reports/balances?account_id=" + b.checking + "&from=2026-10-01&to=2026-10-26",
+		"/api/v1/positions?date=2026-10-26",
+	} {
+		want, got := source.Do(http.MethodGet, path, nil), target.Do(http.MethodGet, path, nil)
+		if want.Status != http.StatusOK || got.Status != http.StatusOK || !bytes.Equal(want.Body, got.Body) {
+			t.Errorf("GET %s:\nsource %d %s\ntarget %d %s", path, want.Status, want.Body, got.Status, got.Body)
+		}
+	}
+}
+
 // ADR 021, V1: schema_version no longer gates an import, and an archive written before
 // archive_version existed reads as version 1.
 func TestImportArchiveOfAnotherSchemaVersion(t *testing.T) {
@@ -425,4 +490,37 @@ func edited(t *testing.T, files map[string][]byte, table string, edit func([]map
 	out["manifest.json"], _ = json.Marshal(m)
 
 	return zipOf(t, out)
+}
+
+// seedReplaced reconciles every posting of the one book of h and gives it an assistant
+// conversation and a day of assistant usage, rows that no archive carries.
+func seedReplaced(t *testing.T, h *apitest.Harness) {
+	t.Helper()
+
+	for _, sql := range []string{
+		`UPDATE ledger_posting SET status = 'reconciled'`,
+		`INSERT INTO assistant_conversation (id, books_id, member_id, title, created_at, updated_at)
+			SELECT uuidv7(), books_id, member_id, 'Old', now(), now() FROM identity_membership`,
+		`INSERT INTO assistant_usage (books_id, day, provider_id, model, use_id, requests, errors,
+			quota_errors, input_tokens, output_tokens)
+			SELECT books_id, '2026-10-20', 'local', 'qwen3:32b', 'assistant.chat', 1, 0, 0, 10, 10
+			FROM identity_membership`,
+	} {
+		if _, err := h.Pool.Exec(t.Context(), sql); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+// replacedRows counts the assistant conversations and usage days of h.
+func replacedRows(t *testing.T, h *apitest.Harness) int {
+	t.Helper()
+
+	var n int
+	if err := h.Pool.QueryRow(t.Context(), `SELECT (SELECT count(*) FROM assistant_conversation)
+		+ (SELECT count(*) FROM assistant_usage)`).Scan(&n); err != nil {
+		t.Fatal(err)
+	}
+
+	return n
 }

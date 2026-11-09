@@ -19,6 +19,9 @@ const maxPassphraseBytes = 1024
 // maxFlagBytes bounds a boolean multipart part.
 const maxFlagBytes = 16
 
+// maxNameBytes bounds the replace_books_name part.
+const maxNameBytes = 1024
+
 // errFileRequired: the multipart body holds no part named file.
 var errFileRequired = errors.New("file is required")
 
@@ -82,6 +85,7 @@ func (s *Server) ImportArchive(ctx context.Context, req ImportArchiveRequestObje
 	var (
 		archive []byte
 		creds   app.ImportCredentials
+		replace string
 		found   bool
 	)
 
@@ -120,6 +124,13 @@ func (s *Server) ImportArchive(ctx context.Context, req ImportArchiveRequestObje
 			}
 
 			creds.Skip = string(b) == "true"
+		case "replace_books_name":
+			b, err := io.ReadAll(io.LimitReader(part, maxNameBytes))
+			if err != nil {
+				return nil, fmt.Errorf("%w: %w", app.ErrArchiveInvalid, err)
+			}
+
+			replace = string(b)
 		}
 	}
 
@@ -127,7 +138,7 @@ func (s *Server) ImportArchive(ctx context.Context, req ImportArchiveRequestObje
 		return nil, errFileRequired
 	}
 
-	res, err := s.exports.Import(ctx, auth.MustBooksID(ctx), archive, creds)
+	res, err := s.exports.Import(ctx, auth.MustBooksID(ctx), archive, creds, replace)
 	if err != nil {
 		return nil, err
 	}

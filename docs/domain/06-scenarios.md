@@ -1047,3 +1047,7 @@ The scenarios of `docs/specs/2026-11-06-return-index-comparison-design.md`: a sa
 ### S340–S348 External identity (A211–A215)
 
 The scenarios of `docs/specs/2026-11-07-external-identity-design.md`: a reserve line naming a reserve in another case, spacing or Unicode form (S340); an unmapped reserve holding a mapped reserve's former name (S341); the window of a reused name (S342); an unresolved line booking no yield (S343); an account no longer listed (S344); its replacement (S345); a file line repeating a stored one under another name or id (S346); a sync line repeating a line of a file batch (S347); the conformance suite of an aggregator (S348).
+
+### S352–S354 Import that replaces a book
+
+The scenarios of `docs/specs/2026-10-26-export-design.md`, amendment of 2026-11-09: an archive imported with the name of a populated book replaces its content and deletes its assistant conversations and usage (S352); a name that differs from the book's is refused with 422 `confirmation_mismatch` and writes nothing (S353); an archive refused inside the transaction keeps the previous content (S354).

@@ -171,6 +171,11 @@ func ToProblem(err error) (problem.Details, bool) {
 		return problem.New(http.StatusForbidden, "book_role_required", err.Error()), true
 	case errors.Is(err, app.ErrImportNotEmpty):
 		return problem.New(http.StatusConflict, "import_not_empty", err.Error()), true
+	case errors.Is(err, app.ErrConfirmationMismatch):
+		d := problem.New(http.StatusUnprocessableEntity, "confirmation_mismatch", err.Error())
+		d.Errors = []problem.FieldError{{Field: "replace_books_name", Message: "must equal the name of the book"}}
+
+		return d, true
 	case errors.Is(err, app.ErrImportConflict):
 		return problem.New(http.StatusConflict, "import_conflict", err.Error()), true
 	case errors.Is(err, app.ErrExportNotFound):

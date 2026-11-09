@@ -34,6 +34,7 @@ The root package composes the module and exposes `RegisterRoutes`; `cmd/equori` 
 | `reporting` reads other modules' tables with `SELECT` only | Code review |
 | A database transaction never spans modules | The owner module exposes the atomic operation |
 | Amendment of 2026-10-26: `importArchive` of `reporting` writes every fact table of every module in one transaction (`docs/specs/2026-10-26-export-design.md`, E4). It is the one exception to the two rules above. Reason: a restore of whole tables has no owner operation to call, and N13 requires that a refused import writes nothing. | `TestImportRejects` |
+| Amendment of 2026-11-09: with `replace_books_name`, `importArchive` also deletes the book's rows of the assistant tables that no archive carries (`docs/specs/2026-10-26-export-design.md`, R3), in the same transaction. Reason: R4 requires that a refused replacement keeps the previous content. | `TestS352S354ImportReplacesBooks` |
 
 `internal/platform/` holds infrastructure without business rules: config, database connection, migrations, HTTP server.
 

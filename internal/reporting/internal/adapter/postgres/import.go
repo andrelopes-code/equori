@@ -95,19 +95,20 @@ func columns(ctx context.Context, q DBTX, table string) ([]string, error) {
 	return pgx.CollectRows(rows, pgx.RowTo[string])
 }
 
-func (r *Exports) Import(ctx context.Context, booksID int64, tables []app.ArchiveTable, attachments map[string][]byte, sealed app.SealedCredentials) ([]app.TableCount, app.RestoredCredentials, error) {
+func (r *Exports) Import(
+	ctx context.Context,
+	booksID int64,
+	tables []app.ArchiveTable,
+	attachments map[string][]byte,
+	sealed app.SealedCredentials,
+	replace string,
+) ([]app.TableCount, app.RestoredCredentials, error) {
 	var counts []app.TableCount
 
 	var restored app.RestoredCredentials
 	err := pgx.BeginFunc(ctx, r.pool, func(tx pgx.Tx) error {
-		var holds bool
-		if err := tx.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM ledger_transaction WHERE books_id = $1)
-			OR EXISTS (SELECT 1 FROM ledger_account WHERE books_id = $1 AND system_role IS NULL)`, booksID).Scan(&holds); err != nil {
+		if err := clearable(ctx, tx, booksID, replace); err != nil {
 			return err
-		}
-
-		if holds {
-			return app.ErrImportNotEmpty
 		}
 
 		facts, err := FactTables(ctx, tx)
@@ -220,6 +221,48 @@ func (r *Exports) Import(ctx context.Context, booksID int64, tables []app.Archiv
 	}
 
 	return counts, restored, err
+}
+
+// replacedTables hold rows that no archive carries and that a replacement deletes, child
+// tables first (export design R3).
+var replacedTables = []string{"assistant_proposal", "assistant_message", "assistant_conversation", "assistant_usage"}
+
+// clearable refuses an import into a book that holds facts, unless replace repeats the book
+// name; then it deletes the rows of replacedTables and unlocks the reconciled postings for the
+// deletes of Import (export design E4 step 2, R2, R3).
+func clearable(ctx context.Context, tx pgx.Tx, booksID int64, replace string) error {
+	if replace == "" {
+		var holds bool
+		if err := tx.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM ledger_transaction WHERE books_id = $1)
+			OR EXISTS (SELECT 1 FROM ledger_account WHERE books_id = $1 AND system_role IS NULL)`, booksID).Scan(&holds); err != nil {
+			return err
+		}
+
+		if holds {
+			return app.ErrImportNotEmpty
+		}
+
+		return nil
+	}
+
+	var name string
+	if err := tx.QueryRow(ctx, `SELECT coalesce(name, '') FROM identity_books WHERE id = $1`, booksID).Scan(&name); err != nil {
+		return err
+	}
+
+	if name != replace {
+		return app.ErrConfirmationMismatch
+	}
+
+	for _, t := range replacedTables {
+		if _, err := tx.Exec(ctx, fmt.Sprintf(`DELETE FROM %s WHERE books_id = $1`, pgx.Identifier{t}.Sanitize()), booksID); err != nil {
+			return fmt.Errorf("clear %s: %w", t, err)
+		}
+	}
+
+	_, err := tx.Exec(ctx, `SELECT set_config('equori.unlock_reconciled', 'on', TRUE)`)
+
+	return err
 }
 
 // insert writes rows in one statement; a shared row already present is kept.

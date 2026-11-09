@@ -20,6 +20,8 @@ var (
 	ErrArchiveTooNew  = errors.New("the archive was written by a later version")
 	ErrImportNotEmpty = errors.New("the books already hold facts")
 	ErrImportConflict = errors.New("an identifier of the archive belongs to another book")
+
+	ErrConfirmationMismatch = errors.New("replace_books_name differs from the name of the book")
 )
 
 // ArchiveTable is a table of an archive with one JSON object per row.
@@ -67,8 +69,16 @@ type ImportRepository interface {
 	// Import writes the tables in one transaction (export design E4, steps 2 to 4);
 	// attachments are keyed by the hexadecimal SHA-256 of their bytes. sealed holds the secret of
 	// each integration and of each provider by id; the transaction writes those of the imported
-	// rows and returns their counts (export design C6, T5).
-	Import(ctx context.Context, booksID int64, tables []ArchiveTable, attachments map[string][]byte, sealed SealedCredentials) ([]TableCount, RestoredCredentials, error)
+	// rows and returns their counts (export design C6, T5). A non-empty replace is the book name
+	// that lets the import delete the content of a book that holds facts (export design R2).
+	Import(
+		ctx context.Context,
+		booksID int64,
+		tables []ArchiveTable,
+		attachments map[string][]byte,
+		sealed SealedCredentials,
+		replace string,
+	) ([]TableCount, RestoredCredentials, error)
 }
 
 type archiveManifest struct {
@@ -94,8 +104,15 @@ type archiveManifest struct {
 // Import migrates an archive of an earlier version, restores it into the books of a book
 // without facts, then rebuilds the derived tables (export design E4, ADR 021). An archive that
 // carries credentials needs their passphrase, opened before any write, or the choice to skip them
-// (export design C5).
-func (s *Exports) Import(ctx context.Context, booksID int64, archive []byte, creds ImportCredentials) (ImportResult, error) {
+// (export design C5). A non-empty replace names the book whose content the archive replaces
+// (export design R2).
+func (s *Exports) Import(
+	ctx context.Context,
+	booksID int64,
+	archive []byte,
+	creds ImportCredentials,
+	replace string,
+) (ImportResult, error) {
 	files, err := unzip(archive, MaxExpandedBytes)
 	if err != nil {
 		return ImportResult{}, err
@@ -185,7 +202,7 @@ func (s *Exports) Import(ctx context.Context, booksID int64, archive []byte, cre
 		return ImportResult{}, err
 	}
 
-	counts, restored, err := s.imports.Import(ctx, booksID, tables, attachments, sealed)
+	counts, restored, err := s.imports.Import(ctx, booksID, tables, attachments, sealed, replace)
 	if err != nil {
 		return ImportResult{}, err
 	}

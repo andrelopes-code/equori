@@ -394,6 +394,9 @@ type ImportArchiveMultipartBody struct {
 	// Passphrase The credentials_passphrase of the export; needed when the archive carries credentials.
 	Passphrase *string `json:"passphrase,omitempty"`
 
+	// ReplaceBooksName The name of the active book; present, the import replaces the content of a book that holds facts (export design R1 to R4).
+	ReplaceBooksName *string `json:"replace_books_name,omitempty"`
+
 	// SkipCredentials true imports an archive that carries credentials without them; ignored when passphrase is set.
 	SkipCredentials *ImportArchiveMultipartBodySkipCredentials `json:"skip_credentials,omitempty"`
 }

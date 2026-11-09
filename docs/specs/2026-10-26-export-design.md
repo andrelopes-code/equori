@@ -135,3 +135,20 @@ Out of scope: the second factor (a TOTP secret in a portable file weakens it; th
 ### Documents changed in the same commits
 
 ADR 019 P1 (the key travels sealed by a passphrase in the archive); ADR 008 K8 (the bundle carries provider keys); `docs/operations/export.md`; the guide article of the data section in `internal/assistant/internal/guide/articles/` (`settings_language_and_region.md`).
+
+## Amendment of 2026-11-09: import that replaces the content of a book
+
+An owner moves a book from one instance to another whose book already holds facts. Before this amendment the only path was to delete the database volume of the receiving instance.
+
+| ID | Rule |
+|---|---|
+| R1 | `importArchive` accepts the optional multipart field `replace_books_name`, at most 1024 bytes. Absent or empty, E4 step 2 applies unchanged. |
+| R2 | Present, the value must equal the name of the active book, otherwise 422 `confirmation_mismatch` on `replace_books_name` and nothing is written. Equal, E4 step 2 does not apply. |
+| R3 | In the transaction of E4 step 3, before the fact tables, the import deletes the book's rows of `assistant_proposal`, `assistant_message`, `assistant_conversation` and `assistant_usage`, and unlocks the reconciled postings for its deletes (`equori.unlock_reconciled`). The book, its name, region and base currency, members, sessions, invitations and access tokens are kept. |
+| R4 | An import refused at any step leaves the previous content of the book unchanged. |
+
+The data section of settings, for a book that holds facts, offers "Replace content" in place of the import. Its dialog states what is deleted and what is kept, and enables the file choice only when the typed name equals the name of the book.
+
+### Tests
+
+- `TestS352S354ImportReplacesBooks`: a different name is 422 `confirmation_mismatch` (S353); an archive with a posting on an unknown account, imported with the name over a book with reconciled postings and assistant rows, is 422 `archive_invalid` and keeps the account and the assistant rows (S354); the same archive unedited replaces the content, deletes the assistant rows and reproduces the accounts, net worth, balances and positions of the source (S352).

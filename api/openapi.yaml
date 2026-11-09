@@ -2438,7 +2438,9 @@ paths:
         a checksum that differs, a table the instance does not export or an archive_version below 1; 422
         archive_too_new, with archive_version and instance_version, for an archive of a later version (ADR 021);
         an archive of an earlier version is migrated before any write; 409 import_not_empty when the book holds a transaction or an account without a system
-        role; 409 import_conflict when an identifier belongs to another book of the instance. A refused import
+        role and the request has no replace_books_name; 422 confirmation_mismatch when replace_books_name differs from
+        the name of the active book; with the name, the import deletes the content of the book, its assistant
+        conversations and usage, and writes the archive in the same transaction; 409 import_conflict when an identifier belongs to another book of the instance. A refused import
         writes nothing. With the passphrase of an archive that carries credentials, the credentials are restored
         under the key of the instance (export design C5 to C7): 422 passphrase_required when the archive carries
         credentials and the request has neither passphrase nor skip_credentials, 422 passphrase_invalid for a wrong
@@ -2461,6 +2463,12 @@ paths:
                   type: string
                   enum: ["true", "false"]
                   description: "true imports an archive that carries credentials without them; ignored when passphrase is set."
+                replace_books_name:
+                  type: string
+                  maxLength: 1024
+                  description: >-
+                    The name of the active book; present, the import replaces the content of a book that
+                    holds facts (export design R1 to R4).
       responses:
         "200":
           description: The rows written per table, in import order.
