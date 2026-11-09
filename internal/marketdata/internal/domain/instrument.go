@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"maps"
 	"regexp"
 	"slices"
 	"strings"
@@ -19,6 +20,8 @@ var micPattern = regexp.MustCompile(`^[A-Z0-9]{4}$`)
 var subtypePattern = regexp.MustCompile(`^[a-z0-9_]{2,40}$`)
 
 var codePattern = regexp.MustCompile(`^[A-Z0-9.]{2,20}$`)
+
+var symbolPattern = regexp.MustCompile("^[A-Za-z0-9.=^_-]{1,40}$")
 
 type Instrument struct {
 	Code          money.Currency
@@ -50,6 +53,12 @@ func (in Instrument) Validate() (Instrument, error) {
 		return in, invalid("exchange", "must be an ISO 10383 MIC")
 	case in.Subtype != "" && !subtypePattern.MatchString(in.Subtype):
 		return in, invalid("subtype", "must match ^[a-z0-9_]{2,40}$")
+	}
+
+	for _, key := range slices.Sorted(maps.Keys(in.Symbols)) {
+		if !symbolPattern.MatchString(in.Symbols[key]) {
+			return in, invalid("symbols."+key, "must match ^[A-Za-z0-9.=^_-]{1,40}$")
+		}
 	}
 
 	return in, nil

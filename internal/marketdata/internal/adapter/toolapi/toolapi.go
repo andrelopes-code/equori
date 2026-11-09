@@ -16,7 +16,9 @@ type Service interface {
 	Instrument(ctx context.Context, code string) (domain.Instrument, error)
 	ListInstruments(ctx context.Context, typ string) ([]domain.Instrument, error)
 	DefineInstrument(ctx context.Context, in domain.Instrument) (domain.Instrument, error)
-	EditInstrument(ctx context.Context, code, name, exchange, subtype string) (domain.Instrument, error)
+	EditInstrument(
+		ctx context.Context, code, name, exchange, subtype string, symbols map[string]string,
+	) (domain.Instrument, error)
 	RecordPrices(ctx context.Context, ps []domain.Price) error
 	ListPrices(ctx context.Context, instrument, quote money.Currency, from, to time.Time) ([]domain.Price, error)
 	Terms(ctx context.Context, code string) (domain.Terms, error)

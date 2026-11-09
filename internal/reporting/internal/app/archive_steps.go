@@ -9,7 +9,7 @@ import (
 
 // ArchiveVersion is the archive_version this instance writes and the highest it reads
 // (ADR 021). It is the number of steps in archiveSteps plus 1.
-const ArchiveVersion = 12
+const ArchiveVersion = 13
 
 // ArchiveStep migrates the tables of an archive from one version to the next; it is pure and
 // leaves its input unchanged (ADR 021, V3).
@@ -20,7 +20,7 @@ type ArchiveStep func([]ArchiveTable) ([]ArchiveTable, error)
 var archiveSteps = []ArchiveStep{
 	addExcludedFromLiquidity, addBudgetReference, addStatementBasis, dropConversations,
 	addReliableSync, addSavingsTarget, addMatchWindow, addAssistantConfiguration,
-	addCsvReading, addExternalIdentity, addTransferPairing,
+	addCsvReading, addExternalIdentity, addTransferPairing, addInstrumentSymbols,
 }
 
 // migrateArchive applies the steps from version from to the last one, in order.
@@ -209,4 +209,16 @@ func editRows(tables []ArchiveTable, table string, edit func(map[string]jsontext
 // tables, so the step changes nothing and they import empty.
 func addAssistantConfiguration(tables []ArchiveTable) ([]ArchiveTable, error) {
 	return tables, nil
+}
+
+// addInstrumentSymbols moves a version 12 archive to version 13, which adds
+// marketdata_instrument_symbol (migration 00095). Version 12 has no rows for it, so every table
+// carries over unchanged.
+func addInstrumentSymbols(tables []ArchiveTable) ([]ArchiveTable, error) {
+	out := make([]ArchiveTable, len(tables))
+	for i, t := range tables {
+		out[i] = ArchiveTable{Name: t.Name, Rows: slices.Clone(t.Rows)}
+	}
+
+	return out, nil
 }

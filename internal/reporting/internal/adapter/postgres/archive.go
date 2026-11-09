@@ -37,7 +37,7 @@ var notExported = []string{
 
 // sharedTables hold rows of every book; the archive carries all of them.
 var sharedTables = []string{
-	"marketdata_holiday", "marketdata_index_rate", "marketdata_instrument", "marketdata_fixed_income_terms", "marketdata_price",
+	"marketdata_holiday", "marketdata_index_rate", "marketdata_instrument", "marketdata_instrument_symbol", "marketdata_fixed_income_terms", "marketdata_price",
 }
 
 // rowExpressions write a row of t without books_id; a table listed here drops more.

@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"context"
+	"maps"
 	"time"
 
 	openapi_types "github.com/oapi-codegen/runtime/types"
@@ -20,6 +21,10 @@ func (s *Server) DefineInstrument(ctx context.Context, req DefineInstrumentReque
 
 	if b.Subtype != nil {
 		in.Subtype = string(*b.Subtype)
+	}
+
+	if b.Symbols != nil {
+		in.Symbols = *b.Symbols
 	}
 
 	out, err := s.svc.DefineInstrument(ctx, in)
@@ -88,7 +93,13 @@ func (s *Server) EditInstrument(ctx context.Context, req EditInstrumentRequestOb
 		subtype = *b.Subtype
 	}
 
-	out, err := s.svc.EditInstrument(ctx, req.Code, b.Name, exchange, subtype)
+	var symbols map[string]string
+	if b.Symbols != nil {
+		symbols = map[string]string{}
+		maps.Copy(symbols, *b.Symbols)
+	}
+
+	out, err := s.svc.EditInstrument(ctx, req.Code, b.Name, exchange, subtype, symbols)
 	if err != nil {
 		return nil, err
 	}
@@ -111,6 +122,11 @@ func toInstrumentAPI(in domain.Instrument) Instrument {
 	if in.Subtype != "" {
 		sub := in.Subtype
 		out.Subtype = &sub
+	}
+
+	if len(in.Symbols) > 0 {
+		symbols := InstrumentSymbols(in.Symbols)
+		out.Symbols = &symbols
 	}
 
 	return out

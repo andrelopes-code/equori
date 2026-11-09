@@ -5444,6 +5444,7 @@ export interface components {
             quote_currency?: string;
             exchange?: string;
             subtype?: string;
+            symbols?: components["schemas"]["InstrumentSymbols"];
             coverage?: components["schemas"]["InstrumentCoverage"];
         };
         InstrumentCoverage: {
@@ -5491,11 +5492,17 @@ export interface components {
             exchange?: string;
             /** @description Refines the type for the owner's jurisdiction, such as cri, cdb or equity_fund (investments design 4.1). */
             subtype?: string;
+            symbols?: components["schemas"]["InstrumentSymbols"];
         };
         InstrumentEdit: {
             name: string;
             exchange?: string;
             subtype?: string;
+            symbols?: components["schemas"]["InstrumentSymbols"];
+        };
+        /** @description The symbol a source requests for the instrument, by source ID (A222 MQ20). In an edit, absent keeps the stored set and an empty object clears it. */
+        InstrumentSymbols: {
+            [key: string]: string;
         };
         InstrumentList: {
             items: components["schemas"]["Instrument"][];

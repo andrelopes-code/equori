@@ -6,7 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"maps"
 	"net/http"
+	"slices"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -20,6 +22,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/adapter/toolapi"
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/calendar"
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/domain"
+	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
 	"github.com/andrelopes-code/equori/internal/platform/locale"
 	"github.com/andrelopes-code/equori/internal/platform/money"
@@ -192,7 +195,15 @@ func (m *Module) Instrument(ctx context.Context, code string) (Instrument, error
 		return Instrument{}, err
 	}
 
-	return toInstrument(row), nil
+	symbols, err := m.symbolsByInstrument(ctx)
+	if err != nil {
+		return Instrument{}, err
+	}
+
+	in := toInstrument(row)
+	in.Symbols = symbols[row.Code]
+
+	return in, nil
 }
 
 func (m *Module) Currencies(ctx context.Context) ([]Instrument, error) {
@@ -214,9 +225,15 @@ func (m *Module) ListInstruments(ctx context.Context, typ string) ([]Instrument,
 		return nil, err
 	}
 
+	symbols, err := m.symbolsByInstrument(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	out := make([]Instrument, len(rows))
 	for i, r := range rows {
 		out[i] = toInstrument(r)
+		out[i].Symbols = symbols[r.Code]
 	}
 
 	return out, nil
@@ -229,6 +246,10 @@ func (m *Module) DefineInstrument(ctx context.Context, in Instrument) (Instrumen
 		return Instrument{}, err
 	}
 
+	if err := m.checkSymbolSources(in.Symbols); err != nil {
+		return Instrument{}, err
+	}
+
 	quote, err := m.Instrument(ctx, string(in.QuoteCurrency))
 	if errors.Is(err, ErrUnknownInstrument) || (err == nil && quote.Type != domain.TypeCurrency) {
 		return Instrument{}, &domain.FieldError{Field: "quote_currency", Message: "must be a currency"}
@@ -238,18 +259,8 @@ func (m *Module) DefineInstrument(ctx context.Context, in Instrument) (Instrumen
 		return Instrument{}, err
 	}
 
-	quoteCode := string(in.QuoteCurrency)
-
-	n, err := m.q.InsertInstrument(ctx, postgres.InsertInstrumentParams{
-		Code: string(in.Code), InstrumentType: in.Type, Scale: int16(in.Scale), //nolint:gosec // G115: Validate bounds the scale to 0–12
-		Name: in.Name, QuoteCurrency: &quoteCode, Exchange: optional(in.Exchange), Subtype: optional(in.Subtype),
-	})
-	if err != nil {
-		return Instrument{}, fmt.Errorf("insert instrument: %w", err)
-	}
-
-	if n == 0 {
-		return Instrument{}, ErrInstrumentExists
+	if err := m.insertInstrument(ctx, in); err != nil {
+		return Instrument{}, err
 	}
 
 	m.requestDefaultHistory(ctx, in)
@@ -258,8 +269,10 @@ func (m *Module) DefineInstrument(ctx context.Context, in Instrument) (Instrumen
 }
 
 // EditInstrument replaces the name, exchange and subtype of a security; the other fields are
-// immutable (A59, A134).
-func (m *Module) EditInstrument(ctx context.Context, code, name, exchange, subtype string) (Instrument, error) {
+// immutable (A59, A134). symbols nil keeps the stored symbols; an empty map clears them (plan 2 D19).
+func (m *Module) EditInstrument(
+	ctx context.Context, code, name, exchange, subtype string, symbols map[string]string,
+) (Instrument, error) {
 	in, err := m.Instrument(ctx, code)
 	if err != nil {
 		return Instrument{}, err
@@ -269,29 +282,146 @@ func (m *Module) EditInstrument(ctx context.Context, code, name, exchange, subty
 		return Instrument{}, &domain.FieldError{Field: "code", Message: "is a currency"}
 	}
 
-	oldExchange := in.Exchange
+	oldExchange, oldSymbols := in.Exchange, in.Symbols
 
 	in.Name, in.Exchange, in.Subtype = name, exchange, subtype
+	if symbols != nil {
+		in.Symbols = symbols
+	}
+
 	if in, err = in.Validate(); err != nil {
 		return Instrument{}, err
 	}
 
-	n, err := m.q.UpdateInstrument(ctx, postgres.UpdateInstrumentParams{
-		Code: code, Name: in.Name, Exchange: optional(in.Exchange), Subtype: optional(in.Subtype),
-	})
-	if err != nil {
-		return Instrument{}, fmt.Errorf("update instrument: %w", err)
+	if err := m.checkSymbolSources(symbols); err != nil {
+		return Instrument{}, err
 	}
 
-	if n == 0 {
-		return Instrument{}, ErrUnknownInstrument
+	if err := m.updateInstrument(ctx, in, symbols != nil); err != nil {
+		return Instrument{}, err
 	}
 
-	if in.Exchange != oldExchange {
+	if in.Exchange != oldExchange || (symbols != nil && !maps.Equal(symbols, oldSymbols)) {
 		m.requestDefaultHistory(ctx, in)
 	}
 
 	return in, nil
+}
+
+// insertInstrument stores the instrument and its symbols in one transaction.
+func (m *Module) insertInstrument(ctx context.Context, in Instrument) error {
+	tx, err := m.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	q := m.q.WithTx(tx)
+	quoteCode := string(in.QuoteCurrency)
+
+	n, err := q.InsertInstrument(ctx, postgres.InsertInstrumentParams{
+		Code: string(in.Code), InstrumentType: in.Type, Scale: int16(in.Scale), //nolint:gosec // G115: Validate bounds the scale to 0–12
+		Name: in.Name, QuoteCurrency: &quoteCode, Exchange: optional(in.Exchange), Subtype: optional(in.Subtype),
+	})
+	if err != nil {
+		return fmt.Errorf("insert instrument: %w", err)
+	}
+
+	if n == 0 {
+		return ErrInstrumentExists
+	}
+
+	if err := storeSymbols(ctx, q, in.Code, in.Symbols); err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
+}
+
+// updateInstrument replaces the name, exchange and subtype, and the symbols when replaceSymbols is
+// set, in one transaction.
+func (m *Module) updateInstrument(ctx context.Context, in Instrument, replaceSymbols bool) error {
+	tx, err := m.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	q := m.q.WithTx(tx)
+
+	n, err := q.UpdateInstrument(ctx, postgres.UpdateInstrumentParams{
+		Code: string(in.Code), Name: in.Name, Exchange: optional(in.Exchange), Subtype: optional(in.Subtype),
+	})
+	if err != nil {
+		return fmt.Errorf("update instrument: %w", err)
+	}
+
+	if n == 0 {
+		return ErrUnknownInstrument
+	}
+
+	if replaceSymbols {
+		if err := storeSymbols(ctx, q, in.Code, in.Symbols); err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit(ctx)
+}
+
+// storeSymbols replaces the symbols of code with symbols, inserted in key order.
+func storeSymbols(ctx context.Context, q *postgres.Queries, code money.Currency, symbols map[string]string) error {
+	if err := q.DeleteInstrumentSymbols(ctx, string(code)); err != nil {
+		return fmt.Errorf("delete instrument symbols: %w", err)
+	}
+
+	for _, source := range slices.Sorted(maps.Keys(symbols)) {
+		err := q.InsertInstrumentSymbol(ctx, postgres.InsertInstrumentSymbolParams{
+			Instrument: string(code), Source: source, Symbol: symbols[source],
+		})
+		if err != nil {
+			return fmt.Errorf("insert instrument symbol: %w", err)
+		}
+	}
+
+	return nil
+}
+
+// checkSymbolSources accepts a key only when a registered source of that ID reads a symbol.
+func (m *Module) checkSymbolSources(symbols map[string]string) error {
+	for _, key := range slices.Sorted(maps.Keys(symbols)) {
+		reads := slices.ContainsFunc(m.feeds.Sources, func(src feed.Source) bool {
+			_, ok := src.(feed.SymbolOverride)
+			return ok && src.ID() == key
+		})
+		if !reads {
+			return &domain.FieldError{Field: "symbols." + key, Message: "is not a source that reads a symbol"}
+		}
+	}
+
+	return nil
+}
+
+// symbolsByInstrument returns the symbols of every instrument: instrument code, then source ID.
+func (m *Module) symbolsByInstrument(ctx context.Context) (map[string]map[string]string, error) {
+	rows, err := m.q.ListInstrumentSymbols(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("list instrument symbols: %w", err)
+	}
+
+	out := make(map[string]map[string]string)
+
+	for _, r := range rows {
+		if out[r.Instrument] == nil {
+			out[r.Instrument] = make(map[string]string)
+		}
+
+		out[r.Instrument][r.Source] = r.Symbol
+	}
+
+	return out, nil
 }
 
 func optional(s string) *string {

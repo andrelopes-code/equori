@@ -1,8 +1,10 @@
 package marketdata_test
 
 import (
+	"maps"
 	"net/http"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
@@ -220,4 +222,58 @@ func TestInstrumentSubtype(t *testing.T) {
 		body := map[string]any{"code": "BADONE", "type": "fixed_income", "scale": 2, "name": "Bad", "quote_currency": "BRL", "subtype": bad}
 		h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/instruments", body), http.StatusBadRequest, "invalid_request", "subtype")
 	}
+}
+
+// S365: symbols are stored with the instrument, replaced by an edit that carries them, kept by one
+// that omits them, and checked against the sources that read a symbol (MQ20).
+func TestInstrumentSymbols(t *testing.T) {
+	t.Parallel()
+
+	h := apitest.New(t, apitest.As(usProfile()))
+	path := "/api/v1/instruments/BRK.B"
+	symbolsOf := func(r apitest.Response) map[string]string {
+		var got struct {
+			Symbols map[string]string `json:"symbols"`
+		}
+		r.Decode(t, &got)
+
+		return got.Symbols
+	}
+	keep := map[string]any{"name": "Berkshire B", "exchange": "XNYS"}
+	want := map[string]string{"yahoo_chart": "BRK-B"}
+
+	r := h.Do(http.MethodPost, "/api/v1/instruments", map[string]any{
+		"code": "BRK.B", "type": "stock", "scale": 0, "name": "Berkshire B", "quote_currency": "USD",
+		"exchange": "XNYS", "symbols": want,
+	})
+	if r.Status != http.StatusCreated {
+		t.Fatalf("define status = %d: %s", r.Status, r.Body)
+	}
+
+	if got := symbolsOf(r); !maps.Equal(got, want) {
+		t.Fatalf("defined symbols = %v, want %v", got, want)
+	}
+
+	if got := symbolsOf(h.Do(http.MethodGet, path, nil)); !maps.Equal(got, want) {
+		t.Fatalf("read symbols = %v, want %v", got, want)
+	}
+
+	if got := symbolsOf(h.Do(http.MethodPatch, path, keep)); !maps.Equal(got, want) {
+		t.Fatalf("symbols after an edit without symbols = %v, want %v", got, want)
+	}
+
+	cleared := h.Do(http.MethodPatch, path, map[string]any{"name": "Berkshire B", "exchange": "XNYS", "symbols": map[string]string{}})
+	if cleared.Status != http.StatusOK || len(symbolsOf(cleared)) != 0 || strings.Contains(string(cleared.Body), `"symbols"`) {
+		t.Fatalf("clear status = %d: %s", cleared.Status, cleared.Body)
+	}
+
+	h.ExpectProblem(h.Do(http.MethodPatch, path, map[string]any{"name": "Berkshire B", "symbols": map[string]string{"ecb": "X"}}),
+		http.StatusUnprocessableEntity, "validation_failed", "symbols.ecb")
+
+	if got := h.Do(http.MethodGet, path, nil); strings.Contains(string(got.Body), `"symbols"`) {
+		t.Fatalf("read after the rejected edit: %s", got.Body)
+	}
+
+	h.ExpectProblem(h.Do(http.MethodPatch, path, map[string]any{"name": "Berkshire B", "symbols": map[string]string{"yahoo_chart": "BRK B"}}),
+		http.StatusBadRequest, "invalid_request", "")
 }

@@ -1,6 +1,7 @@
 package marketdata_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/andrelopes-code/equori/internal/platform/postgres/pgtest"
@@ -98,6 +99,31 @@ func TestSchemaRejectsInvalidExpectations(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			if _, err := pool.Exec(t.Context(), sql); err == nil {
+				t.Fatal("accepted")
+			}
+		})
+	}
+}
+
+// A222 MQ20.
+func TestSchemaRejectsInvalidSymbols(t *testing.T) {
+	t.Parallel()
+
+	pool := pgtest.New(t)
+	ctx := t.Context()
+
+	if _, err := pool.Exec(ctx, `INSERT INTO marketdata_instrument_symbol VALUES ('USD', 'yahoo_chart', 'USDBRL=X')`); err != nil {
+		t.Fatal(err)
+	}
+
+	for name, sql := range map[string]string{
+		"source outside the pattern": `INSERT INTO marketdata_instrument_symbol VALUES ('EUR', 'Yahoo', 'EURUSD=X')`,
+		"symbol with a space":        `INSERT INTO marketdata_instrument_symbol VALUES ('EUR', 'yahoo_chart', 'BRK B')`,
+		"symbol of 41 characters":    `INSERT INTO marketdata_instrument_symbol VALUES ('EUR', 'yahoo_chart', '` + strings.Repeat("A", 41) + `')`,
+		"unknown instrument":         `INSERT INTO marketdata_instrument_symbol VALUES ('NOPE', 'yahoo_chart', 'NOPE')`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			if _, err := pool.Exec(ctx, sql); err == nil {
 				t.Fatal("accepted")
 			}
 		})

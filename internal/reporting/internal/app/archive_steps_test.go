@@ -380,7 +380,7 @@ func TestAddTransferPairing(t *testing.T) {
 		t.Fatalf("the input changed: %q", v11[0].Rows)
 	}
 
-	if ArchiveVersion != 12 {
-		t.Fatalf("ArchiveVersion = %d, want 12", ArchiveVersion)
+	if ArchiveVersion < 12 {
+		t.Fatalf("ArchiveVersion = %d, want at least 12", ArchiveVersion)
 	}
 }

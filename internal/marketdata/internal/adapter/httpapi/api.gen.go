@@ -315,10 +315,13 @@ type Instrument struct {
 	Name     string              `json:"name"`
 
 	// QuoteCurrency Absent for currencies.
-	QuoteCurrency *string        `json:"quote_currency,omitempty"`
-	Scale         int            `json:"scale"`
-	Subtype       *string        `json:"subtype,omitempty"`
-	Type          InstrumentType `json:"type"`
+	QuoteCurrency *string `json:"quote_currency,omitempty"`
+	Scale         int     `json:"scale"`
+	Subtype       *string `json:"subtype,omitempty"`
+
+	// Symbols The symbol a source requests for the instrument, by source ID (A222 MQ20). In an edit, absent keeps the stored set and an empty object clears it.
+	Symbols *InstrumentSymbols `json:"symbols,omitempty"`
+	Type    InstrumentType     `json:"type"`
 }
 
 // InstrumentCoverage defines model for InstrumentCoverage.
@@ -342,6 +345,9 @@ type InstrumentEdit struct {
 	Exchange *string `json:"exchange,omitempty"`
 	Name     string  `json:"name"`
 	Subtype  *string `json:"subtype,omitempty"`
+
+	// Symbols The symbol a source requests for the instrument, by source ID (A222 MQ20). In an edit, absent keeps the stored set and an empty object clears it.
+	Symbols *InstrumentSymbols `json:"symbols,omitempty"`
 }
 
 // InstrumentHistory defines model for InstrumentHistory.
@@ -367,8 +373,11 @@ type InstrumentInput struct {
 	Scale         int     `json:"scale"`
 
 	// Subtype Refines the type for the owner's jurisdiction, such as cri, cdb or equity_fund (investments design 4.1).
-	Subtype *string        `json:"subtype,omitempty"`
-	Type    InstrumentType `json:"type"`
+	Subtype *string `json:"subtype,omitempty"`
+
+	// Symbols The symbol a source requests for the instrument, by source ID (A222 MQ20). In an edit, absent keeps the stored set and an empty object clears it.
+	Symbols *InstrumentSymbols `json:"symbols,omitempty"`
+	Type    InstrumentType     `json:"type"`
 }
 
 // InstrumentList defines model for InstrumentList.
@@ -385,6 +394,9 @@ type InstrumentSourceCoverage struct {
 	Last     *openapi_types.Date `json:"last"`
 	Official bool                `json:"official"`
 }
+
+// InstrumentSymbols The symbol a source requests for the instrument, by source ID (A222 MQ20). In an edit, absent keeps the stored set and an empty object clears it.
+type InstrumentSymbols map[string]string
 
 // InstrumentType defines model for InstrumentType.
 type InstrumentType string

@@ -248,7 +248,7 @@ func manageInstrument(svc Service) tool.Tool {
 				return manageInstrumentOut{}, err
 			}
 
-			inst, err = svc.EditInstrument(ctx, in.Code, in.Name, inst.Exchange, inst.Subtype)
+			inst, err = svc.EditInstrument(ctx, in.Code, in.Name, inst.Exchange, inst.Subtype, nil)
 
 			return manageInstrumentOut{Instrument: toInstrumentView(inst)}, err
 		case "record_price":

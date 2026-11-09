@@ -51,6 +51,12 @@ type MarketdataInstrument struct {
 	Subtype        *string
 }
 
+type MarketdataInstrumentSymbol struct {
+	Instrument string
+	Source     string
+	Symbol     string
+}
+
 type MarketdataPrice struct {
 	Instrument      string
 	QuoteInstrument string
