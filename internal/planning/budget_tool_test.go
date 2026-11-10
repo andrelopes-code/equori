@@ -3,6 +3,7 @@ package planning_test
 import (
 	"net/http"
 	"reflect"
+	"slices"
 	"testing"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
@@ -355,4 +356,41 @@ func TestSavePlanToolKeepsSavingsTarget(t *testing.T) {
 	if got.SavingsTargetBP == nil || *got.SavingsTargetBP != 2500 || amountOf(got.SavingsTarget) != 212500 || got.Planned.Amount != 150000 {
 		t.Fatalf("plan after the tool save = %+v", got)
 	}
+}
+
+// A187: the assistant sets the savings target of the plan; a save without it keeps the stored one.
+func TestSavePlanToolSetsSavingsTarget(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t, "2026-11-10")
+	food := f.h.Account("Food", "expense", "", nil)
+	f.savePlan("2026-11", map[string]any{"source": "fixed", "fixed": apitest.BRL(850000), "amounts": []map[string]any{}})
+
+	args := map[string]any{
+		"action": "save_plan", "month": "2026-11", "savings_target_bp": 1500,
+		"amounts": []map[string]any{{"category_id": food, "amount": "1500.00"}},
+	}
+
+	p, r := preview(t, f.h, "manage_budget_or_goal", args)
+	if r.IsError || !slices.ContainsFunc(p.Changes, func(c tool.Change) bool { return c.Field == "rate" && c.After.Text == "1500 bp of the reference" }) {
+		t.Fatalf("preview = %+v %s", p, r.Content)
+	}
+
+	toolOutput(t, f.h, "manage_budget_or_goal", args, &toolManaged{})
+
+	if got := f.plan("2026-11"); got.SavingsTargetBP == nil || *got.SavingsTargetBP != 1500 || amountOf(got.SavingsTarget) != 127500 {
+		t.Fatalf("plan after the save = %+v", got)
+	}
+
+	toolOutput(t, f.h, "manage_budget_or_goal", map[string]any{
+		"action": "save_plan", "month": "2026-11", "savings_target_bp": 0, "amounts": []map[string]any{{"category_id": food, "amount": "1400.00"}},
+	}, &toolManaged{})
+
+	if got := f.plan("2026-11"); got.SavingsTargetBP == nil || *got.SavingsTargetBP != 0 {
+		t.Fatalf("plan after a zero target = %+v", got)
+	}
+
+	args["savings_target_bp"] = 10001
+	f.h.ExpectToolError(f.h.Tool("manage_budget_or_goal", args), "validation_failed", "savings_target_bp")
+
+	f.h.ExpectToolError(f.h.Tool("manage_budget_or_goal", map[string]any{"action": "delete_budget", "budget_id": food, "savings_target_bp": 5}), "invalid_arguments", "savings_target_bp")
 }

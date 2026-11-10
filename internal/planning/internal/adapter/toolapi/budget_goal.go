@@ -33,18 +33,19 @@ type planAmountIn struct {
 }
 
 type manageBudgetOrGoalIn struct {
-	Action     manageBudgetOrGoalAction `json:"action" jsonschema:"operation to propose"`
-	BudgetID   string                   `json:"budget_id,omitzero" jsonschema:"for set_budget_amount and delete_budget: budget from get_budgets_and_goals"`
-	GoalID     string                   `json:"goal_id,omitzero" jsonschema:"for update_goal and delete_goal: goal from get_budgets_and_goals"`
-	CategoryID string                   `json:"category_id,omitzero" jsonschema:"for create_budget: expense category from list_accounts"`
-	Amount     string                   `json:"amount,omitzero" jsonschema:"for create_budget and set_budget_amount: positive monthly amount; for create_goal and update_goal: positive target; for save_plan: the fixed reference income"`
-	Month      string                   `json:"month,omitzero" jsonschema:"for create_budget, set_budget_amount and save_plan: first month the amount applies to; written YYYY-MM"`
-	Source     planSource               `json:"source,omitzero" jsonschema:"for save_plan: reference income of the plan; the stored one when absent"`
-	Amounts    []planAmountIn           `json:"amounts,omitzero" jsonschema:"for save_plan: the categories whose amount changes from month on; a version of that month is replaced"`
-	Rollover   bool                     `json:"rollover,omitzero" jsonschema:"for create_budget: the unspent amount carries to the next month"`
-	Name       string                   `json:"name,omitzero" jsonschema:"for create_goal and update_goal: goal name"`
-	DueOn      tool.Date                `json:"due_on,omitzero" jsonschema:"for create_goal and update_goal: date the target should be reached"`
-	AccountIDs []string                 `json:"account_ids,omitzero" jsonschema:"for create_goal and update_goal: balance accounts whose value counts toward the goal"`
+	Action          manageBudgetOrGoalAction `json:"action" jsonschema:"operation to propose"`
+	BudgetID        string                   `json:"budget_id,omitzero" jsonschema:"for set_budget_amount and delete_budget: budget from get_budgets_and_goals"`
+	GoalID          string                   `json:"goal_id,omitzero" jsonschema:"for update_goal and delete_goal: goal from get_budgets_and_goals"`
+	CategoryID      string                   `json:"category_id,omitzero" jsonschema:"for create_budget: expense category from list_accounts"`
+	Amount          string                   `json:"amount,omitzero" jsonschema:"for create_budget and set_budget_amount: positive monthly amount; for create_goal and update_goal: positive target; for save_plan: the fixed reference income"`
+	Month           string                   `json:"month,omitzero" jsonschema:"for create_budget, set_budget_amount and save_plan: first month the amount applies to; written YYYY-MM"`
+	Source          planSource               `json:"source,omitzero" jsonschema:"for save_plan: reference income of the plan; the stored one when absent"`
+	SavingsTargetBP tool.OptionalInt         `json:"savings_target_bp,omitzero" jsonschema:"for save_plan: share of the reference to save, in basis points from 0 to 10000; the stored one when absent"`
+	Amounts         []planAmountIn           `json:"amounts,omitzero" jsonschema:"for save_plan: the categories whose amount changes from month on; a version of that month is replaced"`
+	Rollover        bool                     `json:"rollover,omitzero" jsonschema:"for create_budget: the unspent amount carries to the next month"`
+	Name            string                   `json:"name,omitzero" jsonschema:"for create_goal and update_goal: goal name"`
+	DueOn           tool.Date                `json:"due_on,omitzero" jsonschema:"for create_goal and update_goal: date the target should be reached"`
+	AccountIDs      []string                 `json:"account_ids,omitzero" jsonschema:"for create_goal and update_goal: balance accounts whose value counts toward the goal"`
 }
 
 type manageBudgetOrGoalOut struct {
@@ -73,7 +74,7 @@ func prepareBudgetOrGoal(ctx context.Context, svc *app.Service, l Ledger, booksI
 		{"budget_id", in.BudgetID != ""}, {"goal_id", in.GoalID != ""}, {"category_id", in.CategoryID != ""},
 		{"amount", in.Amount != ""}, {"month", in.Month != ""}, {"rollover", in.Rollover}, {"name", in.Name != ""},
 		{"due_on", !in.DueOn.IsZero()}, {"account_ids", len(in.AccountIDs) > 0},
-		{"source", in.Source != ""}, {"amounts", len(in.Amounts) > 0},
+		{"source", in.Source != ""}, {"amounts", len(in.Amounts) > 0}, {"savings_target_bp", in.SavingsTargetBP.Set},
 	}
 	name := string(in.Action)
 
@@ -92,7 +93,7 @@ func prepareBudgetOrGoal(ctx context.Context, svc *app.Service, l Ledger, booksI
 	case "delete_goal":
 		err = required(name, fields, []string{"goal_id"})
 	case "save_plan":
-		err = required(name, fields, []string{"month", "amounts"}, "source", "amount")
+		err = required(name, fields, []string{"month", "amounts"}, "source", "amount", "savings_target_bp")
 	}
 
 	if err != nil {
@@ -289,6 +290,10 @@ func manageBudgetOrGoal(svc *app.Service, l Ledger, _ clock.Clock) tool.Tool {
 				pv.Changes = append(pv.Changes, tool.Change{Field: "reference", After: tool.MoneyValue(*p.amount)})
 			}
 
+			if in.SavingsTargetBP.Set {
+				pv.Changes = append(pv.Changes, tool.Change{Field: "rate", After: tool.TextValue(fmt.Sprintf("%d bp of the reference", in.SavingsTargetBP.N))})
+			}
+
 			planned := make(map[uuid.UUID]int64, len(p.plan.Rows))
 			for _, r := range p.plan.Rows {
 				planned[r.CategoryID] = r.Planned
@@ -339,7 +344,11 @@ func manageBudgetOrGoal(svc *app.Service, l Ledger, _ clock.Clock) tool.Tool {
 			}
 
 			var target *int
-			if p.plan.Reference.HasTarget {
+
+			switch {
+			case in.SavingsTargetBP.Set:
+				target = &in.SavingsTargetBP.N
+			case p.plan.Reference.HasTarget:
 				target = &p.plan.Reference.TargetBP
 			}
 

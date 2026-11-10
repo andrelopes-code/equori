@@ -5381,6 +5381,10 @@
             "fixed"
           ]
         },
+        "savings_target_bp": {
+          "type": "integer",
+          "description": "for save_plan: share of the reference to save, in basis points from 0 to 10000; the stored one when absent"
+        },
         "amounts": {
           "type": "array",
           "items": {
