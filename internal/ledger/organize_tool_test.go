@@ -240,3 +240,57 @@ func TestManageAccountsOtherUser(t *testing.T) {
 		f.h.ExpectToolError(f.h.Tool("manage_accounts_and_payees", args), "not_found", "")
 	}
 }
+
+func TestManageAccountsOpeningYieldAndLiquidity(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t, apitest.Today("2026-10-23"))
+	tl := "manage_accounts_and_payees"
+
+	type accountView struct {
+		OpenedOn              string `json:"opened_on"`
+		YieldMode             string `json:"yield_mode"`
+		ExcludedFromLiquidity bool   `json:"excluded_from_liquidity"`
+	}
+
+	var out manageOut
+	toolOutput(t, f.h, tl, map[string]any{
+		"action": "create_account", "name": "Reserve CDB", "class": "asset", "kind": "savings",
+		"opened_on": "2026-01-15", "yield_mode": "auto",
+	}, &out)
+
+	var got accountView
+	f.h.MustDo(http.MethodGet, "/api/v1/accounts/"+out.ID, nil, http.StatusOK, &got)
+
+	if got != (accountView{OpenedOn: "2026-01-15", YieldMode: "auto"}) {
+		t.Fatalf("created = %+v", got)
+	}
+
+	update := map[string]any{
+		"action": "update_account", "account_id": out.ID, "opened_on": "2025-12-01",
+		"yield_mode": "none", "excluded_from_liquidity": true,
+	}
+
+	p := previewTool(t, f.h, tl, update)
+	if len(p.Changes) != 3 || p.Changes[0].Field != "date" || p.Changes[0].Before.Date != "2026-01-15" || p.Changes[0].After.Date != "2025-12-01" ||
+		p.Changes[1].After.Text != "yield none" || p.Changes[2].After.Text != "excluded from liquidity" {
+		t.Fatalf("preview = %+v", p)
+	}
+
+	toolOutput(t, f.h, tl, update, &manageOut{})
+	f.h.MustDo(http.MethodGet, "/api/v1/accounts/"+out.ID, nil, http.StatusOK, &got)
+
+	if got != (accountView{OpenedOn: "2025-12-01", YieldMode: "none", ExcludedFromLiquidity: true}) {
+		t.Fatalf("updated = %+v", got)
+	}
+
+	toolOutput(t, f.h, tl, map[string]any{"action": "update_account", "account_id": out.ID, "excluded_from_liquidity": false}, &manageOut{})
+	f.h.MustDo(http.MethodGet, "/api/v1/accounts/"+out.ID, nil, http.StatusOK, &got)
+
+	if got.ExcludedFromLiquidity {
+		t.Errorf("excluded_from_liquidity = true after false")
+	}
+
+	f.h.ExpectToolError(f.h.Tool(tl, map[string]any{"action": "update_account", "account_id": out.ID, "opened_on": "2026-06-01"}), "validation_failed", "opened_on")
+	f.h.ExpectToolError(f.h.Tool(tl, map[string]any{"action": "close_account", "account_id": out.ID, "yield_mode": "auto"}), "invalid_arguments", "yield_mode")
+	f.h.ExpectToolError(f.h.Tool(tl, map[string]any{"action": "create_account", "name": "X", "class": "expense", "excluded_from_liquidity": true}), "invalid_arguments", "excluded_from_liquidity")
+}

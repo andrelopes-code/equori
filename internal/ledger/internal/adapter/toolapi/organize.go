@@ -30,6 +30,10 @@ func (manageAccountsAndPayeesKind) Values() []string {
 	return []string{"checking", "savings", "cash", "wallet", "benefit", "reserve", "brokerage", "receivable", "loan", "credit_card", "other"}
 }
 
+type manageAccountsAndPayeesYield string
+
+func (manageAccountsAndPayeesYield) Values() []string { return []string{"none", "auto"} }
+
 type manageAccountsAndPayeesIn struct {
 	Action        manageAccountsAndPayeesAction `json:"action" jsonschema:"operation to propose"`
 	AccountID     string                        `json:"account_id,omitzero" jsonschema:"account or category to change or merge, from list_accounts"`
@@ -44,6 +48,10 @@ type manageAccountsAndPayeesIn struct {
 	PayeeID       string                        `json:"payee_id,omitzero" jsonschema:"for rename_payee and merge_payee: payee to change, from list_payees_and_tags"`
 	Tag           string                        `json:"tag,omitzero" jsonschema:"for rename_tag, merge_tag and delete_tag: tag to change, from list_payees_and_tags"`
 	IntoTag       string                        `json:"into_tag,omitzero" jsonschema:"for merge_tag: tag that remains"`
+
+	OpenedOn              tool.Date                    `json:"opened_on,omitzero" jsonschema:"for create_account: opening date; for update_account: an earlier opening date"`
+	YieldMode             manageAccountsAndPayeesYield `json:"yield_mode,omitzero" jsonschema:"for create_account and update_account: auto books the yield of the account"`
+	ExcludedFromLiquidity tool.OptionalBool            `json:"excluded_from_liquidity,omitzero" jsonschema:"for update_account: leave the account out of the liquidity indicator"`
 }
 
 type manageAccountsAndPayeesOut struct {
@@ -212,6 +220,7 @@ func givenFields(in manageAccountsAndPayeesIn) map[string]bool {
 		"account_id": in.AccountID != "", "name": in.Name != "", "class": in.Class != "", "kind": in.Kind != "", "currency": in.Currency != "",
 		"parent_id": in.ParentID != "", "institution_id": in.InstitutionID != "", "date": !in.Date.IsZero(), "into_id": in.IntoID != "", "payee_id": in.PayeeID != "",
 		"tag": in.Tag != "", "into_tag": in.IntoTag != "",
+		"opened_on": !in.OpenedOn.IsZero(), "yield_mode": in.YieldMode != "", "excluded_from_liquidity": in.ExcludedFromLiquidity.Set,
 	}
 }
 
@@ -254,6 +263,8 @@ func (c organizeCall) planCreateAccount(ctx context.Context, pv *tool.Preview) (
 		"currency",
 		"parent_id",
 		"institution_id",
+		"opened_on",
+		"yield_mode",
 	); err != nil {
 		return nil, err
 	}
@@ -271,6 +282,7 @@ func (c organizeCall) planCreateAccount(ctx context.Context, pv *tool.Preview) (
 	a := domain.Account{
 		Name: c.in.Name, Class: domain.Class(c.in.Class), Kind: domain.Kind(c.in.Kind), Instrument: currency,
 		ParentID: c.parentID, InstitutionID: c.institutionID,
+		OpenedOn: c.in.OpenedOn.Time, YieldMode: domain.YieldMode(c.in.YieldMode),
 	}
 	pv.Target = c.in.Name
 
@@ -315,18 +327,26 @@ func (c organizeCall) describeNewAccount(
 		pv.Changes = append(pv.Changes, tool.Change{Field: "institution", After: text(name)})
 	}
 
+	if !c.in.OpenedOn.IsZero() {
+		pv.Changes = append(pv.Changes, tool.Change{Field: "date", After: tool.DateValue(c.in.OpenedOn.Time)})
+	}
+
+	if c.in.YieldMode != "" {
+		pv.Changes = append(pv.Changes, tool.Change{Field: "status", After: text("yield " + string(c.in.YieldMode))})
+	}
+
 	return nil
 }
 
 func (c organizeCall) planUpdateAccount(ctx context.Context, pv *tool.Preview) (organizeRun, error) {
 	text := tool.TextValue
 
-	if err := c.check([]string{"account_id"}, "name", "parent_id", "institution_id"); err != nil {
+	if err := c.check([]string{"account_id"}, "name", "parent_id", "institution_id", "opened_on", "yield_mode", "excluded_from_liquidity"); err != nil {
 		return nil, err
 	}
 
-	if c.in.Name == "" && c.parentID == uuid.Nil && c.institutionID == uuid.Nil {
-		return nil, tool.InvalidArgument("name", "one of name, parent_id or institution_id is required for update_account")
+	if c.in.Name == "" && c.parentID == uuid.Nil && c.institutionID == uuid.Nil && !c.settingsGiven() {
+		return nil, tool.InvalidArgument("name", "one of name, parent_id, institution_id, opened_on, yield_mode or excluded_from_liquidity is required for update_account")
 	}
 
 	a, err := c.svc.Account(ctx, c.booksID, c.accountID)
@@ -350,10 +370,45 @@ func (c organizeCall) planUpdateAccount(ctx context.Context, pv *tool.Preview) (
 		return nil, err
 	}
 
+	c.patchSettings(pv, &patch, a)
+
 	return func() (manageAccountsAndPayeesOut, error) {
 		updated, err := c.svc.UpdateAccount(ctx, c.booksID, a.ID, patch)
 		return manageAccountsAndPayeesOut{Action: c.action, ID: a.ID.String(), Name: updated.Name}, err
 	}, nil
+}
+
+func (c organizeCall) settingsGiven() bool {
+	return c.given["opened_on"] || c.given["yield_mode"] || c.given["excluded_from_liquidity"]
+}
+
+// patchSettings sets the opening date, the yield mode and the liquidity flag that the call gave.
+func (c organizeCall) patchSettings(pv *tool.Preview, patch *app.AccountPatch, a domain.Account) {
+	text := tool.TextValue
+
+	if !c.in.OpenedOn.IsZero() {
+		patch.OpenedOn = &c.in.OpenedOn.Time
+		pv.Changes = append(pv.Changes, tool.Change{Field: "date", Before: tool.DateValue(a.OpenedOn), After: tool.DateValue(c.in.OpenedOn.Time)})
+	}
+
+	if c.in.YieldMode != "" {
+		mode := domain.YieldMode(c.in.YieldMode)
+		patch.YieldMode = &mode
+		pv.Changes = append(pv.Changes, tool.Change{Field: "status", Before: text("yield " + string(a.YieldMode)), After: text("yield " + string(mode))})
+	}
+
+	if c.in.ExcludedFromLiquidity.Set {
+		patch.ExcludedFromLiquidity = &c.in.ExcludedFromLiquidity.B
+		pv.Changes = append(pv.Changes, tool.Change{Field: "status", Before: text(liquidityText(a.ExcludedFromLiquidity)), After: text(liquidityText(c.in.ExcludedFromLiquidity.B))})
+	}
+}
+
+func liquidityText(excluded bool) string {
+	if excluded {
+		return "excluded from liquidity"
+	}
+
+	return "counts in liquidity"
 }
 
 func (c organizeCall) patchParent(

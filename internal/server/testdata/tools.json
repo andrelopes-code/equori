@@ -5268,6 +5268,23 @@
         "into_tag": {
           "type": "string",
           "description": "for merge_tag: tag that remains"
+        },
+        "opened_on": {
+          "type": "string",
+          "description": "for create_account: opening date; for update_account: an earlier opening date",
+          "format": "date"
+        },
+        "yield_mode": {
+          "type": "string",
+          "description": "for create_account and update_account: auto books the yield of the account",
+          "enum": [
+            "none",
+            "auto"
+          ]
+        },
+        "excluded_from_liquidity": {
+          "type": "boolean",
+          "description": "for update_account: leave the account out of the liquidity indicator"
         }
       },
       "required": [
