@@ -27,6 +27,7 @@ type settleStatementIn struct {
 	InstallmentAmount string                `json:"installment_amount,omitzero" jsonschema:"for finance: positive amount of each installment"`
 	DueDate           tool.Date             `json:"due_date,omitzero" jsonschema:"for set_facts: due date the institution states"`
 	ClosingDate       tool.Date             `json:"closing_date,omitzero" jsonschema:"for set_facts: closing date the institution states"`
+	Minimum           string                `json:"minimum,omitzero" jsonschema:"for set_facts: minimum payment the institution states"`
 	TransactionIDs    []string              `json:"transaction_ids,omitzero" jsonschema:"for defer_postings: transactions whose card posting moves to the next statement"`
 }
 
@@ -72,7 +73,7 @@ func planSettle(ctx context.Context, svc *app.Service, booksID int64, in settleS
 
 	given := map[string]bool{
 		"statement_id": true, "date": !in.Date.IsZero(), "amount": in.Amount != "", "from_account_id": in.FromAccountID != "",
-		"installment_count": in.InstallmentCount != 0, "installment_amount": in.InstallmentAmount != "", "due_date": !in.DueDate.IsZero(), "closing_date": !in.ClosingDate.IsZero(),
+		"installment_count": in.InstallmentCount != 0, "installment_amount": in.InstallmentAmount != "", "due_date": !in.DueDate.IsZero(), "closing_date": !in.ClosingDate.IsZero(), "minimum": in.Minimum != "",
 		"transaction_ids": len(in.TransactionIDs) > 0,
 	}
 	required := []string{"statement_id"}
@@ -86,7 +87,7 @@ func planSettle(ctx context.Context, svc *app.Service, booksID int64, in settleS
 	case "confirm_amount_due":
 		required = append(required, "amount")
 	case "set_facts":
-		required, optional = append(required, "amount", "due_date"), []string{"closing_date"}
+		required, optional = append(required, "amount", "due_date"), []string{"closing_date", "minimum"}
 	case "defer_postings":
 		required = append(required, "transaction_ids")
 	}
@@ -185,6 +186,16 @@ func planSettle(ctx context.Context, svc *app.Service, booksID int64, in settleS
 		if !in.ClosingDate.IsZero() {
 			f.Closing = &in.ClosingDate.Time
 			pv.Changes = append(pv.Changes, tool.Change{Field: "date", After: tool.DateValue(in.ClosingDate.Time)})
+		}
+
+		if in.Minimum != "" {
+			minimum, err := parse("minimum", in.Minimum)
+			if err != nil {
+				return pv, nil, err
+			}
+
+			f.Minimum = &minimum
+			pv.Changes = append(pv.Changes, tool.Change{Field: "limit", After: tool.MoneyValue(minimum)})
 		}
 
 		return pv, func() (settleStatementOut, error) { return out, svc.SetOwnerFacts(ctx, booksID, id, f) }, nil

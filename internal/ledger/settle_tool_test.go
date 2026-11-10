@@ -1,6 +1,9 @@
 package ledger_test
 
 import (
+	"encoding/json"
+	"net/http"
+	"strings"
 	"testing"
 )
 
@@ -102,4 +105,30 @@ func TestSettleStatementOtherUser(t *testing.T) {
 	} {
 		c.h.ExpectToolError(c.h.Tool("settle_statement", args), "not_found", "")
 	}
+}
+
+func TestSettleStatementFactsMinimum(t *testing.T) {
+	t.Parallel()
+	c := newCardSetup(t, "2026-11-12")
+	c.purchase("2026-10-14", 150000)
+	sid := c.statementID(t, "2026-11")
+
+	facts := map[string]any{"statement_id": sid, "action": "set_facts", "amount": "1500.00", "minimum": "225.00", "due_date": "2026-11-10"}
+
+	p := previewTool(t, c.h, "settle_statement", facts)
+	if len(p.Changes) != 3 || p.Changes[2].Field != "limit" || p.Changes[2].After.Amount != "225.00" {
+		t.Fatalf("preview = %+v", p)
+	}
+
+	toolOutput(t, c.h, "settle_statement", facts, &settleOut{})
+
+	var raw json.RawMessage
+	c.h.MustDo(http.MethodGet, "/api/v1/statements/"+sid, nil, http.StatusOK, &raw)
+
+	if !strings.Contains(string(raw), `"minimum":{"amount":22500`) {
+		t.Errorf("statement = %s", raw)
+	}
+
+	c.h.ExpectToolError(c.h.Tool("settle_statement", map[string]any{"statement_id": sid, "action": "pay", "amount": "1.00", "from_account_id": c.checking, "minimum": "1.00"}), "invalid_arguments", "minimum")
+	c.h.ExpectToolError(c.h.Tool("settle_statement", map[string]any{"statement_id": sid, "action": "set_facts", "amount": "1500.00", "due_date": "2026-11-10", "minimum": "x"}), "invalid_arguments", "minimum")
 }

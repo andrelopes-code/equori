@@ -7175,6 +7175,10 @@
           "description": "for set_facts: closing date the institution states",
           "format": "date"
         },
+        "minimum": {
+          "type": "string",
+          "description": "for set_facts: minimum payment the institution states"
+        },
         "transaction_ids": {
           "type": "array",
           "items": {
