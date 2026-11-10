@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"regexp"
 
+	"github.com/andrelopes-code/equori/internal/platform/auth"
+
 	"github.com/google/jsonschema-go/jsonschema"
 )
 
@@ -38,6 +40,10 @@ type Spec struct {
 	Effect      Effect
 	// Idempotent reports that repeating a call with the same arguments changes nothing more.
 	Idempotent bool
+	// Role is the lowest book role that may call the tool; empty asks for no role beyond the one
+	// that the effect needs. A call from a lower role, or from a context without a role, is refused
+	// with book_role_required, as the HTTP operation with the same x-book-role is (ADR 029).
+	Role auth.BookRole
 }
 
 // Tool is a Spec with its schemas and its handler, with the argument and result types erased.

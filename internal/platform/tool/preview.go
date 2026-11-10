@@ -146,6 +146,11 @@ func (r *Registry) Preview(ctx context.Context, name string, args json.RawMessag
 func (r *Registry) preview(ctx context.Context, e entry, booksID int64, args json.RawMessage) (Preview, Result, string, error) {
 	name := e.tool.spec.Name
 
+	if denied := roleDenied(ctx, e.tool.spec); denied != nil {
+		res, outcome, err := failure(*denied)
+		return Preview{}, res, outcome, err
+	}
+
 	args, bad := e.tool.validate(args)
 	if bad != nil {
 		res, outcome, err := failure(*bad)

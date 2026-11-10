@@ -348,3 +348,66 @@ func TestSetValidate(t *testing.T) {
 		})
 	}
 }
+
+func TestRegistryBookRole(t *testing.T) {
+	t.Parallel()
+
+	gated := New(Spec{Name: "gated", Description: "Needs an owner.", Effect: Write, Role: auth.RoleOwner},
+		func(_ context.Context, _ int64, _ failIn) (echoOut, error) { return echoOut{Text: "ran"}, nil })
+	preview := func(_ context.Context, _ int64, _ failIn) (Preview, error) { return Preview{Action: "gated"}, nil }
+	withPreview := NewWrite(Spec{Name: "gated_preview", Description: "Needs an owner.", Effect: Write, Role: auth.RoleOwner}, preview,
+		func(_ context.Context, _ int64, _ failIn) (echoOut, error) { return echoOut{Text: "ran"}, nil })
+
+	r, err := NewRegistry(slog.New(slog.DiscardHandler), Group{Tools: []Tool{gated, withPreview}})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bg := context.Background()
+	tests := []struct {
+		name string
+		ctx  context.Context
+		want string
+	}{
+		{"owner", auth.WithIdentity(bg, 1, 7, auth.RoleOwner), ""},
+		{"write", auth.WithIdentity(bg, 1, 7, auth.RoleWrite), "book_role_required"},
+		{"read", auth.WithIdentity(bg, 1, 7, auth.RoleRead), "book_role_required"},
+		{"no role", auth.WithBooksID(bg, 7), "book_role_required"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			res, err := r.Call(tt.ctx, "gated", json.RawMessage(`{"kind":"x"}`))
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if got := errorCode(res); got != tt.want {
+				t.Errorf("call code = %q, want %q", got, tt.want)
+			}
+
+			_, res, err = r.Preview(tt.ctx, "gated_preview", json.RawMessage(`{"kind":"x"}`))
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if got := errorCode(res); got != tt.want {
+				t.Errorf("preview code = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+func errorCode(res Result) string {
+	if !res.IsError {
+		return ""
+	}
+
+	var e struct {
+		Code string `json:"code"`
+	}
+	_ = json.Unmarshal(res.Content, &e)
+
+	return e.Code
+}

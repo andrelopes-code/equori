@@ -113,6 +113,10 @@ func (r *Registry) Call(ctx context.Context, name string, args json.RawMessage) 
 func (r *Registry) call(ctx context.Context, e entry, booksID int64, args json.RawMessage) (Result, string, error) {
 	name := e.tool.spec.Name
 
+	if denied := roleDenied(ctx, e.tool.spec); denied != nil {
+		return failure(*denied)
+	}
+
 	args, bad := e.tool.validate(args)
 	if bad != nil {
 		return failure(*bad)
@@ -208,4 +212,17 @@ func (s Set) Validate(name string, args json.RawMessage) (Result, error) {
 	}
 
 	return Result{}, nil
+}
+
+// roleDenied returns the refusal of a call whose book role is below the role the tool needs.
+func roleDenied(ctx context.Context, s Spec) *Error {
+	if s.Role == "" {
+		return nil
+	}
+
+	if role, ok := auth.CurrentRole(ctx); ok && role.Allows(s.Role) {
+		return nil
+	}
+
+	return &Error{Code: "book_role_required", Detail: "this tool needs the book role " + string(s.Role)}
 }
