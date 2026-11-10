@@ -64,6 +64,9 @@ type toolSchedule struct {
 		From string `json:"from"`
 		To   string `json:"to"`
 	} `json:"pauses"`
+	MatchToleranceBP int `json:"match_tolerance_bp"`
+	GraceDays        int `json:"grace_days"`
+	MatchWindowDays  int `json:"match_window_days"`
 }
 
 type toolOccurrence struct {
@@ -494,5 +497,102 @@ func TestManageScheduleCreateInvalidPayingTransaction(t *testing.T) {
 
 	if len(none.Schedules) != 0 {
 		t.Fatalf("schedules after the errors = %+v", none.Schedules)
+	}
+}
+
+// A198 and A199 through the assistant: rename, earlier start and matching settings, where 0 is a value.
+func TestManageScheduleUpdate(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t, "2026-11-01")
+	id := f.createRentByTool()
+
+	var got toolSchedules
+	toolOutput(t, f.h, "list_schedules", map[string]any{"schedule_id": id, "from": "2026-11-01", "to": "2026-12-31"}, &got)
+
+	if s := got.Schedules[0]; s.MatchToleranceBP != 1000 || s.GraceDays != 3 || s.MatchWindowDays != 7 {
+		t.Fatalf("default matching = %+v", s)
+	}
+
+	args := map[string]any{
+		"action": "update", "schedule_id": id, "description": "Rent (apartment)",
+		"match_tolerance_bp": 500, "grace_days": 0, "match_window_days": 10,
+	}
+
+	p, r := preview(t, f.h, "manage_schedule", args)
+	if r.IsError {
+		t.Fatalf("preview = error %s", r.Content)
+	}
+
+	if p.Action != "manage_schedule.update" || p.Target != "Schedule Rent" {
+		t.Errorf("preview = %+v", p)
+	}
+
+	wantChanges := []tool.Change{
+		{Field: "description", Before: tool.TextValue("Rent"), After: tool.TextValue("Rent (apartment)")},
+		{Field: "terms", Before: tool.TextValue("amount tolerance 1000 bp, 3 grace days, 7 day window"),
+			After: tool.TextValue("amount tolerance 500 bp, 0 grace days, 10 day window")},
+	}
+	if !reflect.DeepEqual(p.Changes, wantChanges) {
+		t.Errorf("preview changes = %+v", p.Changes)
+	}
+
+	var updated toolSchedule
+	toolOutput(t, f.h, "manage_schedule", args, &updated)
+
+	if updated.Description != "Rent (apartment)" || updated.MatchToleranceBP != 500 || updated.GraceDays != 0 || updated.MatchWindowDays != 10 {
+		t.Errorf("updated = %+v", updated)
+	}
+
+	toolOutput(t, f.h, "manage_schedule", map[string]any{"action": "update", "schedule_id": id, "starts_on": "2026-09-05"}, &updated)
+	toolOutput(t, f.h, "list_schedules", map[string]any{"schedule_id": id, "from": "2026-09-01", "to": "2026-11-30"}, &got)
+
+	dates := map[string]bool{}
+	for _, o := range got.Occurrences {
+		dates[o.ExpectedOn] = true
+	}
+
+	if !dates["2026-09-05"] || !dates["2026-10-05"] || !dates["2026-11-05"] || updated.MatchToleranceBP != 500 {
+		t.Errorf("occurrences = %+v, updated = %+v", got.Occurrences, updated)
+	}
+
+	f.h.ExpectToolError(f.h.Tool("manage_schedule", map[string]any{"action": "update", "schedule_id": id, "starts_on": "2026-09-05"}), "validation_failed", "starts_on")
+}
+
+func TestManageScheduleUpdateInvalidArguments(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t, "2026-11-01")
+	id := f.createRentByTool()
+
+	tests := []struct {
+		name  string
+		args  map[string]any
+		field string
+	}{
+		{"update without a change", map[string]any{"action": "update", "schedule_id": id}, "description"},
+		{"update without schedule_id", map[string]any{"action": "update", "grace_days": 2}, "schedule_id"},
+		{"update with amount", map[string]any{"action": "update", "schedule_id": id, "amount": "1.00"}, "amount"},
+		{"pause with grace_days", map[string]any{"action": "pause", "schedule_id": id, "from": "2026-12-01", "to": "2026-12-31", "grace_days": 2}, "grace_days"},
+		{"change_terms with starts_on", map[string]any{"action": "change_terms", "schedule_id": id, "from": "2026-12-01", "amount": "1.00", "starts_on": "2026-09-05"}, "starts_on"},
+	}
+	for _, tt := range tests {
+		f.h.ExpectToolError(f.h.Tool("manage_schedule", tt.args), "invalid_arguments", tt.field)
+		_, r := preview(t, f.h, "manage_schedule", tt.args)
+		f.h.ExpectToolError(r, "invalid_arguments", tt.field)
+	}
+}
+
+func TestManageScheduleCreateWithMatching(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t, "2026-11-01")
+
+	var out toolSchedule
+	toolOutput(t, f.h, "manage_schedule", map[string]any{
+		"action": "create", "kind": "bill", "description": "Water", "account_id": f.checking, "counterpart_id": f.rent,
+		"amount": "80.00", "frequency": "monthly", "day_of_month": 10, "start": "2026-11-10",
+		"match_tolerance_bp": 0, "grace_days": 0, "match_window_days": 2,
+	}, &out)
+
+	if out.MatchToleranceBP != 0 || out.GraceDays != 0 || out.MatchWindowDays != 2 {
+		t.Errorf("created = %+v", out)
 	}
 }

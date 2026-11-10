@@ -17,7 +17,7 @@ import (
 type manageScheduleAction string
 
 func (manageScheduleAction) Values() []string {
-	return []string{"create", "change_terms", "pause", "end"}
+	return []string{"create", "update", "change_terms", "pause", "end"}
 }
 
 type manageScheduleKind string
@@ -34,9 +34,9 @@ func (manageScheduleFrequency) Values() []string {
 
 type manageScheduleIn struct {
 	Action        manageScheduleAction    `json:"action" jsonschema:"operation to propose"`
-	ScheduleID    string                  `json:"schedule_id,omitzero" jsonschema:"for change_terms, pause and end: schedule from list_schedules"`
+	ScheduleID    string                  `json:"schedule_id,omitzero" jsonschema:"for update, change_terms, pause and end: schedule from list_schedules"`
 	Kind          manageScheduleKind      `json:"kind,omitzero" jsonschema:"for create: kind of schedule"`
-	Description   string                  `json:"description,omitzero" jsonschema:"for create: description of each transaction"`
+	Description   string                  `json:"description,omitzero" jsonschema:"for create: description of each transaction; for update: new description of the schedule"`
 	AccountID     string                  `json:"account_id,omitzero" jsonschema:"for create: balance account the money leaves or reaches"`
 	CounterpartID string                  `json:"counterpart_id,omitzero" jsonschema:"for create: category, or the other account of a transfer"`
 	PayeeID       string                  `json:"payee_id,omitzero" jsonschema:"for create: payee from list_payees_and_tags"`
@@ -50,6 +50,11 @@ type manageScheduleIn struct {
 	To            tool.Date               `json:"to,omitzero" jsonschema:"for pause: last paused date"`
 
 	PaidByTransactionID string `json:"paid_by_transaction_id,omitzero" jsonschema:"for create: the transaction that paid the occurrence on start"`
+
+	StartsOn         tool.Date        `json:"starts_on,omitzero" jsonschema:"for update: earlier first date, on the rhythm of the schedule"`
+	MatchToleranceBP tool.OptionalInt `json:"match_tolerance_bp,omitzero" jsonschema:"for create and update: amount tolerance in basis points, 0 to 10000; 1000 when absent"`
+	GraceDays        tool.OptionalInt `json:"grace_days,omitzero" jsonschema:"for create and update: days past the expected date before overdue; 3 when absent"`
+	MatchWindowDays  tool.OptionalInt `json:"match_window_days,omitzero" jsonschema:"for create and update: days from the expected date a transaction may realize it, 0 to 31; 7 when absent"`
 }
 
 // schedulePlan holds what a manage_schedule call reads and validates before it previews or writes.
@@ -95,6 +100,8 @@ func prepareSchedule(ctx context.Context, svc *app.Service, l Ledger, booksID in
 		{"amount", given(in.Amount)}, {"frequency", given(string(in.Frequency))}, {"interval", in.Interval != 0},
 		{"day_of_month", in.DayOfMonth != 0}, {"start", !in.Start.IsZero()}, {"until", !in.Until.IsZero()},
 		{"from", !in.From.IsZero()}, {"to", !in.To.IsZero()}, {"paid_by_transaction_id", given(in.PaidByTransactionID)},
+		{"starts_on", !in.StartsOn.IsZero()}, {"match_tolerance_bp", in.MatchToleranceBP.Set},
+		{"grace_days", in.GraceDays.Set}, {"match_window_days", in.MatchWindowDays.Set},
 	}
 	name := string(in.Action)
 
@@ -102,7 +109,15 @@ func prepareSchedule(ctx context.Context, svc *app.Service, l Ledger, booksID in
 	switch in.Action {
 	case "create":
 		err = required(name, fields, []string{"kind", "description", "account_id", "counterpart_id", "amount", "frequency", "start"},
-			"payee_id", "interval", "day_of_month", "until", "paid_by_transaction_id")
+			"payee_id", "interval", "day_of_month", "until", "paid_by_transaction_id",
+			"match_tolerance_bp", "grace_days", "match_window_days")
+	case "update":
+		err = required(name, fields, []string{"schedule_id"},
+			"description", "starts_on", "match_tolerance_bp", "grace_days", "match_window_days")
+		if err == nil && !hasUpdateField(in) {
+			err = tool.InvalidArgument("description",
+				"one of description, starts_on, match_tolerance_bp, grace_days or match_window_days is required for update")
+		}
 	case "change_terms":
 		err = required(name, fields, []string{"schedule_id", "from"}, "amount", "frequency", "interval", "day_of_month")
 		switch {
@@ -252,7 +267,8 @@ func checkPaidBy(ctx context.Context, l Ledger, booksID int64, p *schedulePlan) 
 func manageSchedule(svc *app.Service, l Ledger, clk clock.Clock) tool.Tool {
 	return tool.NewWrite(tool.Spec{
 		Name: "manage_schedule",
-		Description: "Proposes creating a recurring schedule or changing one: new terms from a date, a pause, or an end. " +
+		Description: "Proposes creating a recurring schedule or changing one: update its description, first date or matching, " +
+			"new terms from a date, a pause, or an end. " +
 			"Use it when the user sets up or changes a recurring bill, income, subscription, transfer or saving. " +
 			"Do not use it for one occurrence: manage_occurrence does. " +
 			"The user confirms first.",
@@ -287,6 +303,8 @@ func manageSchedule(svc *app.Service, l Ledger, clk clock.Clock) tool.Tool {
 			}
 
 			return pv, nil
+		case "update":
+			pv.Target, pv.Changes = "Schedule "+p.schedule.Description, updateChanges(p.schedule, in)
 		case "change_terms":
 			last := p.schedule.Terms[len(p.schedule.Terms)-1]
 
@@ -334,8 +352,11 @@ func manageSchedule(svc *app.Service, l Ledger, clk clock.Clock) tool.Tool {
 			s, err = svc.CreateSchedule(ctx, booksID, app.ScheduleInput{
 				Kind: domain.Kind(in.Kind), AccountID: p.accountID, CounterpartID: p.counterID, PayeeID: p.payeeID,
 				Description: in.Description, Amount: *p.amount, Rule: *p.rule,
-				PaidBy: p.paidBy,
+				PaidBy: p.paidBy, ToleranceBP: optionalInt(in.MatchToleranceBP),
+				GraceDays: optionalInt(in.GraceDays), WindowDays: optionalInt(in.MatchWindowDays),
 			})
+		case "update":
+			s, err = svc.Update(ctx, booksID, p.schedule.ID, scheduleChange(in))
 		case "change_terms":
 			s, err = svc.ChangeTerms(ctx, booksID, p.schedule.ID, in.From.Time, p.amount, p.rule)
 		case "pause":
@@ -355,4 +376,71 @@ func manageSchedule(svc *app.Service, l Ledger, clk clock.Clock) tool.Tool {
 
 		return toScheduleView(s, accounts, clk.Today(ctx), nil, true)
 	})
+}
+
+func hasUpdateField(in manageScheduleIn) bool {
+	return in.Description != "" || !in.StartsOn.IsZero() ||
+		in.MatchToleranceBP.Set || in.GraceDays.Set || in.MatchWindowDays.Set
+}
+
+func scheduleChange(in manageScheduleIn) app.ScheduleChange {
+	c := app.ScheduleChange{
+		ToleranceBP: optionalInt(in.MatchToleranceBP), GraceDays: optionalInt(in.GraceDays),
+		WindowDays: optionalInt(in.MatchWindowDays),
+	}
+	if in.Description != "" {
+		c.Description = &in.Description
+	}
+
+	if !in.StartsOn.IsZero() {
+		c.StartsOn = &in.StartsOn.Time
+	}
+
+	return c
+}
+
+func optionalInt(o tool.OptionalInt) *int {
+	if !o.Set {
+		return nil
+	}
+
+	return &o.N
+}
+
+// updateChanges lists each field the update sets, with the value it replaces. The matching
+// settings share one change: Change.Field is a closed vocabulary that the chat screen labels.
+func updateChanges(s domain.Schedule, in manageScheduleIn) []tool.Change {
+	var changes []tool.Change
+	if in.Description != "" {
+		changes = append(changes, tool.Change{Field: "description",
+			Before: tool.TextValue(s.Description), After: tool.TextValue(in.Description)})
+	}
+
+	if !in.StartsOn.IsZero() {
+		changes = append(changes, tool.Change{Field: "date",
+			Before: tool.DateValue(s.Terms[0].EffectiveFrom), After: tool.DateValue(in.StartsOn.Time)})
+	}
+
+	if in.MatchToleranceBP.Set || in.GraceDays.Set || in.MatchWindowDays.Set {
+		after := s
+		after.ToleranceBP = pick(in.MatchToleranceBP, s.ToleranceBP)
+		after.GraceDays = pick(in.GraceDays, s.GraceDays)
+		after.WindowDays = pick(in.MatchWindowDays, s.WindowDays)
+		changes = append(changes, tool.Change{Field: "terms",
+			Before: tool.TextValue(describeMatching(s)), After: tool.TextValue(describeMatching(after))})
+	}
+
+	return changes
+}
+
+func pick(o tool.OptionalInt, current int) int {
+	if o.Set {
+		return o.N
+	}
+
+	return current
+}
+
+func describeMatching(s domain.Schedule) string {
+	return fmt.Sprintf("amount tolerance %d bp, %d grace days, %d day window", s.ToleranceBP, s.GraceDays, s.WindowDays)
 }

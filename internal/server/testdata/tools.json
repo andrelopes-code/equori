@@ -5009,6 +5009,18 @@
                   ],
                   "additionalProperties": false
                 }
+              },
+              "match_tolerance_bp": {
+                "type": "integer",
+                "description": "amount tolerance in basis points"
+              },
+              "grace_days": {
+                "type": "integer",
+                "description": "days past the expected date before overdue"
+              },
+              "match_window_days": {
+                "type": "integer",
+                "description": "days from the expected date a transaction may realize it"
               }
             },
             "required": [
@@ -5018,7 +5030,10 @@
               "account_name",
               "counterpart_name",
               "amount",
-              "frequency"
+              "frequency",
+              "match_tolerance_bp",
+              "grace_days",
+              "match_window_days"
             ],
             "additionalProperties": false
           }
@@ -6129,7 +6144,7 @@
   },
   {
     "name": "manage_schedule",
-    "description": "Proposes creating a recurring schedule or changing one: new terms from a date, a pause, or an end. Use it when the user sets up or changes a recurring bill, income, subscription, transfer or saving. Do not use it for one occurrence: manage_occurrence does. The user confirms first.",
+    "description": "Proposes creating a recurring schedule or changing one: update its description, first date or matching, new terms from a date, a pause, or an end. Use it when the user sets up or changes a recurring bill, income, subscription, transfer or saving. Do not use it for one occurrence: manage_occurrence does. The user confirms first.",
     "effect": "write",
     "idempotent": false,
     "input_schema": {
@@ -6140,6 +6155,7 @@
           "description": "operation to propose",
           "enum": [
             "create",
+            "update",
             "change_terms",
             "pause",
             "end"
@@ -6147,7 +6163,7 @@
         },
         "schedule_id": {
           "type": "string",
-          "description": "for change_terms, pause and end: schedule from list_schedules"
+          "description": "for update, change_terms, pause and end: schedule from list_schedules"
         },
         "kind": {
           "type": "string",
@@ -6162,7 +6178,7 @@
         },
         "description": {
           "type": "string",
-          "description": "for create: description of each transaction"
+          "description": "for create: description of each transaction; for update: new description of the schedule"
         },
         "account_id": {
           "type": "string",
@@ -6221,6 +6237,23 @@
         "paid_by_transaction_id": {
           "type": "string",
           "description": "for create: the transaction that paid the occurrence on start"
+        },
+        "starts_on": {
+          "type": "string",
+          "description": "for update: earlier first date, on the rhythm of the schedule",
+          "format": "date"
+        },
+        "match_tolerance_bp": {
+          "type": "integer",
+          "description": "for create and update: amount tolerance in basis points, 0 to 10000; 1000 when absent"
+        },
+        "grace_days": {
+          "type": "integer",
+          "description": "for create and update: days past the expected date before overdue; 3 when absent"
+        },
+        "match_window_days": {
+          "type": "integer",
+          "description": "for create and update: days from the expected date a transaction may realize it, 0 to 31; 7 when absent"
         }
       },
       "required": [
@@ -6337,6 +6370,18 @@
             ],
             "additionalProperties": false
           }
+        },
+        "match_tolerance_bp": {
+          "type": "integer",
+          "description": "amount tolerance in basis points"
+        },
+        "grace_days": {
+          "type": "integer",
+          "description": "days past the expected date before overdue"
+        },
+        "match_window_days": {
+          "type": "integer",
+          "description": "days from the expected date a transaction may realize it"
         }
       },
       "required": [
@@ -6346,7 +6391,10 @@
         "account_name",
         "counterpart_name",
         "amount",
-        "frequency"
+        "frequency",
+        "match_tolerance_bp",
+        "grace_days",
+        "match_window_days"
       ],
       "additionalProperties": false
     }

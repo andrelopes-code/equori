@@ -51,6 +51,10 @@ type scheduleView struct {
 	NextExpectedOn  tool.Date   `json:"next_expected_on,omitzero"`
 	Terms           []termsView `json:"terms,omitzero"`
 	Pauses          []pauseView `json:"pauses,omitzero"`
+
+	MatchToleranceBP int `json:"match_tolerance_bp" jsonschema:"amount tolerance in basis points"`
+	GraceDays        int `json:"grace_days" jsonschema:"days past the expected date before overdue"`
+	MatchWindowDays  int `json:"match_window_days" jsonschema:"days from the expected date a transaction may realize it"`
 }
 
 type occurrenceView struct {
@@ -109,6 +113,7 @@ func toScheduleView(s domain.Schedule, accounts map[uuid.UUID]Account, today tim
 		ScheduleID: s.ID.String(), Description: s.Description, Kind: string(s.Kind),
 		AccountName: accountName(accounts, s.AccountID), CounterpartName: accountName(accounts, s.CounterpartID),
 		Amount: t.Amount, Frequency: t.Frequency,
+		MatchToleranceBP: s.ToleranceBP, GraceDays: s.GraceDays, MatchWindowDays: s.WindowDays,
 	}
 	if d, ok := next[s.ID]; ok {
 		v.NextExpectedOn = tool.DateOf(d)
