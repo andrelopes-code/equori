@@ -34,10 +34,14 @@ type manageRuleIn struct {
 	Name                string              `json:"name,omitzero" jsonschema:"for create_rule, change_rule and accept_suggestion: rule name"`
 	DescriptionContains string              `json:"description_contains,omitzero" jsonschema:"for create_rule and change_rule: text the description must contain"`
 	CategoryID          string              `json:"category_id,omitzero" jsonschema:"for create_rule, change_rule and map_source_category: category to set"`
-	PayeeID             string              `json:"payee_id,omitzero" jsonschema:"for create_rule and change_rule: payee to set; for create_alias and change_alias: payee the alias names"`
+	PayeeID             string              `json:"payee_id,omitzero" jsonschema:"for create_rule, change_rule: payee to set; for create_alias, change_alias: the alias payee"`
 	Pattern             string              `json:"pattern,omitzero" jsonschema:"for create_alias and change_alias: text matched against imported descriptions"`
 	MatchType           manageRuleMatchType `json:"match_type,omitzero" jsonschema:"for create_alias and change_alias: how pattern matches"`
-	RuleIDs             []string            `json:"rule_ids,omitzero" jsonschema:"for reorder_rules: every rule ID in the new priority order"`
+	RuleIDs             []string            `json:"rule_ids,omitzero" jsonschema:"for reorder_rules: every rule ID in the new order"`
+	Conditions          []string            `json:"conditions,omitzero" jsonschema:"for create_rule, change_rule, with actions, not with description_contains: all must hold; each reads field operator value. Fields: description, raw_description, payee, amount, absolute_amount, account, account_kind, source, weekday, day_of_month, installment. Operators: equals, contains, starts_with, regex, between, greater_than, less_than, in_list. between and in_list join values with a bar between spaces; an amount reads 10.00 BRL"`
+	Actions             []string            `json:"actions,omitzero" jsonschema:"for create_rule, change_rule: each reads type target; add_tags takes comma-separated tags, the others an ID"`
+	Enabled             tool.OptionalBool   `json:"enabled,omitzero" jsonschema:"for create_rule, change_rule: whether it runs; true on create"`
+	StopProcessing      tool.OptionalBool   `json:"stop_processing,omitzero" jsonschema:"for create_rule, change_rule: skip later rules after it"`
 }
 
 type manageRuleOut struct {
@@ -62,20 +66,33 @@ func parseManage(in manageRuleIn) (ids, error) {
 		{"alias_id", in.AliasID != ""}, {"name", in.Name != ""}, {"description_contains", in.DescriptionContains != ""},
 		{"category_id", in.CategoryID != ""}, {"payee_id", in.PayeeID != ""}, {"pattern", in.Pattern != ""},
 		{"match_type", in.MatchType != ""}, {"rule_ids", len(in.RuleIDs) > 0},
+		{"conditions", len(in.Conditions) > 0}, {"actions", len(in.Actions) > 0},
+		{"enabled", in.Enabled.Set}, {"stop_processing", in.StopProcessing.Set},
 	}
 
 	needed := map[manageRuleAction][]string{
-		"create_rule": {"name", "description_contains", "category_id"}, "change_rule": {"rule_id", "name", "description_contains", "category_id"},
+		"create_rule": {"name"}, "change_rule": {"rule_id"},
 		"delete_rule": {"rule_id"}, "reorder_rules": {"rule_ids"}, "accept_suggestion": {"suggestion_id", "name"},
 		"dismiss_suggestion": {"suggestion_id"}, "run_rules": nil, "map_source_category": {"source_category_id", "category_id"},
 		"create_alias": {"pattern", "match_type", "payee_id"}, "change_alias": {"alias_id", "pattern", "match_type", "payee_id"}, "delete_alias": {"alias_id"},
 	}[in.Action]
-	if (in.Action == "create_rule" || in.Action == "change_rule") && in.PayeeID != "" {
-		needed = append(slices.Clone(needed), "payee_id")
+	if in.Action == "create_rule" || in.Action == "change_rule" {
+		needed = slices.Clone(needed)
+		for _, f := range fields {
+			if f.given && !slices.Contains(needed, f.name) && slices.Contains(ruleFields, f.name) {
+				needed = append(needed, f.name)
+			}
+		}
 	}
 
 	if err := required(string(in.Action), fields, needed...); err != nil {
 		return ids{}, err
+	}
+
+	if in.Action == "create_rule" || in.Action == "change_rule" {
+		if err := checkRuleForm(in); err != nil {
+			return ids{}, err
+		}
 	}
 
 	var p ids
@@ -115,7 +132,7 @@ func notFound() error { return app.ErrNotFound }
 func manageRule(svc *app.Service, names Names, today func(context.Context) time.Time) tool.Tool {
 	return tool.NewWrite(tool.Spec{
 		Name: "manage_rule",
-		Description: "Proposes a change to automatic categorization: create, change, reorder or delete a rule; accept or dismiss a suggested rule; run the rules over uncategorized transactions; map an aggregator's category; create, change or delete a payee alias. " +
+		Description: "Proposes a change to automatic categorization: create, change, reorder or delete a rule; accept or dismiss a suggested rule; run the rules; map an aggregator's category; create, change or delete a payee alias. " +
 			"Use it when the user wants future transactions categorized automatically. " +
 			"Do not use it for transactions already recorded one by one: categorize_transactions does. " +
 			"The user confirms every change.",
@@ -136,35 +153,27 @@ func manageRule(svc *app.Service, names Names, today func(context.Context) time.
 		text := tool.TextValue
 		switch in.Action {
 		case "create_rule", "change_rule":
-			rule, err := descriptionRule(in.Name, in.DescriptionContains, p.category, p.payee)
+			var old domain.Rule
+			if in.Action == "change_rule" {
+				if old, err = svc.Rule(ctx, booksID, p.rule); err != nil {
+					return pv, err
+				}
+			}
+
+			rule, err := buildRule(in, p, old)
 			if err != nil {
 				return pv, err
 			}
 
-			rule.ID = p.rule
-
-			change := []tool.Change{{Field: "name", After: text(in.Name)}, {Field: "pattern", After: text(in.DescriptionContains)}, {Field: "category", After: text(categories[p.category])}}
-			if p.payee != uuid.Nil {
-				change = append(change, tool.Change{Field: "payee", After: text(payees[p.payee])})
-			}
-
-			pv.Target = "Rule " + in.Name
-			if in.Action == "change_rule" {
-				old, err := svc.Rule(ctx, booksID, p.rule)
-				if err != nil {
-					return pv, err
-				}
-
-				rule.Enabled, rule.StopProcessing, rule.Priority = old.Enabled, old.StopProcessing, old.Priority
-				change[0].Before, change[1].Before, change[2].Before = text(old.Name), text(conditionsText(old.Conditions)), text(actionsText(old.Actions, categories, payees))
-			}
+			pv.Target = "Rule " + rule.Name
 
 			preview, err := svc.PreviewRule(ctx, booksID, rule)
 			if err != nil {
 				return pv, err
 			}
 
-			pv.Changes = append(change, tool.Change{Field: "count", After: text(fmt.Sprintf("%d transactions of the last year", preview.WouldCategorize.Count))})
+			pv.Changes = append(ruleChanges(in, p, old, rule, categories, payees),
+				tool.Change{Field: "count", After: text(fmt.Sprintf("%d transactions of the last year", preview.WouldCategorize.Count))})
 		case "delete_rule":
 			old, err := svc.Rule(ctx, booksID, p.rule)
 			if err != nil {
@@ -280,7 +289,14 @@ func manageRule(svc *app.Service, names Names, today func(context.Context) time.
 
 		switch in.Action {
 		case "create_rule", "change_rule":
-			rule, err := descriptionRule(in.Name, in.DescriptionContains, p.category, p.payee)
+			var old domain.Rule
+			if in.Action == "change_rule" {
+				if old, err = svc.Rule(ctx, booksID, p.rule); err != nil {
+					return manageRuleOut{}, err
+				}
+			}
+
+			rule, err := buildRule(in, p, old)
 			if err != nil {
 				return manageRuleOut{}, err
 			}
@@ -288,12 +304,6 @@ func manageRule(svc *app.Service, names Names, today func(context.Context) time.
 			if in.Action == "create_rule" {
 				rule, err = svc.CreateRule(ctx, booksID, rule)
 			} else {
-				old, oldErr := svc.Rule(ctx, booksID, p.rule)
-				if oldErr != nil {
-					return manageRuleOut{}, oldErr
-				}
-
-				rule.ID, rule.Enabled, rule.StopProcessing = p.rule, old.Enabled, old.StopProcessing
 				rule, err = svc.ChangeRule(ctx, booksID, rule)
 			}
 
@@ -368,3 +378,78 @@ func findSourceCategory(ctx context.Context, svc *app.Service, booksID int64, id
 }
 
 func compareIDs(a, b uuid.UUID) int { return bytes.Compare(a[:], b[:]) }
+
+// ruleChanges lists the fields a create_rule or change_rule call sets. The simple form shows the
+// text and the category it was given; the structured form shows the rendered conditions and actions.
+func ruleChanges(in manageRuleIn, p ids, old, rule domain.Rule, categories, payees map[uuid.UUID]string) []tool.Change {
+	text := tool.TextValue
+	create := in.Action == "create_rule"
+	f := formOf(in)
+
+	var changes []tool.Change
+
+	if create || in.Name != "" {
+		c := tool.Change{Field: "name", After: text(rule.Name)}
+		if !create {
+			c.Before = text(old.Name)
+		}
+
+		changes = append(changes, c)
+	}
+
+	if create || f.simple || len(in.Conditions) > 0 {
+		pattern := text(conditionsText(rule.Conditions))
+		if f.simple {
+			pattern = text(in.DescriptionContains)
+		}
+
+		c := tool.Change{Field: "pattern", After: pattern}
+		if !create {
+			c.Before = text(conditionsText(old.Conditions))
+		}
+
+		changes = append(changes, c)
+	}
+
+	if create || f.simple || len(in.Actions) > 0 {
+		category := text(actionsText(rule.Actions, categories, payees))
+		if f.simple {
+			category = text(categories[p.category])
+		}
+
+		c := tool.Change{Field: "category", After: category}
+		if !create {
+			c.Before = text(actionsText(old.Actions, categories, payees))
+		}
+
+		changes = append(changes, c)
+	}
+
+	if f.simple && in.PayeeID != "" {
+		changes = append(changes, tool.Change{Field: "payee", After: text(payees[p.payee])})
+	}
+
+	if in.Enabled.Set || in.StopProcessing.Set {
+		c := tool.Change{Field: "status", After: text(ruleStatus(rule))}
+		if !create {
+			c.Before = text(ruleStatus(old))
+		}
+
+		changes = append(changes, c)
+	}
+
+	return changes
+}
+
+func ruleStatus(r domain.Rule) string {
+	s := "disabled"
+	if r.Enabled {
+		s = "enabled"
+	}
+
+	if r.StopProcessing {
+		s += ", stops later rules"
+	}
+
+	return s
+}

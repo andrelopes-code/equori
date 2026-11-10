@@ -6033,7 +6033,7 @@
   },
   {
     "name": "manage_rule",
-    "description": "Proposes a change to automatic categorization: create, change, reorder or delete a rule; accept or dismiss a suggested rule; run the rules over uncategorized transactions; map an aggregator's category; create, change or delete a payee alias. Use it when the user wants future transactions categorized automatically. Do not use it for transactions already recorded one by one: categorize_transactions does. The user confirms every change.",
+    "description": "Proposes a change to automatic categorization: create, change, reorder or delete a rule; accept or dismiss a suggested rule; run the rules; map an aggregator's category; create, change or delete a payee alias. Use it when the user wants future transactions categorized automatically. Do not use it for transactions already recorded one by one: categorize_transactions does. The user confirms every change.",
     "effect": "destructive",
     "idempotent": false,
     "input_schema": {
@@ -6086,7 +6086,7 @@
         },
         "payee_id": {
           "type": "string",
-          "description": "for create_rule and change_rule: payee to set; for create_alias and change_alias: payee the alias names"
+          "description": "for create_rule, change_rule: payee to set; for create_alias, change_alias: the alias payee"
         },
         "pattern": {
           "type": "string",
@@ -6106,7 +6106,29 @@
           "items": {
             "type": "string"
           },
-          "description": "for reorder_rules: every rule ID in the new priority order"
+          "description": "for reorder_rules: every rule ID in the new order"
+        },
+        "conditions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "for create_rule, change_rule, with actions, not with description_contains: all must hold; each reads field operator value. Fields: description, raw_description, payee, amount, absolute_amount, account, account_kind, source, weekday, day_of_month, installment. Operators: equals, contains, starts_with, regex, between, greater_than, less_than, in_list. between and in_list join values with a bar between spaces; an amount reads 10.00 BRL"
+        },
+        "actions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "for create_rule, change_rule: each reads type target; add_tags takes comma-separated tags, the others an ID"
+        },
+        "enabled": {
+          "type": "boolean",
+          "description": "for create_rule, change_rule: whether it runs; true on create"
+        },
+        "stop_processing": {
+          "type": "boolean",
+          "description": "for create_rule, change_rule: skip later rules after it"
         }
       },
       "required": [
