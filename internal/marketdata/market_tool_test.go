@@ -2,6 +2,7 @@ package marketdata_test
 
 import (
 	"encoding/json"
+	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"testing"
@@ -367,4 +368,98 @@ func TestGetMarketDataInstrumentCoverage(t *testing.T) {
 	if s := c.Sources[1]; s.ID != "ecb" || s.Enabled || !s.Official || s.Last != "" {
 		t.Errorf("source 1 = %+v", s)
 	}
+}
+
+type instrumentFacts struct {
+	Name     string            `json:"name"`
+	Exchange string            `json:"exchange"`
+	Subtype  string            `json:"subtype"`
+	Symbols  map[string]string `json:"symbols"`
+}
+
+func TestManageInstrumentToolExchangeSubtypeSymbols(t *testing.T) {
+	t.Parallel()
+	h := apitest.New(t)
+
+	define := map[string]any{
+		"action": "define", "code": "MXRF11", "name": "Maxi Renda", "type": "reit", "quote_currency": "BRL",
+		"exchange": "BVMF", "subtype": "fii_papel", "symbols": []string{"yahoo_chart=MXRF11.SA"},
+	}
+	toolOutput(t, h, "manage_instrument", define, &struct{}{})
+
+	var got instrumentFacts
+	h.MustDo(http.MethodGet, "/api/v1/instruments/MXRF11", nil, http.StatusOK, &got)
+
+	want := instrumentFacts{Name: "Maxi Renda", Exchange: "BVMF", Subtype: "fii_papel", Symbols: map[string]string{"yahoo_chart": "MXRF11.SA"}}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("defined = %+v", got)
+	}
+
+	var view struct {
+		Instrument struct {
+			Exchange string   `json:"exchange"`
+			Symbols  []string `json:"symbols"`
+		} `json:"instrument"`
+	}
+	toolOutput(t, h, "get_market_data", map[string]any{"view": "instrument", "code": "MXRF11"}, &view)
+
+	if view.Instrument.Exchange != "BVMF" || !reflect.DeepEqual(view.Instrument.Symbols, []string{"yahoo_chart=MXRF11.SA"}) {
+		t.Errorf("view = %+v", view)
+	}
+
+	edit := map[string]any{"action": "edit", "code": "MXRF11", "subtype": "fii_tijolo"}
+
+	p, r := preview(t, h, "manage_instrument", edit)
+	if r.IsError || len(p.Changes) != 1 || p.Changes[0].Before.Text != "fii_papel" || p.Changes[0].After.Text != "fii_tijolo" {
+		t.Fatalf("preview = %+v %s", p, r.Content)
+	}
+
+	toolOutput(t, h, "manage_instrument", edit, &struct{}{})
+	h.MustDo(http.MethodGet, "/api/v1/instruments/MXRF11", nil, http.StatusOK, &got)
+
+	want.Subtype = "fii_tijolo"
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("after a subtype edit = %+v", got)
+	}
+
+	toolOutput(t, h, "manage_instrument", map[string]any{"action": "edit", "code": "MXRF11", "symbols": []string{}}, &struct{}{})
+
+	got = instrumentFacts{}
+	h.MustDo(http.MethodGet, "/api/v1/instruments/MXRF11", nil, http.StatusOK, &got)
+
+	if len(got.Symbols) != 0 || got.Name != "Maxi Renda" || got.Exchange != "BVMF" {
+		t.Fatalf("after clearing the symbols = %+v", got)
+	}
+
+	h.ExpectToolError(h.Tool("manage_instrument", map[string]any{"action": "edit", "code": "MXRF11"}), "invalid_arguments", "name")
+	h.ExpectToolError(h.Tool("manage_instrument", map[string]any{"action": "edit", "code": "MXRF11", "exchange": "B3"}), "validation_failed", "exchange")
+	h.ExpectToolError(h.Tool("manage_instrument", map[string]any{"action": "edit", "code": "MXRF11", "symbols": []string{"yahoo"}}), "invalid_arguments", "symbols")
+	h.ExpectToolError(h.Tool("manage_instrument", map[string]any{"action": "edit", "code": "MXRF11", "symbols": []string{"nowhere=X"}}), "validation_failed", "symbols.nowhere")
+	h.ExpectToolError(h.Tool("manage_instrument", map[string]any{"action": "edit", "code": "NOPE", "name": "x"}), "not_found", "")
+	h.ExpectToolError(h.Tool("manage_instrument", map[string]any{"action": "rename", "code": "MXRF11", "name": "x", "subtype": "fii"}), "invalid_arguments", "subtype")
+}
+
+func TestManageInstrumentToolDayCount(t *testing.T) {
+	t.Parallel()
+	h := apitest.New(t)
+	defineFixedIncome(t, h, "CDBXPTO")
+
+	args := map[string]any{
+		"action": "set_terms", "code": "CDBXPTO", "issued_on": "2026-01-02", "matures_on": "2028-01-02",
+		"face_value": "1000.00", "index_id": "cdi", "day_count": "act365",
+	}
+	toolOutput(t, h, "manage_instrument", args, &struct{}{})
+
+	var got struct {
+		Instrument toolInstrument `json:"instrument"`
+	}
+	toolOutput(t, h, "get_market_data", map[string]any{"view": "instrument", "code": "CDBXPTO"}, &got)
+
+	if got.Instrument.Terms.DayCount != "act365" {
+		t.Errorf("day count = %q", got.Instrument.Terms.DayCount)
+	}
+
+	args["index_id"], args["day_count"] = "", "bus252"
+	delete(args, "index_id")
+	h.ExpectToolError(h.Tool("manage_instrument", args), "validation_failed", "")
 }

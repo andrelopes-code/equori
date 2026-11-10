@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
+	"slices"
 	"time"
 
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/domain"
@@ -43,6 +45,8 @@ type instrumentView struct {
 	Name          string    `json:"name"`
 	Type          string    `json:"type"`
 	Subtype       string    `json:"subtype,omitzero"`
+	Exchange      string    `json:"exchange,omitzero"`
+	Symbols       []string  `json:"symbols,omitzero"`
 	QuoteCurrency string    `json:"quote_currency,omitzero"`
 	Scale         int       `json:"scale"`
 	Terms         termsView `json:"terms,omitzero"`
@@ -110,7 +114,12 @@ type getMarketDataOut struct {
 }
 
 func toInstrumentView(in domain.Instrument) instrumentView {
-	return instrumentView{Code: string(in.Code), Name: in.Name, Type: in.Type, Subtype: in.Subtype, QuoteCurrency: string(in.QuoteCurrency), Scale: in.Scale}
+	v := instrumentView{Code: string(in.Code), Name: in.Name, Type: in.Type, Subtype: in.Subtype, Exchange: in.Exchange, QuoteCurrency: string(in.QuoteCurrency), Scale: in.Scale}
+	for _, k := range slices.Sorted(maps.Keys(in.Symbols)) {
+		v.Symbols = append(v.Symbols, k+"="+in.Symbols[k])
+	}
+
+	return v
 }
 
 func toCoverageView(c domain.Coverage) coverageView {

@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/domain"
@@ -15,8 +17,12 @@ import (
 type manageInstrumentAction string
 
 func (manageInstrumentAction) Values() []string {
-	return []string{"define", "rename", "record_price", "set_terms", "request_history"}
+	return []string{"define", "rename", "edit", "record_price", "set_terms", "request_history"}
 }
+
+type manageInstrumentDayCount string
+
+func (manageInstrumentDayCount) Values() []string { return []string{"bus252", "act365"} }
 
 type manageInstrumentType string
 
@@ -40,6 +46,11 @@ type manageInstrumentIn struct {
 	PercentOfIndexBP int                    `json:"percent_of_index_bp,omitzero" jsonschema:"for set_terms: percentage of the index in basis points, 11000 for 110%"`
 	SpreadBP         int                    `json:"spread_bp,omitzero" jsonschema:"for set_terms: annual spread in basis points"`
 	From             tool.Date              `json:"from,omitzero" jsonschema:"for request_history: first date of the prices to load"`
+
+	Exchange string                   `json:"exchange,omitzero" jsonschema:"for define and edit: ISO 10383 market code, such as BVMF"`
+	Subtype  string                   `json:"subtype,omitzero" jsonschema:"for define and edit: refines the type, such as cdb or fii_papel"`
+	Symbols  []string                 `json:"symbols,omitzero" jsonschema:"for define and edit: source=symbol entries, such as yahoo=PETR4.SA; an empty list on edit clears them"`
+	DayCount manageInstrumentDayCount `json:"day_count,omitzero" jsonschema:"for set_terms: bus252 needs a daily index; follows the index when absent"`
 }
 
 type manageInstrumentOut struct {
@@ -62,13 +73,24 @@ func checkInstrumentArgs(in manageInstrumentIn) error {
 		{"issued_on", !in.IssuedOn.IsZero()}, {"matures_on", !in.MaturesOn.IsZero()}, {"face_value", in.FaceValue != ""},
 		{"index_id", in.IndexID != ""}, {"percent_of_index_bp", in.PercentOfIndexBP != 0}, {"spread_bp", in.SpreadBP != 0},
 		{"from", !in.From.IsZero()},
+		{"exchange", in.Exchange != ""}, {"subtype", in.Subtype != ""}, {"symbols", in.Symbols != nil}, {"day_count", in.DayCount != ""},
 	}
 
 	name := string(in.Action)
 	switch in.Action {
 	case "define":
 		// A zero scale is valid and cannot be told from an absent one.
-		return required(name, slices.DeleteFunc(slices.Clone(fields), func(f field) bool { return f.name == "scale" }), "name", "type", "quote_currency")
+		return required(name, without(fields, "scale", "exchange", "subtype", "symbols"), "name", "type", "quote_currency")
+	case "edit":
+		if err := required(name, without(fields, "name", "exchange", "subtype", "symbols")); err != nil {
+			return err
+		}
+
+		if in.Name == "" && in.Exchange == "" && in.Subtype == "" && in.Symbols == nil {
+			return tool.InvalidArgument("name", "or exchange, subtype or symbols is required for edit")
+		}
+
+		return nil
 	case "rename":
 		return required(name, fields, "name")
 	case "record_price":
@@ -77,12 +99,70 @@ func checkInstrumentArgs(in manageInstrumentIn) error {
 		return required(name, fields, "from")
 	}
 
-	return required(name, slices.DeleteFunc(slices.Clone(fields), func(f field) bool { return slices.Contains(optionalTermFields, f.name) }),
-		"issued_on", "matures_on", "face_value")
+	return required(name, without(fields, append([]string{"day_count"}, optionalTermFields...)...), "issued_on", "matures_on", "face_value")
 }
 
-func (in manageInstrumentIn) instrument() domain.Instrument {
-	return domain.Instrument{Code: money.Currency(in.Code), Type: string(in.Type), Scale: in.Scale, Name: in.Name, QuoteCurrency: money.Currency(in.QuoteCurrency)}
+// without returns fields minus the named ones, which an action takes as optional.
+func without(fields []field, names ...string) []field {
+	return slices.DeleteFunc(slices.Clone(fields), func(f field) bool { return slices.Contains(names, f.name) })
+}
+
+// symbolMap reads source=symbol entries; a nil list reads as nil and an empty one as an empty map.
+func symbolMap(entries []string) (map[string]string, error) {
+	if entries == nil {
+		return nil, nil
+	}
+
+	m := make(map[string]string, len(entries))
+
+	for _, e := range entries {
+		source, symbol, ok := strings.Cut(e, "=")
+		if !ok || source == "" || symbol == "" {
+			return nil, tool.InvalidArgument("symbols", fmt.Sprintf("entry %q must read source=symbol", e))
+		}
+
+		m[source] = symbol
+	}
+
+	return m, nil
+}
+
+func (in manageInstrumentIn) instrument() (domain.Instrument, error) {
+	symbols, err := symbolMap(in.Symbols)
+	if err != nil {
+		return domain.Instrument{}, err
+	}
+
+	return domain.Instrument{
+		Code: money.Currency(in.Code), Type: string(in.Type), Scale: in.Scale, Name: in.Name, QuoteCurrency: money.Currency(in.QuoteCurrency),
+		Exchange: in.Exchange, Subtype: in.Subtype, Symbols: symbols,
+	}, nil
+}
+
+// edited applies an edit call to inst: a field the call leaves out keeps its value.
+func (in manageInstrumentIn) edited(inst domain.Instrument) (domain.Instrument, error) {
+	symbols, err := symbolMap(in.Symbols)
+	if err != nil {
+		return domain.Instrument{}, err
+	}
+
+	if in.Name != "" {
+		inst.Name = in.Name
+	}
+
+	if in.Exchange != "" {
+		inst.Exchange = in.Exchange
+	}
+
+	if in.Subtype != "" {
+		inst.Subtype = in.Subtype
+	}
+
+	if symbols != nil {
+		inst.Symbols = symbols
+	}
+
+	return inst.Validate()
 }
 
 func parsePrice(s string) (money.Rate, error) {
@@ -113,11 +193,15 @@ func (in manageInstrumentIn) terms(
 		IssuedOn: in.IssuedOn.Time, MaturesOn: in.MaturesOn.Time, IndexID: in.IndexID, PercentOfIndexBP: in.PercentOfIndexBP,
 		SpreadBP: in.SpreadBP, DayCount: domain.DayCountAct365, FaceValue: face.Amount(),
 	}
+	if in.DayCount != "" {
+		t.DayCount = string(in.DayCount)
+	}
+
 	if t.PercentOfIndexBP == 0 {
 		t.PercentOfIndexBP = 10000
 	}
 
-	if daily.Has(t.IndexID) {
+	if in.DayCount == "" && daily.Has(t.IndexID) {
 		t.DayCount = domain.DayCountBus252
 	}
 
@@ -145,7 +229,11 @@ func manageInstrument(svc Service) tool.Tool {
 		p := tool.Preview{Action: "manage_instrument." + string(in.Action), Target: "Instrument " + in.Code}
 		switch in.Action {
 		case "define":
-			def, err := in.instrument().Validate()
+			def, err := in.instrument()
+			if err == nil {
+				def, err = def.Validate()
+			}
+
 			if err != nil {
 				return tool.Preview{}, err
 			}
@@ -164,6 +252,7 @@ func manageInstrument(svc Service) tool.Tool {
 				{Field: "instrument", After: tool.TextValue(string(def.Code))}, {Field: "name", After: tool.TextValue(def.Name)},
 				{Field: "kind", After: tool.TextValue(def.Type)}, {Field: "currency", After: tool.TextValue(string(def.QuoteCurrency))},
 			}
+			p.Changes = append(p.Changes, instrumentFactChanges(domain.Instrument{}, def)...)
 		case "rename":
 			inst, err := svc.Instrument(ctx, in.Code)
 			if err != nil {
@@ -182,6 +271,22 @@ func manageInstrument(svc Service) tool.Tool {
 			}
 
 			p.Changes = []tool.Change{{Field: "name", Before: tool.TextValue(before), After: tool.TextValue(inst.Name)}}
+		case "edit":
+			inst, err := svc.Instrument(ctx, in.Code)
+			if err != nil {
+				return tool.Preview{}, err
+			}
+
+			if inst.Type == domain.TypeCurrency {
+				return tool.Preview{}, &domain.FieldError{Field: "code", Message: "is a currency"}
+			}
+
+			after, err := in.edited(inst)
+			if err != nil {
+				return tool.Preview{}, err
+			}
+
+			p.Changes = instrumentFactChanges(inst, after)
 		case "record_price":
 			inst, err := svc.Instrument(ctx, in.Code)
 			if err != nil {
@@ -240,8 +345,32 @@ func manageInstrument(svc Service) tool.Tool {
 
 		switch in.Action {
 		case "define":
-			def, err := svc.DefineInstrument(ctx, in.instrument())
+			def, err := in.instrument()
+			if err != nil {
+				return manageInstrumentOut{}, err
+			}
+
+			def, err = svc.DefineInstrument(ctx, def)
+
 			return manageInstrumentOut{Instrument: toInstrumentView(def)}, err
+		case "edit":
+			inst, err := svc.Instrument(ctx, in.Code)
+			if err != nil {
+				return manageInstrumentOut{}, err
+			}
+
+			if inst.Type == domain.TypeCurrency {
+				return manageInstrumentOut{}, &domain.FieldError{Field: "code", Message: "is a currency"}
+			}
+
+			after, err := in.edited(inst)
+			if err != nil {
+				return manageInstrumentOut{}, err
+			}
+
+			after, err = svc.EditInstrument(ctx, in.Code, after.Name, after.Exchange, after.Subtype, in.symbolsForEdit(after))
+
+			return manageInstrumentOut{Instrument: toInstrumentView(after)}, err
 		case "rename":
 			inst, err := svc.Instrument(ctx, in.Code)
 			if err != nil {
@@ -298,4 +427,51 @@ func manageInstrument(svc Service) tool.Tool {
 
 		return manageInstrumentOut{Terms: v}, err
 	})
+}
+
+// symbolsForEdit returns the symbols to send to EditInstrument: nil keeps the stored set.
+func (in manageInstrumentIn) symbolsForEdit(after domain.Instrument) map[string]string {
+	if in.Symbols == nil {
+		return nil
+	}
+
+	if after.Symbols == nil {
+		return map[string]string{}
+	}
+
+	return after.Symbols
+}
+
+// instrumentFactChanges lists the exchange, subtype, name and symbols that differ between two states.
+func instrumentFactChanges(before, after domain.Instrument) []tool.Change {
+	var changes []tool.Change
+
+	text := tool.TextValue
+	if before.Name != after.Name && before.Name != "" {
+		changes = append(changes, tool.Change{Field: "name", Before: text(before.Name), After: text(after.Name)})
+	}
+
+	if before.Exchange != after.Exchange {
+		changes = append(changes, tool.Change{Field: "exchange", Before: text(before.Exchange), After: text(after.Exchange)})
+	}
+
+	if before.Subtype != after.Subtype {
+		changes = append(changes, tool.Change{Field: "subtype", Before: text(before.Subtype), After: text(after.Subtype)})
+	}
+
+	if !maps.Equal(before.Symbols, after.Symbols) {
+		changes = append(changes, tool.Change{Field: "symbols", Before: text(symbolsText(before.Symbols)), After: text(symbolsText(after.Symbols))})
+	}
+
+	return changes
+}
+
+// symbolsText renders symbols as source=symbol entries sorted by source.
+func symbolsText(m map[string]string) string {
+	entries := make([]string, 0, len(m))
+	for _, k := range slices.Sorted(maps.Keys(m)) {
+		entries = append(entries, k+"="+m[k])
+	}
+
+	return strings.Join(entries, ", ")
 }

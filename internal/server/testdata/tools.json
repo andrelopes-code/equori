@@ -2590,6 +2590,15 @@
               "subtype": {
                 "type": "string"
               },
+              "exchange": {
+                "type": "string"
+              },
+              "symbols": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
               "quote_currency": {
                 "type": "string"
               },
@@ -2716,6 +2725,15 @@
             },
             "subtype": {
               "type": "string"
+            },
+            "exchange": {
+              "type": "string"
+            },
+            "symbols": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             },
             "quote_currency": {
               "type": "string"
@@ -5744,6 +5762,7 @@
           "enum": [
             "define",
             "rename",
+            "edit",
             "record_price",
             "set_terms",
             "request_history"
@@ -5818,6 +5837,29 @@
           "type": "string",
           "description": "for request_history: first date of the prices to load",
           "format": "date"
+        },
+        "exchange": {
+          "type": "string",
+          "description": "for define and edit: ISO 10383 market code, such as BVMF"
+        },
+        "subtype": {
+          "type": "string",
+          "description": "for define and edit: refines the type, such as cdb or fii_papel"
+        },
+        "symbols": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "for define and edit: source=symbol entries, such as yahoo=PETR4.SA; an empty list on edit clears them"
+        },
+        "day_count": {
+          "type": "string",
+          "description": "for set_terms: bus252 needs a daily index; follows the index when absent",
+          "enum": [
+            "bus252",
+            "act365"
+          ]
         }
       },
       "required": [
@@ -5843,6 +5885,15 @@
             },
             "subtype": {
               "type": "string"
+            },
+            "exchange": {
+              "type": "string"
+            },
+            "symbols": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             },
             "quote_currency": {
               "type": "string"
