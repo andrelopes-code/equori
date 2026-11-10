@@ -5,6 +5,7 @@ type ImportCounts = components["schemas"]["ImportCounts"];
 export type SyncCountKey =
   | "created"
   | "matched"
+  | "paired"
   | "needs_review"
   | "updated"
   | "withdrawn"
@@ -13,6 +14,7 @@ export type SyncCountKey =
 const order: SyncCountKey[] = [
   "created",
   "matched",
+  "paired",
   "needs_review",
   "updated",
   "withdrawn",

@@ -10,6 +10,7 @@ import type { components } from "@/api/schema.gen";
 import { useResolveRecord } from "@/features/accounts/api";
 import { CandidateList } from "@/features/accounts/candidate-list";
 import { GroupConfirm } from "@/features/accounts/group-confirm";
+import { TransferCandidateList } from "@/features/accounts/transfer-candidate-list";
 import type { MessageKey } from "@/i18n/catalog.en";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
@@ -140,8 +141,8 @@ export function ReviewRecord({
           }}
         />
       )}
-      {record.review_reason !== "group" && (
-        <CandidateList
+      {record.review_reason === "transfer" && (
+        <TransferCandidateList
           record={record}
           scale={scale}
           pending={pending}
@@ -153,6 +154,20 @@ export function ReviewRecord({
           }}
         />
       )}
+      {record.review_reason !== "group" &&
+        record.review_reason !== "transfer" && (
+          <CandidateList
+            record={record}
+            scale={scale}
+            pending={pending}
+            onMatch={(transactionId) => {
+              run(
+                { action: "match", transaction_id: transactionId },
+                transactionId,
+              );
+            }}
+          />
+        )}
     </Stack>
   );
 }

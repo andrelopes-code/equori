@@ -35,6 +35,13 @@ describe("syncCounts", () => {
     ]);
   });
 
+  it("returns paired after matched", () => {
+    expect(syncCounts({ ...zero, matched: 1, paired: 2 })).toEqual([
+      { key: "matched", count: 1 },
+      { key: "paired", count: 2 },
+    ]);
+  });
+
   it("returns nothing when every count is zero", () => {
     expect(syncCounts(zero)).toEqual([]);
   });

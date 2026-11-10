@@ -16,6 +16,7 @@ type Account = components["schemas"]["Account"];
 const countTones = {
   created: "success",
   matched: "secondary",
+  paired: "secondary",
   needs_review: "warning",
   updated: "secondary",
   withdrawn: "secondary",
