@@ -43,3 +43,21 @@ func (d *Date) UnmarshalJSON(b []byte) error {
 
 	return nil
 }
+
+// OptionalInt is an integer that may be absent: a given 0 differs from no value.
+type OptionalInt struct {
+	N   int
+	Set bool
+}
+
+func (o OptionalInt) MarshalJSON() ([]byte, error) { return json.Marshal(o.N) }
+
+func (o *OptionalInt) UnmarshalJSON(b []byte) error {
+	if err := json.Unmarshal(b, &o.N); err != nil {
+		return err
+	}
+
+	o.Set = true
+
+	return nil
+}
