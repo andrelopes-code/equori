@@ -143,3 +143,66 @@ func TestManageCardOtherUser(t *testing.T) {
 	foreign, _, _ := otherUserCardPurchase(t, c.h)
 	c.h.ExpectToolError(c.h.Tool("manage_card", map[string]any{"account_id": foreign, "action": "add_card", "holder": "Ana", "last_four": "1234"}), "not_found", "")
 }
+
+func TestManageCardBillingCycleOptions(t *testing.T) {
+	t.Parallel()
+	c := newCardSetup(t, "2026-10-23")
+
+	cycle := map[string]any{
+		"account_id": c.card, "action": "set_billing_cycle", "effective_from": "2027-02-10", "due_day": 15,
+		"closing_mode": "before_due", "closing_days_before_due": 7, "closing_adjustment": "preceding",
+		"closing_day_assignment": "closing", "due_date_adjustment": "none",
+	}
+	toolOutput(t, c.h, "manage_card", cycle, &cardOut{})
+
+	var rules struct {
+		Items []struct {
+			EffectiveFrom        string `json:"effective_from"`
+			ClosingMode          string `json:"closing_mode"`
+			ClosingDaysBeforeDue int    `json:"closing_days_before_due"`
+			ClosingAdjustment    string `json:"closing_adjustment"`
+			ClosingDayAssignment string `json:"closing_day_assignment"`
+			DueDateAdjustment    string `json:"due_date_adjustment"`
+			DueDay               int    `json:"due_day"`
+		} `json:"items"`
+	}
+	c.h.MustDo(http.MethodGet, "/api/v1/accounts/"+c.card+"/billing-cycle-rules", nil, http.StatusOK, &rules)
+
+	last := rules.Items[len(rules.Items)-1]
+	if last.EffectiveFrom != "2027-02" || last.ClosingMode != "before_due" || last.ClosingDaysBeforeDue != 7 || last.ClosingAdjustment != "preceding" ||
+		last.ClosingDayAssignment != "closing" || last.DueDateAdjustment != "none" || last.DueDay != 15 {
+		t.Errorf("rule = %+v", last)
+	}
+
+	cycle["calendar"] = "nowhere"
+	c.h.ExpectToolError(c.h.Tool("manage_card", cycle), "validation_failed", "calendar")
+
+	c.h.ExpectToolError(c.h.Tool("manage_card", map[string]any{"account_id": c.card, "action": "set_billing_cycle", "effective_from": "2027-03-01", "due_day": 15, "closing_mode": "before_due"}), "invalid_arguments", "closing_days_before_due")
+	c.h.ExpectToolError(c.h.Tool("manage_card", map[string]any{"account_id": c.card, "action": "set_billing_cycle", "effective_from": "2027-03-01", "due_day": 15, "closing_day": 5, "closing_days_before_due": 7}), "invalid_arguments", "closing_days_before_due")
+	c.h.ExpectToolError(c.h.Tool("manage_card", map[string]any{"account_id": c.card, "action": "set_billing_cycle", "effective_from": "2027-03-01", "due_day": 15}), "invalid_arguments", "closing_day")
+}
+
+func TestManageCardForeignCharge(t *testing.T) {
+	t.Parallel()
+	c := newCardSetup(t, "2026-10-23")
+
+	for _, bp := range []int{0, 350} {
+		toolOutput(t, c.h, "manage_card", map[string]any{
+			"account_id": c.card, "action": "add_card", "holder": "Ana", "last_four": "1234", "foreign_charge_bp": bp,
+		}, &cardOut{})
+	}
+
+	var cards struct {
+		Items []struct {
+			ForeignChargeBP int `json:"foreign_charge_bp"`
+		} `json:"items"`
+	}
+	c.h.MustDo(http.MethodGet, "/api/v1/accounts/"+c.card+"/cards", nil, http.StatusOK, &cards)
+
+	if len(cards.Items) != 2 || cards.Items[0].ForeignChargeBP != 0 || cards.Items[1].ForeignChargeBP != 350 {
+		t.Fatalf("cards = %+v", cards.Items)
+	}
+
+	c.h.ExpectToolError(c.h.Tool("manage_card", map[string]any{"account_id": c.card, "action": "add_card", "holder": "Ana", "last_four": "1234", "foreign_charge_bp": 10001}), "validation_failed", "foreign_charge_bp")
+	c.h.ExpectToolError(c.h.Tool("manage_card", map[string]any{"account_id": c.card, "action": "remove_card", "card_id": c.card, "foreign_charge_bp": 5}), "invalid_arguments", "foreign_charge_bp")
+}

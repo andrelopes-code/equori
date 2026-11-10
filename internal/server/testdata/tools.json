@@ -5487,6 +5487,54 @@
         "due_day": {
           "type": "integer",
           "description": "for set_billing_cycle: day of the month the statement is due"
+        },
+        "closing_mode": {
+          "type": "string",
+          "description": "for set_billing_cycle: day closes on closing_day, before_due closes closing_days_before_due days before the due date; day when absent",
+          "enum": [
+            "day",
+            "before_due"
+          ]
+        },
+        "closing_days_before_due": {
+          "type": "integer",
+          "description": "for set_billing_cycle with closing_mode before_due: 1 to 28"
+        },
+        "closing_adjustment": {
+          "type": "string",
+          "description": "for set_billing_cycle: shift of the closing date on the calendar; none when absent",
+          "enum": [
+            "none",
+            "following",
+            "preceding",
+            "modified_following"
+          ]
+        },
+        "closing_day_assignment": {
+          "type": "string",
+          "description": "for set_billing_cycle: whether a purchase on the closing day goes to the next statement or the closing one; next when absent",
+          "enum": [
+            "next",
+            "closing"
+          ]
+        },
+        "due_date_adjustment": {
+          "type": "string",
+          "description": "for set_billing_cycle: shift of the due date on the calendar; following when absent",
+          "enum": [
+            "none",
+            "following",
+            "preceding",
+            "modified_following"
+          ]
+        },
+        "calendar": {
+          "type": "string",
+          "description": "for set_billing_cycle: business-day calendar; the region calendar when absent"
+        },
+        "foreign_charge_bp": {
+          "type": "integer",
+          "description": "for add_card: charge on purchases in another currency, in basis points from 0 to 10000"
         }
       },
       "required": [

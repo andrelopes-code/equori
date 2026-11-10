@@ -2,8 +2,10 @@ package toolapi
 
 import (
 	"context"
+	"fmt"
 	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/google/uuid"
 
@@ -18,6 +20,20 @@ func (manageCardAction) Values() []string {
 	return []string{"add_card", "edit_card", "remove_card", "set_card_active", "set_credit_limit", "set_billing_cycle"}
 }
 
+type manageCardClosingMode string
+
+func (manageCardClosingMode) Values() []string { return []string{"day", "before_due"} }
+
+type manageCardAdjustment string
+
+func (manageCardAdjustment) Values() []string {
+	return []string{"none", "following", "preceding", "modified_following"}
+}
+
+type manageCardAssignment string
+
+func (manageCardAssignment) Values() []string { return []string{"next", "closing"} }
+
 type manageCardIn struct {
 	AccountID     string           `json:"account_id" jsonschema:"credit card account, from list_accounts"`
 	Action        manageCardAction `json:"action" jsonschema:"operation to propose"`
@@ -30,6 +46,14 @@ type manageCardIn struct {
 	EffectiveFrom tool.Date        `json:"effective_from,omitzero" jsonschema:"for set_credit_limit: first date of the limit; for set_billing_cycle: any date of the first statement month it applies to"`
 	ClosingDay    int              `json:"closing_day,omitzero" jsonschema:"for set_billing_cycle: day of the month the statement closes"`
 	DueDay        int              `json:"due_day,omitzero" jsonschema:"for set_billing_cycle: day of the month the statement is due"`
+
+	ClosingMode          manageCardClosingMode `json:"closing_mode,omitzero" jsonschema:"for set_billing_cycle: day closes on closing_day, before_due closes closing_days_before_due days before the due date; day when absent"`
+	ClosingDaysBeforeDue int                   `json:"closing_days_before_due,omitzero" jsonschema:"for set_billing_cycle with closing_mode before_due: 1 to 28"`
+	ClosingAdjustment    manageCardAdjustment  `json:"closing_adjustment,omitzero" jsonschema:"for set_billing_cycle: shift of the closing date on the calendar; none when absent"`
+	ClosingDayAssignment manageCardAssignment  `json:"closing_day_assignment,omitzero" jsonschema:"for set_billing_cycle: whether a purchase on the closing day goes to the next statement or the closing one; next when absent"`
+	DueDateAdjustment    manageCardAdjustment  `json:"due_date_adjustment,omitzero" jsonschema:"for set_billing_cycle: shift of the due date on the calendar; following when absent"`
+	Calendar             string                `json:"calendar,omitzero" jsonschema:"for set_billing_cycle: business-day calendar; the region calendar when absent"`
+	ForeignChargeBP      tool.OptionalInt      `json:"foreign_charge_bp,omitzero" jsonschema:"for add_card: charge on purchases in another currency, in basis points from 0 to 10000"`
 }
 
 type manageCardOut struct {
@@ -80,12 +104,15 @@ func planCard(ctx context.Context, svc *app.Service, booksID int64, in manageCar
 	given := map[string]bool{
 		"account_id": true, "card_id": in.CardID != "", "holder": in.Holder != "", "last_four": in.LastFour != "", "virtual": in.Virtual, "active": in.Active,
 		"amount": in.Amount != "", "effective_from": !in.EffectiveFrom.IsZero(), "closing_day": in.ClosingDay != 0, "due_day": in.DueDay != 0,
+		"closing_mode": in.ClosingMode != "", "closing_days_before_due": in.ClosingDaysBeforeDue != 0,
+		"closing_adjustment": in.ClosingAdjustment != "", "closing_day_assignment": in.ClosingDayAssignment != "",
+		"due_date_adjustment": in.DueDateAdjustment != "", "calendar": in.Calendar != "", "foreign_charge_bp": in.ForeignChargeBP.Set,
 	}
 
 	var required, optional []string
 	switch in.Action {
 	case "add_card":
-		required, optional = []string{"holder", "last_four"}, []string{"virtual"}
+		required, optional = []string{"holder", "last_four"}, []string{"virtual", "foreign_charge_bp"}
 	case "edit_card":
 		required, optional = []string{"card_id"}, []string{"holder", "last_four"}
 	case "remove_card":
@@ -95,7 +122,14 @@ func planCard(ctx context.Context, svc *app.Service, booksID int64, in manageCar
 	case "set_credit_limit":
 		required = []string{"amount", "effective_from"}
 	default:
-		required = []string{"closing_day", "due_day", "effective_from"}
+		required = []string{"due_day", "effective_from"}
+		optional = []string{"closing_mode", "closing_adjustment", "closing_day_assignment", "due_date_adjustment", "calendar"}
+
+		if in.ClosingMode == "before_due" {
+			required = append(required, "closing_days_before_due")
+		} else {
+			required = append(required, "closing_day")
+		}
 	}
 
 	if err := checkFields(action, given, append([]string{"account_id"}, required...), optional...); err != nil {
@@ -122,9 +156,12 @@ func planCard(ctx context.Context, svc *app.Service, booksID int64, in manageCar
 
 		c := domain.Card{AccountID: a.ID, Holder: in.Holder, LastFour: in.LastFour, Virtual: in.Virtual}
 		pv.Changes = []tool.Change{{Field: "card", After: tool.TextValue(cardText(c))}}
+		if in.ForeignChargeBP.Set {
+			pv.Changes = append(pv.Changes, tool.Change{Field: "rate", After: tool.TextValue(fmt.Sprintf("%d bp on foreign purchases", in.ForeignChargeBP.N))})
+		}
 
 		return pv, func() (manageCardOut, error) {
-			created, err := svc.AddCard(ctx, booksID, c, nil)
+			created, err := svc.AddCard(ctx, booksID, c, optionalBP(in.ForeignChargeBP))
 			out.ID = created.ID.String()
 
 			return out, err
@@ -190,14 +227,11 @@ func planCard(ctx context.Context, svc *app.Service, booksID int64, in manageCar
 		}, nil
 	default:
 		rule := domain.BillingCycleRule{
-			EffectiveFrom: domain.MonthOf(in.EffectiveFrom.Time), ClosingMode: domain.ClosingDay, ClosingDay: in.ClosingDay, DueDay: in.DueDay,
-			Assignment: domain.AssignNext, Adjustment: "following", ClosingAdjustment: "none",
+			EffectiveFrom: domain.MonthOf(in.EffectiveFrom.Time), ClosingMode: string(in.ClosingMode), ClosingDay: in.ClosingDay,
+			ClosingDaysBeforeDue: in.ClosingDaysBeforeDue, DueDay: in.DueDay, Assignment: string(in.ClosingDayAssignment),
+			Adjustment: string(in.DueDateAdjustment), ClosingAdjustment: string(in.ClosingAdjustment), Calendar: in.Calendar,
 		}
-		pv.Changes = []tool.Change{
-			{Field: "closing_day", After: tool.TextValue(strconv.Itoa(in.ClosingDay))},
-			{Field: "due_day", After: tool.TextValue(strconv.Itoa(in.DueDay))},
-			{Field: "date", After: tool.DateValue(rule.EffectiveFrom.FirstDay())},
-		}
+		pv.Changes = cycleChanges(in, rule)
 
 		return pv, func() (manageCardOut, error) {
 			_, err := svc.AddBillingRule(ctx, booksID, a.ID, rule)
@@ -264,4 +298,44 @@ func cardOf(ctx context.Context, svc *app.Service, booksID int64, accountID, car
 	}
 
 	return domain.Card{}, app.ErrNotFound
+}
+
+func optionalBP(o tool.OptionalInt) *int {
+	if !o.Set {
+		return nil
+	}
+
+	return &o.N
+}
+
+// cycleChanges lists what a set_billing_cycle call sets. The options the call left out take the
+// defaults of the domain, so only the ones it gave are listed.
+func cycleChanges(in manageCardIn, rule domain.BillingCycleRule) []tool.Change {
+	closing := strconv.Itoa(in.ClosingDay)
+	if in.ClosingMode == "before_due" {
+		closing = fmt.Sprintf("%d days before the due date", in.ClosingDaysBeforeDue)
+	}
+
+	changes := []tool.Change{
+		{Field: "closing_day", After: tool.TextValue(closing)},
+		{Field: "due_day", After: tool.TextValue(strconv.Itoa(in.DueDay))},
+		{Field: "date", After: tool.DateValue(rule.EffectiveFrom.FirstDay())},
+	}
+
+	var options []string
+
+	for _, o := range []struct{ name, value string }{
+		{"closing adjustment", rule.ClosingAdjustment}, {"closing day assignment", rule.Assignment},
+		{"due date adjustment", rule.Adjustment}, {"calendar", rule.Calendar},
+	} {
+		if o.value != "" {
+			options = append(options, o.name+" "+o.value)
+		}
+	}
+
+	if len(options) > 0 {
+		changes = append(changes, tool.Change{Field: "terms", After: tool.TextValue(strings.Join(options, ", "))})
+	}
+
+	return changes
 }
