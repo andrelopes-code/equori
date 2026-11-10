@@ -26,6 +26,10 @@ type recordInvestmentIn struct {
 	Withheld      string               `json:"withheld,omitzero" jsonschema:"for income: positive tax withheld at source"`
 	IncomeType    string               `json:"income_type,omitzero" jsonschema:"for income: type from get_portfolio with view income_types"`
 	CategoryID    string               `json:"category_id,omitzero" jsonschema:"for income: income category from list_accounts"`
+
+	Description        string `json:"description,omitzero" jsonschema:"description of the transaction; the default one when absent"`
+	TaxesCategoryID    string `json:"taxes_category_id,omitzero" jsonschema:"for buy and sell: expense category of the taxes; the taxes account when absent"`
+	WithheldCategoryID string `json:"withheld_category_id,omitzero" jsonschema:"for income: expense category of the tax withheld; the taxes account when absent"`
 }
 
 type recordInvestmentOut struct {
@@ -72,16 +76,27 @@ func planInvestment(ctx context.Context, svc *app.Service, booksID int64, in rec
 		return pv, nil, err
 	}
 
+	taxesCategoryID, err := optionalID(in.TaxesCategoryID, "taxes_category_id")
+	if err != nil {
+		return pv, nil, err
+	}
+
+	withheldCategoryID, err := optionalID(in.WithheldCategoryID, "withheld_category_id")
+	if err != nil {
+		return pv, nil, err
+	}
+
 	given := map[string]bool{
 		"account_id": true, "cash_account_id": true, "date": !in.Date.IsZero(), "quantity": in.Quantity != "", "unit_price": in.UnitPrice != "",
 		"fees": in.Fees != "", "taxes": in.Taxes != "", "gross": in.Gross != "", "withheld": in.Withheld != "", "income_type": in.IncomeType != "", "category_id": in.CategoryID != "",
+		"description": in.Description != "", "taxes_category_id": in.TaxesCategoryID != "", "withheld_category_id": in.WithheldCategoryID != "",
 	}
 
 	base := []string{"account_id", "cash_account_id", "date"}
 	if in.Kind == "income" {
-		err = checkFields(action, given, append(base, "gross", "income_type", "category_id"), "withheld")
+		err = checkFields(action, given, append(base, "gross", "income_type", "category_id"), "withheld", "description", "withheld_category_id")
 	} else {
-		err = checkFields(action, given, append(base, "quantity", "unit_price"), "fees", "taxes")
+		err = checkFields(action, given, append(base, "quantity", "unit_price"), "fees", "taxes", "description", "taxes_category_id")
 	}
 
 	if err != nil {
@@ -134,6 +149,7 @@ func planInvestment(ctx context.Context, svc *app.Service, booksID int64, in rec
 		o := domain.IncomeOrder{
 			AccountID: security.ID, CashAccountID: cash.ID, CategoryID: categoryID, Type: domain.IncomeType(in.IncomeType),
 			Date: in.Date.Time, Gross: gross, Withheld: withheld,
+			WithheldCategoryID: withheldCategoryID, Description: in.Description,
 		}
 		amountChange(&gross)
 		amountChange(withheld)
@@ -174,6 +190,7 @@ func planInvestment(ctx context.Context, svc *app.Service, booksID int64, in rec
 	o := domain.TradeOrder{
 		AccountID: security.ID, CashAccountID: cash.ID, Side: domain.Side(in.Kind), Date: in.Date.Time,
 		Quantity: quantity, UnitPrice: price, Fees: fees, Taxes: taxes,
+		TaxesCategoryID: taxesCategoryID, Description: in.Description,
 	}
 	pv.Changes = append(pv.Changes, tool.Change{Field: "quantity", After: tool.TextValue(quantity.Decimal())}, tool.Change{Field: "price", After: tool.TextValue(price.String())})
 

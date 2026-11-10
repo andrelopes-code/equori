@@ -32,6 +32,8 @@ type recordTransactionIn struct {
 	OriginalCurrency string                        `json:"original_currency,omitzero" jsonschema:"for a foreign purchase on a card: ISO 4217 code of the charged currency"`
 	ExchangeRate     string                        `json:"exchange_rate,omitzero" jsonschema:"for a foreign purchase: decimal rate from original_currency to the card's currency, such as 5.4830"`
 	ToAmount         string                        `json:"to_amount,omitzero" jsonschema:"for an exchange between accounts in two currencies: positive amount received in the currency of to_account_id"`
+	Fee              string                        `json:"fee,omitzero" jsonschema:"for an exchange: positive fee in the base currency"`
+	FeeCategoryID    string                        `json:"fee_category_id,omitzero" jsonschema:"for an exchange: expense category of the fee; the fees account when absent"`
 }
 
 type recordTransactionOut struct {
@@ -52,6 +54,8 @@ type recordPlan struct {
 	dests    []destination
 	payeeID  uuid.UUID
 	toAmount money.Money // set for an exchange
+	fee      *money.Money
+	feeID    uuid.UUID
 	exchange bool
 	original money.Money // set for a foreign purchase
 	rate     money.Rate
@@ -114,6 +118,10 @@ func recordTransaction(svc *app.Service) tool.Tool {
 			pv.Changes = append(pv.Changes, tool.Change{Field: "amount", After: tool.MoneyValue(p.toAmount)})
 		}
 
+		if p.fee != nil {
+			pv.Changes = append(pv.Changes, tool.Change{Field: "amount", After: tool.MoneyValue(*p.fee)})
+		}
+
 		return pv, nil
 	}, func(ctx context.Context, booksID int64, in recordTransactionIn) (recordTransactionOut, error) {
 		p, err := planRecord(ctx, svc, booksID, in)
@@ -141,7 +149,7 @@ func recordTransaction(svc *app.Service) tool.Tool {
 		case p.exchange:
 			t, err = svc.Exchange(ctx, booksID, app.Exchange{
 				FromAccountID: p.from.ID, ToAccountID: p.dests[0].account.ID, Date: in.Date.Time, Description: in.Description,
-				FromAmount: p.amount, ToAmount: p.toAmount,
+				FromAmount: p.amount, ToAmount: p.toAmount, Fee: p.fee, FeeCategoryID: p.feeID,
 			})
 		default:
 			postings := []domain.Posting{{AccountID: p.from.ID, Amount: p.amount.Neg()}}
@@ -285,5 +293,47 @@ func planRecord(ctx context.Context, svc *app.Service, booksID int64, in recordT
 		p.exchange = true
 	}
 
+	if err := planExchangeFee(ctx, svc, booksID, in, &p); err != nil {
+		return p, err
+	}
+
 	return p, nil
+}
+
+// planExchangeFee reads fee and fee_category_id, which only an exchange takes.
+func planExchangeFee(ctx context.Context, svc *app.Service, booksID int64, in recordTransactionIn, p *recordPlan) error {
+	feeID, err := optionalID(in.FeeCategoryID, "fee_category_id")
+	if err != nil {
+		return err
+	}
+
+	if in.Fee == "" && feeID == uuid.Nil {
+		return nil
+	}
+
+	switch {
+	case !p.exchange:
+		return tool.InvalidArgument("fee", "is used only by an exchange between accounts in two currencies")
+	case in.Fee == "":
+		return tool.InvalidArgument("fee", "is required with fee_category_id")
+	}
+
+	settings, err := svc.Settings(ctx, booksID)
+	if err != nil {
+		return err
+	}
+
+	unit, err := svc.AmountOf(ctx, 0, settings.BaseCurrency)
+	if err != nil {
+		return err
+	}
+
+	fee, err := tool.ParsePositive("fee", in.Fee, unit)
+	if err != nil {
+		return err
+	}
+
+	p.fee, p.feeID = &fee, feeID
+
+	return nil
 }

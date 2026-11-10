@@ -6826,6 +6826,18 @@
         "category_id": {
           "type": "string",
           "description": "for income: income category from list_accounts"
+        },
+        "description": {
+          "type": "string",
+          "description": "description of the transaction; the default one when absent"
+        },
+        "taxes_category_id": {
+          "type": "string",
+          "description": "for buy and sell: expense category of the taxes; the taxes account when absent"
+        },
+        "withheld_category_id": {
+          "type": "string",
+          "description": "for income: expense category of the tax withheld; the taxes account when absent"
         }
       },
       "required": [
@@ -6930,6 +6942,14 @@
         "to_amount": {
           "type": "string",
           "description": "for an exchange between accounts in two currencies: positive amount received in the currency of to_account_id"
+        },
+        "fee": {
+          "type": "string",
+          "description": "for an exchange: positive fee in the base currency"
+        },
+        "fee_category_id": {
+          "type": "string",
+          "description": "for an exchange: expense category of the fee; the fees account when absent"
         }
       },
       "required": [

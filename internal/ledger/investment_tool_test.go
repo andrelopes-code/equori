@@ -82,3 +82,54 @@ func TestRecordInvestmentOtherUser(t *testing.T) {
 	foreign := otherUserAccount(t, f.h, "Foreign", "asset", "checking")
 	f.h.ExpectToolError(f.h.Tool("record_investment", map[string]any{"kind": "buy", "account_id": foreign, "cash_account_id": f.cash, "date": "2026-10-05", "quantity": "1", "unit_price": "1"}), "not_found", "")
 }
+
+func TestRecordInvestmentDescriptionAndTaxCategories(t *testing.T) {
+	t.Parallel()
+	f := newInvestFixture(t)
+	taxes := f.h.Account("Brokerage taxes", "expense", "", nil)
+
+	buy := map[string]any{
+		"kind": "buy", "account_id": f.mxrf11, "cash_account_id": f.cash, "date": "2026-10-05", "quantity": "10",
+		"unit_price": "10.00", "description": "Second lot",
+	}
+
+	var out investmentOut
+	toolOutput(t, f.h, "record_investment", buy, &out)
+
+	if tx := f.h.Transaction(out.TransactionID); tx.Description != "Second lot" {
+		t.Fatalf("buy description = %q", tx.Description)
+	}
+
+	sell := map[string]any{
+		"kind": "sell", "account_id": f.mxrf11, "cash_account_id": f.cash, "date": "2026-10-20", "quantity": "5",
+		"unit_price": "12.00", "taxes": "1.50", "taxes_category_id": taxes,
+	}
+	toolOutput(t, f.h, "record_investment", sell, &out)
+
+	if got := amountsByAccount(f.h.Transaction(out.TransactionID)); got[taxes] != 150 || got[f.cash] != 5850 {
+		t.Fatalf("sale postings = %v", got)
+	}
+
+	f.h.ExpectToolError(f.h.Tool("record_investment", map[string]any{
+		"kind": "buy", "account_id": f.mxrf11, "cash_account_id": f.cash, "date": "2026-10-05", "quantity": "1", "unit_price": "1", "withheld_category_id": taxes,
+	}), "invalid_arguments", "withheld_category_id")
+}
+
+func TestRecordInvestmentIncomeDescriptionAndWithheldCategory(t *testing.T) {
+	t.Parallel()
+	f := newIncomeFixture(t)
+	withheld := f.h.Account("Income tax", "expense", "", nil)
+
+	args := map[string]any{
+		"kind": "income", "account_id": f.mxrf11, "cash_account_id": f.cash, "date": "2026-10-26", "gross": "10.00",
+		"withheld": "1.50", "income_type": "dividend", "category_id": f.dividends, "withheld_category_id": withheld, "description": "October dividend",
+	}
+
+	var out investmentOut
+	toolOutput(t, f.h, "record_investment", args, &out)
+
+	tx := f.h.Transaction(out.TransactionID)
+	if got := amountsByAccount(tx); tx.Description != "October dividend" || got[withheld] != 150 || got[f.cash] != 850 {
+		t.Fatalf("income = %q %v", tx.Description, got)
+	}
+}

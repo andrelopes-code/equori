@@ -177,3 +177,28 @@ func TestRecordTransactionOtherUser(t *testing.T) {
 	args := map[string]any{"date": "2026-10-23", "description": "x", "amount": "1.00", "from_account_id": other.ID, "to_account_id": f.restaurant}
 	f.h.ExpectToolError(f.h.Tool("record_transaction", args), "not_found", "")
 }
+
+func TestRecordTransactionExchangeFee(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t, apitest.Today("2026-10-23"))
+	wise := f.h.Account("Wise USD", "asset", "checking", map[string]any{"currency": "USD"})
+	fees := f.h.Account("Exchange fees", "expense", "", nil)
+	args := map[string]any{
+		"date": "2026-10-14", "description": "USD", "amount": "5483.00", "from_account_id": f.checking, "to_account_id": wise,
+		"to_amount": "1000.00", "fee": "12.00", "fee_category_id": fees,
+	}
+
+	var out writeOut
+	toolOutput(t, f.h, "record_transaction", args, &out)
+
+	got := amountsByAccount(f.h.Transaction(out.TransactionID))
+	if got[f.checking] != -549500 || got[wise] != 100000 || got[fees] != 1200 {
+		t.Errorf("postings = %v", got)
+	}
+
+	plain := map[string]any{"date": "2026-10-14", "description": "x", "amount": "10.00", "from_account_id": f.checking, "to_account_id": f.restaurant, "fee": "1.00"}
+	f.h.ExpectToolError(f.h.Tool("record_transaction", plain), "invalid_arguments", "fee")
+
+	args["fee_category_id"] = "x"
+	f.h.ExpectToolError(f.h.Tool("record_transaction", args), "invalid_arguments", "fee_category_id")
+}
