@@ -1,6 +1,6 @@
 # Transfer pairing between own accounts (amendments A216 to A221)
 
-Issue #30. Amends A29 and A30 (P5b pairing), A148 and A149 of `2026-10-31-reliable-bank-connection-design.md`. Adds one extension point under ADR 016. Scenarios S355 to S364.
+Issue #30. Amends A29 and A30 (P5b pairing), A148 and A149 of `2026-10-31-reliable-bank-connection-design.md`. Adds one extension point under ADR 016. Scenarios S375 to S384.
 
 ## Goal
 
@@ -140,16 +140,16 @@ Setup of section 6.15 of `docs/domain/06-scenarios.md`: clock 2026-11-12; items 
 
 | ID | Scenario |
 |---|---|
-| S355 | Holder on both lines. Mercado Pago syncs a line −250.00 of 2026-11-10 with receiver the holder: it waits in review `transfer` without candidates and books nothing. Nubank then syncs +250.00 of 2026-11-10 with payer the holder: the Mercado Pago record is created, version 2 of its transaction holds Mercado Pago −250.00 and Nubank +250.00, each confirmed by its record; the Nubank record carries decision `paired`; the Nubank batch counts `paired` 1 and `created` 0; the Mercado Pago batch counts `needs_review` 0 and `created` 1. The summary of the Nubank run lists both records, the paired one with its undo. The same lines synced in the opposite order give one transaction with the same postings, the Mercado Pago record carrying `paired`. |
-| S356 | Undo. Undo of the S355 Nubank record: version 3 holds Mercado Pago −250.00 against Uncategorized expense; the Nubank record waits in review `transfer` with that transaction as its one candidate. `match` with it gives version 4, equal in postings to version 2, and no decision. A second undo returns 409 `no_decision`. After the owner edits the description of version 2, undo returns 409 `no_decision`. |
-| S357 | Card payment. A Nubank Gold payment line +784.65 of 2026-11-05 is recorded on `transfers_in_transit` (A88). A Nubank line −784.65 of 2026-11-05 without counterparty waits in review `transfer` with the card transaction as its one candidate; `match` makes that transaction hold Nubank −784.65 and the card payment. A Mercado Pago line −784.65 whose receiver is the issuer's `br_cnpj` has the same outcome. |
-| S358 | Third party. A Mercado Pago transaction +90.00 of 2026-11-08 from a line without counterparty is uncategorized. A Nubank line −90.00 of 2026-11-08 with receiver the third party is booked against Uncategorized expense, with no review. A Nubank line +60.00 of 2026-11-08 with payer the third party, against a Mercado Pago transaction −60.00 of 2026-11-05, is booked against Uncategorized income. |
-| S359 | Account not connected. A Mercado Pago line +1,200.00 of 2026-11-04 with payer the holder and no counterpart waits in review `transfer` without candidates; the next sync keeps it there. `create` books it against Uncategorized income, and `POST /transactions/{id}/transfer` to the manual account "Itaú" gives the transfer of S50. |
-| S360 | Masked counterparty. The Mercado Pago line of S355 waits in review. A Nubank line +250.00 of 2026-11-10 with payer `***.982.247-**` is booked against Uncategorized income. Reading the Mercado Pago record lists that transaction as its one candidate; `match` pairs them with no decision. |
-| S361 | No document. A Nubank transaction −40.00 of 2026-11-09 from a line without counterparty is uncategorized. A Mercado Pago line +40.00 of 2026-11-10 without counterparty waits in review `transfer` with that transaction as its one candidate. A book of region `US` gives the same outcome. |
-| S362 | Several counterparts. Two Nubank transactions −100.00 of 2026-11-09 and 2026-11-11, uncategorized. A Mercado Pago line +100.00 of 2026-11-10 with payer the holder waits in review `transfer` with both candidates; `match` with the second pairs it, and the first stays uncategorized. |
-| S363 | Precedence. A rule "description contains `Transferência recebida`" → category Gifts: the Nubank line of S355 is booked against Gifts, and the Mercado Pago record stays in review without candidates. A Nubank line that a posting of Nubank takes by zone `link` (A100) keeps the link. |
-| S364 | Bounds. Against the Mercado Pago line of S355 dated 2026-11-07, the Nubank line of 2026-11-10 is paired (3 days). Dated 2026-11-06, the Nubank line waits in review `transfer` without candidates (4 days). A Nubank line +250.01 finds no counterpart. A pending Nubank line +250.00 is not a pairing line. |
+| S375 | Holder on both lines. Mercado Pago syncs a line −250.00 of 2026-11-10 with receiver the holder: it waits in review `transfer` without candidates and books nothing. Nubank then syncs +250.00 of 2026-11-10 with payer the holder: the Mercado Pago record is created, version 2 of its transaction holds Mercado Pago −250.00 and Nubank +250.00, each confirmed by its record; the Nubank record carries decision `paired`; the Nubank batch counts `paired` 1 and `created` 0; the Mercado Pago batch counts `needs_review` 0 and `created` 1. The summary of the Nubank run lists both records, the paired one with its undo. The same lines synced in the opposite order give one transaction with the same postings, the Mercado Pago record carrying `paired`. |
+| S376 | Undo. Undo of the S375 Nubank record: version 3 holds Mercado Pago −250.00 against Uncategorized expense; the Nubank record waits in review `transfer` with that transaction as its one candidate. `match` with it gives version 4, equal in postings to version 2, and no decision. A second undo returns 409 `no_decision`. After the owner edits the description of version 2, undo returns 409 `no_decision`. |
+| S377 | Card payment. A Nubank Gold payment line +784.65 of 2026-11-05 is recorded on `transfers_in_transit` (A88). A Nubank line −784.65 of 2026-11-05 without counterparty waits in review `transfer` with the card transaction as its one candidate; `match` makes that transaction hold Nubank −784.65 and the card payment. A Mercado Pago line −784.65 whose receiver is the issuer's `br_cnpj` has the same outcome. |
+| S378 | Third party. A Mercado Pago transaction +90.00 of 2026-11-08 from a line without counterparty is uncategorized. A Nubank line −90.00 of 2026-11-08 with receiver the third party is booked against Uncategorized expense, with no review. A Nubank line +60.00 of 2026-11-08 with payer the third party, against a Mercado Pago transaction −60.00 of 2026-11-05, is booked against Uncategorized income. |
+| S379 | Account not connected. A Mercado Pago line +1,200.00 of 2026-11-04 with payer the holder and no counterpart waits in review `transfer` without candidates; the next sync keeps it there. `create` books it against Uncategorized income, and `POST /transactions/{id}/transfer` to the manual account "Itaú" gives the transfer of S50. |
+| S380 | Masked counterparty. The Mercado Pago line of S375 waits in review. A Nubank line +250.00 of 2026-11-10 with payer `***.982.247-**` is booked against Uncategorized income. Reading the Mercado Pago record lists that transaction as its one candidate; `match` pairs them with no decision. |
+| S381 | No document. A Nubank transaction −40.00 of 2026-11-09 from a line without counterparty is uncategorized. A Mercado Pago line +40.00 of 2026-11-10 without counterparty waits in review `transfer` with that transaction as its one candidate. A book of region `US` gives the same outcome. |
+| S382 | Several counterparts. Two Nubank transactions −100.00 of 2026-11-09 and 2026-11-11, uncategorized. A Mercado Pago line +100.00 of 2026-11-10 with payer the holder waits in review `transfer` with both candidates; `match` with the second pairs it, and the first stays uncategorized. |
+| S383 | Precedence. A rule "description contains `Transferência recebida`" → category Gifts: the Nubank line of S375 is booked against Gifts, and the Mercado Pago record stays in review without candidates. A Nubank line that a posting of Nubank takes by zone `link` (A100) keeps the link. |
+| S384 | Bounds. Against the Mercado Pago line of S375 dated 2026-11-07, the Nubank line of 2026-11-10 is paired (3 days). Dated 2026-11-06, the Nubank line waits in review `transfer` without candidates (4 days). A Nubank line +250.01 finds no counterpart. A pending Nubank line +250.00 is not a pairing line. |
 
 Each scenario has a test through `internal/apitest` that fails on the current code.
 
@@ -157,17 +157,17 @@ Each scenario has a test through `internal/apitest` that fails on the current co
 
 | Case | Rule | Covered by |
 |---|---|---|
-| Both lines in one sync run of one connection | The account read second finds the first account's record or transaction | S355 variant in the plan |
+| Both lines in one sync run of one connection | The account read second finds the first account's record or transaction | S375 variant in the plan |
 | Two syncs of one book at the same time | A218 rule 3 | Plan test with two concurrent syncs |
 | Counterpart record in review for another reason | Not a counterpart (A216 rule 3 names review `transfer` only) | Plan test |
-| Counterpart already a transfer, or categorized | Not a counterpart (A216 rule 2.5) | S363 |
-| Two equal transfers in the window | Each line finds two counterparts and waits in review | S362 |
-| Different currencies, or a fee changing the amount | No counterpart (A216 rule 2.2) | S364 (amount) |
+| Counterpart already a transfer, or categorized | Not a counterpart (A216 rule 2.5) | S383 |
+| Two equal transfers in the window | Each line finds two counterparts and waits in review | S382 |
+| Different currencies, or a fee changing the amount | No counterpart (A216 rule 2.2) | S384 (amount) |
 | Reconciled card credit as counterpart | The ledger refuses the transfer; not a counterpart (A216 rule 2.6) | Plan test |
 | Holder mapped after the line was imported | Counterparty not revised (A217 rule 5) | Plan test |
 | Shared book, transfer between two members' accounts | Each counterparty is the holder of the other's account: `holder` | Plan test |
 | Withdrawal of a paired line (A38) | Withdrawal applies as for any linked record; the last decision becomes `withdrawn` | Plan test |
-| Card account without holder | Card lines carry no counterparty; card payments follow the core | S357 |
+| Card account without holder | Card lines carry no counterparty; card payments follow the core | S377 |
 | File import line | Not a pairing line; S45 to S50 unchanged | Existing tests |
 
 ## Out of scope
@@ -181,7 +181,7 @@ Each scenario has a test through `internal/apitest` that fails on the current co
 
 ## Left to the plan
 
-The migration names, the ports of ingestion and ledger for the book-wide counterpart query and the undo of a pairing, the lock of A218 rule 3, the web components of review `transfer`, the guide article text, and the section S355 to S364 of `docs/domain/06-scenarios.md`.
+The migration names, the ports of ingestion and ledger for the book-wide counterpart query and the undo of a pairing, the lock of A218 rule 3, the web components of review `transfer`, the guide article text, and the section S375 to S384 of `docs/domain/06-scenarios.md`.
 
 ## Owner task
 

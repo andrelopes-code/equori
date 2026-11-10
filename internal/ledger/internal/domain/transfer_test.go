@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// S356: Unpair returns a paired transaction to the category side of its previous version.
+// S376: Unpair returns a paired transaction to the category side of its previous version.
 func TestUnpair(t *testing.T) {
 	t.Parallel()
 	f := newCategorizeFixture(t)

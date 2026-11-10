@@ -32,7 +32,7 @@ type counterpartSetup struct {
 	gifts string
 }
 
-// S355: the counterparts of a sync line follow A216 rules 2.1 to 2.6.
+// S375: the counterparts of a sync line follow A216 rules 2.1 to 2.6.
 func TestCounterparts(t *testing.T) {
 	t.Parallel()
 
@@ -83,7 +83,7 @@ func TestCounterparts(t *testing.T) {
 	}
 }
 
-// S355: pairing replaces the transit side with a posting that the record confirms.
+// S375: pairing replaces the transit side with a posting that the record confirms.
 func TestPairImported(t *testing.T) {
 	t.Parallel()
 	s := newCounterpartSetup(t)
@@ -115,7 +115,7 @@ func TestPairImported(t *testing.T) {
 	}
 }
 
-// S356: undo returns the paired transaction to the postings of the version before the pairing.
+// S376: undo returns the paired transaction to the postings of the version before the pairing.
 func TestUnpairImported(t *testing.T) {
 	t.Parallel()
 	s := newCounterpartSetup(t)
@@ -154,7 +154,7 @@ func TestUnpairImported(t *testing.T) {
 	}
 }
 
-// S356: a correction after the pairing leaves the transaction as the owner wrote it.
+// S376: a correction after the pairing leaves the transaction as the owner wrote it.
 func TestUnpairImportedAfterCorrection(t *testing.T) {
 	t.Parallel()
 	s := newCounterpartSetup(t)

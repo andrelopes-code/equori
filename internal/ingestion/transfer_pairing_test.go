@@ -146,9 +146,9 @@ func TestCounterpartyNotRevised(t *testing.T) {
 	}
 }
 
-// S358: a line whose counterparty is a third party pairs with no transaction, with or without a
+// S378: a line whose counterparty is a third party pairs with no transaction, with or without a
 // counterpart of the same amount.
-func TestS358ThirdParty(t *testing.T) {
+func TestS378ThirdParty(t *testing.T) {
 	t.Parallel()
 
 	f := newPairingFixture(t)
@@ -185,9 +185,9 @@ func TestS358ThirdParty(t *testing.T) {
 	}
 }
 
-// S361: without a document the line waits in review with the transaction as its candidate, in a
+// S381: without a document the line waits in review with the transaction as its candidate, in a
 // region that no default names as in the default one.
-func TestS361NoDocument(t *testing.T) {
+func TestS381NoDocument(t *testing.T) {
 	t.Parallel()
 
 	profiles := map[string][]apitest.Option{
@@ -214,8 +214,8 @@ func TestS361NoDocument(t *testing.T) {
 	}
 }
 
-// S362: two counterparts in the window are both candidates, by date.
-func TestS362SeveralCounterparts(t *testing.T) {
+// S382: two counterparts in the window are both candidates, by date.
+func TestS382SeveralCounterparts(t *testing.T) {
 	t.Parallel()
 
 	f := newPairingFixture(t)
@@ -252,9 +252,9 @@ func TestS362SeveralCounterparts(t *testing.T) {
 	}
 }
 
-// S357: a line that looks like the payment of a card bill lists the card transaction and
+// S377: a line that looks like the payment of a card bill lists the card transaction and
 // match makes it the payment from the account; the issuer's CNPJ as receiver gives the same.
-func TestS357CardPayment(t *testing.T) {
+func TestS377CardPayment(t *testing.T) {
 	t.Parallel()
 
 	issuer := &pluggy.DocumentNumber{Type: "CNPJ", Value: "18.236.120/0001-58"}
@@ -322,9 +322,9 @@ func TestS357CardPayment(t *testing.T) {
 	}
 }
 
-// S360: a masked document is no holder, so the line waits in review; the owner pairs it with the
+// S380: a masked document is no holder, so the line waits in review; the owner pairs it with the
 // transaction of the other line, which the review lists.
-func TestS360MaskedCounterparty(t *testing.T) {
+func TestS380MaskedCounterparty(t *testing.T) {
 	t.Parallel()
 
 	f := newPairingFixture(t)
@@ -407,8 +407,8 @@ func TestMatchRefusedCandidate(t *testing.T) {
 	}
 }
 
-// S363: a rule of the owner and a posting that takes the line by zone link come before pairing.
-func TestS363Precedence(t *testing.T) {
+// S383: a rule of the owner and a posting that takes the line by zone link come before pairing.
+func TestS383Precedence(t *testing.T) {
 	t.Parallel()
 
 	f := newPairingFixture(t)
@@ -450,9 +450,9 @@ func TestS363Precedence(t *testing.T) {
 	}
 }
 
-// S364: a counterpart 3 days away pairs, 4 days away or of another amount waits in review, and a
+// S384: a counterpart 3 days away pairs, 4 days away or of another amount waits in review, and a
 // pending line is no record.
-func TestS364Bounds(t *testing.T) {
+func TestS384Bounds(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -534,9 +534,9 @@ func TestPairWithTransaction(t *testing.T) {
 	}
 }
 
-// S355: the line that waits in review is created and the later line pairs with its transaction, in
+// S375: the line that waits in review is created and the later line pairs with its transaction, in
 // both orders; a third sync of both items changes nothing (D4).
-func TestS355HolderOnBothLines(t *testing.T) {
+func TestS375HolderOnBothLines(t *testing.T) {
 	t.Parallel()
 
 	orders := map[string]bool{"mercado pago first": true, "nubank first": false}
@@ -628,10 +628,10 @@ func TestS355HolderOnBothLines(t *testing.T) {
 	}
 }
 
-// S356 (A220): undo returns the transaction to its version before the pairing, as a new version;
+// S376 (A220): undo returns the transaction to its version before the pairing, as a new version;
 // the record waits in review with the transaction as its candidate. A correction after the
 // pairing leaves the transaction as the owner wrote it.
-func TestS356Undo(t *testing.T) {
+func TestS376Undo(t *testing.T) {
 	t.Parallel()
 
 	t.Run("undo and match again", func(t *testing.T) {
@@ -727,9 +727,9 @@ func TestWithdrawnPairedLine(t *testing.T) {
 	}
 }
 
-// S359: a line that names the holder and finds no counterpart stays in review; the owner books it
+// S379: a line that names the holder and finds no counterpart stays in review; the owner books it
 // and turns it into a transfer to a manual account (S50).
-func TestS359AccountNotConnected(t *testing.T) {
+func TestS379AccountNotConnected(t *testing.T) {
 	t.Parallel()
 
 	f := newPairingFixture(t)
@@ -1080,7 +1080,7 @@ func (f pairingFixture) legs(tx string) map[string]int64 {
 	return out
 }
 
-// pairedFixture runs S355 with the Mercado Pago line first: the Nubank record nu-in is paired
+// pairedFixture runs S375 with the Mercado Pago line first: the Nubank record nu-in is paired
 // with the transaction of mp-out, which the pairing leaves at version 2.
 func pairedFixture(t *testing.T) (pairingFixture, string) {
 	t.Helper()
