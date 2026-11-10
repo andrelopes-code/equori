@@ -97,3 +97,49 @@ func TestOptionalIntJSON(t *testing.T) {
 		t.Errorf("schema = %s, %v", s.json, s.err)
 	}
 }
+
+func TestOptionalBoolJSON(t *testing.T) {
+	t.Parallel()
+	type wrapper struct {
+		B OptionalBool `json:"b,omitzero"`
+	}
+
+	tests := []struct {
+		name    string
+		in      string
+		wantSet bool
+		wantB   bool
+		wantOut string
+	}{
+		{"absent", `{}`, false, false, `{}`},
+		{"false", `{"b":false}`, true, false, `{"b":false}`},
+		{"true", `{"b":true}`, true, true, `{"b":true}`},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			var w wrapper
+			if err := json.Unmarshal([]byte(tt.in), &w); err != nil {
+				t.Fatal(err)
+			}
+
+			if w.B.Set != tt.wantSet || w.B.B != tt.wantB {
+				t.Errorf("decoded = %+v, want set %v b %v", w.B, tt.wantSet, tt.wantB)
+			}
+
+			b, err := json.Marshal(w)
+			if err != nil || string(b) != tt.wantOut {
+				t.Errorf("encoded = %s, %v; want %s", b, err, tt.wantOut)
+			}
+		})
+	}
+
+	if err := json.Unmarshal([]byte(`{"b":"x"}`), &wrapper{}); err == nil {
+		t.Error("unmarshal of a string succeeded")
+	}
+
+	if s := schemaFor[wrapper](); s.err != nil || !strings.Contains(string(s.json), `"b":{"type":"boolean"}`) {
+		t.Errorf("schema = %s, %v", s.json, s.err)
+	}
+}

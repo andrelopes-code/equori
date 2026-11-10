@@ -20,9 +20,10 @@ var keywords = map[string]bool{
 }
 
 var (
-	dateType        = reflect.TypeFor[Date]()
-	optionalIntType = reflect.TypeFor[OptionalInt]()
-	enumeratedType  = reflect.TypeFor[Enumerated]()
+	dateType         = reflect.TypeFor[Date]()
+	optionalIntType  = reflect.TypeFor[OptionalInt]()
+	optionalBoolType = reflect.TypeFor[OptionalBool]()
+	enumeratedType   = reflect.TypeFor[Enumerated]()
 )
 
 // schemas holds one inferred schema per type for the process: inference depends on the type
@@ -102,6 +103,9 @@ func collectTypes(t reflect.Type, types map[reflect.Type]*jsonschema.Schema, see
 		return nil
 	case t == optionalIntType:
 		types[t] = &jsonschema.Schema{Type: "integer"}
+		return nil
+	case t == optionalBoolType:
+		types[t] = &jsonschema.Schema{Type: "boolean"}
 		return nil
 	case t.Kind() == reflect.String && t.Implements(enumeratedType):
 		values := reflect.Zero(t).Interface().(Enumerated).Values()

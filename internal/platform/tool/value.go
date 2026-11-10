@@ -61,3 +61,21 @@ func (o *OptionalInt) UnmarshalJSON(b []byte) error {
 
 	return nil
 }
+
+// OptionalBool is a boolean that may be absent: a given false differs from no value.
+type OptionalBool struct {
+	B   bool
+	Set bool
+}
+
+func (o OptionalBool) MarshalJSON() ([]byte, error) { return json.Marshal(o.B) }
+
+func (o *OptionalBool) UnmarshalJSON(b []byte) error {
+	if err := json.Unmarshal(b, &o.B); err != nil {
+		return err
+	}
+
+	o.Set = true
+
+	return nil
+}
