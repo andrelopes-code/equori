@@ -32,7 +32,6 @@ export function RangeChange({ stats, quote, loading }: RangeChangeProps) {
   return (
     <StatCard
       size="lg"
-      fill="subtle"
       goodWhen="up"
       formatOptions={{ minimumFractionDigits: 2, maximumFractionDigits: 2 }}
       className={styles.change}
