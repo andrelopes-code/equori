@@ -1,6 +1,6 @@
 # Human navigability of the code base
 
-Status: draft. Scope: structure, documentation and file layout. No behavior changes.
+Status: draft. Scope: structure, documentation and file layout. No behavior changes. Plan: `docs/superpowers/plans/2026-11-11-human-navigability.md`.
 
 ## Problem
 
@@ -27,10 +27,12 @@ A contributor who opens the repository cannot locate the file that serves a scre
 2. A contributor adds an endpoint by following one checklist that names each file and command.
 3. Every module follows one layout, or its deviation is written in the module README.
 4. A directory holds at most 40 hand-written files, tests included.
+5. Hand-written Go code sits at most 4 levels under `internal/`. A hand-written non-test file holds at most 400 lines.
+6. The contract and the queries of a module sit inside the module directory.
 
 ## Non-goals
 
-- No change to the module boundaries, the dependency rules or the generators of ADR 002 and ADR 028.
+- No change to the module boundaries, the dependency rules or the generators of ADR 002 and ADR 028. The enforcement of isolation between modules moves from the nested `internal/` directory to `depguard` (ADR 033).
 - No change to behavior, API contract, SQL schema or user interface.
 - No removal of generated code.
 
@@ -38,28 +40,22 @@ A contributor who opens the repository cannot locate the file that serves a scre
 
 | ID | Decision |
 |---|---|
-| H1 | The navigation map is `docs/contributing/map.md`. It holds the hop table of an endpoint, the checklist to add an endpoint, the module table and the web table from screen to file. |
-| H2 | Each module root holds a `README.md` of at most 30 lines: purpose, owned table prefix, OpenAPI tag, the layout and its deviations, the entry file of each layer. |
-| H3 | Each web feature holds a `README.md` of at most 30 lines: route, entry component, query file, owned endpoints, guide topic. |
-| H4 | Web features above 40 files are split into subfolders named after a sub-screen. The `index.ts` of the feature keeps its exports. |
-| H5 | `repository.go` and any hand-written Go file above 800 lines are split by topic, one file per concept. Package, names and signatures stay. |
-| H6 | `marketdata` and `reporting` are aligned to the layout of ADR 002, or their deviation is recorded in an amendment of ADR 002 and in their README. The choice follows a size spike. |
-| H7 | `api/openapi.yaml` is split into one file per module, bundled before generation, if a spike shows that `oapi-codegen` and `openapi-typescript` produce byte-identical output from the bundle. |
-| H8 | Identifiers private to a plan (`A222`, `MQ27`, `S366`, `D12`) in comments and doc comments are replaced by the rule they cite or are defined in `docs/domain`. |
+| H1 | The navigation map is `docs/contributing/map.md`. |
+| H2 | Each module root holds a `README.md` of at most 30 lines: purpose, owned table prefix, OpenAPI tag, entry file of each layer, deviations. |
+| H3 | Each web feature holds a `README.md` of at most 30 lines: route, entry component, endpoints, guide topic. |
+| H4 | The layers of a module move from `internal/<module>/internal/{domain,app,adapter/*}` to `internal/<module>/{domain,app,httpapi,postgres,toolapi}`. Mechanism packages move beside them. |
+| H5 | `db/queries/<module>/` moves to `internal/<module>/postgres/queries/`. |
+| H6 | `api/openapi.yaml` becomes a generated bundle of `internal/<module>/openapi.yaml` files and `api/shared.yaml`, if a spike shows byte-identical generated output. |
+| H7 | `marketdata` and `reporting` follow the layout of H4. |
+| H8 | Web features split into `pages/`, sub-screen folders and `model/`. A feature above 40 files splits into sub-features. |
+| H9 | Hand-written non-test Go files above 400 lines are split by topic. Black-box module tests move to `tests/<area>/` if a spike shows equal pass count. |
+| H10 | Identifiers private to a plan (`A222`, `MQ27`, `S366`, `D12`) in comments are replaced by the rule they cite. |
+| H11 | A Go test fails when a directory holds more than 40 hand-written files or a non-test file holds more than 400 lines. |
+| H12 | Move commits are listed in `.git-blame-ignore-revs`. |
 
 ## Slices
 
-| Slice | Content | Risk |
-|---|---|---|
-| S1 | H1 and the `CONTRIBUTING.md` link | None: documentation only |
-| S2 | H2 and H3 | None: documentation only |
-| S3 | H4, one feature per commit | Import paths; checked by typecheck and the web tests |
-| S4 | H5 | Moved code; checked by the Go tests of the package |
-| S5 | H7 spike, then H7 | Generated output must stay identical |
-| S6 | H6 | Moved packages; checked by `depguard` and the Go tests |
-| S7 | H8 | Comments only |
-
-Each slice that moves code follows "Reorganizing existing code": tests before and after with equal pass count, one injected defect per new file.
+The phases and tasks of `docs/superpowers/plans/2026-11-11-human-navigability.md` are the slices. Each slice that moves code follows "Reorganizing existing code": tests before and after with equal pass count, one injected defect per new file.
 
 ## Cross-cutting questions
 
