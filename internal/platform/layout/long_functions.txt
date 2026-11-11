@@ -18,13 +18,13 @@ internal/classification/app/rules.go	Service.checkRule	pending: backend reorgani
 internal/classification/app/source_category.go	Service.sourceCategories	pending: backend reorganization plan
 internal/classification/domain/codec.go	ConditionFromDoc	pending: backend reorganization plan
 internal/classification/domain/decide.go	Decide	pending: backend reorganization plan
-internal/classification/domain/rule.go	checkCondition	pending: backend reorganization plan
-internal/classification/domain/rule.go	checkParts	pending: backend reorganization plan
+internal/classification/domain/rule_check.go	checkCondition	pending: backend reorganization plan
+internal/classification/domain/rule_check.go	checkParts	pending: backend reorganization plan
 internal/classification/domain/split.go	Allocate	pending: backend reorganization plan
 internal/classification/toolapi/explain.go	explainCategorization	pending: backend reorganization plan
 internal/classification/toolapi/manage_rule.go	manageRule	pending: backend reorganization plan
-internal/classification/toolapi/manage_rule.go	parseManage	pending: backend reorganization plan
-internal/classification/toolapi/manage_rule.go	ruleChanges	pending: backend reorganization plan
+internal/classification/toolapi/manage_rule_args.go	parseManage	pending: backend reorganization plan
+internal/classification/toolapi/manage_rule_changes.go	ruleChanges	pending: backend reorganization plan
 internal/classification/toolapi/rules.go	listRules	pending: backend reorganization plan
 internal/identity/app/session.go	Service.Login	pending: backend reorganization plan
 internal/identity/app/setup.go	Service.CompleteSetup	pending: backend reorganization plan

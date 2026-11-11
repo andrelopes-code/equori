@@ -8,6 +8,12 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
+const (
+	MethodRule    = "rule"
+	MethodSource  = "source"
+	MethodHistory = "history"
+)
+
 // HistoryKey selects the payee history of one category class (P5 amendment A23).
 type HistoryKey struct {
 	PayeeID uuid.UUID

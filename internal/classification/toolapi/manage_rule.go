@@ -1,7 +1,6 @@
 package toolapi
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"slices"
@@ -11,7 +10,6 @@ import (
 
 	"github.com/andrelopes-code/equori/internal/classification/app"
 	"github.com/andrelopes-code/equori/internal/classification/domain"
-	"github.com/andrelopes-code/equori/internal/platform/page"
 	"github.com/andrelopes-code/equori/internal/platform/tool"
 )
 
@@ -55,72 +53,6 @@ type manageRuleOut struct {
 }
 
 // ids holds the parsed identifiers of a manage_rule call.
-type ids struct {
-	rule, suggestion, source, alias, category, payee uuid.UUID
-	rules                                            []uuid.UUID
-}
-
-func parseManage(in manageRuleIn) (ids, error) {
-	fields := []field{
-		{"rule_id", in.RuleID != ""}, {"suggestion_id", in.SuggestionID != ""}, {"source_category_id", in.SourceCategoryID != ""},
-		{"alias_id", in.AliasID != ""}, {"name", in.Name != ""}, {"description_contains", in.DescriptionContains != ""},
-		{"category_id", in.CategoryID != ""}, {"payee_id", in.PayeeID != ""}, {"pattern", in.Pattern != ""},
-		{"match_type", in.MatchType != ""}, {"rule_ids", len(in.RuleIDs) > 0},
-		{"conditions", len(in.Conditions) > 0}, {"actions", len(in.Actions) > 0},
-		{"enabled", in.Enabled.Set}, {"stop_processing", in.StopProcessing.Set},
-	}
-
-	needed := map[manageRuleAction][]string{
-		"create_rule": {"name"}, "change_rule": {"rule_id"},
-		"delete_rule": {"rule_id"}, "reorder_rules": {"rule_ids"}, "accept_suggestion": {"suggestion_id", "name"},
-		"dismiss_suggestion": {"suggestion_id"}, "run_rules": nil, "map_source_category": {"source_category_id", "category_id"},
-		"create_alias": {"pattern", "match_type", "payee_id"}, "change_alias": {"alias_id", "pattern", "match_type", "payee_id"}, "delete_alias": {"alias_id"},
-	}[in.Action]
-	if in.Action == "create_rule" || in.Action == "change_rule" {
-		needed = slices.Clone(needed)
-		for _, f := range fields {
-			if f.given && !slices.Contains(needed, f.name) && slices.Contains(ruleFields, f.name) {
-				needed = append(needed, f.name)
-			}
-		}
-	}
-
-	if err := required(string(in.Action), fields, needed...); err != nil {
-		return ids{}, err
-	}
-
-	if in.Action == "create_rule" || in.Action == "change_rule" {
-		if err := checkRuleForm(in); err != nil {
-			return ids{}, err
-		}
-	}
-
-	var p ids
-
-	var err error
-	for _, x := range []struct {
-		s, field string
-		into     *uuid.UUID
-	}{
-		{in.RuleID, "rule_id", &p.rule}, {in.SuggestionID, "suggestion_id", &p.suggestion}, {in.SourceCategoryID, "source_category_id", &p.source},
-		{in.AliasID, "alias_id", &p.alias}, {in.CategoryID, "category_id", &p.category}, {in.PayeeID, "payee_id", &p.payee},
-	} {
-		if *x.into, err = optionalID(x.s, x.field); err != nil {
-			return ids{}, err
-		}
-	}
-
-	for _, s := range in.RuleIDs {
-		id, err := optionalID(s, "rule_ids")
-		if err != nil {
-			return ids{}, err
-		}
-
-		p.rules = append(p.rules, id)
-	}
-
-	return p, nil
-}
 
 func (in manageRuleIn) alias(id uuid.UUID, payee uuid.UUID) domain.Alias {
 	return domain.Alias{ID: id, Pattern: in.Pattern, MatchType: domain.MatchType(in.MatchType), PayeeID: payee}
@@ -335,121 +267,4 @@ func manageRule(svc *app.Service, names Names, today func(context.Context) time.
 
 		return manageRuleOut{Deleted: true}, svc.DeleteAlias(ctx, booksID, p.alias)
 	})
-}
-
-func findSuggestion(ctx context.Context, svc *app.Service, booksID int64, id uuid.UUID) (app.Suggestion, error) {
-	r := page.Request[app.SuggestionKey]{Limit: page.MaxLimit}
-	for {
-		items, next, err := svc.ListSuggestions(ctx, booksID, "", r)
-		if err != nil {
-			return app.Suggestion{}, err
-		}
-
-		if i := slices.IndexFunc(items, func(s app.Suggestion) bool { return s.ID == id }); i >= 0 {
-			return items[i], nil
-		}
-
-		if next == nil {
-			return app.Suggestion{}, notFound()
-		}
-
-		r.After = next
-	}
-}
-
-func findSourceCategory(ctx context.Context, svc *app.Service, booksID int64, id uuid.UUID) (app.SourceCategory, error) {
-	r := page.Request[app.NameKey]{Limit: page.MaxLimit}
-	for {
-		items, next, err := svc.ListSourceCategories(ctx, booksID, r)
-		if err != nil {
-			return app.SourceCategory{}, err
-		}
-
-		if i := slices.IndexFunc(items, func(c app.SourceCategory) bool { return c.ID == id }); i >= 0 {
-			return items[i], nil
-		}
-
-		if next == nil {
-			return app.SourceCategory{}, notFound()
-		}
-
-		r.After = next
-	}
-}
-
-func compareIDs(a, b uuid.UUID) int { return bytes.Compare(a[:], b[:]) }
-
-// ruleChanges lists the fields a create_rule or change_rule call sets. The simple form shows the
-// text and the category it was given; the structured form shows the rendered conditions and actions.
-func ruleChanges(in manageRuleIn, p ids, old, rule domain.Rule, categories, payees map[uuid.UUID]string) []tool.Change {
-	text := tool.TextValue
-	create := in.Action == "create_rule"
-	f := formOf(in)
-
-	var changes []tool.Change
-
-	if create || in.Name != "" {
-		c := tool.Change{Field: "name", After: text(rule.Name)}
-		if !create {
-			c.Before = text(old.Name)
-		}
-
-		changes = append(changes, c)
-	}
-
-	if create || f.simple || len(in.Conditions) > 0 {
-		pattern := text(conditionsText(rule.Conditions))
-		if f.simple {
-			pattern = text(in.DescriptionContains)
-		}
-
-		c := tool.Change{Field: "pattern", After: pattern}
-		if !create {
-			c.Before = text(conditionsText(old.Conditions))
-		}
-
-		changes = append(changes, c)
-	}
-
-	if create || f.simple || len(in.Actions) > 0 {
-		category := text(actionsText(rule.Actions, categories, payees))
-		if f.simple {
-			category = text(categories[p.category])
-		}
-
-		c := tool.Change{Field: "category", After: category}
-		if !create {
-			c.Before = text(actionsText(old.Actions, categories, payees))
-		}
-
-		changes = append(changes, c)
-	}
-
-	if f.simple && in.PayeeID != "" {
-		changes = append(changes, tool.Change{Field: "payee", After: text(payees[p.payee])})
-	}
-
-	if in.Enabled.Set || in.StopProcessing.Set {
-		c := tool.Change{Field: "status", After: text(ruleStatus(rule))}
-		if !create {
-			c.Before = text(ruleStatus(old))
-		}
-
-		changes = append(changes, c)
-	}
-
-	return changes
-}
-
-func ruleStatus(r domain.Rule) string {
-	s := "disabled"
-	if r.Enabled {
-		s = "enabled"
-	}
-
-	if r.StopProcessing {
-		s += ", stops later rules"
-	}
-
-	return s
 }
