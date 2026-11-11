@@ -35,6 +35,7 @@ type Service interface {
 	EditInstrument(
 		ctx context.Context, code, name, exchange, subtype string, symbols map[string]string,
 	) (domain.Instrument, error)
+	DeleteInstrument(ctx context.Context, code string) error
 	PutTerms(ctx context.Context, code string, t domain.Terms) (domain.Terms, error)
 	Terms(ctx context.Context, code string) (domain.Terms, error)
 	RecordPrices(ctx context.Context, ps []domain.Price) error
@@ -135,6 +136,9 @@ func ToProblem(err error) (problem.Details, bool) {
 		return problem.New(http.StatusUnprocessableEntity, "no_source", "no enabled source quotes the instrument"), true
 	case errors.Is(err, domain.ErrInstrumentExists):
 		return problem.New(http.StatusConflict, "instrument_exists", err.Error()), true
+	case errors.Is(err, domain.ErrInstrumentInUse):
+		return problem.New(http.StatusConflict, "instrument_in_use",
+			"a position, an account or a transaction still uses the instrument"), true
 	}
 
 	return problem.Details{}, false

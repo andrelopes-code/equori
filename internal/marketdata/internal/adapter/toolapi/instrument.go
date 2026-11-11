@@ -17,7 +17,7 @@ import (
 type manageInstrumentAction string
 
 func (manageInstrumentAction) Values() []string {
-	return []string{"define", "rename", "edit", "record_price", "set_terms", "request_history"}
+	return []string{"define", "rename", "edit", "record_price", "set_terms", "request_history", "delete"}
 }
 
 type manageInstrumentDayCount string
@@ -97,6 +97,8 @@ func checkInstrumentArgs(in manageInstrumentIn) error {
 		return required(name, fields, "date", "price")
 	case "request_history":
 		return required(name, fields, "from")
+	case "delete":
+		return required(name, fields)
 	}
 
 	return required(name, without(fields, append([]string{"day_count"}, optionalTermFields...)...), "issued_on", "matures_on", "face_value")
@@ -216,7 +218,7 @@ func termsText(t domain.Terms) string {
 func manageInstrument(svc Service) tool.Tool {
 	return tool.NewWrite(tool.Spec{
 		Name: "manage_instrument",
-		Description: "Proposes defining or renaming a security for the whole instance, recording a manual price, setting the terms of a fixed income instrument, or loading the price history of an instrument since a date from the enabled sources. " +
+		Description: "Proposes defining, renaming or deleting a security for the whole instance (a security that a position, an account or a transaction uses cannot be deleted), recording a manual price, setting the terms of a fixed income instrument, or loading the price history of an instrument since a date from the enabled sources. " +
 			"Use it when the user needs a security that does not exist yet or a price that is missing. " +
 			"Do not use it to buy or sell: record_investment does. " +
 			"Instruments and prices are shared by every book of the instance; the user confirms first.",
@@ -304,6 +306,18 @@ func manageInstrument(svc Service) tool.Tool {
 			p.Changes = []tool.Change{
 				{Field: "price", After: tool.TextValue(in.Price + " " + string(inst.QuoteCurrency))}, {Field: "date", After: tool.DateValue(in.Date.Time)},
 			}
+		case "delete":
+			inst, err := svc.Instrument(ctx, in.Code)
+			if err != nil {
+				return tool.Preview{}, err
+			}
+
+			if inst.Type == domain.TypeCurrency {
+				return tool.Preview{}, &domain.FieldError{Field: "code", Message: "is a currency"}
+			}
+
+			p.Destructive = true
+			p.Changes = []tool.Change{{Field: "instrument", Before: tool.TextValue(string(inst.Code) + " " + inst.Name)}}
 		case "request_history":
 			if _, err := svc.Instrument(ctx, in.Code); err != nil {
 				return tool.Preview{}, err
@@ -398,6 +412,8 @@ func manageInstrument(svc Service) tool.Tool {
 			err = svc.RecordPrices(ctx, []domain.Price{{Instrument: inst.Code, Quote: inst.QuoteCurrency, Date: in.Date.Time, Value: v, Source: domain.SourceManual}})
 
 			return manageInstrumentOut{Price: priceView{Date: in.Date, Value: v.Reduced().String()}}, err
+		case "delete":
+			return manageInstrumentOut{}, svc.DeleteInstrument(ctx, in.Code)
 		case "request_history":
 			if err := svc.RequestHistory(ctx, in.Code, in.From.Time); err != nil {
 				return manageInstrumentOut{}, err

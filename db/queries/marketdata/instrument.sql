@@ -57,3 +57,23 @@ SELECT
     unnest(@scales::SMALLINT[]),
     unnest(@names::TEXT[])
 ON CONFLICT (code) DO NOTHING;
+
+-- name: DeleteInstrumentPrices :exec
+DELETE FROM marketdata_price
+WHERE
+    instrument = @code;
+
+-- name: DeleteInstrumentTerms :exec
+DELETE FROM marketdata_fixed_income_terms
+WHERE
+    instrument_code = @code;
+
+-- name: DeleteInstrumentHistory :exec
+DELETE FROM marketdata_history
+WHERE
+    instrument = @code;
+
+-- name: DeleteInstrument :execrows
+DELETE FROM marketdata_instrument
+WHERE
+    code = @code;

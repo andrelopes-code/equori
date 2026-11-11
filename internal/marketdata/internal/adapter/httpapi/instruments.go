@@ -107,6 +107,14 @@ func (s *Server) EditInstrument(ctx context.Context, req EditInstrumentRequestOb
 	return EditInstrument200JSONResponse(toInstrumentAPI(out)), nil
 }
 
+func (s *Server) DeleteInstrument(ctx context.Context, req DeleteInstrumentRequestObject) (DeleteInstrumentResponseObject, error) {
+	if err := s.svc.DeleteInstrument(ctx, req.Code); err != nil {
+		return nil, err
+	}
+
+	return DeleteInstrument204Response{}, nil
+}
+
 func toInstrumentAPI(in domain.Instrument) Instrument {
 	out := Instrument{Code: string(in.Code), Type: InstrumentType(in.Type), Scale: in.Scale, Name: in.Name}
 	if in.QuoteCurrency != "" {

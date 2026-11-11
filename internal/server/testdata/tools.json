@@ -5800,7 +5800,7 @@
   },
   {
     "name": "manage_instrument",
-    "description": "Proposes defining or renaming a security for the whole instance, recording a manual price, setting the terms of a fixed income instrument, or loading the price history of an instrument since a date from the enabled sources. Use it when the user needs a security that does not exist yet or a price that is missing. Do not use it to buy or sell: record_investment does. Instruments and prices are shared by every book of the instance; the user confirms first.",
+    "description": "Proposes defining, renaming or deleting a security for the whole instance (a security that a position, an account or a transaction uses cannot be deleted), recording a manual price, setting the terms of a fixed income instrument, or loading the price history of an instrument since a date from the enabled sources. Use it when the user needs a security that does not exist yet or a price that is missing. Do not use it to buy or sell: record_investment does. Instruments and prices are shared by every book of the instance; the user confirms first.",
     "effect": "write",
     "idempotent": false,
     "input_schema": {
@@ -5815,7 +5815,8 @@
             "edit",
             "record_price",
             "set_terms",
-            "request_history"
+            "request_history",
+            "delete"
           ]
         },
         "code": {

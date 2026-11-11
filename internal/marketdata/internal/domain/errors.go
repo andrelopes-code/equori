@@ -7,6 +7,7 @@ var (
 	ErrValidation        = errors.New("validation failed")
 	ErrUnknownInstrument = errors.New("unknown instrument")
 	ErrInstrumentExists  = errors.New("instrument exists")
+	ErrInstrumentInUse   = errors.New("instrument in use")
 	ErrPriceMissing      = errors.New("price missing")
 	ErrNoTerms           = errors.New("no terms")
 	ErrUnknownIndex      = errors.New("unknown index")

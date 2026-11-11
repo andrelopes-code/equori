@@ -277,3 +277,80 @@ func TestInstrumentSymbols(t *testing.T) {
 	h.ExpectProblem(h.Do(http.MethodPatch, path, map[string]any{"name": "Berkshire B", "symbols": map[string]string{"yahoo_chart": "BRK B"}}),
 		http.StatusBadRequest, "invalid_request", "")
 }
+
+// A223 RM1, RM2: removing a security deletes it with its prices and leaves the others.
+func TestS385DeleteInstrument(t *testing.T) {
+	t.Parallel()
+	h := apitest.New(t)
+	h.MustDo(http.MethodPost, "/api/v1/instruments", mxrf11(), http.StatusCreated, nil)
+	other := mxrf11()
+	other["code"] = "KNRI11"
+	h.MustDo(http.MethodPost, "/api/v1/instruments", other, http.StatusCreated, nil)
+
+	for _, code := range []string{"MXRF11", "KNRI11"} {
+		h.MustDo(http.MethodPost, "/api/v1/prices", map[string]any{"instrument": code, "quote_instrument": "BRL", "date": "2026-10-22", "value": "10.50"}, http.StatusCreated, nil)
+	}
+
+	if r := h.Do(http.MethodDelete, "/api/v1/instruments/MXRF11", nil); r.Status != http.StatusNoContent {
+		t.Fatalf("delete status = %d: %s", r.Status, r.Body)
+	}
+
+	h.ExpectProblem(h.Do(http.MethodGet, "/api/v1/instruments/MXRF11", nil), http.StatusNotFound, "not_found", "")
+
+	var prices struct {
+		Items []priceAPI `json:"items"`
+	}
+	h.MustDo(http.MethodGet, "/api/v1/prices?instrument=KNRI11&quote_instrument=BRL&from=2026-10-01&to=2026-10-31", nil, http.StatusOK, &prices)
+
+	if len(prices.Items) != 1 {
+		t.Fatalf("prices of the other instrument = %+v, want 1", prices.Items)
+	}
+
+	h.MustDo(http.MethodPost, "/api/v1/instruments", mxrf11(), http.StatusCreated, nil)
+	h.MustDo(http.MethodGet, "/api/v1/prices?instrument=MXRF11&quote_instrument=BRL&from=2026-10-01&to=2026-10-31", nil, http.StatusOK, &prices)
+
+	if len(prices.Items) != 0 {
+		t.Fatalf("prices of the redefined instrument = %+v, want none", prices.Items)
+	}
+
+	h.ExpectProblem(h.Do(http.MethodDelete, "/api/v1/instruments/PETR4", nil), http.StatusNotFound, "not_found", "")
+	h.ExpectProblem(h.Do(http.MethodDelete, "/api/v1/instruments/BRL", nil), http.StatusUnprocessableEntity, "validation_failed", "code")
+}
+
+// A223 RM3: a security that an account holds cannot be removed, and nothing of it is deleted.
+func TestS386DeleteInstrumentInUse(t *testing.T) {
+	t.Parallel()
+	h := apitest.New(t)
+	h.MustDo(http.MethodPost, "/api/v1/instruments", mxrf11(), http.StatusCreated, nil)
+	h.MustDo(http.MethodPost, "/api/v1/prices", map[string]any{"instrument": "MXRF11", "quote_instrument": "BRL", "date": "2026-10-22", "value": "10.50"}, http.StatusCreated, nil)
+
+	var inst struct {
+		ID string `json:"id"`
+	}
+	h.MustDo(http.MethodPost, "/api/v1/institutions", map[string]string{"name": "XP"}, http.StatusCreated, &inst)
+
+	parent := h.Account("XP", "asset", "brokerage", map[string]any{"institution_id": inst.ID, "currency": "BRL"})
+	h.Account("XP MXRF11", "asset", "brokerage", map[string]any{"institution_id": inst.ID, "parent_id": parent, "currency": "MXRF11"})
+
+	h.ExpectProblem(h.Do(http.MethodDelete, "/api/v1/instruments/MXRF11", nil), http.StatusConflict, "instrument_in_use", "")
+
+	var prices struct {
+		Items []priceAPI `json:"items"`
+	}
+	h.MustDo(http.MethodGet, "/api/v1/prices?instrument=MXRF11&quote_instrument=BRL&from=2026-10-01&to=2026-10-31", nil, http.StatusOK, &prices)
+
+	if len(prices.Items) != 1 {
+		t.Fatalf("prices after the refusal = %+v, want 1", prices.Items)
+	}
+}
+
+// A223 B2: removing a security writes to the instance's market data, a writer role.
+func TestDeleteInstrumentRoles(t *testing.T) {
+	t.Parallel()
+	h := apitest.New(t)
+	h.MustDo(http.MethodPost, "/api/v1/instruments", mxrf11(), http.StatusCreated, nil)
+
+	reader := h.JoinAs("reader@example.com", h.OwnerID(), "read")
+	h.ExpectProblem(h.Call(reader, http.MethodDelete, "/api/v1/instruments/MXRF11", nil), http.StatusForbidden, "book_role_required", "")
+	h.ExpectProblem(h.Call(&http.Client{}, http.MethodDelete, "/api/v1/instruments/MXRF11", nil), http.StatusUnauthorized, "unauthenticated", "")
+}

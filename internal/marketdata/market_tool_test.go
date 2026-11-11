@@ -485,3 +485,25 @@ func TestMarketToolCatalog(t *testing.T) {
 
 	h.ExpectToolError(h.Tool("get_market_data", map[string]any{"view": "catalog"}), "invalid_arguments", "query")
 }
+
+// A223 RM4: the action delete previews the removal and then deletes the security.
+func TestManageInstrumentToolDelete(t *testing.T) {
+	t.Parallel()
+
+	h := apitest.New(t)
+	h.MustDo("POST", "/api/v1/instruments", mxrf11(), 201, nil)
+
+	args := map[string]any{"action": "delete", "code": "MXRF11"}
+
+	p, r := preview(t, h, "manage_instrument", args)
+	if r.IsError || p.Action != "manage_instrument.delete" || len(p.Changes) != 1 || p.Changes[0].Field != "instrument" {
+		t.Fatalf("preview = %+v %s", p, r.Content)
+	}
+
+	toolOutput(t, h, "manage_instrument", args, &struct{}{})
+	h.ExpectProblem(h.Do("GET", "/api/v1/instruments/MXRF11", nil), 404, "not_found", "")
+
+	h.ExpectToolError(h.Tool("manage_instrument", args), "not_found", "")
+	h.ExpectToolError(h.Tool("manage_instrument", map[string]any{"action": "delete", "code": "BRL"}), "validation_failed", "code")
+	h.ExpectToolError(h.Tool("manage_instrument", map[string]any{"action": "delete", "code": "MXRF11", "name": "X"}), "invalid_arguments", "name")
+}

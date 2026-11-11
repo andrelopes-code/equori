@@ -1819,7 +1819,8 @@ export interface paths {
         get: operations["getInstrument"];
         put?: never;
         post?: never;
-        delete?: never;
+        /** Delete a security with its prices, terms, history requests and symbols; a security that a record references is refused (A223). */
+        delete: operations["deleteInstrument"];
         options?: never;
         head?: never;
         /** Replace the name, exchange and subtype of a security; an absent exchange or subtype is cleared (A134). */
@@ -7054,7 +7055,7 @@ export interface components {
              *     record_resolved, already_matched, group_changed, not_categorizable, suggestion_closed, pairing_ambiguous,
              *     integration_unavailable, aggregator_unauthorized, aggregator_unavailable, integration_in_use,
              *     csv_suggestion_unavailable, csv_suggestion_unusable, currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended,
-             *     budget_exists, instrument_exists, mixed_instruments, price_missing, no_source, later_sale_exists,
+             *     budget_exists, instrument_exists, instrument_in_use, mixed_instruments, price_missing, no_source, later_sale_exists,
              *     investment_transaction, system_account, attachment_not_inlineable, archive_too_new, passphrase_invalid, passphrase_required,
              *     setup_token_invalid, setup_complete, book_role_required, books_not_found, member_not_found,
              *     last_owner, already_member, invitation_not_found, invitation_email_mismatch,
@@ -10097,6 +10098,30 @@ export interface operations {
             };
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
+        };
+    };
+    deleteInstrument: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
         };
     };
     editInstrument: {

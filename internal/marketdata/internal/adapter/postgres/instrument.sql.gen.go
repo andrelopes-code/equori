@@ -9,6 +9,53 @@ import (
 	"context"
 )
 
+const deleteInstrument = `-- name: DeleteInstrument :execrows
+DELETE FROM marketdata_instrument
+WHERE
+    code = $1
+`
+
+func (q *Queries) DeleteInstrument(ctx context.Context, code string) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteInstrument, code)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const deleteInstrumentHistory = `-- name: DeleteInstrumentHistory :exec
+DELETE FROM marketdata_history
+WHERE
+    instrument = $1
+`
+
+func (q *Queries) DeleteInstrumentHistory(ctx context.Context, code string) error {
+	_, err := q.db.Exec(ctx, deleteInstrumentHistory, code)
+	return err
+}
+
+const deleteInstrumentPrices = `-- name: DeleteInstrumentPrices :exec
+DELETE FROM marketdata_price
+WHERE
+    instrument = $1
+`
+
+func (q *Queries) DeleteInstrumentPrices(ctx context.Context, code string) error {
+	_, err := q.db.Exec(ctx, deleteInstrumentPrices, code)
+	return err
+}
+
+const deleteInstrumentTerms = `-- name: DeleteInstrumentTerms :exec
+DELETE FROM marketdata_fixed_income_terms
+WHERE
+    instrument_code = $1
+`
+
+func (q *Queries) DeleteInstrumentTerms(ctx context.Context, code string) error {
+	_, err := q.db.Exec(ctx, deleteInstrumentTerms, code)
+	return err
+}
+
 const getInstrument = `-- name: GetInstrument :one
 SELECT
     code, instrument_type, scale, name, quote_currency, exchange, subtype

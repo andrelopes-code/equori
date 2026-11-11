@@ -14,6 +14,7 @@ import (
 	"sync/atomic"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	openapi_types "github.com/oapi-codegen/runtime/types"
 
@@ -34,6 +35,7 @@ import (
 var (
 	ErrUnknownInstrument = domain.ErrUnknownInstrument
 	ErrInstrumentExists  = domain.ErrInstrumentExists
+	ErrInstrumentInUse   = domain.ErrInstrumentInUse
 	ErrPriceMissing      = domain.ErrPriceMissing
 	ErrNoTerms           = domain.ErrNoTerms
 	ErrUnknownIndex      = domain.ErrUnknownIndex
@@ -42,6 +44,9 @@ var (
 
 // sourceAccrual is the source of the prices computed from the terms of a fixed income security.
 const sourceAccrual = domain.SourceAccrual
+
+// foreignKeyViolation is the SQLSTATE of a row that another table still references.
+const foreignKeyViolation = "23503"
 
 type (
 	Instrument   = domain.Instrument
@@ -313,6 +318,68 @@ func (m *Module) EditInstrument(
 	}
 
 	return in, nil
+}
+
+// DeleteInstrument removes a security with its prices, terms, history requests and symbols (A223
+// RM1). A row of another table that references the code makes the delete fail on its foreign key;
+// the transaction then rolls back and the answer is ErrInstrumentInUse (RM3).
+func (m *Module) DeleteInstrument(ctx context.Context, code string) error {
+	in, err := m.Instrument(ctx, code)
+	if err != nil {
+		return err
+	}
+
+	if in.Type == domain.TypeCurrency {
+		return &domain.FieldError{Field: "code", Message: "is a currency"}
+	}
+
+	tx, err := m.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	q := m.q.WithTx(tx)
+
+	if err := m.deleteInstrumentRows(ctx, q, code); err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
+}
+
+func (m *Module) deleteInstrumentRows(ctx context.Context, q *postgres.Queries, code string) error {
+	steps := []struct {
+		name string
+		run  func() error
+	}{
+		{"prices", func() error { return q.DeleteInstrumentPrices(ctx, code) }},
+		{"terms", func() error { return q.DeleteInstrumentTerms(ctx, code) }},
+		{"history", func() error { return q.DeleteInstrumentHistory(ctx, code) }},
+		{"symbols", func() error { return q.DeleteInstrumentSymbols(ctx, code) }},
+	}
+
+	for _, step := range steps {
+		if err := step.run(); err != nil {
+			return fmt.Errorf("delete instrument %s: %w", step.name, err)
+		}
+	}
+
+	n, err := q.DeleteInstrument(ctx, code)
+	if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == foreignKeyViolation {
+		return ErrInstrumentInUse
+	}
+
+	if err != nil {
+		return fmt.Errorf("delete instrument: %w", err)
+	}
+
+	if n == 0 {
+		return ErrUnknownInstrument
+	}
+
+	return nil
 }
 
 // insertInstrument stores the instrument and its symbols in one transaction.

@@ -595,7 +595,7 @@ type Problem struct {
 	// record_resolved, already_matched, group_changed, not_categorizable, suggestion_closed, pairing_ambiguous,
 	// integration_unavailable, aggregator_unauthorized, aggregator_unavailable, integration_in_use,
 	// csv_suggestion_unavailable, csv_suggestion_unusable, currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended,
-	// budget_exists, instrument_exists, mixed_instruments, price_missing, no_source, later_sale_exists,
+	// budget_exists, instrument_exists, instrument_in_use, mixed_instruments, price_missing, no_source, later_sale_exists,
 	// investment_transaction, system_account, attachment_not_inlineable, archive_too_new, passphrase_invalid, passphrase_required,
 	// setup_token_invalid, setup_complete, book_role_required, books_not_found, member_not_found,
 	// last_owner, already_member, invitation_not_found, invitation_email_mismatch,
@@ -711,6 +711,9 @@ type ServerInterface interface {
 	// DefineInstrument Define a security for the whole instance (P8 amendment A59).
 	// (POST /instruments)
 	DefineInstrument(w http.ResponseWriter, r *http.Request)
+	// DeleteInstrument Delete a security with its prices, terms, history requests and symbols; a security that a record references is refused (A223).
+	// (DELETE /instruments/{code})
+	DeleteInstrument(w http.ResponseWriter, r *http.Request, code string)
 	// GetInstrument One instrument.
 	// (GET /instruments/{code})
 	GetInstrument(w http.ResponseWriter, r *http.Request, code string)
@@ -953,6 +956,32 @@ func (siw *ServerInterfaceWrapper) DefineInstrument(w http.ResponseWriter, r *ht
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.DefineInstrument(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteInstrument operation middleware
+func (siw *ServerInterfaceWrapper) DeleteInstrument(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "code" -------------
+	var code string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "code", r.PathValue("code"), &code, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "code", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteInstrument(w, r, code)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1451,6 +1480,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/market-data/probe", wrapper.ProbeQuote)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/instruments", wrapper.ListInstruments)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/instruments", wrapper.DefineInstrument)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/instruments/{code}", wrapper.DeleteInstrument)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/instruments/{code}", wrapper.GetInstrument)
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/instruments/{code}", wrapper.EditInstrument)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/instruments/{code}/terms", wrapper.GetInstrumentTerms)
@@ -1899,6 +1929,80 @@ func (response DefineInstrument409ApplicationProblemPlusJSONResponse) VisitDefin
 type DefineInstrument422ApplicationProblemPlusJSONResponse Problem
 
 func (response DefineInstrument422ApplicationProblemPlusJSONResponse) VisitDefineInstrumentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteInstrumentRequestObject struct {
+	Code string `json:"code"`
+}
+
+type DeleteInstrumentResponseObject interface {
+	VisitDeleteInstrumentResponse(w http.ResponseWriter) error
+}
+
+type DeleteInstrument204Response struct {
+}
+
+func (response DeleteInstrument204Response) VisitDeleteInstrumentResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteInstrument401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response DeleteInstrument401ApplicationProblemPlusJSONResponse) VisitDeleteInstrumentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteInstrument404ApplicationProblemPlusJSONResponse Problem
+
+func (response DeleteInstrument404ApplicationProblemPlusJSONResponse) VisitDeleteInstrumentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteInstrument409ApplicationProblemPlusJSONResponse Problem
+
+func (response DeleteInstrument409ApplicationProblemPlusJSONResponse) VisitDeleteInstrumentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteInstrument422ApplicationProblemPlusJSONResponse Problem
+
+func (response DeleteInstrument422ApplicationProblemPlusJSONResponse) VisitDeleteInstrumentResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -2904,6 +3008,9 @@ type StrictServerInterface interface {
 	// DefineInstrument Define a security for the whole instance (P8 amendment A59).
 	// (POST /instruments)
 	DefineInstrument(ctx context.Context, request DefineInstrumentRequestObject) (DefineInstrumentResponseObject, error)
+	// DeleteInstrument Delete a security with its prices, terms, history requests and symbols; a security that a record references is refused (A223).
+	// (DELETE /instruments/{code})
+	DeleteInstrument(ctx context.Context, request DeleteInstrumentRequestObject) (DeleteInstrumentResponseObject, error)
 	// GetInstrument One instrument.
 	// (GET /instruments/{code})
 	GetInstrument(ctx context.Context, request GetInstrumentRequestObject) (GetInstrumentResponseObject, error)
@@ -3165,6 +3272,32 @@ func (sh *strictHandler) DefineInstrument(w http.ResponseWriter, r *http.Request
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(DefineInstrumentResponseObject); ok {
 		if err := validResponse.VisitDefineInstrumentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteInstrument operation middleware
+func (sh *strictHandler) DeleteInstrument(w http.ResponseWriter, r *http.Request, code string) {
+	var request DeleteInstrumentRequestObject
+
+	request.Code = code
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteInstrument(ctx, request.(DeleteInstrumentRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteInstrument")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteInstrumentResponseObject); ok {
+		if err := validResponse.VisitDeleteInstrumentResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
