@@ -1,11 +1,11 @@
-export { CardPage } from "@/features/cards/card-page";
-export { CardsPage } from "@/features/cards/cards-page";
+export { CardPage } from "@/features/cards/pages/card-page";
+export { CardsPage } from "@/features/cards/pages/cards-page";
 export {
   phoneCardTabs,
   validateCardSearch,
-} from "@/features/cards/card-search";
-export { StatementPage } from "@/features/cards/statement-page";
-export { validateStatementSearch } from "@/features/cards/statement-search";
-export { addMonths } from "@/features/cards/reference-months";
+} from "@/features/cards/model/card-search";
+export { StatementPage } from "@/features/cards/pages/statement-page";
+export { validateStatementSearch } from "@/features/cards/pages/statement-search";
+export { addMonths } from "@/features/cards/model/reference-months";
 export { cardsQuery, flowsQuery, statementsQuery } from "@/features/cards/api";
-export { currentAndUnpaid } from "@/features/cards/card-totals";
+export { currentAndUnpaid } from "@/features/cards/model/card-totals";
