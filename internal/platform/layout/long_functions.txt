@@ -84,10 +84,10 @@ internal/ledger/domain/reimburse.go	Transaction.Reimburse	pending: backend reorg
 internal/ledger/domain/statement.go	Summarize	pending: backend reorganization plan
 internal/ledger/domain/trade.go	BuildTrade	pending: backend reorganization plan
 internal/ledger/domain/transaction.go	NewTransaction	pending: backend reorganization plan
-internal/ledger/domain/transaction.go	checkPosting	pending: backend reorganization plan
+internal/ledger/domain/posting.go	checkPosting	pending: backend reorganization plan
 internal/ledger/domain/transfer.go	Transaction.Transfer	pending: backend reorganization plan
-internal/ledger/httpapi/convert.go	fromTransactionInput	pending: backend reorganization plan
-internal/ledger/httpapi/convert.go	toTransactionAPI	pending: backend reorganization plan
+internal/ledger/httpapi/convert_transaction.go	fromTransactionInput	pending: backend reorganization plan
+internal/ledger/httpapi/convert_transaction.go	toTransactionAPI	pending: backend reorganization plan
 internal/ledger/httpapi/errors.go	ToProblem	pending: backend reorganization plan
 internal/ledger/httpapi/server.go	Server.Register	table of data
 internal/ledger/postgres/mapping.go	snapshot.transaction	pending: backend reorganization plan
