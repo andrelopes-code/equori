@@ -9,7 +9,7 @@ import { useRef, useState } from "react";
 import { ProblemError, problemMessage } from "@/api/problem";
 import { useLogin } from "@/features/session/api";
 import type { SecondFactorChallenge } from "@/features/session/api";
-import styles from "@/features/session/login-page.module.css";
+import styles from "@/features/session/pages/login-page.module.css";
 import { useT } from "@/i18n/i18n-provider";
 import { FormNotice } from "@/ui/form-notice";
 

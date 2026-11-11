@@ -7,7 +7,9 @@ import { catalogPtBR as pt } from "@/i18n/catalog.pt-BR";
 import { fakeApi, json, problem } from "@/testing/fake-api";
 import { renderApp } from "@/testing/render-app";
 
-vi.mock("@/features/session/reload-home", () => ({ reloadHome: vi.fn() }));
+vi.mock("@/features/session/model/reload-home", () => ({
+  reloadHome: vi.fn(),
+}));
 
 interface Sent {
   route: string;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { currencyChoices } from "@/features/session/currency-choices";
+import { currencyChoices } from "@/features/session/setup/currency-choices";
 
 describe("currencyChoices", () => {
   it("starts with the default choice, whose value is empty", () => {

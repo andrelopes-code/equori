@@ -5,7 +5,7 @@ import {
   createPasskeyCredential,
   getPasskeyAssertion,
   passkeysAvailable,
-} from "@/features/session/passkey-ceremony";
+} from "@/features/session/passkey/passkey-ceremony";
 
 const buffer = (...bytes: number[]) => new Uint8Array(bytes).buffer;
 

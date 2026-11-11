@@ -2,8 +2,8 @@ import { useState } from "react";
 
 import { ProblemError, errorText } from "@/api/problem";
 import { useAcceptInvitation } from "@/features/session/api";
-import { forgetInviteToken } from "@/features/session/invite-token";
-import { reloadHome } from "@/features/session/reload-home";
+import { forgetInviteToken } from "@/features/session/invite/invite-token";
+import { reloadHome } from "@/features/session/model/reload-home";
 import { useT } from "@/i18n/i18n-provider";
 
 interface InviteAcceptance {

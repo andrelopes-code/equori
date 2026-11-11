@@ -2,7 +2,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 
 import { useDeleteSession } from "@/features/session/api";
-import { forgetDeviceUser } from "@/features/session/device-user";
+import { forgetDeviceUser } from "@/features/session/model/device-user";
 
 export function useLogout() {
   const queryClient = useQueryClient();

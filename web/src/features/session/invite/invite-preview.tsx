@@ -3,8 +3,8 @@ import { Stack } from "@slotted/react/stack";
 import { Text } from "@slotted/react/typography";
 
 import type { InvitationPreview } from "@/features/session/api";
-import { InviteNewMemberForm } from "@/features/session/invite-new-member-form";
-import { useInviteAcceptance } from "@/features/session/use-invite-acceptance";
+import { InviteNewMemberForm } from "@/features/session/invite/invite-new-member-form";
+import { useInviteAcceptance } from "@/features/session/invite/use-invite-acceptance";
 import { useT } from "@/i18n/i18n-provider";
 import { FormNotice } from "@/ui/form-notice";
 

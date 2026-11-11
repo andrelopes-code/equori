@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { decodeBase64url, encodeBase64url } from "@/features/session/base64url";
+import {
+  decodeBase64url,
+  encodeBase64url,
+} from "@/features/session/passkey/base64url";
 
 describe("base64url", () => {
   it.each([

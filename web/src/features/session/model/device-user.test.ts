@@ -4,7 +4,7 @@ import {
   forgetDeviceUser,
   readDeviceUser,
   rememberDeviceUser,
-} from "@/features/session/device-user";
+} from "@/features/session/model/device-user";
 
 describe("device user", () => {
   beforeEach(() => {

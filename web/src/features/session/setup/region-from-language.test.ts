@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { regionFromLanguage } from "@/features/session/region-from-language";
+import { regionFromLanguage } from "@/features/session/setup/region-from-language";
 
 describe("regionFromLanguage", () => {
   it.each([

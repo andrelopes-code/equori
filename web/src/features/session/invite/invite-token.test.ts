@@ -4,7 +4,7 @@ import {
   forgetInviteToken,
   readInviteToken,
   writeInviteToken,
-} from "@/features/session/invite-token";
+} from "@/features/session/invite/invite-token";
 
 beforeEach(() => {
   sessionStorage.clear();

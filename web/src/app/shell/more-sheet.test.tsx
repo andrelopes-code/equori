@@ -8,7 +8,9 @@ import { catalogPtBR as pt } from "@/i18n/catalog.pt-BR";
 import { fakeApi, json } from "@/testing/fake-api";
 import { renderApp } from "@/testing/render-app";
 
-vi.mock("@/features/session/reload-home", () => ({ reloadHome: vi.fn() }));
+vi.mock("@/features/session/model/reload-home", () => ({
+  reloadHome: vi.fn(),
+}));
 
 const casa = { id: 4, name: "Casa", role: "owner", active: false };
 const casal = { id: 12, name: "Casal", role: "write", active: true };

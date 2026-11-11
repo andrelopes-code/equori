@@ -8,7 +8,7 @@ import type { Client } from "openapi-fetch";
 import { useApi } from "@/api/api-context";
 import { unwrap } from "@/api/problem";
 import type { components, paths } from "@/api/schema.gen";
-import { reloadHome } from "@/features/session/reload-home";
+import { reloadHome } from "@/features/session/model/reload-home";
 import { useAppLocale } from "@/i18n/i18n-provider";
 import type { Language } from "@/i18n/languages";
 import { writeActiveBooks } from "@/theme/book-accent";

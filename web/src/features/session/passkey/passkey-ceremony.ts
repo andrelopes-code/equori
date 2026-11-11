@@ -1,5 +1,8 @@
 import type { components } from "@/api/schema.gen";
-import { decodeBase64url, encodeBase64url } from "@/features/session/base64url";
+import {
+  decodeBase64url,
+  encodeBase64url,
+} from "@/features/session/passkey/base64url";
 
 export type PasskeyOptions = components["schemas"]["PasskeyOptions"];
 export type PasskeyRequest = NonNullable<

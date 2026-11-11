@@ -5,8 +5,8 @@ import { Stack } from "@slotted/react/stack";
 import { Heading, Text } from "@slotted/react/typography";
 import { useEffect, useState } from "react";
 
-import styles from "@/features/session/login-page.module.css";
-import { SetupForm } from "@/features/session/setup-form";
+import styles from "@/features/session/pages/login-page.module.css";
+import { SetupForm } from "@/features/session/setup/setup-form";
 import { useT } from "@/i18n/i18n-provider";
 
 // The token arrives in the fragment of the address serve printed (W-U1, W-U6 of the Windows

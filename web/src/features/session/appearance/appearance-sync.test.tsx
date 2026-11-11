@@ -1,7 +1,7 @@
 import { act, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { AppearanceSync } from "@/features/session/appearance-sync";
+import { AppearanceSync } from "@/features/session/appearance/appearance-sync";
 import { fakeApi, json, problem } from "@/testing/fake-api";
 import { renderWithProviders } from "@/testing/render-app";
 import { applyScheme, readScheme } from "@/theme/scheme";

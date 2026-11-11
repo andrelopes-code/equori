@@ -6,8 +6,8 @@ import {
   bookKeyNames,
   hasUnsuffixedBookKeys,
   moveUnsuffixedBookKeys,
-} from "@/features/session/book-keys";
-import { rememberDeviceUser } from "@/features/session/device-user";
+} from "@/features/session/model/book-keys";
+import { rememberDeviceUser } from "@/features/session/model/device-user";
 
 describe("bookKey", () => {
   beforeEach(() => {

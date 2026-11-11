@@ -8,10 +8,10 @@ import { useEffect } from "react";
 import { useApi } from "@/api/api-context";
 import { ProblemError, errorText } from "@/api/problem";
 import { invitationPreviewQuery } from "@/features/session/api";
-import { InvitePreview } from "@/features/session/invite-preview";
-import { forgetInviteToken } from "@/features/session/invite-token";
-import styles from "@/features/session/login-page.module.css";
-import { useInviteToken } from "@/features/session/use-invite-token";
+import { InvitePreview } from "@/features/session/invite/invite-preview";
+import { forgetInviteToken } from "@/features/session/invite/invite-token";
+import styles from "@/features/session/pages/login-page.module.css";
+import { useInviteToken } from "@/features/session/invite/use-invite-token";
 import { useT } from "@/i18n/i18n-provider";
 import { FormNotice } from "@/ui/form-notice";
 

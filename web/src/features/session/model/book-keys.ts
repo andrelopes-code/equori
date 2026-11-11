@@ -1,5 +1,5 @@
 import type { components } from "@/api/schema.gen";
-import { readDeviceUser } from "@/features/session/device-user";
+import { readDeviceUser } from "@/features/session/model/device-user";
 
 // HA29: browser keys whose values hold IDs of one book; each is stored as <name>.<booksId>.
 export const bookKeyNames = {

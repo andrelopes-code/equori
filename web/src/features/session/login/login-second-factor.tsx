@@ -9,13 +9,13 @@ import type {
   SecondFactorChallenge,
   SecondFactorInput,
 } from "@/features/session/api";
-import { LoginCodeForm } from "@/features/session/login-code-form";
-import styles from "@/features/session/login-page.module.css";
+import { LoginCodeForm } from "@/features/session/login/login-code-form";
+import styles from "@/features/session/pages/login-page.module.css";
 import {
   PasskeyCeremonyError,
   getPasskeyAssertion,
   passkeysAvailable,
-} from "@/features/session/passkey-ceremony";
+} from "@/features/session/passkey/passkey-ceremony";
 import { useT } from "@/i18n/i18n-provider";
 import { FormNotice } from "@/ui/form-notice";
 

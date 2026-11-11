@@ -9,7 +9,7 @@ import type {
   SecondFactorChallenge,
   SecondFactorInput,
 } from "@/features/session/api";
-import styles from "@/features/session/login-page.module.css";
+import styles from "@/features/session/pages/login-page.module.css";
 import { useT } from "@/i18n/i18n-provider";
 
 interface LoginCodeFormProps {

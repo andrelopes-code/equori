@@ -5,11 +5,11 @@ import type { FormErrors } from "@slotted/react/form";
 import { useMemo, useState } from "react";
 
 import { UpdateCheckChoice } from "@/features/instance";
-import styles from "@/features/session/login-page.module.css";
-import { regionFromLanguage } from "@/features/session/region-from-language";
-import { SetupAccountFields } from "@/features/session/setup-account-fields";
-import { SetupBooksFields } from "@/features/session/setup-books-fields";
-import { useSetupSubmit } from "@/features/session/use-setup-submit";
+import styles from "@/features/session/pages/login-page.module.css";
+import { regionFromLanguage } from "@/features/session/setup/region-from-language";
+import { SetupAccountFields } from "@/features/session/setup/setup-account-fields";
+import { SetupBooksFields } from "@/features/session/setup/setup-books-fields";
+import { useSetupSubmit } from "@/features/session/setup/use-setup-submit";
 import { useAppLocaleState, useT } from "@/i18n/i18n-provider";
 import { languages, matchLanguage } from "@/i18n/languages";
 import type { Language } from "@/i18n/languages";

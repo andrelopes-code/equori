@@ -5,11 +5,13 @@ import { describe, expect, it, vi } from "vitest";
 
 import { useApi } from "@/api/api-context";
 import { meQuery, useChooseLanguage, useSwitchBooks } from "@/features/session";
-import { reloadHome } from "@/features/session/reload-home";
+import { reloadHome } from "@/features/session/model/reload-home";
 import { fakeApi, json } from "@/testing/fake-api";
 import { renderWithProviders } from "@/testing/render-app";
 
-vi.mock("@/features/session/reload-home", () => ({ reloadHome: vi.fn() }));
+vi.mock("@/features/session/model/reload-home", () => ({
+  reloadHome: vi.fn(),
+}));
 
 function Probe() {
   const { data } = useQuery({ ...meQuery(useApi()), staleTime: Infinity });

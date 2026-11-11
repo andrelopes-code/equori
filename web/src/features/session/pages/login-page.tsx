@@ -5,9 +5,9 @@ import { Text } from "@slotted/react/typography";
 import { useState } from "react";
 
 import type { SecondFactorChallenge } from "@/features/session/api";
-import { LoginPasswordForm } from "@/features/session/login-password-form";
-import { LoginSecondFactor } from "@/features/session/login-second-factor";
-import styles from "@/features/session/login-page.module.css";
+import { LoginPasswordForm } from "@/features/session/login/login-password-form";
+import { LoginSecondFactor } from "@/features/session/login/login-second-factor";
+import styles from "@/features/session/pages/login-page.module.css";
 import { useT } from "@/i18n/i18n-provider";
 import { BrandMark } from "@/ui/brand-mark";
 

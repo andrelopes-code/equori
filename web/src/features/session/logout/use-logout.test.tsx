@@ -5,8 +5,8 @@ import { beforeEach, expect, it } from "vitest";
 import {
   readDeviceUser,
   rememberDeviceUser,
-} from "@/features/session/device-user";
-import { useLogout } from "@/features/session/use-logout";
+} from "@/features/session/model/device-user";
+import { useLogout } from "@/features/session/logout/use-logout";
 import { fakeApi } from "@/testing/fake-api";
 import { renderWithRouter } from "@/testing/render-app";
 

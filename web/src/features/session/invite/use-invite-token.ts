@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import {
   readInviteToken,
   writeInviteToken,
-} from "@/features/session/invite-token";
+} from "@/features/session/invite/invite-token";
 
 // The token arrives in the fragment of the link (HA25); it is stored for the login step of an
 // existing member (HA27) and taken out of the address bar and the history.
