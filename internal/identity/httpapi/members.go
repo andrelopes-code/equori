@@ -2,16 +2,18 @@ package httpapi
 
 import (
 	"context"
+	"net/http"
 	"time"
 
 	"github.com/andrelopes-code/equori/internal/identity/app"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
+	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 )
 
-func (s *Server) ListMembers(ctx context.Context, _ ListMembersRequestObject) (ListMembersResponseObject, error) {
+func (s *Server) listMembers(ctx context.Context, _ *http.Request, _ httpserver.None) (BooksMemberList, error) {
 	members, err := s.svc.Members(ctx, auth.MustBooksID(ctx))
 	if err != nil {
-		return nil, err
+		return BooksMemberList{}, err
 	}
 
 	items := make([]BooksMember, 0, len(members))
@@ -19,53 +21,68 @@ func (s *Server) ListMembers(ctx context.Context, _ ListMembersRequestObject) (L
 		items = append(items, toAPIBooksMember(m))
 	}
 
-	return ListMembers200JSONResponse{Items: items}, nil
+	return BooksMemberList{Items: items}, nil
 }
 
-func (s *Server) UpdateMember(ctx context.Context, req UpdateMemberRequestObject) (UpdateMemberResponseObject, error) {
-	if req.Body == nil {
-		return nil, errInvalidRequest
+func (s *Server) updateMember(
+	ctx context.Context,
+	r *http.Request,
+	in UpdateMemberJSONRequestBody,
+) (httpserver.None, error) {
+	memberID, err := httpserver.PathInt64(r, "memberId")
+	if err != nil {
+		return httpserver.None{}, err
 	}
 
-	if err := s.svc.ChangeRole(ctx, auth.MustBooksID(ctx), req.MemberId, auth.BookRole(req.Body.Role)); err != nil {
-		return nil, err
+	if err := s.svc.ChangeRole(ctx, auth.MustBooksID(ctx), memberID, auth.BookRole(in.Role)); err != nil {
+		return httpserver.None{}, err
 	}
 
-	return UpdateMember204Response{}, nil
+	return httpserver.None{}, nil
 }
 
-func (s *Server) RemoveMember(ctx context.Context, req RemoveMemberRequestObject) (RemoveMemberResponseObject, error) {
-	if err := s.svc.RemoveMembership(ctx, auth.MustBooksID(ctx), req.MemberId); err != nil {
-		return nil, err
+func (s *Server) removeMember(ctx context.Context, r *http.Request, _ httpserver.None) (httpserver.None, error) {
+	memberID, err := httpserver.PathInt64(r, "memberId")
+	if err != nil {
+		return httpserver.None{}, err
 	}
 
-	return RemoveMember204Response{}, nil
+	if err := s.svc.RemoveMembership(ctx, auth.MustBooksID(ctx), memberID); err != nil {
+		return httpserver.None{}, err
+	}
+
+	return httpserver.None{}, nil
 }
 
-// LeaveBooks ends the caller's session with the membership (BK6), so it answers the expired cookie.
-func (s *Server) LeaveBooks(ctx context.Context, _ LeaveBooksRequestObject) (LeaveBooksResponseObject, error) {
+// leaveBooks ends the caller's session with the membership (BK6), so it answers the expired cookie.
+func (s *Server) leaveBooks(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	if err := s.svc.RemoveMembership(ctx, auth.MustBooksID(ctx), auth.MustMemberID(ctx)); err != nil {
-		return nil, err
+		s.errs.Write(w, r, err)
+		return
 	}
 
-	cookie := s.cookie("", time.Unix(0, 0))
-
-	return LeaveBooks204Response{Headers: LeaveBooks204ResponseHeaders{SetCookie: &cookie}}, nil
+	w.Header().Set("Set-Cookie", s.cookie("", time.Unix(0, 0)))
+	w.WriteHeader(http.StatusNoContent)
 }
 
-// DeleteCurrentBooks ends the session of the caller with the book (DB6), so it answers the expired cookie.
-func (s *Server) DeleteCurrentBooks(ctx context.Context, req DeleteCurrentBooksRequestObject) (DeleteCurrentBooksResponseObject, error) {
-	if req.Body == nil {
-		return nil, errInvalidRequest
+// deleteCurrentBooks ends the session of the caller with the book (DB6), so it answers the expired cookie.
+func (s *Server) deleteCurrentBooks(w http.ResponseWriter, r *http.Request) {
+	in, ok := decodeBody[DeleteCurrentBooksJSONRequestBody](s, w, r)
+	if !ok {
+		return
 	}
 
-	if err := s.svc.DeleteBooks(ctx, auth.MustBooksID(ctx), auth.MustMemberID(ctx), req.Body.Name); err != nil {
-		return nil, err
+	ctx := r.Context()
+
+	if err := s.svc.DeleteBooks(ctx, auth.MustBooksID(ctx), auth.MustMemberID(ctx), in.Name); err != nil {
+		s.errs.Write(w, r, err)
+		return
 	}
 
-	cookie := s.cookie("", time.Unix(0, 0))
-
-	return DeleteCurrentBooks204Response{Headers: DeleteCurrentBooks204ResponseHeaders{SetCookie: &cookie}}, nil
+	w.Header().Set("Set-Cookie", s.cookie("", time.Unix(0, 0)))
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func toAPIBooksMember(m app.Membership) BooksMember {

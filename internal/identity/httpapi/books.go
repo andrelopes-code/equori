@@ -2,38 +2,40 @@ package httpapi
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/andrelopes-code/equori/internal/identity/app"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
+	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
-func (s *Server) GetCurrentBooks(ctx context.Context, _ GetCurrentBooksRequestObject) (GetCurrentBooksResponseObject, error) {
+func (s *Server) getCurrentBooks(ctx context.Context, _ *http.Request, _ httpserver.None) (BooksSettings, error) {
 	settings, err := s.svc.BooksSettings(ctx, auth.MustBooksID(ctx))
 	if err != nil {
-		return nil, err
+		return BooksSettings{}, err
 	}
 
-	return GetCurrentBooks200JSONResponse(toAPIBooksSettings(settings)), nil
+	return toAPIBooksSettings(settings), nil
 }
 
-func (s *Server) UpdateCurrentBooks(ctx context.Context, req UpdateCurrentBooksRequestObject) (UpdateCurrentBooksResponseObject, error) {
-	if req.Body == nil {
-		return nil, errInvalidRequest
-	}
-
-	settings, err := s.svc.UpdateBooksSettings(ctx, auth.MustBooksID(ctx), req.Body.Region, req.Body.TimeZone, req.Body.Name)
+func (s *Server) updateCurrentBooks(
+	ctx context.Context,
+	_ *http.Request,
+	in UpdateCurrentBooksJSONRequestBody,
+) (BooksSettings, error) {
+	settings, err := s.svc.UpdateBooksSettings(ctx, auth.MustBooksID(ctx), in.Region, in.TimeZone, in.Name)
 	if err != nil {
-		return nil, err
+		return BooksSettings{}, err
 	}
 
-	return UpdateCurrentBooks200JSONResponse(toAPIBooksSettings(settings)), nil
+	return toAPIBooksSettings(settings), nil
 }
 
-func (s *Server) ListMyBooks(ctx context.Context, _ ListMyBooksRequestObject) (ListMyBooksResponseObject, error) {
+func (s *Server) listMyBooks(ctx context.Context, _ *http.Request, _ httpserver.None) (BooksMembershipList, error) {
 	books, err := s.svc.Books(ctx, auth.MustMemberID(ctx), auth.MustBooksID(ctx))
 	if err != nil {
-		return nil, err
+		return BooksMembershipList{}, err
 	}
 
 	items := make([]BooksMembership, 0, len(books))
@@ -41,38 +43,37 @@ func (s *Server) ListMyBooks(ctx context.Context, _ ListMyBooksRequestObject) (L
 		items = append(items, toAPIBooksMembership(b))
 	}
 
-	return ListMyBooks200JSONResponse{Items: items}, nil
+	return BooksMembershipList{Items: items}, nil
 }
 
-func (s *Server) CreateBooks(ctx context.Context, req CreateBooksRequestObject) (CreateBooksResponseObject, error) {
-	if req.Body == nil {
-		return nil, errInvalidRequest
-	}
-
-	b := req.Body
-
-	created, err := s.svc.CreateBooks(ctx, auth.MustMemberID(ctx), b.Name, b.Region, money.Currency(deref(b.BaseCurrency)))
+func (s *Server) createBooks(
+	ctx context.Context,
+	_ *http.Request,
+	in CreateBooksJSONRequestBody,
+) (BooksMembership, error) {
+	created, err := s.svc.CreateBooks(ctx, auth.MustMemberID(ctx), in.Name, in.Region, money.Currency(deref(in.BaseCurrency)))
 	if err != nil {
-		return nil, err
+		return BooksMembership{}, err
 	}
 
-	return CreateBooks201JSONResponse(toAPIBooksMembership(created)), nil
+	return toAPIBooksMembership(created), nil
 }
 
-func (s *Server) SwitchBooks(ctx context.Context, req SwitchBooksRequestObject) (SwitchBooksResponseObject, error) {
-	if req.Body == nil {
-		return nil, errInvalidRequest
+func (s *Server) switchBooks(
+	ctx context.Context,
+	r *http.Request,
+	in SwitchBooksJSONRequestBody,
+) (httpserver.None, error) {
+	session, err := r.Cookie(CookieName)
+	if err != nil {
+		return httpserver.None{}, app.ErrUnauthenticated
 	}
 
-	if req.Params.EquoriSession == nil {
-		return nil, app.ErrUnauthenticated
+	if err := s.svc.SwitchBooks(ctx, auth.MustMemberID(ctx), session.Value, in.BooksId); err != nil {
+		return httpserver.None{}, err
 	}
 
-	if err := s.svc.SwitchBooks(ctx, auth.MustMemberID(ctx), *req.Params.EquoriSession, req.Body.BooksId); err != nil {
-		return nil, err
-	}
-
-	return SwitchBooks204Response{}, nil
+	return httpserver.None{}, nil
 }
 
 func toAPIBooksMembership(b app.BooksMembership) BooksMembership {

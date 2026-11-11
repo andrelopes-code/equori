@@ -12,15 +12,15 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 )
 
-func (s *Server) GetSecondFactor(ctx context.Context, _ GetSecondFactorRequestObject) (GetSecondFactorResponseObject, error) {
+func (s *Server) getSecondFactor(ctx context.Context, _ *http.Request, _ httpserver.None) (SecondFactor, error) {
 	member, err := currentMember(ctx)
 	if err != nil {
-		return nil, err
+		return SecondFactor{}, err
 	}
 
 	state, err := s.svc.SecondFactor(ctx, member.ID)
 	if err != nil {
-		return nil, err
+		return SecondFactor{}, err
 	}
 
 	passkeys := make([]Passkey, 0, len(state.Passkeys))
@@ -28,85 +28,89 @@ func (s *Server) GetSecondFactor(ctx context.Context, _ GetSecondFactorRequestOb
 		passkeys = append(passkeys, toAPIPasskey(p))
 	}
 
-	return GetSecondFactor200JSONResponse{Totp: state.TOTP, Passkeys: passkeys, RecoveryCodesLeft: state.RecoveryCodesLeft}, nil
+	return SecondFactor{Totp: state.TOTP, Passkeys: passkeys, RecoveryCodesLeft: state.RecoveryCodesLeft}, nil
 }
 
-func (s *Server) StartTotp(ctx context.Context, _ StartTotpRequestObject) (StartTotpResponseObject, error) {
+func (s *Server) startTotp(ctx context.Context, _ *http.Request, _ httpserver.None) (TotpSetup, error) {
 	member, err := currentMember(ctx)
 	if err != nil {
-		return nil, err
+		return TotpSetup{}, err
 	}
 
 	secret, uri, err := s.svc.StartTOTP(ctx, member.ID)
 	if err != nil {
-		return nil, err
+		return TotpSetup{}, err
 	}
 
-	return StartTotp200JSONResponse{Secret: domain.EncodeTOTPSecret(secret), Uri: uri}, nil
+	return TotpSetup{Secret: domain.EncodeTOTPSecret(secret), Uri: uri}, nil
 }
 
-func (s *Server) ConfirmTotp(ctx context.Context, req ConfirmTotpRequestObject) (ConfirmTotpResponseObject, error) {
+func (s *Server) confirmTotp(
+	ctx context.Context,
+	r *http.Request,
+	in ConfirmTotpJSONRequestBody,
+) (RecoveryCodes, error) {
 	member, err := currentMember(ctx)
 	if err != nil {
-		return nil, err
+		return RecoveryCodes{}, err
 	}
 
-	if req.Body == nil {
-		return nil, errInvalidRequest
-	}
-
-	codes, err := s.svc.ConfirmTOTP(ctx, member.ID, deref(req.Params.EquoriSession), req.Body.Code)
+	codes, err := s.svc.ConfirmTOTP(ctx, member.ID, cookieValue(r, CookieName), in.Code)
 	if err != nil {
-		return nil, err
+		return RecoveryCodes{}, err
 	}
 
-	return ConfirmTotp200JSONResponse{RecoveryCodes: nonNil(codes)}, nil
+	return RecoveryCodes{RecoveryCodes: nonNil(codes)}, nil
 }
 
-func (s *Server) DisableTotp(ctx context.Context, req DisableTotpRequestObject) (DisableTotpResponseObject, error) {
+func (s *Server) disableTotp(
+	ctx context.Context,
+	_ *http.Request,
+	in DisableTotpJSONRequestBody,
+) (httpserver.None, error) {
 	member, err := currentMember(ctx)
 	if err != nil {
-		return nil, err
+		return httpserver.None{}, err
 	}
 
-	if req.Body == nil {
-		return nil, errInvalidRequest
+	if err := s.svc.DisableTOTP(ctx, member.ID, in.Password); err != nil {
+		return httpserver.None{}, err
 	}
 
-	if err := s.svc.DisableTOTP(ctx, member.ID, req.Body.Password); err != nil {
-		return nil, err
-	}
-
-	return DisableTotp204Response{}, nil
+	return httpserver.None{}, nil
 }
 
-func (s *Server) RegenerateRecoveryCodes(ctx context.Context, req RegenerateRecoveryCodesRequestObject) (RegenerateRecoveryCodesResponseObject, error) {
+func (s *Server) regenerateRecoveryCodes(
+	ctx context.Context,
+	_ *http.Request,
+	in RegenerateRecoveryCodesJSONRequestBody,
+) (RecoveryCodes, error) {
 	member, err := currentMember(ctx)
 	if err != nil {
-		return nil, err
+		return RecoveryCodes{}, err
 	}
 
-	if req.Body == nil {
-		return nil, errInvalidRequest
-	}
-
-	codes, err := s.svc.RegenerateRecoveryCodes(ctx, member.ID, req.Body.Password)
+	codes, err := s.svc.RegenerateRecoveryCodes(ctx, member.ID, in.Password)
 	if err != nil {
-		return nil, err
+		return RecoveryCodes{}, err
 	}
 
-	return RegenerateRecoveryCodes200JSONResponse{RecoveryCodes: nonNil(codes)}, nil
+	return RecoveryCodes{RecoveryCodes: nonNil(codes)}, nil
 }
 
-func (s *Server) CreatePasskeyOptions(ctx context.Context, req CreatePasskeyOptionsRequestObject) (CreatePasskeyOptionsResponseObject, error) {
+func (s *Server) createPasskeyOptions(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (PasskeyOptions, error) {
 	member, err := currentMember(ctx)
 	if err != nil {
-		return nil, err
+		return PasskeyOptions{}, err
 	}
 
-	options, err := s.svc.PasskeyOptions(ctx, member.ID, deref(req.Params.Origin))
+	options, err := s.svc.PasskeyOptions(ctx, member.ID, r.Header.Get("Origin"))
 	if err != nil {
-		return nil, err
+		return PasskeyOptions{}, err
 	}
 
 	exclude := make([]string, 0, len(options.ExcludeCredentials))
@@ -114,7 +118,7 @@ func (s *Server) CreatePasskeyOptions(ctx context.Context, req CreatePasskeyOpti
 		exclude = append(exclude, encodeBinary(id))
 	}
 
-	return CreatePasskeyOptions200JSONResponse{
+	return PasskeyOptions{
 		Challenge:          encodeBinary(options.Challenge),
 		UserId:             encodeBinary(options.UserID),
 		UserName:           options.UserName,
@@ -122,64 +126,77 @@ func (s *Server) CreatePasskeyOptions(ctx context.Context, req CreatePasskeyOpti
 	}, nil
 }
 
-func (s *Server) CreatePasskey(ctx context.Context, req CreatePasskeyRequestObject) (CreatePasskeyResponseObject, error) {
+func (s *Server) createPasskey(
+	ctx context.Context,
+	r *http.Request,
+	body CreatePasskeyJSONRequestBody,
+) (PasskeyCreated, error) {
 	member, err := currentMember(ctx)
 	if err != nil {
-		return nil, err
+		return PasskeyCreated{}, err
 	}
 
-	if req.Body == nil {
-		return nil, errInvalidRequest
-	}
-
-	in, err := toPasskeyInput(req.Body)
+	in, err := toPasskeyInput(&body)
 	if err != nil {
-		return nil, err
+		return PasskeyCreated{}, err
 	}
 
-	passkey, codes, err := s.svc.CreatePasskey(ctx, member.ID, deref(req.Params.EquoriSession), deref(req.Params.Origin), in)
+	session, origin := cookieValue(r, CookieName), r.Header.Get("Origin")
+
+	passkey, codes, err := s.svc.CreatePasskey(ctx, member.ID, session, origin, in)
 	if err != nil {
-		return nil, err
+		return PasskeyCreated{}, err
 	}
 
-	return CreatePasskey201JSONResponse{Passkey: toAPIPasskey(passkey), RecoveryCodes: nonNil(codes)}, nil
+	return PasskeyCreated{Passkey: toAPIPasskey(passkey), RecoveryCodes: nonNil(codes)}, nil
 }
 
-func (s *Server) RemovePasskey(ctx context.Context, req RemovePasskeyRequestObject) (RemovePasskeyResponseObject, error) {
+func (s *Server) removePasskey(
+	ctx context.Context,
+	r *http.Request,
+	in RemovePasskeyJSONRequestBody,
+) (httpserver.None, error) {
 	member, err := currentMember(ctx)
 	if err != nil {
-		return nil, err
+		return httpserver.None{}, err
 	}
 
-	if req.Body == nil {
-		return nil, errInvalidRequest
+	id, err := httpserver.PathUUID(r, "id")
+	if err != nil {
+		return httpserver.None{}, err
 	}
 
-	if err := s.svc.RemovePasskey(ctx, member.ID, req.Id, req.Body.Password); err != nil {
-		return nil, err
+	if err := s.svc.RemovePasskey(ctx, member.ID, id, in.Password); err != nil {
+		return httpserver.None{}, err
 	}
 
-	return RemovePasskey204Response{}, nil
+	return httpserver.None{}, nil
 }
 
-func (s *Server) CompleteSecondFactor(ctx context.Context, req CompleteSecondFactorRequestObject) (CompleteSecondFactorResponseObject, error) {
-	if req.Body == nil {
-		return nil, errInvalidRequest
+// completeSecondFactor answers 204 with the session cookie and an expired pending login cookie.
+func (s *Server) completeSecondFactor(w http.ResponseWriter, r *http.Request) {
+	body, ok := decodeBody[CompleteSecondFactorJSONRequestBody](s, w, r)
+	if !ok {
+		return
 	}
 
-	answer, err := toSecondFactorAnswer(req.Body)
+	answer, err := toSecondFactorAnswer(&body)
 	if err != nil {
-		return nil, err
+		s.errs.Write(w, r, err)
+		return
 	}
 
-	result, err := s.svc.CompleteSecondFactor(ctx, deref(req.Params.EquoriLogin), deref(req.Params.Origin), answer)
+	ctx := r.Context()
+
+	result, err := s.svc.CompleteSecondFactor(ctx, cookieValue(r, loginCookieName), r.Header.Get("Origin"), answer)
 	if errors.Is(err, app.ErrSecondFactorInvalid) {
 		s.log.WarnContext(ctx, "login failed", "member_id", result.Session.MemberID, "reason", err.Error(),
 			"request_id", httpserver.RequestID(ctx))
 	}
 
 	if err != nil {
-		return nil, err
+		s.errs.Write(w, r, err)
+		return
 	}
 
 	attrs := []any{"member_id", result.Session.MemberID, "books_id", result.Session.BooksID, "method", result.Method}
@@ -189,26 +206,13 @@ func (s *Server) CompleteSecondFactor(ctx context.Context, req CompleteSecondFac
 
 	s.log.InfoContext(ctx, "login succeeded", append(attrs, "request_id", httpserver.RequestID(ctx))...)
 
-	return secondFactorDone{
-		session: s.cookie(result.Session.Token, result.Session.ExpiresAt),
-		login:   s.loginCookie("", time.Unix(0, 0)),
-	}, nil
-}
-
-// secondFactorDone answers 204 with the session cookie and an expired pending login cookie.
-type secondFactorDone struct {
-	session, login string
-}
-
-func (d secondFactorDone) VisitCompleteSecondFactorResponse(w http.ResponseWriter) error {
-	w.Header().Add("Set-Cookie", d.session)
-	w.Header().Add("Set-Cookie", d.login)
+	w.Header().Add("Set-Cookie", s.cookie(result.Session.Token, result.Session.ExpiresAt))
+	w.Header().Add("Set-Cookie", s.loginCookie("", time.Unix(0, 0)))
 	w.WriteHeader(http.StatusNoContent)
-
-	return nil
 }
 
-func (s *Server) pendingLoginResponse(p *app.PendingLogin) CreateSessionResponseObject {
+// writePendingLogin answers 202 with the second factor challenge and the pending login cookie.
+func (s *Server) writePendingLogin(w http.ResponseWriter, r *http.Request, p *app.PendingLogin) {
 	challenge := SecondFactorChallenge{Methods: make([]SecondFactorChallengeMethods, 0, len(p.Methods))}
 	for _, m := range p.Methods {
 		challenge.Methods = append(challenge.Methods, SecondFactorChallengeMethods(m))
@@ -226,9 +230,17 @@ func (s *Server) pendingLoginResponse(p *app.PendingLogin) CreateSessionResponse
 		}{AllowCredentials: allow, Challenge: encodeBinary(p.Passkey.Challenge)}
 	}
 
-	cookie := s.loginCookie(p.Token, p.ExpiresAt)
+	s.writeJSONCookie(w, r, http.StatusAccepted, s.loginCookie(p.Token, p.ExpiresAt), challenge)
+}
 
-	return CreateSession202JSONResponse{Body: challenge, Headers: CreateSession202ResponseHeaders{SetCookie: &cookie}}
+// cookieValue returns the value of the named cookie, or "" when r has none.
+func cookieValue(r *http.Request, name string) string {
+	c, err := r.Cookie(name)
+	if err != nil {
+		return ""
+	}
+
+	return c.Value
 }
 
 func currentMember(ctx context.Context) (domain.Member, error) {

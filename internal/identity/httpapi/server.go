@@ -1,8 +1,11 @@
 package httpapi
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -26,8 +29,6 @@ const (
 	rolePublic      = "public"
 )
 
-var _ StrictServerInterface = (*Server)(nil)
-
 type Server struct {
 	svc           *app.Service
 	secureCookies bool
@@ -39,16 +40,46 @@ func NewServer(svc *app.Service, secureCookies bool, log *slog.Logger) *Server {
 	return &Server{svc: svc, secureCookies: secureCookies, log: log, errs: httpserver.ErrorWriter{Log: log, Map: ToProblem}}
 }
 
+// Register lists every route of the identity operations; each handler sits in this package.
 func (s *Server) Register(mux *http.ServeMux) {
-	strict := NewStrictHandlerWithOptions(s, nil, StrictHTTPServerOptions{
-		RequestErrorHandlerFunc:  s.errs.WriteRequestError,
-		ResponseErrorHandlerFunc: s.errs.Write,
-	})
-	HandlerWithOptions(strict, StdHTTPServerOptions{
-		BaseURL:          BaseURL,
-		BaseRouter:       mux,
-		ErrorHandlerFunc: s.errs.WriteRequestError,
-	})
+	ok, created := http.StatusOK, http.StatusCreated
+
+	mux.HandleFunc("POST "+BaseURL+"/session", s.createSession)
+	mux.HandleFunc("DELETE "+BaseURL+"/session", s.deleteSession)
+	mux.HandleFunc("GET "+BaseURL+"/setup", httpserver.Handle(s.errs, ok, s.getSetup))
+	mux.HandleFunc("POST "+BaseURL+"/setup", s.completeSetup)
+	mux.HandleFunc("GET "+BaseURL+"/me", httpserver.Handle(s.errs, ok, s.getCurrentUser))
+	mux.HandleFunc("PATCH "+BaseURL+"/me", httpserver.Handle(s.errs, ok, s.updateCurrentUser))
+	mux.HandleFunc("GET "+BaseURL+"/me/appearance", httpserver.Handle(s.errs, ok, s.getMemberAppearance))
+	mux.HandleFunc("PUT "+BaseURL+"/me/appearance", httpserver.Handle(s.errs, ok, s.setMemberAppearance))
+	mux.HandleFunc("GET "+BaseURL+"/books/current", httpserver.Handle(s.errs, ok, s.getCurrentBooks))
+	mux.HandleFunc("PATCH "+BaseURL+"/books/current", httpserver.Handle(s.errs, ok, s.updateCurrentBooks))
+	mux.HandleFunc("DELETE "+BaseURL+"/books/current", s.deleteCurrentBooks)
+	mux.HandleFunc("GET "+BaseURL+"/me/books", httpserver.Handle(s.errs, ok, s.listMyBooks))
+	mux.HandleFunc("POST "+BaseURL+"/books", httpserver.Handle(s.errs, created, s.createBooks))
+	mux.HandleFunc("PUT "+BaseURL+"/session/books", httpserver.Handle(s.errs, ok, s.switchBooks))
+	mux.HandleFunc("GET "+BaseURL+"/books/current/members", httpserver.Handle(s.errs, ok, s.listMembers))
+	mux.HandleFunc("PATCH "+BaseURL+"/books/current/members/{memberId}", httpserver.Handle(s.errs, ok, s.updateMember))
+	mux.HandleFunc("DELETE "+BaseURL+"/books/current/members/{memberId}", httpserver.Handle(s.errs, ok, s.removeMember))
+	mux.HandleFunc("DELETE "+BaseURL+"/books/current/membership", s.leaveBooks)
+	mux.HandleFunc("GET "+BaseURL+"/books/current/invitations", httpserver.Handle(s.errs, ok, s.listInvitations))
+	mux.HandleFunc("POST "+BaseURL+"/books/current/invitations", httpserver.Handle(s.errs, created, s.createInvitation))
+	mux.HandleFunc("DELETE "+BaseURL+"/books/current/invitations/{id}", httpserver.Handle(s.errs, ok, s.deleteInvitation))
+	mux.HandleFunc("POST "+BaseURL+"/account-invitations", httpserver.Handle(s.errs, created, s.createAccountInvitation))
+	mux.HandleFunc("POST "+BaseURL+"/invitations/preview", httpserver.Handle(s.errs, ok, s.previewInvitation))
+	mux.HandleFunc("POST "+BaseURL+"/invitations/accept", s.acceptInvitation)
+	mux.HandleFunc("GET "+BaseURL+"/access-tokens", httpserver.Handle(s.errs, ok, s.listAccessTokens))
+	mux.HandleFunc("POST "+BaseURL+"/access-tokens", httpserver.Handle(s.errs, created, s.createAccessToken))
+	mux.HandleFunc("DELETE "+BaseURL+"/access-tokens/{id}", httpserver.Handle(s.errs, ok, s.deleteAccessToken))
+	mux.HandleFunc("GET "+BaseURL+"/me/second-factor", httpserver.Handle(s.errs, ok, s.getSecondFactor))
+	mux.HandleFunc("POST "+BaseURL+"/me/totp", httpserver.Handle(s.errs, ok, s.startTotp))
+	mux.HandleFunc("POST "+BaseURL+"/me/totp/confirm", httpserver.Handle(s.errs, ok, s.confirmTotp))
+	mux.HandleFunc("POST "+BaseURL+"/me/totp/disable", httpserver.Handle(s.errs, ok, s.disableTotp))
+	mux.HandleFunc("POST "+BaseURL+"/me/recovery-codes", httpserver.Handle(s.errs, ok, s.regenerateRecoveryCodes))
+	mux.HandleFunc("POST "+BaseURL+"/me/passkeys/options", httpserver.Handle(s.errs, ok, s.createPasskeyOptions))
+	mux.HandleFunc("POST "+BaseURL+"/me/passkeys", httpserver.Handle(s.errs, created, s.createPasskey))
+	mux.HandleFunc("POST "+BaseURL+"/me/passkeys/{id}/remove", httpserver.Handle(s.errs, ok, s.removePasskey))
+	mux.HandleFunc("POST "+BaseURL+"/session/second-factor", s.completeSecondFactor)
 }
 
 type memberKey struct{}
@@ -97,21 +128,23 @@ func isAPI(r *http.Request) bool {
 	return strings.HasPrefix(r.URL.Path, "/api/")
 }
 
-func (s *Server) GetSetup(ctx context.Context, _ GetSetupRequestObject) (GetSetupResponseObject, error) {
+func (s *Server) getSetup(ctx context.Context, _ *http.Request, _ httpserver.None) (SetupStatus, error) {
 	required, err := s.svc.SetupRequired(ctx)
 	if err != nil {
-		return nil, err
+		return SetupStatus{}, err
 	}
 
-	return GetSetup200JSONResponse{Required: required}, nil
+	return SetupStatus{Required: required}, nil
 }
 
-func (s *Server) CompleteSetup(ctx context.Context, req CompleteSetupRequestObject) (CompleteSetupResponseObject, error) {
-	if req.Body == nil {
-		return nil, errInvalidRequest
+// completeSetup answers 201 with the session cookie.
+func (s *Server) completeSetup(w http.ResponseWriter, r *http.Request) {
+	b, ok := decodeBody[CompleteSetupJSONRequestBody](s, w, r)
+	if !ok {
+		return
 	}
 
-	b := req.Body
+	ctx := r.Context()
 
 	session, user, err := s.svc.CompleteSetup(ctx, app.SetupRequest{
 		Token:        b.Token,
@@ -124,93 +157,104 @@ func (s *Server) CompleteSetup(ctx context.Context, req CompleteSetupRequestObje
 		TimeZone:     b.TimeZone,
 	})
 	if err != nil {
-		return nil, err
+		s.errs.Write(w, r, err)
+		return
 	}
 
 	s.log.InfoContext(ctx, "first member created", "member_id", user.ID, "request_id", httpserver.RequestID(ctx))
 	cookie := s.cookie(session.Token, session.ExpiresAt)
+	body := toAPIUser(user, locale.Locale{Language: user.Language, Region: b.Region}, session.BooksID, auth.RoleOwner)
 
-	return CompleteSetup201JSONResponse{Body: toAPIUser(user, locale.Locale{Language: user.Language, Region: b.Region}, session.BooksID, auth.RoleOwner), Headers: CompleteSetup201ResponseHeaders{SetCookie: &cookie}}, nil
+	s.writeJSONCookie(w, r, http.StatusCreated, cookie, body)
 }
 
-func (s *Server) CreateSession(ctx context.Context, req CreateSessionRequestObject) (CreateSessionResponseObject, error) {
-	if req.Body == nil {
-		return nil, errInvalidRequest
+// createSession answers 204 with the session cookie, or 202 with the second factor challenge and
+// the pending login cookie.
+func (s *Server) createSession(w http.ResponseWriter, r *http.Request) {
+	b, ok := decodeBody[CreateSessionJSONRequestBody](s, w, r)
+	if !ok {
+		return
 	}
 
-	session, pending, err := s.svc.Login(ctx, req.Body.Email, req.Body.Password, deref(req.Params.Origin))
+	ctx := r.Context()
+
+	session, pending, err := s.svc.Login(ctx, b.Email, b.Password, r.Header.Get("Origin"))
 	switch {
 	case errors.Is(err, app.ErrInvalidCredentials), errors.Is(err, app.ErrTooManyAttempts):
-		s.log.WarnContext(ctx, "login failed", "email", req.Body.Email, "reason", err.Error(),
+		s.log.WarnContext(ctx, "login failed", "email", b.Email, "reason", err.Error(),
 			"request_id", httpserver.RequestID(ctx))
+		s.errs.Write(w, r, err)
 
-		return nil, err
+		return
 	case err != nil:
-		return nil, err
+		s.errs.Write(w, r, err)
+		return
 	}
 
 	if pending != nil {
-		return s.pendingLoginResponse(pending), nil
+		s.writePendingLogin(w, r, pending)
+		return
 	}
 
 	s.log.InfoContext(ctx, "login succeeded", "member_id", session.MemberID, "books_id", session.BooksID,
 		"method", app.MethodPassword, "request_id", httpserver.RequestID(ctx))
-	cookie := s.cookie(session.Token, session.ExpiresAt)
 
-	return CreateSession204Response{Headers: CreateSession204ResponseHeaders{SetCookie: &cookie}}, nil
+	w.Header().Set("Set-Cookie", s.cookie(session.Token, session.ExpiresAt))
+	w.WriteHeader(http.StatusNoContent)
 }
 
-func (s *Server) DeleteSession(ctx context.Context, req DeleteSessionRequestObject) (DeleteSessionResponseObject, error) {
-	if req.Params.EquoriSession != nil {
-		if err := s.svc.Logout(ctx, *req.Params.EquoriSession); err != nil {
-			return nil, err
+// deleteSession answers 204 with the expired session cookie.
+func (s *Server) deleteSession(w http.ResponseWriter, r *http.Request) {
+	if c, err := r.Cookie(CookieName); err == nil {
+		if err := s.svc.Logout(r.Context(), c.Value); err != nil {
+			s.errs.Write(w, r, err)
+			return
 		}
 	}
 
-	cookie := s.cookie("", time.Unix(0, 0))
-
-	return DeleteSession204Response{Headers: DeleteSession204ResponseHeaders{SetCookie: &cookie}}, nil
+	w.Header().Set("Set-Cookie", s.cookie("", time.Unix(0, 0)))
+	w.WriteHeader(http.StatusNoContent)
 }
 
-func (s *Server) GetCurrentUser(ctx context.Context, _ GetCurrentUserRequestObject) (GetCurrentUserResponseObject, error) {
+func (s *Server) getCurrentUser(ctx context.Context, _ *http.Request, _ httpserver.None) (User, error) {
 	user, ok := ctx.Value(memberKey{}).(domain.Member)
 	if !ok {
-		return nil, app.ErrUnauthenticated
+		return User{}, app.ErrUnauthenticated
 	}
 
 	l, err := s.svc.Profile(ctx, auth.MustBooksID(ctx), user.ID)
 	if err != nil {
-		return nil, err
+		return User{}, err
 	}
 
-	return GetCurrentUser200JSONResponse(toAPIUser(user, l, auth.MustBooksID(ctx), auth.MustBookRole(ctx))), nil
+	return toAPIUser(user, l, auth.MustBooksID(ctx), auth.MustBookRole(ctx)), nil
 }
 
-func (s *Server) UpdateCurrentUser(ctx context.Context, req UpdateCurrentUserRequestObject) (UpdateCurrentUserResponseObject, error) {
+func (s *Server) updateCurrentUser(
+	ctx context.Context,
+	_ *http.Request,
+	in UpdateCurrentUserJSONRequestBody,
+) (User, error) {
 	user, ok := ctx.Value(memberKey{}).(domain.Member)
 	if !ok {
-		return nil, app.ErrUnauthenticated
+		return User{}, app.ErrUnauthenticated
 	}
 
-	if req.Body == nil {
-		return nil, errInvalidRequest
-	}
-
-	if req.Body.DisplayName != nil {
-		name, err := s.svc.SetDisplayName(ctx, user.ID, *req.Body.DisplayName)
+	if in.DisplayName != nil {
+		name, err := s.svc.SetDisplayName(ctx, user.ID, *in.DisplayName)
 		if err != nil {
-			return nil, err
+			return User{}, err
 		}
 
 		user.DisplayName = name
 	}
 
-	l, err := s.svc.UpdateProfile(ctx, auth.MustBooksID(ctx), user.ID, deref(req.Body.Language), "")
+	l, err := s.svc.UpdateProfile(ctx, auth.MustBooksID(ctx), user.ID, deref(in.Language), "")
 	if err != nil {
-		return nil, err
+		return User{}, err
 	}
 
-	return UpdateCurrentUser200JSONResponse(toAPIUser(user, l, auth.MustBooksID(ctx), auth.MustBookRole(ctx))), nil
+	return toAPIUser(user, l, auth.MustBooksID(ctx), auth.MustBookRole(ctx)), nil
 }
 
 func toAPIUser(u domain.Member, l locale.Locale, booksID int64, role auth.BookRole) User {
@@ -241,6 +285,32 @@ func deref(s *string) string {
 	}
 
 	return *s
+}
+
+// decodeBody decodes the JSON body of r into T. On failure it writes the 400 problem and returns
+// false.
+func decodeBody[T any](s *Server, w http.ResponseWriter, r *http.Request) (T, bool) {
+	var in T
+	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
+		s.errs.WriteRequestError(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return in, false
+	}
+
+	return in, true
+}
+
+// writeJSONCookie answers status with body as JSON and the Set-Cookie header cookie.
+func (s *Server) writeJSONCookie(w http.ResponseWriter, r *http.Request, status int, cookie string, body any) {
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(body); err != nil {
+		s.errs.Write(w, r, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Set-Cookie", cookie)
+	w.WriteHeader(status)
+	_, _ = buf.WriteTo(w)
 }
 
 func (s *Server) cookie(value string, expires time.Time) string {
