@@ -7,9 +7,9 @@ import { Tag } from "@slotted/react/tag";
 import { Text } from "@slotted/react/typography";
 import { useState } from "react";
 
-import { goalLine, type Goal } from "@/features/goals/goal-line";
-import { defaultMonthly, monthlyRange } from "@/features/goals/goal-plan";
-import { monthsBetween } from "@/features/goals/goal-plan";
+import { goalLine, type Goal } from "@/features/goals/goal-card/goal-line";
+import { defaultMonthly, monthlyRange } from "@/features/goals/model/goal-plan";
+import { monthsBetween } from "@/features/goals/model/goal-plan";
 import { formatReferenceMonth, numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";

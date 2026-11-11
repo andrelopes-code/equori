@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { goalSegments } from "@/features/goals/goal-segments";
+import { goalSegments } from "@/features/goals/goal-card/goal-segments";
 
 describe("goal segments", () => {
   it("fills one segment per 5 per cent, rounded down", () => {

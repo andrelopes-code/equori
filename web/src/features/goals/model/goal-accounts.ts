@@ -1,5 +1,5 @@
 import type { components } from "@/api/schema.gen";
-import { goalSubtree } from "@/features/goals/goal-contribution";
+import { goalSubtree } from "@/features/goals/model/goal-contribution";
 
 type Account = components["schemas"]["Account"];
 

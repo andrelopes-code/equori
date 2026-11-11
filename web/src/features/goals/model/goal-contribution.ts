@@ -1,5 +1,5 @@
 import type { components } from "@/api/schema.gen";
-import type { Goal } from "@/features/goals/goal-line";
+import type { Goal } from "@/features/goals/goal-card/goal-line";
 
 type Account = components["schemas"]["Account"];
 type Schedule = components["schemas"]["Schedule"];

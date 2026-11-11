@@ -21,8 +21,11 @@ import { useState } from "react";
 import { useApi } from "@/api/api-context";
 import { ProblemError, errorText, fieldErrors } from "@/api/problem";
 import { accountsQuery } from "@/features/accounts";
-import type { Goal } from "@/features/goals/goal-line";
-import { goalAccounts, withoutNesting } from "@/features/goals/goal-accounts";
+import type { Goal } from "@/features/goals/goal-card/goal-line";
+import {
+  goalAccounts,
+  withoutNesting,
+} from "@/features/goals/model/goal-accounts";
 import { useCreateGoal, useUpdateGoal } from "@/features/planning";
 import { settingsQuery, useScale } from "@/features/setup";
 import { shiftDate } from "@/i18n/format";

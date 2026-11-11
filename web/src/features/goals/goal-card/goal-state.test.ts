@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { goalState, monthsLeft } from "@/features/goals/goal-state";
+import { goalState, monthsLeft } from "@/features/goals/goal-card/goal-state";
 
 const money = (amount: number) => ({ amount, currency: "BRL" });
 const goal = (remaining: number, due_on: string) => ({

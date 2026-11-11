@@ -6,8 +6,8 @@ import {
 } from "@slotted/react/collapsible";
 import { Text } from "@slotted/react/typography";
 
-import type { Goal } from "@/features/goals/goal-line";
-import styles from "@/features/goals/goals.module.css";
+import type { Goal } from "@/features/goals/goal-card/goal-line";
+import styles from "@/features/goals/pages/goals.module.css";
 import { numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";

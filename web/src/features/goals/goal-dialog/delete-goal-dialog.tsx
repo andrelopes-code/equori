@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 import { errorText } from "@/api/problem";
-import type { Goal } from "@/features/goals/goal-line";
+import type { Goal } from "@/features/goals/goal-card/goal-line";
 import { useDeleteGoal } from "@/features/planning";
 import { useT } from "@/i18n/i18n-provider";
 import { ConfirmDialog } from "@/ui/confirm-dialog";

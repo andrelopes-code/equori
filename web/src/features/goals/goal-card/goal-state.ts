@@ -1,5 +1,5 @@
-import type { Goal } from "@/features/goals/goal-line";
-import { monthsBetween } from "@/features/goals/goal-plan";
+import type { Goal } from "@/features/goals/goal-card/goal-line";
+import { monthsBetween } from "@/features/goals/model/goal-plan";
 
 export type GoalState = "reached" | "overdue" | "open";
 

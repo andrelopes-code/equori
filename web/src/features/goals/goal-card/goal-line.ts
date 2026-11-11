@@ -1,5 +1,5 @@
 import type { components } from "@/api/schema.gen";
-import { completionWithReturn } from "@/features/goals/goal-plan";
+import { completionWithReturn } from "@/features/goals/model/goal-plan";
 
 export type Goal = components["schemas"]["Goal"];
 

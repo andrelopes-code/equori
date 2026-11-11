@@ -1,5 +1,5 @@
-import { goalSegments } from "@/features/goals/goal-segments";
-import styles from "@/features/goals/goal-meter.module.css";
+import { goalSegments } from "@/features/goals/goal-card/goal-segments";
+import styles from "@/features/goals/goal-card/goal-meter.module.css";
 
 const slots = Array.from({ length: 20 }, (_, i) => i);
 

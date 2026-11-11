@@ -4,7 +4,7 @@ import {
   completionMonth,
   completionWithReturn,
   defaultMonthly,
-} from "@/features/goals/goal-plan";
+} from "@/features/goals/model/goal-plan";
 
 describe("goal plan", () => {
   it("completes after the months the remainder takes at the monthly amount", () => {

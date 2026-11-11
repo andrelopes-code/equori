@@ -11,12 +11,12 @@ import {
 import { Tag } from "@slotted/react/tag";
 import { Heading, Text } from "@slotted/react/typography";
 
-import { GoalMeter } from "@/features/goals/goal-meter";
-import { GoalParts } from "@/features/goals/goal-parts";
-import { goalState, monthsLeft } from "@/features/goals/goal-state";
-import type { Goal } from "@/features/goals/goal-line";
-import { GoalWhatIf } from "@/features/goals/goal-what-if";
-import styles from "@/features/goals/goals.module.css";
+import { GoalMeter } from "@/features/goals/goal-card/goal-meter";
+import { GoalParts } from "@/features/goals/goal-card/goal-parts";
+import { goalState, monthsLeft } from "@/features/goals/goal-card/goal-state";
+import type { Goal } from "@/features/goals/goal-card/goal-line";
+import { GoalWhatIf } from "@/features/goals/goal-card/goal-what-if";
+import styles from "@/features/goals/pages/goals.module.css";
 import { formatDate, numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";

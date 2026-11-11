@@ -24,14 +24,14 @@ import { accountsQuery } from "@/features/accounts";
 import {
   holdsInvestments,
   scheduledContribution,
-} from "@/features/goals/goal-contribution";
+} from "@/features/goals/model/goal-contribution";
 import { goalsQuery, schedulesQuery } from "@/features/planning";
-import { goalState } from "@/features/goals/goal-state";
-import { GoalCard } from "@/features/goals/goal-card";
-import { DeleteGoalDialog } from "@/features/goals/delete-goal-dialog";
-import { GoalDialog } from "@/features/goals/goal-dialog";
-import type { Goal } from "@/features/goals/goal-line";
-import styles from "@/features/goals/goals.module.css";
+import { goalState } from "@/features/goals/goal-card/goal-state";
+import { GoalCard } from "@/features/goals/goal-card/goal-card";
+import { DeleteGoalDialog } from "@/features/goals/goal-dialog/delete-goal-dialog";
+import { GoalDialog } from "@/features/goals/goal-dialog/goal-dialog";
+import type { Goal } from "@/features/goals/goal-card/goal-line";
+import styles from "@/features/goals/pages/goals.module.css";
 import { useScale } from "@/features/setup";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";

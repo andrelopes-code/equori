@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import type { components } from "@/api/schema.gen";
-import { goalAccounts, withoutNesting } from "@/features/goals/goal-accounts";
+import {
+  goalAccounts,
+  withoutNesting,
+} from "@/features/goals/model/goal-accounts";
 import {
   accountFixtures,
   brokerageID,

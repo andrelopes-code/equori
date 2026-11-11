@@ -6,7 +6,7 @@ import {
   holdsInvestments,
   monthlyEquivalent,
   scheduledContribution,
-} from "@/features/goals/goal-contribution";
+} from "@/features/goals/model/goal-contribution";
 
 type Schedule = components["schemas"]["Schedule"];
 type Account = components["schemas"]["Account"];
