@@ -1,6 +1,5 @@
 internal/classification/domain/rule.go	pending: backend reorganization plan
 internal/classification/toolapi/manage_rule.go	pending: backend reorganization plan
-internal/ingestion/postgres/record.go	pending: backend reorganization plan
 internal/marketdata/toolapi/instrument.go	pending: backend reorganization plan
 internal/planning/app/plan.go	pending: backend reorganization plan
 internal/planning/toolapi/manage_schedule.go	pending: backend reorganization plan
