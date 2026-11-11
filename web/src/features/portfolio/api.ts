@@ -3,7 +3,7 @@ import type { Client } from "openapi-fetch";
 
 import { unwrap } from "@/api/problem";
 import type { paths } from "@/api/schema.gen";
-import type { AllocationBy } from "@/features/portfolio/portfolio-search";
+import type { AllocationBy } from "@/features/portfolio/model/portfolio-search";
 
 export function allocationQuery(
   api: Client<paths>,
