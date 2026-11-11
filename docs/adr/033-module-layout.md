@@ -15,7 +15,7 @@ internal/<module>/
   openapi.yaml         operations and schemas of the module; `make gen` bundles every module file with api/base.yaml and api/shared.yaml into api/openapi.yaml
   domain/              entities and invariants; stdlib and platform/money only
   app/                 use cases; declares the ports (Repository, Clock)
-  httpapi/             handlers; api.gen.go and oapi-codegen.yaml
+  httpapi/             routes (`Register`) and handlers; api.gen.go (models only) and oapi-codegen.yaml (ADR 034)
   toolapi/             assistant and MCP tools
   postgres/            repository; sqlc output (*.gen.go); queries/*.sql
   <mechanism>/         optional private package: password, feed, calendar, llmapi

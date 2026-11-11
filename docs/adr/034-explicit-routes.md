@@ -26,6 +26,10 @@ The reader of an endpoint follows three hand-written hops: the route in `httpapi
 | A handler reads the body through `httpserver.Handle` and its variants; it reads path and query values through the helpers of `internal/platform/httpserver` | review |
 | Errors keep their path: `ErrorWriter.WriteRequestError` for decoding, `ErrorWriter.Write` for the use case | `internal/platform/httpserver` tests |
 
+## Helpers
+
+`internal/platform/httpserver` holds `Handle` (one signature, `None` for no body or 204), `HandleCreated` and `WriteCreated` (201 with Location), `Query`, `PathUUID` and `PathInt64` (a malformed value answers 400 through `BadRequestError`), and `routetest.Check`.
+
 ## Migration
 
-`capture` is the pilot. Each other module moves in its own commit, with equal test counts. A module that still has the strict server keeps `var _ StrictServerInterface = (*Server)(nil)`.
+All eleven modules moved in their own commits with equal test counts plus one route test each. Operations that set a header or a cookie, stream, answer 202 without a body or read multipart are plain `func(w, r)` handlers registered in `Register`. Generated Go fell from 67163 to 31431 lines.
