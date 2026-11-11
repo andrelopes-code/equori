@@ -11,7 +11,7 @@ export EQUORI_TEST_DATABASE_URL ?= postgres://equori:equori@127.0.0.1:$(EQUORI_T
 COMPOSE := docker compose -f compose.yaml -f compose.dev.yaml
 # Migrations stay unformatted: applied ones are never edited, and the formatter joins the aligned
 # columns of a CREATE TABLE into one line.
-SQL_QUERIES := $(wildcard db/queries/*/*.sql internal/*/postgres/queries/*.sql)
+SQL_QUERIES := $(wildcard internal/*/postgres/queries/*.sql)
 SQL_FMT := web/node_modules/.bin/sql-formatter
 # Secrets and personal settings kept outside the repository (secret key, timezone, owner); read
 # after dev.env and before .env by the targets that run the app.
@@ -44,7 +44,7 @@ lint: $(TOOLS)
 	GOOS=windows $(BIN)/golangci-lint run
 	GOOS=windows CGO_ENABLED=0 go vet ./...
 
-# Each module's adapter/httpapi holds an oapi-codegen.yaml selecting its tag from api/openapi.yaml.
+# Each module's httpapi holds an oapi-codegen.yaml selecting its tag from api/openapi.yaml.
 gen: $(TOOLS) $(WEB_DEPS)
 	go run ./internal/platform/money/gen
 	go run ./internal/platform/config/gen

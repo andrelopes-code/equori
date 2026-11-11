@@ -27,6 +27,6 @@ Every error response from `/api/v1` has `Content-Type: application/problem+json`
 | `request_id` | Same value as the `X-Request-ID` header and the access log entry. |
 | `errors` | For requests that violate the contract (400 `invalid_request`), one entry per violation; for domain rule failures (422), the field of the first broken rule (ADR 007, C1). |
 
-Implementation: `internal/platform/problem`. Domain errors are mapped to problems in each module's `adapter/httpapi`; `domain` and `app` never import `problem`.
+Implementation: `internal/platform/problem`. Domain errors are mapped to problems in each module's `httpapi`; `domain` and `app` never import `problem`.
 
 Amended by ADR 020: a problem may carry `retry_at`, an RFC 3339 instant after which the same request can succeed.

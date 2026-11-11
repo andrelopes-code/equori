@@ -28,7 +28,7 @@ Tools are pinned in `tools/go.mod` and built into `bin/`; `web/` tools are pinne
 | `make run-dev` | `make dev` and `make web-dev` together |
 | `make run-prod` | Production build served by the binary on `:8091` (`PROD_ADDR`), beside `make run-dev` |
 | `make web-check` | Build `web/`, then typecheck, ESLint and Prettier check |
-| `make gen` | Regenerate sqlc and oapi-codegen output after editing `db/queries`, `db/migrations` or `api/openapi.yaml`; also compiles the theme |
+| `make gen` | Regenerate sqlc and oapi-codegen output after editing `internal/<module>/postgres/queries`, `db/migrations` or `api/openapi.yaml`; also compiles the theme |
 | `make vuln` | govulncheck |
 | `make dist` | Release archives and `SHA256SUMS` in `dist/` (ADR 022) |
 | `make upgrade-test` | A database seeded by one image keeps every fact under another (ADR 022, R7) |
@@ -46,11 +46,10 @@ A commit runs format, lint and the generated-code check on its staged files. A p
 cmd/equori/            composition root only: config, wiring, start
 cmd/demoseed/          demo data for a local instance
 internal/platform/     infrastructure without business rules
-internal/<module>/     one business module (ADR 002)
+internal/<module>/     one business module: code, queries and tests (ADR 033)
 internal/server/       composition of every module: HTTP handler and outbox dispatcher
 internal/apitest/      HTTP test harness over internal/server
 db/migrations/         goose SQL migrations, embedded
-db/queries/<module>/   sqlc queries, one directory per owner module
 api/openapi.yaml       HTTP contract, source of truth for server and frontend types
 web/                   single-page application (Vite, React, TypeScript), embedded by web/embed.go
 packaging/, scripts/   release packaging (Homebrew, Windows) and release scripts
@@ -62,23 +61,22 @@ docs/operations/       runbooks for operators
 docs/contributing/     contributor guides: feature design, regions, currencies, forms, phone screens, web rules, agents
 ```
 
-Module internals: `<module>.go` (public API) → `internal/domain` → `internal/app` → `internal/adapter/{postgres,httpapi,toolapi}`. ADR 002 sets the dependency rules; `depguard` and the compiler enforce them.
+Module layout (ADR 033): `<module>.go` (public API) → `domain/` → `app/` → `httpapi/`, `toolapi/`, `postgres/`. The queries of a module sit in `postgres/queries/`. ADR 002 sets the dependency rules; `depguard` enforces them, including the rule that a module is reached only through its root package.
 
-The second `internal` makes a module's packages importable only from inside that module. `internal/instance` shows the layout:
+`internal/instance` shows the layout:
 
 ```
 internal/instance/
-  instance.go                       public API; New passes each adapter to app.NewService
-  internal/
-    domain/version.go               pure rules: Newer compares two versions
-    app/service.go                  Service and the ports it declares: Repository, Releases
-    app/version.go                  use case: checks the admin, calls Releases and domain.Newer
-    adapter/httpapi/version.go      HTTP handler: calls the Service
-    adapter/postgres/repository.go  implements app.Repository
-    adapter/releases/github.go      implements app.Releases
+  instance.go               public API; New passes each adapter to app.NewService
+  domain/version.go         pure rules: Newer compares two versions
+  app/service.go            Service and the ports it declares: Repository, Releases
+  app/version.go            use case: checks the admin, calls Releases and domain.Newer
+  httpapi/version.go        HTTP handler: calls the Service
+  postgres/repository.go    implements app.Repository
+  releases/github.go        implements app.Releases
 ```
 
-`app` never imports `adapter`. A topic keeps its file name across layers: read `domain/version.go`, then `app/version.go`, then `adapter/httpapi/version.go`.
+`app` never imports `httpapi`, `postgres` or `toolapi`. A topic keeps its file name across layers: read `domain/version.go`, then `app/version.go`, then `httpapi/version.go`. `docs/contributing/map.md` lists the files of an endpoint.
 
 ## Language
 
@@ -104,9 +102,9 @@ Everything is in English: identifiers, files, packages, comments, log messages, 
 - No global mutable state. Dependencies are passed through constructors.
 - HTTP errors are RFC 9457 problems written with `internal/platform/problem` (ADR 004).
 - Language model calls go through `internal/platform/llm` (ADR 009); each module declares its chain in code.
-- Tools for language models are declared in `adapter/toolapi` and composed in `internal/server` (ADR 012).
+- Tools for language models are declared in `internal/<module>/toolapi` and composed in `internal/server` (ADR 012).
 - Handlers get the book with `auth.MustBooksID(ctx)` and the member with `auth.MustMemberID(ctx)` (`internal/platform/auth`) and pass them to `app` explicitly. `identity.Authorize` authenticates every `/api/` route and checks the book role its operation declares in `x-book-role` (ADR 029).
-- `*.gen.go` and `*.gen.ts` files are generated; never edit them. A new module adds an entry to `sqlc.yaml`, `db/queries/<module>/`, a tag in `api/openapi.yaml` and `adapter/httpapi/oapi-codegen.yaml`.
+- `*.gen.go` and `*.gen.ts` files are generated; never edit them. A new module adds an entry to `sqlc.yaml`, a directory `internal/<module>/postgres/queries/`, a tag in `api/openapi.yaml`, `httpapi/oapi-codegen.yaml` and a depguard rule in `.golangci.yml`.
 - Every business table has `books_id`; every query on it filters by `books_id` (ADR 003, ADR 029).
 - Web code follows `docs/contributing/web.md`.
 

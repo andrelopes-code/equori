@@ -14,7 +14,7 @@ An extension point is declared by the module that consumes it.
 | ID | Rule |
 |---|---|
 | X1 | The interface is declared in the module's `internal/domain` (pure rules) or `internal/app` (I/O) and named by behavior (`Calendar`, `PriceSource`, `Aggregator`, `Jurisdiction`, `Lexicon`). |
-| X2 | One package per implementation under `internal/<module>/internal/<point>/<id>/`. A pure data implementation is a Go value in a file named after its id. |
+| X2 | One package per implementation under `internal/<module>/<point>/<id>/`. A pure data implementation is a Go value in a file named after its id. |
 | X3 | An identifier matches `^[a-z0-9_]{2,40}$`. A regional implementation is prefixed by region (`br_banking`, `bcb_ptax`); an international one is not (`ecb`, `weekend`, `bic`). |
 | X4 | A registry is a `registry.Registry[T]` (`internal/platform/registry`) built by a constructor in the module root. It is immutable after construction. `Get(id)` returns the implementation or an error wrapping `registry.ErrUnknown`. `New` rejects duplicate and malformed identifiers. `IDs` returns the identifiers in ascending order. |
 | X5 | No `init()` registration and no package-level mutable variable. |

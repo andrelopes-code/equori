@@ -105,38 +105,32 @@ func readQueries(t *testing.T) []query {
 
 	var queries []query
 
-	roots := []string{filepath.Join("..", "..", "db", "queries"), filepath.Join("..", "..", "internal")}
+	root := filepath.Join("..", "..", "internal")
 
-	for _, root := range roots {
-		err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
-			if os.IsNotExist(err) && path == root {
-				return filepath.SkipDir
-			}
-
-			if err != nil || d.IsDir() || filepath.Ext(path) != ".sql" {
-				return err
-			}
-
-			if _, ok := queryModule(path); !ok {
-				return nil
-			}
-
-			body, err := os.ReadFile(path)
-			if err != nil {
-				return err
-			}
-
-			queries = append(queries, splitQueries(path, string(body))...)
-
-			return nil
-		})
-		if err != nil {
-			t.Fatal(err)
+	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() || filepath.Ext(path) != ".sql" {
+			return err
 		}
+
+		if _, ok := queryModule(path); !ok {
+			return nil
+		}
+
+		body, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+
+		queries = append(queries, splitQueries(path, string(body))...)
+
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	if len(queries) == 0 {
-		t.Fatal("no query found under internal/<module>/postgres/queries or db/queries")
+		t.Fatal("no query found under internal/<module>/postgres/queries")
 	}
 
 	return queries
@@ -178,17 +172,12 @@ func firstScopedTable(text string, scoped map[string]bool) (string, bool) {
 	return found[0], true
 }
 
-// queryModule names the module that owns a query file: internal/<module>/postgres/queries/x.sql
-// or db/queries/<module>/x.sql.
+// queryModule names the module that owns a query file: internal/<module>/postgres/queries/x.sql.
 func queryModule(file string) (string, bool) {
 	dir := filepath.ToSlash(filepath.Dir(file))
 
 	if i := strings.Index(dir, "/postgres/queries"); i >= 0 {
 		return filepath.Base(dir[:i]), true
-	}
-
-	if strings.Contains(dir, "db/queries/") {
-		return filepath.Base(dir), true
 	}
 
 	return "", false

@@ -1,6 +1,6 @@
 # ADR 002: Modular monolith with ports and adapters per module
 
-- Status: accepted
+- Status: accepted; the module layout and the compiler isolation are superseded by ADR 033
 - Date: 2026-10-14
 
 ## Decision

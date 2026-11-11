@@ -16,7 +16,7 @@ type Repository interface {
 	// ...
 }
 
-// adapter/postgres
+// postgres
 type db interface {
 	DBTX
 	Begin(ctx context.Context) (pgx.Tx, error)
