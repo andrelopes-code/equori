@@ -3,33 +3,50 @@ package httpapi
 import (
 	"context"
 
+	"net/http"
+
 	"github.com/google/uuid"
 	openapi_types "github.com/oapi-codegen/runtime/types"
 
 	"github.com/andrelopes-code/equori/internal/classification/app"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
+	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 )
 
-func (s *Server) GetCategorization(ctx context.Context, req GetCategorizationRequestObject) (GetCategorizationResponseObject, error) {
-	rec, err := s.svc.Categorization(ctx, auth.MustBooksID(ctx), req.Id)
+func (s *Server) getCategorization(
+	ctx context.Context, r *http.Request, _ httpserver.None,
+) (Categorization, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return Categorization{}, err
 	}
 
-	return GetCategorization200JSONResponse(toCategorizationAPI(rec)), nil
+	rec, err := s.svc.Categorization(ctx, auth.MustBooksID(ctx), id)
+	if err != nil {
+		return Categorization{}, err
+	}
+
+	return toCategorizationAPI(rec), nil
 }
 
-func (s *Server) ListCategorizations(ctx context.Context, req ListCategorizationsRequestObject) (ListCategorizationsResponseObject, error) {
-	if n := len(req.Params.TransactionId); n == 0 || n > 200 {
-		return nil, &paramError{field: "transaction_id", message: "must have 1 to 200 ids"}
-	}
-
-	recs, err := s.svc.Categorizations(ctx, auth.MustBooksID(ctx), req.Params.TransactionId)
+func (s *Server) listCategorizations(
+	ctx context.Context, r *http.Request, _ httpserver.None,
+) (CategorizationList, error) {
+	params, err := httpserver.Query[ListCategorizationsParams](r)
 	if err != nil {
-		return nil, err
+		return CategorizationList{}, err
 	}
 
-	out := ListCategorizations200JSONResponse{Items: make([]Categorization, len(recs))}
+	if n := len(params.TransactionId); n == 0 || n > 200 {
+		return CategorizationList{}, &paramError{field: "transaction_id", message: "must have 1 to 200 ids"}
+	}
+
+	recs, err := s.svc.Categorizations(ctx, auth.MustBooksID(ctx), params.TransactionId)
+	if err != nil {
+		return CategorizationList{}, err
+	}
+
+	out := CategorizationList{Items: make([]Categorization, len(recs))}
 	for i, rec := range recs {
 		out.Items[i] = toCategorizationAPI(rec)
 	}
@@ -51,27 +68,34 @@ func toCategorizationAPI(rec app.Record) Categorization {
 	return out
 }
 
-func (s *Server) RunRules(ctx context.Context, _ RunRulesRequestObject) (RunRulesResponseObject, error) {
+func (s *Server) runRules(ctx context.Context, _ *http.Request, _ httpserver.None) (RuleRun, error) {
 	examined, categorized, err := s.svc.RunRules(ctx, auth.MustBooksID(ctx))
 	if err != nil {
-		return nil, err
+		return RuleRun{}, err
 	}
 
-	return RunRules200JSONResponse{Examined: examined, Categorized: categorized}, nil
+	return RuleRun{Examined: examined, Categorized: categorized}, nil
 }
 
-func (s *Server) GetCategorizationStatistics(ctx context.Context, req GetCategorizationStatisticsRequestObject) (GetCategorizationStatisticsResponseObject, error) {
-	if req.Params.To.Before(req.Params.From.Time) {
-		return nil, &paramError{field: "to", message: "must not be before from"}
-	}
-
-	st, err := s.svc.Statistics(ctx, auth.MustBooksID(ctx), req.Params.From.Time, req.Params.To.Time)
+func (s *Server) getCategorizationStatistics(
+	ctx context.Context, r *http.Request, _ httpserver.None,
+) (CategorizationStatistics, error) {
+	params, err := httpserver.Query[GetCategorizationStatisticsParams](r)
 	if err != nil {
-		return nil, err
+		return CategorizationStatistics{}, err
 	}
 
-	return GetCategorizationStatistics200JSONResponse{
-		From: req.Params.From, To: openapi_types.Date{Time: req.Params.To.Time},
+	if params.To.Before(params.From.Time) {
+		return CategorizationStatistics{}, &paramError{field: "to", message: "must not be before from"}
+	}
+
+	st, err := s.svc.Statistics(ctx, auth.MustBooksID(ctx), params.From.Time, params.To.Time)
+	if err != nil {
+		return CategorizationStatistics{}, err
+	}
+
+	return CategorizationStatistics{
+		From: params.From, To: openapi_types.Date{Time: params.To.Time},
 		Total: st.Total, Rule: st.Rule, Source: st.Source, History: st.History, Manual: st.Manual, Uncategorized: st.Uncategorized,
 	}, nil
 }

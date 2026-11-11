@@ -2,11 +2,13 @@ package httpapi
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/google/uuid"
 
 	"github.com/andrelopes-code/equori/internal/classification/app"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
+	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/platform/page"
 )
 
@@ -21,18 +23,25 @@ func toSourceCategoryAPI(c app.SourceCategory) SourceCategory {
 	return out
 }
 
-func (s *Server) ListSourceCategories(ctx context.Context, req ListSourceCategoriesRequestObject) (ListSourceCategoriesResponseObject, error) {
-	p, err := listPage[app.NameKey](req.Params.Limit, req.Params.Cursor)
+func (s *Server) listSourceCategories(
+	ctx context.Context, r *http.Request, _ httpserver.None,
+) (SourceCategoryList, error) {
+	params, err := httpserver.Query[ListSourceCategoriesParams](r)
 	if err != nil {
-		return nil, err
+		return SourceCategoryList{}, err
+	}
+
+	p, err := listPage[app.NameKey](params.Limit, params.Cursor)
+	if err != nil {
+		return SourceCategoryList{}, err
 	}
 
 	cs, next, err := s.svc.ListSourceCategories(ctx, auth.MustBooksID(ctx), p)
 	if err != nil {
-		return nil, err
+		return SourceCategoryList{}, err
 	}
 
-	out := ListSourceCategories200JSONResponse{Items: make([]SourceCategory, len(cs))}
+	out := SourceCategoryList{Items: make([]SourceCategory, len(cs))}
 	for i, c := range cs {
 		out.Items[i] = toSourceCategoryAPI(c)
 	}
@@ -42,16 +51,23 @@ func (s *Server) ListSourceCategories(ctx context.Context, req ListSourceCategor
 	return out, err
 }
 
-func (s *Server) MapSourceCategory(ctx context.Context, req MapSourceCategoryRequestObject) (MapSourceCategoryResponseObject, error) {
-	var category uuid.UUID
-	if req.Body.CategoryId != nil {
-		category = *req.Body.CategoryId
-	}
-
-	c, err := s.svc.MapSourceCategory(ctx, auth.MustBooksID(ctx), req.Id, category)
+func (s *Server) mapSourceCategory(
+	ctx context.Context, r *http.Request, in MapSourceCategoryJSONRequestBody,
+) (SourceCategory, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return SourceCategory{}, err
 	}
 
-	return MapSourceCategory200JSONResponse(toSourceCategoryAPI(c)), nil
+	var category uuid.UUID
+	if in.CategoryId != nil {
+		category = *in.CategoryId
+	}
+
+	c, err := s.svc.MapSourceCategory(ctx, auth.MustBooksID(ctx), id, category)
+	if err != nil {
+		return SourceCategory{}, err
+	}
+
+	return toSourceCategoryAPI(c), nil
 }

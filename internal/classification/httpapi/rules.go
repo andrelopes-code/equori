@@ -1,21 +1,20 @@
 package httpapi
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
+	"fmt"
+	"net/http"
 
 	"github.com/google/uuid"
 
 	"github.com/andrelopes-code/equori/internal/classification/app"
 	"github.com/andrelopes-code/equori/internal/classification/domain"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
+	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/platform/page"
 )
-
-// location is the Location header of a created record (ADR 007, C6).
-func location(collection string, id uuid.UUID) *string {
-	l := BaseURL + collection + id.String()
-	return &l
-}
 
 func toRuleAPI(r domain.Rule) Rule {
 	out := Rule{
@@ -123,24 +122,29 @@ func fromRuleInput(in RuleInput) (domain.Rule, error) {
 	return domain.RuleFromDocs(r, conditions, actions)
 }
 
-func (s *Server) ListRules(ctx context.Context, req ListRulesRequestObject) (ListRulesResponseObject, error) {
-	p, err := listPage[app.RuleKey](req.Params.Limit, req.Params.Cursor)
+func (s *Server) listRules(ctx context.Context, r *http.Request, _ httpserver.None) (RulePage, error) {
+	params, err := httpserver.Query[ListRulesParams](r)
 	if err != nil {
-		return nil, err
+		return RulePage{}, err
+	}
+
+	p, err := listPage[app.RuleKey](params.Limit, params.Cursor)
+	if err != nil {
+		return RulePage{}, err
 	}
 
 	rules, next, err := s.svc.ListRules(ctx, auth.MustBooksID(ctx), p)
 	if err != nil {
-		return nil, err
+		return RulePage{}, err
 	}
 
-	out := ListRules200JSONResponse{Items: make([]Rule, len(rules))}
-	for i, r := range rules {
-		out.Items[i] = toRuleAPI(r)
+	out := RulePage{Items: make([]Rule, len(rules))}
+	for i, rule := range rules {
+		out.Items[i] = toRuleAPI(rule)
 	}
 
 	if err := s.withUsage(ctx, out.Items); err != nil {
-		return nil, err
+		return RulePage{}, err
 	}
 
 	out.NextCursor, err = page.Next(next)
@@ -148,29 +152,43 @@ func (s *Server) ListRules(ctx context.Context, req ListRulesRequestObject) (Lis
 	return out, err
 }
 
-func (s *Server) CreateRule(ctx context.Context, req CreateRuleRequestObject) (CreateRuleResponseObject, error) {
-	r, err := fromRuleInput(*req.Body)
-	if err != nil {
-		return nil, err
+// createRule is a custom handler: the success status is 201 with a Location header.
+func (s *Server) createRule(w http.ResponseWriter, r *http.Request) {
+	var body CreateRuleJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		s.errs.WriteRequestError(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+
+		return
 	}
 
-	created, err := s.svc.CreateRule(ctx, auth.MustBooksID(ctx), r)
+	rule, err := fromRuleInput(body)
 	if err != nil {
-		return nil, err
+		s.errs.Write(w, r, err)
+
+		return
 	}
 
-	return CreateRule201JSONResponse{Body: toRuleAPI(created), Headers: CreateRule201ResponseHeaders{Location: location("/rules/", created.ID)}}, nil
+	created, err := s.svc.CreateRule(r.Context(), auth.MustBooksID(r.Context()), rule)
+	if err != nil {
+		s.errs.Write(w, r, err)
+
+		return
+	}
+
+	s.writeCreated(w, r, BaseURL+"/rules/"+created.ID.String(), toRuleAPI(created))
 }
 
-func (s *Server) PreviewRule(ctx context.Context, req PreviewRuleRequestObject) (PreviewRuleResponseObject, error) {
-	r, err := fromRuleInput(*req.Body)
+func (s *Server) previewRule(
+	ctx context.Context, _ *http.Request, in PreviewRuleJSONRequestBody,
+) (RulePreview, error) {
+	rule, err := fromRuleInput(in)
 	if err != nil {
-		return nil, err
+		return RulePreview{}, err
 	}
 
-	p, err := s.svc.PreviewRule(ctx, auth.MustBooksID(ctx), r)
+	p, err := s.svc.PreviewRule(ctx, auth.MustBooksID(ctx), rule)
 	if err != nil {
-		return nil, err
+		return RulePreview{}, err
 	}
 
 	set := func(ps app.PreviewSet) RulePreviewSet {
@@ -182,65 +200,86 @@ func (s *Server) PreviewRule(ctx context.Context, req PreviewRuleRequestObject) 
 		return RulePreviewSet{Count: ps.Count, TransactionIds: ids}
 	}
 
-	return PreviewRule200JSONResponse{WouldCategorize: set(p.WouldCategorize), Conflicts: set(p.Conflicts)}, nil
+	return RulePreview{WouldCategorize: set(p.WouldCategorize), Conflicts: set(p.Conflicts)}, nil
 }
 
-func (s *Server) GetRule(ctx context.Context, req GetRuleRequestObject) (GetRuleResponseObject, error) {
-	r, err := s.svc.Rule(ctx, auth.MustBooksID(ctx), req.Id)
+func (s *Server) getRule(ctx context.Context, r *http.Request, _ httpserver.None) (Rule, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return Rule{}, err
 	}
 
-	out := []Rule{toRuleAPI(r)}
+	rule, err := s.svc.Rule(ctx, auth.MustBooksID(ctx), id)
+	if err != nil {
+		return Rule{}, err
+	}
+
+	out := []Rule{toRuleAPI(rule)}
 	if err := s.withUsage(ctx, out); err != nil {
-		return nil, err
+		return Rule{}, err
 	}
 
-	return GetRule200JSONResponse(out[0]), nil
+	return out[0], nil
 }
 
-func (s *Server) ChangeRule(ctx context.Context, req ChangeRuleRequestObject) (ChangeRuleResponseObject, error) {
-	r, err := fromRuleInput(*req.Body)
+func (s *Server) changeRule(
+	ctx context.Context, r *http.Request, in ChangeRuleJSONRequestBody,
+) (Rule, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return Rule{}, err
 	}
 
-	r.ID = req.Id
-
-	changed, err := s.svc.ChangeRule(ctx, auth.MustBooksID(ctx), r)
+	rule, err := fromRuleInput(in)
 	if err != nil {
-		return nil, err
+		return Rule{}, err
+	}
+
+	rule.ID = id
+
+	changed, err := s.svc.ChangeRule(ctx, auth.MustBooksID(ctx), rule)
+	if err != nil {
+		return Rule{}, err
 	}
 
 	out := []Rule{toRuleAPI(changed)}
 	if err := s.withUsage(ctx, out); err != nil {
-		return nil, err
+		return Rule{}, err
 	}
 
-	return ChangeRule200JSONResponse(out[0]), nil
+	return out[0], nil
 }
 
-func (s *Server) DeleteRule(ctx context.Context, req DeleteRuleRequestObject) (DeleteRuleResponseObject, error) {
-	if err := s.svc.DeleteRule(ctx, auth.MustBooksID(ctx), req.Id); err != nil {
-		return nil, err
-	}
-
-	return DeleteRule204Response{}, nil
-}
-
-func (s *Server) ReorderRules(ctx context.Context, req ReorderRulesRequestObject) (ReorderRulesResponseObject, error) {
-	rules, err := s.svc.ReorderRules(ctx, auth.MustBooksID(ctx), req.Body.RuleIds)
+func (s *Server) deleteRule(
+	ctx context.Context, r *http.Request, _ httpserver.None,
+) (httpserver.None, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return httpserver.None{}, err
 	}
 
-	out := ReorderRules200JSONResponse{Items: make([]Rule, len(rules))}
-	for i, r := range rules {
-		out.Items[i] = toRuleAPI(r)
+	if err := s.svc.DeleteRule(ctx, auth.MustBooksID(ctx), id); err != nil {
+		return httpserver.None{}, err
+	}
+
+	return httpserver.None{}, nil
+}
+
+func (s *Server) reorderRules(
+	ctx context.Context, _ *http.Request, in ReorderRulesJSONRequestBody,
+) (RuleList, error) {
+	rules, err := s.svc.ReorderRules(ctx, auth.MustBooksID(ctx), in.RuleIds)
+	if err != nil {
+		return RuleList{}, err
+	}
+
+	out := RuleList{Items: make([]Rule, len(rules))}
+	for i, rule := range rules {
+		out.Items[i] = toRuleAPI(rule)
 	}
 
 	if err := s.withUsage(ctx, out.Items); err != nil {
-		return nil, err
+		return RuleList{}, err
 	}
 
 	return out, nil
@@ -276,18 +315,25 @@ func fromAliasInput(in PayeeAliasInput) domain.Alias {
 	return domain.Alias{Pattern: in.Pattern, MatchType: domain.MatchType(in.MatchType), PayeeID: in.PayeeId}
 }
 
-func (s *Server) ListPayeeAliases(ctx context.Context, req ListPayeeAliasesRequestObject) (ListPayeeAliasesResponseObject, error) {
-	p, err := listPage[app.AliasKey](req.Params.Limit, req.Params.Cursor)
+func (s *Server) listPayeeAliases(
+	ctx context.Context, r *http.Request, _ httpserver.None,
+) (PayeeAliasPage, error) {
+	params, err := httpserver.Query[ListPayeeAliasesParams](r)
 	if err != nil {
-		return nil, err
+		return PayeeAliasPage{}, err
+	}
+
+	p, err := listPage[app.AliasKey](params.Limit, params.Cursor)
+	if err != nil {
+		return PayeeAliasPage{}, err
 	}
 
 	aliases, next, err := s.svc.ListAliases(ctx, auth.MustBooksID(ctx), p)
 	if err != nil {
-		return nil, err
+		return PayeeAliasPage{}, err
 	}
 
-	out := ListPayeeAliases200JSONResponse{Items: make([]PayeeAlias, len(aliases))}
+	out := PayeeAliasPage{Items: make([]PayeeAlias, len(aliases))}
 	for i, a := range aliases {
 		out.Items[i] = toAliasAPI(a)
 	}
@@ -297,40 +343,85 @@ func (s *Server) ListPayeeAliases(ctx context.Context, req ListPayeeAliasesReque
 	return out, err
 }
 
-func (s *Server) CreatePayeeAlias(ctx context.Context, req CreatePayeeAliasRequestObject) (CreatePayeeAliasResponseObject, error) {
-	a, err := s.svc.CreateAlias(ctx, auth.MustBooksID(ctx), fromAliasInput(*req.Body))
-	if err != nil {
-		return nil, err
+// createPayeeAlias is a custom handler: the success status is 201 with a Location header.
+func (s *Server) createPayeeAlias(w http.ResponseWriter, r *http.Request) {
+	var body CreatePayeeAliasJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		s.errs.WriteRequestError(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+
+		return
 	}
 
-	return CreatePayeeAlias201JSONResponse{Body: toAliasAPI(a), Headers: CreatePayeeAlias201ResponseHeaders{Location: location("/payee-aliases/", a.ID)}}, nil
-}
-
-func (s *Server) GetPayeeAlias(ctx context.Context, req GetPayeeAliasRequestObject) (GetPayeeAliasResponseObject, error) {
-	a, err := s.svc.Alias(ctx, auth.MustBooksID(ctx), req.Id)
+	a, err := s.svc.CreateAlias(r.Context(), auth.MustBooksID(r.Context()), fromAliasInput(body))
 	if err != nil {
-		return nil, err
+		s.errs.Write(w, r, err)
+
+		return
 	}
 
-	return GetPayeeAlias200JSONResponse(toAliasAPI(a)), nil
+	s.writeCreated(w, r, BaseURL+"/payee-aliases/"+a.ID.String(), toAliasAPI(a))
 }
 
-func (s *Server) ChangePayeeAlias(ctx context.Context, req ChangePayeeAliasRequestObject) (ChangePayeeAliasResponseObject, error) {
-	in := fromAliasInput(*req.Body)
-	in.ID = req.Id
+func (s *Server) getPayeeAlias(ctx context.Context, r *http.Request, _ httpserver.None) (PayeeAlias, error) {
+	id, err := httpserver.PathUUID(r, "id")
+	if err != nil {
+		return PayeeAlias{}, err
+	}
+
+	a, err := s.svc.Alias(ctx, auth.MustBooksID(ctx), id)
+	if err != nil {
+		return PayeeAlias{}, err
+	}
+
+	return toAliasAPI(a), nil
+}
+
+func (s *Server) changePayeeAlias(
+	ctx context.Context, r *http.Request, body ChangePayeeAliasJSONRequestBody,
+) (PayeeAlias, error) {
+	id, err := httpserver.PathUUID(r, "id")
+	if err != nil {
+		return PayeeAlias{}, err
+	}
+
+	in := fromAliasInput(body)
+	in.ID = id
 
 	a, err := s.svc.ChangeAlias(ctx, auth.MustBooksID(ctx), in)
 	if err != nil {
-		return nil, err
+		return PayeeAlias{}, err
 	}
 
-	return ChangePayeeAlias200JSONResponse(toAliasAPI(a)), nil
+	return toAliasAPI(a), nil
 }
 
-func (s *Server) DeletePayeeAlias(ctx context.Context, req DeletePayeeAliasRequestObject) (DeletePayeeAliasResponseObject, error) {
-	if err := s.svc.DeleteAlias(ctx, auth.MustBooksID(ctx), req.Id); err != nil {
-		return nil, err
+func (s *Server) deletePayeeAlias(
+	ctx context.Context, r *http.Request, _ httpserver.None,
+) (httpserver.None, error) {
+	id, err := httpserver.PathUUID(r, "id")
+	if err != nil {
+		return httpserver.None{}, err
 	}
 
-	return DeletePayeeAlias204Response{}, nil
+	if err := s.svc.DeleteAlias(ctx, auth.MustBooksID(ctx), id); err != nil {
+		return httpserver.None{}, err
+	}
+
+	return httpserver.None{}, nil
+}
+
+// writeCreated answers 201 with the JSON body and the Location header of the created record
+// (ADR 007, C6).
+func (s *Server) writeCreated(w http.ResponseWriter, r *http.Request, location string, body any) {
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(body); err != nil {
+		s.errs.Write(w, r, err)
+
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Location", location)
+	w.WriteHeader(http.StatusCreated)
+	_, _ = buf.WriteTo(w)
 }

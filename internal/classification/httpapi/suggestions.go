@@ -2,11 +2,13 @@ package httpapi
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/google/uuid"
 
 	"github.com/andrelopes-code/equori/internal/classification/app"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
+	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/platform/page"
 )
 
@@ -31,23 +33,30 @@ func toSuggestionAPI(s app.Suggestion) RuleSuggestion {
 	return out
 }
 
-func (s *Server) ListRuleSuggestions(ctx context.Context, req ListRuleSuggestionsRequestObject) (ListRuleSuggestionsResponseObject, error) {
-	p, err := listPage[app.SuggestionKey](req.Params.Limit, req.Params.Cursor)
+func (s *Server) listRuleSuggestions(
+	ctx context.Context, r *http.Request, _ httpserver.None,
+) (RuleSuggestionPage, error) {
+	params, err := httpserver.Query[ListRuleSuggestionsParams](r)
 	if err != nil {
-		return nil, err
+		return RuleSuggestionPage{}, err
+	}
+
+	p, err := listPage[app.SuggestionKey](params.Limit, params.Cursor)
+	if err != nil {
+		return RuleSuggestionPage{}, err
 	}
 
 	state := ""
-	if req.Params.State != nil {
-		state = string(*req.Params.State)
+	if params.State != nil {
+		state = string(*params.State)
 	}
 
 	items, next, err := s.svc.ListSuggestions(ctx, auth.MustBooksID(ctx), state, p)
 	if err != nil {
-		return nil, err
+		return RuleSuggestionPage{}, err
 	}
 
-	out := ListRuleSuggestions200JSONResponse{Items: make([]RuleSuggestion, len(items))}
+	out := RuleSuggestionPage{Items: make([]RuleSuggestion, len(items))}
 	for i, sg := range items {
 		out.Items[i] = toSuggestionAPI(sg)
 	}
@@ -57,20 +66,34 @@ func (s *Server) ListRuleSuggestions(ctx context.Context, req ListRuleSuggestion
 	return out, err
 }
 
-func (s *Server) AcceptRuleSuggestion(ctx context.Context, req AcceptRuleSuggestionRequestObject) (AcceptRuleSuggestionResponseObject, error) {
-	sg, err := s.svc.AcceptSuggestion(ctx, auth.MustBooksID(ctx), req.Id, req.Body.Name)
+func (s *Server) acceptRuleSuggestion(
+	ctx context.Context, r *http.Request, in AcceptRuleSuggestionJSONRequestBody,
+) (RuleSuggestion, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return RuleSuggestion{}, err
 	}
 
-	return AcceptRuleSuggestion200JSONResponse(toSuggestionAPI(sg)), nil
+	sg, err := s.svc.AcceptSuggestion(ctx, auth.MustBooksID(ctx), id, in.Name)
+	if err != nil {
+		return RuleSuggestion{}, err
+	}
+
+	return toSuggestionAPI(sg), nil
 }
 
-func (s *Server) DismissRuleSuggestion(ctx context.Context, req DismissRuleSuggestionRequestObject) (DismissRuleSuggestionResponseObject, error) {
-	sg, err := s.svc.DismissSuggestion(ctx, auth.MustBooksID(ctx), req.Id)
+func (s *Server) dismissRuleSuggestion(
+	ctx context.Context, r *http.Request, _ httpserver.None,
+) (RuleSuggestion, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return RuleSuggestion{}, err
 	}
 
-	return DismissRuleSuggestion200JSONResponse(toSuggestionAPI(sg)), nil
+	sg, err := s.svc.DismissSuggestion(ctx, auth.MustBooksID(ctx), id)
+	if err != nil {
+		return RuleSuggestion{}, err
+	}
+
+	return toSuggestionAPI(sg), nil
 }

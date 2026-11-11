@@ -14,8 +14,6 @@ import (
 
 const BaseURL = "/api/v1"
 
-var _ StrictServerInterface = (*Server)(nil)
-
 type Server struct {
 	svc  *app.Service
 	errs httpserver.ErrorWriter
@@ -26,11 +24,46 @@ func NewServer(svc *app.Service, log *slog.Logger) *Server {
 }
 
 func (s *Server) Register(mux *http.ServeMux) {
-	strict := NewStrictHandlerWithOptions(s, nil, StrictHTTPServerOptions{
-		RequestErrorHandlerFunc:  s.errs.WriteRequestError,
-		ResponseErrorHandlerFunc: s.errs.Write,
-	})
-	HandlerWithOptions(strict, StdHTTPServerOptions{BaseURL: BaseURL, BaseRouter: mux, ErrorHandlerFunc: s.errs.WriteRequestError})
+	mux.HandleFunc("GET "+BaseURL+"/rules",
+		httpserver.Handle(s.errs, http.StatusOK, s.listRules))
+	mux.HandleFunc("POST "+BaseURL+"/rules", s.createRule)
+	mux.HandleFunc("POST "+BaseURL+"/rules/reorder",
+		httpserver.Handle(s.errs, http.StatusOK, s.reorderRules))
+	mux.HandleFunc("POST "+BaseURL+"/rules/preview",
+		httpserver.Handle(s.errs, http.StatusOK, s.previewRule))
+	mux.HandleFunc("POST "+BaseURL+"/rules/run",
+		httpserver.Handle(s.errs, http.StatusOK, s.runRules))
+	mux.HandleFunc("GET "+BaseURL+"/transactions/{id}/categorization",
+		httpserver.Handle(s.errs, http.StatusOK, s.getCategorization))
+	mux.HandleFunc("GET "+BaseURL+"/categorizations",
+		httpserver.Handle(s.errs, http.StatusOK, s.listCategorizations))
+	mux.HandleFunc("GET "+BaseURL+"/source-categories",
+		httpserver.Handle(s.errs, http.StatusOK, s.listSourceCategories))
+	mux.HandleFunc("PUT "+BaseURL+"/source-categories/{id}",
+		httpserver.Handle(s.errs, http.StatusOK, s.mapSourceCategory))
+	mux.HandleFunc("GET "+BaseURL+"/categorization-statistics",
+		httpserver.Handle(s.errs, http.StatusOK, s.getCategorizationStatistics))
+	mux.HandleFunc("GET "+BaseURL+"/rule-suggestions",
+		httpserver.Handle(s.errs, http.StatusOK, s.listRuleSuggestions))
+	mux.HandleFunc("POST "+BaseURL+"/rule-suggestions/{id}/accept",
+		httpserver.Handle(s.errs, http.StatusOK, s.acceptRuleSuggestion))
+	mux.HandleFunc("POST "+BaseURL+"/rule-suggestions/{id}/dismiss",
+		httpserver.Handle(s.errs, http.StatusOK, s.dismissRuleSuggestion))
+	mux.HandleFunc("GET "+BaseURL+"/rules/{id}",
+		httpserver.Handle(s.errs, http.StatusOK, s.getRule))
+	mux.HandleFunc("PUT "+BaseURL+"/rules/{id}",
+		httpserver.Handle(s.errs, http.StatusOK, s.changeRule))
+	mux.HandleFunc("DELETE "+BaseURL+"/rules/{id}",
+		httpserver.Handle(s.errs, http.StatusOK, s.deleteRule))
+	mux.HandleFunc("GET "+BaseURL+"/payee-aliases",
+		httpserver.Handle(s.errs, http.StatusOK, s.listPayeeAliases))
+	mux.HandleFunc("POST "+BaseURL+"/payee-aliases", s.createPayeeAlias)
+	mux.HandleFunc("GET "+BaseURL+"/payee-aliases/{id}",
+		httpserver.Handle(s.errs, http.StatusOK, s.getPayeeAlias))
+	mux.HandleFunc("PUT "+BaseURL+"/payee-aliases/{id}",
+		httpserver.Handle(s.errs, http.StatusOK, s.changePayeeAlias))
+	mux.HandleFunc("DELETE "+BaseURL+"/payee-aliases/{id}",
+		httpserver.Handle(s.errs, http.StatusOK, s.deletePayeeAlias))
 }
 
 // paramError is a parameter that conforms to the contract but whose value the handler cannot use.
