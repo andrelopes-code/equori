@@ -156,11 +156,6 @@ internal/planning/toolapi/recurring.go	findRecurring	pending: backend reorganiza
 internal/planning/toolapi/schedules.go	listSchedules	pending: backend reorganization plan
 internal/platform/config/config.go	Load	pending: backend reorganization plan
 internal/platform/config/variables.go	Variables	table of data
-internal/platform/llm/aistudio/aistudio.go	Provider.Stream	pending: backend reorganization plan
-internal/platform/llm/openai/openai.go	Provider.Stream	pending: backend reorganization plan
-internal/platform/llm/router.go	Client.Stream	pending: backend reorganization plan
-internal/platform/llm/tools.go	Run	pending: backend reorganization plan
-internal/platform/llm/tools.go	runTools	pending: backend reorganization plan
 internal/platform/money/gen/main.go	Generate	pending: backend reorganization plan
 internal/platform/pgcluster/pgcluster.go	start	pending: backend reorganization plan
 internal/platform/postgres/pgtest/pgtest.go	buildTemplate	pending: backend reorganization plan

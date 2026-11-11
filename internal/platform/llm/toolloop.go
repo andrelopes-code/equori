@@ -24,7 +24,13 @@ func (e *ToolError) Error() string { return string(e.Content) }
 // tool with its handler. It returns the final response and the whole conversation, which
 // keeps every signature for a later turn. A handler error goes back to the model as an
 // error result; only a context error stops the loop.
-func RunTools(ctx context.Context, client *Client, req Request, handlers map[string]ToolHandler, maxSteps int) (Response, []Message, error) {
+func RunTools(
+	ctx context.Context,
+	client *Client,
+	req Request,
+	handlers map[string]ToolHandler,
+	maxSteps int,
+) (Response, []Message, error) {
 	res, err := Run(ctx, client, req, handlers, LoopOptions{MaxSteps: maxSteps})
 	return res.Response, res.History, err
 }
@@ -59,90 +65,132 @@ type Result struct {
 // Run is RunTools with step-limit forcing, target pinning and one restart. With Pin, a pinned
 // call that finds its target exhausted restarts the whole turn once, from req.Messages, on the
 // chain again.
-func Run(ctx context.Context, client *Client, req Request, handlers map[string]ToolHandler, opts LoopOptions) (Result, error) {
-	var res Result
+func Run(
+	ctx context.Context,
+	client *Client,
+	req Request,
+	handlers map[string]ToolHandler,
+	opts LoopOptions,
+) (Result, error) {
 	start := slices.Clone(req.Messages)
-	history := slices.Clone(start)
-	var pin Target
+	st := loopState{history: slices.Clone(start)}
 
-	step := 0
-	for step < opts.MaxSteps {
-		step++
-		req.Messages = history
-		req.Pin = pin
+	for st.step < opts.MaxSteps {
+		st.step++
+		req.Messages = st.history
+		req.Pin = st.pin
 		req.ToolChoice = ToolChoiceAuto
 
-		forced := opts.ForceAnswer && step == opts.MaxSteps
+		forced := opts.ForceAnswer && st.step == opts.MaxSteps
 		if forced {
 			req.ToolChoice = ToolChoiceNone
 		}
 
 		resp, err := client.Stream(ctx, req, opts.OnText)
 		if err != nil {
-			if pin != (Target{}) && !res.Restarted && errors.Is(err, ErrExhausted) {
-				if opts.OnRestart != nil {
-					opts.OnRestart()
-				}
-
-				history, pin, step, res.Restarted = slices.Clone(start), Target{}, 0, true
-
+			if st.restartPinned(err, start, opts) {
 				continue
 			}
 
-			res.History = history
+			st.res.History = st.history
 
-			return res, err
+			return st.res, err
 		}
 
-		res.Usage.InputTokens += resp.Usage.InputTokens
+		st.accept(resp, opts)
 
-		res.Usage.OutputTokens += resp.Usage.OutputTokens
-		if opts.Pin && pin == (Target{}) {
-			pin = resp.Target
-		}
-
-		for i, p := range resp.Message.Parts {
-			if p.ToolCall != nil && p.ToolCall.ID == "" {
-				p.ToolCall.ID = fmt.Sprintf("call_%d_%d", step, i)
-			}
-		}
-
-		history = append(history, resp.Message)
-
-		res.Response, res.History, res.Steps = resp, history, step
 		if forced {
-			res.StepLimit = true
-			return res, nil
+			st.res.StepLimit = true
+			return st.res, nil
 		}
 
-		var toolCalls []ToolCall
-		for _, p := range resp.Message.Parts {
-			if p.ToolCall != nil {
-				toolCalls = append(toolCalls, *p.ToolCall)
-			}
-		}
-
-		results, err := runTools(ctx, handlers, toolCalls, opts)
+		results, err := runTools(ctx, handlers, collectToolCalls(resp.Message), opts)
 		if err != nil {
-			res.Response = Response{}
-			return res, err
+			st.res.Response = Response{}
+			return st.res, err
 		}
 
 		if len(results) == 0 {
-			return res, nil
+			return st.res, nil
 		}
 
-		history = append(history, Message{Role: RoleTool, Parts: results})
+		st.history = append(st.history, Message{Role: RoleTool, Parts: results})
 	}
 
-	res.Response, res.History = Response{}, history
+	st.res.Response, st.res.History = Response{}, st.history
 
-	return res, ErrTooManySteps
+	return st.res, ErrTooManySteps
+}
+
+// loopState is the state of one Run: the result so far, the conversation, the pinned target
+// and the model calls of the current attempt.
+type loopState struct {
+	res     Result
+	history []Message
+	pin     Target
+	step    int
+}
+
+// restartPinned restarts the turn from start when a pinned call found its target exhausted
+// and no restart happened yet; it reports whether it did.
+func (st *loopState) restartPinned(err error, start []Message, opts LoopOptions) bool {
+	if st.pin == (Target{}) || st.res.Restarted || !errors.Is(err, ErrExhausted) {
+		return false
+	}
+
+	if opts.OnRestart != nil {
+		opts.OnRestart()
+	}
+
+	st.history, st.pin, st.step, st.res.Restarted = slices.Clone(start), Target{}, 0, true
+
+	return true
+}
+
+// accept adds the usage of resp, pins its target, names the calls without an ID and appends the
+// message to the conversation.
+func (st *loopState) accept(resp Response, opts LoopOptions) {
+	st.res.Usage.InputTokens += resp.Usage.InputTokens
+
+	st.res.Usage.OutputTokens += resp.Usage.OutputTokens
+	if opts.Pin && st.pin == (Target{}) {
+		st.pin = resp.Target
+	}
+
+	assignCallIDs(st.step, resp.Message.Parts)
+
+	st.history = append(st.history, resp.Message)
+
+	st.res.Response, st.res.History, st.res.Steps = resp, st.history, st.step
+}
+
+func assignCallIDs(step int, parts []Part) {
+	for i, p := range parts {
+		if p.ToolCall != nil && p.ToolCall.ID == "" {
+			p.ToolCall.ID = fmt.Sprintf("call_%d_%d", step, i)
+		}
+	}
+}
+
+func collectToolCalls(msg Message) []ToolCall {
+	var calls []ToolCall
+	for _, p := range msg.Parts {
+		if p.ToolCall != nil {
+			calls = append(calls, *p.ToolCall)
+		}
+	}
+
+	return calls
 }
 
 // runTools runs the calls of one response: the concurrent ones together, at most maxConcurrent at a
 // time, then the others one by one in response order. Results keep response order.
-func runTools(ctx context.Context, handlers map[string]ToolHandler, calls []ToolCall, opts LoopOptions) ([]Part, error) {
+func runTools(
+	ctx context.Context,
+	handlers map[string]ToolHandler,
+	calls []ToolCall,
+	opts LoopOptions,
+) ([]Part, error) {
 	if opts.OnToolCall != nil {
 		for _, c := range calls {
 			opts.OnToolCall(c)
@@ -151,12 +199,39 @@ func runTools(ctx context.Context, handlers map[string]ToolHandler, calls []Tool
 
 	results := make([]Part, len(calls))
 	errs := make([]error, len(calls))
-	concurrent := func(c ToolCall) bool { return opts.Concurrent != nil && opts.Concurrent(c.Name) }
+
+	runConcurrent(ctx, handlers, calls, results, errs, opts)
+
+	if err := errors.Join(errs...); err != nil {
+		return nil, err
+	}
+
+	if err := runSequential(ctx, handlers, calls, results, opts); err != nil {
+		return nil, err
+	}
+
+	return results, nil
+}
+
+func isConcurrent(opts LoopOptions, c ToolCall) bool {
+	return opts.Concurrent != nil && opts.Concurrent(c.Name)
+}
+
+// runConcurrent runs the concurrent calls together and stores each result and error at the
+// index of its call.
+func runConcurrent(
+	ctx context.Context,
+	handlers map[string]ToolHandler,
+	calls []ToolCall,
+	results []Part,
+	errs []error,
+	opts LoopOptions,
+) {
 	sem := make(chan struct{}, maxConcurrent)
 
 	var wg sync.WaitGroup
 	for i, c := range calls {
-		if !concurrent(c) {
+		if !isConcurrent(opts, c) {
 			continue
 		}
 
@@ -176,25 +251,30 @@ func runTools(ctx context.Context, handlers map[string]ToolHandler, calls []Tool
 	}
 
 	wg.Wait()
+}
 
-	if err := errors.Join(errs...); err != nil {
-		return nil, err
-	}
-
+// runSequential runs the other calls one by one in response order.
+func runSequential(
+	ctx context.Context,
+	handlers map[string]ToolHandler,
+	calls []ToolCall,
+	results []Part,
+	opts LoopOptions,
+) error {
 	for i, c := range calls {
-		if concurrent(c) {
+		if isConcurrent(opts, c) {
 			continue
 		}
 
 		r, err := runTool(ctx, handlers, c)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
 		results[i] = Part{ToolResult: &r}
 	}
 
-	return results, nil
+	return nil
 }
 
 func runTool(ctx context.Context, handlers map[string]ToolHandler, call ToolCall) (ToolResult, error) {

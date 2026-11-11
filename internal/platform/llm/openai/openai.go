@@ -51,7 +51,12 @@ func (p *Provider) Generate(ctx context.Context, model string, req llm.Request) 
 // Stream asks for a streamed completion with a final usage chunk and accumulates its deltas,
 // tool calls by index, into the response Generate would return. A stream that ends before a
 // chunk names its finish reason is a transient failure.
-func (p *Provider) Stream(ctx context.Context, model string, req llm.Request, onText func(string)) (llm.Response, error) {
+func (p *Provider) Stream(
+	ctx context.Context,
+	model string,
+	req llm.Request,
+	onText func(string),
+) (llm.Response, error) {
 	w := toWire(model, req)
 	w.Stream, w.StreamOptions = true, &streamOptions{IncludeUsage: true}
 
@@ -60,75 +65,9 @@ func (p *Provider) Stream(ctx context.Context, model string, req llm.Request, on
 		return llm.Response{}, fmt.Errorf("encode request: %w", err)
 	}
 
-	var wire chatResponse
-	finish := ""
+	var st streamState
 
-	read := func(r io.Reader) error {
-		var text strings.Builder
-		var calls []toolCall
-		scanner := bufio.NewScanner(r)
-		scanner.Buffer(make([]byte, 0, 64<<10), 1<<20)
-
-		for scanner.Scan() {
-			data, ok := strings.CutPrefix(strings.TrimSpace(scanner.Text()), "data:")
-
-			data = strings.TrimSpace(data)
-			if !ok || data == "[DONE]" {
-				continue
-			}
-
-			var chunk chatChunk
-			if err := json.Unmarshal([]byte(data), &chunk); err != nil {
-				return fmt.Errorf("openai %s: decode chunk: %w", model, err)
-			}
-
-			if chunk.Usage != nil {
-				wire.Usage = *chunk.Usage
-			}
-
-			if len(chunk.Choices) == 0 {
-				continue
-			}
-
-			c := chunk.Choices[0]
-			if c.Delta.Content != "" {
-				onText(c.Delta.Content)
-				text.WriteString(c.Delta.Content)
-			}
-
-			for _, d := range c.Delta.ToolCalls {
-				// The index comes from the server; a response never holds this many calls.
-				if d.Index < 0 || d.Index >= maxToolCalls {
-					return fmt.Errorf("openai %s: tool call index %d: %w", model, d.Index, llm.ErrTransient)
-				}
-
-				for len(calls) <= d.Index {
-					calls = append(calls, toolCall{Type: "function"})
-				}
-
-				tc := &calls[d.Index]
-				if d.ID != "" {
-					tc.ID = d.ID
-				}
-
-				tc.Function.Name += d.Function.Name
-				tc.Function.Arguments += d.Function.Arguments
-			}
-
-			if c.FinishReason != "" {
-				finish = c.FinishReason
-			}
-		}
-
-		if err := scanner.Err(); err != nil {
-			return fmt.Errorf("openai %s: read stream: %w: %w", model, llm.ErrTransient, err)
-		}
-
-		content := text.String()
-		wire.Choices = []choice{{Message: message{Content: &content, ToolCalls: calls}, FinishReason: finish}}
-
-		return nil
-	}
+	read := func(r io.Reader) error { return st.read(r, model, onText) }
 	if err := p.do(ctx, http.MethodPost, "/chat/completions", model, body, read); err != nil {
 		if ctx.Err() != nil {
 			return llm.Response{}, fmt.Errorf("openai %s: %w", model, ctx.Err())
@@ -137,11 +76,121 @@ func (p *Provider) Stream(ctx context.Context, model string, req llm.Request, on
 		return llm.Response{}, err
 	}
 
-	if finish == "" {
-		return llm.Response{}, fmt.Errorf("openai %s: stream ended without a finish reason: %w", model, llm.ErrTransient)
+	if st.finish == "" {
+		return llm.Response{}, fmt.Errorf(
+			"openai %s: stream ended without a finish reason: %w", model, llm.ErrTransient)
 	}
 
-	return fromWire(wire), nil
+	return fromWire(st.wire), nil
+}
+
+// streamState accumulates the chunks of one stream.
+type streamState struct {
+	wire   chatResponse
+	finish string
+}
+
+func (st *streamState) read(r io.Reader, model string, onText func(string)) error {
+	var text strings.Builder
+
+	var calls []toolCall
+
+	scanner := bufio.NewScanner(r)
+	scanner.Buffer(make([]byte, 0, 64<<10), 1<<20)
+
+	for scanner.Scan() {
+		data, ok := strings.CutPrefix(strings.TrimSpace(scanner.Text()), "data:")
+
+		data = strings.TrimSpace(data)
+		if !ok || data == "[DONE]" {
+			continue
+		}
+
+		var chunk chatChunk
+		if err := json.Unmarshal([]byte(data), &chunk); err != nil {
+			return fmt.Errorf("openai %s: decode chunk: %w", model, err)
+		}
+
+		var err error
+		if calls, err = st.applyChunk(chunk, &text, calls, model, onText); err != nil {
+			return err
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return fmt.Errorf("openai %s: read stream: %w: %w", model, llm.ErrTransient, err)
+	}
+
+	content := text.String()
+	st.wire.Choices = []choice{
+		{Message: message{Content: &content, ToolCalls: calls}, FinishReason: st.finish},
+	}
+
+	return nil
+}
+
+// applyChunk folds one chunk into the state and returns the tool calls so far.
+func (st *streamState) applyChunk(
+	chunk chatChunk,
+	text *strings.Builder,
+	calls []toolCall,
+	model string,
+	onText func(string),
+) ([]toolCall, error) {
+	if chunk.Usage != nil {
+		st.wire.Usage = *chunk.Usage
+	}
+
+	if len(chunk.Choices) == 0 {
+		return calls, nil
+	}
+
+	c := chunk.Choices[0]
+	if c.Delta.Content != "" {
+		onText(c.Delta.Content)
+		text.WriteString(c.Delta.Content)
+	}
+
+	for _, d := range c.Delta.ToolCalls {
+		var err error
+		if calls, err = applyToolDelta(calls, d.Index, d.ID, d.Function, model); err != nil {
+			return nil, err
+		}
+	}
+
+	if c.FinishReason != "" {
+		st.finish = c.FinishReason
+	}
+
+	return calls, nil
+}
+
+func applyToolDelta(
+	calls []toolCall,
+	index int,
+	id string,
+	fn function,
+	model string,
+) ([]toolCall, error) {
+	// The index comes from the server; a response never holds this many calls.
+	if index < 0 || index >= maxToolCalls {
+		return nil, fmt.Errorf(
+			"openai %s: tool call index %d: %w", model, index, llm.ErrTransient)
+	}
+
+	for len(calls) <= index {
+		calls = append(calls, toolCall{Type: "function"})
+	}
+
+	tc := &calls[index]
+	if id != "" {
+		tc.ID = id
+	}
+
+	tc.Function.Name += fn.Name
+	tc.Function.Arguments += fn.Arguments
+
+	return calls, nil
 }
 
 func decodeInto(what string, out any) func(io.Reader) error {

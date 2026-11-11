@@ -15,3 +15,8 @@ type Provider interface {
 type Streamer interface {
 	Stream(ctx context.Context, model string, req Request, onText func(string)) (Response, error)
 }
+
+// ModelLister is a provider that lists the models its API serves.
+type ModelLister interface {
+	Models(ctx context.Context) ([]string, error)
+}

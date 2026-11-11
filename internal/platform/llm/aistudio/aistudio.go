@@ -48,16 +48,43 @@ func (p *Provider) Generate(ctx context.Context, model string, req llm.Request) 
 
 // Stream calls streamGenerateContent and merges its chunks into the response Generate would
 // return. A stream that ends before a chunk names its finish reason is a transient failure.
-func (p *Provider) Stream(ctx context.Context, model string, req llm.Request, onText func(string)) (llm.Response, error) {
+func (p *Provider) Stream(
+	ctx context.Context,
+	model string,
+	req llm.Request,
+	onText func(string),
+) (llm.Response, error) {
 	resp, err := p.post(ctx, model, ":streamGenerateContent?alt=sse", req)
 	if err != nil {
 		return llm.Response{}, err
 	}
+
 	defer resp.Body.Close()
-	var merged generateResponse
-	var parts []part
-	finish := ""
-	scanner := bufio.NewScanner(resp.Body)
+
+	st, err := readChunks(ctx, model, resp.Body, onText)
+	if err != nil {
+		return llm.Response{}, err
+	}
+
+	return st.response(model)
+}
+
+// streamState is the merge of the chunks read so far.
+type streamState struct {
+	merged generateResponse
+	parts  []part
+	finish string
+}
+
+func readChunks(
+	ctx context.Context,
+	model string,
+	body io.Reader,
+	onText func(string),
+) (streamState, error) {
+	var st streamState
+
+	scanner := bufio.NewScanner(body)
 	scanner.Buffer(make([]byte, 0, 64<<10), 1<<20)
 
 	for scanner.Scan() {
@@ -68,62 +95,78 @@ func (p *Provider) Stream(ctx context.Context, model string, req llm.Request, on
 
 		var chunk generateResponse
 		if err := json.Unmarshal([]byte(strings.TrimSpace(data)), &chunk); err != nil {
-			return llm.Response{}, fmt.Errorf("aistudio %s: decode chunk: %w", model, err)
+			return streamState{}, fmt.Errorf("aistudio %s: decode chunk: %w", model, err)
 		}
 
-		if chunk.UsageMetadata.PromptTokenCount > 0 || chunk.UsageMetadata.CandidatesTokenCount > 0 {
-			merged.UsageMetadata = chunk.UsageMetadata
-		}
-
-		if chunk.PromptFeedback != nil {
-			merged.PromptFeedback = chunk.PromptFeedback
-		}
-
-		if len(chunk.Candidates) == 0 {
-			continue
-		}
-
-		c := chunk.Candidates[0]
-		if c.FinishReason != "" {
-			finish = c.FinishReason
-		}
-
-		if c.Content == nil {
-			continue
-		}
-
-		for _, np := range c.Content.Parts {
-			if np.Thought {
-				continue
-			}
-
-			if np.Text != nil && *np.Text != "" {
-				onText(*np.Text)
-			}
-
-			parts = mergePart(parts, np)
-		}
+		st.mergeChunk(chunk, onText)
 	}
 
 	if err := scanner.Err(); err != nil {
 		if ctx.Err() != nil {
-			return llm.Response{}, fmt.Errorf("aistudio %s: %w", model, ctx.Err())
+			return streamState{}, fmt.Errorf("aistudio %s: %w", model, ctx.Err())
 		}
 
-		return llm.Response{}, fmt.Errorf("aistudio %s: read stream: %w: %w", model, llm.ErrTransient, err)
+		return streamState{}, fmt.Errorf(
+			"aistudio %s: read stream: %w: %w", model, llm.ErrTransient, err)
 	}
 
-	if merged.PromptFeedback != nil && merged.PromptFeedback.BlockReason != "" && len(parts) == 0 {
-		return fromWire(merged), nil
+	return st, nil
+}
+
+// mergeChunk folds one chunk into the state and hands its new text to onText.
+func (st *streamState) mergeChunk(chunk generateResponse, onText func(string)) {
+	um := chunk.UsageMetadata
+	if um.PromptTokenCount > 0 || um.CandidatesTokenCount > 0 {
+		st.merged.UsageMetadata = um
 	}
 
-	if finish == "" {
-		return llm.Response{}, fmt.Errorf("aistudio %s: stream ended without a finish reason: %w", model, llm.ErrTransient)
+	if chunk.PromptFeedback != nil {
+		st.merged.PromptFeedback = chunk.PromptFeedback
 	}
 
-	merged.Candidates = []candidate{{Content: &content{Role: "model", Parts: parts}, FinishReason: finish}}
+	if len(chunk.Candidates) == 0 {
+		return
+	}
 
-	return fromWire(merged), nil
+	c := chunk.Candidates[0]
+	if c.FinishReason != "" {
+		st.finish = c.FinishReason
+	}
+
+	if c.Content == nil {
+		return
+	}
+
+	for _, np := range c.Content.Parts {
+		if np.Thought {
+			continue
+		}
+
+		if np.Text != nil && *np.Text != "" {
+			onText(*np.Text)
+		}
+
+		st.parts = mergePart(st.parts, np)
+	}
+}
+
+// response builds the Response of the merged chunks.
+func (st streamState) response(model string) (llm.Response, error) {
+	fb := st.merged.PromptFeedback
+	if fb != nil && fb.BlockReason != "" && len(st.parts) == 0 {
+		return fromWire(st.merged), nil
+	}
+
+	if st.finish == "" {
+		return llm.Response{}, fmt.Errorf(
+			"aistudio %s: stream ended without a finish reason: %w", model, llm.ErrTransient)
+	}
+
+	st.merged.Candidates = []candidate{
+		{Content: &content{Role: "model", Parts: st.parts}, FinishReason: st.finish},
+	}
+
+	return fromWire(st.merged), nil
 }
 
 // mergePart joins a text part to a preceding text part without a signature, moving its signature
@@ -226,159 +269,4 @@ func (p *Provider) Models(ctx context.Context) ([]string, error) {
 	slices.Sort(ids)
 
 	return ids, nil
-}
-
-func toWire(req llm.Request) generateRequest {
-	w := generateRequest{Contents: []content{}}
-	if req.System != "" {
-		s := req.System
-		w.SystemInstruction = &content{Parts: []part{{Text: &s}}}
-	}
-
-	for _, m := range req.Messages {
-		role := "user"
-		if m.Role == llm.RoleModel {
-			role = "model"
-		}
-
-		c := content{Role: role, Parts: []part{}}
-		for _, p := range m.Parts {
-			c.Parts = append(c.Parts, partToWire(p))
-		}
-
-		w.Contents = append(w.Contents, c)
-	}
-
-	if len(req.Tools) > 0 {
-		var decls []functionDeclaration
-		for _, t := range req.Tools {
-			decls = append(decls, functionDeclaration{Name: t.Name, Description: t.Description, ParametersJSONSchema: t.Parameters})
-		}
-
-		w.Tools = []tool{{FunctionDeclarations: decls}}
-		if req.ToolChoice == llm.ToolChoiceNone {
-			w.ToolConfig = &toolConfig{}
-			w.ToolConfig.FunctionCallingConfig.Mode = "NONE"
-		}
-	}
-
-	if req.Schema != nil || req.MaxOutputTokens > 0 || req.Temperature != nil || req.Thinking != "" {
-		cfg := &generationConfig{MaxOutputTokens: req.MaxOutputTokens, Temperature: req.Temperature}
-		if req.Schema != nil {
-			cfg.ResponseMimeType, cfg.ResponseJSONSchema = "application/json", req.Schema
-		}
-
-		if req.Thinking == "low" {
-			cfg.ThinkingConfig = &thinkingConfig{ThinkingLevel: "LOW"}
-		}
-
-		w.GenerationConfig = cfg
-	}
-
-	return w
-}
-
-func partToWire(p llm.Part) part {
-	var w part
-	switch {
-	case p.ToolCall != nil:
-		w.FunctionCall = &functionCall{ID: p.ToolCall.ID, Name: p.ToolCall.Name, Args: p.ToolCall.Args}
-	case p.ToolResult != nil:
-		w.FunctionResponse = &functionResponse{ID: p.ToolResult.CallID, Name: p.ToolResult.Name, Response: asObject(p.ToolResult.Content)}
-	default:
-		t := p.Text
-		w.Text = &t
-	}
-
-	if p.Signature != nil && p.Signature.Provider == name {
-		w.ThoughtSignature = p.Signature.Data
-	}
-
-	return w
-}
-
-// asObject wraps content that is not a JSON object, because functionResponse.response must
-// be one.
-func asObject(content json.RawMessage) json.RawMessage {
-	trimmed := bytes.TrimSpace(content)
-	if len(trimmed) > 0 && trimmed[0] == '{' {
-		return content
-	}
-
-	if len(trimmed) == 0 {
-		trimmed = []byte("null")
-	}
-
-	b, _ := json.Marshal(map[string]json.RawMessage{"result": trimmed})
-
-	return b
-}
-
-func fromWire(w generateResponse) llm.Response {
-	resp := llm.Response{
-		Message: llm.Message{Role: llm.RoleModel},
-		Usage: llm.Usage{
-			InputTokens:  w.UsageMetadata.PromptTokenCount,
-			OutputTokens: w.UsageMetadata.CandidatesTokenCount + w.UsageMetadata.ThoughtsTokenCount,
-		},
-	}
-	if len(w.Candidates) == 0 {
-		resp.FinishReason = llm.FinishOther
-		if w.PromptFeedback != nil && w.PromptFeedback.BlockReason != "" {
-			resp.FinishReason = llm.FinishBlocked
-		}
-
-		return resp
-	}
-
-	c := w.Candidates[0]
-
-	hasCall := false
-	if c.Content != nil {
-		for _, p := range c.Content.Parts {
-			if p.Thought {
-				continue
-			}
-
-			var np llm.Part
-			switch {
-			case p.FunctionCall != nil:
-				np.ToolCall = &llm.ToolCall{ID: p.FunctionCall.ID, Name: p.FunctionCall.Name, Args: p.FunctionCall.Args}
-				hasCall = true
-			case p.Text != nil:
-				np.Text = *p.Text
-			}
-
-			if len(p.ThoughtSignature) > 0 {
-				np.Signature = &llm.Signature{Provider: name, Data: p.ThoughtSignature}
-			}
-
-			resp.Message.Parts = append(resp.Message.Parts, np)
-		}
-	}
-
-	resp.FinishReason = finishReason(c.FinishReason, hasCall)
-
-	return resp
-}
-
-func finishReason(reason string, hasCall bool) llm.FinishReason {
-	switch reason {
-	case "STOP", "":
-		if hasCall {
-			return llm.FinishToolCalls
-		}
-
-		if reason == "" {
-			return llm.FinishOther
-		}
-
-		return llm.FinishStop
-	case "MAX_TOKENS":
-		return llm.FinishLength
-	case "SAFETY", "RECITATION", "BLOCKLIST", "PROHIBITED_CONTENT", "SPII":
-		return llm.FinishBlocked
-	default:
-		return llm.FinishOther
-	}
 }
