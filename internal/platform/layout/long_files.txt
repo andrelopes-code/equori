@@ -1,4 +1,3 @@
-cmd/equori/main.go	pending: backend reorganization plan
 internal/classification/domain/rule.go	pending: backend reorganization plan
 internal/classification/toolapi/manage_rule.go	pending: backend reorganization plan
 internal/identity/httpapi/server.go	pending: backend reorganization plan

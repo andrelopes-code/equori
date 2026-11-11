@@ -25,6 +25,16 @@ const (
 	serviceAccount = `NT SERVICE\equori`
 )
 
+func runService(args []string) error {
+	err := serviceCommand(args)
+	if errors.Is(err, winsvc.ErrUnsupported) {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(2)
+	}
+
+	return err
+}
+
 func serviceCommand(args []string) error {
 	if len(args) == 1 {
 		switch args[0] {

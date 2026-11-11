@@ -18,6 +18,7 @@ const (
 	repoRoot       = "../../.."
 	maxFileLines   = 400
 	maxFuncLines   = 50
+	maxMainLines   = 80
 	maxGoDirFiles  = 40
 	maxWebDirFiles = 40
 )
@@ -84,6 +85,19 @@ func TestGoFunctionSize(t *testing.T) {
 			t.Errorf("long_functions.txt: %q no longer exceeds %d lines; remove the entry",
 				key, maxFuncLines)
 		}
+	}
+}
+
+// TestMainSize rejects a cmd/equori/main.go above maxMainLines: main.go holds main and run only.
+func TestMainSize(t *testing.T) {
+	data, err := os.ReadFile(filepath.Join(repoRoot, "cmd/equori/main.go"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	lines := bytes.Count(data, []byte("\n"))
+	if lines > maxMainLines {
+		t.Errorf("cmd/equori/main.go has %d lines; move code by concept (limit %d)", lines, maxMainLines)
 	}
 }
 

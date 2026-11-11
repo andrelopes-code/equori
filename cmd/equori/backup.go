@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -10,6 +9,7 @@ import (
 	"time"
 
 	"github.com/andrelopes-code/equori/internal/platform/backup"
+	"github.com/andrelopes-code/equori/internal/platform/config"
 	"github.com/andrelopes-code/equori/internal/platform/pgcluster"
 	"github.com/andrelopes-code/equori/internal/platform/postgres"
 )
@@ -22,12 +22,9 @@ restore also accepts an encrypted copy (.age) and reads its password from stdin.
 In managed mode, restore refuses to run while equori serve runs.`
 
 func backupCommand(args []string) error {
-	fs := flag.NewFlagSet("backup", flag.ContinueOnError)
-
-	out := fs.String("out", "", "file to write; default EQUORI_BACKUP_DIR when set, the current directory otherwise")
-	if err := fs.Parse(args); err != nil || fs.NArg() != 0 {
-		fmt.Fprintln(os.Stderr, backupUsage)
-		return errUsage
+	out, err := parseBackupFlags(args)
+	if err != nil {
+		return err
 	}
 
 	cfg, _, err := setup()
@@ -35,8 +32,27 @@ func backupCommand(args []string) error {
 		return err
 	}
 
-	ctx := context.Background()
+	return runBackup(context.Background(), cfg, out)
+}
 
+// parseBackupFlags returns the --out value; no positional argument is allowed.
+func parseBackupFlags(args []string) (string, error) {
+	fs := flag.NewFlagSet("backup", flag.ContinueOnError)
+
+	out := fs.String(
+		"out",
+		"",
+		"file to write; default EQUORI_BACKUP_DIR when set, the current directory otherwise",
+	)
+	if err := fs.Parse(args); err != nil || fs.NArg() != 0 {
+		fmt.Fprintln(os.Stderr, backupUsage)
+		return "", errUsage
+	}
+
+	return *out, nil
+}
+
+func runBackup(ctx context.Context, cfg config.Config, out string) error {
 	bin, err := pgcluster.Bin(cfg.PostgresBin)
 	if err != nil {
 		return err
@@ -60,14 +76,7 @@ func backupCommand(args []string) error {
 		return err
 	}
 
-	path := *out
-	if path == "" {
-		path = backup.Name(backup.Manual, time.Now().UTC(), latest)
-		if cfg.BackupDir != "" {
-			path = filepath.Join(cfg.BackupDir, path)
-		}
-	}
-
+	path := backupPath(cfg, out, latest)
 	if err := backup.Dump(ctx, bin, dsn, path); err != nil {
 		return err
 	}
@@ -78,98 +87,15 @@ func backupCommand(args []string) error {
 	return nil
 }
 
-func restoreCommand(args []string) error {
-	if len(args) != 1 {
-		fmt.Fprintln(os.Stderr, backupUsage)
-		return errUsage
-	}
-
-	file := args[0]
-
-	cfg, _, err := setup()
-	if err != nil {
-		return err
-	}
-
-	ctx := context.Background()
-
-	latest, err := postgres.LatestVersion()
-	if err != nil {
-		return err
-	}
-
-	bin, err := pgcluster.Bin(cfg.PostgresBin)
-	if err != nil {
-		return err
-	}
-
-	file, cleanup, err := plainDump(file)
-	if err != nil {
-		return err
-	}
-
-	defer cleanup()
-
-	// Restore never calls openDatabase, which would migrate before the drop.
-	if cfg.Managed() {
-		c, err := pgcluster.Attach(ctx, cfg.DataDir, bin)
-		if err != nil {
-			return err
+// backupPath returns out, or a generated name under EQUORI_BACKUP_DIR when set.
+func backupPath(cfg config.Config, out string, latest int64) string {
+	path := out
+	if path == "" {
+		path = backup.Name(backup.Manual, time.Now().UTC(), latest)
+		if cfg.BackupDir != "" {
+			path = filepath.Join(cfg.BackupDir, path)
 		}
-
-		if !c.Owned() {
-			_ = c.Stop()
-			return errors.New("equori serve is running on this data directory; stop it, then run equori restore again")
-		}
-
-		defer func() { _ = c.Stop() }()
-
-		err = backup.Restore(ctx, c.Bin(), c.DSN(pgcluster.Database), file, latest)
-		if err != nil {
-			return err
-		}
-	} else if err := backup.Restore(ctx, bin, cfg.DatabaseURL, file, latest); err != nil {
-		return err
 	}
 
-	fmt.Printf("restored %s; the next start applies newer migrations\n", file)
-
-	return nil
-}
-
-// plainDump returns file when it is a dump. For an encrypted copy it returns a decrypted
-// temporary file, which cleanup removes.
-func plainDump(file string) (string, func(), error) {
-	isCopy, err := backup.IsCopy(file)
-	if err != nil {
-		return "", nil, err
-	}
-
-	if !isCopy {
-		return file, func() {}, nil
-	}
-
-	password, err := readPassword()
-	if err != nil {
-		return "", nil, err
-	}
-
-	tmp, err := os.CreateTemp("", "equori-restore-*.dump")
-	if err != nil {
-		return "", nil, fmt.Errorf("create temporary dump: %w", err)
-	}
-
-	cleanup := func() { _ = os.Remove(tmp.Name()) }
-
-	if err := tmp.Close(); err != nil {
-		cleanup()
-		return "", nil, fmt.Errorf("close temporary dump: %w", err)
-	}
-
-	if err := backup.Decrypt(file, tmp.Name(), password); err != nil {
-		cleanup()
-		return "", nil, err
-	}
-
-	return tmp.Name(), cleanup, nil
+	return path
 }

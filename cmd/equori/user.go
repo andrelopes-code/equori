@@ -27,8 +27,6 @@ otherwise the first line of input.
 reset-second-factor deletes the member's TOTP, passkeys, recovery codes, pending
 logins and sessions (ADR 030).`
 
-var errUsage = errors.New("invalid arguments")
-
 func userCommand(args []string) error {
 	if len(args) > 0 {
 		switch args[0] {
@@ -44,21 +42,22 @@ func userCommand(args []string) error {
 	return errUsage
 }
 
-func createUser(args []string) error {
-	fs := flag.NewFlagSet("user create", flag.ContinueOnError)
-	fs.SetOutput(io.Discard)
-	email := fs.String("email", "", "")
-	language := fs.String("language", "", "")
-	region := fs.String("region", "", "")
-	currency := fs.String("currency", "", "")
+// createUserArgs holds the flags of user create.
+type createUserArgs struct {
+	email    string
+	language string
+	region   string
+	currency string
+	admin    bool
+}
 
-	admin := fs.Bool("admin", false, "")
-	if err := fs.Parse(args); err != nil || *email == "" || *language == "" || *region == "" || fs.NArg() > 0 {
-		fmt.Fprintln(os.Stderr, userUsage)
-		return errUsage
+func createUser(args []string) error {
+	in, err := parseCreateArgs(args)
+	if err != nil {
+		return err
 	}
 
-	l, base, err := userSettings(*language, *region, *currency)
+	l, base, err := userSettings(in.language, in.region, in.currency)
 	if err != nil {
 		return err
 	}
@@ -82,7 +81,7 @@ func createUser(args []string) error {
 	defer db.Close(log)
 
 	role := identity.RoleMember
-	if *admin {
+	if in.admin {
 		role = identity.RoleAdmin
 	}
 
@@ -91,7 +90,7 @@ func createUser(args []string) error {
 		return err
 	}
 
-	user, err := module.CreateMember(ctx, *email, password, role, l, base)
+	user, err := module.CreateMember(ctx, in.email, password, role, l, base)
 	if err != nil {
 		return fmt.Errorf("create user: %w", err)
 	}
@@ -99,6 +98,29 @@ func createUser(args []string) error {
 	fmt.Fprintf(os.Stderr, "created %s user %s (id %d)\n", user.Role, user.Email, user.ID)
 
 	return nil
+}
+
+// parseCreateArgs parses the flags of user create; --email, --language and --region are required
+// and no positional argument is allowed.
+func parseCreateArgs(args []string) (createUserArgs, error) {
+	var in createUserArgs
+
+	fs := flag.NewFlagSet("user create", flag.ContinueOnError)
+	fs.SetOutput(io.Discard)
+	fs.StringVar(&in.email, "email", "", "")
+	fs.StringVar(&in.language, "language", "", "")
+	fs.StringVar(&in.region, "region", "", "")
+	fs.StringVar(&in.currency, "currency", "", "")
+
+	fs.BoolVar(&in.admin, "admin", false, "")
+
+	err := fs.Parse(args)
+	if err != nil || in.email == "" || in.language == "" || in.region == "" || fs.NArg() > 0 {
+		fmt.Fprintln(os.Stderr, userUsage)
+		return createUserArgs{}, errUsage
+	}
+
+	return in, nil
 }
 
 func resetSecondFactor(args []string) error {

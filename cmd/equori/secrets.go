@@ -26,20 +26,28 @@ func secretsCommand(args []string) error {
 	}
 
 	if args[0] == "key" {
-		cfg, _, err := setup()
-		if err != nil {
-			return err
-		}
-
-		if cfg.SecretKey == "" {
-			return errors.New("no secret key is configured: set EQUORI_SECRET_KEY")
-		}
-
-		fmt.Println(base64.StdEncoding.EncodeToString([]byte(cfg.SecretKey)))
-
-		return nil
+		return printSecretKey()
 	}
 
+	return rotateSecrets()
+}
+
+func printSecretKey() error {
+	cfg, _, err := setup()
+	if err != nil {
+		return err
+	}
+
+	if cfg.SecretKey == "" {
+		return errors.New("no secret key is configured: set EQUORI_SECRET_KEY")
+	}
+
+	fmt.Println(base64.StdEncoding.EncodeToString([]byte(cfg.SecretKey)))
+
+	return nil
+}
+
+func rotateSecrets() error {
 	cfg, log, err := setup()
 	if err != nil {
 		return err
@@ -58,6 +66,11 @@ func secretsCommand(args []string) error {
 		return err
 	}
 
+	return resealAll(ctx, app)
+}
+
+// resealAll reseals the stored secrets of each module, one module at a time.
+func resealAll(ctx context.Context, app *server.App) error {
 	n, err := app.Ingestion.RotateSecrets(ctx)
 	if err != nil {
 		return err
