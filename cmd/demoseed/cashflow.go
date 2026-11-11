@@ -39,39 +39,6 @@ func (s *seeder) expense(d time.Time, via, category, payee, desc string, cents i
 // mealReserve is the balance of the meal card that a purchase leaves for the next one, in cents.
 const mealReserve = 30000
 
-// Payroll of Tarsus Tecnologia. Amounts are in cents.
-const (
-	healthPlanDiscount = 31240
-	inss2024           = 87724 // maximum monthly contribution of the year
-	inss2025           = 95162
-	inss2026           = 98809
-)
-
-func gross(month time.Time) int64 {
-	return step(month, 1490000, map[string]int64{"2026-01": 1580000})
-}
-
-func inssOf(month time.Time) int64 {
-	switch month.Year() {
-	case 2024:
-		return inss2024
-	case 2025:
-		return inss2025
-	default:
-		return inss2026
-	}
-}
-
-// irrfOf applies the 27.5 % bracket with its deduction; every salary of the persona falls in it.
-func irrfOf(base int64, month time.Time) int64 {
-	deduction := int64(89600)
-	if ym(month) >= "2025-05" {
-		deduction = 90873
-	}
-
-	return base*275/1000 - deduction
-}
-
 func (s *seeder) payroll(month time.Time) {
 	g := gross(month)
 	inss := inssOf(month)
@@ -91,6 +58,12 @@ func (s *seeder) payroll(month time.Time) {
 
 // extras are the yearly payments of the employer and the occasional income.
 func (s *seeder) extras() {
+	s.extrasEmployer()
+	s.extrasFreelance()
+	s.extrasRefunds()
+}
+
+func (s *seeder) extrasEmployer() {
 	p := func(d, desc, income string, g, inss, irrf int64, account string) {
 		day, _ := time.Parse(time.DateOnly, d)
 		s.at(day, func() {
@@ -117,7 +90,9 @@ func (s *seeder) extras() {
 	// PLR is taxed apart from the salary; 17 % is an approximate effective rate.
 	p("2025-03-14", "PLR 2024", "income.bonus", 1380000, 0, 1380000*17/100, "itau.checking")
 	p("2026-03-13", "PLR 2025", "income.bonus", 1530000, 0, 1530000*17/100, "itau.checking")
+}
 
+func (s *seeder) extrasFreelance() {
 	free := func(d, desc string, cents int64) {
 		day, _ := time.Parse(time.DateOnly, d)
 		s.at(day, func() {
@@ -128,7 +103,9 @@ func (s *seeder) extras() {
 	free("2025-10-09", "Workshop de priorização de produto", 240000)
 	free("2026-05-15", "Mentoria e revisão de roadmap", 410000)
 	free("2026-08-21", "Palestra em meetup de produto", 180000)
+}
 
+func (s *seeder) extrasRefunds() {
 	refund := func(d, desc, payee string, cents int64, tags ...string) {
 		day, _ := time.Parse(time.DateOnly, d)
 		s.at(day, func() {

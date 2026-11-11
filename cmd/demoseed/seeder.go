@@ -82,7 +82,7 @@ func (s *seeder) do(method, path string, body, out any) {
 		reader = bytes.NewReader(b)
 	}
 
-	req, err := http.NewRequestWithContext(s.ctx, method, s.base+"/api/v1"+path, reader)
+	req, err := http.NewRequestWithContext(s.ctx, method, s.base+"/api/v1"+path, reader) //nolint:gosec // the address is the operator's own instance.
 	if err != nil {
 		s.fail("build %s %s: %w", method, path, err)
 		return
@@ -221,22 +221,6 @@ func (s *seeder) requireEmpty() {
 			s.fail("the book already owns account %q; drop the user and create it again before seeding", a.Name)
 		}
 	}
-}
-
-type money struct {
-	Amount   int64  `json:"amount"`
-	Currency string `json:"currency"`
-}
-
-func brl(cents int64) money { return money{Amount: cents, Currency: "BRL"} }
-
-type posting struct {
-	AccountID string `json:"account_id"`
-	Amount    money  `json:"amount"`
-}
-
-func post(account string, cents int64) posting {
-	return posting{AccountID: account, Amount: brl(cents)}
 }
 
 // record posts a balanced transaction, keeps the running balances and returns its id.

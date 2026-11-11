@@ -29,43 +29,18 @@ func main() {
 }
 
 func run(args []string) error {
-	fs := flag.NewFlagSet("demoseed", flag.ContinueOnError)
-	cfg := config{}
-	today := fs.String("today", "", "last day of the history, YYYY-MM-DD; default the current date in São Paulo")
-	fs.StringVar(&cfg.url, "url", "http://127.0.0.1:8080", "address of the running application")
-	fs.StringVar(&cfg.email, "email", "demo@equori.local", "email of the demo user")
-	fs.StringVar(&cfg.password, "password", os.Getenv("EQUORI_DEMO_PASSWORD"), "password of the demo user; default $EQUORI_DEMO_PASSWORD")
-
-	if err := fs.Parse(args); err != nil {
+	cfg, err := parseFlags(args)
+	if err != nil {
 		return err
-	}
-
-	if cfg.password == "" {
-		return errors.New("a password is required: set -password or EQUORI_DEMO_PASSWORD")
-	}
-
-	loc, err := time.LoadLocation("America/Sao_Paulo")
-	if err != nil {
-		return fmt.Errorf("load location: %w", err)
-	}
-
-	cfg.today = time.Now().In(loc)
-	if *today != "" {
-		if cfg.today, err = time.Parse(time.DateOnly, *today); err != nil {
-			return fmt.Errorf("-today: %w", err)
-		}
-	}
-
-	jar, err := cookiejar.New(nil)
-	if err != nil {
-		return fmt.Errorf("cookie jar: %w", err)
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 
-	s := newSeeder(ctx, cfg.url, &http.Client{Jar: jar, Timeout: time.Minute})
-	s.login(cfg.email, cfg.password)
+	s, err := connect(ctx, cfg)
+	if err != nil {
+		return err
+	}
 
 	if err := seed(s, cfg); err != nil {
 		return err
@@ -114,6 +89,49 @@ func seed(s *seeder, cfg config) error {
 	s.goals()
 
 	return s.err
+}
+
+func parseFlags(args []string) (config, error) {
+	fs := flag.NewFlagSet("demoseed", flag.ContinueOnError)
+	cfg := config{}
+	today := fs.String("today", "", "last day of the history, YYYY-MM-DD; default the current date in São Paulo")
+	fs.StringVar(&cfg.url, "url", "http://127.0.0.1:8080", "address of the running application")
+	fs.StringVar(&cfg.email, "email", "demo@equori.local", "email of the demo user")
+	fs.StringVar(&cfg.password, "password", os.Getenv("EQUORI_DEMO_PASSWORD"), "password of the demo user; default $EQUORI_DEMO_PASSWORD")
+
+	if err := fs.Parse(args); err != nil {
+		return cfg, err
+	}
+
+	if cfg.password == "" {
+		return cfg, errors.New("a password is required: set -password or EQUORI_DEMO_PASSWORD")
+	}
+
+	loc, err := time.LoadLocation("America/Sao_Paulo")
+	if err != nil {
+		return cfg, fmt.Errorf("load location: %w", err)
+	}
+
+	cfg.today = time.Now().In(loc)
+	if *today != "" {
+		if cfg.today, err = time.Parse(time.DateOnly, *today); err != nil {
+			return cfg, fmt.Errorf("-today: %w", err)
+		}
+	}
+
+	return cfg, nil
+}
+
+func connect(ctx context.Context, cfg config) (*seeder, error) {
+	jar, err := cookiejar.New(nil)
+	if err != nil {
+		return nil, fmt.Errorf("cookie jar: %w", err)
+	}
+
+	s := newSeeder(ctx, cfg.url, &http.Client{Jar: jar, Timeout: time.Minute})
+	s.login(cfg.email, cfg.password)
+
+	return s, nil
 }
 
 func firstOfMonth(t time.Time) time.Time {

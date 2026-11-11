@@ -1,12 +1,8 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
-	"math"
-	"mime/multipart"
 	"net/http"
-	"net/textproto"
 	"strings"
 )
 
@@ -90,100 +86,6 @@ func (s *seeder) reconcileStatements() {
 	}
 }
 
-// noBalance leaves the closing balance out of a statement file; a reported balance reconciles the account up to its date.
-const noBalance = int64(math.MinInt64)
-
-// bankOFX writes an OFX 1.x checking statement. The balance is the closing balance reported by the institution.
-func bankOFX(from, to string, balance int64, lines []ofxLine) []byte {
-	var b strings.Builder
-	b.WriteString("OFXHEADER:100\nDATA:OFXSGML\nVERSION:102\nCHARSET:UTF-8\n\n<OFX><BANKMSGSRSV1><STMTTRNRS><STMTRS><CURDEF>BRL\n")
-	fmt.Fprintf(&b, "<BANKTRANLIST><DTSTART>%s<DTEND>%s\n", from, to)
-
-	for _, l := range lines {
-		fmt.Fprintf(&b, "<STMTTRN><TRNTYPE>OTHER<DTPOSTED>%s<TRNAMT>%s<FITID>%s<NAME>%s</STMTTRN>\n", l.date, l.amount, l.fitid, l.name)
-	}
-
-	b.WriteString("</BANKTRANLIST>")
-
-	if balance != noBalance {
-		fmt.Fprintf(&b, "<LEDGERBAL><BALAMT>%s<DTASOF>%s</LEDGERBAL>", reais(balance), to)
-	}
-
-	b.WriteString("</STMTRS></STMTTRNRS></BANKMSGSRSV1></OFX>\n")
-
-	return []byte(b.String())
-}
-
-func cardOFX(from, to string, lines []ofxLine) []byte {
-	var b strings.Builder
-	b.WriteString("OFXHEADER:100\nDATA:OFXSGML\nVERSION:102\n\n<OFX><CREDITCARDMSGSRSV1><CCSTMTTRNRS><CCSTMTRS><CURDEF>BRL\n")
-	fmt.Fprintf(&b, "<BANKTRANLIST><DTSTART>%s<DTEND>%s\n", from, to)
-
-	for _, l := range lines {
-		fmt.Fprintf(&b, "<STMTTRN><TRNTYPE>OTHER<DTPOSTED>%s<TRNAMT>%s<FITID>%s<MEMO>%s</STMTTRN>\n", l.date, l.amount, l.fitid, l.name)
-	}
-
-	b.WriteString("</BANKTRANLIST></CCSTMTRS></CCSTMTTRNRS></CREDITCARDMSGSRSV1></OFX>\n")
-
-	return []byte(b.String())
-}
-
-type ofxLine struct{ date, amount, fitid, name string }
-
-func reais(cents int64) string {
-	sign := ""
-	if cents < 0 {
-		sign, cents = "-", -cents
-	}
-
-	return fmt.Sprintf("%s%d.%02d", sign, cents/100, cents%100)
-}
-
-// upload posts content as the multipart field "file" of path.
-func (s *seeder) upload(path string, fields map[string]string, name string, content []byte) {
-	var body bytes.Buffer
-
-	w := multipart.NewWriter(&body)
-	for k, v := range fields {
-		_ = w.WriteField(k, v)
-	}
-
-	h := textproto.MIMEHeader{}
-	h.Set("Content-Disposition", fmt.Sprintf(`form-data; name="file"; filename="%s"`, name))
-	h.Set("Content-Type", "application/octet-stream")
-
-	part, err := w.CreatePart(h)
-	if err != nil {
-		s.fail("multipart: %w", err)
-		return
-	}
-
-	_, _ = part.Write(content)
-	_ = w.Close()
-
-	req, err := http.NewRequestWithContext(s.ctx, http.MethodPost, s.base+"/api/v1"+path, &body)
-	if err != nil {
-		s.fail("build upload %s: %w", path, err)
-		return
-	}
-
-	req.Header.Set("Content-Type", w.FormDataContentType())
-
-	resp, err := s.http.Do(req) //nolint:gosec // the address is the operator's own instance.
-	if err != nil {
-		s.fail("upload %s: %w", path, err)
-		return
-	}
-	defer resp.Body.Close()
-
-	s.calls++
-	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		var raw bytes.Buffer
-		_, _ = raw.ReadFrom(resp.Body)
-		s.fail("upload %s: status %d: %s", path, resp.StatusCode, truncate(raw.Bytes()))
-	}
-}
-
 // recent returns the outflows of an account in the last days, newest last.
 func (s *seeder) recent(key string, days int) []entry {
 	var out []entry
@@ -198,11 +100,15 @@ func (s *seeder) recent(key string, days int) []entry {
 	return out
 }
 
-func compact(date string) string { return strings.ReplaceAll(date, "-", "") }
-
 // importStatements uploads the statements of the last three weeks of the Nubank account and of the Itaú card. Lines equal to recorded ones match; the others become uncategorized and the rules decide them.
 func (s *seeder) importStatements() {
 	from, to := compact(iso(s.today.AddDate(0, 0, -21))), compact(iso(s.today))
+
+	s.importBankStatements(from, to)
+	s.importCardStatements(from, to)
+}
+
+func (s *seeder) importBankStatements(from, to string) {
 	var lines []ofxLine
 	var added int64
 
@@ -234,10 +140,12 @@ func (s *seeder) importStatements() {
 	// The lines that the ledger lacks start nine days back, so the account is funded before the first of them.
 	s.ensure(s.today.AddDate(0, 0, -10), "nubank.checking", -added+30000)
 	s.upload("/accounts/"+s.id("nubank.checking")+"/imports", map[string]string{"format": "ofx"}, "nubank-"+ym(s.today)+".ofx", bankOFX(from, to, s.bal[s.id("nubank.checking")]+added, lines))
+}
 
+func (s *seeder) importCardStatements(from, to string) {
 	var cards []ofxLine
 
-	n = 0
+	n := 0
 	for _, e := range s.recent("card.itau", 21) {
 		n++
 		cards = append(cards, ofxLine{compact(e.date), reais(e.cents), fmt.Sprintf("IT%s%02d", compact(e.date), n), strings.ToUpper(e.desc)})

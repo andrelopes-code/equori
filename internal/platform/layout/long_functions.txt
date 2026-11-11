@@ -1,8 +1,4 @@
-cmd/demoseed/cashflow.go	seeder.extras	pending: backend reorganization plan
-cmd/demoseed/chart.go	seeder.buildChart	pending: backend reorganization plan
-cmd/demoseed/main.go	run	pending: backend reorganization plan
 cmd/demoseed/purchases.go	seeder.purchases	table of data
-cmd/demoseed/reconcile.go	seeder.importStatements	pending: backend reorganization plan
 internal/assistant/app/proposal.go	Service.Confirm	pending: backend reorganization plan
 internal/assistant/app/resolve.go	Service.candidates	pending: backend reorganization plan
 internal/assistant/app/turn.go	Service.Turn	pending: backend reorganization plan

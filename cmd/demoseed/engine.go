@@ -191,3 +191,12 @@ func (s *seeder) ensure(date time.Time, key string, need int64) {
 
 	s.record(iso(date), desc, extra, post(s.id(key), top), post(s.id(from), -top))
 }
+
+func day(s string) time.Time {
+	d, err := time.Parse(time.DateOnly, s)
+	if err != nil {
+		panic(err)
+	}
+
+	return d
+}
