@@ -11,8 +11,8 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/andrelopes-code/equori/internal/classification/internal/app"
-	"github.com/andrelopes-code/equori/internal/classification/internal/domain"
+	"github.com/andrelopes-code/equori/internal/classification/app"
+	"github.com/andrelopes-code/equori/internal/classification/domain"
 	"github.com/andrelopes-code/equori/internal/platform/page"
 )
 

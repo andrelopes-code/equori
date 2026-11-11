@@ -6,7 +6,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/andrelopes-code/equori/internal/classification/internal/app"
+	"github.com/andrelopes-code/equori/internal/classification/app"
 )
 
 func nullUUID(id uuid.UUID) uuid.NullUUID { return uuid.NullUUID{UUID: id, Valid: id != uuid.Nil} }

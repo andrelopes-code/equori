@@ -8,7 +8,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/andrelopes-code/equori/internal/classification/internal/domain"
+	"github.com/andrelopes-code/equori/internal/classification/domain"
 )
 
 // Ledger event types, as the module root maps them.

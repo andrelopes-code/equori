@@ -5,7 +5,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/andrelopes-code/equori/internal/classification/internal/domain"
+	"github.com/andrelopes-code/equori/internal/classification/domain"
 	"github.com/andrelopes-code/equori/internal/platform/page"
 )
 

@@ -28,7 +28,7 @@ Facts of the code on 2026-11-09:
 - `pairingWindowDays` is 3 (`internal/ledger/internal/app/transfer.go`, A29).
 - `PairingCandidates` (`db/queries/ledger/transfer.sql`) selects imported, unvoided transactions with the opposite amount on one target account whose other side is uncategorized or `transfers_in_transit` (A29, A88).
 - `completePairing` (`internal/ledger/internal/app/imports.go`) pairs a line only when a rule or a reserve (A76) decided a transfer to one named account (A30). A line without that decision is booked against the uncategorized account.
-- Only a rule decides a transfer in classification (`internal/classification/internal/domain/decide.go`).
+- Only a rule decides a transfer in classification (`internal/classification/domain/decide.go`).
 
 ## Definitions
 

@@ -102,7 +102,7 @@ func TestRegistry(t *testing.T) {
 **Files:**
 - Create: `internal/platform/textfold/textfold.go`
 - Test: `internal/platform/textfold/textfold_test.go`
-- Modify: `internal/classification/internal/domain/text.go:8-35` (delete `latinFold`, `latinFirst`, `latinLast`, `fold`; `Normalize` maps words with `textfold.Rune`)
+- Modify: `internal/classification/domain/text.go:8-35` (delete `latinFold`, `latinFirst`, `latinLast`, `fold`; `Normalize` maps words with `textfold.Rune`)
 - Modify: `internal/capture/domain/text.go:9-35` (same deletions; same use)
 - Modify: `internal/ingestion/internal/domain/match.go:246-266` (delete `fold` and `unaccented`; `strings.Map(textfold.Rune, s)`)
 
@@ -746,7 +746,7 @@ Fixture (the ECB format):
 
 **Files:**
 - Create: `db/migrations/00048_aggregator_term.sql`: `ALTER TABLE ingestion_integration RENAME COLUMN provider TO aggregator` and replace its check with the identifier check; same for `classification_source_category` (and its unique constraint keeps working on the renamed column); `ingestion_batch.source` and `ledger_reconciliation.source`: replace `open_finance` with `aggregator` in data and in the checks (`ingestion_batch`: `('ofx','csv','aggregator')`; `ledger_reconciliation`: `('manual','import','aggregator')`)
-- Modify: queries in `db/queries/ingestion/`, `db/queries/classification/`, `db/queries/ledger/` that name these columns or values; `internal/classification/classification.go` (`LineCategory.Provider` → `Aggregator`), `internal/classification/internal/app/ports.go:90`, `internal/classification/internal/adapter/postgres/source_category.go:30-31`, `internal/ingestion/ingestion.go:154-158`
+- Modify: queries in `db/queries/ingestion/`, `internal/classification/postgres/queries/`, `db/queries/ledger/` that name these columns or values; `internal/classification/classification.go` (`LineCategory.Provider` → `Aggregator`), `internal/classification/app/ports.go:90`, `internal/classification/postgres/source_category.go:30-31`, `internal/ingestion/ingestion.go:154-158`
 - Modify: `api/openapi.yaml:3157,3226,4333,4371,4406,4455,4463,4716,4879,2891` (`provider` → `aggregator` with the identifier pattern; `item_id` → `external_id`; the connection gains `state` enum `[ok, needs_owner, failed]`; descriptions name no aggregator; `open_finance` → `aggregator` in both enums)
 - Modify: every Go and web caller reported by `make gen` and `make web-check` failures (web types come from `schema.gen.ts`)
 - Test: `internal/ingestion/schema_test.go`, `internal/classification/source_category_test.go`, `internal/ingestion/connection_test.go`
