@@ -8,6 +8,7 @@ import (
 
 	"github.com/andrelopes-code/equori/internal/ledger"
 	"github.com/andrelopes-code/equori/internal/planning/app"
+	"github.com/andrelopes-code/equori/internal/planning/domain"
 	"github.com/andrelopes-code/equori/internal/planning/toolapi"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/textfold"
@@ -51,7 +52,7 @@ func (m *Module) RecurringFor(ctx context.Context, booksID int64, p RecurringPro
 
 // probeFact resolves the names of p into a detector fact; ok is false when the account is not an
 // open balance account of the book or the amount or the key is unusable.
-func probeFact(p RecurringProbe, accounts []ledger.CaptureAccount, payees []ledger.CapturePayee) (app.SeriesFact, bool) {
+func probeFact(p RecurringProbe, accounts []ledger.CaptureAccount, payees []ledger.CapturePayee) (domain.SeriesFact, bool) {
 	var account ledger.CaptureAccount
 
 	for _, a := range accounts {
@@ -63,15 +64,15 @@ func probeFact(p RecurringProbe, accounts []ledger.CaptureAccount, payees []ledg
 
 	unit, err := money.New(0, account.Instrument)
 	if err != nil || account.ID == uuid.Nil || (p.Currency != "" && p.Currency != string(account.Instrument)) {
-		return app.SeriesFact{}, false
+		return domain.SeriesFact{}, false
 	}
 
 	amount, err := money.ParseDecimal(p.Amount, account.Instrument, unit.Scale())
 	if err != nil || amount.Amount() <= 0 {
-		return app.SeriesFact{}, false
+		return domain.SeriesFact{}, false
 	}
 
-	fact := app.SeriesFact{AccountID: account.ID, Date: p.Date, Amount: amount.Amount(), Key: textfold.String(p.Description)}
+	fact := domain.SeriesFact{AccountID: account.ID, Date: p.Date, Amount: amount.Amount(), Key: textfold.String(p.Description)}
 
 	for _, py := range payees {
 		if p.Payee != "" && textfold.String(py.Name) == textfold.String(p.Payee) {

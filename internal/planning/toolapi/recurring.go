@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/andrelopes-code/equori/internal/planning/app"
+	"github.com/andrelopes-code/equori/internal/planning/domain"
 	"github.com/andrelopes-code/equori/internal/platform/textfold"
 	"github.com/andrelopes-code/equori/internal/platform/tool"
 )
@@ -108,7 +109,7 @@ func findRecurring(svc *app.Service, l Ledger) tool.Tool {
 	})
 }
 
-func toSeriesView(s app.Series, payee string, accounts map[uuid.UUID]Account) (seriesView, error) {
+func toSeriesView(s domain.Series, payee string, accounts map[uuid.UUID]Account) (seriesView, error) {
 	amount, err := moneyOf(s.LastAmount, accounts[s.AccountID].Instrument)
 	if err != nil {
 		return seriesView{}, err
@@ -140,7 +141,7 @@ func toSeriesView(s app.Series, payee string, accounts map[uuid.UUID]Account) (s
 }
 
 // EncodeSeries encodes s as find_recurring encodes one element of its series.
-func EncodeSeries(s app.Series, payee string, accounts map[uuid.UUID]Account) (json.RawMessage, error) {
+func EncodeSeries(s domain.Series, payee string, accounts map[uuid.UUID]Account) (json.RawMessage, error) {
 	v, err := toSeriesView(s, payee, accounts)
 	if err != nil {
 		return nil, err

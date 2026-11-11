@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/andrelopes-code/equori/internal/planning/app"
+	"github.com/andrelopes-code/equori/internal/planning/domain"
 )
 
 // Spec 2026-11-03 §13: a series already covered by a schedule names it.
@@ -38,7 +39,7 @@ func TestRecurringCovered(t *testing.T) {
 		t.Errorf("ScheduleID = %v, want %v", got[0].ScheduleID, id)
 	}
 
-	if got[0].Frequency != app.CadenceMonthly || got[0].Count != 3 || got[0].LastAmount != 210000 {
+	if got[0].Frequency != domain.CadenceMonthly || got[0].Count != 3 || got[0].LastAmount != 210000 {
 		t.Errorf("series = %+v", got[0])
 	}
 
@@ -109,7 +110,7 @@ func TestRecurringProbe(t *testing.T) {
 		t.Fatalf("series without probe = %d, want 0", len(got))
 	}
 
-	probe := app.SeriesFact{
+	probe := domain.SeriesFact{
 		AccountID: uuid.MustParse(f.checking), CategoryID: uuid.MustParse(f.rent), PayeeID: uuid.MustParse(f.landlord),
 		Key: f.landlord, Date: time.Date(2026, 10, 20, 0, 0, 0, 0, time.UTC), Amount: 210000,
 	}
@@ -119,7 +120,7 @@ func TestRecurringProbe(t *testing.T) {
 		t.Fatalf("series with probe = %d, want 1", len(got))
 	}
 
-	if got[0].Count != 2 || got[0].Frequency != app.CadenceMonthly || got[0].LastAmount != 210000 {
+	if got[0].Count != 2 || got[0].Frequency != domain.CadenceMonthly || got[0].LastAmount != 210000 {
 		t.Errorf("series = %+v", got[0])
 	}
 
@@ -137,7 +138,7 @@ func TestRecurringProbe(t *testing.T) {
 	}
 }
 
-func (f fixture) recurring(filter app.RecurringFilter) []app.Series {
+func (f fixture) recurring(filter app.RecurringFilter) []domain.Series {
 	f.h.T().Helper()
 
 	got, err := f.h.App.Planning.RecurringForTest(f.h.T().Context(), f.h.OwnerID(), filter)

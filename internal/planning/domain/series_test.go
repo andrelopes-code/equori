@@ -1,9 +1,8 @@
-package app
+package domain
 
 import (
 	"slices"
 	"testing"
-	"time"
 
 	"github.com/google/uuid"
 )
@@ -186,15 +185,6 @@ func facts(account, category uuid.UUID, key string, amount int64, dates ...strin
 	}
 
 	return out
-}
-
-func day(s string) time.Time {
-	d, err := time.Parse(time.DateOnly, s)
-	if err != nil {
-		panic(err)
-	}
-
-	return d
 }
 
 func sameSeries(a, b Series) bool {
