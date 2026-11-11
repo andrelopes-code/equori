@@ -2,6 +2,7 @@ package tool
 
 import (
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/andrelopes-code/equori/internal/platform/money"
@@ -78,4 +79,28 @@ func (o *OptionalBool) UnmarshalJSON(b []byte) error {
 	o.Set = true
 
 	return nil
+}
+
+// ParseAmount reads a decimal string in the code and scale of unit.
+func ParseAmount(field, s string, unit money.Money) (money.Money, error) {
+	m, err := money.ParseDecimal(s, unit.Currency(), unit.Scale())
+	if err != nil {
+		return money.Money{}, InvalidArgument(field, fmt.Sprintf("must be a decimal such as 125.90 with at most %d decimals", unit.Scale()))
+	}
+
+	return m, nil
+}
+
+// ParsePositive is ParseAmount for a value that must be greater than zero.
+func ParsePositive(field, s string, unit money.Money) (money.Money, error) {
+	m, err := ParseAmount(field, s, unit)
+	if err != nil {
+		return money.Money{}, err
+	}
+
+	if m.Amount() <= 0 {
+		return money.Money{}, InvalidArgument(field, "must be greater than zero")
+	}
+
+	return m, nil
 }

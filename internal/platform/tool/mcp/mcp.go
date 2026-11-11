@@ -35,17 +35,6 @@ type Verify func(ctx context.Context, token string) (Grant, error)
 // ErrInvalidToken is a token Verify refuses: malformed, unknown, expired or deleted.
 var ErrInvalidToken = errors.New("invalid access token")
 
-type Config struct {
-	Registry *tool.Registry
-	// Names are the tools of the chat set; a read grant reaches only the ReadOnly ones.
-	Names        []string
-	Instructions string
-	Prompts      []Prompt
-	Version      string
-	Verify       Verify
-	Log          *slog.Logger
-}
-
 const maxBodyBytes = 1 << 20
 
 // New returns the handler of POST /mcp.

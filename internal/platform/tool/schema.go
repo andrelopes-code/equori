@@ -91,22 +91,35 @@ func inferSchema[T any](t reflect.Type) inferred {
 // collectTypes registers the schemas inference cannot derive: Date, Enumerated types, and
 // slices, which inference makes nullable because a nil slice encodes as null. Tools encode
 // empty slices as [].
-func collectTypes(t reflect.Type, types map[reflect.Type]*jsonschema.Schema, seen map[reflect.Type]bool) error {
+func collectTypes(
+	t reflect.Type,
+	types map[reflect.Type]*jsonschema.Schema,
+	seen map[reflect.Type]bool,
+) error {
 	if seen[t] {
 		return nil
 	}
 
 	seen[t] = true
+
+	if s, ok := registeredSchema(t); ok {
+		types[t] = s
+		return nil
+	}
+
+	return collectChildren(t, types, seen)
+}
+
+// registeredSchema returns the fixed schema of Date, OptionalInt, OptionalBool and Enumerated
+// types.
+func registeredSchema(t reflect.Type) (*jsonschema.Schema, bool) {
 	switch {
 	case t == dateType:
-		types[t] = &jsonschema.Schema{Type: "string", Format: "date"}
-		return nil
+		return &jsonschema.Schema{Type: "string", Format: "date"}, true
 	case t == optionalIntType:
-		types[t] = &jsonschema.Schema{Type: "integer"}
-		return nil
+		return &jsonschema.Schema{Type: "integer"}, true
 	case t == optionalBoolType:
-		types[t] = &jsonschema.Schema{Type: "boolean"}
-		return nil
+		return &jsonschema.Schema{Type: "boolean"}, true
 	case t.Kind() == reflect.String && t.Implements(enumeratedType):
 		values := reflect.Zero(t).Interface().(Enumerated).Values()
 
@@ -115,11 +128,19 @@ func collectTypes(t reflect.Type, types map[reflect.Type]*jsonschema.Schema, see
 			enum[i] = v
 		}
 
-		types[t] = &jsonschema.Schema{Type: "string", Enum: enum}
-
-		return nil
+		return &jsonschema.Schema{Type: "string", Enum: enum}, true
 	}
 
+	return nil, false
+}
+
+// collectChildren registers the schemas of the types a struct, slice, array, pointer or map
+// holds.
+func collectChildren(
+	t reflect.Type,
+	types map[reflect.Type]*jsonschema.Schema,
+	seen map[reflect.Type]bool,
+) error {
 	switch t.Kind() {
 	case reflect.Struct:
 		for f := range t.Fields() {

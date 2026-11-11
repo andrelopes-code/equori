@@ -177,43 +177,6 @@ func failure(e Error) (Result, string, error) {
 	return Result{Content: b, IsError: true}, e.Code, nil
 }
 
-// Set is the part of a registry one consumer may call.
-type Set struct {
-	r     *Registry
-	names []string
-}
-
-func (s Set) Tools() []Tool {
-	out := make([]Tool, len(s.names))
-	for i, n := range s.names {
-		out[i] = s.r.entries[n].tool
-	}
-
-	return out
-}
-
-func (s Set) Call(ctx context.Context, name string, args json.RawMessage) (Result, error) {
-	if !slices.Contains(s.names, name) {
-		return Result{}, fmt.Errorf("call tool %s: %w", name, ErrUnknownTool)
-	}
-
-	return s.r.Call(ctx, name, args)
-}
-
-// Validate checks args against the input schema of a tool of the set, like Call, without running it.
-func (s Set) Validate(name string, args json.RawMessage) (Result, error) {
-	if !slices.Contains(s.names, name) {
-		return Result{}, fmt.Errorf("validate tool %s: %w", name, ErrUnknownTool)
-	}
-
-	if _, bad := s.r.entries[name].tool.validate(args); bad != nil {
-		res, _, err := failure(*bad)
-		return res, err
-	}
-
-	return Result{}, nil
-}
-
 // roleDenied returns the refusal of a call whose book role is below the role the tool needs.
 func roleDenied(ctx context.Context, s Spec) *Error {
 	if s.Role == "" {
