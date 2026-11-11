@@ -45,6 +45,7 @@ export function DefineInstrumentFields({ form }: DefineInstrumentFieldsProps) {
     typeChoices,
     currencyChoices,
     chosenQuote,
+    chosenScale,
   } = form;
 
   return (
@@ -161,6 +162,7 @@ export function DefineInstrumentFields({ form }: DefineInstrumentFieldsProps) {
             name="scale"
             inputMode="numeric"
             value={scale}
+            placeholder={chosenScale === null ? undefined : String(chosenScale)}
             maxLength={2}
             onChange={(event) => {
               setScale(event.target.value.replace(/\D/g, ""));
@@ -168,7 +170,9 @@ export function DefineInstrumentFields({ form }: DefineInstrumentFieldsProps) {
           />
           {errors.scale === undefined ? (
             <FieldDescription>
-              {t("instruments.field.scaleHint")}
+              {chosenScale === null
+                ? t("instruments.field.scaleHint")
+                : t("instruments.field.scaleHintType", { value: chosenScale })}
             </FieldDescription>
           ) : (
             <FieldError>{errors.scale}</FieldError>

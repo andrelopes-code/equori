@@ -33,8 +33,11 @@ export const instrumentsEn = {
     "A currency or an investment is shared by every user of this installation.",
   "instruments.field.code": "Code",
   "instruments.field.type": "Type",
-  "instruments.field.scale": "Decimal places",
-  "instruments.field.scaleHint": "From 0 to 12 places of the smallest unit.",
+  "instruments.field.scale": "Decimal places of the quantity",
+  "instruments.field.scaleHint":
+    "How many decimal places the quantity takes. Choose the type to see the default.",
+  "instruments.field.scaleHintType":
+    "Leave blank to use {value}, the default of the type. Use 0 for whole units and more places for fractions.",
   "instruments.field.name": "Name",
   "instruments.field.quote": "Quote currency",
   "instruments.field.exchange": "Exchange",

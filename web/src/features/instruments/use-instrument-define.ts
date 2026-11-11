@@ -6,6 +6,7 @@ import { ProblemError, errorText, fieldErrors } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
 import { subtypesQuery, useDefineInstrument } from "@/features/instruments/api";
 import { instrumentTypes } from "@/features/instruments/instrument-groups";
+import { scaleDefault } from "@/features/instruments/scale-default";
 import {
   subtypeLabel,
   typeLabel,
@@ -63,6 +64,8 @@ export function useInstrumentDefine(onDone: () => void) {
     [instruments.data],
   );
   const chosenQuote = quote ?? base ?? null;
+  const typedScale = scale.trim() === "" ? null : Number(scale);
+  const chosenScale = typedScale ?? scaleDefault(type);
 
   const apply = (listing: CatalogListing) => {
     setCode(listing.code);
@@ -80,18 +83,23 @@ export function useInstrumentDefine(onDone: () => void) {
     const required = t("instruments.required");
     if (code.trim() === "") next.code = required;
     if (type === null) next.type = required;
-    if (scale.trim() === "") next.scale = required;
+    if (chosenScale === null) next.scale = required;
     if (name.trim() === "") next.name = required;
     if (chosenQuote === null) next.quote_currency = required;
     setErrors(next);
     setSummary(null);
-    if (Object.keys(next).length > 0 || type === null || chosenQuote === null)
+    if (
+      Object.keys(next).length > 0 ||
+      type === null ||
+      chosenQuote === null ||
+      chosenScale === null
+    )
       return;
     define
       .mutateAsync({
         code: code.trim().toUpperCase(),
         type,
-        scale: Number(scale),
+        scale: chosenScale,
         name: name.trim(),
         quote_currency: chosenQuote,
         ...(exchange.trim() === "" ? {} : { exchange: exchange.trim() }),
@@ -130,6 +138,7 @@ export function useInstrumentDefine(onDone: () => void) {
     typeChoices,
     currencyChoices,
     chosenQuote,
+    chosenScale,
     apply,
     submit,
   };

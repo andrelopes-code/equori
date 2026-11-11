@@ -33,8 +33,11 @@ export const instrumentsPtBR: Record<keyof typeof instrumentsEn, string> = {
     "Uma moeda ou um investimento vale para todos os usuários desta instalação.",
   "instruments.field.code": "Código",
   "instruments.field.type": "Tipo",
-  "instruments.field.scale": "Casas decimais",
-  "instruments.field.scaleHint": "De 0 a 12 casas da menor unidade.",
+  "instruments.field.scale": "Casas decimais da quantidade",
+  "instruments.field.scaleHint":
+    "Quantas casas decimais a quantidade aceita. Escolha o tipo para ver o padrão.",
+  "instruments.field.scaleHintType":
+    "Deixe em branco para usar {value}, o padrão do tipo. Use 0 para unidades inteiras e mais casas para frações.",
   "instruments.field.name": "Nome",
   "instruments.field.quote": "Moeda de cotação",
   "instruments.field.exchange": "Bolsa",

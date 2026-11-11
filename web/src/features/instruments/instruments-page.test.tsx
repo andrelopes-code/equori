@@ -190,6 +190,71 @@ describe("Instrument catalog", () => {
     expect(new Set(subtypeRequests)).toEqual(new Set(["fixed_income"]));
   });
 
+  // A223 RM9
+  it("takes the decimal places of the type when none is typed", async () => {
+    const sent: unknown[] = [];
+    const fetch = api({
+      "POST /api/v1/instruments": async (req) => {
+        sent.push(await req.json());
+        return json(201, {
+          code: "BTC",
+          type: "crypto",
+          scale: 8,
+          name: "Bitcoin",
+          quote_currency: "BRL",
+        });
+      },
+    });
+    await renderApp("/instruments", { fetch });
+    const user = userEvent.setup();
+    await user.click(
+      await screen.findByRole("button", {
+        name: catalogEn["instruments.define"],
+      }),
+    );
+    const dialog = await screen.findByRole("dialog");
+    await user.type(
+      within(dialog).getByRole("textbox", { name: /^Code/ }),
+      "btc",
+    );
+    await user.type(
+      within(dialog).getByRole("textbox", { name: /^Name/ }),
+      "Bitcoin",
+    );
+    await user.click(
+      within(dialog).getByRole("combobox", {
+        name: catalogEn["instruments.field.type"],
+      }),
+    );
+    await user.click(
+      await screen.findByRole("option", {
+        name: catalogEn["instruments.type.crypto"],
+      }),
+    );
+
+    expect(
+      within(dialog).getByRole("textbox", { name: /^Decimal places/ }),
+    ).toHaveAttribute("placeholder", "8");
+
+    await user.click(
+      within(dialog).getByRole("button", {
+        name: catalogEn["instruments.save"],
+      }),
+    );
+
+    await waitFor(() => {
+      expect(sent).toEqual([
+        {
+          code: "BTC",
+          type: "crypto",
+          scale: 8,
+          name: "Bitcoin",
+          quote_currency: "BRL",
+        },
+      ]);
+    });
+  });
+
   it("fills the define dialog from a catalog result", async () => {
     const sent: unknown[] = [];
     const fetch = api({
