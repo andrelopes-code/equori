@@ -1,0 +1,239 @@
+import { describe, expect, it } from "vitest";
+
+import {
+  countCsv,
+  minorUnits,
+  previewCsv,
+  splitCsv,
+} from "@/features/accounts/csv/csv-preview";
+
+const base = {
+  delimiter: "semicolon" as const,
+  header_rows: 1,
+  date_column: "Data",
+  date_layout: "DD/MM/YYYY" as const,
+  amount_column: "Valor",
+  decimal_separator: "," as const,
+  description_column: "Descrição",
+};
+
+describe("splitCsv", () => {
+  it("keeps a quoted delimiter and doubled quotes inside a cell", () => {
+    expect(splitCsv('a;"b;c";"say ""hi"""\n1;2;3\n', ";")).toEqual([
+      ["a", "b;c", 'say "hi"'],
+      ["1", "2", "3"],
+    ]);
+  });
+});
+
+describe("previewCsv", () => {
+  it("reads dates, descriptions and amounts with the profile's separators", () => {
+    const text =
+      "Data;Descrição;Valor\n05/10/2026;Padaria;-1.234,56\n\n06/10/2026;Salário;5.000,00\n";
+    expect(previewCsv(text, base, 2)).toEqual({
+      headers: ["Data", "Descrição", "Valor"],
+      rows: [
+        {
+          date: "2026-10-05",
+          description: "Padaria",
+          amount: -123456,
+          problems: [],
+        },
+        {
+          date: "2026-10-06",
+          description: "Salário",
+          amount: 500000,
+          problems: [],
+        },
+      ],
+      problem: null,
+    });
+  });
+
+  it("reads a debit as money out and a credit as money in", () => {
+    const text =
+      "date,memo,out,in\n2026-10-05,Rent,1500.00,\n2026-10-06,Refund,,20.00\n";
+    const profile = {
+      delimiter: "comma" as const,
+      header_rows: 1,
+      date_column: "date",
+      date_layout: "YYYY-MM-DD" as const,
+      debit_column: "out",
+      credit_column: "in",
+      decimal_separator: "." as const,
+      description_column: "memo",
+    };
+    expect(previewCsv(text, profile, 2).rows.map((r) => r.amount)).toEqual([
+      -150000, 2000,
+    ]);
+  });
+
+  it("flips every sign when the export lists charges as positive", () => {
+    const text = "Data;Descrição;Valor\n05/10/2026;Mercado;99,90\n";
+    expect(
+      previewCsv(text, { ...base, amount_sign: "inverted" }, 2).rows[0]?.amount,
+    ).toBe(-9990);
+  });
+
+  it("reads columns by position when the file has no header", () => {
+    const text = "05/10/2026;Padaria;-10,00\n";
+    const profile = {
+      ...base,
+      header_rows: 0,
+      date_column: "1",
+      description_column: "2",
+      amount_column: "3",
+    };
+    expect(previewCsv(text, profile, 2)).toEqual({
+      headers: ["1", "2", "3"],
+      rows: [
+        {
+          date: "2026-10-05",
+          description: "Padaria",
+          amount: -1000,
+          problems: [],
+        },
+      ],
+      problem: null,
+    });
+  });
+
+  it("marks a cell it cannot read and names a column the header lacks", () => {
+    const text = "Data;Descrição;Valor\n2026-10-05;Padaria;abc\n";
+    expect(previewCsv(text, base, 2).rows[0]?.problems).toEqual([
+      "date",
+      "amount",
+    ]);
+    expect(
+      previewCsv(text, { ...base, amount_column: "Total" }, 2).problem,
+    ).toEqual({
+      field: "amount_column",
+      column: "Total",
+    });
+  });
+
+  it("stops at the limit", () => {
+    const lines = Array.from(
+      { length: 15 },
+      (_, i) => `0${String((i % 9) + 1)}/10/2026;x;1,00`,
+    );
+    expect(
+      previewCsv(`Data;Descrição;Valor\n${lines.join("\n")}`, base, 2).rows,
+    ).toHaveLength(10);
+  });
+});
+
+describe("minorUnits", () => {
+  it.each([
+    ["1.234,56", ",", ".", 2, 123456],
+    ["1 234.56", ".", " ", 2, 123456],
+    ["1'234.5", ".", "'", 2, 123450],
+    ["1.234,56", ",", "", 2, undefined],
+    ["1,234.56", ",", ".", 2, undefined],
+    ["1.234", ",", "", 2, undefined],
+    ["1234,56", ",", "", 2, 123456],
+    ["R$ 1.234,56", ",", ".", 2, 123456],
+    ["1.234,56 BRL", ",", ".", 2, 123456],
+    ["€1,50", ",", ".", 2, 150],
+    ["(100,00)", ",", ".", 2, -10000],
+    ["100,00-", ",", ".", 2, -10000],
+    ["-(100,00)", ",", ".", 2, undefined],
+    ["100,00 D", ",", ".", 2, 10000],
+  ] as const)(
+    "reads %j (decimal %j, group %j)",
+    (text, decimal, group, scale, want) => {
+      expect(minorUnits(text, decimal, group, scale)).toBe(want);
+    },
+  );
+});
+
+describe("previewCsv group separator", () => {
+  const sheet = (amount: string) =>
+    `Data;Descrição;Valor\n05/10/2026;Padaria;${amount}\n`;
+  const first = (amount: string, group: string) =>
+    previewCsv(sheet(amount), { ...base, group_separator: group }, 2).rows[0];
+
+  it("rejects a group separator the profile does not declare", () => {
+    expect(first("1.234,56", " ")?.problems).toEqual(["amount"]);
+  });
+  it("reads the declared group separator", () => {
+    expect(first("1'234,56", "'")).toMatchObject({
+      amount: 123456,
+      problems: [],
+    });
+  });
+  it("treats an empty group separator as none", () => {
+    expect(first("1.234,56", "")?.problems).toEqual(["amount"]);
+  });
+  it("defaults to the separator that is not decimal", () => {
+    const rows = previewCsv(sheet("1.234,56"), base, 2).rows;
+    expect(rows[0]).toMatchObject({ amount: 123456, problems: [] });
+  });
+});
+
+describe("previewCsv reading", () => {
+  const sheet = (...lines: string[]) =>
+    `Data;Descrição;Valor\n${lines.join("\n")}\n`;
+
+  it("counts header rows as the server's reader does, without empty lines", () => {
+    const text = "Banco\n\nData;Descrição;Valor\n2026-10-05;Padaria;-10,00\n";
+    const { headers, rows } = previewCsv(
+      text,
+      { ...base, header_rows: 2, date_layout: "YYYY-MM-DD" },
+      2,
+    );
+    expect(headers).toEqual(["Data", "Descrição", "Valor"]);
+    expect(rows[0]?.description).toBe("Padaria");
+  });
+
+  it("reads a file of 200 000 lines", () => {
+    const text = `Data;Descrição;Valor\n${"05/10/2026;x;1,00\n".repeat(200_000)}`;
+    expect(previewCsv(text, base, 2).rows).toHaveLength(10);
+  });
+
+  it("leaves out the footer rows", () => {
+    const text = sheet("05/10/2026;Padaria;-1,00", "06/10/2026;Total;9,00");
+    const rows = previewCsv(text, { ...base, footer_rows: 1 }, 2).rows;
+    expect(rows.map((r) => r.description)).toEqual(["Padaria"]);
+  });
+
+  it("reads a date written without leading zeros", () => {
+    const rows = previewCsv(sheet("3/1/2026;x;1,00"), base, 2).rows;
+    expect(rows[0]?.date).toBe("2026-01-03");
+  });
+
+  it("drops the time after a date", () => {
+    const rows = previewCsv(sheet("05/10/2026 14:22;x;1,00"), base, 2).rows;
+    expect(rows[0]?.date).toBe("2026-10-05");
+  });
+
+  it("makes a line with the debit marker after the amount negative", () => {
+    const text = sheet("05/10/2026;a;100,00 D", "05/10/2026;b;50,00 C");
+    const rows = previewCsv(text, { ...base, debit_marker: "D" }, 2).rows;
+    expect(rows.map((r) => r.amount)).toEqual([-10000, 5000]);
+  });
+
+  it("makes a line with the debit marker in the sign column negative", () => {
+    const text =
+      "Data;Descrição;Valor;Tipo\n05/10/2026;a;10,00;Débito\n05/10/2026;b;20,00;Crédito\n";
+    const profile = { ...base, sign_column: "Tipo", debit_marker: "débito" };
+    expect(previewCsv(text, profile, 2).rows.map((r) => r.amount)).toEqual([
+      -1000, 2000,
+    ]);
+  });
+});
+
+describe("countCsv", () => {
+  it("counts the lines it cannot read and the lines in and out", () => {
+    const lines: string[] = Array.from({ length: 11 }, (_, i) =>
+      i < 3 ? `05/10/2026;x;1,00` : `05/10/2026;x;-1,00`,
+    );
+    lines.push("2026-10-05;x;1,00");
+    const text = `Data;Descrição;Valor\n${lines.join("\n")}\n`;
+    expect(countCsv(text, base, 2)).toEqual({
+      unreadable: 1,
+      moneyIn: 3,
+      moneyOut: 8,
+    });
+  });
+});
