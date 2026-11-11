@@ -7,7 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/andrelopes-code/equori/internal/reporting/internal/app"
+	"github.com/andrelopes-code/equori/internal/reporting/app"
 )
 
 func (r *Repository) BaseCurrency(ctx context.Context, booksID int64) (string, error) {

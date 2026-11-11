@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/andrelopes-code/equori/internal/platform/auth"
-	"github.com/andrelopes-code/equori/internal/reporting/internal/app"
+	"github.com/andrelopes-code/equori/internal/reporting/app"
 )
 
 // maxPassphraseBytes bounds the passphrase part: 256 characters of up to 4 bytes.

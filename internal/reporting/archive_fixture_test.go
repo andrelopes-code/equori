@@ -11,7 +11,7 @@ import (
 	"testing"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
-	"github.com/andrelopes-code/equori/internal/reporting/internal/app"
+	"github.com/andrelopes-code/equori/internal/reporting/app"
 )
 
 var update = flag.Bool("update", false, "write the fixture archive of a new archive_version to testdata")

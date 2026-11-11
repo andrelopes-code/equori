@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
-	"github.com/andrelopes-code/equori/internal/reporting/internal/app"
+	"github.com/andrelopes-code/equori/internal/reporting/app"
 )
 
 func (r *Repository) CardFacts(ctx context.Context, booksID int64, to time.Time) (app.CardFacts, error) {

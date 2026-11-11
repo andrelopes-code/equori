@@ -13,7 +13,7 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"github.com/andrelopes-code/equori/internal/platform/postgres/pgtest"
-	"github.com/andrelopes-code/equori/internal/reporting/internal/app"
+	"github.com/andrelopes-code/equori/internal/reporting/app"
 )
 
 var update = flag.Bool("update", false, "write the fingerprint of a new archive_version to testdata")
@@ -66,7 +66,7 @@ func TestArchiveFingerprint(t *testing.T) {
 	if got != string(want) {
 		t.Fatalf("an exported table changed under archive_version %d, whose fingerprint %s is published.\n"+
 			"Increment app.ArchiveVersion, append the migration step of the archive to archiveSteps in "+
-			"internal/reporting/internal/app/archive_steps.go, then run this test with -update to write the new "+
+			"internal/reporting/app/archive_steps.go, then run this test with -update to write the new "+
 			"fingerprint and TestImportArchiveFixtures with -update to write the new fixture (ADR 021, V2, V6, V7).\n"+
 			"got:\n%s", app.ArchiveVersion, path, got)
 	}

@@ -21,10 +21,10 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/outbox"
 	"github.com/andrelopes-code/equori/internal/platform/tool"
-	"github.com/andrelopes-code/equori/internal/reporting/internal/adapter/httpapi"
-	"github.com/andrelopes-code/equori/internal/reporting/internal/adapter/postgres"
-	"github.com/andrelopes-code/equori/internal/reporting/internal/adapter/toolapi"
-	"github.com/andrelopes-code/equori/internal/reporting/internal/app"
+	"github.com/andrelopes-code/equori/internal/reporting/app"
+	"github.com/andrelopes-code/equori/internal/reporting/httpapi"
+	"github.com/andrelopes-code/equori/internal/reporting/postgres"
+	"github.com/andrelopes-code/equori/internal/reporting/toolapi"
 )
 
 // ArchiveVersion is the archive_version of the exports of this binary (ADR 021, V9).

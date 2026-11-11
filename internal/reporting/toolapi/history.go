@@ -8,7 +8,7 @@ import (
 
 	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/tool"
-	"github.com/andrelopes-code/equori/internal/reporting/internal/app"
+	"github.com/andrelopes-code/equori/internal/reporting/app"
 )
 
 // maxDailyPoints bounds the balances view; a longer period keeps one point per week (spec 7.4).

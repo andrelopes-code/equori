@@ -3,7 +3,7 @@ package toolapi
 
 import (
 	"github.com/andrelopes-code/equori/internal/platform/tool"
-	"github.com/andrelopes-code/equori/internal/reporting/internal/app"
+	"github.com/andrelopes-code/equori/internal/reporting/app"
 )
 
 func Tools(svc *app.Service, clk app.Clock) []tool.Tool {

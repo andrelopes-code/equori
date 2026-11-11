@@ -76,7 +76,7 @@ internal/ledger/internal/adapter/toolapi/
   toolapi.go        Tools(svc *app.Service) []tool.Tool
   accounts.go       list_accounts, get_balances
   transactions.go   search_transactions
-internal/reporting/internal/adapter/toolapi/
+internal/reporting/toolapi/
   toolapi.go
   categories.go     get_category_totals
 ```

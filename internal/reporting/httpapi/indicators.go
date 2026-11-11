@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/andrelopes-code/equori/internal/platform/auth"
-	"github.com/andrelopes-code/equori/internal/reporting/internal/app"
+	"github.com/andrelopes-code/equori/internal/reporting/app"
 )
 
 func (s *Server) GetIndicators(ctx context.Context, req GetIndicatorsRequestObject) (GetIndicatorsResponseObject, error) {

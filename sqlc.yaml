@@ -94,11 +94,11 @@ sql:
         out: internal/ingestion/postgres
   - engine: postgresql
     schema: db/migrations
-    queries: db/queries/reporting
+    queries: internal/reporting/postgres/queries
     gen:
       go:
         <<: *go
-        out: internal/reporting/internal/adapter/postgres
+        out: internal/reporting/postgres
   - engine: postgresql
     schema: db/migrations
     queries: internal/instance/postgres/queries

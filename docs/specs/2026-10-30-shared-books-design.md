@@ -31,7 +31,7 @@ P10 separates the person from the data. P11 then adds invitations, the switch of
 - `identity_user` holds the person (email, password, role, language) and the owner of the data (region).
 - Sealed values bind the user ID as associated data (ADR 008, K3): `ingestion_integration` credentials and `assistant_provider.sealed_key`.
 - Stored JSON names the user: `ledger_transaction_version.snapshot` (key `user_id`) and the payload of the events `identity.user_created.v1` and `.v2`.
-- The archive (ADR 021) selects its tables by the column `user_id` and strips that column from each row (`internal/reporting/internal/adapter/postgres/archive.go`).
+- The archive (ADR 021) selects its tables by the column `user_id` and strips that column from each row (`internal/reporting/postgres/archive.go`).
 - Settings come from three places: environment variables, database columns keyed by user, and `localStorage` keys of the browser (section 5).
 
 ## 4. Decisions
