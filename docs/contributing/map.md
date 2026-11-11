@@ -18,7 +18,7 @@ Start from the `operationId` in `api/openapi.yaml`. Replace `<module>` with the 
 | Port implementation | `internal/<module>/postgres/<topic>.go` | Search the port method name. |
 | Query | `internal/<module>/postgres/queries/<topic>.sql` | Generated Go: `internal/<module>/postgres/<topic>.sql.gen.go`. |
 | Public API of the module | `internal/<module>/<module>.go` | Other modules call the module only here. |
-| Assistant and MCP tool | `internal/<module>/toolapi/` | Composed in `internal/server/server.go`. |
+| Assistant and MCP tool | `internal/<module>/toolapi/` | Composed in `internal/server/modules.go` (tools) and `internal/server/routes.go` (MCP). |
 | Tool exposure | `internal/server/tool_exposure_test.go` | One entry per `operationId`. |
 | HTTP test | `internal/<module>/*_test.go` and `internal/apitest/` | Search the path or the scenario ID. |
 

@@ -184,4 +184,3 @@ internal/reporting/postgres/cash.go	Repository.CardFacts	pending: backend reorga
 internal/reporting/postgres/import.go	Exports.Import	pending: backend reorganization plan
 internal/reporting/toolapi/history.go	getAccountHistory	pending: backend reorganization plan
 internal/reporting/toolapi/indicators.go	getFinancialIndicators	pending: backend reorganization plan
-internal/server/server.go	New	pending: backend reorganization plan

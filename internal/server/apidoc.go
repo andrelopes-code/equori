@@ -1,5 +1,4 @@
-// Package apidoc serves the HTTP contract and an interactive reference for it.
-package apidoc
+package server
 
 import (
 	_ "embed"
@@ -11,9 +10,9 @@ import (
 //go:embed reference.html
 var reference []byte
 
-// Register adds GET /openapi.yaml, which returns contract, and GET /docs, which renders it.
+// registerAPIDocs adds GET /openapi.yaml, which returns contract, and GET /docs, which renders it.
 // Both routes sit outside /api/ and need no session.
-func Register(mux *http.ServeMux, contract []byte) {
+func registerAPIDocs(mux *http.ServeMux, contract []byte) {
 	mux.HandleFunc("GET /openapi.yaml", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/yaml")
 		_, _ = w.Write(contract)
