@@ -19,8 +19,6 @@ func Query[P any](r *http.Request) (P, error) {
 	var params P
 
 	value := reflect.ValueOf(&params).Elem()
-	values := r.URL.Query()
-
 	for i := range value.NumField() {
 		field := value.Type().Field(i)
 
@@ -31,7 +29,7 @@ func Query[P any](r *http.Request) (P, error) {
 
 		required := field.Type.Kind() != reflect.Pointer
 
-		err := runtime.BindQueryParameter("form", true, required, name, values, value.Field(i).Addr().Interface())
+		err := runtime.BindRawQueryParameter("form", true, required, name, r.URL.RawQuery, value.Field(i).Addr().Interface())
 		if err != nil {
 			return params, fmt.Errorf("query parameter %q: %w", name, err)
 		}
