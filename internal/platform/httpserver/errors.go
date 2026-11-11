@@ -1,11 +1,20 @@
 package httpserver
 
 import (
+	"errors"
 	"log/slog"
 	"net/http"
 
 	"github.com/andrelopes-code/equori/internal/platform/problem"
 )
+
+// BadRequestError marks an error raised while reading a request value (a path wildcard or a query
+// parameter); ErrorWriter answers it as 400 invalid_request.
+type BadRequestError struct{ Err error }
+
+func (e *BadRequestError) Error() string { return e.Err.Error() }
+
+func (e *BadRequestError) Unwrap() error { return e.Err }
 
 // ErrorWriter writes the problem of an error raised while serving a module's request (ADR 004).
 type ErrorWriter struct {
@@ -16,6 +25,12 @@ type ErrorWriter struct {
 
 // Write is the handler error path: transport errors, then the module's errors, then 500.
 func (e ErrorWriter) Write(w http.ResponseWriter, r *http.Request, err error) {
+	if _, bad := errors.AsType[*BadRequestError](err); bad {
+		e.WriteRequestError(w, r, err)
+
+		return
+	}
+
 	d, ok := problem.Transport(err)
 	if !ok {
 		d, ok = e.Map(err)

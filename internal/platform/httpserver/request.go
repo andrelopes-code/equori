@@ -31,7 +31,7 @@ func Query[P any](r *http.Request) (P, error) {
 
 		err := runtime.BindRawQueryParameter("form", true, required, name, r.URL.RawQuery, value.Field(i).Addr().Interface())
 		if err != nil {
-			return params, fmt.Errorf("query parameter %q: %w", name, err)
+			return params, &BadRequestError{Err: fmt.Errorf("query parameter %q: %w", name, err)}
 		}
 	}
 
@@ -42,7 +42,7 @@ func Query[P any](r *http.Request) (P, error) {
 func PathUUID(r *http.Request, name string) (uuid.UUID, error) {
 	id, err := uuid.Parse(r.PathValue(name))
 	if err != nil {
-		return uuid.Nil, fmt.Errorf("path parameter %q: %w", name, err)
+		return uuid.Nil, &BadRequestError{Err: fmt.Errorf("path parameter %q: %w", name, err)}
 	}
 
 	return id, nil
@@ -52,7 +52,7 @@ func PathUUID(r *http.Request, name string) (uuid.UUID, error) {
 func PathInt64(r *http.Request, name string) (int64, error) {
 	n, err := strconv.ParseInt(r.PathValue(name), 10, 64)
 	if err != nil {
-		return 0, fmt.Errorf("path parameter %q: %w", name, err)
+		return 0, &BadRequestError{Err: fmt.Errorf("path parameter %q: %w", name, err)}
 	}
 
 	return n, nil

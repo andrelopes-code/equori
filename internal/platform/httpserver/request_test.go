@@ -1,6 +1,9 @@
 package httpserver_test
 
 import (
+	"context"
+	"io"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -9,6 +12,7 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
+	"github.com/andrelopes-code/equori/internal/platform/problem"
 )
 
 type listParams struct {
@@ -97,5 +101,32 @@ func TestPathValues(t *testing.T) {
 
 	if _, err := httpserver.PathUUID(bad, "id"); err == nil {
 		t.Error("PathUUID accepted a malformed value")
+	}
+}
+
+func TestMalformedValuesAnswer400(t *testing.T) {
+	writer := httpserver.ErrorWriter{
+		Log: slog.New(slog.NewTextHandler(io.Discard, nil)),
+		Map: func(error) (problem.Details, bool) { return problem.Details{}, false },
+	}
+
+	handler := httpserver.Handle(
+		writer,
+		http.StatusOK,
+		func(_ context.Context, r *http.Request, _ httpserver.None) (httpserver.None, error) {
+			_, err := httpserver.PathUUID(r, "id")
+
+			return httpserver.None{}, err
+		},
+	)
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/x", http.NoBody)
+	req.SetPathValue("id", "nope")
+
+	handler(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Errorf("status = %d, want 400", rec.Code)
 	}
 }
