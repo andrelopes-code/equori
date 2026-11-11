@@ -19,18 +19,19 @@ internal/<module>/
   toolapi/             assistant and MCP tools
   postgres/            repository; sqlc output (*.gen.go); queries/*.sql
   <mechanism>/         optional private package: password, feed, calendar, llmapi
-  tests/<area>/        optional black-box tests
+  *_test.go            black-box tests of the public API, named by area
 ```
 
 Limits of the layout:
 
 | Limit | Value |
 |---|---|
-| Depth of hand-written code under `internal/` | 4 levels: `internal/<module>/<layer>/<file>` |
-| Hand-written files in one directory, tests included | 40 |
-| Lines in one hand-written non-test file | 400 |
+| Depth of a layer file | 4 levels: `internal/<module>/<layer>/<file>`; a mechanism package (`feed/yahoochart`) adds one level |
+| Hand-written non-test Go files in one directory | 40 |
+| Lines in one hand-written non-test Go file | 600 |
+| Files in one `web/src` directory, tests included | 40; `web/src/theme` is exempt |
 
-A Go test in `internal/platform/` enforces the last two limits.
+Tests are not counted in the Go limits: a module root keeps its black-box tests, named by area (`card_*_test.go`). `internal/platform/layout` enforces the limits.
 
 ## Isolation between modules
 
@@ -43,6 +44,10 @@ The nested `internal/` directory no longer isolates the layers of a module. `dep
 | `app` does not import `httpapi`, `postgres`, `toolapi`, `llmapi`, `net/http`, `database/sql` or `pgx` | `depguard` |
 
 The dependency rules of ADR 002 (table ownership, no transaction across modules, the amendments of 2026-10-26 and 2026-11-09) stay unchanged.
+
+## Deviations
+
+`marketdata` and `reporting` predate the layout and keep their shape. `marketdata` holds its use cases as methods of `Module` in the module root and has no `app/`. `reporting` has no `domain/`. Each README states its deviation. Moving them changes design, not structure, and is left to a decision of its own.
 
 ## Generated code
 

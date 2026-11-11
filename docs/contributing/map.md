@@ -66,15 +66,33 @@ Modules whose layout differs from this table are listed in "Modules" below.
 
 The table prefix of a table is the name of its owner module (`ledger_account`, `marketdata_*`). The outbox tables use `outbox_`.
 
+## Identifiers in comments
+
+A comment or a commit may cite an identifier such as `S364`, `MQ27` or `HA9`. The identifier is defined in one document; prefixes below name it. A prefix that two or more documents use (`A`, `D`, `R`, `P`, `F`, `C`) is resolved with `git grep -n "| <ID> " docs` or `git grep -n "<ID>\." docs`, then by the date of the commit that cites it.
+
+| Prefix | Defined in |
+|---|---|
+| `S` followed by digits | `docs/domain/06-scenarios.md` (acceptance scenarios; also the `S` rows of `docs/contributing/feature-design.md`) |
+| `N` | `docs/domain/08-non-functional-requirements.md` |
+| `M` | `docs/contributing/currencies.md` |
+| `O` | `docs/contributing/web.md` |
+| `R`, `C`, `B`, `D`, `X` in a checklist row | `docs/contributing/feature-design.md` |
+| `HA` | `docs/specs/2026-10-30-households-access-design.md` |
+| `BK` | `docs/specs/2026-10-30-shared-books-design.md` |
+| `MQ` | `docs/specs/2026-11-09-market-quotes-design.md` |
+| `PC` | `docs/specs/2026-11-07-portfolio-clarity-design.md` |
+| `T` | `docs/adr/012-tool-registry.md` for tool rows; `T1` and `T2` of `docs/contributing/feature-design.md` are time rows |
+
 ## Web
 
 | Task | Location |
 |---|---|
+| Where a feature keeps its files | `web/src/features/<feature>/README.md`; the shape is rule O16 of `docs/contributing/web.md` |
 | Route of a screen | `web/src/app/router.tsx` |
 | Screen of a route | The page component that `web/src/app/router.tsx` imports from `web/src/features/<feature>/index.ts` |
 | Queries and mutations of a feature | `web/src/features/<feature>/api.ts` |
 | Types of the API | `web/src/api/schema.gen.ts` (generated from `api/openapi.yaml`) |
-| Shared components | `web/src/ui/` |
+| Shared components | `web/src/ui/<concept>/`; `web/src/ui/README.md` lists the folders |
 | Application shell and providers | `web/src/app/shell/`, `web/src/app/providers.tsx` |
 | Texts | `web/src/i18n/catalog-*.en.ts` and `catalog-*.pt-BR.ts` |
 | Screen to guide topic | `web/src/navigation/navigation-map.json` |

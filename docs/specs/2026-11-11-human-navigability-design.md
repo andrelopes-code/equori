@@ -26,8 +26,8 @@ A contributor who opens the repository cannot locate the file that serves a scre
 1. A contributor finds the files of an existing endpoint, screen or rule in at most three lookups, starting from a path, a screen name or an `operationId`.
 2. A contributor adds an endpoint by following one checklist that names each file and command.
 3. Every module follows one layout, or its deviation is written in the module README.
-4. A directory holds at most 40 hand-written files, tests included.
-5. Hand-written Go code sits at most 4 levels under `internal/`. A hand-written non-test file holds at most 400 lines.
+4. A directory holds at most 40 hand-written non-test Go files, and at most 40 files in `web/src` (tests included; `web/src/theme` exempt).
+5. A layer file sits at most 4 levels under `internal/`. A hand-written non-test Go file holds at most 600 lines.
 6. The contract and the queries of a module sit inside the module directory.
 
 ## Non-goals
@@ -46,11 +46,11 @@ A contributor who opens the repository cannot locate the file that serves a scre
 | H4 | The layers of a module move from `internal/<module>/internal/{domain,app,adapter/*}` to `internal/<module>/{domain,app,httpapi,postgres,toolapi}`. Mechanism packages move beside them. |
 | H5 | `db/queries/<module>/` moves to `internal/<module>/postgres/queries/`. |
 | H6 | `api/openapi.yaml` becomes a generated bundle of `internal/<module>/openapi.yaml` files and `api/shared.yaml`, if a spike shows byte-identical generated output. |
-| H7 | `marketdata` and `reporting` follow the layout of H4. |
+| H7 | `marketdata` and `reporting` keep their shape; the READMEs and ADR 033 record the deviation. Moving them is a design change. |
 | H8 | Web features split into `pages/`, sub-screen folders and `model/`. A feature above 40 files splits into sub-features. |
-| H9 | Hand-written non-test Go files above 400 lines are split by topic. Black-box module tests move to `tests/<area>/` if a spike shows equal pass count. |
-| H10 | Identifiers private to a plan (`A222`, `MQ27`, `S366`, `D12`) in comments are replaced by the rule they cite. |
-| H11 | A Go test fails when a directory holds more than 40 hand-written files or a non-test file holds more than 400 lines. |
+| H9 | Hand-written non-test Go files above 600 lines are split by topic. Black-box tests stay in the module root; tests are not counted in the Go limits. |
+| H10 | Identifiers in comments (`A222`, `MQ27`, `S366`) stay. `docs/contributing/map.md` lists where each prefix is defined and how to resolve an ambiguous one. |
+| H11 | `internal/platform/layout` fails when a Go file exceeds 600 lines, a Go directory holds more than 40 non-test files or a `web/src` directory holds more than 40 files. |
 | H12 | Move commits are listed in `.git-blame-ignore-revs`. |
 
 ## Slices
