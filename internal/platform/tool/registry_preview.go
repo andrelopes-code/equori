@@ -81,6 +81,7 @@ func (r *Registry) preview(
 				name,
 				fmt.Errorf("preview field %q is not in ChangeFields", c.Field),
 			)
+
 			return Preview{}, res, outcome, err
 		}
 	}
