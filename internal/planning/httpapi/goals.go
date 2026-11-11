@@ -2,9 +2,13 @@ package httpapi
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"net/http"
 
 	"github.com/andrelopes-code/equori/internal/planning/app"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
+	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/platform/page"
 )
 
@@ -37,72 +41,96 @@ func toGoalPartsAPI(ps []app.ValuedPart) *[]GoalPart {
 	return &out
 }
 
-func (s *Server) CreateGoal(ctx context.Context, req CreateGoalRequestObject) (CreateGoalResponseObject, error) {
-	target, err := fromMoneyAPI("target", req.Body.Target)
-	if err != nil {
-		return nil, err
+func (s *Server) createGoal(w http.ResponseWriter, r *http.Request) {
+	var in CreateGoalJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
+		s.errs.WriteRequestError(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+
+		return
 	}
 
-	g, err := s.svc.CreateGoal(ctx, auth.MustBooksID(ctx), req.Body.Name, target, req.Body.DueOn.Time, req.Body.AccountIds)
+	g, err := s.addGoal(r.Context(), in)
 	if err != nil {
-		return nil, err
+		s.errs.Write(w, r, err)
+
+		return
 	}
 
-	return CreateGoal201JSONResponse{Body: toGoalAPI(g), Headers: CreateGoal201ResponseHeaders{Location: location("/goals/", g.ID)}}, nil
+	s.writeCreated(w, r, "/goals/", g.ID, toGoalAPI(g))
 }
 
-func (s *Server) UpdateGoal(ctx context.Context, req UpdateGoalRequestObject) (UpdateGoalResponseObject, error) {
-	patch := app.GoalPatch{Name: req.Body.Name, AccountIDs: req.Body.AccountIds}
-	if req.Body.Target != nil {
-		target, err := fromMoneyAPI("target", *req.Body.Target)
+func (s *Server) updateGoal(ctx context.Context, r *http.Request, in UpdateGoalJSONRequestBody) (Goal, error) {
+	id, err := httpserver.PathUUID(r, "id")
+	if err != nil {
+		return Goal{}, err
+	}
+
+	patch := app.GoalPatch{Name: in.Name, AccountIDs: in.AccountIds}
+	if in.Target != nil {
+		target, err := fromMoneyAPI("target", *in.Target)
 		if err != nil {
-			return nil, err
+			return Goal{}, err
 		}
 
 		patch.Target = &target
 	}
 
-	if req.Body.DueOn != nil {
-		patch.DueOn = &req.Body.DueOn.Time
+	if in.DueOn != nil {
+		patch.DueOn = &in.DueOn.Time
 	}
 
-	g, err := s.svc.UpdateGoal(ctx, auth.MustBooksID(ctx), req.Id, patch)
+	g, err := s.svc.UpdateGoal(ctx, auth.MustBooksID(ctx), id, patch)
 	if err != nil {
-		return nil, err
+		return Goal{}, err
 	}
 
-	return UpdateGoal200JSONResponse(toGoalAPI(g)), nil
+	return toGoalAPI(g), nil
 }
 
-func (s *Server) DeleteGoal(ctx context.Context, req DeleteGoalRequestObject) (DeleteGoalResponseObject, error) {
-	if err := s.svc.DeleteGoal(ctx, auth.MustBooksID(ctx), req.Id); err != nil {
-		return nil, err
+func (s *Server) deleteGoal(ctx context.Context, r *http.Request, _ httpserver.None) (httpserver.None, error) {
+	id, err := httpserver.PathUUID(r, "id")
+	if err != nil {
+		return httpserver.None{}, err
 	}
 
-	return DeleteGoal204Response{}, nil
-}
-
-func (s *Server) GetGoal(ctx context.Context, req GetGoalRequestObject) (GetGoalResponseObject, error) {
-	g, err := s.svc.Goal(ctx, auth.MustBooksID(ctx), req.Id)
-	if err != nil {
-		return nil, err
+	if err := s.svc.DeleteGoal(ctx, auth.MustBooksID(ctx), id); err != nil {
+		return httpserver.None{}, err
 	}
 
-	return GetGoal200JSONResponse(toGoalAPI(g)), nil
+	return httpserver.None{}, nil
 }
 
-func (s *Server) ListGoals(ctx context.Context, req ListGoalsRequestObject) (ListGoalsResponseObject, error) {
-	p, err := listPage[app.IDKey](req.Params.Limit, req.Params.Cursor)
+func (s *Server) getGoal(ctx context.Context, r *http.Request, _ httpserver.None) (Goal, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return Goal{}, err
+	}
+
+	g, err := s.svc.Goal(ctx, auth.MustBooksID(ctx), id)
+	if err != nil {
+		return Goal{}, err
+	}
+
+	return toGoalAPI(g), nil
+}
+
+func (s *Server) listGoals(ctx context.Context, r *http.Request, _ httpserver.None) (GoalPage, error) {
+	params, err := httpserver.Query[ListGoalsParams](r)
+	if err != nil {
+		return GoalPage{}, err
+	}
+
+	p, err := listPage[app.IDKey](params.Limit, params.Cursor)
+	if err != nil {
+		return GoalPage{}, err
 	}
 
 	gs, next, err := s.svc.ListGoals(ctx, auth.MustBooksID(ctx), p)
 	if err != nil {
-		return nil, err
+		return GoalPage{}, err
 	}
 
-	out := ListGoals200JSONResponse{Items: make([]Goal, len(gs))}
+	out := GoalPage{Items: make([]Goal, len(gs))}
 	for i, g := range gs {
 		out.Items[i] = toGoalAPI(g)
 	}
@@ -110,4 +138,13 @@ func (s *Server) ListGoals(ctx context.Context, req ListGoalsRequestObject) (Lis
 	out.NextCursor, err = page.Next(next)
 
 	return out, err
+}
+
+func (s *Server) addGoal(ctx context.Context, in CreateGoalJSONRequestBody) (app.GoalView, error) {
+	target, err := fromMoneyAPI("target", in.Target)
+	if err != nil {
+		return app.GoalView{}, err
+	}
+
+	return s.svc.CreateGoal(ctx, auth.MustBooksID(ctx), in.Name, target, in.DueOn.Time, in.AccountIds)
 }

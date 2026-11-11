@@ -2,33 +2,50 @@ package httpapi
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/andrelopes-code/equori/internal/platform/auth"
+	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 )
 
-func (s *Server) RealizeOccurrence(ctx context.Context, req RealizeOccurrenceRequestObject) (RealizeOccurrenceResponseObject, error) {
-	o, err := s.svc.Realize(ctx, auth.MustBooksID(ctx), req.Id, req.Body.TransactionId)
+func (s *Server) realizeOccurrence(ctx context.Context, r *http.Request, in RealizeOccurrenceJSONRequestBody) (Occurrence, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return Occurrence{}, err
 	}
 
-	return RealizeOccurrence200JSONResponse(toOccurrenceAPI(o)), nil
+	o, err := s.svc.Realize(ctx, auth.MustBooksID(ctx), id, in.TransactionId)
+	if err != nil {
+		return Occurrence{}, err
+	}
+
+	return toOccurrenceAPI(o), nil
 }
 
-func (s *Server) ReopenOccurrence(ctx context.Context, req ReopenOccurrenceRequestObject) (ReopenOccurrenceResponseObject, error) {
-	o, err := s.svc.Reopen(ctx, auth.MustBooksID(ctx), req.Id)
+func (s *Server) reopenOccurrence(ctx context.Context, r *http.Request, _ httpserver.None) (Occurrence, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return Occurrence{}, err
 	}
 
-	return ReopenOccurrence200JSONResponse(toOccurrenceAPI(o)), nil
+	o, err := s.svc.Reopen(ctx, auth.MustBooksID(ctx), id)
+	if err != nil {
+		return Occurrence{}, err
+	}
+
+	return toOccurrenceAPI(o), nil
 }
 
-func (s *Server) UnrealizeOccurrence(ctx context.Context, req UnrealizeOccurrenceRequestObject) (UnrealizeOccurrenceResponseObject, error) {
-	o, err := s.svc.Unrealize(ctx, auth.MustBooksID(ctx), req.Id)
+func (s *Server) unrealizeOccurrence(ctx context.Context, r *http.Request, _ httpserver.None) (Occurrence, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return Occurrence{}, err
 	}
 
-	return UnrealizeOccurrence200JSONResponse(toOccurrenceAPI(o)), nil
+	o, err := s.svc.Unrealize(ctx, auth.MustBooksID(ctx), id)
+	if err != nil {
+		return Occurrence{}, err
+	}
+
+	return toOccurrenceAPI(o), nil
 }

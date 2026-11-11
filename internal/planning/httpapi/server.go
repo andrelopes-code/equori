@@ -1,6 +1,8 @@
 package httpapi
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -19,8 +21,6 @@ import (
 
 const BaseURL = "/api/v1"
 
-var _ StrictServerInterface = (*Server)(nil)
-
 type Server struct {
 	svc  *app.Service
 	errs httpserver.ErrorWriter
@@ -31,11 +31,59 @@ func NewServer(svc *app.Service, log *slog.Logger) *Server {
 }
 
 func (s *Server) Register(mux *http.ServeMux) {
-	strict := NewStrictHandlerWithOptions(s, nil, StrictHTTPServerOptions{
-		RequestErrorHandlerFunc:  s.errs.WriteRequestError,
-		ResponseErrorHandlerFunc: s.errs.Write,
-	})
-	HandlerWithOptions(strict, StdHTTPServerOptions{BaseURL: BaseURL, BaseRouter: mux, ErrorHandlerFunc: s.errs.WriteRequestError})
+	mux.HandleFunc("GET "+BaseURL+"/schedules",
+		httpserver.Handle(s.errs, http.StatusOK, s.listSchedules))
+	mux.HandleFunc("POST "+BaseURL+"/schedules", s.createSchedule)
+	mux.HandleFunc("GET "+BaseURL+"/schedules/{id}",
+		httpserver.Handle(s.errs, http.StatusOK, s.getSchedule))
+	mux.HandleFunc("PATCH "+BaseURL+"/schedules/{id}",
+		httpserver.Handle(s.errs, http.StatusOK, s.updateScheduleMatching))
+	mux.HandleFunc("GET "+BaseURL+"/occurrences",
+		httpserver.Handle(s.errs, http.StatusOK, s.listOccurrences))
+	mux.HandleFunc("POST "+BaseURL+"/occurrences/{id}/realize",
+		httpserver.Handle(s.errs, http.StatusOK, s.realizeOccurrence))
+	mux.HandleFunc("POST "+BaseURL+"/occurrences/{id}/skip",
+		httpserver.Handle(s.errs, http.StatusOK, s.skipOccurrence))
+	mux.HandleFunc("POST "+BaseURL+"/occurrences/{id}/move",
+		httpserver.Handle(s.errs, http.StatusOK, s.moveOccurrence))
+	mux.HandleFunc("POST "+BaseURL+"/schedules/{id}/terms",
+		httpserver.Handle(s.errs, http.StatusCreated, s.changeScheduleTerms))
+	mux.HandleFunc("POST "+BaseURL+"/schedules/{id}/pauses",
+		httpserver.Handle(s.errs, http.StatusCreated, s.pauseSchedule))
+	mux.HandleFunc("POST "+BaseURL+"/schedules/{id}/end",
+		httpserver.Handle(s.errs, http.StatusOK, s.endSchedule))
+	mux.HandleFunc("GET "+BaseURL+"/budgets",
+		httpserver.Handle(s.errs, http.StatusOK, s.listBudgets))
+	mux.HandleFunc("POST "+BaseURL+"/budgets", s.createBudget)
+	mux.HandleFunc("GET "+BaseURL+"/budgets/{id}",
+		httpserver.Handle(s.errs, http.StatusOK, s.getBudget))
+	mux.HandleFunc("DELETE "+BaseURL+"/budgets/{id}",
+		httpserver.Handle(s.errs, http.StatusOK, s.deleteBudget))
+	mux.HandleFunc("POST "+BaseURL+"/budgets/{id}/amounts",
+		httpserver.Handle(s.errs, http.StatusCreated, s.addBudgetAmount))
+	mux.HandleFunc("GET "+BaseURL+"/budgets/{id}/progress",
+		httpserver.Handle(s.errs, http.StatusOK, s.getBudgetProgress))
+	mux.HandleFunc("GET "+BaseURL+"/goals",
+		httpserver.Handle(s.errs, http.StatusOK, s.listGoals))
+	mux.HandleFunc("POST "+BaseURL+"/goals", s.createGoal)
+	mux.HandleFunc("GET "+BaseURL+"/goals/{id}",
+		httpserver.Handle(s.errs, http.StatusOK, s.getGoal))
+	mux.HandleFunc("PATCH "+BaseURL+"/goals/{id}",
+		httpserver.Handle(s.errs, http.StatusOK, s.updateGoal))
+	mux.HandleFunc("DELETE "+BaseURL+"/goals/{id}",
+		httpserver.Handle(s.errs, http.StatusOK, s.deleteGoal))
+	mux.HandleFunc("GET "+BaseURL+"/accounts/{id}/projection",
+		httpserver.Handle(s.errs, http.StatusOK, s.getProjection))
+	mux.HandleFunc("GET "+BaseURL+"/commitments",
+		httpserver.Handle(s.errs, http.StatusOK, s.getCommitted))
+	mux.HandleFunc("GET "+BaseURL+"/budget-plan",
+		httpserver.Handle(s.errs, http.StatusOK, s.getBudgetPlan))
+	mux.HandleFunc("PUT "+BaseURL+"/budget-plan",
+		httpserver.Handle(s.errs, http.StatusOK, s.saveBudgetPlan))
+	mux.HandleFunc("POST "+BaseURL+"/occurrences/{id}/reopen",
+		httpserver.Handle(s.errs, http.StatusOK, s.reopenOccurrence))
+	mux.HandleFunc("POST "+BaseURL+"/occurrences/{id}/unrealize",
+		httpserver.Handle(s.errs, http.StatusOK, s.unrealizeOccurrence))
 }
 
 // paramError is a parameter that conforms to the contract but whose value the handler cannot use.
@@ -127,10 +175,20 @@ func fromMoneyAPI(field string, m Money) (money.Money, error) {
 	return v, nil
 }
 
-// location is the Location header of a created record (ADR 007, C6).
-func location(collection string, id uuid.UUID) *string {
-	l := BaseURL + collection + id.String()
-	return &l
+// writeCreated answers 201 with the JSON body and the Location header of the created record
+// (ADR 007, C6).
+func (s *Server) writeCreated(w http.ResponseWriter, r *http.Request, collection string, id uuid.UUID, body any) {
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(body); err != nil {
+		s.errs.Write(w, r, err)
+
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Location", BaseURL+collection+id.String())
+	w.WriteHeader(http.StatusCreated)
+	_, _ = buf.WriteTo(w)
 }
 
 func apiDate(t time.Time) openapi_types.Date { return openapi_types.Date{Time: t} }

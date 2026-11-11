@@ -2,95 +2,127 @@ package httpapi
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/andrelopes-code/equori/internal/planning/app"
 	"github.com/andrelopes-code/equori/internal/planning/domain"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
+	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
-func (s *Server) SkipOccurrence(ctx context.Context, req SkipOccurrenceRequestObject) (SkipOccurrenceResponseObject, error) {
+func (s *Server) skipOccurrence(ctx context.Context, r *http.Request, in SkipOccurrenceJSONRequestBody) (Occurrence, error) {
+	id, err := httpserver.PathUUID(r, "id")
+	if err != nil {
+		return Occurrence{}, err
+	}
+
 	var reason string
-	if req.Body.Reason != nil {
-		reason = *req.Body.Reason
+	if in.Reason != nil {
+		reason = *in.Reason
 	}
 
-	o, err := s.svc.Skip(ctx, auth.MustBooksID(ctx), req.Id, reason)
+	o, err := s.svc.Skip(ctx, auth.MustBooksID(ctx), id, reason)
 	if err != nil {
-		return nil, err
+		return Occurrence{}, err
 	}
 
-	return SkipOccurrence200JSONResponse(toOccurrenceAPI(o)), nil
+	return toOccurrenceAPI(o), nil
 }
 
-func (s *Server) MoveOccurrence(ctx context.Context, req MoveOccurrenceRequestObject) (MoveOccurrenceResponseObject, error) {
-	o, err := s.svc.Move(ctx, auth.MustBooksID(ctx), req.Id, req.Body.Date.Time)
+func (s *Server) moveOccurrence(ctx context.Context, r *http.Request, in MoveOccurrenceJSONRequestBody) (Occurrence, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return Occurrence{}, err
 	}
 
-	return MoveOccurrence200JSONResponse(toOccurrenceAPI(o)), nil
+	o, err := s.svc.Move(ctx, auth.MustBooksID(ctx), id, in.Date.Time)
+	if err != nil {
+		return Occurrence{}, err
+	}
+
+	return toOccurrenceAPI(o), nil
 }
 
-func (s *Server) ChangeScheduleTerms(ctx context.Context, req ChangeScheduleTermsRequestObject) (ChangeScheduleTermsResponseObject, error) {
+func (s *Server) changeScheduleTerms(ctx context.Context, r *http.Request, in ChangeScheduleTermsJSONRequestBody) (Schedule, error) {
+	id, err := httpserver.PathUUID(r, "id")
+	if err != nil {
+		return Schedule{}, err
+	}
+
 	var amount *money.Money
-	if req.Body.Amount != nil {
-		m, err := fromMoneyAPI("amount", *req.Body.Amount)
+	if in.Amount != nil {
+		m, err := fromMoneyAPI("amount", *in.Amount)
 		if err != nil {
-			return nil, err
+			return Schedule{}, err
 		}
 
 		amount = &m
 	}
 
 	var rule *domain.Rule
-	if req.Body.Recurrence != nil {
-		r := fromRecurrenceAPI(*req.Body.Recurrence)
-		rule = &r
+	if in.Recurrence != nil {
+		rr := fromRecurrenceAPI(*in.Recurrence)
+		rule = &rr
 	}
 
-	sch, err := s.svc.ChangeTerms(ctx, auth.MustBooksID(ctx), req.Id, req.Body.EffectiveFrom.Time, amount, rule)
+	sch, err := s.svc.ChangeTerms(ctx, auth.MustBooksID(ctx), id, in.EffectiveFrom.Time, amount, rule)
 	if err != nil {
-		return nil, err
+		return Schedule{}, err
 	}
 
-	return ChangeScheduleTerms201JSONResponse(toScheduleAPI(sch)), nil
+	return toScheduleAPI(sch), nil
 }
 
-func (s *Server) UpdateScheduleMatching(ctx context.Context, req UpdateScheduleMatchingRequestObject) (UpdateScheduleMatchingResponseObject, error) {
-	in := app.ScheduleChange{
-		Description: req.Body.Description,
-		ToleranceBP: req.Body.MatchToleranceBp,
-		GraceDays:   req.Body.GraceDays,
-		WindowDays:  req.Body.MatchWindowDays,
-	}
-
-	if req.Body.StartsOn != nil {
-		in.StartsOn = &req.Body.StartsOn.Time
-	}
-
-	sch, err := s.svc.Update(ctx, auth.MustBooksID(ctx), req.Id, in)
+func (s *Server) updateScheduleMatching(ctx context.Context, r *http.Request, in UpdateScheduleMatchingJSONRequestBody) (Schedule, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return Schedule{}, err
 	}
 
-	return UpdateScheduleMatching200JSONResponse(toScheduleAPI(sch)), nil
+	change := app.ScheduleChange{
+		Description: in.Description,
+		ToleranceBP: in.MatchToleranceBp,
+		GraceDays:   in.GraceDays,
+		WindowDays:  in.MatchWindowDays,
+	}
+
+	if in.StartsOn != nil {
+		change.StartsOn = &in.StartsOn.Time
+	}
+
+	sch, err := s.svc.Update(ctx, auth.MustBooksID(ctx), id, change)
+	if err != nil {
+		return Schedule{}, err
+	}
+
+	return toScheduleAPI(sch), nil
 }
 
-func (s *Server) PauseSchedule(ctx context.Context, req PauseScheduleRequestObject) (PauseScheduleResponseObject, error) {
-	sch, err := s.svc.Pause(ctx, auth.MustBooksID(ctx), req.Id, req.Body.From.Time, req.Body.To.Time)
+func (s *Server) pauseSchedule(ctx context.Context, r *http.Request, in PauseScheduleJSONRequestBody) (Schedule, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return Schedule{}, err
 	}
 
-	return PauseSchedule201JSONResponse(toScheduleAPI(sch)), nil
+	sch, err := s.svc.Pause(ctx, auth.MustBooksID(ctx), id, in.From.Time, in.To.Time)
+	if err != nil {
+		return Schedule{}, err
+	}
+
+	return toScheduleAPI(sch), nil
 }
 
-func (s *Server) EndSchedule(ctx context.Context, req EndScheduleRequestObject) (EndScheduleResponseObject, error) {
-	sch, err := s.svc.End(ctx, auth.MustBooksID(ctx), req.Id, req.Body.From.Time)
+func (s *Server) endSchedule(ctx context.Context, r *http.Request, in EndScheduleJSONRequestBody) (Schedule, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return Schedule{}, err
 	}
 
-	return EndSchedule200JSONResponse(toScheduleAPI(sch)), nil
+	sch, err := s.svc.End(ctx, auth.MustBooksID(ctx), id, in.From.Time)
+	if err != nil {
+		return Schedule{}, err
+	}
+
+	return toScheduleAPI(sch), nil
 }

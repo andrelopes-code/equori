@@ -2,11 +2,15 @@ package httpapi
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/andrelopes-code/equori/internal/planning/app"
 	"github.com/andrelopes-code/equori/internal/planning/domain"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
+	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/platform/page"
 )
 
@@ -31,54 +35,68 @@ func toBudgetAPI(b domain.Budget) Budget {
 	return out
 }
 
-func (s *Server) CreateBudget(ctx context.Context, req CreateBudgetRequestObject) (CreateBudgetResponseObject, error) {
-	amount, err := fromMoneyAPI("amount", req.Body.Amount)
-	if err != nil {
-		return nil, err
+func (s *Server) createBudget(w http.ResponseWriter, r *http.Request) {
+	var in CreateBudgetJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
+		s.errs.WriteRequestError(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+
+		return
 	}
 
-	from, err := parseMonth("effective_from", req.Body.EffectiveFrom)
+	b, err := s.addBudget(r.Context(), in)
 	if err != nil {
-		return nil, err
+		s.errs.Write(w, r, err)
+
+		return
 	}
 
-	b, err := s.svc.CreateBudget(ctx, auth.MustBooksID(ctx), req.Body.CategoryId, amount, from, req.Body.Rollover)
-	if err != nil {
-		return nil, err
-	}
-
-	return CreateBudget201JSONResponse{Body: toBudgetAPI(b), Headers: CreateBudget201ResponseHeaders{Location: location("/budgets/", b.ID)}}, nil
+	s.writeCreated(w, r, "/budgets/", b.ID, toBudgetAPI(b))
 }
 
-func (s *Server) GetBudget(ctx context.Context, req GetBudgetRequestObject) (GetBudgetResponseObject, error) {
-	b, err := s.svc.Budget(ctx, auth.MustBooksID(ctx), req.Id)
+func (s *Server) getBudget(ctx context.Context, r *http.Request, _ httpserver.None) (Budget, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return Budget{}, err
 	}
 
-	return GetBudget200JSONResponse(toBudgetAPI(b)), nil
-}
-
-func (s *Server) DeleteBudget(ctx context.Context, req DeleteBudgetRequestObject) (DeleteBudgetResponseObject, error) {
-	if err := s.svc.DeleteBudget(ctx, auth.MustBooksID(ctx), req.Id); err != nil {
-		return nil, err
+	b, err := s.svc.Budget(ctx, auth.MustBooksID(ctx), id)
+	if err != nil {
+		return Budget{}, err
 	}
 
-	return DeleteBudget204Response{}, nil
+	return toBudgetAPI(b), nil
 }
 
-func (s *Server) ListBudgets(ctx context.Context, req ListBudgetsRequestObject) (ListBudgetsResponseObject, error) {
-	p, err := listPage[app.IDKey](req.Params.Limit, req.Params.Cursor)
+func (s *Server) deleteBudget(ctx context.Context, r *http.Request, _ httpserver.None) (httpserver.None, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return httpserver.None{}, err
+	}
+
+	if err := s.svc.DeleteBudget(ctx, auth.MustBooksID(ctx), id); err != nil {
+		return httpserver.None{}, err
+	}
+
+	return httpserver.None{}, nil
+}
+
+func (s *Server) listBudgets(ctx context.Context, r *http.Request, _ httpserver.None) (BudgetPage, error) {
+	params, err := httpserver.Query[ListBudgetsParams](r)
+	if err != nil {
+		return BudgetPage{}, err
+	}
+
+	p, err := listPage[app.IDKey](params.Limit, params.Cursor)
+	if err != nil {
+		return BudgetPage{}, err
 	}
 
 	bs, next, err := s.svc.ListBudgets(ctx, auth.MustBooksID(ctx), p)
 	if err != nil {
-		return nil, err
+		return BudgetPage{}, err
 	}
 
-	out := ListBudgets200JSONResponse{Items: make([]Budget, len(bs))}
+	out := BudgetPage{Items: make([]Budget, len(bs))}
 	for i, b := range bs {
 		out.Items[i] = toBudgetAPI(b)
 	}
@@ -88,38 +106,67 @@ func (s *Server) ListBudgets(ctx context.Context, req ListBudgetsRequestObject) 
 	return out, err
 }
 
-func (s *Server) AddBudgetAmount(ctx context.Context, req AddBudgetAmountRequestObject) (AddBudgetAmountResponseObject, error) {
-	amount, err := fromMoneyAPI("amount", req.Body.Amount)
+func (s *Server) addBudgetAmount(ctx context.Context, r *http.Request, in AddBudgetAmountJSONRequestBody) (Budget, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return Budget{}, err
 	}
 
-	from, err := parseMonth("effective_from", req.Body.EffectiveFrom)
+	amount, err := fromMoneyAPI("amount", in.Amount)
 	if err != nil {
-		return nil, err
+		return Budget{}, err
 	}
 
-	b, err := s.svc.AddBudgetAmount(ctx, auth.MustBooksID(ctx), req.Id, from, amount)
+	from, err := parseMonth("effective_from", in.EffectiveFrom)
 	if err != nil {
-		return nil, err
+		return Budget{}, err
 	}
 
-	return AddBudgetAmount201JSONResponse(toBudgetAPI(b)), nil
+	b, err := s.svc.AddBudgetAmount(ctx, auth.MustBooksID(ctx), id, from, amount)
+	if err != nil {
+		return Budget{}, err
+	}
+
+	return toBudgetAPI(b), nil
 }
 
-func (s *Server) GetBudgetProgress(ctx context.Context, req GetBudgetProgressRequestObject) (GetBudgetProgressResponseObject, error) {
-	month, err := parseMonth("month", req.Params.Month)
+func (s *Server) getBudgetProgress(ctx context.Context, r *http.Request, _ httpserver.None) (BudgetProgress, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return BudgetProgress{}, err
 	}
 
-	p, currency, err := s.svc.BudgetProgress(ctx, auth.MustBooksID(ctx), req.Id, month)
+	params, err := httpserver.Query[GetBudgetProgressParams](r)
 	if err != nil {
-		return nil, err
+		return BudgetProgress{}, err
 	}
 
-	return GetBudgetProgress200JSONResponse{
+	month, err := parseMonth("month", params.Month)
+	if err != nil {
+		return BudgetProgress{}, err
+	}
+
+	p, currency, err := s.svc.BudgetProgress(ctx, auth.MustBooksID(ctx), id, month)
+	if err != nil {
+		return BudgetProgress{}, err
+	}
+
+	return BudgetProgress{
 		Month: p.Month.Format(monthLayout), Planned: toMoneyAPI(p.Planned, currency), Carried: toMoneyAPI(p.Carried, currency),
 		Spent: toMoneyAPI(p.Spent, currency), Available: toMoneyAPI(p.Available, currency),
 	}, nil
+}
+
+func (s *Server) addBudget(ctx context.Context, in CreateBudgetJSONRequestBody) (domain.Budget, error) {
+	amount, err := fromMoneyAPI("amount", in.Amount)
+	if err != nil {
+		return domain.Budget{}, err
+	}
+
+	from, err := parseMonth("effective_from", in.EffectiveFrom)
+	if err != nil {
+		return domain.Budget{}, err
+	}
+
+	return s.svc.CreateBudget(ctx, auth.MustBooksID(ctx), in.CategoryId, amount, from, in.Rollover)
 }

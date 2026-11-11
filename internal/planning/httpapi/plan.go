@@ -3,12 +3,14 @@ package httpapi
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/google/uuid"
 
 	"github.com/andrelopes-code/equori/internal/planning/app"
 	"github.com/andrelopes-code/equori/internal/planning/domain"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
+	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
@@ -84,50 +86,60 @@ func toBudgetPlanAPI(p app.Plan) BudgetPlan {
 	return out
 }
 
-func (s *Server) GetBudgetPlan(ctx context.Context, req GetBudgetPlanRequestObject) (GetBudgetPlanResponseObject, error) {
-	month, err := parseMonth("month", req.Params.Month)
+func (s *Server) getBudgetPlan(ctx context.Context, r *http.Request, _ httpserver.None) (BudgetPlan, error) {
+	params, err := httpserver.Query[GetBudgetPlanParams](r)
 	if err != nil {
-		return nil, err
+		return BudgetPlan{}, err
+	}
+
+	month, err := parseMonth("month", params.Month)
+	if err != nil {
+		return BudgetPlan{}, err
 	}
 
 	p, err := s.svc.BudgetPlan(ctx, auth.MustBooksID(ctx), month)
 	if err != nil {
-		return nil, err
+		return BudgetPlan{}, err
 	}
 
-	return GetBudgetPlan200JSONResponse(toBudgetPlanAPI(p)), nil
+	return toBudgetPlanAPI(p), nil
 }
 
-func (s *Server) SaveBudgetPlan(ctx context.Context, req SaveBudgetPlanRequestObject) (SaveBudgetPlanResponseObject, error) {
-	month, err := parseMonth("month", req.Params.Month)
+func (s *Server) saveBudgetPlan(ctx context.Context, r *http.Request, in SaveBudgetPlanJSONRequestBody) (BudgetPlan, error) {
+	params, err := httpserver.Query[SaveBudgetPlanParams](r)
 	if err != nil {
-		return nil, err
+		return BudgetPlan{}, err
+	}
+
+	month, err := parseMonth("month", params.Month)
+	if err != nil {
+		return BudgetPlan{}, err
 	}
 
 	var fixed *money.Money
-	if req.Body.Fixed != nil {
-		m, err := fromMoneyAPI("fixed", *req.Body.Fixed)
+	if in.Fixed != nil {
+		m, err := fromMoneyAPI("fixed", *in.Fixed)
 		if err != nil {
-			return nil, err
+			return BudgetPlan{}, err
 		}
 
 		fixed = &m
 	}
 
-	amounts := make([]app.PlanAmount, len(req.Body.Amounts))
-	for i, a := range req.Body.Amounts {
+	amounts := make([]app.PlanAmount, len(in.Amounts))
+	for i, a := range in.Amounts {
 		m, err := fromMoneyAPI(fmt.Sprintf("amounts[%d].amount", i), a.Amount)
 		if err != nil {
-			return nil, err
+			return BudgetPlan{}, err
 		}
 
 		amounts[i] = app.PlanAmount{CategoryID: a.CategoryId, Amount: m}
 	}
 
-	p, err := s.svc.SaveBudgetPlan(ctx, auth.MustBooksID(ctx), month, domain.ReferenceSource(req.Body.Source), fixed, req.Body.SavingsTargetBp, amounts)
+	p, err := s.svc.SaveBudgetPlan(ctx, auth.MustBooksID(ctx), month, domain.ReferenceSource(in.Source), fixed, in.SavingsTargetBp, amounts)
 	if err != nil {
-		return nil, err
+		return BudgetPlan{}, err
 	}
 
-	return SaveBudgetPlan200JSONResponse(toBudgetPlanAPI(p)), nil
+	return toBudgetPlanAPI(p), nil
 }

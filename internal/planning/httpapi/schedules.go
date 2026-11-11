@@ -2,11 +2,15 @@ package httpapi
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/andrelopes-code/equori/internal/planning/app"
 	"github.com/andrelopes-code/equori/internal/planning/domain"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
+	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/platform/page"
 )
 
@@ -86,47 +90,55 @@ func toScheduleAPI(s domain.Schedule) Schedule {
 	return out
 }
 
-func (s *Server) CreateSchedule(ctx context.Context, req CreateScheduleRequestObject) (CreateScheduleResponseObject, error) {
-	b := req.Body
+func (s *Server) createSchedule(w http.ResponseWriter, r *http.Request) {
+	var in CreateScheduleJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
+		s.errs.WriteRequestError(w, r, fmt.Errorf("can't decode JSON body: %w", err))
 
-	amount, err := fromMoneyAPI("amount", b.Amount)
-	if err != nil {
-		return nil, err
+		return
 	}
 
-	created, err := s.svc.CreateSchedule(ctx, auth.MustBooksID(ctx), app.ScheduleInput{
-		Kind: domain.Kind(b.Kind), AccountID: b.AccountId, CounterpartID: b.CounterpartId, PayeeID: optUUID(b.PayeeId),
-		Description: b.Description, Amount: amount, Rule: fromRecurrenceAPI(b.Recurrence), Calendar: stringOf(b.Calendar),
-		ToleranceBP: b.MatchToleranceBp, GraceDays: b.GraceDays, WindowDays: b.MatchWindowDays,
-	})
+	created, err := s.addSchedule(r.Context(), in)
 	if err != nil {
-		return nil, err
+		s.errs.Write(w, r, err)
+
+		return
 	}
 
-	return CreateSchedule201JSONResponse{Body: toScheduleAPI(created), Headers: CreateSchedule201ResponseHeaders{Location: location("/schedules/", created.ID)}}, nil
+	s.writeCreated(w, r, "/schedules/", created.ID, toScheduleAPI(created))
 }
 
-func (s *Server) GetSchedule(ctx context.Context, req GetScheduleRequestObject) (GetScheduleResponseObject, error) {
-	sch, err := s.svc.Schedule(ctx, auth.MustBooksID(ctx), req.Id)
+func (s *Server) getSchedule(ctx context.Context, r *http.Request, _ httpserver.None) (Schedule, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return Schedule{}, err
 	}
 
-	return GetSchedule200JSONResponse(toScheduleAPI(sch)), nil
+	sch, err := s.svc.Schedule(ctx, auth.MustBooksID(ctx), id)
+	if err != nil {
+		return Schedule{}, err
+	}
+
+	return toScheduleAPI(sch), nil
 }
 
-func (s *Server) ListSchedules(ctx context.Context, req ListSchedulesRequestObject) (ListSchedulesResponseObject, error) {
-	p, err := listPage[app.IDKey](req.Params.Limit, req.Params.Cursor)
+func (s *Server) listSchedules(ctx context.Context, r *http.Request, _ httpserver.None) (SchedulePage, error) {
+	params, err := httpserver.Query[ListSchedulesParams](r)
 	if err != nil {
-		return nil, err
+		return SchedulePage{}, err
+	}
+
+	p, err := listPage[app.IDKey](params.Limit, params.Cursor)
+	if err != nil {
+		return SchedulePage{}, err
 	}
 
 	ss, next, err := s.svc.ListSchedules(ctx, auth.MustBooksID(ctx), p)
 	if err != nil {
-		return nil, err
+		return SchedulePage{}, err
 	}
 
-	out := ListSchedules200JSONResponse{Items: make([]Schedule, len(ss))}
+	out := SchedulePage{Items: make([]Schedule, len(ss))}
 	for i, sch := range ss {
 		out.Items[i] = toScheduleAPI(sch)
 	}
@@ -150,31 +162,35 @@ func toOccurrenceAPI(o app.OccurrenceView) Occurrence {
 	return out
 }
 
-func (s *Server) ListOccurrences(ctx context.Context, req ListOccurrencesRequestObject) (ListOccurrencesResponseObject, error) {
+func (s *Server) listOccurrences(ctx context.Context, r *http.Request, _ httpserver.None) (OccurrenceList, error) {
+	params, err := httpserver.Query[ListOccurrencesParams](r)
+	if err != nil {
+		return OccurrenceList{}, err
+	}
+
 	var state domain.State
-	if req.Params.State != nil {
-		state = domain.State(*req.Params.State)
+	if params.State != nil {
+		state = domain.State(*params.State)
 	}
 
 	var os []app.OccurrenceView
 
-	var err error
 	switch {
-	case req.Params.TransactionId != nil:
-		os, err = s.svc.OccurrencesOfTransaction(ctx, auth.MustBooksID(ctx), *req.Params.TransactionId)
-	case req.Params.From == nil:
+	case params.TransactionId != nil:
+		os, err = s.svc.OccurrencesOfTransaction(ctx, auth.MustBooksID(ctx), *params.TransactionId)
+	case params.From == nil:
 		err = &paramError{field: "from", message: "value is required but missing"}
-	case req.Params.To == nil:
+	case params.To == nil:
 		err = &paramError{field: "to", message: "value is required but missing"}
 	default:
-		os, err = s.svc.Occurrences(ctx, auth.MustBooksID(ctx), req.Params.From.Time, req.Params.To.Time, optUUID(req.Params.ScheduleId), state)
+		os, err = s.svc.Occurrences(ctx, auth.MustBooksID(ctx), params.From.Time, params.To.Time, optUUID(params.ScheduleId), state)
 	}
 
 	if err != nil {
-		return nil, err
+		return OccurrenceList{}, err
 	}
 
-	out := ListOccurrences200JSONResponse{Items: make([]Occurrence, len(os))}
+	out := OccurrenceList{Items: make([]Occurrence, len(os))}
 	for i, o := range os {
 		out.Items[i] = toOccurrenceAPI(o)
 	}
@@ -182,6 +198,18 @@ func (s *Server) ListOccurrences(ctx context.Context, req ListOccurrencesRequest
 	return out, nil
 }
 
+func (s *Server) addSchedule(ctx context.Context, b CreateScheduleJSONRequestBody) (domain.Schedule, error) {
+	amount, err := fromMoneyAPI("amount", b.Amount)
+	if err != nil {
+		return domain.Schedule{}, err
+	}
+
+	return s.svc.CreateSchedule(ctx, auth.MustBooksID(ctx), app.ScheduleInput{
+		Kind: domain.Kind(b.Kind), AccountID: b.AccountId, CounterpartID: b.CounterpartId, PayeeID: optUUID(b.PayeeId),
+		Description: b.Description, Amount: amount, Rule: fromRecurrenceAPI(b.Recurrence), Calendar: stringOf(b.Calendar),
+		ToleranceBP: b.MatchToleranceBp, GraceDays: b.GraceDays, WindowDays: b.MatchWindowDays,
+	})
+}
 func stringOf(p *string) string {
 	if p == nil {
 		return ""
