@@ -214,29 +214,14 @@ func cardDetailsOf(ctx context.Context, svc *app.Service, booksID int64, a domai
 	today := svc.Today(ctx)
 	out := cardDetailsView{Cards: []cardView{}, Statements: []statementRowView{}}
 
-	cards, err := svc.Cards(ctx, booksID, a.ID)
-	if err != nil {
+	var err error
+
+	if out.Cards, err = loadCardViews(ctx, svc, booksID, a); err != nil {
 		return cardDetailsView{}, err
 	}
 
-	for _, c := range cards {
-		out.Cards = append(out.Cards, cardView{CardID: c.ID.String(), Holder: c.Holder, LastFour: c.LastFour, Virtual: c.Virtual, Active: c.Active})
-	}
-
-	limits, err := svc.CreditLimits(ctx, booksID, a.ID)
-	if err != nil {
+	if err := loadCreditLimit(ctx, svc, booksID, a, &out); err != nil {
 		return cardDetailsView{}, err
-	}
-
-	if len(limits) > 0 {
-		sum, err := svc.CardSummary(ctx, booksID, a)
-		if err != nil {
-			return cardDetailsView{}, err
-		}
-
-		if sum != nil {
-			out.CreditLimit, out.AvailableLimit = tool.MoneyOf(sum.CreditLimit), tool.MoneyOf(sum.AvailableLimit)
-		}
 	}
 
 	rules, err := svc.BillingRules(ctx, booksID, a.ID)
@@ -253,29 +238,8 @@ func cardDetailsOf(ctx context.Context, svc *app.Service, booksID int64, a domai
 		from = &m
 	}
 
-	views, err := allPages(func(p page.Request[app.StatementKey]) ([]app.StatementView, *app.StatementKey, error) {
-		rows, next, _, err := svc.Statements(ctx, booksID, a.ID, from, nil, p)
-		return rows, next, err
-	})
-	if err != nil {
+	if out.Statements, err = loadStatementRows(ctx, svc, booksID, a, unit, from, out.Statements); err != nil {
 		return cardDetailsView{}, err
-	}
-
-	for _, v := range views {
-		due, err := minorMoney(unit, v.Summary.AmountDue)
-		if err != nil {
-			return cardDetailsView{}, err
-		}
-
-		unpaid, err := minorMoney(unit, v.Summary.Unpaid)
-		if err != nil {
-			return cardDetailsView{}, err
-		}
-
-		out.Statements = append(out.Statements, statementRowView{
-			StatementID: v.ID.String(), Reference: v.Input.Reference.String(), ClosingDate: tool.DateOf(v.Input.Closing),
-			DueDate: tool.DateOf(v.Input.Due), Status: v.Summary.Status, AmountDue: due, Unpaid: unpaid,
-		})
 	}
 
 	if !in.PurchaseDate.IsZero() {
@@ -297,4 +261,90 @@ func cardDetailsOf(ctx context.Context, svc *app.Service, booksID int64, a domai
 	}
 
 	return out, nil
+}
+
+func loadCardViews(ctx context.Context, svc *app.Service, booksID int64, a domain.Account) ([]cardView, error) {
+	views := []cardView{}
+
+	cards, err := svc.Cards(ctx, booksID, a.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, c := range cards {
+		views = append(views, cardView{
+			CardID:   c.ID.String(),
+			Holder:   c.Holder,
+			LastFour: c.LastFour,
+			Virtual:  c.Virtual,
+			Active:   c.Active,
+		})
+	}
+
+	return views, nil
+}
+
+func loadCreditLimit(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	a domain.Account,
+	out *cardDetailsView,
+) error {
+	limits, err := svc.CreditLimits(ctx, booksID, a.ID)
+	if err != nil {
+		return err
+	}
+
+	if len(limits) == 0 {
+		return nil
+	}
+
+	sum, err := svc.CardSummary(ctx, booksID, a)
+	if err != nil {
+		return err
+	}
+
+	if sum != nil {
+		out.CreditLimit, out.AvailableLimit = tool.MoneyOf(sum.CreditLimit), tool.MoneyOf(sum.AvailableLimit)
+	}
+
+	return nil
+}
+
+func loadStatementRows(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	a domain.Account,
+	unit money.Money,
+	from *domain.ReferenceMonth,
+	rows []statementRowView,
+) ([]statementRowView, error) {
+	views, err := allPages(func(p page.Request[app.StatementKey]) ([]app.StatementView, *app.StatementKey, error) {
+		rows, next, _, err := svc.Statements(ctx, booksID, a.ID, from, nil, p)
+		return rows, next, err
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	for _, v := range views {
+		due, err := minorMoney(unit, v.Summary.AmountDue)
+		if err != nil {
+			return nil, err
+		}
+
+		unpaid, err := minorMoney(unit, v.Summary.Unpaid)
+		if err != nil {
+			return nil, err
+		}
+
+		rows = append(rows, statementRowView{
+			StatementID: v.ID.String(), Reference: v.Input.Reference.String(), ClosingDate: tool.DateOf(v.Input.Closing),
+			DueDate: tool.DateOf(v.Input.Due), Status: v.Summary.Status, AmountDue: due, Unpaid: unpaid,
+		})
+	}
+
+	return rows, nil
 }

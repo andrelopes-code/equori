@@ -62,81 +62,126 @@ func changeTransaction(svc *app.Service) tool.Tool {
 			"The user confirms before the change applies.",
 		Effect: tool.Write,
 	}, func(ctx context.Context, booksID int64, in changeTransactionIn) (tool.Preview, error) {
-		p, err := planChange(ctx, svc, booksID, in)
-		if err != nil {
-			return tool.Preview{}, err
-		}
-
-		pv := tool.Preview{Action: "change_transaction", Target: targetOf(p.current), Basis: basisOf(p.current)}
-
-		accounts, _, err := allAccounts(ctx, svc, booksID)
-		if err != nil {
-			return pv, err
-		}
-
-		switch in.Action {
-		case "correct":
-			pv.Changes, err = correctionChanges(ctx, svc, booksID, p, accounts)
-		case "make_transfer":
-			before := ""
-			for _, po := range p.current.Postings {
-				if a := accounts[po.AccountID]; a.IsCategory() {
-					before = a.Name
-				}
-			}
-
-			pv.Changes = []tool.Change{{Field: "account", Before: tool.TextValue(before), After: tool.TextValue(p.transfer.Name)}}
-		default:
-			var total money.Money
-			for i, a := range p.allocs {
-				pv.Changes = append(pv.Changes, tool.Change{Field: "transaction", After: tool.TextValue(targetText(p.expenses[i]))})
-				if i == 0 {
-					total = a.Amount
-				} else if total, err = total.Add(a.Amount); err != nil {
-					return pv, err
-				}
-			}
-
-			pv.Changes = append(pv.Changes, tool.Change{Field: "amount", After: tool.MoneyValue(total)})
-		}
-
-		return pv, err
+		return previewChange(ctx, svc, booksID, in)
 	}, func(ctx context.Context, booksID int64, in changeTransactionIn) (changeTransactionOut, error) {
-		p, err := planChange(ctx, svc, booksID, in)
-		if err != nil {
-			return changeTransactionOut{}, err
-		}
-
-		var id uuid.UUID
-		switch in.Action {
-		case "correct":
-			var t domain.Transaction
-			if t, err = svc.CorrectTransaction(ctx, booksID, p.current.ID, p.current.Version, p.next, in.Reason); err == nil {
-				id = t.ID
-			}
-		case "make_transfer":
-			var res app.TransferResult
-			res, err = svc.Transfer(ctx, booksID, app.TransferRequest{
-				TransactionID: p.current.ID, ExpectedVersion: p.current.Version, AccountID: p.transfer.ID, Cause: app.Cause{Method: app.MethodManual},
-			})
-			id = res.Kept
-		default:
-			var t domain.Transaction
-			if t, err = svc.Reimburse(ctx, booksID, app.ReimbursementRequest{
-				TransactionID: p.current.ID, ExpectedVersion: p.current.Version, Allocations: p.allocs, Cause: app.Cause{Method: app.MethodManual},
-			}); err == nil {
-				id = t.ID
-			}
-		}
-
-		if err != nil {
-			return changeTransactionOut{}, err
-		}
-
-		t, err := svc.Transaction(ctx, booksID, id)
-
-		return changeTransactionOut{TransactionID: id.String(), Version: t.Version}, err
+		return runChange(ctx, svc, booksID, in)
 	})
+}
+
+func previewChange(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	in changeTransactionIn,
+) (tool.Preview, error) {
+	p, err := planChange(ctx, svc, booksID, in)
+	if err != nil {
+		return tool.Preview{}, err
+	}
+
+	pv := tool.Preview{Action: "change_transaction", Target: targetOf(p.current), Basis: basisOf(p.current)}
+
+	accounts, _, err := allAccounts(ctx, svc, booksID)
+	if err != nil {
+		return pv, err
+	}
+
+	switch in.Action {
+	case "correct":
+		pv.Changes, err = correctionChanges(ctx, svc, booksID, p, accounts)
+	case "make_transfer":
+		pv.Changes = transferChanges(p, accounts)
+	default:
+		pv.Changes, err = reimbursementChanges(p)
+	}
+
+	return pv, err
+}
+
+func transferChanges(p changePlan, accounts map[uuid.UUID]domain.Account) []tool.Change {
+	before := ""
+	for _, po := range p.current.Postings {
+		if a := accounts[po.AccountID]; a.IsCategory() {
+			before = a.Name
+		}
+	}
+
+	return []tool.Change{{Field: "account", Before: tool.TextValue(before), After: tool.TextValue(p.transfer.Name)}}
+}
+
+func reimbursementChanges(p changePlan) ([]tool.Change, error) {
+	var changes []tool.Change
+
+	var total money.Money
+	for i, a := range p.allocs {
+		changes = append(changes, tool.Change{Field: "transaction", After: tool.TextValue(targetText(p.expenses[i]))})
+		if i == 0 {
+			total = a.Amount
+		} else if sum, err := total.Add(a.Amount); err != nil {
+			return changes, err
+		} else {
+			total = sum
+		}
+	}
+
+	return append(changes, tool.Change{Field: "amount", After: tool.MoneyValue(total)}), nil
+}
+
+func runChange(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	in changeTransactionIn,
+) (changeTransactionOut, error) {
+	p, err := planChange(ctx, svc, booksID, in)
+	if err != nil {
+		return changeTransactionOut{}, err
+	}
+
+	id, err := applyChange(ctx, svc, booksID, in, p)
+	if err != nil {
+		return changeTransactionOut{}, err
+	}
+
+	t, err := svc.Transaction(ctx, booksID, id)
+
+	return changeTransactionOut{TransactionID: id.String(), Version: t.Version}, err
+}
+
+func applyChange(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	in changeTransactionIn,
+	p changePlan,
+) (uuid.UUID, error) {
+	var id uuid.UUID
+
+	var err error
+	switch in.Action {
+	case "correct":
+		var t domain.Transaction
+		if t, err = svc.CorrectTransaction(ctx, booksID, p.current.ID, p.current.Version, p.next, in.Reason); err == nil {
+			id = t.ID
+		}
+	case "make_transfer":
+		var res app.TransferResult
+		res, err = svc.Transfer(ctx, booksID, app.TransferRequest{
+			TransactionID: p.current.ID, ExpectedVersion: p.current.Version, AccountID: p.transfer.ID,
+			Cause: app.Cause{Method: app.MethodManual},
+		})
+		id = res.Kept
+	default:
+		var t domain.Transaction
+		if t, err = svc.Reimburse(ctx, booksID, app.ReimbursementRequest{
+			TransactionID: p.current.ID, ExpectedVersion: p.current.Version, Allocations: p.allocs,
+			Cause: app.Cause{Method: app.MethodManual},
+		}); err == nil {
+			id = t.ID
+		}
+	}
+
+	return id, err
 }
 
 func targetText(t domain.Transaction) string {
@@ -167,73 +212,116 @@ func planChange(ctx context.Context, svc *app.Service, booksID int64, in changeT
 	}
 
 	given := map[string]bool{
-		"reason": in.Reason != "", "date": !in.Date.IsZero(), "description": in.Description != "", "payee_id": in.PayeeID != "",
-		"tags": in.Tags != nil, "amount": in.Amount != "", "from_account_id": in.FromAccountID != "",
-		"to_account_id": in.ToAccountID != "", "allocations": len(in.Allocations) > 0,
+		"reason": in.Reason != "", "date": !in.Date.IsZero(), "description": in.Description != "",
+		"payee_id": in.PayeeID != "", "tags": in.Tags != nil, "amount": in.Amount != "",
+		"from_account_id": in.FromAccountID != "", "to_account_id": in.ToAccountID != "",
+		"allocations": len(in.Allocations) > 0,
 	}
 	switch in.Action {
 	case "correct":
-		if err := unusedFields("correct", given, "reason", "date", "description", "payee_id", "tags", "amount", "from_account_id", "to_account_id"); err != nil {
-			return p, err
-		}
-
-		if in.Reason == "" {
-			return p, tool.InvalidArgument("reason", "is required for correct")
-		}
-
-		if err := installmentFields(p.current, given); err != nil {
-			return p, err
-		}
-
-		p.next, err = correctedTransaction(ctx, svc, booksID, p.current, in)
+		return planCorrect(ctx, svc, booksID, in, given, p)
 	case "make_transfer":
-		if err := unusedFields("make_transfer", given, "to_account_id"); err != nil {
-			return p, err
-		}
-
-		var to uuid.UUID
-		if to, err = requiredID(in.ToAccountID, "to_account_id"); err != nil {
-			return p, err
-		}
-
-		p.transfer, err = svc.Account(ctx, booksID, to)
+		return planMakeTransfer(ctx, svc, booksID, in, given, p)
 	default:
-		if err := unusedFields("reimburse", given, "allocations"); err != nil {
-			return p, err
-		}
+		return planReimburse(ctx, svc, booksID, in, given, p)
+	}
+}
 
-		if len(in.Allocations) == 0 {
-			return p, tool.InvalidArgument("allocations", "is required for reimburse")
-		}
-
-		var unit money.Money
-		for _, po := range p.current.Postings {
-			unit = po.Amount
-			break
-		}
-
-		for _, a := range in.Allocations {
-			var expenseID uuid.UUID
-			if expenseID, err = requiredID(a.ExpenseID, "allocations"); err != nil {
-				return p, err
-			}
-
-			expense, err := svc.Transaction(ctx, booksID, expenseID)
-			if err != nil {
-				return p, err
-			}
-
-			amount, err := tool.ParsePositive("allocations", a.Amount, unit)
-			if err != nil {
-				return p, err
-			}
-
-			p.allocs = append(p.allocs, app.AllocationRequest{OriginalID: expenseID, Amount: amount})
-			p.expenses = append(p.expenses, expense)
-		}
+func planCorrect(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	in changeTransactionIn,
+	given map[string]bool,
+	p changePlan,
+) (changePlan, error) {
+	used := []string{
+		"reason", "date", "description", "payee_id", "tags", "amount", "from_account_id", "to_account_id",
+	}
+	if err := unusedFields("correct", given, used...); err != nil {
+		return p, err
 	}
 
+	if in.Reason == "" {
+		return p, tool.InvalidArgument("reason", "is required for correct")
+	}
+
+	if err := installmentFields(p.current, given); err != nil {
+		return p, err
+	}
+
+	var err error
+
+	p.next, err = correctedTransaction(ctx, svc, booksID, p.current, in)
+
 	return p, err
+}
+
+func planMakeTransfer(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	in changeTransactionIn,
+	given map[string]bool,
+	p changePlan,
+) (changePlan, error) {
+	if err := unusedFields("make_transfer", given, "to_account_id"); err != nil {
+		return p, err
+	}
+
+	to, err := requiredID(in.ToAccountID, "to_account_id")
+	if err != nil {
+		return p, err
+	}
+
+	p.transfer, err = svc.Account(ctx, booksID, to)
+
+	return p, err
+}
+
+func planReimburse(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	in changeTransactionIn,
+	given map[string]bool,
+	p changePlan,
+) (changePlan, error) {
+	if err := unusedFields("reimburse", given, "allocations"); err != nil {
+		return p, err
+	}
+
+	if len(in.Allocations) == 0 {
+		return p, tool.InvalidArgument("allocations", "is required for reimburse")
+	}
+
+	var unit money.Money
+	for _, po := range p.current.Postings {
+		unit = po.Amount
+		break
+	}
+
+	for _, a := range in.Allocations {
+		expenseID, err := requiredID(a.ExpenseID, "allocations")
+		if err != nil {
+			return p, err
+		}
+
+		expense, err := svc.Transaction(ctx, booksID, expenseID)
+		if err != nil {
+			return p, err
+		}
+
+		amount, err := tool.ParsePositive("allocations", a.Amount, unit)
+		if err != nil {
+			return p, err
+		}
+
+		p.allocs = append(p.allocs, app.AllocationRequest{OriginalID: expenseID, Amount: amount})
+		p.expenses = append(p.expenses, expense)
+	}
+
+	return p, nil
 }
 
 // installmentFields rejects the correct arguments an installment purchase does not take.
@@ -270,15 +358,54 @@ func sides(t domain.Transaction) (from, to int, ok bool) {
 	return 1, 0, true
 }
 
-func correctedTransaction(ctx context.Context, svc *app.Service, booksID int64, cur domain.Transaction, in changeTransactionIn) (domain.Transaction, error) {
+func correctedTransaction(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	cur domain.Transaction,
+	in changeTransactionIn,
+) (domain.Transaction, error) {
+	next := copyTransaction(cur)
+	if err := applyCorrectedFields(&next, in); err != nil {
+		return next, err
+	}
+
+	from, to, two := sides(cur)
+	if err := checkCorrectedSides(in, two); err != nil {
+		return next, err
+	}
+
+	if in.Amount != "" {
+		if err := applyCorrectedAmount(&next, cur, in, from, to); err != nil {
+			return next, err
+		}
+	}
+
+	if err := applyCorrectedAccounts(ctx, svc, booksID, &next, in, from, to); err != nil {
+		return next, err
+	}
+
+	return next, nil
+}
+
+func copyTransaction(cur domain.Transaction) domain.Transaction {
 	next := domain.Transaction{
 		Date: cur.Date, Description: cur.Description, PayeeID: cur.PayeeID, Tags: cur.Tags, Links: cur.Links,
 		Origin: cur.Origin,
 	}
 	for _, po := range cur.Postings {
-		next.Postings = append(next.Postings, domain.Posting{AccountID: po.AccountID, Amount: po.Amount, Weight: po.Weight, Memo: po.Memo})
+		next.Postings = append(next.Postings, domain.Posting{
+			AccountID: po.AccountID,
+			Amount:    po.Amount,
+			Weight:    po.Weight,
+			Memo:      po.Memo,
+		})
 	}
 
+	return next
+}
+
+func applyCorrectedFields(next *domain.Transaction, in changeTransactionIn) error {
 	if !in.Date.IsZero() {
 		next.Date = in.Date.Time
 	}
@@ -290,7 +417,7 @@ func correctedTransaction(ctx context.Context, svc *app.Service, booksID int64, 
 	if in.PayeeID != "" {
 		id, err := optionalID(in.PayeeID, "payee_id")
 		if err != nil {
-			return next, err
+			return err
 		}
 
 		next.PayeeID = id
@@ -300,23 +427,42 @@ func correctedTransaction(ctx context.Context, svc *app.Service, booksID int64, 
 		next.Tags = in.Tags
 	}
 
-	from, to, two := sides(cur)
-	for field, given := range map[string]bool{"amount": in.Amount != "", "from_account_id": in.FromAccountID != "", "to_account_id": in.ToAccountID != ""} {
+	return nil
+}
+
+func checkCorrectedSides(in changeTransactionIn, two bool) error {
+	fields := map[string]bool{
+		"amount": in.Amount != "", "from_account_id": in.FromAccountID != "", "to_account_id": in.ToAccountID != "",
+	}
+	for field, given := range fields {
 		if given && !two {
-			return next, tool.InvalidArgument(field, "applies only to a transaction with one source and one destination")
+			return tool.InvalidArgument(field, "applies only to a transaction with one source and one destination")
 		}
 	}
 
-	if in.Amount != "" {
-		amount, err := tool.ParsePositive("amount", in.Amount, cur.Postings[from].Amount)
-		if err != nil {
-			return next, err
-		}
+	return nil
+}
 
-		next.Postings[from].Amount, next.Postings[to].Amount = amount.Neg(), amount
-		next.Postings[from].Weight, next.Postings[to].Weight = money.Money{}, money.Money{}
+func applyCorrectedAmount(next *domain.Transaction, cur domain.Transaction, in changeTransactionIn, from, to int) error {
+	amount, err := tool.ParsePositive("amount", in.Amount, cur.Postings[from].Amount)
+	if err != nil {
+		return err
 	}
 
+	next.Postings[from].Amount, next.Postings[to].Amount = amount.Neg(), amount
+	next.Postings[from].Weight, next.Postings[to].Weight = money.Money{}, money.Money{}
+
+	return nil
+}
+
+func applyCorrectedAccounts(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	next *domain.Transaction,
+	in changeTransactionIn,
+	from, to int,
+) error {
 	for idx, s := range map[int]string{from: in.FromAccountID, to: in.ToAccountID} {
 		if s == "" {
 			continue
@@ -329,18 +475,18 @@ func correctedTransaction(ctx context.Context, svc *app.Service, booksID int64, 
 
 		id, err := requiredID(s, field)
 		if err != nil {
-			return next, err
+			return err
 		}
 
 		a, err := svc.Account(ctx, booksID, id)
 		if err != nil {
-			return next, err
+			return err
 		}
 
 		next.Postings[idx].AccountID = a.ID
 	}
 
-	return next, nil
+	return nil
 }
 
 func correctionChanges(ctx context.Context, svc *app.Service, booksID int64, p changePlan, accounts map[uuid.UUID]domain.Account) ([]tool.Change, error) {

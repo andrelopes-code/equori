@@ -87,8 +87,12 @@ func manageCard(svc *app.Service) tool.Tool {
 
 func cardText(c domain.Card) string { return c.Holder + " " + c.LastFour }
 
-func planCard(ctx context.Context, svc *app.Service, booksID int64, in manageCardIn) (tool.Preview, func() (manageCardOut, error), error) {
-	action := string(in.Action)
+func planCard(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	in manageCardIn,
+) (tool.Preview, func() (manageCardOut, error), error) {
 	pv := tool.Preview{Action: "manage_card"}
 
 	id, err := requiredID(in.AccountID, "account_id")
@@ -101,12 +105,48 @@ func planCard(ctx context.Context, svc *app.Service, booksID int64, in manageCar
 		return pv, nil, err
 	}
 
+	if err := checkCardFields(in); err != nil {
+		return pv, nil, err
+	}
+
+	a, err := svc.Account(ctx, booksID, id)
+	if err != nil {
+		return pv, nil, err
+	}
+
+	if a.Kind != domain.KindCreditCard {
+		return pv, nil, tool.InvalidArgument("account_id", "is not a credit card account")
+	}
+
+	pv.Target = a.Name
+
+	out := manageCardOut{AccountID: a.ID.String(), Action: string(in.Action)}
+	switch in.Action {
+	case "add_card":
+		return planAddCard(ctx, svc, booksID, a, in, pv, out)
+	case "edit_card":
+		return planEditCard(ctx, svc, booksID, a, cardID, in, pv, out)
+	case "remove_card":
+		return planRemoveCard(ctx, svc, booksID, a, cardID, pv, out)
+	case "set_card_active":
+		return planSetCardActive(ctx, svc, booksID, a, cardID, in, pv, out)
+	case "set_credit_limit":
+		return planSetCreditLimit(ctx, svc, booksID, a, in, pv, out)
+	default:
+		return planSetBillingCycle(ctx, svc, booksID, a, in, pv, out)
+	}
+}
+
+func checkCardFields(in manageCardIn) error {
 	given := map[string]bool{
-		"account_id": true, "card_id": in.CardID != "", "holder": in.Holder != "", "last_four": in.LastFour != "", "virtual": in.Virtual, "active": in.Active,
-		"amount": in.Amount != "", "effective_from": !in.EffectiveFrom.IsZero(), "closing_day": in.ClosingDay != 0, "due_day": in.DueDay != 0,
+		"account_id": true, "card_id": in.CardID != "", "holder": in.Holder != "",
+		"last_four": in.LastFour != "", "virtual": in.Virtual, "active": in.Active,
+		"amount": in.Amount != "", "effective_from": !in.EffectiveFrom.IsZero(),
+		"closing_day": in.ClosingDay != 0, "due_day": in.DueDay != 0,
 		"closing_mode": in.ClosingMode != "", "closing_days_before_due": in.ClosingDaysBeforeDue != 0,
 		"closing_adjustment": in.ClosingAdjustment != "", "closing_day_assignment": in.ClosingDayAssignment != "",
-		"due_date_adjustment": in.DueDateAdjustment != "", "calendar": in.Calendar != "", "foreign_charge_bp": in.ForeignChargeBP.Set,
+		"due_date_adjustment": in.DueDateAdjustment != "", "calendar": in.Calendar != "",
+		"foreign_charge_bp": in.ForeignChargeBP.Set,
 	}
 
 	var required, optional []string
@@ -132,114 +172,155 @@ func planCard(ctx context.Context, svc *app.Service, booksID int64, in manageCar
 		}
 	}
 
-	if err := checkFields(action, given, append([]string{"account_id"}, required...), optional...); err != nil {
-		return pv, nil, err
+	return checkFields(string(in.Action), given, append([]string{"account_id"}, required...), optional...)
+}
+
+func planAddCard(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	a domain.Account,
+	in manageCardIn,
+	pv tool.Preview,
+	out manageCardOut,
+) (tool.Preview, func() (manageCardOut, error), error) {
+	if !lastFourPattern.MatchString(in.LastFour) {
+		return pv, nil, tool.InvalidArgument("last_four", "must be four digits")
 	}
 
-	a, err := svc.Account(ctx, booksID, id)
+	c := domain.Card{AccountID: a.ID, Holder: in.Holder, LastFour: in.LastFour, Virtual: in.Virtual}
+
+	pv.Changes = []tool.Change{{Field: "card", After: tool.TextValue(cardText(c))}}
+	if in.ForeignChargeBP.Set {
+		rate := fmt.Sprintf("%d bp on foreign purchases", in.ForeignChargeBP.N)
+		pv.Changes = append(pv.Changes, tool.Change{Field: "rate", After: tool.TextValue(rate)})
+	}
+
+	return pv, func() (manageCardOut, error) {
+		created, err := svc.AddCard(ctx, booksID, c, optionalBP(in.ForeignChargeBP))
+		out.ID = created.ID.String()
+
+		return out, err
+	}, nil
+}
+
+func planRemoveCard(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	a domain.Account,
+	cardID uuid.UUID,
+	pv tool.Preview,
+	out manageCardOut,
+) (tool.Preview, func() (manageCardOut, error), error) {
+	c, err := cardOf(ctx, svc, booksID, a.ID, cardID)
 	if err != nil {
 		return pv, nil, err
 	}
 
-	if a.Kind != domain.KindCreditCard {
-		return pv, nil, tool.InvalidArgument("account_id", "is not a credit card account")
+	pv.Changes = []tool.Change{{Field: "card", Before: tool.TextValue(cardText(c))}}
+	pv.Destructive = true
+
+	return pv, func() (manageCardOut, error) {
+		out.ID = c.ID.String()
+
+		return out, svc.DeleteCard(ctx, booksID, c.ID)
+	}, nil
+}
+
+func planSetCardActive(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	a domain.Account,
+	cardID uuid.UUID,
+	in manageCardIn,
+	pv tool.Preview,
+	out manageCardOut,
+) (tool.Preview, func() (manageCardOut, error), error) {
+	c, err := cardOf(ctx, svc, booksID, a.ID, cardID)
+	if err != nil {
+		return pv, nil, err
 	}
 
-	pv.Target = a.Name
-
-	out := manageCardOut{AccountID: a.ID.String(), Action: action}
-	switch in.Action {
-	case "add_card":
-		if !lastFourPattern.MatchString(in.LastFour) {
-			return pv, nil, tool.InvalidArgument("last_four", "must be four digits")
+	status := func(active bool) tool.Value {
+		if active {
+			return tool.TextValue("active")
 		}
 
-		c := domain.Card{AccountID: a.ID, Holder: in.Holder, LastFour: in.LastFour, Virtual: in.Virtual}
-		pv.Changes = []tool.Change{{Field: "card", After: tool.TextValue(cardText(c))}}
-		if in.ForeignChargeBP.Set {
-			pv.Changes = append(pv.Changes, tool.Change{Field: "rate", After: tool.TextValue(fmt.Sprintf("%d bp on foreign purchases", in.ForeignChargeBP.N))})
-		}
-
-		return pv, func() (manageCardOut, error) {
-			created, err := svc.AddCard(ctx, booksID, c, optionalBP(in.ForeignChargeBP))
-			out.ID = created.ID.String()
-
-			return out, err
-		}, nil
-	case "edit_card":
-		return planEditCard(ctx, svc, booksID, a, cardID, in, pv, out)
-	case "remove_card":
-		c, err := cardOf(ctx, svc, booksID, a.ID, cardID)
-		if err != nil {
-			return pv, nil, err
-		}
-
-		pv.Changes = []tool.Change{{Field: "card", Before: tool.TextValue(cardText(c))}}
-		pv.Destructive = true
-
-		return pv, func() (manageCardOut, error) {
-			out.ID = c.ID.String()
-
-			return out, svc.DeleteCard(ctx, booksID, c.ID)
-		}, nil
-	case "set_card_active":
-		c, err := cardOf(ctx, svc, booksID, a.ID, cardID)
-		if err != nil {
-			return pv, nil, err
-		}
-
-		status := func(active bool) tool.Value {
-			if active {
-				return tool.TextValue("active")
-			}
-
-			return tool.TextValue("inactive")
-		}
-		pv.Changes = []tool.Change{
-			{Field: "card", After: tool.TextValue(cardText(c))},
-			{Field: "status", Before: status(c.Active), After: status(in.Active)},
-		}
-
-		return pv, func() (manageCardOut, error) {
-			_, err := svc.EditCard(ctx, booksID, c.ID, domain.CardEdit{Active: &in.Active})
-			out.ID = c.ID.String()
-
-			return out, err
-		}, nil
-	case "set_credit_limit":
-		unit, err := svc.AmountOf(ctx, 0, a.Instrument)
-		if err != nil {
-			return pv, nil, err
-		}
-
-		amount, err := tool.ParsePositive("amount", in.Amount, unit)
-		if err != nil {
-			return pv, nil, err
-		}
-
-		pv.Changes = []tool.Change{{Field: "limit", After: tool.MoneyValue(amount)}, {Field: "date", After: tool.DateValue(in.EffectiveFrom.Time)}}
-
-		return pv, func() (manageCardOut, error) {
-			_, err := svc.AddCreditLimit(ctx, booksID, app.CreditLimit{AccountID: a.ID, EffectiveFrom: in.EffectiveFrom.Time, Amount: amount})
-			out.ID = a.ID.String()
-
-			return out, err
-		}, nil
-	default:
-		rule := domain.BillingCycleRule{
-			EffectiveFrom: domain.MonthOf(in.EffectiveFrom.Time), ClosingMode: string(in.ClosingMode), ClosingDay: in.ClosingDay,
-			ClosingDaysBeforeDue: in.ClosingDaysBeforeDue, DueDay: in.DueDay, Assignment: string(in.ClosingDayAssignment),
-			Adjustment: string(in.DueDateAdjustment), ClosingAdjustment: string(in.ClosingAdjustment), Calendar: in.Calendar,
-		}
-		pv.Changes = cycleChanges(in, rule)
-
-		return pv, func() (manageCardOut, error) {
-			_, err := svc.AddBillingRule(ctx, booksID, a.ID, rule)
-			out.ID = a.ID.String()
-
-			return out, err
-		}, nil
+		return tool.TextValue("inactive")
 	}
+	pv.Changes = []tool.Change{
+		{Field: "card", After: tool.TextValue(cardText(c))},
+		{Field: "status", Before: status(c.Active), After: status(in.Active)},
+	}
+
+	return pv, func() (manageCardOut, error) {
+		_, err := svc.EditCard(ctx, booksID, c.ID, domain.CardEdit{Active: &in.Active})
+		out.ID = c.ID.String()
+
+		return out, err
+	}, nil
+}
+
+func planSetCreditLimit(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	a domain.Account,
+	in manageCardIn,
+	pv tool.Preview,
+	out manageCardOut,
+) (tool.Preview, func() (manageCardOut, error), error) {
+	unit, err := svc.AmountOf(ctx, 0, a.Instrument)
+	if err != nil {
+		return pv, nil, err
+	}
+
+	amount, err := tool.ParsePositive("amount", in.Amount, unit)
+	if err != nil {
+		return pv, nil, err
+	}
+
+	pv.Changes = []tool.Change{
+		{Field: "limit", After: tool.MoneyValue(amount)},
+		{Field: "date", After: tool.DateValue(in.EffectiveFrom.Time)},
+	}
+
+	return pv, func() (manageCardOut, error) {
+		_, err := svc.AddCreditLimit(ctx, booksID, app.CreditLimit{
+			AccountID:     a.ID,
+			EffectiveFrom: in.EffectiveFrom.Time,
+			Amount:        amount,
+		})
+		out.ID = a.ID.String()
+
+		return out, err
+	}, nil
+}
+
+func planSetBillingCycle(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	a domain.Account,
+	in manageCardIn,
+	pv tool.Preview,
+	out manageCardOut,
+) (tool.Preview, func() (manageCardOut, error), error) {
+	rule := domain.BillingCycleRule{
+		EffectiveFrom: domain.MonthOf(in.EffectiveFrom.Time), ClosingMode: string(in.ClosingMode), ClosingDay: in.ClosingDay,
+		ClosingDaysBeforeDue: in.ClosingDaysBeforeDue, DueDay: in.DueDay, Assignment: string(in.ClosingDayAssignment),
+		Adjustment: string(in.DueDateAdjustment), ClosingAdjustment: string(in.ClosingAdjustment), Calendar: in.Calendar,
+	}
+	pv.Changes = cycleChanges(in, rule)
+
+	return pv, func() (manageCardOut, error) {
+		_, err := svc.AddBillingRule(ctx, booksID, a.ID, rule)
+		out.ID = a.ID.String()
+
+		return out, err
+	}, nil
 }
 
 func planEditCard(ctx context.Context, svc *app.Service, booksID int64, a domain.Account, cardID uuid.UUID, in manageCardIn, pv tool.Preview, out manageCardOut) (tool.Preview, func() (manageCardOut, error), error) {

@@ -44,67 +44,100 @@ func categorizeTransactions(svc *app.Service) tool.Tool {
 			"The user confirms before categories change.",
 		Effect: tool.Write,
 	}, func(ctx context.Context, booksID int64, in categorizeTransactionsIn) (tool.Preview, error) {
-		p, err := planCategorize(ctx, svc, booksID, in)
+		return previewCategorize(ctx, svc, booksID, in)
+	}, func(ctx context.Context, booksID int64, in categorizeTransactionsIn) (categorizeTransactionsOut, error) {
+		return runCategorize(ctx, svc, booksID, in)
+	})
+}
+
+func previewCategorize(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	in categorizeTransactionsIn,
+) (tool.Preview, error) {
+	p, err := planCategorize(ctx, svc, booksID, in)
+	if err != nil {
+		return tool.Preview{}, err
+	}
+
+	keys := make([]string, len(p.items))
+	for i, it := range p.items {
+		keys[i] = it.ID.String() + ":" + strconv.Itoa(it.ExpectedVersion)
+	}
+
+	slices.Sort(keys)
+
+	pv := tool.Preview{
+		Action: "categorize_transactions", Target: strconv.Itoa(len(p.items)) + " transactions", Basis: strings.Join(keys, ","),
+		Changes: []tool.Change{{Field: "category", After: tool.TextValue(p.category.Name)}},
+	}
+	if p.payeeID != uuid.Nil {
+		names, err := svc.PayeeNames(ctx, booksID, []uuid.UUID{p.payeeID})
 		if err != nil {
 			return tool.Preview{}, err
 		}
 
-		keys := make([]string, len(p.items))
-		for i, it := range p.items {
-			keys[i] = it.ID.String() + ":" + strconv.Itoa(it.ExpectedVersion)
+		pv.Changes = append(pv.Changes, tool.Change{Field: "payee", After: tool.TextValue(names[p.payeeID])})
+	}
+
+	return pv, nil
+}
+
+func runCategorize(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	in categorizeTransactionsIn,
+) (categorizeTransactionsOut, error) {
+	p, err := planCategorize(ctx, svc, booksID, in)
+	if err != nil {
+		return categorizeTransactionsOut{}, err
+	}
+
+	errs, err := svc.CategorizeMany(ctx, booksID, p.category.ID, p.items)
+	if err != nil {
+		return categorizeTransactionsOut{}, err
+	}
+
+	out := categorizeTransactionsOut{Results: make([]categorizeResult, len(p.items))}
+	for i, it := range p.items {
+		out.Results[i] = categorizeResult{TransactionID: it.ID.String(), Status: bulkStatus(errs[i])}
+		if errs[i] != nil || p.payeeID == uuid.Nil {
+			continue
 		}
 
-		slices.Sort(keys)
-
-		pv := tool.Preview{
-			Action: "categorize_transactions", Target: strconv.Itoa(len(p.items)) + " transactions", Basis: strings.Join(keys, ","),
-			Changes: []tool.Change{{Field: "category", After: tool.TextValue(p.category.Name)}},
-		}
-		if p.payeeID != uuid.Nil {
-			names, err := svc.PayeeNames(ctx, booksID, []uuid.UUID{p.payeeID})
-			if err != nil {
-				return tool.Preview{}, err
-			}
-
-			pv.Changes = append(pv.Changes, tool.Change{Field: "payee", After: tool.TextValue(names[p.payeeID])})
-		}
-
-		return pv, nil
-	}, func(ctx context.Context, booksID int64, in categorizeTransactionsIn) (categorizeTransactionsOut, error) {
-		p, err := planCategorize(ctx, svc, booksID, in)
+		status, err := setCategorizedPayee(ctx, svc, booksID, it.ID, p.payeeID)
 		if err != nil {
-			return categorizeTransactionsOut{}, err
+			return out, err
 		}
 
-		errs, err := svc.CategorizeMany(ctx, booksID, p.category.ID, p.items)
-		if err != nil {
-			return categorizeTransactionsOut{}, err
-		}
+		out.Results[i].Status = status
+	}
 
-		out := categorizeTransactionsOut{Results: make([]categorizeResult, len(p.items))}
-		for i, it := range p.items {
-			out.Results[i] = categorizeResult{TransactionID: it.ID.String(), Status: bulkStatus(errs[i])}
-			if errs[i] != nil || p.payeeID == uuid.Nil {
-				continue
-			}
+	return out, nil
+}
 
-			t, err := svc.Transaction(ctx, booksID, it.ID)
-			if err != nil {
-				return out, err
-			}
+func setCategorizedPayee(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	id uuid.UUID,
+	payeeID uuid.UUID,
+) (string, error) {
+	t, err := svc.Transaction(ctx, booksID, id)
+	if err != nil {
+		return "", err
+	}
 
-			cerrs, err := svc.Categorize(ctx, booksID, []app.Categorization{{
-				TransactionID: it.ID, ExpectedVersion: t.Version, PayeeID: &p.payeeID, Cause: app.Cause{Method: app.MethodManual},
-			}})
-			if err != nil {
-				return out, err
-			}
+	cerrs, err := svc.Categorize(ctx, booksID, []app.Categorization{{
+		TransactionID: id, ExpectedVersion: t.Version, PayeeID: &payeeID, Cause: app.Cause{Method: app.MethodManual},
+	}})
+	if err != nil {
+		return "", err
+	}
 
-			out.Results[i].Status = bulkStatus(cerrs[0])
-		}
-
-		return out, nil
-	})
+	return bulkStatus(cerrs[0]), nil
 }
 
 // bulkStatus names an item error by the same words as the HTTP API (A78).

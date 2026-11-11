@@ -2,10 +2,12 @@ package toolapi
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 
 	"github.com/andrelopes-code/equori/internal/ledger/app"
+	"github.com/andrelopes-code/equori/internal/ledger/domain"
 	"github.com/andrelopes-code/equori/internal/platform/page"
 	"github.com/andrelopes-code/equori/internal/platform/tool"
 )
@@ -45,50 +47,88 @@ func listAccounts(svc *app.Service) tool.Tool {
 			"Do not use it for balances: get_balances returns them.",
 		Effect: tool.ReadOnly,
 	}, func(ctx context.Context, booksID int64, in listAccountsIn) (listAccountsOut, error) {
-		byID, all, err := allAccounts(ctx, svc, booksID)
-		if err != nil {
-			return listAccountsOut{}, err
-		}
-
-		institutions, err := allPages(func(p page.Request[app.InstitutionKey]) ([]app.Institution, *app.InstitutionKey, error) {
-			return svc.ListInstitutions(ctx, booksID, p)
-		})
-		if err != nil {
-			return listAccountsOut{}, err
-		}
-
-		names := make(map[uuid.UUID]string, len(institutions))
-		for _, i := range institutions {
-			names[i.ID] = i.Name
-		}
-
-		settings, err := svc.Settings(ctx, booksID)
-		if err != nil {
-			return listAccountsOut{}, err
-		}
-
-		views := []accountView{}
-		for _, a := range all {
-			if (in.Class != "" && string(a.Class) != string(in.Class)) || (a.ClosedOn != nil && !in.IncludeClosed) {
-				continue
-			}
-
-			v := accountView{
-				ID: a.ID.String(), Name: a.Name, Class: string(a.Class), Kind: string(a.Kind), Currency: string(a.Instrument),
-				SystemRole: string(a.SystemRole), Closed: a.ClosedOn != nil, InstitutionName: names[a.InstitutionID],
-			}
-			if a.ParentID != uuid.Nil {
-				v.ParentID, v.ParentName = a.ParentID.String(), byID[a.ParentID].Name
-			}
-
-			views = append(views, v)
-		}
-
-		out := listAccountsOut{BaseCurrency: string(settings.BaseCurrency)}
-		out.Accounts, out.NextCursor, err = tool.PageOf(views, func(v accountView) string { return v.ID }, in.PageArgs)
-
-		return out, err
+		return runListAccounts(ctx, svc, booksID, in)
 	})
+}
+
+func runListAccounts(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	in listAccountsIn,
+) (listAccountsOut, error) {
+	byID, all, err := allAccounts(ctx, svc, booksID)
+	if err != nil {
+		return listAccountsOut{}, err
+	}
+
+	names, err := loadInstitutionNames(ctx, svc, booksID)
+	if err != nil {
+		return listAccountsOut{}, err
+	}
+
+	settings, err := svc.Settings(ctx, booksID)
+	if err != nil {
+		return listAccountsOut{}, err
+	}
+
+	views := buildAccountViews(all, byID, names, in)
+
+	out := listAccountsOut{BaseCurrency: string(settings.BaseCurrency)}
+	out.Accounts, out.NextCursor, err = tool.PageOf(views, func(v accountView) string { return v.ID }, in.PageArgs)
+
+	return out, err
+}
+
+func loadInstitutionNames(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+) (map[uuid.UUID]string, error) {
+	institutions, err := allPages(
+		func(p page.Request[app.InstitutionKey]) ([]app.Institution, *app.InstitutionKey, error) {
+			return svc.ListInstitutions(ctx, booksID, p)
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	names := make(map[uuid.UUID]string, len(institutions))
+	for _, i := range institutions {
+		names[i.ID] = i.Name
+	}
+
+	return names, nil
+}
+
+func buildAccountViews(
+	all []domain.Account,
+	byID map[uuid.UUID]domain.Account,
+	names map[uuid.UUID]string,
+	in listAccountsIn,
+) []accountView {
+	views := []accountView{}
+	for _, a := range all {
+		if (in.Class != "" && string(a.Class) != string(in.Class)) || (a.ClosedOn != nil && !in.IncludeClosed) {
+			continue
+		}
+
+		v := accountView{
+			ID: a.ID.String(), Name: a.Name, Class: string(a.Class), Kind: string(a.Kind),
+			Currency:        string(a.Instrument),
+			SystemRole:      string(a.SystemRole),
+			Closed:          a.ClosedOn != nil,
+			InstitutionName: names[a.InstitutionID],
+		}
+		if a.ParentID != uuid.Nil {
+			v.ParentID, v.ParentName = a.ParentID.String(), byID[a.ParentID].Name
+		}
+
+		views = append(views, v)
+	}
+
+	return views
 }
 
 type basis string
@@ -130,46 +170,85 @@ func getBalances(svc *app.Service) tool.Tool {
 			"nor for a balance over time: get_account_history returns it.",
 		Effect: tool.ReadOnly,
 	}, func(ctx context.Context, booksID int64, in getBalancesIn) (getBalancesOut, error) {
-		date := in.Date.Time
-		if in.Date.IsZero() {
-			date = svc.Today(ctx)
-		}
-
-		b := app.Basis(in.Basis)
-		if b == "" {
-			b = app.BasisBooked
-		}
-
-		balances, err := svc.BalancesAt(ctx, booksID, date, b)
-		if err != nil {
-			return getBalancesOut{}, err
-		}
-
-		amounts := make(map[uuid.UUID]tool.Money, len(balances))
-		for _, bal := range balances {
-			if !bal.Amount.IsZero() {
-				amounts[bal.AccountID] = tool.MoneyOf(bal.Amount)
-			}
-		}
-
-		_, all, err := allAccounts(ctx, svc, booksID)
-		if err != nil {
-			return getBalancesOut{}, err
-		}
-
-		views := []balanceView{}
-		for _, a := range all {
-			m, ok := amounts[a.ID]
-			if !ok || (in.Class != "" && string(a.Class) != string(in.Class)) {
-				continue
-			}
-
-			views = append(views, balanceView{AccountID: a.ID.String(), AccountName: a.Name, Class: string(a.Class), Balance: m})
-		}
-
-		out := getBalancesOut{Date: tool.DateOf(date), Basis: string(b)}
-		out.Balances, out.NextCursor, err = tool.PageOf(views, func(v balanceView) string { return v.AccountID }, in.PageArgs)
-
-		return out, err
+		return runGetBalances(ctx, svc, booksID, in)
 	})
+}
+
+func runGetBalances(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	in getBalancesIn,
+) (getBalancesOut, error) {
+	date := in.Date.Time
+	if in.Date.IsZero() {
+		date = svc.Today(ctx)
+	}
+
+	b := app.Basis(in.Basis)
+	if b == "" {
+		b = app.BasisBooked
+	}
+
+	amounts, err := loadBalanceAmounts(ctx, svc, booksID, date, b)
+	if err != nil {
+		return getBalancesOut{}, err
+	}
+
+	_, all, err := allAccounts(ctx, svc, booksID)
+	if err != nil {
+		return getBalancesOut{}, err
+	}
+
+	views := buildBalanceViews(all, amounts, in)
+
+	out := getBalancesOut{Date: tool.DateOf(date), Basis: string(b)}
+	out.Balances, out.NextCursor, err = tool.PageOf(views, func(v balanceView) string { return v.AccountID }, in.PageArgs)
+
+	return out, err
+}
+
+func loadBalanceAmounts(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	date time.Time,
+	b app.Basis,
+) (map[uuid.UUID]tool.Money, error) {
+	balances, err := svc.BalancesAt(ctx, booksID, date, b)
+	if err != nil {
+		return nil, err
+	}
+
+	amounts := make(map[uuid.UUID]tool.Money, len(balances))
+	for _, bal := range balances {
+		if !bal.Amount.IsZero() {
+			amounts[bal.AccountID] = tool.MoneyOf(bal.Amount)
+		}
+	}
+
+	return amounts, nil
+}
+
+func buildBalanceViews(
+	all []domain.Account,
+	amounts map[uuid.UUID]tool.Money,
+	in getBalancesIn,
+) []balanceView {
+	views := []balanceView{}
+	for _, a := range all {
+		m, ok := amounts[a.ID]
+		if !ok || (in.Class != "" && string(a.Class) != string(in.Class)) {
+			continue
+		}
+
+		views = append(views, balanceView{
+			AccountID:   a.ID.String(),
+			AccountName: a.Name,
+			Class:       string(a.Class),
+			Balance:     m,
+		})
+	}
+
+	return views
 }
