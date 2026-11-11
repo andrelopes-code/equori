@@ -49,6 +49,7 @@ describe("Quote section", () => {
     expect(change).toHaveTextContent("R$38.45");
     expect(change).toHaveTextContent("up +0.92%from 10/14/2026 to 10/16/2026");
     expect(change).toHaveAttribute("data-size", "lg");
+    expect(change).toHaveClass(/change/);
     expect(figures.querySelector("[data-ui='stat-card']")).toBe(change);
     expect(await card(catalogEn["instrument.figures.high"])).toHaveTextContent(
       "R$38.4510/16/2026",

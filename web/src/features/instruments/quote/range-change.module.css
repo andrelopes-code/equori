@@ -4,9 +4,18 @@
     grid-column: span 2;
   }
 
+  /* The dates of the range stay on one line: the family wraps the comparison anywhere. */
+  .change [data-part="comparison"] {
+    white-space: nowrap;
+  }
+
   @media (max-width: 40rem) {
     .change {
       grid-column: auto;
+    }
+
+    .change [data-part="comparison"] {
+      white-space: normal;
     }
   }
 }
