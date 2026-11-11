@@ -2,6 +2,9 @@ package httpapi
 
 import (
 	"context"
+	"net/http"
+
+	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 
 	"github.com/andrelopes-code/equori/internal/platform/page"
 
@@ -44,41 +47,59 @@ func toStatementAPI(v app.StatementView, currency money.Currency) StatementSumma
 	return out
 }
 
-func (s *Server) SetStatementFacts(ctx context.Context, req SetStatementFactsRequestObject) (SetStatementFactsResponseObject, error) {
-	total, err := fromMoneyAPI("total", req.Body.Total)
+func (s *Server) setStatementFacts(
+	ctx context.Context,
+	r *http.Request,
+	in SetStatementFactsJSONRequestBody,
+) (StatementDetail, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return StatementDetail{}, err
 	}
 
-	f := app.StatementFacts{Closing: optDate(req.Body.ClosingDate), Due: dateOf(req.Body.DueDate), Total: total}
-	if req.Body.Minimum != nil {
-		minimum, err := fromMoneyAPI("minimum", *req.Body.Minimum)
+	total, err := fromMoneyAPI("total", in.Total)
+	if err != nil {
+		return StatementDetail{}, err
+	}
+
+	f := app.StatementFacts{Closing: optDate(in.ClosingDate), Due: dateOf(in.DueDate), Total: total}
+	if in.Minimum != nil {
+		minimum, err := fromMoneyAPI("minimum", *in.Minimum)
 		if err != nil {
-			return nil, err
+			return StatementDetail{}, err
 		}
 
 		f.Minimum = &minimum
 	}
 
 	booksID := auth.MustBooksID(ctx)
-	if err := s.svc.SetOwnerFacts(ctx, booksID, req.Id, f); err != nil {
-		return nil, err
+	if err := s.svc.SetOwnerFacts(ctx, booksID, id, f); err != nil {
+		return StatementDetail{}, err
 	}
 
-	out, err := s.statementDetail(ctx, booksID, req.Id)
+	out, err := s.statementDetail(ctx, booksID, id)
 	if err != nil {
-		return nil, err
+		return StatementDetail{}, err
 	}
 
-	return SetStatementFacts200JSONResponse(out), nil
+	return out, nil
 }
 
-func (s *Server) RemoveStatementFacts(ctx context.Context, req RemoveStatementFactsRequestObject) (RemoveStatementFactsResponseObject, error) {
-	if err := s.svc.RemoveOwnerFacts(ctx, auth.MustBooksID(ctx), req.Id); err != nil {
-		return nil, err
+func (s *Server) removeStatementFacts(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (httpserver.None, error) {
+	id, err := httpserver.PathUUID(r, "id")
+	if err != nil {
+		return httpserver.None{}, err
 	}
 
-	return RemoveStatementFacts204Response{}, nil
+	if err := s.svc.RemoveOwnerFacts(ctx, auth.MustBooksID(ctx), id); err != nil {
+		return httpserver.None{}, err
+	}
+
+	return httpserver.None{}, nil
 }
 
 func optMonth(field string, s *string) (*domain.ReferenceMonth, error) {
@@ -94,28 +115,42 @@ func optMonth(field string, s *string) (*domain.ReferenceMonth, error) {
 	return &m, nil
 }
 
-func (s *Server) ListStatements(ctx context.Context, req ListStatementsRequestObject) (ListStatementsResponseObject, error) {
-	from, err := optMonth("from", req.Params.From)
+func (s *Server) listStatements(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (StatementList, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return StatementList{}, err
 	}
 
-	to, err := optMonth("to", req.Params.To)
+	params, err := httpserver.Query[ListStatementsParams](r)
 	if err != nil {
-		return nil, err
+		return StatementList{}, err
 	}
 
-	p, err := listPage[app.StatementKey](req.Params.Limit, req.Params.Cursor)
+	from, err := optMonth("from", params.From)
 	if err != nil {
-		return nil, err
+		return StatementList{}, err
 	}
 
-	views, next, a, err := s.svc.Statements(ctx, auth.MustBooksID(ctx), req.Id, from, to, p)
+	to, err := optMonth("to", params.To)
 	if err != nil {
-		return nil, err
+		return StatementList{}, err
 	}
 
-	out := ListStatements200JSONResponse{Items: make([]StatementSummary, len(views))}
+	p, err := listPage[app.StatementKey](params.Limit, params.Cursor)
+	if err != nil {
+		return StatementList{}, err
+	}
+
+	views, next, a, err := s.svc.Statements(ctx, auth.MustBooksID(ctx), id, from, to, p)
+	if err != nil {
+		return StatementList{}, err
+	}
+
+	out := StatementList{Items: make([]StatementSummary, len(views))}
 	for i, v := range views {
 		out.Items[i] = toStatementAPI(v, a.Instrument)
 	}
@@ -125,13 +160,22 @@ func (s *Server) ListStatements(ctx context.Context, req ListStatementsRequestOb
 	return out, err
 }
 
-func (s *Server) GetStatement(ctx context.Context, req GetStatementRequestObject) (GetStatementResponseObject, error) {
-	out, err := s.statementDetail(ctx, auth.MustBooksID(ctx), req.Id)
+func (s *Server) getStatement(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (StatementDetail, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return StatementDetail{}, err
 	}
 
-	return GetStatement200JSONResponse(out), nil
+	out, err := s.statementDetail(ctx, auth.MustBooksID(ctx), id)
+	if err != nil {
+		return StatementDetail{}, err
+	}
+
+	return out, nil
 }
 
 func (s *Server) statementDetail(ctx context.Context, booksID int64, id uuid.UUID) (StatementDetail, error) {

@@ -3,50 +3,71 @@ package httpapi
 import (
 	"context"
 	"fmt"
+	"net/http"
+
+	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 
 	"github.com/andrelopes-code/equori/internal/ledger/app"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
 )
 
-func (s *Server) ReimburseTransaction(ctx context.Context, req ReimburseTransactionRequestObject) (ReimburseTransactionResponseObject, error) {
+func (s *Server) reimburseTransaction(
+	ctx context.Context,
+	r *http.Request,
+	in ReimburseTransactionJSONRequestBody,
+) (Transaction, error) {
+	id, err := httpserver.PathUUID(r, "id")
+	if err != nil {
+		return Transaction{}, err
+	}
+
 	booksID := auth.MustBooksID(ctx)
 
-	in := app.ReimbursementRequest{
-		TransactionID: req.Id, ExpectedVersion: req.Body.ExpectedVersion, Cause: app.Cause{Method: app.MethodManual},
-		Allocations: make([]app.AllocationRequest, len(req.Body.Allocations)),
+	input := app.ReimbursementRequest{
+		TransactionID: id, ExpectedVersion: in.ExpectedVersion, Cause: app.Cause{Method: app.MethodManual},
+		Allocations: make([]app.AllocationRequest, len(in.Allocations)),
 	}
-	for i, a := range req.Body.Allocations {
+	for i, a := range in.Allocations {
 		amount, err := fromMoneyAPI(fmt.Sprintf("allocations[%d].amount", i), a.Amount)
 		if err != nil {
-			return nil, err
+			return Transaction{}, err
 		}
 
-		in.Allocations[i] = app.AllocationRequest{OriginalID: a.OriginalId, Amount: amount}
+		input.Allocations[i] = app.AllocationRequest{OriginalID: a.OriginalId, Amount: amount}
 		if a.CategoryId != nil {
-			in.Allocations[i].CategoryID = *a.CategoryId
+			input.Allocations[i].CategoryID = *a.CategoryId
 		}
 	}
 
-	done, err := s.svc.Reimburse(ctx, booksID, in)
+	done, err := s.svc.Reimburse(ctx, booksID, input)
 	if err != nil {
-		return nil, err
+		return Transaction{}, err
 	}
 
 	t, err := s.svc.Transaction(ctx, booksID, done.ID)
 	if err != nil {
-		return nil, err
+		return Transaction{}, err
 	}
 
-	return ReimburseTransaction200JSONResponse(toTransactionAPI(t)), nil
+	return toTransactionAPI(t), nil
 }
 
-func (s *Server) ListReimbursementCandidates(ctx context.Context, req ListReimbursementCandidatesRequestObject) (ListReimbursementCandidatesResponseObject, error) {
-	candidates, suggestion, err := s.svc.ReimbursementCandidates(ctx, auth.MustBooksID(ctx), req.Id)
+func (s *Server) listReimbursementCandidates(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (ReimbursementCandidateList, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return ReimbursementCandidateList{}, err
 	}
 
-	out := ListReimbursementCandidates200JSONResponse{Items: make([]ReimbursementCandidate, len(candidates))}
+	candidates, suggestion, err := s.svc.ReimbursementCandidates(ctx, auth.MustBooksID(ctx), id)
+	if err != nil {
+		return ReimbursementCandidateList{}, err
+	}
+
+	out := ReimbursementCandidateList{Items: make([]ReimbursementCandidate, len(candidates))}
 	for i, c := range candidates {
 		out.Items[i] = ReimbursementCandidate{
 			Transaction: toTransactionAPI(c.Transaction), Remaining: toMoneyAPI(c.Remaining), Allocated: toMoneyAPI(c.Allocated),
@@ -60,13 +81,22 @@ func (s *Server) ListReimbursementCandidates(ctx context.Context, req ListReimbu
 	return out, nil
 }
 
-func (s *Server) ListReimbursementSources(ctx context.Context, req ListReimbursementSourcesRequestObject) (ListReimbursementSourcesResponseObject, error) {
-	sources, err := s.svc.ReimbursementSources(ctx, auth.MustBooksID(ctx), req.Id)
+func (s *Server) listReimbursementSources(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (ReimbursementSourceList, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return ReimbursementSourceList{}, err
 	}
 
-	out := ListReimbursementSources200JSONResponse{Items: make([]ReimbursementSource, len(sources))}
+	sources, err := s.svc.ReimbursementSources(ctx, auth.MustBooksID(ctx), id)
+	if err != nil {
+		return ReimbursementSourceList{}, err
+	}
+
+	out := ReimbursementSourceList{Items: make([]ReimbursementSource, len(sources))}
 	for i, c := range sources {
 		out.Items[i] = ReimbursementSource{Transaction: toTransactionAPI(c.Transaction), Free: toMoneyAPI(c.Free)}
 	}

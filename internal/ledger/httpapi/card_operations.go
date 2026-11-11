@@ -3,6 +3,9 @@ package httpapi
 import (
 	"context"
 	"fmt"
+	"net/http"
+
+	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 
 	"github.com/andrelopes-code/equori/internal/ledger/app"
 	"github.com/andrelopes-code/equori/internal/ledger/domain"
@@ -10,18 +13,22 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
-func (s *Server) CreateInstallmentPurchase(ctx context.Context, req CreateInstallmentPurchaseRequestObject) (CreateInstallmentPurchaseResponseObject, error) {
-	in, err := fromInstallmentPurchaseInput(*req.Body)
+func (s *Server) createInstallmentPurchase(
+	ctx context.Context,
+	r *http.Request,
+	in CreateInstallmentPurchaseJSONRequestBody,
+) (InstallmentPurchase, error) {
+	input, err := fromInstallmentPurchaseInput(in)
 	if err != nil {
-		return nil, err
+		return InstallmentPurchase{}, err
 	}
 
-	t, planID, err := s.svc.InstallmentPurchase(ctx, auth.MustBooksID(ctx), in)
+	t, planID, err := s.svc.InstallmentPurchase(ctx, auth.MustBooksID(ctx), input)
 	if err != nil {
-		return nil, err
+		return InstallmentPurchase{}, err
 	}
 
-	return CreateInstallmentPurchase201JSONResponse{Transaction: toTransactionAPI(t), PlanId: planID}, nil
+	return InstallmentPurchase{Transaction: toTransactionAPI(t), PlanId: planID}, nil
 }
 
 func fromInstallmentPurchaseInput(b InstallmentPurchaseInput) (app.InstallmentPurchaseInput, error) {
@@ -72,109 +79,177 @@ func fromInstallmentPurchaseInput(b InstallmentPurchaseInput) (app.InstallmentPu
 	return in, nil
 }
 
-func (s *Server) GetCommitment(ctx context.Context, req GetCommitmentRequestObject) (GetCommitmentResponseObject, error) {
-	m, err := domain.ParseReferenceMonth(req.Params.Month)
+func (s *Server) getCommitment(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (Commitment, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, &domain.FieldError{Field: "month", Message: "must be YYYY-MM", Err: domain.ErrValidation}
+		return Commitment{}, err
 	}
 
-	amount, err := s.svc.Commitment(ctx, auth.MustBooksID(ctx), req.Id, m)
+	params, err := httpserver.Query[GetCommitmentParams](r)
 	if err != nil {
-		return nil, err
+		return Commitment{}, err
 	}
 
-	return GetCommitment200JSONResponse{Month: m.String(), Amount: toMoneyAPI(amount)}, nil
+	m, err := domain.ParseReferenceMonth(params.Month)
+	if err != nil {
+		return Commitment{}, &domain.FieldError{Field: "month", Message: "must be YYYY-MM", Err: domain.ErrValidation}
+	}
+
+	amount, err := s.svc.Commitment(ctx, auth.MustBooksID(ctx), id, m)
+	if err != nil {
+		return Commitment{}, err
+	}
+
+	return Commitment{Month: m.String(), Amount: toMoneyAPI(amount)}, nil
 }
 
-func (s *Server) PayStatement(ctx context.Context, req PayStatementRequestObject) (PayStatementResponseObject, error) {
-	amount, err := fromMoneyAPI("amount", req.Body.Amount)
+func (s *Server) payStatement(
+	ctx context.Context,
+	r *http.Request,
+	in PayStatementJSONRequestBody,
+) (Transaction, string, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return Transaction{}, "", err
 	}
 
-	t, err := s.svc.PayStatement(ctx, auth.MustBooksID(ctx), req.Id, dateOf(req.Body.Date), req.Body.FromAccountId, amount)
+	amount, err := fromMoneyAPI("amount", in.Amount)
 	if err != nil {
-		return nil, err
+		return Transaction{}, "", err
 	}
 
-	return PayStatement201JSONResponse{Body: toTransactionAPI(t), Headers: PayStatement201ResponseHeaders{Location: location("/transactions/", t.ID)}}, nil
+	t, err := s.svc.PayStatement(ctx, auth.MustBooksID(ctx), id, dateOf(in.Date), in.FromAccountId, amount)
+	if err != nil {
+		return Transaction{}, "", err
+	}
+
+	return toTransactionAPI(t), location("/transactions/", t.ID), nil
 }
 
-func (s *Server) FinanceStatement(ctx context.Context, req FinanceStatementRequestObject) (FinanceStatementResponseObject, error) {
-	installment, err := fromMoneyAPI("installment_amount", req.Body.InstallmentAmount)
+func (s *Server) financeStatement(
+	ctx context.Context,
+	r *http.Request,
+	in FinanceStatementJSONRequestBody,
+) (InstallmentPurchase, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return InstallmentPurchase{}, err
 	}
 
-	t, planID, err := s.svc.FinanceStatement(ctx, auth.MustBooksID(ctx), req.Id, dateOf(req.Body.Date), req.Body.InstallmentCount, installment)
+	installment, err := fromMoneyAPI("installment_amount", in.InstallmentAmount)
 	if err != nil {
-		return nil, err
+		return InstallmentPurchase{}, err
 	}
 
-	return FinanceStatement201JSONResponse{Transaction: toTransactionAPI(t), PlanId: planID}, nil
+	t, planID, err := s.svc.FinanceStatement(ctx, auth.MustBooksID(ctx), id, dateOf(in.Date), in.InstallmentCount, installment)
+	if err != nil {
+		return InstallmentPurchase{}, err
+	}
+
+	return InstallmentPurchase{Transaction: toTransactionAPI(t), PlanId: planID}, nil
 }
 
-func (s *Server) RefundTransaction(ctx context.Context, req RefundTransactionRequestObject) (RefundTransactionResponseObject, error) {
-	amount, err := fromMoneyAPI("amount", req.Body.Amount)
+func (s *Server) refundTransaction(
+	ctx context.Context,
+	r *http.Request,
+	in RefundTransactionJSONRequestBody,
+) (Transaction, string, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return Transaction{}, "", err
 	}
 
-	statement, err := optMonth("statement", req.Body.Statement)
+	amount, err := fromMoneyAPI("amount", in.Amount)
 	if err != nil {
-		return nil, err
+		return Transaction{}, "", err
 	}
 
-	t, err := s.svc.RefundPurchase(ctx, auth.MustBooksID(ctx), req.Id, dateOf(req.Body.Date), amount, statement)
+	statement, err := optMonth("statement", in.Statement)
 	if err != nil {
-		return nil, err
+		return Transaction{}, "", err
 	}
 
-	return RefundTransaction201JSONResponse{Body: toTransactionAPI(t), Headers: RefundTransaction201ResponseHeaders{Location: location("/transactions/", t.ID)}}, nil
+	t, err := s.svc.RefundPurchase(ctx, auth.MustBooksID(ctx), id, dateOf(in.Date), amount, statement)
+	if err != nil {
+		return Transaction{}, "", err
+	}
+
+	return toTransactionAPI(t), location("/transactions/", t.ID), nil
 }
 
-func (s *Server) CancelInstallmentPlan(ctx context.Context, req CancelInstallmentPlanRequestObject) (CancelInstallmentPlanResponseObject, error) {
-	statement, err := optMonth("credit_statement", req.Body.CreditStatement)
+func (s *Server) cancelInstallmentPlan(
+	ctx context.Context,
+	r *http.Request,
+	in CancelInstallmentPlanJSONRequestBody,
+) (Transaction, string, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return Transaction{}, "", err
 	}
 
-	t, err := s.svc.CancelPlan(ctx, auth.MustBooksID(ctx), req.Id, dateOf(req.Body.Date), statement)
+	statement, err := optMonth("credit_statement", in.CreditStatement)
 	if err != nil {
-		return nil, err
+		return Transaction{}, "", err
 	}
 
-	return CancelInstallmentPlan201JSONResponse{Body: toTransactionAPI(t), Headers: CancelInstallmentPlan201ResponseHeaders{Location: location("/transactions/", t.ID)}}, nil
+	t, err := s.svc.CancelPlan(ctx, auth.MustBooksID(ctx), id, dateOf(in.Date), statement)
+	if err != nil {
+		return Transaction{}, "", err
+	}
+
+	return toTransactionAPI(t), location("/transactions/", t.ID), nil
 }
 
-func (s *Server) AnticipateInstallments(ctx context.Context, req AnticipateInstallmentsRequestObject) (AnticipateInstallmentsResponseObject, error) {
-	b := req.Body
+func (s *Server) anticipateInstallments(
+	ctx context.Context,
+	r *http.Request,
+	in AnticipateInstallmentsJSONRequestBody,
+) (Transaction, string, error) {
+	id, err := httpserver.PathUUID(r, "id")
+	if err != nil {
+		return Transaction{}, "", err
+	}
+
+	b := in
 
 	amount, err := fromMoneyAPI("amount", b.Amount)
 	if err != nil {
-		return nil, err
+		return Transaction{}, "", err
 	}
 
 	target, err := optMonth("target_statement", &b.TargetStatement)
 	if err != nil {
-		return nil, err
+		return Transaction{}, "", err
 	}
 
-	t, err := s.svc.AnticipatePlan(ctx, auth.MustBooksID(ctx), req.Id, dateOf(b.Date), b.FromInstallment, b.ToInstallment, *target, amount)
+	t, err := s.svc.AnticipatePlan(ctx, auth.MustBooksID(ctx), id, dateOf(b.Date), b.FromInstallment, b.ToInstallment, *target, amount)
 	if err != nil {
-		return nil, err
+		return Transaction{}, "", err
 	}
 
-	return AnticipateInstallments201JSONResponse{Body: toTransactionAPI(t), Headers: AnticipateInstallments201ResponseHeaders{Location: location("/transactions/", t.ID)}}, nil
+	return toTransactionAPI(t), location("/transactions/", t.ID), nil
 }
 
-func (s *Server) GetInstallmentPlan(ctx context.Context, req GetInstallmentPlanRequestObject) (GetInstallmentPlanResponseObject, error) {
-	v, err := s.svc.InstallmentPlan(ctx, auth.MustBooksID(ctx), req.Id)
+func (s *Server) getInstallmentPlan(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (InstallmentPlan, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return InstallmentPlan{}, err
 	}
 
-	out := GetInstallmentPlan200JSONResponse{
+	v, err := s.svc.InstallmentPlan(ctx, auth.MustBooksID(ctx), id)
+	if err != nil {
+		return InstallmentPlan{}, err
+	}
+
+	out := InstallmentPlan{
 		Id: v.Plan.ID, TransactionId: v.Plan.OriginTransactionID, AccountId: v.Plan.AccountID,
 		Status: InstallmentPlanStatus(v.Status), Count: v.Plan.Count, Installments: make([]ScheduledInstallment, len(v.Installments)),
 	}
@@ -183,25 +258,39 @@ func (s *Server) GetInstallmentPlan(ctx context.Context, req GetInstallmentPlanR
 		out.Interest = &interest
 	}
 
-	for i, in := range v.Installments {
-		amount, err := money.New(in.Amount, v.Plan.Interest.Currency())
+	for i, input := range v.Installments {
+		amount, err := money.New(input.Amount, v.Plan.Interest.Currency())
 		if err != nil {
-			return nil, err
+			return InstallmentPlan{}, err
 		}
 
-		out.Installments[i] = ScheduledInstallment{Number: in.Number, Statement: in.Reference.String(), Amount: toMoneyAPI(amount), Reversed: in.Reversed}
+		out.Installments[i] = ScheduledInstallment{Number: input.Number, Statement: input.Reference.String(), Amount: toMoneyAPI(amount), Reversed: input.Reversed}
 	}
 
 	return out, nil
 }
 
-func (s *Server) GetStatementPlacement(ctx context.Context, req GetStatementPlacementRequestObject) (GetStatementPlacementResponseObject, error) {
-	p, err := s.svc.PlaceStatement(ctx, auth.MustBooksID(ctx), req.Id, dateOf(req.Params.Date))
+func (s *Server) getStatementPlacement(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (StatementPlacement, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return StatementPlacement{}, err
 	}
 
-	out := GetStatementPlacement200JSONResponse{Reference: p.Reference.String(), ClosingDate: apiDate(p.Closing), DueDate: apiDate(p.Due)}
+	params, err := httpserver.Query[GetStatementPlacementParams](r)
+	if err != nil {
+		return StatementPlacement{}, err
+	}
+
+	p, err := s.svc.PlaceStatement(ctx, auth.MustBooksID(ctx), id, dateOf(params.Date))
+	if err != nil {
+		return StatementPlacement{}, err
+	}
+
+	out := StatementPlacement{Reference: p.Reference.String(), ClosingDate: apiDate(p.Closing), DueDate: apiDate(p.Due)}
 	if p.Previous != nil {
 		closing, due := apiDate(p.Previous.Closing), apiDate(p.Previous.Due)
 		out.PreviousClosingDate, out.PreviousDueDate = &closing, &due

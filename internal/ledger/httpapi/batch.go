@@ -3,19 +3,24 @@ package httpapi
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/andrelopes-code/equori/internal/ledger/app"
 	"github.com/andrelopes-code/equori/internal/ledger/domain"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
 )
 
-func (s *Server) CreateTransactionBatch(ctx context.Context, req CreateTransactionBatchRequestObject) (CreateTransactionBatchResponseObject, error) {
-	entries := make([]app.BatchEntry, len(req.Body.Entries))
-	for i, e := range req.Body.Entries {
+func (s *Server) createTransactionBatch(
+	ctx context.Context,
+	r *http.Request,
+	in CreateTransactionBatchJSONRequestBody,
+) (TransactionBatch, error) {
+	entries := make([]app.BatchEntry, len(in.Entries))
+	for i, e := range in.Entries {
 		if e.Transaction != nil {
 			t, err := fromTransactionInput(ctx, *e.Transaction, s.svc.AmountOf)
 			if err != nil {
-				return nil, domain.WithFieldPrefix(fmt.Sprintf("entries[%d].transaction.", i), err)
+				return TransactionBatch{}, domain.WithFieldPrefix(fmt.Sprintf("entries[%d].transaction.", i), err)
 			}
 
 			entries[i].Transaction = &t
@@ -24,7 +29,7 @@ func (s *Server) CreateTransactionBatch(ctx context.Context, req CreateTransacti
 		if e.InstallmentPurchase != nil {
 			p, err := fromInstallmentPurchaseInput(*e.InstallmentPurchase)
 			if err != nil {
-				return nil, domain.WithFieldPrefix(fmt.Sprintf("entries[%d].installment_purchase.", i), err)
+				return TransactionBatch{}, domain.WithFieldPrefix(fmt.Sprintf("entries[%d].installment_purchase.", i), err)
 			}
 
 			entries[i].Purchase = &p
@@ -33,7 +38,7 @@ func (s *Server) CreateTransactionBatch(ctx context.Context, req CreateTransacti
 
 	created, err := s.svc.RecordBatch(ctx, auth.MustBooksID(ctx), entries)
 	if err != nil {
-		return nil, err
+		return TransactionBatch{}, err
 	}
 
 	items := make([]Transaction, len(created))
@@ -41,5 +46,5 @@ func (s *Server) CreateTransactionBatch(ctx context.Context, req CreateTransacti
 		items[i] = toTransactionAPI(t)
 	}
 
-	return CreateTransactionBatch201JSONResponse{Items: items}, nil
+	return TransactionBatch{Items: items}, nil
 }

@@ -3,6 +3,9 @@ package httpapi
 import (
 	"context"
 	"errors"
+	"net/http"
+
+	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 
 	"github.com/google/uuid"
 
@@ -12,25 +15,34 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/page"
 )
 
-func (s *Server) ListTransactions(ctx context.Context, req ListTransactionsRequestObject) (ListTransactionsResponseObject, error) {
-	p, err := listPage[app.TransactionCursor](req.Params.Limit, req.Params.Cursor)
+func (s *Server) listTransactions(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (TransactionPage, error) {
+	params, err := httpserver.Query[ListTransactionsParams](r)
 	if err != nil {
-		return nil, err
+		return TransactionPage{}, err
+	}
+
+	p, err := listPage[app.TransactionCursor](params.Limit, params.Cursor)
+	if err != nil {
+		return TransactionPage{}, err
 	}
 
 	q := app.TransactionQuery{
-		BooksID: auth.MustBooksID(ctx), AccountID: optUUID(req.Params.AccountId), PayeeID: optUUID(req.Params.PayeeId),
-		Tag: optString(req.Params.Tag), Q: optString(req.Params.Q), From: optDate(req.Params.From), To: optDate(req.Params.To), Limit: p.Limit, After: p.After,
-		AmountMin: req.Params.AmountMin, AmountMax: req.Params.AmountMax,
-		Uncategorized: req.Params.Uncategorized != nil && *req.Params.Uncategorized,
+		BooksID: auth.MustBooksID(ctx), AccountID: optUUID(params.AccountId), PayeeID: optUUID(params.PayeeId),
+		Tag: optString(params.Tag), Q: optString(params.Q), From: optDate(params.From), To: optDate(params.To), Limit: p.Limit, After: p.After,
+		AmountMin: params.AmountMin, AmountMax: params.AmountMax,
+		Uncategorized: params.Uncategorized != nil && *params.Uncategorized,
 	}
 
 	rows, next, err := s.svc.ListTransactions(ctx, q)
 	if err != nil {
-		return nil, err
+		return TransactionPage{}, err
 	}
 
-	out := ListTransactions200JSONResponse{Items: make([]Transaction, len(rows))}
+	out := TransactionPage{Items: make([]Transaction, len(rows))}
 	for i, t := range rows {
 		out.Items[i] = toTransactionAPI(t)
 	}
@@ -40,93 +52,128 @@ func (s *Server) ListTransactions(ctx context.Context, req ListTransactionsReque
 	return out, err
 }
 
-func (s *Server) CreateTransaction(ctx context.Context, req CreateTransactionRequestObject) (CreateTransactionResponseObject, error) {
-	in, err := fromTransactionInput(ctx, *req.Body, s.svc.AmountOf)
+func (s *Server) createTransaction(
+	ctx context.Context,
+	r *http.Request,
+	in CreateTransactionJSONRequestBody,
+) (Transaction, string, error) {
+	input, err := fromTransactionInput(ctx, in, s.svc.AmountOf)
 	if err != nil {
-		return nil, err
+		return Transaction{}, "", err
 	}
 
-	t, err := s.svc.RecordTransaction(ctx, auth.MustBooksID(ctx), in)
+	t, err := s.svc.RecordTransaction(ctx, auth.MustBooksID(ctx), input)
 	if err != nil {
-		return nil, err
+		return Transaction{}, "", err
 	}
 
-	return CreateTransaction201JSONResponse{Body: toTransactionAPI(t), Headers: CreateTransaction201ResponseHeaders{Location: location("/transactions/", t.ID)}}, nil
+	return toTransactionAPI(t), location("/transactions/", t.ID), nil
 }
 
-func (s *Server) GetTransaction(ctx context.Context, req GetTransactionRequestObject) (GetTransactionResponseObject, error) {
-	booksID := auth.MustBooksID(ctx)
-
-	t, err := s.svc.Transaction(ctx, booksID, req.Id)
+func (s *Server) getTransaction(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (Transaction, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return Transaction{}, err
 	}
 
-	refs, err := s.svc.ReferencedBy(ctx, booksID, req.Id)
+	booksID := auth.MustBooksID(ctx)
+
+	t, err := s.svc.Transaction(ctx, booksID, id)
 	if err != nil {
-		return nil, err
+		return Transaction{}, err
+	}
+
+	refs, err := s.svc.ReferencedBy(ctx, booksID, id)
+	if err != nil {
+		return Transaction{}, err
 	}
 
 	out := toTransactionAPI(t)
 
 	referencedBy := make([]LinkReference, len(refs))
-	for i, r := range refs {
-		referencedBy[i] = LinkReference{Type: LinkReferenceType(r.Type), Source: r.Source, Amount: linkAmountAPI(r.Amount, r.Currency)}
+	for i, rec := range refs {
+		referencedBy[i] = LinkReference{Type: LinkReferenceType(rec.Type), Source: rec.Source, Amount: linkAmountAPI(rec.Amount, rec.Currency)}
 	}
 
 	out.ReferencedBy = &referencedBy
 
-	return GetTransaction200JSONResponse(out), nil
+	return out, nil
 }
 
-func (s *Server) CorrectTransaction(ctx context.Context, req CorrectTransactionRequestObject) (CorrectTransactionResponseObject, error) {
-	b := req.Body
+func (s *Server) correctTransaction(
+	ctx context.Context,
+	r *http.Request,
+	in CorrectTransactionJSONRequestBody,
+) (Transaction, error) {
+	id, err := httpserver.PathUUID(r, "id")
+	if err != nil {
+		return Transaction{}, err
+	}
 
-	in, err := fromTransactionInput(ctx, TransactionInput{
+	b := in
+
+	input, err := fromTransactionInput(ctx, TransactionInput{
 		Date: b.Date, Description: b.Description, PayeeId: b.PayeeId, Tags: b.Tags, Links: b.Links, Postings: b.Postings,
 	}, s.svc.AmountOf)
 	if err != nil {
-		return nil, err
+		return Transaction{}, err
 	}
 
-	t, err := s.svc.CorrectTransaction(ctx, auth.MustBooksID(ctx), req.Id, b.ExpectedVersion, in, b.Reason)
+	t, err := s.svc.CorrectTransaction(ctx, auth.MustBooksID(ctx), id, b.ExpectedVersion, input, b.Reason)
 	if err != nil {
-		return nil, err
+		return Transaction{}, err
 	}
 
-	return CorrectTransaction200JSONResponse(toTransactionAPI(t)), nil
+	return toTransactionAPI(t), nil
 }
 
-func (s *Server) VoidTransaction(ctx context.Context, req VoidTransactionRequestObject) (VoidTransactionResponseObject, error) {
+func (s *Server) voidTransaction(
+	ctx context.Context,
+	r *http.Request,
+	in VoidTransactionJSONRequestBody,
+) (Transaction, error) {
+	id, err := httpserver.PathUUID(r, "id")
+	if err != nil {
+		return Transaction{}, err
+	}
+
 	booksID := auth.MustBooksID(ctx)
-	if err := s.svc.VoidTransaction(ctx, booksID, req.Id, req.Body.Reason); err != nil {
-		return nil, err
+	if err := s.svc.VoidTransaction(ctx, booksID, id, in.Reason); err != nil {
+		return Transaction{}, err
 	}
 
-	t, err := s.svc.Transaction(ctx, booksID, req.Id)
+	t, err := s.svc.Transaction(ctx, booksID, id)
 	if err != nil {
-		return nil, err
+		return Transaction{}, err
 	}
 
-	return VoidTransaction200JSONResponse(toTransactionAPI(t)), nil
+	return toTransactionAPI(t), nil
 }
 
-func (s *Server) VoidTransactions(ctx context.Context, req VoidTransactionsRequestObject) (VoidTransactionsResponseObject, error) {
-	ids := make([]uuid.UUID, len(req.Body.Items))
-	for i, it := range req.Body.Items {
+func (s *Server) voidTransactions(
+	ctx context.Context,
+	r *http.Request,
+	in VoidTransactionsJSONRequestBody,
+) (BulkVoidResult, error) {
+	ids := make([]uuid.UUID, len(in.Items))
+	for i, it := range in.Items {
 		ids[i] = it.Id
 	}
 
-	errs, err := s.svc.VoidMany(ctx, auth.MustBooksID(ctx), ids, req.Body.Reason)
+	errs, err := s.svc.VoidMany(ctx, auth.MustBooksID(ctx), ids, in.Reason)
 	if err != nil {
-		return nil, err
+		return BulkVoidResult{}, err
 	}
 
-	out := VoidTransactions200JSONResponse{Results: make([]BulkVoidItemResult, len(ids))}
+	out := BulkVoidResult{Results: make([]BulkVoidItemResult, len(ids))}
 	for i, id := range ids {
 		status, ok := voidStatus(errs[i])
 		if !ok {
-			return nil, errs[i]
+			return BulkVoidResult{}, errs[i]
 		}
 
 		out.Results[i] = BulkVoidItemResult{Id: id, Status: status}
@@ -154,27 +201,36 @@ func voidStatus(err error) (BulkVoidItemResultStatus, bool) {
 	return "", false
 }
 
-func (s *Server) TransferTransaction(ctx context.Context, req TransferTransactionRequestObject) (TransferTransactionResponseObject, error) {
+func (s *Server) transferTransaction(
+	ctx context.Context,
+	r *http.Request,
+	in TransferTransactionJSONRequestBody,
+) (TransferResult, error) {
+	id, err := httpserver.PathUUID(r, "id")
+	if err != nil {
+		return TransferResult{}, err
+	}
+
 	booksID := auth.MustBooksID(ctx)
 
-	in := app.TransferRequest{
-		TransactionID: req.Id, ExpectedVersion: req.Body.ExpectedVersion, AccountID: req.Body.AccountId, Cause: app.Cause{Method: app.MethodManual},
+	input := app.TransferRequest{
+		TransactionID: id, ExpectedVersion: in.ExpectedVersion, AccountID: in.AccountId, Cause: app.Cause{Method: app.MethodManual},
 	}
-	if req.Body.PairWith != nil {
-		in.PairWith = *req.Body.PairWith
+	if in.PairWith != nil {
+		input.PairWith = *in.PairWith
 	}
 
-	res, err := s.svc.Transfer(ctx, booksID, in)
+	res, err := s.svc.Transfer(ctx, booksID, input)
 	if err != nil {
-		return nil, err
+		return TransferResult{}, err
 	}
 
 	t, err := s.svc.Transaction(ctx, booksID, res.Kept)
 	if err != nil {
-		return nil, err
+		return TransferResult{}, err
 	}
 
-	out := TransferTransaction200JSONResponse{Transaction: toTransactionAPI(t)}
+	out := TransferResult{Transaction: toTransactionAPI(t)}
 	if res.Voided != uuid.Nil {
 		out.VoidedTransactionId = &res.Voided
 	}
@@ -182,13 +238,22 @@ func (s *Server) TransferTransaction(ctx context.Context, req TransferTransactio
 	return out, nil
 }
 
-func (s *Server) ListTransactionVersions(ctx context.Context, req ListTransactionVersionsRequestObject) (ListTransactionVersionsResponseObject, error) {
-	versions, err := s.svc.Versions(ctx, auth.MustBooksID(ctx), req.Id)
+func (s *Server) listTransactionVersions(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (TransactionVersionList, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return TransactionVersionList{}, err
 	}
 
-	out := ListTransactionVersions200JSONResponse{Items: make([]TransactionVersion, len(versions))}
+	versions, err := s.svc.Versions(ctx, auth.MustBooksID(ctx), id)
+	if err != nil {
+		return TransactionVersionList{}, err
+	}
+
+	out := TransactionVersionList{Items: make([]TransactionVersion, len(versions))}
 	for i, v := range versions {
 		out.Items[i] = TransactionVersion{
 			Version: v.Version, Reason: v.Reason, ReplacedAt: v.ReplacedAt, Transaction: toTransactionAPI(v.Transaction),

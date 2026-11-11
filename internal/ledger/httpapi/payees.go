@@ -2,26 +2,38 @@ package httpapi
 
 import (
 	"context"
+	"net/http"
+
+	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 
 	"github.com/andrelopes-code/equori/internal/ledger/app"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
 	"github.com/andrelopes-code/equori/internal/platform/page"
 )
 
-func (s *Server) ListPayees(ctx context.Context, req ListPayeesRequestObject) (ListPayeesResponseObject, error) {
-	p, err := listPage[app.PayeeKey](req.Params.Limit, req.Params.Cursor)
+func (s *Server) listPayees(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (PayeeList, error) {
+	params, err := httpserver.Query[ListPayeesParams](r)
 	if err != nil {
-		return nil, err
+		return PayeeList{}, err
+	}
+
+	p, err := listPage[app.PayeeKey](params.Limit, params.Cursor)
+	if err != nil {
+		return PayeeList{}, err
 	}
 
 	rows, next, err := s.svc.ListPayees(ctx, auth.MustBooksID(ctx), p)
 	if err != nil {
-		return nil, err
+		return PayeeList{}, err
 	}
 
-	out := ListPayees200JSONResponse{Items: make([]Payee, len(rows))}
-	for i, r := range rows {
-		out.Items[i] = toPayeeAPI(r)
+	out := PayeeList{Items: make([]Payee, len(rows))}
+	for i, rec := range rows {
+		out.Items[i] = toPayeeAPI(rec)
 	}
 
 	out.NextCursor, err = page.Next(next)
@@ -29,29 +41,51 @@ func (s *Server) ListPayees(ctx context.Context, req ListPayeesRequestObject) (L
 	return out, err
 }
 
-func (s *Server) CreatePayee(ctx context.Context, req CreatePayeeRequestObject) (CreatePayeeResponseObject, error) {
-	p, err := s.svc.CreatePayee(ctx, auth.MustBooksID(ctx), req.Body.Name)
+func (s *Server) createPayee(
+	ctx context.Context,
+	r *http.Request,
+	in CreatePayeeJSONRequestBody,
+) (Payee, error) {
+	p, err := s.svc.CreatePayee(ctx, auth.MustBooksID(ctx), in.Name)
 	if err != nil {
-		return nil, err
+		return Payee{}, err
 	}
 
-	return CreatePayee201JSONResponse(toPayeeAPI(p)), nil
+	return toPayeeAPI(p), nil
 }
 
-func (s *Server) RenamePayee(ctx context.Context, req RenamePayeeRequestObject) (RenamePayeeResponseObject, error) {
-	p, err := s.svc.RenamePayee(ctx, auth.MustBooksID(ctx), req.Id, req.Body.Name)
+func (s *Server) renamePayee(
+	ctx context.Context,
+	r *http.Request,
+	in RenamePayeeJSONRequestBody,
+) (Payee, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return Payee{}, err
 	}
 
-	return RenamePayee200JSONResponse{Id: p.ID, Name: p.Name}, nil
+	p, err := s.svc.RenamePayee(ctx, auth.MustBooksID(ctx), id, in.Name)
+	if err != nil {
+		return Payee{}, err
+	}
+
+	return Payee{Id: p.ID, Name: p.Name}, nil
 }
 
-func (s *Server) MergePayee(ctx context.Context, req MergePayeeRequestObject) (MergePayeeResponseObject, error) {
-	p, err := s.svc.MergePayees(ctx, auth.MustBooksID(ctx), req.Id, req.Body.Into)
+func (s *Server) mergePayee(
+	ctx context.Context,
+	r *http.Request,
+	in MergePayeeJSONRequestBody,
+) (Payee, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return Payee{}, err
 	}
 
-	return MergePayee200JSONResponse{Id: p.ID, Name: p.Name}, nil
+	p, err := s.svc.MergePayees(ctx, auth.MustBooksID(ctx), id, in.Into)
+	if err != nil {
+		return Payee{}, err
+	}
+
+	return Payee{Id: p.ID, Name: p.Name}, nil
 }

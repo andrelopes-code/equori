@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/andrelopes-code/equori/internal/ledger/app"
 	"github.com/andrelopes-code/equori/internal/ledger/domain"
@@ -9,85 +10,97 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
-func (s *Server) RecordForeignPurchase(ctx context.Context, req RecordForeignPurchaseRequestObject) (RecordForeignPurchaseResponseObject, error) {
-	b := req.Body
+func (s *Server) recordForeignPurchase(
+	ctx context.Context,
+	r *http.Request,
+	in RecordForeignPurchaseJSONRequestBody,
+) (Transaction, string, error) {
+	b := in
 
 	original, err := fromMoneyAPI("original", b.Original)
 	if err != nil {
-		return nil, err
+		return Transaction{}, "", err
 	}
 
 	rate, err := money.ParseRate(b.Rate)
 	if err != nil {
-		return nil, &domain.FieldError{Field: "rate", Message: "must be a positive decimal with at most 12 decimals", Err: domain.ErrValidation}
+		return Transaction{}, "", &domain.FieldError{Field: "rate", Message: "must be a positive decimal with at most 12 decimals", Err: domain.ErrValidation}
 	}
 
-	in := app.ForeignPurchase{
+	input := app.ForeignPurchase{
 		AccountID: b.AccountId, CategoryID: b.CategoryId, PayeeID: optUUID(b.PayeeId), ForeignChargeCategoryID: optUUID(b.ForeignChargeCategoryId),
 		Date: dateOf(b.Date), Description: optString(b.Description), Original: original, Rate: rate, ForeignChargeRateBP: b.ForeignChargeRateBp,
 	}
 	if b.Statement != nil {
 		m, err := domain.ParseReferenceMonth(*b.Statement)
 		if err != nil {
-			return nil, &domain.FieldError{Field: "statement", Message: err.Error(), Err: domain.ErrValidation}
+			return Transaction{}, "", &domain.FieldError{Field: "statement", Message: err.Error(), Err: domain.ErrValidation}
 		}
 
-		in.Statement = &m
+		input.Statement = &m
 	}
 
-	t, err := s.svc.RecordForeignPurchase(ctx, auth.MustBooksID(ctx), in)
+	t, err := s.svc.RecordForeignPurchase(ctx, auth.MustBooksID(ctx), input)
 	if err != nil {
-		return nil, err
+		return Transaction{}, "", err
 	}
 
-	return RecordForeignPurchase201JSONResponse{Body: toTransactionAPI(t), Headers: RecordForeignPurchase201ResponseHeaders{Location: location("/transactions/", t.ID)}}, nil
+	return toTransactionAPI(t), location("/transactions/", t.ID), nil
 }
 
-func (s *Server) ExchangeCurrency(ctx context.Context, req ExchangeCurrencyRequestObject) (ExchangeCurrencyResponseObject, error) {
-	b := req.Body
+func (s *Server) exchangeCurrency(
+	ctx context.Context,
+	r *http.Request,
+	in ExchangeCurrencyJSONRequestBody,
+) (Transaction, string, error) {
+	b := in
 
 	from, err := fromMoneyAPI("from_amount", b.FromAmount)
 	if err != nil {
-		return nil, err
+		return Transaction{}, "", err
 	}
 
 	to, err := fromMoneyAPI("to_amount", b.ToAmount)
 	if err != nil {
-		return nil, err
+		return Transaction{}, "", err
 	}
 
-	in := app.Exchange{
+	input := app.Exchange{
 		FromAccountID: b.FromAccountId, ToAccountID: b.ToAccountId, FeeCategoryID: optUUID(b.FeeCategoryId),
 		Date: dateOf(b.Date), Description: optString(b.Description), FromAmount: from, ToAmount: to,
 	}
 	if b.Fee != nil {
 		fee, err := fromMoneyAPI("fee", *b.Fee)
 		if err != nil {
-			return nil, err
+			return Transaction{}, "", err
 		}
 
-		in.Fee = &fee
+		input.Fee = &fee
 	}
 
-	t, err := s.svc.Exchange(ctx, auth.MustBooksID(ctx), in)
+	t, err := s.svc.Exchange(ctx, auth.MustBooksID(ctx), input)
 	if err != nil {
-		return nil, err
+		return Transaction{}, "", err
 	}
 
-	return ExchangeCurrency201JSONResponse{Body: toTransactionAPI(t), Headers: ExchangeCurrency201ResponseHeaders{Location: location("/transactions/", t.ID)}}, nil
+	return toTransactionAPI(t), location("/transactions/", t.ID), nil
 }
 
-func (s *Server) RecordTrade(ctx context.Context, req RecordTradeRequestObject) (RecordTradeResponseObject, error) {
-	b := req.Body
+func (s *Server) recordTrade(
+	ctx context.Context,
+	r *http.Request,
+	in RecordTradeJSONRequestBody,
+) (Transaction, string, error) {
+	b := in
 
 	quantity, err := s.svc.AmountOf(ctx, b.Quantity.Amount, money.Currency(b.Quantity.Currency))
 	if err != nil {
-		return nil, &domain.FieldError{Field: "quantity", Message: err.Error(), Err: domain.ErrValidation}
+		return Transaction{}, "", &domain.FieldError{Field: "quantity", Message: err.Error(), Err: domain.ErrValidation}
 	}
 
 	price, err := money.ParseRate(b.UnitPrice)
 	if err != nil {
-		return nil, &domain.FieldError{Field: "unit_price", Message: "must be a positive decimal with at most 12 decimals", Err: domain.ErrValidation}
+		return Transaction{}, "", &domain.FieldError{Field: "unit_price", Message: "must be a positive decimal with at most 12 decimals", Err: domain.ErrValidation}
 	}
 
 	o := domain.TradeOrder{
@@ -97,7 +110,7 @@ func (s *Server) RecordTrade(ctx context.Context, req RecordTradeRequestObject) 
 	if b.Fees != nil {
 		fees, err := fromMoneyAPI("fees", *b.Fees)
 		if err != nil {
-			return nil, err
+			return Transaction{}, "", err
 		}
 
 		o.Fees = &fees
@@ -106,7 +119,7 @@ func (s *Server) RecordTrade(ctx context.Context, req RecordTradeRequestObject) 
 	if b.Taxes != nil {
 		taxes, err := fromMoneyAPI("taxes", *b.Taxes)
 		if err != nil {
-			return nil, err
+			return Transaction{}, "", err
 		}
 
 		o.Taxes = &taxes
@@ -114,18 +127,22 @@ func (s *Server) RecordTrade(ctx context.Context, req RecordTradeRequestObject) 
 
 	t, err := s.svc.RecordTrade(ctx, auth.MustBooksID(ctx), o)
 	if err != nil {
-		return nil, err
+		return Transaction{}, "", err
 	}
 
-	return RecordTrade201JSONResponse{Body: toTransactionAPI(t), Headers: RecordTrade201ResponseHeaders{Location: location("/transactions/", t.ID)}}, nil
+	return toTransactionAPI(t), location("/transactions/", t.ID), nil
 }
 
-func (s *Server) RecordInvestmentIncome(ctx context.Context, req RecordInvestmentIncomeRequestObject) (RecordInvestmentIncomeResponseObject, error) {
-	b := req.Body
+func (s *Server) recordInvestmentIncome(
+	ctx context.Context,
+	r *http.Request,
+	in RecordInvestmentIncomeJSONRequestBody,
+) (Transaction, string, error) {
+	b := in
 
 	gross, err := fromMoneyAPI("gross", b.Gross)
 	if err != nil {
-		return nil, err
+		return Transaction{}, "", err
 	}
 
 	o := domain.IncomeOrder{
@@ -135,7 +152,7 @@ func (s *Server) RecordInvestmentIncome(ctx context.Context, req RecordInvestmen
 	if b.Withheld != nil {
 		withheld, err := fromMoneyAPI("withheld", *b.Withheld)
 		if err != nil {
-			return nil, err
+			return Transaction{}, "", err
 		}
 
 		o.Withheld = &withheld
@@ -143,8 +160,8 @@ func (s *Server) RecordInvestmentIncome(ctx context.Context, req RecordInvestmen
 
 	t, err := s.svc.RecordIncome(ctx, auth.MustBooksID(ctx), o)
 	if err != nil {
-		return nil, err
+		return Transaction{}, "", err
 	}
 
-	return RecordInvestmentIncome201JSONResponse{Body: toTransactionAPI(t), Headers: RecordInvestmentIncome201ResponseHeaders{Location: location("/transactions/", t.ID)}}, nil
+	return toTransactionAPI(t), location("/transactions/", t.ID), nil
 }

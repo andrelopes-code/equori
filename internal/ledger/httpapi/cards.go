@@ -2,6 +2,9 @@ package httpapi
 
 import (
 	"context"
+	"net/http"
+
+	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 
 	"github.com/andrelopes-code/equori/internal/ledger/app"
 	"github.com/andrelopes-code/equori/internal/ledger/domain"
@@ -31,68 +34,95 @@ func toBillingRuleAPI(r domain.BillingCycleRule) BillingCycleRule {
 	return out
 }
 
-func (s *Server) ListBillingCycleRules(ctx context.Context, req ListBillingCycleRulesRequestObject) (ListBillingCycleRulesResponseObject, error) {
-	rules, err := s.svc.BillingRules(ctx, auth.MustBooksID(ctx), req.Id)
+func (s *Server) listBillingCycleRules(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (BillingCycleRuleList, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return BillingCycleRuleList{}, err
 	}
 
-	out := ListBillingCycleRules200JSONResponse{Items: make([]BillingCycleRule, len(rules))}
-	for i, r := range rules {
-		out.Items[i] = toBillingRuleAPI(r)
+	rules, err := s.svc.BillingRules(ctx, auth.MustBooksID(ctx), id)
+	if err != nil {
+		return BillingCycleRuleList{}, err
+	}
+
+	out := BillingCycleRuleList{Items: make([]BillingCycleRule, len(rules))}
+	for i, rec := range rules {
+		out.Items[i] = toBillingRuleAPI(rec)
 	}
 
 	return out, nil
 }
 
-func (s *Server) CreateBillingCycleRule(ctx context.Context, req CreateBillingCycleRuleRequestObject) (CreateBillingCycleRuleResponseObject, error) {
-	b := req.Body
+func (s *Server) createBillingCycleRule(
+	ctx context.Context,
+	r *http.Request,
+	in CreateBillingCycleRuleJSONRequestBody,
+) (BillingCycleRule, error) {
+	id, err := httpserver.PathUUID(r, "id")
+	if err != nil {
+		return BillingCycleRule{}, err
+	}
+
+	b := in
 
 	from, err := domain.ParseReferenceMonth(b.EffectiveFrom)
 	if err != nil {
-		return nil, &domain.FieldError{Field: "effective_from", Message: "must be YYYY-MM", Err: domain.ErrValidation}
+		return BillingCycleRule{}, &domain.FieldError{Field: "effective_from", Message: "must be YYYY-MM", Err: domain.ErrValidation}
 	}
 
-	r := domain.BillingCycleRule{EffectiveFrom: from, DueDay: b.DueDay, Calendar: optString(b.Calendar)}
+	rec := domain.BillingCycleRule{EffectiveFrom: from, DueDay: b.DueDay, Calendar: optString(b.Calendar)}
 	if b.ClosingDay != nil {
-		r.ClosingDay = *b.ClosingDay
+		rec.ClosingDay = *b.ClosingDay
 	}
 
 	if b.ClosingMode != nil {
-		r.ClosingMode = string(*b.ClosingMode)
+		rec.ClosingMode = string(*b.ClosingMode)
 	}
 
 	if b.ClosingDaysBeforeDue != nil {
-		r.ClosingDaysBeforeDue = *b.ClosingDaysBeforeDue
+		rec.ClosingDaysBeforeDue = *b.ClosingDaysBeforeDue
 	}
 
 	if b.ClosingAdjustment != nil {
-		r.ClosingAdjustment = string(*b.ClosingAdjustment)
+		rec.ClosingAdjustment = string(*b.ClosingAdjustment)
 	}
 
 	if b.ClosingDayAssignment != nil {
-		r.Assignment = string(*b.ClosingDayAssignment)
+		rec.Assignment = string(*b.ClosingDayAssignment)
 	}
 
 	if b.DueDateAdjustment != nil {
-		r.Adjustment = string(*b.DueDateAdjustment)
+		rec.Adjustment = string(*b.DueDateAdjustment)
 	}
 
-	created, err := s.svc.AddBillingRule(ctx, auth.MustBooksID(ctx), req.Id, r)
+	created, err := s.svc.AddBillingRule(ctx, auth.MustBooksID(ctx), id, rec)
 	if err != nil {
-		return nil, err
+		return BillingCycleRule{}, err
 	}
 
-	return CreateBillingCycleRule201JSONResponse(toBillingRuleAPI(created)), nil
+	return toBillingRuleAPI(created), nil
 }
 
-func (s *Server) ListCreditLimits(ctx context.Context, req ListCreditLimitsRequestObject) (ListCreditLimitsResponseObject, error) {
-	limits, err := s.svc.CreditLimits(ctx, auth.MustBooksID(ctx), req.Id)
+func (s *Server) listCreditLimits(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (CreditLimitList, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return CreditLimitList{}, err
 	}
 
-	out := ListCreditLimits200JSONResponse{Items: make([]CreditLimit, len(limits))}
+	limits, err := s.svc.CreditLimits(ctx, auth.MustBooksID(ctx), id)
+	if err != nil {
+		return CreditLimitList{}, err
+	}
+
+	out := CreditLimitList{Items: make([]CreditLimit, len(limits))}
 	for i, l := range limits {
 		out.Items[i] = CreditLimit{EffectiveFrom: apiDate(l.EffectiveFrom), Amount: toMoneyAPI(l.Amount)}
 	}
@@ -100,18 +130,27 @@ func (s *Server) ListCreditLimits(ctx context.Context, req ListCreditLimitsReque
 	return out, nil
 }
 
-func (s *Server) CreateCreditLimit(ctx context.Context, req CreateCreditLimitRequestObject) (CreateCreditLimitResponseObject, error) {
-	amount, err := fromMoneyAPI("amount", req.Body.Amount)
+func (s *Server) createCreditLimit(
+	ctx context.Context,
+	r *http.Request,
+	in CreateCreditLimitJSONRequestBody,
+) (CreditLimit, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return CreditLimit{}, err
 	}
 
-	l, err := s.svc.AddCreditLimit(ctx, auth.MustBooksID(ctx), app.CreditLimit{AccountID: req.Id, EffectiveFrom: dateOf(req.Body.EffectiveFrom), Amount: amount})
+	amount, err := fromMoneyAPI("amount", in.Amount)
 	if err != nil {
-		return nil, err
+		return CreditLimit{}, err
 	}
 
-	return CreateCreditLimit201JSONResponse{EffectiveFrom: apiDate(l.EffectiveFrom), Amount: toMoneyAPI(l.Amount)}, nil
+	l, err := s.svc.AddCreditLimit(ctx, auth.MustBooksID(ctx), app.CreditLimit{AccountID: id, EffectiveFrom: dateOf(in.EffectiveFrom), Amount: amount})
+	if err != nil {
+		return CreditLimit{}, err
+	}
+
+	return CreditLimit{EffectiveFrom: apiDate(l.EffectiveFrom), Amount: toMoneyAPI(l.Amount)}, nil
 }
 
 func toCardAPI(c domain.Card) Card {
@@ -119,13 +158,22 @@ func toCardAPI(c domain.Card) Card {
 	return Card{Id: c.ID, Holder: c.Holder, LastFour: c.LastFour, Virtual: &virtual, Active: c.Active, ForeignChargeBp: c.ForeignChargeBP}
 }
 
-func (s *Server) ListCards(ctx context.Context, req ListCardsRequestObject) (ListCardsResponseObject, error) {
-	cards, err := s.svc.Cards(ctx, auth.MustBooksID(ctx), req.Id)
+func (s *Server) listCards(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (CardList, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return CardList{}, err
 	}
 
-	out := ListCards200JSONResponse{Items: make([]Card, len(cards))}
+	cards, err := s.svc.Cards(ctx, auth.MustBooksID(ctx), id)
+	if err != nil {
+		return CardList{}, err
+	}
+
+	out := CardList{Items: make([]Card, len(cards))}
 	for i, c := range cards {
 		out.Items[i] = toCardAPI(c)
 	}
@@ -133,32 +181,59 @@ func (s *Server) ListCards(ctx context.Context, req ListCardsRequestObject) (Lis
 	return out, nil
 }
 
-func (s *Server) CreateCard(ctx context.Context, req CreateCardRequestObject) (CreateCardResponseObject, error) {
-	virtual := req.Body.Virtual != nil && *req.Body.Virtual
-
-	c, err := s.svc.AddCard(ctx, auth.MustBooksID(ctx), domain.Card{AccountID: req.Id, Holder: req.Body.Holder, LastFour: req.Body.LastFour, Virtual: virtual}, req.Body.ForeignChargeBp)
+func (s *Server) createCard(
+	ctx context.Context,
+	r *http.Request,
+	in CreateCardJSONRequestBody,
+) (Card, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return Card{}, err
 	}
 
-	return CreateCard201JSONResponse(toCardAPI(c)), nil
+	virtual := in.Virtual != nil && *in.Virtual
+
+	c, err := s.svc.AddCard(ctx, auth.MustBooksID(ctx), domain.Card{AccountID: id, Holder: in.Holder, LastFour: in.LastFour, Virtual: virtual}, in.ForeignChargeBp)
+	if err != nil {
+		return Card{}, err
+	}
+
+	return toCardAPI(c), nil
 }
 
-func (s *Server) UpdateCard(ctx context.Context, req UpdateCardRequestObject) (UpdateCardResponseObject, error) {
-	b := req.Body
-
-	c, err := s.svc.EditCard(ctx, auth.MustBooksID(ctx), req.Id, domain.CardEdit{Holder: b.Holder, LastFour: b.LastFour, Active: b.Active})
+func (s *Server) updateCard(
+	ctx context.Context,
+	r *http.Request,
+	in UpdateCardJSONRequestBody,
+) (Card, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return Card{}, err
 	}
 
-	return UpdateCard200JSONResponse(toCardAPI(c)), nil
+	b := in
+
+	c, err := s.svc.EditCard(ctx, auth.MustBooksID(ctx), id, domain.CardEdit{Holder: b.Holder, LastFour: b.LastFour, Active: b.Active})
+	if err != nil {
+		return Card{}, err
+	}
+
+	return toCardAPI(c), nil
 }
 
-func (s *Server) DeleteCard(ctx context.Context, req DeleteCardRequestObject) (DeleteCardResponseObject, error) {
-	if err := s.svc.DeleteCard(ctx, auth.MustBooksID(ctx), req.Id); err != nil {
-		return nil, err
+func (s *Server) deleteCard(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (httpserver.None, error) {
+	id, err := httpserver.PathUUID(r, "id")
+	if err != nil {
+		return httpserver.None{}, err
 	}
 
-	return DeleteCard204Response{}, nil
+	if err := s.svc.DeleteCard(ctx, auth.MustBooksID(ctx), id); err != nil {
+		return httpserver.None{}, err
+	}
+
+	return httpserver.None{}, nil
 }

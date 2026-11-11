@@ -2,6 +2,9 @@ package httpapi
 
 import (
 	"context"
+	"net/http"
+
+	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 
 	"github.com/andrelopes-code/equori/internal/platform/page"
 
@@ -33,36 +36,59 @@ func toAssertionResultAPI(res app.AssertionResult) AssertionResult {
 	return out
 }
 
-func (s *Server) CreateBalanceAssertion(ctx context.Context, req CreateBalanceAssertionRequestObject) (CreateBalanceAssertionResponseObject, error) {
-	amount, err := fromMoneyAPI("amount", req.Body.Amount)
+func (s *Server) createBalanceAssertion(
+	ctx context.Context,
+	r *http.Request,
+	in CreateBalanceAssertionJSONRequestBody,
+) (AssertionResult, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return AssertionResult{}, err
 	}
 
-	res, err := s.svc.AssertBalance(ctx, auth.MustBooksID(ctx), req.Id, dateOf(req.Body.Date), amount, optString((*string)(req.Body.Source)))
+	amount, err := fromMoneyAPI("amount", in.Amount)
 	if err != nil {
-		return nil, err
+		return AssertionResult{}, err
 	}
 
-	return CreateBalanceAssertion201JSONResponse(toAssertionResultAPI(res)), nil
+	res, err := s.svc.AssertBalance(ctx, auth.MustBooksID(ctx), id, dateOf(in.Date), amount, optString((*string)(in.Source)))
+	if err != nil {
+		return AssertionResult{}, err
+	}
+
+	return toAssertionResultAPI(res), nil
 }
 
-func (s *Server) ListBalanceAssertions(ctx context.Context, req ListBalanceAssertionsRequestObject) (ListBalanceAssertionsResponseObject, error) {
+func (s *Server) listBalanceAssertions(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (BalanceAssertionList, error) {
+	id, err := httpserver.PathUUID(r, "id")
+	if err != nil {
+		return BalanceAssertionList{}, err
+	}
+
+	params, err := httpserver.Query[ListBalanceAssertionsParams](r)
+	if err != nil {
+		return BalanceAssertionList{}, err
+	}
+
 	booksID := auth.MustBooksID(ctx)
 
-	a, err := s.svc.Account(ctx, booksID, req.Id)
+	a, err := s.svc.Account(ctx, booksID, id)
 	if err != nil {
-		return nil, err
+		return BalanceAssertionList{}, err
 	}
 
-	p, err := listPage[app.AssertionKey](req.Params.Limit, req.Params.Cursor)
+	p, err := listPage[app.AssertionKey](params.Limit, params.Cursor)
 	if err != nil {
-		return nil, err
+		return BalanceAssertionList{}, err
 	}
 
-	assertions, next, err := s.svc.BalanceAssertions(ctx, booksID, req.Id, p)
+	assertions, next, err := s.svc.BalanceAssertions(ctx, booksID, id, p)
 	if err != nil {
-		return nil, err
+		return BalanceAssertionList{}, err
 	}
 
 	out := BalanceAssertionList{Items: make([]BalanceAssertion, len(assertions))}
@@ -72,25 +98,43 @@ func (s *Server) ListBalanceAssertions(ctx context.Context, req ListBalanceAsser
 
 	out.NextCursor, err = page.Next(next)
 
-	return ListBalanceAssertions200JSONResponse(out), err
+	return out, err
 }
 
-func (s *Server) ResolveBalanceAssertion(ctx context.Context, req ResolveBalanceAssertionRequestObject) (ResolveBalanceAssertionResponseObject, error) {
-	res, err := s.svc.ResolveAssertion(ctx, auth.MustBooksID(ctx), req.Id, domain.Resolution(req.Body.Resolution))
+func (s *Server) resolveBalanceAssertion(
+	ctx context.Context,
+	r *http.Request,
+	in ResolveBalanceAssertionJSONRequestBody,
+) (AssertionResult, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return AssertionResult{}, err
 	}
 
-	return ResolveBalanceAssertion200JSONResponse(toAssertionResultAPI(res)), nil
+	res, err := s.svc.ResolveAssertion(ctx, auth.MustBooksID(ctx), id, domain.Resolution(in.Resolution))
+	if err != nil {
+		return AssertionResult{}, err
+	}
+
+	return toAssertionResultAPI(res), nil
 }
 
-func (s *Server) GetReconciliationStatus(ctx context.Context, req GetReconciliationStatusRequestObject) (GetReconciliationStatusResponseObject, error) {
-	out, err := s.reconciliationStatus(ctx, auth.MustBooksID(ctx), req.Id)
+func (s *Server) getReconciliationStatus(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (ReconciliationStatus, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return ReconciliationStatus{}, err
 	}
 
-	return GetReconciliationStatus200JSONResponse(out), nil
+	out, err := s.reconciliationStatus(ctx, auth.MustBooksID(ctx), id)
+	if err != nil {
+		return ReconciliationStatus{}, err
+	}
+
+	return out, nil
 }
 
 func (s *Server) reconciliationStatus(ctx context.Context, booksID int64, accountID uuid.UUID) (ReconciliationStatus, error) {
@@ -107,49 +151,76 @@ func (s *Server) reconciliationStatus(ctx context.Context, booksID int64, accoun
 	return out, nil
 }
 
-func (s *Server) UnlockAccount(ctx context.Context, req UnlockAccountRequestObject) (UnlockAccountResponseObject, error) {
-	booksID := auth.MustBooksID(ctx)
-	if err := s.svc.Unlock(ctx, booksID, req.Id, dateOf(req.Body.From)); err != nil {
-		return nil, err
-	}
-
-	out, err := s.reconciliationStatus(ctx, booksID, req.Id)
+func (s *Server) unlockAccount(
+	ctx context.Context,
+	r *http.Request,
+	in UnlockAccountJSONRequestBody,
+) (ReconciliationStatus, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return ReconciliationStatus{}, err
 	}
 
-	return UnlockAccount200JSONResponse(out), nil
+	booksID := auth.MustBooksID(ctx)
+	if err := s.svc.Unlock(ctx, booksID, id, dateOf(in.From)); err != nil {
+		return ReconciliationStatus{}, err
+	}
+
+	out, err := s.reconciliationStatus(ctx, booksID, id)
+	if err != nil {
+		return ReconciliationStatus{}, err
+	}
+
+	return out, nil
 }
 
-func (s *Server) ReconcileStatement(ctx context.Context, req ReconcileStatementRequestObject) (ReconcileStatementResponseObject, error) {
-	amount, err := fromMoneyAPI("amount_due", req.Body.AmountDue)
+func (s *Server) reconcileStatement(
+	ctx context.Context,
+	r *http.Request,
+	in ReconcileStatementJSONRequestBody,
+) (StatementDetail, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return StatementDetail{}, err
+	}
+
+	amount, err := fromMoneyAPI("amount_due", in.AmountDue)
+	if err != nil {
+		return StatementDetail{}, err
 	}
 
 	booksID := auth.MustBooksID(ctx)
-	if err := s.svc.ReconcileStatement(ctx, booksID, req.Id, amount); err != nil {
-		return nil, err
+	if err := s.svc.ReconcileStatement(ctx, booksID, id, amount); err != nil {
+		return StatementDetail{}, err
 	}
 
-	out, err := s.statementDetail(ctx, booksID, req.Id)
+	out, err := s.statementDetail(ctx, booksID, id)
 	if err != nil {
-		return nil, err
+		return StatementDetail{}, err
 	}
 
-	return ReconcileStatement200JSONResponse(out), nil
+	return out, nil
 }
 
-func (s *Server) DeferStatementPostings(ctx context.Context, req DeferStatementPostingsRequestObject) (DeferStatementPostingsResponseObject, error) {
-	booksID := auth.MustBooksID(ctx)
-	if err := s.svc.DeferPostings(ctx, booksID, req.Id, req.Body.TransactionIds); err != nil {
-		return nil, err
-	}
-
-	out, err := s.statementDetail(ctx, booksID, req.Id)
+func (s *Server) deferStatementPostings(
+	ctx context.Context,
+	r *http.Request,
+	in DeferStatementPostingsJSONRequestBody,
+) (StatementDetail, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return StatementDetail{}, err
 	}
 
-	return DeferStatementPostings200JSONResponse(out), nil
+	booksID := auth.MustBooksID(ctx)
+	if err := s.svc.DeferPostings(ctx, booksID, id, in.TransactionIds); err != nil {
+		return StatementDetail{}, err
+	}
+
+	out, err := s.statementDetail(ctx, booksID, id)
+	if err != nil {
+		return StatementDetail{}, err
+	}
+
+	return out, nil
 }

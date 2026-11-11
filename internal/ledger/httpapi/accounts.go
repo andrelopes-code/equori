@@ -2,6 +2,9 @@ package httpapi
 
 import (
 	"context"
+	"net/http"
+
+	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 
 	"github.com/google/uuid"
 
@@ -11,23 +14,32 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/page"
 )
 
-func (s *Server) ListAccounts(ctx context.Context, req ListAccountsRequestObject) (ListAccountsResponseObject, error) {
-	p, err := listPage[app.AccountKey](req.Params.Limit, req.Params.Cursor)
+func (s *Server) listAccounts(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (AccountList, error) {
+	params, err := httpserver.Query[ListAccountsParams](r)
 	if err != nil {
-		return nil, err
+		return AccountList{}, err
+	}
+
+	p, err := listPage[app.AccountKey](params.Limit, params.Cursor)
+	if err != nil {
+		return AccountList{}, err
 	}
 
 	booksID := auth.MustBooksID(ctx)
 
 	rows, next, err := s.svc.ListAccounts(ctx, booksID, p)
 	if err != nil {
-		return nil, err
+		return AccountList{}, err
 	}
 
-	out := ListAccounts200JSONResponse{Items: make([]Account, len(rows))}
-	for i, r := range rows {
-		if out.Items[i], err = s.accountAPI(ctx, booksID, r); err != nil {
-			return nil, err
+	out := AccountList{Items: make([]Account, len(rows))}
+	for i, rec := range rows {
+		if out.Items[i], err = s.accountAPI(ctx, booksID, rec); err != nil {
+			return AccountList{}, err
 		}
 	}
 
@@ -36,29 +48,42 @@ func (s *Server) ListAccounts(ctx context.Context, req ListAccountsRequestObject
 	return out, err
 }
 
-func (s *Server) CreateAccount(ctx context.Context, req CreateAccountRequestObject) (CreateAccountResponseObject, error) {
-	a, err := s.svc.CreateAccount(ctx, auth.MustBooksID(ctx), fromAccountInput(*req.Body))
+func (s *Server) createAccount(
+	ctx context.Context,
+	r *http.Request,
+	in CreateAccountJSONRequestBody,
+) (Account, string, error) {
+	a, err := s.svc.CreateAccount(ctx, auth.MustBooksID(ctx), fromAccountInput(in))
 	if err != nil {
-		return nil, err
+		return Account{}, "", err
 	}
 
-	return CreateAccount201JSONResponse{Body: toAccountAPI(a), Headers: CreateAccount201ResponseHeaders{Location: location("/accounts/", a.ID)}}, nil
+	return toAccountAPI(a), location("/accounts/", a.ID), nil
 }
 
-func (s *Server) GetAccount(ctx context.Context, req GetAccountRequestObject) (GetAccountResponseObject, error) {
+func (s *Server) getAccount(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (Account, error) {
+	id, err := httpserver.PathUUID(r, "id")
+	if err != nil {
+		return Account{}, err
+	}
+
 	booksID := auth.MustBooksID(ctx)
 
-	a, err := s.svc.Account(ctx, booksID, req.Id)
+	a, err := s.svc.Account(ctx, booksID, id)
 	if err != nil {
-		return nil, err
+		return Account{}, err
 	}
 
 	out, err := s.accountAPI(ctx, booksID, a)
 	if err != nil {
-		return nil, err
+		return Account{}, err
 	}
 
-	return GetAccount200JSONResponse(out), nil
+	return out, nil
 }
 
 // accountAPI is an account with the limits of a card, when it is one with a credit limit.
@@ -78,90 +103,144 @@ func (s *Server) accountAPI(ctx context.Context, booksID int64, a domain.Account
 	return out, nil
 }
 
-func (s *Server) UpdateAccount(ctx context.Context, req UpdateAccountRequestObject) (UpdateAccountResponseObject, error) {
-	patch := app.AccountPatch{
-		Name: req.Body.Name, ParentID: req.Body.ParentId, InstitutionID: req.Body.InstitutionId,
-		ExcludedFromLiquidity: req.Body.ExcludedFromLiquidity,
-	}
-	if req.Body.OpenedOn != nil {
-		patch.OpenedOn = &req.Body.OpenedOn.Time
+func (s *Server) updateAccount(
+	ctx context.Context,
+	r *http.Request,
+	in UpdateAccountJSONRequestBody,
+) (Account, error) {
+	id, err := httpserver.PathUUID(r, "id")
+	if err != nil {
+		return Account{}, err
 	}
 
-	if req.Body.YieldMode != nil {
-		mode := domain.YieldMode(*req.Body.YieldMode)
+	patch := app.AccountPatch{
+		Name: in.Name, ParentID: in.ParentId, InstitutionID: in.InstitutionId,
+		ExcludedFromLiquidity: in.ExcludedFromLiquidity,
+	}
+	if in.OpenedOn != nil {
+		patch.OpenedOn = &in.OpenedOn.Time
+	}
+
+	if in.YieldMode != nil {
+		mode := domain.YieldMode(*in.YieldMode)
 		patch.YieldMode = &mode
 	}
 
-	a, err := s.svc.UpdateAccount(ctx, auth.MustBooksID(ctx), req.Id, patch)
+	a, err := s.svc.UpdateAccount(ctx, auth.MustBooksID(ctx), id, patch)
 	if err != nil {
-		return nil, err
+		return Account{}, err
 	}
 
-	return UpdateAccount200JSONResponse(toAccountAPI(a)), nil
+	return toAccountAPI(a), nil
 }
 
-func (s *Server) CloseAccount(ctx context.Context, req CloseAccountRequestObject) (CloseAccountResponseObject, error) {
+func (s *Server) closeAccount(
+	ctx context.Context,
+	r *http.Request,
+	in CloseAccountJSONRequestBody,
+) (Account, error) {
+	id, err := httpserver.PathUUID(r, "id")
+	if err != nil {
+		return Account{}, err
+	}
+
 	booksID := auth.MustBooksID(ctx)
-	if err := s.svc.CloseAccount(ctx, booksID, req.Id, dateOf(req.Body.ClosedOn)); err != nil {
-		return nil, err
+	if err := s.svc.CloseAccount(ctx, booksID, id, dateOf(in.ClosedOn)); err != nil {
+		return Account{}, err
 	}
 
-	a, err := s.svc.Account(ctx, booksID, req.Id)
+	a, err := s.svc.Account(ctx, booksID, id)
 	if err != nil {
-		return nil, err
+		return Account{}, err
 	}
 
-	return CloseAccount200JSONResponse(toAccountAPI(a)), nil
+	return toAccountAPI(a), nil
 }
 
-func (s *Server) SetAccountAppearance(ctx context.Context, req SetAccountAppearanceRequestObject) (SetAccountAppearanceResponseObject, error) {
+func (s *Server) setAccountAppearance(
+	ctx context.Context,
+	r *http.Request,
+	in SetAccountAppearanceJSONRequestBody,
+) (Account, error) {
+	id, err := httpserver.PathUUID(r, "id")
+	if err != nil {
+		return Account{}, err
+	}
+
 	var color int
 	var icon string
 
-	if req.Body.Color != nil {
-		color = *req.Body.Color
+	if in.Color != nil {
+		color = *in.Color
 	}
 
-	if req.Body.Icon != nil {
-		icon = string(*req.Body.Icon)
+	if in.Icon != nil {
+		icon = string(*in.Icon)
 	}
 
-	a, err := s.svc.SetAppearance(ctx, auth.MustBooksID(ctx), req.Id, color, icon)
+	a, err := s.svc.SetAppearance(ctx, auth.MustBooksID(ctx), id, color, icon)
 	if err != nil {
-		return nil, err
+		return Account{}, err
 	}
 
-	return SetAccountAppearance200JSONResponse(toAccountAPI(a)), nil
+	return toAccountAPI(a), nil
 }
 
-func (s *Server) SetAccountParent(ctx context.Context, req SetAccountParentRequestObject) (SetAccountParentResponseObject, error) {
+func (s *Server) setAccountParent(
+	ctx context.Context,
+	r *http.Request,
+	in SetAccountParentJSONRequestBody,
+) (Account, error) {
+	id, err := httpserver.PathUUID(r, "id")
+	if err != nil {
+		return Account{}, err
+	}
+
 	var parent uuid.UUID
-	if req.Body.ParentId != nil {
-		parent = *req.Body.ParentId
+	if in.ParentId != nil {
+		parent = *in.ParentId
 	}
 
-	a, err := s.svc.UpdateAccount(ctx, auth.MustBooksID(ctx), req.Id, app.AccountPatch{ParentID: &parent})
+	a, err := s.svc.UpdateAccount(ctx, auth.MustBooksID(ctx), id, app.AccountPatch{ParentID: &parent})
 	if err != nil {
-		return nil, err
+		return Account{}, err
 	}
 
-	return SetAccountParent200JSONResponse(toAccountAPI(a)), nil
+	return toAccountAPI(a), nil
 }
 
-func (s *Server) MergeAccount(ctx context.Context, req MergeAccountRequestObject) (MergeAccountResponseObject, error) {
-	a, err := s.svc.MergeCategories(ctx, auth.MustBooksID(ctx), req.Id, req.Body.Into)
+func (s *Server) mergeAccount(
+	ctx context.Context,
+	r *http.Request,
+	in MergeAccountJSONRequestBody,
+) (Account, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return Account{}, err
 	}
 
-	return MergeAccount200JSONResponse(toAccountAPI(a)), nil
+	a, err := s.svc.MergeCategories(ctx, auth.MustBooksID(ctx), id, in.Into)
+	if err != nil {
+		return Account{}, err
+	}
+
+	return toAccountAPI(a), nil
 }
 
-func (s *Server) ReopenAccount(ctx context.Context, req ReopenAccountRequestObject) (ReopenAccountResponseObject, error) {
-	a, err := s.svc.ReopenAccount(ctx, auth.MustBooksID(ctx), req.Id)
+func (s *Server) reopenAccount(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (Account, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return Account{}, err
 	}
 
-	return ReopenAccount200JSONResponse(toAccountAPI(a)), nil
+	a, err := s.svc.ReopenAccount(ctx, auth.MustBooksID(ctx), id)
+	if err != nil {
+		return Account{}, err
+	}
+
+	return toAccountAPI(a), nil
 }

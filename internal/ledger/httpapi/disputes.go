@@ -2,6 +2,9 @@ package httpapi
 
 import (
 	"context"
+	"net/http"
+
+	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 
 	"github.com/andrelopes-code/equori/internal/ledger/app"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
@@ -17,13 +20,22 @@ func toDisputeAPI(d app.Dispute) Dispute {
 	return out
 }
 
-func (s *Server) ListDisputes(ctx context.Context, req ListDisputesRequestObject) (ListDisputesResponseObject, error) {
-	disputes, err := s.svc.Disputes(ctx, auth.MustBooksID(ctx), req.Id)
+func (s *Server) listDisputes(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (DisputeList, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return DisputeList{}, err
 	}
 
-	out := ListDisputes200JSONResponse{Items: make([]Dispute, len(disputes))}
+	disputes, err := s.svc.Disputes(ctx, auth.MustBooksID(ctx), id)
+	if err != nil {
+		return DisputeList{}, err
+	}
+
+	out := DisputeList{Items: make([]Dispute, len(disputes))}
 	for i, d := range disputes {
 		out.Items[i] = toDisputeAPI(d)
 	}
@@ -31,25 +43,43 @@ func (s *Server) ListDisputes(ctx context.Context, req ListDisputesRequestObject
 	return out, nil
 }
 
-func (s *Server) OpenDispute(ctx context.Context, req OpenDisputeRequestObject) (OpenDisputeResponseObject, error) {
-	d, err := s.svc.OpenDispute(ctx, auth.MustBooksID(ctx), req.Id, dateOf(req.Body.OpenedOn))
+func (s *Server) openDispute(
+	ctx context.Context,
+	r *http.Request,
+	in OpenDisputeJSONRequestBody,
+) (Dispute, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return Dispute{}, err
 	}
 
-	return OpenDispute201JSONResponse(toDisputeAPI(d)), nil
+	d, err := s.svc.OpenDispute(ctx, auth.MustBooksID(ctx), id, dateOf(in.OpenedOn))
+	if err != nil {
+		return Dispute{}, err
+	}
+
+	return toDisputeAPI(d), nil
 }
 
-func (s *Server) ResolveDispute(ctx context.Context, req ResolveDisputeRequestObject) (ResolveDisputeResponseObject, error) {
-	statement, err := optMonth("statement", req.Body.Statement)
+func (s *Server) resolveDispute(
+	ctx context.Context,
+	r *http.Request,
+	in ResolveDisputeJSONRequestBody,
+) (Dispute, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return Dispute{}, err
 	}
 
-	d, err := s.svc.ResolveDispute(ctx, auth.MustBooksID(ctx), req.Id, dateOf(req.Body.ResolvedOn), string(req.Body.Outcome), statement)
+	statement, err := optMonth("statement", in.Statement)
 	if err != nil {
-		return nil, err
+		return Dispute{}, err
 	}
 
-	return ResolveDispute200JSONResponse(toDisputeAPI(d)), nil
+	d, err := s.svc.ResolveDispute(ctx, auth.MustBooksID(ctx), id, dateOf(in.ResolvedOn), string(in.Outcome), statement)
+	if err != nil {
+		return Dispute{}, err
+	}
+
+	return toDisputeAPI(d), nil
 }
