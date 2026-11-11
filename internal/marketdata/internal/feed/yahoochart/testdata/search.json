@@ -1,0 +1,8 @@
+{"quotes":[
+{"exchange":"GER","shortname":"Vanguard FTSE All-World U.ETF R","quoteType":"ETF","symbol":"VWCE.DE","longname":"Vanguard FTSE All-World UCITS ETF USD Accumulation"},
+{"exchange":"MUN","shortname":"Vanguard FTSE All-World U.ETF R","quoteType":"ETF","symbol":"VWCE.MU"},
+{"exchange":"NMS","shortname":"Apple Inc.","quoteType":"EQUITY","symbol":"AAPL","longname":"Apple Inc."},
+{"exchange":"NYQ","shortname":"Berkshire Hathaway Inc. New","quoteType":"EQUITY","symbol":"BRK-B"},
+{"exchange":"CME","shortname":"Apple Inc Single Stock futures","quoteType":"FUTURE","symbol":"SAAPL=F"},
+{"exchange":"CCC","shortname":"Bitcoin USD","quoteType":"CRYPTOCURRENCY","symbol":"BTC-USD"}
+]}

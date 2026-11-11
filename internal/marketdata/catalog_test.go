@@ -3,6 +3,7 @@ package marketdata_test
 import (
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"reflect"
 	"testing"
 	"time"
@@ -185,6 +186,45 @@ func TestCatalogRoles(t *testing.T) {
 
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("other book = %+v, want %+v", got, want)
+	}
+}
+
+// A222 X2: the catalog of a region other than Brazil lists Yahoo quotes under their MIC (MQ28).
+func TestCatalogOutsideBrazil(t *testing.T) {
+	t.Parallel()
+
+	body, err := os.ReadFile("internal/feed/yahoochart/testdata/search.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/yahoo/v1/finance/search" {
+			http.NotFound(w, r)
+			return
+		}
+
+		_, _ = w.Write(body)
+	}))
+	t.Cleanup(srv.Close)
+
+	h := apitest.New(t, apitest.As(usProfile()), apitest.Today("2026-11-09"),
+		apitest.PriceFeeds([]string{"yahoo_chart"}, map[string]string{"yahoo_chart": srv.URL + "/yahoo"}))
+
+	var got catalogAPI
+
+	h.MustDo(http.MethodGet, catalogPath+"apple", nil, http.StatusOK, &got)
+
+	if len(got.Items) != 3 {
+		t.Fatalf("items = %+v, want 3", got.Items)
+	}
+
+	want := catalogItemAPI{
+		Code: "AAPL", Name: "Apple Inc.", Type: "stock", Exchange: "XNAS", Symbol: "AAPL",
+		Source: "yahoo_chart",
+	}
+	if got.Items[1] != want {
+		t.Fatalf("item 2 = %+v, want %+v", got.Items[1], want)
 	}
 }
 

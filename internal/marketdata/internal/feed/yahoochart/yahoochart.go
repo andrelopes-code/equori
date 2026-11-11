@@ -31,6 +31,10 @@ var micSuffixes = map[string]string{
 	"XSES": ".SI",
 }
 
+// yahooExchanges maps the exchange code of a Yahoo search answer to a MIC, for a symbol without a
+// suffix (plan 3 D8). Region-dependent: a US listing is the only case without a suffix.
+var yahooExchanges = map[string]string{"NMS": "XNAS", "NYQ": "XNYS", "PCX": "ARCX"}
+
 // Source reads the daily chart of the Yahoo Finance public API (A222 MQ18).
 type Source struct {
 	client  *http.Client
@@ -152,6 +156,54 @@ func (s Source) Fetch(ctx context.Context, codes []money.Currency, from, to time
 	return out, errors.Join(errs...)
 }
 
+// Search asks the Yahoo search endpoint for the stocks and ETFs matching query. A quote whose
+// exchange resolves to no MIC is skipped (plan 3 D7, D8).
+func (s Source) Search(ctx context.Context, query string, limit int) ([]feed.Listing, error) {
+	endpoint := fmt.Sprintf("%s/v1/finance/search?q=%s&quotesCount=%d&newsCount=0",
+		strings.TrimSuffix(strings.TrimSuffix(s.baseURL, "/"), "/v8/finance/chart"),
+		url.QueryEscape(query), limit)
+
+	body, err := feed.Get(ctx, s.client, endpoint)
+	if err != nil {
+		return nil, fmt.Errorf("search Yahoo: %w", err)
+	}
+
+	var answer struct {
+		Quotes []struct {
+			Exchange  string `json:"exchange"`
+			ShortName string `json:"shortname"`
+			LongName  string `json:"longname"`
+			QuoteType string `json:"quoteType"`
+			Symbol    string `json:"symbol"`
+		} `json:"quotes"`
+	}
+	if err := json.Unmarshal(body, &answer); err != nil {
+		return nil, fmt.Errorf("decode Yahoo search: %w", err)
+	}
+
+	var out []feed.Listing
+
+	for _, q := range answer.Quotes {
+		kind := map[string]string{"EQUITY": "stock", "ETF": "etf"}[q.QuoteType]
+
+		code, mic, ok := resolveSymbol(q.Symbol, q.Exchange)
+		if kind == "" || !ok {
+			continue
+		}
+
+		name := q.LongName
+		if name == "" {
+			name = q.ShortName
+		}
+
+		out = append(out, feed.Listing{
+			Code: code, Name: name, Type: kind, Exchange: mic, Symbol: q.Symbol,
+		})
+	}
+
+	return out, nil
+}
+
 func (s Source) fetchCode(
 	ctx context.Context, code money.Currency, t target, from, to time.Time,
 ) ([]feed.Quote, error) {
@@ -168,6 +220,24 @@ func (s Source) fetchCode(
 	}
 
 	return parse(body, code, t.quote, from, to)
+}
+
+// resolveSymbol returns the code and the MIC of a Yahoo symbol: the suffix after the last `.`
+// names the MIC, and a symbol without one takes it from the exchange code (plan 3 D8).
+func resolveSymbol(symbol, exchange string) (money.Currency, string, bool) {
+	if i := strings.LastIndexByte(symbol, '.'); i >= 0 {
+		for mic, suffix := range micSuffixes {
+			if suffix != "" && suffix == symbol[i:] {
+				return money.Currency(symbol[:i]), mic, true
+			}
+		}
+
+		return "", "", false
+	}
+
+	mic, ok := yahooExchanges[exchange]
+
+	return money.Currency(strings.ReplaceAll(symbol, "-", ".")), mic, ok
 }
 
 func quoteCurrencies(ins []feed.Instrument) map[money.Currency]bool {

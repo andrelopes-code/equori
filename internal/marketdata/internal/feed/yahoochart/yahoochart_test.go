@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"reflect"
 	"slices"
 	"strings"
 	"sync"
@@ -194,6 +195,67 @@ func TestFetchRateLimited(t *testing.T) {
 
 	if !slices.Equal(requests, []string{"/AAPL"}) {
 		t.Fatalf("requests = %v, want [/AAPL]", requests)
+	}
+}
+
+func TestSearch(t *testing.T) {
+	t.Parallel()
+
+	body, err := os.ReadFile("testdata/search.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	status := http.StatusOK
+
+	var query string
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/yahoo/v1/finance/search" {
+			t.Errorf("path = %q, want /yahoo/v1/finance/search", r.URL.Path)
+		}
+
+		query = r.URL.RawQuery
+
+		if status != http.StatusOK {
+			w.WriteHeader(status)
+			return
+		}
+
+		_, _ = w.Write(body)
+	}))
+	t.Cleanup(srv.Close)
+
+	src := yahoochart.New(srv.Client(), srv.URL+"/yahoo/v8/finance/chart")
+
+	got, err := src.Search(t.Context(), "vw ce", 20)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := []feed.Listing{
+		{
+			Code: "VWCE", Name: "Vanguard FTSE All-World UCITS ETF USD Accumulation", Type: "etf",
+			Exchange: "XETR", Symbol: "VWCE.DE",
+		},
+		{Code: "AAPL", Name: "Apple Inc.", Type: "stock", Exchange: "XNAS", Symbol: "AAPL"},
+		{
+			Code: "BRK.B", Name: "Berkshire Hathaway Inc. New", Type: "stock", Exchange: "XNYS",
+			Symbol: "BRK-B",
+		},
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("search = %+v, want %+v", got, want)
+	}
+
+	if query != "q=vw+ce&quotesCount=20&newsCount=0" {
+		t.Fatalf("query = %q", query)
+	}
+
+	status = http.StatusTooManyRequests
+
+	if _, err := src.Search(t.Context(), "vw", 20); err == nil {
+		t.Fatal("429 answer returned no error")
 	}
 }
 
