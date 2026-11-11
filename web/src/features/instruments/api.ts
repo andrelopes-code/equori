@@ -83,6 +83,17 @@ export function latestPriceQuery(
   });
 }
 
+export function catalogQuery(api: Client<paths>, q: string) {
+  return queryOptions({
+    queryKey: [...instrumentKeys.all, "catalog", q] as const,
+    queryFn: async () =>
+      unwrap(
+        await api.GET("/market-data/catalog", { params: { query: { q } } }),
+      ),
+    staleTime: 60_000,
+  });
+}
+
 export function useDefineInstrument() {
   const api = useApi();
   return useMutation({

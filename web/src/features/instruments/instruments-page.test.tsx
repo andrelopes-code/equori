@@ -188,6 +188,95 @@ describe("Instrument catalog", () => {
     expect(new Set(subtypeRequests)).toEqual(new Set(["fixed_income"]));
   });
 
+  it("fills the define dialog from a catalog result", async () => {
+    const sent: unknown[] = [];
+    const fetch = api({
+      "GET /api/v1/market-data/catalog": (req) => {
+        expect(new URL(req.url).searchParams.get("q")).toBe("petr");
+        return json(200, {
+          items: [
+            {
+              code: "PETR4",
+              name: "Petrobras PN",
+              type: "stock",
+              exchange: "BVMF",
+              quote_currency: "BRL",
+              symbol: "PETR4.SA",
+              source: "yahoo_chart",
+              defined: false,
+            },
+            {
+              code: "PETR3",
+              name: "",
+              exchange: "BVMF",
+              quote_currency: "BRL",
+              symbol: "",
+              source: "b3_consolidated",
+              defined: true,
+            },
+          ],
+          unavailable: ["coinbase"],
+        });
+      },
+      "POST /api/v1/instruments": async (req) => {
+        sent.push(await req.json());
+        return json(201, {});
+      },
+    });
+    await renderApp("/instruments", { fetch });
+    const user = userEvent.setup();
+    await user.click(
+      await screen.findByRole("button", {
+        name: catalogEn["instruments.define"],
+      }),
+    );
+    const dialog = await screen.findByRole("dialog");
+    await user.type(
+      within(dialog).getByRole("combobox", {
+        name: catalogEn["instruments.search.label"],
+      }),
+      "petr",
+    );
+    const chosen = await screen.findByRole("option", { name: /PETR4/ });
+    const defined = screen.getByRole("option", { name: /PETR3/ });
+    expect(defined).toHaveAttribute("aria-disabled", "true");
+    expect(defined).toHaveTextContent(catalogEn["instruments.search.defined"]);
+    expect(
+      within(dialog).getByText("No answer from: Coinbase"),
+    ).toBeInTheDocument();
+    await user.click(chosen);
+    expect(within(dialog).getByRole("textbox", { name: /^Code/ })).toHaveValue(
+      "PETR4",
+    );
+    expect(
+      within(dialog).getByRole("textbox", { name: /^Exchange/ }),
+    ).toHaveValue("BVMF");
+    expect(within(dialog).getByRole("textbox", { name: /^Name/ })).toHaveValue(
+      "Petrobras PN",
+    );
+    await user.type(
+      within(dialog).getByRole("textbox", { name: /^Decimal places/ }),
+      "0",
+    );
+    await user.click(
+      within(dialog).getByRole("button", {
+        name: catalogEn["instruments.save"],
+      }),
+    );
+    await waitFor(() => {
+      expect(sent).toEqual([
+        {
+          code: "PETR4",
+          type: "stock",
+          scale: 0,
+          name: "Petrobras PN",
+          quote_currency: "BRL",
+          exchange: "BVMF",
+        },
+      ]);
+    });
+  });
+
   it("shows the problem the server returns for a code in use", async () => {
     const fetch = api({
       "POST /api/v1/instruments": () =>

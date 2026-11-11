@@ -54,6 +54,11 @@ export const instrumentsPtBR: Record<keyof typeof instrumentsEn, string> = {
   "instruments.source.cvm_funds": "CVM",
   "instruments.source.coinbase": "Coinbase",
   "instruments.source.yahoo_chart": "Yahoo Finance",
+  "instruments.search.label": "Buscar por código ou nome",
+  "instruments.search.hint":
+    "Um resultado preenche os campos abaixo; eles continuam editáveis.",
+  "instruments.search.defined": "Já definido",
+  "instruments.search.unavailable": "Sem resposta de: {sources}",
   "instruments.symbol.label": "Símbolo em {source}",
   "instruments.symbol.hint":
     "Vazio usa o símbolo derivado do código e da bolsa.",

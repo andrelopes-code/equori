@@ -54,6 +54,11 @@ export const instrumentsEn = {
   "instruments.source.cvm_funds": "CVM",
   "instruments.source.coinbase": "Coinbase",
   "instruments.source.yahoo_chart": "Yahoo Finance",
+  "instruments.search.label": "Search by code or name",
+  "instruments.search.hint":
+    "A result fills the fields below; they stay editable.",
+  "instruments.search.defined": "Already defined",
+  "instruments.search.unavailable": "No answer from: {sources}",
   "instruments.symbol.label": "Symbol at {source}",
   "instruments.symbol.hint":
     "Empty uses the symbol derived from the code and the exchange.",
