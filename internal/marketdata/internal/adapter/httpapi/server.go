@@ -48,6 +48,9 @@ type Service interface {
 	Refresh(ctx context.Context) error
 	SearchCatalog(ctx context.Context, query string) (domain.CatalogResult, error)
 	ProbeQuote(ctx context.Context, in domain.Instrument) (domain.ProbeResult, error)
+	RecordInstrumentPrices(
+		ctx context.Context, code string, quote money.Currency, points []domain.PricePoint, dryRun bool,
+	) (domain.PriceCounts, error)
 	RequestHistory(ctx context.Context, code string, from time.Time) error
 	Coverage(ctx context.Context, in domain.Instrument) (domain.Coverage, error)
 }

@@ -415,6 +415,39 @@ type InstrumentList struct {
 	Items []Instrument `json:"items"`
 }
 
+// InstrumentPricePoint defines model for InstrumentPricePoint.
+type InstrumentPricePoint struct {
+	Date openapi_types.Date `json:"date"`
+
+	// Value Positive exact decimal with at most 12 decimals (ADR 005).
+	//
+	// Example: 5.4830
+	Value Rate `json:"value"`
+}
+
+// InstrumentPricesInput defines model for InstrumentPricesInput.
+type InstrumentPricesInput struct {
+	// DryRun True stores nothing and returns the counts.
+	DryRun          *bool                  `json:"dry_run,omitempty"`
+	Prices          []InstrumentPricePoint `json:"prices"`
+	QuoteInstrument string                 `json:"quote_instrument"`
+}
+
+// InstrumentPricesResult defines model for InstrumentPricesResult.
+type InstrumentPricesResult struct {
+	// BelowFeed Dates of the request that hold a price of an official source.
+	BelowFeed int `json:"below_feed"`
+
+	// New Dates without a csv price.
+	New int `json:"new"`
+
+	// Replaced Dates whose csv price has another value.
+	Replaced int `json:"replaced"`
+
+	// Unchanged Dates whose csv price has the same value.
+	Unchanged int `json:"unchanged"`
+}
+
 // InstrumentSourceCoverage defines model for InstrumentSourceCoverage.
 type InstrumentSourceCoverage struct {
 	Enabled  bool                `json:"enabled"`
@@ -637,6 +670,9 @@ type EditInstrumentJSONRequestBody = InstrumentEdit
 // RequestInstrumentHistoryJSONRequestBody defines body for RequestInstrumentHistory for application/json ContentType.
 type RequestInstrumentHistoryJSONRequestBody = InstrumentHistoryInput
 
+// RecordInstrumentPricesJSONRequestBody defines body for RecordInstrumentPrices for application/json ContentType.
+type RecordInstrumentPricesJSONRequestBody = InstrumentPricesInput
+
 // PutInstrumentTermsJSONRequestBody defines body for PutInstrumentTerms for application/json ContentType.
 type PutInstrumentTermsJSONRequestBody = FixedIncomeTermsInput
 
@@ -684,6 +720,9 @@ type ServerInterface interface {
 	// RequestInstrumentHistory Request the prices of an instrument since a date from each enabled source that quotes it (A222 MQ8).
 	// (POST /instruments/{code}/history)
 	RequestInstrumentHistory(w http.ResponseWriter, r *http.Request, code string)
+	// RecordInstrumentPrices Record a series of prices of one instrument as source csv, all or nothing, or count what it would change (A222 MQ32).
+	// (POST /instruments/{code}/prices)
+	RecordInstrumentPrices(w http.ResponseWriter, r *http.Request, code string)
 	// GetInstrumentTerms The terms of a fixed income instrument (investments design 4.2).
 	// (GET /instruments/{code}/terms)
 	GetInstrumentTerms(w http.ResponseWriter, r *http.Request, code string)
@@ -992,6 +1031,32 @@ func (siw *ServerInterfaceWrapper) RequestInstrumentHistory(w http.ResponseWrite
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.RequestInstrumentHistory(w, r, code)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RecordInstrumentPrices operation middleware
+func (siw *ServerInterfaceWrapper) RecordInstrumentPrices(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "code" -------------
+	var code string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "code", r.PathValue("code"), &code, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "code", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RecordInstrumentPrices(w, r, code)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1391,6 +1456,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/instruments/{code}/terms", wrapper.GetInstrumentTerms)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/instruments/{code}/terms", wrapper.PutInstrumentTerms)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/instruments/{code}/history", wrapper.RequestInstrumentHistory)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/instruments/{code}/prices", wrapper.RecordInstrumentPrices)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/prices", wrapper.ListPrices)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/prices", wrapper.RecordPrice)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/prices/import", wrapper.ImportPrices)
@@ -2041,6 +2107,101 @@ func (response RequestInstrumentHistory404ApplicationProblemPlusJSONResponse) Vi
 type RequestInstrumentHistory422ApplicationProblemPlusJSONResponse Problem
 
 func (response RequestInstrumentHistory422ApplicationProblemPlusJSONResponse) VisitRequestInstrumentHistoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RecordInstrumentPricesRequestObject struct {
+	Code string `json:"code"`
+	Body *RecordInstrumentPricesJSONRequestBody
+}
+
+type RecordInstrumentPricesResponseObject interface {
+	VisitRecordInstrumentPricesResponse(w http.ResponseWriter) error
+}
+
+type RecordInstrumentPrices200JSONResponse InstrumentPricesResult
+
+func (response RecordInstrumentPrices200JSONResponse) VisitRecordInstrumentPricesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RecordInstrumentPrices400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response RecordInstrumentPrices400ApplicationProblemPlusJSONResponse) VisitRecordInstrumentPricesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RecordInstrumentPrices401ApplicationProblemPlusJSONResponse Problem
+
+func (response RecordInstrumentPrices401ApplicationProblemPlusJSONResponse) VisitRecordInstrumentPricesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RecordInstrumentPrices404ApplicationProblemPlusJSONResponse Problem
+
+func (response RecordInstrumentPrices404ApplicationProblemPlusJSONResponse) VisitRecordInstrumentPricesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RecordInstrumentPrices413ApplicationProblemPlusJSONResponse Problem
+
+func (response RecordInstrumentPrices413ApplicationProblemPlusJSONResponse) VisitRecordInstrumentPricesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(413)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RecordInstrumentPrices422ApplicationProblemPlusJSONResponse Problem
+
+func (response RecordInstrumentPrices422ApplicationProblemPlusJSONResponse) VisitRecordInstrumentPricesResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -2752,6 +2913,9 @@ type StrictServerInterface interface {
 	// RequestInstrumentHistory Request the prices of an instrument since a date from each enabled source that quotes it (A222 MQ8).
 	// (POST /instruments/{code}/history)
 	RequestInstrumentHistory(ctx context.Context, request RequestInstrumentHistoryRequestObject) (RequestInstrumentHistoryResponseObject, error)
+	// RecordInstrumentPrices Record a series of prices of one instrument as source csv, all or nothing, or count what it would change (A222 MQ32).
+	// (POST /instruments/{code}/prices)
+	RecordInstrumentPrices(ctx context.Context, request RecordInstrumentPricesRequestObject) (RecordInstrumentPricesResponseObject, error)
 	// GetInstrumentTerms The terms of a fixed income instrument (investments design 4.2).
 	// (GET /instruments/{code}/terms)
 	GetInstrumentTerms(ctx context.Context, request GetInstrumentTermsRequestObject) (GetInstrumentTermsResponseObject, error)
@@ -3093,6 +3257,39 @@ func (sh *strictHandler) RequestInstrumentHistory(w http.ResponseWriter, r *http
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(RequestInstrumentHistoryResponseObject); ok {
 		if err := validResponse.VisitRequestInstrumentHistoryResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RecordInstrumentPrices operation middleware
+func (sh *strictHandler) RecordInstrumentPrices(w http.ResponseWriter, r *http.Request, code string) {
+	var request RecordInstrumentPricesRequestObject
+
+	request.Code = code
+
+	var body RecordInstrumentPricesJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RecordInstrumentPrices(ctx, request.(RecordInstrumentPricesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RecordInstrumentPrices")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RecordInstrumentPricesResponseObject); ok {
+		if err := validResponse.VisitRecordInstrumentPricesResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

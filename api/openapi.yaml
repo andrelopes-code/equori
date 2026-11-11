@@ -3160,6 +3160,41 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /instruments/{code}/prices:
+    post:
+      tags: [marketdata]
+      operationId: recordInstrumentPrices
+      x-book-role: write
+      summary: Record a series of prices of one instrument as source csv, all or nothing, or count what it would change (A222 MQ32).
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InstrumentPricesInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InstrumentPricesResult"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "413":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
   /prices:
     get:
       tags: [marketdata]
@@ -9832,6 +9867,48 @@ components:
           items:
             type: string
             pattern: "^[a-z0-9_]{2,40}$"
+    InstrumentPricePoint:
+      type: object
+      additionalProperties: false
+      required: [date, value]
+      properties:
+        date:
+          type: string
+          format: date
+        value:
+          $ref: "#/components/schemas/Rate"
+    InstrumentPricesInput:
+      type: object
+      additionalProperties: false
+      required: [quote_instrument, prices]
+      properties:
+        quote_instrument:
+          type: string
+        prices:
+          type: array
+          minItems: 1
+          maxItems: 20000
+          items:
+            $ref: "#/components/schemas/InstrumentPricePoint"
+        dry_run:
+          type: boolean
+          description: True stores nothing and returns the counts.
+    InstrumentPricesResult:
+      type: object
+      required: [new, replaced, unchanged, below_feed]
+      properties:
+        new:
+          type: integer
+          description: Dates without a csv price.
+        replaced:
+          type: integer
+          description: Dates whose csv price has another value.
+        unchanged:
+          type: integer
+          description: Dates whose csv price has the same value.
+        below_feed:
+          type: integer
+          description: Dates of the request that hold a price of an official source.
     InstrumentHistoryInput:
       type: object
       additionalProperties: false

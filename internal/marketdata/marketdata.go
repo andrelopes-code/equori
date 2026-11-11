@@ -24,6 +24,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/domain"
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
+	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/platform/locale"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/registry"
@@ -138,6 +139,12 @@ func (m *Module) Tools() tool.Group {
 
 func (m *Module) RegisterRoutes(mux *http.ServeMux, log *slog.Logger) {
 	httpapi.NewServer(m.listHolidays, m.calendarList, m, log).Register(mux)
+}
+
+// BodyLimits raises the request body limit of a series import: 20,000 prices of 60 bytes
+// pass the default 1 MiB, and the limit is 2 MiB (A222 MQ32).
+func (m *Module) BodyLimits() []httpserver.BodyLimit {
+	return []httpserver.BodyLimit{{Pattern: "POST /api/v1/instruments/{code}/prices", Bytes: 2 << 20}}
 }
 
 func (m *Module) listHolidays(ctx context.Context, calendar string, year int) ([]httpapi.Holiday, error) {

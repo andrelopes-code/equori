@@ -298,7 +298,10 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 
 	return &App{
 		Handler: httpserver.Middleware(root, log,
-			slices.Concat(ledgerModule.BodyLimits(), ingestionModule.BodyLimits(), reportingModule.BodyLimits())...),
+			slices.Concat(
+				ledgerModule.BodyLimits(), ingestionModule.BodyLimits(), reportingModule.BodyLimits(),
+				marketdataModule.BodyLimits(),
+			)...),
 		Dispatcher: dispatcher,
 		Tools:      tools,
 		Identity:   identityModule,

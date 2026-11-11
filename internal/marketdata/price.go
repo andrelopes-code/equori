@@ -14,6 +14,8 @@ import (
 	platformpg "github.com/andrelopes-code/equori/internal/platform/postgres"
 )
 
+const rateMessage = "value must be a positive decimal with at most 12 decimals and 18 integer digits"
+
 // RecordPrices stores ps in one transaction; an existing (instrument, quote, date,
 // source) gets the new value (P8 amendment A60).
 func (m *Module) RecordPrices(ctx context.Context, ps []Price) error {
@@ -47,6 +49,103 @@ func (m *Module) ImportPrices(ctx context.Context, content []byte) (int, error) 
 	}
 
 	return len(ps), m.upsert(ctx, ps)
+}
+
+// RecordInstrumentPrices records a series of one instrument as source csv, all or nothing, or
+// only counts what it would change (A222 MQ32).
+func (m *Module) RecordInstrumentPrices(
+	ctx context.Context, code string, quote money.Currency, points []domain.PricePoint, dryRun bool,
+) (domain.PriceCounts, error) {
+	if _, err := m.Instrument(ctx, code); err != nil {
+		return domain.PriceCounts{}, err
+	}
+
+	if len(points) == 0 {
+		return domain.PriceCounts{}, &domain.FieldError{Field: "prices", Message: "must not be empty"}
+	}
+
+	ps := make([]Price, len(points))
+	firstOf := make(map[time.Time]int, len(points))
+
+	for i, pt := range points {
+		if !domain.StorableRate(pt.Value) {
+			return domain.PriceCounts{}, &domain.FieldError{Field: fmt.Sprintf("prices[%d]", i), Message: rateMessage}
+		}
+
+		if j, ok := firstOf[pt.Date]; ok {
+			return domain.PriceCounts{}, &domain.FieldError{
+				Field: fmt.Sprintf("prices[%d]", i), Message: fmt.Sprintf("date repeats prices[%d]", j),
+			}
+		}
+
+		firstOf[pt.Date] = i
+		ps[i] = Price{Instrument: money.Currency(code), Quote: quote, Date: pt.Date, Value: pt.Value, Source: domain.SourceCSV}
+	}
+
+	if err := m.validatePrice(ctx, ps[0], map[money.Currency]Instrument{}); err != nil {
+		return domain.PriceCounts{}, err
+	}
+
+	counts, err := m.priceCounts(ctx, ps)
+	if err != nil || dryRun {
+		return counts, err
+	}
+
+	return counts, m.upsert(ctx, ps)
+}
+
+// priceCounts reads the prices of the dates of ps before any write (D17).
+func (m *Module) priceCounts(ctx context.Context, ps []Price) (domain.PriceCounts, error) {
+	dates := make([]time.Time, len(ps))
+	for i, p := range ps {
+		dates[i] = p.Date
+	}
+
+	rows, err := m.q.ListPricesOnDates(ctx, postgres.ListPricesOnDatesParams{
+		Instrument: string(ps[0].Instrument), QuoteInstrument: string(ps[0].Quote), Dates: dates,
+	})
+	if err != nil {
+		return domain.PriceCounts{}, fmt.Errorf("list prices on dates: %w", err)
+	}
+
+	csvValue := map[time.Time]string{}
+	belowFeed := map[time.Time]bool{}
+
+	for _, r := range rows {
+		switch r.Source {
+		case domain.SourceCSV:
+			v, err := platformpg.RateOf(r.Value)
+			if err != nil {
+				return domain.PriceCounts{}, err
+			}
+
+			csvValue[r.Date] = v.Reduced().String()
+		case domain.SourceManual, domain.SourceAccrual:
+		default:
+			belowFeed[r.Date] = !m.unofficial.Has(r.Source) || belowFeed[r.Date]
+		}
+	}
+
+	var counts domain.PriceCounts
+
+	for _, p := range ps {
+		stored, ok := csvValue[p.Date]
+
+		switch {
+		case !ok:
+			counts.New++
+		case stored == p.Value.Reduced().String():
+			counts.Unchanged++
+		default:
+			counts.Replaced++
+		}
+
+		if belowFeed[p.Date] {
+			counts.BelowFeed++
+		}
+	}
+
+	return counts, nil
 }
 
 func (m *Module) validatePrice(ctx context.Context, p Price, checked map[money.Currency]Instrument) error {

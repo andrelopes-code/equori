@@ -236,6 +236,54 @@ func (q *Queries) ListChosenPrices(ctx context.Context, arg ListChosenPricesPara
 	return items, nil
 }
 
+const listPricesOnDates = `-- name: ListPricesOnDates :many
+SELECT
+    date,
+    source,
+    value
+FROM
+    marketdata_price
+WHERE
+    instrument = $1
+    AND quote_instrument = $2
+    AND date = ANY ($3::date[])
+ORDER BY
+    date,
+    source
+`
+
+type ListPricesOnDatesParams struct {
+	Instrument      string
+	QuoteInstrument string
+	Dates           []time.Time
+}
+
+type ListPricesOnDatesRow struct {
+	Date   time.Time
+	Source string
+	Value  pgtype.Numeric
+}
+
+func (q *Queries) ListPricesOnDates(ctx context.Context, arg ListPricesOnDatesParams) ([]ListPricesOnDatesRow, error) {
+	rows, err := q.db.Query(ctx, listPricesOnDates, arg.Instrument, arg.QuoteInstrument, arg.Dates)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListPricesOnDatesRow
+	for rows.Next() {
+		var i ListPricesOnDatesRow
+		if err := rows.Scan(&i.Date, &i.Source, &i.Value); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const priceOnOrBefore = `-- name: PriceOnOrBefore :many
 SELECT
     instrument, quote_instrument, date, value, source, priority, recorded_at

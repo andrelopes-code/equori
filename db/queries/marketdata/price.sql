@@ -151,3 +151,18 @@ GROUP BY
     source
 ORDER BY
     source;
+
+-- name: ListPricesOnDates :many
+SELECT
+    date,
+    source,
+    value
+FROM
+    marketdata_price
+WHERE
+    instrument = @instrument
+    AND quote_instrument = @quote_instrument
+    AND date = ANY (@dates::date[])
+ORDER BY
+    date,
+    source;

@@ -3,6 +3,7 @@ package httpapi
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 
 	openapi_types "github.com/oapi-codegen/runtime/types"
@@ -13,6 +14,8 @@ import (
 
 // maxImportBytes stays under the default request body limit of 1 MiB.
 const maxImportBytes = 1 << 20
+
+const rateMessage = "value must be a positive decimal with at most 12 decimals and 18 integer digits"
 
 func (s *Server) RecordPrice(ctx context.Context, req RecordPriceRequestObject) (RecordPriceResponseObject, error) {
 	b := req.Body
@@ -57,6 +60,33 @@ func (s *Server) ImportPrices(ctx context.Context, req ImportPricesRequestObject
 
 		return ImportPrices200JSONResponse{Recorded: n}, nil
 	}
+}
+
+func (s *Server) RecordInstrumentPrices(
+	ctx context.Context, req RecordInstrumentPricesRequestObject,
+) (RecordInstrumentPricesResponseObject, error) {
+	b := req.Body
+
+	points := make([]domain.PricePoint, len(b.Prices))
+	for i, p := range b.Prices {
+		value, err := money.ParseRate(p.Value)
+		if err != nil {
+			return nil, &domain.FieldError{Field: fmt.Sprintf("prices[%d]", i), Message: rateMessage}
+		}
+
+		points[i] = domain.PricePoint{Date: p.Date.Time, Value: value}
+	}
+
+	counts, err := s.svc.RecordInstrumentPrices(
+		ctx, req.Code, money.Currency(b.QuoteInstrument), points, b.DryRun != nil && *b.DryRun,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return RecordInstrumentPrices200JSONResponse{
+		New: counts.New, Replaced: counts.Replaced, Unchanged: counts.Unchanged, BelowFeed: counts.BelowFeed,
+	}, nil
 }
 
 func (s *Server) ListPrices(ctx context.Context, req ListPricesRequestObject) (ListPricesResponseObject, error) {

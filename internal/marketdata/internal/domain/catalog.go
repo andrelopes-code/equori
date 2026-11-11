@@ -37,3 +37,14 @@ type ProbeResult struct {
 	Quotes    []ProbeQuote
 	Available []string
 }
+
+// PricePoint is one price of a series of one instrument.
+type PricePoint struct {
+	Date  time.Time
+	Value money.Rate
+}
+
+// PriceCounts is what a series changes among the csv prices of its dates (A222 MQ32).
+type PriceCounts struct {
+	New, Replaced, Unchanged, BelowFeed int
+}

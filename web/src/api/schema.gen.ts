@@ -1863,6 +1863,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/instruments/{code}/prices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record a series of prices of one instrument as source csv, all or nothing, or count what it would change (A222 MQ32). */
+        post: operations["recordInstrumentPrices"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/prices": {
         parameters: {
             query?: never;
@@ -5563,6 +5580,27 @@ export interface components {
             quotes: components["schemas"]["ProbeQuote"][];
             /** @description The disabled sources that would quote the instrument. */
             available: string[];
+        };
+        InstrumentPricePoint: {
+            /** Format: date */
+            date: string;
+            value: components["schemas"]["Rate"];
+        };
+        InstrumentPricesInput: {
+            quote_instrument: string;
+            prices: components["schemas"]["InstrumentPricePoint"][];
+            /** @description True stores nothing and returns the counts. */
+            dry_run?: boolean;
+        };
+        InstrumentPricesResult: {
+            /** @description Dates without a csv price. */
+            new: number;
+            /** @description Dates whose csv price has another value. */
+            replaced: number;
+            /** @description Dates whose csv price has the same value. */
+            unchanged: number;
+            /** @description Dates of the request that hold a price of an official source. */
+            below_feed: number;
         };
         InstrumentHistoryInput: {
             /** Format: date */
@@ -10160,6 +10198,37 @@ export interface operations {
             400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    recordInstrumentPrices: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InstrumentPricesInput"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstrumentPricesResult"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            413: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
         };
     };
