@@ -3,36 +3,20 @@
 package apitest
 
 import (
-	"bytes"
-	"context"
-	"encoding/json/v2"
-	"fmt"
 	"io"
-	"io/fs"
 	"log/slog"
-	"maps"
-	"mime/multipart"
 	"net/http"
-	"net/http/cookiejar"
 	"net/http/httptest"
 	"os"
-	"strings"
-	"sync"
 	"sync/atomic"
 	"testing"
-	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/andrelopes-code/equori/internal/identity"
 	"github.com/andrelopes-code/equori/internal/instance"
-	"github.com/andrelopes-code/equori/internal/platform/clock"
-	"github.com/andrelopes-code/equori/internal/platform/llm"
-	"github.com/andrelopes-code/equori/internal/platform/locale"
 	"github.com/andrelopes-code/equori/internal/platform/logring"
-	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/postgres/pgtest"
-	"github.com/andrelopes-code/equori/internal/platform/tool"
 	"github.com/andrelopes-code/equori/internal/server"
 )
 
@@ -51,164 +35,6 @@ type Harness struct {
 	handler atomic.Pointer[http.Handler]
 	// Profile is the language, region and base currency of the owner of New.
 	Profile Profile
-}
-
-// logBuffer keeps every log line of the test, for assertions on what is never logged.
-type logBuffer struct {
-	mu  sync.Mutex
-	buf bytes.Buffer
-}
-
-func (b *logBuffer) Write(p []byte) (int, error) {
-	b.mu.Lock()
-	defer b.mu.Unlock()
-
-	return b.buf.Write(p)
-}
-
-func (b *logBuffer) String() string {
-	b.mu.Lock()
-	defer b.mu.Unlock()
-
-	return b.buf.String()
-}
-
-// Option configures the harness: the server configuration and the profile of the owner of New.
-type Option func(*options)
-
-type options struct {
-	cfg     server.Config
-	profile Profile
-}
-
-// Today fixes the instance clock at 12:00 UTC of date (YYYY-MM-DD).
-func Today(date string) Option {
-	d, err := time.Parse(time.DateOnly, date)
-	if err != nil {
-		panic(err)
-	}
-
-	clk := clock.New(func() time.Time { return d.Add(12 * time.Hour) })
-
-	return func(o *options) { o.cfg.Clock = &clk }
-}
-
-// Clock replaces the instance clock with now.
-func Clock(now func() time.Time) Option {
-	clk := clock.New(now)
-	return func(o *options) { o.cfg.Clock = &clk }
-}
-
-// IdentityClock replaces the clock of sessions and second factors with now.
-func IdentityClock(now func() time.Time) Option {
-	return func(o *options) { o.cfg.IdentityNow = now }
-}
-
-// ExtraTools adds tool groups to the registry and the chat set.
-func ExtraTools(groups ...tool.Group) Option {
-	return func(o *options) { o.cfg.ExtraTools = append(o.cfg.ExtraTools, groups...) }
-}
-
-// LLM configures providers for the whole instance through server.Config.LLMProviders (BK24).
-func LLM(providers ...llm.Provider) Option {
-	return func(o *options) { o.cfg.LLMProviders = providers }
-}
-
-// LLMWait replaces the timer the chat waits on for a transient cooldown to end (design 2026-10-26 E6).
-func LLMWait(f func(context.Context, time.Time) error) Option {
-	return func(o *options) { o.cfg.LLMWait = f }
-}
-
-// LLMFactory builds the providers members configure, in place of the real adapters.
-func LLMFactory(f func(api, baseURL, key string) llm.Provider) Option {
-	return func(o *options) { o.cfg.LLMFactory = f }
-}
-
-// Web serves fsys as the single-page application outside /api/.
-func Web(fsys fs.FS) Option {
-	return func(o *options) { o.cfg.Web = fsys }
-}
-
-// WebDevPort redirects pages to a Vite server on port of the request's host.
-func WebDevPort(port int) Option {
-	return func(o *options) { o.cfg.WebDevPort = port }
-}
-
-// APIDocs serves the API reference at /docs and the contract at /openapi.yaml.
-func APIDocs() Option {
-	return func(o *options) { o.cfg.APIDocs = true }
-}
-
-// FakeDumpContent is what FakeDump writes.
-const FakeDumpContent = "equori test dump\n"
-
-// FakeDump writes FakeDumpContent to path with mode 0600, in place of pg_dump.
-func FakeDump(_ context.Context, path string) error {
-	return os.WriteFile(path, []byte(FakeDumpContent), 0o600)
-}
-
-// Backups turns automatic backups on in dir, with the encrypted copy folder copyDir ("" for none);
-// dump replaces pg_dump.
-func Backups(dir, copyDir string, dump func(ctx context.Context, path string) error) Option {
-	return func(o *options) {
-		o.cfg.Instance.BackupDir, o.cfg.Instance.CopyDir, o.cfg.Instance.Dump = dir, copyDir, dump
-	}
-}
-
-// Version sets the version of the running app.
-func Version(v string) Option {
-	return func(o *options) { o.cfg.Version = v }
-}
-
-// ReleaseURL replaces the latest-release address of the version check.
-func ReleaseURL(url string) Option {
-	return func(o *options) { o.cfg.Instance.ReleaseURL = url }
-}
-
-// Distribution sets EQUORI_DISTRIBUTION and the mode of the instance (A194).
-func Distribution(variable, mode string) Option {
-	return func(o *options) { o.cfg.Instance.Distribution, o.cfg.Instance.Mode = variable, mode }
-}
-
-// SecretKey is the integration key Pluggy sets (32 bytes).
-const SecretKey = "equori-test-secret-key-32-bytes!" //nolint:gosec // G101: a fixed key for test databases only
-
-// Aggregator sends the requests of aggregator id to url and enables integrations with SecretKey.
-func Aggregator(id, url string) Option {
-	return func(o *options) {
-		if o.cfg.AggregatorURLs == nil {
-			o.cfg.AggregatorURLs = map[string]string{}
-		}
-
-		o.cfg.AggregatorURLs[id], o.cfg.SecretKey = url, SecretKey
-	}
-}
-
-// PriceFeeds enables the price feeds ids against the base URLs of a test server.
-func PriceFeeds(ids []string, urls map[string]string) Option {
-	return func(o *options) { o.cfg.PriceFeeds, o.cfg.FeedURLs = ids, urls }
-}
-
-// FeedBounds bounds one source in a catalog search and in a probe.
-func FeedBounds(catalog, probe time.Duration) Option {
-	return func(o *options) { o.cfg.CatalogBound, o.cfg.ProbeBound = catalog, probe }
-}
-
-// IndexFeeds enables the index feeds ids against the base URLs of a test server.
-func IndexFeeds(ids []string, urls map[string]string) Option {
-	return func(o *options) {
-		o.cfg.IndexFeeds = ids
-		if o.cfg.FeedURLs == nil {
-			o.cfg.FeedURLs = map[string]string{}
-		}
-
-		maps.Copy(o.cfg.FeedURLs, urls)
-	}
-}
-
-// SecretKeys replaces the integration keys; pass it after Aggregator.
-func SecretKeys(current, previous string) Option {
-	return func(o *options) { o.cfg.SecretKey, o.cfg.PreviousSecretKey = current, previous }
 }
 
 // New starts the application and logs in owner@example.com as Client.
@@ -246,6 +72,35 @@ func Empty(t testing.TB, opts ...Option) *Harness {
 	return h
 }
 
+// Restart replaces the application on the same database and address, as a restart with
+// another configuration does; sessions stay valid.
+func (h *Harness) Restart(opts ...Option) {
+	h.t.Helper()
+	h.start(opts)
+}
+
+// Close stops the server after the requests in flight finish, so a test can read what a
+// request left behind after its client went away; the harness serves no request afterwards.
+func (h *Harness) Close() { h.server.Close() }
+
+// Logger returns the logger the server writes through; the diagnostic file reads its warnings.
+func (h *Harness) Logger() *slog.Logger { return h.log }
+
+// Logs returns every log line written so far, at debug level and above.
+func (h *Harness) Logs() string { return h.logs.String() }
+
+// T returns the test the harness reports to.
+func (h *Harness) T() testing.TB { return h.t }
+
+// Dispatch delivers every pending outbox event, as the dispatcher goroutine does in production.
+func (h *Harness) Dispatch() {
+	h.t.Helper()
+
+	if _, err := h.App.Dispatcher.DispatchPending(h.t.Context()); err != nil {
+		h.t.Fatal(err)
+	}
+}
+
 // start builds the application and returns the profile the options select.
 func (h *Harness) start(opts []Option) Profile {
 	h.t.Helper()
@@ -272,403 +127,4 @@ func (h *Harness) start(opts []Option) Profile {
 	h.handler.Store(&app.Handler)
 
 	return o.profile
-}
-
-// Restart replaces the application on the same database and address, as a restart with
-// another configuration does; sessions stay valid.
-func (h *Harness) Restart(opts ...Option) {
-	h.t.Helper()
-	h.start(opts)
-}
-
-// Close stops the server after the requests in flight finish, so a test can read what a
-// request left behind after its client went away; the harness serves no request afterwards.
-func (h *Harness) Close() { h.server.Close() }
-
-// Logger returns the logger the server writes through; the diagnostic file reads its warnings.
-func (h *Harness) Logger() *slog.Logger { return h.log }
-
-// Logs returns every log line written so far, at debug level and above.
-func (h *Harness) Logs() string { return h.logs.String() }
-
-// T returns the test the harness reports to.
-func (h *Harness) T() testing.TB { return h.t }
-
-// Login is LoginAs for a Brazilian member with BRL as base currency.
-func (h *Harness) Login(email string) *http.Client {
-	h.t.Helper()
-	return h.LoginAs(email, locale.Locale{Language: "pt", Region: "BR"}, "BRL")
-}
-
-// LoginAs creates the member, runs the outbox so the ledger provisions it, and returns a client with its session.
-func (h *Harness) LoginAs(email string, l locale.Locale, base money.Currency) *http.Client {
-	h.t.Helper()
-	return h.login(email, identity.RoleAdmin, l, base)
-}
-
-// LoginMember is Login for a member with the role member.
-func (h *Harness) LoginMember(email string) *http.Client {
-	h.t.Helper()
-	return h.login(email, identity.RoleMember, locale.Locale{Language: "pt", Region: "BR"}, "BRL")
-}
-
-func (h *Harness) login(email, role string, l locale.Locale, base money.Currency) *http.Client {
-	h.t.Helper()
-
-	if _, err := h.App.Identity.CreateMember(h.t.Context(), email, Password, role, l, base); err != nil {
-		h.t.Fatal(err)
-	}
-
-	h.Dispatch()
-
-	return h.SignIn(email)
-}
-
-// SignIn returns a new client with the session of POST /api/v1/session for an existing member.
-func (h *Harness) SignIn(email string) *http.Client {
-	h.t.Helper()
-
-	jar, err := cookiejar.New(nil)
-	if err != nil {
-		h.t.Fatal(err)
-	}
-
-	c := &http.Client{Jar: jar}
-	if r := h.Call(c, http.MethodPost, "/api/v1/session", map[string]string{"email": email, "password": Password}); r.Status != http.StatusNoContent {
-		h.t.Fatalf("login status %d: %s", r.Status, r.Body)
-	}
-
-	return c
-}
-
-// JoinAs creates a member with the instance role member and its own book, adds a membership of
-// booksID with role, logs in and switches the session to booksID (HA4).
-func (h *Harness) JoinAs(email string, booksID int64, role string) *http.Client {
-	h.t.Helper()
-
-	c := h.LoginMember(email)
-
-	if _, err := h.Pool.Exec(h.t.Context(),
-		`INSERT INTO identity_membership (member_id, books_id, role) VALUES ($1, $2, $3)`, h.MemberIDOf(email), booksID, role); err != nil {
-		h.t.Fatal(err)
-	}
-
-	if r := h.Call(c, http.MethodPut, "/api/v1/session/books", map[string]int64{"books_id": booksID}); r.Status != http.StatusNoContent {
-		h.t.Fatalf("switch books status %d: %s", r.Status, r.Body)
-	}
-
-	return c
-}
-
-// BooksIDOf returns the books ID that the member with email logs in to (HA3).
-func (h *Harness) BooksIDOf(email string) int64 {
-	h.t.Helper()
-
-	var id int64
-	if err := h.Pool.QueryRow(h.t.Context(),
-		`SELECT ms.books_id FROM identity_membership ms JOIN identity_member m ON m.id = ms.member_id
-		WHERE m.email = $1 ORDER BY ms.last_active_at DESC, ms.books_id LIMIT 1`, email).Scan(&id); err != nil {
-		h.t.Fatal(err)
-	}
-
-	return id
-}
-
-// MemberIDOf returns the member ID of email.
-func (h *Harness) MemberIDOf(email string) int64 {
-	h.t.Helper()
-
-	var id int64
-	if err := h.Pool.QueryRow(h.t.Context(), `SELECT id FROM identity_member WHERE email = $1`, email).Scan(&id); err != nil {
-		h.t.Fatal(err)
-	}
-
-	return id
-}
-
-// OwnerID returns BooksIDOf("owner@example.com").
-func (h *Harness) OwnerID() int64 {
-	h.t.Helper()
-	return h.BooksIDOf("owner@example.com")
-}
-
-// Dispatch delivers every pending outbox event, as the dispatcher goroutine does in production.
-func (h *Harness) Dispatch() {
-	h.t.Helper()
-
-	if _, err := h.App.Dispatcher.DispatchPending(h.t.Context()); err != nil {
-		h.t.Fatal(err)
-	}
-}
-
-type Response struct {
-	Status int
-	Header http.Header
-	Body   []byte
-}
-
-func (r Response) Decode(t testing.TB, v any) {
-	t.Helper()
-
-	if err := json.Unmarshal(r.Body, v); err != nil {
-		t.Fatalf("decode %s: %v", r.Body, err)
-	}
-}
-
-func (h *Harness) Call(c *http.Client, method, path string, body any) Response {
-	h.t.Helper()
-
-	var reader io.Reader
-	if body != nil {
-		b, err := json.Marshal(body)
-		if err != nil {
-			h.t.Fatal(err)
-		}
-
-		reader = strings.NewReader(string(b))
-	}
-
-	req, err := http.NewRequestWithContext(h.t.Context(), method, h.server.URL+path, reader)
-	if err != nil {
-		h.t.Fatal(err)
-	}
-
-	if body != nil {
-		req.Header.Set("Content-Type", "application/json")
-	}
-
-	return h.send(c, req)
-}
-
-// URL is the base URL of the test server, for requests the JSON helpers cannot build.
-func (h *Harness) URL() string { return h.server.URL }
-
-// Send executes a request built by the test with the given client.
-func (h *Harness) Send(c *http.Client, req *http.Request) Response {
-	h.t.Helper()
-	return h.send(c, req)
-}
-
-func (h *Harness) send(c *http.Client, req *http.Request) Response {
-	h.t.Helper()
-
-	resp, err := c.Do(req) //nolint:gosec // tests address the harness's own httptest server
-	if err != nil {
-		h.t.Fatal(err)
-	}
-	defer resp.Body.Close()
-
-	b, err := io.ReadAll(resp.Body)
-	if err != nil {
-		h.t.Fatal(err)
-	}
-
-	return Response{Status: resp.StatusCode, Header: resp.Header, Body: b}
-}
-
-// Upload posts content as the multipart/form-data field "file".
-func (h *Harness) Upload(path, fileName string, content []byte) Response {
-	h.t.Helper()
-	return h.UploadAs(h.Client, path, nil, fileName, content)
-}
-
-// UploadWith posts content as the field "file" with other form fields.
-func (h *Harness) UploadWith(path string, fields map[string]string, fileName string, content []byte) Response {
-	h.t.Helper()
-	return h.UploadAs(h.Client, path, fields, fileName, content)
-}
-
-// UploadAs posts a multipart form with the given client.
-func (h *Harness) UploadAs(c *http.Client, path string, fields map[string]string, fileName string, content []byte) Response {
-	h.t.Helper()
-	var body bytes.Buffer
-
-	w := multipart.NewWriter(&body)
-	for k, v := range fields {
-		if err := w.WriteField(k, v); err != nil {
-			h.t.Fatal(err)
-		}
-	}
-
-	part, err := w.CreateFormFile("file", fileName)
-	if err != nil {
-		h.t.Fatal(err)
-	}
-
-	if _, err := part.Write(content); err != nil {
-		h.t.Fatal(err)
-	}
-
-	if err := w.Close(); err != nil {
-		h.t.Fatal(err)
-	}
-
-	req, err := http.NewRequestWithContext(h.t.Context(), http.MethodPost, h.server.URL+path, &body)
-	if err != nil {
-		h.t.Fatal(err)
-	}
-
-	req.Header.Set("Content-Type", w.FormDataContentType())
-
-	return h.send(c, req)
-}
-
-func (h *Harness) Do(method, path string, body any) Response {
-	h.t.Helper()
-	return h.Call(h.Client, method, path, body)
-}
-
-// MustDo fails the test unless the response has status; out, when not nil, receives the body.
-func (h *Harness) MustDo(method, path string, body any, status int, out any) {
-	h.t.Helper()
-
-	r := h.Do(method, path, body)
-	if r.Status != status {
-		h.t.Fatalf("%s %s = %d, want %d: %s", method, path, r.Status, status, r.Body)
-	}
-
-	if out != nil {
-		r.Decode(h.t, out)
-	}
-}
-
-// ExpectProblem checks an RFC 9457 response; field, when not empty, must be the first field error.
-func (h *Harness) ExpectProblem(r Response, status int, code, field string) {
-	h.t.Helper()
-
-	if r.Status != status {
-		h.t.Fatalf("status = %d, want %d: %s", r.Status, status, r.Body)
-	}
-
-	var p struct {
-		Code   string `json:"code"`
-		Errors []struct {
-			Field string `json:"field"`
-		} `json:"errors"`
-	}
-	r.Decode(h.t, &p)
-
-	if p.Code != code {
-		h.t.Fatalf("code = %q, want %q: %s", p.Code, code, r.Body)
-	}
-
-	if field != "" && (len(p.Errors) == 0 || p.Errors[0].Field != field) {
-		h.t.Fatalf("field errors = %+v, want %q", p.Errors, field)
-	}
-}
-
-// Account creates an account in the profile's base currency and returns its id.
-func (h *Harness) Account(name, class, kind string, extra map[string]any) string {
-	h.t.Helper()
-
-	body := map[string]any{"name": name, "class": class, "currency": string(h.Profile.Base)}
-	if kind != "" {
-		body["kind"] = kind
-	}
-
-	for k, v := range extra {
-		body[k] = v
-	}
-
-	var out struct {
-		ID string `json:"id"`
-	}
-	h.MustDo(http.MethodPost, "/api/v1/accounts", body, http.StatusCreated, &out)
-
-	return out.ID
-}
-
-// Record posts a transaction and returns its id.
-func (h *Harness) Record(date string, postings ...map[string]any) string {
-	h.t.Helper()
-	var out struct {
-		ID string `json:"id"`
-	}
-	h.MustDo(http.MethodPost, "/api/v1/transactions", map[string]any{"date": date, "description": "test", "postings": postings}, http.StatusCreated, &out)
-
-	return out.ID
-}
-
-func BRL(amount int64) map[string]any { return map[string]any{"amount": amount, "currency": "BRL"} }
-
-func Posting(account string, amount int64) map[string]any {
-	return map[string]any{"account_id": account, "amount": BRL(amount)}
-}
-
-// Card creates a credit card account with a billing cycle rule from 2026-01.
-func (h *Harness) Card(name string, closingDay, dueDay int, assignment string) string {
-	h.t.Helper()
-	id := h.Account(name, "liability", "credit_card", nil)
-	h.MustDo(http.MethodPost, "/api/v1/accounts/"+id+"/billing-cycle-rules", map[string]any{
-		"effective_from": "2026-01", "closing_day": closingDay, "due_day": dueDay, "closing_day_assignment": assignment,
-	}, http.StatusCreated, nil)
-
-	return id
-}
-
-// Transaction returns the decoded transaction.
-func (h *Harness) Transaction(id string) TransactionView {
-	h.t.Helper()
-	var out TransactionView
-	h.MustDo(http.MethodGet, "/api/v1/transactions/"+id, nil, http.StatusOK, &out)
-
-	return out
-}
-
-type TransactionView struct {
-	ID          string        `json:"id"`
-	Version     int           `json:"version"`
-	Date        string        `json:"date"`
-	Description string        `json:"description"`
-	Origin      string        `json:"origin"`
-	Postings    []PostingView `json:"postings"`
-}
-
-type PostingView struct {
-	ID        string `json:"id"`
-	AccountID string `json:"account_id"`
-	Amount    struct {
-		Amount int64 `json:"amount"`
-	} `json:"amount"`
-	Statement   string `json:"statement"`
-	Status      string `json:"status"`
-	CardRole    string `json:"card_role"`
-	Installment *struct {
-		Number int    `json:"number"`
-		Count  int    `json:"count"`
-		PlanID string `json:"plan_id"`
-	} `json:"installment"`
-}
-
-// Rows runs a query and returns one string per row, the columns joined by a space.
-func (h *Harness) Rows(sql string, args ...any) []string {
-	h.t.Helper()
-
-	rows, err := h.Pool.Query(h.t.Context(), sql, args...)
-	if err != nil {
-		h.t.Fatalf("query: %v", err)
-	}
-	defer rows.Close()
-
-	var out []string
-
-	for rows.Next() {
-		values, err := rows.Values()
-		if err != nil {
-			h.t.Fatalf("scan: %v", err)
-		}
-
-		parts := make([]string, len(values))
-		for i, v := range values {
-			parts[i] = fmt.Sprint(v)
-		}
-
-		out = append(out, strings.Join(parts, " "))
-	}
-
-	if err := rows.Err(); err != nil {
-		h.t.Fatalf("rows: %v", err)
-	}
-
-	return out
 }
