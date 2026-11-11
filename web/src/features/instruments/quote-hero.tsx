@@ -64,14 +64,20 @@ export function QuoteHero({ reading, quote, loading, stale }: QuoteHeroProps) {
             {formatSignedBasisPoints(change, locale)}
           </StatCardDelta>
         )}
-        {reading?.reference != null && (
+        {reading !== null && (
           <StatCardComparison>
-            {t(
-              reading.basis === "previous"
-                ? "instrument.quote.vsPrevious"
-                : "instrument.quote.sinceStart",
-              { date: formatDate(reading.reference.date, locale) },
-            )}
+            {reading.reference === null
+              ? t(
+                  reading.basis === "start"
+                    ? "instrument.quote.rangeStart"
+                    : "instrument.quote.firstQuote",
+                )
+              : t(
+                  reading.basis === "previous"
+                    ? "instrument.quote.vsPrevious"
+                    : "instrument.quote.sinceStart",
+                  { date: formatDate(reading.reference.date, locale) },
+                )}
           </StatCardComparison>
         )}
       </StatCardFigure>

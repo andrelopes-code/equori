@@ -102,7 +102,6 @@ export const instrumentsEn = {
   "instruments.coverage.rangeSource":
     "Quotes from {first} to {last} · {count} quotes · {source}",
   "instruments.coverage.none": "No quote",
-  "instruments.coverage.stale": "The last quote, of {date}, is late.",
   "instruments.coverage.age": "Last quote {age}",
   "instruments.history.load": "Load history since…",
   "instruments.history.title": "Load price history",
@@ -188,6 +187,8 @@ export const instrumentsEn = {
   "instrument.quote.latest": "Quote of {date} · {source}",
   "instrument.quote.vsPrevious": "against the quote of {date}",
   "instrument.quote.sinceStart": "since {date}, start of the range",
+  "instrument.quote.rangeStart": "start of the range",
+  "instrument.quote.firstQuote": "first quote, none before it",
   "instrument.quote.stale": "Overdue",
   "instrument.quote.none": "No quote recorded.",
   "instrument.interval.week":

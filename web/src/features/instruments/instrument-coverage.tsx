@@ -1,4 +1,3 @@
-import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
 import { Stack } from "@slotted/react/stack";
 import { Text } from "@slotted/react/typography";
 import { useState } from "react";
@@ -72,17 +71,6 @@ export function InstrumentCoverage({
             },
           )}
         </Text>
-      )}
-      {coverage.stale && coverage.last !== null && (
-        <Alert tone="warning">
-          <AlertContent>
-            <AlertDescription>
-              {t("instruments.coverage.stale", {
-                date: formatDate(coverage.last, locale),
-              })}
-            </AlertDescription>
-          </AlertContent>
-        </Alert>
       )}
       {age !== null && (
         <Text tone="muted">

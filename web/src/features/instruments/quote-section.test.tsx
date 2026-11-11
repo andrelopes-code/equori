@@ -21,6 +21,18 @@ describe("Quote section", () => {
     expect(hero).toHaveTextContent("against the quote of 10/14/2026");
   });
 
+  it("keeps the comparison line when there is nothing to compare", async () => {
+    const fetch = api({
+      "GET /api/v1/prices": () =>
+        json(200, { interval: "day", items: [petr("2026-10-16", "38.45")] }),
+    });
+    await renderApp("/instruments/PETR4", { fetch });
+
+    expect(
+      await screen.findByText(catalogEn["instrument.quote.firstQuote"]),
+    ).toBeInTheDocument();
+  });
+
   it("sums the range in four figures", async () => {
     await renderApp("/instruments/PETR4", { fetch: api() });
     const figures = await screen.findByRole("region", {

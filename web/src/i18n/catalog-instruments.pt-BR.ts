@@ -102,7 +102,6 @@ export const instrumentsPtBR: Record<keyof typeof instrumentsEn, string> = {
   "instruments.coverage.rangeSource":
     "Cotações de {first} a {last} · {count} cotações · {source}",
   "instruments.coverage.none": "Nenhuma cotação",
-  "instruments.coverage.stale": "A última cotação, de {date}, está atrasada.",
   "instruments.coverage.age": "Última cotação {age}",
   "instruments.history.load": "Carregar histórico desde…",
   "instruments.history.title": "Carregar histórico de cotações",
@@ -190,6 +189,8 @@ export const instrumentsPtBR: Record<keyof typeof instrumentsEn, string> = {
   "instrument.quote.latest": "Cotação de {date} · {source}",
   "instrument.quote.vsPrevious": "em relação à cotação de {date}",
   "instrument.quote.sinceStart": "desde {date}, início do intervalo",
+  "instrument.quote.rangeStart": "início do intervalo",
+  "instrument.quote.firstQuote": "primeira cotação, sem anterior",
   "instrument.quote.stale": "Atrasada",
   "instrument.quote.none": "Nenhuma cotação registrada.",
   "instrument.interval.week":

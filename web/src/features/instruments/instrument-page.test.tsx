@@ -302,7 +302,8 @@ describe("Instrument page", () => {
       ]);
     });
 
-    it("MQ35: warns that the last quote is late", async () => {
+    // The warning is a tag on the quote, not an alert that moves the page.
+    it("MQ35: marks the last quote as late", async () => {
       const fetch = withCoverage({
         ...base,
         last: "2026-10-12",
@@ -312,8 +313,9 @@ describe("Instrument page", () => {
       await renderApp("/instruments/PETR4", { fetch });
 
       expect(
-        await screen.findByText("The last quote, of 10/12/2026, is late."),
+        await screen.findByText(catalogEn["instrument.quote.stale"]),
       ).toBeInTheDocument();
+      expect(document.querySelector('[data-ui="alert"]')).toBeNull();
     });
 
     it("MQ35: states the age of the last quote when no source is enabled", async () => {
