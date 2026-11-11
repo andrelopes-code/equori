@@ -28,13 +28,16 @@ pre-commit:
         piped: true
         jobs:
           - name: sql-format
-            glob: "db/queries/**/*.sql"
+            glob:
+              - "db/queries/**/*.sql"
+              - "internal/*/postgres/queries/*.sql"
             run: for f in {staged_files}; do web/node_modules/.bin/sql-formatter --fix "$f" || exit 1; done
             stage_fixed: true
 
           - name: gen-check
             glob:
               - "db/queries/**"
+              - "internal/*/postgres/queries/**"
               - "db/migrations/**"
               - "sqlc.yaml"
               - "api/openapi.yaml"

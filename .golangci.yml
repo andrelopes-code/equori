@@ -28,9 +28,11 @@ linters:
           list-mode: strict
           files:
             - "**/internal/domain/**"
+            - "**/internal/*/domain/**"
           allow:
             - $gostd
             - github.com/andrelopes-code/equori/internal/*/internal/domain
+            - github.com/andrelopes-code/equori/internal/*/domain
             - github.com/andrelopes-code/equori/internal/platform/money
             - github.com/andrelopes-code/equori/internal/platform/registry
             - github.com/andrelopes-code/equori/internal/platform/textfold
@@ -39,6 +41,7 @@ linters:
           list-mode: lax
           files:
             - "**/internal/app/**"
+            - "**/internal/*/app/**"
           deny:
             - pkg: net/http
               desc: app must not depend on transport; use adapter/httpapi
@@ -48,6 +51,14 @@ linters:
               desc: app reaches data through ports; use adapter/postgres
             - pkg: github.com/andrelopes-code/equori/internal/*/internal/adapter
               desc: inverted dependency; adapter imports app, never the reverse
+            - pkg: github.com/andrelopes-code/equori/internal/*/httpapi
+              desc: inverted dependency; httpapi imports app, never the reverse
+            - pkg: github.com/andrelopes-code/equori/internal/*/postgres
+              desc: inverted dependency; postgres imports app, never the reverse
+            - pkg: github.com/andrelopes-code/equori/internal/*/toolapi
+              desc: inverted dependency; toolapi imports app, never the reverse
+            - pkg: github.com/andrelopes-code/equori/internal/*/llmapi
+              desc: inverted dependency; llmapi imports app, never the reverse
             - pkg: github.com/andrelopes-code/equori/internal/platform/problem
               desc: HTTP error mapping belongs to adapter/httpapi (ADR 004)
         platform:
