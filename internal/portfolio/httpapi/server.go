@@ -1,3 +1,4 @@
+// Package httpapi serves the portfolio operations of api/openapi.yaml.
 package httpapi
 
 import (
@@ -19,8 +20,6 @@ import (
 
 const BaseURL = "/api/v1"
 
-var _ StrictServerInterface = (*Server)(nil)
-
 type Server struct {
 	svc  *app.Service
 	errs httpserver.ErrorWriter
@@ -30,18 +29,37 @@ func NewServer(svc *app.Service, log *slog.Logger) *Server {
 	return &Server{svc: svc, errs: httpserver.ErrorWriter{Log: log, Map: ToProblem}}
 }
 
+// Register lists every route of the portfolio operations; each handler sits in this file.
 func (s *Server) Register(mux *http.ServeMux) {
-	strict := NewStrictHandlerWithOptions(s, nil, StrictHTTPServerOptions{
-		RequestErrorHandlerFunc:  s.errs.WriteRequestError,
-		ResponseErrorHandlerFunc: s.errs.Write,
-	})
-	HandlerWithOptions(strict, StdHTTPServerOptions{BaseURL: BaseURL, BaseRouter: mux, ErrorHandlerFunc: s.errs.WriteRequestError})
+	mux.HandleFunc("GET "+BaseURL+"/positions",
+		httpserver.Handle(s.errs, http.StatusOK, s.listPositions))
+	mux.HandleFunc("GET "+BaseURL+"/realized-results",
+		httpserver.Handle(s.errs, http.StatusOK, s.listRealizedResults))
+	mux.HandleFunc("GET "+BaseURL+"/income-events",
+		httpserver.Handle(s.errs, http.StatusOK, s.listIncomeEvents))
+	mux.HandleFunc("GET "+BaseURL+"/investment-income-types",
+		httpserver.Handle(s.errs, http.StatusOK, s.listInvestmentIncomeTypes))
+	mux.HandleFunc("GET "+BaseURL+"/reports/return",
+		httpserver.Handle(s.errs, http.StatusOK, s.getReturn))
+	mux.HandleFunc("GET "+BaseURL+"/reports/allocation",
+		httpserver.Handle(s.errs, http.StatusOK, s.getAllocation))
+	mux.HandleFunc("GET "+BaseURL+"/reports/net-worth",
+		httpserver.Handle(s.errs, http.StatusOK, s.getNetWorth))
+	mux.HandleFunc("GET "+BaseURL+"/reports/net-worth/days",
+		httpserver.Handle(s.errs, http.StatusOK, s.getNetWorthDays))
+	mux.HandleFunc("GET "+BaseURL+"/instrument-subtypes",
+		httpserver.Handle(s.errs, http.StatusOK, s.listInstrumentSubtypes))
 }
 
-func (s *Server) ListPositions(ctx context.Context, req ListPositionsRequestObject) (ListPositionsResponseObject, error) {
-	ps, err := s.svc.Positions(ctx, auth.MustBooksID(ctx), req.Params.Date.Time, valueIn(req.Params.ValueIn))
+func (s *Server) listPositions(ctx context.Context, r *http.Request, _ httpserver.None) (PositionList, error) {
+	params, err := httpserver.Query[ListPositionsParams](r)
 	if err != nil {
-		return nil, err
+		return PositionList{}, err
+	}
+
+	ps, err := s.svc.Positions(ctx, auth.MustBooksID(ctx), params.Date.Time, valueIn(params.ValueIn))
+	if err != nil {
+		return PositionList{}, err
 	}
 
 	items := make([]Position, len(ps))
@@ -66,25 +84,30 @@ func (s *Server) ListPositions(ctx context.Context, req ListPositionsRequestObje
 		}
 	}
 
-	warnings, err := s.svc.QuoteWarnings(ctx, auth.MustBooksID(ctx), req.Params.Date.Time)
+	warnings, err := s.svc.QuoteWarnings(ctx, auth.MustBooksID(ctx), params.Date.Time)
 	if err != nil {
-		return nil, err
+		return PositionList{}, err
 	}
 
-	return ListPositions200JSONResponse{Items: items, QuoteWarnings: quoteWarnings(warnings)}, nil
+	return PositionList{Items: items, QuoteWarnings: quoteWarnings(warnings)}, nil
 }
 
-func (s *Server) ListRealizedResults(ctx context.Context, req ListRealizedResultsRequestObject) (ListRealizedResultsResponseObject, error) {
-	booksID := auth.MustBooksID(ctx)
-
-	from, to, err := s.svc.TaxYear(ctx, booksID, req.Params.Year)
+func (s *Server) listRealizedResults(ctx context.Context, r *http.Request, _ httpserver.None) (RealizedResultList, error) {
+	params, err := httpserver.Query[ListRealizedResultsParams](r)
 	if err != nil {
-		return nil, err
+		return RealizedResultList{}, err
 	}
 
-	rs, err := s.svc.RealizedResults(ctx, booksID, req.Params.Year)
+	booksID := auth.MustBooksID(ctx)
+
+	from, to, err := s.svc.TaxYear(ctx, booksID, params.Year)
 	if err != nil {
-		return nil, err
+		return RealizedResultList{}, err
+	}
+
+	rs, err := s.svc.RealizedResults(ctx, booksID, params.Year)
+	if err != nil {
+		return RealizedResultList{}, err
 	}
 
 	items := make([]RealizedResult, len(rs))
@@ -96,20 +119,25 @@ func (s *Server) ListRealizedResults(ctx context.Context, req ListRealizedResult
 		}
 	}
 
-	return ListRealizedResults200JSONResponse{From: date(from), To: date(to.AddDate(0, 0, -1)), Items: items}, nil
+	return RealizedResultList{From: date(from), To: date(to.AddDate(0, 0, -1)), Items: items}, nil
 }
 
-func (s *Server) ListIncomeEvents(ctx context.Context, req ListIncomeEventsRequestObject) (ListIncomeEventsResponseObject, error) {
-	booksID := auth.MustBooksID(ctx)
-
-	from, to, err := s.svc.TaxYear(ctx, booksID, req.Params.Year)
+func (s *Server) listIncomeEvents(ctx context.Context, r *http.Request, _ httpserver.None) (IncomeEventList, error) {
+	params, err := httpserver.Query[ListIncomeEventsParams](r)
 	if err != nil {
-		return nil, err
+		return IncomeEventList{}, err
 	}
 
-	es, err := s.svc.IncomeEvents(ctx, booksID, req.Params.Year)
+	booksID := auth.MustBooksID(ctx)
+
+	from, to, err := s.svc.TaxYear(ctx, booksID, params.Year)
 	if err != nil {
-		return nil, err
+		return IncomeEventList{}, err
+	}
+
+	es, err := s.svc.IncomeEvents(ctx, booksID, params.Year)
+	if err != nil {
+		return IncomeEventList{}, err
 	}
 
 	items := make([]IncomeEvent, len(es))
@@ -121,13 +149,13 @@ func (s *Server) ListIncomeEvents(ctx context.Context, req ListIncomeEventsReque
 		}
 	}
 
-	return ListIncomeEvents200JSONResponse{From: date(from), To: date(to.AddDate(0, 0, -1)), Items: items}, nil
+	return IncomeEventList{From: date(from), To: date(to.AddDate(0, 0, -1)), Items: items}, nil
 }
 
-func (s *Server) ListInvestmentIncomeTypes(ctx context.Context, _ ListInvestmentIncomeTypesRequestObject) (ListInvestmentIncomeTypesResponseObject, error) {
+func (s *Server) listInvestmentIncomeTypes(ctx context.Context, _ *http.Request, _ httpserver.None) (IncomeTypeList, error) {
 	types, err := s.svc.IncomeTypes(ctx, auth.MustBooksID(ctx))
 	if err != nil {
-		return nil, err
+		return IncomeTypeList{}, err
 	}
 
 	items := make([]IncomeType, len(types))
@@ -135,52 +163,62 @@ func (s *Server) ListInvestmentIncomeTypes(ctx context.Context, _ ListInvestment
 		items[i] = IncomeType(t)
 	}
 
-	return ListInvestmentIncomeTypes200JSONResponse{Items: items}, nil
+	return IncomeTypeList{Items: items}, nil
 }
 
-func (s *Server) ListInstrumentSubtypes(ctx context.Context, req ListInstrumentSubtypesRequestObject) (ListInstrumentSubtypesResponseObject, error) {
-	subtypes, err := s.svc.Subtypes(ctx, auth.MustBooksID(ctx), string(req.Params.Type))
+func (s *Server) listInstrumentSubtypes(ctx context.Context, r *http.Request, _ httpserver.None) (SubtypeList, error) {
+	params, err := httpserver.Query[ListInstrumentSubtypesParams](r)
 	if err != nil {
-		return nil, err
+		return SubtypeList{}, err
 	}
 
-	return ListInstrumentSubtypes200JSONResponse{Items: subtypes}, nil
+	subtypes, err := s.svc.Subtypes(ctx, auth.MustBooksID(ctx), string(params.Type))
+	if err != nil {
+		return SubtypeList{}, err
+	}
+
+	return SubtypeList{Items: subtypes}, nil
 }
 
-func (s *Server) GetReturn(ctx context.Context, req GetReturnRequestObject) (GetReturnResponseObject, error) {
+func (s *Server) getReturn(ctx context.Context, r *http.Request, _ httpserver.None) (ReturnReport, error) {
+	params, err := httpserver.Query[GetReturnParams](r)
+	if err != nil {
+		return ReturnReport{}, err
+	}
+
 	var in money.Currency
-	if req.Params.ValueIn != nil {
-		in = money.Currency(*req.Params.ValueIn)
+	if params.ValueIn != nil {
+		in = money.Currency(*params.ValueIn)
 	}
 
 	var account uuid.UUID
-	if req.Params.AccountId != nil {
-		account = *req.Params.AccountId
+	if params.AccountId != nil {
+		account = *params.AccountId
 	}
 
 	var index string
-	if req.Params.Index != nil {
-		index = *req.Params.Index
+	if params.Index != nil {
+		index = *params.Index
 	}
 
-	r, err := s.svc.Return(ctx, auth.MustBooksID(ctx), account, req.Params.From.Time, req.Params.To.Time, in, index)
+	res, err := s.svc.Return(ctx, auth.MustBooksID(ctx), account, params.From.Time, params.To.Time, in, index)
 	if err != nil {
-		return nil, err
+		return ReturnReport{}, err
 	}
 
-	out := GetReturn200JSONResponse{
-		AnnualBp: r.AnnualBP,
-		Opening:  toMoney(r.Opening),
-		Closing:  toMoney(r.Closing),
-		Flows:    make([]ReturnFlow, len(r.Flows)),
-		Profile:  ReturnReportProfile(r.Profile),
-		PeriodBp: r.PeriodBP,
+	out := ReturnReport{
+		AnnualBp: res.AnnualBP,
+		Opening:  toMoney(res.Opening),
+		Closing:  toMoney(res.Closing),
+		Flows:    make([]ReturnFlow, len(res.Flows)),
+		Profile:  ReturnReportProfile(res.Profile),
+		PeriodBp: res.PeriodBP,
 	}
-	for i, f := range r.Flows {
+	for i, f := range res.Flows {
 		out.Flows[i] = ReturnFlow{Date: date(f.Date), Amount: toMoney(f.Amount)}
 	}
 
-	if b := r.Benchmark; b != nil {
+	if b := res.Benchmark; b != nil {
 		out.Benchmark = &ReturnBenchmark{
 			Index:     b.Index,
 			From:      date(b.From),
@@ -204,19 +242,19 @@ func (s *Server) GetReturn(ctx context.Context, req GetReturnRequestObject) (Get
 		}
 	}
 
-	if r.Index != "" {
-		out.Index = &r.Index
+	if res.Index != "" {
+		out.Index = &res.Index
 	}
 
-	if r.UnavailableReason != "" {
-		out.UnavailableReason = &r.UnavailableReason
+	if res.UnavailableReason != "" {
+		out.UnavailableReason = &res.UnavailableReason
 	}
 
-	if e := r.Excluded; e != nil {
+	if e := res.Excluded; e != nil {
 		out.Excluded = &ReturnExcluded{Income: excludedOf(e.Income), Expense: excludedOf(e.Expense)}
 	}
 
-	if i := r.Inflation; i != nil {
+	if i := res.Inflation; i != nil {
 		out.Inflation = &ReturnInflation{
 			Index:    i.Index,
 			From:     date(i.From),
@@ -238,36 +276,51 @@ func excludedOf(t *app.ExcludedTotal) *ReturnExcludedPart {
 	return &ReturnExcludedPart{Amount: toMoney(t.Amount), Categories: t.Categories}
 }
 
-func (s *Server) GetAllocation(ctx context.Context, req GetAllocationRequestObject) (GetAllocationResponseObject, error) {
-	r, err := s.svc.Allocation(ctx, auth.MustBooksID(ctx), req.Params.Date.Time, string(req.Params.By), valueIn(req.Params.ValueIn))
+func (s *Server) getAllocation(ctx context.Context, r *http.Request, _ httpserver.None) (Allocation, error) {
+	params, err := httpserver.Query[GetAllocationParams](r)
 	if err != nil {
-		return nil, err
+		return Allocation{}, err
 	}
 
-	out := GetAllocation200JSONResponse{Total: toMoney(r.Total), Groups: make([]AllocationGroup, len(r.Groups))}
-	for i, g := range r.Groups {
+	res, err := s.svc.Allocation(ctx, auth.MustBooksID(ctx), params.Date.Time, string(params.By), valueIn(params.ValueIn))
+	if err != nil {
+		return Allocation{}, err
+	}
+
+	out := Allocation{Total: toMoney(res.Total), Groups: make([]AllocationGroup, len(res.Groups))}
+	for i, g := range res.Groups {
 		out.Groups[i] = AllocationGroup{Key: g.Key, Value: toMoney(g.Value), ShareBp: g.ShareBP}
 	}
 
 	return out, nil
 }
 
-func (s *Server) GetNetWorth(ctx context.Context, req GetNetWorthRequestObject) (GetNetWorthResponseObject, error) {
-	r, err := s.svc.NetWorth(ctx, auth.MustBooksID(ctx), req.Params.Date.Time, valueIn(req.Params.ValueIn))
+func (s *Server) getNetWorth(ctx context.Context, r *http.Request, _ httpserver.None) (NetWorth, error) {
+	params, err := httpserver.Query[GetNetWorthParams](r)
 	if err != nil {
-		return nil, err
+		return NetWorth{}, err
 	}
 
-	return GetNetWorth200JSONResponse{Assets: toMoney(r.Assets), Liabilities: toMoney(r.Liabilities), Net: toMoney(r.Net)}, nil
+	res, err := s.svc.NetWorth(ctx, auth.MustBooksID(ctx), params.Date.Time, valueIn(params.ValueIn))
+	if err != nil {
+		return NetWorth{}, err
+	}
+
+	return NetWorth{Assets: toMoney(res.Assets), Liabilities: toMoney(res.Liabilities), Net: toMoney(res.Net)}, nil
 }
 
-func (s *Server) GetNetWorthDays(ctx context.Context, req GetNetWorthDaysRequestObject) (GetNetWorthDaysResponseObject, error) {
-	days, err := s.svc.NetWorthDays(ctx, auth.MustBooksID(ctx), req.Params.From.Time, req.Params.To.Time, valueIn(req.Params.ValueIn))
+func (s *Server) getNetWorthDays(ctx context.Context, r *http.Request, _ httpserver.None) (NetWorthDays, error) {
+	params, err := httpserver.Query[GetNetWorthDaysParams](r)
 	if err != nil {
-		return nil, err
+		return NetWorthDays{}, err
 	}
 
-	out := GetNetWorthDays200JSONResponse{Items: make([]NetWorthDay, 0, len(days))}
+	days, err := s.svc.NetWorthDays(ctx, auth.MustBooksID(ctx), params.From.Time, params.To.Time, valueIn(params.ValueIn))
+	if err != nil {
+		return NetWorthDays{}, err
+	}
+
+	out := NetWorthDays{Items: make([]NetWorthDay, 0, len(days))}
 	for _, d := range days {
 		out.Items = append(out.Items, NetWorthDay{
 			Date:        date(d.Date),
