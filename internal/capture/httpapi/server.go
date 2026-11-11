@@ -20,8 +20,6 @@ import (
 
 const BaseURL = "/api/v1"
 
-var _ StrictServerInterface = (*Server)(nil)
-
 type Server struct {
 	svc  *app.Service
 	errs httpserver.ErrorWriter
@@ -31,12 +29,14 @@ func NewServer(svc *app.Service, log *slog.Logger) *Server {
 	return &Server{svc: svc, errs: httpserver.ErrorWriter{Log: log, Map: toProblem}}
 }
 
+// Register lists every route of the capture operations; each handler sits in this file.
 func (s *Server) Register(mux *http.ServeMux) {
-	strict := NewStrictHandlerWithOptions(s, nil, StrictHTTPServerOptions{
-		RequestErrorHandlerFunc:  s.errs.WriteRequestError,
-		ResponseErrorHandlerFunc: s.errs.Write,
-	})
-	HandlerWithOptions(strict, StdHTTPServerOptions{BaseURL: BaseURL, BaseRouter: mux, ErrorHandlerFunc: s.errs.WriteRequestError})
+	mux.HandleFunc("POST "+BaseURL+"/capture/preview",
+		httpserver.Handle(s.errs, http.StatusOK, s.previewCapture))
+	mux.HandleFunc("POST "+BaseURL+"/capture/suggestions",
+		httpserver.Handle(s.errs, http.StatusOK, s.suggestCaptureCategories))
+	mux.HandleFunc("POST "+BaseURL+"/transactions/category-suggestions",
+		httpserver.Handle(s.errs, http.StatusOK, s.suggestTransactionCategories))
 }
 
 // toProblem maps the module's errors to the codes declared in api/openapi.yaml (ADR 004).
@@ -68,21 +68,21 @@ func toProblem(err error) (problem.Details, bool) {
 	return problem.Details{}, false
 }
 
-func (s *Server) PreviewCapture(ctx context.Context, req PreviewCaptureRequestObject) (PreviewCaptureResponseObject, error) {
+func (s *Server) previewCapture(ctx context.Context, body CapturePreviewInput) (CapturePreview, error) {
 	var def uuid.UUID
-	if req.Body.DefaultAccountId != nil {
-		def = *req.Body.DefaultAccountId
+	if body.DefaultAccountId != nil {
+		def = *body.DefaultAccountId
 	}
 
 	var reference time.Time
-	if req.Body.ReferenceDate != nil {
-		y, m, d := req.Body.ReferenceDate.Date()
+	if body.ReferenceDate != nil {
+		y, m, d := body.ReferenceDate.Date()
 		reference = time.Date(y, m, d, 0, 0, 0, 0, time.UTC)
 	}
 
-	lines, err := s.svc.Preview(ctx, auth.MustBooksID(ctx), req.Body.Text, def, reference)
+	lines, err := s.svc.Preview(ctx, auth.MustBooksID(ctx), body.Text, def, reference)
 	if err != nil {
-		return nil, err
+		return CapturePreview{}, err
 	}
 
 	out := make([]CaptureLine, len(lines))
@@ -90,7 +90,7 @@ func (s *Server) PreviewCapture(ctx context.Context, req PreviewCaptureRequestOb
 		out[i] = toLine(l)
 	}
 
-	return PreviewCapture200JSONResponse{Lines: out}, nil
+	return CapturePreview{Lines: out}, nil
 }
 
 func toLine(l app.Line) CaptureLine {
@@ -158,18 +158,18 @@ func optUUID(id uuid.UUID) *openapi_types.UUID {
 	return &id
 }
 
-func (s *Server) SuggestCaptureCategories(ctx context.Context, req SuggestCaptureCategoriesRequestObject) (SuggestCaptureCategoriesResponseObject, error) {
-	items := make([]app.SuggestItem, len(req.Body.Items))
-	for i, it := range req.Body.Items {
+func (s *Server) suggestCaptureCategories(ctx context.Context, body CaptureSuggestionInput) (CaptureSuggestions, error) {
+	items := make([]app.SuggestItem, len(body.Items))
+	for i, it := range body.Items {
 		items[i] = app.SuggestItem{Description: it.Description, Class: string(it.Kind)}
 	}
 
 	suggestions, available, err := s.svc.Suggest(ctx, auth.MustBooksID(ctx), items)
 	if err != nil {
-		return nil, err
+		return CaptureSuggestions{}, err
 	}
 
-	out := SuggestCaptureCategories200JSONResponse{Available: available, Items: make([]CaptureSuggestion, len(suggestions))}
+	out := CaptureSuggestions{Available: available, Items: make([]CaptureSuggestion, len(suggestions))}
 	for i, sg := range suggestions {
 		if sg.CategoryID == uuid.Nil {
 			continue
@@ -186,15 +186,15 @@ func (s *Server) SuggestCaptureCategories(ctx context.Context, req SuggestCaptur
 	return out, nil
 }
 
-func (s *Server) SuggestTransactionCategories(ctx context.Context, req SuggestTransactionCategoriesRequestObject) (SuggestTransactionCategoriesResponseObject, error) {
-	suggestions, available, err := s.svc.SuggestForTransactions(ctx, auth.MustBooksID(ctx), req.Body.TransactionIds)
+func (s *Server) suggestTransactionCategories(ctx context.Context, body TransactionSuggestionInput) (TransactionSuggestions, error) {
+	suggestions, available, err := s.svc.SuggestForTransactions(ctx, auth.MustBooksID(ctx), body.TransactionIds)
 	if err != nil {
-		return nil, err
+		return TransactionSuggestions{}, err
 	}
 
-	out := SuggestTransactionCategories200JSONResponse{Available: available, Items: make([]TransactionSuggestion, len(suggestions))}
+	out := TransactionSuggestions{Available: available, Items: make([]TransactionSuggestion, len(suggestions))}
 	for i, sg := range suggestions {
-		out.Items[i].TransactionId = req.Body.TransactionIds[i]
+		out.Items[i].TransactionId = body.TransactionIds[i]
 
 		if sg.CategoryID == uuid.Nil {
 			continue
