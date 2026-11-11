@@ -105,28 +105,38 @@ func readQueries(t *testing.T) []query {
 
 	var queries []query
 
-	root := filepath.Join("..", "..", "db", "queries")
+	roots := []string{filepath.Join("..", "..", "db", "queries"), filepath.Join("..", "..", "internal")}
 
-	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
-		if err != nil || d.IsDir() || filepath.Ext(path) != ".sql" {
-			return err
-		}
+	for _, root := range roots {
+		err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+			if os.IsNotExist(err) && path == root {
+				return filepath.SkipDir
+			}
 
-		body, err := os.ReadFile(path)
+			if err != nil || d.IsDir() || filepath.Ext(path) != ".sql" {
+				return err
+			}
+
+			if _, ok := queryModule(path); !ok {
+				return nil
+			}
+
+			body, err := os.ReadFile(path)
+			if err != nil {
+				return err
+			}
+
+			queries = append(queries, splitQueries(path, string(body))...)
+
+			return nil
+		})
 		if err != nil {
-			return err
+			t.Fatal(err)
 		}
-
-		queries = append(queries, splitQueries(path, string(body))...)
-
-		return nil
-	})
-	if err != nil {
-		t.Fatal(err)
 	}
 
 	if len(queries) == 0 {
-		t.Fatal("no query found under db/queries")
+		t.Fatal("no query found under internal/<module>/postgres/queries or db/queries")
 	}
 
 	return queries
@@ -142,7 +152,8 @@ func splitQueries(file, body string) []query {
 			end = marks[i+1][0]
 		}
 
-		key := filepath.Base(filepath.Dir(file)) + "." + body[m[2]:m[3]]
+		module, _ := queryModule(file)
+		key := module + "." + body[m[2]:m[3]]
 		queries = append(queries, query{file: file, key: key, text: body[m[0]:end]})
 	}
 
@@ -165,4 +176,20 @@ func firstScopedTable(text string, scoped map[string]bool) (string, bool) {
 	slices.Sort(found)
 
 	return found[0], true
+}
+
+// queryModule names the module that owns a query file: internal/<module>/postgres/queries/x.sql
+// or db/queries/<module>/x.sql.
+func queryModule(file string) (string, bool) {
+	dir := filepath.ToSlash(filepath.Dir(file))
+
+	if i := strings.Index(dir, "/postgres/queries"); i >= 0 {
+		return filepath.Base(dir[:i]), true
+	}
+
+	if strings.Contains(dir, "db/queries/") {
+		return filepath.Base(dir), true
+	}
+
+	return "", false
 }

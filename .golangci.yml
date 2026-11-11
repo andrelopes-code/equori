@@ -49,15 +49,93 @@ linters:
               desc: app reaches data through ports; use adapter/postgres
             - pkg: github.com/jackc/pgx
               desc: app reaches data through ports; use adapter/postgres
-            - pkg: github.com/andrelopes-code/equori/internal/*/internal/adapter
-              desc: inverted dependency; adapter imports app, never the reverse
-            - pkg: github.com/andrelopes-code/equori/internal/*/httpapi
+            - pkg: github.com/andrelopes-code/equori/internal/assistant/httpapi
               desc: inverted dependency; httpapi imports app, never the reverse
-            - pkg: github.com/andrelopes-code/equori/internal/*/postgres
+            - pkg: github.com/andrelopes-code/equori/internal/assistant/postgres
               desc: inverted dependency; postgres imports app, never the reverse
-            - pkg: github.com/andrelopes-code/equori/internal/*/toolapi
+            - pkg: github.com/andrelopes-code/equori/internal/assistant/toolapi
               desc: inverted dependency; toolapi imports app, never the reverse
-            - pkg: github.com/andrelopes-code/equori/internal/*/llmapi
+            - pkg: github.com/andrelopes-code/equori/internal/assistant/llmapi
+              desc: inverted dependency; llmapi imports app, never the reverse
+            - pkg: github.com/andrelopes-code/equori/internal/capture/httpapi
+              desc: inverted dependency; httpapi imports app, never the reverse
+            - pkg: github.com/andrelopes-code/equori/internal/capture/postgres
+              desc: inverted dependency; postgres imports app, never the reverse
+            - pkg: github.com/andrelopes-code/equori/internal/capture/toolapi
+              desc: inverted dependency; toolapi imports app, never the reverse
+            - pkg: github.com/andrelopes-code/equori/internal/capture/llmapi
+              desc: inverted dependency; llmapi imports app, never the reverse
+            - pkg: github.com/andrelopes-code/equori/internal/classification/httpapi
+              desc: inverted dependency; httpapi imports app, never the reverse
+            - pkg: github.com/andrelopes-code/equori/internal/classification/postgres
+              desc: inverted dependency; postgres imports app, never the reverse
+            - pkg: github.com/andrelopes-code/equori/internal/classification/toolapi
+              desc: inverted dependency; toolapi imports app, never the reverse
+            - pkg: github.com/andrelopes-code/equori/internal/classification/llmapi
+              desc: inverted dependency; llmapi imports app, never the reverse
+            - pkg: github.com/andrelopes-code/equori/internal/identity/httpapi
+              desc: inverted dependency; httpapi imports app, never the reverse
+            - pkg: github.com/andrelopes-code/equori/internal/identity/postgres
+              desc: inverted dependency; postgres imports app, never the reverse
+            - pkg: github.com/andrelopes-code/equori/internal/identity/toolapi
+              desc: inverted dependency; toolapi imports app, never the reverse
+            - pkg: github.com/andrelopes-code/equori/internal/identity/llmapi
+              desc: inverted dependency; llmapi imports app, never the reverse
+            - pkg: github.com/andrelopes-code/equori/internal/ingestion/httpapi
+              desc: inverted dependency; httpapi imports app, never the reverse
+            - pkg: github.com/andrelopes-code/equori/internal/ingestion/postgres
+              desc: inverted dependency; postgres imports app, never the reverse
+            - pkg: github.com/andrelopes-code/equori/internal/ingestion/toolapi
+              desc: inverted dependency; toolapi imports app, never the reverse
+            - pkg: github.com/andrelopes-code/equori/internal/ingestion/llmapi
+              desc: inverted dependency; llmapi imports app, never the reverse
+            - pkg: github.com/andrelopes-code/equori/internal/instance/httpapi
+              desc: inverted dependency; httpapi imports app, never the reverse
+            - pkg: github.com/andrelopes-code/equori/internal/instance/postgres
+              desc: inverted dependency; postgres imports app, never the reverse
+            - pkg: github.com/andrelopes-code/equori/internal/instance/toolapi
+              desc: inverted dependency; toolapi imports app, never the reverse
+            - pkg: github.com/andrelopes-code/equori/internal/instance/llmapi
+              desc: inverted dependency; llmapi imports app, never the reverse
+            - pkg: github.com/andrelopes-code/equori/internal/ledger/httpapi
+              desc: inverted dependency; httpapi imports app, never the reverse
+            - pkg: github.com/andrelopes-code/equori/internal/ledger/postgres
+              desc: inverted dependency; postgres imports app, never the reverse
+            - pkg: github.com/andrelopes-code/equori/internal/ledger/toolapi
+              desc: inverted dependency; toolapi imports app, never the reverse
+            - pkg: github.com/andrelopes-code/equori/internal/ledger/llmapi
+              desc: inverted dependency; llmapi imports app, never the reverse
+            - pkg: github.com/andrelopes-code/equori/internal/marketdata/httpapi
+              desc: inverted dependency; httpapi imports app, never the reverse
+            - pkg: github.com/andrelopes-code/equori/internal/marketdata/postgres
+              desc: inverted dependency; postgres imports app, never the reverse
+            - pkg: github.com/andrelopes-code/equori/internal/marketdata/toolapi
+              desc: inverted dependency; toolapi imports app, never the reverse
+            - pkg: github.com/andrelopes-code/equori/internal/marketdata/llmapi
+              desc: inverted dependency; llmapi imports app, never the reverse
+            - pkg: github.com/andrelopes-code/equori/internal/planning/httpapi
+              desc: inverted dependency; httpapi imports app, never the reverse
+            - pkg: github.com/andrelopes-code/equori/internal/planning/postgres
+              desc: inverted dependency; postgres imports app, never the reverse
+            - pkg: github.com/andrelopes-code/equori/internal/planning/toolapi
+              desc: inverted dependency; toolapi imports app, never the reverse
+            - pkg: github.com/andrelopes-code/equori/internal/planning/llmapi
+              desc: inverted dependency; llmapi imports app, never the reverse
+            - pkg: github.com/andrelopes-code/equori/internal/portfolio/httpapi
+              desc: inverted dependency; httpapi imports app, never the reverse
+            - pkg: github.com/andrelopes-code/equori/internal/portfolio/postgres
+              desc: inverted dependency; postgres imports app, never the reverse
+            - pkg: github.com/andrelopes-code/equori/internal/portfolio/toolapi
+              desc: inverted dependency; toolapi imports app, never the reverse
+            - pkg: github.com/andrelopes-code/equori/internal/portfolio/llmapi
+              desc: inverted dependency; llmapi imports app, never the reverse
+            - pkg: github.com/andrelopes-code/equori/internal/reporting/httpapi
+              desc: inverted dependency; httpapi imports app, never the reverse
+            - pkg: github.com/andrelopes-code/equori/internal/reporting/postgres
+              desc: inverted dependency; postgres imports app, never the reverse
+            - pkg: github.com/andrelopes-code/equori/internal/reporting/toolapi
+              desc: inverted dependency; toolapi imports app, never the reverse
+            - pkg: github.com/andrelopes-code/equori/internal/reporting/llmapi
               desc: inverted dependency; llmapi imports app, never the reverse
             - pkg: github.com/andrelopes-code/equori/internal/platform/problem
               desc: HTTP error mapping belongs to adapter/httpapi (ADR 004)
@@ -86,6 +164,94 @@ linters:
               desc: platform must not depend on business modules (ADR 002)
             - pkg: github.com/andrelopes-code/equori/internal/instance
               desc: platform must not depend on business modules (ADR 002)
+        module-assistant:
+          list-mode: lax
+          files:
+            - "$all"
+            - "!**/internal/assistant/**"
+          deny:
+            - pkg: github.com/andrelopes-code/equori/internal/assistant/*
+              desc: a module is reached only through its root package (ADR 033)
+        module-capture:
+          list-mode: lax
+          files:
+            - "$all"
+            - "!**/internal/capture/**"
+          deny:
+            - pkg: github.com/andrelopes-code/equori/internal/capture/
+              desc: a module is reached only through its root package (ADR 033)
+        module-classification:
+          list-mode: lax
+          files:
+            - "$all"
+            - "!**/internal/classification/**"
+          deny:
+            - pkg: github.com/andrelopes-code/equori/internal/classification/*
+              desc: a module is reached only through its root package (ADR 033)
+        module-identity:
+          list-mode: lax
+          files:
+            - "$all"
+            - "!**/internal/identity/**"
+          deny:
+            - pkg: github.com/andrelopes-code/equori/internal/identity/*
+              desc: a module is reached only through its root package (ADR 033)
+        module-ingestion:
+          list-mode: lax
+          files:
+            - "$all"
+            - "!**/internal/ingestion/**"
+          deny:
+            - pkg: github.com/andrelopes-code/equori/internal/ingestion/*
+              desc: a module is reached only through its root package (ADR 033)
+        module-instance:
+          list-mode: lax
+          files:
+            - "$all"
+            - "!**/internal/instance/**"
+          deny:
+            - pkg: github.com/andrelopes-code/equori/internal/instance/*
+              desc: a module is reached only through its root package (ADR 033)
+        module-ledger:
+          list-mode: lax
+          files:
+            - "$all"
+            - "!**/internal/ledger/**"
+          deny:
+            - pkg: github.com/andrelopes-code/equori/internal/ledger/*
+              desc: a module is reached only through its root package (ADR 033)
+        module-marketdata:
+          list-mode: lax
+          files:
+            - "$all"
+            - "!**/internal/marketdata/**"
+          deny:
+            - pkg: github.com/andrelopes-code/equori/internal/marketdata/*
+              desc: a module is reached only through its root package (ADR 033)
+        module-planning:
+          list-mode: lax
+          files:
+            - "$all"
+            - "!**/internal/planning/**"
+          deny:
+            - pkg: github.com/andrelopes-code/equori/internal/planning/*
+              desc: a module is reached only through its root package (ADR 033)
+        module-portfolio:
+          list-mode: lax
+          files:
+            - "$all"
+            - "!**/internal/portfolio/**"
+          deny:
+            - pkg: github.com/andrelopes-code/equori/internal/portfolio/*
+              desc: a module is reached only through its root package (ADR 033)
+        module-reporting:
+          list-mode: lax
+          files:
+            - "$all"
+            - "!**/internal/reporting/**"
+          deny:
+            - pkg: github.com/andrelopes-code/equori/internal/reporting/*
+              desc: a module is reached only through its root package (ADR 033)
   exclusions:
     presets:
       - std-error-handling
