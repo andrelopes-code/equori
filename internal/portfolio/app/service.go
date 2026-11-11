@@ -27,73 +27,11 @@ type Account struct {
 	Instrument                  money.Currency
 }
 
-// Ledger is read through ledger.Module (ADR 002).
-type Ledger interface {
-	AccountFacts(ctx context.Context, booksID int64) ([]Account, error)
-	InvestmentFacts(ctx context.Context, booksID int64, brokerageID uuid.UUID) (domain.Facts, error)
-	BaseCurrency(ctx context.Context, booksID int64) (money.Currency, error)
-	// ValuedBalance values the account and its sub-accounts at the end of date in currency in; the
-	// error wraps ErrNotFound for an unknown account and ErrPriceMissing for a missing price.
-	ValuedBalance(ctx context.Context, booksID int64, accountID uuid.UUID, date time.Time, in money.Currency) (money.Money, error)
-	// ExternalFlows takes the accounts as one tree; FirstPosting is the earliest booked date of it.
-	ExternalFlows(ctx context.Context, booksID int64, accountIDs []uuid.UUID, from, to time.Time) ([]Flow, error)
-	FirstPosting(ctx context.Context, booksID int64, accountIDs []uuid.UUID) (time.Time, bool, error)
-	// RecordedYield is what the ledger records of the tree of the accounts in [from, to]: the flows
-	// that are not yield, the yield credits and the other income and expense amounts (amendment A208
-	// R19).
-	RecordedYield(ctx context.Context, booksID int64, accountIDs []uuid.UUID, from, to time.Time) (Recorded, error)
-	// Balances is the balance of every asset and liability account at the end of date, each in
-	// its own instrument and counting its own postings only.
-	Balances(ctx context.Context, booksID int64, date time.Time) ([]AccountBalance, error)
-}
-
-// Jurisdictions gives the tax jurisdiction of a book; a nil result means none applies.
-type Jurisdictions interface {
-	For(ctx context.Context, booksID int64) (domain.Jurisdiction, error)
-}
-
 type Price struct {
 	Instrument, Quote money.Currency
 	Date              time.Time
 	Value             money.Rate
 	Source            string
-}
-
-// MarketData values quantities; Convert returns an error wrapping ErrPriceMissing when no
-// price path exists.
-type MarketData interface {
-	Scale(ctx context.Context, code money.Currency) (int, error)
-	// InstrumentOf returns the type and the quotation currency of an instrument; a currency
-	// has no quotation currency.
-	InstrumentOf(ctx context.Context, code money.Currency) (InstrumentInfo, error)
-	Convert(ctx context.Context, q money.Money, to money.Currency, date time.Time) (money.Money, []Price, error)
-	// IndexRates returns the rates of a daily index in [from, to], oldest first: ErrUnknownIndex
-	// when the index is not enabled or has no rate, ErrIndexNotDaily when its period is not a day.
-	IndexRates(ctx context.Context, id string, from, to time.Time) ([]IndexRate, error)
-	// BenchmarkIndex returns the default index of the book's region, or "" (amendment A208 R2).
-	BenchmarkIndex(ctx context.Context, booksID int64) (string, error)
-	// YearBasis returns the rate days of a year on which an index is quoted, or 0 when unknown
-	// (amendment A208 R9).
-	YearBasis(index string) int
-	// IndexCurrency returns the currency an index belongs to, or "" when unknown (R15).
-	IndexCurrency(index string) money.Currency
-	// InflationIndex returns the default inflation index of the book's region, or "" (R16).
-	InflationIndex(ctx context.Context, booksID int64) (string, error)
-	// MonthlyRates returns the rates of a monthly index in [from, to], oldest first, each dated
-	// on the first day of its month: ErrUnknownIndex when the index is not enabled or has no
-	// rate, ErrIndexNotMonthly when its period is not a month.
-	MonthlyRates(ctx context.Context, id string, from, to time.Time) ([]IndexRate, error)
-	// QuoteState returns the first and last dates with a price of code, nil when none is stored,
-	// and whether its next price is overdue (A222 MQ24).
-	QuoteState(ctx context.Context, code money.Currency) (first, last *time.Time, stale bool, err error)
-}
-
-type Repository interface {
-	Replace(ctx context.Context, booksID int64, accountIDs []uuid.UUID, r domain.Rebuilt) error
-	PositionsAt(ctx context.Context, booksID int64, date time.Time) ([]domain.PositionDay, error)
-	RealizedResults(ctx context.Context, booksID int64, from, to time.Time) ([]domain.RealizedResult, error)
-	IncomeEvents(ctx context.Context, booksID int64, from, to time.Time) ([]domain.IncomeEvent, error)
-	BooksToRebuild(ctx context.Context) ([]int64, error)
 }
 
 type Service struct {
