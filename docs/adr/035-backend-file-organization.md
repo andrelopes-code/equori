@@ -19,6 +19,7 @@ Every Go file holds one concept and carries the name of that concept. Every func
 | A hand-written non-test Go file has at most 400 lines | `internal/platform/layout`, `TestGoFileSize` |
 | A hand-written non-test function body has at most 50 lines | `internal/platform/layout`, `TestGoFunctionSize` |
 | An allow-list entry is removed when its file or function no longer exceeds the limit | `internal/platform/layout`; a stale entry fails the test |
+| `app` declares every port in `app/ports.go`; above 400 lines the file keeps the repository and clock ports and the other groups move to `app/ports_<group>.go` | review |
 | A package is not named `util`, `helpers`, `misc`, `common`, `types` or `base`; `types.go` exists only in a module root | review |
 
 ## Long functions

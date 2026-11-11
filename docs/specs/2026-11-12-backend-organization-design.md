@@ -26,6 +26,7 @@ Non-goals: behavior change; changes to `api/`, `db/migrations/`, `web/`, request
 | BO12 | Rows that change an exported signature | Refused. Examples: `planning.New` with eight positional arguments, `WithFeeds` ordering in `marketdata`, removal of exported methods. The plan lists them under Out of scope. | Brief, Non-goals |
 | BO13 | Parity proof | Each task proves, with `parity.py` in the scratchpad, that the multiset of non-blank lines of the touched packages is equal before and after, except `import` lines, signatures and calls of extracted step functions, and lines the layout rule requires. | Brief, Phase D |
 | BO14 | One plan file against the four-slice limit of `docs/contributing/agents.md` | The plan file holds five parts of at most four slices each; the limit applies per part. | Brief, Phase C |
+| BO15 | `app/ports.go` above 400 lines (ledger, 526 lines) against the rule that `app` declares its ports in `app/ports.go` | `ports.go` keeps the repository and clock ports; cohesive groups of ports move to `ports_<group>.go` in the same package. The directory limit of 40 files is not raised: small files of the same concept merge. | ADR 033, ADR 035 |
 
 ## Cross-cutting questions
 
