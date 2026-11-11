@@ -9,6 +9,7 @@ import (
 
 	"github.com/andrelopes-code/equori/internal/ledger/domain"
 	"github.com/andrelopes-code/equori/internal/platform/outbox"
+	"github.com/andrelopes-code/equori/internal/platform/page"
 )
 
 const (
@@ -34,6 +35,10 @@ type TagRenamed struct {
 // TagDeleted is the payload of EventTagDeleted.
 type TagDeleted struct {
 	Name string `json:"name"`
+}
+
+func (s *Service) ListTags(ctx context.Context, booksID int64, p page.Request[TagKey]) ([]string, *TagKey, error) {
+	return s.repo.ListTags(ctx, booksID, p)
 }
 
 func (s *Service) Tag(ctx context.Context, booksID int64, name string) (TagUsage, error) {
