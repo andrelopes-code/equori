@@ -1,0 +1,85 @@
+import { PageBody } from "@slotted/react/page";
+import {
+  PageHeader,
+  PageHeaderHeading,
+  PageHeaderMarks,
+  PageHeaderSubheading,
+  PageHeaderTitle,
+  PageHeaderTitleArea,
+  PageHeaderTitleRow,
+} from "@slotted/react/page-header";
+import { Tag } from "@slotted/react/tag";
+import { Heading, Text } from "@slotted/react/typography";
+import type { ReactNode } from "react";
+
+import styles from "@/features/setup/pages/settings-page.module.css";
+import type { SettingsTopic } from "@/features/setup/model/settings-topics";
+import { useT } from "@/i18n/i18n-provider";
+import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
+
+// One pane of the settings page: its title, what it holds, and its groups. local marks a pane whose
+// choices stay in this browser rather than in the account.
+export function SettingsSection({
+  topic,
+  title,
+  description,
+  local = false,
+  children,
+}: {
+  topic: SettingsTopic;
+  title: string;
+  description?: string;
+  local?: boolean;
+  children: ReactNode;
+}) {
+  const t = useT();
+  const heading = `settings-${topic}`;
+  const compact = useMediaQuery(compactQuery);
+  const tag = local && (
+    <Tag size="sm" tone="secondary">
+      {t("settings.browserOnly.tag")}
+    </Tag>
+  );
+  // On a phone the pane is the page: it takes the page header every other page has.
+  if (compact)
+    return (
+      <>
+        <PageHeader size="lg">
+          <PageHeaderTitleArea>
+            <PageHeaderTitleRow>
+              <PageHeaderTitle>
+                <PageHeaderHeading>{title}</PageHeaderHeading>
+                {tag && <PageHeaderMarks>{tag}</PageHeaderMarks>}
+                {description !== undefined && (
+                  <PageHeaderSubheading>{description}</PageHeaderSubheading>
+                )}
+              </PageHeaderTitle>
+            </PageHeaderTitleRow>
+          </PageHeaderTitleArea>
+        </PageHeader>
+        <PageBody>
+          <section id={topic} aria-label={title} className={styles.pane}>
+            {children}
+          </section>
+        </PageBody>
+      </>
+    );
+  return (
+    <section id={topic} aria-labelledby={heading} className={styles.pane}>
+      <header className={styles.paneHeader}>
+        <div className={styles.paneTitle}>
+          <Heading level={2} size="2xl" id={heading}>
+            {title}
+          </Heading>
+          {tag}
+        </div>
+        {description !== undefined && (
+          <Text size="md" tone="muted">
+            {description}
+          </Text>
+        )}
+      </header>
+      {children}
+    </section>
+  );
+}

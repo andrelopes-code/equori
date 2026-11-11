@@ -1,0 +1,38 @@
+import { Page, PageBody } from "@slotted/react/page";
+import { useEffect } from "react";
+
+import { AppearanceSaveError } from "@/features/setup/studio/appearance-save-error";
+import styles from "@/features/setup/pages/appearance-studio.module.css";
+import { StudioCanvas } from "@/features/setup/studio/studio-canvas";
+import { StudioHeader } from "@/features/setup/studio/studio-header";
+import { StudioPanel } from "@/features/setup/studio/studio-panel";
+import { useThemeLibrary } from "@/features/setup/themes/use-theme-library";
+import { suspendBookAccent } from "@/theme/book-accent";
+
+// The appearance studio: the controls at the start edge, the application drawn beside them
+// (docs/specs/2026-10-29-appearance-studio-design.md, A7).
+export function AppearanceStudio() {
+  const library = useThemeLibrary();
+
+  useEffect(() => {
+    suspendBookAccent(true);
+    return () => {
+      suspendBookAccent(false);
+    };
+  }, []);
+
+  return (
+    <Page width="full">
+      <StudioHeader library={library} />
+
+      <AppearanceSaveError />
+
+      <PageBody>
+        <div className={styles.workspace}>
+          <StudioPanel library={library} />
+          <StudioCanvas />
+        </div>
+      </PageBody>
+    </Page>
+  );
+}

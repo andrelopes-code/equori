@@ -1,0 +1,63 @@
+import { Glyph, Icon } from "@slotted/react/icon";
+import { Text } from "@slotted/react/typography";
+
+import styles from "@/features/setup/themes/theme-gallery.module.css";
+import { ThemeMiniature } from "@/features/setup/themes/theme-miniature";
+import type { ThemeValues } from "@/theme/themes";
+
+export interface ThemeOptionProps {
+  name: string;
+  description?: string;
+  values: ThemeValues;
+  checked: boolean;
+  onChoose: (values: ThemeValues) => void;
+}
+
+// Families read: radio-group, card. None draws a choice as a picture of its result. The option is
+// a native radio, so the platform gives it its name, arrow keys and form value.
+export function ThemeOption({
+  name,
+  description,
+  values,
+  checked,
+  onChoose,
+}: ThemeOptionProps) {
+  return (
+    <label className={styles.option}>
+      <input
+        type="radio"
+        name="theme"
+        className={styles.radio}
+        checked={checked}
+        aria-label={name}
+        onChange={() => {
+          onChoose(values);
+        }}
+      />
+      <span className={styles.frame} aria-hidden="true">
+        <ThemeMiniature values={values} />
+      </span>
+      <span className={styles.caption}>
+        <span className={styles.title}>
+          <Text size="sm" weight="medium">
+            {name}
+          </Text>
+          {checked && (
+            <span className={styles.mark} aria-hidden="true">
+              <Icon size="sm">
+                <Glyph name="check" />
+              </Icon>
+            </span>
+          )}
+        </span>
+        <span className={styles.description}>
+          {description !== undefined && (
+            <Text size="xs" tone="muted">
+              {description}
+            </Text>
+          )}
+        </span>
+      </span>
+    </label>
+  );
+}

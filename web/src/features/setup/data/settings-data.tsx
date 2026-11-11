@@ -1,0 +1,59 @@
+import { SkeletonText } from "@slotted/react/skeleton";
+import { Stack } from "@slotted/react/stack";
+import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+
+import { useApi } from "@/api/api-context";
+import type { DataMessage } from "@/features/setup/data/data-message";
+import { exportQuery, hasTransactionsQuery } from "@/features/setup/api";
+import { ExportRow } from "@/features/setup/data/export-row";
+import { ImportRow } from "@/features/setup/data/import-row";
+import { SettingsGroup } from "@/features/setup/settings-layout/settings-group";
+import { SettingsSection } from "@/features/setup/settings-layout/settings-section";
+import { useT } from "@/i18n/i18n-provider";
+import { FormNotice } from "@/ui/form-notice";
+import { QueryError } from "@/ui/query-error";
+
+// Export and import of the books (docs/specs/2026-10-26-export-design.md).
+export function SettingsData() {
+  const t = useT();
+  const api = useApi();
+  const current = useQuery(exportQuery(api));
+  const hasTransactions = useQuery(hasTransactionsQuery(api));
+  const [message, setMessage] = useState<DataMessage | null>(null);
+
+  const loading = current.isPending || hasTransactions.isPending;
+
+  return (
+    <SettingsSection
+      topic="data"
+      title={t("settings.data.title")}
+      description={t("settings.data.description")}
+    >
+      <Stack gap={5}>
+        {current.isError && (
+          <QueryError
+            error={current.error}
+            onRetry={() => void current.refetch()}
+          />
+        )}
+
+        {!current.isError && loading && <SkeletonText lines={4} />}
+
+        {!current.isError && !loading && (
+          <SettingsGroup>
+            <ExportRow onMessage={setMessage} />
+            <ImportRow
+              blocked={hasTransactions.data === true}
+              onMessage={setMessage}
+            />
+          </SettingsGroup>
+        )}
+
+        {message !== null && (
+          <FormNotice tone={message.tone}>{message.text}</FormNotice>
+        )}
+      </Stack>
+    </SettingsSection>
+  );
+}

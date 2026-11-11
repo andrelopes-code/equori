@@ -1,0 +1,90 @@
+import type { SettingsTopic } from "@/features/setup/model/settings-topics";
+
+// Lucide geometry (ISC licence) on its 24-unit grid: user, shield, palette, wallet,
+// calendar, users, plug, chart-line, sparkles, terminal, database, archive, info, chevron-right and
+// chevron-left.
+const PATHS: Record<SettingsTopic | "next" | "previous", readonly string[]> = {
+  account: [
+    "M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2",
+    "M12 3a4 4 0 1 1 0 8 4 4 0 0 1 0-8z",
+  ],
+  security: [
+    "M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z",
+  ],
+  appearance: [
+    "M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z",
+    "M13.5 6a.5.5 0 1 1 0 1 .5.5 0 0 1 0-1z",
+    "M17.5 10a.5.5 0 1 1 0 1 .5.5 0 0 1 0-1z",
+    "M8.5 7a.5.5 0 1 1 0 1 .5.5 0 0 1 0-1z",
+    "M6.5 12a.5.5 0 1 1 0 1 .5.5 0 0 1 0-1z",
+  ],
+  finances: [
+    "M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1",
+    "M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4",
+  ],
+  calendars: [
+    "M8 2v4",
+    "M16 2v4",
+    "M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z",
+    "M3 10h18",
+  ],
+  members: [
+    "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2",
+    "M9 3a4 4 0 1 1 0 8 4 4 0 0 1 0-8z",
+    "M22 21v-2a4 4 0 0 0-3-3.87",
+    "M16 3.13a4 4 0 0 1 0 7.75",
+  ],
+  integrations: [
+    "M12 22v-5",
+    "M9 8V2",
+    "M15 8V2",
+    "M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8z",
+  ],
+  market_data: ["M3 3v16a2 2 0 0 0 2 2h16", "m19 9-5 5-4-4-3 3"],
+  assistant: [
+    "M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z",
+    "M20 3v4",
+    "M22 5h-4",
+  ],
+  external_access: ["m4 17 6-6-6-6", "M12 19h8"],
+  data: [
+    "M12 2c4.97 0 9 1.34 9 3s-4.03 3-9 3-9-1.34-9-3 4.03-3 9-3z",
+    "M3 5v14a9 3 0 0 0 18 0V5",
+    "M3 12a9 3 0 0 0 18 0",
+  ],
+  backup: [
+    "M3 3h18a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z",
+    "M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8",
+    "M10 12h4",
+  ],
+  about: ["M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20z", "M12 16v-4", "M12 8h.01"],
+  next: ["m9 18 6-6-6-6"],
+  previous: ["m15 18-6-6 6-6"],
+};
+
+// Families read: icon. The glyph set holds no artwork for these topics, so the page draws its own
+// on Lucide's grid, in the stroke of the application's navigation.
+export function SettingsIcon({
+  name,
+}: {
+  name: SettingsTopic | "next" | "previous";
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="100%"
+      height="100%"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.75}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      {PATHS[name].map((d) => (
+        <path key={d} d={d} />
+      ))}
+    </svg>
+  );
+}
