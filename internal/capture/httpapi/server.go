@@ -68,7 +68,7 @@ func toProblem(err error) (problem.Details, bool) {
 	return problem.Details{}, false
 }
 
-func (s *Server) previewCapture(ctx context.Context, body CapturePreviewInput) (CapturePreview, error) {
+func (s *Server) previewCapture(ctx context.Context, _ *http.Request, body CapturePreviewInput) (CapturePreview, error) {
 	var def uuid.UUID
 	if body.DefaultAccountId != nil {
 		def = *body.DefaultAccountId
@@ -158,7 +158,7 @@ func optUUID(id uuid.UUID) *openapi_types.UUID {
 	return &id
 }
 
-func (s *Server) suggestCaptureCategories(ctx context.Context, body CaptureSuggestionInput) (CaptureSuggestions, error) {
+func (s *Server) suggestCaptureCategories(ctx context.Context, _ *http.Request, body CaptureSuggestionInput) (CaptureSuggestions, error) {
 	items := make([]app.SuggestItem, len(body.Items))
 	for i, it := range body.Items {
 		items[i] = app.SuggestItem{Description: it.Description, Class: string(it.Kind)}
@@ -186,7 +186,7 @@ func (s *Server) suggestCaptureCategories(ctx context.Context, body CaptureSugge
 	return out, nil
 }
 
-func (s *Server) suggestTransactionCategories(ctx context.Context, body TransactionSuggestionInput) (TransactionSuggestions, error) {
+func (s *Server) suggestTransactionCategories(ctx context.Context, _ *http.Request, body TransactionSuggestionInput) (TransactionSuggestions, error) {
 	suggestions, available, err := s.svc.SuggestForTransactions(ctx, auth.MustBooksID(ctx), body.TransactionIds)
 	if err != nil {
 		return TransactionSuggestions{}, err

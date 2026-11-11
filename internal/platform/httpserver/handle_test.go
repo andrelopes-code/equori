@@ -38,27 +38,29 @@ func TestHandle(t *testing.T) {
 	tests := []struct {
 		name       string
 		body       string
-		fn         func(context.Context, echoIn) (echoOut, error)
+		fn         func(context.Context, *http.Request, echoIn) (echoOut, error)
 		wantStatus int
 		wantBody   string
 	}{
 		{
-			name:       "writes the result with the given status",
-			body:       `{"name":"ana"}`,
-			fn:         func(_ context.Context, in echoIn) (echoOut, error) { return echoOut{"hi " + in.Name}, nil },
+			name: "writes the result with the given status",
+			body: `{"name":"ana"}`,
+			fn: func(_ context.Context, _ *http.Request, in echoIn) (echoOut, error) {
+				return echoOut{"hi " + in.Name}, nil
+			},
 			wantStatus: http.StatusCreated,
 			wantBody:   `{"greeting":"hi ana"}` + "\n",
 		},
 		{
 			name:       "answers 400 for a malformed body",
 			body:       `{`,
-			fn:         func(context.Context, echoIn) (echoOut, error) { return echoOut{}, nil },
+			fn:         func(context.Context, *http.Request, echoIn) (echoOut, error) { return echoOut{}, nil },
 			wantStatus: http.StatusBadRequest,
 		},
 		{
 			name:       "maps an error of the function",
 			body:       `{}`,
-			fn:         func(context.Context, echoIn) (echoOut, error) { return echoOut{}, errBoom },
+			fn:         func(context.Context, *http.Request, echoIn) (echoOut, error) { return echoOut{}, errBoom },
 			wantStatus: http.StatusUnprocessableEntity,
 		},
 	}
@@ -78,5 +80,27 @@ func TestHandle(t *testing.T) {
 				t.Errorf("body = %q, want %q", rec.Body.String(), tt.wantBody)
 			}
 		})
+	}
+}
+
+func TestHandleWithoutBodyAndWithoutContent(t *testing.T) {
+	writer := httpserver.ErrorWriter{Log: slog.New(slog.NewTextHandler(io.Discard, nil))}
+	called := false
+
+	handler := httpserver.Handle(
+		writer,
+		http.StatusOK,
+		func(context.Context, *http.Request, httpserver.None) (httpserver.None, error) {
+			called = true
+
+			return httpserver.None{}, nil
+		},
+	)
+
+	rec := httptest.NewRecorder()
+	handler(rec, httptest.NewRequestWithContext(t.Context(), http.MethodDelete, "/x", http.NoBody))
+
+	if !called || rec.Code != http.StatusNoContent || rec.Body.Len() != 0 {
+		t.Errorf("called = %v, status = %d, body = %q", called, rec.Code, rec.Body.String())
 	}
 }
