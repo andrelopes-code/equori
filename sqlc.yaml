@@ -45,11 +45,11 @@ sql:
         out: internal/marketdata/internal/adapter/postgres
   - engine: postgresql
     schema: db/migrations
-    queries: db/queries/ledger
+    queries: internal/ledger/postgres/queries
     gen:
       go:
         <<: *go
-        out: internal/ledger/internal/adapter/postgres
+        out: internal/ledger/postgres
   - engine: postgresql
     schema: db/migrations
     queries: internal/classification/postgres/queries

@@ -3,7 +3,7 @@ package ledger
 import (
 	"testing"
 
-	"github.com/andrelopes-code/equori/internal/ledger/internal/app"
+	"github.com/andrelopes-code/equori/internal/ledger/app"
 )
 
 // BenchmarkBalanceAt measures N06 on the reference dataset of chapter 8: 75,000

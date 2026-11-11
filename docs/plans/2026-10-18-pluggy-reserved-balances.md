@@ -42,8 +42,8 @@ internal/ingestion/app/{sync.go,importer.go,connection.go,ports}
 internal/ingestion/postgres/connection.go
 internal/ingestion/{sync_test.go,reserve_test.go}
 internal/ledger/ledger.go                                AssertSyncedBalance, AssertSyncedReserve
-internal/ledger/internal/app/reconciliation.go           AssertSynced
-internal/ledger/internal/domain/{reconciliation.go,reconciliation_test.go}
+internal/ledger/app/reconciliation.go           AssertSynced
+internal/ledger/domain/{reconciliation.go,reconciliation_test.go}
 docs/domain/{05-domain-model.md,06-scenarios.md}
 docs/operations/pluggy.md
 ```
@@ -53,7 +53,7 @@ docs/operations/pluggy.md
 ### Task 1: Synced assertion re-evaluated (D5, A77, S71)
 
 **Files:**
-- Modify: `internal/ledger/internal/app/reconciliation.go` (new `AssertSynced`; the decision code shared with `AssertBalance`)
+- Modify: `internal/ledger/app/reconciliation.go` (new `AssertSynced`; the decision code shared with `AssertBalance`)
 - Modify: `internal/ledger/ledger.go` (`AssertSyncedBalance` calls `AssertSynced`)
 - Modify: `internal/ingestion/app/sync.go` (`syncAccount`)
 - Test: `internal/ingestion/sync_test.go`
@@ -128,11 +128,11 @@ docs/operations/pluggy.md
 ### Task 4: Bounded yield on reserved balances (D3, A75, S69)
 
 **Files:**
-- Modify: `internal/ledger/internal/domain/reconciliation.go` (`YieldBound`, `DecideSyncedReserve`), `reconciliation_test.go`
-- Modify: `internal/ledger/internal/app/reconciliation.go` (`AssertSynced` with `reserve` true)
+- Modify: `internal/ledger/domain/reconciliation.go` (`YieldBound`, `DecideSyncedReserve`), `reconciliation_test.go`
+- Modify: `internal/ledger/app/reconciliation.go` (`AssertSynced` with `reserve` true)
 - Modify: `internal/ledger/ledger.go` (`AssertSyncedReserve`)
 - Modify: `internal/ingestion/ingestion.go` (`ledgerPort.AssertSyncedReserve`), the app port declaring `AssertSyncedBalance`, `internal/ingestion/app/sync.go`
-- Test: `internal/ledger/internal/domain/reconciliation_test.go`, `internal/ingestion/reserve_test.go`
+- Test: `internal/ledger/domain/reconciliation_test.go`, `internal/ingestion/reserve_test.go`
 
 **Interfaces:**
 - `const reserveYieldPercentPer30Days = 3`
@@ -143,7 +143,7 @@ docs/operations/pluggy.md
 
 - [ ] **Step 1: Write the failing table test `TestYieldBound`**: `(100000, 1) → 100`, `(100292, 1) → 100`, `(100000, 30) → 3000`, `(102000, 3) → 306`, `(100000, 0) → 100`, `(0, 5) → 0`, `(-5, 5) → 0`, `(9007199254740991, 36500) → 328762772798046171`; and `TestDecideSyncedReserve`: `(100352, 100292, 1, auto) → yield 60`, `(100392, 100292, 1, auto) → yield 100`, `(100393, 100292, 1, auto) → open 101`, `(100200, 100292, 1, auto) → open −92`, `(100352, 100292, 0, auto) → open 60`, `(100352, 100292, 1, none) → open 60`, `(100292, 100292, 0, auto) → none`.
 - [ ] **Step 2: Write the failing test `TestS69BoundedReserveYield`** on the S68 setup after the 2026-11-10 assertion: item updated 2026-11-11, amount `1003.52` → sync → assertions list has the 2026-11-11 item `reconciled` true; the account's transactions include "Yield 2026-11-11 to 2026-11-11" with MP Cofrinho +60 and Yield −60. Item updated 2026-11-12, amount `1004.53` → the 2026-11-12 assertion is `reconciled` false and the account's reconciliation status (`ReconciliationStatus`) shows an open difference of 101. Subtest: a reserve with `yield_mode` `none` and the same amounts → no yield transaction, the 2026-11-11 difference 60 stays open.
-- [ ] **Step 3: Run** `go test ./internal/ledger/internal/domain/ -run 'TestYieldBound|TestDecideSyncedReserve' -count=1` and `go test ./internal/ingestion/ -run TestS69 -count=1` → FAIL (undefined functions; no yield).
+- [ ] **Step 3: Run** `go test ./internal/ledger/domain/ -run 'TestYieldBound|TestDecideSyncedReserve' -count=1` and `go test ./internal/ingestion/ -run TestS69 -count=1` → FAIL (undefined functions; no yield).
 - [ ] **Step 4: Implement** the domain functions, `AssertSynced` with `reserve`, the module and port methods, the call in `syncAccount`.
 - [ ] **Step 5: Run** both tests → PASS; `go test ./internal/ledger/... ./internal/ingestion/... -count=1` → PASS (`TestSyncBalanceRecordsNoYield` unchanged); `make check` → exit 0.
 - [ ] **Step 6: Commit** `git commit -m "feat(ingestion): book bounded yield on synced reserved balances"`.

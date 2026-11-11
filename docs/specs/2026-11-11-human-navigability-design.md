@@ -15,7 +15,7 @@ A contributor who opens the repository cannot locate the file that serves a scre
 | `internal/marketdata`: Go files in the module root, `internal/app`, `internal/adapter/postgres` (hand-written) | 18, 0, 0 |
 | `internal/reporting`: `internal/domain` files, `internal/adapter/postgres` files (hand-written) | 0, 18 |
 | `internal/ledger`: test files in the module root | 101 |
-| Largest hand-written non-test Go file | `internal/ledger/internal/adapter/postgres/repository.go`, 1486 lines |
+| Largest hand-written non-test Go file | `internal/ledger/postgres/repository.go`, 1486 lines |
 | Files in `web/src/features/accounts`, `transactions`, `setup`, `instruments` | 234, 194, 191, 88 |
 | Subfolders in `web/src/features/instruments` among its first 60 files | 0 |
 | README files inside `internal/` or `web/src/` | 0 |

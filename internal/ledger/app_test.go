@@ -12,9 +12,9 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/andrelopes-code/equori/internal/ledger/internal/adapter/postgres"
-	"github.com/andrelopes-code/equori/internal/ledger/internal/app"
-	"github.com/andrelopes-code/equori/internal/ledger/internal/domain"
+	"github.com/andrelopes-code/equori/internal/ledger/app"
+	"github.com/andrelopes-code/equori/internal/ledger/domain"
+	"github.com/andrelopes-code/equori/internal/ledger/postgres"
 	"github.com/andrelopes-code/equori/internal/marketdata"
 	"github.com/andrelopes-code/equori/internal/platform/clock"
 	"github.com/andrelopes-code/equori/internal/platform/money"

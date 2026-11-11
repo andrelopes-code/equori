@@ -43,7 +43,7 @@
 ### Task 2: Endpoint
 
 **Files:**
-- Modify: `db/queries/ledger/` (new query `TreeExternalFlows`), `internal/ledger/internal/app/` (service method), `internal/ledger/ledger.go` (`ExternalFlows`)
+- Modify: `internal/ledger/postgres/queries/` (new query `TreeExternalFlows`), `internal/ledger/app/` (service method), `internal/ledger/ledger.go` (`ExternalFlows`)
 - Modify: `internal/portfolio/portfolio.go` (ledger port `ExternalFlows`, `ValuedBalance`), `internal/portfolio/app/service.go` (`Return`), `internal/portfolio/httpapi/server.go` (`GetReturn`), `api/openapi.yaml`, `internal/server/tool_exposure_test.go` (`getReturn: "-pending"`)
 - Test: `internal/portfolio/return_test.go`
 

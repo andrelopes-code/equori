@@ -143,7 +143,7 @@ func TestOtherScripts(t *testing.T) {
 
 **Files:**
 - Create: `db/migrations/00038_ledger_tag_unicode.sql` (drop the pattern check of `ledger_tag.name` from `00004_ledger.sql:63`; add `CHECK (length(name) BETWEEN 1 AND 60 AND name !~ '\s' AND name !~ '^-')`)
-- Modify: `internal/ledger/internal/domain/transaction.go:241-252` (`normalizeTags`: `strings.ToLower` then spaces to `-`; accept `^[\p{L}\p{N}][\p{L}\p{N}-]{0,59}$` counted in runes; message `must use letters, digits and hyphens, up to 60 characters`)
+- Modify: `internal/ledger/domain/transaction.go:241-252` (`normalizeTags`: `strings.ToLower` then spaces to `-`; accept `^[\p{L}\p{N}][\p{L}\p{N}-]{0,59}$` counted in runes; message `must use letters, digits and hyphens, up to 60 characters`)
 - Test: `internal/ledger/tags_test.go` (new), `internal/ledger/schema_test.go`
 
 - [ ] **Step 1: Write the failing tests.** `TestTagsInAnyScript`: create a transaction with `"tags": ["Café", "праздник", "a b"]`, GET it, assert tags `["a-b", "café", "праздник"]`. `TestTagNameSchema` in `schema_test.go`: direct `INSERT INTO ledger_tag (user_id, name) VALUES ($1, 'a b')` returns a check violation.
@@ -471,9 +471,9 @@ func TestBRBankingMatchesThePreviousRules(t *testing.T) {
 
 **Files:**
 - Modify: `internal/ledger/ledger.go:139-143` (`MarketData` gains `DefaultCalendar(region string) string`); add `type Profiles interface { Profile(ctx context.Context, userID int64) (locale.Locale, error) }`; `New(pool, dispatcher, md MarketData, profiles Profiles, clk, log)`
-- Modify: `internal/ledger/internal/app/ports.go:75-80` (`Calendar` gains `DefaultCalendar(region string) string`; new port `Profiles` with the same method), `internal/ledger/internal/app/service.go:41` (`NewService(repo, clock, cal, ins, prices, profiles)`; callers pass `nil` where they pass `nil` today)
-- Modify: `internal/ledger/internal/domain/billing.go:108-110` (delete the `br_banking` default; an empty calendar is invalid: field `calendar`, message `is required`)
-- Modify: `internal/ledger/internal/app/cards.go:20-30` (before validation: an empty `rule.Calendar` takes `s.cal.DefaultCalendar(profile.Region)`)
+- Modify: `internal/ledger/app/ports.go:75-80` (`Calendar` gains `DefaultCalendar(region string) string`; new port `Profiles` with the same method), `internal/ledger/app/service.go:41` (`NewService(repo, clock, cal, ins, prices, profiles)`; callers pass `nil` where they pass `nil` today)
+- Modify: `internal/ledger/domain/billing.go:108-110` (delete the `br_banking` default; an empty calendar is invalid: field `calendar`, message `is required`)
+- Modify: `internal/ledger/app/cards.go:20-30` (before validation: an empty `rule.Calendar` takes `s.cal.DefaultCalendar(profile.Region)`)
 - Modify: `internal/server/server.go:86` (`ledger.New(pool, dispatcher, marketdataModule, identityModule, clk, log)`)
 - Create: `db/migrations/00041_ledger_billing_calendar.sql` (`ALTER TABLE ledger_billing_cycle_rule ALTER COLUMN calendar DROP DEFAULT, ADD CHECK (calendar ~ '^[a-z0-9_]{2,40}$')`)
 - Modify: `api/openapi.yaml:5337` (description of `calendar`: `Business-day calendar id from GET /calendars; defaults to the calendar of the owner's region.`)
@@ -630,8 +630,8 @@ Fixture (the ECB format):
 
 **Files:**
 - Create: `db/migrations/00045_ledger_institution_identifier.sql`: add `identifier_scheme text CHECK (identifier_scheme ~ '^[a-z0-9_]{2,40}$')`, `identifier text CHECK (length(identifier) BETWEEN 1 AND 40)`, `CHECK ((identifier_scheme IS NULL) = (identifier IS NULL))`, unique index on `(user_id, identifier_scheme, identifier)`; `UPDATE ledger_institution SET identifier_scheme = 'br_ispb', identifier = ispb WHERE ispb IS NOT NULL`; drop index `ledger_institution_ispb_key` and column `ispb`
-- Create: `internal/ledger/internal/domain/identifier.go`: `type IdentifierScheme struct{ ID string; Pattern *regexp.Regexp }`; schemes `br_ispb` `^[0-9]{8}$`, `bic` `^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$`; `func ValidateIdentifier(scheme, identifier string) error` (fields `scheme` and `identifier`)
-- Modify: `db/queries/ledger/reference.sql`, `internal/ledger/internal/app/service.go`, `internal/ledger/internal/app/ports.go`, `internal/ledger/internal/adapter/httpapi/server.go`, `convert.go`, `internal/ledger/internal/adapter/postgres/repository.go`, `mapping.go`
+- Create: `internal/ledger/domain/identifier.go`: `type IdentifierScheme struct{ ID string; Pattern *regexp.Regexp }`; schemes `br_ispb` `^[0-9]{8}$`, `bic` `^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$`; `func ValidateIdentifier(scheme, identifier string) error` (fields `scheme` and `identifier`)
+- Modify: `internal/ledger/postgres/queries/reference.sql`, `internal/ledger/app/service.go`, `internal/ledger/app/ports.go`, `internal/ledger/httpapi/server.go`, `convert.go`, `internal/ledger/postgres/repository.go`, `mapping.go`
 - Modify: `api/openapi.yaml` (replace operation `setInstitutionISPB` with `PUT /institutions/{id}/identifier` `setInstitutionIdentifier`, body `{scheme, identifier}`; `Institution` replaces `ispb` with `identifier: {scheme, identifier} | null`; new `GET /institution-identifier-schemes` `listInstitutionIdentifierSchemes` → `{items: [{id, pattern}]}`)
 - Modify: `internal/server/tool_exposure_test.go` (remove `setInstitutionISPB`; add `"setInstitutionIdentifier": "-write"`, `"listInstitutionIdentifierSchemes": "-pending"`)
 - Test: `internal/ledger/institution_test.go`, `internal/ledger/schema_test.go`, `internal/ledger/identifier_migration_test.go` (new)
@@ -647,9 +647,9 @@ Fixture (the ECB format):
 **Files:**
 - Create: `db/migrations/00046_ledger_card_foreign_charge.sql` (`ALTER TABLE ledger_card ADD COLUMN foreign_charge_bp int NOT NULL DEFAULT 350 CHECK (foreign_charge_bp BETWEEN 0 AND 10000)`, then `ALTER COLUMN foreign_charge_bp DROP DEFAULT`)
 - Modify: `internal/ledger/region_defaults.go` (`func DefaultForeignChargeBP(region string) int`: `BR` 350, any other 0)
-- Modify: `internal/ledger/internal/app/currency.go:17-30` (delete `DefaultIOFRateBP`; `ForeignPurchase` fields `ForeignChargeCategoryID uuid.UUID`, `ForeignChargeRateBP *int`; nil rate uses the card's `foreign_charge_bp`)
-- Modify: card creation and card read in `internal/ledger/internal/app/card_operations.go` and the card queries (body field `foreign_charge_bp` optional; default from the region through `Profiles`)
-- Modify: `internal/ledger/internal/adapter/httpapi/currency.go:23-24`; `api/openapi.yaml:673` (summary without IOF), `:6206-6215` (`foreign_charge_rate_bp`, `foreign_charge_category_id`), card schemas (`foreign_charge_bp`)
+- Modify: `internal/ledger/app/currency.go:17-30` (delete `DefaultIOFRateBP`; `ForeignPurchase` fields `ForeignChargeCategoryID uuid.UUID`, `ForeignChargeRateBP *int`; nil rate uses the card's `foreign_charge_bp`)
+- Modify: card creation and card read in `internal/ledger/app/card_operations.go` and the card queries (body field `foreign_charge_bp` optional; default from the region through `Profiles`)
+- Modify: `internal/ledger/httpapi/currency.go:23-24`; `api/openapi.yaml:673` (summary without IOF), `:6206-6215` (`foreign_charge_rate_bp`, `foreign_charge_category_id`), card schemas (`foreign_charge_bp`)
 - Test: `internal/ledger/currency_test.go` (`TestS16ForeignPurchase` uses the new field names), `internal/ledger/foreign_charge_test.go` (new)
 
 - [ ] **Step 1: Write the failing tests.** `TestForeignChargeDefaults`: BR user card → `foreign_charge_bp` 350; foreign purchase of `100.00 USD` at rate `5.0000` without a rate → postings `−500.00 BRL` purchase and `−17.50 BRL` foreign charge on the card, `+17.50` on the given category; DE user (EUR) card → 0 and a purchase without a charge posting; explicit `foreign_charge_rate_bp: 100` on the BR card → `−5.00`; after `PATCH /me {"region":"BR"}` for the DE user, the existing card still reads 0.
@@ -691,7 +691,7 @@ Fixture (the ECB format):
 
 **Files:**
 - Create: `db/migrations/00047_tax_jurisdiction.sql`: in `ledger_investment_income` and `portfolio_income_event`, replace the `income_type IN (...)` checks with the identifier check; `portfolio_income_event.tax_treatment` and `portfolio_realized_result.tax_class` drop `NOT NULL` and get the identifier check (null allowed)
-- Modify: `internal/ledger/internal/domain/income.go:16,46` (keep `IncomeJCP` out of ledger: delete the enumerated check; validate `registry.ValidID`; message `must match ^[a-z0-9_]{2,40}$`)
+- Modify: `internal/ledger/domain/income.go:16,46` (keep `IncomeJCP` out of ledger: delete the enumerated check; validate `registry.ValidID`; message `must match ^[a-z0-9_]{2,40}$`)
 - Modify: `internal/portfolio/postgres/repository.go`, `internal/portfolio/httpapi/server.go:75,90` (null → JSON null)
 - Modify: `api/openapi.yaml:6027-6029` (`IncomeType` → `type: string, pattern`), `:6168-6170` (`tax_treatment` nullable pattern), `tax_class` nullable; new `GET /investment-income-types` `listInvestmentIncomeTypes` (tag `portfolio`) → `{items: [string]}`
 - Modify: `internal/server/tool_exposure_test.go` (`"listInvestmentIncomeTypes": "-pending"`)
@@ -746,7 +746,7 @@ Fixture (the ECB format):
 
 **Files:**
 - Create: `db/migrations/00048_aggregator_term.sql`: `ALTER TABLE ingestion_integration RENAME COLUMN provider TO aggregator` and replace its check with the identifier check; same for `classification_source_category` (and its unique constraint keeps working on the renamed column); `ingestion_batch.source` and `ledger_reconciliation.source`: replace `open_finance` with `aggregator` in data and in the checks (`ingestion_batch`: `('ofx','csv','aggregator')`; `ledger_reconciliation`: `('manual','import','aggregator')`)
-- Modify: queries in `internal/ingestion/postgres/queries/`, `internal/classification/postgres/queries/`, `db/queries/ledger/` that name these columns or values; `internal/classification/classification.go` (`LineCategory.Provider` → `Aggregator`), `internal/classification/app/ports.go:90`, `internal/classification/postgres/source_category.go:30-31`, `internal/ingestion/ingestion.go:154-158`
+- Modify: queries in `internal/ingestion/postgres/queries/`, `internal/classification/postgres/queries/`, `internal/ledger/postgres/queries/` that name these columns or values; `internal/classification/classification.go` (`LineCategory.Provider` → `Aggregator`), `internal/classification/app/ports.go:90`, `internal/classification/postgres/source_category.go:30-31`, `internal/ingestion/ingestion.go:154-158`
 - Modify: `api/openapi.yaml:3157,3226,4333,4371,4406,4455,4463,4716,4879,2891` (`provider` → `aggregator` with the identifier pattern; `item_id` → `external_id`; the connection gains `state` enum `[ok, needs_owner, failed]`; descriptions name no aggregator; `open_finance` → `aggregator` in both enums)
 - Modify: every Go and web caller reported by `make gen` and `make web-check` failures (web types come from `schema.gen.ts`)
 - Test: `internal/ingestion/schema_test.go`, `internal/classification/source_category_test.go`, `internal/ingestion/connection_test.go`

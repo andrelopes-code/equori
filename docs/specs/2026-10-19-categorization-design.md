@@ -27,7 +27,7 @@ Each amendment lands with its OpenAPI contract, `make gen`, an apitest through `
 
 ### A73 No cycle in the account tree
 
-`checkParent` (`internal/ledger/internal/app/service.go`) walks the ancestors of the new parent and rejects the account itself among them: 422 `validation_failed` on `parent_id`, "must not be a descendant of the account". A new migration adds a constraint trigger `ledger_account_no_cycle` on `ledger_account` that raises `check_violation` for the same case, because the recursive queries of `db/queries/ledger/balance.sql` and `internal/reporting/postgres/queries/account_day.sql` use `UNION ALL` and do not terminate on a cycle. A schema test updates two rows into a cycle with direct SQL and expects the rejection.
+`checkParent` (`internal/ledger/app/service.go`) walks the ancestors of the new parent and rejects the account itself among them: 422 `validation_failed` on `parent_id`, "must not be a descendant of the account". A new migration adds a constraint trigger `ledger_account_no_cycle` on `ledger_account` that raises `check_violation` for the same case, because the recursive queries of `internal/ledger/postgres/queries/balance.sql` and `internal/reporting/postgres/queries/account_day.sql` use `UNION ALL` and do not terminate on a cycle. A schema test updates two rows into a cycle with direct SQL and expects the rejection.
 
 ### A74 Archive and reopen
 

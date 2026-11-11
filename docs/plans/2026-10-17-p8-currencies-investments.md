@@ -147,7 +147,7 @@ Commit `feat(marketdata): fetch prices from BCB PTAX and B3`.
 
 ### Task 4: Security accounts and original amounts (A58, A63, A64)
 
-**Files:** `internal/ledger/internal/domain/{account.go,transaction.go,errors.go}`, `internal/ledger/internal/domain/{account_test.go,transaction_test.go}`, `internal/ledger/internal/app/{ports.go,service.go,balances.go}`, `internal/ledger/internal/adapter/postgres/mapping.go`, `internal/ledger/internal/adapter/httpapi/{convert.go,errors.go}`, `internal/ledger/ledger.go`, `internal/reporting/…` (series of a mixed parent), `api/openapi.yaml` (code `mixed_instruments`), `internal/ledger/{securities_test.go,schema_test.go}`, `internal/reporting/reporting_test.go`.
+**Files:** `internal/ledger/domain/{account.go,transaction.go,errors.go}`, `internal/ledger/domain/{account_test.go,transaction_test.go}`, `internal/ledger/app/{ports.go,service.go,balances.go}`, `internal/ledger/postgres/mapping.go`, `internal/ledger/httpapi/{convert.go,errors.go}`, `internal/ledger/ledger.go`, `internal/reporting/…` (series of a mixed parent), `api/openapi.yaml` (code `mixed_instruments`), `internal/ledger/{securities_test.go,schema_test.go}`, `internal/reporting/reporting_test.go`.
 
 ```go
 // domain/account.go
@@ -167,7 +167,7 @@ Commit `feat(ledger): hold securities in brokerage accounts`.
 
 ### Task 5: Valued balances, foreign purchases and exchanges (A65, A66, A67)
 
-**Files:** `internal/ledger/internal/{app/currency.go,adapter/httpapi/currency.go}`, `internal/ledger/internal/app/{ports.go,balances.go}`, `internal/ledger/ledger.go` (`Prices` port wiring), `api/openapi.yaml` (`/foreign-purchases`, `/exchanges`; `value_in` on `/accounts/{id}/balance`; `Balance.value`, `Balance.prices`), `internal/ledger/{currency_test.go,scenarios_test.go}`.
+**Files:** `internal/ledger/{app/currency.go,adapter/httpapi/currency.go}`, `internal/ledger/app/{ports.go,balances.go}`, `internal/ledger/ledger.go` (`Prices` port wiring), `api/openapi.yaml` (`/foreign-purchases`, `/exchanges`; `value_in` on `/accounts/{id}/balance`; `Balance.value`, `Balance.prices`), `internal/ledger/{currency_test.go,scenarios_test.go}`.
 
 ```go
 // app/ports.go
@@ -186,7 +186,7 @@ Commit `feat(ledger): foreign purchases, exchanges and valued balances`.
 
 ### Task 6: Trades (A68, A69)
 
-**Files:** `db/migrations/00022_ledger_investments.sql`, `db/queries/ledger/investment.sql`, `internal/ledger/internal/{domain/trade.go,app/trades.go,adapter/postgres/investment.go,adapter/httpapi/trades.go}`, `internal/ledger/internal/app/service.go` (A69 checks on record, correct and void), `internal/ledger/ledger.go` (`InvestmentFacts`), `api/openapi.yaml` (`/trades`; `Transaction.trade`; codes `later_sale_exists`, `investment_transaction`), `internal/ledger/internal/domain/trade_test.go`, `internal/ledger/{trades_test.go,scenarios_test.go,schema_test.go}`.
+**Files:** `db/migrations/00022_ledger_investments.sql`, `internal/ledger/postgres/queries/investment.sql`, `internal/ledger/{domain/trade.go,app/trades.go,adapter/postgres/investment.go,adapter/httpapi/trades.go}`, `internal/ledger/app/service.go` (A69 checks on record, correct and void), `internal/ledger/ledger.go` (`InvestmentFacts`), `api/openapi.yaml` (`/trades`; `Transaction.trade`; codes `later_sale_exists`, `investment_transaction`), `internal/ledger/domain/trade_test.go`, `internal/ledger/{trades_test.go,scenarios_test.go,schema_test.go}`.
 
 **Tables:** `ledger_trade (transaction_id, user_id, account_id, cash_account_id, side IN ('buy','sell'), quantity bigint > 0, unit_price numeric(30,12) > 0, gross bigint, fees bigint >= 0, taxes bigint >= 0, cost bigint, currency text)`, `PRIMARY KEY (transaction_id)`, composite FKs `(user_id, transaction_id)` → `ledger_transaction`, `(user_id, account_id)` and `(user_id, cash_account_id)` → `ledger_account`, `CHECK ((side = 'sell') = (cost IS NOT NULL))`, `CHECK (side = 'sell' OR taxes = 0)`; index `(account_id, side)`.
 
@@ -211,7 +211,7 @@ Commit `feat(ledger): record trades at average cost`.
 
 ### Task 7: Investment income (A70)
 
-**Files:** `db/migrations/00023_ledger_investment_income.sql`, `db/queries/ledger/investment.sql`, `internal/ledger/internal/{domain/income.go,app/income.go,adapter/httpapi/income.go}`, `api/openapi.yaml` (`/investment-income`; `Transaction.investment_income`), `internal/ledger/internal/domain/income_test.go`, `internal/ledger/{income_test.go,scenarios_test.go}`.
+**Files:** `db/migrations/00023_ledger_investment_income.sql`, `internal/ledger/postgres/queries/investment.sql`, `internal/ledger/{domain/income.go,app/income.go,adapter/httpapi/income.go}`, `api/openapi.yaml` (`/investment-income`; `Transaction.investment_income`), `internal/ledger/domain/income_test.go`, `internal/ledger/{income_test.go,scenarios_test.go}`.
 
 **Table:** `ledger_investment_income (transaction_id, user_id, account_id, cash_account_id, income_type IN ('dividend','jcp','interest','coupon'), gross bigint > 0, withheld bigint >= 0, currency text)`, `PRIMARY KEY (transaction_id)`, composite FKs as `ledger_trade`, `CHECK (withheld < gross)`.
 

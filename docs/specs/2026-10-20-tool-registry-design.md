@@ -72,7 +72,7 @@ Registry error codes: `invalid_arguments`, `result_too_large`, `internal_error`.
 ## Module side
 
 ```
-internal/ledger/internal/adapter/toolapi/
+internal/ledger/toolapi/
   toolapi.go        Tools(svc *app.Service) []tool.Tool
   accounts.go       list_accounts, get_balances
   transactions.go   search_transactions

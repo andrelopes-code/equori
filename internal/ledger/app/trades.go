@@ -1,0 +1,221 @@
+package app
+
+import (
+	"bytes"
+	"context"
+	"fmt"
+	"slices"
+	"time"
+
+	"github.com/google/uuid"
+
+	"github.com/andrelopes-code/equori/internal/ledger/domain"
+	"github.com/andrelopes-code/equori/internal/platform/money"
+)
+
+// RecordTrade records M17: a purchase or sale of a security for cash of the same
+// brokerage, the sale at average cost (P8 amendment A68).
+func (s *Service) RecordTrade(ctx context.Context, booksID int64, o domain.TradeOrder) (domain.Transaction, error) {
+	var created domain.Transaction
+	err := s.repo.InTx(ctx, func(r Repository) error {
+		base, err := baseCurrency(ctx, r, booksID)
+		if err != nil {
+			return err
+		}
+
+		security, cash, err := s.brokerageAccounts(ctx, r, booksID, o.AccountID, o.CashAccountID, base)
+		if err != nil {
+			return err
+		}
+
+		if o.Quantity.Currency() != security.Instrument {
+			return fieldErr("quantity", "must be an amount of "+string(security.Instrument), domain.ErrValidation)
+		}
+
+		// Two sales of one account serialize on its row, so each reads the holding the other left.
+		if _, err := r.LockAccount(ctx, booksID, security.ID); err != nil {
+			return err
+		}
+
+		quantity, basis, err := r.Holding(ctx, booksID, security.ID, o.Date)
+		if err != nil {
+			return err
+		}
+
+		var h domain.Holding
+		if h.Quantity, err = s.AmountOf(ctx, quantity, security.Instrument); err != nil {
+			return err
+		}
+
+		if h.CostBasis, err = money.New(basis, base); err != nil {
+			return err
+		}
+
+		accts, err := s.tradeAccounts(ctx, r, booksID, o.TaxesCategoryID, "taxes_category_id")
+		if err != nil {
+			return err
+		}
+
+		postings, trade, err := domain.BuildTrade(o, cash.Instrument, h, accts)
+		if err != nil {
+			return err
+		}
+
+		created, err = s.insert(ctx, r, domain.Transaction{
+			BooksID: booksID, Date: o.Date, Description: o.Description, BalancingCurrency: base, Postings: postings, Trade: &trade,
+		})
+
+		return err
+	})
+
+	return created, err
+}
+
+// RecordIncome records M18: income paid on a security into cash of the same brokerage
+// (P8 amendment A70).
+func (s *Service) RecordIncome(ctx context.Context, booksID int64, o domain.IncomeOrder) (domain.Transaction, error) {
+	var created domain.Transaction
+	err := s.repo.InTx(ctx, func(r Repository) error {
+		base, err := baseCurrency(ctx, r, booksID)
+		if err != nil {
+			return err
+		}
+
+		if _, _, err := s.brokerageAccounts(ctx, r, booksID, o.AccountID, o.CashAccountID, base); err != nil {
+			return err
+		}
+
+		category, err := loadAccount(ctx, r, booksID, o.CategoryID, "category_id")
+		if err != nil {
+			return err
+		}
+
+		if category.Class != domain.ClassIncome {
+			return fieldErr("category_id", "must be an income category", domain.ErrValidation)
+		}
+
+		accts, err := s.tradeAccounts(ctx, r, booksID, o.WithheldCategoryID, "withheld_category_id")
+		if err != nil {
+			return err
+		}
+
+		o.WithheldCategoryID = accts.Taxes
+		if o.Withheld == nil {
+			profile, err := s.profiles.Profile(ctx, booksID)
+			if err != nil {
+				return fmt.Errorf("read profile: %w", err)
+			}
+
+			o.DefaultWithholdingBP = s.defaults.WithholdingBP(profile.Region, string(o.Type))
+		}
+
+		postings, income, err := domain.BuildIncome(o)
+		if err != nil {
+			return err
+		}
+
+		created, err = s.insert(ctx, r, domain.Transaction{
+			BooksID: booksID, Date: o.Date, Description: o.Description, BalancingCurrency: base, Postings: postings, Income: &income,
+		})
+
+		return err
+	})
+
+	return created, err
+}
+
+// brokerageAccounts checks a security account and a cash account of the same brokerage
+// in the base currency.
+func (s *Service) brokerageAccounts(ctx context.Context, r Repository, booksID int64, securityID, cashID uuid.UUID, base money.Currency) (domain.Account, domain.Account, error) {
+	security, err := loadAccount(ctx, r, booksID, securityID, "account_id")
+	if err != nil {
+		return domain.Account{}, domain.Account{}, err
+	}
+
+	if !security.HoldsSecurity() {
+		return domain.Account{}, domain.Account{}, fieldErr("account_id", "must hold a security", domain.ErrValidation)
+	}
+
+	cash, err := loadAccount(ctx, r, booksID, cashID, "cash_account_id")
+	if err != nil {
+		return domain.Account{}, domain.Account{}, err
+	}
+
+	if cash.HoldsSecurity() || cash.ParentID != security.ParentID {
+		return domain.Account{}, domain.Account{}, fieldErr("cash_account_id", "must be a cash account of the brokerage holding account_id", domain.ErrValidation)
+	}
+
+	if cash.Instrument != base {
+		return domain.Account{}, domain.Account{}, fieldErr("cash_account_id", "must be in the base currency "+string(base), domain.ErrCurrencyUnsupported)
+	}
+
+	return security, cash, nil
+}
+
+// tradeAccounts returns the result and tax accounts; taxesCategory, named field in the
+// request, replaces the system account taxes.
+func (s *Service) tradeAccounts(ctx context.Context, r Repository, booksID int64, taxesCategory uuid.UUID, field string) (domain.TradeAccounts, error) {
+	var accts domain.TradeAccounts
+	for _, x := range []struct {
+		role domain.SystemRole
+		id   *uuid.UUID
+	}{{domain.RoleRealizedGains, &accts.RealizedGains}, {domain.RoleRealizedLosses, &accts.RealizedLosses}, {domain.RoleTaxes, &accts.Taxes}} {
+		a, err := r.SystemAccount(ctx, booksID, x.role)
+		if err != nil {
+			return domain.TradeAccounts{}, err
+		}
+
+		*x.id = a.ID
+	}
+
+	if taxesCategory != uuid.Nil {
+		if err := s.expenseCategory(ctx, r, booksID, taxesCategory, field); err != nil {
+			return domain.TradeAccounts{}, err
+		}
+
+		accts.Taxes = taxesCategory
+	}
+
+	return accts, nil
+}
+
+// checkLaterSales locks the security accounts of postings and rejects a change dated on
+// or before a non-voided sale of one of them other than exclude (P8 amendment A69).
+func checkLaterSales(ctx context.Context, r Repository, booksID int64, date time.Time, postings []domain.Posting, exclude uuid.UUID) error {
+	ids := make([]uuid.UUID, 0, len(postings))
+	for _, p := range postings {
+		if isSecurity(p.Amount.Currency()) {
+			ids = append(ids, p.AccountID)
+		}
+	}
+
+	if len(ids) == 0 {
+		return nil
+	}
+
+	// A sale locks its account before reading the holding; locking here, in id order,
+	// makes a concurrent change wait for that sale and then see it.
+	slices.SortFunc(ids, func(a, b uuid.UUID) int { return bytes.Compare(a[:], b[:]) })
+
+	for _, id := range slices.Compact(ids) {
+		if _, err := r.LockAccount(ctx, booksID, id); err != nil {
+			return err
+		}
+	}
+
+	later, err := r.LaterSaleExists(ctx, booksID, ids, date, exclude)
+	if err != nil {
+		return err
+	}
+
+	if later {
+		return ErrLaterSaleExists
+	}
+
+	return nil
+}
+
+func isSecurity(c money.Currency) bool {
+	_, err := money.ParseCurrency(string(c))
+	return err != nil
+}

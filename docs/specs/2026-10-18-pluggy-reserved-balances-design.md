@@ -106,7 +106,7 @@ Amendment of 2026-10-27:
   region: "Yield <day>" for one day and "Yield <first day> to <assertion date>" for a longer
   period in English, "Rendimento de <dia>" and "Rendimento de <primeiro dia> a <data>" in
   Portuguese. The other descriptions the ledger writes follow the same rule
-  (`internal/ledger/internal/domain/wording_*.go`).
+  (`internal/ledger/domain/wording_*.go`).
 
 ### D4 Transfers between checking and a reserved balance (A76)
 

@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/andrelopes-code/equori/internal/ledger/internal/app"
-	"github.com/andrelopes-code/equori/internal/ledger/internal/domain"
+	"github.com/andrelopes-code/equori/internal/ledger/app"
+	"github.com/andrelopes-code/equori/internal/ledger/domain"
 )
 
 func (f ledgerFixture) balance(t *testing.T, accountID domain.Account, on string, basis app.Basis) int64 {
