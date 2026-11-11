@@ -1,0 +1,15 @@
+@layer app {
+  .head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--slotted-space-4);
+  }
+
+  /* The hero takes the room the range control leaves, so its label and figure stay on one line. */
+  .hero {
+    flex: 1 1 24rem;
+    min-inline-size: 0;
+  }
+}

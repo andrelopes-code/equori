@@ -3,7 +3,7 @@ import { Heading, Text } from "@slotted/react/typography";
 
 import type { components } from "@/api/schema.gen";
 import { InstrumentCoverage } from "@/features/instruments/instrument-coverage";
-import { PriceHistory } from "@/features/instruments/price-history";
+import { QuoteSection } from "@/features/instruments/quote-section";
 import { useHistoryRefresh } from "@/features/instruments/use-history-refresh";
 import { useT } from "@/i18n/i18n-provider";
 
@@ -39,13 +39,7 @@ export function InstrumentPrices({
           onRecord={onRecord}
         />
       )}
-      {quote !== null && (
-        <PriceHistory
-          instrument={instrument.code}
-          quote={quote}
-          first={instrument.coverage?.first ?? null}
-        />
-      )}
+      {quote !== null && <QuoteSection instrument={instrument} quote={quote} />}
     </Stack>
   );
 }

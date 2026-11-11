@@ -1,4 +1,4 @@
-import type { ChartSeries } from "@slotted/core/chart";
+import type { ChartAnnotation, ChartSeries } from "@slotted/core/chart";
 import { Chart } from "@slotted/react/chart";
 import { useMemo } from "react";
 
@@ -6,65 +6,129 @@ import type { components } from "@/api/schema.gen";
 import {
   axisLabel,
   axisSpanDays,
-  showMarkers,
+  axisTicks,
 } from "@/features/instruments/price-axis";
-import { numberFormatter } from "@/i18n/format";
+import { usePriceFormat } from "@/features/instruments/use-price-format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { MASK } from "@/privacy/mask";
-import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type Price = components["schemas"]["Price"];
 
-// A price is an exact decimal that the chart plots as a number; nothing is computed from it.
+interface PriceChartProps {
+  prices: readonly Price[];
+  quote: string;
+  loading: boolean;
+  // The average cost of the book's positions, drawn as a reference line (IP6).
+  averageCost?: number | null | undefined;
+  onActiveDateChange?: ((date: string | null) => void) | undefined;
+}
+
+type Field = "date" | "price" | "manual";
+
+// A price is an exact decimal that the chart plots as a number; nothing is computed from it. A
+// manual price outranks the feeds (MQ1) and is marked, because it can depart from them (IP5).
 export function PriceChart({
   prices,
+  quote,
   loading,
-}: {
-  prices: readonly Price[];
-  loading: boolean;
-}) {
+  averageCost = null,
+  onActiveDateChange,
+}: PriceChartProps) {
   const t = useT();
   const [locale] = useAppLocale();
-  const fmt = useMoneyFormat();
+  const format = usePriceFormat(quote);
   const data = useMemo(
     () =>
       [...prices]
         .sort((a, b) => a.date.localeCompare(b.date))
-        .map((p) => ({ date: p.date, price: Number(p.value) })),
+        .map((p) => ({
+          date: p.date,
+          price: Number(p.value),
+          manual: p.source === "manual" ? Number(p.value) : null,
+        })),
     [prices],
   );
   const span = axisSpanDays(data);
-  const format = (value: number) =>
-    fmt.hidden
-      ? MASK
-      : numberFormatter(locale, { maximumFractionDigits: 6 }).format(value);
-  const series: ChartSeries<"date" | "price">[] = [
+  const ticks = axisTicks(
+    Date.parse(data[0]?.date ?? ""),
+    Date.parse(data.at(-1)?.date ?? ""),
+  );
+  const hasManual = data.some((d) => d.manual !== null);
+  const series: ChartSeries<Field>[] = [
     {
       id: "price",
       kind: "line",
       field: "price",
       label: t("instrument.chart.title"),
-      format,
-      // A time axis keeps the gaps between recorded prices; a marker shows each recorded price
-      // until the line is too dense for it.
-      markers: showMarkers(data.length) ? "all" : "last",
+      format: format.number,
+      markers: "last",
     },
+    ...(hasManual
+      ? [
+          {
+            id: "manual",
+            kind: "scatter",
+            field: "manual",
+            label: t("instrument.chart.manual"),
+            format: format.number,
+          } satisfies ChartSeries<Field>,
+        ]
+      : []),
   ];
+  const annotations: ChartAnnotation[] =
+    averageCost === null
+      ? []
+      : [
+          {
+            kind: "line",
+            axis: "start",
+            value: averageCost,
+            label: `${t("instrument.chart.averageCost")} ${format.number(averageCost)}`,
+            tone: "secondary",
+          },
+        ];
+
   return (
     <Chart
       variant="card"
-      size="sm"
+      size="md"
       loading={loading}
       aria-label={t("instrument.prices.title")}
-      legend={false}
+      legend={hasManual}
+      legendInteractive={false}
       data={data}
       series={series}
+      annotations={annotations}
       x={{
         field: "date",
         type: "time",
         format: (value) => axisLabel(value, locale, span),
       }}
-      y={{ format }}
+      y={{ format: format.tick }}
+      extendOption={(option) => withTicks(option, ticks)}
+      onActivePointChange={(point) => {
+        onActiveDateChange?.(point === null ? null : point.key);
+      }}
     />
   );
+}
+
+// The engine places the labels of a time axis by its own rule, a weekly step beside the first of
+// each month (F4). The option is the engine's, read as loose data (its x axis is a list of one);
+// this stays until the family exposes the tick positions.
+function withTicks(option: Record<string, unknown>, ticks: number[]) {
+  const axes = option.xAxis;
+  if (!Array.isArray(axes)) return option;
+
+  return {
+    ...option,
+    xAxis: axes.map((axis: unknown) => {
+      if (typeof axis !== "object" || axis === null) return axis;
+
+      const label: unknown = Reflect.get(axis, "axisLabel");
+      const axisLabel =
+        typeof label === "object" && label !== null ? label : {};
+
+      return { ...axis, axisLabel: { ...axisLabel, customValues: ticks } };
+    }),
+  };
 }

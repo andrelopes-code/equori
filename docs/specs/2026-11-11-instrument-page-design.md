@@ -45,7 +45,7 @@ Originality test: every element answers a question of section 2. No own element 
 
 | ID | Decision |
 |---|---|
-| IP1 | The page order is: Quote, Position (only when an account holds the instrument), Terms (fixed income with terms), Data, Prices by date (collapsed). The positions table moves from the top to the Position section. |
+| IP1 | The page order is: Quote, Position (only when an account holds the instrument), Terms (fixed income with terms), Data. The price table, collapsed, stands inside the Quote section under the range figures, because its rows are the points of the chart. The positions table moves from the top to the Position section. |
 | IP2 | The latest price is the price of the greatest date of `latestPriceQuery` (366 days). The hero shows it with the quote currency symbol, its date, its source label and, when the previous quote exists, the change against it: `(latest - previous) / previous` in basis points from the two exact decimals. A stale instrument (`coverage.stale`) adds a warning tag with the date. An instrument with no price shows the empty state of the section. |
 | IP3 | While the pointer or the keyboard reads a point of the chart, the hero shows that point's price and date and the change against the first point of the range. When the reading ends, the hero returns to IP2. |
 | IP4 | `fetchPrices` returns `{ items, interval }`. The range control states the interval in words when it is not `day`: "One point per week: the last price of each week". |

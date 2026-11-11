@@ -600,7 +600,7 @@ describe("Instrument page", () => {
     );
   });
 
-  it("PC19: states the position before the prices and nothing for an instrument not held", async () => {
+  it("PC19: states the position after the quote and nothing for an instrument not held", async () => {
     const { unmount } = await renderApp("/instruments/PETR4", { fetch: api() });
     const table = await screen.findByRole("table", {
       name: catalogEn["instrument.positions.caption"],
@@ -610,7 +610,7 @@ describe("Instrument page", () => {
     });
 
     expect(
-      table.compareDocumentPosition(prices) & Node.DOCUMENT_POSITION_FOLLOWING,
+      prices.compareDocumentPosition(table) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
     unmount();
 

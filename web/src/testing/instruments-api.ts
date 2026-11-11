@@ -104,6 +104,7 @@ export function instrumentsApi(overrides: Record<string, Route> = {}) {
         const from = query.get("from") ?? "";
         const to = query.get("to") ?? "";
         return json(200, {
+          interval: "day",
           items: priceFixtures.filter(
             (p) =>
               p.instrument === query.get("instrument") &&

@@ -119,8 +119,6 @@ export function InstrumentPage() {
       </PageHeader>
       <PageBody>
         <Stack gap={6}>
-          <InstrumentPositions code={i.code} />
-
           <InstrumentPrices
             instrument={i}
             quote={quote}
@@ -128,6 +126,8 @@ export function InstrumentPage() {
               setRecording(true);
             }}
           />
+
+          <InstrumentPositions code={i.code} />
           {fixedIncome && terms.isError && (
             <QueryError
               error={terms.error}

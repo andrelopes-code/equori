@@ -99,7 +99,7 @@ export function PriceSeriesPreview({
         </Text>
       )}
       {read > 0 && read <= maxPrices && (
-        <PriceChart prices={prices} loading={false} />
+        <PriceChart prices={prices} quote={quote} loading={false} />
       )}
       {read > 0 && (
         <Text size="sm" tone="muted">

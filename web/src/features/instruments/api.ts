@@ -19,6 +19,8 @@ export const instrumentKeys = {
   subtypes: (type: string) => ["instruments", "subtypes", type] as const,
   prices: (instrument: string, quote: string, from: string, to: string) =>
     ["instruments", "prices", instrument, quote, from, to] as const,
+  series: (instrument: string, quote: string, from: string, to: string) =>
+    ["instruments", "series", instrument, quote, from, to] as const,
   latest: (instrument: string, quote: string, today: string) =>
     ["instruments", "latest", instrument, quote, today] as const,
 };
@@ -40,6 +42,20 @@ export function subtypesQuery(api: Client<paths>, type: InstrumentType) {
   });
 }
 
+async function fetchPriceList(
+  api: Client<paths>,
+  instrument: string,
+  quote: string,
+  from: string,
+  to: string,
+) {
+  return unwrap(
+    await api.GET("/prices", {
+      params: { query: { instrument, quote_instrument: quote, from, to } },
+    }),
+  );
+}
+
 async function fetchPrices(
   api: Client<paths>,
   instrument: string,
@@ -47,13 +63,7 @@ async function fetchPrices(
   from: string,
   to: string,
 ) {
-  return (
-    await unwrap(
-      await api.GET("/prices", {
-        params: { query: { instrument, quote_instrument: quote, from, to } },
-      }),
-    )
-  ).items;
+  return (await fetchPriceList(api, instrument, quote, from, to)).items;
 }
 
 export function pricesQuery(
@@ -66,6 +76,20 @@ export function pricesQuery(
   return queryOptions({
     queryKey: instrumentKeys.prices(instrument, quote, from, to),
     queryFn: () => fetchPrices(api, instrument, quote, from, to),
+  });
+}
+
+// The prices of a range with the interval of its points (MQ30): one per day, week or month.
+export function priceSeriesQuery(
+  api: Client<paths>,
+  instrument: string,
+  quote: string,
+  from: string,
+  to: string,
+) {
+  return queryOptions({
+    queryKey: instrumentKeys.series(instrument, quote, from, to),
+    queryFn: () => fetchPriceList(api, instrument, quote, from, to),
   });
 }
 
