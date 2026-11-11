@@ -5,13 +5,13 @@
 
 ## 1. Context
 
-`internal/marketdata/internal/domain/terms.go` declares `IndexCDI = "cdi"`. `Terms.Validate` accepts the day count `bus252` only for that index, and `Accrue` in `accrual.go` compounds that index by business day. Every other index compounds by ended month. The Brazilian index is a rule of the domain core, against ADR 016 and the Regions section of `CONTRIBUTING.md`.
+`internal/marketdata/domain/terms.go` declares `IndexCDI = "cdi"`. `Terms.Validate` accepts the day count `bus252` only for that index, and `Accrue` in `accrual.go` compounds that index by business day. Every other index compounds by ended month. The Brazilian index is a rule of the domain core, against ADR 016 and the Regions section of `CONTRIBUTING.md`.
 
 ## 2. Decisions
 
 | ID | Decision | Reason |
 |---|---|---|
-| IC1 | An index source declares business-day compounding through an optional interface of `internal/marketdata/internal/index`: `BusinessDayCompounding`, method `CompoundsByBusinessDay() bool`. A source that does not implement it compounds by ended month. | ADR 016 X1 and X2: the module that consumes the rule declares it, and the region's implementation holds it. An optional interface leaves `overnight` and `cpi` untouched. |
+| IC1 | An index source declares business-day compounding through an optional interface of `internal/marketdata/index`: `BusinessDayCompounding`, method `CompoundsByBusinessDay() bool`. A source that does not implement it compounds by ended month. | ADR 016 X1 and X2: the module that consumes the rule declares it, and the region's implementation holds it. An optional interface leaves `overnight` and `cpi` untouched. |
 | IC2 | `brsgs.CDI` implements it with `true`; `brsgs.IPCA` with `false`. | The rule moves with the `br` source that serves the index. |
 | IC3 | The module computes the sorted index IDs of every registered source that compounds by business day, enabled or not, once in `marketdata.New`. | The rule holds today for `cdi` whether or not `br_cdi` is enabled; enabling a source must not change how stored terms accrue. |
 | IC4 | The domain receives that set as a value, `domain.BusinessDayIndexes`, in `Terms.Validate` and `Accrue`. The domain names no index. | ADR 016 Consequences: `domain` imports only the standard library and `platform/money`; it holds no registry. |

@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/andrelopes-code/equori/internal/marketdata/internal/adapter/postgres"
-	"github.com/andrelopes-code/equori/internal/marketdata/internal/domain"
+	"github.com/andrelopes-code/equori/internal/marketdata/domain"
+	"github.com/andrelopes-code/equori/internal/marketdata/postgres"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 

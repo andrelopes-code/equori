@@ -193,7 +193,7 @@ func TestCatalogRoles(t *testing.T) {
 func TestCatalogOutsideBrazil(t *testing.T) {
 	t.Parallel()
 
-	body, err := os.ReadFile("internal/feed/yahoochart/testdata/search.json")
+	body, err := os.ReadFile("feed/yahoochart/testdata/search.json")
 	if err != nil {
 		t.Fatal(err)
 	}

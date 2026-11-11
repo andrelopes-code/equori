@@ -83,7 +83,7 @@ Anti-goals:
 
 ### 3.3 New sources
 
-Each new source is a package of `internal/marketdata/internal/feed/<id>/`, an entry in `sourceEntries` with `Lag`, `Official` and default start (MQ6), and a test against a fixture in `testdata/` (`docs/contributing/regions.md`, step 6).
+Each new source is a package of `internal/marketdata/feed/<id>/`, an entry in `sourceEntries` with `Lag`, `Official` and default start (MQ6), and a test against a fixture in `testdata/` (`docs/contributing/regions.md`, step 6).
 
 | ID | Decision |
 |---|---|

@@ -1,0 +1,145 @@
+package httpapi
+
+import (
+	"context"
+	"errors"
+	"log/slog"
+	"net/http"
+	"time"
+
+	openapi_types "github.com/oapi-codegen/runtime/types"
+
+	"github.com/andrelopes-code/equori/internal/marketdata/domain"
+	"github.com/andrelopes-code/equori/internal/platform/money"
+
+	"github.com/andrelopes-code/equori/internal/platform/httpserver"
+	"github.com/andrelopes-code/equori/internal/platform/problem"
+)
+
+const BaseURL = "/api/v1"
+
+// ErrNotFound is returned by HolidayLister for an unknown calendar.
+var ErrNotFound = errors.New("not found")
+
+// HolidayLister is provided by the module root, which owns the calendar rules.
+type HolidayLister func(ctx context.Context, calendar string, year int) ([]Holiday, error)
+
+// CalendarLister is provided by the module root, which owns the calendar registry and the owner's region.
+type CalendarLister func(ctx context.Context) (CalendarList, error)
+
+// Service is the module root: instruments and prices (P8 amendments A59, A60).
+type Service interface {
+	DefineInstrument(ctx context.Context, in domain.Instrument) (domain.Instrument, error)
+	ListInstruments(ctx context.Context, typ string) ([]domain.Instrument, error)
+	Instrument(ctx context.Context, code string) (domain.Instrument, error)
+	EditInstrument(
+		ctx context.Context, code, name, exchange, subtype string, symbols map[string]string,
+	) (domain.Instrument, error)
+	DeleteInstrument(ctx context.Context, code string) error
+	PutTerms(ctx context.Context, code string, t domain.Terms) (domain.Terms, error)
+	Terms(ctx context.Context, code string) (domain.Terms, error)
+	RecordPrices(ctx context.Context, ps []domain.Price) error
+	ImportPrices(ctx context.Context, content []byte) (int, error)
+	ListPrices(ctx context.Context, instrument, quote money.Currency, from, to time.Time) ([]domain.Price, error)
+	Indexes(ctx context.Context) ([]domain.IndexSummary, error)
+	IndexRates(ctx context.Context, id string, from, to time.Time) ([]domain.IndexRate, error)
+	Expectations(ctx context.Context, id string) (domain.IndexExpectations, error)
+	Feeds(ctx context.Context) ([]domain.Feed, error)
+	SetFeed(ctx context.Context, id string, enabled, acceptUnofficial bool) (domain.Feed, error)
+	Refresh(ctx context.Context) error
+	SearchCatalog(ctx context.Context, query string) (domain.CatalogResult, error)
+	ProbeQuote(ctx context.Context, in domain.Instrument) (domain.ProbeResult, error)
+	RecordInstrumentPrices(
+		ctx context.Context, code string, quote money.Currency, points []domain.PricePoint, dryRun bool,
+	) (domain.PriceCounts, error)
+	RequestHistory(ctx context.Context, code string, from time.Time) error
+	Coverage(ctx context.Context, in domain.Instrument) (domain.Coverage, error)
+}
+
+var _ StrictServerInterface = (*Server)(nil)
+
+type Server struct {
+	holidays  HolidayLister
+	calendars CalendarLister
+	svc       Service
+	errs      httpserver.ErrorWriter
+}
+
+func NewServer(holidays HolidayLister, calendars CalendarLister, svc Service, log *slog.Logger) *Server {
+	return &Server{holidays: holidays, calendars: calendars, svc: svc, errs: httpserver.ErrorWriter{Log: log, Map: ToProblem}}
+}
+
+func (s *Server) Register(mux *http.ServeMux) {
+	strict := NewStrictHandlerWithOptions(s, nil, StrictHTTPServerOptions{
+		RequestErrorHandlerFunc:  s.errs.WriteRequestError,
+		ResponseErrorHandlerFunc: s.errs.Write,
+	})
+	HandlerWithOptions(strict, StdHTTPServerOptions{BaseURL: BaseURL, BaseRouter: mux, ErrorHandlerFunc: s.errs.WriteRequestError})
+}
+
+func (s *Server) ListHolidays(ctx context.Context, req ListHolidaysRequestObject) (ListHolidaysResponseObject, error) {
+	hs, err := s.holidays(ctx, req.Name, req.Params.Year)
+	if err != nil {
+		return nil, err
+	}
+
+	return ListHolidays200JSONResponse{Items: hs}, nil
+}
+
+func (s *Server) ListCalendars(ctx context.Context, _ ListCalendarsRequestObject) (ListCalendarsResponseObject, error) {
+	list, err := s.calendars(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return ListCalendars200JSONResponse(list), nil
+}
+
+// NewHoliday builds the API representation; the module root uses it in its HolidayLister.
+func NewHoliday(date openapi_types.Date, code, name, source string) Holiday {
+	h := Holiday{Date: date, Name: name, Source: HolidaySource(source)}
+	if code != "" {
+		h.Code = &code
+	}
+
+	return h
+}
+
+// ToProblem maps the module's errors to the codes declared in api/openapi.yaml (ADR 004).
+func ToProblem(err error) (problem.Details, bool) {
+	if fe, ok := errors.AsType[*domain.FieldError](err); ok {
+		d := problem.New(http.StatusUnprocessableEntity, "validation_failed", fe.Error())
+		d.Errors = []problem.FieldError{{Field: fe.Field, Message: fe.Message}}
+
+		return d, true
+	}
+
+	switch {
+	case errors.Is(err, ErrNotFound):
+		return problem.New(http.StatusNotFound, "not_found", "unknown calendar"), true
+	case errors.Is(err, domain.ErrUnknownInstrument):
+		return problem.New(http.StatusNotFound, "not_found", "unknown instrument"), true
+	case errors.Is(err, domain.ErrUnknownIndex):
+		return problem.New(http.StatusNotFound, "not_found", "unknown index"), true
+	case errors.Is(err, domain.ErrNoTerms):
+		return problem.New(http.StatusNotFound, "not_found", "the instrument has no terms"), true
+	case errors.Is(err, domain.ErrUnknownFeed):
+		return problem.New(http.StatusNotFound, "not_found", "unknown feed"), true
+	case errors.Is(err, domain.ErrAdminRequired):
+		return problem.New(http.StatusForbidden, "admin_required", "only an admin changes the instance's market data feeds"), true
+	case errors.Is(err, domain.ErrRefreshRunning):
+		return problem.New(http.StatusConflict, "refresh_running", "a tick of the market data feeds is running"), true
+	case errors.Is(err, domain.ErrUnofficialSource):
+		return problem.New(http.StatusUnprocessableEntity, "unofficial_source",
+			"the source is not official; enabling it needs accept_unofficial"), true
+	case errors.Is(err, domain.ErrNoSource):
+		return problem.New(http.StatusUnprocessableEntity, "no_source", "no enabled source quotes the instrument"), true
+	case errors.Is(err, domain.ErrInstrumentExists):
+		return problem.New(http.StatusConflict, "instrument_exists", err.Error()), true
+	case errors.Is(err, domain.ErrInstrumentInUse):
+		return problem.New(http.StatusConflict, "instrument_in_use",
+			"a position, an account or a transaction still uses the instrument"), true
+	}
+
+	return problem.Details{}, false
+}

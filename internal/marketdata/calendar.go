@@ -7,8 +7,8 @@ import (
 	"slices"
 	"time"
 
-	"github.com/andrelopes-code/equori/internal/marketdata/internal/adapter/postgres"
-	"github.com/andrelopes-code/equori/internal/marketdata/internal/calendar"
+	"github.com/andrelopes-code/equori/internal/marketdata/calendar"
+	"github.com/andrelopes-code/equori/internal/marketdata/postgres"
 )
 
 // CalendarBRBanking identifies the Brazilian banking calendar.

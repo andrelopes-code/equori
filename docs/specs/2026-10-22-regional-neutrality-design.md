@@ -52,7 +52,7 @@ An extension point is declared by the module that consumes it:
 | Part | Rule |
 |---|---|
 | Interface | Declared in the module's `internal/domain` (pure rules) or `internal/app` (I/O), named by behavior (`Calendar`, `PriceSource`, `Aggregator`, `Jurisdiction`, `Lexicon`). |
-| Implementation | One package per implementation under `internal/<module>/internal/<point>/<id>/`, for example `internal/marketdata/internal/feed/bcbptax/`. A pure data implementation (a calendar, a lexicon) is a Go value in a file named after its id. |
+| Implementation | One package per implementation under `internal/<module>/internal/<point>/<id>/`, for example `internal/marketdata/feed/bcbptax/`. A pure data implementation (a calendar, a lexicon) is a Go value in a file named after its id. |
 | Identifier | A lowercase string `^[a-z0-9_]{2,40}$`, prefixed by region when the implementation is regional (`br_banking`, `bcb_ptax`), unprefixed when it is international (`ecb`, `weekend`, `bic`). |
 | Registry | A value of type `Registry[T]` built by a constructor in the module root (`marketdata.NewCalendars()`), returning every implementation the module ships. A registry is immutable after construction; `Get(id)` returns the implementation or `ErrUnknown<Point>`. |
 | Selection | The instance enables implementations by id through environment variables read in `internal/platform/config` as plain strings; the module validates the ids against its registry at startup and the process exits with the variable name and the unknown id. |
@@ -112,13 +112,13 @@ Numbers in brackets are the coupling numbers of the survey of 2026-10-22.
 ### 5.2 Conversion [2]
 
 - The constant `pivot` is removed. `Convert` tries, in order: direct price, inverse price, then a two-leg path through an intermediate instrument `X` that has a price (direct or inverse) with both `from` and `to` on or before the date.
-- Among several intermediates, the chosen one has the latest older leg date (the minimum of its two leg dates is the greatest), then the lowest code in byte order. One query in `db/queries/marketdata` returns the candidates.
+- Among several intermediates, the chosen one has the latest older leg date (the minimum of its two leg dates is the greatest), then the lowest code in byte order. One query in `internal/marketdata/postgres/queries` returns the candidates.
 - `Conversion.Prices` keeps returning the prices used (B05). P8 amendment A61 is amended in the domain documents.
 
 ### 5.3 Price feeds [3]
 
 ```go
-// internal/marketdata/internal/feed
+// internal/marketdata/feed
 type Source interface {
 	ID() string                                   // price source id, e.g. "bcb_ptax"
 	Codes(ins []Instrument) []money.Currency      // the instrument codes whose prices this source fetches
@@ -144,7 +144,7 @@ type Source interface {
 ### 5.5 Business-day calendars [13]
 
 ```go
-// internal/marketdata/internal/calendar
+// internal/marketdata/calendar
 type Calendar struct {
 	ID      string
 	Weekend []time.Weekday

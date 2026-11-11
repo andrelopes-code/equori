@@ -7,8 +7,8 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/andrelopes-code/equori/internal/marketdata/internal/adapter/postgres"
-	"github.com/andrelopes-code/equori/internal/marketdata/internal/domain"
+	"github.com/andrelopes-code/equori/internal/marketdata/domain"
+	"github.com/andrelopes-code/equori/internal/marketdata/postgres"
 )
 
 // Terms are the contract of a fixed income security (investments design 4.2).

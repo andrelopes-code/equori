@@ -8,10 +8,10 @@ import (
 
 	"github.com/jackc/pgx/v5/pgtype"
 
-	"github.com/andrelopes-code/equori/internal/marketdata/internal/adapter/postgres"
-	"github.com/andrelopes-code/equori/internal/marketdata/internal/domain"
-	"github.com/andrelopes-code/equori/internal/marketdata/internal/expectation"
-	"github.com/andrelopes-code/equori/internal/marketdata/internal/expectation/brfocus"
+	"github.com/andrelopes-code/equori/internal/marketdata/domain"
+	"github.com/andrelopes-code/equori/internal/marketdata/expectation"
+	"github.com/andrelopes-code/equori/internal/marketdata/expectation/brfocus"
+	"github.com/andrelopes-code/equori/internal/marketdata/postgres"
 )
 
 type IndexExpectations = domain.IndexExpectations

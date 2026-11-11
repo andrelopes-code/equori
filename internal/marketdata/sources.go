@@ -5,16 +5,16 @@ import (
 	"net/http"
 	"slices"
 
-	"github.com/andrelopes-code/equori/internal/marketdata/internal/domain"
-	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed"
-	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed/b3consolidated"
-	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed/b3cotahist"
-	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed/bcbptax"
-	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed/coinbase"
-	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed/cvmfunds"
-	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed/ecb"
-	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed/tesourodireto"
-	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed/yahoochart"
+	"github.com/andrelopes-code/equori/internal/marketdata/domain"
+	"github.com/andrelopes-code/equori/internal/marketdata/feed"
+	"github.com/andrelopes-code/equori/internal/marketdata/feed/b3consolidated"
+	"github.com/andrelopes-code/equori/internal/marketdata/feed/b3cotahist"
+	"github.com/andrelopes-code/equori/internal/marketdata/feed/bcbptax"
+	"github.com/andrelopes-code/equori/internal/marketdata/feed/coinbase"
+	"github.com/andrelopes-code/equori/internal/marketdata/feed/cvmfunds"
+	"github.com/andrelopes-code/equori/internal/marketdata/feed/ecb"
+	"github.com/andrelopes-code/equori/internal/marketdata/feed/tesourodireto"
+	"github.com/andrelopes-code/equori/internal/marketdata/feed/yahoochart"
 )
 
 type sourceEntry struct {

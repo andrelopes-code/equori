@@ -144,7 +144,7 @@ func expectProbeRejected(t *testing.T, h *apitest.Harness) {
 func probeHarness(t *testing.T, enabled []string, bound time.Duration) *apitest.Harness {
 	t.Helper()
 
-	body, err := os.ReadFile("internal/feed/yahoochart/testdata/vwce.json")
+	body, err := os.ReadFile("feed/yahoochart/testdata/vwce.json")
 	if err != nil {
 		t.Fatal(err)
 	}

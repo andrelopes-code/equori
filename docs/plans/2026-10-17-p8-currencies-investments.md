@@ -2,7 +2,7 @@
 
 **Goal:** Deliver roadmap phase P8: securities as instruments, prices with two public feeds, conversion between instruments, valued balances, foreign purchases, currency exchanges, trades with average cost, investment income, the Portfolio derived tables and multi-currency planning (S16, S17, S21, S22, S64–S67).
 
-**Architecture:** `platform/money` generalizes `Money` to any instrument with its scale and adds an exact `Rate` and a single-rounding conversion. `marketdata` owns instruments, prices, feeds behind an anti-corruption layer (`internal/marketdata/internal/feed`) and the conversion service. `ledger` records foreign purchases, exchanges, trades and investment income as transactions with detail rows (D1 data) and computes the cost of a sale from the weights of the security account. A new module `internal/portfolio` rebuilds positions, realized results and income events from Ledger facts on the outbox events (ADR 006) and reads Ledger only through `ledger.Module` methods (ADR 002). `planning` drops the base-currency restriction of A47.
+**Architecture:** `platform/money` generalizes `Money` to any instrument with its scale and adds an exact `Rate` and a single-rounding conversion. `marketdata` owns instruments, prices, feeds behind an anti-corruption layer (`internal/marketdata/feed`) and the conversion service. `ledger` records foreign purchases, exchanges, trades and investment income as transactions with detail rows (D1 data) and computes the cost of a sale from the weights of the security account. A new module `internal/portfolio` rebuilds positions, realized results and income events from Ledger facts on the outbox events (ADR 006) and reads Ledger only through `ledger.Module` methods (ADR 002). `planning` drops the base-currency restriction of A47.
 
 **Tech Stack:** As P7. New dependency: none (`archive/zip`, `encoding/json`, `math/big` from the standard library). New external hosts, contacted only when enabled (N17): `olinda.bcb.gov.br` (BCB PTAX), `bvmf.bmfbovespa.com.br` (B3 COTAHIST).
 
@@ -94,7 +94,7 @@ Commit `feat(platform): amounts of any instrument and exact rates`.
 
 ### Task 2: Instruments, prices and conversion (A59, A60, A61)
 
-**Files:** `db/migrations/00021_marketdata_prices.sql`, `db/queries/marketdata/{instrument.sql,price.sql}`, `api/openapi.yaml` (tag `marketdata`: `/instruments`, `/instruments/{code}`, `/prices`, `/prices/import`; schemas `Instrument`, `Price`, `Rate`; codes `instrument_exists`, `price_missing`; `Money.currency` pattern of A58), `internal/marketdata/{marketdata.go,price.go,convert.go}`, `internal/marketdata/internal/adapter/httpapi/{server.go,instruments.go,prices.go}`, `internal/marketdata/{instruments_test.go,prices_test.go,convert_test.go,schema_test.go}`.
+**Files:** `db/migrations/00021_marketdata_prices.sql`, `internal/marketdata/postgres/queries/{instrument.sql,price.sql}`, `api/openapi.yaml` (tag `marketdata`: `/instruments`, `/instruments/{code}`, `/prices`, `/prices/import`; schemas `Instrument`, `Price`, `Rate`; codes `instrument_exists`, `price_missing`; `Money.currency` pattern of A58), `internal/marketdata/{marketdata.go,price.go,convert.go}`, `internal/marketdata/httpapi/{server.go,instruments.go,prices.go}`, `internal/marketdata/{instruments_test.go,prices_test.go,convert_test.go,schema_test.go}`.
 
 **Tables:** `marketdata_instrument` gains `quote_currency text REFERENCES marketdata_instrument (code)` and `exchange text CHECK (exchange IN ('B3'))`, with `CHECK ((instrument_type = 'currency') = (quote_currency IS NULL))`; `marketdata_price (instrument, quote_instrument, date, value numeric(30,12) CHECK (value > 0), source CHECK IN ('manual','csv','bcb_ptax','b3_cotahist'), priority smallint, recorded_at timestamptz DEFAULT now())`, `PRIMARY KEY (instrument, quote_instrument, date, source)`, `CHECK (instrument <> quote_instrument)`, `CHECK (priority = CASE source WHEN 'manual' THEN 1 WHEN 'csv' THEN 2 ELSE 3 END)`, both instrument columns FK to `marketdata_instrument`; index `(instrument, quote_instrument, date DESC)` (7.5).
 
@@ -120,7 +120,7 @@ Commit `feat(marketdata): define instruments and record prices`.
 
 ### Task 3: Price feeds (A62)
 
-**Files:** `internal/marketdata/internal/feed/{ptax.go,cotahist.go,feed.go}`, `internal/marketdata/internal/feed/{ptax_test.go,cotahist_test.go}`, `internal/marketdata/internal/feed/testdata/{ptax_usd.json,COTAHIST_D29102026.TXT}`, `internal/marketdata/{feeds.go,feeds_test.go}`, `internal/platform/config/{config.go,config_test.go}` (`EQUORI_PRICE_FEEDS`, `EQUORI_BCB_PTAX_URL`, `EQUORI_B3_COTAHIST_URL`), `internal/server/server.go` (`App.Marketdata`, feed config), `cmd/equori/main.go` (`RunFeeds(ctx, 6*time.Hour)`), `docs/operations/price-feeds.md`.
+**Files:** `internal/marketdata/feed/{ptax.go,cotahist.go,feed.go}`, `internal/marketdata/feed/{ptax_test.go,cotahist_test.go}`, `internal/marketdata/feed/testdata/{ptax_usd.json,COTAHIST_D29102026.TXT}`, `internal/marketdata/{feeds.go,feeds_test.go}`, `internal/platform/config/{config.go,config_test.go}` (`EQUORI_PRICE_FEEDS`, `EQUORI_BCB_PTAX_URL`, `EQUORI_B3_COTAHIST_URL`), `internal/server/server.go` (`App.Marketdata`, feed config), `cmd/equori/main.go` (`RunFeeds(ctx, 6*time.Hour)`), `docs/operations/price-feeds.md`.
 
 ```go
 // feed/feed.go: the anti-corruption layer returns marketdata prices only.

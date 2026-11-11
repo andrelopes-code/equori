@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/andrelopes-code/equori/internal/marketdata/internal/adapter/postgres"
-	"github.com/andrelopes-code/equori/internal/marketdata/internal/domain"
+	"github.com/andrelopes-code/equori/internal/marketdata/domain"
+	"github.com/andrelopes-code/equori/internal/marketdata/postgres"
 )
 
 // Coverage reports the stored prices of in and the sources that quote it (A222 MQ23, MQ24).

@@ -135,7 +135,7 @@ type yahooFake struct {
 func newYahooFake(t *testing.T) *yahooFake {
 	t.Helper()
 
-	body, err := os.ReadFile("internal/feed/yahoochart/testdata/aapl.json")
+	body, err := os.ReadFile("feed/yahoochart/testdata/aapl.json")
 	if err != nil {
 		t.Fatal(err)
 	}

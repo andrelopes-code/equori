@@ -260,7 +260,7 @@ func TestISOCurrencies(t *testing.T) {
 
 **Files:**
 - Create: `internal/marketdata/currencies.go`
-- Modify: `db/queries/marketdata/instrument.sql` (add query below)
+- Modify: `internal/marketdata/postgres/queries/instrument.sql` (add query below)
 - Modify: `cmd/equori/main.go` `serve()` (after `server.New`, before starting goroutines: `if err := app.Marketdata.ReconcileCurrencies(ctx); err != nil { return err }`)
 - Modify: `internal/apitest/apitest.go` `start` (same call after `server.New`, `h.t.Fatal` on error)
 - Test: `internal/marketdata/instruments_test.go`
@@ -387,8 +387,8 @@ func TestProvisioningUsesTheChosenCurrency(t *testing.T) {
 ### Task 9: Calendar rule tables
 
 **Files:**
-- Create: `internal/marketdata/internal/calendar/calendar.go` (types below), `internal/marketdata/internal/calendar/rule.go`, `internal/marketdata/internal/calendar/br_banking.go`, `internal/marketdata/internal/calendar/weekend.go`
-- Test: `internal/marketdata/internal/calendar/rule_test.go`
+- Create: `internal/marketdata/calendar/calendar.go` (types below), `internal/marketdata/calendar/rule.go`, `internal/marketdata/calendar/br_banking.go`, `internal/marketdata/calendar/weekend.go`
+- Test: `internal/marketdata/calendar/rule_test.go`
 
 **Interfaces:**
 - Produces:
@@ -446,7 +446,7 @@ func TestBRBankingMatchesThePreviousRules(t *testing.T) {
 }
 ```
 
-- [ ] **Step 2:** `go test ./internal/marketdata/internal/calendar/` → FAIL.
+- [ ] **Step 2:** `go test ./internal/marketdata/calendar/` → FAIL.
 - [ ] **Step 3:** Implement. `ObservedNearestWeekday`: Saturday → Friday, Sunday → Monday. `ObservedNextWorkday`: Saturday or Sunday → next Monday. `BRBanking` restates the list in `internal/marketdata/calendar.go:65-90` (`ruleHolidays`) with `From: 2024` for Black Consciousness Day.
 - [ ] **Step 4:** Run → PASS.
 - [ ] **Step 5:** Commit `feat(marketdata): declare business-day calendars as rule tables`.
@@ -457,7 +457,7 @@ func TestBRBankingMatchesThePreviousRules(t *testing.T) {
 - Modify: `internal/marketdata/calendar.go` (delete `CalendarBRBanking`, `Easter` body, `ruleHolidays`; `Module` holds `calendars registry.Registry[calendar.Calendar]` built in `marketdata.New`; `Holidays`, `IsBusinessDay` and `shift` use `Calendar.Holidays` and `Calendar.IsWeekend`; unknown ids return an error wrapping `ErrUnknownCalendar`; `func Easter(year int) time.Time { return calendar.Easter(year) }` stays as the exported wrapper)
 - Create: `internal/marketdata/region_defaults.go`: `func (m *Module) DefaultCalendar(region string) string` (`BR` → `br_banking`, any other → `weekend`); `func (m *Module) Calendars() []string`
 - Modify: `api/openapi.yaml` (new `GET /calendars`, `operationId: listCalendars`, response `{items: [{id, weekend: [string enum of weekday names]}]}`)
-- Modify: `internal/marketdata/internal/adapter/httpapi/server.go`, `internal/marketdata/marketdata.go`
+- Modify: `internal/marketdata/httpapi/server.go`, `internal/marketdata/marketdata.go`
 - Modify: `internal/server/tool_exposure_test.go` (`"listCalendars": "-pending"`)
 - Test: `internal/marketdata/calendar_test.go`
 
@@ -502,11 +502,11 @@ func TestBRBankingMatchesThePreviousRules(t *testing.T) {
 ### Task 13: Price source interface
 
 **Files:**
-- Modify: `internal/marketdata/internal/feed/feed.go` (add `Source` and `Instrument` below; keep `Quote`, `ErrNoData`, `get`)
-- Move: `internal/marketdata/internal/feed/ptax.go` and its test → `internal/marketdata/internal/feed/bcbptax/` (type `Source`, `func New(c *http.Client, baseURL string) Source`, `ID()` = `bcb_ptax`, `Codes` = currency instruments other than `BRL`, `Fetch` loops codes and skips `feed.ErrNoData` per code)
-- Move: `internal/marketdata/internal/feed/cotahist.go` and its test → `internal/marketdata/internal/feed/b3cotahist/` (`ID()` = `b3_cotahist`; `Codes` = instruments with exchange `B3` and quote currency `BRL` — Task 17 changes `B3` to `BVMF`; `Fetch` loops days from `from` to `to`, skips Saturdays and Sundays and days with `ErrNoData`)
+- Modify: `internal/marketdata/feed/feed.go` (add `Source` and `Instrument` below; keep `Quote`, `ErrNoData`, `get`)
+- Move: `internal/marketdata/feed/ptax.go` and its test → `internal/marketdata/feed/bcbptax/` (type `Source`, `func New(c *http.Client, baseURL string) Source`, `ID()` = `bcb_ptax`, `Codes` = currency instruments other than `BRL`, `Fetch` loops codes and skips `feed.ErrNoData` per code)
+- Move: `internal/marketdata/feed/cotahist.go` and its test → `internal/marketdata/feed/b3cotahist/` (`ID()` = `b3_cotahist`; `Codes` = instruments with exchange `B3` and quote currency `BRL` — Task 17 changes `B3` to `BVMF`; `Fetch` loops days from `from` to `to`, skips Saturdays and Sundays and days with `ErrNoData`)
 - Modify: `internal/marketdata/feeds.go` (`FeedConfig{Sources []feed.Source; Client *http.Client; Clock clock.Clock; Log *slog.Logger}`; one `tick(ctx, src)`: codes from `src.Codes(instruments)`, start = minimum over codes of `feedStart(ctx, src.ID(), code, today)`, `Fetch`, store every returned quote, log the error when not nil)
-- Modify: `internal/marketdata/internal/domain/price.go:13-37` (delete `SourceBCBPTAX`, `SourceB3COTAHIST`; `Priority`: `manual` 1, `csv` 2, any `registry.ValidID` id 3, otherwise error)
+- Modify: `internal/marketdata/domain/price.go:13-37` (delete `SourceBCBPTAX`, `SourceB3COTAHIST`; `Priority`: `manual` 1, `csv` 2, any `registry.ValidID` id 3, otherwise error)
 - Modify: `internal/server/server.go:51-53,82-85` (build `[]feed.Source` from the existing booleans and URLs; Task 14 replaces them)
 - Test: `internal/marketdata/feeds_test.go`, the moved tests
 
@@ -549,7 +549,7 @@ func TestBRBankingMatchesThePreviousRules(t *testing.T) {
 ### Task 15: ECB source
 
 **Files:**
-- Create: `internal/marketdata/internal/feed/ecb/ecb.go`, `ecb_test.go`, `testdata/eurofxref-hist-90d.xml`
+- Create: `internal/marketdata/feed/ecb/ecb.go`, `ecb_test.go`, `testdata/eurofxref-hist-90d.xml`
 - Modify: `internal/marketdata/sources.go` (register `ecb`; default URL `https://www.ecb.europa.eu/stats/eurofxref/eurofxref-hist-90d.xml` — open it once with `curl -sI`; a non-200 answer stops the task and is reported)
 
 Fixture (the ECB format):
@@ -565,7 +565,7 @@ Fixture (the ECB format):
 ```
 
 - [ ] **Step 1: Write the failing test** `TestECB`: `Codes` of `EUR, USD, GBP, BTC (crypto)` → `[GBP USD]`; `Fetch(ctx, [USD], 2026-10-20, 2026-10-20)` → exactly `Quote{Instrument: "EUR", Quote: "USD", Date: 2026-10-20, Value: "1.0832"}`; `Fetch` with range `2026-10-19..2026-10-20` and codes `[GBP USD]` → 4 quotes; a 404 → `errors.Is(err, feed.ErrNoData)`.
-- [ ] **Step 2:** `go test ./internal/marketdata/internal/feed/ecb/` → FAIL.
+- [ ] **Step 2:** `go test ./internal/marketdata/feed/ecb/` → FAIL.
 - [ ] **Step 3:** Implement with `encoding/xml` and `money.ParseRate`.
 - [ ] **Step 4:** Run → PASS.
 - [ ] **Step 5:** Commit `feat(marketdata): add the ECB reference rates feed`.
@@ -575,7 +575,7 @@ Fixture (the ECB format):
 **Files:**
 - Modify: `internal/marketdata/convert.go` (delete `pivot`; the third step calls `ConversionIntermediate`, then `m.leg(from, x)` and `m.leg(x, to)`)
 - Modify: `internal/marketdata/feeds.go` (no `pivot` reference remains)
-- Modify: `db/queries/marketdata/price.sql`:
+- Modify: `internal/marketdata/postgres/queries/price.sql`:
   ```sql
   -- name: ConversionIntermediate :one
   WITH legs AS (
@@ -611,9 +611,9 @@ Fixture (the ECB format):
 
 **Files:**
 - Create: `db/migrations/00044_marketdata_mic_types.sql`: drop the type check (`00003_marketdata.sql:4`) and the exchange check (`00021_marketdata_prices.sql:4`); `UPDATE marketdata_instrument SET exchange = 'BVMF' WHERE exchange = 'B3'`; `UPDATE ... SET instrument_type = 'reit' WHERE instrument_type = 'fii'`; `... 'depositary_receipt' WHERE ... 'bdr'`; add `CHECK (instrument_type IN ('currency','stock','etf','reit','depositary_receipt','fixed_income','fund','crypto'))` and `CHECK (exchange ~ '^[A-Z0-9]{4}$')`. Apply the same type rename to `portfolio_realized_result.tax_class` rows (Task 20 rebuilds them).
-- Modify: `internal/marketdata/internal/domain/instrument.go:16,26,44-45` (`SecurityTypes`; exchange rule `must be an ISO 10383 MIC`, pattern `^[A-Z0-9]{4}$`)
+- Modify: `internal/marketdata/domain/instrument.go:16,26,44-45` (`SecurityTypes`; exchange rule `must be an ISO 10383 MIC`, pattern `^[A-Z0-9]{4}$`)
 - Modify: `api/openapi.yaml:5441` (type enum), `:5458-5483` (`exchange`: `pattern: "^[A-Z0-9]{4}$"`)
-- Modify: `internal/marketdata/internal/feed/b3cotahist/b3cotahist.go` (`BVMF`)
+- Modify: `internal/marketdata/feed/b3cotahist/b3cotahist.go` (`BVMF`)
 - Test: `internal/marketdata/instruments_test.go`, `internal/marketdata/mic_migration_test.go` (new, after `internal/ledger/link_migration_test.go`: `pgtest.Empty`, `postgres.MigrateTo(ctx, pool, 43, log)`, insert, migrate up, read)
 
 - [ ] **Step 1: Write the failing tests.** `POST /api/v1/instruments` with `exchange: "B3"` → 400 `invalid_request` field `exchange`; `"BVMF"` → 201; `type: "fii"` → 400 field `type`; `"reit"` → 201. Migration test: row `('MXRF11', 'fii', 0, 'Maxi Renda', 'BRL', 'B3')` reads `('reit', 'BVMF')` after migrating up.

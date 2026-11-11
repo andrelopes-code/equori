@@ -6,10 +6,10 @@ import (
 	"slices"
 	"time"
 
-	"github.com/andrelopes-code/equori/internal/marketdata/internal/adapter/postgres"
-	"github.com/andrelopes-code/equori/internal/marketdata/internal/domain"
-	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed"
-	"github.com/andrelopes-code/equori/internal/marketdata/internal/index"
+	"github.com/andrelopes-code/equori/internal/marketdata/domain"
+	"github.com/andrelopes-code/equori/internal/marketdata/feed"
+	"github.com/andrelopes-code/equori/internal/marketdata/index"
+	"github.com/andrelopes-code/equori/internal/marketdata/postgres"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
 )
 

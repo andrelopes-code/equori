@@ -38,11 +38,11 @@ sql:
             go_type: github.com/google/uuid.NullUUID
   - engine: postgresql
     schema: db/migrations
-    queries: db/queries/marketdata
+    queries: internal/marketdata/postgres/queries
     gen:
       go:
         <<: *go
-        out: internal/marketdata/internal/adapter/postgres
+        out: internal/marketdata/postgres
   - engine: postgresql
     schema: db/migrations
     queries: internal/ledger/postgres/queries

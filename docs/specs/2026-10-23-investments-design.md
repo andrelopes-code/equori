@@ -50,7 +50,7 @@ Work is delivered in the order of section 4. Each part is a vertical slice with 
 - ADR 005: money is an integer of minor units; a rate is `money.Rate`, an exact decimal with at most 12 decimals. Dates are calendar dates.
 - ADR 016, X1 to X10: an extension point is an interface declared by the consuming module, one package per implementation under `internal/<module>/internal/<point>/<id>/`, a registry built by a constructor, an identifier matching `^[a-z0-9_]{2,40}$`, a column holding it with that `CHECK`, and two implementations (one may be a test implementation).
 - `CONTRIBUTING.md`: a behavior change starts with a failing test; a schema change is a new goose migration; a new operation in `api/openapi.yaml` has an entry in `internal/server/tool_exposure_test.go`; every business table has `user_id`, but `marketdata_*` tables are instance-wide like `marketdata_instrument`.
-- Existing facts this design builds on: `Jurisdiction` in `internal/portfolio/domain/jurisdiction.go` (`TaxClass(instrumentType, exchange)`, `Treatment(incomeType)`, `IncomeTypes()`); price `Source` in `internal/marketdata/internal/feed/feed.go` (`ID`, `Codes`, `Fetch`) with the sources `bcb_ptax`, `b3_cotahist` and `ecb`; price priority `manual` 1, `csv` 2, feeds 3 (A60); `ValuedBalance` in Ledger (A65) and its `Parts` (A121); `GET /positions`, `/realized-results`, `/income-events` in Portfolio.
+- Existing facts this design builds on: `Jurisdiction` in `internal/portfolio/domain/jurisdiction.go` (`TaxClass(instrumentType, exchange)`, `Treatment(incomeType)`, `IncomeTypes()`); price `Source` in `internal/marketdata/feed/feed.go` (`ID`, `Codes`, `Fetch`) with the sources `bcb_ptax`, `b3_cotahist` and `ecb`; price priority `manual` 1, `csv` 2, feeds 3 (A60); `ValuedBalance` in Ledger (A65) and its `Parts` (A121); `GET /positions`, `/realized-results`, `/income-events` in Portfolio.
 
 ## 4. Parts, in delivery order
 
@@ -145,5 +145,5 @@ I1, I3 and I4 are independent. I2 and I3 can run in parallel after I1.
 
 ### Amendment of 2026-10-26
 
-- IPCA accrual, decided: the accrual uses the last published level, repeated until the next one is published; no estimate of the current month enters a price. Reason: a published level is verifiable against the source, and an estimate would change prices already shown once the real level arrives. `TestAccrueIPCAWithoutPublishedMonth` (`internal/marketdata/internal/domain/accrual_test.go`) fixes the behavior.
+- IPCA accrual, decided: the accrual uses the last published level, repeated until the next one is published; no estimate of the current month enters a price. Reason: a published level is verifiable against the source, and an estimate would change prices already shown once the real level arrives. `TestAccrueIPCAWithoutPublishedMonth` (`internal/marketdata/domain/accrual_test.go`) fixes the behavior.
 - Treatment of `cri` and `cra` for an owner that is not an individual: still open. `br` keeps assuming an individual.

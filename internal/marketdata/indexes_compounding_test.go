@@ -4,7 +4,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/andrelopes-code/equori/internal/marketdata/internal/domain"
+	"github.com/andrelopes-code/equori/internal/marketdata/domain"
 )
 
 func TestBusinessDayIndexes(t *testing.T) {

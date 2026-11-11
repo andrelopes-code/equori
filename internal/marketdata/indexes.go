@@ -10,12 +10,12 @@ import (
 
 	"github.com/jackc/pgx/v5/pgtype"
 
-	"github.com/andrelopes-code/equori/internal/marketdata/internal/adapter/postgres"
-	"github.com/andrelopes-code/equori/internal/marketdata/internal/domain"
-	"github.com/andrelopes-code/equori/internal/marketdata/internal/index"
-	"github.com/andrelopes-code/equori/internal/marketdata/internal/index/brsgs"
-	"github.com/andrelopes-code/equori/internal/marketdata/internal/index/cpi"
-	"github.com/andrelopes-code/equori/internal/marketdata/internal/index/overnight"
+	"github.com/andrelopes-code/equori/internal/marketdata/domain"
+	"github.com/andrelopes-code/equori/internal/marketdata/index"
+	"github.com/andrelopes-code/equori/internal/marketdata/index/brsgs"
+	"github.com/andrelopes-code/equori/internal/marketdata/index/cpi"
+	"github.com/andrelopes-code/equori/internal/marketdata/index/overnight"
+	"github.com/andrelopes-code/equori/internal/marketdata/postgres"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
 )
 
