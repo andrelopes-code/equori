@@ -20,7 +20,7 @@ jobs:
       run:
         shell: pwsh
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       # The check must fail on a newer minor before its pass on the live list counts.
       - run: |
           $pin = (Get-Content packaging/windows/postgresql.env | Where-Object { $_ -match '^PG_VERSION=' }) -replace '^PG_VERSION=(\d+)\.(\d+)-\d+$', '$1 $2'

@@ -42,8 +42,8 @@ jobs:
       id-token: write
       attestations: write
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-go@v6
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
       - uses: actions/setup-node@v7
@@ -73,20 +73,20 @@ jobs:
       id-token: write
       attestations: write
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ghcr.io/${{ github.repository }}
           tags: |
@@ -94,7 +94,7 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=raw,value=latest,enable=${{ !contains(github.ref_name, '-') }}
       # R4: the image reports the tag before anything is pushed.
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@v7
         with:
           context: .
           load: true
@@ -111,7 +111,7 @@ jobs:
           prev=${{ steps.prev.outputs.tag }}
           scripts/upgrade-test.sh "ghcr.io/${{ github.repository }}:${prev#v}" equori:smoke "$prev"
       - id: meta-standalone
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ghcr.io/${{ github.repository }}
           tags: |
@@ -119,7 +119,7 @@ jobs:
             type=semver,pattern={{major}}.{{minor}},suffix=-standalone
             type=raw,value=standalone,enable=${{ !contains(github.ref_name, '-') }}
       # R4: the standalone image turns healthy and reports the tag before it is pushed.
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@v7
         with:
           context: .
           target: standalone
@@ -131,7 +131,7 @@ jobs:
       # P14 A166.2: the pasted command installs this image before it is pushed.
       - run: scripts/install-smoke.sh equori:standalone "${GITHUB_REF_NAME#v}"
       - id: push
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           platforms: linux/amd64,linux/arm64
@@ -145,7 +145,7 @@ jobs:
           subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true
       - id: push-standalone
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           target: standalone
@@ -181,10 +181,10 @@ jobs:
       ARTIFACT_SIGNING_ACCOUNT: ${{ secrets.ARTIFACT_SIGNING_ACCOUNT }}
       ARTIFACT_SIGNING_PROFILE: ${{ secrets.ARTIFACT_SIGNING_PROFILE }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
       - uses: actions/setup-node@v7
@@ -239,7 +239,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: actions/download-artifact@v8
         with:
           name: dist
@@ -281,13 +281,13 @@ jobs:
     if: startsWith(github.ref_name, 'v0.') || !contains(github.ref_name, '-')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: actions/download-artifact@v8
         with:
           name: dist
           path: dist/
       - run: scripts/render-formula.sh "${GITHUB_REF_NAME#v}" dist/SHA256SUMS > "$RUNNER_TEMP/equori.rb"
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           repository: andrelopes-code/homebrew-equori
           token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
