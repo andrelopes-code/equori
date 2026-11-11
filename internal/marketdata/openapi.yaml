@@ -495,7 +495,7 @@ paths:
       tags: [marketdata]
       operationId: listPrices
       x-book-role: read
-      summary: The chosen price of each date with prices in [from, to], at most 18,300 days, one point per period of interval (P8 amendment A60, A222 MQ30).
+      summary: The chosen price of each date with prices in [from, to], at most 18,300 days, one point per date with a price (P8 amendment A60, A222 MQ30).
       parameters:
         - name: instrument
           in: query
@@ -1123,12 +1123,8 @@ schemas:
         $ref: "#/components/schemas/Rate"
   PriceList:
     type: object
-    required: [items, interval]
+    required: [items]
     properties:
-      interval:
-        type: string
-        enum: [day, week, month]
-        description: One point per date up to 400 days, per ISO week up to 3,660 days, per month beyond; a point is the chosen price of the latest date with a price in its period (A222 MQ30).
       items:
         type: array
         items:

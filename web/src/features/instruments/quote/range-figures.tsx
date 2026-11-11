@@ -12,17 +12,11 @@ import { FigureGrid } from "@/ui/display/figure-grid";
 interface RangeFiguresProps {
   stats: PriceStats | null;
   quote: string;
-  interval: string;
   loading: boolean;
 }
 
-// IP7: while loading, stats is null; the change, the high, the low and the number of points of the range on the chart.
-export function RangeFigures({
-  stats,
-  quote,
-  interval,
-  loading,
-}: RangeFiguresProps) {
+// IP7: while loading, stats is null; the change, the high, the low and the number of quotes of the range.
+export function RangeFigures({ stats, quote, loading }: RangeFiguresProps) {
   const t = useT();
   const [locale] = useAppLocale();
   const format = usePriceFormat(quote);
@@ -67,15 +61,8 @@ export function RangeFigures({
             ? undefined
             : numberFormatter(locale).format(stats.count)
         }
-        note={t(intervalNote(interval))}
+        note={t("instrument.figures.pointsNote")}
       />
     </FigureGrid>
   );
-}
-
-function intervalNote(interval: string) {
-  if (interval === "week") return "instrument.figures.pointsWeek";
-  if (interval === "month") return "instrument.figures.pointsMonth";
-
-  return "instrument.figures.pointsDay";
 }

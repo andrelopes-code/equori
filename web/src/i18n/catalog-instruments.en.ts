@@ -191,10 +191,6 @@ export const instrumentsEn = {
   "instrument.quote.firstQuote": "first quote, none before it",
   "instrument.quote.stale": "Overdue",
   "instrument.quote.none": "No quote recorded.",
-  "instrument.interval.week":
-    "One point per week: the last quote of each week.",
-  "instrument.interval.month":
-    "One point per month: the last quote of each month.",
   "instrument.chart.manual": "Manual price",
   "instrument.chart.averageCost": "Average cost",
   "instrument.figures.label": "Summary of the range",
@@ -203,9 +199,7 @@ export const instrumentsEn = {
   "instrument.figures.high": "High of the range",
   "instrument.figures.low": "Low of the range",
   "instrument.figures.points": "Quotes in the range",
-  "instrument.figures.pointsDay": "one per date with a quote",
-  "instrument.figures.pointsWeek": "one per week",
-  "instrument.figures.pointsMonth": "one per month",
+  "instrument.figures.pointsNote": "one per date with a quote",
   "instrument.position.figures": "Summary of the position",
   "instrument.position.result": "Unrealized result",
   "instrument.position.resultNote": "market value minus cost",

@@ -24,7 +24,7 @@ describe("Quote section", () => {
   it("keeps the comparison line when there is nothing to compare", async () => {
     const fetch = api({
       "GET /api/v1/prices": () =>
-        json(200, { interval: "day", items: [petr("2026-10-16", "38.45")] }),
+        json(200, { items: [petr("2026-10-16", "38.45")] }),
     });
     await renderApp("/instruments/PETR4", { fetch });
 
@@ -56,42 +56,12 @@ describe("Quote section", () => {
     );
     expect(
       await card(catalogEn["instrument.figures.points"]),
-    ).toHaveTextContent(`2${catalogEn["instrument.figures.pointsDay"]}`);
-  });
-
-  // MQ30
-  it("says what one point of a weekly range stands for", async () => {
-    const fetch = api({
-      "GET /api/v1/prices": () =>
-        json(200, {
-          interval: "week",
-          items: [petr("2026-10-09", "38.10"), petr("2026-10-16", "38.45")],
-        }),
-    });
-    await renderApp("/instruments/PETR4", { fetch });
-
-    expect(
-      await screen.findByText(catalogEn["instrument.interval.week"]),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(catalogEn["instrument.figures.pointsWeek"]),
-    ).toBeInTheDocument();
-  });
-
-  it("says nothing of an interval for daily points", async () => {
-    await renderApp("/instruments/PETR4", { fetch: api() });
-    await screen.findByRole("region", {
-      name: catalogEn["instrument.figures.label"],
-    });
-
-    expect(
-      screen.queryByText(catalogEn["instrument.interval.week"]),
-    ).toBeNull();
+    ).toHaveTextContent(`2${catalogEn["instrument.figures.pointsNote"]}`);
   });
 
   it("states that an instrument with no quote has none", async () => {
     const fetch = api({
-      "GET /api/v1/prices": () => json(200, { interval: "day", items: [] }),
+      "GET /api/v1/prices": () => json(200, { items: [] }),
     });
     await renderApp("/instruments/PETR4", { fetch });
 

@@ -149,29 +149,25 @@ func TestImportPrices(t *testing.T) {
 	}
 }
 
-// S363: a range over 400 days returns one point per ISO week (A222 MQ30).
-func TestS363WeeklyPoints(t *testing.T) {
+// S363: a range over 400 days returns the chosen price of every date with a price (MQ30).
+func TestS363EveryDateOfALongRange(t *testing.T) {
 	t.Parallel()
 	h := apitest.New(t)
 
-	for _, p := range []struct{ date, value string }{
+	want := []struct{ date, value string }{
 		{"2020-01-06", "1"}, {"2020-01-08", "2"}, {"2020-01-13", "3"},
-		{"2025-12-29", "5"}, {"2026-01-01", "4"}, {"2026-01-31", "6"},
-	} {
+		{"2025-12-29", "5"}, {"2026-01-01", "4"},
+	}
+
+	for _, p := range append(want, struct{ date, value string }{"2026-01-31", "6"}) {
 		h.MustDo(http.MethodPost, "/api/v1/prices", map[string]any{"instrument": "USD", "quote_instrument": "BRL", "date": p.date, "value": p.value}, http.StatusCreated, nil)
 	}
 
 	var list struct {
-		Interval string     `json:"interval"`
-		Items    []priceAPI `json:"items"`
+		Items []priceAPI `json:"items"`
 	}
 	h.MustDo(http.MethodGet, "/api/v1/prices?instrument=USD&quote_instrument=BRL&from=2020-01-01&to=2026-01-02", nil, http.StatusOK, &list)
 
-	if list.Interval != "week" {
-		t.Fatalf("interval = %q, want week", list.Interval)
-	}
-
-	want := []struct{ date, value string }{{"2020-01-08", "2"}, {"2020-01-13", "3"}, {"2026-01-01", "4"}}
 	if len(list.Items) != len(want) {
 		t.Fatalf("items = %+v", list.Items)
 	}

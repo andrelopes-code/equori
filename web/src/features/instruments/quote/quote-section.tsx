@@ -58,7 +58,6 @@ export function QuoteSection({ instrument, quote }: QuoteSectionProps) {
   const { rows } = useInstrumentPositions(instrument.code);
 
   const prices = series.data?.items ?? [];
-  const interval = series.data?.interval ?? "day";
   const reading = quoteReading(recent.data?.items ?? [], prices, activeDate);
   const stats = priceStats(prices);
   const averageCost = positionTotals(rows, quote)?.averageCost ?? null;
@@ -90,23 +89,13 @@ export function QuoteSection({ instrument, quote }: QuoteSectionProps) {
           onActiveDateChange={setActiveDate}
         />
       )}
-      {interval !== "day" && (
-        <Text size="sm" tone="muted">
-          {t(`instrument.interval.${interval}`)}
-        </Text>
-      )}
       {series.data?.items.length === 0 && (
         <Text size="sm" tone="muted">
           {t("instrument.prices.empty")}
         </Text>
       )}
       {(series.isPending || stats !== null) && (
-        <RangeFigures
-          stats={stats}
-          quote={quote}
-          interval={interval}
-          loading={series.isPending}
-        />
+        <RangeFigures stats={stats} quote={quote} loading={series.isPending} />
       )}
       {prices.length > 0 && <PriceDetails prices={prices} />}
     </Stack>

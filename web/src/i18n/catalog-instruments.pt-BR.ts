@@ -193,10 +193,6 @@ export const instrumentsPtBR: Record<keyof typeof instrumentsEn, string> = {
   "instrument.quote.firstQuote": "primeira cotação, sem anterior",
   "instrument.quote.stale": "Atrasada",
   "instrument.quote.none": "Nenhuma cotação registrada.",
-  "instrument.interval.week":
-    "Um ponto por semana: a última cotação de cada semana.",
-  "instrument.interval.month":
-    "Um ponto por mês: a última cotação de cada mês.",
   "instrument.chart.manual": "Preço manual",
   "instrument.chart.averageCost": "Custo médio",
   "instrument.figures.label": "Resumo do intervalo",
@@ -205,9 +201,7 @@ export const instrumentsPtBR: Record<keyof typeof instrumentsEn, string> = {
   "instrument.figures.high": "Máxima do intervalo",
   "instrument.figures.low": "Mínima do intervalo",
   "instrument.figures.points": "Cotações no intervalo",
-  "instrument.figures.pointsDay": "uma por data com cotação",
-  "instrument.figures.pointsWeek": "uma por semana",
-  "instrument.figures.pointsMonth": "uma por mês",
+  "instrument.figures.pointsNote": "uma por data com cotação",
   "instrument.position.figures": "Resumo da posição",
   "instrument.position.result": "Resultado não realizado",
   "instrument.position.resultNote": "valor de mercado menos custo",

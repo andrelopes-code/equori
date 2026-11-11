@@ -117,7 +117,7 @@ Each new source is a package of `internal/marketdata/feed/<id>/`, an entry in `s
 
 | ID | Decision |
 |---|---|
-| MQ30 | `listPrices` accepts a range of up to 18,300 days (50 years). `PriceList` gains `interval`: `day` for a range up to 400 days, `week` up to 3,660 days, `month` beyond. A week or month point is the chosen price of the latest date with a price in that ISO week or calendar month. |
+| MQ30 | `listPrices` accepts a range of up to 18,300 days (50 years) and returns the chosen price of every date with a price in it. `PriceList` has no `interval`: the points are never aggregated (amended 2026-11-11, instrument quote chart). |
 | MQ31 | The chart offers 1M, 3M, 1Y, 5Y and Max. Max starts at `coverage.first`. The table under the chart lists the points the answer returned. |
 
 ### 3.7 Import of one instrument
@@ -152,7 +152,7 @@ Every screen keeps its current phone scope. The search of MQ37 and the preview o
 | `recordInstrumentPrices` | new (MQ32) | write |
 | `getInstrument` | `coverage` (MQ23), `symbols` (MQ20) | read |
 | `defineInstrument`, `editInstrument` | `symbols` (MQ20); history request (MQ7) | write |
-| `listPrices` | range and `interval` (MQ30) | read |
+| `listPrices` | range (MQ30) | read |
 | `listMarketDataFeeds` | `official`, `covers`, `history_pending` (MQ25) | read |
 | `setMarketDataFeed` | `accept_unofficial` (MQ22); history request (MQ6) | admin |
 | `listPositions` | `quote_warnings` (MQ26) | read |
@@ -165,7 +165,7 @@ New `Problem.code` values: `no_source` (MQ8), `unofficial_source` (MQ22).
 |---|---|
 | R1 | The region-dependent values are the sources and what they hold: CNPJ (`cvm_funds`), Tesouro title types (`tesouro_direto`), the MIC suffix table (`yahoo_chart`). Each one lives in its source package, a registry entry of `sources.go`. The suggestions are cases of `SuggestedFeeds` in `region_defaults.go` (MQ21). |
 | R2 | A region without a case suggests no source. `ecb`, `coinbase` and `yahoo_chart` are available to any region once an admin enables them. |
-| R3 | Source IDs keep `^[a-z0-9_]{2,40}$` (MQ4, MQ20). No new `enum`. `interval` (MQ30) is a closed `enum`: the calendar units are universal. |
+| R3 | Source IDs keep `^[a-z0-9_]{2,40}$` (MQ4, MQ20). No new `enum`. |
 | R4 | `docs/contributing/regions.md` gains the row "Instrument catalog" (`feed.Catalog`, MQ28). Step 6 names `Official`, the default start and the optional interfaces. |
 | R5 | New keys, with pt-BR and en text: `instruments.coverage.*`, `instruments.history.*`, `instruments.search.*`, `instruments.probe.*`, `instruments.symbol.*`, `prices.import.paste.*`, `prices.import.preview.*`, `settings.feeds.covers`, `settings.feeds.unofficial.*`, `settings.feeds.historyPending`, `portfolio.quoteWarnings.*`, and the labels `instruments.source.cvm_funds`, `instruments.source.tesouro_direto`, `instruments.source.coinbase`, `instruments.source.yahoo_chart`. |
 | R6 | Dates, counts and prices on screen go through the formatters of `@/i18n/format`, with the active tag. |
@@ -204,7 +204,7 @@ Every external source in a test is a fake server that serves a fixture of `testd
 | S360 | A history request whose source answers 500: the row keeps `error` and stays pending. The next tick with a 200 answer clears it (MQ9). |
 | S361 | With a stored `from_date` of 2006-11-09, `POST /instruments/USD/history` with `from` 2010-01-01 keeps 2006-11-09. With `from` 2000-01-01 it stores 2000-01-01 and clears `done_at` (MQ5). |
 | S362 | `POST /instruments/{code}/history` for an instrument that no enabled source quotes answers 422 `no_source` (MQ8). |
-| S363 | `listPrices` over 6 years returns `interval: week` and one point per ISO week, each the latest price of its week (MQ30). |
+| S363 | `listPrices` over 6 years returns the chosen price of every date with a price (MQ30). |
 | S364 | Region `US`: enabling `yahoo_chart` without `accept_unofficial` answers 422 `unofficial_source`. With it, `AAPL` (XNAS, USD) gets the quotes of the fixture, dated in `America/New_York` (MQ18, MQ22). |
 | S365 | Region `US`: `BRK.B` (XNYS) is requested as `BRK-B`. An override `{yahoo_chart: "BRK-B"}` on an instrument of MIC `XNZE` makes it quoted (MQ19, MQ20). |
 | S366 | A book with base `BRL` and instrument `VWCE` (XETR, EUR): the probe with `yahoo_chart` enabled returns the latest fixture quote in `EUR`. With no enabled source it returns `available: [yahoo_chart]` (MQ27). |

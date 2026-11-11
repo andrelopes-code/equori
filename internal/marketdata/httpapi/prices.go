@@ -136,7 +136,7 @@ func (s *Server) listPrices(ctx context.Context, r *http.Request, _ httpserver.N
 		items[i] = toPriceAPI(x)
 	}
 
-	return PriceList{Items: items, Interval: PriceListInterval(domain.PriceInterval(p.From.Time, p.To.Time))}, nil
+	return PriceList{Items: items}, nil
 }
 
 func toPriceAPI(p domain.Price) Price {

@@ -35,7 +35,6 @@ describe("Fixed income terms", () => {
     const fetch = api({
       "GET /api/v1/prices": () =>
         json(200, {
-          interval: "day",
           items: [price("CDB1", "2026-10-16", "1100.00", "accrual")],
         }),
     });

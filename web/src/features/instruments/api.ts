@@ -79,7 +79,7 @@ export function pricesQuery(
   });
 }
 
-// The prices of a range with the interval of its points (MQ30): one per day, week or month.
+// Every date with a price in the range (MQ30).
 export function priceSeriesQuery(
   api: Client<paths>,
   instrument: string,
