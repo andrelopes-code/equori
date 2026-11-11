@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/google/uuid"
-
 	"github.com/andrelopes-code/equori/internal/identity/domain"
 )
 
@@ -32,13 +30,6 @@ const (
 	secondFactorAttempts = 5
 )
 
-// Sealer seals values bound to their row (ADR 008).
-type Sealer interface {
-	Seal(plaintext, associated []byte) ([]byte, error)
-	Open(sealed, associated []byte) ([]byte, error)
-	NeedsReseal(sealed []byte) bool
-}
-
 type SecondFactor struct {
 	TOTP              bool
 	Passkeys          []domain.Passkey
@@ -50,47 +41,6 @@ type FirstFactor struct {
 	Hashes      [][]byte
 	KeepSession []byte
 	At          time.Time
-}
-
-type SecondFactorRepository interface {
-	SecondFactor(ctx context.Context, memberID int64) (SecondFactor, error)
-	HasSecondFactor(ctx context.Context, memberID int64) (bool, error)
-	// SaveTOTP stores an unconfirmed secret; ErrTOTPEnabled when a confirmed one exists.
-	SaveTOTP(ctx context.Context, memberID int64, sealed []byte, at time.Time) error
-	// TOTP returns ErrNotFound without a row.
-	TOTP(ctx context.Context, memberID int64) (domain.TOTP, error)
-	// ConfirmTOTP confirms at step under a lock of the member row and applies f when no factor
-	// existed, reported as first; ErrTOTPCodeInvalid when no unconfirmed row has last_step below step.
-	ConfirmTOTP(ctx context.Context, memberID, step int64, f FirstFactor) (first bool, err error)
-	// AddPasskey is ConfirmTOTP for a new passkey; ErrPasskeyInvalid when the credential ID exists.
-	AddPasskey(ctx context.Context, p domain.Passkey, f FirstFactor) (first bool, err error)
-	// DisableTOTP and RemovePasskey delete the recovery codes when no factor is left; RemovePasskey
-	// returns ErrPasskeyNotFound.
-	DisableTOTP(ctx context.Context, memberID int64) error
-	RemovePasskey(ctx context.Context, memberID int64, id uuid.UUID) error
-	// ReplaceRecoveryCodes returns ErrSecondFactorMissing without a factor.
-	ReplaceRecoveryCodes(ctx context.Context, memberID int64, hashes [][]byte, at time.Time) error
-	SavePasskeyChallenge(ctx context.Context, memberID int64, challenge []byte, expiresAt time.Time) error
-	// TakePasskeyChallenge deletes the row; ErrNotFound without one or when it expired at now.
-	TakePasskeyChallenge(ctx context.Context, memberID int64, now time.Time) ([]byte, error)
-	// UseTOTPStep, UseRecoveryCode and UsePasskey return false for a refused factor.
-	UseTOTPStep(ctx context.Context, memberID, step int64) (bool, error)
-	UseRecoveryCode(ctx context.Context, memberID int64, hash []byte) (left int, ok bool, err error)
-	UsePasskey(ctx context.Context, memberID int64, id uuid.UUID, signCount uint32, at time.Time) (bool, error)
-	CreateLoginChallenge(ctx context.Context, c domain.LoginChallenge) error
-	// LoginChallenge returns ErrNotFound for an unknown or expired token hash.
-	LoginChallenge(ctx context.Context, tokenHash []byte, now time.Time) (domain.LoginChallenge, error)
-	// CountLoginAttempt counts one answer before it is checked; ok is false when the pending login is
-	// unknown, expired or has used limit attempts.
-	CountLoginAttempt(ctx context.Context, tokenHash []byte, now time.Time, limit int32) (attempts int32, ok bool, err error)
-	// DeleteLoginChallenge returns false when no row was deleted.
-	DeleteLoginChallenge(ctx context.Context, tokenHash []byte) (bool, error)
-	DeleteExpiredLoginChallenges(ctx context.Context, now time.Time) error
-	// ResetSecondFactor deletes every factor, challenge, pending login and session of the member in
-	// one transaction (HA49).
-	ResetSecondFactor(ctx context.Context, memberID int64) error
-	// ResealTOTP stores each non-nil result of reseal; it returns the count stored.
-	ResealTOTP(ctx context.Context, reseal func(memberID int64, sealed []byte) ([]byte, error)) (int, error)
 }
 
 func (s *Service) UseSealer(box Sealer) { s.box = box }

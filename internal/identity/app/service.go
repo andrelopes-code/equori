@@ -2,15 +2,11 @@
 package app
 
 import (
-	"context"
 	"errors"
 	"runtime"
 	"time"
 
-	"github.com/andrelopes-code/equori/internal/identity/domain"
 	"github.com/andrelopes-code/equori/internal/identity/password"
-	"github.com/andrelopes-code/equori/internal/platform/auth"
-	"github.com/andrelopes-code/equori/internal/platform/locale"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
@@ -36,55 +32,6 @@ var (
 	// ErrAppearanceTooLarge reports an appearance object over MaxAppearanceBytes.
 	ErrAppearanceTooLarge = errors.New("appearance over 16 KiB")
 )
-
-// Repository returns ErrNotFound for missing rows and ErrEmailTaken on duplicate email.
-type Repository interface {
-	CreateMember(ctx context.Context, u domain.Member, region string, base money.Currency) (domain.Member, int64, error)
-	// CreateFirstMember returns ErrSetupComplete when a member exists.
-	CreateFirstMember(ctx context.Context, u domain.Member, b FirstBooks) (domain.Member, int64, error)
-	AnyMember(ctx context.Context) (bool, error)
-	// UpdateProfile stores the language of the member and the region of the books in one transaction.
-	UpdateProfile(ctx context.Context, memberID, booksID int64, l locale.Locale) error
-	// Locale returns ErrNotFound without rows.
-	Locale(ctx context.Context, booksID, memberID int64) (locale.Locale, error)
-	// LoginBooks returns ErrNotFound without rows.
-	LoginBooks(ctx context.Context, memberID int64) (int64, error)
-	// BooksZone returns ErrNotFound without the row; timeZone is nil while the book uses the default of its region.
-	BooksZone(ctx context.Context, booksID int64) (region string, timeZone *string, err error)
-	BooksName(ctx context.Context, booksID int64) (string, error)
-	// UpdateBooksSettings returns the stored name; a nil name keeps it.
-	UpdateBooksSettings(ctx context.Context, booksID int64, region string, timeZone, name *string) (string, error)
-	// TouchMembership returns ErrNotFound without the membership.
-	TouchMembership(ctx context.Context, memberID, booksID int64, at time.Time) error
-	// SwitchSession touches the membership and moves the session in one transaction; ErrBooksNotFound
-	// without the membership, also on a foreign key violation (spec section 9).
-	SwitchSession(ctx context.Context, tokenHash []byte, memberID, booksID int64, at time.Time) error
-	MemberBooks(ctx context.Context, memberID int64) ([]BooksMembership, error)
-	Members(ctx context.Context, booksID int64) ([]Membership, error)
-	// ChangeRole and RemoveMembership lock the book row first; ErrMemberNotFound, ErrLastOwner.
-	ChangeRole(ctx context.Context, booksID, memberID int64, role auth.BookRole) error
-	RemoveMembership(ctx context.Context, booksID, memberID int64) error
-	// DeleteBooks deletes the book with all its data under the lock of its row (DB1 to DB5):
-	// ErrConfirmationMismatch, ErrBooksHasMembers, ErrLastBooks.
-	DeleteBooks(ctx context.Context, booksID, memberID int64, name string) error
-	// CreateBooks creates the book and its owner membership and publishes identity.books_created.v1.
-	CreateBooks(ctx context.Context, memberID int64, language, name, region string, base money.Currency) (int64, error)
-	// Appearance returns the stored JSON object of the member.
-	Appearance(ctx context.Context, memberID int64) ([]byte, error)
-	// SetAppearance replaces the stored JSON object of the member.
-	SetAppearance(ctx context.Context, memberID int64, doc []byte) error
-	// SetDisplayName stores the name of the member; an empty name clears it.
-	SetDisplayName(ctx context.Context, memberID int64, name string) error
-	MemberByID(ctx context.Context, memberID int64) (domain.Member, error)
-	MemberByEmail(ctx context.Context, email string) (domain.Member, error)
-	CreateSession(ctx context.Context, s domain.Session) error
-	MemberBySession(ctx context.Context, tokenHash []byte, now time.Time) (Access, error)
-	DeleteSession(ctx context.Context, tokenHash []byte) error
-	DeleteExpiredSessions(ctx context.Context, now time.Time) error
-	AccessTokenRepository
-	InvitationRepository
-	SecondFactorRepository
-}
 
 // FirstBooks is the book that CreateFirstMember creates with the first member.
 type FirstBooks struct {

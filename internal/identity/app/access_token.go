@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"strings"
-	"time"
 
 	"github.com/google/uuid"
 
@@ -16,17 +15,6 @@ var (
 	ErrAccessTokenNotFound = errors.New("access token not found")
 	ErrInvalidAccessToken  = errors.New("invalid access token")
 )
-
-// AccessTokenRepository stores personal access tokens; every method but AccessTokenByHash filters by member.
-type AccessTokenRepository interface {
-	CreateAccessToken(ctx context.Context, t domain.AccessToken) error
-	AccessTokens(ctx context.Context, memberID, booksID int64) ([]domain.AccessToken, error)
-	// DeleteAccessToken returns ErrAccessTokenNotFound when the member has no token with id.
-	DeleteAccessToken(ctx context.Context, memberID int64, id uuid.UUID) error
-	// AccessTokenByHash returns ErrNotFound for an unknown or expired token.
-	AccessTokenByHash(ctx context.Context, hash []byte, now time.Time) (domain.AccessToken, error)
-	TouchAccessToken(ctx context.Context, t domain.AccessToken, now time.Time) error
-}
 
 // CreateAccessToken returns the token text, shown to the user once, and its record (design 2026-10-26 X5-X7).
 func (s *Service) CreateAccessToken(ctx context.Context, memberID, booksID int64, role auth.BookRole, name, scope string, days int) (string, domain.AccessToken, error) {

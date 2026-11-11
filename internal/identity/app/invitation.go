@@ -37,32 +37,6 @@ type Acceptance struct {
 	Password, Language string
 }
 
-type InvitationRepository interface {
-	// SaveInvitation deletes the book's expired invitations, then stores inv; ErrAlreadyMember when the
-	// email has a membership in the book.
-	SaveInvitation(ctx context.Context, inv domain.Invitation) (domain.Invitation, error)
-	// Invitations deletes the book's expired invitations and returns the others.
-	Invitations(ctx context.Context, booksID int64, now time.Time) ([]domain.Invitation, error)
-	// DeleteInvitation returns ErrInvitationNotFound when the book has no invitation with id.
-	DeleteInvitation(ctx context.Context, booksID int64, id uuid.UUID) error
-	// InvitationPreview returns ErrInvitationNotFound for an unknown or expired token hash.
-	InvitationPreview(ctx context.Context, tokenHash []byte, now time.Time) (InvitationPreview, error)
-	// AcceptAsNewMember deletes the invitation and creates m with its membership in one transaction;
-	// ErrInvitationNotFound, ErrEmailTaken.
-	AcceptAsNewMember(ctx context.Context, tokenHash []byte, m domain.Member, now time.Time) (domain.Member, int64, error)
-	// SaveAccountInvitation deletes the expired account invitations, then stores inv; ErrEmailTaken
-	// when a member has the email.
-	SaveAccountInvitation(ctx context.Context, inv domain.AccountInvitation) (domain.AccountInvitation, error)
-	// AccountInvitationPreview returns ErrInvitationNotFound for an unknown or expired token hash.
-	AccountInvitationPreview(ctx context.Context, tokenHash []byte, now time.Time) (InvitationPreview, error)
-	// AcceptAccountInvitation deletes the invitation, creates m and its book in one transaction;
-	// ErrInvitationNotFound, ErrEmailTaken.
-	AcceptAccountInvitation(ctx context.Context, tokenHash []byte, m domain.Member, now time.Time) (domain.Member, int64, error)
-	// AcceptAsMember deletes the invitation, adds the membership and moves the session in one
-	// transaction; ErrInvitationNotFound, ErrAlreadyMember.
-	AcceptAsMember(ctx context.Context, tokenHash []byte, memberID int64, sessionHash []byte, now time.Time) error
-}
-
 // CreateInvitation returns the token, shown once, and the stored invitation (HA24): ErrAlreadyMember.
 func (s *Service) CreateInvitation(ctx context.Context, booksID, invitedBy int64, email string, role auth.BookRole) (string, domain.Invitation, error) {
 	email, err := domain.NormalizeEmail(email)
