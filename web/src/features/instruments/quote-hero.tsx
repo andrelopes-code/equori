@@ -6,7 +6,6 @@ import {
   StatCardHeader,
   StatCardLabel,
   StatCardMessage,
-  StatCardStatus,
   StatCardValue,
 } from "@slotted/react/stat-card";
 import { Tag } from "@slotted/react/tag";
@@ -49,14 +48,12 @@ export function QuoteHero({ reading, quote, loading, stale }: QuoteHeroProps) {
                 date: formatDate(reading.price.date, locale),
                 source: sourceLabel(t, reading.price.source),
               })}
-        </StatCardLabel>
-        {stale && (
-          <StatCardStatus>
-            <Tag size="sm" tone="warning">
+          {stale && (
+            <Tag size="sm" tone="warning" className="ms-4">
               {t("instrument.quote.stale")}
             </Tag>
-          </StatCardStatus>
-        )}
+          )}
+        </StatCardLabel>
       </StatCardHeader>
       <StatCardFigure>
         <StatCardValue>

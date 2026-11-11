@@ -74,8 +74,9 @@ export function PriceChart({
         ]
       : []),
   ];
+  // A reference outside the plotted prices would stretch the axis away from the line (IP6).
   const annotations: ChartAnnotation[] =
-    averageCost === null
+    averageCost === null || !within(data, averageCost)
       ? []
       : [
           {
@@ -86,8 +87,6 @@ export function PriceChart({
             tone: "secondary",
           },
         ];
-
-  const widenTo = reaches(data, averageCost);
 
   return (
     <Chart
@@ -105,10 +104,7 @@ export function PriceChart({
         type: "time",
         format: (value) => axisLabel(value, locale, span),
       }}
-      y={{
-        format: format.tick,
-        ...(widenTo === null ? {} : { min: widenTo }),
-      }}
+      y={{ format: format.tick }}
       extendOption={(option) => withTicks(option, ticks)}
       onActivePointChange={(point) => {
         onActiveDateChange?.(point === null ? null : point.key);
@@ -138,13 +134,8 @@ function withTicks(option: Record<string, unknown>, ticks: number[]) {
   };
 }
 
-// The average cost below every price needs the axis widened to it; an explicit minimum above
-// the data would clip the line, so one is set only in that case.
-function reaches(
-  data: readonly { price: number }[],
-  averageCost: number | null,
-): number | null {
-  if (averageCost === null) return null;
-
-  return data.every((d) => d.price > averageCost) ? averageCost : null;
+function within(data: readonly { price: number }[], value: number): boolean {
+  return (
+    data.some((d) => d.price <= value) && data.some((d) => d.price >= value)
+  );
 }

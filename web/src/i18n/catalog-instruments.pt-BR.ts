@@ -89,6 +89,7 @@ export const instrumentsPtBR: Record<keyof typeof instrumentsEn, string> = {
   "instrument.chart.title": "Preço",
   "instrument.col.date": "Data",
   "instrument.col.price": "Preço",
+  "instrument.col.change": "Variação",
   "instrument.col.source": "Fonte",
   "instrument.range.label": "Intervalo do histórico",
   "instrument.range.m1": "1M",

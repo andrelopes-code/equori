@@ -89,6 +89,7 @@ export const instrumentsEn = {
   "instrument.chart.title": "Price",
   "instrument.col.date": "Date",
   "instrument.col.price": "Price",
+  "instrument.col.change": "Change",
   "instrument.col.source": "Source",
   "instrument.range.label": "Range of the history",
   "instrument.range.m1": "1M",

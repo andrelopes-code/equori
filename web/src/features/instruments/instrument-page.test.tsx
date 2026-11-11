@@ -55,11 +55,11 @@ describe("Instrument page", () => {
       name: catalogEn["instrument.prices.caption"],
     });
     await waitFor(() => {
-      expect(rowTexts(table)).toContain("10/16/2026|38.45|Manual");
+      expect(rowTexts(table)).toContain("10/16/2026|38.45|+0.92%|Manual");
     });
     expect(rowTexts(table).slice(1)).toEqual([
-      "10/16/2026|38.45|Manual",
-      "10/14/2026|38.10|B3, daily quotes",
+      "10/16/2026|38.45|+0.92%|Manual",
+      "10/14/2026|38.10|—|B3, daily quotes",
     ]);
     expect(
       screen.getByRole("group", { name: catalogEn["instrument.prices.title"] }),
