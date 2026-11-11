@@ -6,7 +6,7 @@ Maintains read models derived from the ledger (chapter 4, 4.3.7).
 |---|---|
 | OpenAPI tag | `reporting`: 11 operations in `openapi.yaml` |
 | Tables | prefix `reporting_`, created in `db/migrations/` |
-| Public API | `reporting.go` |
+| Public API | `reporting.go` (Module, New), `types.go` (DTO aliases, errors, ports) and the other 4 non-test files of this directory |
 | Layers (hand-written files) | `app/` (10), `httpapi/` (5), `toolapi/` (4), `postgres/` (5) |
 | Ports | `app/ports.go` (the interfaces the module needs: its repository and the other modules it calls) |
 | Queries | `postgres/queries/` (4 files) |
