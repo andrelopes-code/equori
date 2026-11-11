@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
-import { json } from "@/testing/fake-api";
+import { json, problem } from "@/testing/fake-api";
 import { instrumentsApi as api } from "@/testing/instruments-api";
 import { renderApp } from "@/testing/render-app";
 
@@ -605,5 +605,71 @@ describe("Instrument page", () => {
     expect(
       await screen.findByText(catalogEn["common.error.title"]),
     ).toBeInTheDocument();
+  });
+});
+
+// A223 RM5
+describe("Remove instrument", () => {
+  it("confirms, deletes the security and returns to the list", async () => {
+    const fetch = api({
+      "DELETE /api/v1/instruments/PETR4": () =>
+        new Response(null, { status: 204 }),
+    });
+    await renderApp("/instruments/PETR4", { fetch });
+    const user = userEvent.setup();
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: catalogEn["instrument.remove"],
+      }),
+    );
+    expect(
+      await screen.findByText(catalogEn["instrument.remove.body"]),
+    ).toBeVisible();
+    expect(fetch.calls).not.toContain("DELETE /api/v1/instruments/PETR4");
+
+    await user.click(
+      within(await screen.findByRole("alertdialog")).getByRole("button", {
+        name: catalogEn["instrument.remove.confirm"],
+      }),
+    );
+
+    expect(
+      await screen.findByText(catalogEn["instruments.subtitle"]),
+    ).toBeVisible();
+  });
+
+  it("states that a record still uses the security and keeps the dialog open", async () => {
+    const fetch = api({
+      "DELETE /api/v1/instruments/PETR4": () =>
+        problem(409, "instrument_in_use"),
+    });
+    await renderApp("/instruments/PETR4", { fetch });
+    const user = userEvent.setup();
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: catalogEn["instrument.remove"],
+      }),
+    );
+    await user.click(
+      within(await screen.findByRole("alertdialog")).getByRole("button", {
+        name: catalogEn["instrument.remove.confirm"],
+      }),
+    );
+
+    expect(
+      await screen.findByText(catalogEn["problem.instrument_in_use"]),
+    ).toBeVisible();
+    expect(screen.getByRole("alertdialog")).toBeVisible();
+  });
+
+  it("offers no removal for a currency", async () => {
+    await renderApp("/instruments/USD", { fetch: api() });
+    await screen.findByRole("heading", { name: "Dollar" });
+
+    expect(
+      screen.queryByRole("button", { name: catalogEn["instrument.remove"] }),
+    ).toBeNull();
   });
 });

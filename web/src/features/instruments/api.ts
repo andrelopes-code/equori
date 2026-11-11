@@ -119,6 +119,18 @@ export function useDefineInstrument() {
   });
 }
 
+export function useDeleteInstrument() {
+  const api = useApi();
+  return useMutation({
+    mutationFn: async (code: string) =>
+      unwrap(
+        await api.DELETE("/instruments/{code}", {
+          params: { path: { code } },
+        }),
+      ),
+  });
+}
+
 export function useEditInstrument() {
   const api = useApi();
   return useMutation({

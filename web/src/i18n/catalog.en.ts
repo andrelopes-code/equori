@@ -218,6 +218,8 @@ export const catalogEn = {
   "problem.integration_unavailable":
     "The server has no EQUORI_SECRET_KEY, so it cannot store credentials.",
   "problem.integration_in_use": "Connections still use this integration.",
+  "problem.instrument_in_use":
+    "A position, an account or a transaction still uses this instrument. Remove those first.",
   "settings.assistant.title": "Assistant",
   "settings.assistant.description":
     "Language model providers and the models each feature uses.",

@@ -70,6 +70,11 @@ export const instrumentsPtBR: Record<keyof typeof instrumentsEn, string> = {
   "instruments.symbol.invalid": "Use apenas letras, dígitos e . = ^ _ -",
   "instrument.facts": "Cadastro",
   "instrument.edit": "Editar cadastro",
+  "instrument.remove": "Remover",
+  "instrument.remove.title": "Remover {code}?",
+  "instrument.remove.body":
+    "O ativo, seus preços e o histórico de cotações são apagados. Não há como desfazer.",
+  "instrument.remove.confirm": "Remover ativo",
   "instrument.edit.description":
     "Código, tipo, casas decimais e moeda de cotação permanecem como definidos. A alteração vale para todos os usuários desta instalação.",
   "instrument.edit.save": "Salvar",

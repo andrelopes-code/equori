@@ -21,7 +21,7 @@
 | RM2 | An unknown code is 404 `not_found`. A currency is 422 `validation_failed`, field `code`, message `is a currency` (the rule of `editInstrument`). |
 | RM3 | A row of another table that references the code (a position, a transaction, an account, a price quoted in it) blocks the removal. The answer is 409 `instrument_in_use` and nothing is deleted. The module does not read the tables of other modules; the foreign key of each table is the check (ADR 002). |
 | RM4 | The tool `manage_instrument` gains the action `delete`, with the preview of RM1 and the same errors. |
-| RM5 | The instrument page shows the action "Remove instrument". A dialog asks for confirmation and states what goes: the prices and the history of the code. A 409 shows the text of RM3 in the dialog and keeps it open. After a removal the screen returns to the instrument list. |
+| RM5 | The instrument page shows the action "Remove instrument". A dialog asks for confirmation and states what goes: the prices and the history of the code. A 409 shows the text of `problem.instrument_in_use` in the dialog and keeps it open. After a removal the screen returns to the instrument list. |
 | RM6 | The time axis of the price chart writes the day and the month when the prices span 100 days or fewer, and the month and the year above 100 days (`formatReferenceMonth`). The span is the days between the first and the last price shown. The format comes from the active locale through `Intl`. |
 | RM7 | The chart draws a marker on every price when the range holds 60 prices or fewer. Above that, a marker on the last price only. |
 
@@ -33,7 +33,7 @@
 | R2 | Does not apply. |
 | R3 | Does not apply: no new value set. |
 | R4 | Does not apply: no extension point. |
-| R5 | Texts: `instrument.remove`, `instrument.remove.title`, `instrument.remove.body`, `instrument.remove.confirm`, `instrument.remove.inUse`, each with pt-BR and en. |
+| R5 | Texts: `instrument.remove`, `instrument.remove.title`, `instrument.remove.body`, `instrument.remove.confirm` and `problem.instrument_in_use`, each with pt-BR and en text. |
 | R6 | The axis dates take their format from the active tag through `Intl` (RM6). |
 | C1 | Does not apply: no amount is stored or computed. |
 | C2 | Does not apply: no amounts are added or compared. |

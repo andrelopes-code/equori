@@ -21,6 +21,7 @@ import { InstrumentPositions } from "@/features/instruments/instrument-positions
 import { typeLabel } from "@/features/instruments/instrument-labels";
 import { InstrumentPrices } from "@/features/instruments/instrument-prices";
 import { EditInstrumentDialog } from "@/features/instruments/edit-instrument-dialog";
+import { RemoveInstrumentAction } from "@/features/instruments/remove-instrument-action";
 import { RecordPriceDialog } from "@/features/instruments/record-price-dialog";
 import { TermsDialog } from "@/features/instruments/terms-dialog";
 import { TermsSection } from "@/features/instruments/terms-section";
@@ -97,6 +98,7 @@ export function InstrumentPage() {
                   }}
                 />
               )}
+              <RemoveInstrumentAction instrument={i} />
               {fixedIncome && quote !== null && terms.data !== undefined && (
                 <HeaderAction
                   label={t(terms.data === null ? "terms.set" : "terms.change")}
