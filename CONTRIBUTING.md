@@ -40,6 +40,8 @@ A commit runs format, lint and the generated-code check on its staged files. A p
 
 ## Layout
 
+`docs/contributing/map.md` locates the files of an endpoint, a screen or a module and lists the steps to add an endpoint.
+
 ```
 cmd/equori/            composition root only: config, wiring, start
 cmd/demoseed/          demo data for a local instance
