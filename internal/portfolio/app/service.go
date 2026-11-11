@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/andrelopes-code/equori/internal/platform/money"
-	"github.com/andrelopes-code/equori/internal/portfolio/internal/domain"
+	"github.com/andrelopes-code/equori/internal/portfolio/domain"
 )
 
 const kindBrokerage = "brokerage"

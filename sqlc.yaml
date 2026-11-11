@@ -73,11 +73,11 @@ sql:
         out: internal/capture/postgres
   - engine: postgresql
     schema: db/migrations
-    queries: db/queries/portfolio
+    queries: internal/portfolio/postgres/queries
     gen:
       go:
         <<: *go
-        out: internal/portfolio/internal/adapter/postgres
+        out: internal/portfolio/postgres
   - engine: postgresql
     schema: db/migrations
     queries: db/queries/planning

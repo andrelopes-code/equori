@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/andrelopes-code/equori/internal/portfolio/internal/app"
-	"github.com/andrelopes-code/equori/internal/portfolio/internal/domain"
+	"github.com/andrelopes-code/equori/internal/portfolio/app"
+	"github.com/andrelopes-code/equori/internal/portfolio/domain"
 )
 
 type aprilYear struct{ domain.Jurisdiction }

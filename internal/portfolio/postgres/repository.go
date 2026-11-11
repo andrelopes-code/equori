@@ -9,8 +9,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/andrelopes-code/equori/internal/platform/money"
-	"github.com/andrelopes-code/equori/internal/portfolio/internal/app"
-	"github.com/andrelopes-code/equori/internal/portfolio/internal/domain"
+	"github.com/andrelopes-code/equori/internal/portfolio/app"
+	"github.com/andrelopes-code/equori/internal/portfolio/domain"
 )
 
 var _ app.Repository = (*Repository)(nil)

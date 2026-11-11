@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/andrelopes-code/equori/internal/platform/tool"
-	"github.com/andrelopes-code/equori/internal/portfolio/internal/app"
+	"github.com/andrelopes-code/equori/internal/portfolio/app"
 )
 
 // AccountNames returns the names of the book's accounts by ID.

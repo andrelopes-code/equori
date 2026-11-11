@@ -179,7 +179,7 @@ The model must represent every item below. Each item gets at least one worked ex
 
 | ID | Decision |
 |---|---|
-| D1 | The model stores every datum required for income tax, and derives the tax class and the tax treatment of income from the owner's jurisdiction (`Jurisdiction` in `internal/portfolio/internal/domain/jurisdiction.go`; `br` is the only implementation). The data required for Brazilian income tax (IRPF) is: trade date, quantity, unit price, fees, taxes withheld, income type (exempt dividends, taxable JCP, taxable yield) and average cost by Receita Federal rules. Generating the annual declaration report is a later feature. Stored from P8 on in `ledger_trade`, `ledger_investment_income` and the `portfolio_` tables (chapter 7, 7.4). |
+| D1 | The model stores every datum required for income tax, and derives the tax class and the tax treatment of income from the owner's jurisdiction (`Jurisdiction` in `internal/portfolio/domain/jurisdiction.go`; `br` is the only implementation). The data required for Brazilian income tax (IRPF) is: trade date, quantity, unit price, fees, taxes withheld, income type (exempt dividends, taxable JCP, taxable yield) and average cost by Receita Federal rules. Generating the annual declaration report is a later feature. Stored from P8 on in `ledger_trade`, `ledger_investment_income` and the `portfolio_` tables (chapter 7, 7.4). |
 | D2 | Transactions accept attachments (M29). Files are stored in PostgreSQL, so one database backup contains all data. Limit: 10 MiB per file. |
 
 ### 1.11.1 Scope of version 1.0

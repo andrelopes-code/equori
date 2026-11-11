@@ -30,13 +30,13 @@
 ### Task 1: Internal rate of return
 
 **Files:**
-- Create: `internal/portfolio/internal/domain/return.go`, `internal/portfolio/internal/domain/return_test.go`
+- Create: `internal/portfolio/domain/return.go`, `internal/portfolio/domain/return_test.go`
 
 **Interfaces:**
 - Produces: `type CashFlow struct { Date time.Time; Amount int64 }` (investor view: money put in is negative, money taken out and the closing value are positive); `func AnnualReturnBP(flows []CashFlow) (bp int, ok bool)`.
 
 - [ ] **Step 1: Write the failing tests** in `return_test.go`: `TestAnnualReturnBP` table with flows `{2025-10-31: -100000}`, `{2026-10-31: +105000}` giving 500, ok; the same with closing 100000 giving 0, ok; the same with closing 110000 giving 1000, ok; flows `-100000` at `2025-10-31`, `-100000` at `2026-04-30`, `+215000` at `2026-10-31` giving the value in the test's comment (computed independently in Python with the day-count `(date - first) / 365`, rounded half to even); a withdrawal case; and `ok == false` for a single flow, for flows without a negative one, for a zero closing value after a contribution.
-- [ ] **Step 2: Run** `go test ./internal/portfolio/internal/domain -run AnnualReturnBP`. Expected: FAIL (undefined).
+- [ ] **Step 2: Run** `go test ./internal/portfolio/domain -run AnnualReturnBP`. Expected: FAIL (undefined).
 - [ ] **Step 3: Implement** `AnnualReturnBP` in `return.go`: sort by date, exponent `(date - first).Hours()/24/365`, solve `sum(amount / (1+r)^t) = 0` by bisection on `r` in `[-0.9999, 1000]` after a sign check at both ends (no sign change means `ok == false`), 200 iterations, result `round-half-even(r * 10000)`.
 - [ ] **Step 4: Run** the same command. Expected: PASS.
 
@@ -44,7 +44,7 @@
 
 **Files:**
 - Modify: `db/queries/ledger/` (new query `TreeExternalFlows`), `internal/ledger/internal/app/` (service method), `internal/ledger/ledger.go` (`ExternalFlows`)
-- Modify: `internal/portfolio/portfolio.go` (ledger port `ExternalFlows`, `ValuedBalance`), `internal/portfolio/internal/app/service.go` (`Return`), `internal/portfolio/internal/adapter/httpapi/server.go` (`GetReturn`), `api/openapi.yaml`, `internal/server/tool_exposure_test.go` (`getReturn: "-pending"`)
+- Modify: `internal/portfolio/portfolio.go` (ledger port `ExternalFlows`, `ValuedBalance`), `internal/portfolio/app/service.go` (`Return`), `internal/portfolio/httpapi/server.go` (`GetReturn`), `api/openapi.yaml`, `internal/server/tool_exposure_test.go` (`getReturn: "-pending"`)
 - Test: `internal/portfolio/return_test.go`
 
 **Interfaces:**

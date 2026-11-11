@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/andrelopes-code/equori/internal/platform/money"
-	"github.com/andrelopes-code/equori/internal/portfolio/internal/domain"
+	"github.com/andrelopes-code/equori/internal/portfolio/domain"
 )
 
 // MaxReturnDays is the longest period of a return (investments design 4.3).

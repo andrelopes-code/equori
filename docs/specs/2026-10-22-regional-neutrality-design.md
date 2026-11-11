@@ -190,7 +190,7 @@ type Rule struct {
 ### 5.9 Investment income and tax [23]
 
 ```go
-// internal/portfolio/internal/domain
+// internal/portfolio/domain
 type Jurisdiction interface {
 	ID() string
 	IncomeTypes() []string                       // types beyond the universal set

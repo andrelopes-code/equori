@@ -19,7 +19,7 @@ A reader asks, in this order: did it make money, did it beat the index, did it b
 |---|---|---|
 | D1 | One sentence states the answer before any figure. | Owner review of 2026-11-09: the section reads as figures assembled from ready parts. |
 | D2 | A comparison is two bars on one axis with the value written at the bar end. Lengths read more precisely than numbers in cards. | `docs/specs/2026-11-07-portfolio-clarity-design.md`, D3. |
-| D3 | The money result is derived on the client from `opening`, `closing` and `flows`: `gain = closing - opening - sum(flows)`. A flow is positive when money entered the tree (`internal/portfolio/internal/app/return.go`, `Return`). | The report; no field is added. |
+| D3 | The money result is derived on the client from `opening`, `closing` and `flows`: `gain = closing - opening - sum(flows)`. A flow is positive when money entered the tree (`internal/portfolio/app/return.go`, `Return`). | The report; no field is added. |
 | D4 | A bar needs no color to be read: the value is written on it, the index is solid, the inflation is hatched, and the chip beside each comparison holds an icon and words. | Dataviz rule: identity is never color alone. |
 | D5 | The decomposition of the growth into deposits and gain stands on the portfolio only, where deposits are common. The account page states the same rows without the bar. | Owner, 2026-11-09. |
 

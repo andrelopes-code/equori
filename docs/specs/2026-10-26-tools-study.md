@@ -111,7 +111,7 @@ The 50/30/20 split (needs, wants, savings of after-tax income) comes from Warren
 | Card installments and committed amounts | `planning` `Committed`, card statements | future outflows for a payoff or cash-flow tool |
 | Schedules and subscriptions | `web/src/features/planning/` | recurring amounts for a cost-over-time tool |
 | Category totals, cash and accrual views | `reporting` | mean monthly expense for a reserve or withdrawal tool |
-| Jurisdiction extension point | `internal/portfolio/internal/domain/jurisdiction.go` | the place for the rules of 3.6 |
+| Jurisdiction extension point | `internal/portfolio/domain/jurisdiction.go` | the place for the rules of 3.6 |
 | Assistant tools | ADR 012 | a tool computed on the server can also be a tool of the assistant |
 
 ## 5. Candidate tools

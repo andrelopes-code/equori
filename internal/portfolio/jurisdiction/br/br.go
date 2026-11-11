@@ -5,7 +5,7 @@ import (
 	"slices"
 	"time"
 
-	"github.com/andrelopes-code/equori/internal/portfolio/internal/domain"
+	"github.com/andrelopes-code/equori/internal/portfolio/domain"
 )
 
 const bvmf = "BVMF"

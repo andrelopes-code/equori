@@ -14,7 +14,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/problem"
-	"github.com/andrelopes-code/equori/internal/portfolio/internal/app"
+	"github.com/andrelopes-code/equori/internal/portfolio/app"
 )
 
 const BaseURL = "/api/v1"

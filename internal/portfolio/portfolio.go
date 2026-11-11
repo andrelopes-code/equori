@@ -24,12 +24,12 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/outbox"
 	"github.com/andrelopes-code/equori/internal/platform/registry"
 	"github.com/andrelopes-code/equori/internal/platform/tool"
-	"github.com/andrelopes-code/equori/internal/portfolio/internal/adapter/httpapi"
-	"github.com/andrelopes-code/equori/internal/portfolio/internal/adapter/postgres"
-	"github.com/andrelopes-code/equori/internal/portfolio/internal/adapter/toolapi"
-	"github.com/andrelopes-code/equori/internal/portfolio/internal/app"
-	"github.com/andrelopes-code/equori/internal/portfolio/internal/domain"
-	"github.com/andrelopes-code/equori/internal/portfolio/internal/jurisdiction/br"
+	"github.com/andrelopes-code/equori/internal/portfolio/app"
+	"github.com/andrelopes-code/equori/internal/portfolio/domain"
+	"github.com/andrelopes-code/equori/internal/portfolio/httpapi"
+	"github.com/andrelopes-code/equori/internal/portfolio/jurisdiction/br"
+	"github.com/andrelopes-code/equori/internal/portfolio/postgres"
+	"github.com/andrelopes-code/equori/internal/portfolio/toolapi"
 )
 
 // consumer names the module's outbox subscriptions (ADR 006).

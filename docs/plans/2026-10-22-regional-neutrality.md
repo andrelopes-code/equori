@@ -665,7 +665,7 @@ Fixture (the ECB format):
 ### Task 20: Jurisdiction interface and the `br` implementation
 
 **Files:**
-- Create: `internal/portfolio/internal/domain/jurisdiction.go`:
+- Create: `internal/portfolio/domain/jurisdiction.go`:
   ```go
   var UniversalIncomeTypes = []string{"coupon", "distribution", "dividend", "interest"}
   type Jurisdiction interface {
@@ -675,11 +675,11 @@ Fixture (the ECB format):
   	Treatment(incomeType string) string // "" when the type has no treatment
   }
   ```
-- Create: `internal/portfolio/internal/jurisdiction/br/br.go` (`reit`+`BVMF` → `fii`; `depositary_receipt`+`BVMF` → `bdr`; other → the type; `dividend` → `exempt`; `jcp`, `interest`, `coupon`, `distribution` → `exclusive`; `IncomeTypes` → `["jcp"]`)
+- Create: `internal/portfolio/jurisdiction/br/br.go` (`reit`+`BVMF` → `fii`; `depositary_receipt`+`BVMF` → `bdr`; other → the type; `dividend` → `exempt`; `jcp`, `interest`, `coupon`, `distribution` → `exclusive`; `IncomeTypes` → `["jcp"]`)
 - Create: `internal/portfolio/region_defaults.go` (`BR` → `br`)
-- Modify: `internal/portfolio/internal/domain/rebuild.go:15-18,128-140` (delete the treatment constants; `Rebuild` takes a `Jurisdiction`, nil allowed; nil → empty tax class and treatment)
+- Modify: `internal/portfolio/domain/rebuild.go:15-18,128-140` (delete the treatment constants; `Rebuild` takes a `Jurisdiction`, nil allowed; nil → empty tax class and treatment)
 - Modify: `internal/portfolio/portfolio.go:36` (`New(pool, dispatcher, l, md, profiles Profiles, log)`; the rebuild reads the owner's profile), `internal/server/server.go:97`
-- Test: `internal/portfolio/internal/jurisdiction/br/br_test.go`, `internal/portfolio/internal/domain/rebuild_test.go`
+- Test: `internal/portfolio/jurisdiction/br/br_test.go`, `internal/portfolio/domain/rebuild_test.go`
 
 - [ ] **Step 1: Write the failing tests.** `TestBR`: `TaxClass("reit","BVMF")` = `fii`; `TaxClass("depositary_receipt","BVMF")` = `bdr`; `TaxClass("reit","XNYS")` = `reit`; `Treatment("dividend")` = `exempt`; `Treatment("jcp")` = `exclusive`. `TestRebuildWithoutJurisdiction`: the rebuild of a sale and a dividend with a nil jurisdiction yields `TaxClass == ""` and `TaxTreatment == ""`.
 - [ ] **Step 2:** `go test ./internal/portfolio/... -run 'BR|Rebuild'` → FAIL.
@@ -692,7 +692,7 @@ Fixture (the ECB format):
 **Files:**
 - Create: `db/migrations/00047_tax_jurisdiction.sql`: in `ledger_investment_income` and `portfolio_income_event`, replace the `income_type IN (...)` checks with the identifier check; `portfolio_income_event.tax_treatment` and `portfolio_realized_result.tax_class` drop `NOT NULL` and get the identifier check (null allowed)
 - Modify: `internal/ledger/internal/domain/income.go:16,46` (keep `IncomeJCP` out of ledger: delete the enumerated check; validate `registry.ValidID`; message `must match ^[a-z0-9_]{2,40}$`)
-- Modify: `internal/portfolio/internal/adapter/postgres/repository.go`, `internal/portfolio/internal/adapter/httpapi/server.go:75,90` (null → JSON null)
+- Modify: `internal/portfolio/postgres/repository.go`, `internal/portfolio/httpapi/server.go:75,90` (null → JSON null)
 - Modify: `api/openapi.yaml:6027-6029` (`IncomeType` → `type: string, pattern`), `:6168-6170` (`tax_treatment` nullable pattern), `tax_class` nullable; new `GET /investment-income-types` `listInvestmentIncomeTypes` (tag `portfolio`) → `{items: [string]}`
 - Modify: `internal/server/tool_exposure_test.go` (`"listInvestmentIncomeTypes": "-pending"`)
 - Modify: `cmd/equori/main.go` (command `portfolio` with argument `rebuild`, after `reportingCommand`; usage `usage: equori portfolio rebuild`); `internal/portfolio/portfolio.go` (`func (m *Module) RebuildAll(ctx context.Context) error`)

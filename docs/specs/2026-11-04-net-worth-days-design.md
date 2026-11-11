@@ -27,7 +27,7 @@ No regional value enters: the currency comes from settings, and dates and month 
 
 | Piece | Place |
 |---|---|
-| `NetWorthDays(ctx, booksID, from, to, in)` | `internal/portfolio/internal/app/allocation.go`, one `NetWorth` per day; `ErrInvalidDayRange` |
+| `NetWorthDays(ctx, booksID, from, to, in)` | `internal/portfolio/app/allocation.go`, one `NetWorth` per day; `ErrInvalidDayRange` |
 | Operation `getNetWorthDays` | `api/openapi.yaml`, tag `portfolio`, `x-book-role: read`; entry in `internal/server/tool_exposure_test.go` |
 | `monthEntries(transactions, categories, base, day)` | `web/src/features/reports/net-worth-days.ts`, pure, tested |
 | `NetWorthMonthChart` | `web/src/features/reports/net-worth-month-chart.tsx` |
