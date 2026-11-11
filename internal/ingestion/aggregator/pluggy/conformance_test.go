@@ -7,7 +7,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/ingestion/aggregator/aggregatortest"
 	"github.com/andrelopes-code/equori/internal/ingestion/aggregator/pluggy"
 	"github.com/andrelopes-code/equori/internal/ingestion/aggregator/pluggy/client"
-	"github.com/andrelopes-code/equori/internal/ingestion/aggregator/pluggy/client/pluggytest"
+	"github.com/andrelopes-code/equori/internal/ingestion/aggregator/pluggy/pluggytest"
 	"github.com/andrelopes-code/equori/internal/ingestion/app"
 	"github.com/andrelopes-code/equori/internal/ingestion/domain"
 	"github.com/andrelopes-code/equori/internal/platform/clock"

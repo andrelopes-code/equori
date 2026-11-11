@@ -29,9 +29,6 @@ internal/classification/toolapi/rules.go	listRules	pending: backend reorganizati
 internal/identity/app/session.go	Service.Login	pending: backend reorganization plan
 internal/identity/app/setup.go	Service.CompleteSetup	pending: backend reorganization plan
 internal/identity/httpapi/server.go	ToProblem	table of data
-internal/ingestion/aggregator/pluggy/client/normalize.go	Normalize	pending: backend reorganization plan
-internal/ingestion/aggregator/pluggy/client/pluggytest/server.go	Server.serve	pending: backend reorganization plan
-internal/ingestion/aggregator/pluggy/port.go	Port.ReadAccount	pending: backend reorganization plan
 internal/ingestion/app/connection.go	Service.CreateConnection	pending: backend reorganization plan
 internal/ingestion/app/connection.go	Service.MapAccount	pending: backend reorganization plan
 internal/ingestion/app/import_match.go	Service.repeats	pending: backend reorganization plan

@@ -1,5 +1,4 @@
-// Package pluggy reads Pluggy items, accounts, bills and transactions and translates them
-// into Ingestion's records (anti-corruption layer, chapter 4).
+// Package client calls the Pluggy API and decodes its payloads.
 package client
 
 import (
@@ -133,18 +132,13 @@ type Bill struct {
 }
 
 // Item statuses that allow a sync (P6 A43).
-const (
-	StatusUpdated  = "UPDATED"
-	StatusUpdating = "UPDATING"
-)
+const StatusUpdated = "UPDATED"
 
 // Account kinds.
 const (
-	TypeCredit       = "CREDIT"
-	SubtypeChecking  = "CHECKING_ACCOUNT"
-	SubtypeSavings   = "SAVINGS_ACCOUNT"
-	SubtypeCard      = "CREDIT_CARD"
-	SubtypeReserve   = "RESERVED_BALANCE"
-	statusPending    = "PENDING"
-	recordDateLayout = "2006-01-02"
+	TypeCredit      = "CREDIT"
+	SubtypeChecking = "CHECKING_ACCOUNT"
+	SubtypeSavings  = "SAVINGS_ACCOUNT"
+	SubtypeCard     = "CREDIT_CARD"
+	SubtypeReserve  = "RESERVED_BALANCE"
 )

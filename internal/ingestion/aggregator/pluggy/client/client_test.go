@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/andrelopes-code/equori/internal/ingestion/aggregator/pluggy/client"
-	"github.com/andrelopes-code/equori/internal/ingestion/aggregator/pluggy/client/pluggytest"
+	"github.com/andrelopes-code/equori/internal/ingestion/aggregator/pluggy/pluggytest"
 )
 
 type fakeClock struct{ now time.Time }
