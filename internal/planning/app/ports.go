@@ -144,6 +144,7 @@ type ScheduleRef struct {
 	ID      uuid.UUID
 }
 
+// Repository stores the planning tables; postgres/ implements it.
 type Repository interface {
 	// MergeCategory moves budgets and schedules from one category to another (A75).
 	MergeCategory(ctx context.Context, booksID int64, from, into uuid.UUID) error
