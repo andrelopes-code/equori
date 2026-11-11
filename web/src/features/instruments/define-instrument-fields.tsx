@@ -13,7 +13,6 @@ import {
 } from "@/features/instruments/use-instrument-define";
 import { useT } from "@/i18n/i18n-provider";
 import { ChoiceSelect } from "@/ui/choice-select";
-import { FormLayout } from "@/ui/form-layout";
 import { FormNotice } from "@/ui/form-notice";
 import { FormRow } from "@/ui/form-row";
 
@@ -49,7 +48,7 @@ export function DefineInstrumentFields({ form }: DefineInstrumentFieldsProps) {
   } = form;
 
   return (
-    <FormLayout>
+    <>
       {summary !== null && <FormNotice>{summary}</FormNotice>}
 
       <FormRow>
@@ -179,6 +178,6 @@ export function DefineInstrumentFields({ form }: DefineInstrumentFieldsProps) {
           )}
         </Field>
       </FormRow>
-    </FormLayout>
+    </>
   );
 }

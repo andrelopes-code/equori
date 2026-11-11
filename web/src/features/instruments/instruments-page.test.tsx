@@ -255,6 +255,26 @@ describe("Instrument catalog", () => {
     });
   });
 
+  it("spaces the catalog search through the form column of the define dialog", async () => {
+    await renderApp("/instruments", { fetch: api({}) });
+    const user = userEvent.setup();
+    await user.click(
+      await screen.findByRole("button", {
+        name: catalogEn["instruments.define"],
+      }),
+    );
+    const dialog = await screen.findByRole("dialog");
+
+    const search = within(dialog)
+      .getByRole("combobox", { name: catalogEn["instruments.search.label"] })
+      .closest('[data-ui="field"]');
+    const row = within(dialog)
+      .getByRole("textbox", { name: /^Code/ })
+      .closest('[data-ui="field"]')?.parentElement;
+
+    expect(search?.parentElement).toBe(row?.parentElement);
+  });
+
   it("fills the define dialog from a catalog result", async () => {
     const sent: unknown[] = [];
     const fetch = api({
