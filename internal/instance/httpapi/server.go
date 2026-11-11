@@ -13,8 +13,6 @@ import (
 
 const BaseURL = "/api/v1"
 
-var _ StrictServerInterface = (*Server)(nil)
-
 type Server struct {
 	svc  *app.Service
 	errs httpserver.ErrorWriter
@@ -24,12 +22,19 @@ func NewServer(svc *app.Service, log *slog.Logger) *Server {
 	return &Server{svc: svc, errs: httpserver.ErrorWriter{Log: log, Map: ToProblem}}
 }
 
+// Register lists every route of the instance operations; each handler sits in this package.
 func (s *Server) Register(mux *http.ServeMux) {
-	strict := NewStrictHandlerWithOptions(s, nil, StrictHTTPServerOptions{
-		RequestErrorHandlerFunc:  s.errs.WriteRequestError,
-		ResponseErrorHandlerFunc: s.errs.Write,
-	})
-	HandlerWithOptions(strict, StdHTTPServerOptions{BaseURL: BaseURL, BaseRouter: mux, ErrorHandlerFunc: s.errs.WriteRequestError})
+	mux.HandleFunc("GET "+BaseURL+"/instance/backup",
+		httpserver.Handle(s.errs, http.StatusOK, s.getBackup))
+	mux.HandleFunc("POST "+BaseURL+"/instance/backup",
+		httpserver.Handle(s.errs, http.StatusOK, s.runBackup))
+	mux.HandleFunc("PUT "+BaseURL+"/instance/backup/copy-password",
+		httpserver.Handle(s.errs, http.StatusOK, s.setCopyPassword))
+	mux.HandleFunc("GET "+BaseURL+"/instance/diagnostic", s.getDiagnostic)
+	mux.HandleFunc("GET "+BaseURL+"/instance/version",
+		httpserver.Handle(s.errs, http.StatusOK, s.getVersion))
+	mux.HandleFunc("PUT "+BaseURL+"/instance/version/update-check",
+		httpserver.Handle(s.errs, http.StatusOK, s.setUpdateCheck))
 }
 
 // ToProblem maps the module's errors to the codes declared in api/openapi.yaml (ADR 004).

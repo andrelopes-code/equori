@@ -2,35 +2,41 @@ package httpapi
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/andrelopes-code/equori/internal/instance/domain"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
+	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 )
 
-func (s *Server) GetBackup(ctx context.Context, _ GetBackupRequestObject) (GetBackupResponseObject, error) {
+func (s *Server) getBackup(ctx context.Context, _ *http.Request, _ httpserver.None) (BackupStatus, error) {
 	status, err := s.svc.BackupStatus(ctx, auth.MustMemberID(ctx))
 	if err != nil {
-		return nil, err
+		return BackupStatus{}, err
 	}
 
-	return GetBackup200JSONResponse(toBackupStatus(status)), nil
+	return toBackupStatus(status), nil
 }
 
-func (s *Server) RunBackup(ctx context.Context, _ RunBackupRequestObject) (RunBackupResponseObject, error) {
+func (s *Server) runBackup(ctx context.Context, _ *http.Request, _ httpserver.None) (BackupStatus, error) {
 	status, err := s.svc.RunBackup(ctx, auth.MustMemberID(ctx))
 	if err != nil {
-		return nil, err
+		return BackupStatus{}, err
 	}
 
-	return RunBackup200JSONResponse(toBackupStatus(status)), nil
+	return toBackupStatus(status), nil
 }
 
-func (s *Server) SetCopyPassword(ctx context.Context, request SetCopyPasswordRequestObject) (SetCopyPasswordResponseObject, error) {
-	if err := s.svc.SetCopyPassword(ctx, auth.MustMemberID(ctx), request.Body.Password); err != nil {
-		return nil, err
+func (s *Server) setCopyPassword(
+	ctx context.Context,
+	_ *http.Request,
+	in SetCopyPasswordJSONRequestBody,
+) (httpserver.None, error) {
+	if err := s.svc.SetCopyPassword(ctx, auth.MustMemberID(ctx), in.Password); err != nil {
+		return httpserver.None{}, err
 	}
 
-	return SetCopyPassword204Response{}, nil
+	return httpserver.None{}, nil
 }
 
 func toBackupStatus(s domain.BackupStatus) BackupStatus {

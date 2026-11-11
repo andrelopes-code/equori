@@ -2,27 +2,33 @@ package httpapi
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/andrelopes-code/equori/internal/instance/app"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
+	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 )
 
-func (s *Server) GetVersion(ctx context.Context, _ GetVersionRequestObject) (GetVersionResponseObject, error) {
+func (s *Server) getVersion(ctx context.Context, _ *http.Request, _ httpserver.None) (VersionStatus, error) {
 	status, err := s.svc.VersionStatus(ctx, auth.MustMemberID(ctx))
 	if err != nil {
-		return nil, err
+		return VersionStatus{}, err
 	}
 
-	return GetVersion200JSONResponse(toVersionStatus(status)), nil
+	return toVersionStatus(status), nil
 }
 
-func (s *Server) SetUpdateCheck(ctx context.Context, request SetUpdateCheckRequestObject) (SetUpdateCheckResponseObject, error) {
-	status, err := s.svc.SetUpdateCheck(ctx, auth.MustMemberID(ctx), request.Body.UpdateCheck)
+func (s *Server) setUpdateCheck(
+	ctx context.Context,
+	_ *http.Request,
+	in SetUpdateCheckJSONRequestBody,
+) (VersionStatus, error) {
+	status, err := s.svc.SetUpdateCheck(ctx, auth.MustMemberID(ctx), in.UpdateCheck)
 	if err != nil {
-		return nil, err
+		return VersionStatus{}, err
 	}
 
-	return SetUpdateCheck200JSONResponse(toVersionStatus(status)), nil
+	return toVersionStatus(status), nil
 }
 
 func toVersionStatus(v app.VersionStatus) VersionStatus {

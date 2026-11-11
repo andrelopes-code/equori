@@ -1,7 +1,9 @@
 package httpapi
 
 import (
-	"context"
+	"bytes"
+	"encoding/json"
+	"net/http"
 	"slices"
 	"time"
 
@@ -9,18 +11,31 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/auth"
 )
 
-func (s *Server) GetDiagnostic(ctx context.Context, _ GetDiagnosticRequestObject) (GetDiagnosticResponseObject, error) {
+// getDiagnostic is a custom handler: the response sets Content-Disposition.
+func (s *Server) getDiagnostic(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	d, err := s.svc.Diagnostic(ctx, auth.MustMemberID(ctx))
 	if err != nil {
-		return nil, err
+		s.errs.Write(w, r, err)
+
+		return
 	}
 
-	disposition := `attachment; filename="equori-diagnostic-` + d.GeneratedAt.Format(time.DateOnly) + `.json"`
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(toDiagnostic(d)); err != nil {
+		s.errs.Write(w, r, err)
 
-	return GetDiagnostic200JSONResponse{
-		Body:    toDiagnostic(d),
-		Headers: GetDiagnostic200ResponseHeaders{ContentDisposition: &disposition},
-	}, nil
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(
+		"Content-Disposition",
+		`attachment; filename="equori-diagnostic-`+d.GeneratedAt.Format(time.DateOnly)+`.json"`,
+	)
+	w.WriteHeader(http.StatusOK)
+	_, _ = buf.WriteTo(w)
 }
 
 func toDiagnostic(d domain.Diagnostic) Diagnostic {
