@@ -127,7 +127,7 @@ export function InstrumentPage() {
             }}
           />
 
-          <InstrumentPositions code={i.code} />
+          <InstrumentPositions code={i.code} quote={quote} />
           {fixedIncome && terms.isError && (
             <QueryError
               error={terms.error}

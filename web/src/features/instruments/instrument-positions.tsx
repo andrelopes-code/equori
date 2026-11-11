@@ -21,11 +21,14 @@ import {
   AccountLink,
   accountsQuery,
   averageCostText,
-  positionsQuery,
 } from "@/features/accounts";
 import { useScale } from "@/features/setup";
-import { useT } from "@/i18n/i18n-provider";
-import { useToday } from "@/i18n/today";
+import { PositionFigures } from "@/features/instruments/position-figures";
+import { positionResult } from "@/features/instruments/position-totals";
+import { useInstrumentPositions } from "@/features/instruments/use-instrument-positions";
+import { formatSignedBasisPoints } from "@/i18n/format";
+import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { MASK } from "@/privacy/mask";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 import { PricedValue } from "@/ui/priced-value";
 import { QueryError } from "@/ui/query-error";
@@ -34,16 +37,21 @@ type Position = components["schemas"]["Position"];
 
 // The positions of the accounts that hold one instrument at the end of today, each linked to its
 // account. listPositions answers for every account, so the page filters by the instrument.
-export function InstrumentPositions({ code }: { code: string }) {
+export function InstrumentPositions({
+  code,
+  quote,
+}: {
+  code: string;
+  quote: string | null;
+}) {
   const t = useT();
   const api = useApi();
-  const today = useToday();
+  const [locale] = useAppLocale();
   const fmt = useMoneyFormat();
   const scale = useScale();
-  const positions = useQuery(positionsQuery(api, today));
+  const { positions, rows } = useInstrumentPositions(code);
   const accounts = useQuery(accountsQuery(api));
   const byID = new Map((accounts.data ?? []).map((a) => [a.id, a]));
-  const rows = (positions.data ?? []).filter((p) => p.instrument === code);
   const pending = positions.isPending || accounts.isPending || scale === null;
   if (positions.isError)
     return (
@@ -73,6 +81,19 @@ export function InstrumentPositions({ code }: { code: string }) {
     ) : (
       <PricedValue value={money(p.market_value)} prices={p.prices} />
     );
+  const result = (p: Position) => {
+    const r = positionResult(p);
+    if (r === null || scale === null) return null;
+
+    const amount = fmt.signed(
+      { amount: r.amount, currency: p.cost_basis.currency },
+      scale(p.cost_basis.currency),
+    );
+
+    return r.bp === null
+      ? amount
+      : `${amount} (${fmt.hidden ? MASK : formatSignedBasisPoints(r.bp, locale)})`;
+  };
   if (!pending && rows.length === 0) return null;
 
   return (
@@ -80,7 +101,8 @@ export function InstrumentPositions({ code }: { code: string }) {
       <Heading level={2} size="md">
         {t("instrument.positions.title")}
       </Heading>
-      <Table columns={5} variant="framed">
+      {quote !== null && <PositionFigures rows={rows} quote={quote} />}
+      <Table columns={6} variant="framed">
         <TableContent>
           <TableCaption>{t("instrument.positions.caption")}</TableCaption>
           <TableHead>
@@ -99,6 +121,9 @@ export function InstrumentPositions({ code }: { code: string }) {
               </TableColumnHeader>
               <TableColumnHeader numeric>
                 {t("positions.marketValue")}
+              </TableColumnHeader>
+              <TableColumnHeader numeric>
+                {t("instrument.position.result")}
               </TableColumnHeader>
             </TableRow>
           </TableHead>
@@ -125,6 +150,7 @@ export function InstrumentPositions({ code }: { code: string }) {
                   </TableCell>
                   <TableCell numeric>{money(p.cost_basis)}</TableCell>
                   <TableCell numeric>{marketValue(p)}</TableCell>
+                  <TableCell numeric>{result(p) ?? "—"}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

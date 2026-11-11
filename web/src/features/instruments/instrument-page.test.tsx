@@ -592,7 +592,7 @@ describe("Instrument page", () => {
     });
     await within(table).findByRole("link", { name: /PETR4/ });
     expect(rowTexts(table).slice(1)).toEqual([
-      "Corretora / PETR4|100|R$35.00|R$3,500.00|R$3,845.00",
+      "Corretora / PETR4|100|R$35.00|R$3,500.00|R$3,845.00|+R$345.00 (+9.86%)",
     ]);
     expect(within(table).getByRole("link", { name: /PETR4/ })).toHaveAttribute(
       "href",
