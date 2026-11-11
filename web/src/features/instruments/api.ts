@@ -1,5 +1,6 @@
 import {
   queryOptions,
+  skipToken,
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query";
@@ -91,6 +92,22 @@ export function catalogQuery(api: Client<paths>, q: string) {
         await api.GET("/market-data/catalog", { params: { query: { q } } }),
       ),
     staleTime: 60_000,
+  });
+}
+
+export function probeQuery(
+  api: Client<paths>,
+  input: components["schemas"]["ProbeInput"] | null,
+) {
+  return queryOptions({
+    queryKey: [...instrumentKeys.all, "probe", input] as const,
+    queryFn:
+      input === null
+        ? skipToken
+        : async () =>
+            unwrap(await api.POST("/market-data/probe", { body: input })),
+    staleTime: 60_000,
+    retry: false,
   });
 }
 

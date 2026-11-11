@@ -11,6 +11,8 @@ import {
 
 import { DefineInstrumentFields } from "@/features/instruments/define-instrument-fields";
 import { InstrumentSearch } from "@/features/instruments/instrument-search";
+import { probeInput } from "@/features/instruments/probe-input";
+import { QuoteProbe } from "@/features/instruments/quote-probe";
 import { useInstrumentDefine } from "@/features/instruments/use-instrument-define";
 import { useT } from "@/i18n/i18n-provider";
 import { useOverlayOpen } from "@/ui/use-overlay-open";
@@ -53,6 +55,15 @@ export function DefineInstrumentDialog({
             <InstrumentSearch onChoose={form.apply} />
 
             <DefineInstrumentFields form={form} />
+
+            <QuoteProbe
+              input={probeInput({
+                code: form.code,
+                type: form.type,
+                exchange: form.exchange,
+                quote: form.chosenQuote,
+              })}
+            />
           </DialogBody>
           <DialogFooter>
             <Button variant="ghost" tone="secondary" onClick={onCancel}>

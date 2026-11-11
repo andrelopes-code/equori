@@ -59,6 +59,11 @@ export const instrumentsPtBR: Record<keyof typeof instrumentsEn, string> = {
     "Um resultado preenche os campos abaixo; eles continuam editáveis.",
   "instruments.search.defined": "Já definido",
   "instruments.search.unavailable": "Sem resposta de: {sources}",
+  "instruments.probe.quote": "{source}: {value} em {date}",
+  "instruments.probe.none": "{source}: sem cotação para este código",
+  "instruments.probe.failed": "{source}: sem resposta",
+  "instruments.probe.available": "Não ativada: {source}",
+  "instruments.probe.settings": "Configurações de dados de mercado",
   "instruments.symbol.label": "Símbolo em {source}",
   "instruments.symbol.hint":
     "Vazio usa o símbolo derivado do código e da bolsa.",

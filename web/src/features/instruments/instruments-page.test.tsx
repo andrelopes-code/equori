@@ -2,7 +2,9 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
+import { formatPrice } from "@/features/instruments/rate";
 import { catalogEn } from "@/i18n/catalog.en";
+import { formatDate } from "@/i18n/format";
 import { json, problem } from "@/testing/fake-api";
 import { instrumentsApi as api } from "@/testing/instruments-api";
 import { renderApp } from "@/testing/render-app";
@@ -277,6 +279,69 @@ describe("Instrument catalog", () => {
     });
   });
 
+  it("shows what each source quotes for the instrument being defined", async () => {
+    const probed: unknown[] = [];
+    const fetch = api({
+      "POST /api/v1/market-data/probe": async (req) => {
+        probed.push(await req.json());
+        return json(200, probeResult);
+      },
+    });
+    await renderApp("/instruments", { fetch });
+    const dialog = await openProbeForm();
+
+    const base = "B3, consolidated trades";
+    expect(
+      await within(dialog).findByText(
+        `${base}: ${formatPrice("38.5", "en-US")} on ${formatDate("2026-11-06", "en-US")}`,
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(dialog).getByText("Coinbase: no quote for this code"),
+    ).toBeInTheDocument();
+    expect(
+      within(dialog).getByText("Tesouro Direto: no answer"),
+    ).toBeInTheDocument();
+    expect(
+      within(dialog).getByText("Not enabled: Yahoo Finance"),
+    ).toBeInTheDocument();
+    expect(
+      within(dialog).getByRole("link", {
+        name: catalogEn["instruments.probe.settings"],
+      }),
+    ).toBeInTheDocument();
+    expect(probed).toEqual([
+      { code: "PETR4", type: "stock", exchange: "BVMF", quote_currency: "BRL" },
+    ]);
+  });
+
+  it("hides the sources not enabled and the settings link from a member", async () => {
+    const fetch = api({
+      "GET /api/v1/me": () =>
+        json(200, {
+          id: 1,
+          email: "a@b.c",
+          books_id: 1,
+          role: "member",
+          language: "en",
+          region: "BR",
+        }),
+      "POST /api/v1/market-data/probe": () => json(200, probeResult),
+    });
+    await renderApp("/instruments", { fetch });
+    const dialog = await openProbeForm();
+
+    expect(
+      await within(dialog).findByText("Coinbase: no quote for this code"),
+    ).toBeInTheDocument();
+    expect(within(dialog).queryByText(/Not enabled/)).toBeNull();
+    expect(
+      within(dialog).queryByRole("link", {
+        name: catalogEn["instruments.probe.settings"],
+      }),
+    ).toBeNull();
+  });
+
   it("shows the problem the server returns for a code in use", async () => {
     const fetch = api({
       "POST /api/v1/instruments": () =>
@@ -347,3 +412,46 @@ describe("Instrument catalog", () => {
     ).toBeNull();
   });
 });
+
+const probeResult = {
+  quotes: [
+    {
+      source: "b3_consolidated",
+      date: "2026-11-06",
+      value: "38.5",
+      error: null,
+    },
+    { source: "coinbase", date: null, value: null, error: null },
+    { source: "tesouro_direto", date: null, value: null, error: "status 500" },
+  ],
+  available: ["yahoo_chart"],
+};
+
+async function openProbeForm() {
+  const user = userEvent.setup();
+  await user.click(
+    await screen.findByRole("button", {
+      name: catalogEn["instruments.define"],
+    }),
+  );
+  const dialog = await screen.findByRole("dialog");
+  await user.click(
+    within(dialog).getByRole("combobox", {
+      name: catalogEn["instruments.field.type"],
+    }),
+  );
+  await user.click(
+    await screen.findByRole("option", {
+      name: catalogEn["instruments.type.stock"],
+    }),
+  );
+  await user.type(
+    within(dialog).getByRole("textbox", { name: /^Code/ }),
+    "PETR4",
+  );
+  await user.type(
+    within(dialog).getByRole("textbox", { name: /^Exchange/ }),
+    "BVMF",
+  );
+  return dialog;
+}
