@@ -1,9 +1,7 @@
 package httpapi
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -62,7 +60,7 @@ func (s *Server) Register(mux *http.ServeMux) {
 		httpserver.Handle(s.errs, http.StatusOK, s.listAggregators))
 	mux.HandleFunc("GET "+BaseURL+"/integrations",
 		httpserver.Handle(s.errs, http.StatusOK, s.listIntegrations))
-	mux.HandleFunc("POST "+BaseURL+"/integrations", s.createIntegration)
+	mux.HandleFunc("POST "+BaseURL+"/integrations", httpserver.HandleCreated(s.errs, s.createIntegration))
 	mux.HandleFunc("GET "+BaseURL+"/integrations/{id}",
 		httpserver.Handle(s.errs, http.StatusOK, s.getIntegration))
 	mux.HandleFunc("DELETE "+BaseURL+"/integrations/{id}",
@@ -71,7 +69,7 @@ func (s *Server) Register(mux *http.ServeMux) {
 		httpserver.Handle(s.errs, http.StatusOK, s.updateIntegrationCredentials))
 	mux.HandleFunc("GET "+BaseURL+"/connections",
 		httpserver.Handle(s.errs, http.StatusOK, s.listConnections))
-	mux.HandleFunc("POST "+BaseURL+"/connections", s.createConnection)
+	mux.HandleFunc("POST "+BaseURL+"/connections", httpserver.HandleCreated(s.errs, s.createConnection))
 	mux.HandleFunc("GET "+BaseURL+"/connections/{id}",
 		httpserver.Handle(s.errs, http.StatusOK, s.getConnection))
 	mux.HandleFunc("DELETE "+BaseURL+"/connections/{id}",
@@ -223,20 +221,4 @@ func (s *Server) listImportBatches(
 	out.NextCursor, err = page.Next(next)
 
 	return out, err
-}
-
-// writeCreated answers 201 with the JSON body and the Location header of the created record
-// (ADR 007, C6).
-func (s *Server) writeCreated(w http.ResponseWriter, r *http.Request, location string, body any) {
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(body); err != nil {
-		s.errs.Write(w, r, err)
-
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Location", location)
-	w.WriteHeader(http.StatusCreated)
-	_, _ = buf.WriteTo(w)
 }

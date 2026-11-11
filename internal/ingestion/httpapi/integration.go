@@ -2,8 +2,6 @@ package httpapi
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/andrelopes-code/equori/internal/ingestion/app"
@@ -17,24 +15,16 @@ func toIntegrationAPI(i domain.Integration) Integration {
 	return Integration{Id: i.ID, Aggregator: string(i.Aggregator), Name: i.Name, UpdatedAt: i.UpdatedAt.UTC()}
 }
 
-// createIntegration is a custom handler: the success status is 201 with a Location header.
-func (s *Server) createIntegration(w http.ResponseWriter, r *http.Request) {
-	var b CreateIntegrationJSONRequestBody
-	if err := json.NewDecoder(r.Body).Decode(&b); err != nil {
-		s.errs.WriteRequestError(w, r, fmt.Errorf("can't decode JSON body: %w", err))
-
-		return
-	}
-
-	i, err := s.svc.CreateIntegration(r.Context(), auth.MustBooksID(r.Context()),
+func (s *Server) createIntegration(
+	ctx context.Context, _ *http.Request, b CreateIntegrationJSONRequestBody,
+) (Integration, string, error) {
+	i, err := s.svc.CreateIntegration(ctx, auth.MustBooksID(ctx),
 		domain.AggregatorID(b.Aggregator), b.Name, domain.Credentials(b.Credentials))
 	if err != nil {
-		s.errs.Write(w, r, err)
-
-		return
+		return Integration{}, "", err
 	}
 
-	s.writeCreated(w, r, BaseURL+"/integrations/"+i.ID.String(), toIntegrationAPI(i))
+	return toIntegrationAPI(i), BaseURL + "/integrations/" + i.ID.String(), nil
 }
 
 func (s *Server) listIntegrations(ctx context.Context, r *http.Request, _ httpserver.None) (IntegrationList, error) {

@@ -95,7 +95,7 @@ func (s *Server) importFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.writeCreated(w, r, BaseURL+"/import-batches/"+b.ID.String(), toBatchAPI(b))
+	httpserver.WriteCreated(s.errs, w, r, BaseURL+"/import-batches/"+b.ID.String(), toBatchAPI(b))
 }
 
 func (s *Server) getImportBatch(ctx context.Context, r *http.Request, _ httpserver.None) (ImportBatch, error) {

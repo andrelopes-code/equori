@@ -2,8 +2,6 @@ package httpapi
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -90,22 +88,15 @@ func toScheduleAPI(s domain.Schedule) Schedule {
 	return out
 }
 
-func (s *Server) createSchedule(w http.ResponseWriter, r *http.Request) {
-	var in CreateScheduleJSONRequestBody
-	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
-		s.errs.WriteRequestError(w, r, fmt.Errorf("can't decode JSON body: %w", err))
-
-		return
-	}
-
-	created, err := s.addSchedule(r.Context(), in)
+func (s *Server) createSchedule(
+	ctx context.Context, _ *http.Request, in CreateScheduleJSONRequestBody,
+) (Schedule, string, error) {
+	created, err := s.addSchedule(ctx, in)
 	if err != nil {
-		s.errs.Write(w, r, err)
-
-		return
+		return Schedule{}, "", err
 	}
 
-	s.writeCreated(w, r, "/schedules/", created.ID, toScheduleAPI(created))
+	return toScheduleAPI(created), BaseURL + "/schedules/" + created.ID.String(), nil
 }
 
 func (s *Server) getSchedule(ctx context.Context, r *http.Request, _ httpserver.None) (Schedule, error) {

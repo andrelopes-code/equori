@@ -2,8 +2,6 @@ package httpapi
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -60,25 +58,15 @@ func toConnectionAPI(c domain.Connection) Connection {
 	return out
 }
 
-// createConnection is a custom handler: the success status is 201 with a Location header.
-func (s *Server) createConnection(w http.ResponseWriter, r *http.Request) {
-	var b CreateConnectionJSONRequestBody
-	if err := json.NewDecoder(r.Body).Decode(&b); err != nil {
-		s.errs.WriteRequestError(w, r, fmt.Errorf("can't decode JSON body: %w", err))
-
-		return
-	}
-
-	c, err := s.svc.CreateConnection(
-		r.Context(), auth.MustBooksID(r.Context()), b.IntegrationId, b.ExternalId, opt(b.Name),
-	)
+func (s *Server) createConnection(
+	ctx context.Context, _ *http.Request, b CreateConnectionJSONRequestBody,
+) (Connection, string, error) {
+	c, err := s.svc.CreateConnection(ctx, auth.MustBooksID(ctx), b.IntegrationId, b.ExternalId, opt(b.Name))
 	if err != nil {
-		s.errs.Write(w, r, err)
-
-		return
+		return Connection{}, "", err
 	}
 
-	s.writeCreated(w, r, BaseURL+"/connections/"+c.ID.String(), toConnectionAPI(c))
+	return toConnectionAPI(c), BaseURL + "/connections/" + c.ID.String(), nil
 }
 
 func (s *Server) listConnections(ctx context.Context, r *http.Request, _ httpserver.None) (ConnectionList, error) {

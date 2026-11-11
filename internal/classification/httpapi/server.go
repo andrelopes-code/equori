@@ -26,7 +26,7 @@ func NewServer(svc *app.Service, log *slog.Logger) *Server {
 func (s *Server) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET "+BaseURL+"/rules",
 		httpserver.Handle(s.errs, http.StatusOK, s.listRules))
-	mux.HandleFunc("POST "+BaseURL+"/rules", s.createRule)
+	mux.HandleFunc("POST "+BaseURL+"/rules", httpserver.HandleCreated(s.errs, s.createRule))
 	mux.HandleFunc("POST "+BaseURL+"/rules/reorder",
 		httpserver.Handle(s.errs, http.StatusOK, s.reorderRules))
 	mux.HandleFunc("POST "+BaseURL+"/rules/preview",
@@ -57,7 +57,7 @@ func (s *Server) Register(mux *http.ServeMux) {
 		httpserver.Handle(s.errs, http.StatusOK, s.deleteRule))
 	mux.HandleFunc("GET "+BaseURL+"/payee-aliases",
 		httpserver.Handle(s.errs, http.StatusOK, s.listPayeeAliases))
-	mux.HandleFunc("POST "+BaseURL+"/payee-aliases", s.createPayeeAlias)
+	mux.HandleFunc("POST "+BaseURL+"/payee-aliases", httpserver.HandleCreated(s.errs, s.createPayeeAlias))
 	mux.HandleFunc("GET "+BaseURL+"/payee-aliases/{id}",
 		httpserver.Handle(s.errs, http.StatusOK, s.getPayeeAlias))
 	mux.HandleFunc("PUT "+BaseURL+"/payee-aliases/{id}",

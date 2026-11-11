@@ -1,10 +1,7 @@
 package httpapi
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
-	"fmt"
 	"log/slog"
 	"net/http"
 
@@ -52,7 +49,7 @@ func (s *Server) Register(mux *http.ServeMux) {
 
 	// Accounts
 	mux.HandleFunc("GET "+BaseURL+"/accounts", httpserver.Handle(s.errs, http.StatusOK, s.listAccounts))
-	mux.HandleFunc("POST "+BaseURL+"/accounts", handleCreated(s.errs, s.createAccount))
+	mux.HandleFunc("POST "+BaseURL+"/accounts", httpserver.HandleCreated(s.errs, s.createAccount))
 	mux.HandleFunc("GET "+BaseURL+"/accounts/{id}", httpserver.Handle(s.errs, http.StatusOK, s.getAccount))
 	mux.HandleFunc("PATCH "+BaseURL+"/accounts/{id}", httpserver.Handle(s.errs, http.StatusOK, s.updateAccount))
 	mux.HandleFunc("POST "+BaseURL+"/accounts/{id}/close", httpserver.Handle(s.errs, http.StatusOK, s.closeAccount))
@@ -67,11 +64,11 @@ func (s *Server) Register(mux *http.ServeMux) {
 
 	// Transactions
 	mux.HandleFunc("GET "+BaseURL+"/transactions", httpserver.Handle(s.errs, http.StatusOK, s.listTransactions))
-	mux.HandleFunc("POST "+BaseURL+"/transactions", handleCreated(s.errs, s.createTransaction))
-	mux.HandleFunc("POST "+BaseURL+"/foreign-purchases", handleCreated(s.errs, s.recordForeignPurchase))
-	mux.HandleFunc("POST "+BaseURL+"/exchanges", handleCreated(s.errs, s.exchangeCurrency))
-	mux.HandleFunc("POST "+BaseURL+"/trades", handleCreated(s.errs, s.recordTrade))
-	mux.HandleFunc("POST "+BaseURL+"/investment-income", handleCreated(s.errs, s.recordInvestmentIncome))
+	mux.HandleFunc("POST "+BaseURL+"/transactions", httpserver.HandleCreated(s.errs, s.createTransaction))
+	mux.HandleFunc("POST "+BaseURL+"/foreign-purchases", httpserver.HandleCreated(s.errs, s.recordForeignPurchase))
+	mux.HandleFunc("POST "+BaseURL+"/exchanges", httpserver.HandleCreated(s.errs, s.exchangeCurrency))
+	mux.HandleFunc("POST "+BaseURL+"/trades", httpserver.HandleCreated(s.errs, s.recordTrade))
+	mux.HandleFunc("POST "+BaseURL+"/investment-income", httpserver.HandleCreated(s.errs, s.recordInvestmentIncome))
 	mux.HandleFunc("GET "+BaseURL+"/transactions/{id}", httpserver.Handle(s.errs, http.StatusOK, s.getTransaction))
 	mux.HandleFunc("PUT "+BaseURL+"/transactions/{id}", httpserver.Handle(s.errs, http.StatusOK, s.correctTransaction))
 	mux.HandleFunc("POST "+BaseURL+"/transactions/{id}/void", httpserver.Handle(s.errs, http.StatusOK, s.voidTransaction))
@@ -103,12 +100,12 @@ func (s *Server) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST "+BaseURL+"/installment-purchases", httpserver.Handle(s.errs, http.StatusCreated, s.createInstallmentPurchase))
 	mux.HandleFunc("POST "+BaseURL+"/transaction-batches", httpserver.Handle(s.errs, http.StatusCreated, s.createTransactionBatch))
 	mux.HandleFunc("GET "+BaseURL+"/accounts/{id}/commitments", httpserver.Handle(s.errs, http.StatusOK, s.getCommitment))
-	mux.HandleFunc("POST "+BaseURL+"/statements/{id}/payments", handleCreated(s.errs, s.payStatement))
+	mux.HandleFunc("POST "+BaseURL+"/statements/{id}/payments", httpserver.HandleCreated(s.errs, s.payStatement))
 	mux.HandleFunc("POST "+BaseURL+"/statements/{id}/financing", httpserver.Handle(s.errs, http.StatusCreated, s.financeStatement))
-	mux.HandleFunc("POST "+BaseURL+"/transactions/{id}/refunds", handleCreated(s.errs, s.refundTransaction))
+	mux.HandleFunc("POST "+BaseURL+"/transactions/{id}/refunds", httpserver.HandleCreated(s.errs, s.refundTransaction))
 	mux.HandleFunc("GET "+BaseURL+"/installment-plans/{id}", httpserver.Handle(s.errs, http.StatusOK, s.getInstallmentPlan))
-	mux.HandleFunc("POST "+BaseURL+"/installment-plans/{id}/cancellation", handleCreated(s.errs, s.cancelInstallmentPlan))
-	mux.HandleFunc("POST "+BaseURL+"/installment-plans/{id}/anticipation", handleCreated(s.errs, s.anticipateInstallments))
+	mux.HandleFunc("POST "+BaseURL+"/installment-plans/{id}/cancellation", httpserver.HandleCreated(s.errs, s.cancelInstallmentPlan))
+	mux.HandleFunc("POST "+BaseURL+"/installment-plans/{id}/anticipation", httpserver.HandleCreated(s.errs, s.anticipateInstallments))
 
 	// Disputes
 	mux.HandleFunc("GET "+BaseURL+"/transactions/{id}/disputes", httpserver.Handle(s.errs, http.StatusOK, s.listDisputes))
@@ -131,43 +128,6 @@ func (s *Server) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST "+BaseURL+"/transactions/{id}/attachments", s.createAttachment)
 	mux.HandleFunc("DELETE "+BaseURL+"/attachments/{id}", httpserver.Handle(s.errs, http.StatusOK, s.deleteAttachment))
 	mux.HandleFunc("GET "+BaseURL+"/attachments/{id}/content", s.getAttachmentContent)
-}
-
-// handleCreated is httpserver.Handle for an operation that answers 201 with a Location header:
-// fn returns the body and the value of the header.
-func handleCreated[In, Out any](
-	e httpserver.ErrorWriter,
-	fn func(ctx context.Context, r *http.Request, in In) (Out, string, error),
-) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		var in In
-		if _, none := any(in).(httpserver.None); !none {
-			if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
-				e.WriteRequestError(w, r, fmt.Errorf("can't decode JSON body: %w", err))
-
-				return
-			}
-		}
-
-		out, loc, err := fn(r.Context(), r, in)
-		if err != nil {
-			e.Write(w, r, err)
-
-			return
-		}
-
-		var buf bytes.Buffer
-		if err := json.NewEncoder(&buf).Encode(out); err != nil {
-			e.Write(w, r, err)
-
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.Header().Set("Location", loc)
-		w.WriteHeader(http.StatusCreated)
-		_, _ = buf.WriteTo(w)
-	}
 }
 
 func (s *Server) getSettings(

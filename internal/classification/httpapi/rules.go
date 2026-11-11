@@ -1,10 +1,7 @@
 package httpapi
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -152,30 +149,20 @@ func (s *Server) listRules(ctx context.Context, r *http.Request, _ httpserver.No
 	return out, err
 }
 
-// createRule is a custom handler: the success status is 201 with a Location header.
-func (s *Server) createRule(w http.ResponseWriter, r *http.Request) {
-	var body CreateRuleJSONRequestBody
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		s.errs.WriteRequestError(w, r, fmt.Errorf("can't decode JSON body: %w", err))
-
-		return
-	}
-
-	rule, err := fromRuleInput(body)
+func (s *Server) createRule(
+	ctx context.Context, _ *http.Request, in CreateRuleJSONRequestBody,
+) (Rule, string, error) {
+	rule, err := fromRuleInput(in)
 	if err != nil {
-		s.errs.Write(w, r, err)
-
-		return
+		return Rule{}, "", err
 	}
 
-	created, err := s.svc.CreateRule(r.Context(), auth.MustBooksID(r.Context()), rule)
+	created, err := s.svc.CreateRule(ctx, auth.MustBooksID(ctx), rule)
 	if err != nil {
-		s.errs.Write(w, r, err)
-
-		return
+		return Rule{}, "", err
 	}
 
-	s.writeCreated(w, r, BaseURL+"/rules/"+created.ID.String(), toRuleAPI(created))
+	return toRuleAPI(created), BaseURL + "/rules/" + created.ID.String(), nil
 }
 
 func (s *Server) previewRule(
@@ -343,23 +330,15 @@ func (s *Server) listPayeeAliases(
 	return out, err
 }
 
-// createPayeeAlias is a custom handler: the success status is 201 with a Location header.
-func (s *Server) createPayeeAlias(w http.ResponseWriter, r *http.Request) {
-	var body CreatePayeeAliasJSONRequestBody
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		s.errs.WriteRequestError(w, r, fmt.Errorf("can't decode JSON body: %w", err))
-
-		return
-	}
-
-	a, err := s.svc.CreateAlias(r.Context(), auth.MustBooksID(r.Context()), fromAliasInput(body))
+func (s *Server) createPayeeAlias(
+	ctx context.Context, _ *http.Request, in CreatePayeeAliasJSONRequestBody,
+) (PayeeAlias, string, error) {
+	a, err := s.svc.CreateAlias(ctx, auth.MustBooksID(ctx), fromAliasInput(in))
 	if err != nil {
-		s.errs.Write(w, r, err)
-
-		return
+		return PayeeAlias{}, "", err
 	}
 
-	s.writeCreated(w, r, BaseURL+"/payee-aliases/"+a.ID.String(), toAliasAPI(a))
+	return toAliasAPI(a), BaseURL + "/payee-aliases/" + a.ID.String(), nil
 }
 
 func (s *Server) getPayeeAlias(ctx context.Context, r *http.Request, _ httpserver.None) (PayeeAlias, error) {
@@ -408,20 +387,4 @@ func (s *Server) deletePayeeAlias(
 	}
 
 	return httpserver.None{}, nil
-}
-
-// writeCreated answers 201 with the JSON body and the Location header of the created record
-// (ADR 007, C6).
-func (s *Server) writeCreated(w http.ResponseWriter, r *http.Request, location string, body any) {
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(body); err != nil {
-		s.errs.Write(w, r, err)
-
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Location", location)
-	w.WriteHeader(http.StatusCreated)
-	_, _ = buf.WriteTo(w)
 }

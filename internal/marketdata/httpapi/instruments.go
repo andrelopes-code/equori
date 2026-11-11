@@ -1,7 +1,6 @@
 package httpapi
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -16,15 +15,9 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
-// defineInstrument is a custom handler: the success status is 201 with a Location header.
-func (s *Server) defineInstrument(w http.ResponseWriter, r *http.Request) {
-	var b DefineInstrumentJSONRequestBody
-	if err := json.NewDecoder(r.Body).Decode(&b); err != nil {
-		s.errs.WriteRequestError(w, r, fmt.Errorf("can't decode JSON body: %w", err))
-
-		return
-	}
-
+func (s *Server) defineInstrument(
+	ctx context.Context, _ *http.Request, b DefineInstrumentJSONRequestBody,
+) (Instrument, string, error) {
 	in := domain.Instrument{Code: money.Currency(b.Code), Type: string(b.Type), Scale: b.Scale, Name: b.Name, QuoteCurrency: money.Currency(b.QuoteCurrency)}
 	if b.Exchange != nil {
 		in.Exchange = string(*b.Exchange)
@@ -38,24 +31,12 @@ func (s *Server) defineInstrument(w http.ResponseWriter, r *http.Request) {
 		in.Symbols = *b.Symbols
 	}
 
-	out, err := s.svc.DefineInstrument(r.Context(), in)
+	out, err := s.svc.DefineInstrument(ctx, in)
 	if err != nil {
-		s.errs.Write(w, r, err)
-
-		return
+		return Instrument{}, "", err
 	}
 
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(toInstrumentAPI(out)); err != nil {
-		s.errs.Write(w, r, err)
-
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Location", BaseURL+"/instruments/"+string(out.Code))
-	w.WriteHeader(http.StatusCreated)
-	_, _ = buf.WriteTo(w)
+	return toInstrumentAPI(out), BaseURL + "/instruments/" + string(out.Code), nil
 }
 
 func (s *Server) listInstruments(ctx context.Context, r *http.Request, _ httpserver.None) (InstrumentList, error) {

@@ -1,8 +1,6 @@
 package httpapi
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -33,7 +31,7 @@ func NewServer(svc *app.Service, log *slog.Logger) *Server {
 func (s *Server) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET "+BaseURL+"/schedules",
 		httpserver.Handle(s.errs, http.StatusOK, s.listSchedules))
-	mux.HandleFunc("POST "+BaseURL+"/schedules", s.createSchedule)
+	mux.HandleFunc("POST "+BaseURL+"/schedules", httpserver.HandleCreated(s.errs, s.createSchedule))
 	mux.HandleFunc("GET "+BaseURL+"/schedules/{id}",
 		httpserver.Handle(s.errs, http.StatusOK, s.getSchedule))
 	mux.HandleFunc("PATCH "+BaseURL+"/schedules/{id}",
@@ -54,7 +52,7 @@ func (s *Server) Register(mux *http.ServeMux) {
 		httpserver.Handle(s.errs, http.StatusOK, s.endSchedule))
 	mux.HandleFunc("GET "+BaseURL+"/budgets",
 		httpserver.Handle(s.errs, http.StatusOK, s.listBudgets))
-	mux.HandleFunc("POST "+BaseURL+"/budgets", s.createBudget)
+	mux.HandleFunc("POST "+BaseURL+"/budgets", httpserver.HandleCreated(s.errs, s.createBudget))
 	mux.HandleFunc("GET "+BaseURL+"/budgets/{id}",
 		httpserver.Handle(s.errs, http.StatusOK, s.getBudget))
 	mux.HandleFunc("DELETE "+BaseURL+"/budgets/{id}",
@@ -65,7 +63,7 @@ func (s *Server) Register(mux *http.ServeMux) {
 		httpserver.Handle(s.errs, http.StatusOK, s.getBudgetProgress))
 	mux.HandleFunc("GET "+BaseURL+"/goals",
 		httpserver.Handle(s.errs, http.StatusOK, s.listGoals))
-	mux.HandleFunc("POST "+BaseURL+"/goals", s.createGoal)
+	mux.HandleFunc("POST "+BaseURL+"/goals", httpserver.HandleCreated(s.errs, s.createGoal))
 	mux.HandleFunc("GET "+BaseURL+"/goals/{id}",
 		httpserver.Handle(s.errs, http.StatusOK, s.getGoal))
 	mux.HandleFunc("PATCH "+BaseURL+"/goals/{id}",
@@ -173,22 +171,6 @@ func fromMoneyAPI(field string, m Money) (money.Money, error) {
 	}
 
 	return v, nil
-}
-
-// writeCreated answers 201 with the JSON body and the Location header of the created record
-// (ADR 007, C6).
-func (s *Server) writeCreated(w http.ResponseWriter, r *http.Request, collection string, id uuid.UUID, body any) {
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(body); err != nil {
-		s.errs.Write(w, r, err)
-
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Location", BaseURL+collection+id.String())
-	w.WriteHeader(http.StatusCreated)
-	_, _ = buf.WriteTo(w)
 }
 
 func apiDate(t time.Time) openapi_types.Date { return openapi_types.Date{Time: t} }

@@ -2,8 +2,6 @@ package httpapi
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/andrelopes-code/equori/internal/planning/app"
@@ -41,22 +39,15 @@ func toGoalPartsAPI(ps []app.ValuedPart) *[]GoalPart {
 	return &out
 }
 
-func (s *Server) createGoal(w http.ResponseWriter, r *http.Request) {
-	var in CreateGoalJSONRequestBody
-	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
-		s.errs.WriteRequestError(w, r, fmt.Errorf("can't decode JSON body: %w", err))
-
-		return
-	}
-
-	g, err := s.addGoal(r.Context(), in)
+func (s *Server) createGoal(
+	ctx context.Context, _ *http.Request, in CreateGoalJSONRequestBody,
+) (Goal, string, error) {
+	g, err := s.addGoal(ctx, in)
 	if err != nil {
-		s.errs.Write(w, r, err)
-
-		return
+		return Goal{}, "", err
 	}
 
-	s.writeCreated(w, r, "/goals/", g.ID, toGoalAPI(g))
+	return toGoalAPI(g), BaseURL + "/goals/" + g.ID.String(), nil
 }
 
 func (s *Server) updateGoal(ctx context.Context, r *http.Request, in UpdateGoalJSONRequestBody) (Goal, error) {

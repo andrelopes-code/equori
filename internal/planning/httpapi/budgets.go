@@ -2,8 +2,6 @@ package httpapi
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -35,22 +33,15 @@ func toBudgetAPI(b domain.Budget) Budget {
 	return out
 }
 
-func (s *Server) createBudget(w http.ResponseWriter, r *http.Request) {
-	var in CreateBudgetJSONRequestBody
-	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
-		s.errs.WriteRequestError(w, r, fmt.Errorf("can't decode JSON body: %w", err))
-
-		return
-	}
-
-	b, err := s.addBudget(r.Context(), in)
+func (s *Server) createBudget(
+	ctx context.Context, _ *http.Request, in CreateBudgetJSONRequestBody,
+) (Budget, string, error) {
+	b, err := s.addBudget(ctx, in)
 	if err != nil {
-		s.errs.Write(w, r, err)
-
-		return
+		return Budget{}, "", err
 	}
 
-	s.writeCreated(w, r, "/budgets/", b.ID, toBudgetAPI(b))
+	return toBudgetAPI(b), BaseURL + "/budgets/" + b.ID.String(), nil
 }
 
 func (s *Server) getBudget(ctx context.Context, r *http.Request, _ httpserver.None) (Budget, error) {

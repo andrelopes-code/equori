@@ -90,7 +90,8 @@ func (s *Server) Register(mux *http.ServeMux) {
 		httpserver.Handle(s.errs, http.StatusOK, s.probeQuote))
 	mux.HandleFunc("GET "+BaseURL+"/instruments",
 		httpserver.Handle(s.errs, http.StatusOK, s.listInstruments))
-	mux.HandleFunc("POST "+BaseURL+"/instruments", s.defineInstrument)
+	mux.HandleFunc("POST "+BaseURL+"/instruments",
+		httpserver.HandleCreated(s.errs, s.defineInstrument))
 	mux.HandleFunc("GET "+BaseURL+"/instruments/{code}",
 		httpserver.Handle(s.errs, http.StatusOK, s.getInstrument))
 	mux.HandleFunc("PATCH "+BaseURL+"/instruments/{code}",
