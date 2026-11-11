@@ -135,3 +135,7 @@ func allSchedules(ctx context.Context, svc *app.Service, booksID int64) ([]domai
 		r.After = next
 	}
 }
+
+func validationError(field, message string) error {
+	return &domain.FieldError{Field: field, Message: message, Err: domain.ErrValidation}
+}

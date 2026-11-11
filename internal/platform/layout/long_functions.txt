@@ -130,7 +130,7 @@ internal/marketdata/toolapi/market.go	getMarketData	pending: backend reorganizat
 internal/planning/app/budgets.go	Service.BudgetProgress	pending: backend reorganization plan
 internal/planning/app/changes.go	Service.ChangeTerms	pending: backend reorganization plan
 internal/planning/app/plan.go	Service.BudgetPlan	pending: backend reorganization plan
-internal/planning/app/plan.go	Service.SaveBudgetPlan	pending: backend reorganization plan
+internal/planning/app/plan_save.go	Service.SaveBudgetPlan	pending: backend reorganization plan
 internal/planning/app/plan.go	Service.planOccurrences	pending: backend reorganization plan
 internal/planning/app/realize.go	Service.reevaluate	pending: backend reorganization plan
 internal/planning/app/schedules.go	Service.CreateSchedule	pending: backend reorganization plan
@@ -146,7 +146,7 @@ internal/planning/toolapi/budget_goal.go	prepareBudgetOrGoal	pending: backend re
 internal/planning/toolapi/budgets.go	getBudgetsAndGoals	pending: backend reorganization plan
 internal/planning/toolapi/budgets.go	toPlanView	pending: backend reorganization plan
 internal/planning/toolapi/manage_schedule.go	manageSchedule	pending: backend reorganization plan
-internal/planning/toolapi/manage_schedule.go	prepareSchedule	pending: backend reorganization plan
+internal/planning/toolapi/manage_schedule_prepare.go	prepareSchedule	pending: backend reorganization plan
 internal/planning/toolapi/occurrence.go	manageOccurrence	pending: backend reorganization plan
 internal/planning/toolapi/projection.go	projectBalance	pending: backend reorganization plan
 internal/planning/toolapi/recurring.go	findRecurring	pending: backend reorganization plan
