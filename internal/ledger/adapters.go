@@ -1,0 +1,90 @@
+// Package ledger records accounts, transactions and balances (docs/domain, chapters 5 and 7).
+// It is the only entry point to the module for the rest of the application.
+package ledger
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"sync"
+	"time"
+
+	"github.com/andrelopes-code/equori/internal/ledger/app"
+	"github.com/andrelopes-code/equori/internal/marketdata"
+	"github.com/andrelopes-code/equori/internal/platform/money"
+)
+
+type regionDefaults struct{}
+
+func (regionDefaults) ForeignChargeBP(region string) int { return DefaultForeignChargeBP(region) }
+
+func (regionDefaults) WithholdingBP(region, incomeType string) int {
+	return DefaultWithholdingBP(region, incomeType)
+}
+
+func (regionDefaults) ReserveYieldPercent(currency money.Currency) int64 {
+	return DefaultReserveYieldPercent(currency)
+}
+
+type pricesAdapter struct{ md MarketData }
+
+func (p pricesAdapter) Convert(ctx context.Context, q money.Money, to money.Currency, date time.Time) (app.Conversion, error) {
+	c, err := p.md.Convert(ctx, q, to, date)
+	if errors.Is(err, marketdata.ErrPriceMissing) {
+		return app.Conversion{}, fmt.Errorf("%w: %w", app.ErrPriceMissing, err)
+	}
+
+	if err != nil {
+		return app.Conversion{}, err
+	}
+
+	out := app.Conversion{Value: c.Value, Prices: make([]app.Price, len(c.Prices))}
+	for i, x := range c.Prices {
+		out.Prices[i] = app.Price{Instrument: x.Instrument, Quote: x.Quote, Date: x.Date, Value: x.Value, Source: x.Source}
+	}
+
+	return out, nil
+}
+
+type calendarAdapter struct{ cal MarketData }
+
+func (c calendarAdapter) Adjust(ctx context.Context, name string, d time.Time, adjustment string) (time.Time, error) {
+	return c.cal.Adjust(ctx, name, d, marketdata.Adjustment(adjustment))
+}
+
+func (c calendarAdapter) DefaultCalendar(region string) string { return c.cal.DefaultCalendar(region) }
+
+// instruments caches Market data instruments for the module's lifetime: code, type,
+// scale and quote currency are immutable (P8 amendment A59).
+type instruments struct {
+	md    MarketData
+	mu    sync.Mutex
+	cache map[money.Currency]app.Instrument
+}
+
+func (c *instruments) Instrument(ctx context.Context, code money.Currency) (app.Instrument, error) {
+	c.mu.Lock()
+	in, ok := c.cache[code]
+	c.mu.Unlock()
+
+	if ok {
+		return in, nil
+	}
+
+	m, err := c.md.Instrument(ctx, string(code))
+	if errors.Is(err, marketdata.ErrUnknownInstrument) {
+		return app.Instrument{}, app.ErrUnknownInstrument
+	}
+
+	if err != nil {
+		return app.Instrument{}, err
+	}
+
+	in = app.Instrument{Code: m.Code, Scale: m.Scale, QuoteCurrency: m.QuoteCurrency}
+
+	c.mu.Lock()
+	c.cache[code] = in
+	c.mu.Unlock()
+
+	return in, nil
+}
