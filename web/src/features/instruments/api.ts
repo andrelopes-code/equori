@@ -9,8 +9,8 @@ import type { Client } from "openapi-fetch";
 import { useApi } from "@/api/api-context";
 import { ProblemError, unwrap } from "@/api/problem";
 import type { components, paths } from "@/api/schema.gen";
-import { latestPrice } from "@/features/instruments/instrument-groups";
-import { priceWindow } from "@/features/instruments/price-window";
+import { latestPrice } from "@/features/instruments/model/instrument-groups";
+import { priceWindow } from "@/features/instruments/model/price-window";
 
 export const instrumentKeys = {
   all: ["instruments"] as const,

@@ -1,0 +1,240 @@
+import type { GridColumn, GridQuery } from "@slotted/core/grid";
+import { emptyQuery, withFilter, withSearch } from "@slotted/core/grid";
+import { DataGrid } from "@slotted/react/data-grid";
+import { FilterBar } from "@slotted/react/filter-bar";
+import type { FilterBarField } from "@slotted/react/filter-bar";
+import { Text } from "@slotted/react/typography";
+import { useNavigate } from "@tanstack/react-router";
+import { useCallback, useMemo, useState } from "react";
+
+import type { CatalogRow } from "@/features/instruments/model/catalog-rows";
+import {
+  subtypeLabel,
+  typeLabel,
+} from "@/features/instruments/model/instrument-labels";
+import { LatestPriceCell } from "@/features/instruments/catalog/latest-price-cell";
+import styles from "@/features/instruments/pages/instruments-page.module.css";
+import { useT } from "@/i18n/i18n-provider";
+import { AppLink } from "@/ui/app-link";
+
+const initialQuery: GridQuery = {
+  ...emptyQuery(),
+  group: ["type"],
+};
+
+const distinct = (rows: readonly CatalogRow[], key: keyof CatalogRow) =>
+  [...new Set(rows.map((r) => r[key]).filter((v) => v !== ""))].sort();
+
+// The instruments grouped by type, searched by code or name and filtered by type, subtype or
+// quote currency. The grid windows its rows and each visible row asks for its own latest price.
+export function InstrumentsGrid({
+  rows,
+  loading,
+}: {
+  rows: readonly CatalogRow[];
+  loading: boolean;
+}) {
+  const t = useT();
+  const navigate = useNavigate();
+  const [query, setQuery] = useState<GridQuery>(initialQuery);
+  const [opened, setOpened] = useState<readonly string[] | undefined>();
+  const types = useMemo(() => distinct(rows, "type"), [rows]);
+  const subtypes = useMemo(() => distinct(rows, "subtype"), [rows]);
+  const quotes = useMemo(() => distinct(rows, "quoteCurrency"), [rows]);
+  const typeOptions = useMemo(
+    () => types.map((value) => ({ value, label: typeLabel(t, value) })),
+    [types, t],
+  );
+  const subtypeOptions = useMemo(
+    () => subtypes.map((value) => ({ value, label: subtypeLabel(t, value) })),
+    [subtypes, t],
+  );
+  const quoteOptions = useMemo(
+    () => quotes.map((value) => ({ value, label: value })),
+    [quotes],
+  );
+  const columns = useMemo<GridColumn<CatalogRow>[]>(
+    () => [
+      {
+        id: "code",
+        label: t("instruments.col.code"),
+        accessor: "code",
+        rowHeader: true,
+        searchable: true,
+        width: 120,
+      },
+      {
+        id: "name",
+        label: t("instruments.col.name"),
+        accessor: "name",
+        searchable: true,
+        flex: 1,
+        minWidth: 200,
+        priority: 3,
+      },
+      {
+        id: "type",
+        label: t("instruments.col.type"),
+        accessor: "type",
+        kind: "set",
+        options: typeOptions,
+        width: 150,
+        priority: 6,
+      },
+      {
+        id: "subtype",
+        label: t("instruments.col.subtype"),
+        accessor: "subtype",
+        kind: "set",
+        options: subtypeOptions,
+        width: 130,
+        priority: 5,
+      },
+      {
+        id: "quoteCurrency",
+        label: t("instruments.col.quote"),
+        accessor: "quoteCurrency",
+        kind: "set",
+        options: quoteOptions,
+        width: 170,
+        priority: 4,
+      },
+      {
+        id: "exchange",
+        label: t("instruments.col.exchange"),
+        accessor: "exchange",
+        width: 110,
+        priority: 7,
+      },
+      {
+        id: "price",
+        label: t("instruments.col.price"),
+        accessor: () => "",
+        numeric: true,
+        sortable: false,
+        width: 150,
+        priority: 1,
+      },
+      {
+        id: "priceDate",
+        label: t("instruments.col.priceDate"),
+        accessor: () => "",
+        sortable: false,
+        width: 150,
+        priority: 2,
+      },
+    ],
+    [t, typeOptions, subtypeOptions, quoteOptions],
+  );
+  const fields = useMemo<FilterBarField[]>(
+    () => [
+      {
+        key: "type",
+        kind: "set",
+        label: t("instruments.col.type"),
+        options: typeOptions,
+      },
+      {
+        key: "subtype",
+        kind: "set",
+        label: t("instruments.col.subtype"),
+        options: subtypeOptions,
+      },
+      {
+        key: "quoteCurrency",
+        kind: "set",
+        label: t("instruments.col.quote"),
+        options: quoteOptions,
+      },
+    ],
+    [t, typeOptions, subtypeOptions, quoteOptions],
+  );
+  const cellRenderers = useMemo(
+    () => ({
+      code: ({ row }: { row: CatalogRow }) => (
+        <AppLink
+          variant="neutral"
+          underline="hover"
+          to={{ to: "/instruments/$code", params: { code: row.code } }}
+        >
+          {row.code}
+        </AppLink>
+      ),
+      price: ({ row }: { row: CatalogRow }) => (
+        <LatestPriceCell row={row} part="price" />
+      ),
+      priceDate: ({ row }: { row: CatalogRow }) => (
+        <LatestPriceCell row={row} part="date" />
+      ),
+    }),
+    [],
+  );
+  // PC20: every group opens except the currencies, which only a reader who wants them opens.
+  const expandedGroups = useMemo(
+    () =>
+      opened ??
+      types
+        .filter((type) => type !== "currency")
+        .map((type) => `type=${typeLabel(t, type)}`),
+    [opened, types, t],
+  );
+  const renderGroup = useCallback(
+    ({ node }: { node: { rows: readonly CatalogRow[] } }) => {
+      const label = `${typeLabel(t, node.rows[0]?.type ?? "")} · ${String(node.rows.length)}`;
+      return <Text weight="semibold">{label}</Text>;
+    },
+    [t],
+  );
+  return (
+    <div className={styles.region}>
+      <FilterBar
+        fields={fields}
+        value={query.filter ?? null}
+        onValueChange={(filter) => {
+          setQuery((current) => withFilter(current, filter).query);
+        }}
+        query={query.search}
+        onQueryChange={(text) => {
+          setQuery((current) => withSearch(current, text).query);
+        }}
+        queryDelay={0}
+        count={rows.length}
+        total={rows.length}
+        messages={{ search: t("instruments.search") }}
+      />
+      <div className={styles.listing}>
+        <DataGrid
+          aria-label={t("instruments.caption")}
+          variant="framed"
+          columns={columns}
+          rows={rows}
+          rowKey="code"
+          rowHeight={44}
+          // The group rows carry the type, so its own column stays out of sight.
+          defaultColumnState={{ hidden: ["type"] }}
+          loading={loading}
+          query={query}
+          onQueryChange={setQuery}
+          expandedGroups={[...expandedGroups]}
+          onExpandedGroupsChange={(keys) => {
+            setOpened(
+              keys === "all"
+                ? types.map((type) => `type=${typeLabel(t, type)}`)
+                : keys,
+            );
+          }}
+          height="100%"
+          activatable
+          onActivate={(event) => {
+            void navigate({
+              to: "/instruments/$code",
+              params: { code: event.key },
+            });
+          }}
+          cellRenderers={cellRenderers}
+          renderGroup={renderGroup}
+        />
+      </div>
+    </div>
+  );
+}
