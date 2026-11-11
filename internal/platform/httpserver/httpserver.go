@@ -1,4 +1,4 @@
-// Package httpserver provides the HTTP server lifecycle and the health endpoint.
+// Package httpserver provides the HTTP server lifecycle, the health endpoint, the middleware chain, NotFound, RequestID and the handler helpers of the module httpapi packages.
 package httpserver
 
 import (

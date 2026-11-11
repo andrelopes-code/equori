@@ -54,6 +54,46 @@ func template(t testing.TB) string {
 }
 
 func buildTemplate() (string, error) {
+	name, err := hashMigrations()
+	if err != nil {
+		return "", err
+	}
+
+	ctx := context.Background()
+
+	admin, err := connectAdmin(ctx)
+	if err != nil {
+		return "", err
+	}
+	defer admin.Close(ctx)
+
+	if err := lockTemplate(ctx, admin, name); err != nil {
+		return "", err
+	}
+
+	defer admin.Exec(ctx, "SELECT pg_advisory_unlock(hashtextextended($1, 0))", name) //nolint:errcheck // the session ends next
+
+	var ready bool
+	if err := admin.QueryRow(ctx, "SELECT EXISTS (SELECT 1 FROM pg_database WHERE datname = $1 AND datistemplate)", name).Scan(&ready); err != nil || ready {
+		return name, err
+	}
+
+	if err := createTemplateDB(ctx, admin, name); err != nil {
+		return "", err
+	}
+
+	if err := migrateTemplate(ctx, name); err != nil {
+		return "", err
+	}
+
+	// Marked last: a database left by an interrupted build is not a template and is rebuilt.
+	_, err = admin.Exec(ctx, "ALTER DATABASE "+name+" WITH IS_TEMPLATE true")
+
+	return name, err
+}
+
+// hashMigrations names the template after the content of the embedded migrations.
+func hashMigrations() (string, error) {
 	sum := sha256.New()
 	if err := fs.WalkDir(db.Migrations, ".", func(path string, d fs.DirEntry, err error) error {
 		if err != nil || d.IsDir() {
@@ -69,57 +109,46 @@ func buildTemplate() (string, error) {
 		return "", err
 	}
 
-	name := "template_" + hex.EncodeToString(sum.Sum(nil))[:16]
-	ctx := context.Background()
+	return "template_" + hex.EncodeToString(sum.Sum(nil))[:16], nil
+}
 
-	admin, err := connectAdmin(ctx)
-	if err != nil {
-		return "", err
-	}
-	defer admin.Close(ctx)
+func lockTemplate(ctx context.Context, admin *pgx.Conn, name string) error {
+	_, err := admin.Exec(ctx, "SELECT pg_advisory_lock(hashtextextended($1, 0))", name)
 
-	if _, err := admin.Exec(ctx, "SELECT pg_advisory_lock(hashtextextended($1, 0))", name); err != nil {
-		return "", err
-	}
+	return err
+}
 
-	defer admin.Exec(ctx, "SELECT pg_advisory_unlock(hashtextextended($1, 0))", name) //nolint:errcheck // the session ends next
-
-	var ready bool
-	if err := admin.QueryRow(ctx, "SELECT EXISTS (SELECT 1 FROM pg_database WHERE datname = $1 AND datistemplate)", name).Scan(&ready); err != nil || ready {
-		return name, err
-	}
-
+func createTemplateDB(ctx context.Context, admin *pgx.Conn, name string) error {
 	if _, err := admin.Exec(ctx, "DROP DATABASE IF EXISTS "+name); err != nil {
-		return "", err
+		return err
 	}
 
-	if _, err := admin.Exec(ctx, "CREATE DATABASE "+name); err != nil {
-		return "", err
-	}
+	_, err := admin.Exec(ctx, "CREATE DATABASE "+name)
 
+	return err
+}
+
+func migrateTemplate(ctx context.Context, name string) error {
 	cfg, err := pgxpool.ParseConfig(os.Getenv(envURL))
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	cfg.ConnConfig.Database = name
 
 	pool, err := pgxpool.NewWithConfig(ctx, cfg)
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	err = postgres.Migrate(ctx, pool, slog.New(slog.NewTextHandler(io.Discard, nil)))
 	pool.Close()
 
 	if err != nil {
-		return "", fmt.Errorf("prepare template: %w", err)
+		return fmt.Errorf("prepare template: %w", err)
 	}
 
-	// Marked last: a database left by an interrupted build is not a template and is rebuilt.
-	_, err = admin.Exec(ctx, "ALTER DATABASE "+name+" WITH IS_TEMPLATE true")
-
-	return name, err
+	return nil
 }
 
 func connectAdmin(ctx context.Context) (*pgx.Conn, error) {

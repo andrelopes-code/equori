@@ -2,11 +2,13 @@ package config
 
 import (
 	"encoding/base64"
+	"fmt"
 	"log/slog"
 	"net"
 	"net/url"
 	"slices"
 	"strconv"
+	"strings"
 )
 
 // Reader names what reads a variable (A160.1).
@@ -73,6 +75,16 @@ type Variable struct {
 	Audience      Audience
 	Description   string
 	DescriptionPT string
+}
+
+// Removed is an environment variable that ADR 029 replaced with a screen (BK26).
+type Removed struct {
+	Name, Screen string
+}
+
+// named is one environment name of an entry; id is set for a family member.
+type named struct {
+	name, id string
 }
 
 // Variables is the configuration map, in the order of the start-up report.
@@ -292,4 +304,84 @@ func validPort(s string) bool {
 	port, err := strconv.Atoi(s)
 
 	return err == nil && port >= 1 && port <= 65535
+}
+
+// Lookup returns the entry that name matches: an exact name, or a family whose prefix and
+// suffix enclose a non-empty ID.
+func Lookup(name string) (Variable, bool) {
+	for _, v := range Variables() {
+		prefix, suffix, family := strings.Cut(v.Name, idPlaceholder)
+		if !family {
+			if v.Name == name {
+				return v, true
+			}
+
+			continue
+		}
+
+		if len(name) > len(prefix)+len(suffix) && strings.HasPrefix(name, prefix) && strings.HasSuffix(name, suffix) {
+			return v, true
+		}
+	}
+
+	return Variable{}, false
+}
+
+// Known reports whether name is an entry, a family member or a removed variable (A161.4).
+func Known(name string) bool {
+	if _, ok := Lookup(name); ok {
+		return true
+	}
+
+	return slices.ContainsFunc(removedVariables(), func(r Removed) bool { return r.Name == name })
+}
+
+// RemovedVariables returns the removed variables getenv still sets, in the order of the table.
+func RemovedVariables(getenv func(string) string) []Removed {
+	var out []Removed
+	for _, r := range removedVariables() {
+		if getenv(r.Name) != "" {
+			out = append(out, r)
+		}
+	}
+
+	return out
+}
+
+func removedVariables() []Removed {
+	return []Removed{
+		{"EQUORI_TIMEZONE", "Settings > Finances > Time zone"},
+		{"EQUORI_SYNC_INTERVAL", "Settings > Integrations > Check for new data"},
+		{"EQUORI_GEMINI_API_KEY", "Settings > Assistant > Providers, preset aistudio"},
+		{"EQUORI_GEMINI_URL", "Settings > Assistant > Providers, preset aistudio"},
+		{"EQUORI_PRICE_FEEDS", "Settings > Market data"},
+		{"EQUORI_INDEX_FEEDS", "Settings > Market data"},
+	}
+}
+
+func (v Variable) expand(families Families) []named {
+	prefix, suffix, family := strings.Cut(v.Name, idPlaceholder)
+	if !family {
+		return []named{{name: v.Name}}
+	}
+
+	ids := families.Feeds
+	if v.Name == AggregatorURLFamily {
+		ids = families.Aggregators
+	}
+
+	out := make([]named, 0, len(ids))
+	for _, id := range ids {
+		out = append(out, named{name: prefix + strings.ToUpper(id) + suffix, id: id})
+	}
+
+	return out
+}
+
+func (v Variable) report(name, value string) string {
+	if v.Secret {
+		return fmt.Sprintf("%s is set but invalid; expected %s; example: %s=%s", name, v.Expected, name, v.Example)
+	}
+
+	return fmt.Sprintf("%s is %q; expected %s; example: %s=%s", name, value, v.Expected, name, v.Example)
 }

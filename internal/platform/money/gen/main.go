@@ -31,11 +31,34 @@ type currencyList struct {
 
 // Generate returns the Go source and the updated lock. Funds, entries without a minor unit and entries without a code are excluded.
 func Generate(list []byte, lock map[string]LockEntry) ([]byte, map[string]LockEntry, error) {
-	var doc currencyList
-	if err := xml.Unmarshal(list, &doc); err != nil {
-		return nil, nil, fmt.Errorf("parse list one: %w", err)
+	doc, err := parseList(list)
+	if err != nil {
+		return nil, nil, err
 	}
 
+	out, err := mergeLock(doc, lock)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	src, err := renderSource(out)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return src, out, nil
+}
+
+func parseList(list []byte) (currencyList, error) {
+	var doc currencyList
+	if err := xml.Unmarshal(list, &doc); err != nil {
+		return doc, fmt.Errorf("parse list one: %w", err)
+	}
+
+	return doc, nil
+}
+
+func mergeLock(doc currencyList, lock map[string]LockEntry) (map[string]LockEntry, error) {
 	out := make(map[string]LockEntry, len(lock))
 	for code, e := range lock {
 		out[code] = e
@@ -54,12 +77,16 @@ func Generate(list []byte, lock map[string]LockEntry) ([]byte, map[string]LockEn
 
 		seen[e.Code] = true
 		if prev, ok := lock[e.Code]; ok && prev.Exponent != int8(units) {
-			return nil, nil, fmt.Errorf("%s: exponent changed from %d to %d", e.Code, prev.Exponent, units)
+			return nil, fmt.Errorf("%s: exponent changed from %d to %d", e.Code, prev.Exponent, units)
 		}
 
 		out[e.Code] = LockEntry{Exponent: int8(units), Name: e.Name.Value}
 	}
 
+	return out, nil
+}
+
+func renderSource(out map[string]LockEntry) ([]byte, error) {
 	codes := make([]string, 0, len(out))
 	for code := range out {
 		codes = append(codes, code)
@@ -85,10 +112,10 @@ func Generate(list []byte, lock map[string]LockEntry) ([]byte, map[string]LockEn
 
 	src, err := format.Source(b.Bytes())
 	if err != nil {
-		return nil, nil, fmt.Errorf("format source: %w", err)
+		return nil, fmt.Errorf("format source: %w", err)
 	}
 
-	return src, out, nil
+	return src, nil
 }
 
 func main() {

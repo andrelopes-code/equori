@@ -14,8 +14,6 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
-
-	"github.com/andrelopes-code/equori/internal/platform/postgres"
 )
 
 const (
@@ -141,73 +139,6 @@ func lockDir(dir string) (*os.File, error) {
 	}
 
 	return f, nil
-}
-
-func start(ctx context.Context, dir, bin string, lock *os.File) (*Cluster, error) {
-	socket, err := socketDir(dir)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := privateDir(socket); err != nil {
-		return nil, err
-	}
-
-	major, err := Major(ctx, filepath.Join(bin, "postgres"))
-	if err != nil {
-		return nil, err
-	}
-
-	if major < postgres.MinMajor {
-		return nil, fmt.Errorf("PostgreSQL %d is older than %d, the oldest the migrations run on", major, postgres.MinMajor)
-	}
-
-	pgdata := filepath.Join(dir, "pg")
-	if err := initialize(ctx, bin, pgdata, major); err != nil {
-		return nil, err
-	}
-
-	if err := stopLeftover(ctx, bin, pgdata, socket); err != nil {
-		return nil, err
-	}
-
-	// Not CommandContext: the server outlives the start context and stops in Stop, after HTTP.
-	cmd := exec.Command(filepath.Join(bin, "postgres"), "-D", pgdata, "-k", socket, //nolint:gosec,noctx // G204: the programs directory is the owner's configuration.
-		"-c", "listen_addresses=", "-c", "max_connections="+maxConnections)
-	cmd.Stdout, cmd.Stderr = os.Stderr, os.Stderr
-
-	p, err := newProc(cmd)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := cmd.Start(); err != nil {
-		p.close()
-		return nil, fmt.Errorf("start postgres: %w", err)
-	}
-
-	c := &Cluster{dir: dir, bin: bin, socket: socket, lock: lock, cmd: cmd, proc: p, done: make(chan struct{})}
-	go func() {
-		c.exitErr = cmd.Wait()
-		close(c.done)
-	}()
-
-	if err := p.started(cmd); err != nil {
-		_ = c.stopChild()
-		return nil, err
-	}
-
-	if err := c.waitReady(ctx); err != nil {
-		_ = c.stopChild()
-		return nil, err
-	}
-
-	if err := c.ensureDatabase(ctx); err != nil {
-		_ = c.stopChild()
-		return nil, err
-	}
-
-	return c, nil
 }
 
 func initialize(ctx context.Context, bin, pgdata string, major int) error {

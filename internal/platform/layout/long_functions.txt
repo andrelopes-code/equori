@@ -154,11 +154,7 @@ internal/planning/toolapi/occurrence.go	manageOccurrence	pending: backend reorga
 internal/planning/toolapi/projection.go	projectBalance	pending: backend reorganization plan
 internal/planning/toolapi/recurring.go	findRecurring	pending: backend reorganization plan
 internal/planning/toolapi/schedules.go	listSchedules	pending: backend reorganization plan
-internal/platform/config/config.go	Load	pending: backend reorganization plan
 internal/platform/config/variables.go	Variables	table of data
-internal/platform/money/gen/main.go	Generate	pending: backend reorganization plan
-internal/platform/pgcluster/pgcluster.go	start	pending: backend reorganization plan
-internal/platform/postgres/pgtest/pgtest.go	buildTemplate	pending: backend reorganization plan
 internal/portfolio/app/benchmark.go	Service.benchmark	pending: backend reorganization plan
 internal/portfolio/app/benchmark_window.go	period.comparedWindow	pending: backend reorganization plan
 internal/portfolio/app/return.go	Service.returnOf	pending: backend reorganization plan

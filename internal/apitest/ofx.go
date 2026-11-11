@@ -51,8 +51,3 @@ func CardOFX(lines ...OFXLine) []byte {
 
 	return []byte(b.String())
 }
-
-// Import uploads a statement file in format (ofx or csv) to the account.
-func (h *Harness) Import(account, format, name string, content []byte) Response {
-	return h.UploadWith("/api/v1/accounts/"+account+"/imports", map[string]string{"format": format}, name, content)
-}

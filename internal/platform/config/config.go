@@ -2,14 +2,10 @@
 package config
 
 import (
-	"cmp"
 	"encoding/base64"
 	"errors"
-	"fmt"
 	"log/slog"
 	"path/filepath"
-	"runtime"
-	"slices"
 	"strconv"
 	"strings"
 )
@@ -47,11 +43,6 @@ type Config struct {
 	AggregatorURLs, FeedURLs map[string]string
 }
 
-// Removed is an environment variable that ADR 029 replaced with a screen (BK26).
-type Removed struct {
-	Name, Screen string
-}
-
 // Managed reports whether equori runs its own PostgreSQL server (M1).
 func (c Config) Managed() bool { return c.DatabaseURL == "" }
 
@@ -62,6 +53,23 @@ type Families struct {
 
 // Load reads every binary entry of Variables and reports every invalid one in one error (A161.1).
 func Load(getenv func(string) string, families Families) (Config, error) {
+	cfg, lines := loadVariables(getenv, families)
+
+	if cfg.HTTPAddr == "" {
+		cfg.HTTPAddr = ":8080"
+	}
+
+	lines = append(lines, checkSecretKeys(cfg, getenv)...)
+	lines = append(lines, resolveDataDir(&cfg, getenv)...)
+
+	if len(lines) > 0 {
+		return Config{}, errors.New(strings.Join(append([]string{reportHeader}, lines...), "\n"))
+	}
+
+	return cfg, nil
+}
+
+func loadVariables(getenv func(string) string, families Families) (Config, []string) {
 	var (
 		cfg   Config
 		lines []string
@@ -88,136 +96,34 @@ func Load(getenv func(string) string, families Families) (Config, error) {
 		}
 	}
 
-	if cfg.HTTPAddr == "" {
-		cfg.HTTPAddr = ":8080"
-	}
+	return cfg, lines
+}
 
+func checkSecretKeys(cfg Config, getenv func(string) string) []string {
 	if cfg.PreviousSecretKey != "" && getenv("EQUORI_SECRET_KEY") == "" {
-		lines = append(lines, "EQUORI_SECRET_KEY_PREVIOUS is set without EQUORI_SECRET_KEY")
+		return []string{"EQUORI_SECRET_KEY_PREVIOUS is set without EQUORI_SECRET_KEY"}
 	}
 
-	if cfg.DatabaseURL == "" {
-		cfg.DataDir = DataDir(getenv)
+	return nil
+}
 
-		switch {
-		case cfg.DataDir != "":
-			if cfg.BackupDir == "" {
-				cfg.BackupDir = filepath.Join(cfg.DataDir, "backups")
-			}
-		case getenv("EQUORI_DATABASE_URL") == "":
-			lines = append(lines, "EQUORI_DATABASE_URL is not set and this system has no default data directory; set EQUORI_DATABASE_URL or EQUORI_DATA_DIR")
+func resolveDataDir(cfg *Config, getenv func(string) string) []string {
+	if cfg.DatabaseURL != "" {
+		return nil
+	}
+
+	cfg.DataDir = DataDir(getenv)
+
+	switch {
+	case cfg.DataDir != "":
+		if cfg.BackupDir == "" {
+			cfg.BackupDir = filepath.Join(cfg.DataDir, "backups")
 		}
+	case getenv("EQUORI_DATABASE_URL") == "":
+		return []string{"EQUORI_DATABASE_URL is not set and this system has no default data directory; set EQUORI_DATABASE_URL or EQUORI_DATA_DIR"}
 	}
 
-	if len(lines) > 0 {
-		return Config{}, errors.New(strings.Join(append([]string{reportHeader}, lines...), "\n"))
-	}
-
-	return cfg, nil
-}
-
-// Lookup returns the entry that name matches: an exact name, or a family whose prefix and
-// suffix enclose a non-empty ID.
-func Lookup(name string) (Variable, bool) {
-	for _, v := range Variables() {
-		prefix, suffix, family := strings.Cut(v.Name, idPlaceholder)
-		if !family {
-			if v.Name == name {
-				return v, true
-			}
-
-			continue
-		}
-
-		if len(name) > len(prefix)+len(suffix) && strings.HasPrefix(name, prefix) && strings.HasSuffix(name, suffix) {
-			return v, true
-		}
-	}
-
-	return Variable{}, false
-}
-
-// Known reports whether name is an entry, a family member or a removed variable (A161.4).
-func Known(name string) bool {
-	if _, ok := Lookup(name); ok {
-		return true
-	}
-
-	return slices.ContainsFunc(removedVariables(), func(r Removed) bool { return r.Name == name })
-}
-
-// DataDir is EQUORI_DATA_DIR, else DefaultDataDir of this system.
-func DataDir(getenv func(string) string) string {
-	return cmp.Or(getenv("EQUORI_DATA_DIR"), DefaultDataDir(runtime.GOOS, getenv))
-}
-
-// EnvFilePath is equori.env of the data directory; "" in external mode or without a data directory.
-func EnvFilePath(getenv func(string) string) string {
-	if getenv("EQUORI_DATABASE_URL") != "" {
-		return ""
-	}
-
-	dir := DataDir(getenv)
-	if dir == "" {
-		return ""
-	}
-
-	return filepath.Join(dir, "equori.env")
-}
-
-// RemovedVariables returns the removed variables getenv still sets, in the order of the table.
-func RemovedVariables(getenv func(string) string) []Removed {
-	var out []Removed
-	for _, r := range removedVariables() {
-		if getenv(r.Name) != "" {
-			out = append(out, r)
-		}
-	}
-
-	return out
-}
-
-func removedVariables() []Removed {
-	return []Removed{
-		{"EQUORI_TIMEZONE", "Settings > Finances > Time zone"},
-		{"EQUORI_SYNC_INTERVAL", "Settings > Integrations > Check for new data"},
-		{"EQUORI_GEMINI_API_KEY", "Settings > Assistant > Providers, preset aistudio"},
-		{"EQUORI_GEMINI_URL", "Settings > Assistant > Providers, preset aistudio"},
-		{"EQUORI_PRICE_FEEDS", "Settings > Market data"},
-		{"EQUORI_INDEX_FEEDS", "Settings > Market data"},
-	}
-}
-
-// named is one environment name of an entry; id is set for a family member.
-type named struct {
-	name, id string
-}
-
-func (v Variable) expand(families Families) []named {
-	prefix, suffix, family := strings.Cut(v.Name, idPlaceholder)
-	if !family {
-		return []named{{name: v.Name}}
-	}
-
-	ids := families.Feeds
-	if v.Name == AggregatorURLFamily {
-		ids = families.Aggregators
-	}
-
-	out := make([]named, 0, len(ids))
-	for _, id := range ids {
-		out = append(out, named{name: prefix + strings.ToUpper(id) + suffix, id: id})
-	}
-
-	return out
-}
-
-func (v Variable) report(name, value string) string {
-	if v.Secret {
-		return fmt.Sprintf("%s is set but invalid; expected %s; example: %s=%s", name, v.Expected, name, v.Example)
-	}
-
-	return fmt.Sprintf("%s is %q; expected %s; example: %s=%s", name, value, v.Expected, name, v.Example)
+	return nil
 }
 
 // store copies a valid value into its field; valid has already checked its form.

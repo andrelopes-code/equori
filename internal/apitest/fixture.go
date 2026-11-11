@@ -44,6 +44,16 @@ func Posting(account string, amount int64) map[string]any {
 	return map[string]any{"account_id": account, "amount": BRL(amount)}
 }
 
+// Money is an amount in the base currency of the harness profile.
+func (h *Harness) Money(amount int64) map[string]any {
+	return map[string]any{"amount": amount, "currency": string(h.Profile.Base)}
+}
+
+// Posting is apitest.Posting in the base currency of the harness profile.
+func (h *Harness) Posting(account string, amount int64) map[string]any {
+	return map[string]any{"account_id": account, "amount": h.Money(amount)}
+}
+
 // Card creates a credit card account with a billing cycle rule from 2026-01.
 func (h *Harness) Card(name string, closingDay, dueDay int, assignment string) string {
 	h.t.Helper()

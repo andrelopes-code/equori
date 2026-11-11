@@ -1,6 +1,11 @@
 package config
 
-import "path"
+import (
+	"cmp"
+	"path"
+	"path/filepath"
+	"runtime"
+)
 
 // DefaultDataDir is the per-user data directory of managed mode (M1), or the machine-wide one on
 // Windows (W-M1); "" when the system has none.
@@ -31,4 +36,23 @@ func DefaultDataDir(goos string, getenv func(string) string) string {
 	}
 
 	return ""
+}
+
+// DataDir is EQUORI_DATA_DIR, else DefaultDataDir of this system.
+func DataDir(getenv func(string) string) string {
+	return cmp.Or(getenv("EQUORI_DATA_DIR"), DefaultDataDir(runtime.GOOS, getenv))
+}
+
+// EnvFilePath is equori.env of the data directory; "" in external mode or without a data directory.
+func EnvFilePath(getenv func(string) string) string {
+	if getenv("EQUORI_DATABASE_URL") != "" {
+		return ""
+	}
+
+	dir := DataDir(getenv)
+	if dir == "" {
+		return ""
+	}
+
+	return filepath.Join(dir, "equori.env")
 }

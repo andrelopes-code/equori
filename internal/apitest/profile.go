@@ -33,13 +33,3 @@ func Profiles() []Profile { return []Profile{Brazil(), Neutral(), ForeignBase()}
 
 // As makes the owner of New a member of profile p.
 func As(p Profile) Option { return func(o *options) { o.profile = p } }
-
-// Money is an amount in the base currency of the harness profile.
-func (h *Harness) Money(amount int64) map[string]any {
-	return map[string]any{"amount": amount, "currency": string(h.Profile.Base)}
-}
-
-// Posting is apitest.Posting in the base currency of the harness profile.
-func (h *Harness) Posting(account string, amount int64) map[string]any {
-	return map[string]any{"account_id": account, "amount": h.Money(amount)}
-}
