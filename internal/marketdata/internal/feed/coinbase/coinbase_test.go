@@ -162,3 +162,71 @@ func day(s string) time.Time {
 
 	return d
 }
+
+const products = `{"products":[
+{"product_id":"BTC-USD","base_currency_id":"BTC","quote_currency_id":"USD","base_name":"Bitcoin","is_disabled":false},
+{"product_id":"BTC-USDC","base_currency_id":"BTC","quote_currency_id":"USDC","base_name":"Bitcoin","is_disabled":false},
+{"product_id":"ETH-EUR","base_currency_id":"ETH","quote_currency_id":"EUR","base_name":"Ethereum","is_disabled":false},
+{"product_id":"OLD-USD","base_currency_id":"OLD","quote_currency_id":"USD","base_name":"Old Bitcoin","is_disabled":true}
+],"num_products":4}`
+
+func TestSearch(t *testing.T) {
+	t.Parallel()
+
+	var (
+		mu       sync.Mutex
+		requests []string
+	)
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+
+		requests = append(requests, r.URL.Path+"?"+r.URL.RawQuery)
+		mu.Unlock()
+
+		_, _ = w.Write([]byte(products))
+	}))
+	t.Cleanup(srv.Close)
+
+	src := coinbase.New(srv.Client(), srv.URL)
+
+	got, err := src.Search(t.Context(), "bit", 20)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := []feed.Listing{
+		{Code: "BTC", Name: "Bitcoin", Type: "crypto", QuoteCurrency: "USD", Symbol: "BTC-USD"},
+		{Code: "BTC", Name: "Bitcoin", Type: "crypto", QuoteCurrency: "USDC", Symbol: "BTC-USDC"},
+	}
+	if !slices.Equal(got, want) {
+		t.Fatalf("bit = %+v, want %+v", got, want)
+	}
+
+	got, err = src.Search(t.Context(), "eth", 20)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want = []feed.Listing{{Code: "ETH", Name: "Ethereum", Type: "crypto", QuoteCurrency: "EUR", Symbol: "ETH-EUR"}}
+	if !slices.Equal(got, want) {
+		t.Fatalf("eth = %+v, want %+v", got, want)
+	}
+
+	if wantReq := []string{"/products?product_type=SPOT"}; !slices.Equal(requests, wantReq) {
+		t.Fatalf("requests = %v, want %v", requests, wantReq)
+	}
+}
+
+func TestSearchFailsOnAServerError(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		http.Error(w, "down", http.StatusInternalServerError)
+	}))
+	t.Cleanup(srv.Close)
+
+	if _, err := coinbase.New(srv.Client(), srv.URL).Search(t.Context(), "bit", 20); err == nil {
+		t.Fatal("Search succeeded on a 500")
+	}
+}

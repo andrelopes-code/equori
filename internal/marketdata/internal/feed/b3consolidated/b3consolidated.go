@@ -26,11 +26,17 @@ type Source struct {
 	client  *http.Client
 	baseURL string
 	years   b3cotahist.Source
+	list    *feed.ListCache
 }
 
 // New returns the source; years reads the COTAHIST year files of a range over 31 days.
 func New(c *http.Client, baseURL string, years b3cotahist.Source) Source {
-	return Source{client: c, baseURL: strings.TrimSuffix(baseURL, "/"), years: years}
+	return Source{
+		client:  c,
+		baseURL: strings.TrimSuffix(baseURL, "/"),
+		years:   years,
+		list:    feed.NewListCache(time.Now),
+	}
 }
 
 func (Source) ID() string { return "b3_consolidated" }
@@ -101,6 +107,11 @@ func (c Source) Fetch(ctx context.Context, codes []money.Currency, from, to time
 	return out, nil
 }
 
+// Search matches the tickers of the latest file a fetch parsed; it never fetches (plan 3 D5).
+func (c Source) Search(_ context.Context, query string, limit int) ([]feed.Listing, error) {
+	return feed.MatchListings(c.list.Last(), query, limit), nil
+}
+
 // fetchDay downloads the file of day in two steps: a request by name returns a token, the token
 // returns the file.
 func (c Source) fetchDay(ctx context.Context, day time.Time, want map[string]bool) ([]feed.Quote, error) {
@@ -133,12 +144,20 @@ func (c Source) fetchDay(ctx context.Context, day time.Time, want map[string]boo
 		return nil, fmt.Errorf("download the file: %w", err)
 	}
 
-	return parse(string(body), day, want)
+	quotes, listings, err := parse(string(body), day, want)
+	if err != nil {
+		return nil, err
+	}
+
+	c.list.Set(listings)
+
+	return quotes, nil
 }
 
-// parse reads a file: a status line, a header naming the columns, one line per ticker. A malformed
+// parse reads a file: a status line, a header naming the columns, one line per ticker. It returns
+// the quotes of the wanted tickers and a listing for each CASH ticker with a last price. A malformed
 // file returns an error and no quote.
-func parse(body string, day time.Time, want map[string]bool) ([]feed.Quote, error) {
+func parse(body string, day time.Time, want map[string]bool) ([]feed.Quote, []feed.Listing, error) {
 	lines := strings.Split(strings.TrimRight(body, "\r\n"), "\n")
 	for i := range lines {
 		lines[i] = strings.TrimSuffix(lines[i], "\r")
@@ -146,11 +165,11 @@ func parse(body string, day time.Time, want map[string]bool) ([]feed.Quote, erro
 
 	status, ok := strings.CutPrefix(lines[0], "Status do Arquivo: ")
 	if !ok || len(lines) < 2 {
-		return nil, fmt.Errorf("line 1: %q is not a file status", lines[0])
+		return nil, nil, fmt.Errorf("line 1: %q is not a file status", lines[0])
 	}
 
 	if status != "Final" {
-		return nil, errNotFinal
+		return nil, nil, errNotFinal
 	}
 
 	header := strings.Split(lines[1], ";")
@@ -164,45 +183,56 @@ func parse(body string, day time.Time, want map[string]bool) ([]feed.Quote, erro
 	tickerCol, okTicker := cols["TckrSymb"]
 
 	priceCol, okPrice := cols["LastPric"]
+	segmentCol, okSegment := cols["SgmtNm"]
+
 	if !okDate || !okTicker || !okPrice {
-		return nil, errors.New("line 2: the header lacks RptDt, TckrSymb or LastPric")
+		return nil, nil, errors.New("line 2: the header lacks RptDt, TckrSymb or LastPric")
 	}
 
 	date := day.Format(time.DateOnly)
 	seen := make(map[string]bool)
 
-	var out []feed.Quote
+	var (
+		out      []feed.Quote
+		listings []feed.Listing
+	)
+
 	for i, line := range lines[2:] {
 		n := i + 3
 
 		rec := strings.Split(line, ";")
 		if len(rec) != len(header) {
-			return nil, fmt.Errorf("line %d: %d fields, want %d", n, len(rec), len(header))
+			return nil, nil, fmt.Errorf("line %d: %d fields, want %d", n, len(rec), len(header))
 		}
 
 		if rec[dateCol] != date {
-			return nil, fmt.Errorf("line %d: not a record of %s", n, date)
+			return nil, nil, fmt.Errorf("line %d: not a record of %s", n, date)
 		}
 
 		ticker := rec[tickerCol]
+
+		if okSegment && rec[segmentCol] == "CASH" && rec[priceCol] != "" {
+			listings = append(listings, feed.Listing{Code: money.Currency(ticker), Exchange: "BVMF", QuoteCurrency: "BRL"})
+		}
+
 		// An instrument without a trade on the day, such as an untraded option, has no last price.
 		if !want[ticker] || rec[priceCol] == "" {
 			continue
 		}
 
 		if seen[ticker] {
-			return nil, fmt.Errorf("line %d: %s appears twice", n, ticker)
+			return nil, nil, fmt.Errorf("line %d: %s appears twice", n, ticker)
 		}
 
 		seen[ticker] = true
 		// The file writes a decimal comma and no thousands separator.
 		value, err := money.ParseRate(strings.Replace(rec[priceCol], ",", ".", 1))
 		if err != nil {
-			return nil, fmt.Errorf("line %d: %w", n, err)
+			return nil, nil, fmt.Errorf("line %d: %w", n, err)
 		}
 
 		out = append(out, feed.Quote{Instrument: money.Currency(ticker), Quote: "BRL", Date: day, Value: value})
 	}
 
-	return out, nil
+	return out, listings, nil
 }

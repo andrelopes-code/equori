@@ -23,6 +23,7 @@ type Source struct {
 	client  *http.Client
 	baseURL string
 	quotes  *quotes
+	list    *feed.ListCache
 }
 
 // quotes maps a code to its quote currency (plan 2 D12).
@@ -33,7 +34,12 @@ type quotes struct {
 
 // New returns a Source that reads the products under baseURL.
 func New(c *http.Client, baseURL string) Source {
-	return Source{client: c, baseURL: baseURL, quotes: &quotes{byID: map[money.Currency]money.Currency{}}}
+	return Source{
+		client:  c,
+		baseURL: baseURL,
+		quotes:  &quotes{byID: map[money.Currency]money.Currency{}},
+		list:    feed.NewListCache(time.Now),
+	}
 }
 
 func (Source) ID() string { return "coinbase" }
@@ -82,6 +88,56 @@ func (s Source) Fetch(ctx context.Context, codes []money.Currency, from, to time
 	}
 
 	return out, errors.Join(errs...)
+}
+
+// Search matches the enabled spot products; the list is read at most once in 24 hours (plan 3 D6).
+func (s Source) Search(ctx context.Context, query string, limit int) ([]feed.Listing, error) {
+	list, ok := s.list.Fresh()
+	if !ok {
+		var err error
+
+		if list, err = s.readProducts(ctx); err != nil {
+			return nil, err
+		}
+
+		s.list.Set(list)
+	}
+
+	return feed.MatchListings(list, query, limit), nil
+}
+
+func (s Source) readProducts(ctx context.Context) ([]feed.Listing, error) {
+	body, err := feed.Get(ctx, s.client, s.baseURL+"/products?product_type=SPOT")
+	if err != nil {
+		return nil, fmt.Errorf("fetch Coinbase products: %w", err)
+	}
+
+	var answer struct {
+		Products []struct {
+			ID         string         `json:"product_id"`
+			Base       money.Currency `json:"base_currency_id"`
+			Quote      money.Currency `json:"quote_currency_id"`
+			Name       string         `json:"base_name"`
+			IsDisabled bool           `json:"is_disabled"`
+		} `json:"products"`
+	}
+	if err := json.Unmarshal(body, &answer); err != nil {
+		return nil, fmt.Errorf("decode Coinbase products: %w", err)
+	}
+
+	list := make([]feed.Listing, 0, len(answer.Products))
+
+	for _, p := range answer.Products {
+		if p.IsDisabled {
+			continue
+		}
+
+		list = append(list, feed.Listing{
+			Code: p.Base, Name: p.Name, Type: "crypto", QuoteCurrency: p.Quote, Symbol: p.ID,
+		})
+	}
+
+	return list, nil
 }
 
 func (s Source) fetchCode(

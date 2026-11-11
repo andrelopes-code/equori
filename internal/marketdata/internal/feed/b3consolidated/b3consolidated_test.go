@@ -240,3 +240,48 @@ func TestCodes(t *testing.T) {
 		t.Fatalf("codes = %v", got)
 	}
 }
+
+func TestSearch(t *testing.T) {
+	t.Parallel()
+	_, src := serve(t, map[string][]byte{"2026-10-27": fixture(t)})
+
+	got, err := src.Search(t.Context(), "petr", 20)
+	if err != nil || len(got) != 0 {
+		t.Fatalf("before a fetch = %+v, %v", got, err)
+	}
+
+	_, err = src.Fetch(t.Context(), []money.Currency{"PETR4"}, day("2026-10-27"), day("2026-10-27"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		query string
+		want  []money.Currency
+	}{
+		{"petr", []money.Currency{"PETR4"}},
+		{"11", []money.Currency{"AUVP11", "IVVB11", "MXRF11"}},
+		{"A1MDA315", nil},
+	}
+
+	for _, tc := range tests {
+		got, err := src.Search(t.Context(), tc.query, 20)
+		if err != nil {
+			t.Fatalf("%s: %v", tc.query, err)
+		}
+
+		var codes []money.Currency
+
+		for _, l := range got {
+			codes = append(codes, l.Code)
+
+			if l.Name != "" || l.Type != "" || l.Exchange != "BVMF" || l.QuoteCurrency != "BRL" || l.Symbol != "" {
+				t.Fatalf("%s: listing %+v", tc.query, l)
+			}
+		}
+
+		if !slices.Equal(codes, tc.want) {
+			t.Fatalf("%s = %v, want %v", tc.query, codes, tc.want)
+		}
+	}
+}
