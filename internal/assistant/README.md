@@ -8,6 +8,7 @@ Stores each book's language model providers and chains, and resolves the targets
 | Tables | prefix `assistant_`, created in `db/migrations/` |
 | Public API | `assistant.go` |
 | Layers (hand-written files) | `domain/` (7), `app/` (18), `httpapi/` (6), `toolapi/` (2), `postgres/` (4), `llmapi/` (3) |
+| Ports | `app/ports.go` (the interfaces the module needs: its repository and the other modules it calls) |
 | Queries | `postgres/queries/` (5 files) |
 | Tests | black-box tests in this directory (`*_test.go`: 19); package tests beside each layer |
 

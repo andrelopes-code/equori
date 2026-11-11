@@ -14,15 +14,6 @@ import (
 // UsageDays is the number of days the period figures sum, today included.
 const UsageDays = 30
 
-// UsageRepository holds the day counters and the declared limits (ADR 019 U2, U4).
-type UsageRepository interface {
-	AddUsage(ctx context.Context, e domain.UsageEntry) error
-	UsageSince(ctx context.Context, booksID int64, today, since time.Time) ([]domain.UsageSummary, error)
-	UsageByDay(ctx context.Context, booksID int64, from, to time.Time) ([]domain.UsageDay, error)
-	Limits(ctx context.Context, booksID int64) ([]domain.Limit, error)
-	SetLimit(ctx context.Context, booksID int64, l domain.Limit) error
-}
-
 // Attempt mirrors llm.Attempt (ADR 009 M1).
 type Attempt struct {
 	ProviderID, Model, UseID, Outcome string

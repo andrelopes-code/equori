@@ -81,3 +81,28 @@ type Tools interface {
 	Validate(name string, args json.RawMessage) (tool.Result, error)
 	Effect(name string) (tool.Effect, bool)
 }
+
+// Agent runs the model loop over the chat tools. Its errors are *LimitError, ErrChatUnavailable, ErrTurnFailed
+// or a context error. Write tools reach Service.Propose with ctx. onText receives the model's text as it arrives.
+type Agent interface {
+	Run(ctx context.Context, booksID int64, req AgentRequest, onStep func(tool string), onText func(text string), onRestart func()) (AgentResult, error)
+}
+
+// TurnEvents receives the progress of a turn. Turn is called once the user message is stored; after it the turn
+// ends with Answer or Error. The text a Delta brought before a Step belongs to a call that asked for tools.
+type TurnEvents interface {
+	Turn(conversationID, messageID uuid.UUID)
+	Delta(text string)
+	Step(tool string)
+	Answer(m AnsweredMessage)
+	Error(err error)
+}
+
+// UsageRepository holds the day counters and the declared limits (ADR 019 U2, U4).
+type UsageRepository interface {
+	AddUsage(ctx context.Context, e domain.UsageEntry) error
+	UsageSince(ctx context.Context, booksID int64, today, since time.Time) ([]domain.UsageSummary, error)
+	UsageByDay(ctx context.Context, booksID int64, from, to time.Time) ([]domain.UsageDay, error)
+	Limits(ctx context.Context, booksID int64) ([]domain.Limit, error)
+	SetLimit(ctx context.Context, booksID int64, l domain.Limit) error
+}

@@ -51,12 +51,6 @@ type AgentResult struct {
 	ProviderName, Model       string
 }
 
-// Agent runs the model loop over the chat tools. Its errors are *LimitError, ErrChatUnavailable, ErrTurnFailed
-// or a context error. Write tools reach Service.Propose with ctx. onText receives the model's text as it arrives.
-type Agent interface {
-	Run(ctx context.Context, booksID int64, req AgentRequest, onStep func(tool string), onText func(text string), onRestart func()) (AgentResult, error)
-}
-
 // UseNotices sets the lookup of the accounts the system prompt names (A152).
 func (s *Service) UseNotices(n func(context.Context, int64) ([]AccountNotice, error)) {
 	s.notices = n
@@ -70,16 +64,6 @@ func (s *Service) UseAgent(a Agent, profile func(context.Context, int64) (locale
 type AnsweredMessage struct {
 	Message   domain.Message
 	Proposals []domain.Proposal
-}
-
-// TurnEvents receives the progress of a turn. Turn is called once the user message is stored; after it the turn
-// ends with Answer or Error. The text a Delta brought before a Step belongs to a call that asked for tools.
-type TurnEvents interface {
-	Turn(conversationID, messageID uuid.UUID)
-	Delta(text string)
-	Step(tool string)
-	Answer(m AnsweredMessage)
-	Error(err error)
 }
 
 type TurnInput struct {
