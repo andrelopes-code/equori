@@ -6,7 +6,7 @@ Records accounts, transactions and balances (docs/domain, chapters 5 and 7). It 
 |---|---|
 | OpenAPI tag | `ledger`: 80 operations in `openapi.yaml` |
 | Tables | prefix `ledger_`, created in `db/migrations/` |
-| Public API | `ledger.go` and the other 10 non-test files of this directory |
+| Public API | `ledger.go` (Module, New), `types.go` (DTO aliases, errors, ports) and the other 11 non-test files of this directory |
 | Layers (hand-written files) | `domain/` (22), `app/` (40), `httpapi/` (20), `toolapi/` (20), `postgres/` (24) |
 | Ports | `app/ports.go` (the interfaces the module needs: its repository and the other modules it calls) |
 | Queries | `postgres/queries/` (12 files) |
