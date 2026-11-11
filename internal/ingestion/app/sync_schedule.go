@@ -9,11 +9,6 @@ const DefaultSyncIntervalMinutes = 60
 
 var ErrAdminRequired = errors.New("only an admin changes the instance's sync interval")
 
-// Admins tells whether a member holds the admin instance role.
-type Admins interface {
-	IsAdmin(ctx context.Context, memberID int64) (bool, error)
-}
-
 // SyncInterval returns the stored interval, or DefaultSyncIntervalMinutes without one.
 func (s *Service) SyncInterval(ctx context.Context) (int, error) {
 	minutes, ok, err := s.repo.SyncInterval(ctx)

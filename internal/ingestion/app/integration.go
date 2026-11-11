@@ -30,48 +30,6 @@ type UnauthorizedError struct{ Field string }
 func (e *UnauthorizedError) Error() string { return e.Field + ": " + ErrAggregatorUnauthorized.Error() }
 func (e *UnauthorizedError) Unwrap() error { return ErrAggregatorUnauthorized }
 
-// Sealer seals values bound to their row (ADR 008).
-type Sealer interface {
-	Seal(plaintext, associated []byte) ([]byte, error)
-	// Open returns an error for a value that another key, row or tampering produced.
-	Open(sealed, associated []byte) ([]byte, error)
-	NeedsReseal(sealed []byte) bool
-}
-
-// Aggregator reads an aggregator application with an integration's credentials and may
-// cache one API key per integration. Errors: ErrAggregatorUnauthorized, ErrItemNotFound, or
-// one wrapping ErrAggregatorUnavailable; none names an identifier (A44). An external account's
-// ExternalID stays the same while the institution keeps the account, and a rename keeps it; a
-// line of a reserved balance sets ReserveMove, with ReserveExternalID or ReserveName when the
-// source gives them (A211). aggregatortest.Run checks this contract.
-type Aggregator interface {
-	ID() string
-	Name() string
-	CredentialFields() []domain.CredentialField
-	// ConnectMethod names how a connection is created: "reference" takes the item reference
-	// of an application the owner connected elsewhere.
-	ConnectMethod() string
-	MinSyncInterval() time.Duration
-	// State reads the status an aggregator reports for a connection.
-	State(providerStatus string) domain.ConnectionState
-	// Portal names the site or app where the owner acts on an item, empty when there is none.
-	Portal() string
-	// Verify creates an API key from the credentials, replacing any cached one.
-	Verify(ctx context.Context, integrationID uuid.UUID, c domain.Credentials) error
-	// Item returns the item as an unsaved connection with its accounts.
-	Item(ctx context.Context, integrationID uuid.UUID, c domain.Credentials, itemID string) (domain.Connection, error)
-	// Accounts lists the item's external accounts, reserved balances included.
-	Accounts(ctx context.Context, integrationID uuid.UUID, c domain.Credentials, itemID string) ([]domain.ExternalAccount, error)
-	// ItemState returns the item's status, last update and next automatic update.
-	ItemState(ctx context.Context, integrationID uuid.UUID, c domain.Credentials, itemID string) (ItemState, error)
-	// ReadAccount returns an account of the item with its lines dated in [from, to], in minor
-	// units of scale; with createdFrom, also the lines the aggregator created at or after it,
-	// in Created (A144). ErrAccountGone when the item no longer lists the account. A reserved
-	// balance is found by its identification and read without lines (A74).
-	ReadAccount(ctx context.Context, integrationID uuid.UUID, c domain.Credentials, itemID, accountID string, from, to time.Time, createdFrom *time.Time, scale int) (domain.AccountRead, error)
-	Forget(integrationID uuid.UUID)
-}
-
 // NameKey pages lists ordered by name.
 type NameKey struct {
 	Name string    `json:"n"`
