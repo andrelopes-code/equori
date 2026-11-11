@@ -3,7 +3,12 @@ import { Chart } from "@slotted/react/chart";
 import { useMemo } from "react";
 
 import type { components } from "@/api/schema.gen";
-import { formatDayMonth, numberFormatter } from "@/i18n/format";
+import {
+  axisLabel,
+  axisSpanDays,
+  showMarkers,
+} from "@/features/instruments/price-axis";
+import { numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { MASK } from "@/privacy/mask";
 import { useMoneyFormat } from "@/privacy/use-money-format";
@@ -28,6 +33,7 @@ export function PriceChart({
         .map((p) => ({ date: p.date, price: Number(p.value) })),
     [prices],
   );
+  const span = axisSpanDays(data);
   const format = (value: number) =>
     fmt.hidden
       ? MASK
@@ -39,8 +45,9 @@ export function PriceChart({
       field: "price",
       label: t("instrument.chart.title"),
       format,
-      // A time axis keeps the gaps between recorded prices; a marker shows each recorded price.
-      markers: "all",
+      // A time axis keeps the gaps between recorded prices; a marker shows each recorded price
+      // until the line is too dense for it.
+      markers: showMarkers(data.length) ? "all" : "last",
     },
   ];
   return (
@@ -55,8 +62,7 @@ export function PriceChart({
       x={{
         field: "date",
         type: "time",
-        format: (value) =>
-          formatDayMonth(new Date(value).toISOString().slice(0, 10), locale),
+        format: (value) => axisLabel(value, locale, span),
       }}
       y={{ format }}
     />
