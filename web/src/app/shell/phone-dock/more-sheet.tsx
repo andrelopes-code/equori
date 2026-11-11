@@ -27,12 +27,12 @@ import { useState } from "react";
 import type { ReactNode } from "react";
 
 import { useApi } from "@/api/api-context";
-import { destinations } from "@/app/shell/destinations";
-import { MoreBooks } from "@/app/shell/more-books";
-import styles from "@/app/shell/more-sheet.module.css";
-import { ShellIcon } from "@/app/shell/shell-icon";
-import type { ShellIconName } from "@/app/shell/shell-icon";
-import { useBooks } from "@/app/shell/use-books";
+import { destinations } from "@/app/shell/destinations/destinations";
+import { MoreBooks } from "@/app/shell/books/more-books";
+import styles from "@/app/shell/phone-dock/more-sheet.module.css";
+import { ShellIcon } from "@/app/shell/destinations/shell-icon";
+import type { ShellIconName } from "@/app/shell/destinations/shell-icon";
+import { useBooks } from "@/app/shell/books/use-books";
 import { errorText } from "@/api/problem";
 import { meQuery, useChooseLanguage, useLogout } from "@/features/session";
 import { NewBooksDialog } from "@/features/setup";

@@ -18,14 +18,14 @@ import {
   SideNavigationList,
 } from "@slotted/react/side-navigation";
 
-import { AccountMenu } from "@/app/shell/account-menu";
+import { AccountMenu } from "@/app/shell/account-menu/account-menu";
 import { BrandMark } from "@/ui/display/brand-mark";
-import styles from "@/app/shell/desktop-nav.module.css";
-import { destinations } from "@/app/shell/destinations";
-import { ShellIcon } from "@/app/shell/shell-icon";
-import { useDestinationPress } from "@/app/shell/use-destination-press";
-import { useEntry } from "@/app/shell/use-entry";
-import { useUncategorizedCount } from "@/app/shell/use-uncategorized-count";
+import styles from "@/app/shell/desktop-nav/desktop-nav.module.css";
+import { destinations } from "@/app/shell/destinations/destinations";
+import { ShellIcon } from "@/app/shell/destinations/shell-icon";
+import { useDestinationPress } from "@/app/shell/destinations/use-destination-press";
+import { useEntry } from "@/app/shell/frame-state/use-entry";
+import { useUncategorizedCount } from "@/app/shell/destinations/use-uncategorized-count";
 import { useT } from "@/i18n/i18n-provider";
 
 // The palette's chord as aria-keyshortcuts names it; Shortcut draws it for the platform itself.

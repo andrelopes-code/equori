@@ -1,7 +1,7 @@
 import { Icon } from "@slotted/react/icon";
 import { IconButton } from "@slotted/react/button";
 
-import { ShellIcon } from "@/app/shell/shell-icon";
+import { ShellIcon } from "@/app/shell/destinations/shell-icon";
 import { useT } from "@/i18n/i18n-provider";
 import { usePrivacy } from "@/privacy/privacy-provider";
 

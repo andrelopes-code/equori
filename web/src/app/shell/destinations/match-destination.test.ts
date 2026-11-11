@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { matchDestination } from "@/app/shell/match-destination";
+import { matchDestination } from "@/app/shell/destinations/match-destination";
 
 describe("matchDestination", () => {
   it.each([

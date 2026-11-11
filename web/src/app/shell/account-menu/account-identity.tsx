@@ -1,5 +1,5 @@
-import styles from "@/app/shell/account-menu.module.css";
-import { useBooks } from "@/app/shell/use-books";
+import styles from "@/app/shell/account-menu/account-menu.module.css";
+import { useBooks } from "@/app/shell/books/use-books";
 
 interface AccountIdentityProps {
   name: string;

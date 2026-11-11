@@ -14,22 +14,22 @@ import type { CommandPaletteHandle } from "@slotted/react/command-palette";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import styles from "@/app/shell/app-frame.module.css";
-import { CommandMenu } from "@/app/shell/command-menu";
-import { DesktopNav } from "@/app/shell/desktop-nav";
-import { PhoneDock } from "@/app/shell/phone-dock";
-import { PhoneGate } from "@/app/shell/phone-gate";
-import { ReadOnlyNotice } from "@/app/shell/read-only-notice";
-import { TopAppBar } from "@/app/shell/top-app-bar";
-import { useEditing } from "@/app/shell/use-editing";
+import { CommandMenu } from "@/app/shell/command-menu/command-menu";
+import { DesktopNav } from "@/app/shell/desktop-nav/desktop-nav";
+import { PhoneDock } from "@/app/shell/phone-dock/phone-dock";
+import { PhoneGate } from "@/app/shell/phone-gate/phone-gate";
+import { ReadOnlyNotice } from "@/app/shell/read-only-notice/read-only-notice";
+import { TopAppBar } from "@/app/shell/top-app-bar/top-app-bar";
+import { useEditing } from "@/app/shell/frame-state/use-editing";
 import {
   useEntry,
   useEntryShortcut,
   useKeyShortcut,
-} from "@/app/shell/use-entry";
-import { useNavPreference } from "@/app/shell/use-nav-preference";
-import { useExtent } from "@/app/shell/use-extent";
-import { useScrollState } from "@/app/shell/use-scroll-state";
-import { useWide } from "@/app/shell/use-wide";
+} from "@/app/shell/frame-state/use-entry";
+import { useNavPreference } from "@/app/shell/desktop-nav/use-nav-preference";
+import { useExtent } from "@/app/shell/frame-state/use-extent";
+import { useScrollState } from "@/app/shell/frame-state/use-scroll-state";
+import { useWide } from "@/app/shell/phone-gate/use-wide";
 import { AssistantPanel, useBeside } from "@/features/assistant";
 import { AppearanceSync } from "@/features/session";
 import { useCaptureQueueNotice } from "@/features/transactions";

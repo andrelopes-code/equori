@@ -1,5 +1,5 @@
-import { destinations } from "@/app/shell/destinations";
-import type { Destination } from "@/app/shell/destinations";
+import { destinations } from "@/app/shell/destinations/destinations";
+import type { Destination } from "@/app/shell/destinations/destinations";
 
 export interface DestinationMatch {
   destination: Destination | undefined;

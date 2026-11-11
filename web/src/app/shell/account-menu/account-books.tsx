@@ -8,7 +8,7 @@ import {
   MenuTrigger,
 } from "@slotted/react/menu";
 
-import type { useBooks } from "@/app/shell/use-books";
+import type { useBooks } from "@/app/shell/books/use-books";
 import { useT } from "@/i18n/i18n-provider";
 
 interface AccountBooksProps {

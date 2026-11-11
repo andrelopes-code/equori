@@ -2,8 +2,11 @@ import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { usePressSelection } from "@slotted/react/press-selection";
 import type { MouseEvent } from "react";
 
-import type { Destination, DestinationKey } from "@/app/shell/destinations";
-import { matchDestination } from "@/app/shell/match-destination";
+import type {
+  Destination,
+  DestinationKey,
+} from "@/app/shell/destinations/destinations";
+import { matchDestination } from "@/app/shell/destinations/match-destination";
 
 export interface DestinationPress {
   pathname: string;

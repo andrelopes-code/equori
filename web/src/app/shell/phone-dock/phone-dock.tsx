@@ -2,12 +2,12 @@ import { Badge } from "@slotted/react/badge";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 
-import { destinations } from "@/app/shell/destinations";
-import { MoreSheet } from "@/app/shell/more-sheet";
-import styles from "@/app/shell/phone-dock.module.css";
-import { ShellIcon } from "@/app/shell/shell-icon";
-import { useDestinationPress } from "@/app/shell/use-destination-press";
-import { useUncategorizedCount } from "@/app/shell/use-uncategorized-count";
+import { destinations } from "@/app/shell/destinations/destinations";
+import { MoreSheet } from "@/app/shell/phone-dock/more-sheet";
+import styles from "@/app/shell/phone-dock/phone-dock.module.css";
+import { ShellIcon } from "@/app/shell/destinations/shell-icon";
+import { useDestinationPress } from "@/app/shell/destinations/use-destination-press";
+import { useUncategorizedCount } from "@/app/shell/destinations/use-uncategorized-count";
 import { useT } from "@/i18n/i18n-provider";
 import { SpeedDial } from "@/ui/navigation/speed-dial";
 

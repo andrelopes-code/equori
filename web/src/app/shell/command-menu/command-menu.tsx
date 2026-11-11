@@ -11,9 +11,9 @@ import type { Ref } from "react";
 
 import { useApi } from "@/api/api-context";
 
-import { destinations } from "@/app/shell/destinations";
-import { ShellIcon } from "@/app/shell/shell-icon";
-import { useEntry } from "@/app/shell/use-entry";
+import { destinations } from "@/app/shell/destinations/destinations";
+import { ShellIcon } from "@/app/shell/destinations/shell-icon";
+import { useEntry } from "@/app/shell/frame-state/use-entry";
 import { accountsQuery } from "@/features/accounts";
 import { useChooseLanguage, useLogout } from "@/features/session";
 import { useAppLocaleState, useT } from "@/i18n/i18n-provider";

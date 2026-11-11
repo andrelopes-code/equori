@@ -1,7 +1,7 @@
 import { useMatches } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
-import { WideScreenNotice } from "@/app/shell/wide-screen-notice";
+import { WideScreenNotice } from "@/app/shell/phone-gate/wide-screen-notice";
 import { compactQuery, useMediaQuery } from "@/ui/runtime/use-media-query";
 
 interface PhoneGateProps {

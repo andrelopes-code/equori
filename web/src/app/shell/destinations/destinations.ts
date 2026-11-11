@@ -1,4 +1,4 @@
-import type { ShellIconName } from "@/app/shell/shell-icon";
+import type { ShellIconName } from "@/app/shell/destinations/shell-icon";
 import type { MessageKey } from "@/i18n/catalog.en";
 
 export type DestinationKey =

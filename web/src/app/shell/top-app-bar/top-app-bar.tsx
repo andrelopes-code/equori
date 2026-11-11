@@ -2,10 +2,10 @@ import { useRouter, useRouterState } from "@tanstack/react-router";
 import { IconButton } from "@slotted/react/button";
 import { Icon } from "@slotted/react/icon";
 
-import { matchDestination } from "@/app/shell/match-destination";
-import { PrivacyToggle } from "@/app/shell/privacy-toggle";
-import { ShellIcon } from "@/app/shell/shell-icon";
-import styles from "@/app/shell/top-app-bar.module.css";
+import { matchDestination } from "@/app/shell/destinations/match-destination";
+import { PrivacyToggle } from "@/app/shell/top-app-bar/privacy-toggle";
+import { ShellIcon } from "@/app/shell/destinations/shell-icon";
+import styles from "@/app/shell/top-app-bar/top-app-bar.module.css";
 import { useT } from "@/i18n/i18n-provider";
 
 // Families read: app-shell, top-navigation, page-header. The phone's bar is equori's own by

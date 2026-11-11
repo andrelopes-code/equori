@@ -12,12 +12,12 @@ import {
 import { useState } from "react";
 
 import { useApi } from "@/api/api-context";
-import { AccountBooks } from "@/app/shell/account-books";
-import { AccountChoice } from "@/app/shell/account-choice";
-import { AccountIdentity } from "@/app/shell/account-identity";
-import styles from "@/app/shell/account-menu.module.css";
-import { ShellIcon } from "@/app/shell/shell-icon";
-import { useBooks } from "@/app/shell/use-books";
+import { AccountBooks } from "@/app/shell/account-menu/account-books";
+import { AccountChoice } from "@/app/shell/account-menu/account-choice";
+import { AccountIdentity } from "@/app/shell/account-menu/account-identity";
+import styles from "@/app/shell/account-menu/account-menu.module.css";
+import { ShellIcon } from "@/app/shell/destinations/shell-icon";
+import { useBooks } from "@/app/shell/books/use-books";
 import { errorText } from "@/api/problem";
 import { meQuery, useChooseLanguage, useLogout } from "@/features/session";
 import { NewBooksDialog } from "@/features/setup";

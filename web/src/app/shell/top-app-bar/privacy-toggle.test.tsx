@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { catalogEn } from "@/i18n/catalog.en";
 import { fakeApi } from "@/testing/fake-api";
 import { renderWithProviders } from "@/testing/render-app";
-import { PrivacyToggle } from "@/app/shell/privacy-toggle";
+import { PrivacyToggle } from "@/app/shell/top-app-bar/privacy-toggle";
 
 describe("PrivacyToggle", () => {
   beforeEach(() => {

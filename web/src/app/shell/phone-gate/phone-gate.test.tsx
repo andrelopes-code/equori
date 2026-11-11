@@ -2,7 +2,7 @@ import { screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { newRouter } from "@/app/router";
-import { destinations } from "@/app/shell/destinations";
+import { destinations } from "@/app/shell/destinations/destinations";
 import { catalogEn } from "@/i18n/catalog.en";
 import { writeLocale } from "@/i18n/locale";
 import { fakeApi, json } from "@/testing/fake-api";
