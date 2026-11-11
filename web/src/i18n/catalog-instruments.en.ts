@@ -111,6 +111,7 @@ export const instrumentsEn = {
   "instruments.history.loading": "Loading history since {from}",
   "instruments.history.failed": "History since {from} failed: {error}",
   "instruments.history.retry": "Try again",
+  "instruments.actions": "Quote actions",
   "instrument.price.record": "Record price",
   "instrument.price.title": "Record a manual price",
   "instrument.price.date": "Date",

@@ -111,6 +111,7 @@ export const instrumentsPtBR: Record<keyof typeof instrumentsEn, string> = {
   "instruments.history.loading": "Carregando histórico desde {from}",
   "instruments.history.failed": "O histórico desde {from} falhou: {error}",
   "instruments.history.retry": "Tentar de novo",
+  "instruments.actions": "Ações das cotações",
   "instrument.price.record": "Registrar preço",
   "instrument.price.title": "Registrar um preço manual",
   "instrument.price.date": "Data",

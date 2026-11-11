@@ -271,6 +271,37 @@ describe("Instrument page", () => {
       });
     });
 
+    // A223 RM10
+    it("keeps the retry in the failure alert and the other actions in one toolbar", async () => {
+      const fetch = withCoverage({
+        ...base,
+        sources: [source({ history: failed })],
+      });
+      await renderApp("/instruments/PETR4", { fetch });
+
+      const alert = (
+        await screen.findByText(/^History since 10\/17\/2006 failed/)
+      ).closest<HTMLElement>('[data-ui="alert"]');
+      if (alert === null) throw new Error("the failure is not in an alert");
+      expect(
+        within(alert).getByRole("button", {
+          name: catalogEn["instruments.history.retry"],
+        }),
+      ).toBeVisible();
+
+      const toolbar = screen.getByRole("toolbar", {
+        name: catalogEn["instruments.actions"],
+      });
+      expect(
+        within(toolbar)
+          .getAllByRole("button")
+          .map((button) => button.textContent),
+      ).toEqual([
+        catalogEn["instruments.history.load"],
+        catalogEn["prices.import.one"],
+      ]);
+    });
+
     it("MQ35: warns that the last quote is late", async () => {
       const fetch = withCoverage({
         ...base,

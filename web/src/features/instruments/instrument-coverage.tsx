@@ -1,6 +1,4 @@
 import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
-import { Button } from "@slotted/react/button";
-import { Inline } from "@slotted/react/inline";
 import { Stack } from "@slotted/react/stack";
 import { Text } from "@slotted/react/typography";
 import { useState } from "react";
@@ -12,7 +10,9 @@ import {
   historyState,
   quoteAge,
 } from "@/features/instruments/coverage-line";
+import { CoverageActions } from "@/features/instruments/coverage-actions";
 import { HistoryDialog } from "@/features/instruments/history-dialog";
+import { HistoryNotice } from "@/features/instruments/history-notice";
 import { InstrumentPriceImportDialog } from "@/features/instruments/instrument-price-import-dialog";
 import { sourceLabel } from "@/features/instruments/instrument-labels";
 import { formatDate, formatRelativeDays, numberFormatter } from "@/i18n/format";
@@ -91,59 +91,23 @@ export function InstrumentCoverage({
           })}
         </Text>
       )}
-      {history.kind === "loading" && (
-        <Text tone="muted">
-          {t("instruments.history.loading", {
-            from: formatDate(history.from, locale),
-          })}
-        </Text>
-      )}
-      {history.kind === "failed" && (
-        <Alert tone="danger">
-          <AlertContent>
-            <AlertDescription>
-              {t("instruments.history.failed", {
-                from: formatDate(history.from, locale),
-                error: history.error,
-              })}
-            </AlertDescription>
-          </AlertContent>
-        </Alert>
-      )}
-      <Inline gap={2}>
-        {history.kind === "failed" && (
-          <Button size="sm" onClick={handleRetry} loading={retry.isPending}>
-            {t("instruments.history.retry")}
-          </Button>
-        )}
-        {loadable && (
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => {
-              setLoading(true);
-            }}
-          >
-            {t("instruments.history.load")}
-          </Button>
-        )}
-        {quote !== null && (
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => {
-              setImporting(true);
-            }}
-          >
-            {t("prices.import.one")}
-          </Button>
-        )}
-        {range.kind === "none" && (
-          <Button size="sm" variant="ghost" onClick={onRecord}>
-            {t("instrument.price.record")}
-          </Button>
-        )}
-      </Inline>
+      <HistoryNotice
+        history={history}
+        retrying={retry.isPending}
+        onRetry={handleRetry}
+      />
+      <CoverageActions
+        canLoad={loadable}
+        canImport={quote !== null}
+        canRecord={range.kind === "none"}
+        onLoad={() => {
+          setLoading(true);
+        }}
+        onImport={() => {
+          setImporting(true);
+        }}
+        onRecord={onRecord}
+      />
       {loading && (
         <HistoryDialog
           code={code}
