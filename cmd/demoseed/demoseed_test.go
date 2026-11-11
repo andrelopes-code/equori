@@ -30,6 +30,40 @@ func seedHarness(t *testing.T, date string) (*seeder, config, *apitest.Harness) 
 	return newSeeder(context.Background(), h.URL(), c), config{today: today}, h
 }
 
+// Prices are shared by every book of the instance and a manual price outranks the feeds (MQ1): the
+// seeder never records one over an instrument that already has a price.
+func TestSeedKeepsExistingPrices(t *testing.T) {
+	s, cfg, _ := seedHarness(t, testToday)
+	s.start = firstOfMonth(cfg.today).AddDate(0, -historyMonths, 0)
+	s.today = cfg.today
+	start := iso(s.start)
+	s.loadSystemAccounts()
+	s.loadHolidays()
+	s.requireEmpty()
+	s.localizeSystemAccounts()
+	s.buildChart(start)
+	s.buildInvestments(start)
+	s.do(http.MethodPost, "/prices", map[string]any{"instrument": "ITUB4", "quote_instrument": "BRL", "date": "2026-11-04", "value": "41.20"}, nil)
+
+	s.postPrices()
+
+	var list struct {
+		Items []struct {
+			Date  string `json:"date"`
+			Value string `json:"value"`
+		} `json:"items"`
+	}
+	s.do(http.MethodGet, "/prices?instrument=ITUB4&quote_instrument=BRL&from="+start+"&to="+testToday, nil, &list)
+
+	if s.err != nil {
+		t.Fatal(s.err)
+	}
+
+	if len(list.Items) != 1 || list.Items[0].Date != "2026-11-04" || list.Items[0].Value != "41.2" {
+		t.Fatalf("ITUB4 prices = %+v, want only the existing one", list.Items)
+	}
+}
+
 func TestSeed(t *testing.T) {
 	s, cfg, h := seedHarness(t, testToday)
 	if err := seed(s, cfg); err != nil {

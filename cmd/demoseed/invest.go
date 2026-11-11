@@ -108,8 +108,14 @@ func (s *seeder) priceOn(code string, d time.Time) float64 {
 func rate(p float64) string { return fmt.Sprintf("%.4f", p) }
 
 // postPrices records the price of every security on the last business day of each month and on the last day.
+// Prices are shared by every book of the instance and a manual price outranks the feeds (MQ1), so a
+// security that already has a price keeps it.
 func (s *seeder) postPrices() {
 	for _, sec := range securities {
+		if s.hasPrices(sec.code) {
+			continue
+		}
+
 		for _, m := range months(s.start, s.today) {
 			d := m.AddDate(0, 1, -1)
 			for d.Weekday() == time.Saturday || d.Weekday() == time.Sunday {
@@ -123,6 +129,16 @@ func (s *seeder) postPrices() {
 			s.do(http.MethodPost, "/prices", map[string]any{"instrument": sec.code, "quote_instrument": "BRL", "date": iso(d), "value": rate(s.priceOn(sec.code, d))}, nil)
 		}
 	}
+}
+
+// hasPrices reports whether the instance holds a price of code, in quote currency BRL, since the start of the history.
+func (s *seeder) hasPrices(code string) bool {
+	var list struct {
+		Items []struct{} `json:"items"`
+	}
+	s.do(http.MethodGet, "/prices?instrument="+code+"&quote_instrument=BRL&from="+iso(s.start)+"&to="+iso(s.today), nil, &list)
+
+	return len(list.Items) > 0
 }
 
 // buy schedules a purchase of about reais reais of code on d, in whole units of the scale of the security.
