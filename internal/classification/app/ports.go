@@ -41,6 +41,7 @@ type AliasKey struct {
 	ID uuid.UUID `json:"ai"`
 }
 
+// Repository stores rules and categories; postgres/ implements it.
 // Repository returns ErrNotFound for missing rows.
 type Repository interface {
 	InTx(ctx context.Context, fn func(Repository) error) error
