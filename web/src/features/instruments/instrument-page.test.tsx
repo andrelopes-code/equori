@@ -639,6 +639,24 @@ describe("Instrument page", () => {
   });
 });
 
+// A223: the waiting state of the page stands for its anatomy.
+describe("Instrument page while it loads", () => {
+  it("reserves the heading, the sections and the chart", async () => {
+    const fetch = api({
+      "GET /api/v1/instruments/PETR4": () =>
+        new Promise<Response>(() => undefined),
+    });
+    await renderApp("/instruments/PETR4", { fetch });
+
+    await waitFor(() => {
+      expect(
+        document.querySelectorAll('[data-ui="skeleton"]').length,
+      ).toBeGreaterThanOrEqual(5);
+    });
+    expect(screen.queryByRole("heading", { level: 1 })).toBeNull();
+  });
+});
+
 // A223 RM5
 describe("Remove instrument", () => {
   it("confirms, deletes the security and returns to the list", async () => {

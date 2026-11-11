@@ -36,6 +36,7 @@
 | RM8 | `yahoo_chart` `Search` fills `quote_currency` of a listing from the table `micCurrencies` of its package: the whole-unit currency its MIC quotes in. A MIC that quotes in a subunit (`XLON` pence, `XJSE` cents) and a MIC outside the table leave it empty. This amends plan 3 D7 and MQ28. |
 | RM9 | The define dialog fills the scale from the type until the owner types one: `stock`, `etf`, `reit`, `depositary_receipt` and `fixed_income` 0; `fund` 6; `crypto` 8. The hint states what the number means in plain words. |
 | RM10 | The coverage section groups its failure in one `Alert` with the retry in `AlertActions`, and its other actions in one `Toolbar`. |
+| RM11 | A load draws placeholders of its anatomy, not equal bars: the market data settings reserve their two cards with the rows of a feed, and the page of an instrument reserves its heading, holdings, chart and facts. While an enabled feed holds a pending history, or a refresh is polled, the Slotted `Loader` sits beside the refresh action; while a history of an instrument loads, it sits beside the sentence that says so. |
 
 ## 3. Cross-cutting questions
 

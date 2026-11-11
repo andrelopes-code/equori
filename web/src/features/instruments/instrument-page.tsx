@@ -8,7 +8,6 @@ import {
   PageHeaderTitleArea,
   PageHeaderTitleRow,
 } from "@slotted/react/page-header";
-import { SkeletonText } from "@slotted/react/skeleton";
 import { Stack } from "@slotted/react/stack";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "@tanstack/react-router";
@@ -17,6 +16,7 @@ import { useState } from "react";
 import { useApi } from "@/api/api-context";
 import { instrumentQuery, termsQuery } from "@/features/instruments/api";
 import { InstrumentFacts } from "@/features/instruments/instrument-facts";
+import { InstrumentPagePlaceholder } from "@/features/instruments/instrument-page-placeholder";
 import { InstrumentPositions } from "@/features/instruments/instrument-positions";
 import { typeLabel } from "@/features/instruments/instrument-labels";
 import { InstrumentPrices } from "@/features/instruments/instrument-prices";
@@ -65,13 +65,7 @@ export function InstrumentPage() {
       </Page>
     );
   if (instrument.data === undefined || base === undefined)
-    return (
-      <Page width="full" loading>
-        <PageBody>
-          <SkeletonText lines={6} />
-        </PageBody>
-      </Page>
-    );
+    return <InstrumentPagePlaceholder />;
   const i = instrument.data;
   const quote = quoteOf(i, base);
   const subheading = `${i.code} · ${typeLabel(t, i.type)}`;
