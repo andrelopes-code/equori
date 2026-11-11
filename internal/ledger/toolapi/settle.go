@@ -3,6 +3,7 @@ package toolapi
 import (
 	"context"
 	"strconv"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -58,7 +59,6 @@ func settleStatement(svc *app.Service) tool.Tool {
 }
 
 func planSettle(ctx context.Context, svc *app.Service, booksID int64, in settleStatementIn) (tool.Preview, func() (settleStatementOut, error), error) {
-	action := string(in.Action)
 	pv := tool.Preview{Action: "settle_statement"}
 
 	id, err := requiredID(in.StatementID, "statement_id")
@@ -71,28 +71,7 @@ func planSettle(ctx context.Context, svc *app.Service, booksID int64, in settleS
 		return pv, nil, err
 	}
 
-	given := map[string]bool{
-		"statement_id": true, "date": !in.Date.IsZero(), "amount": in.Amount != "", "from_account_id": in.FromAccountID != "",
-		"installment_count": in.InstallmentCount != 0, "installment_amount": in.InstallmentAmount != "", "due_date": !in.DueDate.IsZero(), "closing_date": !in.ClosingDate.IsZero(), "minimum": in.Minimum != "",
-		"transaction_ids": len(in.TransactionIDs) > 0,
-	}
-	required := []string{"statement_id"}
-
-	var optional []string
-	switch in.Action {
-	case "pay":
-		required, optional = append(required, "amount", "from_account_id"), []string{"date"}
-	case "finance":
-		required, optional = append(required, "installment_count", "installment_amount"), []string{"date"}
-	case "confirm_amount_due":
-		required = append(required, "amount")
-	case "set_facts":
-		required, optional = append(required, "amount", "due_date"), []string{"closing_date", "minimum"}
-	case "defer_postings":
-		required = append(required, "transaction_ids")
-	}
-
-	if err := checkFields(action, given, required, optional...); err != nil {
+	if err = checkSettleFields(in); err != nil {
 		return pv, nil, err
 	}
 
@@ -124,94 +103,185 @@ func planSettle(ctx context.Context, svc *app.Service, booksID int64, in settleS
 		date = in.Date.Time
 	}
 
-	out := settleStatementOut{StatementID: id.String()}
+	step := settleStep{
+		svc: svc, booksID: booksID, in: in, id: id, fromID: fromID, view: v, due: due, unit: unit, date: date,
+	}
 
-	parse := func(field, s string) (money.Money, error) { return tool.ParsePositive(field, s, unit) }
+	return step.plan(ctx, pv)
+}
+
+func checkSettleFields(in settleStatementIn) error {
+	action := string(in.Action)
+	given := map[string]bool{
+		"statement_id": true, "date": !in.Date.IsZero(), "amount": in.Amount != "", "from_account_id": in.FromAccountID != "",
+		"installment_count": in.InstallmentCount != 0, "installment_amount": in.InstallmentAmount != "", "due_date": !in.DueDate.IsZero(), "closing_date": !in.ClosingDate.IsZero(), "minimum": in.Minimum != "",
+		"transaction_ids": len(in.TransactionIDs) > 0,
+	}
+	required := []string{"statement_id"}
+
+	var optional []string
 	switch in.Action {
 	case "pay":
-		amount, err := parse("amount", in.Amount)
-		if err != nil {
-			return pv, nil, err
-		}
-
-		from, err := svc.Account(ctx, booksID, fromID)
-		if err != nil {
-			return pv, nil, err
-		}
-
-		pv.Changes = []tool.Change{{Field: "amount", After: tool.MoneyValue(amount)}, {Field: "account", After: tool.TextValue(from.Name)}, {Field: "date", After: tool.DateValue(date)}}
-
-		return pv, func() (settleStatementOut, error) {
-			t, err := svc.PayStatement(ctx, booksID, id, date, from.ID, amount)
-			out.TransactionID = t.ID.String()
-
-			return out, err
-		}, nil
+		required, optional = append(required, "amount", "from_account_id"), []string{"date"}
 	case "finance":
-		amount, err := parse("installment_amount", in.InstallmentAmount)
-		if err != nil {
-			return pv, nil, err
-		}
-
-		pv.Changes = []tool.Change{
-			{Field: "installments", After: tool.TextValue(strconv.Itoa(in.InstallmentCount))},
-			{Field: "amount", After: tool.MoneyValue(amount)},
-			{Field: "date", After: tool.DateValue(date)},
-		}
-
-		return pv, func() (settleStatementOut, error) {
-			t, _, err := svc.FinanceStatement(ctx, booksID, id, date, in.InstallmentCount, amount)
-			out.TransactionID = t.ID.String()
-
-			return out, err
-		}, nil
+		required, optional = append(required, "installment_count", "installment_amount"), []string{"date"}
 	case "confirm_amount_due":
-		amount, err := parse("amount", in.Amount)
-		if err != nil {
-			return pv, nil, err
-		}
-
-		pv.Changes = []tool.Change{{Field: "amount", Before: tool.Value{Amount: due.Amount, Currency: due.Currency}, After: tool.MoneyValue(amount)}}
-
-		return pv, func() (settleStatementOut, error) { return out, svc.ReconcileStatement(ctx, booksID, id, amount) }, nil
+		required = append(required, "amount")
 	case "set_facts":
-		amount, err := parse("amount", in.Amount)
+		required, optional = append(required, "amount", "due_date"), []string{"closing_date", "minimum"}
+	case "defer_postings":
+		required = append(required, "transaction_ids")
+	}
+
+	return checkFields(action, given, required, optional...)
+}
+
+// settleStep holds the resolved inputs that every action of settle_statement shares.
+type settleStep struct {
+	svc     *app.Service
+	booksID int64
+	in      settleStatementIn
+	id      uuid.UUID
+	fromID  uuid.UUID
+	view    app.StatementView
+	due     tool.Money
+	unit    money.Money
+	date    time.Time
+}
+
+func (s settleStep) plan(
+	ctx context.Context,
+	pv tool.Preview,
+) (tool.Preview, func() (settleStatementOut, error), error) {
+	switch s.in.Action {
+	case "pay":
+		return s.pay(ctx, pv)
+	case "finance":
+		return s.finance(ctx, pv)
+	case "confirm_amount_due":
+		return s.confirmAmountDue(ctx, pv)
+	case "set_facts":
+		return s.setFacts(ctx, pv)
+	case "defer_postings":
+		return s.deferPostings(ctx, pv)
+	default:
+		return s.removeFacts(ctx, pv)
+	}
+}
+
+func (s settleStep) pay(ctx context.Context, pv tool.Preview) (tool.Preview, func() (settleStatementOut, error), error) {
+	out := settleStatementOut{StatementID: s.id.String()}
+
+	amount, err := s.parse("amount", s.in.Amount)
+	if err != nil {
+		return pv, nil, err
+	}
+
+	from, err := s.svc.Account(ctx, s.booksID, s.fromID)
+	if err != nil {
+		return pv, nil, err
+	}
+
+	pv.Changes = []tool.Change{{Field: "amount", After: tool.MoneyValue(amount)}, {Field: "account", After: tool.TextValue(from.Name)}, {Field: "date", After: tool.DateValue(s.date)}}
+
+	return pv, func() (settleStatementOut, error) {
+		t, err := s.svc.PayStatement(ctx, s.booksID, s.id, s.date, from.ID, amount)
+		out.TransactionID = t.ID.String()
+
+		return out, err
+	}, nil
+}
+
+func (s settleStep) finance(ctx context.Context, pv tool.Preview) (tool.Preview, func() (settleStatementOut, error), error) {
+	out := settleStatementOut{StatementID: s.id.String()}
+
+	amount, err := s.parse("installment_amount", s.in.InstallmentAmount)
+	if err != nil {
+		return pv, nil, err
+	}
+
+	pv.Changes = []tool.Change{
+		{Field: "installments", After: tool.TextValue(strconv.Itoa(s.in.InstallmentCount))},
+		{Field: "amount", After: tool.MoneyValue(amount)},
+		{Field: "date", After: tool.DateValue(s.date)},
+	}
+
+	return pv, func() (settleStatementOut, error) {
+		t, _, err := s.svc.FinanceStatement(ctx, s.booksID, s.id, s.date, s.in.InstallmentCount, amount)
+		out.TransactionID = t.ID.String()
+
+		return out, err
+	}, nil
+}
+
+func (s settleStep) confirmAmountDue(ctx context.Context, pv tool.Preview) (tool.Preview, func() (settleStatementOut, error), error) {
+	out := settleStatementOut{StatementID: s.id.String()}
+
+	amount, err := s.parse("amount", s.in.Amount)
+	if err != nil {
+		return pv, nil, err
+	}
+
+	pv.Changes = []tool.Change{{Field: "amount", Before: tool.Value{Amount: s.due.Amount, Currency: s.due.Currency}, After: tool.MoneyValue(amount)}}
+
+	return pv, func() (settleStatementOut, error) { return out, s.svc.ReconcileStatement(ctx, s.booksID, s.id, amount) }, nil
+}
+
+func (s settleStep) setFacts(ctx context.Context, pv tool.Preview) (tool.Preview, func() (settleStatementOut, error), error) {
+	in := s.in
+	out := settleStatementOut{StatementID: s.id.String()}
+
+	amount, err := s.parse("amount", in.Amount)
+	if err != nil {
+		return pv, nil, err
+	}
+
+	f := app.StatementFacts{Due: in.DueDate.Time, Total: amount}
+
+	pv.Changes = []tool.Change{{Field: "amount", After: tool.MoneyValue(amount)}, {Field: "due_on", After: tool.DateValue(in.DueDate.Time)}}
+	if !in.ClosingDate.IsZero() {
+		f.Closing = &in.ClosingDate.Time
+		pv.Changes = append(pv.Changes, tool.Change{Field: "date", After: tool.DateValue(in.ClosingDate.Time)})
+	}
+
+	if in.Minimum != "" {
+		minimum, err := s.parse("minimum", in.Minimum)
 		if err != nil {
 			return pv, nil, err
 		}
 
-		f := app.StatementFacts{Due: in.DueDate.Time, Total: amount}
-
-		pv.Changes = []tool.Change{{Field: "amount", After: tool.MoneyValue(amount)}, {Field: "due_on", After: tool.DateValue(in.DueDate.Time)}}
-		if !in.ClosingDate.IsZero() {
-			f.Closing = &in.ClosingDate.Time
-			pv.Changes = append(pv.Changes, tool.Change{Field: "date", After: tool.DateValue(in.ClosingDate.Time)})
-		}
-
-		if in.Minimum != "" {
-			minimum, err := parse("minimum", in.Minimum)
-			if err != nil {
-				return pv, nil, err
-			}
-
-			f.Minimum = &minimum
-			pv.Changes = append(pv.Changes, tool.Change{Field: "limit", After: tool.MoneyValue(minimum)})
-		}
-
-		return pv, func() (settleStatementOut, error) { return out, svc.SetOwnerFacts(ctx, booksID, id, f) }, nil
-	case "defer_postings":
-		txIDs := make([]uuid.UUID, len(in.TransactionIDs))
-		for i, raw := range in.TransactionIDs {
-			if txIDs[i], err = requiredID(raw, "transaction_ids"); err != nil {
-				return pv, nil, err
-			}
-		}
-
-		pv.Changes = []tool.Change{{Field: "statement", Before: tool.TextValue(v.Input.Reference.String()), After: tool.TextValue(v.Input.Reference.Add(1).String())}}
-
-		return pv, func() (settleStatementOut, error) { return out, svc.DeferPostings(ctx, booksID, id, txIDs) }, nil
-	default:
-		pv.Changes = []tool.Change{{Field: "due_on", Before: tool.DateValue(v.Input.Due)}}
-		return pv, func() (settleStatementOut, error) { return out, svc.RemoveOwnerFacts(ctx, booksID, id) }, nil
+		f.Minimum = &minimum
+		pv.Changes = append(pv.Changes, tool.Change{Field: "limit", After: tool.MoneyValue(minimum)})
 	}
+
+	return pv, func() (settleStatementOut, error) { return out, s.svc.SetOwnerFacts(ctx, s.booksID, s.id, f) }, nil
+}
+
+func (s settleStep) deferPostings(ctx context.Context, pv tool.Preview) (tool.Preview, func() (settleStatementOut, error), error) {
+	out := settleStatementOut{StatementID: s.id.String()}
+
+	txIDs := make([]uuid.UUID, len(s.in.TransactionIDs))
+
+	var err error
+	for i, raw := range s.in.TransactionIDs {
+		if txIDs[i], err = requiredID(raw, "transaction_ids"); err != nil {
+			return pv, nil, err
+		}
+	}
+
+	pv.Changes = []tool.Change{{Field: "statement", Before: tool.TextValue(s.view.Input.Reference.String()), After: tool.TextValue(s.view.Input.Reference.Add(1).String())}}
+
+	return pv, func() (settleStatementOut, error) { return out, s.svc.DeferPostings(ctx, s.booksID, s.id, txIDs) }, nil
+}
+
+func (s settleStep) removeFacts(ctx context.Context, pv tool.Preview) (tool.Preview, func() (settleStatementOut, error), error) {
+	out := settleStatementOut{StatementID: s.id.String()}
+
+	pv.Changes = []tool.Change{{Field: "due_on", Before: tool.DateValue(s.view.Input.Due)}}
+
+	return pv, func() (settleStatementOut, error) { return out, s.svc.RemoveOwnerFacts(ctx, s.booksID, s.id) }, nil
+}
+
+func (s settleStep) parse(field, text string) (money.Money, error) {
+	return tool.ParsePositive(field, text, s.unit)
 }

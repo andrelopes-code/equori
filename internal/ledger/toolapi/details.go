@@ -108,74 +108,107 @@ func getAccountDetails(svc *app.Service) tool.Tool {
 			"Do not use it for a statement's lines: get_statement returns them.",
 		Effect: tool.ReadOnly,
 	}, func(ctx context.Context, booksID int64, in getAccountDetailsIn) (getAccountDetailsOut, error) {
-		id, err := requiredID(in.AccountID, "account_id")
-		if err != nil {
-			return getAccountDetailsOut{}, err
-		}
-
-		a, err := svc.Account(ctx, booksID, id)
-		if err != nil {
-			return getAccountDetailsOut{}, err
-		}
-
-		isCard := a.Kind == domain.KindCreditCard
-		if !isCard {
-			switch {
-			case in.Month != "":
-				return getAccountDetailsOut{}, tool.InvalidArgument("month", "applies only to a credit card account")
-			case !in.PurchaseDate.IsZero():
-				return getAccountDetailsOut{}, tool.InvalidArgument("purchase_date", "applies only to a credit card account")
-			case in.StatementsFrom != "":
-				return getAccountDetailsOut{}, tool.InvalidArgument("statements_from", "applies only to a credit card account")
-			}
-		}
-
-		var month, from *domain.ReferenceMonth
-		if month, err = parseMonth(in.Month, "month"); err != nil {
-			return getAccountDetailsOut{}, err
-		}
-
-		if from, err = parseMonth(in.StatementsFrom, "statements_from"); err != nil {
-			return getAccountDetailsOut{}, err
-		}
-
-		out := getAccountDetailsOut{
-			Account: accountSummaryView{
-				AccountID: a.ID.String(), Name: a.Name, Class: string(a.Class), Kind: string(a.Kind),
-				Currency: string(a.Instrument), Closed: a.ClosedOn != nil,
-			},
-			BalanceAssertions: []assertionView{},
-		}
-
-		unit, err := svc.AmountOf(ctx, 0, a.Instrument)
-		if err != nil {
-			return out, err
-		}
-
-		if out.Reconciliation, err = reconciliationOf(ctx, svc, booksID, id); err != nil {
-			return out, err
-		}
-
-		assertions, _, err := svc.BalanceAssertions(ctx, booksID, id, page.Request[app.AssertionKey]{Limit: 5})
-		if err != nil {
-			return out, err
-		}
-
-		for _, b := range assertions {
-			amount, err := minorMoney(unit, b.Amount)
-			if err != nil {
-				return out, err
-			}
-
-			out.BalanceAssertions = append(out.BalanceAssertions, assertionView{Date: tool.DateOf(b.Date), Amount: amount, Reconciled: b.Reconciled, Source: b.Source})
-		}
-
-		if isCard {
-			out.Card, err = cardDetailsOf(ctx, svc, booksID, a, unit, in, month, from)
-		}
-
-		return out, err
+		return runGetAccountDetails(ctx, svc, booksID, in)
 	})
+}
+
+func runGetAccountDetails(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	in getAccountDetailsIn,
+) (getAccountDetailsOut, error) {
+	id, err := requiredID(in.AccountID, "account_id")
+	if err != nil {
+		return getAccountDetailsOut{}, err
+	}
+
+	a, err := svc.Account(ctx, booksID, id)
+	if err != nil {
+		return getAccountDetailsOut{}, err
+	}
+
+	isCard := a.Kind == domain.KindCreditCard
+	if !isCard {
+		if err = rejectCardArguments(in); err != nil {
+			return getAccountDetailsOut{}, err
+		}
+	}
+
+	var month, from *domain.ReferenceMonth
+	if month, err = parseMonth(in.Month, "month"); err != nil {
+		return getAccountDetailsOut{}, err
+	}
+
+	if from, err = parseMonth(in.StatementsFrom, "statements_from"); err != nil {
+		return getAccountDetailsOut{}, err
+	}
+
+	out := getAccountDetailsOut{Account: accountSummaryOf(a), BalanceAssertions: []assertionView{}}
+
+	unit, err := svc.AmountOf(ctx, 0, a.Instrument)
+	if err != nil {
+		return out, err
+	}
+
+	if out.Reconciliation, err = reconciliationOf(ctx, svc, booksID, id); err != nil {
+		return out, err
+	}
+
+	if err = addAssertions(ctx, svc, booksID, id, unit, &out); err != nil {
+		return out, err
+	}
+
+	if isCard {
+		out.Card, err = cardDetailsOf(ctx, svc, booksID, a, unit, in, month, from)
+	}
+
+	return out, err
+}
+
+func accountSummaryOf(a domain.Account) accountSummaryView {
+	return accountSummaryView{
+		AccountID: a.ID.String(), Name: a.Name, Class: string(a.Class), Kind: string(a.Kind),
+		Currency: string(a.Instrument), Closed: a.ClosedOn != nil,
+	}
+}
+
+func rejectCardArguments(in getAccountDetailsIn) error {
+	switch {
+	case in.Month != "":
+		return tool.InvalidArgument("month", "applies only to a credit card account")
+	case !in.PurchaseDate.IsZero():
+		return tool.InvalidArgument("purchase_date", "applies only to a credit card account")
+	case in.StatementsFrom != "":
+		return tool.InvalidArgument("statements_from", "applies only to a credit card account")
+	}
+
+	return nil
+}
+
+func addAssertions(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	id uuid.UUID,
+	unit money.Money,
+	out *getAccountDetailsOut,
+) error {
+	assertions, _, err := svc.BalanceAssertions(ctx, booksID, id, page.Request[app.AssertionKey]{Limit: 5})
+	if err != nil {
+		return err
+	}
+
+	for _, b := range assertions {
+		amount, err := minorMoney(unit, b.Amount)
+		if err != nil {
+			return err
+		}
+
+		out.BalanceAssertions = append(out.BalanceAssertions, assertionView{Date: tool.DateOf(b.Date), Amount: amount, Reconciled: b.Reconciled, Source: b.Source})
+	}
+
+	return nil
 }
 
 func parseMonth(s, field string) (*domain.ReferenceMonth, error) {

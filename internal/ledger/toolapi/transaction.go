@@ -95,104 +95,141 @@ func getTransaction(svc *app.Service) tool.Tool {
 			"Do not use it to find transactions: search_transactions does.",
 		Effect: tool.ReadOnly,
 	}, func(ctx context.Context, booksID int64, in getTransactionIn) (getTransactionOut, error) {
-		id, err := requiredID(in.TransactionID, "transaction_id")
-		if err != nil {
-			return getTransactionOut{}, err
-		}
-
-		t, err := svc.Transaction(ctx, booksID, id)
-		if err != nil {
-			return getTransactionOut{}, err
-		}
-
-		accounts, _, err := allAccounts(ctx, svc, booksID)
-		if err != nil {
-			return getTransactionOut{}, err
-		}
-
-		versions, err := svc.Versions(ctx, booksID, id)
-		if err != nil {
-			return getTransactionOut{}, err
-		}
-
-		attachments, _, err := svc.Attachments(ctx, booksID, id, page.Request[app.AttachmentKey]{Limit: 20})
-		if err != nil {
-			return getTransactionOut{}, err
-		}
-
-		disputes, err := svc.Disputes(ctx, booksID, id)
-		if err != nil {
-			return getTransactionOut{}, err
-		}
-
-		refs, err := svc.ReferencedBy(ctx, booksID, id)
-		if err != nil {
-			return getTransactionOut{}, err
-		}
-
-		payeeIDs := []uuid.UUID{}
-		if t.PayeeID != uuid.Nil {
-			payeeIDs = append(payeeIDs, t.PayeeID)
-		}
-
-		payees, err := svc.PayeeNames(ctx, booksID, payeeIDs)
-		if err != nil {
-			return getTransactionOut{}, err
-		}
-
-		out := getTransactionOut{
-			History: []historyEntry{}, Attachments: []attachmentView{}, Disputes: []disputeView{},
-		}
-
-		out.Transaction = transactionDetailView{
-			transactionView: viewOf(t, accounts, payees), Version: t.Version,
-			Links: []linkView{}, ReferencedBy: []linkView{},
-		}
-		for _, l := range t.Links {
-			v, err := linkOf(string(l.Type), l.Target, l.Amount, t.BalancingCurrency)
-			if err != nil {
-				return getTransactionOut{}, err
-			}
-
-			out.Transaction.Links = append(out.Transaction.Links, v)
-		}
-
-		for _, r := range refs {
-			v, err := linkOf(string(r.Type), r.Source, r.Amount, money.Currency(r.Currency))
-			if err != nil {
-				return getTransactionOut{}, err
-			}
-
-			out.Transaction.ReferencedBy = append(out.Transaction.ReferencedBy, v)
-		}
-
-		for _, v := range versions {
-			out.History = append(out.History, historyEntry{Version: v.Version, Reason: v.Reason, ReplacedAt: v.ReplacedAt.Format(time.RFC3339)})
-		}
-
-		for _, a := range attachments {
-			out.Attachments = append(out.Attachments, attachmentView{FileName: a.FileName, Size: a.Size})
-		}
-
-		for _, d := range disputes {
-			v := disputeView{DisputeID: d.ID.String(), OpenedOn: tool.DateOf(d.OpenedOn), Outcome: d.Outcome}
-			if d.ResolvedOn != nil {
-				v.ResolvedOn = tool.DateOf(*d.ResolvedOn)
-			}
-
-			out.Disputes = append(out.Disputes, v)
-		}
-
-		if out.InstallmentPlan, err = installmentPlanOf(ctx, svc, booksID, t); err != nil {
-			return getTransactionOut{}, err
-		}
-
-		if in.IncludeReimbursement {
-			err = reimbursementsOf(ctx, svc, booksID, id, &out)
-		}
-
-		return out, err
+		return runGetTransaction(ctx, svc, booksID, in)
 	})
+}
+
+func runGetTransaction(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	in getTransactionIn,
+) (getTransactionOut, error) {
+	id, err := requiredID(in.TransactionID, "transaction_id")
+	if err != nil {
+		return getTransactionOut{}, err
+	}
+
+	t, err := svc.Transaction(ctx, booksID, id)
+	if err != nil {
+		return getTransactionOut{}, err
+	}
+
+	src, err := loadTransactionSources(ctx, svc, booksID, t)
+	if err != nil {
+		return getTransactionOut{}, err
+	}
+
+	out, err := transactionOutOf(t, src)
+	if err != nil {
+		return getTransactionOut{}, err
+	}
+
+	if out.InstallmentPlan, err = installmentPlanOf(ctx, svc, booksID, t); err != nil {
+		return getTransactionOut{}, err
+	}
+
+	if in.IncludeReimbursement {
+		err = reimbursementsOf(ctx, svc, booksID, id, &out)
+	}
+
+	return out, err
+}
+
+// transactionSources holds what get_transaction reads besides the transaction itself.
+type transactionSources struct {
+	accounts    map[uuid.UUID]domain.Account
+	versions    []app.Version
+	attachments []app.Attachment
+	disputes    []app.Dispute
+	refs        []app.Reference
+	payees      map[uuid.UUID]string
+}
+
+func loadTransactionSources(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	t domain.Transaction,
+) (transactionSources, error) {
+	var src transactionSources
+
+	var err error
+	if src.accounts, _, err = allAccounts(ctx, svc, booksID); err != nil {
+		return src, err
+	}
+
+	if src.versions, err = svc.Versions(ctx, booksID, t.ID); err != nil {
+		return src, err
+	}
+
+	if src.attachments, _, err = svc.Attachments(ctx, booksID, t.ID, page.Request[app.AttachmentKey]{Limit: 20}); err != nil {
+		return src, err
+	}
+
+	if src.disputes, err = svc.Disputes(ctx, booksID, t.ID); err != nil {
+		return src, err
+	}
+
+	if src.refs, err = svc.ReferencedBy(ctx, booksID, t.ID); err != nil {
+		return src, err
+	}
+
+	payeeIDs := []uuid.UUID{}
+	if t.PayeeID != uuid.Nil {
+		payeeIDs = append(payeeIDs, t.PayeeID)
+	}
+
+	src.payees, err = svc.PayeeNames(ctx, booksID, payeeIDs)
+
+	return src, err
+}
+
+func transactionOutOf(t domain.Transaction, src transactionSources) (getTransactionOut, error) {
+	out := getTransactionOut{
+		History: []historyEntry{}, Attachments: []attachmentView{}, Disputes: []disputeView{},
+	}
+
+	out.Transaction = transactionDetailView{
+		transactionView: viewOf(t, src.accounts, src.payees), Version: t.Version,
+		Links: []linkView{}, ReferencedBy: []linkView{},
+	}
+	for _, l := range t.Links {
+		v, err := linkOf(string(l.Type), l.Target, l.Amount, t.BalancingCurrency)
+		if err != nil {
+			return getTransactionOut{}, err
+		}
+
+		out.Transaction.Links = append(out.Transaction.Links, v)
+	}
+
+	for _, r := range src.refs {
+		v, err := linkOf(string(r.Type), r.Source, r.Amount, money.Currency(r.Currency))
+		if err != nil {
+			return getTransactionOut{}, err
+		}
+
+		out.Transaction.ReferencedBy = append(out.Transaction.ReferencedBy, v)
+	}
+
+	for _, v := range src.versions {
+		out.History = append(out.History, historyEntry{Version: v.Version, Reason: v.Reason, ReplacedAt: v.ReplacedAt.Format(time.RFC3339)})
+	}
+
+	for _, a := range src.attachments {
+		out.Attachments = append(out.Attachments, attachmentView{FileName: a.FileName, Size: a.Size})
+	}
+
+	for _, d := range src.disputes {
+		v := disputeView{DisputeID: d.ID.String(), OpenedOn: tool.DateOf(d.OpenedOn), Outcome: d.Outcome}
+		if d.ResolvedOn != nil {
+			v.ResolvedOn = tool.DateOf(*d.ResolvedOn)
+		}
+
+		out.Disputes = append(out.Disputes, v)
+	}
+
+	return out, nil
 }
 
 func linkOf(kind string, target uuid.UUID, amount int64, currency money.Currency) (linkView, error) {

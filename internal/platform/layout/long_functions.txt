@@ -92,15 +92,6 @@ internal/ledger/httpapi/errors.go	ToProblem	pending: backend reorganization plan
 internal/ledger/httpapi/server.go	Server.Register	table of data
 internal/ledger/postgres/mapping.go	snapshot.transaction	pending: backend reorganization plan
 internal/ledger/postgres/transaction.go	Repository.completeAll	pending: backend reorganization plan
-internal/ledger/toolapi/details.go	getAccountDetails	pending: backend reorganization plan
-internal/ledger/toolapi/investment.go	planInvestment	pending: backend reorganization plan
-internal/ledger/toolapi/labels.go	listPayeesAndTags	pending: backend reorganization plan
-internal/ledger/toolapi/reconcile.go	planReconcile	pending: backend reorganization plan
-internal/ledger/toolapi/record.go	planRecord	pending: backend reorganization plan
-internal/ledger/toolapi/record.go	recordTransaction	pending: backend reorganization plan
-internal/ledger/toolapi/settle.go	planSettle	pending: backend reorganization plan
-internal/ledger/toolapi/statement.go	getStatement	pending: backend reorganization plan
-internal/ledger/toolapi/transaction.go	getTransaction	pending: backend reorganization plan
 internal/marketdata/accrual.go	Module.accrue	pending: backend reorganization plan
 internal/marketdata/coverage.go	Module.Coverage	pending: backend reorganization plan
 internal/marketdata/domain/accrual.go	Accrue	pending: backend reorganization plan

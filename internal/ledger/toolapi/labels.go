@@ -46,62 +46,124 @@ func listPayeesAndTags(svc *app.Service) tool.Tool {
 			"Do not use it for transactions of a payee: search_transactions with query does that.",
 		Effect: tool.ReadOnly,
 	}, func(ctx context.Context, booksID int64, in listPayeesAndTagsIn) (listPayeesAndTagsOut, error) {
-		q := strings.ToLower(in.Query)
-		match := func(name string) bool { return strings.Contains(strings.ToLower(name), q) }
-		var out listPayeesAndTagsOut
-
-		var err error
-		switch in.Kind {
-		case "payees":
-			var rows []app.Payee
-			if rows, err = allPages(func(p page.Request[app.PayeeKey]) ([]app.Payee, *app.PayeeKey, error) {
-				return svc.ListPayees(ctx, booksID, p)
-			}); err != nil {
-				return out, err
-			}
-
-			views := []payeeView{}
-			for _, r := range rows {
-				if match(r.Name) {
-					views = append(views, payeeView{PayeeID: r.ID.String(), Name: r.Name})
-				}
-			}
-
-			out.Payees, out.NextCursor, err = tool.PageOf(views, func(v payeeView) string { return v.PayeeID }, in.PageArgs)
-		case "tags":
-			var rows []string
-			if rows, err = allPages(func(p page.Request[app.TagKey]) ([]string, *app.TagKey, error) {
-				return svc.ListTags(ctx, booksID, p)
-			}); err != nil {
-				return out, err
-			}
-
-			tags := []string{}
-			for _, r := range rows {
-				if match(r) {
-					tags = append(tags, r)
-				}
-			}
-
-			out.Tags, out.NextCursor, err = tool.PageOf(tags, func(s string) string { return s }, in.PageArgs)
-		default:
-			var rows []app.Institution
-			if rows, err = allPages(func(p page.Request[app.InstitutionKey]) ([]app.Institution, *app.InstitutionKey, error) {
-				return svc.ListInstitutions(ctx, booksID, p)
-			}); err != nil {
-				return out, err
-			}
-
-			views := []institutionView{}
-			for _, r := range rows {
-				if match(r.Name) {
-					views = append(views, institutionView{InstitutionID: r.ID.String(), Name: r.Name})
-				}
-			}
-
-			out.Institutions, out.NextCursor, err = tool.PageOf(views, func(v institutionView) string { return v.InstitutionID }, in.PageArgs)
-		}
-
-		return out, err
+		return runListPayeesAndTags(ctx, svc, booksID, in)
 	})
+}
+
+func runListPayeesAndTags(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	in listPayeesAndTagsIn,
+) (listPayeesAndTagsOut, error) {
+	q := strings.ToLower(in.Query)
+	match := func(name string) bool { return strings.Contains(strings.ToLower(name), q) }
+	var out listPayeesAndTagsOut
+
+	var err error
+	switch in.Kind {
+	case "payees":
+		err = listPayees(ctx, svc, booksID, in, match, &out)
+	case "tags":
+		err = listTags(ctx, svc, booksID, in, match, &out)
+	default:
+		err = listInstitutions(ctx, svc, booksID, in, match, &out)
+	}
+
+	return out, err
+}
+
+func listPayees(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	in listPayeesAndTagsIn,
+	match func(string) bool,
+	out *listPayeesAndTagsOut,
+) error {
+	rows, err := allPages(func(p page.Request[app.PayeeKey]) ([]app.Payee, *app.PayeeKey, error) {
+		return svc.ListPayees(ctx, booksID, p)
+	})
+	if err != nil {
+		return err
+	}
+
+	out.Payees, out.NextCursor, err = pageMatched(rows, match, in.PageArgs,
+		func(r app.Payee) (string, payeeView) {
+			return r.Name, payeeView{PayeeID: r.ID.String(), Name: r.Name}
+		},
+		func(v payeeView) string { return v.PayeeID },
+	)
+
+	return err
+}
+
+func listTags(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	in listPayeesAndTagsIn,
+	match func(string) bool,
+	out *listPayeesAndTagsOut,
+) error {
+	rows, err := allPages(func(p page.Request[app.TagKey]) ([]string, *app.TagKey, error) {
+		return svc.ListTags(ctx, booksID, p)
+	})
+	if err != nil {
+		return err
+	}
+
+	tags := []string{}
+	for _, r := range rows {
+		if match(r) {
+			tags = append(tags, r)
+		}
+	}
+
+	out.Tags, out.NextCursor, err = tool.PageOf(tags, func(s string) string { return s }, in.PageArgs)
+
+	return err
+}
+
+func listInstitutions(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	in listPayeesAndTagsIn,
+	match func(string) bool,
+	out *listPayeesAndTagsOut,
+) error {
+	rows, err := allPages(func(p page.Request[app.InstitutionKey]) ([]app.Institution, *app.InstitutionKey, error) {
+		return svc.ListInstitutions(ctx, booksID, p)
+	})
+	if err != nil {
+		return err
+	}
+
+	out.Institutions, out.NextCursor, err = pageMatched(rows, match, in.PageArgs,
+		func(r app.Institution) (string, institutionView) {
+			return r.Name, institutionView{InstitutionID: r.ID.String(), Name: r.Name}
+		},
+		func(v institutionView) string { return v.InstitutionID },
+	)
+
+	return err
+}
+
+// pageMatched keeps the views of the rows whose name satisfies match and returns one page of them.
+func pageMatched[R, V any](
+	rows []R,
+	match func(string) bool,
+	args tool.PageArgs,
+	view func(R) (string, V),
+	key func(V) string,
+) ([]V, string, error) {
+	views := []V{}
+	for _, r := range rows {
+		if name, v := view(r); match(name) {
+			views = append(views, v)
+		}
+	}
+
+	return tool.PageOf(views, key, args)
 }

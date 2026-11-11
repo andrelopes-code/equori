@@ -88,50 +88,83 @@ func planReconcile(ctx context.Context, svc *app.Service, booksID int64, in reco
 	pv.Target = a.Name
 	switch in.Action {
 	case "record_balance":
-		unit, err := svc.AmountOf(ctx, 0, a.Instrument)
-		if err != nil {
-			return pv, nil, err
-		}
-
-		amount, err := tool.ParseAmount("amount", in.Amount, unit)
-		if err != nil {
-			return pv, nil, err
-		}
-
-		pv.Changes = []tool.Change{{Field: "amount", After: tool.MoneyValue(amount)}, {Field: "date", After: tool.DateValue(in.Date.Time)}}
-
-		return pv, func() (reconcileAccountOut, error) {
-			res, err := svc.AssertBalance(ctx, booksID, a.ID, in.Date.Time, amount, app.SourceManual)
-			return assertionOut(a.ID.String(), res), err
-		}, nil
+		return planRecordBalance(ctx, svc, booksID, in, a, pv)
 	case "resolve_difference":
-		st, err := svc.ReconciliationStatus(ctx, booksID, a.ID)
-		if err != nil {
-			return pv, nil, err
-		}
-
-		if st.Open == nil {
-			return pv, nil, tool.InvalidArgument("account_id", "has no open difference")
-		}
-
-		pv.Basis = st.Open.AssertionID.String() + ":" + st.Open.Difference.Decimal()
-		pv.Changes = []tool.Change{
-			{Field: "amount", After: tool.MoneyValue(st.Open.Difference)},
-			{Field: "date", After: tool.DateValue(st.Open.Date)},
-			{Field: "status", Before: tool.TextValue("open difference"), After: tool.TextValue(string(in.Resolution))},
-		}
-
-		return pv, func() (reconcileAccountOut, error) {
-			res, err := svc.ResolveAssertion(ctx, booksID, st.Open.AssertionID, domain.Resolution(in.Resolution))
-			return assertionOut(a.ID.String(), res), err
-		}, nil
+		return planResolveDifference(ctx, svc, booksID, in, a, pv)
 	default:
-		pv.Changes = []tool.Change{{Field: "date", After: tool.DateValue(in.Date.Time)}, {Field: "status", Before: tool.TextValue("reconciled"), After: tool.TextValue("unlocked")}}
-
-		return pv, func() (reconcileAccountOut, error) {
-			return reconcileAccountOut{AccountID: a.ID.String()}, svc.Unlock(ctx, booksID, a.ID, in.Date.Time)
-		}, nil
+		return planUnlock(ctx, svc, booksID, in, a, pv)
 	}
+}
+
+func planRecordBalance(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	in reconcileAccountIn,
+	a domain.Account,
+	pv tool.Preview,
+) (tool.Preview, func() (reconcileAccountOut, error), error) {
+	unit, err := svc.AmountOf(ctx, 0, a.Instrument)
+	if err != nil {
+		return pv, nil, err
+	}
+
+	amount, err := tool.ParseAmount("amount", in.Amount, unit)
+	if err != nil {
+		return pv, nil, err
+	}
+
+	pv.Changes = []tool.Change{{Field: "amount", After: tool.MoneyValue(amount)}, {Field: "date", After: tool.DateValue(in.Date.Time)}}
+
+	return pv, func() (reconcileAccountOut, error) {
+		res, err := svc.AssertBalance(ctx, booksID, a.ID, in.Date.Time, amount, app.SourceManual)
+		return assertionOut(a.ID.String(), res), err
+	}, nil
+}
+
+func planResolveDifference(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	in reconcileAccountIn,
+	a domain.Account,
+	pv tool.Preview,
+) (tool.Preview, func() (reconcileAccountOut, error), error) {
+	st, err := svc.ReconciliationStatus(ctx, booksID, a.ID)
+	if err != nil {
+		return pv, nil, err
+	}
+
+	if st.Open == nil {
+		return pv, nil, tool.InvalidArgument("account_id", "has no open difference")
+	}
+
+	pv.Basis = st.Open.AssertionID.String() + ":" + st.Open.Difference.Decimal()
+	pv.Changes = []tool.Change{
+		{Field: "amount", After: tool.MoneyValue(st.Open.Difference)},
+		{Field: "date", After: tool.DateValue(st.Open.Date)},
+		{Field: "status", Before: tool.TextValue("open difference"), After: tool.TextValue(string(in.Resolution))},
+	}
+
+	return pv, func() (reconcileAccountOut, error) {
+		res, err := svc.ResolveAssertion(ctx, booksID, st.Open.AssertionID, domain.Resolution(in.Resolution))
+		return assertionOut(a.ID.String(), res), err
+	}, nil
+}
+
+func planUnlock(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	in reconcileAccountIn,
+	a domain.Account,
+	pv tool.Preview,
+) (tool.Preview, func() (reconcileAccountOut, error), error) {
+	pv.Changes = []tool.Change{{Field: "date", After: tool.DateValue(in.Date.Time)}, {Field: "status", Before: tool.TextValue("reconciled"), After: tool.TextValue("unlocked")}}
+
+	return pv, func() (reconcileAccountOut, error) {
+		return reconcileAccountOut{AccountID: a.ID.String()}, svc.Unlock(ctx, booksID, a.ID, in.Date.Time)
+	}, nil
 }
 
 func assertionOut(accountID string, res app.AssertionResult) reconcileAccountOut {
