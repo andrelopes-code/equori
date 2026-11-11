@@ -4,7 +4,7 @@ import (
 	"context"
 	"runtime"
 
-	"github.com/andrelopes-code/equori/internal/instance/internal/domain"
+	"github.com/andrelopes-code/equori/internal/instance/domain"
 )
 
 // Diagnostic assembles the diagnostic file for an admin (A158).

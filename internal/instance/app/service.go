@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/andrelopes-code/equori/internal/instance/internal/domain"
+	"github.com/andrelopes-code/equori/internal/instance/domain"
 	"github.com/andrelopes-code/equori/internal/platform/clock"
 	"github.com/andrelopes-code/equori/internal/platform/logring"
 	"github.com/andrelopes-code/equori/internal/platform/outbox"

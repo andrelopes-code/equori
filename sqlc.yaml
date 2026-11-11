@@ -101,8 +101,8 @@ sql:
         out: internal/reporting/internal/adapter/postgres
   - engine: postgresql
     schema: db/migrations
-    queries: db/queries/instance
+    queries: internal/instance/postgres/queries
     gen:
       go:
         <<: *go
-        out: internal/instance/internal/adapter/postgres
+        out: internal/instance/postgres

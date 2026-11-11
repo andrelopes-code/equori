@@ -5,7 +5,7 @@ import (
 	"slices"
 	"time"
 
-	"github.com/andrelopes-code/equori/internal/instance/internal/domain"
+	"github.com/andrelopes-code/equori/internal/instance/domain"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
 )
 

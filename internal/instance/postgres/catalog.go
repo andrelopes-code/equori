@@ -7,8 +7,8 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/andrelopes-code/equori/internal/instance/internal/app"
-	"github.com/andrelopes-code/equori/internal/instance/internal/domain"
+	"github.com/andrelopes-code/equori/internal/instance/app"
+	"github.com/andrelopes-code/equori/internal/instance/domain"
 	platformpostgres "github.com/andrelopes-code/equori/internal/platform/postgres"
 )
 

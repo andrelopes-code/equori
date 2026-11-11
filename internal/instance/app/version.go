@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/andrelopes-code/equori/internal/instance/internal/domain"
+	"github.com/andrelopes-code/equori/internal/instance/domain"
 )
 
 // VersionStatus is what the about topic shows an admin (A159.5).
