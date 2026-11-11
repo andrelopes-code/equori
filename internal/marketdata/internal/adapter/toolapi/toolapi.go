@@ -29,6 +29,7 @@ type Service interface {
 	Expectations(ctx context.Context, id string) (domain.IndexExpectations, error)
 	RequestHistory(ctx context.Context, code string, from time.Time) error
 	Coverage(ctx context.Context, in domain.Instrument) (domain.Coverage, error)
+	SearchCatalog(ctx context.Context, query string) (domain.CatalogResult, error)
 }
 
 // Holiday is a non-business day of a calendar.

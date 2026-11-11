@@ -189,6 +189,11 @@ func PriceFeeds(ids []string, urls map[string]string) Option {
 	return func(o *options) { o.cfg.PriceFeeds, o.cfg.FeedURLs = ids, urls }
 }
 
+// FeedBounds bounds one source in a catalog search and in a probe.
+func FeedBounds(catalog, probe time.Duration) Option {
+	return func(o *options) { o.cfg.CatalogBound, o.cfg.ProbeBound = catalog, probe }
+}
+
 // IndexFeeds enables the index feeds ids against the base URLs of a test server.
 func IndexFeeds(ids []string, urls map[string]string) Option {
 	return func(o *options) {

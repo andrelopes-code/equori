@@ -2922,6 +2922,32 @@ paths:
           $ref: "#/components/responses/Problem"
         "409":
           $ref: "#/components/responses/Problem"
+  /market-data/catalog:
+    get:
+      tags: [marketdata]
+      operationId: searchInstrumentCatalog
+      x-book-role: read
+      summary: The instruments the enabled sources can quote, searched by code or name; at most 20 (A222 MQ29).
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+            maxLength: 60
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CatalogSearch"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
   /instruments:
     get:
       tags: [marketdata]
@@ -9689,6 +9715,47 @@ components:
           type: string
           nullable: true
           description: The failure of the last attempt; the next tick tries again.
+    CatalogListing:
+      type: object
+      additionalProperties: false
+      required: [code, name, exchange, quote_currency, symbol, source, defined]
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+          description: Empty when the source states none.
+        type:
+          $ref: "#/components/schemas/InstrumentType"
+        exchange:
+          type: string
+          description: ISO 10383 MIC, or empty.
+        quote_currency:
+          type: string
+          description: Empty when the source states none.
+        symbol:
+          type: string
+          description: The symbol the source requests, or empty.
+        source:
+          type: string
+          pattern: "^[a-z0-9_]{2,40}$"
+        defined:
+          type: boolean
+          description: An instrument with this code exists.
+    CatalogSearch:
+      type: object
+      required: [items, unavailable]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/CatalogListing"
+        unavailable:
+          type: array
+          description: The enabled sources that failed or passed their bound.
+          items:
+            type: string
+            pattern: "^[a-z0-9_]{2,40}$"
     InstrumentHistoryInput:
       type: object
       additionalProperties: false

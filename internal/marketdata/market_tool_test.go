@@ -463,3 +463,25 @@ func TestManageInstrumentToolDayCount(t *testing.T) {
 	delete(args, "index_id")
 	h.ExpectToolError(h.Tool("manage_instrument", args), "validation_failed", "")
 }
+
+func TestMarketToolCatalog(t *testing.T) {
+	t.Parallel()
+
+	h := tesouroHarness(t, http.StatusOK)
+
+	var out struct {
+		Catalog []map[string]any `json:"catalog"`
+	}
+
+	toolOutput(t, h, "get_market_data", map[string]any{"view": "catalog", "query": "selic"}, &out)
+
+	want := []map[string]any{{
+		"code": "LFT.20270301", "name": "Tesouro Selic 2027", "type": "fixed_income",
+		"quote_currency": "BRL", "source": "tesouro_direto", "defined": false,
+	}}
+	if !reflect.DeepEqual(out.Catalog, want) {
+		t.Fatalf("catalog = %v, want %v", out.Catalog, want)
+	}
+
+	h.ExpectToolError(h.Tool("get_market_data", map[string]any{"view": "catalog"}), "invalid_arguments", "query")
+}

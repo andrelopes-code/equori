@@ -16,7 +16,7 @@ import (
 type getMarketDataView string
 
 func (getMarketDataView) Values() []string {
-	return []string{"instruments", "instrument", "prices", "calendars", "holidays", "indexes", "index_rates", "index_expectations"}
+	return []string{"instruments", "instrument", "prices", "catalog", "calendars", "holidays", "indexes", "index_rates", "index_expectations"}
 }
 
 type getMarketDataIn struct {
@@ -28,6 +28,7 @@ type getMarketDataIn struct {
 	Index    string            `json:"index,omitzero" jsonschema:"for index_rates and index_expectations: index id from the indexes view"`
 	Calendar string            `json:"calendar,omitzero" jsonschema:"for holidays: calendar identifier from the calendars view"`
 	Year     int               `json:"year,omitzero" jsonschema:"for holidays: calendar year"`
+	Query    string            `json:"query,omitzero" jsonschema:"for catalog: text of a code or a name, 2 characters or more"`
 }
 
 type termsView struct {
@@ -101,10 +102,22 @@ type indexRateView struct {
 	Rate string    `json:"rate"`
 }
 
+type listingView struct {
+	Code          string `json:"code"`
+	Name          string `json:"name,omitzero"`
+	Type          string `json:"type,omitzero"`
+	Exchange      string `json:"exchange,omitzero"`
+	QuoteCurrency string `json:"quote_currency,omitzero"`
+	Source        string `json:"source"`
+	Defined       bool   `json:"defined"`
+}
+
 type getMarketDataOut struct {
 	Instruments []instrumentView `json:"instruments,omitzero"`
 	Instrument  instrumentView   `json:"instrument,omitzero"`
 	Prices      []priceView      `json:"prices,omitzero"`
+	Catalog     []listingView    `json:"catalog,omitzero"`
+	Unavailable []string         `json:"unavailable,omitzero"`
 	Calendars   []calendarView   `json:"calendars,omitzero"`
 	Holidays    []holidayView    `json:"holidays,omitzero"`
 	Indexes     []indexView      `json:"indexes,omitzero"`
@@ -143,6 +156,7 @@ func getMarketData(svc Service, cals Calendars) tool.Tool {
 		Name: "get_market_data",
 		Description: "Returns market data of the instance: instruments with their type and scale, one instrument with its fixed income terms, prices of an instrument in a period, business-day calendars, a calendar's holidays in a year, " +
 			"the stored economic indexes, the rates of one index in a period, or the annual rates a market survey expects for one index (where the indexes view says expected). " +
+			"The catalog view searches, by code or name, the instruments the enabled price sources can quote, to define one with manage_instrument. " +
 			"Use it for prices, securities, holidays and index rates. " +
 			"Do not use it for the book's holdings: get_portfolio does.",
 		Effect:     tool.ReadOnly,
@@ -151,6 +165,7 @@ func getMarketData(svc Service, cals Calendars) tool.Tool {
 		fields := []field{
 			{"code", in.Code != ""}, {"quote", in.Quote != ""}, {"from", !in.From.IsZero()}, {"to", !in.To.IsZero()},
 			{"calendar", in.Calendar != ""}, {"year", in.Year != 0}, {"index", in.Index != ""},
+			{"query", in.Query != ""},
 		}
 		name := "view " + string(in.View)
 
@@ -160,6 +175,8 @@ func getMarketData(svc Service, cals Calendars) tool.Tool {
 			err = required(name, fields, "code")
 		case "prices":
 			err = required(name, fields, "code", "quote", "from", "to")
+		case "catalog":
+			err = required(name, fields, "query")
 		case "holidays":
 			err = required(name, fields, "calendar", "year")
 		case "index_rates":
@@ -221,6 +238,21 @@ func getMarketData(svc Service, cals Calendars) tool.Tool {
 			}
 
 			return out, err
+		case "catalog":
+			res, err := svc.SearchCatalog(ctx, in.Query)
+			if err != nil {
+				return getMarketDataOut{}, err
+			}
+
+			out := getMarketDataOut{Catalog: []listingView{}, Unavailable: res.Unavailable}
+			for _, l := range res.Items {
+				out.Catalog = append(out.Catalog, listingView{
+					Code: string(l.Code), Name: l.Name, Type: l.Type, Exchange: l.Exchange,
+					QuoteCurrency: string(l.QuoteCurrency), Source: l.Source, Defined: l.Defined,
+				})
+			}
+
+			return out, nil
 		case "indexes":
 			rows, err := svc.Indexes(ctx)
 

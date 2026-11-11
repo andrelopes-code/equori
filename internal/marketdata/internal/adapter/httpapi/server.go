@@ -46,6 +46,7 @@ type Service interface {
 	Feeds(ctx context.Context) ([]domain.Feed, error)
 	SetFeed(ctx context.Context, id string, enabled, acceptUnofficial bool) (domain.Feed, error)
 	Refresh(ctx context.Context) error
+	SearchCatalog(ctx context.Context, query string) (domain.CatalogResult, error)
 	RequestHistory(ctx context.Context, code string, from time.Time) error
 	Coverage(ctx context.Context, in domain.Instrument) (domain.Coverage, error)
 }

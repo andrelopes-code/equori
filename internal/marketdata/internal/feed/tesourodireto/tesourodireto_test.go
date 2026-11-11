@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"slices"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -95,6 +96,80 @@ func TestFetch(t *testing.T) {
 	if err != nil || len(got) != 0 {
 		t.Fatalf("404: quotes = %v, err = %v", got, err)
 	}
+}
+
+// titlesFixture holds the titles of two base dates; only the latest one is listed.
+const titlesFixture = "Tipo Titulo;Data Vencimento;Data Base;Taxa Compra Manha;Taxa Venda Manha;PU Compra Manha;PU Venda Manha;PU Base Manha\n" +
+	"Tesouro IPCA+;15/08/2030;05/11/2026;7,90;8,02;3000,00;2990,00;2990,00\n" +
+	"Tesouro IPCA+;15/05/2035;06/11/2026;7,87;7,99;2515,93;2491,12;2491,12\n" +
+	"Tesouro Selic;01/03/2027;06/11/2026;0,02;0,03;20251,05;20240,05;20240,05\n" +
+	"Tesouro Outro;15/05/2035;06/11/2026;7,00;7,10;100,00;99,00;99,00\n"
+
+func TestSearch(t *testing.T) {
+	t.Parallel()
+
+	var requests atomic.Int32
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		requests.Add(1)
+
+		_, _ = w.Write([]byte(titlesFixture))
+	}))
+	t.Cleanup(srv.Close)
+
+	t.Run("downloads the file once", func(t *testing.T) {
+		requests.Store(0)
+
+		src := tesourodireto.New(srv.Client(), srv.URL+"/td.csv")
+
+		got, err := src.Search(t.Context(), "ipca", 20)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		want := []feed.Listing{
+			{Code: "NTNBP.20350515", Name: "Tesouro IPCA+ 2035", Type: "fixed_income", QuoteCurrency: "BRL"},
+		}
+		if !slices.Equal(got, want) {
+			t.Fatalf("ipca = %v, want %v", got, want)
+		}
+
+		got, err = src.Search(t.Context(), "tesouro", 20)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if len(got) != 2 || got[0].Code != "LFT.20270301" || got[0].Name != "Tesouro Selic 2027" ||
+			got[1].Code != "NTNBP.20350515" {
+			t.Fatalf("tesouro = %v", got)
+		}
+
+		if n := requests.Load(); n != 1 {
+			t.Fatalf("requests = %d, want 1", n)
+		}
+	})
+
+	t.Run("lists the file a fetch read", func(t *testing.T) {
+		requests.Store(0)
+
+		src := tesourodireto.New(srv.Client(), srv.URL+"/td.csv")
+
+		quotes, err := src.Fetch(
+			t.Context(), []money.Currency{"NTNBP.20350515"}, day("2026-11-01"), day("2026-11-09"),
+		)
+		if err != nil || len(quotes) != 1 {
+			t.Fatalf("quotes = %v, err = %v", quotes, err)
+		}
+
+		got, err := src.Search(t.Context(), "selic", 20)
+		if err != nil || len(got) != 1 || got[0].Code != "LFT.20270301" {
+			t.Fatalf("selic = %v, err = %v", got, err)
+		}
+
+		if n := requests.Load(); n != 1 {
+			t.Fatalf("requests = %d, want 1", n)
+		}
+	})
 }
 
 func day(s string) time.Time {

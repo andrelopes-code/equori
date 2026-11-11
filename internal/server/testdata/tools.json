@@ -2514,7 +2514,7 @@
   },
   {
     "name": "get_market_data",
-    "description": "Returns market data of the instance: instruments with their type and scale, one instrument with its fixed income terms, prices of an instrument in a period, business-day calendars, a calendar's holidays in a year, the stored economic indexes, the rates of one index in a period, or the annual rates a market survey expects for one index (where the indexes view says expected). Use it for prices, securities, holidays and index rates. Do not use it for the book's holdings: get_portfolio does.",
+    "description": "Returns market data of the instance: instruments with their type and scale, one instrument with its fixed income terms, prices of an instrument in a period, business-day calendars, a calendar's holidays in a year, the stored economic indexes, the rates of one index in a period, or the annual rates a market survey expects for one index (where the indexes view says expected). The catalog view searches, by code or name, the instruments the enabled price sources can quote, to define one with manage_instrument. Use it for prices, securities, holidays and index rates. Do not use it for the book's holdings: get_portfolio does.",
     "effect": "read_only",
     "idempotent": true,
     "input_schema": {
@@ -2527,6 +2527,7 @@
             "instruments",
             "instrument",
             "prices",
+            "catalog",
             "calendars",
             "holidays",
             "indexes",
@@ -2563,6 +2564,10 @@
         "year": {
           "type": "integer",
           "description": "for holidays: calendar year"
+        },
+        "query": {
+          "type": "string",
+          "description": "for catalog: text of a code or a name, 2 characters or more"
         }
       },
       "required": [
@@ -2864,6 +2869,47 @@
               "value"
             ],
             "additionalProperties": false
+          }
+        },
+        "catalog": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string"
+              },
+              "exchange": {
+                "type": "string"
+              },
+              "quote_currency": {
+                "type": "string"
+              },
+              "source": {
+                "type": "string"
+              },
+              "defined": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "code",
+              "source",
+              "defined"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "unavailable": {
+          "type": "array",
+          "items": {
+            "type": "string"
           }
         },
         "calendars": {

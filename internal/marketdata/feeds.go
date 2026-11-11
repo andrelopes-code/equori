@@ -29,7 +29,11 @@ type FeedConfig struct {
 	Expectations []expectation.Source
 	// Seed names the sources enabled while no setting is stored; tests set it through
 	// server.Config, production passes none (ADR 025 F2, ADR 029 BK25).
-	Seed   []string
+	Seed []string
+	// CatalogBound and ProbeBound bound one source in a catalog search and in a probe; WithFeeds
+	// sets 3 and 5 seconds when zero (A222 MQ27, MQ29).
+	CatalogBound, ProbeBound time.Duration
+
 	Client *http.Client
 	Clock  clock.Clock
 	Log    *slog.Logger
@@ -37,6 +41,14 @@ type FeedConfig struct {
 
 // WithFeeds sets the feeds; the composition root calls it once.
 func (m *Module) WithFeeds(cfg FeedConfig) *Module {
+	if cfg.CatalogBound == 0 {
+		cfg.CatalogBound = 3 * time.Second
+	}
+
+	if cfg.ProbeBound == 0 {
+		cfg.ProbeBound = 5 * time.Second
+	}
+
 	m.feeds = cfg
 	m.life, m.stop = context.WithCancel(context.Background())
 

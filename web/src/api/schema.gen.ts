@@ -1756,6 +1756,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/market-data/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The instruments the enabled sources can quote, searched by code or name; at most 20 (A222 MQ29). */
+        get: operations["searchInstrumentCatalog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/instruments": {
         parameters: {
             query?: never;
@@ -5488,6 +5505,26 @@ export interface components {
             done: boolean;
             /** @description The failure of the last attempt; the next tick tries again. */
             error: string | null;
+        };
+        CatalogListing: {
+            code: string;
+            /** @description Empty when the source states none. */
+            name: string;
+            type?: components["schemas"]["InstrumentType"];
+            /** @description ISO 10383 MIC, or empty. */
+            exchange: string;
+            /** @description Empty when the source states none. */
+            quote_currency: string;
+            /** @description The symbol the source requests, or empty. */
+            symbol: string;
+            source: string;
+            /** @description An instrument with this code exists. */
+            defined: boolean;
+        };
+        CatalogSearch: {
+            items: components["schemas"]["CatalogListing"][];
+            /** @description The enabled sources that failed or passed their bound. */
+            unavailable: string[];
         };
         InstrumentHistoryInput: {
             /** Format: date */
@@ -9844,6 +9881,31 @@ export interface operations {
             401: components["responses"]["Problem"];
             403: components["responses"]["Problem"];
             409: components["responses"]["Problem"];
+        };
+    };
+    searchInstrumentCatalog: {
+        parameters: {
+            query: {
+                q: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CatalogSearch"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
         };
     };
     listInstruments: {

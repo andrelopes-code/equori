@@ -64,6 +64,11 @@ func (in Instrument) Validate() (Instrument, error) {
 	return in, nil
 }
 
+// ValidSecurityCode reports whether code can name a security: the code pattern, and no currency.
+func ValidSecurityCode(code money.Currency) bool {
+	return codePattern.MatchString(string(code)) && !isCurrency(code)
+}
+
 func isCurrency(code money.Currency) bool {
 	_, err := money.ParseCurrency(string(code))
 	return err == nil

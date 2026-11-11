@@ -85,6 +85,9 @@ type Config struct {
 	PriceFeeds []string
 	IndexFeeds []string
 	FeedURLs   map[string]string
+	// CatalogBound and ProbeBound bound one source in a catalog search and in a probe; zero keeps
+	// the defaults of marketdata.WithFeeds (A222 MQ27, MQ29).
+	CatalogBound, ProbeBound time.Duration
 	// ExtraTools join the registry and the chat set; production passes none.
 	ExtraTools []tool.Group
 	// Instance configures backups and the encrypted copy; New sets Version, the keys, Clock, Admins, Outbox and Connections.
@@ -162,7 +165,7 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 
 	marketdataModule := marketdata.New(pool).WithFeeds(marketdata.FeedConfig{
 		Sources: sources, Indexes: indexSources, Expectations: marketdata.NewExpectationSources(cfg.FeedURLs, feedClient), Seed: slices.Concat(cfg.PriceFeeds, cfg.IndexFeeds),
-		Client: feedClient, Clock: clk, Log: log,
+		Client: feedClient, Clock: clk, Log: log, CatalogBound: cfg.CatalogBound, ProbeBound: cfg.ProbeBound,
 	})
 	marketdataModule.WithProfiles(identityModule).WithAdmins(identityModule)
 	ledgerModule := ledger.New(pool, dispatcher, marketdataModule, identityModule, clk, log)

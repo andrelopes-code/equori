@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"net/http"
 	"os"
 	"regexp"
@@ -37,11 +38,12 @@ type Source struct {
 	client *http.Client
 	url    string
 	seen   *feed.Conditional
+	list   *feed.ListCache
 }
 
 // New returns a Source that reads the CSV file at url.
 func New(c *http.Client, url string) Source {
-	return Source{client: c, url: url, seen: feed.NewConditional()}
+	return Source{client: c, url: url, seen: feed.NewConditional(), list: feed.NewListCache(time.Now)}
 }
 
 func (Source) ID() string { return "tesouro_direto" }
@@ -76,7 +78,12 @@ func (s Source) Fetch(ctx context.Context, codes []money.Currency, from, to time
 	lastModified, err := feed.DownloadSince(ctx, s.client, s.url, since, func(f *os.File, _ int64) error {
 		var err error
 
-		out, err = readQuotes(f, codes, from, to)
+		var list []feed.Listing
+
+		out, list, err = readFile(f, codes, from, to)
+		if err == nil {
+			s.list.Set(list)
+		}
 
 		return err
 	})
@@ -93,7 +100,31 @@ func (s Source) Fetch(ctx context.Context, codes []money.Currency, from, to time
 	return out, nil
 }
 
-func readQuotes(r io.Reader, codes []money.Currency, from, to time.Time) ([]feed.Quote, error) {
+// Search returns the titles of the latest Data Base of the file whose code or name contains query.
+// Without a fresh list it downloads the file.
+func (s Source) Search(ctx context.Context, query string, limit int) ([]feed.Listing, error) {
+	list, ok := s.list.Fresh()
+	if !ok {
+		_, err := feed.DownloadSince(ctx, s.client, s.url, "", func(f *os.File, _ int64) error {
+			var err error
+
+			_, list, err = readFile(f, nil, time.Time{}, time.Time{})
+			if err == nil {
+				s.list.Set(list)
+			}
+
+			return err
+		})
+		if err != nil && !errors.Is(err, feed.ErrNoData) {
+			return nil, fmt.Errorf("search Tesouro titles: %w", err)
+		}
+	}
+
+	return feed.MatchListings(list, query, limit), nil
+}
+
+// readFile returns the quotes of codes in [from, to] and the titles of the latest Data Base.
+func readFile(r io.Reader, codes []money.Currency, from, to time.Time) ([]feed.Quote, []feed.Listing, error) {
 	cr := csv.NewReader(r)
 	cr.Comma = ';'
 	cr.FieldsPerRecord = -1
@@ -101,26 +132,29 @@ func readQuotes(r io.Reader, codes []money.Currency, from, to time.Time) ([]feed
 
 	header, err := cr.Read()
 	if err != nil {
-		return nil, fmt.Errorf("read Tesouro header: %w", err)
+		return nil, nil, fmt.Errorf("read Tesouro header: %w", err)
 	}
 
 	col := func(name string) int { return slices.Index(header, name) }
 	iType, iMaturity, iBase, iPrice := col("Tipo Titulo"), col("Data Vencimento"), col("Data Base"), col("PU Venda Manha")
 
 	if slices.Contains([]int{iType, iMaturity, iBase, iPrice}, -1) {
-		return nil, fmt.Errorf("read Tesouro header: columns missing in %q", header)
+		return nil, nil, fmt.Errorf("read Tesouro header: columns missing in %q", header)
 	}
 
-	var out []feed.Quote
+	var (
+		out    []feed.Quote
+		titles latestTitles
+	)
 
 	for n := 2; ; n++ {
 		row, err := cr.Read()
 		if errors.Is(err, io.EOF) {
-			return out, nil
+			return out, titles.sorted(), nil
 		}
 
 		if err != nil {
-			return nil, fmt.Errorf("read Tesouro line %d: %w", n, err)
+			return nil, nil, fmt.Errorf("read Tesouro line %d: %w", n, err)
 		}
 
 		prefix, ok := prefixes[row[iType]]
@@ -130,20 +164,30 @@ func readQuotes(r io.Reader, codes []money.Currency, from, to time.Time) ([]feed
 
 		maturity, err := time.Parse("02/01/2006", row[iMaturity])
 		if err != nil {
-			return nil, fmt.Errorf("read Tesouro line %d: %w", n, err)
+			return nil, nil, fmt.Errorf("read Tesouro line %d: %w", n, err)
 		}
 
 		code := money.Currency(prefix + "." + maturity.Format("20060102"))
+
+		base, baseErr := time.Parse("02/01/2006", row[iBase])
+		if baseErr == nil {
+			titles.add(base, feed.Listing{
+				Code:          code,
+				Name:          row[iType] + " " + maturity.Format("2006"),
+				Type:          "fixed_income",
+				QuoteCurrency: "BRL",
+			})
+		}
+
 		if !slices.Contains(codes, code) {
 			continue
 		}
 
-		date, err := time.Parse("02/01/2006", row[iBase])
-		if err != nil {
-			return nil, fmt.Errorf("read Tesouro line %d: %w", n, err)
+		if baseErr != nil {
+			return nil, nil, fmt.Errorf("read Tesouro line %d: %w", n, baseErr)
 		}
 
-		if date.Before(from) || date.After(to) {
+		if base.Before(from) || base.After(to) {
 			continue
 		}
 
@@ -153,11 +197,36 @@ func readQuotes(r io.Reader, codes []money.Currency, from, to time.Time) ([]feed
 
 		value, err := money.ParseRate(strings.Replace(row[iPrice], ",", ".", 1))
 		if err != nil {
-			return nil, fmt.Errorf("read Tesouro line %d: %w", n, err)
+			return nil, nil, fmt.Errorf("read Tesouro line %d: %w", n, err)
 		}
 
-		out = append(out, feed.Quote{Instrument: code, Quote: "BRL", Date: date, Value: value})
+		out = append(out, feed.Quote{Instrument: code, Quote: "BRL", Date: base, Value: value})
 	}
+}
+
+// latestTitles collects the titles of the latest Data Base seen.
+type latestTitles struct {
+	base time.Time
+	list map[money.Currency]feed.Listing
+}
+
+func (t *latestTitles) add(base time.Time, l feed.Listing) {
+	if base.Before(t.base) {
+		return
+	}
+
+	if base.After(t.base) {
+		t.base, t.list = base, map[money.Currency]feed.Listing{}
+	}
+
+	t.list[l.Code] = l
+}
+
+func (t *latestTitles) sorted() []feed.Listing {
+	out := slices.Collect(maps.Values(t.list))
+	slices.SortFunc(out, func(a, b feed.Listing) int { return strings.Compare(string(a.Code), string(b.Code)) })
+
+	return out
 }
 
 func joinCodes(codes []money.Currency) string {

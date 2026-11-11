@@ -200,6 +200,36 @@ type CalendarList struct {
 	Items   []Calendar `json:"items"`
 }
 
+// CatalogListing defines model for CatalogListing.
+type CatalogListing struct {
+	Code string `json:"code"`
+
+	// Defined An instrument with this code exists.
+	Defined bool `json:"defined"`
+
+	// Exchange ISO 10383 MIC, or empty.
+	Exchange string `json:"exchange"`
+
+	// Name Empty when the source states none.
+	Name string `json:"name"`
+
+	// QuoteCurrency Empty when the source states none.
+	QuoteCurrency string `json:"quote_currency"`
+	Source        string `json:"source"`
+
+	// Symbol The symbol the source requests, or empty.
+	Symbol string          `json:"symbol"`
+	Type   *InstrumentType `json:"type,omitempty"`
+}
+
+// CatalogSearch defines model for CatalogSearch.
+type CatalogSearch struct {
+	Items []CatalogListing `json:"items"`
+
+	// Unavailable The enabled sources that failed or passed their bound.
+	Unavailable []string `json:"unavailable"`
+}
+
 // FieldError defines model for FieldError.
 type FieldError struct {
 	Field   string `json:"field"`
@@ -550,6 +580,11 @@ type ListInstrumentsParams struct {
 	Type *InstrumentType `form:"type,omitempty" json:"type,omitempty"`
 }
 
+// SearchInstrumentCatalogParams defines parameters for SearchInstrumentCatalog.
+type SearchInstrumentCatalogParams struct {
+	Q string `form:"q" json:"q"`
+}
+
 // ListPricesParams defines parameters for ListPrices.
 type ListPricesParams struct {
 	Instrument      string             `form:"instrument" json:"instrument"`
@@ -622,6 +657,9 @@ type ServerInterface interface {
 	// PutInstrumentTerms Set the terms of a fixed income instrument, replacing the earlier ones and the prices accrued from them.
 	// (PUT /instruments/{code}/terms)
 	PutInstrumentTerms(w http.ResponseWriter, r *http.Request, code string)
+	// SearchInstrumentCatalog The instruments the enabled sources can quote, searched by code or name; at most 20 (A222 MQ29).
+	// (GET /market-data/catalog)
+	SearchInstrumentCatalog(w http.ResponseWriter, r *http.Request, params SearchInstrumentCatalogParams)
 	// ListMarketDataFeeds Every price and index feed of the instance with its state (ADR 025 F5).
 	// (GET /market-data/feeds)
 	ListMarketDataFeeds(w http.ResponseWriter, r *http.Request)
@@ -979,6 +1017,39 @@ func (siw *ServerInterfaceWrapper) PutInstrumentTerms(w http.ResponseWriter, r *
 	handler.ServeHTTP(w, r)
 }
 
+// SearchInstrumentCatalog operation middleware
+func (siw *ServerInterfaceWrapper) SearchInstrumentCatalog(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params SearchInstrumentCatalogParams
+
+	// ------------- Required query parameter "q" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "q", r.URL.Query(), &params.Q, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "q"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "q", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SearchInstrumentCatalog(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListMarketDataFeeds operation middleware
 func (siw *ServerInterfaceWrapper) ListMarketDataFeeds(w http.ResponseWriter, r *http.Request) {
 
@@ -1261,6 +1332,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/market-data/feeds", wrapper.ListMarketDataFeeds)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/market-data/feeds/{id}", wrapper.SetMarketDataFeed)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/market-data/refresh", wrapper.RefreshMarketData)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/market-data/catalog", wrapper.SearchInstrumentCatalog)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/instruments", wrapper.ListInstruments)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/instruments", wrapper.DefineInstrument)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/instruments/{code}", wrapper.GetInstrument)
@@ -2062,6 +2134,72 @@ func (response PutInstrumentTerms422ApplicationProblemPlusJSONResponse) VisitPut
 	return err
 }
 
+type SearchInstrumentCatalogRequestObject struct {
+	Params SearchInstrumentCatalogParams
+}
+
+type SearchInstrumentCatalogResponseObject interface {
+	VisitSearchInstrumentCatalogResponse(w http.ResponseWriter) error
+}
+
+type SearchInstrumentCatalog200JSONResponse CatalogSearch
+
+func (response SearchInstrumentCatalog200JSONResponse) VisitSearchInstrumentCatalogResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SearchInstrumentCatalog400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response SearchInstrumentCatalog400ApplicationProblemPlusJSONResponse) VisitSearchInstrumentCatalogResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SearchInstrumentCatalog401ApplicationProblemPlusJSONResponse Problem
+
+func (response SearchInstrumentCatalog401ApplicationProblemPlusJSONResponse) VisitSearchInstrumentCatalogResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SearchInstrumentCatalog422ApplicationProblemPlusJSONResponse Problem
+
+func (response SearchInstrumentCatalog422ApplicationProblemPlusJSONResponse) VisitSearchInstrumentCatalogResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListMarketDataFeedsRequestObject struct {
 }
 
@@ -2503,6 +2641,9 @@ type StrictServerInterface interface {
 	// PutInstrumentTerms Set the terms of a fixed income instrument, replacing the earlier ones and the prices accrued from them.
 	// (PUT /instruments/{code}/terms)
 	PutInstrumentTerms(ctx context.Context, request PutInstrumentTermsRequestObject) (PutInstrumentTermsResponseObject, error)
+	// SearchInstrumentCatalog The instruments the enabled sources can quote, searched by code or name; at most 20 (A222 MQ29).
+	// (GET /market-data/catalog)
+	SearchInstrumentCatalog(ctx context.Context, request SearchInstrumentCatalogRequestObject) (SearchInstrumentCatalogResponseObject, error)
 	// ListMarketDataFeeds Every price and index feed of the instance with its state (ADR 025 F5).
 	// (GET /market-data/feeds)
 	ListMarketDataFeeds(ctx context.Context, request ListMarketDataFeedsRequestObject) (ListMarketDataFeedsResponseObject, error)
@@ -2891,6 +3032,32 @@ func (sh *strictHandler) PutInstrumentTerms(w http.ResponseWriter, r *http.Reque
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(PutInstrumentTermsResponseObject); ok {
 		if err := validResponse.VisitPutInstrumentTermsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SearchInstrumentCatalog operation middleware
+func (sh *strictHandler) SearchInstrumentCatalog(w http.ResponseWriter, r *http.Request, params SearchInstrumentCatalogParams) {
+	var request SearchInstrumentCatalogRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SearchInstrumentCatalog(ctx, request.(SearchInstrumentCatalogRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SearchInstrumentCatalog")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SearchInstrumentCatalogResponseObject); ok {
+		if err := validResponse.VisitSearchInstrumentCatalogResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
