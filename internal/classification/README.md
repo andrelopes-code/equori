@@ -6,7 +6,7 @@ Decides categories with rules, payee aliases and payee history (docs/domain, 4.3
 |---|---|
 | OpenAPI tag | `classification`: 21 operations in `openapi.yaml` |
 | Tables | prefix `classification_`, created in `db/migrations/` |
-| Public API | `classification.go` |
+| Public API | `classification.go` (Module, New), `types.go` (DTO aliases) and the other 3 non-test files of this directory |
 | Layers (hand-written files) | `domain/` (8), `app/` (11), `httpapi/` (5), `toolapi/` (5), `postgres/` (4) |
 | Ports | `app/ports.go` (the interfaces the module needs: its repository and the other modules it calls) |
 | Queries | `postgres/queries/` (6 files) |
