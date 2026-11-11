@@ -3,7 +3,6 @@ package planning
 import (
 	"context"
 	"encoding/json"
-	"time"
 
 	"github.com/google/uuid"
 
@@ -13,14 +12,6 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/textfold"
 )
-
-// RecurringProbe is a transaction not recorded yet, named as a preview names it.
-type RecurringProbe struct {
-	Payee, Description, Account string
-	Date                        time.Time
-	Amount                      string // decimal text of the preview
-	Currency                    string
-}
 
 // RecurringFor returns the series the probe joins, encoded as find_recurring encodes one series.
 // ok is false when the probe joins no qualifying series or names an unknown account, or when its
