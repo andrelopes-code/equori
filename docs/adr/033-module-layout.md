@@ -28,7 +28,7 @@ Limits of the layout:
 |---|---|
 | Depth of a layer file | 4 levels: `internal/<module>/<layer>/<file>`; a mechanism package (`feed/yahoochart`) adds one level |
 | Hand-written non-test Go files in one directory | 40 |
-| Lines in one hand-written non-test Go file | 600 |
+| Lines in one hand-written non-test Go file | 400 (ADR 035; offenders listed in internal/platform/layout/long_files.txt) |
 | Files in one `web/src` directory, tests included | 40; `web/src/theme` is exempt |
 
 Tests are not counted in the Go limits: a module root keeps its black-box tests, named by area (`card_*_test.go`). `internal/platform/layout` enforces the limits.

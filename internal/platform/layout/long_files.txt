@@ -1,0 +1,17 @@
+cmd/equori/main.go	pending: backend reorganization plan
+internal/classification/domain/rule.go	pending: backend reorganization plan
+internal/classification/toolapi/manage_rule.go	pending: backend reorganization plan
+internal/identity/httpapi/server.go	pending: backend reorganization plan
+internal/identity/postgres/repository.go	pending: backend reorganization plan
+internal/ingestion/aggregator/pluggy/client/pluggytest/server.go	pending: backend reorganization plan
+internal/ingestion/ingestion.go	pending: backend reorganization plan
+internal/ingestion/postgres/record.go	pending: backend reorganization plan
+internal/ledger/app/categorize.go	pending: backend reorganization plan
+internal/ledger/app/imports.go	pending: backend reorganization plan
+internal/ledger/app/ports.go	pending: backend reorganization plan
+internal/ledger/domain/transaction.go	pending: backend reorganization plan
+internal/marketdata/marketdata.go	pending: backend reorganization plan
+internal/marketdata/toolapi/instrument.go	pending: backend reorganization plan
+internal/planning/app/plan.go	pending: backend reorganization plan
+internal/planning/toolapi/manage_schedule.go	pending: backend reorganization plan
+internal/reporting/app/cash.go	pending: backend reorganization plan
