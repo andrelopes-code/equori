@@ -9,9 +9,9 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/andrelopes-code/equori/internal/assistant"
-	"github.com/andrelopes-code/equori/internal/assistant/internal/adapter/postgres"
-	"github.com/andrelopes-code/equori/internal/assistant/internal/app"
-	"github.com/andrelopes-code/equori/internal/assistant/internal/domain"
+	"github.com/andrelopes-code/equori/internal/assistant/app"
+	"github.com/andrelopes-code/equori/internal/assistant/domain"
+	"github.com/andrelopes-code/equori/internal/assistant/postgres"
 )
 
 // S198: a conversation and its proposals are reachable only by the member that owns them.

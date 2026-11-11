@@ -19,7 +19,7 @@ import (
 	"time"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
-	"github.com/andrelopes-code/equori/internal/assistant/internal/adapter/llmapi"
+	"github.com/andrelopes-code/equori/internal/assistant/llmapi"
 	"github.com/andrelopes-code/equori/internal/platform/llm"
 	"github.com/andrelopes-code/equori/internal/platform/llm/llmtest"
 )

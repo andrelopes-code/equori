@@ -11,9 +11,9 @@ import (
 
 	"github.com/andrelopes-code/equori/internal/apitest"
 	"github.com/andrelopes-code/equori/internal/assistant"
-	"github.com/andrelopes-code/equori/internal/assistant/internal/adapter/postgres"
-	"github.com/andrelopes-code/equori/internal/assistant/internal/app"
-	"github.com/andrelopes-code/equori/internal/assistant/internal/domain"
+	"github.com/andrelopes-code/equori/internal/assistant/app"
+	"github.com/andrelopes-code/equori/internal/assistant/domain"
+	"github.com/andrelopes-code/equori/internal/assistant/postgres"
 	"github.com/andrelopes-code/equori/internal/platform/llm/llmtest"
 	"github.com/andrelopes-code/equori/internal/platform/tool"
 )

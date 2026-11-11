@@ -1,6 +1,6 @@
 # Appendix B: guide articles
 
-Copy each block verbatim to `internal/assistant/internal/guide/articles/<topic>.md`. Bold terms are terms of `docs/domain/02-ubiquitous-language.md` (checked by `TestGuideTermsExistInGlossary`). The screens of each topic come from the navigation map, so articles name screens without paths.
+Copy each block verbatim to `internal/assistant/guide/articles/<topic>.md`. Bold terms are terms of `docs/domain/02-ubiquitous-language.md` (checked by `TestGuideTermsExistInGlossary`). The screens of each topic come from the navigation map, so articles name screens without paths.
 
 ## getting_started
 

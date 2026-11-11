@@ -76,4 +76,4 @@ No regional value enters: dates and month names come from `src/i18n/format.ts` t
 ## 7. Left to the builder
 
 - The desk cell when a stored layout predates the widget: the grid places a widget with no stored cell in the first free cell (analytics design 5.2).
-- Whether the guide article of the overview topic needs a sentence, per the navigation map of `internal/assistant/internal/guide/`.
+- Whether the guide article of the overview topic needs a sentence, per the navigation map of `internal/assistant/guide/`.

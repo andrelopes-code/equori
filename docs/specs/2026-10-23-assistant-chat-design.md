@@ -230,7 +230,7 @@ Decision: delivery A. It has the highest success per request, the unit the free 
 
 ## 9. Guide and navigation
 
-- `get_help` takes a `topic` enum of 19 articles and returns the article text and the screens of that topic. Articles are English Markdown files in `internal/assistant/internal/guide/articles/<topic>.md`, at most 3,000 bytes each, embedded with `go:embed`. The model answers in the user's language from them.
+- `get_help` takes a `topic` enum of 19 articles and returns the article text and the screens of that topic. Articles are English Markdown files in `internal/assistant/guide/articles/<topic>.md`, at most 3,000 bytes each, embedded with `go:embed`. The model answers in the user's language from them.
 - The articles restate product concepts from `docs/domain/02-ubiquitous-language.md` and `03-domain-flows.md` in user terms. A term written in bold in an article (`**Statement**`) must be a term of the glossary table of `02-ubiquitous-language.md`; `TestGuideTermsExistInGlossary` reads both files and fails on a bold term the glossary lacks.
 - The navigation map is `web/src/navigation/navigation-map.json`: a list of `{path, topics[], screen, tasks[]}`, where `path` is a route of `web/src/app/router.tsx` with parameters written `$name`, `screen` the English name of the screen and `tasks` English phrases of what is done there. `web/embed.go` embeds it (`web.NavigationMap()`); `internal/server` passes it to `assistant`.
 - `navigation-map.test.ts` fails when a `path` of the map is not a route of `routeTree`, and when a route of `routeTree` other than `/login` and the development preview routes is missing from the map. `TestGuideTopicsHaveScreens` fails when a topic has no screen in the map.
@@ -238,7 +238,7 @@ Decision: delivery A. It has the highest success per request, the unit the free 
 
 ## 10. System prompt
 
-The system prompt is a Go template in `internal/assistant/internal/app/prompt.go`; the text is in the plan, task "System prompt", and has these parts:
+The system prompt is a Go template in `internal/assistant/app/prompt.go`; the text is in the plan, task "System prompt", and has these parts:
 
 1. Role: the assistant of equori, a personal finance application; it answers from the user's data through tools and from the guide.
 2. Context: today's date (instance day), the user's language and region (`locale.Locale`), and the current page path when given.

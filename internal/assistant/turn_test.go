@@ -17,7 +17,7 @@ import (
 
 	"github.com/andrelopes-code/equori/internal/apitest"
 	"github.com/andrelopes-code/equori/internal/assistant"
-	"github.com/andrelopes-code/equori/internal/assistant/internal/app"
+	"github.com/andrelopes-code/equori/internal/assistant/app"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
 	"github.com/andrelopes-code/equori/internal/platform/llm"
 	"github.com/andrelopes-code/equori/internal/platform/llm/llmtest"

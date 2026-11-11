@@ -87,7 +87,7 @@ A reader asks, in this order: is this month inside my usual range; how much rese
 - D5: Does not apply: no diagnostic field.
 - S1: Does not apply: no operation added.
 - S2: Does not appear on a phone (D9, ADR 027).
-- S3: The guide article `internal/assistant/internal/guide/articles/reports.md` gains the indicators tab in the same commit as the screen.
+- S3: The guide article `internal/assistant/guide/articles/reports.md` gains the indicators tab in the same commit as the screen.
 - S4: Does not apply: the assistant already reads `getIndicators`.
 - X1: Does not apply: no scenario of `docs/domain/06-scenarios.md`.
 - X2: C3 applies: the USD test above. R1 and R2 do not apply.

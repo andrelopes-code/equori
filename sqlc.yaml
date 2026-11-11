@@ -59,11 +59,11 @@ sql:
         out: internal/classification/postgres
   - engine: postgresql
     schema: db/migrations
-    queries: db/queries/assistant
+    queries: internal/assistant/postgres/queries
     gen:
       go:
         <<: *go
-        out: internal/assistant/internal/adapter/postgres
+        out: internal/assistant/postgres
   - engine: postgresql
     schema: db/migrations
     queries: internal/capture/postgres/queries

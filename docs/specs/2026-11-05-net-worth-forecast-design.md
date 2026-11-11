@@ -62,7 +62,7 @@ The model knows no screen and no account scope: it takes dated, signed amounts w
 | Rows | `netWorthRows(days, points)`: `web/src/features/reports/net-worth-rows.ts`, pure, tested |
 | Messages | `report.netWorth.forecast*` in `catalog-reports.en.ts` and `catalog-reports.pt-BR.ts` |
 | Slotted | #71: `ChartTooltipContent` needs `totalLabel`; #72: no series draws a band, so F8 is read in the tooltip only; #75: content drawn by `renderTooltip` lands in the first column of the tooltip grid, so the tooltip of F9 spans it; #76: a wide value hides every row label, so the tooltip of F9 draws its own rows |
-| Guide | the net worth paragraph of `internal/assistant/internal/guide/articles/reports.md` |
+| Guide | the net worth paragraph of `internal/assistant/guide/articles/reports.md` |
 
 ## 5. Acceptance
 

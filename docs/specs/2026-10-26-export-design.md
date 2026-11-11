@@ -134,7 +134,7 @@ Out of scope: the second factor (a TOTP secret in a portable file weakens it; th
 
 ### Documents changed in the same commits
 
-ADR 019 P1 (the key travels sealed by a passphrase in the archive); ADR 008 K8 (the bundle carries provider keys); `docs/operations/export.md`; the guide article of the data section in `internal/assistant/internal/guide/articles/` (`settings_language_and_region.md`).
+ADR 019 P1 (the key travels sealed by a passphrase in the archive); ADR 008 K8 (the bundle carries provider keys); `docs/operations/export.md`; the guide article of the data section in `internal/assistant/guide/articles/` (`settings_language_and_region.md`).
 
 ## Amendment of 2026-11-09: import that replaces the content of a book
 

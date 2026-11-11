@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
-	"github.com/andrelopes-code/equori/internal/assistant/internal/domain"
+	"github.com/andrelopes-code/equori/internal/assistant/domain"
 	"github.com/andrelopes-code/equori/internal/platform/llm/llmtest"
 )
 

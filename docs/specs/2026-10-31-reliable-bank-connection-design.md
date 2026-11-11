@@ -131,7 +131,7 @@ Reason: the scheduler syncs only an item with data newer than the last sync (A43
 
 ## A152 The assistant names stale and unreconciled accounts
 
-The system prompt of each chat turn (`internal/assistant/internal/app/prompt.go`) lists:
+The system prompt of each chat turn (`internal/assistant/app/prompt.go`) lists:
 
 - each account whose connection is not `ok`, with its state and the date of the institution's last update;
 - each account with an open difference or with unconfirmed entries (A133).
