@@ -1,5 +1,5 @@
-export { CalculatorsPage } from "@/features/calculators/calculators-page";
-export { CalculatorPage } from "@/features/calculators/calculator-page";
-export { isCalculatorId } from "@/features/calculators/calculators";
-export { validateCalculatorSearch } from "@/features/calculators/calculator-search";
-export { indexName } from "@/features/calculators/index-catalog";
+export { CalculatorsPage } from "@/features/calculators/pages/calculators-page";
+export { CalculatorPage } from "@/features/calculators/pages/calculator-page";
+export { isCalculatorId } from "@/features/calculators/model/calculators";
+export { validateCalculatorSearch } from "@/features/calculators/model/calculator-search";
+export { indexName } from "@/features/calculators/rate-source/index-catalog";

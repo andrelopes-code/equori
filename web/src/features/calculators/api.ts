@@ -3,7 +3,7 @@ import type { Client } from "openapi-fetch";
 
 import { unwrap } from "@/api/problem";
 import type { paths } from "@/api/schema.gen";
-import type { IndexRate } from "@/features/calculators/index-rates";
+import type { IndexRate } from "@/features/calculators/rate-source/index-rates";
 
 // The indexes the instance stores; an index's rates never change once published.
 export function indexesQuery(api: Client<paths>) {
