@@ -8,6 +8,7 @@ Records accounts, transactions and balances (docs/domain, chapters 5 and 7). It 
 | Tables | prefix `ledger_`, created in `db/migrations/` |
 | Public API | `ledger.go` and the other 10 non-test files of this directory |
 | Layers (hand-written files) | `domain/` (22), `app/` (40), `httpapi/` (20), `toolapi/` (20), `postgres/` (24) |
+| Ports | `app/ports.go` (the interfaces the module needs: its repository and the other modules it calls) |
 | Queries | `postgres/queries/` (12 files) |
 | Tests | black-box tests in this directory (`*_test.go`: 84); package tests beside each layer |
 

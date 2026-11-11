@@ -6,14 +6,13 @@ import (
 	"errors"
 	"time"
 
-	"github.com/andrelopes-code/equori/internal/platform/page"
-
 	"github.com/google/uuid"
 
 	"github.com/andrelopes-code/equori/internal/ledger/domain"
 	"github.com/andrelopes-code/equori/internal/platform/locale"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/outbox"
+	"github.com/andrelopes-code/equori/internal/platform/page"
 )
 
 var (
@@ -307,6 +306,7 @@ type TransactionQuery struct {
 	Limit         int
 }
 
+// Repository stores the ledger tables; postgres/ implements it.
 // Repository returns ErrNotFound for missing rows. Publish is valid only inside InTx.
 type Repository interface {
 	InTx(ctx context.Context, fn func(Repository) error) error
