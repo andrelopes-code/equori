@@ -489,7 +489,7 @@ func TestBRBankingMatchesThePreviousRules(t *testing.T) {
 
 **Files:**
 - Create: `db/migrations/00042_planning_schedule_calendar.sql` (`ADD COLUMN calendar text NOT NULL DEFAULT 'br_banking' CHECK (calendar ~ '^[a-z0-9_]{2,40}$')`, then `ALTER COLUMN calendar DROP DEFAULT`)
-- Modify: `internal/planning/planning.go:38` (`New(pool, dispatcher, l, md, profiles Profiles, clk, log)`; `Profiles` declared as in Task 11), `internal/planning/internal/app/generate.go:12` (delete `calendarName`; read the schedule's calendar), `internal/planning/internal/adapter/postgres/repository.go:93`, schedule domain and queries, `internal/server/server.go:96`
+- Modify: `internal/planning/planning.go:38` (`New(pool, dispatcher, l, md, profiles Profiles, clk, log)`; `Profiles` declared as in Task 11), `internal/planning/app/generate.go:12` (delete `calendarName`; read the schedule's calendar), `internal/planning/postgres/repository.go:93`, schedule domain and queries, `internal/server/server.go:96`
 - Modify: `api/openapi.yaml:3907-3910` (description without `br_banking`; optional `calendar` on the schedule create body and in the schedule response)
 - Test: `internal/planning/schedule_calendar_test.go` (new)
 

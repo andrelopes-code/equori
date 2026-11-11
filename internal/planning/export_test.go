@@ -3,7 +3,7 @@ package planning
 import (
 	"context"
 
-	"github.com/andrelopes-code/equori/internal/planning/internal/app"
+	"github.com/andrelopes-code/equori/internal/planning/app"
 )
 
 // RecurringForTest runs Service.Recurring, which no exported method of the module wraps yet.

@@ -8,8 +8,8 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/andrelopes-code/equori/internal/ledger"
-	"github.com/andrelopes-code/equori/internal/planning/internal/adapter/toolapi"
-	"github.com/andrelopes-code/equori/internal/planning/internal/app"
+	"github.com/andrelopes-code/equori/internal/planning/app"
+	"github.com/andrelopes-code/equori/internal/planning/toolapi"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/textfold"
 )

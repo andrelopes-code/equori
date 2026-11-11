@@ -80,11 +80,11 @@ sql:
         out: internal/portfolio/postgres
   - engine: postgresql
     schema: db/migrations
-    queries: db/queries/planning
+    queries: internal/planning/postgres/queries
     gen:
       go:
         <<: *go
-        out: internal/planning/internal/adapter/postgres
+        out: internal/planning/postgres
   - engine: postgresql
     schema: db/migrations
     queries: db/queries/ingestion

@@ -251,7 +251,7 @@ Commit `feat(portfolio): positions, realized results and income events`.
 
 ### Task 9: Multi-currency planning (A72)
 
-**Files:** `internal/planning/internal/app/{schedules.go,commitments.go,goals.go,ports.go}`, `internal/planning/planning.go` (`Prices` port), `internal/planning/{schedules_test.go,views_test.go,goals_test.go,scenarios_test.go}`, `api/openapi.yaml` (`Committed.prices`, `Goal.prices`).
+**Files:** `internal/planning/app/{schedules.go,commitments.go,goals.go,ports.go}`, `internal/planning/planning.go` (`Prices` port), `internal/planning/{schedules_test.go,views_test.go,goals_test.go,scenarios_test.go}`, `api/openapi.yaml` (`Committed.prices`, `Goal.prices`).
 
 ```go
 // app/ports.go

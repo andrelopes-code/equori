@@ -6,7 +6,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/andrelopes-code/equori/internal/planning/internal/app"
+	"github.com/andrelopes-code/equori/internal/planning/app"
 )
 
 // Spec 2026-11-03 §13: a series already covered by a schedule names it.
