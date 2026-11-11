@@ -18,21 +18,24 @@ export {
   budgetState,
   startsBy,
   usedShare,
-} from "@/features/planning/budget-month";
-export type { BudgetState, Figures } from "@/features/planning/budget-month";
-export { calendarLabel } from "@/features/planning/calendar-label";
-export { holidayName } from "@/features/planning/holiday-name";
-export { kindLabel } from "@/features/planning/schedule-words";
-export { OccurrenceActions } from "@/features/planning/occurrence-actions";
-export { RealizedOccurrences } from "@/features/planning/realized-occurrences";
-export { PlanningPage } from "@/features/planning/planning-page";
+} from "@/features/planning/model/budget-month";
+export type {
+  BudgetState,
+  Figures,
+} from "@/features/planning/model/budget-month";
+export { calendarLabel } from "@/features/planning/model/calendar-label";
+export { holidayName } from "@/features/planning/model/holiday-name";
+export { kindLabel } from "@/features/planning/model/schedule-words";
+export { OccurrenceActions } from "@/features/planning/occurrences/occurrence-actions";
+export { RealizedOccurrences } from "@/features/planning/occurrences/realized-occurrences";
+export { PlanningPage } from "@/features/planning/pages/planning-page";
 export {
   validateBudgetFormSearch,
   validateBudgetSearch,
   validatePlanningSearch,
   validateScheduleFormSearch,
-} from "@/features/planning/planning-search";
-export { BudgetPage } from "@/features/planning/budget-page";
-export { BudgetFormPage } from "@/features/planning/budget-form-page";
-export { SchedulePage } from "@/features/planning/schedule-page";
-export { ScheduleFormPage } from "@/features/planning/schedule-form-page";
+} from "@/features/planning/model/planning-search";
+export { BudgetPage } from "@/features/planning/pages/budget-page";
+export { BudgetFormPage } from "@/features/planning/pages/budget-form-page";
+export { SchedulePage } from "@/features/planning/pages/schedule-page";
+export { ScheduleFormPage } from "@/features/planning/pages/schedule-form-page";

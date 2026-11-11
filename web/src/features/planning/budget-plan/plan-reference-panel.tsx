@@ -1,0 +1,244 @@
+import { Card, CardBody } from "@slotted/react/card";
+import { ProgressBar } from "@slotted/react/progress-indicator";
+import { Segment, SegmentedControl } from "@slotted/react/segmented-control";
+import { Text } from "@slotted/react/typography";
+import { Fragment } from "react";
+import type { ReactNode } from "react";
+
+import type { components } from "@/api/schema.gen";
+import styles from "@/features/planning/budget-plan/budget-plan.module.css";
+import { planShare } from "@/features/planning/budget-plan/plan-math";
+import { PlanFigure } from "@/features/planning/budget-plan/plan-figure";
+import { PlanSavingsTarget } from "@/features/planning/budget-plan/plan-savings-target";
+import type { PlanFormat } from "@/features/planning/budget-plan/use-plan-format";
+import { useT } from "@/i18n/i18n-provider";
+import { MoneyInput } from "@/ui/money-input";
+
+type BudgetPlan = components["schemas"]["BudgetPlan"];
+type Source = components["schemas"]["BudgetPlanSource"];
+
+const sources: readonly Source[] = [
+  "expected_income",
+  "average_income",
+  "fixed",
+];
+
+// The plan's question first (spec 5.1): what of the reference has no destination yet, the
+// reference it is read against and where that reference comes from.
+export function PlanReferencePanel({
+  plan,
+  source,
+  fixed,
+  reference,
+  unassigned,
+  committed,
+  format,
+  editable,
+  bar,
+  target,
+  onSource,
+  onTarget,
+}: {
+  plan: BudgetPlan;
+  source: Source;
+  fixed: number | undefined;
+  reference: number | undefined;
+  unassigned: number | undefined;
+  // Installments, savings and the counted budgets.
+  committed: number;
+  format: PlanFormat;
+  editable: boolean;
+  bar: ReactNode;
+  target: number | undefined;
+  onSource: (source: Source, fixed?: number) => void;
+  onTarget: (bp: number | undefined) => void;
+}) {
+  const t = useT();
+  const over = unassigned !== undefined && unassigned < 0;
+  const available: Record<Source, boolean> = {
+    expected_income: plan.expected_income !== undefined,
+    average_income: plan.average_income !== undefined,
+    fixed: true,
+  };
+  const share =
+    reference === undefined || unassigned === undefined
+      ? undefined
+      : planShare(reference - unassigned, reference);
+  const months = plan.average_months ?? 0;
+  const line = (label: string, amount: ReactNode, total = false) => (
+    <div className={styles.ledgerLine} data-total={total ? "" : undefined}>
+      <Text
+        size="sm"
+        tone={total ? "default" : "muted"}
+        weight={total ? "medium" : "regular"}
+      >
+        {label}
+      </Text>
+      {typeof amount === "string" ? (
+        <Text
+          size="sm"
+          numeric="tabular"
+          weight={total ? "semibold" : "regular"}
+        >
+          {amount}
+        </Text>
+      ) : (
+        amount
+      )}
+    </div>
+  );
+  const total =
+    reference === undefined ? t("plan.dash") : format.money(reference);
+  // What the reference is made of, each part beside its amount and the reference under them.
+  const ledger =
+    source === "expected_income" ? (
+      <>
+        {(plan.expected_items ?? []).map((item) => (
+          <Fragment key={item.schedule_id}>
+            {line(item.description, format.money(item.amount.amount))}
+          </Fragment>
+        ))}
+        {line(t("plan.base"), total, true)}
+      </>
+    ) : source === "average_income" ? (
+      line(
+        months === 1
+          ? t("plan.averageOfOne")
+          : t("plan.averageOf", { count: String(months) }),
+        total,
+        true,
+      )
+    ) : (
+      line(
+        t("plan.fixedAmount"),
+        format.hidden ? (
+          // entry() is never masked (ADR 018 P4): privacy shows the masked figure instead.
+          <Text size="sm" numeric="tabular" weight="semibold">
+            {format.money(fixed ?? 0)}
+          </Text>
+        ) : (
+          <div className={styles.fixed}>
+            <MoneyInput
+              size="field"
+              aria-label={t("plan.fixedAmount")}
+              value={fixed ?? 0}
+              currency={plan.currency}
+              scale={format.scale}
+              sign="neutral"
+              readOnly={!editable}
+              onChange={(amount) => {
+                onSource("fixed", amount);
+              }}
+            />
+          </div>
+        ),
+        true,
+      )
+    );
+  const received = plan.received_income.amount;
+  // Whole per cent of the reference received, at most a hundred.
+  const receivedPercent =
+    reference === undefined || reference <= 0
+      ? undefined
+      : Math.min(100, Math.floor((received * 100) / reference));
+  return (
+    <Card
+      render={(props) => <section {...props} aria-label={t("plan.panel")} />}
+      fill="outline"
+      className={styles.card}
+    >
+      <CardBody>
+        <div className={styles.panel}>
+          <div className={styles.answer}>
+            <Text size="sm" tone="muted">
+              {over ? t("plan.over") : t("plan.unassigned")}
+            </Text>
+            {unassigned === undefined ? (
+              <Text size="3xl" weight="semibold" tone="muted">
+                {t("plan.dash")}
+              </Text>
+            ) : (
+              <PlanFigure
+                amount={Math.abs(unassigned)}
+                format={format.money}
+                tone={over ? "danger" : "default"}
+                size="3xl"
+              />
+            )}
+            <Text size="sm" tone={over ? "danger" : "muted"} numeric="tabular">
+              {reference === undefined
+                ? t("plan.noReference")
+                : over
+                  ? t("plan.leadOver", {
+                      total: format.money(committed),
+                      reference: format.money(reference),
+                    })
+                  : t("plan.lead", {
+                      share: format.share(share) ?? t("plan.dash"),
+                      month: format.month(plan.month),
+                    })}
+            </Text>
+            <div className={styles.answerBar}>{bar}</div>
+          </div>
+          <div className={styles.source}>
+            <SegmentedControl
+              aria-label={t("plan.source")}
+              size="sm"
+              value={source}
+              disabled={!editable}
+              onValueChange={(value) => {
+                const next = sources.find((s) => s === value);
+                if (next !== undefined)
+                  onSource(
+                    next,
+                    next === "fixed" ? (fixed ?? reference ?? 0) : undefined,
+                  );
+              }}
+            >
+              {sources.map((s) => (
+                <Segment key={s} value={s} disabled={!available[s]}>
+                  {t(`plan.source.${s}`)}
+                </Segment>
+              ))}
+            </SegmentedControl>
+            {(!available.expected_income || !available.average_income) && (
+              <div className={styles.unavailable}>
+                {!available.expected_income && (
+                  <Text size="xs" tone="muted">
+                    {t("plan.noExpected")}
+                  </Text>
+                )}
+                {!available.average_income && (
+                  <Text size="xs" tone="muted">
+                    {t("plan.noAverage")}
+                  </Text>
+                )}
+              </div>
+            )}
+            <div className={styles.ledger}>{ledger}</div>
+            <div className={styles.received}>
+              {line(t("plan.received"), format.money(received))}
+              {receivedPercent !== undefined && (
+                <ProgressBar
+                  size="sm"
+                  tone="success"
+                  label={t("plan.received")}
+                  hideLabel
+                  value={receivedPercent}
+                />
+              )}
+            </div>
+            <PlanSavingsTarget
+              reference={reference}
+              savings={plan.savings.amount}
+              target={target}
+              editable={editable}
+              format={format}
+              onTarget={onTarget}
+            />
+          </div>
+        </div>
+      </CardBody>
+    </Card>
+  );
+}

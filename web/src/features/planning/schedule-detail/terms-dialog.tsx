@@ -1,0 +1,176 @@
+import { Button } from "@slotted/react/button";
+import { Checkbox } from "@slotted/react/checkbox";
+import {
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@slotted/react/dialog";
+import { Field, FieldError, FieldLabel } from "@slotted/react/field";
+import { useState } from "react";
+
+import { errorText } from "@/api/problem";
+import type { components } from "@/api/schema.gen";
+import { useChangeTerms } from "@/features/planning/api";
+import { RecurrenceFields } from "@/features/planning/schedule-fields/recurrence-fields";
+import { useScale } from "@/features/setup";
+import { formatDate, shiftDate } from "@/i18n/format";
+import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { useToday } from "@/i18n/today";
+import { DateInput } from "@/ui/date-input";
+import { FormNotice } from "@/ui/form-notice";
+import { FormLayout } from "@/ui/form-layout";
+import { FormRow } from "@/ui/form-row";
+import { MoneyInput } from "@/ui/money-input";
+import { useOverlayOpen } from "@/ui/use-overlay-open";
+import { useStableCallback } from "@/ui/use-stable-callback";
+
+type Schedule = components["schemas"]["Schedule"];
+
+// A new terms version from a date after the latest one: the amount, the recurrence or both.
+export function TermsDialog({
+  schedule,
+  initialAmount = 0,
+  initialEffectiveFrom,
+  onDone,
+  onCancel,
+}: {
+  schedule: Schedule;
+  initialAmount?: number | undefined;
+  initialEffectiveFrom?: string | undefined;
+  onDone: () => void;
+  onCancel: () => void;
+}) {
+  const t = useT();
+  const [locale] = useAppLocale();
+  const today = useToday();
+  const scale = useScale();
+  const overlayOpen = useOverlayOpen();
+  const change = useChangeTerms();
+  const latest = schedule.terms.at(-1);
+  const after = latest?.effective_from ?? today;
+  const [from, setFrom] = useState(
+    initialEffectiveFrom ??
+      (shiftDate(after, 1) > today ? shiftDate(after, 1) : today),
+  );
+  const [amount, setAmount] = useState(initialAmount);
+  const [withRecurrence, setWithRecurrence] = useState(false);
+  const [recurrence, setRecurrence] = useState(latest?.recurrence);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [summary, setSummary] = useState<string | null>(null);
+  const currency = latest?.amount.currency;
+  const openChange = useStableCallback((open: boolean) => {
+    if (!open) onCancel();
+  });
+  return (
+    <Dialog open={overlayOpen} size="lg" onOpenChange={openChange}>
+      <DialogContent>
+        <form
+          noValidate
+          onSubmit={(event) => {
+            event.preventDefault();
+            const next: Record<string, string> = {};
+            if (from <= after)
+              next.effective_from = t("schedule.required.after", {
+                date: formatDate(after, locale),
+              });
+            if (amount === 0 && !withRecurrence)
+              next.amount = t("schedule.required.change");
+            setErrors(next);
+            setSummary(null);
+            if (Object.keys(next).length > 0 || currency === undefined) return;
+            change
+              .mutateAsync({
+                id: schedule.id,
+                terms: {
+                  effective_from: from,
+                  ...(amount === 0 ? {} : { amount: { amount, currency } }),
+                  ...(withRecurrence && recurrence !== undefined
+                    ? { recurrence }
+                    : {}),
+                },
+              })
+              .then(onDone)
+              .catch((caught: unknown) => {
+                setSummary(errorText(caught, t));
+              });
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>{t("schedule.changeTerms")}</DialogTitle>
+            <DialogDescription>
+              {t("schedule.changeTermsHint", {
+                date: formatDate(after, locale),
+              })}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogBody>
+            <FormLayout fill>
+              {summary !== null && <FormNotice>{summary}</FormNotice>}
+
+              <FormRow>
+                <Field invalid={errors.effective_from !== undefined} required>
+                  <FieldLabel>{t("schedule.effectiveFrom")}</FieldLabel>
+                  <DateInput
+                    name="effective_from"
+                    value={from}
+                    min={shiftDate(after, 1)}
+                    shortcuts={false}
+                    onChange={setFrom}
+                  />
+                  {errors.effective_from !== undefined && (
+                    <FieldError>{errors.effective_from}</FieldError>
+                  )}
+                </Field>
+
+                <Field invalid={errors.amount !== undefined}>
+                  <FieldLabel>{t("schedule.amount")}</FieldLabel>
+                  {currency !== undefined && scale !== null && (
+                    <MoneyInput
+                      size="field"
+                      value={amount}
+                      onChange={setAmount}
+                      currency={currency}
+                      scale={scale(currency)}
+                      sign={schedule.kind === "income" ? "income" : "expense"}
+                    />
+                  )}
+
+                  {errors.amount !== undefined && (
+                    <FieldError>{errors.amount}</FieldError>
+                  )}
+                </Field>
+              </FormRow>
+
+              <Checkbox
+                checked={withRecurrence}
+                onCheckedChange={setWithRecurrence}
+              >
+                {t("schedule.changeRecurrence")}
+              </Checkbox>
+
+              {withRecurrence && recurrence !== undefined && (
+                <RecurrenceFields
+                  value={recurrence}
+                  onChange={setRecurrence}
+                  fill
+                />
+              )}
+            </FormLayout>
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="ghost" tone="secondary" onClick={onCancel}>
+              {t("detail.cancel")}
+            </Button>
+            <Button type="submit" loading={change.isPending}>
+              {t("schedule.save")}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
