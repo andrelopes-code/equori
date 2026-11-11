@@ -2,9 +2,11 @@ package httpapi
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/andrelopes-code/equori/internal/ingestion/domain"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
+	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 )
 
 // delimiters maps the contract's names to the characters CSV files use.
@@ -49,20 +51,30 @@ func toProfileAPI(p domain.Profile) CsvProfile {
 	return out
 }
 
-func (s *Server) GetCsvProfile(ctx context.Context, req GetCsvProfileRequestObject) (GetCsvProfileResponseObject, error) {
-	p, err := s.svc.Profile(ctx, auth.MustBooksID(ctx), req.Id)
+func (s *Server) getCsvProfile(ctx context.Context, r *http.Request, _ httpserver.None) (CsvProfile, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return CsvProfile{}, err
 	}
 
-	return GetCsvProfile200JSONResponse(toProfileAPI(p)), nil
+	p, err := s.svc.Profile(ctx, auth.MustBooksID(ctx), id)
+	if err != nil {
+		return CsvProfile{}, err
+	}
+
+	return toProfileAPI(p), nil
 }
 
-func (s *Server) SaveCsvProfile(ctx context.Context, req SaveCsvProfileRequestObject) (SaveCsvProfileResponseObject, error) {
-	b := req.Body
+func (s *Server) saveCsvProfile(
+	ctx context.Context, r *http.Request, b SaveCsvProfileJSONRequestBody,
+) (CsvProfile, error) {
+	id, err := httpserver.PathUUID(r, "id")
+	if err != nil {
+		return CsvProfile{}, err
+	}
 
 	p := domain.Profile{
-		BooksID: auth.MustBooksID(ctx), AccountID: req.Id, HeaderRows: 1, DateColumn: b.DateColumn, DateLayout: domain.DateLayout(b.DateLayout),
+		BooksID: auth.MustBooksID(ctx), AccountID: id, HeaderRows: 1, DateColumn: b.DateColumn, DateLayout: domain.DateLayout(b.DateLayout),
 		AmountColumn: opt(b.AmountColumn), DebitColumn: opt(b.DebitColumn), CreditColumn: opt(b.CreditColumn),
 		DecimalSeparator: string(b.DecimalSeparator), DescriptionColumn: b.DescriptionColumn, IDColumn: opt(b.IdColumn),
 	}
@@ -98,24 +110,31 @@ func (s *Server) SaveCsvProfile(ctx context.Context, req SaveCsvProfileRequestOb
 
 	saved, err := s.svc.SaveProfile(ctx, p)
 	if err != nil {
-		return nil, err
+		return CsvProfile{}, err
 	}
 
-	return SaveCsvProfile200JSONResponse(toProfileAPI(saved)), nil
+	return toProfileAPI(saved), nil
 }
 
-func (s *Server) SuggestCsvColumns(ctx context.Context, req SuggestCsvColumnsRequestObject) (SuggestCsvColumnsResponseObject, error) {
-	sample := domain.ColumnSample{Rows: req.Body.Rows}
-	if req.Body.Header != nil {
-		sample.Header = *req.Body.Header
-	}
-
-	got, err := s.svc.SuggestColumns(ctx, auth.MustBooksID(ctx), req.Id, sample)
+func (s *Server) suggestCsvColumns(
+	ctx context.Context, r *http.Request, in SuggestCsvColumnsJSONRequestBody,
+) (CsvColumnSuggestion, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return CsvColumnSuggestion{}, err
 	}
 
-	return SuggestCsvColumns200JSONResponse{
+	sample := domain.ColumnSample{Rows: in.Rows}
+	if in.Header != nil {
+		sample.Header = *in.Header
+	}
+
+	got, err := s.svc.SuggestColumns(ctx, auth.MustBooksID(ctx), id, sample)
+	if err != nil {
+		return CsvColumnSuggestion{}, err
+	}
+
+	return CsvColumnSuggestion{
 		DateColumn: got.Date, DescriptionColumn: got.Description, AmountColumn: ref(got.Amount),
 		DebitColumn: ref(got.Debit), CreditColumn: ref(got.Credit), IdColumn: ref(got.ID), SignColumn: ref(got.Sign),
 	}, nil

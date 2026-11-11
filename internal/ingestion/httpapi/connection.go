@@ -2,6 +2,9 @@ package httpapi
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/google/uuid"
@@ -10,6 +13,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/ingestion/app"
 	"github.com/andrelopes-code/equori/internal/ingestion/domain"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
+	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/platform/page"
 )
 
@@ -56,31 +60,44 @@ func toConnectionAPI(c domain.Connection) Connection {
 	return out
 }
 
-func (s *Server) CreateConnection(ctx context.Context, req CreateConnectionRequestObject) (CreateConnectionResponseObject, error) {
-	b := req.Body
+// createConnection is a custom handler: the success status is 201 with a Location header.
+func (s *Server) createConnection(w http.ResponseWriter, r *http.Request) {
+	var b CreateConnectionJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&b); err != nil {
+		s.errs.WriteRequestError(w, r, fmt.Errorf("can't decode JSON body: %w", err))
 
-	c, err := s.svc.CreateConnection(ctx, auth.MustBooksID(ctx), b.IntegrationId, b.ExternalId, opt(b.Name))
-	if err != nil {
-		return nil, err
+		return
 	}
 
-	location := BaseURL + "/connections/" + c.ID.String()
+	c, err := s.svc.CreateConnection(
+		r.Context(), auth.MustBooksID(r.Context()), b.IntegrationId, b.ExternalId, opt(b.Name),
+	)
+	if err != nil {
+		s.errs.Write(w, r, err)
 
-	return CreateConnection201JSONResponse{Body: toConnectionAPI(c), Headers: CreateConnection201ResponseHeaders{Location: &location}}, nil
+		return
+	}
+
+	s.writeCreated(w, r, BaseURL+"/connections/"+c.ID.String(), toConnectionAPI(c))
 }
 
-func (s *Server) ListConnections(ctx context.Context, req ListConnectionsRequestObject) (ListConnectionsResponseObject, error) {
-	p, err := listPage[app.NameKey](req.Params.Limit, req.Params.Cursor)
+func (s *Server) listConnections(ctx context.Context, r *http.Request, _ httpserver.None) (ConnectionList, error) {
+	params, err := httpserver.Query[ListConnectionsParams](r)
 	if err != nil {
-		return nil, err
+		return ConnectionList{}, err
+	}
+
+	p, err := listPage[app.NameKey](params.Limit, params.Cursor)
+	if err != nil {
+		return ConnectionList{}, err
 	}
 
 	cs, next, err := s.svc.ListConnections(ctx, auth.MustBooksID(ctx), p)
 	if err != nil {
-		return nil, err
+		return ConnectionList{}, err
 	}
 
-	out := ListConnections200JSONResponse{Items: make([]Connection, len(cs))}
+	out := ConnectionList{Items: make([]Connection, len(cs))}
 	for i, c := range cs {
 		out.Items[i] = toConnectionAPI(c)
 	}
@@ -90,46 +107,73 @@ func (s *Server) ListConnections(ctx context.Context, req ListConnectionsRequest
 	return out, err
 }
 
-func (s *Server) GetConnection(ctx context.Context, req GetConnectionRequestObject) (GetConnectionResponseObject, error) {
-	c, err := s.svc.Connection(ctx, auth.MustBooksID(ctx), req.Id)
+func (s *Server) getConnection(ctx context.Context, r *http.Request, _ httpserver.None) (Connection, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return Connection{}, err
 	}
 
-	return GetConnection200JSONResponse(toConnectionAPI(c)), nil
-}
-
-func (s *Server) DeleteConnection(ctx context.Context, req DeleteConnectionRequestObject) (DeleteConnectionResponseObject, error) {
-	if err := s.svc.DeleteConnection(ctx, auth.MustBooksID(ctx), req.Id); err != nil {
-		return nil, err
+	c, err := s.svc.Connection(ctx, auth.MustBooksID(ctx), id)
+	if err != nil {
+		return Connection{}, err
 	}
 
-	return DeleteConnection204Response{}, nil
+	return toConnectionAPI(c), nil
 }
 
-func (s *Server) MapExternalAccount(ctx context.Context, req MapExternalAccountRequestObject) (MapExternalAccountResponseObject, error) {
-	b := req.Body
+func (s *Server) deleteConnection(
+	ctx context.Context, r *http.Request, _ httpserver.None,
+) (httpserver.None, error) {
+	id, err := httpserver.PathUUID(r, "id")
+	if err != nil {
+		return httpserver.None{}, err
+	}
+
+	if err := s.svc.DeleteConnection(ctx, auth.MustBooksID(ctx), id); err != nil {
+		return httpserver.None{}, err
+	}
+
+	return httpserver.None{}, nil
+}
+
+func (s *Server) mapExternalAccount(
+	ctx context.Context, r *http.Request, b MapExternalAccountJSONRequestBody,
+) (ExternalAccount, error) {
+	id, err := httpserver.PathUUID(r, "id")
+	if err != nil {
+		return ExternalAccount{}, err
+	}
+
+	externalAccountID, err := httpserver.PathUUID(r, "external_account_id")
+	if err != nil {
+		return ExternalAccount{}, err
+	}
 
 	m := domain.Mapping{AccountID: b.AccountId, Ignored: b.Ignored != nil && *b.Ignored}
 	if b.SyncFrom != nil {
 		m.SyncFrom = &b.SyncFrom.Time
 	}
 
-	a, err := s.svc.MapAccount(ctx, auth.MustBooksID(ctx), req.Id, req.ExternalAccountId, m)
+	a, err := s.svc.MapAccount(ctx, auth.MustBooksID(ctx), id, externalAccountID, m)
 	if err != nil {
-		return nil, err
+		return ExternalAccount{}, err
 	}
 
-	return MapExternalAccount200JSONResponse(toExternalAccountAPI(a)), nil
+	return toExternalAccountAPI(a), nil
 }
 
-func (s *Server) SyncConnection(ctx context.Context, req SyncConnectionRequestObject) (SyncConnectionResponseObject, error) {
-	c, batches, err := s.svc.SyncConnection(ctx, auth.MustBooksID(ctx), req.Id)
+func (s *Server) syncConnection(ctx context.Context, r *http.Request, _ httpserver.None) (SyncResult, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return SyncResult{}, err
 	}
 
-	out := SyncConnection200JSONResponse{Connection: toConnectionAPI(c), Batches: make([]ImportBatch, len(batches))}
+	c, batches, err := s.svc.SyncConnection(ctx, auth.MustBooksID(ctx), id)
+	if err != nil {
+		return SyncResult{}, err
+	}
+
+	out := SyncResult{Connection: toConnectionAPI(c), Batches: make([]ImportBatch, len(batches))}
 	for i, b := range batches {
 		out.Batches[i] = toBatchAPI(b)
 	}
@@ -137,13 +181,20 @@ func (s *Server) SyncConnection(ctx context.Context, req SyncConnectionRequestOb
 	return out, nil
 }
 
-func (s *Server) ListConnectionSyncs(ctx context.Context, req ListConnectionSyncsRequestObject) (ListConnectionSyncsResponseObject, error) {
-	runs, err := s.svc.SyncRuns(ctx, auth.MustBooksID(ctx), req.Id)
+func (s *Server) listConnectionSyncs(
+	ctx context.Context, r *http.Request, _ httpserver.None,
+) (SyncRunList, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return SyncRunList{}, err
 	}
 
-	out := ListConnectionSyncs200JSONResponse{Items: make([]SyncRun, len(runs))}
+	runs, err := s.svc.SyncRuns(ctx, auth.MustBooksID(ctx), id)
+	if err != nil {
+		return SyncRunList{}, err
+	}
+
+	out := SyncRunList{Items: make([]SyncRun, len(runs))}
 	for i, run := range runs {
 		currency := make(map[uuid.UUID]string, len(run.Batches))
 		item := SyncRun{
@@ -156,8 +207,8 @@ func (s *Server) ListConnectionSyncs(ctx context.Context, req ListConnectionSync
 			currency[b.ID] = b.Currency
 		}
 
-		for j, r := range run.Records {
-			item.Records[j] = toRecordAPI(r, currency[r.SummaryBatchID])
+		for j, rec := range run.Records {
+			item.Records[j] = toRecordAPI(rec, currency[rec.SummaryBatchID])
 		}
 
 		out.Items[i] = item

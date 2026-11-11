@@ -2,10 +2,14 @@ package httpapi
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"net/http"
 
 	"github.com/andrelopes-code/equori/internal/ingestion/app"
 	"github.com/andrelopes-code/equori/internal/ingestion/domain"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
+	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/platform/page"
 )
 
@@ -13,32 +17,43 @@ func toIntegrationAPI(i domain.Integration) Integration {
 	return Integration{Id: i.ID, Aggregator: string(i.Aggregator), Name: i.Name, UpdatedAt: i.UpdatedAt.UTC()}
 }
 
-func (s *Server) CreateIntegration(ctx context.Context, req CreateIntegrationRequestObject) (CreateIntegrationResponseObject, error) {
-	b := req.Body
+// createIntegration is a custom handler: the success status is 201 with a Location header.
+func (s *Server) createIntegration(w http.ResponseWriter, r *http.Request) {
+	var b CreateIntegrationJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&b); err != nil {
+		s.errs.WriteRequestError(w, r, fmt.Errorf("can't decode JSON body: %w", err))
 
-	i, err := s.svc.CreateIntegration(ctx, auth.MustBooksID(ctx), domain.AggregatorID(b.Aggregator), b.Name,
-		domain.Credentials(b.Credentials))
-	if err != nil {
-		return nil, err
+		return
 	}
 
-	location := BaseURL + "/integrations/" + i.ID.String()
+	i, err := s.svc.CreateIntegration(r.Context(), auth.MustBooksID(r.Context()),
+		domain.AggregatorID(b.Aggregator), b.Name, domain.Credentials(b.Credentials))
+	if err != nil {
+		s.errs.Write(w, r, err)
 
-	return CreateIntegration201JSONResponse{Body: toIntegrationAPI(i), Headers: CreateIntegration201ResponseHeaders{Location: &location}}, nil
+		return
+	}
+
+	s.writeCreated(w, r, BaseURL+"/integrations/"+i.ID.String(), toIntegrationAPI(i))
 }
 
-func (s *Server) ListIntegrations(ctx context.Context, req ListIntegrationsRequestObject) (ListIntegrationsResponseObject, error) {
-	p, err := listPage[app.NameKey](req.Params.Limit, req.Params.Cursor)
+func (s *Server) listIntegrations(ctx context.Context, r *http.Request, _ httpserver.None) (IntegrationList, error) {
+	params, err := httpserver.Query[ListIntegrationsParams](r)
 	if err != nil {
-		return nil, err
+		return IntegrationList{}, err
+	}
+
+	p, err := listPage[app.NameKey](params.Limit, params.Cursor)
+	if err != nil {
+		return IntegrationList{}, err
 	}
 
 	is, next, err := s.svc.ListIntegrations(ctx, auth.MustBooksID(ctx), p)
 	if err != nil {
-		return nil, err
+		return IntegrationList{}, err
 	}
 
-	out := ListIntegrations200JSONResponse{Items: make([]Integration, len(is))}
+	out := IntegrationList{Items: make([]Integration, len(is))}
 	for i, x := range is {
 		out.Items[i] = toIntegrationAPI(x)
 	}
@@ -48,36 +63,55 @@ func (s *Server) ListIntegrations(ctx context.Context, req ListIntegrationsReque
 	return out, err
 }
 
-func (s *Server) GetIntegration(ctx context.Context, req GetIntegrationRequestObject) (GetIntegrationResponseObject, error) {
-	i, err := s.svc.Integration(ctx, auth.MustBooksID(ctx), req.Id)
+func (s *Server) getIntegration(ctx context.Context, r *http.Request, _ httpserver.None) (Integration, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return Integration{}, err
 	}
 
-	return GetIntegration200JSONResponse(toIntegrationAPI(i)), nil
-}
-
-func (s *Server) UpdateIntegrationCredentials(ctx context.Context, req UpdateIntegrationCredentialsRequestObject) (UpdateIntegrationCredentialsResponseObject, error) {
-	i, err := s.svc.UpdateCredentials(ctx, auth.MustBooksID(ctx), req.Id, domain.Credentials(*req.Body))
+	i, err := s.svc.Integration(ctx, auth.MustBooksID(ctx), id)
 	if err != nil {
-		return nil, err
+		return Integration{}, err
 	}
 
-	return UpdateIntegrationCredentials200JSONResponse(toIntegrationAPI(i)), nil
+	return toIntegrationAPI(i), nil
 }
 
-func (s *Server) DeleteIntegration(ctx context.Context, req DeleteIntegrationRequestObject) (DeleteIntegrationResponseObject, error) {
-	if err := s.svc.DeleteIntegration(ctx, auth.MustBooksID(ctx), req.Id); err != nil {
-		return nil, err
+func (s *Server) updateIntegrationCredentials(
+	ctx context.Context, r *http.Request, in UpdateIntegrationCredentialsJSONRequestBody,
+) (Integration, error) {
+	id, err := httpserver.PathUUID(r, "id")
+	if err != nil {
+		return Integration{}, err
 	}
 
-	return DeleteIntegration204Response{}, nil
+	i, err := s.svc.UpdateCredentials(ctx, auth.MustBooksID(ctx), id, domain.Credentials(in))
+	if err != nil {
+		return Integration{}, err
+	}
+
+	return toIntegrationAPI(i), nil
 }
 
-func (s *Server) ListAggregators(ctx context.Context, _ ListAggregatorsRequestObject) (ListAggregatorsResponseObject, error) {
+func (s *Server) deleteIntegration(
+	ctx context.Context, r *http.Request, _ httpserver.None,
+) (httpserver.None, error) {
+	id, err := httpserver.PathUUID(r, "id")
+	if err != nil {
+		return httpserver.None{}, err
+	}
+
+	if err := s.svc.DeleteIntegration(ctx, auth.MustBooksID(ctx), id); err != nil {
+		return httpserver.None{}, err
+	}
+
+	return httpserver.None{}, nil
+}
+
+func (s *Server) listAggregators(_ context.Context, _ *http.Request, _ httpserver.None) (AggregatorList, error) {
 	all := s.svc.Aggregators()
 
-	out := ListAggregators200JSONResponse{Items: make([]Aggregator, len(all))}
+	out := AggregatorList{Items: make([]Aggregator, len(all))}
 	for i, a := range all {
 		fields := make([]struct {
 			Name   string `json:"name"`

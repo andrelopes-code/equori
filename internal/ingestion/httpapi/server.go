@@ -1,7 +1,9 @@
 package httpapi
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -19,8 +21,6 @@ import (
 
 const BaseURL = "/api/v1"
 
-var _ StrictServerInterface = (*Server)(nil)
-
 type Server struct {
 	svc  *app.Service
 	errs httpserver.ErrorWriter
@@ -31,11 +31,57 @@ func NewServer(svc *app.Service, log *slog.Logger) *Server {
 }
 
 func (s *Server) Register(mux *http.ServeMux) {
-	strict := NewStrictHandlerWithOptions(s, nil, StrictHTTPServerOptions{
-		RequestErrorHandlerFunc:  s.errs.WriteRequestError,
-		ResponseErrorHandlerFunc: s.errs.Write,
-	})
-	HandlerWithOptions(strict, StdHTTPServerOptions{BaseURL: BaseURL, BaseRouter: mux, ErrorHandlerFunc: s.errs.WriteRequestError})
+	mux.HandleFunc("GET "+BaseURL+"/ingestion/sync-schedule",
+		httpserver.Handle(s.errs, http.StatusOK, s.getSyncSchedule))
+	mux.HandleFunc("PUT "+BaseURL+"/ingestion/sync-schedule",
+		httpserver.Handle(s.errs, http.StatusOK, s.setSyncSchedule))
+	mux.HandleFunc("GET "+BaseURL+"/import-batches",
+		httpserver.Handle(s.errs, http.StatusOK, s.listImportBatches))
+	mux.HandleFunc("GET "+BaseURL+"/accounts/{id}/csv-profile",
+		httpserver.Handle(s.errs, http.StatusOK, s.getCsvProfile))
+	mux.HandleFunc("PUT "+BaseURL+"/accounts/{id}/csv-profile",
+		httpserver.Handle(s.errs, http.StatusOK, s.saveCsvProfile))
+	mux.HandleFunc("POST "+BaseURL+"/accounts/{id}/csv-profile/suggestion",
+		httpserver.Handle(s.errs, http.StatusOK, s.suggestCsvColumns))
+	mux.HandleFunc("POST "+BaseURL+"/accounts/{id}/imports", s.importFile)
+	mux.HandleFunc("GET "+BaseURL+"/import-batches/{id}",
+		httpserver.Handle(s.errs, http.StatusOK, s.getImportBatch))
+	mux.HandleFunc("GET "+BaseURL+"/import-batches/{id}/records",
+		httpserver.Handle(s.errs, http.StatusOK, s.listBatchRecords))
+	mux.HandleFunc("GET "+BaseURL+"/accounts/{id}/unconfirmed",
+		httpserver.Handle(s.errs, http.StatusOK, s.listUnconfirmed))
+	mux.HandleFunc("POST "+BaseURL+"/external-records/{id}/reopen",
+		httpserver.Handle(s.errs, http.StatusOK, s.reopenExternalRecord))
+	mux.HandleFunc("POST "+BaseURL+"/external-records/{id}/resolve",
+		httpserver.Handle(s.errs, http.StatusOK, s.resolveExternalRecord))
+	mux.HandleFunc("POST "+BaseURL+"/external-records/resolve",
+		httpserver.Handle(s.errs, http.StatusOK, s.resolveExternalRecords))
+	mux.HandleFunc("POST "+BaseURL+"/external-records/{id}/undo",
+		httpserver.Handle(s.errs, http.StatusOK, s.undoExternalRecordDecision))
+	mux.HandleFunc("GET "+BaseURL+"/aggregators",
+		httpserver.Handle(s.errs, http.StatusOK, s.listAggregators))
+	mux.HandleFunc("GET "+BaseURL+"/integrations",
+		httpserver.Handle(s.errs, http.StatusOK, s.listIntegrations))
+	mux.HandleFunc("POST "+BaseURL+"/integrations", s.createIntegration)
+	mux.HandleFunc("GET "+BaseURL+"/integrations/{id}",
+		httpserver.Handle(s.errs, http.StatusOK, s.getIntegration))
+	mux.HandleFunc("DELETE "+BaseURL+"/integrations/{id}",
+		httpserver.Handle(s.errs, http.StatusOK, s.deleteIntegration))
+	mux.HandleFunc("PUT "+BaseURL+"/integrations/{id}/credentials",
+		httpserver.Handle(s.errs, http.StatusOK, s.updateIntegrationCredentials))
+	mux.HandleFunc("GET "+BaseURL+"/connections",
+		httpserver.Handle(s.errs, http.StatusOK, s.listConnections))
+	mux.HandleFunc("POST "+BaseURL+"/connections", s.createConnection)
+	mux.HandleFunc("GET "+BaseURL+"/connections/{id}",
+		httpserver.Handle(s.errs, http.StatusOK, s.getConnection))
+	mux.HandleFunc("DELETE "+BaseURL+"/connections/{id}",
+		httpserver.Handle(s.errs, http.StatusOK, s.deleteConnection))
+	mux.HandleFunc("POST "+BaseURL+"/connections/{id}/sync",
+		httpserver.Handle(s.errs, http.StatusOK, s.syncConnection))
+	mux.HandleFunc("GET "+BaseURL+"/connections/{id}/syncs",
+		httpserver.Handle(s.errs, http.StatusOK, s.listConnectionSyncs))
+	mux.HandleFunc("PUT "+BaseURL+"/connections/{id}/accounts/{external_account_id}",
+		httpserver.Handle(s.errs, http.StatusOK, s.mapExternalAccount))
 }
 
 // paramError is a parameter that conforms to the contract but whose value the handler cannot use.
@@ -151,18 +197,25 @@ func toBatchAPI(b domain.Batch) ImportBatch {
 	return out
 }
 
-func (s *Server) ListImportBatches(ctx context.Context, req ListImportBatchesRequestObject) (ListImportBatchesResponseObject, error) {
-	p, err := listPage[app.BatchKey](req.Params.Limit, req.Params.Cursor)
+func (s *Server) listImportBatches(
+	ctx context.Context, r *http.Request, _ httpserver.None,
+) (ImportBatchList, error) {
+	params, err := httpserver.Query[ListImportBatchesParams](r)
 	if err != nil {
-		return nil, err
+		return ImportBatchList{}, err
+	}
+
+	p, err := listPage[app.BatchKey](params.Limit, params.Cursor)
+	if err != nil {
+		return ImportBatchList{}, err
 	}
 
 	batches, next, err := s.svc.ListBatches(ctx, auth.MustBooksID(ctx), p)
 	if err != nil {
-		return nil, err
+		return ImportBatchList{}, err
 	}
 
-	out := ListImportBatches200JSONResponse{Items: make([]ImportBatch, len(batches))}
+	out := ImportBatchList{Items: make([]ImportBatch, len(batches))}
 	for i, b := range batches {
 		out.Items[i] = toBatchAPI(b)
 	}
@@ -170,4 +223,20 @@ func (s *Server) ListImportBatches(ctx context.Context, req ListImportBatchesReq
 	out.NextCursor, err = page.Next(next)
 
 	return out, err
+}
+
+// writeCreated answers 201 with the JSON body and the Location header of the created record
+// (ADR 007, C6).
+func (s *Server) writeCreated(w http.ResponseWriter, r *http.Request, location string, body any) {
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(body); err != nil {
+		s.errs.Write(w, r, err)
+
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Location", location)
+	w.WriteHeader(http.StatusCreated)
+	_, _ = buf.WriteTo(w)
 }

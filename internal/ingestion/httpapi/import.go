@@ -3,12 +3,15 @@ package httpapi
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"mime/multipart"
+	"net/http"
 
 	"github.com/andrelopes-code/equori/internal/ingestion/app"
 	"github.com/andrelopes-code/equori/internal/ingestion/domain"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
+	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/platform/problem"
 )
 
@@ -57,29 +60,54 @@ func readForm(body *multipart.Reader) (format, name string, content []byte, err 
 	return format, name, content, nil
 }
 
-func (s *Server) ImportFile(ctx context.Context, req ImportFileRequestObject) (ImportFileResponseObject, error) {
-	format, name, content, err := readForm(req.Body)
+// importFile is a custom handler: the request body is multipart and the success status is 201
+// with a Location header.
+func (s *Server) importFile(w http.ResponseWriter, r *http.Request) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		s.errs.Write(w, r, err)
+
+		return
 	}
+
+	body, err := r.MultipartReader()
+	if err != nil {
+		s.errs.WriteRequestError(w, r, fmt.Errorf("can't decode multipart body: %w", err))
+
+		return
+	}
+
+	format, name, content, err := readForm(body)
+	if err != nil {
+		s.errs.Write(w, r, err)
+
+		return
+	}
+
+	ctx := r.Context()
 
 	b, err := s.svc.Import(ctx, app.ImportFile{
-		BooksID: auth.MustBooksID(ctx), AccountID: req.Id, Source: domain.Source(format), FileName: name, Content: content,
+		BooksID: auth.MustBooksID(ctx), AccountID: id, Source: domain.Source(format), FileName: name, Content: content,
 	})
 	if err != nil {
-		return nil, err
+		s.errs.Write(w, r, err)
+
+		return
 	}
 
-	location := BaseURL + "/import-batches/" + b.ID.String()
-
-	return ImportFile201JSONResponse{Body: toBatchAPI(b), Headers: ImportFile201ResponseHeaders{Location: &location}}, nil
+	s.writeCreated(w, r, BaseURL+"/import-batches/"+b.ID.String(), toBatchAPI(b))
 }
 
-func (s *Server) GetImportBatch(ctx context.Context, req GetImportBatchRequestObject) (GetImportBatchResponseObject, error) {
-	b, err := s.svc.Batch(ctx, auth.MustBooksID(ctx), req.Id)
+func (s *Server) getImportBatch(ctx context.Context, r *http.Request, _ httpserver.None) (ImportBatch, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return ImportBatch{}, err
 	}
 
-	return GetImportBatch200JSONResponse(toBatchAPI(b)), nil
+	b, err := s.svc.Batch(ctx, auth.MustBooksID(ctx), id)
+	if err != nil {
+		return ImportBatch{}, err
+	}
+
+	return toBatchAPI(b), nil
 }

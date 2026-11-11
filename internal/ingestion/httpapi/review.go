@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/google/uuid"
 	openapi_types "github.com/oapi-codegen/runtime/types"
@@ -9,6 +10,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/ingestion/app"
 	"github.com/andrelopes-code/equori/internal/ingestion/domain"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
+	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/platform/page"
 )
 
@@ -54,25 +56,37 @@ func toRecordAPI(r domain.ExternalRecord, currency string) ExternalRecord {
 	return out
 }
 
-func (s *Server) ListBatchRecords(ctx context.Context, req ListBatchRecordsRequestObject) (ListBatchRecordsResponseObject, error) {
-	p, err := listPage[app.RecordKey](req.Params.Limit, req.Params.Cursor)
+func (s *Server) listBatchRecords(
+	ctx context.Context, r *http.Request, _ httpserver.None,
+) (ExternalRecordList, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return ExternalRecordList{}, err
+	}
+
+	params, err := httpserver.Query[ListBatchRecordsParams](r)
+	if err != nil {
+		return ExternalRecordList{}, err
+	}
+
+	p, err := listPage[app.RecordKey](params.Limit, params.Cursor)
+	if err != nil {
+		return ExternalRecordList{}, err
 	}
 
 	var state domain.RecordState
-	if req.Params.State != nil {
-		state = domain.RecordState(*req.Params.State)
+	if params.State != nil {
+		state = domain.RecordState(*params.State)
 	}
 
-	recs, next, b, err := s.svc.Records(ctx, auth.MustBooksID(ctx), req.Id, state, p)
+	recs, next, b, err := s.svc.Records(ctx, auth.MustBooksID(ctx), id, state, p)
 	if err != nil {
-		return nil, err
+		return ExternalRecordList{}, err
 	}
 
-	out := ListBatchRecords200JSONResponse{Items: make([]ExternalRecord, len(recs))}
-	for i, r := range recs {
-		out.Items[i] = toRecordAPI(r, b.Currency)
+	out := ExternalRecordList{Items: make([]ExternalRecord, len(recs))}
+	for i, rec := range recs {
+		out.Items[i] = toRecordAPI(rec, b.Currency)
 	}
 
 	out.NextCursor, err = page.Next(next)
@@ -80,23 +94,32 @@ func (s *Server) ListBatchRecords(ctx context.Context, req ListBatchRecordsReque
 	return out, err
 }
 
-func (s *Server) ResolveExternalRecord(ctx context.Context, req ResolveExternalRecordRequestObject) (ResolveExternalRecordResponseObject, error) {
-	var txID uuid.UUID
-	if req.Body.TransactionId != nil {
-		txID = *req.Body.TransactionId
-	}
-
-	rec, b, err := s.svc.Resolve(ctx, auth.MustBooksID(ctx), req.Id, string(req.Body.Action), txID)
+func (s *Server) resolveExternalRecord(
+	ctx context.Context, r *http.Request, in ResolveExternalRecordJSONRequestBody,
+) (ExternalRecord, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return ExternalRecord{}, err
 	}
 
-	return ResolveExternalRecord200JSONResponse(toRecordAPI(rec, b.Currency)), nil
+	var txID uuid.UUID
+	if in.TransactionId != nil {
+		txID = *in.TransactionId
+	}
+
+	rec, b, err := s.svc.Resolve(ctx, auth.MustBooksID(ctx), id, string(in.Action), txID)
+	if err != nil {
+		return ExternalRecord{}, err
+	}
+
+	return toRecordAPI(rec, b.Currency), nil
 }
 
-func (s *Server) ResolveExternalRecords(ctx context.Context, req ResolveExternalRecordsRequestObject) (ResolveExternalRecordsResponseObject, error) {
-	items := make([]app.Resolution, len(req.Body.Items))
-	for i, it := range req.Body.Items {
+func (s *Server) resolveExternalRecords(
+	ctx context.Context, _ *http.Request, in ResolveExternalRecordsJSONRequestBody,
+) (BulkResolveResult, error) {
+	items := make([]app.Resolution, len(in.Items))
+	for i, it := range in.Items {
 		items[i] = app.Resolution{RecordID: it.RecordId, Action: string(it.Resolution.Action)}
 		if it.Resolution.TransactionId != nil {
 			items[i].TransactionID = *it.Resolution.TransactionId
@@ -105,14 +128,14 @@ func (s *Server) ResolveExternalRecords(ctx context.Context, req ResolveExternal
 
 	errs, err := s.svc.ResolveMany(ctx, auth.MustBooksID(ctx), items)
 	if err != nil {
-		return nil, err
+		return BulkResolveResult{}, err
 	}
 
-	out := ResolveExternalRecords200JSONResponse{Results: make([]BulkResolveItemResult, len(items))}
+	out := BulkResolveResult{Results: make([]BulkResolveItemResult, len(items))}
 	for i, it := range items {
 		status, ok := resolveStatus(errs[i])
 		if !ok {
-			return nil, errs[i]
+			return BulkResolveResult{}, errs[i]
 		}
 
 		out.Results[i] = BulkResolveItemResult{RecordId: it.RecordID, Status: status}
@@ -134,22 +157,34 @@ func resolveStatus(err error) (BulkResolveItemResultStatus, bool) {
 	return status, known && status.Valid()
 }
 
-func (s *Server) ReopenExternalRecord(ctx context.Context, req ReopenExternalRecordRequestObject) (ReopenExternalRecordResponseObject, error) {
-	rec, b, err := s.svc.Reopen(ctx, auth.MustBooksID(ctx), req.Id)
+func (s *Server) reopenExternalRecord(
+	ctx context.Context, r *http.Request, _ httpserver.None,
+) (ExternalRecord, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return ExternalRecord{}, err
 	}
 
-	return ReopenExternalRecord200JSONResponse(toRecordAPI(rec, b.Currency)), nil
+	rec, b, err := s.svc.Reopen(ctx, auth.MustBooksID(ctx), id)
+	if err != nil {
+		return ExternalRecord{}, err
+	}
+
+	return toRecordAPI(rec, b.Currency), nil
 }
 
-func (s *Server) ListUnconfirmed(ctx context.Context, req ListUnconfirmedRequestObject) (ListUnconfirmedResponseObject, error) {
-	ps, currency, err := s.svc.Unconfirmed(ctx, auth.MustBooksID(ctx), req.Id)
+func (s *Server) listUnconfirmed(ctx context.Context, r *http.Request, _ httpserver.None) (UnconfirmedList, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return UnconfirmedList{}, err
 	}
 
-	out := ListUnconfirmed200JSONResponse{Items: make([]UnconfirmedEntry, len(ps))}
+	ps, currency, err := s.svc.Unconfirmed(ctx, auth.MustBooksID(ctx), id)
+	if err != nil {
+		return UnconfirmedList{}, err
+	}
+
+	out := UnconfirmedList{Items: make([]UnconfirmedEntry, len(ps))}
 	for i, p := range ps {
 		out.Items[i] = UnconfirmedEntry{
 			TransactionId: p.TransactionID, Date: openapi_types.Date{Time: p.Date},
@@ -167,11 +202,18 @@ func (s *Server) ListUnconfirmed(ctx context.Context, req ListUnconfirmedRequest
 	return out, nil
 }
 
-func (s *Server) UndoExternalRecordDecision(ctx context.Context, req UndoExternalRecordDecisionRequestObject) (UndoExternalRecordDecisionResponseObject, error) {
-	rec, b, err := s.svc.UndoDecision(ctx, auth.MustBooksID(ctx), req.Id)
+func (s *Server) undoExternalRecordDecision(
+	ctx context.Context, r *http.Request, _ httpserver.None,
+) (ExternalRecord, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return ExternalRecord{}, err
 	}
 
-	return UndoExternalRecordDecision200JSONResponse(toRecordAPI(rec, b.Currency)), nil
+	rec, b, err := s.svc.UndoDecision(ctx, auth.MustBooksID(ctx), id)
+	if err != nil {
+		return ExternalRecord{}, err
+	}
+
+	return toRecordAPI(rec, b.Currency), nil
 }
