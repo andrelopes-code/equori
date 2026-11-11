@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/andrelopes-code/equori/internal/assistant/app"
@@ -16,47 +15,12 @@ import (
 	"github.com/andrelopes-code/equori/internal/assistant/httpapi"
 	"github.com/andrelopes-code/equori/internal/assistant/llmapi"
 	"github.com/andrelopes-code/equori/internal/assistant/postgres"
-	"github.com/andrelopes-code/equori/internal/assistant/toolapi"
 	"github.com/andrelopes-code/equori/internal/platform/clock"
 	"github.com/andrelopes-code/equori/internal/platform/llm"
 	"github.com/andrelopes-code/equori/internal/platform/locale"
 	"github.com/andrelopes-code/equori/internal/platform/secret"
 	"github.com/andrelopes-code/equori/internal/platform/tool"
 )
-
-// ChatUse is the conversational agent's use, consumed by the agent project.
-var ChatUse = llm.Use{
-	ID:                 "assistant.chat",
-	Needs:              []llm.Capability{llm.CapTools},
-	SendsFinancialData: true,
-	Default: []llm.DefaultTarget{
-		{Preset: "gemini", Model: "gemini-3.5-flash"},
-		{Preset: "gemini", Model: "gemini-3.5-flash-lite"},
-		{Preset: "gemini", Model: "gemini-3.1-flash-lite"},
-		{Preset: "groq", Model: "openai/gpt-oss-120b"},
-		{Preset: "mistral", Model: "mistral-small-latest"},
-		{Preset: "ollama", Model: "qwen3:32b"},
-	},
-}
-
-type Config struct {
-	SecretKey, PreviousSecretKey string
-	// Instance are the providers configured through the environment, shared by every book.
-	Instance []llm.Provider
-	Uses     []llm.Use
-	// Navigation is web/src/navigation/navigation-map.json (spec 9); empty means no screens.
-	Navigation []byte
-	// Locale returns the language of the member and the region of the book for the system prompt.
-	Locale func(context.Context, int64) (locale.Locale, error)
-	Clock  clock.Clock
-	// NewProvider builds a book's provider; nil builds the real adapters.
-	NewProvider func(api, baseURL, key string) llm.Provider
-	// Wait blocks a chat turn until a transient cooldown ends (design 2026-10-26 E6); nil uses a timer on Clock.
-	Wait func(ctx context.Context, until time.Time) error
-}
-
-// AccountNotice is an account whose figures an answer qualifies (P12 A152).
-type AccountNotice = app.AccountNotice
 
 type Module struct {
 	svc      *app.Service
@@ -70,16 +34,6 @@ type Module struct {
 	locale func(context.Context, int64) (locale.Locale, error)
 	router *llm.Router
 	wait   func(ctx context.Context, until time.Time) error
-}
-
-// instancePreset maps an environment provider to its preset; only the Gemini adapter is
-// configured through the environment.
-func instancePreset(name string) string {
-	if name == "aistudio" {
-		return "gemini"
-	}
-
-	return name
 }
 
 func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*Module, error) {
@@ -144,102 +98,6 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*Module, error) {
 	return &Module{svc: svc, resolver: llmapi.NewResolver(svc, cfg.Instance, build, log), http: httpapi.NewServer(svc, log), screens: screens, locale: cfg.Locale, wait: wait}, nil
 }
 
-// Tools returns the assistant's own tools for language models (ADR 012).
-func (m *Module) Tools() tool.Group { return tool.Group{Tools: toolapi.Tools(m.screens)} }
-
-// UseTools sets the chat's tools; it fails when a tool that writes has no preview (spec 8.1).
-func (m *Module) UseTools(set tool.Set) error {
-	tools, err := llmapi.NewChatSet(set)
-	if err != nil {
-		return err
-	}
-
-	m.svc.UseTools(tools)
-	m.chat = set
-	m.bindAgent(tools)
-
-	return nil
-}
-
-// UseNotices sets the lookup of the accounts the system prompt names (P12 A152).
-func (m *Module) UseNotices(n func(context.Context, int64) ([]AccountNotice, error)) {
-	m.svc.UseNotices(n)
-}
-
-// Signal is evidence the model receives with a proposal.
-type Signal = app.Signal
-
-// UseSignals sets the lookup of the signals of a preview; nil attaches none.
-func (m *Module) UseSignals(f func(ctx context.Context, booksID int64, p tool.Preview) ([]Signal, error)) {
-	m.svc.UseSignals(f)
-}
-
-// UseRouter sets the router the chat calls models through.
-func (m *Module) UseRouter(r *llm.Router) {
-	m.router = r
-	m.bindAgent(nil)
-}
-
-func (m *Module) bindAgent(tools app.Tools) {
-	if tools != nil {
-		m.tools = tools
-	}
-
-	if m.tools == nil || m.router == nil {
-		return
-	}
-
-	m.svc.UseAgent(llmapi.NewAgent(m.router.Use(ChatUse), m.svc, m.tools, m.chat, m.wait), m.locale)
-}
-
 func (m *Module) Resolver() llm.Resolver { return m.resolver }
 
 func (m *Module) RegisterRoutes(mux *http.ServeMux) { m.http.Register(mux) }
-
-// RotateSecrets reseals every stored provider key under the current key (ADR 008 K4).
-func (m *Module) RotateSecrets(ctx context.Context) (int, error) { return m.svc.RotateSecrets(ctx) }
-
-// ErrSecretKeyMissing: the instance has no EQUORI_SECRET_KEY, so no provider key opens or seals (ADR 008, K2).
-var ErrSecretKeyMissing = app.ErrSecretKeyMissing
-
-// ExportProviderKeys returns the keys of a book's providers in the clear, by provider id, for the
-// credentials bundle of an export archive (export design T3). The caller seals them under a passphrase.
-func (m *Module) ExportProviderKeys(ctx context.Context, booksID int64) (map[uuid.UUID]string, error) {
-	return m.svc.ExportProviderKeys(ctx, booksID)
-}
-
-// SealProviderKeys seals each key for booksID under the key of this instance, by provider id
-// (export design T5).
-func (m *Module) SealProviderKeys(booksID int64, keys map[uuid.UUID]string) (map[uuid.UUID][]byte, error) {
-	return m.svc.SealProviderKeys(booksID, keys)
-}
-
-// Instructions returns the guide an MCP client receives as its instructions (design 2026-10-26 E10).
-func Instructions() string { return app.Instructions() }
-
-// Prompt is a user message an MCP client offers its user; the module does not import the SDK.
-type Prompt struct {
-	Name, Description string
-	Arguments         []PromptArgument
-	Render            func(args map[string]string) (string, error)
-}
-
-type PromptArgument struct {
-	Name, Description string
-	Required          bool
-}
-
-// Prompts returns the MCP prompts (design 2026-10-26 X18).
-func Prompts() []Prompt {
-	var out []Prompt
-	for _, p := range app.MCPPrompts() {
-		args := make([]PromptArgument, 0, len(p.Arguments))
-		for _, a := range p.Arguments {
-			args = append(args, PromptArgument(a))
-		}
-
-		out = append(out, Prompt{Name: p.Name, Description: p.Description, Arguments: args, Render: p.Render})
-	}
-
-	return out
-}
