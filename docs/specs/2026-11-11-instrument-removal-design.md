@@ -25,6 +25,18 @@
 | RM6 | The time axis of the price chart writes the day and the month when the prices span 100 days or fewer, and the month and the year above 100 days (`formatReferenceMonth`). The span is the days between the first and the last price shown. The format comes from the active locale through `Intl`. |
 | RM7 | The chart draws a marker on every price when the range holds 60 prices or fewer. Above that, a marker on the last price only. |
 
+## 2.1 Amendment: currency of a Yahoo listing
+
+| # | Observed | Effect |
+|---|---|---|
+| R4 | The Yahoo search answer carries no currency (checked on 2026-11-11 for `NVDA`: `exchange`, `quoteType`, `longname`, no `currency`). Plan 3 D7 left the listing's quote currency empty. | The define dialog kept the book's base currency for NVDA. The chart answered USD, and the history failed with `quoted in USD, want BRL`. |
+
+| # | Rule |
+|---|---|
+| RM8 | `yahoo_chart` `Search` fills `quote_currency` of a listing from the table `micCurrencies` of its package: the whole-unit currency its MIC quotes in. A MIC that quotes in a subunit (`XLON` pence, `XJSE` cents) and a MIC outside the table leave it empty. This amends plan 3 D7 and MQ28. |
+| RM9 | The define dialog fills the scale from the type until the owner types one: `stock`, `etf`, `reit`, `depositary_receipt` and `fixed_income` 0; `fund` 6; `crypto` 8. The hint states what the number means in plain words. |
+| RM10 | The coverage section groups its failure in one `Alert` with the retry in `AlertActions`, and its other actions in one `Toolbar`. |
+
 ## 3. Cross-cutting questions
 
 | ID | Answer |

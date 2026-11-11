@@ -220,8 +220,8 @@ func TestCatalogOutsideBrazil(t *testing.T) {
 	}
 
 	want := catalogItemAPI{
-		Code: "AAPL", Name: "Apple Inc.", Type: "stock", Exchange: "XNAS", Symbol: "AAPL",
-		Source: "yahoo_chart",
+		Code: "AAPL", Name: "Apple Inc.", Type: "stock", Exchange: "XNAS", QuoteCurrency: "USD",
+		Symbol: "AAPL", Source: "yahoo_chart",
 	}
 	if got.Items[1] != want {
 		t.Fatalf("item 2 = %+v, want %+v", got.Items[1], want)

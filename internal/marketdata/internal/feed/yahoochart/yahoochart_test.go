@@ -236,12 +236,15 @@ func TestSearch(t *testing.T) {
 	want := []feed.Listing{
 		{
 			Code: "VWCE", Name: "Vanguard FTSE All-World UCITS ETF USD Accumulation", Type: "etf",
-			Exchange: "XETR", Symbol: "VWCE.DE",
+			Exchange: "XETR", QuoteCurrency: "EUR", Symbol: "VWCE.DE",
 		},
-		{Code: "AAPL", Name: "Apple Inc.", Type: "stock", Exchange: "XNAS", Symbol: "AAPL"},
+		{
+			Code: "AAPL", Name: "Apple Inc.", Type: "stock", Exchange: "XNAS", QuoteCurrency: "USD",
+			Symbol: "AAPL",
+		},
 		{
 			Code: "BRK.B", Name: "Berkshire Hathaway Inc. New", Type: "stock", Exchange: "XNYS",
-			Symbol: "BRK-B",
+			QuoteCurrency: "USD", Symbol: "BRK-B",
 		},
 	}
 	if !reflect.DeepEqual(got, want) {

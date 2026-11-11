@@ -31,6 +31,18 @@ var micSuffixes = map[string]string{
 	"XSES": ".SI",
 }
 
+// micCurrencies maps the MIC of an exchange to the currency Yahoo quotes it in, so that a search
+// listing states its currency (A223 RM8). Region-dependent. XLON and XJSE are absent: they quote
+// in a subunit (pence, cents), which no currency instrument holds.
+var micCurrencies = map[string]money.Currency{
+	"BVMF": "BRL",
+	"XNYS": "USD", "XNAS": "USD", "ARCX": "USD", "BATS": "USD", "XASE": "USD",
+	"XTSE": "CAD", "XETR": "EUR", "XFRA": "EUR", "XPAR": "EUR", "XAMS": "EUR", "XBRU": "EUR",
+	"XLIS": "EUR", "XMIL": "EUR", "XMAD": "EUR", "XHEL": "EUR", "XWBO": "EUR", "XDUB": "EUR",
+	"XSWX": "CHF", "XSTO": "SEK", "XCSE": "DKK", "XOSL": "NOK", "XASX": "AUD", "XTKS": "JPY",
+	"XHKG": "HKD", "XKRX": "KRW", "XNSE": "INR", "XMEX": "MXN", "XBUE": "ARS", "XSES": "SGD",
+}
+
 // yahooExchanges maps the exchange code of a Yahoo search answer to a MIC, for a symbol without a
 // suffix (plan 3 D8). Region-dependent: a US listing is the only case without a suffix.
 var yahooExchanges = map[string]string{"NMS": "XNAS", "NYQ": "XNYS", "PCX": "ARCX"}
@@ -157,7 +169,8 @@ func (s Source) Fetch(ctx context.Context, codes []money.Currency, from, to time
 }
 
 // Search asks the Yahoo search endpoint for the stocks and ETFs matching query. A quote whose
-// exchange resolves to no MIC is skipped (plan 3 D7, D8).
+// exchange resolves to no MIC is skipped (plan 3 D7, D8). The answer states no currency: the
+// listing takes the one of its MIC, or none.
 func (s Source) Search(ctx context.Context, query string, limit int) ([]feed.Listing, error) {
 	endpoint := fmt.Sprintf("%s/v1/finance/search?q=%s&quotesCount=%d&newsCount=0",
 		strings.TrimSuffix(strings.TrimSuffix(s.baseURL, "/"), "/v8/finance/chart"),
@@ -197,7 +210,8 @@ func (s Source) Search(ctx context.Context, query string, limit int) ([]feed.Lis
 		}
 
 		out = append(out, feed.Listing{
-			Code: code, Name: name, Type: kind, Exchange: mic, Symbol: q.Symbol,
+			Code: code, Name: name, Type: kind, Exchange: mic, QuoteCurrency: micCurrencies[mic],
+			Symbol: q.Symbol,
 		})
 	}
 
