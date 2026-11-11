@@ -64,7 +64,7 @@ export function splitCsv(text: string, delimiter: string): string[][] {
   return rows;
 }
 
-function parseDate(
+export function parseCsvDate(
   text: string,
   layout: CsvProfile["date_layout"] | undefined,
 ): string | undefined {
@@ -229,7 +229,7 @@ function readRows(
 
   const rows = body.map((row): PreviewRow => {
     const problems: PreviewRow["problems"] = [];
-    const day = parseDate(cell(row, date), profile.date_layout);
+    const day = parseCsvDate(cell(row, date), profile.date_layout);
     if (day === undefined) problems.push("date");
     let value: number | undefined;
     if (profile.amount_column !== undefined && profile.amount_column !== "") {
