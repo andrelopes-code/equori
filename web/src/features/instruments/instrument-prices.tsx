@@ -35,6 +35,7 @@ export function InstrumentPrices({
         <InstrumentCoverage
           code={instrument.code}
           coverage={instrument.coverage}
+          quote={quote}
           onRecord={onRecord}
         />
       )}

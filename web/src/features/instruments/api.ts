@@ -227,3 +227,36 @@ export function useImportPrices() {
     },
   });
 }
+
+// A dry run stores nothing and leaves the cached quotes as they are.
+export function useRecordInstrumentPrices() {
+  const api = useApi();
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      code,
+      quote,
+      prices,
+      dryRun,
+    }: {
+      code: string;
+      quote: string;
+      prices: components["schemas"]["InstrumentPricePoint"][];
+      dryRun: boolean;
+    }) =>
+      unwrap(
+        await api.POST("/instruments/{code}/prices", {
+          params: { path: { code } },
+          body: {
+            quote_instrument: quote,
+            prices,
+            ...(dryRun ? { dry_run: true } : {}),
+          },
+        }),
+      ),
+    onSuccess: (_data, { dryRun }) =>
+      dryRun
+        ? undefined
+        : client.invalidateQueries({ queryKey: instrumentKeys.all }),
+  });
+}

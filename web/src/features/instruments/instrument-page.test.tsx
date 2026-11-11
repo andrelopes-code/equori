@@ -354,6 +354,79 @@ describe("Instrument page", () => {
     });
   });
 
+  it("imports a pasted series after a dry run", async () => {
+    const sent: unknown[] = [];
+    const fetch = api({
+      "GET /api/v1/instruments/PETR4": () =>
+        json(200, {
+          code: "PETR4",
+          type: "stock",
+          scale: 0,
+          name: "Petrobras PN",
+          quote_currency: "BRL",
+          exchange: "B3SA",
+          coverage: {
+            first: "2010-01-04",
+            last: "2026-10-16",
+            count: 2,
+            stale: false,
+            sources: [],
+          },
+        }),
+      "POST /api/v1/instruments/PETR4/prices": async (req) => {
+        sent.push(await req.json());
+        return json(200, {
+          new: 2,
+          replaced: 0,
+          unchanged: 0,
+          below_feed: 1,
+        });
+      },
+    });
+    await renderApp("/instruments/PETR4", { fetch });
+    const user = userEvent.setup();
+    await user.click(
+      await screen.findByRole("button", {
+        name: catalogEn["prices.import.one"],
+      }),
+    );
+    const dialog = await screen.findByRole("dialog");
+    await user.type(
+      within(dialog).getByRole("textbox", {
+        name: catalogEn["prices.import.paste.label"],
+      }),
+      "Data;Valor\n02/01/2024;5,12\n03/01/2024;5,15\nTotal;10,27",
+    );
+    for (const text of [
+      "Columns found: Data, Valor",
+      "2 quotes read",
+      "1 line skipped",
+      "Line 4: Total | 10,27",
+      "2 new · 0 replaced · 0 unchanged",
+      "On 1 date the imported value takes the place of the quote of an official source.",
+    ]) {
+      expect(await within(dialog).findByText(text)).toBeInTheDocument();
+    }
+    const prices = [
+      { date: "2024-01-02", value: "5.12" },
+      { date: "2024-01-03", value: "5.15" },
+    ];
+    expect(sent[0]).toEqual({
+      quote_instrument: "BRL",
+      prices,
+      dry_run: true,
+    });
+
+    await user.click(
+      within(dialog).getByRole("button", {
+        name: catalogEn["prices.import.preview.record"],
+      }),
+    );
+
+    expect(await within(dialog).findByText("2 prices recorded.")).toBeVisible();
+    expect(sent[1]).toEqual({ quote_instrument: "BRL", prices });
+  });
+
   it("edits the name, exchange and subtype of a security and sends a cleared exchange as absent", async () => {
     const sent: unknown[] = [];
     const fetch = api({

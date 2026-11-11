@@ -13,6 +13,7 @@ import {
   quoteAge,
 } from "@/features/instruments/coverage-line";
 import { HistoryDialog } from "@/features/instruments/history-dialog";
+import { InstrumentPriceImportDialog } from "@/features/instruments/instrument-price-import-dialog";
 import { sourceLabel } from "@/features/instruments/instrument-labels";
 import { formatDate, formatRelativeDays, numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
@@ -23,6 +24,7 @@ type Coverage = components["schemas"]["InstrumentCoverage"];
 interface InstrumentCoverageProps {
   code: string;
   coverage: Coverage;
+  quote: string | null;
   onRecord: () => void;
 }
 
@@ -30,6 +32,7 @@ interface InstrumentCoverageProps {
 export function InstrumentCoverage({
   code,
   coverage,
+  quote,
   onRecord,
 }: InstrumentCoverageProps) {
   const t = useT();
@@ -37,6 +40,7 @@ export function InstrumentCoverage({
   const today = useToday();
   const retry = useRequestHistory();
   const [loading, setLoading] = useState(false);
+  const [importing, setImporting] = useState(false);
 
   const range = coverageRange(coverage);
   const history = historyState(coverage);
@@ -123,6 +127,17 @@ export function InstrumentCoverage({
             {t("instruments.history.load")}
           </Button>
         )}
+        {quote !== null && (
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              setImporting(true);
+            }}
+          >
+            {t("prices.import.one")}
+          </Button>
+        )}
         {range.kind === "none" && (
           <Button size="sm" variant="ghost" onClick={onRecord}>
             {t("instrument.price.record")}
@@ -137,6 +152,15 @@ export function InstrumentCoverage({
           }}
           onCancel={() => {
             setLoading(false);
+          }}
+        />
+      )}
+      {importing && quote !== null && (
+        <InstrumentPriceImportDialog
+          code={code}
+          quote={quote}
+          onClose={() => {
+            setImporting(false);
           }}
         />
       )}

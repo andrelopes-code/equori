@@ -152,4 +152,28 @@ export const instrumentsPtBR: Record<keyof typeof instrumentsEn, string> = {
   "prices.import.nothing": "Nenhum preço foi gravado.",
   "prices.import.tooLarge": "O arquivo é grande demais.",
   "prices.import.wrongType": "Escolha um arquivo CSV.",
+  "prices.import.one": "Importar arquivo ou colar",
+  "prices.import.one.title": "Importar cotações de {code}",
+  "prices.import.one.description":
+    "Um arquivo ou uma tabela colada com uma data e um valor por linha. O navegador faz a leitura; nada é enviado antes de Registrar.",
+  "prices.import.paste.label": "Texto colado",
+  "prices.import.paste.hint":
+    "As linhas copiadas de uma planilha ou de um site.",
+  "prices.import.preview.columns": "Colunas encontradas: {columns}",
+  "prices.import.preview.date": "Coluna da data",
+  "prices.import.preview.value": "Coluna do valor",
+  "prices.import.preview.read.one": "1 cotação lida",
+  "prices.import.preview.read.other": "{count} cotações lidas",
+  "prices.import.preview.skipped.one": "1 linha ignorada",
+  "prices.import.preview.skipped.other": "{count} linhas ignoradas",
+  "prices.import.preview.skippedLine": "Linha {line}: {text}",
+  "prices.import.preview.counts":
+    "{new} novas · {replaced} substituídas · {unchanged} iguais",
+  "prices.import.preview.belowFeed.one":
+    "Em 1 data o valor importado toma o lugar da cotação de uma fonte oficial.",
+  "prices.import.preview.belowFeed.other":
+    "Em {count} datas o valor importado toma o lugar da cotação de uma fonte oficial.",
+  "prices.import.preview.none": "Nenhuma linha contém uma data e um valor.",
+  "prices.import.preview.tooMany": "A série tem mais de {max} cotações.",
+  "prices.import.preview.record": "Registrar",
 };

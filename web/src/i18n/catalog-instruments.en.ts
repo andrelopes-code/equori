@@ -151,4 +151,27 @@ export const instrumentsEn = {
   "prices.import.nothing": "No price was recorded.",
   "prices.import.tooLarge": "The file is too large.",
   "prices.import.wrongType": "Choose a CSV file.",
+  "prices.import.one": "Import a file or paste",
+  "prices.import.one.title": "Import quotes of {code}",
+  "prices.import.one.description":
+    "A file or a pasted table with one date and one value per line. The browser reads it; nothing is sent before Record.",
+  "prices.import.paste.label": "Pasted text",
+  "prices.import.paste.hint": "The lines copied from a spreadsheet or a site.",
+  "prices.import.preview.columns": "Columns found: {columns}",
+  "prices.import.preview.date": "Date column",
+  "prices.import.preview.value": "Value column",
+  "prices.import.preview.read.one": "1 quote read",
+  "prices.import.preview.read.other": "{count} quotes read",
+  "prices.import.preview.skipped.one": "1 line skipped",
+  "prices.import.preview.skipped.other": "{count} lines skipped",
+  "prices.import.preview.skippedLine": "Line {line}: {text}",
+  "prices.import.preview.counts":
+    "{new} new · {replaced} replaced · {unchanged} unchanged",
+  "prices.import.preview.belowFeed.one":
+    "On 1 date the imported value takes the place of the quote of an official source.",
+  "prices.import.preview.belowFeed.other":
+    "On {count} dates the imported value takes the place of the quote of an official source.",
+  "prices.import.preview.none": "No line holds a date and a value.",
+  "prices.import.preview.tooMany": "The series holds more than {max} quotes.",
+  "prices.import.preview.record": "Record",
 } as const;
