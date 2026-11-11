@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/andrelopes-code/equori/internal/capture/internal/app"
+	"github.com/andrelopes-code/equori/internal/capture/app"
 )
 
 type Repository struct{ q *Queries }

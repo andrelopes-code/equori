@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/andrelopes-code/equori/internal/capture/internal/app"
+	"github.com/andrelopes-code/equori/internal/capture/app"
 	"github.com/andrelopes-code/equori/internal/platform/llm"
 	"github.com/andrelopes-code/equori/internal/platform/locale"
 )

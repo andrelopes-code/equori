@@ -11,8 +11,8 @@ import (
 	"github.com/google/uuid"
 	openapi_types "github.com/oapi-codegen/runtime/types"
 
-	"github.com/andrelopes-code/equori/internal/capture/internal/app"
-	"github.com/andrelopes-code/equori/internal/capture/internal/domain"
+	"github.com/andrelopes-code/equori/internal/capture/app"
+	"github.com/andrelopes-code/equori/internal/capture/domain"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/platform/problem"

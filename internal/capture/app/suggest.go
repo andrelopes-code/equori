@@ -11,7 +11,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/andrelopes-code/equori/internal/capture/internal/domain"
+	"github.com/andrelopes-code/equori/internal/capture/domain"
 	"github.com/andrelopes-code/equori/internal/platform/locale"
 )
 

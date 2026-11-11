@@ -103,7 +103,7 @@ func TestRegistry(t *testing.T) {
 - Create: `internal/platform/textfold/textfold.go`
 - Test: `internal/platform/textfold/textfold_test.go`
 - Modify: `internal/classification/internal/domain/text.go:8-35` (delete `latinFold`, `latinFirst`, `latinLast`, `fold`; `Normalize` maps words with `textfold.Rune`)
-- Modify: `internal/capture/internal/domain/text.go:9-35` (same deletions; same use)
+- Modify: `internal/capture/domain/text.go:9-35` (same deletions; same use)
 - Modify: `internal/ingestion/internal/domain/match.go:246-266` (delete `fold` and `unaccented`; `strings.Map(textfold.Rune, s)`)
 
 **Interfaces:**
@@ -844,7 +844,7 @@ Profile: layout `DD.MM.YYYY` reads `05.11.2026` as `2026-11-05`; `YYYY/MM/DD` re
 ### Task 27: Lexicon extraction
 
 **Files:**
-- Create: `internal/capture/internal/domain/lexicon.go`:
+- Create: `internal/capture/domain/lexicon.go`:
   ```go
   type Lexicon struct {
   	Language         string
@@ -863,13 +863,13 @@ Profile: layout `DD.MM.YYYY` reads `05.11.2026` as `2026-11-05`; `YYYY/MM/DD` re
   }
   func Merge(primary, fallback Lexicon) Lexicon // primary entries win
   ```
-- Create: `internal/capture/internal/domain/lexicon_pt.go` (`var Portuguese = Lexicon{...}` holding the Portuguese words now in `date.go:9-16`, `amount.go:94,127,130`, `installments.go:33-62`, `account.go:60-61,124-127`), `lexicon_en.go` (`var English` with the English words of the same lines)
+- Create: `internal/capture/domain/lexicon_pt.go` (`var Portuguese = Lexicon{...}` holding the Portuguese words now in `date.go:9-16`, `amount.go:94,127,130`, `installments.go:33-62`, `account.go:60-61,124-127`), `lexicon_en.go` (`var English` with the English words of the same lines)
 - Modify: those four files: every word list is read from a `Lexicon`; `Vocabulary` gains `Lexicon Lexicon`
-- Modify: `internal/capture/internal/app/service.go` (fills `Vocabulary.Lexicon = domain.Merge(domain.Portuguese, domain.English)`, the current behavior)
-- Test: existing `internal/capture/internal/domain/read_test.go`, new `lexicon_test.go`
+- Modify: `internal/capture/app/service.go` (fills `Vocabulary.Lexicon = domain.Merge(domain.Portuguese, domain.English)`, the current behavior)
+- Test: existing `internal/capture/domain/read_test.go`, new `lexicon_test.go`
 
 - [ ] **Step 1: Write the failing test** `TestMergePrimaryWins`: `Merge(Lexicon{DaysBack: {"hoje":0}}, Lexicon{DaysBack: {"hoje":5, "today":0}})` → `DaysBack == {"hoje":0, "today":0}`.
-- [ ] **Step 2:** `go test ./internal/capture/internal/domain/ -run TestMerge` → FAIL.
+- [ ] **Step 2:** `go test ./internal/capture/domain/ -run TestMerge` → FAIL.
 - [ ] **Step 3:** Implement; `read_test.go`'s `vocabulary()` sets `Lexicon: Merge(Portuguese, English)`.
 - [ ] **Step 4:** `go test ./internal/capture/...` → PASS with no expected value changed.
 - [ ] **Step 5:** Commit `refactor(capture): hold the words of each language in a lexicon`.
@@ -877,10 +877,10 @@ Profile: layout `DD.MM.YYYY` reads `05.11.2026` as `2026-11-05`; `YYYY/MM/DD` re
 ### Task 28: Reading by the user's language and conventions
 
 **Files:**
-- Create: `internal/capture/internal/domain/conventions.go`: `type DateOrder string` (`"dmy"`, `"mdy"`, `"ymd"`); `type Conventions struct{ Decimal, Group rune; Order DateOrder }`; `Vocabulary` gains `Conventions Conventions`
-- Modify: `internal/capture/internal/domain/amount.go:25-48` (`parseNumber` uses `Conventions.Decimal`/`Group`), `date.go:18-22` (`dayMonth` reads day and month by `Conventions.Order`; `ymd` reads `MM/DD` for two-part dates)
-- Modify: `internal/capture/capture.go:32` (`New(pool, l, c, profiles Profiles, router, clk, log)`), `internal/capture/internal/app/service.go` (lexicon `Merge(lexiconOf(language), English)`; conventions from `locale.ConventionsOf`), `internal/server/server.go:89`
-- Test: `internal/capture/internal/domain/read_test.go`, `internal/capture/locale_test.go` (new, through the HTTP API)
+- Create: `internal/capture/domain/conventions.go`: `type DateOrder string` (`"dmy"`, `"mdy"`, `"ymd"`); `type Conventions struct{ Decimal, Group rune; Order DateOrder }`; `Vocabulary` gains `Conventions Conventions`
+- Modify: `internal/capture/domain/amount.go:25-48` (`parseNumber` uses `Conventions.Decimal`/`Group`), `date.go:18-22` (`dayMonth` reads day and month by `Conventions.Order`; `ymd` reads `MM/DD` for two-part dates)
+- Modify: `internal/capture/capture.go:32` (`New(pool, l, c, profiles Profiles, router, clk, log)`), `internal/capture/app/service.go` (lexicon `Merge(lexiconOf(language), English)`; conventions from `locale.ConventionsOf`), `internal/server/server.go:89`
+- Test: `internal/capture/domain/read_test.go`, `internal/capture/locale_test.go` (new, through the HTTP API)
 
 - [ ] **Step 1: Write the failing tests** in `read_test.go` (today `2026-11-20`): with `Conventions{'.', ',', MDY}` and `Merge(English, English)`: `lunch 25.90 05/11` → amount 2590, date `2026-05-11`; `1,234.50 rent` → 123450. With `{'.', ',', DMY}`: `05/11` → `2026-11-05`. With `{',', '.', DMY}` and Portuguese: `1.234,50 aluguel` → 123450 (existing cases unchanged). With `{',', '.', DMY}` and `Merge(English, English)` (a `de` user, no German lexicon): `today 12,50` → today, 1250. HTTP test: a DE (`en`) user posts the preview of `lunch 12,50` and gets amount 1250.
 - [ ] **Step 2:** `go test ./internal/capture/... -run 'Read|Locale'` → FAIL.
@@ -891,12 +891,12 @@ Profile: layout `DD.MM.YYYY` reads `05.11.2026` as `2026-11-05`; `YYYY/MM/DD` re
 ### Task 29: Suggestion prompt by locale
 
 **Files:**
-- Modify: `internal/capture/internal/adapter/llmapi/suggester.go:17-22` (`func systemPrompt(l locale.Locale) string`; the second sentence becomes `The descriptions are short texts the owner typed, mostly in <locale.EnglishName(l)>, often a shop or service name.`); the suggest call receives the locale
+- Modify: `internal/capture/llmapi/suggester.go:17-22` (`func systemPrompt(l locale.Locale) string`; the second sentence becomes `The descriptions are short texts the owner typed, mostly in <locale.EnglishName(l)>, often a shop or service name.`); the suggest call receives the locale
 - Modify: `docs/adr/014-capture-category-suggestions.md` L2 (the prompt names the owner's language and region)
-- Test: `internal/capture/internal/adapter/llmapi/suggester_test.go`
+- Test: `internal/capture/llmapi/suggester_test.go`
 
 - [ ] **Step 1: Write the failing test** `TestSystemPrompt`: `systemPrompt({pt, BR})` contains `mostly in Portuguese (Brazil)`; `systemPrompt({en, GB})` contains `mostly in English (United Kingdom)`; neither contains `Brazilian owner`.
-- [ ] **Step 2:** `go test ./internal/capture/internal/adapter/llmapi/ -run TestSystemPrompt` → FAIL.
+- [ ] **Step 2:** `go test ./internal/capture/llmapi/ -run TestSystemPrompt` → FAIL.
 - [ ] **Step 3:** Implement.
 - [ ] **Step 4:** Run → PASS; `make check` (end of the backend phases) → PASS.
 - [ ] **Step 5:** Commit `feat(capture): name the owner's language in the suggestion prompt`.

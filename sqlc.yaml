@@ -66,11 +66,11 @@ sql:
         out: internal/assistant/internal/adapter/postgres
   - engine: postgresql
     schema: db/migrations
-    queries: db/queries/capture
+    queries: internal/capture/postgres/queries
     gen:
       go:
         <<: *go
-        out: internal/capture/internal/adapter/postgres
+        out: internal/capture/postgres
   - engine: postgresql
     schema: db/migrations
     queries: db/queries/portfolio

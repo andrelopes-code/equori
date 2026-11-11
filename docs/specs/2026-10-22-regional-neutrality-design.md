@@ -234,7 +234,7 @@ type Jurisdiction interface {
 ### 5.13 Capture [15, 16]
 
 ```go
-// internal/capture/internal/domain
+// internal/capture/domain
 type Lexicon struct {
 	Language     string
 	DaysBack     map[string]int
