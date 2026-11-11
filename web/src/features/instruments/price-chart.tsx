@@ -87,6 +87,8 @@ export function PriceChart({
           },
         ];
 
+  const widenTo = reaches(data, averageCost);
+
   return (
     <Chart
       variant="card"
@@ -103,7 +105,10 @@ export function PriceChart({
         type: "time",
         format: (value) => axisLabel(value, locale, span),
       }}
-      y={{ format: format.tick }}
+      y={{
+        format: format.tick,
+        ...(widenTo === null ? {} : { min: widenTo }),
+      }}
       extendOption={(option) => withTicks(option, ticks)}
       onActivePointChange={(point) => {
         onActiveDateChange?.(point === null ? null : point.key);
@@ -131,4 +136,15 @@ function withTicks(option: Record<string, unknown>, ticks: number[]) {
       return { ...axis, axisLabel: { ...axisLabel, customValues: ticks } };
     }),
   };
+}
+
+// The average cost below every price needs the axis widened to it; an explicit minimum above
+// the data would clip the line, so one is set only in that case.
+function reaches(
+  data: readonly { price: number }[],
+  averageCost: number | null,
+): number | null {
+  if (averageCost === null) return null;
+
+  return data.every((d) => d.price > averageCost) ? averageCost : null;
 }

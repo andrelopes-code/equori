@@ -4,7 +4,11 @@ import { describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
 import { json, problem } from "@/testing/fake-api";
-import { cdbTerms, instrumentsApi as api } from "@/testing/instruments-api";
+import {
+  cdbTerms,
+  instrumentsApi as api,
+  price,
+} from "@/testing/instruments-api";
 import { renderApp } from "@/testing/render-app";
 
 const termsRow = (term: string) =>
@@ -17,13 +21,37 @@ describe("Fixed income terms", () => {
     await screen.findByText("110%");
     expect(termsRow(catalogEn["terms.issuedOn"])).toBe("01/02/2026");
     expect(termsRow(catalogEn["terms.maturesOn"])).toBe("01/02/2027");
-    expect(termsRow(catalogEn["terms.index"])).toBe("cdi");
+    expect(termsRow(catalogEn["terms.index"])).toBe("CDI");
     expect(termsRow(catalogEn["terms.percentOfIndex"])).toBe("110%");
     expect(termsRow(catalogEn["terms.spread"])).toBe("0%");
     expect(termsRow(catalogEn["terms.dayCount"])).toBe(
       catalogEn["instruments.dayCount.bus252"],
     );
     expect(termsRow(catalogEn["terms.faceValue"])).toBe("R$1,000.00");
+  });
+
+  // IP10
+  it("shows how far the term has run and the accrued price over the face value", async () => {
+    const fetch = api({
+      "GET /api/v1/prices": () =>
+        json(200, {
+          interval: "day",
+          items: [price("CDB1", "2026-10-16", "1100.00", "accrual")],
+        }),
+    });
+    await renderApp("/instruments/CDB1", { fetch });
+    const bar = await screen.findByRole("progressbar", {
+      name: catalogEn["terms.progress"],
+    });
+
+    expect(bar).toHaveAttribute("aria-valuenow", "79");
+    expect(bar).toHaveAttribute("aria-valuetext", "288 of 365 days");
+    expect(await screen.findByText("Matures in 77 days.")).toBeInTheDocument();
+    expect(
+      await screen.findByText(
+        "Accrued price of R$1,100.00: +10.00% over the face value.",
+      ),
+    ).toBeInTheDocument();
   });
 
   it("saves the terms of S123 and states that saving replaces the earlier ones and their accrued prices", async () => {

@@ -19,6 +19,7 @@ import { InstrumentFacts } from "@/features/instruments/instrument-facts";
 import { InstrumentPagePlaceholder } from "@/features/instruments/instrument-page-placeholder";
 import { InstrumentPositions } from "@/features/instruments/instrument-positions";
 import { typeLabel } from "@/features/instruments/instrument-labels";
+import { InstrumentData } from "@/features/instruments/instrument-data";
 import { InstrumentPrices } from "@/features/instruments/instrument-prices";
 import { EditInstrumentDialog } from "@/features/instruments/edit-instrument-dialog";
 import { RemoveInstrumentAction } from "@/features/instruments/remove-instrument-action";
@@ -119,13 +120,7 @@ export function InstrumentPage() {
       </PageHeader>
       <PageBody>
         <Stack gap={6}>
-          <InstrumentPrices
-            instrument={i}
-            quote={quote}
-            onRecord={() => {
-              setRecording(true);
-            }}
-          />
+          <InstrumentPrices instrument={i} quote={quote} />
 
           <InstrumentPositions code={i.code} quote={quote} />
           {fixedIncome && terms.isError && (
@@ -135,8 +130,16 @@ export function InstrumentPage() {
             />
           )}
           {fixedIncome && quote !== null && terms.data !== undefined && (
-            <TermsSection terms={terms.data} quote={quote} />
+            <TermsSection code={i.code} terms={terms.data} quote={quote} />
           )}
+          <InstrumentData
+            instrument={i}
+            quote={quote}
+            onRecord={() => {
+              setRecording(true);
+            }}
+          />
+
           <InstrumentFacts instrument={i} />
         </Stack>
       </PageBody>
