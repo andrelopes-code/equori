@@ -13,8 +13,8 @@ import { ProblemError, unwrap } from "@/api/problem";
 import type { components, paths } from "@/api/schema.gen";
 import { accountKeys, balanceKeys } from "@/features/accounts";
 import { setupKeys } from "@/features/setup";
-import { bulkLimit, chunks } from "@/features/transactions/categorize";
-import type { TransactionSearch } from "@/features/transactions/search";
+import { bulkLimit, chunks } from "@/features/transactions/model/categorize";
+import type { TransactionSearch } from "@/features/transactions/model/search";
 
 export interface TransactionQuery extends TransactionSearch {
   limit?: number;
