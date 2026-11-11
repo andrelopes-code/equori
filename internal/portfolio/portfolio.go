@@ -284,6 +284,20 @@ func (p marketPort) InstrumentOf(ctx context.Context, code money.Currency) (app.
 	return app.InstrumentInfo{Type: in.Type, QuoteCurrency: in.QuoteCurrency}, err
 }
 
+func (p marketPort) QuoteState(ctx context.Context, code money.Currency) (first, last *time.Time, stale bool, err error) {
+	in, err := p.md.Instrument(ctx, string(code))
+	if err != nil {
+		return nil, nil, false, err
+	}
+
+	cov, err := p.md.Coverage(ctx, in)
+	if err != nil {
+		return nil, nil, false, err
+	}
+
+	return cov.First, cov.Last, cov.Stale, nil
+}
+
 func (p marketPort) Convert(ctx context.Context, q money.Money, to money.Currency, date time.Time) (money.Money, []app.Price, error) {
 	c, err := p.md.Convert(ctx, q, to, date)
 	if errors.Is(err, marketdata.ErrPriceMissing) {

@@ -11014,12 +11014,29 @@ components:
             $ref: "#/components/schemas/Price"
     PositionList:
       type: object
-      required: [items]
+      required: [items, quote_warnings]
       properties:
         items:
           type: array
           items:
             $ref: "#/components/schemas/Position"
+        quote_warnings:
+          type: array
+          description: The held instruments whose quote is stale or missing at the date (A222 MQ26).
+          items:
+            $ref: "#/components/schemas/PositionQuoteWarning"
+    PositionQuoteWarning:
+      type: object
+      additionalProperties: false
+      required: [instrument, last]
+      properties:
+        instrument:
+          type: string
+        last:
+          type: string
+          format: date
+          nullable: true
+          description: The date of the last stored price, or null.
     RealizedResult:
       type: object
       required: [transaction_id, account_id, instrument, date, month, quantity, cost, proceeds, result, tax_class]

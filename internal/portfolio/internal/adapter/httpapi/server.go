@@ -66,7 +66,12 @@ func (s *Server) ListPositions(ctx context.Context, req ListPositionsRequestObje
 		}
 	}
 
-	return ListPositions200JSONResponse{Items: items}, nil
+	warnings, err := s.svc.QuoteWarnings(ctx, auth.MustBooksID(ctx), req.Params.Date.Time)
+	if err != nil {
+		return nil, err
+	}
+
+	return ListPositions200JSONResponse{Items: items, QuoteWarnings: quoteWarnings(warnings)}, nil
 }
 
 func (s *Server) ListRealizedResults(ctx context.Context, req ListRealizedResultsRequestObject) (ListRealizedResultsResponseObject, error) {
@@ -294,6 +299,19 @@ func optional(s string) *string {
 }
 
 func toMoney(m money.Money) Money { return Money{Amount: m.Amount(), Currency: string(m.Currency())} }
+
+func quoteWarnings(ws []app.QuoteWarning) []PositionQuoteWarning {
+	out := make([]PositionQuoteWarning, len(ws))
+	for i, w := range ws {
+		out[i] = PositionQuoteWarning{Instrument: string(w.Instrument)}
+		if w.Last != nil {
+			d := date(*w.Last)
+			out[i].Last = &d
+		}
+	}
+
+	return out
+}
 
 func date(t time.Time) openapi_types.Date { return openapi_types.Date{Time: t} }
 

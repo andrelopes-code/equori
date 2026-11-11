@@ -83,6 +83,9 @@ type MarketData interface {
 	// on the first day of its month: ErrUnknownIndex when the index is not enabled or has no
 	// rate, ErrIndexNotMonthly when its period is not a month.
 	MonthlyRates(ctx context.Context, id string, from, to time.Time) ([]IndexRate, error)
+	// QuoteState returns the first and last dates with a price of code, nil when none is stored,
+	// and whether its next price is overdue (A222 MQ24).
+	QuoteState(ctx context.Context, code money.Currency) (first, last *time.Time, stale bool, err error)
 }
 
 type Repository interface {

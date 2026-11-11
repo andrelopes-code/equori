@@ -6150,6 +6150,16 @@ export interface components {
         };
         PositionList: {
             items: components["schemas"]["Position"][];
+            /** @description The held instruments whose quote is stale or missing at the date (A222 MQ26). */
+            quote_warnings: components["schemas"]["PositionQuoteWarning"][];
+        };
+        PositionQuoteWarning: {
+            instrument: string;
+            /**
+             * Format: date
+             * @description The date of the last stored price, or null.
+             */
+            last: string | null;
         };
         RealizedResult: {
             /** Format: uuid */

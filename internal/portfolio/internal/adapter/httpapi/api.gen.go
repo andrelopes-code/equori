@@ -194,6 +194,17 @@ type Position struct {
 // PositionList defines model for PositionList.
 type PositionList struct {
 	Items []Position `json:"items"`
+
+	// QuoteWarnings The held instruments whose quote is stale or missing at the date (A222 MQ26).
+	QuoteWarnings []PositionQuoteWarning `json:"quote_warnings"`
+}
+
+// PositionQuoteWarning defines model for PositionQuoteWarning.
+type PositionQuoteWarning struct {
+	Instrument string `json:"instrument"`
+
+	// Last The date of the last stored price, or null.
+	Last *openapi_types.Date `json:"last"`
 }
 
 // Price defines model for Price.
