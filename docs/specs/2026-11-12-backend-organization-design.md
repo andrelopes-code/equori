@@ -25,6 +25,7 @@ Non-goals: behavior change; changes to `api/`, `db/migrations/`, `web/`, request
 | BO11 | Extraction of pure logic between layers | `planning/app/recurring.go` series detector (`DetectSeries`, `detectGroup`, `cadences`) moves to `planning/domain/series.go`. No other cross-layer move is made: the audit rows that propose one beyond this stay as file splits inside the layer. | Audit, planning group |
 | BO12 | Rows that change an exported signature | Refused. Examples: `planning.New` with eight positional arguments, `WithFeeds` ordering in `marketdata`, removal of exported methods. The plan lists them under Out of scope. | Brief, Non-goals |
 | BO13 | Parity proof | Each task proves, with `parity.py` in the scratchpad, that the multiset of non-blank lines of the touched packages is equal before and after, except `import` lines, signatures and calls of extracted step functions, and lines the layout rule requires. | Brief, Phase D |
+| BO14 | One plan file against the four-slice limit of `docs/contributing/agents.md` | The plan file holds five parts of at most four slices each; the limit applies per part. | Brief, Phase C |
 
 ## Cross-cutting questions
 
