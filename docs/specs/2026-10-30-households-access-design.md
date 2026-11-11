@@ -27,11 +27,11 @@ Terms of the shared-books design (books, member, membership, instance role, book
 
 ## 3. Current state
 
-- `identity.RequireSession` (`internal/identity/internal/adapter/httpapi/server.go`) authenticates every `/api/` request except the paths of `isLogin` and `isSetup`. No code reads `identity_membership.role`.
+- `identity.RequireSession` (`internal/identity/httpapi/server.go`) authenticates every `/api/` request except the paths of `isLogin` and `isSetup`. No code reads `identity_membership.role`.
 - `internal/platform/contract` resolves the OpenAPI route of a request (`Validator.route`) and runs after `RequireSession` (`internal/server/server.go`).
 - `api/openapi.yaml` has 218 operations. `internal/server/tool_exposure_test.go` maps each to a tool or an exclusion.
 - The MCP grant has `Write = scope == "write"` (`internal/server/server.go`); a read grant reaches only `tool.ReadOnly` tools (ADR 024, X14).
-- The tool `update_profile` changes the member's language and the book's region (`internal/identity/internal/adapter/toolapi/profile.go`).
+- The tool `update_profile` changes the member's language and the book's region (`internal/identity/toolapi/profile.go`).
 - `assistant_conversation` and its messages and proposals are keyed by `books_id` only.
 - Instance-role checks exist in `marketdata` (feeds) and `ingestion` (sync schedule), both 403 `admin_required`.
 - Four browser keys hold IDs of one book: `equori.capture.defaultAccount`, `equori.capture.queue`, `equori.recent-categories`, `equori.plan.collapsed`; `equori.device.user` holds `{id, email}` of the member for the offline queue (ADR 022, P4a).

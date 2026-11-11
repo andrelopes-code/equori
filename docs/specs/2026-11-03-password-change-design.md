@@ -23,11 +23,11 @@ Read on 2026-11-03 at `322db4d8`.
 
 | Topic | State | Source |
 |---|---|---|
-| Hash write | Only `CreateMember` and the setup flow store `PasswordHash`. | `internal/identity/internal/app/service.go:173` |
+| Hash write | Only `CreateMember` and the setup flow store `PasswordHash`. | `internal/identity/app/service.go:173` |
 | Password rule | 12 to 256 runes. | `domain.ValidatePassword` |
-| Password check for a sensitive action | `checkPassword` counts against the login throttle of the email (5 attempts in 15 minutes) and resets it on success. | `internal/identity/internal/app/second_factor.go:616` |
+| Password check for a sensitive action | `checkPassword` counts against the login throttle of the email (5 attempts in 15 minutes) and resets it on success. | `internal/identity/app/second_factor.go:616` |
 | Operations without a tool | `disableTotp`, `removePasskey` and the other `/me/*` operations of the second factor map to `-session` in `exposure`. | `internal/server/tool_exposure_test.go` |
-| Session removal | `DeleteOtherSessions` and `DeleteMemberSessions` exist; `ResetSecondFactor` runs them under `withMemberLock`. | `internal/identity/internal/adapter/postgres/second_factor.go` |
+| Session removal | `DeleteOtherSessions` and `DeleteMemberSessions` exist; `ResetSecondFactor` runs them under `withMemberLock`. | `internal/identity/postgres/second_factor.go` |
 | CLI | `equori user create` and `equori user reset-second-factor`. | `cmd/equori/user.go` |
 
 ## 4. Decisions

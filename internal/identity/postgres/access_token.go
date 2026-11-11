@@ -9,8 +9,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
-	"github.com/andrelopes-code/equori/internal/identity/internal/app"
-	"github.com/andrelopes-code/equori/internal/identity/internal/domain"
+	"github.com/andrelopes-code/equori/internal/identity/app"
+	"github.com/andrelopes-code/equori/internal/identity/domain"
 )
 
 func (r *Repository) CreateAccessToken(ctx context.Context, t domain.AccessToken) error {

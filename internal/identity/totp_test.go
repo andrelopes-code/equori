@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
-	"github.com/andrelopes-code/equori/internal/identity/internal/domain"
+	"github.com/andrelopes-code/equori/internal/identity/domain"
 )
 
 const wrongPassword = "wrong password 1"

@@ -298,10 +298,10 @@ ON CONFLICT (code) DO NOTHING;
   -- +goose Down
   ALTER TABLE identity_user DROP COLUMN language, DROP COLUMN region;
   ```
-- Modify: `db/queries/identity/identity.sql` (`CreateUser` inserts `language`, `region`; new `UpdateProfile :one`)
+- Modify: `internal/identity/postgres/queries/identity.sql` (`CreateUser` inserts `language`, `region`; new `UpdateProfile :one`)
 - Modify: `internal/platform/postgres/pgtest/pgtest.go:164-175` (`CreateUser` inserts `language 'en', region 'US'`; new `CreateUserBeforeProfile` with the current three-column insert)
 - Modify: every test that calls `postgres.MigrateTo` with a version below 39 and then `pgtest.CreateUser`: switch it to `CreateUserBeforeProfile` (find them with `grep -rln 'MigrateTo' internal`); `internal/ledger/reconciliation_schema_test.go:48` adds the two columns
-- Modify: `internal/identity/internal/domain/user.go`, `internal/identity/internal/app/service.go`, `internal/identity/internal/adapter/postgres/repository.go`, `internal/identity/internal/adapter/httpapi/server.go`, `internal/identity/identity.go`
+- Modify: `internal/identity/domain/user.go`, `internal/identity/app/service.go`, `internal/identity/postgres/repository.go`, `internal/identity/httpapi/server.go`, `internal/identity/identity.go`
 - Modify: `api/openapi.yaml` (`User` gains required `language`, `region`; `/me` gains `patch` `updateCurrentUser` with body `{language?, region?}`, `additionalProperties: false`, patterns `^[a-z]{2,3}$` and `^[A-Z]{2}$`)
 - Modify: `internal/server/tool_exposure_test.go` (`"updateCurrentUser": "-write"`)
 - Test: `internal/identity/profile_test.go` (new), `internal/identity/schema_test.go` (new)
@@ -342,7 +342,7 @@ func TestProfile(t *testing.T) {
 
 **Files:**
 - Modify: `internal/identity/identity.go:51-57`: `func (m *Module) CreateUser(ctx context.Context, email, password, role string, l locale.Locale, baseCurrency money.Currency) (User, error)`
-- Modify: `internal/identity/internal/adapter/postgres/repository.go:37-72` (event `identity.user_created.v2`; payload `{user_id, email, language, region, base_currency}`)
+- Modify: `internal/identity/postgres/repository.go:37-72` (event `identity.user_created.v2`; payload `{user_id, email, language, region, base_currency}`)
 - Create: `internal/ledger/region_defaults.go`: `func DefaultBaseCurrency(region string) (money.Currency, bool)` (`BR` → `BRL`)
 - Modify: `internal/ledger/ledger.go:32-33` (delete the constant), `:200` (subscribe to `identity.user_created.v2`), `:410-423` (payload gains `BaseCurrency money.Currency \`json:"base_currency"\``; `Provision` uses it)
 - Modify: `cmd/equori/user.go:25-60` (flags `--language`, `--region`, `--currency`; usage line `usage: equori user create --email EMAIL --language LANG --region REGION [--currency CODE] [--admin]`; without `--currency`, `ledger.DefaultBaseCurrency(region)`, else error `--currency is required for region <REGION>`)

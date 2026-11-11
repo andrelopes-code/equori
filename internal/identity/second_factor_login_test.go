@@ -16,7 +16,7 @@ import (
 	"time"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
-	"github.com/andrelopes-code/equori/internal/identity/internal/domain"
+	"github.com/andrelopes-code/equori/internal/identity/domain"
 )
 
 var loginNow = time.Date(2026, 10, 31, 12, 0, 0, 0, time.UTC)

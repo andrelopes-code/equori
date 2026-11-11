@@ -2,11 +2,11 @@ version: "2"
 sql:
   - engine: postgresql
     schema: db/migrations
-    queries: db/queries/identity
+    queries: internal/identity/postgres/queries
     gen:
       go: &go
         package: postgres
-        out: internal/identity/internal/adapter/postgres
+        out: internal/identity/postgres
         sql_package: pgx/v5
         output_db_file_name: db.gen.go
         output_models_file_name: models.gen.go

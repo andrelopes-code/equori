@@ -9,8 +9,8 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 
-	"github.com/andrelopes-code/equori/internal/identity/internal/app"
-	"github.com/andrelopes-code/equori/internal/identity/internal/domain"
+	"github.com/andrelopes-code/equori/internal/identity/app"
+	"github.com/andrelopes-code/equori/internal/identity/domain"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
 )
 

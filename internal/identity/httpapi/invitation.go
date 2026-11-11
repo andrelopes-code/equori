@@ -3,8 +3,8 @@ package httpapi
 import (
 	"context"
 
-	"github.com/andrelopes-code/equori/internal/identity/internal/app"
-	"github.com/andrelopes-code/equori/internal/identity/internal/domain"
+	"github.com/andrelopes-code/equori/internal/identity/app"
+	"github.com/andrelopes-code/equori/internal/identity/domain"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )

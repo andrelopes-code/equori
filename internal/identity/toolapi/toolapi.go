@@ -2,7 +2,7 @@
 package toolapi
 
 import (
-	"github.com/andrelopes-code/equori/internal/identity/internal/app"
+	"github.com/andrelopes-code/equori/internal/identity/app"
 	"github.com/andrelopes-code/equori/internal/platform/tool"
 )
 
